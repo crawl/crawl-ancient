@@ -3,6 +3,8 @@
 
 So, you want to start playing Crawl straight away without bothering with the
 manual? Read this, the guide to starting Crawl with a minimum of preparation.
+When you get some more time, you can read crawl.txt in the Docs directory
+for more detailed information.
 
 I suggest printing it out and following its instructions while playing your
 first few games (you can also press '?' while playing for a list of commands).
