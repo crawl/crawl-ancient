@@ -19,10 +19,6 @@
 #include <conio.h>
 #endif
 
-#include "defines.h"
-#include "externs.h"
-#include "enum.h"
-
 #ifdef USE_CURSES
 #include <curses.h>
 #endif
@@ -30,9 +26,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "itemname.h"
+#include "externs.h"
 
-//#include "crawlfnc.h"
+#include "itemname.h"
 #include "shopping.h"
 #include "stuff.h"
 
@@ -43,14 +39,14 @@
    void command_string(char comm[50], int i);
    void wizard_string(char comm[50], int i);
 
-//char invent(unsigned char inv_plus2 [52], int item_class_inv, int inv_quantity [52], unsigned char inv_dam [52], unsigned char inv_class [52], unsigned char inv_type [52], unsigned char inv_plus [52], unsigned char inv_ident [52], char item_wielded, char body_armour, char shield_armour, char cloak_armour, char head_armour, char hand_armour, char foot_armour, char ring [2], char show_price);
-   char invent(int item_class_inv, char show_price);
+
+
 
    unsigned char get_invent(int invent_type)
    {
       char nothing;
 
-      nothing = invent(invent_type, 0);
+      nothing = invent(invent_type, false);
     //you.inv_plus2, invent_type, you.inv_quantity, you.inv_dam, you.inv_class, you.inv_type, you.inv_plus, you.inv_ident, you.item_wielded, you.armour [0], you.armour [5], you.armour [2], you.armour [1], you.armour [3], you.armour [4], you.ring, 0);
 
    #ifdef PLAIN_TERM
@@ -60,8 +56,11 @@
       return nothing;
    }
 
-//char invent(unsigned char inv_plus2 [52], int item_class_inv, int inv_quantity [52], unsigned char inv_dam [52], unsigned char inv_class [52], unsigned char inv_type [52], unsigned char inv_plus [52], unsigned char inv_ident [52], char item_wielded, char body_armour, char shield_armour, char cloak_armour, char head_armour, char hand_armour, char foot_armour, char ring [2], char show_price)
-   char invent(int item_class_inv, char show_price)
+
+
+
+   //char invent(unsigned char inv_plus2 [52], int item_class_inv, int inv_quantity [52], unsigned char inv_dam [52], unsigned char inv_class [52], unsigned char inv_type [52], unsigned char inv_plus [52], unsigned char inv_ident [52], char item_wielded, char body_armour, char shield_armour, char cloak_armour, char head_armour, char hand_armour, char foot_armour, char ring [2], char show_price)
+   char invent(int item_class_inv, bool show_price)
    {
       char st_pass[60];
 
@@ -83,12 +82,9 @@
             temp_id[i][j] = 1;
          }
       }
-    //clrscr();
-    //   for (i = 0; i <= 20; i++)
-    //      cprintf("Line #%d\r\n", i);
-
-
-
+      //clrscr();
+      //for (i = 0; i <= 20; i++)
+      //  cprintf("Line #%d\r\n", i);
 
 
    #ifdef DOS_TERM
@@ -97,7 +93,6 @@
     gettext(1, 1, 80, 25, buffer);
     window(1, 1, 80, 25);
    #endif
-
 
 
       strcpy(st_pass, "");
@@ -150,29 +145,29 @@
       {
          for (i = 0; i < 15; i++)
          {
-            if (item_class_inv == 1 && i == 0)
-               i++;
-            if (item_class_inv == 0 && i == 11)
-               i++;
-         // if (item_class_inv == 11 && i == 3) i++;
-            if (item_class_inv == 6 && i == 10)
-               i++;
+            if (item_class_inv == OBJ_MISSILES && i == 0)
+              i++;
+            if (item_class_inv == OBJ_WEAPONS && i == 11)
+              i++;
+            //if (item_class_inv == OBJ_STAVES && i == 3) i++;
+            if (item_class_inv == OBJ_SCROLLS && i == 10)
+              i++;
             if (item_class_inv != i)
-               Inv_class2[i] = 0;
+              Inv_class2[i] = 0;
          }
       }
 
 
-   //cprintf("hello!");
-    //abort();
-    //if (item_class_inv > 1) Inv_class2 [0] = 0;
+      //cprintf("hello!");
+      //abort();
+      //if (item_class_inv > OBJ_MISSILES) Inv_class2 [0] = 0;
 
 
-      if ((item_class_inv == -1 && inv_count > 0) || (item_class_inv != -1 && Inv_class2[item_class_inv] > 0) || (item_class_inv == 1 && (Inv_class2[0] > 0 || Inv_class2[1] > 0)) || (item_class_inv == 0 && (Inv_class2[0] > 0 || Inv_class2[11] > 0)) || (item_class_inv == 0 && (Inv_class2[0] > 0 || Inv_class2[13] > 0)) || (item_class_inv == 6 && (Inv_class2[6] > 0 || Inv_class2[10] > 0)))     // || (item_class_inv == 3 && (Inv_class2 [3] > 0 || Inv_class2 [11] > 0)))
+      if ((item_class_inv == -1 && inv_count > 0) || (item_class_inv != -1 && Inv_class2[item_class_inv] > 0) || (item_class_inv == OBJ_MISSILES && (Inv_class2[0] > 0 || Inv_class2[1] > 0)) || (item_class_inv == OBJ_WEAPONS && (Inv_class2[0] > 0 || Inv_class2[11] > 0)) || (item_class_inv == OBJ_WEAPONS && (Inv_class2[0] > 0 || Inv_class2[13] > 0)) || (item_class_inv == OBJ_SCROLLS && (Inv_class2[6] > 0 || Inv_class2[10] > 0)))     // || (item_class_inv == OBJ_WANDS && (Inv_class2 [3] > 0 || Inv_class2 [11] > 0)))
 
       {
 
-      //if (item_class_inv != 1) //this is so you can get the '?' invent from throw_it
+      //if (item_class_inv != OBJ_MISSILES) //this is so you can get the '?' invent from throw_it
         //{
          cprintf("  Inventory");
          lines++;
@@ -226,52 +221,52 @@
                textcolor(BLUE);
                switch (i)
                {
-                  case 0:
+                  case OBJ_WEAPONS:
                      cprintf("Hand weapons");
                      break;
-                  case 1:
+                  case OBJ_MISSILES:
                      cprintf("Missiles");
                      break;
-                  case 2:
+                  case OBJ_ARMOUR:
                      cprintf("Armour");
                      break;
-                  case 3:
+                  case OBJ_WANDS:
                      cprintf("Magical devices");
                      break;
-                  case 4:
+                  case OBJ_FOOD:
                      cprintf("Comestibles");
                      break;
-                  case 5:
+                  case OBJ_UNKNOWN_I:
                      cprintf("Books");
                      break;
-                  case 6:
+                  case OBJ_SCROLLS:
                      cprintf("Scrolls");
                      break;
-                  case 7:
+                  case OBJ_JEWELLERY:
                      cprintf("Jewellery");
                      break;
-                  case 8:
+                  case OBJ_POTIONS:
                      cprintf("Potions");
                      break;
-                  case 9:
+                  case OBJ_UNKNOWN_II:
                      cprintf("Gems");
                      break;
-                  case 10:
+                  case OBJ_BOOKS:
                      cprintf("Books");
                      break;
-                  case 11:
+                  case OBJ_STAVES:
                      cprintf("Magical staves");
                      break;
-                  case 12:
+                  case OBJ_ORBS:
                      cprintf("Orbs of Power");
                      break;
-                  case 13:
+                  case OBJ_MISCELLANY:
                      cprintf("Miscellaneous");
                      break;
-                  case 14:
+                  case OBJ_CORPSES:
                      cprintf("Carrion");
                      break;
-               //   case 16: cprintf("Miscellaneous"); break;
+                  //case OBJ_GEMSTONES: cprintf("Miscellaneous"); break;
                }
                textcolor(LIGHTGREY);
                 //cprintf("\n\r");
@@ -345,17 +340,17 @@
                      inv_count--;
 
                      if (j == you.equip[EQ_WEAPON])
-                        cprintf(" (weapon)");
+                       cprintf(" (weapon)");
                      if (j == you.equip[EQ_CLOAK] || j == you.equip[EQ_HELMET] || j == you.equip[EQ_GLOVES] || j == you.equip[EQ_BOOTS] || j == you.equip[EQ_SHIELD] || j == you.equip[EQ_BODY_ARMOUR])
-                        cprintf(" (worn)");
+                       cprintf(" (worn)");
                      if (j == you.equip[EQ_LEFT_RING])
-                        cprintf(" (left hand)");
+                       cprintf(" (left hand)");
                      if (j == you.equip[EQ_RIGHT_RING])
-                        cprintf(" (right hand)");
+                       cprintf(" (right hand)");
                      if (j == you.equip[EQ_AMULET])
-                        cprintf(" (around neck)");
+                       cprintf(" (around neck)");
 
-                     if (show_price == 1)
+                     if ( show_price )
                      {
                         cprintf(" (");
                         itoa(item_value(you.inv_class[j], you.inv_type[j], you.inv_dam[j], you.inv_plus[j], you.inv_plus2[j], you.inv_quantity[j], 3, temp_id), strng, 10);
@@ -386,11 +381,11 @@
             cprintf("You aren't carrying anything.");
          else
          {
-            if (item_class_inv == 0)
+            if (item_class_inv == OBJ_WEAPONS)
                cprintf("You aren't carrying any weapons.");
             else
             {
-               if (item_class_inv == 1)
+               if (item_class_inv == OBJ_MISSILES)
                   cprintf("You aren't carrying any ammunition.");
                else
                {
@@ -519,6 +514,9 @@
       return;
    }
 
+
+
+
    void wizard_string(char comm[50], int i)
 #ifdef WIZARD
    {
@@ -615,6 +613,10 @@
             strcpy(comm, "");
 }
 #endif
+
+
+
+
    void command_string(char comm[50], int i)
    {
 

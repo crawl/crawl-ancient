@@ -1,1042 +1,1137 @@
-Note: This is the list of changes we used in the development of v3.40 of
-      Crawl.  Much of it talks about specific changes to the code that
-      may not be interesting to non-programmers.  We will make no
-      attempt to clean this file up, but you can see the biggest and
-      most visible changes in the versions.txt file.
-
-Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
-1/10/99
-
-* From Josh Boardman:
-  + Lots of enumming, mostly spells
-  + Paladins get a long sword to start and long sword skill
-  + Spriggans can be stalkers
-  + Poisoning something already poisoned gives extra naughty
-  + Added more powerful staves
-  + Armour skill no affects how much armour hurts spellcasting
-  + better summon small mammals spell
-  + Vehumet will help with spell failure and preserve int
-* Large characters get a smaller spellcasting penalty for wearing
-  large shields
-* fixed easy crawl bug in wizard mode
-* added wiz commands for controlled blink and create up staircase
-* fixed the wiz help so that all wiz commands now have help
-* Changed the subspecies selection in newgame.cc so that there is no
-  duplication of info in there.  See the newgame.cc for more details.
-* made Ogre berserkers start with 3 clubs and 1 maces skills, the reverse
-  of all other races, because these races start with clubs rather than axes.
-* made troll berserkers start with 3 unarmed and 2 dodging, but no weapon
-  skills, because they start with no weapons.
-* allowed halflings to be assassins and warpers.
-* thieves now get more starting gold: random2(10) * 6 + random2(10) * 4.
-
-Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
-12/30/99
-
-* Axed linuxlib.*
-* Changed versions.txt to reflect new release
-* updated version and build date defines in version.h
-* added a little more info to init.txt to explain the options
-* eliminated some done stuff from todo.txt and bugs.txt
-* added disclaimer at top of this file
-
-Linley Henzell (linley.henzell@student.adelaide.edu.au)
-27/12/99
-* Fixed the USE_NEW_RANDOM code to work at a reasonable speed without an FP
-  coprocessor
-* Many minor tweaks
-
-Linley Henzell (linley.henzell@student.adelaide.edu.au)
-12/09/99
-* Fixed new berserk code to work with ctrl+direction attacks
-* Now deletes savefiles after death (under DOS, at least)
-* You no longer get xp for killing creatures which were created friendly
-* A few low-level monsters added
-* Initfile options:
-   - Colour-code play-screen map, like the 'X' map
-   - Remove monsters & clouds from map
-* Horned characters can wear caps and hats
-* Class names were put back into lower case, where appropriate
-* You are now told when a monster's enchantments wear off (if in view)
-* You get more information when you look at a monster
-* Monsters no longer cast animate dead when there aren't any corpses in sight
-* You can now use most abilities while hungry (not starving)
-* Monster invisibility can now wear off (it couldn't before)
-* Deflect and repel missiles enchantments now affect missile traps
-* Dexterity affects your shield use
-* Monster AI improvements:
-   - Strong monsters no longer pick up missiles unless they're carrying some
-     already
-   - Some improvements made to monster path-finding
-* USE_NEW_RANDOM rand() removed - the randart code relies on random()
-* Ghosts now only do 2/3 as much damage; xp value reduced, too
-
-Daniel Ligon (makmorn@qis.net)
-11/18/99
-
-* right justify prices in shops
-* fixed the yellow Xom patch
-* Xom sometimes answers prayers
-* strengthen evasion
-* enumerate the 'killed by' list, added "killed by an exploding spore".
-* replaced many calls to "random() % x" to random2(x)
-* eliminated calls to random3 and random4
-* tone down Makhleb's minor destruction
-* put amulets in the discovery listing
-* fix beginning spells for kobold summoners
-* invisible undead are now referred to as "it".
-* permit Spriggan assassins.  The speed and low food requirements of a
-  Spriggan are a great complement to the assassin's hand crossbow.
-
-Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
-10/15/99
-
-* you can now Acquire food.  It gives royal jellies to non
-  ghouls, and royal jellies or chunks to ghouls.  I tried to
-  get it to give you a variety of food, but it was a pain.
-* added XOM_ACTS_YELLOW #define to AppHdr.h
-* Added srand() to acr.cc so for the USE_NEW_RANDOM to work right.
-
-Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
-10/14/99
-
-* Fixed a problem where some super long strings in describe.cc got
-  cut up, causing a compiler error.  (Please try to keep lines < 80
-  characters whenever possible.)
-* enummed describe_god() in describe.cc
-* added makefile.sgi option to Makefile (although it doesn't work)
-* Culled fixed bugs from Bugs.txt
-* Added 'Easy Crawl' door opening.  Walking into a door now
-  opens it.  Running into a door currently opens the door
-  and stops.
-* Added a GOD_NO_GOD case in describe_religion in describe.cc.
-  It was a special case in acr.cc, but that's gone.
-* added #include <stdio.h> to fight.cc and spells2.cc because
-  they include sprintf().  Will compile and link properly
-  without the include on Linux, but not in DOS.
-* Tweaked makefiles .dos, .emx, and .sol
-
-Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
-10/12/99
-
-* Changed the version string to "3.40" and added a #define
-  BUILD_DATE in version.h which is printed along with the
-  version number.
-* Added the USE_NEW_RANDOM #define to AppHdr.h
-* Eliminated duplicate/done items from ToDo.txt.  Might have
-  missed some of the done one's, though.  I only cut the one's
-  that had done next to them.
-* Changed inspect item command to 'v' in shops.
-* moved the contents of oldmakefiles/ into a zip named oldmake.zip
-* make distclean now deletes *.sav, *.lab, core, and *.0* in DOS
-  and Linux.
-* Some of the class names in newgame.cc were not capitalized. Fixed.
-* Added a new random number generator.  Should be a little better
-  than the old one, but it uses rand() rather than random() to
-  get its number.  #define USE_NEW_RANDOM to use it.
-* Noticed a bug in wizard mode where some creatures (necrophage)
-  can reduce your max hp.  Normally this is okay because when you
-  get down to zero, you die.  But in wizard mode, you end up getting
-  negative max_hp, which results in the "you died, but its okay"
-  message every turn.  I added you.max_hp = abs(you.max_hp) to the
-  'h' wizard command, so you can get out of the negative max hps.
-* Removed stethoscope from the 's' key in wizard mode.  Terribly
-  annoying for me, since I can't rest with 5 in Linux.  You can
-  get stethoscope by targetting or looking, so its no big deal.
-* Scores now prints "Wiz" on any scores made from a WIZARD compiled
-  program
-* Added Daniel's patches:
-  * XOM_ACTS_YELLOW is now a #define to make Xom messages be in yellow
-  * Fixed the abyss crash bug
-  * Added banish and Xom acts to the Wizard commands
-* Swapped the v and V commands.  I think its more likely that someone
-  would want to examine one of their items than check the version, so
-  the examine command is lowercase.
-* Added wizard help.  Can be accessed by hitting & then ?.  It simply
-  lists the wizard commands like the normal help screen.
-* Fixed a bug in Daniel's command code where you couldn't do the
-  wizard command.
-* Added wizard option to Makefile.  Same as debug but includes
-  -DWIZARD
-* Weapons of reaching used to attack one monster over another now
-  have a chance to hit the monster inbetween.
-* Giant races get a smaller penalty when using a large shield.
-  Normal sized monsters may get a slightly larger penalty, but
-  only by one or so.
-* Added a function to debug.cc that just prints the
-
-        "You have encountered a program bug.
-         Please exit the level and save."
-
-  message.  I replaced all occurances of these strings in the code
-  with this function.
-* Changed the haste and slow counters in acr.cc to take into account
-  the amulet of resist slow.  Now haste subtract random2(2) each turn
-  rather than one (which could lead to infinite haste but lets not
-  worry about that), and the slow counter subtracts five instead of
-  one each turn.
-
-Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
-10/2/99
-
-* Reformatted the help screen so that it is easier to see what you're
-  looking for at a glance.  Also added a "more" capability so that
-  if the command list goes over the screen size, you will get a more prompt
-  and it will be displayed correctly.
-* Changed the amulet of maintain speed to the amulet of resist slowness. The
-  old description stated that it made you resist slow and made your speed
-  better, but the code only made it so that you would resist slow.  So now
-  if you have the amulet on, you get a +10 boost to any hasting, plus the
-  maximum hasting you can have is bumped up 10.
-* Changed some silly messages involving hasting and slowing.
-* Tried to add some messages to the raise dead functions to indicate
-  that you failed when you cast the spell, but I'm not sure they work.
-  The code is very confusing.  They may only work some of the time.
-* #ifdeffed LINUX the code in acr.cc from line 663 to line 676 which was
-  using variables declared in another ifdef LINUX block.  This may have
-  screwed something up because I'm not sure what's going on here.
-
-Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
-9/29/99
-
-* Fixed the highscore() function so that it doesn't take so long.
-* Added some whitespace to the scores output so that it will look better.
-* fixed a bug involving 'a' being in scores.  See Bugs.txt and ouch.cc
-* added comments in enum.h showing where the unique monsters are
-* Removed the first argument from draw_border in view.cc since it was
-  always being passed the same value.
-* Fixed a bug where the player's score was not always being saved.
-* I noticed some problems with the new makefiles while compiling under
-  DOS.  Any platform that has its own library (like liblinux) should be
-  +='ed to OBJECTS in the system specific makefile.
-* Added noopt (no optimization) to Makefile to allow me to compile under
-  DOS with no headaches.
-
-Daniel Ligon
-28/09/99
-
--- renamed linuxlib to liblinux
--- turned on keypad for ncurses (linux port)
--- made kbhit() of liblinux.cc to always returned 0
--- made big lookup table in liblinux.cc to convert keypresses to
-   commands
--- added enumerated commands to enum.h and to big switch in acr.cc
--- added Brian's makefiles
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-24/09/99
-
--- fixed evasion bug
--- reverted getch_mul function in macro.cc
--- red devils now have probablistic chance on trident/demon trident/no weapon
--- demon tridents are now correctly coloured
--- xp spending cap/MAX_SPENDING_LIMIT
--- made broad axe, spiked flail, great flail less common
--- reduced floating point operations in update_corpses()
--- all demonspawn scales/plates can be given at one or two levels
--- max max hit points are now displayed when the player's max is down
--- From Linley:
-    -- fixed portal so that it doesn't go below level 27
-    -- Fixed the checks for translocating in the abyss
-    -- added fix for going to pandemonium or the abyss from hell
-    -- added note about using + for targeting to various prompts
-    -- ghosts now fade away only if they have less than half their hps
-
-Linley Henzell (linley.henzell@student.adelaide.edu.au)
-12/09/99
--- "Over-map" added
--- Messages can now be coloured. Just call set_colour before mpr.
--- Made wild magic effects do more harm, and increased likelihood of the
-   higher levels of effect.
--- In the Abyss, blink may not work and teleport takes longer
--- Tweaked a few unrandarts
--- Rewrote part of the weapon generation function in dungeon.cc. Add a weapon
-   rarity function.
--- Some monsters can now get a wider range of weapons.
--- Many high-powered demons increased in speed
--- Several changes to skills.cc. Now having many xp in the pool increases
-   the cost of exercising.
--- Increased the threshold values for special "you hit" messages in fight.cc
-   and patched some grammar.
--- Removed three 'silly' monsters (dorgi, Sword, Guardian robot)
--- Now, haste has a direct effect on time_taken, rather than being treated
-   separately. See player_speed().
--- Boots of levitation now allow permanent hovering.
--- The random events in Hell are now much nastier
--- Clouds can now be overwritten by other clouds, sometimes (see place_cloud)
--- The monster mutation spell now affects monsters as polymorph
--- A new init-file variable (verbose) determines how much info about
-   randarts and other magical items in the char dump.
--- bugs fixed:
-    -- monsters can now cast 'direct' spells (eg smiting) over other monsters
-        if targetting the player.
-    -- giants are now given the correct number of rocks.
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-09/09/99
-
--- lowered the damage of some of the new weapons, made tridents heavier.
--- added some changes to the newgame screens from Dustin Ragan
-
--- spellcasting reduced by weapon size (weight and/or speed)
-
-- from Linley:
-    -- made sure helmet/helm colour is initialised to LIGHTCYAN
-    -- made it so that swapping item letters prints both affected items.
-    -- fixed '=' --> '==' in randart.cc line 1515
-    -- fixed more scrolling problem under DOS
-    -- fixed problem with the ctrl-direction keys under DOS
-    -- made subspecies selection a compile time option
-    -- removed possibility of horns mutation for minotaurs
-
--- removed Great Swords skill
-    -- great swords/triple swords are now long swords
-
--- changed Trolls + troll leather to have no effect
--- removed gdbm stuff -- makes things simpler, better security can wait
-   until a new savefile system is done.
-
--- hand and a half weapons
-    -- no bonus if weapon is cursed.
-    -- 1-1/2 hand weapons don't get the speed bonus past 10
-    -- 2 handed weapons can get as fast as speed 7 with skill
-    -- +random2(3) to hit
-    -- +random2(3) to dam (all two handed weapons) applied after skill
-       multipliers (ie. with the dwarf and orc modifiers).
-
--- added code so that multiple shield blocks in a turn becomes increasingly
-   difficult.
-
--- fighters now get dodging or armour based off of starting armour
-
--- shields and large shields now slow down attacks
-
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-08/27/99
-
--- added '*' for level 27 skills in character dump
--- removing the "skill_change /= 2" line from the spell skills was a bit
-   hard on early spellcasters.  Since there's no reason for it in the
-   mid-game, it seems logical to give it to low level characters and
-   phase it out by the mid-game.
-
--- "Crush" was requiring conjurations (hold over from Throw Pebble)
-
--- bug fix: Having 1xp in the pool was allowing a lot of free practising.
-
--- upped penalty for heavy armour (to be more in line with the new penalty
-   for shields).  Are these values high enough?
-
--- added Linley's suggested new weapons (Axe, Spiked Flail, Great mace,
-    Great flail)
-
--- upped damage for some maces & flails (swords are quick and accurate,
-   but maces and flails hit harder).
-
--- changed "Boots" to "Barding" in equipment list for centaurs and naga
-
--- made crystal plate mail somewhat resistant to corrosion.
-
--- added +/- markers to the Skills screen to help out people in monochrome.
-
--- bug fix: fixed labyrinth problems
-
--- bug fix: fix LOS corner problem
-
--- bug fix: can now make with -DWIZARD
-
--- removed spellcasting/invocation interference.
-
--- added broad axe (rare, 15, +3, 17), trident (9, -2, 16),
-   and demon trident (evil -- wielded by red devils, 15, -2 16).
-
--- polearms/whips of reaching
-
--- gave gladiators the choice of using a trident to start.
-
--- removed USE_NEW_BERSERK define
-
--- fixed bug where the AC value of barding was incorrectly displayed.
-
--- quite a bit of cleanup (converting ints to enums in the old code)
-
--- cleaned up draconian AC gains... removed level four increase and gave
-   them two AC to start.
-
--- added knife -- made guaranteed on the first three levels
-
--- fixed bug where memorizing spells was impossible on some terminals.
-
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-08/08/99
-
--- bug fix: Orange Brains could hang game (MS_SUMMON_LEVEL spell in abyss)
-
--- bug fix: monsters should no longer occur "under" the player
-
--- bug fix: portals weren't closed on the way out, but hell gates were removed
-            ... now all are closed.
-
--- bug fix: cannot unlearn spells outside the array bounds.
-
--- bug fix: manuals should auto identify on the first read
-
--- bug fix: Healing book was available from acquirement/Sif Muna
-
--- fixed it so that missile launchers don't train/use the missile skill when
-   used in melee (bows/xbows now train/use maces/flails, slings uses no skill)
-
--- bug fix: Zot traps should no longer give messages involving their effects
-            on monsters, unless the monster is within line of sight.
-
--- bug fix: liquid flame could wrap around and last a long time
-
--- bug fix: that caused "program bugs" to occur in the abyss
-
--- bug fix: fixed number of cards in Decks of Power (it defaulted to zero
-   and thus was giving 255 cards)
-
--- bug fix: fixed Nemelex to give cards instead of Bone Lanterns and
-            Geryon Horns
-
--- bug fix: food not updating with cards
-
--- bug fix: quick blades were getting free actions
-
--- bug fix: spell points now update when you gain Invocations.
-
--- upped granularity of skill gain to reduce stage three
-    -- upped number of learns from manuals to accomidate
-    -- put reductions on XP values of monsters to try and reduce the
-       "stage two" effect
-
--- downed the power of smiting again... it seems reasonable now.
-
--- teleport control restrictions (some areas don't allow controlled
-   teleport now).
-
--- added stacking of runes
-
--- made invocations and spellcasting learning interfer like elemental magic
-
--- increased rate of skill cost per level
-
--- removed division by two for cost of spellcasting skills
-
--- upped the rarity of unique artefacts (all of these seem to come quickly
-   into any game... except the Sword of Power, for which the 50% chance
-   of not creating it probably kept it out of my last game for a while
-
--- evasion/shields are too good
-    - raised shield blocking difficulty a bit (base 10 to 15)
-    - made player's evasion rolled in the monster to hit check (so that
-      a player with an EV of 30+ can still be hit)... added a 1/15
-      chance of hitting regardless (players already got this advantage).
-
--- Moved the .h guards to after the headers (cosmetic)
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-07/30/99
-
--- fixed bug: visiting the abyss from the hall of blades results in the
-   abyss being populated by blades
-
--- fixed problems with the highscore board running off the end of the line
-
--- resist electricity and resist poison are not absolute anymore, you
-   now take 1/3 damage if you resist (you still don't get poisoned if you
-   have poison resistance though)
-
--- fixed bug: storm dragon breath can now be resisted
-
--- draining drains available xp pool as well now
-
--- moved spell levels to a function to fix a bug where you could end up
-   with a large number of negative spells (forgot spell that didn't
-   exist).
-
--- made spellcasting more difficult to get
-
--- fixed plants stalking stairs
-
--- reverted dragon armours to original values... the resistances and benefits
-   they give are good enough, its really the basic heavy armours that needed
-   a bit of improvement.
-
--- fix for Distortion weapons (from Jesse).
-
--- deflect missiles status wasn't listed on '@'
-
--- slime pit runes are now only "possible" runes so you're unlikely to
-   get four of them
-
--- added stats to "elf" dummy monster to allow elf zombies to live.
-
--- added redraw after projected noise
-
--- fixed bug where objects (runes, orb) were clobbered by items given to
-   monsters.
-
--- fixed some monster descriptions that had huge gaps in them
-
--- bug fix: shapeshifters shouldn't polymorph into dancing blades (numbers
-   for names)
-
--- acquirement is better for jewellery than before
-
--- fixed it so the skills screen can handle more than 26 skills.
-
--- levels of poison shown for '@'
-
--- traps get harder to disarm with dungeon level
-
--- traps can now go off when disarming
-
--- traps all handled by handle_traps now.
-
--- are the new traps too hard on monsters?
-   -- probably yes, so they take the old damage for now.
-
--- made player_light_armour() which returns true if the player is in
-   light or no armour.
-
--- fixed monsters interacting with traps bug... non-flying monsters were
-   flying over them.
-
--- made polymorphed monsters not so much of an easy xp trick.
-
--- added monsters speed to the xp calculation
-
--- put cap on plant learning (no more than the first two levels of fighting
-   skills)
-
--- added some support for destroying potions/food on ground from
-   explosions... are only the correct things being destroyed? check
-   bang.cc and destroy_item.
-
--- wearing heavy armour now gives a minium percentage of damage reduction.
-    -- the percent is (skill + base AC of body armour)
-    -- still needs to be applied to monsters, but monsters don't have
-       a convienient way of knowing if they have hard armour (let alone
-       an armour skill) so this can probably weight.
-
--- only heavy armour gives the extra protection from shrapnel attacks
-
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-07/13/99
-
--- blocked entrance to the labyrinth until its debugged
-
--- fixed the wizard code in acr.cc, changed some commands to easier
-   to remember letters... added an identify.
-
--- fixed some cases where cursed jewellery plusses are assumed to
-   be based off of 100, the creation code suggests that its 150 as
-   does many other cases in the code.
-
--- random weapons, armour, and jewellery from acquirement() are now
-   uncursed.
-
--- smoothed out the demonspawn horns so its possible to get twwo levels.
-
--- changed ranger to hunter
-
--- changed some gmon_use values (from Linley)
-
--- changed life protection descriptions
-
--- moved hunger_inc and ATTR_LIGHTNING_RESIST into functions in player(),
-   the attribute is now replaced with ATTR_DIVINE_LIGHTNING_PROTECTION
-   which is used to mark Makleb or Xom protecting the player from a
-   lightning attack.
-
--- added checks for the curses keypad enums
-
--- lowered throwing weapon learning curve
-
--- lowered power of hand crossbows
-
--- lowered traps and doors learning curve
-
--- played with spellcasting staff identification
-
--- fix player ghosts
-    -- monsters now regenerate hps while the player is off level
-    -- ghosts regenerate and teleport away when the player leaves the level
-
--- changed assassins from ninja types to hand crossbow types... gave
-   an enchanted dagger as well to help hand to hand.
-
--- added throwing exercise to darts, hand axes, daggers, and spears... and
-   added throwing skill bonus for them as well (item_use.cc).
-
--- gave scythes, halberds, and glaives a chance at being weapons of speed.
-
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-07/07/99
-
--- fixed ice breathing dragon breath so it doesn't destroy walls
-
--- made life protection a level/3 chance
-
--- fixed the 120/150 hp ghost thing
-
--- anticheat code and security db for multiuser systems (requires gdbm)
-
--- made it so that only picking up items has delay with autopickup, walking
-   over uninteresting stacks should cost no extra time now.
-
--- made berserk players fail the check_awaken test with monsters, and not
-   spend experience on stealth.
-
--- added dexterity to stealth
-
--- gave ogre magi short swords instead of daggers.
-
--- toned down stabbing stun
--- toned down stabbing dex bonus - now limited by stabbing
-
--- assassins now start with a dagger, thieves start with short sword and dagger
--- reversed stats for thief and assassin, gave assassins unarmed combat
-
--- changed wizards to be +7 int/+3 dex, thus making them smarter than
-   the other spellcasters
-
--- draconian rangers no longer start with leather armour
-
--- toned down stealth a bit in player.cc:check_stealth(), and again
-
--- reduced to hit for throw fire/frost and sting (it_use2.cc:zappy())
-
--- fixed repel/deflect missiles problem -- changed bad REPEL reference in
-   acr.cc
-
--- added message to unwielding vampiric weapons.
-
--- hacked up new keypad support for Unix
-
--- shots now are used up 1 in 3 times
-
--- added bonus to hit and dam for crossbows (item_use.cc)
-
--- added magic resistance for elves (player.cc)
-
--- upped autopickup delay to 3.  One and two seem to not be a delay at all.
-
--- opposing elemental staves now can be identified (items.cc, spell.cc)
-
--- added remove of zip file to ouch.cc to prevent cheating
-
--- STABBING check should be STEALTH in view.cc for the no yell check,
-   lowered it to a straight percentage check
-
--- gave Dwarven/Orc rangers Dodging 1, because they were a bit short
-   on skills
-
--- HOrs get orcish bolts (newgame.cc)
-    - added MISSILES check in HILL_ORC check
-
--- Gladiator/Fighter changes (newgame.cc)
-    - fighters are now: fighting 3, weapon 2, dodging/armour 2, shields 2,
-                        stabbing/stealth 1, throwing 2, str + 7, dex + 3.
-    - kobold/troll/ogre fighters are the same as before
-
-    - gladiators are now: fighting 3, weapon 3, dodging/armour 2, shields 1,
-                          unarmed combat 2, str + 6, dex + 4.
-
-    - diffs:
-        - fighters   - lost unarmed combat
-                     - gained a level of shields, and a level of throwing
-
-        - gladiators - lost 1 dodging/armour and 1 shield
-                     - gained 2 unarmed combat
-
-        - stat bonuses were swapped
-        - switched gladiator and fighter armour
-
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-06/22/99
-
--- Ranger weapon variations (halfling slingers, dwarven crossbowers)
-
--- fix Rangers/Reavers problem.  Rangers are now "rangers" so there's
-   no problem with two capital letter Rs.
-
--- stealth improvements
-    -- monsters don't yell (2 * skill) % of the time (view.cc:monster_grid())
-
-    -- Large races lose the stealth * 2, small races now get * 5/2
-                                        (player.cc:check_stealth())
-        -- Huge     x 1 : Troll, Ogre, Ogre Mage, Centaur
-        -- Awkward  x3/2: Minotaur, Draconians
-        -- Normal   x 2 : Everyone else
-        -- Small    x5/2: Halfling, Gnome, Kobold, Spriggan, Naga
-                            -- Naga's aren't small, but they're good
-
-    -- stabbed sleeping monsters now get set the BEH_CHASING_I.
-
-    -- can now have a (skill + dex) % chance of stabbing fleeing or confused
-       monsters.  (fight.cc)
-
-    -- backstab effectiveness depends on the monsters behaviour:
-        - sleeping monsters are easy targets so lots of damage potential
-        - fleeing and confused monsters so not as much damage potential
-        - other cases have even less damage potential
-
-    -- made backstabbing more effective for daggers
-        - daggers add dex/3 damage before the multipliers (fight.cc)
-
-
--- modified fight.cc:monster_dies() so that *any* summoned creature
-   killed by you or your pet won't call done_good.
-        - Elivion/TSO/Zin have to be passed through, and aren't a
-          problem because they can't abuse summoning anyways.
-        - this could use a better fix (ie. keeping track of who summoned
-          which monsters would help a lot)
-
--- fix monster polymorph to avoid NO_EXP monsters (Linley's suggestion)
-    -- added mons_flag( targetc, M_NO_EXP_GAIN ) to do-while loop.
-
--- Remove teleport control + Blink spell combo (Jesse's suggestion)
-    -- removed CONTROL_TELEPORT check from random_blink()
-
--- added racial bonus to worn armour in player_AC()
-
--- added food_change() and redraw to down_stairs to patch hunger status
-   display bug
-
-
-Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
-06/17/99
-
-(Note: I've tried to annotate all my changes in the code  with my initials
-       (BCR), so you can grep for them to find my changes.)
-
-* did some small cleanup here and there
-
-* wrote a new makefile for Linux.
-  Made a number of changes to the make process which should save up some
-  headaches in the future.  Now there is an OS_TYPE variable in the makefile
-  that is automatically make into a #define in the make process, and that
-  should make it easy to keep the makefiles straight on the OS.  Also moved
-  the OBJECTS variable containing the list of the .o files to a file called
-  make.obj which is included into the makefile.  This should save a little
-  space and keep all the makefiles consistent on what objects they need.
-
-* indented and added a header to defines.h
-
-* fixed some oddness in newgame.cc.  Various system dependent name
-  checks were all messed up in a bunch of nested #ifdef stuff.  Sorted it out.
-
-* made the #define MACROS actually do something.  Now if you have it
-  defined, the macros.h and macros.cc files will be used, otherwise they
-  won't.  Right now, Crawl will not work correctly on Linux with MACROS on.
-  See Bugs.txt for more details.
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-06/14/99
-
-Some changes I added from Linley:
-    * a fix for the geryon bug
-
-    * message for berserkers chopping up corpses in rage.
-
-    * changed some incorrect enums in it_use3.cc for Asmodeus's staff.
-
-    * lowers XP penalty for demonspawn to 140%
-
-    * fixed Elyvilon sacrifice code to limit abuse
-
-    * renamed priest.cc, priest.h to abyss.
-
-    * upped the spellcasting penalties for wearing shields to +5/+15/+30,
-        from bucklers (+0), shield (+5), large shield (+15).
-
-    * added random stat increase for Draconians
-
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-6/13/99
-
-* fully separated Spriggans from the giant races, creating a separate block
-  for tiny races in the armour wearing code.
-
-* cursed rings identify themselves as sticky cursed when put on.
-
-* updates weapon if you eat food that you're wielding
-
-* black and grey scales were backwards in demonspawn (with regards to number
-  of levels gained)
-
-* in spells1.cc, blink() and random_blink()... removed the weapons
-  check because the scan_randarts should be all that's required.
-
-* fixed it so that teleport control works properly on blink (depended
-  on order of includes and the compiler/system used).
-
-* added #ifndef checking around all of the *.h files to try and avoid
-  other problems like the above.
-
-* added the full spell listing line to character dumps
-
-* made creaky doors DEX + (Stealth + Traps) / 2 checks... added check on
-  closing doors as well.
-
-* upped the base values of heavy armour by 1 or 2 points.
-
-* in spells3.cc, you_teleport().  Another case of only checking the
-   weapon slot for a property.  Hopefully, I've changed all of these
-   into scan_randarts.
-
-* demonspawn() in mutation.cc had MUT_FAST twice, changed the second
-  to MUT_SHOCK_RESISTANCE like the comment claimed.
-
-* strength damage bonus had an ugly discreet nature to it, I multiplied
-   the dammod values by 6 to get a smoother version of the same function.
-
-* screen needed to be refreshed after spell slot changes.
-
-* Implemented new equipment listing commands:
-    -- )  lists current, swap a, swap b, and default 'f'ire weapons
-    -- ]  lists worn armour
-    -- "  lists worn jewelry (note: '=' is already used).
-
-* shoot_skill = you.skills[SK_THROWING] in item_use.cc was wrong,
-   it should clearly be CROSSBOWS when using a crossbow.
-
-* handle traps in misc() used env.trap_known instead of trap_known
-   (env.trap_known doesn't seem to be referenced anywhere else).
-
-* Vehumet's gift was still not quite correct. -- fixed
-
-* implemented magical Stave detection.  Staves may be detected over time,
-  or whenever an appropriate magic is cast, depending on skill levels.
-
-* Call Imp is too powerful for a level two spell, raised to level three
-
-* added a little checking code in dungeon.cc for monster armour plusses
-
-* more line was misplaced on the recognized item screen
-
-* applied a mix of mine and DML's improvements for the temp file purging
-  system.
-
-
-David Loewenstern <loewenstern@home.com>
-06/02/99
-* added Makefile.dos
-* updated define.h for compatibility with DJGPP
-* cleaned up items.cc,monstuff.cc, mstuff2.cc,spells.cc,
-  (mostly: corrected misassignments unsigned<->signed, unused vars, etc.)
-* added enums: monstuff.cc, mstuff2.cc, beam.cc
-* updated enum.h per above.
-* added autopickup
-* made '&' command only function in debug mode.
-* remove_ring now uses inventory letter.
-* more colorful "hits" in fight.cc (should be useful later to differentiate
-  weapon types).
-* fixed a bug in displaying the top scores when no score file had existed.
-
-
-Jesse Jones (jesjones@halcyon.com)
-05/30/99
-
-* highscore() will print more scores on larger windows.
-* wearing cloaks no longer prevents wearing or removing body armor
-* armor can be dropped if it's worn and not cursed
-* armor can be worn without removing the old armor
-* Added missing ponderous armor message.
-* Weapon line didn't always redraw when Blade Hands was cast (from Brent).
-* detect_items uses '~' instead of '*' (from Brent).
-* Changed wear_armour to allow Spriggan's to wear bucklers.
-* Quit only pops up save changes dialog if game_has_started is true. (Mac)
-* Replaced config.h with AppHdr.h
-* All cc files include their header immediately after the AppHdr file.
-* char_dump.cc dumps failure rates (from Brent).
-
-
-Brent Ross (bwross@csclub.uwaterloo.ca)
-5/?/99
-
-* used GNU indent 1.91 (options -bad -bli0 -i4 -npcs -npsl), to hopefully
-  get the intended BSD indentation style into the code.  Sorted some
-  of the things indent won't help fix... more cleanup needs to be
-  done here (notably with vertical whitespace and breaking up big lines),
-  but it should at least be more readable now (no more column 0 code).
-* various changes to make it work with NUMBER_OF_LINES instead of 25
-* compile option to change default view to non-ibm graphics
-* added ^R redraw screen command and added screen redraws to
-  appropriate places
-* added query to normal saves, ^X doesn't ask
-* made ^Y work, and ^Z suspend for Unix systems
-* added refresh call in beam.cc so beams are always visible
-* added various things to deal with multiuser environment: compressing
-  save files, handling permissions, global lib directory for game files,
-  changes in name validation and file name structure (added uid).
-* made the adjust item letter function swap items instead of fail
-* made Selective Amnesia spell description less confusing
-* made changes to make the targeting more intuitive for angband players
-  (t and space accept targets), as well as behave better about canceling
-  spells (added better abort)
-* fixed unarmed combat so it takes the correct amount of time
-* fixed a hunger/noisy wield bug where effects were not removed
-* fixed a resist lightning bug where air staffs didn't grant it, yet
-  took it away (ie. left the resist with a value of 255... quite good
-  unless you put on something of resist lightning later).
-* made rings/wands/scrolls and such print a message when they
-  are identified by use
-* fixed several cases where the wielded object was changed but the
-  screen wasn't updated
-* fixed bug where a triple level of a demonspawned mutation was never granted
-* patched a bug where the inventory is full yet the count is
-  wrong... this entire thing should be cleaned up
-* fixed problem with curses attributes so that alternate character
-  sets aren't used under Solaris (this is probably good for any
-  Unix not on a IBM alternate character set box)
-* fixed water and earth elementals for the same
-* stone lined the finishing room so you can't dig through?
-* removed some rather silly ways of clearing areas of the screen (under curses)
-  and used the proper curses functions instead (much faster)
-* fixed the bug where going up or down stairs would clear the food status
-* fixed a few "typos" where the new enums were incorrectly substituted
-  (ie. AC += SP_HIGH_ELF;      /* troll */ )
-* fixed a few stat increases where the comment said "/* str or dex */", but
-  was giving "str or int"
-* increased Troll's food consumption to better balance the race.
-* fixed Vehumet's gift giving code so it actually does what's intended
-* added experience pool information to front page
-* changed some of the duplicated titles (traps and doors)
-* changed stairs out of sub-dungeons to be the '<' character, to reflect the
-  key required
-* made portals coloured on the level map... portals in pandemonium are
-  intentionally all the same colour.
-* added a stat increase for kobolds every 5 levels
-* patched a bug that causes Demonspawn to sometimes not get their
-  mutations.
-* tried to make Armour skill a bit better -- get more in combat, a little
-  more frequently otherwise.  Also, EV penalty is now recovered at skill/2.
-* reduced the power of the Sword of Power (now +20 cap, HP/13 - 3)
-* made creaking doors partially depend on skills (dex + traps + stealth,
-  with a benifits of the last two dropping after a total of 10) instead of
-  just luck... levitation isn't a sure way to avoid this now.
-* made wield update after reading scroll of recharging
-* extended the high score file to SCORE_FILE_ENTRIES items... currently only
-  the first 15 are ever displayed by the program
-* USE_NEW_BERSERK
-    - makes berserk counter decrement faster when not attacking (currently
-      using triagular progression)
-    - butchery doesn't get penalized (in fact it resets the penalty
-      counter), eating isn't either (but doesn't reset)
-    - added exhausted counter to count berserk fatigue
-
-    - hopefully this will eventually part of a new, better standard
-      berserk.
-
-* made skills fit onto screen by wrapping the first column if required.
-
-* RAP_PREVENT_TELEPORT and the like didn't do anything because
-   it doesn't use scan_randarts, but checks only the weapon... hopefully
-   all the cases of this are fixed now.
-* wield-amulet-that-you're-wearing bug fixed
-* redraw for weapon when blade hands goes away
-
-* #defines:
-    - CRAWL_NAME and CRAWL_PIZZA, the first auto sets the players name,
-      the second defines a string which describes the players choice of
-      pizza, and has a greater chance than others of occuring.
-    - handling the bstring.h/string include problem -- USE_BSTRING_H
-    - added NUMBER_OF_RUNES_NEEDED and default set it to 3... this allows
-      people to compile the game to require a certain number of runes to
-      enter Zot's domain.
-    - Added USE_CURSES define, for things specific to curses and not
-      just PLAIN_TERM.
-    - USE_TCHARS_IOCTL, USE_UNIX_SIGNALS, USE_SELECT_FOR_DELAY are there
-      to solve various Unix variant problems should people need or want
-      them.
-    - USE_ASCII_CHARACTERS sets the default to the non-IBM character set.
-    - SAVE_DIR_PATH is useful for setting a global lib directory for
-      save files, bones files, and the score file.  SHARED_FILES_CHMOD_VAL
-      is useful with this option on multi-user systems.
-    - SAVE_PACKAGE_CMD, LOAD_UNPACKAGE_CMD, PACKAGE_SUFFIX are there for
-      people who want to use a program to compress and bundle their
-      save games when they're not playing.  Not pretty, but good enough
-      until we come up with a better save file system.
-
-* Added "(q to drink)" to fountain description when you step over one.
-* Greater Healings bas has been upped to 50.
-* Added Demonspawn transmuters.
-* Spriggans and Halflings now use less food (-1).
-* Wizard's hats and caps are now randomly coloured.
-* Changed carrying capactiy to be less dependant on strength.  Pulled
-  the carrying_capacity code into a function, as its called at various
-  different places in the code.  Encumberance levels have been changes
-  to represent a fraction of carrying capacity instead of constant
-  values.
-* Made named artefact weapons slightly rarer, Sword of Power now has
-  1 in 2 check as well.
-
-Jesse Jones (jesjones@halcyon.com)
-5/?/99
-
-* Fixed what appear to be three bugs involving extra semi-colons.
-* File names can be longer than 6 characters and can include spaces.
-* Added some debugging macros.
-* dragon() wasn't handling fire drakes which meant the beam color was
-uninitialized.
-* getstr only adds printable characters to the buffer. (Mac)
-* I've changed mons_spells() so that it returns a struct insted of using
-an int
-  array. (affects mstuff2.cc, mstuff.h and handle_wand).
-* mons_near() now returns a bool. I've changed code like "mons_near(o) ==
-1" and "mons_near(i) != 0" to "mons_near(o)" and "!mons_near(o)".
-* print_description() no longer indexes past the end of the string.
-* Made some minor changes to allow the code to be compiled with the
-"require function protypes" warning.
-* Added an UNUSED template function to config.h
-* Rewrote describe.cc and describe.h
-        - Reformatted
-        - Uses string objects instead of hard-coded char arrays.
-        - Split out 10 new functions from describe_item().
-        - added get_item_description() and is_random_artifact()
-* Rewrote chardump.cc
-        - reformatted
-        - uses string objects
-        - split out 7 functions from dump_char
-        - dumps artifact info.
-* Reformatted viewwindow2(), added some ASSERTs, and split out
-get_ibm_symbol().
-* Reformatted monster() and split out 10(!) new functions.
-* Reformatted mons_spells() and mons_cast(). mons_spells() case 49 uses
-  RED instead of (bogus) 20 for color.
-* Added some ASSERTs to seekmonster().
-* Renamed DEBUG WIZARD.
-* Renamed DEBUG_BUILD DEBUG.
-* Renamed manage_corpses() handle_time().
-* Changed code to use new CORPSE_BODY and CORPSE_SKELETON enums.
-* Deleted struct.h
-* Added player::elapsed_time (holds the total amount of elapsed time in
-the game).
-* Tweaked level and game save routines to include a variable sized chunk
-of extra data.
-* Save level code saves a timestamp. Load level code uses timestamp to
-update corpses
-  and chunks.
-* Renamed many of the player struct members.
-* Renamed all of the monsters, item_struct, and ghost_struct members.
-* Added comment blocks to the top of all files.
-* Added TRACE debug function.
-* you and env are no longer arrays.
-* Fixed the bug in display_char_status that caused the wrong message to
-be printed
-  if the player had magic contamination.
-* look_around() no longer prints a prompt (so things like blink and open
-door no longer print "Press '?' for a monster description.").
-* show_map accepts '\r' along with '.'.
-* Cekugob no longer has fire and cold resistances.
-* spellbook_contents prints unknown spells in light blue.
-* show_map draws shops in yellow.
+                           Version 3.40 Changelog
+
+   Note:
+
+     This file documents the progressive development of Crawl 3.40. Much
+     of it discusses specific changes to the codebase that may prove
+     uninteresting to non-programmers. The devteam has made no great
+     effort to clean up our comments.
+
+     Do you seek a more accessible overview of the latest changes? Those
+     answering "yes" should read the versions.txt entry for Crawl 3.40
+     instead.
+
+
+=============
+Contributors:
+=============
+Linley Henzell    (linley.henzell@student.adelaide.edu.au)
+Jesse Jones       (jesjones@halcyon.com)
+Daniel Ligon      (makmorn@qis.net)
+David Loewenstern (loewenstern@home.com)
+Brian Robinson    (bcr19374@pegasus.cc.ucf.edu)
+Brent Ross        (bwross@csclub.uwaterloo.ca)
+Josh Fishman      (fishman@cs.nyu.edu)
+Don Brodale       (lar@bway.net)
+
+
+23.02.2000 [Don Brodale]
+
+  Borrowed Fixes:
+     * implemented Linley-suggested bugfix in misc.cc:down_stairs() to
+       fix "Abyss bug" that was actually a/the "Pandemonium bug"
+     * copied over new makefile.sol that bwross posted to onelist.com
+
+  Gameplay Changes:
+     * stalkers, assassins, and venom mages now begin the game with
+       knowlege of Poison Potions (c.f., Paladins and Healers possessing
+       knowledge of Healing Potions)
+
+  Structural Alterations:
+     * externs.h now #includes enum.h -- already de facto standard, now
+       openly the case
+     * moved files not directly related to current build into subfolder
+       labeled "misc"
+     * moved files not integrated into current build into the subfolder
+       labeled "unused"
+     * rumours.cc removed from makefile.obj and moved to "unused" folder
+     * proper #includes for decks.cc now in place -- dot_h.h was only
+       used here, now moved to the "unused" folder
+     * redundant #include defines.h in invent.cc and mstruct.cc removed,
+       as they are already #include'd in externs.h
+     * changed some things like: "menv[bk].type = MONS_ABOMINATION_SMALL
+       + (random2(2)) * 26;" to a conditional if-else on coinflip() --
+       avoids mixing enums with math and probably executes more quickly,
+       too
+     * flipped a lot of conditional clauses to place function calls last
+       in && and || chains to take advantage of short-circuit logic,
+       saving routines from possibly needless function calls
+
+  New Functions:
+     * stuff::coin_flip() to replace random2() when desired result is
+       only true or false -- does not use rand() or random() for value
+       returned, so gets around "iffy" rand() implementations on low
+       order bits (from *Numerical Recipies in C*)
+     * stuff::one_chance_in() added to help clean up conditional elements
+       like ".. && random2(foo) == 0 .." -- !one_chance_in() more
+       intuitive than !random2(), too
+     * stuff::stepdown_value() added to replace [and generalize] repeated
+       conditional chains in spells2.cc -- see stuff.cc for details
+     * stuff::table_lookup() added to randomly return a value from an
+       unbounded list of possible values and probabilities
+     * food::is_carnivore() added to handle set conditional evaluation in
+       food.cc and itemuse.cc -- plan on expanding at some later date
+
+  Changes to Existing Functions:
+     * item_name::initial() -> item_name::clear_ids() to clarify at a
+       glance what this function does
+     * extended random22() to accept any number of 'dice' for averaging,
+       renamed to random2avg()
+     * extended random40() to accept any limit, renamed random2limit()
+     * "fixed" item_use::drink_fountain()
+     * "fixed" spells2::cast_twisted() a bit -- needs more fixing
+     * typo in dungeon.cc limited weapon given to elven mage-types to
+       whips and sabres *only* (fixed)
+     * nested [in place of stacked] strings of conditional statements in
+       player::you_resist_magic(), beam::check_monster_magres(),
+       skills2::clac_ep() to eliminate needless value checking
+     * changed create_monster() call in spells2::summon_butter() to
+       duration 22 [from 21] to match other summoning spells
+     * altered staff description routine in describe.cc to prepend "This
+       staff"
+     * dungeon::box_room() optimized for efficiency -- lopsided odds for
+       placement of one (and only one) additional door reflects original
+       algorithm [I cannot explain why it should be this way]
+     * dungeon::city_level() clarified and optimized
+     * dungeon::place_shops() optimized a bit
+     * dungeon::plan_4() optimized a bit -- removed variable boxy_type,
+       as it was useless
+     * dungeon::prepare_swamp() optimized slightly
+     * dungeon::generate_abyss() logic clarified
+     * it_use2::zappy() -- changed func_pass[5] for ZAP_ICE_STORM to
+       BEAM_ICE (23) from BEAM_COLD (3) in accordance with comment and
+       spell description
+     * shopping::shop_getch() removed entirely and replaced by
+       stuff:get_ch() -- differed only in that the former returned char
+       and the latter unsigned char [variable ft in shopping::in_a_shop()
+       changed to unsigned char as a result]
+     * spell::surge_power() -- replaced successive if-tests with complex
+       conditional to limit tests performed to carry out its task
+     * spells2::summon_elemental() would create sleeping elementals if
+       they were summoned hostile to spellcaster (fixed)
+     * spells2::summon_swarm() cleaned-up to make creature selection
+       clearer; added giant mosquito; red wasp -> wolf spider
+       [reversion]; killer bee larvae -> scorpion [as commented];
+     * spells2::summon_things() -- apparent reversal of
+       MONS_ABOMINATION_SMALL and MONS_ABOMINATION_LARGE [jdf flagged it
+       first] fixed by correcting improper enumeration (see below)
+     * spells2::summon_undead() cleaned-up by replacing successive
+       conditional calls to rand2() with one switch call to rand2() per
+       loop-through -- if odds look funny, it represents evaluation of
+       original coding
+     * removed double assignment of numsc from spells2.cc:summon_swarm()
+       and spells2.cc:summon_undead()
+     * newgame::class_allowed() cases now uniformly list >disallowed<
+       species for all classes [except hunter]
+     * newgame.cc:init_player() -- eliminated redundant you.level_type
+       initialization, general clean-up
+     * recoded describe::describe_potion() and describe::describe_food()
+       to handle redundant wordings -- more cases involved, but fewer
+       textual chunks
+     * dungeon::place_specific_trap() now returns bool instead of int
+     * fight::jelly_divide() now returns bool instead of int
+     * invent::invent() is now takes bool instead of char for second
+       parameter
+     * item_use::drink_fountain() now returns bool instead of char
+     * misc::go_berserk() now returns bool instead of char
+     * monstuff::random_near_space() now returns bool instead of char
+     * overmap::print_level_name() now returns bool and takes bool as
+       third parameter, which also means that already_printed is now type
+       bool, too
+     * player::player_see_invis() now returns unsigned char instead of
+       int
+     * player::wearing_amulet() now returns bool instead of char
+     * spells::learn_a_spell() now returns bool instead of char
+     * spells::which_spellbook() now returns bool instead of int
+     * spells0::spell_type() now returns bool instead of int
+     * spells2::brand_weapon() now returns bool instead of char
+     * spells3::you_teleport2() now takes bool instead of char
+     * stuff::see_grd() now returns bool instead of char
+
+  Changes to Variables:
+     * nulled out Great Swords array entries in skills2.cc -- no longer
+       used in Crawl
+     * uncommented the last four entries to the skills[][] array and
+       deleted the fourth -- entries now match size of array as declared
+       elsewhere
+     * converted some integer constants (foo = 59) to single-quoted
+       characters (foo = ';') where appropriate
+     * int item_sacr in religion::altar_prayer() deleted, as it was
+       unusued
+
+  Changes to In-Game Messages and Textual Elements:
+     * VERSION set to "3.40pr" so people know this is not the final
+       release
+     * BUILD_DATE set to "23 Feb 2000" -- I think we should use month
+       abbreviation to avoid numerical confusion
+     * minor tweaking of messages relating to undead players
+     * special statue transformation message for gnomes added
+     * grammatical clean-up and rewording of all spell descriptions in
+       describe.cc -- all checked, some changed a little
+     * item descriptions added to itemname.cc for BOOK_PARTY_TRICKS and
+       BOOK_CANTRIPS (jmf/bcr forgot to do so?)
+     * "book of Useful Magic" -> "book of Practical Magic"
+     * "book of Poisonings" -> "Young Poisoner's Handbook" (it's a movie
+       reference)
+     * "book of Envenomations" -> "book of Toxins"
+     * "book of Storms and Fire" -> "book of the Tempests"
+     * "Anita" ->"Snorg" within its m_list.h entry
+     * "Sneaker" -> "Sneak" for stealthy types (otherwise, does one
+       become an old tennis shoe?)
+     * "Assassin" -> "Blackguard" for stabbing to avoid confusion with
+       character class
+     * "Thief" -> "Covert" for stealthy types to avoid confusion with
+       character class (in case class ever displayed in the future)
+     * "Axe Maniac" -> "Halberdier" for polearms -- category includes
+       more than axes, so this is a better fit and avoids repetition of
+       another "top level" skill name
+     * "Bombardier" -> "Flinger" for slings, as it is more descriptive of
+       a slinger's actions
+     * "Crazy Person" -> "Whirler" and "Really Crazy Person" -> "Crazy
+       Person" for slings -- the joke still remains, but some dignity is
+       restored to slingers everywhere
+     * "Igniter" -> "Firebug" and "Burner" -> "Arsonist" for Fire Magic
+
+  Enumerations and Defines:
+     * COLORS #define applied to numerical values still present in
+       m_list.h
+     * applied COLOR #defines to it_use2::zappy() for ZAPs not switched
+       over from value numbers
+     * applied COLOR #defines to remaining codebase, where I could find
+       references still using numerical values -- I think I overdid it a
+       bit and need to go back and fix a particular set of replacements
+       (my secret)
+     * #define NO_MUT (in mutations.cc) replaced by last member in
+       MUTATIONS: NUM_MUTATIONS
+     * #define NO_EQUIP replaced by last member in EQUIPMENT enum:
+       NUM_EQUIP
+     * removed #defines (and references to them) for Tome of Destruction
+       and Manuals in dungeon.cc -- superceded by BOOKS
+     * replaced 501 with ING where appropriate -- only scattered
+       instances of bare 501's left in the source code
+     * MLAVAfoo and MWATERbar #defines restricted to use only in certain
+       header files [m_list.h monsstat.h newmonst.h], with the exception
+       of MLAVA4 used in monstuff.cc (what is it?) -- I'll clean these up
+       later, but other than this, they are no longer used in the
+       remainder of the codebase
+     * CLOUD_ENERGY -> CLOUD_PURP_SMOKE -- that is what it is, after all
+     * CLOUD_STICKY_FLAME -> CLOUD_BLACK_SMOKE -- that is what it is,
+       after all
+     * MONS_SMALL_ABOMINATION -> MONS_ABOMINATION_LARGE and
+       MONS_LARGE_ABOMINATION -> MONS_ABOMINATION_SMALL -- mistakenly
+       reversed in enum sometime before
+     * MONS_ANITA -> MONS_SNORG -- regenerates and described as being a
+       hairy troll, so must be Snorg!
+     * MONS_FAKE_RAKSHASA -> MONS_RAKSHASA_FAKE
+     * MONS_SMALL_ZOMBIE -> MONS_ZOMBIE_SMALL
+     * MONS_BIG_ZOMBIE -> MONS_ZOMBIE_LARGE
+     * MS_SUMMON_LESSER_DEMON -> MS_SUMMON_DEMON_LESSER -- I like
+       hierarchies
+     * MS_SUMMON_DEMON_1 -> MS_SUMMON_DEMON_GREATER -- _1 too similar to
+       _I = potential typos
+     * MS_GERYON -> MS_SUMMON_BEAST -- more descriptive of its actual
+       function
+     * MS_SLOW_DUP -> MS_CONFUSE -- that is what it is according to
+       monstuff.cc:handle_wand() - removed deprecate comment from enum.h
+     * NWPN_VAMPIRE_S_TOOTH -> NWPN_VAMPIRES_TOOTH -- just too awkward as
+       it was
+     * added BURDEN_STATES -- applied to you.burden_state
+     * added DEMON_CLASS -- applied throughout
+     * added HUNGER_STATES -- applied to you.hunger_state
+     * added SPELLBOOK_CONTENTS -- applied throughout
+     * added UNDEAD_STATES -- applied to you.is_undead
+     * added SHOPS -- applied to env.sh_type[]
+     * expanded CLOUD_TYPES: _SMOKEs, _MIASMA, _DEBUGGING, and most _MONS
+       variations
+     * expanded DUNGEON FEATURES to include elements 208,209,210 (Dry
+       Fountains VII and VIII and the PermaDry(tm) Fountain,
+       respectively)
+     * expanded OBJECT_CLASSES to include OBJ_GEMSTONES
+     * expanded SYMBOLS to include SYM_DEBUG
+     * expanded ZAPS to include added ZAP_ISKS_CROSS -- current use
+       commented out in zappy()
+     * mass enum'ing all over the codebase -- you name it, I tried to
+       enumerate it
+
+
+10.01.2000 [Brian Robinson]
+
+     * From Josh Fishman:
+          + lots of enumming, mostly spells;
+          + Paladins get a long sword and long sword skill to start;
+          + Spriggans may now be stalkers;
+          + poisoning something already poisoned gives extra naughty;
+          + more powerful staves added;
+          + armour skill no longer affects penalty to spellcasting for
+            wearing armor;
+          + summon small mammals spell improved; and
+          + Vehumet will protect against spell failures and preserve
+            intelligence.
+     * large characters receive a smaller spellcasting penalty for
+       bearing large shields;
+     * easy crawl bug in wizard mode fixed;
+     * wiz commands for controlled blink and create up staircase added;
+     * wiz help fixed so that all wiz commands now have help;
+     * subspecies selection in newgame.cc changed to prevent duplication
+       of information -- see the newgame.cc for details;
+     * Ogre berserkers now start with Club skill level 3 and Maces skill
+       level 1 -- the reverse of all other races, because they begin with
+       clubs rather than axes;
+     * Troll berserkers start with Unarmed skill level 3 and Dodging
+       skill level 2, but no weapon skills -- because they start without
+       weapons;
+     * Halflings may now be assassins and warpers; and
+     * Thieves start with more gold: random2(10) * 6 + random2(10) * 4.
+
+
+30.12.1999 [Brian Robinson]
+
+     * linuxlib.* axed
+     * versions.txt updated to reflect new release
+     * version and build date #defines in version.h updated
+     * a little more explanatory info added to init.txt
+     * some completed tasks eliminated from todo.txt and bugs.txt
+     * disclaimer added to this file
+
+
+27.12.1999 [Linley Henzell]
+
+     * USE_NEW_RANDOM tuned to reasonable pace when an FP coprocessor is
+       absent
+     * many minor tweaks
+
+
+09.12.1999 [Linley Henzell]
+
+     * new berserk code works with ctrl+direction attacks
+     * savefiles deleted after death (under DOS, at least)
+     * xp no longer awarded for killing creatures created friendly
+     * a few new low-level monsters
+     * new init.txt options:
+          + colour-code play-screen map, like the 'X' map
+          + remove monsters and clouds from map
+     * horned characters can wear caps and hats
+     * class names switched back into lower case (where appropriate)
+     * informed when a monster's enchantments wear off (if in view)
+     * more information provided when looking at a monster
+     * monsters no longer cast animate dead when corpses aren't in sight
+     * most abilities can be used while hungry (not starving)
+     * monster invisibility can now wear off (it couldn't before)
+     * deflect/repel missiles enchantments now affect missile traps
+     * dexterity affects shield use
+     * monster AI improvements:
+          + strong monsters only pick up missiles if already carrying
+            some
+          + some improvements made to monster path-finding
+     * USE_NEW_RANDOM rand() removed -- randart code relies on random()
+     * ghosts deal 2/3 as much damage; xp value reduced
+
+
+18.11.1999 [Daniel Ligon]
+
+     * shop prices right-justified
+     * yellow Xom patch fixed
+     * Xom will sometimes answer prayers
+     * evasion strengthened
+     * killed-by list enumerated; added "killed by an exploding spore"
+     * many calls to 'random() % x' replaced with 'random2(x)'
+     * calls to random3() and random4() eliminated
+     * Makhleb's minor destruction toned down
+     * amulets placed in the discovery listing
+     * beginning spells fixed for kobold summoners
+     * invisible undead referred to as "it"
+     * Spriggan assassins permitted -- speed/low food requirements
+       (Spriggan) greatly complement hand crossbow (assassin)
+
+
+15.10.1999 [Brian Robinson]
+
+     * can acquire() food: royal jellies given to non-ghouls; royal
+       jellies or chunks to ghouls (attempted a variety of foods; proved
+       too big a pain)
+     * '#define XOM_ACTS_YELLOW' added to AppHdr.h
+     * acr.cc:srand() added for USE_NEW_RANDOM to work properly
+
+
+14.10.1999 [Brian Robinson]
+
+     * fixed: problem where some super-long strings in describe.cc got
+       cut up, causing a compiler error (where possible, please try to
+       keep lines < 80 characters)
+     * describe_god() enumerated in describe.cc
+     * makefile.sgi option added to Makefile (doesn't work)
+     * fixed bugs culled from bugs.txt
+     * EasyCrawl(tm) door opening: walking into door opens it, running
+       into door opens the door and stops player
+     * GOD_NO_GOD case added to describe.cc:describe_religion() (it was
+       an acr.cc special case, but that's gone now)
+     * '#include <stdio.h>' added to fight.cc and spells2.cc because both
+       call sprintf() (would compile/link properly without it under Linux
+       but not DOS)
+     * makefiles .dos, .emx, and .sol tweaked
+
+
+12.10.1999 [Brian Robinson]
+
+     * version string changed to "3.40" and '#define BUILD_DATE' added to
+       version.h for output alongside version number
+     * '#define USE_NEW_RANDOM' added to AppHdr.h
+     * duplicate/completed items removed from todo.txt (may have missed
+       some -- only cut those marked "done")
+     * inspect item command (in shops) changed to 'v'
+     * contents of oldmakefiles directory archived as oldmake.zip
+     * make distclean now deletes *.sav, *.lab, core, and *.0* (DOS and
+       Linux)
+     * fixed: some class names in newgame.cc were not capitalized
+     * new random number generator added -- should be a little better
+       than old RNG; uses rand() rather than random() to generate number
+       (#define USE_NEW_RANDOM to enable)
+     * wizmode fixes:
+          + some creatures (e.g., necrophage) reduce max_hp (NAB:
+            reduction to zero normally means death) -- in wizmode,
+            negative max_hp results, triggering "you died, but its okay"
+            message every turn; added "you.max_hp = abs(you.max_hp)" to
+            the 'h' wizard command to correct negative max_hp
+          + stethoscope unmapped from 's' key -- terribly annoying for
+            me, since I can't rest with '5' under Linux (can still
+            stethoscope by targetting or looking)
+          + WIZARD compiled binaries append "Wiz" to any scores they
+            generate
+          + help screen added, accessed by keying in '&' then '?' (lists
+            wizard commands in a fashion similar to normal help screen)
+          + bugfix: Daniel's command code blocked wizard command
+     * Daniel's patches:
+          + '#define XOM_ACTS_YELLOW' to render Xom's messages in yellow
+          + bugfix: Abyss crash bug
+          + new wizmode commands: "banish" and "Xom acts"
+     * 'v' and 'V' commands swapped -- examining an item seemed more
+       likely (to me) than version check, so "examine" now lowercased
+     * wizard option added to Makefile (same as debug but includes
+       -DWIZARD)
+     * weapons of reaching used to attack one monster behind another may
+       instead hit the monster inbetween
+     * giant races penalized less for using large shields; normal-sized
+       monsters may be penalized slightly more, but only by one or so
+     * debug.cc:error_message_to_player() added to output:
+       "You have encountered a program bug.
+       Please exit the level and save."
+       (previous instances of this message replaced with calls to this
+       function)
+     * haste and slow counters in acr.cc changed to take into account
+       amulet of resist slow: haste subtracts random2(2) each turn
+       (rather than one -- which could have led to infinite haste, but
+       let's not worry about that) and slow subtracts five (one
+       previously) each turn
+
+
+02.10.1999 [Brian Robinson]
+
+     * help screen reformatted to spot entries more readily (at a
+       glance); added "more" capability so that [command summaries >
+       screen size] prompt user for more, preventing screen overflow
+     * amulet of maintain speed changed to the amulet of resist slowness:
+       old item description mentioned both resist slow and a speed bonus,
+       but the code only implemented resist slow -- wearing the amulet
+       now grants +10 to any hasting and also to maximum possible hasting
+     * some silly messages involving hasting and slowing changed
+     * messages indicating spell-casting failure added to the raise dead
+       functions, but I'm not sure they work (coding very confused here;
+       may only work some of the time)
+     * '#ifdef LINUX'-ed the acr.cc code [lines 663 - 676] which uses
+       variables declared in another '#ifdef LINUX' block (something may
+       be screwed up because I'm not sure what's going on here)
+
+
+29.09.1999 [Brian Robinson]
+
+     * highscore() fixed so that it doesn't take so long
+     * scores output padded with some whitespace to improve appearance
+     * bugfix for 'a' being in scores (see bugs.txt and ouch.cc)
+     * comments added to enum.h showing where unique monsters are
+     * first argument removed from view.cc:draw_border() (same value
+       always passed)
+     * bugfix: player's score not always saved
+     * some problems with the new makefiles noticed while compiling under
+       DOS: any platform with its own library (e.g., liblinux) should be
+       +='ed to OBJECTS in appropriate system-specific makefile
+     * Makefile: noopt (no optimization) added to allow me to compile
+       under DOS without headaches
+
+
+28.09.1999 [Daniel Ligon]
+
+     * linuxlib.* renamed to liblinux.*
+     * keypad for ncurses (Linux port) enabled
+     * liblinux.cc:kbhit() will always return 0
+     * big lookup table added to liblinux.cc to convert keypresses into
+       commands
+     * enumerated commands added to both enum.h and big switch statement
+       in acr.cc
+     * Brian's makefiles added
+
+
+24.09.1999 [Brent Ross]
+
+     * bugfix for evasion
+     * macro.cc:getch_mul() reverted
+     * red devils have probablistic chance for (trident|demon trident|no
+       weapon)
+     * demon tridents correctly coloured
+     * xp spending cap/MAX_SPENDING_LIMIT
+     * broad axe, spiked flail, and great flail less common
+     * floating point operations in update_corpses() reduced
+     * all demonspawn scales/plates can be given at one or two levels
+     * max_hp ceiling displayed when player's max_hp reduced
+     * from Linley:
+          + portal fixed so that it doesn't go below level 27
+          + fixed checks for translocating in the Abyss
+          + added fix for going to Pandemonium or the Abyss from Hell
+          + note about using '+' for targeting added to various prompts
+          + ghosts fade away only if they have fewer than half their hp
+
+
+12.09.1999 [Linley Henzell]
+
+     * "Over-map" added
+     * messages can be coloured -- just call set_colour() before mpr()
+     * wild magic effects do more harm; increased likelihood of higher
+       levels of effect
+     * blink may not work and teleport takes longer in the Abyss
+     * a few unrandarts tweaked
+     * rewrote part of dungeon.cc weapon generation function; added
+       weapon rarity function
+     * some monsters receive a wider range of weapons
+     * many high-powered demons have greater speeds
+     * several changes to skills.cc; having many xp in the pool increases
+       the cost of exercising
+     * threshold values increased for special "you hit" messages and some
+       grammar patched -- see fight.cc
+     * three 'silly' monsters removed: dorgi, sword, and guardian robot
+     * haste has a direct effect on time_taken, rather than being treated
+       separately -- see player_speed()
+     * boots of levitation allow permanent hovering
+     * random events in Hell are much nastier
+     * clouds can be overwritten by other clouds, sometimes -- see
+       place_cloud()
+     * monster mutation spell affects monsters as polymorph
+     * new init.txt variable [verbose] determines level of detail about
+       randarts and other magical items in character dump
+     * monsters can cast 'direct' spells (e.g., smiting) over other
+       monsters if targeting player
+     * giants given the correct number of rocks
+
+
+09.09.1999 [Brent Ross]
+
+     * damage lowered for some new weapons; tridents made heavier
+     * some changes from Dustin Ragan added to the newgame screens
+     * spellcasting reduced by weapon size [weight and/or speed]
+     * from Linley:
+          + verified helmet/helm colour initialisation to LIGHTCYAN
+          + swapping item letters outputs both items affected
+          + '=' fixed to '==' in randart.cc line 1515
+          + bugfix: more scrolling problem under DOS
+          + bugfix: problem with the ctrl-direction keys under DOS
+          + subspecies selection made into compile time option
+          + horns mutation removed as a possibility for minotaurs
+     * Great Swords skill removed -- great swords/triple swords treated
+       as long swords
+     * Trolls + troll leather changed to no effect
+     * gdbm stuff removed -- makes things simpler; better security can
+       wait for new savefile implementation
+     * hand-and-a-half weapons:
+          + no bonus if weapon is cursed
+          + 1-1/2 hand weapons don't get the speed bonus past 10
+          + two-handed weapons can get as fast as speed 7 with skill
+          + +random2(3) to hit
+          + +random2(3) to dam [all two-handed weapons] applied after
+            skill multipliers (i.e., with the dwarf and orc modifiers)
+     * multiple shield blocks in a turn becomes increasingly difficult
+     * fighters get dodging or armour skills on basis of starting armour
+     * shields and large shields slow down attacks
+
+
+27.08.1999 [Brent Ross]
+
+     * character dump includes '*' for level 27 skills
+     * removing the "skill_change /= 2" line from spell skills was a bit
+       hard on early spellcasters (it seems reasonable to give to
+       low-level characters and phase out by mid-game, when it isn't
+       needed)
+     * bugfix: "Crush" required conjurations (hold over from Throw
+       Pebble)
+     * bugfix: having 1 xp in the pool permitted a lot of free practising
+     * penalty increased for heavy armour, now more in line with the new
+       shield penalty (are these values high enough?)
+     * Linley's new weapon suggestions added: axe, spiked flail, great
+       mace, great flail
+     * damage increased for some maces and flails (swords are quick and
+       accurate, maces and flails hit harder)
+     * "Boots" changed to "Barding" in centaur/naga equipment lists
+     * crystal plate mail somewhat resistant to corrosion
+     * +/- markers added to skills screen for benefit of monochrome
+       displays
+     * bugfix: labyrinth problems
+     * bugfix: LOS corner problem
+     * bugfix: can now make with -DWIZARD
+     * spellcasting/invocation interference removed
+     * weapon additions: broad axe [rare, 15, +3, 17], trident [9, -2,
+       16], and demon trident [evil -- wielded by red devils: 15, -2, 16]
+     * polearms/whips of reaching added
+     * gladiators given choice of starting with trident
+     * '#define USE_NEW_BERSERK' removed
+     * bugfix: incorrect display of barding AC value
+     * quite a bit of cleanup (converting ints to enums in the old code)
+     * draconian AC gains clean-up; removed level four increase and gave
+       two AC at start
+     * knife added; guaranteed on the first three levels
+     * bugfix: memorizing spells was impossible on some terminals
+
+
+08.08.1999 [Brent Ross]
+
+     * bugfix: Orange Brains could hang game (MS_SUMMON_LEVEL spell in
+       Abyss)
+     * bugfix: monsters should no longer occur "under" the player
+     * bugfix: portals weren't closed on way out, but hell gates were
+       removed (now all are closed)
+     * bugfix: cannot unlearn spells outside the array bounds
+     * bugfix: manuals should auto-identify on the first read
+     * bugfix: Healing book was available from acquirement/Sif Muna
+     * missile launchers no longer train/use associated skill when used
+       as melee weapons (bows/xbows will train/use maces/flails, slings
+       use no skill)
+     * Zot traps will no longer message their effects on monsters unless
+       monster within LOS
+     * bugfix: liquid flame could wrap around and last a long time
+     * bugfix: whatever caused "program bugs" to occur in the Abyss
+     * bugfix: number of cards in Decks of Power defaulted to 0 and thus
+       gave 255 cards
+     * Nemelex fixed to give cards instead of Bone Lanterns and Geryon
+       Horns
+     * bugfix: food was not updating with cards
+     * bugfix: quick blades were getting free actions
+     * spell points update when Invocations gained
+     * granularity of skill gain upped to reduce "stage three":
+          + number of learns from manuals upped to accommodate
+          + monster xp values reduced to limit "stage two" effect
+     * power of smiting again reduced (seems reasonable now)
+     * teleport control restrictions (some areas will not allow
+       controlled teleport)
+     * runes may be stacked
+     * invocations and spellcasting learning interfere with one another
+       (like elemental magic)
+     * increased rate of skill cost per level
+     * removed division by two for cost of spellcasting skills
+     * greater rarity for unique artefacts (all seem to enter quickly
+       into any game, except the Sword of Power, for which the 50% chance
+       against creation probably kept it out of my last game for a while)
+     * evasion/shields were too good:
+          + shield blocking difficulty raised a bit (from base 10 to 15)
+          + player's evasion rolled in the monster to-hit check (so that
+            a player with an EV of 30+ can still be hit)... added a 1/15
+            chance of hitting regardless (players already got this
+            advantage).
+     * *.h guards moved to after the headers (cosmetic)
+
+
+30.07.1999 [Brent Ross]
+
+     * bugfix: visiting Abyss from Hall of Blades resulted in an Abyss
+       populated by blades
+     * bugfix: problems with highscore entries running off end of the
+       line
+     * electrical and poison resistances no longer absolute -- 1/3 damage
+       taken on successful resist (still no poisoning for those with
+       poison resistance)
+     * storm dragon breath can be resisted
+     * draining will drain available xp pool, too
+     * spell levels moved to a function to prevent amassing a large
+       number of negative spells (forgot spell that didn't exist)
+     * spellcasting more difficult to get
+     * bugfix: plants stalking stairs
+     * dragon armours reverted to original values -- resistances and
+       benefits given are good enough (basic heavy armours were the ones
+       in real need of improvement)
+     * bugfix: distortion weapons (from Jesse)
+     * bugfix: deflect missiles status wasn't listed on '@'
+     * slime pit runes are only "possible" runes -- unlikely to get four
+       of them now
+     * stats added to "elf" dummy monster to allow elf zombies to live
+     * added redraw after projected noise
+     * bugfix: objects (runes, orb) were clobbered by items given to
+       monsters.
+     * monster descriptions with huge gaps in them were fixed
+     * bugfix: shapeshifters shouldn't polymorph into dancing blades
+       (numbers for names)
+     * acquirement() better than before for jewelry
+     * skills screen can handle more than 26 skills
+     * levels of poisoning shown for '@'
+     * traps more difficult to disarm as dungeon level increases
+     * traps might trigger during attempts to disarm
+     * all traps handled by handle_traps()
+     * are the new traps too hard on monsters? (probably yes, so they
+       take old damage amounts for now)
+     * player_light_armour() added, which returns true if the player is
+       in light or no armour
+     * bugfix: non-flying monsters were flying over traps
+     * polymorphed monsters not much of an easy xp trick anymore
+     * xp calculation takes into account a monster's speed
+     * plant learning capped (no more than first two levels of fighting
+       skills)
+     * some support added for explosions destroying potions/food on
+       ground are only the correct things being destroyed? -- check
+       bang.cc and destroy_item()
+     * wearing heavy armour provides a minium percentage of damage
+       reduction:
+          + percent = (skill + base AC of body armour)
+          + still needs application to monsters, but monsters don't
+            convieniently know whether they possess hard armour (let
+            alone armour skill) so this can probably wait
+     * extra protection from shrapnel attacks provided by heavy armour
+       only
+
+
+13.07.1999 [Brent Ross]
+
+     * entrance to the Labyrinth blocked until debugged
+     * wizmode code in acr.cc fixed; changed some commands to more easily
+       remembered letters; added an identify
+     * fixed some cases where cursed jewelry plusses are assumed to be
+       based off 100 (creation code and many other cases suggest that
+       it's 150)
+     * random weapons, armour, and jewelry from acquirement() are now
+       uncursed
+     * demonspawn horns smoothed out so it's possible to get two levels
+     * ranger changed to hunter
+     * some gmon_use values changed (from Linley)
+     * life protection descriptions changed
+     * hunger_inc and ATTR_LIGHTNING_RESIST moved to functions in
+       player() -- the attribute is now replaced with
+       ATTR_DIVINE_LIGHTNING_PROTECTION (used to denote Makleb or Xom
+       protecting player from a lightning attack)
+     * checks added for the curses keypad enums
+     * learning curve for throwing skill lowered
+     * hand crossbows reduced in power
+     * learning curve for traps and doors skill lowered
+     * played with spellcasting staff identification
+     * player ghosts fixed:
+          + monsters regenerate hp while player is off level
+          + ghosts regenerate and teleport away when player leaves the
+            level
+     * assassins changed from ninja to hand crossbow types; given
+       enchanted dagger as well to help hand-to-hand
+     * throwing exercise added to darts, hand axes, daggers, and spears;
+       throwing skill bonus added for them, as well -- see item_use.cc
+     * scythes, halberds, and glaives given a chance to be weapons of
+       speed
+
+
+07.07.1999 [Brent Ross]
+
+     * breath from ice-breathing dragons won't destroy walls
+     * life protection now a (level/3) chance
+     * bugfix: the 120/150 hp ghost thing
+     * anticheat code and security db added for multiuser systems
+       (requires gdbm)
+     * only picking up items has associated delay with autopickup,
+       walking over uninteresting stacks shouldn't cost any extra time
+     * berserk players fail the check_awaken() test with monsters and do
+       not spend experience on stealth
+     * dexterity added to stealth
+     * ogre magi given short swords instead of daggers
+     * stabbing stun effect toned down
+     * stabbing dex bonus toned down -- now limited by stabbing
+     * assassins start with a dagger; thieves start with short sword and
+       dagger
+     * stat mods reversed for thief and assassin; assassins given unarmed
+       combat
+     * wizard stat mods changed to +7 int/+3 dex, making them smarter
+       than other spellcasters
+     * draconian rangers no longer start with leather armour
+     * stealth toned down a bit (and again) in player.cc:check_stealth()
+     * to-hit reduced for throw fire/frost and sting -- see
+       it_use2.cc:zappy()
+     * bugfix: repel/deflect missiles problem -- changed bad REPEL
+       reference in acr.cc
+     * message added to unwielding vampiric weapons
+     * new keypad support hacked up for Unix
+     * shots used up 1 in 3 times
+     * bonus for crossbows' to hit and dam (item_use.cc)
+     * magic resistance for elves (player.cc)
+     * autopickup delay upped to 3 (one and two seem to be no delay at
+       all)
+     * opposing elemental staves can be identified (items.cc, spell.cc)
+     * zipfile removal added to ouch.cc to prevent cheating
+     * bugfix: view.cc STABBING check should be STEALTH for the no-yell
+       check; lowered to a straight percentage check
+     * Dwarven/Orc rangers given Dodging 1 (they were a bit short on
+       skills)
+     * HOrs get orcish bolts (newgame.cc) -- added MISSILES check in
+       HILL_ORC check
+     * gladiator/fighter modifications: (newgame.cc)
+          + fighters: skills -- fighting 3, weapon 2, dodging/armour 2,
+            shields 2, stabbing/stealth 1, throwing 2; stats -- str +7,
+            dex +3
+          + kobold/troll/ogre fighters: same as before
+          + gladiators: skills -- fighting 3, weapon 3, dodging/armour 2,
+            shields 1, unarmed combat 2; stats -- str +6, dex +4
+          + comparision to previous values:
+               o fighters: lost unarmed combat; +1 shields and +1
+                 throwing
+               o gladiators: -1 dodging/armour and -1 shield; +2 unarmed
+                 combat
+               o stat bonuses swapped
+               o armor for gladiator/fighter switched
+
+
+22.06.1999 [Brent Ross]
+
+     * new ranger weapon variations (halfling slingers, dwarven
+       crossbowers)
+     * Ranger/Reaver problem fixed -- 'R'angers are now 'r'angers (so
+       capital letter R used only once)
+     * stealth improvements:
+          + monsters don't yell (2 * skill) % of the time -- see
+            view.cc:monster_grid()
+          + large races lose *2 modifier, small races receive *5/2 -- see
+            player.cc:check_stealth()
+               o Huge (x1): Troll, Ogre, Ogre Mage, Centaur
+               o Awkward (x3/2): Minotaur, Draconians
+               o Normal (x2): Everyone else
+               o Small (x5/2): Halfling, Gnome, Kobold, Spriggan, Naga
+                 (Naga's aren't small, but they're good)
+          + BEH_CHASING_I set for sleeping monsters who are stabbed
+          + now a (skill + dex)% chance of stabbing fleeing or confused
+            monsters -- see fight.cc
+          + backstab effectiveness depends on the monsters behaviour:
+               o sleeping monsters are easy targets -- lots of damage
+                 potential
+               o fleeing and confused monsters -- not as much damage
+                 potential
+               o other cases have even less damage potential
+          + backstabbing more effective for daggers: daggers add dex/3
+            damage before the multipliers -- see fight.cc
+     * fight.cc:monster_dies() modified so that *any* summoned creature
+       killed by player/pet won't call done_good()
+          + Elivion/TSO/Zin have to be passed through (not a problem
+            because they can't abuse summoning, anyway)
+          + this could use a better fix (i.e., tracking who summoned
+            which monsters would help a lot)
+     * (Linley's suggestion) monster polymorph fixed to avoid NO_EXP
+       monsters: added "mons_flag(targetc, M_NO_EXP_GAIN)" to do-while
+       loop
+     * (Jesse's suggestion) teleport control/blink spell combo removed:
+       CONTROL_TELEPORT check removed from random_blink()
+     * racial bonus added to worn armour in player_AC()
+     * patched hunger status display bug: added food_change() and redraw
+       to down_stairs
+
+
+17.06.1999 [Brian Robinson]
+
+     Note: I've tried to annotate all my changes in the code with my
+     initials [BCR] so you can grep for them to find my changes.
+
+     * some small cleanup here and there
+     * new makefile written for Linux
+     * changes to the make process which should spare us future
+       headaches:
+          + OS_TYPE variable in the makefile that is automatically made
+            into a #define during make process (should make it easy to
+            keep the makefiles straight on the OS)
+          + moved OBJECTS variable containing the list of the *.o files
+            to a file called make.obj which is included into the makefile
+            (should save a little space and keep all makefiles consistent
+            on object requirements)
+     * defines.h indented and added a header
+     * some newgame.cc oddness fixed: various system dependent name
+       checks were all messed up in a bunch of nested #ifdef stuff
+       (sorted it out)
+     * '#define MACROS' now does something: if defined, macros.h and
+       macros.cc files will be used, otherwise they won't (right now,
+       Crawl will not work correctly under Linux with MACROS defined --
+       see bugs.txt)
+
+
+14.06.1999 [Brent Ross]
+
+     Some changes I added from Linley:
+
+     * bugfix for the Geryon bug
+     * message added for berserkers chopping up corpses in rage
+     * some incorrect enums in it_use3.cc (for Asmodeus's staff) changed
+     * demonspawn xp penalty lowered to 140%
+     * Elyvilon sacrifice code fixed to limit abuse
+     * priest.cc and priest.h renamed to abyss.*
+     * spellcasting penalties for wearing shields upped to +5/+15/+30
+       from +0/+5/+15 [buckler/shield/large shield]
+     * random stat increase added for Draconians
+
+
+13.06.1999 [Brent Ross]
+
+     * Spriggans fully separated from the giant races, creating a
+       separate block for tiny races in the armour wearing code
+     * cursed rings identify themselves as "sticky cursed" when put on
+     * weapon slot updates if player eats food that is being wielded
+     * bugfix: black and grey scales reversed for demonspawn (with
+       regards to number of levels gained)
+     * for spells1.cc, blink() and random_blink(): weapons check removed
+       because scan_randarts should be only requirement
+     * bugfix: teleport control now works properly on blink (dependent on
+       order of includes and target compiler/system)
+     * #ifndef checking added around all *.h files to avoid problems
+       similar to those above
+     * full spell listing line added to character dumps
+     * creaky doors are [DEX + (Stealth + Traps) / 2] checks; check added
+       on closing doors, as well
+     * base values of heavy armour upped by 1 or 2 points
+     * spells3.cc:you_teleport() was another case of only checking the
+       weapon slot for a property (hopefully, I've changed all these into
+       scan_randarts)
+     * mutation.cc:demonspawn() had MUT_FAST twice; changed the second to
+       MUT_SHOCK_RESISTANCE (as the comment claimed)
+     * strength damage bonus had an ugly discrete nature to it;
+       multiplied the dammod values by 6 to get a smoother version of the
+       same function
+     * bugfix: screen needed to be refreshed after spell slot changes
+     * new equipment listing commands:
+          + ')' lists current, swap a, swap b, and default 'f'ire weapons
+          + ']' lists worn armour
+          + '"' lists worn jewelry (NB: '=' already used elsewhere)
+     * bugfix: "shoot_skill = you.skills[SK_THROWING]" in item_use.cc was
+       wrong (should clearly be CROSSBOWS when using a crossbow)
+     * bugfix: handle_traps in misc() used env.trap_known instead of
+       trap_known (env.trap_known doesn't seem to be referenced anywhere
+       else)
+     * bugfix: Vehumet's gift was still not quite correct
+     * magical staves detection: staves may be detected over time or
+       whenever appropriate magic is cast, depending on skill levels
+     * Call Imp raised to a level three spell (too powerful for level
+       two)
+     * a little checking code added to dungeon.cc for monster armour
+       plusses
+     * bugfix: more line was misplaced on the recognized item screen
+     * mix of my/DML's improvements applied to the temp file purging
+       system
+
+
+02.06.1999 [David Loewenstern]
+
+     * Makefile.dos added
+     * define.h updated for compatibility with DJGPP
+     * items.cc, monstuff.cc, mstuff2.cc, and spells.cc cleaned up
+       (mostly corrected misassignments, unsigned<->signed, unused vars,
+       etc.)
+     * enums added to monstuff.cc, mstuff2.cc, beam.cc
+     * enum.h updated as per above
+     * autopickup added
+     * '&' command functions only in debug mode
+     * remove_ring() now uses inventory letter
+     * fight.cc features more colourful "hits" (should be useful later to
+       differentiate weapons)
+     * bugfix: displaying top scores when no scorefile previously had
+       existed
+
+
+30.05.1999 [Jesse Jones]
+
+     * highscore() will print more scores on larger windows
+     * worn cloaks no longer prevents wearing or removing body armor
+     * worn armor can be dropped if it's uncursed
+     * armor can be worn without removing the old armor
+     * missing ponderous armor message added
+     * from Brent:
+          + bugfix: weapon line didn't always redraw after casting Blade
+            Hands
+          + detect_items() uses '~' instead of '*'
+          + char_dump.cc dumps failure rates
+     * wear_armour() changed to allow Spriggans to wear bucklers
+     * quit only pops up save changes dialog if game_has_started is true
+       (Mac)
+     * AppHdr.h replaces config.h
+     * all *.cc files include their header immediately after the AppHdr
+       file
+
+
+??.05.1999 [Brent Ross]
+
+     * GNU indent 1.91 [-bad -bli0 -i4 -npcs -npsl] applied to get the
+       intended BSD indentation style into the code; sorted through some
+       things indent won't fix (more cleanup needs to be done -- notably,
+       vertical whitespace and breaking up big lines -- but should be
+       more readable now; no more column 0 code!)
+     * various changes to make code work with NUMBER_OF_LINES instead of
+       25
+     * compile-time option to change default view to non-ibm graphics
+     * ^R redraw screen command; screen redraws added to appropriate
+       places
+     * query added for normal saves (^X doesn't ask)
+     * ^Y works now; ^Z suspend for Unix systems
+     * refresh call added to beam.cc so beams are always visible
+     * various things to deal with multiuser environment:
+          + compressing save files
+          + permissions handling
+          + global lib directory for game files
+          + changes in name validation and file name structure (added
+            uid)
+     * adjust item letter function now swaps items (instead of failing)
+     * Selective Amnesia spell description is less confusing
+     * targeting more intuitive for Angband players (t/space accepts
+       targets), behaves better about canceling spells (added better
+       abort)
+     * unarmed combat fixed to the correct amount of time
+     * bugfix: hunger/noisy wield bug where effects were not removed
+     * bugfix: air staffs didn't grant resist lightning, yet took it away
+       (i.e., left the resist with a value of 255, quite good unless you
+       put on something of resist lightning later)
+     * rings/wands/scrolls and such output a message when they are
+       identified by use
+     * fixed several cases where wielded object changed but the screen
+       didn't update
+     * bugfix: a triple level of a demonspawned mutation was never
+       granted
+     * patched bug where the inventory is full yet the count is wrong
+       (this entire thing should be cleaned up)
+     * curses attributes fixed so that alternate character sets aren't
+       used under Solaris (this is probably good for any *nix not on a
+       IBM alternate character set box)
+     * water and earth elementals fixed for same
+     * stone lined the finishing room so you can't dig through?
+     * some rather silly ways of clearing areas of the screen (under
+       curses) removed; proper curses functions used instead (much
+       faster)
+     * bugfix: going up or down stairs would clear the food status
+     * bugfix: incorrect substitutions of new enums (i.e., "AC +=
+       SP_HIGH_ELF; /* troll */")
+     * bugfix: stat increases where comment noted "/* str or dex */", but
+       "str or int" given instead
+     * Troll's food consumption increased to better balance the race
+     * Vehumet's gift giving code fixed to actually do what is intended
+     * experience pool information added to front page
+     * some of the duplicated titles (traps and doors) changed
+     * stairs leading out of sub-dungeons changed to '<' character, to
+       reflect the key required
+     * portals coloured on the level map; all portals in Pandemonium are
+       intentionally the same colour
+     * kobolds receive stat increase every five levels
+     * bugpatch: Demonspawn sometimes don't receive their mutations
+     * Armour skill a bit better: get more in combat, a little more
+       frequently otherwise; EV penalty is now recovered at skill/2
+     * Sword of Power reduced in power (now +20 cap, HP/13 - 3)
+     * creaking doors partially depend on skills (dex + traps + stealth,
+       with benefits of last two dropping after a total of 10) instead of
+       simply luck; levitation isn't a sure way to avoid this now
+     * wield update inserted after reading scroll of recharging
+     * high score file extended to SCORE_FILE_ENTRIES items (currently,
+       only the first 15 are ever displayed)
+     * USE_NEW_BERSERK:
+          + berserk counter decrements faster when not attacking
+            (currently using triagular progression)
+          + butchery is not penalized (in fact, it resets penalty
+            counter); eating isn't either (no reset, though)
+          + exhausted counter added to count berserk fatigue
+          + hopefully this will become part of a new, better standard
+            berserk
+     * skills fit onto screen by wrapping the first column (if required)
+     * bugfix: RAP_PREVENT_TELEPORT and the like didn't do anything
+       because they checked only the weapon, instead of using
+       scan_randarts (hopefully, all the cases of this are fixed now)
+     * bugfix: wield-amulet-that-you're-wearing bug
+     * redraw for weapon when Blade Hands expires
+     * #defines:
+          + CRAWL_NAME -- auto sets player's name
+          + CRAWL_PIZZA -- string describing player's choice of pizza;
+            greater likelihood of incidence than others
+          + USE_BSTRING_H -- handles the bstring.h/string include problem
+          + NUMBER_OF_RUNES_NEEDED (defaults to 3) -- allows compiled
+            games to limit entrance to Zot's domain only to those with a
+            certain number of runes
+          + USE_CURSES -- for things specific to curses and not just
+            PLAIN_TERM.
+          + USE_TCHARS_IOCTL, USE_UNIX_SIGNALS, USE_SELECT_FOR_DELAY --
+            to solve various *nix variant problems should people need or
+            want them
+          + USE_ASCII_CHARACTERS -- sets the default to non-IBM character
+            set
+          + SAVE_DIR_PATH -- useful for setting a global lib directory
+            for save files, bones files, and the score file
+          + SHARED_FILES_CHMOD_VAL -- useful with SAVE_DIR_PATH on
+            multi-user systems
+          + SAVE_PACKAGE_CMD, LOAD_UNPACKAGE_CMD, PACKAGE_SUFFIX -- for
+            people who want to use a program to compress and bundle their
+            save games when they're not playing (not pretty, but good
+            enough until we invent a better save file system)
+     * "(q to drink)" added to fountain description when player steps
+       over one
+     * Greater Healings base upped to 50
+     * Demonspawn transmuters added
+     * Spriggans and Halflings consume less food (-1)
+     * wizard's hats and caps are randomly coloured
+     * carrying capactiy less dependent upon strength; pulled
+       carrying_capacity code into a single function (as it's called from
+       various different places); encumberance levels represent fractions
+       of carrying capacity instead of earlier constant values
+     * named artefact weapons slightly rarer; Sword of Power has 1 in 2
+       check
+
+
+??.05.1999 [Jesse Jones]
+
+     * bugfix: appeared to be three bugs involving extra semi-colons
+     * file names can be longer than six characters and can include
+       spaces
+     * some debugging macros added
+     * bugifx: dragon() wasn't handling fire drakes, which meant beam
+       color was uninitialized.
+     * getstr() only adds printable characters to the buffer (Mac)
+     * mons_spells() now returns a struct instead of using an int array
+       -- affects mstuff2.cc, mstuff.h, and handle_wand()
+     * mons_near() now returns a bool. I've changed code like
+       "mons_near(o) == 1" and "mons_near(i) != 0" to "mons_near(o)" and
+       "!mons_near(i)"
+     * print_description() no longer indexes past the end of the string.
+     * minor changes made to the code to allow compilation with the
+       "require function protypes" warning
+     * UNUSED template function added to config.h
+     * rewrote describe.cc and describe.h:
+          + reformatted
+          + string objects used in place of hard-coded char arrays
+          + ten new functions split out from describe_item()
+          + get_item_description() and is_random_artifact() added
+     * rewrote chardump.cc
+          + reformatted
+          + string objects used
+          + seven functions split out from dump_char
+          + dumps artifact info
+     * reformatted viewwindow2(); added some ASSERTs; split out
+       get_ibm_symbol()
+     * reformatted monster() and split out ten(!) new functions
+     * reformatted mons_spells() and mons_cast(); mons_spells() case 49
+       uses RED instead of (bogus) 20 for color
+     * some ASSERTs added to seekmonster()
+     * DEBUG renamed to WIZARD
+     * DEBUG_BUILD renamed to DEBUG
+     * manage_corpses() renamed to handle_time()
+     * code changed to use new CORPSE_BODY and CORPSE_SKELETON enums
+     * struct.h deleted
+     * player::elapsed_time added (holds the total amount of elapsed time
+       in the game)
+     * level and game save routines tweaked to include a variable sized
+       chunk of extra data
+     * save level code saves a timestamp; load level code uses timestamp
+       to update corpses and chunks
+     * many player struct members renamed
+     * all of the monsters, item_struct, and ghost_struct members renamed
+     * comment blocks added to the top of all files
+     * TRACE debug function added
+     * you and env are no longer arrays
+     * bugfix: display_char_status() displayed the wrong message if the
+       player had magic contamination
+     * look_around() no longer prints a prompt (so things like blink and
+       open door no longer prompt "Press '?' for a monster description.")
+     * show_map() accepts '\r' along with '.'
+     * Cekugob no longer conveys resistances to fire and cold
+     * spellbook_contents() prints unknown spells in light blue
+     * show_map() draws shops in yellow

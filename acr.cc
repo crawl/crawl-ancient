@@ -63,8 +63,6 @@
 #include <stdio.h>
 
 #include "externs.h"
-#include "enum.h"
-
 
 #include "ability.h"
 #include "chardump.h"
@@ -121,7 +119,6 @@
 #include "transfor.h"
 #include "view.h"
 
-
 /*
    #include "player.h"
    #include "message.h"
@@ -146,6 +143,7 @@
    #include "misc.h"
    #include "newgame.h"
  */
+
 /* Functions in main module */
    void input(void);
    void open_door(char move_x, char move_y);
@@ -153,14 +151,11 @@
    void move_player(char move_x, char move_y);
    void do_berserk_no_combat_penalty(void);
 
-//void missile(struct player you [1], struct environ env [1], struct bolt beam [1], int throw_2);
-//void beam(struct player you [1], struct environ env [1], struct bolt beam [1]);
-
+   //void missile(struct player you [1], struct environ env [1], struct bolt beam [1], int throw_2);
+   //void beam(struct player you [1], struct environ env [1], struct bolt beam [1]);
 
    void more();
    void initialise();
-
-
 
    struct environ env;
    struct player you;
@@ -248,8 +243,9 @@ static bool Use_No_Black = false;
 
       if (argc > 1)
       {
-         if (stricmp(argv[1], "-c") == 0 || stricmp(argv[1], "-nc") == 0
-            || stricmp(argv[1], "-nb") == 0)
+         if ( stricmp(argv[1], "-c") == 0
+               || stricmp(argv[1], "-nc") == 0
+               || stricmp(argv[1], "-nb") == 0 )
          {
             viewwindow = &viewwindow3;
             mapch = &mapchar3;
@@ -298,9 +294,9 @@ static bool Use_No_Black = false;
    //new_game();
 
       set_colour(LIGHTGREY);
-      init_overmap();
-      initial();
-      initialise();
+      init_overmap();            // in overmap.cc (duh?)
+      clear_ids();               // in itemname.cc
+      initialise();              // keep scrolling down ...
 
       while (true)
       {
@@ -308,13 +304,14 @@ static bool Use_No_Black = false;
       //      cprintf("x");
       }
    /* Should never reach this stage, right? */
+
    #ifdef LINUX
     lincurses_shutdown();
    #endif
+
    #ifdef MAC
     deinit_mac();
    #endif
-
 
    #ifdef USE_EMX
     deinit_emx();
@@ -357,17 +354,17 @@ static bool Use_No_Black = false;
       window(1, 1, 80, NUMBER_OF_LINES);
    #endif
 
-      textcolor(7);
+      textcolor(LIGHTGREY);
 
       print_stats();
 
-      if (you.paralysis == 0)
+      if ( !you.paralysis )
       {
-         if (you.delay_t > 1)
-            you.delay_t--;
-         if (you.delay_t == 1)
+         if ( you.delay_t > 1 )
+           you.delay_t--;
+         if ( you.delay_t == 1 )
          {
-            switch (you.delay_doing)
+            switch ( you.delay_doing )
             {
                case DELAY_EAT:
                   mpr("You finish eating.");
@@ -969,7 +966,7 @@ static bool Use_No_Black = false;
             break;
          case 'X':
          case CMD_DISPLAY_MAP:
-            if (you.level_type == 1 || you.level_type == 2)
+            if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
             {
                strcpy(info, "You have no idea where you are!");
                mpr(info);
@@ -1411,11 +1408,12 @@ static bool Use_No_Black = false;
       }
 
 
-      if (random2(10) == 0)
+      if ( one_chance_in(10) )
       {
-         if ((player_teleport() > 0 && random2(100 / player_teleport()) == 0) || (you.level_type == 2 && random2(30) == 0))
+         if ( ( player_teleport() > 0 && one_chance_in( 100 / player_teleport() ) )
+                || ( you.level_type == LEVEL_ABYSS && one_chance_in(30) ) )
          {
-            you_teleport2(1);   // this is instantaneous
+            you_teleport2(true);   // this is instantaneous
 
          }
       }
@@ -1438,7 +1436,7 @@ static bool Use_No_Black = false;
       if (you.duration[DUR_LIQUID_FLAMES] != 0)
       {
          mpr("You are covered in liquid flames!");
-         scrolls_burn(8, 6);
+         scrolls_burn(8, OBJ_SCROLLS);
       /* hit_player((random2(5) + random2(5) + 1) * you.time_taken / 10, 1, 0, 17, env); */
 
 
@@ -1457,7 +1455,7 @@ static bool Use_No_Black = false;
       if (you.duration[DUR_ICY_ARMOUR] > 1)
       {
          you.duration[DUR_ICY_ARMOUR]--;
-      //              scrolls_burn(4, 8);
+      //              scrolls_burn(4, OBJ_POTIONS);
       }
 
       if (you.duration[DUR_ICY_ARMOUR] == 1)
@@ -1672,7 +1670,7 @@ static bool Use_No_Black = false;
          you.duration[DUR_TELEPORT]--;
       if (you.duration[DUR_TELEPORT] == 1)
       {
-         you_teleport2(1);
+         you_teleport2(true);
          you.duration[DUR_TELEPORT] = 0;
       }
 
@@ -1729,14 +1727,14 @@ static bool Use_No_Black = false;
          you.duration[DUR_TELEPORT]--;
       if (you.duration[DUR_TELEPORT] == 1)
       {
-         you_teleport2(1);
+         you_teleport2(true);
          you.duration[DUR_TELEPORT] = 0;
       }
 
       if (you.invis > 1)
       {
          you.invis--;
-         if (you.hunger >= 40 && you.is_undead != 2)
+         if (you.hunger >= 40 && you.is_undead != US_UNDEAD)
             you.hunger -= 5;
          if (you.invis == 6)
          {
@@ -1784,7 +1782,7 @@ static bool Use_No_Black = false;
       if (you.slow > 1)
       {
          // BCR - Amulet of resist slow affects slow counter
-         if (wearing_amulet(AMU_RESIST_SLOW))
+         if ( wearing_amulet(AMU_RESIST_SLOW) )
          {
             you.slow -= 5;
             if (you.slow < 1)
@@ -1805,7 +1803,7 @@ static bool Use_No_Black = false;
       if (you.haste > 1)
       {
          // BCR - Amulet of resist slow affects haste counter
-         if (wearing_amulet(AMU_RESIST_SLOW))
+         if ( wearing_amulet(AMU_RESIST_SLOW) )
          {
             you.haste -= random2(2);
          }
@@ -1853,12 +1851,12 @@ static bool Use_No_Black = false;
         //
          if (you.berserk_penalty != NO_BERSERK_PENALTY)
          {
-            if (random2(5) == 0 || random2( you.berserk_penalty ) > 4)
+            if ( one_chance_in(5) || random2( you.berserk_penalty ) > 4)
             {
                mpr( "You feel very exhausted." );
                lose_stat( STAT_STRENGTH, random2(you.strength / 5) );
             }
-            else if (random2(15 - you.berserk_penalty) == 0)
+            else if ( one_chance_in(15 - you.berserk_penalty) )
             {
                mpr( "You pass out from exhaustion." );
                you.paralysis += 2 + random2(3);
@@ -1914,11 +1912,11 @@ static bool Use_No_Black = false;
       }
 
 
-      if (you.rotting > 0 || (you.species == SP_GHOUL && random2(2) == 0))
+      if ( you.rotting > 0 || ( you.species == SP_GHOUL && coinflip() ) )
       {
          if (you.species == SP_MUMMY)
             you.rotting = 0;
-         else if (random2(20) <= (you.rotting - 1) || (you.species == SP_GHOUL && random2(200) == 0))
+         else if ( random2(20) <= (you.rotting - 1) || (you.species == SP_GHOUL && one_chance_in(200) ) )
          {
             ouch(1, 0, KILLED_BY_ROTTING);
             you.hp_max--;
@@ -1952,7 +1950,7 @@ static bool Use_No_Black = false;
                strcpy(info, "You feel extremely sick.");
                mpr(info);
             }
-            else if (you.poison > 5 && random2(2) == 0)
+            else if (you.poison > 5 && coinflip() )
             {
                ouch(random2(2) + 2, 0, KILLED_BY_POISON);
                you.redraw_hit_points = 1;
@@ -1969,7 +1967,7 @@ static bool Use_No_Black = false;
                mpr(info);
             }
 
-            if (random2(8) == 0 || (you.hp == 1 && random2(3) == 0))
+            if ( one_chance_in(8) || (you.hp == 1 && one_chance_in(3) ))
             {
                strcpy(info, "You feel a little better.");
                mpr(info);
@@ -2014,7 +2012,7 @@ static bool Use_No_Black = false;
 
       }
 
-      if (you.is_undead != 2)
+      if (you.is_undead != US_UNDEAD)
       {
          int total_food = player_hunger_rate() + you.burden_state;
 
@@ -2066,7 +2064,7 @@ static bool Use_No_Black = false;
       {
          handle_time( 200 + (you.time_taken - you.synch_time) );
          you.synch_time = 200;
-         if (random2(50) == 0)
+         if ( one_chance_in(50) )
             cull_items();
       }
       else
@@ -2094,14 +2092,14 @@ static bool Use_No_Black = false;
                   break;
             //       case 1: mpr("You feel a pleasing absence."); break;
                case 2:
-                  if (random2(4) == 0)
+                  if ( one_chance_in(4) )
                   {
                      strcpy(info, "The silver statue's eyes glow a ");
                      weird_colours(random2(200), wc);
                      strcat(info, wc);
                      strcat(info, " colour.");
                      mpr(info);
-                     create_monster(summon_any_demon(random2(2)), 25, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+                     create_monster(summon_any_demon(random2(2)), 25, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
                   }
                   break;
             //       case 3: mpr("You feel a terrible presence observing you."); break;
@@ -2110,7 +2108,7 @@ static bool Use_No_Black = false;
          }
          if (visible[2] != 0)
          {
-            if (random2(3) == 0)
+            if ( one_chance_in(3) )
             {
                mpr("A hostile presence attacks your mind!");
                miscast_effect(SPTYP_DIVINATION, random2(15), random2(150), 100);
@@ -2124,7 +2122,7 @@ static bool Use_No_Black = false;
 
       if (you.hunger <= 500)
       {
-         if (you.paralysis == 0 && random2(40) == 0)
+         if (you.paralysis == 0 && one_chance_in(40) )
          {
             strcpy(info, "You lose consciousness!");
             mpr(info);
@@ -2140,37 +2138,37 @@ static bool Use_No_Black = false;
          }
       }
 
-      if (you.hunger_state == 3 && you.hunger <= 2600)    // && you.hunger_inc > 0)
+      if (you.hunger_state == HS_SATIATED && you.hunger <= 2600)    // && you.hunger_inc > 0)
 
       {
          strcpy(info, "You are feeling hungry.");
          mpr(info);
-         you.hunger_state = 2;
+         you.hunger_state = HS_HUNGRY;
          you.redraw_hunger = 1;
       }
 
 
-      if (you.hunger_state == 2 && you.hunger <= 1000)    // && you.hunger_inc > 0)
+      if (you.hunger_state == HS_HUNGRY && you.hunger <= 1000)    // && you.hunger_inc > 0)
 
       {
          strcpy(info, "You are starving!");
          mpr(info);
-         you.hunger_state = 1;
+         you.hunger_state = HS_STARVING;
          you.redraw_hunger = 1;
       }
 
 
-      if (you.hunger_state == 4 && you.hunger < 7000)     // && you.hunger_inc > 0)
+      if (you.hunger_state == HS_FULL && you.hunger < 7000)     // && you.hunger_inc > 0)
 
       {
-         you.hunger_state = 3;
+         you.hunger_state = HS_SATIATED;
          you.redraw_hunger = 1;
       }
 
-      if (you.hunger_state == 5 && you.hunger < 11000)    // && you.hunger_inc > 0)
+      if (you.hunger_state == HS_ENGORGED && you.hunger < 11000)    // && you.hunger_inc > 0)
 
       {
-         you.hunger_state = 4;
+         you.hunger_state = HS_FULL;
          you.redraw_hunger = 1;
       }
 
@@ -2189,24 +2187,26 @@ static bool Use_No_Black = false;
 
 
 
-      if (you.level_type != 0)    /* No monsters in labyrinths */
+      if (you.level_type != LEVEL_DUNGEON)    /* No monsters in labyrinths */
       {
          switch (you.level_type)
          {
-            case 1:
-               break;              /* labyrinth */
-            case 2:
-               if (random2(5) == 0)
+            case LEVEL_LABYRINTH:
+               break;
+            case LEVEL_ABYSS:
+               if ( one_chance_in(5) )
                   mons_place(2500, 0, 50, 50, 1, MHITNOT, 250, 51);
-               break;              /* Abyss  */
-            case 3:
-               if (random2(50) == 0)
+               break;
+            case LEVEL_PANDEMONIUM:
+               if ( one_chance_in(50) )
                   pandemonium_mons();     //mons_place(250, 0, 50, 50, 0, MHITNOT, 250, 52);
 
-               break;              /* Pandemonium */
+               break;
          }
       }
-      else if (random2(240) == 0 && you.level_type != 1 && you.where_are_you != 18)
+      else if ( you.level_type != LEVEL_LABYRINTH
+               && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE
+               && one_chance_in(240) )
          mons_place(2500, 0, 50, 50, 1, MHITNOT, 250, you.your_level);
 
       return;
@@ -2231,7 +2231,7 @@ static bool Use_No_Black = false;
              [you.x_pos + door_move[0].move_x]
              [you.y_pos + door_move[0].move_y] != MNG
           && (menv[env.mgrid[you.x_pos + door_move[0].move_x]
-                   [you.y_pos + door_move[0].move_y]].type < MLAVA0
+                   [you.y_pos + door_move[0].move_y]].type < MONS_LAVA_WORM
           || menv[env.mgrid[you.x_pos + door_move[0].move_x]
                  [you.y_pos + door_move[0].move_y]].number == 0))
       {
@@ -2283,7 +2283,7 @@ static bool Use_No_Black = false;
       {
          int skill = you.dex + (SK_TRAPS_DOORS + SK_STEALTH) / 2;
 
-         if (random2(skill) == 0)
+         if ( one_chance_in(skill) )
          {
             strcpy(info, "As you open the door, it creaks loudly!");
             noisy(15, you.x_pos, you.y_pos);
@@ -2306,7 +2306,7 @@ static bool Use_No_Black = false;
          strcpy(info, "You swing at nothing.");
          mpr(info);
          you.turn_is_over = 1;
-         if (you.is_undead != 2)
+         if (you.is_undead != US_UNDEAD)
             you.hunger -= 3;
       }
 
@@ -2359,10 +2359,10 @@ static bool Use_No_Black = false;
 
 
 
-      if (grd[you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y] == 70)
+      if (grd[you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y] == DNGN_OPEN_DOOR)
       {
 
-         if (env.igrid[you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y] != 501)
+         if (env.igrid[you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y] != ING)
          {
             strcpy(info, "There's something blocking the doorway.");
             mpr(info);
@@ -2373,7 +2373,7 @@ static bool Use_No_Black = false;
 
          int  skill = you.dex + (SK_TRAPS_DOORS + SK_STEALTH) / 2;
 
-         if (random2(skill) == 0)
+         if ( one_chance_in(skill) )
          {
             strcpy(info, "As you close the door, it creaks loudly!");
             noisy(15, you.x_pos, you.y_pos);
@@ -2415,15 +2415,11 @@ static bool Use_No_Black = false;
       your_sign = '@';
       your_colour = LIGHTGREY;
 
-   /*for (i = 0; i < 10; i ++)
-   {
-   func_pass [i] = 0;
-   } */
+      /*for (i = 0; i < 10; i ++)
+       {
+        func_pass [i] = 0;
+       } */
 
-      for (i = 0; i < NO_EQUIP; i++)
-      {
-         you.equip[NO_EQUIP] = -1;
-      }
     /*for (i = 0; i < 20; i++)
        {
        mons_alloc [i] = 250;
@@ -2431,7 +2427,6 @@ static bool Use_No_Black = false;
 
    /* system initialisation stuff */
       textbackground(0);
-      you.your_level = 0;
 
    #ifdef DOS
     directvideo = 1;
@@ -2443,6 +2438,7 @@ static bool Use_No_Black = false;
 
       srandom(time(NULL));
       srand(time(NULL));
+      cf_setseed();            // required for stuff::coinflip()
       clrscr();
 
    /* init item array */
@@ -2463,23 +2459,23 @@ static bool Use_No_Black = false;
 
       int j = 0;
 
-   //env.it [0] = &it[0];
-    //env.elvl [0] = &lvl[0];
+      //env.it [0] = &it[0];
+      //env.elvl [0] = &lvl[0];
 
       for (i = 0; i < MNST; i++)
       {
-      //        env.mons [i] = &mons [i];
+         //env.mons [i] = &mons [i];
          env.mons[i].type = -1;
          env.mons[i].speed_increment = 10;
          env.mons[i].target_x = 155;
          env.mons[i].enchantment1 = 0;
-         env.mons[i].behavior = 0;       // sleeping
+         env.mons[i].behavior = BEH_SLEEP;
 
          env.mons[i].monster_foe = MNG;  // nothing
 
          for (j = 0; j < 3; j++)
          {
-            env.mons[i].enchantment[j] = 0;
+            env.mons[i].enchantment[j] = ENCH_NONE;
          }
          for (j = 0; j < 8; j++)
          {
@@ -2498,27 +2494,15 @@ static bool Use_No_Black = false;
          }
       }
 
-      for (i = 0; i < 52; i++)
-      {
-         you.inv_quantity[i] = 0;
-      }
-
    /*for (i = 0; i < 50; i++)
    {
    unique_creatures [i] = 0;
    } */
 
-      for (i = 0; i < 25; i++)
-      {
-         you.spells[i] = 210;
-      }
-
       for (i = 0; i < 10; i++)
       {
          visible[i] = 0;
       }
-
-      you.prev_targ = MHITNOT;
 
    /*for (i = 0; i < 19; i ++)
    {
@@ -2533,19 +2517,19 @@ static bool Use_No_Black = false;
       int newc = new_game();
 
       if (newc == 0)
-         restore_game();
+        restore_game();
 
       game_has_started = true;
 
       calc_hp();
       calc_ep();
 
-   //if (you.species == 12) you.is_undead = 2; else you.is_undead = 0;
+   //if (you.species == SP_MUMMY) you.is_undead = US_UNDEAD; else you.is_undead = US_ALIVE;
     /*switch(you.species)
        {
-       case 10: your_sign = 'o'; break;
-       case 11: your_sign = 'K'; break;
-       case 12: your_sign = 'M'; break;
+       case SP_HILL_ORC: your_sign = 'o'; break;
+       case SP_KOBOLD: your_sign = 'K'; break;
+       case SP_MUMMY: your_sign = 'M'; break;
        default: your_sign = '@'; break;
        } */
 
@@ -2569,22 +2553,18 @@ static bool Use_No_Black = false;
       if (newc == 1)
          moving_level = 1;
 
-   /*load(82, moving_level, level_saved, was_a_labyrinth, old_level, just_made_new_lev); */
-   //load(82, moving_level, 0, 0, 0, 0, just_made_new_lev);
+      //load(82, moving_level, level_saved, was_a_labyrinth, old_level, just_made_new_lev);
+      //load(82, moving_level, 0, 0, 0, 0, just_made_new_lev);
       load(82, moving_level, 0, 0, 0, just_made_new_lev, you.where_are_you);
 
       moving_level = 0;
       just_made_new_lev = 0;
       newc = 0;
 
-   //new_level();
-
       mon_init(gmon_use, mcolour);        //, mcolour);
-    //new_level(); // - must come after mon_init
 
-   //def_letters(letters);
-
-   /*def_properties(property, mass); */
+      //def_letters(letters);
+      //def_properties(property, mass);
 
       init_properties();
       burden_change();
@@ -2592,7 +2572,6 @@ static bool Use_No_Black = false;
 
       if (newc == 1)
       {
-
          for (i = 0; i < GXM; i++)
          {
             for (j = 0; j < GYM; j++)
@@ -2603,16 +2582,15 @@ static bool Use_No_Black = false;
                   you.y_pos = j;
                }
             }
-            if (grd[i][j] == 67)
+            if ( grd[i][j] == DNGN_FLOOR )
                break;
          }
 
 
-        // burden_change();
-        // food_change();
-         new_level();            // - must come after mon_init
-
-      }                           // end if newc
+         //burden_change();
+         //food_change();
+         new_level();            // must come after mon_init
+      }          // end if (newc)
 
       you.redraw_hit_points = 1;
       you.redraw_magic_points = 1;
@@ -2635,7 +2613,6 @@ static bool Use_No_Black = false;
       viewwindow(1, false); // This just puts the view up for the first turn.
 
       item();
-
 
    }
 
@@ -2669,7 +2646,7 @@ static bool Use_No_Black = false;
                break;
 
             case 4:
-               mpr("You feel your anger fading.");
+               mpr("You feel your anger subside.");
                break;
 
             case 6:
@@ -2700,23 +2677,22 @@ static bool Use_No_Black = false;
    }
 
 
-/*
-   Called when the player moves by walking/running. Also calls attack function
-   and trap function etc when necessary.
- */
+   // Called when the player moves by walking/running. Also calls
+   // attack function and trap function etc when necessary.
+
    void move_player(char move_x, char move_y)
    {
-      char attacking = 0;
-      char stepping = 0;
+      bool attacking = false;
+      unsigned char stepping = 0;
 
-   //char move_x, move_y;
+      //char move_x, move_y;
       char info[200];
       int i;
       int trap_known;
 
-      if (you.conf > 0)
+      if ( you.conf )
       {
-         if (random2(3) != 0)
+         if ( !one_chance_in(3) )
          {
             move_x = random2(3) - 1;
             move_y = random2(3) - 1;
@@ -2729,9 +2705,9 @@ static bool Use_No_Black = false;
             return;
          }
 
-         if (   (grd[you.x_pos + move_x][you.y_pos + move_y] == 61
-             || grd[you.x_pos + move_x][you.y_pos + move_y] == 62)
-             && you.levitation == 0)
+         if ( ( grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_LAVA
+                 || grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_DEEP_WATER )
+             && !you.levitation )
          {
             fall_into_a_pool(0, grd[you.x_pos + move_x][you.y_pos + move_y]);
             you.turn_is_over = 1;
@@ -2740,59 +2716,59 @@ static bool Use_No_Black = false;
          }
       }                           // end of if you.conf
 
-      if (   you.running > 0
+      if ( you.running > 0
           && you.running != 2
-          && grd[you.x_pos + move_x][you.y_pos + move_y] != 67
-          && grd[you.x_pos + move_x][you.y_pos + move_y] != 78)
-      {
+          && grd[you.x_pos + move_x][you.y_pos + move_y] != DNGN_FLOOR
+          && grd[you.x_pos + move_x][you.y_pos + move_y] != DNGN_UNDISCOVERED_TRAP )
+        {
         // BCR - Easy doors running
-        if (grd[you.x_pos + move_x][you.y_pos + move_y] == 3)
-        {
-          open_door(move_x, move_y);
+          if ( grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_CLOSED_DOOR )
+            open_door(move_x, move_y);
+          else
+            {
+              you.running = 0;
+              move_x = 0;
+              move_y = 0;
+              you.turn_is_over = 0;
+            }
+
+          return;
         }
-        else
-        {
-          you.running = 0;
-          move_x = 0;
-          move_y = 0;
-          you.turn_is_over = 0;
-        }
-        return;
-      }
 
       if (mgrd[you.x_pos + move_x][you.y_pos + move_y] != MNG)
       {
-         if (menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].type >= MLAVA0
-            && menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].number == 1)
-         {
+         if ( menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].type >= MONS_LAVA_WORM
+             && menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].number == 1 )
+           {
             goto break_out;
-         }
+           }
 
-         if (   menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].behavior == 7
-            && menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].enchantment[2] != 6
-            && you.conf == 0)
-         {
-            swap_places(mgrd[you.x_pos + move_x][you.y_pos + move_y]);
-            goto break_out;
-         }
+         if ( menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].behavior == BEH_ENSLAVED
+             && menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].enchantment[2] != ENCH_INVIS
+             && !you.conf )
+           {
+              swap_places(mgrd[you.x_pos + move_x][you.y_pos + move_y]);
+              goto break_out;
+           }
 
          you_attack(mgrd[you.x_pos + move_x][you.y_pos + move_y], true);
          you.turn_is_over = 1;
 
          if (you.berserk_penalty != NO_BERSERK_PENALTY)
-         {
-            // we don't want to create a penalty if there isn't
-            // supposed to be one
-            you.berserk_penalty = 0;
-         }
+           {
+              // we don't want to create a penalty if there isn't
+              // supposed to be one
+              you.berserk_penalty = 0;
+           }
 
-         attacking = 1;
+         attacking = true;
       }
 
    break_out:
-      if ((grd[you.x_pos + move_x][you.y_pos + move_y] == 61
-          || grd[you.x_pos + move_x][you.y_pos + move_y] == 62)
-         && attacking == 0 && you.levitation == 0)
+      if ( ( grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_LAVA
+              || grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_DEEP_WATER )
+          && !attacking
+          && !you.levitation )
       {
          mpr("Do you really want to step there?");
          stepping = get_ch();
@@ -2807,9 +2783,11 @@ static bool Use_No_Black = false;
          return;
       }
 
-      if (attacking == 0 && (grd[you.x_pos + move_x][you.y_pos + move_y] >= MINMOVE))
+      if ( !attacking
+          && ( grd[you.x_pos + move_x][you.y_pos + move_y] >= MINMOVE ) )
       {
-         if (grd[you.x_pos + move_x][you.y_pos + move_y] == 78 && random2( you.skills[SK_TRAPS_DOORS] + 1 ) > 3)
+         if ( grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_UNDISCOVERED_TRAP
+             && random2( you.skills[SK_TRAPS_DOORS] + 1 ) > 3 )
          {
             strcpy(info, "Wait a moment, ");
             strcat(info, you.your_name);
@@ -2822,27 +2800,32 @@ static bool Use_No_Black = false;
                if (env.trap_x[i] == you.x_pos + move_x && env.trap_y[i] == you.y_pos + move_y)
                   break;
             }
-            if (env.trap_type[i] < 4 || env.trap_type[i] == 6 || env.trap_type[i] == 7)
-               grd[you.x_pos + move_x][you.y_pos + move_y] = 75;
-            if (env.trap_type[i] == 4 || env.trap_type[i] == 5 || env.trap_type[i] == 8)
-               grd[you.x_pos + move_x][you.y_pos + move_y] = 76;
+            if ( env.trap_type[i] < TRAP_TELEPORT
+                  || env.trap_type[i] == TRAP_BLADE
+                  || env.trap_type[i] == TRAP_BOLT )
+               grd[you.x_pos + move_x][you.y_pos + move_y] = DNGN_TRAP_I;
+            if ( env.trap_type[i] == TRAP_TELEPORT
+                  || env.trap_type[i] == TRAP_AMNESIA
+                  || env.trap_type[i] == TRAP_ZOT )
+               grd[you.x_pos + move_x][you.y_pos + move_y] = DNGN_TRAP_II;
             return;
          }
          you.x_pos += move_x;
          you.y_pos += move_y;
-         if (grd[you.x_pos][you.y_pos] == 65 && you.levitation == 0)
+         if ( grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER
+             && !you.levitation )
          {
-            if (random2(3) == 0)
+            if ( one_chance_in(3) )
             {
                mpr("Splash!");
                noisy(10, you.x_pos, you.y_pos);
             }
             you.time_taken *= 13 + random2(8);
             you.time_taken /= 10;
-            if (grd[you.x_pos - move_x][you.y_pos - move_y] != 65)
+            if ( grd[you.x_pos - move_x][you.y_pos - move_y] != DNGN_SHALLOW_WATER )
             {
                mpr("You enter the shallow water. Moving in this stuff is going to be slow.");
-               if (you.invis != 0)
+               if ( you.invis )
                {
                   mpr("And don't expect to remain undetected.");
                }
@@ -2918,7 +2901,7 @@ static bool Use_No_Black = false;
       if (you.running == 2)
          you.running = 1;
 
-      if (   you.level_type == 2
+      if (   you.level_type == LEVEL_ABYSS
           && (   you.x_pos <= 21
               || you.x_pos >= 59
               || you.y_pos <= 15
@@ -2958,7 +2941,7 @@ static bool Use_No_Black = false;
       #endif
       }
 
-      if (!attacking)
+      if ( !attacking )
       {
          do_berserk_no_combat_penalty();
       }

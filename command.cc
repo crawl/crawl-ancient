@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include "externs.h"
-#include "enum.h"
+
 #include "ouch.h"
 #include "message.h"
 #include "stuff.h"
@@ -322,7 +322,7 @@ query:
 
     throw_2 = conv_lett(throw_1);
 
-    if (you.spells[throw_2] == 210)
+    if (you.spells[throw_2] == SPELL_NO_SPELL)
     {
 #ifdef PLAIN_TERM
         adjust_spells_cleanup(needs_redraw);
@@ -398,7 +398,7 @@ query:
     strcat(info, str_pass);
     mpr(info);
 
-    if (you.spells[throw_2] != 210)
+    if (you.spells[throw_2] != SPELL_NO_SPELL)
     {
         strcpy(info, " ");
         info[0] = throw_2 + 97;

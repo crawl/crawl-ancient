@@ -9,7 +9,7 @@
 # you are prompted for your name every time you play.
 # If there is a name after the =, this will be used every time.
 #
-name=RBarnes
+name=
 
 #
 # Directory for reading macro.txt and init.txt, and dumping characters.

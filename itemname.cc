@@ -15,22 +15,22 @@
 #include "itemname.h"
 
 #ifdef DOS
-#include <conio.h>
+  #include <conio.h>
 #endif
 
 #ifdef USE_CURSES
-#include <curses.h>
+  #include <curses.h>
 #endif
 
 #include <string.h>
 #include <stdlib.h>
 
 #include "externs.h"
-#include "enum.h"
 
 #ifdef MACROS
   #include "macro.h"
 #endif
+
 #include "mstruct.h"
 #include "randart.h"
 #include "skills2.h"
@@ -156,7 +156,7 @@ char item_name(unsigned char item_plus2, char item_clas, char item_typ, unsigned
         case 5:
             strcat(glag, "your ");
             break;
-/*              case 6: nothing */
+        // case 6: nothing
         case 7:
             strcat(glag, "its ");
             break;
@@ -183,7 +183,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
     switch (item_clas)
     {
 
-    case OBJ_WEAPONS:           // weapons
+    case OBJ_WEAPONS:
 
         if (ident_lev > 0)
         {
@@ -230,51 +230,51 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
 
             if (ident_lev > 0)
             {
-                switch (item_da - 180)
+                switch (item_da)
                 {
-                case 1:
+                case NWPN_SINGING_SWORD:
                     strcat(glog, "Singing Sword");
                     break;
-                case 2:
+                case NWPN_WRATH_OF_TROG:
                     strcat(glog, "Wrath of Trog");
                     break;
-                case 3:
+                case NWPN_SCYTHE_OF_CURSES:
                     strcat(glog, "Scythe of Curses");
                     break;
-                case 4:
+                case NWPN_MACE_OF_VARIABILITY:
                     strcat(glog, "Mace of Variability");
                     break;
-                case 5:
+                case NWPN_GLAIVE_OF_PRUNE:
                     strcat(glog, "Glaive of Prune");
                     break;
-                case 6:
+                case NWPN_SCEPTRE_OF_TORMENT:
                     strcat(glog, "Sceptre of Torment");
                     break;
-                case 7:
+                case NWPN_SWORD_OF_ZONGULDROK:
                     strcat(glog, "Sword of Zonguldrok");
                     break;
-                case 8:
+                case NWPN_SWORD_OF_CEREBOV:
                     strcat(glog, "Sword of Cerebov");
                     break;
-                case 9:
+                case NWPN_STAFF_OF_DISPATER:
                     strcat(glog, "Staff of Dispater");
                     break;
-                case 10:
+                case NWPN_SCEPTRE_OF_ASMODEUS:
                     strcat(glog, "Sceptre of Asmodeus");
                     break;
-                case 11:
+                case NWPN_SWORD_OF_POWER:
                     strcat(glog, "Sword of Power");
                     break;
-                case 12:
+                case NWPN_KNIFE_OF_ACCURACY:
                     strcat(glog, "Knife of Accuracy");
                     break;
-                case 13:
+                case NWPN_STAFF_OF_OLGREB:
                     strcat(glog, "Staff of Olgreb");
                     break;
-                case 14:
+                case NWPN_VAMPIRES_TOOTH:
                     strcat(glog, "Vampire's Tooth");
                     break;
-                case 15:
+                case NWPN_STAFF_OF_WUCAD_MU:
                     strcat(glog, "Staff of Wucad Mu");
                     break;      // this random name generator makes some weird things
 
@@ -454,7 +454,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
         break;
 
 
-    case OBJ_MISSILES:          // ammunition
+    case OBJ_MISSILES:
 
         if (item_da % 30 == 3 || item_da % 30 == 4)
         {
@@ -495,48 +495,41 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
         case MI_STONE:
             strcat(glog, "stone");
             break;
+
         case MI_ARROW:
             strcat(glog, "arrow");
             break;
+
         case MI_BOLT:
             strcat(glog, "bolt");
             break;
+
         case MI_DART:
             strcat(glog, "dart");
             break;
+
         case MI_EGGPLANT:
             strcat(glog, "eggplant");
             break;
+
         case MI_LARGE_ROCK:
             strcat(glog, "large rock");
             break;
+
         case 6:
-            strcat(glog, "");
-            break;
         case 7:
-            strcat(glog, "");
-            break;
         case 8:
-            strcat(glog, "");
-            break;
         case 9:
-            strcat(glog, "");
-            break;
         case 10:
             strcat(glog, "");
             break;
+
+        // where is case 11? 19jan2000 {dlb}
+
         case 12:
-            strcat(glog, "");
-            break;
         case 13:
-            strcat(glog, "");
-            break;
         case 14:
-            strcat(glog, "");
-            break;
         case 15:
-            strcat(glog, "");
-            break;
         case 16:
             strcat(glog, "");
             break;
@@ -556,14 +549,13 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case 2:
                 strcat(glog, " of ice");
                 break;
-//  case 3: strcat(glog, " of venom"); break;
-                //  case 4: strcat(glog, " of venom"); break; /* temporary, produced by spell */
+            //  case 3: strcat(glog, " of venom"); break;
+            //  case 4: strcat(glog, " of venom"); break; /* temporary, produced by spell */
             }
         }
         break;
 
-    case OBJ_ARMOUR:            // armour
-
+    case OBJ_ARMOUR:
 
         if (ident_lev > 0)
         {
@@ -572,9 +564,6 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                 strcat(glog, "cursed ");
             }
         }
-
-
-
 
         if (ident_lev > 2)
         {
@@ -586,8 +575,6 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             strcat(glog, tmp_quant);
             strcat(glog, " ");
         }
-
-
 
         if (item_typ == ARM_GLOVES || (item_typ == ARM_BOOTS && item_plus2 == 0))
             strcat(glog, "pair of ");
@@ -1204,7 +1191,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             strcat(glog, "s");
         break;
 
-    case OBJ_FOOD:              // food
+    case OBJ_FOOD:
 
         switch (item_typ)
         {
@@ -1217,10 +1204,9 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
         case FOOD_PEAR:
             strcat(glog, "pear");
             break;
-        case FOOD_APPLE:
+        case FOOD_APPLE:                    // make this less common
             strcat(glog, "apple");
-            break;              // make this less common.
-
+            break;
         case FOOD_CHOKO:
             strcat(glog, "choko");
             break;
@@ -1301,7 +1287,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
         }
         break;
 
-    case OBJ_SCROLLS:           // scrolls
+    case OBJ_SCROLLS:
 
         if (it_quant == 1)
         {
@@ -1402,7 +1388,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
         break;                  // end of scrolls
 
 
-    case OBJ_JEWELLERY: // jewellery
+    case OBJ_JEWELLERY:
 
         if (ident_lev > 0)
         {
@@ -1519,7 +1505,6 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case RING_TELEPORT_CONTROL:
                 strcat(glog, "ring of teleport control");
                 break;
-
             case AMU_RAGE:
                 strcat(glog, "amulet of rage");
                 break;
@@ -1663,7 +1648,6 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             }
             if (item_da > 13)
                 switch (item_da / 13)   // secondary characteristic of amulet
-
                 {
                 case 0:
                     strcat(glog, "dented ");
@@ -1757,7 +1741,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
 
         break;
 
-    case OBJ_MISCELLANY:        // Miscellaneous
+    case OBJ_MISCELLANY:
 
         switch (ident_lev)
         {
@@ -1839,12 +1823,12 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                 case 22:
                     strcat(glog, "decaying ");
                     break;
-                case 50:
+                case 50:                    // found in Pandemonium
                     strcat(glog, "demonic ");
-                    break;      /* found in pandemonium */
-                case 51:
+                    break;
+                case 51:                    // found in the Abyss
                     strcat(glog, "abyssal ");
-                    break;      /* found in abyss */
+                    break;
                 }               /* If more are added here, must also add below. */
                 if (it_quant > 1)
                     strcat(glog, "runes");
@@ -1889,7 +1873,6 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case MISC_HORN_OF_GERYON:
                 strcat(glog, "Horn of Geryon");
                 break;
-
             case MISC_BOX_OF_BEASTS:
                 strcat(glog, "box of beasts");
                 break;
@@ -1944,12 +1927,12 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                 case 22:
                     strcat(glog, "decaying ");
                     break;
-                case 50:
+                case 50:                    // found in Pandemonium
                     strcat(glog, "demonic ");
-                    break;      /* found in pandemonium */
-                case 51:
+                    break;
+                case 51:                    // found in the Abyss
                     strcat(glog, "abyssal ");
-                    break;      /* found in abyss */
+                    break;
                 }        /* If more are added here, must also add above. */
 
                 if (it_quant > 1)
@@ -2087,11 +2070,11 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case BOOK_ENCHANTMENTS:
                 strcat(glog, "book of Enchantments");
                 break;
-            case BOOK_POISONINGS:
-                strcat(glog, "book of Poisonings");
+            case BOOK_YOUNG_POISONERS:
+                strcat(glog, "Young Poisoner's Handbook");
                 break;
-            case BOOK_STORMS_AND_FIRE:
-                strcat(glog, "book of Storms and Fire");
+            case BOOK_TEMPESTS:
+                strcat(glog, "book of the Tempests");
                 break;
             case BOOK_DEATH:
                 strcat(glog, "book of Death");
@@ -2105,8 +2088,8 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case BOOK_TRANSFIGURATIONS:
                 strcat(glog, "book of Transfigurations");
                 break;
-            case BOOK_USEFUL_MAGIC:
-                strcat(glog, "book of Useful Magic");
+            case BOOK_PRACTICAL_MAGIC:
+                strcat(glog, "book of Practical Magic");
                 break;
             case BOOK_WAR_CHANTS:
                 strcat(glog, "book of War Chants");
@@ -2132,7 +2115,6 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case BOOK_DEMONOLOGY:
                 strcat(glog, "book of Demonology");
                 break;
-
             case BOOK_AIR:
                 strcat(glog, "book of Air");
                 break;
@@ -2145,8 +2127,8 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case BOOK_WARP:
                 strcat(glog, "book of the Warp");
                 break;
-            case BOOK_ENVENOMATIONS:
-                strcat(glog, "book of Envenomations");
+            case BOOK_TOXINS:
+                strcat(glog, "book of Toxins");
                 break;
             case BOOK_ANNIHILATIONS:
                 strcat(glog, "book of Annihilations");
@@ -2154,11 +2136,9 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case BOOK_UNLIFE:
                 strcat(glog, "book of Unlife");
                 break;
-
             case BOOK_DESTRUCTION:
                 strcat(glog, "tome of destruction");
                 break;
-
             case BOOK_CONTROL:
                 strcat(glog, "book of Control");
                 break;
@@ -2185,6 +2165,12 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                 break;
             case BOOK_POWER:
                 strcat(glog, "book of Power");
+                break;
+            case BOOK_CANTRIPS:
+                strcat(glog, "book of Cantrips");
+                break;
+            case BOOK_PARTY_TRICKS:
+                strcat(glog, "book of Party Tricks");
                 break;
 
             }                   // end switch
@@ -2328,10 +2314,9 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case STAFF_POISON:
                 strcat(glog, " of poison");
                 break;
-            case STAFF_ENERGY:
+            case STAFF_ENERGY:              // crappy name. oh well
                 strcat(glog, " of energy");
-                break;          // crappy name. oh well
-
+                break;
             case STAFF_DEATH:
                 strcat(glog, " of death");
                 break;
@@ -2344,7 +2329,6 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case STAFF_SUMMONING_I:
                 strcat(glog, " of summoning");
                 break;
-
             case STAFF_SMITING:
                 strcat(glog, " of smiting");
                 break;
@@ -2372,7 +2356,6 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case STAFF_DEMONOLOGY:
                 strcat(glog, " of demonology");
                 break;
-
             case STAFF_AIR:
                 strcat(glog, " of air");
                 break;
@@ -2382,7 +2365,6 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case STAFF_CHANNELING:
                 strcat(glog, " of channeling");
                 break;
-
             }                   // end switch
 
         }                       // end if
@@ -2428,15 +2410,13 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
         break;
 
 
-    case 15:                    // money
-
+    case OBJ_GOLD:
         strcat(glog, "gold piece");
-//if (it_quant > 1) strcat(glog, "s");
+        //if (it_quant > 1) strcat(glog, "s");
         break;
 
 
-    case 16:                    // Gems - obviously not yet implemented
-
+    case OBJ_GEMSTONES:                     // obviously not implemented yet
         break;
 
 
@@ -2464,7 +2444,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
     default:
         strcat(glog, "!");
     }                           // end of switch?
-    //} // end of for lopp
+    //} // end of for loop
 
     if (strlen(glog) < 3)
     {
@@ -2509,11 +2489,6 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
 
 
 
-
-
-
-
-
 void save_id(char identy[4][50])
 {
 
@@ -2531,7 +2506,9 @@ void save_id(char identy[4][50])
 }
 
 
-void initial()
+
+
+void clear_ids( void )
 {
     char i = 0;
     char j = 0;
@@ -2543,7 +2520,7 @@ void initial()
             id[i][j] = 0;
         }
     }
-}                               // end of void initial
+}                               // end of clear_ids()
 
 
 void set_id(char cla, char ty, char setting)
@@ -2557,16 +2534,16 @@ void set_id(char cla, char ty, char setting)
 
     switch (cla)
     {
-    case 3:
+    case OBJ_WANDS:
         id[0][ty] = setting;
         break;
-    case 6:
+    case OBJ_SCROLLS:
         id[1][ty] = setting;
         break;
-    case 7:
+    case OBJ_JEWELLERY:
         id[2][ty] = setting;
         break;
-    case 8:
+    case OBJ_POTIONS:
         id[3][ty] = setting;
         break;
         /* if it's none of these, will just return */
@@ -2584,18 +2561,18 @@ char get_id(char cla, char ty)
 
     switch (cla)
     {
-    case 3:
+    case OBJ_WANDS:
         return id[0][ty];
-    case 6:
+    case OBJ_SCROLLS:
         return id[1][ty];
-    case 7:
+    case OBJ_JEWELLERY:
         return id[2][ty];
-    case 8:
+    case OBJ_POTIONS:
         return id[3][ty];
         /* if it's none of these, will just return 0 */
     }
-    return 0;
 
+    return 0;
 }                               /* end of char get_id */
 
 
@@ -2603,7 +2580,7 @@ char get_id(char cla, char ty)
 
 int property(int pr1, int pr2, int pr3)
 {
-    return prop[pr1][pr2][pr3];
+    return prop[pr1][pr2][pr3]; // pr1 = OBJ class; pr2 = SUBCLASS; pr3 = properties {dlb}
 }
 
 
@@ -2616,239 +2593,171 @@ int mass(int pr1, int pr2)
 void init_properties()
 {
     //strcpy(all_items [2] [0], "robe");
-    prop[OBJ_ARMOUR][ARM_ROBE][PARM_AC] = 1;    // AC
-
-    prop[OBJ_ARMOUR][ARM_ROBE][PARM_EVASION] = 0;       // evasion
-
+    prop[OBJ_ARMOUR][ARM_ROBE][PARM_AC] = 1;
+    prop[OBJ_ARMOUR][ARM_ROBE][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_ROBE] = 60;
 
     //strcpy(all_items [2] [0], "leather armour");
-    prop[OBJ_ARMOUR][ARM_LEATHER_ARMOUR][PARM_AC] = 2;  // AC
-
-    prop[OBJ_ARMOUR][ARM_LEATHER_ARMOUR][PARM_EVASION] = -1;    // evasion
-
+    prop[OBJ_ARMOUR][ARM_LEATHER_ARMOUR][PARM_AC] = 2;
+    prop[OBJ_ARMOUR][ARM_LEATHER_ARMOUR][PARM_EVASION] = -1;
     mss[OBJ_ARMOUR][ARM_LEATHER_ARMOUR] = 150;
 
     //strcpy(all_items [2] [1], "ring mail");
-    prop[OBJ_ARMOUR][ARM_RING_MAIL][PARM_AC] = 4;       // AC
-
-    prop[OBJ_ARMOUR][ARM_RING_MAIL][PARM_EVASION] = -2;         // evasion
-
+    prop[OBJ_ARMOUR][ARM_RING_MAIL][PARM_AC] = 4;
+    prop[OBJ_ARMOUR][ARM_RING_MAIL][PARM_EVASION] = -2;
     mss[OBJ_ARMOUR][ARM_RING_MAIL] = 300;
 
     //strcpy(all_items [2] [2], "scale mail");
-    prop[OBJ_ARMOUR][ARM_SCALE_MAIL][PARM_AC] = 5;      // AC
-
-    prop[OBJ_ARMOUR][ARM_SCALE_MAIL][PARM_EVASION] = -2;        // evasion
-
+    prop[OBJ_ARMOUR][ARM_SCALE_MAIL][PARM_AC] = 5;
+    prop[OBJ_ARMOUR][ARM_SCALE_MAIL][PARM_EVASION] = -2;
     mss[OBJ_ARMOUR][ARM_SCALE_MAIL] = 400;
 
     //strcpy(all_items [2] [3], "chain mail");
-    prop[OBJ_ARMOUR][ARM_CHAIN_MAIL][PARM_AC] = 6;      // AC
-
-    prop[OBJ_ARMOUR][ARM_CHAIN_MAIL][PARM_EVASION] = -3;        // evasion
-
+    prop[OBJ_ARMOUR][ARM_CHAIN_MAIL][PARM_AC] = 6;
+    prop[OBJ_ARMOUR][ARM_CHAIN_MAIL][PARM_EVASION] = -3;
     mss[OBJ_ARMOUR][ARM_CHAIN_MAIL] = 450;
 
     //strcpy(all_items [2] [4], "splint mail");
-    prop[OBJ_ARMOUR][ARM_SPLINT_MAIL][PARM_AC] = 8;     // AC
-
-    prop[OBJ_ARMOUR][ARM_SPLINT_MAIL][PARM_EVASION] = -5;       // evasion
-
+    prop[OBJ_ARMOUR][ARM_SPLINT_MAIL][PARM_AC] = 8;
+    prop[OBJ_ARMOUR][ARM_SPLINT_MAIL][PARM_EVASION] = -5;
     mss[OBJ_ARMOUR][ARM_SPLINT_MAIL] = 550;
 
     //strcpy(all_items [2] [5], "banded mail");
-    prop[OBJ_ARMOUR][ARM_BANDED_MAIL][PARM_AC] = 7;     // AC
-
-    prop[OBJ_ARMOUR][ARM_BANDED_MAIL][PARM_EVASION] = -4;       // evasion
-
+    prop[OBJ_ARMOUR][ARM_BANDED_MAIL][PARM_AC] = 7;
+    prop[OBJ_ARMOUR][ARM_BANDED_MAIL][PARM_EVASION] = -4;
     mss[OBJ_ARMOUR][ARM_BANDED_MAIL] = 500;
 
     //strcpy(all_items [2] [6], "plate mail");
-    prop[OBJ_ARMOUR][ARM_PLATE_MAIL][PARM_AC] = 9;      // AC
-
-    prop[OBJ_ARMOUR][ARM_PLATE_MAIL][PARM_EVASION] = -5;        // evasion
-
+    prop[OBJ_ARMOUR][ARM_PLATE_MAIL][PARM_AC] = 9;
+    prop[OBJ_ARMOUR][ARM_PLATE_MAIL][PARM_EVASION] = -5;
     mss[OBJ_ARMOUR][ARM_PLATE_MAIL] = 650;
 
     // dragon hide
-    prop[OBJ_ARMOUR][ARM_DRAGON_HIDE][PARM_AC] = 2;     // AC
-
-    prop[OBJ_ARMOUR][ARM_DRAGON_HIDE][PARM_EVASION] = -2;       // evasion
-
+    prop[OBJ_ARMOUR][ARM_DRAGON_HIDE][PARM_AC] = 2;
+    prop[OBJ_ARMOUR][ARM_DRAGON_HIDE][PARM_EVASION] = -2;
     mss[OBJ_ARMOUR][ARM_DRAGON_HIDE] = 220;
 
     // troll hide
-    prop[OBJ_ARMOUR][ARM_TROLL_HIDE][PARM_AC] = 1;      // AC
-
-    prop[OBJ_ARMOUR][ARM_TROLL_HIDE][PARM_EVASION] = -1;        // evasion
-
+    prop[OBJ_ARMOUR][ARM_TROLL_HIDE][PARM_AC] = 1;
+    prop[OBJ_ARMOUR][ARM_TROLL_HIDE][PARM_EVASION] = -1;
     mss[OBJ_ARMOUR][ARM_TROLL_HIDE] = 180;
 
     // crystal plate
-    prop[OBJ_ARMOUR][ARM_CRYSTAL_PLATE_MAIL][PARM_AC] = 16;     // AC
-
-    prop[OBJ_ARMOUR][ARM_CRYSTAL_PLATE_MAIL][PARM_EVASION] = -8;        // evasion
-
+    prop[OBJ_ARMOUR][ARM_CRYSTAL_PLATE_MAIL][PARM_AC] = 16;
+    prop[OBJ_ARMOUR][ARM_CRYSTAL_PLATE_MAIL][PARM_EVASION] = -8;
     mss[OBJ_ARMOUR][ARM_CRYSTAL_PLATE_MAIL] = 1200;
 
     // dragon scale
-    prop[OBJ_ARMOUR][ARM_DRAGON_ARMOUR][PARM_AC] = 8;   // AC
-
-    prop[OBJ_ARMOUR][ARM_DRAGON_ARMOUR][PARM_EVASION] = -2;     // evasion
-
+    prop[OBJ_ARMOUR][ARM_DRAGON_ARMOUR][PARM_AC] = 8;
+    prop[OBJ_ARMOUR][ARM_DRAGON_ARMOUR][PARM_EVASION] = -2;
     mss[OBJ_ARMOUR][ARM_DRAGON_ARMOUR] = 220;
 
     // troll leather
-    prop[OBJ_ARMOUR][ARM_TROLL_LEATHER_ARMOUR][PARM_AC] = 2;    // AC
-
-    prop[OBJ_ARMOUR][ARM_TROLL_LEATHER_ARMOUR][PARM_EVASION] = -1;      // evasion
-
+    prop[OBJ_ARMOUR][ARM_TROLL_LEATHER_ARMOUR][PARM_AC] = 2;
+    prop[OBJ_ARMOUR][ARM_TROLL_LEATHER_ARMOUR][PARM_EVASION] = -1;
     mss[OBJ_ARMOUR][ARM_TROLL_LEATHER_ARMOUR] = 180;
 
     // ice dragon hide
-    prop[OBJ_ARMOUR][ARM_ICE_DRAGON_HIDE][PARM_AC] = 2;         // AC
-
-    prop[OBJ_ARMOUR][ARM_ICE_DRAGON_HIDE][PARM_EVASION] = -2;   // evasion
-
+    prop[OBJ_ARMOUR][ARM_ICE_DRAGON_HIDE][PARM_AC] = 2;
+    prop[OBJ_ARMOUR][ARM_ICE_DRAGON_HIDE][PARM_EVASION] = -2;
     mss[OBJ_ARMOUR][ARM_ICE_DRAGON_HIDE] = 220;
 
     // ice dragon scale
-    prop[OBJ_ARMOUR][ARM_ICE_DRAGON_ARMOUR][PARM_AC] = 8;       // AC
-
-    prop[OBJ_ARMOUR][ARM_ICE_DRAGON_ARMOUR][PARM_EVASION] = -2;         // evasion
-
+    prop[OBJ_ARMOUR][ARM_ICE_DRAGON_ARMOUR][PARM_AC] = 8;
+    prop[OBJ_ARMOUR][ARM_ICE_DRAGON_ARMOUR][PARM_EVASION] = -2;
     mss[OBJ_ARMOUR][ARM_ICE_DRAGON_ARMOUR] = 220;
 
     // steam dragon hide
-    prop[OBJ_ARMOUR][ARM_STEAM_DRAGON_HIDE][PARM_AC] = 0;       // AC
-
-    prop[OBJ_ARMOUR][ARM_STEAM_DRAGON_HIDE][PARM_EVASION] = 0;  // evasion
-
+    prop[OBJ_ARMOUR][ARM_STEAM_DRAGON_HIDE][PARM_AC] = 0;
+    prop[OBJ_ARMOUR][ARM_STEAM_DRAGON_HIDE][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_STEAM_DRAGON_HIDE] = 120;
 
     // steam dragon armour
-    prop[OBJ_ARMOUR][ARM_STEAM_DRAGON_ARMOUR][PARM_AC] = 3;     // AC
-
-    prop[OBJ_ARMOUR][ARM_STEAM_DRAGON_ARMOUR][PARM_EVASION] = 0;        // evasion
-
+    prop[OBJ_ARMOUR][ARM_STEAM_DRAGON_ARMOUR][PARM_AC] = 3;
+    prop[OBJ_ARMOUR][ARM_STEAM_DRAGON_ARMOUR][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_STEAM_DRAGON_ARMOUR] = 120;
 
     // mottled dragon hide
-    prop[OBJ_ARMOUR][ARM_MOTTLED_DRAGON_HIDE][PARM_AC] = 1;     // AC
-
-    prop[OBJ_ARMOUR][ARM_MOTTLED_DRAGON_HIDE][PARM_EVASION] = -1;       // evasion
-
+    prop[OBJ_ARMOUR][ARM_MOTTLED_DRAGON_HIDE][PARM_AC] = 1;
+    prop[OBJ_ARMOUR][ARM_MOTTLED_DRAGON_HIDE][PARM_EVASION] = -1;
     mss[OBJ_ARMOUR][ARM_MOTTLED_DRAGON_HIDE] = 150;
 
     // mottled dragon hide
-    prop[OBJ_ARMOUR][ARM_MOTTLED_DRAGON_ARMOUR][PARM_AC] = 5;   // AC
-
-    prop[OBJ_ARMOUR][ARM_MOTTLED_DRAGON_ARMOUR][PARM_EVASION] = -1;     // evasion
-
+    prop[OBJ_ARMOUR][ARM_MOTTLED_DRAGON_ARMOUR][PARM_AC] = 5;
+    prop[OBJ_ARMOUR][ARM_MOTTLED_DRAGON_ARMOUR][PARM_EVASION] = -1;
     mss[OBJ_ARMOUR][ARM_MOTTLED_DRAGON_ARMOUR] = 150;
 
     // storm dragon hide
-    prop[OBJ_ARMOUR][ARM_STORM_DRAGON_HIDE][PARM_AC] = 2;       // AC
-
-    prop[OBJ_ARMOUR][ARM_STORM_DRAGON_HIDE][PARM_EVASION] = -5;         // evasion
-
+    prop[OBJ_ARMOUR][ARM_STORM_DRAGON_HIDE][PARM_AC] = 2;
+    prop[OBJ_ARMOUR][ARM_STORM_DRAGON_HIDE][PARM_EVASION] = -5;
     mss[OBJ_ARMOUR][ARM_STORM_DRAGON_HIDE] = 400;
 
     // storm dragon armour
-    prop[OBJ_ARMOUR][ARM_STORM_DRAGON_ARMOUR][PARM_AC] = 9;     // AC
-
-    prop[OBJ_ARMOUR][ARM_STORM_DRAGON_ARMOUR][PARM_EVASION] = -5;       // evasion
-
+    prop[OBJ_ARMOUR][ARM_STORM_DRAGON_ARMOUR][PARM_AC] = 9;
+    prop[OBJ_ARMOUR][ARM_STORM_DRAGON_ARMOUR][PARM_EVASION] = -5;
     mss[OBJ_ARMOUR][ARM_STORM_DRAGON_ARMOUR] = 400;
 
     // gold dragon hide
-    prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_HIDE][PARM_AC] = 2;        // AC
-
-    prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_HIDE][PARM_EVASION] = -10;         // evasion
-
+    prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_HIDE][PARM_AC] = 2;
+    prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_HIDE][PARM_EVASION] = -10;
     mss[OBJ_ARMOUR][ARM_GOLD_DRAGON_HIDE] = 1100;
 
     // gold dragon armour
-    prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_ARMOUR][PARM_AC] = 10;     // AC
-
-    prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_ARMOUR][PARM_EVASION] = -10;       // evasion
-
+    prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_ARMOUR][PARM_AC] = 10;
+    prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_ARMOUR][PARM_EVASION] = -10;
     mss[OBJ_ARMOUR][ARM_GOLD_DRAGON_ARMOUR] = 1100;
 
     // animal skin
-    prop[OBJ_ARMOUR][ARM_ANIMAL_SKIN][PARM_AC] = 1;     // AC
-
-    prop[OBJ_ARMOUR][ARM_ANIMAL_SKIN][PARM_EVASION] = 0;        // evasion
-
+    prop[OBJ_ARMOUR][ARM_ANIMAL_SKIN][PARM_AC] = 1;
+    prop[OBJ_ARMOUR][ARM_ANIMAL_SKIN][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_ANIMAL_SKIN] = 100;
 
     // swamp dragon hide
-    prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_HIDE][PARM_AC] = 1;       // AC
-
-    prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_HIDE][PARM_EVASION] = -2;         // evasion
-
+    prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_HIDE][PARM_AC] = 1;
+    prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_HIDE][PARM_EVASION] = -2;
     mss[OBJ_ARMOUR][ARM_SWAMP_DRAGON_HIDE] = 200;
 
     // swamp dragon hide
-    prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_ARMOUR][PARM_AC] = 6;     // AC
-
-    prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_ARMOUR][PARM_EVASION] = -2;       // evasion
-
+    prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_ARMOUR][PARM_AC] = 6;
+    prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_ARMOUR][PARM_EVASION] = -2;
     mss[OBJ_ARMOUR][ARM_SWAMP_DRAGON_ARMOUR] = 200;
 
 
-
-    // other armour:
+// other armour:
 
     // shield:
-    prop[OBJ_ARMOUR][ARM_SHIELD][PARM_AC] = 0;  // AC
-
-    prop[OBJ_ARMOUR][ARM_SHIELD][PARM_EVASION] = 0;     // evasion
-
+    prop[OBJ_ARMOUR][ARM_SHIELD][PARM_AC] = 0;
+    prop[OBJ_ARMOUR][ARM_SHIELD][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_SHIELD] = 100;
 
     // cloak
-    prop[OBJ_ARMOUR][ARM_CLOAK][PARM_AC] = 1;   // AC
-
-    prop[OBJ_ARMOUR][ARM_CLOAK][PARM_EVASION] = 0;      // evasion
-
+    prop[OBJ_ARMOUR][ARM_CLOAK][PARM_AC] = 1;
+    prop[OBJ_ARMOUR][ARM_CLOAK][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_CLOAK] = 20;
 
     // helmet
-    prop[OBJ_ARMOUR][ARM_HELMET][PARM_AC] = 1;  // AC
-
-    prop[OBJ_ARMOUR][ARM_HELMET][PARM_EVASION] = 0;     // evasion
-
+    prop[OBJ_ARMOUR][ARM_HELMET][PARM_AC] = 1;
+    prop[OBJ_ARMOUR][ARM_HELMET][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_HELMET] = 80;
 
-
     // gloves
-    prop[OBJ_ARMOUR][ARM_GLOVES][PARM_AC] = 1;  // AC
-
-    prop[OBJ_ARMOUR][ARM_GLOVES][PARM_EVASION] = 0;     // evasion
-
+    prop[OBJ_ARMOUR][ARM_GLOVES][PARM_AC] = 1;
+    prop[OBJ_ARMOUR][ARM_GLOVES][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_GLOVES] = 20;
 
     // boots
-    prop[OBJ_ARMOUR][ARM_BOOTS][PARM_AC] = 1;   // AC
-
-    prop[OBJ_ARMOUR][ARM_BOOTS][PARM_EVASION] = 0;      // evasion
-
+    prop[OBJ_ARMOUR][ARM_BOOTS][PARM_AC] = 1;
+    prop[OBJ_ARMOUR][ARM_BOOTS][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_BOOTS] = 40;
 
     // buckler:
-    prop[OBJ_ARMOUR][ARM_BUCKLER][PARM_AC] = 0;         // AC
-
-    prop[OBJ_ARMOUR][ARM_BUCKLER][PARM_EVASION] = 0;    // evasion
-
+    prop[OBJ_ARMOUR][ARM_BUCKLER][PARM_AC] = 0;
+    prop[OBJ_ARMOUR][ARM_BUCKLER][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_BUCKLER] = 50;
 
     // large shield:
-    prop[OBJ_ARMOUR][ARM_LARGE_SHIELD][PARM_AC] = 0;    // AC
-
-    prop[OBJ_ARMOUR][ARM_LARGE_SHIELD][PARM_EVASION] = 0;       // evasion
-
+    prop[OBJ_ARMOUR][ARM_LARGE_SHIELD][PARM_AC] = 0;
+    prop[OBJ_ARMOUR][ARM_LARGE_SHIELD][PARM_EVASION] = 0;
     mss[OBJ_ARMOUR][ARM_LARGE_SHIELD] = 250;
 
 
@@ -2858,24 +2767,16 @@ void init_properties()
     {
         mss[OBJ_WANDS][i] = 100;
         mss[OBJ_FOOD][i] = 100;
-        mss[5][i] = 200;
+        mss[OBJ_UNKNOWN_I][i] = 200;                     // what are these? {dlb}
         mss[OBJ_SCROLLS][i] = 50;
         mss[OBJ_JEWELLERY][i] = 20;
         mss[OBJ_POTIONS][i] = 60;
-        mss[9][i] = 5;
-        // don't know what these are, yet:
-        mss[OBJ_BOOKS][i] = 100;        // books
-
-        mss[OBJ_STAVES][i] = 130;       // staves
-
-        mss[OBJ_ORBS][i] = 300; // the Orb!
-
+        mss[OBJ_UNKNOWN_II][i] = 5;                      // don't know what these are, yet:
+        mss[OBJ_BOOKS][i] = 100;
+        mss[OBJ_STAVES][i] = 130;
+        mss[OBJ_ORBS][i] = 300;
         mss[OBJ_MISCELLANY][i] = 100;
         mss[OBJ_CORPSES][i] = 100;
-
-
-
-
     }
 
 // this is food, right?
@@ -2900,40 +2801,17 @@ void init_properties()
     mss[OBJ_FOOD][FOOD_BEEF_JERKY] = 20;
     mss[OBJ_FOOD][FOOD_CHEESE] = 40;
     mss[OBJ_FOOD][FOOD_SAUSAGE] = 40;
-    mss[OBJ_FOOD][FOOD_CHUNK] = 100;    // chunk of flesh
-    /*mss [4] [21] = 40;
-       mss [OBJ_FOOD] [22] = 50;
-       mss [OBJ_FOOD] [23] = 60;
-       mss [OBJ_FOOD] [24] = 60;
-       mss [OBJ_FOOD] [25] = 100; */
+    mss[OBJ_FOOD][FOOD_CHUNK] = 100;
+    /*mss [OBJ_FOOD] [21] = 40;
+      mss [OBJ_FOOD] [22] = 50;
+      mss [OBJ_FOOD] [23] = 60;
+      mss [OBJ_FOOD] [24] = 60;
+      mss [OBJ_FOOD] [25] = 100; */
 
-    mss[OBJ_MISCELLANY][MISC_BOTTLED_EFREET] = 250;     // flask
+    mss[OBJ_MISCELLANY][MISC_BOTTLED_EFREET] = 250;
 
-    mss[OBJ_MISCELLANY][MISC_CRYSTAL_BALL_OF_SEEING] = 200;     // crystal ball
+    mss[OBJ_MISCELLANY][MISC_CRYSTAL_BALL_OF_SEEING] = 200;
 
-/*
-   case 0: strcat(glog , "meat ration"); break;
-   case 1: strcat(glog , "bread ration"); break;
-   case 2: strcat(glog , "pear"); break;
-   case 3: strcat(glog , "apple"); break; // make this less common.
-   case 4: strcat(glog , "choko"); break;
-   case 5: strcat(glog , "honeycomb"); break;
-   case 6: strcat(glog , "royal jell"); break; // maybe a joke monster of the same name? - mix something with jelly crystals?
-   case 7: strcat(glog , "snozzcumber"); break;
-   case 8: strcat(glog , "slice of pizza"); break;
-   case 9: strcat(glog , "apricot"); break;
-   case 10: strcat(glog , "orange"); break;
-   case 11: strcat(glog , "banana"); break;
-   case 12: strcat(glog , "strawberr"); break;
-   case 13: strcat(glog , "rambutan"); break;
-   case 14: strcat(glog , "lemon"); break;
-   case 15: strcat(glog , "grape"); break;
-   case 16: strcat(glog , "sultana"); break;
-   case 17: strcat(glog , "lychee"); break;
-   case 18: strcat(glog , "beef jerk"); break;
-   case 19: strcat(glog , "cheese"); break;
-   case 20: strcat(glog , "sausage"); break;
- */
 
     // weapons: blunt weapons are first to help grouping them together
     //  note: AC prop can't be 0 or -ve because of division.
@@ -2945,87 +2823,87 @@ void init_properties()
     // prop [x] [2] is speed
 
     // club
-    prop[OBJ_WEAPONS][WPN_CLUB][PWPN_DAMAGE] = 5;       // damage
+    prop[OBJ_WEAPONS][WPN_CLUB][PWPN_DAMAGE] = 5;
     prop[OBJ_WEAPONS][WPN_CLUB][PWPN_HIT] = 4;  // helps to get past evasion
-    prop[OBJ_WEAPONS][WPN_CLUB][PWPN_SPEED] = 12;       // speed
+    prop[OBJ_WEAPONS][WPN_CLUB][PWPN_SPEED] = 12;
     mss[OBJ_WEAPONS][WPN_CLUB] = 50;
 
     // mace:
-    prop[OBJ_WEAPONS][WPN_MACE][PWPN_DAMAGE] = 8;       // damage
+    prop[OBJ_WEAPONS][WPN_MACE][PWPN_DAMAGE] = 8;
     prop[OBJ_WEAPONS][WPN_MACE][PWPN_HIT] = 3;  // helps to get past evasion
-    prop[OBJ_WEAPONS][WPN_MACE][PWPN_SPEED] = 14;       // speed
+    prop[OBJ_WEAPONS][WPN_MACE][PWPN_SPEED] = 14;
     mss[OBJ_WEAPONS][WPN_MACE] = 140;
 
     // great mace
-    prop[OBJ_WEAPONS][WPN_GREAT_MACE][PWPN_DAMAGE] = 16;      // damage
+    prop[OBJ_WEAPONS][WPN_GREAT_MACE][PWPN_DAMAGE] = 16;
     prop[OBJ_WEAPONS][WPN_GREAT_MACE][PWPN_HIT] = -3;
-    prop[OBJ_WEAPONS][WPN_GREAT_MACE][PWPN_SPEED] = 18;      // speed
+    prop[OBJ_WEAPONS][WPN_GREAT_MACE][PWPN_SPEED] = 18;
     mss[OBJ_WEAPONS][WPN_GREAT_MACE] = 260;
 
     // flail
-    prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_DAMAGE] = 9;      // damage
+    prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_DAMAGE] = 9;
     prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_HIT] = 2;  // helps to get past evasion
-    prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_SPEED] = 15;      // speed
+    prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_SPEED] = 15;
     mss[OBJ_WEAPONS][WPN_FLAIL] = 150;
 
     // spiked flail
-    prop[OBJ_WEAPONS][WPN_SPIKED_FLAIL][PWPN_DAMAGE] = 12;      // damage
+    prop[OBJ_WEAPONS][WPN_SPIKED_FLAIL][PWPN_DAMAGE] = 12;
     prop[OBJ_WEAPONS][WPN_SPIKED_FLAIL][PWPN_HIT] = 1;
-    prop[OBJ_WEAPONS][WPN_SPIKED_FLAIL][PWPN_SPEED] = 16;      // speed
+    prop[OBJ_WEAPONS][WPN_SPIKED_FLAIL][PWPN_SPEED] = 16;
     mss[OBJ_WEAPONS][WPN_SPIKED_FLAIL] = 170;
 
     // great flail
-    prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_DAMAGE] = 17;      // damage
+    prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_DAMAGE] = 17;
     prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_HIT] = -4;
-    prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_SPEED] = 19;      // speed
+    prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_SPEED] = 19;
     mss[OBJ_WEAPONS][WPN_GREAT_FLAIL] = 300;
 
     // dagger
-    prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_DAMAGE] = 3;     // damage
+    prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_DAMAGE] = 3;
     prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_HIT] = 6;  // helps to get past evasion
-    prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_SPEED] = 11;     // speed
+    prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_SPEED] = 11;
     mss[OBJ_WEAPONS][WPN_DAGGER] = 20;
 
     // knife
-    prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_DAMAGE] = 2;     // damage
+    prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_DAMAGE] = 2;
     prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_HIT] = 0;  // helps to get past evasion
-    prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_SPEED] = 11;     // speed
+    prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_SPEED] = 11;
     mss[OBJ_WEAPONS][WPN_KNIFE] = 10;
 
     // morningstar
-    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_DAMAGE] = 10;        // damage
+    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_DAMAGE] = 10;
     prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_HIT] = 2;
-    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_SPEED] = 15;        // speed
+    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_SPEED] = 15;
     mss[OBJ_WEAPONS][WPN_MORNINGSTAR] = 150;
 
     // short sword
-    prop[OBJ_WEAPONS][WPN_SHORT_SWORD][PWPN_DAMAGE] = 6;        // damage
+    prop[OBJ_WEAPONS][WPN_SHORT_SWORD][PWPN_DAMAGE] = 6;
     prop[OBJ_WEAPONS][WPN_SHORT_SWORD][PWPN_HIT] = 5;
-    prop[OBJ_WEAPONS][WPN_SHORT_SWORD][PWPN_SPEED] = 12;        // speed
+    prop[OBJ_WEAPONS][WPN_SHORT_SWORD][PWPN_SPEED] = 12;
     mss[OBJ_WEAPONS][WPN_SHORT_SWORD] = 100;
 
     // long sword
-    prop[OBJ_WEAPONS][WPN_LONG_SWORD][PWPN_DAMAGE] = 10;        // damage
+    prop[OBJ_WEAPONS][WPN_LONG_SWORD][PWPN_DAMAGE] = 10;
     prop[OBJ_WEAPONS][WPN_LONG_SWORD][PWPN_HIT] = 3;
-    prop[OBJ_WEAPONS][WPN_LONG_SWORD][PWPN_SPEED] = 14;         // speed
+    prop[OBJ_WEAPONS][WPN_LONG_SWORD][PWPN_SPEED] = 14;
     mss[OBJ_WEAPONS][WPN_LONG_SWORD] = 160;
 
     // great sword
-    prop[OBJ_WEAPONS][WPN_GREAT_SWORD][PWPN_DAMAGE] = 16;       // damage
+    prop[OBJ_WEAPONS][WPN_GREAT_SWORD][PWPN_DAMAGE] = 16;
     prop[OBJ_WEAPONS][WPN_GREAT_SWORD][PWPN_HIT] = -1;
-    prop[OBJ_WEAPONS][WPN_GREAT_SWORD][PWPN_SPEED] = 17;        // speed
+    prop[OBJ_WEAPONS][WPN_GREAT_SWORD][PWPN_SPEED] = 17;
     mss[OBJ_WEAPONS][WPN_GREAT_SWORD] = 250;
 
     // scimitar
-    prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_DAMAGE] = 11;  // damage
+    prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_DAMAGE] = 11;
     prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_HIT] = 1;
-    prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_SPEED] = 14;   // speed
+    prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_SPEED] = 14;
     mss[OBJ_WEAPONS][WPN_SCIMITAR] = 170;
 
     // hand axe
-    prop[OBJ_WEAPONS][WPN_HAND_AXE][PWPN_DAMAGE] = 7;   // damage
+    prop[OBJ_WEAPONS][WPN_HAND_AXE][PWPN_DAMAGE] = 7;
     prop[OBJ_WEAPONS][WPN_HAND_AXE][PWPN_HIT] = 2;
-    prop[OBJ_WEAPONS][WPN_HAND_AXE][PWPN_SPEED] = 13;   // speed
+    prop[OBJ_WEAPONS][WPN_HAND_AXE][PWPN_SPEED] = 13;
     mss[OBJ_WEAPONS][WPN_HAND_AXE] = 110;
 
     // axe
@@ -3041,85 +2919,85 @@ void init_properties()
     mss[OBJ_WEAPONS][WPN_BROAD_AXE] = 180;
 
     // battleaxe
-    prop[OBJ_WEAPONS][WPN_BATTLEAXE][PWPN_DAMAGE] = 17;         // damage
+    prop[OBJ_WEAPONS][WPN_BATTLEAXE][PWPN_DAMAGE] = 17;
     prop[OBJ_WEAPONS][WPN_BATTLEAXE][PWPN_HIT] = -2;
-    prop[OBJ_WEAPONS][WPN_BATTLEAXE][PWPN_SPEED] = 18;  // speed
+    prop[OBJ_WEAPONS][WPN_BATTLEAXE][PWPN_SPEED] = 18;
     mss[OBJ_WEAPONS][WPN_BATTLEAXE] = 200;
 
     // spear
-    prop[OBJ_WEAPONS][WPN_SPEAR][PWPN_DAMAGE] = 5;      // damage
+    prop[OBJ_WEAPONS][WPN_SPEAR][PWPN_DAMAGE] = 5;
     prop[OBJ_WEAPONS][WPN_SPEAR][PWPN_HIT] = 3;
-    prop[OBJ_WEAPONS][WPN_SPEAR][PWPN_SPEED] = 13;      // speed
+    prop[OBJ_WEAPONS][WPN_SPEAR][PWPN_SPEED] = 13;
     mss[OBJ_WEAPONS][WPN_SPEAR] = 50;
 
     // trident
-    prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_DAMAGE] = 9;      // damage
+    prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_DAMAGE] = 9;
     prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_HIT] = -2;
-    prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_SPEED] = 17;      // speed
+    prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_SPEED] = 17;
     mss[OBJ_WEAPONS][WPN_TRIDENT] = 160;
 
     // demon trident
-    prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_DAMAGE] = 15;      // damage
+    prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_DAMAGE] = 15;
     prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_HIT] = -2;
-    prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_SPEED] = 17;      // speed
+    prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_SPEED] = 17;
     mss[OBJ_WEAPONS][WPN_DEMON_TRIDENT] = 160;
 
     // halberd
-    prop[OBJ_WEAPONS][WPN_HALBERD][PWPN_DAMAGE] = 13;   // damage
+    prop[OBJ_WEAPONS][WPN_HALBERD][PWPN_DAMAGE] = 13;
     prop[OBJ_WEAPONS][WPN_HALBERD][PWPN_HIT] = -3;
-    prop[OBJ_WEAPONS][WPN_HALBERD][PWPN_SPEED] = 19;    // speed
+    prop[OBJ_WEAPONS][WPN_HALBERD][PWPN_SPEED] = 19;
     mss[OBJ_WEAPONS][WPN_HALBERD] = 200;
 
     // sling
     // - the three properties are _not_ irrelevant here
     // - when something hits something else (either may be you)
     //   in melee, these are used.
-    prop[OBJ_WEAPONS][WPN_SLING][PWPN_DAMAGE] = 1;      // damage
+    prop[OBJ_WEAPONS][WPN_SLING][PWPN_DAMAGE] = 1;
     prop[OBJ_WEAPONS][WPN_SLING][PWPN_HIT] = -1;
-    prop[OBJ_WEAPONS][WPN_SLING][PWPN_SPEED] = 11;      // speed
+    prop[OBJ_WEAPONS][WPN_SLING][PWPN_SPEED] = 11;
     mss[OBJ_WEAPONS][WPN_SLING] = 10;
 
     // bow
-    prop[OBJ_WEAPONS][WPN_BOW][PWPN_DAMAGE] = 2;        // damage
+    prop[OBJ_WEAPONS][WPN_BOW][PWPN_DAMAGE] = 2;
     prop[OBJ_WEAPONS][WPN_BOW][PWPN_HIT] = -3;  // helps to get past evasion
-    prop[OBJ_WEAPONS][WPN_BOW][PWPN_SPEED] = 11;        // speed
+    prop[OBJ_WEAPONS][WPN_BOW][PWPN_SPEED] = 11;
     mss[OBJ_WEAPONS][WPN_BOW] = 100;
 
     // crossbow
-    prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_DAMAGE] = 2;   // damage
+    prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_DAMAGE] = 2;
     prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_HIT] = -1;
-    prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_SPEED] = 15;   // speed
+    prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_SPEED] = 15;
     mss[OBJ_WEAPONS][WPN_CROSSBOW] = 250;
 
     // hand crossbow
-    prop[OBJ_WEAPONS][WPN_HAND_CROSSBOW][PWPN_DAMAGE] = 1;      // damage
+    prop[OBJ_WEAPONS][WPN_HAND_CROSSBOW][PWPN_DAMAGE] = 1;
     prop[OBJ_WEAPONS][WPN_HAND_CROSSBOW][PWPN_HIT] = -1;
-    prop[OBJ_WEAPONS][WPN_HAND_CROSSBOW][PWPN_SPEED] = 15;      // speed
+    prop[OBJ_WEAPONS][WPN_HAND_CROSSBOW][PWPN_SPEED] = 15;
     mss[OBJ_WEAPONS][WPN_HAND_CROSSBOW] = 70;
 
     // glaive
-    prop[OBJ_WEAPONS][WPN_GLAIVE][PWPN_DAMAGE] = 15;    // damage
+    prop[OBJ_WEAPONS][WPN_GLAIVE][PWPN_DAMAGE] = 15;
     prop[OBJ_WEAPONS][WPN_GLAIVE][PWPN_HIT] = -3;
-    prop[OBJ_WEAPONS][WPN_GLAIVE][PWPN_SPEED] = 18;     // speed
+    prop[OBJ_WEAPONS][WPN_GLAIVE][PWPN_SPEED] = 18;
     mss[OBJ_WEAPONS][WPN_GLAIVE] = 200;
 
     // staff - hmmm
-    prop[OBJ_WEAPONS][WPN_QUARTERSTAFF][PWPN_DAMAGE] = 7;       // damage
+    prop[OBJ_WEAPONS][WPN_QUARTERSTAFF][PWPN_DAMAGE] = 7;
     prop[OBJ_WEAPONS][WPN_QUARTERSTAFF][PWPN_HIT] = 6;
-    prop[OBJ_WEAPONS][WPN_QUARTERSTAFF][PWPN_SPEED] = 12;       // speed
+    prop[OBJ_WEAPONS][WPN_QUARTERSTAFF][PWPN_SPEED] = 12;
     mss[OBJ_WEAPONS][WPN_QUARTERSTAFF] = 130;
 
     // scythe
-    prop[OBJ_WEAPONS][WPN_SCYTHE][PWPN_DAMAGE] = 14;    // damage
+    prop[OBJ_WEAPONS][WPN_SCYTHE][PWPN_DAMAGE] = 14;
     prop[OBJ_WEAPONS][WPN_SCYTHE][PWPN_HIT] = -4;
-    prop[OBJ_WEAPONS][WPN_SCYTHE][PWPN_SPEED] = 22;     // speed
+    prop[OBJ_WEAPONS][WPN_SCYTHE][PWPN_SPEED] = 22;
     mss[OBJ_WEAPONS][WPN_SCYTHE] = 230;
 
 
     // giant club
-    prop[OBJ_WEAPONS][WPN_GIANT_CLUB][PWPN_DAMAGE] = 15;        // damage
+    prop[OBJ_WEAPONS][WPN_GIANT_CLUB][PWPN_DAMAGE] = 15;
     prop[OBJ_WEAPONS][WPN_GIANT_CLUB][PWPN_HIT] = -5;
-    prop[OBJ_WEAPONS][WPN_GIANT_CLUB][PWPN_SPEED] = 16;         // speed
+    prop[OBJ_WEAPONS][WPN_GIANT_CLUB][PWPN_SPEED] = 16;
     mss[OBJ_WEAPONS][WPN_GIANT_CLUB] = 750;
 
     // giant spiked club
@@ -3131,75 +3009,75 @@ void init_properties()
     // these two ^^^ should have the same speed because of 2-h ogres.
 
     // eveningstar
-    prop[OBJ_WEAPONS][WPN_EVENINGSTAR][PWPN_DAMAGE] = 12;       // damage
+    prop[OBJ_WEAPONS][WPN_EVENINGSTAR][PWPN_DAMAGE] = 12;
     prop[OBJ_WEAPONS][WPN_EVENINGSTAR][PWPN_HIT] = 2;
-    prop[OBJ_WEAPONS][WPN_EVENINGSTAR][PWPN_SPEED] = 15;        // speed
+    prop[OBJ_WEAPONS][WPN_EVENINGSTAR][PWPN_SPEED] = 15;
     mss[OBJ_WEAPONS][WPN_EVENINGSTAR] = 150;
 
     // quick blade
-    prop[OBJ_WEAPONS][WPN_QUICK_BLADE][PWPN_DAMAGE] = 5;        // damage
+    prop[OBJ_WEAPONS][WPN_QUICK_BLADE][PWPN_DAMAGE] = 5;
     prop[OBJ_WEAPONS][WPN_QUICK_BLADE][PWPN_HIT] = 6;
-    prop[OBJ_WEAPONS][WPN_QUICK_BLADE][PWPN_SPEED] = 7;         // speed
+    prop[OBJ_WEAPONS][WPN_QUICK_BLADE][PWPN_SPEED] = 7;
     mss[OBJ_WEAPONS][WPN_QUICK_BLADE] = 100;
 
     // katana
-    prop[OBJ_WEAPONS][WPN_KATANA][PWPN_DAMAGE] = 13;    // damage
+    prop[OBJ_WEAPONS][WPN_KATANA][PWPN_DAMAGE] = 13;
     prop[OBJ_WEAPONS][WPN_KATANA][PWPN_HIT] = 4;
-    prop[OBJ_WEAPONS][WPN_KATANA][PWPN_SPEED] = 13;     // speed
+    prop[OBJ_WEAPONS][WPN_KATANA][PWPN_SPEED] = 13;
     mss[OBJ_WEAPONS][WPN_KATANA] = 160;
 
     // exec axe
-    prop[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE][PWPN_DAMAGE] = 20;  // damage
+    prop[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE][PWPN_DAMAGE] = 20;
     prop[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE][PWPN_HIT] = -4;
-    prop[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE][PWPN_SPEED] = 20;   // speed
+    prop[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE][PWPN_SPEED] = 20;
     mss[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE] = 320;
 
     // double sword
-    prop[OBJ_WEAPONS][WPN_DOUBLE_SWORD][PWPN_DAMAGE] = 15;      // damage
+    prop[OBJ_WEAPONS][WPN_DOUBLE_SWORD][PWPN_DAMAGE] = 15;
     prop[OBJ_WEAPONS][WPN_DOUBLE_SWORD][PWPN_HIT] = 3;
-    prop[OBJ_WEAPONS][WPN_DOUBLE_SWORD][PWPN_SPEED] = 16;       // speed
+    prop[OBJ_WEAPONS][WPN_DOUBLE_SWORD][PWPN_SPEED] = 16;
     mss[OBJ_WEAPONS][WPN_DOUBLE_SWORD] = 220;
 
     // triple sword
-    prop[OBJ_WEAPONS][WPN_TRIPLE_SWORD][PWPN_DAMAGE] = 19;      // damage
+    prop[OBJ_WEAPONS][WPN_TRIPLE_SWORD][PWPN_DAMAGE] = 19;
     prop[OBJ_WEAPONS][WPN_TRIPLE_SWORD][PWPN_HIT] = -1;
-    prop[OBJ_WEAPONS][WPN_TRIPLE_SWORD][PWPN_SPEED] = 19;       // speed
+    prop[OBJ_WEAPONS][WPN_TRIPLE_SWORD][PWPN_SPEED] = 19;
     mss[OBJ_WEAPONS][WPN_TRIPLE_SWORD] = 300;
 
     // hammer
-    prop[OBJ_WEAPONS][WPN_HAMMER][PWPN_DAMAGE] = 7;     // damage
+    prop[OBJ_WEAPONS][WPN_HAMMER][PWPN_DAMAGE] = 7;
     prop[OBJ_WEAPONS][WPN_HAMMER][PWPN_HIT] = 2;
-    prop[OBJ_WEAPONS][WPN_HAMMER][PWPN_SPEED] = 13;     // speed
+    prop[OBJ_WEAPONS][WPN_HAMMER][PWPN_SPEED] = 13;
     mss[OBJ_WEAPONS][WPN_HAMMER] = 130;
 
     // ancus
-    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_DAMAGE] = 9;      // damage
+    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_DAMAGE] = 9;
     prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_HIT] = 1;
-    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_SPEED] = 14;      // speed
+    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_SPEED] = 14;
     mss[OBJ_WEAPONS][WPN_ANCUS] = 160;
 
     // whip
-    prop[OBJ_WEAPONS][WPN_WHIP][PWPN_DAMAGE] = 3;       // damage
+    prop[OBJ_WEAPONS][WPN_WHIP][PWPN_DAMAGE] = 3;
     prop[OBJ_WEAPONS][WPN_WHIP][PWPN_HIT] = 1;  // helps to get past evasion
-    prop[OBJ_WEAPONS][WPN_WHIP][PWPN_SPEED] = 14;       // speed
+    prop[OBJ_WEAPONS][WPN_WHIP][PWPN_SPEED] = 14;
     mss[OBJ_WEAPONS][WPN_WHIP] = 30;
 
     // sabre
-    prop[OBJ_WEAPONS][WPN_SABRE][PWPN_DAMAGE] = 7;      // damage
+    prop[OBJ_WEAPONS][WPN_SABRE][PWPN_DAMAGE] = 7;
     prop[OBJ_WEAPONS][WPN_SABRE][PWPN_HIT] = 4;
-    prop[OBJ_WEAPONS][WPN_SABRE][PWPN_SPEED] = 12;      // speed
+    prop[OBJ_WEAPONS][WPN_SABRE][PWPN_SPEED] = 12;
     mss[OBJ_WEAPONS][WPN_SABRE] = 110;
 
     // demon blade
-    prop[OBJ_WEAPONS][WPN_DEMON_BLADE][PWPN_DAMAGE] = 13;       // damage
+    prop[OBJ_WEAPONS][WPN_DEMON_BLADE][PWPN_DAMAGE] = 13;
     prop[OBJ_WEAPONS][WPN_DEMON_BLADE][PWPN_HIT] = 2;
-    prop[OBJ_WEAPONS][WPN_DEMON_BLADE][PWPN_SPEED] = 15;        // speed
+    prop[OBJ_WEAPONS][WPN_DEMON_BLADE][PWPN_SPEED] = 15;
     mss[OBJ_WEAPONS][WPN_DEMON_BLADE] = 200;
 
     // demon whip
-    prop[OBJ_WEAPONS][WPN_DEMON_WHIP][PWPN_DAMAGE] = 10;        // damage
+    prop[OBJ_WEAPONS][WPN_DEMON_WHIP][PWPN_DAMAGE] = 10;
     prop[OBJ_WEAPONS][WPN_DEMON_WHIP][PWPN_HIT] = 1;
-    prop[OBJ_WEAPONS][WPN_DEMON_WHIP][PWPN_SPEED] = 14;         // speed
+    prop[OBJ_WEAPONS][WPN_DEMON_WHIP][PWPN_SPEED] = 14;
     mss[OBJ_WEAPONS][WPN_DEMON_WHIP] = 30;
 
 
@@ -3355,7 +3233,7 @@ unsigned char check_item_knowledge(void)
 
                 yps = wherey();
 
-//   item_name_2(i, j, 0, 0, 1, 3, 3, st_pass);
+                //item_name_2(i, j, 0, 0, 1, 3, 3, st_pass);
                 //char item_name_2(char item_clas, char item_typ, unsigned char item_da, unsigned char it_plus, unsigned int it_quant, char ident_lev, char glog [60])
                 item_name_2(0, ft, j, 0, 0, 1, 0, st_pass);
 
@@ -3375,7 +3253,7 @@ unsigned char check_item_knowledge(void)
         ki = getch();
         //ki = getch();
         //ki = anything;
-        if (ki >= 65 && ki < 123)
+        if (ki >= 'A' && ki < '{')     // was 65 and 123, respectively 22jan2000 {dlb}
         {
 #ifdef DOS_TERM
             puttext(35, 1, 80, 25, buffer);
@@ -3405,11 +3283,11 @@ putty:
 
 char weapon_skill(char wclass, char wtype)
 {
-    if (wclass == 11)
-        return 7;               // staff
+    if (wclass == OBJ_STAVES)
+        return SK_STAVES;
 
-    if (wclass != 0)
-        return 0;               // no skill
+    if (wclass != OBJ_WEAPONS)
+        return SK_FIGHTING;    // no skill
 
     switch (wtype)
     {
@@ -3461,7 +3339,7 @@ char weapon_skill(char wclass, char wtype)
         return SK_POLEARMS;
 
     case WPN_SLING:
-        return 0;
+        return SK_FIGHTING;
 
     case WPN_BOW:
     case WPN_CROSSBOW:
@@ -3472,18 +3350,15 @@ char weapon_skill(char wclass, char wtype)
         return SK_STAVES;
     }
 
-    return 0;
+    return SK_FIGHTING;
 }
 
 
 char damage_type(char wclass, char wtype)
 {
 
-    if (wclass != 0)
-        return 0;               // bludgeon
-    // 1 = slicing
-    // 2 = piercing
-    // 3 = chopping
+    if (wclass != OBJ_WEAPONS)
+        return DVORP_CRUSHING;
 
     switch (wtype)
     {
@@ -3504,7 +3379,6 @@ char damage_type(char wclass, char wtype)
     case WPN_DEMON_WHIP:
         return DVORP_CRUSHING;
 
-
     case WPN_KNIFE:
     case WPN_DAGGER:
     case WPN_SHORT_SWORD:
@@ -3520,7 +3394,6 @@ char damage_type(char wclass, char wtype)
     case WPN_DEMON_BLADE:
         return DVORP_SLICING;
 
-
     case WPN_SPEAR:
     case WPN_SPIKED_FLAIL:
     case WPN_GIANT_SPIKED_CLUB:
@@ -3529,7 +3402,6 @@ char damage_type(char wclass, char wtype)
     case WPN_TRIDENT:
     case WPN_DEMON_TRIDENT:
         return DVORP_PIERCING;
-
 
     case WPN_HAND_AXE:
     case WPN_AXE:
@@ -3541,7 +3413,7 @@ char damage_type(char wclass, char wtype)
         return DVORP_CHOPPING;
     }
 
-    return 0;
+    return DVORP_CRUSHING;
 }                               // end damage_type
 
 int hands_required_for_weapon( char wclass, char wtype )
@@ -3553,50 +3425,40 @@ int hands_required_for_weapon( char wclass, char wtype )
     case OBJ_WEAPONS:
         switch (wtype)
         {
-        case WPN_HALBERD:
-        case WPN_SCYTHE:
-        case WPN_GLAIVE:
+            case WPN_HALBERD:
+            case WPN_SCYTHE:
+            case WPN_GLAIVE:
+            case WPN_QUARTERSTAFF:
+            case WPN_BATTLEAXE:
+            case WPN_EXECUTIONERS_AXE:
+            case WPN_GREAT_SWORD:
+            case WPN_TRIPLE_SWORD:
+            case WPN_GREAT_MACE:
+            case WPN_GREAT_FLAIL:
+            case WPN_GIANT_CLUB:
+            case WPN_GIANT_SPIKED_CLUB:
+                ret = HANDS_TWO_HANDED;
+                break;
 
-        case WPN_QUARTERSTAFF:
+            case WPN_SPEAR:
+            case WPN_TRIDENT:
+            case WPN_DEMON_TRIDENT:
+            case WPN_AXE:
+            case WPN_BROAD_AXE:
+            case WPN_KATANA:
+            case WPN_DOUBLE_SWORD:
+// These are all really just spiked versions of one-handed weapons,
+// and so should probably just be one-handed as well.
+            // case WPN_ANCUS:
+            // case WPN_SPIKED_FLAIL:
+            // case WPN_MORNINGSTAR:
+            // case WPN_EVENINGSTAR:
+                ret = HANDS_ONE_OR_TWO_HANDED;
+                break;
 
-        case WPN_BATTLEAXE:
-        case WPN_EXECUTIONERS_AXE:
-
-        case WPN_GREAT_SWORD:
-        case WPN_TRIPLE_SWORD:
-
-        case WPN_GREAT_MACE:
-        case WPN_GREAT_FLAIL:
-        case WPN_GIANT_CLUB:
-        case WPN_GIANT_SPIKED_CLUB:
-            ret = HANDS_TWO_HANDED;
-            break;
-
-
-        case WPN_SPEAR:
-        case WPN_TRIDENT:
-        case WPN_DEMON_TRIDENT:
-
-        case WPN_AXE:
-        case WPN_BROAD_AXE:
-
-        case WPN_KATANA:
-        case WPN_DOUBLE_SWORD:
-
-/*      case WPN_ANCUS:
-        case WPN_SPIKED_FLAIL:
-        case WPN_MORNINGSTAR:
-        case WPN_EVENINGSTAR:
-These are all really just spiked versions of one-handed weapons, and so
-should probably just be one-handed as well.
-*/
-            ret = HANDS_ONE_OR_TWO_HANDED;
-            break;
-
-
-        default:
-            ret = HANDS_ONE_HANDED;
-            break;
+            default:
+                ret = HANDS_ONE_HANDED;
+                break;
         }
         break;
 
@@ -3604,7 +3466,6 @@ should probably just be one-handed as well.
     case OBJ_STAVES:
         ret = HANDS_TWO_HANDED;
         break;
-
 
     default:
         ret = HANDS_ONE_HANDED;
@@ -3889,9 +3750,9 @@ two_letter:
     case 25:
         strcat(name, "ll");
         break;
-//case 26: strcat(name, "sh"); break;
-        //case 12: strcat(name, "sh"); break;
-        //case 13: strcat(name, "sh"); break;
+    //case 26: strcat(name, "sh"); break;
+    //case 12: strcat(name, "sh"); break;
+    //case 13: strcat(name, "sh"); break;
     default:
         i--;
         goto hello;

@@ -535,7 +535,7 @@ void monster(void)
 
                         case 10:        // your worsest poison
 
-                            if (random2(2) == 0)
+                            if ( coinflip() )
                                 mons[i].m_hp -= random2((mons[i].m_ench[p] % 50) - 5) + 1;
                             if (mons[i].m_hp <= 0)
                             {
@@ -599,7 +599,7 @@ void monster(void)
                                 monster_die(i);
                                 goto endbat;
                             }
-                            if (random2(2) == 0)
+                            if ( coinflip() )
                             {
                                 mons[i].m_ench[p]--;    //= 0;
 
@@ -735,7 +735,7 @@ void monster(void)
                 // no monster currently has gmon_use > 3. To you[0].speed up, maybe give
                 // some advanced monsters ability to use items, but not kobolds etc.
 
-                if (igrid[mons[i].m_x][mons[i].m_y] != 501 && (gmon_use[mons[i].m_class] == 3 | mons[i].m_class == 35))
+                if (igrid[mons[i].m_x][mons[i].m_y] != ING && (gmon_use[mons[i].m_class] == 3 | mons[i].m_class == 35))
                 {
                     mons_pickup();
                 }
@@ -758,14 +758,14 @@ void monster(void)
    if (it[0].ix [o] == mons [i].m_x && it[0].iy [o] == mons [i].m_y && it[0].iquant [o] > 0)
    {
 
-   if ((mons [i].m_inv [0] == 501 | it[0].iquant [mons [i].m_inv [0]] == 0) && it[0].iclass [o] == 0 && mons [i].m_inv [0] != o)
+   if ((mons [i].m_inv [0] == ING | it[0].iquant [mons [i].m_inv [0]] == 0) && it[0].iclass [o] == 0 && mons [i].m_inv [0] != o)
    {
    mons [i].m_inv [0] = o; // picking up weapons.
    brek = 1;
    break;
    //strcpy(info, "Hello!"); incrl(); more();
    }
-   if ((mons [i].m_inv [1] == 501 | it[0].iquant [mons [i].m_inv [1]] == 0) && it[0].iclass [o] == 1 && mons [i].m_inv [1] != o)
+   if ((mons [i].m_inv [1] == ING | it[0].iquant [mons [i].m_inv [1]] == 0) && it[0].iclass [o] == 1 && mons [i].m_inv [1] != o)
    {
    mons [i].m_inv [1] = o;
    brek = 1;
@@ -896,7 +896,7 @@ void monster(void)
                     {
 
                     case 59:
-                        if (random2(2) == 0 && (mons[i].m_ench[2] != 6 | you[0].see_invis != 0))
+                        if ( ( mons[i].m_ench[2] != ENCH_INVIS | you[0].see_invis != 0 ) && coinflip() )
                         {
                             strcpy(info, "The giant eyeball stares at you!");
                             incrl();
@@ -906,7 +906,7 @@ void monster(void)
                         break;
 
                     case 65:
-                        if (random2(2) == 0 && (mons[i].m_ench[2] != 6 | you[0].see_invis != 0))
+                        if ( ( mons[i].m_ench[2] != ENCH_INVIS | you[0].see_invis != 0 ) && coinflip() )
                         {
                             strcpy(info, "The eye of draining stares at you!");
                             incrl();
@@ -1013,7 +1013,7 @@ void monster(void)
                     case MLAVA2:
                         if (you[0].invis != 0 && mons_see_invis(mons[i].m_class) == 0)
                             break;
-                        if (random2(2) == 0 | mons[i].m_sec == 1 | mons[i].m_ench[2] == 6)
+                        if ( coinflip() | mons[i].m_sec == 1 | mons[i].m_ench[2] == ENCH_INVIS )
                             break;
 // viewwindow was here.
                         if (show[mons[i].m_x - you[0].x_pos + 6][mons[i].m_y - you[0].y_pos + 6] != 0)
@@ -1173,7 +1173,7 @@ void monster(void)
 
 
 //case 68:
-                        //place_cloud(101, mons [i].m_x, mons [i].m_y, 2 + random2(4));
+                        //place_cloud(CLOUD_FIRE_MON, mons [i].m_x, mons [i].m_y, 2 + random2(4));
                         //break;
 
 
@@ -1184,7 +1184,7 @@ void monster(void)
                     case 12:
                         if (you[0].invis != 0 && mons_see_invis(mons[i].m_class) == 0)
                             break;
-                        if (mons[i].m_inv[1] != 501)    // manticore
+                        if (mons[i].m_inv[1] != ING)    // manticore
 
                         {
                             hand_used = mons[i].m_inv[1];
@@ -1328,7 +1328,7 @@ void monster(void)
                             if (tracer_mons == 1 && trac_targ == MHITYOU | random2(10) == 0)    // | (tracer == 0 && trac_targ == MHITYOU))
 
                             {
-                                if (random2(2) == 0 | (mons[i].m_ench_1 == 1))
+                                if ( coinflip() | (mons[i].m_ench_1 == 1) )
                                     break;
                                 spell_cast = func_pass_2[2];
                                 goto casted;
@@ -1488,14 +1488,14 @@ void monster(void)
 //      }
 
 //      it[0].iquant [mons [i].m_inv [4]] --;
-                        //      if (it[0].iquant [mons [i].m_inv [4]] == 0) mons [i].m_inv [4] = 501; // = it[0].ilink [mons [i].m_inv [4]] ???
+                        //      if (it[0].iquant [mons [i].m_inv [4]] == 0) mons [i].m_inv [4] = ING; // = it[0].ilink [mons [i].m_inv [4]] ???
                         mmov_x = 0;
                         trac_hit_tamed = 0;
                         continue;
 //}
                     }
 
-                  end_switch:if (gmon_use[mons[i].m_class] > 0 && mons[i].m_inv[1] != 501 && mons[i].m_class != 30 && (you[0].invis == 0 | mons_see_invis(mons[i].m_class) != 0))
+                  end_switch:if (gmon_use[mons[i].m_class] > 0 && mons[i].m_inv[1] != ING && mons[i].m_class != 30 && (you[0].invis == 0 | mons_see_invis(mons[i].m_class) != 0))
                                                                                                                                                                                 // 2-h ogre
 
                     {
@@ -1812,7 +1812,7 @@ void mons_pickup(void)
     switch (it[0].iclass[igrid[mons[i].m_x][mons[i].m_y]])
     {
     case 0:
-        if (mons[i].m_inv[0] != 501)
+        if (mons[i].m_inv[0] != ING)
             return;
         if (it[0].idam[igrid[mons[i].m_x][mons[i].m_y]] > 180)
             return;             // too tricky for now
@@ -1822,7 +1822,7 @@ void mons_pickup(void)
 
         mons[i].m_inv[0] = igrid[mons[i].m_x][mons[i].m_y];
         igrid[mons[i].m_x][mons[i].m_y] = it[0].ilink[igrid[mons[i].m_x][mons[i].m_y]];
-        it[0].ilink[mons[i].m_inv[0]] = 501;
+        it[0].ilink[mons[i].m_inv[0]] = ING;
         if (it[0].idam[mons[i].m_inv[0]] % 30 == 7)
             mons[i].m_AC += 3;
         strcpy(info, monam(mons[i].m_sec, mons[i].m_class, mons[i].m_ench[2], 0));
@@ -1837,7 +1837,7 @@ void mons_pickup(void)
         break;
 
     case 1:
-        if (mons[i].m_inv[1] != 501 && it[0].itype[mons[i].m_inv[1]] == it[0].itype[igrid[mons[i].m_x][mons[i].m_y]] && it[0].iplus[mons[i].m_inv[1]] == it[0].iplus[igrid[mons[i].m_x][mons[i].m_y]] && it[0].iplus2[mons[i].m_inv[1]] == it[0].iplus2[igrid[mons[i].m_x][mons[i].m_y]] && it[0].idam[mons[i].m_inv[1]] == it[0].idam[igrid[mons[i].m_x][mons[i].m_y]])
+        if (mons[i].m_inv[1] != ING && it[0].itype[mons[i].m_inv[1]] == it[0].itype[igrid[mons[i].m_x][mons[i].m_y]] && it[0].iplus[mons[i].m_inv[1]] == it[0].iplus[igrid[mons[i].m_x][mons[i].m_y]] && it[0].iplus2[mons[i].m_inv[1]] == it[0].iplus2[igrid[mons[i].m_x][mons[i].m_y]] && it[0].idam[mons[i].m_inv[1]] == it[0].idam[igrid[mons[i].m_x][mons[i].m_y]])
         {
             it[0].iquant[mons[i].m_inv[1]] += it[0].iquant[igrid[mons[i].m_x][mons[i].m_y]];
             it[0].iquant[igrid[mons[i].m_x][mons[i].m_y]] = 0;
@@ -1845,7 +1845,7 @@ void mons_pickup(void)
             it[0].ilink[mons[i].m_inv[0]] = 501;
             return;
         }
-        if (mons[i].m_inv[0] != 501 | it[0].iquant[igrid[mons[i].m_x][mons[i].m_y]] == 1)
+        if (mons[i].m_inv[0] != ING | it[0].iquant[igrid[mons[i].m_x][mons[i].m_y]] == 1)
             return;
         mons[i].m_inv[1] = igrid[mons[i].m_x][mons[i].m_y];
         igrid[mons[i].m_x][mons[i].m_y] = it[0].ilink[igrid[mons[i].m_x][mons[i].m_y]];
@@ -1897,14 +1897,14 @@ void mons_pickup(void)
    if (it[0].ix [o] == mons [i].m_x && it[0].iy [o] == mons [i].m_y && it[0].iquant [o] > 0)
    {
 
-   if ((mons [i].m_inv [0] == 501 | it[0].iquant [mons [i].m_inv [0]] == 0) && it[0].iclass [o] == 0 && mons [i].m_inv [0] != o)
+   if ((mons [i].m_inv [0] == ING | it[0].iquant [mons [i].m_inv [0]] == 0) && it[0].iclass [o] == 0 && mons [i].m_inv [0] != o)
    {
    mons [i].m_inv [0] = o; // picking up weapons.
    brek = 1;
    break;
    //strcpy(info, "Hello!"); incrl(); more();
    }
-   if ((mons [i].m_inv [1] == 501 | it[0].iquant [mons [i].m_inv [1]] == 0) && it[0].iclass [o] == 1 && mons [i].m_inv [1] != o)
+   if ((mons [i].m_inv [1] == ING | it[0].iquant [mons [i].m_inv [1]] == 0) && it[0].iclass [o] == 1 && mons [i].m_inv [1] != o)
    {
    mons [i].m_inv [1] = o;
    brek = 1;

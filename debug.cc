@@ -24,9 +24,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "direct.h"
 #include "externs.h"
-#include "enum.h"
+
+#include "direct.h"
 #include "itemname.h"
 #include "player.h"
 #include "shopping.h"
@@ -443,7 +443,7 @@ void cast_spec_spell_name()
         }
 
         mpr("I couldn't find that spell.");
-        if (random2(20) == 0) mpr("Maybe you should go back to WIZARD school.");
+    if ( one_chance_in(20) ) mpr("Maybe you should go back to WIZARD school.");
 
 }
 #endif
@@ -466,7 +466,7 @@ void create_spec_monster()
     specs[1] = getche();
     specs[2] = getche();
 
-    create_monster(atoi(specs), 0, 0, you.x_pos, you.y_pos, MHITNOT, 250);
+    create_monster(atoi(specs), 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
 }
 
 
@@ -501,14 +501,14 @@ void create_spec_monster_name()
                 moname(i, 0, 1, 100, spname);
                 if (strstr(strlwr(spname), strlwr(specs)) != NULL)
                 {
-                    create_monster(i, 0, 0, you.x_pos, you.y_pos, MHITNOT, 250);
+                    create_monster(i, 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
                         return;
                 }
 
         }
 
         mpr("I couldn't find that monster.");
-        if (random2(20) == 0) mpr("Maybe it's hiding.");
+    if ( one_chance_in(20) ) mpr("Maybe it's hiding.");
 
 }
 

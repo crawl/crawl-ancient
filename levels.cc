@@ -12,7 +12,7 @@
 #include "levels.h"
 
 #include "externs.h"
-#include "enum.h"
+
 #include "monplace.h"
 #include "mstruct.h"
 #include "stuff.h"
@@ -160,31 +160,31 @@ void init_pandemonium()
             break;
         }
 
-        if (random2(10) == 0)
+        if ( one_chance_in(10) )
             env.mons_alloc[pc] = 80 + random2(10);
-        if (random2(30) == 0)
+        if ( one_chance_in(30) )
             env.mons_alloc[pc] = 3;
-        if (random2(30) == 0)
+        if ( one_chance_in(30) )
             env.mons_alloc[pc] = 8;
-        if (random2(20) == 0)
+        if ( one_chance_in(20) )
             env.mons_alloc[pc] = 235 + random2(5);
 
     }
 
-    if (random2(8) == 0)
+    if ( one_chance_in(8) )
         env.mons_alloc[7] = 230 + random2(5);
-    if (random2(5) == 0)
+    if ( one_chance_in(5) )
         env.mons_alloc[8] = 230 + random2(5);
-    if (random2(3) == 0)
+    if ( one_chance_in(3) )
         env.mons_alloc[9] = 230 + random2(5);
 
-    if (random2(10) == 0)
+    if ( one_chance_in(10) )
         env.mons_alloc[7 + random2(3)] = 31;
-    if (random2(10) == 0)
+    if ( one_chance_in(10) )
         env.mons_alloc[7 + random2(3)] = 126;
-    if (random2(10) == 0)
+    if ( one_chance_in(10) )
         env.mons_alloc[7 + random2(3)] = 127;
-    if (random2(10) == 0)
+    if ( one_chance_in(10) )
         env.mons_alloc[7 + random2(3)] = 245;
 
 // set at least some specific monsters for the special levels - this
@@ -197,7 +197,7 @@ void pandemonium_mons(void)
 
     int pan_mons = env.mons_alloc[random2(10)];
 
-    if (random2(40) == 0)
+    if ( one_chance_in(40) )
     {
         do
         {

@@ -13,7 +13,7 @@
 
 char curse_an_item(char which, char power);
 void monster_blink(int mn);
-char random_near_space(int passed[2]);
+bool random_near_space(int passed[2]);
 bool monster_regenerates(int monster_type);
 
 int distance(int x1, int x2, int y1, int y2);

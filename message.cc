@@ -22,7 +22,6 @@
 #endif
 
 #include "externs.h"
-#include "enum.h"
 
 #include <string.h>
 
@@ -51,7 +50,7 @@ void mpr(const char *inf)
     window(1, 1, 80, 25);
 #endif
 
-    textcolor(7);
+    textcolor(LIGHTGREY);
 
 //if (scrloc == 8)
     if (scrloc == NUMBER_OF_LINES - 18)
@@ -60,7 +59,7 @@ void mpr(const char *inf)
 #ifdef PLAIN_TERM
         gotoxy(2, NUMBER_OF_LINES);
         _setcursortype(_NORMALCURSOR);
-        textcolor(7);
+        textcolor(LIGHTGREY);
 
 // cdl -- cprintf("\r--more--");
 #ifdef DOS
@@ -171,7 +170,7 @@ void more()
     gotoxy(2, 7);
 #endif
     _setcursortype(_NORMALCURSOR);
-    textcolor(7);
+    textcolor(LIGHTGREY);
 
 // cdl -- cprintf("\r--more--");
 #ifdef DOS

@@ -3,6 +3,7 @@
 
 #include "defines.h"
 #include "message.h"
+#include "enum.h"
 
 extern char info[200];
 extern char st_prn[20];
@@ -94,7 +95,7 @@ struct player
 
     double elapsed_time;        // total amount of elapsed time in the game
 
-    unsigned char synch_time;   // amount of time to wait before calling handle_time
+    unsigned char synch_time;   // amount to wait before calling handle_time
 
     unsigned char disease;
 
@@ -105,7 +106,7 @@ struct player
 
     int hunger;
     // char hunger_inc;         // this is now handled by player_hunger_rate
-    char equip[NO_EQUIP];
+    char equip[NUM_EQUIP];
     /* list in player.cc */
 
     int hp;
@@ -128,7 +129,7 @@ struct player
     /* xxx_ch variables : determine whether new value is printed next turn.
        Set to 1 if value is changed. */
     char redraw_hunger;
-    char hunger_state;          /* normal */
+    char hunger_state;          // normal
     char redraw_burden;
     char redraw_hit_points;
     char redraw_magic_points;
@@ -136,7 +137,7 @@ struct player
     char redraw_intelligence;
     char redraw_dexterity;
     char redraw_experience;
-    char redraw_armor_class;    /* remember that the AC shown = 10 - AC */
+    char redraw_armor_class;    // remember that the AC shown = 10 - AC
     char redraw_gold;
     char redraw_evasion;
 
@@ -151,10 +152,10 @@ struct player
     char speed;
     int time_taken;
 
-    char shield_blocks;         // number of shield blocks since last action
-                                // this field is transient, its not saved
-                                // out but is set to zero at the start of the
-                                // input loop.
+    char shield_blocks;     // number of shield blocks since last action
+                            // this field is transient, its not saved
+                            // out but is set to zero at the start of the
+                            // input loop.
 
     unsigned char inv_class[52];
     unsigned char inv_type[52];
@@ -164,16 +165,15 @@ struct player
     unsigned char inv_ident[52];
     char inv_colour[52];
     int inv_quantity[52];
-    char num_inv_items;         // number of items carried.
+    char num_inv_items;         // number of items carried
 
     int burden;
     char burden_state;
     unsigned char spells[25];
     char spell_no;
-    // char spell_levels;       // handled in player.cc now
-    unsigned char char_direction;
-    // 0 = going down
-    // 1 = going up!
+    //char spell_levels;              // handled in player.cc now
+    unsigned char char_direction;     // 0 = going down
+                                      // 1 = going up!
     unsigned char pet_target;
 
     int your_level;
@@ -187,7 +187,7 @@ struct player
     int slow;
     int haste;
     int might;
-    int levitation;             // levitation
+    int levitation;
 
     int poison;
     int rotting;
@@ -196,13 +196,9 @@ struct player
     int exhausted;              // fatigue counter for berserk
     int berserk_penalty;        // pelnalty for moving while berserk
 
-    unsigned char attribute[30];  // various attributes, eg resist lightning
-    /* list in player.cc */
+    unsigned char attribute[30];  // see ATTRIBUTES in enum.h
 
-    char is_undead;
-    /* 0 - is alive
-       1 - is undead, but can still eat/drink etc (eg vampire)
-       2 - is undead (mummy etc) */
+    char is_undead;               // see UNDEAD_STATES in enum.h
 
     char delay_doing;
     char delay_t;
@@ -268,11 +264,11 @@ struct item_struct
     unsigned char pluses2[ITEMS];       /* dam+ etc */
     unsigned char special[ITEMS];       /* special stuff */
     unsigned int quantity[ITEMS];       /* multiple items */
-    unsigned char x[ITEMS];     /*  x-location */
-    unsigned char y[ITEMS];     /* y-location */
+    unsigned char x[ITEMS];             /*  x-location */
+    unsigned char y[ITEMS];             /* y-location */
     unsigned char colour[ITEMS];        /* colour */
-    unsigned char id[ITEMS];    /* identification */
-    unsigned int link[ITEMS];   /* next item in stack */
+    unsigned char id[ITEMS];            /* identification */
+    unsigned int link[ITEMS];           /* next item in stack */
 };
 
 
@@ -333,6 +329,6 @@ struct system_environment
     char  *crawl_dir;
 };
 
-extern system_environment  sys_env;
+extern system_environment sys_env;
 
 #endif // EXTERNS_H

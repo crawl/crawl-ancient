@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "externs.h"
-#include "enum.h"
 
 #include "bang.h"
 #include "describe.h"
@@ -65,7 +64,7 @@ void gain_piety(char pgn);
 void naughty(char type_naughty, int naughtiness);
 void excommunication(void);
 void god_pitch(unsigned char which_god);
-void altar_prayer();
+void altar_prayer(void);
 void lose_piety(char pgn);
 
 void pray(void)
@@ -85,17 +84,16 @@ void pray(void)
         if (you.species == SP_DEMIGOD)
         {
             mpr("Sorry, a being of your status cannot worship here.");
-            return;             /* demigod */
+            return;
         }
         god_pitch(grd[you.x_pos][you.y_pos] - 179);
         return;
     }
 
-
     if (you.religion == GOD_NO_GOD)
     {
-        if (you.is_undead != 0)
-            mpr("You spend a moment contemplating the meaning of death.");
+        if (you.is_undead)
+            mpr("You spend a moment contemplating the meaning of unlife.");
         else
             mpr("You spend a moment contemplating the meaning of life.");
         return;
@@ -103,7 +101,7 @@ void pray(void)
 
     if (you.religion == GOD_XOM)
     {
-        if ( random2( 10 ) )
+        if ( random2(10) )
         {
           mpr("Xom ignores you.");
         }
@@ -123,7 +121,7 @@ void pray(void)
           // bad results are enforced, good are not
           char force = ! nice;
 
-          Xom_acts( nice, 1+sever, force );
+          Xom_acts( nice, 1 + sever, force );
         }
         return;
     }
@@ -185,27 +183,26 @@ void pray(void)
  */
 
         if (you.religion == GOD_NEMELEX_XOBEH && random2(200) <= you.piety
-                    && (random2(3) == 0 || you.attribute[ATTR_CARD_TABLE] == 0)
+                    && ( you.attribute[ATTR_CARD_TABLE] == 0 || one_chance_in(3) )
                     && you.attribute[ATTR_CARD_COUNTDOWN] == 0
-                    && grd[you.x_pos][you.y_pos] != 61
-                    && grd[you.x_pos][you.y_pos] != 62)
+                    && grd[you.x_pos][you.y_pos] != DNGN_LAVA
+                    && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER)     // what of lava/water_x? {dlb}
         {
             int Nemelex = 0;
             int gift_type = MISC_DECK_OF_TRICKS;
 
             if (you.attribute[ATTR_CARD_TABLE] == 0)
             {
-                Nemelex = items(1, OBJ_MISCELLANY,
-                                MISC_PORTABLE_ALTAR_OF_NEMELEX, 1, 1, 250);
+                Nemelex = items(1, OBJ_MISCELLANY, MISC_PORTABLE_ALTAR_OF_NEMELEX, 1, 1, 250);
                 you.attribute[ATTR_CARD_TABLE] = 1;
             }
             else
             {
-                if (random2(200) <= you.piety && random2(4) == 0)
+                if (random2(200) <= you.piety && one_chance_in(4) )
                     gift_type = MISC_DECK_OF_SUMMONINGS;
-                if (random2(200) <= you.piety && random2(2) == 0)
+                if (random2(200) <= you.piety && coinflip() )
                     gift_type = MISC_DECK_OF_WONDERS;
-                if (random2(200) <= you.piety && random2(4) == 0)
+                if (random2(200) <= you.piety && one_chance_in(4) )
                     gift_type = MISC_DECK_OF_POWER;
                 Nemelex = items(1, OBJ_MISCELLANY, gift_type, 1, 1, 250);
             }
@@ -226,50 +223,49 @@ void pray(void)
             lose_piety(5 + random2(5) + random2(5));
         }
 
-        if ((you.religion == GOD_OKAWARU || you.religion == GOD_TROG)
-                    && you.piety > 130 && random2(you.piety) > 120
-                    && random2(4) == 0 && grd[you.x_pos][you.y_pos] != 61
-                    && grd[you.x_pos][you.y_pos] != 62)
+        if ( ( you.religion == GOD_OKAWARU || you.religion == GOD_TROG )
+                    && you.piety > 130
+                    && random2(you.piety) > 120
+                    && grd[you.x_pos][you.y_pos] != DNGN_LAVA
+                    && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER
+                    && one_chance_in(4) )
+
         {
             strcpy(info, god_name(you.religion));
             strcat(info, " grants you a gift!");
             mpr(info);
             more();
-            if (you.religion == GOD_TROG
-                        || (you.religion == GOD_OKAWARU && random2(2) == 0))
+            if ( you.religion == GOD_TROG
+                  || (you.religion == GOD_OKAWARU && coinflip() ) )
                 acquirement(OBJ_WEAPONS);
             else
                 acquirement(OBJ_ARMOUR);
             lose_piety(30 + random2(10) + random2(10));
         }
 
-        if (you.religion == GOD_YREDELEMNUL && random2(you.piety) > 80
-                                                    && random2(10) == 0)
+        if ( you.religion == GOD_YREDELEMNUL
+             && random2(you.piety) > 80
+             && one_chance_in(10) )
         {
             strcpy(info, god_name(you.religion));
             strcat(info, " grants you an undead servant!");
             mpr(info);
             more();
-            int und_serv = MONS_WRAITH;         /* wraith */
 
-            if (random2(7) == 0)
-                und_serv = MONS_MUMMY;
-            if (random2(7) == 0)
-                und_serv = MONS_VAMPIRE;
-            if (random2(10) == 0)
-                und_serv = MONS_FLAYED_GHOST;
-            if (random2(10) == 0)
-                und_serv = MONS_GHOUL;
-            if (random2(7) == 0)
-                und_serv = MONS_ROTTING_HULK;
-            if (random2(9) == 0)
-                und_serv = MONS_SKELETAL_WARRIOR;
-            if (random2(7) == 0)
-                und_serv = MONS_SPECTRAL_WARRIOR;
-            if (random2(7) == 0)
-                und_serv = MONS_WIGHT;
-            create_monster(und_serv, 0, 7, you.x_pos, you.y_pos,
-                                                        you.pet_target, 250);
+            int thing_called = MONS_PROGRAM_BUG;                // misassignment trapping 15jan2000 {dlb}
+
+            thing_called = table_lookup( 100,                // see stuff.cc {dlb}
+                                         MONS_WRAITH, 67,            // 33% chance
+                                         MONS_WIGHT, 53,             // 12% chance
+                                         MONS_SPECTRAL_WARRIOR, 41,  // 16% chance
+                                         MONS_ROTTING_HULK, 32,      //  9% chance
+                                         MONS_SKELETAL_WARRIOR, 24,  //  8% chance
+                                         MONS_VAMPIRE, 17,           //  7% chance
+                                         MONS_GHOUL, 11,             //  6% chance
+                                         MONS_MUMMY, 5,              //  6% chance
+                                         MONS_FLAYED_GHOST, 0 );     //  5% chance
+
+            create_monster(thing_called, 0, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
 
             lose_piety(4 + random2(4) + random2(4));
         }
@@ -282,18 +278,17 @@ void pray(void)
             int gift = BOOK_MINOR_MAGIC_I;
 
             switch (you.religion) {
-            case GOD_KIKUBAAQUDGHA:
-                // Kiku - gives death books
-                if (you.had_item[BOOK_NECROMANCY] == 0)
+            case GOD_KIKUBAAQUDGHA:                        // gives death books
+                if (!you.had_item[BOOK_NECROMANCY])
                     gift = BOOK_NECROMANCY;
 
-                else if (you.had_item[BOOK_DEATH] == 0)
+                else if (!you.had_item[BOOK_DEATH])
                     gift = BOOK_DEATH;
 
-                else if (you.had_item[BOOK_UNLIFE] == 0)
+                else if (!you.had_item[BOOK_UNLIFE])
                     gift = BOOK_UNLIFE;
 
-                else if (you.had_item[BOOK_NECRONOMICON] == 0)
+                else if (!you.had_item[BOOK_NECRONOMICON])
                     gift = BOOK_NECRONOMICON;
 
                 break;
@@ -305,27 +300,26 @@ void pray(void)
             // Vehumet - gives conj/summ. Gives bks first for whichever
             // skill is higher
             case GOD_VEHUMET:
-                if (you.had_item[BOOK_CONJURATIONS_I] == 0)
+                if (!you.had_item[BOOK_CONJURATIONS_I])
                     gift = BOOK_CONJURATIONS_I;
-                else if (you.had_item[BOOK_ANNIHILATIONS] == 0)
+                else if (!you.had_item[BOOK_ANNIHILATIONS])
                     gift = BOOK_ANNIHILATIONS;      // conj bks
 
                 if (you.skills[SK_CONJURATIONS] < you.skills[SK_SUMMONINGS]
                                             || gift == BOOK_MINOR_MAGIC_I)
                 {
-                    if (you.had_item[BOOK_SUMMONINGS] == 0)
+                    if (!you.had_item[BOOK_SUMMONINGS])
                         gift = BOOK_SUMMONINGS;
-                    else if (you.had_item[BOOK_INVOCATIONS] == 0)
+                    else if (!you.had_item[BOOK_INVOCATIONS])
                         gift = BOOK_INVOCATIONS;
-                    else if (you.had_item[BOOK_DEMONOLOGY] == 0)
+                    else if (!you.had_item[BOOK_DEMONOLOGY])
                         gift = BOOK_DEMONOLOGY;         // summoning bks
                 }
                 break;
             }
 
-            //shouldn't give you something if it's just going to fall in a pool
-            if (gift != BOOK_MINOR_MAGIC_I && (grd[you.x_pos][you.y_pos] != 61
-                                        && grd[you.x_pos][you.y_pos] != 62))
+            if (gift != BOOK_MINOR_MAGIC_I && (grd[you.x_pos][you.y_pos] != DNGN_LAVA
+                                        && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER))
             {
                 strcpy(info, god_name(you.religion));
                 strcat(info, " grants you a gift!");
@@ -340,6 +334,7 @@ void pray(void)
                 {
                     int thing_created = items(1, OBJ_BOOKS, gift, 1, 1, 250);
 
+// this messaging should really become a function of its own somewhere {dlb}
                     if (you.species != SP_NAGA)
                         mpr("Something appears at your feet!");
                     else
@@ -361,6 +356,9 @@ void pray(void)
     }
 }
 
+
+
+
 char *god_name(int which_god)
 {
 
@@ -369,11 +367,11 @@ char *god_name(int which_god)
     case GOD_NO_GOD:
         return "You aren't religious!";
     case GOD_ZIN:
-        return "Zin";
+        return "Zin";               // old priest
     case GOD_SHINING_ONE:
         return "The Shining One";
     case GOD_KIKUBAAQUDGHA:
-        return "Kikubaaqudgha";
+        return "Kikubaaqudgha";     // death
     case GOD_YREDELEMNUL:
         return "Yredelemnul";
     case GOD_XOM:
@@ -385,18 +383,21 @@ char *god_name(int which_god)
     case GOD_MAKHLEB:
         return "Makhleb";
     case GOD_SIF_MUNA:
-        return "Sif Muna";
+        return "Sif Muna";          // magic
     case GOD_TROG:
         return "Trog";
     case GOD_NEMELEX_XOBEH:
-        return "Nemelex Xobeh";
+        return "Nemelex Xobeh";     // trickster
     case GOD_ELYVILON:
-        return "Elyvilon";
+        return "Elyvilon";          // the healer
     }
 
-    return "Illegal god";
-
+    return "Illegal god";     // abyss.cc also had: Jurubetut (Fire),
+                              // Vuhemeti (Ice), Okawaru (War/Chaos),
+                              // and Lugafu the Hairy ... {dlb}
 }
+
+
 
 
 char *god_name_long(int which_god)
@@ -432,7 +433,7 @@ char *god_name_long(int which_god)
         return "Elyvilon the Healer";
     }
 
-    return "Illegal God";
+    return "Illegal, God of Software Bugs";
 }
 
 
@@ -459,7 +460,7 @@ void Xom_acts(char niceness, int sever, char force_sever)
 #endif
 
 okay_try_again:
-    if (niceness == 0 || random2(3) == 0)
+    if (niceness == 0 || one_chance_in(3) )
     {
         /* bad things */
 
@@ -528,7 +529,7 @@ okay_try_again:
             return;
         }
 
-        if (random2(sever) <= 3 && you.is_undead == 0)
+        if (random2(sever) <= 3 && !you.is_undead)
         {
             switch (random2(4))
             {
@@ -558,7 +559,7 @@ okay_try_again:
             return;
         }
 
-        if (random2(sever) <= 3 && you.is_undead == 0)
+        if (random2(sever) <= 3 && !you.is_undead)
         {
             switch (random2(4))
             {
@@ -575,7 +576,7 @@ okay_try_again:
                 mpr("You hear Xom's maniacal laughter.");
                 break;
             }
-            if (random2(4) == 0)
+            if ( one_chance_in(4) )
             {
                 drain_exp();
                 if (random2(sever) > 3)
@@ -606,28 +607,28 @@ okay_try_again:
                 mpr("You hear Xom's maniacal laughter.");
                 break;
             }
-            if (random2(4) != 0)
+            if ( !one_chance_in(4) )
             {
-                create_monster(MONS_NEQOXEC + random2(5), 22, 1,
+                create_monster(MONS_NEQOXEC + random2(5), 22, BEH_CHASING_I,
                                         you.x_pos, you.y_pos, MHITNOT, 250);
-                if (random2(3) == 0)
-                    create_monster(MONS_NEQOXEC + random2(5), 22, 1,
-                                        you.x_pos, you.y_pos, MHITNOT, 250);
-
-                if (random2(4) == 0)
-                    create_monster(MONS_NEQOXEC + random2(5), 22, 1,
+                if ( one_chance_in(3) )
+                    create_monster(MONS_NEQOXEC + random2(5), 22, BEH_CHASING_I,
                                         you.x_pos, you.y_pos, MHITNOT, 250);
 
-                if (random2(3) == 0)
-                    create_monster(MONS_HELLION + random2(10), 22, 1,
+                if ( one_chance_in(4) )
+                    create_monster(MONS_NEQOXEC + random2(5), 22, BEH_CHASING_I,
                                         you.x_pos, you.y_pos, MHITNOT, 250);
 
-                if (random2(4) == 0)
-                    create_monster(MONS_HELLION + random2(10), 22, 1,
+                if ( one_chance_in(3) )
+                    create_monster(MONS_HELLION + random2(10), 22, BEH_CHASING_I,
+                                        you.x_pos, you.y_pos, MHITNOT, 250);
+
+                if ( one_chance_in(4) )
+                    create_monster(MONS_HELLION + random2(10), 22, BEH_CHASING_I,
                                         you.x_pos, you.y_pos, MHITNOT, 250);
             }
             else
-                dancing_weapon(100, 1);         /* nasty, but fun */
+                dancing_weapon(100, 1);          // nasty, but fun
 
             return;
         }
@@ -651,7 +652,7 @@ okay_try_again:
             return;
         }
 
-        if (random2(4) != 0)
+        if ( !one_chance_in(4) )
             goto okay_try_again;
 
         mpr("You hear Xom's maniacal laughter.");
@@ -659,7 +660,7 @@ okay_try_again:
     }
 /* ouch(x, 19, y); for killed by Xom message */
 
-/* Okay, now for the nicer stuff (note: these things are not necess nice): */
+// Okay, now for the nicer stuff (note: these things are not necessarily nice):
     if (random2(sever) <= 2)
     {
         switch (random2(4))
@@ -696,7 +697,7 @@ okay_try_again:
             potion_effect(POT_INVISIBILITY, 150);
             break;
         case 5:
-            if (random2(6) == 0)
+            if ( one_chance_in(6) )
             {
                 potion_effect(POT_EXPERIENCE, 150);
             }
@@ -728,14 +729,14 @@ okay_try_again:
             mpr("Xom opens a gate.");
             break;
         }
-        create_monster(MONS_NEQOXEC + random2(5), 22, 7, you.x_pos, you.y_pos, you.pet_target, 250);
-        create_monster(MONS_NEQOXEC + random2(5), 22, 7, you.x_pos, you.y_pos, you.pet_target, 250);
+        create_monster(MONS_NEQOXEC + random2(5), 22, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
+        create_monster(MONS_NEQOXEC + random2(5), 22, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
         if (random2(you.experience_level) >= 8)
-            create_monster(MONS_NEQOXEC + random2(5), 22, 7, you.x_pos, you.y_pos, you.pet_target, 250);
+            create_monster(MONS_NEQOXEC + random2(5), 22, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
         if (random2(you.experience_level) >= 8)
-            create_monster(MONS_HELLION + random2(10), 22, 7, you.x_pos, you.y_pos, you.pet_target, 250);
+            create_monster(MONS_HELLION + random2(10), 22, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
         if (random2(you.experience_level) >= 8)
-            create_monster(MONS_HELLION + random2(10), 22, 7, you.x_pos, you.y_pos, you.pet_target, 250);
+            create_monster(MONS_HELLION + random2(10), 22, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
         return;
     }
 
@@ -753,9 +754,9 @@ okay_try_again:
             mpr("Xom's generous nature manifests itself.");
             break;
         }
-        if (grd[you.x_pos][you.y_pos] == 61 || grd[you.x_pos][you.y_pos] == 62)
+        if (grd[you.x_pos][you.y_pos] == DNGN_LAVA || grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
         {
-            mpr("You hear a splash.");  /* How unfortunate. I'll bet Xom feels sorry for you. */
+            mpr("You hear a splash.");  // How unfortunate. I'll bet Xom feels sorry for you.
             return;
         }
         int thing_created = items(1, 250, 250, 1, you.experience_level * 3, 250);
@@ -786,9 +787,9 @@ okay_try_again:
             break;
         }
         if (random2(you.experience_level) <= 5)
-            create_monster(MONS_WHITE_IMP + random2(5), 0, 7, you.x_pos, you.y_pos, you.pet_target, 250);
+            create_monster(MONS_WHITE_IMP + random2(5), 0, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
         else
-            create_monster(MONS_NEQOXEC + random2(5), 0, 7, you.x_pos, you.y_pos, you.pet_target, 250);
+            create_monster(MONS_NEQOXEC + random2(5), 0, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
         return;
     }
 
@@ -813,7 +814,7 @@ okay_try_again:
         return;
     }
 
-    if (random2(sever) <= 5 && you.is_undead == 0)
+    if (random2(sever) <= 5 && !you.is_undead)
     {
         switch (random2(4))
         {
@@ -846,7 +847,7 @@ okay_try_again:
         beam[0].beam_source = MNG;
         beam[0].type = 43;
         beam[0].damage = 130;
-        beam[0].flavour = 5;
+        beam[0].flavour = BEAM_ELECTRICITY;
         beam[0].bx = you.x_pos;
         beam[0].by = you.y_pos;
         strcpy(beam[0].beam_name, "blast of lightning");
@@ -857,7 +858,7 @@ okay_try_again:
         return;
     }
 
-    if (random2(4) != 0)
+    if ( !one_chance_in(4) )
         goto okay_try_again;
 
     mpr("You hear Xom's maniacal laughter.");
@@ -887,7 +888,7 @@ void done_good(char thing_done, int pgain)
 
     switch (thing_done)
     {
-    case GOOD_KILLED_LIVING:    /* killed a living monster in god's name */
+    case GOOD_KILLED_LIVING:                // killed a living monster in god's name
         switch (you.religion)
         {
         case GOD_ELYVILON:
@@ -909,7 +910,7 @@ void done_good(char thing_done, int pgain)
         }
         break;
 
-    case GOOD_KILLED_UNDEAD:    /* killed an undead in god's name */
+    case GOOD_KILLED_UNDEAD:                // killed an undead in god's name
         switch (you.religion)
         {
         case GOD_ZIN:
@@ -925,7 +926,7 @@ void done_good(char thing_done, int pgain)
         }
         break;
 
-    case GOOD_KILLED_DEMON:     /* killed a demon in god's name */
+    case GOOD_KILLED_DEMON:                 // killed a demon in god's name
         switch (you.religion)
         {
         case GOD_ZIN:
@@ -1039,9 +1040,9 @@ void done_good(char thing_done, int pgain)
 void gain_piety(char pgn)
 {
 
-    if (you.piety > 100 && random2(3) == 0)
+    if (you.piety > 100 && one_chance_in(3) )
         return;
-    if (you.piety > 150 && random2(3) == 0)
+    if (you.piety > 150 && one_chance_in(3) )
         return;
     if (you.piety > 199)
         return;
@@ -1208,9 +1209,6 @@ void gain_piety(char pgn)
 
 }
 
-/*
-
- */
 void naughty(char type_naughty, int naughtiness)
 {
 /*
@@ -1265,7 +1263,7 @@ void naughty(char type_naughty, int naughtiness)
         }
         break;
 
-    case NAUGHTY_BUTCHER:       /* butchering in the name of */
+    case NAUGHTY_BUTCHER:                   // in the name of ...
         switch (you.religion)
         {
         case GOD_ZIN:
@@ -1276,7 +1274,7 @@ void naughty(char type_naughty, int naughtiness)
         }
         break;
 
-    case NAUGHTY_STABBING:      /* stabbing */
+    case NAUGHTY_STABBING:
         switch (you.religion)
         {
         case GOD_SHINING_ONE:
@@ -1285,7 +1283,7 @@ void naughty(char type_naughty, int naughtiness)
         }
         break;
 
-    case NAUGHTY_SPELLCASTING:  /* spellcasting */
+    case NAUGHTY_SPELLCASTING:
         switch (you.religion)
         {
         case GOD_TROG:
@@ -1294,7 +1292,7 @@ void naughty(char type_naughty, int naughtiness)
         }
         break;
 
-    case NAUGHTY_POISON: /* poison */
+    case NAUGHTY_POISON:
       switch (you.religion)
         {
         case GOD_SHINING_ONE:
@@ -1521,12 +1519,8 @@ void excommunication(void)
 void altar_prayer(void)
 {
 
-    int item_sacr;
     int i, j;
     char subst_id[4][50];
-
-
-    item_sacr = 501;
 
     for (i = 0; i < 4; i++)
     {
@@ -1536,7 +1530,7 @@ void altar_prayer(void)
         }
     }
 
-    if (igrd[you.x_pos][you.y_pos] == 501 || you.religion == GOD_SHINING_ONE || you.religion == GOD_XOM)
+    if (igrd[you.x_pos][you.y_pos] == ING || you.religion == GOD_SHINING_ONE || you.religion == GOD_XOM)
     {
         mpr("You kneel at the altar and pray.");
         return;
@@ -1548,7 +1542,7 @@ void altar_prayer(void)
 
     do
     {
-        if (random2(1000) == 0)
+        if ( one_chance_in(1000) )
             break;
         j = mitm.link[i];
         switch (you.religion)
@@ -1608,7 +1602,7 @@ void altar_prayer(void)
         }
         i = j;
     }
-    while (i != 501);
+    while (i != ING);
 
 }
 
@@ -1624,7 +1618,7 @@ void god_pitch(unsigned char which_god)
 
     more();
 
-    if ((you.is_undead != 0 || you.species == SP_DEMONSPAWN) && (which_god == GOD_ZIN || which_god == GOD_SHINING_ONE || which_god == GOD_ELYVILON))
+    if ((you.is_undead || you.species == SP_DEMONSPAWN) && (which_god == GOD_ZIN || which_god == GOD_SHINING_ONE || which_god == GOD_ELYVILON))
     {
         strcpy(info, god_name(which_god));
         strcat(info, " does not accept worship from those such as you!");

@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #include "externs.h"
-#include "enum.h"
+
 #include "player.h"
 #include "skills2.h"
 #include "stuff.h"
@@ -86,7 +86,7 @@ void exercise2(char exsk, char deg)
     if (you.skills[exsk] == 27)
         return;                 // already maximum
 
-    if (you.practise_skill[exsk] == 0 && random2(4) != 0)
+    if ( you.practise_skill[exsk] == 0 && !one_chance_in(4) )
         return;
 
 
@@ -216,7 +216,7 @@ void exercise2(char exsk, char deg)
             )
             )
         {
-            if (random2(3) == 0)
+            if ( one_chance_in(3) )
                 return;
         }
 
@@ -228,7 +228,7 @@ void exercise2(char exsk, char deg)
             )
         {
             // of course, this is cumulative with the one above.
-            if (random2(3) != 0)
+            if ( !one_chance_in(3) )
                 return;
         }
 
@@ -238,7 +238,7 @@ void exercise2(char exsk, char deg)
             )
             )
         {
-            if (random2(3) != 0)
+            if ( !one_chance_in(3) )
                 return;
         }
     }

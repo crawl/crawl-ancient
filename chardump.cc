@@ -36,9 +36,9 @@
 #include <conio.h>
 #endif
 
-#include "describe.h"
 #include "externs.h"
-#include "enum.h"
+
+#include "describe.h"
 #include "player.h"
 #include "religion.h"
 #include "itemname.h"
@@ -747,7 +747,7 @@ static void dump_spells(string & text)
 
         for (int j = 0; j < 25; j++)
         {
-            if (you.spells[j] != 210)
+            if (you.spells[j] != SPELL_NO_SPELL)
             {
                 string spell_line = " ";
                 char ft;
@@ -775,7 +775,7 @@ static void dump_spells(string & text)
                 bool already = false;
                 for (int i = 0; spell_type_index[i] != 0; i++)
                 {
-                    if (spell_type( you.spells[j], spell_type_index[i] ) == 1)
+                    if ( spell_type(you.spells[j], spell_type_index[i]) )
                     {
                         spell_line += spell_type_name( spell_type_index[i],
                                                                     already );
@@ -925,11 +925,11 @@ bool dump_char(char show_prices, char fname[30])        // $$$ a try block?
 
     switch (you.burden_state)
     {
-    case 5:
+    case BS_OVERLOADED:
         text += "You are overloaded with stuff.";
         text += EOL;
         break;
-    case 2:
+    case BS_ENCUMBERED:
         text += "You are encumbered.";
         text += EOL;
         break;

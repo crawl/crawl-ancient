@@ -29,7 +29,6 @@
 #include <stdlib.h>
 
 #include "externs.h"
-#include "enum.h"
 
 #include "bang.h"
 #include "beam.h"
@@ -68,7 +67,7 @@
 
 void throw_it(struct bolt beam[1], int throw_2);
 void use_randart(unsigned char item_wield_2);
-char drink_fountain();
+bool drink_fountain();
 
 extern int book_thing;          /* defined in spells.cc */
 extern char wield_change;       /* defined in output.cc */
@@ -266,7 +265,7 @@ void wield_weapon(char auto_wield)
             return;
         }
 
-        if ((you.is_undead != 0 || you.species == SP_DEMONSPAWN)
+        if ((you.is_undead || you.species == SP_DEMONSPAWN)
                 && (you.inv_dam[item_wield_2] < 180
                     && (you.inv_dam[item_wield_2] % 30 == SPWPN_HOLY_WRATH
                     || you.inv_dam[item_wield_2] % 30 == SPWPN_DISRUPTION)))
@@ -453,7 +452,7 @@ void wield_weapon(char auto_wield)
             //  you.special_wield = 8;
             break;
 
-        case NWPN_VAMPIRE_S_TOOTH:
+        case NWPN_VAMPIRES_TOOTH:
             // you.hunger_inc += 9;
             mpr("You feel a strange hunger, and smell blood on the air...");
             break;
@@ -1313,7 +1312,7 @@ void throw_it(struct bolt beam[1], int throw_2)
     mpr("Which direction? (*/+ to target)");
 
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
-        if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != 6 || player_see_invis() != 0))
+        if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != ENCH_INVIS || player_see_invis() != 0))
         {
             strcpy(info, "You are currently targetting ");
             strcat(info, monam(menv[you.prev_targ].number, menv[you.prev_targ].type, menv[you.prev_targ].enchantment[
@@ -1346,7 +1345,7 @@ void throw_it(struct bolt beam[1], int throw_2)
 
     beam[0].range = 5;          /* provisional until mass variable used */
 
-    beam[0].flavour = 0;
+    beam[0].flavour = BEAM_MISSILE;
 
     switch (you.inv_class[throw_2])
     {
@@ -1467,7 +1466,7 @@ void throw_it(struct bolt beam[1], int throw_2)
                 break;
 
             case WPN_BOW:       /* bow */
-                exercise(SK_BOWS, 1 + random2(2));
+                exercise( SK_BOWS, ( (coinflip()) ? 2 : 1 ) );
                 beam[0].hit += random2(you.skills[SK_BOWS] + 1)
                                 + random2(you.skills[SK_BOWS] + 1);
                 beam[0].damage += random2(you.skills[SK_BOWS] + 1)
@@ -1480,7 +1479,7 @@ void throw_it(struct bolt beam[1], int throw_2)
             // values of 10 and 5 make bows better at skill level 10.
 
             case WPN_CROSSBOW:  /* crossbow */
-                exercise(SK_CROSSBOWS, 1 + random2(2));
+                exercise( SK_CROSSBOWS, ( (coinflip()) ? 2 : 1 ) );
                 beam[0].hit += random2(you.skills[SK_CROSSBOWS] + 1)
                                                                 + random2(10);
                 beam[0].damage += random2(you.skills[SK_CROSSBOWS] + 1)
@@ -1489,7 +1488,7 @@ void throw_it(struct bolt beam[1], int throw_2)
                 break;
 
             case WPN_HAND_CROSSBOW:     /* hand crossbow */
-                exercise(SK_CROSSBOWS, 1 + random2(2));
+                exercise( SK_CROSSBOWS, ( (coinflip()) ? 2 : 1 ) );
                 beam[0].hit += random2(you.skills[SK_CROSSBOWS] + 1)
                                                                 + random2(6);
                 beam[0].damage += random2(you.skills[SK_CROSSBOWS] + 1)
@@ -1534,7 +1533,7 @@ void throw_it(struct bolt beam[1], int throw_2)
                     && you.inv_dam[you.equip[EQ_WEAPON]]% 30 != SPWPN_FROST)
             {
                 beam[0].damage += 1 + random2(5);
-                beam[0].flavour = 2;
+                beam[0].flavour = BEAM_FIRE;
                 strcpy(beam[0].beam_name, "bolt of ");
                 if (you.inv_dam[throw_2] % 30 == 3
                                         || you.inv_dam[throw_2] % 30 == 4)
@@ -1561,7 +1560,7 @@ void throw_it(struct bolt beam[1], int throw_2)
                     && you.inv_dam[you.equip[EQ_WEAPON]] % 30 != SPWPN_FLAME)
             {
                 beam[0].damage += 1 + random2(5);
-                beam[0].flavour = 3;
+                beam[0].flavour = BEAM_COLD;
                 strcpy(beam[0].beam_name, "bolt of ");
                 if (you.inv_dam[throw_2] % 30 == 3
                                         || you.inv_dam[throw_2] % 30 == 4)
@@ -1777,7 +1776,7 @@ void puton_ring()
     else if (you.equip[EQ_AMULET] != -1)
     {
         strcpy(info, "You are already wearing an amulet.");
-        if (!random2(20))
+        if ( !one_chance_in(20) )
         {
             strcat(info, " And I must say it looks quite fetching.");
         }
@@ -1817,20 +1816,19 @@ void puton_ring()
     switch (you.inv_type[ring_wear_2])
     {
 
-    case RING_REGENERATION:     /* you.ring of regeneration */
-        /*      you.rate_regen += 100; */
-        // you.hunger_inc += 2;
+    case RING_REGENERATION:
+        //you.rate_regen += 100;
+        //you.hunger_inc += 2;
         if (you.hp < you.hp_max)
             set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);   // this is a bit dodgy
-
         break;
 
-    case RING_PROTECTION:       /* protection */
+    case RING_PROTECTION:
         /*      if (you.inv_plus [ring_wear_2] > 130) player_AC() -= 100;
            player_AC() += you.inv_plus [ring_wear_2];
            player_AC() -= 50; */
         you.redraw_armor_class = 1;
-        //      you.hunger_inc += 1;
+        //you.hunger_inc++;
         if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
         {
             set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
@@ -1838,27 +1836,25 @@ void puton_ring()
         }
         break;
 
-    case RING_PROTECTION_FROM_FIRE:     /* fire resistance */
-        /*      player_res_fire() += 1; */
-        //      you.hunger_inc += 1;
+    case RING_PROTECTION_FROM_FIRE:
+        //player_res_fire()++;
+        //you.hunger_inc++;
         break;
 
-    case RING_POISON_RESISTANCE:        // you.poison resistance
-        /*      you.res_poison += 1; */
-        ///     you.hunger_inc += 1;
+    case RING_POISON_RESISTANCE:
+        //you.res_poison++;
+        //you.hunger_inc++;
         break;
 
-    case RING_PROTECTION_FROM_COLD:     // cold resistance
-        //      you.hunger_inc += 1;
-
+    case RING_PROTECTION_FROM_COLD:
+        //you.hunger_inc++;
         break;
 
-    case RING_STRENGTH: // increase you.strength
-
+    case RING_STRENGTH:
         you.strength += (you.inv_plus[ring_wear_2] % 100) - 50;
         you.max_strength += (you.inv_plus[ring_wear_2] % 100) - 50;
         you.redraw_strength = 1;
-        //      you.hunger_inc += 1;
+        //you.hunger_inc++;
         burden_change();
         if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
         {
@@ -1867,37 +1863,35 @@ void puton_ring()
         }
         break;
 
-    case RING_SLAYING:          // slaying
-        /*      you.f_abil += 30; */
-        //      you.hunger_inc += 1;
+    case RING_SLAYING:
+        //you.f_abil += 30;
+        //you.hunger_inc++;
         break;
 
-    case RING_SEE_INVISIBLE:    // see invisible
-        /*      you.see_invis --; */
-        //      you.hunger_inc += 1;
+    case RING_SEE_INVISIBLE:
+        //you.see_invis--;
+        //you.hunger_inc++;
         break;
 
-    case RING_INVISIBILITY:     // invisibility
-        //      if (you.invis > 0) you.invis = 0;
-
+    case RING_INVISIBILITY:
+        //if (you.invis > 0) you.invis = 0;
         if (you.invis == 0)
         {
             mpr("You become transparent for a moment.");
         }
         set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
         you.inv_ident[ring_wear_2] = 3;
-        //      you.invis --;
-        //      you.hunger_inc += 4;
+        //you.invis--;
+        //you.hunger_inc += 4;
         break;
 
-    case RING_HUNGER:           // you.hunger
-
-        // you.hunger_inc += 4;
+    case RING_HUNGER:
+        //you.hunger_inc += 4;
         break;
 
-    case RING_TELEPORTATION:    // teleportation
-        //      you.hunger_inc += 1;
-        /*      player_teleport() += 1; */
+    case RING_TELEPORTATION:
+        //you.hunger_inc++;
+        //player_teleport()++;
         break;
 
     case RING_EVASION:
@@ -1910,20 +1904,19 @@ void puton_ring()
         break;
 
     case RING_SUSTAIN_ABILITIES:
-        // you.hunger_inc += 1;
-        /* you.sust_abil++; */
+        //you.hunger_inc++;
+        //you.sust_abil++;
         break;
 
     case RING_SUSTENANCE:
-        // you.hunger_inc -= 2;
+        //you.hunger_inc -= 2;
         break;
 
-    case RING_DEXTERITY:        // increase you.dex
-
+    case RING_DEXTERITY:
         you.dex += (you.inv_plus[ring_wear_2] % 100) - 50;
         you.max_dex += (you.inv_plus[ring_wear_2] % 100) - 50;
         you.redraw_dexterity = 1;
-        //      you.hunger_inc += 1;
+        //you.hunger_inc++;
         if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
         {
             you.inv_ident[ring_wear_2] = 3;
@@ -1931,12 +1924,11 @@ void puton_ring()
         }
         break;
 
-    case RING_INTELLIGENCE:     // increase you.intel
-
+    case RING_INTELLIGENCE:
         you.intel += (you.inv_plus[ring_wear_2] % 100) - 50;
         you.max_intel += (you.inv_plus[ring_wear_2] % 100) - 50;
         you.redraw_intelligence = 1;
-        //      you.hunger_inc += 1;
+        //you.hunger_inc++;
         if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
         {
             you.inv_ident[ring_wear_2] = 3;
@@ -1944,23 +1936,22 @@ void puton_ring()
         }
         break;
 
-    case RING_WIZARDRY: // wizardry
-        /* you.mag_abil += 3; */
-        // you.hunger_inc += 1;
+    case RING_WIZARDRY:
+        //you.mag_abil += 3;
+        //you.hunger_inc++;
         break;
 
-    case RING_MAGICAL_POWER:    // magic
-
+    case RING_MAGICAL_POWER:
         you.max_magic_points += 9;
         you.base_magic_points2 += 9;
-        // you.hunger_inc ++;
+        //you.hunger_inc++;
         you.redraw_magic_points = 1;
-        /* you.magic_battery ++; */
+        //you.magic_battery++;
         calc_ep();
         set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
         break;
 
-    case RING_LEVITATION:       // levitation
+    case RING_LEVITATION:
         /*      if (you.levitation > 0) you.levitation = 0;
            else if (you.levitation == 0)
            {
@@ -1978,34 +1969,31 @@ void puton_ring()
         set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
         break;
 
-    case RING_LIFE_PROTECTION:  // player_prot_life()
-        //      you.hunger_inc ++;
-
+    case RING_LIFE_PROTECTION:
+        //you.hunger_inc++;
         break;
 
-    case RING_PROTECTION_FROM_MAGIC:    // magic resistance
-        // you.hunger_inc += 1;
-
+    case RING_PROTECTION_FROM_MAGIC:
+        //you.hunger_inc++;
         break;
 
-    case RING_FIRE:             // fire
-        /* player_res_fire() += 1;
-           you.spec_fire += 1;
-           player_res_cold() -= 1; */
-        // you.hunger_inc += 1;
+    case RING_FIRE:
+        //player_res_fire()++;
+        //you.spec_fire++;
+        //player_res_cold()--;
+        //you.hunger_inc++;
         break;
 
-    case RING_ICE:              // ice
-        /* player_res_fire() -= 1;
-           you.spec_cold += 1;
-           player_res_cold() += 1; */
-        // you.hunger_inc += 1;
+    case RING_ICE:
+        //player_res_fire()--;
+        //you.spec_cold++;
+        //player_res_cold()++
+        //you.hunger_inc++;
         break;
 
-    case RING_TELEPORT_CONTROL: // teleport control
-
+    case RING_TELEPORT_CONTROL:
         you.attribute[ATTR_CONTROL_TELEPORT]++;
-        // you.hunger_inc += 1;
+        //you.hunger_inc++;
         break;
 
 
@@ -2180,35 +2168,28 @@ void remove_ring()
 
     switch (you.inv_type[ring_wear_2])
     {
-
-    case RING_REGENERATION:     // regen
-
-        // you.hunger_inc -= 2;
+    case RING_REGENERATION:
+        //you.hunger_inc -= 2;
         break;
 
-    case RING_PROTECTION:       // prot
-
+    case RING_PROTECTION:
         you.redraw_armor_class = 1;
-        //      you.hunger_inc -= 1;
+        //you.hunger_inc--;
         break;
 
-    case RING_PROTECTION_FROM_FIRE:     // fire resistance
-        //      you.hunger_inc -= 1;
-
+    case RING_PROTECTION_FROM_FIRE:
+        //you.hunger_inc--;
         break;
 
-    case RING_POISON_RESISTANCE:        // you.poison resistance
-        //      you.hunger_inc -= 1;
-
+    case RING_POISON_RESISTANCE:
+        //you.hunger_inc--;
         break;
 
-    case RING_PROTECTION_FROM_COLD:     // cold resistance
-        //      you.hunger_inc -= 1;
-
+    case RING_PROTECTION_FROM_COLD:
+        //you.hunger_inc--;
         break;
 
-    case RING_STRENGTH: // increase you.strength
-
+    case RING_STRENGTH:
         you.strength -= (you.inv_plus[ring_wear_2] % 100);
         you.max_strength -= (you.inv_plus[ring_wear_2] % 100);
         you.strength += 50;
@@ -2218,84 +2199,72 @@ void remove_ring()
         burden_change();
         break;
 
-    case RING_SLAYING:          // slaying
-        //      you.hunger_inc -= 1;
-
+    case RING_SLAYING:
+        //you.hunger_inc--;
         break;
 
-    case RING_SEE_INVISIBLE:    // see invisible
-        //      you.hunger_inc -= 1;
-
+    case RING_SEE_INVISIBLE:
+        //you.hunger_inc--;
         break;
 
-    case RING_INVISIBILITY:     // invisibility
-        //      you.invis ++;
-        //      if (you.invis == 0) you.invis = 1;
-        //      you.hunger_inc -= 4;
-
+    case RING_INVISIBILITY:
+        //you.invis ++;
+        //if (you.invis == 0) you.invis = 1;
+        //you.hunger_inc -= 4;
         if (you.invis != 0)
             you.invis = 1;
         break;
 
-    case RING_HUNGER:           // you.hunger
-
-        // you.hunger_inc -= 4;
+    case RING_HUNGER:
+        //you.hunger_inc -= 4;
         break;
 
-    case RING_TELEPORTATION:    // teleportation
-        //      you.hunger_inc -= 1;
-
+    case RING_TELEPORTATION:
+        //you.hunger_inc--;
         break;
 
     case RING_EVASION:
-
         you.redraw_evasion = 1;
         break;
 
-    case RING_SUSTAIN_ABILITIES:        // you.sust_abil
-        // you.hunger_inc -= 1;
-
+    case RING_SUSTAIN_ABILITIES:
+        //you.hunger_inc--;
         break;
 
-    case RING_SUSTENANCE:       // sustenance
-
-        // you.hunger_inc += 2;
+    case RING_SUSTENANCE:
+        //you.hunger_inc += 2;
         break;
 
-    case RING_DEXTERITY:        // increase you.dex
-
+    case RING_DEXTERITY:
         you.dex -= (you.inv_plus[ring_wear_2] % 100) - 50;
         you.max_dex -= (you.inv_plus[ring_wear_2] % 100) - 50;
         you.redraw_dexterity = 1;
-        //      you.hunger_inc -= 1;
+        //you.hunger_inc--;
         break;
 
-    case RING_INTELLIGENCE:     // increase you.intel
-
+    case RING_INTELLIGENCE:
         you.intel -= (you.inv_plus[ring_wear_2] % 100) - 50;
         you.max_intel -= (you.inv_plus[ring_wear_2] % 100) - 50;
         you.redraw_intelligence = 1;
-        //      you.hunger_inc -= 1;
+        //you.hunger_inc--;
         break;
 
-    case RING_WIZARDRY: // wizardry
-        // you.hunger_inc -= 1;
-
+    case RING_WIZARDRY:
+        //you.hunger_inc--;
         break;
 
-    case RING_MAGICAL_POWER:    // magic
-
+    case RING_MAGICAL_POWER:
         you.max_magic_points -= 9;
         you.base_magic_points2 -= 9;
         if (you.magic_points > you.max_magic_points)
             you.magic_points = you.max_magic_points;
-        // you.hunger_inc --;
+        //you.hunger_inc--;
         you.redraw_magic_points = 1;
-        /* you.magic_battery --; */
+        //you.magic_battery--;
         calc_ep();
         break;
 
-    case RING_LEVITATION:       // levitation
+    case RING_LEVITATION:
         /*      you.levitation ++;
            if (you.levitation == 0) you.levitation = 1;
            you.hunger_inc -= 1; */
@@ -2303,37 +2272,32 @@ void remove_ring()
             you.levitation = 1;
         break;
 
-    case RING_LIFE_PROTECTION:  // player_prot_life()
-        //      you.hunger_inc --;
-
+    case RING_LIFE_PROTECTION:
+        //you.hunger_inc--;
         break;
 
-    case RING_PROTECTION_FROM_MAGIC:    // magic resistance
-        // you.hunger_inc -= 1;
-
+    case RING_PROTECTION_FROM_MAGIC:
+        //you.hunger_inc--;
         break;
 
-    case RING_FIRE:             // fire
-        /* player_res_fire() -= 1;
-           you.spec_fire -= 1;
-           player_res_cold() += 1; */
-        // you.hunger_inc -= 1;
+    case RING_FIRE:
+        //player_res_fire()--;
+        //you.spec_fire--;
+        //player_res_cold()++;
+        //you.hunger_inc--;
         break;
 
-    case RING_ICE:              // ice
-        /* player_res_fire() += 1;
-           you.spec_cold -= 1;
-           player_res_cold() -= 1; */
-        // you.hunger_inc -= 1;
+    case RING_ICE:
+        //player_res_fire()--;
+        //you.spec_cold--;
+        //player_res_cold()--;
+        //you.hunger_inc--;
         break;
 
-    case RING_TELEPORT_CONTROL: // teleport control
-
+    case RING_TELEPORT_CONTROL:
         you.attribute[ATTR_CONTROL_TELEPORT]--;
-        // you.hunger_inc -= 1;
+        //you.hunger_inc--;
         break;
-
-
     }                           // end of switch
 
     if (you.inv_dam[ring_wear_2] == 200 || you.inv_dam[ring_wear_2] == 201)
@@ -2418,7 +2382,7 @@ void zap_wand()
 
     mpr("Which direction? (*/+ to target)");
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
-        if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != 6 || player_see_invis() != 0))
+        if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != ENCH_INVIS || player_see_invis() != 0))
         {
             strcpy(info, "You are currently targetting ");
             strcat(info, monam(menv[you.prev_targ].number, menv[you.prev_targ].type, menv[you.prev_targ].enchantment[
@@ -2456,9 +2420,9 @@ void zap_wand()
     if (type_zapped == WAND_RANDOM_EFFECTS)     /* random effects */
     {
         type_zapped = random2(16);
-        if (random2(20) == 0)
+        if ( one_chance_in(20) )
             type_zapped = 17;
-        if (random2(17) == 0)
+        if ( one_chance_in(17) )
             type_zapped = 21;
     }
 
@@ -2517,7 +2481,7 @@ void eat_food()
 
     unsigned char nthing = 0;
 
-    if (you.is_undead == 2)
+    if (you.is_undead == US_UNDEAD)
     {
         mpr("You can't eat.");
         return;
@@ -2530,7 +2494,7 @@ void eat_food()
         return;
     }
 
-    if (igrd[you.x_pos][you.y_pos] != 501)
+    if (igrd[you.x_pos][you.y_pos] != ING)
     {
         if (eat_from_floor() == 1)
             return;
@@ -2587,7 +2551,7 @@ void eat_food()
         return;
     }
 
-    if (you.species == SP_GHOUL || you.species == SP_KOBOLD || you.mutation[MUT_CARNIVOROUS] == 3)      // kobold etc
+    if ( is_carnivore() )          // new function call - in food.cc 13jan2000 {dlb}
 
     {
         if (
@@ -2609,7 +2573,7 @@ void eat_food()
 
 
     if (you.inv_type
-        [food_eat_2] == FOOD_CHUNK && you.hunger_state > 2 && wearing_amulet(AMU_THE_GOURMAND) == 0 &&
+        [food_eat_2] == FOOD_CHUNK && you.hunger_state > HS_HUNGRY && !wearing_amulet(AMU_THE_GOURMAND) &&
         you.species != SP_KOBOLD &&
         you.species != SP_OGRE &&
         you.species != SP_TROLL &&
@@ -2654,24 +2618,17 @@ void drink()
     unsigned char nthing = 0;
     unsigned char keyin;
 
-    if (you.is_undead == 2)
+    if (you.is_undead == US_UNDEAD)
     {
         mpr("You can't drink.");
         return;
     }
 
-    if (grd
-        [you.x_pos]
-        [you.y_pos] >= 200 && grd
-        [you.x_pos]
-        [you.y_pos] <= 209 && grd
-        [you.x_pos]
-        [you.y_pos] %
-        2 ==
-        0)
+    if ( grd[you.x_pos][you.y_pos] == DNGN_BLUE_FOUNTAIN
+          || grd[you.x_pos][you.y_pos] == DNGN_SPARKLING_FOUNTAIN )
     {
-        if (drink_fountain() == 1)
-            return;
+        if ( drink_fountain() )
+          return;
     }
 
     if (you.num_inv_items == 0)
@@ -2762,93 +2719,123 @@ void drink()
 }                               /* end of void drink() */
 
 
-char drink_fountain()
+bool drink_fountain()
 {
-    char dry = 0;
+    bool gone_dry = false;
+    int temp_rand;                      // for probability determinations {dlb}
+    int fountain_effect = POT_WATER;    // for fountain effects {dlb}
 
-    switch (grd[you.x_pos][you.y_pos])
+    switch ( grd[you.x_pos][you.y_pos] )
     {
-    case 200:
+      case DNGN_BLUE_FOUNTAIN:
         mpr("Drink from the fountain?");
         break;
-    case 202:
+      case DNGN_SPARKLING_FOUNTAIN:
         mpr("Drink from the sparkling fountain?");
         break;
     }
 
     char keyin = get_ch();
 
-    if (keyin == 'y' || keyin == 'Y')
-    {
-        switch (grd[you.x_pos][you.y_pos])
-        {
-        case 200:               /* water fountain */
-            mpr("You drink the pure, clear water.");
-            if (random2(20) == 0)
-                dry = 1;
-            break;
-        case 202:               /* magic fountain */
-            mpr("You drink the sparkling water.");
-            switch (random2(25))
-            {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-                potion_effect(random2(4), 100);
-                break;
-            case 4:
-                if (random2(3) == 0)
-                    potion_effect(POT_GAIN_STRENGTH + random2(3), 100);
-                break;
-            case 5:
-            case 6:
-            case 7:
-            case 8:
-                potion_effect(POT_LEVITATION + random2(6), 100);
-                break;
-            case 9:
-                if (random2(5) == 0)
-                    potion_effect(POT_DECAY, 100);
-                else
-                    potion_effect(POT_DEGENERATION, 100);
-                break;
-            case 10:
-                potion_effect(POT_DECAY, 100);
-                break;
-            case 11:
-            case 12:
-                potion_effect(POT_MAGIC + random2(4), 100);
-                break;
-            case 13:
-                potion_effect(POT_MUTATION, 100);
-                break;
-            default:
-                mpr("Nothing appears to happen.");
-                break;          /* Does nothing */
-            }
-            if (random2(10) == 0)
-            {
-                dry = 1;
-                if (random2(5) == 0)
-                    grd[you.x_pos][you.y_pos] = 200;    /* back to a normal fountain, but you won't know it yet */
-            }
-            break;
-        }
-    }
-    else
-        return 0;
+    if (keyin != 'y' && keyin != 'Y')
+      return false;                         // early return for the cowardly {dlb}
 
-    if (dry == 1)
+    switch ( grd[you.x_pos][you.y_pos] )
     {
-        mpr("The fountain dries up!");
-        grd[you.x_pos][you.y_pos]++;
+      case DNGN_BLUE_FOUNTAIN:
+        mpr("You drink the pure, clear water.");
+        break;
+      case DNGN_SPARKLING_FOUNTAIN:
+        mpr("You drink the sparkling water.");
+        break;
     }
+
+    if ( grd[you.x_pos][you.y_pos] == DNGN_SPARKLING_FOUNTAIN )
+      {
+         temp_rand = random2(4500);
+
+         if ( temp_rand > 2399 )
+           fountain_effect = POT_WATER;                    // 46.7% chance {dlb}
+         else if ( temp_rand > 2183 )
+           fountain_effect = POT_DECAY;                    //  4.8% chance {dlb}
+         else if ( temp_rand > 2003 )
+           fountain_effect = POT_MUTATION;                 //  4.0% chance {dlb}
+         else if ( temp_rand > 1823 )
+           fountain_effect = POT_HEALING;                  //  4.0% chance {dlb}
+         else if ( temp_rand > 1643 )
+           fountain_effect = POT_HEAL_WOUNDS;              //  4.0% chance {dlb}
+         else if ( temp_rand > 1463 )
+           fountain_effect = POT_SPEED;                    //  4.0% chance {dlb}
+         else if ( temp_rand > 1283 )
+           fountain_effect = POT_MIGHT;                    //  4.0% chance {dlb}
+         else if ( temp_rand > 1139 )
+           fountain_effect = POT_DEGENERATION;             //  3.2% chance {dlb}
+         else if ( temp_rand > 1019 )
+           fountain_effect = POT_LEVITATION;               //  2.7% chance {dlb}
+         else if ( temp_rand > 899 )
+           fountain_effect = POT_POISON;                   //  2.7% chance {dlb}
+         else if ( temp_rand > 779 )
+           fountain_effect = POT_SLOWING;                  //  2.7% chance {dlb}
+         else if ( temp_rand > 659 )
+           fountain_effect = POT_PARALYSIS;                //  2.7% chance {dlb}
+         else if ( temp_rand > 539 )
+           fountain_effect = POT_CONFUSION;                //  2.7% chance {dlb}
+         else if ( temp_rand > 419 )
+           fountain_effect = POT_INVISIBILITY;             //  2.7% chance {dlb}
+         else if ( temp_rand > 329 )
+           fountain_effect = POT_MAGIC;                    //  2.0% chance {dlb}
+         else if ( temp_rand > 239 )
+           fountain_effect = POT_RESTORE_ABILITIES;        //  2.0% chance {dlb}
+         else if ( temp_rand > 149 )
+           fountain_effect = POT_STRONG_POISON;            //  2.0% chance {dlb}
+         else if ( temp_rand > 59 )
+           fountain_effect = POT_BERSERK_RAGE;             //  2.0% chance {dlb}
+         else if ( temp_rand > 39 )
+           fountain_effect = POT_GAIN_STRENGTH;            //  0.4% chance {dlb}
+         else if ( temp_rand > 19 )
+           fountain_effect = POT_GAIN_DEXTERITY;           //  0.4% chance {dlb}
+         else
+           fountain_effect = POT_GAIN_INTELLIGENCE;        //  0.4% chance {dlb}
+      }
+
+    potion_effect(fountain_effect, 100);
+
+    switch ( grd[you.x_pos][you.y_pos] )
+    {
+      case DNGN_BLUE_FOUNTAIN:
+        if ( one_chance_in(20) )
+          gone_dry = true;
+        break;
+      case DNGN_SPARKLING_FOUNTAIN:
+        if ( one_chance_in(10) )
+          {
+             gone_dry = true;
+             break;
+          }
+        else
+          {
+             temp_rand = random2(50);
+              if ( temp_rand > 40 )     // 18% probability
+                grd[you.x_pos][you.y_pos] = DNGN_BLUE_FOUNTAIN;    // you won't know it (yet)
+          }
+        break;
+    }
+
+    if ( gone_dry )
+      {
+        mpr("The fountain dries up!");
+        if (grd[you.x_pos][you.y_pos] == DNGN_BLUE_FOUNTAIN)
+          grd[you.x_pos][you.y_pos] = DNGN_DRY_FOUNTAIN_I;
+        else if (grd[you.x_pos][you.y_pos] == DNGN_SPARKLING_FOUNTAIN)
+          grd[you.x_pos][you.y_pos] = DNGN_DRY_FOUNTAIN_II;
+      }
 
     you.turn_is_over = 1;
 
-    return 1;
+    return true;
 }
+
+
 
 
 void read_scroll()
@@ -2933,13 +2920,13 @@ void read_scroll()
             mesclr();
             return;
         }
-        if (learn_a_spell(sc_read_2, conv_lett(book_thing)) != 1)
+        if ( !learn_a_spell(sc_read_2, conv_lett(book_thing)) )
         {
             mesclr();
             return;
         }
         nthing = which_spell_in_book(you.inv_type[sc_read_2], conv_lett(book_thing) + 1);
-        if (nthing == 210)
+        if ( nthing == SPELL_NO_SPELL )
         {
             mesclr();
             return;
@@ -2969,7 +2956,7 @@ void read_scroll()
 
     if (you.mutation[MUT_BLURRY_VISION] > 0 && random2(5) < you.mutation[MUT_BLURRY_VISION])
     {
-        if (you.mutation[MUT_BLURRY_VISION] == 3 && random2(3) == 0)
+        if ( you.mutation[MUT_BLURRY_VISION] == 3 && one_chance_in(3) )
             mpr("This scroll appears to be blank.");
         else
             mpr("The writing blurs in front of your eyes.");
@@ -3005,7 +2992,7 @@ void read_scroll()
     }
 
     if (you.skills[SK_SPELLCASTING] == 0)
-        exercise(SK_SPELLCASTING, 1 + random2(2));
+        exercise( SK_SPELLCASTING, ( (coinflip()) ? 2 : 1 ) );
 
     switch (you.inv_type[sc_read_2])
     {
@@ -3015,7 +3002,6 @@ void read_scroll()
         identify(1);
         wield_change = 1;
         return;
-
 
     case SCR_TELEPORTATION:
         you_teleport();
@@ -3046,7 +3032,7 @@ void read_scroll()
 
     case SCR_SUMMONING:
         mpr("A horrible Thing appears!");
-        create_monster(MONS_LARGE_ABOMINATION, 25, 7, you.x_pos, you.y_pos, MHITNOT, 250);
+        create_monster(MONS_ABOMINATION_SMALL, 25, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
         set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
         break;
 
@@ -3060,17 +3046,12 @@ void read_scroll()
             return;
         }
 
-        if (you.inv_class
-            [you.equip
-             [EQ_WEAPON]] == OBJ_WEAPONS || you.inv_class
-            [you.equip
-             [EQ_WEAPON]] == OBJ_MISSILES)
+        if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
+              || you.inv_class[you.equip[EQ_WEAPON]] == OBJ_MISSILES )
         {
 
-            if (you.inv_type
-                [sc_read_2] == SCR_ENCHANT_WEAPON_II && you.inv_class
-                [you.equip
-                 [EQ_WEAPON]] == OBJ_WEAPONS)
+            if ( you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_II
+                && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
             {
                 id_used = you.inv_plus2[you.equip[EQ_WEAPON]];
             }
@@ -3079,13 +3060,9 @@ void read_scroll()
 
             affected = 1;
 
-            if (you.inv_class
-                [you.equip
-                 [EQ_WEAPON]] == OBJ_WEAPONS &&
-                (you.inv_dam
-                 [you.equip
-                  [EQ_WEAPON]] > 180 || you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25))  // artefacts can't be enchanted, but these scrolls still remove curses
-
+            if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
+                && ( you.inv_dam[you.equip[EQ_WEAPON]] > 180
+                      || you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25 ) )  // artefacts can't be enchanted, but these scrolls still remove curses
             {
                 /*      strcpy(info, "Nothing appears to happen.");
                    mpr(info);
@@ -3112,25 +3089,28 @@ void read_scroll()
                return;
                } */
 
-            if (id_used >= 154 || (id_used < 100 && id_used >= 54))
+            if ( id_used >= 154 || (id_used < 100 && id_used >= 54) )
             {
                 if (random2(9) < id_used % 50)
                     affected = 0;
             }
 
             // if it isn't affected by the enchantment, it will still be uncursed:
-            if (you.inv_plus[you.equip[EQ_WEAPON]] >= 154 || (you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25 &&
-                                 you.inv_plus[you.equip[EQ_WEAPON]] >= 100))
+            if ( you.inv_plus[you.equip[EQ_WEAPON]] >= 154
+                  || ( you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25
+                      && you.inv_plus[you.equip[EQ_WEAPON]] >= 100 ) )
             {
                 if (affected == 0)
                 {
-                    item_name(you.inv_plus2[you.equip[EQ_WEAPON]], you.inv_class[you.equip[EQ_WEAPON]], you
-                              .inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus
-                              [you.equip[EQ_WEAPON]], you.inv_quantity[you.equip[EQ_WEAPON]], you.inv_ident[you
-                                                                      .equip
-                                                                  [EQ_WEAPON
-                                                                          ]]
-                              ,4, str_pass);
+                  item_name( you.inv_plus2[you.equip[EQ_WEAPON]],
+                             you.inv_class[you.equip[EQ_WEAPON]],
+                             you.inv_type[you.equip[EQ_WEAPON]],
+                             you.inv_dam[you.equip[EQ_WEAPON]],
+                             you.inv_plus[you.equip[EQ_WEAPON]],
+                             you.inv_quantity[you.equip[EQ_WEAPON]],
+                             you.inv_ident[you.equip[EQ_WEAPON]],
+                             4,
+                             str_pass );
                     strcpy(info, str_pass);
                     strcat(info, " glows silver for a moment.");
                     mpr(info);
@@ -3150,39 +3130,30 @@ void read_scroll()
 
 
             // vVvVv    This is *here* (as opposed to lower down) for a reason!
-            item_name(you.inv_plus2
-                      [you.equip
-                       [EQ_WEAPON]], you.inv_class
-                      [you.equip
-                       [EQ_WEAPON]], you.inv_type
-                      [you.equip
-                       [EQ_WEAPON]], you.inv_dam
-                      [you.equip
-                       [EQ_WEAPON]], you.inv_plus
-                      [you.equip
-                       [EQ_WEAPON]], you.inv_quantity
-                      [you.equip
-                       [EQ_WEAPON]], you.inv_ident
-                      [you.equip[EQ_WEAPON]], 4, str_pass);
+            item_name( you.inv_plus2[you.equip[EQ_WEAPON]],
+                       you.inv_class[you.equip[EQ_WEAPON]],
+                       you.inv_type[you.equip[EQ_WEAPON]],
+                       you.inv_dam[you.equip[EQ_WEAPON]],
+                       you.inv_plus[you.equip[EQ_WEAPON]],
+                       you.inv_quantity[you.equip[EQ_WEAPON]],
+                       you.inv_ident[you.equip[EQ_WEAPON]],
+                       4,
+                       str_pass );
 
             strcpy(info, str_pass);
-            if (you.inv_type
-                [sc_read_2] == SCR_ENCHANT_WEAPON_II && you.inv_class
-                [you.equip
-                 [EQ_WEAPON]] == OBJ_WEAPONS)
+            if ( you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_II
+                && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
             {
                 strcat(info, " glows red for a moment.");
                 mpr(info);
             }
-            else if (you.inv_type
-                     [sc_read_2] == SCR_ENCHANT_WEAPON_I && you.inv_class
-                     [you.equip
-                      [EQ_WEAPON]] == OBJ_WEAPONS)
+            else if ( you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_I
+                     && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
             {
                 strcat(info, " glows green for a moment.");
                 mpr(info);
             }
-            else if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
+            else if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
             {
                 id_used--;      /* no plusses for using this */
                 if (you.duration[DUR_VORPAL_BLADE] > 0)
@@ -3198,7 +3169,7 @@ void read_scroll()
                     mpr(info);
                     beam[0].type = 43;
                     beam[0].damage = 110;
-                    beam[0].flavour = 2;
+                    beam[0].flavour = BEAM_FIRE;
                     beam[0].bx = you.x_pos;
                     beam[0].by = you.y_pos;
                     strcpy(beam[0].beam_name, "fiery explosion");
@@ -3231,16 +3202,16 @@ void read_scroll()
                 {
                     strcat(info, " glows bright yellow for a while.");
                     mpr(info);
-                    you.inv_plus[you.equip[EQ_WEAPON]] += 1 + random2(2);
-                    you.inv_plus2[you.equip[EQ_WEAPON]] += 1 + random2(2);
-                    if (you.inv_plus[you.equip[EQ_WEAPON]] > 130)
+                    you.inv_plus[you.equip[EQ_WEAPON]] += ( (coinflip()) ? 2 : 1 );
+                    you.inv_plus2[you.equip[EQ_WEAPON]] += ( (coinflip()) ? 2 : 1 );
+                    if ( you.inv_plus[you.equip[EQ_WEAPON]] > 130 )
                         you.inv_plus[you.equip[EQ_WEAPON]] -= 100;
                     set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
                     return;
                 }
             }
-            set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
 
+            set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
 
             id_used++;
             if (you.inv_plus[you.equip[EQ_WEAPON]] > 130)
@@ -3248,17 +3219,13 @@ void read_scroll()
             if (id_used > 130)
                 id_used -= 100;
 
-            if (you.inv_type
-                [sc_read_2] == SCR_ENCHANT_WEAPON_II && you.inv_class
-                [you.equip
-                 [EQ_WEAPON]] == OBJ_WEAPONS)
+            if ( you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_II
+                && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
             {
                 you.inv_plus2[you.equip[EQ_WEAPON]] = id_used;
             }
-            else if (you.inv_type
-                     [sc_read_2] == SCR_ENCHANT_WEAPON_I && you.inv_class
-                     [you.equip
-                      [EQ_WEAPON]] == OBJ_WEAPONS)
+            else if ( you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_I
+                     && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
             {
                 you.inv_plus[you.equip[EQ_WEAPON]] = id_used;
             }
@@ -3271,14 +3238,14 @@ void read_scroll()
         mpr("Nothing appears to happen.");
         return;                 // end of case 7: enc weapon
 
-    case SCR_VORPALISE_WEAPON:  // vorpalise weapon
-        if (you.equip[EQ_WEAPON] == -1
-                || you.inv_class [you.equip [EQ_WEAPON]] != OBJ_WEAPONS
-                || (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-                && (you.inv_dam[you.equip[EQ_WEAPON]] > 180
-                || you.inv_dam [you.equip [EQ_WEAPON]] % 30 >= 25
-                || (you.inv_type[you .equip [EQ_WEAPON ] ] >= WPN_SLING
-                && you.inv_type[you.equip[EQ_WEAPON]] <= WPN_HAND_CROSSBOW))))
+    case SCR_VORPALISE_WEAPON:
+        if ( you.equip[EQ_WEAPON] == -1
+              || you.inv_class [you.equip [EQ_WEAPON]] != OBJ_WEAPONS
+              || ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
+                  && ( you.inv_dam[you.equip[EQ_WEAPON]] > 180
+                        || you.inv_dam [you.equip [EQ_WEAPON]] % 30 >= 25
+                        || ( you.inv_type[you .equip [EQ_WEAPON ] ] >= WPN_SLING
+                            && you.inv_type[you.equip[EQ_WEAPON]] <= WPN_HAND_CROSSBOW ) ) ) )
         {
             mpr("Nothing appears to happen.");
             return;
@@ -3299,8 +3266,8 @@ void read_scroll()
         set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
         wield_change = 1;
 
-        if (you.inv_dam[you.equip[EQ_WEAPON]] > 180
-                    || you.inv_dam[you.equip[EQ_WEAPON]] % 30 != SPWPN_NORMAL)
+        if ( you.inv_dam[you.equip[EQ_WEAPON]] > 180
+              || you.inv_dam[you.equip[EQ_WEAPON]] % 30 != SPWPN_NORMAL )
         {
             /* you.inv_plus [you.equip [EQ_WEAPON]] = 50;
                you.inv_plus2 [you.equip [EQ_WEAPON]] = 50;
@@ -3329,7 +3296,9 @@ void read_scroll()
 
 
     case SCR_RECHARGING:
-        if (you.equip[EQ_WEAPON] != -1 && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS && you.inv_dam[you.equip[EQ_WEAPON]] == SPWPN_ELECTROCUTION)       // electrocution
+        if ( you.equip[EQ_WEAPON] != -1
+            && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
+            && you.inv_dam[you.equip[EQ_WEAPON]] == SPWPN_ELECTROCUTION )
 
             goto weapon_enchant;
 
@@ -3368,42 +3337,24 @@ void read_scroll()
         // NOTE: It is assumed that armour which changes in this way does not change
         //  into a form of armour with a different evasion modifier.
 
-        if (you.inv_type
-            [you.equip
-             [EQ_BODY_ARMOUR]] == ARM_DRAGON_HIDE || you.inv_type
-            [you.equip
-             [EQ_BODY_ARMOUR]] == ARM_ICE_DRAGON_HIDE || you.inv_type
-            [you.equip
-             [EQ_BODY_ARMOUR]] == ARM_STEAM_DRAGON_HIDE || you.inv_type
-            [you.equip
-             [EQ_BODY_ARMOUR]] == ARM_MOTTLED_DRAGON_HIDE || you.inv_type
-            [you.equip
-             [EQ_BODY_ARMOUR]] == ARM_STORM_DRAGON_HIDE || you.inv_type
-            [you.equip
-             [EQ_BODY_ARMOUR]] == ARM_GOLD_DRAGON_HIDE || you.inv_type
-            [you.equip
-             [EQ_BODY_ARMOUR]] == ARM_SWAMP_DRAGON_HIDE)        // dragon hide
+        if ( you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_DRAGON_HIDE
+              || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_ICE_DRAGON_HIDE
+              || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_STEAM_DRAGON_HIDE
+              || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_MOTTLED_DRAGON_HIDE
+              || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_STORM_DRAGON_HIDE
+              || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_GOLD_DRAGON_HIDE
+              || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_SWAMP_DRAGON_HIDE )
 
         {
             affected = EQ_BODY_ARMOUR;
-            item_name(you.inv_plus2[you.equip[affected]], you.inv_class[you.equip[affected]], you.inv_type[
-                                                                         you
-
-                                                                           .
-                                                                       equip
-                                                                           [
-                                                                    affected
-                                                                           ]
-                      ]
-                      ,you.inv_dam[you.equip[affected]], you.inv_plus[you.equip[affected]], you.inv_quantity[you
-
-                                                                           .
-                                                                       equip
-                                                                           [
-                                                                    affected
-                                                                           ]
-                      ]
-                      ,you.inv_ident[you.equip[affected]], 4, str_pass);
+            item_name( you.inv_plus2[you.equip[affected]],
+                       you.inv_class[you.equip[affected]],
+                       you.inv_type[you.equip[affected]],
+                       you.inv_dam[you.equip[affected]],
+                       you.inv_plus[you.equip[affected]],
+                       you.inv_quantity[you.equip[affected]],
+                       you.inv_ident[you.equip[affected]],
+                       4, str_pass );
             strcpy(info, str_pass);
             strcat(info, " glows purple and changes!");
             mpr(info);
@@ -3414,42 +3365,42 @@ void read_scroll()
             {
 
             case ARM_DRAGON_HIDE:
-                /*                 player_res_fire() ++;
-                   player_res_cold() --; */
+                //player_res_fire() ++;
+                //player_res_cold() --;
                 you.inv_type[you.equip[EQ_BODY_ARMOUR]] = ARM_DRAGON_ARMOUR;
                 break;
 
             case ARM_ICE_DRAGON_HIDE:
-                /*                 player_res_cold() ++;
-                   player_res_fire() --; */
+                //player_res_cold() ++;
+                //player_res_fire() --;
                 you.inv_type[you.equip[EQ_BODY_ARMOUR]] = ARM_ICE_DRAGON_ARMOUR;
                 break;
 
-            case ARM_STEAM_DRAGON_HIDE: // steam dragon
+            case ARM_STEAM_DRAGON_HIDE:
 
                 you.inv_type[you.equip[EQ_BODY_ARMOUR]] = ARM_STEAM_DRAGON_ARMOUR;
                 break;
 
-            case ARM_MOTTLED_DRAGON_HIDE:       // mottled dragon
+            case ARM_MOTTLED_DRAGON_HIDE:
 
                 you.inv_type[you.equip[EQ_BODY_ARMOUR]] = ARM_MOTTLED_DRAGON_ARMOUR;
                 break;
 
-            case ARM_STORM_DRAGON_HIDE: // storm dragon
+            case ARM_STORM_DRAGON_HIDE:
 
                 you.inv_type[you.equip[EQ_BODY_ARMOUR]] = ARM_STORM_DRAGON_ARMOUR;
-                // you.attribute[ATTR_RESIST_LIGHTNING]++;
+                //you.attribute[ATTR_RESIST_LIGHTNING]++;
                 break;
 
-            case ARM_GOLD_DRAGON_HIDE:          // gold dragon
+            case ARM_GOLD_DRAGON_HIDE:
 
                 you.inv_type[you.equip[EQ_BODY_ARMOUR]] = ARM_GOLD_DRAGON_ARMOUR;
-                /*                 player_res_fire() ++;
-                   player_res_cold() ++;
-                   you.res_poison ++; */
+                //player_res_fire() ++;
+                //player_res_cold() ++;
+                //you.res_poison ++;
                 break;
 
-            case ARM_SWAMP_DRAGON_HIDE: // swamp dragon
+            case ARM_SWAMP_DRAGON_HIDE:
 
                 you.inv_type[you.equip[EQ_BODY_ARMOUR]] = ARM_SWAMP_DRAGON_ARMOUR;
                 break;
@@ -3461,26 +3412,18 @@ void read_scroll()
         }
 
 
-        if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_TROLL_HIDE)  // troll hide
+        if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_TROLL_HIDE)
 
         {
             affected = EQ_BODY_ARMOUR;
-            item_name(you.inv_plus2[you.equip[affected]], you.inv_class[you.equip[affected]], you.inv_type[
-                                                                         you
-                                                                           .
-                                                                       equip
-                                                                           [
-                                                                    affected
-                                                                           ]
-                      ]
-                      ,you.inv_dam[you.equip[affected]], you.inv_plus[you.equip[affected]], you.inv_quantity[you
-                                                                           .
-                                                                       equip
-                                                                           [
-                                                                    affected
-                                                                           ]
-                      ]
-                      ,you.inv_ident[you.equip[affected]], 4, str_pass);
+            item_name( you.inv_plus2[you.equip[affected]],
+                       you.inv_class[you.equip[affected]],
+                       you.inv_type[you.equip[affected]],
+                       you.inv_dam[you.equip[affected]],
+                       you.inv_plus[you.equip[affected]],
+                       you.inv_quantity[you.equip[affected]],
+                       you.inv_ident[you.equip[affected]],
+                       4, str_pass );
             strcpy(info, str_pass);
             strcat(info, " glows purple and changes!");
             mpr(info);
@@ -3492,24 +3435,14 @@ void read_scroll()
 
         if (you.inv_dam[you.equip[affected]] % 30 >= 25)
         {
-            item_name(you.inv_plus2[you.equip[affected]], you.inv_class[you.equip[affected]], you.inv_type[
-                                                                         you
-
-                                                                           .
-                                                                       equip
-                                                                           [
-                                                                    affected
-                                                                           ]
-                      ]
-                      ,you.inv_dam[you.equip[affected]], you.inv_plus[you.equip[affected]], you.inv_quantity[you
-
-                                                                           .
-                                                                       equip
-                                                                           [
-                                                                    affected
-                                                                           ]
-                      ]
-                      ,you.inv_ident[you.equip[affected]], 4, str_pass);
+            item_name( you.inv_plus2[you.equip[affected]],
+                       you.inv_class[you.equip[affected]],
+                       you.inv_type[you.equip[affected]],
+                       you.inv_dam[you.equip[affected]],
+                       you.inv_plus[you.equip[affected]],
+                       you.inv_quantity[you.equip[affected]],
+                       you.inv_ident[you.equip[affected]],
+                       4, str_pass );
             set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
             strcpy(info, str_pass);
             strcat(info, " glows faintly for a moment.");
@@ -3523,22 +3456,14 @@ void read_scroll()
         {
             if (random2(8) >= (you.inv_plus[you.equip[affected]] - 150))
             {
-                item_name(you.inv_plus2
-                          [you.equip
-                           [affected]], you.inv_class
-                          [you.equip
-                           [affected]], you.inv_type[you.equip[affected]], you.inv_dam[you.equip[affected]], you.inv_plus[
-                                                                         you
-
-                                                                           .
-                                                                       equip
-                                                                           [
-                                                                    affected
-                                                                           ]
-                          ]
-                          ,you.inv_quantity[you.equip[affected]], you.inv_ident[you.equip[affected]], 4, str_pass)
-                    ;
-
+                item_name( you.inv_plus2[you.equip[affected]],
+                           you.inv_class[you.equip[affected]],
+                           you.inv_type[you.equip[affected]],
+                           you.inv_dam[you.equip[affected]],
+                           you.inv_plus[you.equip[affected]],
+                           you.inv_quantity[you.equip[affected]],
+                           you.inv_ident[you.equip[affected]],
+                           4, str_pass );
                 you.inv_plus[you.equip[affected]] -= 100;
                 set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
 
@@ -3556,23 +3481,22 @@ void read_scroll()
                 goto nothing_happened_2;
         }
 
-        if (you.inv_type[you.equip[affected]] >= ARM_CLOAK && you.inv_type[you.equip[affected]] <= ARM_BOOTS
-            )
-            if ((you.inv_plus[you.equip[affected]] - 50 >= 2 && you.inv_plus[you.equip[affected]] < 130) ||
-                you.inv_plus[you.equip[affected]] >= 152)
+        if ( you.inv_type[you.equip[affected]] >= ARM_CLOAK
+            && you.inv_type[you.equip[affected]] <= ARM_BOOTS )
+            if ( ( you.inv_plus[you.equip[affected]] - 50 >= 2
+                  && you.inv_plus[you.equip[affected]] < 130 )
+               || you.inv_plus[you.equip[affected]] >= 152 )
                 goto nothing_happened_2;
 
         // vVvVv    This is *here* for a reason!
-        item_name(you.inv_plus2[you.equip[affected]], you.inv_class[you.equip[affected]], you.inv_type[you
-                                                                      .equip
-                                                                   [affected
-                                                                         ]],
-                  you.inv_dam[you.equip[affected]], you.inv_plus[you.equip[affected]], you.inv_quantity[you
-                                                                      .equip
-                                                                   [affected
-                                                                         ]],
-                  you.inv_ident[you.equip[affected]], 4, str_pass);
-
+        item_name( you.inv_plus2[you.equip[affected]],
+                   you.inv_class[you.equip[affected]],
+                   you.inv_type[you.equip[affected]],
+                   you.inv_dam[you.equip[affected]],
+                   you.inv_plus[you.equip[affected]],
+                   you.inv_quantity[you.equip[affected]],
+                   you.inv_ident[you.equip[affected]],
+                   4, str_pass );
         you.inv_plus[you.equip[affected]]++;
         if (you.inv_plus[you.equip[affected]] > 130)
             you.inv_plus[you.equip[affected]] -= 100;
@@ -3588,9 +3512,9 @@ void read_scroll()
         mpr(info);
         return;                 // end of ench you.equip
 
-    case SCR_TORMENT:           // torment
-        /*      beam[0].bx = you.x_pos;
-           beam[0].by = you.y_pos; */
+    case SCR_TORMENT:
+        //beam[0].bx = you.x_pos;
+        //beam[0].by = you.y_pos;
         torment();              //you.x_pos, you.y_pos);
 
         if (get_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2]) == 1)
@@ -3599,25 +3523,14 @@ void read_scroll()
         set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
         return;
 
-    case SCR_RANDOM_USELESSNESS:        // random uselessness
-
+    case SCR_RANDOM_USELESSNESS:
         random_uselessness(random2(9), sc_read_2);      //random2 (1));
-
         return;
 
-    case SCR_CURSE_WEAPON:      // curse weapon
-
-        if (you.equip[EQ_WEAPON] == -1 || you.inv_class[you.equip[EQ_WEAPON]] > OBJ_WEAPONS || you.inv_plus[
-                                                                         you
-
-                                                                           .
-                                                                       equip
-                                                                           [
-                                                                   EQ_WEAPON
-                                                                           ]
-            ]
-            > 130)              // || you.inv_dam [you.equip [EQ_WEAPON]] % 30 >= 25)
-
+    case SCR_CURSE_WEAPON:
+        if ( you.equip[EQ_WEAPON] == -1
+              || you.inv_class[you.equip[EQ_WEAPON]] > OBJ_WEAPONS
+              || you.inv_plus[you.equip[EQ_WEAPON]] > 130 )     // || you.inv_dam [you.equip [EQ_WEAPON]] % 30 >= 25)
         {
             goto nothing_happened_2;
         }
@@ -3632,7 +3545,6 @@ void read_scroll()
 
 
     case SCR_CURSE_ARMOUR:      // curse you.equip
-
         for (i = EQ_CLOAK; i < EQ_RIGHT_RING; i++)
         {
             if (i == EQ_LEFT_RING)
@@ -3652,15 +3564,14 @@ void read_scroll()
 
 
         // vVvVv    This is *here* for a reason!
-        item_name(you.inv_plus2[you.equip[affected]], you.inv_class[you.equip[affected]], you.inv_type[you
-                                                                      .equip
-                                                                   [affected
-                                                                         ]],
-                  you.inv_dam[you.equip[affected]], you.inv_plus[you.equip[affected]], you.inv_quantity[you
-                                                                      .equip
-                                                                   [affected
-                                                                         ]],
-                  you.inv_ident[you.equip[affected]], 4, str_pass);
+        item_name( you.inv_plus2[you.equip[affected]],
+                   you.inv_class[you.equip[affected]],
+                   you.inv_type[you.equip[affected]],
+                   you.inv_dam[you.equip[affected]],
+                   you.inv_plus[you.equip[affected]],
+                   you.inv_quantity[you.equip[affected]],
+                   you.inv_ident[you.equip[affected]],
+                   4, str_pass );
         you.inv_plus[you.equip[affected]] += 100;
         set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
         strcpy(info, str_pass);
@@ -3674,7 +3585,8 @@ void read_scroll()
 
         beam[0].type = 43;
         beam[0].damage = 110;
-        beam[0].flavour = 2;    // <=- not sure about this
+        beam[0].flavour = BEAM_FIRE;        // unsure about this
+                                            // BEAM_EXPLOSION instead? {dlb}
 
         beam[0].bx = you.x_pos;
         beam[0].by = you.y_pos;
@@ -3686,22 +3598,17 @@ void read_scroll()
         set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
         break;
 
-    case SCR_BLINKING:          // blink
-
+    case SCR_BLINKING:
         blink();
-
         set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-
         break;
 
         // This is never called; it is dealt with earlier:
-    case SCR_PAPER:             // paper
-
+    case SCR_PAPER:
         break;
 
-    case SCR_MAGIC_MAPPING:     // magic mapping
-
-        if (you.level_type == 1 || you.level_type == 2)
+    case SCR_MAGIC_MAPPING:
+        if ( you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS )
         {
             mpr("You feel momentarily disoriented.");
             set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);

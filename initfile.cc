@@ -10,14 +10,15 @@
  */
 
 
+#include "AppHdr.h"
+#include "initfile.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "AppHdr.h"
-#include "initfile.h"
-#include "enum.h"
 #include "externs.h"
+
 #include "items.h"
 
 

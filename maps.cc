@@ -3868,9 +3868,9 @@ char rand_demon_2(char vgrid[81][81], int mons_array[7])
     strcpy(vgrid[11], "............");
 
     mons_array[0] = 401;
-    mons_array[1] = summon_any_demon(2);
-    mons_array[2] = summon_any_demon(1);
-    mons_array[3] = summon_any_demon(1);
+    mons_array[1] = summon_any_demon(DEMON_GREATER);
+    mons_array[2] = summon_any_demon(DEMON_COMMON);
+    mons_array[3] = summon_any_demon(DEMON_COMMON);
     mons_array[4] = 250;
     mons_array[5] = 250;
 
@@ -3895,8 +3895,8 @@ char rand_demon_3(char vgrid[81][81], int mons_array[7])
     strcpy(vgrid[11], "............");
 
     mons_array[0] = 401;
-    mons_array[1] = summon_any_demon(1);
-    mons_array[2] = summon_any_demon(1);
+    mons_array[1] = summon_any_demon(DEMON_COMMON);
+    mons_array[2] = summon_any_demon(DEMON_COMMON);
 
     return 1;
 
@@ -3994,7 +3994,7 @@ char rand_demon_7(char vgrid[81][81], int mons_array[7])
 
     mons_array[0] = 401;
     mons_array[1] = summon_any_demon(random2(3));
-    mons_array[2] = summon_any_demon(2);
+    mons_array[2] = summon_any_demon(DEMON_GREATER);
 
     return 1;
 
@@ -4017,7 +4017,7 @@ char rand_demon_8(char vgrid[81][81], int mons_array[7])
     strcpy(vgrid[11], "............");
 
     mons_array[0] = 401;
-    mons_array[1] = summon_any_demon(2);
+    mons_array[1] = summon_any_demon(DEMON_GREATER);
     mons_array[2] = summon_any_demon(random2(3));
 
     return 1;
@@ -4042,7 +4042,7 @@ char rand_demon_9(char vgrid[81][81], int mons_array[7])
 
     mons_array[0] = 401;
     mons_array[1] = summon_any_demon(random2(3));
-    mons_array[2] = summon_any_demon(2);
+    mons_array[2] = summon_any_demon(DEMON_GREATER);
 
     return 1;
 

@@ -9,7 +9,7 @@ enum
 };
 
 void seen_altar(unsigned char which_altar);
-char print_level_name(int i, int j, char already_printed);
+bool print_level_name(int i, int j, bool already_printed);
 void init_overmap(void);
 void display_overmap(void);
 void seen_staircase(unsigned char which_staircase);

@@ -1,7 +1,7 @@
 /*
  *  File:       defines.h
  *  Summary:    Various definess used by Crawl.
- *  Written by: Linlet Henzel
+ *  Written by: Linley Henzel
  *
  *      Abstract:       A variety of miscellaneous constant values are found here.
  *                      I think we should move the colors into an enum or something
@@ -19,8 +19,6 @@
 
 #ifndef DEFINES_H
   #define DEFINES_H
-
-  #define NO_EQUIP 10
 
   // there's got to be a better way...
   #ifdef _LIBLINUX_IMPLEMENTATION
@@ -54,7 +52,6 @@
   #define MINMOVE 31
   /* Lowest grid value which can be seen through */
   #define MINSEE 11
-
 
   #define menv env.mons
   #define mitm env.it[0]
@@ -109,5 +106,13 @@
     #define LIGHTGREY LIGHTGRAY
     #define DARKGREY DARKGRAY
   #endif
+
+  // required for stuff::coinflip()
+  #define IB1 1
+  #define IB2 2
+  #define IB5 16
+  #define IB18 131072
+  #define MASK (IB1 + IB2 + IB5)
+  // required for stuff::coinflip()
 
 #endif // DEFINES_H

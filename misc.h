@@ -28,5 +28,5 @@ void weird_writing(char stringy[40]);
 void fall_into_a_pool(char place, unsigned char grype);
 void new_level(void);
 void weird_colours(unsigned char coll, char wc[30]);
-char go_berserk(void);
+bool go_berserk(void);
 #endif

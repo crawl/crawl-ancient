@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include "externs.h"
-#include "enum.h"
 
 #include "debug.h"
 #include "view.h"
@@ -99,7 +98,7 @@ void direction(char rnge, struct dist moves[1])
         }
 
         if (   !mons_near(you.prev_targ)
-            || (   menv[you.prev_targ].enchantment[2] == 6
+            || (   menv[you.prev_targ].enchantment[2] == ENCH_INVIS
                 && player_see_invis() == 0))
         {
             strcpy(info, "You can't see that creature any more.");
@@ -374,7 +373,7 @@ int look_around(struct dist moves[1])
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
     {
         if (   mons_near(you.prev_targ)
-            && (   menv[you.prev_targ].enchantment[2] != 6
+            && (   menv[you.prev_targ].enchantment[2] != ENCH_INVIS
                 || player_see_invis() != 0))
         {
             strcpy(info, "You are currently targetting ");
@@ -476,10 +475,10 @@ int look_around(struct dist moves[1])
                 if (mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9] == MNG)
                     continue;
 
-                if (menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].enchantment[2] == 6 && player_see_invis() == 0)
+                if (menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].enchantment[2] == ENCH_INVIS && player_see_invis() == 0)
                     continue;
 
-                if (menv [mgrd [you.x_pos + xps - 17] [you.y_pos + yps - 9]].type >= MLAVA0 && menv [mgrd [you.x_pos + xps - 17][you.y_pos + yps - 9]].number == 1)
+                if (menv [mgrd [you.x_pos + xps - 17] [you.y_pos + yps - 9]].type >= MONS_LAVA_WORM && menv [mgrd [you.x_pos + xps - 17][you.y_pos + yps - 9]].number == 1)
                     continue;
 
                 describe_monsters(menv [mgrd [you.x_pos + xps - 17] [you.y_pos + yps - 9]].type, mgrd [you.x_pos + xps - 17][you.y_pos + yps - 9]);
@@ -605,20 +604,20 @@ gotchy:
         {
             int i = mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9];
 
-            if (grd[you.x_pos + xps - 17][you.y_pos + yps - 9] == 65)
+            if (grd[you.x_pos + xps - 17][you.y_pos + yps - 9] == DNGN_SHALLOW_WATER)
             {
-                if (menv[i].enchantment[2] == 6 && mons_flies(menv[i].type) == 0 && player_see_invis() == 0)
+                if (menv[i].enchantment[2] == ENCH_INVIS && mons_flies(menv[i].type) == 0 && player_see_invis() == 0)
                 {
                     mpr("There is a strange disturbance in the water here.");
                 }
             }
 
-            if (menv[i].enchantment[2] == 6 && player_see_invis() == 0)
+            if (menv[i].enchantment[2] == ENCH_INVIS && player_see_invis() == 0)
                 goto look_clouds;
 
             int mmov_x = menv[i].inv[0];
 
-            if (menv[i].type == 144)
+            if (menv[i].type == MONS_DANCING_WEAPON)
             {
                 item_name(mitm.pluses2[mmov_x], mitm.base_type[mmov_x], mitm.sub_type[mmov_x],
                           mitm.special[mmov_x], mitm.pluses[mmov_x], mitm.quantity[mmov_x],
@@ -632,14 +631,14 @@ gotchy:
                 strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 2));
                     strcat(info, ".");
                     mpr(info);
-                if (mmov_x != 501)
+                if (mmov_x != ING)
                                 {
                                         strcpy(info, "It is wielding ");
                         item_name(mitm.pluses2[mmov_x], mitm.base_type[mmov_x], mitm.sub_type[mmov_x],
                               mitm.special[mmov_x], mitm.pluses[mmov_x], mitm.quantity[mmov_x],
                               mitm.id[mmov_x], 3, str_pass);
                             strcat(info, str_pass);
-                                        if (menv[i].type == MONS_TWO_HEADED_OGRE && menv[i].inv[1] != 501)
+                                        if (menv[i].type == MONS_TWO_HEADED_OGRE && menv[i].inv[1] != ING)
                                         {
                         strcat(info, ",");
                                                 mpr(info);
@@ -703,36 +702,45 @@ gotchy:
 look_clouds:
         if (env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9] != CNG)
         {
-            switch (env.cloud_type[env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9]] % 100)
+            switch (env.cloud_type[env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9]] % 100)  // (!!!) {dlb}
             {
-            case 1:
+            case CLOUD_FIRE:
                 strcpy(info, "There is a cloud of flame here.");
                 break;
-            case 2:
+
+            case CLOUD_STINK:
                 strcpy(info, "There is a cloud of noxious fumes here.");
                 break;
-            case 3:
+
+            case CLOUD_COLD:
                 strcpy(info, "There is a cloud of freezing vapour here.");
                 break;
-            case 4:
+
+            case CLOUD_POISON:
                 strcpy(info, "There is a cloud of poison gas here.");
                 break;
-            case 5:
-                strcpy(info, "There is a cloud of smoke here.");
+
+            case CLOUD_GREY_SMOKE:
+                strcpy(info, "There is a cloud of grey smoke here.");
                 break;
-            case 6:
+
+            case CLOUD_BLUE_SMOKE:
                 strcpy(info, "There is a cloud of blue smoke here.");
                 break;
-            case 7:
+
+            case CLOUD_PURP_SMOKE:
                 strcpy(info, "There is a cloud of purple smoke here.");
                 break;
-            case 8:
+
+            case CLOUD_STEAM:
                 strcpy(info, "There is a cloud of steam here.");
                 break;
-            case 9:
+
+            case CLOUD_MIASMA:
                 strcpy(info, "There is an evil black miasma here.");
                 break;
-            case 10:
+
+            case CLOUD_BLACK_SMOKE:
                 strcpy(info, "There is a cloud of black smoke here.");
                 break;
             }
@@ -740,9 +748,9 @@ look_clouds:
         }
         // end of look_clouds:
 
-        if (igrd[you.x_pos + xps - 17][you.y_pos + yps - 9] != 501)
+        if (igrd[you.x_pos + xps - 17][you.y_pos + yps - 9] != ING)
         {
-            if (mitm.base_type[igrd[you.x_pos + xps - 17][you.y_pos + yps - 9]] == 15)
+            if (mitm.base_type[igrd[you.x_pos + xps - 17][you.y_pos + yps - 9]] == OBJ_GOLD)
             {
                 mpr("You see some money here.");
             }
@@ -755,31 +763,31 @@ look_clouds:
                 mpr(info);
             }
 
-            if (mitm.link[igrd[you.x_pos + xps - 17][you.y_pos + yps - 9]] != 501)
+            if (mitm.link[igrd[you.x_pos + xps - 17][you.y_pos + yps - 9]] != ING)
                 mpr("There is something else lying underneath.");
         }
 
         switch (grd[you.x_pos + xps - 17][you.y_pos + yps - 9])
         {
-        case 2:
+        case DNGN_STONE_WALL:
             mpr("A stone wall.");
             break;
-        case 1:
-        case 5:         // secret door
-            if (you.level_type == 3)
+        case DNGN_ROCK_WALL:
+        case DNGN_SECRET_DOOR:
+            if (you.level_type == LEVEL_PANDEMONIUM)
             {
                 mpr("A wall of the weird stuff which makes up Pandemonium.");
             }
             else
                 mpr("A rock wall.");
             break;
-        case 3:
+        case DNGN_CLOSED_DOOR:
             mpr("A closed door.");
             break;
-        case 4:
+        case DNGN_METAL_WALL:
             mpr("A metal wall.");
             break;
-        case 6:
+        case DNGN_GREEN_CRYSTAL_WALL:
             mpr("A wall of green crystal.");
             break;
         case 7:
@@ -1026,18 +1034,18 @@ look_clouds:
         case 191:
             mpr("A silver altar of Elyvilon.");
             break;
-        case 200:
+        case DNGN_BLUE_FOUNTAIN:
             mpr("A fountain of clear blue water.");
             break;
-        case 202:
+        case DNGN_SPARKLING_FOUNTAIN:
             mpr("A fountain of sparkling water.");
             break;
-        case 201:
-        case 203:
-        case 205:
-        case 207:
-        case 209:
-        case 210:
+        case DNGN_DRY_FOUNTAIN_I:
+        case DNGN_DRY_FOUNTAIN_II:
+        case DNGN_DRY_FOUNTAIN_IV:
+        case DNGN_DRY_FOUNTAIN_VI:
+        case DNGN_DRY_FOUNTAIN_VIII:
+        case DNGN_PERMADRY_FOUNTAIN:
             mpr("A dry fountain.");
             break;
         }
@@ -1196,8 +1204,8 @@ finished_spiralling:
       {
             if (mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9] != MNG
             && env.show [temp_xps - 8] [temp_yps] != 0
-            && (menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].enchantment[2] != 6 || player_see_invis() != 0)
-            && (menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].type < MLAVA0 || menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].number != 1))
+            && (menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].enchantment[2] != ENCH_INVIS || player_see_invis() != 0)
+            && (menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].type < MONS_LAVA_WORM || menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].number != 1))
               // & not invis etc
             {
 //       mpr("Found something!");

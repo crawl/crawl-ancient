@@ -17,7 +17,7 @@
 #include <string.h>
 
 #include "externs.h"
-#include "enum.h"
+
 #include "it_use2.h"
 #include "item_use.h"
 #include "spells.h"
@@ -62,7 +62,7 @@
       switch (you.special_wield)
       {
          case SPWLD_SING:
-            if (random2(20) == 0)
+            if ( one_chance_in(20) )
             {
                strcpy(info, "The Singing Sword ");
                switch (random2(32))
@@ -203,7 +203,7 @@
 
          case SPWLD_CURSE:           // scythe of Curses
 
-            if (random2(30) == 0)
+            if ( one_chance_in(30) )
                curse_an_item(0, 0);
             break;
 
@@ -211,7 +211,7 @@
 
             if (you.inv_plus[you.equip[EQ_WEAPON]] > 100)
                you.inv_plus[you.equip[EQ_WEAPON]] -= 100;
-            if (random2(5) != 0)
+            if ( !one_chance_in(5) )
                break;
             you.inv_plus[you.equip[EQ_WEAPON]] += random2(2);
             you.inv_plus[you.equip[EQ_WEAPON]] -= random2(2);
@@ -234,12 +234,12 @@
 
          case SPWLD_TORMENT: // mace of torment
 
-            if (random2(200) == 0)
+            if ( one_chance_in(200) )
                torment();
             break;
 
          case SPWLD_ZONGULDROK:
-            if (random2(5) == 0)
+            if ( one_chance_in(5) )
                animate_dead(1 + random2(3), 1, MHITYOU, 1);
             break;
 
@@ -285,13 +285,13 @@
          case SPWLD_SHADOW:          // shadow lamp
 
             if (random2(8) <= 0 + player_spec_death())
-               create_monster(MONS_SHADOW, 21, 7, you.x_pos, you.y_pos, MHITNOT, 250);
+               create_monster(MONS_SHADOW, 21, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
          //naughty(5, 1);
             show_green = DARKGREY;
             break;
 
          case 51:                    /* randart makes noises */
-            if (random2(20) == 0)
+            if ( one_chance_in(20) )
             {
                in_name(you.equip[EQ_WEAPON], 4, str_pass);
                strcpy(info, str_pass);
@@ -302,7 +302,7 @@
             break;
 
          case 52:                    /* randart makes noises */
-            if (random2(20) == 0)
+            if ( one_chance_in(20) )
             {
                in_name(you.equip[EQ_WEAPON], 4, str_pass);
                strcpy(info, str_pass);
@@ -313,7 +313,7 @@
             break;
 
          case 53:                    /* randart makes noises */
-            if (random2(20) == 0)
+            if ( one_chance_in(20) )
             {
                mpr("You hear a voice call your name.");
                noisy(25, you.x_pos, you.y_pos);
@@ -321,7 +321,7 @@
             break;
 
          case 54:                    /* randart makes noises */
-            if (random2(20) == 0)
+            if ( one_chance_in(20) )
             {
                mpr("You hear a shout.");
                noisy(25, you.x_pos, you.y_pos);
@@ -443,7 +443,7 @@
             {
                switch (you.inv_dam[you.equip[EQ_WEAPON]])
                {
-                  case NWPN_STAFF_OF_DISPATER:    // staff of Dispater
+                  case NWPN_STAFF_OF_DISPATER:
                      if (you.deaths_door != 0 || you.hp <= 10
                         || you.magic_points <= 4)
                         goto nothing_hap;
@@ -468,7 +468,7 @@
                      your_spells(SPELL_HELLFIRE, 100, 0);
                      break;
 
-                  case NWPN_SCEPTRE_OF_ASMODEUS:          // sceptre of Asmodeus
+                  case NWPN_SCEPTRE_OF_ASMODEUS:
                      spell_casted = random2(21);
                      if (spell_casted == 0)
                         goto nothing_hap;       // nothing happens
@@ -477,7 +477,7 @@
 
                      {
                         spell_casted = MONS_HELLION + random2(10);
-                        if (random2(4) == 0)
+                        if ( one_chance_in(4) )
                         {
                            set_colour(RED);
                            strcpy(info, "\"Your arrogance condemns you, mortal!\"");
@@ -486,26 +486,26 @@
                         else
                            strcpy(info, "The Sceptre summons one of its servants.");
                         mpr(info);
-                        create_monster(spell_casted, 25, 1, you.x_pos, you.y_pos,
+                        create_monster(spell_casted, 25, BEH_CHASING_I, you.x_pos, you.y_pos,
                                       MHITNOT, 250);
                         break;
                      }
 
-                     spell_casted = SPELL_BOLT_OF_FIRE;  // firebolt
+                     spell_casted = SPELL_BOLT_OF_FIRE;
 
-                     if (random2(3) == 0)
-                        spell_casted = SPELL_LIGHTNING_BOLT;    // lightning
+                     if ( one_chance_in(3) )
+                        spell_casted = SPELL_LIGHTNING_BOLT;
 
-                     if (random2(4) == 0)
-                        spell_casted = SPELL_BOLT_OF_DRAINING;  // draining
+                     if ( one_chance_in(4) )
+                        spell_casted = SPELL_BOLT_OF_DRAINING;
 
-                     if (random2(20) == 0)
-                        spell_casted = SPELL_HELLFIRE;  // hellfire
+                     if ( one_chance_in(20) )
+                        spell_casted = SPELL_HELLFIRE;
 
                      your_spells(spell_casted, 10, 0);
                      break;
 
-                  case NWPN_STAFF_OF_OLGREB:      // staff of Olgreb
+                  case NWPN_STAFF_OF_OLGREB:
                      if (you.magic_points <= 5
                         || you.skills[SK_SPELLCASTING] <= random2(11))
                      {
@@ -516,16 +516,15 @@
                      if (you.magic_points <= 0)
                         you.magic_points = 0;
                      you.redraw_magic_points = 1;
-                     your_spells(SPELL_OLGREBS_TOXIC_RADIANCE, 100, 0);  // toxic rad
+                     your_spells(SPELL_OLGREBS_TOXIC_RADIANCE, 100, 0);
 
-                     your_spells(SPELL_VENOM_BOLT, 100, 0);      // venom bolt
+                     your_spells(SPELL_VENOM_BOLT, 100, 0);
 
                      break;
 
-                  case NWPN_STAFF_OF_WUCAD_MU:    // staff of Wucad Mu
+                  case NWPN_STAFF_OF_WUCAD_MU:
 
-                     if (you.magic_points == you.max_magic_points
-                        || random2(4) == 0)
+                     if ( you.magic_points == you.max_magic_points || one_chance_in(4) )
                      {
                         strcpy(info, "Nothing appears to happen.");
                         mpr(info);
@@ -537,7 +536,7 @@
                      you.redraw_magic_points = 1;
                      strcpy(info, "Magical energy flows into your mind!");
                      mpr(info);
-                     if (random2(3) == 0)
+                     if ( one_chance_in(3) )
                         miscast_effect(19, random2(9), random2(70), 100);
                      break;
 
@@ -553,7 +552,7 @@
          case OBJ_STAVES:
             if (you.inv_type[you.equip[EQ_WEAPON]] == STAFF_CHANNELING)
             {
-               if (you.magic_points == you.max_magic_points || random2(4) == 0)
+               if ( you.magic_points == you.max_magic_points || one_chance_in(4) )
                {
                   strcpy(info, "Nothing appears to happen.");
                   mpr(info);
@@ -584,7 +583,7 @@
             staff_spell(you.equip[EQ_WEAPON]);
             break;
 
-         case OBJ_MISCELLANY:        // misc
+         case OBJ_MISCELLANY:
 
             switch (you.inv_type[you.equip[EQ_WEAPON]])
             {
@@ -595,7 +594,7 @@
                   ball_of_seeing();
                   break;
                case MISC_AIR_ELEMENTAL_FAN:
-                  if (random2(2) == 0)
+                  if ( coinflip() )
                   {
                      strcpy(info, "Nothing appears to happen.");
                      mpr(info);
@@ -604,7 +603,7 @@
                   summon_elemental(100, MONS_AIR_ELEMENTAL, 4);
                   break;
                case MISC_LAMP_OF_FIRE:
-                  if (random2(2) == 0)
+                  if ( coinflip() )
                   {
                      strcpy(info, "Nothing appears to happen.");
                      mpr(info);
@@ -613,7 +612,7 @@
                   summon_elemental(100, MONS_FIRE_ELEMENTAL, 4);
                   break;
                case MISC_STONE_OF_EARTH_ELEMENTALS:
-                  if (random2(2) == 0)
+                  if ( coinflip() )
                   {
                      strcpy(info, "Nothing appears to happen.");
                      mpr(info);
@@ -621,9 +620,9 @@
                   }
                   summon_elemental(100, MONS_EARTH_ELEMENTAL, 4);
                   break;
-               case MISC_HORN_OF_GERYON:       // Horn of Geryon
+               case MISC_HORN_OF_GERYON:
 
-                  if (you.where_are_you == 3)
+                  if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
                   {
                      strcpy(info, "You produce a weird and mournful sound.");
                      mpr(info);
@@ -664,64 +663,64 @@
                   {
                      strcpy(info, "You produce a hideous howling noise!");
                      mpr(info);
-                     create_monster(MONS_BEAST, 23, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+                     create_monster(MONS_BEAST, 23, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
                   }
                   break;
 
-               case MISC_BOX_OF_BEASTS:        // box of beasts
+               case MISC_BOX_OF_BEASTS:
 
                   box_of_beasts();
                   break;
 
-               case MISC_DECK_OF_WONDERS:      // deck of wonders
+               case MISC_DECK_OF_WONDERS:
 
                   deck_of_cards(0);
                   break;
 
-               case MISC_DECK_OF_SUMMONINGS:   // deck of summonings
+               case MISC_DECK_OF_SUMMONINGS:
 
                   deck_of_cards(1);
                   break;
 
-               case MISC_CRYSTAL_BALL_OF_ENERGY:       // crystal ball of energy
+               case MISC_CRYSTAL_BALL_OF_ENERGY:
 
                   ball_of_energy();
                   break;
 
-               case 12:                // crystal ball of fixation
+               case MISC_CRYSTAL_BALL_OF_FIXATION:
 
                   ball_of_fixation();
                   break;
 
-               case MISC_DISC_OF_STORMS:       // disc of storms
+               case MISC_DISC_OF_STORMS:
 
                   disc_of_storms();
                   break;
 
-               case MISC_DECK_OF_TRICKS:       // deck of tricks
+               case MISC_DECK_OF_TRICKS:
 
                   deck_of_cards(2);
                   break;
 
-               case MISC_DECK_OF_POWER:        // deck of power
+               case MISC_DECK_OF_POWER:
 
                   deck_of_cards(3);
                   break;
 
-               case MISC_PORTABLE_ALTAR_OF_NEMELEX:    // card table
+               case MISC_PORTABLE_ALTAR_OF_NEMELEX:
 
-                  if (you.where_are_you == 18)
+                  if (you.where_are_you == BRANCH_ECUMENICAL_TEMPLE)
                   {
                      mpr("Don't you think this level already has more than enough altars?");
                      return;
                   }
-                  if (grd[you.x_pos][you.y_pos] != 67)
+                  if (grd[you.x_pos][you.y_pos] != DNGN_FLOOR)
                   {
                      mpr("You need a piece of empty floor to place this item.");
                      break;
                   }
                   mpr("You unfold the altar and place it on the floor.");
-                  grd[you.x_pos][you.y_pos] = 190;
+                  grd[you.x_pos][you.y_pos] = DNGN_ALTAR_NEMELEX_XOBEH;
                   unwield_item(you.equip[EQ_WEAPON]);
                   you.inv_quantity[you.equip[EQ_WEAPON]] = 0;
                   you.equip[EQ_WEAPON] = -1;
@@ -760,18 +759,18 @@
       you.equip[EQ_WEAPON] = -1;
       you.num_inv_items--;
 
-      if (random2(5) != 0)
+      if ( !one_chance_in(5) )
       {
          set_colour(RED);
          strcpy(info, "\"Thank you for releasing me!\"");
          mpr(info);
-         create_monster(MONS_EFREET, 24, 7, you.x_pos, you.y_pos, MHITNOT, 250);
+         create_monster(MONS_EFREET, 24, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
          return;
       }
 
       strcpy(info, "It howls insanely!");
       mpr(info);
-      create_monster(MONS_EFREET, 24, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+      create_monster(MONS_EFREET, 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
 
    }                               // end efreet_flask
 
@@ -784,7 +783,7 @@
       mpr(info);
       use = random2(you.intel * 6);       //magic_ability(you.intel, you.intel));
 
-      if (you.conf != 0)
+      if (you.conf)
          use = 0;
       if (use < 2)
       {
@@ -812,7 +811,10 @@
             you.conf = 40;
          return;
       }
-      if (use < 15 || random2(2) == 0 || you.level_type == 1 || you.level_type == 2)
+      if ( use < 15
+            || you.level_type == LEVEL_LABYRINTH
+              || you.level_type == LEVEL_ABYSS
+                || coinflip() )
       {
          strcpy(info, "You see nothing.");
          mpr(info);
@@ -830,21 +832,23 @@
    {
       you.turn_is_over = 1;
 
-      if ((random2(60) > 30 + you.skills[SK_AIR_MAGIC] && random2(3) != 0) || you.attribute[ATTR_SPEC_AIR] != 0)
+      if ( you.attribute[ATTR_SPEC_AIR] != 0
+            || ( random2(60) > 30 + you.skills[SK_AIR_MAGIC]
+               && !one_chance_in(3) ) )
       {
          strcpy(info, "Nothing appears to happen.");
          mpr(info);
          return;
       }
 
-      if (random2(60) > 30 + you.skills[SK_AIR_MAGIC] && random2(3) != 0)
+      if (random2(60) > 30 + you.skills[SK_AIR_MAGIC] && !one_chance_in(3) )
       {
          strcpy(info, "The disc glows for a moment, then fades.");
          mpr(info);
          return;
       }
 
-      if (random2(60) > 30 + you.skills[SK_AIR_MAGIC] && random2(3) != 0)
+      if (random2(60) > 30 + you.skills[SK_AIR_MAGIC] && !one_chance_in(3) )
       {
          strcpy(info, "Little bolts of electricity crackle over the disc.");
          mpr(info);
@@ -866,16 +870,16 @@
          switch (random2(3))
          {
             case 0:
-               which_zap_thing = 14;
-               break;              // lightning bolt
+               which_zap_thing = ZAP_LIGHTNING;
+               break;
 
             case 1:
-               which_zap_thing = 34;
-               break;              // shock
+               which_zap_thing = ZAP_ELECTRICITY;
+               break;
 
             case 2:
-               which_zap_thing = 35;
-               break;              // orb of elec
+               which_zap_thing = ZAP_ORB_OF_ELECTRICITY;
+               break;
 
          }
          struct bolt beam[1];
@@ -930,7 +934,7 @@
       }
 
 
-      if (learn_a_spell(zap_device_2, sc_read_2) != 1)
+      if ( !learn_a_spell(zap_device_2, sc_read_2) )
       {
          goto whattt;
       }
@@ -1040,7 +1044,7 @@
          case 0:
          case 11:
          case 12:
-            if (random2(5) == 0)
+            if ( one_chance_in(5) )
             {
                strcpy(info, "The book disappears in a mighty explosion!");
                mpr(info);
@@ -1055,8 +1059,8 @@
             }
             beam[0].type = 43;
             beam[0].damage = 115;
-            beam[0].flavour = 2;    // <=- not sure about this
-
+            beam[0].flavour = BEAM_FIRE;    // unsure about this
+                                            // BEAM_EXPLOSION instead? [dlb]
             beam[0].bx = you.x_pos;
             beam[0].by = you.y_pos;
             strcpy(beam[0].beam_name, "fiery explosion");
@@ -1070,16 +1074,16 @@
          case 14:
             strcpy(info, "A cloud of choking fumes pours from the book's pages!");
             mpr(info);
-            big_cloud(4, you.x_pos, you.y_pos, 20);
-         //if (random2(3) == 0) return; else break;
+            big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 20);
+         //if ( one_chance_in(3) ) return; else break;
             return;
 
          case 2:
          case 13:
             strcpy(info, "A cloud of freezing gas pours from the book's pages!");
             mpr(info);
-            big_cloud(3, you.x_pos, you.y_pos, 20);
-         //if (random2(3) == 0) return; else break;
+            big_cloud(CLOUD_COLD, you.x_pos, you.y_pos, 20);
+         //if ( one_chance_in(3) ) return; else break;
             return;
 
          case 3:
@@ -1091,7 +1095,7 @@
          case 9:
             strcpy(info, "A cloud of weird smoke pours from the book's pages!");
             mpr(info);
-            big_cloud(5 + random2(3), you.x_pos, you.y_pos, 20);
+            big_cloud(CLOUD_GREY_SMOKE + random2(3), you.x_pos, you.y_pos, 20);
             return;                 // else break;
 
          case 10:
@@ -1099,7 +1103,7 @@
             mpr(info);
             strcpy(info, "It doesn't look too friendly.");
             mpr(info);
-            create_monster(MONS_LARGE_ABOMINATION, 25, 1, you.x_pos, you.y_pos, MHITNOT, 250);
+            create_monster(MONS_ABOMINATION_SMALL, 25, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
             return;
 
         // next is 14
@@ -1117,8 +1121,7 @@
          case 17:
          case 1:
             spell_casted = SPELL_FIREBALL;
-            break;                  // fireball
-
+            break;
          case 21:
          case 18:
          case 2:
@@ -1222,7 +1225,7 @@
 
       exercise(you.inv_plus[sc_read_2], 500);
 
-      if (random2(10) == 0)
+      if ( one_chance_in(10) )
       {
          strcpy(info, "The book crumbles into dust.");
          mpr(info);
@@ -1255,14 +1258,14 @@
 
       strcpy(info, "You open the lid, ");
 
-      if (random2(3) == 0)
+      if ( one_chance_in(3) )
       {
          strcat(info, "but nothing happens.");
          mpr(info);
          return;
       }
 
-      if (random2(10) == 0)
+      if ( one_chance_in(10) )
       {
          strcat(info, "but nothing happens.");
          mpr(info);
@@ -1274,51 +1277,51 @@
       {
          case 0:
             beasty = MONS_GIANT_BAT;
-            break;                  // bat
+            break;
 
          case 1:
             beasty = MONS_HOUND;
-            break;                  // hound
+            break;
 
          case 2:
             beasty = MONS_JACKAL;
-            break;                  // jackal
+            break;
 
          case 3:
             beasty = MONS_RAT;
-            break;                  // rat
+            break;
 
          case 4:
             beasty = MONS_ICE_BEAST;
-            break;                  // ice beast
+            break;
 
          case 5:
             beasty = MONS_SNAKE;
-            break;                  // snake
+            break;
 
          case 6:
             beasty = MONS_YAK;
-            break;                  // yak
+            break;
 
          case 7:
             beasty = MONS_BUTTERFLY;
-            break;                  // butterfly
+            break;
 
          case 8:
             beasty = MONS_HELL_HOUND;
-            break;                  // hell hound
+            break;
 
          case 9:
             beasty = MONS_BROWN_SNAKE;
-            break;                  // brown snake
+            break;
 
          case 10:
             beasty = MONS_GIANT_LIZARD;
-            break;                  // giant lizard
+            break;
 
       }
 
-      create_monster(beasty, 21 + random2(4), 7, you.x_pos, you.y_pos, you.pet_target, 250);
+      create_monster(beasty, 21 + random2(4), BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
 
       strcat(info, "and something leaps out!");
       mpr(info);
@@ -1369,7 +1372,8 @@
       proportional = you.magic_points * 100;
       proportional /= you.max_magic_points;
 
-      if (random2(20) + random2(20) + random2(20) + random2(10) > proportional || random2(25) == 0)
+      if ( one_chance_in(25)
+            || random2(20) + random2(20) + random2(20) + random2(10) > proportional )
          goto drain_away;
 
       strcpy(info, "You are suffused with power!");

@@ -33,7 +33,7 @@ char *rumour[] =
     "The Scythe of Curses is best used in small doses.",
     "An orb of fixation contains the meaning of life, if you just look hard enough.",
     "An orb of fixation is just a poorly-tuned orb of seeing.",
-  "The Singing Sword provides one with a constant source of entertainment.",
+    "The Singing Sword provides one with a constant source of entertainment.",
     "Giant slugs are easy to kill, if you can just find a large enough salt shaker.",
     "They say that Jellies reproduce by a process of binary fission.",
     "A Necromancer with a wand of polymorph can make powerful friends.",

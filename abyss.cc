@@ -18,7 +18,6 @@
 #include "message.h"
 
 #include "externs.h"
-#include "enum.h"
 
 #include "stuff.h"
 
@@ -27,53 +26,22 @@ char area_shift(void);
 
 
 
-/*
-   char *god_name(char which_god)
-   {
-
-   switch(which_god)
-   {
-   case 1: return "Zin";
-   case 2: return "The Shining One";
-   case 3: return "Elyvilon";
-   case 4: return "Nelemex Xobeh";
-   case 5: return "Jurubetut";
-   case 6: return "Vuhemeti";
-   case 7: return "Okawaru";
-   case 8: return "Kikubaaqudgha";
-   case 9: return "Sif Muna";
-   case 10: return "Lugafu the Hairy";
-   }
-
-   return "The God of Software Bugs";
-   }
- */
 
 void priest_spells(int func_pass[10], char religious)
 {
 
     switch (religious)
     {
-    case 1:                     // Zin
-
-        func_pass[1] = 38;      // lesser healing
-
-        func_pass[2] = 46;      // repel undead
-
-        func_pass[3] = 65;      // heal other
-
-        func_pass[4] = 41;      // purification
-
-        func_pass[5] = 39;      // greater healing
-
-        func_pass[6] = 45;      // smiting
-
-        func_pass[7] = 47;      // holy word
-
-        func_pass[8] = 4;       // pestilence  - remove curse?
-
-        func_pass[9] = 86;      // summon guardian
-
+    case GOD_ZIN:
+        func_pass[1] = SPELL_LESSER_HEALING;
+        func_pass[2] = SPELL_REPEL_UNDEAD;
+        func_pass[3] = SPELL_HEAL_OTHER;
+        func_pass[4] = SPELL_PURIFICATION;
+        func_pass[5] = SPELL_GREATER_HEALING;
+        func_pass[6] = SPELL_SMITING;
+        func_pass[7] = SPELL_HOLY_WORD;
+        func_pass[8] = SPELL_REMOVE_CURSE;
+        func_pass[9] = SPELL_GUARDIAN;
         break;
 /*
    case 2: // The Shining One
@@ -99,11 +67,11 @@ void priest_spells(int func_pass[10], char religious)
    func_pass [8] = -1; //
    func_pass [9] = -1; //
    break;
-
- */
+*/
     }
 
 }
+
 /*
    Spells to be added: (+ renamed!)
    holy berserker
@@ -116,101 +84,7 @@ void priest_spells(int func_pass[10], char religious)
    92 abjuration
    93 another healing spell
    94 something else healing
-
-
-   case 0: return 6; // identify
-   case 1: return 5; // teleportation
-   case 2: return 6; // cause fear
-   case 3: return 1; // noise
-   case 4: return 5; // remove curse
-   case 5: return 1; // magic missile
-   case 6: return 5; // fireball
-   case 13: return 3; // conjure flame
-   case 14: return 4; // dig
-   case 15: return 5; // firebolt
-   case 16: return 5; // bolt of freezing cold
-   case 17: return 6; // bolt of lightning
-   case 20: return 6; // polymorph other
-   case 21: return 3;
-   case 22: return 4;
-   case 23: return 4;
-   case 24: return 3;
-   case 25: return 4; // invisibility
-   case 26: return 2; // throw flame
-   case 27: return 2; // throw frost
-   case 28: return 4; // blink
-   case 29: return 7; // freezing cloud
-   case 30: return 3; // stinking cloud
-   case 31: return 8; // ring of flames
-   case 32: return 2; //  restore strength:
-   case 33: return 2; //          int
-   case 34: return 2; //          dex
-   case 35: return 5; // venom bolt
-   case 36: return 4; // toxic radiance - uses lots of food?
-   case 37: return 5; // teleport other
-   case 38: return 2; // lesser healing
-   case 39: return 6; // greater healing
-   case 40: return 3; // cure poison
-   case 41: return 5; // purification
-   case 42: return 8; // death's door
-   case 43: return 3; // selective amnesia
-   case 44: return 7; // mass confusion
-   case 45: return 4; // smiting
-   case 46: return 3; // repel undead
-   case 47: return 7; // holy word
-   case 48: return 3; // detect curse
-   case 49: return 1; // summon small mammal
-   case 50: return 4; // Abjuration
-   case 51: return 4; // summon scorpions
-   case 52: return 3; // levitation
-   case 53: return 6; // bolt of draining
-   case 54: return 8; // splinters
-   case 55: return 4; // innacuracy
-   case 56: return 6; // poisonous cloud
-   case 57: return 9; // fire storm
-   case 58: return 2; // detect traps
-   case 59: return 2; // random blink
-   case 60: return 5; // Isk's blast
-   case 61: return 5; // swarm
-   case 62: return 8; // Summon Thing
-   case 63: return 4; // Enslavement
-   case 64: return 4; // Magic Mapping
-   case 65: return 3; // heal other
-   case 66: return 7; // Animate dead
-   case 67: return 1; // Pain
-   case 68: return 4; // Extension
-   case 69: return 6; // Control Undead
-   case 70: return 3; // animate skeleton
-   case 71: return 4; // vampiric draining
-   case 72: return 8; // summon greater undead
-   case 73: return 2; // detect items
-   case 74: return 6; // reviv
-   case 75: return 1; // burn
-   case 76: return 1; // freeze
-   case 77: return 6; // Summon elemental
-   case 78: return 5; // refrigeration
-   case 79: return 4; // Sticky flame
-   case 80: return 5; // Ice beast
-   case 81: return 4; // Ozocubu's Armour
-   case 82: return 2; // imp
-   case 83: return 2; // deflect missiles
-   case 84: return 3; // berserker
-   case 85: return 4; // dispel undead
-
-
-   / *
-   Gods:
-   1:Zin - old priest/P
-   2The Shining One
-   3Lugafu the Hairy
-   4Elyvilon - Healing
-   5Nelemex Xobeh - Trickster
-   6Jurubetut - Fire
-   7Vuhimeti - Ice
-   8Okawaru - war, destruction, chaos etc
-   9Kikubaaqudgha - Death
-   10Sif Muna - magic
- */
+*/
 
 
 
@@ -237,46 +111,45 @@ void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsi
     int what_was_there;
     int thing_created;
 
-//int it_no2 = 0;
+    //int it_no2 = 0;
     int rooms_done = 0;
     int rooms_to_do = 0;
 
     unsigned char replaced[5];
-    unsigned char base_type = 1;
+    unsigned char base_type = DNGN_ROCK_WALL;
 
-    if (random2(4) == 0)
-        base_type = 2;
-    if (random2(15) == 0)
-        base_type = 4;
-    if (random2(20) == 0)
-        base_type = 61;
-    if (random2(25) == 0)
-        base_type = 62;
-    if (random2(1000) == 0)
-        base_type = 3;
-
+    if ( one_chance_in(4) )
+        base_type = DNGN_STONE_WALL;
+    if ( one_chance_in(15) )
+        base_type = DNGN_METAL_WALL;
+    if ( one_chance_in(20) )
+        base_type = DNGN_LAVA;
+    if ( one_chance_in(25) )
+        base_type = DNGN_DEEP_WATER;
+    if ( one_chance_in(1000) )
+        base_type = DNGN_CLOSED_DOOR;
 
     for (i = 0; i < 5; i++)
     {
         replaced[i] = base_type;
-        if (random2(5) == 0)
-            replaced[i] = 1;
-        if (random2(10) == 0)
-            replaced[i] = 2;
-        if (random2(15) == 0)
-            replaced[i] = 4;
-        if (random2(20) == 0)
-            replaced[i] = 61;
-        if (random2(25) == 0)
-            replaced[i] = 62;
-        if (random2(15) == 0)
-            replaced[i] = 65;
-        if (random2(1000) == 0)
-            replaced[i] = 3;
+        if ( one_chance_in(5) )
+            replaced[i] = DNGN_ROCK_WALL;
+        if ( one_chance_in(10) )
+            replaced[i] = DNGN_STONE_WALL;
+        if ( one_chance_in(15) )
+            replaced[i] = DNGN_METAL_WALL;
+        if ( one_chance_in(20) )
+            replaced[i] = DNGN_LAVA;
+        if ( one_chance_in(25) )
+            replaced[i] = DNGN_DEEP_WATER;
+        if ( one_chance_in(15) )
+            replaced[i] = DNGN_SHALLOW_WATER;
+        if ( one_chance_in(1000) )
+            replaced[i] = DNGN_CLOSED_DOOR;
     }
 
 
-    if (random2(3) == 0)
+    if ( one_chance_in(3) )
     {
         rooms_to_do = 1 + random2(10);
         do
@@ -285,7 +158,7 @@ void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsi
             y1 = 10 + random2(50);
             x2 = x1 + 1 + random2(10);
             y2 = y1 + 1 + random2(10);
-            if (random2(100) == 0)
+            if ( one_chance_in(100) )
                 goto out_of_rooms;
             for (i = x1; i < x2; i++)
             {
@@ -299,7 +172,7 @@ void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsi
             {
                 for (j = y1; j < y2; j++)
                 {
-                    grd[i][j] = 67;
+                    grd[i][j] = DNGN_FLOOR;
                 }
             }
           continued:
@@ -319,19 +192,19 @@ out_of_rooms:
         {
             if (grd[i][j] == 30 && random2(100) <= thickness)
             {
-                grd[i][j] = 67;
-                if (random2(200) == 0 && items_placed < 150)  // % 200
+                grd[i][j] = DNGN_FLOOR;
+                if ( items_placed < 150 && one_chance_in(200) )  // % 200
 
                 {
-                    if (random2(500) == 0)
+                    if ( one_chance_in(500) )
                     {
 /*         do
    {
    k = 4 + random2(16);
-   if (random2(100) == 0) goto creation;
+   if ( one_chance_in(100) ) goto creation;
    } while (you.unique_items [k + 3] == 1); */
 
-                        thing_created = items(1, 13, 14, 1, 51, 250);
+                        thing_created = items(1, OBJ_MISCELLANY, MISC_RUNE_OF_ZOT, 1, 51, 250);
 
                         goto created;
                     }
@@ -354,15 +227,15 @@ out_of_rooms:
         {
             if (grd[i][j] == 30)
                 grd[i][j] = replaced[random2(5)];
-            if (random2(7500) == 0)
-                grd[i][j] = 97; /* gate out of abyss */
-            if (random2(10000) == 0)  /* altar */
+            if ( one_chance_in(7500) )
+                grd[i][j] = DNGN_EXIT_ABYSS; /* gate out of abyss */
+            if ( one_chance_in(10000) )  /* altar */
             {
                 do
                 {
-                    grd[i][j] = 180 + random2(12);
+                    grd[i][j] = DNGN_ALTAR_ZIN + random2(12);
                 }
-                while (grd[i][j] == 183 || grd[i][j] == 185 || grd[i][j] == 190);
+                while (grd[i][j] == DNGN_ALTAR_YREDELEMNUL || grd[i][j] == DNGN_ALTAR_VEHUMET || grd[i][j] == DNGN_ALTAR_NEMELEX_XOBEH);
             }
         }
     }
@@ -391,8 +264,8 @@ char area_shift(void)
             for (j = 0; j < 8; j++)
             {
                 mitm.quantity[menv[i].inv[j]] = 0;
-                mitm.link[menv[i].inv[j]] = 501;
-                menv[i].inv[j] = 501;
+                mitm.link[menv[i].inv[j]] = ING;
+                menv[i].inv[j] = ING;
             }
             for (j = 0; j < MNST; j++)
             {
@@ -404,7 +277,6 @@ char area_shift(void)
         else
         {
             menv[i].target_x = menv[i].x;       // this will make it find a new target
-
             menv[i].target_y = menv[i].y;
         }
     }
@@ -418,22 +290,22 @@ char area_shift(void)
                 continue;
             grd[i][j] = 30;
             mgrd[i][j] = MNG;
-            if (igrd[i][j] != 501)
+            if (igrd[i][j] != ING)
             {
                 k = igrd[i][j];
-                igrd[i][j] = 501;
-                if (k < 0 || k > 501)
-                    k = 501;
-                while (k != 501)
+                igrd[i][j] = ING;
+                if (k < 0 || k > ING)
+                    k = ING;
+                while (k != ING)
                 {
                     mitm.quantity[k] = 0;
                     l = mitm.link[k];
-                    mitm.link[k] = 501;
-                    if (mitm.base_type[k] == 12 && mitm.sub_type[k] >= 4 && mitm.sub_type[k] <= 19)
+                    mitm.link[k] = ING;
+                    if (mitm.base_type[k] == OBJ_ORBS && mitm.sub_type[k] >= 4 && mitm.sub_type[k] <= 19)
                     {
                         you.unique_items[mitm.sub_type[k] + 3] = 2;     /* This means lost in the abyss, and can be found again only there. */
                     }
-                    if (mitm.base_type[k] == 0 && mitm.special[k] >= 181)
+                    if (mitm.base_type[k] == OBJ_WEAPONS && mitm.special[k] >= 181)
                     {
                         if (mitm.special[k] - 181 <= 6)
                             you.unique_items[mitm.special[k] - 181] = 1;
@@ -459,7 +331,7 @@ char area_shift(void)
               continue;
             grd[45 + i - you.x_pos][35 + j - you.y_pos] = grd[i][j];
             igrd[45 + i - you.x_pos][35 + j - you.y_pos] = igrd[i][j];
-            igrd[i][j] = 501;
+            igrd[i][j] = ING;
             mgrd[45 + i - you.x_pos][35 + j - you.y_pos] = mgrd[i][j];
             if (mgrd[i][j] != MNG)
             {
@@ -487,11 +359,11 @@ char area_shift(void)
 
     for (i = 0; i < CLOUDS; i++)
     {
-        if (env.cloud_type[i] == 0)
+        if (env.cloud_type[i] == CLOUD_NONE)
             continue;
         if (env.cloud_x[i] < 35 || env.cloud_x[i] > 55 || env.cloud_y[i] < 25 || env.cloud_y[i] > 45)
         {
-            env.cloud_type[i] = 0;
+            env.cloud_type[i] = CLOUD_NONE;
             env.cloud_decay[i] = 0;
         }
         else
@@ -548,6 +420,9 @@ char area_shift(void)
 
 }
 
+
+
+
 // must set cloud_no to zero when calling this function
 void abyss_teleport(void)
 {
@@ -571,7 +446,7 @@ void abyss_teleport(void)
         for (j = 10; j < 61; j++)
         {
             grd[i][j] = 30;
-            igrd[i][j] = 501;
+            igrd[i][j] = ING;
             mgrd[i][j] = MNG;
             env.cgrid[i][j] = CNG;
         }
@@ -581,11 +456,11 @@ void abyss_teleport(void)
     {
         if (mitm.quantity[k] >= 1)
         {
-            if (mitm.base_type[k] == 12)
+            if (mitm.base_type[k] == OBJ_ORBS)
             {
                 you.unique_items[mitm.sub_type[k] + 3] = 2;
             }
-            if (mitm.base_type[k] == 0 && mitm.special[k] >= 181)
+            if (mitm.base_type[k] == OBJ_WEAPONS && mitm.special[k] >= 181)
             {
                 if (mitm.special[k] - 181 <= 6)
                     you.unique_items[mitm.special[k] - 181] = 1;
@@ -595,7 +470,7 @@ void abyss_teleport(void)
             }
         }
         mitm.quantity[k] = 0;
-        mitm.link[k] = 501;
+        mitm.link[k] = ING;
     }
 
     for (i = 0; i < MNST; i++)
@@ -605,7 +480,7 @@ void abyss_teleport(void)
 
     for (i = 0; i < CLOUDS; i++)
     {
-        env.cloud_type[i] = 0;
+        env.cloud_type[i] = CLOUD_NONE;
         env.cloud_decay[i] = 0;
         env.cloud_x[i] = 0;
         env.cloud_y[i] = 0;
@@ -613,13 +488,11 @@ void abyss_teleport(void)
 
     env.cloud_no = 0;           // I know this doesn't do anything, of course
 
-
     you.x_pos = 45;
     you.y_pos = 35;
 
     generate_area(10, 10, 70, 60);
 
-    grd[you.x_pos][you.y_pos] = 67;
-
+    grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
 
 }

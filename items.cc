@@ -25,10 +25,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "debug.h"
 #include "externs.h"
-#include "enum.h"
 
+#include "debug.h"
 #include "effects.h"
 #include "fight.h"
 #include "invent.h"
@@ -46,7 +45,6 @@
 #include "spells.h"
 #include "stuff.h"
 
-char mutate(int which_mutation);
 void autopickup(void);
 
 
@@ -72,18 +70,19 @@ void item_check(char keyin)
     int counter = 0;
     int counter_max = 0;
 
-    if (env.grid[you.x_pos][you.y_pos] >= 69 && env.grid[you.x_pos][you.y_pos] <= 210)
+    if ( env.grid[you.x_pos][you.y_pos] >= DNGN_ENTER_HELL
+        && env.grid[you.x_pos][you.y_pos] <= DNGN_PERMADRY_FOUNTAIN )
     {
-        if (env.grid[you.x_pos][you.y_pos] >= 82 && env.grid[you.x_pos][you.y_pos] <= 85)
+        if (env.grid[you.x_pos][you.y_pos] >= DNGN_STONE_STAIRS_DOWN_I && env.grid[you.x_pos][you.y_pos] <= DNGN_ROCK_STAIRS_DOWN)
         {
-            if (env.grid[you.x_pos][you.y_pos] == 85)
+            if (env.grid[you.x_pos][you.y_pos] == DNGN_ROCK_STAIRS_DOWN)
                 mpr("There is a rock staircase leading down here.");
             else
                 mpr("There is a stone staircase down here.");
         }
-        else if (env.grid[you.x_pos][you.y_pos] >= 86 && env.grid[you.x_pos][you.y_pos] <= 89)
+        else if (env.grid[you.x_pos][you.y_pos] >= DNGN_STONE_STAIRS_UP_I && env.grid[you.x_pos][you.y_pos] <= DNGN_ROCK_STAIRS_UP)
         {
-            if (env.grid[you.x_pos][you.y_pos] == 89)
+            if (env.grid[you.x_pos][you.y_pos] == DNGN_ROCK_STAIRS_UP)
                 mpr("There is a rock staircase leading upwards here.");
             else
                 mpr("There is a stone staircase up here.");
@@ -91,165 +90,159 @@ void item_check(char keyin)
         else
             switch (env.grid[you.x_pos][you.y_pos])
             {
-            case 69:
+            case DNGN_ENTER_HELL:
                 mpr("There is a gateway to hell here.");
                 break;
-            case 80:
+            case DNGN_ENTER_SHOP:
                 mpr("There is an entrance to a shop here.");
                 break;
-            case 81:
+            case DNGN_ENTER_LABYRINTH:
                 mpr("There is an entrance to a labyrinth here.");
                 mpr("Beware, for starvation awaits!");
                 break;
-            case 92:
+            case DNGN_ENTER_DIS:
                 mpr("There is a gateway to the Iron City of Dis here.");
                 break;
-            case 93:
+            case DNGN_ENTER_GEHENNA:
                 mpr("There is a gateway to Gehenna here.");
                 break;
-            case 94:
+            case DNGN_ENTER_COCYTUS:
                 mpr("There is a gateway to the frozen wastes of Cocytus here.");
                 break;
-            case 95:
+            case DNGN_ENTER_TARTARUS:
                 mpr("There is a gateway to Tartarus here.");
                 break;
-            case 96:
+            case DNGN_ENTER_ABYSS:
                 mpr("There is a one-way gate to the infinite horrors of the Abyss here.");
                 break;
-            case 97:
+            case DNGN_EXIT_ABYSS:
                 mpr("There is a gateway leading out of the Abyss here.");
                 break;
-            case 98:
+            case DNGN_STONE_ARCH:
                 mpr("There is an empty stone archway here.");
                 break;
-            case 99:
+            case DNGN_ENTER_PANDEMONIUM:
                 mpr("There is a gate leading to the halls of Pandemonium here.");
                 break;
-            case 100:
+            case DNGN_EXIT_PANDEMONIUM:
                 mpr("There is a gate leading out of Pandemonium here.");
                 break;
-            case 101:
+            case DNGN_TRANSIT_PANDEMONIUM:
                 mpr("There is a gate leading to another region of Pandemonium here.");
                 break;
-
-            case 110:
+            case DNGN_ENTER_ORCISH_MINES:
                 mpr("There is a staircase to the orcish mines here.");
                 break;
-            case 111:
+            case DNGN_ENTER_HIVE:
                 mpr("There is a staircase to the Hive here.");
                 break;
-            case 112:
+            case DNGN_ENTER_LAIR_I:
                 mpr("There is a staircase to the Lair here.");
                 break;
-            case 113:
+            case DNGN_ENTER_SLIME_PITS:
                 mpr("There is a staircase to the Slime Pits here.");
                 break;
-            case 114:
+            case DNGN_ENTER_VAULTS:
                 mpr("There is a staircase to the Vaults here.");
                 break;
-            case 115:
+            case DNGN_ENTER_CRYPT_I:
                 mpr("There is a staircase to the Crypt here.");
                 break;
-            case 116:
+            case DNGN_ENTER_HALL_OF_BLADES:
                 mpr("There is a staircase to the Hall of Blades here.");
                 break;
-            case 117:
+            case DNGN_ENTER_ZOT:
                 mpr("There is a gate to the Realm of Zot here.");
                 break;
-            case 118:
+            case DNGN_ENTER_TEMPLE:
                 mpr("There is a staircase to the Ecumenical Temple here.");
                 break;
-            case 119:
+            case DNGN_ENTER_SNAKE_PIT:
                 mpr("There is a staircase to the Snake Pit here.");
                 break;
-            case 120:
+            case DNGN_ENTER_ELVEN_HALLS:
                 mpr("There is a staircase to the Elven Halls here.");
                 break;
-            case 121:
+            case DNGN_ENTER_TOMB:
                 mpr("There is a staircase to the Tomb here.");
                 break;
-            case 122:
+            case DNGN_ENTER_SWAMP:
                 mpr("There is a staircase to the Swamp here.");
                 break;
-            case 130:
-            case 131:
-            case 134:
-            case 138:
-            case 132:
+            case DNGN_RETURN_DUNGEON_I:
+            case DNGN_RETURN_DUNGEON_II:
+            case DNGN_RETURN_DUNGEON_III:
+            case DNGN_RETURN_DUNGEON_IV:
+            case DNGN_RETURN_DUNGEON_V:
                 mpr("There is a staircase back to the Dungeon here.");
                 break;
-            case 142:
+            case DNGN_RETURN_LAIR_II:
+            case DNGN_RETURN_LAIR_III:
+            case DNGN_RETURN_LAIR_IV:
                 mpr("There is a staircase back to the Lair here.");
                 break;
-            case 133:
-                mpr("There is a staircase back to the Lair here.");
-                break;
-            case 135:
+            case DNGN_RETURN_VAULTS:
                 mpr("There is a staircase back to the Vaults here.");
                 break;
-            case 141:
-            case 136:
+            case DNGN_RETURN_CRYPT_II:
+            case DNGN_RETURN_CRYPT_III:
                 mpr("There is a staircase back to the Crypt here.");
                 break;
-            case 139:
-                mpr("There is a staircase back to the Lair here.");
-                break;
-            case 140:
+            case DNGN_RETURN_MINES:
                 mpr("There is a staircase back to the Mines here.");
                 break;
-            case 137:
+            case DNGN_EXIT_ZOT:
                 mpr("There is a gate leading back out of this place here.");
                 break;
-
-            case 180:
+            case DNGN_ALTAR_ZIN:
                 mpr("There is a glowing white marble altar of Zin here.");
                 break;
-            case 181:
+            case DNGN_ALTAR_SHINING_ONE:
                 mpr("There is a glowing golden altar of the Shining One here.");
                 break;
-            case 182:
+            case DNGN_ALTAR_KIKUBAAQUDGHA:
                 mpr("There is an ancient bone altar of Kikubaaqudgha here.");
                 break;
-            case 183:
+            case DNGN_ALTAR_YREDELEMNUL:
                 mpr("There is a basalt altar of Yredelemnul here.");
                 break;
-            case 184:
+            case DNGN_ALTAR_XOM:
                 mpr("There is a shimmering altar of Xom here.");
                 break;
-            case 185:
+            case DNGN_ALTAR_VEHUMET:
                 mpr("There is a shining altar of Vehumet here.");
                 break;
-            case 186:
+            case DNGN_ALTAR_OKAWARU:
                 mpr("There is an iron altar of Okawaru here.");
                 break;
-            case 187:
+            case DNGN_ALTAR_MAKHLEB:
                 mpr("There is a burning altar of Makhleb here.");
                 break;
-            case 188:
+            case DNGN_ALTAR_SIF_MUNA:
                 mpr("There is a deep blue altar of Sif Muna here.");
                 break;
-            case 189:
+            case DNGN_ALTAR_TROG:
                 mpr("There is a bloodstained altar of Trog here.");
                 break;
-            case 190:
+            case DNGN_ALTAR_NEMELEX_XOBEH:
                 mpr("There is a sparkling altar of Nemelex Xobeh here.");
                 break;
-            case 191:
+            case DNGN_ALTAR_ELYVILON:
                 mpr("There is a silver altar of Elyvilon here.");
                 break;
 
-            case 200:
+            case DNGN_BLUE_FOUNTAIN:
                 mpr("There is a fountain here (q to drink).");
                 break;
-            case 202:
+            case DNGN_SPARKLING_FOUNTAIN:
                 mpr("There is a sparkling fountain here (q to drink).");
                 break;
-            case 201:
-            case 203:
-            case 205:
-            case 207:
-            case 209:
-            case 210:
+            case DNGN_DRY_FOUNTAIN_I:
+            case DNGN_DRY_FOUNTAIN_II:
+            case DNGN_DRY_FOUNTAIN_IV:
+            case DNGN_DRY_FOUNTAIN_VI:
+            case DNGN_DRY_FOUNTAIN_VIII:
+            case DNGN_PERMADRY_FOUNTAIN:
                 mpr("There is a dry fountain here.");
                 break;
 
@@ -267,7 +260,7 @@ void item_check(char keyin)
     int objl = env.igrid[you.x_pos][you.y_pos];
     int hrg = 0;
 
-    while (objl != 501)
+    while (objl != ING)
     {
         counter++;
 
@@ -277,7 +270,7 @@ void item_check(char keyin)
             break;
         }
 
-        if (mitm.base_type[objl] == 15)
+        if (mitm.base_type[objl] == OBJ_GOLD)
         {
             itoa(mitm.quantity[objl], temp_quant, 10);
             strcpy(item_show[counter], temp_quant);
@@ -312,7 +305,7 @@ linking:
 
     }
 
-    if ((counter_max > 0 && counter_max < 6) || (counter_max > 1 && keyin == 59))
+    if ((counter_max > 0 && counter_max < 6) || (counter_max > 1 && keyin == ';'))
     {
         mpr("Things that are here:");
         while (counter < counter_max)
@@ -323,7 +316,7 @@ linking:
         }
     }
 
-    if (counter_max > 5 && keyin != 59)
+    if (counter_max > 5 && keyin != ';')
     {
         mpr("There are several objects here.");
     }
@@ -343,13 +336,13 @@ void pickup()
     char str_pass[50];
     char keyin = 0;
 
-    if (you.levitation != 0 && wearing_amulet(AMU_CONTROLLED_FLIGHT) == 0)
+    if ( you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT) )
     {
         mpr("You can't reach the floor from up here.");
         return;
     }
 
-    if (grd[you.x_pos][you.y_pos] == 190 && you.where_are_you != 18)
+    if (grd[you.x_pos][you.y_pos] == DNGN_ALTAR_NEMELEX_XOBEH && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE)
     {
         if (you.num_inv_items >= 52)
         {
@@ -397,7 +390,7 @@ void pickup()
                 return;
             }
 
-            grd[you.x_pos][you.y_pos] = 67;
+            grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
         }
     }
 
@@ -463,7 +456,7 @@ void pickup()
             {
                 strcpy(info, "pick up ");
 
-                if (mitm.base_type[o] == 15)
+                if (mitm.base_type[o] == OBJ_GOLD)
                 {
                     itoa(mitm.quantity[o], st_prn, 10);
                     strcat(info, st_prn);
@@ -588,9 +581,9 @@ int add_item(int item_got, int quant_got)
             unit_mass = 130;
             break;
         case OBJ_CORPSES:
-            if (mitm.sub_type[item_got] == 0)
+            if (mitm.sub_type[item_got] == CORPSE_BODY)
                 unit_mass = mons_weight(mitm.pluses[item_got]);
-            if (mitm.sub_type[item_got] == 1)
+            if (mitm.sub_type[item_got] == CORPSE_SKELETON)
                 unit_mass = mons_weight(mitm.pluses[item_got]) / 2;
             break;
         case OBJ_GOLD:
@@ -653,27 +646,21 @@ int add_item(int item_got, int quant_got)
     for (m = 0; m < 52; m++)
     {
 
-        if ((mitm.base_type[item_got] == OBJ_MISSILES
-                || (mitm.base_type[item_got] == OBJ_FOOD
-                    && mitm.sub_type[item_got] != FOOD_CHUNK)
+        if ( ( mitm.base_type[item_got] == OBJ_MISSILES
+                || (mitm.base_type[item_got] == OBJ_FOOD && mitm.sub_type[item_got] != FOOD_CHUNK)
                 || mitm.base_type[item_got] == OBJ_SCROLLS
                 || mitm.base_type[item_got] == OBJ_POTIONS
-                || (mitm.base_type[item_got] == OBJ_MISCELLANY
-                    && mitm.sub_type[item_got] == MISC_RUNE_OF_ZOT)
-                || mitm.base_type[item_got] == 9)
-
+                || (mitm.base_type[item_got] == OBJ_MISCELLANY && mitm.sub_type[item_got] == MISC_RUNE_OF_ZOT)
+                || mitm.base_type[item_got] == OBJ_UNKNOWN_II )
             && you.inv_class[m] == mitm.base_type[item_got]
             && you.inv_type[m] == mitm.sub_type[item_got]
-
-            && (((mitm.base_type[item_got] == OBJ_FOOD
-                            && mitm.sub_type[item_got] != FOOD_CHUNK)
+            && ( ( (mitm.base_type[item_got] == OBJ_FOOD && mitm.sub_type[item_got] != FOOD_CHUNK)
                     || mitm.base_type[item_got] == OBJ_SCROLLS
                     || mitm.base_type[item_got] == OBJ_POTIONS)
-                || (you.inv_plus[m] == mitm.pluses[item_got]
+                || ( you.inv_plus[m] == mitm.pluses[item_got]
                     && you.inv_plus2[m] == mitm.pluses2[item_got]
-                    && you.inv_dam[m] == mitm.special[item_got]))
-
-            && you.inv_quantity[m] > 0)
+                    && you.inv_dam[m] == mitm.special[item_got] ) )
+            && you.inv_quantity[m] > 0 )
         {
             if (mitm.id[item_got] == you.inv_ident[m]
                     || mitm.base_type[item_got] == OBJ_FOOD
@@ -733,7 +720,7 @@ int add_item(int item_got, int quant_got)
 
             mpr(info);
 
-            if (mitm.base_type[item_got] == 12 && you.char_direction == 0)
+            if (mitm.base_type[item_got] == OBJ_ORBS && you.char_direction == 0)
             {
                 mpr("Now all you have to do is get back out of the dungeon!");
                 you.char_direction = 1;
@@ -779,7 +766,7 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
     int item_mass = 0;
     int unit_mass = 0;
 
-    if (you.inv_class[item_drop_2] < 3 || you.inv_class[item_drop_2] == 4 || you.inv_class[item_drop_2] == 13)
+    if (you.inv_class[item_drop_2] < OBJ_WANDS || you.inv_class[item_drop_2] == OBJ_FOOD || you.inv_class[item_drop_2] == OBJ_MISCELLANY)
     {
         unit_mass = mass(you.inv_class[item_drop_2], you.inv_type[item_drop_2]);
     }
@@ -787,42 +774,42 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
     {
         switch (you.inv_class[item_drop_2])
         {
-        case 3:
+        case OBJ_WANDS:
             unit_mass = 100;
             break;
-        case 4:
+        case OBJ_FOOD:
             unit_mass = 100;
             break;
-        case 5:
+        case OBJ_UNKNOWN_I:
             unit_mass = 200;
             break;
-        case 6:
+        case OBJ_SCROLLS:
             unit_mass = 50;
             break;
-        case 7:
+        case OBJ_JEWELLERY:
             unit_mass = 20;
             break;
-        case 8:
+        case OBJ_POTIONS:
             unit_mass = 60;
             break;
-        case 9:
+        case OBJ_UNKNOWN_II:
             unit_mass = 5;
             break;
-        case 10:
+        case OBJ_BOOKS:
             unit_mass = 250;
             break;
-        case 11:
+        case OBJ_STAVES:
             unit_mass = 130;
             break;
-        case 13:
+        case OBJ_MISCELLANY:
             unit_mass = 250;
             break;
-        case 14:
-/* if (mitm.sub_type [item_got] == 0) unit_mass = mons_weight(mitm.pluses [item_got]);
-   if (mitm.sub_type [item_got] == 1) unit_mass = mons_weight(mitm.pluses [item_got]) / 2; */
-            if (mitm.sub_type[item_drop_2] == 0)
+        case OBJ_CORPSES:
+/* if (mitm.sub_type [item_got] == CORPSE_BODY) unit_mass = mons_weight(mitm.pluses [item_got]);
+   if (mitm.sub_type [item_got] == CORPSE_SKELETON) unit_mass = mons_weight(mitm.pluses [item_got]) / 2; */
+            if (mitm.sub_type[item_drop_2] == CORPSE_BODY)
                 unit_mass = mons_weight(mitm.pluses[item_drop_2]);
-            if (mitm.sub_type[item_drop_2] == 1)
+            if (mitm.sub_type[item_drop_2] == CORPSE_SKELETON)
                 unit_mass = mons_weight(mitm.pluses[item_drop_2]) / 2;
             break;
         }
@@ -832,9 +819,19 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
 
     int m = 0, i = 0;
 
-    if (igrd[x_plos][y_plos] != 501)
+    if (igrd[x_plos][y_plos] != ING)
     {
-        if ((you.inv_class[item_drop_2] == 1 || you.inv_class[item_drop_2] == 4 || you.inv_class[item_drop_2] == 6 || you.inv_class[item_drop_2] == 8 || you.inv_class[item_drop_2] == 9) && you.inv_class[item_drop_2] == mitm.base_type[igrd[x_plos][y_plos]] && you.inv_type[item_drop_2] == mitm.sub_type[igrd[x_plos][y_plos]] && you.inv_plus[item_drop_2] == mitm.pluses[igrd[x_plos][y_plos]] && you.inv_plus2[item_drop_2] == mitm.pluses2[igrd[x_plos][y_plos]] && you.inv_dam[item_drop_2] == mitm.special[igrd[x_plos][y_plos]] && mitm.quantity[igrd[x_plos][y_plos]] > 0)
+        if ( ( you.inv_class[item_drop_2] == OBJ_MISSILES
+                || you.inv_class[item_drop_2] == OBJ_FOOD
+                || you.inv_class[item_drop_2] == OBJ_SCROLLS
+                || you.inv_class[item_drop_2] == OBJ_POTIONS
+                || you.inv_class[item_drop_2] == OBJ_UNKNOWN_II )
+            && you.inv_class[item_drop_2] == mitm.base_type[igrd[x_plos][y_plos]]
+            && you.inv_type[item_drop_2] == mitm.sub_type[igrd[x_plos][y_plos]]
+            && you.inv_plus[item_drop_2] == mitm.pluses[igrd[x_plos][y_plos]]
+            && you.inv_plus2[item_drop_2] == mitm.pluses2[igrd[x_plos][y_plos]]
+            && you.inv_dam[item_drop_2] == mitm.special[igrd[x_plos][y_plos]]
+            && mitm.quantity[igrd[x_plos][y_plos]] > 0 )
         {
             if (you.inv_ident[item_drop_2] == mitm.id[igrd[x_plos][y_plos]])
             {
@@ -901,9 +898,9 @@ static void drop_gold()
 
         mpr(info);
 
-        if (igrd[you.x_pos][you.y_pos] != 501)
+        if (igrd[you.x_pos][you.y_pos] != ING)
         {
-            if (mitm.base_type[igrd[you.x_pos][you.y_pos]] == 15)
+            if (mitm.base_type[igrd[you.x_pos][you.y_pos]] == OBJ_GOLD)
             {
                 mitm.quantity[igrd[you.x_pos][you.y_pos]] += quant_drop;
                 you.gold -= quant_drop;
@@ -920,7 +917,7 @@ static void drop_gold()
             if (mitm.quantity[i] == 0)
             {
                 mitm.id[i] = 0;
-                mitm.base_type[i] = 15;
+                mitm.base_type[i] = OBJ_GOLD;
                 mitm.quantity[i] = quant_drop;
                 break;
             }
@@ -1169,7 +1166,7 @@ void update_corpses(double elapsedTime)
 void handle_time(int time_delta)
 {
     // Nasty things happen to people who spend too long in Hell
-    if (you.where_are_you > 0 && you.where_are_you < 10 && you.where_are_you != 3 && random2(2) == 0)
+    if (you.where_are_you > 0 && you.where_are_you < 10 && you.where_are_you != BRANCH_VESTIBULE_OF_HELL && coinflip() )
     {
         switch (random2(17))
         {
@@ -1232,15 +1229,15 @@ void handle_time(int time_delta)
             break;
         }
 
-        if (random2(3) == 0)
+        if ( one_chance_in(3) )
         {
-         if (random2(2) == 0) miscast_effect(SPTYP_NECROMANCY, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-          else if (random2(2) == 0) miscast_effect(SPTYP_SUMMONING, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-                else if (random2(2) == 0) miscast_effect(SPTYP_CONJURATION, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-                        else if (random2(2) == 0) miscast_effect(SPTYP_ENCHANTMENT, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+         if ( coinflip() ) miscast_effect(SPTYP_NECROMANCY, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+          else if ( coinflip() ) miscast_effect(SPTYP_SUMMONING, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+            else if ( coinflip() ) miscast_effect(SPTYP_CONJURATION, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                else if ( coinflip() ) miscast_effect(SPTYP_ENCHANTMENT, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
         }
         else
-                if (random2(3) == 0)
+            if ( one_chance_in(3) )
                 switch(you.where_are_you)
                 {
                  case BRANCH_DIS: miscast_effect(SPTYP_EARTH, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
@@ -1253,56 +1250,56 @@ void handle_time(int time_delta)
                       break;
                 }
         else
-          if (random2(3) == 0)
+          if ( one_chance_in(3) )
             switch(you.where_are_you)
                 {
-                 case BRANCH_DIS: create_monster(summon_any_demon(2), 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+                 case BRANCH_DIS: create_monster(summon_any_demon(DEMON_GREATER), 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
                       break;
-                 case BRANCH_GEHENNA: create_monster(MONS_FIEND, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+                 case BRANCH_GEHENNA: create_monster(MONS_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
                       break;
-                 case BRANCH_COCYTUS: create_monster(MONS_ICE_FIEND, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+                 case BRANCH_COCYTUS: create_monster(MONS_ICE_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
                       break;
-                 case BRANCH_TARTARUS: create_monster(MONS_SHADOW_FIEND, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+                 case BRANCH_TARTARUS: create_monster(MONS_SHADOW_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
                       break;
                 }
 
 // Note no "else". This can happen in addition to the above...
 
-        if (random2(3) == 0)
+    if ( one_chance_in(3) )
     {
-        create_monster(250, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
-        if (random2(3) == 0)
-            create_monster(250, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+        create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+        if ( one_chance_in(3) )
+            create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
 
-        if (random2(3) == 0)
-            create_monster(250, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+        if ( one_chance_in(3) )
+            create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
 
-        if (random2(3) == 0)
-            create_monster(250, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+        if ( one_chance_in(3) )
+            create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
 
-        if (random2(3) == 0)
-            create_monster(250, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+        if ( one_chance_in(3) )
+            create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
     }
     } // End of special Hellish things
 
-    // Adjust the player's stats if s/he's deseased (or recovering).
+    // Adjust the player's stats if s/he's diseased (or recovering).
     if (you.disease == 0)
     {
-        if (you.strength < you.max_strength && random2(100) == 0)
+        if (you.strength < you.max_strength && one_chance_in(100) )
         {
             mpr("You feel your strength returning.");
             you.strength++;
             you.redraw_strength = 1;
         }
 
-        if (you.dex < you.max_dex && random2(100) == 0)
+        if (you.dex < you.max_dex && one_chance_in(100) )
         {
             mpr("You feel your dexterity returning.");
             you.dex++;
             you.redraw_dexterity = 1;
         }
 
-        if (you.intel < you.max_intel && random2(100) == 0)
+        if (you.intel < you.max_intel && one_chance_in(100) )
         {
             mpr("You feel your intelligence returning.");
             you.intel++;
@@ -1312,7 +1309,7 @@ void handle_time(int time_delta)
     }
     else
     {
-        if (random2(30) == 0)
+        if ( one_chance_in(30) )
         {
             mpr("Your disease is taking its toll.");
             lose_stat(100, 1);
@@ -1324,18 +1321,18 @@ void handle_time(int time_delta)
         lose_stat(100, 1);
 
     // Account for mutagenic radiation
-    if (you.invis > 0 || (you.haste > 0 && you.berserker == 0))
-        if (random2(10) == 0 && you.magic_contamination < 100)
+    if ( you.invis > 0 || (you.haste > 0 && you.berserker == 0))
+        if ( you.magic_contamination < 100 && one_chance_in(10) )
             you.magic_contamination++;
 
     you.magic_contamination += random2(scan_randarts(RAP_MUTAGENIC) + 1);
 
-    if (you.magic_contamination > 0 && random2(2) == 0)
+    if ( you.magic_contamination > 0 && coinflip() )
     {
         if (you.magic_contamination > 4 && random2(150) <= you.magic_contamination)
         {
             mpr("You've accumulated too much magical radiation!");
-            if (random2(2) == 0)
+            if ( coinflip() )
                 mutate(100);
             else
                 give_bad_mutation();
@@ -1345,10 +1342,10 @@ void handle_time(int time_delta)
 
     // Random chance to identify staff in hand based off of Spellcasting
     // and an appropriate other spell skill... is 1/20 too fast?
-    if (you.equip[EQ_WEAPON] != -1
+    if ( you.equip[EQ_WEAPON] != -1
         && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
         && you.inv_ident[you.equip[EQ_WEAPON]] == 0
-        && random2(20) == 0)
+        && one_chance_in(20) )
     {
         int total_skill = you.skills[SK_SPELLCASTING];
 
@@ -1430,26 +1427,25 @@ void handle_time(int time_delta)
         switch (you.religion)
         {
         case GOD_XOM:
-            if (random2(75) == 0)
+            if ( one_chance_in(75) )
                 Xom_acts(1, you.experience_level + random2(15), 1);
             break;
 
         case GOD_ZIN:           // These gods like long-standing worshippers
-
         case GOD_ELYVILON:
-            if (random2(20) == 0 && you.piety < 150)
+            if ( you.piety < 150 && one_chance_in(20) )
                 gain_piety(1);
             break;
 
         case GOD_SHINING_ONE:
-            if (random2(15) == 0 && you.piety < 150)
+            if ( you.piety < 150 && one_chance_in(15) )
                 gain_piety(1);
             break;
 
         case GOD_YREDELEMNUL:
         case GOD_KIKUBAAQUDGHA:
         case GOD_VEHUMET:
-            if (random2(17) == 0)
+            if ( one_chance_in(17) )
                 lose_piety(1);
             if (you.piety <= 0)
                 excommunication();
@@ -1458,31 +1454,30 @@ void handle_time(int time_delta)
         case GOD_OKAWARU:       // These gods accept corpses, so they time-out faster:
 
         case GOD_TROG:
-            if (random2(14) == 0)
+            if ( one_chance_in(14) )
                 lose_piety(1);
             if (you.piety <= 0)
                 excommunication();
             break;
 
         case GOD_MAKHLEB:
-            if (random2(16) == 0)
+            if ( one_chance_in(16) )
                 lose_piety(1);
             if (you.piety <= 0)
                 excommunication();
             break;
 
         case GOD_SIF_MUNA:
-            if (random2(20) == 0)
+            if ( one_chance_in(20) )
                 lose_piety(1);
             if (you.piety <= 0)
                 excommunication();
             break;
 
         case GOD_NEMELEX_XOBEH: // relatively patient
-
-            if (random2(35) == 0)
+            if ( one_chance_in(35) )
                 lose_piety(1);
-            if (you.attribute[ATTR_CARD_COUNTDOWN] > 0 && random2(2) == 0)
+            if (you.attribute[ATTR_CARD_COUNTDOWN] > 0 && coinflip() )
                 you.attribute[ATTR_CARD_COUNTDOWN]--;
             if (you.piety <= 0)
                 excommunication();
@@ -1564,19 +1559,19 @@ void handle_time(int time_delta)
         goto practise_stealth;
 
     // lowered the random roll from % 7 to % 6 -- bwross
-    if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random2(6) == 0)
+    if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && one_chance_in(6) )
         exercise(SK_ARMOUR, 1);
 
     // also skills:
 practise_stealth:
-    if (you.burden_state != 0 || you.berserker)
+    if (you.burden_state || you.berserker)
         return;
 
     if (you.equip[EQ_BODY_ARMOUR] != -1)
     {
         if (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30 != 4)   /* elven armours don't hamper stealth */
             if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 1 && (you.inv_type[you.equip[EQ_BODY_ARMOUR]] < 22 || you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 25))  /* neither do robes or steam/mottled DSM */
-                if (random2( mass(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) ) >= 100 || random2(3) != 0)
+                if (random2( mass(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) ) >= 100 || !one_chance_in(3) )
                     return;
     }
 
@@ -1585,7 +1580,7 @@ practise_stealth:
     if (you.special_wield == 50)
         return;                 // shadow lantern stops stealth
 
-    if (random2(6) == 0)
+    if ( one_chance_in(6) )
         exercise(SK_STEALTH, 1);
 }                               // end handle_time
 
@@ -1604,7 +1599,7 @@ void autopickup()
     if (autopickup_on == 0 || autopickups == 0L)
         return;
 
-    if (you.levitation != 0 && wearing_amulet(AMU_CONTROLLED_FLIGHT) == 0)
+    if ( you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT) )
         return;                 //flying
 
     o = env.igrid[you.x_pos][you.y_pos];

@@ -12,7 +12,7 @@
 #include "mons_lev.h"
 
 #include "externs.h"
-#include "enum.h"
+
 #include "mstruct.h"
 
 int mons_rarity(int mcls);
@@ -53,173 +53,71 @@ int mons_rare_swamp(int mcls);
 
 
 
+
 int mons_level_dis(int mcls)
 {
-
     int mlev = 0;
 
     switch (mcls)
     {
-    case 3:
+    case MONS_CLAY_GOLEM:
+    case MONS_IMP:
+    case MONS_NECROPHAGE:
+    case MONS_RED_DEVIL:
+    case MONS_SKELETAL_WARRIOR:
+    case MONS_ZOMBIE_LARGE:
         mlev = 1;
-        break;                  // "red devil"
+        break;
 
-    case 8:
-        mlev = 1;
-        break;                  // "imp"
-
-    case 13:
-        mlev = 1;
-        break;                  // "necrophage"
-
-    case 15:
+    case MONS_PHANTOM:
+    case MONS_ZOMBIE_SMALL:
+    case MONS_WIGHT:
+    case MONS_SHADOW:
+    case MONS_HELL_HOUND:
+    case MONS_ROTTING_DEVIL:
+    case MONS_TORMENTOR:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_HELL_KNIGHT:
+    case MONS_STONE_GOLEM:
         mlev = 2;
-        break;                  // "phantom"
+        break;
 
-    case 25:
-        mlev = 2;
-        break;                  // "zombie"
+    case MONS_MUMMY:
+    case MONS_EFREET:
+    case MONS_FLYING_SKULL:
+    case MONS_HELLION:
+    case MONS_IRON_GOLEM:
+    case MONS_HELL_HOG:
+        mlev = 3;
+        break;
 
-    case 31:
+    case MONS_VAMPIRE:
+    case MONS_WRAITH:
+    case MONS_HAIRY_DEVIL:
+    case MONS_IRON_DEVIL:
+    case MONS_FREEZING_WRAITH:
+    case MONS_FLAYED_GHOST:
+        mlev = 4;
+        break;
+
+    case MONS_LICH:
+    case MONS_REAPER:
+    case MONS_SOUL_EATER:
+    case MONS_ICE_DRAGON:
+    case MONS_ICE_DEVIL:
+    case MONS_BLUE_DEVIL:
+    case MONS_SPECTRAL_WARRIOR:
+    case MONS_DANCING_WEAPON:
+        mlev = 5;
+        break;
+
+    case MONS_FIEND:
+    case MONS_ANCIENT_LICH:
+    case MONS_SKELETAL_DRAGON:
+    case MONS_IRON_DRAGON:
         mlev = 6;
-        break;                  // "fiend"
-
-    case 37:
-        mlev = 5;
-        break;                  // "lich"
-
-    case 38:
-        mlev = 3;
-        break;                  // "mummy"
-
-    case 47:
-        mlev = 4;
-        break;                  // "vampire"
-
-    case 48:
-        mlev = 4;
-        break;                  // "wraith"
-
-    case 51:
-        mlev = 1;
-        break;                  // "zombie"
-
-    case 60:
-        mlev = 2;
-        break;                  // "wight"
-
-    case 63:
-        mlev = 2;
-        break;                  // "shadow"
-
-    case 68:
-        mlev = 3;
-        break;                  // "efreet"
-
-    case 72:
-        mlev = 3;
-        break;                  // "flying skull"
-
-    case 73:
-        mlev = 2;
-        break;                  // "hell hound"
-
-    case 80:
-        mlev = 3;
-        break;                  // "hellion"
-
-    case 81:
-        mlev = 2;
-        break;                  // "rotting devil"
-
-    case 82:
-        mlev = 2;
-        break;                  // "tormentor"
-
-    case 83:
-        mlev = 5;
-        break;                  // "reaper"
-
-    case 84:
-        mlev = 5;
-        break;                  // "soul eater"
-
-    case 85:
-        mlev = 4;
-        break;                  // "hairy devil"
-
-    case 89:
-        mlev = 4;
-        break;                  // iron devil
-
-    case 75:
-        mlev = 5;
-        break;                  // "ice dragon"
-
-    case 77:
-        mlev = 4;
-        break;                  // "freezing wraith"
-
-    case 86:
-        mlev = 5;
-        break;                  // "ice devil"
-
-    case 87:
-        mlev = 5;
-        break;                  // "blue devil"
-
-    case 107:
-    case 108:
-        mlev = 2;
-        break;                  // "skeleton"
-
-    case 109:
-        mlev = 2;
-        break;                  //strcat(gmon_name, "hell knight"); break; break; break;
-
-    case 116:
-        mlev = 1;
-        break;                  // clay golem
-
-    case 118:
-        mlev = 2;
-        break;                  // stone golem
-
-    case 119:
-        mlev = 3;
-        break;                  // iron golem
-
-    case 130:
-        mlev = 5;
-        break;                  // spec
-
-    case 137:
-        mlev = 4;
-        break;                  // flayed ghost
-
-    case 144:
-        mlev = 5;
-        break;                  // dancing weapon
-
-    case 356:
-        mlev = 6;
-        break;                  // ancient lich
-
-    case 369:
-        mlev = 6;
-        break;                  // skeletal dragon
-
-    case 394:
-        mlev = 3;
-        break;                  // hell-hog
-
-    case 398:
-        mlev = 6;
-        break;                  // iron D
-
-    case 399:
-        mlev = 1;
-        break;                  // skeletal warrior
+        break;
 
     default:
         return 0;
@@ -227,7 +125,100 @@ int mons_level_dis(int mcls)
 
     return mlev + 26;
 
-}
+}     // end mons_level_dis()
+
+
+
+
+int mons_rare_dis(int mcls)
+{
+    switch (mcls)
+    {
+    case MONS_IMP:
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_IRON_DEVIL:
+        return 99;
+
+    case MONS_REAPER:
+        return 77;
+
+    case MONS_TORMENTOR:
+        return 66;
+
+    case MONS_RED_DEVIL:
+    case MONS_SKELETAL_WARRIOR:
+        return 50;
+
+    case MONS_WRAITH:
+        return 48;
+
+    case MONS_SHADOW:
+        return 56;
+
+    case MONS_HELL_HOUND:
+        return 46;
+
+    case MONS_MUMMY:
+    case MONS_WIGHT:
+        return 45;
+
+    case MONS_HELLION:
+    case MONS_BLUE_DEVIL:
+        return 40;
+
+    case MONS_FLYING_SKULL:
+        return 35;
+
+    case MONS_FREEZING_WRAITH:
+    case MONS_ICE_DEVIL:
+        return 30;
+
+    case MONS_NECROPHAGE:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_FLAYED_GHOST:
+        return 25;
+
+    case MONS_SKELETAL_DRAGON:
+    case MONS_HELL_HOG:
+        return 20;
+
+    case MONS_VAMPIRE:
+        return 19;
+
+    case MONS_PHANTOM:
+        return 17;
+
+    case MONS_HAIRY_DEVIL:
+        return 15;
+
+    case MONS_LICH:
+    case MONS_EFREET:
+    case MONS_ROTTING_DEVIL:
+    case MONS_SOUL_EATER:
+    case MONS_HELL_KNIGHT:
+    case MONS_CLAY_GOLEM:
+    case MONS_STONE_GOLEM:
+    case MONS_IRON_GOLEM:
+    case MONS_SPECTRAL_WARRIOR:
+    case MONS_DANCING_WEAPON:
+        return 10;
+
+    case MONS_IRON_DRAGON:
+        return 5;
+
+    case MONS_FIEND:
+    case MONS_ANCIENT_LICH:
+        return 3;
+
+    default:
+        return 0;
+    }                           // end switch
+
+}     // end mons_rare_dis()
+
+
 
 
 int mons_level_gehenna(int mcls)
@@ -237,142 +228,58 @@ int mons_level_gehenna(int mcls)
 
     switch (mcls)
     {
-    case 3:
+    case MONS_RED_DEVIL:
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_CLAY_GOLEM:
         mlev = 1;
-        break;                  // "red devil"
+        break;
 
-    case 8:
+    case MONS_IMP:
+    case MONS_NECROPHAGE:
+    case MONS_HELL_HOUND:
+    case MONS_STONE_GOLEM:
+    case MONS_HELL_HOG:
         mlev = 2;
-        break;                  // "imp"
+        break;
 
-    case 13:
-        mlev = 2;
-        break;                  // "necrophage"
-
-    case 15:
+    case MONS_PHANTOM:
+    case MONS_MUMMY:
+    case MONS_WIGHT:
+    case MONS_SHADOW:
+    case MONS_FLYING_SKULL:
+    case MONS_ROTTING_DEVIL:
+    case MONS_IRON_GOLEM:
         mlev = 3;
-        break;                  // "phantom"
+        break;
 
-    case 25:
-        mlev = 1;
-        break;                  // "zombie"
-
-    case 31:
-        mlev = 6;
-        break;                  // "fiend"
-
-    case 37:
-        mlev = 6;
-        break;                  // "lich"
-
-    case 38:
-        mlev = 3;
-        break;                  // "mummy"
-
-    case 47:
+    case MONS_VAMPIRE:
+    case MONS_WRAITH:
+    case MONS_HAIRY_DEVIL:
+    case MONS_HELL_KNIGHT:
         mlev = 4;
-        break;                  // "vampire"
+        break;
 
-    case 48:
-        mlev = 4;
-        break;                  // "wraith"
-
-    case 51:
-        mlev = 1;
-        break;                  // "zombie"
-
-    case 60:
-        mlev = 3;
-        break;                  // "wight"
-
-    case 63:
-        mlev = 3;
-        break;                  // "shadow"
-
-    case 68:
+    case MONS_EFREET:
+    case MONS_HELLION:
+    case MONS_TORMENTOR:
+    case MONS_FLAYED_GHOST:
         mlev = 5;
-        break;                  // "efreet"
+        break;
 
-    case 72:
-        mlev = 3;
-        break;                  // "flying skull"
-
-    case 73:
-        mlev = 2;
-        break;                  // "hell hound"
-
-    case 80:
-        mlev = 5;
-        break;                  // "hellion"
-
-    case 81:
-        mlev = 3;
-        break;                  // "rotting devil"
-
-    case 82:
-        mlev = 5;
-        break;                  // "tormentor"
-
-    case 83:
+    case MONS_FIEND:
+    case MONS_LICH:
+    case MONS_REAPER:
+    case MONS_SOUL_EATER:
+    case MONS_SPECTRAL_WARRIOR:
+    case MONS_PIT_FIEND:
+    case MONS_ANCIENT_LICH:
+    case MONS_SKELETAL_DRAGON:
+    case MONS_SERPENT_OF_HELL:
         mlev = 6;
-        break;                  // "reaper"
-
-    case 84:
-        mlev = 6;
-        break;                  // "soul eater"
-
-    case 85:
-        mlev = 4;
-        break;                  // "hairy devil"
-
-    case 107:
-    case 108:
-        mlev = 1;
-        break;                  // "skeleton"
-
-    case 109:
-        mlev = 4;
-        break;                  //strcat(gmon_name, "hell knight"); break; break; break;
-
-    case 116:
-        mlev = 1;
-        break;                  // clay golem
-
-    case 118:
-        mlev = 2;
-        break;                  // stone golem
-
-    case 119:
-        mlev = 3;
-        break;                  // iron golem
-
-    case 130:
-        mlev = 6;
-        break;                  // spec
-
-    case 137:
-        mlev = 5;
-        break;                  // flayed ghost
-
-    case 245:
-        mlev = 6;
-        break;                  // pit fiend
-
-    case 356:
-        mlev = 6;
-        break;                  // ancient lich
-
-    case 369:
-        mlev = 6;
-        break;                  // skeletal dragon
-
-    case 394:
-        mlev = 2;
-        break;                  // hell-hog
-
-    case 395:
-        mlev = 6;
-        break;                  // Serpent of Hell
+        break;
 
     default:
         return 0;
@@ -380,254 +287,99 @@ int mons_level_gehenna(int mcls)
 
     return mlev + 26;
 
-}
+}     // end mons_level_gehenna()
 
 
-int mons_rare_dis(int mcls)
-{
-    switch (mcls)
-    {
-    case 3:
-        return 50;              // "red devil"
-
-    case 8:
-        return 99;              // "imp"
-
-    case 13:
-        return 25;              // "necrophage"
-
-    case 15:
-        return 17;              // "phantom"
-
-    case 25:
-        return 99;              // "zombie"
-
-    case 31:
-        return 3;               // "fiend"
-
-    case 37:
-        return 10;              // "lich"
-
-    case 38:
-        return 45;              // "mummy"
-
-    case 47:
-        return 19;              // "vampire"
-
-    case 48:
-        return 48;              // "wraith"
-
-    case 51:
-        return 99;              // "zombie"
-
-    case 60:
-        return 45;              // "wight"
-
-    case 63:
-        return 56;              // "shadow"
-
-    case 68:
-        return 10;              // "efreet"
-
-    case 72:
-        return 35;              // "flying skull"
-
-    case 73:
-        return 46;              // "hell hound"
-
-    case 80:
-        return 40;              // "hellion"
-
-    case 81:
-        return 10;              // "rotting devil"
-
-    case 82:
-        return 66;              // "tormentor"
-
-    case 83:
-        return 77;              // "reaper"
-
-    case 84:
-        return 10;              // "soul eater"
-
-    case 85:
-        return 15;              // "hairy devil"
-
-    case 89:
-        return 99;              // iron devil
-
-    case 77:
-        return 30;              // "freezing wraith"
-
-    case 86:
-        return 30;              // "ice devil"
-
-    case 87:
-        return 40;              // "blue devil"
-
-    case 107:
-    case 108:
-        return 25;              // "skeleton"
-
-    case 109:
-        return 10;              //strcat(gmon_name, "hell knight"); break;
-
-    case 116:
-        return 10;              // clay golem
-
-    case 118:
-        return 10;              // stone golem
-
-    case 119:
-        return 10;              // iron golem
-
-    case 130:
-        return 10;              // spec
-
-    case 137:
-        return 25;              // flayed ghost
-
-    case 144:
-        return 10;              // dancing weapon
-
-    case 356:
-        return 3;               // ancient lich
-
-    case 369:
-        return 20;              // skeletal dragon
-
-    case 394:
-        return 20;              // hell-hog
-
-    case 398:
-        return 5;               // iron D
-
-    case 399:
-        return 50;              // skeletal warrior
-
-    default:
-        return 0;
-    }                           // end switch
-
-}
 
 
 int mons_rare_gehenna(int mcls)
 {
     switch (mcls)
     {
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+        return 99;
 
-    case 3:
-        return 60;              // "red devil"
+    case MONS_MUMMY:
+        return 70;
 
-    case 8:
-        return 30;              // "imp"
+    case MONS_SHADOW:
+        return 61;
 
-    case 13:
-        return 50;              // "necrophage"
+    case MONS_WIGHT:
+    case MONS_RED_DEVIL:
+        return 60;
 
-    case 15:
-        return 32;              // "phantom"
+    case MONS_HELLION:
+        return 54;
 
-    case 25:
-        return 99;              // "zombie"
+    case MONS_WRAITH:
+        return 53;
 
-    case 31:
-        return 5;               // "fiend"
+    case MONS_NECROPHAGE:
+    case MONS_ROTTING_DEVIL:
+        return 50;
 
-    case 37:
-        return 25;              // "lich"
+    case MONS_VAMPIRE:
+        return 44;
 
-    case 38:
-        return 70;              // "mummy"
+    case MONS_FLYING_SKULL:
+    case MONS_REAPER:
+        return 43;
 
-    case 47:
-        return 44;              // "vampire"
+    case MONS_TORMENTOR:
+        return 42;
 
-    case 48:
-        return 53;              // "wraith"
+    case MONS_HELL_HOUND:
+        return 41;
 
-    case 51:
-        return 99;              // "zombie"
+    case MONS_PHANTOM:
+    case MONS_FLAYED_GHOST:
+        return 32;
 
-    case 60:
-        return 60;              // "wight"
+    case MONS_IMP:
+    case MONS_IRON_DEVIL:
+    case MONS_HELL_HOG:
+        return 30;
 
-    case 63:
-        return 61;              // "shadow"
+    case MONS_LICH:
+        return 25;
 
-    case 68:
-        return 5;               // "efreet"
+    case MONS_HELL_KNIGHT:
+        return 21;
 
-    case 72:
-        return 43;              // "flying skull"
+    case MONS_HAIRY_DEVIL:
+    case MONS_SPECTRAL_WARRIOR:
+        return 20;
 
-    case 73:
-        return 41;              // "hell hound"
+    case MONS_CLAY_GOLEM:
+    case MONS_SKELETAL_DRAGON:
+        return 10;
 
-    case 80:
-        return 54;              // "hellion"
+    case MONS_STONE_GOLEM:
+        return 8;
 
-    case 81:
-        return 50;              // "rotting devil"
+    case MONS_PIT_FIEND:
+        return 7;
 
-    case 82:
-        return 42;              // "tormentor"
+    case MONS_FIEND:
+    case MONS_EFREET:
+    case MONS_SOUL_EATER:
+    case MONS_IRON_GOLEM:
+        return 5;
 
-    case 83:
-        return 43;              // "reaper"
-
-    case 84:
-        return 5;               // "soul eater"
-
-    case 85:
-        return 20;              // "hairy devil"
-
-    case 89:
-        return 30;              // iron devil - in Dis
-
-    case 107:
-    case 108:
-        return 99;              // "skeleton"
-
-    case 109:
-        return 21;              //strcat(gmon_name, "hell knight"); break;
-
-    case 116:
-        return 10;              // clay golem
-
-    case 118:
-        return 8;               // stone golem
-
-    case 119:
-        return 5;               // iron golem
-
-    case 130:
-        return 20;              // spec
-
-    case 137:
-        return 32;              // flayed ghost
-
-    case 245:
-        return 7;               // pit fiend
-
-    case 356:
-        return 4;               // ancient lich
-
-    case 369:
-        return 10;              // skeletal dragon
-
-    case 394:
-        return 30;              // hell-hog
-
-    case 395:
-        return 4;               // Serpent of Hell
+    case MONS_ANCIENT_LICH:
+    case MONS_SERPENT_OF_HELL:
+        return 4;
 
     default:
         return 0;
     }                           // end switch
 
-}
+}     // end mons_rare_gehenna()
+
 
 
 
@@ -638,114 +390,51 @@ int mons_level_cocytus(int mcls)
 
     switch (mcls)
     {
-    case 13:
+    case MONS_NECROPHAGE:
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_SKELETAL_WARRIOR:
         mlev = 1;
-        break;                  // "necrophage"
+        break;
 
-    case 15:
+    case MONS_PHANTOM:
+    case MONS_ICE_BEAST:
+    case MONS_SHADOW:
+    case MONS_BLUE_DEVIL:
         mlev = 2;
-        break;                  // "phantom"
+        break;
 
-    case 25:
-        mlev = 1;
-        break;                  // "zombie"
-
-    case 34:
-        mlev = 2;
-        break;                  // "ice beast"
-
-    case 37:
-        mlev = 6;
-        break;                  // "lich"
-
-    case 38:
-        mlev = 4;
-        break;                  // "mummy"
-
-    case 47:
+    case MONS_VAMPIRE:
+    case MONS_WIGHT:
+    case MONS_FLYING_SKULL:
+    case MONS_ROTTING_DEVIL:
         mlev = 3;
-        break;                  // "vampire"
+        break;
 
-    case 48:
+    case MONS_MUMMY:
+    case MONS_WRAITH:
+    case MONS_HUNGRY_GHOST:
+    case MONS_FREEZING_WRAITH:
+    case MONS_HAIRY_DEVIL:
+    case MONS_SPECTRAL_WARRIOR:
         mlev = 4;
-        break;                  // "wraith"
+        break;
 
-    case 51:
-        mlev = 1;
-        break;                  // "zombie"
-
-    case 60:
-        mlev = 3;
-        break;                  // "wight"
-
-    case 63:
-        mlev = 2;
-        break;                  // "shadow"
-
-    case 64:
-        mlev = 4;
-        break;                  // "hungry ghost"
-
-    case 72:
-        mlev = 3;
-        break;                  // "flying skull"
-
-    case 75:
+    case MONS_ICE_DRAGON:
+    case MONS_TORMENTOR:
+    case MONS_ICE_DEVIL:
         mlev = 5;
-        break;                  // "ice dragon"
+        break;
 
-    case 77:
-        mlev = 4;
-        break;                  // "freezing wraith"
-
-    case 81:
-        mlev = 3;
-        break;                  // "rotting devil"
-
-    case 82:
-        mlev = 5;
-        break;                  // "tormentor"
-
-    case 83:
+    case MONS_LICH:
+    case MONS_REAPER:
+    case MONS_SOUL_EATER:
+    case MONS_ANCIENT_LICH:
+    case MONS_SKELETAL_DRAGON:
         mlev = 6;
-        break;                  // "reaper"
-
-    case 84:
-        mlev = 6;
-        break;                  // "soul eater"
-
-    case 85:
-        mlev = 4;
-        break;                  // "hairy devil"
-
-    case 86:
-        mlev = 5;
-        break;                  // "ice devil"
-
-    case 87:
-        mlev = 2;
-        break;                  // "blue devil"
-
-    case 107:
-    case 108:
-        mlev = 1;
-        break;                  // "skeleton"
-
-    case 130:
-        mlev = 4;
-        break;                  // spec
-
-    case 356:
-        mlev = 6;
-        break;                  // ancient lich
-
-    case 369:
-        mlev = 6;
-        break;                  // skeletal dragon
-
-    case 399:
-        mlev = 1;
-        break;                  // skeletal warrior
+        break;
 
     default:
         return 0;
@@ -753,97 +442,84 @@ int mons_level_cocytus(int mcls)
 
     return mlev + 26;
 
-}
+}     // end mons_level_cocytus()
+
+
+
 
 int mons_rare_cocytus(int mcls)
 {
     switch (mcls)
     {
-    case 13:
-        return 25;              // "necrophage"
+    case MONS_FREEZING_WRAITH:
+        return 87;
 
-    case 15:
-        return 25;              // "phantom"
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ICE_BEAST:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+        return 85;
 
-    case 25:
-        return 85;              // "zombie"
+    case MONS_ICE_DEVIL:
+    case MONS_BLUE_DEVIL:
+        return 76;
 
-    case 34:
-        return 85;              // "ice beast"
+    case MONS_FLYING_SKULL:
+        return 57;
 
-    case 37:
-        return 12;              // "lich"
+    case MONS_SHADOW:
+        return 56;
 
-    case 38:
-        return 35;              // "mummy"
+    case MONS_SKELETAL_WARRIOR:
+        return 50;
 
-    case 47:
-        return 34;              // "vampire"
+    case MONS_REAPER:
+        return 47;
 
-    case 48:
-        return 45;              // "wraith"
+    case MONS_WRAITH:
+    case MONS_WIGHT:
+        return 45;
 
-    case 51:
-        return 85;              // "zombie"
+    case MONS_ICE_DRAGON:
+        return 38;
 
-    case 60:
-        return 45;              // "wight"
+    case MONS_ROTTING_DEVIL:
+    case MONS_TORMENTOR:
+        return 37;
 
-    case 63:
-        return 56;              // "shadow"
+    case MONS_MUMMY:
+        return 35;
 
-    case 64:
-        return 26;              // "hungry ghost"
+    case MONS_VAMPIRE:
+        return 34;
 
-    case 72:
-        return 57;              // "flying skull"
+    case MONS_HUNGRY_GHOST:
+    case MONS_HAIRY_DEVIL:
+        return 26;
 
-    case 75:
-        return 38;              // "ice dragon"
+    case MONS_NECROPHAGE:
+    case MONS_PHANTOM:
+        return 25;
 
-    case 77:
-        return 87;              // "freezing wraith"
-
-    case 81:
-        return 37;              // "rotting devil"
-
-    case 82:
-        return 37;              // "tormentor"
-
-    case 83:
-        return 47;              // "reaper"
-
-    case 84:
-        return 19;              // "soul eater"
-
-    case 85:
-        return 26;              // "hairy devil"
-
-    case 86:
-        return 76;              // "ice devil"
-
-    case 87:
-        return 76;              // "blue devil"
-
-    case 107:
-    case 108:
-        return 85;              // "skeleton"
-
-    case 130:
+    case MONS_SPECTRAL_WARRIOR:
         return 20;
-    case 356:
-        return 5;               // ancient lich
 
-    case 369:
-        return 12;              // skeletal dragon
+    case MONS_SOUL_EATER:
+        return 19;
 
-    case 399:
-        return 50;              // skeletal warrior
+    case MONS_LICH:
+    case MONS_SKELETAL_DRAGON:
+        return 12;
+
+    case MONS_ANCIENT_LICH:
+        return 5;
 
     default:
         return 0;
     }
-}
+}     // end mons_rare_cocytus()
+
 
 
 
@@ -855,146 +531,59 @@ int mons_level_tartarus(int mcls)
     switch (mcls)
     {
 
-    case 3:
+    case MONS_RED_DEVIL:
+    case MONS_IMP:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_SHADOW_IMP:
+    case MONS_SKELETAL_WARRIOR:
         mlev = 1;
-        break;                  // "red devil"
+        break;
 
-    case 8:
-        mlev = 1;
-        break;                  // "imp"
-
-    case 13:
+    case MONS_NECROPHAGE:
+    case MONS_PHANTOM:
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_WIGHT:
+    case MONS_HELL_KNIGHT:
         mlev = 2;
-        break;                  // "necrophage"
+        break;
 
-    case 15:
-        mlev = 2;
-        break;                  // "phantom"
+    case MONS_WRAITH:
+    case MONS_SHADOW:
+    case MONS_HELL_HOUND:
+    case MONS_FREEZING_WRAITH:
+    case MONS_NECROMANCER:
+    case MONS_SHADOW_DEMON:
+        mlev = 3;
+        break;
 
-    case 25:
-        mlev = 2;
-        break;                  // "zombie"
+    case MONS_HUNGRY_GHOST:
+    case MONS_MUMMY:
+    case MONS_TORMENTOR:
+    case MONS_ICE_DEVIL:
+    case MONS_BLUE_DEVIL:
+    case MONS_SPECTRAL_WARRIOR:
+    case MONS_FLAYED_GHOST:
+    case MONS_SKELETAL_DRAGON:
+        mlev = 4;
+        break;
 
-    case 37:
+    case MONS_VAMPIRE:
+    case MONS_FLYING_SKULL:
+    case MONS_HELLION:
+    case MONS_ROTTING_DEVIL:
+    case MONS_REAPER:
+    case MONS_SHADOW_DRAGON:
+        mlev = 5;
+        break;
+
+    case MONS_LICH:
+    case MONS_SOUL_EATER:
+    case MONS_HAIRY_DEVIL:
+    case MONS_ANCIENT_LICH:
         mlev = 6;
-        break;                  // "lich"
-
-    case 38:
-        mlev = 4;
-        break;                  // "mummy"
-
-    case 47:
-        mlev = 5;
-        break;                  // "vampire"
-
-    case 48:
-        mlev = 3;
-        break;                  // "wraith"
-
-    case 51:
-        mlev = 2;
-        break;                  // "zombie"
-
-    case 60:
-        mlev = 2;
-        break;                  // "wight"
-
-    case 63:
-        mlev = 3;
-        break;                  // "shadow"
-
-    case 64:
-        mlev = 4;
-        break;                  // "hungry ghost"
-
-    case 72:
-        mlev = 5;
-        break;                  // "flying skull"
-
-    case 73:
-        mlev = 3;
-        break;                  // "hell hound"
-
-    case 77:
-        mlev = 3;
-        break;                  // "freezing wraith"
-
-    case 80:
-        mlev = 5;
-        break;                  // "hellion"
-
-    case 81:
-        mlev = 5;
-        break;                  // "rotting devil"
-
-    case 82:
-        mlev = 4;
-        break;                  // "tormentor"
-
-    case 83:
-        mlev = 5;
-        break;                  // "reaper"
-
-    case 84:
-        mlev = 6;
-        break;                  // "soul eater"
-
-    case 85:
-        mlev = 6;
-        break;                  // "hairy devil"
-
-    case 86:
-        mlev = 4;
-        break;                  // "ice devil"
-
-    case 87:
-        mlev = 4;
-        break;                  // "blue devil"
-
-    case 107:
-    case 108:
-        mlev = 1;
-        break;                  // "skeleton"
-
-    case 109:
-        mlev = 2;
-        break;                  // "hell knight"); break;
-
-    case 110:
-        mlev = 3;
-        break;                  // "necromancer"); break;
-
-    case 130:
-        mlev = 4;
-        break;                  // spec
-
-    case 137:
-        mlev = 4;
-        break;                  // flayed ghost
-
-    case 165:
-        mlev = 5;
-        break;                  // shadow dragon
-
-    case 237:
-        mlev = 1;
-        break;                  // shadow imp
-
-    case 238:
-        mlev = 3;
-        break;                  // shadow demon
-
-    case 356:
-        mlev = 6;
-        break;                  // ancient lich
-
-    case 369:
-        mlev = 4;
-        break;                  // skeletal dragon
-
-    case 399:
-        mlev = 1;
-        break;                  // skeletal warrior
+        break;
 
     default:
         return 0;
@@ -1002,122 +591,109 @@ int mons_level_tartarus(int mcls)
 
     return mlev + 26;
 
-}
+}     // end mons_level_tartarus()
+
+
+
 
 int mons_rare_tartarus(int mcls)
 {
     switch (mcls)
     {
 
-    case 3:
-        return 13;              // "red devil"
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_SHADOW_IMP:
+    case MONS_SKELETAL_WARRIOR:
+        return 99;
 
-    case 8:
-        return 20;              // "imp"
+    case MONS_SHADOW:
+        return 92;
 
-    case 13:
-        return 72;              // "necrophage"
+    case MONS_REAPER:
+        return 73;
 
-    case 15:
-        return 52;              // "phantom"
+    case MONS_NECROPHAGE:
+        return 72;
 
-    case 25:
-        return 99;              // "zombie"
+    case MONS_WIGHT:
+        return 71;
 
-    case 37:
-        return 24;              // "lich"
+    case MONS_ROTTING_DEVIL:
+        return 62;
 
-    case 38:
-        return 33;              // "mummy"
+    case MONS_FREEZING_WRAITH:
+        return 60;
 
-    case 47:
-        return 44;              // "vampire"
+    case MONS_FLYING_SKULL:
+        return 53;
 
-    case 48:
-        return 52;              // "wraith"
+    case MONS_HELL_HOUND:
+    case MONS_PHANTOM:
+    case MONS_WRAITH:
+        return 52;
 
-    case 51:
-        return 99;              // "zombie"
+    case MONS_SHADOW_DEMON:
+        return 50;
 
-    case 60:
-        return 71;              // "wight"
-
-    case 63:
-        return 92;              // "shadow"
-
-    case 64:
-        return 32;              // "hungry ghost"
-
-    case 72:
-        return 53;              // "flying skull"
-
-    case 73:
-        return 52;              // "hell hound"
-
-    case 77:
-        return 60;              // "freezing wraith"
-
-    case 80:
-        return 42;              // "hellion"
-
-    case 81:
-        return 62;              // "rotting devil"
-
-    case 82:
-        return 42;              // "tormentor"
-
-    case 83:
-        return 73;              // "reaper"
-
-    case 84:
-        return 35;              // "soul eater"
-
-    case 85:
-        return 30;              // "hairy devil"
-
-    case 86:
-        return 34;              // "ice devil" not really appropriate for a fiery hell.
-
-    case 87:
-        return 32;              // "blue devil"
-
-    case 107:
-    case 108:
-        return 99;              // "skeleton"
-
-    case 109:
-        return 14;              //strcat(gmon_name, "hell knight"); break;
-
-    case 110:
-        return 12;              //strcat(gmon_name, "necromancer"); break;
-
-    case 130:
+    case MONS_SPECTRAL_WARRIOR:
         return 45;
-    case 137:
-        return 30;              // flayed ghost
 
-    case 165:
-        return 12;              // shadow dragon
+    case MONS_VAMPIRE:
+        return 44;
 
-    case 237:
-        return 99;              // shadow imp
+    case MONS_HELLION:
+    case MONS_TORMENTOR:
+        return 42;
 
-    case 238:
-        return 50;              // shadow demon
+    case MONS_SKELETAL_DRAGON:
+        return 40;
 
-    case 356:
-        return 6;               // ancient lich
+    case MONS_SOUL_EATER:
+        return 35;
 
-    case 369:
-        return 40;              // skeletal dragon
+    case MONS_ICE_DEVIL:     // not really appropriate for a fiery hell
+        return 34;
 
-    case 399:
-        return 99;              // skeletal warrior
+    case MONS_MUMMY:
+        return 33;
+
+    case MONS_HUNGRY_GHOST:
+    case MONS_BLUE_DEVIL:
+        return 32;
+
+    case MONS_HAIRY_DEVIL:
+    case MONS_FLAYED_GHOST:
+        return 30;
+
+    case MONS_LICH:
+        return 24;
+
+    case MONS_IMP:
+        return 20;
+
+    case MONS_RED_DEVIL:
+        return 13;
+
+    case MONS_HELL_KNIGHT:
+        return 14;
+
+    case MONS_NECROMANCER:
+    case MONS_SHADOW_DRAGON:
+        return 12;
+
+    case MONS_ANCIENT_LICH:
+        return 6;
 
     default:
         return 0;
     }
-}
+}     // end mons_rare_tartarus()
+
+
+
 
 int mons_level_abyss(int mcls)
 {
@@ -1125,177 +701,110 @@ int mons_level_abyss(int mcls)
 
     switch (mcls)
     {
-    case 3:                     //60; // "red devil"
-
-    case 5:                     //8; // "fungus"
-
-    case 8:                     //10; // "imp"
-
-    case 13:                    //10; // "necrophage"
-
-    case 15:                    //8; // "phantom"
-
-    case 20:                    //21; // "ugly thing"
-
-    case 23:                    //91; // "abomination"
-
-    case 25:                    //10; // "zombie"
-
-    case 32:                    //12; // "giant spore"
-
-    case 34:                    //9; // "ice beast"
-
-    case 35:                    //9; // "jelly"
-
-    case 37:                    //34; // "lich"
-
-    case 38:                    //10; // "mummy"
-
-    case 39:                    //13; // "naga"
-
-    case 43:                    //17; // "raksasha"
-
-    case 46:                    //12; // "unseen horror"
-
-    case 47:                    //19; // "vampire"
-
-    case 48:                    //15; // "wraith"
-
-    case 49:                    //1500; // "abomination"
-
-    case 51:                    //20; // "zombie"
-
-    case 59:                    //8; // "giant eyeball"
-
-    case 60:                    //10; // "wight"
-
-    case 63:                    //11; // "shadow"
-
-    case 64:                    //11; // "hungry ghost"
-
-    case 65:                    //14; // "eye of draining"
-
-    case 68:                    //18; // "efreet"
-
-    case 69:                    //16; // "brain worm"
-
-    case 70:                    //26; // "giant orange brain"
-
-    case 72:                    //65; // "flying skull"
-
-    case 73:                    //61; // "hell hound"
-
-    case 77:                    //25; // "freezing wraith"
-
-    case 79:                    //25; // GooE
-
-    case 80:                    //60; // "hellion"
-
-    case 81:                    //60; // "rotting devil"
-
-    case 82:                    //62; // "tormentor"
-
-    case 83:                    //63; // "reaper"
-
-    case 84:                    //65; // "soul eater"
-
-    case 85:                    //60; // "hairy devil"
-
-    case 86:                    //6500; // "ice devil" not really appropriate for a fiery hell.
-
-    case 87:                    //6200; // "blue devil"
-
-    case 89:
-    case 102:                   //25; //strcat(gmon_name, "very ugly thing"); break;
-
-    case 107:
-    case 108:                   //20; // "skeleton"
-
-    case 109:                   //31; //strcat(gmon_name, "hell knight"); break;
-
-    case 110:                   //20; //strcat(gmon_name, "necromancer"); break;
-
-    case 111:                   //17; //strcat(gmon_name, "wizard"); break;
-
-    case 116:                   //20; // clay golem
-
-    case 117:                   //15; // wood golem
-
-    case 118:                   //22; // stone golem
-
-    case 119:                   //25; // iron golem
-
-    case 120:                   //30; // crystal golem
-
-    case 121:                   //35; // toenail golem
-
-    case 123:                   //22; //strcat(gmon_name, "earth elemental"); break;
-
-    case 124:                   //22; //strcat(gmon_name, "fire elemental"); break;
-
-    case 125:                   //22; //strcat(gmon_name, "air elemental"); break;
-
-    case 130:                   //30; //strcat(gmon_name, "spectre"); break;
-
-    case 137:                   //29; // flayed ghost
-
-    case 140:                   //32; // wisp
-
-    case 141:                   //29; // vapour
-
-    case 143:
-    case 144:
-    case 220:                   // demons:
-
-    case 221:
-    case 222:
-    case 223:
-    case 224:                   //strcat(gmon_name, "lesser demon"); break;
-
-    case 225:
-    case 226:
-    case 227:
-    case 228:
-    case 229:                   //strcat(gmon_name, "demon"); break;
-
-    case 230:
-    case 231:
-    case 232:
-    case 233:
-    case 234:                   //strcat(gmon_name, "greater demon"); break;
-
-    case 235:
-    case 236:
-    case 237:
-    case 238:
-    case 239:
-    case 245:                   // pit fiend
-
-    case 260:
-    case 261:
-    case 356:                   // ancient lich
-
-    case 364:                   // shining eye
-
-    case 369:                   // skeletal dragon
-
-    case 370:                   // tentacled monstr
-
-    case 385:                   // eye of devastation
-
-    case 399:                   // skeletal warrior
-
+    case MONS_RED_DEVIL:              //60;
+    case MONS_FUNGUS:                 //8;
+    case MONS_IMP:                    //10;
+    case MONS_NECROPHAGE:             //10;
+    case MONS_PHANTOM:                //8;
+    case MONS_UGLY_THING:             //21;
+    case MONS_ABOMINATION_SMALL:      //91;
+    case MONS_ZOMBIE_SMALL:           //10;
+    case MONS_GIANT_SPORE:            //12;
+    case MONS_ICE_BEAST:              //9;
+    case MONS_JELLY:                  //9;
+    case MONS_LICH:                   //34;
+    case MONS_MUMMY:                  //10;
+    case MONS_GUARDIAN_NAGA:          //13;
+    case MONS_RAKSHASA:               //17;
+    case MONS_UNSEEN_HORROR:          //12;
+    case MONS_VAMPIRE:                //19;
+    case MONS_WRAITH:                 //15;
+    case MONS_ABOMINATION_LARGE:      //1500;
+    case MONS_ZOMBIE_LARGE:             //20;
+    case MONS_GIANT_EYEBALL:          //8;
+    case MONS_WIGHT:                  //10;
+    case MONS_SHADOW:                 //11;
+    case MONS_HUNGRY_GHOST:           //11;
+    case MONS_EYE_OF_DRAINING:        //14;
+    case MONS_EFREET:                 //18;
+    case MONS_BRAIN_WORM:             //16;
+    case MONS_GIANT_ORANGE_BRAIN:     //26;
+    case MONS_FLYING_SKULL:           //65;
+    case MONS_HELL_HOUND:             //61;
+    case MONS_FREEZING_WRAITH:        //25;
+    case MONS_GREAT_ORB_OF_EYES:      //25;
+    case MONS_HELLION:                //60;
+    case MONS_ROTTING_DEVIL:          //60;
+    case MONS_TORMENTOR:              //62;
+    case MONS_REAPER:                 //63;
+    case MONS_SOUL_EATER:             //65;
+    case MONS_HAIRY_DEVIL:            //60;
+    case MONS_ICE_DEVIL:              //6500; // not really appropriate for a fiery hell
+    case MONS_BLUE_DEVIL:             //6200;
+    case MONS_IRON_DEVIL:
+    case MONS_VERY_UGLY_THING:        //25;
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:         //20;
+    case MONS_HELL_KNIGHT:            //31;
+    case MONS_WIZARD:                 //17;
+    case MONS_NECROMANCER:            //20;
+    case MONS_CLAY_GOLEM:             //20;
+    case MONS_WOOD_GOLEM:             //15;
+    case MONS_STONE_GOLEM:            //22;
+    case MONS_IRON_GOLEM:             //25;
+    case MONS_CRYSTAL_GOLEM:          //30;
+    case MONS_TOENAIL_GOLEM:          //35;
+    case MONS_EARTH_ELEMENTAL:        //22;
+    case MONS_FIRE_ELEMENTAL:         //22;
+    case MONS_AIR_ELEMENTAL:          //22;
+    case MONS_SPECTRAL_WARRIOR:       //30;
+    case MONS_FLAYED_GHOST:           //29;
+    case MONS_INSUBSTANTIAL_WISP:     //32;
+    case MONS_VAPOUR:                 //29;
+    case MONS_SPINY_WORM:
+    case MONS_DANCING_WEAPON:
+    case MONS_WHITE_IMP:
+    case MONS_LEMURE:
+    case MONS_UFETUBUS:
+    case MONS_MANES:
+    case MONS_MIDGE:
+    case MONS_NEQOXEC:
+    case MONS_ORANGE_DEMON:
+    case MONS_HELLWING:
+    case MONS_SMOKE_DEMON:
+    case MONS_YNOXINUL:
+    case MONS_EXECUTIONER:
+    case MONS_GREEN_DEATH:
+    case MONS_BLUE_DEATH:
+    case MONS_BALRUG:
+    case MONS_CACODEMON:
+    case MONS_DEMONIC_CRAWLER:
+    case MONS_SUN_DEMON:
+    case MONS_SHADOW_IMP:
+    case MONS_SHADOW_DEMON:
+    case MONS_LOROCYPROCA:
+    case MONS_PIT_FIEND:
+    case MONS_NAGA_MAGE:
+    case MONS_NAGA_WARRIOR:
+    case MONS_ANCIENT_LICH:
+    case MONS_SHINING_EYE:
+    case MONS_SKELETAL_DRAGON:
+    case MONS_TENTACLED_MONSTROSITY:
+    case MONS_EYE_OF_DEVASTATION:
+    case MONS_SKELETAL_WARRIOR:
         return 1;
-//found = 1; break;
+        //found = 1; break;
     default:
         return 0;
-
 
     }
 
     return 0;
 
-}                               // end mons_level_abyss(mcls)
+}     // end mons_level_abyss()
+
+
+
 
 int mons_rare_abyss(int mcls)
 {
@@ -1303,242 +812,151 @@ int mons_rare_abyss(int mcls)
 
     switch (mcls)
     {
-    case 3:
-        return 5;               // "red devil"
+    case MONS_ABOMINATION_SMALL:
+    case MONS_ABOMINATION_LARGE:
+        return 99;
 
-    case 5:
-        return 8;               // "fungus"
-
-    case 8:
-        return 10;              // "imp"
-
-    case 13:
-        return 10;              // "necrophage"
-
-    case 15:
-        return 8;               // "phantom"
-
-    case 20:
-        return 3;               // "ugly thing"
-
-    case 23:
-        return 99;              // "abomination"
-
-    case 25:
-        return 35;              // "zombie"
-
-    case 32:
-        return 2;               // "giant spore"
-
-    case 34:
-        return 9;               // "ice beast"
-
-    case 35:
-        return 9;               // "jelly"
-
-    case 37:
-        return 14;              // "lich"
-
-    case 38:
-        return 10;              // "mummy"
-
-    case 39:
-        return 10;              // "naga"
-
-    case 43:
-        return 17;              // "raksasha"
-
-    case 46:
-        return 12;              // "unseen horror"
-
-    case 47:
-        return 9;               // "vampire"
-
-    case 48:
-        return 15;              // "wraith"
-
-    case 49:
-        return 99;              // "abomination"
-
-    case 51:
-        return 35;              // "zombie"
-
-    case 59:
-        return 8;               // "giant eyeball"
-
-    case 60:
-        return 10;              // "wight"
-
-    case 63:
-        return 11;              // "shadow"
-
-    case 64:
-        return 11;              // "hungry ghost"
-
-    case 65:
-        return 14;              // "eye of draining"
-
-    case 68:
-        return 18;              // "efreet"
-
-    case 69:
-        return 16;              // "brain worm"
-
-    case 70:
-        return 15;              // "giant orange brain"
-
-    case 72:
-        return 15;              // "flying skull"
-
-    case 73:
-        return 11;              // "hell hound"
-
-    case 77:
-        return 15;              // "freezing wraith"
-
-    case 79:
-        return 5;               // GooE
-
-    case 80:
-        return 10;              // "hellion"
-
-    case 81:
-        return 10;              // "rotting devil"
-
-    case 82:
-        return 9;               // "tormentor"
-
-    case 83:
-        return 8;               // "reaper"
-
-    case 84:
-        return 7;               // "soul eater"
-
-    case 85:
-        return 10;              // "hairy devil"
-
-    case 86:
-        return 10;              // "ice devil" not really appropriate for a fiery hell.
-
-    case 87:
-        return 10;              // "blue devil"
-
-    case 89:
-        return 6;               // "iron devil"
-
-    case 102:
-        return 15;              //strcat(gmon_name, "very ugly thing"); break;
-
-    case 107:
-    case 108:
-        return 40;              // "skeleton"
-
-    case 109:
-        return 3;               //strcat(gmon_name, "hell knight"); break;
-
-    case 110:
-        return 3;               //strcat(gmon_name, "necromancer"); break;
-
-    case 111:
-        return 5;               //strcat(gmon_name, "wizard"); break;
-
-    case 116:
-        return 5;               // clay golem
-
-    case 117:
-        return 5;               // wood golem
-
-    case 118:
-        return 5;               // stone golem
-
-    case 119:
-        return 5;               // iron golem
-
-    case 120:
-        return 3;               // crystal golem
-
-    case 121:
-        return 1;               // toenail golem
-
-    case 123:
-        return 4;               //strcat(gmon_name, "earth elemental"); break;
-
-    case 124:
-        return 4;               //strcat(gmon_name, "fire elemental"); break;
-
-    case 125:
-        return 4;               //strcat(gmon_name, "air elemental"); break;
-
-    case 130:
-        return 5;               //strcat(gmon_name, "spectre"); break;
-
-    case 137:
-        return 4;               // flayed ghost
-
-    case 140:
-        return 12;              // wisp
-
-    case 141:
-        return 9;               // vapour
-
-    case 143:
-        return 5;               // spiny worm
-
-    case 144:
-        return 2;               // dancing weapon
-
-    case 220:                   // demons:
-
-    case 221:
-    case 222:
-    case 223:
-    case 224:
+    case MONS_WHITE_IMP:
+    case MONS_LEMURE:
+    case MONS_UFETUBUS:
+    case MONS_MANES:
+    case MONS_MIDGE:
         return 80;
-    case 225:
-    case 226:
-    case 227:
-    case 228:
-    case 229:
+
+    case MONS_NEQOXEC:
+    case MONS_ORANGE_DEMON:
+    case MONS_HELLWING:
+    case MONS_SMOKE_DEMON:
+    case MONS_YNOXINUL:
         return 50;
-    case 230:
-    case 231:
-    case 232:
-    case 233:
-    case 234:
-    case 235:
-    case 236:
-    case 237:
-    case 238:
-    case 239:
+
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_SKELETAL_WARRIOR:
+        return 40;
+
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ZOMBIE_LARGE:
+        return 35;
+
+    case MONS_SKELETAL_DRAGON:
+        return 20;
+
+    case MONS_EFREET:
+        return 18;
+
+    case MONS_RAKSHASA:
+        return 17;
+
+    case MONS_BRAIN_WORM:
+        return 16;
+
+    case MONS_GIANT_ORANGE_BRAIN:
+    case MONS_FLYING_SKULL:
+    case MONS_WRAITH:
+    case MONS_FREEZING_WRAITH:
+    case MONS_VERY_UGLY_THING:
+        return 15;
+
+    case MONS_LICH:
+    case MONS_EYE_OF_DRAINING:
+        return 14;
+
+    case MONS_UNSEEN_HORROR:
+    case MONS_INSUBSTANTIAL_WISP:
+        return 12;
+
+    case MONS_SHADOW:
+    case MONS_HUNGRY_GHOST:
+    case MONS_HELL_HOUND:
+        return 11;
+
+    case MONS_MUMMY:
+    case MONS_GUARDIAN_NAGA:
+    case MONS_IMP:
+    case MONS_NECROPHAGE:
+    case MONS_WIGHT:
+    case MONS_HELLION:
+    case MONS_ROTTING_DEVIL:
+    case MONS_HAIRY_DEVIL:
+    case MONS_ICE_DEVIL:     // not really appropriate for a fiery hell
+    case MONS_BLUE_DEVIL:
+    case MONS_EXECUTIONER:
+    case MONS_GREEN_DEATH:
+    case MONS_BLUE_DEATH:
+    case MONS_BALRUG:
+    case MONS_CACODEMON:
+    case MONS_DEMONIC_CRAWLER:
+    case MONS_SUN_DEMON:
+    case MONS_SHADOW_IMP:
+    case MONS_SHADOW_DEMON:
+    case MONS_LOROCYPROCA:
         return 10;
-    case 245:
-        return 5;               // pit fiend
 
-    case 260:
-    case 261:
-    case 356:                   // ancient lich
+    case MONS_ICE_BEAST:
+    case MONS_JELLY:
+    case MONS_VAMPIRE:
+    case MONS_TORMENTOR:
+    case MONS_VAPOUR:
+        return 9;
 
-    case 364:                   // shining eye
+    case MONS_PHANTOM:
+    case MONS_FUNGUS:
+    case MONS_GIANT_EYEBALL:
+    case MONS_REAPER:
+        return 8;
 
-    case 370:                   // tentacled monstr
+    case MONS_SOUL_EATER:
+        return 7;
 
+    case MONS_IRON_DEVIL:
+        return 6;
+
+    case MONS_RED_DEVIL:
+    case MONS_GREAT_ORB_OF_EYES:
+    case MONS_WIZARD:
+    case MONS_CLAY_GOLEM:
+    case MONS_WOOD_GOLEM:
+    case MONS_STONE_GOLEM:
+    case MONS_IRON_GOLEM:
+    case MONS_SPECTRAL_WARRIOR:
+    case MONS_SPINY_WORM:
+    case MONS_PIT_FIEND:
+    case MONS_NAGA_MAGE:
+    case MONS_NAGA_WARRIOR:
+    case MONS_ANCIENT_LICH:
+    case MONS_SHINING_EYE:
+    case MONS_TENTACLED_MONSTROSITY:
         return 5;
-    case 369:
-        return 20;              // skeletal dragon
 
-    case 385:
-        return 3;               // eye of devastation
+    case MONS_EARTH_ELEMENTAL:
+    case MONS_FIRE_ELEMENTAL:
+    case MONS_AIR_ELEMENTAL:
+    case MONS_FLAYED_GHOST:
+        return 4;
 
-    case 399:
-        return 40;              // skeletal warrior
+    case MONS_UGLY_THING:
+    case MONS_HELL_KNIGHT:
+    case MONS_NECROMANCER:
+    case MONS_CRYSTAL_GOLEM:
+    case MONS_EYE_OF_DEVASTATION:
+        return 3;
+
+    case MONS_GIANT_SPORE:
+    case MONS_DANCING_WEAPON:
+        return 2;
+
+    case MONS_TOENAIL_GOLEM:
+        return 1;
 
     default:
         return 0;
 
-
     }
     return 0;
-}                               // end mons_level(mcls)
+}     // end mons_rare_abyss()
+
+
 
 
 int mons_level(int mcls)
@@ -1546,37 +964,39 @@ int mons_level(int mcls)
 
     switch (you.where_are_you)
     {
-    case 2:
-        return mons_level_gehenna(mcls);        // Gehenna
+    case BRANCH_DIS:     // about the same as Gehenna
+        return mons_level_dis(mcls);
 
-    case 4:
-        return mons_level_cocytus(mcls);        // Cocytus
+    case BRANCH_GEHENNA:
+        return mons_level_gehenna(mcls);
 
-    case 1:
-        return mons_level_dis(mcls);    // Dis - about the same as Gehenna
+    case BRANCH_COCYTUS:
+        return mons_level_cocytus(mcls);
 
-    case 5:
-        return mons_level_tartarus(mcls);       // Tartarus
+    case BRANCH_TARTARUS:
+        return mons_level_tartarus(mcls);
 
-    case 10:
-        return mons_level_orc_mines(mcls);      // orcish mines
+    case BRANCH_ORCISH_MINES:
+        return mons_level_orc_mines(mcls);
 
-    case 11:
-        return mons_level_hive(mcls);   // the hive
+    case BRANCH_HIVE:
+        return mons_level_hive(mcls);
 
-    case 12:
-        return mons_level_lair(mcls);   // the lair
+    case BRANCH_LAIR:
+        return mons_level_lair(mcls);
 
-    case 13:
-        return mons_level_slime_pits(mcls);     // the lair
-        /* 14 - the vaults - just uses normal monsters */
-    case 15:
-        return mons_level_crypt(mcls);  // the lair
+    case BRANCH_SLIME_PITS:
+        return mons_level_slime_pits(mcls);
 
-    case 16:
-        return mons_level_hall_ob(mcls);        // the lair
+// 14 - the vaults - just uses normal monsters
 
-    case 17:                    // the realm of Zot
+    case BRANCH_CRYPT:
+        return mons_level_crypt(mcls);
+
+    case BRANCH_HALL_OF_BLADES:
+        return mons_level_hall_ob(mcls);
+
+    case BRANCH_HALL_OF_ZOT:
 
         switch (mcls)
         {
@@ -1608,7 +1028,7 @@ int mons_level(int mcls)
             return 32;
         case 378:
             return 31;
-/*        case 379:
+        /*case 379:
             return 29;
         case 380:
             return 32;
@@ -1620,23 +1040,25 @@ int mons_level(int mcls)
             return 30;
         }
         break;
-    case 19:
-        return mons_level_snake(mcls);  // the lair
 
-    case 20:
-        return mons_level_elf(mcls);    // the lair
+    case BRANCH_SNAKE_PIT:
+        return mons_level_snake(mcls);
 
-    case 21:
-        return mons_level_tomb(mcls);   // the lair
+    case BRANCH_ELVEN_HALLS:
+        return mons_level_elf(mcls);
 
-    case 22:
-        return mons_level_swamp(mcls);  // the Swamp
+    case BRANCH_TOMB:
+        return mons_level_tomb(mcls);
+
+    case BRANCH_SWAMP:
+        return mons_level_swamp(mcls);
 
     }
 
-    if (you.level_type == 2)
+    if (you.level_type == LEVEL_ABYSS)
         return mons_level_abyss(mcls);
-    if (you.level_type == 3)
+
+    if (you.level_type == LEVEL_PANDEMONIUM)
         return mons_pan(mcls);
 
 /*
@@ -1646,528 +1068,244 @@ int mons_level(int mcls)
 
     switch (mcls)
     {
-    case 0:
-        return 8;               // "giant ant"
-
-    case 1:
-        return 4;               // "giant bat"
-
-    case 2:
-        return 9;               // "centaur"
-
-    case 4:
-        return 12;              // "ettin"
-
-    case 5:
-        return 8;               // "fungus"
-
-    case 6:
-        return 1;               // "goblin"
-
-    case 7:
-        return 8;               // "hound"
-
-    case 8:
-        return 9;               // "imp"
-
-    case 9:
-        return 5;               // "jackal"
-
-    case 10:
-        return 11;              // "killer bee"
-
-    case 11:
-        return 5;               // "killer bee larva"
-
-    case 12:
-        return 12;              // "manticore"
-
-    case 13:
-        return 9;               // "necrophage"
-
-    case 14:
-        return 7;               // "orc"
-
-    case 15:
-        return 8;               // "phantom"
-
-    case 16:
-        return 9;               // "quasit"
-
-    case 17:
-        return 4;               // "rat"
-
-    case 18:
-        return 8;               // "scorpion"
-
-    case 19:
-        return 24;              // "tunneling worm"
-
-    case 20:
-        return 17;              // "ugly thing"
-
-    case 22:
-        return 6;               // "worm"
-
-    case 24:
-        return 11;              // "yellow wasp"
-
-    case 25:
-        return 9;               // "zombie"
-
-    case 27:
-        return 10;              // "giant beetle"
-
-    case 28:
-        return 15;              // "cyclops"
-
-    case 29:
-        return 18;              // "dragon"
-
-    case 30:
-        return 13;              // "two-headed ogre"
-
-    case 32:
-        return 10;              // "giant spore"
-
-    case 33:
-        return 5;               // "hobgoblin"
-
-    case 34:
-        return 9;               // "ice beast"
-
-    case 35:
-        return 9;               // "jelly"
-
-    case 36:
-        return 4;               // "kobold"
-
-    case 37:
-        return 25;              // "lich"
-
-    case 38:
-        return 10;              // "mummy"
-
-    case 39:
-        return 16;              // "naga"
-
-    case 40:
-        return 8;               // "ogre"
-
-    case 41:
-        return 12;              // "plant"
-
-    case 42:
-        return 20;              // "queen bee"
-
-    case 43:
-        return 16;              // "raksasha"
-
-    case 44:
-        return 6;               // "snake"
-
-    case 45:
-        return 13;              // "troll"
-
-    case 46:
-        return 12;              // "unseen horror"
-
-    case 47:
-        return 16;              // "vampire"
-
-    case 48:
-        return 14;              // "wraith"
-
-    case 50:
-        return 13;              // "yak"
-
-    case 51:
-        return 16;              // "zombie"
-
-    case 52:
-        return 10;              // "orc warrior"
-
-    case 53:
-        return 18;              // "kobold demonologist"
-
-    case 54:
-        return 8;               // "orc wizard"
-
-    case 55:
-        return 20;              // "orc knight"
-
-    case 57:
-        return 12;              // "wyvern"
-
-    case 58:
-        return 13;              // "kobold leader"
-
-    case 59:
-        return 8;               // "giant eyeball"
-
-    case 60:
-        return 10;              // "wight"
-
-    case 61:
-        return 13;              // "oklob plant"
-
-    case 62:
-        return 14;              // "wolf spider"
-
-    case 63:
-        return 11;              // "shadow"
-
-    case 64:
-        return 11;              // "hungry ghost"
-
-    case 65:
-        return 12;              // "eye of draining"
-
-    case 66:
-        return 16;              // "butterfly"
-
-    case 67:
-        return 16;              // "wandering mushroom"
-
-    case 68:
-        return 15;              // "efreet"
-
-    case 69:
-        return 15;              // "brain worm"
-
-    case 70:
-        return 20;              // "giant orange brain"
-
-    case 71:
-        return 21;              // "boulder beetle"
-
-    case 75:
-        return 20;              // "ice dragon"
-
-    case 76:
-        return 16;              // "slime thing"
-
-    case 77:
-        return 22;              // "freezing wraith"
-
-    case 79:
-        return 20;              // GooE
-
-    case 98:
-        return 27;              // glowing shapeshifter
-
-    case 99:
-        return 17;              // shapeshifter
-
-    case 100:
-        return 5;               //strcat(gmon_name, "giant mite"); break;
-
-    case 101:
-        return 10;              //strcat(gmon_name, "steam dragon"); break;
-
-    case 102:
-        return 20;              //strcat(gmon_name, "very ugly thing"); break;
-
-    case 103:
-        return 23;              //strcat(gmon_name, "orc sorceror"); break;
-
-    case 104:
-        return 11;              //strcat(gmon_name, "hippogriff"); break;
-
-    case 105:
-        return 17;              //strcat(gmon_name, "griffon"); break;
-
-    case 106:
-        return 20;              //strcat(gmon_name, "hydra"); break;
-
-    case 107:
-    case 108:
-        return 20;              // "skeleton"
-
-    case 109:
-        return 25;              //strcat(gmon_name, "hell knight"); break;
-
-    case 110:
-        return 20;              //strcat(gmon_name, "necromancer"); break;
-
-    case 111:
-        return 17;              //strcat(gmon_name, "wizard"); break;
-
-    case 112:
-        return 15;              //strcat(gmon_name, "orc priest"); break;
-
-    case 113:
-        return 21;              //strcat(gmon_name, "orc high priest"); break;
-
-    case 115:
-        return 5;               // gnoll
-
-    case 116:
-        return 17;              // clay golem
-
-    case 117:
-        return 13;              // wood golem
-
-    case 118:
-        return 16;              // stone golem
-
-    case 119:
-        return 19;              // iron golem
-
-    case 120:
-        return 22;              // crystal golem
-
-    case 121:
-        return 19;              // toenail golem
-
-    case 122:
-        return 15;              // mottled dragon
-
-    case 123:
-        return 20;              //strcat(gmon_name, "earth elemental"); break;
-
-    case 124:
-        return 20;              //strcat(gmon_name, "fire elemental"); break;
-
-    case 125:
-        return 20;              //strcat(gmon_name, "air elemental"); break;
-        //case 126: strcat(gmon_name, "Ice Fiend"); break;
-        //case 127: strcat(gmon_name, "Shadow Fiend"); break;
-
-    case 128:
-        return 9;               //strcat(gmon_name, "brown snake"); break;
-
-    case 129:
-        return 11;              //strcat(gmon_name, "giant lizard"); break;
-
-    case 130:
-        return 26;              //strcat(gmon_name, "spectre"); break;
-
-    case 131:
-        return 21;              // pulsating mass
-
-    case 132:
-        return 26;              // storm D
-
-    case 133:
-        return 19;              //strcat(gmon_name, "yaktaur"); break;
-        //case 134: return 32; //strcat(gmon_name, "death yak"); break;
-
-    case 135:
-        return 19;              //strcat(gmon_name, "rock troll"); break;
-
-    case 136:
-        return 25;              //strcat(gmon_name, "stone giant"); break; // stoned giant
-
-    case 137:
-        return 22;              // flayed ghost
-
-    case 138:
-        return 24;              // bumblebee
-
-    case 139:
-        return 22;              // red back
-
-    case 140:
-        return 25;              // wisp
-
-    case 141:
-        return 22;              // vapour
-
-    case 142:
-        return 19;              // Ogre mage
-
-    case 143:
-        return 20;              // spiny worm
-
-    case 144:
-        return 25;              // dancing weapon
-
-    case 145:
-        return 30;              // Titan
-
-    case 146:
-        return 30;              // Golden dragon
-
-    case 159:
-        return 13;              // giant centipede
-
-    case 160:
-        return 24;              // iron Troll
-
-    case 162:
-        return 25;              // fire giant
-
-    case 163:
-        return 25;              // frost giant
-
-    case 165:
-        return 29;              // shadow dragon
-
-    case 168:
-        return 25;              // deep troll
-
-    case 169:
-        return 16;              // giant blowfly
-
-    case 170:
-        return 20;              // red wasp
-
-    case 173:
-        return 14;              // soldier ant
-
-    case 174:
-        return 14;              // hill giant
-
-    case 177:
-        return 10;              // giant frog
-
-    case 178:
-        return 13;              // giant brown frog
-
-    case 180:
-        return 16;              // blink frog
-
-    case 181:
-        return 2;              // giant cockroach
-
-    case 182:
-        return 2;              // small snake
-
-    case 240:
-        return 20;              // shadow wraith
-
-    case 241:
-        return 18;              // giant amoeba
-
-    case 242:
-        return 19;              // giant slug
-
-    case 243:
-        return 20;              // giant snail
-
-    case 246:
-        return 22;              // boring beetle
-
-    case 247:
-        return 18;              // gargoyle
-
-    case 260:                   // Naga mage
-
-    case 261:
-        return 20;              // Naga warrior
-
-    case 263:
-        return 10;              // deep elf soldier
-
-    case 264:
-        return 20;              // deep elf fighter
-
-    case 265:
-        return 20;              // deep elf knight
-
-    case 266:
-        return 20;              // deep elf mage
-
-    case 267:
-        return 20;              // deep elf summoner
-
-    case 268:
-        return 26;              // deep elf conjurer
-
-    case 269:
-        return 27;              // deep elf priest
-
-    case 270:
-        return 30;              // deep elf high priest
-
-    case 271:
-        return 30;              // deep elf demonologist
-
-    case 272:
-        return 30;              // deep elf annihilator
-
-    case 273:
-        return 30;              // deep elf sorceror
-
-    case 274:
-        return 30;              // deep elf death mage
-
-    case 356:
-        return 30;              // ancient lich
-
-    case 357:
-        return 2;               // ooze
-
-    case 364:
-        return 23;              // shining eye
-
-    case 369:
-        return 30;              // skeletal dragon
-
-    case 370:
-        return 27;              // tentacled monstr
-
-    case 371:
-        return 22;              // sphinx
-
-    case 376:
-        return 17;              // centaur warrior
-
-    case 377:
-        return 24;              // yaktaur warrior
-
-    case 385:
-        return 15;              // eye of devastation
-
-    case 389:
-    case 390:
-    case 391:
-    case 392:
-    case 393:
-        return 15;              // mimic
-
-    case 396:
-        return 17;              // boggart
-
-    case 397:
-        return 30;              // quicksilver D
-
-    case 398:
-        return 30;              // iron D
-
-    case 399:
-        return 15;              // skeletal warrior
-
-    case MLAVA0:
-        return 500;             // "lava worm"
-
-    case MLAVA1:
-        return 500;             // "lava fish"
-
-    case MLAVA2:
-        return 500;             // "lava snake"
-
-    case MLAVA3:
-        return 500;             // "another lava thing"
-
-    case MWATER0:
-        return 500;             // "big fish"
-
-    case MWATER1:
-        return 500;             // "giant goldfish"
-
-    case MWATER2:
-        return 500;             // "electrical eel"
-
-    case MWATER3:
-        return 500;             // "jellyfish"
-
-    case MWATER4:
-        return 500;             // ""
-
-    case MWATER5:
-        return 500;             // ""
+    case MONS_GOBLIN:
+        return 1;
+
+    case MONS_GIANT_COCKROACH:
+    case MONS_SMALL_SNAKE:
+    case MONS_OOZE:
+        return 2;
+
+    case MONS_GIANT_BAT:
+    case MONS_RAT:
+    case MONS_KOBOLD:
+        return 4;
+
+    case MONS_JACKAL:
+    case MONS_KILLER_BEE_LARVA:
+    case MONS_HOBGOBLIN:
+    case MONS_GIANT_MITE:
+    case MONS_GNOLL:
+        return 5;
+
+    case MONS_WORM:
+    case MONS_SNAKE:
+        return 6;
+
+    case MONS_ORC:
+        return 7;
+
+    case MONS_OGRE:
+    case MONS_ORC_WIZARD:
+    case MONS_GIANT_EYEBALL:
+    case MONS_PHANTOM:
+    case MONS_GIANT_ANT:
+    case MONS_FUNGUS:
+    case MONS_HOUND:
+    case MONS_SCORPION:
+        return 8;
+
+    case MONS_IMP:
+    case MONS_CENTAUR:
+    case MONS_NECROPHAGE:
+    case MONS_QUASIT:
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ICE_BEAST:
+    case MONS_JELLY:
+    case MONS_BROWN_SNAKE:
+        return 9;
+
+    case MONS_DEEP_ELF_SOLDIER:
+    case MONS_GIANT_FROG:
+    case MONS_GIANT_BEETLE:
+    case MONS_GIANT_SPORE:
+    case MONS_MUMMY:
+    case MONS_ORC_WARRIOR:
+    case MONS_WIGHT:
+    case MONS_STEAM_DRAGON:
+        return 10;
+
+    case MONS_HIPPOGRIFF:
+    case MONS_SHADOW:
+    case MONS_HUNGRY_GHOST:
+    case MONS_YELLOW_WASP:
+    case MONS_KILLER_BEE:
+    case MONS_GIANT_LIZARD:
+        return 11;
+
+    case MONS_ETTIN:
+    case MONS_MANTICORE:
+    case MONS_PLANT:
+    case MONS_UNSEEN_HORROR:
+    case MONS_WYVERN:
+    case MONS_EYE_OF_DRAINING:
+        return 12;
+
+    case MONS_YAK:
+    case MONS_BIG_KOBOLD:
+    case MONS_OKLOB_PLANT:
+    case MONS_WOOD_GOLEM:
+    case MONS_TWO_HEADED_OGRE:
+    case MONS_TROLL:
+    case MONS_GIANT_CENTIPEDE:
+    case MONS_GIANT_BROWN_FROG:
+        return 13;
+
+    case MONS_SOLDIER_ANT:
+    case MONS_HILL_GIANT:
+    case MONS_WRAITH:
+    case MONS_WOLF_SPIDER:
+        return 14;
+
+    case MONS_EFREET:
+    case MONS_BRAIN_WORM:
+    case MONS_ORC_PRIEST:
+    case MONS_MOTTLED_DRAGON:
+    case MONS_CYCLOPS:
+    case MONS_EYE_OF_DEVASTATION:
+    case MONS_GOLD_MIMIC:
+    case MONS_WEAPON_MIMIC:
+    case MONS_ARMOUR_MIMIC:
+    case MONS_SCROLL_MIMIC:
+    case MONS_POTION_MIMIC:
+    case MONS_SKELETAL_WARRIOR:
+        return 15;
+
+    case MONS_GUARDIAN_NAGA:
+    case MONS_RAKSHASA:
+    case MONS_STONE_GOLEM:
+    case MONS_BUTTERFLY:
+    case MONS_WANDERING_MUSHROOM:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_VAMPIRE:
+    case MONS_SLIME_CREATURE:
+    case MONS_GIANT_BLOWFLY:
+    case MONS_BLINK_FROG:
+        return 16;
+
+    case MONS_CENTAUR_WARRIOR:
+    case MONS_BOGGART:
+    case MONS_SHAPESHIFTER:
+    case MONS_GRIFFON:
+    case MONS_WIZARD:
+    case MONS_CLAY_GOLEM:
+    case MONS_UGLY_THING:
+        return 17;
+
+    case MONS_DRAGON:
+    case MONS_KOBOLD_DEMONOLOGIST:
+    case MONS_GIANT_AMOEBA:
+    case MONS_GARGOYLE:
+        return 18;
+
+    case MONS_GIANT_SLUG:
+    case MONS_IRON_GOLEM:
+    case MONS_TOENAIL_GOLEM:
+    case MONS_YAKTAUR:
+    case MONS_ROCK_TROLL:
+    case MONS_OGRE_MAGE:
+        return 19;
+
+    case MONS_QUEEN_BEE:
+    case MONS_ORC_KNIGHT:
+    case MONS_GIANT_ORANGE_BRAIN:
+    case MONS_ICE_DRAGON:
+    case MONS_GREAT_ORB_OF_EYES:
+    case MONS_VERY_UGLY_THING:
+    case MONS_HYDRA:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_NECROMANCER:
+    case MONS_EARTH_ELEMENTAL:
+    case MONS_FIRE_ELEMENTAL:
+    case MONS_AIR_ELEMENTAL:
+    case MONS_SPINY_WORM:
+    case MONS_RED_WASP:
+    case MONS_SHADOW_WRAITH:
+    case MONS_GIANT_SNAIL:
+    case MONS_NAGA_MAGE:
+    case MONS_NAGA_WARRIOR:
+    case MONS_DEEP_ELF_FIGHTER:
+    case MONS_DEEP_ELF_KNIGHT:
+    case MONS_DEEP_ELF_MAGE:
+    case MONS_DEEP_ELF_SUMMONER:
+        return 20;
+
+    case MONS_BOULDER_BEETLE:
+    case MONS_ORC_HIGH_PRIEST:
+    case MONS_PULSATING_LUMP:
+        return 21;
+
+    case MONS_FREEZING_WRAITH:
+    case MONS_CRYSTAL_GOLEM:
+    case MONS_FLAYED_GHOST:
+    case MONS_REDBACK:
+    case MONS_VAPOUR:
+    case MONS_SPHINX:
+    case MONS_BORING_BEETLE:
+        return 22;
+
+    case MONS_SHINING_EYE:
+    case MONS_ORC_SORCEROR:
+        return 23;
+
+    case MONS_TUNNELING_WORM:
+    case MONS_BUMBLEBEE:
+    case MONS_IRON_TROLL:
+    case MONS_YAKTAUR_CAPTAIN:
+        return 24;
+
+    case MONS_FIRE_GIANT:
+    case MONS_FROST_GIANT:
+    case MONS_STONE_GIANT:
+    case MONS_INSUBSTANTIAL_WISP:
+    case MONS_DANCING_WEAPON:
+    case MONS_HELL_KNIGHT:
+    case MONS_DEEP_TROLL:
+    case MONS_LICH:
+        return 25;
+
+    case MONS_SPECTRAL_WARRIOR:
+    case MONS_STORM_DRAGON:
+    case MONS_DEEP_ELF_CONJURER:
+        return 26;
+
+    case MONS_DEEP_ELF_PRIEST:
+    case MONS_GLOWING_SHAPESHIFTER:
+    case MONS_TENTACLED_MONSTROSITY:
+        return 27;
+
+    case MONS_SHADOW_DRAGON:
+        return 29;
+
+    case MONS_TITAN:
+    case MONS_GOLDEN_DRAGON:
+    case MONS_DEEP_ELF_HIGH_PRIEST:
+    case MONS_DEEP_ELF_DEMONOLOGIST:
+    case MONS_DEEP_ELF_ANNIHILATOR:
+    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_DEATH_MAGE:
+    case MONS_ANCIENT_LICH:
+    case MONS_QUICKSILVER_DRAGON:
+    case MONS_IRON_DRAGON:
+    case MONS_SKELETAL_DRAGON:
+        return 30;
+
+    //case MONS_ICE_FIEND:
+    //case MONS_SHADOW_FIEND:
+    //case MONS_DEATH_YAK: return 32;
+
+    case MONS_LAVA_WORM:
+    case MONS_LAVA_FISH:
+    case MONS_LAVA_SNAKE:
+    case MONS_ANOTHER_LAVA_THING:
+    case MONS_BIG_FISH:
+    case MONS_GIANT_GOLDFISH:
+    case MONS_ELECTRICAL_EEL:
+    case MONS_JELLYFISH:
+    case MONS_WATER_ELEMENTAL:
+    case MONS_SWAMP_WORM:
+        return 500;
 
     default:
         return 99;
@@ -2175,7 +1313,8 @@ int mons_level(int mcls)
 
     }
     return 50;
-}                               // end mons_level(mcls)
+}     // end mons_level()
+
 
 
 
@@ -2185,37 +1324,39 @@ int mons_rarity(int mcls)
 
     switch (you.where_are_you)
     {
-    case 2:
-        return mons_rare_gehenna(mcls);         // Gehenna
+    case BRANCH_DIS:
+        return mons_rare_dis(mcls);         // about the same as Gehenna
 
-    case 4:
-        return mons_rare_cocytus(mcls);         // Cocytus
+    case BRANCH_GEHENNA:
+        return mons_rare_gehenna(mcls);
 
-    case 1:
-        return mons_rare_dis(mcls);     // Dis - about the same as Gehenna
+    case BRANCH_COCYTUS:
+        return mons_rare_cocytus(mcls);
 
-    case 5:
-        return mons_rare_tartarus(mcls);        // Tartarus
+    case BRANCH_TARTARUS:
+        return mons_rare_tartarus(mcls);
 
-    case 10:
-        return mons_rare_orc_mines(mcls);       // orcish mines
+    case BRANCH_ORCISH_MINES:
+        return mons_rare_orc_mines(mcls);
 
-    case 11:
-        return mons_rare_hive(mcls);    // the hive
+    case BRANCH_HIVE:
+        return mons_rare_hive(mcls);
 
-    case 12:
-        return mons_rare_lair(mcls);    // the lair
+    case BRANCH_LAIR:
+        return mons_rare_lair(mcls);
 
-    case 13:
-        return mons_rare_slime_pits(mcls);      // the lair
-        /* 14 - the vaults - uses normal monsters */
-    case 15:
-        return mons_rare_crypt(mcls);   // the crypt
+    case BRANCH_SLIME_PITS:
+        return mons_rare_slime_pits(mcls);
 
-    case 16:
-        return mons_rare_hall_ob(mcls);         // the lair
+// 14 - the vaults - uses normal monsters
 
-    case 17:                    // the realm of Zot
+    case BRANCH_CRYPT:
+        return mons_rare_crypt(mcls);
+
+    case BRANCH_HALL_OF_BLADES:
+        return mons_rare_hall_ob(mcls);
+
+    case BRANCH_HALL_OF_ZOT:
 
         switch (mcls)
         {
@@ -2259,596 +1400,296 @@ int mons_rarity(int mcls)
             return 40;
         }
         break;
-    case 19:
-        return mons_rare_snake(mcls);   // the lair
 
-    case 20:
-        return mons_rare_elf(mcls);     // the lair
+    case BRANCH_SNAKE_PIT:
+        return mons_rare_snake(mcls);
 
-    case 21:
-        return mons_rare_tomb(mcls);    // the tomb
+    case BRANCH_ELVEN_HALLS:
+        return mons_rare_elf(mcls);
 
-    case 22:
-        return mons_rare_swamp(mcls);   // the Swamp
+    case BRANCH_TOMB:
+        return mons_rare_tomb(mcls);
+
+    case BRANCH_SWAMP:
+        return mons_rare_swamp(mcls);
 
     }
 
-    if (you.level_type == 2)
+    if (you.level_type == LEVEL_ABYSS)
         return mons_rare_abyss(mcls);
 
     switch (mcls)
     {
-    case 0:
-        return 80;              // "giant ant"
-
-    case 1:
-        return 99;              // "giant bat"
-
-    case 2:
-        return 70;              // "centaur"
-
-    case 3:
-        return 99;              // "red devil"
-
-    case 4:
-        return 0;               // "ettin"
-
-    case 5:
-        return 20;              // "fungus"
-
-    case 6:
-        return 99;              // "goblin"
-
-    case 7:
-        return 70;              // "hound"
-
-    case 8:
-        return 99;              // imp
-
-    case 9:
-        return 40;              // "jackal"
-
-    case 10:
-        return 50;              // "killer bee"
-
-    case 11:
-        return 0;               // "killer bee larva"
-
-    case 12:
-        return 45;              // "manticore"
-
-    case 13:
-        return 30;              // "necrophage"
-
-    case 14:
-        return 99;              // "orc"
-
-    case 15:
-        return 40;              // "phantom"
-
-    case 16:
-        return 0;               // "quasit"
-
-    case 17:
-        return 99;              // "rat"
-
-    case 18:
-        return 50;              // "scorpion"
-
-    case 19:
-        return 0;               // "tunneling worm" - these are currently too buggy
-
-    case 20:
-        return 99;              // "ugly thing"
-
-    case 21:
-        return 30;              // "fire vortex"
-
-    case 22:
-        return 50;              // "worm"
-
-    case 23:
-        return 0;               // "abomination"
-
-    case 24:
-        return 30;              // "yellow wasp"
-
-    case 25:
+    case MONS_GIANT_BAT:
+    case MONS_RED_DEVIL:
+    case MONS_GOBLIN:
+    case MONS_IMP:
+    case MONS_ORC:
+    case MONS_RAT:
+    case MONS_UGLY_THING:
+    case MONS_ZOMBIE_SMALL:
+    case MONS_HOBGOBLIN:
+    case MONS_KOBOLD:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_HILL_GIANT:
+    case MONS_GIANT_FROG:
         return 99;
-    case 26:
-        return 0;               // "angel"
 
-    case 27:
-        return 50;              // "giant beetle"
-
-    case 28:
-        return 70;              // "cyclops"
-
-    case 29:
-        return 30;              // "dragon"
-
-    case 30:
-        return 40;              // "two-headed ogre"
-
-    case 31:
-        return 0;               // "fiend"
-
-    case 32:
-        return 40;              // "giant spore"
-
-    case 33:
-        return 99;              // "hobgoblin"
-
-    case 34:
-        return 50;              // "ice beast"
-
-    case 35:
-        return 60;              // "jelly"
-
-    case 36:
-        return 99;              // "kobold"
-
-    case 37:
-        return 17;              // "lich"
-
-    case 38:
-        return 30;              // "mummy"
-
-    case 39:
-        return 3;               // "naga"
-
-    case 40:
-        return 70;              // "ogre"
-
-    case 41:
-        return 25;              // "plant"
-
-    case 42:
-        return 0;               // "queen bee"
-
-    case 43:
-        return 20;              // "raksasha"
-
-    case 44:
-        return 80;              // "snake"
-
-    case 45:
-        return 70;              // "troll"
-
-    case 46:
-        return 50;              // "unseen horror"
-
-    case 47:
-        return 30;              // "vampire"
-
-    case 48:
-        return 40;              // "wraith"
-
-    case 49:
-        return 0;               // "abomination"
-
-    case 50:
-        return 70;              // "yak"
-
-    case 51:
-        return 99;              // Z
-
-    case 52:
-        return 70;              // "orc warrior"
-
-    case 53:
-        return 13;              // "kobold demonologist"
-
-    case 54:
-        return 50;              // "orc wizard"
-
-    case 55:
-        return 60;              // "orc knight"
-
-    case 56:
-        return 0;               // "worm tail"
-
-    case 57:
-        return 40;              // "wyvern"
-
-    case 58:
-        return 50;              // "kobold leader"
-
-    case 59:
-        return 40;              // "giant eyeball"
-
-    case 60:
-        return 40;              // "wight"
-
-    case 61:
-        return 10;              // "oklob plant"
-
-    case 62:
-        return 36;              // "wolf spider"
-
-    case 63:
-        return 41;              // "shadow"
-
-    case 64:
-        return 41;              // "hungry ghost"
-
-    case 65:
-        return 33;              // "eye of draining"
-
-    case 66:
-        return 20;              // "butterfly"
-
-    case 67:
-        return 10;              // "wandering mushroom"
-
-    case 68:
-        return 15;              // "efreet"
-
-    case 69:
-        return 26;              // "brain worm"
-
-    case 70:
-        return 10;              // "giant orange brain"
-
-    case 71:
-        return 34;              // "boulder beetle"
-
-    case 72:
-        return 75;              // "flying skull"
-
-    case 73:
-        return 71;              // "hell hound"
-
-    case 74:
-        return 0;               // "minotaur"
-
-    case 75:
-        return 20;              // "ice dragon"
-
-    case 76:
-        return 75;              // "slime thing"
-
-    case 77:
-        return 35;              // "freezing wraith"
-
-    case 78:
-        return 0;               // fake R
-
-    case 79:
-        return 25;              // GooE
-
-    case 80:
-        return 70;              // "hellion"
-
-    case 81:
-        return 60;              // "rotting devil"
-
-    case 82:
-        return 50;              // "tormentor"
-
-    case 83:
-        return 40;              // "reaper"
-
-    case 84:
-        return 30;              // "soul eater"
-
-    case 85:
-        return 40;              // "hairy devil"
-
-    case 98:
-        return 35;              // glowing shapeshifter
-
-    case 99:
-        return 59;              // shapeshifter
-
-    case 100:
-        return 30;              //strcat(gmon_name, "giant mite"); break;
-
-    case 101:
-        return 20;              //strcat(gmon_name, "steam dragon"); break;
-
-    case 102:
-        return 20;              //strcat(gmon_name, "very ugly thing"); break;
-
-    case 103:
-        return 10;              //strcat(gmon_name, "orc sorceror"); break;
-
-    case 104:
-        return 50;              //strcat(gmon_name, "hippogriff"); break;
-
-    case 105:
-        return 40;              //strcat(gmon_name, "griffon"); break;
-
-    case 106:
-        return 20;              //strcat(gmon_name, "hydra"); break;
-
-    case 107:
-        return 99;
-    case 108:
-        return 99;              // skeletons
-
-    case 109:
-        return 10;              //strcat(gmon_name, "hell knight"); break;
-
-    case 110:
-        return 15;              //strcat(gmon_name, "necromancer"); break;
-
-    case 111:
-        return 20;              //strcat(gmon_name, "wizard"); break;
-
-    case 112:
-        return 25;              //strcat(gmon_name, "orc priest"); break;
-
-    case 113:
-        return 12;              //strcat(gmon_name, "orc high priest"); break;
-        // 114 is human
-
-    case 115:
-        return 30;              // gnoll
-
-    case 116:
-        return 15;              // clay golem
-
-    case 117:
-        return 15;              // wood golem
-
-    case 118:
-        return 10;              // stone golem
-
-    case 119:
-        return 10;              // iron golem
-
-    case 120:
-        return 5;               // crystal golem
-
-    case 121:
-        return 2;               // toenail golem
-
-    case 122:
-        return 40;              // mottled dragon
-
-    case 123:
-        return 4;               //strcat(gmon_name, "earth elemental"); break;
-
-    case 124:
-        return 4;               //strcat(gmon_name, "fire elemental"); break;
-
-    case 125:
-        return 4;               //strcat(gmon_name, "air elemental"); break;
-
-    case 128:
-        return 30;              //strcat(gmon_name, "brown snake"); break;
-
-    case 129:
-        return 30;              //strcat(gmon_name, "giant lizard"); break;
-
-    case 130:
-        return 20;              //strcat(gmon_name, "spectre"); break;
-
-    case 131:
-        return 2;               // pulsating mass
-
-    case 132:
-        return 20;              // storm D
-
-    case 133:
-        return 40;              //strcat(gmon_name, "yaktaur"); break;
-        //case 134: return 32; //strcat(gmon_name, "death yak"); break;
-
-    case 135:
-        return 48;              //strcat(gmon_name, "rock troll"); break;
-
-    case 136:
-        return 53;              //strcat(gmon_name, "stone giant"); break; // stoned giant
-
-    case 137:
-        return 29;              // flayed ghost
-
-    case 138:
-        return 12;              // bumblebee
-
-    case 139:
-        return 20;              // red back
-
-    case 140:
-        return 20;              // wisp
-
-    case 141:
-        return 5;               // vapour
-
-    case 142:
-        return 45;              // Ogre mage
-
-    case 143:
-        return 30;              // Spiny worm
-
-    case 144:
-        return 5;               // dancing weapon
-
-    case 145:
-        return 10;              // Titan
-
-    case 146:
-        return 7;               // Golden dragon
-
-    case 159:
-        return 40;              // giant centipede
-
-    case 160:
-        return 25;              // iron Troll
-
-    case 162:
-        return 25;              // fire giant
-
-    case 163:
-        return 25;              // frost giant
-
-    case 165:
-        return 20;              // shadow dragon
-
-    case 168:
-        return 25;              // deep troll
-
-    case 169:
-        return 50;              // giant blowfly
-
-    case 170:
-        return 25;              // red wasp
-
-    case 173:
-        return 35;              // soldier ant
-
-    case 174:
-        return 99;              // hill giant
-
-    case 177:
-        return 99;              // giant frog
-
-    case 178:
-        return 70;              // giant brown frog
-
-    case 180:
-        return 15;              // blink frog
-
-    case 181:
-        return 50;              // giant cockroach
-
-    case 182:
-        return 30;              // small snake
-
-    case 240:
-        return 10;              // shadow wraith
-
-    case 241:
-        return 35;              // giant amoeba
-
-    case 242:
-        return 32;              // giant slug
-
-    case 243:
-        return 20;              // giant snail
-
-    case 246:
-        return 17;              // boring beetle
-
-    case 247:
-        return 6;               // gargoyle
-
-    case 260:
-    case 261:
-        return 5;               // Nagas
-
-    case 263:
-        return 10;              // deep elf soldier
-
-    case 264:
-        return 25;              // deep elf fighter
-
-    case 265:
-        return 25;              // deep elf knight
-
-    case 266:
-        return 5;               // deep elf mage
-
-    case 267:
-        return 5;               // deep elf summoner
-
-    case 268:
-        return 4;               // deep elf conjurer
-
-    case 269:
-        return 3;               // deep elf priest
-
-    case 270:
-        return 5;               // deep elf high priest
-
-    case 271:
-        return 3;               // deep elf demonologist
-
-    case 272:
-        return 3;               // deep elf annihilator
-
-    case 273:
-        return 3;               // deep elf sorceror
-
-    case 274:
-        return 3;               // deep elf death mage
-
-    case 356:
-        return 3;               // ancient lich
-
-    case 357:
-        return 25;               // ooze
-
-    case 364:
-        return 2;               // shining eye
-
-    case 369:
-        return 10;              // skeletal dragon
-
-    case 370:
-        return 17;              // tentacled monstr
-
-    case 371:
-        return 20;              // sphinx
-
-    case 376:
-        return 80;              // centaur warrior
-
-    case 377:
-        return 70;              // yaktaur warrior
-
-    case 385:
-        return 15;              // eye of devastation
-
-    case 389:
-    case 390:
-    case 391:
-    case 392:
-    case 393:
-        return 30;              // mimic
-
-    case 396:
-        return 25;              // boggart
-
-    case 397:
-        return 5;               // quicksilver D
-
-    case 398:
-        return 5;               // iron D
-
-    case 399:
-        return 30;              // skeletal warrior
-
-    case MLAVA0:
-        return 500;             // "lava worm"
-
-    case MLAVA1:
-        return 500;             // "lava fish"
-
-    case MLAVA2:
-        return 500;             // "lava snake"
-
-    case MLAVA3:
-        return 500;             // "another lava thing"
-
-    case MWATER0:
-        return 500;             // "big fish"
-
-    case MWATER1:
-        return 500;             // "giant goldfish"
-
-    case MWATER2:
-        return 500;             // "electrical eel"
-
-    case MWATER3:
-        return 500;             // "jellyfish"
-
-    case MWATER4:
-        return 500;             // ""
-
-    case MWATER5:
-        return 500;             // ""
+    case MONS_GIANT_ANT:
+    case MONS_SNAKE:
+        return 80;
+
+    case MONS_CENTAUR_WARRIOR:
+        return 80;
+
+    case MONS_FLYING_SKULL:
+    case MONS_SLIME_CREATURE:
+        return 75;
+
+    case MONS_HELL_HOUND:
+        return 71;
+
+    case MONS_HELLION:
+    case MONS_CENTAUR:
+    case MONS_HOUND:
+    case MONS_CYCLOPS:
+    case MONS_OGRE:
+    case MONS_TROLL:
+    case MONS_YAK:
+    case MONS_ORC_WARRIOR:
+    case MONS_YAKTAUR_CAPTAIN:
+    case MONS_GIANT_BROWN_FROG:
+        return 70;
+
+    case MONS_ORC_KNIGHT:
+    case MONS_JELLY:
+    case MONS_ROTTING_DEVIL:
+        return 60;
+
+    case MONS_SHAPESHIFTER:
+        return 59;
+
+    case MONS_STONE_GIANT:
+        return 53;
+
+    case MONS_GIANT_BLOWFLY:
+    case MONS_GIANT_COCKROACH:
+    case MONS_KILLER_BEE:
+    case MONS_SCORPION:
+    case MONS_WORM:
+    case MONS_GIANT_BEETLE:
+    case MONS_ICE_BEAST:
+    case MONS_UNSEEN_HORROR:
+    case MONS_ORC_WIZARD:
+    case MONS_BIG_KOBOLD:
+    case MONS_TORMENTOR:
+    case MONS_HIPPOGRIFF:
+        return 50;
+
+    case MONS_ROCK_TROLL:
+        return 48;
+
+    case MONS_MANTICORE:
+    case MONS_OGRE_MAGE:
+        return 45;
+
+    case MONS_SHADOW:
+    case MONS_HUNGRY_GHOST:
+        return 41;
+
+    case MONS_YAKTAUR:
+    case MONS_GIANT_CENTIPEDE:
+    case MONS_WYVERN:
+    case MONS_GIANT_EYEBALL:
+    case MONS_WIGHT:
+    case MONS_WRAITH:
+    case MONS_JACKAL:
+    case MONS_PHANTOM:
+    case MONS_TWO_HEADED_OGRE:
+    case MONS_GIANT_SPORE:
+    case MONS_REAPER:
+    case MONS_HAIRY_DEVIL:
+    case MONS_GRIFFON:
+    case MONS_MOTTLED_DRAGON:
+        return 40;
+
+    case MONS_WOLF_SPIDER:
+        return 36;
+
+    case MONS_FREEZING_WRAITH:
+    case MONS_GLOWING_SHAPESHIFTER:
+    case MONS_SOLDIER_ANT:
+    case MONS_GIANT_AMOEBA:
+        return 35;
+
+    case MONS_BOULDER_BEETLE:
+        return 34;
+
+    case MONS_EYE_OF_DRAINING:
+        return 33;
+
+    case MONS_GIANT_SLUG:
+        return 32;
+
+    case MONS_NECROPHAGE:
+    case MONS_FIRE_VORTEX:
+    case MONS_YELLOW_WASP:
+    case MONS_DRAGON:
+    case MONS_MUMMY:
+    case MONS_VAMPIRE:
+    case MONS_SOUL_EATER:
+    case MONS_GIANT_MITE:
+    case MONS_GNOLL:
+    case MONS_BROWN_SNAKE:
+    case MONS_GIANT_LIZARD:
+    case MONS_SPINY_WORM:
+    case MONS_SMALL_SNAKE:
+    case MONS_GOLD_MIMIC:
+    case MONS_WEAPON_MIMIC:
+    case MONS_ARMOUR_MIMIC:
+    case MONS_SCROLL_MIMIC:
+    case MONS_POTION_MIMIC:
+    case MONS_SKELETAL_WARRIOR:
+        return 30;
+
+    case MONS_FLAYED_GHOST:
+        return 29;
+
+    case MONS_BRAIN_WORM:
+        return 26;
+
+    case MONS_PLANT:
+    case MONS_GREAT_ORB_OF_EYES:
+    case MONS_ORC_PRIEST:
+    case MONS_BOGGART:
+    case MONS_OOZE:
+    case MONS_IRON_TROLL:
+    case MONS_FIRE_GIANT:
+    case MONS_FROST_GIANT:
+    case MONS_DEEP_TROLL:
+    case MONS_RED_WASP:
+    case MONS_DEEP_ELF_FIGHTER:
+    case MONS_DEEP_ELF_KNIGHT:
+        return 25;
+
+    case MONS_REDBACK:
+    case MONS_INSUBSTANTIAL_WISP:
+    case MONS_SHADOW_DRAGON:
+    case MONS_GIANT_SNAIL:
+    case MONS_SPHINX:
+    case MONS_FUNGUS:
+    case MONS_RAKSHASA:
+    case MONS_BUTTERFLY:
+    case MONS_ICE_DRAGON:
+    case MONS_HYDRA:
+    case MONS_WIZARD:
+    case MONS_STEAM_DRAGON:
+    case MONS_VERY_UGLY_THING:
+    case MONS_SPECTRAL_WARRIOR:
+    case MONS_STORM_DRAGON:
+        return 20;
+
+    case MONS_LICH:
+    case MONS_TENTACLED_MONSTROSITY:
+    case MONS_BORING_BEETLE:
+        return 17;
+
+    case MONS_BLINK_FROG:
+    case MONS_EYE_OF_DEVASTATION:
+    case MONS_EFREET:
+    case MONS_NECROMANCER:
+    case MONS_CLAY_GOLEM:
+    case MONS_WOOD_GOLEM:
+        return 15;
+
+    case MONS_KOBOLD_DEMONOLOGIST:
+        return 13;
+
+    case MONS_ORC_HIGH_PRIEST:
+    case MONS_BUMBLEBEE:
+        return 12;
+
+    case MONS_TITAN:
+    case MONS_SHADOW_WRAITH:
+    case MONS_DEEP_ELF_SOLDIER:
+    case MONS_HELL_KNIGHT:
+    case MONS_WANDERING_MUSHROOM:
+    case MONS_GIANT_ORANGE_BRAIN:
+    case MONS_ORC_SORCEROR:
+    case MONS_OKLOB_PLANT:
+    case MONS_STONE_GOLEM:
+    case MONS_IRON_GOLEM:
+    case MONS_SKELETAL_DRAGON:
+        return 10;
+
+    case MONS_GOLDEN_DRAGON:
+        return 7;
+
+    case MONS_GARGOYLE:
+        return 6;
+
+    case MONS_DEEP_ELF_MAGE:
+    case MONS_DEEP_ELF_SUMMONER:
+    case MONS_DEEP_ELF_HIGH_PRIEST:
+    case MONS_QUICKSILVER_DRAGON:
+    case MONS_IRON_DRAGON:
+    case MONS_NAGA_MAGE:
+    case MONS_NAGA_WARRIOR:
+    case MONS_CRYSTAL_GOLEM:
+    case MONS_VAPOUR:
+    case MONS_DANCING_WEAPON:
+        return 5;
+
+    case MONS_EARTH_ELEMENTAL:
+    case MONS_FIRE_ELEMENTAL:
+    case MONS_AIR_ELEMENTAL:
+    case MONS_DEEP_ELF_CONJURER:
+        return 4;
+
+    case MONS_DEEP_ELF_PRIEST:
+    case MONS_DEEP_ELF_DEMONOLOGIST:
+    case MONS_DEEP_ELF_ANNIHILATOR:
+    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_DEATH_MAGE:
+    case MONS_ANCIENT_LICH:
+    case MONS_GUARDIAN_NAGA:
+        return 3;
+
+    case MONS_SHINING_EYE:
+    case MONS_TOENAIL_GOLEM:
+    case MONS_PULSATING_LUMP:
+        return 2;
+
+    case MONS_ETTIN:
+    case MONS_KILLER_BEE_LARVA:
+    case MONS_QUASIT:
+    case MONS_TUNNELING_WORM:
+    case MONS_ABOMINATION_SMALL:
+    case MONS_ANGEL:
+    case MONS_FIEND:
+    case MONS_QUEEN_BEE:
+    case MONS_ABOMINATION_LARGE:
+    case MONS_WORM_TAIL:
+    case MONS_MINOTAUR:
+    case MONS_RAKSHASA_FAKE:
+        return 0;
+
+    //case 114 is human
+    //case MONS_DEATH_YAK: return 32;
+
+    case MONS_LAVA_WORM:
+    case MONS_LAVA_FISH:
+    case MONS_LAVA_SNAKE:
+    case MONS_ANOTHER_LAVA_THING:
+    case MONS_BIG_FISH:
+    case MONS_GIANT_GOLDFISH:
+    case MONS_ELECTRICAL_EEL:
+    case MONS_JELLYFISH:
+    case MONS_WATER_ELEMENTAL:
+    case MONS_SWAMP_WORM:
+        return 500;
 
     default:
         return 0;
@@ -2856,7 +1697,7 @@ int mons_rarity(int mcls)
 
     return 0;
 
-}                               // end int mons_rarity
+}     // end int mons_rarity()
 
 
 
@@ -2868,91 +1709,45 @@ int mons_level_orc_mines(int mcls)
 
     switch (mcls)
     {
-    case 5:
+    case MONS_FUNGUS:
+    case MONS_GOBLIN:
+    case MONS_ORC:
         mlev = 0;
-        break;                  // "fungus"
+        break;
 
-    case 6:
-        mlev = 0;
-        break;                  // "goblin"
-
-    case 14:
-        mlev = 0;
-        break;                  // "orc"
-
-    case 28:
-        mlev = 3;
-        break;                  // "cyclops"
-
-    case 30:
-        mlev = 3;
-        break;                  // "two-headed ogre"
-
-    case 33:
+    case MONS_HOBGOBLIN:
+    case MONS_ORC_WARRIOR:
+    case MONS_ORC_PRIEST:
         mlev = 1;
-        break;                  // "hobgoblin"
+        break;
 
-    case 40:
+    case MONS_GNOLL:
+    case MONS_OGRE:
         mlev = 2;
-        break;                  // "ogre"
+        break;
 
-    case 45:
+    case MONS_CYCLOPS:
+    case MONS_TWO_HEADED_OGRE:
+    case MONS_TROLL:
+    case MONS_ORC_WIZARD:
+    case MONS_ORC_KNIGHT:
+    case MONS_ORC_SORCEROR:
+    case MONS_ORC_HIGH_PRIEST:
+    case MONS_ROCK_TROLL:
+    case MONS_STONE_GIANT:
+    case MONS_OGRE_MAGE:
+    case MONS_IRON_TROLL:
+    case MONS_ORC_WARLORD:
         mlev = 3;
-        break;                  // "troll"
-
-    case 52:
-        mlev = 1;
-        break;                  // "orc warrior"
-
-    case 54:
-        mlev = 3;
-        break;                  // "orc wizard"
-
-    case 55:
-        mlev = 3;
-        break;                  // "orc knight"
-
-    case 103:
-        mlev = 3;
-        break;                  //strcat(gmon_name, "orc sorceror"); break; break;
-
-    case 112:
-        mlev = 1;
-        break;                  //strcat(gmon_name, "orc priest"); break; break;
-
-    case 113:
-        mlev = 3;
-        break;                  //strcat(gmon_name, "orc high priest"); break; break;
-
-    case 115:
-        mlev = 2;
-        break;                  // gnoll
-
-    case 135:
-        mlev = 3;
-        break;                  //strcat(gmon_name, "rock troll"); break; break;
-
-    case 136:
-        mlev = 3;
-        break;                  //strcat(gmon_name, "stone giant"); break; break; break; // stoned giant
-
-    case 142:
-        mlev = 3;
-        break;                  // Ogre mage
-
-    case 160:
-        mlev = 3;
-        break;                  // iron Troll
-
-    case 262:
-        mlev = 3;
-        break;                  // orc warlord
+        break;
 
     }
 
     return mlev + you.branch_stairs[0] + 1;
 
-}
+}    // end mons_level_orc_mines()
+
+
 
 
 int mons_rare_orc_mines(int mcls)
@@ -2962,91 +1757,59 @@ int mons_rare_orc_mines(int mcls)
 
     switch (mcls)
     {
-    case 5:
-        mlev = 10;
-        break;                  // "fungus"
-
-    case 6:
-        mlev = 30;
-        break;                  // "goblin"
-
-    case 14:
+    case MONS_ORC:
         mlev = 300;
-        break;                  // "orc"
+        break;
 
-    case 28:
-        mlev = 5;
-        break;                  // "cyclops"
-
-    case 30:
-        mlev = 5;
-        break;                  // "two-headed ogre"
-
-    case 33:
-        mlev = 20;
-        break;                  // "hobgoblin"
-
-    case 40:
-        mlev = 20;
-        break;                  // "ogre"
-
-    case 45:
-        mlev = 13;
-        break;                  // "troll"
-
-    case 52:
+    case MONS_GOBLIN:
+    case MONS_ORC_WARRIOR:
         mlev = 30;
-        break;                  // "orc warrior"
+        break;
 
-    case 54:
+    case MONS_HOBGOBLIN:
+    case MONS_OGRE:
+        mlev = 20;
+        break;
+
+    case MONS_TROLL:
+        mlev = 13;
+        break;
+
+    case MONS_FUNGUS:
+    case MONS_ORC_WIZARD:
+    case MONS_ORC_KNIGHT:
+    case MONS_ORC_SORCEROR:
+    case MONS_ORC_PRIEST:
         mlev = 10;
-        break;                  // "orc wizard"
+        break;
 
-    case 55:
-        mlev = 10;
-        break;                  // "orc knight"
-
-    case 103:
-        mlev = 10;
-        break;                  //strcat(gmon_name, "orc sorceror"); break; break;
-
-    case 112:
-        mlev = 10;
-        break;                  //strcat(gmon_name, "orc priest"); break; break;
-
-    case 113:
+    case MONS_CYCLOPS:
+    case MONS_TWO_HEADED_OGRE:
+    case MONS_ORC_HIGH_PRIEST:
         mlev = 5;
-        break;                  //strcat(gmon_name, "orc high priest"); break; break;
+        break;
 
-    case 115:
+    case MONS_ROCK_TROLL:
+    case MONS_STONE_GIANT:
+    case MONS_IRON_TROLL:
+        mlev = 3;
+        break;
+
+    case MONS_GNOLL:
+    case MONS_ORC_WARLORD:
         mlev = 2;
-        break;                  // gnoll
+        break;
 
-    case 135:
-        mlev = 3;
-        break;                  //strcat(gmon_name, "rock troll"); break; break;
-
-    case 136:
-        mlev = 3;
-        break;                  //strcat(gmon_name, "stone giant"); break; break; break; // stoned giant
-
-    case 142:
+    case MONS_OGRE_MAGE:
         mlev = 1;
-        break;                  // Ogre mage
-
-    case 160:
-        mlev = 3;
-        break;                  // iron Troll
-
-    case 262:
-        mlev = 2;
-        break;                  // orc warlord
+        break;
 
     }
 
     return mlev;
 
-}
+}     // end mons_rare_orc_mines()
+
 
 
 
@@ -3060,20 +1823,20 @@ int mons_level_hive(int mcls)
 
     switch (mcls)
     {
-    case 10:
-        return you.branch_stairs[1] + 1 + 0;    // "killer bee"
+    case MONS_PLANT:
+    case MONS_KILLER_BEE:
+        return you.branch_stairs[1] + 1 + 0;
 
-    case 11:
-        return you.branch_stairs[1] + 1 + 2;    // "killer bee larva"
-
-    case 41:
-        return you.branch_stairs[1] + 1 + 0;    // "plant"
+    case MONS_KILLER_BEE_LARVA:
+        return you.branch_stairs[1] + 1 + 2;
 
     default:
         return 99;
     }
     return 50;
-}                               // end mons_level(mcls)
+}     // end mons_level_hive()
+
+
 
 
 int mons_rare_hive(int mcls)
@@ -3086,20 +1849,22 @@ int mons_rare_hive(int mcls)
 
     switch (mcls)
     {
-    case 10:
-        return 300;             // "killer bee"
+    case MONS_KILLER_BEE:
+        return 300;
 
-    case 11:
-        return 50;              // "killer bee larva"
+    case MONS_PLANT:
+        return 100;
 
-    case 41:
-        return 100;             // "plant"
+    case MONS_KILLER_BEE_LARVA:
+        return 50;
 
     default:
         return 0;
     }
 
-}                               // end mons_level(mcls)
+}     // end mons_rare_hive()
+
+
 
 
 int mons_level_lair(int mcls)
@@ -3112,149 +1877,73 @@ int mons_level_lair(int mcls)
 
     switch (mcls)
     {
-    case 1:
-        return you.branch_stairs[2] + 1 + 0;    // "giant bat"
+    case MONS_GIANT_BAT:
+    case MONS_JACKAL:
+    case MONS_RAT:
+        return you.branch_stairs[2] + 1 + 0;
 
-    case 5:
-        return you.branch_stairs[2] + 1 + 4;    // "fungus"
+    case MONS_GIANT_CENTIPEDE:
+        return you.branch_stairs[2] + 1 + 1;
 
-    case 7:
-        return you.branch_stairs[2] + 1 + 2;    // "hound"
+    case MONS_HOUND:
+    case MONS_GREY_RAT:
+    case MONS_GIANT_FROG:
+        return you.branch_stairs[2] + 1 + 2;
 
-    case 9:
-        return you.branch_stairs[2] + 1 + 0;    // "jackal"
+    case MONS_WORM:
+        return you.branch_stairs[2] + 1 + 3;
 
-    case 17:
-        return you.branch_stairs[2] + 1 + 0;    // "rat"
+    case MONS_FUNGUS:
+    case MONS_SCORPION:
+    case MONS_SNAKE:
+    case MONS_GIANT_MITE:
+    case MONS_GIANT_LIZARD:
+    case MONS_GREEN_RAT:
+    case MONS_GIANT_BROWN_FROG:
+        return you.branch_stairs[2] + 1 + 4;
 
-    case 18:
-        return you.branch_stairs[2] + 1 + 4;    // "scorpion"
+    case MONS_YELLOW_WASP:
+    case MONS_GIANT_BEETLE:
+    case MONS_PLANT:
+    case MONS_BUTTERFLY:
+    case MONS_HIPPOGRIFF:
+    case MONS_BROWN_SNAKE:
+    case MONS_WAR_DOG:
+    case MONS_SPINY_FROG:
+    case MONS_GIANT_SLUG:
+        return you.branch_stairs[2] + 1 + 5;
 
-    case 22:
-        return you.branch_stairs[2] + 1 + 3;    // "worm"
+    case MONS_GIANT_SPORE:
+    case MONS_YAK:
+    case MONS_WOLF_SPIDER:
+    case MONS_STEAM_DRAGON:
+    case MONS_ORANGE_RAT:
+    case MONS_SHEEP:
+    case MONS_BLINK_FROG:
+    case MONS_GIANT_SNAIL:
+        return you.branch_stairs[2] + 1 + 6;
 
-    case 24:
-        return you.branch_stairs[2] + 1 + 5;    // "yellow wasp"
+    case MONS_WYVERN:
+    case MONS_OKLOB_PLANT:
+    case MONS_BRAIN_WORM:
+    case MONS_HYDRA:
+    case MONS_BUMBLEBEE:
+    case MONS_BLACK_SNAKE:
+    case MONS_FIREDRAKE:
+        return you.branch_stairs[2] + 1 + 7;
 
-    case 27:
-        return you.branch_stairs[2] + 1 + 5;    // "giant beetle"
+    case MONS_WANDERING_MUSHROOM:
+    case MONS_GRIFFON:
+    case MONS_REDBACK:
+    case MONS_LINDWORM:
+    case MONS_ELEPHANT_SLUG:
+        return you.branch_stairs[2] + 1 + 8;
 
-    case 32:
-        return you.branch_stairs[2] + 1 + 6;    // "giant spore"
-
-    case 41:
-        return you.branch_stairs[2] + 1 + 5;    // "plant"
-
-    case 44:
-        return you.branch_stairs[2] + 1 + 4;    // "snake"
-
-    case 50:
-        return you.branch_stairs[2] + 1 + 6;    // "yak"
-
-    case 57:
-        return you.branch_stairs[2] + 1 + 7;    // "wyvern"
-
-    case 61:
-        return you.branch_stairs[2] + 1 + 7;    // "oklob plant"
-
-    case 62:
-        return you.branch_stairs[2] + 1 + 6;    // "wolf spider"
-
-    case 66:
-        return you.branch_stairs[2] + 1 + 5;    // "butterfly"
-
-    case 67:
-        return you.branch_stairs[2] + 1 + 8;    // "wandering mushroom"
-
-    case 69:
-        return you.branch_stairs[2] + 1 + 7;    // "brain worm"
-
-    case 71:
-        return you.branch_stairs[2] + 1 + 9;    // "boulder beetle"
-
-    case 100:
-        return you.branch_stairs[2] + 1 + 4;    // giant mite"); break;
-
-    case 101:
-        return you.branch_stairs[2] + 1 + 6;    // steam dragon"); break;
-
-    case 104:
-        return you.branch_stairs[2] + 1 + 5;    // hippogriff"); break;
-
-    case 105:
-        return you.branch_stairs[2] + 1 + 8;    // griffon"); break;
-
-    case 106:
-        return you.branch_stairs[2] + 1 + 7;    // hydra"); break;
-
-    case 128:
-        return you.branch_stairs[2] + 1 + 5;    // brown snake"); break;
-
-    case 129:
-        return you.branch_stairs[2] + 1 + 4;    // giant lizard"); break;
-
-    case 134:
-        return you.branch_stairs[2] + 1 + 9;    // death yak"); break;
-
-    case 138:
-        return you.branch_stairs[2] + 1 + 7;    // bumblebee
-
-    case 139:
-        return you.branch_stairs[2] + 1 + 8;    // red back
-
-    case 143:
-        return you.branch_stairs[2] + 1 + 9;    // spiny worm
-
-    case 148:
-        return you.branch_stairs[2] + 1 + 8;    // lindworm
-
-    case 149:
-        return you.branch_stairs[2] + 1 + 8;    // elephant slug
-
-    case 150:
-        return you.branch_stairs[2] + 1 + 5;    // war dog
-
-    case 151:
-        return you.branch_stairs[2] + 1 + 2;    // grey rat
-
-    case 152:
-        return you.branch_stairs[2] + 1 + 4;    // green rat
-
-    case 153:
-        return you.branch_stairs[2] + 1 + 6;    // orange rat
-
-    case 154:
-        return you.branch_stairs[2] + 1 + 7;    // black snake
-
-    case 155:
-        return you.branch_stairs[2] + 1 + 6;    // sheep
-
-    case 159:
-        return you.branch_stairs[2] + 1 + 1;    // giant centipede
-
-    case 164:
-        return you.branch_stairs[2] + 1 + 7;    // fire drake
-
-    case 177:
-        return you.branch_stairs[2] + 1 + 2;    // giant frog
-
-    case 178:
-        return you.branch_stairs[2] + 1 + 4;    // giant brown frog
-
-    case 179:
-        return you.branch_stairs[2] + 1 + 5;    // spiny frog
-
-    case 180:
-        return you.branch_stairs[2] + 1 + 6;    // blink frog
-
-    case 242:
-        return you.branch_stairs[2] + 1 + 5;    // giant slug
-
-    case 243:
-        return you.branch_stairs[2] + 1 + 6;    // giant snail
-
-    case 246:
-        return you.branch_stairs[2] + 1 + 9;    // boring beetle
+    case MONS_BOULDER_BEETLE:
+    case MONS_DEATH_YAK:
+    case MONS_SPINY_WORM:
+    case MONS_BORING_BEETLE:
+        return you.branch_stairs[2] + 1 + 9;
 
     default:
         return 99;
@@ -3262,7 +1951,9 @@ int mons_level_lair(int mcls)
 
     }
     return 50;
-}                               // end mons_level(mcls)
+}     // end mons_level_lair()
+
+
 
 
 int mons_rare_lair(int mcls)
@@ -3275,149 +1966,143 @@ int mons_rare_lair(int mcls)
 
     switch (mcls)
     {
-    case 1:
-        return 99;              // "giant bat"
+    case MONS_RAT:
+        return 200;
 
-    case 5:
-        return 50;              // "fungus"
+    case MONS_GIANT_BAT:
+        return 99;
 
-    case 7:
-        return 60;              // "hound"
+    case MONS_FUNGUS:
+        return 50;
 
-    case 9:
-        return 70;              // "jackal"
+    case MONS_HOUND:
+        return 60;
 
-    case 17:
-        return 200;             // "rat"
+    case MONS_JACKAL:
+        return 70;
 
-    case 18:
-        return 10;              // "scorpion"
+    case MONS_SCORPION:
+        return 10;
 
-    case 22:
-        return 30;              // "worm"
+    case MONS_WORM:
+        return 30;
 
-    case 24:
-        return 5;               // "yellow wasp"
+    case MONS_YELLOW_WASP:
+        return 5;
 
-    case 27:
-        return 10;              // "giant beetle"
+    case MONS_GIANT_BEETLE:
+        return 10;
 
-    case 32:
-        return 2;               // "giant spore"
+    case MONS_GIANT_SPORE:
+        return 2;
 
-    case 41:
-        return 80;              // "plant"
+    case MONS_PLANT:
+    case MONS_SNAKE:
+        return 80;
 
-    case 44:
-        return 80;              // "snake"
+    case MONS_YAK:
+        return 50;
 
-    case 50:
-        return 50;              // "yak"
+    case MONS_WYVERN:
+        return 20;
 
-    case 57:
-        return 20;              // "wyvern"
+    case MONS_OKLOB_PLANT:
+        return 10;
 
-    case 61:
-        return 10;              // "oklob plant"
+    case MONS_WOLF_SPIDER:
+        return 6;
 
-    case 62:
-        return 6;               // "wolf spider"
+    case MONS_BUTTERFLY:
+        return 5;
 
-    case 66:
-        return 5;               // "butterfly"
+    case MONS_WANDERING_MUSHROOM:
+        return 8;
 
-    case 67:
-        return 8;               // "wandering mushroom"
+    case MONS_BRAIN_WORM:
+        return 7;
 
-    case 69:
-        return 7;               // "brain worm"
+    case MONS_BOULDER_BEETLE:
+        return 20;
 
-    case 71:
-        return 20;              // "boulder beetle"
+    case MONS_GIANT_MITE:
+        return 30;
 
-    case 100:
-        return 30;              // giant mite"); break;
+    case MONS_STEAM_DRAGON:
+        return 10;
 
-    case 101:
-        return 10;              // steam dragon"); break;
+    case MONS_HIPPOGRIFF:
+        return 50;
 
-    case 104:
-        return 50;              // hippogriff"); break;
+    case MONS_GRIFFON:
+        return 30;
 
-    case 105:
-        return 30;              // griffon"); break;
+    case MONS_HYDRA:
+        return 20;
 
-    case 106:
-        return 20;              // hydra"); break;
+    case MONS_BROWN_SNAKE:
+    case MONS_GIANT_LIZARD:
+        return 90;
 
-    case 128:
-        return 90;              // brown snake"); break;
+    case MONS_DEATH_YAK:
+        return 30;
 
-    case 129:
-        return 90;              // giant lizard"); break;
+    case MONS_BUMBLEBEE:
+        return 7;
 
-    case 134:
-        return 30;              // death yak"); break;
+    case MONS_REDBACK:
+        return 8;
 
-    case 138:
-        return 7;               // bumblebee
+    case MONS_SPINY_WORM:
+        return 9;
 
-    case 139:
-        return 8;               // red back
+    case MONS_LINDWORM:
+        return 10;
 
-    case 143:
-        return 9;               // spiny worm
+    case MONS_ELEPHANT_SLUG:
+        return 30;
 
-    case 148:
-        return 10;              // lindworm
+    case MONS_WAR_DOG:
+        return 35;
 
-    case 149:
-        return 30;              // elephant slug
+    case MONS_GREY_RAT:
+        return 99;
 
-    case 150:
-        return 35;              // war dog
+    case MONS_GREEN_RAT:
+        return 64;
 
-    case 151:
-        return 99;              // grey rat
+    case MONS_ORANGE_RAT:
+        return 10;
 
-    case 152:
-        return 64;              // green rat
+    case MONS_BLACK_SNAKE:
+        return 47;
 
-    case 153:
-        return 10;              // orange rat
+    case MONS_SHEEP:
+        return 36;
 
-    case 154:
-        return 47;              // black snake
+    case MONS_GIANT_CENTIPEDE:
+        return 50;
 
-    case 155:
-        return 36;              // sheep
+    case MONS_FIREDRAKE:
+        return 36;
 
-    case 159:
-        return 50;              // giant centipede
+    case MONS_GIANT_FROG:
+    case MONS_GIANT_BROWN_FROG:
+        return 99;
 
-    case 164:
-        return 36;              // fire drake
+    case MONS_SPINY_FROG:
+        return 75;
 
-    case 177:
-        return 99;              // giant frog
+    case MONS_BLINK_FROG:
+        return 45;
 
-    case 178:
-        return 99;              // giant brown frog
+    case MONS_GIANT_SLUG:
+        return 55;
 
-    case 179:
-        return 75;              // spiny frog
+    case MONS_GIANT_SNAIL:
+        return 56;
 
-    case 180:
-        return 45;              // blink frog
-
-    case 242:
-        return 55;              // giant slug
-
-    case 243:
-        return 56;              // giant snail
-
-    case 246:
-        return 29;              // boring beetle
+    case MONS_BORING_BEETLE:
+        return 29;
 
     default:
         return 0;
@@ -3425,7 +2110,8 @@ int mons_rare_lair(int mcls)
 
     }
     return 0;
-}                               // end mons_level(mcls)
+}     // end mons_rare_lair()
+
 
 
 
@@ -3436,50 +2122,38 @@ int mons_level_slime_pits(int mcls)
 
     switch (mcls)
     {
-    case 35:
+    case MONS_JELLY:
+    case MONS_OOZE:
         mlev = 1;
-        break;                  // "jelly"
+        break;
 
-    case 76:
+    case MONS_SLIME_CREATURE:
         mlev = 2;
-        break;                  // "slime thing"
+        break;
 
-    case 131:
+    case MONS_GIANT_AMOEBA:
+    case MONS_BROWN_OOZE:
+    case MONS_AZURE_JELLY:
+    case MONS_ACID_BLOB:
+        mlev = 3;
+        break;
+
+    case MONS_PULSATING_LUMP:
         mlev = 4;
-        break;                  // pulsating mass
+        break;
 
-    case 241:
-        mlev = 3;
-        break;                  // giant amoeba
-
-    case 275:
-        mlev = 3;
-        break;                  // brown ooze
-
-    case 276:
-        mlev = 3;
-        break;                  // azure jelly
-
-    case 277:
-        mlev = 5;
-        break;                  // death ooze
-
-    case 278:
-        mlev = 3;
-        break;                  // acid blob
-
-    case 357:
-                mlev = 1;
-        break;               // ooze
-
-    case 370:
-        return 5;               // tentacled monstr
+    case MONS_DEATH_OOZE:
+    case MONS_TENTACLED_MONSTROSITY:
+        return 5;
 
     }
 
     return mlev + you.branch_stairs[3] + 1;
 
-}
+}     // end mons_level_slime_pits()
+
+
+
 
 int mons_rare_slime_pits(int mcls)
 {
@@ -3488,51 +2162,47 @@ int mons_rare_slime_pits(int mcls)
 
     switch (mcls)
     {
-    case 35:
+    case MONS_JELLY:
         mlev = 300;
-        break;                  // "jelly"
+        break;
 
-    case 76:
+    case MONS_SLIME_CREATURE:
         mlev = 200;
-        break;                  // "slime thing"
+        break;
 
-    case 131:
-        mlev = 20;
-        break;                  // pulsating mass
-
-    case 241:
-        mlev = 100;
-        break;                  // giant amoeba
-
-    case 275:
+    case MONS_BROWN_OOZE:
         mlev = 150;
-        break;                  // brown ooze
+        break;
 
-    case 276:
-        mlev = 30;
-        break;                  // azure jelly
-
-    case 277:
-        mlev = 20;
-        break;                  // death ooze
-
-    case 278:
+    case MONS_GIANT_AMOEBA:
+    case MONS_ACID_BLOB:
         mlev = 100;
-        break;                  // acid blob
+        break;
 
-    case 357:
-                mlev = 50;
-        break;                  // ooze
+    case MONS_OOZE:
+        mlev = 50;
+        break;
 
-    case 370:
+    case MONS_AZURE_JELLY:
+        mlev = 30;
+        break;
+
+    case MONS_PULSATING_LUMP:
+    case MONS_DEATH_OOZE:
+        mlev = 20;
+        break;
+
+    case MONS_TENTACLED_MONSTROSITY:
         mlev = 2;
-        break;                  // tentacled monstr
+        break;
 
     }
 
     return mlev;
 
-}
+}     // end mons_rare_slime_pits()
+
+
 
 
 int mons_level_crypt(int mcls)
@@ -3547,118 +2217,52 @@ int mons_level_crypt(int mcls)
 
     switch (mcls)
     {
-    case 13:
-        mlev = 2;
-        break;                  // "necrophage"
-
-    case 15:
-        mlev = 1;
-        break;                  // "phantom"
-
-    case 23:
-        mlev = 4;
-        break;                  // "abomination"
-
-    case 25:
+    case MONS_ZOMBIE_SMALL:
         mlev = 0;
-        break;                  // "zombie"
+        break;
 
-    case 37:
-        mlev = 5;
-        break;                  // "lich"
-
-    case 38:
-        mlev = 4;
-        break;                  // "mummy"
-
-    case 47:
-        mlev = 4;
-        break;                  // "vampire"
-
-    case 48:
-        mlev = 3;
-        break;                  // "wraith"
-
-    case 49:
-        mlev = 4;
-        break;                  // "abomination"
-
-    case 51:
+    case MONS_PHANTOM:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_WIGHT:
         mlev = 1;
-        break;                  // "zombie"
+        break;
 
-    case 60:
-        mlev = 1;
-        break;                  // "wight"
-
-    case 63:
+    case MONS_SHADOW:
+    case MONS_HUNGRY_GHOST:
+    case MONS_NECROPHAGE:
+    case MONS_SKELETAL_WARRIOR:
         mlev = 2;
-        break;                  // "shadow"
+        break;
 
-    case 64:
-        mlev = 2;
-        break;                  // "hungry ghost"
-
-    case 72:
+    case MONS_NECROMANCER:
+    case MONS_PULSATING_LUMP:
+    case MONS_FLAYED_GHOST:
+    case MONS_GHOUL:
+    case MONS_ROTTING_HULK:
+    case MONS_WRAITH:
+    case MONS_FLYING_SKULL:
         mlev = 3;
-        break;                  // "flying skull"
+        break;
 
-    case 83:
+    case MONS_SPECTRAL_WARRIOR:
+    case MONS_SHADOW_WRAITH:
+    case MONS_VAMPIRE_KNIGHT:
+    case MONS_VAMPIRE_MAGE:
+    case MONS_SKELETAL_DRAGON:
+    case MONS_ABOMINATION_SMALL:
+    case MONS_MUMMY:
+    case MONS_VAMPIRE:
+    case MONS_ABOMINATION_LARGE:
+        mlev = 4;
+        break;
+
+    case MONS_REAPER:
+    case MONS_ANCIENT_LICH:
+    case MONS_LICH:
         mlev = 5;
-        break;                  // "reaper"
-
-    case 107:
-    case 108:
-        mlev = 1;
-        break;                  // "skeleton"
-
-    case 110:
-        mlev = 3;
-        break;                  //strcat(gmon_name, "necromancer");
-
-    case 130:
-        mlev = 4;
-        break;                  //strcat(gmon_name, "spectre");
-
-    case 131:
-        mlev = 3;
-        break;                  // pulsating mass
-
-    case 137:
-        mlev = 3;
-        break;                  // flayed ghost
-
-    case 156:
-        mlev = 3;
-        break;                  // ghoul
-
-    case 240:
-        mlev = 4;
-        break;                  // shadow wraith
-
-    case 356:
-        mlev = 5;
-        break;                  // ancient lich
-
-    case 362:
-        mlev = 4;
-        break;                  // vampire knight
-
-    case 363:
-        mlev = 4;
-        break;                  // vampire mage
-
-    case 369:
-        mlev = 4;
-        break;                  // skeletal dragon
-
-    case 372:
-        mlev = 3;
-        break;                  // rotting hulk
-
-    case 399:
-        mlev = 2;
-        break;                  // skeletal warrior
+        break;
 
     default:
         mlev = 99;
@@ -3666,7 +2270,10 @@ int mons_level_crypt(int mcls)
 
     }
     return mlev + you.branch_stairs[5] + 1;
-}                               // end mons_level(mcls)
+
+}     // end mons_level_crypt()
+
+
 
 
 int mons_rare_crypt(int mcls)
@@ -3680,118 +2287,94 @@ int mons_rare_crypt(int mcls)
 
     switch (mcls)
     {
-    case 13:
-        mlev = 50;
-        break;                  // "necrophage"
-
-    case 15:
-        mlev = 21;
-        break;                  // "phantom"
-
-    case 23:
-        mlev = 5;
-        break;                  // "abomination"
-
-    case 25:
+    case MONS_ZOMBIE_SMALL:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
         mlev = 410;
-        break;                  // "zombie"
+        break;
 
-    case 37:
-        mlev = 5;
-        break;                  // "lich"
-
-    case 38:
-        mlev = 24;
-        break;                  // "mummy"
-
-    case 47:
-        mlev = 21;
-        break;                  // "vampire"
-
-    case 48:
-        mlev = 33;
-        break;                  // "wraith"
-
-    case 49:
-        mlev = 4;
-        break;                  // "abomination"
-
-    case 51:
+    case MONS_ZOMBIE_LARGE:
         mlev = 300;
-        break;                  // "zombie"
+        break;
 
-    case 60:
-        mlev = 35;
-        break;                  // "wight"
-
-    case 63:
-        mlev = 30;
-        break;                  // "shadow"
-
-    case 64:
-        mlev = 12;
-        break;                  // "hungry ghost"
-
-    case 72:
-        mlev = 13;
-        break;                  // "flying skull"
-
-    case 83:
-        mlev = 5;
-        break;                  // "reaper"
-
-    case 107:
-    case 108:
-        mlev = 410;
-        break;                  // "skeleton"
-
-    case 110:
-        mlev = 25;
-        break;                  //strcat(gmon_name, "necromancer");
-
-    case 130:
-        mlev = 14;
-        break;                  //strcat(gmon_name, "spectre");
-
-    case 131:
-        mlev = 3;
-        break;                  // pulsating mass
-
-    case 137:
-        mlev = 13;
-        break;                  // flayed ghost
-
-    case 156:
-        mlev = 25;
-        break;                  // ghoul
-
-    case 240:
-        mlev = 10;
-        break;                  // shadow wraith
-
-    case 356:
-        mlev = 8;
-        break;                  // ancient lich
-
-    case 362:
-        mlev = 20;
-        break;                  // vampire knight
-
-    case 363:
-        mlev = 20;
-        break;                  // vampire mage
-
-    case 369:
-        mlev = 24;
-        break;                  // skeletal dragon
-
-    case 372:
-        mlev = 17;
-        break;                  // rotting hulk
-
-    case 399:
+    case MONS_SKELETAL_WARRIOR:
         mlev = 75;
-        break;                  // skeletal warrior
+        break;
+
+    case MONS_NECROPHAGE:
+        mlev = 50;
+        break;
+
+    case MONS_WIGHT:
+        mlev = 35;
+        break;
+
+    case MONS_WRAITH:
+        mlev = 33;
+        break;
+
+    case MONS_SHADOW:
+        mlev = 30;
+        break;
+
+    case MONS_NECROMANCER:
+    case MONS_GHOUL:
+        mlev = 25;
+        break;
+
+    case MONS_MUMMY:
+    case MONS_SKELETAL_DRAGON:
+        mlev = 24;
+        break;
+
+    case MONS_VAMPIRE:
+    case MONS_PHANTOM:
+        mlev = 21;
+        break;
+
+    case MONS_VAMPIRE_KNIGHT:
+    case MONS_VAMPIRE_MAGE:
+        mlev = 20;
+        break;
+
+    case MONS_ROTTING_HULK:
+        mlev = 17;
+        break;
+
+    case MONS_SPECTRAL_WARRIOR:
+        mlev = 14;
+        break;
+
+    case MONS_FLYING_SKULL:
+    case MONS_FLAYED_GHOST:
+        mlev = 13;
+        break;
+
+    case MONS_HUNGRY_GHOST:
+        mlev = 12;
+        break;
+
+    case MONS_SHADOW_WRAITH:
+        mlev = 10;
+        break;
+
+    case MONS_ANCIENT_LICH:
+        mlev = 8;
+        break;
+
+    case MONS_ABOMINATION_SMALL:
+    case MONS_LICH:
+    case MONS_REAPER:
+        mlev = 5;
+        break;
+
+    case MONS_ABOMINATION_LARGE:
+        mlev = 4;
+        break;
+
+    case MONS_PULSATING_LUMP:
+        mlev = 3;
+        break;
 
     default:
         mlev = 0;
@@ -3799,35 +2382,10 @@ int mons_rare_crypt(int mcls)
 
     }
     return mlev;
-}                               // end mons_level(mcls)
 
-int mons_level_hall_ob(int mcls)
-{
+}     // end mons_rare_crypt()
 
-    switch (mcls)
-    {
-    case 144:
-        return you.branch_stairs[6] + 1;        // dancing weapon
 
-    }
-
-    return 0;
-
-}
-
-int mons_rare_hall_ob(int mcls)
-{
-
-    switch (mcls)
-    {
-    case 144:
-        return 1000;            // dancing weapon
-
-    }
-
-    return 0;
-
-}
 
 
 int mons_level_snake(int mcls)
@@ -3841,37 +2399,28 @@ int mons_level_snake(int mcls)
 
     switch (mcls)
     {
-    case 44:
+    case MONS_SNAKE:
         mlev = 1;
-        break;                  // snake
+        break;
 
-    case 128:
+    case MONS_BROWN_SNAKE:
+    case MONS_BLACK_SNAKE:
+    case MONS_YELLOW_SNAKE:
+    case MONS_GREY_SNAKE:
         mlev = 2;
-        break;                  // brown snake
+        break;
 
-    case 154:
-        mlev = 2;
-        break;                  // black snake
-
-    case 166:
-        mlev = 2;
-        break;                  // yellow snake
-
-    case 167:
-        mlev = 2;
-        break;                  // grey snake
-
-    case 161:
+    case MONS_NAGA:
         mlev = 3;
-        break;                  // naga
+        break;
 
-    case 260:
-        mlev = 5;
-        break;                  // naga mage
-
-    case 261:
+    case MONS_NAGA_WARRIOR:
         mlev = 4;
-        break;                  // naga warrior
+        break;
+
+    case MONS_NAGA_MAGE:
+        mlev = 5;
+        break;
 
     default:
         mlev = 99;
@@ -3881,7 +2430,10 @@ int mons_level_snake(int mcls)
 
     return mlev + you.branch_stairs[9] + 1;
 
-}
+}     // end mons_level_snake()
+
+
+
 
 int mons_rare_snake(int mcls)
 {
@@ -3894,37 +2446,31 @@ int mons_rare_snake(int mcls)
 
     switch (mcls)
     {
-    case 44:
+    case MONS_SNAKE:
+    case MONS_BROWN_SNAKE:
         mlev = 99;
-        break;                  // snake
+        break;
 
-    case 128:
-        mlev = 99;
-        break;                  // brown snake
-
-    case 154:
-        mlev = 72;
-        break;                  // black snake
-
-    case 166:
-        mlev = 32;
-        break;                  // yellow snake
-
-    case 167:
-        mlev = 32;
-        break;                  // grey snake
-
-    case 161:
+    case MONS_NAGA:
         mlev = 53;
-        break;                  // naga
+        break;
 
-    case 260:
-        mlev = 15;
-        break;                  // naga mage
+    case MONS_BLACK_SNAKE:
+        mlev = 72;
+        break;
 
-    case 261:
+    case MONS_NAGA_WARRIOR:
         mlev = 34;
-        break;                  // naga warrior
+        break;
+
+    case MONS_YELLOW_SNAKE:
+    case MONS_GREY_SNAKE:
+        mlev = 32;
+        break;
+
+    case MONS_NAGA_MAGE:
+        mlev = 15;
+        break;
 
     default:
         mlev = 0;
@@ -3934,7 +2480,10 @@ int mons_rare_snake(int mcls)
 
     return mlev;
 
-}
+}     // end mons_rare_snake()
+
+
+
 
 int mons_level_elf(int mcls)
 {
@@ -3947,90 +2496,44 @@ int mons_level_elf(int mcls)
 
     switch (mcls)
     {
-    case 5:
-        mlev = 3;
-        break;                  // fungus
-
-    case 99:
-        mlev = 4;
-        break;                  // shapeshifter
-
-    case 263:
+    case MONS_DEEP_ELF_SOLDIER:
+    case MONS_DEEP_ELF_FIGHTER:
+    case MONS_ORC:
+    case MONS_ORC_WARRIOR:
         mlev = 1;
-        break;                  // deep elf soldier
+        break;
 
-    case 264:
-        mlev = 1;
-        break;                  // deep elf fighter
-
-    case 265:
-        mlev = 4;
-        break;                  // deep elf knight
-
-    case 266:
+    case MONS_ORC_WIZARD:
+    case MONS_DEEP_ELF_MAGE:
+    case MONS_DEEP_ELF_SUMMONER:
         mlev = 2;
-        break;                  // deep elf mage
+        break;
 
-    case 267:
-        mlev = 2;
-        break;                  // deep elf summoner
-
-    case 268:
+    case MONS_FUNGUS:
+    case MONS_DEEP_ELF_CONJURER:
+    case MONS_ORC_KNIGHT:
         mlev = 3;
-        break;                  // deep elf conjurer
+        break;
 
-    case 269:
+    case MONS_ORC_SORCEROR:
+    case MONS_DEEP_ELF_PRIEST:
+    case MONS_SHAPESHIFTER:
+    case MONS_DEEP_ELF_KNIGHT:
         mlev = 4;
-        break;                  // deep elf priest
+        break;
 
-    case 270:
-        mlev = 7;
-        break;                  // deep elf high priest
-
-    case 271:
-        mlev = 7;
-        break;                  // deep elf demonologist
-
-    case 272:
-        mlev = 7;
-        break;                  // deep elf annihilator
-
-    case 273:
-        mlev = 7;
-        break;                  // deep elf sorceror
-
-    case 274:
-        mlev = 7;
-        break;                  // deep elf death mage
-
-
-    case 14:
-        mlev = 1;
-        break;                  // "orc"
-
-    case 52:
-        mlev = 1;
-        break;                  // "orc warrior"
-
-    case 54:
-        mlev = 2;
-        break;                  // "orc wizard"
-
-    case 55:
-        mlev = 3;
-        break;                  // "orc knight"
-
-    case 103:
-        mlev = 4;
-        break;                  //strcat(gmon_name, "orc sorceror"); break; break;
-
-    case 112:
+    case MONS_ORC_PRIEST:
+    case MONS_ORC_HIGH_PRIEST:
         mlev = 5;
-        break;                  //strcat(gmon_name, "orc priest"); break; break;
+        break;
 
-    case 113:
-        mlev = 5;
-        break;                  //strcat(gmon_name, "orc high priest"); break; break;
+    case MONS_DEEP_ELF_HIGH_PRIEST:
+    case MONS_DEEP_ELF_DEMONOLOGIST:
+    case MONS_DEEP_ELF_ANNIHILATOR:
+    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_DEATH_MAGE:
+        mlev = 7;
+        break;
 
     default:
         mlev = 99;
@@ -4040,7 +2543,10 @@ int mons_level_elf(int mcls)
 
     return mlev + you.branch_stairs[10] + 1;
 
-}
+}     // end mons_level_elf()
+
+
+
 
 int mons_rare_elf(int mcls)
 {
@@ -4053,88 +2559,64 @@ int mons_rare_elf(int mcls)
 
     switch (mcls)
     {
-    case 5:
+    case MONS_FUNGUS:
         mlev = 300;
-        break;                  // fungus
+        break;
 
-    case 99:
-        return 25;              // shapeshifter
-
-    case 263:
+    case MONS_DEEP_ELF_SOLDIER:
+    case MONS_DEEP_ELF_FIGHTER:
+    case MONS_DEEP_ELF_MAGE:
         mlev = 100;
-        break;                  // deep elf soldier
+        break;
 
-    case 264:
-        mlev = 100;
-        break;                  // deep elf fighter
-
-    case 265:
+    case MONS_DEEP_ELF_KNIGHT:
         mlev = 80;
-        break;                  // deep elf knight
+        break;
 
-    case 266:
-        mlev = 100;
-        break;                  // deep elf mage
-
-    case 267:
+    case MONS_DEEP_ELF_SUMMONER:
         mlev = 72;
-        break;                  // deep elf summoner
+        break;
 
-    case 268:
+    case MONS_DEEP_ELF_CONJURER:
         mlev = 63;
-        break;                  // deep elf conjurer
+        break;
 
-    case 269:
+    case MONS_DEEP_ELF_PRIEST:
         mlev = 44;
-        break;                  // deep elf priest
+        break;
 
-    case 270:
-        mlev = 10;
-        break;                  // deep elf high priest
+    case MONS_SHAPESHIFTER:
+        return 25;
 
-    case 271:
-        mlev = 17;
-        break;                  // deep elf demonologist
-
-    case 272:
-        mlev = 13;
-        break;                  // deep elf annihilator
-
-    case 273:
-        mlev = 17;
-        break;                  // deep elf sorceror
-
-    case 274:
-        mlev = 13;
-        break;                  // deep elf death mage
-
-    case 14:
+    case MONS_ORC:
         mlev = 20;
-        break;                  // "orc"
+        break;
 
-    case 52:
-        mlev = 11;
-        break;                  // "orc warrior"
+    case MONS_DEEP_ELF_DEMONOLOGIST:
+    case MONS_DEEP_ELF_SORCEROR:
+        mlev = 17;
+        break;
 
-    case 54:
+    case MONS_DEEP_ELF_ANNIHILATOR:
+    case MONS_DEEP_ELF_DEATH_MAGE:
+    case MONS_ORC_WIZARD:
         mlev = 13;
-        break;                  // "orc wizard"
+        break;
 
-    case 55:
-        mlev = 5;
-        break;                  // "orc knight"
+    case MONS_ORC_WARRIOR:
+        mlev = 11;
+        break;
 
-    case 103:
+    case MONS_DEEP_ELF_HIGH_PRIEST:
+    case MONS_ORC_SORCEROR:
         mlev = 10;
-        break;                  //strcat(gmon_name, "orc sorceror"); break; break;
+        break;
 
-    case 112:
+    case MONS_ORC_KNIGHT:
+    case MONS_ORC_PRIEST:
+    case MONS_ORC_HIGH_PRIEST:
         mlev = 5;
-        break;                  //strcat(gmon_name, "orc priest"); break; break;
-
-    case 113:
-        mlev = 5;
-        break;                  //strcat(gmon_name, "orc high priest"); break; break;
+        break;
 
     default:
         mlev = 0;
@@ -4144,7 +2626,9 @@ int mons_rare_elf(int mcls)
 
     return mlev;
 
-}
+}     // end mons_rare_elf()
+
+
 
 
 int mons_level_tomb(int mcls)
@@ -4159,50 +2643,37 @@ int mons_level_tomb(int mcls)
 
     switch (mcls)
     {
-    case 25:
+    case MONS_ZOMBIE_SMALL:
         mlev = 0;
-        break;                  // "zombie"
+        break;
 
-    case 37:
-        mlev = 3;
-        break;                  // "lich"
-
-    case 38:
+    case MONS_MUMMY:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
         mlev = 1;
-        break;                  // "mummy"
+        break;
 
-    case 51:
-        mlev = 1;
-        break;                  // "zombie"
-
-    case 72:
+    case MONS_GUARDIAN_MUMMY:
+    case MONS_FLYING_SKULL:
         mlev = 2;
-        break;                  // "flying skull"
+        break;
 
-    case 107:
-    case 108:
-        mlev = 1;
-        break;                  // "skeleton"
-
-    case 356:
+    case MONS_LICH:
+    case MONS_ANCIENT_LICH:
+    case MONS_MUMMY_PRIEST:
         mlev = 3;
-        break;                  // ancient lich
-
-    case 373:
-        mlev = 2;
-        break;                  // "guardian mummy"
-
-    case 375:
-        mlev = 3;
-        break;                  // "mummy priest"
+        break;
 
     default:
         mlev = 99;
-
-
     }
+
     return mlev + you.branch_stairs[5] + 1;
-}                               // end mons_level(mcls)
+
+}     // end mons_level_tomb()
+
+
 
 
 int mons_rare_tomb(int mcls)
@@ -4217,50 +2688,51 @@ int mons_rare_tomb(int mcls)
 
     switch (mcls)
     {
-    case 25:
-        mlev = 20;
-        break;                  // "zombie"
-
-    case 37:
-        mlev = 4;
-        break;                  // "lich"
-
-    case 38:
+    case MONS_MUMMY:
         mlev = 300;
-        break;                  // "mummy"
+        break;
 
-    case 51:
-        mlev = 21;
-        break;                  // "zombie"
-
-    case 72:
-        mlev = 33;
-        break;                  // "flying skull"
-
-    case 107:
-    case 108:
-        mlev = 21;
-        break;                  // "skeleton"
-
-    case 356:
-        mlev = 2;
-        break;                  // ancient lich
-
-    case 373:
+    case MONS_GUARDIAN_MUMMY:
         mlev = 202;
-        break;                  // "guardian mummy"
+        break;
 
-    case 375:
+    case MONS_MUMMY_PRIEST:
         mlev = 40;
-        break;                  // "mummy priest"
+        break;
+
+    case MONS_FLYING_SKULL:
+        mlev = 33;
+        break;
+
+    case MONS_ZOMBIE_LARGE:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+        mlev = 21;
+        break;
+
+    case MONS_ZOMBIE_SMALL:
+        mlev = 20;
+        break;
+
+    case MONS_LICH:
+        mlev = 4;
+        break;
+
+    case MONS_ANCIENT_LICH:
+        mlev = 2;
+        break;
 
     default:
         mlev = 0;
 
 
     }
+
     return mlev;
-}                               // end mons_level(mcls)
+
+}     // end mons_rare_tomb()
+
+
 
 
 int mons_level_swamp(int mcls)
@@ -4270,141 +2742,61 @@ int mons_level_swamp(int mcls)
 
     switch (mcls)
     {
-    case 1:
+    case MONS_GIANT_BAT:
+    case MONS_SWAMP_DRAKE:
+    case MONS_GIANT_FROG:
+    case MONS_GIANT_AMOEBA:
+    case MONS_GIANT_SLUG:
+    case MONS_RAT:
+    case MONS_WORM:
+    case MONS_GIANT_BLOWFLY:
         mlev = 1;
-        break;                  // "giant bat"
+        break;
 
-    case 5:
+    case MONS_GIANT_BROWN_FROG:
+    case MONS_FUNGUS:
+    case MONS_NECROPHAGE:
+    case MONS_PLANT:
+    case MONS_SNAKE:
+    case MONS_BUTTERFLY:
+    case MONS_GIANT_LIZARD:
+    case MONS_GIANT_MOSQUITO:
+    case MONS_GIANT_SNAIL:
         mlev = 2;
-        break;                  // "fungus"
+        break;
 
-    case 13:
-        mlev = 2;
-        break;                  // "necrophage"
-
-    case 15:
+    case MONS_SPINY_FROG:
+    case MONS_PHANTOM:
+    case MONS_JELLY:
+    case MONS_UGLY_THING:
+    case MONS_HUNGRY_GHOST:
+    case MONS_BROWN_SNAKE:
+    case MONS_INSUBSTANTIAL_WISP:
+    case MONS_RED_WASP:
+    case MONS_SWAMP_DRAGON:
         mlev = 3;
-        break;                  // "phantom"
+        break;
 
-    case 17:
-        mlev = 1;
-        break;                  // "rat"
-
-    case 20:
-        mlev = 3;
-        break;                  // "ugly thing"
-
-    case 22:
-        mlev = 1;
-        break;                  // "worm"
-
-    case 35:
-        mlev = 3;
-        break;                  // "jelly"
-
-    case 41:
-        mlev = 2;
-        break;                  // "plant"
-
-    case 44:
-        mlev = 2;
-        break;                  // "snake"
-
-    case 64:
-        mlev = 3;
-        break;                  // "hungry ghost"
-
-    case 66:
-        mlev = 2;
-        break;                  // "butterfly"
-
-    case 76:
+    case MONS_BLINK_FROG:
+    case MONS_SLIME_CREATURE:
+    case MONS_VERY_UGLY_THING:
+    case MONS_HYDRA:
+    case MONS_VAPOUR:
+    case MONS_TENTACLED_MONSTROSITY:
         mlev = 4;
-        break;                  // "slime thing"
-
-    case 102:
-        mlev = 4;
-        break;                  // very ugly thing
-
-    case 106:
-        mlev = 4;
-        break;                  // hydra
-
-    case 128:
-        mlev = 3;
-        break;                  // brown snake
-
-    case 129:
-        mlev = 2;
-        break;                  // giant lizard
-
-    case 140:
-        mlev = 3;
-        break;                  // wisp
-
-    case 141:
-        mlev = 4;
-        break;                  // vapour
-
-    case 158:
-        mlev = 2;
-        break;                  // giant mosquito
-
-    case 169:
-        mlev = 1;
-        break;                  // giant blowfly
-
-    case 170:
-        mlev = 3;
-        break;                  // red wasp
-
-    case 171:
-        mlev = 3;
-        break;                  // swamp dragon
-
-    case 172:
-        mlev = 1;
-        break;                  // swamp drake
-
-    case 177:
-        mlev = 1;
-        break;                  // giant frog
-
-    case 178:
-        mlev = 2;
-        break;                  // giant brown frog
-
-    case 179:
-        mlev = 3;
-        break;                  // spiny frog
-
-    case 180:
-        mlev = 4;
-        break;                  // blink frog
-
-    case 241:
-        mlev = 1;
-        break;                  // giant amoeba
-
-    case 242:
-        mlev = 1;
-        break;                  // giant slug
-
-    case 243:
-        mlev = 2;
-        break;                  // giant snail
-
-    case 370:
-        mlev = 4;
-        break;                  // tentacled monstr
+        break;
 
     default:
         mlev = 99;
 
-
     }
+
     return mlev + you.branch_stairs[12] + 1;
-}                               // end mons_level_swamp(mcls)
+
+}     // end mons_level_swamp()
+
+
+
 
 int mons_rare_swamp(int mcls)
 {
@@ -4413,141 +2805,138 @@ int mons_rare_swamp(int mcls)
 
     switch (mcls)
     {
-    case 1:
-        mlev = 99;
-        break;                  // "giant bat"
-
-    case 5:
-        mlev = 99;
-        break;                  // "fungus"
-
-    case 13:
-        mlev = 12;
-        break;                  // "necrophage"
-
-    case 15:
-        mlev = 13;
-        break;                  // "phantom"
-
-    case 17:
-        mlev = 61;
-        break;                  // "rat"
-
-    case 20:
-        mlev = 13;
-        break;                  // "ugly thing"
-
-    case 22:
-        mlev = 21;
-        break;                  // "worm"
-
-    case 35:
-        mlev = 23;
-        break;                  // "jelly"
-
-    case 41:
-        mlev = 200;
-        break;                  // "plant"
-
-    case 44:
-        mlev = 52;
-        break;                  // "snake"
-
-    case 64:
-        mlev = 13;
-        break;                  // "hungry ghost"
-
-    case 66:
-        mlev = 22;
-        break;                  // "butterfly"
-
-    case 76:
-        mlev = 54;
-        break;                  // "slime thing"
-
-    case 102:
-        mlev = 14;
-        break;                  // very ugly thing
-
-    case 106:
-        mlev = 54;
-        break;                  // hydra
-
-    case 128:
-        mlev = 33;
-        break;                  // brown snake
-
-    case 129:
-        mlev = 22;
-        break;                  // giant lizard
-
-    case 140:
-        mlev = 43;
-        break;                  // wisp
-
-    case 141:
-        mlev = 14;
-        break;                  // vapour
-
-    case 158:
+    case MONS_GIANT_MOSQUITO:
         mlev = 250;
-        break;                  // giant mosquito
+        break;
 
-    case 169:
-        mlev = 100;
-        break;                  // giant blowfly
+    case MONS_PLANT:
+        mlev = 200;
+        break;
 
-    case 170:
-        mlev = 30;
-        break;                  // red wasp
-
-    case 171:
-        mlev = 30;
-        break;                  // swamp dragon
-
-    case 172:
-        mlev = 80;
-        break;                  // swamp drake
-
-    case 177:
+    case MONS_GIANT_FROG:
         mlev = 150;
-        break;                  // giant frog
+        break;
 
-    case 178:
+    case MONS_GIANT_BLOWFLY:
+        mlev = 100;
+        break;
+
+    case MONS_GIANT_BAT:
+    case MONS_FUNGUS:
+        mlev = 99;
+        break;
+
+    case MONS_GIANT_BROWN_FROG:
         mlev = 90;
-        break;                  // giant brown frog
+        break;
 
-    case 179:
+    case MONS_SWAMP_DRAKE:
+        mlev = 80;
+        break;
+
+    case MONS_RAT:
+        mlev = 61;
+        break;
+
+    case MONS_SLIME_CREATURE:
+    case MONS_HYDRA:
+        mlev = 54;
+        break;
+
+    case MONS_SNAKE:
+        mlev = 52;
+        break;
+
+    case MONS_INSUBSTANTIAL_WISP:
+        mlev = 43;
+        break;
+
+    case MONS_BROWN_SNAKE:
+        mlev = 33;
+        break;
+
+    case MONS_RED_WASP:
+    case MONS_SWAMP_DRAGON:
+    case MONS_SPINY_FROG:
         mlev = 30;
-        break;                  // spiny frog
+        break;
 
-    case 180:
+    case MONS_JELLY:
+        mlev = 23;
+        break;
+
+    case MONS_BUTTERFLY:
+    case MONS_GIANT_LIZARD:
+        mlev = 22;
+        break;
+
+    case MONS_WORM:
+        mlev = 21;
+        break;
+
+    case MONS_VERY_UGLY_THING:
+    case MONS_VAPOUR:
+        mlev = 14;
+        break;
+
+    case MONS_PHANTOM:
+    case MONS_UGLY_THING:
+    case MONS_HUNGRY_GHOST:
+        mlev = 13;
+        break;
+
+    case MONS_NECROPHAGE:
+        mlev = 12;
+        break;
+
+    case MONS_BLINK_FROG:
+    case MONS_GIANT_AMOEBA:
+    case MONS_GIANT_SLUG:
+    case MONS_GIANT_SNAIL:
         mlev = 10;
-        break;                  // blink frog
+        break;
 
-    case 241:
-        mlev = 10;
-        break;                  // giant amoeba
-
-    case 242:
-        mlev = 10;
-        break;                  // giant slug
-
-    case 243:
-        mlev = 10;
-        break;                  // giant snail
-
-    case 370:
+    case MONS_TENTACLED_MONSTROSITY:
         mlev = 5;
-        break;                  // tentacled monstr
+        break;
 
     default:
         mlev = 0;
 
 
     }
+
     return mlev;
-}                               // end mons_rare_swamp(mcls)
+
+}     // end mons_rare_swamp()
+
+
+
+
+int mons_level_hall_ob(int mcls)
+{
+    switch (mcls)
+    {
+    case MONS_DANCING_WEAPON:
+        return you.branch_stairs[6] + 1;
+    }
+    return 0;
+}
+
+
+
+
+int mons_rare_hall_ob(int mcls)
+{
+    switch (mcls)
+    {
+    case MONS_DANCING_WEAPON:
+        return 1000;
+    }
+    return 0;
+}
+
+
 
 
 /*
@@ -4606,5 +2995,7 @@ int branch_depth(int branch)
         return 5;               // the Swamp
 
     }
+
     return 0;
-}
+
+}     // end branch_depth()

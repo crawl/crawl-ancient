@@ -14,7 +14,7 @@
 
 // ($pellbinder) (c) D.G.S.E. 1998
 
-// ****remeber***** must make an hardcopy of this sometime
+// ****remember***** must make an hardcopy of this sometime
 
 #ifdef macintosh
 #define PACKED

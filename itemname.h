@@ -14,7 +14,7 @@
 char item_name(unsigned char item_plus2, char item_clas, char item_typ, unsigned char item_da, unsigned char it_plus, unsigned int it_quant, char ident_lev, char descrip, char glag[60]);
 char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsigned char item_da, unsigned char it_plus, unsigned int it_quant, char ident_lev, char glog[60]);
 void save_id(char identy[4][50]);
-void initial(void);
+void clear_ids(void);
 void set_id(char cla, char ty, char setting);
 char get_id(char cla, char ty);
 void it_name(int itn, char des, char str_pass[80]);

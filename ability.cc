@@ -36,7 +36,6 @@
 #endif
 
 #include "externs.h"
-#include "enum.h"
 
 #include "bang.h"
 #include "beam.h"
@@ -210,18 +209,18 @@ void species_ability()          /* Now handles all special abilities */
 
 
 
-    if (wearing_amulet(AMU_RAGE) != 0 || scan_randarts(RAP_BERSERK) > 0)
+    if (wearing_amulet(AMU_RAGE) || scan_randarts(RAP_BERSERK) > 0)
     {
         ability[abil_c] = ABIL_GO_BERSERK_I;
         ability_fail[abil_c] = 50 - you.experience_level * 2;
         if (you.species == SP_HILL_DWARF || you.species == SP_MOUNTAIN_DWARF || you.species == SP_HILL_ORC || you.species == SP_OGRE)
             ability_fail[abil_c] -= 10;
         if (you.species == SP_TROLL)
-            ability_fail[abil_c] -= 30;         /* troll */
+            ability_fail[abil_c] -= 30;
         abil_c++;
     }
 
-    if (you.species == SP_KENKU && you.experience_level >= 5 && you.duration[DUR_CONTROLLED_FLIGHT] == 0 && you.levitation == 0)        // kenku can fly, but only from the ground (until levitation 15, when it becomes permanent until revoked)
+    if (you.species == SP_KENKU && you.experience_level > 4 && you.duration[DUR_CONTROLLED_FLIGHT] == 0 && you.levitation == 0)        // kenku can fly, but only from the ground (until levitation 15, when it becomes permanent until revoked)
 
     {
         ability[abil_c] = ABIL_FLY;
@@ -231,7 +230,7 @@ void species_ability()          /* Now handles all special abilities */
 
 /* Assorted demonic powers follow: */
 
-    if (you.mutation[MUT_SUMMON_MINOR_DEMONS] != 0)     // Summon minor demon
+    if (you.mutation[MUT_SUMMON_MINOR_DEMONS] != 0)
 
     {
         ability[abil_c] = ABIL_SUMMON_MINOR_DEMON;
@@ -239,7 +238,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.mutation[MUT_SUMMON_DEMONS] != 0)   // Summon demon
+    if (you.mutation[MUT_SUMMON_DEMONS] != 0)
 
     {
         ability[abil_c] = ABIL_SUMMON_DEMON;
@@ -247,7 +246,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.mutation[MUT_HURL_HELLFIRE] != 0)   // Hellfire
+    if (you.mutation[MUT_HURL_HELLFIRE] != 0)
 
     {
         ability[abil_c] = ABIL_HELLFIRE;
@@ -255,7 +254,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.mutation[MUT_CALL_TORMENT] != 0)    // Torment
+    if (you.mutation[MUT_CALL_TORMENT] != 0)
 
     {
         ability[abil_c] = ABIL_TORMENT;
@@ -263,7 +262,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.mutation[MUT_RAISE_DEAD] != 0)      // Raise Dead
+    if (you.mutation[MUT_RAISE_DEAD] != 0)
 
     {
         ability[abil_c] = ABIL_RAISE_DEAD;
@@ -271,7 +270,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.mutation[MUT_CONTROL_DEMONS] != 0)  // Control Demon
+    if (you.mutation[MUT_CONTROL_DEMONS] != 0)
 
     {
         ability[abil_c] = ABIL_CONTROL_DEMON;
@@ -279,7 +278,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.mutation[MUT_PANDEMONIUM] != 0)     // Gate to Pan
+    if (you.mutation[MUT_PANDEMONIUM] != 0)
 
     {
         ability[abil_c] = ABIL_TO_PANDEMONIUM;
@@ -287,7 +286,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.mutation[MUT_CHANNEL_HELL] != 0)    // Channel from Hell
+    if (you.mutation[MUT_CHANNEL_HELL] != 0)
 
     {
         ability[abil_c] = ABIL_CHANNELING;
@@ -295,7 +294,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.mutation[MUT_THROW_FLAMES] != 0)    // Throw flame
+    if (you.mutation[MUT_THROW_FLAMES] != 0)
 
     {
         ability[abil_c] = ABIL_THROW_FLAME;
@@ -303,7 +302,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.mutation[MUT_THROW_FROST] != 0)     // Throw frost
+    if (you.mutation[MUT_THROW_FROST] != 0)
 
     {
         ability[abil_c] = ABIL_THROW_FROST;
@@ -311,7 +310,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.mutation[MUT_SMITE] != 0)   // Bolt of Draining
+    if (you.mutation[MUT_SMITE] != 0)
 
     {
         ability[abil_c] = ABIL_BOLT_OF_DRAINING;
@@ -382,7 +381,7 @@ void species_ability()          /* Now handles all special abilities */
     {
         ability[abil_c] = ABIL_TELEPORTATION;
         ability_fail[abil_c] = 50;
-        if (you.mutation[MUT_TELEPORT_AT_WILL] >= 2)
+        if (you.mutation[MUT_TELEPORT_AT_WILL] > 1)
             ability_fail[abil_c] = 20;
         abil_c++;
     }
@@ -621,7 +620,7 @@ void species_ability()          /* Now handles all special abilities */
 
 
 /*
-   if (you.hunger_state <= 2)
+   if (you.hunger_state <= HS_HUNGRY)
    {
    strcpy(info, "You're too hungry.");
    mpr(info);
@@ -653,7 +652,7 @@ query:
         if (unthing == 2)
             return;
 
-        if ((unthing >= 65 && unthing <= 90) || (unthing >= 97 && unthing <= 122))
+        if ((unthing >= 64 && unthing <= 91) || (unthing >= 97 && unthing <= 122))
         {
             keyin = unthing;
         }
@@ -683,7 +682,7 @@ unknown:
 
     abil_used = spc2;
 
-    if (you.hunger_state <= 1)
+    if (you.hunger_state <= HS_STARVING)
     {
         strcpy(info, "You're too hungry.");
         mpr(info);
@@ -747,7 +746,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 200 + random2(200) + random2(200);
         if (you.mutation[MUT_TELEPORT_AT_WILL] == 3)
-            you_teleport2(1);
+            you_teleport2(true);
         else
             you_teleport();
         break;
@@ -830,14 +829,14 @@ unknown:
 
     case ABIL_GO_BERSERK_I:     // berserk
 
-        if (you.hunger_state <= 2)
+        if (you.hunger_state <= HS_HUNGRY)
         {
             strcpy(info, "You're too hungry to go berserk.");
             mpr(info);
             return;
         }
-        if (go_berserk() == 0)
-            mpr("You fail to go berserk.");
+        if ( !go_berserk() )
+          mpr("You fail to go berserk.");
         break;
 
     case ABIL_FLY:              // Fly (kenku). Eventually becomes permanent (handled in acr.cc)
@@ -851,7 +850,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 100 + random2(100) + random2(100);
         cast_fly(you.experience_level * 4);
-        if (you.experience_level >= 15)
+        if (you.experience_level > 14)
         {
             mpr("You feel very comfortable in the air.");
             you.levitation = 100;
@@ -867,7 +866,7 @@ unknown:
             mpr("You don't have enough magic to use that ability.");
             return;
         }
-        if (you.hp <= 3)
+        if (you.hp < 4)
         {
             mpr("You don't have enough vitality to use that power.");
             return;
@@ -877,16 +876,16 @@ unknown:
         you.hp -= 3;
         you.redraw_hit_points = 1;
         you.hunger -= 50 + random2(100) + random2(100);
-        summon_ice_beast_etc(you.experience_level * 4, summon_any_demon(0));
+        summon_ice_beast_etc(you.experience_level * 4, summon_any_demon(DEMON_LESSER));
         break;
 
-    case ABIL_SUMMON_DEMON:     /* summon demon */
+    case ABIL_SUMMON_DEMON:
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
             return;
         }
-        if (you.hp <= 5)
+        if (you.hp < 6)
         {
             mpr("You don't have enough vitality to use that power.");
             return;
@@ -896,16 +895,16 @@ unknown:
         you.hp -= 5;
         you.redraw_hit_points = 1;
         you.hunger -= 100 + random2(200) + random2(200);
-        summon_ice_beast_etc(you.experience_level * 4, summon_any_demon(1));
+        summon_ice_beast_etc(you.experience_level * 4, summon_any_demon(DEMON_COMMON));
         break;
 
-    case ABIL_HELLFIRE: /* Hellfire */
+    case ABIL_HELLFIRE:
         if (you.magic_points < 8)
         {
             mpr("You don't have enough magic to use that ability.");
             return;
         }
-        if (you.hp <= 8)
+        if (you.hp < 9)
         {
             mpr("You don't have enough vitality to use that power.");
             return;
@@ -919,10 +918,10 @@ unknown:
 
         break;
 
-    case ABIL_TORMENT:          /* Torment */
-        if (you.is_undead != 0)
+    case ABIL_TORMENT:
+        if (you.is_undead)
         {
-            mpr("Undead cannot use this ability.");
+            mpr("The unliving cannot use this ability.");
             return;
         }
         if (you.magic_points < 9)
@@ -936,13 +935,13 @@ unknown:
         torment();
         break;
 
-    case ABIL_RAISE_DEAD:       /* Raise dead */
+    case ABIL_RAISE_DEAD:
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
             return;
         }
-        if (you.hp <= 5)
+        if (you.hp < 6)
         {
             mpr("You don't have enough vitality to use that power.");
             return;
@@ -956,13 +955,13 @@ unknown:
 
         break;
 
-    case ABIL_CONTROL_DEMON:    /* Control demon */
+    case ABIL_CONTROL_DEMON:
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
             return;
         }
-        if (you.hp <= 4)
+        if (you.hp < 5)
         {
             mpr("You don't have enough vitality to use that power.");
             return;
@@ -980,8 +979,8 @@ unknown:
         zapping(ZAP_CONTROL_DEMON, you.experience_level * 5, beam);
         break;
 
-    case ABIL_TO_PANDEMONIUM:   /* Pandemonium */
-        if (you.level_type == 3)
+    case ABIL_TO_PANDEMONIUM:
+        if (you.level_type == LEVEL_PANDEMONIUM)
         {
             mpr("You're already here.");
             return;
@@ -997,7 +996,7 @@ unknown:
         banished(99);
         break;
 
-    case ABIL_CHANNELING:       /* Channeling */
+    case ABIL_CHANNELING:
         if (you.hp < 1)
         {
             mpr("You don't have enough vitality to use that power.");
@@ -1014,13 +1013,13 @@ unknown:
         break;
 
     case ABIL_THROW_FLAME:
-    case ABIL_THROW_FROST:      /* Throw flame/frost */
+    case ABIL_THROW_FROST:
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
             return;
         }
-        if (you.hp <= 1)
+        if (you.hp < 2)
         {
             mpr("You don't have enough vitality to use that power.");
             return;
@@ -1041,13 +1040,13 @@ unknown:
             zapping(ZAP_FROST, you.experience_level * 3, beam);
         break;
 
-    case ABIL_BOLT_OF_DRAINING: /* bolt of draining */
+    case ABIL_BOLT_OF_DRAINING:
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
             return;
         }
-        if (you.hp <= 4)
+        if (you.hp < 5)
         {
             mpr("You don't have enough vitality to use that power.");
             return;
@@ -1066,8 +1065,8 @@ unknown:
         break;
 
 /* Items etc */
-    case ABIL_TURN_INVISIBLE:   /* turn invis */
-        if (you.hunger_state <= 2)
+    case ABIL_TURN_INVISIBLE:
+        if (you.hunger_state <= HS_HUNGRY)
         {
             mpr("You're too hungry to turn invisible.");
             return;
@@ -1083,12 +1082,12 @@ unknown:
         potion_effect(POT_INVISIBILITY, you.experience_level + 10);
         break;
 
-    case ABIL_TURN_VISIBLE:     /* uninvisible */
+    case ABIL_TURN_VISIBLE:
         mpr("You feel less transparent.");
         you.invis = 1;
         break;
 
-    case ABIL_LEVITATE: /* levitate */
+    case ABIL_LEVITATE:
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1100,12 +1099,12 @@ unknown:
         potion_effect(POT_LEVITATION, you.experience_level + 10);
         break;
 
-    case ABIL_STOP_LEVITATING:  /* unlevitate */
+    case ABIL_STOP_LEVITATING:
         mpr("You feel heavy.");
         you.levitation = 1;
         break;
 
-    case ABIL_END_TRANSFORMATION:       /* untransform */
+    case ABIL_END_TRANSFORMATION:
         mpr("You feel almost normal.");
         you.duration[DUR_TRANSFORMATION] = 2;
         break;
@@ -1126,7 +1125,7 @@ unknown:
         exercise(SK_INVOCATIONS, 1);
         break;
 
-    case ABIL_MINOR_HEALING:    /* Minor Healing */
+    case ABIL_MINOR_HEALING:
         if (you.magic_points < 2)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1141,7 +1140,7 @@ unknown:
         exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
-    case ABIL_PESTILENCE:       /* Pestilence */
+    case ABIL_PESTILENCE:
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1151,11 +1150,11 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 100 + random2(100) + random2(100);
         summon_swarm(you.piety);
-        lose_piety(2 + random2(2));
+        lose_piety( ( (coinflip()) ? 3 : 2 ) );
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
-    case ABIL_HOLY_WORD:        /* Holy Word */
+    case ABIL_HOLY_WORD:
         if (you.magic_points < 6)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1165,11 +1164,11 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 150 + random2(150) + random2(150);
         holy_word(you.piety);
-        lose_piety(3 + random2(2));
+        lose_piety( ( (coinflip()) ? 4 : 3 ) );
         exercise(SK_INVOCATIONS, 3 + random2(5));
         break;
 
-    case ABIL_SUMMON_GUARDIAN:  /* Guardian */
+    case ABIL_SUMMON_GUARDIAN:
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1183,9 +1182,6 @@ unknown:
         exercise(SK_INVOCATIONS, 8 + random2(10));
         break;
 
-
-
-
     case ABIL_SMITING:
         if (you.magic_points < 3)
         {
@@ -1197,10 +1193,10 @@ unknown:
         you.hunger -= 50 + random2(50) + random2(50);
         cast_smiting(you.skills[SK_INVOCATIONS] * 8);
         lose_piety(1);
-        exercise(SK_INVOCATIONS, 2 + random2(2));
+        exercise( SK_INVOCATIONS, ( (coinflip()) ? 3 : 2 ) );
         break;
 
-    case ABIL_ANNIHILATE_UNDEAD:        /* destroy undead */
+    case ABIL_ANNIHILATE_UNDEAD:
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1215,11 +1211,11 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 50 + random2(50) + random2(50);
         zapping(ZAP_DISPEL_UNDEAD, you.skills[SK_INVOCATIONS] * 6, beam);
-        lose_piety(1 + random2(2));
+        lose_piety( ( (coinflip()) ? 2 : 1 ) );
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
-    case ABIL_THUNDERBOLT:      /* thunderbolt */
+    case ABIL_THUNDERBOLT:
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1234,11 +1230,11 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 100 + random2(100) + random2(100);
         zapping(ZAP_LIGHTNING, you.skills[SK_INVOCATIONS] * 6, beam);
-        lose_piety(1 + random2(2));
+        lose_piety( ( (coinflip()) ? 2 : 1 ) );
         exercise(SK_INVOCATIONS, 3 + random2(6));
         break;
 
-    case ABIL_SUMMON_DAEVA:     /* Daeva */
+    case ABIL_SUMMON_DAEVA:
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1253,7 +1249,7 @@ unknown:
         break;
 
 
-    case ABIL_RECALL_UNDEAD_SLAVES:     /* recall undead */
+    case ABIL_RECALL_UNDEAD_SLAVES:
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1265,7 +1261,7 @@ unknown:
         exercise(SK_INVOCATIONS, 1);
         break;
 
-    case ABIL_ENSLAVE_UNDEAD:   /* enslave undead */
+    case ABIL_ENSLAVE_UNDEAD:
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1280,11 +1276,11 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 150 + random2(150) + random2(150);
         zapping(ZAP_ENSLAVE_UNDEAD, you.skills[SK_INVOCATIONS] * 8, beam);
-        lose_piety(2 + random2(2));
+        lose_piety( ( (coinflip()) ? 3 : 2 ) );
         exercise(SK_INVOCATIONS, 5 + random2(5));
         break;
 
-    case ABIL_INVOKE_DEATH:     /* Invoke Death */
+    case ABIL_INVOKE_DEATH:
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1299,7 +1295,7 @@ unknown:
         break;
 
 
-    case ABIL_ANIMATE_CORPSE:   /* Animate Skeleton */
+    case ABIL_ANIMATE_CORPSE:   /* Animate Skeleton */  // but class allowed is body, so which is it? 19jan2000 {dlb}
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1309,11 +1305,11 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 50 + random2(50) + random2(50);
         mpr("You call on the dead to walk for you...");
-        animate_a_corpse(you.x_pos, you.y_pos, 7, you.pet_target, 0);
+        animate_a_corpse(you.x_pos, you.y_pos, BEH_ENSLAVED, you.pet_target, CORPSE_BODY);
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
-    case ABIL_RECALL_UNDEAD:    /* Recall Undead */
+    case ABIL_RECALL_UNDEAD:
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1338,10 +1334,10 @@ unknown:
         mpr("You call on the dead to walk for you...");
         animate_dead(you.skills[SK_INVOCATIONS] + 1, 7, you.pet_target, 1);
         exercise(SK_INVOCATIONS, 2 + random2(4));
-        lose_piety(1 + random2(2));
+        lose_piety( ( (coinflip()) ? 2 : 1 ) );
         break;
 
-    case ABIL_DRAIN_LIFE:       /* Drain Life */
+    case ABIL_DRAIN_LIFE:
         if (you.magic_points < 6)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1355,7 +1351,7 @@ unknown:
         lose_piety(1 + random2(3));
         break;
 
-    case ABIL_CONTROL_UNDEAD:   /* Control Undead */
+    case ABIL_CONTROL_UNDEAD:
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1369,7 +1365,7 @@ unknown:
         lose_piety(2 + random2(3));
         break;
 
-    case ABIL_CHANNEL_ENERGY:   /* channeling */
+    case ABIL_CHANNEL_ENERGY:
         you.hunger -= 50 + random2(50) + random2(50);
         you.magic_points += 1 + random2(you.skills[SK_INVOCATIONS] / 4 + 2);
         if (you.magic_points > you.max_magic_points)
@@ -1380,7 +1376,7 @@ unknown:
         exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
-    case ABIL_MIGHT_I:          /* might */
+    case ABIL_MIGHT_I:
         if (you.magic_points < 2)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1393,7 +1389,7 @@ unknown:
         exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
-    case ABIL_HEALING_I:        /* Minor healing */
+    case ABIL_HEALING_I:
         if (you.magic_points < 2)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1408,7 +1404,7 @@ unknown:
         break;
 
 
-    case ABIL_HASTE:            /* haste */
+    case ABIL_HASTE:
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1424,7 +1420,7 @@ unknown:
 
 
 
-    case ABIL_MINOR_DESTRUCTION:        /* minor destr */
+    case ABIL_MINOR_DESTRUCTION:
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1439,7 +1435,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 20 + random2(20) + random2(20);
 
-        power = random22( you.skills[SK_INVOCATIONS] * 6 );
+        power = random2avg( (you.skills[SK_INVOCATIONS] * 6), 2 );
 
         switch (random2(5))
         {
@@ -1460,7 +1456,7 @@ unknown:
             zapping(ZAP_BREATHE_ACID, power, beam);
             break;
         }
-        exercise(SK_INVOCATIONS, 1 + random2(2));
+        exercise( SK_INVOCATIONS, ( (coinflip()) ? 2 : 1 ) );
         break;
 
     case ABIL_LESSER_SERVANT_OF_MAKHLEB:        /* minor summoning */
@@ -1473,11 +1469,11 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 50 + random2(50) + random2(50);
         summon_ice_beast_etc(20 + you.skills[SK_INVOCATIONS] * 3, 225 + random2(5));
-        lose_piety(1 + random2(2));
+        lose_piety( ( (coinflip()) ? 2 : 1 ) );
         exercise(SK_INVOCATIONS, 2 + random2(3));
         break;
 
-    case ABIL_MAJOR_DESTRUCTION:        /* major destr */
+    case ABIL_MAJOR_DESTRUCTION:
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1520,7 +1516,7 @@ unknown:
             beam[0].beam_source = MNG;
             beam[0].type = 43;
             beam[0].damage = 130;
-            beam[0].flavour = 5;
+            beam[0].flavour = BEAM_ELECTRICITY;
             beam[0].bx = you.x_pos;
             beam[0].by = you.y_pos;
             strcpy(beam[0].beam_name, "blast of lightning");
@@ -1530,7 +1526,7 @@ unknown:
             you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
             break;
         }
-        lose_piety(1 + random2(2));
+        lose_piety( ( (coinflip()) ? 2 : 1 ) );
         exercise(SK_INVOCATIONS, 3 + random2(5));
         break;
 
@@ -1544,28 +1540,28 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 100 + random2(50) + random2(50);
         summon_ice_beast_etc(20 + you.skills[SK_INVOCATIONS] * 3, 230 + random2(5));
-        lose_piety(2 + random2(2));
+        lose_piety( ( (coinflip()) ? 3 : 2 ) );
         exercise(SK_INVOCATIONS, 6 + random2(6));
         break;
 
 
 
-    case ABIL_GO_BERSERK_II:    /* berserk */
-        if (you.hunger_state <= 2)
+    case ABIL_GO_BERSERK_II:
+        if (you.hunger_state <= HS_HUNGRY)
         {
             strcpy(info, "You're too hungry to go berserk.");
             mpr(info);
             return;
         }
-        if (go_berserk() == 0)
-            mpr("You fail to go berserk.");
+        if ( !go_berserk() )
+          mpr("You fail to go berserk.");
         you.hunger -= 100 + random2(100) + random2(100);
         //exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
     case ABIL_MIGHT_II: /* might */
         potion_effect(POT_MIGHT, you.skills[SK_INVOCATIONS] * 6);
-        lose_piety(1 + random2(2));
+        lose_piety( ( (coinflip()) ? 2 : 1 ) );
         you.hunger -= 200 + random2(200) + random2(200);
         //exercise(SK_INVOCATIONS, 2 + random2(5));
         break;
@@ -1597,7 +1593,7 @@ unknown:
         if (cast_lesser_healing() == 0)
             break;
         you.hunger -= 100 + random2(100) + random2(100);
-        exercise(SK_INVOCATIONS, 1 + random2(2));
+        exercise( SK_INVOCATIONS, ( (coinflip()) ? 2 : 1 ) );
         break;
 
     case ABIL_PURIFICATION:

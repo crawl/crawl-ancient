@@ -23,11 +23,10 @@
 #include <curses.h>
 #endif
 
-#include "externs.h"
-#include "enum.h"
-
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "externs.h"
 
 int species_skills(char skill, char species);
 unsigned int skill_exp_needed(int lev);         /* both in skills.cc */
@@ -36,78 +35,60 @@ unsigned int skill_exp_needed(int lev);         /* both in skills.cc */
 
 char *skills[50][5] =
 {
-    {"Fighting", "Grunt", "Fighter", "Warrior", "Slayer"},      // fighter
-     {"Short Blades", "Stabber", "Cutter", "Slicer", "Knifefighter"},   // short blades
-     {"Long Swords", "Slasher", "Cutter", "Slicer", "Eviscerator"},     // long swords
-     {"Great Swords", "Slasher", "Cutter", "Slicer", "Eviscerator"},    // great swords
-     {"Axes", "Chopper", "Cleaver", "Hacker", "Axe Maniac"},    // axes
-     {"Maces & Flails", "Basher", "Cruncher", "Smasher", "Crusher"},    //  maces & flails
-     {"Polearms", "Chopper", "Cleaver", "Hacker", "Axe Maniac"},        // polearms
-     {"Staves", "Basher", "Cruncher", "Smasher", "Stickfighter"},       // staves
-
-// 8:
- {"Slings", "Slinger", "Bombardier", "Crazy Person", "Really Crazy Person"},    // slings - who would bother?
-     {"Bows", "Hunter", "Archer", "Sharpshooter", "Merry Person"},      // bows - as in 'Robin Hood and his...'
- {"Crossbows", "Hunter", "Archer", "Sharpshooter", "Ballista" /* silly */ },    // xbows
-     {"Darts", "Thrower", "Hurler", "Hurler, First Class", "Darts Champion"},   // darts
-// 12
-     {"Throwing", "Thrower", "Chucker", "Chucker, First Class", "Catapult"},    // throwing
-
-// 13
-    {"Armour", "Grunt", "Heavy Grunt", "Tortoise", "Invulnerable"},     // armour
-     {"Dodging", "Ducker", "Dodger", "Avoider", "Evader"},      // dodging
-     {"Stealth", "Sneaker", "Thief", "Shadow", "Undetectable"},         // stealth
-     {"Stabbing", "Backstabber", "Cutthroat", "Assassin", "Politician"},        // stabbing
-// 17
- {"Shields", "Shield-Bearer", "Blocker", "Blocker, First Class", "Hoplite"},    // shields
-     {"Traps & Doors", "Disarmer", "Trapper", "Architect", "Engineer"},         // traps
-
- {"Unarmed Combat", "Brawler", "Boxer", "Martial Artist", "Master"},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-
-    {"Spellcasting", "Magician", "Wizard", "Eclecticist", "Archmage"},  // spellcasting
-     {"Conjurations", "Evoker", "Conjurer", "Destroyer", "Annihilator"},        // conjure
-     {"Enchantments", "Charm-Maker", "Enchanter", "Infuser", "Spellbinder"},    // enchant
-     {"Summonings", "Caller", "Invoker", "Summoner", "Demonologist"},   // summoning
-// 29:
-  {"Necromancy", "Grave Robber", "Necromancer", "Reanimator", "Death Mage"},    // death
-     {"Translocations", "Jumper", "Shifter", "Blinker", "Translocater"},        // translocations
-     {"Transmigration", "Changer", "Transformer", "Transmogrifier", "Transmuter"},      // transmigrations
-     {"Divinations", "Seer", "Overseer", "Diviner", "Oracle"},  // divinations
-
-// 33:
-
-    {"Fire Magic", "Igniter", "Burner", "Pyromancer", "Infernalist"},
-    {"Ice Magic", "Freezer", "Refrigerator", "Cryomancer", "Englaciator"},
-    {"Air Magic", "Air Mage", "Cloud mage", "Sky Mage", "Storm Mage"},
-    {"Earth Magic", "Digger", "Geomancer", "Petrifier", "Earth Mage"},
-
-    {"Poison Magic", "Stinger", "Tainter", "Poisoner", "Venom Mage"},
+    {"Fighting", "Grunt", "Fighter", "Warrior", "Slayer"},             //  0- fighting
+    {"Short Blades", "Stabber", "Cutter", "Slicer", "Knifefighter"},   //  1- short blades
+    {"Long Blades", "Slasher", "Cutter", "Slicer", "Eviscerator"},     //  2- long swords
+    {NULL},                                                            //  3- was: great swords {dlb}
+    {"Axes", "Chopper", "Cleaver", "Hacker", "Axe Maniac"},            //  4- axes
+    {"Maces & Flails", "Basher", "Cruncher", "Smasher", "Crusher"},    //  5- maces & flails
+    {"Polearms", "Chopper", "Cleaver", "Hacker", "Halberdier"},        //  6- polearms
+    {"Staves", "Basher", "Cruncher", "Smasher", "Stickfighter"},       //  7- staves
+    {"Slings", "Slinger", "Flinger", "Whirler", "Crazy Person"},       //  8- slings (who would bother?)
+    {"Bows", "Hunter", "Archer", "Sharpshooter", "Merry Person"},      //  9- bows  (as in 'Robin Hood and his...')
+    {"Crossbows", "Hunter", "Archer", "Sharpshooter", "Ballista"},                  // 10- xbows
+    {"Darts", "Thrower", "Hurler", "Hurler, First Class", "Darts Champion"},        // 11- darts
+    {"Throwing", "Thrower", "Chucker", "Chucker, First Class", "Catapult"},         // 12- throwing
+    {"Armour", "Grunt", "Heavy Grunt", "Tortoise", "Invulnerable"},                 // 13- armour
+    {"Dodging", "Ducker", "Dodger", "Avoider", "Evader"},                           // 14- dodging
+    {"Stealth", "Sneak", "Covert", "Shadow", "Undetectable"},                       // 15- stealth
+    {"Stabbing", "Backstabber", "Cutthroat", "Blackguard", "Politician"},           // 16- stabbing
+    {"Shields", "Shield-Bearer", "Blocker", "Blocker, First Class", "Hoplite"},     // 17- shields
+    {"Traps & Doors", "Disarmer", "Trapper", "Architect", "Engineer"},              // 18- traps
+    {"Unarmed Combat", "Brawler", "Boxer", "Martial Artist", "Master"},             // 19- unarmed combat
+    {NULL},                                                                 // 20- empty
+    {NULL},                                                                 // 21- empty
+    {NULL},                                                                 // 22- empty
+    {NULL},                                                                 // 23- empty
+    {NULL},                                                                 // 24- empty
+    {"Spellcasting", "Magician", "Wizard", "Eclecticist", "Archmage"},      // 25- spellcasting
+    {"Conjurations", "Evoker", "Conjurer", "Destroyer", "Annihilator"},     // 26- conjuration
+    {"Enchantments", "Charm-Maker", "Enchanter", "Infuser", "Spellbinder"}, // 27- enchantment
+    {"Summonings", "Caller", "Invoker", "Summoner", "Demonologist"},        // 28- summoning
+    {"Necromancy", "Grave Robber", "Necromancer", "Reanimator", "Death Mage"},     // 29- necromany
+    {"Translocations", "Jumper", "Shifter", "Blinker", "Translocater"},            // 30- translocations
+    {"Transmigration", "Changer", "Transformer", "Transmogrifier", "Transmuter"},  // 31- transmigrations
+    {"Divinations", "Seer", "Overseer", "Diviner", "Oracle"},                      // 32- divinations
+    {"Fire Magic", "Firebug", "Arsonist", "Pyromancer", "Infernalist"},            // 33- fire
+    {"Ice Magic", "Freezer", "Refrigerator", "Cryomancer", "Englaciator"},         // 34- ice
+    {"Air Magic", "Air Mage", "Cloud mage", "Sky Mage", "Storm Mage"},             // 35- air
+    {"Earth Magic", "Digger", "Geomancer", "Petrifier", "Earth Mage"},             // 36- air
+    {"Poison Magic", "Stinger", "Tainter", "Poisoner", "Venom Mage"},              // 37- earth
+    {"Invocations", "Believer", "Servant", "Worldly Agent", "Invoker"},            // 38- invocations
 
 /*NOTE: If more skills are added, must change ranges in level_change() in crawl99.cc */
-
 /*{"",             "", "", "", ""}, */
 
-// 38:
-
-    {"Invocations", "Believer", "Servant", "Worldly Agent", "Invoker"},
-
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-/*{NULL},
-   {NULL},
-   {NULL},
-   {NULL} */
+    {NULL},                                                                 // 39- empty
+    {NULL},                                                                 // 40- empty
+    {NULL},                                                                 // 41- empty
+    {NULL},                                                                 // 42- empty
+    {NULL},                                                                 // 43- empty
+    {NULL},                                                                 // 44- empty
+    {NULL},                                                                 // 45- empty
+    {NULL},                                                                 // 46- empty
+    {NULL},                                                                 // 47- empty
+    {NULL},                                                                 // 48- empty
+    {NULL}                                                                  // 49- empty  {end of array}
 };
 
 
@@ -2141,19 +2122,24 @@ int calc_ep(void)
     else
         enp += spell_extra;
 
-/*if (enp > 21) enp = ((enp - 27) / 2) + 27;
+/* if (enp > 21) enp = ((enp - 27) / 2) + 27;
    if (enp > 36) enp = ((enp - 36) / 2) + 36;
    if (enp > 49) enp = ((enp - 49) / 2) + 49; */
 
-    if (enp > 18)
-        enp = ((enp - 18) / 2) + 18;
-    if (enp > 27)
-        enp = ((enp - 27) / 2) + 27;
-    if (enp > 36)
-        enp = ((enp - 36) / 2) + 36;
-
-    if (enp > 49)
-        enp = 49;
+    if (enp > 18)                           // nested if's rather than stacked 'em
+      {                                     // uglier than before but slightly
+        enp = ((enp - 18) / 2) + 18;        // more efficient 16jan2000 {dlb}
+        if (enp > 27)
+          {
+            enp = ((enp - 27) / 2) + 27;
+            if (enp > 36)
+              {
+                enp = ((enp - 36) / 2) + 36;
+                if (enp > 49)
+                    enp = 49;
+              }
+          }
+      }
 
     you.max_magic_points = enp;
     if (you.magic_points > you.max_magic_points)

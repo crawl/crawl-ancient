@@ -12,7 +12,7 @@
 #define SPELLS3_H
 
 void entomb();
-void you_teleport2(char allow_control);
+void you_teleport2(bool allow_control);
 void you_teleport();
 bool monster_on_level(int monster);
 bool allow_control_teleport();

@@ -31,9 +31,9 @@
 
 #include <string.h>
 
-#include "debug.h"
 #include "externs.h"
-#include "enum.h"
+
+#include "debug.h"
 #include "mstruct.h"
 #include "overmap.h"
 #include "player.h"
@@ -97,13 +97,14 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 0:
         *ch = 0;
         break;
+
     case 1:
         *color = env.rock_colour;
         *ch = 177;
         break;                  // rock wall - remember earth elementals
 
     case 2:
-        if (you.where_are_you == 17) {
+        if (you.where_are_you == BRANCH_HALL_OF_ZOT) {
             // stone in the realm of Zot is coloured the same as rock
             *color = env.rock_colour;
         }
@@ -117,15 +118,17 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 3:
         *ch = 254;
         break;
+
     case 4:
         *ch = 177;
         *color = CYAN;
         break;
+
     case 5:
         *ch = 177;              // hidden secret door
-
         *color = env.rock_colour;
         break;
+
     case 6:
         *ch = 177;
         *color = GREEN;
@@ -134,63 +137,63 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 7:
         *ch = '8';
         *color = DARKGREY;      // orcish idol
-
         break;
+
     case 8:
         *ch = 177;
         *color = YELLOW;
         break;                  // wax wall
-        /* Anything added here must also be added to the PLAIN_TERMINAL viewwindow2 below */
+  /* Anything added here must also be added to the PLAIN_TERMINAL viewwindow2 below */
+
     case 21:
         *ch = '8';
         *color = WHITE;         // silver statue
-
         if (visible[1] == 0)
             visible[1] = 3;
         else
             visible[1] = 2;
         visible[0] = 2;
         break;
+
     case 22:
         *ch = '8';
         *color = LIGHTGREY;     // granite statue
-
         break;
+
     case 23:
         *ch = '8';
         *color = LIGHTRED;      // orange crystal statue
-
         if (visible[2] == 0)
             visible[2] = 3;
         else
             visible[2] = 2;
         visible[0] = 2;
         break;
+
     case 35:
         *ch = '#';
         break;
+
     case 61:
         *ch = 247;
         *color = RED;           // lava!
-
         break;
+
     case 62:
         *ch = 247;              // this wavy thing also used for water elemental
-
         *color = BLUE;          // water
-
         break;
+
     case 65:
         *ch = 247;              // this wavy thing also used for water elemental
-
         *color = CYAN;          // shallow water
-
         break;
+
     case 67:
         *color = env.floor_colour;      //LIGHTGREY;
-
         *ch = 249;
         break;
+
     case 69:
         *ch = 239;
         *color = RED;
@@ -215,10 +218,12 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
         *color = MAGENTA;
         *ch = 94;
         break;
+
     case 77:
         *color = LIGHTGREY;
         *ch = 94;
         break;
+
     case 78:
         *ch = 249;
         *color = env.floor_colour;
@@ -229,7 +234,8 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
         *color = YELLOW;        // shop?
                 seen_other_thing(object);
         break;
-        // if I change anything above here, must also change magic mapping!
+  // if I change anything above here, must also change magic mapping!
+
     case 81:
         *ch = 239;
         *color = LIGHTGREY;
@@ -244,6 +250,7 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 84:
         *ch = '>';
         break;
+
     case 89:
         *color = BROWN;         // ladder
 
@@ -252,6 +259,7 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 88:
         *ch = '<';
         break;
+
     case 92:
         *color = CYAN;
         *ch = 239;
@@ -361,66 +369,77 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
         *ch = 220;
         seen_altar(GOD_ZIN);
         break;                  /* Altar to Zin */
+
     case 181:
         *color = YELLOW;
         *ch = 220;
         seen_altar(GOD_SHINING_ONE);
         break;                  /* Altar to TSO */
+
     case 182:
         *color = DARKGREY;
         *ch = 220;
         seen_altar(GOD_KIKUBAAQUDGHA);
         break;                  /* Altar to Kiku */
+
     case 183:
         *color = DARKGREY;
-        if (random2(3) == 0)
+        if ( one_chance_in(3) )
             *color = RED;
         *ch = 220;
         seen_altar(GOD_YREDELEMNUL);
         break;                  /* Altar to Yredelemnul */
+
     case 184:
         *color = random2(15) + 1;
         *ch = 220;
         seen_altar(GOD_XOM);
         break;                  /* Altar to Xom */
+
     case 185:
         *color = LIGHTBLUE;
-        if (random2(3) == 0)
+        if ( one_chance_in(3) )
             *color = LIGHTMAGENTA;
-        if (random2(3) == 0)
+        if ( one_chance_in(3) )
             *color = LIGHTRED;
         *ch = 220;
         seen_altar(GOD_VEHUMET);
         break;                  /* Altar to Vehumet */
+
     case 186:
         *color = CYAN;
         *ch = 220;
         seen_altar(GOD_OKAWARU);
         break;                  /* Altar to Okawaru */
+
     case 187:
         *color = RED;
-        if (random2(3) == 0)
+        if ( one_chance_in(3) )
             *color = LIGHTRED;
-        if (random2(3) == 0)
+        if ( one_chance_in(3) )
             *color = YELLOW;
         *ch = 220;
         seen_altar(GOD_MAKHLEB);
         break;                  /* Altar to Makhleb */
+
     case 188:
         *color = BLUE;
         *ch = 220;
         seen_altar(GOD_SIF_MUNA);
         break;                  /* Altar to Sif Muna */
+
     case 189:
         *color = RED;
         *ch = 220;
         seen_altar(GOD_TROG);
         break;                  /* Altar to Trog */
+
     case 190:
         *color = LIGHTMAGENTA;
         *ch = 220;
         seen_altar(GOD_NEMELEX_XOBEH);
         break;                  /* Altar to Nemelex */
+
     case 191:
         *color = LIGHTGREY;
         *ch = 220;
@@ -431,29 +450,36 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
         *color = BLUE;
         *ch = 159;
         break;                  /* water fountain - looks like a weird f */
+
     case 201:
         *color = LIGHTGREY;
         *ch = 159;
         break;                  /* dry fountain */
-    case 202:
+
+    case DNGN_SPARKLING_FOUNTAIN:
         *color = LIGHTBLUE;
         *ch = 159;
-        break;                  /* Magic fountain */
+        break;
+
     case 203:
         *color = LIGHTGREY;
         *ch = 159;
         break;                  /* dry fountain */
-    case 210:
+
+    case DNGN_PERMADRY_FOUNTAIN:
         *color = LIGHTGREY;
         *ch = 159;
-        break;                  /* permenantly dry fountain */
+        break;
+
     case 256:
         *ch = '0';
         break;
+
     case 257:
         *color = CYAN;
         *ch = '~';
         break;                  /* Invis creature walking through water */
+
     case 258:
         *ch = 41;
         break;                  // weapon )
@@ -602,7 +628,7 @@ void viewwindow2(char draw_it, bool do_updates)
             bufcount += 16;
         }
 
-        if (you.level_type != 1 && you.level_type != 2)
+        if (you.level_type != LEVEL_LABYRINTH && you.level_type != LEVEL_ABYSS)
         {
             bufcount = 0;
             for (count_y = 0; count_y < 17; count_y++)
@@ -709,51 +735,47 @@ char colour_code_map(unsigned char map_value)
         switch(map_value)
         {
 
-            case 75:            // dart trap
+            case DNGN_TRAP_I:
                 return LIGHTCYAN;
                 break;
 
-            case 76:            // trap?
+            case DNGN_TRAP_II:
+            case DNGN_TRAP_III:
                 return MAGENTA;
                 break;
 
-            case 77:            // trap?
-                return MAGENTA;
-                break;
-
-            case 80:            // shop?
+            case DNGN_ENTER_SHOP:
                 return YELLOW;
                 break;
 
-            case 92:            // dis
+            case DNGN_ENTER_DIS:
                 return CYAN;
                 break;
 
-            case 69:            // hell
-            case 93:            // gehenne
+            case DNGN_ENTER_HELL:
+            case DNGN_ENTER_GEHENNA:
                 return RED;
                 break;
 
-            case 94:            // cocytus
+            case DNGN_ENTER_COCYTUS:
                 return LIGHTCYAN;
                 break;
 
-            case 96:            // abyss
+            case DNGN_ENTER_ABYSS:
                 return random2(16);
                 break;
 
-            case 81:            // labyrinth
-            case 98:            // closed hell gates
+            case DNGN_ENTER_LABYRINTH:
+            case DNGN_STONE_ARCH:
                 return LIGHTGREY;
                 break;
 
-
-            case 99:            // to pandemonium
+            case DNGN_ENTER_PANDEMONIUM:
                 return LIGHTBLUE;
                 break;
 
-            case 100:           // out of
-            case 101:           // to another part
+            case DNGN_EXIT_PANDEMONIUM:
+            case DNGN_TRANSIT_PANDEMONIUM:
                 // These are Pandemonium gates, I'm using light
                 // green for all types of gates as to maintain
                 // the fact that the player should have to
@@ -762,22 +784,22 @@ char colour_code_map(unsigned char map_value)
                 return LIGHTGREEN;
                 break;
 
-            case 117:           // realm of zot?
-            case 137:           // realm of zot?
+            case DNGN_ENTER_ZOT:
+            case DNGN_EXIT_ZOT:
                 return MAGENTA;
                 break;
 
-            case 82:            // down stairs
-            case 83:
-            case 84:
-            case 85:
+            case DNGN_STONE_STAIRS_DOWN_I:
+            case DNGN_STONE_STAIRS_DOWN_II:
+            case DNGN_STONE_STAIRS_DOWN_III:
+            case DNGN_ROCK_STAIRS_DOWN:
                 return RED;
                 break;
 
-            case 86:            // up stairs
-            case 87:
-            case 88:
-            case 89:
+            case DNGN_STONE_STAIRS_UP_I:
+            case DNGN_STONE_STAIRS_UP_II:
+            case DNGN_STONE_STAIRS_UP_III:
+            case DNGN_ROCK_STAIRS_UP:
                 return BLUE;
                 break;
 
@@ -899,17 +921,17 @@ void monster_grid( bool do_updates )
                     }
                 }
 
-/*      if (mons [s].enchantment [2] == 6 && (you.see_invis == 0 || (mons [s].type >= MLAVA0 && mons [s].number == 1))) */
-                if (menv[s].enchantment[2] == 6 && (player_see_invis() == 0 || (menv[s].type >= MLAVA0 && menv[s].number == 1)))
+/*      if (mons [s].enchantment [2] == ENCH_INVIS && (you.see_invis == 0 || (mons [s].type >= MONS_LAVA_WORM && mons [s].number == 1))) */
+                if (menv[s].enchantment[2] == ENCH_INVIS && (player_see_invis() == 0 || (menv[s].type >= MONS_LAVA_WORM && menv[s].number == 1)))
                 {
-                    if (grd[menv[s].x][menv[s].y] == 65 && mons_flies(menv[s].type) == 0)
+                    if (grd[menv[s].x][menv[s].y] == DNGN_SHALLOW_WATER && mons_flies(menv[s].type) == 0)
                     {
                         show_backup [menv[s].x - you.x_pos + 9][menv[s].y - you.y_pos + 9] = env.show[menv[s].x - you.x_pos + 9][menv[s].y - you.y_pos + 9];
                         env.show[menv[s].x - you.x_pos + 9][menv[s].y - you.y_pos + 9] = 257;
                     }
                     continue;
                 }
-                else if (menv[s].behavior != 7 && (menv[s].type < 389 || menv[s].type > 393))
+                else if (menv[s].behavior != BEH_ENSLAVED && (menv[s].type < MONS_GOLD_MIMIC || menv[s].type > MONS_POTION_MIMIC))
                     you.running = 0;    /* Friendly monsters or mimics don't disturb */
 
                 if (menv[s].type < MONS_GOLD_MIMIC || menv[s].type > MONS_POTION_MIMIC) // mimics are always left on map
@@ -963,65 +985,65 @@ void item()
     {
         for (count_x = (you.x_pos - 8); (count_x < you.x_pos + 9); count_x++)
         {
-            if (env.igrid[count_x][count_y] != 501)
+            if (env.igrid[count_x][count_y] != ING)
             {
                 if (env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] != 0)
                 {
                     env.show_col[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = mitm.colour[env.igrid[count_x][count_y]];
-                    if (grd[count_x][count_y] == 65)
+                    if (grd[count_x][count_y] == DNGN_SHALLOW_WATER)
                         env.show_col[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = CYAN;
                     switch (mitm.base_type[env.igrid[count_x][count_y]])
                     {
-                    case 0:
+                    case OBJ_WEAPONS:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 258;
                         break;
                         // need + 6 because show is 0 - 12, not -6 - +6
-                    case 1:
+                    case OBJ_MISSILES:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 258;
                         break;
-                    case 2:
+                    case OBJ_ARMOUR:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 259;
                         break;
-                    case 3:
+                    case OBJ_WANDS:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 260;
                         break;
-                    case 4:
+                    case OBJ_FOOD:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 261;
                         break;
-                    case 5:
+                    case OBJ_UNKNOWN_I:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 262;
                         break;
-                    case 6:
+                    case OBJ_SCROLLS:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 263;
                         break;
-                    case 7:
+                    case OBJ_JEWELLERY:
                         if (mitm.sub_type[env.igrid[count_x][count_y]] >= 35)
                             env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 273;
                         else
                             env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 264;
                         break;
-                    case 8:
+                    case OBJ_POTIONS:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 265;
                         break;
-                    case 9:
+                    case OBJ_UNKNOWN_II:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 266;
                         break;
-                    case 10:
+                    case OBJ_BOOKS:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 267;
                         break;
-                    case 11:
+                    case OBJ_STAVES:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 269;
                         break;
-                    case 12:
+                    case OBJ_ORBS:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 256;
                         break;
-                    case 13:
+                    case OBJ_MISCELLANY:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 270;
                         break;
-                    case 14:
+                    case OBJ_CORPSES:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 271;
                         break;
-                    case 15:
+                    case OBJ_GOLD:
                         env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = 272;
                         env.show_col[count_x - you.x_pos + 9][count_y - you.y_pos + 9] = YELLOW;
                         break;
@@ -1053,7 +1075,7 @@ void cloud_grid(void)
         if (mnc > env.cloud_no)
             break;
 
-        if (env.cloud_type[s] != 0)
+        if (env.cloud_type[s] != CLOUD_NONE)
         {
             mnc++;
 
@@ -1063,70 +1085,81 @@ void cloud_grid(void)
                 show_backup [env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = env.show[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9];
                 env.show[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = 35;
 
-                switch (env.cloud_type[s] % 100)
+                switch ( env.cloud_type[s] )  // was % 100 before enumerating _MON clouds 22jan2000 {dlb}
                 {
-                case 1:
-                    if (env.cloud_decay[s] <= 20 || random2(4) == 0)
-                    {
+                case CLOUD_FIRE:
+                case CLOUD_FIRE_MON:
+                    if (env.cloud_decay[s] <= 20 || one_chance_in(4) )
+                      {
                         env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = RED;
                         break;
-                    }
-                    if (env.cloud_decay[s] <= 40 || random2(4) == 0)
-                    {
+                      }
+                    if (env.cloud_decay[s] <= 40 || one_chance_in(4) )
+                      {
                         env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = LIGHTRED;
                         break;
-                    }
+                      }
                     env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = YELLOW;
                     break;
-                case 2:
+
+                case CLOUD_STINK:
+                case CLOUD_STINK_MON:
                     env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = GREEN;
                     break;
-                case 3: //show_col [cloud_x [s] - you.x_pos + 9] [cloud_y [s] - you.y_pos + 9] = WHITE; break;
 
-                    if (env.cloud_decay[s] <= 20 || random2(4) == 0)
-                    {
+                case CLOUD_COLD:     // was simply: env.show_col ... = WHITE; break;
+                case CLOUD_COLD_MON:
+                    if (env.cloud_decay[s] <= 20 || one_chance_in(4) )
+                      {
                         env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = BLUE;
                         break;
-                    }
-                    if (env.cloud_decay[s] <= 40 || random2(4) == 0)
-                    {
+                      }
+                    if (env.cloud_decay[s] <= 40 || one_chance_in(4) )
+                      {
                         env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = LIGHTBLUE;
                         break;
-                    }
+                      }
                     env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = WHITE;
                     break;
-                case 4:
-                    if (random2(3) != 0)
+
+                case CLOUD_POISON:
+                case CLOUD_POISON_MON:
+                    if ( !one_chance_in(3) )
                         env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = GREEN;
                     else
                         env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = LIGHTGREEN;
                     break;
-                case 5:
+
+                case CLOUD_STEAM:
+                case CLOUD_STEAM_MON:
+                case CLOUD_GREY_SMOKE:
+                case CLOUD_GREY_SMOKE_MON:
                     env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = LIGHTGREY;
                     break;
-                case 6:
+
+                case CLOUD_BLUE_SMOKE:
+                case CLOUD_BLUE_SMOKE_MON:
                     env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = LIGHTBLUE;
                     break;
-                case 7:
+
+                case CLOUD_PURP_SMOKE:
+                case CLOUD_PURP_SMOKE_MON:
                     env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = MAGENTA;
                     break;
-                case 8:
-                    env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = LIGHTGREY;
-                    break;
-                case 9:
-                    env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = DARKGREY;
-                    break;      // miasma
 
-                case 10:
+                case CLOUD_MIASMA:
+                case CLOUD_MIASMA_MON:
+                case CLOUD_BLACK_SMOKE:
+                case CLOUD_BLACK_SMOKE_MON:
                     env.show_col[env.cloud_x[s] - you.x_pos + 9][env.cloud_y[s] - you.y_pos + 9] = DARKGREY;
-                    break;      // black smoke
+                    break;
 
                 }
             }
         }
     }                           // end of for i above
 
-}                               // end of cloudter_grid()
+}                               // end of cloud_grid()
 
 
 
@@ -2183,7 +2216,7 @@ void draw_border(char your_name[kNameLen], char class_name[40], char tspecies)
 
     clrscr();
     gotoxy(40, 1);
-    textcolor(7);
+    textcolor(LIGHTGREY);
     char print_it[80];
     char print_it2[42];
 
@@ -2217,7 +2250,7 @@ void draw_border(char your_name[kNameLen], char class_name[40], char tspecies)
     window(1, 1, 80, 25);
 #endif
     gotoxy(40, 1);
-    textcolor(7);
+    textcolor(LIGHTGREY);
     cprintf(print_it2);
     gotoxy(40, 2);
     cprintf(species_name(tspecies));
@@ -2588,95 +2621,59 @@ unsigned char mapchar(unsigned char ldfk)
 
     switch (ldfk)
     {
-    case 0:
+    case DNGN_UNSEEN:
         showed = 0;
         break;
-    case 5:                     // secret door
 
-    case 1:
+    case DNGN_SECRET_DOOR:
+    case DNGN_ROCK_WALL:
+    case DNGN_STONE_WALL:
+    case DNGN_METAL_WALL:
+    case DNGN_GREEN_CRYSTAL_WALL:
+    case DNGN_WAX_WALL:
         showed = 176;
-        break;                  // rock wall
+        break;
 
-    case 2:
-        showed = 176;
-        break;                  // stone wall
 
-    case 3:
+    case DNGN_CLOSED_DOOR:
         showed = 206;
-        break;                  // door
-
-    case 4:
-    case 6:
-    case 8:
-        showed = 176;
         break;
-    case 11:
+
+    case 20:                  // orcish idol
+    case 24:                  // ???
+    case 25:                  // ???
+    case DNGN_SILVER_STATUE:
+    case DNGN_GRANITE_STATUE:
+    case DNGN_ORANGE_CRYSTAL_STATUE:
+        showed = '8';
+        break;
+
+    case DNGN_LAVA_X:
+    case DNGN_WATER_X:
+    case DNGN_LAVA:
+    case DNGN_DEEP_WATER:
+    case DNGN_SHALLOW_WATER:
         showed = 247;
         break;
-    case 12:
-        showed = 247;
-        break;
-    case 20:
-        showed = '8';
-        break;                  // orcish idol
 
-    case 21:
-        showed = '8';
-        break;                  // silver statue
-
-    case 22:
-        showed = '8';
-        break;                  // granite statue
-
-    case 23:
-        showed = '8';
-        break;                  //
-
-    case 24:
-        showed = '8';
-        break;                  //
-
-    case 25:
-        showed = '8';
-        break;                  //
-
-    case 61:
-    case 62:
-    case 65:
-        showed = 247;
-        break;
-    case 67:
+    case DNGN_FLOOR:
+    case DNGN_UNDISCOVERED_TRAP:
         showed = 250;
         break;
-        //case 68: showed = '>'; break; // < (60)
-    case 69:
-        showed = 239;
-        break;                  // >
 
-    case 70:
+    //case 68: showed = '>'; break; // < (60)
+
+    case DNGN_OPEN_DOOR:
         showed = 39;
-        break;                  // open door
-        //case 72: showed = '<'; break;
-
-    case 75:
-        showed = 94;
-        break;                  // ^ dart trap
-
-    case 76:
-        showed = 94;
-        break;                  // ^ magic trap
-
-    case 77:
-        showed = 94;
         break;
-    case 78:
-        showed = 250;
-        break;                  // undiscovered trap
 
-    case 81:
-    case 80:
-        showed = 239;
-        break;                  // shop
+    //case 72: showed = '<'; break;
+
+    case DNGN_TRAP_I:
+    case DNGN_TRAP_II:
+    case DNGN_TRAP_III:
+        showed = '^';
+        break;
 
     case 82:
     case 83:
@@ -2724,49 +2721,52 @@ unsigned char mapchar(unsigned char ldfk)
         showed = '<';
         break;
 
-    case 92:
-    case 93:
-    case 94:
-    case 95:
-    case 96:
-    case 97:
-    case 98:
-    case 99:
-    case 100:
-    case 101:
-    case 117:
-    case 137:
+    case DNGN_ENTER_HELL:
+    case DNGN_ENTER_LABYRINTH:
+    case DNGN_ENTER_SHOP:
+    case DNGN_ENTER_DIS:
+    case DNGN_ENTER_GEHENNA:
+    case DNGN_ENTER_COCYTUS:
+    case DNGN_ENTER_TARTARUS:
+    case DNGN_ENTER_ABYSS:
+    case DNGN_EXIT_ABYSS:
+    case DNGN_STONE_ARCH:
+    case DNGN_ENTER_PANDEMONIUM:
+    case DNGN_EXIT_PANDEMONIUM:
+    case DNGN_TRANSIT_PANDEMONIUM:
+    case DNGN_ENTER_ZOT:
+    case DNGN_EXIT_ZOT:
         showed = 239;
         break;
 
-    case 180:
-    case 181:
-    case 182:
-    case 183:
-    case 184:
-    case 185:
-    case 186:
-    case 187:
-    case 188:
-    case 189:
-    case 190:
-    case 191:
+    case DNGN_ALTAR_ZIN:
+    case DNGN_ALTAR_SHINING_ONE:
+    case DNGN_ALTAR_KIKUBAAQUDGHA:
+    case DNGN_ALTAR_YREDELEMNUL:
+    case DNGN_ALTAR_XOM:
+    case DNGN_ALTAR_VEHUMET:
+    case DNGN_ALTAR_OKAWARU:
+    case DNGN_ALTAR_MAKHLEB:
+    case DNGN_ALTAR_SIF_MUNA:
+    case DNGN_ALTAR_TROG:
+    case DNGN_ALTAR_NEMELEX_XOBEH:
+    case DNGN_ALTAR_ELYVILON:
         showed = 220;
-        break;                  /* Altars */
+        break;
 
-    case 200:
-    case 201:
-    case 202:
-    case 203:
-    case 204:
-    case 205:
-    case 206:
-    case 207:
-    case 208:
-    case 209:
-    case 210:
+    case DNGN_BLUE_FOUNTAIN:
+    case DNGN_DRY_FOUNTAIN_I:
+    case DNGN_SPARKLING_FOUNTAIN:
+    case DNGN_DRY_FOUNTAIN_II:
+    case DNGN_DRY_FOUNTAIN_III:
+    case DNGN_DRY_FOUNTAIN_IV:
+    case DNGN_DRY_FOUNTAIN_V:
+    case DNGN_DRY_FOUNTAIN_VI:
+    case DNGN_DRY_FOUNTAIN_VII:
+    case DNGN_DRY_FOUNTAIN_VIII:
+    case DNGN_PERMADRY_FOUNTAIN:
         showed = 159;
-        break;                  /* fountain */
+        break;
 
     default:
         showed = 0;
@@ -2783,97 +2783,63 @@ unsigned char mapchar2(unsigned char ldfk)
 
     switch (ldfk)
     {
-    case 0:
+    case DNGN_UNSEEN:
         showed = 0;
         break;
-    case 5:                     // secret door
 
-    case 1:
-        showed = 177;
-        break;                  // rock wall
-
-    case 2:
-        showed = 177;
-        break;                  // stone wall
-
-    case 3:
-        showed = 254;
-        break;                  // door
-
-    case 4:
-    case 6:
-    case 8:
+    case DNGN_SECRET_DOOR:
+    case DNGN_ROCK_WALL:
+    case DNGN_STONE_WALL:
+    case DNGN_METAL_WALL:
+    case DNGN_GREEN_CRYSTAL_WALL:
+    case DNGN_WAX_WALL:
         showed = 177;
         break;
-/*  case 11: showed = 247; break;
-   case 12: showed = 247; break; */
-    case 20:
-        showed = '8';
-        break;                  // orcish idol
 
-    case 21:
-        showed = '8';
-        break;                  // silver statue
+    case DNGN_CLOSED_DOOR:
+        showed = 254;
+        break;
 
-    case 22:
-        showed = '8';
-        break;                  // granite statue
+    //case 11: showed = 247; break;
+    //case 12: showed = 247; break;
 
-    case 23:
+    case 20:                  // orcish idol
+    case 24:                  // ???
+    case 25:                  // ???
+    case DNGN_SILVER_STATUE:
+    case DNGN_GRANITE_STATUE:
+    case DNGN_ORANGE_CRYSTAL_STATUE:
         showed = '8';
-        break;                  //
+        break;
 
-    case 24:
-        showed = '8';
-        break;                  //
-
-    case 25:
-        showed = '8';
-        break;                  //
-
-    case 61:
-    case 62:
-    case 65:
+    case DNGN_LAVA:
+    case DNGN_DEEP_WATER:
+    case DNGN_SHALLOW_WATER:
         showed = 247;
         break;
-    case 67:
+
+    case DNGN_FLOOR:
+    case DNGN_UNDISCOVERED_TRAP:
         showed = 249;
         break;
+
     case 68:
         showed = '>';
         break;                  // <
 
-    case 69:
-        showed = 239;
-        break;                  // >
-
-    case 70:
+    case DNGN_OPEN_DOOR:
         showed = 39;
-        break;                  // open door
+        break;
 
     case 72:
         showed = '<';
         break;                  // <
 
-    case 75:
-        showed = 94;
-        break;                  // ^ dart trap
-
-    case 76:
-        showed = 94;
-        break;                  // ^ magic trap
-
-    case 77:
-        showed = 94;
+    case DNGN_TRAP_I:
+    case DNGN_TRAP_II:
+    case DNGN_TRAP_III:
+        showed = '^';
         break;
-    case 78:
-        showed = 249;
-        break;                  // undiscovered trap
-
-    case 81:
-    case 80:
-        showed = 239;
-        break;                  // shop
 
     case 82:
     case 83:
@@ -2921,49 +2887,52 @@ unsigned char mapchar2(unsigned char ldfk)
         showed = '<';
         break;
 
-    case 92:
-    case 93:
-    case 94:
-    case 95:
-    case 96:
-    case 97:
-    case 98:
-    case 99:
-    case 100:
-    case 101:
-    case 117:
-    case 137:
+    case DNGN_ENTER_HELL:
+    case DNGN_ENTER_LABYRINTH:
+    case DNGN_ENTER_SHOP:
+    case DNGN_ENTER_DIS:
+    case DNGN_ENTER_GEHENNA:
+    case DNGN_ENTER_COCYTUS:
+    case DNGN_ENTER_TARTARUS:
+    case DNGN_ENTER_ABYSS:
+    case DNGN_EXIT_ABYSS:
+    case DNGN_STONE_ARCH:
+    case DNGN_ENTER_PANDEMONIUM:
+    case DNGN_EXIT_PANDEMONIUM:
+    case DNGN_TRANSIT_PANDEMONIUM:
+    case DNGN_ENTER_ZOT:
+    case DNGN_EXIT_ZOT:
         showed = 239;
         break;
 
-    case 180:
-    case 181:
-    case 182:
-    case 183:
-    case 184:
-    case 185:
-    case 186:
-    case 187:
-    case 188:
-    case 189:
-    case 190:
-    case 191:
+    case DNGN_ALTAR_ZIN:
+    case DNGN_ALTAR_SHINING_ONE:
+    case DNGN_ALTAR_KIKUBAAQUDGHA:
+    case DNGN_ALTAR_YREDELEMNUL:
+    case DNGN_ALTAR_XOM:
+    case DNGN_ALTAR_VEHUMET:
+    case DNGN_ALTAR_OKAWARU:
+    case DNGN_ALTAR_MAKHLEB:
+    case DNGN_ALTAR_SIF_MUNA:
+    case DNGN_ALTAR_TROG:
+    case DNGN_ALTAR_NEMELEX_XOBEH:
+    case DNGN_ALTAR_ELYVILON:
         showed = 220;
-        break;                  /* Altars */
+        break;
 
-    case 200:
-    case 201:
-    case 202:
-    case 203:
-    case 204:
-    case 205:
-    case 206:
-    case 207:
-    case 208:
-    case 209:
-    case 210:
+    case DNGN_BLUE_FOUNTAIN:
+    case DNGN_DRY_FOUNTAIN_I:
+    case DNGN_SPARKLING_FOUNTAIN:
+    case DNGN_DRY_FOUNTAIN_II:
+    case DNGN_DRY_FOUNTAIN_III:
+    case DNGN_DRY_FOUNTAIN_IV:
+    case DNGN_DRY_FOUNTAIN_V:
+    case DNGN_DRY_FOUNTAIN_VI:
+    case DNGN_DRY_FOUNTAIN_VII:
+    case DNGN_DRY_FOUNTAIN_VIII:
+    case DNGN_PERMADRY_FOUNTAIN:
         showed = 159;
-        break;                  /* fountain */
+        break;
     default:
         showed = 0;
         break;
@@ -3006,16 +2975,17 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
     switch (object)
     {
 
-                    case 0:
+                    case DNGN_UNSEEN:
                         *ch = 0;
                         break;
+
                     case 1:
                         *color = env.rock_colour;
                         *ch = '#';
                         break;  // rock wall - remember earth elementals
 
                     case 2:
-                        if (you.where_are_you == 17)
+                        if (you.where_are_you == BRANCH_HALL_OF_ZOT)
                             *color = env.rock_colour;
                         else
                             *color = LIGHTGREY;
@@ -3025,15 +2995,17 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
                     case 3:
                         *ch = '+';
                         break;
+
                     case 4:
                         *ch = '#';
                         *color = CYAN;
                         break;
+
                     case 5:
                         *ch = '#';   // hidden secret door
-
                         *color = env.rock_colour;
                         break;
+
                     case 6:
                         *ch = '#';
                         *color = GREEN;
@@ -3042,8 +3014,8 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
                     case 7:
                         *ch = '8';
                         *color = DARKGREY;         // orcish idol
-
                         break;
+
                     case 8:
                         *ch = '#';
                         *color = YELLOW;
@@ -3059,11 +3031,12 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
                             visible[1] = 2;
                         visible[0] = 2;
                         break;
+
                     case 22:
                         *ch = '8';
                         *color = LIGHTGREY;        // granite statue
-
                         break;
+
                     case 23:
                         *ch = '8';
                         *color = LIGHTRED;         // orange crystal statue
@@ -3074,32 +3047,33 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
                             visible[2] = 2;
                         visible[0] = 2;
                         break;
+
                     case 35:
                         *ch = '#';
                         break;
+
                     case 61:
                         *ch = '{';
                         *color = RED;      // lava!
-
                         break;
+
                     case 62:
                         *ch = '{';   // this wavy thing also used for water elemental
                         // note that some monsters which use IBM graphics aren't set for this function - too tricky for now.
 
                         *color = BLUE;     // water
-
                         break;
+
                     case 65:
                         *ch = '{';
                         *color = CYAN;     // shallow water
-
                         break;
 
                     case 67:
                         *color = env.floor_colour;         //LIGHTGREY;
-
                         *ch = '.';
                         break;
+
                     case 69:
                         *ch = '\\';
                         *color = RED;
@@ -3124,10 +3098,12 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
                         *color = MAGENTA;
                         *ch = 94;
                         break;
+
                     case 77:
                         *color = LIGHTGREY;
                         *ch = 94;
                         break;
+
                     case 78:
                         *ch = '.';
                         *color = env.floor_colour;
@@ -3139,6 +3115,7 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
                                                 seen_other_thing(80);
                         break;
 // if I change anything above here, must also change magic mapping!
+
                     case 81:
                         *ch = '\\';
                         *color = LIGHTGREY;
@@ -3153,9 +3130,9 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
                     case 84:
                         *ch = '>';
                         break;
+
                     case 89:
                         *color = BROWN;    // ladder
-
                     case 86:
                     case 87:
                     case 88:
@@ -3266,73 +3243,82 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
                         *ch = '\\';
                         break;
 
-
-
                     case 180:
                         *color = WHITE;
                         *ch = '_';
                                         seen_altar(GOD_ZIN);
                         break;  /* Altar to Zin */
+
                     case 181:
                         *color = YELLOW;
                         *ch = '_';
                                         seen_altar(GOD_SHINING_ONE);
                         break;  /* Altar to TSO */
+
                     case 182:
                         *color = DARKGREY;
                         *ch = '_';
                                         seen_altar(GOD_KIKUBAAQUDGHA);
                         break;  /* Altar to Kiku */
+
                     case 183:
                         *color = DARKGREY;
-                        if (random2(3) == 0)
+                        if ( one_chance_in(3) )
                             *color = RED;
                         *ch = '_';
                                         seen_altar(GOD_YREDELEMNUL);
                         break;  /* Altar to Yredelemnul */
+
                     case 184:
                         *color = random2(15) + 1;
                         *ch = '_';
                                         seen_altar(GOD_XOM);
                         break;  /* Altar to Xom */
+
                     case 185:
                         *color = LIGHTBLUE;
-                        if (random2(3) == 0)
+                        if ( one_chance_in(3) )
                             *color = LIGHTMAGENTA;
-                        if (random2(3) == 0)
+                        if ( one_chance_in(3) )
                             *color = LIGHTRED;
                         *ch = '_';
                                         seen_altar(GOD_VEHUMET);
                         break;  /* Altar to Vehumet */
+
                     case 186:
                         *color = CYAN;
                         *ch = '_';
                                         seen_altar(GOD_OKAWARU);
                         break;  /* Altar to Okawaru */
+
                     case 187:
                         *color = RED;
-                        if (random2(3) == 0)
+                        if ( one_chance_in(3) )
                             *color = LIGHTRED;
-                        if (random2(3) == 0)
+                        if ( one_chance_in(3) )
                             *color = YELLOW;
                         *ch = '_';
                                         seen_altar(GOD_MAKHLEB);
                         break;  /* Altar to Makhleb */
+
                     case 188:
                         *color = BLUE;
                         *ch = '_';
                                         seen_altar(GOD_SIF_MUNA);
                         break;  /* Altar to Sif Muna */
+
                     case 189:
                         *color = RED;
                         *ch = '_';
                                         seen_altar(GOD_TROG);
                         break;  /* Altar to Trog */
+
                     case 190:
                         *color = LIGHTMAGENTA;
                         *ch = '_';
                                         seen_altar(GOD_NEMELEX_XOBEH);
                         break;  /* Altar to Nemelex */
+
                     case 191:
                         *color = LIGHTGREY;
                         *ch = '_';
@@ -3343,23 +3329,26 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
                         *color = BLUE;
                         *ch = '}';
                         break;  /* Fountain */
+
                     case 201:
                         *color = LIGHTGREY;
                         *ch = '}';
                         break;  /* dry fountain */
-                    case 202:
+
+                    case DNGN_SPARKLING_FOUNTAIN:
                         *color = LIGHTBLUE;
                         *ch = '}';
-                        break;  /* Magic fountain */
+                        break;
+
                     case 203:
                         *color = LIGHTGREY;
                         *ch = '}';
                         break;  /* dry fountain */
 
-                    case 210:
+                    case DNGN_PERMADRY_FOUNTAIN:
                         *color = LIGHTGREY;
                         *ch = '}';
-                        break;  /* permenantly dry fountain */
+                        break;
 
                     case 256:
                         *ch = '0';
@@ -3451,6 +3440,8 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch, unsigned 
 }
 
 
+
+
 /*
    This is the viewwindow function for computers without IBM graphic displays.
    It is activated by a command line argument, which sets a function pointer.
@@ -3522,7 +3513,7 @@ void viewwindow3(char draw_it, bool do_updates)
         }
         bufcount = 0;
 
-        if (you.level_type != 1 && you.level_type != 2)
+        if (you.level_type != LEVEL_LABYRINTH && you.level_type != LEVEL_ABYSS)
         {
             for (count_y = 0; count_y < 17; count_y++)
             {
@@ -3629,101 +3620,66 @@ void viewwindow3(char draw_it, bool do_updates)
 
 
 
+
 unsigned char mapchar3(unsigned char ldfk)
 {
     unsigned char showed = 0;
 
     switch (ldfk)
     {
-    case 0:
+    case DNGN_UNSEEN:
         showed = 0;
         break;
-    case 5:                     // secret door
 
-    case 1:
+    case DNGN_SECRET_DOOR:
+    case DNGN_ROCK_WALL:
+    case DNGN_STONE_WALL:
+    case DNGN_METAL_WALL:
+    case DNGN_GREEN_CRYSTAL_WALL:
+    case DNGN_WAX_WALL:
         showed = '*';
-        break;                  // rock wall
+        break;
 
-    case 2:
-        showed = '*';
-        break;                  // stone wall
-
-    case 3:
+    case DNGN_CLOSED_DOOR:
         showed = '+';
-        break;                  // door
-
-    case 4:
-    case 6:
-    case 8:
-        showed = '*';
         break;
-    case 11:
+
+    case 20:                  // orcish idol
+    case 24:                  // ???
+    case 25:                  // ???
+    case DNGN_SILVER_STATUE:
+    case DNGN_GRANITE_STATUE:
+    case DNGN_ORANGE_CRYSTAL_STATUE:
+        showed = '8';
+        break;
+
+    case DNGN_LAVA_X:
+    case DNGN_WATER_X:
+    case DNGN_LAVA:
+    case DNGN_DEEP_WATER:
+    case DNGN_SHALLOW_WATER:
         showed = '{';
         break;
-    case 12:
-        showed = '{';
-        break;
-    case 20:
-        showed = '8';
-        break;                  // orcish idol
 
-    case 21:
-        showed = '8';
-        break;                  // silver statue
-
-    case 22:
-        showed = '8';
-        break;                  // granite statue
-
-    case 23:
-        showed = '8';
-        break;                  //
-
-    case 24:
-        showed = '8';
-        break;                  //
-
-    case 25:
-        showed = '8';
-        break;                  //
-
-    case 61:
-    case 62:
-    case 65:
-        showed = '{';
-        break;
-    case 67:
+    case DNGN_FLOOR:
+    case DNGN_UNDISCOVERED_TRAP:
         showed = ',';
         break;
-        //case 68: showed = '>'; break; // < (60)
-    case 69:
-        showed = '\\';
-        break;                  // >
 
-    case 70:
+    //case 68: showed = '>'; break; // < (60)
+
+
+    case DNGN_OPEN_DOOR:
         showed = 39;
         break;                  // open door
-        //case 72: showed = '<'; break;
 
-    case 75:
-        showed = 94;
-        break;                  // ^ dart trap
+    //case 72: showed = '<'; break;
 
-    case 76:
-        showed = 94;
-        break;                  // ^ magic trap
-
-    case 77:
-        showed = 94;
+    case DNGN_TRAP_I:
+    case DNGN_TRAP_II:
+    case DNGN_TRAP_III:
+        showed = '^';
         break;
-    case 78:
-        showed = ',';
-        break;                  // undiscovered trap
-
-    case 81:
-    case 80:
-        showed = '\\';
-        break;                  // shop
 
     case 82:
     case 83:
@@ -3771,49 +3727,52 @@ unsigned char mapchar3(unsigned char ldfk)
         showed = '<';
         break;
 
-    case 92:
-    case 93:
-    case 94:
-    case 95:
-    case 96:
-    case 97:
-    case 98:
-    case 99:
-    case 100:
-    case 101:
-    case 117:
-    case 137:
+    case DNGN_ENTER_HELL:
+    case DNGN_ENTER_LABYRINTH:
+    case DNGN_ENTER_SHOP:
+    case DNGN_ENTER_DIS:
+    case DNGN_ENTER_GEHENNA:
+    case DNGN_ENTER_COCYTUS:
+    case DNGN_ENTER_TARTARUS:
+    case DNGN_ENTER_ABYSS:
+    case DNGN_EXIT_ABYSS:
+    case DNGN_STONE_ARCH:
+    case DNGN_ENTER_PANDEMONIUM:
+    case DNGN_EXIT_PANDEMONIUM:
+    case DNGN_TRANSIT_PANDEMONIUM:
+    case DNGN_ENTER_ZOT:
+    case DNGN_EXIT_ZOT:
         showed = '\\';
         break;
 
-    case 180:
-    case 181:
-    case 182:
-    case 183:
-    case 184:
-    case 185:
-    case 186:
-    case 187:
-    case 188:
-    case 189:
-    case 190:
-    case 191:
+    case DNGN_ALTAR_ZIN:
+    case DNGN_ALTAR_SHINING_ONE:
+    case DNGN_ALTAR_KIKUBAAQUDGHA:
+    case DNGN_ALTAR_YREDELEMNUL:
+    case DNGN_ALTAR_XOM:
+    case DNGN_ALTAR_VEHUMET:
+    case DNGN_ALTAR_OKAWARU:
+    case DNGN_ALTAR_MAKHLEB:
+    case DNGN_ALTAR_SIF_MUNA:
+    case DNGN_ALTAR_TROG:
+    case DNGN_ALTAR_NEMELEX_XOBEH:
+    case DNGN_ALTAR_ELYVILON:
         showed = '_';
-        break;                  /* Altars */
+        break;
 
-    case 200:
-    case 201:
-    case 202:
-    case 203:
-    case 204:
-    case 205:
-    case 206:
-    case 207:
-    case 208:
-    case 209:
-    case 210:
+    case DNGN_BLUE_FOUNTAIN:
+    case DNGN_DRY_FOUNTAIN_I:
+    case DNGN_SPARKLING_FOUNTAIN:
+    case DNGN_DRY_FOUNTAIN_II:
+    case DNGN_DRY_FOUNTAIN_III:
+    case DNGN_DRY_FOUNTAIN_IV:
+    case DNGN_DRY_FOUNTAIN_V:
+    case DNGN_DRY_FOUNTAIN_VI:
+    case DNGN_DRY_FOUNTAIN_VII:
+    case DNGN_DRY_FOUNTAIN_VIII:
+    case DNGN_PERMADRY_FOUNTAIN:
         showed = '}';
-        break;                  /* fountain */
+        break;
 
     default:
         showed = 0;
@@ -3824,107 +3783,71 @@ unsigned char mapchar3(unsigned char ldfk)
 
 }
 
+
+
+
 unsigned char mapchar4(unsigned char ldfk)
 {
     unsigned char showed = 0;
 
     switch (ldfk)
     {
-    case 0:
+    case DNGN_UNSEEN:
         showed = 0;
         break;
-    case 5:                     // secret door
 
-    case 1:
-        showed = '#';
-        break;                  // rock wall
-
-    case 2:
-        showed = '#';
-        break;                  // stone wall
-
-    case 3:
+    case DNGN_CLOSED_DOOR:
         showed = '+';
-        break;                  // door
+        break;
 
-    case 4:
-    case 6:
-    case 8:
+    case DNGN_SECRET_DOOR:
+    case DNGN_ROCK_WALL:
+    case DNGN_STONE_WALL:
+    case DNGN_METAL_WALL:
+    case DNGN_GREEN_CRYSTAL_WALL:
+    case DNGN_WAX_WALL:
         showed = '#';
         break;
-    case 11:
+
+    case 20:                  // orcish idol
+    case 24:                  // ???
+    case 25:                  // ???
+    case DNGN_SILVER_STATUE:
+    case DNGN_GRANITE_STATUE:
+    case DNGN_ORANGE_CRYSTAL_STATUE:
+        showed = '8';
+        break;
+
+    case DNGN_LAVA_X:
+    case DNGN_WATER_X:
+    case DNGN_LAVA:
+    case DNGN_DEEP_WATER:
+    case DNGN_SHALLOW_WATER:
         showed = '{';
         break;
-    case 12:
-        showed = '{';
-        break;
-    case 20:
-        showed = '8';
-        break;                  // orcish idol
 
-    case 21:
-        showed = '8';
-        break;                  // silver statue
-
-    case 22:
-        showed = '8';
-        break;                  // granite statue
-
-    case 23:
-        showed = '8';
-        break;                  //
-
-    case 24:
-        showed = '8';
-        break;                  //
-
-    case 25:
-        showed = '8';
-        break;                  //
-
-    case 61:
-    case 62:
-    case 65:
-        showed = '{';
-        break;
-    case 67:
+    case DNGN_FLOOR:
+    case DNGN_UNDISCOVERED_TRAP:
         showed = '.';
         break;
+
     case 68:
         showed = '>';
         break;                  // <
 
-    case 69:
-        showed = '\\';
-        break;                  // >
-
-    case 70:
+    case DNGN_OPEN_DOOR:
         showed = 39;
-        break;                  // open door
+        break;
 
     case 72:
         showed = '<';
         break;                  // <
 
-    case 75:
-        showed = 94;
-        break;                  // ^ dart trap
-
-    case 76:
-        showed = 94;
-        break;                  // ^ magic trap
-
-    case 77:
-        showed = 94;
+    case DNGN_TRAP_I:
+    case DNGN_TRAP_II:
+    case DNGN_TRAP_III:
+        showed = '^';
         break;
-    case 78:
-        showed = '.';
-        break;                  // undiscovered trap
-
-    case 81:
-    case 80:
-        showed = '\\';
-        break;                  // shop
 
     case 82:
     case 83:
@@ -3972,49 +3895,52 @@ unsigned char mapchar4(unsigned char ldfk)
         showed = '<';
         break;
 
-    case 92:
-    case 93:
-    case 94:
-    case 95:
-    case 96:
-    case 97:
-    case 98:
-    case 99:
-    case 100:
-    case 101:
-    case 117:
-    case 137:
+    case DNGN_ENTER_HELL:
+    case DNGN_ENTER_LABYRINTH:
+    case DNGN_ENTER_SHOP:
+    case DNGN_ENTER_DIS:
+    case DNGN_ENTER_GEHENNA:
+    case DNGN_ENTER_COCYTUS:
+    case DNGN_ENTER_TARTARUS:
+    case DNGN_ENTER_ABYSS:
+    case DNGN_EXIT_ABYSS:
+    case DNGN_STONE_ARCH:
+    case DNGN_ENTER_PANDEMONIUM:
+    case DNGN_EXIT_PANDEMONIUM:
+    case DNGN_TRANSIT_PANDEMONIUM:
+    case DNGN_ENTER_ZOT:
+    case DNGN_EXIT_ZOT:
         showed = '\\';
         break;
 
-    case 180:
-    case 181:
-    case 182:
-    case 183:
-    case 184:
-    case 185:
-    case 186:
-    case 187:
-    case 188:
-    case 189:
-    case 190:
-    case 191:
+    case DNGN_ALTAR_ZIN:
+    case DNGN_ALTAR_SHINING_ONE:
+    case DNGN_ALTAR_KIKUBAAQUDGHA:
+    case DNGN_ALTAR_YREDELEMNUL:
+    case DNGN_ALTAR_XOM:
+    case DNGN_ALTAR_VEHUMET:
+    case DNGN_ALTAR_OKAWARU:
+    case DNGN_ALTAR_MAKHLEB:
+    case DNGN_ALTAR_SIF_MUNA:
+    case DNGN_ALTAR_TROG:
+    case DNGN_ALTAR_NEMELEX_XOBEH:
+    case DNGN_ALTAR_ELYVILON:
         showed = '_';
-        break;                  /* Altars */
+        break;
 
-    case 200:
-    case 201:
-    case 202:
-    case 203:
-    case 204:
-    case 205:
-    case 206:
-    case 207:
-    case 208:
-    case 209:
-    case 210:
+    case DNGN_BLUE_FOUNTAIN:
+    case DNGN_DRY_FOUNTAIN_I:
+    case DNGN_SPARKLING_FOUNTAIN:
+    case DNGN_DRY_FOUNTAIN_II:
+    case DNGN_DRY_FOUNTAIN_III:
+    case DNGN_DRY_FOUNTAIN_IV:
+    case DNGN_DRY_FOUNTAIN_V:
+    case DNGN_DRY_FOUNTAIN_VI:
+    case DNGN_DRY_FOUNTAIN_VII:
+    case DNGN_DRY_FOUNTAIN_VIII:
+    case DNGN_PERMADRY_FOUNTAIN:
         showed = '}';
-        break;                  /* fountain */
+        break;
     default:
         showed = 0;
         break;

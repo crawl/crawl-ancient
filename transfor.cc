@@ -16,7 +16,6 @@
 #include <string.h>
 
 #include "externs.h"
-#include "enum.h"
 
 #include "it_use2.h"
 #include "itemname.h"
@@ -82,9 +81,9 @@ char transform(int pow, char which_trans)
     if (you.attribute[ATTR_TRANSFORMATION] != TRAN_NONE)
         untransform();
 
-    if (you.is_undead != 0)
+    if (you.is_undead)
     {
-        mpr("Your dead flesh cannot be transformed in this way.");
+        mpr("Your unliving flesh cannot be transformed in this way.");
         return 0;
     }
 
@@ -138,7 +137,14 @@ char transform(int pow, char which_trans)
                 return 1;
 
             case TRAN_STATUE:           /* also AC + 20, ev - 5 */
-                mpr("You turn into a living statue of rough stone.");
+                if ( you.species != SP_GNOME )
+                  {
+                      mpr("You turn into a living statue of rough stone.");
+                  }
+                else
+                  {
+                      mpr("Look, a garden gnome. How cute is that?");
+                  }
                 rem_stuff[EQ_WEAPON] = 0;       /* can still hold a weapon */
                 remove_equipment(rem_stuff);
                 you.dex -= 2;
@@ -196,7 +202,7 @@ char transform(int pow, char which_trans)
                 you.max_strength += 3;
                 your_sign = 'L';
                 your_colour = LIGHTGREY;
-                you.is_undead = 1;
+                you.is_undead = US_HUNGRY_DEAD;
                 return 1;
     }
 
@@ -261,7 +267,7 @@ void untransform()
                 you.strength -= 3;
                 you.max_strength -= 3;
                 mpr("You feel yourself come back to life.");
-                you.is_undead = 0;
+                you.is_undead = US_ALIVE;
                 break;
     }
 
@@ -301,13 +307,13 @@ char can_equip(char use_which)
     {
     case TRAN_NONE:
         return 1;
-    case TRAN_SPIDER:           /* spider - can't wear anything */
+    case TRAN_SPIDER:           // spider - can't wear anything
         return 0;
-    case TRAN_BLADE_HANDS:      /* scythe hands */
+    case TRAN_BLADE_HANDS:
         if (use_which == EQ_WEAPON || use_which == EQ_GLOVES || use_which == EQ_SHIELD)
             return 0;
         return 1;
-    case TRAN_STATUE:           /* statue */
+    case TRAN_STATUE:
         if (use_which == EQ_WEAPON)
             return 1;
         return 0;

@@ -136,7 +136,7 @@
 
 // real monsters
 {
-    0, 'a', 8, "giant ant", M_ED_POISON,
+    0, 'a', DARKGREY, "giant ant", M_ED_POISON,
         700, 10, 0, H_NORMAL, -3,
     {
         8, 0, 0, 0
@@ -150,7 +150,7 @@
 ,
 
 {
-    1, 'b', 8, "giant bat", M_FLIES | M_SEE_INVIS,
+    1, 'b', DARKGREY, "giant bat", M_FLIES | M_SEE_INVIS,
         150, 4, 1, H_NORMAL, -3,
     {
         1, 0, 0, 0
@@ -178,7 +178,7 @@
 ,
 
 {
-    3, '4', 4, "red devil", M_RES_POISON | M_RES_HELLFIRE | M_ED_COLD | M_FLIES,
+    3, '4', RED, "red devil", M_RES_POISON | M_RES_HELLFIRE | M_ED_COLD | M_FLIES,
         0, 10, 3, H_DEMONIC, -7,
     {
         18, 0, 0, 0
@@ -192,7 +192,7 @@
 ,
 
 {
-    4, 'e', 6, "ettin", M_NO_FLAGS,
+    4, 'e', BROWN, "ettin", M_NO_FLAGS,
         0, 10, 4, H_NORMAL, -3,
     {
         18, 12, 0, 0
@@ -206,7 +206,7 @@
 ,
 
 {
-    5, 'f', 7, "fungus", M_NO_EXP_GAIN | M_RES_POISON,
+    5, 'f', LIGHTGREY, "fungus", M_NO_EXP_GAIN | M_RES_POISON,
         0, 10, 5, H_NORMAL, 5000,
     {
         0, 0, 0, 0
@@ -220,14 +220,14 @@
 ,
 /*
    // plain silly (test if changing works)
-   {6, 'D', 13, "purple dinosaur", M_NO_FLAGS,
+   {6, 'D', LIGHTMAGENTA, "purple dinosaur", M_NO_FLAGS,
    5000, 10, 6, H_HOLY, -3, {10,10,10,10},
    {10,10,10,80}, 1, 4, 12, 7, 250, C_CLEAN, Z_BIG, S_SCREAM, I_HIGH, 3},
  */
 
 // this is what it should be
 {
-    6, 'g', 7, "goblin", M_NO_FLAGS,
+    6, 'g', LIGHTGREY, "goblin", M_NO_FLAGS,
         400, 10, 6, H_NORMAL, -3,
     {
         4, 0, 0, 0
@@ -241,7 +241,7 @@
 ,
 
 {
-    7, 'h', 6, "hound", M_SEE_INVIS,
+    7, 'h', BROWN, "hound", M_SEE_INVIS,
         300, 10, 7, H_NORMAL, -3,
     {
         6, 0, 0, 0
@@ -270,7 +270,7 @@
 ,
 
 {
-    9, 'j', 14, "jackal", M_NO_FLAGS,
+    9, 'j', YELLOW, "jackal", M_NO_FLAGS,
         200, 10, 9, H_NORMAL, -3,
     {
         3, 0, 0, 0
@@ -284,7 +284,7 @@
 ,
 
 {
-    10, 'k', 14, "killer bee", M_ED_POISON | M_FLIES,
+    10, 'k', YELLOW, "killer bee", M_ED_POISON | M_FLIES,
         150, 11, 10, H_NORMAL, -3,
     {
         10, 0, 0, 0
@@ -298,7 +298,7 @@
 ,
 
 {
-    11, 'w', 7, "killer bee larva", M_ED_POISON | M_NO_SKELETON,
+    11, 'w', LIGHTGREY, "killer bee larva", M_ED_POISON | M_NO_SKELETON,
         150, 5, 11, H_NORMAL, -3,
     {
         3, 0, 0, 0
@@ -312,7 +312,7 @@
 ,
 
 {
-    12, 'm', 6, "manticore", M_NO_FLAGS,
+    12, 'm', BROWN, "manticore", M_NO_FLAGS,
         1800, 10, 12, H_NORMAL, -3,
     {
         14, 8, 8, 0
@@ -341,7 +341,7 @@
 ,
 
 {
-    14, 'o', 12, "orc", M_NO_FLAGS,
+    14, 'o', LIGHTRED, "orc", M_NO_FLAGS,
         600, 10, 14, H_NORMAL, -3,
     {
         5, 0, 0, 0
@@ -369,7 +369,7 @@
 ,
 
 {
-    16, 'q', 7, "quasit", M_RES_POISON | M_RES_FIRE | M_RES_COLD,
+    16, 'q', LIGHTGREY, "quasit", M_RES_POISON | M_RES_FIRE | M_RES_COLD,
         0, 10, 16, H_NORMAL, 50,
     {
         3, 2, 2, 0
@@ -383,7 +383,7 @@
 ,
 
 {
-    17, 'r', 6, "rat", M_NO_FLAGS,
+    17, 'r', BROWN, "rat", M_NO_FLAGS,
         200, 10, 17, H_NORMAL, -3,
     {
         3, 0, 0, 0
@@ -411,7 +411,7 @@
 ,
 
 {
-    19, 't', 12, "tunneling worm", M_RES_POISON,
+    19, 't', LIGHTRED, "tunneling worm", M_RES_POISON,
         0, 10, 19, H_NORMAL, 5000,
     {
         50, 0, 0, 0
@@ -482,7 +482,7 @@
 ,
 
 {
-    24, 'y', 14, "yellow wasp", M_ED_POISON | M_FLIES,
+    24, 'y', YELLOW, "yellow wasp", M_ED_POISON | M_FLIES,
         220, 12, 24, H_NORMAL, -3,
     {
         13, 0, 0, 0
@@ -497,7 +497,7 @@
 
 // small zombie
 {
-    25, 'z', 6, "", M_RES_POISON | M_RES_COLD,
+    25, 'z', BROWN, "", M_RES_POISON | M_RES_COLD,
         0, 6, 25, H_UNDEAD, 5000,
     {
         10, 0, 0, 0
@@ -525,7 +525,7 @@
 ,
 
 {
-    27, 'B', 8, "giant beetle", M_ED_POISON,
+    27, 'B', DARKGREY, "giant beetle", M_ED_POISON,
         1000, 10, 27, H_NORMAL, -3,
     {
         20, 0, 0, 0
@@ -539,7 +539,7 @@
 ,
 
 {
-    28, 'C', 6, "cyclops", M_NO_FLAGS,
+    28, 'C', BROWN, "cyclops", M_NO_FLAGS,
         2500, 10, 28, H_NORMAL, -3,
     {
         35, 0, 0, 0
@@ -609,7 +609,7 @@
 ,
 
 {
-    33, 'g', 6, "hobgoblin", M_NO_FLAGS,
+    33, 'g', BROWN, "hobgoblin", M_NO_FLAGS,
         500, 10, 33, H_NORMAL, -3,
     {
         5, 0, 0, 0
@@ -651,7 +651,7 @@
 ,
 
 {
-    36, 'K', 6, "kobold", M_NO_FLAGS,
+    36, 'K', BROWN, "kobold", M_NO_FLAGS,
         400, 10, 36, H_NORMAL, -3,
     {
         4, 0, 0, 0
@@ -665,7 +665,7 @@
 ,
 
 {
-    37, 'L', 15, "lich", M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_SEE_INVIS,
+    37, 'L', WHITE, "lich", M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_SEE_INVIS,
         0, 16, 37, H_UNDEAD, -11,
     {
         15, 0, 0, 0
@@ -679,7 +679,7 @@
 ,
 
 {
-    38, 'M', 15, "mummy", M_RES_POISON | M_ED_FIRE | M_RES_COLD,
+    38, 'M', WHITE, "mummy", M_RES_POISON | M_ED_FIRE | M_RES_COLD,
         0, 10, 38, H_UNDEAD, -5,
     {
         20, 0, 0, 0
@@ -707,7 +707,7 @@
 ,
 
 {
-    40, 'O', 6, "ogre", M_NO_FLAGS,
+    40, 'O', BROWN, "ogre", M_NO_FLAGS,
         1300, 10, 40, H_NORMAL, -3,
     {
         17, 0, 0, 0
@@ -721,7 +721,7 @@
 ,
 
 {
-    41, 'P', 2, "plant", M_NO_EXP_GAIN,
+    41, 'P', GREEN, "plant", M_NO_EXP_GAIN,
         0, 10, 41, H_NORMAL, 5000,
     {
         0, 0, 0, 0
@@ -749,7 +749,7 @@
 ,
 
 {
-    43, 'R', 14, "rakshasa", M_RES_POISON | M_SPELLCASTER | M_SEE_INVIS,
+    43, 'R', YELLOW, "rakshasa", M_RES_POISON | M_SPELLCASTER | M_SEE_INVIS,
         0, 15, 43, H_NORMAL, -10,
     {
         20, 0, 0, 0
@@ -777,7 +777,7 @@
 ,
 
 {
-    45, 'T', 6, "troll", M_NO_FLAGS,
+    45, 'T', BROWN, "troll", M_NO_FLAGS,
         1500, 10, 45, H_NORMAL, -3,
     {
         20, 15, 15, 0
@@ -877,7 +877,7 @@
 ,
 
 {
-    52, 'o', 14, "orc warrior", M_NO_FLAGS,
+    52, 'o', YELLOW, "orc warrior", M_NO_FLAGS,
         0, 10, 14, H_NORMAL, -3,
     {
         20, 0, 0, 0
@@ -1031,7 +1031,7 @@
 ,
 
 {
-    63, ' ', 0, "shadow", M_RES_POISON | M_RES_COLD,
+    63, ' ', BLACK, "shadow", M_RES_POISON | M_RES_COLD,
         0, 10, 63, H_UNDEAD, -5,
     {
         5, 0, 0, 0
@@ -2103,7 +2103,7 @@
 }
 ,
 
-// dummy monster, used for corpses etc
+// 147 - dummy monster, used for corpses etc.
 {
     147, 'e', DARKGREY, "elf", M_NO_FLAGS,
         450, 10, 147, H_NORMAL, -3,
@@ -3558,7 +3558,7 @@
 ,
 
 {
-    292, 'T', GREEN, "Anita", M_NO_FLAGS | M_SPEAKS,
+    292, 'T', GREEN, "Snorg", M_NO_FLAGS | M_SPEAKS,
         0, 20, 45, H_NORMAL, -3,
     {
         20, 15, 15, 0
@@ -4543,7 +4543,7 @@
 ,
 
 {
-    MLAVA3, 0, 0, "another lava thing", M_NO_FLAGS,
+    MLAVA3, 0, BLACK, "another lava thing", M_NO_FLAGS,
         0, 10, MLAVA3, H_NORMAL, -3,
     {
         0, 0, 0, 0

@@ -19,7 +19,6 @@
 #include <stdlib.h>
 
 #include "externs.h"
-#include "enum.h"
 
 #include "itemname.h"
 #include "stuff.h"
@@ -700,8 +699,7 @@ int random5(unsigned int randmax)
     if (randmax == 0)
         return 0;
 
-    return (int) rand() / (RAND_MAX / randmax + 1);
-//    return rand() % randmax;
+    return (int) rand() / (RAND_MAX / randmax + 1);     //return rand() % randmax;
         // must use random (not rand) for the predictable-results-from-known
         //  -srandom-seeds thing to work.
 }

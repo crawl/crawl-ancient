@@ -41,7 +41,6 @@ overmap.o \
 player.o \
 randart.o \
 religion.o \
-rumours.o \
 shopping.o \
 skills.o \
 skills2.o \

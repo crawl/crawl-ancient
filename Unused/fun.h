@@ -322,7 +322,7 @@ void gain_exp(unsigned int exp_gained);
 void display_char_status(void);
 void redraw_skill(char your_name[kNameLen], char clasnam[40]);
 char *species_name(char speci);
-char wearing_amulet(char which_am);
+bool wearing_amulet(char which_am);              // changed from char to bool 14jan2000 {dlb}
 unsigned long exp_needed(int lev, char species);
 int check_stealth(void);
 void level_change(void);
@@ -497,10 +497,17 @@ void remove_curse(void);
 void cast_selective_amnesia(void);
 
 /* stuff.cc */
-int random2(unsigned int randmax);
+int random2(int randmax);                 // was random2(unsigned int) - don't know when it changed 16jan2000 {dlb}
+int random2avg(int max , int rolls);      // was random22(int max) - extended for any number of rolls 16jan2000 {dlb}
+int random2limit(int max, int limit);     // was random40(int max) - extended for any limit 16jan2000 {dlb}
 unsigned char get_ch(void);
 char see_grid(unsigned char grx, unsigned char gry);
 int magic_ability(int mag_abil, int intel);
+int stepdown_value (int base_value, int stepping, int first_step, int last_step, int ceiling_value);     // added 12jan2000 {dlb}
+bool one_chance_in (int a_million);                                                                      // added 14jan2000 {dlb}
+void cf_setseed (void);                   // added 16jan2000 {dlb}
+bool coinflip (void);                     // added 16jan2000 {dlb}
+int table_lookup (int die_roll, ...);     // the ellipsis is not a typo - added 16jan2000 {dlb}
 
 /* view.cc */
 void moname(int mcl, char mench, char see_inv, char descrip, char glog[40]);

@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "externs.h"
-#include "enum.h"
 
 #include "bang.h"
 #include "direct.h"
@@ -87,20 +86,20 @@ void beam(struct bolt beam[1])
     beam[0].by = beam[0].source_y;
 
     if (beam[0].move_x > 0)
-        beam_sign_x = 1;
-    if (beam[0].move_x < 0)
-    {
+      beam_sign_x = 1;
+    else if (beam[0].move_x < 0)
+      {
         beam_sign_x = -1;
         beam[0].move_x *= -1;
-    }
+      }
 
     if (beam[0].move_y > 0)
-        beam_sign_y = 1;
-    if (beam[0].move_y < 0)
-    {
+      beam_sign_y = 1;
+    else if (beam[0].move_y < 0)
+      {
         beam_sign_y = -1;
         beam[0].move_y *= -1;
-    }
+      }
 
     if (beam[0].move_x > 1 || beam[0].move_y > 1 || beam[0].move_x < -1 || beam[0].move_y < -1)
     {
@@ -166,17 +165,17 @@ void beam(struct bolt beam[1])
         if (strcmp(beam[0].beam_name, "blast of poison") == 0)
         {
             if (beam[0].thing_thrown != KILL_MON)
-                place_cloud(CLOUD_POISON, beam[0].bx, beam[0].by, random2(4) + 2);
+              place_cloud(CLOUD_POISON, beam[0].bx, beam[0].by, random2(4) + 2);
             else
-                place_cloud(CLOUD_POISON_MON, beam[0].bx, beam[0].by, random2(4) + 2);
+              place_cloud(CLOUD_POISON_MON, beam[0].bx, beam[0].by, random2(4) + 2);
         }
 
         if (strcmp(beam[0].beam_name, "blast of poison") == 0 && beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y)
         {
             if (beam[0].thing_thrown != KILL_MON)
-                big_cloud(4, beam[0].bx, beam[0].by, 0);
+              big_cloud(CLOUD_POISON, beam[0].bx, beam[0].by, 0);
             else
-                big_cloud(104, beam[0].bx, beam[0].by, 0);
+              big_cloud(CLOUD_POISON_MON, beam[0].bx, beam[0].by, 0);
             beam[0].aim_down = 0;
             return;
         }
@@ -202,7 +201,7 @@ void beam(struct bolt beam[1])
             if (grd[beam[0].bx][beam[0].by] == DNGN_ROCK_WALL)
             {
                 grd[beam[0].bx][beam[0].by] = DNGN_FLOOR;
-                if (crumble == 0)       // && see_grid(beam[0].bx, beam[0].by) == 1)
+                if (crumble == 0)       // && see_grid(beam[0].bx, beam[0].by) )
 
                 {
                     mpr("You hear a grinding noise.");
@@ -219,7 +218,7 @@ void beam(struct bolt beam[1])
         else
         {
 
-/*              if (beam[0].flavour == 10)
+/*              if (beam[0].flavour == BEAM_EXPLOSION)
    {
    explosion1(beam);
    beam[0].aim_down = 0;
@@ -238,10 +237,10 @@ void beam(struct bolt beam[1])
                 if (grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] == DNGN_ORCISH_IDOL || (grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] >= DNGN_SILVER_STATUE && grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] <= DNGN_STATUE_39))
                 {
                     grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] = DNGN_FLOOR;
-                    if (see_grid(beam[0].bx + beam[0].move_x, beam[0].by + beam[0].move_y) == 0)
-                        mpr("You hear a hideous screaming!");
+                    if ( !see_grid(beam[0].bx + beam[0].move_x, beam[0].by + beam[0].move_y) )
+                      mpr("You hear a hideous screaming!");
                     else
-                        mpr("The statue screams as its substance crumbles away!");
+                      mpr("The statue screams as its substance crumbles away!");
                     beam[0].wand_id = 1;
                 }
                 return;
@@ -331,14 +330,10 @@ void beam(struct bolt beam[1])
 
             clouty = env.cgrid[beam[0].bx][beam[0].by];
 
-/* 1 = fire, 3 = cold, 2 = stinking */
-
             if ((env.cloud_type[clouty] == CLOUD_COLD && beam[0].flavour == BEAM_FIRE) || (env.cloud_type[clouty] == CLOUD_FIRE && beam[0].flavour == BEAM_COLD))
             {
-                if (see_grid(beam[0].bx, beam[0].by) == 1)
-                {
-                    mpr("You hear a sizzling sound!");
-                }
+                if ( see_grid(beam[0].bx, beam[0].by) )
+                  mpr("You hear a sizzling sound!");
 
                 env.cloud_type[clouty] = CLOUD_NONE;
                 env.cgrid[env.cloud_x[clouty]][env.cloud_y[clouty]] = CNG;
@@ -361,7 +356,7 @@ out_of_cloud_bit:
                 goto out_of_hit_you;
             }
 
-/*      if (beam[0].flavour == 10)
+/*      if (beam[0].flavour == BEAM_EXPLOSION)
    {
    explosion1(beam);
    beam[0].aim_down = 0;
@@ -372,8 +367,10 @@ out_of_cloud_bit:
             if (beam[0].beam_name[0] != '0')     // ie enchantments always hit
 
             {
-                if (player_light_armour() && random2(2) == 0
-                                && beam[0].move_x != 0 && beam[0].move_y != 0)
+                if ( player_light_armour()
+                                && beam[0].move_x != 0
+                                && beam[0].move_y != 0
+                                && coinflip() )
                     exercise(SK_DODGING, 1);
 
                 if (you.duration[DUR_REPEL_MISSILES] != 0
@@ -383,7 +380,7 @@ out_of_cloud_bit:
                 if (you.duration[DUR_DEFLECT_MISSILES] != 0)
                     beam[0].hit = random2(beam[0].hit / 2);
 
-                if (beam[0].hit < random40(player_evasion())
+                if (beam[0].hit < random2limit(player_evasion(),40)
                                             + random2(you.dex) / 3 - 2
                             && (beam[0].move_x != 0 || beam[0].move_y != 0))
                 {
@@ -409,7 +406,7 @@ out_of_cloud_bit:
                         mpr(info);
                         return;
                     }
-                switch (beam[0].colour)
+                switch (beam[0].colour)  // these colors are misapplied - see mons_ench_f2() {dlb}
                 {
                 case BLACK:
                     potion_effect(POT_SLOWING, beam[0].ench_power);
@@ -457,7 +454,7 @@ out_of_cloud_bit:
                     return;     // enslavement - confusion?
 
                 case LIGHTGREEN:
-                    if (you.level_type == 2)
+                    if (you.level_type == LEVEL_ABYSS)
                     {
                         mpr("You feel trapped.");
                         break;
@@ -470,7 +467,7 @@ out_of_cloud_bit:
 
                 case LIGHTMAGENTA:        // pain
 
-                    if (you.is_undead != 0 || you.mutation[MUT_TORMENT_RESISTANCE] != 0)
+                    if (you.is_undead || you.mutation[MUT_TORMENT_RESISTANCE] != 0)
                     {
                         strcpy(info, "You are unaffected.");
                         mpr(info);
@@ -538,7 +535,7 @@ out_of_cloud_bit:
                     exercise(SK_SHIELDS, (random2(3)) / 2);
 
             if (you.equip[EQ_BODY_ARMOUR] != -1)
-                if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random2(4) == 0)
+                if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && one_chance_in(4) )
                     exercise(SK_ARMOUR, 1);
 
             if (hurted <= 0)
@@ -552,10 +549,10 @@ out_of_cloud_bit:
    if (strcmp(info, "How terrible") != 0) mpr(info); */
 
             if (beam[0].flavour == BEAM_FIRE || stricmp(beam[0].beam_name, "hellfire") == 0)
-                scrolls_burn(3, 6);     // also above
+                scrolls_burn(3, OBJ_SCROLLS);     // also above
 
             if (beam[0].flavour == BEAM_COLD)
-                scrolls_burn(3, 8);
+                scrolls_burn(3, OBJ_POTIONS);
 
             if (YOU_KILL(beam[0].thing_thrown))
                 ouch(hurted, 0, KILLED_BY_TARGETTING);
@@ -583,7 +580,7 @@ out_of_cloud_bit:
 
 out_of_hit_you:
         if (beam[0].target_x == beam[0].bx && beam[0].target_y == beam[0].by && beam[0].aim_down == 1 && ((grd[beam[0].bx][beam[0].by] == DNGN_LAVA && beam[0].flavour == BEAM_COLD) || ((grd[beam[0].bx][beam[0].by] == DNGN_DEEP_WATER || grd[beam[0].bx][beam[0].by] == DNGN_SHALLOW_WATER) && beam[0].flavour == BEAM_FIRE)))
-            place_cloud(CLOUD_STEAM, beam[0].bx, beam[0].by, 2 + random2(5));     // steam
+            place_cloud(CLOUD_STEAM, beam[0].bx, beam[0].by, 2 + random2(5));
 
         if (mgrd[beam[0].bx][beam[0].by] != MNG && (beam[0].colour != BROWN || beam[0].beam_name[0] != '0'))
         {
@@ -601,7 +598,7 @@ out_of_hit_you:
                 //       "     = 3 = hits tamed monster(s) but no others
                 //       "     = 4 = hits tamed monster(s) + possibly other things
 
-                if (menv[o].type >= MLAVA0 && menv[o].number == 1 && (beam[0].bx != beam[0].target_x || beam[0].by != beam[0].target_y || beam[0].aim_down != 1))
+                if (menv[o].type >= MONS_LAVA_WORM && menv[o].number == 1 && (beam[0].bx != beam[0].target_x || beam[0].by != beam[0].target_y || beam[0].aim_down != 1))
                     goto check_aimed;
 
                 if (beam[0].beam_name[0] != '0')         // ie enchantments always hit
@@ -707,20 +704,21 @@ out_of_hit_you:
                     {
 
 
-                        if (menv[o].behavior == 7 && menv[beam[0].beam_source].behavior == 7)
-                        {
+                        if ( menv[o].behavior == BEH_ENSLAVED
+                            && menv[beam[0].beam_source].behavior == BEH_ENSLAVED)
+                          {
                             beam[0].tracer_mons = 4;
                             return;     //goto check_aimed;
+                          }
 
-                        }
-
-                        if (menv[o].behavior == 7 && beam[0].tracer_mons == 0)
-                        {
+                        if ( menv[o].behavior == BEH_ENSLAVED
+                            && beam[0].tracer_mons == 0 )
+                          {
                             beam[0].tracer_mons = 3;
                             beam[0].trac_hit_tamed = 1;
                             return;
                             //goto check_aimed;
-                        }
+                          }
 
                         if (o == menv[beam[0].beam_source].monster_foe)
                         {
@@ -732,7 +730,6 @@ out_of_hit_you:
                         if (beam[0].tracer_mons == 0)
                         {
                             beam[0].tracer_mons = 1;    //3;
-
                             return;
                             //goto check_aimed;
                         }
@@ -765,7 +762,7 @@ out_of_hit_you:
                 {
                     if (check_mons_magres(o, beam[0].ench_power) == 0 && (beam[0].move_x != 0 || beam[0].move_y))
                         goto it_resists;
-                    if (mons_near(o) && menv[o].enchantment[2] != 6)
+                    if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
                     {
                         strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                         strcat(info, " looks slightly unstable.");
@@ -791,7 +788,7 @@ out_of_hit_you:
                 {
                     if (check_mons_magres(o, beam[0].ench_power) == 0)
                         goto it_resists;
-                    if (you.level_type == 2)
+                    if (you.level_type == LEVEL_ABYSS)
                     {
                         strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                         strcat(info, " wobbles for a moment.");
@@ -806,10 +803,11 @@ out_of_hit_you:
 
                 if (beam[0].colour == LIGHTCYAN)
                 {
-                    if (mons_holiness(menv[o].type) != 0 || menv[o].type == 131)
-                        goto unaffected;
+                    if ( mons_holiness(menv[o].type) != MH_NORMAL
+                          || menv[o].type == MONS_PULSATING_LUMP )
+                      goto unaffected;
                     if (check_mons_magres(o, beam[0].ench_power) == 0)
-                        goto it_resists;
+                      goto it_resists;
                     monster_polymorph(o, 131, 100);
                     beam[0].aim_down = 0;
                     beam[0].wand_id = 1;
@@ -1184,7 +1182,7 @@ void missile(struct bolt beam[1], int throw_2)
 
             if (strcmp(beam[0].beam_name, "orb of energy") == 0)
             {
-                place_cloud(CLOUD_ENERGY, beam[0].bx, beam[0].by, random2(5) + 1);
+                place_cloud(CLOUD_PURP_SMOKE, beam[0].bx, beam[0].by, random2(5) + 1);
             }
 
             if (strcmp(beam[0].beam_name, "great blast of cold") == 0)
@@ -1199,7 +1197,7 @@ void missile(struct bolt beam[1], int throw_2)
 
             if (strcmp(beam[0].beam_name, "sticky flame") == 0)
             {
-                place_cloud(CLOUD_STICKY_FLAME, beam[0].bx, beam[0].by, random2(4) + 1);
+                place_cloud(CLOUD_BLACK_SMOKE, beam[0].bx, beam[0].by, random2(4) + 1);
             }
 
             if (strcmp(beam[0].beam_name, "poison gas") == 0)
@@ -1213,9 +1211,9 @@ void missile(struct bolt beam[1], int throw_2)
             if (strcmp(beam[0].beam_name, "foul vapour") == 0 && beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y)
             {
                 if (beam[0].thing_thrown != KILL_MON)
-                    big_cloud(2, beam[0].bx, beam[0].by, 0);
+                    big_cloud(CLOUD_STINK, beam[0].bx, beam[0].by, 0);
                 else
-                    big_cloud(102, beam[0].bx, beam[0].by, 0);
+                    big_cloud(CLOUD_STINK_MON, beam[0].bx, beam[0].by, 0);
                 return;
             }
 
@@ -1258,8 +1256,8 @@ void missile(struct bolt beam[1], int throw_2)
                             exercise(SK_SHIELDS, random2(2));
 
                     if (player_shield_class() > 0
-                            && random2(beam[0].hit * 5 + 5 * you.shield_blocks)
-                                        <= random2(player_shield_class()) + (random2(you.dex) / 5) - 1)
+                        && random2(beam[0].hit * 5 + 5 * you.shield_blocks)
+                            <= random2(player_shield_class()) + (random2(you.dex) / 5) - 1)
                     {
                         you.shield_blocks++;
                         strcpy(info, "You block the ");
@@ -1281,14 +1279,16 @@ void missile(struct bolt beam[1], int throw_2)
                         break;
                     }           // end of block
 
-                    if (player_light_armour() && random2(2) == 0
-                                && beam[0].move_x != 0 && beam[0].move_y != 0)
+                    if ( player_light_armour()
+                                && beam[0].move_x != 0
+                                && beam[0].move_y != 0
+                                && coinflip() )
                         exercise(SK_DODGING, 1);
 
                     if (you.duration[DUR_REPEL_MISSILES] != 0 || you.mutation[MUT_REPULSION_FIELD] == 3)
                         beam[0].hit = random2(beam[0].hit);
 
-                    if (beam[0].hit >= random40(player_evasion())
+                    if (beam[0].hit >= random2limit(player_evasion(),40)
                                                 + random2(you.dex) / 3 - 2
                                     && you.duration[DUR_DEFLECT_MISSILES] == 0)
                     {
@@ -1333,11 +1333,11 @@ void missile(struct bolt beam[1], int throw_2)
                             && strcmp(beam[0].beam_name, "ball of steam") != 0)
                             || stricmp(beam[0].beam_name, "hellfire") == 0)
                         {
-                            scrolls_burn(2, 6);
+                            scrolls_burn(2, OBJ_SCROLLS);
                         }
 
                         if (beam[0].flavour == BEAM_COLD)
-                            scrolls_burn(2, 8);
+                            scrolls_burn(2, OBJ_POTIONS);
 
                         hurted -= random2(player_AC() + 1);
                         if (hurted <= 0)
@@ -1345,7 +1345,7 @@ void missile(struct bolt beam[1], int throw_2)
 
 
                         if (you.equip[EQ_BODY_ARMOUR] != -1)
-                            if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random2(4) == 0)
+                            if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && one_chance_in(4) )
                                 exercise(SK_ARMOUR, 1);
 
                         if (YOU_KILL(beam[0].thing_thrown))
@@ -1405,9 +1405,9 @@ void missile(struct bolt beam[1], int throw_2)
 
                 if (beam[0].colour == 200)      /* tracer */
                 {
-                    if (menv[o].type < MLAVA0 || menv[o].number == 0)
+                    if (menv[o].type < MONS_LAVA_WORM || menv[o].number == 0)
                     {
-                        if (beam[0].trac_hit_mons == 1 || menv[o].enchantment[2] != 6)
+                        if (beam[0].trac_hit_mons == 1 || menv[o].enchantment[2] != ENCH_INVIS)
                         {
                             if (o == beam[0].trac_targ)
                                 beam[0].tracer_mons = 1;
@@ -1423,7 +1423,7 @@ void missile(struct bolt beam[1], int throw_2)
                     /* Start of : It's not a tracer */
                 {
 
-                    if (beam[0].hit >= random2(menv[o].evasion) && ((menv[o].type < MLAVA0 || menv[o].number == 0) || (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y && beam[0].aim_down == 1)))
+                    if (beam[0].hit >= random2(menv[o].evasion) && ((menv[o].type < MONS_LAVA_WORM || menv[o].number == 0) || (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y && beam[0].aim_down == 1)))
                     {
                         hurted = 0;
 
@@ -1518,7 +1518,7 @@ void missile(struct bolt beam[1], int throw_2)
 
                         break;
                     }
-                    else if (YOU_KILL(beam[0].thing_thrown) && mons_near(o) && (menv[o].type < MLAVA0 || menv[o].number == 0))  // No message if monster missile misses
+                    else if (YOU_KILL(beam[0].thing_thrown) && mons_near(o) && (menv[o].type < MONS_LAVA_WORM || menv[o].number == 0))  // No message if monster missile misses
                       {
                         strcpy(info, "The ");
                         strcat(info, beam[0].beam_name);
@@ -1527,8 +1527,8 @@ void missile(struct bolt beam[1], int throw_2)
                         strcat(info, ".");
                         mpr(info);
 
-                        if (you.invis != 0 && mons_see_invis(menv[o].type) != 0 && menv[o].behavior == 0)
-                            menv[o].behavior = 1;
+                        if (you.invis != 0 && mons_see_invis(menv[o].type) != 0 && menv[o].behavior == BEH_SLEEP)
+                            menv[o].behavior = BEH_CHASING_I;
 
                     }
 
@@ -1573,7 +1573,7 @@ landed:
 
     if (beam[0].thing_thrown == KILL_YOU)      // ie if you threw it.
     {
-        if (grd[beam[0].bx][beam[0].by] != 61 && grd[beam[0].bx][beam[0].by] != DNGN_DEEP_WATER)
+        if (grd[beam[0].bx][beam[0].by] != DNGN_LAVA && grd[beam[0].bx][beam[0].by] != DNGN_DEEP_WATER)
         {
             if (you.inv_class[throw_2] != 1
                 || random2((you.inv_type[throw_2] == MI_STONE) ? 3 : 2) != 0)
@@ -1591,7 +1591,7 @@ landed:
     }
 
 
-    if (beam[0].thing_thrown == KILL_MON && (grd[beam[0].bx][beam[0].by] != DNGN_LAVA && grd[beam[0].bx][beam[0].by] != DNGN_DEEP_WATER) && random2(2) != 0)       // monster threw it.
+    if (beam[0].thing_thrown == KILL_MON && (grd[beam[0].bx][beam[0].by] != DNGN_LAVA && grd[beam[0].bx][beam[0].by] != DNGN_DEEP_WATER) && coinflip() )       // monster threw it.
 
     {
 
@@ -1602,15 +1602,24 @@ landed:
         else
         {
 
-            if (igrd[beam[0].bx][beam[0].by] != 501)
+            if (igrd[beam[0].bx][beam[0].by] != ING)
             {
-                if ((mitm.base_type[throw_2] == 1 || mitm.base_type[throw_2] == 4 || mitm.base_type[throw_2] == 6 || mitm.base_type[throw_2] == 8 || mitm.base_type[throw_2] == 9) && mitm.base_type[throw_2] == mitm.base_type[igrd[beam[0].bx][beam[0].by]] && mitm.sub_type[throw_2] == mitm.sub_type[igrd[beam[0].bx][beam[0].by]] && mitm.pluses[throw_2] == mitm.pluses[igrd[beam[0].bx][beam[0].by]] && mitm.pluses2[throw_2] == mitm.pluses2[igrd[beam[0].bx][beam[0].by]] && mitm.special[throw_2] == mitm.special[igrd[beam[0].bx][beam[0].by]])
+                if ( ( mitm.base_type[throw_2] == OBJ_MISSILES
+                        || mitm.base_type[throw_2] == OBJ_FOOD
+                        || mitm.base_type[throw_2] == OBJ_SCROLLS
+                        || mitm.base_type[throw_2] == OBJ_POTIONS
+                        || mitm.base_type[throw_2] == OBJ_UNKNOWN_II )
+                     && mitm.base_type[throw_2] == mitm.base_type[igrd[beam[0].bx][beam[0].by]]
+                     && mitm.sub_type[throw_2] == mitm.sub_type[igrd[beam[0].bx][beam[0].by]]
+                     && mitm.pluses[throw_2] == mitm.pluses[igrd[beam[0].bx][beam[0].by]]
+                     && mitm.pluses2[throw_2] == mitm.pluses2[igrd[beam[0].bx][beam[0].by]]
+                     && mitm.special[throw_2] == mitm.special[igrd[beam[0].bx][beam[0].by]] )
                 {
                     mitm.quantity[igrd[beam[0].bx][beam[0].by]]++;
                     beam[0].aim_down = 0;
                     return;
                 }
-            }                   // end of if igrd != 501
+            }                   // end of if igrd != ING
 
             int o = 0;
 
@@ -1626,13 +1635,13 @@ landed:
                     mitm.special[o] = mitm.special[throw_2];
                     mitm.colour[o] = mitm.colour[throw_2];
                     mitm.quantity[o] = 1;
-                    mitm.link[o] = 501;
+                    mitm.link[o] = ING;
                     /*                              it_no ++; */
                     break;
                 }
             }                   // end of o loop
 
-            if (igrd[beam[0].bx][beam[0].by] == 501)
+            if (igrd[beam[0].bx][beam[0].by] == ING)
             {
                 igrd[beam[0].bx][beam[0].by] = o;
             }
@@ -1662,10 +1671,10 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
 {
     switch (beam[0].flavour)
     {
-    case BEAM_FIRE:                     /* fire */
+    case BEAM_FIRE:
         if (mons_res_fire(menv[o].type) > 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " appears unharmed.");
@@ -1673,9 +1682,9 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
             }
             hurted = 0;
         }
-        else if (menv[o].inv[2] != 501 && mitm.special[menv[o].inv[2]] % 30 == 2)
+        else if (menv[o].inv[2] != ING && mitm.special[menv[o].inv[2]] % 30 == 2)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " resists.");
@@ -1684,7 +1693,7 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
             hurted /= 3;
         }
 
-        if (mons_res_fire(menv[o].type) == -1 && (menv[o].inv[2] == 501 || mitm.special[menv[o].inv[2]] % 30 != 2))
+        if (mons_res_fire(menv[o].type) == -1 && (menv[o].inv[2] == ING || mitm.special[menv[o].inv[2]] % 30 != 2))
         {
             strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
             strcat(info, " is burned terribly!");
@@ -1695,10 +1704,10 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
         break;
 
 
-    case BEAM_COLD:                     /* cold */
+    case BEAM_COLD:
         if (mons_res_cold(menv[o].type) > 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " appears unharmed.");
@@ -1706,9 +1715,9 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
             }
             hurted = 0;
         }
-        else if (menv[o].inv[2] != 501 && mitm.special[menv[o].inv[2]] % 30 == 3)
+        else if (menv[o].inv[2] != ING && mitm.special[menv[o].inv[2]] % 30 == 3)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " resists.");
@@ -1717,7 +1726,7 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
             hurted /= 3;
         }
 
-        if (mons_res_cold(menv[o].type) == -1 && (menv[o].inv[2] == 501 || mitm.special[menv[o].inv[2]] % 30 != 3))
+        if (mons_res_cold(menv[o].type) == -1 && (menv[o].inv[2] == ING || mitm.special[menv[o].inv[2]] % 30 != 3))
         {
             strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
             strcat(info, " is frozen!");
@@ -1730,7 +1739,7 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
     case BEAM_ELECTRICITY:
         if (mons_res_elec(menv[o].type) > 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " appears unharmed.");
@@ -1741,15 +1750,15 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
         break;
 
 
-    case BEAM_POISON:                     /* poison */
-        if (random2(3) != 0)
+    case BEAM_POISON:
+        if ( !one_chance_in(3) )
         {
              poison_monster(o,!YOU_KILL(beam[0].thing_thrown));
         }
 
         if (mons_res_poison(menv[o].type) > 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " appears unharmed.");
@@ -1759,10 +1768,10 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
         }
         break;
 
-    case BEAM_NEG:                     /* negativity */
+    case BEAM_NEG:
         if (mons_holiness(menv[o].type) > 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " appears unharmed.");
@@ -1778,7 +1787,7 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
                 strcat(info, " is drained.");
                 mpr(info);
             }
-            if (random2(5) == 0)
+            if ( one_chance_in(5) )
                 menv[o].hit_dice--;
             menv[o].max_hit_points -= 2 + random2(3);
             menv[o].hit_points -= 2 + random2(3);
@@ -1786,15 +1795,15 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
                 menv[o].hit_points = menv[o].max_hit_points;
             if (menv[o].hit_dice <= 0)
                 menv[o].hit_points = 0;
-        }                       /* end else */
+        }                                   // end else
 
         break;
 
 
-    case BEAM_HOLY:                    /* flame of cleansing */
+    case BEAM_HOLY:                         // flame of cleansing
         if (mons_holiness(menv[o].type) <= 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " appears unharmed.");
@@ -1807,7 +1816,7 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
     case BEAM_ICE:                    /* ice - about 50% of damage is cold, other 50% is impact and can't be resisted (except by AC, of course) */
         if (mons_res_cold(menv[o].type) > 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " partially resists.");
@@ -1815,9 +1824,9 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
             }
             hurted /= 2;
         }
-        else if (menv[o].inv[2] != 501 && mitm.special[menv[o].inv[2]] % 30 == 3)
+        else if (menv[o].inv[2] != ING && mitm.special[menv[o].inv[2]] % 30 == 3)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " partially resists.");
@@ -1826,7 +1835,7 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
             hurted /= 2;
         }
 
-        if (mons_res_cold(menv[o].type) == -1 && (menv[o].inv[2] == 501 || mitm.special[menv[o].inv[2]] % 30 != 3))
+        if (mons_res_cold(menv[o].type) == -1 && (menv[o].inv[2] == ING || mitm.special[menv[o].inv[2]] % 30 != 3))
         {
             strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
             strcat(info, " is frozen!");
@@ -1844,7 +1853,7 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
     {
         if (mons_res_fire(menv[o].type) == 2)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " appears unharmed.");
@@ -1852,9 +1861,9 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
             }
             hurted = 0;
         }
-        if (mons_res_fire(menv[o].type) == 1 || (menv[o].inv[2] != 501 && mitm.special[menv[o].inv[2]] % 30 == 2))
+        if (mons_res_fire(menv[o].type) == 1 || (menv[o].inv[2] != ING && mitm.special[menv[o].inv[2]] % 30 == 2))
         {
-            if (mons_near(o) && menv[o].enchantment[2] != 6)
+            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
             {
                 strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
                 strcat(info, " partially resists.");
@@ -1862,7 +1871,7 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
             }
             hurted /= 2;
         }
-        if (mons_res_fire(menv[o].type) == -1 && (menv[o].inv[2] == 501 || mitm.special[menv[o].inv[2]] % 30 != 2))
+        if (mons_res_fire(menv[o].type) == -1 && (menv[o].inv[2] == ING || mitm.special[menv[o].inv[2]] % 30 != 2))
         {
             strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
             strcat(info, " is burned terribly!");
@@ -1894,16 +1903,22 @@ int check_mons_magres(int mn, int pow)
     //if (random2(pow) + random2(pow) + random2(pow) + random2(pow) + random2(pow) >= mrs) return 1;
     //if (random2(pow) + random2(pow) + random2(pow
 
-    if (pow > 40)
-        pow = ((pow - 40) / 2) + 40;
-    if (pow > 70)
-        pow = ((pow - 70) / 2) + 70;
-    if (pow > 90)
-        pow = ((pow - 90) / 2) + 90;
 
-    if (pow > 120)
-        pow = 120;
 
+    if (pow > 40)                           // nested if's rather than stacked 'em
+      {                                     // uglier than before but slightly
+        pow = ((pow - 40) / 2) + 40;        // more efficient 16jan2000 {dlb}
+        if (pow > 70)
+          {
+            pow = ((pow - 70) / 2) + 70;
+            if (pow > 90)
+              {
+                pow = ((pow - 90) / 2) + 90;
+                if (pow > 120)
+                    pow = 120;
+              }
+          }
+      }
 
     int mrchance = 100 + mrs;
 
@@ -1951,11 +1966,11 @@ void mass_enchantment(int wh_enchant, int pow)
         if (!mons_near(i))
             continue;
 
-        if (wh_enchant == 30 && (mons_holiness(menv[i].type) != 1 || menv[i].behavior == 7))
+        if (wh_enchant == ENCH_CHARM && (mons_holiness(menv[i].type) != MH_UNDEAD || menv[i].behavior == BEH_ENSLAVED))
             continue;
         /* assuming that the only mass charm is control undead */
 
-        if (wh_enchant != 30 || mons_holiness(menv[i].type) != 1)
+        if (wh_enchant != ENCH_CHARM || mons_holiness(menv[i].type) != MH_UNDEAD)
 /*   if (check_mons_magres(i, pow) == 0 && beam[0].colour != 1 && beam[0].colour != 2 && beam[0].colour != 5) */
             if (check_mons_magres(i, pow) == 0)         /* && beam[0].colour != 1 && beam[0].colour != 2 && beam[0].colour != 5) */
             {
@@ -1966,7 +1981,11 @@ void mass_enchantment(int wh_enchant, int pow)
                 continue;
             }
 
-        if (menv[i].x > you.x_pos - 9 && menv[i].x < you.x_pos + 9 && menv[i].y > you.y_pos - 9 && menv[i].y < you.y_pos + 9 && see_grid(menv[i].x, menv[i].y) != 0)    /*show [menv [i].x - you.x_pos + 9] [menv [i].y - you.y_pos + 9] != 0) */
+        if ( menv[i].x > you.x_pos - 9
+            && menv[i].x < you.x_pos + 9
+            && menv[i].y > you.y_pos - 9
+            && menv[i].y < you.y_pos + 9
+            && see_grid(menv[i].x, menv[i].y) )    /*show [menv [i].x - you.x_pos + 9] [menv [i].y - you.y_pos + 9] != 0) */
         {
             if (menv[i].enchantment1 == 1)
                 for (p = 0; p < 3; p++)
@@ -1982,11 +2001,11 @@ void mass_enchantment(int wh_enchant, int pow)
                     brek = 0;
                     break;
                 }
-                if (menv[i].enchantment[p] == 0)
+                if (menv[i].enchantment[p] == ENCH_NONE)
                 {
                     menv[i].enchantment[p] = wh_enchant;
                     menv[i].enchantment1 = 1;
-                    if (menv[i].enchantment[2] != 6 || player_see_invis() != 0)
+                    if (menv[i].enchantment[2] != ENCH_INVIS || player_see_invis() != 0)
                     {
                         strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));
                         switch (wh_enchant)
@@ -2028,25 +2047,25 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
 
     switch (beam[0].colour)     /* put in magic resistance */
     {
-    case BLACK:                     /* slow monster */
+    case BLACK:                     /* 0 = slow monster */
         for (p = 0; p < 3; p++)
         {
-            if (menv[o].enchantment[p] == 1)
+            if (menv[o].enchantment[p] == ENCH_SLOW)
             {
                 if (is_near)
                     mpr("Nothing appears to happen.");
                 return 1;
             }
-            if (menv[o].enchantment[p] == 2)
+            if (menv[o].enchantment[p] == ENCH_HASTE)
             {
-                menv[o].enchantment[p] = 0;
+                menv[o].enchantment[p] = ENCH_NONE;
                 if (menv[o].speed >= 100)
                 {
                     menv[o].speed = ((menv[o].speed - 100) / 2) + 100;
                 }
                 else
                     menv[o].speed /= 2;
-                if (menv[o].enchantment[0] == 0 && menv[o].enchantment[1] == 0 && menv[o].enchantment[2] == 0)
+                if (menv[o].enchantment[0] == ENCH_NONE && menv[o].enchantment[1] == ENCH_NONE && menv[o].enchantment[2] == ENCH_NONE)
                     menv[o].enchantment1 = 0;
                 brek = 1;
                 break;
@@ -2056,9 +2075,9 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         if (brek == 0)
             for (p = 0; p < 3; p++)
             {
-                if (menv[o].enchantment[p] == 0)        /* || p == 2) replaces 3rd enchantment if all full. */
+                if (menv[o].enchantment[p] == ENCH_NONE)        /* || p == 2) replaces 3rd enchantment if all full. */
                 {
-                    menv[o].enchantment[p] = 1;
+                    menv[o].enchantment[p] = ENCH_SLOW;
                     if (menv[o].speed >= 100)
                     {
                         menv[o].speed = ((menv[o].speed - 100) / 2) + 100;
@@ -2083,22 +2102,22 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         }
         return 1;
 
-    case BLUE:                     // haste
+    case BLUE:                     // 1 = haste
 
         for (p = 0; p < 3; p++)
         {
-            if (menv[o].enchantment[p] == 2)
+            if (menv[o].enchantment[p] == ENCH_HASTE)
                 goto nothinghap;
-            if (menv[o].enchantment[p] == 1)
+            if (menv[o].enchantment[p] == ENCH_SLOW)
             {
-                menv[o].enchantment[p] = 0;
+                menv[o].enchantment[p] = ENCH_NONE;
                 if (menv[o].speed >= 100)
                 {
                     menv[o].speed = ((menv[o].speed - 100) * 2) + 100;
                 }
                 else
                     menv[o].speed *= 2;
-                if (menv[o].enchantment[0] == 0 && menv[o].enchantment[1] == 0 && menv[o].enchantment[2] == 0)
+                if (menv[o].enchantment[0] == ENCH_NONE && menv[o].enchantment[1] == ENCH_NONE && menv[o].enchantment[2] == ENCH_NONE)
                     menv[o].enchantment1 = 0;
                 brek = 1;
                 break;
@@ -2108,9 +2127,9 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         if (brek == 0)
             for (p = 0; p < 3; p++)
             {
-                if (menv[o].enchantment[p] == 0)
+                if (menv[o].enchantment[p] == ENCH_NONE)
                 {
-                    menv[o].enchantment[p] = 2;
+                    menv[o].enchantment[p] = ENCH_HASTE;
                     if (menv[o].speed >= 100)
                     {
                         menv[o].speed = ((menv[o].speed - 100) * 2) + 100;
@@ -2121,7 +2140,7 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
                     break;
                 }
             }
-        if (p == 2 && menv[o].enchantment[p] != 0)
+        if (p == 2 && menv[o].enchantment[p] != ENCH_NONE)
             goto nothinghap;
 
         // put in an exception for fungi, plants and other things you won't
@@ -2137,7 +2156,7 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         return 1;
 
 
-    case GREEN:                     /* healing */
+    case GREEN:                     /* 2 = healing */
         if (menv[o].hit_points == menv[o].max_hit_points)
         {
             goto nothinghap;
@@ -2167,7 +2186,7 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         }
         return 1;
 
-    case CYAN:                     /* paralysis */
+    case CYAN:                     /* 3 = paralysis */
         menv[o].speed_increment = 0;
 
         if (is_near == 1)
@@ -2214,18 +2233,18 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         }
         return 1;
 
-    case RED:                     /* confusion */
+    case RED:                     /* 4 = confusion */
         for (p = 0; p < 3; p++)
         {
-            if (menv[o].enchantment[p] == 5)
+            if (menv[o].enchantment[p] == ENCH_CONFUSION)
                 return 1;
         }                       /* end of for p */
         for (p = 0; p < 3; p++)
         {
             /* replaces 3rd enchantment if all full. */
-            if (menv[o].enchantment[p] == 0 || p == 2)
+            if (menv[o].enchantment[p] == ENCH_NONE || p == 2)
             {
-                menv[o].enchantment[p] = 5;
+                menv[o].enchantment[p] = ENCH_CONFUSION;
                 menv[o].enchantment1 = 1;
                 break;
             }
@@ -2245,11 +2264,11 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         return 1;
 
 
-    case MAGENTA:                     /* invisibility */
-        if (menv[o].enchantment[2] == 6 || is_near != 1)
+    case MAGENTA:                     /* 5 = invisibility */
+        if (menv[o].enchantment[2] == ENCH_INVIS || is_near != 1)
             goto nothinghap;
 
-        if (menv[o].enchantment[2] != 0)
+        if (menv[o].enchantment[2] != ENCH_NONE)
         {
             if (is_near)
             {
@@ -2270,26 +2289,26 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
             mpr(info);
             func_pass[1] = 1;
         }
-        menv[o].enchantment[2] = 6;
+        menv[o].enchantment[2] = ENCH_INVIS;
         menv[o].enchantment1 = 1;
         return 1;
 
         /* 6 is used by digging
            7            teleport
            8            polymorph */
-    case LIGHTBLUE:                     /* charm */
+    case LIGHTBLUE:                     /* 9 = charm */
         for (p = 0; p < 3; p++)
         {
-            if (menv[o].enchantment[p] == 30)
+            if (menv[o].enchantment[p] == ENCH_CHARM)
                 return 1;
         }                       /* end of for p */
         for (p = 0; p < 4; p++)
         {
             if (p == 3)
                 return 1;
-            if (menv[o].enchantment[p] == 0)    /* replaces 3rd enchantment if all full. */
+            if (menv[o].enchantment[p] == ENCH_NONE)    /* replaces 3rd enchantment if all full. */
             {
-                menv[o].enchantment[p] = 30;
+                menv[o].enchantment[p] = ENCH_CHARM;
                 menv[o].enchantment1 = 1;
                 menv[o].behavior = 7;
                 break;
@@ -2336,33 +2355,37 @@ void poison_monster(int mn, char source)
 
     if (mons_res_poison(menv[mn].type) > 0)
       return;
-    if (menv[mn].inv[2] != 501 && mitm.special[menv[mn].inv[2]] % 30 == 4)
+    if (menv[mn].inv[2] != ING && mitm.special[menv[mn].inv[2]] % 30 == 4)
       return;
 
-    for (p = 0; p < 3; p++) {
-      if (menv[mn].enchantment[p] % 50 == 10) {
-        return;
-      }
-      if (menv[mn].enchantment[p] % 50 >= 7 && menv[mn].enchantment[p] % 50 < 10) {
-        menv[mn].enchantment[p]++;
-        brek = 1;
-        if (mons_near(mn) && (menv[mn].enchantment[2] != 6 || player_see_invis() != 0)) {
-          strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
-          strcat(info, " looks rather sicker.");
-          mpr(info);
-          //jmf: it's worse to kick something when it's sick
-          naughty( NAUGHTY_POISON, 10 + random2(you.experience_level) );
-        }
-        break;
-      }
-    }                           /* end of for p */
+    for (p = 0; p < 3; p++)
+      {
+        if (menv[mn].enchantment[p] % 50 == 10)
+          {
+            return;
+          }
+        if (menv[mn].enchantment[p] % 50 >= 7 && menv[mn].enchantment[p] % 50 < 10)
+          {
+            menv[mn].enchantment[p]++;
+            brek = 1;
+            if (mons_near(mn) && (menv[mn].enchantment[2] != ENCH_INVIS || player_see_invis() != 0))
+              {
+                strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
+                strcat(info, " looks rather sicker.");
+                  mpr(info);
+                //jmf: it's worse to kick something when it's sick
+                naughty( NAUGHTY_POISON, 10 + random2(you.experience_level) );
+              }
+            break;
+          }
+      }                           /* end of for p */
 
     if (brek == 0)
       for (p = 0; p < 3; p++) {
-        if (menv[mn].enchantment[p] == 0) {
-          menv[mn].enchantment[p] = 7;
+        if (menv[mn].enchantment[p] == ENCH_NONE) {
+          menv[mn].enchantment[p] = ENCH_YOUR_POISON_I;
           menv[mn].enchantment1 = 1;
-          if (mons_near(mn) && (menv[mn].enchantment[2] != 6 || player_see_invis() != 0)) {
+          if (mons_near(mn) && (menv[mn].enchantment[2] != ENCH_INVIS || player_see_invis() != 0)) {
             strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
             strcat(info, " looks rather sick.");
             mpr(info);
@@ -2372,7 +2395,7 @@ void poison_monster(int mn, char source)
         }
       }
 
-    if (source == 1 && menv[mn].enchantment[p] <= 10 && menv[mn].enchantment[p] >= 7) {
+    if (source == 1 && menv[mn].enchantment[p] <= ENCH_YOUR_POISON_IV && menv[mn].enchantment[p] >= ENCH_YOUR_POISON_I) {
       menv[mn].enchantment[p] += 50;
     }
 }
@@ -2393,7 +2416,7 @@ void sticky_flame_monster(int mn, char source, int power)
 
     if (mons_res_fire(menv[mn].type) > 0)
         return;
-    if (menv[mn].inv[2] != 501 && mitm.special[menv[mn].inv[2]] % 30 == 2)
+    if (menv[mn].inv[2] != ING && mitm.special[menv[mn].inv[2]] % 30 == 2)
         return;
 
     long_last = random2(power) / 2 + 1;
@@ -2402,19 +2425,19 @@ void sticky_flame_monster(int mn, char source, int power)
 
     for (p = 0; p < 3; p++)
     {
-      if (menv[mn].enchantment[p] == 34 || menv[mn].enchantment[p] == 64) {
+      if (menv[mn].enchantment[p] == ENCH_YOUR_STICKY_FLAME_IV || menv[mn].enchantment[p] == ENCH_STICKY_FLAME_IV) {
         // already covered in sticky flame - ouch!
         return;
       }
-        if ((menv[mn].enchantment[p] >= 31 && menv[mn].enchantment[p] < 34) || (menv[mn].enchantment[p] >= 61 && menv[mn].enchantment[p] < 64))
+        if ((menv[mn].enchantment[p] >= ENCH_YOUR_STICKY_FLAME_I && menv[mn].enchantment[p] < ENCH_YOUR_STICKY_FLAME_IV) || (menv[mn].enchantment[p] >= ENCH_STICKY_FLAME_I && menv[mn].enchantment[p] < ENCH_STICKY_FLAME_IV))
         {
             menv[mn].enchantment[p] += long_last;
-            if (menv[mn].enchantment[p] > 34 && menv[mn].enchantment[p] < 60)
-                menv[mn].enchantment[p] = 34;
-            if (menv[mn].enchantment[p] > 64)
-                menv[mn].enchantment[p] = 64;
+            if (menv[mn].enchantment[p] > ENCH_YOUR_STICKY_FLAME_IV && menv[mn].enchantment[p] < ENCH_POISON_IV)
+                menv[mn].enchantment[p] = ENCH_YOUR_STICKY_FLAME_IV;
+            if (menv[mn].enchantment[p] > ENCH_STICKY_FLAME_IV)
+                menv[mn].enchantment[p] = ENCH_STICKY_FLAME_IV;
             brek = 1;
-            if (mons_near(mn) && (menv[mn].enchantment[2] != 6 || player_see_invis() != 0))
+            if (mons_near(mn) && (menv[mn].enchantment[2] != ENCH_INVIS || player_see_invis() != 0))
             {
                 strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
                 strcat(info, " is covered in liquid fire!");
@@ -2427,11 +2450,11 @@ void sticky_flame_monster(int mn, char source, int power)
     if (brek == 0)
         for (p = 0; p < 3; p++)
         {
-            if (menv[mn].enchantment[p] == 0)
+            if (menv[mn].enchantment[p] == ENCH_NONE)
             {
                 menv[mn].enchantment[p] = 30 + long_last;
                 menv[mn].enchantment1 = 1;
-                if (mons_near(mn) && (menv[mn].enchantment[2] != 6 || player_see_invis() != 0))
+                if (mons_near(mn) && (menv[mn].enchantment[2] != ENCH_INVIS || player_see_invis() != 0))
                 {
                     strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
                     strcat(info, " is covered in liquid fire!");
@@ -2441,7 +2464,7 @@ void sticky_flame_monster(int mn, char source, int power)
             }
         }
 
-    if (source == 1 && menv[mn].enchantment[p] <= 60 && menv[mn].enchantment[p] >= 31)
+    if (source == 1 && menv[mn].enchantment[p] <= ENCH_POISON_IV && menv[mn].enchantment[p] >= ENCH_YOUR_STICKY_FLAME_I)
     {
         menv[mn].enchantment[p] += 30;
     }
@@ -2464,9 +2487,9 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
 
     if (env.cgrid[ctarget_x][ctarget_y] != CNG)
     {
-     if ((env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] >= 5 // smoke
-         && env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] <= 8)
-         || env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] == 2 // stink
+     if ((env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] >= CLOUD_GREY_SMOKE // smoke
+         && env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] <= CLOUD_STEAM)
+         || env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] == CLOUD_STINK // stink
          || env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] == 10 // smoke
          || env.cloud_decay[env.cgrid[ctarget_x][ctarget_y]] <= 20)//soon gone
      {
@@ -2488,7 +2511,7 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
             env.cloud_no--;
         }
 
-        if (env.cloud_type[ci] == 0)    // ie is empty
+        if (env.cloud_type[ci] == CLOUD_NONE)    // ie is empty
 
         {
             env.cloud_type[ci] = cl_type;
@@ -2556,7 +2579,7 @@ void mimic_alert(int mimic)
 
     for (p = 0; p < 3; p++)
     {
-        if (menv[mimic].enchantment[p] >= 40 && menv[mimic].enchantment[p] <= 43)
+        if (menv[mimic].enchantment[p] >= ENCH_TP_I && menv[mimic].enchantment[p] <= ENCH_TP_IV)
             return;
     }
 

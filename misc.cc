@@ -22,9 +22,9 @@
 #include <conio.h>
 #endif
 
-#include "direct.h"
 #include "externs.h"
-#include "enum.h"
+
+#include "direct.h"
 #include "files.h"
 #include "fight.h"
 #include "items.h"
@@ -62,7 +62,7 @@ void destroy_item(int dest)
 
 //if (mitm.quantity [dest] <= 0) return;
 
-    if (dest == 501)
+    if (dest == ING)
         return;
 
     for (c = 0; c < MNST; c++)
@@ -71,15 +71,15 @@ void destroy_item(int dest)
             continue;
         for (cy = 0; cy < 8; cy++)
         {
-            if (menv[c].inv[cy] == dest)        //menv [c].inv [cy] = 501;
+            if (menv[c].inv[cy] == dest)        //menv [c].inv [cy] = ING;
 
             {
-                menv[c].inv[cy] = 501;
+                menv[c].inv[cy] = ING;
                 mitm.quantity[dest] = 0;
-                mitm.link[dest] = 501;
-                if (menv[c].type == 144)
+                mitm.link[dest] = ING;
+                if (menv[c].type == MONS_DANCING_WEAPON)
                 {
-                    monster_die(c, 6, 0);
+                    monster_die(c, KILL_RESET, 0);
                 }
                 return;
             }
@@ -95,7 +95,7 @@ void destroy_item(int dest)
         {
             mitm.link[c] = mitm.link[dest];
             mitm.quantity[dest] = 0;
-            mitm.link[dest] = 501;
+            mitm.link[dest] = ING;
             return;
         }
     }
@@ -110,7 +110,7 @@ void destroy_item(int dest)
             {
                 igrd[c][cy] = mitm.link[dest];
                 mitm.quantity[dest] = 0;
-                mitm.link[dest] = 501;
+                mitm.link[dest] = ING;
                 return;
             }
         }
@@ -144,12 +144,12 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
                 ch_col = LIGHTRED;
             mitm.colour[o] = ch_col;
             mitm.quantity[o] = 1 + random2(mons_weight(mcls) / 150);
-            mitm.link[o] = 501;
+            mitm.link[o] = ING;
             break;
         }
     }                           // end of o loop
 
-    if (igrd[chx][chy] == 501)
+    if (igrd[chx][chy] == ING)
     {
         igrd[chx][chy] = o;
     }
@@ -168,7 +168,15 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
 
    } */
 
-    if ((mcls == MONS_DRAGON || mcls == MONS_TROLL || mcls == MONS_ICE_DRAGON || mcls == MONS_STEAM_DRAGON || mcls == MONS_MOTTLED_DRAGON || mcls == MONS_STORM_DRAGON || mcls == MONS_GOLDEN_DRAGON || mcls == MONS_SWAMP_DRAGON) && random2(3) != 0)
+    if ( ( mcls == MONS_DRAGON
+            || mcls == MONS_TROLL
+             || mcls == MONS_ICE_DRAGON
+              || mcls == MONS_STEAM_DRAGON
+               || mcls == MONS_MOTTLED_DRAGON
+                || mcls == MONS_STORM_DRAGON
+                 || mcls == MONS_GOLDEN_DRAGON
+                  || mcls == MONS_SWAMP_DRAGON )
+         && !one_chance_in(3) )
     {
 // this places skins of various creatures, which are classed as armour and can be enchanted to become special magical armours.
         for (o = 0; o < ITEMS; o++)
@@ -178,11 +186,10 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
             if (mitm.quantity[o] == 0)
             {
                 mitm.quantity[o] = 1;
-                mitm.link[o] = 501;
+                mitm.link[o] = ING;
                 switch (mcls)
                 {
-                case MONS_DRAGON:       // dragon scales
-
+                case MONS_DRAGON:
                     mitm.id[o] = 0;
                     mitm.base_type[o] = OBJ_ARMOUR;
                     mitm.pluses[o] = 50;
@@ -191,8 +198,8 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
                     mitm.special[o] = 0;
                     mitm.colour[o] = GREEN;
                     break;
-                case MONS_TROLL:        // troll hide
 
+                case MONS_TROLL:
                     mitm.id[o] = 0;
                     mitm.base_type[o] = OBJ_ARMOUR;
                     mitm.pluses[o] = 50;
@@ -201,8 +208,8 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
                     mitm.special[o] = 0;
                     mitm.colour[o] = BROWN;
                     break;
-                case MONS_ICE_DRAGON:   // ice dragon scales
 
+                case MONS_ICE_DRAGON:
                     mitm.id[o] = 0;
                     mitm.base_type[o] = OBJ_ARMOUR;
                     mitm.pluses[o] = 50;
@@ -211,8 +218,8 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
                     mitm.special[o] = 0;
                     mitm.colour[o] = WHITE;
                     break;
-                case MONS_STEAM_DRAGON: // steam dragon scales
 
+                case MONS_STEAM_DRAGON:
                     mitm.id[o] = 0;
                     mitm.base_type[o] = OBJ_ARMOUR;
                     mitm.pluses[o] = 50;
@@ -221,8 +228,8 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
                     mitm.special[o] = 0;
                     mitm.colour[o] = LIGHTGREY;
                     break;
-                case MONS_MOTTLED_DRAGON:       // mottled dragon scales
 
+                case MONS_MOTTLED_DRAGON:
                     mitm.id[o] = 0;
                     mitm.base_type[o] = OBJ_ARMOUR;
                     mitm.pluses[o] = 50;
@@ -231,8 +238,8 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
                     mitm.special[o] = 0;
                     mitm.colour[o] = LIGHTMAGENTA;
                     break;
-                case MONS_STORM_DRAGON: // storm dragon scales
 
+                case MONS_STORM_DRAGON:
                     mitm.id[o] = 0;
                     mitm.base_type[o] = OBJ_ARMOUR;
                     mitm.pluses[o] = 50;
@@ -241,8 +248,8 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
                     mitm.special[o] = 0;
                     mitm.colour[o] = LIGHTBLUE;
                     break;
-                case MONS_GOLDEN_DRAGON:        // golden dragon scales
 
+                case MONS_GOLDEN_DRAGON:
                     mitm.id[o] = 0;
                     mitm.base_type[o] = OBJ_ARMOUR;
                     mitm.pluses[o] = 50;
@@ -251,8 +258,8 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
                     mitm.special[o] = 0;
                     mitm.colour[o] = YELLOW;
                     break;
-                case MONS_SWAMP_DRAGON: // swamp dragon scales
 
+                case MONS_SWAMP_DRAGON:
                     mitm.id[o] = 0;
                     mitm.base_type[o] = OBJ_ARMOUR;
                     mitm.pluses[o] = 50;
@@ -265,7 +272,7 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
                 break;
             }
         }
-        if (igrd[chx][chy] == 501)
+        if (igrd[chx][chy] == ING)
         {
             igrd[chx][chy] = o;
         }
@@ -295,25 +302,25 @@ char search_around(void)
         for (sry = you.y_pos - 1; sry < you.y_pos + 2; sry++)
         {
             // don't exclude own square; may be levitating
-            if (grd[srx][sry] == 5 && random2(17) <= you.skills[SK_TRAPS_DOORS] + 1)    //) >= chance_found)
+            if (grd[srx][sry] == DNGN_SECRET_DOOR && random2(17) <= you.skills[SK_TRAPS_DOORS] + 1)    //) >= chance_found)
 
             {
-                grd[srx][sry] = 3;
+                grd[srx][sry] = DNGN_CLOSED_DOOR;
                 strcpy(info, "You found a secret door!");
                 mpr(info);
-                exercise(SK_TRAPS_DOORS, 1 + random2(2));
+                exercise( SK_TRAPS_DOORS, ( (coinflip()) ? 2 : 1 ) );
             }
-            if (grd[srx][sry] == 78 && random2(17) <= you.skills[SK_TRAPS_DOORS] + 1)
+            if (grd[srx][sry] == DNGN_UNDISCOVERED_TRAP && random2(17) <= you.skills[SK_TRAPS_DOORS] + 1)
             {
                 for (i = 0; i < NTRAPS; i++)
                 {
                     if (env.trap_x[i] == srx && env.trap_y[i] == sry)
                         break;
                 }
-                if (env.trap_type[i] < 4 || env.trap_type[i] == 6 || env.trap_type[i] == 7)
-                    grd[srx][sry] = 75;
-                if (env.trap_type[i] == 4 || env.trap_type[i] == 5 || env.trap_type[i] == 8)
-                    grd[srx][sry] = 76;
+                if (env.trap_type[i] < TRAP_TELEPORT || env.trap_type[i] == TRAP_BLADE || env.trap_type[i] == TRAP_BOLT)
+                    grd[srx][sry] = DNGN_TRAP_I;
+                if (env.trap_type[i] == TRAP_TELEPORT || env.trap_type[i] == TRAP_AMNESIA || env.trap_type[i] == TRAP_ZOT)
+                    grd[srx][sry] = DNGN_TRAP_II;
                 strcpy(info, "You found a trap!");
                 mpr(info);
             }
@@ -324,15 +331,17 @@ char search_around(void)
 }
 
 
+
+
 void in_a_cloud(void)
 {
 
     int cl = env.cgrid[you.x_pos][you.y_pos];
     int hurted = 0;
 
-    switch (env.cloud_type[cl] % 100)
-    {
-    case 1:
+    switch (env.cloud_type[cl] % 100)       // eventually, list out all cloud_types, don't use math {dlb}
+    {                                       // % 100 counterintuitive/limits max. # of cloud_types {dlb}
+    case CLOUD_FIRE:
         strcpy(info, "You are engulfed in roaring flames!");
         mpr(info);
         if (player_res_fire() <= 100)
@@ -353,10 +362,10 @@ void in_a_cloud(void)
             hurted /= 2 + (player_res_fire() - 100) * (player_res_fire() - 100);
             ouch(hurted, cl, KILLED_BY_CLOUD);
         }
-        scrolls_burn(7, 6);
+        scrolls_burn(7, OBJ_SCROLLS);
         break;
 
-    case 2:
+    case CLOUD_STINK:
         // If you don't have to breathe, unaffected
         strcpy(info, "You are engulfed in noxious fumes!");
         mpr(info);
@@ -373,7 +382,7 @@ void in_a_cloud(void)
         }
         break;
 
-    case 3:
+    case CLOUD_COLD:
         strcpy(info, "You are engulfed in freezing vapours!");
         mpr(info);
         if (player_res_cold() <= 100)
@@ -394,12 +403,11 @@ void in_a_cloud(void)
             hurted /= 2 + (player_res_cold() - 100) * (player_res_cold() - 100);
             ouch(hurted, cl, KILLED_BY_CLOUD);
         }
-        scrolls_burn(7, 8);
+        scrolls_burn(7, OBJ_POTIONS);
         break;
 
-    case 4:                     // you.poison
+    case CLOUD_POISON:                     // you.poison
         // If you don't have to breathe, unaffected
-
         strcpy(info, "You are engulfed in poison gas!");
         mpr(info);
         if (player_res_poison() != 0)
@@ -408,17 +416,17 @@ void in_a_cloud(void)
         you.poison++;
         break;
 
-    case 5:
-    case 6:
-    case 7:
-    case 10:
+    case CLOUD_GREY_SMOKE:
+    case CLOUD_BLUE_SMOKE:
+    case CLOUD_PURP_SMOKE:
+    case CLOUD_BLACK_SMOKE:
         mpr("You are engulfed in a cloud of smoke!");
         break;
 
-    case 8:
+    case CLOUD_STEAM:
         strcpy(info, "You are engulfed in a cloud of scalding steam!");
         mpr(info);
-        if (you.species == SP_PALE_DRACONIAN && you.experience_level >= 6)
+        if (you.species == SP_PALE_DRACONIAN && you.experience_level > 5)
         {
             mpr("It doesn't seem to affect you.");
             return;
@@ -434,14 +442,14 @@ void in_a_cloud(void)
         ouch((hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
         break;
 
-    case 9:                     // dark miasma
+    case CLOUD_MIASMA:
         strcpy(info, "You are engulfed in a dark miasma.");
         mpr(info);
         if (player_prot_life() > random2(3))
-            return;
-        /*   beam_colour = 4; */
+          return;
+        //beam_colour = 4;
         if (player_res_poison() <= 0)
-            you.poison++;
+          you.poison++;
         hurted += (random2(5) + random2(5) + random2(4) * you.time_taken) / 10;         // 3
 
         if (hurted <= 0)
@@ -456,16 +464,9 @@ void in_a_cloud(void)
         }
         break;
 
-
-// case 5 // grey smoke - harmless
-        // case 6 blue smoke - also harmless
-        // case 7 purple smoke - mostly harmless
-
     }
 
 }
-
-
 
 
 
@@ -475,21 +476,24 @@ void up_stairs()
     unsigned char stair_find = grd[you.x_pos][you.y_pos];
     char old_level_where = you.where_are_you;
 
-    if (stair_find == 80)
+    if ( stair_find == DNGN_ENTER_SHOP )
     {
         shop();
         return;
     }
 
 
-    if ((stair_find < 86 || stair_find > 89) && (stair_find < 130 || stair_find > 150))
+    if ( ( stair_find < DNGN_STONE_STAIRS_UP_I
+            || stair_find > DNGN_ROCK_STAIRS_UP )
+        && ( stair_find < DNGN_RETURN_DUNGEON_I
+              || stair_find > 150 ) )
     {
         strcpy(info, "You can't go up here.");
         mpr(info);
         return;
     }
 
-    if (you.burden_state == 5)
+    if ( you.burden_state == BS_OVERLOADED )
     {
         strcpy(info, "You are carrying too much to climb upwards.");
         mpr(info);
@@ -498,7 +502,7 @@ void up_stairs()
     }
 
 
-    if (you.your_level == 0)
+    if ( you.your_level == 0 )
     {
         mpr("Are you sure you want to leave the Dungeon?");
         char kein = get_ch();
@@ -528,7 +532,7 @@ void up_stairs()
         mpr(info);
         for (i = 0; i < 52; i++)
         {
-            if (you.inv_quantity[i] > 0 && you.inv_class[i] == 12)
+            if ( you.inv_quantity[i] > 0 && you.inv_class[i] == OBJ_ORBS )
                 ouch(-9999, 0, KILLED_BY_WINNING);
         }
 
@@ -536,23 +540,24 @@ void up_stairs()
 
     }
 
-
     mpr("Entering...");
     you.prev_targ = MHITNOT;
 
-    if (you.where_are_you == 3)
+    if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
     {
         mpr("Thank you for visiting Hell. Please come again soon.");
-        you.where_are_you = 0;
-        stair_find = 82;
+        you.where_are_you = BRANCH_MAIN_DUNGEON;
+        stair_find = DNGN_STONE_STAIRS_DOWN_I;
     }
 
-    if (you.where_are_you > 0 && you.where_are_you != 3 && you.where_are_you < 10)
+    if ( you.where_are_you > 0
+        && you.where_are_you != BRANCH_VESTIBULE_OF_HELL
+        && you.where_are_you < 10 )
     {
 /* strcpy(info, "You hear a howl of diabolical anger from deep beneath you!");
    mpr(info);
    more(); */
-        you.where_are_you = 3;
+        you.where_are_you = BRANCH_VESTIBULE_OF_HELL;
         you.your_level = 27;
     }
 
@@ -565,26 +570,26 @@ void up_stairs()
     case 137:
     case 138:
         mpr("Welcome back to the Dungeon!");
-        you.where_are_you = 0;
+        you.where_are_you = BRANCH_MAIN_DUNGEON;
         break;
     case 133:
     case 139:
     case 142:
         mpr("Welcome back to the Lair of Beasts!");
-        you.where_are_you = 12;
+        you.where_are_you = BRANCH_LAIR;
         break;
     case 135:
         mpr("Welcome back to the Vaults!");
-        you.where_are_you = 14;
+        you.where_are_you = BRANCH_VAULTS;
         break;
     case 141:
     case 136:
         mpr("Welcome back to the Crypt!");
-        you.where_are_you = 15;
+        you.where_are_you = BRANCH_CRYPT;
         break;
     case 140:
         mpr("Welcome back to the Orcish Mines!");
-        you.where_are_you = 10;
+        you.where_are_you = BRANCH_ORCISH_MINES;
         break;
     }
     char stair_taken = stair_find;
@@ -592,14 +597,14 @@ void up_stairs()
     char want_followers = 1;
 
 /*load(stair_taken, moving_level, level_saved, was_a_labyrinth, old_level, want_followers, just_made_new_lev); */
-    if (you.where_are_you == 3)
+    if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
         you.your_level = 27;
     load(stair_taken, moving_level, 0, old_level, want_followers, 0, old_level_where);
     moving_level = 0;
 
     new_level();
 
-    if (you.levitation != 0)
+    if ( you.levitation )
     {
         if (you.duration[DUR_CONTROLLED_FLIGHT])
         {
@@ -627,8 +632,10 @@ void up_stairs()
             {
                 mgrd[count_x][count_y] = MNG;   /* This is one of the worst things I've ever done */
             }
-            if (grd[count_x][count_y] >= 200 && grd[count_x][count_y] <= 209 && grd[count_x][count_y] % 2 == 1)
-                if (random2(3) == 0)
+            if ( grd[count_x][count_y] >= DNGN_BLUE_FOUNTAIN
+                && grd[count_x][count_y] < DNGN_PERMADRY_FOUNTAIN
+                && grd[count_x][count_y] % 2 == 1 )
+                if ( one_chance_in(3) )
                     grd[count_x][count_y]--;    /* sometimes dry fountains will start flowing again */
         }
     }
@@ -647,7 +654,7 @@ void down_stairs(char remove_stairs, int old_level)
     char was_a_labyrinth = 0;
     unsigned char stair_find = grd[you.x_pos][you.y_pos];
 
-//int old_level = you.your_level;
+    //int old_level = you.your_level;
     char leaving_abyss = 0;
     char old_where = you.where_are_you;
 
@@ -661,20 +668,20 @@ void down_stairs(char remove_stairs, int old_level)
     }
 #endif
 
-    if ((stair_find < 81 || stair_find > 85) && stair_find != 69 && ((stair_find < 92 || stair_find > 101) && stair_find != 98) && !(stair_find >= 110 && stair_find < 130))
+    if ((stair_find < DNGN_ENTER_LABYRINTH || stair_find > DNGN_ROCK_STAIRS_DOWN) && stair_find != DNGN_ENTER_HELL && ((stair_find < DNGN_ENTER_DIS || stair_find > DNGN_TRANSIT_PANDEMONIUM) && stair_find != DNGN_STONE_ARCH) && !(stair_find >= DNGN_ENTER_ORCISH_MINES && stair_find < DNGN_RETURN_DUNGEON_I))
     {
         strcpy(info, "You can't go down here!");
         mpr(info);
         return;
     }
 
-    if (stair_find >= 81 && stair_find <= 85 && you.where_are_you == 3)
+    if (stair_find >= DNGN_ENTER_LABYRINTH && stair_find <= DNGN_ROCK_STAIRS_DOWN && you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
     {
         mpr("A mysterious force prevents you from descending the staircase.");
         return;
     }                           /* down stairs in vestibule are one-way */
 
-    if (stair_find == 98)
+    if (stair_find == DNGN_STONE_ARCH)
     {
         strcpy(info, "You can't go down here!");
         mpr(info);
@@ -682,22 +689,22 @@ void down_stairs(char remove_stairs, int old_level)
     }
 
 
-    if (you.levitation != 0 && wearing_amulet(AMU_CONTROLLED_FLIGHT) == 0)
+    if ( you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT) )
     {
         strcpy(info, "You're floating high up above the floor!");
         mpr(info);
         return;
     }
 
-    if (stair_find == 117)
+    if ( stair_find == DNGN_ENTER_ZOT )
     {
         int num_runes = 0;
 
         for (i = 0; i < 52; i++)
         {
-            if (you.inv_class[i] == OBJ_MISCELLANY
-                            && you.inv_type[i] == MISC_RUNE_OF_ZOT
-                            && you.inv_quantity[i] > 0)
+            if ( you.inv_class[i] == OBJ_MISCELLANY
+                && you.inv_type[i] == MISC_RUNE_OF_ZOT
+                && you.inv_quantity[i] > 0 )
             {
                 num_runes += you.inv_quantity[i];
             }
@@ -705,22 +712,22 @@ void down_stairs(char remove_stairs, int old_level)
 
         if (num_runes < NUMBER_OF_RUNES_NEEDED)
         {
-            if (NUMBER_OF_RUNES_NEEDED == 1)
+            switch (NUMBER_OF_RUNES_NEEDED)
             {
-                mpr("You need a Rune to enter this staircase.");
-            }
-            else
-            {
-                sprintf(info,
+                case 1:
+                    mpr("You need a Rune to enter this staircase.");
+                    break;
+                default:
+                    sprintf(info,
                         "You need at least %d Runes to enter this staircase.",
                         NUMBER_OF_RUNES_NEEDED );
-                mpr(info);
+                    mpr(info);
             }
             return;
         }
     }
 
-    if (you.level_type == LEVEL_PANDEMONIUM && grd[you.x_pos][you.y_pos] == 101)
+    if (you.level_type == LEVEL_PANDEMONIUM && grd[you.x_pos][you.y_pos] == DNGN_TRANSIT_PANDEMONIUM)
     {
         was_a_labyrinth = 1;
     }
@@ -735,116 +742,115 @@ void down_stairs(char remove_stairs, int old_level)
     mpr("Entering...");
     you.prev_targ = MHITNOT;
 
-    if (grd[you.x_pos][you.y_pos] == 69)
+    if ( grd[you.x_pos][you.y_pos] == DNGN_ENTER_HELL )
     {
-        you.where_are_you = 3;  /* go to hell! */
+        you.where_are_you = BRANCH_VESTIBULE_OF_HELL;
         strcpy(info, "Welcome to Hell!");
         mpr(info);
         strcpy(info, "Please enjoy your stay.");
         mpr(info);
         more();
-// you.your_level = 59;
-        you.your_level = 26;
+        you.your_level = 26;                // = 59;
     }
 
-    if ((grd[you.x_pos][you.y_pos] >= 92 && grd[you.x_pos][you.y_pos] <= 95) || (grd[you.x_pos][you.y_pos] >= 110 && grd[you.x_pos][you.y_pos] <= 150))
+    if ((grd[you.x_pos][you.y_pos] >= DNGN_ENTER_DIS && grd[you.x_pos][you.y_pos] <= DNGN_ENTER_TARTARUS) || (grd[you.x_pos][you.y_pos] >= DNGN_ENTER_ORCISH_MINES && grd[you.x_pos][you.y_pos] <= 150))
     {
-        switch (grd[you.x_pos][you.y_pos])
-        {
-        case 92:
+        switch (grd[you.x_pos][you.y_pos])  // no idea why such a huge switch and not 100-grd[][]
+        {                                   // planning ahead for re-organizaing grd[][] values - 13jan2000 {dlb}
+        case DNGN_ENTER_DIS:
             strcpy(info, "Welcome to the Iron City of Dis!");
-            you.where_are_you = 1;
+            you.where_are_you = BRANCH_DIS;
             you.your_level = 26;
             break;
-        case 93:
+        case DNGN_ENTER_GEHENNA:
             strcpy(info, "Welcome to Gehenna!");
-            you.where_are_you = 2;
+            you.where_are_you = BRANCH_GEHENNA;
             you.your_level = 26;
             break;
-        case 94:
+        case DNGN_ENTER_COCYTUS:
             strcpy(info, "Welcome to Cocytus!");
-            you.where_are_you = 4;
+            you.where_are_you = BRANCH_COCYTUS;
             you.your_level = 26;
             break;
-        case 95:
+        case DNGN_ENTER_TARTARUS:
             strcpy(info, "Welcome to Tartarus!");
-            you.where_are_you = 5;
+            you.where_are_you = BRANCH_TARTARUS;
             you.your_level = 26;
             break;
-        case 110:
+        case DNGN_ENTER_ORCISH_MINES:
             strcpy(info, "Welcome to the Orcish Mines!");
-            you.where_are_you = 10;
+            you.where_are_you = BRANCH_ORCISH_MINES;
             break;
-        case 111:
+        case DNGN_ENTER_HIVE:
             strcpy(info, "You hear a buzzing sound coming from all directions.");
-            you.where_are_you = 11;
+            you.where_are_you = BRANCH_HIVE;
             break;
-        case 112:
+        case DNGN_ENTER_LAIR_I:
             strcpy(info, "Welcome to the Lair of Beasts!");
-            you.where_are_you = 12;
+            you.where_are_you = BRANCH_LAIR;
             break;
-        case 113:
+        case DNGN_ENTER_SLIME_PITS:
             strcpy(info, "Welcome to the Pits of Slime!");
-            you.where_are_you = 13;
+            you.where_are_you = BRANCH_SLIME_PITS;
             break;
-        case 114:
+        case DNGN_ENTER_VAULTS:
             strcpy(info, "Welcome to the Vaults!");
-            you.where_are_you = 14;
+            you.where_are_you = BRANCH_VAULTS;
             break;
-        case 115:
+        case DNGN_ENTER_CRYPT_I:
             strcpy(info, "Welcome to the Crypt!");
-            you.where_are_you = 15;
+            you.where_are_you = BRANCH_CRYPT;
             break;
-        case 116:
+        case DNGN_ENTER_HALL_OF_BLADES:
             strcpy(info, "Welcome to the Hall of Blades!");
-            you.where_are_you = 16;
+            you.where_are_you = BRANCH_HALL_OF_BLADES;
             break;
-        case 117:
+        case DNGN_ENTER_ZOT:
             strcpy(info, "Welcome to the Hall of Zot!");
-            you.where_are_you = 17;
+            you.where_are_you = BRANCH_HALL_OF_ZOT;
             break;
-        case 118:
+        case DNGN_ENTER_TEMPLE:
             strcpy(info, "Welcome to the Ecumenical Temple!");
-            you.where_are_you = 18;
+            you.where_are_you = BRANCH_ECUMENICAL_TEMPLE;
             break;
-        case 119:
+        case DNGN_ENTER_SNAKE_PIT:
             strcpy(info, "Welcome to the Snake Pit!");
-            you.where_are_you = 19;
+            you.where_are_you = BRANCH_SNAKE_PIT;
             break;
-        case 120:
+        case DNGN_ENTER_ELVEN_HALLS:
             strcpy(info, "Welcome to the Elven Halls!");
-            you.where_are_you = 20;
+            you.where_are_you = BRANCH_ELVEN_HALLS;
             break;
-        case 121:
+        case DNGN_ENTER_TOMB:
             strcpy(info, "Welcome to the Tomb!");
-            you.where_are_you = 21;
+            you.where_are_you = BRANCH_TOMB;
             break;
-        case 122:
+        case DNGN_ENTER_SWAMP:
             strcpy(info, "Welcome to the Swamp!");
-            you.where_are_you = 22;
+            you.where_are_you = BRANCH_SWAMP;
             break;
         }
         mpr(info);
     }
 
-    if (grd[you.x_pos][you.y_pos] == 81)
+    if (grd[you.x_pos][you.y_pos] == DNGN_ENTER_LABYRINTH)
     {
-        you.level_type = 1;
-        grd[you.x_pos][you.y_pos] = 67;
+        you.level_type = LEVEL_LABYRINTH;
+        grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
     }
 
-    if (grd[you.x_pos][you.y_pos] == 96)
+    if (grd[you.x_pos][you.y_pos] == DNGN_ENTER_ABYSS)
     {
-        you.level_type = 2;
+        you.level_type = LEVEL_ABYSS;
     }
 
-    if (grd[you.x_pos][you.y_pos] == 99)
+    if (grd[you.x_pos][you.y_pos] == DNGN_ENTER_PANDEMONIUM)
     {
-        you.level_type = 3;
+        you.level_type = LEVEL_PANDEMONIUM;
     }
 
     if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS
-                                    || you.level_type == LEVEL_PANDEMONIUM)
+            || you.level_type == LEVEL_PANDEMONIUM)
     {
 
         char glorpstr[kFileNameSize];
@@ -881,37 +887,36 @@ void down_stairs(char remove_stairs, int old_level)
 
     }
 
-    if (grd[you.x_pos][you.y_pos] == 97 || grd[you.x_pos][you.y_pos] == 100)
+    if (grd[you.x_pos][you.y_pos] == DNGN_EXIT_ABYSS || grd[you.x_pos][you.y_pos] == DNGN_EXIT_PANDEMONIUM)
     {
         leaving_abyss = 1;      /* or pan */
-// you.your_level --;
+        // you.your_level --;
         strcpy(info, "You pass through the gate, and find yourself at the top of a staircase.");
         mpr(info);
         more();
     }
-
 
     if (you.level_type == LEVEL_DUNGEON)
         you.your_level++;
 
     int stair_taken = stair_find;
 
-//unsigned char save_old = 1;
+    //unsigned char save_old = 1;
     unsigned char moving_level = 1;
     unsigned char want_followers = 1;
 
     if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
-        stair_taken = 67;       //81;
+        stair_taken = DNGN_FLOOR;       //81;
 
     if (you.level_type == LEVEL_PANDEMONIUM)
-        stair_taken = 101;
+        stair_taken = DNGN_TRANSIT_PANDEMONIUM;
 
     if (remove_stairs == 1)
     {
-        grd[you.x_pos][you.y_pos] = 67;
+        grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
     }
 
-/*load(you.your_level); */
+    //load(you.your_level);
     load(stair_taken, moving_level, was_a_labyrinth, old_level, want_followers, 0, old_where);
 
     moving_level = 0;
@@ -954,16 +959,16 @@ void down_stairs(char remove_stairs, int old_level)
         strcpy(info, "You enter the Abyss!");
         mpr(info);
         strcpy(info, "To return, you must find a gate leading back.");
-        grd[you.x_pos][you.y_pos] = 67;
-        you.your_level--;
+        grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
+        if (old_level_type != LEVEL_PANDEMONIUM) you.your_level --;     // Linley-suggested addition 17jan2000 {dlb}
         init_pandemonium();     /* colours only */
 
-        if (you.where_are_you > 0 && you.where_are_you < 10)
-        {
+        if (you.where_are_you > BRANCH_MAIN_DUNGEON && you.where_are_you < BRANCH_ORCISH_MINES)
+          {
             // ie if you're in Hell
             you.where_are_you = BRANCH_MAIN_DUNGEON;
             you.your_level = 25;
-        }
+          }
     }
     else if (you.level_type == LEVEL_PANDEMONIUM)
     {
@@ -977,18 +982,19 @@ void down_stairs(char remove_stairs, int old_level)
         else
         {
             strcpy(info, "You enter the halls of Pandemonium!");
+            if (old_level_type != LEVEL_ABYSS) you.your_level --;      // Linley-suggested addition 17jan2000 {dlb}
             mpr(info);
             strcpy(info, "To return, you must find a gate leading back.");
             init_pandemonium();
             for (pc = 0; pc < pt; pc++)
                 pandemonium_mons();
 
-            if (you.where_are_you > 0 && you.where_are_you < 10)
-            {
+            if (you.where_are_you > BRANCH_MAIN_DUNGEON && you.where_are_you < BRANCH_ORCISH_MINES)
+              {
                 // ie if you're in Hell
                 you.where_are_you = BRANCH_MAIN_DUNGEON;
                 you.your_level = 25;
-            }
+              }
         }
     }
     else
@@ -1010,8 +1016,10 @@ void down_stairs(char remove_stairs, int old_level)
             if (mgrd[count_x][count_y] != MNG && (menv[mgrd[count_x][count_y]].type == -1 || menv[mgrd[count_x][count_y]].x != count_x || menv[mgrd[count_x][count_y]].y != count_y))
             {
                 mgrd[count_x][count_y] = MNG;   /* This is one of the worst things I've ever done */
-                if (grd[count_x][count_y] >= 200 && grd[count_x][count_y] <= 209 && grd[count_x][count_y] % 2 == 1)
-                    if (random2(3) == 0)
+                if ( grd[count_x][count_y] >= DNGN_BLUE_FOUNTAIN
+                    && grd[count_x][count_y] < DNGN_PERMADRY_FOUNTAIN
+                    && grd[count_x][count_y] % 2 == 1 )
+                    if ( one_chance_in(3) )
                         grd[count_x][count_y]--;        /* sometimes dry fountains will start flowing again */
             }
         }
@@ -1022,55 +1030,57 @@ void down_stairs(char remove_stairs, int old_level)
 }                               // end of void down_stairs(void)
 
 
+
+
 void new_level(void)
 {
 
     char temp_quant[10];
 
-    textcolor(7);
+    textcolor(LIGHTGREY);
     itoa(you.your_level + 1, temp_quant, 10);
     if (you.where_are_you >= 1 && you.where_are_you <= 9)
         itoa(you.your_level - 26, temp_quant, 10);
     switch (you.where_are_you)
     {
 /* Remember, must add this to the death_string in ouch */
-    case 10:
+    case BRANCH_ORCISH_MINES:
         itoa(you.your_level - you.branch_stairs[0], temp_quant, 10);
         break;
-    case 11:
+    case BRANCH_HIVE:
         itoa(you.your_level - you.branch_stairs[1], temp_quant, 10);
         break;
-    case 12:
+    case BRANCH_LAIR:
         itoa(you.your_level - you.branch_stairs[2], temp_quant, 10);
         break;
-    case 13:
+    case BRANCH_SLIME_PITS:
         itoa(you.your_level - you.branch_stairs[3], temp_quant, 10);
         break;
-    case 14:
+    case BRANCH_VAULTS:
         itoa(you.your_level - you.branch_stairs[4], temp_quant, 10);
         break;
-    case 15:
+    case BRANCH_CRYPT:
         itoa(you.your_level - you.branch_stairs[5], temp_quant, 10);
         break;
-    case 16:
+    case BRANCH_HALL_OF_BLADES:
         itoa(you.your_level - you.branch_stairs[6], temp_quant, 10);
         break;
-    case 17:
+    case BRANCH_HALL_OF_ZOT:
         itoa(you.your_level - you.branch_stairs[7], temp_quant, 10);
         break;
-    case 18:
+    case BRANCH_ECUMENICAL_TEMPLE:
         itoa(you.your_level - you.branch_stairs[8], temp_quant, 10);
         break;
-    case 19:
+    case BRANCH_SNAKE_PIT:
         itoa(you.your_level - you.branch_stairs[9], temp_quant, 10);
         break;
-    case 20:
+    case BRANCH_ELVEN_HALLS:
         itoa(you.your_level - you.branch_stairs[10], temp_quant, 10);
         break;
-    case 21:
+    case BRANCH_TOMB:
         itoa(you.your_level - you.branch_stairs[11], temp_quant, 10);
         break;
-    case 22:
+    case BRANCH_SWAMP:
         itoa(you.your_level - you.branch_stairs[12], temp_quant, 10);
         break;
     }
@@ -1111,85 +1121,85 @@ void new_level(void)
     }
     else
     {
-        if (you.where_are_you != 3)
+        if (you.where_are_you != BRANCH_VESTIBULE_OF_HELL)
             cprintf(temp_quant);
 
         switch (you.where_are_you)
         {
-        case 0:
+        case BRANCH_MAIN_DUNGEON:
             cprintf(" of the Dungeon           ");
             break;
-        case 1:
+        case BRANCH_DIS:
             env.floor_colour = CYAN;
             env.rock_colour = CYAN;
             cprintf(" of Dis                   ");
             break;
-        case 2:
+        case BRANCH_GEHENNA:
             env.floor_colour = DARKGREY;
             env.rock_colour = RED;
             cprintf(" of Gehenna               ");
             break;
-        case 3:
+        case BRANCH_VESTIBULE_OF_HELL:
             env.floor_colour = LIGHTGREY;
             env.rock_colour = LIGHTGREY;
             cprintf("- the Vestibule of Hell            ");
             break;
-        case 4:
+        case BRANCH_COCYTUS:
             env.floor_colour = LIGHTBLUE;
             env.rock_colour = LIGHTCYAN;
             cprintf(" of Cocytus                   ");
             break;
-        case 5:
+        case BRANCH_TARTARUS:
             env.floor_colour = DARKGREY;
             env.rock_colour = DARKGREY;
             cprintf(" of Tartarus                ");
             break;
-        case 6:
+        case BRANCH_INFERNO:
             env.floor_colour = LIGHTRED;
             env.rock_colour = RED;
             cprintf(" of the Inferno               ");
             break;
-        case 7:
+        case BRANCH_THE_PIT:
             env.floor_colour = RED;
             env.rock_colour = DARKGREY;
             cprintf(" of the Pit              ");
             break;
-        case 10:
+        case BRANCH_ORCISH_MINES:
             env.floor_colour = BROWN;
             env.rock_colour = BROWN;
             cprintf(" of the Orcish Mines          ");
             break;
-        case 11:
+        case BRANCH_HIVE:
             env.floor_colour = YELLOW;
             env.rock_colour = BROWN;
             cprintf(" of the Hive                  ");
             break;
-        case 12:
+        case BRANCH_LAIR:
             env.floor_colour = GREEN;
             env.rock_colour = BROWN;
             cprintf(" of the Lair                  ");
             break;
-        case 13:
+        case BRANCH_SLIME_PITS:
             env.floor_colour = GREEN;
             env.rock_colour = LIGHTGREEN;
             cprintf(" of the Slime Pits            ");
             break;
-        case 14:
+        case BRANCH_VAULTS:
             env.floor_colour = LIGHTGREY;
             env.rock_colour = BROWN;
             cprintf(" of the Vaults                ");
             break;
-        case 15:
+        case BRANCH_CRYPT:
             env.floor_colour = LIGHTGREY;
             env.rock_colour = LIGHTGREY;
             cprintf(" of the Crypt                 ");
             break;
-        case 16:
+        case BRANCH_HALL_OF_BLADES:
             env.floor_colour = LIGHTGREY;
             env.rock_colour = LIGHTGREY;
             cprintf(" of the Hall of Blades        ");
             break;
-        case 17:
+        case BRANCH_HALL_OF_ZOT:
             if (you.your_level - you.branch_stairs[7] <= 1)
             {
                 env.floor_colour = LIGHTGREY;
@@ -1217,27 +1227,27 @@ void new_level(void)
                 }
             cprintf(" of the Realm of Zot          ");
             break;
-        case 18:
+        case BRANCH_ECUMENICAL_TEMPLE:
             env.floor_colour = LIGHTGREY;
             env.rock_colour = LIGHTGREY;
             cprintf(" of the Temple                ");
             break;
-        case 19:
+        case BRANCH_SNAKE_PIT:
             env.floor_colour = LIGHTGREEN;
             env.rock_colour = YELLOW;
             cprintf(" of the Snake Pit             ");
             break;
-        case 20:
+        case BRANCH_ELVEN_HALLS:
             env.floor_colour = DARKGREY;
             env.rock_colour = LIGHTGREY;
             cprintf(" of the Elven Halls           ");
             break;
-        case 21:
+        case BRANCH_TOMB:
             env.floor_colour = YELLOW;
             env.rock_colour = LIGHTGREY;
             cprintf(" of the Tomb                  ");
             break;
-        case 22:
+        case BRANCH_SWAMP:
             env.floor_colour = BROWN;
             env.rock_colour = BROWN;
             cprintf(" of the Swamp                 ");
@@ -1255,7 +1265,7 @@ void dart_trap(int trap_known, int trapped, struct bolt beam[1])
     int damage_taken = 0;
 
 
-    if (random2(10) < 2 || (trap_known == 1 && random2(4) != 0))
+    if ( random2(10) < 2 || ( trap_known == 1 && !one_chance_in(4) ) )
     {
         strcpy(info, "You avoid triggering a");
         strcat(info, beam[0].beam_name);
@@ -1277,7 +1287,7 @@ void dart_trap(int trap_known, int trapped, struct bolt beam[1])
         goto out_of_trap;
     }
 
-    // note that this uses full (not random40) player_evasion.
+    // note that this uses full ( not random2limit(foo,40) ) player_evasion.
     if ((20 + you.your_level * 2) * random2(200) / 100 >= player_evasion() + random2(you.dex) / 3 - 2 + (you.duration[DUR_REPEL_MISSILES] * 10)
                 && you.duration[DUR_DEFLECT_MISSILES] == 0)
     {
@@ -1294,14 +1304,14 @@ void dart_trap(int trap_known, int trapped, struct bolt beam[1])
         mpr(info);
     }
 
-    if (player_light_armour() && random2(2) == 0)
+    if (player_light_armour() && coinflip() )
         exercise(SK_DODGING, 1);
 
 out_of_trap:
     beam[0].bx = you.x_pos;
     beam[0].by = you.y_pos;
 
-    if (random2(2) != 0)
+    if ( coinflip() )
         itrap(beam, trapped);
 
 }
@@ -1314,35 +1324,29 @@ void itrap(struct bolt beam[1], int trapped)
 
     switch (env.trap_type[trapped])
     {
-    case 0:                     //dart
-
-        beam[0].colour = 1;     // class
-
-        beam[0].damage = MI_DART;       // type
-
+    case TRAP_DART:
+        beam[0].colour = OBJ_MISSILES;
+        beam[0].damage = MI_DART;
         break;
 
-    case 1:                     // arrow
-
-        beam[0].colour = 1;
+    case TRAP_ARROW:
+        beam[0].colour = OBJ_MISSILES;
         beam[0].damage = MI_ARROW;
         break;
-
-    case 2:                     //spear
-
-        beam[0].colour = 0;
-        beam[0].damage = 11;
+// why is one treated as a missile and the other a weapon? 19jan2000 {dlb}
+    case TRAP_SPEAR:
+        beam[0].colour = OBJ_WEAPONS;
+        beam[0].damage = WPN_SPEAR;
         break;
 
-    case 3:                     // (hand) axe
-
-        beam[0].colour = 0;
-        beam[0].damage = 9;
+    case TRAP_AXE:
+        beam[0].colour = OBJ_MISSILES;
+        beam[0].damage = MI_AXE;
         break;
+// why is one treated as a missile and the other a weapon? 19jan2000 {dlb}
 
-    case 7:                     // bolt
-
-        beam[0].colour = 1;
+    case TRAP_BOLT:
+        beam[0].colour = OBJ_MISSILES;
         beam[0].damage = MI_BOLT;
         break;
 
@@ -1400,7 +1404,7 @@ void cull_items(void)
             destroy_item(cull);
         if (mitm.base_type[cull] == OBJ_WANDS && mitm.pluses[cull] == 0)
             destroy_item(cull);
-        if (mitm.base_type[cull] == OBJ_WEAPONS && mitm.pluses[cull] % 100 == 50 && random2(3) == 0)
+        if ( mitm.base_type[cull] == OBJ_WEAPONS && mitm.pluses[cull] % 100 == 50 && one_chance_in(3) )
             destroy_item(cull);
     }
 
@@ -1450,7 +1454,7 @@ void handle_traps(char trt, int i, char trap_known)
             mpr("You feel a weird sense of stasis.");
             break;
         }
-        you_teleport2(1);
+        you_teleport2(true);
         break;
 
     case TRAP_AMNESIA:
@@ -1459,14 +1463,14 @@ void handle_traps(char trt, int i, char trap_known)
         break;
 
     case TRAP_BLADE:
-        if (trap_known == 1 && random2(3) == 0)
+        if ( trap_known == 1 && one_chance_in(3) )
         {
             strcpy(info, "You avoid triggering a blade trap.");
             mpr(info);
             return;
         }
 
-        if (random40(player_evasion()) + random2(you.dex) / 3 +
+        if (random2limit(player_evasion(),40) + random2(you.dex) / 3 +
                                                         trap_known * 3 > 8)
         {
             strcpy(info, "A huge blade swings just past you!");
@@ -1480,7 +1484,7 @@ void handle_traps(char trt, int i, char trap_known)
                                             - random2(player_AC() + 1), 0, KILLED_BY_TRAP);
         break;
 
-    case TRAP_ZOT:                     /* Zot trap! */
+    case TRAP_ZOT:
     default:
         if (trap_known == 1)
         {
@@ -1517,7 +1521,7 @@ void disarm_trap(struct dist disa[1])
         }
     }
 
-    if (env.trap_type[i] == 4 || env.trap_type[i] == 5 || env.trap_type[i] == 8)
+    if (env.trap_type[i] == TRAP_TELEPORT || env.trap_type[i] == TRAP_AMNESIA || env.trap_type[i] == TRAP_ZOT)
     {
         strcpy(info, "You can't disarm that trap.");
         mpr(info);
@@ -1559,7 +1563,7 @@ void disarm_trap(struct dist disa[1])
         for (j = 0; j < 20; j++)
         {
             itrap(beam, i);     /* places items (eg darts), which will automatically stack */
-            if (j > 10 && random2(3) == 0)
+            if (j > 10 && one_chance_in(3) )
                 break;
         }
     }
@@ -1571,7 +1575,7 @@ void disarm_trap(struct dist disa[1])
     you.turn_is_over = 1;
 
     // reduced from 5 + random2(5)
-    exercise(SK_TRAPS_DOORS, 1 + you.your_level / 5 + random2(5));
+    exercise( SK_TRAPS_DOORS, 1 + you.your_level / 5 + random2(5) );
 }
 
 
@@ -1585,23 +1589,23 @@ int manage_clouds(void)
     for (cc = 0; cc < CLOUDS; cc++)
     {
 
-        if (env.cloud_type[cc] == 0)
+        if (env.cloud_type[cc] == CLOUD_NONE)
             continue;
 
         cchck++;
 
             env.cloud_decay[cc] -= you.time_taken;
 
-        if ((env.cloud_type[cc] == 1 && grd[env.cloud_x[cc]][env.cloud_y[cc]] == 12) || (env.cloud_type[cc] == 3 && grd[env.cloud_x[cc]][env.cloud_y[cc]] == 11))
+        if ((env.cloud_type[cc] == CLOUD_FIRE && grd[env.cloud_x[cc]][env.cloud_y[cc]] == DNGN_WATER_X) || (env.cloud_type[cc] == CLOUD_COLD && grd[env.cloud_x[cc]][env.cloud_y[cc]] == DNGN_LAVA_X))
         {
                 env.cloud_decay[cc] -= you.time_taken * 3;
         }
 
-        if (you.slow != 0)
+        if (you.slow)
         {
             env.cloud_decay[cc] -= you.time_taken;
 
-            if ((env.cloud_type[cc] == 1 && grd[env.cloud_x[cc]][env.cloud_y[cc]] == 62) || (env.cloud_type[cc] == 3 && grd[env.cloud_x[cc]][env.cloud_y[cc]] == 61))
+            if ((env.cloud_type[cc] == CLOUD_FIRE && grd[env.cloud_x[cc]][env.cloud_y[cc]] == DNGN_DEEP_WATER) || (env.cloud_type[cc] == CLOUD_COLD && grd[env.cloud_x[cc]][env.cloud_y[cc]] == DNGN_LAVA))
             {
                 env.cloud_decay[cc] -= you.time_taken * 2;
             }                   /* lava makes cold clouds dissipate, ditto for water and flaming clouds */
@@ -1610,7 +1614,7 @@ int manage_clouds(void)
 
         if (env.cloud_decay[cc] <= 0)
         {
-            env.cloud_type[cc] = 0;
+            env.cloud_type[cc] = CLOUD_NONE;
             env.cloud_decay[cc] = 0;
             env.cgrid[env.cloud_x[cc]][env.cloud_y[cc]] = CNG;
             ugy--;
@@ -1755,11 +1759,11 @@ void fall_into_a_pool(char place, unsigned char grype)
 
     switch (grype)
     {
-    case 61:
+    case DNGN_LAVA:
         strcpy(info, "You fall into the lava!");
         mpr(info);
         break;
-    case 62:
+    case DNGN_DEEP_WATER:
         strcpy(info, "You fall into the water!");
         mpr(info);
         break;
@@ -1769,14 +1773,14 @@ void fall_into_a_pool(char place, unsigned char grype)
     more();
     mesclr();
 
-    if (grype == 61 && player_res_fire() <= 100)
+    if (grype == DNGN_LAVA && player_res_fire() <= 100)
     {
         strcpy(info, "You burn to a cinder!");
         mpr(info);
         ouch(-9999, 0, KILLED_BY_LAVA);
     }
 
-    if (grype == 61)
+    if (grype == DNGN_LAVA)
     {
         mpr("The lava burns you!");
         ouch((10 + random2(20) + random2(20) + random2(20)) / (player_res_fire() - 99), 0, KILLED_BY_LAVA);
@@ -1786,7 +1790,7 @@ void fall_into_a_pool(char place, unsigned char grype)
 
     if (place == 1 && scramble() == 1)
     {
-        if (empty_surrounds(you.x_pos, you.y_pos, 67, 0, empty) == 1)
+        if (empty_surrounds(you.x_pos, you.y_pos, DNGN_FLOOR, 0, empty) == 1)
         {
             you.x_pos = empty[0];
             you.y_pos = empty[1];
@@ -1806,7 +1810,7 @@ void fall_into_a_pool(char place, unsigned char grype)
         strcpy(info, "You manage to scramble free!");
         mpr(info);
         if (grype == 61)
-            scrolls_burn(10, 6);
+            scrolls_burn(10, OBJ_SCROLLS);
         return;
     }
 
@@ -1975,25 +1979,25 @@ void weird_colours(unsigned char coll, char wc[30])
 
 }
 
-char go_berserk(void)
+bool go_berserk(void)
 {
     if (you.berserker)
-    {
+      {
         mpr("You're already berserk!");
-        return 0;
-    }
+        return false;
+      }
 
     if (you.exhausted)
-    {
+      {
         mpr( "You're too exhausted to go berserk.");
-        return 0;
-    }
+        return false;
+      }
 
-    if (you.is_undead == 2 || you.species == SP_GHOUL)
-    {
+    if (you.is_undead == US_UNDEAD || you.species == SP_GHOUL)
+      {
         mpr("You cannot raise a blood rage in your lifeless body.");
-        return 0;
-    }
+        return false;
+      }
 
     strcpy(info, "A red film seems to cover your vision as you go berserk!");
     mpr(info);
@@ -2007,41 +2011,43 @@ char go_berserk(void)
     you.hp *= 15;
     you.hp /= 10;
     you.redraw_hit_points = 1;
+
     if (you.hp >= you.hp_max)
-        you.hp = you.hp_max;
+      you.hp = you.hp_max;
     if (you.might == 0)
-    {
+      {
         you.redraw_strength = 1;
         you.strength += 5;
         you.max_strength += 5;
-    }
+      }
 
     you.might += you.berserker;
     you.haste += you.berserker;
 
     if (you.berserk_penalty != NO_BERSERK_PENALTY)
-        you.berserk_penalty = 0;
+      you.berserk_penalty = 0;
 
-    return 1;
+    return true;
 }
+
 
 
 
 int trap_item(char base_type, char sub_type, char beam_x, char beam_y)
 {
 
-    if (igrd[beam_x][beam_y] != 501)
+    if (igrd[beam_x][beam_y] != ING)
     {
         if ((base_type == 1 || base_type == 4 || base_type == 6 || base_type == 8 || base_type == 9) && base_type == mitm.base_type[igrd[beam_x][beam_y]] && sub_type == mitm.sub_type[igrd[beam_x][beam_y]] && mitm.pluses[igrd[beam_x][beam_y]] == 50 && mitm.special[igrd[beam_x][beam_y]] == 0)
         {
             mitm.quantity[igrd[beam_x][beam_y]]++;
             return 0;
         }
-    }                           // end of if igrd != 501
+    }                           // end of if igrd != ING
 
-    if (igrd[beam_x][beam_y] != 501)
-        if (mitm.link[igrd[beam_x][beam_y]] != 501)
-            if (mitm.link[mitm.link[igrd[beam_x][beam_y]]] != 501)
+    if (igrd[beam_x][beam_y] != ING)
+        if (mitm.link[igrd[beam_x][beam_y]] != ING)
+            if (mitm.link[mitm.link[igrd[beam_x][beam_y]]] != ING)
                 return 0;
 // don't want to go overboard here. Will only generate up to three separate trap items, or less if there are other items on the square.
 
@@ -2064,7 +2070,7 @@ int trap_item(char base_type, char sub_type, char beam_x, char beam_y)
             mitm.special[o] = 0;
             mitm.colour[o] = LIGHTCYAN;
             mitm.quantity[o] = 1;
-            mitm.link[o] = 501;
+            mitm.link[o] = ING;
 //                      it_no ++;
             break;
         }
@@ -2075,7 +2081,7 @@ int trap_item(char base_type, char sub_type, char beam_x, char beam_y)
 
 
 
-    if (igrd[beam_x][beam_y] == 501)
+    if (igrd[beam_x][beam_y] == ING)
     {
         igrd[beam_x][beam_y] = o;
     }

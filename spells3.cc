@@ -16,7 +16,6 @@
 #include <string.h>
 
 #include "externs.h"
-#include "enum.h"
 
 #include "beam.h"
 #include "direct.h"
@@ -40,6 +39,8 @@
 extern char wield_change;       /* defined in output.cc */
 
 
+
+
 void cast_selective_amnesia(void)
 {
     char spc = 0;
@@ -47,13 +48,12 @@ void cast_selective_amnesia(void)
     char ep_gain = 0;
     int keyin = 0;
 
-    if (you.spell_no == 0)
-    {
-        strcpy(info, "You don't know any spells.");     // can this happen?
-
-        mpr(info);
-        return;
-    }
+    if ( you.spell_no == 0 )
+      {
+         strcpy(info, "You don't know any spells.");     // can this happen?
+         mpr(info);
+         return;
+      }
 
 query:
     strcpy(info, "Forget which spell?");
@@ -97,73 +97,74 @@ unknown:
 
     spc2 = conv_lett(spc);
 
-    if (spc2 >= 25 || you.spells[spc2] == 210)
+    if ( spc2 >= 25 || you.spells[spc2] == SPELL_NO_SPELL )
     {
         goto unknown;
     }
 
-    if (you.religion != GOD_SIF_MUNA
-                    && random2(you.skills[SK_SPELLCASTING])
-                                < random2(spell_value(you.spells[spc2])))
-    {
-        strcpy(info, "Oops! This spell sure is a blunt instrument.");
-        mpr(info);
-        forget_map(20 + random2(50));
-        return;
-    }
+    if ( you.religion != GOD_SIF_MUNA
+        && random2(you.skills[SK_SPELLCASTING]) < random2(spell_value(you.spells[spc2])) )
+      {
+         strcpy(info, "Oops! This spell sure is a blunt instrument.");
+         mpr(info);
+         forget_map(20 + random2(50));
+         return;
+      }
 
     ep_gain = spell_value(you.spells[spc2]);
+
     if (ep_gain < 0)
-        ep_gain = 0;
+      ep_gain = 0;
 
     if (ep_gain == spell_value(you.spells[spc2]))
-    {
-        strcpy(info, "The spell releases its latent energy back to you as it unravels.");
-    }
+      strcpy(info, "The spell releases its latent energy back to you as it unravels.");
 
     mpr(info);
 
-    // you.spell_levels += ep_gain;
+    //you.spell_levels += ep_gain;
     you.redraw_magic_points = 1;
     you.spell_no--;
 
-    you.spells[spc2] = 210;
+    you.spells[spc2] = SPELL_NO_SPELL;
 }                               /* end of cast_selective_amn */
+
+
 
 
 void remove_curse(void)
 {
 
-    if (you.equip[EQ_WEAPON] != -1 && you.inv_class[you.equip[EQ_WEAPON]] == 0)
-    {
-        if (you.inv_plus[you.equip[EQ_WEAPON]] > 130)
-            you.inv_plus[you.equip[EQ_WEAPON]] -= 100;
-        wield_change = 1;
-    }
+    if ( you.equip[EQ_WEAPON] != -1
+        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
+      {
+         if (you.inv_plus[you.equip[EQ_WEAPON]] > 130)
+           you.inv_plus[you.equip[EQ_WEAPON]] -= 100;
+         wield_change = 1;
+      }
 
-    if (you.equip[EQ_LEFT_RING] != -1)
-    {
-        if (you.inv_plus[you.equip[EQ_LEFT_RING]] > 130)
-            you.inv_plus[you.equip[EQ_LEFT_RING]] -= 100;
-    }
+    if ( you.equip[EQ_LEFT_RING] != -1 )
+      {
+         if (you.inv_plus[you.equip[EQ_LEFT_RING]] > 130)
+           you.inv_plus[you.equip[EQ_LEFT_RING]] -= 100;
+      }
 
-    if (you.equip[EQ_RIGHT_RING] != -1)
-    {
-        if (you.inv_plus[you.equip[EQ_RIGHT_RING]] > 130)
-            you.inv_plus[you.equip[EQ_RIGHT_RING]] -= 100;
-    }
+    if ( you.equip[EQ_RIGHT_RING] != -1 )
+      {
+         if (you.inv_plus[you.equip[EQ_RIGHT_RING]] > 130)
+           you.inv_plus[you.equip[EQ_RIGHT_RING]] -= 100;
+      }
 
-    if (you.equip[EQ_AMULET] != -1)
-    {
-        if (you.inv_plus[you.equip[EQ_AMULET]] > 130)
-            you.inv_plus[you.equip[EQ_AMULET]] -= 100;
-    }
+    if ( you.equip[EQ_AMULET] != -1 )
+      {
+         if (you.inv_plus[you.equip[EQ_AMULET]] > 130)
+           you.inv_plus[you.equip[EQ_AMULET]] -= 100;
+      }
     int i;
 
-    for (i = 1; i < 7; i++)
+    for (i = EQ_CLOAK; i <= EQ_BODY_ARMOUR; i++)
     {
-        if (you.inv_plus[you.equip[i]] > 130)
-            you.inv_plus[you.equip[i]] -= 100;
+       if (you.inv_plus[you.equip[i]] > 130)
+         you.inv_plus[you.equip[i]] -= 100;
     }
 
 
@@ -173,57 +174,61 @@ void remove_curse(void)
 }                               /* end of remove_curse() */
 
 
+
+
 void detect_curse(void)
 {
 
     int curse_found = 0;
-    int i;
 
-    for (i = 0; i < 52; i++)
+    for (int i = 0; i < 52; i++)
     {
+      if ( you.inv_quantity[i] == 0 )
+        continue;
 
-        if (you.inv_quantity[i] == 0)
-            continue;
-
-        if (you.inv_class[i] == 0 || you.inv_class[i] == 2 || you.inv_class[i] == 7)
+      if ( you.inv_class[i] == OBJ_WEAPONS
+            || you.inv_class[i] == OBJ_ARMOUR
+            || you.inv_class[i] == OBJ_JEWELLERY )
         {
-            if (you.inv_ident[i] == 0)
+          if ( you.inv_ident[i] == 0 )
             {
-                curse_found++;
-                you.inv_ident[i] = 1;
+               curse_found++;
+               you.inv_ident[i] = 1;
             }
         }
     }                           /* end of for i */
 
-//if (curse_found > 0)
-    //{
-    // strcpy(info, "You sense a malignant aura.");
-    //} else
+    //if (curse_found > 0)
+    //  strcpy(info, "You sense a malignant aura.");
+    //else
     strcpy(info, "You sense the presence of curses on your possessions.");
 
     mpr(info);
 
 }
 
+
+
+
 void cast_smiting(int pow)
 {
 
     struct dist beam[1];
-    int i;
+    unsigned char i;
 
     strcpy(info, "Smite whom?");
     mpr(info);
 
     direction(100, beam);
 
-    if (beam[0].nothing == -1
-        || mgrd[beam[0].target_x][beam[0].target_y] == MNG
-        || (beam[0].target_x == you.x_pos && beam[0].target_y == you.y_pos))
-    {
+    if ( beam[0].nothing == -1
+          || mgrd[beam[0].target_x][beam[0].target_y] == MNG
+          || (beam[0].target_x == you.x_pos && beam[0].target_y == you.y_pos ) )
+      {
         strcpy(info, "The spell fizzles.");
         mpr(info);
         return;
-    }
+      }
 
     i = mgrd[beam[0].target_x][beam[0].target_y];
 
@@ -239,16 +244,19 @@ void cast_smiting(int pow)
     // menv[i].hit_points -= random2(8) + random2(pow) / 3;
 
     if (menv[i].hit_points <= 0)
-        monster_die(i, 1, 0);
+      monster_die(i, KILL_YOU, 0);
     else
-        print_wounds(i);
+      print_wounds(i);
 
 }                               /* end of smiting */
+
+
+
 
 void airstrike(int pow)
 {
     struct dist beam[1];
-    int i;
+    unsigned char i;
     int hurted = 0;
 
     strcpy(info, "Strike whom?");
@@ -256,7 +264,8 @@ void airstrike(int pow)
 
     direction(100, beam);
 
-    if (beam[0].nothing == -1 || mgrd[beam[0].target_x][beam[0].target_y] == MNG)
+    if ( beam[0].nothing == -1
+          || mgrd[beam[0].target_x][beam[0].target_y] == MNG)
     {
         strcpy(info, "The spell fizzles.");
         mpr(info);
@@ -274,37 +283,38 @@ void airstrike(int pow)
 
     hurted -= random2(menv[i].armor_class + 1);
     if (hurted < 0)
-        hurted = 0;
+      hurted = 0;
 
     menv[i].hit_points -= hurted;
 
     if (menv[i].hit_points <= 0)
-        monster_die(i, 1, 0);
+      monster_die(i, KILL_YOU, 0);
     else
-        print_wounds(i);
+      print_wounds(i);
 
 }
+
 
 
 
 void cast_bone_shards(int power)
 {
 
-    if (you.equip[EQ_WEAPON] == -1 || you.inv_class[you.equip[EQ_WEAPON]] != 14)        //  || you.inv_type [you.equip [0]] != 1)
+    if ( you.equip[EQ_WEAPON] == -1
+          || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_CORPSES )
 
-    {
+      {
         strcpy(info, "The spell fails.");
         mpr(info);
         return;
-    }
+      }
 
-    if (you.inv_type[you.equip[EQ_WEAPON]] != 1)
-    {
+    if ( you.inv_type[you.equip[EQ_WEAPON]] != CORPSE_SKELETON )
+      {
         strcpy(info, "The corpse collapses into a mass of pulpy flesh.");
         mpr(info);
-
         return;
-    }
+      }
 
     power *= 15;
     power += mons_weight(you.inv_plus[you.equip[EQ_WEAPON]]);
@@ -329,7 +339,7 @@ void cast_bone_shards(int power)
     }
 
     zapping(ZAP_BONE_SHARDS, power, beam);
-/*   zapping(26, power); */
+    //zapping(ZAP_BONE_SHARDS, power);
     burden_change();
 
 }
@@ -340,16 +350,18 @@ void sublimation(int pow)
 
     unsigned char was_wielded = 0;
 
-    if (you.equip[EQ_WEAPON] == -1 || you.inv_class[you.equip[EQ_WEAPON]] != 4 || you.inv_type[you.equip[EQ_WEAPON]] != 21)
+    if ( you.equip[EQ_WEAPON] == -1
+          || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_FOOD
+          || you.inv_type[you.equip[EQ_WEAPON]] != FOOD_CHUNK )
     {
-        if (you.deaths_door != 0)
+        if ( you.deaths_door != 0 )
         {
             strcpy(info, "A conflicting enchantment prevents the spell from coming into effect.");
             mpr(info);
             return;
         }
 
-        if (you.hp <= 1)
+        if ( you.hp < 2 )     // sublimation costs 1 hp and should not kill you!
         {
             strcpy(info, "Your attempt to draw power from your own body fails.");
             mpr(info);
@@ -359,17 +371,17 @@ void sublimation(int pow)
         strcpy(info, "You draw magical energy from your own body!");
         mpr(info);
 
-        while (you.magic_points < you.max_magic_points && you.hp > 1)
+        while ( you.magic_points < you.max_magic_points && you.hp > 1 )
         {
             you.magic_points++;
             you.hp--;
-            if (random2(pow) < 6 && you.hp > 1)
+            if ( you.hp > 1 && random2(pow) < 6 )
                 you.hp--;
-            if (random2(pow) < 6 && you.hp > 1)
+            if ( you.hp > 1 && random2(pow) < 6 )
                 you.hp--;
-            if (random2(pow) < 6 && you.hp > 1)
+            if ( you.hp > 1 && random2(pow) < 6 )
                 you.hp--;
-            if (random2(pow) < 6)
+            if ( random2(pow) < 6 )
                 break;
         }
 
@@ -388,9 +400,9 @@ void sublimation(int pow)
         pow = 100;
 
     you.magic_points += 7 + random2(7);
-/*you.magic_points += random2(pow) / 3;
-   you.magic_points += random2(pow) / 3;
-   you.magic_points += random2(pow) / 3; */
+    //you.magic_points += random2(pow) / 3;
+    //you.magic_points += random2(pow) / 3;
+    //you.magic_points += random2(pow) / 3;
 
     was_wielded = you.equip[EQ_WEAPON];
     unwield_item(you.equip[EQ_WEAPON]);
@@ -410,19 +422,22 @@ void sublimation(int pow)
 
 }
 
+
+
+
 void dancing_weapon(int pow, char force_hostile)
 {
     int numsc = 21 + random2(pow) / 5;
 
     if (numsc > 25)
-        numsc = 25;
+      numsc = 25;
 
     int summs = 0;
     int i = 0;
-    char behavi = 7;
+    char behavi = BEH_ENSLAVED;
     char empty[2];
 
-    if (empty_surrounds(you.x_pos, you.y_pos, 67, 0, empty) == 0)
+    if (empty_surrounds(you.x_pos, you.y_pos, DNGN_FLOOR, 0, empty) == 0)
     {
 failed_spell:
         strcpy(info, "You hear a popping sound.");
@@ -430,18 +445,22 @@ failed_spell:
         return;
     }
 
-    if (you.equip[EQ_WEAPON] == -1 || you.inv_class[you.equip[EQ_WEAPON]] != 0 || (you.inv_type[you.equip[EQ_WEAPON]] >= 13 && you.inv_type[you.equip[EQ_WEAPON]] <= 16) || you.inv_dam[you.equip[EQ_WEAPON]] >= 180)
-    {
-        goto failed_spell;
-    }
+    if ( you.equip[EQ_WEAPON] == -1
+          || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS
+          || (you.inv_type[you.equip[EQ_WEAPON]] >= 13 && you.inv_type[you.equip[EQ_WEAPON]] <= 16)
+          || you.inv_dam[you.equip[EQ_WEAPON]] >= 180 )
+      {
+         goto failed_spell;
+     }
 
-    if (you.inv_plus[you.equip[EQ_WEAPON]] >= 100 || force_hostile == 1)
-        behavi = 1;             /* a cursed weapon becomes hostile */
+    if ( you.inv_plus[you.equip[EQ_WEAPON]] >= 100
+          || force_hostile == 1 )
+      behavi = BEH_CHASING_I;             // cursed weapons become hostile
 
     summs = create_monster(MONS_DANCING_WEAPON, numsc, behavi, empty[0], empty[1], you.pet_target, 1);
 
     if (summs == -1)
-        goto failed_spell;
+      goto failed_spell;
 
     for (i = 0; i < ITEMS; i++)
     {
@@ -461,7 +480,7 @@ failed_spell:
             mitm.special[i] = you.inv_dam[you.equip[EQ_WEAPON]];
             mitm.colour[i] = you.inv_colour[you.equip[EQ_WEAPON]];
             mitm.quantity[i] = 1;
-            mitm.link[i] = 501;
+            mitm.link[i] = ING;
             /* it_no ++; */
             break;
         }
@@ -482,6 +501,9 @@ failed_spell:
     menv[summs].number = mitm.colour[i];
 }
 
+
+
+
 bool monster_on_level(int monster)
 {
     for (int i = 0; i < MNST; i++)
@@ -492,6 +514,9 @@ bool monster_on_level(int monster)
 
     return false;
 }
+
+
+
 
 //
 // This function returns true if the player can used controlled
@@ -545,40 +570,48 @@ bool allow_control_teleport()
 
     // Tell the player why if they have teleport control.
     if (ret == false && you.attribute[ATTR_CONTROL_TELEPORT] != 0)
-        mpr("A powerful magic prevents you from controlling you teleport.");
+        mpr("A powerful magic prevents control of your teleportation.");
 
     return ret;
 }
 
+
+
+
 void you_teleport()
 {
     if (scan_randarts(RAP_PREVENT_TELEPORTATION))
-    {
-        mpr("You feel a weird sense of stasis.");
-        return;
-    }
+      {
+         mpr("You feel a weird sense of stasis.");
+         return;
+      }
 
     if (you.duration[DUR_TELEPORT] != 0)
-    {
-        mpr("You feel strangely stable.");
-        you.duration[DUR_TELEPORT] = 0;
-        return;
-    }
+      {
+         mpr("You feel strangely stable.");
+         you.duration[DUR_TELEPORT] = 0;
+         return;
+      }
 
     mpr("You feel strangely unstable.");
     you.duration[DUR_TELEPORT] = 4 + random2(3);
-    if (you.level_type == LEVEL_ABYSS && random2(3) != 0)
-    {
-     mpr("You have a feeling this translocation may take a while to kick in...");
-     you.duration[DUR_TELEPORT] += 3 + random2(3);
-    }
+
+    if (you.level_type == LEVEL_ABYSS && !one_chance_in(3) )
+      {
+         mpr("You have a feeling this translocation may take a while to kick in...");
+         you.duration[DUR_TELEPORT] += 3 + random2(3);
+      }
 }
 
 
-void you_teleport2(char allow_control)
+
+
+void you_teleport2(bool allow_control)
 {
-    if (you.attribute[ATTR_CONTROL_TELEPORT] != 0 && allow_control_teleport()
-                                        && you.conf == 0 && allow_control == 1)
+    if ( you.attribute[ATTR_CONTROL_TELEPORT] != 0
+        && allow_control_teleport()
+        && !you.conf
+        && allow_control )
     {
         mpr("You may choose your destination (press '.' or delete to select).");
         mpr("Expect minor deviation; teleporting into an open area is recommended.");
@@ -596,7 +629,7 @@ void you_teleport2(char allow_control)
         plox[0] += random2(3) - 1;
         plox[1] += random2(3) - 1;
 
-        if (random2(4) == 0)
+        if ( one_chance_in(4) )
         {
             plox[0] += random2(3) - 1;
             plox[1] += random2(3) - 1;
@@ -621,14 +654,13 @@ void you_teleport2(char allow_control)
         you.x_pos = plox[0];
         you.y_pos = plox[1];
 
-        if ((grd[you.x_pos][you.y_pos] != 67
-                                    && grd[you.x_pos][you.y_pos] != 65)
-                    || mgrd[you.x_pos][you.y_pos] != MNG
-                    || env.cgrid[you.x_pos][you.y_pos] != CNG)
-        {
+        if ( ( grd[you.x_pos][you.y_pos] != DNGN_FLOOR && grd[you.x_pos][you.y_pos] != DNGN_SHALLOW_WATER )
+                || mgrd[you.x_pos][you.y_pos] != MNG
+                || env.cgrid[you.x_pos][you.y_pos] != CNG )
+          {
             mpr("Oops!");
             goto random_teleport;
-        }
+          }
 
     }
     else
@@ -641,19 +673,21 @@ random_teleport:
             you.x_pos = random2(70) + 10;
             you.y_pos = random2(60) + 10;
         }
-        while ((grd[you.x_pos][you.y_pos] != 67
-                                    && grd[you.x_pos][you.y_pos] != 65)
-                        || mgrd[you.x_pos][you.y_pos] != MNG
-                        || env.cgrid[you.x_pos][you.y_pos] != CNG);
+        while ( ( grd[you.x_pos][you.y_pos] != DNGN_FLOOR
+                 && grd[you.x_pos][you.y_pos] != DNGN_SHALLOW_WATER )
+               || mgrd[you.x_pos][you.y_pos] != MNG
+               || env.cgrid[you.x_pos][you.y_pos] != CNG );
     }
 
-    if (you.level_type == 2)
+    if (you.level_type == LEVEL_ABYSS)
     {
         abyss_teleport();
         env.cloud_no = 0;
         you.pet_target = MHITNOT;
     }
 }                               /* end of you_teleport */
+
+
 
 
 void entomb()
@@ -674,28 +708,33 @@ void entomb()
             if (srx == you.x_pos && sry == you.y_pos)
                 continue;
 
-            if (grd[srx][sry] != 67 && grd[srx][sry] != 65 && grd[srx][sry] != 70 && (grd[srx][sry] < 75 || grd[srx][sry] > 78))
-                continue;
+            if ( grd[srx][sry] != DNGN_FLOOR
+                && grd[srx][sry] != DNGN_SHALLOW_WATER
+                && grd[srx][sry] != DNGN_OPEN_DOOR
+                && ( grd[srx][sry] < DNGN_TRAP_I
+                      || grd[srx][sry] > DNGN_UNDISCOVERED_TRAP ) )
+              continue;
+
             if (mgrd[srx][sry] != MNG)
-                continue;
+              continue;
 
             int objl = igrd[srx][sry];
             int hrg = 0;
 
-            while (objl != 501)
+            while (objl != ING)
             {
-                if (mitm.base_type[objl] == 12)
-                    goto finish_loop;   // Wouldn't want to do this (ie destroy an Orb)
+               if (mitm.base_type[objl] == OBJ_ORBS)
+                 goto finish_loop;   // Wouldn't want to do this (ie destroy an Orb)
 
-                hrg = mitm.link[objl];
-                objl = hrg;
+               hrg = mitm.link[objl];
+               objl = hrg;
             }
 
             objl = igrd[srx][sry];
             hrg = 0;
 //   int objl2;
 
-            while (objl != 501)
+            while (objl != ING)
             {
 //    objl2 = objl;
                 hrg = mitm.link[objl];
@@ -707,13 +746,13 @@ void entomb()
 
             if (env.cgrid[srx][sry] != CNG)
             {
-                env.cloud_type[env.cgrid[srx][sry]] = 0;
+                env.cloud_type[env.cgrid[srx][sry]] = CLOUD_NONE;
                 env.cgrid[env.cloud_x[env.cgrid[srx][sry]]][env.cloud_y[env.cgrid[srx][sry]]] = CNG;
                 env.cloud_decay[env.cgrid[srx][sry]] = 0;
                 env.cloud_no--;
             }
 
-            grd[srx][sry] = 1;
+            grd[srx][sry] = DNGN_ROCK_WALL;
             number_built++;
           finish_loop:chance_found++;
                                 // this does nothing
@@ -722,37 +761,55 @@ void entomb()
     }
 
     if (number_built > 0)
-    {
-        strcpy(info, "Walls grow out of the floor around you!");
-    }
+      strcpy(info, "Walls grow out of the floor around you!");
     else
-        strcpy(info, "Nothing appears to happen.");
+      strcpy(info, "Nothing appears to happen.");
+
     mpr(info);
 
 }
+
+
 
 
 void cast_poison_ammo(void)
 {
 
-    if (you.equip[EQ_WEAPON] == -1 || you.inv_class[you.equip[EQ_WEAPON]] != 1 || you.inv_dam[you.equip[EQ_WEAPON]] != 0 || you.inv_type[you.equip[EQ_WEAPON]] == 0 || you.inv_type[you.equip[EQ_WEAPON]] == 5)
-    {
-        mpr("Nothing appears to happen.");
-        return;
-    }
+    if ( you.equip[EQ_WEAPON] == -1
+          || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_MISSILES
+          || you.inv_dam[you.equip[EQ_WEAPON]] != 0
+          || you.inv_type[you.equip[EQ_WEAPON]] == MI_STONE
+          || you.inv_type[you.equip[EQ_WEAPON]] == MI_LARGE_ROCK )
+      {
+         mpr("Nothing appears to happen.");
+         return;
+      }
 
-    item_name(you.inv_plus2[you.equip[EQ_WEAPON]], you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_quantity[you.equip[EQ_WEAPON]], you.inv_ident[you.equip[EQ_WEAPON]], 4, str_pass);
+    item_name( you.inv_plus2[you.equip[EQ_WEAPON]],
+               you.inv_class[you.equip[EQ_WEAPON]],
+               you.inv_type[you.equip[EQ_WEAPON]],
+               you.inv_dam[you.equip[EQ_WEAPON]],
+               you.inv_plus[you.equip[EQ_WEAPON]],
+               you.inv_quantity[you.equip[EQ_WEAPON]],
+               you.inv_ident[you.equip[EQ_WEAPON]],
+               4, str_pass );
+
     strcpy(info, str_pass);
-    if (you.inv_quantity[you.equip[EQ_WEAPON]] == 1)
-        strcat(info, " is covered in a thin film of poison.");
+
+    if ( you.inv_quantity[you.equip[EQ_WEAPON]] == 1 )
+      strcat(info, " is covered in a thin film of poison.");
     else
-        strcat(info, " are covered in a thin film of poison.");
+      strcat(info, " are covered in a thin film of poison.");
+
     mpr(info);
 
     you.inv_dam[you.equip[EQ_WEAPON]] = 3;
+
     wield_change = 1;
 
 }
+
+
 
 
 void create_noise2()
@@ -781,17 +838,21 @@ void create_noise2()
 #endif
 
     if (plox[0] < 1 || plox[1] < 1 || plox[0] > 78 || plox[1] > 68)
-    {
-        mpr("You hear a muffled thud.");
-        return;
-    }
+      {
+         mpr("You hear a muffled thud.");
+      }
+    else
+      {
+        mpr("You hear a distant voice call your name.");
+        noisy(30, plox[0], plox[1]);
+      }
 
-    mpr("You hear a distant voice call your name.");
-
-    noisy(30, plox[0], plox[1]);
-
+    return;
 
 }
+
+
+
 
 /*
    Type recalled:
@@ -806,7 +867,7 @@ void recall(char type_recalled)
     int l = MNST - 1;
     char recalled = 0;
 
-    if (random2(2) == 0)
+    if ( coinflip() )
     {
         j = MNST - 1;
         l = 0;
@@ -818,21 +879,24 @@ void recall(char type_recalled)
     for (i = j; i != l; i += k)
     {
         if (menv[i].type == -1)
-            continue;
-        if (menv[i].behavior != 7)
-            continue;
-        if (menv[i].type >= MLAVA0)
-            continue;
+          continue;
+        if (menv[i].behavior != BEH_ENSLAVED)
+          continue;
+        if (menv[i].type >= MONS_LAVA_WORM)
+          continue;
 
         if (type_recalled == 1)
         {
-            if (!((menv[i].type == 23 || menv[i].type == 49) && menv[i].number == BROWN || menv[i].number == RED || menv[i].number == LIGHTRED))        /* abominations created by twisted res, although it gets others too */
-                if (!(menv[i].type == 83))      /* reapers */
-                    if (mons_holiness(menv[i].type) != 1)
+            if ( !( ( menv[i].type == MONS_ABOMINATION_SMALL || menv[i].type == MONS_ABOMINATION_LARGE )
+                     && menv[i].number == BROWN
+                     || menv[i].number == RED
+                     || menv[i].number == LIGHTRED ) )        /* abominations created by twisted res, although it gets others too */
+                if (!(menv[i].type == MONS_REAPER))
+                    if (mons_holiness(menv[i].type) != MH_UNDEAD)
                         continue;
         }
 
-        if (empty_surrounds(you.x_pos, you.y_pos, 67, 0, empty) == 0)
+        if (empty_surrounds(you.x_pos, you.y_pos, DNGN_FLOOR, 0, empty) == 0)
         {
             break;              /* time to stop */
         }
@@ -843,7 +907,7 @@ void recall(char type_recalled)
             menv[i].y = empty[1];
             mgrd[menv[i].x][menv[i].y] = i;
             recalled++;
-            if (menv[i].enchantment[2] != 6 || player_see_invis() != 0)
+            if (menv[i].enchantment[2] != ENCH_INVIS || player_see_invis() != 0)
             {
                 strcpy(info, "You recall your ");
                 strcat(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 4));
@@ -862,28 +926,30 @@ void recall(char type_recalled)
 }
 
 
+
+
 void portal(void)
 {
 
     char dir_sign = 0;
 
-    if (you.where_are_you != 0) // && you.where_are_you < 10)
+    if ( you.where_are_you != BRANCH_MAIN_DUNGEON ) // && you.where_are_you < 10)
+      {
+         mpr("This spell doesn't work here.");
+         return;
+      }
 
-    {
-        mpr("This spell doesn't work here.");
-        return;
-    }
-    if (you.level_type != 0)
-    {
-        mpr("This spell doesn't work here.");
-        return;
-    }
+    if (you.level_type != LEVEL_DUNGEON)
+      {
+         mpr("This spell doesn't work here.");
+         return;
+      }
 
-    if (grd[you.x_pos][you.y_pos] != 67)
-    {
-        mpr("You must be on a piece of normal floor to cast this spell.");
-        return;
-    }
+    if (grd[you.x_pos][you.y_pos] != DNGN_FLOOR)
+      {
+         mpr("You must be on a piece of normal floor to cast this spell.");
+         return;
+      }
 
     mpr("Which direction ('<' for up, '>' for down, 'x' to quit)?");
 
@@ -915,7 +981,11 @@ get_dir:
         dir_sign = -1;
 
     mpr("How many levels (1 - 9, 'x' to quit)?");
-  get_dir2:keyi = get_ch();
+
+get_dir2:
+
+    keyi = get_ch();
+
     if (keyi < 49 && keyi > 57 && keyi != 'x')
         goto get_dir2;
 
@@ -929,7 +999,7 @@ get_dir:
 
     int target_level = you.your_level + keyi * dir_sign;
 
-    if (you.where_are_you == 0)
+    if (you.where_are_you == BRANCH_MAIN_DUNGEON)
     {
         if (target_level < 0)
             target_level = 0;
@@ -942,11 +1012,14 @@ get_dir:
     int old_lev = you.your_level;
 
     you.your_level = target_level - 1;
-    grd[you.x_pos][you.y_pos] = 82;
+    grd[you.x_pos][you.y_pos] = DNGN_STONE_STAIRS_DOWN_I;
 
     down_stairs(1, old_lev);
 
 }
+
+
+
 
 void cast_death_channel(int pow)
 {
@@ -954,7 +1027,8 @@ void cast_death_channel(int pow)
     mpr("You feel a great wave of evil energy pour through your body.");
 
     you.duration[DUR_DEATH_CHANNEL] += 15 + random2((pow / 3) + 1);
-    if (you.duration[DUR_DEATH_CHANNEL] > 30)
-        you.duration[DUR_DEATH_CHANNEL] = 30;
+
+    if ( you.duration[DUR_DEATH_CHANNEL] > 30 )
+      you.duration[DUR_DEATH_CHANNEL] = 30;
 
 }

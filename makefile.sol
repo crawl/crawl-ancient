@@ -1,35 +1,58 @@
-# Make file for Dungeon Crawl (linux port only for now)
+# Make file for Dungeon Crawl (linux)
 
-C_COMP = g++
-C_ARGS = -Wall -O -DSOLARIS
-L_ARGS = -s
+APPNAME = crawl
+
+# this file contains a list of the libraries.
+# it will make a variable called OBJECTS that contains all the libraries
+include makefile.obj
+
+OBJECTS += liblinux.o
+
+CXX = g++
+DELETE = rm -f
+COPY = cp
+OS_TYPE = SOLARIS
+CFLAGS = -Wall -D$(OS_TYPE) $(EXTRA_FLAGS)
+LDFLAGS = -static
 MCHMOD = 2755
-GROUP = games
 INSTALLDIR = /opt/crawl/bin
 LIB = -lcurses
 
-include makefile.obj
+all:            $(APPNAME)
 
-#INCLUDE = -I/opt/include/
-
-all:            crawl
-
-install:        crawl
-		rm -f ${INSTALLDIR}/crawl.old
-		mv -f ${INSTALLDIR}/crawl ${INSTALLDIR}/crawl.old
-		cp crawl ${INSTALLDIR}/crawl
-		chgrp ${GROUP} ${INSTALLDIR}/crawl
-		chmod ${MCHMOD} ${INSTALLDIR}/crawl
+install:        $(APPNAME)
+		$(COPY) ${INSTALLDIR}/${APPNAME} ${INSTALLDIR}/${APPNAME}.old
+		$(COPY) $(APPNAME) ${INSTALLDIR}
+		chmod ${MCHMOD} ${INSTALLDIR}/$(APPNAME)
 
 clean:
-		rm -f *.o
+		$(DELETE) *.o
 
 distclean:
-		rm -f *.o bones.* morgue.txt scores crawl
+		$(DELETE) *.o
+		$(DELETE) bones.*
+		$(DELETE) morgue.txt
+		$(DELETE) scores
+		$(DELETE) $(APPNAME)
+		$(DELETE) *.sav
+		$(DELETE) core
+		$(DELETE) *.0*
+		$(DELETE) *.lab
 
-crawl:	${OBJECTS}
-		${C_COMP} ${L_ARGS} -o $@ ${OBJECTS} ${LIB}
-		chmod ${MCHMOD} $@
+
+$(APPNAME):	$(OBJECTS)
+		${CXX} ${LDFLAGS} $(INCLUDES) $(CFLAGS) $(OBJECTS) -o $(APPNAME) $(LIB)
+		strip $(APPNAME)
+		chmod ${MCHMOD} $(APPNAME)
+
+debug:		$(OBJECTS)
+		${CXX} ${LDFLAGS} $(INCLUDES) $(CFLAGS) $(OBJECTS) -o $(APPNAME) $(LIB)
+
+profile:	$(OBJECTS)
+		${CXX} -g -p ${LDFLAGS} $(INCLUDES) $(CFLAGS) $(OBJECTS) -o $(APPNAME) $(LIB)
 
 .cc.o:
-		${C_COMP} ${C_ARGS} -c $< ${INCLUDE}
+		${CXX} ${CFLAGS} -c $< ${INCLUDE}
+
+.h.cc:
+		touch $@

@@ -21,15 +21,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
+#include "externs.h"
 
 #include "debug.h"
-#include "defines.h"
-//#include "estruct.h"
-//#include "colours.h"
 #include "mstruct.h"
-#include <ctype.h>
-#include "externs.h"
-#include "enum.h"
 #include "player.h"
 #include "stuff.h"
 
@@ -50,239 +47,788 @@ unsigned char                   // will do as long as spell/sec numbers don't co
   spell_list[][7] =
 {                               // sec  bolt   ench  selfench  misc   misc2  emergency
 /*orc wiz              */
- {0, 0, 4, 5, 0, 100, 16},
+  {0,
+    MS_MMISSILE,
+    MS_SLOW,
+    MS_HASTE,
+    MS_MMISSILE,
+    100,
+    MS_BLINK
+  },
 /*orc wiz              */
- {1, 1, 6, 11, 0, 100, 100},
+  {1,
+    MS_FLAME,
+    MS_CONFUSE,
+    MS_INVIS,
+    MS_MMISSILE,
+    100,
+    100
+  },
 /*orc wiz              */
- {2, 2, 100, 5, 1, 0, 100},
+  {2,
+    MS_FROST,
+    100,
+    MS_HASTE,
+    MS_FLAME,
+    MS_MMISSILE,
+    100
+  },
 /*naga                 */
- {10, 15, 15, 13, 7, 4, 13},
+  {10,
+    MS_TELEPORT_OTHER,
+    MS_TELEPORT_OTHER,
+    MS_HEAL,
+    MS_VENOM_BOLT,
+    MS_SLOW,
+    MS_HEAL
+  },
 /*Lich                 */
- {20, 9, 3, 51, 28, 39, 14},
+  {20,
+    MS_COLD_BOLT,
+    MS_PARALYSIS,
+    MS_SUMMON_DEMON_GREATER,
+    MS_ANIMATE_DEAD,
+    MS_IRON_BOLT,
+    MS_TELEPORT
+  },
 /*Lich                 */
- {21, 8, 6, 5, 19, 51, 52},
+  {21,
+    MS_FIRE_BOLT,
+    MS_CONFUSE,
+    MS_HASTE,
+    MS_NEGATIVE_BOLT,
+    MS_SUMMON_DEMON_GREATER,
+    MS_BANISHMENT
+  },
 /*Lich                 */
- {22, 19, 28, 51, 2, 17, 16},
+  {22,
+    MS_NEGATIVE_BOLT,
+    MS_ANIMATE_DEAD,
+    MS_SUMMON_DEMON_GREATER,
+    MS_FROST,
+    MS_CRYSTAL_SPEAR,
+    MS_BLINK
+  },
 /*Lich                 */
- {23, 22, 9, 11, 28, 39, 11},
+  {23,
+    MS_ORB_ENERGY,
+    MS_COLD_BOLT,
+    MS_INVIS,
+    MS_ANIMATE_DEAD,
+    MS_IRON_BOLT,
+    MS_INVIS
+  },
 /*burning devil        */
- {30, 20, 20, 20, 20, 20, 20},
+  {30,
+    MS_HELLFIRE_BURST,
+    MS_HELLFIRE_BURST,
+    MS_HELLFIRE_BURST,
+    MS_HELLFIRE_BURST,
+    MS_HELLFIRE_BURST,
+    MS_HELLFIRE_BURST
+  },
 /*vampire              */
- {40, 21, 100, 100, 100, 100, 21},
+  {40,
+    MS_VAMPIRE_SUMMON,
+    100,
+    100,
+    100,
+    100,
+    MS_VAMPIRE_SUMMON
+  },
 /*efreet               */
- {50, 8, 100, 100, 12, 100, 100},
+  {50,
+    MS_FIRE_BOLT,
+    100,
+    100,
+    MS_FIREBALL,
+    100,
+    100
+  },
 /*brain worm           */
- {52, 23, 100, 100, 23, 100, 100},
+  {52,
+    MS_BRAIN_FEED,
+    100,
+    100,
+    MS_BRAIN_FEED,
+    100,
+    100
+  },
 /*giant orange brain   */
- {53, 23, 43, 6, 24, 16, 14},
+  {53,
+    MS_BRAIN_FEED,
+    MS_MUTATION,
+    MS_CONFUSE,
+    MS_LEVEL_SUMMON,
+    MS_BLINK,
+    MS_TELEPORT
+  },
 /*R                    */
- {54, 25, 16, 11, 25, 16, 14},
+  {54,
+    MS_FAKE_RAKSHASA_SUMMON,
+    MS_BLINK,
+    MS_INVIS,
+    MS_FAKE_RAKSHASA_SUMMON,
+    MS_BLINK,
+    MS_TELEPORT
+  },
 /*GooE                 */
- {55, 3, 45, 100, 4, 6, 15},
+  {55,
+    MS_PARALYSIS,
+    MS_DISINTEGRATE,
+    100,
+    MS_SLOW,
+    MS_CONFUSE,
+    MS_TELEPORT_OTHER
+  },
 /*orc sorceror         */
- {56, 8, 19, 27, 52, 20, 14},
+  { 56,
+    MS_FIRE_BOLT,
+    MS_NEGATIVE_BOLT,
+    MS_SUMMON_DEMON,
+    52,
+    20,
+    MS_TELEPORT
+  },
 /*steam dragon         */
- {57, 26, 26, 100, 26, 26, 100},
+  {57,
+    MS_STEAM_BALL,
+    MS_STEAM_BALL,
+    100,
+    MS_STEAM_BALL,
+    MS_STEAM_BALL,
+    100
+  },
 /*hell knight          */
- {58, 100, 29, 5, 100, 100, 100},
+  {58,
+    100,
+    MS_PAIN,
+    MS_HASTE,
+    100,
+    100,
+    100
+  },
 /*hell knight          */
- {59, 100, 8, 100, 100, 100, 16},
+  {59,
+    100,
+    MS_FIRE_BOLT,
+    100,
+    100,
+    100,
+    MS_BLINK
+  },
 /*necromancer          */
- {60, 9, 19, 100, 28, 28, 14},
+  {60,
+    MS_COLD_BOLT,
+    MS_NEGATIVE_BOLT,
+    100,
+    MS_ANIMATE_DEAD,
+    MS_ANIMATE_DEAD,
+    MS_TELEPORT
+  },
 /*necromancer          */
- {61, 8, 29, 11, 28, 28, 16},
+  {61,
+    MS_FIRE_BOLT,
+    MS_PAIN,
+    MS_INVIS,
+    MS_ANIMATE_DEAD,
+    MS_ANIMATE_DEAD,
+    MS_BLINK
+  },
 /*wizard               */
- {62, 0, 3, 5, 10, 6, 14},
+  {62,
+    MS_MMISSILE,
+    MS_PARALYSIS,
+    MS_HASTE,
+    MS_LIGHTNING_BOLT,
+    MS_CONFUSE,
+    MS_TELEPORT
+  },
 /*wizard               */
- {63, 7, 22, 11, 6, 4, 14},
+  {63,
+    MS_VENOM_BOLT,
+    MS_ORB_ENERGY,
+    MS_INVIS,
+    MS_CONFUSE,
+    MS_SLOW,
+    MS_TELEPORT
+  },
 /*wizard               */
- {64, 3, 17, 16, 8, 9, 13},
+  {64,
+    MS_PARALYSIS,
+    MS_CRYSTAL_SPEAR,
+    MS_BLINK,
+    MS_FIRE_BOLT,
+    MS_COLD_BOLT,
+    MS_HEAL
+  },
 /*wizard               */
- {65, 40, 38, 16, 10, 52, 13},
+  {65,
+    MS_STONE_ARROW,
+    MS_STING,
+    MS_BLINK,
+    MS_LIGHTNING_BOLT,
+    MS_BANISHMENT,
+    MS_HEAL
+  },
 /*wizard               */
- {66, 3, 1, 11, 15, 12, 11},
+  {66,
+    MS_PARALYSIS,
+    MS_FLAME,
+    MS_INVIS,
+    MS_TELEPORT_OTHER,
+    MS_FIREBALL,
+    MS_INVIS
+  },
 /*orc priest           */
- {67, 29, 100, 30, 100, 100, 13},
+  {67,
+    MS_PAIN,
+    100,
+    MS_SMITE,
+    100,
+    100,
+    MS_HEAL
+  },
 /*orc high priest      */
- {68, 29, 27, 30, 27, 28, 13},
+  {68,
+    MS_PAIN,
+    MS_SUMMON_DEMON,
+    MS_SMITE,
+    MS_SUMMON_DEMON,
+    MS_ANIMATE_DEAD,
+    MS_HEAL
+  },
 /*mottled D            */
- {69, 31, 31, 100, 100, 100, 100},
+  {69,
+    MS_STICKY_FLAME,
+    MS_STICKY_FLAME,
+    100,
+    100,
+    100,
+    100
+  },
 /*Ice Fiend            */
- {70, 9, 9, 48, 100, 100, 27},
+  {70,
+    MS_COLD_BOLT,
+    MS_COLD_BOLT,
+    MS_TORMENT,
+    100,
+    100,
+    MS_SUMMON_DEMON
+  },
 /*Shadow Fiend         */
- {71, 9, 19, 48, 100, 100, 27},
+  {71,
+    MS_COLD_BOLT,
+    MS_NEGATIVE_BOLT,
+    MS_TORMENT,
+    100,
+    100,
+    MS_SUMMON_DEMON
+  },
 /*tormentor            */
- {72, 29, 100, 100, 100, 100, 100},
+  {72,
+    MS_PAIN,
+    100,
+    100,
+    100,
+    100,
+    100
+  },
 /*Storm D + vapour     */
- {73, 10, 10, 100, 10, 10, 100},
+  {73,
+    MS_LIGHTNING_BOLT,
+    MS_LIGHTNING_BOLT,
+    100,
+    MS_LIGHTNING_BOLT,
+    MS_LIGHTNING_BOLT,
+    100
+  },
 /*WHITE lesser demon   */
- {74, 2, 100, 100, 100, 100, 100},
+  {74,
+    MS_FROST,
+    100,
+    100,
+    100,
+    100,
+    100
+  },
 /*CYAN demon           */
- {75, 100, 39, 34, 100, 34, 100},
+  {75,
+    100,
+    MS_IRON_BOLT,
+    MS_SUMMON_UFETUBUS,
+    100,
+    MS_SUMMON_UFETUBUS,
+    100
+  },
 /*MAGENTA demon        */
- {76, 43, 100, 100, 23, 33, 100},
+  {76,
+    MS_MUTATION,
+    100,
+    100,
+    MS_BRAIN_FEED,
+    MS_SUMMON_DEMON_LESSER,
+    100
+  },
 /*LIGHTGRAY demon (227) */
- {77, 100, 100, 100, 15, 28, 14},
+  {77,
+    100,
+    100,
+    100,
+    MS_TELEPORT_OTHER,
+    MS_ANIMATE_DEAD,
+    MS_TELEPORT
+  },
 /*LIGHTGRAY demon (228) */
- {78, 31, 26, 30, 100, 100, 100},
-/*BROWN gr demon       */
- {79, 33, 33, 43, 33, 18, 100},
+  {78,
+    MS_STICKY_FLAME,
+    MS_STEAM_BALL,
+    MS_SMITE,
+    100,
+    100,
+    100
+  },
+/*BROWN greater demon       */
+  {79,
+    MS_SUMMON_DEMON_LESSER,
+    MS_SUMMON_DEMON_LESSER,
+    MS_MUTATION,
+    MS_SUMMON_DEMON_LESSER,
+    MS_DIG,
+    100
+  },
 /*GREEN greater demon  */
- {80, 32, 32, 100, 7, 33, 16},
+  {80,
+    MS_POISON_BLAST,
+    MS_POISON_BLAST,
+    100,
+    MS_VENOM_BOLT,
+    MS_SUMMON_DEMON_LESSER,
+    MS_BLINK
+  },
 /*RED gr demon (233)   */
- {81, 8, 12, 100, 31, 30, 14},
+  {81,
+    MS_FIRE_BOLT,
+    MS_FIREBALL,
+    100,
+    MS_STICKY_FLAME,
+    MS_SMITE,
+    MS_TELEPORT
+  },
 /*BLUE gr demon        */
- {82, 10, 9, 100, 33, 24, 15},
+  {82,
+    MS_LIGHTNING_BOLT,
+    MS_COLD_BOLT,
+    100,
+    MS_SUMMON_DEMON_LESSER,
+    MS_LEVEL_SUMMON,
+    MS_TELEPORT_OTHER
+  },
 /*Geryon               */
- {83, 36, 100, 36, 36, 100, 36},
+  {83,
+    MS_SUMMON_BEAST,
+    100,
+    MS_SUMMON_BEAST,
+    MS_SUMMON_BEAST,
+    100,
+    MS_SUMMON_BEAST
+  },
 /*Dispater             */
- {84, 51, 39, 27, 10, 49, 27},
+  {84,
+    MS_SUMMON_DEMON_GREATER,
+    MS_IRON_BOLT,
+    MS_SUMMON_DEMON,
+    MS_LIGHTNING_BOLT,
+    MS_HELLFIRE,
+    MS_SUMMON_DEMON
+  },
 /*Asmodeus             */
- {85, 8, 49, 27, 51, 19, 14},
+  {85,
+    MS_FIRE_BOLT,
+    MS_HELLFIRE,
+    MS_SUMMON_DEMON,
+    MS_SUMMON_DEMON_GREATER,
+    MS_NEGATIVE_BOLT,
+    MS_TELEPORT
+  },
 /*Ereshkigal           */
- {86, 19, 9, 27, 29, 3, 13},
+  {86,
+    MS_NEGATIVE_BOLT,
+    MS_COLD_BOLT,
+    MS_SUMMON_DEMON,
+    MS_PAIN,
+    MS_PARALYSIS,
+    MS_HEAL
+  },
 /*Antaeus              */
- {87, 9, 10, 100, 100, 100, 100},
+  {87,
+    MS_COLD_BOLT,
+    MS_LIGHTNING_BOLT,
+    100,
+    100,
+    100,
+    100
+  },
 /*Nemelex Xobeh        */
- {90, 27, 30, 11, 43, 24, 14},
+  {90,
+    MS_SUMMON_DEMON,
+    MS_SMITE,
+    MS_INVIS,
+    MS_MUTATION,
+    MS_LEVEL_SUMMON,
+    MS_TELEPORT
+  },
 /*Sif Muna             */
- {91, 10, 9, 27, 16, 14, 13},
+  {91,
+    MS_LIGHTNING_BOLT,
+    MS_COLD_BOLT,
+    MS_SUMMON_DEMON,
+    MS_BLINK,
+    MS_TELEPORT,
+    MS_HEAL
+  },
 /*Okawaru              */
- {92, 8, 39, 100, 12, 33, 100},
+  {92,
+    MS_FIRE_BOLT,
+    MS_IRON_BOLT,
+    100,
+    MS_FIREBALL,
+    MS_SUMMON_DEMON_LESSER,
+    100
+  },
 /*Kikubaaqudgha        */
- {93, 32, 4, 100, 19, 27, 27},
+  {93,
+    MS_POISON_BLAST,
+    MS_SLOW,
+    100,
+    MS_NEGATIVE_BOLT,
+    MS_SUMMON_DEMON,
+    MS_SUMMON_DEMON
+  },
 /*Titan                */
- {94, 10, 100, 100, 100, 100, 13},
+  {94,
+    MS_LIGHTNING_BOLT,
+    100,
+    100,
+    100,
+    100,
+    MS_HEAL
+  },
 /*Golden dragon        */
- {95, 8, 9, 100, 100, 32, 100},
+  {95,
+    MS_FIRE_BOLT,
+    MS_COLD_BOLT,
+    100,
+    100,
+    MS_POISON_BLAST,
+    100
+  },
 /*deep elf summoner    */
- {96, 16, 33, 34, 21, 27, 14},
+  {96,
+    MS_BLINK,
+    MS_SUMMON_DEMON_LESSER,
+    MS_SUMMON_UFETUBUS,
+    MS_VAMPIRE_SUMMON,
+    MS_SUMMON_DEMON,
+    MS_TELEPORT
+  },
 /*deep elf conjurer    */
- {97, 8, 9, 100, 10, 31, 14},
+  {97,
+    MS_FIRE_BOLT,
+    MS_COLD_BOLT,
+    100,
+    MS_LIGHTNING_BOLT,
+    MS_STICKY_FLAME,
+    MS_TELEPORT
+  },
 /*deep elf conjurer 2  */
- {98, 31, 22, 11, 40, 19, 14},
+  {98,
+    MS_STICKY_FLAME,
+    MS_ORB_ENERGY,
+    MS_INVIS,
+    MS_STONE_ARROW,
+    MS_NEGATIVE_BOLT,
+    MS_TELEPORT
+  },
 /*deep elf priest      */
- {99, 29, 100, 30, 13, 28, 13},
+  {99,
+    MS_PAIN,
+    100,
+    MS_SMITE,
+    MS_HEAL,
+    MS_ANIMATE_DEAD,
+    MS_HEAL
+  },
 /*deep elf high priest */
- {100, 27, 20, 30, 13, 28, 13},
+  {100,
+    MS_SUMMON_DEMON,
+    MS_HELLFIRE_BURST,
+    MS_SMITE,
+    MS_HEAL,
+    MS_ANIMATE_DEAD,
+    MS_HEAL
+  },
 /*deep elf demonologist */
- {101, 27, 52, 51, 27, 33, 14},
+  {101,
+    MS_SUMMON_DEMON,
+    MS_BANISHMENT,
+    MS_SUMMON_DEMON_GREATER,
+    MS_SUMMON_DEMON,
+    MS_SUMMON_DEMON_LESSER,
+    MS_TELEPORT
+  },
 /*deep elf annihilator */
- {102, 10, 17, 16, 39, 32, 14},
+  {102,
+    MS_LIGHTNING_BOLT,
+    MS_CRYSTAL_SPEAR,
+    MS_BLINK,
+    MS_IRON_BOLT,
+    MS_POISON_BLAST,
+    MS_TELEPORT
+  },
 /*deep elf sorceror    */
- {103, 19, 3, 5, 27, 28, 14},
+  {103,
+    MS_NEGATIVE_BOLT,
+    MS_PARALYSIS,
+    MS_HASTE,
+    MS_SUMMON_DEMON,
+    MS_ANIMATE_DEAD,
+    MS_TELEPORT
+  },
 /*deep elf death mage  */
- {104, 19, 19, 13, 28, 28, 14},
+  {104,
+    MS_NEGATIVE_BOLT,
+    MS_NEGATIVE_BOLT,
+    MS_HEAL,
+    MS_ANIMATE_DEAD,
+    MS_ANIMATE_DEAD,
+    MS_TELEPORT
+  },
 /*kobold demonologist  */
- {105, 33, 27, 33, 27, 100, 100},
+  {105,
+    MS_SUMMON_DEMON_LESSER,
+    MS_SUMMON_DEMON,
+    MS_SUMMON_DEMON_LESSER,
+    MS_SUMMON_DEMON,
+    100,
+    100
+  },
 /*naga                 */
- {106, 41, 41, 100, 100, 100, 100},
+  {106,
+    MS_POISON_SPLASH,
+    MS_POISON_SPLASH,
+    100,
+    100,
+    100,
+    100
+  },
 /*naga mage            */
- {107, 7, 22, 5, 7, 15, 14},
+  {107,
+    MS_VENOM_BOLT,
+    MS_ORB_ENERGY,
+    MS_HASTE,
+    MS_VENOM_BOLT,
+    MS_TELEPORT_OTHER,
+    MS_TELEPORT
+  },
 /*curse skull          */
- {108, 42, 42, 48, 100, 42, 100},
+  {108,
+    MS_SUMMON_UNDEAD,
+    MS_SUMMON_UNDEAD,
+    MS_TORMENT,
+    100,
+    MS_SUMMON_UNDEAD,
+    100
+  },
 /*shining eye          */
- {109, 43, 43, 100, 100, 100, 100},
+  {109,
+    MS_MUTATION,
+    MS_MUTATION,
+    100,
+    100,
+    100,
+    100
+  },
 /*frost giant          */
- {110, 9, 9, 100, 100, 100, 100},
+  {110,
+    MS_COLD_BOLT,
+    MS_COLD_BOLT,
+    100,
+    100,
+    100,
+    100
+  },
 /*Angel                */
- {111, 100, 100, 13, 100, 13, 13},
+  {111,
+    100,
+    100,
+    MS_HEAL,
+    100,
+    MS_HEAL,
+    MS_HEAL
+  },
 /*Daeva                */
- {112, 30, 100, 30, 100, 30, 100},
+  {112,
+    MS_SMITE,
+    100,
+    MS_SMITE,
+    100,
+    MS_SMITE,
+    100
+  },
 /*Shadow Dragon        */
- {113, 19, 19, 100, 100, 19, 100},
+  {113,
+    MS_NEGATIVE_BOLT,
+    MS_NEGATIVE_BOLT,
+    100,
+    100,
+    MS_NEGATIVE_BOLT,
+    100
+  },
 /*Sphinx               */
- {114, 6, 3, 30, 4, 100, 13},
+  {114,
+    MS_CONFUSE,
+    MS_PARALYSIS,
+    MS_SMITE,
+    MS_SLOW,
+    100,
+    MS_HEAL
+  },
 /*Mummy                */
- {115, 27, 30, 48, 30, 29, 100},
+  {115,
+    MS_SUMMON_DEMON,
+    MS_SMITE,
+    MS_TORMENT,
+    MS_SMITE,
+    MS_PAIN,
+    100
+  },
 /*Dorgi                */
- {116, 44, 44, 100, 44, 44, 44},
+  {116,
+    MS_ZULZER,
+    MS_ZULZER,
+    100,
+    MS_ZULZER,
+    MS_ZULZER,
+    MS_ZULZER
+  },
 /*Sword                */
- {117, 8, 8, 43, 12, 12, 12},
+  {117,
+    MS_FIRE_BOLT,
+    MS_FIRE_BOLT,
+    MS_MUTATION,
+    MS_FIREBALL,
+    MS_FIREBALL,
+    MS_FIREBALL
+  },
 /*Shadow imp           */
- {118, 29, 100, 28, 28, 100, 100},
+  {118,
+    MS_PAIN,
+    100,
+    MS_ANIMATE_DEAD,
+    MS_ANIMATE_DEAD,
+    100,
+    100
+  },
 /*Ghost - in struct    */
- {119, 100, 100, 100, 100, 100, 100},
+  {119,
+    100,
+    100,
+    100,
+    100,
+    100,
+    100
+  },
 /*Hell-hog             */
- {120, 31, 31, 100, 100, 100, 100},
+  {120,
+    MS_STICKY_FLAME,
+    MS_STICKY_FLAME,
+    100,
+    100,
+    100,
+    100
+  },
 /*Swamp Dragon         */
- {121, 32, 32, 100, 32, 32, 100},
+  {121,
+    MS_POISON_BLAST,
+    MS_POISON_BLAST,
+    100,
+    MS_POISON_BLAST,
+    MS_POISON_BLAST,
+    100
+  },
 /*Swamp Drake          */
- {122, 46, 46, 100, 46, 46, 100},
+  {122,
+    MS_MARSH_GAS,
+    MS_MARSH_GAS,
+    100,
+    MS_MARSH_GAS,
+    MS_MARSH_GAS,
+    100
+  },
 /*Serpent of Hell      */
- {123, 49, 49, 49, 49, 49, 49},
+  {123,
+    MS_HELLFIRE,
+    MS_HELLFIRE,
+    MS_HELLFIRE,
+    MS_HELLFIRE,
+    MS_HELLFIRE,
+    MS_HELLFIRE
+  },
 /*Boggart              */
- {124, 6, 4, 11, 16, 24, 16},
+  {124,
+    MS_CONFUSE,
+    MS_SLOW,
+    MS_INVIS,
+    MS_BLINK,
+    MS_LEVEL_SUMMON,
+    MS_BLINK
+  },
 /*Eye of Devastation   */
- {125, 37, 37, 37, 37, 37, 37},
+  {125,
+    MS_ENERGY_BOLT,
+    MS_ENERGY_BOLT,
+    MS_ENERGY_BOLT,
+    MS_ENERGY_BOLT,
+    MS_ENERGY_BOLT,
+    MS_ENERGY_BOLT
+  },
 /*Quicksilver dragon   */
- {126, 47, 47, 100, 47, 47, 100},
+  {126,
+    MS_QUICKSILVER_BOLT,
+    MS_QUICKSILVER_BOLT,
+    100,
+    MS_QUICKSILVER_BOLT,
+    MS_QUICKSILVER_BOLT,
+    100
+  },
 /*Iron dragon          */
- {127, 50, 50, 100, 50, 50, 100},
+  {127,
+    MS_METAL_SPLINTERS,
+    MS_METAL_SPLINTERS,
+    100,
+    MS_METAL_SPLINTERS,
+    MS_METAL_SPLINTERS,
+    100
+  },
 /*Skeletal warrior     */
- {128, 28, 100, 28, 100, 100, 100},
+  {128,
+    MS_ANIMATE_DEAD,
+    100,
+    MS_ANIMATE_DEAD,
+    100,
+    100,
+    100
+  },
 };
 
 
 /*
-   case 0: // magic missile
-   case 1: // flame
-   case 2: // frost
-   case 3: // paralysis
-   case 4: // slow monster
-   case 5: // haste self
-   case 6: // confusion
-   case 7: // venom bolt
-   case 8: // bolt of fire
-   case 9: // bolt of cold
-   case 10: // lightning
-   case 11: // make invisible
-   case 12: // fireball
-   case 13: // healing
-   case 14: // teleportation
-   case 15: // teleport away
-   case 16: // blink
-   case 17: // crystal spear
-   case 18: // dig - must be in misc2 position
-   case 19: // -ve energy
-   case 20: // burst of hellfire
-   case 21: // vampire's summoning
-   case 22: // mystic blast
-   case 23: // brain feeding
-   case 24: // summon anything appropriate for level
-   case 25: // fake Rs
-   case 26: // breathe steam
-   case 27: // summon demons
-   case 28: // animate dead
-   case 29: // pain
-   case 30: // smiting
-   case 31: // sticky flame
-   case 32: // blast of poison
-   case 33: // summon lesser demon
-   case 34: // summon LIGHTCYAN lesser demon
-   case 35: // blast thing
-   case 36: // Geryon's summoning
-   case 37: // bolt of energy (eye of devastation)
-   case 38: // sting
-   case 39: // iron bolt
-   case 40: // stone arrow
-   case 41: // poison spit (naga)
-   case 42: // summon undead around player (curse skull)
-   case 43: // mutation
-   case 44: // fire zulzer
-   case 45: // disintegrate
-   case 46: // foul vapour
-   case 47: // breathe energy
-   case 48: // torment
-   case 49: // fiend's hellfire
-   case 50: // metal splinters
-   case 51: // summon greater (class 1) demon
-   case 52: // banishment (to the Abyss)
 
    Note: is assumed that most monsters capable of casting the more powerful
    summonings can also cast Abjuration (just for simplicity)
 
- */
+*/
 
 
 /*struct monsters
@@ -495,7 +1041,7 @@ int mons_res_cold(int mc)
 
 int mons_skeleton(int mc)
 {
-//      if (mons_zombie_size(mc) == 0 || mons_weight(mc) == 0) return 0;
+    //if (mons_zombie_size(mc) == 0 || mons_weight(mc) == 0) return 0;
     if (mons_zombie_size(mc) == 0 || mons_weight(mc) == 0)
         return 0;
     if (mf(M_NO_SKELETON))
@@ -571,8 +1117,7 @@ void define_monster(int k, struct monsters mns[MNST])
     switch (m2_class)
     {                           // some monsters are randomized
 
-    case 23:                    // x????
-
+    case MONS_ABOMINATION_SMALL:
         m2_HD = 4 + random2(4);
         m2_AC = 3 + random2(7);       //gmon_AC [2];
 
@@ -582,16 +1127,17 @@ void define_monster(int k, struct monsters mns[MNST])
         if (m2_sec == 250)
             m2_sec = random2(15) + 1;
         break;
-    case 25:
+
+    case MONS_ZOMBIE_SMALL:
         m2_HD = random2(2) + 1;
-        break;                  // small zombie
+        break;
 
-    case 37:
+    case MONS_LICH:
+    case MONS_ANCIENT_LICH:
         m2_sec = random2(4) + 20;
-        break;                  // lich
+        break;
 
-    case 49:                    // Abomination
-
+    case MONS_ABOMINATION_LARGE:
         m2_HD = 8 + random2(4);
         m2_AC = 5 + random2(5) + random2(5);        //gmon_AC [2];
 
@@ -601,231 +1147,196 @@ void define_monster(int k, struct monsters mns[MNST])
         if (m2_sec == 250)
             m2_sec = random2(15) + 1;
         break;
-    case 51:
-        m2_HD = random2(5) + 3;
-        break;                  // large zombie
 
-    case 53:
-        m2_sec = 105;           // kobold demonologist
+    case MONS_ZOMBIE_LARGE:
+        m2_HD = random2(5) + 3;
         break;
 
-    case 54:
+    case MONS_KOBOLD_DEMONOLOGIST:
+        m2_sec = 105;
+        break;
+
+    case MONS_ORC_WIZARD:
         m2_sec = random2(3);
-        break;                  // orc wizard
+        break;
 
-    case 66:
+    case MONS_BUTTERFLY:
         m2_sec = random2(15) + 1;
-        break;                  // butterfly
+        break;
 
-    case 88:                    // beast
-
+    case MONS_BEAST:
         m2_HD = 4 + random2(4);
         m2_AC = 2 + random2(5);
         m2_ev = 7 + random2(5);
         m2_speed = 8 + random2(5);
         break;
-    case 106:
+
+    case MONS_HYDRA:
         m2_sec = 4 + random2(5);
-        break;                  // hydra
-
-    case 109:
-        m2_sec = 58 + random2(2);
-        break;                  // hell knight
-
-    case 110:
-        m2_sec = 60 + random2(2);
-        break;                  // necromancer
-
-    case 111:                   // wizard
-
-    case 142:
-        m2_sec = 62 + random2(5);
-        break;                  // ogre mage
-
-    case 263:                   // deep elf soldier
-
-    case 264:                   // deep elf fighter
-
-    case 265:
-        m2_sec = random2(3);
-        break;                  // deep elf knight
-
-    case 266:
-        m2_sec = 62 + random2(5);
-        break;                  // deep elf mage
-
-    case 268:
-        m2_sec = 97 + random2(2);
-        break;                  // deep elf conjurer
-
-    case 220:
-        m2_sec = 74;
-        break;                  // lesser demon
-
-    case 225:
-        m2_sec = 76;
-        break;                  // demon
-
-    case 227:
-        m2_sec = 77;
-        break;                  // demon
-
-    case 228:
-        m2_sec = 78;
-        break;                  // demon
-
-    case 229:
-        m2_sec = 75;
-        break;                  // demon
-
-    case 231:
-        m2_sec = 80;
-        break;                  // gr demon
-
-    case 233:
-        m2_sec = 81;
-        break;                  // gr demon
-
-    case 234:
-        m2_sec = 79;
-        break;                  // gr demon
-
-    case 244:
-        m2_sec = random2(15) + 1;
-        break;                  // gr demon
-
-    case 251:
-        m2_sec = 90;
-        break;                  // Nemelex Xobeh
-
-    case 252:
-        m2_sec = 91;
-        break;                  // Sif Muna
-
-    case 253:
-        m2_sec = 92;
-        break;                  // Okawaru
-
-    case 254:
-        m2_sec = 93;
-        break;                  // Kiku
-
-    case 281:
-        m2_sec = 0;
-        break;                  // Jessica
-
-    case 283:
-        m2_sec = 1;
-        break;                  // Sigmund
-
-    case 284:
-        m2_sec = 2;
-        break;                  // Blork
-
-    case 286:
-        m2_sec = 2;
-        break;                  // Psyche
-
-    case 290:
-        m2_sec = 2;
-        break;                  // Michael
-
-    case 293:
-        m2_sec = 63;
-        break;                  // Erica
-
-    case 294:
-        m2_sec = 60;
-        break;                  // Josephine
-
-    case 295:
-        m2_sec = 59;
-        break;                  // Harold
-
-    case 297:
-        m2_sec = 10;
-        break;                  // Jozef
-
-    case 300:
-        m2_sec = 65;
-        break;                  // Louise
-
-    case 301:
-        m2_sec = 68;
-        break;                  // Francis
-
-    case 302:
-        m2_sec = 68;
-        break;                  // Frances
-
-    case 303:
-        m2_sec = 65;
-        break;                  // Rupert
-
-    case 304:
-        m2_sec = 67;
-        break;                  // Wayne
-
-    case 305:
-        m2_sec = 0;
-        break;                  // Duane
-
-    case 307:
-        m2_sec = 59;
-        break;                  // Norris
-
-    case 308:
-        m2_sec = 23;
-        break;                  // Adolf
-
-    case 309:
-        m2_sec = 50;
-        break;                  // Margery
-
-    case 310:
-        m2_sec = 23;
-        break;                  // Boris
-
-    case 340:
-        m2_sec = 83;
-        break;                  // Geryon
-
-    case 341:
-        m2_sec = 84;
-        break;                  // Dispater
-
-    case 342:
-        m2_sec = 85;
-        break;                  // Asmodeus
-
-    case 343:
-        m2_sec = 87;
-        break;                  // Antaeus
-
-    case 344:
-        m2_sec = 86;
-        break;                  // Ereshkigal
-
-    case 356:
-        m2_sec = random2(4) + 20;
-        break;                  // ancient lich - same as normal one
-
-    case 390:
-    case 391:                   // mimics
-
-        if (random2(4) == 0)
-            m2_sec = LIGHTCYAN;
-        else
-            m2_sec = BROWN;
-        if (random2(10) == 0)
-            m2_sec = CYAN;
-        if (random2(20) == 0)
-            m2_sec = random2(15) + 1;
         break;
 
-    case 392:
-    case 393:                   // mimics
+    case MONS_HELL_KNIGHT:
+        m2_sec = ( (coinflip()) ? 59 : 58 );
+        break;
 
+    case MONS_NECROMANCER:
+        m2_sec = ( (coinflip()) ? 61 : 60 );
+        break;
+
+    case MONS_WIZARD:
+    case MONS_OGRE_MAGE:
+    case MONS_DEEP_ELF_MAGE:
+        m2_sec = 62 + random2(5);
+        break;
+
+    case MONS_DEEP_ELF_SOLDIER:
+    case MONS_DEEP_ELF_FIGHTER:
+    case MONS_DEEP_ELF_KNIGHT:
+        m2_sec = random2(3);
+        break;
+
+    case MONS_DEEP_ELF_CONJURER:
+        m2_sec = ( (coinflip()) ? 98 : 97 );
+        break;
+
+    case MONS_WHITE_IMP:
+        m2_sec = 74;
+        break;
+
+    case MONS_YNOXINUL:
+        m2_sec = 75;
+        break;
+
+    case MONS_NEQOXEC:
+        m2_sec = 76;
+        break;
+
+    case MONS_HELLWING:
+        m2_sec = 77;
+        break;
+
+    case MONS_SMOKE_DEMON:
+        m2_sec = 78;
+        break;
+
+    case MONS_CACODEMON:
+        m2_sec = 79;
+        break;
+
+    case MONS_GREEN_DEATH:
+        m2_sec = 80;
+        break;
+
+    case MONS_BALRUG:
+        m2_sec = 81;
+        break;
+
+    case MONS_SPATIAL_VORTEX:   // gr demon        // comment and value (244) do not match !!! 15jan2000 {dlb}
+        m2_sec = random2(15) + 1;
+        break;
+
+    case MONS_MNOLEG:
+        m2_sec = 90;
+        break;
+
+    case MONS_LOM_LOBON:
+        m2_sec = 91;
+        break;
+
+    case MONS_CEREBOV:
+        m2_sec = 92;
+        break;
+
+    case MONS_GLOORX_VLOQ:
+        m2_sec = 93;
+        break;
+
+    case MONS_JESSICA:
+    case MONS_DUANE:
+        m2_sec = 0;
+        break;
+
+    case MONS_SIGMUND:
+        m2_sec = 1;
+        break;
+
+    case MONS_BLORK_THE_ORC:
+    case MONS_PSYCHE:
+    case MONS_MICHAEL:
+        m2_sec = 2;
+        break;
+
+    case MONS_JOZEF:
+        m2_sec = 10;
+        break;
+
+    case MONS_ADOLF:
+    case MONS_BORIS:
+        m2_sec = 23;
+        break;
+
+    case MONS_MARGERY:
+        m2_sec = 50;
+        break;
+
+    case MONS_HAROLD:
+    case MONS_NORRIS:
+        m2_sec = 59;
+        break;
+
+    case MONS_JOSEPHINE:
+        m2_sec = 60;
+        break;
+
+    case MONS_ERICA:
+        m2_sec = 63;
+        break;
+
+    case MONS_LOUISE:
+    case MONS_RUPERT:
+        m2_sec = 65;
+        break;
+
+    case MONS_FRANCIS:
+    case MONS_FRANCES:
+        m2_sec = 68;
+        break;
+
+    case MONS_WAYNE:
+        m2_sec = 67;
+        break;
+
+    case MONS_GERYON:
+        m2_sec = 83;
+        break;
+
+    case MONS_DISPATER:
+        m2_sec = 84;
+        break;
+
+    case MONS_ASMODEUS:
+        m2_sec = 85;
+        break;
+
+    case MONS_ERESHKIGAL:
+        m2_sec = 86;
+        break;
+
+    case MONS_ANTAEUS:
+        m2_sec = 87;
+        break;
+
+    case MONS_WEAPON_MIMIC:
+    case MONS_ARMOUR_MIMIC:
+        m2_sec = table_lookup( 100,               // see stuff.cc {dlb}
+                               BROWN, 35,                 // 65% chance
+                               LIGHTCYAN, 15,             // 20% chance
+                               CYAN, 5,                   // 10% chance
+                               (random2(15) + 1), 0 );    //  5% chance
+        break;
+
+    case MONS_SCROLL_MIMIC:
+    case MONS_POTION_MIMIC:
         m2_sec = 1 + random2(15);
         break;
 
@@ -923,13 +1434,13 @@ char *monam(int mons_num, int mons, char mench, char desc)
     strcpy(gmo_n, "");
 
     // if you can't see the critter, let moname() print [Ii]t.
-    if (mench == 6 && ! player_see_invis() )
+    if (mench == ENCH_INVIS && ! player_see_invis() )
     {
         moname(mons, mench, player_see_invis(), desc, gmo_n);
         return gmo_n;
     }
 
-    if (mons == MONS_SMALL_ZOMBIE || mons == MONS_BIG_ZOMBIE)
+    if (mons == MONS_ZOMBIE_SMALL || mons == MONS_ZOMBIE_LARGE)
     {
         moname(mons_num, mench, player_see_invis(), desc, gmo_n);
         strcat(gmo_n, " zombie");
@@ -992,7 +1503,7 @@ void moname(int mons_num, char mench, char see_inv, char descrip, char glog[40])
     strcpy(gmon_name, mons_name(mons_num));
     strcpy(glog, "");
 
-    if (mench == 6 && see_inv == 0)
+    if (mench == ENCH_INVIS && see_inv == 0)
     {
         switch (descrip)
         {
@@ -1048,7 +1559,7 @@ void moname(int mons_num, char mench, char see_inv, char descrip, char glog[40])
             break;
         }
 
-    if ((descrip == 2 || descrip == 3) && (glog[1] != 110) && mench == 6 && see_inv == 0)
+    if ((descrip == 2 || descrip == 3) && (glog[1] != 110) && mench == ENCH_INVIS && see_inv == 0)
         strcat(glog, "n ");
 
     strcat(glog, gmon_name);
@@ -1063,7 +1574,7 @@ int exper_value(int mclass, int mHD, int maxhp)
     int modifier = mons_exp_mod(mclass);
 
 
-    if (mclass == MONS_SMALL_ZOMBIE || mclass == MONS_BIG_ZOMBIE
+    if (mclass == MONS_ZOMBIE_SMALL || mclass == MONS_ZOMBIE_LARGE
             || mclass == MONS_SMALL_SKELETON || mclass == MONS_LARGE_SKELETON)
     {
         x_val = (16 + mHD * 4) * (mHD * mHD) / 10;
@@ -1094,7 +1605,7 @@ int exper_value(int mclass, int mHD, int maxhp)
         x_val = 1000 + (x_val - 1000) / 2;
 
 
-    // guarantee the value is withing limits
+    // guarantee the value is within limits
     if (mons_flag(mclass, M_NO_EXP_GAIN))
         x_val = 0;
     else if (x_val <= 0)
@@ -1111,114 +1622,77 @@ char mons_pan(int mcls)         // is the monster to be found in pandemonium
 
     switch (mcls)
     {
-    case 5:                     //strcat(gmon_name, "fungus"); break;
-
-    case 13:                    //strcat(gmon_name, "necrophage"); break;
-
-    case 15:                    //strcat(gmon_name, "phantom"); break;
-
-    case 23:                    //strcat(gmon_name, "abomination"); break;
-
-    case 25:                    //break;
-
-    case 35:                    //strcat(gmon_name, "jelly"); break;
-
-    case 37:                    //strcat(gmon_name, "lich"); break;
-
-    case 38:                    //strcat(gmon_name, "mummy"); break;
-
-    case 43:                    //strcat(gmon_name, "rakshasa"); break;
-
-    case 46:                    //strcat(gmon_name, "unseen horror"); break;
-
-    case 47:                    //strcat(gmon_name, "vampire"); break;
-
-    case 48:                    //strcat(gmon_name, "wraith"); break;
-
-    case 49:                    //strcat(gmon_name, "abomination"); break;
-
-    case 51:                    //break;
-        // strcat(gmon_name, "large zombie"); break;
-
-    case 59:                    //strcat(gmon_name, "giant eyeball"); break;
-
-    case 60:                    //strcat(gmon_name, "wight"); break;
-
-    case 63:                    //strcat(gmon_name, "shadow"); break;
-
-    case 64:                    //strcat(gmon_name, "hungry ghost"); break;
-
-    case 65:                    //strcat(gmon_name, "eye of draining"); break;
-
-    case 68:                    //strcat(gmon_name, "efreet"); break;
-
-    case 69:                    //strcat(gmon_name, "brain worm"); break;
-
-    case 70:                    //strcat(gmon_name, "giant orange brain"); break;
-
-    case 72:                    //strcat(gmon_name, "flying skull"); break;
-
-    case 76:                    //strcat(gmon_name, "slime creature"); break;
-
-    case 77:                    //strcat(gmon_name, "freezing wraith"); break;
-
-    case 78:                    //strcat(gmon_name, "rakshasa"); break;
-
-    case 79:                    //strcat(gmon_name, "great orb of eyes"); break;
-
-    case 107:                   //break;
-
-    case 108:                   //// ske
-
-    case 116:                   //strcat(gmon_name, "clay golem"); break;
-
-    case 117:                   //strcat(gmon_name, "wood golem"); break;
-
-    case 118:                   //strcat(gmon_name, "stone golem"); break;
-
-    case 119:                   //strcat(gmon_name, "iron golem"); break;
-
-    case 120:                   //strcat(gmon_name, "crystal golem"); break;
-
-    case 121:                   //strcat(gmon_name, "toenail golem"); break;
-
-    case 122:                   //strcat(gmon_name, "mottled dragon"); break;
-
-    case 123:                   //strcat(gmon_name, "earth elemental"); break;
-
-    case 124:                   //strcat(gmon_name, "fire elemental"); break;
-
-    case 125:                   //strcat(gmon_name, "air elemental"); break;
-
-    case 130:                   //strcat(gmon_name, "spectre"); break;
-
-    case 131:                   //strcat(gmon_name, "pulsating lump"); break;
-
-    case 136:                   //strcat(gmon_name, "stone giant"); break; // stoned giant
-
-    case 137:                   //strcat(gmon_name, "flayed ghost"); break;
-
-    case 140:                   //strcat(gmon_name, "insubstantial wisp"); break;
-
-    case 110:                   //strcat(gmon_name, "necromancer"); break;
-
-    case 111:                   //strcat(gmon_name, "wizard"); break;
-
-    case 220:
-    case 221:
-    case 222:
-    case 223:
-    case 224:
-    case 225:
-    case 226:
-    case 227:
-    case 228:
-    case 229:
-    case 230:
-    case 231:
-    case 232:
-    case 233:
-    case 234:
+// icky monsters
+    case MONS_FUNGUS:
+    case MONS_JELLY:
+    case MONS_BRAIN_WORM:
+    case MONS_GIANT_ORANGE_BRAIN:
+    case MONS_SLIME_CREATURE:
+// undead
+    case MONS_NECROPHAGE:
+    case MONS_PHANTOM:
+    case MONS_ZOMBIE_SMALL:
+    case MONS_LICH:
+    case MONS_MUMMY:
+    case MONS_VAMPIRE:
+    case MONS_WRAITH:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_WIGHT:
+    case MONS_SHADOW:
+    case MONS_HUNGRY_GHOST:
+    case MONS_FLYING_SKULL:
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+    case MONS_SPECTRAL_WARRIOR:
+    case MONS_FLAYED_GHOST:
+    case MONS_FREEZING_WRAITH:
+// "things"
+    case MONS_ABOMINATION_SMALL:
+    case MONS_UNSEEN_HORROR:
+    case MONS_ABOMINATION_LARGE:
+    case MONS_PULSATING_LUMP:
+    case MONS_INSUBSTANTIAL_WISP:
+// eyes
+    case MONS_GIANT_EYEBALL:
+    case MONS_EYE_OF_DRAINING:
+    case MONS_GREAT_ORB_OF_EYES:
+// malign beings
+    case MONS_EFREET:
+    case MONS_RAKSHASA:
+    case MONS_RAKSHASA_FAKE:
+// golems
+    case MONS_CLAY_GOLEM:
+    case MONS_WOOD_GOLEM:
+    case MONS_STONE_GOLEM:
+    case MONS_IRON_GOLEM:
+    case MONS_CRYSTAL_GOLEM:
+    case MONS_TOENAIL_GOLEM:
+// dragon(s)
+    case MONS_MOTTLED_DRAGON:
+// elementals
+    case MONS_EARTH_ELEMENTAL:
+    case MONS_FIRE_ELEMENTAL:
+    case MONS_AIR_ELEMENTAL:
+// humanoids
+    case MONS_NECROMANCER:
+    case MONS_WIZARD:
+    case MONS_STONE_GIANT:
+// demons
+    case MONS_WHITE_IMP:
+    case MONS_LEMURE:
+    case MONS_UFETUBUS:
+    case MONS_MANES:
+    case MONS_MIDGE:
+    case MONS_NEQOXEC:
+    case MONS_ORANGE_DEMON:
+    case MONS_HELLWING:
+    case MONS_SMOKE_DEMON:
+    case MONS_YNOXINUL:
+    case MONS_EXECUTIONER:
+    case MONS_GREEN_DEATH:
+    case MONS_BLUE_DEATH:
+    case MONS_BALRUG:
+    case MONS_CACODEMON:
         return 52;
     default:
         return 0;

@@ -26,9 +26,9 @@
 #include <stdlib.h>
 #include <string>
 
-#include "debug.h"
 #include "externs.h"
-#include "enum.h"
+
+#include "debug.h"
 #include "itemname.h"
 #include "mstruct.h"
 #include "player.h"
@@ -88,6 +88,7 @@ static void print_ench(string & description, unsigned char item_plus)
 
     else
         description += "extremely heavily enchanted ";
+
 }
 
 
@@ -105,7 +106,7 @@ static void print_description(const string & description)
     unsigned int i = 0;
     int j = 0;
 
-    textcolor(7);
+    textcolor(LIGHTGREY);
 
     for (i = 0; i < description.length(); i++)
     {
@@ -355,7 +356,7 @@ static void randart_descpr(string & description, int item_class, int item_type, 
 //---------------------------------------------------------------
 static string describe_demon()
 {
-    long randstore = random();  // $$$ why is this done?
+    long randstore = random();              // $$$ why is this done?
 
     long globby = 0;
 
@@ -708,172 +709,190 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
         switch (item_type)
         {
         case WPN_CLUB:
-            description = "A heavy piece of wood. ";
+            description += "A heavy piece of wood. ";
             break;
 
         case WPN_MACE:
-            description = "A long handle with a heavy lump on one end. ";
+            description += "A long handle "
+                           "with a heavy lump on one end. ";
             break;
 
         case WPN_FLAIL:
-            description = "Like a mace, but with a length of chain between the handle and the lump of metal. ";
+            description += "Like a mace, but with a length of chain "
+                           "between the handle and the lump of metal. ";
             break;
 
         case WPN_DAGGER:
-            description = "A long knife or a very short sword, which can be held or thrown. ";
+            description += "A long knife or a very short sword, "
+                           "which can be held or thrown. ";
             break;
 
         case WPN_KNIFE:
-            description = "A simple survival knife.  Designed more for utility than combat, it looks quite capable of butchering a corpse.";
+            description += "A simple survival knife. "
+                           "Designed more for utility than combat, "
+                           "it looks quite capable of butchering a corpse. ";
             break;
 
         case WPN_MORNINGSTAR:
-            description = "A mace covered in spikes. ";
+            description += "A mace covered in spikes. ";
             break;
 
         case WPN_SHORT_SWORD:
-            description = "A sword with a short, slashing blade. ";
+            description += "A sword with a short, slashing blade. ";
             break;
 
         case WPN_LONG_SWORD:
-            description = "A sword with a long, slashing blade. ";
+            description += "A sword with a long, slashing blade. ";
             break;
 
         case WPN_GREAT_SWORD:
-            description = "A sword with a very long, heavy blade and a long handle. ";
+            description += "A sword with a very long, heavy blade "
+                           "and a long handle. ";
             break;
 
         case WPN_SCIMITAR:
-            description = "A long sword with a curved blade. ";
+            description += "A long sword with a curved blade. ";
             break;
 
         case WPN_HAND_AXE:
-            description = "An axe designed for either hand combat or throwing. ";
+            description += "An axe designed for either "
+                           "hand combat or throwing. ";
             break;
 
         case WPN_BATTLEAXE:
-            description = "A large axe with a double-headed blade. ";
+            description += "A large axe with a double-headed blade. ";
             break;
 
         case WPN_SPEAR:
-            description = "A long stick with a pointy blade on one end, to be held or thrown. ";
+            description += "A long stick with a pointy blade on one end, "
+                           "to be held or thrown. ";
             break;
 
         case WPN_TRIDENT:
-            description = "A hafted weapon with three points at one end. ";
+            description += "A hafted weapon with three points at one end. ";
             break;
 
         case WPN_HALBERD:
-            description = "A long pole with a spiked axe head on one end. ";
+            description += "A long pole with a spiked axe head on one end. ";
             break;
 
         case WPN_SLING:
-            description = "A piece of cloth and leather for launching stones, which do a small amount of damage on impact. ";
+            description += "A piece of cloth and leather for launching stones, "
+                           "which do a small amount of damage on impact. ";
             break;
 
         case WPN_BOW:
-            description = "A curved piece of wood and string, for shooting arrows. It does good damage in combat, and a skilled user can use it to great effect. ";
+            description += "A curved piece of wood and string, "
+                           "for shooting arrows. It does good damage in combat, "
+                           "and a skilled user can use it to great effect. ";
             break;
 
         case WPN_CROSSBOW:
-            description = "A piece of machinery used for firing bolts, which takes some time to load and fire. It does very good damage in combat. ";
+            description += "A piece of machinery used for firing bolts, "
+                           "which takes some time to load and fire. "
+                           "It does very good damage in combat. ";
             break;
 
         case WPN_HAND_CROSSBOW:
-            description = "A small crossbow, for firing darts. ";
+            description += "A small crossbow, for firing darts. ";
             break;
 
         case WPN_GLAIVE:
-            description = "A pole with a large, heavy blade on one end. ";
+            description += "A pole with a large, heavy blade on one end. ";
             break;
 
         case WPN_QUARTERSTAFF:
-          description = "A sturdy wooden pole. " ;
-            //jmf: was "A pole, held with both hands. ";
+            description += "A sturdy wooden pole. ";     //jmf - was: "A pole, held with both hands. ";
             break;
 
         case WPN_SCYTHE:
-            description = "A farm implement, usually unsuited to combat. ";
+            description += "A farm implement, usually unsuited to combat. ";
             break;
 
         case WPN_GIANT_CLUB:
-            description = "A giant lump of wood, shaped for an ogre's hands. ";
+            description += "A giant lump of wood, "
+                           "shaped for an ogre's hands. ";
             break;
 
         case WPN_GIANT_SPIKED_CLUB:
-            description = "A giant lump of wood covered in sharp spikes. ";
+            description += "A giant lump of wood covered in sharp spikes. ";
             break;
 
         case WPN_EVENINGSTAR:
-            description = "The opposite to a morningstar. ";
+            description += "The opposite to a morningstar. ";
             break;
 
         case WPN_QUICK_BLADE:
-            description = "A small and magically quick sword. ";
+            description += "A small and magically quick sword. ";
             break;
 
         case WPN_KATANA:
-            description = "A very rare and extremely effective imported weapon, featuring a long single-edged blade. ";
+            description += "A very rare and extremely effective "
+                           "imported weapon, featuring a long "
+                           "single-edged blade. ";
             break;
 
         case WPN_EXECUTIONERS_AXE:
-            description = "A huge axe. ";
+            description += "A huge axe. ";
             break;
 
         case WPN_DOUBLE_SWORD:
-            description = "A magical weapon with two razor-sharp blades. ";
+            description += "A magical weapon with two razor-sharp blades. ";
             break;
 
         case WPN_TRIPLE_SWORD:
-            description = "A magical weapon with three great razor-sharp blades. ";
+            description += "A magical weapon with three "
+                           "great razor-sharp blades. ";
             break;
 
         case WPN_HAMMER:
-            description = "The kind of thing you hit nails with, adapted for battle. ";
+            description += "The kind of thing you hit nails with, "
+                           "adapted for battle. ";
             break;
 
         case WPN_ANCUS:
-            description = "A large and vicious toothed club. ";
+            description += "A large and vicious toothed club. ";
             break;
 
         case WPN_WHIP:
-            description = "A whip. ";
+            description += "A whip. ";
             break;
 
         case WPN_SABRE:
-            description = "A sword with a medium length slashing blade. ";
+            description += "A sword with a medium length slashing blade. ";
             break;
 
         case WPN_DEMON_BLADE:
-            description = "A terrible weapon, forged in the fires of Hell. ";
+            description += "A terrible weapon, forged in the fires of Hell. ";
             break;
 
         case WPN_DEMON_WHIP:
-            description = "A terrible weapon, woven in the depths of the inferno. ";
+            description += "A terrible weapon, woven "
+                           "in the depths of the inferno. ";
             break;
 
         case WPN_DEMON_TRIDENT:
-            description = "A terrible weapon, molded by fire and brimstone. ";
+            description += "A terrible weapon, molded by fire and brimstone. ";
             break;
 
         case WPN_BROAD_AXE:
-            description = "An axe with a large blade.";
+            description += "An axe with a large blade. ";
             break;
 
         case WPN_AXE:
-            description = "An axe intended for hand to hand combat.";
+            description += "An axe intended for hand to hand combat. ";
             break;
 
         case WPN_SPIKED_FLAIL:
-            description = "A flail with large spikes on the metal lump.";
+            description += "A flail with large spikes on the metal lump. ";
             break;
 
         case WPN_GREAT_MACE:
-            description = "A large and heavy mace.";
+            description += "A large and heavy mace. ";
             break;
 
         case WPN_GREAT_FLAIL:
-            description = "A large and heavy flail.";
+            description += "A large and heavy flail. ";
             break;
 
         default:
@@ -881,65 +900,71 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
         }
     }
 
-    if (verbose == 1 &&
-        item_type != WPN_BOW && item_type != WPN_SLING
-            && item_type != WPN_CROSSBOW && item_type != WPN_HAND_CROSSBOW)
+    if ( verbose == 1
+        && item_type != WPN_BOW
+        && item_type != WPN_SLING
+        && item_type != WPN_CROSSBOW
+        && item_type != WPN_HAND_CROSSBOW )
     {
         switch (hands_required_for_weapon( item_class, item_type ))
         {
-        case HANDS_ONE_HANDED:
-            description += " It is a one handed weapon. ";
-            break;
-
-        case HANDS_ONE_OR_TWO_HANDED:
-            description += " It can be used with one hand, or more "
-                    "effectively with two (if you're not using a shield). ";
-            break;
-
-        case HANDS_TWO_HANDED:
-            description += " It is a two handed weapon. ";
-            break;
+            case HANDS_ONE_HANDED:
+                description += " It is a one handed weapon. ";
+                break;
+            case HANDS_ONE_OR_TWO_HANDED:
+                description += " It can be used with one hand, or more "
+                               "effectively with two "
+                               "(when not using a shield). ";
+                break;
+            case HANDS_TWO_HANDED:
+                description += " It is a two handed weapon. ";
+                break;
         }
     }
 
-    if (verbose == 1 && (item_type < 13 || item_type > 16))
-    {                           // ie is not a missile device
+    if ( verbose == 1 && (item_type < 13 || item_type > 16) )
+    {                           // ie, not a missile device
 
         description += "$Damage rating: ";
-        append_value(description, property(0, item_type, 0), 0);
+        append_value(description, property(OBJ_WEAPONS, item_type, PWPN_DAMAGE), 0);
 
         description += "$Accuracy rating: ";
-        append_value(description, property(0, item_type, 1), 1);
+        append_value(description, property(OBJ_WEAPONS, item_type, PWPN_HIT), 1);
 
         description += "$Speed multiplier (x10): ";
-        append_value(description, property(0, item_type, 2), 1);
+        append_value(description, property(OBJ_WEAPONS, item_type, PWPN_SPEED), 1);
         description += "$";
     }
 
 
     if (item_dam % 30 < 25)
     {
-    switch(item_dam / 30)
+        switch(item_dam / 30)
         {
             case DWPN_DWARVEN:
                 description += "It is well-crafted and very durable.$";
                 break;
-        }
+    }
 
-    if (item_type == WPN_BOW || item_type == WPN_SLING
-            || item_type == WPN_CROSSBOW || item_type == WPN_HAND_CROSSBOW)
+    if ( item_type == WPN_BOW
+          || item_type == WPN_SLING
+            || item_type == WPN_CROSSBOW
+              || item_type == WPN_HAND_CROSSBOW )
         switch(item_dam / 30)
-                {
+        {
                 case DWPN_DWARVEN:
-                    description += "It is most deadly when used with dwarven ammunition.$";
+                    description += "It is most deadly when used with "
+                                   "dwarven ammunition.$";
                     break;
                 case DWPN_ELVEN:
-                    description += "It is most deadly when used with elven ammunition.$";
+                    description += "It is most deadly when used with "
+                                   "elven ammunition.$";
                     break;
                 case DWPN_ORCISH:
-                    description += "It is most deadly when used with orcish ammunition.$";
+                    description += "It is most deadly when used with "
+                                   "orcish ammunition.$";
                     break;
-                }
+        }
     }
 
     if (item_dam >= 180)
@@ -948,49 +973,60 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
         {
             switch (item_dam)
             {
-            case 181:
-                description += "This blessed weapon loves nothing more than to sing to its owner, whether they want it to or not. ";
+            case NWPN_SINGING_SWORD:
+                description += "This blessed weapon loves nothing more "
+                               "than to sing to its owner, "
+                               "whether they want it to or not. ";
                 break;
-            case 182:
-                description += "This was the favourite weapon of the Old God Trog, before he lost it one day. It induces a bloodthirsty berserker rage in anyone who uses it to strike another. ";
+            case NWPN_WRATH_OF_TROG:
+                description += "This was the favourite weapon of "
+                               "the Old God Trog, before he lost it one day. "
+                               "It induces a bloodthirsty berserker rage in "
+                               "anyone who uses it to strike another. ";
                 break;
-            case 183:
-                description += "This weapon carries a terrible and highly irritating curse. ";
+            case NWPN_SCYTHE_OF_CURSES:
+                description += "This weapon carries a "
+                               "terrible and highly irritating curse. ";
                 break;
-            case 184:
+            case NWPN_MACE_OF_VARIABILITY:
                 description += "It is rather unreliable. ";
                 break;
-            case 185:
+            case NWPN_GLAIVE_OF_PRUNE:
                 description +=   "It is the creation of a mad God, and "
                                 "carries a curse which transforms anyone "
                                 "possessing it into a prune. Fortunately, "
                                 "the curse works very slowly, and one can "
                                 "use it briefly with no consequences "
                                 "worse than slightly purple skin and a "
-                                "few wrinkles.";
+                                "few wrinkles. ";
                 break;
-            case 186:
-                description += "This truly accursed weapon is an instrument of Hell. ";
+            case NWPN_SCEPTRE_OF_TORMENT:
+                description += "This truly accursed weapon is "
+                               "an instrument of Hell. ";
                 break;
-            case 187:
-                description += "This dreadful weapon is used at the user's peril. ";
+            case NWPN_SWORD_OF_ZONGULDROK:
+                description += "This dreadful weapon is used "
+                               "at the user's peril. ";
                 break;
-            case 188:
+            case NWPN_SWORD_OF_CEREBOV:
                 description += "Flames cover its twisted blade. ";
                 break;
-            case 189:
-                description += "This legendary item can unleash the fury of Hell. ";
+            case NWPN_STAFF_OF_DISPATER:
+                description += "This legendary item can unleash "
+                               "the fury of Hell. ";
                 break;
-            case 190:
-                description += "It carries some of the powers of the arch-fiend Asmodeus. ";
+            case NWPN_SCEPTRE_OF_ASMODEUS:
+                description += "It carries some of the powers of "
+                               "the arch-fiend Asmodeus. ";
                 break;
-            case 191:
-                description += "It rewards the powerful with power and the meek with weakness. ";
+            case NWPN_SWORD_OF_POWER:
+                description += "It rewards the powerful with power "
+                               "and the meek with weakness. ";
                 break;
-            case 192:
+            case NWPN_KNIFE_OF_ACCURACY:
                 description += "It is almost unerringly accurate. ";
                 break;
-            case 193:
+            case NWPN_STAFF_OF_OLGREB:
                 description +=  "It was the magical weapon wielded by the "
                                "mighty wizard Olgreb before he met his "
                                "fate somewhere within these dungeons. It "
@@ -999,13 +1035,15 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
                                "ability to use venomous magic, and "
                                "carries magical powers which can "
                                "be invoked by one skilled in the use "
-                               "of magic.";
+                               "of magic. ";
                 break;
-            case 194:
+            case NWPN_VAMPIRES_TOOTH:
                 description += "It is lethally vampiric. ";
                 break;
-            case 195:
-                description += "Its power varies in proportion to its wielder's intelligence. Using it can be a bit risky. ";
+            case NWPN_STAFF_OF_WUCAD_MU:
+                description += "Its power varies in proportion to "
+                               "its wielder's intelligence. "
+                               "Using it can be a bit risky. ";
                 break;
             }
         }
@@ -1050,57 +1088,80 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
 
         if (item_dam % 30 >= 25)
             spec_ench = randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_BRAND);
-             else if (verbose == 0) spec_ench = 0;
+             else if (verbose == 0) spec_ench = SPWPN_NORMAL;
                // don't bother printing this generic info if not a randart
 
-        if (spec_ench != 0 && item_id >= 2)
+        if (spec_ench != SPWPN_NORMAL && item_id >= 2)
         {
             switch (spec_ench)
             {
             case SPWPN_FLAMING:
-                description += "It emits flame when wielded, causing extra injury to most foes and up to double damage against particularly susceptible opponents. ";
+                description += "It emits flame when wielded, "
+                               "causing extra injury to most foes "
+                               "and up to double damage against "
+                               "particularly susceptible opponents. ";
                 break;
             case SPWPN_FREEZING:
-                description += "It has been specially enchanted to freeze those struck by it, causing extra injury to most foes and up to double damage against particularly susceptible opponents. ";
+                description += "It has been specially enchanted to "
+                               "freeze those struck by it, causing "
+                               "extra injury to most foes and "
+                               "up to double damage against "
+                               "particularly susceptible opponents. ";
                 break;
             case SPWPN_HOLY_WRATH:
-                description += "It has been blessed by the Shining One to harm undead and cause great damage to the unholy creatures of Hell or Pandemonium. ";
+                description += "It has been blessed by the Shining One "
+                               "to harm undead and cause great damage to "
+                               "the unholy creatures of Hell or Pandemonium. ";
                 break;
             case SPWPN_ELECTROCUTION:
-                description += "Occasionally upon striking a foe it will discharge some electrical energy and cause terrible harm. ";
+                description += "Occasionally upon striking a foe "
+                               "it will discharge some electrical energy "
+                               "and cause terrible harm. ";
                 break;
             case SPWPN_ORC_SLAYING:
-                description += "It is especially effective against all of orcish descent. ";
+                description += "It is especially effective against "
+                               "all of orcish descent. ";
                 break;
             case SPWPN_VENOM:
                 description += "It poisons the flesh of those it strikes. ";
                 break;
             case SPWPN_PROTECTION:
-                description += "It protects the one who wields it against injury. ";
+                description += "It protects the one who wields it "
+                               "against injury. ";
                 break;
             case SPWPN_DRAINING:
-                description += "A truly terrible weapon, it drains the life of those it strikes. ";
+                description += "A truly terrible weapon, "
+                               "it drains the life of those it strikes. ";
                 break;
             case SPWPN_SPEED:
-                description += "It allows its wielder to attack twice when they would otherwise have struck only once. ";
+                description += "It allows its wielder to attack twice when "
+                               "they would otherwise have struck only once. ";
                 break;
             case SPWPN_VORPAL:
                 description += "It inflicts extra damage upon your enemies. ";
                 break;
             case SPWPN_FLAME:
-                description += "It turns projectiles fired from it into bolts of fire. ";
+                description += "It turns projectiles fired from it into "
+                               "bolts of fire. ";
                 break;
             case SPWPN_FROST:
-                description += "It turns projectiles fired from it into bolts of frost. ";
+                description += "It turns projectiles fired from it into "
+                               "bolts of frost. ";
                 break;
             case SPWPN_VAMPIRICISM:
-                description += "It inflicts no extra harm, but heals its wielder somewhat when he or she strikes a living foe. ";
+                description += "It inflicts no extra harm, "
+                               "but heals its wielder somewhat when "
+                               "he or she strikes a living foe. ";
                 break;
             case SPWPN_DISRUPTION:
-                description += "It is a weapon blessed by Zin, and can inflict up to fourfold damage when used against the undead. ";
+                description += "It is a weapon blessed by Zin, "
+                               "and can inflict up to fourfold damage "
+                               "when used against the undead. ";
                 break;
             case SPWPN_PAIN:
-                description += "In the hands of one skilled in necromantic magic it inflicts extra damage on living creatures. ";
+                description += "In the hands of one skilled in "
+                               "necromantic magic it inflicts "
+                               "extra damage on living creatures. ";
                 break;
             case SPWPN_DISTORTION:
                 description += "It warps and distorts space around it. ";
@@ -1116,52 +1177,56 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
             randart_descpr(description, item_class, item_type, item_plus, item_plus2, item_dam);
 
      if (verbose == 1)
-        switch (item_type)
-        {
-        case WPN_SLING:
-            description += "It falls into the 'slings' category. ";
-            break;
+       {
+          description += "It falls into the";     // moved repeated string here, deleted below 15jan2000 {dlb}
 
-        case WPN_BOW:
-            description += "It falls into the 'bows' category. ";
-            break;
+          switch (item_type)
+          {
+          case WPN_SLING:
+              description += " 'slings' category. ";
+              break;
 
-        case WPN_HAND_CROSSBOW:
-        case WPN_CROSSBOW:
-            description += "It falls into the 'crossbows' category. ";
-            break;
+          case WPN_BOW:
+              description += " 'bows' category. ";
+              break;
 
-        default:
-            // Melee weapons
-            switch (weapon_skill(item_class, item_type))
-            {
-            case SK_SHORT_BLADES:
-                description += "It falls into the 'short blades' category. ";
-                break;
-            case SK_LONG_SWORDS:
-                description += "It falls into the 'long swords' category. ";
-                break;
-            // case SK_GREAT_SWORDS:
-            //    description += "It falls into the 'great swords' category. ";
-            //    break;
-            case SK_AXES:
-                description += "It falls into the 'axes' category. ";
-                break;
-            case SK_MACES_FLAILS:
-                description += "It falls into the 'maces and flails' category. ";
-                break;
-            case SK_POLEARMS:
-                description += "It falls into the 'pole-arms' category. ";
-                break;
+          case WPN_HAND_CROSSBOW:
+          case WPN_CROSSBOW:
+              description += " 'crossbows' category. ";
+              break;
 
-            case SK_STAVES:
-                description += "It falls into the 'staves' category. ";
-                break;
+          default:
+              // Melee weapons
+              switch (weapon_skill(item_class, item_type))
+              {
+              case SK_SHORT_BLADES:
+                  description += " 'short blades' category. ";
+                  break;
+              case SK_LONG_SWORDS:
+                  description += " 'long swords' category. ";
+                  break;
+              //case SK_GREAT_SWORDS:
+              //    description += "It falls into the 'great swords' category. ";
+              //    break;
+              case SK_AXES:
+                  description += " 'axes' category. ";
+                  break;
+              case SK_MACES_FLAILS:
+                  description += " 'maces and flails' category. ";
+                  break;
+              case SK_POLEARMS:
+                  description += " 'pole-arms' category. ";
+                  break;
+              case SK_STAVES:
+                  description += " 'staves' category. ";
+                  break;
 
-            default:
-                DEBUGSTR("Unknown weapon type");
-            }
-        }
+              default:
+                  DEBUGSTR("Unknown weapon type");
+              }
+          }
+       }
+
     }
 
     return description;
@@ -1181,27 +1246,30 @@ static string describe_ammo(int item_type, int item_plus, int item_dam, unsigned
 
     switch (item_type)
     {
-    case 0:
+    case MI_STONE:
         description += "A stone. ";
         break;
 
-    case 1:
+    case MI_ARROW:
         description += "An arrow. ";
         break;
 
-    case 2:
+    case MI_BOLT:
         description += "A crossbow bolt. ";
         break;
 
-    case 3:
+    case MI_DART:
         description += "A small throwing weapon. ";
         break;
 
-    case 4:
-        description += "A purple vegetable. The presence of this object in the game indicates a bug (or some kind of cheating on your part). ";
+    case MI_EGGPLANT:
+        description += "A purple vegetable. "
+                       "The presence of this object in the game "
+                       "indicates a bug "
+                       "(or some kind of cheating on your part). ";
         break;
 
-    case 5:
+    case MI_LARGE_ROCK:
         description += "A rock, used by giants as a missile. ";
         break;
 
@@ -1214,10 +1282,12 @@ static string describe_ammo(int item_type, int item_plus, int item_dam, unsigned
         switch (item_dam % 30)
         {
         case 1:
-            description += "When fired from an appropriate launcher, it turns into a bolt of flame. ";
+            description += "When fired from an appropriate launcher, "
+                           "it turns into a bolt of flame. ";
             break;
         case 2:
-            description += "When fired from an appropriate launcher, it turns into a bolt of ice. ";
+            description += "When fired from an appropriate launcher, "
+                           "it turns into a bolt of ice. ";
             break;
         case 3:
         case 4:
@@ -1300,7 +1370,9 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             break;
 
         case ARM_SHIELD:
-            description += "A piece of metal, to be strapped on one's arm. It is cumbersome to wear, and slightly slows the rate at which you may attack.";
+            description += "A piece of metal, to be strapped on one's arm. "
+                           "It is cumbersome to wear, and slightly slows "
+                           "the rate at which you may attack. ";
             break;
 
         case ARM_CLOAK:
@@ -1324,9 +1396,11 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
 
         case ARM_BOOTS:
             if (item_plus2 == 1)
-                description += "A special armour made for Nagas, to wear on their tails. ";
+                description += "A special armour made for Nagas, "
+                               "to wear over their tails. ";
             else if (item_plus2 == 2)
-                description += "An armour made for centaurs, to wear on their horse bodies. ";
+                description += "An armour made for centaurs, "
+                               "to wear over their equine half. ";
             else
                 description += "A pair of sturdy boots. ";
             break;
@@ -1336,74 +1410,114 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             break;
 
         case ARM_LARGE_SHIELD:
-            description += "Like a normal shield, only larger. It is very cumbersome to wear, and slows the rate at which you may attack.";
+            description += "Like a normal shield, only larger. "
+                           "It is very cumbersome to wear, and "
+                           "slows the rate at which you may attack. ";
             break;
 
         case ARM_DRAGON_HIDE:
-            description += "The scaly skin of a dragon. I suppose you could wear it if you really wanted to. ";
+            description += "The scaly skin of a dragon. I suppose "
+                           "you could wear it if you really wanted to. ";
             break;
 
         case ARM_TROLL_HIDE:
-            description += "The rough and knobbly hide of a troll. I suppose you could wear it if you really wanted to. ";
+            description += "The rough and knobbly hide of a troll. "
+                           "I suppose you could wear it "
+                           "if you really wanted to. ";
             break;
 
         case ARM_CRYSTAL_PLATE_MAIL:
-            description += "An incredibly heavy but extremely effective suit of crystalline armour.  It is somewhat resistant to corrosion.";
+            description += "An incredibly heavy but extremely effective "
+                           "suit of crystalline armour. "
+                           "It is somewhat resistant to corrosion. ";
             break;
 
         case ARM_DRAGON_ARMOUR:
-            description += "A magical armour, made from the scales of a fire-breathing dragon. It provides great protection from the effects of fire, but renders its wearer more susceptible to the effects of cold. ";
+            description += "A magical armour, made from the scales of "
+                           "a fire-breathing dragon. It provides "
+                           "great protection from the effects of fire, "
+                           "but renders its wearer more susceptible to "
+                           "the effects of cold. ";
             break;
 
         case ARM_TROLL_LEATHER_ARMOUR:
-            description += "A magical armour, made from the skin of a common troll. It magically regenerates its wearer's flesh at a fairly slow rate (unless they're already a troll). ";
+            description += "A magical armour, made from the skin of "
+                           "a common troll. It magically regenerates "
+                           "its wearer's flesh at a fairly slow rate "
+                           "(unless already a troll). ";
             break;
 
         case ARM_ICE_DRAGON_HIDE:
-            description += "The scaly skin of a dragon. I suppose you could wear it if you really wanted to. ";
+            description += "The scaly skin of a dragon. I suppose "
+                           "you could wear it if you really wanted to. ";
             break;
 
         case ARM_ICE_DRAGON_ARMOUR:
-            description += "A magical armour, made from the scales of a cold-breathing dragon. It provides great protection from the effects of cold, but renders its wearer more susceptible to the effects of fire and heat. ";
+            description += "A magical armour, made from the scales of "
+                           "a cold-breathing dragon. It provides "
+                           "great protection from the effects of cold, "
+                           "but renders its wearer more susceptible to "
+                           "the effects of fire and heat. ";
             break;
 
         case ARM_STEAM_DRAGON_HIDE:
-            description += "The soft and supple scaley skin of a steam dragon. I suppose you could wear it if you really wanted to. ";
+            description += "The soft and supple scaley skin of "
+                           "a steam dragon. I suppose you could "
+                           "wear it if you really wanted to. ";
             break;
 
         case ARM_STEAM_DRAGON_ARMOUR:
-            description += "A magical armour, made from the scales of a "
- "steam-breathing dragon. Although unlike the armour made from the scales "
- "of some larger dragons it does not provide its wearer with much in the way "
- "of special magical protection, it is extremely light and as supple as cloth. ";
-            break; /* Actually, it protects from steam */
+            description += "A magical armour, made from the scales of "
+                           "a steam-breathing dragon. Although unlike "
+                           "the armour made from the scales of some "
+                           "larger dragons it does not provide its wearer "
+                           "with much in the way of special magical "
+                           "protection, it is extremely light and "
+                           "as supple as cloth. ";
+            break; /* it protects from steam */
 
         case ARM_MOTTLED_DRAGON_HIDE:
-            description += "The weirdly-patterned scaley skin of a mottled dragon. I suppose you could wear it if you really wanted to. ";
+            description += "The weirdly-patterned scaley skin of "
+                           "a mottled dragon. I suppose you could "
+                           "wear it if you really wanted to. ";
             break;
 
         case ARM_MOTTLED_DRAGON_ARMOUR:
              description += "A magical armour made from the scales of a "
- "mottled dragon. Although unlike the armour made from the scales of some "
- "larger dragons it does not provide its wearer with much in the way of "
- "special magical protection, it is as light and relatively "
- "uncumbersome as leather armour. ";
+                            "mottled dragon. Although unlike the armour "
+                            "made from the scales of some larger dragons "
+                            "it does not provide its wearer with much in "
+                            "the way of special magical protection, it is "
+                            "as light and relatively uncumbersome as "
+                            "leather armour. ";
             break; /* Protects from napalm */
 
         case ARM_STORM_DRAGON_HIDE:
-            description += "The hide of a storm dragon, covered in extremely hard blue scales. I suppose you could wear it if you really wanted to. ";
+            description += "The hide of a storm dragon, covered in "
+                           "extremely hard blue scales. I suppose "
+                           "you could wear it if you really wanted to. ";
             break;
 
         case ARM_STORM_DRAGON_ARMOUR:
-            description += "A magical armour made from the scales of a lightning-breathing dragon. It is heavier than most dragon scale armours, but gives its wearer great resistance to electrical discharges. ";
+            description += "A magical armour made from the scales of "
+                           "a lightning-breathing dragon. It is heavier "
+                           "than most dragon scale armours, but gives "
+                           "its wearer great resistance to "
+                           "electrical discharges. ";
             break;
 
         case ARM_GOLD_DRAGON_HIDE:
-            description += "The extremely tough and heavy skin of a golden dragon, covered in shimmering golden scales. I suppose you could wear it if you really wanted to. ";
+            description += "The extremely tough and heavy skin of a "
+                           "golden dragon, covered in shimmering golden "
+                           "scales. I suppose you could wear it if "
+                           "you really wanted to. ";
             break;
 
         case ARM_GOLD_DRAGON_ARMOUR:
-            description += "A magical armour made from the golden scales of a golden dragon. It is extremely heavy and cumbersome, but confers resistance to fire, cold, and poison on its wearer. ";
+            description += "A magical armour made from the golden scales "
+                           "of a golden dragon. It is extremely heavy and "
+                           "cumbersome, but confers resistances to fire, "
+                           "cold, and poison on its wearer. ";
             break;
 
         case ARM_ANIMAL_SKIN:
@@ -1411,11 +1525,16 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             break;
 
         case ARM_SWAMP_DRAGON_HIDE:
-            description += "The slimy and smelly skin of a swamp-dwelling dragon. I suppose you could wear it if you really wanted to. ";
+            description += "The slimy and smelly skin of a "
+                           "swamp-dwelling dragon. I suppose "
+                           "you could wear it "
+                           "if you *really* wanted to. ";
             break;
 
         case ARM_SWAMP_DRAGON_ARMOUR:
-            description += "A magical armour made from the scales of a swamp dragon. It confers resistance to poison on its wearer. ";
+            description += "A magical armour made from the scales of "
+                           "a swamp dragon. It confers resistance to "
+                           "poison on its wearer. ";
             break;
 
         default:
@@ -1431,10 +1550,10 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             // Barding has AC value 4.
             append_value(description, 4, 0);
         else
-            append_value(description, property(2, item_type, 0), 0);
+            append_value(description, property(OBJ_ARMOUR, item_type, PARM_AC), 0);
 
         description += "$Evasion modifier: ";
-        append_value(description, property(2, item_type, 1), 0);
+        append_value(description, property(OBJ_ARMOUR, item_type, PARM_EVASION), 0);
         description += "$";
     }
 
@@ -1462,23 +1581,23 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
 
     if (item_dam % 30 < 25)
     {
-        switch(item_dam / 30)
-          {
+        switch(item_dam / 30)               // not the complete list? {dlb}
+        {
           case DARM_ELVEN:
-            description += "It is well-crafted and very light";
-            if (item_type == ARM_CLOAK || item_type == ARM_BOOTS)
-              description += ", and helps its wearer avoid being noticed";
-            description += ". ";
-            break;
+              description += "It is well-crafted and very light";
+              if (item_type == ARM_CLOAK || item_type == ARM_BOOTS)
+                description += ", and helps its wearer avoid being noticed";
+              description += ". ";
+              break;
           case DARM_DWARVEN:
-            description += "It is well-crafted and very durable. ";
-            break;
-          }
+              description += "It is well-crafted and very durable. ";
+              break;
+        }
     }
 
     if (item_id > 1 && (verbose == 1 || item_dam % 30 >= 25))
     {
-        switch (item_dam % 30)
+        switch (item_dam % 30)              // not enumerated? {dlb}
         {
         case 1:
             description += "It allows its wearer to run at a great speed. ";
@@ -1496,7 +1615,9 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             description += "It allows its wearer to see invisible things. ";
             break;
         case 6:
-            description += "When activated it hides its wearer from the sight of others, but also increases their metabolic rate by a large amount. ";
+            description += "When activated it hides its wearer from "
+                           "the sight of others, but also increases "
+                           "their metabolic rate by a large amount. ";
             break;
         case 7:
             description += "It increases the physical power of its wearer. ";
@@ -1511,10 +1632,13 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             description += "It is highly cumbersome. ";
             break;
         case 11:
-            description += "It can be activated to allow its wearer to float above the ground and remain so indefinitely. ";
+            description += "It can be activated to allow its wearer to "
+                           "float above the ground and "
+                           "remain so indefinitely. ";
             break;
         case 12:
-            description += "It increases its wearer's resistance to enchantments. ";
+            description += "It increases its wearer's resistance "
+                           "to enchantments. ";
             break;
         case 13:
             description += "It protects its wearer from harm. ";
@@ -1523,17 +1647,22 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             description += "It enhances the stealth of its wearer. ";
             break;
         case 15:
-            description += "It protects its wearer from the effects of both cold and heat. ";
-            break;              // these two are robes only.
-
+            description += "It protects its wearer from the effects "
+                           "of both cold and heat. ";
+            break;              // these two are robes only     // which two? :P {dlb}
         case 16:
-            description += "It partially protects its wearer from the effects of negative energy. ";
+            description += "It partially protects its wearer from "
+                           "the effects of negative energy. ";
             break;
         case 17:
-            description += "It greatly increases the power of its wearer's magical spells, but is only intended for those who have very little left to learn. ";
+            description += "It greatly increases the power of its "
+                           "wearer's magical spells, but is only "
+                           "intended for those who have "
+                           "very little left to learn. ";
             break;
         case 18:
-            description += "It protects its wearer's possessions from damage and destruction. ";
+            description += "It protects its wearer's possessions "
+                           "from damage and destruction. ";
             break;
         }
     }
@@ -1553,94 +1682,102 @@ static string describe_stick(int item_type, int item_plus, unsigned char item_id
 
     description.reserve(64);
 
-    if (get_id(3, item_type) == 0)
+    if (get_id(OBJ_WANDS, item_type) == 0)
     {
         description += "A stick. Maybe it's magical. ";
 
     }
     else
     {
-        description += "A magical device which";
+        description += "A magical device which ";
         switch (item_type)
         {
-        case 0:
-            description += " throws little bits of flame. ";
+        case WAND_FLAME:
+            description += "throws little bits of flame. ";
             break;
 
-        case 1:
-            description += " throws little bits of frost. ";
+        case WAND_FROST:
+            description += "throws little bits of frost. ";
             break;
 
-        case 2:
-            description += " casts enchantments to slow down the actions of a creature at which it is directed. ";
+        case WAND_SLOWING:
+            description += "casts enchantments to slow down the actions of "
+                           "a creature at which it is directed. ";
             break;
 
-        case 3:
-            description += " casts enchantments to speed up the actions of a creature at which it is directed. ";
+        case WAND_HASTING:
+            description += "casts enchantments to speed up the actions of "
+                           "a creature at which it is directed. ";
             break;
 
-        case 4:
-            description += " throws small bolts of destructive energy. ";
+        case WAND_MAGIC_DARTS:
+            description += "throws small bolts of destructive energy. ";
             break;
 
-        case 5:
-            description += " can heal a creature's wounds. ";
+        case WAND_HEALING:
+            description += "can heal a creature's wounds. ";
             break;
 
-        case 6:
-            description += " can render a creature immobile. ";
+        case WAND_PARALYSIS:
+            description += "can render a creature immobile. ";
             break;
 
-        case 7:
-            description += " throws great bolts of fire. ";
+        case WAND_FIRE:
+            description += "throws great bolts of fire. ";
             break;
 
-        case 8:
-            description += " throws great bolts of cold. ";
+        case WAND_COLD:
+            description += "throws great bolts of cold. ";
             break;
 
-        case 9:
-            description += " induces confusion and bewilderment in a target creature. ";
+        case WAND_CONFUSION:
+            description += "induces confusion and bewilderment in "
+                           "a target creature. ";
             break;
 
-        case 10:
-            description += " hides a creature from the view of others. ";
+        case WAND_INVISIBILITY:
+            description += "hides a creature from the view of others. ";
             break;
 
-        case 11:
-            description += " drills tunnels through unworked rock. ";
+        case WAND_DIGGING:
+            description += "drills tunnels through unworked rock. ";
             break;
 
-        case 12:
-            description += " throws exploding blasts of flame. ";
+        case WAND_FIREBALL:
+            description += "throws exploding blasts of flame. ";
             break;
 
-        case 13:
-            description += " causes a creature to be randomly translocated. ";
+        case WAND_TELEPORTATION:
+            description += "causes a creature to be randomly translocated. ";
             break;
 
-        case 14:
-            description += " throws great bolts of lightning. ";
+        case WAND_LIGHTNING:
+            description += "throws great bolts of lightning. ";
             break;
 
-        case 15:
-            description += " causes a creature to be transmogrified into another form. It doesn't work on you, so don't even try. ";
+        case WAND_POLYMORPH_OTHER:
+            description += "causes a creature to be transmogrified into "
+                           "another form. "
+                           "It doesn't work on you, so don't even try. ";
             break;
 
-        case 16:
-            description += " causes slavish obedience in a creature. ";
+        case WAND_ENSLAVEMENT:
+            description += "causes slavish obedience in a creature. ";
             break;
 
-        case 17:
-            description += " throws a bolt of negative energy which drains the life essences of living creatures, but is useless against the undead. ";
+        case WAND_DRAINING:
+            description += "throws a bolt of negative energy which "
+                           "drains the life essences of living creatures, "
+                           "but is useless against the undead. ";
             break;
 
-        case 18:
-            description += " can produce a variety of effects. ";
+        case WAND_RANDOM_EFFECTS:
+            description += "can produce a variety of effects. ";
             break;
 
-        case 19:
-            description += " disrupts the physical structure of an object, especially a creature's body. ";
+        case WAND_DISINTEGRATION:
+            description += "disrupts the physical structure of "
+                           "an object, especially a creature's body. ";
             break;
 
         default:
@@ -1668,95 +1805,189 @@ static string describe_food(int item_type, int item_dam)
 
     switch (item_type)
     {
-    case 0:
-        description += "A filling ration of dried and preserved meats. ";
+// rations
+    case FOOD_MEAT_RATION:
+    case FOOD_BREAD_RATION:
+        description += "A filling ration of ";
+        switch (item_type)
+        {
+            case FOOD_MEAT_RATION:
+                description += "dried and preserved meats";
+                break;
+            case FOOD_BREAD_RATION:
+                description += "bread";
+                break;
+        }
+        description += ". ";
         break;
 
-    case 1:
-        description += "A filling ration of bread. ";
+// fruits
+    case FOOD_PEAR:
+    case FOOD_APPLE:
+    case FOOD_APRICOT:
+    case FOOD_ORANGE:
+    case FOOD_BANANA:
+    case FOOD_STRAWBERRY:
+    case FOOD_RAMBUTAN:
+    case FOOD_LEMON:
+    case FOOD_GRAPE:
+    case FOOD_LYCHEE:
+    case FOOD_SULTANA:
+        description += "A";
+        switch (item_type)
+        {
+            case FOOD_PEAR:
+                description += " delicious juicy";
+                break;
+            case FOOD_APPLE:
+                description += " delicious red or green";
+                break;
+            case FOOD_APRICOT:
+                description += " delicious orange";
+                break;
+            case FOOD_ORANGE:
+                description += " delicious juicy orange";
+                break;
+            case FOOD_BANANA:
+                description += " delicious yellow";
+                break;
+            case FOOD_STRAWBERRY:
+                description += " small but delicious red";
+                break;
+            case FOOD_RAMBUTAN:
+                description += " small but delicious tropical";
+                break;
+            case FOOD_LEMON:
+                description += " yellow";
+                break;
+            case FOOD_GRAPE:
+                description += " small";
+                break;
+            case FOOD_LYCHEE:
+                description += " tropical";
+                break;
+            case FOOD_SULTANA:
+                description += " dried ";
+                break;
+        }
+        description += " fruit";
+        switch (item_type)
+        {
+            case FOOD_BANANA:
+                description += ", probably grown and imported by "
+                               "some amoral multinational as the "
+                               "result of a corrupt trade deal";
+                break;
+            case FOOD_RAMBUTAN:
+                description += ". How it got into this dungeon "
+                               "is anyone's guess";
+                break;
+            case FOOD_SULTANA:
+                description += " of some sort, possibly a grape";
+                break;
+        }
+        description +=". ";
         break;
 
-    case 2:
-        description += "A delicious juicy fruit. ";
+// vegetables
+    case FOOD_CHOKO:
+    case FOOD_SNOZZCUMBER:
+        description += "A";
+        switch (item_type)
+        {
+            case FOOD_CHOKO:
+                description += "n almost tasteless green";
+                break;
+            case FOOD_SNOZZCUMBER:
+                description += " repulsive cucumber-shaped";
+                break;
+        }
+        description += " vegetable";
+        switch (item_type)
+        {
+            case FOOD_CHOKO:
+                description += ", which grows on a vine";
+                break;
+        }
+        description += ". ";
         break;
 
-    case 3:
-        description += "A delicious red or green fruit. ";
-        break;
-
-    case 4:
-        description += "An almost tasteless green vegetable, which grows on a vine. ";
-        break;
-
-    case 5:
-        description += "A lump of the delicious honeycomb made by giant bees. ";
-        break;
-
-    case 6:
-        description += "A lump of the magical substance produced by giant bees to be fed to their queens. ";
-        break;
-
-    case 7:
-        description += "A repulsive cucumber-shaped vegetable. ";
-        break;
-
-    case 8:
-        description += "A slice of pizza. Don't tell me you don't know what that is! ";
-        break;
-
-    case 9:
-        description += "A delicious orange fruit. ";
-        break;
-
-    case 10:
-        description += "A delicious juicy orange fruit. ";
-        break;
-
-    case 11:
-        description += "A delicious yellow fruit, probably grown and imported by some amoral multinational as the result of a corrupt trade deal. ";
-        break;
-
-    case 12:
-        description += "A small but delicious red fruit. ";
-        break;
-
-        // are you noticing a pattern here?
-    case 13:
-        description += "A small but delicious tropical fruit. How it got into this dungeon is anyone's guess. ";
-        break;
-
-    case 14:
-        description += "A yellow fruit. ";
-        break;
-
-    case 15:
-        description += "A small fruit. ";
-        break;
-
-    case 16:
-        description += "A dried grape. ";
-        break;
-
-    case 17:
-        description += "A tropical fruit. ";
-        break;
-
-    case 18:
-        description += "A strip of preserved dead cow or bull. ";
-        break;
-
-    case 19:
-        description += "A lump of cheese. ";
-        break;
-
-    case 20:
-        description += "An elongated lump of low-grade gristle, entrails and cereal products encased in an intestine. Yum! ";
-        break;
-
-    case 21:
-        description += "A piece of dungeon meat. It looks rather unpleasant. ";
-        if (item_dam < 100)
-            description += "In fact, it is rotting away before your eyes. Eating it would probably be unwise. ";
+// lumps, slices, chunks, and strips
+    case FOOD_HONEYCOMB:
+    case FOOD_ROYAL_JELLY:
+    case FOOD_PIZZA:
+    case FOOD_CHEESE:
+    case FOOD_BEEF_JERKY:
+    case FOOD_SAUSAGE:
+    case FOOD_CHUNK:
+        description += "A";
+        switch (item_type)
+        {
+            case FOOD_SAUSAGE:
+            description += "n elongated";
+                break;
+        }
+        switch (item_type)
+        {
+            case FOOD_HONEYCOMB:
+            case FOOD_ROYAL_JELLY:
+            case FOOD_CHEESE:
+            case FOOD_SAUSAGE:
+            description += " lump";
+                break;
+            case FOOD_PIZZA:
+                description += " slice";
+                break;
+            case FOOD_BEEF_JERKY:
+                description += " strip";
+                break;
+            case FOOD_CHUNK:
+                description += " piece";
+        }
+        description += " of ";
+        switch (item_type)
+        {
+            case FOOD_SAUSAGE:
+                description += "low-grade gristle, entrails and "
+                               "cereal products encased in an intestine";
+                break;
+            case FOOD_HONEYCOMB:
+                description += "the delicious honeycomb made by giant bees";
+                break;
+            case FOOD_ROYAL_JELLY:
+                description += "the magical substance produced by giant bees "
+                               "to be fed to their queens";
+                break;
+            case FOOD_PIZZA:
+                description += "pizza";
+                break;
+            case FOOD_CHEESE:
+                description += "cheese";
+                break;
+            case FOOD_BEEF_JERKY:
+                description += "preserved dead cow or bull";
+                break;
+            case FOOD_CHUNK:
+                description += "dungeon meat";
+                break;
+        }
+        description += ". ";
+        switch (item_type)
+        {
+            case FOOD_SAUSAGE:
+                description += "Yum! ";
+                break;
+            case FOOD_PIZZA:
+                description += "Don't tell me you don't know what that is! ";
+                break;
+            case FOOD_CHUNK:
+                description += "It looks rather unpleasant. ";
+                if (item_dam < 100)
+                    description += "In fact, it is "
+                                   "rotting away before your eyes. "
+                                   "Eating it would probably be unwise. ";
+                break;
+        }
         break;
 
     default:
@@ -1778,114 +2009,216 @@ static string describe_potion(int item_type)
 
     description.reserve(64);
 
-    if (get_id(8, item_type) == 0)
+    if (get_id(OBJ_POTIONS, item_type) == 0)
     {
         description += "A small bottle of liquid. ";
 
     }
     else
     {
+        description += "A";
+
         switch (item_type)
         {
-        case 0:
-            description += "A blessed fluid which heals some wounds, clears the mind, and cures diseases. If one uses it when they are at or near full health, it can also slightly repair permanent injuries. ";
+        case POT_HEALING:
+            description += " blessed";
             break;
-
-        case 1:
-            description += "A magical healing elixir, which causes wounds to close and heal almost instantly. If one uses it when they are at or near full health, it can also repair permanent injuries. ";
+        case POT_HEAL_WOUNDS:
+            description += " magical healing";
             break;
-
-        case 2:
-            description += "An enchanted beverage which speeds the actions of anyone who drinks it. ";
+        case POT_SPEED:
+            description += "n enchanted";
             break;
-
-        case 3:
-            description += "A magic potion which greatly increases the strength and physical power of one who drinks it. ";
+        case POT_MIGHT:
+            description += " magic";
             break;
-
-        case 4:
-            description += "A potion of beneficial mutation. ";
+        case POT_POISON:
+            description += " nasty poisonous";
             break;
-
-        case 5:
-            description += "A potion of beneficial mutation. ";
+        case POT_PORRIDGE:
+            description += " filling";
             break;
-
-        case 6:
-            description += "A potion of beneficial mutation. ";
+        case POT_DEGENERATION:
+            description += " noxious";
             break;
-
-        case 7:
-            description += "A potion which confers great buoyancy on one who consumes it. ";
+        case POT_DECAY:
+            description += " vile and putrid cursed";
             break;
-
-        case 8:
-            description += "A nasty poisonous liquid. ";
+        case POT_WATER:
+            description += " unique";
             break;
-
-        case 9:
-            description += "A potion which slows your actions. ";
+        case POT_EXPERIENCE:
+            description += " truly wonderful and very rare";
             break;
-
-        case 10:
-            description += "A potion which eliminates your control over your own body. ";
+        case POT_MAGIC:
+            description += " valuable";
             break;
-
-        case 11:
-            description += "A potion which confuses your perceptions and reduces your control over your own actions. ";
+        case POT_STRONG_POISON:
+            description += " terribly venomous";
             break;
-
-        case 12:
-            description += "A potion which hides you from the sight of others. ";
-            break;
-
-        case 13:
-            description += "A filling potion of sludge, high in cereal fibre. ";
-            break;
-
-        case 14:
-            description += "A noxious concoction, which can do terrible things to your body, brain and reflexes. ";
-            break;
-
-        case 15:
-            description += "A vile and putrid cursed liquid, which causes your flesh to decay before your very eyes. ";
-            break;
-
-        case 16:
-            description += "A unique substance, vital for the existence of most life. ";
-            break;
-
-        case 17:
-            description += "A truly wonderful and very rare drink. ";
-            break;
-
-        case 18:
-            description += "A valuable potion which grants a person with an infusion of magical energy. ";
-            break;
-
-        case 19:
-            description += "A potion which restores the abilities of one who drinks it. ";
-            break;
-
-        case 20:
-            description += "A terribly venomous potion. ";
-            break;
-
-        case 21:
-            description += "A potion which can send one into an incoherent rage. ";
-            break;
-
-        case 22:
-            description += "A potion which removes some or all of any mutations which may be afflicting you. ";
-            break;
-
-        case 23:
-            description += "A potion which does very strange things to you. ";
-            break;
-
-        default:
-            DEBUGSTR("Unknown potion");
         }
+
+        description += " ";
+
+        switch (item_type)
+        {
+        case POT_MIGHT:
+        case POT_GAIN_STRENGTH:
+        case POT_GAIN_DEXTERITY:
+        case POT_GAIN_INTELLIGENCE:
+        case POT_LEVITATION:
+        case POT_SLOWING:
+        case POT_PARALYSIS:
+        case POT_CONFUSION:
+        case POT_INVISIBILITY:
+        case POT_PORRIDGE:
+        case POT_MAGIC:
+        case POT_RESTORE_ABILITIES:
+        case POT_STRONG_POISON:
+        case POT_BERSERK_RAGE:
+        case POT_CURE_MUTATION:
+        case POT_MUTATION:
+            description += "potion";
+            break;
+        case POT_HEALING:
+            description += "fluid";
+            break;
+        case POT_HEAL_WOUNDS:
+            description += "elixir";
+            break;
+        case POT_SPEED:
+            description += "beverage";
+            break;
+        case POT_POISON:
+        case POT_DECAY:
+            description += "liquid";
+            break;
+        case POT_DEGENERATION:
+            description += "concoction";
+            break;
+        case POT_WATER:
+            description += "substance";
+            break;
+        case POT_EXPERIENCE:
+            description += "drink";
+            break;
+        }
+
+        switch (item_type)
+        {
+        case POT_HEALING:
+        case POT_HEAL_WOUNDS:
+        case POT_SPEED:
+        case POT_MIGHT:
+        case POT_LEVITATION:
+        case POT_SLOWING:
+        case POT_PARALYSIS:
+        case POT_CONFUSION:
+        case POT_INVISIBILITY:
+        case POT_DEGENERATION:
+        case POT_DECAY:
+        case POT_MAGIC:
+        case POT_RESTORE_ABILITIES:
+        case POT_BERSERK_RAGE:
+        case POT_CURE_MUTATION:
+        case POT_MUTATION:
+            description += " which ";
+            break;
+        case POT_GAIN_STRENGTH:
+        case POT_GAIN_DEXTERITY:
+        case POT_GAIN_INTELLIGENCE:
+        case POT_PORRIDGE:
+            description += " of ";
+            break;
+        }
+
+        switch (item_type)
+        {
+        case POT_HEALING:
+            description += "heals some wounds, clears the mind, "
+                           "and cures diseases";
+            break;
+        case POT_HEAL_WOUNDS:
+            description += "causes wounds to close and heal "
+                           "almost instantly";
+            break;
+        case POT_SPEED:
+            description += "speeds the actions of anyone who drinks it";
+            break;
+        case POT_MIGHT:
+            description += "greatly increases the strength and "
+                           "physical power of one who drinks it";
+            break;
+        case POT_GAIN_STRENGTH:
+        case POT_GAIN_DEXTERITY:
+        case POT_GAIN_INTELLIGENCE:
+            description += "beneficial mutation";
+            break;
+        case POT_LEVITATION:
+            description += "confers great buoyancy on one who consumes it";
+            break;
+        case POT_SLOWING:
+            description += "slows your actions";
+            break;
+        case POT_PARALYSIS:
+            description += "eliminates your control over your own body";
+            break;
+        case POT_CONFUSION:
+            description += "confuses your perceptions and reduces "
+                           "your control over your own actions";
+            break;
+        case POT_INVISIBILITY:
+            description += "hides you from the sight of others";
+            break;
+        case POT_PORRIDGE:
+            description += "sludge, high in cereal fibre";
+            break;
+        case POT_DEGENERATION:
+            description += "can do terrible things to your "
+                           "body, brain and reflexes";
+            break;
+        case POT_DECAY:
+            description += "causes your flesh to decay "
+                           "before your very eyes";
+            break;
+        case POT_WATER:
+            description += ", vital for the existence of most life";
+            break;
+        case POT_MAGIC:
+            description += "grants a person with an "
+                           "infusion of magical energy";
+            break;
+        case POT_RESTORE_ABILITIES:
+            description += "restores the abilities of one who drinks it";
+            break;
+        case POT_BERSERK_RAGE:
+            description += "can send one into an incoherent rage";
+            break;
+        case POT_CURE_MUTATION:
+            description += "removes some or all of any mutations "
+                           "which may be afflicting you";
+            break;
+        case POT_MUTATION:
+            description += "does very strange things to you";
+            break;
+        }
+
+        description += ". ";
+
+        switch (item_type)
+        {
+        case POT_HEALING:
+        case POT_HEAL_WOUNDS:
+            description += "If one uses it when they are "
+                           "at or near full health, it can also ";
+            if (item_type == POT_HEALING)
+                description +="slightly";
+            description += " repair permanent injuries. ";
+            break;
+        }
+
+        //default:
+        //    DEBUGSTR("Unknown potion");          // I had no idea where to put this back 16jan2000 {dlb}
     }
 
     return description;
@@ -1903,7 +2236,7 @@ static string describe_scroll(int item_type)
 
     description.reserve(64);
 
-    if (get_id(6, item_type) == 0)
+    if (get_id(OBJ_SCROLLS, item_type) == 0)
     {
         description += "A scroll of paper covered in magical writing. ";
 
@@ -1912,107 +2245,136 @@ static string describe_scroll(int item_type)
     {
         switch (item_type)
         {
-        case 0:
-            description += "This useful magic scroll allows you to determine the properties of any object. ";
+        case SCR_IDENTIFY:
+            description += "This useful magic scroll allows you to "
+                           "determine the properties of any object. ";
             break;
 
-        case 1:
-            description += "Reading the words on this scroll translocates you to a random position. ";
+        case SCR_TELEPORTATION:
+            description += "Reading the words on this scroll "
+                           "translocates you to a random position. ";
             break;
 
-        case 2:
-            description += "This scroll causes great fear in those who see the one who reads it. ";
+        case SCR_FEAR:
+            description += "This scroll causes great fear in those "
+                           "who see the one who reads it. ";
             break;
 
-        case 3:
-            description += "This scroll causes a loud noise. It is not universally noted for its usefulness.";
+        case SCR_NOISE:
+            description += "This scroll causes a loud noise. It is not "
+                           "universally noted for its usefulness.";
             break;
 
-        case 4:
-            description += "Reading this scroll removes curses from the items you are using. ";
+        case SCR_REMOVE_CURSE:
+            description += "Reading this scroll removes curses from "
+                           "the items you are using. ";
             break;
 
-        case 5:
-            description += "This scroll allows you to detect the presence of cursed items among your possessions. ";
+        case SCR_DETECT_CURSE:
+            description += "This scroll allows you to detect the presence "
+                           "of cursed items among your possessions. ";
             break;
 
-        case 6:
-            description += "This scroll opens a conduit to the Abyss and draws a terrible beast to this world for a limited time. ";
+        case SCR_SUMMONING:
+            description += "This scroll opens a conduit to the Abyss "
+                            "and draws a terrible beast to this world "
+                            "for a limited time. ";
             break;
 
-        case 7:
-            description += "This scroll places an enchantment on a weapon, making it more accurate in combat. It may fail to affect weapons already heavily enchanted. ";
+        case SCR_ENCHANT_WEAPON_I:
+            description += "This scroll places an enchantment on a weapon, "
+                           "making it more accurate in combat. It may fail "
+                           "to affect weapons already heavily enchanted. ";
             break;
 
-        case 8:
-            description += "This scroll places an enchantment on a piece of armour. ";
+        case SCR_ENCHANT_ARMOUR:
+            description += "This scroll places an enchantment "
+                           "on a piece of armour. ";
             break;
 
-        case 9:
-            description += "This scroll calls on the powers of Hell to inflict great pain on any nearby creature - including you! ";
+        case SCR_TORMENT:
+            description += "This scroll calls on the powers of Hell to "
+                           "inflict great pain on any nearby creature - "
+                           "including you! ";
             break;
 
-        case 10:
+        case SCR_RANDOM_USELESSNESS:
             description += "Does some randomly useless thing. ";
             break;
 
-        case 11:
+        case SCR_CURSE_WEAPON:
             description += "This scroll places a curse on a weapon. ";
             break;
 
-        case 12:
-            description += "This scroll places a curse on a piece of armour. ";
+        case SCR_CURSE_ARMOUR:
+            description += "This scroll places a curse "
+                           "on a piece of armour. ";
             break;
 
-        case 13:
-            description += "Upon being read, this scroll causes a large explosion. ";
+        case SCR_IMMOLATION:
+            description += "The back of the scroll reads: "
+                           "\"Upon being read, this scroll "
+                           "causes a large explosion.\" ";
             break;
 
-        case 14:
-            description += "This scroll allows its reader to teleport a short distance, with precise control. ";
+        case SCR_BLINKING:
+            description += "This scroll allows its reader to teleport "
+                           "a short distance, with precise control. ";
             break;
 
-        case 15:
+        case SCR_PAPER:
             description += "Apart from a label, this scroll is blank. ";
             break;
 
-        case 16:
-            description += "This scroll reveals the nearby surroundings of one who reads it. ";
+        case SCR_MAGIC_MAPPING:
+            description += "This scroll reveals the nearby surroundings "
+                           "of one who reads it. ";
             break;
 
-        case 17:
-            description += "This scroll induces an irritating disorientation. ";
+        case SCR_FORGETFULNESS:
+            description += "This scroll induces "
+                           "an irritating disorientation. ";
             break;
 
-        case 18:
-            description += "This wonderful scroll causes the creation of "
- "an item valuable to the reader at the reader's feet. It is especially "
- "treasured by specialist magicians, as they can use it to obtain the "
- "powerful spells of their speciality. It will "
- "avoid creating some types of item if one such is already in the "
- "possession of the reader. ";
+        case SCR_ACQUIREMENT:
+            description += "This wonderful scroll causes the "
+                           "creation of an item valuable to "
+                           "the reader at the reader's feet. "
+                           "It is especially treasured by specialist "
+                           "magicians, as they can use it to obtain "
+                           "the powerful spells of their specialty. "
+                           "It will avoid creating some types of item "
+                           "if one such is already in the possession "
+                           "of the reader. ";
             break;
 
-        case 19:
-            description += "This scroll places an enchantment on a weapon, making it inflict greater damage in combat. It may fail to affect weapons already heavily enchanted. ";
+        case SCR_ENCHANT_WEAPON_II:
+            description += "This scroll places an enchantment on a weapon, "
+                           "making it inflict greater damage in combat. "
+                           "It may fail to affect weapons already "
+                           "heavily enchanted. ";
             break;
 
-        case 20:                // vorpalise weapon
-
+        case SCR_VORPALISE_WEAPON:
             description += "This scroll enchants a weapon so as to make "
- "it far more effective at inflicting harm on its wielder's enemies. "
- "Using "
- "it on a weapon already affected by some kind of special enchantment "
- "(other than that produced by a normal scroll of enchant weapon) is not "
- "advised. ";
+                           "it far more effective at inflicting harm on "
+                           "its wielder's enemies. Using it on a weapon "
+                           "already affected by some kind of special "
+                           "enchantment (other than that produced by a "
+                           "normal scroll of enchant weapon) is not advised. ";
             break;
 
-        case 21:
-            description += "This scroll restores the charges of any magical wand wielded by its reader. ";
+        case SCR_RECHARGING:
+            description += "This scroll restores the charges of "
+                           "any magical wand wielded by its reader. ";
             break;
 
-        case 22:
-            description += "This scroll enchants a weapon to be far more effective in combat. Although it can be used in the creation of especially enchanted weapons, it may fail to affect those already heavily enchanted. ";
+        case SCR_ENCHANT_WEAPON_III:
+            description += "This scroll enchants a weapon to be "
+                           "far more effective in combat. Although "
+                           "it can be used in the creation of especially "
+                           "enchanted weapons, it may fail to affect those "
+                           "already heavily enchanted. ";
             break;
 
         default:
@@ -2040,7 +2402,7 @@ static string describe_jewellery(int item_class, int item_type, int item_plus, i
         description += unrandart_descrip(1, item_class, item_type, item_plus, item_plus2);
 
     }
-    else if (get_id(7, item_type) == 0)
+    else if (get_id(OBJ_JEWELLERY, item_type) == 0)
     {
         description += "A piece of jewellery. ";
 
@@ -2144,9 +2506,9 @@ static string describe_jewellery(int item_class, int item_type, int item_plus, i
 
         case 23:
             description += "This ring allows its wearer to control the "
- "destination of any teleportation, although without perfect accuracy. "
- "Trying to teleport into a solid object will result in a random "
- "teleportation, at least in the case of a normal teleportation.";
+                           "destination of any teleportation, although without perfect accuracy. "
+                           "Trying to teleport into a solid object will result in a random "
+                           "teleportation, at least in the case of a normal teleportation.";
             break;
 
         case AMU_RAGE:
@@ -2179,10 +2541,10 @@ static string describe_jewellery(int item_class, int item_type, int item_plus, i
 
         case 42:
             description += "Should the wearer of this amulet be levitated "
- "by magical means, he or she will be able to exercise some control over "
- "the resulting motion. This allows the descent of staircases and the "
- "retrieval of items lying on the ground, for example, but does not "
- "deprive the wearer of the benefits of levitation. ";
+                           "by magical means, he or she will be able to exercise some control over "
+                           "the resulting motion. This allows the descent of staircases and the "
+                           "retrieval of items lying on the ground, for example, but does not "
+                           "deprive the wearer of the benefits of levitation. ";
             break;
 
         case 43:
@@ -2220,85 +2582,86 @@ static string describe_staff(int item_type, unsigned char item_id)
 
     description.reserve(100);
 
-    if (item_id == 0)
+    if (!item_id)
     {
-        description += "A stick embued with magical properties. ";
+        description += "A stick imbued with magical properties. ";
 
     }
     else
     {
+        description += "This staff ";       //NB: the leading space is here {dlb}
         switch (item_type)
         {
-        case 0:
-            description += "This staff increases the magical proficiency of its wielder by a considerable degree, increasing the power of their spells. ";
+        case STAFF_WIZARDRY:
+            description += "increases the magical proficiency of its wielder by a considerable degree, increasing the power of their spells. ";
             break;
 
-        case 1:
-            description += "This staff provides a reservoir of magical power to its wielder. ";
+        case STAFF_POWER:
+            description += "provides a reservoir of magical power to its wielder. ";
             break;
 
-        case 2:
-            description += "This staff increases the power of fire spells cast by its wielder, and protects him or her from the effects of heat and fire. It can burn those struck by it, and will attempt to impart knowledge of Fire Magic to its wielder. ";
+        case STAFF_FIRE:
+            description += "increases the power of fire spells cast by its wielder, and protects him or her from the effects of heat and fire. It can burn those struck by it, and will attempt to impart knowledge of Fire Magic to its wielder. ";
             break;
 
-        case 3:
-            description += "This staff increases the power of ice spells cast by its wielder, and protects him or her from the effects of cold. It can freeze those struck by it, and will attempt to tutor its wielder in Ice Magic. ";
+        case STAFF_COLD:
+            description += "increases the power of ice spells cast by its wielder, and protects him or her from the effects of cold. It can freeze those struck by it, and will attempt to tutor its wielder in Ice Magic. ";
             break;
 
-        case 4:
-            description += "This staff increases the power of poisoning spells cast by its wielder, and protects him or her from the effects of poison. It can poison those struck by it, and will attempt to school its wielder in Poison Magic. ";
+        case STAFF_POISON:
+            description += "increases the power of poisoning spells cast by its wielder, and protects him or her from the effects of poison. It can poison those struck by it, and will attempt to school its wielder in Poison Magic. ";
             break;
 
-        case 5:
-            description += "This staff allows its wielder to cast magical spells without hungering as a result. ";
+        case STAFF_ENERGY:
+            description += "allows its wielder to cast magical spells without hungering as a result. ";
             break;
 
-        case 6:
-            description += "This staff increases the power of necromantic spells cast by its wielder. It can cause great pain in those living souls its wielder strikes. It will attempt to teach its weilder Necromancy. ";
+        case STAFF_DEATH:
+            description += "increases the power of necromantic spells cast by its wielder. It can cause great pain in those living souls its wielder strikes. It will attempt to teach its weilder Necromancy. ";
             break;
 
-        case 7:
-            description += "This staff increases the power of conjurations cast by its wielder. ";
+        case STAFF_CONJURATION:
+            description += "increases the power of conjurations cast by its wielder. ";
             break;
 
-        case 8:
-            description += "This staff increases the power of enchantments cast by its wielder. ";
+        case STAFF_ENCHANTMENT:
+            description += "increases the power of enchantments cast by its wielder. ";
             break;
 
-        case 9:
-            description += "This staff increases the power of summonings cast by its wielder. ";
+        case STAFF_SUMMONING_I:
+            description += "increases the power of summonings cast by its wielder. ";
             break;
 
-        case 10:
-            description += "This holy spell staff allows its wielder to smite foes from afar. ";
+        case STAFF_SMITING:
+            description += "of holy spells allows its wielder to smite foes from afar. ";
             break;
 
-        case 11:
-            description += "This spell staff contains spells of summoning. ";
+        case STAFF_SUMMONING_II:
+            description += "of spells contains spells of summoning. ";
             break;
 
-        case 16:
-            description += "This spell staff contains spells designed to repel one's enemies. ";
+        case STAFF_WARDING:
+            description += "of spells contains spells designed to repel one's enemies. ";
             break;
 
-        case 17:
-            description += "This spell staff contains spells which reveal various aspects of an explorer's surroundings to them. ";
+        case STAFF_DISCOVERY:
+            description += "of spells contains spells which reveal various aspects of an explorer's surroundings to them. ";
             break;
 
-        case 25:
-            description += "This staff increases the power of air spells cast by its wielder. It can shock those struck by it, and will attempt to teach its weilder Air Magic. ";
+        case STAFF_AIR:
+            description += "increases the power of air spells cast by its wielder. It can shock those struck by it, and will attempt to teach its weilder Air Magic. ";
             break;
 
-        case 26:
-            description += "This staff increases the power of earth spells cast by its wielder. It can crush those struck by it, and will attempt to teach its weilder Earth Magic. ";
+        case STAFF_EARTH:
+            description += "increases the power of earth spells cast by its wielder. It can crush those struck by it, and will attempt to teach its weilder Earth Magic. ";
             break;
 
-        case 27:
-            description += "This staff allows its caster to channel ambient magical energy for his or her own purposes. ";
+        case STAFF_CHANNELING:
+            description += "allows its caster to channel ambient magical energy for his or her own purposes. ";
             break;
 
         default:
-            description += "This spell staff contains spells of mayhem and destruction. ";
+            description += "of spells contains spells of mayhem and destruction. ";
             break;
         }
 
@@ -2388,22 +2751,22 @@ static string describe_misc_item(int item_type, unsigned char item_id)
             break;
         case 2:
              description += "A magical device for summoning air "
- "elementals. It is rather unreliable, and usually requires several "
- "attempts to function correctly. Using it carries an element of risk, "
- "which is reduced if one is skilled in the appropriate elemental magic. ";
+                            "elementals. It is rather unreliable, and usually requires several "
+                            "attempts to function correctly. Using it carries an element of risk, "
+                            "which is reduced if one is skilled in the appropriate elemental magic. ";
             break;
         case 3:
              description += "A magical device for summoning fire "
- "elementals. It is rather unreliable, and usually requires several "
- "attempts to function correctly. Using it carries an element of risk, "
- "which is reduced if one is skilled in the appropriate elemental magic.";
+                            "elementals. It is rather unreliable, and usually requires several "
+                            "attempts to function correctly. Using it carries an element of risk, "
+                            "which is reduced if one is skilled in the appropriate elemental magic.";
             break;
         case 4:
              description += "A magical device for summoning earth "
- "elementals. It is rather unreliable, and usually requires several "
- "attempts to function correctly. Using it carries an element of "
- "risk, which is reduced if one is skilled in the appropriate "
- "elemental magic.";
+                            "elementals. It is rather unreliable, and usually requires several "
+                            "attempts to function correctly. Using it carries an element of "
+                            "risk, which is reduced if one is skilled in the appropriate "
+                            "elemental magic.";
             break;
         case 5:
             description += "An unholy device which calls on the powers of darkness to assist its user, with a small cost attached. ";
@@ -2421,12 +2784,12 @@ static string describe_misc_item(int item_type, unsigned char item_id)
             description += "A deck of magical cards, depicting a range of weird and wondrous creatures. ";
             break;
         case 10:
- description += "A magical device which can be used to restore one's "
- "reserves of magical energy, but the use of which carries the risk of "
- "draining all of those energies completely. This risk varies inversely "
- "with the proportion of their maximum "
- "energy which the user possesses; a user near his or her full potential "
- "will find this item most beneficial. ";
+            description += "A magical device which can be used to restore one's "
+                            "reserves of magical energy, but the use of which carries the risk of "
+                            "draining all of those energies completely. This risk varies inversely "
+                            "with the proportion of their maximum "
+                            "energy which the user possesses; a user near his or her full potential "
+                            "will find this item most beneficial. ";
             break;
         case 11:
             description += "A magical box after its power is spent. ";
@@ -2466,10 +2829,12 @@ static string describe_misc_item(int item_type, unsigned char item_id)
 //      Public Functions
 // ========================================================================
 
+
+// begin defined-out function
 #if 0
 
 // This function has currently been replaced by is_dumpable_artifact
-
+//
 //---------------------------------------------------------------
 //
 // is_artifact
@@ -2486,7 +2851,7 @@ bool is_artifact(int item_class, int item_type, int item_plus, int item_plus2, i
 
     switch (item_class)
     {
-    case 0:                     // weapon
+    case OBJ_WEAPONS:
 
         if (spec_ench == 25 && strlen(unrandart_descrip(1, item_class, item_type, item_plus, item_plus2)) != 0)
             is = true;          // unrandom
@@ -2507,7 +2872,7 @@ bool is_artifact(int item_class, int item_type, int item_plus, int item_plus2, i
         }
         break;
 
-    case 2:                     // armor
+    case OBJ_ARMOUR:
 
         if (spec_ench == 25 && strlen(unrandart_descrip(1, item_class, item_type, item_plus, item_plus2)) != 0)
             is = true;          // unrandom
@@ -2520,12 +2885,12 @@ bool is_artifact(int item_class, int item_type, int item_plus, int item_plus2, i
 
         break;
 
-    case 7:                     // jewellery
+    case OBJ_JEWELLERY:
 
         if (item_dam == 201 && strlen(unrandart_descrip(1, item_class, item_type, item_plus, item_plus2)) != 0)
             is = true;          // unrandom
 
-        else if (get_id(7, item_type))
+        else if (get_id(OBJ_JEWELLERY, item_type))
             is = true;          // fixed?
 
         if (item_id >= 2 && (item_dam == 200 || item_dam == 201))
@@ -2537,6 +2902,7 @@ bool is_artifact(int item_class, int item_type, int item_plus, int item_plus2, i
     return is;
 }
 #endif
+// end defined-out function
 
 
 bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
@@ -2551,13 +2917,13 @@ bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
     int spec_ench = item_dam % 30;
 
     switch (item_class) {
-        case 0:             // weapon
+        case OBJ_WEAPONS:
             if (spec_ench >= 25 || item_dam >= 180)
                 is = item_id >= 2; // first check is for randarts, second
                                    // for fixed arts.
             break;
 
-        case 2:             // armour
+        case OBJ_ARMOUR:
             if (spec_ench >= 25)
                 is = item_id >= 2; // randarts.
 
@@ -2565,14 +2931,14 @@ bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
                 is = spec_ench >= 1 && spec_ench <= 18;
             break;
 
-        case 7:                // jewellery
+        case OBJ_JEWELLERY:
             if (item_dam == 200 || item_dam == 201)
                 is = item_id >= 2;      // randarts and unrandarts
 // BCR - huh?
 //#if 1
             // include this bit if descriptions of all rings and
             // amulets are desired
-            else if (verbose == 1 && get_id(7, item_type))
+            else if (verbose == 1 && get_id(OBJ_JEWELLERY, item_type))
                 is = true;
 //#endif
             break;
@@ -2596,76 +2962,76 @@ string get_item_description(int item_class, int item_type, int item_plus, int it
 
     description.reserve(200);
 
-    /*
-       Removed DML 6/2/99
-       int spec_ench = 0;
-       not used!
-    */
+    // int spec_ench = 0;                // unused - removed 6.2.1999 {dml}
 
     switch (item_class)
     {
-    case 0:
+    case OBJ_WEAPONS:
         description += describe_weapon(item_class, item_type, item_plus, item_plus2, item_dam, item_id, verbose);
         break;
 
-    case 1:
+    case OBJ_MISSILES:
         description += describe_ammo(item_type, item_plus, item_dam, item_id);
         break;
 
-    case 2:
+    case OBJ_ARMOUR:
         description += describe_armour(item_class, item_type, item_plus, item_plus2, item_dam, item_id, verbose);
         break;
 
-    case 3:
+    case OBJ_WANDS:
         description += describe_stick(item_type, item_plus, item_id);
         break;
 
-    case 4:
+    case OBJ_FOOD:
         description += describe_food(item_type, item_dam);
         break;
 
-    case 8:
-        description += describe_potion(item_type);
-        break;
-
-    case 6:
+    case OBJ_SCROLLS:
         description += describe_scroll(item_type);
         break;
 
-    case 7:
+    case OBJ_JEWELLERY:
         description += describe_jewellery(item_class, item_type, item_plus, item_plus2, item_dam, item_id, verbose);
         break;
 
-    case 10:
+    case OBJ_POTIONS:
+        description += describe_potion(item_type);
+        break;
+
+    case OBJ_BOOKS:
         switch (item_type)
         {
-        case 35:
+        case BOOK_DESTRUCTION:
             description += "An extremely powerful but unpredictable book of magic. ";
             break;
 
-        case 41:
-            description += "A valuable book of magic which allows one to practise a certain skill greatly. As it is used, it gradually disintegrates and will eventually fall apart. ";
+        case BOOK_MANUAL:
+            description += "A valuable book of magic which allows one to practise "
+                           "a certain skill greatly. As it is used, it gradually "
+                           "disintegrates and will eventually fall apart. ";
             break;
 
         default:
-            description += "A book of magic spells. Beware, for some of the more powerful grimoires are not to be toyed with. ";
+            description += "A book of magic spells. Beware, for some of the "
+                           "more powerful grimoires are not to be toyed with. ";
             break;
         }
         break;
 
-    case 11:
+    case OBJ_STAVES:
         description += describe_staff(item_type, item_id);
         break;
 
-    case 12:
-        description += "Once you have escaped to the surface with this invaluable artefact, your quest is complete.";
+    case OBJ_ORBS:
+        description += "Once you have escaped to the surface with "
+                       "this invaluable artefact, your quest is complete. ";
         break;
 
-    case 13:
+    case OBJ_MISCELLANY:
         description += describe_misc_item(item_type, item_id);
         break;
 
-    case 14:
+    case OBJ_CORPSES:
         if (item_type == 0)
             description += "A corpse. ";
         else
@@ -2674,7 +3040,7 @@ string get_item_description(int item_class, int item_type, int item_plus, int it
 
     default:
         DEBUGSTR("Bad item class");
-        description += "This item should not exist. Mayday! Mayday!";
+        description += "This item should not exist. Mayday! Mayday! ";
     }
 
     if (verbose == 1)
@@ -2682,9 +3048,9 @@ string get_item_description(int item_class, int item_type, int item_plus, int it
      description += "It weighs around ";
      char item_mass[7];
 
-     if (item_class == 14)
+     if (item_class == OBJ_CORPSES)
      {
-        if (item_type == 0)
+        if (item_type == CORPSE_BODY)
             itoa(mons_weight(item_plus) / 10, item_mass, 10);
         else
             itoa(mons_weight(item_plus) / 20, item_mass, 10);
@@ -2693,7 +3059,7 @@ string get_item_description(int item_class, int item_type, int item_plus, int it
         itoa(mass(item_class, item_type) / 10, item_mass, 10);
 
      description += item_mass;
-     description += " aum. ";    // arbitrary unit of mass
+     description += " aum. ";               // arbitrary unit of mass
     }
 
     return description;
@@ -2719,7 +3085,8 @@ void describe_item(int item_class, int item_type, int item_plus, int item_plus2,
 
     clrscr();
 
-    string description = get_item_description(item_class, item_type, item_plus, item_plus2, item_dam, item_id, 1);
+    string description =
+         get_item_description(item_class, item_type, item_plus, item_plus2, item_dam, item_id, 1);
 
     print_description(description);
 
@@ -2737,7 +3104,7 @@ void describe_item(int item_class, int item_type, int item_plus, int item_plus2,
 //
 // describe_spell
 //
-// Describes every spell in the game.
+// Describes (most) every spell in the game.
 //
 //---------------------------------------------------------------
 void describe_spell(int spelled)
@@ -2748,632 +3115,746 @@ void describe_spell(int spelled)
 
 #ifdef DOS_TERM
     char buffer[3400];
-
     gettext(25, 1, 80, 25, buffer);
-
     window(25, 1, 80, 25);
 #endif
 
     clrscr();
 
-    description += "This spell";
+    description += "This spell ";           // NB: the leading space is here {dlb}
     switch (spelled)
     {
     case SPELL_IDENTIFY:
-        description += " allows the caster to determine the properties of an otherwise inscrutable magic item. ";
+        description += "allows the caster to determine the properties of "
+                       "an otherwise inscrutable magic item. ";
         break;
 
     case SPELL_TELEPORT_SELF:
-        description += " teleports the caster to a random location. ";
+        description += "teleports the caster to a random location. ";
         break;
 
     case SPELL_CAUSE_FEAR:
-        description += " causes fear in those near to the caster. ";
+        description += "causes fear in those near to the caster. ";
         break;
 
     case SPELL_CREATE_NOISE:
-        description += " causes a loud noise to be heard. ";
+        description += "causes a loud noise to be heard. ";
         break;
 
     case SPELL_REMOVE_CURSE:
-        description += " removes curses from any items which are being used by the caster. ";
+        description += "removes curses from any items which are "
+                       "being used by the caster. ";
         break;
 
     case SPELL_MAGIC_DART:
-        description += " hurls a small bolt of magical energy. ";
+        description += "hurls a small bolt of magical energy. ";
         break;
 
     case SPELL_FIREBALL:
-        description += " hurls an exploding bolt of fire. ";
+        description += "hurls an exploding bolt of fire. ";
         break;
 
+// spells 7 through 12 ??? {dlb}
+
     case SPELL_CONJURE_FLAME:
-        description += " creates a column of roaring flame. ";
+        description += "creates a column of roaring flame. ";
         break;
 
     case SPELL_DIG:
-        description += " digs a tunnel through unworked rock. ";
+        description += "digs a tunnel through unworked rock. ";
         break;
 
     case SPELL_BOLT_OF_FIRE:
-        description += " hurls a great bolt of flames. ";
+        description += "hurls a great bolt of flames. ";
         break;
 
     case SPELL_BOLT_OF_COLD:
-        description += " hurls a great bolt of ice and frost. ";
+        description += "hurls a great bolt of ice and frost. ";
         break;
 
     case SPELL_LIGHTNING_BOLT:
-        description += " hurls a mighty bolt of lightning. Although this spell causes less damage than the similar fire and ice spells, it can rip through whole rows of creatures. ";
+        description += "hurls a mighty bolt of lightning. "
+                       "Although this spell inflicts less damage than "
+                       "similar fire and ice spells, it can at once "
+                       "rip through whole rows of creatures. ";
         break;
 
+// spells 18 and 19 ??? {dlb}
+
     case SPELL_POLYMORPH_OTHER:
-        description += " randomly alters the form of another creature. ";
+        description += "randomly alters the form of another creature. ";
         break;
 
     case SPELL_SLOW:
-        description += " slows the actions of a creature. ";
+        description += "slows the actions of a creature. ";
         break;
 
     case SPELL_HASTE:
-        description += " speeds the actions of a creature. ";
+        description += "speeds the actions of a creature. ";
         break;
 
     case SPELL_PARALYZE:
-        description += " prevents a creature from moving. ";
+        description += "prevents a creature from moving. ";
         break;
 
     case SPELL_CONFUSE:
-        description += " induces a state of bewilderment and confusion in a creature's mind. ";
+        description += "induces a state of bewilderment and confusion "
+                       "in a creature's mind. ";
         break;
 
     case SPELL_INVISIBILITY:
-        description += " hides a creature from the sight of others. ";
+        description += "hides a creature from the sight of others. ";
         break;
 
     case SPELL_THROW_FLAME:
-        description += " throws a small bolt of flame. ";
+        description += "throws a small bolt of flame. ";
         break;
 
     case SPELL_THROW_FROST:
-        description += " throws a small bolt of frost. ";
+        description += "throws a small bolt of frost. ";
         break;
 
     case SPELL_CONTROLLED_BLINK:
-        description += " allows a short-range translocation, with precise control. ";
+        description += "allows short-range translocation, with precise control. ";
         break;
 
     case SPELL_FREEZING_CLOUD:
-        description += " conjures up a large cloud of lethally cold vapour. ";
+        description += "conjures up a large cloud of lethally cold vapour. ";
         break;
 
     case SPELL_MEPHITIC_CLOUD:
-        description += " conjures up a large but short-lived cloud of vile fumes. ";
+        description += "conjures up a large but short-lived cloud of vile fumes. ";
         break;
 
     case SPELL_RING_OF_FLAMES:
-        description += " surrounds the caster with a mobile ring of searing flame. It is not recommended for those vulnerable to the effects of fire. ";
+        description += "surrounds the caster with a mobile ring of searing flame. "
+                       "It is not recommended for those vulnerable to the effects of fire. ";
         break;
 
     case SPELL_RESTORE_STRENGTH:
-        description += " restores the physical strength of the caster. ";
+        description += "restores the physical strength of the caster. ";
         break;
 
     case SPELL_RESTORE_INTELLIGENCE:
-        description += " restores the intelligence of the caster. ";
+        description += "restores the intelligence of the caster. ";
         break;
 
     case SPELL_RESTORE_DEXTERITY:
-        description += " restores the dexterity of the caster. ";
+        description += "restores the dexterity of the caster. ";
         break;
 
     case SPELL_VENOM_BOLT:
-        description += " throws a bolt of deadly poison. ";
+        description += "throws a bolt of deadly poison. ";
         break;
 
     case SPELL_OLGREBS_TOXIC_RADIANCE:
-        description += " bathes the caster's surroundings with a poisonous green light. ";
+        description += "bathes the caster's surroundings in poisonous green light. ";
         break;
 
     case SPELL_TELEPORT_OTHER:
-        description += " randomly translocates another creature. ";
+        description += "randomly translocates another creature. ";
         break;
 
     case SPELL_LESSER_HEALING:
-        description += " heals a small amount of damage to the caster's body. ";
+        description += "heals a small amount of damage to the caster's body. ";
         break;
 
     case SPELL_GREATER_HEALING:
-        description += " heals a large amount of damage to the caster's body. ";
+        description += "heals a large amount of damage to the caster's body. ";
         break;
 
     case SPELL_CURE_POISON_I:
-        description += " removes poison from the caster's system. ";
+        description += "removes poison from the caster's system. ";
         break;
 
     case SPELL_PURIFICATION:
-        description += " purifies the caster's body, removing poison, disease, and some malign enchantments. ";
+        description += "purifies the caster's body, removing "
+                       "poison, disease, and certain malign enchantments. ";
         break;
 
     case SPELL_DEATHS_DOOR:
-         description += " is extremely powerful, but carries a degree of "
- "risk. It renders a living caster almost invulnerable to harm for a "
- "brief period of time, but can bring them dangerously close to death (how "
- "close depends on their necromantic abilities).  The spell can be cancelled "
- "at any time by any healing effect, and the caster will recieve one warning "
- "shortly before the spell expires. Undead cannot use this spell. ";
+         description += "is extremely powerful, but carries a degree of risk. "
+                        "It renders living casters nigh invulnerable to harm "
+                        "for a brief period, but can bring them dangerously "
+                        "close to death (how close depends on one's necromantic "
+                        "abilities). The spell can be cancelled at any time by "
+                        "any healing effect, and the caster will recieve one "
+                        "warning shortly before the spell expires. "
+                        "Undead cannot use this spell. ";
         break;
 
     case SPELL_SELECTIVE_AMNESIA:
-         description += " allows the caster to selectively erase a spell "
- "from memory and regain the magical energy bound up in it. One will be "
- "able to memorise this spell even if their mind is otherwise full of "
- "magic (i.e. You have the maximum number of spells already).";
+         description += "allows the caster to selectively erase one spell "
+                        "from memory to recapture the magical energy bound "
+                        "up with it. Casters will be able to memorise this "
+                        "spell should even their minds be otherwise full of "
+                        "magic (i.e., already possessing the maximum number "
+                        "of spells). ";
         break;
 
     case SPELL_MASS_CONFUSION:
-        description += " causes confusion in all who see the caster. ";
+        description += "causes confusion in all who gaze upon the caster. ";
         break;
 
     case SPELL_SMITING:
-        description += " smites a creature of the caster's choice. ";
+        description += "smites one creature of the caster's choice. ";
         break;
 
     case SPELL_REPEL_UNDEAD:
-        description += " calls on divine power to repel the unholy. ";
+        description += "calls on a divine power to repel the unholy. ";
         break;
 
     case SPELL_HOLY_WORD:
-        description += " involves the speaking of a word of power which repels and can destroy unholy creatures. ";
+        description += "involves the intonation of a word of power "
+                       "which repels and can destroy unholy creatures. ";
         break;
 
     case SPELL_DETECT_CURSE:
-        description += " alerts the caster to the presence of curses on his or her possessions. ";
+        description += "alerts the caster to the presence of curses "
+                       "on his or her possessions. ";
         break;
 
     case SPELL_SUMMON_SMALL_MAMMAL:
-        description += " summons one or more small creatures to the caster's aid. ";
+        description += "summons one or more "
+                       "small creatures to the caster's aid. ";
         break;
 
     case SPELL_ABJURATION_I:
-        description += " attempts to send hostile summoned creatures to the place from whence they came, or at least reduce the duration of their presence in the caster's locality. ";
+        description += "attempts to send hostile summoned creatures to "
+                       "the place from whence they came, or at least "
+                       "shorten their stay in the caster's locality. ";
         break;
 
     case SPELL_SUMMON_SCORPIONS:
-        description += " summons one or more giant scorpions to the caster's assistance. ";
+        description += "summons one or more "
+                       "giant scorpions to the caster's assistance. ";
         break;
 
     case SPELL_LEVITATION:
-        description += " allows the caster to float in the air. ";
+        description += "allows the caster to float in the air. ";
         break;
 
     case SPELL_BOLT_OF_DRAINING:
-        description += " hurls a deadly bolt of negative energy, which drains the life of any living creature which it strikes. ";
+        description += "hurls a deadly bolt of negative energy, "
+                       "which drains the life from any living creature "
+                       "it strikes. ";
         break;
 
     case SPELL_LEHUDIBS_CRYSTAL_SPEAR:
-        description += " hurls a lethally sharp bolt of crystal. ";
+        description += "hurls a lethally sharp bolt of crystal. ";
         break;
 
     case SPELL_BOLT_OF_INACCURACY:
-        description += " causes enormous damage to any creature struck by the bolt of incandescent energy that it conjures into existence. Unfortunately, it is very difficult to aim and very rarely hits anything. Pity, that. ";
+        description += "inflicts enormous damage upon any creature struck "
+                       "by the bolt of incandescent energy conjured into "
+                       "existence. Unfortunately, it is very difficult to "
+                       "aim and very rarely hits anything. Pity, that. ";
         break;
 
     case SPELL_POISONOUS_CLOUD:
-        description += " conjures forth a great cloud of lethal gasses. ";
+        description += "conjures forth a great cloud of lethal gasses. ";
         break;
 
     case SPELL_FIRE_STORM:
-        description += " creates a mighty storm of roaring flame. ";
+        description += "creates a mighty storm of roaring flame. ";
         break;
 
     case SPELL_DETECT_TRAPS:
-        description += " detects traps in the caster's vicinity. ";
+        description += "reveals traps in the caster's vicinity. ";
         break;
 
     case SPELL_BLINK:
-        description += " randomly translocates the caster a short distance. ";
+        description += "randomly translocates the caster a short distance. ";
         break;
 
     case SPELL_ISKENDERUNS_MYSTIC_BLAST:
-        description += " throws a crackling sphere of destructive energy. ";
+        description += "throws a crackling sphere of destructive energy. ";
         break;
 
     case SPELL_SWARM:
-        description += " summons forth a pestilential swarm. ";
+        description += "summons forth a pestilential swarm. ";
         break;
 
     case SPELL_SUMMON_HORRIBLE_THINGS:
-         description += " opens a gate to the Abyss and calls through one "
- "or more hideous abominations from that dreadful place. The powers who "
- "supervise this invocation require the caster to surrender some of "
- "his/her/its intelligence in exchange for their service. ";
+         description += "opens a gate to the Abyss and calls through "
+                        "one or more hideous abominations from "
+                        "that dreadful place. The powers who answer "
+                        "this invocation require of casters a portion "
+                        "of their intellect in exchange for this service. ";
         break;
 
     case SPELL_ENSLAVEMENT:
-        description += " causes an otherwise hostile creature to fight on your side for a while. ";
+        description += "causes an otherwise hostile creature "
+                       "to fight on your side for a while. ";
         break;
 
     case SPELL_MAGIC_MAPPING:
-        description += " reveals your surroundings. ";
+        description += "reveals details about the caster's surroundings. ";
         break;
 
     case SPELL_HEAL_OTHER:
-        description += " heals another creature from a distance. ";
+        description += "heals another creature from a distance. ";
         break;
 
     case SPELL_ANIMATE_DEAD:
-        description += " causes the dead to rise up and serve the caster; all corpses within a certain distance of the caster are affected. A powerful magician can create an army of mindless undead slaves with this spell. ";
+        description += "causes the dead to rise up and serve the caster; "
+                       "every corpse within a certain distance of the caster "
+                       "is affected. By means of this spell, powerful casters "
+                       "could press into service an army of the mindless undead. ";
         break;
 
     case SPELL_PAIN:
-        description += " causes an extremely painful injury to a living creature. ";
+        description += "inflicts an extremely painful injury "
+                       "upon one living creature. ";
         break;
 
     case SPELL_EXTENSION:
-        description += " extends the durations of most beneficial enchantments affecting the caster. ";
+        description += "extends the durations of most beneficial enchantments "
+                       "affecting the caster. ";
         break;
 
     case SPELL_CONTROL_UNDEAD:
-        description += " attempts to enslave any undead in the vicinity of the caster. ";
+        description += "attempts to enslave any undead in the vicinity of the caster. ";
         break;
 
     case SPELL_ANIMATE_SKELETON:
-        description += " raises a skeleton to a state of unlife. ";
+        description += "raises an inert skeleton to a state of unlife. ";
         break;
 
     case SPELL_VAMPIRIC_DRAINING:
-        description += " steals the life of a living creature and grants it to the caster. It will not drain more life than the caster is capable of absorbing. ";
+        description += "steals the life of a living creature and grants it "
+                       "to the caster. Life will not be drained in excess of "
+                       "what the caster can capably absorb. ";
         break;
 
     case SPELL_SUMMON_WRAITHS:
-        description += " calls on the powers of the undead to aid the caster. ";
+        description += "calls on the powers of the undead to aid the caster. ";
         break;
 
     case SPELL_DETECT_ITEMS:
-        description += " detects any items lying in the caster's general vicinity. ";
+        description += "detects any items lying about the caster's general vicinity. ";
         break;
 
     case SPELL_BORGNJORS_REVIVIFICATION:
-        description += " instantly heals any and all wounds suffered by the caster, but permanently reduces their resilience by an amount dependent on (and inverse to) their magical skill. ";
+        description += "instantly heals any and all wounds suffered by the caster "
+                       "with an attendant, permanent lessening of one's resilience "
+                       "to injury -- the severity of which is dependent on "
+                       "(and inverse to) magical skill. ";
         break;
 
     case SPELL_BURN:
-        description += " burns a creature. ";
+        description += "burns a creature. ";
         break;
 
     case SPELL_FREEZE:
-        description += " freezes a creature.  This may result in the creature"
-                       " not being able to move for a short period of time.";
+        description += "freezes a creature. This may result in the creature "
+                       "not being able to move for a short period of time. ";
         break;
 
     case SPELL_SUMMON_ELEMENTAL:
-         description += " calls forth a spirit from the elemental planes "
- "to aid the caster. A large quantity of the desired element must be "
- "available; this is rarely a problem for earth and air, but may be for "
- "fire or water. The elemental will usually be friendly to the caster "
- "(especially if they are skilled in the appropriate form of elemental "
- "magic).";
+         description += "calls forth "
+                        "a spirit from the elemental planes to aid the caster. "
+                        "A large quantity of the desired element must be "
+                        "available; this is rarely a problem for earth and air, "
+                        "but may be for fire or water. The elemental will usually "
+                        "be friendly to casters -- especially those skilled in "
+                        "the appropriate form of elemental magic.";
         break;
 
     case SPELL_OZOCUBUS_REFRIGERATION:
-        description += " drains the heat from the caster and the caster's surroundings, causing harm to all creatures not resistant to cold. ";
+        description += "drains the heat from the caster and the caster's surroundings, "
+                       "causing harm to all creatures not resistant to cold. ";
         break;
 
     case SPELL_STICKY_FLAME:
-        description += " conjures a sticky glob of liquid fire, which adheres to any creature it strikes and burns. ";
+        description += "conjures a sticky glob of liquid fire, which will "
+                       "adhere to and burn any creature it strikes. ";
         break;
 
     case SPELL_SUMMON_ICE_BEAST:
-        description += " calls forth a beast of ice to serve the caster. ";
+        description += "calls forth "
+                       "a beast of ice to serve the caster. ";
         break;
 
     case SPELL_OZOCUBUS_ARMOUR:
-         description += " covers the caster's body with a protective layer "
- "of ice, the power of which depends on his or her skill with Ice magic. "
- "The caster and the caster's equipment are protected from the cold, but "
- "this spell will not function if the caster is already wearing "
- "heavy armour. ";
+         description += "encases the caster's body in a protective layer "
+                        "of ice, the power of which depends on his or her "
+                        "skill with Ice magic. The caster and the caster's "
+                        "equipment are protected from the cold, but the "
+                        "spell will not function for casters already wearing "
+                        "heavy armour. ";
         break;
 
     case SPELL_CALL_IMP:
-        description += " calls forth a minor demon from the pits of Hell. ";
+        description += "calls forth "
+                       "a minor demon from the pits of Hell. ";
         break;
 
     case SPELL_REPEL_MISSILES:
-        description += " reduces the chance of projectile attacks striking the caster. Even powerful attacks such as lightning bolts or dragon breath are affected, although smaller missiles are repelled to a much greater degree.";
+        description += "reduces the chance of projectile attacks striking "
+                       "the caster. Even powerful attacks such as "
+                       "lightning bolts or dragon breath are affected, "
+                       "although smaller missiles are repelled to a "
+                       "much greater extent. ";
         break;
 
     case SPELL_BERSERKER_RAGE:
-        description += " sends the caster into a temporary psychotic rage. ";
+        description += "sends the caster into a temporary psychotic rage. ";
         break;
 
     case SPELL_DISPEL_UNDEAD:
-        description += " inflicts a great deal of damage on an undead creature. ";
+        description += "inflicts a great deal of damage on an undead creature. ";
         break;
 
+// spell  86 - Guardian
+// spell  87 - Pestilence
+// spell  99 - Thunderbolt
+// spell 100 - Flame of Cleansing
+// spell 101 - Shining Light
+// spell 102 - Summon Daeva
+// spell 103 - Abjuration II
+
     case SPELL_TWISTED_RESURRECTION:
-        description += " allows its caster to imbue a mass of deceased flesh with a magical life force. Casting this spell involves the assembling of a heap of several corpses; the greater the mass of flesh available, the greater the chances of success. "
-;
+        description += "allows its caster to imbue a mass of deceased flesh "
+                       "with a magical life force. Casting this spell involves "
+                       "the assembling several corpses together; the greater "
+                       "the combined mass of flesh available, the greater the "
+                       "chances of success. ";
         break;
 
     case SPELL_REGENERATION:
-        description += " dramatically but temporarily increases the caster's recuperative abilities, while also increasing the rate at which he or she consumes food. ";
+        description += "dramatically but temporarily increases the caster's "
+                       "recuperative abilities, while also increasing the rate "
+                       "of food consumption. ";
         break;
 
     case SPELL_BONE_SHARDS:
-       description += " uses the bones of a skeleton (or the bone-like "
- "exoskeleton of, for example, an insect) as the raw materials for a "
- "lethal spray of slicing bone fragments, allowing its creator to dispense "
- "with conjuration magic entirely and use necromancy alone for a low-level "
- "but very powerful combat spell. Using a large and heavy skeleton (by "
- "wielding it) results in a more powerful effect. ";
+       description += "uses the bones of a skeleton (or similar materials: "
+                      "the rigid exoskeleton of an insect, for example) to "
+                      "dispense a lethal spray of slicing fragments, allowing "
+                      "its caster to dispense with conjurations in favor of "
+                      "necromancy alone to provide a low-level yet very "
+                      "powerful offensive spell. The use of a large and "
+                      "heavy skeleton (by wielding it) amplifies this spell's "
+                      "effect. ";
         break;
 
     case SPELL_BANISHMENT:
-        description += " banishes a creature to the Abyss. Magicians wishing "
- "to visit that unpleasant place may use it to banish themselves. ";
+        description += "banishes one creature to the Abyss. Those wishing "
+                       "to visit that unpleasant place in person may always "
+                       "banish themselves. ";
         break;
 
     case SPELL_CIGOTUVIS_DEGENERATION:
-        description += " mutates a creature into a pulsating mass of flesh. ";
+        description += "mutates one creature into a pulsating mass of flesh. ";
         break;
 
     case SPELL_STING:
-        description += " throws a magical dart of poison. ";
+        description += "throws a magical dart of poison. ";
         break;
 
     case SPELL_SUBLIMATION_OF_BLOOD:
-         description += " converts flesh, blood, and other bodily fluids "
- "into magical energy. The caster may use his or her own body as the "
- "focus for this spell (which can be dangerous but never directly lethal), "
- "or can wield a piece of butchered flesh and draw power from that. ";
+         description += "converts flesh, blood, and other bodily fluids "
+                        "into magical energy. Casters may focus this spell "
+                        "on their own bodies (which can be dangerous but "
+                        "never directly lethal) or can wield freshly butchered "
+                        "flesh in order to draw power into themselves. ";
         break;
 
     case SPELL_TUKIMAS_DANCE:
-        description += " causes a weapon held in the caster's hand to dance "
- "into the air and strike the caster's enemies. It will not function on "
- "magical staves or certain willful artefacts. ";
+        description += "causes a weapon held in the caster's hand to dance "
+                       "into the air and strike the caster's enemies. It will "
+                       "not function on magical staves and certain "
+                       "willful artefacts. ";
         break;
 
-    case SPELL_HELLFIRE:
-        description += " should only be available from Dispater's staff. "
- "So how are you reading this? (describe.cc)";
+    case SPELL_HELLFIRE:                    // basically, a debug message {dlb}
+        description += "should only be available from Dispater's staff. "
+                       "So how are you reading this? (describe.cc)";
         break;
 
     case SPELL_SUMMON_DEMON:
-        description += " opens a gate to the realm of Pandemonium and draws "
- "forth one of its inhabitants to serve the caster for a time. ";
+        description += "opens a gate to the realm of Pandemonium "
+                       "and draws forth one of its inhabitants "
+                       "to serve the caster for a time. ";
         break;
 
     case SPELL_DEMONIC_HORDE:
-        description += " draws a small swarm of small demons to do battle "
- "with the caster's foes. ";
+        description += "calls forth "
+                       "a small swarm of small demons "
+                       "to do battle with the caster's foes. ";
         break;
 
     case SPELL_SUMMON_GREATER_DEMON:
-        description += " calls one of the greater demons of Pandemonium "
- "forth to serve the caster. Beware, for the spell binding it to service "
- "may not outlast the spell binding it to this world! ";
+        description += "calls forth one of the greater demons of Pandemonium "
+                       "to serve the caster. Beware, for the spell binding it "
+                       "to service may not outlast "
+                       "that which binds it to this world! ";
         break;
 
     case SPELL_CORPSE_ROT:
-        description += " rapidly accelerates the process of decay in any "
- "corpses lying around the caster, in the process emitting a foul miasmic "
- "vapour which eats away at the life force of any creature within it. ";
+        description += "rapidly accelerates the decomposition of any "
+                       "corpses lying around the caster, emitting in"
+                       "process a foul miasmic vapour, which eats away "
+                       "at the life force of any creature it envelops. ";
         break;
 
     case SPELL_TUKIMAS_VORPAL_BLADE:
-        description += " bestows a lethal but temporary sharpness on a sword "
- "held by the caster. It will not affect weapons which are otherwise affected "
- "by special enchantments. ";
+        description += "bestows a lethal but temporary sharpness "
+                       "on a sword held by the caster. It will not affect "
+                       "weapons otherwise subject to special enchantments. ";
         break;
 
     case SPELL_FIRE_BRAND:
-        description += " sets a weapon held by the caster on fire. It will "
- "not affect weapons which are otherwise affected by special enchantments. ";
+        description += "sets a weapon held by the caster ablaze. It will not "
+                       "affect weapons otherwise subject to special enchantments. ";
         break;
 
     case SPELL_FREEZING_AURA:
-        description += " infuses a weapon held by the caster with an aura of "
- "freezing cold. It will not affect weapons which are otherwise affected by "
- "special enchantments. ";
+        description += "surrounds a weapon held by the caster with an aura of "
+                       "freezing cold. It will not affect weapons which are "
+                       "otherwise subject to special enchantments. ";
         break;
 
     case SPELL_LETHAL_INFUSION:
-        description += " infuses a weapon held by the caster with unholy "
-  "energies. It will not affect weapons which are otherwise affected by "
-  "special enchantments. ";
+        description += "infuses a weapon held by the caster with unholy "
+                       "energies. It will not affect weapons which are "
+                       "otherwise subject to special enchantments. ";
         break;
 
-    case SPELL_CRUSH:
-        description += " crushes a nearby creature with waves of "
-          "gravitational force. ";
+    case SPELL_CRUSH:                       // a theory of gravity in Crawl? {dlb}
+        description += "crushes a nearby creature with waves of "
+                       "gravitational force. ";
         break;
 
     case SPELL_BOLT_OF_IRON:
-        description += " hurls a large and heavy metal bolt at the caster's "
- "foes. ";
+        description += "hurls "
+                       "a large and heavy metal bolt "
+                       "at the caster's foes. ";
         break;
 
     case SPELL_STONE_ARROW:
-        description += " hurls a sharp spine of rock. ";
+        description += "hurls "
+                       "a sharp spine of rock outward from the caster. ";
         break;
 
     case SPELL_TOMB_OF_DOROKLOHE:
-  description += " entombs the caster within four walls of rock. These "
- "walls will destroy most objects in their way, but their growth is "
- "obstructed by the presence of any creatures. Beware - one would be "
- "unwise to use this spell without a reliable escape route.";
+        description += "entombs the caster within four walls of rock. These "
+                       "walls will destroy most objects in their way, but "
+                       "their growth is obstructed by the presence of any "
+                       "creature. Beware - only the unwise cast this spell "
+                       "without reliable means of escape. ";
         break;
 
     case SPELL_STONEMAIL:
-        description += " protects the caster with chunky scales of stone, the power of which depends on his or her Earth magic skill. These scales can coexist with other forms of armour, but are extremely heavy and cumbersome. ";
+        description += "covers the caster with chunky scales of stone, "
+                       "the durability of which depends on his or her "
+                       "skill with Earth magic. These scales can coexist "
+                       "with other forms of armour, but are in and of "
+                       "themselves extremely heavy and cumbersome. ";
         break;
 
     case SPELL_SHOCK:
-        description += " throws a bolt of electricity. ";
+        description += "throws a bolt of electricity. ";
         break;
 
     case SPELL_SWIFTNESS:
-        description += " imbues its caster with the ability to run extremely fast. It will not increase the speed of those who are fleet of foot anyway (such as centaurs). ";
+        description += "imbues its caster with the ability to achieve "
+                       "great speeds. It will not increase the speed "
+                       "of those who are already fleet of foot "
+                       "(such as centaurs). ";
         break;
 
     case SPELL_FLY:
-        description += " grants its caster the ability to fly through the air. ";
+        description += "grants to the caster the ability to fly through the air. ";
         break;
 
     case SPELL_INSULATION:
-        description += " protects its caster from electric shocks. ";
+        description += "protects the caster from electric shocks. ";
         break;
 
     case SPELL_ORB_OF_ELECTROCUTION:
-        description += " hurls a crackling orb of electrical energy which causes a huge explosion on impact. ";
+        description += "hurls "
+                       "a crackling orb of electrical energy "
+                       "which explodes with immense force on impact. ";
         break;
 
     case SPELL_DETECT_CREATURES:
-        description += " allows the caster to detect any creatures within a certain radius. ";
+        description += "allows the caster to detect any creatures "
+                       "within a certain radius. ";
         break;
 
     case SPELL_CURE_POISON_II:
-        description += " removes some or all of any poisons from the caster's system. ";
+        description += "removes some or all toxins from the caster's system. ";
         break;
 
     case SPELL_CONTROL_TELEPORT:
-        description += " allows the caster to control his or her translocations. ";
+        description += "allows the caster to control translocations. ";
         break;
 
     case SPELL_POISON_AMMUNITION:
-        description += " poisons missile ammunition held by the caster. ";
+        description += "envenoms missile ammunition held by the caster. ";
         break;
 
     case SPELL_POISON_WEAPON:
-        description += " covers a sharp bladed weapon with poison for a while. ";
+        description += "temporarily coats any sharp bladed weapon with poison. ";
         break;
 
     case SPELL_RESIST_POISON:
-        description += " protects your body from any poisons which may enter it for a period of time. ";
+        description += "protects the caster from exposure to all poisons "
+                       "for a period of time. ";
         break;
 
     case SPELL_PROJECTED_NOISE:
-        description += " produces a noise emanating from a place of the caster's choice. ";
+        description += "produces a noise emanating "
+                       "from a place of the caster's own choosing. ";
         break;
 
     case SPELL_ALTER_SELF:
-        description += " causes a weird alteration in the caster's body, "
-  "leaving the caster in a weakened state (but never killing them). It may "
-  "fail to affect those who are heavily mutated already. ";
+        description += "causes aberrations to form in the caster's body, "
+                       "leaving the caster in a weakened state "
+                       "(though it is not fatal in and of itself). "
+                       "It may fail to affect those who are already "
+                       "heavily mutated. ";
         break;
 
-        /* 145 - debugging ray */
+// spell 145 - debugging ray
+
     case SPELL_RECALL:
-        description += " is greatly prized by summoners and necromancers, "
- "as it allows the caster to recall any friendly creatures who may be "
- "nearby to a position adjacent to the caster.";
+        description += "is greatly prized by summoners and necromancers, "
+                       "as it allows the caster to recall any friendly "
+                       "creatures nearby to a position adjacent to the caster. ";
         break;
 
     case SPELL_PORTAL:
-         description += " creates a gate allowing long-distance travel "
- "through a relatively ordinary environment (ie the Dungeon only). It "
- "lasts long enough for the caster and nearby creatures to enter. It will "
- "not take you past the level limits of your current area.";
+         description += "creates a gate allowing long-distance travel "
+                        "in relatively ordinary environments "
+                        "(i.e., the Dungeon only). The portal lasts "
+                        "long enough for the caster and nearby creatures "
+                        "to enter. Casters are never taken past the level "
+                        "limits of the current area. ";
         break;
 
     case SPELL_AGONY:
-        description += " cuts the resilience of a target creature in half, "
- "although it will never cause death directly.";
+        description += "cuts the resilience of a target creature in half, "
+                       "although it will never cause death directly. ";
         break;
 
     case SPELL_SPIDER_FORM:
-        description += " temporarily transforms the caster into a venomous "
- "spider-like creature.";
+        description += "temporarily transforms the caster into a venomous, "
+                       "spider-like creature. ";
         break;
 
     case SPELL_DISRUPT:
-        description += " disrupts the matter of a creature's body, causing "
- "injury.";
+        description += "disrupts the matter of another creature's body, "
+                       "causing injury.";
         break;
 
-    case SPELL_DISINTEGRATE:
-        description += " tears apart the matter making up an object "
- "(especially a creature's body), causing severe damage.";
+    case SPELL_DISINTEGRATE:                // atomic theory in Crawl? {dlb}
+        description += "rends apart the substance of an object "
+                       "(especially a creature's body), "
+                       "causing severe damage. ";
         break;
 
     case SPELL_BLADE_HANDS:
-        description += " causes long, scythe-shaped blades to grow from the "
- "caster's hands. It makes spellcasting a little difficult.";
+        description += "causes long, scythe-shaped blades to grow "
+                       "from the caster's hands. "
+                       "It makes spellcasting somewhat difficult. ";
         break;
 
     case SPELL_STATUE_FORM:
-        description += " temporarily transforms the caster into a slow-moving but extremely robust stone statue.";
+        description += "temporarily transforms the caster into a "
+                       "slow-moving (but extremely robust) stone statue. ";
         break;
 
     case SPELL_ICE_FORM:
-        description += " temporarily transform's the caster's body into a frozen ice-creature.";
+        description += "temporarily transforms the caster's body into a "
+                       "frozen ice-creature. ";
         break;
 
     case SPELL_DRAGON_FORM:
-        description += " temporarily transforms the caster into a great fire-breathing dragon.";
+        description += "temporarily transforms the caster into a "
+                       "great, fire-breathing dragon. ";
         break;
 
     case SPELL_NECROMUTATION:
-        description += " first transforms the caster into a semi-corporeal apparition receptive to negative energy, then infuses that form with the powers of Death. The caster becomes resistant to cold, poison, magic and hostile negative energies.";
+        description += "first transforms the caster into a "
+                       "semi-corporeal apparition receptive to negative energy, "
+                       "then infuses that form with the powers of Death. "
+                       "The caster becomes resistant to "
+                       "cold, poison, magic and hostile negative energies. ";
         break;
 
     case SPELL_DEATH_CHANNEL:
-        description += " raises living creatures slain by the caster into a state of unliving slavery as spectral horrors.";
+        description += "raises living creatures slain by the caster "
+                       "into a state of unliving slavery as spectral horrors. ";
         break;
 
     case SPELL_SYMBOL_OF_TORMENT:
-        description += " calls on the powers of Hell to cause agonising "
- "injuries to anyone or anything living in the caster's vicinity. It "
- "carries a degree of danger for any necromancer brave enough to invoke "
- "it, for the Symbol also affects its caller and "
- "indeed will not function if they are immune to its terrible effects. "
- "Despite its power, however, it is never lethal.";
+        description += "calls on the powers of Hell to cause agonising "
+                       "injury to any living thing in the caster's vicinity. "
+                       "It carries within itself a degree of danger, "
+                       "for any brave enough to invoke it, for the Symbol "
+                       "also affects its caller and indeed will not function "
+                       "if he or she is immune to its terrible effects. "
+                       "Despite its ominous power, this spell is never lethal. ";
         break;
 
     case SPELL_DEFLECT_MISSILES:
-        description += " protects the caster from any kind of projectile attack, although particular powerful attacks (lightning bolts, etcetera) are deflected less than lighter missiles. ";
+        description += "protects the caster from "
+                       "any kind of projectile attack, "
+                       "although particularly powerful attacks "
+                       "(lightning bolts, etc.) are deflected "
+                       "to a lesser extent than lighter missiles. ";
         break;
 
     case SPELL_ORB_OF_FRAGMENTATION:
-        description += " throws a heavy sphere of metal which explodes on impact into a blast of deadly jagged fragments. It can rip a creature to shreds, but is ineffective against heavily armoured targets.";
+        description += "throws a heavy sphere of metal "
+                       "which explodes on impact into a rain of "
+                       "deadly, jagged fragments. "
+                       "It can rip a creature to shreds, "
+                       "but proves ineffective against heavily-armoured targets. ";
         break;
 
     case SPELL_ICE_BOLT:
-        description += " throws a chunk of ice. It is particularly "
- "effective against those creatures not immune to the effects of freezing "
- "temperatures, but half of its destructive potential comes from its "
- "weight and sharp edges and cannot be ignored even "
- "by cold-resistant creatures.";
+        description += "throws forth a chunk of ice. "
+                       "It is particularly effective against "
+                       "those creatures not immune to the effects of freezing, "
+                       "but the half of its destructive potential that comes from "
+                       "its weight and cutting edges "
+                       "cannot be ignored by even cold-resistant creatures. ";
         break;
 
     case SPELL_ICE_STORM:
-        description += " conjures forth a raging blizzard of ice, sleet and freezing gasses.";
+        description += "conjures forth "
+                       "a raging blizzard of ice, sleet and freezing gasses. ";
         break;
 
     case SPELL_ARC:
-        description += " zaps a random nearby creature with a powerful"
-                       " electrical current.";
+        description += "zaps at random a nearby creature with a powerful "
+                       "electrical current.";
         break;
 
-    case SPELL_AIRSTRIKE:
-        description += " causes the air around a creature to twist itself into a whirling vortex and attack.";
+    case SPELL_AIRSTRIKE:                   // jet planes in Crawl ??? {dlb}
+        description += "causes the air around a creature to twist itself into "
+                       "a whirling vortex of meterological fury. ";
         break;
 
     case SPELL_SHADOW_CREATURES:
-         description += " weaves a creature from shadows and threads of "
- "Abyssal matter. The creature thus brought into existence will be a "
- "recreation of some type of creature found in the caster's immediate "
- "vicinity. The spell even creates appropriate pieces of equipment for "
- "the creature, which are given a lasting substance by the Conjuration "
- "portion of this spell.";
+         description += "weaves a creature from shadows and threads of "
+                        "Abyssal matter. The creature thus brought into "
+                        "existence will recreate some type of creature "
+                        "found in the caster's immediate vicinity. "
+                        "The spell even creates appropriate equipment for "
+                        "the creature, which are given a lasting substance "
+                        "by this conjuration. ";
         break;
 
     default:
         DEBUGSTR("Bad spell");
-        description += " apparently does not exist. Casting it may therefore be unwise. Please contact Dungeon Tech Support at /dev/null for details.";
+        description += "apparently does not exist. "
+                       "Casting it may therefore be unwise. "
+                       "Please contact Dungeon Tech Support at /dev/null for details. ";
     }
 
     print_description(description);
@@ -3405,11 +3886,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
 #ifdef DOS_TERM
     char buffer[3400];
-
     gettext(25, 1, 80, 25, buffer);
-#endif
-
-#ifdef DOS_TERM
     window(25, 1, 80, 25);
 #endif
 
@@ -3417,1437 +3894,1055 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     switch (class_described)
     {
-    case 0:                     // giant ant
+// (missing) case 147 is elf dummy monster     // give it an entry anyway? {dlb}
+// (missing) case 423 - MONS_ANOTHER_LAVA_THING ??? 15jan2000 {dlb}
+//                      no entry in m_list.h 17jan200 {dlb}
+// (missing) case 250 - MONS_PROGRAM_BUG ??? 16jan2000 {dlb}
 
+    case MONS_KILLER_BEE_LARVA:
+    case MONS_QUASIT:
+    case MONS_ANGEL:
+    case MONS_HUMAN:
+        description = "";
+        break;
+
+    case MONS_GIANT_ANT:
         description = "A black ant with poisonous pincers, about the size of a large dog.";
         break;
 
-    case 1:                     // giant bat
+    case MONS_SOLDIER_ANT:
+        description = "A giant ant with large mandibles and a vicious sting.";
+        break;
 
+    case MONS_QUEEN_ANT:
+        description = "A bloated insect, covered in thick chitinous armour. Now you know where all those ants keep coming from!";
+        break;
+
+    case MONS_ANT_LARVA:
+        description = "A baby ant. Isn't it cute?";
+        break;
+
+    case MONS_GIANT_BAT:
         description = "A huge black bat.";
         break;
 
-    case 2:                     // centaur
-
-        description = "A hybrid with the torso of a human atop the body of a large horse.";
+    case MONS_CENTAUR:
+    case MONS_CENTAUR_WARRIOR:
+        description += "A hybrid with the torso of a "
+                       "human atop the body of a large horse. ";
+        if (class_described == MONS_CENTAUR_WARRIOR)
+            description += "It looks aggressive. ";
         break;
 
-    case 3:                     // red devil
+    case MONS_YAKTAUR:
+    case MONS_YAKTAUR_CAPTAIN:
+        description += "Like a centaur, but half yak. ";
+        if (class_described == MONS_YAKTAUR_CAPTAIN)
+            description += "It looks aggressive. ";
+        break;
 
+    case MONS_RED_DEVIL:
         description = "The Red Devil is slightly shorter than a human, "
                       "but muscular and covered in spikes and horns. Two "
                       "short wings sprout from its shoulders.";
         break;
 
-    case 4:                     // ?
+    case MONS_ROTTING_DEVIL:
+        description = "A hideous decaying form.";
+        break;
 
-        DEBUGSTR("bad monster?");
+    case MONS_HAIRY_DEVIL:
+        description = "A demon covered in hair. Watch out - it may have fleas!";
+        break;
+
+    case MONS_ICE_DEVIL:
+        description = "A demon covered in glittering ice.";
+        break;
+
+    case MONS_BLUE_DEVIL:
+        description = "A nasty blue thing. It looks cold.";
+        break;
+
+    case MONS_IRON_DEVIL:
+        description = "A hideous humanoid figure with metal skin.";
+        break;
+
+    case MONS_ETTIN:
+        DEBUGSTR("bad monster?");     // it has been enum'ed 16jan2000 {dlb}
         description = "";
         break;
 
-    case 5:                     // fungus
-
+    case MONS_FUNGUS:
         description = "A lumpy grey fungus, growing well in the dank underground dungeon.";
         break;
 
-    case 6:                     // goblin
-
+    case MONS_GOBLIN:
         description = "A race of short, ugly humanoids.";
         break;
 
-    case 7:                     // hound
-
+    case MONS_HOUND:
         description = "A fearsome hunting dog.";
         break;
 
-    case 8:                     // imp
+    case MONS_HELL_HOUND:
+        description = "A great black dog, with smoke pouring from its fanged mouth.";
+        break;
 
+    case MONS_WAR_DOG:
+        description = "A vicious dog, trained to kill. ";
+        break;
+
+    case MONS_IMP:
         description = "An ugly little minor demon.";
         break;
 
-    case 9:                     // jackal
-
+    case MONS_JACKAL:
         description = "A canine scavenger. Packs of these creatures roam the underworld, searching for carrion to devour.";
         break;
 
-    case 10:                    // k
-
+    case MONS_KILLER_BEE:
         description = "A giant bee, bearing a deadly sting which can sting repeatedly.";
         break;
 
-    case 11:                    // ?
-
-        description = "";
+    case MONS_QUEEN_BEE:
+        description = "Even larger and more dangerous-looking than its offspring, this creature wants you out of its hive. Now!";
         break;
 
-    case 12:                    // manticore
+    case MONS_BUMBLEBEE:
+        description = "A very large and fat hairy bee.";
+        break;
 
+    case MONS_MANTICORE:
         description = "A hideous cross-breed, bearing the features of a "
                       "human and a lion, with great bat-like wings. Its tail "
                       "bristles with spikes, which can be loosed at potential "
                       "prey.";
         break;
 
-    case 13:                    // necrophage
-
+    case MONS_NECROPHAGE:
         description = "A vile undead creation of the most unholy necromancy, these creatures are made from the decaying corpses of humanoid creatures.  They exist to spread disease and decay, and gain power from the decaying corpses of other beings.";
         break;
 
-    case 14:                    // orc
-
-        description = "An ugly subterranean race, orcs combine the worst features of humans, pigs, and several other unpleasant creatures.";
-        break;
-
-    case 15:                    // phantom
-
-        description = "A certain type of undead spirit.";
-        break;
-
-    case 16:                    // q
-
-        description = "";
-        break;
-
-    case 17:                    // rat
-
-        description = "Rats which have grown large and aggressive in the pestilential dungeon environment.";
-        break;
-
-    case 18:                    // scorpion
-
-        description = "A giant black scorpion, its body covered in thick armour plating, and its tail tipped by a nasty venomous sting.";
-        break;
-
-    case 56:
-    case 19:                    // tunnelling worm
-
-        description = "A gargantuan worm, its huge maw capable of crushing rock into dust with little trouble.";
-        break;
-
-    case 20:                    // u
-
-        description = "An ugly thing. Yuck.";
-        break;
-
-    case 21:                    // vortex
-
-        description = "A swirling cloud of flame.";
-        break;
-
-    case 22:                    // w
-
-        description = "A giant worm, with unusually large teeth (for a worm).";
-        break;
-
-    case 23:                    // x
-
-        description = "A hideous form, created or summoned by some arcane process.";
-        break;
-
-    case 24:                    // y
-
-        description = "A giant wasp covered with thick plates of yellow chitinous armour.";
-        break;
-
-    case 25:                    // z
-
-        description = "A corpse raised from the dead to undeath by necromancy.";
-        break;
-
-    case 26:                    // A
-
-        description = "";
-        break;
-
-    case 27:                    // B
-
-        description = "A huge black beetle with great crunching mandibles and an armour-plated body.";
-        break;
-
-    case 28:                    // C
-
-        description = "A giant with one eye in the centre of its forehead. Despite their lack of binocular vision, cyclopses throw boulders with fearsomely accuracy.";
-        break;
-
-    case 29:                    // D
-
-        description = "A great reptilian beast, covered in thick green scales and with two huge bat-like wings. Little trails of smoke spill from its toothy maw.";
-        break;
-
-    case 30:                    // E
-
-        description = "A huge ogre with two heads on top of a bloated ogre body. It is capable of holding a weapon in each giant hand.";
-        break;
-
-    case 31:                    // F
-
-        description = "One of the most fearsome denizens of Hell. A huge and powerful demon wreathed in hellfire, with great scaly wings.";
-        break;
-
-    case 32:                    // G
-
-        description = "A volatile floating ball of spores, covered in knobbly rhizome growths.";
-        break;
-
-    case 33:                    // g
-
-        description = "Larger relatives of goblins.";
-        break;
-
-    case 34:                    // I
-
-        description = "A terrible creature, formed of snow and crystalline ice. Its feet leave puddles of icy water on the floor.";
-        break;
-
-    case 35:                    // J
-
-        description = "A pulsating mass of acidic protoplasm. It can and will eat almost anything, and grows a little each time...";
-        break;
-
-    case 36:                    // K
-
-        description = "Reputedly the creation of an ancient demon-god, kobolds are small goblin-like creatures with canine heads.";
-        break;
-
-    case 37:                    // L
-
-     description = "A wizard who didn't want to die, a Lich is a skeleton "
- "or decaying corpse kept alive by a mighty exercise of necromancy. These"
- " undead creatures can wield great magic and are best avoided by all but"
- " the most confident (or stupid) adventurers.";
-        break;
-
-    case 38:                    // M
-
-        description = "An undead figure covered in bandages and embalming fluids, compelled to walk by an ancient curse. It radiates a malign aura to those who intrude on its domain.";
-        break;
-
-    case 39:                    // N
-
-        description = "A serpent with the head of a human. These nagas are "
- "often used as guardians by powerful creatures.";
-        break;
-
-    case 40:                    // O
-
-        description = "A larger, uglier and usually fatter relative of orcs and goblins.";
-        break;
-
-    case 41:                    // P
-
-        description = "Few plants can grow in the unpleasant dungeon environment, but some have managed to adapt and even thrive underground in the absence of the sun.";
-        break;
-
-    case 42:                    // Q
-
-        description = "Even larger and more dangerous-looking than its offspring, this creature wants you out of its hive. Now!";
-        break;
-
-    case 78:                    // fake R
-    case 43:                    // R
-
-        description = "A type of demon who comes to the material world in search of power and knowledge. Rakshasas are experts in the art of illusion, among other things.";
-        break;
-
-    case 44:                    // S
-
-        description = "The common dungeon snake.";
-        break;
-
-    case 45:                    // T
-
-        description = "A huge, nasty-looking creature. Its thick and knobbly hide seems to heal almost instantly from most wounds.";
-        break;
-
-    case 46:                    // U
-
-        description = "These creatures are usually unseen by the eyes of most, and those few who have seen them would rather not have.";
-        break;
-
-    case 47:                    // V
-
-        description = "A powerful undead. It wants to drink your blood! ";
-        break;
-
-    case 48:                    // W
-
-        description = "This undead spirit appears as a cloud of black mist surrounding an insubstantial skeletal form. Its eyes burn bright with unholy malevolence.";
-        break;
-
-    case 49:                    // X
-
-        description = "A huge and hideous creature, created or summoned by some arcane process.";
-        break;
-
-    case 50:                    // Y
-
-        description = "The common dungeon yak. Covered in shaggy yak hair and bearing a nasty pair of yak horns.";
-        break;
-
-    case 51:                    // Z
-
-        description = "A corpse raised from the dead to undeath by necromancy.";
-        break;
-
-    case 52:                    // o war
-
-        description = "An armoured orc, obviously experienced in the ways of hacking other creatures apart.";
-        break;
-
-    case 53:                    // K dem
-
-        description = "A kobold who has learned to summon and direct demons.";
-        break;
-
-    case 54:                    // o wiz
-
-        description = "While orcs are generally quite stupid, occasionally one of them develops an aptitude for magic.";
-        break;
-
-    case 55:                    // o knight
-
-        description = "A heavily armoured orc, covered in scars from many past battles.";
-        break;
-
-        //case 56: // worm tail
-        //description = "";
-        //break;
-
-    case 57:                    // wyvern
-
-        description = "Although smaller and less formidable than true dragons, wyverns are nonetheless a foe to be reckoned with.";
-        break;
-
-    case 58:                    // big kobold
-
-        description = "A kobold of unusual size.";
-        break;
-
-    case 59:                    // giant eyeball
-
-        description = "A giant eyeball, with a captivating stare.";
-        break;
-
-    case 60:                    // wight
-
-        description = "An ancient warrior, kept in a state of undeath by its will to live.";
-        break;
-
-    case 61:                    // oklob plant
-
-        description = "A vicious plant, dripping with vitriol.";
-        break;
-
-    case 62:                    // wolf s
-
-        description = "A large hairy spider with vicious mandibles, roaming the dungeon in search of food.";
-        break;
-
-    case 63:                    // shadow
-
-        description = "A walking undead shadow.";
-        break;
-
-    case 64:                    // hungry ghost
-
-        description = "The undead form of someone who died of starvation, this creature wants the same thing to happen to you!";
-        break;
-
-    case 65:                    // eye of draining
-
-        description = "These hovering eyeballs are especially loathed by wizards.";
-        break;
-
-    case 66:                    // butterfly
-
-        description = "A large multicoloured butterfly with beautifully patterned wings.";
-        break;
-
-    case 67:                    // wandering mushroom
-
-        description = "A large, fat mushroom.";
-        break;
-
-    case 68:                    // Efreet
-
-        description = "A huge and muscular figure engulfed in a cloud of searing flame.";
-        break;
-
-    case 69:                    // brain worm
-
-        description = "A slimy mauve worm with a greatly distended head.";
-        break;
-
-    case 70:                    // Brain
-
-        description = "A huge wrinkled brain, floating just off the floor. Every now and then it seems to pulsate.";
-        break;
-
-    case 71:                    // B B
-
-        description = "A huge beetle with an almost impenetrable rocky carapace.";
-        break;
-
-    case 72:                    // flying skull
-
-        description = "Unholy magic keeps a disembodied undead skull hovering above the floor. It has a nasty set of teeth.";
-        break;
-
-    case 73:                    // h hound
-
-        description = "A great black dog, with smoke pouring from its fanged mouth.";
-        break;
-
-    case 74:                    // minotaur
-
-        description = "A large human with the head of a bull. It makes its home in secluded labyrinths.";
-        break;
-
-    case 75:                    // ice dragon
-
-        description = "Like a normal dragon, only white and covered in frost.";
-        break;
-
-    case 76:                    // Slime creature
-
-        description = "An icky glob of slime, which slithers along the ground.";
-        break;
-
-    case 77:                    // freezing W
-
-        description = "A cloud of freezing air surrounding an incorporeal skeletal form.";
-        break;
-
-        // 78 is fake R
-
-    case 79:                    // GooE
-
-        description = "A levitating ball, covered in malignant eyes.";
-        break;
-
-    case 80:                    // hellion
-
-        description = "A frightful demon, covered in roaring hellfire.";
-        break;
-
-    case 81:                    // rot dev
-
-        description = "A hideous decaying form.";
-        break;
-
-    case 82:                    // torm
-
-        description = "This cruel and malicious devil is covered in all manner of claws, spines and hooks.";
-        break;
-
-    case 83:                    // reaper
-
-        description = "A skeletal form wielding a giant scythe. It has come for your soul!";
-        break;
-
-    case 84:                    // soul eater
-
-        description = "This greater demon looks like a shadow gliding through the air towards you. It radiates an intense aura of negative power.";
-        break;
-
-    case 85:                    // hairy
-
-        description = "A demon covered in hair. Watch out - it may have fleas!";
-        break;
-
-    case 86:                    // ice devil
-
-        description = "A demon covered in glittering ice.";
-        break;
-
-    case 87:                    // blue devil
-
-        description = "A nasty blue thing. It looks cold.";
-        break;
-
-    case 88:                    // beast
-
-        description = "A weird and hideous cross between beast and human.";
-        break;
-
-    case 89:                    // iron devil
-
-        description = "A hideous humanoid figure with metal skin.";
-        break;
-
-    case 98:                    // glowing (unstable) shapeshifter
-
-        description = "A shapeshifter who has lost control over his, her or its transformations, and is constantly changing form.";
-        break;
-
-    case 99:                    // shapeshifter
-
-        description = "A weird creature with the power to change its form. It is very rarely observed in its natural state.";
-        break;
-
-    case 100:                   // giant mite
-
-        description = "A large arachnid with vicious poisoned mouth-parts.";
-        break;
-
-    case 101:                   // steam dragon
-
-        description = "A relatively small grey dragon, with steam pouring from its mouth.";
-        break;
-
-    case 102:                   // v u
-
-        description = "A very ugly thing. Double yuck.";
-        break;
-
-    case 103:                   //
-
-        description = "An orc wizard who draws power from Hell.";
-        break;
-
-    case 104:                   // H
-
-        description = "A large creature with the hindquarters of a horse and the wings, talons and head of an eagle.";
-        break;
-
-    case 105:                   //
-
-        description = "A huge creature with the hindquarters of a lion and the wings, head and talons of a great eagle.";
-        break;
-
-    case 106:                   // hydra
-
-        description = "A great reptilian beast, distantly related to the dragon. It has many heads, and the potential to grow many more!";
-        break;
-
-    case 107:                   // skeletons
-
-    case 108:
-        description = "A skeleton compelled to unlife by the exercise of necromancy.";
-        break;
-
-    case 109:                   // hell knight
-
-        description = "A heavily armoured warrior, in league with the powers of Hell.";
-        break;
-
-    case 110:                   // necromancer
-
-        description = "A wizard who specialises in the practice of necromantic magic.";
-        break;
-
-    case 111:                   // wizard
-
-        description = "An evil wizard.";
-        break;
-
-    case 112:                   // orc priest
-
-        description = "A servant of the Gods of the orcs.";
-        break;
-
-    case 113:                   // orc high priest
-
-        description = "An exalted servant of the Gods of the orcs";
-        break;
-
-    case 114:                   // human
-
-        description = "";
-        break;
-
-    case 115:                   // gnoll
-
-        description = "A large relative of orcs and goblins.";
-        break;
-
-    case 116:                   // clay golem
-
-        description = "A huge animated clay statue.";
-        break;
-
-    case 117:                   // wood golem
-
-        description = "An animated wooden statue.";
-        break;
-
-    case 118:                   // stone golem
-
-        description = "A huge animated stone statue.";
-        break;
-
-    case 119:                   // iron golem
-
-        description = "A huge animated metal statue.";
-        break;
-
-    case 120:                   // crystal golem
-
-        description = "A huge animated crystal statue.";
-        break;
-
-    case 121:                   // toenail golem
-
-        description = "A huge animated statue made entirely from toenail clippings. Some people just have too much time on their hands.";
-        break;
-
-    case 122:                   // mottled dragon
-
-        description = "A small dragon with strangely mottled scales.";
-        break;
-
-    case 123:                   // earth elemental
-
-        description = "A spirit drawn from the elemental plane of earth, which exists in this world by inhabiting a lump of earth and rocks.";
-        break;
-
-    case 124:                   // fire elemental
-
-        description = "A spirit drawn from the elemental plane of fire, which exists in this world as a brilliant column of raging flames.";
-        break;
-
-    case 125:                   // air elemental
-
-        description = "A spirit drawn from the elemental plane of air. It exists in this world as a swirling vortex of air, which is often undetectable without magical aid.";
-        break;
-
-    case 126:                   // Ice fiend
-
-        description = "One of the most terrible denizens of the many Hells, the Ice Fiend is a huge icy figure, covered in frost and wreathed in freezing air.";
-        break;
-
-    case 127:                   // shadow fiend
-
-        description = "One of the most terrible denizens of the many Hells, this horrible being appears as a great mass of writhing shadows which occasionally reveal a huge, horned skeleton.";
-        break;
-
-    case 128:                   // brown snake
-
-        description = "A large brown snake.";
-        break;
-
-    case 129:                   // giant lizard
-
-        description = "A huge lizard, with great crunching jaws.";
-        break;
-
-    case 130:                   // Spectre
-
-        description = "A hideous translucent green undead spirit.";
-        break;
-
-    case 131:                   // pulsating mass
-
-        description = "A revolting glob of writhing flesh.";
-        break;
-
-    case 132:                   // storm D
-
-        description = "A huge and very powerful dragon. Sparks crackle along its enormous scaly wings.";
-        break;
-
-    case 133:                   // yaktaur
-
-        description = "Like a centaur, but half yak.";
-        break;
-
-    case 134:                   // death yak
-
-        description = "A larger and beefier relative of the common dungeon yak. Its little red eyes gleam with hunger for living flesh.";
-        break;
-
-    case 135:                   // rock troll
-
-        description = "An enormous and very nasty-looking creature. Its rocky hide seems to heal almost instantaneously from most wounds.";
-        break;
-
-    case 136:                   // stone giant
-
-        description = "A gigantic humanoid figure, with grey skin almost as hard as rock. It carries a supply of boulders, and wants to play catch with you.";
-        break;
-
-    case 137:                   // flayed ghost
-
-        description = "A hideous undead creature, with torn skin hanging from an emaciated body.";
-        break;
-
-    case 138:                   // bumblebee
-
-        description = "A very large and fat hairy bee.";
-        break;
-
-    case 139:                   // redback
-
-        description = "A vicious black spider with a splash of red on its swollen abdomen. Its mandibles drip with lethal poison.";
-        break;
-
-    case 140:                   // wisp
-
-        description = "A thin wisp of floating gas.";
-        break;
-
-    case 141:                   // vapour
-
-        description = "A normally invisible cloud of weird-looking vapour.";
-        break;
-
-    case 142:                   // ogre mage
-
-        description = "An rare ogre, skilled in the use of magic.";
-        break;
-
-    case 143:                   // spiny worm
-
-        description = "A great black worm, its many-segmented body covered in spikey plates of chitinous armour. Acidic venom drips from its toothy maw.";
-        break;
-
-    case 144:                   // dancing weapon
-
-        description = "A weapon dancing in the air. ";
-        break;
-
-    case 145:                   // titan
-
-        description = "A huge and very powerful giant. ";
-        break;
-
-    case 146:                   // golden dragon
-
-        description = "A great dragon covered in shining golden scales. ";
-        break;
-
-        // 147 is elf dummy monster
-
-    case 148:                   // lindworm
-
-        description = "A very large and very fat lizard. ";
-        break;
-
-    case 149:                   // elephant slug
-
-        description = "A huge grey slug with folds of wrinkled skin. ";
-        break;
-
-    case 150:                   // war dog
-
-        description = "A vicious dog, trained to kill. ";
-        break;
-
-    case 151:                   // grey rat
-
-        description = "A very large grey rat. ";
-        break;
-
-    case 152:                   // green rat
-
-        description = "A very large rat, with hair and skin of a most peculiar green colour. ";
-        break;
-
-    case 153:                   // orange rat
-
-        description = "A huge rat, with weird knobbly orange skin. It glows with unholy energies. ";
-        break;
-
-    case 154:                   // black snake
-
-        description = "A large black snake. ";
-        break;
-
-    case 155:                   // sheep
-
-        description = "A stupid woolly animal, with murder in its eyes. ";
-        break;
-
-    case 156:                   // ghoul
-
+    case MONS_GHOUL:
         description = "An undead creature created by a similar curse to that used in the production of the necrophage. ";
         break;
 
-    case 157:                   // hog
-
-        description = "A large, fat and very ugly pig. ";
+    case MONS_ORC:
+        description = "An ugly subterranean race, orcs combine the worst features of humans, pigs, and several other unpleasant creatures.";
         break;
 
-    case 158:                   // mosquito
-
-        description = "A huge, bloated mosquito. It looks diseased.";
+    case MONS_ORC_KNIGHT:
+        description = "A heavily armoured orc, covered in scars from many past battles.";
         break;
 
-    case 159:                   // giant centipede
-
-        description = "It has a lot of legs.";
+    case MONS_ORC_PRIEST:
+        description = "A servant of the Gods of the orcs.";
         break;
 
-    case 160:                   // iron troll
-
-        description = "A great troll covered in armour plates of rusty iron. ";
+    case MONS_ORC_HIGH_PRIEST:
+        description = "An exalted servant of the Gods of the orcs";
         break;
 
-    case 161:                   // Naga
-
-        description = "A weird hybrid; human from the waist up, it has a snake tail instead of legs.";
+    case MONS_ORC_SORCEROR:
+        description = "An orc wizard who draws power from Hell.";
         break;
 
-    case 162:                   // Fire giant
-
-        description = "A red giant, breathing clouds of smoke.";
-        break;
-
-    case 163:                   // Frost giant
-
-        description = "A frozen giant.";
-        break;
-
-    case 164:                   // Firedrake
-
-        description = "A small dragon, puffing clouds of smoke.";
-        break;
-
-    case 165:                   // Shadow dragon
-
-        description = "A great shadowy shape, radiating evil and death.";
-        break;
-
-    case 166:                   // yellow snake
-
-        description = "A large yellow tubular reptile.";
-        break;
-
-    case 167:                   // grey snake
-
-        description = "A very large grey python.";
-        break;
-
-    case 168:                   // deep troll
-
-        description = "A stooped troll.";
-        break;
-
-    case 169:                   // giant blowfly
-
-        description = "A huge and irritating fly.";
-        break;
-
-    case 170:                   // red wasp
-
-        description = "A huge wasp with a viciously barbed stinger.";
-        break;
-
-    case 171:                   // swamp dragon
-
-        description = "A slimy dragon, covered in swamp muck. Poisonous gasses dribble from its snout.";
-        break;
-
-    case 172:                   // swamp drake
-
-        description = "A small and slimy dragon, covered in swamp muck. It smells horrible.";
-        break;
-
-    case 173:                   // soldier ant
-
-        description = "A giant ant with large mandibles and a vicious sting.";
-        break;
-
-    case 174:                   // hill giant
-
-        description = "Although one of the smaller giant varieties, the hill giant is still big enough to be dangerous.";
-        break;
-
-    case 175:                   // Queen ant
-
-        description = "A bloated insect, covered in thick chitinous armour. Now you know where all those ants keep coming from!";
-        break;
-
-    case 176:                   // ant larva
-
-        description = "A baby ant. Isn't it cute?";
-        break;
-
-    case 177:                   // giant frog
-
-        description = "It probably didn't get this big by eating little insects.";
-        break;
-
-    case 178:                   // giant brown frog
-
-        description = "A very large and vicious-looking carnivorous frog. Its knobbly brown skin blends in with the rough rock of your surroundings.";
-        break;
-
-    case 179:                   // spiny frog
-
-        description = "Although slightly smaller than its cousin, the giant brown frog, the spiny frog makes up for lack of size by being covered in wickedly barbed spines and spurs.";
-        break;
-
-    case 180:                   // blink frog
-
-        description = "A weird-looking frog, constantly blinking in and out of reality.";
-        break;
-
-
-    case 181:                   // giant cockroach
-
-        description = "A large brown cockroach.";
-        break;
-
-    case 182:                   // small snake
-
-        description = "The lesser dungeon snake.";
-        break;
-
-    case 240:                   // Shadow wraith
-
-        description = "A mist-wreathed skeletal shadow hanging in mid-air, this creature is almost invisible even to your enhanced sight. ";    // assumes: to read this message, has see invis
-        break;
-
-    case 241:                   // Giant amoeba
-
-        description = "A pulsating lump of protoplasm. ";
-        break;
-
-    case 242:                   // Giant Slug
-
-        description = "A huge and disgusting gastropod. ";
-        break;
-
-    case 243:                   // Giant Snail
-
-        description = "A huge and disgusting shelled gastropod. ";
-        break;
-
-    case 244:                   // spatial vortex
-
-        description = "A shimmering, twisted coil of space.";
-        break;
-
-    case 245:                   // Pit Fiend
-
-        description = "A huge winged fiend with incredibly tough skin.";
-        break;
-
-    case 246:                   // boring beetle
-
-        description = "A large brown beetle with huge, rock-crushing mandibles.";
-        break;
-
-    case 247:                   // gargoyle
-
-        description = "A hideous stone statue come to life.";
-        break;
-
-    case 248:                   // metal gargoyle
-
-        description = "A hideous metal statue come to life.";
-        break;
-
-    case 249:                   // molten gargoyle
-
-        description = "A hideous melting stone statue come to life.";
-        break;
-
-    case 260:                   // naga mage
-
-    case 261:                   // naga warrior
-
-        description = "A weird hybrid; human from the waist up, it has a snake tail instead of legs.";
-        break;
-
-    case 262:                   // orc warlord
-
+    case MONS_ORC_WARLORD:
         description = "A very large and strong orc.";
         break;
 
-    case 263:                   // deep elf soldier
-
-    case 264:                   // deep elf fighter
-
-    case 265:                   // deep elf knight
-
-    case 266:                   // deep elf mage
-
-    case 267:                   // deep elf summoner
-
-    case 268:                   // deep elf conjurer
-
-    case 269:                   // deep elf priest
-
-    case 270:                   // deep elf high priest
-
-    case 271:                   // deep elf demonologist
-
-    case 272:                   // deep elf annihilator
-
-    case 273:                   // deep elf sorceror
-
-    case 274:                   // deep elf death mage
-
-        description = "One of the race of elves which inhabits this dreary cave. ";
-        break;
-
-
-        /*case 133: // yaktaur
-           description = "";
-           break; */
-
-    case 282:                   // Ijyb
-
-        description = "A twisted goblin. ";
-        break;
-
-    case 284:                   // blork
-
-        description = "A particularly fat and ugly orc. ";
-        break;
-
-    case 287:                   // Erolcha
-
-        description = "A beefy ogre. ";
-        break;
-
-    case 289:                   // Yrug
-
-        description = "An orc. ";
-        break;
-
-    case 292:                   // Snorg
-
-        description = "A hairy troll. ";
-        break;
-
-    case 306:                   // Xtahua
-
-        description = "An ancient and mighty dragon. ";
-        break;
-
-    case 310:                   // Boris
-
-        description = "An ancient lich, the air around his shrouded form crackling with evil energy. ";
-        break;
-
-    case 220:                   // white imp
-
-        description = "A small and mischevious minor demon. ";
-        break;
-
-    case 221:                   // lemure
-
-        description = "A vaguely humanoid blob of putrid white flesh. ";
-        break;
-
-    case 222:                   // ufetubus
-
-        description = "A chattering and shrieking minor demon. ";
-        break;
-
-    case 223:                   // manes
-
-        description = "An ugly, twisted little minor demon. ";
-        break;
-
-    case 224:                   // midge
-
-        description = "A small flying demon. ";
-        break;
-
-    case 225:                   // neh?
-
-        description = "A weirdly shaped demon. ";
-        break;
-
-    case 226:                   // orange demon
-
-        description = "A bright orange demon with a venomous stinger. ";
-        break;
-
-    case 227:                   // hellwing
-
-        description = "A hideous skeletal demon, with wings of ancient withered skin. ";
-        break;
-
-    case 228:                   // smoke demon
-
-        description = "A writhing cloud of smoke hanging in the air. ";
-        break;
-
-    case 229:                   // ynoxinul
-
-        description = "A demon with shiny metallic scales. ";
-        break;
-
-    case 230:                   // Executioner
-
-        description = "A horribly powerful demon. ";
-        break;
-
-    case 231:                   // green death
-
-        description = "A bloated form covered in oozing sores and exhaling clouds of lethal poison. ";
-        break;
-
-    case 232:                   // blue death
-
-        description = "A blue greater demon. ";
-        break;
-
-    case 233:                   // balrug
-
-        description = "A huge and very powerful demon, wreathed in fire and shadows. ";
-        break;
-
-    case 234:                   // cacodemon
-
-        description = "A hideously ugly demon of rage and legendary power. ";
-        break;
-
-    case 235:                   // demonic crawler
-
-        description = "A long and bloated body, supported by dozens of short legs and topped with an evil-looking head. ";
-        break;
-
-    case 236:                   // sun demon
-
-        description = "A demonic figure shining with the light and fury of the sun. ";
-        break;
-
-    case 237:                   // shadow imp
-
-        description = "A small and shadowy figure. ";
-        break;
-
-    case 238:                   // shadow demon
-
-        description = "A mysterious demonic figure, constantly blurring into multiple shadows of iteself.";
-        break;
-
-    case 239:                   // Lorocyproca
-
-        description = "A tall and gaunt figure, draped in long robes which flow as if alive.";
-        break;
-
-    case 251:                   // Nemelex Xobeh
-
-        description = "A weirdly glowing figure, dancing through the twisted air of Pandemonium. ";
-        break;
-
-    case 252:                   // Sif Muna
-
-        description = "An ancient and strangely serene demon. It regards you coldly from the huge glowing eye in the centre of its forehead. ";
-        break;
-
-    case 253:                   // Okawaru
-
-        description = "A violent and wrathful demon, Cerebov appears as a giant human covered in shining golden armour and wielding a huge twisted sword. ";
-        break;
-
-    case 254:                   // Kikubaaqudgha
-
-        description = "A shadowy figure clothed in profound darkness. ";
-        break;
-
-    case 275:                   // ooze
-
-        description = "A viscous liquid, flowing along the floor in search of organic matter to corrode. ";
+    case MONS_ORC_WARRIOR:
+        description = "An armoured orc, obviously experienced in the ways of hacking other creatures apart.";
         break;
 
-    case 276:                   // azure jelly
-
-        description = "A faintly glowing blob of bright blue cytoplasm. ";
-        break;
-
-    case 277:                   // death ooze
-
-        description = "A putrid mass of decaying flesh. ";
-        break;
-
-    case 278:                   // acid blob
-
-        description = "A lump of sickly green flesh, dripping with lethal acid. ";
-        break;
-
-    case 279:                   // royal jelly
-
-        description = "A particularly rich and golden gelatinous thing. ";
-        break;
-
-    case 280:                   // Terence
-
-    case 281:                   // Jessica
-
-    case 283:                   // Sigmund
-
-    case 285:                   // Edmund
-
-    case 286:                   // Psyche
-
-    case 288:                   // Donald
-
-    case 290:                   // Michael
-
-    case 291:                   // Joseph
-
-    case 293:                   // Erica
-
-    case 294:                   // Josephine
-
-    case 295:                   // Harold
-
-    case 296:                   // Norbert
-
-    case 297:                   // Jozef
-
-    case 298:                   // Agnes
-
-    case 299:                   // Maud
-
-    case 300:                   // Louise
-
-    case 301:                   // Francis
-
-    case 302:                   // Frances
-
-    case 303:                   // Rupert
-
-    case 304:                   // Wayne
-
-    case 305:                   // Duane
-
-    case 307:                   // Norris
-
-    case 308:                   // Adolf
-
-    case 309:                   // Margery
-
-        description = "A human wandering the dungeons, trying to keep you away from whatever is concealed in the depths. ";
-        break;
-
-    case 340:                   // Geryon
-
-        description = "A huge and slithery arch-demon, guarding the gates of Hell. ";
-        break;
-
-    case 341:                   // Dispater
-
-        description = "The lord of the Iron City of Dis. ";
-        break;
-
-    case 342:
-        description = "One of the arch-demons who dwell in the depths of Hell. ";
-        break;
-
-    case 343:
-        description = "A great titan who lives in the depths of Cocytus. ";
-        break;
-
-    case 344:
-        description = "A fearsome arch-fiend who rules the deathly netherworld of Tartarus. ";
-        break;
-
-    case 356:
-        description = "A lich who has grown mighty over countless years.";
-        break;
-
-    case 357:
-        description = "A disgusting glob of grey sludge.";
-        break;
-
-    case 360:
-        description = "A heavily armed and armoured guardian of the Vaults. ";
-        break;
-
-    case 361:
-        description = "A charred skull floating in the air and rotating slowly.  Mystic symbols carved into its blackened surface indicate its resistance to almost any form of attack. ";
-        break;
-
-    case 362:                   // vamp knight
-
-        description = "A deadly warrior whose skills have not diminished even in undeath. ";
-        break;
-
-    case 363:                   // vamp mage
-
-        description = "A powerful magician whose skills have not diminished even in undeath. ";
-        break;
-
-    case 364:                   // shining eye
-
-        description = "A huge and strangely deformed eyeball, pulsating with light. ";
-        break;
-
-    case 365:                   // orb guardian
-
-        description = "A huge and glowing purple creature, created by the Orb to defend itself. ";
-        break;
-
-    case 366:                   // Daeva
-
-        description = "A divine agent of the Shining One. It manifests as a winged figure obscured by an aura of brilliant golden light. ";
-        break;
-
-    case 367:                   // spectral thing
-
-        description = "A hideous glowing apparition.";
-        break;
-
-    case 368:                   // greater naga
-
-        description = "An unusually large and powerful naga.";
-        break;
-
-    case 369:                   // skeletal dragon
-
-        description = "A huge undead abomination, pieced together from the broken bones of many dragons.";
-        break;
-
-    case 370:                   // tentacled monstrosity
-
-        description = "A writhing mass of tentacles, all covered in putrid mucous.";
+    case MONS_ORC_WIZARD:
+        description = "While orcs are generally quite stupid, occasionally one of them develops an aptitude for magic.";
         break;
 
-    case 371:                   // sphinx
-
-        description = "A large creature with a human head, the body of a lion, and the wings of a huge bird.";
+    case MONS_PHANTOM:
+        description = "A certain type of undead spirit.";
         break;
-
-    case 372:                   // rotting hulk
 
-        description = "A shambling undead, related to the ghoul.";
+    case MONS_RAT:
+        description = "Rats which have grown large and aggressive in the pestilential dungeon environment.";
         break;
 
-    case 373:                   // guardian mummy
-
-        description = "An ancient warrior, embalmed and cursed with the ability to walk even when dead.";
+    case MONS_GREY_RAT:
+        description = "A very large grey rat. ";
         break;
-
-    case 374:                   // greater mummy
 
-        description = "The embalmed and undead corpse of an ancient ruler.";
+    case MONS_GREEN_RAT:
+        description = "A very large rat, with hair and skin of a most peculiar green colour. ";
         break;
 
-    case 375:                   // mummy priest
-
-        description = "The embalmed and undead corpse of an ancient servant of darkness.";
+    case MONS_ORANGE_RAT:
+        description = "A huge rat, with weird knobbly orange skin. It glows with unholy energies. ";
         break;
-
-    case 376:                   // centaur warrior
 
-        description = "A hybrid with the torso of a human atop the body of a large horse. It looks aggressive.";
+    case MONS_SCORPION:
+        description = "A giant black scorpion, its body covered in thick armour plating, and its tail tipped by a nasty venomous sting.";
         break;
 
-    case 377:                   // yaktaur
-
-        description = "Like a centaur, but half yak. It looks aggressive.";
+    case MONS_TUNNELING_WORM:
+    case MONS_WORM_TAIL:
+        description = "A gargantuan worm, its huge maw capable of crushing rock into dust with little trouble.";
         break;
 
-    case 378:                   // Killer Klown
-
-         description = "A comical figure full of life and laughter.  It"
-" looks very happy to see you.$But is there a slightly malicious cast to"
-" its features?  Is that red facepaint or something altogether less"
-" pleasant? Join in the fun, and maybe you'll find out!";
+    case MONS_BRAIN_WORM:
+        description = "A slimy mauve worm with a greatly distended head.";
         break;
-
-        /* Hugh Cook monsters: */
 
-    case 379:                   // guardian robot
-
-        description = "A moving column of metal.";
+    case MONS_LAVA_WORM:
+        description = "A vicious red worm which swims through molten rock.";
         break;
-
-    case 380:                   // dorgi
 
-       description = "\"The dorgi...was a huge grumping machine with a "
-" pronounced propensity for violence. It was huge, heavy, brown and"
-" bulbous. A hulking thing stubbled with inscrutable protruberances. A"
-" monstrous thing which moved upon its victims with a sound like heavy"
-" breathing.\"$(Hugh Cook, _The Wazir and the Witch_)";
+    case MONS_SPINY_WORM:
+        description = "A great black worm, its many-segmented body covered in spikey plates of chitinous armour. Acidic venom drips from its toothy maw.";
         break;
 
-    case 381:                   // Sword
-
-        description = "An incandescent globe of light, capable of impressive "
-                      "pyrotechnics.";
+    case MONS_SWAMP_WORM:
+        description = "A large worm, adept at swimming through the muck of this foul swamp.";
         break;
-
-    case 382:                   // quokka
 
-        description = "A small marsupial mammal. "; //, altered by nanotechnological manipulators.";
+    case MONS_WORM:
+        description = "A giant worm, with unusually large teeth (for a worm).";
         break;
 
-    case 385:                   // eye of devastation
-
-        description = "A huge eyeball, encased in a levitating globe of incandescant energy. ";
+    case MONS_UGLY_THING:
+        description = "An ugly thing. Yuck.";
         break;
 
-    case 386:                   // moth of wrath
-
-        description = "A huge moth, as violent as it is hairy.";
+    case MONS_VERY_UGLY_THING:
+        description = "A very ugly thing. Double yuck.";
         break;
-
-    case 387:                   // death cob
 
-        description = "A dreadful undead cob of corn.";
+    case MONS_FIRE_VORTEX:
+        description = "A swirling cloud of flame.";
         break;
 
-    case 388:                   // curse toe
-
-        description = "A disembodied toe, hanging in the air and radiating an intense field of negative energy.";
+    case MONS_SPATIAL_VORTEX:
+        description = "A shimmering, twisted coil of space.";
         break;
-
-    case 389:                   // mimic in gold form
 
-        description = "An apparently harmless pile of gold coins hides a nasty venomous shapechanging predator.";
+    case MONS_ABOMINATION_SMALL:
+        description = "A hideous form, created or summoned by some arcane process.";
         break;
 
-    case 390:                   // mimic in weapon form
-
-        description = "An apparently abandoned weapon, actually a vicious little beast in disguise.";
+    case MONS_ABOMINATION_LARGE:
+        description = "A huge and hideous creature, created or summoned by some arcane process.";
         break;
-
-    case 391:                   // mimic in armour form
 
-        description = "An apparently abandoned suit of finely-made armour, actually a vicious little beast in disguise.";
+    case MONS_YELLOW_WASP:
+        description = "A giant wasp covered with thick plates of yellow chitinous armour.";
         break;
 
-    case 392:                   // mimic in scroll form
-
-        description = "An ancient parchment covered in arcane runes. Did it just twitch?";
+    case MONS_RED_WASP:
+        description = "A huge wasp with a viciously barbed stinger.";
         break;
 
-    case 393:                   // mimic in potion form
-
-        description = "A delicious looking magical drink. Go on, pick it up!";
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ZOMBIE_LARGE:
+        description += "A corpse raised from the dead "
+                       "to undeath by necromancy. ";
         break;
-
-    case 394:                   // hell-hog
 
-        description = "A large, fat and very ugly pig, suckled in the pits of Hell. ";
+    case MONS_CYCLOPS:
+        description = "A giant with one eye in the centre of its forehead. Despite their lack of binocular vision, cyclopses throw boulders with fearsomely accuracy.";
         break;
 
-    case 395:                   // Serpent of Hell
-
-        description = "A huge dragon, burning with hellfire. ";
+    case MONS_DRAGON:
+        description = "A great reptilian beast, covered in thick green scales and with two huge bat-like wings. Little trails of smoke spill from its toothy maw.";
         break;
-
-    case 396:                   // boggart
 
-        description = "A twisted little sprite-goblin. Beware of its magical tricks!";
+    case MONS_GOLDEN_DRAGON:
+        description = "A great dragon covered in shining golden scales. ";
         break;
 
-    case 397:                   // quicksilver D
-
-        description = "A long and sinuous dragon, seemingly more neck and tail than anything else. Its skin shines like molten mercury, and magical energies arc from its pointed snout.";
+    case MONS_ICE_DRAGON:
+        description = "Like a normal dragon, only white and covered in frost.";
         break;
-
-    case 398:                   // iron D
 
+    case MONS_IRON_DRAGON:
         description = "A very heavy and apparently flightless dragon.";
         break;
 
-    case 399:                   // skeletal warrior
+    case MONS_MOTTLED_DRAGON:
+        description = "A small dragon with strangely mottled scales.";
+        break;
 
+    case MONS_QUICKSILVER_DRAGON:
+        description = "A long and sinuous dragon, seemingly more neck and tail than anything else. Its skin shines like molten mercury, and magical energies arc from its pointed snout.";
+        break;
+
+    case MONS_SHADOW_DRAGON:
+        description = "A great shadowy shape, radiating evil and death.";
+        break;
+
+    case MONS_SKELETAL_DRAGON:
+        description = "A huge undead abomination, pieced together from the broken bones of many dragons.";
+        break;
+
+    case MONS_STEAM_DRAGON:
+        description = "A relatively small grey dragon, with steam pouring from its mouth.";
+        break;
+
+    case MONS_STORM_DRAGON:
+        description = "A huge and very powerful dragon. Sparks crackle along its enormous scaly wings.";
+        break;
+
+    case MONS_SWAMP_DRAGON:
+        description = "A slimy dragon, covered in swamp muck. Poisonous gasses dribble from its snout.";
+        break;
+
+    case MONS_SERPENT_OF_HELL:
+        description = "A huge dragon, burning with hellfire. ";
+        break;
+
+    case MONS_SWAMP_DRAKE:
+        description = "A small and slimy dragon, covered in swamp muck. It smells horrible.";
+        break;
+
+    case MONS_FIREDRAKE:
+        description = "A small dragon, puffing clouds of smoke.";
+        break;
+
+    case MONS_TWO_HEADED_OGRE:
+        description = "A huge ogre with two heads on top of a bloated ogre body. It is capable of holding a weapon in each giant hand.";
+        break;
+
+    case MONS_FIEND:
+        description = "One of the most fearsome denizens of Hell. A huge and powerful demon wreathed in hellfire, with great scaly wings.";
+        break;
+
+    case MONS_ICE_FIEND:
+        description = "One of the most terrible denizens of the many Hells, the Ice Fiend is a huge icy figure, covered in frost and wreathed in freezing air.";
+        break;
+
+    case MONS_SHADOW_FIEND:
+        description = "One of the most terrible denizens of the many Hells, this horrible being appears as a great mass of writhing shadows which occasionally reveal a huge, horned skeleton.";
+        break;
+
+    case MONS_GIANT_SPORE:
+        description = "A volatile floating ball of spores, covered in knobbly rhizome growths.";
+        break;
+
+    case MONS_HOBGOBLIN:
+        description = "Larger relatives of goblins.";
+        break;
+
+    case MONS_ICE_BEAST:
+        description = "A terrible creature, formed of snow and crystalline ice. Its feet leave puddles of icy water on the floor.";
+        break;
+
+    case MONS_KOBOLD:
+        description = "Reputedly the creation of an ancient demon-god, kobolds are small goblin-like creatures with canine heads.";
+        break;
+
+    case MONS_BIG_KOBOLD:
+        description = "A kobold of unusual size.";
+        break;
+
+    case MONS_KOBOLD_DEMONOLOGIST:
+        description = "A kobold who has learned to summon and direct demons.";
+        break;
+
+    case MONS_LICH:
+        description += "A wizard who didn't want to die, a Lich is a skeleton "
+                       "or decaying corpse kept alive by a mighty exercise of "
+                       "necromancy. These undead creatures can wield great "
+                       "magic and are best avoided by all but the most "
+                       "confident (or stupid) adventurers. ";
+        break;
+
+    case MONS_ANCIENT_LICH:
+        description = "A lich who has grown mighty over countless years. ";
+        break;
+
+    case MONS_MUMMY:
+        description += "An undead figure covered in "
+                      "bandages and embalming fluids, "
+                      "compelled to walk by an ancient curse. "
+                      "It radiates a malign aura "
+                      "to those who intrude on its domain. ";
+        break;
+
+    case MONS_GUARDIAN_MUMMY:
+        description += "An ancient warrior, embalmed "
+                      "and cursed with the ability to walk even when dead.";
+        break;
+
+    case MONS_GREATER_MUMMY:
+    case MONS_MUMMY_PRIEST:
+        description += "The embalmed and undead corpse of an ancient ";
+        if (class_described == MONS_GREATER_MUMMY)
+            description += "ruler";
+        else
+            description += "servant of darkness";
+        description += ". ";
+        break;
+
+    case MONS_GUARDIAN_NAGA:
+        description = "A serpent with the head of a human. These nagas are "
+                      "often used as guardians by powerful creatures.";
+        break;
+
+    case MONS_GREATER_NAGA:
+        description = "An unusually large and powerful naga.";
+        break;
+
+    case MONS_NAGA:
+    case MONS_NAGA_MAGE:
+    case MONS_NAGA_WARRIOR:
+        description = "A weird hybrid; human from the waist up, it has a snake tail instead of legs.";
+        break;
+
+    case MONS_OGRE:
+        description = "A larger, uglier and usually fatter relative of orcs and goblins.";
+        break;
+
+    case MONS_OGRE_MAGE:
+        description = "A rare ogre, skilled in the use of magic.";
+        break;
+
+    case MONS_PLANT:
+        description = "Few plants can grow in the unpleasant dungeon environment, but some have managed to adapt and even thrive underground in the absence of the sun.";
+        break;
+
+    case MONS_OKLOB_PLANT:
+        description = "A vicious plant, dripping with vitriol.";
+        break;
+
+    case MONS_RAKSHASA:
+    case MONS_RAKSHASA_FAKE:
+        description = "A type of demon who comes to the material world in search of power and knowledge. Rakshasas are experts in the art of illusion, among other things.";
+        break;
+
+    case MONS_SNAKE:
+        description = "The common dungeon snake.";
+        break;
+
+    case MONS_BLACK_SNAKE:
+        description = "A large black snake. ";
+        break;
+
+    case MONS_BROWN_SNAKE:
+        description = "A large brown snake.";
+        break;
+
+    case MONS_GREY_SNAKE:
+        description = "A very large grey python.";
+        break;
+
+    case MONS_LAVA_SNAKE:
+        description = "A burning red snake which rears up from pools of lava and tries to bite you.";
+        break;
+
+    case MONS_SMALL_SNAKE:
+        description = "The lesser dungeon snake.";
+        break;
+
+    case MONS_YELLOW_SNAKE:
+        description = "A large yellow tubular reptile.";
+        break;
+
+    case MONS_GIANT_LIZARD:
+        description = "A huge lizard, with great crunching jaws.";
+        break;
+
+    case MONS_LINDWORM:     // maybe it's just me, but what *is* a lindworm?
+        description = "A very large and very fat lizard. ";
+        break;
+
+    case MONS_TROLL:
+        description = "A huge, nasty-looking creature. Its thick and knobbly hide seems to heal almost instantly from most wounds.";
+        break;
+
+    case MONS_DEEP_TROLL:
+        description = "A stooped troll.";
+        break;
+
+    case MONS_IRON_TROLL:
+        description = "A great troll covered in armour plates of rusty iron. "; // you can't see its hide, but think its thick and kobbly, too :P {dlb}
+        break;
+
+    case MONS_ROCK_TROLL:
+        description = "An enormous and very nasty-looking creature. Its rocky hide seems to heal almost instantaneously from most wounds.";
+        break;
+
+    case MONS_UNSEEN_HORROR:
+        description = "These creatures are usually unseen by the eyes of most, and those few who have seen them would rather not have.";
+        break;
+
+    case MONS_VAMPIRE:
+        description = "A powerful undead. It wants to drink your blood! ";
+        break;
+
+    case MONS_VAMPIRE_KNIGHT:
+        description = "A deadly warrior whose skills have not diminished even in undeath. ";
+        break;
+
+    case MONS_VAMPIRE_MAGE:
+        description = "A powerful magician whose skills have not diminished even in undeath. ";
+        break;
+
+    case MONS_WRAITH:
+        description = "This undead spirit appears as a cloud of black mist surrounding an insubstantial skeletal form. Its eyes burn bright with unholy malevolence.";
+        break;
+
+    case MONS_FREEZING_WRAITH:
+        description = "A cloud of freezing air surrounding an incorporeal skeletal form.";
+        break;
+
+    case MONS_SHADOW_WRAITH:
+        description = "A mist-wreathed skeletal shadow hanging in mid-air, this creature is almost invisible even to your enhanced sight. ";    // assumes: to read this message, has see invis
+        break;
+
+    case MONS_YAK:
+        description = "The common dungeon yak. Covered in shaggy yak hair and bearing a nasty pair of yak horns.";
+        break;
+
+    case MONS_DEATH_YAK:
+        description = "A larger and beefier relative of the common dungeon yak. Its little red eyes gleam with hunger for living flesh.";
+        break;
+
+    case MONS_WYVERN:
+        description = "Although smaller and less formidable than true dragons, wyverns are nonetheless a foe to be reckoned with.";
+        break;
+
+    case MONS_GIANT_EYEBALL:
+        description = "A giant eyeball, with a captivating stare.";
+        break;
+
+    case MONS_GREAT_ORB_OF_EYES:
+        description = "A levitating ball, covered in malignant eyes.";
+        break;
+
+    case MONS_EYE_OF_DEVASTATION:
+        description = "A huge eyeball, encased in a levitating globe of incandescant energy. ";
+        break;
+
+    case MONS_SHINING_EYE:
+        description += "A huge and strangely deformed eyeball, "
+                       "pulsating with light. "
+                       "Beauty is certainly nowhere to be found "
+                       "in this beholder. ";
+        break;
+
+    case MONS_EYE_OF_DRAINING:
+        description = "These hovering eyeballs are especially loathed by wizards.";
+        break;
+
+    case MONS_WIGHT:
+        description = "An ancient warrior, kept in a state of undeath by its will to live.";
+        break;
+
+    case MONS_WOLF_SPIDER:
+        description = "A large hairy spider with vicious mandibles, roaming the dungeon in search of food.";
+        break;
+
+    case MONS_REDBACK:
+        description = "A vicious black spider with a splash of red on its swollen abdomen. Its mandibles drip with lethal poison.";
+        break;
+
+    case MONS_SHADOW:
+        description = "A walking undead shadow.";
+        break;
+
+    case MONS_HUNGRY_GHOST:
+        description = "The undead form of someone who died of starvation, this creature wants the same thing to happen to you!";
+        break;
+
+    case MONS_BUTTERFLY:
+        description = "A large multicoloured butterfly with beautifully patterned wings.";
+        break;
+
+    case MONS_WANDERING_MUSHROOM:
+        description = "A large, fat mushroom.";
+        break;
+
+    case MONS_EFREET:
+        description = "A huge and muscular figure engulfed in a cloud of searing flame.";
+        break;
+
+    case MONS_GIANT_ORANGE_BRAIN:
+        description = "A huge wrinkled brain, floating just off the floor. Every now and then it seems to pulsate.";
+        break;
+
+    case MONS_GIANT_BEETLE:
+        description = "A huge black beetle with great crunching mandibles and an armour-plated body.";
+        break;
+
+    case MONS_BORING_BEETLE:
+        description = "A large brown beetle with huge, rock-crushing mandibles.";
+        break;
+
+    case MONS_BOULDER_BEETLE:
+        description = "A huge beetle with an almost impenetrable rocky carapace.";
+        break;
+
+    case MONS_FLYING_SKULL:
+        description = "Unholy magic keeps a disembodied undead skull hovering above the floor. It has a nasty set of teeth.";
+        break;
+
+    case MONS_MINOTAUR:
+        description = "A large human with the head of a bull. It makes its home in secluded labyrinths.";
+        break;
+
+    case MONS_SLIME_CREATURE:
+        description = "An icky glob of slime, which slithers along the ground.";
+        break;
+
+    case MONS_HELLION:
+        description = "A frightful demon, covered in roaring hellfire.";
+        break;
+
+    case MONS_TORMENTOR:
+        description = "This cruel and malicious devil is covered in all manner of claws, spines and hooks.";
+        break;
+
+    case MONS_REAPER:
+        description = "A skeletal form wielding a giant scythe. It has come for your soul!";
+        break;
+
+    case MONS_SOUL_EATER:
+        description = "This greater demon looks like a shadow gliding through the air towards you. It radiates an intense aura of negative power.";
+        break;
+
+    case MONS_BEAST:
+        description = "A weird and hideous cross between beast and human.";
+        break;
+
+    case MONS_GLOWING_SHAPESHIFTER:
+        description = "A shapeshifter who has lost control over his, her or its transformations, and is constantly changing form.";
+        break;
+
+    case MONS_SHAPESHIFTER:
+        description = "A weird creature with the power to change its form. It is very rarely observed in its natural state.";
+        break;
+
+    case MONS_GIANT_MITE:
+        description = "A large arachnid with vicious poisoned mouth-parts.";
+        break;
+
+    case MONS_GRIFFON:
+    case MONS_HIPPOGRIFF:
+        description += "A large creature with the hindquarters of a ";
+        if (class_described == MONS_HIPPOGRIFF)
+            description += "horse";
+        else
+            description += "lion";
+        description += " and the wings, head, and talons of a great eagle. ";
+        break;
+
+    case MONS_HYDRA:
+        description = "A great reptilian beast, distantly related to the dragon. It has many heads, and the potential to grow many more!";
+        break;
+
+    case MONS_SMALL_SKELETON:
+    case MONS_LARGE_SKELETON:
+        description = "A skeleton compelled to unlife by the exercise of necromancy.";
+        break;
+
+    case MONS_SKELETAL_WARRIOR:
         description = "The vicious and heavily armed skeleton of a humanoid creature, animated by unholy power.";
         break;
 
-    case 400:
+    case MONS_HELL_KNIGHT:
+        description = "A heavily armoured warrior, in league with the powers of Hell.";
+        break;
+
+    case MONS_WIZARD:
+        description = "An evil wizard.";
+        break;
+
+    case MONS_NECROMANCER:
+        description = "A wizard who specialises in the practice of necromantic magic.";
+        break;
+
+    case MONS_GNOLL:
+        description = "A large relative of orcs and goblins.";
+        break;
+
+    case MONS_CLAY_GOLEM:
+        description = "A huge animated clay statue.";
+        break;
+
+    case MONS_WOOD_GOLEM:
+        description = "An animated wooden statue.";
+        break;
+
+    case MONS_STONE_GOLEM:
+        description = "A huge animated stone statue.";
+        break;
+
+    case MONS_IRON_GOLEM:
+        description = "A huge animated metal statue.";
+        break;
+
+    case MONS_CRYSTAL_GOLEM:
+        description = "A huge animated crystal statue.";
+        break;
+
+    case MONS_TOENAIL_GOLEM:
+        description = "A huge animated statue made entirely from toenail clippings. Some people just have too much time on their hands.";
+        break;
+
+    case MONS_EARTH_ELEMENTAL:
+        description = "A spirit drawn from the elemental plane of earth, which exists in this world by inhabiting a lump of earth and rocks.";
+        break;
+
+    case MONS_FIRE_ELEMENTAL:
+        description = "A spirit drawn from the elemental plane of fire, which exists in this world as a brilliant column of raging flames.";
+        break;
+
+    case MONS_AIR_ELEMENTAL:
+        description = "A spirit drawn from the elemental plane of air. It exists in this world as a swirling vortex of air, which is often undetectable without magical aid.";
+        break;
+
+    case MONS_WATER_ELEMENTAL:
+        description = "A spirit drawn from the elemental plane of water. It exists on this world as part of a body of water.";
+        break;
+
+    case MONS_SPECTRAL_WARRIOR:     // spectre
+        description = "A hideous translucent green undead spirit.";
+        break;
+
+    case MONS_CURSE_TOE:
+        description = "A disembodied toe, hanging in the air and radiating an intense field of negative energy.";
+        break;
+
+    case MONS_PULSATING_LUMP:
+        description = "A revolting glob of writhing flesh.";
+        break;
+
+    case MONS_OOZE:
+        description = "A disgusting glob of grey sludge.";
+        break;
+
+    case MONS_BROWN_OOZE:
+        description = "A viscous liquid, flowing along the floor in search of organic matter to corrode. ";
+        break;
+
+    case MONS_DEATH_OOZE:
+        description = "A putrid mass of decaying flesh. ";
+        break;
+
+    case MONS_GIANT_AMOEBA:
+        description = "A pulsating lump of protoplasm. ";
+        break;
+
+    case MONS_JELLY:
+        description = "A pulsating mass of acidic protoplasm. It can and will eat almost anything, and grows a little each time...";
+        break;
+
+    case MONS_AZURE_JELLY:
+        description = "A faintly glowing blob of bright blue cytoplasm. ";
+        break;
+
+    case MONS_ACID_BLOB:
+        description = "A lump of sickly green flesh, dripping with lethal acid. ";
+        break;
+
+    case MONS_JELLYFISH:
+        description = "A pulsating glob of transparent flesh, waiting just below the surface to sting you with its many tentacles.";
+        break;
+
+    case MONS_ROYAL_JELLY:
+        description = "A particularly rich and golden gelatinous thing. ";
+        break;
+
+    case MONS_FIRE_GIANT:
+        description = "A red giant, breathing clouds of smoke.";
+        break;
+
+    case MONS_FROST_GIANT:
+        description = "A frozen giant.";
+        break;
+
+    case MONS_HILL_GIANT:
+        description = "Although one of the smaller giant varieties, the hill giant is still big enough to be dangerous.";
+        break;
+
+    case MONS_STONE_GIANT:
+        description = "A gigantic humanoid figure, with grey skin almost as hard as rock. It carries a supply of boulders, and wants to play catch with you.";
+        break;
+
+    case MONS_TITAN:
+        description = "A huge and very powerful giant. ";
+        break;
+
+    case MONS_FLAYED_GHOST:
+        description = "A hideous undead creature, with torn skin hanging from an emaciated body.";
+        break;
+
+    case MONS_INSUBSTANTIAL_WISP:
+        description = "A thin wisp of floating gas.";
+        break;
+
+    case MONS_VAPOUR:
+        description = "A normally invisible cloud of weird-looking vapour.";
+        break;
+
+    case MONS_DANCING_WEAPON:
+        description = "A weapon dancing in the air. ";
+        break;
+
+    case MONS_ELEPHANT_SLUG:
+        description = "A huge grey slug with folds of wrinkled skin. ";
+        break;
+
+    case MONS_GIANT_SLUG:
+        description = "A huge and disgusting gastropod. ";
+        break;
+
+    case MONS_GIANT_SNAIL:
+        description = "A huge and disgusting shelled gastropod. ";
+        break;
+
+    case MONS_SHEEP:
+        description = "A stupid woolly animal, with murder in its eyes. ";
+        break;
+
+    case MONS_HOG:
+        description = "A large, fat and very ugly pig. ";
+        break;
+
+    case MONS_HELL_HOG:
+        description = "A large, fat and very ugly pig, suckled in the pits of Hell. ";
+        break;
+
+    case MONS_GIANT_MOSQUITO:
+        description = "A huge, bloated mosquito. It looks diseased.";
+        break;
+
+    case MONS_GIANT_CENTIPEDE:
+        description = "It has a lot of legs.";
+        break;
+
+    case MONS_GIANT_BLOWFLY:
+        description = "A huge and irritating fly.";
+        break;
+
+    case MONS_GIANT_FROG:
+        description = "It probably didn't get this big by eating little insects.";
+        break;
+
+    case MONS_GIANT_BROWN_FROG:
+        description = "A very large and vicious-looking carnivorous frog. Its knobbly brown skin blends in with the rough rock of your surroundings.";
+        break;
+
+    case MONS_SPINY_FROG:
+        description = "Although slightly smaller than its cousin, the giant brown frog, the spiny frog makes up for lack of size by being covered in wickedly barbed spines and spurs.";
+        break;
+
+    case MONS_BLINK_FROG:
+        description = "A weird-looking frog, constantly blinking in and out of reality.";
+        break;
+
+    case MONS_GIANT_COCKROACH:
+        description = "A large brown cockroach.";
+        break;
+
+    case MONS_PIT_FIEND:
+        description = "A huge winged fiend with incredibly tough skin.";
+        break;
+
+    case MONS_GARGOYLE:
+        description = "A hideous stone statue come to life.";
+        break;
+
+    case MONS_METAL_GARGOYLE:
+        description = "A hideous metal statue come to life.";
+        break;
+
+    case MONS_MOLTEN_GARGOYLE:
+        description = "A hideous melting stone statue come to life.";
+        break;
+
+    case MONS_DEEP_ELF_SOLDIER:
+    case MONS_DEEP_ELF_FIGHTER:
+    case MONS_DEEP_ELF_KNIGHT:
+    case MONS_DEEP_ELF_MAGE:
+    case MONS_DEEP_ELF_SUMMONER:
+    case MONS_DEEP_ELF_CONJURER:
+    case MONS_DEEP_ELF_PRIEST:
+    case MONS_DEEP_ELF_HIGH_PRIEST:
+    case MONS_DEEP_ELF_DEMONOLOGIST:
+    case MONS_DEEP_ELF_ANNIHILATOR:
+    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_DEATH_MAGE:
+        description = "One of the race of elves which inhabits this dreary cave. ";
+        break;
+
+    case MONS_WHITE_IMP:
+        description = "A small and mischevious minor demon. ";
+        break;
+
+    case MONS_LEMURE:
+        description = "A vaguely humanoid blob of putrid white flesh. ";
+        break;
+
+    case MONS_UFETUBUS:
+        description = "A chattering and shrieking minor demon. ";
+        break;
+
+    case MONS_MANES:
+        description = "An ugly, twisted little minor demon. ";
+        break;
+
+    case MONS_MIDGE:
+        description = "A small flying demon. ";
+        break;
+
+    case MONS_NEQOXEC:
+        description = "A weirdly shaped demon. ";
+        break;
+
+    case MONS_ORANGE_DEMON:
+        description = "A bright orange demon with a venomous stinger. ";
+        break;
+
+    case MONS_HELLWING:
+        description = "A hideous skeletal demon, with wings of ancient withered skin. ";
+        break;
+
+    case MONS_SMOKE_DEMON:
+        description = "A writhing cloud of smoke hanging in the air. ";
+        break;
+
+    case MONS_YNOXINUL:
+        description = "A demon with shiny metallic scales. ";
+        break;
+
+    case MONS_EXECUTIONER:
+        description = "A horribly powerful demon. ";
+        break;
+
+    case MONS_GREEN_DEATH:
+        description = "A bloated form covered in oozing sores and exhaling clouds of lethal poison. ";
+        break;
+
+    case MONS_BLUE_DEATH:
+        description = "A blue greater demon. ";
+        break;
+
+    case MONS_BALRUG:
+        description = "A huge and very powerful demon, wreathed in fire and shadows. ";
+        break;
+
+    case MONS_CACODEMON:
+        description = "A hideously ugly demon of rage and legendary power. ";
+        break;
+
+    case MONS_DEMONIC_CRAWLER:
+        description = "A long and bloated body, supported by dozens of short legs and topped with an evil-looking head. ";
+        break;
+
+    case MONS_SUN_DEMON:
+        description = "A demonic figure shining with the light and fury of the sun. ";
+        break;
+
+    case MONS_SHADOW_IMP:
+        description = "A small and shadowy figure. ";
+        break;
+
+    case MONS_SHADOW_DEMON:
+        description = "A mysterious demonic figure, constantly blurring into multiple shadows of iteself.";
+        break;
+
+    case MONS_LOROCYPROCA:
+        description = "A tall and gaunt figure, draped in long robes which flow as if alive.";
+        break;
+
+    case MONS_GERYON:
+        description = "A huge and slithery arch-demon, guarding the gates of Hell. ";
+        break;
+
+    case MONS_DISPATER:
+        description = "The lord of the Iron City of Dis. ";
+        break;
+
+    case MONS_ASMODEUS:
+        description = "One of the arch-demons who dwell in the depths of Hell. ";
+        break;
+
+    case MONS_ANTAEUS:
+        description = "A great titan who lives in the depths of Cocytus. ";
+        break;
+
+    case MONS_ERESHKIGAL:
+        description = "A fearsome arch-fiend who rules the deathly netherworld of Tartarus. ";
+        break;
+
+    case MONS_VAULT_GUARD:
+        description = "A heavily armed and armoured guardian of the Vaults. ";
+        break;
+
+    case MONS_CURSE_SKULL:
+        description = "A charred skull floating in the air and rotating slowly.  Mystic symbols carved into its blackened surface indicate its resistance to almost any form of attack. ";
+        break;
+
+    case MONS_ORB_GUARDIAN:
+        description = "A huge and glowing purple creature, created by the Orb to defend itself. ";
+        break;
+
+    case MONS_DAEVA:
+        description = "A divine agent of the Shining One. It manifests as a winged figure obscured by an aura of brilliant golden light. ";
+        break;
+
+    case MONS_SPECTRAL_THING:
+        description = "A hideous glowing apparition.";
+        break;
+
+    case MONS_TENTACLED_MONSTROSITY:
+        description = "A writhing mass of tentacles, all covered in putrid mucous.";
+        break;
+
+    case MONS_SPHINX:
+        description = "A large creature with a human head, the body of a lion, and the wings of a huge bird.";
+        break;
+
+    case MONS_ROTTING_HULK:
+        description = "A shambling undead, related to the ghoul.";
+        break;
+
+    case MONS_KILLER_KLOWN:
+         description = "A comical figure full of life and laughter.  It"
+                       " looks very happy to see you.$But is there a slightly malicious cast to"
+                       " its features?  Is that red facepaint or something altogether less"
+                       " pleasant? Join in the fun, and maybe you'll find out!";
+        break;
+
+    case MONS_MOTH_OF_WRATH:
+        description = "A huge moth, as violent as it is hairy.";
+        break;
+
+    case MONS_DEATH_COB:
+        description = "A dreadful undead cob of corn.";
+        break;
+
+    case MONS_BOGGART:
+        description = "A twisted little sprite-goblin. Beware of its magical tricks!";
+        break;
+
+    case MONS_LAVA_FISH:
+        description = "A fish which lives in lava.";
+        break;
+
+    case MONS_BIG_FISH:
+        description = "A fish of unusual size.";
+        break;
+
+    case MONS_GIANT_GOLDFISH:
+        description = "This is what happens when you give your pet goldfish too much food!";
+        break;
+
+    case MONS_ELECTRICAL_EEL:
+        description = "A small and slimy eel, crackling with electrical discharge.";
+        break;
+
+// randomly generated descriptions
+    case MONS_PLAYER_GHOST:
         description = "The ghost of ";
         description += ghost.name;
         description += ", a";
@@ -4873,72 +4968,143 @@ void describe_monsters(int class_described, unsigned char which_mons)
         description += ".";
         break;
 
-    case 401:                   // random '&' in pandemonium
-
+    case MONS_PANDEMONIUM_DEMON:
         description = describe_demon();
         break;
 
-    case MLAVA0:                // lava worm
-
-        description = "A vicious red worm which swims through molten rock.";
+// mimics
+    case MONS_GOLD_MIMIC:
+        description = "An apparently harmless pile of gold coins hides a nasty venomous shapechanging predator.";
         break;
 
-    case MLAVA1:                // lava fish
-
-        description = "A fish which lives in lava.";
+    case MONS_WEAPON_MIMIC:
+        description = "An apparently abandoned weapon, actually a vicious little beast in disguise.";
         break;
 
-    case MLAVA2:                // lava snake
-
-        description = "A burning red snake which rears up from pools of lava and tries to bite you.";
+    case MONS_ARMOUR_MIMIC:
+        description = "An apparently abandoned suit of finely-made armour, actually a vicious little beast in disguise.";
         break;
 
-    case MWATER0:               // big fish
-
-        description = "A fish of unusual size.";
+    case MONS_SCROLL_MIMIC:
+        description = "An ancient parchment covered in arcane runes. Did it just twitch?";
         break;
 
-    case MWATER1:               // giant goldfish
-
-        description = "This is what happens when you give your pet goldfish too much food!";
+    case MONS_POTION_MIMIC:
+        description = "A delicious looking magical drink. Go on, pick it up!";
         break;
 
-    case MWATER2:               // elec eel
-
-        description = "A small and slimy eel, crackling with electrical discharge.";
+// Hugh Cook monsters:
+    case MONS_GUARDIAN_ROBOT:     // deprecated? 16jan2000 {dlb}
+        description = "A moving column of metal.";
         break;
 
-    case MWATER3:               // jellyfish
-
-        description = "A pulsating glob of transparent flesh, waiting just below the surface to sting you with its many tentacles.";
+    case MONS_DORGI:     // deprecated? 16jan2000 {dlb}
+       description = "\"The dorgi...was a huge grumping machine with a "
+                     " pronounced propensity for violence. It was huge, heavy, brown and"
+                     " bulbous. A hulking thing stubbled with inscrutable protruberances. A"
+                     " monstrous thing which moved upon its victims with a sound like heavy"
+                     " breathing.\"$(Hugh Cook, _The Wazir and the Witch_)";
         break;
 
-    case MWATER4:               // water elemental
-
-        description = "A spirit drawn from the elemental plane of water. It exists on this world as part of a body of water.";
+    case MONS_SWORD:     // deprecated? 16jan2000 {dlb}
+        description = "An incandescent globe of light, capable of impressive "
+                      "pyrotechnics.";
         break;
 
-    case MWATER5:               // swamp worm
+    case MONS_QUOKKA:
+        description = "A small marsupial mammal. "; //, altered by nanotechnological manipulators.";
+        break;
 
-        description = "A large worm, adept at swimming through the muck of this foul swamp.";
+// uniques
+    case MONS_MNOLEG:     // was: Nemelex Xobeh - and wrong! {dlb}
+        description += "A weirdly glowing figure, "
+                       "dancing through the twisted air of Pandemonium. ";
+        break;
+
+    case MONS_LOM_LOBON:     // was: Sif Muna - and wrong! {dlb}
+        description += "An ancient and strangely serene demon. "
+                       "It regards you coldly from "
+                       "the huge glowing eye "
+                       "in the centre of its forehead. ";
+        break;
+
+    case MONS_CEREBOV:     // was:Okawaru - and wrong! {dlb}
+        description += "A violent and wrathful demon, "
+                      "Cerebov appears as a giant human "
+                      "covered in shining golden armour "
+                      "and wielding a huge twisted sword. ";
+        break;
+
+    case MONS_GLOORX_VLOQ:     // was: Kikubaaqudgha - and wrong! {dlb}
+        description = "A shadowy figure clothed in profound darkness. ";
+        break;
+
+    case MONS_TERENCE:
+    case MONS_JESSICA:
+    case MONS_SIGMUND:
+    case MONS_EDMUND:
+    case MONS_PSYCHE:
+    case MONS_DONALD:
+    case MONS_MICHAEL:
+    case MONS_JOSEPH:
+    case MONS_ERICA:
+    case MONS_JOSEPHINE:
+    case MONS_HAROLD:
+    case MONS_NORBERT:
+    case MONS_JOZEF:
+    case MONS_AGNES:
+    case MONS_MAUD:
+    case MONS_LOUISE:
+    case MONS_FRANCIS:
+    case MONS_FRANCES:
+    case MONS_RUPERT:
+    case MONS_WAYNE:
+    case MONS_DUANE:
+    case MONS_NORRIS:
+    case MONS_ADOLF:
+    case MONS_MARGERY:
+        description += "A human wandering the dungeons, "
+                       "trying to keep you away from "
+                       "whatever is concealed in the depths. ";
+        break;
+
+    case MONS_IJYB:
+        description = "A twisted goblin. ";
+        break;
+
+    case MONS_BLORK_THE_ORC:
+        description = "A particularly fat and ugly orc. ";
+        break;
+
+    case MONS_EROLCHA:
+        description = "A beefy ogre. ";
+        break;
+
+    case MONS_URUG:
+        description = "An orc. ";
+        break;
+
+    case MONS_SNORG:
+        description = "A hairy troll. ";
+        break;
+
+    case MONS_XTAHUA:
+        description = "An ancient and mighty dragon. ";
+        break;
+
+    case MONS_BORIS:
+        description += "An ancient lich. "
+                       "The air around his shrouded form "
+                       "crackles with evil energy. ";
         break;
 
     default:
         DEBUGSTR("Missing monster description");
-        description = "A monster whose description is yet to be written.";
+        description = "A monster whose description has yet to be written. ";
         break;
 
         // onocentaur - donkey
 
-        /*case MLAVA0: //
-           description = "";
-           break;
-         */
-        /*
-           case 110: //
-           description = "";
-           break;
-         */
     }
 
     /*
@@ -4950,6 +5116,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
        description += " experience point.";
        else strcat(description += " experience points.";
      */
+
     print_description(description);
 
     if (getch() == 0)
@@ -4978,9 +5145,7 @@ void describe_god(int which_god)
 
 #ifdef DOS_TERM
     char buffer[3400];
-
     gettext(25, 1, 80, 25, buffer);
-
     window(25, 1, 80, 25);
 #endif
 
@@ -4993,113 +5158,128 @@ void describe_god(int which_god)
     case GOD_NO_GOD:
         description += "You are not religious.";
         break;
+
     case GOD_ZIN:
-      description += "Zin is an ancient and revered God, dedicated to the "
-        "establishment of order and the destruction of the forces of "
-        "chaos and night. Valued worshippers can gain a variety of powers "
-        "useful in the fight against evil, but must abstain from the use "
-        "of necromancy and other forms of unholy magic. Zin appreciates "
-        "long-standing faith as well as sacrifices of valued objects "
-        "and the slaying of demons and the undead.";
+      description += "Zin is an ancient and revered God, dedicated to "
+                     "the establishment of order and the destruction of "
+                     "the forces of chaos and night. "
+                     "Valued worshippers can gain a variety of powers "
+                     "useful in the fight against evil, but must abstain "
+                     "from the use of necromancy and other forms of "
+                     "unholy magic. Zin appreciates long-standing faith "
+                     "as well as sacrifices of valued objects "
+                     "and the slaying of demons and the undead. ";
         break;
+
     case GOD_SHINING_ONE:
-      description += "The Shining One is a powerful crusading diety, allied"
-        " with Zin in the fight against evil. Followers may be granted with"
-        " the ability to summarily dispense the wrath of heaven, but must "
-        "never use any form of evil magic and should fight honourably. The "
-        "Shining One appreciates long-standing persistence in the endless "
-        "crusade, as well as the dedicated destruction of unholy creatures.";
+      description += "The Shining One is a powerful crusading diety, allied "
+                     "with Zin in the fight against evil. Followers may be granted with "
+                     "the ability to summarily dispense the wrath of heaven, but must "
+                     "never use any form of evil magic and should fight honourably. The "
+                     "Shining One appreciates long-standing persistence in the endless "
+                     "crusade, as well as the dedicated destruction of unholy creatures. ";
       break;
+
     case GOD_KIKUBAAQUDGHA:
       description += "Kikubaaqudgha is a terrible Demon-God, served by those "
-        "who seek knowledge of the powers of death. Followers gain special "
-        "powers over the undead, and especially favoured servants can call "
-        "on mighty demons to slay their foes. $Kikubaaqudgha requires the "
-        "deaths of living creatures as often as possible, but is not "
-        "interested in the offering of corpses except at an appropriate "
-        "altar.";
+                     "who seek knowledge of the powers of death. Followers gain special "
+                     "powers over the undead, and especially favoured servants can call "
+                     "on mighty demons to slay their foes. $Kikubaaqudgha requires the "
+                     "deaths of living creatures as often as possible, but is not "
+                     "interested in the offering of corpses except at an appropriate "
+                     "altar. ";
       if (you.piety >= 50 && you.religion == GOD_KIKUBAAQUDGHA)
-        description += "$Kikubaaqudgha is protecting you from the "
-          "side-effects of death magic.";
+          description += "$Kikubaaqudgha is protecting you from the "
+                         "side-effects of death magic. ";
       break;
+
     case GOD_YREDELEMNUL:
       description += "Yredelemnul is worshipped by those who seek powers over "
-        "death and the undead without having to learn to use necromancy. "
-        "Followers can raise legions of servile undead and gain a number of "
-        "other useful (if unpleasant) powers. Yredelemnul appreciates killing,"
-        " but prefers corpses to be put to use rather than sacrificed.";
+                     "death and the undead without having to learn to use necromancy. "
+                     "Followers can raise legions of servile undead and gain a number of "
+                     "other useful (if unpleasant) powers. Yredelemnul appreciates killing, "
+                     "but prefers corpses to be put to use rather than sacrificed. ";
       break;
+
     case GOD_XOM:
-      description += "Xom is a wild and unpredictable God of chaos, who seeks"
-        " not worshippers but playthings to toy with. Many choose to follow "
-        "Xom in the hope of receiving fabulous rewards and mighty powers, "
-        "but Xom is nothing if not capricious.";
+      description += "Xom is a wild and unpredictable God of chaos, who seeks "
+                     "not worshippers but playthings to toy with. Many choose to follow "
+                     "Xom in the hope of receiving fabulous rewards and mighty powers, "
+                     "but Xom is nothing if not capricious. ";
       break;
+
     case GOD_VEHUMET:
       description += "Vehumet is a God of the destructive powers of magic. "
-        "Followers gain various useful powers to enhance their command of "
-        "the hermetic arts, and the most favoured stand to gain access to "
-        "some of the fearsome spells in Vehumet's library. One's devotion to "
-        "Vehumet can be proved by the causing of as much carnage and "
-        "destruction as possible.";
+                     "Followers gain various useful powers to enhance their command of "
+                     "the hermetic arts, and the most favoured stand to gain access to "
+                     "some of the fearsome spells in Vehumet's library. One's devotion to "
+                     "Vehumet can be proved by the causing of as much carnage and "
+                     "destruction as possible. ";
       if (you.religion == GOD_VEHUMET)
         {
           if (you.piety >= 30)
             description += "$You can gain power from the those you kill "
-              "in Vehumet's name, or those slain by your servants.";
+                           "in Vehumet's name, or those slain by your servants. ";
 
           if (you.piety >= 50)
             description += "$Your conjurations and summonings cast in "
-              "Vehumet's name rarely fail.";
+                           "Vehumet's name rarely fail. ";
 
           if (you.piety >= 75)
             description += "$During prayer you are protected from "
-              "summoned creatures.";
+                           "summoned creatures. ";
         }
       break;
+
     case GOD_OKAWARU:
       description += "Okawaru is a dangerous and powerful God of battle. "
-        "Followers can gain a number of powers useful in combat as well as "
-        "various rewards, but must constantly prove themselves through "
-        "battle and the sacrifice of corpses and valuable items.";
+                     "Followers can gain a number of powers useful in combat as well as "
+                     "various rewards, but must constantly prove themselves through "
+                     "battle and the sacrifice of corpses and valuable items. ";
       break;
+
     case GOD_MAKHLEB:
       description += "Makhleb the Destroyer is a fearsome God of chaos and "
-        "violent death. Followers, who must constantly appease Makhleb with "
-        "blood, stand to gain various powers of death and destruction. The "
-        "Destroyer appreciates sacrifices of corpses and valuable items.";
+                     "violent death. Followers, who must constantly appease Makhleb with "
+                     "blood, stand to gain various powers of death and destruction. The "
+                     "Destroyer appreciates sacrifices of corpses and valuable items. ";
       if (you.piety >= 30 && you.religion == GOD_MAKHLEB)
         description += "$You can gain power from the deaths of those killed "
-          "in Makhleb's name.";
+                       "in Makhleb's name. ";
       break;
+
     case GOD_SIF_MUNA:
       description += "Sif Muna is a contemplative but powerful deity, served "
-        "by those who seek magical knowledge. Sif Muna appreciates sacrifices "
-        "of valuable items, and the casting of spells as often as possible.";
-        if (you.piety >= 100 && you.religion == GOD_SIF_MUNA)
-          description += "$Sif Muna is protecting you from some of the "
-            "side-effects of magic.";
+                     "by those who seek magical knowledge. Sif Muna appreciates sacrifices "
+                     "of valuable items, and the casting of spells as often as possible. ";
+      if (you.piety >= 100 && you.religion == GOD_SIF_MUNA)
+        description += "$Sif Muna is protecting you from some of the "
+                       "side-effects of magic. ";
         break;
+
     case GOD_TROG:
-      description += "Trog is an ancient God of anger and violence. Followers"
-        " are expected to kill in Trog's name and sacrifice the dead, and in "
-        "return gain power in battle and occasional rewards. Trog hates "
-        "wizards, and followers are forbidden the use of spell magic.";
+      description += "Trog is an ancient God of anger and violence. Followers "
+                     "are expected to kill in Trog's name and sacrifice the dead, and in "
+                     "return gain power in battle and occasional rewards. Trog hates "
+                     "wizards, and followers are forbidden the use of spell magic. ";
       break;
+
     case GOD_NEMELEX_XOBEH:
       description += "Nemelex is a strange and unpredictable trickster God, "
-        "whose powers can be invoked through the magical packs of cards "
-        "which Nemelex paints in the ichor of demons. Followers receive "
-        "occasional gifts, and should use these gifts as much as possible. "
-        "Offerings of any type of item are also appreciated.";
+                     "whose powers can be invoked through the magical packs of cards "
+                     "which Nemelex paints in the ichor of demons. Followers receive "
+                     "occasional gifts, and should use these gifts as much as possible. "
+                     "Offerings of any type of item are also appreciated. ";
       break;
+
     case GOD_ELYVILON:
       description += "Elyvilon the Healer is worshipped by the healers (among "
-        "others), who gain their healing powers by long worship and devotion. "
-        "Although Elyvilon prefers a creed of pacifism, those who crusade "
-        "against evil are not excluded. Elyvilon appreciates the offering "
-        "of weapons.";
+                     "others), who gain their healing powers by long worship and devotion. "
+                     "Although Elyvilon prefers a creed of pacifism, those who crusade "
+                     "against evil are not excluded. Elyvilon appreciates the offering "
+                     "of weapons. ";
       break;
+
     default:
       DEBUGSTR("Unknown god");
     }

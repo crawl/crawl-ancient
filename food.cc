@@ -21,7 +21,7 @@
 //#include <stdlib.h> only needed for itoa
 
 #include "externs.h"
-#include "enum.h"
+
 #include "spells2.h"
 #include "mutation.h"
 #include "player.h"
@@ -48,62 +48,63 @@
    char butchery(void);
    int eating(int func_pass[10], unsigned char item_class, int food_eat_3);
    void ghoul_eat_flesh(char rotting);
+   bool is_carnivore (void);
 
 
    void food_change()
    {
-      you.hunger_state = 0;
+      you.hunger_state = HS_RAVENOUS;
 
       if (you.hunger <= 1000)
       {
-         if (you.hunger_state != 1)
+         if (you.hunger_state != HS_STARVING)
             you.redraw_hunger = 1;
 
-         you.hunger_state = 1;   // starving
+         you.hunger_state = HS_STARVING;
          return;
       }
 
       if (you.hunger <= 2600)
       {
-         if (you.hunger_state != 2)
+         if (you.hunger_state != HS_HUNGRY)
             you.redraw_hunger = 1;
 
-         you.hunger_state = 2;   // hungry
+         you.hunger_state = HS_HUNGRY;
          return;
       }
 
       if (you.hunger < 7000)
       {
-         if (you.hunger_state != 3)
+         if (you.hunger_state != HS_SATIATED)
             you.redraw_hunger = 1;
 
-         you.hunger_state = 3;   // -
+         you.hunger_state = HS_SATIATED;
          return;
       }
 
       if (you.species == SP_GHOUL)
       {
-         if (you.hunger_state != 3)
+         if (you.hunger_state != HS_SATIATED)
             you.redraw_hunger = 1;
 
          you.hunger = 10999;
-         you.hunger_state = 3;
+         you.hunger_state = HS_SATIATED;
          return;
       }
 
       if (you.hunger < 11000)
       {
-         if (you.hunger_state != 4)
+         if (you.hunger_state != HS_FULL)
             you.redraw_hunger = 1;
 
-         you.hunger_state = 4;   // Full
+         you.hunger_state = HS_FULL;
          return;
       }
 
-      if (you.hunger_state != 5)
+      if (you.hunger_state != HS_ENGORGED)
          you.redraw_hunger = 1;
 
-      you.hunger_state = 5;       // Engorged
+      you.hunger_state = HS_ENGORGED;
    }
 
 
@@ -156,7 +157,7 @@
       int items_here = 0;
       int item_got = 0;
 
-      if (you.levitation != 0 && wearing_amulet(AMU_CONTROLLED_FLIGHT) == 0)
+      if ( you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT) )
       {
         //      strcpy(info, "You can't reach the floor from up here.");
         //      mpr(info);
@@ -164,13 +165,13 @@
       }
 
 
-      int last_item = 501;
+      int last_item = ING;
 
       int objl = igrd[you.x_pos][you.y_pos];
       int hrg = 0;
       int counter = 0;
 
-      while (objl != 501)
+      while (objl != ING)
       {
          counter++;
 
@@ -191,7 +192,7 @@
       if (items_here == 1)
       {
          if (mitm.base_type[igrd[you.x_pos][you.y_pos]] != OBJ_FOOD)
-            goto out_of_eating; // && mitm.base_type [igrd [you.x_pos] [you.y_pos]] != 14) return 0;
+            goto out_of_eating; // && mitm.base_type [igrd [you.x_pos] [you.y_pos]] != OBJ_CORPSES) return 0;
 
          strcpy(info, "Eat ");
          if (mitm.quantity[igrd[you.x_pos][you.y_pos]] > 1)
@@ -212,10 +213,10 @@
 
          int item_got = igrd[you.x_pos][you.y_pos];
 
-         last_item = 501;
+         last_item = ING;
          you.redraw_hunger = 1;
 
-         if (you.species == SP_GHOUL || you.species == SP_KOBOLD || you.mutation[MUT_CARNIVOROUS] == 3)  // kobold, ghoul, mutant
+         if ( is_carnivore() )          // new function call 13jan2000 {dlb}
          {
             if ((mitm.sub_type[item_got] >= FOOD_BREAD_RATION && mitm.sub_type[item_got] <= FOOD_CHOKO) || (mitm.sub_type[item_got
                                  ]
@@ -237,7 +238,7 @@
                mpr("You can't eat raw meat!");
                return 0;
             }
-            if (you.hunger_state > 2 && wearing_amulet(AMU_THE_GOURMAND) == 0
+            if ( you.hunger_state > HS_HUNGRY && !wearing_amulet(AMU_THE_GOURMAND)
                && you.species != SP_KOBOLD
                && you.species != SP_OGRE
                && you.species != SP_TROLL
@@ -298,7 +299,7 @@
       }
     // end of if items_here
 
-      last_item = 501;
+      last_item = ING;
 
       if (items_here > 1)
       {
@@ -309,7 +310,7 @@
 
          {
             if (mitm.base_type[o] != OBJ_FOOD)
-               goto out_of_eating;     // && mitm.base_type [o] != 14) goto out_of_eating;
+               goto out_of_eating;     // && mitm.base_type [o] != OBJ_CORPSES) goto out_of_eating;
 
             strcpy(info, "Eat ");
             if (mitm.quantity[o] > 1)
@@ -334,7 +335,7 @@
 
                item_got = o;
 
-               if (you.species == SP_GHOUL || you.species == SP_KOBOLD || you.mutation[MUT_CARNIVOROUS] == 3)  // kobold etc
+               if ( is_carnivore() )          // new function call 13jan2000 {dlb}
 
                {
                   if ((mitm.sub_type[item_got] >= FOOD_BREAD_RATION && mitm.sub_type[item_got] <= FOOD_CHOKO) || (mitm.sub_type
@@ -358,12 +359,12 @@
                      mpr("You can't eat raw meat!");
                      return 0;
                   }
-                  if (you.hunger_state > 2 && wearing_amulet(AMU_THE_GOURMAND) == 0 &&
-                     you.species != SP_KOBOLD &&
-                     you.species != SP_OGRE &&
-                     you.species != SP_TROLL &&
-                     you.species != SP_GHOUL &&
-                     you.mutation[MUT_CARNIVOROUS] == 0)
+                  if (you.hunger_state > HS_HUNGRY && !wearing_amulet(AMU_THE_GOURMAND)
+                        && you.species != SP_KOBOLD
+                        && you.species != SP_OGRE
+                        && you.species != SP_TROLL
+                        && you.species != SP_GHOUL
+                        && you.mutation[MUT_CARNIVOROUS] == 0)
                   {
                      strcpy(info, "You aren't quite hungry enough to eat that!");
                      mpr(info);
@@ -431,7 +432,7 @@
 
             hrg = mitm.link[o];
             o = hrg;
-            if (o == 501)
+            if (o == ING)
                return 0;
 
             if (items_here == 0)
@@ -455,14 +456,14 @@
       int item_got;
       unsigned char keyin;
 
-      if (igrd[you.x_pos][you.y_pos] == 501)
+      if (igrd[you.x_pos][you.y_pos] == ING)
       {
          strcpy(info, "There isn't anything here!");
          mpr(info);
          return 0;
       }
 
-      if (you.levitation != 0 && wearing_amulet(AMU_CONTROLLED_FLIGHT) == 0)
+      if ( you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT) )
       {
          strcpy(info, "You can't reach the floor from up here.");
          mpr(info);
@@ -490,13 +491,13 @@
       }
 
 
-      int last_item = 501;
+      int last_item = ING;
 
       int objl = igrd[you.x_pos][you.y_pos];
       int hrg = 0;
       int counter = 0;
 
-      while (objl != 501)
+      while (objl != ING)
       {
          counter++;
 
@@ -537,7 +538,7 @@
 
          int item_got = igrd[you.x_pos][you.y_pos];
 
-         last_item = 501;
+         last_item = ING;
          you.redraw_hunger = 1;
 
          you.delay_t = 4;
@@ -571,7 +572,7 @@
       }
     // end of if items_here
 
-      last_item = 501;
+      last_item = ING;
 
       if (items_here > 1)
       {
@@ -649,7 +650,7 @@
             hrg = mitm.link[o];
             o = hrg;
 
-            if (o == 501)
+            if (o == ING)
                goto failed;
 
             if (items_here == 0)
@@ -668,7 +669,7 @@
 
    void eat_meat(int fod_eat_2)
    {
-      if (wearing_amulet(AMU_THE_GOURMAND) == 1 && (fod_eat_2 == 2 || fod_eat_2 == 3))
+      if ( wearing_amulet(AMU_THE_GOURMAND) && (fod_eat_2 == 2 || fod_eat_2 == 3) )
          fod_eat_2 = 1;
 
       switch (fod_eat_2)
@@ -693,7 +694,7 @@
             break;
 
          case 2:
-            if (random2(3) != 0)
+            if ( !one_chance_in(3) )
                goto appetising;
          case 50:
             if (you.species == SP_GHOUL)
@@ -701,13 +702,11 @@
                ghoul_eat_flesh(fod_eat_2 == 50);
                break;
             }
-            if ((you.species == SP_KOBOLD || you.species == SP_TROLL) && random2(15) != 0)
-               goto appetising;    // kobold, troll
-
-            if ((you.species == SP_HILL_ORC || you.species == SP_OGRE) && random2(5) != 0)
-               goto appetising;    // orc, ogre
-
-            if (you.is_undead != 0)
+            if ((you.species == SP_KOBOLD || you.species == SP_TROLL) && !one_chance_in(15) )
+               goto appetising;
+            if ((you.species == SP_HILL_ORC || you.species == SP_OGRE) && !one_chance_in(5) )
+               goto appetising;
+            if (you.is_undead)
                goto appetising;
             strcpy(info, "There is something wrong with this meat.");
             mpr(info);
@@ -728,7 +727,7 @@
             break;
 
          case 4:
-            if (you.is_undead != 0)
+            if (you.is_undead)
                goto appetising;
 
             strcpy(info, "You feel your flesh start to rot away!");
@@ -758,9 +757,9 @@
       if (rotting == 0)
       {
          mpr("This raw flesh tastes good.");
-         if (random2(5) != 0)
+         if ( !one_chance_in(5) )
             healed = 1;
-         if (random2(3) != 0 && you.base_hp < 5000)
+         if ( you.base_hp < 5000 && !one_chance_in(3) )
          {
             you.base_hp++;
             mpr("You feel more resilient.");
@@ -770,7 +769,7 @@
       {
          mpr("This rotting flesh tastes delicious!");
          healed = 1;
-         if (random2(4) != 0 && you.base_hp < 5000)
+         if ( you.base_hp < 5000 && !one_chance_in(4) )
          {
             you.base_hp++;
             mpr("You feel more resilient.");
@@ -778,7 +777,7 @@
          }
       }
 
-      if (you.strength < you.max_strength && random2(5) == 0)
+      if (you.strength < you.max_strength && one_chance_in(5) )
       {
          mpr("You feel your strength returning.");
          you.strength++;
@@ -909,7 +908,7 @@
             case FOOD_PIZZA:
                strcpy(info, "Mmm... ");
 
-               if (sys_env.crawl_pizza && !random2(3))
+               if ( sys_env.crawl_pizza && !one_chance_in(3) )
                {
                   mpr(sys_env.crawl_pizza);
                }
@@ -970,7 +969,7 @@
                else
                {
                   mpr("That orange was delicious!");
-                  if (random2(8) == 0)
+                  if ( one_chance_in(8) )
                      strcat(info, " Even the peel tasted good!");
                }
                func_pass[0] += 1000;
@@ -986,7 +985,7 @@
                else
                {
                   mpr("That banana was delicious!");
-                  if (random2(8) == 0)
+                  if ( one_chance_in(8) )
                      strcat(info, " Even the peel tasted good!");
                }
                func_pass[0] += 1000;
@@ -1075,7 +1074,7 @@
                else
                {
                   mpr("That beef jerky was delicious!");
-                  if (random2(4) == 0)
+                  if ( one_chance_in(4) )
                      mpr("That beef jerky was jerk-a-riffic!");
                }
                func_pass[0] += 1500;
@@ -1140,3 +1139,24 @@
 
       return 0;
    }                               // end of int eaten(...)
+
+
+// added to provide simple evaluation of dietary preference 13jan2000 {dlb}
+    bool is_carnivore (void)
+    {
+        bool meat_eater = false;
+
+        if ( you.species == SP_GHOUL
+                || you.species == SP_KOBOLD
+                    || you.mutation[MUT_CARNIVOROUS] == 3 )
+          {
+              meat_eater = true;
+          }
+        else
+          {
+              meat_eater = false;
+          }
+
+        return meat_eater;
+
+    }

@@ -1,0 +1,170 @@
+                              Bugs Outstanding
+
+
+Compiling
+
+     * makefile.sgi for IRIX does not work (no clue why)
+     * DJGPP may puke up a lung on some of the very long functions if
+       compiled using certain options (sometimes simply running make
+       again will work; sometimes changing the options will force
+       compile)
+
+
+Critical Errors
+
+     * skeletal warrior cast a spell and seg-faulted the game in the
+       Abyss
+     * sometimes leaving the Abyss through an exit sends game into an
+       infinite loop (hard to replicate, though)
+     * Makleb's Minor Destruction -- first prompt '8' crashes game under
+       DOS?
+     * entering Ecumenical Temple may cause game crash (?)
+     * using stairs/portals sometimes misplaces the player, either into
+       solid rock or onto bogus levels (level 28 of the dungeon, level -1
+       of a sub-dungeon).
+
+
+Platform Specific
+
+     * Linux: various odd effects when playing in term (may be terminfo's
+       fault)
+
+
+Display
+
+     * "killed by program bug" when actually "killed by exploding spore"
+     * missing space when printing gold amounts?
+     * hunger status isn't redrawn with level change (definitely happens
+       when engorged and I think also when full)
+          + should be fixed now [bwross]
+          + still not fixed [JDJ]
+     * screen doesn't always update when wielded object changes
+          + hopefully fixed most instances [bwross]
+     * when ascending stairs, three unlit squares in each quadrant will
+       light only after waiting a turn
+     * LOS code seems flaky: fairly often bits of the dungeon become
+       visible even though they're in an unconnected part of the map
+     * beams aren't always visible
+          + should be fixed -- at least for curses [bwross]
+     * check for screen length problems and fix them -- e.g., map
+       centering is still off base line 12 (should this be shifted for
+       longer windows?)
+
+
+Items
+
+     * "-5 stone" heavily enchanted to do *more* damage, costs 100
+     * "cloaks of poison resistance" don't work -- looks like I added
+       this new cloak type without also adding a check in
+       player.cc:player_res_poison() (should be easy to fix)
+     * "+6" was a missile weapon generated in a jewelry shop
+     * found "an amulet of Cekugob" (an unrandart) and it should be
+       identified as "the amulet of Cekugob" -- a 'V' check indicated
+       none of its powers, but at least some of them were being applied
+       to my character
+     * is food caching fix correct? (food seems to disappear quickly,
+       rather than rot away)
+          + it doesn't seem quite right: food will sometimes rot, but
+            more often it seems to disappear too quickly [JDJ]
+     * an item is cursed if its "iplus" value is "big enough" -- however,
+       "big enough" is >80 in some places, >130 in others, and perhaps
+       >120 in others (I'm not sure about the 120; I recall seeing it but
+       can't find it now)
+
+       Right now I have an artifact ring that I can't uncurse since the
+       value used when uncursing is 130 and the value used when sticking
+       is 80 -- the uncursing code checks against 80 on one hand and
+       against 130 on the other
+
+
+Monsters
+
+     * artefact weapons of Holy Wrath wielded by undead
+     * monsters shout upon seeing me when I couldn't see them
+     * friendly creatures turn hostile (may occur when player loses
+       invisibility with creature in view)
+     * giant spores should affect food on the ground (as well as in
+       inventory)
+
+
+Characters
+
+     * currently possible to gain zero hp when gaining a level --
+       safeguards should exist to prevent negative values, if not
+       guaranteeing at least 1 hp per level
+     * Armour skill advances too slowly?
+          + People here were never using heavy armour -- banded, splint,
+            scale, plate are still completly ignored. I did a few changes
+            to make it more on par with doging -- i.e., I made it recover
+            evasion every two instead of every three levels, to help
+            counter with the silly and difficut to calculate double
+            penalty subtraction deal that destroys evasion when you wear
+            armour (add to that the to-hit penalty and the limited value
+            of armour points and it's no wonder no one bothers). Since
+            it's not as easy to advance, I gave it a slight nudge by
+            increasing the exercise in combat to 1 + random2(2).
+          + Maybe another solution would be to bump up the base AC values
+            of each armour type. I only used the T$R standard values as a
+            kind of default; I see no reason why plate mail should give 7
+            points instead of 12 or 15. (especially as the base AC of
+            body armour is usually inconsequential compared to the
+            protection offered by a set of magical gloves, boots, a
+            cloak, etc.)
+
+
+Inventory
+
+     * full inventory doesn't account for possible item stacking or for
+       picking up gold
+     * inventory count bug: inventory counter occasionally gets out of
+       sync (should either be moved or fixed)
+
+
+Combat Related
+
+     * EV seems to get screwed up after transforms -- it seems to get at
+       the transform value when the player has no armour (calculated
+       correctly once armour is on)
+
+
+Magic
+
+     * Conjure Flame should do damage at a constant rate, not when
+       creatures in it move
+
+
+Teleportation
+
+     * if you have teleport control you'll see a prompt that says:
+       "You may choose your destination (press '.' or delete to select)."
+       I somehow got into the habit of immediately blowing by this prompt
+       without ever reading it so I was always flailing around whenever I
+       tried to teleport. I've changed show_map() so that it accepts '\r'
+       as well as '.' (which should be much more intuitive) but I don't
+       see a check for the delete key in show_map() so I think the prompt
+       is wrong
+     * teleport control is really wacky -- I'd expect to be able to use
+       the return key to select the square but it seems to key off one of
+       the keypad keys
+     * teleport/blink + control is too powerful, especially for vaults
+
+
+Targeting
+
+     * targeting is off at times (possible rounding errors)
+     * sometimes when targeting a spell like fireball, I can target an
+       unseen square and other times I can't
+     * fired beams sometimes take the wrong route and can't hit targets
+       in LOS
+
+
+Codebase
+
+     * in monsters enum, values 250 - 310 should be reserved for Uniques,
+       but 260 - 280 are occupied by other monsters -- should move them
+       if it won't mess anything else up (if moved, remember to alter
+       ouch.cc check for placing 'a' is put in front of the unique's name
+       in the scores)
+     * from the code, it appears that dropping items takes zero time
+     * fixed keypad
+          + still broken

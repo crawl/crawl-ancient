@@ -26,10 +26,6 @@
 #include <conio.h>
 #endif
 
-#include "externs.h"
-#include "enum.h"
-#include "monstuff.h"
-
 #ifdef DOS
   #include <file.h>
 #endif
@@ -57,6 +53,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "externs.h"
+
+#include "monstuff.h"
 #include "debug.h"
 #include "dungeon.h"
 #include "itemname.h"
@@ -172,7 +171,7 @@ static void reset_ch()
     you.redraw_experience = 1;
     you.redraw_gold = 1;
     you.redraw_hunger = 1;
-    you.hunger_state = 3;
+    you.hunger_state = HS_SATIATED;
 }
 
 
@@ -320,7 +319,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
 #endif
 
     strcat(cha_fil, ".");
-    if (you.level_type != 0)
+    if (you.level_type != LEVEL_DUNGEON)
         strcat(cha_fil, "lab"); /* temporary level */
     else
     {
@@ -346,7 +345,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
     {
         for (int clouty = 0; clouty < CLOUDS; ++clouty)
         {
-            env.cloud_type[clouty] = 0;
+            env.cloud_type[clouty] = CLOUD_NONE;
             env.cgrid[env.cloud_x[clouty]][env.cloud_y[clouty]] = CNG;
             env.cloud_decay[clouty] = 0;
             --env.cloud_no;
@@ -391,7 +390,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
                      || (menv[fmenv].type == -1))
                     continue;
 
-                if (menv[fmenv].type >= MLAVA0)
+                if (menv[fmenv].type >= MONS_LAVA_WORM)
                     continue;
 
                 if (menv[fmenv].speed_increment < 50)
@@ -411,11 +410,11 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
                 foll_targ_1_y[following] = menv[fmenv].target_y;
 
                 for (minvc = 0; minvc < 8; ++minvc)
-                    foll_inv[following][minvc] = 501;
+                    foll_inv[following][minvc] = ING;
 
                 for (minvc = 0; minvc < 8; ++minvc)
                 {
-                    if (menv[fmenv].inv[minvc] == 501)
+                    if (menv[fmenv].inv[minvc] == ING)
                     {
                         fit_iquant[following][minvc] = 0;
                         continue;
@@ -482,10 +481,10 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
 
         builder(you.your_level, you.level_type);
 
-        if (you.level_type == 3)
+        if (you.level_type == LEVEL_PANDEMONIUM)
             generate_random_demon();
 
-        if (random2(3) == 0 && you.your_level > 1)
+        if ( you.your_level > 1 && one_chance_in(3) )
         {
             strcpy(corr_level, "");
             if (you.your_level < 10)
@@ -499,7 +498,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
 #else
             strcpy(cha_fil, "bones.");
 #endif
-            if (you.level_type != 0)
+            if (you.level_type != LEVEL_DUNGEON)
                 strcat(cha_fil, "lab");         /* temporary level */
             else
                 strcat(cha_fil, corr_level);
@@ -725,7 +724,7 @@ found_stair:
                             {
                                 if (fit_iquant[fmenv][minvc] == 0)
                                 {
-                                    menv[following].inv[minvc] = 501;
+                                    menv[following].inv[minvc] = ING;
                                     continue;
                                 }
                                 itmf = 0;
@@ -740,7 +739,7 @@ found_stair:
                                 mitm.quantity[itmf] = fit_iquant[fmenv][minvc];
                                 mitm.colour[itmf] = fit_icol[fmenv][minvc];
                                 mitm.id[itmf] = fit_iid[fmenv][minvc];
-                                mitm.link[itmf] = 501;
+                                mitm.link[itmf] = ING;
                             }
                             menv[following].behavior = foll_beh[fmenv];
                             menv[following].number = foll_sec[fmenv];
@@ -767,12 +766,12 @@ out_of_foll:
                 continue;
             for (j = 0; j < 8; j++)
             {
-                if (menv[i].inv[j] == 501)
+                if (menv[i].inv[j] == ING)
                     continue;
-                if (mitm.link[menv[i].inv[j]] != 501)
+                if (mitm.link[menv[i].inv[j]] != ING)
                 {
                     /* items carried by monsters shouldn't be linked */
-                    mitm.link[menv[i].inv[j]] = 501;
+                    mitm.link[menv[i].inv[j]] = ING;
                 }
             }
         }
@@ -787,7 +786,7 @@ out_of_foll:
                             && (grd[count_x][count_y] <= DNGN_ROCK_STAIRS_UP))
                     {
                         grd[count_x][count_y] = DNGN_FLOOR;
-                        if (random2(50) == 0)
+                        if ( one_chance_in(50) )
                             grd[count_x][count_y] = DNGN_EXIT_PANDEMONIUM;
                     }
 
@@ -817,12 +816,12 @@ out_of_foll:
     moving_level = 0;
 
     for (count_x = 0; count_x < ITEMS; count_x++)
-        mitm.link[count_x] = 501;
+        mitm.link[count_x] = ING;
 
     for (i = 0; i < GXM; i++)
     {
         for (j = 0; j < GYM; j++)
-            igrd[i][j] = 501;
+            igrd[i][j] = ING;
     }
 
     const int oldlen = 20 + 20 + 4 * 80 * 70 + 3 * NTRAPS + 25 * ITEMS + 1 + 9 * CLOUDS + 5 * 8 + 5 * 20 + (18 + 5 + 5 + 5 + 5 + 8 * 5) * MNST;
@@ -909,9 +908,9 @@ out_of_foll:
     {
         for (count_y = 0; count_y < GYM; count_y++)
         {
-            if ((igrd[count_x][count_y] < 0) || (igrd[count_x][count_y] > 501))
+            if ((igrd[count_x][count_y] < 0) || (igrd[count_x][count_y] > ING))
             {
-                igrd[count_x][count_y] = 501;
+                igrd[count_x][count_y] = ING;
             }
         }
     }
@@ -933,7 +932,7 @@ out_of_foll:
         if (mitm.base_type[i] == 100)
         {
             mitm.quantity[i] = 0;
-            mitm.link[i] = 501;
+            mitm.link[i] = ING;
         }
     }
 
@@ -1055,24 +1054,24 @@ out_of_foll:
     {
         for (j = 0; j < GYM; j++)
         {
-            if (igrd[i][j] < 0 | igrd[i][j] > 501)
-                igrd[i][j] = 501;
+            if (igrd[i][j] < 0 | igrd[i][j] > ING)
+                igrd[i][j] = ING;
         }
     }
     for (i = 0; i < MNST; i++)
     {
         for (j = 0; j < 8; j++)
         {
-            if ((menv[i].inv[j] < 0) || (menv[i].inv[j] > 501))
-                menv[i].inv[j] = 501;
-            if (menv[i].inv[j] != 501)
-                mitm.link[menv[i].inv[j]] = 501;
+            if ((menv[i].inv[j] < 0) || (menv[i].inv[j] > ING))
+                menv[i].inv[j] = ING;
+            if (menv[i].inv[j] != ING)
+                mitm.link[menv[i].inv[j]] = ING;
         }
     }
     for (i = 0; i < ITEMS; i++)
     {
-        if (mitm.link[i] > 501)
-            mitm.link[i] = 501;
+        if (mitm.link[i] > ING)
+            mitm.link[i] = ING;
     }
     for (i = 0; i < MNST; i++)
     {
@@ -1080,11 +1079,11 @@ out_of_foll:
             continue;
         for (j = 0; j < 8; j++)
         {
-            if (menv[i].inv[j] == 501)
+            if (menv[i].inv[j] == ING)
                 continue;
-            if (mitm.link[menv[i].inv[j]] != 501)
+            if (mitm.link[menv[i].inv[j]] != ING)
             {
-                mitm.link[menv[i].inv[j]] = 501;
+                mitm.link[menv[i].inv[j]] = ING;
             }
         }
     }
@@ -1110,21 +1109,21 @@ out_of_foll:
 
 
 
-    if (you.your_level == 35 && stair_taken >= 86)
+    if (you.your_level == 35 && stair_taken >= DNGN_STONE_STAIRS_UP_I)
     {
         do
         {
             you.x_pos = 10 + random2(GXM - 10);
             you.y_pos = 10 + random2(GYM - 10);
         }
-        while ((grd[you.x_pos][you.y_pos] != 67) || (mgrd[you.x_pos][you.y_pos] != MNG));
+        while ((grd[you.x_pos][you.y_pos] != DNGN_FLOOR) || (mgrd[you.x_pos][you.y_pos] != MNG));
         count_x = you.x_pos;
         count_y = you.y_pos;
         goto found_stair;
     }
     else
     {
-        if (stair_taken == 67)
+        if (stair_taken == DNGN_FLOOR)
             for (count_x = 0; count_x < GXM; count_x++)
             {
                 for (count_y = 0; count_y < GYM; count_y++)
@@ -1133,11 +1132,11 @@ out_of_foll:
                         goto found_stair;
                 }
             }
-        if (stair_taken >= 130 && stair_taken < 150)
+        if (stair_taken >= DNGN_RETURN_DUNGEON_I && stair_taken < 150)
             stair_taken -= 20;
-        else if (stair_taken >= 110 && stair_taken < 130)
+        else if (stair_taken >= DNGN_ENTER_ORCISH_MINES && stair_taken <= DNGN_ENTER_SWAMP)
             stair_taken += 20;
-        else if (stair_taken < 86)
+        else if (stair_taken < DNGN_STONE_STAIRS_UP_I)
             stair_taken += 4;
         else
             stair_taken -= 4;
@@ -1149,10 +1148,10 @@ out_of_foll:
                     goto found_stair;
             }
         }
-        if (stair_taken < 86)
-            stair_taken = 82;
+        if (stair_taken < DNGN_STONE_STAIRS_UP_I)
+            stair_taken = DNGN_STONE_STAIRS_DOWN_I;
         else
-            stair_taken = 86;
+            stair_taken = DNGN_STONE_STAIRS_UP_I;
         for (count_x = 0; count_x < GXM; count_x++)
         {
             for (count_y = 0; count_y < GYM; count_y++)
@@ -1233,11 +1232,11 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
     {
         for (fry = 0; fry < 8; fry++)
         {
-            if (menv[frx].inv[fry] != 501)
+            if (menv[frx].inv[fry] != ING)
             {
                 mitm.x[menv[frx].inv[fry]] = 2;
                 mitm.y[menv[frx].inv[fry]] = 2;
-                mitm.link[menv[frx].inv[fry]] = 501;
+                mitm.link[menv[frx].inv[fry]] = ING;
             }
         }
     }
@@ -1249,21 +1248,21 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
 
             int count_out = 0;
 
-            if (igrd[count_x][count_y] < 0 | igrd[count_x][count_y] > 501)
-                igrd[count_x][count_y] = 501;
-            if (igrd[count_x][count_y] > 501)
-                igrd[count_x][count_y] = 501;
-            if (igrd[count_x][count_y] == 501)
+            if (igrd[count_x][count_y] < 0 | igrd[count_x][count_y] > ING)
+                igrd[count_x][count_y] = ING;
+            if (igrd[count_x][count_y] > ING)
+                igrd[count_x][count_y] = ING;
+            if (igrd[count_x][count_y] == ING)
                 continue;
 
             frx = igrd[count_x][count_y];
 
-            while (frx != 501)
+            while (frx != ING)
             {
                 mitm.x[frx] = count_x;
                 mitm.y[frx] = count_y;
 
-                if (frx > 501 | frx < 0)
+                if (frx > ING | frx < 0)
                 {
                     cprintf("Error! Item out of bounds: ");
                     itoa(frx, st_prn, 10);
@@ -1280,12 +1279,12 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
                 if (count_out > 1000)
                 {
                     count_out = 0;
-                    mitm.link[frx] = 501;
+                    mitm.link[frx] = ING;
                     mpr("Item link error.");
                     break;
                 }
 
-                if (frx == 501)
+                if (frx == ING)
                     break;
             }
         }
@@ -1344,7 +1343,7 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
         *p++ = mitm.y[i];
         *p++ = mitm.id[i];
         if (mitm.quantity[i] == 0)
-            mitm.link[i] = 501;
+            mitm.link[i] = ING;
         save_int(p, mitm.link[i] + 40000, 5);
         save_int(p, igrd[mitm.x[i]][mitm.y[i]] + 40000, 5);
         *p++ = mitm.pluses2[i];
@@ -1540,7 +1539,7 @@ void save_game(char leave_game)
     save_int(p, you.hunger, 6);
 
     *p++ = 0;
-    for (i = 0; i < NO_EQUIP; ++i)
+    for (i = 0; i < NUM_EQUIP; ++i)
         *p++ = you.equip[i];
     *p++ = you.magic_points;
     *p++ = you.max_magic_points;
@@ -1719,7 +1718,7 @@ void save_game(char leave_game)
         return;
 
 /*if (you.level_type != 0) was_a_labyrinth = 1; */
-    if (you.level_type == 0)
+    if (you.level_type == LEVEL_DUNGEON)
         save_level(you.your_level, 0, you.where_are_you);
     else
         save_level(you.your_level, 1, you.where_are_you);
@@ -1868,7 +1867,7 @@ void restore_game()
 
 /*you.item_wielded=*p++; */ ++p;
 
-    for (i = 0; i < NO_EQUIP; ++i)
+    for (i = 0; i < NUM_EQUIP; ++i)
         you.equip[i] = *p++;
 
     you.magic_points = *p++;
@@ -1919,7 +1918,7 @@ void restore_game()
     for (i = 0; i < 25; ++i)
     {
         you.spells[i] = *p++;
-        if (you.spells[i] != 210)
+        if (you.spells[i] != SPELL_NO_SPELL)
             ++you.spell_no;
     }
 
@@ -2039,7 +2038,7 @@ void restore_game()
 
 void save_ghost()
 {
-    if ((you.your_level <= 1) || (you.is_undead != 0))
+    if ((you.your_level <= 1) || (you.is_undead))
         return;
 
     char corr_level[10];
@@ -2060,7 +2059,7 @@ void save_ghost()
     strcpy(cha_fil, "bones.");
 #endif
 
-    if (you.level_type != 0)
+    if (you.level_type != LEVEL_DUNGEON)
         strcat(cha_fil, "lab"); /* temporary level */
     else
         strcat(cha_fil, corr_level);
@@ -2097,7 +2096,7 @@ void save_ghost()
     {
         if (you.inv_class[you.equip[EQ_WEAPON]] == 0)
         {
-            d = property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], 0);
+            d = property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_DAMAGE);
             if (you.inv_dam[you.equip[EQ_WEAPON]] < 180)
                 e = you.inv_dam[you.equip[EQ_WEAPON]] % 30;
             if (you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25)
@@ -2297,86 +2296,86 @@ unsigned char translate_spell(unsigned char spel)
 {
     switch (spel)
     {
-    case 1:
-        return 14;
-    case 5:
-        return 0;
-    case 6:
-        return 12;
-    case 14:
-        return 18;
-    case 15:
-        return 8;
-    case 16:
-        return 9;
-    case 17:
-        return 10;
-    case 20:
-        return 43;
-    case 21:
-        return 4;
-    case 22:
-        return 5;
-    case 23:
-        return 3;
-    case 24:
-        return 6;
-    case 25:
-        return 11;
-    case 26:
-        return 1;
-    case 27:
-        return 2;
-    case 28:
-        return 16;              /* approximate */
-/*  case 29: return ; no freezing/mephitic cloud yet
-   case 30: return ; */
-    case 35:
-        return 7;
-    case 37:
-        return 15;
-    case 49:
-        return 21;              /* approximate */
-    case 53:
-        return 19;
-    case 54:
-        return 17;
-    case 59:
-        return 16;
-    case 60:
-        return 22;
-    case 62:
-        return 24;              /* approximate */
-    case 66:
-        return 28;
-    case 67:
-        return 29;
-    case 72:
-        return 42;              /* approximate */
-    case 79:
-        return 31;
-    case 82:
-        return 33;
-    case 113:
-        return 52;
-    case 115:
-        return 38;
-    case 119:
-        return 27;
-    case 120:
-        return 33;
-    case 121:
-        return 51;
-    case 128:
-        return 39;
-    case 129:
-        return 40;
-    case 148:
-        return 48;              /* Too powerful to give ghosts Torment for Agony? Nah. */
-    case 151:
-        return 45;
-    case 158:
-        return 48;
+    case SPELL_TELEPORT_SELF:
+        return MS_TELEPORT;
+    case SPELL_MAGIC_DART:
+        return MS_MMISSILE;
+    case SPELL_FIREBALL:
+        return MS_FIREBALL;
+    case SPELL_DIG:
+        return MS_DIG;
+    case SPELL_BOLT_OF_FIRE:
+        return MS_FIRE_BOLT;
+    case SPELL_BOLT_OF_COLD:
+        return MS_COLD_BOLT;
+    case SPELL_LIGHTNING_BOLT:
+        return MS_LIGHTNING_BOLT;
+    case SPELL_POLYMORPH_OTHER:
+        return MS_MUTATION;
+    case SPELL_SLOW:
+        return MS_SLOW;
+    case SPELL_HASTE:
+        return MS_HASTE;
+    case SPELL_PARALYZE:
+        return MS_PARALYSIS;
+    case SPELL_CONFUSE:
+        return MS_CONFUSE;
+    case SPELL_INVISIBILITY:
+        return MS_INVIS;
+    case SPELL_THROW_FLAME:
+        return MS_FLAME;
+    case SPELL_THROW_FROST:
+        return MS_FROST;
+    case SPELL_CONTROLLED_BLINK:
+        return MS_BLINK;              /* approximate */
+/*  case FREEZING_CLOUD: return ; no freezing/mephitic cloud yet
+    case MEPHITIC_CLOUD: return ; */
+    case SPELL_VENOM_BOLT:
+        return MS_VENOM_BOLT;
+    case SPELL_TELEPORT_OTHER:
+        return MS_TELEPORT_OTHER;
+    case SPELL_SUMMON_SMALL_MAMMAL:
+        return MS_VAMPIRE_SUMMON;            /* approximate */
+    case SPELL_BOLT_OF_DRAINING:
+        return MS_NEGATIVE_BOLT;
+    case SPELL_LEHUDIBS_CRYSTAL_SPEAR:
+        return MS_CRYSTAL_SPEAR;
+    case SPELL_BLINK:
+        return MS_BLINK;
+    case SPELL_ISKENDERUNS_MYSTIC_BLAST:
+        return MS_ORB_ENERGY;
+    case SPELL_SUMMON_HORRIBLE_THINGS:
+        return MS_LEVEL_SUMMON;              /* approximate */
+    case SPELL_ANIMATE_DEAD:
+        return MS_ANIMATE_DEAD;
+    case SPELL_PAIN:
+        return MS_PAIN;
+    case SPELL_SUMMON_WRAITHS:
+        return MS_SUMMON_UNDEAD;              /* approximate */
+    case SPELL_STICKY_FLAME:
+        return MS_STICKY_FLAME;
+    case SPELL_CALL_IMP:
+        return MS_SUMMON_DEMON_LESSER;
+    case SPELL_BANISHMENT:
+        return MS_BANISHMENT;
+    case SPELL_STING:
+        return MS_STING;
+    case SPELL_SUMMON_DEMON:
+        return MS_SUMMON_DEMON;
+    case SPELL_DEMONIC_HORDE:
+        return MS_SUMMON_DEMON_LESSER;
+    case SPELL_SUMMON_GREATER_DEMON:
+        return MS_SUMMON_DEMON_GREATER;
+    case SPELL_BOLT_OF_IRON:
+        return MS_IRON_BOLT;
+    case SPELL_STONE_ARROW:
+        return MS_STONE_ARROW;
+    case SPELL_AGONY:
+        return MS_TORMENT;              /* Too powerful to give ghosts Torment for Agony? Nah. */
+    case SPELL_DISINTEGRATE:
+        return MS_DISINTEGRATE;
+    case SPELL_SYMBOL_OF_TORMENT:
+        return MS_TORMENT;
     default:
         return 100;
     }
@@ -2384,6 +2383,8 @@ unsigned char translate_spell(unsigned char spel)
     return 100;
 
 }
+
+
 
 
 void generate_random_demon(void)
@@ -2396,7 +2397,7 @@ void generate_random_demon(void)
     {
         if (rdem == MNST)
             return;             /* obviously no random demon */
-        if (menv[rdem].type == 401)
+        if (menv[rdem].type == MONS_PANDEMONIUM_DEMON)
             break;              /* found one! */
     }
 
@@ -2404,36 +2405,36 @@ void generate_random_demon(void)
     strcpy(ghost.name, st_prn);
 
     ghost.values[0] = 50 + random2(50) + random2(50) + random2(50) + random2(50);
-    if (random2(3) == 0)
+    if ( one_chance_in(3) )
         ghost.values[0] += random2(50) + random2(50);
 /* hp - could be defined below (as could ev, AC etc). Oh well, too late */
 
     ghost.values[1] = 5 + random2(10);  /* evasion */
     ghost.values[2] = random2(0);       /* AC */
-    if (random2(3) == 0)
+    if ( one_chance_in(3) )
         ghost.values[3] = 1;
     else
         ghost.values[3] = 0;    /* see inv */
-    if (random2(3) != 0)
+    if ( !one_chance_in(3) )
     {
         ghost.values[4] = 0;    /* res_fire */
-        if (random2(4) == 0)
+        if ( one_chance_in(4) )
             ghost.values[4] = 99;
-        if (random2(4) == 0)
+        if ( one_chance_in(4) )
             ghost.values[4] = 102;
     }
     else
         ghost.values[4] = 101;
-    if (random2(3) != 0)
+    if ( !one_chance_in(3) )
     {
         ghost.values[5] = 0;    /* res_cold */
-        if (random2(4) == 0)
+        if ( one_chance_in(4) )
             ghost.values[5] = 99;
     }
     else
         ghost.values[5] = 101;
 /* demons, like ghosts, automatically get res poison + prot_life */
-    if (random2(3) != 0)
+    if ( !one_chance_in(3) )
     {
         ghost.values[6] = 0;    /* res_elec */
     }
@@ -2442,22 +2443,22 @@ void generate_random_demon(void)
 
     ghost.values[7] = 10 + random2(20) + random2(20) + random2(20);     /* damage in combat */
     ghost.values[8] = 0;        /* special attack type (uses weapon brand code) */
-    if (random2(2) == 0)
+    if ( coinflip() )
     {
         ghost.values[8] = random2(17);
         if (ghost.values[8] == 3 || ghost.values[8] == 5 || ghost.values[8] == 7 || ghost.values[8] == 11 || ghost.values[8] == 12 || ghost.values[8] == 14)
             ghost.values[8] = 0;        /* some brands inappropriate (eg holy wrath) */
     }
     ghost.values[9] = 0;        /* ghost species - used for: is demon a spellcaster? */
-    if (random2(3) != 0)
+    if ( !one_chance_in(3) )
         ghost.values[9] = 1;
     ghost.values[10] = random2(3);      /* ghost best skill - used for: does demon fly? */
-    if (random2(3) == 0)
+    if ( one_chance_in(3) )
         ghost.values[10] = 0;
     ghost.values[11] = 0;       /* vacant - ghost best skill level */
     ghost.values[12] = 10 + random2(10);        /* Hit Dice */
     ghost.values[13] = 0;       /* ghost class - used for: does demon cycle colours? */
-    if (random2(10) == 0)
+    if ( one_chance_in(10) )
         ghost.values[13] = 1;
 
     menv[rdem].hit_dice = ghost.values[12];
@@ -2466,7 +2467,7 @@ void generate_random_demon(void)
     menv[rdem].armor_class = ghost.values[2];
     menv[rdem].evasion = ghost.values[1];
     menv[rdem].speed = 10;
-    if (random2(3) != 0)
+    if ( !one_chance_in(3) )
         menv[rdem].speed = 8 + random2(10);
     menv[rdem].speed_increment = 70;
     menv[rdem].number = 1 + random2(15);        /* demon's colour */
@@ -2483,10 +2484,10 @@ void generate_random_demon(void)
    Some special monster-only spells are at the end. */
     if (ghost.values[9] == 1)
     {
-        if (random2(2) == 0)
+        if ( coinflip() )
             do
             {
-                if (random2(3) == 0)
+                if ( one_chance_in(3) )
                     break;
                 ghost.values[14] = search_order_conj[i];
                 i++;
@@ -2495,10 +2496,10 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if (random2(2) == 0)
+        if ( coinflip() )
             do
             {
-                if (random2(3) == 0)
+                if ( one_chance_in(3) )
                     break;
                 ghost.values[15] = search_order_conj[i];
                 i++;
@@ -2507,10 +2508,10 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if (random2(4) != 0)
+        if ( !one_chance_in(4) )
             do
             {
-                if (random2(3) == 0)
+                if ( one_chance_in(3) )
                     break;
                 ghost.values[16] = search_order_third[i];
                 i++;
@@ -2519,10 +2520,10 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if (random2(2) == 0)
+        if ( coinflip() )
             do
             {
-                if (random2(3) == 0)
+                if ( one_chance_in(3) )
                     break;
                 ghost.values[17] = search_order_misc[i];
                 i++;
@@ -2531,10 +2532,10 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if (random2(2) == 0)
+        if ( coinflip() )
             do
             {
-                if (random2(3) == 0)
+                if ( one_chance_in(3) )
                     break;
                 ghost.values[18] = search_order_misc[i];
                 i++;
@@ -2543,10 +2544,10 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if (random2(2) == 0)
-            ghost.values[19] = 59;      /* blink */
-        if (random2(2) == 0)
-            ghost.values[19] = 1;       /* teleport */
+        if ( coinflip() )
+            ghost.values[19] = SPELL_BLINK;
+        if ( coinflip() )
+            ghost.values[19] = SPELL_TELEPORT_SELF;
 
         for (i = 14; i < 20; i++)
         {
@@ -2554,38 +2555,37 @@ void generate_random_demon(void)
         }                       /* Converts the player spell indices to monster spell ones */
 
 /* give demon a chance for some monster-only spells: */
-        if (random2(25) == 0)
-            ghost.values[14] = 50;      /* metal splinters */
-        if (random2(25) == 0)
-            ghost.values[14] = 37;      /* eye of devas */
-        if (random2(25) == 0)
-            ghost.values[15] = 26;      /* steam */
-        if (random2(25) == 0)
-            ghost.values[15] = 35;      /* blast */
-        if (random2(25) == 0)
-            ghost.values[15] = 49;      /* fiend's hellfire */
-        if (random2(25) == 0)
-            ghost.values[16] = 30;      /* smiting */
-        if (random2(25) == 0)
-            ghost.values[16] = 20;      /* burst of hellfire */
-        if (random2(25) == 0)
-            ghost.values[16] = 20;      /* burst of hellfire */
-        if (random2(15) == 0)
-            ghost.values[18] = 18;      /* dig */
+        if ( one_chance_in(25) )
+            ghost.values[14] = MS_METAL_SPLINTERS;
+        if ( one_chance_in(25) )
+            ghost.values[14] = MS_ENERGY_BOLT;      /* eye of devas */
+        if ( one_chance_in(25) )
+            ghost.values[15] = MS_STEAM_BALL;
+        if ( one_chance_in(25) )
+            ghost.values[15] = MS_PURPLE_BLAST;
+        if ( one_chance_in(25) )
+            ghost.values[15] = MS_HELLFIRE;
+        if ( one_chance_in(25) )
+            ghost.values[16] = MS_SMITE;
+        if ( one_chance_in(25) )
+            ghost.values[16] = MS_HELLFIRE_BURST;
+        if ( one_chance_in(25) )
+            ghost.values[16] = MS_HELLFIRE_BURST;
+        if ( one_chance_in(15) )
+            ghost.values[18] = MS_DIG;
 
 /* and demon-summoning should be fairly common: */
-        if (random2(12) == 0)
-            ghost.values[16] = 51;      /* summon class 1 demons */
-        if (random2(12) == 0)
-            ghost.values[16] = 27;      /* summon demons */
-        if (random2(20) == 0)
-            ghost.values[17] = 51;      /* summon class 1 demons */
-        if (random2(20) == 0)
-            ghost.values[17] = 27;      /* summon demons */
-
+        if ( one_chance_in(12) )
+            ghost.values[16] = MS_SUMMON_DEMON_GREATER;
+        if ( one_chance_in(12) )
+            ghost.values[16] = MS_SUMMON_DEMON;
+        if ( one_chance_in(20) )
+            ghost.values[17] = MS_SUMMON_DEMON_GREATER;
+        if ( one_chance_in(20) )
+            ghost.values[17] = MS_SUMMON_DEMON;
 
         if (ghost.values[17] == 250)
-            ghost.values[17] = 27;      /* at least they can summon demons */
+            ghost.values[17] = MS_SUMMON_DEMON;      /* at least they can summon demons */
 
     }
 

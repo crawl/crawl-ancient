@@ -18,22 +18,21 @@
 
 #include <stdlib.h>
 
-#include "externs.h"
-#include "enum.h"
-#include "itemname.h"
-#include "player.h"
-#include "ouch.h"
-
 #ifdef USE_CURSES
 #include <curses.h>
 #endif
 
-char wield_change;
+#include "externs.h"
 
+#include "itemname.h"
+#include "player.h"
+#include "ouch.h"
+
+char wield_change;
 
 void print_stats()
 {
-    textcolor(7);
+    textcolor(LIGHTGREY);
 
     char temp_quant[15];
 
@@ -234,17 +233,17 @@ void print_stats()
         gotoxy(40, 14);
         switch (you.hunger_state)
         {
-        case 5:
+        case HS_ENGORGED:
             textcolor(BLUE);
             cprintf("Engorged");
             textcolor(LIGHTGREY);
             break;
-        case 4:
+        case HS_FULL:
             textcolor(GREEN);
             cprintf("Full    ");
             textcolor(LIGHTGREY);
             break;
-        case 3:
+        case HS_SATIATED:
 #ifdef USE_CURSES
             clrtoeol();
 #else
@@ -252,12 +251,12 @@ void print_stats()
 #endif
             break;
 
-        case 2:
+        case HS_HUNGRY:
             textcolor(YELLOW);
             cprintf("Hungry  ");
             textcolor(LIGHTGREY);
             break;
-        case 1:
+        case HS_STARVING:
             textcolor(RED);
             cprintf("Starving");
             textcolor(LIGHTGREY);
@@ -271,12 +270,12 @@ void print_stats()
         gotoxy(40, 15);
         switch (you.burden_state)
         {
-        case 5:
+        case BS_OVERLOADED:
             textcolor(YELLOW);
             cprintf("Overloaded");
             textcolor(LIGHTGREY);
             break;
-        case 2:
+        case BS_ENCUMBERED:
             textcolor(LIGHTRED);
             cprintf("Encumbered");
             textcolor(LIGHTGREY);
