@@ -499,14 +499,7 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth, c
 
             FILE *gfile = fopen(cha_fil, "rb");
 
-            if (gfile == NULL)
-            {
-                strcpy(info, "Error opening ghost file: ");
-                strcat(info, cha_fil);
-                mpr(info);
-                more();
-            }
-            else
+            if (gfile != NULL)
             {
                 char buf1[40];
 
@@ -1412,7 +1405,7 @@ void save_game( bool leave_game )
 #endif
 #endif
 
-    int datalen = 42 + 30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25 + 12 * 52 + 50 * 5 + 50 * 4 + 50 + 50 + 6 * 50 + 50 + 50 + 30 + 30 + 30 + 100 + 50 + 100 + NO_UNRANDARTS + MAX_LEVELS * MAX_BRANCHES + MAX_BRANCHES + (2 * (MAX_LEVELS * MAX_BRANCHES));
+    int datalen = 44 + 30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25 + 12 * 52 + 50 * 5 + 50 * 4 + 50 + 50 + 6 * 50 + 50 + 50 + 30 + 30 + 30 + 100 + 50 + 100 + NO_UNRANDARTS + MAX_LEVELS * MAX_BRANCHES + MAX_BRANCHES + (2 * (MAX_LEVELS * MAX_BRANCHES));
     char *buf = (char *) malloc(datalen);
     char *p = buf;
 
@@ -1420,7 +1413,7 @@ void save_game( bool leave_game )
 
     *p++ = 4;                   // minor version number
 
-    save_int(p, 42, 4);         // chunk size
+    save_int(p, 44, 4);         // chunk size
 
     save_double(p, you.elapsed_time, 14);
 
@@ -1428,6 +1421,10 @@ void save_game( bool leave_game )
     *p++ = you.gift_timeout;
     for (i = 0; i < 21; i++)
         *p++ = you.penance[i];
+
+    // added 23Jun2000 by GDL for player vision radius
+    *p++ = you.normal_vision;
+    *p++ = you.current_vision;
 
     // minor version >= 2
     for (i = 0; i < MAX_LEVELS; i++)
@@ -1663,7 +1660,7 @@ void save_game( bool leave_game )
 
     if (handle == NULL)
     {
-        perror("Unable to open file for writing");
+        perror("Unable to open file for writing!");
         end(-1);
     }
     int retval = write2(handle, buf, datalen);
@@ -1671,7 +1668,7 @@ void save_game( bool leave_game )
     free(buf);
     if (datalen != retval)
     {
-        perror("opa (4)...");
+        perror("opa (4)...!");
         end(-1);
     }
     fclose(handle);
@@ -1738,13 +1735,13 @@ void restore_game( void )
 
     int oldlen = 30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25 + 12 * 52 + 50 * 5 + 50 * 4 + 50 + 50 + 6 * 50 + 50 + 50 + 30 + 30 + 30 + 100 + 50 + 100 + NO_UNRANDARTS + MAX_BRANCHES + (2 * (MAX_LEVELS * MAX_BRANCHES));
 
-    int datalen = oldlen + 42 + MAX_LEVELS * MAX_BRANCHES;
+    int datalen = oldlen + 44 + MAX_LEVELS * MAX_BRANCHES;
     char *buf = (char *) malloc(datalen);
     char *p = buf;
 
     int bytes = read2(handle, buf, datalen);
 
-    if (oldlen != bytes && datalen != bytes && (oldlen + 42) != bytes)
+    if (oldlen != bytes && datalen != bytes && (oldlen + 44) != bytes)
     {
         free(buf);
         perror("Unable to read file");
@@ -1784,6 +1781,12 @@ void restore_game( void )
                 you.penance[i] = *p++;
                 used_chunk++;
             }
+
+            // added 22Jun2000 for player vision radius GDL
+            used_chunk += 2;
+            you.normal_vision = *p++;
+            you.current_vision = *p++;
+
         }
         else
         {

@@ -24,6 +24,18 @@ Brent Ross        (bwross@csclub.uwaterloo.ca)
 Josh Fishman      (fishman@cs.nyu.edu)
 Don Brodale       (lar@bway.net)
 
+21.jun.2000 (Michal Valvoda)
+     Changes:
+        monstuff.cc
+           - completely reworked mons_speak routine
+           - removed silence check required to call mons_speak (line 749)
+           - lowered chance to speak to one_chance_in (7) (line 749)
+        describe.cc
+           - added many new monster descriptions (deep elves, unique monsters
+              like Sigmund, Terence etc., killer bee larva ...)
+           - changed some existing descriptions - made them more detailed
+           - in case of some "smell" message add MUMMY check
+
 
 19.jun.2000 (Gordon Lipford)
      Changes:

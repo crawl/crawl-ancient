@@ -207,8 +207,6 @@ bool new_game( void )
         return false;
     }
 
-    fclose(handle);
-
     clrscr();    // this replaces the following commented chunk b/c
                  // things also look better under linux, so why not
                  // just make all platforms start from the top? {dlb}
