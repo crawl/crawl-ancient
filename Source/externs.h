@@ -65,31 +65,6 @@ struct dist
     int  prev_target;   // previous target
 };
 
-/*
- * old bolt structure
-struct bolt
-{
-    int range, type, colour, flavour, source_x, source_y;
-    int damage, ench_power, hit, bx, by, target_x;
-    int target_y;
-    char wand_id;
-    char aim_down;
-    char thing_thrown;
-    char move_x, move_y;
-    int trac_targ;
-    int tracer_mons;
-    int trac_hit_tamed;
-    int trac_hit_mons;
-    int tracer;
-    int trac_targ_x, trac_targ_y;
-
-    // If a monster fired it, which monster?
-    int beam_source;
-
-    char beam_name[40];
-};
-*/
-
 struct bolt
 {
     // INPUT parameters set by caller
@@ -114,7 +89,7 @@ struct bolt
     int fr_power, foe_power;    // total levels/hit dice affected
 
     // INTERNAL use - please do not read/set outside
-    // of beam.cc and bang.cc !!
+    // of beam.cc!!
     bool isTracer;              // is this a tracer?
     bool aimedAtFeet;           // this was aimed at self!
     bool msgGenerated;          // an appropriate msg was already mpr'd
@@ -122,6 +97,7 @@ struct bolt
     bool smartMonster;          // tracer firer can guess at other mons. resists?
     bool canSeeInvis;           // tracer firer can see invisible?
     bool isFriendly;            // tracer firer is enslaved or pet
+    int  foeRatio;              // 100* foe ratio (see mons_should_fire())
 };
 
 struct player
@@ -210,7 +186,8 @@ struct player
   FixedVector<unsigned char, ENDOFPACK> inv_ident;
   FixedVector<unsigned char, ENDOFPACK> inv_colour;
   FixedVector<int, ENDOFPACK> inv_quantity;
-  char num_inv_items;                    // number of items carried
+//  num_inv_items is deprecated -- use inv_count() instead!
+//  char num_inv_items;                    // number of items carried
 
   int burden;
   char burden_state;
@@ -278,6 +255,8 @@ struct player
   unsigned char betrayal;
   unsigned char normal_vision;        // how far the species gets to see
   unsigned char current_vision;       // current sight radius (cells)
+
+  unsigned char hell_exit;            // which level plyr goes to on hell exit.
 
   int passwall_x;       // coord for passwall, shouldn't need saving, since
   int passwall_y;       // the player should never get an action.

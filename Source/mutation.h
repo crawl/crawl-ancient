@@ -18,7 +18,7 @@
  * called from: acr - decks - effects - fight - food - it_use2 - items -
  *              mutation - religion - spell - spells
  * *********************************************************************** */
-bool mutate(int which_mutation);
+bool mutate(int which_mutation, bool failMsg = true);
 
 
 // last updated 12may2000 {dlb}

@@ -26,6 +26,7 @@
 
 #include "debug.h"
 #include "invent.h"
+#include "items.h"
 #include "it_use3.h"
 #include "player.h"
 #include "religion.h"
@@ -1062,7 +1063,7 @@ static bool which_spellbook(void)
         mpr("You can't memorise any more spells yet.");
         return false;
     }
-    else if (you.num_inv_items < 1)
+    else if (inv_count() < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return false;

@@ -950,7 +950,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                     if (mons_res_elec(defender->type))
                         break;
 
-                    CAT_MONSTER_INFO(monster_attacked);
+                    strcpy(info, ptr_monam(defender, 0));
                     strcat(info, " is jolted");
                     specdam = STAFF_DAMAGE(SK_AIR_MAGIC);
                     CAT_PUNCTUATION(specdam);
@@ -1787,6 +1787,8 @@ void monster_attack(int monster_attacking)
     int specdam = 0;
     char heads = 0;             // for hydras {dlb}
     int hand_used = 0;
+    int extraDamage = 0;            // from special mon. attacks (burn, freeze, etc)
+    int resistValue = 0;           // player resist value (varies)
 
     if (attacker->type == MONS_HYDRA)
         heads = attacker->number;
@@ -2252,21 +2254,26 @@ void monster_attack(int monster_attacking)
             case MONS_FIRE_ELEMENTAL:
             case MONS_BALRUG:
             case MONS_SUN_DEMON:
-                mpr("You are engulfed in flame!");
+                strcpy(info, "You are engulfed in flames");
 
-                if (player_res_fire() > 100)
+                resistValue = player_res_fire() - 100;
+                extraDamage = 15 + random2(15);
+                if (resistValue > 0)
                 {
-                    damage_taken += (15 + random2(15)) /
-                                        (1 + (player_res_fire() - 100)
-                                                * (player_res_fire() - 100));
+                    extraDamage /= (1 + resistValue * resistValue);
+                }
+                else
+                {
+                    if (resistValue < 0)
+                        extraDamage += 8 + random2(8);
                 }
 
-                if (player_res_fire() <= 100)
-                    damage_taken += 15 + random2(15);
+                strcat(info, (extraDamage < 10) ? "." :
+                             (extraDamage < 25) ? "!" :
+                             "!!");
 
-                if (player_res_fire() < 100)
-                    damage_taken += 8 + random2(8);
-
+                mpr(info);
+                damage_taken += extraDamage;
                 scrolls_burn(1, OBJ_SCROLLS);
                 break;
 
@@ -2389,33 +2396,33 @@ void monster_attack(int monster_attacking)
             case MONS_WHITE_IMP:
             case MONS_ANTAEUS:
             case MONS_AZURE_JELLY:
-                if (player_res_cold() <= 100)
-                {
-                    damage_taken += attacker->hit_dice
-                                            + random2(attacker->hit_dice * 2);
+                extraDamage = attacker->hit_dice +
+                    random2(attacker->hit_dice * 2);
+                resistValue = player_res_cold() - 100;
 
+                if (resistValue > 0)
+                {
+                    extraDamage /= (1 + resistValue * resistValue);
+                }
+                if (resistValue < 0)
+                {
+                    extraDamage += attacker->hit_dice +
+                        random2(attacker->hit_dice * 2);
+                }
+
+                if (extraDamage > 4)
+                {
                     strcpy(info, ptr_monam(attacker, 0));
-                    strcat(info, " freezes you!");
+                    if (extraDamage < 10)
+                        strcat(info, "chills you.");
+                    else
+                        strcat(info, "freezes you!");
+                    if (extraDamage > 19)
+                        strcat(info, "!");
                     mpr(info);
                 }
-                else
-                {
-                    damage_taken += attacker->hit_dice
-                                            + random2(attacker->hit_dice * 2);
 
-                    damage_taken /= (1 + (player_res_cold() - 100)
-                                                * (player_res_cold() - 100));
-
-                    strcpy(info, ptr_monam(attacker, 0));
-                    strcat(info, " chills you.");
-                    mpr(info);
-                }
-
-                if (player_res_cold() < 100)
-                {
-                    damage_taken += attacker->hit_dice
-                                                + random2(attacker->hit_dice);
-                }
+                damage_taken += extraDamage;
 
                 scrolls_burn(1, OBJ_POTIONS);
                 break;

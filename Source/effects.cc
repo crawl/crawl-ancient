@@ -232,8 +232,7 @@ void direct_effect(struct bolt &pbolt)
 
     case DMNBM_MUTATION:
         mpr("Strange energies course through your body.");
-        if (!mutate(100))
-            mpr("You feel very weird for a moment.");
+        mutate(100);
         break;
     }
 
@@ -259,7 +258,7 @@ void mons_direct_effect(struct bolt &pbolt, int i)
         pbolt.flavour = BEAM_LAVA;
 
         damage_taken = 5 + random2(10) + random2(5);
-        check_mons_resists(monster, pbolt, damage_taken);
+        mons_adjust_flavoured(monster, pbolt, damage_taken);
 
         if (monster->behavior == BEH_SLEEP)
             monster->behavior = BEH_CHASING_I;

@@ -461,8 +461,6 @@ void scrolls_burn(char burn_strength, char target_class)
 
                 if (you.inv_quantity[burnc] < 1)
                 {
-                    you.num_inv_items--;
-
                     // I can't assume any level of intelligence on
                     // the player's behalf
                     if (burnc == you.equip[EQ_WEAPON])

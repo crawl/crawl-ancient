@@ -2254,7 +2254,6 @@ bool new_game(void)
                 }
 
                 you.inv_colour[i] = BROWN;
-                you.num_inv_items++;
                 break;
             }
         }
@@ -3332,7 +3331,6 @@ void init_player(void)
     you.burden = 0;
     you.burden_state = BS_UNENCUMBERED;
 
-    you.num_inv_items = 0;
     you.spell_no = 0;
 
     you.your_level = 0;

@@ -26,7 +26,9 @@
 #endif
 
 #include "externs.h"
+#include "fight.h"
 #include "player.h"
+#include "wpn-misc.h"
 
 //jmf: brent sez:
 //  There's a reason curses is included after the *.h files in beam.cc.
@@ -1748,7 +1750,6 @@ void show_skills(void)
     int wxbow = 0;              // warn about xbow
     int wsling = 0;             // warn about sling
     int effSkill;               // max effective skill depends on Throwing
-    static const char *wmsg = "Low throwing skill hampers your utilization of ";
 
     _setcursortype(_NOCURSOR);
 
@@ -1845,50 +1846,6 @@ void show_skills(void)
             scrln++;
         }
     }
-
-    // new: inform player if they need more throwing skill (GDL)
-    effSkill = you.skills[SK_THROWING] * 2 + 1;
-    if (you.skills[SK_BOWS] > effSkill)
-        wbow = 1;
-
-    if (you.skills[SK_CROSSBOWS] > effSkill)
-        wxbow = 1;
-
-    if (you.skills[SK_SLINGS] > effSkill)
-        wsling = 1;
-
-    int wcount = wbow + wxbow + wsling;
-
-    if (wcount > 0)
-    {
-        gotoxy(1, bottom_line - 2);
-        textcolor(LIGHTGREY);
-        cprintf(wmsg);
-
-        if (wbow > 0)
-        {
-            cprintf("bows");
-            if (wcount == 2)
-                cprintf(" and ");
-            if (wcount == 3)
-                cprintf(", ");
-        }
-
-        if (wxbow > 0)
-        {
-            cprintf("crossbows");
-            if (wcount > 2)
-                cprintf(",");
-            if (wcount > 1)
-                cprintf(" and ");
-        }
-
-        if (wsling > 0)
-            cprintf("slings");
-
-        cprintf(".");
-    }
-    // Done - warn player about insufficient Throwing skill
 
     // if any more skills added, must adapt letters to go into caps
     gotoxy(1, bottom_line);
@@ -2141,3 +2098,60 @@ int species_skills(char skill, char species)
     else
         return spec_skills[species - 1][skill];
 }                               // end species_skills()
+
+// new: inform player if they need more throwing skill (GDL)
+void wield_warning()
+{
+    int wepType  = you.inv_type[you.equip[EQ_WEAPON]];
+
+    // early out - don't warn for non-weapons
+    if (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS)
+        return;
+
+#ifdef USE_NEW_COMBAT_STATS
+    // only warn about str/dex for non-launcher weapons
+    if (!launches_things(wepType))
+    {
+        const int stat_bonus = effective_stat_bonus();
+
+        strcpy( info, "Your relatively low " );
+        strcat( info, (you.strength < you.dex) ? "strength " : "dexterity " );
+
+        if (stat_bonus <= -2)
+        {
+            strcat( info, "is limiting your use of this weapon." );
+            mpr( info, MSGCH_WARN );
+        }
+        else if (stat_bonus <= -5)
+        {
+            strcat( info, "is severely limiting your use of this weapon." );
+            mpr( info, MSGCH_WARN );
+        }
+        return;
+    }
+#endif
+
+    // must be a launcher
+    int effSkill = you.skills[SK_THROWING] * 2 + 1;
+    int shoot_skill = 0;
+
+    switch (wepType)
+    {
+        case WPN_SLING:
+            shoot_skill = you.skills[SK_SLINGS];
+            break;
+        case WPN_BOW:
+            shoot_skill = you.skills[SK_BOWS];
+            break;
+        case WPN_CROSSBOW:
+        case WPN_HAND_CROSSBOW:
+            shoot_skill = you.skills[SK_CROSSBOWS];
+            break;
+        default:
+            shoot_skill = 0;
+            break;
+    }
+
+    if (shoot_skill > effSkill)
+        mpr("Your low throwing skill limits your effectiveness with this weapon.");
+}

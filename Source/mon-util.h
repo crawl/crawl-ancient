@@ -372,4 +372,12 @@ void mons_spell_list(unsigned char sec, int splist[6]);
  * *********************************************************************** */
 bool mons_should_fire(struct bolt &beam);
 
+
+// last updated 14jan2001 (gdl)
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+bool ms_always_fire(int mons_spell);
+
+
 #endif

@@ -800,7 +800,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     //jmf: FIXME: SPELL_SHINING_LIGHT?
 
     case SPELL_SUMMON_DAEVA:
-        summon_ice_beast_etc(powc, MONS_ANGEL);
+        summon_ice_beast_etc(powc, MONS_DAEVA);
         return true;
 
     case SPELL_ABJURATION_II:
@@ -1004,7 +1004,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
         set_hp(1 + random2(you.hp), false);
 
-        if (!mutate(100))
+        if (!mutate(100, false))
             mpr("Odd... you don't feel any different.");
         return true;
 

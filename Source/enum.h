@@ -615,10 +615,10 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_TRANSIT_PANDEMONIUM,          //  101
     DNGN_ENTER_ORCISH_MINES = 110,     //  110
     DNGN_ENTER_HIVE,
-    DNGN_ENTER_LAIR_I,
+    DNGN_ENTER_LAIR,
     DNGN_ENTER_SLIME_PITS,
     DNGN_ENTER_VAULTS,
-    DNGN_ENTER_CRYPT_I,                //  115
+    DNGN_ENTER_CRYPT,                //  115
     DNGN_ENTER_HALL_OF_BLADES,
     DNGN_ENTER_ZOT,
     DNGN_ENTER_TEMPLE,
@@ -631,13 +631,13 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_RETURN_DUNGEON_III,
     DNGN_RETURN_LAIR_II,
     DNGN_RETURN_DUNGEON_IV,
-    DNGN_RETURN_VAULTS,                //  135
-    DNGN_RETURN_CRYPT_II,
+    DNGN_RETURN_VAULTS_II,                //  135
+    DNGN_RETURN_VAULTS_III,
     DNGN_EXIT_ZOT,
     DNGN_RETURN_DUNGEON_V,
     DNGN_RETURN_LAIR_III,
     DNGN_RETURN_MINES,                 //  140
-    DNGN_RETURN_CRYPT_III,
+    DNGN_RETURN_CRYPT,
     DNGN_RETURN_LAIR_IV,               //  142
     DNGN_ALTAR_ZIN = 180,              //  180
     DNGN_ALTAR_SHINING_ONE,

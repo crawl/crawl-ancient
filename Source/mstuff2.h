@@ -103,4 +103,14 @@ void monster_teleport(struct monsters *monster, bool instan);
  * *********************************************************************** */
 void spore_goes_pop(struct monsters *monster);
 
+
+// last updated Jan14,2001 -- gdl
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+void throw_type(int lnchClass, int lnchType, int wepClass, int wepType,
+    bool &launched, bool &thrown);
+
+
+
 #endif

@@ -20,7 +20,7 @@
 static HANDLE inbuf = NULL;
 static HANDLE outbuf = NULL;
 static int current_color = -1;
-// static FILE *foo = NULL;  //DEBUG
+//static FILE *foo = NULL;  //DEBUG
 
 // buffering stuff
 #define BUF_SIZE 128
@@ -80,8 +80,8 @@ void init_libw32c(void)
    // SetConsoleTextAttribute()
    textcolor(0);
 
-   // DEBUG
-   // foo = fopen("debug.txt", "w");
+   //DEBUG
+   //foo = fopen("debug.txt", "w");
 }
 
 void _setcursortype(int curstype)
@@ -199,7 +199,7 @@ int vk_translate( WORD VirtCode, CHAR c, DWORD cKeys)
    bool ctrlDown = false;
 
    // DEBUG
-   // fprintf(foo, "Received code %d (%c) with modifiers: %d\n", VirtCode, c, cKeys);
+   //fprintf(foo, "Received code %d (%c) with modifiers: %d\n", VirtCode, c, cKeys);
 
    // step 1 - we don't care about shift or control
    if (VirtCode == VK_SHIFT || VirtCode == VK_CONTROL)
@@ -221,6 +221,9 @@ int vk_translate( WORD VirtCode, CHAR c, DWORD cKeys)
    // hack - translate ^P and ^Q since 16 and 17 are taken by CTRL and SHIFT
    if ((VirtCode == 80 || VirtCode == 81) && ctrlDown)
       return VirtCode & 0x003f;     // shift back down
+
+   if (VirtCode == VK_DELETE && !ctrlDown)         // assume keypad '.'
+      return '.';
 
    // see if we're a vkey
    int mkey;
@@ -282,7 +285,7 @@ int getch(void)
        }
     }
     // DEBUG
-    // fprintf(foo, "getch() returning %02x (%c)\n", key, key);
+    //fprintf(foo, "getch() returning %02x (%c)\n", key, key);
 
     return key;
 }

@@ -78,10 +78,11 @@ bool curse_an_item(char which, char power)
 
         cu1 = you.inv_class[cu];
 
-    /*  if (cu1 == OBJ_WEAPONS || cu1 == OBJ_ARMOUR)
-       {
-       if (you.inv_dam [cu] % 30 >= 25) continue; //no randarts
-       } */
+        if (cu1 == OBJ_WEAPONS || cu1 == OBJ_ARMOUR)
+        {
+            if (you.inv_dam [cu] % 30 >= 25)
+                continue; //no randarts
+        }
 
         if (cu1 == OBJ_JEWELLERY)
         {
@@ -789,11 +790,12 @@ static bool handle_enchantment(struct monsters *monster)
                 if (monster->behavior != BEH_ENSLAVED
                     || random2(500) <= 10 + monster->hit_dice)
                 {
+                    if (monster->behavior == BEH_ENSLAVED)
+                        simple_monster_message(monster,
+                            " is no longer your friend.");
                     // reset to monster's original behaviour
                     monster->behavior = BEH_CHASING_I;
                     flag_ench(monster, p);
-                    simple_monster_message(monster,
-                                                " is no longer your friend.");
                 }
                 break;
 
@@ -1015,8 +1017,8 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
 
         // setup tracer
         strcpy(beem.beam_name, "glob of lava");
-        beem.range = 5;
-        beem.rangeMax = 14;
+        beem.range = 4;
+        beem.rangeMax = 13;
         beem.damage = 108;
         beem.colour = RED;
         beem.type = SYM_ZAP;
@@ -1056,8 +1058,8 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         beem.hit = 150;
         beem.beam_source = monster_index(monster);
         beem.thrower = KILL_MON;
-        beem.range = 5;
-        beem.rangeMax = 14;
+        beem.range = 4;
+        beem.rangeMax = 13;
         beem.isBeam = true;
 
         // fire tracer
@@ -1575,17 +1577,6 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
         int hspell_pass[6] = { MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL,
             MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL };
 
-        // this little bit makes no sense, esp. given how
-        // hellions are treated below -- a remnant of past
-        // ideas on how to handle hellion casting? {dlb}:
-        if (monster->type == MONS_HELLION)
-        {
-            temp_rand = random2(3);
-
-            monster->number = ((temp_rand == 0) ? RED :
-                               (temp_rand == 1) ? LIGHTRED : YELLOW);
-        }
-
         int msecc = ((monster->type == MONS_HELLION)           ? MST_BURNING_DEVIL :
                      (monster->type == MONS_PANDEMONIUM_DEMON) ? MST_GHOST
                                                             : monster->number);
@@ -1625,6 +1616,10 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                     if (spell_cast == MS_NO_SPELL)
                         continue;
 
+                    // do we need a tracer?
+                    if (ms_always_fire(spell_cast))
+                        break;
+
                     setup_mons_cast(monster, beem, spell_cast);
 
                     // fire tracer
@@ -1633,8 +1628,8 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                     // good idea?
                     if (mons_should_fire(beem))
                         break;
-
                     spell_cast = MS_NO_SPELL;
+
                     // ok, maybe we'll cast a defensive spell
                     if (coinflip())
                         spell_cast = hspell_pass[2];
@@ -1798,49 +1793,61 @@ static bool handle_throw(struct monsters *monster, bolt & beem)
     // yes, there is a logic to this ordering {dlb}:
     if (monster->behavior == BEH_CONFUSED || monster->behavior == BEH_SLEEP)
         return false;
-    else if ((monster->behavior == BEH_FIGHT
+
+    if ((monster->behavior == BEH_FIGHT
                 || monster->behavior == BEH_ENSLAVED)
             && monster->monster_foe == MHITNOT)
-    {
         return false;
-    }
-    else if (!mons_itemuse(monster->type))
+
+    if (!mons_itemuse(monster->type))
         return false;
-    else if (monster->inv[MSLOT_MISSILE] == NON_ITEM
+
+    if (monster->inv[MSLOT_MISSILE] == NON_ITEM
              || mitm.quantity[monster->inv[MSLOT_MISSILE]] <= 0)
-    {
         return false;
-    }
+
     // don't allow offscreen throwing.. for now.
-    else if (monster->monster_foe == MHITYOU && !mons_near(monster))
+    if (monster->monster_foe == MHITYOU && !mons_near(monster))
+        return false;
+
+    if (monster->type == MONS_TWO_HEADED_OGRE) // poor 2-headed ogres {dlb}
+        return false;
+
+    if (one_chance_in(5))
+        return false;
+
+    // new (GDL) - don't throw idiotic stuff.  It's a waste of time.
+    int mon_item = monster->inv[MSLOT_MISSILE];
+    int wepClass = mitm.base_type[mon_item];
+    int wepType = mitm.sub_type[mon_item];
+
+    int weapon = monster->inv[MSLOT_WEAPON];
+    int lnchClass = weapon != NON_ITEM ? mitm.base_type[weapon] : -1;
+    int lnchType = weapon != NON_ITEM ? mitm.sub_type[weapon] : 0;
+    bool thrown = false;
+    bool launched = false;
+    throw_type(lnchClass, lnchType, wepClass, wepType, launched, thrown);
+    if (!(launched || thrown))
+        return false;
+
+    // ok, we'll try it.
+    setup_generic_throw(monster, beem);
+
+    // fire tracer
+    fire_tracer(monster, beem);
+
+    // good idea?
+    if (mons_should_fire(beem))
     {
-        return false;
+        item_name(mitm.pluses2[mon_item], mitm.base_type[mon_item],
+                  mitm.sub_type[mon_item], mitm.special[mon_item],
+                  mitm.pluses[mon_item], 1, mitm.id[mon_item], 6, str_pass);
+        strcpy(beem.beam_name, str_pass);
+
+        return mons_throw(monster, beem, mon_item);
     }
-    else if (monster->type == MONS_TWO_HEADED_OGRE) // poor 2-headed ogres {dlb}
-        return false;
-    else if (one_chance_in(5))
-        return false;
     else
-    {
-        setup_generic_throw(monster, beem);
-
-        // fire tracer
-        fire_tracer(monster, beem);
-
-        // good idea?
-        if (mons_should_fire(beem))
-        {
-            int mon_item = monster->inv[MSLOT_MISSILE];
-            item_name(mitm.pluses2[mon_item], mitm.base_type[mon_item],
-                      mitm.sub_type[mon_item], mitm.special[mon_item],
-                      mitm.pluses[mon_item], 1, mitm.id[mon_item], 6, str_pass);
-            strcpy(beem.beam_name, str_pass);
-
-            return mons_throw(monster, beem, mon_item);
-        }
-    }
-
-    return false;
+        return false;
 }                               // end handle_throw()
 
 //---------------------------------------------------------------
@@ -2947,8 +2954,8 @@ static bool plant_spit(struct monsters *monster, struct bolt &pbolt)
     // setup plant spit
     strcpy(pbolt.beam_name, "plant spit");
     pbolt.type = SYM_ZAP;
-    pbolt.range = 10;
-    pbolt.rangeMax = 10;
+    pbolt.range = 9;
+    pbolt.rangeMax = 9;
     pbolt.colour = YELLOW;
     pbolt.flavour = BEAM_ACID;
     pbolt.beam_source = monster_index(monster);

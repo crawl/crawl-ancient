@@ -409,21 +409,18 @@ void drop_everything(void)
 {
     int i = 0;
 
-    if (you.num_inv_items < 1)
+    if (inv_count() < 1)
         return;
 
     mpr( "You find yourself unable to carry your posessions!" );
 
-    while (you.num_inv_items && i < ENDOFPACK)
+    for(i=0; i<ENDOFPACK; i++)
     {
         if (you.inv_quantity[i] > 0)
         {
             item_place(i, you.x_pos, you.y_pos, you.inv_quantity[i]);
             you.inv_quantity[i] = 0;
-            you.num_inv_items--;
         }
-
-        i++;
     }
 
     return;

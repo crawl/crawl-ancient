@@ -174,6 +174,7 @@ static void set_weapon_special(int the_weapon, int spwpn);
 static void special_room(void);
 static void specr_2(void);
 static void spotty_level(bool seeded, int iterations, bool boxy);
+static void place_branch_entrances(int dlevel, char level_type);
 
 /*
  **************************************************
@@ -969,108 +970,8 @@ int builder(unsigned int lev_numb, char level_type)
     }
 
   finished_monsters:
-    if (many_many >= 20 && many_many <= 27 && level_type == LEVEL_DUNGEON
-                                && you.where_are_you == BRANCH_MAIN_DUNGEON)
-    {
-        do
-        {
-            bi = random2(GXM - 10);
-            bj = random2(GYM - 10);
-        }
-        while (grd[bi][bj] != DNGN_FLOOR || mgrd[bi][bj] != NON_MONSTER);
 
-        grd[bi][bj] = DNGN_ENTER_HELL;
-    }
-
-    if (many_many >= 20 && many_many <= 50
-        && (many_many == 23 || one_chance_in(4))
-        && level_type == LEVEL_DUNGEON
-        && you.where_are_you == BRANCH_MAIN_DUNGEON)
-    {
-        do
-        {
-            bi = random2(GXM - 10);
-            bj = random2(GYM - 10);
-        }
-        while (grd[bi][bj] != DNGN_FLOOR || mgrd[bi][bj] != NON_MONSTER);
-
-        grd[bi][bj] = DNGN_ENTER_PANDEMONIUM;
-    }
-
-    if (many_many >= 20 && many_many <= 30
-        && (many_many == 24 || one_chance_in(3))
-        && level_type == LEVEL_DUNGEON
-        && you.where_are_you == BRANCH_MAIN_DUNGEON)
-    {
-        do
-        {
-            bi = random2(GXM - 10);
-            bj = random2(GYM - 10);
-        }
-        while (grd[bi][bj] != DNGN_FLOOR || mgrd[bi][bj] != NON_MONSTER);
-
-        grd[bi][bj] = DNGN_ENTER_ABYSS;
-    }
-
-    // have to figure out the functionality of this bit {dlb}:
-    for (count_x = 0; count_x < 30; count_x++)
-    {
-        if (!you.branch_stairs[count_x])
-            break;
-
-        if (count_x != 7)
-        {
-            //jmf: oh god. why. 24mar2000
-            if ((count_x == 3 && you.where_are_you == BRANCH_LAIR
-                    && level_type == LEVEL_DUNGEON
-                    && many_many == you.branch_stairs[STAIRS_SLIME_PITS])
-                || (count_x == 5 && you.where_are_you == BRANCH_VAULTS
-                    && level_type == LEVEL_DUNGEON
-                    && many_many == you.branch_stairs[STAIRS_CRYPT])
-                || (count_x == 6 && you.where_are_you == BRANCH_VAULTS
-                    && level_type == LEVEL_DUNGEON
-                    && many_many == you.branch_stairs[STAIRS_HALL_OF_BLADES])
-                || (count_x == 9 && you.where_are_you == BRANCH_LAIR
-                    && level_type == LEVEL_DUNGEON
-                    && many_many == you.branch_stairs[STAIRS_SNAKE_PIT])
-                || (count_x == 10 && you.where_are_you == BRANCH_ORCISH_MINES
-                    && level_type == LEVEL_DUNGEON
-                    && many_many == you.branch_stairs[STAIRS_ELVEN_HALLS])
-                || (count_x == 11 && you.where_are_you == BRANCH_CRYPT
-                    && level_type == LEVEL_DUNGEON
-                    && many_many == you.branch_stairs[STAIRS_TOMB])
-                || (count_x == 12 && you.where_are_you == BRANCH_LAIR
-                    && level_type == LEVEL_DUNGEON
-                    && many_many == you.branch_stairs[STAIRS_SWAMP]))
-            {
-                do
-                {
-                    bi = random2(GXM - 10);
-                    bj = random2(GYM - 10);
-                }
-                while (grd[bi][bj] != DNGN_FLOOR
-                                || mgrd[bi][bj] != NON_MONSTER);
-
-                // staircase to slime pits
-                grd[bi][bj] = DNGN_ENTER_ORCISH_MINES + count_x;
-            }
-            else if (many_many == you.branch_stairs[count_x]
-                     && level_type == LEVEL_DUNGEON
-                     && you.where_are_you == BRANCH_MAIN_DUNGEON)
-            {
-                do
-                {
-                    bi = random2(GXM - 10);
-                    bj = random2(GYM - 10);
-                }
-                while (grd[bi][bj] != DNGN_FLOOR
-                               || mgrd[bi][bj] != NON_MONSTER);
-
-                // staircase to branch level
-                grd[bi][bj] = DNGN_ENTER_ORCISH_MINES + count_x;
-            }
-        }                       // end if (count_x != 7)
-    }                           /* end for loop */
+    place_branch_entrances(many_many, level_type);
 
     check_doors();
 
@@ -1204,24 +1105,6 @@ int builder(unsigned int lev_numb, char level_type)
         }
     }
 
-    // replaces all down stairs with staircases to Zot:
-    if (many_many == 26
-        && level_type == LEVEL_DUNGEON
-        && you.where_are_you == BRANCH_MAIN_DUNGEON)
-    {
-        for (bi = 1; bi < GXM; bi++)
-        {
-            for (bj = 1; bj < GYM; bj++)
-            {
-                if (grd[bi][bj] >= DNGN_STONE_STAIRS_DOWN_I
-                        && grd[bi][bj] <= DNGN_ROCK_STAIRS_DOWN)
-                {
-                    grd[bi][bj] = DNGN_ENTER_ZOT;
-                }
-            }
-        }
-    }
-
     // Top level of branch levels - replaces up stairs
     // with stairs back to dungeon or wherever:
     for (count_x = 0; count_x < 30; count_x++)
@@ -1281,28 +1164,7 @@ int builder(unsigned int lev_numb, char level_type)
         && you.level_type == LEVEL_DUNGEON && one_chance_in(5))
         place_altar();
 
-    if (you.where_are_you == BRANCH_MAIN_DUNGEON)
-    {
-        for (bi = 1; bi < GXM; bi++)
-        {
-            for (bj = 1; bj < GYM; bj++)
-            {
-                switch (grd[bi][bj])
-                {
-                case DNGN_ENTER_SLIME_PITS:
-                case DNGN_ENTER_CRYPT_I:
-                case DNGN_ENTER_HALL_OF_BLADES:
-                case DNGN_ENTER_SNAKE_PIT:
-                case DNGN_ENTER_ELVEN_HALLS:
-                case DNGN_ENTER_TOMB:
-                case DNGN_ENTER_SWAMP:
-                    grd[bi][bj] = DNGN_FLOOR;
-                    break;      /* this shouldn't be necessary, but is */
-                }
-            }
-        }
-    }
-
+    // hall of blades (1 level deal) - no down staircases, thanks!
     if (you.where_are_you == BRANCH_HALL_OF_BLADES)
     {
         for (bi = 1; bi < GXM; bi++)
@@ -1668,9 +1530,7 @@ int place_monster(unsigned char plus_seventy, int typed, bool is_summoning,
 
     define_monster(bk, menv);
 
-    // yep, value was 309
-    // -- shouldn't it have been 310 (MONS_BORIS) ??? 15jan2000 {dlb}
-    if (menv[bk].type >= MONS_TERENCE && menv[bk].type <= MONS_MARGERY)
+    if (menv[bk].type >= MONS_TERENCE && menv[bk].type <= MONS_BORIS)
         you.unique_creatures[menv[bk].type - 280] = 1;
 
     plussed++;
@@ -2037,6 +1897,7 @@ int place_monster(unsigned char plus_seventy, int typed, bool is_summoning,
         give_item();
 
     // give manticores 8 to 16 spike volleys.
+    // they're not spellcasters so this doesn't screw anything up.
     if (menv[bk].type == MONS_MANTICORE)
         menv[bk].number = 8 + random2(9);
 
@@ -4278,6 +4139,14 @@ static void big_room(void)
     if (type_floor == DNGN_FLOOR)
         type_2 = DNGN_ROCK_WALL + random2(4);
 
+    if (you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+    {
+        if (type_floor == DNGN_LAVA)
+            type_floor = DNGN_SHALLOW_WATER;
+        if (type_2 == DNGN_LAVA)
+            type_2 == DNGN_SHALLOW_WATER;
+    }
+
     if (one_chance_in(4))
     {
         chequerboard( type_floor, type_2, type_floor, room_x1 + 1, room_y1 + 1,
@@ -4386,6 +4255,10 @@ static void diamond_rooms(void)
 
 static void octa_room(unsigned char type_floor)
 {
+    // hack - avoid lava in the crypt {gdl}
+    if ((you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+         && type_floor == DNGN_LAVA)
+        type_floor = DNGN_SHALLOW_WATER;
 
     for (bi = room_x1; bi < room_x2; bi++)
     {
@@ -5787,12 +5660,14 @@ static void give_item(void)
     case MONS_DEEP_ELF_SOLDIER:
     case MONS_DEEP_ELF_SORCEROR:
     case MONS_DEEP_ELF_SUMMONER:
-        force_spec = 1;
+        if (force_spec == 250)
+            force_spec = 1;
         // deliberate fall through {dlb}
     case MONS_ORC_KNIGHT:
     case MONS_ORC_WARLORD:
     case MONS_ORC_WARRIOR:
-        force_spec = 3;
+        if (force_spec == 250)
+            force_spec = 3;
         // deliberate fall through {dlb}
     case MONS_IJYB:
     case MONS_ORC:
@@ -6807,6 +6682,11 @@ static void city_level(void)
 
 static void box_room(int bx1, int bx2, int by1, int by2, int wall_type)
 {
+    // hack -- avoid lava in the crypt. {gdl}
+    if ((you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+         && wall_type == DNGN_LAVA)
+        wall_type = DNGN_SHALLOW_WATER;
+
     int temp_rand;              // probability determination {dlb}
 
     for (bcount_x = bx1; bcount_x < bx2 + 1; bcount_x++)
@@ -7508,6 +7388,11 @@ static void place_pool(unsigned char pool_type, unsigned char pool_x1,
 {
     int i, j;
     unsigned char left_edge, right_edge;
+
+    // don't place LAVA pools in crypt.. use shallow water instead.
+    if ((you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+        && pool_type == DNGN_LAVA)
+        pool_type = DNGN_SHALLOW_WATER;
 
     if (pool_x1 >= pool_x2 - 4 || pool_y1 >= pool_y2 - 4)
         return;
@@ -8952,3 +8837,112 @@ static int pick_an_altar(void)
 
     return altar_type;
 }                               // end pick_an_altar()
+
+static void place_specific_stair(unsigned char stair)
+{
+    int sx, sy;
+
+    do
+    {
+        sx = random2(GXM-10);
+        sy = random2(GYM-10);
+    }
+    while(grd[sx][sy] != DNGN_FLOOR || mgrd[sx][sy] != NON_MONSTER);
+
+    grd[sx][sy] = stair;
+}
+
+static void place_branch_entrances(int dlevel, char level_type)
+{
+    unsigned char stair;
+    unsigned char entrance;
+    int sx, sy;
+
+    if (!level_type == LEVEL_DUNGEON)
+        return;
+
+    if (you.where_are_you == BRANCH_MAIN_DUNGEON)
+    {
+        // stair to HELL
+        if (dlevel >= 20 && dlevel <= 27)
+            place_specific_stair(DNGN_ENTER_HELL);
+
+        // stair to PANDEMONIUM
+        if (dlevel >= 20 && dlevel <= 50
+            && (dlevel == 23 || one_chance_in(4)))
+            place_specific_stair(DNGN_ENTER_PANDEMONIUM);
+
+        // stairs to ABYSS
+        if (dlevel >= 20 && dlevel <= 30
+            && (dlevel == 24 || one_chance_in(3)))
+            place_specific_stair(DNGN_ENTER_ABYSS);
+
+        // level 26: replaces all down stairs with staircases to Zot:
+        if (dlevel == 26)
+        {
+            for (sx = 1; bi < GXM; sx++)
+                for (sy = 1; bj < GYM; sy++)
+                    if (grd[sx][sy] >= DNGN_STONE_STAIRS_DOWN_I
+                            && grd[sx][sy] <= DNGN_ROCK_STAIRS_DOWN)
+                    {
+                        grd[sx][sy] = DNGN_ENTER_ZOT;
+                    }
+        }
+    }
+
+    // place actual branch entrances
+    for (int branch = 0; branch < 30; branch++)
+    {
+        stair = 0;
+        entrance = 100;
+
+        if (you.branch_stairs[branch] == 100)   // set in newgame
+            break;
+
+        if (you.branch_stairs[branch] != dlevel)
+            continue;
+
+        // decide if this branch leaves from this level
+        switch(branch)
+        {
+            case STAIRS_ORCISH_MINES:
+            case STAIRS_HIVE:
+            case STAIRS_LAIR:
+            case STAIRS_VAULTS:
+            case STAIRS_ECUMENICAL_TEMPLE:
+                entrance = BRANCH_MAIN_DUNGEON;
+                break;
+
+            case STAIRS_SLIME_PITS:
+            case STAIRS_SWAMP:
+            case STAIRS_SNAKE_PIT:
+                entrance = BRANCH_LAIR;
+                break;
+
+            case STAIRS_ELVEN_HALLS:
+                entrance = BRANCH_ORCISH_MINES;
+                break;
+
+            case STAIRS_CRYPT:
+            case STAIRS_HALL_OF_BLADES:
+                entrance = BRANCH_VAULTS;
+                break;
+
+            case STAIRS_TOMB:
+                entrance = BRANCH_CRYPT;
+                break;
+
+            default:
+                entrance = 100;
+                break;
+        }
+
+        if (you.where_are_you != entrance)
+            continue;
+
+        stair = branch + DNGN_ENTER_ORCISH_MINES;
+        place_specific_stair(stair);
+    }   // end loop - possible branch entrances
+}
+
+

@@ -96,56 +96,69 @@ static void print_ench(string & description, unsigned char item_plus)
 // word and such. The character $ is interpreted as a CR.
 //
 //---------------------------------------------------------------
-static void print_description(const string & description)
+static void print_description(const string & d)
 {
-    unsigned int i = 0;
-    int j = 0;
+    int nextLine = -1;
+    int currentPos = 0;
+    const int lineWidth = 79;
+    bool nlSearch = true;       // efficiency
 
     textcolor(LIGHTGREY);
 
-    for (i = 0; i < description.length(); i++)
+    while(currentPos < d.length())
     {
-#ifdef DOS_TERM
-        if (description[i] == '$')
+        if (currentPos != 0)
         {
-            cprintf(EOL);
-            j = 0;
-
-        }
-        else
-            putch(description[i]);
-
-
-        if (j % 55 >= 43 && description[i] == 32
-            && i + 1 < description.length() && description[i + 1] != '$')
-        {
-            cprintf(EOL);
-            j = 0;
-        }
-#endif
-
 #ifdef PLAIN_TERM
-        if (description[i] == '$')
-        {
             gotoxy(1, wherey() + 1);
-            j = 0;
-
-        }
-        else
-            putch(description[i]);
-
-
-        if (j % 70 >= 58 && description[i] == 32
-            && i + 1 < description.length() && description[i + 1] != '$')
-        {
-            gotoxy(1, wherey() + 1);
-            j = 0;
-        }
 #endif
-        j++;
+#ifdef DOS_TERM
+            cprintf(EOL);
+#endif
+        }
+
+        // see if $ sign is within one lineWidth
+        if (nlSearch)
+        {
+            nextLine = d.find('$', currentPos);
+            if (nextLine >= currentPos && nextLine < currentPos + lineWidth)
+            {
+                cprintf((d.substr(currentPos, nextLine - currentPos)).data());
+                currentPos = nextLine + 1;
+                continue;
+            }
+            if (nextLine < 0)
+                nlSearch = false;       // there are no newlines, don't search again.
+        }
+
+        // no newline -- see if rest of string will fit.
+        if (currentPos + lineWidth >= d.length())
+        {
+            cprintf((d.substr(currentPos)).data());
+            return;
+        }
+
+
+        // ok.. try to truncate at space.
+        nextLine = d.rfind(' ', currentPos + lineWidth);
+
+        if (nextLine > 0)
+        {
+            cprintf((d.substr(currentPos, nextLine - currentPos)).data());
+            currentPos = nextLine + 1;
+            continue;
+        }
+
+        // oops.  just truncate.
+        nextLine = currentPos + lineWidth;
+
+        if (nextLine > d.length())
+            nextLine = d.length();
+
+        cprintf((d.substr(currentPos, nextLine - currentPos)).data());
+        currentPos = nextLine;
     }
 }
-
 
 //---------------------------------------------------------------
 //
@@ -4302,7 +4315,7 @@ void describe_spell(int spelled)
                        "near the caster.  The mass of the target item(s) will "
                        "make the task more difficult, with some items too "
                        "massive to ever be moved by this spell.  Also be "
-                       "wary that is your power level is insufficient "
+                       "wary that if your power level is insufficient "
                        "to move all of a group of items, some might be lost "
                        "to the cosmic void... but you need not worry about "
                        "this when transporting only a single object. ";
@@ -6220,7 +6233,7 @@ god_favour:     //mv: now let's print favor as Brent suggested
        //saves his life (probably it shouldn't be displayed at all).
        //What about this ?
        {
-        sprintf ( info, "%s %s watches you during your prayer." EOL,
+        sprintf ( info, "%s %s watches over you during your prayer." EOL,
                    god_name(which_god),
                    (you.piety>=150) ? "carefully":  // > 4/5
                    (you.piety>=90 ) ? "often" : // > 2/3

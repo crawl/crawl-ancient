@@ -419,8 +419,8 @@ void stinking_cloud(void)
 
     strcpy(beem.beam_name, "ball of vapour");
     beem.colour = GREEN;
-    beem.range = 7;
-    beem.rangeMax = 7;
+    beem.range = 6;
+    beem.rangeMax = 6;
     beem.damage = 0;
     beem.hit = 20;
     beem.type = SYM_ZAP;

@@ -270,7 +270,6 @@ void deck_of_cards(unsigned char which_deck)
 
             if (you.inv_quantity[you.equip[EQ_WEAPON]] == 0)
             {
-                you.num_inv_items--;
                 you.equip[EQ_WEAPON] = -1;
 
                 mpr("You are now empty handed.");
@@ -303,6 +302,7 @@ static void cards(unsigned char which_card)
     int dvar1 = 0;
     int loopy = 0;              // general purpose loop variable {dlb}
     bool success = false;       // for summoning messages {dlb}
+    bool failMsg = true;
 
     switch (which_card)
     {
@@ -440,7 +440,8 @@ static void cards(unsigned char which_card)
         mpr("You have drawn the Freak!");
         for (loopy = 0; loopy < 6; loopy++)
         {
-            mutate(100);
+            if (!mutate(100, failMsg))
+                failMsg = false;
         }
         break;
 

@@ -918,19 +918,107 @@ inline char *mons_name( int mc )
 
 bool mons_should_fire(struct bolt &beam)
 {
+    // use of foeRatio:
+    // the higher this number, the more monsters
+    // will _avoid_ collateral damage to their friends.
+    // setting this to zero will in fact have all
+    // monsters ignore their friends when considering
+    // collateral damage.
+
     // quick check - did we in fact get any foes?
     if (beam.foe_count == 0)
         return false;
 
-    // if we either hit no friends, or monster is stupid
-    // and doesn't care if we hit friends:
-    if (beam.fr_count == 0 || (!beam.smartMonster))
+    // if we either hit no friends, or monster too dumb to care
+    if (beam.fr_count == 0 || !beam.smartMonster)
         return true;
 
-    // smart monsters will only fire if they
-    // do minimal collateral damage
-    if (beam.foe_power >= 3 * beam.fr_power)
+    // only fire if they do acceptably low collateral damage
+    // the default for this is 50%;  in other words, don't
+    // hit a foe unless you hit 2 or fewer friends.
+    if (beam.foe_power >= (beam.foeRatio * beam.fr_power) / 100)
         return true;
 
     return false;
+}
+
+
+// used to determine whether or not a monster should always
+// fire this spell if selected.  If not, we should use a
+// tracer.
+
+// note - this function assumes that the monster is "nearby"
+// its target!
+
+bool ms_always_fire(int monspell)
+{
+    bool always = true;
+
+    switch(monspell)
+    {
+        case MS_BANISHMENT:
+        case MS_COLD_BOLT:
+        case MS_CONFUSE:
+        case MS_CRYSTAL_SPEAR:
+        case MS_DISINTEGRATE:
+        case MS_ENERGY_BOLT:
+        case MS_FIRE_BOLT:
+        case MS_FIREBALL:
+        case MS_FLAME:
+        case MS_FROST:
+        case MS_HELLFIRE:
+        case MS_IRON_BOLT:
+        case MS_LIGHTNING_BOLT:
+        case MS_MARSH_GAS:
+        case MS_METAL_SPLINTERS:
+        case MS_MMISSILE:
+        case MS_NEGATIVE_BOLT:
+        case MS_ORB_ENERGY:
+        case MS_PAIN:
+        case MS_PARALYSIS:
+        case MS_POISON_BLAST:
+        case MS_POISON_SPLASH:
+        case MS_QUICKSILVER_BOLT:
+        case MS_SLOW:
+        case MS_STEAM_BALL:
+        case MS_STICKY_FLAME:
+        case MS_STING:
+        case MS_STONE_ARROW:
+        case MS_TELEPORT_OTHER:
+        case MS_VENOM_BOLT:
+            always = false;
+            break;
+
+        // self-niceties and direct effects
+        case MS_ANIMATE_DEAD:
+        case MS_BLINK:
+        case MS_BRAIN_FEED:
+        case MS_DIG:
+        case MS_FAKE_RAKSHASA_SUMMON:
+        case MS_HASTE:
+        case MS_HEAL:
+        case MS_HELLFIRE_BURST:
+        case MS_INVIS:
+        case MS_LEVEL_SUMMON:
+        case MS_MUTATION:
+        case MS_SMITE:
+        case MS_SUMMON_BEAST:
+        case MS_SUMMON_DEMON_LESSER:
+        case MS_SUMMON_DEMON:
+        case MS_SUMMON_DEMON_GREATER:
+        case MS_SUMMON_UFETUBUS:
+        case MS_TELEPORT:
+        case MS_TORMENT:
+        case MS_VAMPIRE_SUMMON:
+
+        // meaningless, but sure, why not?
+        case MS_NO_SPELL:
+            break;
+
+        default:
+            break;
+
+    }
+
+    return always;
 }

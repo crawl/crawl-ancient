@@ -97,7 +97,7 @@ static void doOutputBuffering(bool newValue)
 // with the IBM graphics option.
 //
 //---------------------------------------------------------------
-static void get_ibm_symbol(unsigned int object, unsigned char *ch,
+void get_ibm_symbol(unsigned int object, unsigned char *ch,
                            unsigned char *color)
 {
     ASSERT(color != NULL);
@@ -328,10 +328,10 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch,
 
     case DNGN_ENTER_ORCISH_MINES:
     case DNGN_ENTER_HIVE:
-    case DNGN_ENTER_LAIR_I:
+    case DNGN_ENTER_LAIR:
     case DNGN_ENTER_SLIME_PITS:
     case DNGN_ENTER_VAULTS:
-    case DNGN_ENTER_CRYPT_I:
+    case DNGN_ENTER_CRYPT:
     case DNGN_ENTER_HALL_OF_BLADES:
     case DNGN_ENTER_TEMPLE:
     case DNGN_ENTER_SNAKE_PIT:
@@ -358,12 +358,12 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch,
     case DNGN_RETURN_DUNGEON_III:
     case DNGN_RETURN_LAIR_II:
     case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS:
-    case DNGN_RETURN_CRYPT_II:
+    case DNGN_RETURN_VAULTS_II:
+    case DNGN_RETURN_VAULTS_III:
     case DNGN_RETURN_DUNGEON_V:
     case DNGN_RETURN_LAIR_III:
     case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT_III:
+    case DNGN_RETURN_CRYPT:
     case DNGN_RETURN_LAIR_IV:
     case 143:
     case 144:
@@ -841,10 +841,10 @@ char colour_code_map(unsigned char map_value)
 
     case DNGN_ENTER_ORCISH_MINES:
     case DNGN_ENTER_HIVE:
-    case DNGN_ENTER_LAIR_I:
+    case DNGN_ENTER_LAIR:
     case DNGN_ENTER_SLIME_PITS:
     case DNGN_ENTER_VAULTS:
-    case DNGN_ENTER_CRYPT_I:
+    case DNGN_ENTER_CRYPT:
     case DNGN_ENTER_HALL_OF_BLADES:
     case DNGN_ENTER_TEMPLE:
     case DNGN_ENTER_SNAKE_PIT:
@@ -863,12 +863,12 @@ char colour_code_map(unsigned char map_value)
     case DNGN_RETURN_DUNGEON_III:
     case DNGN_RETURN_LAIR_II:
     case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS:
-    case DNGN_RETURN_CRYPT_II:
+    case DNGN_RETURN_VAULTS_II:
+    case DNGN_RETURN_VAULTS_III:
     case DNGN_RETURN_DUNGEON_V:
     case DNGN_RETURN_LAIR_III:
     case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT_III:
+    case DNGN_RETURN_CRYPT:
     case DNGN_RETURN_LAIR_IV:
     case 143:
     case 144:
@@ -922,23 +922,6 @@ void monster_grid(bool do_updates)
                             int the_shout = mons_shouts(monster->type);
 
                             strcpy(info, "You hear ");
-#if 0
-                            strcat(info, (the_shout == 1) ? "a shout!" :
-                                   (the_shout == 2) ? "a bark!" :
-                                   (the_shout == 3) ? "two shouts!" :
-                                   (the_shout == 4) ? "a roar!" :
-                                   (the_shout == 5) ? "a hideous shriek!" :
-                                   (the_shout == 6) ? "a bellow!" :
-                                   (the_shout == 7) ? "a screech!" :
-                                   (the_shout ==
-                                    8) ? "an angry buzzing noise."
-                                   : (the_shout ==
-                                      9) ? "a chilling moan." : (the_shout ==
-                                                                 10) ?
-                                   "an irritating high-pitched whine."
-                                   : (the_shout ==
-                                      11) ? "a croak." : "buggy behavior!");
-#else
                             switch (the_shout)
                             {
                             case S_SILENT:
@@ -986,7 +969,6 @@ void monster_grid(bool do_updates)
                                 strcat(info, "an angry growl!");
                                 break;
                             }
-#endif
                             mpr(info);
                         }
 
@@ -2167,10 +2149,10 @@ unsigned char mapchar(unsigned char ldfk)
     case DNGN_ROCK_STAIRS_DOWN:
     case DNGN_ENTER_ORCISH_MINES:
     case DNGN_ENTER_HIVE:
-    case DNGN_ENTER_LAIR_I:
+    case DNGN_ENTER_LAIR:
     case DNGN_ENTER_SLIME_PITS:
     case DNGN_ENTER_VAULTS:
-    case DNGN_ENTER_CRYPT_I:
+    case DNGN_ENTER_CRYPT:
     case DNGN_ENTER_HALL_OF_BLADES:
     case DNGN_ENTER_TEMPLE:
     case DNGN_ENTER_SNAKE_PIT:
@@ -2193,12 +2175,12 @@ unsigned char mapchar(unsigned char ldfk)
     case DNGN_RETURN_DUNGEON_III:
     case DNGN_RETURN_LAIR_II:
     case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS:
-    case DNGN_RETURN_CRYPT_II:
+    case DNGN_RETURN_VAULTS_II:
+    case DNGN_RETURN_VAULTS_III:
     case DNGN_RETURN_DUNGEON_V:
     case DNGN_RETURN_LAIR_III:
     case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT_III:
+    case DNGN_RETURN_CRYPT:
     case DNGN_RETURN_LAIR_IV:
     case 143:
     case 144:
@@ -2333,10 +2315,10 @@ unsigned char mapchar2(unsigned char ldfk)
     case DNGN_ROCK_STAIRS_DOWN:
     case DNGN_ENTER_ORCISH_MINES:
     case DNGN_ENTER_HIVE:
-    case DNGN_ENTER_LAIR_I:
+    case DNGN_ENTER_LAIR:
     case DNGN_ENTER_SLIME_PITS:
     case DNGN_ENTER_VAULTS:
-    case DNGN_ENTER_CRYPT_I:
+    case DNGN_ENTER_CRYPT:
     case DNGN_ENTER_HALL_OF_BLADES:
     case DNGN_ENTER_TEMPLE:
     case DNGN_ENTER_SNAKE_PIT:
@@ -2359,12 +2341,12 @@ unsigned char mapchar2(unsigned char ldfk)
     case DNGN_RETURN_DUNGEON_III:
     case DNGN_RETURN_LAIR_II:
     case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS:
-    case DNGN_RETURN_CRYPT_II:
+    case DNGN_RETURN_VAULTS_II:
+    case DNGN_RETURN_VAULTS_III:
     case DNGN_RETURN_DUNGEON_V:
     case DNGN_RETURN_LAIR_III:
     case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT_III:
+    case DNGN_RETURN_CRYPT:
     case DNGN_RETURN_LAIR_IV:
     case 143:
     case 144:
@@ -2451,7 +2433,7 @@ bool mons_near(struct monsters * monster)
 // without the IBM graphics option.
 //
 //---------------------------------------------------------------
-static void get_non_ibm_symbol(unsigned int object, unsigned char *ch,
+void get_non_ibm_symbol(unsigned int object, unsigned char *ch,
                                unsigned char *color)
 {
     ASSERT(color != NULL);
@@ -2680,10 +2662,10 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch,
 
     case DNGN_ENTER_ORCISH_MINES:
     case DNGN_ENTER_HIVE:
-    case DNGN_ENTER_LAIR_I:
+    case DNGN_ENTER_LAIR:
     case DNGN_ENTER_SLIME_PITS:
     case DNGN_ENTER_VAULTS:
-    case DNGN_ENTER_CRYPT_I:
+    case DNGN_ENTER_CRYPT:
     case DNGN_ENTER_HALL_OF_BLADES:
     case DNGN_ENTER_TEMPLE:
     case DNGN_ENTER_SNAKE_PIT:
@@ -2710,12 +2692,12 @@ static void get_non_ibm_symbol(unsigned int object, unsigned char *ch,
     case DNGN_RETURN_DUNGEON_III:
     case DNGN_RETURN_LAIR_II:
     case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS:
-    case DNGN_RETURN_CRYPT_II:
+    case DNGN_RETURN_VAULTS_II:
+    case DNGN_RETURN_VAULTS_III:
     case DNGN_RETURN_DUNGEON_V:
     case DNGN_RETURN_LAIR_III:
     case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT_III:
+    case DNGN_RETURN_CRYPT:
     case DNGN_RETURN_LAIR_IV:
     case 143:
     case 144:
@@ -3175,10 +3157,10 @@ unsigned char mapchar3(unsigned char ldfk)
     case DNGN_ROCK_STAIRS_DOWN:
     case DNGN_ENTER_ORCISH_MINES:
     case DNGN_ENTER_HIVE:
-    case DNGN_ENTER_LAIR_I:
+    case DNGN_ENTER_LAIR:
     case DNGN_ENTER_SLIME_PITS:
     case DNGN_ENTER_VAULTS:
-    case DNGN_ENTER_CRYPT_I:
+    case DNGN_ENTER_CRYPT:
     case DNGN_ENTER_HALL_OF_BLADES:
     case DNGN_ENTER_TEMPLE:
     case DNGN_ENTER_SNAKE_PIT:
@@ -3201,12 +3183,12 @@ unsigned char mapchar3(unsigned char ldfk)
     case DNGN_RETURN_DUNGEON_III:
     case DNGN_RETURN_LAIR_II:
     case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS:
-    case DNGN_RETURN_CRYPT_II:
+    case DNGN_RETURN_VAULTS_II:
+    case DNGN_RETURN_VAULTS_III:
     case DNGN_RETURN_DUNGEON_V:
     case DNGN_RETURN_LAIR_III:
     case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT_III:
+    case DNGN_RETURN_CRYPT:
     case DNGN_RETURN_LAIR_IV:
     case 143:
     case 144:
@@ -3340,10 +3322,10 @@ unsigned char mapchar4(unsigned char ldfk)
     case DNGN_ROCK_STAIRS_DOWN:
     case DNGN_ENTER_ORCISH_MINES:
     case DNGN_ENTER_HIVE:
-    case DNGN_ENTER_LAIR_I:
+    case DNGN_ENTER_LAIR:
     case DNGN_ENTER_SLIME_PITS:
     case DNGN_ENTER_VAULTS:
-    case DNGN_ENTER_CRYPT_I:
+    case DNGN_ENTER_CRYPT:
     case DNGN_ENTER_HALL_OF_BLADES:
     case DNGN_ENTER_TEMPLE:
     case DNGN_ENTER_SNAKE_PIT:
@@ -3366,12 +3348,12 @@ unsigned char mapchar4(unsigned char ldfk)
     case DNGN_RETURN_DUNGEON_III:
     case DNGN_RETURN_LAIR_II:
     case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS:
-    case DNGN_RETURN_CRYPT_II:
+    case DNGN_RETURN_VAULTS_II:
+    case DNGN_RETURN_VAULTS_III:
     case DNGN_RETURN_DUNGEON_V:
     case DNGN_RETURN_LAIR_III:
     case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT_III:
+    case DNGN_RETURN_CRYPT:
     case DNGN_RETURN_LAIR_IV:
     case 143:
     case 144:

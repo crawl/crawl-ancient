@@ -101,5 +101,11 @@ void wield_weapon(bool auto_wield);
 void zap_wand(void);
 
 
+// last updated 15jan2001 {gdl}
+/* ***********************************************************************
+ * called from: item_use food
+ * *********************************************************************** */
+void wield_effects(int item_wield_2, bool showMsgs);
+
 
 #endif

@@ -86,8 +86,24 @@ void viewwindow3(char draw_it, bool do_updates);        // non-IBM graphics
 
 // last updated 19jun2000 (gdl)
 /* ***********************************************************************
- * called from:
+ * called from: acr view
  * *********************************************************************** */
 void setLOSRadius(int newLR);
+
+// last updated 17jan2001 (gdl)
+/* ***********************************************************************
+ * called from: beam view
+ * *********************************************************************** */
+void get_ibm_symbol(unsigned int object, unsigned char *ch,
+    unsigned char *color);
+
+
+// last updated 17jan2001 (gdl)
+/* ***********************************************************************
+ * called from: beam view
+ * *********************************************************************** */
+void get_non_ibm_symbol(unsigned int object, unsigned char *ch,
+    unsigned char *color);
+
 
 #endif

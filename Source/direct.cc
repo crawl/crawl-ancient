@@ -986,7 +986,7 @@ static void describe_cell(int mx, int my)
     case DNGN_ENTER_HIVE:
         mpr("A staircase to the Hive.");
         break;
-    case DNGN_ENTER_LAIR_I:
+    case DNGN_ENTER_LAIR:
         mpr("A staircase to the Lair.");
         break;
     case DNGN_ENTER_SLIME_PITS:
@@ -995,7 +995,7 @@ static void describe_cell(int mx, int my)
     case DNGN_ENTER_VAULTS:
         mpr("A staircase to the Vaults.");
         break;
-    case DNGN_ENTER_CRYPT_I:
+    case DNGN_ENTER_CRYPT:
         mpr("A staircase to the Crypt.");
         break;
     case DNGN_ENTER_HALL_OF_BLADES:
@@ -1027,28 +1027,22 @@ static void describe_cell(int mx, int my)
         mpr("A staircase back to the Dungeon.");
         break;
     case DNGN_RETURN_LAIR_II:
-        mpr("A staircase back to the Lair.");
-        break;
-    case DNGN_RETURN_VAULTS:
-        mpr("A staircase back to the Vaults.");
-        break;
-    case DNGN_RETURN_CRYPT_II:
-        mpr("A staircase back to the Crpyt.");
-        break;
     case DNGN_RETURN_LAIR_III:
+    case DNGN_RETURN_LAIR_IV:
         mpr("A staircase back to the Lair.");
+        break;
+    case DNGN_RETURN_VAULTS_II:
+    case DNGN_RETURN_VAULTS_III:
+        mpr("A staircase back to the Vaults.");
         break;
     case DNGN_RETURN_MINES:
         mpr("A staircase back to the Mines.");
         break;
-    case DNGN_RETURN_CRYPT_III:
+    case DNGN_RETURN_CRYPT:
         mpr("A staircase back to the Crypt.");
         break;
     case DNGN_EXIT_ZOT:
         mpr("A gate leading back out of this place.");
-        break;
-    case DNGN_RETURN_LAIR_IV:
-        mpr("A staircase back to the Lair.");
         break;
     case DNGN_ALTAR_ZIN:
         mpr("A glowing white marble altar of Zin.");

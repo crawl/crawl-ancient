@@ -192,7 +192,21 @@ void activate_ability(void)
 
     abil_used = spc2;
 
-    if (you.hunger_state < HS_HUNGRY)
+    // some abilities don't need a hunger check
+    bool hungerCheck = true;
+    switch (abil_now[abil_used].which)
+    {
+        case ABIL_RENOUNCE_RELIGION:
+        case ABIL_STOP_LEVITATING:
+        case ABIL_TURN_VISIBLE:
+        case ABIL_END_TRANSFORMATION:
+            hungerCheck = false;
+            break;
+        default:
+            break;
+    }
+
+    if (hungerCheck && you.hunger_state < HS_HUNGRY)
     {
         mpr("You're too hungry.");
         return;

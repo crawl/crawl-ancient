@@ -92,11 +92,6 @@ char invent(int item_class_inv, bool show_price)
     for (i = 0; i < 15; i++)
         Inv_class2[i] = 0;
 
-    //if (num_inv_items != 0)
-    //{
-
-    //strcpy(info [info_lines], " You are carrying"); info_lines++;
-
     for (i = 0; i < ENDOFPACK; i++)
     {
         if (you.inv_quantity[i])
@@ -341,10 +336,6 @@ char invent(int item_class_inv, bool show_price)
         }
         //info_lines ++;
     }
-    //} // end of if (num_inv_items)
-    //more();
-
-    //} // end of inventory()
 
     if (anything > 0)
     {

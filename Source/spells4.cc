@@ -73,7 +73,7 @@ static int quadrant_blink(char x, char y, int pow, int garbage);
 static void apply_area_square(int (*func) (char, char, int, int), char cx,
                               char cy, int power);
 static void apply_area_visible(int (*func) (char, char, int, int), int power);
-static void apply_random_around_player(int (*func) (char, char, int, int),
+static int  apply_random_around_player(int (*func) (char, char, int, int),
                                        int power, int num_targs = 1);
 
 //void cast_animate_golem(int pow); // see actual function for reasoning {dlb}
@@ -281,10 +281,12 @@ static void apply_area_square(int (*func) (char, char, int, int),
 }                               // end apply_area_square()
 
 
-static void apply_area_around_player(int (*func) (char, char, int, int),
+// returns summation of return values from passed in function.
+static int apply_area_around_player(int (*func) (char, char, int, int),
                                      int power)
 {
     char x, y;
+    int rv = 0;
 
     for (x = you.x_pos - 1; x <= you.x_pos + 1; x++)
     {
@@ -293,22 +295,25 @@ static void apply_area_around_player(int (*func) (char, char, int, int),
             if (x == you.x_pos && y == you.y_pos)
                 continue;
             else
-                func(x, y, power, 0);
+                rv += func(x, y, power, 0);
         }
     }
+    return rv;
 }                               // end apply_area_around_player()
 
 // effect up to max_targs monsters beside the player, chosen randomly
-static void apply_random_around_player( int (*func) (char, char, int, int),
+// return varies with the function called;  return values will be added up.
+static int apply_random_around_player( int (*func) (char, char, int, int),
                                         int power, int max_targs)
 {
+    int rv = 0;
+
     if (max_targs <= 0)
-        return;
+        return 0;
 
     if (max_targs >= 8)
     {
-        apply_area_around_player( func, power );
-        return;
+        return apply_area_around_player( func, power );
     }
 
     FixedVector< Coord, 8 > targs;
@@ -391,7 +396,7 @@ static void apply_random_around_player( int (*func) (char, char, int, int),
                 // at random, max_targs/count of the time (the rest
                 // of the time it replaces an element in an unchosen
                 // slot -- but we don't care about them).
-                if (count < max_targs)
+                if (count <= max_targs)
                     targs[ count - 1 ] = Coord( x, y );
                 else if (random2( count ) < max_targs)
                     targs[ random2( max_targs ) ] = Coord( x, y );
@@ -414,9 +419,10 @@ static void apply_random_around_player( int (*func) (char, char, int, int),
         for (int i = 0; i < targs_found; i++)
         {
             ASSERT( targs[i].x && targs[i].y );
-            func( targs[i].x, targs[i].y, divided_power, 0 );
+            rv += func( targs[i].x, targs[i].y, divided_power, 0 );
         }
     }
+    return rv;
 }                               // end apply_random_around_player()
 
 static void apply_one_neighbouring_square(int (*func) (char, char, int, int),
@@ -1226,7 +1232,6 @@ void cast_sticks_to_snakes(int pow)
         {
             unwield_item( weapon );
             you.inv_quantity[ weapon ] = 0;
-            you.num_inv_items--;
             you.equip[EQ_WEAPON] = -1;
             mpr("You are now empty handed.");
         }
@@ -1500,7 +1505,7 @@ static int ignite_poison_monsters(char x, char y, int pow, int garbage)
     if (mons_corpse_thingy(menv[monster].type) == CE_POISONOUS)
     {
         beam.flavour = BEAM_FIRE;
-        damage = check_mons_resists(&menv[monster], beam, damage);
+        damage = mons_adjust_flavoured(&menv[monster], beam, damage);
         player_hurt_monster(monster, damage);
         return 1;
     }
@@ -1545,7 +1550,6 @@ void cast_ignite_poison(int pow)
             {                   // burn poison ammo
                 strength += you.inv_quantity[item];
                 you.inv_quantity[item] = 0;
-                you.num_inv_items = 0;
                 mpr("Some ammo you are carrying burns!");
             }
         }
@@ -1572,7 +1576,6 @@ void cast_ignite_poison(int pow)
                 mpr(info);
 
                 you.inv_quantity[item] = 0;
-                you.num_inv_items--;
 
                 if (item == you.equip[EQ_WEAPON])
                 {
@@ -1691,7 +1694,7 @@ static int discharge_monsters(char x, char y, int pow, int garbage)
 
         beam.flavour = BEAM_ELECTRICITY;
 
-        damage = check_mons_resists(&menv[mon], beam, damage);
+        damage = mons_adjust_flavoured(&menv[mon], beam, damage);
 
         if (damage)
         {
@@ -1710,8 +1713,11 @@ static int discharge_monsters(char x, char y, int pow, int garbage)
 void cast_discharge(int pow)
 {
     int num_targs = 2 + random2(3) + random2( pow ) / 20;
+    int dam;
 
-    apply_random_around_player( discharge_monsters, pow, num_targs );
+    dam = apply_random_around_player( discharge_monsters, pow, num_targs );
+    if (dam == 0)
+        mpr("The air around you crackles with energy.");
 }                               // end cast_discharge()
 
 // NB: this must be checked against the same effects
@@ -2346,7 +2352,6 @@ void cast_evaporate(int pow)
     if (you.inv_quantity[you.equip[EQ_WEAPON]] == 0)
     {
         unwield_item(you.equip[EQ_WEAPON]);
-        you.num_inv_items--;
         you.equip[EQ_WEAPON] = -1;
         mpr("You are now empty handed.");
     }
@@ -3100,7 +3105,6 @@ void cast_sandblast(int pow)
         if (you.inv_quantity[you.equip[EQ_WEAPON]] < 1)
         {
             you.equip[EQ_WEAPON] = -1;
-            you.num_inv_items--;
             mpr("You are now empty handed.");
         }
     }

@@ -1559,7 +1559,7 @@ void save_game(bool leave_game)
 #endif
 #endif
 
-    int datalen = 44 + 30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25
+    int datalen = 45 + 30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25
                   + 12 * 52 + 50 * 5 + 50 * 4 + 50 + 50 + 6 * 50 + 50 + 50
                   + 30 + 30 + 30 + 100 + 50 + 100 + NO_UNRANDARTS
                   + MAX_LEVELS * MAX_BRANCHES + MAX_BRANCHES
@@ -1585,6 +1585,9 @@ void save_game(bool leave_game)
     // added 23Jun2000 by GDL for player vision radius
     *p++ = you.normal_vision;
     *p++ = you.current_vision;
+
+    // added 17jan2001 by GDL to track exit from hell.
+    *p++ = you.hell_exit;
 
     // minor version >= 2
     for (i = 0; i < MAX_LEVELS; i++)
@@ -1912,7 +1915,7 @@ void restore_game(void)
         50 * 4 + 50 + 50 + 6 * 50 + 50 + 50 + 30 + 30 + 30 + 100 + 50 + 100 +
         NO_UNRANDARTS + MAX_BRANCHES + (2 * (MAX_LEVELS * MAX_BRANCHES));
 
-    int datalen = oldlen + 44 + MAX_LEVELS * MAX_BRANCHES;
+    int datalen = oldlen + 45 + MAX_LEVELS * MAX_BRANCHES;
     char *buf = (char *) malloc(datalen);
     char *p = buf;
 
@@ -1965,6 +1968,9 @@ void restore_game(void)
             used_chunk += 2;
             you.normal_vision = *p++;
             you.current_vision = *p++;
+
+            // added 17jan2001 for player exit from hell
+            you.hell_exit = *p++;
 
         }
         else
@@ -2098,8 +2104,6 @@ void restore_game(void)
             ++you.spell_no;
     }
 
-    you.num_inv_items = 0;
-
     for (i = 0; i < ENDOFPACK; ++i)
     {
         you.inv_class[i] = *p++;
@@ -2110,9 +2114,6 @@ void restore_game(void)
         you.inv_ident[i] = *p++;
         you.inv_quantity[i] = load_int(p, 5);
         you.inv_plus2[i] = *p++;
-
-        if (you.inv_quantity[i] > 0)
-            ++you.num_inv_items;
     }
 
     for (i = 0; i < 5; ++i)

@@ -25,6 +25,7 @@
 
 #include "describe.h"
 #include "invent.h"
+#include "items.h"
 #include "itemname.h"
 #include "player.h"
 #include "spl-book.h"
@@ -172,7 +173,7 @@ char in_a_shop(char shoppy, char id[4][50])
         goto goodbye;
     }
 
-    if (you.num_inv_items >= ENDOFPACK)
+    if (inv_count() >= ENDOFPACK)
     {
         shop_print("You seem to be carrying too much.", 20);
         more3();
@@ -474,8 +475,6 @@ void purchase(int item_got)
     you.inv_dam[i] = mitm.special[item_got];
     you.inv_colour[i] = mitm.colour[item_got];
     you.inv_quantity[i] = mitm.quantity[item_got];
-
-    you.num_inv_items++;
 }                               // end purchase()
 
 unsigned int item_value(unsigned char item_clas, unsigned char item_typ,

@@ -457,6 +457,7 @@ void up_stairs(void)
 {
     unsigned char stair_find = grd[you.x_pos][you.y_pos];
     char old_level_where = you.where_are_you;
+    bool was_a_labyrinth = false;
 
     if (stair_find == DNGN_ENTER_SHOP)
     {
@@ -492,7 +493,10 @@ void up_stairs(void)
     // in the abyss or pandemonium a bit trouble (well the labyrinth does
     // provide a way out of those places, its really not that bad I suppose)
     if (you.level_type == LEVEL_LABYRINTH)
+    {
         you.level_type = LEVEL_DUNGEON;
+        was_a_labyrinth = true;
+    }
 
     you.your_level--;
 
@@ -518,7 +522,7 @@ void up_stairs(void)
     {
         mpr("Thank you for visiting Hell. Please come again soon.");
         you.where_are_you = BRANCH_MAIN_DUNGEON;
-        stair_find = DNGN_STONE_STAIRS_DOWN_I;
+        stair_find = DNGN_STONE_STAIRS_UP_I;
     }
 
     if (you.where_are_you > BRANCH_MAIN_DUNGEON
@@ -546,12 +550,12 @@ void up_stairs(void)
         mpr("Welcome back to the Lair of Beasts!");
         you.where_are_you = BRANCH_LAIR;
         break;
-    case DNGN_RETURN_VAULTS:
+    case DNGN_RETURN_VAULTS_II:
+    case DNGN_RETURN_VAULTS_III:
         mpr("Welcome back to the Vaults!");
         you.where_are_you = BRANCH_VAULTS;
         break;
-    case DNGN_RETURN_CRYPT_III:
-    case DNGN_RETURN_CRYPT_II:
+    case DNGN_RETURN_CRYPT:
         mpr("Welcome back to the Crypt!");
         you.where_are_you = BRANCH_CRYPT;
         break;
@@ -561,16 +565,16 @@ void up_stairs(void)
         break;
     }
 
-    char stair_taken = stair_find;
+    unsigned char stair_taken = stair_find;
     bool moving_level = true;
     bool want_followers = true;
 
 /*load(stair_taken, moving_level, level_saved, was_a_labyrinth, old_level, want_followers, just_made_new_lev); */
     if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
-        you.your_level = 27;
+        you.your_level = you.hell_exit;
 
-    load( stair_taken, moving_level, false, old_level, want_followers, false,
-          old_level_where );
+    load( stair_taken, moving_level, was_a_labyrinth, old_level,
+        want_followers, false, old_level_where );
 
     moving_level = false;
 
@@ -718,6 +722,7 @@ void down_stairs(bool remove_stairs, int old_level)
     if (stair_find == DNGN_ENTER_HELL)
     {
         you.where_are_you = BRANCH_VESTIBULE_OF_HELL;
+        you.hell_exit = you.your_level;
 
         mpr("Welcome to Hell!");
         mpr("Please enjoy your stay.");
@@ -763,7 +768,7 @@ void down_stairs(bool remove_stairs, int old_level)
             strcpy(info, "You hear a buzzing sound coming from all directions.");
             you.where_are_you = BRANCH_HIVE;
             break;
-        case DNGN_ENTER_LAIR_I:
+        case DNGN_ENTER_LAIR:
             strcat(info, "the Lair of Beasts!");
             you.where_are_you = BRANCH_LAIR;
             break;
@@ -775,7 +780,7 @@ void down_stairs(bool remove_stairs, int old_level)
             strcat(info, "the Vaults!");
             you.where_are_you = BRANCH_VAULTS;
             break;
-        case DNGN_ENTER_CRYPT_I:
+        case DNGN_ENTER_CRYPT:
             strcat(info, "the Crypt!");
             you.where_are_you = BRANCH_CRYPT;
             break;

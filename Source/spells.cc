@@ -58,6 +58,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
  *  force_effect forces a certain effect to occur. Currently unused.
  */
     struct bolt beam;
+    bool failMsg = true;
 
     int loopj = 0;
     int spec_effect = 0;
@@ -312,8 +313,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 potion_effect(POT_CONFUSION, 10);
                 break;
             case 3:
-                if (!mutate(100))
-                    canned_msg(MSG_NOTHING_HAPPENS);
+                mutate(100);
                 break;
             }
             break;
@@ -436,8 +436,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 banished(DNGN_ENTER_ABYSS);     // sends you to the abyss
                 break;
             case 3:
-                if (!mutate(100))
-                    canned_msg(MSG_NOTHING_HAPPENS);
+                mutate(100);
                 break;
             }
             break;
@@ -944,7 +943,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 ouch(3 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
-                mpr("Strange energies tear through your body!");
+                mpr("Strange energies suffuse your body!");
                 mutate(100);
                 break;
             case 2:
@@ -965,7 +964,10 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("Your body is distorted in a weird and horrible way!");
 
                 for (i = 0; i < 4; i++)
-                    mutate(100);
+                {
+                    if (!mutate(100, failMsg))
+                        failMsg = false;
+                }
 
                 ouch(7 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;

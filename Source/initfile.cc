@@ -147,47 +147,6 @@ static string & tolower_string( string &str )
     return (str);
 }
 
-static void strip( string &buf )
-{
-    int len = buf.length();
-    int s;
-
-    int t = 0;
-    bool emptyspace = true;
-
-    for (s = 0; s < len; s++)
-    {
-        // strip leading spaces as well as CRLF
-        if (buf[s] == ' ' && emptyspace)
-            continue;
-
-        // strip non-alnum.  this is redundant with the code in newgame(),
-        // which I hate,  but sscanf is known to produce garbage on some
-        // systems (i.e. mine :(  if the input field is blank.  This ends
-        // up swallowing the initial "hello!" text,  which is annoying.
-        if (!isalnum(buf[s]))
-            continue;
-
-        if (buf[s] == 0x0A || buf[s] == 0x0D)
-            buf[s] = '\0';
-
-        emptyspace = false;
-        buf[t] = buf[s];
-        t++;
-    }
-
-    // tie off
-    buf[t] = '\0';
-
-    // now strip trailing spaces - easy.
-    for (len = strlen(buf.c_str()) - 1; len >= 0; len--)
-    {
-        if (buf[len] != ' ')
-            break;
-    }
-    buf[len + 1] = '\0';
-}
-
 static bool read_bool( const string &field, bool def_value )
 {
     bool ret = def_value;
@@ -285,14 +244,14 @@ void read_init_file(void)
         string subkey = "";
         string field = "";
 
-        const unsigned int first_equals = str.find('=');
-        const unsigned int first_dot = str.find('.');
+        int first_equals = str.find('=');
+        int first_dot = str.find('.');
 
         // all lines with no equal-signs we ignore
-        if (first_equals == string::npos)
+        if (first_equals < 0)
             continue;
 
-        if (first_dot != string::npos || first_dot < first_equals)
+        if (first_dot > 0 && first_dot < first_equals)
         {
             key    = str.substr( 0, first_dot );
             subkey = str.substr( first_dot + 1, first_equals - first_dot - 1 );
@@ -302,6 +261,7 @@ void read_init_file(void)
         {
             // no subkey (dots are okay in value field)
             key    = str.substr( 0, first_equals );
+            subkey = "";
             field  = str.substr( first_equals + 1 );
         }
 
@@ -359,8 +319,7 @@ void read_init_file(void)
         }
         else if (key == "name")
         {
-            // clean up field first
-            strip( field );
+            // field is already cleaned up from trim_string()
             strncpy(you.your_name, field.c_str(), kNameLen);
         }
         else if (key == "verbose_dump")

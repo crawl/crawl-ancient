@@ -27,7 +27,6 @@
 
 #include "externs.h"
 
-#include "bang.h"
 #include "effects.h"
 #include "fight.h"
 #include "it_use2.h"
@@ -341,6 +340,12 @@ void beam(struct bolt &pbolt, int inv_number)
         // actually draw the beam/missile/whatever.
         if (!pbolt.isTracer)
         {
+            // we don't clean up the old position.
+            // first, most people like seeing the full path,
+            // and second, it is hard to do it right with
+            // respect to killed monsters, cloud trails, etc.
+
+            // draw new position
             int drawx = tx - you.x_pos + 18;
             int drawy = ty - you.y_pos + 9;
             // bounds check
@@ -387,8 +392,8 @@ void beam(struct bolt &pbolt, int inv_number)
 
 // returns damage taken by a monster from a "flavoured" (fire, ice, etc.)
 // attack -- damage from clouds and branded weapons handled elsewhere.
-int check_mons_resists(struct monsters *monster, struct bolt &pbolt,
-                       int hurted)
+int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
+                       int hurted, bool doFlavouredEffects)
 {
     switch (pbolt.flavour)
     {
@@ -470,12 +475,12 @@ int check_mons_resists(struct monsters *monster, struct bolt &pbolt,
 
 
     case BEAM_POISON:
-        if (!pbolt.isTracer && !one_chance_in(3))
+        if (doFlavouredEffects && !pbolt.isTracer && !one_chance_in(3))
             poison_monster(monster, YOU_KILL(pbolt.thrower));
 
         if (mons_res_poison(monster->type) > 0)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects && !pbolt.isTracer)
                 simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
@@ -491,8 +496,8 @@ int check_mons_resists(struct monsters *monster, struct bolt &pbolt,
         }
         else
         {
-            // early out for tracer
-            if (pbolt.isTracer)
+            // early out for tracer/no side effects
+            if (pbolt.isTracer || !doFlavouredEffects)
                 return hurted;
 
             simple_monster_message(monster, " is drained.");
@@ -629,7 +634,7 @@ int check_mons_resists(struct monsters *monster, struct bolt &pbolt,
     }
 
     return hurted;
-}                               // end check_mons_resists()
+}                               // end mons_adjust_flavoured()
 
 // these return values seem "backward" to me {dlb}:
 
@@ -702,6 +707,7 @@ void mass_enchantment(int wh_enchant, int pow)
     int i = 0;                  // loop variable {dlb}
     int p;                      // loop variable {dlb}
     bool brek = false;
+    bool msgGenerated = false;
     struct monsters *monster = 0;       // NULL {dlb}
 
     viewwindow(0, false);
@@ -758,6 +764,8 @@ void mass_enchantment(int wh_enchant, int pow)
                     if (monster->enchantment[2] != ENCH_INVIS
                         || player_see_invis())
                     {
+                        // turn message on
+                        msgGenerated = true;
                         switch (wh_enchant)
                         {
                         case ENCH_FEAR:
@@ -773,20 +781,20 @@ void mass_enchantment(int wh_enchant, int pow)
                                                    " submits to your will.");
                             monster->behavior = BEH_ENSLAVED;
                             break;
+                        default:
+                            // oops, I guess not!
+                            msgGenerated = false;
                         }
 
                         break;  // I'm totally confused on this one {dlb}
-                    }
-                    else
-                    {
-                        // I do not like this at all -- gives away # of
-                        // invisble monsters in area of effect {dlb}
-                        canned_msg(MSG_NOTHING_HAPPENS);
                     }
                 }
             }
         }                       // end "if mons_near(monster)"
     }                           // end "for i"
+
+    if (!msgGenerated)
+        canned_msg(MSG_NOTHING_HAPPENS);
 }                               // end mass_enchantmenet()
 
 /*
@@ -1040,7 +1048,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
             if (p == 3)
                 return MON_AFFECTED;
 
-            if (monster->enchantment[p] == ENCH_NONE)   /* replaces 3rd enchantment if all full. */
+            if (monster->enchantment[p] == ENCH_NONE)
             {
                 monster->enchantment[p] = ENCH_CHARM;
                 monster->enchantment1 = 1;
@@ -1288,6 +1296,15 @@ void fire_tracer(struct monsters *monster, struct bolt &pbolt)
     // init tracer variables
     pbolt.foe_count = pbolt.fr_count = 0;
     pbolt.foe_power = pbolt.fr_power = 0;
+    pbolt.foeRatio = 80;        // default - see mons_should_fire()
+
+    // foe ratio for summon gtr. demons & undead -- they may be
+    // summoned, but they're hostile and would love nothing better
+    // than to nuke the player and his minions
+    if (mons_holiness(monster->type) == MH_UNDEAD
+        || mons_holiness(monster->type) == MH_DEMONIC)
+        if (monster->enchantment[0] == ENCH_CHARM)
+            pbolt.foeRatio = 25;
 
     // fire!
     beam(pbolt);
@@ -1826,7 +1843,6 @@ static int affect_place_clouds(struct bolt &beam, int x, int y)
         cloud_type = YOU_KILL(beam.thrower)?CLOUD_POISON:CLOUD_POISON_MON;
 
         place_cloud( cloud_type, x, y, random2(4) + 2 );
-        return 0;
     }
 
     // FIRE/COLD over water/lava
@@ -2170,7 +2186,7 @@ static int  affect_player(struct bolt &beam)
 
     strcpy( info, "The " );
     strcat( info, beam.beam_name );
-    strcat( info, beam.isExplosion?" engulfs you!":"hits you!" );
+    strcat( info, beam.isExplosion?" engulfs you!":" hits you!" );
     mpr(info);
 
     int hurted = 0;
@@ -2249,8 +2265,9 @@ static int  affect_player(struct bolt &beam)
 
     // simple cases for scroll burns
     if (beam.flavour == BEAM_LAVA
-        || stricmp(beam.beam_name, "hellfire"))
+        || stricmp(beam.beam_name, "hellfire") == 0)
         scrolls_burn(burn_power, OBJ_SCROLLS);
+
     // more complex (geez..)
     if (beam.flavour == BEAM_FIRE && strcmp(beam.beam_name, "ball of steam") != 0)
         scrolls_burn(burn_power, OBJ_SCROLLS);
@@ -2321,6 +2338,12 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
         if (you.invis && mon->behavior == BEH_SLEEP && !beam.canSeeInvis)
             mon->behavior = BEH_CHASING_I;
 
+        // !@#*( affect_monster_enchantment() has side-effects on
+        // the beam structure which screw up range_used_on_hit(),
+        // so call it now and store.
+        int rangeUsed = range_used_on_hit(beam);
+
+        // now do enchantment affect
         int ench_result = affect_monster_enchantment(beam, mon);
         switch(ench_result)
         {
@@ -2335,7 +2358,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
             default:
                 break;
         }
-        return range_used_on_hit(beam);
+        return rangeUsed;
 
         // END non-tracer enchantment
     }
@@ -2381,7 +2404,9 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
         hurt_final = 0;
     }
 
-    hurt_final = check_mons_resists(mon, beam, hurt_final);
+    // check monster resists,  _without_ side effects (since the
+    // beam/missile might yet miss!)
+    hurt_final = mons_adjust_flavoured(mon, beam, hurt_final, false);
 
     // now,  we know how much this monster would (probably) be
     // hurt by this beam.
@@ -2457,6 +2482,12 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
         }
     }
 
+    // note that hurt_final was calculated above, so we don't need it again.
+    // just need to apply flavoured specials (since we called with
+    // doFlavouredEffects = false above)
+    mons_adjust_flavoured(mon, beam, hurt_final);
+
+    // now hurt monster
     hurt_monster(mon, hurt_final);
 
     if (mon->behavior == BEH_SLEEP)
@@ -2669,7 +2700,7 @@ deathCheck:
             mimic_alert(mon);
     }
 
-    return MON_AFFECTED;;
+    return MON_AFFECTED;
 }
 
 

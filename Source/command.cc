@@ -21,6 +21,7 @@
 
 #include "invent.h"
 #include "itemname.h"
+#include "items.h"
 #include "ouch.h"
 #include "spells0.h"
 #include "spl-util.h"
@@ -71,7 +72,7 @@ void adjust_item(void)
     unsigned char throw_2, throw_3;
     unsigned nthing = 0;
 
-    if (you.num_inv_items < 1)
+    if (inv_count() < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return;

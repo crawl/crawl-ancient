@@ -41,10 +41,12 @@
 #include "invent.h"
 #include "it_use2.h"
 #include "it_use3.h"
+#include "items.h"
 #include "itemname.h"
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
+#include "mstuff2.h"
 #include "mon-util.h"
 #include "ouch.h"
 #include "player.h"
@@ -72,11 +74,10 @@ void use_randart(unsigned char item_wield_2);
 void wield_weapon(bool auto_wield)
 {
     unsigned char nthing = 0;
-    unsigned char i_dam = 0;
     char str_pass[80];
     unsigned char keyin;
 
-    if (you.num_inv_items < 1)
+    if (inv_count() < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return;
@@ -290,30 +291,35 @@ void wield_weapon(bool auto_wield)
     strcat(info, " (weapon in hand)");
     mpr(info);
 
-#ifdef USE_NEW_COMBAT_STATS
-    const int stat_bonus = effective_stat_bonus();
+    // warn player about low str/dex or throwing skill
+    wield_warning();
 
-    strcpy( info, "Your relatively low " );
-    strcat( info, (you.strength < you.dex) ? "strength " : "dexterity " );
+    // any oddness on wielding taken care of here
+    wield_effects(item_wield_2, true);
 
-    if (stat_bonus <= -2)
-    {
-        strcat( info, "is limiting your use of this weapon." );
-        mpr( info, MSGCH_WARN );
-    }
-    else if (stat_bonus <= -5)
-    {
-        strcat( info, "is severely limiting your use of this weapon." );
-        mpr( info, MSGCH_WARN );
-    }
-#endif
+    // time calculations
+    you.time_taken *= 5;
+    you.time_taken /= 10;
+
+    wield_change = true;
+    you.turn_is_over = 1;
+}
+
+// provide a function for handling initial wielding of 'special'
+// weapons,  or those whose function is annoying to reproduce in
+// other places *cough* auto-butchering *cough*    {gdl}
+
+void wield_effects(int item_wield_2, bool showMsgs)
+{
+    unsigned char i_dam = 0;
 
     // and here we finally get to the special effects of wielding {dlb}
     if (you.inv_class[item_wield_2] == OBJ_MISCELLANY)
     {
         if (you.inv_type[item_wield_2] == MISC_LANTERN_OF_SHADOWS)
         {
-            mpr("The area is filled with flickering shadows.");
+            if (showMsgs)
+                mpr("The area is filled with flickering shadows.");
             you.special_wield = SPWLD_SHADOW;
         }
     }
@@ -348,7 +354,8 @@ void wield_weapon(bool auto_wield)
             && (you.religion == GOD_ZIN || you.religion == GOD_SHINING_ONE
                 || you.religion == GOD_ELYVILON))
         {
-            mpr("You really shouldn't be using a nasty item like this.");
+            if (showMsgs)
+                mpr("You really shouldn't be using a nasty item like this.");
         }
 
         if (you.inv_plus[item_wield_2] > 80)
@@ -371,67 +378,119 @@ void wield_weapon(bool auto_wield)
             if (you.inv_dam[item_wield_2] % 30 >= SPWPN_RANDART_I)
                 i_dam = inv_randart_wpn_properties(item_wield_2, 0, RAP_BRAND);
 
-            int effect = 0;     // for distortion effects
+            // message first
+            if (showMsgs)
+            {
+                switch (i_dam)
+                {
+                case SPWPN_FLAMING:
+                    mpr("It bursts into flame!");
+                    break;
 
+                case SPWPN_FREEZING:
+                    mpr("It glows with a cold blue light!");
+                    break;
+
+                case SPWPN_HOLY_WRATH:
+                    mpr("It softly glows with a divine radiance!");
+                    break;
+
+                case SPWPN_ELECTROCUTION:
+                    mpr("You hear the crackle of electricity.");
+                    break;
+
+                case SPWPN_ORC_SLAYING:
+                    mpr((you.species == SP_HILL_ORC)
+                            ? "You feel a sudden desire to commit suicide."
+                            : "You feel a sudden desire to kill orcs!");
+                    break;
+
+                case SPWPN_VENOM:
+                    mpr("It begins to drip with poison!");
+                    break;
+
+                case SPWPN_PROTECTION:
+                    mpr("You feel protected!");
+                    break;
+
+                case SPWPN_DRAINING:
+                    mpr("You sense an unholy aura.");
+                    break;
+
+                case SPWPN_SPEED:
+                    mpr("Your hands tingle!");
+                    break;
+
+                case SPWPN_FLAME:
+                    mpr("It glows red for a moment.");
+                    break;
+
+                case SPWPN_FROST:
+                    mpr("It is covered in frost.");
+                    break;
+
+                case SPWPN_VAMPIRICISM:
+                    mpr("You feel a strange hunger.");
+                    break;
+
+                case SPWPN_DISRUPTION:
+                    mpr("You sense a holy aura.");
+                    break;
+
+                case SPWPN_PAIN:
+                    mpr("A searing pain shoots up your arm!");
+                    break;
+
+                case NWPN_SINGING_SWORD:
+                    mpr("The Singing Sword hums in delight!");
+                    break;
+
+                case NWPN_WRATH_OF_TROG:
+                    mpr("You feel bloodthirsty!");
+                    break;
+
+                case NWPN_SCYTHE_OF_CURSES:
+                    mpr("A shiver runs down your spine.");
+                    break;
+
+                case NWPN_GLAIVE_OF_PRUNE:
+                    mpr("You feel pruney.");
+                    break;
+
+                case NWPN_SCEPTRE_OF_TORMENT:
+                    mpr("A terribly searing pain shoots up your arm!");
+                    break;
+
+                case NWPN_SWORD_OF_ZONGULDROK:
+                    mpr("You sense an extremely unholy aura.");
+                    break;
+
+                case NWPN_SWORD_OF_POWER:
+                    mpr("You sense an aura of extreme power.");
+                    break;
+
+                case NWPN_STAFF_OF_OLGREB:
+                    // josh declares mummies cannot smell {dlb}
+                    if (you.species != SP_MUMMY)
+                        mpr("You smell chlorine.");
+                    break;
+
+                case NWPN_VAMPIRES_TOOTH:
+                    // josh declares mummies cannot smell, and do not hunger {dlb}
+                    if (you.species != SP_MUMMY)
+                        mpr("You feel a strange hunger, and smell blood on the air...");
+                    break;
+
+                default:
+                    break;
+                }
+            }
+
+            // effect second
             switch (i_dam)
             {
-            case SPWPN_FLAMING:
-                mpr("It bursts into flame!");
-                break;
-
-            case SPWPN_FREEZING:
-                mpr("It glows with a cold blue light!");
-                break;
-
-            case SPWPN_HOLY_WRATH:
-                mpr("It softly glows with a divine radiance!");
-                break;
-
-            case SPWPN_ELECTROCUTION:
-                mpr("You hear the crackle of electricity.");
-                break;
-
-            case SPWPN_ORC_SLAYING:
-                mpr((you.species == SP_HILL_ORC)
-                        ? "You feel a sudden desire to commit suicide."
-                        : "You feel a sudden desire to kill orcs!");
-                break;
-
-            case SPWPN_VENOM:
-                mpr("It begins to drip with poison!");
-                break;
-
             case SPWPN_PROTECTION:
-                mpr("You feel protected!");
                 you.redraw_armor_class = 1;
-                break;
-
-            case SPWPN_DRAINING:
-                mpr("You sense an unholy aura.");
-                break;
-
-            case SPWPN_SPEED:
-                mpr("Your hands tingle!");
-                break;
-
-            case SPWPN_FLAME:
-                mpr("It glows red for a moment.");
-                break;
-
-            case SPWPN_FROST:
-                mpr("It is covered in frost.");
-                break;
-
-            case SPWPN_VAMPIRICISM:
-                mpr("You feel a strange hunger.");
-                break;
-
-            case SPWPN_DISRUPTION:
-                mpr("You sense a holy aura.");
-                break;
-
-            case SPWPN_PAIN:
-                mpr("A searing pain shoots up your arm!");
                 break;
 
             case SPWPN_DISTORTION:
@@ -443,17 +502,14 @@ void wield_weapon(bool auto_wield)
                 break;
 
             case NWPN_SINGING_SWORD:
-                mpr("The Singing Sword hums in delight!");
                 you.special_wield = SPWLD_SING;
                 break;
 
             case NWPN_WRATH_OF_TROG:
-                mpr("You feel bloodthirsty!");
                 you.special_wield = SPWLD_TROG;
                 break;
 
             case NWPN_SCYTHE_OF_CURSES:
-                mpr("A shiver runs down your spine.");
                 you.special_wield = SPWLD_CURSE;
                 break;
 
@@ -462,36 +518,24 @@ void wield_weapon(bool auto_wield)
                 break;
 
             case NWPN_GLAIVE_OF_PRUNE:
-                mpr("You feel pruney.");
                 you.special_wield = SPWLD_NONE;
                 break;
 
             case NWPN_SCEPTRE_OF_TORMENT:
-                mpr("A terribly searing pain shoots up your arm!");
                 you.special_wield = SPWLD_TORMENT;
                 break;
 
             case NWPN_SWORD_OF_ZONGULDROK:
-                mpr("You sense an extremely unholy aura.");
                 you.special_wield = SPWLD_ZONGULDROK;
                 break;
 
             case NWPN_SWORD_OF_POWER:
-                mpr("You sense an aura of extreme power.");
                 you.special_wield = SPWLD_POWER;
                 break;
 
             case NWPN_STAFF_OF_OLGREB:
                 // josh declares mummies cannot smell {dlb}
-                if (you.species != SP_MUMMY)
-                    mpr("You smell chlorine.");
                 you.special_wield = SPWLD_OLGREB;
-                break;
-
-            case NWPN_VAMPIRES_TOOTH:
-                // josh declares mummies cannot smell, and do not hunger {dlb}
-                if (you.species != SP_MUMMY)
-                    mpr("You feel a strange hunger, and smell blood on the air...");
                 break;
 
             case NWPN_STAFF_OF_WUCAD_MU:
@@ -504,12 +548,6 @@ void wield_weapon(bool auto_wield)
                 use_randart(item_wield_2);
         }
     }
-
-    you.time_taken *= 5;
-    you.time_taken /= 10;
-
-    wield_change = true;
-    you.turn_is_over = 1;
 }                               // end wield_weapon()
 
 //---------------------------------------------------------------
@@ -526,7 +564,7 @@ bool armour_prompt(const string & mesg, int *index)
 
     bool succeeded = false;
 
-    if (you.num_inv_items < 1)
+    if (inv_count() < 1)
         canned_msg(MSG_NOTHING_CARRIED);
     else if (you.berserker)
         canned_msg(MSG_TOO_BERSERK);
@@ -1108,7 +1146,7 @@ void throw_anything(void)
         canned_msg(MSG_TOO_BERSERK);
         return;
     }
-    else if (you.num_inv_items < 1)
+    else if (inv_count() < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return;
@@ -1326,31 +1364,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     }
 
     // figure out if we're thrown or launched
-    if (wepClass == OBJ_MISSILES
-        && lnchClass == OBJ_WEAPONS
-        && launches_things(lnchType) && wepType == launched_by(lnchType))
-    {
-        launched = true;
-    }
-
-    if (wepClass == OBJ_WEAPONS)
-    {
-        if (wepType == WPN_DAGGER || wepType == WPN_HAND_AXE
-            || wepType == WPN_SPEAR)
-        {
-            thrown = true;
-        }
-    }
-
-    if (wepClass == OBJ_MISSILES)
-    {
-        if (wepType == MI_DART || wepType == MI_STONE)
-            thrown = true;
-    }
-
-    // launched overrides thrown
-    if (launched == true)
-        thrown = false;
+    throw_type(lnchClass, lnchType, wepClass, wepType, launched, thrown);
 
     // extract launcher bonuses due to magic
     if (launched)
@@ -1725,8 +1739,6 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
     if (you.inv_quantity[throw_2] == 0)
     {
-        you.num_inv_items--;
-
         if (you.equip[EQ_WEAPON] == throw_2)
         {
             you.equip[EQ_WEAPON] = -1;
@@ -1746,7 +1758,7 @@ void puton_ring(void)
     unsigned char nthing = 0;
     bool is_amulet = false;
 
-    if (you.num_inv_items < 1)
+    if (inv_count() < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return;
@@ -2237,7 +2249,7 @@ void zap_wand(void)
 
     beam.obviousEffect = false;
 
-    if (you.num_inv_items < 1)
+    if (inv_count() < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return;
@@ -2413,7 +2425,7 @@ void drink(void)
             return;
     }
 
-    if (you.num_inv_items < 1)
+    if (inv_count() < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return;
@@ -2475,7 +2487,6 @@ void drink(void)
     you.inv_quantity[drink_2]--;
     if (you.inv_quantity[drink_2] == 0)
     {
-        you.num_inv_items--;
         if (you.equip[EQ_WEAPON] == drink_2)
         {
             you.equip[EQ_WEAPON] = -1;
@@ -2595,7 +2606,7 @@ void read_scroll(void)
         return;
     }
 
-    if (you.num_inv_items < 1)
+    if (inv_count() < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return;
@@ -2730,8 +2741,6 @@ void read_scroll(void)
 
         if (you.inv_quantity[sc_read_2] == 0)
         {
-            you.num_inv_items--;
-
             if (you.equip[EQ_WEAPON] == sc_read_2)
             {
                 you.equip[EQ_WEAPON] = -1;

@@ -72,5 +72,12 @@ void update_corpses(double elapsedTime);
  * *********************************************************************** */
 void handle_time(int time_delta);
 
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: command food item_use shopping spl-book transfor
+ * *********************************************************************** */
+int inv_count(void);
+
+
 
 #endif

@@ -318,7 +318,7 @@ void seen_staircase( unsigned char which_staircase )
     case DNGN_ENTER_HIVE:
         which_branch = BRANCH_HIVE;
         break;
-    case DNGN_ENTER_LAIR_I:
+    case DNGN_ENTER_LAIR:
         which_branch = BRANCH_LAIR;
         break;
     case DNGN_ENTER_SLIME_PITS:
@@ -327,7 +327,7 @@ void seen_staircase( unsigned char which_staircase )
     case DNGN_ENTER_VAULTS:
         which_branch = BRANCH_VAULTS;
         break;
-    case DNGN_ENTER_CRYPT_I:
+    case DNGN_ENTER_CRYPT:
         which_branch = BRANCH_CRYPT;
         break;
     case DNGN_ENTER_HALL_OF_BLADES:

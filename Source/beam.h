@@ -30,10 +30,12 @@ void beam(struct bolt &pbolt, int inv_number = -1);
 void explosion(struct bolt &pbolt);
 
 
+// last updated 22jan2001 {gdl}
 /* ***********************************************************************
- * called from: effects - spells2
+ * called from: effects - spells2 - spells4
  * *********************************************************************** */
-int check_mons_resists(struct monsters *monster, struct bolt &pbolt, int hurted);
+int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
+    int hurted, bool doFlavouredEffects = true);
 
 
 /* ***********************************************************************

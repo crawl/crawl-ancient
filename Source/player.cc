@@ -2818,6 +2818,20 @@ void display_char_status(void)
         mpr(info);
     }
 
+    if (you.rotting || you.species == SP_GHOUL)
+    {
+        // I apologize in advance for the horrendous ugliness about to
+        // transpire.  Avert your eyes!
+        strcpy(info, "Your flesh is rotting");
+        strcat(info, (you.rotting > 15) ? " before your eyes!":
+                     (you.rotting > 8)  ? " away quickly.":
+                     (you.rotting > 4)  ? " badly."
+                                        :
+                     ((you.species == SP_GHOUL && you.rotting > 0)
+                        ?" faster than usual.":"."));
+        mpr(info);
+    }
+
     if (you.magic_contamination > 5)
     {
         strcpy(info, "You are ");

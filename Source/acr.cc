@@ -2436,13 +2436,8 @@ static bool initialise(void)
     //if ( newc )
     //  stair_taken = 82;
 
-    you.num_inv_items = 0;
-
-    for (i = 0; i < ENDOFPACK; i++)
-    {
-        if (you.inv_quantity[i])
-            you.num_inv_items++;
-    }
+    // DON'T uSE num_inv_items!!
+    // you.num_inv_items = 0;
 
     bool just_made_new_lev = !newc;
     bool moving_level = newc;

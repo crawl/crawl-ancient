@@ -78,4 +78,11 @@ unsigned int skill_exp_needed(int lev);
 void show_skills(void);
 
 
+// last_updated 14jan2001 {gdl}
+/* ***********************************************************************
+ * called from: item_use
+ * *********************************************************************** */
+void wield_warning(void);
+
+
 #endif

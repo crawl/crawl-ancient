@@ -153,7 +153,7 @@ void item_check(char keyin)
             case DNGN_ENTER_HIVE:
                 mpr("There is a staircase to the Hive here.");
                 break;
-            case DNGN_ENTER_LAIR_I:
+            case DNGN_ENTER_LAIR:
                 mpr("There is a staircase to the Lair here.");
                 break;
             case DNGN_ENTER_SLIME_PITS:
@@ -162,7 +162,7 @@ void item_check(char keyin)
             case DNGN_ENTER_VAULTS:
                 mpr("There is a staircase to the Vaults here.");
                 break;
-            case DNGN_ENTER_CRYPT_I:
+            case DNGN_ENTER_CRYPT:
                 mpr("There is a staircase to the Crypt here.");
                 break;
             case DNGN_ENTER_HALL_OF_BLADES:
@@ -198,11 +198,11 @@ void item_check(char keyin)
             case DNGN_RETURN_LAIR_IV:
                 mpr("There is a staircase back to the Lair here.");
                 break;
-            case DNGN_RETURN_VAULTS:
+            case DNGN_RETURN_VAULTS_II:
+            case DNGN_RETURN_VAULTS_III:
                 mpr("There is a staircase back to the Vaults here.");
                 break;
-            case DNGN_RETURN_CRYPT_II:
-            case DNGN_RETURN_CRYPT_III:
+            case DNGN_RETURN_CRYPT:
                 mpr("There is a staircase back to the Crypt here.");
                 break;
             case DNGN_RETURN_MINES:
@@ -363,9 +363,7 @@ void pickup(void)
     if (grd[you.x_pos][you.y_pos] == DNGN_ALTAR_NEMELEX_XOBEH
         && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE)
     {
-        // XXX: This isn't too advisable either... the num_inv_items
-        // is known to get out of wack and not be reliable. -- bwr
-        if (you.num_inv_items >= ENDOFPACK)
+        if (inv_count() >= ENDOFPACK)
         {
             mpr("There is a portable altar here, but you can't carry anything else.");
             return;
@@ -385,7 +383,6 @@ void pickup(void)
                     you.inv_dam[m] = 0;
                     you.inv_colour[m] = LIGHTMAGENTA;
                     you.inv_quantity[m] = 1;
-                    you.num_inv_items++;
                     burden_change();
                     info[0] = index_to_letter(m);
                     info[1] = '\0';
@@ -395,15 +392,6 @@ void pickup(void)
                     mpr(info);
                     break;
                 }
-            }
-
-            // This is here to catch things when the count gets out of sync.
-            if (m == ENDOFPACK)
-            {
-                ASSERT(you.num_inv_items == ENDOFPACK);
-                mpr("You can't carry anything else.");
-                you.num_inv_items = ENDOFPACK;
-                return;
             }
 
             grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
@@ -588,7 +576,8 @@ int add_item(int item_got, int quant_got)
         strcpy(info, "You pick up ");
         itoa(quant_got, st_prn, 10);
         strcat(info, st_prn);
-        strcat(info, " gold pieces.");
+        strcat(info, " gold piece");
+        strcat(info, (quant_got > 1)?"s.":".");
         mpr(info);
 
         you.turn_is_over = 1;
@@ -598,7 +587,7 @@ int add_item(int item_got, int quant_got)
     }
 
     // check for slot space
-    if (you.num_inv_items >= ENDOFPACK)
+    if (inv_count() >= ENDOFPACK)
         return NON_ITEM;
 
     if (partialPickup)
@@ -680,18 +669,8 @@ int add_item(int item_got, int quant_got)
                 mpr("Now all you have to do is get back out of the dungeon!");
                 you.char_direction = DIR_ASCENDING;
             }
-
-            you.num_inv_items++;
             break;
         }
-
-    // This is here to catch when the count gets out of sync.
-    if (m == ENDOFPACK)
-    {
-        ASSERT(you.num_inv_items == ENDOFPACK);
-        you.num_inv_items = ENDOFPACK;
-        return (NON_ITEM);
-    }
 
     you.turn_is_over = 1;
 
@@ -802,28 +781,29 @@ bool move_top_item( int src_x, int src_y, int dest_x, int dest_y )
 // drop_gold
 //
 //---------------------------------------------------------------
-static void drop_gold(void)
+static void drop_gold(int amount)
 {
     if (you.gold > 0)
     {
-        int quant_drop = you.gold;      /* needs quantity selection. */
+        if (amount > you.gold)
+            amount = you.gold;
 
         char temp_quant[10];
 
         strcpy(info, "You drop ");
-        itoa(you.gold, temp_quant, 10);
+        itoa(amount, temp_quant, 10);
 
         strcat(info, temp_quant);
         strcat(info, " gold piece");
-        strcat(info, (you.gold > 1) ? "s." : ".");
+        strcat(info, (amount > 1) ? "s." : ".");
         mpr(info);
 
         if (igrd[you.x_pos][you.y_pos] != NON_ITEM)
         {
             if (mitm.base_type[igrd[you.x_pos][you.y_pos]] == OBJ_GOLD)
             {
-                mitm.quantity[igrd[you.x_pos][you.y_pos]] += quant_drop;
-                you.gold -= quant_drop;
+                mitm.quantity[igrd[you.x_pos][you.y_pos]] += amount;
+                you.gold -= amount;
                 you.redraw_gold = 1;
                 return;
             }
@@ -837,7 +817,7 @@ static void drop_gold(void)
             {
                 mitm.id[i] = 0;
                 mitm.base_type[i] = OBJ_GOLD;
-                mitm.quantity[i] = quant_drop;
+                mitm.quantity[i] = amount;
                 break;
             }
         }
@@ -847,7 +827,7 @@ static void drop_gold(void)
         igrd[you.x_pos][you.y_pos] = i;
         mitm.link[i] = m;
 
-        you.gold -= quant_drop;
+        you.gold -= amount;
         you.redraw_gold = 1;
 
     }
@@ -856,6 +836,44 @@ static void drop_gold(void)
         mpr("You don't have any money.");
     }
 }                               // end drop_gold()
+
+// gets a quantity and item letter
+// keyin should be the first key typed
+// output: assigns -1 to quant_drop if no quant. specified.
+static unsigned char get_item_quant(unsigned char keyin, int &quant_drop)
+{
+    quant_drop = -1;
+
+    while(true)
+    {
+        if ((keyin >= 'a' && keyin <= 'z')
+            || (keyin >= 'A' && keyin <= 'Z')
+            || keyin == '$')
+        {
+            break;
+        }
+
+        if (keyin >= '0' && keyin <= '9')
+        {
+            if (quant_drop < 0)
+                quant_drop = 0;
+            else
+                quant_drop *= 10;
+
+            quant_drop += keyin - '0';
+            // silliness
+            if (quant_drop > 9999999)
+                quant_drop = 9999999;
+        }
+        else
+            break;
+
+        keyin = get_ch();
+    }
+
+    return keyin;
+}
+
 
 //---------------------------------------------------------------
 //
@@ -872,7 +890,7 @@ void drop(void)
     unsigned char item_drop_2;
     char str_pass[80];
 
-    if (you.num_inv_items < 1)
+    if (inv_count() < 1 && you.gold == 0)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return;
@@ -886,7 +904,8 @@ void drop(void)
 
     if (keyin == '$')
     {
-        drop_gold();
+        // drop all gold
+        drop_gold(you.gold);
         return;
     }
 
@@ -902,9 +921,29 @@ void drop(void)
             goto query2;
     }
 
-    item_drop_1 = (int) keyin;
-    quant_drop = 0;
+    item_drop_1 = get_item_quant(keyin, quant_drop);
 
+    // do gold check again
+    if (item_drop_1 == '$')
+    {
+        drop_gold(quant_drop);
+        return;
+    }
+
+    if ((item_drop_1 < 'A' || (item_drop_1 > 'Z' && item_drop_1 < 'a')
+         || item_drop_1 > 'z'))
+    {
+        mpr("You don't have any such object.");
+        return;
+    }
+
+    if (quant_drop == 0)
+    {
+        canned_msg(MSG_OK);
+        return;
+    }
+
+/*
     if (item_drop_1 >= '0' && item_drop_1 <= '9')
     {
         quant_drop = item_drop_1 - '0';
@@ -920,18 +959,9 @@ void drop(void)
             item_drop_1 = (int) keyin;
         }
     }
-
-    if ((item_drop_1 < 'A' || (item_drop_1 > 'Z' && item_drop_1 < 'a')
-         || item_drop_1 > 'z'))
-    {
-        mpr("You don't have any such object.");
-        return;
-    }
+*/
 
     item_drop_2 = letter_to_index(item_drop_1);
-
-    if (quant_drop == 0)
-        quant_drop = you.inv_quantity[item_drop_2];
 
     if (you.inv_quantity[item_drop_2] == 0)
     {
@@ -968,6 +998,9 @@ void drop(void)
         return;
     }
 
+    if (quant_drop < 0)
+        quant_drop = you.inv_quantity[item_drop_2];
+
     if (quant_drop > you.inv_quantity[item_drop_2])
         quant_drop = you.inv_quantity[item_drop_2];
 
@@ -991,10 +1024,7 @@ void drop(void)
     you.inv_quantity[item_drop_2] -= quant_drop;
 
     if (you.inv_quantity[item_drop_2] < 1)
-    {
         you.inv_quantity[item_drop_2] = 0;
-        you.num_inv_items--;
-    }
 
     burden_change();
 }                               // end drop()
@@ -1391,7 +1421,6 @@ void handle_time(int time_delta)
 
                 you.inv_quantity[i] = 0;
                 burden_change();
-                you.num_inv_items--;
                 continue;
             }
 
@@ -1408,7 +1437,6 @@ void handle_time(int time_delta)
 
                 you.inv_quantity[i] = 0;
                 burden_change();
-                you.num_inv_items--;
                 continue;
             }
 
@@ -1525,3 +1553,17 @@ void autopickup(void)
         you.delay_doing = DELAY_AUTOPICKUP;
     }
 }
+
+int inv_count(void)
+{
+    int count=0;
+
+    for(int i=0; i< ENDOFPACK; i++)
+    {
+        if (you.inv_quantity[i] > 0)
+            count += 1;
+    }
+
+    return count;
+}
+

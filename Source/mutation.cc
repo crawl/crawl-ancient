@@ -1075,7 +1075,7 @@ void display_mutations(void)
     return;
 }                               // end display_mutations()
 
-bool mutate(int which_mutation)
+bool mutate(int which_mutation, bool failMsg)
 {
     char mutat = which_mutation;
     bool force_mutation = false;        // is mutation forced?
@@ -1095,7 +1095,8 @@ bool mutate(int which_mutation)
     if (wearing_amulet(AMU_RESIST_MUTATION)
         && !force_mutation && !one_chance_in(10))
     {
-        mpr("You feel rather odd for a moment.");
+        if (failMsg)
+            mpr("You feel odd for a moment.");
         return false;
     }
 
@@ -1103,7 +1104,8 @@ bool mutate(int which_mutation)
         && !force_mutation
         && (you.mutation[MUT_MUTATION_RESISTANCE] == 3 || !one_chance_in(3)))
     {
-        mpr("You feel rather odd for a moment.");
+        if (failMsg)
+            mpr("You feel odd for a moment.");
         return false;
     }
 

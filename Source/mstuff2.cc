@@ -632,8 +632,8 @@ void setup_dragon(struct monsters *monster, struct bolt &pbolt)
         DEBUGSTR("Bad monster class in setup_dragon()");
     }
 
-    pbolt.range = 5;
-    pbolt.rangeMax = 14;
+    pbolt.range = 4;
+    pbolt.rangeMax = 13;
     pbolt.damage = 100 + (monster->hit_dice * 2);
     pbolt.type = SYM_ZAP;
     pbolt.hit = 30;
@@ -655,36 +655,12 @@ void setup_generic_throw(struct monsters *monster, struct bolt &pbolt)
     pbolt.isBeam = false;
 }
 
-bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
+// decide if something is launched or thrown
+// pass -1 for launcher class & 0 for type if no weapon is weilded
+
+void throw_type(int lnchClass, int lnchType, int wepClass, int wepType,
+    bool &launched, bool &thrown)
 {
-    int baseHit = 0, baseDam = 0;       // from thrown or ammo
-    int ammoHitBonus = 0, ammoDamBonus = 0;     // from thrown or ammo
-    int lnchHitBonus = 0, lnchDamBonus = 0;     // special add from launcher
-    int exHitBonus = 0, exDamBonus = 0; // 'extra' bonus from skill/dex/str
-
-    int hitMult = 0;
-    int damMult = 0;
-
-    bool launched = false;      // item is launched
-    bool thrown = false;        // item is sensible thrown item
-
-    // some initial convenience & initializations
-    int wepClass = mitm.base_type[hand_used];
-    int wepType = mitm.sub_type[hand_used];
-
-    int weapon = monster->inv[MSLOT_WEAPON];
-    int lnchClass = weapon != NON_ITEM ? mitm.base_type[weapon] : -1;
-    int lnchType = weapon != NON_ITEM ? mitm.sub_type[weapon] : -1;
-
-    pbolt.range = 9;
-    pbolt.beam_source = monster_index(monster);
-
-    pbolt.type = SYM_MISSILE;
-    pbolt.colour = mitm.colour[hand_used];
-    pbolt.flavour = BEAM_MISSILE;
-    pbolt.thrower = KILL_MON_MISSILE;
-
-    // figure out if we're thrown or launched
     if (wepClass == OBJ_MISSILES
         && lnchClass == OBJ_WEAPONS
         && launches_things(lnchType) && wepType == launched_by(lnchType))
@@ -710,6 +686,39 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     // launched overrides thrown
     if (launched == true)
         thrown = false;
+}
+
+bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
+{
+    int baseHit = 0, baseDam = 0;       // from thrown or ammo
+    int ammoHitBonus = 0, ammoDamBonus = 0;     // from thrown or ammo
+    int lnchHitBonus = 0, lnchDamBonus = 0;     // special add from launcher
+    int exHitBonus = 0, exDamBonus = 0; // 'extra' bonus from skill/dex/str
+
+    int hitMult = 0;
+    int damMult = 0;
+
+    bool launched = false;      // item is launched
+    bool thrown = false;        // item is sensible thrown item
+
+    // some initial convenience & initializations
+    int wepClass = mitm.base_type[hand_used];
+    int wepType = mitm.sub_type[hand_used];
+
+    int weapon = monster->inv[MSLOT_WEAPON];
+    int lnchClass = weapon != NON_ITEM ? mitm.base_type[weapon] : -1;
+    int lnchType = weapon != NON_ITEM ? mitm.sub_type[weapon] : 0;
+
+    pbolt.range = 9;
+    pbolt.beam_source = monster_index(monster);
+
+    pbolt.type = SYM_MISSILE;
+    pbolt.colour = mitm.colour[hand_used];
+    pbolt.flavour = BEAM_MISSILE;
+    pbolt.thrower = KILL_MON_MISSILE;
+
+    // figure out if we're thrown or launched
+    throw_type(lnchClass, lnchType, wepClass, wepType, launched, thrown);
 
     // extract launcher bonuses due to magic
     if (launched)
@@ -958,8 +967,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_MMISSILE:
         beam.colour = LIGHTMAGENTA;     //inv_colour [throw_2];
         beam.name = "magic dart";       // inv_name [throw_2]);
-        beam.range = 7;
-        beam.rangeMax = 11;
+        beam.range = 6;
+        beam.rangeMax = 10;
         beam.damage = 104 + (power / 100);
         beam.hit = 1500;
         beam.type = SYM_ZAP;
@@ -971,8 +980,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_FLAME:
         beam.colour = RED;
         beam.name = "puff of flame";
-        beam.range = 7;
-        beam.rangeMax = 11;
+        beam.range = 6;
+        beam.rangeMax = 10;
 
         // should this be the same as magic missile?
         // No... magic missile is special in that it has a really
@@ -989,8 +998,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_FROST:
         beam.colour = WHITE;
         beam.name = "puff of frost";
-        beam.range = 7;
-        beam.range = 11;
+        beam.range = 6;
+        beam.range = 10;
 
         // should this be the same as magic missile?
         // see MS_FLAME -- bwr
@@ -1005,8 +1014,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_PARALYSIS:
         beam.name = "0";
-        beam.range = 6;
-        beam.rangeMax = 10;
+        beam.range = 5;
+        beam.rangeMax = 9;
         beam.type = 0;
         beam.colour = CYAN;
         beam.thrown = KILL_MON_MISSILE;
@@ -1016,8 +1025,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_SLOW:
         beam.name = "0";
-        beam.range = 6;
-        beam.rangeMax = 10;
+        beam.range = 5;
+        beam.rangeMax = 9;
         beam.type = 0;
         beam.colour = BLACK;
         beam.thrown = KILL_MON_MISSILE;
@@ -1027,8 +1036,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_HASTE:              // (self)
         beam.name = "0";
-        beam.range = 6;
-        beam.rangeMax = 10;
+        beam.range = 5;
+        beam.rangeMax = 9;
         beam.type = 0;
         beam.colour = BLUE;
         beam.thrown = KILL_MON_MISSILE;
@@ -1038,8 +1047,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_CONFUSE:
         beam.name = "0";
-        beam.range = 6;
-        beam.rangeMax = 10;
+        beam.range = 5;
+        beam.rangeMax = 9;
         beam.type = 0;
         beam.colour = RED;
         beam.thrown = KILL_MON_MISSILE;
@@ -1049,8 +1058,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_VENOM_BOLT:
         beam.name = "bolt of poison";
-        beam.range = 8;
-        beam.rangeMax = 17;
+        beam.range = 7;
+        beam.rangeMax = 16;
         beam.damage = 106 + power / 13;
         beam.colour = LIGHTGREEN;
         beam.type = SYM_ZAP;
@@ -1062,8 +1071,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_FIRE_BOLT:
         beam.name = "bolt of fire";
-        beam.range = 5;
-        beam.rangeMax = 14;
+        beam.range = 4;
+        beam.rangeMax = 13;
         beam.damage = 108 + power / 11;
         beam.colour = RED;
         beam.type = SYM_ZAP;
@@ -1075,8 +1084,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_COLD_BOLT:
         beam.name = "bolt of cold";
-        beam.range = 5;
-        beam.rangeMax = 14;
+        beam.range = 4;
+        beam.rangeMax = 13;
         beam.damage = 108 + power / 11;
         beam.colour = WHITE;
         beam.type = SYM_ZAP;
@@ -1088,8 +1097,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_LIGHTNING_BOLT:
         beam.name = "bolt of lightning";
-        beam.range = 8;
-        beam.rangeMax = 17;
+        beam.range = 7;
+        beam.rangeMax = 16;
         beam.damage = 110 + power / 9;
         beam.colour = LIGHTCYAN;
         beam.type = SYM_ZAP;
@@ -1101,8 +1110,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_INVIS:
         beam.name = "0";
-        beam.range = 6;
-        beam.rangeMax = 10;
+        beam.range = 5;
+        beam.rangeMax = 9;
         beam.type = 0;
         beam.colour = MAGENTA;
         beam.thrown = KILL_MON;
@@ -1113,8 +1122,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_FIREBALL:
         beam.colour = RED;
         beam.name = "fireball";
-        beam.range = 7;
-        beam.rangeMax = 11;
+        beam.range = 6;
+        beam.rangeMax = 10;
         beam.damage = 107 + power / 10;
         beam.hit = 40;
         beam.type = SYM_ZAP;
@@ -1125,8 +1134,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_HEAL:
         beam.name = "0";
-        beam.range = 6;
-        beam.rangeMax = 10;
+        beam.range = 5;
+        beam.rangeMax = 9;
         beam.type = 0;
         beam.colour = GREEN;
         beam.thrown = KILL_MON;
@@ -1136,8 +1145,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_TELEPORT:
         beam.name = "0";
-        beam.range = 6;
-        beam.rangeMax = 10;
+        beam.range = 5;
+        beam.rangeMax = 9;
         beam.type = 0;
         beam.colour = LIGHTGREY;        // 6 is used by digging
         beam.thrown = KILL_MON;
@@ -1147,8 +1156,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_TELEPORT_OTHER:
         beam.name = "0";
-        beam.range = 6;
-        beam.rangeMax = 10;
+        beam.range = 5;
+        beam.rangeMax = 9;
         beam.type = 0;
         beam.colour = LIGHTGREY;        // 6 is used by digging
         beam.thrown = KILL_MON;
@@ -1162,8 +1171,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_CRYSTAL_SPEAR:      // was splinters
         beam.name = "crystal spear";
-        beam.range = 8;
-        beam.rangeMax = 17;
+        beam.range = 7;
+        beam.rangeMax = 16;
         beam.damage = 112 + power / 10;
         beam.colour = WHITE;
         beam.type = SYM_MISSILE;
@@ -1175,8 +1184,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_DIG:
         beam.name = "0";
-        beam.range = 4;
-        beam.rangeMax = 8 + random2(power) / 10;
+        beam.range = 3;
+        beam.rangeMax = 7 + random2(power) / 10;
         beam.type = 0;
         beam.colour = BROWN;
         beam.thrown = KILL_MON;
@@ -1186,8 +1195,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_NEGATIVE_BOLT:      // negative energy
         beam.name = "bolt of negative energy";
-        beam.range = 8;
-        beam.rangeMax = 17;
+        beam.range = 7;
+        beam.rangeMax = 16;
         beam.damage = 106 + power / 13;
         beam.colour = DARKGREY;
         beam.type = SYM_ZAP;
@@ -1202,8 +1211,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_ORB_ENERGY: // mystic blast
         beam.colour = LIGHTMAGENTA;
         beam.name = "orb of energy";
-        beam.range = 7;
-        beam.rangeMax = 11;
+        beam.range = 6;
+        beam.rangeMax = 10;
         beam.damage = 107 + (power / 14);
         beam.hit = 10 + (power / 20);
         beam.type = SYM_ZAP;
@@ -1217,8 +1226,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_STEAM_BALL:
         beam.colour = LIGHTGREY;
         beam.name = "ball of steam";
-        beam.range = 7;
-        beam.rangeMax = 11;
+        beam.range = 6;
+        beam.rangeMax = 10;
         beam.damage = 106;
         beam.hit = 11;
         beam.type = SYM_ZAP;
@@ -1232,8 +1241,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_PAIN:
         beam.name = "0";
-        beam.range = 8;
-        beam.rangeMax = 15;
+        beam.range = 7;
+        beam.rangeMax = 14;
         beam.type = 0;
         beam.colour = LIGHTMAGENTA;     // pain
         beam.thrown = KILL_MON;
@@ -1248,8 +1257,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_STICKY_FLAME:
         beam.colour = RED;
         beam.name = "sticky flame";
-        beam.range = 7;
-        beam.rangeMax = 11;
+        beam.range = 6;
+        beam.rangeMax = 10;
         beam.damage = 103 + power / 50;
         beam.hit = 8 + power / 15;
         beam.type = SYM_ZAP;
@@ -1260,8 +1269,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_POISON_BLAST:       // demon
         beam.name = "blast of poison";
-        beam.range = 8;
-        beam.rangeMax = 17;
+        beam.range = 7;
+        beam.rangeMax = 16;
         beam.damage = 103 + power / 25;
         beam.colour = LIGHTGREEN;
         beam.type = SYM_ZAP;
@@ -1274,8 +1283,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_PURPLE_BLAST:       // purple bang thing
         beam.colour = LIGHTMAGENTA;
         beam.name = "blast";
-        beam.range = 7;
-        beam.rangeMax = 11;
+        beam.range = 6;
+        beam.rangeMax = 10;
         beam.damage = 106;
         beam.hit = 9;
         beam.type = SYM_ZAP;
@@ -1287,8 +1296,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_ENERGY_BOLT:        // eye of devastation
         beam.colour = YELLOW;
         beam.name = "bolt of energy";
-        beam.range = 10;
-        beam.rangeMax = 24;
+        beam.range = 9;
+        beam.rangeMax = 23;
         beam.damage = 120;
         beam.hit = 9;
         beam.type = SYM_ZAP;
@@ -1300,8 +1309,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_STING:              // sting
         beam.colour = GREEN;
         beam.name = "sting";
-        beam.range = 9;
-        beam.rangeMax = 13;
+        beam.range = 8;
+        beam.rangeMax = 12;
         beam.damage = 6 + power / 25;
         beam.hit = 60;
         beam.type = SYM_ZAP;
@@ -1313,8 +1322,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_IRON_BOLT:
         beam.colour = LIGHTCYAN;
         beam.name = "iron bolt";
-        beam.range = 5;
-        beam.rangeMax = 9;
+        beam.range = 4;
+        beam.rangeMax = 8;
         beam.damage = 108 + (power / 9);
         beam.hit = 6 + (power / 25);
         beam.type = SYM_MISSILE;
@@ -1326,8 +1335,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_STONE_ARROW:
         beam.colour = LIGHTGREY;
         beam.name = "stone arrow";
-        beam.range = 9;
-        beam.rangeMax = 13;
+        beam.range = 8;
+        beam.rangeMax = 12;
         beam.damage = 105 + (power / 10);
         beam.hit = 5 + power / 47;
         beam.type = SYM_MISSILE;
@@ -1339,8 +1348,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_POISON_SPLASH:
         beam.colour = GREEN;
         beam.name = "splash of poison";
-        beam.range = 6;
-        beam.rangeMax = 11;
+        beam.range = 5;
+        beam.rangeMax = 10;
         beam.damage = 4 + power / 10;
         beam.hit = 9;
         beam.type = SYM_ZAP;
@@ -1351,8 +1360,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_DISINTEGRATE:
         beam.name = "0";
-        beam.range = 8;
-        beam.rangeMax = 15;
+        beam.range = 7;
+        beam.rangeMax = 14;
         beam.type = 0;
         beam.colour = WHITE;
         beam.thrown = KILL_MON;
@@ -1364,8 +1373,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_MARSH_GAS:          // swamp drake
         beam.name = "foul vapour";
-        beam.range = 8;
-        beam.rangeMax = 17;
+        beam.range = 7;
+        beam.rangeMax = 16;
         beam.damage = 102 + power / 25;
         beam.colour = GREEN;
         beam.type = SYM_ZAP;
@@ -1378,8 +1387,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_QUICKSILVER_BOLT:   // Quicksilver dragon
         beam.colour = random_colour();
         beam.name = "bolt of energy";
-        beam.range = 10;
-        beam.rangeMax = 24;
+        beam.range = 9;
+        beam.rangeMax = 23;
         beam.damage = 125;
         beam.hit = 9;
         beam.type = SYM_ZAP;
@@ -1391,8 +1400,8 @@ struct SBeam mons_spells(char spell_cast, int power)
     case MS_HELLFIRE:           // fiend's hellfire
         beam.name = "hellfire";
         beam.colour = RED;
-        beam.range = 5;
-        beam.rangeMax = 14;
+        beam.range = 4;
+        beam.rangeMax = 13;
         beam.damage = 25;
         beam.hit = 20;
         beam.type = SYM_ZAP;
@@ -1403,8 +1412,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_METAL_SPLINTERS:
         beam.name = "spray of metal splinters";
-        beam.range = 8;
-        beam.rangeMax = 17;
+        beam.range = 7;
+        beam.rangeMax = 16;
         beam.damage = 120 + power / 20;
         beam.colour = CYAN;
         beam.type = SYM_ZAP;
@@ -1416,8 +1425,8 @@ struct SBeam mons_spells(char spell_cast, int power)
 
     case MS_BANISHMENT:
         beam.name = "0";
-        beam.range = 6;
-        beam.rangeMax = 10;
+        beam.range = 5;
+        beam.rangeMax = 9;
         beam.type = 0;
         beam.colour = LIGHTGREEN;
         beam.thrown = KILL_MON_MISSILE;

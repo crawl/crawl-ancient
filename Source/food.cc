@@ -25,6 +25,7 @@
 
 #include "debug.h"
 #include "invent.h"
+#include "items.h"
 #include "itemname.h"
 #include "item_use.h"
 #include "misc.h"
@@ -116,6 +117,9 @@ void set_hunger(int new_hunger_level, bool suppress_msg)
 
 // more of a "weapon_switch back from butchering" function, switching
 // to a weapon is done using the wield_weapon code.
+// special cases like staves of power or other special weps are taken
+// care of by calling wield_effects()    {gdl}
+
 static void weapon_switch( int targ )
 {
     you.equip[EQ_WEAPON] = targ;
@@ -129,6 +133,9 @@ static void weapon_switch( int targ )
 
         sprintf( info, "Switching back to %c - %s.", let, buff );
         mpr( info );
+
+        // special checks: staves of power, etc
+        wield_effects( targ, false );
     }
     else
     {
@@ -146,6 +153,7 @@ bool butchery(void)
 
     bool can_butcher = false;
     bool wpn_switch = false;
+    bool new_cursed = false;
     int old_weapon = you.equip[EQ_WEAPON];
 
     bool barehand_butcher = (you.species == SP_TROLL || you.species == SP_GHOUL
@@ -257,6 +265,14 @@ bool butchery(void)
         return false;
     }
 
+    // check to see if the new implement is cursed - if so,  set a
+    // flag indicating this.  If a player actually butchers anything,
+    // this flag can be checked before switching back.
+    int wpn = you.equip[EQ_WEAPON];
+    if (wpn != -1 && you.inv_class[wpn] == OBJ_WEAPONS
+        && you.inv_plus[wpn] > 80)
+        new_cursed = true;
+
     // No turning back at this point, we better be qualified.
     ASSERT( can_butcher );
 
@@ -300,7 +316,7 @@ bool butchery(void)
         it_name(igrd[you.x_pos][you.y_pos], 3, str_pass);
         strcat(info, str_pass);
         strcat(info, "\?");
-        mpr(info);
+        mpr(info, MSGCH_PROMPT);
 
         unsigned char keyin = getch();
 
@@ -340,11 +356,11 @@ bool butchery(void)
             you.delay_t = 0;
             you.delay_doing = 0;
 
-            if (wpn_switch)
+            if (wpn_switch && !new_cursed)
             {
                 weapon_switch( old_weapon );
                 // need to count the swap delay in this case
-                you.delay_t = 2;  // yes, two is corrent, 1 == no delay
+                you.delay_t = 2;  // yes, two is correct, 1 == no delay
                 you.delay_doing = DELAY_WEAPON_SWAP;
             }
 
@@ -356,7 +372,7 @@ bool butchery(void)
                       you.y_pos, mitm.colour[item_got] );
         destroy_item(item_got);
 
-        if (wpn_switch)
+        if (wpn_switch && !new_cursed)
             weapon_switch( old_weapon );
 
         return true;
@@ -421,7 +437,7 @@ bool butchery(void)
                     you.delay_t = 0;
                     you.delay_doing = 0;
 
-                    if (wpn_switch)
+                    if (wpn_switch && !new_cursed)
                     {
                         weapon_switch( old_weapon );
                         // need to count the swap delay in this case
@@ -438,7 +454,7 @@ bool butchery(void)
                 you.turn_is_over = 1;
                 destroy_item(item_got);
 
-                if (wpn_switch)
+                if (wpn_switch && !new_cursed)
                     weapon_switch( old_weapon );
                 return true;
             }
@@ -494,7 +510,7 @@ void eat_food(void)
             return;
     }
 
-    if (you.num_inv_items < 1)
+    if (inv_count() < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return;
@@ -559,7 +575,6 @@ void eat_food(void)
 
     if (you.inv_quantity[which_inventory_slot] == 0)
     {
-        you.num_inv_items--;
         if (you.equip[EQ_WEAPON] == which_inventory_slot)
         {
             you.equip[EQ_WEAPON] = -1;
@@ -594,9 +609,9 @@ static bool food_change(bool suppress_message)
         return state_changed;
     }
 
-    // take care of ghouls - they can never be
-    // 'full'
-    if (you.hunger > 6999) you.hunger = 6999;
+    // take care of ghouls - they can never be 'full'
+    if (you.species == SP_GHOUL)
+        if (you.hunger > 6999) you.hunger = 6999;
 
 
     // get new hunger state
@@ -726,7 +741,7 @@ static bool eat_from_floor(void)
         it_name(igrd[you.x_pos][you.y_pos], 3, str_pass);
         strcat(info, str_pass);
         strcat(info, "\?");
-        mpr(info);
+        mpr(info, MSGCH_PROMPT);
 
         unsigned char keyin = getch();
 
@@ -795,7 +810,7 @@ static bool eat_from_floor(void)
             it_name(o, 3, str_pass);
             strcat(info, str_pass);
             strcat(info, "\?");
-            mpr(info);
+            mpr(info, MSGCH_PROMPT );
 
             keyin = getch();
             if (keyin == 0)

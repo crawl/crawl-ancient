@@ -646,7 +646,6 @@ void invoke_wielded(void)
                 unwield_item(you.equip[EQ_WEAPON]);
                 you.inv_quantity[you.equip[EQ_WEAPON]] = 0;
                 you.equip[EQ_WEAPON] = -1;
-                you.num_inv_items--;
             }
             break;
 
@@ -673,7 +672,6 @@ static void efreet_flask(void)
     unwield_item(you.equip[EQ_WEAPON]);
     you.inv_quantity[you.equip[EQ_WEAPON]] = 0;
     you.equip[EQ_WEAPON] = -1;
-    you.num_inv_items--;
 
     if (create_monster( MONS_EFREET, 24, behavior, you.x_pos,
                                             you.y_pos, MHITYOU, 250 ) != -1)
@@ -889,7 +887,6 @@ void tome_of_power(char sc_read_2)
             mpr("The book disappears in a mighty explosion!");
 
             you.inv_quantity[sc_read_2] = 0;
-            you.num_inv_items--;
 
             if (sc_read_2 == you.equip[EQ_WEAPON])
             {
@@ -1005,7 +1002,6 @@ void skill_manual(char sc_read_2)
         mpr("The book crumbles into dust.");
 
         you.inv_quantity[sc_read_2] = 0;
-        you.num_inv_items--;
 
         if (sc_read_2 == you.equip[EQ_WEAPON])
         {

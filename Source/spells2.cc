@@ -815,7 +815,7 @@ void cast_refrigeration(int pow)
             mpr(info);
 
             hurted = 3 + random2(7) + random2(pow) / 20;
-            hurted = check_mons_resists(monster, beam, hurted);
+            hurted = mons_adjust_flavoured(monster, beam, hurted);
 
             hurt_monster(monster, hurted);
 
@@ -1026,7 +1026,7 @@ char burn_freeze(int pow, char flavour)
     beam.flavour = flavour;
 
     if (flavour != BEAM_MISSILE)
-        hurted = check_mons_resists(monster, beam, hurted);
+        hurted = mons_adjust_flavoured(monster, beam, hurted);
 
     if (hurted)
     {

@@ -78,26 +78,29 @@ void cast_selective_amnesia(bool force)
 
         if (index_value >= 25 || you.spells[index_value] == SPELL_NO_SPELL)
             mpr("You don't know that spell.");
-        else if (!force
+        else
+        {
+            if (!force
                  && (you.religion != GOD_SIF_MUNA
                      && random2(you.skills[SK_SPELLCASTING])
                          < random2(spell_difficulty(you.spells[index_value]))))
-        {
-            mpr("Oops! This spell sure is a blunt instrument.");
-            forget_map(20 + random2(50));
-        }
-        else
-        {
-            you.spell_no--;
-            you.spells[index_value] = SPELL_NO_SPELL;
-
-            ep_gain = spell_mana(you.spells[index_value]);
-
-            if (ep_gain > 0)
             {
-                inc_mp(ep_gain, false);
-                mpr( "The spell releases its latent energy back to you as "
-                     "it unravels." );
+                mpr("Oops! This spell sure is a blunt instrument.");
+                forget_map(20 + random2(50));
+            }
+            else
+            {
+                ep_gain = spell_mana(you.spells[index_value]);
+
+                you.spell_no--;
+                you.spells[index_value] = SPELL_NO_SPELL;
+
+                if (ep_gain > 0)
+                {
+                    inc_mp(ep_gain, false);
+                    mpr( "The spell releases its latent energy back to you as "
+                         "it unravels." );
+                }
             }
         }
     }
@@ -300,7 +303,6 @@ bool cast_bone_shards(int power)
         /* can this be false? */
         if (you.inv_quantity[you.equip[EQ_WEAPON]] == 0)
         {
-            you.num_inv_items--;
             you.equip[EQ_WEAPON] = -1;
             mpr("You are now empty handed.");
         }
@@ -364,10 +366,7 @@ void sublimation(int power)
         you.inv_quantity[was_wielded]--;
 
         if (you.inv_quantity[was_wielded] < 1)
-        {
             you.inv_quantity[was_wielded] = 0;
-            you.num_inv_items--;
-        }
 
         burden_change();
 
@@ -418,7 +417,6 @@ void simulacrum(int power)
 
         if (you.inv_quantity[ chunk ] <= 0)
         {
-            you.num_inv_items--;
             you.equip[EQ_WEAPON] = -1;
             mpr("You are now empty handed.");
         }
@@ -529,7 +527,6 @@ void dancing_weapon(int pow, bool force_hostile)
 
     you.inv_quantity[you.equip[EQ_WEAPON]] = 0;
     you.equip[EQ_WEAPON] = -1;
-    you.num_inv_items--;
 
     menv[summs].inv[MSLOT_WEAPON] = i;
     menv[summs].number = mitm.colour[i];

@@ -554,16 +554,12 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
                 set_hp(1 + random2(you.hp), false);
                 deflate_hp(you.hp_max / 2, true);
 
-                bool success = false;
-                for (int i = 0; i < 4; i++) {
-                    if (mutate(100)) {
-                        success = true;
-                        break;
-                    }
+                bool failMsg = true;
+                for (int i = 0; i < 4; i++)
+                {
+                    if (!mutate(100, failMsg))
+                        failMsg = false;
                 }
-
-                if (!success)
-                    mpr("You feel queasy for a moment.");
 
                 done_bad = true;
             }
