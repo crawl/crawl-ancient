@@ -131,7 +131,7 @@ char temp_quant [15];
          itoa(you[0].gp, st_prn, 10);
          gotoxy (46,10);
          cprintf(st_prn);
-         cprintf("  ");
+         cprintf("    ");
          you[0].gp_ch = 0;
         }
 

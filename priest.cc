@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include "dungeon.h"
 #include "levels.h"
+#include "message.h"
+
 #include "externs.h"
 
 void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsigned char gy2);
@@ -363,6 +365,7 @@ for (i = 5; i < 75; i ++)
   {
    k = igrd [i] [j];
    igrd [i] [j] = 501;
+   if (k < 0 || k > 501) k = 501;
    while(k != 501)
    {
     mitm.iquant [k] = 0;
@@ -370,7 +373,7 @@ for (i = 5; i < 75; i ++)
     mitm.ilink [k] = 501;
     if (mitm.iclass [k] == 12 && mitm.itype [k] >= 4 && mitm.itype [k] <= 19)
     {
-      you[0].unique_items [mitm.itype [k] + 3] = 2;
+      you[0].unique_items [mitm.itype [k] + 3] = 2; /* This means lost in the abyss, and can be found again only there. */
     }
     if (mitm.iclass [k] == 0 && mitm.idam [k] >= 181)
     {

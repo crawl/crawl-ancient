@@ -299,7 +299,7 @@ beem[0].source_y = menv [i].m_y;
 
 // Need to correct this for power of spellcaster
 int func_pass [10];
-func_pass [8] = menv [i].m_HD * 6;
+func_pass [8] = menv [i].m_HD * 12;
 
 int ufdg = mons_spells(spell_cast, func_pass, beem[0].beam_name);
 
@@ -456,7 +456,7 @@ if (beem[0].move_x != 0 || beem[0].move_y != 0)
   break;
   }
 
-                beem[0].damage = 100 + menv [i].m_HD;
+                beem[0].damage = 100 + menv [i].m_HD * 2;
                 beem[0].type = '#';
   beem[0].hit = 30;
   beem[0].beam_source = i;
@@ -479,7 +479,7 @@ void mons_throw(int i, struct bolt beem [1], int hand_used)
 {
 
 char shoot = 0;
-beem[0].range = 7;
+beem[0].range = 9;
 beem[0].beam_source = i;
 /*if (menv [i].m_x > you[0].x_pos - 6 && menv [i].m_x < you[0].x_pos + 6 && menv [i].m_y > you[0].y_pos - 6 && menv [i].m_y < you[0].y_pos + 6)
 {
@@ -753,7 +753,7 @@ return 1;
 case 7: // venom bolt
 strcpy(beam_name, "bolt of poison");
 func_pass [1] = random2(10) + 8;
-func_pass [2] = 106 + func_pass [8] / 15;
+func_pass [2] = 106 + func_pass [8] / 10;
 func_pass [0] = LIGHTGREEN;
 func_pass [4] = 35;
 func_pass [6] = 2;
@@ -765,7 +765,7 @@ return 1;
 case 8:
 strcpy(beam_name, "bolt of fire");
 func_pass [1] = random2(10) + 5;
-func_pass [2] = 108 + func_pass [8] / 15;
+func_pass [2] = 108 + func_pass [8] / 9;
 func_pass [0] = 4;
 func_pass [4] = 35; // 35
 func_pass [6] = 2;
@@ -778,7 +778,7 @@ return 1;
 case 9:
 strcpy(beam_name, "bolt of cold");
 func_pass [1] = random2(10) + 5;
-func_pass [2] = 108 + func_pass [8] / 15;
+func_pass [2] = 108 + func_pass [8] / 9;
 func_pass [0] = 15;
 func_pass [4] = 35;
 func_pass [6] = 2;
@@ -789,7 +789,7 @@ return 1;
 case 10: // lightning
 strcpy(beam_name, "bolt of lightning");
 func_pass [1] = random2(10) + 8;
-func_pass [2] = 108 + func_pass [8] / 11;
+func_pass [2] = 110 + func_pass [8] / 7;
 func_pass [0] = LIGHTCYAN;
 func_pass [4] = 35;
 func_pass [6] = 2;
@@ -851,7 +851,7 @@ return 0; // blink
 case 17: // was splinters
 strcpy(beam_name, "crystal spear");
 func_pass [1] = random2(10) + 8;
-func_pass [2] = 112 + func_pass [8] / 10;
+func_pass [2] = 112 + func_pass [8] / 8;
 func_pass [0] = WHITE;
 func_pass [4] = ')';
 func_pass [6] = 2;
@@ -872,7 +872,7 @@ return 1;
 case 19: // negative energy
 strcpy(beam_name, "bolt of negative energy");
 func_pass [1] = random2(10) + 8;
-func_pass [2] = 105 + func_pass [8] / 16;
+func_pass [2] = 106 + func_pass [8] / 10;
 func_pass [0] = DARKGREY;
 func_pass [4] = 35;
 func_pass [6] = 2;
@@ -917,7 +917,7 @@ func_pass [4] = 0;
 func_pass [0] = 13; // pain
 func_pass [6] = 2;
 func_pass [2] = 50;
-func_pass [3] = 7 + (func_pass [8] / 40);
+func_pass [3] = 7 + (func_pass [8] / 20);
 func_pass [5] = 4; // magic
 return 1;
 
@@ -927,7 +927,7 @@ case 31: // sticky flame
 func_pass [0] = 4;
 strcpy(beam_name, "sticky flame");
 func_pass [1] = random2(5) + 7;
-func_pass [2] = 102 + func_pass [8] / 50;
+func_pass [2] = 103 + func_pass [8] / 50;
 func_pass [3] = 8 + func_pass [8] / 25;
 func_pass [4] = '#';
 func_pass [6] = 4;
@@ -974,7 +974,7 @@ return 0;
         func_pass [0] = LIGHTCYAN;
         strcpy(beam_name, "iron bolt");
         func_pass [1] = random2(5) + 5;
-        func_pass [2] = 108 + (func_pass [8] / 7);
+        func_pass [2] = 108 + (func_pass [8] / 6);
         func_pass [3] = 6 + (func_pass [8] / 25);
         func_pass [4] = ')';
         func_pass [6] = 4;
@@ -986,7 +986,7 @@ return 0;
         func_pass [0] = LIGHTGREY;
         strcpy(beam_name, "stone arrow");
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 105 + (func_pass [8] / 10);
+        func_pass [2] = 105 + (func_pass [8] / 8);
         func_pass [3] = 5 + func_pass [8] / 47;
         func_pass [4] = ')';
         func_pass [6] = 4;
@@ -1010,7 +1010,7 @@ return 0;
         func_pass [0] = YELLOW;
         strcpy(beam_name, "zulzer blast");
         func_pass [1] = random2(4) + 15;
-        func_pass [2] = 120;
+        func_pass [2] = 125;
         func_pass [3] = 7;
         func_pass [4] = '#';
         func_pass [6] = 4;
@@ -1058,7 +1058,7 @@ thing_thrown = func_pass [6];
 case 49: // fiend's hellfire
 strcpy(beam_name, "hellfire");
 func_pass [1] = random2(10) + 5;
-func_pass [2] = 20;
+func_pass [2] = 25;
 func_pass [3] = 20;
 func_pass [0] = 20;
 func_pass [4] = 35;

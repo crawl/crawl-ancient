@@ -320,6 +320,7 @@ void load (unsigned char stair_taken, char moving_level, char was_a_labyrinth, c
   int handle2 = open(cha_fil, O_RDONLY, O_CREAT | O_TRUNC | O_BINARY, 0660);
   if (handle2 != -1)
   {
+         close(handle2);
      handle = fopen(cha_fil, "rb");
   } else
 //  if (handle2==-1)
@@ -1152,13 +1153,15 @@ void save_game (char leave_game) {
 //  int handle=open(char_f, O_CREAT|O_TRUNC|O_BINARY, 0660);
   FILE *handle=//open(char_f, O_RDWR|O_CREAT|O_TRUNC|O_BINARY, 0660);
    fopen(char_f, "wb");
-  if (handle==NULL) {
+  if (handle==NULL)
+  {
     perror("Unable to open file for writing");
     end(-1);
   }
   int retval=write2(handle, buf, datalen);
   free(buf);
-  if (datalen!=retval) {
+  if (datalen!=retval)
+  {
     perror("opa (4)...");
     end(-1);
   }

@@ -2734,7 +2734,7 @@ case 70:
 strcat(descpr, " raises a skeleton to a state of unlife. ");
 break;
 case 71:
-strcat(descpr, " steals the life of a living creature and grants it to the caster. ");
+strcat(descpr, " steals the life of a living creature and grants it to the caster. It will not drain more life than the caster is capable of absorbing. ");
 break;
 case 72:
 strcat(descpr, " calls on the powers of the undead to aid the caster. ");
@@ -2849,7 +2849,7 @@ case 132:
 strcat(descpr, " throws a bolt of electricity. ");
 break;
 case 133:
-strcat(descpr, " imbues its caster with the ability to run extremely fast. ");
+strcat(descpr, " imbues its caster with the ability to run extremely fast. It will not increase the speed of those who are fleet of foot anyway (such as centaurs). ");
 break;
 case 134:
 strcat(descpr, " grants its caster the ability to fly through the air. ");
@@ -2988,7 +2988,7 @@ case 3:
 strcpy(descpr, "Kikubaaqudgha is a terrible Demon-God, served by those who \
 seek knowledge of the powers of death. Followers gain special powers \
 over the undead, and especially favoured servants can call on mighty demons \
-to slay their foes. Kikubaaqudgha requires the deaths of living creatures \
+to slay their foes. $Kikubaaqudgha requires the deaths of living creatures \
 and the offering of corpses, as often as possible.");
 if (you[0].piety >= 50 && you[0].religion == 3)
  strcat(descpr, "$Kikubaaqudgha is protecting you from the side-effects of death magic.");
@@ -3003,7 +3003,8 @@ case 6:
 strcpy(descpr, "Vehumet is a God of the destructive powers of magic. \
 Followers gain various useful powers to enhance their command of \
 the hermetic arts, and the most favoured stand to gain access to \
-some of the fearsome spells in Vehumet's library.");
+some of the fearsome spells in Vehumet's library. One's devotion to Vehumet \
+can be proved by the causing of as much carnage and destruction as possible.");
 if (you[0].religion == 6)
 {
  if (you[0].piety >= 30)

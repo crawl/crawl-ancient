@@ -770,7 +770,7 @@ switch(spc2)
    case 141: // poison blade
    if (brand_weapon(6, powc) == 0)
    {
-    strcpy(info, "The spell fizzles.");
+    strcpy(info, "Your current weapon is inappropriate for this spell.");
     mpr(info);
    }
    return 1;

@@ -348,7 +348,7 @@ always changing around */
                                 abil_c ++;
                                 break;
                         case 6:
-                                ability [abil_c] = 130;
+                                ability [abil_c] = 160;
                                 ability_fail [abil_c] = 25 - you[0].intel;
                                 abil_c ++;
                                 break;

@@ -697,13 +697,13 @@ mesclr();
   {
    strcpy(info, "You freeze!");
    mpr(info);
-   ouch(3 + random2(7) + random2(7) + random2(pow) / 10, 0, 16);
+   ouch(3 + random2(7) + random2(7) + random2(pow) / 20, 0, 16);
   }
   if (player_res_cold() > 100)
   {
    strcpy(info, "You feel very cold.");
    mpr(info);
-   ouch((3 + random2(7) + random2(7) + random2(pow) / 10) / (2 + (player_res_cold() - 100) * (player_res_cold() - 100)), 0, 16);
+   ouch((3 + random2(7) + random2(7) + random2(pow) / 20) / (2 + (player_res_cold() - 100) * (player_res_cold() - 100)), 0, 16);
   }
   if (player_res_cold() < 100)
   {
@@ -720,10 +720,10 @@ for (toxy = 0; toxy < MNST; toxy ++)
    strcat(info, monam(menv [toxy].m_sec,menv[toxy].m_class, menv [toxy].m_ench [2], 1));
    strcat(info, ".");
    mpr(info);
-   int hurted = 3 + random2(7) + random2(7) + random2(pow) / 10;
+   int hurted = 3 + random2(7) + random2(pow) / 20;
    beam[0].flavour = 3;
 //   o = toxy;
-   check_mons_resists(beam, toxy, hurted);
+   hurted = check_mons_resists(beam, toxy, hurted);
    menv [toxy].m_hp -= hurted;
    if (menv [toxy].m_hp <= 0)
    {
@@ -788,8 +788,15 @@ if (mons_holiness(menv [mgr].m_class) > 0)
         return -1;
 }
 
-inflicted = 3 + random2(6) + random2(6) + random2(pow) / 4;
+inflicted = 3 + random2(5) + random2(5) + random2(pow) / 7;
 if (inflicted >= menv [mgr].m_hp) inflicted = menv [mgr].m_hp;
+if (inflicted >= you[0].hp_max - you[0].hp) inflicted = you[0].hp_max - you[0].hp;
+if (inflicted == 0)
+{
+ mpr("Nothing appears to happen.");
+ return -1;
+}
+
 menv [mgr].m_hp -= inflicted;
 
 strcpy(info, "You feel life coursing from ");
@@ -869,7 +876,7 @@ mpr(info);
 int hurted = 1 + random2(4) + random2(3) + random2(pow) / 25;
 struct bolt beam [1];
 beam[0].flavour = b_f;
-check_mons_resists(beam, mgr, hurted);
+hurted = check_mons_resists(beam, mgr, hurted);
 menv [mgr].m_hp -= hurted;
 
 if (menv [mgr].m_hp <= 0)

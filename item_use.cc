@@ -635,80 +635,97 @@ armr = armour_wear_2;
 
 if (you[0].inv_class [armour_wear_2] != 2)
 {
-        strcpy(info, "You can't wear that thing.");
-        mpr(info);
+        mpr("You can't wear that thing.");
         return;
 }
 
 if (armour_wear_2 == you[0].equip [6] || armour_wear_2 == you[0].equip [1] || armour_wear_2 == you[0].equip [5] || armour_wear_2 == you[0].equip [2] || armour_wear_2 == you[0].equip [3] || armour_wear_2 == you[0].equip [4]) // or armour_wear_w == helmet etc
 {
-        strcpy(info, "You are already wearing that!");
-        mpr(info);
+        mpr("You are already wearing that!");
         return;
 }
 
 if (you[0].inv_quant [armour_wear_2] == 0)
 {
-        strcpy(info, "You don't have any such object.");
-        mpr(info);
+        mpr("You don't have any such object.");
         return;
 }
 
 if (armour_wear_2 == you[0].equip [0])
 {
-        strcpy(info, "You are wielding that object!");
-        mpr(info);
+        mpr("You are wielding that object!");
         return;
 }
 
 if ((you[0].inv_type [armour_wear_2] < 8 || you[0].inv_type [armour_wear_2] > 14) && you[0].equip [1] != -1)
 {
-        strcpy(info, "You can't wear that over your cloak.");
-        mpr(info);
+        mpr("You can't wear that over your cloak.");
         return;
 }
 
 
 if ((you[0].inv_type [armour_wear_2] < 8 || you[0].inv_type [armour_wear_2] > 14) && you[0].equip [6] != -1)
 {
-        strcpy(info, "You are already wearing some body armour.");
-        mpr(info);
+        mpr("You are already wearing some body armour.");
         return;
 }
 
 
 if ((you[0].inv_type [armour_wear_2] == 8 || you[0].inv_type [armour_wear_2] == 14 || you[0].inv_type [armour_wear_2] == 13) && you[0].equip [5] != -1)
 {
-        strcpy(info, "You are already holding a shield.");
-        mpr(info);
+        mpr("You are already holding a shield.");
         return;
 }
 
-if (you[0].equip [0] != -1 && (you[0].inv_type [armour_wear_2] == 8 || you[0].inv_type [armour_wear_2] == 13 || you[0].inv_type [armour_wear_2] == 14) && (you[0].inv_class [you[0].equip [0]] == 0 && (you[0].inv_type [you[0].equip [0]] == 7 || you[0].inv_type [you[0].equip [0]] == 10 || you[0].inv_type [you[0].equip [0]] == 12 || you[0].inv_type [you[0].equip [0]] == 17 || you[0].inv_type [you[0].equip [0]] == 18 || you[0].inv_type [you[0].equip [0]] == 19 || you[0].inv_type [you[0].equip [0]] == 20 || you[0].inv_type [you[0].equip [0]] == 21)) || you[0].inv_class [you[0].equip [0]] == 11)
-{
-   strcpy(info, "You can't wear a shield with a two-handed weapon.");
-   mpr(info);
-   return;
-}
+/* This next bit was fixed and restructured by Daniel Ligon: */
+if (
+          you[0].equip [0] != -1   /* you're wielding something */
+       && (
+            /* three types of shields */
+               you[0].inv_type [armour_wear_2] == 8
+            || you[0].inv_type [armour_wear_2] == 13
+            || you[0].inv_type [armour_wear_2] == 14
+          )
+       && (
+               /* you are wielding a weapon */
+               you[0].inv_class [you[0].equip [0]] == 0
+            && (
+                 /* and it's two handed */
+                    you[0].inv_type [you[0].equip [0]] == 7
+                 || you[0].inv_type [you[0].equip [0]] == 10
+                 || you[0].inv_type [you[0].equip [0]] == 12
+                 || you[0].inv_type [you[0].equip [0]] == 17
+                 || you[0].inv_type [you[0].equip [0]] == 18
+                 || you[0].inv_type [you[0].equip [0]] == 19
+                 || you[0].inv_type [you[0].equip [0]] == 20
+                 || you[0].inv_type [you[0].equip [0]] == 21
+               )
+          )
+
+       || /* you are wielding a staff */
+          you[0].inv_class [you[0].equip [0]] == 11
+     )
+  {
+     strcpy(info, "You can't wear a shield with a two-handed weapon.");
+     mpr(info);
+     return;
+  }
 
 if (you[0].inv_type [armour_wear_2] == 10 && you[0].equip [2] != -1)
 {
-        strcpy(info, "You are already wearing a helmet.");
-        mpr(info);
+        mpr("You are already wearing a helmet.");
         return;
 }
 
 if (you[0].inv_type [armour_wear_2] == 9 && you[0].equip [1] != -1)
 {
-        strcpy(info, "You are already wearing a cloak.");
-        mpr(info);
+        mpr("You are already wearing a cloak.");
         return;
 }
 
 if (you[0].inv_type [armour_wear_2] == 11 && you[0].equip [3] != -1)
 {
-        strcpy(info, "You are already wearing some gloves.");
-        mpr(info);
+        mpr("You are already wearing some gloves.");
         return;
 }
 
@@ -1517,17 +1534,17 @@ beam[0].move_y = thr[0].move_y;
 beam[0].target_x = thr[0].target_x;
 beam[0].target_y = thr[0].target_y;
 
-beam[0].range = 2; /* provisional until mass variable used */
+beam[0].range = 5; /* provisional until mass variable used */
 
 beam[0].flavour = 0;
 
 switch (you[0].inv_class [throw_2])
 {
         case 0: beam[0].type = 41;
- beam[0].range = 6;
+ beam[0].range = 9;
  break;
         case 1: beam[0].type = 41;
- beam[0].range = 7;
+ beam[0].range = 9;
  break;
         case 2: beam[0].type = 91; break;
         case 3: beam[0].type = 47; break;

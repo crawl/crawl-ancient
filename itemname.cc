@@ -766,7 +766,7 @@ Remember, potions food and scrolls stack on the basis of class and type only.
    if (id [2] [item_typ] > 0)
         {
 
-        if (ident_lev > 1 && item_typ == 1 || item_typ == 5 || item_typ == 6 || item_typ == 11 || item_typ == 14 || item_typ == 15)
+        if (ident_lev > 1 && (item_typ == 1 || item_typ == 5 || item_typ == 6 || item_typ == 11 || item_typ == 14 || item_typ == 15))
         {
                 char gokh = it_plus - 50;
                 if (gokh >= 0 && (gokh <= 80 || gokh >= 100)) strcat(glog, "+");
@@ -1749,8 +1749,8 @@ mss [13] [1] = 200; // crystal ball
         mss [0] [17] = 200;
 
         // staff - hmmm
-        prop [0] [18] [0] = 5; // damage
-        prop [0] [18] [1] = 4; // helps to get past evasion
+        prop [0] [18] [0] = 7; // damage
+        prop [0] [18] [1] = 6; // helps to get past evasion
         prop [0] [18] [2] = 12; // speed
         mss [0] [18] = 130;
 

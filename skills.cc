@@ -169,7 +169,7 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
 /*        if (exsk == 27)
          you[0].res_magic += 2;*/
 
-        if (best_skill(0, 50, 99) != old_best_skill)
+        if (best_skill(0, 50, 99) != old_best_skill || old_best_skill == exsk)
         {
          strcpy(title, skill_title(best_skill(0, 50, 99), you[0].skills [best_skill(0, 50, 99)], you[0].clas, you[0].xl));
          redraw_skill(you[0].your_name, title);

@@ -153,7 +153,7 @@ void quit_game(void)
 
 void version(void)
 {
-        strcpy(info, "This is Dungeon Crawl v3.01. (Last build 26/12/98)");
+        strcpy(info, "This is Dungeon Crawl v3.02. (Last build 3/1/99)");
         mpr(info);
 }
 

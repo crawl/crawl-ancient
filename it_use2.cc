@@ -300,7 +300,7 @@ switch(z_type)
  case 17: // negative energy
         strcpy(str_pass, "bolt of negative energy");
         func_pass [1] = random2(10) + 8;
-        func_pass [2] = 104 + func_pass [8] / 13;
+        func_pass [2] = 105 + func_pass [8] / 13;
         func_pass [0] = DARKGREY;
         func_pass [4] = 35;
         func_pass [6] = 2;//1;
@@ -337,7 +337,7 @@ switch(z_type)
         func_pass [0] = 13;//you[0].inv_col [throw_2];//icolour [you[0].inv_class [throw_2]] [you[0].inv_type [throw_2]];
         strcpy(str_pass, "orb of energy");// you[0].inv_name [throw_2]);
         func_pass [1] = random2(5) + 8;
-        func_pass [2] = 105 + (func_pass [8] / 9);
+        func_pass [2] = 105 + (func_pass [8] / 20);
         func_pass [3] = 10 + (func_pass [8] / 20);
         func_pass [4] = 35;
         func_pass [6] = 4;//3;
@@ -375,7 +375,7 @@ switch(z_type)
         func_pass [0] = 4;
         strcpy(str_pass, "sticky flame");
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 102 + func_pass [8] / 16;
+        func_pass [2] = 102 + func_pass [8] / 30;
         func_pass [3] = 60;
         func_pass [4] = '#';
         func_pass [6] = 4;
@@ -391,7 +391,7 @@ switch(z_type)
         func_pass [0] = 14; // pain
         func_pass [6] = 2; //1;
         func_pass [2] = 50;
-        func_pass [3] = 9 + (func_pass [8] / 3);
+        func_pass [3] = 9 + (func_pass [8] / 5);
         func_pass [5] = 4; // magic
         func_pass [8] *= 15;
         func_pass [8] /= 10;
@@ -412,7 +412,7 @@ switch(z_type)
         case 26: // bone shards
         strcpy(str_pass, "spray of bone shards");
         func_pass [1] = random2(10) + 8;
-        func_pass [2] = 102 + func_pass [8] / 150; // note that f_p [8] has a high value for this spell
+        func_pass [2] = 102 + func_pass [8] / 150; // note that f_p [2] has a high value for this spell
         func_pass [0] = LIGHTGREY;
         func_pass [4] = 35;
         func_pass [6] = 2;
@@ -427,10 +427,10 @@ switch(z_type)
         func_pass [4] = 0;
         func_pass [0] = 10;
         func_pass [6] = 2;
-        func_pass [2] = 50;
+    func_pass [2] = 50;
         func_pass [5] = 4; // magic
-        func_pass [8] *= 15;
-        func_pass [8] /= 10;
+    func_pass [8] *= 25;
+    func_pass [8] /= 10;
         return 2;
 
         case 28: // degeneration
@@ -439,10 +439,10 @@ switch(z_type)
         func_pass [4] = 0;
         func_pass [0] = 11;
         func_pass [6] = 2;
-        func_pass [2] = 50;
-        func_pass [5] = 4; // magic
-        func_pass [8] *= 15;
-        func_pass [8] /= 10;
+    func_pass [2] = 50;
+    func_pass [5] = 4; // magic
+    func_pass [8] *= 15;
+    func_pass [8] /= 10;
         return 2;
 
         case 29: // sting
@@ -457,7 +457,7 @@ switch(z_type)
         func_pass [7] = 1; // wand_id
         return 1;
 
-        case 30: // hellfire
+    case 30: // hellfire
         strcpy(str_pass, "hellfire");
         func_pass [1] = random2(10) + 8;
         func_pass [2] = 20;
@@ -466,10 +466,10 @@ switch(z_type)
         func_pass [6] = 2;
         func_pass [5] = 10;
         func_pass [7] = 1;
-        func_pass [3] = 20;
-        return 2;
+    func_pass [3] = 20;
+    return 2;
 
-        case 31: // Iron Bolt
+    case 31: // Iron Bolt
         func_pass [0] = LIGHTCYAN;
         strcpy(str_pass, "iron bolt");
         func_pass [1] = random2(5) + 5;
@@ -509,7 +509,7 @@ switch(z_type)
         func_pass [0] = LIGHTCYAN;
         strcpy(str_pass, "zap");
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 4 + (func_pass [8] / 8);
+        func_pass [2] = 5 + (func_pass [8] / 8);
         func_pass [3] = 1500;
         func_pass [4] = 35;
         func_pass [6] = 2;
@@ -636,8 +636,8 @@ switch(z_type)
         func_pass [2] = 50;
         func_pass [3] = 6 + (func_pass [8] / 50);  //104 + (func_pass [8] / 150);
         func_pass [5] = 4; // magic
-        func_pass [8] *= 30;
-        func_pass [8] /= 10;
+    func_pass [8] *= 30;
+    func_pass [8] /= 10;
         return 2;
 
         case 45: // disruption
@@ -666,7 +666,7 @@ switch(z_type)
         func_pass [8] /= 10;
         return 2;
 
-        case 47: // Isk's Cross
+/*      case 47: // Isk's Cross
         func_pass [0] = 13;
         strcpy(str_pass, "blast");
         func_pass [1] = random2(5) + 12;
@@ -677,7 +677,7 @@ switch(z_type)
         func_pass [5] = 1; // an exploding bolt (also used for fireball)
         func_pass [7] = 1;
         return 1;
-
+*/
         case 48: // breathe steam
         func_pass [0] = LIGHTGREY;
         strcpy(str_pass, "ball of steam");

@@ -1229,7 +1229,7 @@ basic_level:    doorlevel = random3(11);
                         continue;
                 }
 
-                if (random3(5) == 0 && many_many > 6 && you[0].where_are_you == 0 && you[0].level_type == 0)
+                if (random3(4) == 0 && many_many > 6 && you[0].where_are_you == 0 && you[0].level_type == 0)
                 {
                         build_minivaults(200);
                         done_city = 1;
@@ -3481,7 +3481,7 @@ int items(unsigned char allow_uniques,
                         if (random() % 7 == 0 && mitm.itype [bp] >= 1 && mitm.itype [bp] <= 3) mitm.idam [bp] = mitm.idam [bp] % 30 + 1;
                         if (random() % 7 == 0 && mitm.itype [bp] >= 1 && mitm.itype [bp] <= 3) mitm.idam [bp] = mitm.idam [bp] % 30 + 2;
                         if ((random() % 5 == 0 || mitm.idam [bp] == 90 && random() % 3 == 0) && mitm.itype [bp] >= 1 && mitm.itype [bp] <= 3) mitm.idam [bp] = mitm.idam [bp] % 30 + 3;
-            quant = random3(9) + random3 (9) + 1;// + random3 (10) + 1;
+            quant = random3(9) + random3 (9) + random3 (10) + random3(9) + 1;
             if (10 + many_many >= random3(100)) mitm.iplus [bp] = random3(5);
                         mitm.iplus [bp] += 50;
                         break;
@@ -4037,7 +4037,7 @@ int items(unsigned char allow_uniques,
 
                 default: // money - class = 15
                         mitm.iclass [bp] = 15;
-                        quant = random3(10) + random3(10) + 1 + random3(many_many) + random3(many_many) + random3(many_many);
+                        quant = random3(10) + random3(10) + 1 + random3(many_many); // + random3(many_many) + random3(many_many);
                         break;
 
         }

@@ -1,20 +1,28 @@
-#define DOS
-
-#include <sys/stat.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "config.h"
 
 #ifdef DOS
 #include <file.h>
 #include <conio.h>
 #include <dos.h>
 #endif
+
 #ifdef LINUX
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
 #endif
+
+#ifdef USE_EMX
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
+#endif
+
+#include <sys/stat.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 
 int main(void) //int argc, char *argv[])
@@ -22,6 +30,10 @@ int main(void) //int argc, char *argv[])
 
 char signat [80];
 char getsig [80];
+
+#ifdef USE_EMX
+  init_emx();
+#endif // USE_EMX
 
 /*if (argc > 1)
 {
@@ -63,11 +75,12 @@ char da_mon;
 
 struct dates retdate [1];*/
 
+char st_prn [5];
+
+#ifndef USE_EMX
 struct date retdate [1];
 
 getdate(retdate);
-
-char st_prn [5];
 
 itoa(retdate[0].da_day, st_prn, 10);
 strcat(signat, st_prn);
@@ -77,7 +90,14 @@ strcat(signat, st_prn);
 strcat(signat, "/");
 itoa(retdate[0].da_year, st_prn, 10);
 strcat(signat, st_prn);
+#endif // !USE_EMX
 
+#ifdef USE_EMX
+  time_t t;
+  time(&t);
+  struct tm *tms=localtime(&t);
+  sprintf(signat+strlen(signat), "%d/%d/%d", tms->tm_mday, tms->tm_mon+1, tms->tm_year);
+#endif // USE_EMX
 
 
 strcat(signat, ")");
@@ -279,8 +299,8 @@ out_of_ready2 :
 }*/
 
 
-int placed = 0;
-char has_printed = 0;
+//int placed = 0;
+//char has_printed = 0;
 
 int i = 0;
 
@@ -429,6 +449,10 @@ for (hc = 0; hc < 99; hc ++)
 }
 
 close(handle);
+
+#ifdef USE_EMX
+  deinit_emx();
+#endif // USE_EMX
 
 return 1;
 

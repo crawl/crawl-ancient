@@ -1022,8 +1022,7 @@ int dur_incr = 0;
  {
   if (player_fast_run() != 0)
   {
-   strcpy(info, "The spell fails.");
-   mpr(info);
+   mpr("You can already move quickly.");
    return;
   }
 //  you[0].fast_run ++;

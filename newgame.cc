@@ -106,8 +106,8 @@ for (i = 0; i < 52; i ++)
 
 textcolor(7);
 
-cprintf(EOL"Hello, and welcome to Dungeon Crawl v3.01!");
-cprintf(EOL"(Copyright 1997 Linley Henzell)");
+cprintf(EOL"Hello, and welcome to Dungeon Crawl v3.02!");
+cprintf(EOL"(Copyright 1997, 1998, 1999 Linley Henzell)");
 cprintf(EOL"Please read Crawl.txt for instructions and legal details."EOL EOL);
 name_q : cprintf("What is your name today? ");
 //cin >> your_nam;
@@ -2879,7 +2879,7 @@ switch(speci)
  case 5:
  case 6:
  case 10:
- case 12:
+ case 11:
  case 13:
  case 31: /* Demigod */
  return 1;

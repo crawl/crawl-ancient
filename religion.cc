@@ -699,7 +699,7 @@ switch(thing_done)
  {
   case 6:
   strcpy(info, god_name(you[0].religion));
-  strcat(info, " accepts your servant's kill.");
+  strcat(info, " accepts your collateral kill.");
   mpr(info);
   if (random2(pgain + 18) > 5) gain_piety(1);
   break;

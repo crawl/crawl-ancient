@@ -1372,15 +1372,19 @@ sc_read_2 = conv_lett(sc_read_1);
 
 if (you[0].inv_quant [sc_read_2] == 0)
 {
-        strcpy(info, "You don't have any such object.");
-        mpr(info);
+        mpr("You don't have any such object.");
         return 0;
 }
 
 if (you[0].inv_class [sc_read_2] != 10)
 {
-        strcpy(info, "That isn't a spellbook!");
-        mpr(info);
+        mpr("That isn't a spellbook!");
+        return 0;
+}
+
+if (you[0].inv_type [sc_read_2] == 41) /* manuals */
+{
+        mpr("That isn't a spellbook!");
         return 0;
 }
 

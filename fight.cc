@@ -156,7 +156,7 @@ if (you[0].equip [0] != -1)
  }
  if (you[0].inv_class [you[0].equip [0]] == 11)
  {
-   your_to_hit += 8;
+   your_to_hit += property(0, 18, 1); /* magical staff */
  }
 }
 
@@ -225,7 +225,7 @@ if (you[0].equip [0] != -1)
  }
  if (you[0].inv_class [you[0].equip [0]] == 11)
         {
-   damage = 5;
+   damage = property(0, 18, 0);
         }
 }
 
@@ -236,7 +236,7 @@ if (you[0].equip [0] != -1)
         if (you[0].inv_class [you[0].equip [0]] == 0 || you[0].inv_class [you[0].equip [0]] == 11)
         {
                 if (you[0].inv_class [you[0].equip [0]] == 11)
-                        weapon_speed2 = 12; else weapon_speed2 = property(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], 2);
+                        weapon_speed2 = property(0, 18, 2); else weapon_speed2 = property(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], 2);
 
                 weapon_speed2 -= you[0].skills [weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]])] / 2;
 
@@ -1814,11 +1814,11 @@ if (drained == 1) drain_exp();
 
 damage_taken += specdam;
 
-if (damage_taken > 0 && damage_taken < 150) /* ultra-high damages are assumed buggy */
+if (damage_taken > 0 && damage_taken < 150) /* ultra-high damages are assumed buggy - I wish there was a more elegant way to fix this (there probably is) */
 {
         ouch(damage_taken, monster_attacking, 0);
         you[0].hp_ch = 1;
-        if (you[0].religion == 5 && you[0].hp <= you[0].hp / 3 && random2(10) == 0) Xom_acts(1, you[0].xl, 0);
+        if (you[0].religion == 5 && you[0].hp <= you[0].hp_max / 3 && random2(10) == 0) Xom_acts(1, you[0].xl, 0);
 
 }
 

@@ -552,7 +552,7 @@ switch (menv [i].m_ench [p])
    case 62: // sticky flame
    case 63: // sticky flame
    case 64: // sticky flame
-   menv [i].m_hp -= ((random2(5) + random2(5) + 1) * 10) / menv [i].m_speed;
+   menv [i].m_hp -= ((random2(4) + random2(4) + 1) * 10) / menv [i].m_speed;
    if (mons_res_fire(menv [i].m_class) == -1) menv [i].m_hp -= ((random2(5) + random2(5) + 1) * 10) / menv [i].m_speed;
    if (mons_near(i) == 1)
    {
@@ -704,8 +704,7 @@ break;
 case 59:
 if (random2(2) == 0 && (menv [i].m_ench [2] != 6 || player_see_invis() != 0))
 {
-  strcpy(info, "The giant eyeball stares at you!");
-  mpr(info);
+  mpr("The giant eyeball stares at you.");
   if (you[0].paralysis < 10) you[0].paralysis += 2 + random2(3);
 }
 break;
@@ -713,8 +712,7 @@ break;
 case 65:
 if (random2(2) == 0 && (menv [i].m_ench [2] != 6 || player_see_invis() != 0))
 {
-  strcpy(info, "The eye of draining stares at you!");
-  mpr(info);
+  mpr("The eye of draining stares at you.");
   you[0].ep -= random2(5) + random2(5) + random2(5) + 2;
   if (you[0].ep < 0) you[0].ep = 1;
   you[0].ep_ch = 1;
@@ -1704,8 +1702,10 @@ switch(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]])
                 return;
  if (mitm.idam [igrd [menv [i].m_x] [menv [i].m_y]] > 180) return;
  if (mitm.idam [igrd [menv [i].m_x] [menv [i].m_y]] % 30 >= 25) return;
-        if ((mons_charclass(menv [i].m_class) == 36 || mons_charclass(menv [i].m_class) == 6) && property(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]], mitm.itype[igrd [menv [i].m_x] [menv [i].m_y]], 1) <= 0) return;
- // wimpy monsters shouldn't pick up halberds etc
+ if ((mons_charclass(menv [i].m_class) == 36 || mons_charclass(menv [i].m_class) == 6) && property(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]], mitm.itype[igrd [menv [i].m_x] [menv [i].m_y]], 1) <= 0) return;
+ // wimpy monsters (Kob, gob) shouldn't pick up halberds etc
+ if (mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == 20 || mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == 21) return;
+ // Nobody picks up giant clubs
         menv [i].m_inv [0] = igrd [menv [i].m_x] [menv [i].m_y];
         igrd [menv [i].m_x] [menv [i].m_y] = mitm.ilink [igrd [menv [i].m_x] [menv [i].m_y]];
  mitm.ilink [menv [i].m_inv [0]] = 501;
@@ -1720,14 +1720,23 @@ switch(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]])
         break;
 
         case 1:
-        if (menv [i].m_inv [1] != 501 && mitm.itype [menv [i].m_inv [1]] == mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] && mitm.iplus [menv [i].m_inv [1]] == mitm.iplus [igrd [menv [i].m_x] [menv [i].m_y]] && mitm.iplus2 [menv [i].m_inv [1]] == mitm.iplus2 [igrd [menv [i].m_x] [menv [i].m_y]] &&  mitm.idam [menv [i].m_inv [1]] == mitm.idam [igrd [menv [i].m_x] [menv [i].m_y]])
+        if (menv [i].m_inv [1] != 501 && mitm.itype [menv [i].m_inv [1]] == mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] && mitm.iplus [menv [i].m_inv [1]] == mitm.iplus [igrd [menv [i].m_x] [menv [i].m_y]] && mitm.idam [menv [i].m_inv [1]] == mitm.idam [igrd [menv [i].m_x] [menv [i].m_y]])
+    /* Removed check for item_plus2 - probably irrelevant */
         {
+                strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
+                strcat(info, " picks up ");
+                it_name(igrd [menv [i].m_x] [menv [i].m_y], 3, str_pass);
+                strcat(info, str_pass);
+                strcat(info, ".");
+                if (mons_near(i)) mpr(info);
                 mitm.iquant [menv [i].m_inv [1]] += mitm.iquant [igrd [menv [i].m_x] [menv [i].m_y]];
                 mitm.iquant [igrd [menv [i].m_x] [menv [i].m_y]] = 0;
                 igrd [menv [i].m_x] [menv [i].m_y] = mitm.ilink [igrd [menv [i].m_x] [menv [i].m_y]];
-  mitm.ilink [menv [i].m_inv [0]] = 501;
+            mitm.ilink [menv [i].m_inv [0]] = 501;
                 return;
         }
+    if (mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == 5) return;
+    // Nobody bothers to pick up rocks if they don't already have some.
         if (menv [i].m_inv [0] != 501 || mitm.iquant [igrd [menv [i].m_x] [menv [i].m_y]] == 1)
                 return;
         menv [i].m_inv [1] = igrd [menv [i].m_x] [menv [i].m_y];

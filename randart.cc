@@ -642,7 +642,7 @@ if (aclass == 0) /* Only weapons get brands, of course */
  if (random4(6) == 0) proprt [0] = 1 + random4(2);
  if (random4(6) == 0) proprt [0] = 5 + random4(4);
  if (random4(6) == 0) proprt [0] = 10;
- //if (proprt [0] == 11 || proprt [0] == 12) proprt [0] = 0; /* no bows for now */
+ if (proprt [0] == 11 || proprt [0] == 12) proprt [0] = 0; /* missile wpns */
  if (proprt [0] == 7) proprt [0] = 0; /* no protection */
  if (proprt [0] == 14 && atype != 1) proprt [0] = 0; /* Only maces get disruption */
 

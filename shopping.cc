@@ -525,7 +525,7 @@ if (ident_lev > 1)
   case 14: valued *= 50; break; // mace of disruption
   case 15: valued *= 30; break; // pain
   case 16: valued *= 30; break; // distortion
-  default: valued *= 120; break; /* randart */
+  default: valued *= 70; break; /* randart */
  }
  if (item_da % 30 != 0) valued /= 10;
 }
@@ -822,6 +822,8 @@ if (item_da / 30 == 6) // orc
       case 16: valued += 15; charge_value += 3; break; //strcat(glog, "wand of enslavement"); break;
       case 17: valued += 20; charge_value += 4; break; //strcat(glog, "wand of draining"); break;
       case 18: valued += 13; charge_value += 3; break; //strcat(glog, "wand of random effects"); break;
+      case 19: valued += 17; charge_value += 4; break; //strcat(glog, "wand of disintegration"); break;
+      default: valued += 10; break;
       } //else valued = 10;
 
         if (ident_lev > 1)
@@ -900,6 +902,7 @@ if (item_da / 30 == 6) // orc
  case 21: valued = 1; break;
       // break;
  }
+ valued *= 8;
  break;
 
         case 6: // scrolls
