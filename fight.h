@@ -1,3 +1,15 @@
+#ifndef FIGHT_H
+#define FIGHT_H
+/*
+ *  File:       fight.cc
+ *  Summary:    Functions used during combat.
+ *  Written by: Linley Henzell
+ *
+ *  Change History (most recent first):
+ *
+ *               <1>     -/--/--        LRH             Created
+ */
+
 
 void monster_die(int monster_killed, char killer, int i);
 void you_attack(int monster_attacked);
@@ -7,3 +19,4 @@ int jelly_divide(int jel);
 void alert(void);
 void monster_polymorph(unsigned char monsc, unsigned char targetc, int power);
 void monster_drop_ething(int monster_killed);
+#endif

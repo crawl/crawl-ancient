@@ -4,339 +4,337 @@
 #include "defines.h"
 #include "message.h"
 
-extern char info [200];
-extern char st_prn [20];
+extern char info[200];
+extern char st_prn[20];
 
-extern char str_pass [80];
+extern char str_pass[80];
 
-extern char gmon_use [1000];
-extern char mcolour [1000];
+extern char gmon_use[1000];
+extern char mcolour[1000];
 extern unsigned char show_green;
 
 #ifdef SHORT_FILE_NAMES
-        const int kNameLen      = 30;
-        const int kFileNameLen  = 6;
-        const int kFileNameSize = 5 + kFileNameLen;
+const int kNameLen = 30;
+const int kFileNameLen = 6;
+const int kFileNameSize = 5 + kFileNameLen;
+
 #else
-        const int kNameLen      = 30;
-        const int kFileNameLen  = 28;
-        const int kFileNameSize = 5 + kFileNameLen;
+#ifdef SAVE_DIR_PATH
+        // file name length has to be able to cover full paths -- bwross
+const int kNameLen = 30;
+const int kFileNameLen = 250;
+const int kFileNameSize = 5 + kFileNameLen;
+
+#else
+const int kNameLen = 30;
+const int kFileNameLen = 28;
+const int kFileNameSize = 5 + kFileNameLen;
+
+#endif
+#endif
+
+// Length of Path + File Name
+const int kPathLen = 256;
+
+#ifdef USE_NEW_BERSERK
+
+// This value is used to mark that the current berserk is free from
+// penalty (Xom's granted or from a deck of cards).
+#define NO_BERSERK_PENALTY    -1
+
 #endif
 
 
 struct dist
 {
- char move_x;
- char move_y;
- char target_x;
- char target_y;
- char prev_targ;
- long nothing;
+    char move_x;
+    char move_y;
+    char target_x;
+    char target_y;
+    char prev_targ;
+    long nothing;
 };
+
 
 struct bolt
 {
- int range, type, colour, flavour, source_x, source_y;
- int damage, ench_power, hit, bx, by, target_x;
- int target_y;
-/* char beam_flavour, wand_id;*/
- char wand_id;
- char aim_down;
- char thing_thrown;
-/*, beam_type;*/
- char move_x, move_y;
- int trac_targ;
- int tracer_mons;
- int trac_hit_tamed;
- int trac_hit_mons;
- int tracer;
- int trac_targ_x, trac_targ_y;
-/* int beam_hit;*/
+    int range, type, colour, flavour, source_x, source_y;
+    int damage, ench_power, hit, bx, by, target_x;
+    int target_y;
+    char wand_id;
+    char aim_down;
+    char thing_thrown;
+    char move_x, move_y;
+    int trac_targ;
+    int tracer_mons;
+    int trac_hit_tamed;
+    int trac_hit_mons;
+    int tracer;
+    int trac_targ_x, trac_targ_y;
 
- /* If a monster fired it, which monster? */
- int beam_source;
+    /* If a monster fired it, which monster? */
+    int beam_source;
 
- char beam_name [40];
-
+    char beam_name[40];
 };
 
-/*struct level
-{
- unsigned char grid [GXM] [GYM];
- unsigned char mgrid [GXM] [GYM];
- unsigned int igrid [GXM] [GYM];
- unsigned char map [GXM] [GYM];
-};*/
 
 struct player
 {
-char turnover;
-unsigned char prev_targ;
+    char turn_is_over;          // flag signaling that player has performed a timed action
 
-char your_name [kNameLen];
+    unsigned char prev_targ;
 
-unsigned char species;
-char run_x;
-char run_y;
-char running;
+    char your_name[kNameLen];
 
-/*
-Make these all functions:
-char teleport;
-char see_invis;
-char res_fire;
-char res_poison;
-char res_cold;
-char fast_run;
-char sust_abil;
-char deaths_door;
-char magic_battery;
-char spec_fire;
-char spec_cold;
-char spec_poison;
-char prot_life;
-char berserker;
-char energy;*/
-char special_wield;
-char deaths_door;
-char shock_shield;
+    unsigned char species;
+    char run_x;
+    char run_y;
+    char running;
 
-unsigned char corpse_count;
-unsigned char disease;
+    char special_wield;
+    char deaths_door;
+    char shock_shield;
 
-/* Function
-int res_magic ;
-*/
-char max_level;
+    double elapsed_time;        // total amount of elapsed time in the game
 
-int x_pos;
-int y_pos;
+    unsigned char synch_time;   // amount of time to wait before calling handle_time
 
-int hunger;
-char hunger_inc;
-char equip [NO_EQUIP];
-/* list in player.cc */
+    unsigned char disease;
 
-int hp;
-int hp_max;
-int base_hp; // this is what is affected by necrophages etc
-int base_hp2;
-int ep;
-int ep_max;
-int base_ep;
-int base_ep2;
+    char max_level;
 
-char strength;
-char intel;
-char dex;
-char max_strength;
-char max_intel;
-char max_dex;
+    int x_pos;
+    int y_pos;
 
+    int hunger;
+    char hunger_inc;
+    char equip[NO_EQUIP];
+    /* list in player.cc */
 
-/* xxx_ch variables : determine whether new value is printed next turn.
-Set to 1 if value is changed. */
-char hung_ch;
-char hung_state; /* normal */
-char burden_ch;
-char hp_ch;
-char ep_ch;
-char strength_ch;
-char intel_ch;
-char dex_ch;
-char xp_ch;
-char AC_ch; /* remember that the AC shown = 10 - AC */
-char gp_ch;
-char evasion_ch;
+    int hp;
+    int hp_max;
+    int base_hp;                // this is what is affected by necrophages etc
 
-/* Functions:
-int AC;
-int evasion;
-char shield_class;
-char rate_regen;
-char ep_rate_regen;
-*/
+    int base_hp2;
+    int magic_points;
+    int max_magic_points;
+    int base_magic_points;
+    int base_magic_points2;
 
-unsigned char incr_regen;
-unsigned char ep_incr_regen;
+    char strength;
+    char intel;
+    char dex;
+    char max_strength;
+    char max_intel;
+    char max_dex;
 
-unsigned long xp;
-int xl;
-unsigned int gp;
-int clas;
-char clasnam [30];
-char speed;
-int time_taken;
+    /* xxx_ch variables : determine whether new value is printed next turn.
+       Set to 1 if value is changed. */
+    char redraw_hunger;
+    char hunger_state;          /* normal */
+    char redraw_burden;
+    char redraw_hit_points;
+    char redraw_magic_points;
+    char redraw_strength;
+    char redraw_intelligence;
+    char redraw_dexterity;
+    char redraw_experience;
+    char redraw_armor_class;    /* remember that the AC shown = 10 - AC */
+    char redraw_gold;
+    char redraw_evasion;
 
-        unsigned char inv_class [52];
-        unsigned char inv_type [52];
-        unsigned char inv_plus [52];
-        unsigned char inv_plus2 [52];
-        unsigned char inv_dam [52];
-        unsigned char inv_ident [52];
-        char inv_col [52];
-        int inv_quant [52];
-        char inv_no; // number of items carried.
+    unsigned char hit_points_regeneration;
+    unsigned char magic_points_regeneration;
 
- int burden;
- char burden_state;
-unsigned char spells [25];
-char spell_no;
-char spell_levels;
-unsigned char char_direction ;
-// 0 = going down
-// 1 = going up!
-unsigned char pet_target;
+    unsigned long experience;
+    int experience_level;
+    unsigned int gold;
+    int char_class;
+    char class_name[30];
+    char speed;
+    int time_taken;
 
-int your_level;
+    unsigned char inv_class[52];
+    unsigned char inv_type[52];
+    unsigned char inv_plus[52];
+    unsigned char inv_plus2[52];
+    unsigned char inv_dam[52];
+    unsigned char inv_ident[52];
+    char inv_colour[52];
+    int inv_quantity[52];
+    char num_inv_items;         // number of items carried.
 
-int duration [30]; // lots of durational things. Why didn't I do this for haste etc right from the start? Oh well.
-/* There's a list of these in player.cc */
+    int burden;
+    char burden_state;
+    unsigned char spells[25];
+    char spell_no;
+    char spell_levels;
+    unsigned char char_direction;
+    // 0 = going down
+    // 1 = going up!
+    unsigned char pet_target;
 
-int invis ;
-int conf;
-int paralysis;
-int slow ;
-int haste ; // haste
-int might ; // might
-int lev ; // levitation
-int poison ; // poison!!
-int rotting ;
-int berserker;
+    int your_level;
 
-unsigned char attribute [30]; // various attributes, eg resist lightning
-/* list in player.cc */
+    int duration[30];           // lots of durational things. Why didn't I do this for haste etc right from the start? Oh well.
+    /* There's a list of these in player.cc */
 
-char is_undead;
-/* 0 - is alive
-   1 - is undead, but can still eat/drink etc (eg vampire)
-   2 - is undead (mummy etc)*/
+    int invis;
+    int conf;
+    int paralysis;
+    int slow;
+    int haste;
+    int might;
+    int levitation;             // levitation
 
-char delay_doing;
-char delay_t;
+    int poison;
+    int rotting;
+    int berserker;
 
-unsigned char skills [50];
-unsigned char practise_skill [50];
-unsigned int skill_points [50];
-int exp_available;
+#ifdef USE_NEW_BERSERK
+    int exhausted;              // fatigue counter for berserk
 
-unsigned char item_description [5] [50];
-char unique_items [50];
-char unique_creatures [50];
-char level_type;
+    int berserk_penalty;        // pelnalty for moving while berserk
+#endif
 
+    unsigned char attribute[30];  // various attributes, eg resist lightning
+    /* list in player.cc */
 
+    char is_undead;
+    /* 0 - is alive
+       1 - is undead, but can still eat/drink etc (eg vampire)
+       2 - is undead (mummy etc) */
 
-char where_are_you;
+    char delay_doing;
+    char delay_t;
 
-unsigned char branch_stairs [30];
+    unsigned char skills[50];
+    unsigned char practise_skill[50];
+    unsigned int skill_points[50];
+    int exp_available;
 
-char religion;
-unsigned char piety;
-unsigned char gods [100];
+    unsigned char item_description[5][50];
+    char unique_items[50];
+    char unique_creatures[50];
+    char level_type;
 
-unsigned char mutation [100];
-unsigned char demon_pow [100];
-unsigned char mpower;
+    char where_are_you;
 
-unsigned char had_item [50];
+    unsigned char branch_stairs[30];
 
-unsigned char betrayal;
+    char religion;
+    unsigned char piety;
+    unsigned char gods[100];
 
+    unsigned char mutation[100];
+    unsigned char demon_pow[100];
+    unsigned char magic_contamination;
+
+    unsigned char had_item[50];
+
+    unsigned char betrayal;
 };
 
-extern struct player you [1];
+extern struct player you;
 
 
 struct monsters
 {
- int m_class;
- int m_hp;
- int m_hp_max;
- unsigned char m_HD;
- int m_AC;
- char m_ev;
- unsigned char m_speed;
- unsigned char m_speed_inc;
- unsigned char m_x;
- unsigned char m_y;
- unsigned char m_targ_1_x;
- unsigned char m_targ_1_y;
- int m_inv [8];
- unsigned char m_beh;
- unsigned char m_sec;
- unsigned char m_hit;
- unsigned char m_ench [3];
- unsigned char m_ench_1;
+    int type;
+    int hit_points;
+    int max_hit_points;
+    unsigned char hit_dice;
+    int armor_class;
+    char evasion;
+    unsigned char speed;
+    unsigned char speed_increment;
+    unsigned char x;
+    unsigned char y;
+    unsigned char target_x;
+    unsigned char target_y;
+    int inv[8];
+    unsigned char behavior;
+    unsigned char number;
+    unsigned char monster_foe;
+    unsigned char enchantment[3];
+    unsigned char enchantment1;
 };
 
-/* extern struct monsters mons [MNST]; */
 
 struct item_struct
 {
- unsigned char iclass [ITEMS]; /* basic class (eg weapon) */
- unsigned char itype [ITEMS]; /* type within that class (eg dagger) */
- unsigned char iplus [ITEMS]; /* hit+, charges */
- unsigned char iplus2 [ITEMS]; /* dam+ etc */
- unsigned char idam [ITEMS]; /* special stuff */
- unsigned int iquant [ITEMS]; /* multiple items */
- unsigned char ix [ITEMS]; /*  x-location */
- unsigned char iy [ITEMS]; /* y-location */
- unsigned char icol [ITEMS]; /* colour */
- unsigned char iid [ITEMS]; /* identification */
- unsigned int ilink [ITEMS]; /* next item in stack */
+    unsigned char base_type[ITEMS];     /* basic class (eg weapon) */
+    unsigned char sub_type[ITEMS];      /* type within that class (eg dagger) */
+    unsigned char pluses[ITEMS];        /* hit+, charges */
+    unsigned char pluses2[ITEMS];       /* dam+ etc */
+    unsigned char special[ITEMS];       /* special stuff */
+    unsigned int quantity[ITEMS];       /* multiple items */
+    unsigned char x[ITEMS];     /*  x-location */
+    unsigned char y[ITEMS];     /* y-location */
+    unsigned char colour[ITEMS];        /* colour */
+    unsigned char id[ITEMS];    /* identification */
+    unsigned int link[ITEMS];   /* next item in stack */
 };
-
-/*extern struct item_struct it [1]; */
 
 
 struct environ
 {
- item_struct it [1];
- monsters mons [MNST];
- unsigned char grid [GXM] [GYM];
- unsigned char mgrid [GXM] [GYM];
- int igrid [GXM] [GYM];
- unsigned char map [GXM] [GYM];
- char cgrid [GXM] [GYM];
- unsigned int show [19] [19];
- unsigned char show_col [19] [19];
- unsigned char rock_colour;
- unsigned char floor_colour;
+    item_struct it[1];
+    monsters mons[MNST];
+    unsigned char grid[GXM][GYM];
+    unsigned char mgrid[GXM][GYM];
+    int igrid[GXM][GYM];
+    unsigned char map[GXM][GYM];
+    char cgrid[GXM][GYM];
+    unsigned int show[19][19];
+    unsigned char show_col[19][19];
+    unsigned char rock_colour;
+    unsigned char floor_colour;
 
- unsigned char cloud_x [CLOUDS];
- unsigned char cloud_y [CLOUDS];
- unsigned char cloud_type [CLOUDS];
- int cloud_decay [CLOUDS];
- unsigned char cloud_no;
+    unsigned char cloud_x[CLOUDS];
+    unsigned char cloud_y[CLOUDS];
+    unsigned char cloud_type[CLOUDS];
+    int cloud_decay[CLOUDS];
+    unsigned char cloud_no;
 
- unsigned char keeper_name [5] [3];
- unsigned char sh_x [5];
- unsigned char sh_y [5];
- unsigned char sh_greed [5];
- unsigned char sh_type [5];
- unsigned char sh_level [5];
+    unsigned char keeper_name[5][3];
+    unsigned char sh_x[5];
+    unsigned char sh_y[5];
+    unsigned char sh_greed[5];
+    unsigned char sh_type[5];
+    unsigned char sh_level[5];
 
- unsigned char trap_type [NTRAPS];
- unsigned char trap_x [NTRAPS];
- unsigned char trap_y [NTRAPS];
- int mons_alloc [20];
- int trap_known;
-
+    unsigned char trap_type[NTRAPS];
+    unsigned char trap_x[NTRAPS];
+    unsigned char trap_y[NTRAPS];
+    int mons_alloc[20];
+    int trap_known;
 };
 
-extern struct environ env [1]; // make this global to main module
+extern struct environ env;      // make this global to main module
+
 
 struct ghost_struct
 {
- char gname [20];
- unsigned char ghs [20];
+    char name[20];
+    unsigned char values[20];
 };
 
 extern struct ghost_struct ghost;
 
-extern void (*viewwindow)(char);
+
+extern void (*viewwindow) (char);
 
 
+struct system_environment
+{
+    char  *crawl_name;
+    char  *crawl_pizza;
+    char  *crawl_rc;
+    char  *crawl_dir;
+};
+
+extern system_environment  sys_env;
 
 #endif // EXTERNS_H

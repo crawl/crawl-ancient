@@ -1,3 +1,5 @@
+#ifndef LIBMAC_H
+#define LIBMAC_H
 /*
  *  File:       libmac.h
  *  Summary:    Mac specific routines used by Crawl.
@@ -8,9 +10,6 @@
  *               <1>     3/23/99        JDJ             Created
  */
 
-#ifndef LIBMAC_H
-#define LIBMAC_H
-
 #if macintosh
 
 #include <fcntl.h>
@@ -20,33 +19,40 @@
 
 // constants
 const int _NORMALCURSOR = 1;
-const int _NOCURSOR     = 0;
+const int _NOCURSOR = 0;
 
-const int S_IWRITE  = 0x10000;          // not sure about these...
-const int S_IREAD   = 0x20000;
+const int S_IWRITE = 0x10000;   // not sure about these...
+
+const int S_IREAD = 0x20000;
 
 
 // non-ANSI functions
-int stricmp(const char* lhs, const char* rhs);
-char* strlwr(char* str);
-void itoa(int n, char* buffer, int radix);
+int stricmp(const char *lhs, const char *rhs);
+char *strlwr(char *str);
+void itoa(int n, char *buffer, int radix);
 
-inline int random()                                             {return rand();}
-inline void srandom(unsigned int seed)  {srand(seed);}
+inline int random()
+{
+    return rand();
+}
+inline void srandom(unsigned int seed)
+{
+    srand(seed);
+}
 
-int open(const char* path, int openFlags, int permissions);
-int open(const char* path, int openFlags, int permissions, int mysteryFlags);
+int open(const char *path, int openFlags, int permissions);
+int open(const char *path, int openFlags, int permissions, int mysteryFlags);
 int close(int desc);
-int read(int desc, void* buffer, unsigned int bytes);
-int write(int desc, const void* buffer, unsigned int bytes);
-int unlink(const char* path);
+int read(int desc, void *buffer, unsigned int bytes);
+int write(int desc, const void *buffer, unsigned int bytes);
+int unlink(const char *path);
 
 
 // curses(?) functions
 void clrscr();
 void gotoxy(int x, int y);
 void textcolor(int c);
-void cprintf(const char* format, ... );
+void cprintf(const char *format,...);
 
 void window(int x, int y, int lx, int ly);
 int wherex();
@@ -56,7 +62,7 @@ int kbhit();
 
 char getche();
 int getch();
-void getstr(char* buffer, int bufferSize);
+void getstr(char *buffer, int bufferSize);
 
 void textbackground(int c);
 void _setcursortype(int curstype);
@@ -69,5 +75,5 @@ void init_mac();
 void deinit_mac();
 
 
-#endif          // macintosh
-#endif          // LIBMAC_H
+#endif // macintosh
+#endif // LIBMAC_H

@@ -1,4 +1,17 @@
+#ifndef TRANSFOR_H
+#define TRANSFOR_H
+/*
+ *  File:       transfor.cc
+ *  Summary:    Misc function related to player transformations.
+ *  Written by: Linley Henzell
+ *
+ *  Change History (most recent first):
+ *
+ *               <1>     -/--/--        LRH             Created
+ */
+
 void untransform(void);
 char can_equip(char use_which);
 char transform(int pow, char which_trans);
-int remove_equipment(char remove_stuff [8]);
+int remove_equipment(char remove_stuff[8]);
+#endif

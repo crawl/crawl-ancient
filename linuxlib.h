@@ -1,3 +1,5 @@
+#ifndef LINUXLIB_H
+#define LINUXLIB_H
 /* Some replacement routines missing in gcc */
 
 #define _NORMALCURSOR 1
@@ -8,9 +10,9 @@ void lincurses_startup();
 
 int itoa(int value, char *strptr, int radix);
 
-char * strlwr(char *str);
+char *strlwr(char *str);
 
-int cprintf (char *format, ... );
+int cprintf(char *format,...);
 
 int putch(unsigned char chr);
 
@@ -44,10 +46,12 @@ void lincurses_shutdown();
 
 #ifndef _LINUXLIB_IMPLEMENTATION
 /* Some stuff from curses, to remove compiling warnings.. */
-extern "C" {
-int getstr(char *);
-int getch(void);
-int noecho(void);
-int echo(void);
+extern "C"
+{
+    int getstr(char *);
+    int getch(void);
+    int noecho(void);
+    int echo(void);
 }
+#endif
 #endif

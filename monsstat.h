@@ -1,3 +1,5 @@
+#ifndef MONSSTAT_H
+#define MONSSTAT_H
 //#define MLAVA0 220
 //#define MLAVA1 221
 #define MNST 200
@@ -5,11 +7,11 @@
 
 int mondamage(int mc, int rt);
 
-void mon_init(char gmon_use [1000], char mcolour [1000]);
+void mon_init(char gmon_use[1000], char mcolour[1000]);
 
-void def_letters(char letters [52] [1]);
+void def_letters(char letters[52][1]);
 
-void def_properties(int property [4] [50] [3], int mass [20] [50]);
+void def_properties(int property[4][50][3], int mass[20][50]);
 
 int mon_resist_mag(int mc, char mhd);
 
@@ -35,15 +37,15 @@ char mons_shouts(int mclass);
 
 char mons_flies(int mclass);
 
-void mons_spell_list(unsigned char sec, int splist [6]);
+void mons_spell_list(unsigned char sec, int splist[6]);
 
-void replay_messages(char info [78] [78]);
+void replay_messages(char info[78][78]);
 
 char mons_see_invis(int mclass);
 
 char damage_type(char wclass, char wtype);
 
-void define_monster(int k, struct monsters mns [MNST]);
+void define_monster(int k, struct monsters mns[MNST]);
 
 int mons_exp_mod(int mclass);
 
@@ -63,4 +65,5 @@ char weapon_speed(char wclass, char wtype);
 
 
 unsigned char mons_char(int mc);
-int mons_flag(int mc,int bf);
+int mons_flag(int mc, int bf);
+#endif

@@ -1,3 +1,15 @@
+#ifndef SPELLS2_H
+#define SPELLS2_H
+/*
+ *  File:       spells2.cc
+ *  Summary:    Implementations of some additional spells.
+ *  Written by: Linley Henzell
+ *
+ *  Change History (most recent first):
+ *
+ *               <1>     -/--/--        LRH             Created
+ */
+
 
 int corpse_rot(int power);
 char detect_traps(void);
@@ -24,6 +36,8 @@ void restore_dex(void);
 void cast_refrigeration(int pow);
 void drain_life(int pow);
 void summon_things(int pow);
-void turn_undead(int pow); // what should I use for pow?
+void turn_undead(int pow);      // what should I use for pow?
+
 void holy_word(int pow);
 void cast_toxic_radiance(void);
+#endif

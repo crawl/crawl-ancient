@@ -1,3 +1,5 @@
+#ifndef DOT_H_H
+#define DOT_H_H
 #include "bang.h"
 #include "beam.h"
 #include "chardump.h"
@@ -29,7 +31,7 @@
 #include "ouch.h"
 #include "output.h"
 #include "player.h"
-#include "priest.h"
+#include "abyss.h"
 #include "shopping.h"
 #include "skills.h"
 #include "skills2.h"
@@ -41,3 +43,4 @@
 #include "spells3.h"
 #include "stuff.h"
 #include "view.h"
+#endif

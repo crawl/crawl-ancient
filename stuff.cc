@@ -1,4 +1,15 @@
-#include "config.h"
+/*
+ *  File:       stuff.cc
+ *  Summary:    Misc stuff.
+ *  Written by: Linley Henzell
+ *
+ *  Change History (most recent first):
+ *
+ *               <1>     -/--/--        LRH             Created
+ */
+
+#include "AppHdr.h"
+#include "stuff.h"
 
 #ifdef DOS
 #include <conio.h>
@@ -13,26 +24,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "macro.h"
 #include "message.h"
 #include "misc.h"
 #include "output.h"
 #include "view.h"
 #include "skills2.h"
 
+#ifdef MACROS
+  #include "macro.h"
+#endif
+
 extern char wield_change;
 
 int random2(unsigned int randmax)
 {
- if (randmax <= 0) return 0;
- return random() % randmax;
+    if (randmax <= 0)
+        return 0;
+
+    return random() % randmax;
 }
 
-unsigned char get_ch(void)
+unsigned char get_ch()
 {
- unsigned char gotched = getch();
- if (gotched == 0) gotched = getch();
- return gotched;
+    unsigned char gotched = getch();
+
+    if (gotched == 0)
+        gotched = getch();
+    return gotched;
 }
 
 
@@ -40,50 +58,48 @@ unsigned char get_ch(void)
 char see_grid(unsigned char grx, unsigned char gry)
 {
 
-if (grx > you[0].x_pos - 9 && grx < you[0].x_pos + 9 && gry > you[0].y_pos - 9 && gry < you[0].y_pos + 9)
-{
-        if (env[0].show [grx - you[0].x_pos + 9] [gry - you[0].y_pos + 9] != 0)
-                return 1;
-}
+    if (grx > you.x_pos - 9 && grx < you.x_pos + 9 && gry > you.y_pos - 9 && gry < you.y_pos + 9)
+    {
+        if (env.show[grx - you.x_pos + 9][gry - you.y_pos + 9] != 0)
+            return 1;
+    }
 
-return 0;
+    return 0;
 
-} // end of char mons_near(char)
+}                               // end of char mons_near(char)
 
 
 int magic_ability(int mag_abil, int intel)
 {
 
-int retv = mag_abil * intel;
+    int retv = mag_abil * intel;
 
-retv /= 10;
+    retv /= 10;
 
 
-return retv;
+    return retv;
 
 }
 
 void end(int end_arg)
 {
 #ifdef LINUX
-lincurses_shutdown();
+    lincurses_shutdown();
 #endif
 
 #ifdef MAC
-deinit_mac();
+    deinit_mac();
 #endif
 
- exit(end_arg);
+    exit(end_arg);
 }
 
-void output_value(char string [100], int value)
+void output_value(char string[100], int value)
 {
-
- strcpy(info, string);
- itoa(value, st_prn, 10);
- strcat(info, st_prn);
- mpr(info);
-
+    strcpy(info, string);
+    itoa(value, st_prn, 10);
+    strcat(info, st_prn);
+    mpr(info);
 }
 
 #ifdef PLAIN_TERM
@@ -91,32 +107,31 @@ void output_value(char string [100], int value)
 // playing screen after a call to for example inventory.
 void redraw_screen(void)
 {
+    char title[40];
 
-char title [40];
+    strcpy(title, skill_title(best_skill(0, 50, 99), you.skills[best_skill(0, 50, 99)], you.char_class, you.experience_level));
+    draw_border(BROWN, you.your_name, title, you.species);
 
-strcpy(title, skill_title(best_skill(0, 50, 99), you[0].skills [best_skill(0, 50, 99)], you[0].clas, you[0].xl));
-draw_border(BROWN, you[0].your_name, title, you[0].species);
+//draw_border(BROWN, you.your_name, title);
 
-//draw_border(BROWN, you[0].your_name, title);
+    you.redraw_hit_points = 1;
+    you.redraw_magic_points = 1;
+    you.redraw_strength = 1;
+    you.redraw_intelligence = 1;
+    you.redraw_dexterity = 1;
+    you.redraw_armor_class = 1;
+    you.redraw_evasion = 1;
+    you.redraw_gold = 1;
+    you.redraw_experience = 1;
+    you.redraw_hunger = 1;
+    you.redraw_burden = 1;
+    wield_change = 1;
 
-you[0].hp_ch = 1;
-you[0].ep_ch = 1;
-you[0].strength_ch = 1;
-you[0].intel_ch = 1;
-you[0].dex_ch = 1;
-you[0].AC_ch = 1;
-you[0].evasion_ch = 1;
-you[0].gp_ch = 1;
-you[0].xp_ch = 1;
-you[0].hung_ch = 1;
-you[0].burden_ch = 1;
-wield_change = 1;
+    print_stats();
 
-print_stats();
+    new_level();
 
-new_level();
-
-viewwindow(1);
+    viewwindow(1);
 
 
 }

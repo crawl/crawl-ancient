@@ -1,3 +1,15 @@
+#ifndef SKILLS_H
+#define SKILLS_H
+/*
+ *  File:       skills.cc
+ *  Summary:    Skill exercising functions.
+ *  Written by: Linley Henzell
+ *
+ *  Change History (most recent first):
+ *
+ *               <1>     -/--/--        LRH             Created
+ */
+
 void exercise(char exsk, char deg);
 
 void show_skills(void);
@@ -16,4 +28,5 @@ unsigned int skill_exp_needed(int lev);
 char *skill_name(char which_skill);
 
 int add_skill(int min_skill, int max_skill, int sk_tot);
-void class_sk(int clsk [8] [3], int chcls);
+void class_sk(int clsk[8][3], int chcls);
+#endif

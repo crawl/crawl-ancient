@@ -1,10 +1,22 @@
+#ifndef MSTRUCT_H
+#define MSTRUCT_H
+/*
+ *  File:       mstruct.cc
+ *  Summary:    Misc monster related functions.
+ *  Written by: Linley Henzell
+ *
+ *  Change History (most recent first):
+ *
+ *               <1>     -/--/--        LRH             Created
+ */
+
 #include "externs.h"
 
 // ($pellbinder) (c) D.G.S.E. 1998
 
 // ****remeber***** must make an hardcopy of this sometime
 
-#ifdef MAC
+#ifdef macintosh
 #define PACKED
 #else
 #define PACKED __attribute__ ((packed))
@@ -30,7 +42,7 @@ typedef int MYINT; // used for flags and the like
 #define M_INVIS (1<<6) // is created with invis enchantment set, and never runs out
 // vulnerabilities
 //#define M_ED_ELEC (1<<6) // never used
-#define M_ED_POISON (1<<7) // ???  - - This flag is now (2.50) set for insects (LH)
+#define M_ED_POISON (1<<7) // ???  - - This flag is now (2.50) set for insects (LRH)
 #define M_ED_FIRE (1<<8)
 #define M_ED_COLD (1<<9)
 // casts spells?
@@ -81,7 +93,7 @@ typedef int MYINT; // used for flags and the like
 #define S_CROAK 11 //11=frog croak
 // ai
 // So far this only affects a) chance to see stealthy player and b) chance to
-//  walk through damaging clouds (LH)
+//  walk through damaging clouds (LRH)
 #define I_PLANT 0
 #define I_INSECT 1
 #define I_ANIMAL 2
@@ -98,7 +110,7 @@ extern struct monsterentry {
         // experience is calculated like this:
         // ((((max_hp / 7) + 1) * (mHD * mHD) + 1) * exp_mod) / 10
         //     ^^^^^^ see below at hpdice
-        //   Note that this may make draining attacks less attractive (LH)
+        //   Note that this may make draining attacks less attractive (LRH)
         char exp_mod PACKED;
 
         short charclass PACKED; //
@@ -169,3 +181,6 @@ char *monam(int mons_cla, int mons_e, char desc, char see_invis);
 char mons_pan(int mcls); // is the monster to be found in pandemonium
 
 int mons_flag(int mc,int bf);
+
+
+#endif

@@ -1,27 +1,29 @@
+#ifndef FUN_H
+#define FUN_H
 /*
-This is a list of the various .h files. Functions which are not in .h files
-are not listed, and this file may well be out of date.
-*/
+   This is a list of the various .h files. Functions which are not in .h files
+   are not listed, and this file may well be out of date.
+ */
 
 
 /* bang.cc */
-void explosion1(struct bolt beam [1]);
-void explosion(char ex_size, struct bolt beam [1]);
+void explosion1(struct bolt beam[1]);
+void explosion(char ex_size, struct bolt beam[1]);
 
 /* beam.cc */
-void missile(struct bolt beam [1], int throw_2);
-int check_mons_resists(struct bolt beam [1], int o, int hurted);
-void beam(struct bolt beam [1]);
+void missile(struct bolt beam[1], int throw_2);
+int check_mons_resists(struct bolt beam[1], int o, int hurted);
+void beam(struct bolt beam[1]);
 int check_mons_magres(int mn, int pow);
 void mass_enchantment(int wh_enchant, int pow);
-int mons_ench_f2(int o, char is_near, int func_pass [10], struct bolt beam [1]);
+int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1]);
 void poison_monster(int mn, char source);
 void sticky_flame_monster(int mn, char source, int power);
 void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char ctarget_y, unsigned char cl_range);
-void tracer_f(int i, struct bolt beem [1]);
+void tracer_f(int i, struct bolt beem[1]);
 
 /* chardump.cc */
-char dump_char(char show_prices, char fname [30]);
+char dump_char(char show_prices, char fname[30]);
 
 /* command.cc */
 void stethoscope(int mwh);
@@ -43,13 +45,14 @@ void deck_of_summonings(void);
 
 /* describe.cc */
 void describe_monsters(int class_described);
-void describe_item(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id); //, int property [4] [50] [3], int mass [20] [50]);
+void describe_item(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id);  //, int property [4] [50] [3], int mass [20] [50]);
+
 void describe_spell(int spelled);
 
 /* direct.cc */
-void direction(char rnge, struct dist moves [1]);
+void direction(char rnge, struct dist moves[1]);
 int dir_cursor(char rng);
-int look_around(struct dist moves [1]);
+int look_around(struct dist moves[1]);
 
 /* dungeon.cc */
 
@@ -57,23 +60,23 @@ int builder(unsigned int lev_numb, char level_type);
 
 
 int place_monster(
-unsigned char plus_seventy,
-int typed, int type_place, int px, int py, char behaviour, int hitting,
-char allow_bands,
-int many_many
+                     unsigned char plus_seventy,
+     int typed, int type_place, int px, int py, char behaviour, int hitting,
+                     char allow_bands,
+                     int many_many
 );
 
 
-void spellbook_template(int sbook_type, int func_pass [10]);
+void spellbook_template(int sbook_type, int func_pass[10]);
 
 
 int items(
-unsigned char allow_uniques,
-int force_class,
-int force_type,
-int force_place,
-int many_many,
-int force_spec
+             unsigned char allow_uniques,
+             int force_class,
+             int force_type,
+             int force_place,
+             int many_many,
+             int force_spec
 );
 
 /* effects.cc */
@@ -84,8 +87,8 @@ char lose_stat(char force_stat, char stat_loss);
 void random_uselessness(unsigned char ru, unsigned char sc_read_2);
 void acquirement(void);
 char recharge_wand(void);
-void direct_effect(struct bolt beam [1]);
-void mons_direct_effect(struct bolt beam [1], int i);
+void direct_effect(struct bolt beam[1]);
+void mons_direct_effect(struct bolt beam[1], int i);
 
 /* fight.cc */
 void monster_die(int monster_killed, char killer, int i);
@@ -121,7 +124,7 @@ unsigned char get_invent(int invent_type);
 void list_commands(void);
 
 /* it_use2.cc */
-void zapping(char ztype, int power, struct bolt beams [1]);
+void zapping(char ztype, int power, struct bolt beams[1]);
 void potion_effect(char pot_eff, int pow);
 void unwield_item(char unw);
 void unwear_armour(char unw);
@@ -157,14 +160,14 @@ void read_scroll(void);
 void original_name(void);
 
 /* itemname.cc */
-char item_name(unsigned char item_plus2, char item_clas, char item_typ, unsigned char item_da, unsigned char it_plus, unsigned int it_quant, char ident_lev, char descrip, char glag [60]);
-char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsigned char item_da, unsigned char it_plus, unsigned int it_quant, char ident_lev, char glog [60]);
-void save_id(char identy [4] [30]);
+char item_name(unsigned char item_plus2, char item_clas, char item_typ, unsigned char item_da, unsigned char it_plus, unsigned int it_quant, char ident_lev, char descrip, char glag[60]);
+char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsigned char item_da, unsigned char it_plus, unsigned int it_quant, char ident_lev, char glog[60]);
+void save_id(char identy[4][30]);
 void initial(void);
 void set_id(char cla, char ty, char setting);
 char get_id(char cla, char ty);
-void it_name(int itn, char des, char str_pass [80]);
-void in_name(int inn, char des, char str_pass [80]);
+void it_name(int itn, char des, char str_pass[80]);
+void in_name(int inn, char des, char str_pass[80]);
 int property(int pr1, int pr2, int pr3);
 int mass(int pr1, int pr2);
 void init_properties(void);
@@ -180,17 +183,17 @@ void pickup(void);
 void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop);
 void drop(void);
 int conv_lett(int item_drop_3);
-void manage_corpses(void);
+void handle_time(void);
 
 /* levels.cc */
 void init_pandemonium(void);
 void pandemonium_mons(void);
 
 /* maps.cc */
-char vault_main(char vgrid [81] [81], int mons_array [7], char vault_force, int many_many);
+char vault_main(char vgrid[81][81], int mons_array[7], char vault_force, int many_many);
 
 /* message.cc */
-void mpr(char inf [200]);
+void mpr(char inf[200]);
 void mesclr(void);
 void more(void);
 void mesclr(void);
@@ -203,11 +206,11 @@ char search_around(void);
 void in_a_cloud(void);
 void up_stairs(void);
 void down_stairs(char remove_stairs);
-void dart_trap(int trap_known, int trapped, struct bolt beam [1]);
-void itrap(struct bolt beam [1], int trapped);
+void dart_trap(int trap_known, int trapped, struct bolt beam[1]);
+void itrap(struct bolt beam[1], int trapped);
 void cull_items(void);
 void handle_traps(char trt, char trap_known);
-void disarm_trap(struct dist disa [1]);
+void disarm_trap(struct dist disa[1]);
 void species_ability(void);
 int manage_clouds(void);
 char *weird_writing(void);
@@ -219,12 +222,12 @@ char go_berserk(void);
 /* monplace.cc */
 int mons_place(int typed, int type_place, int px, int py, char behaviour, int hitting, unsigned char plus_seventy, int lev_mons);
 int create_monster(int cls, int dur, int beha, int cr_x, int cr_y, int hitting, int zsec);
-char empty_surrounds(int emx, int emy, unsigned char spc_wanted, char allow_centre, char empty [2]);
+char empty_surrounds(int emx, int emy, unsigned char spc_wanted, char allow_centre, char empty[2]);
 
 /* monstuff.cc */
 char curse_an_item(char which, char power);
 void monster_blink(int mn);
-char random_near_space(int passed [2]);
+char random_near_space(int passed[2]);
 void mons_in_cloud(int i);
 int distance(int x1, int x2, int y1, int y2);
 void swap_places(int swap);
@@ -234,8 +237,8 @@ void monster(void);
 
 /* mstruct.cc */
 int mondamage(int mc, int rt);
-void mon_init(char gmon_use [1000], char mcolour [1000]);
-void def_letters(char letters [52] [1]);
+void mon_init(char gmon_use[1000], char mcolour[1000]);
+void def_letters(char letters[52][1]);
 int mon_resist_mag(int mc, char mhd);
 int mons_res_fire(int mclass);
 int mons_intel(int mclass);
@@ -249,32 +252,33 @@ int mons_holiness(int mclass);
 char mons_shouts(int mclass);
 char mons_flies(int mclass);
 char mons_see_invis(int mclass);
-void define_monster(int k, struct monsters mns [MNST]);
+void define_monster(int k, struct monsters mns[MNST]);
 int mons_exp_mod(int mclass);
 int mons_skeleton(int mcls);
 int mons_res_elec(int mclass);
 int hit_points(int hit_dice, int min_hp, int rand_hp);
-void mons_spell_list(unsigned char sec, int splist [6]);
+void mons_spell_list(unsigned char sec, int splist[6]);
+
 //void def_letters(char letters [52] [1]);
 unsigned char mons_char(int mc);
-void moname(int mcl, char mench, char see_inv, char descrip, char glog [40]);
+void moname(int mcl, char mench, char see_inv, char descrip, char glog[40]);
 int exper_value(int mclass, char mHD, char maxhp);
 
 char *monam(int mons_cla, int mons_e, char desc, char see_invis);
 
 
-char mons_pan(int mcls); // is the monster to be found in pandemonium
+char mons_pan(int mcls);        // is the monster to be found in pandemonium
 
-int mons_flag(int mc,int bf);
+int mons_flag(int mc, int bf);
 
 /* mstuff2.cc */
 void spore_goes_pop(int i);
-void mons_throw(int i, struct bolt beem [1], int hand_used);
-void dragon(int i, struct bolt beem [1]);
+void mons_throw(int i, struct bolt beem[1], int hand_used);
+void dragon(int i, struct bolt beem[1]);
 void monster_teleport(char monstel, char instan);
-void mons_cast(int i, struct bolt beem [1], int spell_cast);
+void mons_cast(int i, struct bolt beem[1], int spell_cast);
 void mons_trap(int i);
-int mons_spells(char spell_cast, int func_pass [10], char beam_name [30]);
+int mons_spells(char spell_cast, int func_pass[10], char beam_name[30]);
 
 /* newgame.cc */
 char new_game(void);
@@ -292,7 +296,7 @@ void drain_exp(void);
 
 /* output.cc */
 void print_stats(void);
-char show_abilities(char ability [20], int ability_fail [20]);
+char show_abilities(char ability[20], int ability_fail[20]);
 
 
 /* player.cc */
@@ -316,7 +320,7 @@ void forget_map(char chance_forgotten);
 void how_hungered(int hunge);
 void gain_exp(unsigned int exp_gained);
 void display_char_status(void);
-void redraw_skill(char your_name [kNameLen], char clasnam [40]);
+void redraw_skill(char your_name[kNameLen], char clasnam[40]);
 char *species_name(char speci);
 char wearing_amulet(char which_am);
 unsigned long exp_needed(int lev, char species);
@@ -333,18 +337,18 @@ int player_spec_holy(void);
 int player_spec_death(void);
 int player_energy(void);
 
-/* priest.cc */
 char *god_name(char which_god);
 
-void priest_spells(int func_pass [10], char religious);
+void priest_spells(int func_pass[10], char religious);
 
+/* abyss.cc */
 char area_shift(void);
 
 void abyss_teleport(void);
 
 /* shopping.cc */
-char in_a_shop(char shoppy, char id [4] [30]);
-unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigned char item_da, unsigned char it_plus, unsigned char it_plus2, unsigned int item_quant, char ident_lev, char id [4] [30]);
+char in_a_shop(char shoppy, char id[4][30]);
+unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigned char item_da, unsigned char it_plus, unsigned char it_plus2, unsigned int item_quant, char ident_lev, char id[4][30]);
 char book_rarity(char which_book);
 void shop(void);
 
@@ -367,7 +371,7 @@ unsigned int skill_exp_needed(int lev);
 char *skill_name(char which_skill);
 
 int add_skill(int min_skill, int max_skill, int sk_tot);
-void class_sk(int clsk [8] [3], int chcls);
+void class_sk(int clsk[8][3], int chcls);
 
 /* skills2.h */
 void show_skills(void);
@@ -386,7 +390,7 @@ unsigned int skill_exp_needed(int lev);
 char *skill_name(char which_skill);
 
 int add_skill(int min_skill, int max_skill, int sk_tot);
-void class_sk(int clsk [8] [3], int chcls);
+void class_sk(int clsk[8][3], int chcls);
 
 /* spell.cc */
 void exercise_spell(int spell_ex, int spc);
@@ -405,7 +409,7 @@ void which_spell(void);
 int spell_hunger(int spell_value, unsigned char spell);
 int which_spell_in_book(int sbook_type, int spl);
 char spellbook_contents(unsigned char plus, unsigned char type);
-void spell_name(unsigned char spell, char spln [60]);
+void spell_name(unsigned char spell, char spln[60]);
 char spell_value(unsigned char spell);
 int spell_type(unsigned char spell, char typy);
 int spell_spec(int spell, int power);
@@ -414,7 +418,7 @@ void print_slash(char already);
 char spell_list(void);
 
 /* spells1.cc */
-char spell_direction(struct dist spelld [1], struct bolt beam [1]);
+char spell_direction(struct dist spelld[1], struct bolt beam[1]);
 
 
 void blink(void);
@@ -424,10 +428,11 @@ void cast_fire_storm(int powc);
 void identify(char pow);
 void conjure_flame(int pow);
 void stinking_cloud(void);
-void stinkcl(char cl_x, char cl_y, struct bolt beam [1]);
+void stinkcl(char cl_x, char cl_y, struct bolt beam[1]);
 
 void cast_big_c(int pow, char cty);
-void big_cloud(char clouds, char cl_x, char cl_y, int pow); //, struct bolt beam [1]);
+void big_cloud(char clouds, char cl_x, char cl_y, int pow);     //, struct bolt beam [1]);
+
 void cast_lesser_healing(int mabil);
 void cast_greater_healing(int mabil);
 void cast_revivification(int mabil);
@@ -473,7 +478,8 @@ void restore_int(void);
 void restore_dex(void);
 void cast_refrigeration(int pow);
 void summon_things(int pow);
-void turn_undead(int pow); // what should I use for pow?
+void turn_undead(int pow);      // what should I use for pow?
+
 void holy_word(int pow);
 void cast_toxic_radiance(void);
 
@@ -496,7 +502,7 @@ char see_grid(unsigned char grx, unsigned char gry);
 int magic_ability(int mag_abil, int intel);
 
 /* view.cc */
-void moname(int mcl, char mench, char see_inv, char descrip, char glog [40]);
+void moname(int mcl, char mench, char see_inv, char descrip, char glog[40]);
 
 void item(void);
 void monster_grid(void);
@@ -506,7 +512,8 @@ int check_awaken(int mons_aw);
 
 void viewwindow(char draw_it);
 void magic_mapping(int map_radius, int proportion);
-void show_map(int spec_place [2]);
+void show_map(int spec_place[2]);
 char mons_near(unsigned char monst);
-void losight(unsigned int sh [19] [19], unsigned char gr [80] [70], int x_p, int y_p);
-void draw_border(int bord_col, char your_name [kNameLen], char clasnam [40], char tspecies);
+void losight(unsigned int sh[19][19], unsigned char gr[80][70], int x_p, int y_p);
+void draw_border(int bord_col, char your_name[kNameLen], char clasnam[40], char tspecies);
+#endif

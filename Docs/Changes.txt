@@ -1,0 +1,324 @@
+Brian Robinson (bcr19374@pegasus.cc.ucf.edu
+6/17/99
+
+(Note: I've tried to annotate all my changes in the code  with my initials (BCR), so you
+       can grep for them to find my changes.)
+* did some small cleanup here and there
+* wrote a new makefile for Linux.  Made a number of changes to the make process which
+  should save up some headaches in the future.  Now there is an OS_TYPE variable in the makefile
+  that is automatically make into a #define in the make process, and that should make it easy to
+  keep the makefiles straight on the OS.  Also moved the OBJECTS variable containing the list of
+  the .o files to a file called make.obj which is included into the makefile.  This should save a
+  little space and keep all the makefiles consistent on what objects they need.
+* indented and added a header to defines.h
+* fixed some oddness in newgame.cc.  Various system dependent name checks were
+  all messed up in a bunch of nested #ifdef stuff.  Sorted it out.
+* made the #define MACROS actually do something.  Now if you have it defined,
+  the macros.h and macros.cc files will be used, otherwise they won't.  Right now,
+  Crawl will not work correctly on Linux with MACROS on.  See Bugs.txt for more details.
+
+Brent Ross (bwross@csclub.uwaterloo.ca)
+6/14/99
+
+Some changes I added from Linley:
+    * a fix for the geryon bug
+
+    * message for berserkers chopping up corpses in rage.
+
+    * changed some incorrect enums in it_use3.cc for Asmodeus's staff.
+
+    * lowers XP penalty for demonspawn to 140%
+
+    * fixed Elyvilon sacrifice code to limit abuse
+
+    * renamed priest.cc, priest.h to abyss.
+
+    * upped the spellcasting penalties for wearing shields to +5/+15/+30,
+        from bucklers (+0), shield (+5), large shield (+15).
+
+    * added random stat increase for Draconians
+
+
+Brent Ross (bwross@csclub.uwaterloo.ca)
+6/13/99
+
+* fully separated Spriggans from the giant races, creating a separate block
+  for tiny races in the armour wearing code.
+
+* cursed rings identify themselves as sticky cursed when put on.
+
+* updates weapon if you eat food that you're wielding
+
+* black and grey scales were backwards in demonspawn (with regards to number
+  of levels gained)
+
+* in spells1.cc, blink() and random_blink()... removed the weapons
+  check because the scan_randarts should be all that's required.
+
+* fixed it so that teleport control works properly on blink (depended
+  on order of includes and the compiler/system used).
+
+* added #ifndef checking around all of the *.h files to try and avoid
+  other problems like the above.
+
+* added the full spell listing line to character dumps
+
+* made creaky doors DEX + (Stealth + Traps) / 2 checks... added check on
+  closing doors as well.
+
+* upped the base values of heavy armour by 1 or 2 points.
+
+* in spells3.cc, you_teleport().  Another case of only checking the
+   weapon slot for a property.  Hopefully, I've changed all of these
+   into scan_randarts.
+
+* demonspawn() in mutation.cc had MUT_FAST twice, changed the second
+  to MUT_SHOCK_RESISTANCE like the comment claimed.
+
+* strength damage bonus had an ugly discreet nature to it, I multiplied
+   the dammod values by 6 to get a smoother version of the same function.
+
+* screen needed to be refreshed after spell slot changes.
+
+* Implemented new equipment listing commands:
+    -- )  lists current, swap a, swap b, and default 'f'ire weapons
+    -- ]  lists worn armour
+    -- "  lists worn jewelry (note: '=' is already used).
+
+* shoot_skill = you.skills[SK_THROWING] in item_use.cc was wrong,
+   it should clearly be CROSSBOWS when using a crossbow.
+
+* handle traps in misc() used env.trap_known instead of trap_known
+   (env.trap_known doesn't seem to be referenced anywhere else).
+
+* Vehumet's gift was still not quite correct. -- fixed
+
+* implemented magical Stave detection.  Staves may be detected over time,
+  or whenever an appropriate magic is cast, depending on skill levels.
+
+* Call Imp is too powerful for a level two spell, raised to level three
+
+* added a little checking code in dungeon.cc for monster armour plusses
+
+* more line was misplaced on the recognized item screen
+
+* applied a mix of mine and DML's improvements for the temp file purging
+  system.
+
+
+David Loewenstern <loewenstern@home.com>
+6/2/99
+* added Makefile.dos
+* updated define.h for compatibility with DJGPP
+* cleaned up items.cc,monstuff.cc, mstuff2.cc,spells.cc,
+  (mostly: corrected misassignments unsigned<->signed, unused vars, etc.)
+* added enums: monstuff.cc, mstuff2.cc, beam.cc
+* updated enum.h per above.
+* added autopickup
+* made '&' command only function in debug mode.
+* remove_ring now uses inventory letter.
+* more colorful "hits" in fight.cc (should be useful later to differentiate
+  weapon types).
+* fixed a bug in displaying the top scores when no score file had existed.
+
+Jesse Jones (jesjones@halcyon.com)
+
+5/30/99
+* highscore() will print more scores on larger windows.
+* wearing cloaks no longer prevents wearing or removing body armor
+* armor can be dropped if it's worn and not cursed
+* armor can be worn without removing the old armor
+* Added missing ponderous armor message.
+* Weapon line didn't always redraw when Blade Hands was cast (from Brent).
+* detect_items uses '~' instead of '*' (from Brent).
+* Changed wear_armour to allow Spriggan's to wear bucklers.
+* Quit only pops up save changes dialog if game_has_started is true. (Mac)
+* Replaced config.h with AppHdr.h
+* All cc files include their header immediately after the AppHdr file.
+* char_dump.cc dumps failure rates (from Brent).
+
+
+Brent Ross (bwross@csclub.uwaterloo.ca)
+
+5/?/99
+
+* used GNU indent 1.91 (options -bad -bli0 -i4 -npcs -npsl), to hopefully
+  get the intended BSD indentation style into the code.  Sorted some
+  of the things indent won't help fix... more cleanup needs to be
+  done here (notably with vertical whitespace and breaking up big lines),
+  but it should at least be more readable now (no more column 0 code).
+* various changes to make it work with NUMBER_OF_LINES instead of 25
+* compile option to change default view to non-ibm graphics
+* added ^R redraw screen command and added screen redraws to
+  appropriate places
+* added query to normal saves, ^X doesn't ask
+* made ^Y work, and ^Z suspend for Unix systems
+* added refresh call in beam.cc so beams are always visible
+* added various things to deal with multiuser environment: compressing
+  save files, handling permissions, global lib directory for game files,
+  changes in name validation and file name structure (added uid).
+* made the adjust item letter function swap items instead of fail
+* made Selective Amnesia spell description less confusing
+* made changes to make the targeting more intuitive for angband players
+  (t and space accept targets), as well as behave better about canceling
+  spells (added better abort)
+* fixed unarmed combat so it takes the correct amount of time
+* fixed a hunger/noisy wield bug where effects were not removed
+* fixed a resist lightning bug where air staffs didn't grant it, yet
+  took it away (ie. left the resist with a value of 255... quite good
+  unless you put on something of resist lightning later).
+* made rings/wands/scrolls and such print a message when they
+  are identified by use
+* fixed several cases where the wielded object was changed but the
+  screen wasn't updated
+* fixed bug where a triple level of a demonspawned mutation was never granted
+* patched a bug where the inventory is full yet the count is
+  wrong... this entire thing should be cleaned up
+* fixed problem with curses attributes so that alternate character
+  sets aren't used under Solaris (this is probably good for any
+  Unix not on a IBM alternate character set box)
+* fixed water and earth elementals for the same
+* stone lined the finishing room so you can't dig through?
+* removed some rather silly ways of clearing areas of the screen (under curses)
+  and used the proper curses functions instead (much faster)
+* fixed the bug where going up or down stairs would clear the food status
+* fixed a few "typos" where the new enums were incorrectly substituted
+  (ie. AC += SP_HIGH_ELF;      /* troll */ )
+* fixed a few stat increases where the comment said "/* str or dex */", but
+  was giving "str or int"
+* increased Troll's food consumption to better balance the race.
+* fixed Vehumet's gift giving code so it actually does what's intended
+* added experience pool information to front page
+* changed some of the duplicated titles (traps and doors)
+* changed stairs out of sub-dungeons to be the '<' character, to reflect the
+  key required
+* made portals coloured on the level map... portals in pandemonium are
+  intentionally all the same colour.
+* added a stat increase for kobolds every 5 levels
+* patched a bug that causes Demonspawn to sometimes not get their
+  mutations.
+* tried to make Armour skill a bit better -- get more in combat, a little
+  more frequently otherwise.  Also, EV penalty is now recovered at skill/2.
+* reduced the power of the Sword of Power (now +20 cap, HP/13 - 3)
+* made creaking doors partially depend on skills (dex + traps + stealth,
+  with a benifits of the last two dropping after a total of 10) instead of
+  just luck... levitation isn't a sure way to avoid this now.
+* made wield update after reading scroll of recharging
+* extended the high score file to SCORE_FILE_ENTRIES items... currently only
+  the first 15 are ever displayed by the program
+* USE_NEW_BERSERK
+    - makes berserk counter decrement faster when not attacking (currently
+      using triagular progression)
+    - butchery doesn't get penalized (in fact it resets the penalty
+      counter), eating isn't either (but doesn't reset)
+    - added exhausted counter to count berserk fatigue
+
+    - hopefully this will eventually part of a new, better standard
+      berserk.
+
+* made skills fit onto screen by wrapping the first column if required.
+
+* RAP_PREVENT_TELEPORT and the like didn't do anything because
+   it doesn't use scan_randarts, but checks only the weapon... hopefully
+   all the cases of this are fixed now.
+* wield-amulet-that-you're-wearing bug fixed
+* redraw for weapon when blade hands goes away
+
+* #defines:
+    - CRAWL_NAME and CRAWL_PIZZA, the first auto sets the players name,
+      the second defines a string which describes the players choice of
+      pizza, and has a greater chance than others of occuring.
+    - handling the bstring.h/string include problem -- USE_BSTRING_H
+    - added NUMBER_OF_RUNES_NEEDED and default set it to 3... this allows
+      people to compile the game to require a certain number of runes to
+      enter Zot's domain.
+    - Added USE_CURSES define, for things specific to curses and not
+      just PLAIN_TERM.
+    - USE_TCHARS_IOCTL, USE_UNIX_SIGNALS, USE_SELECT_FOR_DELAY are there
+      to solve various Unix variant problems should people need or want
+      them.
+    - USE_ASCII_CHARACTERS sets the default to the non-IBM character set.
+    - SAVE_DIR_PATH is useful for setting a global lib directory for
+      save files, bones files, and the score file.  SHARED_FILES_CHMOD_VAL
+      is useful with this option on multi-user systems.
+    - SAVE_PACKAGE_CMD, LOAD_UNPACKAGE_CMD, PACKAGE_SUFFIX are there for
+      people who want to use a program to compress and bundle their
+      save games when they're not playing.  Not pretty, but good enough
+      until we come up with a better save file system.
+
+* Added "(q to drink)" to fountain description when you step over one.
+* Greater Healings bas has been upped to 50.
+* Added Demonspawn transmuters.
+* Spriggans and Halflings now use less food (-1).
+* Wizard's hats and caps are now randomly coloured.
+* Changed carrying capactiy to be less dependant on strength.  Pulled
+  the carrying_capacity code into a function, as its called at various
+  different places in the code.  Encumberance levels have been changes
+  to represent a fraction of carrying capacity instead of constant
+  values.
+* Made named artefact weapons slightly rarer, Sword of Power now has
+  1 in 2 check as well.
+
+
+Jesse Jones (jesjones@halcyon.com)
+
+5/?/99
+
+* Fixed what appear to be three bugs involving extra semi-colons.
+* File names can be longer than 6 characters and can include spaces.
+* Added some debugging macros.
+* dragon() wasn't handling fire drakes which meant the beam color was
+uninitialized.
+* getstr only adds printable characters to the buffer. (Mac)
+* I've changed mons_spells() so that it returns a struct insted of using
+an int
+  array. (affects mstuff2.cc, mstuff.h and handle_wand).
+* mons_near() now returns a bool. I've changed code like "mons_near(o) ==
+1" and "mons_near(i) != 0" to "mons_near(o)" and "!mons_near(o)".
+* print_description() no longer indexes past the end of the string.
+* Made some minor changes to allow the code to be compiled with the
+"require function protypes" warning.
+* Added an UNUSED template function to config.h
+* Rewrote describe.cc and describe.h
+        - Reformatted
+        - Uses string objects instead of hard-coded char arrays.
+        - Split out 10 new functions from describe_item().
+        - added get_item_description() and is_random_artifact()
+* Rewrote chardump.cc
+        - reformatted
+        - uses string objects
+        - split out 7 functions from dump_char
+        - dumps artifact info.
+* Reformatted viewwindow2(), added some ASSERTs, and split out
+get_ibm_symbol().
+* Reformatted monster() and split out 10(!) new functions.
+* Reformatted mons_spells() and mons_cast(). mons_spells() case 49 uses
+RED instead
+  of (bogus) 20 for color.
+* Added some ASSERTs to seekmonster().
+* Renamed DEBUG WIZARD.
+* Renamed DEBUG_BUILD DEBUG.
+* Renamed manage_corpses() handle_time().
+* Changed code to use new CORPSE_BODY and CORPSE_SKELETON enums.
+* Deleted struct.h
+* Added player::elapsed_time (holds the total amount of elapsed time in
+the game).
+* Tweaked level and game save routines to include a variable sized chunk
+of extra data.
+* Save level code saves a timestamp. Load level code uses timestamp to
+update corpses
+  and chunks.
+* Renamed many of the player struct members.
+* Renamed all of the monsters, item_struct, and ghost_struct members.
+* Added comment blocks to the top of all files.
+* Added TRACE debug function.
+* you and env are no longer arrays.
+* Fixed the bug in display_char_status that caused the wrong message to
+be printed
+  if the player had magic contamination.
+* look_around() no longer prints a prompt (so things like blink and open
+door no longer print "Press '?' for a monster description.").
+* show_map accepts '\r' along with '.'.
+* Cekugob no longer has fire and cold resistances.
+* spellbook_contents prints unknown spells in light blue.
+* show_map draws shops in yellow.
