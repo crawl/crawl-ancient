@@ -124,13 +124,13 @@ int check_your_resists(int hurted, int flavour)
 
 
     case BEAM_POISON:
-        if (player_res_poison())
+        if (!player_res_poison())
+            poison_player( (coinflip() ? 2 : 1) );
+        else
         {
             canned_msg(MSG_YOU_RESIST);
             hurted /= 3;
         }
-        else
-            you.poison += (coinflip() ? 2 : 1);
         break;
 
     case BEAM_NEG:
@@ -568,23 +568,23 @@ void ouch(int dam, int death_source, char death_type)
 #if DEBUG_DIAGNOSTICS
             snprintf( info, INFO_SIZE, "Damage: %d; Hit points: %d", dam, you.hp );
             mpr( info );
-#endif
+#endif // DEBUG_DIAGNOSTICS
 
             if (!yesno("Die?", false))
             {
                 set_hp(you.hp_max, false);
                 return;
             }
-#else
+#else  // !def USE_OPTIONAL_WIZARD_DEATH
             mpr("Since you're a debugger, I'll let you live.");
             mpr("Be more careful next time, okay?");
 
             set_hp(you.hp_max, false);
             return;
-#endif
+#endif  // USE_OPTIONAL_WIZARD_DEATH
         }
     }
-#endif
+#endif  // WIZARD
 
     //okay, so you're dead:
 
@@ -598,29 +598,9 @@ void ouch(int dam, int death_source, char death_type)
     char temp_id[4][50];
 
     for (d = 0; d < 4; d++)
+    {
         for (e = 0; e < 50; e++)
             temp_id[d][e] = 1;
-
-    if (death_type == KILLED_BY_LEAVING || death_type == KILLED_BY_WINNING)
-    {
-        for (d = 0; d < ENDOFPACK; d++)
-        {
-            points += item_value( you.inv[d], temp_id, true );
-        }
-    }
-
-    if (points > 99999999)
-        points = 99999999;
-
-    // for death by monster
-    struct monsters *monster = NULL;
-
-    // oh, oh, oh, this is really Bad.  XXX
-    if (death_source >= 0)
-    {
-        monster = &menv[death_source];
-        if (monster->type < 0 || monster->type >= NUM_MONSTERS)
-            monster = NULL;
     }
 
     // CONSTRUCT SCOREFILE ENTRY
@@ -634,6 +614,51 @@ void ouch(int dam, int death_source, char death_type)
 #else
     se.uid = 0;
 #endif
+
+    FixedVector< int, NUM_RUNE_TYPES >  rune_array;
+
+    se.num_runes = 0;
+    se.num_diff_runes = 0;
+
+    for (int i = 0; i < NUM_RUNE_TYPES; i++)
+        rune_array[i] = 0;
+
+    // Calculate value of pack and runes when character leaves dungeon
+    if (death_type == KILLED_BY_LEAVING || death_type == KILLED_BY_WINNING)
+    {
+        for (d = 0; d < ENDOFPACK; d++)
+        {
+            if (is_valid_item( you.inv[d] ))
+            {
+                points += item_value( you.inv[d], temp_id, true );
+
+                if (you.inv[d].base_type == OBJ_MISCELLANY
+                    && you.inv[d].sub_type == MISC_RUNE_OF_ZOT)
+                {
+                    if (rune_array[ you.inv[d].plus ] == 0)
+                        se.num_diff_runes++;
+
+                    se.num_runes += you.inv[d].quantity;
+                    rune_array[ you.inv[d].plus ] += you.inv[d].quantity;
+                }
+            }
+        }
+    }
+
+    // Players will have a hard time getting 1/10 of this (see XP cap):
+    if (points > 99999999)
+        points = 99999999;
+
+    // for death by monster
+    struct monsters *monster = NULL;
+
+    // oh, oh, oh, this is really Bad.  XXX
+    if (death_source >= 0 && death_source < MAX_MONSTERS)
+    {
+        monster = &menv[death_source];
+        if (monster->type < 0 || monster->type >= NUM_MONSTERS)
+            monster = NULL;
+    }
 
     se.points = points;
     se.race = you.species;

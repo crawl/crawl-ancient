@@ -40,6 +40,7 @@
 #include "itemname.h"
 #include "misc.h"
 #include "monplace.h"
+#include "monstuff.h"
 #include "mon-util.h"
 #include "mutation.h"
 #include "player.h"
@@ -1183,10 +1184,15 @@ void move_item_stack_to_grid( int x, int y, int targ_x, int targ_y )
 }
 
 
+// returns quantity dropped
 bool copy_item_to_grid( const item_def &item, int x_plos, int y_plos,
                         int quant_drop )
 {
     if (quant_drop == 0)
+        return (false);
+
+    // default quant_drop == -1 => drop all
+    if (quant_drop < 0)
         quant_drop = item.quantity;
 
     // loop through items at current location
@@ -1323,7 +1329,7 @@ void drop(void)
     item_dropped = prompt_invent_item( "Drop which item?", -1, true, '$',
                                        &quant_drop );
 
-    if (item_dropped == PROMPT_ABORT)
+    if (item_dropped == PROMPT_ABORT || quant_drop == 0)
     {
         canned_msg( MSG_OK );
         return;
@@ -1382,8 +1388,8 @@ void drop(void)
         }
     }
 
-    if (!copy_item_to_grid( you.inv[item_dropped], you.x_pos, you.y_pos,
-                            quant_drop ))
+    if (!copy_item_to_grid( you.inv[item_dropped],
+                            you.x_pos, you.y_pos, quant_drop ))
     {
         mpr( "Too many items on this level, not dropping the item." );
         return;
@@ -1406,6 +1412,81 @@ void drop(void)
 
 //---------------------------------------------------------------
 //
+// shift_monster
+//
+// Moves a monster to approximately (x,y) and returns true
+// if monster was moved.
+//
+//---------------------------------------------------------------
+static bool shift_monster( struct monsters *mon, int x, int y )
+{
+    bool found_move = false;
+
+    int i, j;
+    int tx, ty;
+    int nx = 0, ny = 0;
+
+    int count = 0;
+
+    if (x == 0 && y == 0)
+    {
+        // try and find a random floor space some distance away
+        for (i = 0; i < 50; i++)
+        {
+            tx = 5 + random2( GXM - 10 );
+            ty = 5 + random2( GYM - 10 );
+
+            int dist = grid_distance(x, y, tx, ty);
+            if (grd[tx][ty] == DNGN_FLOOR && dist > 10)
+                break;
+        }
+
+        if (i == 50)
+            return (false);
+    }
+
+    for (i = -1; i <= 1; i++)
+    {
+        for (j = -1; j <= 1; j++)
+        {
+            tx = x + i;
+            ty = y + j;
+
+            if (tx < 5 || tx > GXM - 5 || ty < 5 || ty > GXM - 5)
+                continue;
+
+            // won't drop on anything but vanilla floor right now
+            if (grd[tx][ty] != DNGN_FLOOR)
+                continue;
+
+            if (mgrd[tx][ty] != NON_MONSTER)
+                continue;
+
+            if (tx == you.x_pos && ty == you.y_pos)
+                continue;
+
+            count++;
+            if (one_chance_in(count))
+            {
+                nx = tx;
+                ny = ty;
+                found_move = true;
+            }
+        }
+    }
+
+    if (found_move)
+    {
+        const int mon_index = mgrd[mon->x][mon->y];
+        mgrd[mon->x][mon->y] = NON_MONSTER;
+        mgrd[nx][ny] = mon_index;
+    }
+
+    return (found_move);
+}
+
+//---------------------------------------------------------------
+//
 // update_corpses
 //
 // Update all of the corpses and food chunks on the floor. (The
@@ -1420,7 +1501,7 @@ void update_corpses(double elapsedTime)
     if (elapsedTime <= 0.0)
         return;
 
-    const long rot_time = (int) (elapsedTime / 20.0);
+    const long rot_time = (long) (elapsedTime / 20.0);
 
     for (int c = 0; c < MAX_ITEMS; c++)
     {
@@ -1471,6 +1552,7 @@ void update_corpses(double elapsedTime)
         }
     }
 
+
     int fountain_checks = (int)(elapsedTime / 1000.0);
     if (random2(1000) < (int)(elapsedTime) % 1000)
         fountain_checks += 1;
@@ -1498,6 +1580,174 @@ void update_corpses(double elapsedTime)
         }
     }
 }
+
+
+//---------------------------------------------------------------
+//
+// update_level
+//
+// Update the level when the player returns to it.
+//
+//---------------------------------------------------------------
+void update_level( double elapsedTime )
+{
+    const int turns = (int) (elapsedTime / 10.0);
+
+    update_corpses( elapsedTime );
+
+    for (int m = 0; m < MAX_MONSTERS; m++)
+    {
+        struct monsters *mon = &menv[m];
+
+        if (mon->type == -1)
+            continue;
+
+        // XXX: This is some pretty crude code to make the monsters
+        // appear to do things when the player is off level.  It
+        // could certainly use some improvement since it allows for
+        // a number of impossible things to happen, because it currently
+        // uses blinking instead of A* search or some other method
+        // of really deciding what the monster does.  -- bwr
+        //
+        // XXX: Could also use some way to keep monsters in the
+        // maps that "guard" or belond to a particular room from
+        // blinking around.
+        const int dist = grid_distance( you.x_pos, you.y_pos, mon->x, mon->y );
+        const int range = (turns * mon->speed) / 10;
+        const bool healthy = (mon->hit_points * 2 > mon->max_hit_points);
+
+        const bool short_time = (range >= 5 + random2(10));
+        const bool long_time  = (range >= 250 + roll_dice( 2, 500 ));
+
+        // This is the monster healing code, moved here from tag.cc:
+        if (monster_descriptor( mon->type, MDSC_REGENERATES )
+            || mon->type == MONS_PLAYER_GHOST)
+        {
+            heal_monster( mon, turns, false );
+        }
+        else
+        {
+            heal_monster( mon, (turns / 10), false );
+        }
+
+        // Don't move water or lava monsters around
+        if (monster_habitat( mon->type ) != DNGN_FLOOR)
+            continue;
+
+#if 0
+        // probably too annoying even for DEBUG_DIAGNOSTICS
+        snprintf( info, INFO_SIZE, "mon #%d: dist %d; turns: %d range %d; healthy %d; short_time %d; long_time %d",
+                      m, dist, turns, range, healthy, short_time, long_time );
+
+        mpr( info );
+#endif
+
+        switch (mon->behaviour)
+        {
+        case BEH_SLEEP:
+            // Let sleeping monsters lie
+            break;
+
+        case BEH_WANDER:
+            if (dist > 10)
+            {
+                if (one_chance_in(3) && range > long_time)
+                    mon->behaviour = BEH_SLEEP;
+            }
+            else if (range > short_time)
+                monster_blink( mon );
+            else
+                shift_monster( mon, mon->x, mon->y );
+            break;
+
+        case BEH_FLEE:
+        case BEH_CORNERED:
+            if (dist <= 10)
+            {
+                if (range > short_time)
+                    monster_blink( mon );
+                else
+                    shift_monster( mon, mon->x, mon->y );
+            }
+            break;
+
+        case BEH_SEEK:
+        default:
+            // We'll only bother with monsters near the stairwell for now.
+            if (dist > 10)
+                break;
+
+            if (you.x_pos == mon->target_x && you.y_pos == mon->target_y)
+            {
+                // Monster was heading for that staircase when player left.
+                // Assuming this means that the monster can get to the
+                // stairway (which might not be correct).
+                if (dist <= range && healthy)
+                {
+                    if (range < long_time)
+                        shift_monster( mon, you.x_pos, you.y_pos );
+                    else
+                    {
+                        mon->behaviour = BEH_WANDER;
+
+                        if (!shift_monster( mon, 0, 0 ))
+                            monster_blink( mon );
+                    }
+                }
+                else if (healthy)
+                {
+                    const int dx = you.x_pos - mon->target_x;
+                    const int dy = you.y_pos - mon->target_y;
+
+                    const int tx = (range * dx) / dist;
+                    const int ty = (range * dy) /  dist;
+
+                    if (tx != mon->x && ty != mon->y)
+                    {
+                        if (!shift_monster( mon, tx, ty ))
+                        {
+                            if (range > short_time)
+                                monster_blink( mon );
+                            else
+                                shift_monster( mon, mon->x, mon->y );
+                        }
+                    }
+                }
+                else
+                {
+                    // Monster wasn't healty when player left, so they
+                    // "run" away. -- bwr
+
+                    // check the HPs after healing to see if we've stopped
+                    if (mon->hit_points * 2 > mon->max_hit_points)
+                    {
+                        mon->behaviour = (one_chance_in(3) ? BEH_SLEEP
+                                                           : BEH_WANDER);
+                    }
+
+                    if (range > long_time)
+                        shift_monster( mon, 0, 0 );
+                    else if (range > short_time)
+                        monster_blink( mon );
+                    else
+                        shift_monster( mon, mon->x, mon->y );
+                }
+            }
+            else
+            {
+                // Monster wasn't tracking to that square but is near stairwell
+                if (range > long_time)
+                    shift_monster( mon, 0, 0 );
+                else if (range > short_time)
+                    monster_blink( mon );
+                else
+                    shift_monster( mon, mon->x, mon->y );
+            }
+            break;
+        }
+    }
+}
+
 
 //---------------------------------------------------------------
 //
@@ -1720,7 +1970,7 @@ void handle_time( long time_delta )
                 boom.flavour = BEAM_RANDOM;
                 boom.target_x = you.x_pos;
                 boom.target_y = you.y_pos;
-                boom.damage = 100 + (you.magic_contamination / 2);
+                boom.damage = dice_def( 3, (you.magic_contamination / 2) );
                 boom.thrower = KILL_YOU;
                 boom.ex_size = (you.magic_contamination / 15);
                 boom.ench_power = (you.magic_contamination * 5);
@@ -1975,7 +2225,7 @@ int autopickup_on = 1;
 static void autopickup(void)
 {
     //David Loewenstern 6/99
-    int result, o;
+    int result, o, next;
     bool did_pickup = false;
 
     if (autopickup_on == 0 || Options.autopickups == 0L)
@@ -1988,6 +2238,8 @@ static void autopickup(void)
 
     while (o != NON_ITEM)
     {
+        next = mitm[o].link;
+
         if (Options.autopickups & (1L << mitm[o].base_type))
         {
             result = move_item_to_player( o, mitm[o].quantity);
@@ -2006,13 +2258,13 @@ static void autopickup(void)
             did_pickup = true;
         }
 
-        o = mitm[o].link;
+        o = next;
     }
 
     // move_item_to_player should leave things linked. -- bwr
     // relink_cell(you.x_pos, you.y_pos);
 
-    if (did_pickup && !you_are_delayed())
+    if (did_pickup)
     {
         you.turn_is_over = 1;
         start_delay( DELAY_AUTOPICKUP, 1 );

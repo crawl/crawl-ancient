@@ -21,7 +21,7 @@
 /* ***********************************************************************
  * called from: acr - item_use
  * *********************************************************************** */
-bool armour_prompt(const string & mesg, int *index);
+bool armour_prompt(const std::string & mesg, int *index);
 
 
 // last updated 12may2000 {dlb}

@@ -68,14 +68,14 @@
 
  // fillstring() is a hack to get around a missing constructor in
  // Borland C++ implementation of the STD basic_string.   Argh!!!
-static string fillstring(size_t strlen, char filler)
+static std::string fillstring(size_t strlen, char filler)
 {
-        string s;
+    std::string s;
 
-        for(size_t i=0; i<strlen; i++)
-                s += filler;
+    for (size_t i=0; i<strlen; i++)
+        s += filler;
 
-        return s;
+    return s;
 }
 
  //---------------------------------------------------------------
@@ -89,9 +89,9 @@ static string fillstring(size_t strlen, char filler)
  //  macro, which is of uncertain length (well, that and I didn't know how
  //  to do it any better at the time) (LH)
  //---------------------------------------------------------------
-static string munge_description(const string & inStr)
+static std::string munge_description(const std::string & inStr)
 {
-    string outStr;
+    std::string outStr;
 
     outStr.reserve(inStr.length() + 32);
 
@@ -134,7 +134,7 @@ static string munge_description(const string & inStr)
         }
         else
         {
-            string word;
+            std::string word;
 
             while (i < (long) inStr.length()
                    && lineLen + (long) word.length() < 79
@@ -165,7 +165,7 @@ static string munge_description(const string & inStr)
  // dump_stats
  //
  //---------------------------------------------------------------
-static void dump_stats(string & text)
+static void dump_stats( std::string & text )
 {
     char st_prn[15];
 
@@ -288,7 +288,7 @@ static void dump_stats(string & text)
  // dump_location
  //
  //---------------------------------------------------------------
-static void dump_location(string & text)
+static void dump_location( std::string & text )
 {
     if (you.your_level != -1)
         text += "You are ";
@@ -363,7 +363,7 @@ static void dump_location(string & text)
  // dump_religion
  //
  //---------------------------------------------------------------
-static void dump_religion(string & text)
+static void dump_religion( std::string & text )
 {
     if (you.religion != GOD_NO_GOD)
     {
@@ -403,12 +403,12 @@ static void dump_religion(string & text)
  // dump_inventory
  //
  //---------------------------------------------------------------
-static void dump_inventory(string & text, char show_prices)
+static void dump_inventory( std::string & text, char show_prices )
 {
     int i, j;
     char temp_id[4][50];
 
-    string text2;
+    std::string text2;
 
     for (i = 0; i < 4; i++)
     {
@@ -521,7 +521,7 @@ static void dump_inventory(string & text, char show_prices)
 // dump_skills
 //
 //---------------------------------------------------------------
-static void dump_skills(string & text)
+static void dump_skills( std::string & text )
 {
     text += EOL;
     text += EOL;
@@ -556,9 +556,9 @@ static void dump_skills(string & text)
 // Return string of the i-th spell type, with slash if required
 //
 //---------------------------------------------------------------
-static string spell_type_name(int spell_class, bool slash)
+static std::string spell_type_name(int spell_class, bool slash)
 {
-    string ret;
+    std::string ret;
 
     if (slash)
         ret = "/";
@@ -573,7 +573,7 @@ static string spell_type_name(int spell_class, bool slash)
 // dump_spells
 //
 //---------------------------------------------------------------
-static void dump_spells(string & text)
+static void dump_spells( std::string & text )
 {
     char strng[80];
 
@@ -629,7 +629,7 @@ static void dump_spells(string & text)
         {
             if (you.spells[j] != SPELL_NO_SPELL)
             {
-                string spell_line = " ";
+                std::string spell_line = " ";
                 char ft;
 
                 ft = index_to_letter(j);
@@ -697,7 +697,7 @@ static void dump_spells(string & text)
 // dump_mutations
 //
 //---------------------------------------------------------------
-static void dump_mutations(string & text)
+static void dump_mutations( std::string & text )
 {
     // Can't use how_mutated() here, as it doesn't count demonic powers
     int xz = 0;
@@ -749,7 +749,7 @@ bool dump_char(char show_prices, char fname[30])        // $$$ a try block?
 {
     bool succeeded = false;
 
-    string text;
+    std::string text;
 
     // start with enough room for 100 80 character lines
     text.reserve(100 * 80);
@@ -857,7 +857,7 @@ bool dump_char(char show_prices, char fname[30])        // $$$ a try block?
         size_t begin = 0;
         size_t end = text.find(EOL);
 
-        while (end != string::npos)
+        while (end != std::string::npos)
         {
             end += strlen(EOL);
 

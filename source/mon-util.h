@@ -154,7 +154,7 @@ struct monsterentry
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void mon_init( FixedVector<unsigned short, 1000>& colour );
+void mons_init( FixedVector<unsigned short, 1000>& colour );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -173,7 +173,8 @@ char *ptr_monam( struct monsters *mon, char desc );
 /* ***********************************************************************
  * called from: beam - direct - fight - monstuff - mstuff2 - spells4 - view
  * *********************************************************************** */
-char mons_flies(int mclass);
+char mons_class_flies( int mc );
+char mons_flies( struct monsters *mon );
 
 
 // last updated XXmay2000 {dlb}
@@ -187,7 +188,7 @@ char mons_itemuse(int mc);
 /* ***********************************************************************
  * called from: beam - fight - monstuff - view
  * *********************************************************************** */
-char mons_see_invis(int mclass);
+char mons_see_invis( struct monsters *mon );
 
 bool mons_monster_visible( struct monsters *mon, struct monsters *targ );
 
@@ -197,6 +198,8 @@ bool mons_monster_visible( struct monsters *mon, struct monsters *targ );
  * called from: view
  * *********************************************************************** */
 char mons_shouts(int mclass);
+
+bool mons_is_unique(int mclass);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -217,14 +220,15 @@ int hit_points(int hit_dice, int min_hp, int rand_hp);
 /* ***********************************************************************
  * called from: beam - effects
  * *********************************************************************** */
-int mon_resist_mag(int mc, char mhd);
+int mons_resist_magic( struct monsters *mon );
+int mons_resist_turn_undead( struct monsters *mon );
 
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: fight - monstuff
  * *********************************************************************** */
-int mondamage(int mc, int rt);
+int mons_damage(int mc, int rt);
 
 
 // last updated 12may2000 {dlb}
@@ -277,28 +281,30 @@ int mons_intel_type(int mclass); //jmf: added 20mar2000
 /* ***********************************************************************
  * called from: beam - fight - monstuff
  * *********************************************************************** */
-int mons_res_cold(int mclass);
+int mons_res_cold( struct monsters *mon );
 
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: beam - fight - spells4
  * *********************************************************************** */
-int mons_res_elec(int mclass);
+int mons_res_elec( struct monsters *mon );
 
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: beam - fight - monstuff
  * *********************************************************************** */
-int mons_res_fire(int mclass);
+int mons_res_fire( struct monsters *mon );
 
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: beam - monstuff - spells4
  * *********************************************************************** */
-int mons_res_poison(int mclass);
+int mons_res_poison( struct monsters *mon );
+
+int mons_res_negative_energy( struct monsters *mon );
 
 
 // last updated 12may2000 {dlb}
@@ -432,7 +438,7 @@ int mons_has_ench( struct monsters *mon, unsigned int ench,
                    unsigned int ench2 = ENCH_NONE );
 
 int mons_del_ench( struct monsters *mon, unsigned int ench,
-                   unsigned int ench2 = ENCH_NONE );
+                   unsigned int ench2 = ENCH_NONE, bool quiet = false );
 
 bool mons_add_ench( struct monsters *mon, unsigned int ench );
 

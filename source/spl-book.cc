@@ -39,8 +39,8 @@
 static bool which_spellbook( int &book, int &spell );
 unsigned char spellbook_contents( item_def &book );
 
-int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
-
+int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
+{
     // 0 - Minor Magic I
     {0,
      SPELL_MAGIC_DART,
@@ -68,10 +68,10 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_MAGIC_DART,
      SPELL_SUMMON_SMALL_MAMMAL,
      SPELL_BLINK,
+     SPELL_REPEL_MISSILES,
      SPELL_SLOW,
      SPELL_SUMMON_LARGE_MAMMAL,
      SPELL_MEPHITIC_CLOUD,
-     SPELL_DISCHARGE,
      SPELL_NO_SPELL,
      },
     // 3 - Book of Conjurations I
@@ -742,7 +742,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      },
 };
 
-void spellbook_template( int sbook_type,
+static void spellbook_template( int sbook_type,
                          FixedVector < int, SPELLBOOK_SIZE > &sbtemplate_pass )
 {
     ASSERT( sbook_type >= 0 );
@@ -1072,9 +1072,42 @@ static bool which_spellbook( int &book, int &spell )
     return (true);
 }                               // end which_spellbook()
 
+// Returns false if the player cannot read/memorize from the book,
+// and true otherwise. -- bwr
+static bool player_can_read_spellbook( const item_def &book )
+{
+    if (book.base_type != OBJ_BOOKS)
+        return (true);
+
+    if ((book.sub_type == BOOK_ANNIHILATIONS
+            && you.religion != GOD_VEHUMET
+            && (you.skills[SK_CONJURATIONS] < 10
+                || you.skills[SK_SPELLCASTING] < 10))
+        || (book.sub_type == BOOK_DEMONOLOGY
+            && you.religion != GOD_VEHUMET
+            && (you.skills[SK_SUMMONINGS] < 10
+                || you.skills[SK_SPELLCASTING] < 10))
+        || (book.sub_type == BOOK_NECRONOMICON
+            && you.religion != GOD_KIKUBAAQUDGHA
+            && (you.skills[SK_NECROMANCY] < 10
+                || you.skills[SK_SPELLCASTING] < 10)))
+    {
+        return (false);
+    }
+
+    return (true);
+}
+
 unsigned char read_book( item_def &book, int action )
 {
     unsigned char key2 = 0;
+
+    if (book.base_type == OBJ_BOOKS && !player_can_read_spellbook( book ))
+    {
+        mpr( "This book is beyond your current level of understanding." );
+        more();
+        return (0);
+    }
 
     // remember that this function is called from staff spells as well:
     key2 = spellbook_contents( book, action );
@@ -1348,7 +1381,9 @@ void learn_spell(void)
         }
 
 #if WIZARD
-        if (you.wizard && !yesno("Memorize anyway?"))
+        if (!you.wizard)
+            return;
+        else if (!yesno("Memorize anyway?"))
             return;
 #else
         return;

@@ -96,6 +96,30 @@ int random2avg(int max, int rolls)
     return (sum / rolls);
 }
 
+int roll_dice( int num, int size )
+{
+    int ret = 0;
+    int i;
+
+    // If num <= 0 or size <= 0, then we'll just return the default
+    // value of zero.  This is good behaviour in that it will be
+    // appropriate for errant calculated values that might be passed in.
+    if (num > 0 && size > 0)
+    {
+        ret += num;     // since random2() is zero based
+
+        for (i = 0; i < num; i++)
+            ret += random2( size );
+    }
+
+    return (ret);
+}
+
+int roll_dice( const struct dice_def &dice )
+{
+    return (roll_dice( dice.num, dice.size ));
+}
+
 // originally designed to randomize evasion -
 // values are slightly lowered near (max) and
 // approach an upper limit somewhere near (limit/2)
@@ -428,18 +452,28 @@ bool yesno(const char *str, bool safe)
     }
 }                               // end yesno()
 
-int distance(char x, char y, char x2, char y2)
+
+int grid_distance( int x, int y, int x2, int y2 )
 {
-    int X, Y;
+    int dx, dy;
+
+    dx = abs( x - x2 );
+    dy = abs( y - y2 );
+
+    // returns distance in terms of moves:
+    return (dx > dy ? dx : dy);
+}
+
+int distance( int x, int y, int x2, int y2 )
+{
+    int dx, dy;
 
     //jmf: now accurate, but remember to only compare vs. pre-squared distances.
     //     thus, next to == (distance(m1.x,m1.y, m2.x,m2.y) <= 2)
-    X = (int) x;
-    Y = (int) y;
-    X -= (int) x2;
-    Y -= (int) y2;
+    dx = x - x2;
+    dy = y - y2;
 
-    return (X * X) + (Y * Y);
+    return ((dx * dx) + (dy * dy));
 }                               // end distance()
 
 bool adjacent( int x, int y, int x2, int y2 )

@@ -144,7 +144,8 @@ static void place_debris(int x, int y, int debris_type)
 }                               // end place_debris()
 
 // just to avoid typing this over and over
-inline void player_hurt_monster(int monster, int damage)
+// now returns true if monster died -- bwr
+inline bool player_hurt_monster(int monster, int damage)
 {
     ASSERT( monster != NON_MONSTER );
 
@@ -152,30 +153,27 @@ inline void player_hurt_monster(int monster, int damage)
     {
         hurt_monster( &menv[monster], damage );
 
-        if (menv[monster].hit_points < 1)
-            monster_die( &menv[monster], KILL_YOU, 0 );
-        else
+        if (menv[monster].hit_points > 0)
             print_wounds( &menv[monster] );
+        else
+        {
+            monster_die( &menv[monster], KILL_YOU, 0 );
+            return (true);
+        }
     }
 
-    return;
+    return (false);
 }                               // end player_hurt_monster()
 
 
 // Here begin the actual spells:
 static int shatter_monsters(int x, int y, int pow, int garbage)
 {
-    int damage, monster = mgrd[x][y];
+    dice_def   dam_dice( 0, 5 + pow / 8 );  // number of dice set below
+    const int  monster = mgrd[x][y];
 
     if (monster == NON_MONSTER)
-        return 0;
-
-    // Lowered this -- it was much too powerful with the multipliers
-    // applied below. It's still capable of a 75 base (150 when doubled),
-    // although it's much more likely to be around 52/104 given the
-    // distribution... that's extremely good when you consider the
-    // area of effect involved (radius 4). -- bwr
-    damage = 15 + random2avg( (pow / 5), 4 );
+        return (0);
 
     // Removed a lot of silly monsters down here... people, just because
     // it says ice, rock, or iron in the name doesn't mean it's actually
@@ -185,11 +183,7 @@ static int shatter_monsters(int x, int y, int pow, int garbage)
     case MONS_ICE_BEAST:        // 3/2 damage
     case MONS_SIMULACRUM_SMALL:
     case MONS_SIMULACRUM_LARGE:
-    case MONS_DANCING_WEAPON:
-    // case MONS_MOLTEN_GARGOYLE:    // fairly fluid -- should absorb damage
-    // case MONS_QUICKSILVER_DRAGON: // quicksilver is liquid mercury
-        damage *= 15;
-        damage /= 10;
+        dam_dice.num = 4;
         break;
 
     case MONS_SKELETON_SMALL: // double damage
@@ -203,7 +197,7 @@ static int shatter_monsters(int x, int y, int pow, int garbage)
     case MONS_GARGOYLE:
     case MONS_SKELETAL_DRAGON:
     case MONS_SKELETAL_WARRIOR:
-        damage *= 2;
+        dam_dice.num = 6;
         break;
 
     case MONS_VAPOUR:
@@ -220,7 +214,7 @@ static int shatter_monsters(int x, int y, int pow, int garbage)
     case MONS_HUNGRY_GHOST:
     case MONS_FLAYED_GHOST:
     case MONS_SMOKE_DEMON:      //jmf: I hate these bastards...
-        damage = 0;
+        dam_dice.num = 0;
         break;
 
     case MONS_PULSATING_LUMP:
@@ -234,16 +228,34 @@ static int shatter_monsters(int x, int y, int pow, int garbage)
     case MONS_OOZE:
     case MONS_SPECTRAL_THING:
     case MONS_JELLYFISH:
-        damage = 1 + (damage / 4);
+        dam_dice.num = 1;
+        dam_dice.size /= 2;
+        break;
+
+    case MONS_DANCING_WEAPON:     // flies, but earth based
+    case MONS_MOLTEN_GARGOYLE:
+    case MONS_QUICKSILVER_DRAGON:
+        // Soft, earth creatures... would normally resist to 1 die, but
+        // are sensitive to this spell. -- bwr
+        dam_dice.num = 2;
         break;
 
     default:                    // normal damage
+        if (mons_flies( &menv[monster] ))
+            dam_dice.num = 1;
+        else
+            dam_dice.num = 3;
         break;
     }
 
-    //FIXME: resist maybe? maybe not...
-    player_hurt_monster(monster, random2avg( damage, 2 ));
-    return damage;
+    int damage = roll_dice( dam_dice ) - random2( menv[monster].armour_class );
+
+    if (damage > 0)
+        player_hurt_monster( monster, damage );
+    else
+        damage = 0;
+
+    return (damage);
 }                               // end shatter_monsters()
 
 static int shatter_items(int x, int y, int pow, int garbage)
@@ -287,8 +299,12 @@ static int shatter_items(int x, int y, int pow, int garbage)
 
 static int shatter_walls(int x, int y, int pow, int garbage)
 {
-    int chance = pow / 4;  // 75% at power == 300
-    int stuff = 0;
+    int  chance = 0;
+    int  stuff = 0;
+
+    // if not in-bounds then we can't really shatter it -- bwr
+    if (x <= 5 || x >= GXM - 5 || y <= 5 || y >= GYM - 5)
+        return (0);
 
     switch (grd[x][y])
     {
@@ -297,33 +313,47 @@ static int shatter_walls(int x, int y, int pow, int garbage)
             mpr("A secret door shatters!");
         grd[x][y] = DNGN_FLOOR;
         stuff = DEBRIS_WOOD;
+        chance = 100;
         break;
 
     case DNGN_CLOSED_DOOR:
+    case DNGN_OPEN_DOOR:
         if (see_grid(x, y))
             mpr("A door shatters!");
         grd[x][y] = DNGN_FLOOR;
         stuff = DEBRIS_WOOD;
+        chance = 100;
         break;
 
     case DNGN_METAL_WALL:
+    case DNGN_SILVER_STATUE:
         stuff = DEBRIS_METAL;
-        chance /= 4;
+        chance = pow / 10;
         break;
 
-    case DNGN_GRANITE_STATUE:
-    case DNGN_STONE_WALL:
-        chance /= 2;
-        // fall-through
     case DNGN_ORCISH_IDOL:
+    case DNGN_GRANITE_STATUE:
+        chance = 50;
+        stuff = DEBRIS_STONE;
+        break;
+
+    case DNGN_STONE_WALL:
+        chance = pow / 6;
         stuff = DEBRIS_STONE;
         break;
 
     case DNGN_ROCK_WALL:
+        chance = pow / 4;
         stuff = DEBRIS_ROCK;
         break;
 
+    case DNGN_ORANGE_CRYSTAL_STATUE:
+        chance = pow / 6;
+        stuff = DEBRIS_CRYSTAL;
+        break;
+
     case DNGN_GREEN_CRYSTAL_WALL:
+        chance = 50;
         stuff = DEBRIS_CRYSTAL;
         break;
 
@@ -333,31 +363,31 @@ static int shatter_walls(int x, int y, int pow, int garbage)
 
     if (stuff && random2(100) < chance)
     {
-        if (!silenced(x, y) && !silenced(you.x_pos, you.y_pos))
-            mpr("Ka-crash!");
+        if (!silenced( x, y ))
+            noisy( x, y, 30 );
 
         grd[x][y] = DNGN_FLOOR;
         place_debris(x, y, stuff);
-        return 1;
+        return (1);
     }
 
-    return 0;
+    return (0);
 }                               // end shatter_walls()
 
 void cast_shatter(int pow)
 {
     int damage = 0;
+    const bool sil = silenced( you.x_pos, you.y_pos );
 
     // level 9 spell == 300 cap.
     if (pow > 300)
         pow = 300;
 
-    strcpy(info, "The dungeon ");
-    strcat(info, (silenced(you.x_pos, you.y_pos)) ? "shakes!" : "rumbles!");
-    mpr(info);
+    if (!sil)
+        noisy( you.x_pos, you.y_pos, 30 );
 
-    if (!silenced(you.x_pos, you.y_pos))
-        noisy(you.x_pos, you.y_pos, 30);
+    snprintf(info, INFO_SIZE, "The dungeon %s!", (sil ? "shakes" : "rumbles"));
+    mpr(info);
 
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
@@ -389,11 +419,15 @@ void cast_shatter(int pow)
     if (damage)
         ouch(damage, 0, KILLED_BY_TARGETTING);
 
-    int rad = 3 + (you.skills[SK_EARTH_MAGIC]/9);
+    int rad = 3 + (you.skills[SK_EARTH_MAGIC] / 5);
 
     apply_area_within_radius(shatter_items, you.x_pos, you.y_pos, pow, rad, 0);
     apply_area_within_radius(shatter_monsters, you.x_pos, you.y_pos, pow, rad, 0);
-    apply_area_within_radius(shatter_walls, you.x_pos, you.y_pos, pow, rad, 0);
+    int dest = apply_area_within_radius( shatter_walls, you.x_pos, you.y_pos,
+                                         pow, rad, 0 );
+
+    if (dest && !sil)
+        mpr("Ka-crash!");
 }                               // end cast_shatter()
 
 // cast_forescry: raises evasion (by 8 currently) via divination
@@ -813,14 +847,16 @@ static int sleep_monsters(int x, int y, int pow, int garbage)
     if (mons_holiness(menv[mnstr].type) != MH_NATURAL)          return 0;
     if (check_mons_magres(&menv[mnstr], pow))                   return 0;
     if (mons_friendly(&menv[mnstr]))                            return 0;
+
     //jmf: now that sleep == hibernation:
-    if ((mons_res_cold(menv[mnstr].type) > 0) && coinflip())    return 0;
+    if (mons_res_cold(&menv[mnstr]) > 0 && coinflip())           return 0;
+
     if (mons_has_ench(&menv[mnstr], ENCH_SLEEP_WARY))           return 0;
 
     if (mons_flag(menv[mnstr].type, M_COLD_BLOOD))
         mons_add_ench(&menv[mnstr], ENCH_SLOW);
 
-    menv[mnstr].behavior = BEH_SLEEP;
+    menv[mnstr].behaviour = BEH_SLEEP;
     mons_add_ench(&menv[mnstr], ENCH_SLEEP_WARY);
 
     return 1;
@@ -875,7 +911,7 @@ static int ignite_poison_objects(int x, int y, int pow, int garbage)
     int obj = igrd[x][y], next, strength = 0;
 
     if (obj == NON_ITEM)
-        return 0;
+        return (0);
 
     while (obj != NON_ITEM)
     {
@@ -906,13 +942,9 @@ static int ignite_poison_objects(int x, int y, int pow, int garbage)
     }
 
     if (strength > 0)
-    {
-        place_cloud( CLOUD_FIRE, x, y, strength + random2(1 + strength / 4)
-                                                + random2(1 + strength / 4)
-                                                + random2(1 + strength / 4));
-    }
+        place_cloud(CLOUD_FIRE, x, y, strength + roll_dice(3, strength / 4) );
 
-    return strength;
+    return (strength);
 }                               // end ignite_poison_objects()
 
 static int ignite_poison_clouds( int x, int y, int pow, int garbage )
@@ -948,25 +980,64 @@ static int ignite_poison_clouds( int x, int y, int pow, int garbage )
 static int ignite_poison_monsters(int x, int y, int pow, int garbage)
 {
     struct bolt beam;
+    beam.flavour = BEAM_FIRE;   // this is dumb, only used for adjust!
 
-    //FIXME: go through monster inventories for potions + poison weapons
-    //FIXME: hurt monsters that have been poisoned
-    int monster = mgrd[x][y];
+    dice_def  dam_dice( 0, 5 + pow / 10 );  // dice added below if applicable
 
-    if (monster == NON_MONSTER)
-        return 0;
+    const int mon_index = mgrd[x][y];
+    if (mon_index == NON_MONSTER)
+        return (0);
 
-    int damage = 1 + random2(8) + random2(8) + random2(pow) / 10;
+    struct monsters *const mon = &menv[ mon_index ];
 
-    //FIXME: apply to monsters with poison attack but not poison corpses?
-    if (mons_corpse_thingy(menv[monster].type) == CE_POISONOUS)
+    // Monsters which have poison corpses or poisonous attacks:
+    if (mons_corpse_thingy( mon->type ) == CE_POISONOUS
+        || mon->type == MONS_GIANT_ANT
+        || mon->type == MONS_SMALL_SNAKE
+        || mon->type == MONS_SNAKE
+        || mon->type == MONS_JELLYFISH
+        || mons_charclass( mon->type ) == MONS_GOLD_MIMIC)
     {
-        beam.flavour = BEAM_FIRE;
-        damage = mons_adjust_flavoured(&menv[monster], beam, damage);
-        player_hurt_monster(monster, damage);
-        return 1;
+        dam_dice.num = 3;
     }
-    return 0;
+
+    // Monsters which are poisoned:
+    int strength = 0;
+
+    // first check for player poison:
+    int ench = mons_has_ench( mon, ENCH_YOUR_POISON_I, ENCH_YOUR_POISON_IV );
+    if (ench != ENCH_NONE)
+        strength += ench - ENCH_YOUR_POISON_I + 1;
+
+    // ... now monster poison:
+    ench = mons_has_ench( mon, ENCH_POISON_I, ENCH_POISON_IV );
+    if (ench != ENCH_NONE)
+        strength += ench - ENCH_POISON_I + 1;
+
+    // strength is now the sum of both poison types:
+    dam_dice.num += strength;
+
+    int damage = roll_dice( dam_dice );
+    if (damage > 0)
+    {
+        damage = mons_adjust_flavoured( mon, beam, damage );
+
+#if DEBUG_DIAGNOSTICS
+        snprintf( info, INFO_SIZE, "Damage: %d", damage );
+        mpr( info );
+#endif
+
+        if (!player_hurt_monster( mon_index, damage ))
+        {
+            // Monster survived, remove any poison.
+            mons_del_ench( mon, ENCH_POISON_I, ENCH_POISON_IV );
+            mons_del_ench( mon, ENCH_YOUR_POISON_I, ENCH_YOUR_POISON_IV );
+        }
+
+        return (1);
+    }
+
+    return (0);
 }
 
 void cast_ignite_poison(int pow)
@@ -980,16 +1051,19 @@ void cast_ignite_poison(int pow)
         pow = 200;
 
     // temp weapon of venom => temp fire brand
-    if (you.duration[DUR_WEAPON_BRAND])
+    const int wpn = you.equip[EQ_WEAPON];
+
+    if (wpn != -1
+        && you.duration[DUR_WEAPON_BRAND]
+        && get_weapon_brand( you.inv[wpn] ) == SPWPN_VENOM)
     {
-        if (you.inv[you.equip[EQ_WEAPON]].special == SPWPN_VENOM)
+        if (set_item_ego_type( you.inv[wpn], OBJ_WEAPONS, SPWPN_FLAMING ))
         {
-            in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
-            strcpy(info, str_pass);
-            strcat(info, " bursts into flame!");
+            in_name( wpn, DESC_CAP_YOUR, str_pass );
+            strcpy( info, str_pass );
+            strcat( info, " bursts into flame!" );
             mpr(info);
 
-            you.inv[you.equip[EQ_WEAPON]].special += (SPWPN_FLAMING - SPWPN_VENOM);
             you.wield_change = true;
             you.duration[DUR_WEAPON_BRAND] += 1 + you.duration[DUR_WEAPON_BRAND] / 2;
             if (you.duration[DUR_WEAPON_BRAND] > 80)
@@ -1077,14 +1151,11 @@ void cast_ignite_poison(int pow)
                 || you.species == SP_KOBOLD
                 || you.species == SP_NAGA)))
     {
-        damage = 1 + random2(8) + random2(8) + random2(pow) / 10;
+        damage = roll_dice( 3, 5 + pow / 10 );
     }
 
     // player is poisoned
-    for (int i = 0; i < you.poison; i++)
-    {
-        damage += 1 + random2(6);
-    }
+    damage += roll_dice( you.poison, 6 );
 
     if (damage)
     {
@@ -1102,6 +1173,12 @@ void cast_ignite_poison(int pow)
             mpr("The poison in your system burns!");
 
         ouch(damage, 0, KILLED_BY_TARGETTING);
+
+        if (you.poison > 0)
+        {
+            mpr( "You feel that the poison has left your system." );
+            you.poison = 0;
+        }
     }
 
     apply_area_visible(ignite_poison_clouds, pow);
@@ -1159,7 +1236,7 @@ static int discharge_monsters( int x, int y, int pow, int garbage )
     }
     else if (mon == NON_MONSTER)
         return (0);
-    else if (mons_res_elec(menv[mon].type) || mons_flies(menv[mon].type))
+    else if (mons_res_elec(&menv[mon]) > 0 || mons_flies(&menv[mon]))
         return (0);
     else
     {
@@ -1312,7 +1389,8 @@ static int distortion_monsters(int x, int y, int pow, int message)
     }
 
     player_hurt_monster(monster_attacked, specdam);
-    return specdam;
+
+    return (specdam);
 }                               // end distortion_monsters()
 
 void cast_bend(int pow)
@@ -1593,7 +1671,7 @@ static int intoxicate_monsters(int x, int y, int pow, int garbage)
         return 0;
     if (mons_holiness(menv[mon].type) != MH_NATURAL)
         return 0;
-    if (mons_res_poison(menv[mon].type) > 0)
+    if (mons_res_poison(&menv[mon]) > 0)
         return 0;
 
     mons_add_ench(&menv[mon], ENCH_CONFUSION);
@@ -1672,7 +1750,7 @@ static int glamour_monsters(int x, int y, int pow, int garbage)
         mons_add_ench(&menv[mon], ENCH_CHARM);
         break;
     case 3:
-        menv[mon].behavior = BEH_SLEEP;
+        menv[mon].behaviour = BEH_SLEEP;
         break;
     }
 
@@ -1975,7 +2053,7 @@ void do_monster_rot(int mon)
                          10, 1, CLOUD_MIASMA);
     }
 
-    player_hurt_monster(mon, damage);
+    player_hurt_monster( mon, damage );
     return;
 }                               // end do_monster_rot()
 
@@ -2012,20 +2090,13 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
     struct dist beam;
     struct bolt blast;
     int debris = 0;
-    int i, hurted;
+    int trap;
     bool explode = false;
-    char *what = NULL;
+    bool hole = true;
+    const char *what = NULL;
 
-    // This is unbelievably powerful (power can get quite large):
-    // hurted = (random2(pow) + random2(pow) + random2(pow) + random2(pow)) / 2;
-    // hurted += random2(10) + random2(12);
     if (pow > 200)
         pow = 200;
-
-    // This damage will need to be rolled below (done this way because
-    // we apply damage directly to monsters here, but blast effects roll
-    // their damage elsewhere).
-    hurted = 1 + random2avg(20,2) + (pow / 5);
 
     mpr("Fragment what (e.g. a wall)?", MSGCH_PROMPT);
     direction(beam, DIR_TARGET);
@@ -2044,15 +2115,28 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
     blast.target_x = beam.tx;
     blast.target_y = beam.ty;
     blast.isTracer = false;
+    blast.flavour = BEAM_FRAG;
 
-    i = mgrd[beam.tx][beam.ty];
+    // Maximum die size of 25
+    // Number of dice vary... 3 is easy/common, but it can get as high as 6.
+    blast.damage = dice_def( 0, 5 + pow / 10 );
 
-    if (i != NON_MONSTER)
+    const int grid = grd[beam.tx][beam.ty];
+    const int mon  = mgrd[beam.tx][beam.ty];
+
+    const bool okay_to_dest = ((beam.tx > 5 && beam.tx < GXM - 5)
+                                && (beam.ty > 5 && beam.ty < GYM - 5));
+
+    if (mon != NON_MONSTER)
     {
-        //struct monsters *monster = &menv[i];
-        strcpy(info, ptr_monam( &(menv[i]), DESC_CAP_THE ));
+        // This needs its own buffer... we also need to do it first
+        // in case the target dies. -- bwr
+        char explode_msg[80];
 
-        switch (menv[i].type)
+        snprintf( explode_msg, sizeof( explode_msg ), "%s explodes!",
+                  ptr_monam( &(menv[mon]), DESC_CAP_THE ) );
+
+        switch (menv[mon].type)
         {
         case MONS_ICE_BEAST: // blast of ice fragments
         case MONS_SIMULACRUM_SMALL:
@@ -2060,9 +2144,10 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
             explode = true;
             strcpy(blast.beam_name, "icy blast");
             blast.colour = WHITE;
-            blast.damage = (hurted / 2) + 1;
+            blast.damage.num = 2;
             blast.flavour = BEAM_ICE;
-            player_hurt_monster(i, 1 + random2(hurted));
+            if (player_hurt_monster(mon, roll_dice( blast.damage )))
+                blast.damage.num += 1;
             break;
 
         case MONS_FLYING_SKULL:
@@ -2071,34 +2156,44 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
             explode = true;
 
             snprintf( info, INFO_SIZE, "The sk%s explodes into sharp fragments of bone!",
-                    (menv[i].type == MONS_FLYING_SKULL) ? "ull" : "eleton");
+                    (menv[mon].type == MONS_FLYING_SKULL) ? "ull" : "eleton");
 
             strcpy(blast.beam_name, "blast of bone shards");
 
             blast.colour = LIGHTGREY;
-            blast.damage = (hurted / 3) + 1;
-            blast.flavour = BEAM_FRAG;
 
             if (random2(50) < (pow / 5))        // potential insta-kill
-                monster_die(&menv[i], KILL_YOU, 0);
+            {
+                monster_die(&menv[mon], KILL_YOU, 0);
+                blast.damage.num = 4;
+            }
             else
-                player_hurt_monster(i, 1 + random2(hurted));
+            {
+                blast.damage.num = 2;
+                if (player_hurt_monster(mon, roll_dice( blast.damage )))
+                    blast.damage.num = 4;
+            }
             goto all_done;      // i.e. no "Foo Explodes!"
 
         case MONS_WOOD_GOLEM:
             explode = false;
-            simple_monster_message(&menv[i], " shudders violently!");
-            player_hurt_monster(i, 1 + random2(hurted));
+            simple_monster_message(&menv[mon], " shudders violently!");
+
+            // We use blast.damage not only for inflicting damage here,
+            // but so that later on we'll know that the spell didn't
+            // fizzle (since we don't actually explode wood golems). -- bwr
+            blast.damage.num = 2;
+            player_hurt_monster( mon, roll_dice( blast.damage ) );
             break;
 
         case MONS_IRON_GOLEM:
         case MONS_METAL_GARGOYLE:
             explode = true;
-            strcpy(blast.beam_name, "blast of metal fragments");
+            strcpy( blast.beam_name, "blast of metal fragments" );
             blast.colour = CYAN;
-            blast.damage = hurted;
-            blast.flavour = BEAM_FRAG;
-            player_hurt_monster(i, 1 + random2(hurted));
+            blast.damage.num = 4;
+            if (player_hurt_monster(mon, roll_dice( blast.damage )))
+                blast.damage.num += 2;
             break;
 
         case MONS_CLAY_GOLEM:   // assume baked clay and not wet loam
@@ -2109,9 +2204,9 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
             blast.ex_size = 2;
             strcpy(blast.beam_name, "blast of rock fragments");
             blast.colour = BROWN;
-            blast.damage = hurted / 2 + 1;
-            blast.flavour = BEAM_FRAG;
-            player_hurt_monster(i, 1 + random2(hurted));
+            blast.damage.num = 3;
+            if (player_hurt_monster(mon, roll_dice( blast.damage )))
+                blast.damage.num += 1;
             break;
 
         case MONS_CRYSTAL_GOLEM:
@@ -2119,156 +2214,216 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
             blast.ex_size = 2;
             strcpy(blast.beam_name, "blast of crystal shards");
             blast.colour = WHITE;
-            blast.damage = hurted;
-            blast.flavour = BEAM_FRAG;
-            player_hurt_monster(i, 1 + random2( hurted * 2 ));
+            blast.damage.num = 4;
+            if (player_hurt_monster(mon, roll_dice( blast.damage )))
+                blast.damage.num += 2;
             break;
 
         default:
-            player_hurt_monster(i, 1 + random2( 1 + (hurted / 30) ));
+            blast.damage.num = 1;  // to mark that a monster was targetted
+
+            // Yes, this spell does lousy damage if the
+            // monster isn't susceptable. -- bwr
+            player_hurt_monster( mon, roll_dice( 1, 5 + pow / 50 ) );
             goto do_terrain;
         }
 
-        strcat(info, " explodes!");
-        mpr(info);
+        mpr( explode_msg );
         goto all_done;
     }
 
   do_terrain:
     // FIXME: do nothing in Abyss & Pandemonium?
-    i = grd[beam.tx][beam.ty];
 
-    switch (i)
+    switch (grid)
     {
+    //
+    // Stone and rock terrain
+    //
     case DNGN_ROCK_WALL:
-    case DNGN_STONE_WALL:
     case DNGN_SECRET_DOOR:
+        blast.colour = env.rock_colour;
+        // fall-through
+    case DNGN_STONE_WALL:
         what = "wall";
+        if (you.where_are_you == BRANCH_HALL_OF_ZOT)
+            blast.colour = env.rock_colour;
         // fall-through
     case DNGN_ORCISH_IDOL:
         if (what == NULL)
             what = "stone idol";
+        if (blast.colour == 0)
+            blast.colour = DARKGREY;
         // fall-through
     case DNGN_GRANITE_STATUE:   // normal rock -- big explosion
         if (what == NULL)
             what = "statue";
 
         explode = true;
-        blast.ex_size = (i == DNGN_ORCISH_IDOL || i == DNGN_GRANITE_STATUE)?2:1;
+
         strcpy(blast.beam_name, "blast of rock fragments");
-        blast.colour = BROWN;        // FIXME: colour of actual wall?
-        blast.damage = hurted;
-        blast.flavour = BEAM_FRAG;
+        blast.damage.num = 3;
+        if (blast.colour == 0)
+            blast.colour = LIGHTGREY;
 
-        if (one_chance_in(3))
+        if (okay_to_dest
+            && (grid == DNGN_ORCISH_IDOL
+                || grid == DNGN_GRANITE_STATUE
+                || (pow >= 25 && grid == DNGN_ROCK_WALL && one_chance_in(3))
+                || (pow >= 50 && grid == DNGN_STONE_WALL && one_chance_in(10))))
         {
-            // digging limited to just rock
-            if (i != DNGN_STONE_WALL)
-                grd[beam.tx][beam.ty] = DNGN_FLOOR;
-
+            // terrain blew up real good:
+            blast.ex_size = 2;
+            grd[beam.tx][beam.ty] = DNGN_FLOOR;
             debris = DEBRIS_ROCK;
         }
         break;
 
-    case DNGN_METAL_WALL:       // metal -- small but nasty explosion
-        what = "metal wall";
-        if (one_chance_in(5))
-        {
-            // digging limited to just rock
-            // grd[beam.tx][beam.target_y] = DNGN_FLOOR;
-            debris = DEBRIS_METAL;
-        }
+    //
+    // Metal -- small but nasty explosion
+    //
 
+    case DNGN_METAL_WALL:
+        what = "metal wall";
         blast.colour = CYAN;
         // fallthru
-    case DNGN_SILVER_STATUE:    //jmf: statue not destroyed
+    case DNGN_SILVER_STATUE:
         if (what == NULL)
         {
             what = "silver statue";
             blast.colour = WHITE;
         }
+
         explode = true;
-        strcpy(blast.beam_name, "blast of metal fragments");
-        blast.damage = (hurted * 4) / 3;
-        blast.flavour = BEAM_FRAG;
+        strcpy( blast.beam_name, "blast of metal fragments" );
+        blast.damage.num = 4;
+
+        if (okay_to_dest && pow >= 50 && random2(500) < pow / 5)
+        {
+            blast.damage.num += 2;
+            grd[beam.tx][beam.ty] = DNGN_FLOOR;
+            debris = DEBRIS_METAL;
+        }
         break;
+
+    //
+    // Crystal
+    //
 
     case DNGN_GREEN_CRYSTAL_WALL:       // crystal -- large & nasty explosion
         what = "crystal wall";
         blast.colour = GREEN;
-
-        if (one_chance_in(2))
-        {
-            grd[beam.tx][beam.ty] = DNGN_FLOOR;
-            debris = DEBRIS_CRYSTAL;
-        }
         // fallthru
     case DNGN_ORANGE_CRYSTAL_STATUE:
         if (what == NULL)
+        {
             what = "crystal statue";
-
-        if (blast.colour == 0)
             blast.colour = LIGHTRED; //jmf: == orange, right?
+        }
 
         explode = true;
         blast.ex_size = 2;
         strcpy(blast.beam_name, "blast of crystal shards");
-        blast.damage = (hurted * 3) / 2;
-        blast.flavour = BEAM_FRAG;
+        blast.damage.num = 5;
+
+        if (okay_to_dest
+            && ((grid == DNGN_GREEN_CRYSTAL_WALL && coinflip())
+                || (grid == DNGN_ORANGE_CRYSTAL_STATUE
+                    && pow >= 50 && one_chance_in(10))))
+        {
+            blast.ex_size = coinflip() ? 3 : 2;
+            grd[beam.tx][beam.ty] = DNGN_FLOOR;
+            debris = DEBRIS_CRYSTAL;
+        }
         break;
 
+    //
+    // Traps
+    //
+
+    case DNGN_UNDISCOVERED_TRAP:
     case DNGN_TRAP_MECHANICAL:
-        if (coinflip())
+        trap = trap_at_xy( beam.tx, beam.ty );
+        if (trap != -1
+            && trap_category( env.trap[trap].type ) != DNGN_TRAP_MECHANICAL)
+        {
+            // non-mechanical traps don't explode with this spell -- bwr
+            break;
+        }
+
+        // undiscovered traps appear as exploding from the floor -- bwr
+        what = ((grid == DNGN_UNDISCOVERED_TRAP) ? "floor" : "trap");
+
+        explode = true;
+        hole = false;           // to hit monsters standing on traps
+        strcpy( blast.beam_name, "blast of fragments" );
+        blast.colour = env.floor_colour;  // in order to blend in
+        blast.damage.num = 2;
+
+        // Exploded traps are nonfunctional, ammo is also ruined -- bwr
+        if (okay_to_dest)
+        {
+            grd[beam.tx][beam.ty] = DNGN_FLOOR;
+            env.trap[trap].type = TRAP_UNASSIGNED;
+        }
+        break;
+
+    //
+    // Stone doors and arches
+    //
+
+    case DNGN_OPEN_DOOR:
+    case DNGN_CLOSED_DOOR:
+        // Doors always blow up, stone arches never do (would cause problems)
+        if (okay_to_dest)
             grd[beam.tx][beam.ty] = DNGN_FLOOR;
 
         // fall-through
-    // case DNGN_FLOOR:  // Avoiding Linley's floor material issues -- bwr
-                         // It's also a more interesting spell this way.
-    case DNGN_TRAP_MAGICAL:
-    case DNGN_TRAP_III:
-    case DNGN_UNDISCOVERED_TRAP:
-    case DNGN_OPEN_DOOR:
     case DNGN_STONE_ARCH:       // floor -- small explosion
-        what = "floor";
         explode = true;
-        strcpy(blast.beam_name, "blast of rock fragments");
-        blast.colour = BROWN;     // FIXME: colour of actual dungeon floor?
-        blast.damage = hurted / 2 + 1;
-        blast.flavour = BEAM_FRAG;
+        hole = false;           // to hit monsters standing on doors
+        strcpy( blast.beam_name, "blast of rock fragments" );
+        blast.colour = LIGHTGREY;
+        blast.damage.num = 2;
         break;
 
+    //
+    // Permarock and floor are unaffected -- bwr
+    //
+    case DNGN_PERMAROCK_WALL:
+    case DNGN_FLOOR:
+        explode = false;
+        snprintf( info, INFO_SIZE, "%s seems to be unnaturally hard.",
+                  (grid == DNGN_PERMAROCK_WALL) ? "That wall"
+                                                : "The dungeon floor" );
+        explode = false;
+        break;
+
+    case DNGN_TRAP_III: // What are these? Should they explode? -- bwr
     default:
         // FIXME: cute message for water?
         break;
     }
 
   all_done:
-    if (explode)
+    if (explode && blast.damage.num > 0)
     {
-        if (what != 0)
+        if (what != NULL)
         {
             snprintf( info, INFO_SIZE, "The %s explodes!", what);
             mpr(info);
         }
 
-        // Now we take the hurted amount and convert it for use as part
-        // of the 3dX distribution.
-        if (blast.damage < 100)
-        {
-            blast.damage /= 3;    // find out X (the die size)
-            blast.damage += 101;  // marks it as 3dX (+1 for rounding error)
-
-            if (blast.damage < 104)     // give a minimum
-                blast.damage = 104;
-        }
-
-        explosion(blast);
+        explosion( blast, hole );
+    }
+    else if (blast.damage.num == 0)
+    {
+        // if damage dice are zero we assume that nothing happened at all.
+        canned_msg(MSG_SPELL_FIZZLES);
     }
 
     if (debris)
         place_debris(beam.tx, beam.ty, debris);
-
-    return;
 }                               // end cast_fragmentation()
 
 void cast_twist(int pow)
@@ -2359,12 +2514,8 @@ void cast_far_strike(int pow)
             damage = property( you.inv[ weapon ], PWPN_DAMAGE );
             speed = property( you.inv[ weapon ], PWPN_SPEED );
 
-            if (you.inv[ weapon ].special == SPWPN_SPEED
-                || (is_random_artefact( you.inv[ weapon ] )
-                    && randart_wpn_property(you.inv[weapon], RAP_BRAND) == SPWPN_SPEED))
+            if (get_weapon_brand( you.inv[ weapon ] ) == SPWPN_SPEED)
             {
-                // maybe this should just set it equal to 10, that's
-                // pretty much what the result will be anyways.
                 speed *= 5;
                 speed /= 10;
             }

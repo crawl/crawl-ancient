@@ -28,8 +28,6 @@ void print_stats(void)
 {
     textcolor(LIGHTGREY);
 
-    char temp_quant[15];
-
     if (you.redraw_hit_points)
     {
         int max_max_hp = you.hp_max + player_rotted();
@@ -254,18 +252,22 @@ void print_stats(void)
 
     if (you.redraw_experience)
     {
-        itoa(you.experience_level, temp_quant, 10);
-        itoa(you.experience, st_prn, 10);
         gotoxy(52, 11);
-        cprintf(temp_quant);
-        cprintf("/");
-        cprintf(st_prn);
 
-        cprintf("  (");
-        itoa(you.exp_available, st_prn, 10);
-        cprintf(st_prn);
-        cprintf(")  ");
+#if DEBUG_DIAGNOSTICS
+        cprintf( "%d/%d  (%d/%d)",
+                 you.experience_level, you.experience,
+                 you.skill_cost_level, you.exp_available );
+#else
+        cprintf( "%d/%d  (%d)",
+                 you.experience_level, you.experience, you.exp_available );
+#endif
 
+#ifdef LINUX
+        clear_to_end_of_line();
+#else
+        cprintf("   ");
+#endif
         you.redraw_experience = 0;
     }
 
@@ -391,10 +393,9 @@ void print_stats(void)
     }
 
 #if DEBUG_DIAGNOSTICS
-
     // debug mode GPS
     gotoxy(40, 16);
-    cprintf( "Position(%2d,%2d)", you.x_pos, you.y_pos );
+    cprintf( "Position (%2d,%2d)", you.x_pos, you.y_pos );
 
 #endif
 

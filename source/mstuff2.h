@@ -21,16 +21,17 @@
 
 struct SBeam
 {
-    string name;
-    int colour;
-    int range;
-    int rangeMax;
-    int damage;
-    int hit;
-    int type;
-    int flavour;
-    int thrown;
-    bool isBeam;
+    std::string name;
+    int         colour;
+    int         range;
+    int         rangeMax;
+    int         hit;
+    dice_def    damage;
+    int         ench_power;
+    int         type;
+    int         flavour;
+    int         thrown;
+    bool        isBeam;
 };
 
 

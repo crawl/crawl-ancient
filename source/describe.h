@@ -26,8 +26,8 @@ bool is_dumpable_artifact( const item_def &item, char verbose );
 /* ***********************************************************************
  * called from: chardump - describe
  * *********************************************************************** */
-string get_item_description( const item_def &item, char verbose,
-                             bool dump = false );
+std::string get_item_description( const item_def &item, char verbose,
+                                  bool dump = false );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************

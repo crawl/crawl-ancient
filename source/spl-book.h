@@ -52,13 +52,6 @@ char *spelltype_name(unsigned int which_spelltype);
 
 // updated 24may2000 {dlb}
 /* ***********************************************************************
- * called from: dungeon - spl-book
- * *********************************************************************** */
-void spellbook_template(int sbook_type, FixedVector<int, SPELLBOOK_SIZE>& sbtemplate_pass);    // was foo[10] {dlb}
-
-
-// updated 24may2000 {dlb}
-/* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
 void learn_spell(void);

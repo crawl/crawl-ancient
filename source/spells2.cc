@@ -47,38 +47,42 @@
 int raise_corpse( int corps, int corx, int cory, int corps_beh,
                   int corps_hit, int actual );
 
-unsigned char detect_traps(void)
+unsigned char detect_traps( int pow )
 {
     unsigned char traps_found = 0;
+
+    const int range = 8 + stepdown_value( pow, 10, 10, 40, 45 );
 
     for (int count_x = 0; count_x < MAX_TRAPS; count_x++)
     {
         const int etx = env.trap[ count_x ].x;
         const int ety = env.trap[ count_x ].y;
 
-        if (etx > you.x_pos - 15 && etx < you.x_pos + 15
-            && ety > you.y_pos - 8 && ety < you.y_pos + 8)
+        // Used to just be visible screen:
+        // if (etx > you.x_pos - 15 && etx < you.x_pos + 15
+        //     && ety > you.y_pos - 8 && ety < you.y_pos + 8)
+
+        if (grid_distance( you.x_pos, you.y_pos, etx, ety ) < range)
         {
             if (grd[ etx ][ ety ] == DNGN_UNDISCOVERED_TRAP)
             {
+                traps_found++;
+
                 grd[ etx ][ ety ] = trap_category( env.trap[count_x].type );
                 env.map[etx - 1][ety - 1] = '^';
-                traps_found++;
             }
         }
     }
 
-    return traps_found;
+    return (traps_found);
 }                               // end detect_traps()
 
-unsigned char detect_items(int map_radius)
+unsigned char detect_items( int pow )
 {
     unsigned char items_found = 0;
+    const int     map_radius = 8 + stepdown_value( pow, 10, 10, 40, 45 );
 
     mpr("You detect items!");
-
-    if (map_radius > 50)
-        map_radius = 50;
 
     for (int i = you.x_pos - map_radius; i < you.x_pos + map_radius; i++)
     {
@@ -88,20 +92,21 @@ unsigned char detect_items(int map_radius)
                 continue;
 
             if (igrd[i][j] != NON_ITEM)
+            {
                 env.map[i - 1][j - 1] = '~';
+            }
         }
     }
 
-    return items_found;
+    return (items_found);
 }                               // end detect_items()
 
-unsigned char detect_creatures(int map_radius)
+unsigned char detect_creatures( int pow )
 {
     unsigned char creatures_found = 0;
+    const int     map_radius = 8 + stepdown_value( pow, 10, 10, 40, 45 );
 
     mpr("You detect creatures!");
-
-    map_radius = 50;
 
     for (int i = you.x_pos - map_radius; i < you.x_pos + map_radius; i++)
     {
@@ -111,11 +116,23 @@ unsigned char detect_creatures(int map_radius)
                 continue;
 
             if (mgrd[i][j] != NON_MONSTER)
-                env.map[i - 1][j - 1] = mons_char(menv[mgrd[i][j]].type);
+            {
+                struct monsters *mon = &menv[ mgrd[i][j] ];
+
+                env.map[i - 1][j - 1] = mons_char( mon->type );
+
+                // Assuming that highly intelligent spellcasters can
+                // detect scyring. -- bwr
+                if (mons_intel( mon->type ) == I_HIGH
+                    && mons_flag( mon->type, M_SPELLCASTER ))
+                {
+                    behaviour_event( mon, ME_DISTURB );
+                }
+            }
         }
     }
 
-    return creatures_found;
+    return (creatures_found);
 }                               // end detect_creatures()
 
 int corpse_rot(int power)
@@ -436,10 +453,9 @@ bool brand_weapon(int which_brand, int power)
         return false;
     }
 
-    if (you.inv[wpn].special != SPWPN_NORMAL
-        || is_fixed_artefact( you.inv[wpn] )
-        || is_random_artefact( you.inv[wpn] ))
-        // do you mean to include "dummy crushing" here, too? {dlb}
+    if (is_fixed_artefact( you.inv[wpn] )
+        || is_random_artefact( you.inv[wpn] )
+        || get_weapon_brand( you.inv[wpn] ) != SPWPN_NORMAL )
     {
         return false;
     }
@@ -512,14 +528,11 @@ bool brand_weapon(int which_brand, int power)
         break;
     }
 
-    you.inv[wpn].special += which_brand;
+    set_item_ego_type( you.inv[wpn], OBJ_WEAPONS, which_brand );
 
-    // bad bad bad - enums may change place {dlb}
-    //jmf: what are you talking about? did you read the code?
     mpr(info);
     you.wield_change = true;
 
-    //jmf: FIXME: these value seem okay, but have little testing
     int dur_change = duration_affected + random2avg((power * 2) - 1, 2);
 
     you.duration[DUR_WEAPON_BRAND] += dur_change;
@@ -623,7 +636,9 @@ void turn_undead(int pow)
         // in addition {dlb}
         if (mons_holiness(monster->type) == MH_UNDEAD)
         {
-            if (random2(pow) + you.experience_level < monster->hit_dice * 5)
+            const int mon_resist = mons_resist_turn_undead( monster );
+
+            if (random2(pow) + you.experience_level < mon_resist)
                 continue;
 
             if (!mons_add_ench(monster, ENCH_FEAR))
@@ -631,7 +646,8 @@ void turn_undead(int pow)
 
             simple_monster_message(monster, " is repelled!");
 
-            behavior_event( monster, ME_SCARE ); //mv: must be here to work
+            //mv: must be here to work
+            behaviour_event( monster, ME_SCARE, MHITYOU );
 
             // reduce power based on monster turned
             pow -= monster->hit_dice * 3;
@@ -702,7 +718,7 @@ void cast_toxic_radiance(void)
     else if (!player_res_poison())
     {
         mpr("You feel rather sick.");
-        you.poison += 2;
+        poison_player(2);
     }
 
     // determine which monsters are hit by the radiance: {dlb}
@@ -737,12 +753,19 @@ void cast_refrigeration(int pow)
     struct monsters *monster = 0;       // NULL {dlb}
     int hurted = 0;
     struct bolt beam;
+    int toxy;
+    const int res = player_res_cold();
 
     beam.flavour = BEAM_COLD;
 
     // another little power safety cap -- bwr
     if (pow > 200)
         pow = 200;
+
+    // This is the same damage as Stone Arrow, which is really good
+    // by comparison... self inflicted damage and loss of potions
+    // help balance this. -- bwr
+    const dice_def  dam_dice( 3, 5 + pow / 20 );
 
     mpr("The heat is drained from your surroundings.");
 
@@ -751,30 +774,35 @@ void cast_refrigeration(int pow)
     more();
     mesclr();
 
-    if (player_res_cold() <= 100)
+    hurted = roll_dice( dam_dice );
+
+    if (res <= 100)
     {
         mpr("You freeze!");
-        ouch(3 + random2avg(13, 2) + random2(pow) / 20, 0, KILLED_BY_FREEZING);
-    }
 
-    if (player_res_cold() > 100)
+        if (res < 100)
+            hurted *= 2;
+    }
+    else if (res > 100)
     {
-        mpr("You feel very cold.");
-        ouch((3 + random2avg(13, 2) + random2(pow) / 20) /
-             (1 + (player_res_cold() - 100) * (player_res_cold() - 100)), 0,
-             KILLED_BY_FREEZING);
+        // resistance isn't fully possible given the nature of this spell
+        hurted *= 2;
+        hurted /= (2 + (res - 100));
+
+        if (hurted > 0)
+            mpr("You feel very cold.");
     }
 
-    if (player_res_cold() < 100)
+    if (hurted > 0)
     {
-        /* this is extra damage */
-        ouch(3 + random2(7) + random2(pow) / 30, 0, KILLED_BY_FREEZING);
+        ouch( hurted, 0, KILLED_BY_FREEZING );
+
+        // Note: this used to be a power of 12!... and it was applied
+        // even if the player didn't take damage from the cold.  -- bwr
+        scrolls_burn( 5, OBJ_POTIONS );
     }
 
-    // removed -- killing potions almost makes this spell unusable -- bwr
-    // scrolls_burn( 2, OBJ_POTIONS );
-
-    for (int toxy = 0; toxy < MAX_MONSTERS; toxy++)
+    for (toxy = 0; toxy < MAX_MONSTERS; toxy++)
     {
         monster = &menv[toxy];
 
@@ -788,9 +816,8 @@ void cast_refrigeration(int pow)
             strcat(info, ".");
             mpr(info);
 
-            hurted = 3 + random2(7) + random2(pow) / 20;
+            hurted = roll_dice( dam_dice );
             hurted = mons_adjust_flavoured(monster, beam, hurted);
-
             hurt_monster(monster, hurted);
 
             if (monster->hit_points < 1)
@@ -996,7 +1023,7 @@ char burn_freeze(int pow, char flavour)
     strcat(info, ".");
     mpr(info);
 
-    int hurted = 1 + random2( random2avg(9,2) + (pow / 6) );
+    int hurted = 1 + random2( random2avg( 9, 2 ) + (pow / 6) );
 
     struct bolt beam;
 
@@ -1015,10 +1042,18 @@ char burn_freeze(int pow, char flavour)
         {
             print_wounds(monster);
 
-            //jmf: slow snakes
-            if (flavour == BEAM_COLD && mons_flag(monster->type, M_COLD_BLOOD)
-                && coinflip())
-                mons_add_ench(monster, ENCH_SLOW);
+            if (flavour == BEAM_COLD)
+            {
+                if (mons_flag( monster->type, M_COLD_BLOOD ) && coinflip())
+                    mons_add_ench(monster, ENCH_SLOW);
+
+                const int cold_res = mons_res_cold( monster );
+                if (cold_res <= 0)
+                {
+                    const int stun = (1 - cold_res) * random2( 2 + pow / 5 );
+                    monster->speed_increment -= stun;
+                }
+            }
         }
     }
 
@@ -1036,91 +1071,81 @@ int summon_elemental(int pow, unsigned char restricted_type,
     char summ_success = 0;
     struct dist smove;
 
+    int dir_x;
+    int dir_y;
+    int targ_x;
+    int targ_y;
+
     int numsc = ENCH_ABJ_II + (random2(pow) / 5);
 
     if (numsc > ENCH_ABJ_VI)
         numsc = ENCH_ABJ_VI;
 
-  dirc:
-    mpr("Summon from material in which direction?", MSGCH_PROMPT);
-    // cannot summon earth elemental if you are floating in the air.
-    // problem: what if you're floating over water/lava and are surrounded
-    // by it and a wall, and summon an earth elemental? hmmm...
-    //strcat(info, ", < for air)");
-    //mpr("Which direction?", MSGCH_PROMPT);
-
-    direction(smove, DIR_DIR);
-
-    if (!smove.isValid)
+    for (;;)
     {
-      fizzles:
-        canned_msg(MSG_NOTHING_HAPPENS);
-        return -1;
+        mpr("Summon from material in which direction?", MSGCH_PROMPT);
+
+        direction(smove, DIR_DIR);
+
+        if (!smove.isValid)
+        {
+            canned_msg(MSG_NOTHING_HAPPENS);
+            return (-1);
+        }
+
+        dir_x  = smove.dx;
+        dir_y  = smove.dy;
+        targ_x = you.x_pos + dir_x;
+        targ_y = you.y_pos + dir_y;
+
+        if (mgrd[ targ_x ][ targ_y ] != NON_MONSTER)
+            mpr("Not there!");
+        else if (dir_x == 0 && dir_y == 0)
+            mpr("You can't summon an elemental from yourself!");
+        else
+            break;
     }
 
-    const int dir_x  = smove.dx;
-    const int dir_y  = smove.dy;
-    const int targ_x = you.x_pos + dir_x;
-    const int targ_y = you.y_pos + dir_y;
-
-    if (mgrd[ targ_x ][ targ_y ] != NON_MONSTER)
-    {
-        mpr("Not there!");
-        goto dirc;
-    }
-
-    if (dir_x == 0 && dir_y == 0)
-    {
-        mpr("You can't summon an elemental from yourself!");
-        goto dirc;
-    }
-
-    if (grd[ targ_x ][ targ_y ] == DNGN_ROCK_WALL)
+    if (grd[ targ_x ][ targ_y ] == DNGN_ROCK_WALL
+        && (restricted_type == 0 || restricted_type == MONS_EARTH_ELEMENTAL))
     {
         type_summoned = MONS_EARTH_ELEMENTAL;
-        if (restricted_type != 0 && type_summoned != restricted_type)
-            goto summon_it;
 
         if (targ_x > 6 && targ_x < 74 && targ_y > 6 && targ_y < 64)
             grd[ targ_x ][ targ_y ] = DNGN_FLOOR;
-
-        goto summon_it;
     }
-
-    if (env.cgrid[ targ_x ][ targ_y ] != EMPTY_CLOUD
-        && (env.cloud[env.cgrid[ targ_x ][ targ_y ]].type == CLOUD_FIRE
-            || env.cloud[env.cgrid[ targ_x ][ targ_y ]].type == CLOUD_FIRE_MON))
+    else if ((env.cgrid[ targ_x ][ targ_y ] != EMPTY_CLOUD
+            && (env.cloud[env.cgrid[ targ_x ][ targ_y ]].type == CLOUD_FIRE
+             || env.cloud[env.cgrid[ targ_x ][ targ_y ]].type == CLOUD_FIRE_MON))
+        && (restricted_type == 0 || restricted_type == MONS_FIRE_ELEMENTAL))
     {
         type_summoned = MONS_FIRE_ELEMENTAL;
-
-        if (restricted_type != 0 && type_summoned != restricted_type)
-            goto summon_it;
-
         delete_cloud( env.cgrid[ targ_x ][ targ_y ] );
-        goto summon_it;
     }
-
-    if (grd[ targ_x ][ targ_y ] >= DNGN_FLOOR
-            && env.cgrid[ targ_x ][ targ_y ] == EMPTY_CLOUD)
+    else if ((grd[ targ_x ][ targ_y ] == DNGN_LAVA)
+        && (restricted_type == 0 || restricted_type == MONS_FIRE_ELEMENTAL))
     {
-        type_summoned = MONS_AIR_ELEMENTAL;
-        goto summon_it;
+        type_summoned = MONS_FIRE_ELEMENTAL;
     }
-
-    if (grd[ targ_x ][ targ_y ] == DNGN_DEEP_WATER
-        || grd[ targ_x ][ targ_y ] == DNGN_SHALLOW_WATER
-        || grd[ targ_x ][ targ_y ] == DNGN_BLUE_FOUNTAIN)
+    else if ((grd[ targ_x ][ targ_y ] == DNGN_DEEP_WATER
+            || grd[ targ_x ][ targ_y ] == DNGN_SHALLOW_WATER
+            || grd[ targ_x ][ targ_y ] == DNGN_BLUE_FOUNTAIN)
+        && (restricted_type == 0 || restricted_type == MONS_WATER_ELEMENTAL))
     {
         type_summoned = MONS_WATER_ELEMENTAL;
-        goto summon_it;
     }
-    goto fizzles;
+    else if ((grd[ targ_x ][ targ_y ] >= DNGN_FLOOR
+            && env.cgrid[ targ_x ][ targ_y ] == EMPTY_CLOUD)
+        && (restricted_type == 0 || restricted_type == MONS_AIR_ELEMENTAL))
+    {
+        type_summoned = MONS_AIR_ELEMENTAL;
+    }
 
-  summon_it:
-    if (restricted_type != 0 && type_summoned != restricted_type)
+    // found something to summon
+    if (type_summoned == MONS_PROGRAM_BUG)
     {
         canned_msg(MSG_NOTHING_HAPPENS);
-        return 0;
+        return (-1);
     }
 
     // silly - ice for water? 15jan2000 {dlb}
@@ -1134,7 +1159,7 @@ int summon_elemental(int pow, unsigned char restricted_type,
             && random2(10) >= you.skills[SK_FIRE_MAGIC])
 
         || (type_summoned == MONS_WATER_ELEMENTAL
-            && random2(15 - 10 * (you.species == SP_MERFOLK))
+            && random2((you.species == SP_MERFOLK) ? 5 : 15)
                            >= you.skills[SK_ICE_MAGIC])
 
         || (type_summoned == MONS_AIR_ELEMENTAL
@@ -1147,8 +1172,9 @@ int summon_elemental(int pow, unsigned char restricted_type,
     {
         summ_success = create_monster(type_summoned, numsc, BEH_HOSTILE,
                                        targ_x, targ_y, MHITYOU, 250);
-                  if (summ_success >= 0)
-            mpr("The elemental doesn't seem to appreciate being summoned.");
+
+        if (summ_success >= 0)
+            mpr( "The elemental doesn't seem to appreciate being summoned." );
     }
     else
     {
@@ -1355,13 +1381,13 @@ void summon_swarm(int pow, bool god_gift)
             break;
         }                       // end switch
 
-        int behavior;
+        int behaviour;
         if (random2(pow) > 7)
-            behavior = (god_gift) ? BEH_GOD_GIFT : BEH_FRIENDLY;
+            behaviour = (god_gift) ? BEH_GOD_GIFT : BEH_FRIENDLY;
         else
-            behavior = BEH_HOSTILE;
+            behaviour = BEH_HOSTILE;
 
-        create_monster( thing_called, ENCH_ABJ_III, behavior, you.x_pos,
+        create_monster( thing_called, ENCH_ABJ_III, behaviour, you.x_pos,
             you.y_pos, MHITNOT, 250);
     }
 

@@ -64,12 +64,15 @@ void stop_delay( void )
 
     switch (item.type)
     {
-    case DELAY_BUTCHER:         // lost work here... should be fixed
+    case DELAY_BUTCHER:
+        // Corpse keeps track of work in plus2 field, see handle_delay() -- bwr
         mpr( "You stop butchering the corpse." );
         you.delay_queue.pop();
         break;
 
-    case DELAY_MEMORIZE:        // losing work here is okay
+    case DELAY_MEMORIZE:
+        // Losing work here is okay... having to start from
+        // scratch is a reasonable behaviour. -- bwr
         mpr( "Your memorization is interupted." );
         you.delay_queue.pop();
         break;
@@ -83,16 +86,17 @@ void stop_delay( void )
         you.delay_queue.pop();
         break;
 
-    case DELAY_INTERUPTABLE:  // always stopable
+    case DELAY_INTERUPTABLE:
+        // always stopable by definition...
+        // try using a more specific type anyways. -- bwr
         you.delay_queue.pop();
         break;
 
     case DELAY_EAT:
         // XXX: Large problems with object destruction here... food can
         // be from in the inventory or on the ground and these are
-        // still handled quite differently.  So for now, eating cannot
-        // be stopped.  Would eventually like this to be stoppable,
-        // with partial food items implimented. -- bwr
+        // still handled quite differently.  Eventually we would like
+        // this to be stoppable, with partial food items implimented. -- bwr
         break;
 
     case DELAY_ARMOUR_ON:
@@ -108,10 +112,12 @@ void stop_delay( void )
         // and would have to have a prompt... this works just fine. -- bwr
         break;
 
-    case DELAY_AUTOPICKUP:      // one turn... too much trouble
-    case DELAY_WEAPON_SWAP:     // one turn... too much trouble
-    case DELAY_DROP_ITEM:       // only used for easy armour drops
-    case DELAY_UNINTERUPTABLE:  // never stopable
+    case DELAY_AUTOPICKUP:        // one turn... too much trouble
+    case DELAY_WEAPON_SWAP:       // one turn... too much trouble
+    case DELAY_DROP_ITEM:         // one turn... only used for easy armour drops
+    case DELAY_ASCENDING_STAIRS:  // short... and probably what people want
+    case DELAY_DESCENDING_STAIRS: // short... and probably what people want
+    case DELAY_UNINTERUPTABLE:    // never stopable
     default:
         break;
     }
@@ -135,11 +141,40 @@ void handle_delay( void )
 {
     char  str_pass[80];
     int   i;
+    int   ego;
 
     if (you_are_delayed())
     {
         delay_queue_item &item = you.delay_queue.front();
 
+        // First check cases where delay may no longer be valid:
+        // XXX: need to handle passwall when monster digs -- bwr
+        if (item.type == DELAY_BUTCHER)
+        {
+            // A monster may have raised the corpse you're chopping up! -- bwr
+            // Note that a monster could have raised the corpse and another
+            // monster could die and create a corpse with the same ID number...
+            // However, it would not be at the player's square like the
+            // original and that's why we do it this way.  Note that
+            // we ignore the conversion to skeleton possiblity just to
+            // be nice. -- bwr
+            if (is_valid_item( mitm[item.parm1] )
+                && mitm[item.parm1].base_type == OBJ_CORPSES
+                && mitm[item.parm1].x == you.x_pos
+                && mitm[item.parm1].y == you.y_pos)
+            {
+                // mark work done on the corpse in case we stop -- bwr
+                mitm[item.parm1].plus2++;
+            }
+            else
+            {
+                // corpse is no longer valid!
+                stop_delay();
+                return;
+            }
+        }
+
+        // Handle delay:
         if (item.duration > 0)
         {
 #if DEBUG_DIAGNOSTICS
@@ -208,9 +243,10 @@ void handle_delay( void )
                     }
                 }
 
-                if (you.inv[item.parm1].special != SPARM_NORMAL)
+                ego = get_armour_ego_type( you.inv[item.parm1] );
+                if (ego != SPARM_NORMAL)
                 {
-                    switch (you.inv[item.parm1].special)
+                    switch (ego)
                     {
                     case SPARM_RUNNING:
                         strcpy(info, "You feel quick");
@@ -485,6 +521,14 @@ void handle_delay( void )
 
                     dec_inv_item_quantity( item.parm1, item.parm2 );
                 }
+                break;
+
+            case DELAY_ASCENDING_STAIRS:
+                up_stairs();
+                break;
+
+            case DELAY_DESCENDING_STAIRS:
+                down_stairs( false, item.parm1 );
                 break;
 
             case DELAY_INTERUPTABLE:

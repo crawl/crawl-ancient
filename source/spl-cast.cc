@@ -459,7 +459,7 @@ int spell_spec(int spell)
         }
     }
 
-    enhanced += spell_enhancement(disciplines);
+    enhanced = spell_enhancement(disciplines);
 
     if (enhanced > 0)
     {
@@ -1091,7 +1091,6 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
     case SPELL_HOLY_WORD:
         holy_word(50);
-        //you.conf += random2(3) + 2;
         break;
 
     case SPELL_DETECT_CURSE:
@@ -1142,7 +1141,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
     case SPELL_DETECT_TRAPS:
         strcpy(info, "You detect ");
-        strcat(info, (detect_traps() > 0) ? "some traps!" : "nothing.");
+        strcat(info, (detect_traps(powc) > 0) ? "some traps!" : "nothing.");
         mpr(info);
         return true;
 
@@ -1179,11 +1178,12 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
             mpr("You feel momentarily disoriented.");
         else if (you.level_type == LEVEL_PANDEMONIUM)
-            mpr("Your Earth magic lacks the power to map Pandemonium.");
+            mpr("Your Earth magic cannot map Pandemonium.");
         else
         {
-            mpr("You feel aware of your surroundings.");
-            magic_mapping(5 + (powc * 2), 40 + (powc * 2));
+            mpr( "You feel aware of your surroundings." );
+            powc = stepdown_value( powc, 10, 10, 40, 45 );
+            magic_mapping( 5 + powc, 50 + random2avg( powc * 2, 2 ) );
         }
         return true;
 
@@ -1234,7 +1234,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         return true;
 
     case SPELL_DETECT_ITEMS:
-        detect_items(50);
+        detect_items(powc);
         return true;
 
     case SPELL_BORGNJORS_REVIVIFICATION:
@@ -1368,10 +1368,12 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         dancing_weapon(powc, false);
         return true;
 
-    case SPELL_HELLFIRE:        // should only be available from:
+    case SPELL_HELLFIRE:
+        // should only be available from:
         // staff of Dispater & Sceptre of Asmodeus
         if (spell_direction(spd, beam) == -1)
             return true;
+
         zapping(ZAP_HELLFIRE, powc, beam);
         return true;
 
@@ -2035,7 +2037,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("You are caught in a violent explosion!");
                 mpr("Oops.");
                 beam.type = SYM_BURST;
-                beam.damage = 112;
+                beam.damage = dice_def( 3, 12 );
                 beam.flavour = BEAM_MISSILE; // unsure about this
                 // BEAM_EXPLOSION instead? {dlb}
 
@@ -2061,7 +2063,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             case 1:
                 mpr("There is a sudden explosion of magical energy!");
                 beam.type = SYM_BURST;
-                beam.damage = 120;
+                beam.damage = dice_def( 3, 20 );
                 beam.flavour = BEAM_MISSILE; // unsure about this
                 // BEAM_EXPLOSION instead? {dlb}
                 beam.target_x = you.x_pos;
@@ -2842,7 +2844,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             case 2:
                 mpr("Your body is distorted in a weirdly horrible way!");
                 failMsg = !give_bad_mutation();
-                if (one_chance_in(2))
+                if (coinflip())
                     give_bad_mutation(false, failMsg);
 
                 ouch(5 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
@@ -2936,7 +2938,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("Oops.");
 
                 beam.type = SYM_BURST;
-                beam.damage = 114;
+                beam.damage = dice_def( 3, 14 );
                 beam.flavour = BEAM_FIRE;
                 beam.target_x = you.x_pos;
                 beam.target_y = you.y_pos;
@@ -2965,7 +2967,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("There is a sudden and violent explosion of flames!");
 
                 beam.type = SYM_BURST;
-                beam.damage = 120;
+                beam.damage = dice_def( 3, 20 );
                 beam.flavour = BEAM_FIRE;
                 beam.target_x = you.x_pos;
                 beam.target_y = you.y_pos;
@@ -3064,7 +3066,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("Oops.");
 
                 beam.type = SYM_BURST;
-                beam.damage = 111;
+                beam.damage = dice_def( 3, 11 );
                 beam.flavour = BEAM_COLD;
                 beam.target_x = you.x_pos;
                 beam.target_y = you.y_pos;
@@ -3183,7 +3185,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("Oops.");
 
                 beam.type = SYM_BURST;
-                beam.damage = 115;
+                beam.damage = dice_def( 3, 15 );
                 beam.flavour = BEAM_FRAG;
                 beam.target_x = you.x_pos;
                 beam.target_y = you.y_pos;
@@ -3295,7 +3297,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("Oops.");
 
                 beam.type = SYM_BURST;
-                beam.damage = 108;
+                beam.damage = dice_def( 3, 8 );
                 beam.flavour = BEAM_ELECTRICITY;
                 beam.target_x = you.x_pos;
                 beam.target_y = you.y_pos;
@@ -3373,8 +3375,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 }
 
                 mpr("You feel sick.");
-                you.poison += 2 + random2(3);
+                poison_player( 2 + random2(3) );
                 break;
+
             case 1:
                 snprintf( info, INFO_SIZE, "Noxious gasses pour from your %s!",
                                                  your_hand(1));
@@ -3396,7 +3399,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 }
 
                 mpr("You feel very sick.");
-                you.poison += 3 + random2avg(9, 2);
+                poison_player( 3 + random2avg(9, 2) );
                 break;
 
             case 1:
@@ -3427,7 +3430,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 }
 
                 mpr("You feel incredibly sick.");
-                you.poison += 10 + random2avg(19, 2);
+                poison_player( 10 + random2avg(19, 2) );
                 break;
             case 1:
                 snprintf( info, INFO_SIZE, "Venomous gasses pour from your %s!",

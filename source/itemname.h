@@ -110,6 +110,11 @@ short get_helmet_desc( const item_def &item );
 bool cmp_helmet_type( const item_def &item, short val );
 bool cmp_helmet_desc( const item_def &item, short val );
 
+bool set_item_ego_type( item_def &item, int item_type, int ego_type );
+
+int get_weapon_brand( const item_def &item );
+int get_ammo_brand( const item_def &item );
+int get_armour_ego_type( const item_def &item );
 
 /* ***********************************************************************
  * called from: acr

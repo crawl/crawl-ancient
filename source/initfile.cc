@@ -34,17 +34,17 @@ extern unsigned char mapchar4(unsigned char ldfk);
 extern int character_set;       // unices only
 #endif
 
-static string & tolower_string( string &str );
+static std::string & tolower_string( std::string &str );
 
 const static char *obj_syms = ")([/%.?=!.+\\0}X$";
 const static int   obj_syms_len = 16;
 
 // returns -1 if unmatched else returns 0-15
-static short str_to_colour( const string &str )
+static short str_to_colour( const std::string &str )
 {
     int ret;
 
-    const string cols[16] =
+    const std::string cols[16] =
     {
         "black", "blue", "green", "cyan", "red", "magenta", "brown",
         "lightgrey", "darkgrey", "lightblue", "lightgreen", "lightcyan",
@@ -70,7 +70,7 @@ static short str_to_colour( const string &str )
 }
 
 // returns -1 if unmatched else returns 0-15
-static short str_to_channel_colour( const string &str )
+static short str_to_channel_colour( const std::string &str )
 {
     int ret = str_to_colour( str );
 
@@ -90,11 +90,11 @@ static short str_to_channel_colour( const string &str )
 }
 
 // returns -1 if unmatched else returns 0-15
-static short str_to_channel( const string &str )
+static short str_to_channel( const std::string &str )
 {
     short       ret;
 
-    const string cols[ NUM_MESSAGE_CHANNELS ] =
+    const std::string cols[ NUM_MESSAGE_CHANNELS ] =
     {
         "plain", "prompt", "god", "duration", "danger", "warning", "food",
         "recovery", "talk", "intrinsic_gain", "mutation", "monster_spell",
@@ -110,7 +110,7 @@ static short str_to_channel( const string &str )
     return (ret == NUM_MESSAGE_CHANNELS ? -1 : ret);
 }
 
-static int str_to_weapon( const string &str )
+static int str_to_weapon( const std::string &str )
 {
     if (str == "shortsword" || str == "short sword")
         return (WPN_SHORT_SWORD);
@@ -128,7 +128,7 @@ static int str_to_weapon( const string &str )
         return (WPN_UNKNOWN);
 }
 
-static string & trim_string( string &str )
+static std::string & trim_string( std::string &str )
 {
     // OK,  this is really annoying.  Borland C++ seems to define
     // basic_string::erase to take iterators,  and basic_string::remove
@@ -145,10 +145,10 @@ static string & trim_string( string &str )
     return (str);
 }
 
-static string & tolower_string( string &str )
+static std::string & tolower_string( std::string &str )
 {
     if (str.length()) {
-        for (string::iterator cp = str.begin(); cp != str.end(); cp++) {
+        for (std::string::iterator cp = str.begin(); cp != str.end(); cp++) {
             *cp = tolower( *cp );
         }
     }
@@ -156,7 +156,7 @@ static string & tolower_string( string &str )
     return (str);
 }
 
-static bool read_bool( const string &field, bool def_value )
+static bool read_bool( const std::string &field, bool def_value )
 {
     bool ret = def_value;
 
@@ -256,16 +256,16 @@ void read_init_file(void)
 
         line++;
 
-        string str = s;
+        std::string str = s;
         trim_string( str );
 
         // This is to make some efficient comments
         if (s[0] == '#' || s[0] == '\0')
             continue;
 
-        string key = "";
-        string subkey = "";
-        string field = "";
+        std::string key = "";
+        std::string subkey = "";
+        std::string field = "";
 
         int first_equals = str.find('=');
         int first_dot = str.find('.');
@@ -471,7 +471,7 @@ void read_init_file(void)
             // choose god for Chaos Knights
             if (field == "xom")
                 Options.chaos_knight = GOD_XOM;
-            else if (field == "makleb")
+            else if (field == "makhleb")
                 Options.chaos_knight = GOD_MAKHLEB;
             else if (field == "random")
                 Options.chaos_knight = GOD_RANDOM;

@@ -452,12 +452,6 @@ void dancing_weapon(int pow, bool force_hostile)
     if (i == NON_ITEM)
         goto failed_spell;
 
-    mitm[i] = you.inv[wpn];
-    mitm[i].quantity = 1;
-    mitm[i].x = 0;
-    mitm[i].y = 0;
-    mitm[i].link = NON_ITEM;
-
     // cursed weapons become hostile
     if (item_cursed( you.inv[wpn] ) || force_hostile)
         behavi = BEH_HOSTILE;
@@ -474,12 +468,19 @@ void dancing_weapon(int pow, bool force_hostile)
     }
 
     // We are successful:
+    unwield_item( wpn );                        // remove wield effects
+
+    // copy item (done here after any wield effects are removed)
+    mitm[i] = you.inv[wpn];
+    mitm[i].quantity = 1;
+    mitm[i].x = 0;
+    mitm[i].y = 0;
+    mitm[i].link = NON_ITEM;
+
     in_name( wpn, DESC_CAP_YOUR, str_pass );
     strcpy( info, str_pass );
     strcat( info, " dances into the air!" );
     mpr( info );
-
-    unwield_item( wpn );
 
     you.inv[ wpn ].quantity = 0;
     you.equip[EQ_WEAPON] = -1;
@@ -809,26 +810,32 @@ bool entomb(void)
 
 void cast_poison_ammo(void)
 {
-    if (you.equip[EQ_WEAPON] == -1
-        || you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_MISSILES
-        || you.inv[you.equip[EQ_WEAPON]].special != 0
-        || you.inv[you.equip[EQ_WEAPON]].sub_type == MI_STONE
-        || you.inv[you.equip[EQ_WEAPON]].sub_type == MI_LARGE_ROCK)
+    const int ammo = you.equip[EQ_WEAPON];
+
+    if (ammo == -1
+        || you.inv[ammo].base_type != OBJ_MISSILES
+        || get_ammo_brand( you.inv[ammo] ) != SPMSL_NORMAL
+        || you.inv[ammo].sub_type == MI_STONE
+        || you.inv[ammo].sub_type == MI_LARGE_ROCK)
     {
         canned_msg(MSG_NOTHING_HAPPENS);
         return;
     }
 
-    in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
-    strcpy(info, str_pass);
-    strcat( info,
-            (you.inv[you.equip[EQ_WEAPON]].quantity == 1) ? " is" : " are" );
-    strcat(info, " covered in a thin film of poison.");
-    mpr(info);
+    if (set_item_ego_type( you.inv[ammo], OBJ_MISSILES, SPMSL_POISONED ))
+    {
+        in_name(ammo, DESC_CAP_YOUR, str_pass);
+        strcpy(info, str_pass);
+        strcat(info, (you.inv[ammo].quantity == 1) ? " is" : " are");
+        strcat(info, " covered in a thin film of poison.");
+        mpr(info);
 
-    you.inv[you.equip[EQ_WEAPON]].special = SPMSL_POISONED;
-
-    you.wield_change = true;
+        you.wield_change = true;
+    }
+    else
+    {
+        canned_msg(MSG_NOTHING_HAPPENS);
+    }
 }                               // end cast_poison_ammo()
 
 bool create_noise(void)

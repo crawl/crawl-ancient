@@ -274,28 +274,26 @@ enum BEAMS                        // beam[].flavour
     BEAM_SLEEP,
     BEAM_ICE = 23,                //   23
     BEAM_NUKE = 27,               //   27
-    BEAM_RANDOM                   //   currently translates into FIRE..ACID
-};
+    BEAM_RANDOM,                  //   currently translates into FIRE..ACID
 
-enum BEAM_COLOUR
-{
-    BCOL_SLOW,                  // BLACK
-    BCOL_HASTE,                 // BLUE
-    BCOL_HEALING,               // GREEN
-    BCOL_PARALYSIS,             // CYAN
-    BCOL_CONFUSION,             // RED
-    BCOL_INVISIBILITY,          // MAGENTA
-    BCOL_DIGGING,               // BROWN
-    BCOL_TELEPORT,              // LIGHTGREY
-    BCOL_POLYMORPH,             // DARKGREY
-    BCOL_CHARM,                 // LIGHTBLUE
-    BCOL_BANISH,                // LIGHTGREEN
-    BCOL_DEGENERATE,            // LIGHTCYAN
-    BCOL_ENSLAVE_UNDEAD,        // LIGHTRED
-    BCOL_PAIN,                  // LIGHTMAGENTA
-    BCOL_DISPEL_UNDEAD,         // YELLOW
-    BCOL_DISINTEGRATION,        // WHITE
-    BCOL_ENSLAVE_DEMON          // 16
+    // These used to be handled in the colour field:
+    BEAM_SLOW,                  // BLACK
+    BEAM_HASTE,                 // BLUE
+    BEAM_HEALING,               // GREEN
+    BEAM_PARALYSIS,             // CYAN
+    BEAM_CONFUSION,             // RED
+    BEAM_INVISIBILITY,          // MAGENTA
+    BEAM_DIGGING,               // BROWN
+    BEAM_TELEPORT,              // LIGHTGREY
+    BEAM_POLYMORPH,             // DARKGREY
+    BEAM_CHARM,                 // LIGHTBLUE
+    BEAM_BANISH,                // LIGHTGREEN
+    BEAM_DEGENERATE,            // LIGHTCYAN
+    BEAM_ENSLAVE_UNDEAD,        // LIGHTRED
+    BEAM_PAIN,                  // LIGHTMAGENTA
+    BEAM_DISPEL_UNDEAD,         // YELLOW
+    BEAM_DISINTEGRATION,        // WHITE
+    BEAM_ENSLAVE_DEMON          // colour "16"
 };
 
 enum BOOKS
@@ -585,7 +583,9 @@ enum DELAY
     DELAY_WEAPON_SWAP,                 // for easy_butcher
     DELAY_PASSWALL,
     DELAY_DROP_ITEM,
-    DELAY_INTERUPTABLE,                // simple interuptable delay
+    DELAY_ASCENDING_STAIRS,
+    DELAY_DESCENDING_STAIRS,
+    DELAY_INTERUPTABLE        = 100,   // simple interuptable delay
     DELAY_UNINTERUPTABLE               // simple uninteruptable delay
 };
 
@@ -635,6 +635,7 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_GREEN_CRYSTAL_WALL,
     DNGN_ORCISH_IDOL,
     DNGN_WAX_WALL,                     //    8
+    DNGN_PERMAROCK_WALL,               //    9 - for undiggable walls
     DNGN_LAST_SOLID_TILE = 10,         //   10 - just here temporarily {dlb}
     DNGN_LAVA_X = 11,                  //   11
     DNGN_WATER_X,                      //   12
@@ -1016,9 +1017,9 @@ enum ITEM_STATUS_FLAGS      // per item flags: ie. ident status, cursed status
     ISFLAG_IDENT_MASK        = 0x0000000F,  // mask of all id related flags
 
     // these three masks are of the minimal flags set upon using equipment:
-    ISFLAG_EQ_WEAPON_MASK    = 0x00000003,  // mask of flags for weapon equip
-    ISFLAG_EQ_ARMOUR_MASK    = 0x00000007,  // mask of flags for armour equip
-    ISFLAG_EQ_JEWELLERY_MASK = 0x00000007,  // mask of flags for known jewellery
+    ISFLAG_EQ_WEAPON_MASK    = 0x0000000B,  // mask of flags for weapon equip
+    ISFLAG_EQ_ARMOUR_MASK    = 0x0000000F,  // mask of flags for armour equip
+    ISFLAG_EQ_JEWELLERY_MASK = 0x0000000F,  // mask of flags for known jewellery
 
     ISFLAG_CURSED            = 0x00000100,  // cursed
     ISFLAG_RESERVED_1        = 0x00000200,  // reserved (heavy cursed?)
@@ -1174,6 +1175,7 @@ enum KILLBY
     KILLED_BY_PETRIFICATION,           // 25
     KILLED_BY_SHUGGOTH,
     KILLED_BY_SOMETHING,
+    KILLED_BY_FALLING_DOWN_STAIRS,
     NUM_KILLBY
 };
 
@@ -1635,14 +1637,14 @@ enum MONSTERS                          // (int) menv[].type
 
 };
 
-enum MONSTER_BEHAVIOR                  // create_monster()
+enum MONSTER_BEHAVIOUR                  // create_monster()
 {
     BEH_SLEEP,                         //    0
     BEH_WANDER,
     BEH_SEEK,
     BEH_FLEE,
     BEH_CORNERED,
-    NUM_BEHAVIORS,                     //  max # of legal states
+    NUM_BEHAVIOURS,                    //  max # of legal states
     BEH_CHARMED,                       //  hostile-but-charmed; create only
     BEH_FRIENDLY,                      //  used during creation only
     BEH_HOSTILE,                       //  creation only
@@ -2147,7 +2149,8 @@ enum RUNE_TYPES
     RUNE_MNOLEG                 = 60,
     RUNE_LOM_LOBON,
     RUNE_CEREBOV,
-    RUNE_GLOORX_VLOQ
+    RUNE_GLOORX_VLOQ,
+    NUM_RUNE_TYPES              // should always be last
 };
 
 enum SCROLLS

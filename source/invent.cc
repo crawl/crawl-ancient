@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -403,8 +404,7 @@ int prompt_invent_item( const char *prompt, int type_expect,
             need_prompt = false;
             need_getch  = false;
         }
-        else if (keyin == ESCAPE || keyin == ' '
-                || keyin == '\r' || keyin == '\n')
+        else if (keyin == ESCAPE)
         {
             ret = PROMPT_ABORT;
             break;
@@ -418,8 +418,9 @@ int prompt_invent_item( const char *prompt, int type_expect,
             else
                 break;
         }
-        else    // we've got a character we don't understand...
+        else if (!isspace( keyin ))
         {
+            // we've got a character we don't understand...
             canned_msg( MSG_HUH );
         }
     }
@@ -499,26 +500,28 @@ void wizard_string(char comm[50], int i)
            (i ==  90) ? "o/%%  : create an object"            :
            (i == 100) ? "p    : make entrance to pandemonium" :
            (i == 110) ? "x    : gain an experience level"     :
-           (i == 112) ? "s    : gain 20000 skill points"      :
-           (i == 113) ? "t    : tweak object properties"      :
-           (i == 115) ? "X    : Receive a gift from Xom"      :
-           (i == 120) ? "z    : cast any spell by number"     :
-           (i == 125) ? "Z    : cast any spell by name"       :
-           (i == 130) ? "$    : get 1000 gold"                :
-           (i == 135) ? "</>  : create up/down staircase"     :
-           (i == 135) ? "u/d  : shift up/down one level"      :
-           (i == 140) ? "~/\"  : goto a level"                :
-           (i == 150) ? "(    : create a feature"             :
-           (i == 160) ? "]    : get a mutation"               :
-           (i == 165) ? "[    : get a demonspawn mutation"    :
-           (i == 170) ? ":    : find branch"                  :
-           (i == 180) ? "{    : magic mapping"                :
-           (i == 190) ? "^    : gain piety"                   :
-           (i == 200) ? "_    : gain religion"                :
-           (i == 210) ? "\'    : list items"                  :
-           (i == 220) ? "?    : list wizard commands"         :
-           (i == 230) ? "|    : acquire all unrand artefacts" :
-           (i == 240) ? "+    : turn item into random artefact"
+           (i == 120) ? "s    : gain 20000 skill points"      :
+           (i == 130) ? "S    : set skill to level"           :
+           (i == 140) ? "t    : tweak object properties"      :
+           (i == 150) ? "X    : Receive a gift from Xom"      :
+           (i == 160) ? "z    : cast any spell by number"     :
+           (i == 170) ? "Z    : cast any spell by name"       :
+           (i == 200) ? "$    : get 1000 gold"                :
+           (i == 210) ? "</>  : create up/down staircase"     :
+           (i == 220) ? "u/d  : shift up/down one level"      :
+           (i == 230) ? "~/\"  : goto a level"                :
+           (i == 240) ? "(    : create a feature"             :
+           (i == 250) ? "]    : get a mutation"               :
+           (i == 260) ? "[    : get a demonspawn mutation"    :
+           (i == 270) ? ":    : find branch"                  :
+           (i == 280) ? "{    : magic mapping"                :
+           (i == 290) ? "^    : gain piety"                   :
+           (i == 300) ? "_    : gain religion"                :
+           (i == 310) ? "\'    : list items"                  :
+           (i == 320) ? "?    : list wizard commands"         :
+           (i == 330) ? "|    : acquire all unrand artefacts" :
+           (i == 340) ? "+    : turn item into random artefact" :
+           (i == 350) ? "=    : sum skill points"
                       : "" );
 
 #else
@@ -584,19 +587,21 @@ void command_string(char comm[50], int i)
            (i == 350) ? "=    : reassign inventory/spell letters" :
            (i == 360) ? "\'    : wield item a, or switch to b"    :
 #ifdef MACROS
-           (i == 400) ? "`    : add macro"                        :
-           (i == 410) ? "~    : save macros"                      :
+           (i == 380) ? "`    : add macro"                        :
+           (i == 390) ? "~    : save macros"                      :
 #endif
-           (i == 420) ? "]    : display worn armour"              :
-           (i == 425) ? "\"    : display worn jewellery"          :
-           (i == 430) ? "Shift & direction   : long walk"         :
-           (i == 440) ? "Shift & 5 on keypad : rest 100 turns"    :
-           (i == 462) ? "Ctrl-P : see old messages"               :
+           (i == 400) ? "]    : display worn armour"              :
+           (i == 410) ? "\"    : display worn jewellery"          :
+           (i == 420) ? "Ctrl-P : see old messages"               :
 #ifdef PLAIN_TERM
-           (i == 475) ? "Ctrl-R : Redraw screen"                  :
+           (i == 430) ? "Ctrl-R : Redraw screen"                  :
 #endif
-           (i == 484) ? "Ctrl-A : toggle autopickup"              :
-           (i == 488) ? "Ctrl-X : Save game without query"        :
-           (i == 493) ? "Ctrl & dir : door; untrap; attack"
+           (i == 440) ? "Ctrl-A : toggle autopickup"              :
+           (i == 450) ? "Ctrl-X : Save game without query"        :
+           (i == 460) ? "Shift & DIR : long walk"                 :
+           (i == 465) ? "/ DIR : long walk"                       :
+           (i == 470) ? "Ctrl  & DIR : door; untrap; attack"      :
+           (i == 475) ? "* DIR : door; untrap; attack"            :
+           (i == 478) ? "Shift & 5 on keypad : rest 100 turns"
                       : "" );
 }                               // end command_string()

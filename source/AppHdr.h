@@ -214,6 +214,10 @@
 
     #include <string>
 
+    #ifdef __DJGPP__
+        #define NEED_SNPRINTF
+    #endif
+
 #elif defined(WIN32CONSOLE) && (defined(__IBMCPP__) || defined(__BCPLUSPLUS__))
     #include "libw32c.h"
     #define PLAIN_TERM

@@ -79,9 +79,10 @@ int randart_wpn_property( const item_def &item, char prop );
 /* ***********************************************************************
  * called from: dungeon
  * *********************************************************************** */
-void make_item_randart( item_def &item );
-// void make_item_unrandart(int x, int ura_item);
-void make_item_unrandart( item_def &item, int unrand_index );
+bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which = 0 );
+
+bool make_item_randart( item_def &item );
+bool make_item_unrandart( item_def &item, int unrand_index );
 
 
 /* ***********************************************************************

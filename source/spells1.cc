@@ -196,7 +196,7 @@ void cast_fire_storm(int powc)
         return;
     }
 
-    beam.ex_size = 2 + ((powc + 75) / 150);
+    beam.ex_size = 2 + (powc / 200);
     beam.flavour = BEAM_FIRE;
     beam.type = SYM_ZAP;
     beam.colour = RED;
@@ -208,7 +208,7 @@ void cast_fire_storm(int powc)
     beam.ench_power = powc;     // used for radius
     strcpy( beam.beam_name, "great blast of fire" );
     beam.hit = 10 + (powc / 10);
-    beam.damage = 105 + (powc / 7);
+    beam.damage = dice_def( 3, 5 + (powc / 7) );
 
     explosion( beam );
     mpr("A raging storm of fire appears!");
@@ -353,7 +353,7 @@ void stinking_cloud(void)
     beem.colour = GREEN;
     beem.range = 6;
     beem.rangeMax = 6;
-    beem.damage = 0;
+    beem.damage = dice_def( 1, 0 );
     beem.hit = 20;
     beem.type = SYM_ZAP;
     beem.flavour = BEAM_ACID;
@@ -497,19 +497,7 @@ void cast_cure_poison(int mabil)
     if (!you.poison)
         canned_msg(MSG_NOTHING_HAPPENS);
     else
-    {
-        you.poison -= 2 + random2(mabil) + random2(3);
-
-        if (you.poison < 1)
-        {
-            mpr("You feel the poison leave your system.");
-            you.poison = 0;
-        }
-        else
-        {
-            mpr("You feel most of the poison leave your system.");
-        }
-    }
+        reduce_poison_player( 2 + random2(mabil) + random2(3) );
 
     return;
 }                               // end cast_cure_poison()
@@ -530,6 +518,16 @@ void purification(void)
     // decay), paralysis isn't (how do you cast this?) -- bwr
 }                               // end purification()
 
+int allowed_deaths_door_hp(void)
+{
+    int hp = you.skills[SK_NECROMANCY] / 2;
+
+    if (you.religion == GOD_KIKUBAAQUDGHA && !player_under_penance())
+        hp += you.piety / 15;
+
+    return (hp);
+}
+
 void cast_deaths_door(int pow)
 {
     if (you.is_undead)
@@ -541,20 +539,13 @@ void cast_deaths_door(int pow)
         mpr("You feel invincible!");
         mpr("You seem to hear sand running through an hourglass...");
 
-        you.deaths_door = 8 + random2avg(13, 3) + (random2(pow) / 10);
-
-        // making this cap a bit unpredicable.
-        if (you.deaths_door > 25)
-            you.deaths_door = 25 + random2(3);
-
-        set_hp( you.skills[SK_NECROMANCY], false );
-
-        // Kikubaaqudgha gives out a little gift depending on how
-        // good you are. -- bwr
-        if (you.religion == GOD_KIKUBAAQUDGHA && !player_under_penance())
-            inc_hp( you.piety / 15, false );
-
+        set_hp( allowed_deaths_door_hp(), false );
         deflate_hp( you.hp_max, false );
+
+        you.deaths_door = 10 + random2avg(13, 3) + (random2(pow) / 10);
+
+        if (you.deaths_door > 25)
+            you.deaths_door = 23 + random2(5);
     }
 
     return;

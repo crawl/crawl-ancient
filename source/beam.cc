@@ -101,8 +101,8 @@ void zapping(char ztype, int power, struct bolt &pbolt)
     // all of the following might be changed by zappy():
     pbolt.range = 8 + random2(5);       // default for "0" beams (I think)
     pbolt.rangeMax = 0;
-    pbolt.damage = power;
     pbolt.hit = 0;                      // default for "0" beams (I think)
+    pbolt.damage = dice_def( 1, 0 );    // default for "0" beams (I think)
     pbolt.type = 0;                     // default for "0" beams
     pbolt.flavour = BEAM_MAGIC;         // default for "0" beams
     pbolt.ench_power = power;
@@ -239,6 +239,14 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
             power = 50;
         break;
 
+    case ZAP_DISPEL_UNDEAD:
+        pbolt.ench_power *= 3;
+        pbolt.ench_power /= 2;
+
+        if (power > 200)
+            power = 200;
+        break;
+
     // enchantments and other resistable effects
     case ZAP_SLOWING:
     case ZAP_HASTING:
@@ -251,7 +259,6 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
     case ZAP_TELEPORTATION:
     case ZAP_DIGGING:
     case ZAP_POLYMORPH_OTHER:
-    case ZAP_DISPEL_UNDEAD:
     case ZAP_DEGENERATION:
     case ZAP_BANISHMENT:
         // This is the only power that matters.  We magnify it apparently
@@ -288,7 +295,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "puff of flame");
         pbolt.colour = RED;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 104 + (power / 20);              // max dam: 27
+        pbolt.damage = dice_def( 3, 4 + (power / 20) ); // max dam: 27
         pbolt.hit = 8 + (power / 10);                   // max hit: 18
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
@@ -300,7 +307,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "puff of frost");
         pbolt.colour = WHITE;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 104 + (power / 20);              // max dam: 27
+        pbolt.damage = dice_def( 3, 4 + (power / 20) ); // max dam: 27
         pbolt.hit = 8 + (power / 10);                   // max hit: 18
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_COLD;
@@ -310,13 +317,13 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_SLOWING:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_SLOW;
+        pbolt.flavour = BEAM_SLOW;
         pbolt.isBeam = true;
         break;
 
     case ZAP_HASTING:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_HASTE;
+        pbolt.flavour = BEAM_HASTE;
         pbolt.isBeam = true;
         break;
 
@@ -324,7 +331,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "magic dart");
         pbolt.colour = LIGHTMAGENTA;
         pbolt.range = random2(5) + 8;
-        pbolt.damage = 2 + (power / 4);                 // max dam: 9
+        pbolt.damage = dice_def( 1, 2 + (power / 4) );  // max dam: 9
         pbolt.hit = 1500;                               // hits always
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -333,14 +340,15 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_HEALING:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_HEALING;
-        pbolt.hit = 7 + (power / 3);
+        pbolt.flavour = BEAM_HEALING;
+        // pbolt.hit = 7 + (power / 3);
+        pbolt.damage = dice_def( 1, 7 + (power / 3) );
         pbolt.isBeam = true;
         break;
 
     case ZAP_PARALYSIS:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_PARALYSIS;
+        pbolt.flavour = BEAM_PARALYSIS;
         pbolt.isBeam = true;
         break;
 
@@ -348,8 +356,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of fire");
         pbolt.colour = RED;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 107 + (power / 11);              // max dam: 75
-        pbolt.hit = 10 + (random2(power) / 25);         // max hit: 17
+        pbolt.damage = dice_def( 3, 7 + (power / 11) ); // max dam: 75
+        pbolt.hit = 10 + power / 25;                    // max hit: 17
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
 
@@ -361,8 +369,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of cold");
         pbolt.colour = WHITE;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 107 + (power / 11);              // max dam: 75
-        pbolt.hit = 10 + (random2(power) / 25);         // max hit: 17
+        pbolt.damage = dice_def( 3, 7 + (power / 11) ); // max dam: 75
+        pbolt.hit = 10 + power / 25;                      // max hit: 17
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_COLD;
 
@@ -374,8 +382,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of magma");
         pbolt.colour = RED;
         pbolt.range = 5 + random2(4);
-        pbolt.damage = 106 + (power / 12);              // max dam: 66
-        pbolt.hit = 8 + (random2(power) / 25);          // max hit: 15
+        pbolt.damage = dice_def( 3, 6 + (power / 12) ); // max dam: 66
+        pbolt.hit = 8 + power / 25;                     // max hit: 15
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_LAVA;
 
@@ -385,21 +393,21 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_CONFUSION:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_CONFUSION;
+        pbolt.flavour = BEAM_CONFUSION;
         pbolt.isBeam = true;
         break;
 
     case ZAP_INVISIBILITY:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_INVISIBILITY;
+        pbolt.flavour = BEAM_INVISIBILITY;
         pbolt.isBeam = true;
         break;
 
     case ZAP_DIGGING:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_DIGGING;
+        pbolt.flavour = BEAM_DIGGING;
         // not ordinary "0" beam range {dlb}
-        pbolt.range = 3 + random2(power) + random2(5);
+        pbolt.range = 3 + random2( power / 5 ) + random2(5);
         pbolt.isBeam = true;
         break;
 
@@ -407,7 +415,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "fireball");
         pbolt.colour = RED;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 105 + (power / 7);               // max dam: 99
+        pbolt.damage = dice_def( 3, 5 + (power / 7) );  // max dam: 99
         pbolt.hit = 40;                                 // hit: 40
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_EXPLOSION;                 // fire
@@ -416,16 +424,16 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_TELEPORTATION:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_TELEPORT;
+        pbolt.flavour = BEAM_TELEPORT;
         pbolt.range = 9 + random2(5);
         pbolt.isBeam = true;
         break;
 
-    case ZAP_LIGHTNING: // also for breath (at pow = lev * 2; max dam: 30)
+    case ZAP_LIGHTNING: // also for breath (at pow = lev * 2; max dam: 33)
         strcpy(pbolt.beam_name, "bolt of lightning");
         pbolt.colour = LIGHTCYAN;
         pbolt.range = 8 + random2(10);                  // extended in beam
-        pbolt.damage = 106 + (power / 12);              // max dam: 66
+        pbolt.damage = dice_def( 3, 6 + (power / 10) ); // max dam: 78
         pbolt.hit = 7 + (random2(power) / 20);          // max hit: 16
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;               // beams & reflects
@@ -436,7 +444,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_POLYMORPH_OTHER:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_POLYMORPH;
+        pbolt.flavour = BEAM_POLYMORPH;
         pbolt.range = 9 + random2(5);
         pbolt.isBeam = true;
         break;
@@ -445,8 +453,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of poison");
         pbolt.colour = LIGHTGREEN;
         pbolt.range = 8 + random2(10);
-        pbolt.damage = 105 + (power / 14);              // max dam: 57
-        pbolt.hit = 8 + (random2(power) / 20);          // max hit: 17
+        pbolt.damage = dice_def( 3, 5 + (power / 14) ); // max dam: 57
+        pbolt.hit = 8 + power / 20;                     // max hit: 17
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;                    // extra damage
 
@@ -458,8 +466,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of negative energy");
         pbolt.colour = DARKGREY;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 105 + (power / 14);              // max dam: 57
-        pbolt.hit = 8 + (random2(power) / 20);          // max hit: 17
+        pbolt.damage = dice_def( 3, 5 + (power / 14) ); // max dam: 57
+        pbolt.hit = 8 + power / 20;                     // max hit: 17
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_NEG;                       // drains levels
 
@@ -471,7 +479,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "narrow beam of energy");
         pbolt.colour = YELLOW;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 110 + (power / 5);               // max dam: unlimited
+        pbolt.damage = dice_def( 3, 10 + (power / 5) ); // max dam: unlimited
         pbolt.hit = 2;                                  // hit: 2 (very hard)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = 17;    // whatever
@@ -484,7 +492,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "orb of energy");
         pbolt.colour = LIGHTMAGENTA;
         pbolt.range = 7 + random2(5);
-        pbolt.damage = 105 + (power / 20);              // max dam: 36
+        pbolt.damage = dice_def( 3, 5 + (power / 20) ); // max dam: 36
         pbolt.hit = 10 + (power / 7);                   // max hit: 31
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -494,19 +502,18 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_ENSLAVEMENT:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_CHARM;
+        pbolt.flavour = BEAM_CHARM;
         pbolt.range = 7 + random2(5);
         pbolt.isBeam = true;
         break;
 
     case ZAP_PAIN:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_PAIN;
+        pbolt.flavour = BEAM_PAIN;
         pbolt.range = 7 + random2(8);
 
-        // is this right? other "0" beams do not define ->hit {dlb}
-        // actually, it's used for damage (the spell always hits)
-        pbolt.hit = 6 + (power / 3);                   // max dam: 16
+        // pbolt.hit = 6 + (power / 3);                   // max dam: 16
+        pbolt.damage = dice_def( 1, 6 + (power / 3) );    // max dam: 16
 
         pbolt.ench_power *= 7;
         pbolt.ench_power /= 2;
@@ -517,7 +524,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "sticky flame");        // extra damage
         pbolt.colour = RED;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 102 + (power / 30);              // max dam: 21
+        pbolt.damage = dice_def( 3, 2 + (power / 30) ); // max dam: 21
         pbolt.hit = 11 + (power / 10);                  // max hit: 26
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
@@ -527,10 +534,11 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_DISPEL_UNDEAD:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_DISPEL_UNDEAD;
+        pbolt.flavour = BEAM_DISPEL_UNDEAD;
         pbolt.range = 7 + random2(8);
-        // is this right? other "0" beams do not define ->hit {dlb}
-        pbolt.hit = 9 + (power / 5);
+
+        // pbolt.hit = 9 + (power / 7);                    // max dam: 111
+        pbolt.damage = dice_def( 3, 9 + (power / 7) );     // max dam: 111
         pbolt.isBeam = true;
         break;
 
@@ -538,7 +546,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "golden flame");
         pbolt.colour = YELLOW;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 110 + (power / 7);               // max dam: 156
+        pbolt.damage = dice_def( 3, 10 + (power / 7) ); // max dam: 156
         pbolt.hit = 20 + (random2(power) / 80);         // max hit: 23
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_HOLY;
@@ -556,7 +564,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         // The power here is quite large because it contains a
         // factor based on the size of the skeleton used... therefore
         // damage is highly dependant on material.
-        pbolt.damage = 102 + (power / 250);             // max dam: 69
+        pbolt.damage = dice_def( 3, 2 + (power / 250) );// max dam: 69
         pbolt.hit = 8 + (power / 100);                  // max hit: 60 (high)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MAGIC;                     // unresisted
@@ -567,14 +575,14 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_BANISHMENT:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_BANISH;
+        pbolt.flavour = BEAM_BANISH;
         pbolt.range = 7 + random2(5);
         pbolt.isBeam = true;
         break;
 
     case ZAP_DEGENERATION:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_DEGENERATE;
+        pbolt.flavour = BEAM_DEGENERATE;
         pbolt.range = 7 + random2(5);
         pbolt.isBeam = true;
         break;
@@ -583,7 +591,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "sting");
         pbolt.colour = GREEN;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 6 + (power / 5);                 // max dam: 12
+        pbolt.damage = dice_def( 1, 6 + (power / 5) );  // max dam: 12
         pbolt.hit = 8 + (power / 5);                    // max hit: 14
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;                    // extra damage
@@ -595,7 +603,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "hellfire");
         pbolt.colour = RED;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 110 + (power / 10);              // max dam: 123
+        pbolt.damage = dice_def( 3, 10 + (power / 10) );// max dam: 123
         pbolt.hit = 20 + (power / 10);                  // max hit: 50
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_EXPLOSION;
@@ -608,7 +616,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "pebble");
         pbolt.colour = BROWN;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 5;                               // dam: 5
+        pbolt.damage = dice_def( 1, 5 );                // dam: 5
         pbolt.hit = 8 + (power / 10);                   // max hit: 11
         pbolt.type = SYM_MISSILE;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -620,8 +628,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "stone arrow");
         pbolt.colour = LIGHTGREY;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 105 + (power / 20);              // max dam: 36
-        pbolt.hit = 7 + (power / 20);                   // max hit: 14
+        pbolt.damage = dice_def( 3, 5 + (power / 20) ); // max dam: 36
+        pbolt.hit = 5 + (power / 20);                   // max hit: 12
         pbolt.type = SYM_MISSILE;                       // unresistable
         pbolt.flavour = BEAM_MMISSILE;
 
@@ -631,9 +639,9 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
     case ZAP_IRON_BOLT:
         strcpy(pbolt.beam_name, "iron bolt");
         pbolt.colour = LIGHTCYAN;
-        pbolt.range = 4 + random2(5);
-        pbolt.damage = 108 + (power / 12);              // max dam: 72
-        pbolt.hit = 5 + (random2(power) / 25);          // max hit: 13
+        pbolt.range = 5 + random2(5);
+        pbolt.damage = dice_def( 3, 8 + (power / 12) ); // max dam: 72
+        pbolt.hit = 7 + power / 15;                     // max hit: 20
         pbolt.type = SYM_MISSILE;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
 
@@ -644,8 +652,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "crystal spear");
         pbolt.colour = WHITE;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 112 + (power / 9);               // max dam: 135
-        pbolt.hit = 4 + random2(power) / 30;            // max hit: 14
+        pbolt.damage = dice_def( 3, 12 + (power / 9) ); // max dam: 135
+        pbolt.hit = 10 + power / 15;                    // max hit: 30
         pbolt.type = SYM_MISSILE;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
 
@@ -656,7 +664,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "zap");
         pbolt.colour = LIGHTCYAN;
         pbolt.range = 6 + random2(8);                   // extended in beam
-        pbolt.damage = 5 + random2(power) / 4;          // max dam: 12
+        pbolt.damage = dice_def( 1, 5 + random2(power) / 4 ); // max dam: 12
         pbolt.hit = 8 + power / 7;                      // max hit: 12
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;               // beams & reflects
@@ -669,7 +677,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "orb of electricity");
         pbolt.colour = LIGHTBLUE;
         pbolt.range = 9 + random2(12);
-        pbolt.damage = 105 + (power / 6);               // max dam: 114
+        pbolt.damage = dice_def( 3, 5 + (power / 6) );  // max dam: 114
         pbolt.hit = 40;                                 // hit: 40
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;
@@ -680,7 +688,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "splash of poison");
         pbolt.colour = GREEN;
         pbolt.range = 3 + random2(1 + (power / 2));
-        pbolt.damage = 4 + (power / 2);                 // max dam: 25
+        pbolt.damage = dice_def( 1, 4 + (power / 2) );  // max dam: 25
         pbolt.hit = 5 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;
@@ -691,7 +699,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "debugging ray");
         pbolt.colour = random_colour();
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 150;                             // dam: 150
+        pbolt.damage = dice_def( 3, 50 );               // dam: 150
         pbolt.hit = 60;                                 // hit: 60
         pbolt.type = SYM_DEBUG;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -704,7 +712,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "fiery breath");
         pbolt.colour = RED;
         pbolt.range = 3 + random2(1 + (power / 2));
-        pbolt.damage = 104 + (power / 3);               // max dam: 60
+        pbolt.damage = dice_def( 3, 4 + (power / 3) );  // max dam: 60
         pbolt.hit = 8 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
@@ -718,7 +726,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "freezing breath");
         pbolt.colour = WHITE;
         pbolt.range = 3 + random2(1 + (power / 2));
-        pbolt.damage = 104 + (power / 3);               // max dam: 39
+        pbolt.damage = dice_def( 3, 4 + (power / 3) );  // max dam: 39
         pbolt.hit = 8 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_COLD;
@@ -732,7 +740,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "acid");
         pbolt.colour = YELLOW;
         pbolt.range = 3 + random2(1 + (power / 2));
-        pbolt.damage = 103 + (power / 3);               // max dam: 36
+        pbolt.damage = dice_def( 3, 3 + (power / 3) );  // max dam: 36
         pbolt.hit = 5 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ACID;
@@ -745,7 +753,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "poison gas");
         pbolt.colour = GREEN;
         pbolt.range = 3 + random2(1 + (power / 2));
-        pbolt.damage = 102 + (power / 6);               // max dam: 18
+        pbolt.damage = dice_def( 3, 2 + (power / 6) );  // max dam: 18
         pbolt.hit = 5 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;
@@ -766,7 +774,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
             pbolt.colour = LIGHTMAGENTA;
 
         pbolt.range = 6 + random2(1 + (power / 2));
-        pbolt.damage = 103 + (power / 3);               // max dam: 36
+        pbolt.damage = dice_def( 3, 3 + (power / 3) );  // max dam: 36
         pbolt.hit = 11 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -776,39 +784,36 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_ENSLAVE_UNDEAD:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_ENSLAVE_UNDEAD;
+        pbolt.flavour = BEAM_ENSLAVE_UNDEAD;
         pbolt.range = 7 + random2(5);
         pbolt.isBeam = true;
         break;
 
     case ZAP_AGONY:
         strcpy(pbolt.beam_name, "0agony");
-        pbolt.colour = BCOL_PAIN;
+        pbolt.flavour = BEAM_PAIN;
         pbolt.range = 7 + random2(8);
-        // is this right? other "0" beams do not define ->hit {dlb}
-        pbolt.hit = 6 + (power / 50);
         pbolt.ench_power *= 5;
         pbolt.isBeam = true;
         break;
 
     case ZAP_DISRUPTION:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_DISINTEGRATION;
+        pbolt.flavour = BEAM_DISINTEGRATION;
         pbolt.range = 7 + random2(8);
-        // is this right? other "0" beams do not define ->hit {dlb}
-        // actually, it's used for damage (the spell always hits)
-        pbolt.hit = 6 + (power / 3);                   // max dam: 16
+        // pbolt.hit = 6 + (power / 3);                   // max dam: 16
+        pbolt.damage = dice_def( 1, 6 + (power / 3) );    // max dam: 16
         pbolt.ench_power *= 3;
         pbolt.isBeam = true;
         break;
 
     case ZAP_DISINTEGRATION:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_DISINTEGRATION;
+        pbolt.flavour = BEAM_DISINTEGRATION;
         pbolt.range = 7 + random2(8);
-        // is this right? other "0" beams do not define ->hit {dlb}
-        // actually, it's used for damage (the spell always hits)
-        pbolt.hit = 15 + (power / 3);                   // max dam: 80
+
+        // pbolt.hit = 15 + (power / 3);                   // max dam: 80
+        pbolt.damage = dice_def( 3, 5 + (power / 9) );     // max dam: 81
         pbolt.ench_power *= 5;
         pbolt.ench_power /= 2;
         pbolt.isBeam = true;
@@ -819,7 +824,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "ball of steam");
         pbolt.colour = LIGHTGREY;
         pbolt.range = 6 + random2(5);
-        pbolt.damage = 104 + (power / 5);               // max dam: 27
+        pbolt.damage = dice_def( 3, 4 + (power / 5) );  // max dam: 27
         pbolt.hit = 10 + random2(1 + (power / 5));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
@@ -828,10 +833,10 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_CONTROL_DEMON:
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BCOL_ENSLAVE_DEMON;
+        pbolt.flavour = BEAM_ENSLAVE_DEMON;
         pbolt.range = 7 + random2(5);
-        pbolt.ench_power *= 17;
-        pbolt.ench_power /= 10;
+        pbolt.ench_power *= 3;
+        pbolt.ench_power /= 2;
         pbolt.isBeam = true;
         break;
 
@@ -839,7 +844,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "metal orb");
         pbolt.colour = CYAN;
         pbolt.range = 9 + random2(7);
-        pbolt.damage = 110 + (power / 7);               // max dam: 114
+        pbolt.damage = dice_def( 3, 10 + (power / 7) ); // max dam: 114
         pbolt.hit = 20;                                 // hit: 20
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;
@@ -849,7 +854,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of ice");
         pbolt.colour = WHITE;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 105 + (power / 10);              // max dam: 60
+        pbolt.damage = dice_def( 3, 5 + (power / 10) ); // max dam: 60
         pbolt.hit = 9 + (power / 12);                   // max hit: 21
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ICE;
@@ -859,7 +864,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "great blast of cold");
         pbolt.colour = BLUE;
         pbolt.range = 9 + random2(5);
-        pbolt.damage = 105 + (power / 7);               // max dam: 141
+        pbolt.damage = dice_def( 3, 5 + (power / 7) );  // max dam: 141
         pbolt.hit = 20 + (power / 10);                  // max hit: 50
         pbolt.ench_power = power;                       // used for radius
         pbolt.type = SYM_ZAP;
@@ -890,7 +895,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         if (pbolt.range > 4)
             pbolt.range = 4;
 
-        pbolt.damage = 8 + (power / 3);               // max dam: 18
+        pbolt.damage = dice_def( 1, 8 + (power / 3) );// max dam: 18
         pbolt.hit = 8 + (power / 5);                  // max hit: 15
         pbolt.type = SYM_BOLT;
         pbolt.flavour = BEAM_FIRE;
@@ -908,7 +913,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
             pbolt.range = 4;
 
         // remember -- this one has max power of 100
-        pbolt.damage = 103 + (power / 25);              // max dam: 21
+        pbolt.damage = dice_def( 3, 3 + (power / 25) ); // max dam: 21
         pbolt.hit = 13 + (power / 10);                  // max hit: 20
         pbolt.type = SYM_BOLT;
         pbolt.flavour = BEAM_FRAG;                      // extra AC resist
@@ -928,7 +933,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
         pbolt.colour = BROWN;
         pbolt.range = (random2(power) > random2(30)) ? 2 : 1; // 1 or 2 squares
-        pbolt.damage = 6 + power / 5;                   // max dam: 12
+        pbolt.damage = dice_def( 1, 6 + power / 5 );    // max dam: 12
         pbolt.hit = 10 + (power / 5);                   // max hit: 16
         pbolt.type = SYM_BOLT;
         pbolt.flavour = BEAM_FRAG;                      // extra AC resist
@@ -988,13 +993,13 @@ void beam(struct bolt &pbolt, int inv_number)
     bool sideBlocked, topBlocked, random_beam;
 
 #if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE, "%s %s from %d, %d to %d, %d : t=%d c=%d f=%d hit=%d dam=%d",
+    snprintf( info, INFO_SIZE, "%s %s from %d, %d to %d, %d : t=%d c=%d f=%d hit=%d dam=%dd%d",
              (pbolt.isBeam) ? "beam" : "missile",
              (pbolt.isTracer) ? "tracer" : "",
              pbolt.source_x, pbolt.source_y,
              pbolt.target_x, pbolt.target_y,
              pbolt.type, pbolt.colour, pbolt.flavour,
-             pbolt.hit, pbolt.damage );
+             pbolt.hit, pbolt.damage.num, pbolt.damage.size );
 
     mpr(info);
 #endif
@@ -1023,14 +1028,14 @@ void beam(struct bolt &pbolt, int inv_number)
     {
         if (abs(dx) >= abs(dy))
         {
-            stepx = (dx>0)?100:-100;
-            stepy = 100 * dy/(abs(dx));
+            stepx = (dx > 0) ? 100 : -100;
+            stepy = 100 * dy / (abs(dx));
             roundY = true;
         }
         else
         {
-            stepy = (dy>0)?100:-100;
-            stepx = 100 * dx/(abs(dy));
+            stepy = (dy > 0) ? 100 : -100;
+            stepx = 100 * dx / (abs(dy));
             roundX = true;
         }
     }
@@ -1280,7 +1285,7 @@ void beam(struct bolt &pbolt, int inv_number)
     }
 
     // canned msg for enchantments that affected no-one
-    if (pbolt.beam_name[0] == '0' && pbolt.colour != BCOL_DIGGING)
+    if (pbolt.beam_name[0] == '0' && pbolt.flavour != BEAM_DIGGING)
     {
         if (!pbolt.isTracer && !pbolt.msgGenerated && !pbolt.obviousEffect)
             canned_msg(MSG_NOTHING_HAPPENS);
@@ -1302,29 +1307,27 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
     // if we're not doing flavored effects,  must be preliminary
     // damage check only;  do not print messages or apply any side
     // effects!
+    int resist;
 
     switch (pbolt.flavour)
     {
     case BEAM_FIRE:
-        if (mons_res_fire(monster->type) > 0)
+        resist = mons_res_fire(monster);
+        if (resist > 1)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
+
             hurted = 0;
         }
-        else if (monster->inv[MSLOT_ARMOUR] != NON_ITEM
-                 && mitm[monster->inv[MSLOT_ARMOUR]].special
-                                                 == SPARM_FIRE_RESISTANCE)
+        else if (resist == 1)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " resists.");
+
             hurted /= 3;
         }
-
-        if (mons_res_fire(monster->type) == -1
-            && (monster->inv[MSLOT_ARMOUR] == NON_ITEM
-                || mitm[monster->inv[MSLOT_ARMOUR]].special
-                                                != SPARM_FIRE_RESISTANCE))
+        else if (resist < 0)
         {
             if (monster->type == MONS_ICE_BEAST
                 || monster->type == MONS_SIMULACRUM_SMALL
@@ -1338,6 +1341,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                 if (doFlavouredEffects)
                     simple_monster_message(monster, " is burned terribly!");
             }
+
             hurted *= 15;
             hurted /= 10;
         }
@@ -1345,38 +1349,37 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
 
 
     case BEAM_COLD:
-        if (mons_res_cold(monster->type) > 0)
+        resist = mons_res_cold(monster);
+        if (resist > 1)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
+
             hurted = 0;
         }
-        else if (monster->inv[MSLOT_ARMOUR] != NON_ITEM
-                 && mitm[monster->inv[MSLOT_ARMOUR]].special
-                                                 == SPARM_COLD_RESISTANCE)
+        else if (resist == 1)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " resists.");
+
             hurted /= 3;
         }
-
-        if (mons_res_cold(monster->type) == -1
-            && (monster->inv[MSLOT_ARMOUR] == NON_ITEM
-                || mitm[monster->inv[MSLOT_ARMOUR]].special
-                                                != SPARM_COLD_RESISTANCE))
+        else if (resist < 0)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " is frozen!");
+
             hurted *= 15;
             hurted /= 10;
         }
         break;
 
     case BEAM_ELECTRICITY:
-        if (mons_res_elec(monster->type) > 0)
+        if (mons_res_elec(monster) > 0)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
+
             hurted = 0;
         }
         break;
@@ -1386,20 +1389,21 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
         if (doFlavouredEffects && !one_chance_in(3))
             poison_monster(monster, YOU_KILL(pbolt.thrower));
 
-        if (mons_res_poison(monster->type) > 0)
+        if (mons_res_poison(monster) > 0)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
+
             hurted = 0;
         }
         break;
 
     case BEAM_NEG:
-        if (mons_holiness(monster->type) == MH_UNDEAD
-            || mons_holiness(monster->type) == MH_DEMONIC)
+        if (mons_res_negative_energy(monster) > 0)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
+
             hurted = 0;
         }
         else
@@ -1430,6 +1434,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
+
             hurted = 0;
         }
         break;
@@ -1437,28 +1442,19 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
     case BEAM_ICE:
         /* ice - about 50% of damage is cold, other 50% is impact and
            can't be resisted (except by AC, of course) */
-        if (mons_res_cold(monster->type) > 0)
+        resist = mons_res_cold(monster);
+        if (resist > 0)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " partially resists.");
-            hurted /= 2;
-        }
-        else if (monster->inv[MSLOT_ARMOUR] != NON_ITEM
-                 && mitm[monster->inv[MSLOT_ARMOUR]].special ==
-                 SPARM_COLD_RESISTANCE)
-        {
-            if (doFlavouredEffects)
-                simple_monster_message(monster, " partially resists.");
-            hurted /= 2;
-        }
 
-        if (mons_res_cold(monster->type) == -1
-            && (monster->inv[MSLOT_ARMOUR] == NON_ITEM
-                || mitm[monster->inv[MSLOT_ARMOUR]].special
-                                                != SPARM_COLD_RESISTANCE))
+            hurted /= 2;
+        }
+        else if (resist < 0)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " is frozen!");
+
             hurted *= 13;
             hurted /= 10;
         }
@@ -1467,20 +1463,15 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
 
     if (pbolt.flavour == BEAM_LAVA)    //jmf: lava != hellfire
     {
-        if (mons_res_fire(monster->type) > 0
-            || (monster->inv[MSLOT_ARMOUR] != NON_ITEM
-                && mitm[monster->inv[MSLOT_ARMOUR]].special
-                                                == SPARM_FIRE_RESISTANCE))
+        resist = mons_res_fire(monster);
+        if (resist > 0)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " partially resists.");
+
             hurted /= 2;
         }
-
-        if (mons_res_fire(monster->type) == -1
-            && (monster->inv[MSLOT_ARMOUR] == NON_ITEM
-                || mitm[monster->inv[MSLOT_ARMOUR]].special
-                                                != SPARM_FIRE_RESISTANCE))
+        else if (resist < 0)
         {
             if (monster->type == MONS_ICE_BEAST
                 || monster->type == MONS_SIMULACRUM_SMALL
@@ -1501,27 +1492,22 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
     }
     else if (stricmp(pbolt.beam_name, "hellfire") == 0)
     {
-        if (mons_res_fire(monster->type) >= 2)
+        resist = mons_res_fire(monster);
+        if (resist > 2)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
+
             hurted = 0;
         }
-
-        if (mons_res_fire(monster->type) == 1
-            || (monster->inv[MSLOT_ARMOUR] != NON_ITEM
-                && mitm[monster->inv[MSLOT_ARMOUR]].special
-                                                == SPARM_FIRE_RESISTANCE))
+        else if (resist > 0)
         {
             if (doFlavouredEffects)
                 simple_monster_message(monster, " partially resists.");
+
             hurted /= 2;
         }
-
-        if (mons_res_fire(monster->type) == -1
-            && (monster->inv[MSLOT_ARMOUR] == NON_ITEM
-                || mitm[monster->inv[MSLOT_ARMOUR]].special
-                                                != SPARM_FIRE_RESISTANCE))
+        else if (resist < 0)
         {
             if (monster->type == MONS_ICE_BEAST
                 || monster->type == MONS_SIMULACRUM_SMALL
@@ -1541,17 +1527,17 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
         }
     }
 
-    return hurted;
+    return (hurted);
 }                               // end mons_adjust_flavoured()
 
 // Returns true if the monster made its save against hostile
 // enchantments/some other magics.
 bool check_mons_magres(struct monsters * monster, int pow)
 {
-    int mrs = mon_resist_mag(monster->type, monster->hit_dice);
+    int mrs = mons_resist_magic(monster);
 
     if (mrs == 5000)
-        return true;
+        return (true);
 
     // Evil, evil hack to make weak one hd monsters easier for first
     // level characters who have resistable 1st level spells. Six is
@@ -1581,6 +1567,28 @@ bool check_mons_magres(struct monsters * monster, int pow)
 
     return ((mrch2 < mrchance) ? true : false);
 }                               // end check_mons_magres()
+
+bool check_mons_resist_dispel_undead( struct monsters *monster, int pow )
+{
+    int res = mons_resist_turn_undead( monster );
+
+    if (res >= 5000)
+        return (true);
+
+    pow = stepdown_value( pow, 30, 40, 100, 120 );
+
+    const int mrchance = (100 + res) - pow;
+    const int mrch2 = random2(100) + random2(101);
+
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "Power: %d, monster's res: %d, target: %d, roll: %d",
+             pow, res, mrchance, mrch2 );
+
+    mpr(info);
+#endif
+
+    return ((mrch2 < mrchance) ? true : false);
+}
 
 // Enchants all monsters in player's sight.
 bool mass_enchantment( int wh_enchant, int pow, int origin )
@@ -1655,9 +1663,9 @@ bool mass_enchantment( int wh_enchant, int pow, int origin )
                     }
                 }
 
-                // extra check for fear (monster needs to reevaluate behavior)
+                // extra check for fear (monster needs to reevaluate behaviour)
                 if (wh_enchant == ENCH_FEAR)
-                    behavior_event( monster, ME_SCARE, origin );
+                    behaviour_event( monster, ME_SCARE, origin );
             }
         }                       // end "if mons_near(monster)"
     }                           // end "for i"
@@ -1679,14 +1687,15 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
 {
     bool is_near = mons_near(monster);  // single caluclation permissible {dlb}
 
-    switch (pbolt.colour)      /* put in magic resistance */
+    switch (pbolt.flavour)      /* put in magic resistance */
     {
-    case BCOL_SLOW:         /* 0 = slow monster */
+    case BEAM_SLOW:         /* 0 = slow monster */
         // try to remove haste,  if monster is hasted
         if (mons_del_ench(monster, ENCH_HASTE))
         {
             if (simple_monster_message(monster, " is no longer moving quickly."))
                 pbolt.obviousEffect = true;
+
             return MON_AFFECTED;
         }
 
@@ -1698,14 +1707,14 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
             if (simple_monster_message(monster, " seems to slow down."))
                 pbolt.obviousEffect = true;
         }
-
         return MON_AFFECTED;
 
-    case BCOL_HASTE:                  // 1 = haste
+    case BEAM_HASTE:                  // 1 = haste
         if (mons_del_ench(monster, ENCH_SLOW))
         {
             if (simple_monster_message(monster, " is no longer moving slowly."))
                 pbolt.obviousEffect = true;
+
             return MON_AFFECTED;
         }
 
@@ -1719,8 +1728,8 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
         }
         return MON_AFFECTED;
 
-    case BCOL_HEALING:         /* 2 = healing */
-        if (heal_monster(monster, 5 + random2( pbolt.hit + 1 ), false))
+    case BEAM_HEALING:         /* 2 = healing */
+        if (heal_monster( monster, 5 + roll_dice( pbolt.damage ), false ))
         {
             if (monster->hit_points == monster->max_hit_points)
             {
@@ -1736,7 +1745,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
         }
         return MON_AFFECTED;
 
-    case BCOL_PARALYSIS:                  /* 3 = paralysis */
+    case BEAM_PARALYSIS:                  /* 3 = paralysis */
         monster->speed_increment = 0;
 
         if (simple_monster_message(monster, " suddenly stops moving!"))
@@ -1745,7 +1754,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
         if (grd[monster->x][monster->y] == DNGN_LAVA_X
             || grd[monster->x][monster->y] == DNGN_WATER_X)
         {
-            if (mons_flies(monster->type) == 1)
+            if (mons_flies(monster) == 1)
             {
                 // don't worry about invisibility - you should be able to
                 // see if something has fallen into the lava
@@ -1776,7 +1785,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
         }
         return MON_AFFECTED;
 
-    case BCOL_CONFUSION:                   /* 4 = confusion */
+    case BEAM_CONFUSION:                   /* 4 = confusion */
         if (mons_add_ench(monster, ENCH_CONFUSION))
         {
             // put in an exception for fungi, plants and other things you won't
@@ -1787,7 +1796,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
 
         return MON_AFFECTED;
 
-    case BCOL_INVISIBILITY:               /* 5 = invisibility */
+    case BEAM_INVISIBILITY:               /* 5 = invisibility */
         if (mons_add_ench(monster, ENCH_INVIS))
         {
             if (player_see_invis())
@@ -1799,7 +1808,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
         }
         return MON_AFFECTED;
 
-    case BCOL_CHARM:             /* 9 = charm */
+    case BEAM_CHARM:             /* 9 = charm */
         if (mons_add_ench(monster, ENCH_CHARM))
         {
             // put in an exception for fungi, plants and other things you won't
@@ -1826,14 +1835,8 @@ void poison_monster(struct monsters *monster, bool fromPlayer, int levels)
     if (monster->type == -1)
         return;
 
-    if (mons_res_poison(monster->type) > 0)
+    if (mons_res_poison(monster) > 0)
         return;
-
-    if (monster->inv[MSLOT_ARMOUR] != NON_ITEM
-        && mitm[monster->inv[MSLOT_ARMOUR]].special == SPARM_POISON_RESISTANCE)
-    {
-        return;
-    }
 
     // who gets the credit if monster dies of poison?
     currentPoison = mons_has_ench(monster, ENCH_POISON_I, ENCH_POISON_IV);
@@ -1852,8 +1855,8 @@ void poison_monster(struct monsters *monster, bool fromPlayer, int levels)
     }
 
     // delete old poison
-    mons_del_ench(monster, ENCH_POISON_I, ENCH_POISON_IV);
-    mons_del_ench(monster, ENCH_YOUR_POISON_I, ENCH_YOUR_POISON_IV);
+    mons_del_ench( monster, ENCH_POISON_I, ENCH_POISON_IV, true );
+    mons_del_ench( monster, ENCH_YOUR_POISON_I, ENCH_YOUR_POISON_IV, true );
 
     // now, if player poisons the monster at ANY TIME, they should
     // get credit for the kill if the monster dies from poison.  This
@@ -1900,14 +1903,8 @@ void sticky_flame_monster(int mn, bool fromPlayer, int power)
     if (monster->type == -1)
         return;
 
-    if (mons_res_fire(monster->type) > 0)
+    if (mons_res_fire(monster) > 0)
         return;
-
-    if (monster->inv[MSLOT_ARMOUR] != NON_ITEM
-        && mitm[monster->inv[MSLOT_ARMOUR]].special == SPARM_FIRE_RESISTANCE)
-    {
-        return;
-    }
 
     int long_last = 1 + (random2(power) / 2);
     if (long_last > 4)
@@ -1936,8 +1933,9 @@ void sticky_flame_monster(int mn, bool fromPlayer, int power)
     }
 
     // delete old flame
-    mons_del_ench(monster, ENCH_STICKY_FLAME_I, ENCH_STICKY_FLAME_IV);
-    mons_del_ench(monster, ENCH_YOUR_STICKY_FLAME_I, ENCH_YOUR_STICKY_FLAME_IV);
+    mons_del_ench( monster, ENCH_STICKY_FLAME_I, ENCH_STICKY_FLAME_IV, true );
+    mons_del_ench( monster, ENCH_YOUR_STICKY_FLAME_I, ENCH_YOUR_STICKY_FLAME_IV,
+                   true );
 
     // increase poison strength,  cap at 3 (level is 0..3)
     currentStrength += long_last;
@@ -1979,7 +1977,7 @@ void fire_tracer(struct monsters *monster, struct bolt &pbolt)
     pbolt.source_x = monster->x;    // always safe to do.
     pbolt.source_y = monster->y;
     pbolt.beam_source = monster_index(monster);
-    pbolt.canSeeInvis = (mons_see_invis(monster->type) != 0);
+    pbolt.canSeeInvis = (mons_see_invis(monster) != 0);
     pbolt.smartMonster = (mons_intel(monster->type) == I_HIGH ||
                           mons_intel(monster->type) == I_NORMAL);
     pbolt.isFriendly = mons_friendly(monster);
@@ -2346,40 +2344,40 @@ static bool affectsWalls(struct bolt &beam)
     // don't know of any explosion that affects walls.  But change it here
     // if there is.
     if (beam.isExplosion)
-        return false;
+        return (false);
 
     // digging
-    if (beam.colour == BCOL_DIGGING && beam.beam_name[0] == '0')
-        return true;
+    if (beam.flavour == BEAM_DIGGING)
+        return (true);
 
-    // disintegration (or powerful disruption)
-    // but not needles (which happen to be white.  Argh!  What a hack.
-    if (beam.colour == BCOL_DISINTEGRATION && beam.flavour != BEAM_COLD
-        && beam.hit >= 20 && beam.type != SYM_MISSILE)
-    {
-        return true;
-    }
+    // Isn't this much nicer than the hack to remove ice bolts, disrupt,
+    // and needles (just because they were also coloured "white") -- bwr
+    if (beam.flavour == BEAM_DISINTEGRATION)
+        return (true);
 
     // eye of devestation?
     if (beam.flavour == BEAM_NUKE)
-        return true;
+        return (true);
 
-    return false;
+    return (false);
 }
 
 // return amount of extra range used up by affectation of this wall.
-static int  affect_wall(struct bolt &beam, int x, int y)
+static int affect_wall(struct bolt &beam, int x, int y)
 {
     int rangeUsed = 0;
 
     // DIGGING
-    if (beam.colour == BCOL_DIGGING && beam.beam_name[0] == '0')
+    if (beam.flavour == BEAM_DIGGING)
     {
         if (grd[x][y] == DNGN_STONE_WALL
             || grd[x][y] == DNGN_METAL_WALL
+            || grd[x][y] == DNGN_PERMAROCK_WALL
             || x <= 5 || x >= (GXM - 5)
             || y <= 5 || y >= (GYM - 5))
-            return 0;
+        {
+            return (0);
+        }
 
         if (grd[x][y] == DNGN_ROCK_WALL)
         {
@@ -2392,20 +2390,19 @@ static int  affect_wall(struct bolt &beam, int x, int y)
                     mpr("You hear a grinding noise.");
                     beam.obviousEffect = true;
                 }
+
                 beam.msgGenerated = true;
             }
         }
-        return rangeUsed;
+
+        return (rangeUsed);
     }
     // END DIGGING EFFECT
 
     // NUKE / DISRUPT
-    if ((beam.colour == BCOL_DISINTEGRATION
-            && beam.flavour != BEAM_COLD
-            && beam.hit >= 20)
-        || beam.flavour == BEAM_NUKE)
+    if (beam.flavour == BEAM_DISINTEGRATION || beam.flavour == BEAM_NUKE)
     {
-        int targ_grid = grd[ x ][ y ];
+        int targ_grid = grd[x][y];
 
         if ((targ_grid == DNGN_ROCK_WALL || targ_grid == DNGN_WAX_WALL)
              && !(x <= 6 || y <= 6 || x >= (GXM - 6) || y >= (GYM - 6)))
@@ -2421,7 +2418,7 @@ static int  affect_wall(struct bolt &beam, int x, int y)
         if (targ_grid == DNGN_ORCISH_IDOL || (targ_grid >= DNGN_SILVER_STATUE
                 && targ_grid <= DNGN_STATUE_39))
         {
-            grd[ x ][ y ] = DNGN_FLOOR;
+            grd[x][y] = DNGN_FLOOR;
 
             if (!silenced(you.x_pos, you.y_pos))
             {
@@ -2439,10 +2436,10 @@ static int  affect_wall(struct bolt &beam, int x, int y)
             beam.obviousEffect = 1;
         }
 
-        return BEAM_STOP;
+        return (BEAM_STOP);
     }
 
-    return rangeUsed;
+    return (rangeUsed);
 }
 
 static int affect_place_clouds(struct bolt &beam, int x, int y)
@@ -2459,7 +2456,7 @@ static int affect_place_clouds(struct bolt &beam, int x, int y)
     if (env.cgrid[x][y] != EMPTY_CLOUD)     // hit a cloud
     {
         // polymorph randomly changes clouds in its path
-        if (beam.beam_name[0] == '0' && beam.colour == BCOL_POLYMORPH)
+        if (beam.flavour == BEAM_POLYMORPH)
             env.cloud[ env.cgrid[x][y] ].type = 1 + random2(8);
 
         // now exit (all enchantments)
@@ -2628,7 +2625,7 @@ static int affect_player(struct bolt &beam)
     int beamHit;
 
     // digging -- don't care.
-    if (beam.beam_name[0] == '0' && beam.colour == BCOL_DIGGING)
+    if (beam.flavour == BEAM_DIGGING)
         return 0;
 
     // check for tracer
@@ -2741,10 +2738,10 @@ static int affect_player(struct bolt &beam)
     else
     {
         // BEGIN enchantment beam
-        if (beam.colour != BCOL_HASTE && beam.colour != BCOL_INVISIBILITY
-            && beam.colour != BCOL_HEALING
-            && ((beam.colour != BCOL_TELEPORT
-                    && beam.colour != BCOL_BANISH)
+        if (beam.flavour != BEAM_HASTE && beam.flavour != BEAM_INVISIBILITY
+            && beam.flavour != BEAM_HEALING
+            && ((beam.flavour != BEAM_TELEPORT
+                    && beam.flavour != BEAM_BANISH)
                 || !beam.aimedAtFeet))
         {
             if (you_resist_magic(beam.ench_power))
@@ -2755,56 +2752,56 @@ static int affect_player(struct bolt &beam)
         }
 
         // these colors are misapplied - see mons_ench_f2() {dlb}
-        switch (beam.colour)
+        switch (beam.flavour)
         {
-        case BCOL_SLOW:
+        case BEAM_SLOW:
             potion_effect(POT_SLOWING, beam.ench_power);
             beam.obviousEffect = true;
             break;     // slow
 
-        case BCOL_HASTE:
+        case BEAM_HASTE:
             potion_effect(POT_SPEED, beam.ench_power);
             beam.obviousEffect = true;
             break;     // haste
 
-        case BCOL_HEALING:
+        case BEAM_HEALING:
             potion_effect(POT_HEAL_WOUNDS, beam.ench_power);
             beam.obviousEffect = true;
             break;     // heal (heal wounds potion eff)
 
-        case BCOL_PARALYSIS:
+        case BEAM_PARALYSIS:
             potion_effect(POT_PARALYSIS, beam.ench_power);
             beam.obviousEffect = true;
             break;     // paralysis
 
-        case BCOL_CONFUSION:
+        case BEAM_CONFUSION:
             potion_effect(POT_CONFUSION, beam.ench_power);
             beam.obviousEffect = true;
             break;     // confusion
 
-        case BCOL_INVISIBILITY:
+        case BEAM_INVISIBILITY:
             potion_effect(POT_INVISIBILITY, beam.ench_power);
             beam.obviousEffect = true;
             break;     // invisibility
 
             // 6 is used by digging
 
-        case BCOL_TELEPORT:
+        case BEAM_TELEPORT:
             you_teleport();
             beam.obviousEffect = true;
             break;
 
-        case BCOL_POLYMORPH:
+        case BEAM_POLYMORPH:
             mpr("This is polymorph other only!");
             beam.obviousEffect = true;
             break;
 
-        case BCOL_CHARM:
+        case BEAM_CHARM:
             potion_effect(POT_CONFUSION, beam.ench_power);
             beam.obviousEffect = true;
             break;     // enslavement - confusion?
 
-        case BCOL_BANISH:
+        case BEAM_BANISH:
             if (you.level_type == LEVEL_ABYSS)
             {
                 mpr("You feel trapped.");
@@ -2816,7 +2813,7 @@ static int affect_player(struct bolt &beam)
             beam.obviousEffect = true;
             break;     // banishment to the abyss
 
-        case BCOL_PAIN:      // pain
+        case BEAM_PAIN:      // pain
             if (you.is_undead || you.mutation[MUT_TORMENT_RESISTANCE])
             {
                 mpr("You are unaffected.");
@@ -2826,24 +2823,38 @@ static int affect_player(struct bolt &beam)
             mpr("Pain shoots through your body!");
 
             if (YOU_KILL(beam.thrower))
-                ouch(1 + random2(beam.hit), 0, KILLED_BY_TARGETTING);
+                ouch(roll_dice(beam.damage), 0, KILLED_BY_TARGETTING);
             else
-            {
-                ouch(1 + random2(beam.hit), beam.beam_source,
-                     KILLED_BY_BEAM);
-            }
+                ouch(roll_dice(beam.damage), beam.beam_source, KILLED_BY_BEAM);
+
             beam.obviousEffect = true;
             break;
 
-        case BCOL_DISINTEGRATION:
-            mpr("You are blasted!");
-            if (YOU_KILL(beam.thrower))
-                ouch(random2(beam.hit), 0, KILLED_BY_TARGETTING);
-            else
+        case BEAM_DISPEL_UNDEAD:
+            if (!you.is_undead)
             {
-                ouch(random2(beam.hit), beam.beam_source,
-                     KILLED_BY_BEAM);
+                mpr("You are unaffected.");
+                break;
             }
+
+            mpr( "You convulse!" );
+
+            if (YOU_KILL(beam.thrower))
+                ouch(roll_dice(beam.damage), 0, KILLED_BY_TARGETTING);
+            else
+                ouch(roll_dice(beam.damage), beam.beam_source, KILLED_BY_BEAM);
+
+            beam.obviousEffect = true;
+            break;
+
+        case BEAM_DISINTEGRATION:
+            mpr("You are blasted!");
+
+            if (YOU_KILL(beam.thrower))
+                ouch(roll_dice(beam.damage), 0, KILLED_BY_TARGETTING);
+            else
+                ouch(roll_dice(beam.damage), beam.beam_source, KILLED_BY_BEAM);
+
             beam.obviousEffect = true;
             break;
 
@@ -2870,15 +2881,8 @@ static int affect_player(struct bolt &beam)
     int hurted = 0;
     int burn_power = (beam.isExplosion) ? 5 : ((beam.isBeam) ? 3 : 2);
 
-    // bwross: Note the conversion here to regular dice (minimum of 1, not 0)
-    if (beam.damage > 100)
-    {
-        hurted += 1 + random2(beam.damage - 100);
-        hurted += 1 + random2(beam.damage - 100);
-        hurted += 1 + random2(beam.damage - 100);
-    }
-    else
-        hurted += 1 + random2(beam.damage);
+    // Roll the damage
+    hurted += roll_dice( beam.damage );
 
     hurted -= random2(1 + player_AC());
 
@@ -2918,8 +2922,7 @@ static int affect_player(struct bolt &beam)
         if (hurted || (strstr(beam.beam_name, "needle") != NULL
                         && random2(100) < 90 - (3 * player_AC())))
         {
-            mpr("You are poisoned.");
-            you.poison += 1 + random2(3);
+            poison_player( 1 + random2(3) );
         }
     }
 
@@ -2973,7 +2976,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
     int hurt_final;
 
     // digging -- don't care.
-    if (beam.beam_name[0] == '0' && beam.colour == BCOL_DIGGING)
+    if (beam.flavour == BEAM_DIGGING)
         return (0);
 
     // fire storm creates these, so we'll avoid affecting them
@@ -3022,12 +3025,12 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
             if (mons_friendly(mon) &&  YOU_KILL(beam.thrower))
                 naughty(NAUGHTY_ATTACK_FRIEND, 5);
 
-            behavior_event( mon, ME_ANNOY,
+            behaviour_event( mon, ME_ANNOY,
                         YOU_KILL(beam.thrower) ? MHITYOU : beam.beam_source );
         }
         else
         {
-            behavior_event( mon, ME_ALERT,
+            behaviour_event( mon, ME_ALERT,
                         YOU_KILL(beam.thrower) ? MHITYOU : beam.beam_source );
         }
 
@@ -3066,17 +3069,8 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
 
     hurt = 0;
 
-    // bwross: Note the conversion here to regular dice (minimum of 1, not 0)
-    if (beam.damage > 100)
-    {
-        hurt += 1 + random2(beam.damage - 100);
-        hurt += 1 + random2(beam.damage - 100);
-        hurt += 1 + random2(beam.damage - 100);
-    }
-    else
-    {
-        hurt += 1 + random2(beam.damage);
-    }
+    // Roll the damage:
+    hurt += roll_dice( beam.damage );
 
     hurt_final = hurt;
 
@@ -3153,13 +3147,13 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
             if (hurt_final > mon->hit_dice / 3)
             {
                 naughty(NAUGHTY_ATTACK_FRIEND, 5);
-                behavior_event( mon, ME_ANNOY,
+                behaviour_event( mon, ME_ANNOY,
                         YOU_KILL(beam.thrower) ? MHITYOU : beam.beam_source );
             }
         }
         else
         {
-            behavior_event(mon, ME_ANNOY,
+            behaviour_event(mon, ME_ANNOY,
                     YOU_KILL(beam.thrower) ? MHITYOU : beam.beam_source);
         }
     }
@@ -3258,7 +3252,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
 
 static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
 {
-    if (beam.colour == BCOL_TELEPORT) // teleportation
+    if (beam.flavour == BEAM_TELEPORT) // teleportation
     {
         if (check_mons_magres(mon, beam.ench_power)
             && !beam.aimedAtFeet)
@@ -3274,7 +3268,7 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         return MON_AFFECTED;
     }
 
-    if (beam.colour == BCOL_POLYMORPH)
+    if (beam.flavour == BEAM_POLYMORPH)
     {
         if (mons_holiness( mon->type ) != MH_NATURAL)
             return MON_UNAFFECTED;
@@ -3288,7 +3282,7 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         return MON_AFFECTED;
     }
 
-    if (beam.colour == BCOL_BANISH)
+    if (beam.flavour == BEAM_BANISH)
     {
         if (check_mons_magres(mon, beam.ench_power))
             return MON_RESIST;
@@ -3304,7 +3298,7 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         return MON_AFFECTED;
     }
 
-    if (beam.colour == BCOL_DEGENERATE)
+    if (beam.flavour == BEAM_DEGENERATE)
     {
         if (mons_holiness(mon->type) != MH_NATURAL
             || mon->type == MONS_PULSATING_LUMP)
@@ -3321,23 +3315,25 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         return MON_AFFECTED;
     }
 
-    if (beam.colour == BCOL_DISPEL_UNDEAD)
+    if (beam.flavour == BEAM_DISPEL_UNDEAD)
     {
         if (mons_holiness(mon->type) != MH_UNDEAD)
             return MON_UNAFFECTED;
 
+        if (check_mons_resist_dispel_undead(mon, beam.ench_power))
+            return MON_RESIST;
+
         if (simple_monster_message(mon, " convulses!"))
             beam.obviousEffect = true;
 
-        hurt_monster(mon, random2(beam.hit) + random2(beam.hit) +
-                     random2(beam.hit));
+        hurt_monster( mon, roll_dice( beam.damage ) );
 
         goto deathCheck;
     }
 
-    if ((beam.colour == BCOL_ENSLAVE_UNDEAD
+    if ((beam.flavour == BEAM_ENSLAVE_UNDEAD
             && mons_holiness(mon->type) == MH_UNDEAD)
-        || (beam.colour == BCOL_ENSLAVE_DEMON
+        || (beam.flavour == BEAM_ENSLAVE_DEMON
             && mons_holiness(mon->type) == MH_DEMONIC))
     {
 #if DEBUG_DIAGNOSTICS
@@ -3360,13 +3356,13 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
     // Everything past this point must pass this magic resistance test.
     //
     if (check_mons_magres(mon, beam.ench_power)
-        && beam.colour != BCOL_HASTE && beam.colour != BCOL_HEALING
-        && beam.colour != BCOL_INVISIBILITY)
+        && beam.flavour != BEAM_HASTE && beam.flavour != BEAM_HEALING
+        && beam.flavour != BEAM_INVISIBILITY)
     {
         return MON_RESIST;
     }
 
-    if (beam.colour == BCOL_PAIN)      /* pain/agony */
+    if (beam.flavour == BEAM_PAIN)      /* pain/agony */
     {
         if (mons_holiness(mon->type) == MH_UNDEAD
             || mons_holiness(mon->type) == MH_DEMONIC)
@@ -3388,18 +3384,18 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         else
         {
             // PAIN
-            hurt_monster(mon, 1 + random2(beam.hit));
+            hurt_monster( mon, roll_dice( beam.damage ) );
         }
 
         goto deathCheck;
     }
 
-    if (beam.colour == BCOL_DISINTEGRATION)     /* disrupt/disintegrate */
+    if (beam.flavour == BEAM_DISINTEGRATION)     /* disrupt/disintegrate */
     {
         if (simple_monster_message(mon, " is blasted."))
             beam.obviousEffect = true;
 
-        hurt_monster(mon, 1 + random2(beam.hit));
+        hurt_monster( mon, roll_dice( beam.damage ) );
 
         goto deathCheck;
     }
@@ -3413,7 +3409,7 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
             if (simple_monster_message(mon, " looks drowsy..."))
                 beam.obviousEffect = true;
 
-            mon->behavior = BEH_SLEEP;
+            mon->behaviour = BEH_SLEEP;
             return MON_AFFECTED;
         }
         else
@@ -3463,25 +3459,25 @@ static int  range_used_on_hit(struct bolt &beam)
     // CHECK ENCHANTMENTS
     if (beam.beam_name[0] == '0')
     {
-        switch(beam.colour)
+        switch(beam.flavour)
         {
-        case BCOL_SLOW:
-        case BCOL_HASTE:
-        case BCOL_HEALING:
-        case BCOL_PARALYSIS:
-        case BCOL_CONFUSION:
-        case BCOL_INVISIBILITY:
-        case BCOL_TELEPORT:
-        case BCOL_POLYMORPH:
-        case BCOL_CHARM:
-        case BCOL_BANISH:
-        case BCOL_PAIN:
-        case BCOL_DISINTEGRATION:
-        case BCOL_DEGENERATE:
-        case BCOL_DISPEL_UNDEAD:
-        case BCOL_ENSLAVE_UNDEAD:
-        case BCOL_ENSLAVE_DEMON:
-            return BEAM_STOP;
+        case BEAM_SLOW:
+        case BEAM_HASTE:
+        case BEAM_HEALING:
+        case BEAM_PARALYSIS:
+        case BEAM_CONFUSION:
+        case BEAM_INVISIBILITY:
+        case BEAM_TELEPORT:
+        case BEAM_POLYMORPH:
+        case BEAM_CHARM:
+        case BEAM_BANISH:
+        case BEAM_PAIN:
+        case BEAM_DISINTEGRATION:
+        case BEAM_DEGENERATE:
+        case BEAM_DISPEL_UNDEAD:
+        case BEAM_ENSLAVE_UNDEAD:
+        case BEAM_ENSLAVE_DEMON:
+            return (BEAM_STOP);
         default:
             break;
         }
@@ -3490,10 +3486,11 @@ static int  range_used_on_hit(struct bolt &beam)
         {
         case BEAM_SLEEP:
         case BEAM_BACKLIGHT:
-            return BEAM_STOP;
+            return (BEAM_STOP);
         default:
             break;
         }
+
         return 0;
     }
 
@@ -3601,7 +3598,7 @@ static void explosion1(struct bolt &pbolt)
         strcpy(pbolt.beam_name, "ice storm");
         pbolt.type = SYM_ZAP;
         pbolt.colour = WHITE;
-        ex_size = 2 + pbolt.ench_power / 150;
+        ex_size = 2 + pbolt.ench_power / 200;
     }
 
     if (stricmp(pbolt.beam_name, "ball of vapour") == 0)
@@ -3645,12 +3642,21 @@ static void explosion1(struct bolt &pbolt)
 
 // for each cell affected by the explosion, affect() is called.
 
-void explosion(struct bolt &beam)
+void explosion( struct bolt &beam, bool hole_in_the_middle )
 {
     int r = beam.ex_size;
 
     // beam is now an explosion;  set isExplosion.
     beam.isExplosion = true;
+
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "explosion at (%d, %d) : t=%d c=%d f=%d hit=%d dam=%dd%d",
+             beam.target_x, beam.target_y,
+             beam.type, beam.colour, beam.flavour,
+             beam.hit, beam.damage.num, beam.damage.size );
+
+    mpr(info);
+#endif
 
     // for now, we don't support explosions greater than 9 radius
     if (r > MAX_EXPLOSION_RADIUS)
@@ -3667,7 +3673,7 @@ void explosion(struct bolt &beam)
     }
 
     // discover affected cells - recursion is your friend!
-    // this is done to model an explosion's behavior around
+    // this is done to model an explosion's behaviour around
     // corners where a simple 'line of sight' isn't quite
     // enough.   This might be slow for really big explosions,
     // as the recursion runs approximately as R^2
@@ -3689,10 +3695,11 @@ void explosion(struct bolt &beam)
     // --------------------- begin boom ---------------
 
     bool drawing = true;
-    for(int i=0; i<2; i++)
+    for (int i = 0; i < 2; i++)
     {
-        // do center
-        explosion_cell(beam, 0, 0, drawing);
+        // do center -- but only if its affected
+        if (!hole_in_the_middle)
+            explosion_cell(beam, 0, 0, drawing);
 
         // do the rest of it
         for(int rad = 1; rad <= r; rad ++)
@@ -3739,7 +3746,7 @@ void explosion(struct bolt &beam)
         setBuffering(oldValue);
 #endif
 
-    // duplicate old behavior - pause after entire explosion
+    // duplicate old behaviour - pause after entire explosion
     // has been drawn.
     if (!beam.isTracer)
         more();
@@ -3857,30 +3864,30 @@ bool nasty_beam(struct monsters *mon, struct bolt &beam)
     // now for some non-hurtful enchantments
 
     // degeneration / sleep
-    if (beam.colour == BCOL_DEGENERATE || beam.flavour == BEAM_SLEEP)
+    if (beam.flavour == BEAM_DEGENERATE || beam.flavour == BEAM_SLEEP)
         return (mons_holiness(mon->type) == MH_NATURAL);
 
     // dispel undead / control undead
-    if (beam.colour == BCOL_DISPEL_UNDEAD || beam.colour == BCOL_ENSLAVE_UNDEAD)
+    if (beam.flavour == BEAM_DISPEL_UNDEAD || beam.flavour == BEAM_ENSLAVE_UNDEAD)
         return (mons_holiness(mon->type) == MH_UNDEAD);
 
     // pain/agony
-    if (beam.colour == BCOL_PAIN)
+    if (beam.flavour == BEAM_PAIN)
     {
         return !(mons_holiness(mon->type) == MH_UNDEAD
                     || mons_holiness(mon->type) == MH_DEMONIC);
     }
 
     // control demon
-    if (beam.colour == BCOL_ENSLAVE_DEMON)
+    if (beam.flavour == BEAM_ENSLAVE_DEMON)
         return (mons_holiness(mon->type) == MH_DEMONIC);
 
     // haste
-    if (beam.colour == BCOL_HASTE && beam.flavour != BEAM_BACKLIGHT)
+    if (beam.flavour == BEAM_HASTE)
         return false;
 
     // healing
-    if (beam.colour == BCOL_HEALING || beam.colour == BCOL_INVISIBILITY)
+    if (beam.flavour == BEAM_HEALING || beam.flavour == BEAM_INVISIBILITY)
         return false;
 
     // everything else is considered nasty by everyone

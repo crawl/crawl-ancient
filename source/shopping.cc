@@ -266,7 +266,7 @@ void shop_init_id(int i, FixedArray < int, 4, 50 > &shop_id)
             shop_id[ IDTYPE_JEWELLERY ][j] = get_ident_type(OBJ_JEWELLERY, j);
             set_ident_type(OBJ_JEWELLERY, j, ID_KNOWN_TYPE);
 
-            shop_id[ IDTYPE_POTIONS ][j] = get_ident_type(OBJ_POTIONS, ID_KNOWN_TYPE);
+            shop_id[ IDTYPE_POTIONS ][j] = get_ident_type(OBJ_POTIONS, j);
             set_ident_type(OBJ_POTIONS, j, ID_KNOWN_TYPE);
         }
     }
@@ -537,6 +537,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             break;
 
         case WPN_QUICK_BLADE:
+        case WPN_DEMON_TRIDENT:
             valued += 250;
             break;
 
@@ -545,19 +546,15 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
         case WPN_DEMON_BLADE:
             valued += 300;
             break;
-
-        case WPN_DEMON_TRIDENT:
-            valued += 333;
-            break;
-
         }
-
 
         if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            switch (item.special)
+            switch (get_weapon_brand( item ))
             {
             case SPWPN_NORMAL:
+            default:            // randart
+                valued *= 10;
                 break;
 
             case SPWPN_DRAINING:
@@ -603,14 +600,12 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             case SPWPN_PROTECTION:
                 valued *= 20;
                 break;
-
-            default:            // randart
-                valued *= 70;
-                break;
             }
 
-            if (item.special != SPWPN_NORMAL)
-                valued /= 10;
+            valued /= 10;
+
+            if (is_random_artefact( item ))
+                valued = (valued * 70) / 10;
         }
 
         // elf/dwarf
@@ -819,9 +814,11 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
 
         if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            switch (item.special)
+            const int sparm = get_armour_ego_type( item );
+            switch (sparm)
             {
             case SPARM_NORMAL:
+            default:
                 break;
 
             case SPARM_ARCHMAGI:
@@ -862,13 +859,12 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             case SPARM_PONDEROUSNESS:
                 valued *= 5;
                 break;
-
-            default:            /* assume a randart */
-                valued *= 70;
-                break;
             }
 
-            if (item.special != SPARM_NORMAL)
+            if (is_random_artefact( item ))
+                valued *= 70;
+
+            if (sparm != SPARM_NORMAL)
                 valued /= 10;
         }
 

@@ -367,6 +367,10 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
         strcat(buf, " died");
         break;
 
+    case KILLED_BY_FALLING_DOWN_STAIRS:
+        strcat(buf, " fell down a flight of stairs");
+        break;
+
     default:
         strcat(buf, " nibbled to death by software bugs");
         break;
@@ -619,6 +623,8 @@ void hs_copy(struct scorefile_entry &dest, struct scorefile_entry &src)
     dest.wiz_mode = src.wiz_mode;
     dest.birth_time = src.birth_time;
     dest.death_time = src.death_time;
+    dest.num_diff_runes = src.num_diff_runes;
+    dest.num_runes = src.num_runes;
 }
 
 bool hs_read(FILE *scores, struct scorefile_entry &dest)
@@ -664,8 +670,14 @@ bool hs_read(FILE *scores, struct scorefile_entry &dest)
 static void hs_nextstring(char *&inbuf, char *dest)
 {
     char *p = dest;
-    // assume we're on a ':'
 
+    if (*inbuf == '\0')
+    {
+        *p = '\0';
+        return;
+    }
+
+    // assume we're on a ':'
     inbuf ++;
     while(*inbuf != ':' && *inbuf != '\0')
         *p++ = *inbuf++;
@@ -677,14 +689,16 @@ static int hs_nextint(char *&inbuf)
 {
     char num[20];
     hs_nextstring(inbuf, num);
-    return (atoi(num));
+
+    return (num[0] == '\0' ? 0 : atoi(num));
 }
 
 static long hs_nextlong(char *&inbuf)
 {
     char num[20];
     hs_nextstring(inbuf, num);
-    return (atol(num));
+
+    return (num[0] == '\0' ? 0 : atol(num));
 }
 
 static int val_char( char digit )
@@ -751,11 +765,14 @@ static void hs_parse_numeric(char *inbuf, struct scorefile_entry &se)
 
     se.birth_time = hs_nextdate(inbuf);
     se.death_time = hs_nextdate(inbuf);
+
+    se.num_diff_runes = hs_nextint(inbuf);
+    se.num_runes = hs_nextint(inbuf);
 }
 
 static void hs_write( FILE *scores, struct scorefile_entry &se )
 {
-    char buff[20];
+    char buff[80];  // should be more than enough for date stamps
 
     fprintf(scores, ":%d:%d:%ld:%s:%ld:%d:%d:%s:%d:%d:%d",
             se.version, se.release, se.points, se.name,
@@ -771,7 +788,9 @@ static void hs_write( FILE *scores, struct scorefile_entry &se )
     fprintf(scores, ":%s", buff );
 
     make_date_string( se.death_time, buff );
-    fprintf(scores, ":%s:\n", buff );
+    fprintf(scores, ":%s", buff );
+
+    fprintf(scores, ":%d:%d:\n", se.num_diff_runes, se.num_runes);
 }
 
 // -------------------------------------------------------------------------
@@ -850,6 +869,10 @@ static void hs_parse_string(char *inbuf, struct scorefile_entry &se)
     se.best_skill = 0;
     se.best_skill_lvl = 0;
     se.final_hp = 0;
+    se.birth_time = 0;
+    se.death_time = 0;
+    se.num_runes = 0;
+    se.num_diff_runes = 0;
 }
 
 static void hs_parse_generic_1(char *&inbuf, char *outbuf, const char *stopvalues)

@@ -1737,7 +1737,6 @@ void show_skills(void)
     char st_pass[60];
     int i;
     int x;
-    char strng[5] = "";
     char lcount;
 
     const int num_lines = get_number_of_lines();
@@ -1752,13 +1751,18 @@ void show_skills(void)
     clrscr();
 
   reprint_stuff:
-    gotoxy(1, 1);
     lcount = 'a';
+
+    gotoxy(1, 1);
     textcolor(LIGHTGREY);
-    cprintf(" You have ");
-    itoa(you.exp_available, strng, 10);
-    cprintf(strng);
-    cprintf(" points of unallocated experience." EOL EOL);
+
+#if DEBUG_DIAGNOSTICS
+    cprintf( "You have %d points of unallocated experience (cost lvl %d; total %d)." EOL EOL,
+             you.exp_available, you.skill_cost_level, you.total_skill_points );
+#else
+    cprintf(" You have %d points of unallocated experience." EOL EOL,
+            you.exp_available );
+#endif
 
     char scrln = 3, scrcol = 1;
 
@@ -1773,10 +1777,19 @@ void show_skills(void)
             scrln = 3;
             scrcol = 40;
         }
+
         gotoxy(scrcol, scrln);
+
+#if DEBUG_DIAGNOSTICS
+        // In diagnostic mode we show skills at 0, but only real skills
+        if (x != SK_UNUSED_1
+            && x <= SK_INVOCATIONS
+            && (x <= SK_UNARMED_COMBAT || x >= SK_SPELLCASTING))
+#else
         if (you.skills[x] > 0)
+#endif
         {
-            if (you.practise_skill[x] == 0)
+            if (you.practise_skill[x] == 0 || you.skills[x] == 0)
                 textcolor(DARKGREY);
             else
                 textcolor(LIGHTGREY);
@@ -1784,53 +1797,53 @@ void show_skills(void)
             if (you.skills[x] == 27)
                 textcolor(YELLOW);
 
+#if DEBUG_DIAGNOSTICS
+            if (you.skills[x] == 0)
+                putch(' ');
+            else
+            {
+                putch(lcount);
+                if (lcount == 'z')
+                    lcount = 'A';
+                else
+                    lcount++;
+            }
+#else
             putch(lcount);
             if (lcount == 'z')
                 lcount = 'A';
             else
                 lcount++;
+#endif
 
-            if (you.practise_skill[x] == 0)
-                cprintf(" - ");
-            else
-                cprintf(" + ");
-
-            char bufff[15];
-
-            snprintf( bufff, sizeof(bufff), "%-14s", skills[x][0] );
-            cprintf( bufff );
-
-            cprintf(" Skill ");
-            itoa(you.skills[x], strng, 10);
-            cprintf(strng);
+            cprintf( " %c %-14s Skill %2d",
+                     (you.skills[x] == 0)         ? ' ' :
+                     (you.practise_skill[x] == 0) ? '-' : '+',
+                     skills[x][0], you.skills[x] );
 
             textcolor(BLUE);
-            cprintf(" (");
-
-            const int needed = skill_exp_needed(you.skills[x] + 2);
-            const int prev_needed = skill_exp_needed(you.skills[x] + 1);
-            const int spec_abil = species_skills(x, you.species);
-
-            itoa( (((needed * spec_abil) / 100 - you.skill_points[x]) * 10) /
-                       (((needed - prev_needed) * spec_abil) / 100),
-                 strng, 10);
-
-            cprintf(strng);
-            cprintf(")");
-
-            textcolor(LIGHTGREY);
 
 #if DEBUG_DIAGNOSTICS
-            cprintf(" / ");
-            itoa(you.skill_points[x], strng, 10);
-            cprintf(strng);
+            cprintf( " %5d", you.skill_points[x] );
 #endif
+
+            if (you.skills[x] < 27)
+            {
+                const int needed = skill_exp_needed(you.skills[x] + 2);
+                const int prev_needed = skill_exp_needed(you.skills[x] + 1);
+                const int spec_abil = species_skills(x, you.species);
+
+                cprintf( " (%d)",
+                     (((needed * spec_abil) / 100 - you.skill_points[x]) * 10) /
+                           (((needed - prev_needed) * spec_abil) / 100) );
+            }
+
             scrln++;
         }
+
         /* Extra CR between classes of weapons and such things */
         if (x == SK_STAVES || x == SK_THROWING || x == SK_TRAPS_DOORS
-            || x == SK_UNARMED_COMBAT || x == SK_TRAPS_DOORS
-            || x == SK_INVOCATIONS)
+            || x == SK_UNARMED_COMBAT || x == SK_POISON_MAGIC)
         {
             scrln++;
         }
@@ -1963,17 +1976,14 @@ int calc_hp(void)
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
     case TRAN_STATUE:
-        mpr( "statue" );
         hitp *= 15;
         hitp /= 10;
         break;
     case TRAN_ICE_BEAST:
-        mpr( "ice beast" );
         hitp *= 12;
         hitp /= 10;
         break;
     case TRAN_DRAGON:
-        mpr( "dragon" );
         hitp *= 16;
         hitp /= 10;
         break;
@@ -1987,7 +1997,7 @@ int calc_hp(void)
 
     deflate_hp( you.hp_max, false );
 
-    return hitp;
+    return (hitp);
 }                               // end calc_hp()
 
 
@@ -2002,39 +2012,18 @@ int calc_mp(void)
 
     enp += ((invoc_extra > spell_extra) ? invoc_extra : spell_extra);
 
-
-#if 0
-    /* if (enp > 21) enp = ((enp - 27) / 2) + 27;
-       if (enp > 36) enp = ((enp - 36) / 2) + 36;
-       if (enp > 49) enp = ((enp - 49) / 2) + 49; */
-
-    if (enp > 18)               // nested if's rather than stacked 'em
-    {                           // uglier than before but slightly
-        enp = ((enp - 18) / 2) + 18;    // more efficient 16jan2000 {dlb}
-
-        if (enp > 27)
-        {
-            enp = ((enp - 27) / 2) + 27;
-
-            if (enp > 36)
-            {
-                enp = ((enp - 36) / 2) + 36;
-
-                if (enp > 49)
-                    enp = 49;
-            }
-        }
-    }
-#endif
-
     you.max_magic_points = stepdown_value( enp, 9, 18, 36, 49 );
+
+    you.max_magic_points += player_magical_power();
+    if (you.max_magic_points > 50)
+        you.max_magic_points = 50 + ((you.max_magic_points - 50) / 2);
 
     if (you.magic_points > you.max_magic_points)
         you.magic_points = you.max_magic_points;
 
     you.redraw_magic_points = 1;
 
-    return enp;
+    return (you.max_magic_points);
 }                               // end calc_mp()
 
 

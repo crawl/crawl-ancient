@@ -28,10 +28,117 @@
 #include "macro.h"
 #endif
 
+// MAX_COST_LIMIT is the maximum XP amount it will cost to raise a skill
+//                by 10 skill points (ie one standard practice).
+//
+// MAX_SPENDING_LIMIT is the maximum XP amount we allow the player to
+//                    spend on a skill in a single raise.
+//
+// Note that they don't have to be equal, but it is important to make
+// sure that they're set so that the spending limit will always allow
+// for 1 skill point to be earned.
 #define MAX_COST_LIMIT           250
 #define MAX_SPENDING_LIMIT       250
 
-static void exercise2(char exsk, char deg);
+static void exercise2( char exsk );
+
+// These values were calculated by running a simulation of gaining skills.
+// The goal is to try and match the old cost system which used the player's
+// experience level (which has a number of problems) so things shouldn't
+// seem too different to the player... but we still try to err on the
+// high side for the lower levels. -- bwr
+int skill_cost_needed( int level )
+{
+    // The average starting skill total is actually lower, but
+    // some classes get about 2200, and they would probably be
+    // start around skill cost level 3 if we used the average.  -- bwr
+    int ret = 2200;
+
+    switch (level)
+    {
+    case 1: ret = 0; break;
+
+    case 2:  ret +=   250; break; //  250 -- big because of initial 25 pool
+    case 3:  ret +=   350; break; //  100
+    case 4:  ret +=   550; break; //  200
+    case 5:  ret +=   900; break; //  350
+    case 6:  ret +=  1300; break; //  400
+    case 7:  ret +=  1900; break; //  600
+    case 8:  ret +=  2800; break; //  900
+    case 9:  ret +=  4200; break; // 1400
+    case 10: ret +=  5900; break; // 1700
+    case 11: ret +=  9000; break; // 3100
+
+    default:
+        ret += 9000 + (4000 * (level - 11));
+        break;
+    }
+
+    return (ret);
+}
+
+void calc_total_skill_points( void )
+{
+    int i;
+
+    you.total_skill_points = 0;
+    for (i = 0; i < NUM_SKILLS; i++)
+    {
+        you.total_skill_points += you.skill_points[i];
+    }
+
+    for (i = 1; i <= 27; i++) {
+        if (you.total_skill_points < skill_cost_needed(i)) break;
+    }
+    you.skill_cost_level = i - 1;
+}
+
+// skill_cost_level makes skills more expensive for more experienced characters
+// skill_level      makes higher skills more expensive
+static int calc_skill_cost( int skill_cost_level, int skill_level )
+{
+    int ret = 1 + skill_level;
+
+    // does not yet allow for loss of skill levels.
+    if (skill_level > 9)
+    {
+        ret *= (skill_level - 7);
+        ret /= 3;
+    }
+
+    if (skill_cost_level > 4)
+        ret += skill_cost_level - 4;
+    if (skill_cost_level > 7)
+        ret += skill_cost_level - 7;
+    if (skill_cost_level > 10)
+        ret += skill_cost_level - 10;
+    if (skill_cost_level > 13)
+        ret += skill_cost_level - 13;
+    if (skill_cost_level > 16)
+        ret += skill_cost_level - 16;
+
+    if (skill_cost_level > 10)
+    {
+        ret *= (skill_cost_level - 5);
+        ret /= 5;
+    }
+
+    if (skill_level > 7)
+        ret += 1;
+    if (skill_level > 9)
+        ret += 2;
+    if (skill_level > 11)
+        ret += 3;
+    if (skill_level > 13)
+        ret += 4;
+    if (skill_level > 15)
+        ret += 5;
+
+    if (ret > MAX_COST_LIMIT)
+        ret = MAX_COST_LIMIT;
+
+    return (ret);
+}
 
 void exercise(char exsk, int deg)
 {
@@ -42,7 +149,7 @@ void exercise(char exsk, int deg)
             if (!you.practise_skill[exsk] && !one_chance_in(4))
                 break;
 
-            exercise2(exsk, 1);
+            exercise2( exsk );
             deg--;
         }
     }
@@ -50,55 +157,14 @@ void exercise(char exsk, int deg)
     return;
 }                               // end exercise()
 
-static void exercise2(char exsk, char deg)
+static void exercise2( char exsk )
 {
-    // but "deg" always equals 1 ... {dlb}
-    int skill_change = deg * (1 + you.skills[exsk]);
-
+    int deg = 1;
     int bonus = 0;
-
     char old_best_skill = best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99);
 
-    // does not yet allow for loss of skill levels.
-    if (you.skills[exsk] > 9)
-        skill_change *= (you.skills[exsk] - 7) / 3;
-
-    if (you.experience_level > 4)
-        skill_change += you.experience_level - 4;
-    if (you.experience_level > 7)
-        skill_change += you.experience_level - 7;
-    if (you.experience_level > 9)
-        skill_change += you.experience_level - 9;
-    if (you.experience_level > 10)
-        skill_change += you.experience_level - 10;
-    if (you.experience_level > 11)
-        skill_change += you.experience_level - 11;
-
-    if (you.experience_level >= 8)
-        skill_change *= (you.experience_level - 4) / 4;
-
-    if (you.skills[exsk] > 7)
-        skill_change += 1;
-    if (you.skills[exsk] > 9)
-        skill_change += 2;
-    if (you.skills[exsk] > 11)
-        skill_change += 3;
-    if (you.skills[exsk] > 13)
-        skill_change += 4;
-    if (you.skills[exsk] > 15)
-        skill_change += 5;
-
-    if (skill_change > MAX_COST_LIMIT)
-        skill_change = MAX_COST_LIMIT;
-
-/*
- * New (LH): If the pool is filling up, you use more xp. I think this is
- * quite reasonable, as it will just get ignored past the 20K cut-off anyway.
- * Actually, trying to apply mathematical/logical rigour to the xp pool
- * system doesn't work - it's meant to be arbitrary. The only reason for its
- * existence is to give players a reason to go out and kill things and
- * explore instead of sitting around practising their skills.
- */
+    int skill_change = calc_skill_cost(you.skill_cost_level, you.skills[exsk]);
+    int i;
 
     // being good at some weapons makes others easier to learn:
     if (exsk < SK_SLINGS)
@@ -137,19 +203,20 @@ static void exercise2(char exsk, char deg)
     }
 
     // Quick fix for the fact that stealth can't be gained fast enough to
-    // keep up with the levels of monsters, this should speed its advancement
+    // keep up with the monster levels, this should speed its advancement
     if (exsk == SK_STEALTH)
         bonus += random2(3);
 
+    // spell casting is cheaper early on, and elementals hinder each other
     if (exsk >= SK_SPELLCASTING)
     {
-        if (you.experience_level < 5)
+        if (you.skill_cost_level < 5)
         {
             skill_change /= 2;
         }
-        else if (you.experience_level < 15)
+        else if (you.skill_cost_level < 15)
         {
-            skill_change *= (10 + (you.experience_level - 5));
+            skill_change *= (10 + (you.skill_cost_level - 5));
             skill_change /= 20;
         }
 
@@ -181,17 +248,40 @@ static void exercise2(char exsk, char deg)
             if (!one_chance_in(3))
                 return;
         }
+
+        // experimental restriction (too many spell schools) -- bwr
+        int skill_rank = 1;
+
+        for (i  = SK_CONJURATIONS; i <= SK_DIVINATIONS; i++)
+        {
+            if (you.skills[exsk] < you.skills[exsk])
+                skill_rank++;
+        }
+
+        // Things get progressively harder, but not harder than
+        // the Fire-Air or Ice-Earth level.
+        if (skill_rank > 3 && one_chance_in(10 - skill_rank))
+            return;
+    }
+
+    // experimental class "restriction" (fighter, mage, priest class) -- bwr
+    if (exsk == SK_SPELLCASTING || exsk == SK_INVOCATIONS || exsk == SK_FIGHTING)
+    {
+        if (exsk < you.skills[SK_SPELLCASTING]
+            || exsk < you.skills[SK_INVOCATIONS]
+            || exsk < you.skills[SK_FIGHTING])
+        {
+            if (one_chance_in(6))
+                return;
+        }
     }
 
     int fraction = 0;
 
-    // Have to be careful not to cause skills to become stagnant here.  The
-    // limit of 500 (250 for spells) above for skill_change will make the
-    // limit of 100 count for more than 1/10 so the spending_limit should
-    // never result in a skill never being able to advance.
     int spending_limit = (you.exp_available < MAX_SPENDING_LIMIT)
                                     ? you.exp_available : MAX_SPENDING_LIMIT;
 
+    // handle fractional learning
     if (skill_change > spending_limit)
     {
         // This system is a bit hard on missile weapons in the late game
@@ -268,6 +358,13 @@ static void exercise2(char exsk, char deg)
     you.skill_points[exsk] += skill_inc;
     you.exp_available -= skill_change;
 
+    you.total_skill_points += skill_inc;
+    if (you.skill_cost_level < 27
+       && you.total_skill_points >= skill_cost_needed(you.skill_cost_level + 1))
+    {
+        you.skill_cost_level++;
+    }
+
     if (you.exp_available < 0)
         you.exp_available = 0;
 
@@ -311,10 +408,11 @@ static void exercise2(char exsk, char deg)
             you.redraw_armour_class = 1;
         }
 
-        const unsigned char best =
-                            best_skill( SK_FIGHTING, (NUM_SKILLS - 1), 99 );
-        const unsigned char best_spell =
-                            best_skill( SK_SPELLCASTING, SK_POISON_MAGIC, 99 );
+        const unsigned char best = best_skill( SK_FIGHTING,
+                                               (NUM_SKILLS - 1), 99 );
+
+        const unsigned char best_spell = best_skill( SK_SPELLCASTING,
+                                                     SK_POISON_MAGIC, 99 );
 
         if ((exsk == SK_SPELLCASTING)
                 && (you.skills[exsk] == 1 && best_spell == SK_SPELLCASTING))

@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -78,18 +79,6 @@ struct talent
 static char show_abilities(struct talent *p_abils);
 static bool generate_abilities(struct talent *p_abils);
 static bool insert_ability(int which_ability, struct talent **p_pabils);
-
-struct ability_def
-{
-    int                 ability;
-    const char *        name;
-    unsigned char       mp_cost;        // magic cost of ability
-    unsigned char       hp_cost;        // hit point cost of ability
-    unsigned int        food_cost;      // + rand2avg( food_cost, 2 )
-    unsigned char       piety_cost;     // + random2( (piety_cost + 1) / 2 + 1 )
-    unsigned char       flags;          // used for additonal cost notices
-};
-
 
 // The description screen was way out of date with the actual costs.
 // This table puts all the information in one place... -- bwr
@@ -207,7 +196,7 @@ static const struct ability_def Ability_List[] =
     { ABIL_RENOUNCE_RELIGION, "Renounce Religion", 0, 0, 0, 0, ABFLAG_NONE },
 };
 
-static const struct ability_def & get_ability_def( int abil )
+const struct ability_def & get_ability_def( int abil )
 {
     for (unsigned int i = 0; i < sizeof( Ability_List ); i++)
     {
@@ -218,10 +207,10 @@ static const struct ability_def & get_ability_def( int abil )
     return (Ability_List[0]);
 }
 
-static const string make_cost_description( const struct ability_def &abil )
+const std::string make_cost_description( const struct ability_def &abil )
 {
-    char    tmp_buff[80];  // avoiding string steams for portability
-    string  ret = "";
+    char         tmp_buff[80];  // avoiding string steams for portability
+    std::string  ret = "";
 
     if (abil.mp_cost)
     {
@@ -300,6 +289,7 @@ static const string make_cost_description( const struct ability_def &abil )
 
     return (ret);
 }
+
 
 /*
    Activates a menu which gives player access to all of their non-spell
@@ -510,7 +500,6 @@ void activate_ability(void)
                             + random2(you.experience_level)
                             + you.mutation[MUT_MAPPING] * 10,
                       40 + random2(you.experience_level)
-                            + random2(you.experience_level)
                             + random2(you.experience_level) );
         break;
 
@@ -845,8 +834,7 @@ void activate_ability(void)
         break;
 
     case ABIL_KIKU_INVOKE_DEATH:
-        summon_ice_beast_etc(20 + you.skills[SK_INVOCATIONS] * 3,
-                             MONS_REAPER);
+        summon_ice_beast_etc(20 + you.skills[SK_INVOCATIONS] * 3, MONS_REAPER);
         exercise(SK_INVOCATIONS, 10 + random2(14));
         break;
 
@@ -965,7 +953,7 @@ void activate_ability(void)
             // make a divine lightning bolt...
             beam.beam_source = NON_MONSTER;
             beam.type = SYM_BURST;
-            beam.damage = 130;
+            beam.damage = dice_def( 3, 30 );
             beam.flavour = BEAM_ELECTRICITY;
             beam.target_x = you.x_pos;
             beam.target_y = you.y_pos;
@@ -1261,7 +1249,7 @@ static char show_abilities(struct talent *p_abils)
             // Output costs:
             gotoxy( 35, wherey() );
 
-            string cost_str = make_cost_description( abil );
+            std::string cost_str = make_cost_description( abil );
 
             if (cost_str.length() > 24)
                 cost_str = cost_str.substr( 0, 24 );
@@ -1465,7 +1453,7 @@ static bool generate_abilities(struct talent *p_abils)
     else
     {
         if (player_equip( EQ_RINGS, RING_INVISIBILITY )
-            || player_equip_special( EQ_ALL_ARMOUR, SPARM_DARKNESS )
+            || player_equip_ego_type( EQ_ALL_ARMOUR, SPARM_DARKNESS )
             || scan_randarts(RAP_INVISIBLE))
         {
             insert_ability(ABIL_TURN_INVISIBLE, &p_abils);
@@ -1480,7 +1468,7 @@ static bool generate_abilities(struct talent *p_abils)
     else
     {
         if (player_equip( EQ_RINGS, RING_LEVITATION )
-            || player_equip_special( EQ_BOOTS, SPARM_LEVITATION )
+            || player_equip_ego_type( EQ_BOOTS, SPARM_LEVITATION )
             || scan_randarts(RAP_LEVITATE))
         {
             insert_ability(ABIL_LEVITATE, &p_abils);
@@ -1634,6 +1622,7 @@ static bool insert_ability(int which_ability, struct talent **p_pabils)
 /*********************************************************************/
 {
     int failure = 0;
+    bool perfect = false;  // is perfect
     bool invoc = false;
 
     (*p_pabils)->which = which_ability;
@@ -1642,6 +1631,7 @@ static bool insert_ability(int which_ability, struct talent **p_pabils)
     {
     // begin spell abilities
     case ABIL_DELAYED_FIREBALL:
+        perfect = true;
         failure = 0;
         break;
 
@@ -1738,6 +1728,7 @@ static bool insert_ability(int which_ability, struct talent **p_pabils)
 
         // begin transformation abilities {dlb}
     case ABIL_END_TRANSFORMATION:
+        perfect = true;
         failure = 0;
         break;
 
@@ -1757,6 +1748,7 @@ static bool insert_ability(int which_ability, struct talent **p_pabils)
 
     case ABIL_TURN_VISIBLE:
     case ABIL_STOP_LEVITATING:
+        perfect = true;
         failure = 0;
         break;
 
@@ -1896,6 +1888,7 @@ static bool insert_ability(int which_ability, struct talent **p_pabils)
 
     case ABIL_RENOUNCE_RELIGION:
         invoc = true;
+        perfect = true;
         failure = 0;
         break;
 
@@ -1905,11 +1898,9 @@ static bool insert_ability(int which_ability, struct talent **p_pabils)
         break;
     }
 
-    // this will provide at least a slim chance of failure
-    // note that I'm deliberately excluding "failure == 0"
-    // cases here, as it seems unfair to penalize things like
-    // turning visible or ending levitation {dlb}:
-    if (failure < 0)
+    // Perfect abilities are things like "renounce religion", which
+    // shouldn't have a failure rate ever. -- bwr
+    if (failure <= 0 && !perfect)
         failure = 1;
 
     (*p_pabils)->fail = failure;

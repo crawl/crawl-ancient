@@ -19,13 +19,13 @@
 /* ***********************************************************************
  * called from: bang - it_use2 - monstuff - mstuff2
  * *********************************************************************** */
-void beam(struct bolt &pbolt, int inv_number = -1);
+void beam( struct bolt &pbolt, int inv_number = -1 );
 
 // last updated 19apr2001 {gdl}
 /* ***********************************************************************
  * called from: beam
  * *********************************************************************** */
-bool nasty_beam(struct monsters *mon, struct bolt &beam);
+bool nasty_beam( struct monsters *mon, struct bolt &beam );
 
 
 // last updated 12may2000 {dlb}
@@ -33,40 +33,40 @@ bool nasty_beam(struct monsters *mon, struct bolt &beam);
  * called from: ability - it_use3 - item_use - mstuff2 - religion -
  *              spells - spells4
  * *********************************************************************** */
-void explosion(struct bolt &pbolt);
+void explosion( struct bolt &pbolt, bool hole_in_the_middle = false );
 
 
 // last updated 22jan2001 {gdl}
 /* ***********************************************************************
  * called from: effects - spells2 - spells4
  * *********************************************************************** */
-int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
-    int hurted, bool doFlavouredEffects = true);
+int mons_adjust_flavoured( struct monsters *monster, struct bolt &pbolt,
+                           int hurted, bool doFlavouredEffects = true );
 
 
 /* ***********************************************************************
  * called from: effects
  * *********************************************************************** */
-bool check_mons_magres(struct monsters *monster, int pow);
+bool check_mons_magres( struct monsters *monster, int pow );
 
 
 /* ***********************************************************************
  * called from: ability - item_use - spell
  * returns true if messages were generated during the enchantment
  * *********************************************************************** */
-bool mass_enchantment(int wh_enchant, int pow, int who);
+bool mass_enchantment( int wh_enchant, int pow, int who );
 
 
 /* ***********************************************************************
  * called from: fight - monstuff - mstuff2
  * *********************************************************************** */
-int mons_ench_f2(struct monsters *monster, struct bolt &pbolt);
+int mons_ench_f2( struct monsters *monster, struct bolt &pbolt );
 
 
 /* ***********************************************************************
  * called from: fight - monstuff - spells2
  * *********************************************************************** */
-void poison_monster(struct monsters *monster, bool fromPlayer, int levels = 1);
+void poison_monster( struct monsters *monster, bool fromPlayer, int levels = 1 );
 
 
 /* ***********************************************************************
@@ -83,15 +83,15 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-void fire_tracer(struct monsters *monster, struct bolt &pbolt);
+void fire_tracer( struct monsters *monster, struct bolt &pbolt );
 
 
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-void mimic_alert(struct monsters *mimic);
+void mimic_alert( struct monsters *mimic );
 
 
-void zapping(char ztype, int power, struct bolt &pbolt);
+void zapping( char ztype, int power, struct bolt &pbolt );
 
 #endif

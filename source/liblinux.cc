@@ -554,12 +554,14 @@ void update_screen(void)
 void clear_to_end_of_line(void)
 {
     textcolor( LIGHTGREY );
+    textbackground( BLACK );
     clrtoeol();
 }
 
 void clear_to_end_of_screen(void)
 {
     textcolor( LIGHTGREY );
+    textbackground( BLACK );
     clrtobot();
 }
 
@@ -573,6 +575,7 @@ int clrscr()
     int retval;
 
     textcolor( LIGHTGREY );
+    textbackground( BLACK );
     retval = clear();
     refresh();
     return (retval);
@@ -630,7 +633,7 @@ void textcolor(int col)
     // figure out which colour pair we want
     const int pair = (fg == 0 && bg == 0) ? 63 : (bg * 8 + fg);
 
-    attrset(COLOR_PAIR(pair) | flags | character_set);
+    attrset( COLOR_PAIR(pair) | flags | character_set );
 }
 
 
@@ -678,7 +681,7 @@ void textbackground(int col)
     // figure out which colour pair we want
     const int pair = (fg == 0 && bg == 0) ? 63 : (bg * 8 + fg);
 
-    attrset(COLOR_PAIR(pair) | flags | character_set);
+    attrset( COLOR_PAIR(pair) | flags | character_set );
 }
 
 

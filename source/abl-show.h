@@ -12,6 +12,23 @@
 #ifndef ABLSHOW_H
 #define ABLSHOW_H
 
+#include <string>
+
+// Structure for representing an ability:
+struct ability_def
+{
+    int                 ability;
+    const char *        name;
+    unsigned char       mp_cost;        // magic cost of ability
+    unsigned char       hp_cost;        // hit point cost of ability
+    unsigned int        food_cost;      // + rand2avg( food_cost, 2 )
+    unsigned char       piety_cost;     // + random2( (piety_cost + 1) / 2 + 1 )
+    unsigned char       flags;          // used for additonal cost notices
+};
+
+const struct ability_def & get_ability_def( int abil );
+
+const std::string   make_cost_description( const struct ability_def &abil );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************

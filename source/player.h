@@ -15,7 +15,7 @@
 #include "externs.h"
 
 int player_equip( int slot, int sub_type );
-int player_equip_special( int slot, int sub_type );
+int player_equip_ego_type( int slot, int sub_type );
 int player_damage_type( void );
 
 bool player_is_shapechanged(void);
@@ -124,7 +124,7 @@ int player_hunger_rate(void);
  * called from: debug - it_use3 - spells0
  * *********************************************************************** */
 int player_mag_abil(bool is_weighted);
-
+int player_magical_power( void );
 
 /* ***********************************************************************
  * called from: fight - misc - ouch - spells
@@ -423,6 +423,12 @@ bool player_descriptor( unsigned char which_descriptor,
  * called from:
  * *********************************************************************** */
 void contaminate_player(int change, bool statusOnly = false);
+
+void poison_player( int amount );
+void reduce_poison_player( int amount );
+
+void confuse_player( int amount, bool resistable = true );
+void reduce_confuse_player( int amount );
 
 // last updated 15sep2001 {bwr}
 /* ***********************************************************************

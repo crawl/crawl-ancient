@@ -85,7 +85,7 @@ void pickup(void);
  * called from: beam - items - transfor
  * *********************************************************************** */
 bool copy_item_to_grid( const item_def &item, int x_plos, int y_plos,
-                        int quant_drop = 0 ); // item.quantity by default
+                        int quant_drop = -1 ); // item.quantity by default
 
 // last updated Oct 15, 2000 -- bwr
 /* ***********************************************************************
@@ -105,6 +105,7 @@ void drop(void);
  * called from: files - items
  * *********************************************************************** */
 void update_corpses(double elapsedTime);
+void update_level(double elapsedTime);
 
 
 // last updated: 08jun2000 {dlb}

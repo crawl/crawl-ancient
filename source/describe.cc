@@ -29,6 +29,7 @@
 
 #include "externs.h"
 
+#include "abl-show.h"
 #include "debug.h"
 #include "fight.h"
 #include "itemname.h"
@@ -57,7 +58,7 @@
 // positive values (itoa always adds - to -ve ones).
 //
 //---------------------------------------------------------------
-static void append_value(string & description, int valu, bool plussed)
+static void append_value( std::string & description, int valu, bool plussed )
 {
     if (valu >= 0 && plussed == 1)
         description += "+";
@@ -78,9 +79,9 @@ static void append_value(string & description, int valu, bool plussed)
 // word and such. The character $ is interpreted as a CR.
 //
 //---------------------------------------------------------------
-static void print_description(const string &d)
+static void print_description( const std::string &d )
 {
-    unsigned int  nextLine = string::npos;
+    unsigned int  nextLine = std::string::npos;
     unsigned int  currentPos = 0;
 
 #ifdef DOS
@@ -109,13 +110,15 @@ static void print_description(const string &d)
         if (nlSearch)
         {
             nextLine = d.find('$', currentPos);
+
             if (nextLine >= currentPos && nextLine < currentPos + lineWidth)
             {
                 cprintf((d.substr(currentPos, nextLine - currentPos)).c_str());
                 currentPos = nextLine + 1;
                 continue;
             }
-            if (nextLine < 0)
+
+            if (nextLine == std::string::npos)
                 nlSearch = false;       // there are no newlines, don't search again.
         }
 
@@ -156,7 +159,7 @@ static void print_description(const string &d)
 // string.
 //
 //---------------------------------------------------------------
-static void randart_descpr( string &description, const item_def &item )
+static void randart_descpr( std::string &description, const item_def &item )
 {
     unsigned int old_length = description.length();
 
@@ -305,9 +308,10 @@ static void randart_descpr( string &description, const item_def &item )
 
     if (is_unrandom_artefact( item ))
     {
-        if (strlen(unrandart_descrip(0, item)) > 0)
+        const char *desc = unrandart_descrip( 0, item );
+        if (strlen( desc ) > 0)
         {
-            description += unrandart_descrip(0, item);
+            description += desc;
             description += "$";
         }
     }
@@ -321,7 +325,7 @@ static void randart_descpr( string &description, const item_def &item )
 // Describes the random demons you find in Pandemonium.
 //
 //---------------------------------------------------------------
-static string describe_demon(void)
+static std::string describe_demon(void)
 {
     long globby = 0;
 
@@ -332,7 +336,7 @@ static string describe_demon(void)
 
     srand(globby);
 
-    string description = "A powerful demon, ";
+    std::string description = "A powerful demon, ";
 
     description += ghost.name;
     description += " has a";
@@ -658,9 +662,9 @@ static string describe_demon(void)
 // describe_weapon
 //
 //---------------------------------------------------------------
-static string describe_weapon( const item_def &item, char verbose)
+static std::string describe_weapon( const item_def &item, char verbose)
 {
-    string description;
+    std::string description;
 
     description.reserve(200);
 
@@ -995,11 +999,9 @@ static string describe_weapon( const item_def &item, char verbose)
 
     if (!is_fixed_artefact( item ))
     {
-        int spec_ench = item.special;
+        int spec_ench = get_weapon_brand( item );
 
-        if (is_random_artefact( item ))
-            spec_ench = randart_wpn_property(item, RAP_BRAND);
-        else if (verbose == 0)
+        if (!is_random_artefact( item ) || verbose == 0)
             spec_ench = SPWPN_NORMAL;
 
         // special weapon descrip
@@ -1229,9 +1231,9 @@ static string describe_weapon( const item_def &item, char verbose)
 // describe_ammo
 //
 //---------------------------------------------------------------
-static string describe_ammo( const item_def &item )
+static std::string describe_ammo( const item_def &item )
 {
-    string description;
+    std::string description;
 
     description.reserve(64);
 
@@ -1295,9 +1297,9 @@ static string describe_ammo( const item_def &item )
 // describe_armour
 //
 //---------------------------------------------------------------
-static string describe_armour( const item_def &item, char verbose )
+static std::string describe_armour( const item_def &item, char verbose )
 {
-    string description;
+    std::string description;
 
     description.reserve(200);
 
@@ -1537,14 +1539,14 @@ static string describe_armour( const item_def &item, char verbose )
         description += "$";
     }
 
-    if (!is_random_artefact( item )
-            && item.special != SPARM_NORMAL
-            && item_ident( item, ISFLAG_KNOW_TYPE )
-            && verbose == 1)
+    int ego = get_armour_ego_type( item );
+    if (ego != SPARM_NORMAL
+        && item_ident( item, ISFLAG_KNOW_TYPE )
+        && verbose == 1)
     {
         description += "$";
 
-        switch (item.special)
+        switch (ego)
         {
         case SPARM_RUNNING:
             description += "It allows its wearer to run at a great speed. ";
@@ -1661,9 +1663,9 @@ static string describe_armour( const item_def &item, char verbose )
 // describe_stick
 //
 //---------------------------------------------------------------
-static string describe_stick( const item_def &item )
+static std::string describe_stick( const item_def &item )
 {
-    string description;
+    std::string description;
 
     description.reserve(64);
 
@@ -1781,9 +1783,9 @@ static string describe_stick( const item_def &item )
 // describe_food
 //
 //---------------------------------------------------------------
-static string describe_food( const item_def &item )
+static std::string describe_food( const item_def &item )
 {
-    string description;
+    std::string description;
 
     description.reserve(100);
 
@@ -1997,9 +1999,9 @@ static string describe_food( const item_def &item )
 // describe_potion
 //
 //---------------------------------------------------------------
-static string describe_potion( const item_def &item )
+static std::string describe_potion( const item_def &item )
 {
-    string description;
+    std::string description;
 
     description.reserve(64);
 
@@ -2226,9 +2228,9 @@ static string describe_potion( const item_def &item )
 // describe_scroll
 //
 //---------------------------------------------------------------
-static string describe_scroll( const item_def &item )
+static std::string describe_scroll( const item_def &item )
 {
-    string description;
+    std::string description;
 
     description.reserve(64);
 
@@ -2389,9 +2391,9 @@ static string describe_scroll( const item_def &item )
 // describe_jewellery
 //
 //---------------------------------------------------------------
-static string describe_jewellery( const item_def &item, char verbose)
+static std::string describe_jewellery( const item_def &item, char verbose)
 {
-    string description;
+    std::string description;
 
     description.reserve(200);
 
@@ -2668,9 +2670,9 @@ static string describe_jewellery( const item_def &item, char verbose)
 // describe_staff
 //
 //---------------------------------------------------------------
-static string describe_staff( const item_def &item )
+static std::string describe_staff( const item_def &item )
 {
-    string description;
+    std::string description;
 
     description.reserve(200);
 
@@ -2811,9 +2813,9 @@ static string describe_staff( const item_def &item )
 // describe_misc_item
 //
 //---------------------------------------------------------------
-static string describe_misc_item( const item_def &item )
+static std::string describe_misc_item( const item_def &item )
 {
-    string description;
+    std::string description;
 
     description.reserve(100);
 
@@ -2998,8 +3000,6 @@ static string describe_misc_item( const item_def &item )
 
 bool is_dumpable_artifact( const item_def &item, char verbose)
 {
-    const int spec_ench = item.special;
-
     bool ret = false;
 
     if (is_random_artefact( item ) || is_fixed_artefact( item ))
@@ -3009,6 +3009,7 @@ bool is_dumpable_artifact( const item_def &item, char verbose)
     else if (item.base_type == OBJ_ARMOUR
         && (verbose == 1 && item_ident( item, ISFLAG_KNOW_TYPE )))
     {
+        const int spec_ench = get_armour_ego_type( item );
         ret = (spec_ench >= SPARM_RUNNING && spec_ench <= SPARM_PRESERVATION);
     }
     else if (item.base_type == OBJ_JEWELLERY
@@ -3030,9 +3031,9 @@ bool is_dumpable_artifact( const item_def &item, char verbose)
 // be interpreted as carriage returns.
 //
 //---------------------------------------------------------------
-string get_item_description( const item_def &item, char verbose, bool dump )
+std::string get_item_description( const item_def &item, char verbose, bool dump )
 {
-    string description;
+    std::string description;
     description.reserve(500);
 
     if (!dump)
@@ -3040,7 +3041,7 @@ string get_item_description( const item_def &item, char verbose, bool dump )
         char str_pass[80];
 
         item_name( item, DESC_INVENTORY_EQUIP, str_pass );
-        description += string(str_pass);
+        description += std::string(str_pass);
     }
 
     description += "$$";
@@ -3179,7 +3180,7 @@ void describe_item( const item_def &item )
 
     clrscr();
 
-    string description = get_item_description( item, 1 );
+    std::string description = get_item_description( item, 1 );
 
     print_description(description);
 
@@ -3202,7 +3203,7 @@ void describe_item( const item_def &item )
 //---------------------------------------------------------------
 void describe_spell(int spelled)
 {
-    string description;
+    std::string description;
 
     description.reserve(500);
 
@@ -4295,7 +4296,7 @@ void describe_spell(int spelled)
 //---------------------------------------------------------------
 void describe_monsters(int class_described, unsigned char which_mons)
 {
-    string description;
+    std::string description;
 
     description.reserve(200);
 
@@ -4307,7 +4308,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 #endif
 
     clrscr();
-    description = string( ptr_monam( &(menv[ which_mons ]), DESC_CAP_A ) );
+    description = std::string( ptr_monam( &(menv[ which_mons ]), DESC_CAP_A ) );
     description += "$$";
 
     switch (class_described)
@@ -5978,6 +5979,18 @@ void describe_monsters(int class_described, unsigned char which_mons)
 }                               // end describe_monsters
 
 
+void print_god_abil_desc( int abil )
+{
+    const ability_def &abil_info = get_ability_def( abil );
+
+    const std::string cost = "(" + make_cost_description( abil_info ) + ")";
+
+    // Produce a 79 character string with cost right justified:
+    std::string str( abil_info.name );
+    str += std::string( 79 - str.length() - cost.length(), ' ' ) + cost + EOL;
+
+    cprintf( str.c_str() );
+}
 
 
 //---------------------------------------------------------------
@@ -6234,7 +6247,7 @@ void describe_god( int which_god )
                          (you.piety >  70) ? "A rising star in the eyes of %s." :
                          (you.piety >  40) ? "%s is most pleased with you." :
                          (you.piety >  20) ? "%s has noted your presence." :
-                         (you.piety >   5) ? "%s is noncommital."
+                         (you.piety >   5) ? "%s is noncommittal."
                                            : "You are beneath notice.",
 
                          god_name(which_god)
@@ -6279,105 +6292,185 @@ void describe_god( int which_god )
         // under penance (fix me if I'm wrong)
         if (player_under_penance())
         {
-            cprintf( "None." );
+            cprintf( "None." EOL );
         }
         else
         {
             switch (which_god) //mv: finaly let's print abilities
             {
             case GOD_ZIN:
-                if ( you.piety >= 30 )  cprintf ("You can repel the undead.                                       (1 Magic, Food)" EOL);
-                else cprintf ("None.");
+                if (you.piety >= 30)
+                    print_god_abil_desc( ABIL_ZIN_REPEL_UNDEAD );
+                else
+                    cprintf( "None." EOL );
 
-                if ( you.piety >= 50 )  cprintf ("You can lay on hands for minor healing.                  (2 Magic, Food, Piety)" EOL);
-                if ( you.piety >= 75 )  cprintf ("You can call down a plague.                              (3 Magic, Food, Piety)" EOL);
-                if ( you.piety >= 100 ) cprintf ("You can utter a Holy Word.                               (6 Magic, Food, Piety)" EOL);
-                if ( you.piety >= 120 ) cprintf ("You are able to summon a guardian angel.                 (7 Magic, Food, Piety)" EOL);
+                if (you.piety >= 50)
+                    print_god_abil_desc( ABIL_ZIN_HEALING );
+
+                if (you.piety >= 75)
+                    print_god_abil_desc( ABIL_ZIN_PESTILENCE );
+
+                if (you.piety >= 100)
+                    print_god_abil_desc( ABIL_ZIN_HOLY_WORD );
+
+                if (you.piety >= 120)
+                    print_god_abil_desc( ABIL_ZIN_SUMMON_GUARDIAN );
                 break;
 
             case GOD_SHINING_ONE:
-                if ( you.piety >= 30 )  cprintf ("You can repel the undead.                                       (1 Magic, Food)" EOL);
-                else cprintf ("None.");
+                if (you.piety >= 30)
+                    print_god_abil_desc( ABIL_TSO_REPEL_UNDEAD );
+                else
+                    cprintf( "None." EOL );
 
-                if ( you.piety >= 50 )  cprintf ("You can smite your foes.                                 (3 Magic, Food, Piety)" EOL);
-                if ( you.piety >= 75 )  cprintf ("You can dispel the undead.                               (3 Magic, Food, Piety)" EOL);
-                if ( you.piety >= 100 ) cprintf ("You can hurl bolts of divine anger.                      (5 Magic, Food, Piety)" EOL);
-                if ( you.piety >= 120 ) cprintf ("You are able to summon a divine warrior.                 (8 Magic, Food, Piety)" EOL);
+                if (you.piety >= 50)
+                    print_god_abil_desc( ABIL_TSO_SMITING );
+
+                if (you.piety >= 75)
+                    print_god_abil_desc( ABIL_TSO_ANNIHILATE_UNDEAD );
+
+                if (you.piety >= 100)
+                    print_god_abil_desc( ABIL_TSO_THUNDERBOLT );
+
+                if (you.piety >= 120)
+                    print_god_abil_desc( ABIL_TSO_SUMMON_DAEVA );
                 break;
 
             case GOD_KIKUBAAQUDGHA:
-                 if ( you.piety >= 30 )  cprintf ("You can recall your undead slaves.                                    (1 Magic)" EOL);
-                 else cprintf ("None.");
+                if (you.piety >= 30)
+                    print_god_abil_desc( ABIL_KIKU_RECALL_UNDEAD_SLAVES );
+                else
+                    cprintf( "None." EOL );
 
-                 if ( you.piety >= 50 )  cprintf ("You are protected from some of the side-effects of death magic." EOL);
-                 if ( you.piety >= 75 )  cprintf ("You can permanently enslave the undead.                  (2 Magic, Food, Piety)" EOL);
-                 if ( you.piety >= 120 ) cprintf ("You are able to summon an emissary of Death.             (3 Magic, Food, Piety)" EOL);
-                 break;
+                if (you.piety >= 50)
+                    cprintf("You are protected from some of the side-effects of death magic." EOL);
+
+                if (you.piety >= 75)
+                    print_god_abil_desc( ABIL_KIKU_ENSLAVE_UNDEAD );
+
+                if (you.piety >= 120)
+                    print_god_abil_desc( ABIL_KIKU_INVOKE_DEATH );
+                break;
 
             case GOD_YREDELEMNUL:
-                 if ( you.piety >= 30 )  cprintf ("You can animate corpses.                                        (3 Magic, Food)" EOL);
-                 else cprintf ("None.");
-                 if ( you.piety >= 50 )  cprintf ("You can recall your undead slaves.                              (4 Magic, Food)" EOL);
-                 if ( you.piety >= 75 )  cprintf ("You can animate legions of the dead.                     (7 Magic, Food, Piety)" EOL);
-                 if ( you.piety >= 100 ) cprintf ("You can drain ambient lifeforce.                         (6 Magic, Food, Piety)" EOL);
-                 if ( you.piety >= 120 ) cprintf ("You can control the undead.                              (5 Magic, Food, Piety)" EOL);
-                 break;
+                if (you.piety >= 30)
+                    print_god_abil_desc( ABIL_YRED_ANIMATE_CORPSE );
+                else
+                    cprintf( "None." EOL );
+
+                if (you.piety >= 50)
+                    print_god_abil_desc( ABIL_YRED_RECALL_UNDEAD );
+
+                if (you.piety >= 75)
+                    print_god_abil_desc( ABIL_YRED_ANIMATE_DEAD );
+
+                if (you.piety >= 100)
+                    print_god_abil_desc( ABIL_YRED_DRAIN_LIFE );
+
+                if (you.piety >= 120)
+                    print_god_abil_desc( ABIL_YRED_CONTROL_UNDEAD );
+                break;
+
 
             case GOD_VEHUMET:
-                 if ( you.piety >= 30 )  cprintf ("You can gain power from the those you kill "EOL
-                                                  "   in Vehumet's name, or those slain by your servants." EOL);
-                 else cprintf ("None.");
+                if (you.piety >= 30)
+                {
+                    cprintf( "You can gain power from the those you kill " EOL
+                             "   in Vehumet's name, or those slain by your servants." EOL );
+                }
+                else
+                    cprintf( "None." EOL );
 
-                 if ( you.piety >= 50 )  cprintf ("Vehumet assists with destructive magics during prayer." EOL);
-                 if ( you.piety >= 75 )  cprintf ("During prayer you have some protection from summoned creatures." EOL);
-                 if ( you.piety >= 100 ) cprintf ("You are able to tap ambient magical fields.                              (Food)" EOL);
-                 break;
+                if (you.piety >= 50)
+                    cprintf( "Vehumet assists with destructive magics during prayer." EOL );
+
+                if (you.piety >= 75)
+                    cprintf( "During prayer you have some protection from summoned creatures." EOL );
+
+                if (you.piety >= 100)
+                    print_god_abil_desc( ABIL_VEHUMET_CHANNEL_ENERGY );
+                break;
+
 
             case GOD_OKAWARU:
-                 if ( you.piety >= 30 )  cprintf ("You can gain great, albeit temporary, body strength.     (2 Magic, Food, Piety)" EOL);
-                    else cprintf ("None.");
-                 if ( you.piety >= 50 )  cprintf ("You can call upon Okawaru for minor healing.             (2 Magic, Food, Piety)" EOL);
-                 if ( you.piety >= 120 ) cprintf ("You can haste yourself.                                  (5 Magic, Food, Piety)" EOL);
-                 break;
+                if (you.piety >= 30)
+                    print_god_abil_desc( ABIL_OKAWARU_MIGHT );
+                else
+                    cprintf( "None." EOL );
+
+                if (you.piety >= 50)
+                    print_god_abil_desc( ABIL_OKAWARU_HEALING );
+
+                if (you.piety >= 120)
+                    print_god_abil_desc( ABIL_OKAWARU_HASTE );
+                break;
 
             case GOD_MAKHLEB:
-                 if ( you.piety >= 30 )  cprintf ("You can gain power from the deaths " EOL
-                                                  "   of those you kill in Makhleb's name." EOL);
-                 else cprintf ("None.");
+                if (you.piety >= 30)
+                {
+                    cprintf( "You can gain power from the deaths " EOL
+                             "   of those you kill in Makhleb's name." EOL );
+                }
+                else
+                    cprintf( "None." EOL );
 
-                 if ( you.piety >= 50 )  cprintf ("You can throw some minor destruction on your foes.              (1 Magic, Food)" EOL);
-                 if ( you.piety >= 75 )  cprintf ("You can summon a lesser demon to your aid.               (2 Magic, Food, Piety)" EOL);
-                 if ( you.piety >= 100 ) cprintf ("You can invoke great divine destruction.               (4 Magic, Food, Piety)" EOL);
-                 if ( you.piety >= 120 ) cprintf ("You can summon a greater servant of Makhleb.             (6 Magic, Food, Piety)" EOL);
-                 break;
+                if (you.piety >= 50)
+                    print_god_abil_desc( ABIL_MAKHLEB_MINOR_DESTRUCTION );
+
+                if (you.piety >= 75)
+                    print_god_abil_desc( ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB );
+
+                if (you.piety >= 100)
+                    print_god_abil_desc( ABIL_MAKHLEB_MAJOR_DESTRUCTION );
+
+                if (you.piety >= 120)
+                    print_god_abil_desc( ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB );
+                break;
 
             case GOD_SIF_MUNA:
-                 if ( you.piety >= 50 )  cprintf ("You can freely open your mind to new spells.                   (2 Magic, Piety)" EOL);
-                 else cprintf ("None.");
+                if (you.piety >= 50)
+                    print_god_abil_desc( ABIL_SIF_MUNA_FORGET_SPELL );
+                else
+                    cprintf( "None." EOL );
 
-                 if ( you.piety >= 100 ) cprintf ("You are protected from some side-effects of spellcasting." EOL);
-                 break;
+                if (you.piety >= 100)
+                    cprintf( "You are protected from some side-effects of spellcasting." EOL );
+                break;
 
             case GOD_TROG:
-                 if ( you.piety >= 30 )  cprintf ("You are able to go berserk at will.                                      (Food)" EOL);
-                 else cprintf ("None.");
+                if (you.piety >= 30)
+                    print_god_abil_desc( ABIL_TROG_BERSERK );
+                else
+                    cprintf( "None." EOL );
 
-                 if ( you.piety >= 50 )  cprintf ("You can give your body great, but temporary, strength.            (Food, Piety)" EOL);
-                 if ( you.piety >= 100 ) cprintf ("You are able to haste yourself.                                   (Food, Piety)" EOL);
-                 break;
+                if (you.piety >= 50)
+                    print_god_abil_desc( ABIL_TROG_MIGHT );
+
+                if (you.piety >= 100)
+                    print_god_abil_desc( ABIL_TROG_HASTE_SELF );
+                break;
 
             case GOD_ELYVILON:
-                 if ( you.piety >= 30 )  cprintf ("You can call upon Elyvilon for minor healing.                   (1 Magic, Food)" EOL);
-                 else cprintf ("None.");
+                if (you.piety >= 30)
+                    print_god_abil_desc( ABIL_ELYVILON_LESSER_HEALING );
+                else
+                    cprintf( "None." EOL );
 
-                 if ( you.piety >= 50 )  cprintf ("You are able to purify yourself.                         (2 Magic, Food, Piety)" EOL);
-                 if ( you.piety >= 75 )  cprintf ("You can invoke moderate healing.                         (2 Magic, Food, Piety)" EOL);
-                 if ( you.piety >= 100 ) cprintf ("You can restore your abilities.                          (3 Magic, Food, Piety)" EOL);
-                 if ( you.piety >= 120 ) cprintf ("You can call upon Elyvilon for incredible healing.       (6 Magic, Food, Piety)" EOL);
-                 break;
+                if (you.piety >= 50)
+                    print_god_abil_desc( ABIL_ELYVILON_PURIFICATION );
+
+                if (you.piety >= 75)
+                    print_god_abil_desc( ABIL_ELYVILON_HEALING );
+
+                if (you.piety >= 100)
+                    print_god_abil_desc( ABIL_ELYVILON_RESTORATION );
+
+                if (you.piety >= 120)
+                    print_god_abil_desc( ABIL_ELYVILON_GREATER_HEALING );
+                break;
 
             default:   //mv: default is Xom, Nemelex and all bugs.
-                 cprintf ("None.");
+                cprintf( "None." EOL );
             } //end of printing abilities
         }
     }

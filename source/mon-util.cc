@@ -29,6 +29,7 @@
 #include "debug.h"
 #include "itemname.h"
 #include "player.h"
+#include "randart.h"
 #include "stuff.h"
 #include "view.h"
 
@@ -117,7 +118,7 @@ static monsterentry *seekmonster(int *p_monsterid);
 #define smc seekmonster(&mc)
 
 /* ******************** BEGIN PUBLIC FUNCTIONS ******************** */
-void mon_init(FixedVector < unsigned short, 1000 > &colour)
+void mons_init(FixedVector < unsigned short, 1000 > &colour)
 {
     unsigned int x;             // must be unsigned to match size_t {dlb}
 
@@ -141,13 +142,46 @@ void mon_init(FixedVector < unsigned short, 1000 > &colour)
             mon_entry[x] = mon_entry[MONS_PROGRAM_BUG];
     }
     //return (monsterentry *) 0; // return value should not matter here {dlb}
-}                               // end mon_init()
+}                               // end mons_init()
 
 
 int mons_flag(int mc, int bf)
 {
     return (smc->bitfields & bf) != 0;
 }                               // end mons_flag()
+
+
+static int scan_mon_inv_randarts( struct monsters *mon, int ra_prop )
+{
+    int ret = 0;
+
+    if (mons_itemuse( mon->type ) >= MONUSE_STARTING_EQUIPMENT)
+    {
+        const int weapon = mon->inv[MSLOT_WEAPON];
+        const int second = mon->inv[MSLOT_MISSILE]; // ettins/two-head oges
+        const int armour = mon->inv[MSLOT_ARMOUR];
+
+        if (weapon != NON_ITEM && mitm[weapon].base_type == OBJ_WEAPONS
+            && is_random_artefact( mitm[weapon] ))
+        {
+            ret += randart_wpn_property( mitm[weapon], ra_prop );
+        }
+
+        if (second != NON_ITEM && mitm[second].base_type == OBJ_WEAPONS
+            && is_random_artefact( mitm[second] ))
+        {
+            ret += randart_wpn_property( mitm[second], ra_prop );
+        }
+
+        if (armour != NON_ITEM && mitm[armour].base_type == OBJ_ARMOUR
+            && is_random_artefact( mitm[armour] ))
+        {
+            ret += randart_wpn_property( mitm[armour], ra_prop );
+        }
+    }
+
+    return (ret);
+}
 
 
 int mons_holiness(int mc)
@@ -157,9 +191,9 @@ int mons_holiness(int mc)
 
 bool mons_is_demon( int mc )
 {
-    const int show_char = smc->showchar;
+    const int show_char = mons_char( mc );
 
-    // Not every demonic monster is a demon (ie hellhog)
+    // Not every demonic monster is a demon (ie hell hog, hell hound)
     if (mons_holiness( mc ) == MH_DEMONIC
         && (isdigit( show_char ) || show_char == '&'))
     {
@@ -169,9 +203,10 @@ bool mons_is_demon( int mc )
     return (false);
 }
 
+// Used for elven Glamour ability. -- bwr
 bool mons_is_humanoid( int mc )
 {
-    switch (smc->showchar)
+    switch (mons_char( mc))
     {
     case 'o':   // orcs
     case 'e':   // elvens (deep)
@@ -233,7 +268,7 @@ char mons_shouts(int mc)
     return (u);
 }                               // end mons_shouts()
 
-static bool mons_is_unique( int mc )
+bool mons_is_unique( int mc )
 {
     if (mc <= MONS_PROGRAM_BUG
         || (mc >= MONS_NAGA_MAGE && mc <= MONS_ROYAL_JELLY)
@@ -246,12 +281,16 @@ static bool mons_is_unique( int mc )
     return (true);
 }
 
-char mons_see_invis(int mc)
+char mons_see_invis( struct monsters *mon )
 {
-    if (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON)
-        return ghost.values[3];
-    else
-        return ((smc->bitfields & M_SEE_INVIS) != 0);
+    if (mon->type == MONS_PLAYER_GHOST || mon->type == MONS_PANDEMONIUM_DEMON)
+        return (ghost.values[3]);
+    else if (((seekmonster(&mon->type))->bitfields & M_SEE_INVIS) != 0)
+        return (1);
+    else if (scan_mon_inv_randarts( mon, RAP_EYESIGHT ) > 0)
+        return (1);
+
+    return (0);
 }                               // end mons_see_invis()
 
 
@@ -260,7 +299,7 @@ char mons_see_invis(int mc)
 bool mons_monster_visible( struct monsters *mon, struct monsters *targ )
 {
     if (mons_has_ench(targ, ENCH_SUBMERGED)
-        || (mons_has_ench(targ, ENCH_INVIS) && !mons_see_invis(mon->type)))
+        || (mons_has_ench(targ, ENCH_INVIS) && !mons_see_invis(mon)))
     {
         return (false);
     }
@@ -287,7 +326,7 @@ unsigned char mons_colour(int mc)
 }                               // end mons_colour()
 
 
-int mondamage(int mc, int rt)
+int mons_damage(int mc, int rt)
 {
     ASSERT(rt >= 0);
     ASSERT(rt <= 3);
@@ -301,40 +340,96 @@ int mondamage(int mc, int rt)
     }
     else
         return (smc->damage[rt]);
-}                               // end mondamage()
+}                               // end mons_damage()
 
 
-int mon_resist_mag(int mc, char mhd)
+int mons_resist_magic( struct monsters *mon )
 {
-    int u = smc->resist_magic;
+    int u = (seekmonster(&mon->type))->resist_magic;
 
     // negative values get multiplied with mhd
     if (u < 0)
-        return (mhd * (abs(u) * 2));
-    else
-        return (u);
-}                               // end mon_resist_mag()
+        u = mon->hit_dice * (-u * 2);
 
+    u += scan_mon_inv_randarts( mon, RAP_MAGIC );
 
-int mons_res_elec(int mc)
+    // ego armour resistance
+    const int armour = mon->inv[MSLOT_ARMOUR];
+
+    if (armour != NON_ITEM
+        && get_armour_ego_type( mitm[armour] ) == SPARM_MAGIC_RESISTANCE )
+    {
+        u += 30;
+    }
+
+    return (u);
+}                               // end mon_resist_magic()
+
+// Better than mons_resist_magic since undead tend to have that fairly
+// high so that they're not effected by enchantments.  We make the
+// lower level undead weaker here (it's not uncommon to have an 11 HD
+// zombie, whereas Vampires are only 7 HD). -- bwr
+int mons_resist_turn_undead( struct monsters *mon )
 {
+    // Shouldn't really rely on this, but we play it safe:
+    if (mons_holiness( mon->type ) != MH_UNDEAD)
+        return (5000);
+
+    switch (mon->type)
+    {
+    case MONS_SKELETON_SMALL:
+    case MONS_SKELETON_LARGE:
+    case MONS_ZOMBIE_SMALL:
+    case MONS_ZOMBIE_LARGE:
+    case MONS_SIMULACRUM_SMALL:
+    case MONS_SIMULACRUM_LARGE:
+        return (mon->hit_dice);
+
+    default:
+        break;
+    }
+
+    return (mon->hit_dice * 5);
+}
+
+
+int mons_res_elec( struct monsters *mon )
+{
+    int mc = mon->type;
+
     if (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON)
         return (ghost.values[6] > 0);
 
     /* this is a variable, not a player_xx() function, so can be above 1 */
-    int u = 0, f = smc->bitfields;
+    int u = 0, f = (seekmonster(&mc))->bitfields;
 
     // of course it makes no sense setting them both :)
     if (f & M_RES_ELEC)
         u++;                    //if(f&M_ED_ELEC) u--;
 
+    // don't bother checking equipment if the monster can't use it
+    if (mons_itemuse(mc) >= MONUSE_STARTING_EQUIPMENT)
+    {
+        u += scan_mon_inv_randarts( mon, RAP_ELECTRICITY );
+
+        // no ego armour, but storm dragon.
+        const int armour = mon->inv[MSLOT_ARMOUR];
+        if (armour != NON_ITEM && mitm[armour].base_type == OBJ_ARMOUR
+            && mitm[armour].sub_type == ARM_STORM_DRAGON_ARMOUR)
+        {
+            u += 1;
+        }
+    }
+
     return (u);
 }                               // end mons_res_elec()
 
 
-int mons_res_poison(int mc)
+int mons_res_poison( struct monsters *mon )
 {
-    int u = 0, f = smc->bitfields;
+    int mc = mon->type;
+
+    int u = 0, f = (seekmonster(&mc))->bitfields;
 
     if (f & M_RES_POISON)
         u++;
@@ -342,12 +437,35 @@ int mons_res_poison(int mc)
     if (f & M_ED_POISON)
         u--;
 
+    if (mons_itemuse(mc) >= MONUSE_STARTING_EQUIPMENT)
+    {
+        u += scan_mon_inv_randarts( mon, RAP_POISON );
+
+        const int armour = mon->inv[MSLOT_ARMOUR];
+        if (armour != NON_ITEM && mitm[armour].base_type == OBJ_ARMOUR)
+        {
+            // intrinsic armour abilities
+            switch (mitm[armour].sub_type)
+            {
+            case ARM_SWAMP_DRAGON_ARMOUR: u += 1; break;
+            case ARM_GOLD_DRAGON_ARMOUR:  u += 1; break;
+            default:                              break;
+            }
+
+            // ego armour resistance
+            if (get_armour_ego_type( mitm[armour] ) == SPARM_POISON_RESISTANCE)
+                u += 1;
+        }
+    }
+
     return (u);
 }                               // end mons_res_poison()
 
 
-int mons_res_fire(int mc)
+int mons_res_fire( struct monsters *mon )
 {
+    int mc = mon->type;
+
     if (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON)
     {
         if (ghost.values[4] > 100)
@@ -358,23 +476,51 @@ int mons_res_fire(int mc)
             return 0;
     }
 
-    int u = 0, f = smc->bitfields;
+    int u = 0, f = (seekmonster(&mc))->bitfields;
 
     // no Big Prize (tm) here either if you set all three flags. It's a pity uh?
+    //
+    // Note that natural monster resistance is two levels, this is duplicate
+    // the fact that having this flag used to be a lot better than armour
+    // for monsters (it used to make them immune in a lot of cases) -- bwr
     if (f & M_RES_HELLFIRE)
-        u += 2;
+        u += 3;
     else if (f & M_RES_FIRE)
-        u++;
-
-    if (f & M_ED_FIRE)
+        u += 2;
+    else if (f & M_ED_FIRE)
         u--;
+
+    if (mons_itemuse(mc) >= MONUSE_STARTING_EQUIPMENT)
+    {
+        u += scan_mon_inv_randarts( mon, RAP_POISON );
+
+        const int armour = mon->inv[MSLOT_ARMOUR];
+        if (armour != NON_ITEM && mitm[armour].base_type == OBJ_ARMOUR)
+        {
+            // intrinsic armour abilities
+            switch (mitm[armour].sub_type)
+            {
+            case ARM_DRAGON_ARMOUR:      u += 2; break;
+            case ARM_GOLD_DRAGON_ARMOUR: u += 1; break;
+            case ARM_ICE_DRAGON_ARMOUR:  u -= 1; break;
+            default:                             break;
+            }
+
+            // check ego resistance
+            const int ego = get_armour_ego_type( mitm[armour] );
+            if (ego == SPARM_FIRE_RESISTANCE || ego == SPARM_RESISTANCE)
+                u += 1;
+        }
+    }
 
     return (u);
 }                               // end mons_res_fire()
 
 
-int mons_res_cold(int mc)
+int mons_res_cold( struct monsters *mon )
 {
+    int mc = mon->type;
+
     if (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON)
     {
         if (ghost.values[5] > 100)
@@ -385,17 +531,72 @@ int mons_res_cold(int mc)
             return (0);
     }
 
-    int u = 0, f = smc->bitfields;
+    int u = 0, f = (seekmonster(&mc))->bitfields;
 
+    // Note that natural monster resistance is two levels, this is duplicate
+    // the fact that having this flag used to be a lot better than armour
+    // for monsters (it used to make them immune in a lot of cases) -- bwr
     if (f & M_RES_COLD)
-        u++;
-
-    if (f & M_ED_COLD)
+        u += 2;
+    else if (f & M_ED_COLD)
         u--;
+
+    if (mons_itemuse(mc) >= MONUSE_STARTING_EQUIPMENT)
+    {
+        u += scan_mon_inv_randarts( mon, RAP_POISON );
+
+        const int armour = mon->inv[MSLOT_ARMOUR];
+        if (armour != NON_ITEM && mitm[armour].base_type == OBJ_ARMOUR)
+        {
+            // intrinsic armour abilities
+            switch (mitm[armour].sub_type)
+            {
+            case ARM_ICE_DRAGON_ARMOUR:  u += 2; break;
+            case ARM_GOLD_DRAGON_ARMOUR: u += 1; break;
+            case ARM_DRAGON_ARMOUR:      u -= 1; break;
+            default:                             break;
+            }
+
+            // check ego resistance
+            const int ego = get_armour_ego_type( mitm[armour] );
+            if (ego == SPARM_COLD_RESISTANCE || ego == SPARM_RESISTANCE)
+                u += 1;
+        }
+    }
 
     return (u);
 }                               // end mons_res_cold()
 
+int mons_res_negative_energy( struct monsters *mon )
+{
+    int mc = mon->type;
+
+    if (mons_holiness( mon->type ) == MH_UNDEAD
+        || mons_holiness( mon->type ) == MH_DEMONIC
+        || mon->type == MONS_SHADOW_DRAGON
+        || isdigit( mons_char(mon->type) )                 // to get golems '8'
+        || mons_charclass( mon->type ) == MONS_GOLD_MIMIC) // to get mimics
+    {
+        return (3);  // to match the value for players
+    }
+
+    int u = 0;
+
+    if (mons_itemuse(mc) >= MONUSE_STARTING_EQUIPMENT)
+    {
+        u += scan_mon_inv_randarts( mon, RAP_NEGATIVE_ENERGY );
+
+        const int armour = mon->inv[MSLOT_ARMOUR];
+        if (armour != NON_ITEM && mitm[armour].base_type == OBJ_ARMOUR)
+        {
+            // check for ego resistance
+            if (get_armour_ego_type( mitm[armour] ) == SPARM_POSITIVE_ENERGY)
+                u += 1;
+        }
+    }
+
+    return (u);
+}                               // end mons_res_negative_energy()
 
 int mons_skeleton(int mc)
 {
@@ -408,21 +609,27 @@ int mons_skeleton(int mc)
     return (1);
 }                               // end mons_skeleton()
 
-
-char mons_flies(int mc)
+char mons_class_flies(int mc)
 {
-    if (mc == MONS_PANDEMONIUM_DEMON)
+    if (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON)
         return (ghost.values[10]);
 
     int f = smc->bitfields;
 
-    if (f & M_LEVITATE)
-        return (2);
-
     if (f & M_FLIES)
         return (1);
 
+    if (f & M_LEVITATE)
+        return (2);
+
     return (0);
+}
+
+char mons_flies( struct monsters *mon )
+{
+    char ret = mons_class_flies( mon->type );
+
+    return (ret ? ret : (scan_mon_inv_randarts(mon, RAP_LEVITATE) > 0) ? 2 : 0);
 }                               // end mons_flies()
 
 
@@ -442,7 +649,7 @@ int hit_points(int hit_dice, int min_hp, int rand_hp)
 
 
 #if 0
-// This function isn't really useful... to find out if somethings a
+// This function isn't really useful... to find out if something's a
 // mimic use mons_charclass() and look for MONS_GOLD_MIMIC, that's a
 // more generic way that also handles humans, elves, nagas, orcs, etc.-- bwr
 
@@ -472,7 +679,6 @@ unsigned char mons_category(int which_mons)
 #endif
 
 
-// int exper_value(int mclass, int mHD, int maxhp)
 int exper_value( struct monsters *monster )
 {
     long x_val = 0;
@@ -564,7 +770,7 @@ int exper_value( struct monsters *monster )
     {
         int max_melee = 0;
         for (int i = 0; i < 4; i++)
-            max_melee += mondamage( mclass, i );
+            max_melee += mons_damage( mclass, i );
 
         if (max_melee > 30)
             diff += (max_melee / ((speed == 10) ? 2 : 1));
@@ -609,7 +815,9 @@ int exper_value( struct monsters *monster )
         x_val /= 10;
     }
 
-    // A small reduction on big values. -- bwr
+    // Reductions for big values. -- bwr
+    if (x_val > 100)
+        x_val = 100 + ((x_val - 100) * 3) / 4;
     if (x_val > 1000)
         x_val = 1000 + (x_val - 1000) / 2;
 
@@ -972,7 +1180,7 @@ void moname(int mons_num, bool vis, char descrip, char glog[80])
 
 /* ********************* END PUBLIC FUNCTIONS ********************* */
 
-// see mon_init for initialization of mon_entry array.
+// see mons_init for initialization of mon_entry array.
 static struct monsterentry *seekmonster(int *p_monsterid)
 {
     ASSERT(p_monsterid != 0);
@@ -1157,7 +1365,8 @@ int mons_has_ench(struct monsters *mon, unsigned int ench, unsigned int ench2)
 }
 
 // Returning the deleted enchantment is important!  See abjuration. -- bwr
-int mons_del_ench(struct monsters *mon, unsigned int ench, unsigned int ench2)
+int mons_del_ench( struct monsters *mon, unsigned int ench, unsigned int ench2,
+                   bool quiet )
 {
     unsigned int p;
     int ret_val = ENCH_NONE;
@@ -1200,18 +1409,20 @@ int mons_del_ench(struct monsters *mon, unsigned int ench, unsigned int ench2)
 
     if (ench == ENCH_FEAR)
     {
-        simple_monster_message(mon, " seems to regain its courage.");
+        if (!quiet)
+            simple_monster_message(mon, " seems to regain its courage.");
 
-        // reevaluate behavior
-        behavior_event(mon, ME_EVAL);
+        // reevaluate behaviour
+        behaviour_event(mon, ME_EVAL);
     }
 
     if (ench == ENCH_CONFUSION)
     {
-        simple_monster_message(mon, " seems less confused.");
+        if (!quiet)
+            simple_monster_message(mon, " seems less confused.");
 
-        // reevaluate behavior
-        behavior_event(mon, ME_EVAL);
+        // reevaluate behaviour
+        behaviour_event(mon, ME_EVAL);
     }
 
     if (ench == ENCH_INVIS)
@@ -1224,38 +1435,46 @@ int mons_del_ench(struct monsters *mon, unsigned int ench, unsigned int ench2)
         else if (mons_near(mon) && !player_see_invis()
                     && !mons_has_ench( mon, ENCH_SUBMERGED ))
         {
-            strcpy( info, ptr_monam( mon, DESC_CAP_A ) );
-            strcat( info, " appears!" );
-            mpr( info );
+            if (!quiet)
+            {
+                strcpy( info, ptr_monam( mon, DESC_CAP_A ) );
+                strcat( info, " appears!" );
+                mpr( info );
+            }
         }
     }
 
     if (ench == ENCH_CHARM)
     {
-        simple_monster_message(mon, " is no longer charmed.");
+        if (!quiet)
+            simple_monster_message(mon, " is no longer charmed.");
 
-        // reevaluate behavior
-        behavior_event(mon, ME_EVAL);
+        // reevaluate behaviour
+        behaviour_event(mon, ME_EVAL);
     }
 
     if (ench == ENCH_BACKLIGHT_I)
     {
-        simple_monster_message(mon, " stops glowing.");
+        if (!quiet)
+            simple_monster_message(mon, " stops glowing.");
     }
 
     if (ench == ENCH_STICKY_FLAME_I || ench == ENCH_YOUR_STICKY_FLAME_I)
     {
-        simple_monster_message(mon, " stops burning.");
+        if (!quiet)
+            simple_monster_message(mon, " stops burning.");
     }
 
     if (ench == ENCH_POISON_I || ench == ENCH_YOUR_POISON_I)
     {
-        simple_monster_message(mon, " looks more healthy.");
+        if (!quiet)
+            simple_monster_message(mon, " looks more healthy.");
     }
 
     if (ench == ENCH_YOUR_ROT_I)
     {
-        simple_monster_message(mon, " is no longer rotting.");
+        if (!quiet)
+            simple_monster_message(mon, " is no longer rotting.");
     }
 
     return (ret_val);
@@ -1488,6 +1707,7 @@ bool ms_low_hitpoint_cast( struct monsters *mon, int monspell )
     switch (monspell)
     {
     case MS_TELEPORT:
+    case MS_TELEPORT_OTHER:
     case MS_HEAL:
         ret = true;
         break;
@@ -1542,11 +1762,24 @@ bool ms_waste_of_time( struct monsters *mon, int monspell )
             ret = true;
         break;
 
+    case MS_TELEPORT_OTHER:
+        // Monsters aren't smart enough to know when to cancel teleport.
+        if (mon->foe == MHITYOU)
+        {
+            if (you.duration[DUR_TELEPORT])
+                return (true);
+        }
+        else if (mon->foe != MHITNOT)
+        {
+            if (mons_has_ench( &menv[mon->foe], ENCH_TP_I, ENCH_TP_IV))
+                return (true);
+        }
+        // intentional fall-through
+
     case MS_SLOW:
     case MS_CONFUSE:
     case MS_PAIN:
     case MS_BANISHMENT:
-    case MS_TELEPORT_OTHER:
     case MS_DISINTEGRATE:
     case MS_PARALYSIS:
         // occasionally we don't estimate... just fire and see:
@@ -1569,7 +1802,7 @@ bool ms_waste_of_time( struct monsters *mon, int monspell )
             else
             {
                 targ = &menv[ mon->foe ];
-                est_magic_resist = mon_resist_mag(targ->type, targ->hit_dice);
+                est_magic_resist = mons_resist_magic( targ );
             }
 
             // now randomize (normal intels less accurate than high):

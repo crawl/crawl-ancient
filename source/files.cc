@@ -266,15 +266,17 @@ static void write_tagged_file( FILE *dataFile, char majorVersion,
 }
 
 
-void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
-          char old_level, bool want_followers, bool just_made_new_lev,
-          char where_were_you2)
+void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
+           char old_level, bool want_followers, bool is_new_game,
+           char where_were_you2 )
 {
     int j = 0;
     int i = 0, count_x = 0, count_y = 0;
     char cha_fil[kFileNameSize];
 
-    bool already_saved = false;
+    // bool already_saved = false;
+
+    bool just_created_level = false;
 
     int foll_class[8];
     int foll_hp[8];
@@ -301,13 +303,14 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     int itmf = 0;
     int ic = 0;
     int imn = 0;
+    int val;
 
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
 #endif
 
-    make_filename(cha_fil, you.your_name, you.your_level, you.where_are_you,
-        you.level_type != LEVEL_DUNGEON, false);
+    make_filename( cha_fil, you.your_name, you.your_level, you.where_are_you,
+                   you.level_type != LEVEL_DUNGEON, false );
 
     if (you.level_type == LEVEL_DUNGEON)
     {
@@ -337,7 +340,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         ASSERT( env.cloud_no == 0 );
     }
 
-    if (want_followers && !just_made_new_lev)
+    if (want_followers && !is_new_game)
     {
         for (count_x = you.x_pos - 1; count_x < you.x_pos + 2; count_x++)
         {
@@ -388,7 +391,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 // only friendly monsters,  or those actively seeking the
                 // player,  will follow up/down stairs.
                 if (!(mons_friendly(fmenv) ||
-                    (fmenv->behavior == BEH_SEEK && fmenv->foe == MHITYOU)))
+                    (fmenv->behaviour == BEH_SEEK && fmenv->foe == MHITYOU)))
                 {
                     continue;
                 }
@@ -424,7 +427,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                     destroy_item( item );
                 }
 
-                foll_beh[following] = fmenv->behavior;
+                foll_beh[following] = fmenv->behaviour;
                 foll_att[following] = fmenv->attitude;
                 foll_sec[following] = fmenv->number;
                 foll_hit[following] = fmenv->foe;
@@ -451,7 +454,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         if (!was_a_labyrinth)
             save_level(old_level, false, where_were_you2);
 
-        already_saved = true;
+        // already_saved = true;
         was_a_labyrinth = false;
     }                           // end if level_type == LEVEL_DUNGEON
 
@@ -468,8 +471,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
     FILE *levelFile = fopen(cha_fil, "rb");
 
+    // GENERATE new level when the file can't be opened:
     if (levelFile == NULL)
-    {                           /* generate new level */
+    {
         strcpy(ghost.name, "");
 
         for (imn = 0; imn < 20; ++imn)
@@ -478,6 +482,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }
 
         builder(you.your_level, you.level_type);
+        just_created_level = true;
 
         if (you.level_type == LEVEL_PANDEMONIUM)
             generate_random_demon();
@@ -506,7 +511,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
             }
         }
 
-        if (!just_made_new_lev)
+        if (!is_new_game)
         {
             if (stair_taken == DNGN_ENTER_HELL
                 || stair_taken == DNGN_ENTER_LABYRINTH)
@@ -564,7 +569,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }
 
       found_stair:
-        if (!just_made_new_lev)
+        if (!is_new_game)
         {
             you.x_pos = count_x;
             you.y_pos = count_y;
@@ -586,7 +591,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         if ((you.level_type == LEVEL_DUNGEON
                 || you.level_type == LEVEL_PANDEMONIUM)
             && want_followers
-            && !just_made_new_lev)
+            && !is_new_game)
         {
             for (ic = 0; ic < 2; ic++)
             {
@@ -667,7 +672,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                                 menv[following].inv[minvc] = itmf;
                             }
 
-                            menv[following].behavior = foll_beh[fmenv];
+                            menv[following].behaviour = foll_beh[fmenv];
                             menv[following].attitude = foll_att[fmenv];
                             menv[following].number = foll_sec[fmenv];
                             menv[following].foe = foll_hit[fmenv];
@@ -735,10 +740,24 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
         // update corpses and fountains
         if (env.elapsed_time != 0.0)
-            update_corpses(you.elapsed_time - env.elapsed_time);
+            update_level( you.elapsed_time - env.elapsed_time );
 
-        save_level(you.your_level, (you.level_type != LEVEL_DUNGEON),
-                   you.where_are_you);
+        // Now monsters get a chance to react to the player coming
+        // out of the stairs... the amount of time they get is based
+        // on how stealthy the character is,, but we give an additional
+        // break to newly created levels to be a bit easier on the
+        // character. -- bwr
+        val = (just_created_level ? 5 : 15)
+                - (you.skills[SK_STEALTH] * you.dex) / 10;
+
+        if (val > 0)
+        {
+            you.time_taken = val;
+            handle_monsters();
+        }
+
+        save_level( you.your_level, (you.level_type != LEVEL_DUNGEON),
+                    you.where_are_you );
         return;
     }
 
@@ -840,7 +859,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     }
 
     if (env.elapsed_time != 0.0)
-        update_corpses(you.elapsed_time - env.elapsed_time);
+        update_level( you.elapsed_time - env.elapsed_time );
 }                               // end load()
 
 void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
@@ -1024,7 +1043,7 @@ void load_ghost(void)
         menv[imn].speed = 10;
         menv[imn].speed_increment = 70;
         menv[imn].attitude = ATT_HOSTILE;
-        menv[imn].behavior = BEH_WANDER;
+        menv[imn].behaviour = BEH_WANDER;
         menv[imn].flags = 0;
         menv[imn].foe = MHITNOT;
         menv[imn].foe_memory = 0;
@@ -1502,92 +1521,93 @@ unsigned char translate_spell(unsigned char spel)
     switch (spel)
     {
     case SPELL_TELEPORT_SELF:
-        return MS_TELEPORT;
+        return (MS_TELEPORT);
+
     case SPELL_MAGIC_DART:
-        return MS_MMISSILE;
+        return (MS_MMISSILE);
     case SPELL_FIREBALL:
     case SPELL_DELAYED_FIREBALL:
-        return MS_FIREBALL;
+        return (MS_FIREBALL);
     case SPELL_DIG:
-        return MS_DIG;
+        return (MS_DIG);
     case SPELL_BOLT_OF_FIRE:
-        return MS_FIRE_BOLT;
+        return (MS_FIRE_BOLT);
     case SPELL_BOLT_OF_COLD:
-        return MS_COLD_BOLT;
+        return (MS_COLD_BOLT);
     case SPELL_LIGHTNING_BOLT:
-        return MS_LIGHTNING_BOLT;
+        return (MS_LIGHTNING_BOLT);
     case SPELL_POLYMORPH_OTHER:
-        return MS_MUTATION;
+        return (MS_MUTATION);
     case SPELL_SLOW:
-        return MS_SLOW;
+        return (MS_SLOW);
     case SPELL_HASTE:
-        return MS_HASTE;
+        return (MS_HASTE);
     case SPELL_PARALYZE:
-        return MS_PARALYSIS;
+        return (MS_PARALYSIS);
     case SPELL_CONFUSE:
-        return MS_CONFUSE;
+        return (MS_CONFUSE);
     case SPELL_INVISIBILITY:
-        return MS_INVIS;
+        return (MS_INVIS);
     case SPELL_THROW_FLAME:
-        return MS_FLAME;
+        return (MS_FLAME);
     case SPELL_THROW_FROST:
-        return MS_FROST;
+        return (MS_FROST);
     case SPELL_CONTROLLED_BLINK:
-        return MS_BLINK;        /* approximate */
+        return (MS_BLINK);        /* approximate */
 /*  case FREEZING_CLOUD: return ; no freezing/mephitic cloud yet
    case MEPHITIC_CLOUD: return ; */
     case SPELL_VENOM_BOLT:
-        return MS_VENOM_BOLT;
+        return (MS_VENOM_BOLT);
     case SPELL_TELEPORT_OTHER:
-        return MS_TELEPORT_OTHER;
+        return (MS_TELEPORT_OTHER);
     case SPELL_SUMMON_SMALL_MAMMAL:
-        return MS_VAMPIRE_SUMMON;       /* approximate */
+        return (MS_VAMPIRE_SUMMON);       /* approximate */
     case SPELL_BOLT_OF_DRAINING:
-        return MS_NEGATIVE_BOLT;
+        return (MS_NEGATIVE_BOLT);
     case SPELL_LEHUDIBS_CRYSTAL_SPEAR:
-        return MS_CRYSTAL_SPEAR;
+        return (MS_CRYSTAL_SPEAR);
     case SPELL_BLINK:
-        return MS_BLINK;
+        return (MS_BLINK);
     case SPELL_ISKENDERUNS_MYSTIC_BLAST:
-        return MS_ORB_ENERGY;
+        return (MS_ORB_ENERGY);
     case SPELL_SUMMON_HORRIBLE_THINGS:
-        return MS_LEVEL_SUMMON; /* approximate */
+        return (MS_LEVEL_SUMMON); /* approximate */
     case SPELL_ANIMATE_DEAD:
-        return MS_ANIMATE_DEAD;
+        return (MS_ANIMATE_DEAD);
     case SPELL_PAIN:
-        return MS_PAIN;
+        return (MS_PAIN);
     case SPELL_SUMMON_WRAITHS:
-        return MS_SUMMON_UNDEAD;        /* approximate */
+        return (MS_SUMMON_UNDEAD);        /* approximate */
     case SPELL_STICKY_FLAME:
-        return MS_STICKY_FLAME;
+        return (MS_STICKY_FLAME);
     case SPELL_CALL_IMP:
-        return MS_SUMMON_DEMON_LESSER;
+        return (MS_SUMMON_DEMON_LESSER);
     case SPELL_BANISHMENT:
-        return MS_BANISHMENT;
+        return (MS_BANISHMENT);
     case SPELL_STING:
-        return MS_STING;
+        return (MS_STING);
     case SPELL_SUMMON_DEMON:
-        return MS_SUMMON_DEMON;
+        return (MS_SUMMON_DEMON);
     case SPELL_DEMONIC_HORDE:
-        return MS_SUMMON_DEMON_LESSER;
+        return (MS_SUMMON_DEMON_LESSER);
     case SPELL_SUMMON_GREATER_DEMON:
-        return MS_SUMMON_DEMON_GREATER;
+        return (MS_SUMMON_DEMON_GREATER);
     case SPELL_BOLT_OF_IRON:
-        return MS_IRON_BOLT;
+        return (MS_IRON_BOLT);
     case SPELL_STONE_ARROW:
-        return MS_STONE_ARROW;
+        return (MS_STONE_ARROW);
     case SPELL_DISINTEGRATE:
-        return MS_DISINTEGRATE;
+        return (MS_DISINTEGRATE);
     case SPELL_AGONY:
         /* Too powerful to give ghosts Torment for Agony? Nah. */
-        return MS_TORMENT;
+        return (MS_TORMENT);
     case SPELL_SYMBOL_OF_TORMENT:
-        return MS_TORMENT;
+        return (MS_TORMENT);
     default:
         break;
     }
 
-    return MS_NO_SPELL;
+    return (MS_NO_SPELL);
 }
 
 void generate_random_demon(void)

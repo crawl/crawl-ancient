@@ -198,7 +198,7 @@ void pray(void)
                      (you.piety >  70) ? "greatly pleased with you" :
                      (you.piety >  40) ? "most pleased with you" :
                      (you.piety >  20) ? "pleased with you" :
-                     (you.piety >   5) ? "noncommital"
+                     (you.piety >   5) ? "noncommittal"
                                        : "displeased");
 
         strcat(info, ".");
@@ -500,7 +500,7 @@ char *god_name( int which_god, bool long_name ) // mv - rewritten
                     strcat(buffer, ", Xom-Xom-bo-Bom, Banana-Fana-fo-Fom");
                 break;
             case 13:
-                strcat(buffer, "the Begettor of ");
+                strcat(buffer, "the Begetter of ");
                 strcat(buffer, coinflip() ? "Turbulence" : "Discontinuities");
                 break;
             }
@@ -881,7 +881,7 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
 
             beam.beam_source = NON_MONSTER;
             beam.type = SYM_BURST;
-            beam.damage = 130;
+            beam.damage = dice_def( 3, 30 );
             beam.flavour = BEAM_ELECTRICITY;
             beam.target_x = you.x_pos;
             beam.target_y = you.y_pos;
@@ -1682,8 +1682,8 @@ void divine_retribution(int god)
         break;
 
     case GOD_SHINING_ONE:
-        // Doesn't care unless you've gone over to evil
-        //jmf: expanded definition of evil above to include Vehumet and Makhleb
+        // daeva/smiting theme
+        // Doesn't care unless you've gone over to evil/destructive gods
         if (you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_MAKHLEB
             || you.religion == GOD_YREDELEMNUL || you.religion == GOD_VEHUMET)
         {
@@ -1703,7 +1703,7 @@ void divine_retribution(int god)
 
                 if (success)
                 {
-                    simple_god_message(" sends the divine host to punish your evil ways!", god);
+                    simple_god_message( " sends the divine host to punish you for your evil ways!", god );
                 }
             }
             else
@@ -1730,6 +1730,7 @@ void divine_retribution(int god)
         break;
 
     case GOD_ZIN:
+        // angels/creeping doom theme:
         // Doesn't care unless you've gone over to evil
         if (you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_MAKHLEB
             || you.religion == GOD_YREDELEMNUL || you.religion == GOD_VEHUMET)
@@ -1750,7 +1751,7 @@ void divine_retribution(int god)
 
                 if (success)
                 {
-                    simple_god_message (" sends the divine host to punish you for your evil ways!", god);
+                    simple_god_message(" sends the divine host to punish you for your evil ways!", god);
                 }
             }
             else
@@ -1767,6 +1768,7 @@ void divine_retribution(int god)
         break;
 
     case GOD_MAKHLEB:
+        // demonic servant theme
         if (random2(you.experience_level) > 7 && !one_chance_in(5))
         {
             if (create_monster(MONS_EXECUTIONER + random2(5), 0,
@@ -1797,6 +1799,7 @@ void divine_retribution(int god)
         break;
 
     case GOD_KIKUBAAQUDGHA:
+        // death/necromancy theme
         if (random2(you.experience_level) > 7 && !one_chance_in(5))
         {
             success = false;
@@ -1825,6 +1828,7 @@ void divine_retribution(int god)
         break;
 
     case GOD_YREDELEMNUL:
+        // undead theme
         if (random2(you.experience_level) > 4)
         {
             success = false;
@@ -1865,6 +1869,7 @@ void divine_retribution(int god)
         break;
 
     case GOD_TROG:
+        // physical/berserk theme
         switch (random2(6))
         {
         case 0:
@@ -1943,7 +1948,7 @@ void divine_retribution(int god)
             simple_god_message("'s voice booms out, \"Feel my wrath!\"", god );
 
             // A collection of physical effects that might be better
-            // suited to Trog than wild fire magic... messagaes sould
+            // suited to Trog than wild fire magic... messages could
             // be better here... something more along the lines of apathy
             // or loss of rage to go with the anti-berzerk effect-- bwr
             switch (random2(6))
@@ -1993,6 +1998,7 @@ void divine_retribution(int god)
 
     case GOD_OKAWARU:
         {
+            // warrior theme:
             success = false;
             how_many = 1 + (you.experience_level / 5);
 
@@ -2024,12 +2030,14 @@ void divine_retribution(int god)
         break;
 
     case GOD_VEHUMET:
+        // conjuration and summoning theme
         simple_god_message("'s vengence finds you.", god);
         miscast_effect(coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING,
                        8 + you.experience_level, random2avg(98, 3), 100);
         break;
 
     case GOD_NEMELEX_XOBEH:
+        // like Xom, this might actually help the player -- bwr`
         simple_god_message(" makes you to draw from the Deck of Punishment.",
                            god);
         deck_of_cards(DECK_OF_PUNISHMENT);
@@ -2039,6 +2047,7 @@ void divine_retribution(int god)
         simple_god_message("'s wrath finds you.", god);
         dec_penance(GOD_SIF_MUNA, 1);
 
+        // magic and intelligence theme:
         switch (random2(10))
         {
         case 0:
@@ -2049,12 +2058,7 @@ void divine_retribution(int god)
         case 2:
         case 3:
         case 4:
-            // We access directly here to avoid the player saving
-            if (you.conf < 20)
-            {
-                you.conf = 20;
-                mpr( "You can't seem to think straight!" );
-            }
+            confuse_player( 3 + random2(10), false );
             break;
 
         case 5:
@@ -2084,24 +2088,14 @@ void divine_retribution(int god)
 
     case GOD_ELYVILON:  // Elyvilon doesn't seek revenge
     default:
-        break;
+        return;
     }
 
     // Sometimes divine experiences are overwelming...
-    // We access directly here to avoid the player saving against these
     if (one_chance_in(5) && you.experience_level < random2(37))
     {
-        if (coinflip()) {
-            if (you.conf < 20)
-            {
-                mpr( "The divine experience leaves you feeling confused!",
-                     MSGCH_WARN );
-
-                you.conf += random2(10);
-                if (you.conf > 20)
-                    you.conf = 20;
-            }
-        }
+        if (coinflip())
+            confuse_player( 3 + random2(10) );
         else
         {
             if (you.slow < 90)
@@ -2110,8 +2104,6 @@ void divine_retribution(int god)
                      MSGCH_WARN );
 
                 you.slow += random2(10);
-                if (you.slow > 90)
-                    you.slow = 90;
             }
         }
     }

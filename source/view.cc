@@ -54,7 +54,9 @@ unsigned char show_green;
 extern int stealth;             // defined in acr.cc
 extern FixedVector < char, 10 > visible;        // defined in acr.cc
 
-char colour_code_map(unsigned char map_value);
+// char colour_code_map(unsigned char map_value);
+char colour_code_map( int x, int y );
+
 unsigned char (*mapch) (unsigned char);
 unsigned char (*mapch2) (unsigned char);
 unsigned char mapchar(unsigned char ldfk);
@@ -118,6 +120,7 @@ void get_ibm_symbol(unsigned int object, unsigned short *ch,
         break;
 
     case DNGN_ROCK_WALL:
+    case DNGN_PERMAROCK_WALL:
         *color = env.rock_colour;
         *ch = 177;
         break;                  // remember earth elementals
@@ -712,9 +715,9 @@ void viewwindow2(char draw_it, bool do_updates)
                     if (env.map[ count_x + you.x_pos - 16 ]
                                [ count_y + you.y_pos - 8 ] != 0)
                     {
-                        buffy[bufcount + 1] =
-                            colour_code_map(grd[ count_x + you.x_pos - 16 ]
-                                               [ count_y + you.y_pos - 8 ]);
+                        buffy[bufcount + 1]
+                                = colour_code_map( count_x + you.x_pos - 17,
+                                                   count_y + you.y_pos - 9 );
                     }
                 }
                 bufcount += 2;
@@ -777,48 +780,50 @@ void viewwindow2(char draw_it, bool do_updates)
     }
 }                               // end viewwindow2()
 
-char colour_code_map(unsigned char map_value)
+char colour_code_map( int x, int y )
 {
-    switch (map_value)
+    // XXX: Yes, the map array and the grid array are off by one. -- bwr
+    const int map_value = env.map[x][y];
+    const int grid_value = grd[x + 1][y + 1];
+
+    // XXX: Yeah, this is ugly, but until we have stored layers in the
+    // map we can't tell if we've seen a square, detected it, or just
+    // detected the item or monster on top... giving colour here will
+    // result in detect creature/item detecting features like stairs. -- bwr
+    if (map_value != mapch2( grid_value ))
+        return (DARKGREY);
+
+    switch (grid_value)
     {
     case DNGN_TRAP_MECHANICAL:
-        return LIGHTCYAN;
-        break;
+        return (LIGHTCYAN);
 
     case DNGN_TRAP_MAGICAL:
     case DNGN_TRAP_III:
-        return MAGENTA;
-        break;
+        return (MAGENTA);
 
     case DNGN_ENTER_SHOP:
-        return YELLOW;
-        break;
+        return (YELLOW);
 
     case DNGN_ENTER_DIS:
-        return CYAN;
-        break;
+        return (CYAN);
 
     case DNGN_ENTER_HELL:
     case DNGN_ENTER_GEHENNA:
-        return RED;
-        break;
+        return (RED);
 
     case DNGN_ENTER_COCYTUS:
-        return LIGHTCYAN;
-        break;
+        return (LIGHTCYAN);
 
     case DNGN_ENTER_ABYSS:
         return random2(16);     // so it can be black - is this right? {dlb}
-        break;
 
     case DNGN_ENTER_LABYRINTH:
     case DNGN_STONE_ARCH:
-        return LIGHTGREY;
-        break;
+        return (LIGHTGREY);
 
     case DNGN_ENTER_PANDEMONIUM:
-        return LIGHTBLUE;
-        break;
+        return (LIGHTBLUE);
 
     case DNGN_EXIT_PANDEMONIUM:
     case DNGN_TRANSIT_PANDEMONIUM:
@@ -827,27 +832,23 @@ char colour_code_map(unsigned char map_value)
         // the fact that the player should have to
         // visit them to verify what they are...
         // not just use a crystal ball. -- bwross
-        return LIGHTGREEN;
-        break;
+        return (LIGHTGREEN);
 
     case DNGN_ENTER_ZOT:
     case DNGN_EXIT_ZOT:
-        return MAGENTA;
-        break;
+        return (MAGENTA);
 
     case DNGN_STONE_STAIRS_DOWN_I:
     case DNGN_STONE_STAIRS_DOWN_II:
     case DNGN_STONE_STAIRS_DOWN_III:
     case DNGN_ROCK_STAIRS_DOWN:
-        return RED;
-        break;
+        return (RED);
 
     case DNGN_STONE_STAIRS_UP_I:
     case DNGN_STONE_STAIRS_UP_II:
     case DNGN_STONE_STAIRS_UP_III:
     case DNGN_ROCK_STAIRS_UP:
-        return BLUE;
-        break;
+        return (BLUE);
 
     case DNGN_ENTER_ORCISH_MINES:
     case DNGN_ENTER_HIVE:
@@ -865,8 +866,7 @@ char colour_code_map(unsigned char map_value)
     case 124:
     case 125:
     case 126:
-        return LIGHTRED;
-        break;
+        return (LIGHTRED);
 
     case DNGN_RETURN_DUNGEON_I:
     case DNGN_RETURN_DUNGEON_II:
@@ -884,12 +884,13 @@ char colour_code_map(unsigned char map_value)
     case 144:
     case 145:
     case 146:
-        return LIGHTBLUE;
-        break;
+        return (LIGHTBLUE);
 
     default:
-        return DARKGREY;
+        break;
     }
+
+    return (DARKGREY);
 }
 
 
@@ -904,10 +905,10 @@ void monster_grid(bool do_updates)
         if (monster->type != -1 && mons_near(monster))
         {
             if (do_updates &&
-                (monster->behavior == BEH_SLEEP
-                 || monster->behavior == BEH_WANDER) && check_awaken(s))
+                (monster->behaviour == BEH_SLEEP
+                 || monster->behaviour == BEH_WANDER) && check_awaken(s))
             {
-                behavior_event(monster, ME_ALERT, MHITYOU);
+                behaviour_event(monster, ME_ALERT, MHITYOU);
 
                 if (you.turn_is_over == 1
                     && mons_shouts(monster->type) > 0
@@ -917,7 +918,7 @@ void monster_grid(bool do_updates)
                         && (!silenced(you.x_pos, you.y_pos)
                             && !silenced(monster->x, monster->y)))
                     {
-                        if (mons_holiness(monster->type) == MH_DEMONIC)
+                        if (mons_is_demon( monster->type ) && coinflip())
                         {
                             if (monster->type == MONS_IMP
                                 || monster->type == MONS_WHITE_IMP
@@ -995,7 +996,7 @@ void monster_grid(bool do_updates)
             {
                 // ripple effect?
                 if (grd[monster->x][monster->y] == DNGN_SHALLOW_WATER
-                    && !mons_flies(monster->type))
+                    && !mons_flies(monster))
                 {
                     show_backup[ monster->x - you.x_pos + 9 ]
                                [ monster->y - you.y_pos + 9]
@@ -1075,16 +1076,16 @@ bool check_awaken(int mons_aw)
 
     // I assume that creatures who can see invisible are very perceptive
     mons_perc = 10 + (mons_intel(monster->type) * 4) + monster->hit_dice
-                   + mons_see_invis(monster->type) * 5;
+                   + mons_see_invis(monster) * 5;
 
     // critters that are wandering still have MHITYOU as their foe are
     // still actively on guard for the player,  even if they can't see
-    // him.  Give them a large bonus (handle_behavior() will nuke 'foe'
+    // him.  Give them a large bonus (handle_behaviour() will nuke 'foe'
     // after a while,  removing this bonus.
-    if (monster->behavior == BEH_WANDER && monster->foe == MHITYOU)
+    if (monster->behaviour == BEH_WANDER && monster->foe == MHITYOU)
         mons_perc += 15;
 
-    if (you.invis && !mons_see_invis(monster->type))
+    if (you.invis && !mons_see_invis(monster))
         mons_perc -= 75;
 
     // glowing with magical contamination isn't very stealthy
@@ -1346,9 +1347,9 @@ void noisy(char loudness, char nois_x, char nois_y)
             // through check_awaken() anyway.
 
             if (nois_x == you.x_pos && nois_y == you.y_pos)
-                behavior_event(monster, ME_ALERT, MHITYOU);
+                behaviour_event(monster, ME_ALERT, MHITYOU);
             else
-                behavior_event(monster, ME_DISTURB);
+                behaviour_event(monster, ME_DISTURB);
         }
     }
 }                               // end noisy()
@@ -1809,7 +1810,6 @@ void show_map( FixedVector<int, 2> &spec_place )
 
     char min_x = 80, max_x = 0, min_y = 0, max_y = 0;
     bool found_y = false;
-    unsigned char square;
 
     const int num_lines = get_number_of_lines();
     const int half_screen = num_lines / 2 - 1;
@@ -1902,8 +1902,7 @@ void show_map( FixedVector<int, 2> &spec_place )
 
             }
 
-            square = grd[start_x + i + 1][start_y + j + 1];
-            buffer2[bufcount2 + 1] = colour_code_map(square);
+            buffer2[bufcount2 + 1] = colour_code_map(start_x + i, start_y + j);
 
             if (start_x + i + 1 == you.x_pos && start_y + j + 1 == you.y_pos)
                 buffer2[bufcount2 + 1] = WHITE;
@@ -2240,6 +2239,7 @@ unsigned char mapchar(unsigned char ldfk)
 
     case DNGN_SECRET_DOOR:
     case DNGN_ROCK_WALL:
+    case DNGN_PERMAROCK_WALL:
     case DNGN_STONE_WALL:
     case DNGN_METAL_WALL:
     case DNGN_GREEN_CRYSTAL_WALL:
@@ -2401,6 +2401,7 @@ unsigned char mapchar2(unsigned char ldfk)
 
     case DNGN_SECRET_DOOR:
     case DNGN_ROCK_WALL:
+    case DNGN_PERMAROCK_WALL:
     case DNGN_STONE_WALL:
     case DNGN_METAL_WALL:
     case DNGN_GREEN_CRYSTAL_WALL:
@@ -2607,6 +2608,7 @@ void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
         break;
 
     case DNGN_ROCK_WALL:
+    case DNGN_PERMAROCK_WALL:
         *color = env.rock_colour;
         *ch = '#';
         break;
@@ -3190,8 +3192,8 @@ void viewwindow3(char draw_it, bool do_updates)
                                [count_y + you.y_pos - 8] != 0)
                     {
                         buffy[bufcount + 1]
-                            = colour_code_map( grd[count_x + you.x_pos - 16]
-                                                  [count_y + you.y_pos - 8]);
+                                = colour_code_map( count_x + you.x_pos - 17,
+                                                   count_y + you.y_pos - 9 );
                     }
                 }
 
@@ -3263,6 +3265,7 @@ unsigned char mapchar3(unsigned char ldfk)
 
     case DNGN_SECRET_DOOR:
     case DNGN_ROCK_WALL:
+    case DNGN_PERMAROCK_WALL:
     case DNGN_STONE_WALL:
     case DNGN_METAL_WALL:
     case DNGN_GREEN_CRYSTAL_WALL:
@@ -3428,6 +3431,7 @@ unsigned char mapchar4(unsigned char ldfk)
 
     case DNGN_SECRET_DOOR:
     case DNGN_ROCK_WALL:
+    case DNGN_PERMAROCK_WALL:
     case DNGN_STONE_WALL:
     case DNGN_METAL_WALL:
     case DNGN_GREEN_CRYSTAL_WALL:

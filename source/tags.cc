@@ -83,6 +83,7 @@
 #include "monstuff.h"
 #include "mon-util.h"
 #include "randart.h"
+#include "skills.h"
 #include "stuff.h"
 #include "tags.h"
 
@@ -867,6 +868,9 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
         you.skill_points[j] = unmarshallLong(th);
     }
 
+    // set up you.total_skill_points and you.skill_cost_level
+    calc_total_skill_points();
+
     // how many durations?
     count_c = unmarshallByte(th);
     for (j = 0; j < count_c; ++j)
@@ -1393,7 +1397,7 @@ static void tag_construct_level_monsters(struct tagHeader &th)
         marshallByte(th, menv[i].hit_dice);
         marshallByte(th, menv[i].speed);
         marshallByte(th, menv[i].speed_increment);
-        marshallByte(th, menv[i].behavior);
+        marshallByte(th, menv[i].behaviour);
         marshallByte(th, menv[i].x);
         marshallByte(th, menv[i].y);
         marshallByte(th, menv[i].target_x);
@@ -1550,7 +1554,7 @@ static void tag_read_level_items(struct tagHeader &th, char minorVersion)
 static void tag_read_level_monsters(struct tagHeader &th, char minorVersion)
 {
     int i,j;
-    int count, ecount, icount, turns;
+    int count, ecount, icount;
 
     // how many mons_alloc?
     count = unmarshallByte(th);
@@ -1571,7 +1575,7 @@ static void tag_read_level_monsters(struct tagHeader &th, char minorVersion)
         menv[i].hit_dice = unmarshallByte(th);
         menv[i].speed = unmarshallByte(th);
         menv[i].speed_increment = unmarshallByte(th);
-        menv[i].behavior = unmarshallByte(th);
+        menv[i].behaviour = unmarshallByte(th);
         menv[i].x = unmarshallByte(th);
         menv[i].y = unmarshallByte(th);
         menv[i].target_x = unmarshallByte(th);
@@ -1618,33 +1622,9 @@ static void tag_read_level_monsters(struct tagHeader &th, char minorVersion)
         for (j = 0; j < icount; j++)
             menv[i].inv[j] = unmarshallShort(th);
 
-        // place monster & heal based on time gone (nice touch)
+        // place monster
         if (menv[i].type != -1)
-        {
             mgrd[menv[i].x][menv[i].y] = i;
-
-            if (menv[i].hit_points < menv[i].max_hit_points)
-            {
-                if (env.elapsed_time != 0.0)
-                {
-                    turns = (int) (you.elapsed_time - env.elapsed_time) / 10;
-
-                    if (turns > 0)
-                    {
-                        // player ghosts included here because they cannot
-                        // leave the level to follow the player.
-                        if (monster_descriptor(menv[i].type,
-                                               MDSC_REGENERATES)
-                            || menv[i].type == MONS_PLAYER_GHOST)
-                        {
-                            heal_monster(&menv[i], turns, false);
-                        }
-                        else
-                            heal_monster(&menv[i], (turns / 25), false);
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -1666,7 +1646,7 @@ void tag_missing_level_attitude()
 {
     // we don't really have to do a lot here.
     // just set foe to MHITNOT;  they'll pick up
-    // a foe first time through monster() if
+    // a foe first time through handle_monster() if
     // there's one around.
 
     // as for attitude,  a couple simple checks
@@ -1686,7 +1666,7 @@ void tag_missing_level_attitude()
 
         menv[i].foe = MHITNOT;
 
-        switch(menv[i].behavior)
+        switch(menv[i].behaviour)
         {
             case 0:         // old BEH_SLEEP
                 new_beh = BEH_SLEEP;    // don't wake sleepers
@@ -1708,7 +1688,7 @@ void tag_missing_level_attitude()
         }
 
         menv[i].attitude = (isFriendly)?ATT_FRIENDLY : ATT_HOSTILE;
-        menv[i].behavior = new_beh;
+        menv[i].behaviour = new_beh;
         menv[i].foe_memory = 0;
     }
 }

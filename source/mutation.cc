@@ -1118,6 +1118,7 @@ bool mutate(int which_mutation, bool failMsg)
     }
 
     if (which_mutation == 100)
+    {
         do
         {
             mutat = random2(NUM_MUTATIONS);
@@ -1132,6 +1133,7 @@ bool mutate(int which_mutation, bool failMsg)
                                                && mutat != MUT_CLUMSY))
                || you.mutation[mutat] > 13
                || random2(10) >= mutation_rarity[mutat]);
+    }
 
     if (you.mutation[mutat] >= 3
         && (mutat != MUT_STRONG && mutat != MUT_CLEVER && mutat != MUT_AGILE)
@@ -1205,13 +1207,10 @@ bool mutate(int which_mutation, bool failMsg)
         return false;
     }
 
-    // Preventing hooves for right now -- mutations that prevent
-    // the use of equipment were labeled "bad" in the past... this
-    // also has the problem that I doubt it prevents the player from
     // putting boots on after they are forced off. -- bwr
-    if (mutat == MUT_HOOVES)
-//        && (you.species == SP_NAGA || you.species == SP_CENTAUR
-//            || you.species == SP_KENKU || player_genus(GENPC_DRACONIAN)))
+    if (mutat == MUT_HOOVES
+        && (you.species == SP_NAGA || you.species == SP_CENTAUR
+            || you.species == SP_KENKU || player_genus(GENPC_DRACONIAN)))
     {
         return false;
     }

@@ -35,10 +35,10 @@
 
 static int band_member(int band, int power);
 static int choose_band( int mon_type, int power, int &band_size );
-static int place_monster_aux(int mon_type, char behavior, int target,
+static int place_monster_aux(int mon_type, char behaviour, int target,
     int px, int py, int power, int extra, bool first_band_member);
 
-bool place_monster(int &id, int mon_type, int power, char behavior,
+bool place_monster(int &id, int mon_type, int power, char behaviour,
     int target, bool summoned, int px, int py, bool allow_bands,
     int proximity, int extra)
 {
@@ -281,7 +281,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
         } // end while.. place first monster
     }
 
-    id = place_monster_aux( mon_type, behavior, target, px, py, lev_mons,
+    id = place_monster_aux( mon_type, behaviour, target, px, py, lev_mons,
                             extra, true );
 
     // now, forget about banding if the first placement failed,  or there's too
@@ -326,7 +326,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
     // (5) for each band monster, loop call to place_monster_aux().
     for(i = 1; i < band_size; i++)
     {
-        place_monster_aux( band_monsters[i], behavior, target, px, py,
+        place_monster_aux( band_monsters[i], behaviour, target, px, py,
                            lev_mons, extra, false );
     }
 
@@ -334,7 +334,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
     return (true);
 }
 
-static int place_monster_aux( int mon_type, char behavior, int target,
+static int place_monster_aux( int mon_type, char behaviour, int target,
                               int px, int py, int power, int extra,
                               bool first_band_member )
 {
@@ -465,21 +465,21 @@ static int place_monster_aux( int mon_type, char behavior, int target,
     if (mon_type == MONS_MANTICORE)
         menv[id].number = 8 + random2(9);
 
-    // set attitude, behavior and target
+    // set attitude, behaviour and target
     menv[id].attitude = ATT_HOSTILE;
-    menv[id].behavior = behavior;
+    menv[id].behaviour = behaviour;
     menv[id].foe_memory = 0;
 
     // setting attitude will always make the
     // monster wander.. if you want sleeping
     // hostiles,  use BEH_SLEEP since the default
     // attitude is hostile.
-    if (behavior > NUM_BEHAVIORS)
+    if (behaviour > NUM_BEHAVIOURS)
     {
-        if (behavior == BEH_FRIENDLY || behavior == BEH_GOD_GIFT)
+        if (behaviour == BEH_FRIENDLY || behaviour == BEH_GOD_GIFT)
             menv[id].attitude = ATT_FRIENDLY;
 
-        menv[id].behavior = BEH_WANDER;
+        menv[id].behaviour = BEH_WANDER;
     }
 
     menv[id].foe = target;
@@ -942,7 +942,7 @@ static int band_member(int band, int power)
 
 // PUBLIC FUNCTION -- mons_place().
 
-int mons_place( int mon_type, char behavior, int target, bool summoned,
+int mons_place( int mon_type, char behaviour, int target, bool summoned,
                 int px, int py, int level_type, int proximity, int extra )
 {
     int mon_count = 0;
@@ -1005,7 +1005,7 @@ int mons_place( int mon_type, char behavior, int target, bool summoned,
             break;
     }
 
-    if (place_monster( mid, mon_type, power, behavior, target, summoned,
+    if (place_monster( mid, mon_type, power, behaviour, target, summoned,
                        px, py, permit_bands, proximity, extra ) == false)
     {
         return (-1);
@@ -1017,22 +1017,22 @@ int mons_place( int mon_type, char behavior, int target, bool summoned,
 
         // look at special cases: CHARMED, FRIENDLY, HOSTILE, GOD_GIFT
         // alert summoned being to player's presence
-        if (behavior > NUM_BEHAVIORS)
+        if (behaviour > NUM_BEHAVIOURS)
         {
-            if (behavior == BEH_FRIENDLY || behavior == BEH_GOD_GIFT)
+            if (behaviour == BEH_FRIENDLY || behaviour == BEH_GOD_GIFT)
                 creation->flags |= MF_CREATED_FRIENDLY;
 
-            if (behavior == BEH_GOD_GIFT)
+            if (behaviour == BEH_GOD_GIFT)
                 creation->flags |= MF_GOD_GIFT;
 
-            if (behavior == BEH_CHARMED)
+            if (behaviour == BEH_CHARMED)
             {
                 creation->attitude = ATT_HOSTILE;
                 mons_add_ench(creation, ENCH_CHARM);
             }
 
             // make summoned being aware of player's presence
-            behavior_event(creation, ME_ALERT, MHITYOU);
+            behaviour_event(creation, ME_ALERT, MHITYOU);
         }
     }
 
@@ -1078,7 +1078,7 @@ int create_monster( int cls, int dur, int beha, int cr_x, int cr_y,
 
         // look at special cases: CHARMED, FRIENDLY, HOSTILE, GOD_GIFT
         // alert summoned being to player's presence
-        if (beha > NUM_BEHAVIORS)
+        if (beha > NUM_BEHAVIOURS)
         {
             if (beha == BEH_FRIENDLY || beha == BEH_GOD_GIFT)
                 creation->flags |= MF_CREATED_FRIENDLY;
@@ -1093,7 +1093,7 @@ int create_monster( int cls, int dur, int beha, int cr_x, int cr_y,
             }
 
             // make summoned being aware of player's presence
-            behavior_event(creation, ME_ALERT, MHITYOU);
+            behaviour_event(creation, ME_ALERT, MHITYOU);
         }
 
         if (creation->type == MONS_RAKSHASA_FAKE && !one_chance_in(3))
@@ -1230,7 +1230,7 @@ int summon_any_demon(char demon_class)
         break;
 
     default:
-        summoned = MONS_GIANT_ANT;      // this was the original behavior {dlb}
+        summoned = MONS_GIANT_ANT;      // this was the original behaviour {dlb}
         break;
     }
 

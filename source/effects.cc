@@ -218,15 +218,8 @@ void direct_effect(struct bolt &pbolt)
         pbolt.isBeam = false;
         pbolt.isTracer = false;
         pbolt.hit = 20;
-        pbolt.damage = 120;
+        pbolt.damage = dice_def( 3, 20 );
         explosion( pbolt );
-#if 0
-        pbolt.flavour = BEAM_LAVA;             // but it's hellfire anyway
-        strcpy(pbolt.beam_name, "hellfire");   // for ouch
-        scrolls_burn(4, OBJ_SCROLLS);
-        damage_taken = 5 + random2avg(19, 2);
-        damage_taken = check_your_resists(damage_taken, pbolt.flavour);
-#endif
         break;
 
     case DMNBM_SMITING:
@@ -265,7 +258,7 @@ void mons_direct_effect(struct bolt &pbolt, int i)
     int damage_taken = 0;
 
     // annoy the target
-    behavior_event(monster, ME_ANNOY, i);
+    behaviour_event(monster, ME_ANNOY, i);
 
     switch (pbolt.type)
     {
@@ -1085,9 +1078,9 @@ bool acquirement(unsigned char force_class)
 
                 // fix illegal barding ego types caused by above hack
                 if (mitm[thing_created].plus2 != TBOOT_BOOTS
-                    && mitm[thing_created].special == SPARM_RUNNING)
+                    && get_armour_ego_type( mitm[thing_created] ) == SPARM_RUNNING)
                 {
-                    mitm[thing_created].special = 0;
+                    set_item_ego_type( mitm[thing_created], OBJ_ARMOUR, SPARM_NORMAL );
                 }
                 break;
 

@@ -267,7 +267,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         && (grd[defender->x][defender->y] == DNGN_SHALLOW_WATER
             || grd[defender->x][defender->y] == DNGN_DEEP_WATER)
         // monster not flying
-        && (!mons_flies(defender->type)))
+        && !mons_flies(defender))
     {
         water_attack = true;
     }
@@ -306,9 +306,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
     if (ur_armed
         && you.inv[ weapon ].base_type == OBJ_WEAPONS
-        && (you.inv[ weapon ].special == SPWPN_SPEED
-            || (is_random_artefact( you.inv[ weapon ] )
-                && art_proprt[RAP_BRAND] == SPWPN_SPEED)))
+        && get_weapon_brand( you.inv[weapon] ) == SPWPN_SPEED)
     {
         you.time_taken *= 5;
         you.time_taken /= 10;
@@ -575,14 +573,14 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
     }
 
     // fleeing
-    if (defender->behavior == BEH_FLEE)
+    if (defender->behaviour == BEH_FLEE)
     {
         stabAttempt = true;
         stab_bonus = 2;
     }
 
     // sleeping
-    if (defender->behavior == BEH_SLEEP)
+    if (defender->behaviour == BEH_SLEEP)
     {
         stabAttempt = true;
         rollNeeded = false;
@@ -627,11 +625,11 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
     // now, whether or not you 'hit' the monster in question,  you've
     // pissed them off
-    behavior_event(defender, ME_WHACK, MHITYOU);
+    behaviour_event(defender, ME_WHACK, MHITYOU);
 
     if ((your_to_hit >= defender->evasion || one_chance_in(30))
         || ((defender->speed_increment <= 60
-             || defender->behavior == BEH_SLEEP)
+             || defender->behaviour == BEH_SLEEP)
             && !one_chance_in(10 + you.skills[SK_STABBING])))
     {
         hit = true;
@@ -713,7 +711,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             if (damage_done < 1)
                 damage_done = 1;
 
-            if (defender->behavior == BEH_SLEEP)
+            if (defender->behaviour == BEH_SLEEP)
             {
                 // Sleeping moster wakes up when stabbed but may be groggy
                 if (random2(200) <= you.skills[SK_STABBING] + you.dex)
@@ -801,8 +799,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             mpr(info);
 #endif
             if (ur_armed
-                && you.inv[ weapon ].base_type == OBJ_WEAPONS
-                && you.inv[ weapon ].special == SPWPN_VAMPIRICISM)
+                && get_weapon_brand( you.inv[weapon] ) == SPWPN_VAMPIRICISM)
             {
                 if ((mons_holiness(defender->type) == MH_NATURAL
                         || mons_holiness(defender->type) == MH_HOLY)
@@ -928,26 +925,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         if (is_demonic(you.inv[ weapon ].sub_type))
             naughty(NAUGHTY_UNHOLY, 1);
 
-        weap_dam = you.inv[ weapon ].special;
-
-        if (is_fixed_artefact( you.inv[weapon] ))
-            weap_dam = SPWPN_NORMAL;
-
-        if (is_random_artefact( you.inv[ weapon ] ))
-            weap_dam = art_proprt[RAP_BRAND];
-
-        switch (you.inv[ weapon ].special)
-        {
-        case SPWPN_SWORD_OF_CEREBOV:
-            weap_dam = SPWPN_FLAMING;
-            break;
-        case SPWPN_STAFF_OF_OLGREB:
-            weap_dam = SPWPN_VENOM;
-            break;
-        case SPWPN_VAMPIRES_TOOTH:
-            weap_dam = SPWPN_VAMPIRICISM;
-            break;
-        }
+        weap_dam = get_weapon_brand( you.inv[weapon] );
     }
 
     // jmf: BEGIN STAFF HACK
@@ -966,7 +944,6 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                                 if ((DAMAGE) >= 10) strcat(info, "!"); \
                                 if ((DAMAGE) >  20) strcat(info, "!");
 
-
     if (ur_armed && hit && you.inv[ weapon ].base_type == OBJ_STAVES)
     {
         specdam = 0;
@@ -977,37 +954,29 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             case STAFF_AIR:
                 if (damage_done + you.skills[SK_AIR_MAGIC] > random2(30))
                 {
-                    if (mons_res_elec(defender->type))
+                    if (mons_res_elec(defender))
                         break;
 
-                    strcpy(info, ptr_monam(defender, DESC_CAP_THE));
-                    strcat(info, " is jolted");
                     specdam = STAFF_DAMAGE(SK_AIR_MAGIC);
-                    CAT_PUNCTUATION(specdam);
-                    mpr(info);
+
+                    if (specdam)
+                    {
+                        strcpy(info, ptr_monam(defender, DESC_CAP_THE));
+                        strcat(info, " is jolted");
+                        CAT_PUNCTUATION(specdam);
+                        mpr(info);
+                    }
                 }
                 break;
 
             case STAFF_COLD:    // FIXME: I don't think I used these right ...
-                if (mons_res_cold(defender->type) > 0)
+                if (mons_res_cold(defender) > 0)
                     break;
 
                 specdam = STAFF_DAMAGE(SK_ICE_MAGIC);
 
-                if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
-                    && mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    == SPARM_COLD_RESISTANCE)
-                {
-                    specdam /= 3;
-                }
-
-                if (mons_res_cold(defender->type) < 0
-                    && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
-                        || mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    != SPARM_COLD_RESISTANCE))
-                {
+                if (mons_res_cold(defender) < 0)
                     specdam += STAFF_DAMAGE(SK_ICE_MAGIC);
-                }
 
                 if (specdam)
                 {
@@ -1019,36 +988,28 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 break;
 
             case STAFF_EARTH:
-                if (mons_flies(defender->type))
+                if (mons_flies(defender))
                     break;      //jmf: lame, but someone ought to resist
 
                 specdam = STAFF_DAMAGE(SK_EARTH_MAGIC);
-                strcpy(info, "You crush ");
-                CAT_MONSTER_INFO(monster_attacked);
-                CAT_PUNCTUATION(specdam);
-                mpr(info);
+
+                if (specdam)
+                {
+                    strcpy(info, "You crush ");
+                    CAT_MONSTER_INFO(monster_attacked);
+                    CAT_PUNCTUATION(specdam);
+                    mpr(info);
+                }
                 break;
 
             case STAFF_FIRE:
-                if (mons_res_fire(defender->type) > 0)
+                if (mons_res_fire(defender) > 0)
                     break;
 
                 specdam = STAFF_DAMAGE(SK_FIRE_MAGIC);
 
-                if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
-                    && mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    == SPARM_FIRE_RESISTANCE)
-                {
-                    specdam = (random2(damage_done) / 2 + 1) / 3;
-                }
-
-                if (mons_res_fire(defender->type) < 0
-                    && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
-                        || mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    != SPARM_FIRE_RESISTANCE))
-                {
+                if (mons_res_fire(defender) < 0)
                     specdam += STAFF_DAMAGE(SK_FIRE_MAGIC);
-                }
 
                 if (specdam)
                 {
@@ -1070,22 +1031,25 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 break;
 
             case STAFF_DEATH:
-                // FIXME: bring into line with other staff functions
-                if ((mons_holiness(defender->type) == MH_NATURAL
-                        || mons_holiness(defender->type) == MH_HOLY)
-                    && random2(8) <= you.skills[SK_NECROMANCY])
+                if (mons_res_negative_energy(defender) > 0)
+                    break;
+
+                if (random2(8) <= you.skills[SK_NECROMANCY])
                 {
-                    strcpy(info, ptr_monam(defender, DESC_CAP_THE));
-                    strcat(info, " convulses in agony");
                     specdam = STAFF_DAMAGE(SK_NECROMANCY);
-                    CAT_PUNCTUATION(specdam);
-                    mpr(info);
-                    naughty(NAUGHTY_NECROMANCY, 4);
+
+                    if (specdam)
+                    {
+                        strcpy(info, ptr_monam(defender, DESC_CAP_THE));
+                        strcat(info, " convulses in agony");
+                        CAT_PUNCTUATION(specdam);
+                        mpr(info);
+
+                        naughty(NAUGHTY_NECROMANCY, 4);
+                    }
                 }
                 break;
 
-            default:
-                mpr("You're wielding some staff I've never heard of! (fight.cc)");
             case STAFF_SMITING:
             case STAFF_POWER:
             case STAFF_SUMMONING:
@@ -1102,6 +1066,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             case STAFF_ENCHANTMENT:
             case STAFF_ENERGY:
             case STAFF_WIZARDRY:
+                break;
+
+            default:
+                mpr("You're wielding some staff I've never heard of! (fight.cc)");
                 break;
             } // end switch
         }
@@ -1142,25 +1110,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
         case SPWPN_FLAMING:
             specdam = 0;
-
-            if (!mons_res_fire(defender->type))
-            {
+            if (mons_res_fire(defender) == 0)
                 specdam = random2(damage_done) / 2 + 1;
-                if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
-                    && mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    == SPARM_FIRE_RESISTANCE)
-                {
-                    specdam = (random2(damage_done) / 2 + 1) / 3;
-                }
-            }
-
-            if (mons_res_fire(defender->type) == -1
-                && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
-                    || mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    != SPARM_FIRE_RESISTANCE))
-            {
+            else if (mons_res_fire(defender) < 0)
                 specdam = random2(damage_done) + 1;
-            }
 
             if (specdam)
             {
@@ -1180,24 +1133,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
         case SPWPN_FREEZING:
             specdam = 0;
-            if (!mons_res_cold(defender->type))
-            {
+            if (mons_res_cold(defender) == 0)
                 specdam = 1 + random2(damage_done) / 2;
-                if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
-                    && mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    == SPARM_COLD_RESISTANCE)
-                {
-                    specdam = (1 + random2(damage_done) / 2) / 3;
-                }
-            }
-
-            if (mons_res_cold(defender->type) == -1
-                && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
-                    || mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    != SPARM_COLD_RESISTANCE))
-            {
+            else if (mons_res_cold(defender) < 0)
                 specdam = 1 + random2(damage_done);
-            }
 
             if (specdam)
             {
@@ -1216,17 +1155,17 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             break;
 
         case SPWPN_HOLY_WRATH:
+            // there should be a case in here for holy monsters,
+            // see elsewhere in fight.cc {dlb}
             specdam = 0;
             switch (mons_holiness(defender->type))
             {
-            // there should be a case in here for holy monsters,
-            // see elsewhere in fight.cc {dlb}
             case MH_UNDEAD:
-                specdam += 1 + random2(damage_done);
+                specdam = 1 + random2(damage_done);
                 break;
 
             case MH_DEMONIC:
-                specdam += 1 + (random2(damage_done * 15) / 10);
+                specdam = 1 + (random2(damage_done * 15) / 10);
                 break;
             }
             break;
@@ -1235,14 +1174,14 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         case SPWPN_ELECTROCUTION:
             specdam = 0;
 
-            if (mons_flies(defender->type))
+            if (mons_flies(defender))
                 break;
-            else if (mons_res_elec(defender->type))
+            else if (mons_res_elec(defender) > 0)
                 break;
             else if (one_chance_in(3))
             {
                 mpr("There is a sudden explosion of sparks!");
-                specdam += random2avg(28, 3);
+                specdam = random2avg(28, 3);
             }
             break;
 
@@ -1257,12 +1196,8 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             break;
 
         case SPWPN_DRAINING:
-            if ((mons_holiness(defender->type) == MH_UNDEAD
-                    || mons_holiness(defender->type) == MH_DEMONIC)
-                || one_chance_in(3))
-            {
+            if (mons_res_negative_energy(defender) > 0 || one_chance_in(3))
                 break;
-            }
 
             strcpy(info, "You drain ");
             strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
@@ -1280,8 +1215,9 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
             if (defender->hit_dice < 1)
                 defender->hit_points = 0;
+
             specdam = 1 + (random2(damage_done) / 2);
-            naughty(NAUGHTY_NECROMANCY, 2);
+            naughty( NAUGHTY_NECROMANCY, 2 );
             break;
 
             /* 9 = speed - done before */
@@ -1293,12 +1229,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         case SPWPN_VAMPIRICISM:
             specdam = 0;        // NB: does no extra damage
 
-                 // should really also prevent draining eg golemsholiness(defender->type) == MH_UNDEAD
-            if (mons_holiness(defender->type) == MH_UNDEAD
-                || mons_holiness(defender->type) == MH_DEMONIC)
-            {
+             // should really also prevent draining
+             // eg golemsholiness(defender->type) == MH_UNDEAD
+            if (mons_res_negative_energy(defender) > 0)
                 break;
-            }
             else if (damage_done < 1)
                 break;
             else if (you.hp == you.hp_max || one_chance_in(5))
@@ -1306,21 +1240,20 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
             mpr("You feel better.");
 
+            // thus is probably more valuable on larger weapons?
             if (ur_armed
-                && you.inv[ weapon ].special == SPWPN_VAMPIRES_TOOTH)
+                && is_fixed_artefact( you.inv[weapon] )
+                && you.inv[weapon].special == SPWPN_VAMPIRES_TOOTH)
             {
                 inc_hp(damage_done, false);
             }
             else
-            {
-                // thus is probably more valuable on larger weapons?
                 inc_hp(1 + random2(damage_done), false);
-            }
 
             if (you.hunger_state != HS_ENGORGED)
                 lessen_hunger(random2avg(59, 2), true);
 
-            naughty(NAUGHTY_NECROMANCY, 2);
+            naughty( NAUGHTY_NECROMANCY, 2 );
             break;
 
         case SPWPN_DISRUPTION:
@@ -1334,8 +1267,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
         case SPWPN_PAIN:
             specdam = 0;
-            if ((mons_holiness(defender->type) == MH_NATURAL
-                    || mons_holiness(defender->type) == MH_HOLY)
+            if (mons_res_negative_energy(defender) <= 0
                 && random2(8) <= you.skills[SK_NECROMANCY])
             {
                 simple_monster_message(defender, " convulses in agony.");
@@ -1428,10 +1360,8 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
         if (dam_type == DVORP_SLICING || dam_type == DVORP_CHOPPING)
         {
-            if ((damage_done < 4 || coinflip())
-                && (!ur_armed
-                    || you.inv[ weapon ].base_type != OBJ_WEAPONS
-                    || you.inv[ weapon ].special != SPWPN_VORPAL))
+            if ((ur_armed && get_weapon_brand( you.inv[weapon] ) != SPWPN_VORPAL)
+                || (damage_done < 4 || coinflip()))
             {
                 goto mons_dies;
             }
@@ -1454,9 +1384,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 goto mons_dies;
             }
 
-            if (ur_armed
-                && you.inv[ weapon ].base_type == OBJ_WEAPONS
-                && you.inv[ weapon ].special == SPWPN_FLAMING)
+            if (ur_armed && get_weapon_brand( you.inv[weapon] ) == SPWPN_FLAMING)
             {
                 goto mons_dies; // cauterised
             }
@@ -1858,7 +1786,7 @@ void monster_attack(int monster_attacking)
 
     if (you.duration[DUR_REPEL_UNDEAD]
         && mons_holiness( attacker->type ) == MH_UNDEAD
-        && random2( you.piety / 5 ) > attacker->hit_dice * 2)
+        && random2( you.piety / 2 ) > mons_resist_turn_undead( attacker ))
     {
         simple_monster_message(attacker,
                    " tries to attack you, but is repelled by your holy aura.");
@@ -1882,7 +1810,7 @@ void monster_attack(int monster_attacking)
     }
 
     if (grd[attacker->x][attacker->y] == DNGN_SHALLOW_WATER
-        && !mons_flies(attacker->type)
+        && !mons_flies(attacker)
         && monster_habitat(attacker->type) == DNGN_FLOOR && one_chance_in(4))
     {
         simple_monster_message(attacker, " splashes around in the water.");
@@ -1912,7 +1840,7 @@ void monster_attack(int monster_attacking)
             heads--;
         }
 
-        char mdam = mondamage(attacker->type, runthru);
+        char mdam = mons_damage(attacker->type, runthru);
 
         if (attacker->type == MONS_ZOMBIE_SMALL
             || attacker->type == MONS_ZOMBIE_LARGE
@@ -1922,7 +1850,7 @@ void monster_attack(int monster_attacking)
             || attacker->type == MONS_SIMULACRUM_LARGE
             || attacker->type == MONS_SPECTRAL_THING)
         {
-            mdam = mondamage(attacker->number, runthru);
+            mdam = mons_damage(attacker->number, runthru);
 
             // these are cumulative, of course: {dlb}
             if (mdam > 1)
@@ -1981,7 +1909,8 @@ void monster_attack(int monster_attacking)
         // Factors for blocking
         const int pro_block = player_shield_class() + (random2(you.dex) / 5);
 
-        if (!you.paralysis && !you.conf && player_monster_visible( attacker )
+        if (!you.paralysis && !you_are_delayed() && !you.conf
+            && player_monster_visible( attacker )
             && player_shield_class() > 0
             && random2(con_block) <= random2(pro_block))
         {
@@ -2018,8 +1947,9 @@ void monster_attack(int monster_attacking)
         }
 
         const int player_dodge = random2limit(player_evasion(), 40)
-                                    + random2(you.dex) / 3
-                                    - (player_monster_visible(attacker) ? 2 : 14);
+                                + random2(you.dex) / 3
+                                - (player_monster_visible(attacker) ? 2 : 14)
+                                - (you_are_delayed() ? 5 : 0);
 
         if (!blocked
             && (random2(mons_to_hit) >= player_dodge || one_chance_in(30)))
@@ -2205,10 +2135,11 @@ void monster_attack(int monster_attacking)
                     strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
                     strcat(info, " stings you!");
                     mpr(info);
-                    you.poison++;
 
                     if (attacker->type == MONS_REDBACK)
-                        you.poison += random2avg(9, 2) + 3;
+                        poison_player( random2avg(9, 2) + 3 );
+                    else
+                        poison_player(1);
                 }
                 break;
 
@@ -2222,10 +2153,11 @@ void monster_attack(int monster_attacking)
                     strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
                     strcat(info, " stings you!");
                     mpr(info);
-                    you.poison++;
 
                     if (attacker->type == MONS_BUMBLEBEE)
-                        you.poison += random2(3);
+                        poison_player( random2(3) );
+                    else
+                        poison_player(1);
                 }
                 break;
 
@@ -2312,7 +2244,7 @@ void monster_attack(int monster_attacking)
                     strcat(info, " poisons you!");
                     mpr(info);
 
-                    you.poison++;
+                    poison_player(1);
                 }
                 break;
 
@@ -2325,7 +2257,8 @@ void monster_attack(int monster_attacking)
                     strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
                     strcat(info, " stings you!");
                     mpr(info);
-                    you.poison += 2;
+
+                    poison_player(2);
                 }
                 break;
 
@@ -2341,7 +2274,8 @@ void monster_attack(int monster_attacking)
                     strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
                     strcat(info, " poisons you!");
                     mpr(info);
-                    you.poison++;
+
+                    poison_player(1);
                 }
                 break;
 
@@ -2367,9 +2301,10 @@ void monster_attack(int monster_attacking)
                     drain_exp();
                 break;
 
+
             case MONS_RED_WASP:
                 if (!player_res_poison())
-                    you.poison += (coinflip()? 2 : 1);
+                    poison_player( (coinflip() ? 2 : 1) );
                 // intentional fall-through {dlb}
             case MONS_YELLOW_WASP:
                 strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
@@ -2397,7 +2332,7 @@ void monster_attack(int monster_attacking)
                     strcat(info, " stings you!");
                     mpr(info);
 
-                    you.poison += 2 + random2(4);
+                    poison_player( 2 + random2(4) );
                 }
                 // intentional fall-through {dlb}
             case MONS_BROWN_OOZE:
@@ -2408,10 +2343,33 @@ void monster_attack(int monster_attacking)
                 splash_with_acid(3);
                 break;
 
-            case MONS_ICE_DEVIL:
-            case MONS_ICE_BEAST:
             case MONS_SIMULACRUM_SMALL:
             case MONS_SIMULACRUM_LARGE:
+                extraDamage = 1 + random2(10);
+                resistValue = player_res_cold() - 100;
+
+                strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
+
+                if (resistValue >= 0)
+                {
+                    extraDamage /= (1 + resistValue * resistValue);
+
+                    if (extraDamage > 0)
+                        strcat(info, " chills you.");
+                }
+                else if (resistValue < 0)
+                {
+                    extraDamage += random2(10);
+                    strcat(info, " freezes you.");
+                }
+
+                mpr(info);
+                damage_taken += extraDamage;
+                scrolls_burn( 1, OBJ_POTIONS );
+                break;
+
+            case MONS_ICE_DEVIL:
+            case MONS_ICE_BEAST:
             case MONS_FREEZING_WRAITH:
             case MONS_ICE_FIEND:
             case MONS_WHITE_IMP:
@@ -2527,13 +2485,19 @@ void monster_attack(int monster_attacking)
                 strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
                 strcat(info, " stings you!");
                 mpr(info);
-                you.poison++;
+
+                poison_player(1);
                 lose_stat(STAT_STRENGTH, 1);
                 break;
 
             case MONS_PULSATING_LUMP:
                 if (one_chance_in(3))
-                    mutate(100);
+                {
+                    if (one_chance_in(5))
+                        mutate(100);
+                    else
+                        give_bad_mutation();
+                }
                 break;
             }                   // end of switch for special attacks.
             /* use brek for level drain, maybe with beam variables,
@@ -2717,7 +2681,7 @@ commented out for now
                                 (attacker->type == MONS_DANCING_WEAPON)
                                 ? " is poisoned!" : "'s weapon is poisoned!");
 
-                        you.poison += 2;
+                        poison_player(2);
                     }
                     break;
 
@@ -2881,7 +2845,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
     }
 
     if (grd[attacker->x][attacker->y] == DNGN_SHALLOW_WATER
-        && !mons_flies(attacker->type)
+        && !mons_flies(attacker)
         && habitat == DNGN_FLOOR && one_chance_in(4))
     {
         mpr("You hear a splashing noise.");
@@ -2889,7 +2853,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
     }
 
     if (grd[defender->x][defender->y] == DNGN_SHALLOW_WATER
-        && !mons_flies(defender->type)
+        && !mons_flies(defender)
         && habitat == DNGN_DEEP_WATER)
     {
         water_attack = true;
@@ -2899,13 +2863,13 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
         sees = true;
 
     // now disturb defender, regardless
-    behavior_event(defender, ME_WHACK, monster_attacking);
+    behaviour_event(defender, ME_WHACK, monster_attacking);
 
     char runthru;
 
     for (runthru = 0; runthru < 4; runthru++)
     {
-        char mdam = mondamage(attacker->type, runthru);
+        char mdam = mons_damage(attacker->type, runthru);
         wepSpd = 0;
 
         if (attacker->type == MONS_ZOMBIE_SMALL
@@ -2917,7 +2881,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
             || attacker->type == MONS_SPECTRAL_THING)
             // what do these things have in common? {dlb}
         {
-            mdam = mondamage(attacker->number, runthru);
+            mdam = mons_damage(attacker->number, runthru);
             // cumulative reductions - series of if-conditions
             // is necessary: {dlb}
             if (mdam > 1)
@@ -2963,7 +2927,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
 
         if (mons_to_hit >= defender->evasion
             || ((defender->speed_increment <= 60
-                 || defender->behavior == BEH_SLEEP) && !one_chance_in(20)))
+                 || defender->behaviour == BEH_SLEEP) && !one_chance_in(20)))
         {
             hit = true;
 
@@ -3174,25 +3138,10 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
             case MONS_BALRUG:
             case MONS_SUN_DEMON:
                 specdam = 0;
-                if (!mons_res_fire(defender->type))
-                {
+                if (mons_res_fire(defender) == 0)
                     specdam = 15 + random2(15);
-
-                    if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
-                        && mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                == SPARM_FIRE_RESISTANCE)
-                    {
-                        specdam /= 3;
-                    }
-                }
-
-                if (mons_res_fire(defender->type) == -1
-                    || (defender->inv[MSLOT_ARMOUR] == NON_ITEM
-                        || mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                != SPARM_FIRE_RESISTANCE))
-                {
-                    specdam = random2(25) + 20;
-                }
+                else if (mons_res_fire(defender) < 0)
+                    specdam = 20 + random2(25);
 
                 if (specdam)
                     simple_monster_message(defender, " is engulfed in flame!");
@@ -3279,86 +3228,85 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
             case MONS_WORM:     // giant wasp
                 break;
 
-            case MONS_ICE_DEVIL:
-            case MONS_ICE_BEAST:
             case MONS_SIMULACRUM_SMALL:
             case MONS_SIMULACRUM_LARGE:
+                specdam = 0;
+
+                if (mons_res_cold(defender) == 0)
+                {
+                    specdam = 1 + random2(10);
+                }
+                else if (mons_res_cold(defender) < 0)
+                {
+                    specdam = 1 + random2(10) + random2(10);
+                }
+
+                if (specdam && sees)
+                {
+                    strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
+                    strcat(info, " freezes ");
+                    strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
+                    strcat(info, ".");
+                    mpr(info);
+                }
+
+                damage_taken += specdam;
+                break;
+
+            case MONS_ICE_DEVIL:
+            case MONS_ICE_BEAST:
             case MONS_FREEZING_WRAITH:
             case MONS_ICE_FIEND:
             case MONS_WHITE_IMP:
             case MONS_AZURE_JELLY:
             case MONS_ANTAEUS:
                 specdam = 0;
-                if (!mons_res_cold(defender->type))
+                if (mons_res_cold(defender) == 0)
                 {
-                    specdam = attacker->hit_dice
-                                        + random2(attacker->hit_dice * 2);
-
-                    if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
-                        && mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    == SPARM_COLD_RESISTANCE)
-                    {
-                        specdam = (random2(attacker->hit_dice * 2)
-                                                + (attacker->hit_dice) / 3);
-                    }
+                    specdam = attacker->hit_dice + random2(attacker->hit_dice * 2);
+                }
+                else if (mons_res_cold(defender) < 0)
+                {
+                    specdam = random2(attacker->hit_dice * 3) + (attacker->hit_dice * 2);
                 }
 
-                if (mons_res_cold(defender->type) == -1
-                    && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
-                        || mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    != SPARM_COLD_RESISTANCE))
+                if (specdam && sees)
                 {
-                    specdam = random2(attacker->hit_dice * 3)
-                                                + (attacker->hit_dice * 2);
-                }
-
-                if (specdam)
-                {
-                    if (sees)
-                    {
-                        strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
-                        strcat(info, " freezes ");
-                        strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
-                        strcat(info, ".");
-                        mpr(info);
-                    }
+                    strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
+                    strcat(info, " freezes ");
+                    strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
+                    strcat(info, ".");
+                    mpr(info);
                 }
                 damage_taken += specdam;
                 break;
 
             case MONS_ELECTRIC_GOLEM:
-                if (!mons_flies(defender->type
-                    && !mons_res_elec(defender->type)))
+                if (mons_flies(defender) == 0 && mons_res_elec(defender) == 0)
                 {
-                    specdam = attacker->hit_dice
-                                        + random2(attacker->hit_dice * 2);
+                    specdam = attacker->hit_dice + random2(attacker->hit_dice * 2);
                 }
 
-                if (specdam)
+                if (specdam && sees)
                 {
-                    if (sees)
-                    {
-                        strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
-                        strcat(info, " shocks ");
-                        strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
-                        strcat(info, ".");
-                        mpr(info);
-                    }
+                    strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
+                    strcat(info, " shocks ");
+                    strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
+                    strcat(info, ".");
+                    mpr(info);
                 }
                 damage_taken += specdam;
                 break;
 
             case MONS_VAMPIRE:
-                if (mons_holiness(defender->type) == MH_UNDEAD
-                    || mons_holiness(defender->type) == MH_DEMONIC)
-                {
+            case MONS_VAMPIRE_KNIGHT:
+            case MONS_VAMPIRE_MAGE:
+                if (mons_res_negative_energy(defender) > 0)
                     break;
-                }
 
                 // heh heh {dlb}
                 if (heal_monster(attacker, random2(damage_taken), true))
                     simple_monster_message(attacker, " is healed.");
-
                 break;
             }
         }
@@ -3395,24 +3343,8 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                 case SPWPN_FLAMING:
                     specdam = 0;
 
-                    if (!mons_res_fire(defender->type))
-                    {
-                        specdam = 1 + (random2(damage_taken));
-                        if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
-                            && mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    == SPARM_FIRE_RESISTANCE)
-                        {
-                            specdam /= 3;
-                        }
-                    }
-
-                    if (mons_res_fire(defender->type) == -1
-                        && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
-                            || mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    != SPARM_FIRE_RESISTANCE))
-                    {
+                    if (mons_res_fire(defender) <= 0)
                         specdam = 1 + random2(damage_taken);
-                    }
 
                     if (specdam)
                     {
@@ -3450,24 +3382,8 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                 case SPWPN_FREEZING:
                     specdam = 0;
 
-                    if (!mons_res_cold(defender->type))
-                    {
-                        specdam = 1 + (random2(damage_taken));
-                        if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
-                            && mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    == SPARM_COLD_RESISTANCE)
-                        {
-                            specdam = (1 + (random2(damage_taken) / 2)) / 3;
-                        }
-                    }
-
-                    if (mons_res_cold(defender->type) == -1
-                        && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
-                            || mitm[defender->inv[MSLOT_ARMOUR]].special
-                                                    != SPARM_COLD_RESISTANCE))
-                    {
+                    if (mons_res_cold(defender) <= 0)
                         specdam = 1 + random2(damage_taken);
-                    }
 
                     if (specdam)
                     {
@@ -3523,17 +3439,19 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
 
                 case SPWPN_ELECTROCUTION:
                     //if ( attacker->type == MONS_PLAYER_GHOST ) break;
-                    if (mons_flies(defender->type)
-                        || mons_res_elec(defender->type))
+                    if (mons_flies(defender) > 0 || mons_res_elec(defender) > 0)
                         break;
 
                     specdam = 0;
 
+#if 0
+                    // more of the old code... -- bwr
                     if (mitm[attacker->inv[hand_used]].plus2 <= 0
                         || item_cursed( mitm[attacker->inv[hand_used]] ))
                     {
                         break;
                     }
+#endif
 
                     if (one_chance_in(3))
                     {
@@ -3739,6 +3657,9 @@ void monster_die(struct monsters *monster, char killer, int i)
     if (you.prev_targ == monster_killed)
         you.prev_targ = MHITNOT;
 
+    const bool pet_kill = (MON_KILL(killer) && ((i >= 0 && i < 200)
+                            && mons_friendly(&menv[i])));
+
     if (monster->type == MONS_GIANT_SPORE
         || monster->type == MONS_BALL_LIGHTNING)
     {
@@ -3751,10 +3672,12 @@ void monster_die(struct monsters *monster, char killer, int i)
         simple_monster_message( monster, " dissipates!", MSGCH_MONSTER_DAMAGE,
                                 MDAM_DEAD );
 
-        if (YOU_KILL(killer)
-            && !testbits(monster->flags, MF_CREATED_FRIENDLY))
+        if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
         {
-            gain_exp(exper_value( monster ));
+            if (YOU_KILL(killer))
+                gain_exp( exper_value( monster ) );
+            else if (pet_kill)
+                gain_exp( exper_value( monster ) / 2 + 1 );
         }
 
         if (monster->type == MONS_FIRE_VORTEX)
@@ -3766,10 +3689,12 @@ void monster_die(struct monsters *monster, char killer, int i)
         simple_monster_message( monster, " vaporizes!", MSGCH_MONSTER_DAMAGE,
                                 MDAM_DEAD );
 
-        if (YOU_KILL(killer)
-            && !testbits(monster->flags, MF_CREATED_FRIENDLY))
+        if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
         {
-            gain_exp(exper_value( monster ));
+            if (YOU_KILL(killer))
+                gain_exp( exper_value( monster ) );
+            else if (pet_kill)
+                gain_exp( exper_value( monster ) / 2 + 1 );
         }
 
         place_cloud(CLOUD_COLD_MON, monster->x, monster->y, 2 + random2(4));
@@ -3779,10 +3704,12 @@ void monster_die(struct monsters *monster, char killer, int i)
         simple_monster_message(monster, " falls from the air.",
                                MSGCH_MONSTER_DAMAGE, MDAM_DEAD);
 
-        if (YOU_KILL(killer)
-            && !testbits(monster->flags, MF_CREATED_FRIENDLY))
+        if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
         {
-            gain_exp(exper_value( monster ));
+            if (YOU_KILL(killer))
+                gain_exp( exper_value( monster ) );
+            else if (pet_kill)
+                gain_exp( exper_value( monster ) / 2 + 1 );
         }
     }
     else
@@ -3896,42 +3823,39 @@ void monster_die(struct monsters *monster, char killer, int i)
             if (mons_friendly(monster) && !testbits(monster->flags,MF_GOD_GIFT))
                 naughty(NAUGHTY_FRIEND_DIES, 1 + (monster->hit_dice / 2));
 
-            if ((i >= 0 && i < 200) && mons_friendly(&menv[i]))
+            // Trying to prevent summoning abuse here, so we're trying to
+            // prevent summoned creatures from being being done_good kills.
+            // Only affects creatures which were friendly when summoned.
+            if (!testbits(monster->flags, MF_CREATED_FRIENDLY) && pet_kill)
             {
-                // Trying to prevent summoning abuse here, so we're trying to
-                // prevent summoned creatures from being being done_good kills.
-                // Only affects creatures which were friendly when summoned.
-                if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
-                {
-                    gain_exp(exper_value( monster ) / 2 + 1);
+                gain_exp(exper_value( monster ) / 2 + 1);
 
-                    if (mons_holiness(menv[i].type) == MH_UNDEAD)
+                if (mons_holiness(menv[i].type) == MH_UNDEAD)
+                {
+                    if (mons_holiness(monster->type) == MH_NATURAL)
                     {
-                        if (mons_holiness(monster->type) == MH_NATURAL)
-                        {
-                            done_good( GOOD_SLAVES_KILL_LIVING,
-                                       monster->hit_dice );
-                        }
-                        else
-                            done_good(GOOD_SERVANTS_KILL, monster->hit_dice);
+                        done_good( GOOD_SLAVES_KILL_LIVING,
+                                   monster->hit_dice );
                     }
                     else
-                    {
                         done_good(GOOD_SERVANTS_KILL, monster->hit_dice);
+                }
+                else
+                {
+                    done_good(GOOD_SERVANTS_KILL, monster->hit_dice);
 
-                        if (you.religion == GOD_VEHUMET
-                            && (!player_under_penance()
-                                && random2(you.piety) >= 30))
+                    if (you.religion == GOD_VEHUMET
+                        && (!player_under_penance()
+                            && random2(you.piety) >= 30))
+                    {
+                        /* Vehumet - only for non-undead servants (coding
+                           convenience, no real reason except that Vehumet
+                           prefers demons) */
+                        if (you.magic_points < you.max_magic_points)
                         {
-                            /* Vehumet - only for non-undead servants (coding
-                               convenience, no real reason except that Vehumet
-                               prefers demons) */
-                            if (you.magic_points < you.max_magic_points)
-                            {
-                                mpr("You feel your power returning.");
-                                inc_mp(1 + random2(random2(monster->hit_dice)),
-                                       false);
-                            }
+                            mpr("You feel your power returning.");
+                            inc_mp(1 + random2(random2(monster->hit_dice)),
+                                   false);
                         }
                     }
                 }
@@ -4041,7 +3965,7 @@ void monster_cleanup(struct monsters *monster)
     monster->evasion = 0;
     monster->speed_increment = 0;
     monster->attitude = ATT_HOSTILE;
-    monster->behavior = BEH_SLEEP;
+    monster->behaviour = BEH_SLEEP;
     monster->foe = MHITNOT;
 
     mgrd[monster->x][monster->y] = NON_MONSTER;
@@ -4125,7 +4049,7 @@ bool jelly_divide(struct monsters * parent)
     child->evasion = 2;
     child->speed = 5;
     child->speed_increment = 70 + random2(5);
-    child->behavior = parent->behavior; /* Look at this! */
+    child->behaviour = parent->behaviour; /* Look at this! */
     child->foe = parent->foe;
     child->attitude = parent->attitude;
 
@@ -4153,7 +4077,7 @@ void alert(void)
         monster = &menv[it];
 
         if (monster->type != -1 && mons_near(monster))
-            behavior_event(monster, ME_ALERT, MHITYOU);
+            behaviour_event(monster, ME_ALERT, MHITYOU);
     }
 }                               // end alert()
 
@@ -4188,7 +4112,7 @@ static bool valid_morph( struct monsters *monster, int new_mclass )
      order of evaluation of inner conditional important */
     if (current_tile == DNGN_LAVA || current_tile == DNGN_DEEP_WATER)
     {
-        if (!mons_flies(new_mclass)
+        if (!mons_class_flies(new_mclass)
             || monster_habitat(new_mclass) != current_tile)
         {
             return (false);
@@ -4557,15 +4481,16 @@ static void place_monster_corpse(struct monsters *monster)
     mitm[o].flags = 0;
     mitm[o].base_type = OBJ_CORPSES;
     mitm[o].plus = corpse_class;
-    mitm[o].plus2 = 0;
+    mitm[o].plus2 = 0;                          // butcher work done
     mitm[o].sub_type = CORPSE_BODY;
-    mitm[o].special = 210;
+    mitm[o].special = 210;                      // rot time
     mitm[o].colour = mons_colour(corpse_class);
     mitm[o].quantity = 1;
 
     if (mitm[o].colour == BLACK)
         mitm[o].colour = monster->number;
 
+    // Don't care if 'o' is changed, and it shouldn't be (corpses don't stack)
     move_item_to_grid( &o, monster->x, monster->y );
 }                               // end place_monster_corpse()
 

@@ -33,6 +33,7 @@
 #include "food.h"
 #include "it_use2.h"
 #include "items.h"
+#include "itemname.h"
 #include "lev-pand.h"
 #include "monplace.h"
 #include "mon-util.h"
@@ -68,6 +69,8 @@ void turn_corpse_into_chunks( item_def &item )
     item.base_type = OBJ_FOOD;
     item.sub_type = FOOD_CHUNK;
     item.quantity = 1 + random2( max_chunks );
+
+    item.quantity = stepdown_value( item.quantity, 4, 4, 12, 12 );
 
     // seems to me that this should come about only
     // after the corpse has been butchered ... {dlb}
@@ -217,7 +220,7 @@ void in_a_cloud(void)
         if (1 + random2(27) >= you.experience_level)
         {
             mpr("You choke on the stench!");
-            you.conf += (coinflip()? 3 : 2);
+            confuse_player( (coinflip() ? 3 : 2) );
         }
         break;
 
@@ -257,7 +260,7 @@ void in_a_cloud(void)
         if (!player_res_poison())
         {
             ouch((random2(10) * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
-            you.poison++;
+            poison_player(1);
         }
         break;
 
@@ -301,10 +304,7 @@ void in_a_cloud(void)
         if (player_prot_life() > random2(3))
             return;
 
-        //beam_colour = 4;
-
-        if (!player_res_poison())
-            you.poison++;
+        poison_player(1);
 
         hurted += (random2avg(12, 3) * you.time_taken) / 10;    // 3
 
@@ -371,6 +371,20 @@ void up_stairs(void)
         && (stair_find < DNGN_RETURN_DUNGEON_I || stair_find > 150))
     {
         mpr("You can't go up here.");
+        return;
+    }
+
+    // Since the overloaded message set turn_is_over, I'm assuming that
+    // the overloaded character makes an attempt... so we're doing this
+    // check before that one. -- bwr
+    if (you.conf && random2(100) > you.dex)
+    {
+        mpr("In your confused state, you trip and fall back down the stairs.");
+
+        ouch( roll_dice( 3 + you.burden_state, 5 ), 0,
+              KILLED_BY_FALLING_DOWN_STAIRS );
+
+        you.turn_is_over = 1;
         return;
     }
 
@@ -477,6 +491,8 @@ void up_stairs(void)
     load( stair_taken, true, was_a_labyrinth, old_level,
           want_followers, false, old_level_where );
 
+    viewwindow(1, true);
+
     new_level();
 
     if (you.levitation)
@@ -488,6 +504,8 @@ void up_stairs(void)
     }
     else
         mpr("You climb upwards.");
+
+    you.turn_is_over = 1;
 
     save_game(false);
 }                               // end up_stairs()
@@ -751,6 +769,19 @@ void down_stairs(bool remove_stairs, int old_level)
         more();
     }
 
+    if (you.conf
+        && (stair_find >= DNGN_STONE_STAIRS_DOWN_I
+            && stair_find <= DNGN_ROCK_STAIRS_DOWN)
+        && random2(100) > you.dex)
+    {
+        mpr("In your confused state, you trip and fall down the stairs.");
+
+        // Nastier than when climbing stairs, but you'll aways get to
+        // your destination, -- bwr
+        ouch( roll_dice( 6 + you.burden_state, 10 ), 0,
+              KILLED_BY_FALLING_DOWN_STAIRS );
+    }
+
     if (you.level_type == LEVEL_DUNGEON)
         you.your_level++;
 
@@ -771,9 +802,10 @@ void down_stairs(bool remove_stairs, int old_level)
     load( stair_taken, true, was_a_labyrinth, old_level,
           want_followers, false, old_where );
 
+    viewwindow(1, true);
+
     unsigned char pc = 0;
     unsigned char pt = random2avg(28, 3);
-
 
     switch (you.level_type)
     {
@@ -793,8 +825,8 @@ void down_stairs(bool remove_stairs, int old_level)
 
         init_pandemonium();     /* colours only */
 
-        if (you.where_are_you >= BRANCH_MAIN_DUNGEON
-            && you.where_are_you <= BRANCH_ORCISH_MINES)
+        if (you.where_are_you >= BRANCH_DIS
+            && you.where_are_you < BRANCH_ORCISH_MINES)
         {
             // ie if you're in Hell
             you.where_are_you = BRANCH_MAIN_DUNGEON;
@@ -823,12 +855,13 @@ void down_stairs(bool remove_stairs, int old_level)
             for (pc = 0; pc < pt; pc++)
                 pandemonium_mons();
 
-            if (you.where_are_you > BRANCH_MAIN_DUNGEON
+            if (you.where_are_you >= BRANCH_DIS
                 && you.where_are_you < BRANCH_ORCISH_MINES)
             {
                 // ie if you're in Hell
                 you.where_are_you = BRANCH_MAIN_DUNGEON;
-                you.your_level = 25;
+                you.hell_exit = 26;
+                you.your_level = 26;
             }
         }
         break;
@@ -1085,11 +1118,10 @@ static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
                 && random2(100) < 50 - (3 * player_AC()) / 2
                 && !player_res_poison())
         {
-            mpr("You are poisoned.");
-            you.poison += 1 + random2(3);
+            poison_player( 1 + random2(3) );
         }
 
-        damage_taken = random2(pbolt.damage);
+        damage_taken = roll_dice( pbolt.damage );
         damage_taken -= random2(player_AC() + 1);
 
         if (damage_taken > 0)
@@ -1117,39 +1149,42 @@ static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
 // itrap takes location from target_x, target_y of bolt strcture.
 //
 
-void itrap(struct bolt &pbolt, int trapped)
+void itrap( struct bolt &pbolt, int trapped )
 {
+    int base_type = OBJ_MISSILES;
+    int sub_type = MI_DART;
+
     switch (env.trap[trapped].type)
     {
     case TRAP_DART:
-        pbolt.colour = OBJ_MISSILES;
-        pbolt.damage = MI_DART;
+        base_type = OBJ_MISSILES;
+        sub_type = MI_DART;
         break;
     case TRAP_ARROW:
-        pbolt.colour = OBJ_MISSILES;
-        pbolt.damage = MI_ARROW;
+        base_type = OBJ_MISSILES;
+        sub_type = MI_ARROW;
         break;
     case TRAP_BOLT:
-        pbolt.colour = OBJ_MISSILES;
-        pbolt.damage = MI_BOLT;
+        base_type = OBJ_MISSILES;
+        sub_type = MI_BOLT;
         break;
     case TRAP_SPEAR:
-        pbolt.colour = OBJ_WEAPONS;
-        pbolt.damage = WPN_SPEAR;
+        base_type = OBJ_WEAPONS;
+        sub_type = WPN_SPEAR;
         break;
     case TRAP_AXE:
-        pbolt.colour = OBJ_WEAPONS;
-        pbolt.damage = WPN_HAND_AXE;
+        base_type = OBJ_WEAPONS;
+        sub_type = WPN_HAND_AXE;
         break;
     case TRAP_NEEDLE:
-        pbolt.colour = OBJ_MISSILES;
-        pbolt.damage = MI_NEEDLE;
+        base_type = OBJ_MISSILES;
+        sub_type = MI_NEEDLE;
         break;
     default:
         return;
     }
 
-    trap_item(pbolt.colour, pbolt.damage, pbolt.target_x, pbolt.target_y);
+    trap_item( base_type, sub_type, pbolt.target_x, pbolt.target_y );
 
     return;
 }                               // end itrap()
@@ -1162,37 +1197,37 @@ void handle_traps(char trt, int i, bool trap_known)
     {
     case TRAP_DART:
         strcpy(beam.beam_name, " dart");
-        beam.damage = 4 + (you.your_level / 2);
+        beam.damage = dice_def( 1, 4 + (you.your_level / 2) );
         dart_trap(trap_known, i, beam);
         break;
 
     case TRAP_NEEDLE:
         strcpy(beam.beam_name, " needle");
-        beam.damage = 0;
+        beam.damage = dice_def( 1, 0 );
         dart_trap(trap_known, i, beam);
         break;
 
     case TRAP_ARROW:
         strcpy(beam.beam_name, "n arrow");
-        beam.damage = 7 + you.your_level;
+        beam.damage = dice_def( 1, 7 + you.your_level );
         dart_trap(trap_known, i, beam);
         break;
 
     case TRAP_BOLT:
         strcpy(beam.beam_name, " bolt");
-        beam.damage = 13 + you.your_level;
+        beam.damage = dice_def( 1, 13 + you.your_level );
         dart_trap(trap_known, i, beam);
         break;
 
     case TRAP_SPEAR:
         strcpy(beam.beam_name, " spear");
-        beam.damage = 10 + you.your_level;
+        beam.damage = dice_def( 1, 10 + you.your_level );
         dart_trap(trap_known, i, beam);
         break;
 
     case TRAP_AXE:
         strcpy(beam.beam_name, "n axe");
-        beam.damage = 15 + you.your_level;
+        beam.damage = dice_def( 1, 15 + you.your_level );
         dart_trap(trap_known, i, beam);
         break;
 
@@ -1617,12 +1652,24 @@ bool trap_item(char base_type, char sub_type, char beam_x, char beam_y)
     item.plus2 = 0;
     item.flags = 0;
     item.quantity = 1;
+    item.colour = LIGHTCYAN;
 
-    item.special = (base_type == OBJ_MISSILES && sub_type == MI_NEEDLE)
-                                                        ? SPMSL_POISONED : 0;
-
-    item.colour = (base_type == OBJ_MISSILES && sub_type == MI_NEEDLE)
-                                                        ? WHITE : LIGHTCYAN;
+    if (base_type == OBJ_MISSILES)
+    {
+        if (sub_type == MI_NEEDLE)
+        {
+            set_item_ego_type( item, OBJ_MISSILES, SPMSL_POISONED );
+            item.colour = WHITE;
+        }
+        else
+        {
+            set_item_ego_type( item, OBJ_MISSILES, SPMSL_NORMAL );
+        }
+    }
+    else
+    {
+        set_item_ego_type( item, OBJ_WEAPONS, SPWPN_NORMAL );
+    }
 
     if (igrd[beam_x][beam_y] != NON_ITEM)
     {
@@ -1641,7 +1688,7 @@ bool trap_item(char base_type, char sub_type, char beam_x, char beam_y)
         }
     }                           // end of if igrd != NON_ITEM
 
-    return (copy_item_to_grid( item, beam_x, beam_y, 1 ));
+    return (!copy_item_to_grid( item, beam_x, beam_y, 1 ));
 }                               // end trap_item()
 
 // returns appropriate trap symbol for a given trap type {dlb}

@@ -279,7 +279,7 @@ static const char * give_up(void)
         "despond",
         "disclaim thyself",
         "abandon hope",
-        "face thy requium",
+        "face thy requiem",
         "face thy fugue",
         "admit defeat",
         "flounder",

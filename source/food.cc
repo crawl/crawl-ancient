@@ -16,6 +16,7 @@
 // required for abs() {dlb}:
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -268,7 +269,7 @@ bool butchery(void)
     // doing this here since the above switch may reveal information
     // about the weapon (curse status, ego type).  So even if the
     // character fails to or decides not to butcher past this point,
-    // they have achieved something here and there should be a cost.
+    // they have achieved something and there should be a cost.
     if (wpn_switch)
         start_delay( DELAY_UNINTERUPTABLE, 1, old_weapon );
 
@@ -384,11 +385,14 @@ bool butchery(void)
         }
         else
         {
-            // add one for wpn_switch since we haven't accounted
-            // for the delay when we switched above.
-            start_delay( DELAY_BUTCHER, 3, item_got );
+            int work_req = 3 - mitm[item_got].plus2;
+            if (work_req < 0)
+                work_req = 0;
+
+            start_delay( DELAY_BUTCHER, work_req, item_got );
         }
 
+        // cue up switching weapon back
         if (wpn_switch && !new_cursed)
             start_delay( DELAY_WEAPON_SWAP, 1, old_weapon );
 
@@ -451,7 +455,11 @@ bool butchery(void)
                 }
                 else
                 {
-                    start_delay( DELAY_BUTCHER, 3, item_got );
+                    int work_req = 3 - mitm[item_got].plus2;
+                    if (work_req < 0)
+                        work_req = 0;
+
+                    start_delay( DELAY_BUTCHER, work_req, item_got );
                 }
 
                 if (wpn_switch && !new_cursed)
@@ -748,8 +756,7 @@ static void eat_chunk(int chunk_effect)
 
         case CE_POISONOUS:
             mpr("Yeeuch - this meat is poisonous!");
-
-            you.poison += 3 + random2(4);
+            poison_player( 3 + random2(4) );
             break;
 
         case CE_ROTTEN:

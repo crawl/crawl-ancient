@@ -8,7 +8,6 @@
  *               <1>     -/--/--        LRH             Created
  */
 
-
 #ifndef SPELLS2_H
 #define SPELLS2_H
 
@@ -66,21 +65,21 @@ int vampiric_drain(int pow);
 /* ***********************************************************************
  * called from: spell
  * *********************************************************************** */
-unsigned char detect_creatures(int map_radius);
+unsigned char detect_creatures( int pow );
 
 
 // last updated 24may2000 {dlb}
 /* ***********************************************************************
  * called from: spell
  * *********************************************************************** */
-unsigned char detect_items(int map_radius);
+unsigned char detect_items( int pow );
 
 
 // last updated 24may2000 {dlb}
 /* ***********************************************************************
  * called from: spell
  * *********************************************************************** */
-unsigned char detect_traps(void);
+unsigned char detect_traps( int pow );
 
 
 // last updated 24may2000 {dlb}

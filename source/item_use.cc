@@ -218,10 +218,7 @@ void wield_weapon(bool auto_wield)
             return;
         }
 
-        int weap_brand = you.inv[item_slot].special;
-
-        if (is_random_artefact( you.inv[item_slot] ))
-            weap_brand = randart_wpn_property( you.inv[item_slot], RAP_BRAND );
+        int weap_brand = get_weapon_brand( you.inv[item_slot] );
 
         if ((you.is_undead || you.species == SP_DEMONSPAWN)
             && (!is_fixed_artefact( you.inv[item_slot] )
@@ -280,7 +277,8 @@ void wield_effects(int item_wield_2, bool showMsgs)
     {
         if (you.inv[item_wield_2].sub_type == STAFF_POWER)
         {
-            inc_max_mp(13);
+            // inc_max_mp(13);
+            calc_mp();
             set_ident_flags( you.inv[item_wield_2], ISFLAG_EQ_WEAPON_MASK );
         }
         else
@@ -500,7 +498,7 @@ void wield_effects(int item_wield_2, bool showMsgs)
 // something legit.
 //
 //---------------------------------------------------------------
-bool armour_prompt(const string & mesg, int *index)
+bool armour_prompt( const std::string & mesg, int *index )
 {
     ASSERT(index != NULL);
 
@@ -1297,27 +1295,19 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         exHitBonus += (3 * you.skills[SK_THROWING]) / 4;
 
         // special cases for flame, frost, poison, etc.
-        int bow_brand  = you.inv[ you.equip[EQ_WEAPON] ].special;
+        int bow_brand = get_weapon_brand( you.inv[you.equip[EQ_WEAPON]] );
 
-        if (is_random_artefact( you.inv[ you.equip[EQ_WEAPON] ] ))
-        {
-            bow_brand = randart_wpn_property( you.inv[ you.equip[EQ_WEAPON] ],
-                                                RAP_BRAND );
-        }
-
-        const int ammo_brand = you.inv[throw_2].special;
+        const int ammo_brand = get_ammo_brand( you.inv[throw_2] );
 
         const bool poisoned = (ammo_brand == SPMSL_POISONED
                                 || ammo_brand == SPMSL_POISONED_II);
 
         // check for venom brand (usually only available for blowguns)
         if (bow_brand == SPWPN_VENOM
-            && !(ammo_brand == SPMSL_FLAME
-                || ammo_brand == SPMSL_ICE
-                || poisoned))
+            && !(ammo_brand == SPMSL_FLAME || ammo_brand == SPMSL_ICE || poisoned))
         {
             // poison brand the ammo
-            you.inv[throw_2].special = SPMSL_POISONED;
+            set_item_ego_type( you.inv[throw_2], OBJ_MISSILES, SPMSL_POISONED );
 
             quant_name( you.inv[throw_2], 1, DESC_PLAIN, str_pass );
             strcpy( pbolt.beam_name, str_pass );
@@ -1518,26 +1508,22 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         pbolt.hit = baseHit - random2avg(0 - (exHitBonus - 1), 2);
 
     if (exDamBonus >= 0)
-        pbolt.damage = baseDam + random2(exDamBonus + 1);
+        pbolt.damage = dice_def( 1, baseDam + random2(exDamBonus + 1) );
     else
-        pbolt.damage = baseDam - random2(0 - (exDamBonus - 1));
+        pbolt.damage = dice_def( 1, baseDam - random2(0 - (exDamBonus - 1)) );
 
     // only add bonuses if we're throwing something sensible
     if (thrown || launched || wepClass == OBJ_WEAPONS)
     {
         pbolt.hit += ammoHitBonus + lnchHitBonus;
-        pbolt.damage += ammoDamBonus + lnchDamBonus;
+        pbolt.damage.size += ammoDamBonus + lnchDamBonus;
     }
 
-    // don't do negative damage
-    if (pbolt.damage < 0)
-        pbolt.damage = 0;
-
 #if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE, "H:%d+%d;a%dl%d.  D:%d+%d;a%dl%d -> %d,%d",
+    snprintf( info, INFO_SIZE, "H:%d+%d;a%dl%d.  D:%d+%d;a%dl%d -> %d,%dd%d",
         baseHit, exHitBonus, ammoHitBonus, lnchHitBonus,
         baseDam, exDamBonus, ammoDamBonus, lnchDamBonus,
-        pbolt.hit, pbolt.damage);
+        pbolt.hit, pbolt.damage.num, pbolt.damage.size );
 
     mpr(info);
 #endif
@@ -1755,7 +1741,8 @@ void puton_ring(void)
         break;
 
     case RING_MAGICAL_POWER:
-        inc_max_mp(9);
+        // inc_max_mp(9);
+        calc_mp();
         ident = ID_KNOWN_TYPE;
         break;
 
@@ -1965,7 +1952,7 @@ void remove_ring(void)
         break;
 
     case RING_MAGICAL_POWER:
-        dec_max_mp(9);
+        // dec_max_mp(9);
         break;
 
     case RING_TELEPORT_CONTROL:
@@ -1977,6 +1964,9 @@ void remove_ring(void)
         unuse_randart(ring_wear_2);
 
     you.equip[hand_used + 7] = -1;
+
+    // must occur after ring is removed -- bwr
+    calc_mp();
 
     you.turn_is_over = 1;
 }                               // end remove_ring()
@@ -2269,11 +2259,11 @@ static bool affix_weapon_enchantment( void )
     if (wpn == -1 || !you.duration[ DUR_WEAPON_BRAND ])
         return (false);
 
-    switch (you.inv[you.equip[EQ_WEAPON]].special)
+    switch (get_weapon_brand( you.inv[wpn] ))
     {
     case SPWPN_VORPAL:
-        if (damage_type( you.inv[ wpn ].base_type,
-                         you.inv[ wpn ].sub_type ) != DVORP_CRUSHING)
+        if (damage_type( you.inv[wpn].base_type,
+                         you.inv[wpn].sub_type ) != DVORP_CRUSHING)
         {
             strcat(info, "'s sharpness seems more permanent.");
         }
@@ -2289,7 +2279,7 @@ static bool affix_weapon_enchantment( void )
         mpr(info);
 
         beam.type = SYM_BURST;
-        beam.damage = 110;
+        beam.damage = dice_def( 3, 10 );
         beam.flavour = 2;
         beam.target_x = you.x_pos;
         beam.target_y = you.y_pos;
@@ -2566,17 +2556,7 @@ static void handle_read_book( int item_slot )
     }
     else
     {
-        // Little experimental restriction here... eventually,
-        // individual books/spells might have skill requirements
-        // before they can even be read.  Right now it gives a
-        // clue as to how to get Spellcasting.  -- bwr
-        if (you.skills[SK_SPELLCASTING] == 0)
-        {
-            mpr( "This text is beyond your capability to read." );
-            mpr( "You should start by reading simpler magical texts." );
-            return;
-        }
-
+        // Spellbook
         spell = read_book( you.inv[item_slot], RBOOK_READ_SPELL );
     }
 
@@ -2587,14 +2567,6 @@ static void handle_read_book( int item_slot )
     }
 
     spell_index = letter_to_index( spell );
-#if 0
-    // the same as the check below
-    if (!is_valid_spell_in_book( item_slot, spell_index ))
-    {
-        mesclr();
-        return;
-    }
-#endif
 
     nthing = which_spell_in_book(you.inv[item_slot].sub_type, spell_index);
     if (nthing == SPELL_NO_SPELL)
@@ -2766,7 +2738,7 @@ void read_scroll(void)
         else
         {
             mpr("You feel aware of your surroundings.");
-            magic_mapping(21, 95 + random2(10));
+            magic_mapping(50, 90 + random2(11));
         }
         break;
 
@@ -2784,7 +2756,7 @@ void read_scroll(void)
         mpr("The scroll explodes in your hands!");
 
         beam.type = SYM_BURST;
-        beam.damage = 110;
+        beam.damage = dice_def( 3, 10 );
         // unsure about this    // BEAM_EXPLOSION instead? {dlb}
         beam.flavour = BEAM_FIRE;
         beam.target_x = you.x_pos;
@@ -2889,22 +2861,23 @@ void read_scroll(void)
         mpr(info);
         alert();
 
-        if (you.inv[you.equip[EQ_WEAPON]].special != SPWPN_NORMAL)
+        if (get_weapon_brand( you.inv[nthing] ) != SPWPN_NORMAL)
         {
             mpr("You feel strangely frustrated.");
             break;
         }
 
         you.wield_change = true;
-        you.inv[nthing].special = SPWPN_VORPAL;
+        set_item_ego_type( you.inv[nthing], OBJ_WEAPONS, SPWPN_VORPAL );
         break;
 
     case SCR_RECHARGING:
         nthing = you.equip[EQ_WEAPON];
 
         if (nthing != -1
-            && you.inv[ nthing ].base_type == OBJ_WEAPONS
-            && you.inv[ nthing ].special == SPWPN_ELECTROCUTION)
+            && !is_random_artefact( you.inv[nthing] )
+            && !is_fixed_artefact( you.inv[nthing] )
+            && get_weapon_brand( you.inv[nthing] ) == SPWPN_ELECTROCUTION)
         {
             id_the_scroll = !enchant_weapon( ENCHANT_TO_DAM );
             break;

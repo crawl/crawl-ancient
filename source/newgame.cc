@@ -84,6 +84,7 @@
 #include "items.h"
 #include "player.h"
 #include "randart.h"
+#include "skills.h"
 #include "skills2.h"
 #include "stuff.h"
 #include "version.h"
@@ -162,7 +163,7 @@ int give_first_conjuration_book()
         // case SP_DEEP_ELF:
         case SP_WHITE_DRACONIAN:
         case SP_BLACK_DRACONIAN:
-            return BOOK_CONJURATIONS_II;
+            return (BOOK_CONJURATIONS_II);
 
         case SP_HILL_DWARF:
         case SP_MOUNTAIN_DWARF:
@@ -172,7 +173,7 @@ int give_first_conjuration_book()
         case SP_TROLL:          // unlikely :-)
         case SP_RED_DRACONIAN:
         case SP_MOTTLED_DRACONIAN:
-            return BOOK_CONJURATIONS_I;
+            return (BOOK_CONJURATIONS_I);
 
         default:
             return (coinflip() ? BOOK_CONJURATIONS_I : BOOK_CONJURATIONS_II);
@@ -329,7 +330,7 @@ bool new_game(void)
             cprintf(you.your_name);
             cprintf("!");
 
-            return false;
+            return (false);
         }
     }
 
@@ -374,7 +375,7 @@ bool new_game(void)
                 cprintf(you.your_name);
                 cprintf("!");
 
-                return false;
+                return (false);
             }
         }
     }
@@ -382,7 +383,7 @@ bool new_game(void)
 
 // ************ round-out character statistics and such ************
 
-    species_stat_init(you.species);     // must be down here {dlb}
+    species_stat_init( you.species );     // must be down here {dlb}
 
     you.is_undead = ((you.species == SP_MUMMY) ? US_UNDEAD :
                      (you.species == SP_GHOUL) ? US_HUNGRY_DEAD : US_ALIVE);
@@ -392,9 +393,9 @@ bool new_game(void)
     you.normal_vision = 8;
     you.current_vision = 8;
 
-    jobs_stat_init(you.char_class);
-    jobs_hpmp_init(you.char_class);
-    give_last_paycheck(you.char_class);
+    jobs_stat_init( you.char_class );
+    jobs_hpmp_init( you.char_class );
+    give_last_paycheck( you.char_class );
 
     // randomly boost stats a number of times based on species
     // - should be a function {dlb}
@@ -403,7 +404,7 @@ bool new_game(void)
 
     do
     {
-        switch (random2(NUM_STATS))
+        switch (random2( NUM_STATS ))
         {
         case STAT_STRENGTH:
             if (you.strength > 17 && coinflip())
@@ -430,7 +431,7 @@ bool new_game(void)
 
     // then: adjust hp_max by species {dlb}
     if (player_genus(GENPC_DRACONIAN) || player_genus(GENPC_DWARVEN))
-        you.hp_max++;
+        inc_max_hp(1);
     else
     {
         switch (you.species)
@@ -439,26 +440,26 @@ bool new_game(void)
         case SP_DEMIGOD:
         case SP_OGRE:
         case SP_TROLL:
-            you.hp_max += 3;
+            inc_max_hp(3);
             break;
 
         case SP_GHOUL:
         case SP_MINOTAUR:
         case SP_NAGA:
         case SP_OGRE_MAGE:
-            you.hp_max += 2;
+            inc_max_hp(2);
             break;
 
         case SP_HILL_ORC:
         case SP_MUMMY:
         case SP_MERFOLK:
-            you.hp_max++;
+            inc_max_hp(1);
             break;
 
         case SP_ELF:
         case SP_GREY_ELF:
         case SP_HIGH_ELF:
-            you.hp_max--;
+            dec_max_hp(1);
             break;
 
         case SP_DEEP_ELF:
@@ -467,7 +468,7 @@ bool new_game(void)
         case SP_KENKU:
         case SP_KOBOLD:
         case SP_SPRIGGAN:
-            you.hp_max -= 2;
+            dec_max_hp(2);
             break;
 
         default:
@@ -482,20 +483,14 @@ bool new_game(void)
     case SP_DEMIGOD:
     case SP_GREY_ELF:
     case SP_DEEP_ELF:
-        you.max_magic_points++;
+        inc_max_mp(1);
         break;
 
     default:
         break;
     }
 
-    // Now that we've calculated the player's starting hp and mp,
-    // it's time to actually make that value stick.
-    set_hp( you.hp_max, true );
-    set_mp( you.max_magic_points, true );
-
     // these need to be set above using functions!!! {dlb}
-    you.magic_points = you.max_magic_points;
     you.max_dex = you.dex;
     you.max_strength = you.strength;
     you.max_intel = you.intel;
@@ -562,7 +557,7 @@ bool new_game(void)
 
                 case SP_HILL_DWARF:
                 case SP_MOUNTAIN_DWARF:
-                    set_equip_race( you.inv[i], ISFLAG_ELVEN );
+                    set_equip_race( you.inv[i], ISFLAG_DWARVEN );
                     you.inv[i].colour = CYAN;
                     break;
 
@@ -644,34 +639,30 @@ bool new_game(void)
         if (!you.skills[i])
             continue;
 
-        // you.skill_points [i] = skill_exp_needed(you.skills [i] + 1) * species_skills(i, you.species) / 100;
+        // Start with the amount of skill points required for a human...
+        const int points = skill_exp_needed( you.skills[i] + 1 );
 
-        you.skill_points[i] = skill_exp_needed(you.skills[i] + 1) + 1;
+        you.skill_points[i] = points + 1;
 
         if (i == SK_SPELLCASTING)
-        {
-            you.skill_points[i] =
-                ((skill_exp_needed(you.skills[i] + 1) + 1) * 130) / 100;
-        }
+            you.skill_points[i] = (points * 130) / 100 + 1;
         else if (i == SK_INVOCATIONS)
-        {
-            you.skill_points[i] =
-                ((skill_exp_needed(you.skills[i] + 1) + 1) * 70) / 100;
-        }
+            you.skill_points[i] = (points * 70) / 100 + 1;
 
+        // ...and find out what level that earns this character.
+        const int sp_diff = species_skills( i, you.species );
         you.skills[i] = 0;
-        for (int lvl = 1; lvl <= 8; lvl++) {
-            if (you.skill_points[i] >
-                skill_exp_needed(lvl+1) * species_skills(i, you.species) / 100)
-            {
+
+        for (int lvl = 1; lvl <= 8; lvl++)
+        {
+            if (you.skill_points[i] > (skill_exp_needed(lvl+1) * sp_diff) / 100)
                 you.skills[i] = lvl;
-            }
             else
-            {
                 break;
-            }
         }
     }
+
+    calc_total_skill_points();
 
     for (i = 0; i < ENDOFPACK; i++)
     {
@@ -690,7 +681,6 @@ bool new_game(void)
     // make sure the starting player is fully charged up
     set_hp( you.hp_max, false );
     set_mp( you.max_magic_points, false );
-
 
     give_basic_spells(you.char_class);
     give_basic_knowledge(you.char_class);
@@ -743,7 +733,7 @@ bool new_game(void)
 
     you.branch_stairs[STAIRS_HALL_OF_ZOT] = 26; // always 26
 
-    return true;
+    return (true);
 }                               // end of new_game()
 
 
@@ -1537,6 +1527,9 @@ void init_player(void)
         you.practise_skill[i] = 1;
     }
 
+    you.skill_cost_level = 1;
+    you.total_skill_points = 0;
+
     for (i = 0; i < 30; i++)
         you.attribute[i] = 0;
 
@@ -2218,7 +2211,7 @@ bool verifyPlayerName(void)
     if (stricmp(you.your_name, "con") == 0)
     {
         cprintf(EOL "Sorry, that name gives your OS a headache." EOL);
-        return false;
+        return (false);
     }
 
     // quick check for LPTx -- thank you,  Mr. Tanksley!   ;-)
@@ -2234,11 +2227,11 @@ bool verifyPlayerName(void)
                 break;
             case 0:
                 strcpy(you.your_name, "William");
-                return true;
+                return (true);
         } // end switch
 
         william_tanksley_asked_for_this --;
-        return false;
+        return (false);
     }
 #endif
 
@@ -2249,18 +2242,18 @@ bool verifyPlayerName(void)
         if (you.your_name[i] == ':')
         {
             cprintf(EOL "No colons, please." EOL);
-            return false;
+            return (false);
         }
 #else
         // for other systems we'll be super-weak and rule out
-        // everything but alpha-numeric characters
-        if (!isalnum(you.your_name[i]))
+        // everything but alpha-numeric characters and '_'.
+        if (!isalnum(you.your_name[i]) && you.your_name[i] != '_')
         {
             cprintf(EOL "No non-alphanumerics, please." EOL);
-            return false;
+            return (false);
         }
 #endif
-    }     return true;
+    }     return (true);
 }                               // end verifyPlayerName()
 
 #if 0
@@ -2791,9 +2784,10 @@ static void create_wanderer( void )
         }
         else
         {
-            // little extra darts for throwers
+            // little extra poisoned darts for throwers
             you.inv[4].quantity += random2avg(10,5);
-            you.inv[4].special = SPMSL_POISONED;    // poison the darts
+            set_item_ego_type( you.inv[4], OBJ_MISSILES, SPMSL_POISONED );
+
             you.inv[0].sub_type = WPN_DAGGER;       // up knife to dagger
             you.inv[1].quantity = 0;            // remove bow
         }
@@ -3303,9 +3297,10 @@ void give_items_skills()
         else
         {
             if (you.species == SP_TROLL)  //jmf: these guys get no weapon!
-                you.skills[SK_UNARMED_COMBAT] += 2;
+                you.skills[SK_UNARMED_COMBAT] += 3;
             else
                 you.skills[SK_FIGHTING] += 2;
+
             // BWR sez Ogres & Trolls should probably start w/ Dodge 2 -- GDL
             you.skills[SK_DODGING] = 2;
         }
@@ -3382,10 +3377,12 @@ void give_items_skills()
         you.skills[SK_ENCHANTMENTS] = 1;
         you.skills[SK_SPELLCASTING + random2(3)]++;
         you.skills[SK_SUMMONINGS + random2(5)]++;
+
         if (you.species == SP_HILL_DWARF || you.species == SP_MOUNTAIN_DWARF)
             you.skills[SK_MACES_FLAILS] = 1;
         else
             you.skills[SK_SHORT_BLADES] = 1;
+
         you.skills[SK_STAVES] = 1;
         break;
 
@@ -3394,7 +3391,7 @@ void give_items_skills()
 
         you.inv[0].quantity = 1;
         you.inv[0].base_type = OBJ_WEAPONS;
-        you.inv[0].sub_type = WPN_MACE; //jmf: moved from being in "case 'b'" below
+        you.inv[0].sub_type = WPN_MACE; //jmf: moved from "case 'b'" below
         you.inv[0].plus = 0;
         you.inv[0].plus2 = 0;
         you.inv[0].special = 0;
@@ -3687,8 +3684,8 @@ void give_items_skills()
         you.inv[4].base_type = OBJ_MISSILES;
         you.inv[4].sub_type = MI_NEEDLE;
         you.inv[4].plus = 0;
-        you.inv[4].special = SPMSL_POISONED;
         you.inv[4].colour = WHITE;
+        set_item_ego_type( you.inv[4], OBJ_MISSILES, SPMSL_POISONED );
 
         // deep elves get hand crossbows, everyone else gets blowguns
         // (deep elves tend to suck at melee and need something that

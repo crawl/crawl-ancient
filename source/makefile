@@ -10,6 +10,7 @@ MAKEFILE = makefile.lnx
 #     cuts build time a lot on multi-cpu machines
 OTHER=-j2
 
+# DEBUG mode includes WIZARD mode as well as copious debugging input
 all:
 	$(MAKE) $(OTHER) -f $(MAKEFILE) EXTRA_FLAGS='-O2 -fno-strength-reduce'
 
@@ -25,12 +26,7 @@ clean:
 distclean:
 	$(MAKE) $(OTHER) -f $(MAKEFILE) distclean
 
-# WIZARD gives access to wizard commands (games tagged if any are used)
-# DEBUG gives asserts and bounds checking
-# DEBUG_ITEM_SCAN checks validity of items before each turn (slow)
-# DEBUG_DIAGNOSTICS gives copious output (and sets wizard flag on all games)
-# FULLDEBUG gives all three DEBUG options
-
+# WIZARD mode currently includes asserts, bounds checking, and item checking
 wizard:
 	$(MAKE) $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-g -DWIZARD -DDEBUG -DDEBUG_ITEM_SCAN'
 

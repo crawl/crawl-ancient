@@ -340,7 +340,7 @@ char *rand_wpn_names[] = {
 /* 280: */
     " of Faith",
     " of Untruth",
-    " of the Augerer",
+    " of the Augurer",
     " of the Water Diviner",
     " of the Soothsayer",
     " of Punishment",
@@ -742,13 +742,6 @@ void set_unique_item_status( int base_type, int art, int status )
     }
 }
 
-// XXX: This function attempts to take the new item struct format and
-// calculate the same seed as the original.  This is important
-// if we want to make the randarts compatible between versions.
-// Hopefully, we'll eventually have a system a little less painful. -- bwr
-//
-// The complexity of this function comes from the mess that the
-// old stuctures used to have.
 static long calc_seed( const item_def &item )
 {
     return (item.special & RANDART_SEED_MASK);
@@ -1220,7 +1213,7 @@ char *randart_name( const item_def &item )
         case  5: strcat(art_n, "shimmering "); break;
         case  6: strcat(art_n, "warped "); break;
         case  7: strcat(art_n, "crystal "); break;
-        case  8: strcat(art_n, "jeweled "); break;
+        case  8: strcat(art_n, "jewelled "); break;
         case  9: strcat(art_n, "transparent "); break;
         case 10: strcat(art_n, "encrusted "); break;
         case 11: strcat(art_n, "pitted "); break;
@@ -1526,21 +1519,197 @@ int find_okay_unrandart(unsigned char aclass, unsigned char atype)
     return ret;
 }                               // end find_okay_unrandart()
 
-void make_item_randart( item_def &item )
+// which == 0 (default) gives random fixed artefact.
+// Returns true if successful.
+bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
+{
+    bool  force = true;  // we force any one asked for specifically
+
+    if (!which)
+    {
+        // using old behaviour... try only once. -- bwr
+        force = false;
+
+        which = SPWPN_SINGING_SWORD + random2(12);
+        if (which >= SPWPN_SWORD_OF_CEREBOV)
+            which += 3; // skip over Cerebov's, Dispater's, and Asmodeus' weapons
+    }
+
+    int status = get_unique_item_status( OBJ_WEAPONS, which );
+
+    if ((status == UNIQ_EXISTS
+            || (in_abyss && status == UNIQ_NOT_EXISTS)
+            || (!in_abyss && status == UNIQ_LOST_IN_ABYSS))
+        && !force)
+    {
+        return (false);
+    }
+
+    switch (which)
+    {
+    case SPWPN_SINGING_SWORD:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_LONG_SWORD;
+        item.special = SPWPN_SINGING_SWORD;
+        item.plus  = 7;
+        item.plus2 = 6;
+        break;
+
+    case SPWPN_WRATH_OF_TROG:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_BATTLEAXE;
+        item.special = SPWPN_WRATH_OF_TROG;
+        item.plus  = 3;
+        item.plus2 = 11;
+        break;
+
+    case SPWPN_SCYTHE_OF_CURSES:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_SCYTHE;
+        item.special = SPWPN_SCYTHE_OF_CURSES;
+        item.plus  = 11;
+        item.plus2 = 11;
+        break;
+
+    case SPWPN_MACE_OF_VARIABILITY:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_MACE;
+        item.special = SPWPN_MACE_OF_VARIABILITY;
+        item.plus  = random2(12) - 4;
+        item.plus2 = random2(12) - 4;
+        break;
+
+    case SPWPN_GLAIVE_OF_PRUNE:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_GLAIVE;
+        item.special = SPWPN_GLAIVE_OF_PRUNE;
+        item.plus  = 0;
+        item.plus2 = 12;
+        break;
+
+    case SPWPN_SCEPTRE_OF_TORMENT:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_MACE;
+        item.special = SPWPN_SCEPTRE_OF_TORMENT;
+        item.plus  = 7;
+        item.plus2 = 6;
+        break;
+
+    case SPWPN_SWORD_OF_ZONGULDROK:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_LONG_SWORD;
+        item.special = SPWPN_SWORD_OF_ZONGULDROK;
+        item.plus  = 9;
+        item.plus2 = 9;
+        break;
+
+    case SPWPN_SWORD_OF_POWER:
+        if (!one_chance_in(3) || force)
+        {
+            item.base_type = OBJ_WEAPONS;
+            item.sub_type = WPN_GREAT_SWORD;
+            item.special = SPWPN_SWORD_OF_POWER;
+            item.plus  = 0; // set on wield
+            item.plus2 = 0; // set on wield
+        }
+        else
+        {
+            return (false);
+        }
+        break;
+
+    case SPWPN_KNIFE_OF_ACCURACY:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_DAGGER;
+        item.special = SPWPN_KNIFE_OF_ACCURACY;
+        item.plus  = 27;
+        item.plus2 = -1;
+        break;
+
+    case SPWPN_STAFF_OF_OLGREB:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_QUARTERSTAFF;
+        item.special = SPWPN_STAFF_OF_OLGREB;
+        item.plus  = 0; // set on wield
+        item.plus2 = 0; // set on wield
+        break;
+
+    case SPWPN_VAMPIRES_TOOTH:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_DAGGER;
+        item.special = SPWPN_VAMPIRES_TOOTH;
+        item.plus  = 3;
+        item.plus2 = 4;
+        break;
+
+    case SPWPN_STAFF_OF_WUCAD_MU:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_QUARTERSTAFF;
+        item.special = SPWPN_STAFF_OF_WUCAD_MU;
+        item.plus  = 0; // set on wield
+        item.plus2 = 0; // set on wield
+        break;
+
+    case SPWPN_SWORD_OF_CEREBOV:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_GREAT_SWORD;
+        item.special = SPWPN_STAFF_OF_WUCAD_MU;
+        item.plus  = 6;
+        item.plus2 = 6;
+        item.colour = YELLOW;
+        do_curse_item( item );
+        break;
+
+    case SPWPN_STAFF_OF_DISPATER:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_QUARTERSTAFF;
+        item.special = SPWPN_STAFF_OF_WUCAD_MU;
+        item.plus  = 4;
+        item.plus2 = 4;
+        item.colour = YELLOW;
+        break;
+
+    case SPWPN_SCEPTRE_OF_ASMODEUS:
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_QUARTERSTAFF;
+        item.special = SPWPN_STAFF_OF_WUCAD_MU;
+        item.plus  = 7;
+        item.plus2 = 7;
+        item.colour = RED;
+        break;
+
+    default:
+        DEBUGSTR( "Trying to create illegal fixed artefact!" );
+        return (false);
+    }
+
+    // If we get here, we've made the artefact
+    item.quantity = 1;
+
+    // Items originally generated in the abyss and not found will be
+    // shifted to "lost in abyss", and will only be found there. -- bwr
+    set_unique_item_status( OBJ_WEAPONS, which, UNIQ_EXISTS );
+
+    return (true);
+}
+
+bool make_item_randart( item_def &item )
 {
     if (item.base_type != OBJ_WEAPONS
         && item.base_type != OBJ_ARMOUR
         && item.base_type != OBJ_JEWELLERY)
     {
-        return;
+        return (false);
     }
 
     item.flags |= ISFLAG_RANDART;
     item.special = (random() & RANDART_SEED_MASK);
+
+    return (true);
 }
 
 // void make_item_unrandart( int x, int ura_item )
-void make_item_unrandart( item_def &item, int unrand_index )
+bool make_item_unrandart( item_def &item, int unrand_index )
 {
     item.base_type = unranddata[unrand_index].ura_cl;
     item.sub_type  = unranddata[unrand_index].ura_ty;
@@ -1551,17 +1720,12 @@ void make_item_unrandart( item_def &item, int unrand_index )
     item.flags |= ISFLAG_UNRANDART;
     item.special = 0;  // unused
 
-#if 0
-    if (mitm[ura_item].base_type == OBJ_JEWELLERY)
-        mitm[ura_item].special = SPRING_UNRANDART;
-    else
-        mitm[ura_item].special = SPWPN_RANDART_I;
-#endif
-
     if (unranddata[ unrand_index ].prpty[ RAP_CURSED ])
         do_curse_item( item );
 
     set_unrandart_exist( unrand_index, 1 );
+
+    return (true);
 }                               // end make_item_unrandart()
 
 const char *unrandart_descrip( char which_descrip, const item_def &item )

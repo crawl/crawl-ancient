@@ -21,7 +21,7 @@
  *
  * Usage:
  * mon_type     WANDERING_MONSTER, RANDOM_MONSTER, or monster type
- * behavior     standard behaviors (BEH_ENSLAVED, etc)
+ * behaviour     standard behaviours (BEH_ENSLAVED, etc)
  * target       MHITYOU, MHITNOT, or monster id
  * extra        various things like skeleton/zombie types, colours, etc
  * summoned     monster is summoned?
@@ -34,7 +34,7 @@
  *              2 = don't place the monster near the player
  *              3 = place the monster near stairs (regardless of player pos)
  * *********************************************************************** */
-int mons_place( int mon_type, char behavior, int target, bool summoned,
+int mons_place( int mon_type, char behaviour, int target, bool summoned,
                 int px, int py, int level_type = LEVEL_DUNGEON,
                 int proximity = PROX_ANYWHERE, int extra = 250 );
 
@@ -72,7 +72,7 @@ int summon_any_demon( char demon_class );
  * mons_place().  If you need to put a monster somewhere,  use mons_place().
  * Summoned creatures can be created with create_monster().
  * *********************************************************************** */
-bool place_monster( int &id, int mon_type, int power, char behavior,
+bool place_monster( int &id, int mon_type, int power, char behaviour,
                     int target, bool summoned, int px, int py, bool allow_bands,
                     int proximity = PROX_ANYWHERE, int extra = 250 );
 

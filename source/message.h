@@ -19,7 +19,7 @@
 struct message_item {
     int                 channel;        // message channel
     int                 param;          // param for channel (god, enchantment)
-    string              text;           // text of message
+    std::string         text;           // text of message
 };
 
 

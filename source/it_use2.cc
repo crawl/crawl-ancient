@@ -192,17 +192,12 @@ bool potion_effect(char pot_eff, int pow)
         }
         else
         {
-            if (you.poison)
-                strcpy(info, "You feel even sicker.");
-            else
-            {
-                strcpy(info, "That liquid tasted ");
-                strcat(info, (pot_eff == POT_POISON) ? "very" : "extremely");
-                strcat(info, " nasty...");
-            }
+            strcpy(info, "That liquid tasted ");
+            strcat(info, (pot_eff == POT_POISON) ? "very" : "extremely");
+            strcat(info, " nasty...");
 
-            you.poison += 1 + ((pot_eff == POT_POISON) ?
-                               random2avg(5, 2) : 2 + random2avg(13, 2));
+            poison_player( ((pot_eff == POT_POISON) ? 1 + random2avg(5, 2)
+                                                    : 3 + random2avg(13, 2)) );
         }
 
         mpr(info);
@@ -243,27 +238,7 @@ bool potion_effect(char pot_eff, int pow)
         break;
 
     case POT_CONFUSION:
-        strcpy(info, "You feel ");
-
-        if (wearing_amulet(AMU_CLARITY))
-            strcat(info, "momentarily ");
-        else if (you.conf)
-            strcat(info, "very ");
-
-        strcat(info, "confused.");
-        mpr(info);
-
-        // early return for the protected: {dlb}
-        if (wearing_amulet(AMU_CLARITY))
-            break;
-
-        new_value = 3 + random2(8 + you.conf);
-
-        if (new_value > you.conf)
-            you.conf = new_value;
-
-        if (you.conf > 20)
-            you.conf = 20;
+        confuse_player( 3 + random2(8) );
         break;
 
     case POT_INVISIBILITY:
@@ -406,24 +381,20 @@ void unwield_item(char unw)
                 break;
             }
 
-            you.special_wield = SPWLD_NONE;
             return;
         }
 
-        char i_dam = you.inv[unw].special;
+        int brand = get_weapon_brand( you.inv[unw] );
 
         if (is_random_artefact( you.inv[unw] ))
-        {
-            i_dam = randart_wpn_property( you.inv[unw], RAP_BRAND );
             unuse_randart(unw);
-        }
 
-        if (i_dam != SPWPN_NORMAL)
+        if (brand != SPWPN_NORMAL)
         {
             in_name(unw, DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
 
-            switch (i_dam)
+            switch (brand)
             {
             case SPWPN_FLAMING:
                 strcat(info, " stops flaming.");
@@ -480,14 +451,24 @@ void unwield_item(char unw)
             if (you.duration[DUR_WEAPON_BRAND])
             {
                 you.duration[DUR_WEAPON_BRAND] = 0;
-                you.inv[unw].special = SPWPN_NORMAL;
+                set_item_ego_type( you.inv[unw], OBJ_WEAPONS, SPWPN_NORMAL );
                 mpr("Your branding evaporates.");
             }
         }                       // end if
     }
 
     if (player_equip( EQ_STAFF, STAFF_POWER ))
-        dec_max_mp(13);
+    {
+        // XXX: Ugly hack so that thhis currently works (don't want to
+        // mess with the fact that currently this function doesn't
+        // actually unwield the item, but we need it out of the player's
+        // hand for this to work. -- bwr
+        int tmp = you.equip[ EQ_WEAPON ];
+
+        you.equip[ EQ_WEAPON ] = -1;
+        calc_mp();
+        you.equip[ EQ_WEAPON ] = tmp;
+    }
 
     return;
 }                               // end unwield_item()
@@ -498,7 +479,7 @@ void unwear_armour(char unw)
     you.redraw_armour_class = 1;
     you.redraw_evasion = 1;
 
-    switch (you.inv[unw].special)
+    switch (get_armour_ego_type( you.inv[unw] ))
     {
     case SPARM_RUNNING:
         mpr("You feel rather sluggish.");

@@ -1,4 +1,4 @@
-/*
+ /*
  *  File:       acr.cc
  *  Summary:    Main entry point, event loop, and some initialization functions
  *  Written by: Linley Henzell
@@ -108,6 +108,7 @@
 #include "player.h"
 #include "randart.h"
 #include "religion.h"
+#include "skills.h"
 #include "skills2.h"
 #include "spells1.h"
 #include "spells3.h"
@@ -273,15 +274,10 @@ int main(int argc, char *argv[])
 
     if (game_start || Options.always_greet)
     {
-        string welcome_msg = "Welcome, ";
-        welcome_msg += you.your_name;
-        welcome_msg += " the ";
-        welcome_msg += species_name( you.species );
-        welcome_msg += " ";
-        welcome_msg += you.class_name;
-        welcome_msg += ".";
+        snprintf( info, INFO_SIZE, "Welcome, %s the %s %s.",
+                  you.your_name, species_name( you.species ), you.class_name );
 
-        mpr( welcome_msg.c_str() );
+        mpr( info );
 
         // Starting messages can go here as this should only happen
         // at the start of a new game -- bwr
@@ -326,7 +322,7 @@ int main(int argc, char *argv[])
             god_speaks( you.religion, "Let it end in hellfire!");
             break;
         case GOD_OKAWARU:
-            simple_god_message(" says: Welcome,  disciple.");
+            simple_god_message(" says: Welcome, disciple.");
             break;
         case GOD_MAKHLEB:
             god_speaks( you.religion, "Blood and souls for Makhleb!" );
@@ -419,6 +415,11 @@ static void handle_wizard_command(void)
         redraw_screen();
         break;
 
+    case 'S':
+        debug_set_skills();
+        redraw_screen();
+        break;
+
     case '$':
         you.gold += 1000;
         you.redraw_gold = 1;
@@ -493,7 +494,7 @@ static void handle_wizard_command(void)
         break;
 
     case 'G':
-        // Genocide... or rather "unsummon" all the monsters from the level.
+        // Genocide... "unsummon" all the monsters from the level.
         for (int mon = 0; mon < MAX_MONSTERS; mon++)
         {
             struct monsters *monster = &menv[mon];
@@ -670,6 +671,15 @@ static void handle_wizard_command(void)
                     old_piety, you.piety);
             mpr(info);
         }
+        break;
+
+    case '=':
+        snprintf( info, INFO_SIZE,
+                  "Cost level: %d  Skill points: %d  Next cost level: %d",
+                  you.skill_cost_level, you.total_skill_points,
+                  skill_cost_needed( you.skill_cost_level + 1 ) );
+
+        mpr( info );
         break;
 
     case '_':
@@ -1064,11 +1074,15 @@ static void input(void)
 
     case '<':
     case CMD_GO_UPSTAIRS:
-        up_stairs();
+        start_delay( DELAY_ASCENDING_STAIRS,
+                     1 + !random2(10) + (you.burden_state > BS_UNENCUMBERED) );
         break;
+
     case '>':
     case CMD_GO_DOWNSTAIRS:
-        down_stairs(false, you.your_level);
+        start_delay( DELAY_DESCENDING_STAIRS,
+                     1 + (you.burden_state > BS_UNENCUMBERED),
+                     you.your_level );
         break;
 
     case 'O':
@@ -1240,7 +1254,7 @@ static void input(void)
 
     case 'X':
     case CMD_DISPLAY_MAP:
-#if (!DEBUG)
+#if (!DEBUG_DIAGNOSTICS)
         if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
         {
             mpr("It would help if you knew where you were, first.");
@@ -1591,11 +1605,13 @@ static void input(void)
         you.duration[DUR_WEAPON_BRAND]--;
     else if (you.duration[DUR_WEAPON_BRAND] == 1)
     {
-        int temp_effect = you.inv[you.equip[EQ_WEAPON]].special;
+        const int wpn = you.equip[EQ_WEAPON];
+        const int temp_effect = get_weapon_brand( you.inv[wpn] );
 
         you.duration[DUR_WEAPON_BRAND] = 0;
-        you.inv[you.equip[EQ_WEAPON]].special -= temp_effect;
-        in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
+
+        set_item_ego_type( you.inv[wpn], OBJ_WEAPONS, SPWPN_NORMAL );
+        in_name(wpn, DESC_CAP_YOUR, str_pass);
         strcpy(info, str_pass);
 
         switch (temp_effect)
@@ -1627,7 +1643,7 @@ static void input(void)
             break;
         case SPWPN_DISTORTION:
             strcat(info, " seems straighter.");
-            miscast_effect(SPWPN_DISTORTION, 9, 90, 100);
+            miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100 );
             break;
         default:
             strcat(info, " seems inexplicably less special.");
@@ -1855,13 +1871,8 @@ static void input(void)
         you.invis = 0;
     }
 
-    if (you.conf > 1)
-        you.conf--;
-    else if (you.conf == 1)
-    {
-        mpr("You feel steadier.", MSGCH_DURATION);
-        you.conf = 0;
-    }
+    if (you.conf > 0)
+        reduce_confuse_player(1);
 
     if (you.paralysis > 1)
         you.paralysis--;
@@ -2003,7 +2014,7 @@ static void input(void)
         if (you.species != SP_KENKU || you.experience_level < 15)
             you.levitation--;
 
-        if (player_equip_special( EQ_BOOTS, SPARM_LEVITATION ))
+        if (player_equip_ego_type( EQ_BOOTS, SPARM_LEVITATION ))
             you.levitation = 2;
 
         if (you.levitation == 10)
@@ -2102,21 +2113,17 @@ static void input(void)
             }
 
             if ((you.hp == 1 && one_chance_in(3)) || one_chance_in(8))
-            {
-                mpr("You feel a little better.", MSGCH_RECOVERY);
-                you.poison--;
-            }
+                reduce_poison_player(1);
         }
     }
 
     if (you.deaths_door)
     {
-        if (you.hp > you.skills[SK_NECROMANCY] +
-                        (you.religion == GOD_KIKUBAAQUDGHA ? 13 : 0))
+        if (you.hp > allowed_deaths_door_hp())
         {
             mpr("Your life is in your own hands once again.", MSGCH_DURATION);
             you.paralysis += 5 + random2(5);
-            you.conf += 10 + random2(10);
+            confuse_player( 10 + random2(10) );
             you.hp_max--;
             deflate_hp(you.hp_max, false);
             you.deaths_door = 0;
@@ -2180,7 +2187,7 @@ static void input(void)
 
     viewwindow(1, true);
 
-    monster();
+    handle_monsters();
 
     ASSERT(you.time_taken >= 0);
     // make sure we don't overflow
@@ -2509,7 +2516,7 @@ static bool initialise(void)
     srand(time(NULL));
     cf_setseed();               // required for stuff::coinflip()
 
-    mon_init(mcolour);          // this needs to be way up top {dlb}
+    mons_init(mcolour);          // this needs to be way up top {dlb}
     init_playerspells();        // this needs to be way up top {dlb}
 
     clrscr();
@@ -2526,7 +2533,7 @@ static bool initialise(void)
         menv[i].type = -1;
         menv[i].speed_increment = 10;
         menv[i].flags = 0;
-        menv[i].behavior = BEH_SLEEP;
+        menv[i].behaviour = BEH_SLEEP;
 
         menv[i].foe = NON_MONSTER;
         menv[i].attitude = ATT_HOSTILE;
@@ -2579,26 +2586,25 @@ static bool initialise(void)
     //if ( newc )
     //  stair_taken = 82;
 
-    bool just_made_new_lev = !newc;
-    bool moving_level = newc;
-
     //load(82, moving_level, level_saved, was_a_labyrinth, old_level, just_made_new_lev);
-    load( 82, moving_level, false, 0, false, just_made_new_lev,
-                                                    you.where_are_you );
+    load( 82, newc, false, 0, false, !newc, you.where_are_you );
 
 #if DEBUG_DIAGNOSTICS
     // Debug compiles display a lot of "hidden" information, so we auto-wiz
     you.wizard = true;
 #endif
 
-    moving_level = false;
-    just_made_new_lev = false;
+#if 0
+    // Given this... (see only use of newc past this point)
     newc = false;
+#endif
 
     init_properties();
     burden_change();
     make_hungry(0,true);
 
+#if 0
+    // ... this will never actually happen!
     if (newc)
     {
         for (i = 0; i < GXM; i++)
@@ -2616,6 +2622,7 @@ static bool initialise(void)
 
         new_level();
     }                           // end if (newc)
+#endif
 
     you.redraw_strength = 1;
     you.redraw_intelligence = 1;

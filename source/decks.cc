@@ -97,7 +97,8 @@ enum CARDS                      // (unsigned char) deck_of_foo[]
     CARD_RANDOM = 255           // must remain final member {dlb}
 };
 
-static unsigned char deck_of_wonders[] = {
+static unsigned char deck_of_wonders[] =
+{
     CARD_BLANK,
     CARD_BUTTERFLY,
     CARD_WRAITH,
@@ -127,7 +128,8 @@ static unsigned char deck_of_wonders[] = {
     CARD_PANDEMONIUM
 };
 
-static unsigned char deck_of_summoning[] = {
+static unsigned char deck_of_summoning[] =
+{
     CARD_STATUE,
     CARD_DEMON_LESSER,
     CARD_DEMON_COMMON,
@@ -141,7 +143,8 @@ static unsigned char deck_of_summoning[] = {
     CARD_HORROR_UNSEEN
 };
 
-static unsigned char deck_of_tricks[] = {
+static unsigned char deck_of_tricks[] =
+{
     CARD_BLANK,
     CARD_BUTTERFLY,
     CARD_BLINK,
@@ -155,7 +158,8 @@ static unsigned char deck_of_tricks[] = {
     CARD_HASTEN
 };
 
-static unsigned char deck_of_power[] = {
+static unsigned char deck_of_power[] =
+{
     CARD_BLANK,
     CARD_DEMON_COMMON,
     CARD_DEMON_GREATER,
@@ -175,8 +179,10 @@ static unsigned char deck_of_power[] = {
     CARD_SLOW
 };
 
-// supposed to be bad, small chance of OK
-static unsigned char deck_of_punishment[] = {
+// Supposed to be bad, small chance of OK... Nemelex wouldn't like a game
+// that didn't have some chance of "losing".
+static unsigned char deck_of_punishment[] =
+{
     CARD_BLANK,
     CARD_BUTTERFLY,
     CARD_WRAITH,
@@ -652,11 +658,7 @@ static void cards(unsigned char which_card)
 
     case CARD_VENOM:
         mpr("You have drawn Venom.");
-        if (!player_res_poison())
-        {
-            you.poison += random2(3) + 2;
-            mpr("You feel poison flood through your system.");
-        }
+        poison_player( 2 + random2(3) );
         break;
 
     case CARD_XOM:

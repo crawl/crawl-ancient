@@ -70,7 +70,7 @@ void mons_trap(struct monsters *monster)
 
     // flying monsters neatly avoid mechanical traps
     // and may actually exit this function early: {dlb}
-    if (mons_flies(monster->type))
+    if (mons_flies(monster))
     {
         if (trap_category(env.trap[which_trap].type) == DNGN_TRAP_MECHANICAL)
         {
@@ -92,42 +92,42 @@ void mons_trap(struct monsters *monster)
     case TRAP_DART:
         projectileFired = true;
         strcpy(beem.beam_name, " dart");
-        beem.damage = 4;
+        beem.damage = dice_def( 1, 4 );
         beem.colour = OBJ_MISSILES;
         beem.type = MI_DART;
         break;
     case TRAP_NEEDLE:
         projectileFired = true;
         strcpy(beem.beam_name, " needle");
-        beem.damage = 0;
+        beem.damage = dice_def( 1, 0 );
         beem.colour = OBJ_MISSILES;
         beem.type = MI_NEEDLE;
         break;
     case TRAP_ARROW:
         projectileFired = true;
         strcpy(beem.beam_name, "n arrow");
-        beem.damage = 7;
+        beem.damage = dice_def( 1, 7 );
         beem.colour = OBJ_MISSILES;
         beem.type = MI_ARROW;
         break;
     case TRAP_SPEAR:
         projectileFired = true;
         strcpy(beem.beam_name, " spear");
-        beem.damage = 10;
+        beem.damage = dice_def( 1, 10 );
         beem.colour = OBJ_WEAPONS;
         beem.type = WPN_SPEAR;
         break;
     case TRAP_BOLT:
         projectileFired = true;
         strcpy(beem.beam_name, " bolt");
-        beem.damage = 13;
+        beem.damage = dice_def( 1, 13 );
         beem.colour = OBJ_MISSILES;
         beem.type = MI_BOLT;
         break;
     case TRAP_AXE:
         projectileFired = true;
         strcpy(beem.beam_name, "n axe");
-        beem.damage = 15;
+        beem.damage = dice_def( 1, 15 );
         beem.colour = OBJ_WEAPONS;
         beem.type = WPN_HAND_AXE;
         break;
@@ -259,7 +259,7 @@ void mons_trap(struct monsters *monster)
         if (((20 + (you.your_level * 2)) * random2(200)) / 100
                                                     >= monster->evasion)
         {
-            damage_taken = random2(beem.damage);
+            damage_taken = roll_dice( beem.damage );
             damage_taken -= random2(1 + monster->armour_class);
             if (beem.colour == OBJ_MISSILES
                 && beem.type == MI_NEEDLE
@@ -357,11 +357,11 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
     switch (spell_cast)
     {
     case MS_VAMPIRE_SUMMON:
-        sumcount2 = 3 + random2(4) + monster->hit_dice / 5;
+        sumcount2 = 3 + random2(3) + monster->hit_dice / 5;
 
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
         {
-            int mons = MONS_GIANT_BAT;;
+            int mons = MONS_GIANT_BAT;
 
             if (!one_chance_in(3))
             {
@@ -399,7 +399,7 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
             return;
         }
 
-        sumcount2 = 1 + random2(4) + random2( monster->hit_dice ) / 7;
+        sumcount2 = 1 + random2(4) + random2( monster->hit_dice / 7 + 1 );
 
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
         {
@@ -427,7 +427,8 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
             return;
         }
 
-        sumcount2 = 1 + random2(2) + monster->hit_dice / 10;
+        sumcount2 = 1 + random2(2) + random2( monster->hit_dice / 10 + 1 );
+
         duration  = ENCH_ABJ_II + monster->hit_dice / 10;
         if (duration > ENCH_ABJ_VI)
             duration = ENCH_ABJ_VI;
@@ -446,7 +447,8 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
         return;
 
     case MS_SUMMON_DEMON_LESSER: // class 5 demons
-        sumcount2 = 1 + random2(3) + monster->hit_dice / 5;
+        sumcount2 = 1 + random2(3) + random2( monster->hit_dice / 5 + 1 );
+
         duration  = ENCH_ABJ_II + monster->hit_dice / 5;
         if (duration > ENCH_ABJ_VI)
             duration = ENCH_ABJ_VI;
@@ -460,7 +462,8 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
         return;
 
     case MS_SUMMON_UFETUBUS:
-        sumcount2 = 2 + random2(3) + monster->hit_dice / 5;
+        sumcount2 = 2 + random2(2) + random2( monster->hit_dice / 5 + 1 );
+
         duration  = ENCH_ABJ_II + monster->hit_dice / 5;
         if (duration > ENCH_ABJ_VI)
             duration = ENCH_ABJ_VI;
@@ -485,7 +488,8 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
             return;
         }
 
-        sumcount2 = 1 + random2(2) + random2( monster->hit_dice ) / 4;
+        sumcount2 = 2 + random2(2) + random2( monster->hit_dice / 4 + 1 );
+
         duration  = ENCH_ABJ_II + monster->hit_dice / 5;
         if (duration > ENCH_ABJ_VI)
             duration = ENCH_ABJ_VI;
@@ -520,7 +524,8 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
             return;
         }
 
-        sumcount2 = 1 + random2( monster->hit_dice ) / 10;
+        sumcount2 = 1 + random2( monster->hit_dice / 10 + 1 );
+
         duration  = ENCH_ABJ_II + monster->hit_dice / 10;
         if (duration > ENCH_ABJ_VI)
             duration = ENCH_ABJ_VI;
@@ -648,8 +653,9 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
     pbolt.colour = theBeam.colour;
     pbolt.range = theBeam.range;
     pbolt.rangeMax = theBeam.rangeMax;
-    pbolt.damage = theBeam.damage;
     pbolt.hit = theBeam.hit;
+    pbolt.damage = theBeam.damage;
+    pbolt.ench_power = theBeam.ench_power;
     pbolt.type = theBeam.type;
     pbolt.flavour = theBeam.flavour;
     pbolt.thrower = theBeam.thrown;
@@ -763,7 +769,7 @@ void setup_dragon(struct monsters *monster, struct bolt &pbolt)
 
     pbolt.range = 4;
     pbolt.rangeMax = 13;
-    pbolt.damage = 100 + (monster->hit_dice * 2);
+    pbolt.damage = dice_def( 3, (monster->hit_dice * 2) );
     pbolt.type = SYM_ZAP;
     pbolt.hit = 30;
     pbolt.beam_source = monster_index(monster);
@@ -873,13 +879,13 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
         {
             baseHit = 5;
             hitMult = 40;
-            damMult = 30;
+            damMult = 25;
         }
         else
         {
             baseHit = 0;
             hitMult = 30;
-            damMult = 30;
+            damMult = 25;
         }
 
         baseDam = property( mitm[hand_used], PWPN_DAMAGE );
@@ -907,7 +913,7 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
         case WPN_BOW:
             baseHit = 0;
             hitMult = 60;
-            damMult = 40;
+            damMult = 35;
             // monsters get half the launcher damage bonus,
             // which is about as fair as I can figure it.
             lnchDamBonus = (lnchDamBonus + 1) / 2;
@@ -915,17 +921,17 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
         case WPN_CROSSBOW:
             baseHit = 4;
             hitMult = 70;
-            damMult = 35;
+            damMult = 30;
             break;
         case WPN_HAND_CROSSBOW:
             baseHit = 2;
             hitMult = 50;
-            damMult = 30;
+            damMult = 20;
             break;
         case WPN_SLING:
             baseHit = 1;
             hitMult = 40;
-            damMult = 30;
+            damMult = 20;
             // monsters get half the launcher damage bonus,
             // which is about as fair as I can figure it.
             lnchDamBonus /= 2;
@@ -954,32 +960,33 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
         // monsters no longer gain unfair advantages with weapons of fire/ice
         // and incorrect ammo.  They now have same restriction as players.
 
+        const int bow_brand = get_weapon_brand(mitm[monster->inv[MSLOT_WEAPON]]);
+
+        const int ammo_brand = get_ammo_brand( mitm[hand_used] );
+
+        const bool poison = (ammo_brand == SPMSL_POISONED
+                            || ammo_brand == SPMSL_POISONED_II);
+
         // POISON brand: note that this is overridden by special ammo
-        if (mitm[monster->inv[MSLOT_WEAPON]].special == SPWPN_VENOM
-                && !(mitm[hand_used].special != SPMSL_ICE
-            || mitm[hand_used].special == SPMSL_FLAME))
+        if (bow_brand == SPWPN_VENOM
+            && ammo_brand != SPMSL_ICE && ammo_brand != SPMSL_FLAME)
         {
             // poison it
-            mitm[hand_used].special = SPMSL_POISONED;
+            set_item_ego_type( mitm[hand_used], OBJ_MISSILES, SPMSL_POISONED );
         }
 
 
         // WEAPON or AMMO of FIRE
-        if ((mitm[monster->inv[MSLOT_WEAPON]].special == SPWPN_FLAME
-                && mitm[hand_used].special != SPMSL_ICE)
-            || (mitm[hand_used].special == SPMSL_FLAME
-                && mitm[monster->inv[MSLOT_WEAPON]].special != SPWPN_FROST))
+        if ((bow_brand == SPWPN_FLAME || ammo_brand == SPMSL_FLAME)
+            && bow_brand != SPWPN_FROST && ammo_brand != SPMSL_ICE)
         {
             baseHit += 2;
             exDamBonus += 6;
             pbolt.flavour = BEAM_FIRE;
             strcpy(pbolt.beam_name, "bolt of ");
 
-            if (mitm[hand_used].special == SPMSL_POISONED
-                || mitm[hand_used].special == SPMSL_POISONED_II)
-            {
+            if (poison)
                 strcat(pbolt.beam_name, "poison ");
-            }
 
             strcat(pbolt.beam_name, "flame");
             pbolt.colour = RED;
@@ -987,21 +994,16 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
         }
 
         // WEAPON or AMMO of FROST
-        if ((mitm[monster->inv[MSLOT_WEAPON]].special == SPWPN_FROST
-                && mitm[hand_used].special != SPMSL_FLAME)
-            || (mitm[hand_used].special == SPMSL_ICE
-                && mitm[monster->inv[MSLOT_WEAPON]].special != SPWPN_FLAME))
+        if ((bow_brand == SPWPN_FROST || ammo_brand == SPMSL_ICE)
+            && bow_brand != SPWPN_FLAME && ammo_brand != SPMSL_FLAME)
         {
             baseHit += 2;
             exDamBonus += 6;
             pbolt.flavour = BEAM_COLD;
             strcpy(pbolt.beam_name, "bolt of ");
 
-            if (mitm[hand_used].special == SPMSL_POISONED
-                || mitm[hand_used].special == SPMSL_POISONED_II)
-            {
+            if (poison)
                 strcat(pbolt.beam_name, "poison ");
-            }
 
             strcat(pbolt.beam_name, "frost");
             pbolt.colour = WHITE;
@@ -1041,11 +1043,11 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
 
     // add everything up.
     pbolt.hit = baseHit + random2avg(exHitBonus, 2) + ammoHitBonus;
-    pbolt.damage = baseDam + random2avg(exDamBonus, 2) + ammoDamBonus;
+    pbolt.damage = dice_def( 1, baseDam + random2avg(exDamBonus, 2) + ammoDamBonus );
 
     if (launched)
     {
-        pbolt.damage += lnchDamBonus;
+        pbolt.damage.size += lnchDamBonus;
         pbolt.hit += lnchHitBonus;
     }
 
@@ -1083,7 +1085,7 @@ void spore_goes_pop(struct monsters *monster)
         beam.flavour = BEAM_SPORE;
         strcpy(beam.beam_name, "explosion of spores");
         beam.colour = LIGHTGREY;
-        beam.damage = 115;
+        beam.damage = dice_def( 3, 15 );
         beam.ex_size = 2;
         strcpy( info, "The giant spore explodes!" );
     }
@@ -1092,7 +1094,7 @@ void spore_goes_pop(struct monsters *monster)
         beam.flavour = BEAM_ELECTRICITY;
         strcpy(beam.beam_name, "blast of lightning");
         beam.colour = LIGHTCYAN;
-        beam.damage = 120;
+        beam.damage = dice_def( 3, 20 );
         beam.ex_size = coinflip() ? 3 : 2;
         strcpy( info, "The ball lightning explodes!" );
     }
@@ -1115,8 +1117,9 @@ struct SBeam mons_spells( int spell_cast, int power )
     beam.name = "****";         // initialize to some bogus values so we can catch problems
     beam.colour = 1000;
     beam.range = -1;
-    beam.damage = -1;
     beam.hit = -1;
+    beam.damage = dice_def( 1, 0 );
+    beam.ench_power = -1;
     beam.type = -1;
     beam.flavour = -1;
     beam.thrown = -1;
@@ -1128,7 +1131,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "magic dart";       // inv_name [throw_2]);
         beam.range = 6;
         beam.rangeMax = 10;
-        beam.damage = 104 + (power / 100);
+        beam.damage = dice_def( 3, 4 + (power / 100) );
         beam.hit = 1500;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
@@ -1145,7 +1148,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         // should this be the same as magic missile?
         // No... magic missile is special in that it has a really
         // high to-hit value, so these should do more damage -- bwr
-        beam.damage = 105 + (power / 40);
+        beam.damage = dice_def( 3, 5 + (power / 40) );
 
         beam.hit = 60;
         beam.type = SYM_ZAP;
@@ -1162,7 +1165,7 @@ struct SBeam mons_spells( int spell_cast, int power )
 
         // should this be the same as magic missile?
         // see MS_FLAME -- bwr
-        beam.damage = 105 + (power / 40);
+        beam.damage = dice_def( 3, 5 + (power / 40) );
 
         beam.hit = 60;
         beam.type = SYM_ZAP;
@@ -1176,9 +1179,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BCOL_PARALYSIS;
+        beam.flavour = BEAM_PARALYSIS;
         beam.thrown = KILL_MON_MISSILE;
-        beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
         break;
 
@@ -1187,9 +1189,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BCOL_SLOW;
+        beam.flavour = BEAM_SLOW;
         beam.thrown = KILL_MON_MISSILE;
-        beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
         break;
 
@@ -1198,9 +1199,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BCOL_HASTE;
+        beam.flavour = BEAM_HASTE;
         beam.thrown = KILL_MON_MISSILE;
-        beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
         break;
 
@@ -1209,9 +1209,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BCOL_CONFUSION;
+        beam.flavour = BEAM_CONFUSION;
         beam.thrown = KILL_MON_MISSILE;
-        beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
         break;
 
@@ -1219,7 +1218,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "bolt of poison";
         beam.range = 7;
         beam.rangeMax = 16;
-        beam.damage = 106 + power / 13;
+        beam.damage = dice_def( 3, 6 + power / 13 );
         beam.colour = LIGHTGREEN;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1232,7 +1231,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "bolt of fire";
         beam.range = 4;
         beam.rangeMax = 13;
-        beam.damage = 108 + power / 11;
+        beam.damage = dice_def( 3, 8 + power / 11 );
         beam.colour = RED;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1245,7 +1244,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "bolt of cold";
         beam.range = 4;
         beam.rangeMax = 13;
-        beam.damage = 108 + power / 11;
+        beam.damage = dice_def( 3, 8 + power / 11 );
         beam.colour = WHITE;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1258,7 +1257,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "bolt of lightning";
         beam.range = 7;
         beam.rangeMax = 16;
-        beam.damage = 110 + power / 9;
+        beam.damage = dice_def( 3, 10 + power / 9 );
         beam.colour = LIGHTCYAN;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1272,9 +1271,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BCOL_INVISIBILITY;
+        beam.flavour = BEAM_INVISIBILITY;
         beam.thrown = KILL_MON;
-        beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
         break;
 
@@ -1283,7 +1281,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "fireball";
         beam.range = 6;
         beam.rangeMax = 10;
-        beam.damage = 107 + power / 10;
+        beam.damage = dice_def( 3, 7 + power / 10 );
         beam.hit = 40;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1296,9 +1294,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BCOL_HEALING;
+        beam.flavour = BEAM_HEALING;
         beam.thrown = KILL_MON;
-        beam.flavour = BEAM_MAGIC;
         beam.hit = 5 + (power / 5);
         beam.isBeam = true;
         break;
@@ -1308,9 +1305,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BCOL_TELEPORT;        // 6 is used by digging
+        beam.flavour = BEAM_TELEPORT;        // 6 is used by digging
         beam.thrown = KILL_MON;
-        beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
         break;
 
@@ -1319,9 +1315,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BCOL_TELEPORT;        // 6 is used by digging
+        beam.flavour = BEAM_TELEPORT;        // 6 is used by digging
         beam.thrown = KILL_MON;
-        beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
         break;
 
@@ -1333,7 +1328,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "crystal spear";
         beam.range = 7;
         beam.rangeMax = 16;
-        beam.damage = 112 + power / 10;
+        beam.damage = dice_def( 3, 12 + power / 10 );
         beam.colour = WHITE;
         beam.type = SYM_MISSILE;
         beam.thrown = KILL_MON;
@@ -1347,9 +1342,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 3;
         beam.rangeMax = 7 + random2(power) / 10;
         beam.type = 0;
-        beam.colour = BCOL_DIGGING;
+        beam.flavour = BEAM_DIGGING;
         beam.thrown = KILL_MON;
-        beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
         break;
 
@@ -1357,7 +1351,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "bolt of negative energy";
         beam.range = 7;
         beam.rangeMax = 16;
-        beam.damage = 106 + power / 13;
+        beam.damage = dice_def( 3, 6 + power / 13 );
         beam.colour = DARKGREY;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1373,7 +1367,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "orb of energy";
         beam.range = 6;
         beam.rangeMax = 10;
-        beam.damage = 107 + (power / 14);
+        beam.damage = dice_def( 3, 7 + (power / 14) );
         beam.hit = 10 + (power / 20);
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
@@ -1388,7 +1382,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "ball of steam";
         beam.range = 6;
         beam.rangeMax = 10;
-        beam.damage = 106;
+        beam.damage = dice_def( 3, 6 );
         beam.hit = 11;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
@@ -1404,11 +1398,11 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 7;
         beam.rangeMax = 14;
         beam.type = 0;
-        beam.colour = BCOL_PAIN;     // pain
+        beam.flavour = BEAM_PAIN;     // pain
         beam.thrown = KILL_MON;
-        beam.damage = 50;
-        beam.hit = 7 + (power / 20);
-        beam.flavour = BEAM_MAGIC;
+        // beam.damage = dice_def( 1, 50 );
+        beam.damage = dice_def( 1, 7 + (power / 20) );
+        beam.ench_power = 50;
         beam.isBeam = true;
         break;
 
@@ -1419,7 +1413,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "sticky flame";
         beam.range = 6;
         beam.rangeMax = 10;
-        beam.damage = 103 + power / 50;
+        beam.damage = dice_def( 3, 3 + power / 50 );
         beam.hit = 8 + power / 15;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
@@ -1431,7 +1425,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "blast of poison";
         beam.range = 7;
         beam.rangeMax = 16;
-        beam.damage = 103 + power / 25;
+        beam.damage = dice_def( 3, 3 + power / 25 );
         beam.colour = LIGHTGREEN;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1442,11 +1436,11 @@ struct SBeam mons_spells( int spell_cast, int power )
 
     case MS_PURPLE_BLAST:       // purple bang thing
         beam.colour = LIGHTMAGENTA;
-        beam.name = "blast";
+        beam.name = "orb of energy";
         beam.range = 6;
         beam.rangeMax = 10;
-        beam.damage = 106;
-        beam.hit = 9;
+        beam.damage = dice_def( 3, 10 + power / 15 );
+        beam.hit = 10 + power / 20;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
         beam.flavour = BEAM_EXPLOSION;  // an exploding magical missile
@@ -1458,7 +1452,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "bolt of energy";
         beam.range = 9;
         beam.rangeMax = 23;
-        beam.damage = 120;
+        beam.damage = dice_def( 3, 20 );
         beam.hit = 9;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
@@ -1471,7 +1465,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "sting";
         beam.range = 8;
         beam.rangeMax = 12;
-        beam.damage = 6 + power / 25;
+        beam.damage = dice_def( 1, 6 + power / 25 );
         beam.hit = 60;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
@@ -1484,7 +1478,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "iron bolt";
         beam.range = 4;
         beam.rangeMax = 8;
-        beam.damage = 108 + (power / 9);
+        beam.damage = dice_def( 3, 8 + (power / 9) );
         beam.hit = 6 + (power / 25);
         beam.type = SYM_MISSILE;
         beam.thrown = KILL_MON_MISSILE;
@@ -1497,7 +1491,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "stone arrow";
         beam.range = 8;
         beam.rangeMax = 12;
-        beam.damage = 105 + (power / 10);
+        beam.damage = dice_def( 3, 5 + (power / 10) );
         beam.hit = 5 + power / 47;
         beam.type = SYM_MISSILE;
         beam.thrown = KILL_MON_MISSILE;
@@ -1510,7 +1504,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "splash of poison";
         beam.range = 5;
         beam.rangeMax = 10;
-        beam.damage = 4 + power / 10;
+        beam.damage = dice_def( 1, 4 + power / 10 );
         beam.hit = 9;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
@@ -1523,11 +1517,11 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 7;
         beam.rangeMax = 14;
         beam.type = 0;
-        beam.colour = BCOL_DISINTEGRATION;
+        beam.flavour = BEAM_DISINTEGRATION;
         beam.thrown = KILL_MON;
-        beam.damage = 50;
-        beam.hit = 30 + (power / 10);
-        beam.flavour = BEAM_MAGIC;
+        beam.ench_power = 50;
+        // beam.hit = 30 + (power / 10);
+        beam.damage = dice_def( 1, 30 + (power / 10) );
         beam.isBeam = true;
         break;
 
@@ -1535,7 +1529,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "foul vapour";
         beam.range = 7;
         beam.rangeMax = 16;
-        beam.damage = 102 + power / 25;
+        beam.damage = dice_def( 3, 2 + power / 25 );
         beam.colour = GREEN;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1549,7 +1543,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "bolt of energy";
         beam.range = 9;
         beam.rangeMax = 23;
-        beam.damage = 125;
+        beam.damage = dice_def( 3, 25 );
         beam.hit = 9;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
@@ -1562,7 +1556,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.colour = RED;
         beam.range = 4;
         beam.rangeMax = 13;
-        beam.damage = 125;
+        beam.damage = dice_def( 3, 25 );
         beam.hit = 20;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1574,7 +1568,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "spray of metal splinters";
         beam.range = 7;
         beam.rangeMax = 16;
-        beam.damage = 120 + power / 20;
+        beam.damage = dice_def( 3, 20 + power / 20 );
         beam.colour = CYAN;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1588,9 +1582,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BCOL_BANISH;
+        beam.flavour = BEAM_BANISH;
         beam.thrown = KILL_MON_MISSILE;
-        beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
         break;
 

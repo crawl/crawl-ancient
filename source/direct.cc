@@ -375,7 +375,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                         if (mid == NON_MONSTER)
                             break;
 
-#if (!DEBUG)
+#if (!DEBUG_DIAGNOSTICS)
                         if (!player_monster_visible( &(menv[mid]) ))
                             break;
 #endif
@@ -653,13 +653,13 @@ static void describe_cell(int mx, int my)
 
         if (grd[mx][my] == DNGN_SHALLOW_WATER)
         {
-            if (!player_monster_visible(&menv[i]) && !mons_flies(menv[i].type))
+            if (!player_monster_visible(&menv[i]) && !mons_flies(&menv[i]))
             {
                 mpr("There is a strange disturbance in the water here.");
             }
         }
 
-#if DEBUG
+#if DEBUG_DIAGNOSTICS
         if (!player_monster_visible( &menv[i] ))
             mpr( "There is a non-visible monster here." );
 #else
@@ -722,18 +722,18 @@ static void describe_cell(int mx, int my)
 
         if (!mons_flag(menv[i].type, M_NO_EXP_GAIN))
         {
-            if (menv[i].behavior == BEH_SLEEP)
+            if (menv[i].behaviour == BEH_SLEEP)
             {
                 strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
                 strcat(info, " doesn't appear to have noticed you.");
                 mpr(info);
             }
             // wandering hostile with no target in LOS
-            else if (menv[i].behavior == BEH_WANDER && !mons_friendly(&menv[i])
+            else if (menv[i].behaviour == BEH_WANDER && !mons_friendly(&menv[i])
                     && menv[i].foe == MHITNOT)
             {
                 // special case: batty monsters get set to BEH_WANDER as
-                // part of their special behavior.
+                // part of their special behaviour.
                 if (!testbits(menv[i].flags, MF_BATTY))
                 {
                     strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
@@ -805,7 +805,7 @@ static void describe_cell(int mx, int my)
 #endif
     }
 
-#if (!DEBUG)
+#if (!DEBUG_DIAGNOSTICS)
   // removing warning
   look_clouds:
 #endif
@@ -874,6 +874,9 @@ static void describe_cell(int mx, int my)
             mpr("A wall of the weird stuff which makes up Pandemonium.");
         else
             mpr("A rock wall.");
+        break;
+    case DNGN_PERMAROCK_WALL:
+        mpr("An unnaturally hard rock wall.");
         break;
     case DNGN_CLOSED_DOOR:
         mpr("A closed door.");

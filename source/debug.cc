@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -487,6 +488,44 @@ static int debug_prompt_for_skill( const char *prompt )
 }
 #endif
 
+//---------------------------------------------------------------
+//
+// debug_prompt_for_int
+//
+// If nonneg, then it returns a non-negative number or -1 on fail
+// If !nonneg, then it returns an integer, and 0 on fail
+//
+//---------------------------------------------------------------
+#ifdef WIZARD
+static int debug_prompt_for_int( const char *prompt, bool nonneg )
+{
+    char specs[50];
+
+    mpr( prompt, MSGCH_PROMPT );
+
+#if defined(LINUX)
+    echo();
+    getstr(specs);
+    noecho();
+#elif defined(MAC) || defined(WIN32CONSOLE)
+    getstr(specs, sizeof(specs));
+#else
+    gets(specs);
+#endif
+
+    if (specs[0] == '\0')
+        return (nonneg ? -1 : 0);
+
+    char *end;
+    int   ret = strtol( specs, &end, 10 );
+
+    if ((ret < 0 && nonneg) || (ret == 0 && end == specs))
+        ret = (nonneg ? -1 : 0);
+
+    return (ret);
+}
+#endif
+
 /*
    Some debugging functions, accessable through keys like %, $, &, ) etc when
    a section of code in input() in acr.cc is uncommented.
@@ -500,16 +539,12 @@ static int debug_prompt_for_skill( const char *prompt )
 #ifdef WIZARD
 void cast_spec_spell(void)
 {
-    char specs[4];
+    int spell = debug_prompt_for_int( "Cast which spell by number? ", true );
 
-    mpr( "Cast which spell by number? ", MSGCH_PROMPT );
-
-    specs[0] = getche();
-    specs[1] = getche();
-    specs[2] = getche();
-    specs[3] = '\0';
-
-    your_spells(atoi(specs), 0, false);
+    if (spell == -1)
+        canned_msg( MSG_OK );
+    else
+        your_spells( spell, 0, false );
 }
 #endif
 
@@ -563,16 +598,12 @@ void cast_spec_spell_name(void)
 #ifdef WIZARD
 void create_spec_monster(void)
 {
-    char specs[3];
+    int mon = debug_prompt_for_int( "Create which monster by number? ", true );
 
-    mpr( "Create which monster by number? ", MSGCH_PROMPT );
-
-    specs[0] = getche();
-    specs[1] = getche();
-    specs[2] = getche();
-
-    create_monster( atoi(specs), 0, BEH_SLEEP, you.x_pos, you.y_pos,
-                    MHITNOT, 250 );
+    if (mon == -1)
+        canned_msg( MSG_OK );
+    else
+        create_monster( mon, 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250 );
 }                               // end create_spec_monster()
 #endif
 
@@ -610,28 +641,12 @@ void create_spec_monster_name(void)
 #ifdef WIZARD
 void level_travel( int delta )
 {
-    char  specs[50];
     int   old_level = you.your_level;
     int   new_level = you.your_level + delta;
 
     if (delta == 0)
     {
-        mpr( "Travel to which level? ", MSGCH_PROMPT );
-
-#if defined(LINUX)
-        echo();
-        getstr(specs);
-        noecho();
-#elif defined(MAC)
-        getstr(specs, sizeof(specs));
-#else
-        gets(specs);
-#endif
-
-        if (specs[0] == '\0')
-            return;
-
-        new_level = atoi(specs) - 1;
+        new_level = debug_prompt_for_int( "Travel to which level? ", true ) - 1;
     }
 
     if (new_level < 0 || new_level >= 50)
@@ -760,21 +775,8 @@ void create_spec_object(void)
     }
     else if (class_wanted == OBJ_GOLD)
     {
-        mpr( "How much gold? ", MSGCH_PROMPT );
-
-        specs[0] = '\0';
-
-#if defined(LINUX)
-        echo();
-        getstr(specs);
-        noecho();
-#elif defined(MAC)
-        getstr(specs, sizeof(specs));
-#else
-        gets(specs);
-#endif
-
-        if (specs[0] == '\0')
+        int amount = debug_prompt_for_int( "How much gold? ", true );
+        if (amount <= 0)
         {
             canned_msg( MSG_OK );
             return;
@@ -782,14 +784,7 @@ void create_spec_object(void)
 
         mitm[thing_created].base_type = OBJ_GOLD;
         mitm[thing_created].sub_type = 0;
-        mitm[thing_created].quantity = atoi(specs);
-
-        if (mitm[thing_created].quantity <= 0)
-        {
-            mitm[thing_created].base_type = OBJ_UNASSIGNED;
-            mitm[thing_created].quantity = 0;
-            return;
-        }
+        mitm[thing_created].quantity = amount;
     }
     else if (class_wanted == OBJ_CORPSES)
     {
@@ -1016,12 +1011,10 @@ void tweak_object(void)
     if (item == you.equip[EQ_WEAPON])
         you.wield_change = true;
 
-    // Conveniently, all the fields we're allowing for tweaking
-    // are currently shorts.
-    short *field_ptr = NULL;
-
     for (;;)
     {
+        void *field_ptr = NULL;
+
         for (;;)
         {
             item_name( you.inv[item], DESC_INVENTORY_EQUIP, info );
@@ -1035,14 +1028,11 @@ void tweak_object(void)
 
             if (keyin == 'a')
                 field_ptr = &(you.inv[item].plus);
-            if (keyin == 'b')
+            else if (keyin == 'b')
                 field_ptr = &(you.inv[item].plus2);
-#if 0
-            // Not currently a short
-            if (keyin == 'c')
+            else if (keyin == 'c')
                 field_ptr = &(you.inv[item].special);
-#endif
-            if (keyin == 'd')
+            else if (keyin == 'd')
                 field_ptr = &(you.inv[item].quantity);
             else if (keyin == ESCAPE || keyin == ' '
                     || keyin == '\r' || keyin == '\n')
@@ -1051,11 +1041,21 @@ void tweak_object(void)
                 return;
             }
 
-            if (field_ptr != NULL)
+            if (keyin >= 'a' && keyin <= 'd')
                 break;
         }
 
-        snprintf( info, INFO_SIZE, "Old value: %d (0x%04x)", *field_ptr, *field_ptr );
+        if (keyin != 'c')
+        {
+            const short *const ptr = static_cast< short * >( field_ptr );
+            snprintf( info, INFO_SIZE, "Old value: %d (0x%04x)", *ptr, *ptr );
+        }
+        else
+        {
+            const long *const ptr = static_cast< long * >( field_ptr );
+            snprintf( info, INFO_SIZE, "Old value: %ld (0x%08lx)", *ptr, *ptr );
+        }
+
         mpr( info );
 
         mpr( "New value? ", MSGCH_PROMPT );
@@ -1073,14 +1073,22 @@ void tweak_object(void)
         if (specs[0] == '\0')
             return;
 
-        int new_value = atoi(specs);
-        *field_ptr = new_value;
+        char *end;
+        int   new_value = strtol( specs, &end, 10 );
 
-        item_name( you.inv[item], DESC_INVENTORY_EQUIP, info );
-        mpr( info );
+        if (new_value == 0 && end == specs)
+            return;
 
-        if (!yesno( "Tweak another value?" ))
-            break;
+        if (keyin != 'c')
+        {
+            short *ptr = static_cast< short * >( field_ptr );
+            *ptr = new_value;
+        }
+        else
+        {
+            long *ptr = static_cast< long * >( field_ptr );
+            *ptr = new_value;
+        }
     }
 }
 #endif
@@ -1145,8 +1153,8 @@ void stethoscope(int mwh)
              i, menv[i].type, menv[i].hit_dice,
              menv[i].hit_points, menv[i].max_hit_points,
              menv[i].armour_class, menv[i].evasion,
-             mon_resist_mag( menv[i].type, menv[i].hit_dice ),
-             menv[i].behavior, menv[i].foe );
+             mons_resist_magic( &menv[i] ),
+             menv[i].behaviour, menv[i].foe );
 
     mpr( info );
 
@@ -1360,6 +1368,38 @@ void debug_add_skills(void)
 }                               // end debug_add_skills()
 #endif
 
+//---------------------------------------------------------------
+//
+// debug_set_skills
+//
+//---------------------------------------------------------------
+#ifdef WIZARD
+void debug_set_skills(void)
+{
+    int skill = debug_prompt_for_skill( "Which skill (by name)? " );
+
+    if (skill == -1)
+        mpr("That skill doesn't seem to exist.");
+    else
+    {
+        mpr( skill_name(skill) );
+        int amount = debug_prompt_for_int( "To what level? ", true );
+
+        if (amount == -1)
+            canned_msg( MSG_OK );
+        else
+        {
+            const int points = (skill_exp_needed( amount + 1 )
+                                * species_skills( skill, you.species )) / 100;
+
+            you.skill_points[skill] = points + 1;
+            you.skills[skill] = amount;
+
+            calc_total_skill_points();
+        }
+    }
+}                               // end debug_add_skills()
+#endif
 
 //---------------------------------------------------------------
 //
@@ -1411,21 +1451,15 @@ bool debug_add_mutation(void)
     {
         snprintf( info, INFO_SIZE, "Found: %s", mutation_name( mutation, 1 ) );
         mpr( info );
-        mpr( "How many levels?  ", MSGCH_PROMPT );
 
-#if defined(LINUX)
-        echo();
-        getstr(specs);
-        noecho();
-#elif defined(MAC) || defined(WIN32CONSOLE)
-        getstr(specs, sizeof(specs));
-#else
-        gets(specs);
-#endif
+        int levels = debug_prompt_for_int( "How many levels? ", false );
 
-        const int levels = atoi( specs );
-
-        if (levels > 0)
+        if (levels == 0)
+        {
+            canned_msg( MSG_OK );
+            success = false;
+        }
+        else if (levels > 0)
         {
             for (int i = 0; i < levels; i++)
             {

@@ -81,6 +81,7 @@ void blink(void);
 void cast_big_c(int pow, char cty);
 void cast_confusing_touch(int power);
 void cast_cure_poison(int mabil);
+int  allowed_deaths_door_hp(void);
 void cast_deaths_door(int pow);
 void cast_fire_storm(int powc);
 bool cast_revivification(int power);

@@ -71,7 +71,7 @@ bool mons_speaks(struct monsters *monster)
                          (temp_rand == 7) ? " cries."
                              : " says something but you don't hear anything.");
         }
-        else if (monster->behavior == BEH_FLEE)
+        else if (monster->behaviour == BEH_FLEE)
         {
             temp_rand = random2(10);
             strcat(info,
@@ -257,7 +257,7 @@ bool mons_speaks(struct monsters *monster)
         }
 
     }
-    else if (monster->behavior == BEH_FLEE)
+    else if (monster->behaviour == BEH_FLEE)
     {
         if (mons_holiness( monster->type ) == MH_DEMONIC
             && monster->type != MONS_IMP)

@@ -104,6 +104,7 @@ void tweak_object(void);
  * called from: acr
  * *********************************************************************** */
 void debug_add_skills(void);
+void debug_set_skills(void);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************

@@ -30,6 +30,7 @@
 #include "monplace.h"
 #include "monstuff.h"
 #include "player.h"
+#include "randart.h"
 #include "skills.h"
 #include "skills2.h"
 #include "spells1.h"
@@ -161,9 +162,9 @@ void special_wielded(void)
     case SPWLD_POWER:
         makes_noise = false;
 
-        // placed cap on effect to weaken it -- bwr
-        you.inv[you.equip[EQ_WEAPON]].plus = -3 + (you.hp / 13);
+        you.inv[you.equip[EQ_WEAPON]].plus = -3 + (you.hp / 11);
 
+        // placed cap on effect to weaken it -- bwr
         if (you.inv[you.equip[EQ_WEAPON]].plus > 20)
             you.inv[you.equip[EQ_WEAPON]].plus = 20;
 
@@ -175,7 +176,7 @@ void special_wielded(void)
 
         // giving Olgreb's staff a little lift since staves of poison have
         // been made better.
-        you.inv[you.equip[EQ_WEAPON]].plus = -1 + (you.skills[SK_POISON_MAGIC] / 3);
+        you.inv[you.equip[EQ_WEAPON]].plus = you.skills[SK_POISON_MAGIC] / 3;
         you.inv[you.equip[EQ_WEAPON]].plus2 = you.inv[you.equip[EQ_WEAPON]].plus;
         break;
 
@@ -334,27 +335,29 @@ void invoke_wielded(void)
     int temp_rand = 0;          // for probability determination {dlb}
     int power = 0;
 
+    int wield = you.equip[EQ_WEAPON];
+
     if (you.berserker)
     {
         canned_msg(MSG_TOO_BERSERK);
         return;
     }
-    else if (you.equip[EQ_WEAPON] == -1)
+    else if (wield == -1)
     {
         mpr("You aren't wielding anything!");
         return;
     }
 
-    switch (you.inv[you.equip[EQ_WEAPON]].base_type)
+    switch (you.inv[wield].base_type)
     {
     case OBJ_WEAPONS:
-        if (you.inv[you.equip[EQ_WEAPON]].special == SPWPN_REACHING)
+        if (get_weapon_brand( you.inv[wield] ) == SPWPN_REACHING)
         {
             reaching_weapon_attack();
         }
-        else
+        else if (is_fixed_artefact( you.inv[wield] ))
         {
-            switch (you.inv[you.equip[EQ_WEAPON]].special)
+            switch (you.inv[wield].special)
             {
             case SPWPN_STAFF_OF_DISPATER:
                 if (you.deaths_door || !enough_hp(11, true)
@@ -458,7 +461,7 @@ void invoke_wielded(void)
         break;
 
     case OBJ_STAVES:
-        switch (you.inv[you.equip[EQ_WEAPON]].sub_type)
+        switch (you.inv[wield].sub_type)
         {
         case STAFF_CHANNELING:
             if (you.magic_points == you.max_magic_points || one_chance_in(4))
@@ -514,23 +517,23 @@ void invoke_wielded(void)
             }
             else
             {
-                miscast_effect( SPTYP_CONJURATION, random2(5),
-                                                        random2(50), 100 );
+                miscast_effect( SPTYP_CONJURATION, random2(5), random2(50), 100 );
             }
             break;
 
         default:
-            staff_spell(you.equip[EQ_WEAPON]);
+            staff_spell( wield );
             break;
         }
         break;
 
     case OBJ_MISCELLANY:
-        switch (you.inv[you.equip[EQ_WEAPON]].sub_type)
+        switch (you.inv[wield].sub_type)
         {
         case MISC_BOTTLED_EFREET:
             efreet_flask();
             break;
+
         case MISC_CRYSTAL_BALL_OF_SEEING:
             ball_of_seeing();
             break;
@@ -665,18 +668,18 @@ void invoke_wielded(void)
 
 static void efreet_flask(void)
 {
-    int behavior = (!one_chance_in(5) ? BEH_FRIENDLY : BEH_HOSTILE);
+    int behaviour = (!one_chance_in(5) ? BEH_FRIENDLY : BEH_HOSTILE);
 
     mpr("You open the flask...");
 
     dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
 
-    if (create_monster( MONS_EFREET, ENCH_ABJ_V, behavior, you.x_pos,
+    if (create_monster( MONS_EFREET, ENCH_ABJ_V, behaviour, you.x_pos,
         you.y_pos, MHITYOU, 250 ) != -1)
     {
         mpr( "...and a huge efreet comes out." );
 
-        mpr( (behavior == BEH_FRIENDLY) ? "\"Thank you for releasing me!\""
+        mpr( (behaviour == BEH_FRIENDLY) ? "\"Thank you for releasing me!\""
                                         : "It howls insanely!" );
     }
     else
@@ -704,9 +707,7 @@ static void ball_of_seeing(void)
     }
     else if (use < 10)
     {
-        mpr("You feel confused.");
-        if ((you.conf += 10 + random2(10)) > 40)
-            you.conf = 40;
+        confuse_player( 10 + random2(10), false );
     }
     else if (use < 15
              || you.level_type == LEVEL_LABYRINTH
@@ -717,7 +718,7 @@ static void ball_of_seeing(void)
     else
     {
         mpr("You see a map of your surroundings!");
-        magic_mapping(80, 95 + random2(10));
+        magic_mapping( 15, 50 + random2( you.intel ) );
     }
 
     return;
@@ -781,8 +782,7 @@ static void staff_spell(int zap_device_2)
     set_ident_flags( you.inv[zap_device_2], ISFLAG_KNOW_TYPE );
     you.wield_change = true;
 
-    powc = player_mag_abil(false) + you.experience_level
-                                      + you.skills[SK_SPELLCASTING];
+    powc = player_mag_abil(false) + random2avg( you.experience_level + 10, 2 );
 
     powc *= you.intel;
     powc /= 10;
@@ -816,19 +816,18 @@ static void staff_spell(int zap_device_2)
         || you.experience_level < spell_difficulty(specspell))
     {
         mpr("Your brain hurts!");
-
-        you.conf += 2 + random2(4);
-
-        if (you.conf > 40)
-            you.conf = 40;
-
+        confuse_player( 2 + random2(4) );
         you.turn_is_over = 1;
         return;
     }
 
-    // note that spell staves cannot have empty spaces in strungy before
-    // the last real spell.
-    exercise_spell(specspell, true, true);
+    // Exercising the spell skills doesn't make very much sense given
+    // that spell staves are largely intended to supply spells to
+    // non-spellcasters, and they don't use spell skills to determine
+    // power in the same way that spellcasting does. -- bwr
+    //
+    // exercise_spell(specspell, true, true);
+
     your_spells(specspell, powc, false);
 
     dec_mp(spell_mana(specspell));
@@ -894,7 +893,7 @@ void tome_of_power(char sc_read_2)
         }
 
         beam.type = SYM_BURST;
-        beam.damage = 115;
+        beam.damage = dice_def( 3, 15 );
         // unsure about this    // BEAM_EXPLOSION instead? [dlb]
         beam.flavour = BEAM_FIRE;
         beam.target_x = you.x_pos;
@@ -1066,10 +1065,7 @@ static void ball_of_energy(void)
     }
     else if (use < 6)
     {
-        mpr("You feel confused.");
-
-        if ((you.conf += 10 + random2(10)) > 40)
-            you.conf = 40;
+        confuse_player( 10 + random2(10), false );
     }
     else
     {

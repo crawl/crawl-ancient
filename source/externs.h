@@ -68,6 +68,13 @@ struct coord_def
     // coord_def( int x_in = 0, int y_in = 0 ) : x(x_in), y(y_in) {};
 };
 
+struct dice_def
+{
+    int         num;
+    int         size;
+
+    dice_def( int n = 0, int s = 0 ) : num(n), size(s) {}
+};
 
 // output from direction() function:
 struct dist
@@ -88,35 +95,36 @@ struct dist
 struct bolt
 {
     // INPUT parameters set by caller
-    int range;                  // minimum range
-    int rangeMax;               // maximum range
-    int type;                   // missile gfx
-    int colour;
-    int flavour;
-    int source_x, source_y;     // beam origin
-    int damage, ench_power, hit;
-    int target_x, target_y;     // intended target
-    char thrower;               // what kind of thing threw this?
-    char ex_size;               // explosion radius (0==none)
-    int beam_source;            // NON_MONSTER or monster index #
-    char beam_name[40];
-    bool isBeam;                // beams? (can hits multiple targets?)
+    int         range;                 // minimum range
+    int         rangeMax;              // maximum range
+    int         type;                  // missile gfx
+    int         colour;
+    int         flavour;
+    int         source_x, source_y;    // beam origin
+    dice_def    damage;
+    int         ench_power, hit;
+    int         target_x, target_y;    // intended target
+    char        thrower;               // what kind of thing threw this?
+    char        ex_size;               // explosion radius (0==none)
+    int         beam_source;           // NON_MONSTER or monster index #
+    char        beam_name[40];
+    bool        isBeam;                // beams? (can hits multiple targets?)
 
 
     // OUTPUT parameters (tracing, ID)
-    bool obviousEffect;         // did an 'obvious' effect happen?
-    int fr_count, foe_count;    // # of times a friend/foe is "hit"
-    int fr_power, foe_power;    // total levels/hit dice affected
+    bool        obviousEffect;         // did an 'obvious' effect happen?
+    int         fr_count, foe_count;   // # of times a friend/foe is "hit"
+    int         fr_power, foe_power;   // total levels/hit dice affected
 
     // INTERNAL use - should not usually be set outside of beam.cc
-    bool isTracer;              // is this a tracer?
-    bool aimedAtFeet;           // this was aimed at self!
-    bool msgGenerated;          // an appropriate msg was already mpr'd
-    bool isExplosion;           // explosion phase (as opposed to beam phase)
-    bool smartMonster;          // tracer firer can guess at other mons. resists?
-    bool canSeeInvis;           // tracer firer can see invisible?
-    bool isFriendly;            // tracer firer is enslaved or pet
-    int  foeRatio;              // 100* foe ratio (see mons_should_fire())
+    bool        isTracer;      // is this a tracer?
+    bool        aimedAtFeet;   // this was aimed at self!
+    bool        msgGenerated;  // an appropriate msg was already mpr'd
+    bool        isExplosion;   // explosion phase (as opposed to beam phase)
+    bool        smartMonster;  // tracer firer can guess at other mons. resists?
+    bool        canSeeInvis;   // tracer firer can see invisible?
+    bool        isFriendly;    // tracer firer is enslaved or pet
+    int         foeRatio;      // 100* foe ratio (see mons_should_fire())
 };
 
 
@@ -269,12 +277,14 @@ struct player
 
   char is_undead;                     // see UNDEAD_STATES in enum.h
 
-  queue< delay_queue_item >  delay_queue;  // pending actions
+  std::queue< delay_queue_item >  delay_queue;  // pending actions
 
   FixedVector<unsigned char, 50>  skills;
   FixedVector<unsigned char, 50>  practise_skill;
-  FixedVector<unsigned int, 50>  skill_points;
-  int exp_available;
+  FixedVector<unsigned int, 50>   skill_points;
+  int  skill_cost_level;
+  int  total_skill_points;
+  int  exp_available;
 
   FixedArray<unsigned char, 5, 50> item_description;
   FixedVector<unsigned char, 50> unique_items;
@@ -331,7 +341,7 @@ struct monsters
     unsigned char target_y;
     FixedVector<int, 8> inv;
     unsigned char attitude;            // from MONS_ATTITUDE
-    unsigned int behavior;
+    unsigned int behaviour;
     unsigned int foe;
     FixedVector<unsigned int, NUM_MON_ENCHANTS> enchantment;
     unsigned char flags;               // bitfield of boolean flags
@@ -371,24 +381,24 @@ struct crawl_environment
     unsigned char rock_colour;
     unsigned char floor_colour;
 
-    FixedVector< item_def, MAX_ITEMS >    item;
-    FixedVector< monsters, MAX_MONSTERS >    mons;
+    FixedVector< item_def, MAX_ITEMS >       item;  // item list
+    FixedVector< monsters, MAX_MONSTERS >    mons;  // monster list
 
-    FixedArray< unsigned char, GXM, GYM >    grid;
-    FixedArray< unsigned char, GXM, GYM >    mgrid;
-    FixedArray< int, GXM, GYM >              igrid;
-    FixedArray< unsigned char, GXM, GYM >    map;
-    FixedArray< unsigned char, GXM, GYM >    cgrid;
+    FixedArray< unsigned char, GXM, GYM >    grid;  // terrain grid
+    FixedArray< unsigned char, GXM, GYM >    mgrid; // monster grid
+    FixedArray< int, GXM, GYM >              igrid; // item grid
+    FixedArray< unsigned char, GXM, GYM >    cgrid; // cloud grid
 
-    FixedArray< unsigned int, 19, 19>        show;
-    FixedArray< unsigned short, 19, 19>      show_col;
+    FixedArray< unsigned char, GXM, GYM >    map;   // discovered terrain
 
+    FixedArray< unsigned int, 19, 19>        show;      // view window char
+    FixedArray< unsigned short, 19, 19>      show_col;  // view window colour
 
-    FixedVector< cloud_struct, MAX_CLOUDS >  cloud;
+    FixedVector< cloud_struct, MAX_CLOUDS >  cloud; // cloud list
     unsigned char cloud_no;
 
-    FixedVector< shop_struct, MAX_SHOPS >    shop;
-    FixedVector< trap_struct, MAX_TRAPS >    trap;
+    FixedVector< shop_struct, MAX_SHOPS >    shop;  // shop list
+    FixedVector< trap_struct, MAX_TRAPS >    trap;  // trap list
 
     FixedVector< int, 20 >   mons_alloc;
     int                      trap_known;
@@ -485,7 +495,9 @@ struct scorefile_entry
     int         final_hp;
     char        wiz_mode;           // character used wiz mode
     time_t      birth_time;         // start time of character
-    time_t      death_time;           // end time of character
+    time_t      death_time;         // end time of character
+    int         num_diff_runes;     // number of rune types in inventory
+    int         num_runes;          // total number of runes in inventory
 };
 
 #endif // EXTERNS_H

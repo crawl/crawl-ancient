@@ -23,7 +23,7 @@
 /* ***********************************************************************
  * called from: monstuff beam effects fight view
  * *********************************************************************** */
-void behavior_event(struct monsters *mon, int event_type, int param = 0);
+void behaviour_event(struct monsters *mon, int event_type, int param = 0);
 
 
 /* ***********************************************************************
@@ -76,7 +76,7 @@ bool wounded_damaged(int wound_class);
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void monster(void);
+void handle_monsters(void);
 
 
 /* ***********************************************************************

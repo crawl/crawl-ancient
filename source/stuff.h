@@ -14,6 +14,8 @@
 #ifndef STUFF_H
 #define STUFF_H
 
+#include "externs.h"
+
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -43,7 +45,10 @@ int random2(int randmax);
 /* ***********************************************************************
  * called from: xxx
  * *********************************************************************** */
-int random2avg(int max, int rolls);
+int random2avg( int max, int rolls );
+
+int roll_dice( int num, int size );
+int roll_dice( const struct dice_def &dice );
 
 
 // last updated 12may2000 {dlb}
@@ -121,7 +126,8 @@ bool yesno(const char * str, bool safe = true);
 /* ***********************************************************************
  * called from: fight - monstuff - spells4 - view
  * *********************************************************************** */
-int distance(char x1, char y1, char x2, char y2);
+int grid_distance( int x, int y, int x2, int y2 );
+int distance( int x, int y, int x2, int y2);
 bool adjacent( int x, int y, int x2, int y2 );
 
 
