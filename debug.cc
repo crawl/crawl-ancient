@@ -15,6 +15,7 @@
 #include "stuff.h"
 #include "monplace.h"
 #include "mstruct.h"
+#include "skills.h"
 #include "spell.h"
 
 #define DEBUG
@@ -280,3 +281,19 @@ void stethoscope(int mwh)
         return;
 
 } // end of stethoscope()
+
+
+void debug_add_skills(void)
+{
+
+        char specs [2];
+
+        strcpy(info, "Practice which skill? ");
+        mpr(info);
+
+        specs [0] = getche();
+        specs [1] = getche();
+
+        exercise(atoi(specs), 100);
+
+}

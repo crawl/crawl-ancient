@@ -535,7 +535,7 @@ char *rand_armour_names[] = {
 " of the Untouchables",
 " of Grot",
 " of Grottiness",
-" of of Filth",
+" of Filth",
 /* 20: */
 " of Wonder",
 " of Wondrous Power",
@@ -627,7 +627,7 @@ srandom(globby);
 
 if (aclass == 2) power_level = (aplus - 50) / 2 + 4;
 
-if (aclass == 7) power_level = 2 + random4(6) + random4(6);
+if (aclass == 7) power_level = 1 + random4(4) + random4(4);
 
 if (power_level < 0) power_level = 0;
 
@@ -674,7 +674,7 @@ if (random4(4 + power_level) == 0 && aclass != 2) /* AC mod - not for armours */
 {
  proprt [1] = 1 + random4(3) + random4(3) + random4(3);
  power_level ++;
- if (random4(5) == 0)
+ if (random4(4) == 0)
  {
   proprt [1] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
@@ -685,7 +685,7 @@ if (random4(4 + power_level) == 0) /* ev mod */
 {
  proprt [2] = 1 + random4(3) + random4(3) + random4(3);
  power_level ++;
- if (random4(5) == 0)
+ if (random4(4) == 0)
  {
   proprt [2] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
@@ -696,7 +696,7 @@ if (random4(4 + power_level) == 0) /* str mod */
 {
  proprt [3] = 1 + random4(3) + random4(2);
  power_level ++;
- if (random4(5) == 0)
+ if (random4(4) == 0)
  {
   proprt [3] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
@@ -707,7 +707,7 @@ if (random4(4 + power_level) == 0) /* int mod */
 {
  proprt [4] = 1 + random4(3) + random4(2);
  power_level ++;
- if (random4(5) == 0)
+ if (random4(4) == 0)
  {
   proprt [4] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
@@ -718,7 +718,7 @@ if (random4(4 + power_level) == 0) /* dex mod */
 {
  proprt [5] = 1 + random4(3) + random4(2);
  power_level ++;
- if (random4(5) == 0)
+ if (random4(4) == 0)
  {
   proprt [5] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
@@ -732,7 +732,7 @@ if (random4(4 + power_level) == 0) /* to-hit */
 {
  proprt [26] = 1 + random4(3) + random4(2);
  power_level ++;
- if (random4(5) == 0)
+ if (random4(4) == 0)
  {
   proprt [26] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
@@ -743,7 +743,7 @@ if (random4(4 + power_level) == 0) /* to-dam */
 {
  proprt [27] = 1 + random4(3) + random4(2);
  power_level ++;
- if (random4(5) == 0)
+ if (random4(4) == 0)
  {
   proprt [27] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;

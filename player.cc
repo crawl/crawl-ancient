@@ -13,6 +13,7 @@
 #include "misc.h"
 #include "macro.h"
 #include "mstruct.h"
+#include "mutation.h"
 #include "output.h"
 #include "player.h"
 #include "priest.h"
@@ -27,7 +28,7 @@
 you[0].duration []:
 0 - liquid flames
 1 - icy armour
-2 - deflect missiles
+2 - repel missiles
 3 - prayer
 4 - regeneration
 5 - vorpal blade
@@ -45,6 +46,7 @@ you[0].duration []:
 17 - breathe something
 18 - transformation (duration)
 19 - death channel
+20 - deflect missiles
 */
 
 /* attributes
@@ -54,6 +56,9 @@ you[0].duration []:
 3 - control teleport
 4 - walk slowly (eg naga)
 5 - transformation (form)
+6 - Nemelex card gift countdown
+7 - Nemelex has given you a card table
+8 - How many demonic powers a dspawn has
 */
 
 /* armour list
@@ -99,10 +104,10 @@ int player_regen(void)
 {
  int rr = you[0].hp_max / 3;
  if (rr > 20) rr = 20 + ((rr - 20) / 2);
- /* rings */
+/* rings */
  if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 0) rr += 40;
  if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 0) rr += 40;
- /* spell */
+/* spell */
  if (you[0].duration [4] != 0) rr += 100;
 /* troll leather */
  if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 19) rr += 30;
@@ -110,6 +115,8 @@ int player_regen(void)
    if (you[0].species == 16) rr += 40;
 /* fast heal mutation */
  rr += you[0].mutation [15] * 20;
+/* ghouls heal slowly */
+ if (you[0].species == 35) rr /= 2;
  return rr;
 }
 
@@ -135,10 +142,14 @@ int player_res_magic(void)
   case 5: // deep elf
   rm += you[0].xl * 3;
   break;
+  case 32: // Spriggan
+  rm += you[0].xl * 4;
+  break;
  }
 
-/* armour: (checks cloak only) */
+/* armour: (checks cloak & body armour only) */
  if (you[0].equip [1] != -1 && you[0].inv_dam [you[0].equip [1]] % 30 == 12) rm += 30;
+ if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 12) rm += 30;
 /* rings of magic resistance */
  if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 20) rm += 40;
  if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 20) rm += 40;
@@ -276,8 +287,8 @@ int player_res_cold(void)
  if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 21) rc += 2;
  if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) rc ++;
  if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 18) rc --;
-/* Mummies are cold resistant */
- if (you[0].species == 12) rc ++;
+/* Mummies & ghouls are cold resistant */
+ if (you[0].species == 12 || you[0].species == 35) rc ++;
 /* randart wpns */
  rc += scan_randarts(7);
 /* White drac */
@@ -309,8 +320,8 @@ int player_res_poison(void)
 /* DSMails */
  if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) rp ++; /* Gold */
  if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 32) rp ++; /* Swamp */
-/* Mummies and Nagas are poison resistant */
- if (you[0].species == 12 || you[0].species == 13) rp ++;
+/* Mummies, Nagas and ghouls are poison resistant */
+ if (you[0].species == 12 || you[0].species == 13 || you[0].species == 35) rp ++;
 /* spell of resist poison */
  if (you[0].duration [16] > 0) rp ++;
 /* randarts */
@@ -450,10 +461,12 @@ int player_prot_life(void)
  if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 16) pl ++;
 /* DSMails
  if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) pl ++;*/
-/* Mummies are undead */
- if (you[0].species == 12) pl ++;
+/* Mummies are undead, as are ghouls */
+ if (you[0].species == 12 || you[0].species == 35) pl ++;
 /* randart wpns */
  pl += scan_randarts(10);
+/* demonic power */
+ pl += you[0].mutation [44];
 /* transformations */
  switch(you[0].attribute [5])
  {
@@ -470,8 +483,8 @@ int player_fast_run(void)
  if (you[0].duration [9] != 0) fr ++;
 /* Mutations */
  if (you[0].mutation [24] > 0) fr ++;
-/* Centaurs */
- if (you[0].species == 30) fr ++;
+/* Centaurs & Spriggans */
+ if (you[0].species == 30 || you[0].species == 32) fr ++;
 /* transformations */
  switch(you[0].attribute [5])
  {
@@ -521,7 +534,7 @@ int player_AC(void)
   AC += you[0].inv_plus [you[0].equip [7]];
   AC -= 50;
  }
- if (you[0].equip [0] != -1 && you[0].inv_dam [you[0].equip [0]] % 30 == 7)
+ if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 == 7)
   AC += 5;
  if (you[0].equip [5] != -1 && you[0].inv_dam [you[0].equip [5]] % 30 == 13)
   AC += 3;
@@ -534,8 +547,8 @@ int player_AC(void)
  if (you[0].species == 16) AC += 3; /* troll */
  if (you[0].species == 30) AC += 3; /* centaur */
 
- if (you[0].duration [1] > 0) AC += 4; // ice armour
- if (you[0].duration [11] > 0) AC += 7; // stonemail
+ if (you[0].duration [1] > 0) AC += 4 + you[0].skills [34] / 3; // ice armour
+ if (you[0].duration [11] > 0) AC += 5 + you[0].skills [36] / 2; // stonemail
 
 /* mutations */
  AC += you[0].mutation [0];
@@ -664,8 +677,8 @@ int player_see_invis(void)
  if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 7) si ++;
 /* armour: (checks head armour only) */
  if (you[0].equip [2] != -1 && you[0].inv_dam [you[0].equip [2]] % 30 == 5) si ++;
-/* Nagas have good eyesight */
- if (you[0].species == 13) si ++;
+/* Nagas & Spriggans have good eyesight */
+ if (you[0].species == 13 || you[0].species == 32) si ++;
 /* randart wpns */
  si += scan_randarts(12);
  return si;
@@ -1564,7 +1577,7 @@ if (you[0].xl > 7 && you[0].xl % 4 == 0) increase_stats(random2(2) * 2);
 break;
 
 case 30: // centaur
-if (you[0].xl % 4 == 0) increase_stats(0 + random2(2) * 2); /* str or dex*/
+if (you[0].xl % 4 == 0) increase_stats(0 + random2(2) * 2); /* str or dex */
 if (you[0].xl <= 16)
 {
  you[0].hp_max ++;
@@ -1574,6 +1587,10 @@ if (you[0].xl % 2 == 0)
 {
  you[0].base_hp2 ++;
  you[0].hp_max ++;
+}
+if (you[0].xl % 3 == 0)
+{
+ you[0].base_ep2 --;
 }
 break;
 
@@ -1590,6 +1607,87 @@ if (you[0].xl % 2 == 0)
  you[0].hp_max ++;
 }
 if (you[0].xl % 3 != 0) you[0].base_ep2 ++;
+break;
+
+case 32: // spriggan
+if (you[0].xl <= 16)
+{
+ you[0].hp_max --;
+ you[0].base_hp2 --;
+}
+if (you[0].xl % 3 != 0)
+{
+ you[0].hp_max --;
+ you[0].base_hp2 --;
+}
+you[0].base_ep2 ++;
+if (you[0].xl % 5 == 0) increase_stats(1 + random2(2));
+break;
+case 33: // Minotaur
+if (you[0].xl <= 16)
+{
+ you[0].hp_max ++;
+ you[0].base_hp2 ++;
+}
+if (you[0].xl % 2 == 0)
+{
+ you[0].base_hp2 ++;
+ you[0].hp_max ++;
+}
+if (you[0].xl % 2 == 0)
+{
+ you[0].base_ep2 --;
+}
+if (you[0].xl % 4 == 0) increase_stats(0 + random2(2) * 2); /* str or dex */
+break;
+case 34: // demonspawn
+if (you[0].attribute [8] == 0 && (you[0].xl == 4 || (you[0].xl < 4 && random2(3) == 0)))
+ demonspawn();
+if (you[0].attribute [8] == 1 && you[0].xl > 4 && (you[0].xl == 9 || (you[0].xl < 9 && random2(3) == 0)))
+ demonspawn();
+if (you[0].attribute [8] == 2 && you[0].xl > 9 && (you[0].xl == 14 || (you[0].xl < 14 && random2(3) == 0)))
+ demonspawn();
+if (you[0].attribute [8] == 3 && you[0].xl > 14 && (you[0].xl == 19 || (you[0].xl < 19 && random2(3) == 0)))
+ demonspawn();
+if (you[0].attribute [8] == 4 && you[0].xl > 19 && (you[0].xl == 24 || (you[0].xl < 24 && random2(3) == 0)))
+ demonspawn();
+if (you[0].attribute [8] == 5 && you[0].xl == 27)
+ demonspawn();
+/*if (you[0].attribute [8] == 6 && (you[0].xl == 8 || (you[0].xl < 8 && random2(3) == 0))
+ demonspawn();*/
+if (you[0].xl % 4 == 0) increase_stats(random2(3));
+break;
+case 35: // Ghoul
+if (you[0].xl <= 16)
+{
+ you[0].hp_max ++;
+ you[0].base_hp2 ++;
+}
+if (you[0].xl % 2 == 0)
+{
+ you[0].base_hp2 ++;
+ you[0].hp_max ++;
+}
+if (you[0].xl % 3 == 0)
+{
+ you[0].base_ep2 --;
+}
+if (you[0].xl % 5 == 0) increase_stats(0);
+break;
+case 36: // Kenku
+if (you[0].xl <= 16)
+{
+ you[0].hp_max --;
+ you[0].base_hp2 --;
+}
+if (you[0].xl % 3 == 0)
+{
+ you[0].hp_max --;
+ you[0].base_hp2 --;
+}
+if (you[0].xl % 4 == 0) increase_stats(random2(3));
+if (you[0].xl == 5) mpr("You have gained the ability to fly.");
+if (you[0].xl == 15) mpr("You can now fly continuously.");
 break;
 
 }
@@ -1658,7 +1756,7 @@ switch(which_stat)
 int check_stealth(void)
 {
 
-int stealth = 20 + you[0].skills [15] * 8;
+int stealth = 20 + you[0].skills [15] * 12;
 
 if (you[0].burden_state == 2) stealth /= 2;
 if (you[0].burden_state == 5) stealth /= 5;
@@ -1672,16 +1770,20 @@ if (you[0].equip [6] != -1)
 
 if (you[0].equip [4] != -1)
 {
- if (you[0].inv_dam [you[0].equip [4]] % 30 == 14) stealth *= 2;
+ if (you[0].inv_dam [you[0].equip [4]] % 30 == 14) stealth += 50; // boots of stealth
  if (you[0].inv_dam [you[0].equip [4]] / 30 == 4) stealth += 20; // elven
+ /* boots */
 }
+
 
 if (you[0].equip [1] != -1)
 {
  if (you[0].inv_dam [you[0].equip [1]] / 30 == 4) stealth += 20; // elven
+ /* cloaks */
 }
 
 if (you[0].lev != 0) stealth += 10;
+ else if (grd [you[0].x_pos] [you[0].y_pos] == 65) stealth /= 2; /* Walking through water */
 
 if (you[0].special_wield == 50) stealth = 0; // shadow lantern
 
@@ -1757,6 +1859,9 @@ switch(you[0].attribute [5])
  case 1: mpr("You are in spider-form."); break;
  case 2: mpr("You have blades for hands."); break;
  case 3: mpr("You are a statue."); break;
+ case 4: mpr("You are an ice creature."); break;
+ case 5: mpr("You are in dragon-form."); break;
+ case 6: mpr("You are in lich-form."); break;
 }
 
 if (you[0].duration [0] != 0)
@@ -1970,6 +2075,11 @@ switch(speci)
  case 29: return "Draconian"; /*  */
  case 30: return "Centaur";
  case 31: return "Demigod";
+ case 32: return "Spriggan";
+ case 33: return "Minotaur";
+ case 34: return "Demonspawn";
+ case 35: return "Ghoul";
+ case 36: return "Kenku";
 
 }
 
@@ -1981,6 +2091,7 @@ char wearing_amulet(char which_am)
 {
 
  if (which_am == 42 && (you[0].duration [12] != 0 || (you[0].species >= 18 && you[0].species <= 29) || you[0].attribute [5] == 5)) return 1; // controlled flight - duration [10] : flight spell in operation
+ if (which_am == 37 && you[0].mutation [36] != 0) return 1;
  if (which_am == 39 || which_am == 41)
  {
   if (you[0].equip [1] != -1 && you[0].inv_dam [you[0].equip [1]] % 30 == 18)
@@ -2006,11 +2117,11 @@ switch(species)
  case 6: return 12; // s e
  case 7: return 13; // h dw
  case 8: return 13; // m dw
- case 9: return 10; // 1/2
+ case 9: return 10; // 1/2ling
  case 10: return 10; // ho
  case 11: return 10; // kobold
  case 12: return 15; // mummy
- case 13: return 15; // naga
+ case 13: return 12; // naga
  case 14: return 11; // Gnome
  case 15: return 14; // ogre
  case 16: return 15; // troll
@@ -2026,10 +2137,14 @@ switch(species)
  case 26:
  case 27:
  case 28:
- case 29: return 15; // draconian
+ case 29: return 14; // draconian
  case 30: return 14; // centaur
  case 31: return 16; // demigod
-
+ case 32: return 13; // Spriggan
+ case 33: return 14; // Minotaur
+ case 34: return 15; // Demonspawn
+ case 35: return 12; // Ghoul
+ case 36: return 13; // Kenku
  default: return 0;
 }
 
@@ -2135,7 +2250,7 @@ for (i = 0; i < 7; i ++)
 
 }
 
-for (i = 8; i < 10; i ++) /* rings + amulets */
+for (i = 7; i < 10; i ++) /* rings + amulets */
 {
  if (you[0].equip [i] == -1) continue;
  if (you[0].inv_dam [you[0].equip [i]] != 200) continue;

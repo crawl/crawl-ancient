@@ -17,6 +17,7 @@
 #include "misc.h"
 #include "itemname.h"
 #include "mstruct.h"
+#include "skills2.h"
 
 /*
 IMPORTANT: There is also an eating bit in item_use.cc, so alter that with
@@ -28,6 +29,7 @@ void eat_meat(int fod_eat_2);
 char eat_from_floor(void);
 char butchery(void);
 int eating(int func_pass [10], unsigned char item_class, int food_eat_3);
+void ghoul_eat_flesh(char rotting);
 
 
 void food_change(void)
@@ -47,6 +49,12 @@ if (you[0].hunger <= 2600)
 if (you[0].hunger < 7000)
 {
  you[0].hung_state = 3; // -
+ return;
+}
+if (you[0].species == 35)
+{
+ you[0].hunger = 10999;
+ you[0].hung_state = 3;
  return;
 }
 if (you[0].hunger < 11000)
@@ -106,7 +114,7 @@ char eat_from_floor(void)
 {
 int gloggj;
 int o = igrd [you[0].x_pos] [you[0].y_pos];
-int k;
+int k = 0; /* initialised in the loop */
 unsigned char keyin;
 //gloggo = 0;
 int items_here = 0;
@@ -171,7 +179,7 @@ if (items_here == 1)
                         you[0].hung_ch = 1;
 
 
-   if (you[0].species == 11 || you[0].mutation [10] == 3) // kobold
+   if (you[0].species == 35 || you[0].species == 11 || you[0].mutation [10] == 3) // kobold, ghoul, mutant
    {
     if ((mitm.itype [item_got] >= 1 && mitm.itype [item_got] <= 4) || (mitm.itype [item_got] >= 7 && mitm.itype [item_got] <= 17))
      {
@@ -188,7 +196,7 @@ if (items_here == 1)
      mpr("You can't eat raw meat!");
      return 0;
     }
-    if (you[0].hung_state > 2 && wearing_amulet(40) == 0 && you[0].species != 11 && you[0].species != 15 && you[0].species != 16 && you[0].mutation [10] == 0)
+    if (you[0].hung_state > 2 && wearing_amulet(40) == 0 && you[0].species != 11 && you[0].species != 15 && you[0].species != 16 && you[0].species != 35 && you[0].mutation [10] == 0)
     {
      strcpy(info, "You aren't quite hungry enough to eat that!");
      mpr(info);
@@ -267,7 +275,7 @@ if (items_here > 1)
 
                         item_got = o;
 
-   if (you[0].species == 11 || you[0].mutation [10] == 3) // kobold
+   if (you[0].species == 35 || you[0].species == 11 || you[0].mutation [10] == 3) // kobold etc
    {
     if ((mitm.itype [item_got] >= 1 && mitm.itype [item_got] <= 4) || (mitm.itype [item_got] >= 7 && mitm.itype [item_got] <= 17))
      {
@@ -284,7 +292,7 @@ if (items_here > 1)
      mpr("You can't eat raw meat!");
      return 0;
     }
-    if (you[0].hung_state > 2 && wearing_amulet(40) == 0 && you[0].species != 11 && you[0].species != 15 && you[0].species != 16 && you[0].mutation [10] == 0)
+    if (you[0].hung_state > 2 && wearing_amulet(40) == 0 && you[0].species != 11 && you[0].species != 15 && you[0].species != 16 && you[0].species != 35 && you[0].mutation [10] == 0)
     {
      strcpy(info, "You aren't quite hungry enough to eat that!");
      mpr(info);
@@ -373,7 +381,9 @@ char butchery(void)
 
 //gloggo = 0;
 int items_here = 0;
-int o, k, item_got;
+int o = igrd [you[0].x_pos] [you[0].y_pos];
+int k = 0;
+int item_got;
 unsigned char keyin;
 
 if (igrd [you[0].x_pos] [you[0].y_pos] == 501)
@@ -458,10 +468,10 @@ if (items_here == 1)
    you[0].delay_t = 4;
    you[0].delay_doing = 4;
 
-   if (you[0].species == 16 || you[0].attribute [5] == 2 || you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
+   if (you[0].species == 16 || you[0].species == 35 || you[0].attribute [5] == 2 || you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
     else mpr("You start hacking away.");
 
-   if (you[0].duration [3] != 0 && (you[0].religion == 3 || you[0].religion == 8 || you[0].religion == 10))
+   if (you[0].duration [3] != 0 && (you[0].religion == 7 || you[0].religion == 8 || you[0].religion == 10))
    {
     offer_corpse(item_got);
     you[0].turnover = 1;
@@ -487,9 +497,9 @@ if (items_here > 1)
 
         o = igrd [you[0].x_pos] [you[0].y_pos];
 
-        for (k = 0; k < items_here; k++) // use k because of call to relay_message()
+        for (k = 0; k < items_here; k++)
         {
-   if (mitm.iclass [o] != 14 || mitm.itype [o] != 0) goto out_of_eating; // && mitm.iclass [o] != 14) goto out_of_eating;
+                    if (mitm.iclass [o] != 14 || mitm.itype [o] != 0) goto out_of_eating; // && mitm.iclass [o] != 14) goto out_of_eating;
                         strcpy(info, "Butcher ");
                         it_name(o, 3, str_pass);
                         strcat(info, str_pass);
@@ -514,10 +524,10 @@ if (items_here > 1)
    you[0].delay_t = 4;
    you[0].delay_doing = 4;
 
-   if (you[0].species == 16 || you[0].attribute [5] == 2 || you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
+   if (you[0].species == 16 || you[0].species == 35 || you[0].attribute [5] == 2 || you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
     else mpr("You start hacking away.");
 
-   if (you[0].duration [3] != 0 && (you[0].religion == 3 || you[0].religion == 8 || you[0].religion == 10))
+   if (you[0].duration [3] != 0 && (you[0].religion == 7 || you[0].religion == 8 || you[0].religion == 10))
    {
     offer_corpse(item_got);
     you[0].turnover = 1;
@@ -573,6 +583,11 @@ void eat_meat(int fod_eat_2)
  {
   case 1:
   appetising :
+  if (you[0].species == 35)
+  {
+   ghoul_eat_flesh(0);
+   break;
+  }
   if (you[0].species == 10 || you[0].species == 11 || you[0].species == 15 || you[0].species == 16 || you[0].mutation [10] > 0)
    mpr("This raw flesh tastes good.");
     else
@@ -585,6 +600,11 @@ void eat_meat(int fod_eat_2)
   case 2:
   if (random2(3) != 0) goto appetising;
   case 50:
+  if (you[0].species == 35)
+  {
+   ghoul_eat_flesh(fod_eat_2 == 50);
+   break;
+  }
   if ((you[0].species == 11 || you[0].species == 16) && random2(15) != 0) goto appetising; // kobold, troll
   if ((you[0].species == 10  || you[0].species == 15) && random2(5) != 0) goto appetising; // orc, ogre
   if (you[0].is_undead != 0) goto appetising;
@@ -620,6 +640,55 @@ void eat_meat(int fod_eat_2)
 food_change();
 }
 
+void ghoul_eat_flesh(char rotting)
+{
+
+ char healed = 0;
+
+ if (rotting == 0)
+ {
+   mpr("This raw flesh tastes good.");
+   if (random2(5) != 0) healed = 1;
+   if (random2(3) != 0 && you[0].base_hp < 5000)
+   {
+     you[0].base_hp ++;
+     mpr("You feel more resilient.");
+   }
+ }
+  else
+ {
+   mpr("This rotting flesh tastes delicious!");
+   healed = 1;
+   if (random2(4) != 0 && you[0].base_hp < 5000)
+   {
+     you[0].base_hp ++;
+     mpr("You feel more resilient.");
+         you[0].hunger += 500;
+   }
+ }
+
+ if (you[0].strength < you[0].max_strength && random2(5) == 0)
+ {
+  mpr("You feel your strength returning.");
+  you[0].strength ++;
+  you[0].strength_ch = 1;
+ }
+
+
+if (healed == 1 && you[0].hp < you[0].hp_max)
+{
+ you[0].hp += 1 + random2(5) + random2(you[0].xl + 1);
+ if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
+}
+
+you[0].hunger += 1500;
+you[0].delay_t = 3;
+you[0].delay_doing = 0;
+
+calc_hp();
+you[0].hp_ch = 1;
+
+}
 
 
 int eating(int func_pass [10], unsigned char item_class, int food_eat_3)
@@ -640,7 +709,7 @@ switch(food_eat_3)
         return 0;
 
         case 1:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+    if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
          else mpr("That bread ration really hit the spot!");
         func_pass [0] -= you[0].mutation [10] * 1000;
         func_pass [0] += you[0].mutation [11] * 500;

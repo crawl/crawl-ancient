@@ -14,16 +14,21 @@
 
 #include "ability.h"
 #include "bang.h"
+#include "beam.h"
+#include "effects.h"
 #include "items.h"
 #include "it_use2.h"
 #include "macro.h"
 #include "misc.h"
+#include "monplace.h"
 #include "player.h"
 #include "randart.h"
 #include "religion.h"
+#include "spell.h"
 #include "spells1.h"
 #include "spells2.h"
 #include "spells3.h"
+#include "skills.h"
 #include "skills2.h"
 #include "spells3.h"
 #include "stuff.h"
@@ -171,6 +176,92 @@ void species_ability(void) /* Now handles all special abilities */
                 abil_c ++;
         }
 
+        if (you[0].species == 36 && you[0].xl >= 5 && you[0].duration [12] == 0 && you[0].lev == 0) // kenku can fly, but only from the ground (until lev 15, when it becomes permanent until revoked)
+        {
+                ability [abil_c] = 14;
+                ability_fail [abil_c] = 45 - you[0].xl * 3;
+                abil_c ++;
+        } /* Kenku can fly */
+
+/* Assorted demonic powers follow: */
+
+        if (you[0].mutation [45] != 0) // Summon minor demon
+        {
+         ability [abil_c] = 15;
+         ability_fail [abil_c] = 27 - you[0].xl;
+         abil_c ++;
+        }
+
+        if (you[0].mutation [46] != 0) // Summon demon
+        {
+         ability [abil_c] = 16;
+         ability_fail [abil_c] = 40 - you[0].xl;
+         abil_c ++;
+        }
+
+        if (you[0].mutation [47] != 0) // Hellfire
+        {
+         ability [abil_c] = 17;
+         ability_fail [abil_c] = 50 - you[0].xl;
+         abil_c ++;
+        }
+
+        if (you[0].mutation [48] != 0) // Torment
+        {
+         ability [abil_c] = 18;
+         ability_fail [abil_c] = 60 - you[0].xl;
+         abil_c ++;
+        }
+
+        if (you[0].mutation [49] != 0) // Raise Dead
+        {
+         ability [abil_c] = 19;
+         ability_fail [abil_c] = 50 - you[0].xl;
+         abil_c ++;
+        }
+
+        if (you[0].mutation [50] != 0) // Control Demon
+        {
+         ability [abil_c] = 20;
+         ability_fail [abil_c] = 35 - you[0].xl;
+         abil_c ++;
+        }
+
+        if (you[0].mutation [51] != 0) // Gate to Pan
+        {
+         ability [abil_c] = 21;
+         ability_fail [abil_c] = 57 - you[0].xl * 2;
+         abil_c ++;
+        }
+
+        if (you[0].mutation [53] != 0) // Channel from Hell
+        {
+         ability [abil_c] = 22;
+         ability_fail [abil_c] = 30 - you[0].xl;
+         abil_c ++;
+        }
+
+        if (you[0].mutation [55] != 0) // Throw flame
+        {
+         ability [abil_c] = 23;
+         ability_fail [abil_c] = 10 - you[0].xl;
+         abil_c ++;
+        }
+
+        if (you[0].mutation [56] != 0) // Throw frost
+        {
+         ability [abil_c] = 24;
+         ability_fail [abil_c] = 10 - you[0].xl;
+         abil_c ++;
+        }
+
+        if (you[0].mutation [57] != 0) // Bolt of Draining
+        {
+         ability [abil_c] = 25;
+         ability_fail [abil_c] = 30 - you[0].xl;
+         abil_c ++;
+        }
+
 /* Most abilities from items are displaced by 50, so that abilities obtained
 naturally or from mutations can be put earlier, to avoid the menu letters
 always changing around */
@@ -228,32 +319,37 @@ always changing around */
                 {
                         case 1:
                                 ability [abil_c] = 110;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 30 - (you[0].piety / 10) - you[0].skills [38] * 6;
                                 abil_c ++;
                                 break;
                         case 2:
                                 ability [abil_c] = 120;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 30 - (you[0].piety / 10) - you[0].skills [38] * 6;
                                 abil_c ++;
                                 break;
                         case 3:
                                 ability [abil_c] = 130;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 30 - (you[0].piety / 10) - you[0].skills [38] * 6;
+                                abil_c ++;
+                                break;
+                        case 4:
+                                ability [abil_c] = 140;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 10) - you[0].skills [38] * 3;
                                 abil_c ++;
                                 break;
                         case 7:
                                 ability [abil_c] = 170;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 30 - (you[0].piety / 10) - you[0].skills [38] * 6;
                                 abil_c ++;
                                 break;
                         case 10:
                                 ability [abil_c] = 200;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 30 - you[0].piety;
                                 abil_c ++;
                                 break;
                         case 12:
                                 ability [abil_c] = 220;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 30 - (you[0].piety / 10) - you[0].skills [38] * 6;
                                 abil_c ++;
                                 break;
                 }
@@ -265,37 +361,42 @@ always changing around */
                 {
                         case 1:
                                 ability [abil_c] = 111;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 10) - you[0].skills [38] * 5;
                                 abil_c ++;
                                 break;
                         case 2:
                                 ability [abil_c] = 121;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 10) - you[0].skills [38] * 5;
+                                abil_c ++;
+                                break;
+                        case 4:
+                                ability [abil_c] = 141;
+                                ability_fail [abil_c] = 50 - (you[0].piety / 10) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                         case 7:
                                 ability [abil_c] = 171;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 10) - you[0].skills [38] * 5;
                                 abil_c ++;
                                 break;
                         case 8:
                                 ability [abil_c] = 180;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 10) - you[0].skills [38] * 5;
                                 abil_c ++;
                                 break;
                         case 9:
                                 ability [abil_c] = 190;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 10) - you[0].skills [38] * 5;
                                 abil_c ++;
                                 break;
                         case 10:
                                 ability [abil_c] = 201;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 3);
                                 abil_c ++;
                                 break;
                         case 12:
                                 ability [abil_c] = 221;
-                                ability_fail [abil_c] = 40 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 20 - (you[0].piety / 10) - you[0].skills [38] * 5;
                                 abil_c ++;
                                 break;
                 }
@@ -307,27 +408,32 @@ always changing around */
                 {
                         case 1:
                                 ability [abil_c] = 112;
-                                ability_fail [abil_c] = 80 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 60 - (you[0].piety / 10) - you[0].skills [38] * 5;
                                 abil_c ++;
                                 break;
                         case 2:
                                 ability [abil_c] = 122;
-                                ability_fail [abil_c] = 80 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 60 - (you[0].piety / 10) - you[0].skills [38] * 5;
                                 abil_c ++;
                                 break;
                         case 3:
                                 ability [abil_c] = 132;
-                                ability_fail [abil_c] = 50 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 10) - you[0].skills [38] * 5;
+                                abil_c ++;
+                                break;
+                        case 4:
+                                ability [abil_c] = 142;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 10) - you[0].skills [38] * 5;
                                 abil_c ++;
                                 break;
                         case 8:
                                 ability [abil_c] = 181;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 10) - you[0].skills [38] * 5;
                                 abil_c ++;
                                 break;
                         case 12:
                                 ability [abil_c] = 222;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 3) - you[0].xl;
+                                ability_fail [abil_c] = 40 - (you[0].piety / 10) - you[0].skills [38] * 5;
                                 abil_c ++;
                                 break;
                 }
@@ -339,32 +445,37 @@ always changing around */
                 {
                         case 1:
                                 ability [abil_c] = 113;
-                                ability_fail [abil_c] = 80 - (you[0].piety / 4) - you[0].xl;
+                                ability_fail [abil_c] = 70 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                         case 2:
                                 ability [abil_c] = 123;
-                                ability_fail [abil_c] = 80 - (you[0].piety / 4) - you[0].xl;
+                                ability_fail [abil_c] = 70 - (you[0].piety / 15) - you[0].skills [38] * 4;
+                                abil_c ++;
+                                break;
+                        case 4:
+                                ability [abil_c] = 143;
+                                ability_fail [abil_c] = 60 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                         case 6:
                                 ability [abil_c] = 160;
-                                ability_fail [abil_c] = 25 - you[0].intel;
+                                ability_fail [abil_c] = 40 - you[0].intel - you[0].skills [38];
                                 abil_c ++;
                                 break;
                         case 8:
                                 ability [abil_c] = 182;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 4) - you[0].xl;
+                                ability_fail [abil_c] = 60 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                         case 10:
                                 ability [abil_c] = 202;
-                                ability_fail [abil_c] = 80 - (you[0].piety / 4) - you[0].xl;
+                                ability_fail [abil_c] = 70 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                         case 12:
                                 ability [abil_c] = 223;
-                                ability_fail [abil_c] = 80 - (you[0].piety / 4) - you[0].xl;
+                                ability_fail [abil_c] = 70 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                 }
@@ -376,32 +487,37 @@ always changing around */
                 {
                         case 1:
                                 ability [abil_c] = 114;
-                                ability_fail [abil_c] = 80 - (you[0].piety / 5) - you[0].xl;
+                                ability_fail [abil_c] = 80 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                         case 2:
                                 ability [abil_c] = 124;
-                                ability_fail [abil_c] = 80 - (you[0].piety / 5) - you[0].xl;
+                                ability_fail [abil_c] = 80 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                         case 3:
                                 ability [abil_c] = 133;
-                                ability_fail [abil_c] = 80 - (you[0].piety / 5) - you[0].xl;
+                                ability_fail [abil_c] = 80 - (you[0].piety / 15) - you[0].skills [38] * 4;
+                                abil_c ++;
+                                break;
+                        case 4:
+                                ability [abil_c] = 144;
+                                ability_fail [abil_c] = 70 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                         case 7:
                                 ability [abil_c] = 172;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 4) - you[0].xl;
+                                ability_fail [abil_c] = 70 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                         case 8:
                                 ability [abil_c] = 183;
-                                ability_fail [abil_c] = 70 - (you[0].piety / 5) - you[0].xl;
+                                ability_fail [abil_c] = 70 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                         case 12:
                                 ability [abil_c] = 224;
-                                ability_fail [abil_c] = 80 - (you[0].piety / 6) - you[0].xl;
+                                ability_fail [abil_c] = 80 - (you[0].piety / 15) - you[0].skills [38] * 4;
                                 abil_c ++;
                                 break;
                 }
@@ -491,6 +607,8 @@ if (you[0].duration [17] != 0)
                 you[0].turnover = 1;
                 return;
         }
+
+    you[0].turnover = 1;
 
         you[0].ep_ch = 1;
 
@@ -630,7 +748,282 @@ if (you[0].duration [17] != 0)
                         if (go_berserk() == 0) mpr("You fail to go berserk.");
                         break;
 
+                case 14: // Fly (kenku). Eventually becomes permanent (handled in acr.cc)
+                        if (you[0].hung_state <= 2)
+                        {
+                                strcpy(info, "You're too hungry.");
+                                mpr(info);
+                                return;
+                        }
+                        if (you[0].ep < 3)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 3;
+                        you[0].ep_ch = 1;
+                        you[0].hunger -= 100 + random2(100) + random2(100);
+            cast_fly(you[0].xl * 4);
+            if (you[0].xl >= 15)
+            {
+              mpr("You feel very comfortable in the air.");
+              you[0].lev = 100;
+              you[0].duration [12] = 100;
+            }
+                        break;
 
+/* Demonic powers follow: */
+
+                case 15:  /* summon minor demon */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 3)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        if (you[0].hp <= 3)
+                        {
+                                mpr("You don't have enough vitality to use that power.");
+                                return;
+                        }
+                        you[0].ep -= 3;
+                        you[0].ep_ch = 1;
+                        you[0].hp -= 3;
+                        you[0].hp_ch = 1;
+                        you[0].hunger -= 50 + random2(100) + random2(100);
+                        summon_ice_beast_etc(you[0].xl * 4, summon_any_demon(0));
+                        break;
+
+                case 16:  /* summon demon */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 5)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        if (you[0].hp <= 5)
+                        {
+                                mpr("You don't have enough vitality to use that power.");
+                                return;
+                        }
+                        you[0].ep -= 5;
+                        you[0].ep_ch = 1;
+                        you[0].hp -= 5;
+                        you[0].hp_ch = 1;
+                        you[0].hunger -= 100 + random2(200) + random2(200);
+                        summon_ice_beast_etc(you[0].xl * 4, summon_any_demon(1));
+                        break;
+
+                case 17:  /* Hellfire */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 8)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        if (you[0].hp <= 8)
+                        {
+                                mpr("You don't have enough vitality to use that power.");
+                                return;
+                        }
+                        you[0].ep -= 8;
+                        you[0].ep_ch = 1;
+                        you[0].hp -= 8;
+                        you[0].hp_ch = 1;
+                        you[0].hunger -= 200 + random2(300) + random2(300);
+            your_spells(118, 100, 0); // power (2nd number) is meaningless
+                        break;
+
+                case 18:  /* Torment */
+                        if (you[0].is_undead != 0)
+                        {
+                                mpr("Undead cannot use this ability.");
+                                return;
+                        }
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 9)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 9;
+                        you[0].ep_ch = 1;
+                        you[0].hunger -= 300 + random2(300) + random2(300);
+            torment();
+                        break;
+
+                case 19:  /* Raise dead */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 5)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        if (you[0].hp <= 5)
+                        {
+                                mpr("You don't have enough vitality to use that power.");
+                                return;
+                        }
+                        you[0].ep -= 5;
+                        you[0].ep_ch = 1;
+                        you[0].hp -= 5;
+                        you[0].hp_ch = 1;
+                        you[0].hunger -= 100 + random2(200) + random2(200);
+            your_spells(66, you[0].xl * 5, 0); // power (2nd number) is meaningless
+                        break;
+
+                case 20:  /* Control demon */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 4)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        if (you[0].hp <= 4)
+                        {
+                                mpr("You don't have enough vitality to use that power.");
+                                return;
+                        }
+                        if (spell_direction(abild, beam) == -1)
+                        {
+                                mpr("Okay, then.");
+                                return;
+                        }
+                        you[0].ep -= 4;
+                        you[0].ep_ch = 1;
+                        you[0].hp -= 4;
+                        you[0].hp_ch = 1;
+                        you[0].hunger -= 100 + random2(100) + random2(100);
+                        zapping(49, you[0].xl * 5, beam);
+                        break;
+
+                case 21:  /* Pandemonium */
+            if (you[0].level_type == 3)
+            {
+                                mpr("You're already here.");
+                                return;
+            }
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 4)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 7;
+                        you[0].ep_ch = 1;
+                        you[0].hunger -= 200 + random2(200) + random2(200);
+            banished(99);
+                        break;
+
+                case 22:  /* Channeling */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].hp < 1)
+                        {
+                                mpr("You don't have enough vitality to use that power.");
+                                return;
+                        }
+                        you[0].hp -= 1;
+                        you[0].hp_ch = 1;
+                        you[0].hunger -= 100 + random2(100) + random2(100);
+                    you[0].ep += 1 + random2(5);
+                    if (you[0].ep > you[0].ep_max) you[0].ep = you[0].ep_max;
+                    you[0].ep_ch = 1;
+                    mpr("You channel some magical energy.");
+                        break;
+
+        case 23:
+                case 24:  /* Throw flame/frost */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 1)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        if (you[0].hp <= 1)
+                        {
+                                mpr("You don't have enough vitality to use that power.");
+                                return;
+                        }
+                        if (spell_direction(abild, beam) == -1)
+                        {
+                                mpr("Okay, then.");
+                                return;
+                        }
+                        you[0].ep -= 1;
+                        you[0].ep_ch = 1;
+                        you[0].hp -= 1;
+                        you[0].hp_ch = 1;
+                        you[0].hunger -= 50 + random2(100) + random2(100);
+                        if (ability [abil_used] == 23) zapping(0, you[0].xl * 3, beam);
+             else zapping(1, you[0].xl * 3, beam);
+                        break;
+
+                case 25:  /* bolt of draining */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 4)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        if (you[0].hp <= 4)
+                        {
+                                mpr("You don't have enough vitality to use that power.");
+                                return;
+                        }
+                        if (spell_direction(abild, beam) == -1)
+                        {
+                                mpr("Okay, then.");
+                                return;
+                        }
+                        you[0].ep -= 4;
+                        you[0].ep_ch = 1;
+                        you[0].hp -= 4;
+                        you[0].hp_ch = 1;
+                        you[0].hunger -= 100 + random2(100) + random2(100);
+                        zapping(17, you[0].xl * 6, beam);
+                        break;
+
+/* Items etc */
                 case 51: /* turn invis */
                         if (you[0].hung_state <= 2)
                         {
@@ -649,6 +1042,7 @@ if (you[0].duration [17] != 0)
                         break;
 
                 case 52: /* uninvisible */
+            mpr("You feel less transparent.");
                         you[0].invis = 1;
                         break;
 
@@ -670,16 +1064,31 @@ if (you[0].duration [17] != 0)
                         break;
 
                 case 54: /* unlevitate */
+            mpr("You feel heavy.");
                         you[0].lev = 1;
                         break;
 
                 case 55: /* untransform */
+            mpr("You feel almost normal.");
                         you[0].duration [18] = 2;
                         break;
 
                 case 110:
                 case 120:
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].     ep < 1)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 1;
+                        you[0].ep_ch = 1;
                         turn_undead(you[0].piety);
+            exercise(38, 1);
                         break;
 
                 case 111: /* Minor Healing */
@@ -688,9 +1097,17 @@ if (you[0].duration [17] != 0)
                                 mpr("You're too hungry.");
                                 return;
                         }
+                        if (you[0].     ep < 2)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 2;
+                        you[0].ep_ch = 1;
                         if (cast_lesser_healing() == 0) break;
                         you[0].hunger -= 150 + random2(150) + random2(150);
-                        you[0].piety -= 1;
+                        lose_piety(1);
+            exercise(38, 1 + random2(3));
                         break;
 
                 case 112: /* Pestilence */
@@ -708,7 +1125,8 @@ if (you[0].duration [17] != 0)
                         you[0].ep_ch = 1;
                         you[0].hunger -= 350 + random2(350) + random2(350);
                         summon_swarm(you[0].piety);
-                        you[0].piety -= 2 + random2(2);
+                        lose_piety(2 + random2(2));
+            exercise(38, 2 + random2(4));
                         break;
 
                 case 113: /* Holy Word */
@@ -726,7 +1144,8 @@ if (you[0].duration [17] != 0)
                         you[0].ep_ch = 1;
                         you[0].hunger -= 350 + random2(350) + random2(350);
                         holy_word(you[0].piety);
-                        you[0].piety -= 3 + random2(3);
+                        lose_piety(3 + random2(2));
+            exercise(38, 3 + random2(5));
                         break;
 
                 case 114:  /* Guardian */
@@ -743,8 +1162,9 @@ if (you[0].duration [17] != 0)
                         you[0].ep -= 4;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 350 + random2(350) + random2(350);
-                        summon_ice_beast_etc(you[0].piety / 3, 26);
-                        you[0].piety -= 4 + random2(5);
+                        summon_ice_beast_etc(you[0].skills [38] * 4, 26);
+                        lose_piety(3 + random2(4));
+            exercise(38, 8 + random2(10));
                         break;
 
 
@@ -764,8 +1184,9 @@ if (you[0].duration [17] != 0)
                         you[0].ep -= 3;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 150 + random2(150) + random2(150);
-                        cast_smiting(you[0].piety);
-                        you[0].piety -= 1;
+                        cast_smiting(you[0].skills [38] * 8);
+                        lose_piety(1);
+            exercise(38, 2 + random2(2));
                         break;
 
                 case 122:  /* destroy undead */
@@ -786,8 +1207,9 @@ if (you[0].duration [17] != 0)
                         you[0].ep -= 3;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 150 + random2(250) + random2(250);
-                        zapping(24, you[0].piety, beam);
-                        you[0].piety -= 1 + random2(2);
+                        zapping(24, you[0].skills [38] * 6, beam);
+                        lose_piety(1 + random2(2));
+            exercise(38, 2 + random2(4));
                         break;
 
                 case 123:  /* thunderbolt */
@@ -808,8 +1230,9 @@ if (you[0].duration [17] != 0)
                         you[0].ep -= 5;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 350 + random2(350) + random2(350);
-                        zapping(14, you[0].piety, beam);
-                        you[0].piety -= 2 + random2(2);
+                        zapping(14, you[0].skills [38] * 6, beam);
+                        lose_piety(1 + random2(2));
+            exercise(38, 3 + random2(6));
                         break;
 
                 case 124:  /* Daeva */
@@ -826,8 +1249,9 @@ if (you[0].duration [17] != 0)
                         you[0].ep -= 5;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 350 + random2(350) + random2(350);
-                        summon_ice_beast_etc(you[0].piety / 3, 366);
-                        you[0].piety -= 4 + random2(5);
+                        summon_ice_beast_etc(you[0].skills [38] * 4, 366);
+                        lose_piety(3 + random2(4));
+            exercise(38, 8 + random2(10));
                         break;
 
 
@@ -845,6 +1269,7 @@ if (you[0].duration [17] != 0)
                         you[0].ep -= 1;
                         you[0].ep_ch = 1;
                         recall(1);
+            exercise(38, 1);
                         break;
 
                 case 132:  /* enslave undead */
@@ -865,8 +1290,9 @@ if (you[0].duration [17] != 0)
                         you[0].ep -= 4;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 350 + random2(350) + random2(350);
-                        zapping(43, you[0].piety, beam);
-                        you[0].piety -= 2 + random2(3);
+                        zapping(43, you[0].skills [38] * 8, beam);
+                        lose_piety(2 + random2(2));
+            exercise(38, 5 + random2(5));
                         break;
 
                 case 133:  /* Invoke Death */
@@ -883,8 +1309,103 @@ if (you[0].duration [17] != 0)
                         you[0].ep -= 4;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 350 + random2(350) + random2(350);
-                        summon_ice_beast_etc(you[0].piety / 3, 83);
-                        you[0].piety -= 4 + random2(5);
+                        summon_ice_beast_etc(20 + you[0].skills [38] * 3, 83);
+                        lose_piety(3 + random2(4));
+            exercise(38, 10 + random2(14));
+                        break;
+
+
+                case 140:  /* Animate Skeleton */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 3)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 3;
+                        you[0].ep_ch = 1;
+                        you[0].hunger -= 100 + random2(100) + random2(100);
+            animate_a_corpse(you[0].x_pos, you[0].y_pos, 7, you[0].pet_target, 0);
+            exercise(38, 2 + random2(4));
+                        break;
+
+                case 141:  /* Recall Undead */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 4)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 4;
+                        you[0].ep_ch = 1;
+                        you[0].hunger -= 150 + random2(150) + random2(150);
+            recall(1);
+            exercise(38, 2 + random2(4));
+                        break;
+
+                case 142:  /* Animate Dead */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 7)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 7;
+                        you[0].ep_ch = 1;
+                        you[0].hunger -= 250 + random2(250) + random2(250);
+            animate_dead(you[0].skills [38] + 1, 7, you[0].pet_target, 1);
+            exercise(38, 2 + random2(4));
+                        lose_piety(1 + random2(2));
+                        break;
+
+                case 143:  /* Drain Life */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 6)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 6;
+                        you[0].ep_ch = 1;
+                        you[0].hunger -= 250 + random2(250) + random2(250);
+                        drain_life(you[0].skills [38]);
+            exercise(38, 2 + random2(4));
+                        lose_piety(1 + random2(3));
+                        break;
+
+                case 144:  /* Control Undead */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 5)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 5;
+                        you[0].ep_ch = 1;
+                        you[0].hunger -= 250 + random2(250) + random2(250);
+            mass_enchantment(30, you[0].skills [38] * 8);
+            exercise(38, 3 + random2(4));
+                        lose_piety(2 + random2(3));
                         break;
 
                 case 160: /* channeling */
@@ -895,11 +1416,12 @@ if (you[0].duration [17] != 0)
                                 return;
                         }
                         you[0].hunger -= 50 + random2(50) + random2(50);
-                    you[0].ep += 1 + random2(3);
+                    you[0].ep += 1 + random2(you[0].skills [38] / 4 + 2);
                     if (you[0].ep > you[0].ep_max) you[0].ep = you[0].ep_max;
                     you[0].ep_ch = 1;
                     strcpy(info, "You channel some magical energy.");
                     mpr(info);
+            exercise(38, 1 + random2(3));
                         break;
 
                 case 170: /* might */
@@ -915,9 +1437,10 @@ if (you[0].duration [17] != 0)
                                 return;
                         }
                         you[0].ep -= 2;
-                        potion_effect(3, you[0].piety);
-                        you[0].piety -= 2 + random2(2);
+                        potion_effect(3, you[0].skills [38] * 8);
+                        lose_piety(1);
                         you[0].hunger -= 200 + random2(200) + random2(200);
+            exercise(38, 1 + random2(3));
                         break;
 
                 case 171: /* Minor healing */
@@ -933,7 +1456,9 @@ if (you[0].duration [17] != 0)
                         }
                         you[0].ep -= 2;
                         if (cast_lesser_healing() == 0) break;
+                        lose_piety(1);
                         you[0].hunger -= 100 + random2(100) + random2(100);
+            exercise(38, 2 + random2(5));
                         break;
 
 
@@ -950,9 +1475,10 @@ if (you[0].duration [17] != 0)
                                 return;
                         }
                         you[0].ep -= 5;
-                        potion_effect(2, you[0].piety);
-                        you[0].piety -= 3 + random2(4);
+                        potion_effect(2, you[0].skills [38] * 8);
+                        lose_piety(2 + random2(3));
                         you[0].hunger -= 300 + random2(300) + random2(300);
+            exercise(38, 3 + random2(7));
                         break;
 
 
@@ -964,7 +1490,7 @@ if (you[0].duration [17] != 0)
                                 mpr("You're too hungry.");
                                 return;
                         }
-                        if (you[0].ep < 2)
+                        if (you[0].ep < 1)
                         {
                                 mpr("You don't have enough magic to use that ability.");
                                 return;
@@ -973,21 +1499,40 @@ if (you[0].duration [17] != 0)
                         {
                                 mpr("Okay, then.");
                         }
-                        you[0].ep -= 2;
+                        you[0].ep -= 1;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 100 + random2(150) + random2(150);
                         switch(random2(5))
                         {
-                                case 0: zapping(0, you[0].piety, beam); break;
-                                case 1: zapping(22, you[0].piety, beam); break;
-                                case 2: zapping(33, you[0].piety, beam); break;
-                                case 3: zapping(34, you[0].piety, beam); break;
-                                case 4: zapping(40, you[0].piety, beam); break;
+                                case 0: zapping(0, you[0].skills [38] * 6, beam); break;
+                                case 1: zapping(22, you[0].skills [38] * 6, beam); break;
+                                case 2: zapping(33, you[0].skills [38] * 6, beam); break;
+                                case 3: zapping(34, you[0].skills [38] * 6, beam); break;
+                                case 4: zapping(40, you[0].skills [38] * 6, beam); break;
                         }
-                        you[0].piety -= 1;
+            exercise(38, 1 + random2(2));
                         break;
 
                 case 181:  /* minor summoning */
+                        if (you[0].hung_state <= 2)
+                        {
+                                mpr("You're too hungry.");
+                                return;
+                        }
+                        if (you[0].ep < 2)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 2;
+                        you[0].ep_ch = 1;
+                        you[0].hunger -= 350 + random2(350) + random2(350);
+                        summon_ice_beast_etc(20 + you[0].skills [38] * 3, 225 + random2(5));
+                        lose_piety(1 + random2(2));
+            exercise(38, 2 + random2(3));
+                        break;
+
+                case 182:  /* major destr */
                         if (you[0].hung_state <= 2)
                         {
                                 mpr("You're too hungry.");
@@ -998,40 +1543,22 @@ if (you[0].duration [17] != 0)
                                 mpr("You don't have enough magic to use that ability.");
                                 return;
                         }
-                        you[0].ep -= 3;
-                        you[0].ep_ch = 1;
-                        you[0].hunger -= 350 + random2(350) + random2(350);
-                        summon_ice_beast_etc(you[0].piety / 3, 225 + random2(5));
-                        you[0].piety -= 2 + random2(3);
-                        break;
-
-                case 182:  /* major destr */
-                        if (you[0].hung_state <= 2)
-                        {
-                                mpr("You're too hungry.");
-                                return;
-                        }
-                        if (you[0].ep < 5)
-                        {
-                                mpr("You don't have enough magic to use that ability.");
-                                return;
-                        }
                         if (spell_direction(spd, beam) == -1)
                         {
                                 mpr("Okay, then.");
                         }
-                        you[0].ep -= 5;
+                        you[0].ep -= 3;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 300 + random2(350) + random2(350);
                         switch(random2(8))
                         {
-                                case 0: zapping(7, you[0].piety, beam); break;
-                                case 1: zapping(12, you[0].piety, beam); break;
-                                case 2: zapping(14, you[0].piety, beam); break;
-                                case 3: zapping(17, you[0].piety, beam); break;
-                                case 4: zapping(23, you[0].piety, beam); break;
-                                case 5: zapping(31, you[0].piety, beam); break;
-                                case 6: zapping(35, you[0].piety, beam); break;
+                                case 0: zapping(7, you[0].skills [38] * 5, beam); break;
+                                case 1: zapping(12, you[0].skills [38] * 5, beam); break;
+                                case 2: zapping(14, you[0].skills [38] * 5, beam); break;
+                                case 3: zapping(17, you[0].skills [38] * 5, beam); break;
+                                case 4: zapping(23, you[0].skills [38] * 5, beam); break;
+                                case 5: zapping(31, you[0].skills [38] * 5, beam); break;
+                                case 6: zapping(35, you[0].skills [38] * 5, beam); break;
                                 case 7: you[0].attribute [0] ++;
                                         mpr("Makhleb hurls a blast of lightning!");
                                         beam[0].beam_source = MNG;
@@ -1047,7 +1574,8 @@ if (you[0].duration [17] != 0)
                                         you[0].attribute [0] --;
                                         break;
                         }
-                        you[0].piety -= 2 + random2(2);
+                        lose_piety(1 + random2(2));
+            exercise(38, 3 + random2(5));
                         break;
 
                 case 183:  /* major summoning */
@@ -1056,16 +1584,17 @@ if (you[0].duration [17] != 0)
                                 mpr("You're too hungry.");
                                 return;
                         }
-                        if (you[0].ep < 6)
+                        if (you[0].ep < 4)
                         {
                                 mpr("You don't have enough magic to use that ability.");
                                 return;
                         }
-                        you[0].ep -= 6;
+                        you[0].ep -= 4;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 500 + random2(450) + random2(450);
-                        summon_ice_beast_etc(you[0].piety / 10, 230 + random2(5));
-                        you[0].piety -= 4 + random2(5);
+                        summon_ice_beast_etc(20 + you[0].skills [38] * 3, 230 + random2(5));
+                        lose_piety(2 + random2(2));
+            exercise(38, 6 + random2(6));
                         break;
 
 
@@ -1079,6 +1608,7 @@ if (you[0].duration [17] != 0)
                         }
                         if (go_berserk() == 0) mpr("You fail to go berserk.");
                         you[0].hunger -= 100 + random2(100) + random2(100);
+            //exercise(38, 1 + random2(3));
                         break;
 
                 case 201: /* might */
@@ -1088,9 +1618,10 @@ if (you[0].duration [17] != 0)
                                 mpr(info);
                                 return;
                         }
-                        potion_effect(3, you[0].piety);
-                        you[0].piety -= 2 + random2(2);
+                        potion_effect(3, you[0].skills [38] * 6);
+                        lose_piety(1 + random2(2));
                         you[0].hunger -= 200 + random2(200) + random2(200);
+            //exercise(38, 2 + random2(5));
                         break;
 
                 case 202: /* haste */
@@ -1100,9 +1631,10 @@ if (you[0].duration [17] != 0)
                                 mpr(info);
                                 return;
                         }
-                        potion_effect(2, you[0].piety);
-                        you[0].piety -= 3 + random2(4);
+                        potion_effect(2, you[0].skills [38] * 6);
+                        lose_piety(2 + random2(3));
                         you[0].hunger -= 300 + random2(300) + random2(300);
+            //exercise(38, 4 + random2(6));
                         break;
 
 
@@ -1110,6 +1642,7 @@ if (you[0].duration [17] != 0)
 
                 case 190:
                         cast_selective_amnesia();
+            //exercise(38, 1);
                         break;
 
 
@@ -1119,8 +1652,16 @@ if (you[0].duration [17] != 0)
                                 mpr("You're too hungry.");
                                 return;
                         }
+                        if (you[0].ep < 1)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 1;
+                        you[0].ep_ch = 1;
                         if (cast_lesser_healing() == 0) break;
                         you[0].hunger -= 100 + random2(100) + random2(100);
+            exercise(38, 1 + random2(2));
                         break;
 
                 case 221:
@@ -1129,8 +1670,17 @@ if (you[0].duration [17] != 0)
                                 mpr("You're too hungry.");
                                 return;
                         }
+                        if (you[0].ep < 1)
+                        {
+                                mpr("You don't have enough magic to use that ability.");
+                                return;
+                        }
+                        you[0].ep -= 1;
+                        you[0].ep_ch = 1;
+                        lose_piety(1);
                         you[0].hunger -= 150 + random2(150) + random2(150);
-                        cast_cure_poison(you[0].piety);
+                        purification();
+            exercise(38, 2 + random2(3));
                         break;
 
                 case 222:
@@ -1148,7 +1698,8 @@ if (you[0].duration [17] != 0)
                         you[0].ep -= 2;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 250 + random2(250) + random2(250);
-                        you[0].piety -= 1 + random2(3);
+                        lose_piety(1 + random2(3));
+            exercise(38, 3 + random2(5));
                         break;
 
                 case 223:
@@ -1165,8 +1716,15 @@ if (you[0].duration [17] != 0)
                         you[0].ep -= 3;
                         you[0].ep_ch = 1;
                         you[0].hunger -= 400 + random2(450) + random2(450);
-                        purification();
-                        you[0].piety -= 2 + random2(3);
+                    strcpy(info, "You feel refreshed."); // ...can't think of anything better right now
+                        mpr(info);
+                        restore_str();
+                        restore_int();
+                        restore_dex();
+            if (you[0].base_hp < 5000) you[0].base_hp = 5000;
+            calc_hp();
+                        lose_piety(2 + random2(3));
+            exercise(38, 4 + random2(6));
                         break;
 
                 case 224:
@@ -1185,7 +1743,8 @@ if (you[0].duration [17] != 0)
                         you[0].ep_ch = 1;
                         you[0].hunger -= 600 + random2(550) + random2(550);
 //cast_purification(you[0].piety);
-                        you[0].piety -= 4 + random2(4);
+                        lose_piety(4 + random2(4));
+            exercise(38, 6 + random2(10));
                         break;
 
 
@@ -1366,7 +1925,44 @@ char show_abilities(int ability [120], int ability_fail [120])
                                 case 13:
                                         cprintf("Breathe Steam                   Food, Delay");
                                         break;
-
+                                case 14:
+                                        cprintf("Fly                             3 Magic, Food");
+                                        break;
+/* Demonic powers: */
+                                case 15:
+                                        cprintf("Summon Minor Demon              3 Magic, 3 hp, Food");
+                                        break;
+                                case 16:
+                                        cprintf("Summon Demon                    5 Magic, 5 hp, Food");
+                                        break;
+                                case 17:
+                                        cprintf("Hellfire                        8 Magic, 8 hp, Food");
+                                        break;
+                                case 18:
+                                        cprintf("Torment                         9 Magic, Food");
+                                        break;
+                                case 19:
+                                        cprintf("Raise Dead                      5 Magic, 5 hp, Food");
+                                        break;
+                                case 20:
+                                        cprintf("Control Demon                   4 Magic, 4 hp, Food");
+                                        break;
+                                case 21:
+                                        cprintf("Open Gate to Pandemonium        7 Magic, Food");
+                                        break;
+                                case 22:
+                                        cprintf("Channeling                      1 hp, Food");
+                                        break;
+                                case 23:
+                                        cprintf("Throw Flame                     1 Magic, 1 hp, Food");
+                                        break;
+                                case 24:
+                                        cprintf("Throw Frost                     1 Magic, 1 hp, Food");
+                                        break;
+                                case 25:
+                                        cprintf("Bolt of Draining                4 Magic, 4 hp, Food");
+                                        break;
+/* Most of these powers are from items: */
                                 case 51:
                                         cprintf("Turn Invisible                  2 Magic, Food");
                                         break;
@@ -1385,13 +1981,13 @@ char show_abilities(int ability [120], int ability_fail [120])
                                 case 56:
                                         cprintf(" ");
                                         break;
-
+/* Invocations: */
                                 case 110:
                                 case 120:
-                                        cprintf("Repel Undead                    None");
+                                        cprintf("Repel Undead                    1 Magic, Food");
                                         break;
                                 case 111:
-                                        cprintf("Minor Healing                   Food, Piety");
+                                        cprintf("Minor Healing                   2 Magic, Food, Piety");
                                         break;
                                 case 112:
                                         cprintf("Pestilence                      3 Magic, Food, Piety");
@@ -1426,6 +2022,22 @@ char show_abilities(int ability [120], int ability_fail [120])
                                         cprintf("Invoke Death                    3 Magic, Food, Piety");
                                         break;
 
+                                case 140:
+                                        cprintf("Animate Corpse                  3 Magic, Food");
+                                        break;
+                                case 141:
+                                        cprintf("Recall Undead                   4 Magic, Food");
+                                        break;
+                                case 142:
+                                        cprintf("Animate Dead                    7 Magic, Food, Piety");
+                                        break;
+                                case 143:
+                                        cprintf("Drain Life                      6 Magic, Food, Piety");
+                                        break;
+                                case 144:
+                                        cprintf("Control Undead                  5 Magic, Food, Piety");
+                                        break;
+
                                 case 160:
                                         cprintf("Channel Energy                  Food");
                                         break;
@@ -1441,16 +2053,16 @@ char show_abilities(int ability [120], int ability_fail [120])
                                         break;
 
                                 case 180:
-                                        cprintf("Minor Destruction               2 Magic, Food, Piety");
+                                        cprintf("Minor Destruction               1 Magic, Food");
                                         break;
                                 case 181:
-                                        cprintf("Lesser Servant of Makhleb       3 Magic, Food, Piety");
+                                        cprintf("Lesser Servant of Makhleb       2 Magic, Food, Piety");
                                         break;
                                 case 182:
-                                        cprintf("Major Destruction               5 Magic, Food, Piety");
+                                        cprintf("Major Destruction               3 Magic, Food, Piety");
                                         break;
                                 case 183:
-                                        cprintf("Greater Servant of Makhleb      6 Magic, Food, Piety");
+                                        cprintf("Greater Servant of Makhleb      4 Magic, Food, Piety");
                                         break;
 
 
@@ -1469,16 +2081,16 @@ char show_abilities(int ability [120], int ability_fail [120])
                                         break;
 
                                 case 220:
-                                        cprintf("Lesser Healing                  Food");
+                                        cprintf("Lesser Healing                  1 Magic, Food");
                                         break;
                                 case 221:
-                                        cprintf("Cure Poison                     Food");
+                                        cprintf("Purification                    2 Magic, Food, Piety");
                                         break;
                                 case 222:
                                         cprintf("Healing                         2 Magic, Food, Piety");
                                         break;
                                 case 223:
-                                        cprintf("Purification                    3 Magic, Food, Piety");
+                                        cprintf("Restoration                     3 Magic, Food, Piety");
                                         break;
                                 case 224:
                                         cprintf("Greater Healing                 6 Magic, Food, Piety");

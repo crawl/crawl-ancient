@@ -16,61 +16,17 @@
 #include "message.h"
 #include "player.h"
 #include "transfor.h"
+#include "skills2.h"
 #include "stuff.h"
+
+#define NO_MUT 57
 
 int how_mutated(void);
 char delete_mutation(char which_mutation);
 char body_covered(void);
+void perma_mutate(int which_mut, char how_much);
 
 char mut_string [80];
-
-/*char *char_skin[] = {
-"You have fair skin, ",
-"You have very pale skin, ",
-"You have pale freckly skin, ",
-"You have olive skin, ",
-"You have dark skin, ",
-"You have black skin, ",
-"You have pink blotchy skin, ",
-"You have pale, green-tinged skin, ",
-"You have rough brown skin, ",
-"You have rough grey skin, ",
-"You have yellowish skin, "
-"You have red blotchy skin, ",
-"You have slimy, scabby grey skin, ",
-"You have dessicated, long-dead flesh, ",
-"You have ",
-"You have "
-};
-
-char *char_hair_adj[] = {
-"wavy ",
-"straight ",
-"curly ",
-""
-};
-
-char *char_hair[] = {
-"fair hair, ",
-"blond hair, ",
-"no hair, ",
-"brown hair, ",
-"red hair, ",
-"black hair, ",
-"dark brown hair, ",
-"",
-"",
-""
-};
-
-
-char *odd_legs[] = {
-". ",
-"",
-""
-};
-*/
-
 
 char *mutation_descrip [] [3] =
 {
@@ -82,7 +38,7 @@ char *mutation_descrip [] [3] =
 {"You are partially covered in thick black scales (AC + 3, dex - 1).", "You are mostly covered in thick black scales (AC + 6, dex - 2).", "You are completely covered in thick black scales (AC + 9, dex - 3)."},
 {"You are partially covered in supple grey scales (AC + 1).", "You are mostly covered in supple grey scales (AC + 2).", "You are completely covered in supple grey scales (AC + 3)."},
 {"You are protected by plates of bone (AC + 2, dex - 1).", "You are protected by plates of bone (AC + 3, dex - 2).", "You are protected by plates of bone (AC + 4, dex - 3)."},
-{"You are surrounded by a mild repulsion field (ev + 1).", "You are surrounded by a moderate repulsion field (ev + 3).", "You are surrounded by a strong repulsion field (ev + 5)."},
+{"You are surrounded by a mild repulsion field (ev + 1).", "You are surrounded by a moderate repulsion field (ev + 3).", "You are surrounded by a strong repulsion field (ev + 5; repel missiles)."},
 {"Your system is immune to poisons.", "Your system is immune to poisons.", "Your system is immune to poisons."},
 // 10
 {"Your digestive system is specialised to digest meat.", "Your digestive system is specialised to digest meat.", "You are primarily a carnivore."},
@@ -99,11 +55,10 @@ char *mutation_descrip [] [3] =
 {"You are clumsy (Dex -", "", ""},
 {"You can control translocations.", "You can control translocations.", "You can control translocations."},
 {"Space occasionally distorts in your vicinity.", "Space sometimes distorts in your vicinity.", "Space frequently distorts in your vicinity."},
-{"You are resistant to magic.", "You are highly resistant to magic.", "You are almost impervious to the effects of magic."},
+{"You are resistant to magic.", "You are highly resistant to magic.", "You are extremely resistant to the effects of magic."},
 {"You cover the ground very quickly.", "You cover the ground very quickly.", "You cover the ground very quickly."},
 {"You have supernaturally acute eyesight.", "You have supernaturally acute eyesight.", "You have supernaturally acute eyesight."},
 {"Armour fits poorly on your deformed body.", "Armour fits poorly on your badly deformed body.", "Armour fits poorly on your hideously deformed body."},
-
 {"You can teleport at will.", "You are good at teleporting at will.", "You can teleport instantly at will."},
 {"You can spit poison.", "You can spit poison.", "You can spit poison."},
 {"You can sense your immediate surroundings.", "You can sense your surroundings.", "You can sense a large area of your surroundings."},
@@ -111,15 +66,53 @@ char *mutation_descrip [] [3] =
 {"You can breathe flames.", "You can breathe fire.", "You can breathe blasts of fire."},
 {"You can translocate small distances instantaneously.", "You can translocate small distances instantaneously.", "You can translocate small distances instantaneously."},
 {"You have a pair of small horns on your head.", "You have a pair of horns on your head.", "You have a pair of large horns on your head."},
+{"Your muscles are strong (Str +1), but stiff (Dex -1).", "Your muscles are very strong (Str +2), but stiff (Dex -2).", "Your muscles are extremely strong (Str +3), but stiff (Dex -3)."},
+{"Your muscles are flexible (Dex +1), but weak (Str -1).", "Your muscles are very flexible (Dex +2), but weak (Str -2).", "Your muscles are extremely flexible (Dex +3), but weak (Str -3)."},
+{"You occasionally forget where you are.", "You sometimes forget where you are.", "You frequently forget where you are."},
+{"You possess an exceptional clarity of mind.", "You possess an unnatural clarity of mind.", "You possess a supernatural clarity of mind."},
+{"You tend to lose your temper in combat.", "You often lose your temper in combat.", "You have an uncontrollable temper."},
+{"Your body is slowly deteriorating.", "Your body is deteriorating.", "Your body is rapidly deteriorating."},
+{"Your vision is a little blurry.", "Your vision is quite blurry.", "Your vision is extremely blurry."},
+// 40
+{"You are somewhat resistant to further mutation.", "You are somewhat resistant to both further mutation and mutation removal.", "Your current mutations are irrevocably fixed, and you can mutate no more."},
+{"You are frail (-10 percent hp).", "You are very frail (-20 percent hp).", "You are extremely frail (-30 percent hp)."},
+{"You are robust (+10 percent hp).", "You are very robust (+20 percent hp).", "You are extremely robust (+30 percent hp)."},
+
+{"You are immune to unholy pain and torment.", "", ""},
+{"You are immune to negative energy.", "", ""},
+{"You can summon minor demons to your aid.", "", ""}, /* Use find_spell in files.cc to avoid duplication */
+{"You can summon demons to your aid.", "", ""},
+{"You can hurl blasts of hellfire.", "", ""},
+{"You can call on the torments of Hell.", "", ""},
+{"You can raise the dead to walk for you.", "", ""},
+// 50
+{"You can control demons.", "", ""},
+{"You can travel to (but not from) Pandemonium at will.", "", ""},
+{"You can draw strength from death and destruction.", "", ""},
+{"You can channel magical energy from Hell.", "", ""}, /* Not worshippers of Vehumet */
+{"You can drain life in unarmed combat.", "", ""},
+{"You can throw forth the flames of Gehenna.", "", ""}, /* Not conjurers/worshippers of Makhleb */
+{"You can throw forth the frost of Cocytus.", "", ""},
+{"You can invoke the powers of Tartarus to smite your living foes.", "", ""},
+{"", "", ""},
+{"", "", ""},
+// 60
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
+{"", "", ""},
+{"", "", ""},
+{"", "", ""},
+{"", "", ""},
+{"", "", ""},
+{"", "", ""},
+
 };
 
 /*
-future:
-Forgetful
+If giving a mutation which must succeed (eg demonspawn), must add exception
+to the "resist mutation" mutation thing.
 */
 
 
@@ -137,7 +130,7 @@ char *gain_mutation [] [3] =
 {"You feel healthy.", "You feel healthy.", "You feel healthy."},
 // 10
 {"You hunger for flesh.", "You hunger for flesh.", "You hunger for flesh."},
-{"You feel less carnivorous.", "You feel less carnivorous.", "You feel less carnivorous."},
+{"You hunger for vegetation.", "You hunger for vegetation.", "You hunger for vegetation."},
 {"You feel a sudden chill.", "You feel a sudden chill.", "You feel a sudden chill."},
 {"You feel hot for a moment.", "You feel hot for a moment.", "You feel hot for a moment."},
 {"You feel insulated.", "You feel insulated.", "You feel insulated."},
@@ -161,11 +154,49 @@ char *gain_mutation [] [3] =
 {"Your throat feels hot.", "Your throat feels hot.", "Your throat feels hot."},
 {"You feel a little jumpy.", "You feel more jumpy.", "You feel even more jumpy."},
 {"A pair of horns grows on your head!", "The horns on your head grow some more.", "The horns on your head grow some more."},
+{"Your muscles feel sore.", "Your muscles feel sore.", "Your muscles feel sore."},
+{"Your muscles feel loose.", "Your muscles feel loose.", "Your muscles feel loose."},
+{"You feel a little disoriented.", "You feel a little disoriented.", "Where the Hell are you?"},
+{"Your thoughts seem clearer.", "Your thoughts seem clearer.", "Your thoughts seem clearer."},
+{"You feel a little pissed off.", "You feel angry.", "You feel extremely angry at everything!"},
+{"You feel yourself wasting away.", "You feel yourself wasting away.", "You feel your body start to fall apart."},
+{"Your vision blurs.", "Your vision blurs.", "Your vision blurs."},
+// 40
+{"You feel genetically stable.", "You feel genetically stable.", "You feel genetically immutable."},
+{"You feel frail.", "You feel frail.", "You feel frail."},
+{"You feel robust.", "You feel robust.", "You feel robust."},
+{"You feel a strange anaesthesia.", "", ""},
+{"You feel negative.", "", ""},
+{"A thousand chattering voices call out to you.", "", ""},
+{"Help is not far away!", "", ""},
+{"You smell fire and brimstone.", "", ""},
+{"You feel a terrifying power at your call.", "", ""},
+{"You feel an affinity for the dead.", "", ""},
+// 50
+{"You feel an affinity for all demonkind.", "", ""},
+{"You feel something pulling you to a strange and terrible place.", "", ""},
+{"You feel hungry for death.", "", ""},
+{"You feel a flux of magical energy.", "", ""},
+{"Your skin tingles in a strangely unpleasant way.", "", ""},
+{"You smell the fires of Gehenna.", "", ""},
+{"You feel the icy cold of Cocytus chill your soul.", "", ""},
+{"A shadow passes over the world around you.", "", ""},
+{"", "", ""},
+{"", "", ""},
+{"", "", ""},
+// 60
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
+{"", "", ""},
+{"", "", ""},
+{"", "", ""},
+{"", "", ""},
+{"", "", ""},
+
+
 };
 
 
@@ -206,7 +237,18 @@ char *lose_mutation [] [3] =
 {"A chill runs up and down your throat.", "A chill runs up and down your throat.", "A chill runs up and down your throat."},
 {"You feel a little less jumpy.", "You feel less jumpy.", "You feel less jumpy."},
 {"The horns on your head shrink away.", "The horns on your head shrink a bit.", "The horns on your head shrink a bit."},
-{"", "", ""},
+{"Your muscles feel loose.", "Your muscles feel loose.", "Your muscles feel loose."},
+{"Your muscles feel sore.", "Your muscles feel sore.", "Your muscles feel sore."},
+{"You feel less disoriented.", "You feel less disoriented.", "You feel less disoriented."},
+{"Your thinking seems confused.", "Your thinking seems confused.", "Your thinking seems confused."},
+{"You feel a little more calm.", "You feel a little less angry.", "You feel a little less angry."},
+{"You feel healthier.", "You feel a little healthier.", "You feel a little healthier."},
+{"Your vision sharpens.", "Your vision sharpens a little.", "Your vision sharpens a little."},
+// 40
+{"You feel genetically unstable.", "You feel genetically unstable.", "You should not be reading this message. Bug reports to zel@olis.net.au."},
+{"You feel robust.", "You feel robust.", "You feel robust."},
+{"You feel frail.", "You feel frail.", "You feel frail."},
+/* Some demonic powers start here... */
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
@@ -214,12 +256,15 @@ char *lose_mutation [] [3] =
 };
 
 
+/*
+Chance out of 10 that mutation will be given/removed randomly. 0 means never.
+*/
 char mutation_rarity [] =
 {
 10, // tough skin
-10, // str
-10, // int
-10, // dex
+8, // str
+8, // int
+8, // dex
 3, // gr scales
 2, // bl scales
 2, // grey scales
@@ -233,8 +278,8 @@ char mutation_rarity [] =
 4, // res cold
 2, // res elec
 3, // regen
-7, // fast meta
-10, // slow meta
+10, // fast meta
+7, // slow meta
 10, // abil loss
 10, // ""
 // 20
@@ -252,10 +297,39 @@ char mutation_rarity [] =
 4, // breathe fire
 3, // blink
 7, // horns
+10, // strong/stiff muscles
+10, // weak/loose muscles
+6, // forgetfulness
+6, // clarity (as the amulet)
+7, // berserk/temper
+10, // deterioration
+10, // blurred vision
+// 40
+4, // resist mutation
+10, // frail
+5, // robust
+/* Some demonic powers start here: */
 0,
 0,
+0,
+0,
+0,
+0,
+0,
+// 50
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+// 60
+0
 };
-
 
 void display_mutations(void)
 {
@@ -275,11 +349,14 @@ void display_mutations(void)
         cprintf("                  Mutations & Other Weirdness"EOL);
    textcolor(LIGHTGREY);
 
-   for (i = 0; i < 50; i ++)
+   for (i = 0; i < 100; i ++)
    {
     if (you[0].mutation [i] != 0)
     {
      j ++;
+     textcolor(LIGHTGREY);
+     if (you[0].demon_pow [i] != 0) textcolor(RED); /* mutation is actually a demonic power */
+     if (you[0].demon_pow [i] != 0 && you[0].demon_pow [i] < you[0].mutation [i]) textcolor(LIGHTRED); /* same as above, but power is enhanced by mutation */
      if (i == 1 || i == 2 || i == 3 || i == 18 || i == 19 || i == 20)
      {
       cprintf(mutation_descrip [i] [0]);
@@ -308,38 +385,62 @@ return;
 }
 
 
-char mutate(char which_mutation)
+char mutate(int which_mutation)
 {
 char mutat = which_mutation;
+
+char force = 0;
+
+if (which_mutation >= 1000) /* Must give this mutation - no failure */
+{
+ force = 1;
+ mutat -= 1000;
+ which_mutation -= 1000;
+}
 
 //char st_prn [10];
 
 int i = 0;
 
-if (you[0].is_undead != 0 || (wearing_amulet(44) != 0 && random2(10) != 0))
+if (you[0].is_undead != 0 && force == 0)
  return 0;
+
+if (wearing_amulet(44) != 0 && random2(10) != 0 && force == 0)
+{
+ mpr("You feel rather odd for a moment.");
+ return 0;
+}
+
+if (you[0].mutation [40] != 0 && (you[0].mutation [40] == 3 || random2(3) != 0) && force == 0)
+{
+ mpr("You feel rather odd for a moment.");
+ return 0;
+}
 
 if (which_mutation == 100 && random2(15) < how_mutated())
 {
- if (random2(5) != 0) return 0;
+ if (random2(3) != 0) return 0;
  return delete_mutation(100);
 }
 
 if (which_mutation == 100)
  do
  {
-  mutat = random2(33); /* if number change, change in lose_mut also */
+  mutat = random2(NO_MUT);
   if (random2(1000) == 0) return 0;
- } while ((you[0].mutation [mutat] >= 3 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) || random2(10) > mutation_rarity [mutat] || you[0].mutation [mutat] > 13);
+ } while ((you[0].mutation [mutat] >= 3 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) || random2(10) >= mutation_rarity [mutat] || you[0].mutation [mutat] > 13);
 
 if (you[0].mutation [mutat] >= 3 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) return 0;
-if (you[0].mutation [mutat] > 13) return 0;
+if (you[0].mutation [mutat] > 13 && force == 0) return 0;
 if (mutat == 0 || (mutat >= 4 && mutat <= 7) && body_covered() > 2) return 0;
 
 if ((mutat == 25 || mutat == 9 || mutat == 28) && you[0].species == 13) return 0; // nagas have see invis and res poison and can spit poison
 if (you[0].species == 14 && mutat == 29) return 0; /* gnomes can't sense surroundings */
+if ((you[0].species == 30 || you[0].species == 32) && mutat == 24) return 0; /* centaurs/spriggans are already swift */
 if (mutat == 15 && you[0].mutation [17] > 0) return 0; /* if you have a slow metabolism, no regen */
 if (mutat == 17 && you[0].mutation [15] > 0) return 0; /* if you have a slow metabolism, no regen */
+if (mutat == 25 && you[0].mutation [39] > 0) return 0;
+if (mutat == 39 && you[0].mutation [25] > 0) return 0; /* blurred vision/see invis */
 
 
 mpr("You mutate.");
@@ -491,6 +592,58 @@ switch(mutat)
  remove_equipment(removed);
  break;
 
+ case 33: // strong/stiff
+ if (you[0].mutation [34] > 0)
+ {
+  delete_mutation(34);
+  return 1;
+ }
+ you[0].strength ++;
+ you[0].max_strength ++;
+ you[0].strength_ch = 1;
+ you[0].dex --;
+ you[0].max_dex --;
+ you[0].dex_ch = 1;
+ mpr(gain_mutation [mutat] [0]);
+ break;
+
+ case 34: // weak/loose
+ if (you[0].mutation [33] > 0)
+ {
+  delete_mutation(33);
+  return 1;
+ }
+ you[0].strength --;
+ you[0].max_strength --;
+ you[0].strength_ch = 1;
+ you[0].dex ++;
+ you[0].max_dex ++;
+ you[0].dex_ch = 1;
+ mpr(gain_mutation [mutat] [0]);
+ break;
+
+ case 41: // frail
+ if (you[0].mutation [42] > 0)
+ {
+  delete_mutation(42);
+  return 1;
+ }
+ mpr(gain_mutation [mutat] [you[0].mutation [mutat]]);
+ you[0].mutation [mutat] ++;
+ calc_hp();
+ return 1;
+
+ case 42: // robust
+ if (you[0].mutation [41] > 0)
+ {
+  delete_mutation(41);
+  return 1;
+ }
+ mpr(gain_mutation [mutat] [you[0].mutation [mutat]]);
+ you[0].mutation [mutat] ++;
+ calc_hp();
+ return 1;
+
  case 5:
  case 7:
  you[0].dex --;
@@ -501,6 +654,8 @@ switch(mutat)
 }
 
 you[0].mutation [mutat] ++;
+
+/* remember, some mutations don't get this far (eg frail) */
 
 return 1;
 
@@ -513,9 +668,9 @@ int how_mutated(void)
 int i;
 int j = 0;
 
-for (i = 0; i < 50; i ++)
+for (i = 0; i < 100; i ++)
 {
- j += you[0].mutation [i];
+ if (you[0].demon_pow [i] < you[0].mutation [i]) j += you[0].mutation [i];
 }
 
 return j;
@@ -528,15 +683,23 @@ char delete_mutation(char which_mutation)
 {
 char mutat = which_mutation;
 
+if (you[0].mutation [40] > 1 && (you[0].mutation [40] == 3 || random2(2) == 0))
+{
+ mpr("You feel rather odd for a moment.");
+ return 0;
+}
+
 if (which_mutation == 100)
  do
  {
-  mutat = random2(32);
+  mutat = random2(NO_MUT);
   if (random2(1000) == 0) return 0;
- } while ((you[0].mutation [mutat] == 0 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) || random2(10) > mutation_rarity [mutat]);
+ } while ((you[0].mutation [mutat] == 0 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) || random2(10) >= mutation_rarity [mutat] || you[0].demon_pow [mutat] >= you[0].mutation [mutat]);
 
 
 if (you[0].mutation [mutat] == 0) return 0;
+
+if (you[0].demon_pow [mutat] >= you[0].mutation [mutat]) return 0;
 
 /*mpr("Deleting:");
 itoa(mutat, st_prn, 10);
@@ -619,7 +782,7 @@ switch(mutat)
 
  case 14: // res elec
  you[0].attribute [0] --;
- mpr(lose_mutation [mutat] [you[0].mutation [mutat]]);
+ mpr(lose_mutation [mutat] [you[0].mutation [mutat] - 1]);
  break;
 
  case 16: // fast meta
@@ -629,7 +792,7 @@ switch(mutat)
   break;
  }*/
  you[0].hunger_inc --;
- mpr(lose_mutation [mutat] [you[0].mutation [mutat]]);
+ mpr(lose_mutation [mutat] [you[0].mutation [mutat] - 1]);
  break;
 
  case 17: // slow meta
@@ -639,20 +802,54 @@ switch(mutat)
   break;
  }*/
  if (you[0].mutation [mutat] == 0 || you[0].mutation [mutat] == 2) you[0].hunger_inc ++;
- mpr(lose_mutation [mutat] [you[0].mutation [mutat]]);
+ mpr(lose_mutation [mutat] [you[0].mutation [mutat] - 1]);
  break;
 
  case 21: // control tele
  you[0].attribute [3] --;
- mpr(lose_mutation [mutat] [you[0].mutation [mutat]]);
+ mpr(lose_mutation [mutat] [you[0].mutation [mutat] - 1]);
  break;
+
+ case 33: // strong/stiff
+ you[0].strength --;
+ you[0].max_strength --;
+ you[0].strength_ch = 1;
+ you[0].dex ++;
+ you[0].max_dex ++;
+ you[0].dex_ch = 1;
+ mpr(lose_mutation [mutat] [0]);
+ break;
+
+ case 34: // weak/loose
+ you[0].strength ++;
+ you[0].max_strength ++;
+ you[0].strength_ch = 1;
+ you[0].dex --;
+ you[0].max_dex --;
+ you[0].dex_ch = 1;
+ mpr(lose_mutation [mutat] [0]);
+ break;
+
+ case 41: // frail
+ mpr(lose_mutation [mutat] [0]);
+ if (you[0].mutation [mutat] > 0) you[0].mutation [mutat] --;
+ calc_hp();
+ you[0].hp_ch = 1;
+ return 1;
+
+ case 42: // robust
+ mpr(lose_mutation [mutat] [0]);
+ if (you[0].mutation [mutat] > 0) you[0].mutation [mutat] --;
+ calc_hp();
+ you[0].hp_ch = 1;
+ return 1;
 
  case 5:
  case 7:
  you[0].dex ++;
  you[0].max_dex ++;
  you[0].dex_ch = 1;
- default: mpr(lose_mutation [mutat] [you[0].mutation [mutat]]);
+ default: mpr(lose_mutation [mutat] [you[0].mutation [mutat] - 1]);
  break;
 }
 
@@ -710,10 +907,141 @@ char *mutation_name(char which_mutat)
 
 }
 
+/* Use an attribute counter for how many demonic mutations a dspawn has */
+void demonspawn(void)
+{
+
+ int whichm = -1;
+ char howm = 1;
+ int counter = 0;
+
+ you[0].attribute [8] ++;
+
+ mpr("Your demonic ancestry asserts itself...");
+
+ if (you[0].xl <= 9)
+ {
+  do
+  {
+   if (you[0].skills [26] == 0) /* conjurers don't get throw fr/fl */
+   {
+    whichm = 55 + random2(2);
+    howm = 1;
+   }
+   if (random2(3) == 0 && you[0].skills [28] == 0) /* summoners don't get summon imp */
+   {
+    whichm = 45;
+    howm = 1;
+   }
+
+   if (random2(3) == 0) { whichm = 13 + random2(2); howm = 1; } /* res fire or cold */
+   if (random2(5) == 0) { whichm = 25; howm = 1; } /* see invis */
+   if (random2(7) == 0) { whichm = 28; howm = 1; } /* spit poison */
+   if (random2(10) == 0) { whichm = 29; howm = 2; } /* sense surr */
+   if (random2(12) == 0) { whichm = 21; howm = 1; } /* control teleport */
+   if (random2(5) == 0) { whichm = 30; howm = 2; } /* breathe fire */
+   if (random2(10) == 0) { whichm = 31; howm = 1; } /* blink */
+   if (random2(10) == 0) { whichm = 0; howm = 2 + random2(2); } /* tough skin */
+   if (random2(12) == 0) { whichm = 4; howm = 1; } /* green scales */
+   if (random2(12) == 0) { whichm = 5; howm = 1; } /* scales */
+   if (random2(12) == 0) { whichm = 6; howm = 1; } /* scales */
+   if (random2(30) == 0) { whichm = 7; howm = 1 + random2(2); } /* bone plates */
+   if (random2(30) == 0) { whichm = 8; howm = 1 + random2(3); } /* repulsion field */
+   if (random2(4) == 0) { whichm = 32; howm = 1; if (you[0].xl > 5) howm = 3; }/* horns */
+
+   if (you[0].mutation [whichm] != 0) whichm = -1;
+
+   counter ++;
+  } while (whichm == -1 && counter < 5000);
+  if (whichm == -1) /* unlikely but remotely possible */
+  {
+   you[0].max_strength ++;
+   you[0].max_dex ++;
+   you[0].max_intel ++;
+   you[0].strength ++;
+   you[0].dex ++;
+   you[0].intel ++;
+   you[0].strength_ch = 1;
+   you[0].intel_ch = 1;
+   you[0].dex_ch = 1;
+   /* I know this is a cop-out */
+  }
+   else perma_mutate(whichm, howm);
+   return;
+ }
+
+
+  do
+  {
+   if (you[0].skills [26] <= 2) /* good conjurers don't get bolt of draing */
+   {
+    whichm = 57;
+    howm = 1;
+   }
+   if (random2(4) == 0 && you[0].skills [26] <= 3) /* good conjurers don't get hellfire */
+   {
+    whichm = 47;
+    howm = 1;
+   }
+   if (random2(3) == 0 && you[0].skills [28] <= 2) /* good summoners don't get summon demon */
+   {
+    whichm = 46;
+    howm = 1;
+   }
+
+   if (random2(8) == 0) { whichm = 23; howm = 3; } /* res magic */
+   if (random2(12) == 0) { whichm = 24; howm = 1; } /* swift */
+   if (random2(7) == 0) { whichm = 27; howm = 2; } /* teleport */
+   if (random2(10) == 0) { whichm = 25; howm = 2; } /* regenerate */
+   if (random2(12) == 0) { whichm = 24; howm = 1; } /* resist electric */
+   if (random2(15) == 0 && you[0].mutation [48] == 0) { whichm = 43; howm = 1; } /* resist torment */
+   if (random2(12) == 0) { whichm = 44; howm = 1; } /* resist -ve energy */
+   if (random2(20) == 0 && you[0].mutation [43] == 0) { whichm = 48; howm = 1; } /* symbol of torment */
+   if (random2(12) == 0 && you[0].skills [28] <= 2 && you[0].skills [29] <= 2) { whichm = 50; howm = 1; } /* control demons */
+   if (random2(15) == 0 && you[0].skills [30] <= 2) { whichm = 51; howm = 1; } /* gate to pan */
+   if (random2(11) == 0 && you[0].religion != 6) { whichm = 52; howm = 1; } /* gain power - no worshippers of Vehumet */
+   if (random2(11) == 0 && you[0].religion != 6) { whichm = 53; howm = 1; } /* channel - no worshippers of Vehumet */
+   if (random2(10) == 0 && you[0].skills [28] <= 2 && you[0].skills [29] <= 2) { whichm = 49; howm = 1; } /* raise dead */
+   if (random2(14) == 0 && you[0].skills [19] >= 10) { whichm = 54; howm = 1; } /* drain life */
+
+   if (you[0].mutation [whichm] != 0) whichm = -1;
+
+   counter ++;
+  } while (whichm == -1 && counter < 5000);
+  if (whichm == -1) /* unlikely but remotely possible */
+  {
+   you[0].max_strength ++;
+   you[0].max_dex ++;
+   you[0].max_intel ++;
+   you[0].strength ++;
+   you[0].dex ++;
+   you[0].intel ++;
+   you[0].strength_ch = 1;
+   you[0].intel_ch = 1;
+   you[0].dex_ch = 1;
+   /* I know this is a cop-out */
+  }
+   else perma_mutate(whichm, howm);
+
+
+}
+
+
+void perma_mutate(int which_mut, char how_much)
+{
+
+ mutate(which_mut + 1000);
+ if (how_much == 2) mutate(which_mut + 1000);
+ if (how_much == 3) mutate(which_mut + 1000);
+
+ you[0].demon_pow [which_mut] = how_much;
+
+}
+
 
 char give_good_mutation(void)
 {
-  switch(random2(23)) /* beneficial mutates */
+  switch(random2(25)) /* beneficial mutates */
   {
    case 0: return mutate(0); break;
    case 1: return mutate(1); break;
@@ -738,13 +1066,15 @@ char give_good_mutation(void)
    case 20: return mutate(29); break;
    case 21: return mutate(30); break;
    case 22: return mutate(31); break;
+   case 23: return mutate(36); break;
+   case 24: return mutate(42); break;
   }
  return 0;
 }
 
 char give_bad_mutation(void)
 {
-  switch(random2(8)) /* bad mutations */
+  switch(random2(12)) /* bad mutations */
   {
    case 0: return mutate(10); break;
    case 1: return mutate(11); break;
@@ -754,6 +1084,10 @@ char give_bad_mutation(void)
    case 5: return mutate(20); break;
    case 6: return mutate(22); break;
    case 7: return mutate(26); break;
+   case 8: return mutate(35); break;
+   case 9: return mutate(38); break;
+   case 10: return mutate(39); break;
+   case 11: return mutate(41); break;
   }
  return 0;
 }

@@ -274,7 +274,7 @@ void input(void)
                                 case 1: mpr("You finish putting on your armour."); break;
                                 case 2: mpr("You finish taking off your armour."); break;
                         case 3: mpr("You finish memorising."); break;
-                                case 4: if (you[0].species == 16) mpr("You finish ripping the corpse into pieces.");
+                                case 4: if (you[0].species == 16 || you[0].species == 35) mpr("You finish ripping the corpse into pieces.");
                                 else mpr("You finish chopping the corpse into pieces.");
                                 break;
                         }
@@ -551,7 +551,11 @@ void input(void)
                 case '`': macro_add_query(); break;
                 case '~': mpr("Saving macros."); macro_save(); break;
 
-/*
+
+
+/* Debug starts: * /
+
+
  case '&': cast_spec_spell(); break;
   case '%': create_spec_object2(); break;
   case '*': grd [you[0].x_pos] [you[0].y_pos] = 82; break;
@@ -563,7 +567,7 @@ void input(void)
         specs [1] = getche();
         specs [2] = getche();
     grd [you[0].x_pos] [you[0].y_pos] = atoi(specs); break;
-  case 'G': grd [you[0].x_pos] [you[0].y_pos] = 96; break;
+  case 'G': debug_add_skills(); break;
 //  case '\"': grd [you[0].x_pos] [you[0].y_pos] = 99; break;
 //  case '\'': grd [you[0].x_pos] [you[0].y_pos] = 101; break;
   case '+': create_spec_monster(); break;
@@ -597,8 +601,13 @@ case '[':
 //   acquirement();
 break;
 
-case ']': //grd [you[0].x_pos] [you[0].y_pos] = 96;
-gain_piety(10);
+case ']':
+        char specx [2];
+        strcpy(info, "Gain which mutation? ");
+        mpr(info);
+        specx [0] = getche();
+        specx [1] = getche();
+    mutate(atoi(specx));
 break;
 
   case ')': you[0].xp += 5000; you[0].exp_available += 500; you[0].xp_ch = 1;
@@ -607,20 +616,11 @@ break;
   case '\"': level_travel(); break;
   case '-': you[0].hp = you[0].hp_max; you[0].hp_ch = 1; break;
   case '$': you[0].gp += 500; you[0].gp_ch = 1; break;
-  case '_':
-  int i, j;
-  j = 0;
-  for (i = 0; i < 50; i ++)
-  {
-   j += you[0].skill_points [i];
-  }
-  strcpy(info, "You have a total of ");
-  itoa(j, st_prn, 10);
-  strcat(info, st_prn);
-  strcat(info, " skill points.");
-  mpr(info);
-  break;
+
+  case 'F':     stethoscope(250); break;
+
   case ':':
+  int i, j;
   j = 0;
   for (i = 0; i < 20; i ++)
   {
@@ -637,6 +637,10 @@ break;
   break;
   case '{':
   magic_mapping(99, 100);
+  break;
+  case '_':
+  mpr("You feel more pious! Well done.");
+  gain_piety(10);
   break;
 //  case '}': Xom_acts(1, 50, 1); break;
   case '|': acquirement(250); break;
@@ -768,7 +772,9 @@ break;
                 case 'S': save_game(1); break;
                 case 'Q': quit_game(); break;
                 case 'v': version(); break;
-                case 125: break;
+            case '}':
+//        Can't use this char
+                break;
                 default: strcpy(info, "Unknown command.");
                         mpr(info); break;
 
@@ -835,7 +841,7 @@ break;
         if (you[0].duration [1] > 1)
         {
                 you[0].duration [1] --;
-                scrolls_burn(4, 8);
+//              scrolls_burn(4, 8);
         }
         if (you[0].duration [1] == 1)
         {
@@ -845,16 +851,44 @@ break;
                 you[0].duration [1] = 0;
         }
 
-        if (you[0].duration [2] > 0) you[0].duration [2] --;
+        if (you[0].duration [2] > 0)
+    {
+      you[0].duration [2] --;
+      if (you[0].duration [2] == 6)
+      {
+       mpr("Your repel missiles spell is about to expire...");
+       you[0].duration [2] -= random2(2);
+      }
+    }
         if (you[0].duration [2] == 1)
         {
                 mpr("You feel less protected from missiles.");
                 you[0].duration [2] = 0;
         }
 
+        if (you[0].duration [2] > 0)
+    {
+      you[0].duration [20] --;
+      if (you[0].duration [20] == 6)
+      {
+       mpr("Your deflect missiles spell is about to expire...");
+       you[0].duration [20] -= random2(2);
+      }
+    }
+        if (you[0].duration [20] == 1)
+        {
+                mpr("You feel less protected from missiles.");
+                you[0].duration [20] = 0;
+        }
+
         if (you[0].duration [4] > 0)
         {
                 you[0].duration [4] --;
+        if (you[0].duration [4] == 6)
+        {
+         mpr("Your skin is crawling a little less now.");
+         you[0].duration [4] -= random2(2);
+        }
                 if (you[0].duration [4] == 1)
                 {
                         mpr("Your skin stops crawling.");
@@ -956,7 +990,15 @@ break;
         }
 
 
-        if (you[0].duration [9] > 0) you[0].duration [9] --;
+        if (you[0].duration [9] > 0)
+    {
+     you[0].duration [9] --;
+     if (you[0].duration [9] == 6)
+     {
+        mpr("You start to feel a little slower.");
+        you[0].duration [9] -= random2(2);
+     }
+    }
         if (you[0].duration [9] == 1)
         {
                 mpr("You feel sluggish."); // swiftness runs out
@@ -964,7 +1006,15 @@ break;
 /* you[0].fast_you[0].run --;*/
         }
 
-        if (you[0].duration [10] > 0) you[0].duration [10] --;
+        if (you[0].duration [10] > 0)
+    {
+      you[0].duration [10] --;
+      if (you[0].duration [10] == 6)
+      {
+        mpr("You start to feel a little less insulated.");
+        you[0].duration [10] -= random2(2);
+      }
+    }
         if (you[0].duration [10] == 1)
         {
                 mpr("You feel conductive."); // insulation (lightning resistance) wore off
@@ -972,7 +1022,15 @@ break;
                 you[0].attribute [0] --;
         }
 
-        if (you[0].duration [11] > 1) you[0].duration [11] --;
+        if (you[0].duration [11] > 1)
+    {
+     you[0].duration [11] --;
+     if (you[0].duration [11] == 6)
+     {
+        mpr("Your scaley stone armour is starting to flake away.");
+        you[0].duration [11] -= random2(2);
+     }
+    }
         if (you[0].duration [11] == 1)
         {
                 mpr("Your scaley stone armour disappears.");
@@ -991,7 +1049,15 @@ break;
                 you[0].duration [13] = 0;
         }
 
-        if (you[0].duration [14] > 1) you[0].duration [14] --;
+        if (you[0].duration [14] > 1)
+    {
+      you[0].duration [14] --;
+      if (you[0].duration [14] == 6)
+      {
+        mpr("You start to feel a little uncertain.");
+        you[0].duration [14] -= random2(2);
+      }
+    }
         if (you[0].duration [14] == 1)
         {
                 mpr("You feel uncertain."); // teleport control
@@ -999,14 +1065,30 @@ break;
                 you[0].attribute [3] --;
         }
 
-        if (you[0].duration [16] > 1) you[0].duration [16] --;
+        if (you[0].duration [16] > 1)
+    {
+      you[0].duration [16] --;
+      if (you[0].duration [16] == 6)
+      {
+        mpr("Your poison resistance is about to expire.");
+        you[0].duration [16] -= random2(2);
+      }
+    }
         if (you[0].duration [16] == 1)
         {
                 mpr("Your poison resistance expires."); // poison resistance wore off
                 you[0].duration [16] = 0;
         }
 
-        if (you[0].duration [19] > 1) you[0].duration [19] --;
+        if (you[0].duration [19] > 1)
+    {
+      you[0].duration [19] --;
+      if (you[0].duration [19] == 6)
+      {
+        mpr("Your unholy channel is weakening.");
+        you[0].duration [19] -= random2(2);
+      }
+    }
         if (you[0].duration [19] == 1)
         {
                 mpr("Your unholy channel expires."); // Death channel wore off
@@ -1029,12 +1111,16 @@ break;
         {
                 you[0].invis --;
                 if (you[0].hunger >= 40 && you[0].is_undead != 2) you[0].hunger -= 5;
+        if (you[0].invis == 6)
+        {
+         mpr("You flicker for a moment.");
+         you[0].invis -= random2(2);
+        }
         }
         if (you[0].invis == 1)
         {
                 strcpy(info, "You flicker back into view.");
                 mpr(info);
-//      your_sign = 64;
                 you[0].invis = 0;
         }
 
@@ -1070,6 +1156,11 @@ break;
         if (you[0].haste > 1)
         {
                 you[0].haste--;
+        if (you[0].haste == 6)
+        {
+          mpr("Your extra speed is starting to run out.");
+          you[0].haste -= random2(2);
+        }
         }
 
         if (you[0].haste == 1)
@@ -1107,7 +1198,8 @@ break;
 
         if (you[0].lev > 1)
         {
-                you[0].lev--;
+        if (you[0].species != 36 || you[0].xl < 15)
+                 you[0].lev--;
                 if (you[0].lev == 10)
                 {
                         strcpy(info, "You are starting to lose your buoyancy!");
@@ -1128,16 +1220,15 @@ break;
         }
 
 
-        if (you[0].rotting > 0)
+        if (you[0].rotting > 0 || you[0].species == 35)
         {
-                if (random2(20) <= (you[0].rotting - 1))
+                if (random2(20) <= (you[0].rotting - 1) || (you[0].species == 35 && random2(200) == 0))
                 {
-                        ouch(1, 0, 1);
+                        ouch(1, 0, 21);
                         you[0].hp_max --;
                 you[0].base_hp --;
                         you[0].hp_ch = 1;
-                        strcpy(info, "You feel your flesh rotting away.");
-                        mpr(info);
+                        mpr("You feel your flesh rotting away.");
                         you[0].rotting--;
                 }
 
@@ -1909,9 +2000,26 @@ void move(char move_x, char move_y)
             if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5) grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] = 76;
             return;
                 }
-
                 you[0].x_pos += move_x;
                 you[0].y_pos += move_y;
+        if (grd [you[0].x_pos] [you[0].y_pos] == 65 && you[0].lev == 0)
+        {
+         if (random2(3) == 0)
+         {
+          mpr("Splash!");
+          noisy(10, you[0].x_pos, you[0].y_pos);
+         }
+                 you[0].time_taken *= 13 + random2(8);
+                 you[0].time_taken /= 10;
+         if (grd [you[0].x_pos - move_x] [you[0].y_pos - move_y] != 65)
+         {
+          mpr("You enter the shallow water. Moving in this stuff is going to be slow.");
+          if (you[0].invis != 0)
+          {
+           mpr("And don't expect to remain undetected.");
+          }
+         }
+        }
                 move_x = 0;
                 move_y = 0;
                 if (player_fast_run() != 0)

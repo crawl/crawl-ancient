@@ -84,8 +84,11 @@ case 119: mlev = 3; break; // iron golem
 case 130: mlev = 5; break; // spec
 case 137: mlev = 4; break; // flayed ghost
 case 144: mlev = 5; break; // dancing weapon
+case 356: mlev = 6; break; // ancient lich
 case 369: mlev = 6; break; // skeletal dragon
 case 394: mlev = 3; break; // hell-hog
+case 398: mlev = 6; break; // iron D
+case 399: mlev = 1; break; // skeletal warrior
 default: return 0;
 } // end switch
 
@@ -132,8 +135,10 @@ case 119: mlev = 3; break; // iron golem
 case 130: mlev = 6; break; // spec
 case 137: mlev = 5; break; // flayed ghost
 case 245: mlev = 6; break; // pit fiend
+case 356: mlev = 6; break; // ancient lich
 case 369: mlev = 6; break; // skeletal dragon
 case 394: mlev = 2; break; // hell-hog
+case 395: mlev = 6; break; // Serpent of Hell
 
 default: return 0;
 } // end switch
@@ -182,8 +187,11 @@ case 119: return 10; // iron golem
 case 130: return 10; // spec
 case 137: return 25; // flayed ghost
 case 144: return 10; // dancing weapon
+case 356: return 3; // ancient lich
 case 369: return 20; // skeletal dragon
 case 394: return 20; // hell-hog
+case 398: return 5; // iron D
+case 399: return 50; // skeletal warrior
 
 default: return 0;
 } // end switch
@@ -227,8 +235,10 @@ case 119: return 5; // iron golem
 case 130: return 20; // spec
 case 137: return 32; // flayed ghost
 case 245: return 7; // pit fiend
+case 356: return 4; // ancient lich
 case 369: return 10; // skeletal dragon
 case 394: return 30; // hell-hog
+case 395: return 4; // Serpent of Hell
 default: return 0;
 } // end switch
 }
@@ -267,7 +277,9 @@ case 87: mlev = 2; break; // "blue devil"
 case 107:
 case 108: mlev = 1; break; // "skeleton"
 case 130: mlev = 4; break; // spec
+case 356: mlev = 6; break; // ancient lich
 case 369: mlev = 6; break; // skeletal dragon
+case 399: mlev = 1; break; // skeletal warrior
 default: return 0;
 }
 
@@ -304,7 +316,9 @@ case 87: return 76; // "blue devil"
 case 107:
 case 108: return 85; // "skeleton"
 case 130: return 20;
+case 356: return 5; // ancient lich
 case 369: return 12; // skeletal dragon
+case 399: return 50; // skeletal warrior
 default: return 0;
 }
 }
@@ -351,7 +365,10 @@ case 130: mlev = 4; break; // spec
 case 137: mlev = 4; break; // flayed ghost
 case 165: mlev = 5; break; // shadow dragon
 case 237: mlev = 1; break; // shadow imp
+case 238: mlev = 3; break; // shadow demon
+case 356: mlev = 6; break; // ancient lich
 case 369: mlev = 4; break; // skeletal dragon
+case 399: mlev = 1; break; // skeletal warrior
 default: return 0;
 }
 
@@ -396,7 +413,10 @@ case 130: return 45;
 case 137: return 30; // flayed ghost
 case 165: return 12; // shadow dragon
 case 237: return 99; // shadow imp
+case 238: return 50; // shadow demon
+case 356: return 6; // ancient lich
 case 369: return 40; // skeletal dragon
+case 399: return 99; // skeletal warrior
 default: return 0;
 }
 }
@@ -488,13 +508,18 @@ case 226:
  case 235:
  case 236:
  case 237:
+ case 238:
+ case 239:
  case 245: // pit fiend
 
  case 260:
  case 261:
+ case 356: // ancient lich
  case 364: // shining eye
  case 369: // skeletal dragon
  case 370: // tentacled monstr
+ case 385: // eye of devastation
+ case 399: // skeletal warrior
  return 1;
 //found = 1; break;
 default: return 0;
@@ -592,14 +617,19 @@ case 226:
  case 234:
  case 235:
  case 236:
- case 237: return 10;
+ case 237:
+ case 238:
+ case 239: return 10;
  case 245: return 5; // pit fiend
  case 260:
  case 261:
+ case 356: // ancient lich
  case 364: // shining eye
  case 370: // tentacled monstr
  return 5;
 case 369: return 20; // skeletal dragon
+case 385: return 3; // eye of devastation
+case 399: return 40; // skeletal warrior
 default: return 0;
 
 
@@ -666,11 +696,11 @@ switch(mcls)
 {
 case 0: return 8; // "giant ant"
 case 1: return 4; // "giant bat"
-case 2: return 7; // "centaur"
+case 2: return 9; // "centaur"
 case 4: return 12; // "ettin"
 case 5: return 8; // "fungus"
 case 6: return 1; // "goblin"
-case 7: return 6; // "hound"
+case 7: return 8; // "hound"
 case 8: return 9; // "imp"
 case 9: return 5; // "jackal"
 case 10: return 11; // "killer bee"
@@ -692,10 +722,10 @@ case 28: return 15; // "cyclops"
 case 29: return 18; // "dragon"
 case 30: return 13; // "two-headed ogre"
 case 32: return 10; // "giant spore"
-case 33: return 3; // "hobgoblin"
+case 33: return 5; // "hobgoblin"
 case 34: return 9; // "ice beast"
 case 35: return 9; // "jelly"
-case 36: return 2; // "kobold"
+case 36: return 4; // "kobold"
 case 37: return 25; // "lich"
 case 38: return 10; // "mummy"
 case 39: return 16; // "naga"
@@ -734,6 +764,8 @@ case 75: return 20; // "ice dragon"
 case 76: return 16; // "slime thing"
 case 77: return 22; // "freezing wraith"
 case 79: return 20; // GooE
+case 98: return 27; // glowing shapeshifter
+case 99: return 17; // shapeshifter
 case 100: return 5; //strcat(gmon_name, "giant mite"); break;
 case 101: return 10; //strcat(gmon_name, "steam dragon"); break;
 case 102: return 20; //strcat(gmon_name, "very ugly thing"); break;
@@ -782,6 +814,7 @@ case 143: return 20; // spiny worm
 case 144: return 25; // dancing weapon
 case 145: return 30; // Titan
 case 146: return 30; // Golden dragon
+case 159: return 13; // giant centipede
 
 case 160: return 24; // iron Troll
 case 162: return 25; // fire giant
@@ -790,6 +823,13 @@ case 165: return 29; // shadow dragon
 case 168: return 25; // deep troll
 case 169: return 16; // giant blowfly
 case 170: return 20; // red wasp
+
+case 173: return 14; // soldier ant
+case 174: return 14; // hill giant
+
+case 177: return 10; // giant frog
+case 178: return 13; // giant brown frog
+case 180: return 16; // blink frog
 
 case 240: return 20; // shadow wraith
 case 241: return 18; // giant amoeba
@@ -813,17 +853,24 @@ case 271: return 30; // deep elf demonologist
 case 272: return 30; // deep elf annihilator
 case 273: return 30; // deep elf sorceror
 case 274: return 30; // deep elf death mage
+case 356: return 30; // ancient lich
 case 364: return 23; // shining eye
 case 369: return 30; // skeletal dragon
 case 370: return 27; // tentacled monstr
 case 371: return 22; // sphinx
 case 376: return 17; // centaur warrior
 case 377: return 24; // yaktaur warrior
+case 385: return 15; // eye of devastation
 case 389:
 case 390:
 case 391:
 case 392:
 case 393: return 15; // mimic
+
+case 396: return 17; // boggart
+case 397: return 30; // quicksilver D
+case 398: return 30; // iron D
+case 399: return 15; // skeletal warrior
 
 case MLAVA0: return 500; // "lava worm"
 case MLAVA1: return 500; // "lava fish"
@@ -983,8 +1030,8 @@ case 82: return 50; // "tormentor"
 case 83: return 40; // "reaper"
 case 84: return 30; // "soul eater"
 case 85: return 40; // "hairy devil"
-case 86: return 0; // "ice devil" not really appropriate for a fiery hell.
-case 87: return 0; // "blue devil"
+case 98: return 35; // glowing shapeshifter
+case 99: return 59; // shapeshifter
 case 100: return 30; //strcat(gmon_name, "giant mite"); break;
 case 101: return 20; //strcat(gmon_name, "steam dragon"); break;
 case 102: return 20; //strcat(gmon_name, "very ugly thing"); break;
@@ -1030,8 +1077,9 @@ case 141: return 5; // vapour
 case 142: return 45; // Ogre mage
 case 143: return 30; // Spiny worm
 case 144: return 5; // dancing weapon
-case 145: return 15; // Titan
-case 146: return 10; // Golden dragon
+case 145: return 10; // Titan
+case 146: return 7; // Golden dragon
+case 159: return 40; // giant centipede
 case 160: return 25; // iron Troll
 case 162: return 25; // fire giant
 case 163: return 25; // frost giant
@@ -1040,6 +1088,12 @@ case 165: return 20; // shadow dragon
 case 168: return 25; // deep troll
 case 169: return 50; // giant blowfly
 case 170: return 25; // red wasp
+
+case 173: return 35; // soldier ant
+case 174: return 99; // hill giant
+case 177: return 99; // giant frog
+case 178: return 70; // giant brown frog
+case 180: return 15; // blink frog
 
 case 240: return 10; // shadow wraith
 case 241: return 35; // giant amoeba
@@ -1063,17 +1117,24 @@ case 271: return 3; // deep elf demonologist
 case 272: return 3; // deep elf annihilator
 case 273: return 3; // deep elf sorceror
 case 274: return 3; // deep elf death mage
+case 356: return 3; // ancient lich
 case 364: return 2; // shining eye
 case 369: return 10; // skeletal dragon
 case 370: return 17; // tentacled monstr
 case 371: return 20; // sphinx
 case 376: return 80; // centaur warrior
 case 377: return 70; // yaktaur warrior
+case 385: return 15; // eye of devastation
 case 389:
 case 390:
 case 391:
 case 392:
 case 393: return 30; // mimic
+
+case 396: return 25; // boggart
+case 397: return 5; // quicksilver D
+case 398: return 5; // iron D
+case 399: return 30; // skeletal warrior
 
 case MLAVA0: return 500; // "lava worm"
 case MLAVA1: return 500; // "lava fish"
@@ -1252,7 +1313,12 @@ case 152: return you[0].branch_stairs [2] + 1 + 4; // green rat
 case 153: return you[0].branch_stairs [2] + 1 + 6; // orange rat
 case 154: return you[0].branch_stairs [2] + 1 + 7; // black snake
 case 155: return you[0].branch_stairs [2] + 1 + 6; // sheep
+case 159: return you[0].branch_stairs [2] + 1 + 1; // giant centipede
 case 164: return you[0].branch_stairs [2] + 1 + 7; // fire drake
+case 177: return you[0].branch_stairs [2] + 1 + 2; // giant frog
+case 178: return you[0].branch_stairs [2] + 1 + 4; // giant brown frog
+case 179: return you[0].branch_stairs [2] + 1 + 5; // spiny frog
+case 180: return you[0].branch_stairs [2] + 1 + 6; // blink frog
 case 242: return you[0].branch_stairs [2] + 1 + 5; // giant slug
 case 243: return you[0].branch_stairs [2] + 1 + 6; // giant snail
 case 246: return you[0].branch_stairs [2] + 1 + 9; // boring beetle
@@ -1310,11 +1376,16 @@ case 148: return 10; // lindworm
 case 149: return 30; // elephant slug
 case 150: return 35; // war dog
 case 151: return 99; // grey rat
-case 152: return 74; // green rat
-case 153: return 46; // orange rat
+case 152: return 64; // green rat
+case 153: return 10; // orange rat
 case 154: return 47; // black snake
 case 155: return 36; // sheep
+case 159: return 50; // giant centipede
 case 164: return 36; // fire drake
+case 177: return 99; // giant frog
+case 178: return 99; // giant brown frog
+case 179: return 75; // spiny frog
+case 180: return 45; // blink frog
 case 242: return 55; // giant slug
 case 243: return 56; // giant snail
 case 246: return 29; // boring beetle
@@ -1410,10 +1481,12 @@ case 131: mlev = 3; break; // pulsating mass
 case 137: mlev = 3; break; // flayed ghost
 case 156: mlev = 3; break; // ghoul
 case 240: mlev = 4; break; // shadow wraith
+case 356: mlev = 5; break; // ancient lich
 case 362: mlev = 4; break; // vampire knight
 case 363: mlev = 4; break; // vampire mage
 case 369: mlev = 4; break; // skeletal dragon
 case 372: mlev = 3; break; // rotting hulk
+case 399: mlev = 2; break; // skeletal warrior
 
 default: mlev = 99;
 
@@ -1457,10 +1530,12 @@ case 131: mlev = 3; break; // pulsating mass
 case 137: mlev = 13; break; // flayed ghost
 case 156: mlev = 25; break; // ghoul
 case 240: mlev = 10; break; // shadow wraith
+case 356: mlev = 8; break; // ancient lich
 case 362: mlev = 20; break; // vampire knight
 case 363: mlev = 20; break; // vampire mage
 case 369: mlev = 24; break; // skeletal dragon
 case 372: mlev = 17; break; // rotting hulk
+case 399: mlev = 75; break; // skeletal warrior
 
 default: mlev = 0;
 
@@ -1567,6 +1642,7 @@ switch(mcls)
 {
 case 5: mlev = 3; break; // fungus
 
+case 99: mlev = 4; break; // shapeshifter
 case 263: mlev = 1; break; // deep elf soldier
 case 264: mlev = 1; break; // deep elf fighter
 case 265: mlev = 4; break; // deep elf knight
@@ -1609,6 +1685,7 @@ pre-game deletion routine in new_game in newgame.cc.
 switch(mcls)
 {
 case 5: mlev = 300; break; // fungus
+case 99: return 25; // shapeshifter
 case 263: mlev = 100; break; // deep elf soldier
 case 264: mlev = 100; break; // deep elf fighter
 case 265: mlev = 80; break; // deep elf knight
@@ -1658,6 +1735,7 @@ case 51: mlev = 1; break; // "zombie"
 case 72: mlev = 2; break; // "flying skull"
 case 107:
 case 108: mlev = 1; break; // "skeleton"
+case 356: mlev = 3; break; // ancient lich
 case 373: mlev = 2; break; // "guardian mummy"
 case 375: mlev = 3; break; // "mummy priest"
 
@@ -1688,6 +1766,7 @@ case 51: mlev = 21; break; // "zombie"
 case 72: mlev = 33; break; // "flying skull"
 case 107:
 case 108: mlev = 21; break; // "skeleton"
+case 356: mlev = 2; break; // ancient lich
 case 373: mlev = 202; break; // "guardian mummy"
 case 375: mlev = 40; break; // "mummy priest"
 default: mlev = 0;
@@ -1729,6 +1808,10 @@ case 169: mlev = 1; break; // giant blowfly
 case 170: mlev = 3; break; // red wasp
 case 171: mlev = 3; break; // swamp dragon
 case 172: mlev = 1; break; // swamp drake
+case 177: mlev = 1; break; // giant frog
+case 178: mlev = 2; break; // giant brown frog
+case 179: mlev = 3; break; // spiny frog
+case 180: mlev = 4; break; // blink frog
 case 241: mlev = 1; break; // giant amoeba
 case 242: mlev = 1; break; // giant slug
 case 243: mlev = 2; break; // giant snail
@@ -1772,6 +1855,10 @@ case 169: mlev = 100; break; // giant blowfly
 case 170: mlev = 30; break; // red wasp
 case 171: mlev = 30; break; // swamp dragon
 case 172: mlev = 80; break; // swamp drake
+case 177: mlev = 150; break; // giant frog
+case 178: mlev = 90; break; // giant brown frog
+case 179: mlev = 30; break; // spiny frog
+case 180: mlev = 10; break; // blink frog
 case 241: mlev = 10; break; // giant amoeba
 case 242: mlev = 10; break; // giant slug
 case 243: mlev = 10; break; // giant snail

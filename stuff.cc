@@ -10,8 +10,10 @@
 
 #include "externs.h"
 #include <stdlib.h>
+#include <string.h>
 
 #include "macro.h"
+#include "message.h"
 #include "misc.h"
 #include "output.h"
 #include "view.h"
@@ -68,6 +70,15 @@ lincurses_shutdown();
  exit(end_arg);
 }
 
+void output_value(char string [100], int value)
+{
+
+ strcpy(info, string);
+ itoa(value, st_prn, 10);
+ strcat(info, st_prn);
+ mpr(info);
+
+}
 
 #ifdef PLAIN_TERM
 // this function is used for systems without gettext/puttext to redraw the

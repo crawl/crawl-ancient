@@ -140,7 +140,7 @@ Another cursor input thing.
 */
 int dir_cursor(char rng)
 {
-        char mve_x, mve_y;
+        char mve_x = 0, mve_y = 0;
         char bk = 0;
         char keyy;
 
@@ -316,6 +316,14 @@ if (mgrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9] != MNG)
 
 int i = mgrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9];
 
+if (grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9] == 65)
+{
+ if (menv [i].m_ench [2] == 6 && mons_flies(menv [i].m_class) == 0 && player_see_invis() == 0)
+ {
+  mpr("There is a strange disturbance in the water here.");
+ }
+}
+
 if (menv [i].m_ench [2] == 6 && player_see_invis() == 0) goto look_clouds;
 
         int mmov_x = menv [i].m_inv [0];
@@ -423,7 +431,9 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   break;
   case 61: mpr("Some lava.");
   break;
-  case 62: mpr("Some water.");
+  case 62: mpr("Some deep water.");
+  break;
+  case 65: mpr("Some shallow water.");
   break;
   case 78: // undiscovered trap
   case 67: mpr("Floor.");
@@ -432,20 +442,20 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   break;
 
   case 85:
-  mpr("A ladder leading down.");
+  mpr("A rock staircase leading down.");
   break;
   case 82:
   case 83:
   case 84:
-  mpr("A staircase leading down.");
+  mpr("A stone staircase leading down.");
   break;
   case 89:
-  mpr("A ladder leading upwards.");
+  mpr("A rock staircase leading upwards.");
   break;
   case 86:
   case 87:
   case 88:
-  mpr("A staircase leading up.");
+  mpr("A stone staircase leading up.");
   break;
   case 69: mpr("A gateway to hell.");
   break;
@@ -569,7 +579,9 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   case 182:
   mpr("An ancient bone altar of Kikubaaqudgha.");
   break;
-//  case 183:
+  case 183:
+  mpr("A basalt altar of Yredelemnul.");
+  break;
   case 184:
   mpr("A shimmering altar of Xom.");
   break;
@@ -595,6 +607,22 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   case 191:
   mpr("A silver altar of Elyvilon.");
   break;
+
+  case 200:
+  mpr("A fountain of clear blue water.");
+  break;
+  case 202:
+  mpr("A fountain of sparkling water.");
+  break;
+  case 201:
+  case 203:
+  case 205:
+  case 207:
+  case 209:
+  case 210:
+  mpr("A dry fountain.");
+  break;
+
 
 }
 

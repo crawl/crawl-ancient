@@ -85,7 +85,7 @@ int dem_beha = beha;
 
 if (beha == 100) beha = 7;
 
-unsigned char spcw = 67;
+unsigned char spcw = 65;
 
 if (cls >= MLAVA0) spcw = 61;
 if (cls >= MWATER0) spcw = 62;
@@ -136,7 +136,7 @@ return summd;
 char empty_surrounds(int emx, int emy, unsigned char spc_wanted, char allow_centre, char empty [2])
 {
 
-int count_x, count_y;
+int count_x, count_y = 0;
 
 char minx = -1;
 char maxx = 3;
@@ -170,12 +170,12 @@ for (count_x = minx; count_x != maxx; count_x += xinc)
       if (count_x == 0 && count_y == 0 && allow_centre == 0) continue;
       if (emx + count_x == you[0].x_pos && emy + count_y == you[0].y_pos) continue;
 
-      if (spc_wanted != 67)
+      if (spc_wanted != 65)
       {
         if (grd [emx + count_x] [emy + count_y] == spc_wanted && mgrd [emx + count_x] [emy + count_y] == MNG)
          goto bkout;
       } else
-             if (grd [emx + count_x] [emy + count_y] >= 67 && mgrd [emx + count_x] [emy + count_y] == MNG)
+             if (grd [emx + count_x] [emy + count_y] >= 65 && mgrd [emx + count_x] [emy + count_y] == MNG)
              {
                 goto bkout;
              }

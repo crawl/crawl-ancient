@@ -15,8 +15,7 @@
 
 #ifdef LINUX
 # include <curses.h>
-#endif
-#ifdef DOS
+#else
 # include <conio.h>
 #endif
 
@@ -51,6 +50,9 @@ int macro_init (void)
                 char* act;
             signed int* ract;
                 unsigned int a, len, rlen, tlen;
+
+                /* Fixes a crash with empty macro-file. */
+                a = len = rlen = tlen = 0;
 
                 key = (char*) malloc(ssize);
                 act = (char*) malloc(ssize);
@@ -89,7 +91,6 @@ int macro_init (void)
                         {
 /*                              rkey[0] = -1; */
                                 len = 0; rlen = 0; tlen = 1;
-                                /* No way to escape a '\' right now (FIXME) */
                                 while (len < strlen(key) && tlen > 0)
                                 {
                                         if ( sscanf( &key[len], "\\%i%n", &rkey[rlen], &tlen) == 0)
@@ -170,7 +171,7 @@ int macro_buf_add (int* actions)
         for (i = 0; i < l; i++)
         {
                 node = new_node();
-                (int) node->data = actions[i]; /* We don't need no stinking
+                node->data = (void*) actions[i]; /* We don't need no stinking
                                                                                 structs for one value... */
                 insert_node(node, ((node_s*) macro_buf->data)->prev );
         }
@@ -219,7 +220,9 @@ int macro_save (void)
                 for (i = 0; i<  i_strlen( ((macro_s*) node->data)->key); i++)
                 {
                         c = ((macro_s*) node->data)->key[i];
-                        if( c >= 32 && c < 128)
+                        /* It might be a good idea to allow some escaping of '\'
+                         * too :-) */
+                        if( c >= 32 && c < 128  && c != '\\' )
                           fprintf(f, "%c", c);
                         else
                         {

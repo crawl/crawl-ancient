@@ -144,7 +144,7 @@ bly = you[0].y_pos - 6 + random2(14);
 
 tries ++;
 if (tries >= 150) return 0;
-} while (see_grid(blx, bly) == 0 || grd [blx] [bly] < 67 || mgrd [blx] [bly] != MNG || (you[0].x_pos == blx && you[0].y_pos == bly));
+} while (see_grid(blx, bly) == 0 || grd [blx] [bly] < 65 || mgrd [blx] [bly] != MNG || (you[0].x_pos == blx && you[0].y_pos == bly));
 
 passed [0] = blx;
 passed [1] = bly;
@@ -349,7 +349,8 @@ if (env[0].cgrid [menv [i].m_x] [menv [i].m_y] != CNG)
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) != 1 && menv [i].m_targ_1_x == menv [i].m_x && menv [i].m_targ_1_y == menv [i].m_y)
         menv [i].m_beh = 2;
 
-
+if (menv [i].m_class == 98) menv [i].m_ench [1] = 38;
+if (menv [i].m_class == 99) menv [i].m_ench [1] = 39; /* otherwise are potential problems with summonings */
 
 switch (menv [i].m_beh)
 {
@@ -360,7 +361,7 @@ break;
 
 case 100:
 case 1: // chasing YOU
-if ((mons_near(i) == 1 && (you[0].invis == 0 || mons_see_invis(menv [i].m_class) != 0)) || (mons_near(i) == 0 && menv [i].m_targ_1_x == menv [i].m_x && menv [i].m_targ_1_y == menv [i].m_y))
+if ((mons_near(i) == 1 && (you[0].invis == 0 || mons_see_invis(menv [i].m_class) != 0 || (grd [you[0].x_pos] [you[0].y_pos] == 65 && you[0].lev == 0))) || (mons_near(i) == 0 && menv [i].m_targ_1_x == menv [i].m_x && menv [i].m_targ_1_y == menv [i].m_y))
 {
         menv [i].m_targ_1_x = you[0].x_pos;
         menv [i].m_targ_1_y = you[0].y_pos;
@@ -448,7 +449,7 @@ for (p = 0; p < 3; p ++)
 {
 switch (menv [i].m_ench [p])
 {
-        case 1: // you[0].slow
+        case 1: // slow
         if (random2(250) <= menv [i].m_HD + 10)
         {
                 if (menv [i].m_speed >= 100)
@@ -502,7 +503,7 @@ switch (menv [i].m_ench [p])
         case 6: // invisibility
         if (random2 (40) == 0 || (menv [i].m_class >= MLAVA0 && menv [i].m_sec == 0) || (menv [i].m_class == 125 && random2(3) == 0))
         {
-                if (menv [i].m_class == 46 || menv [i].m_class == 141 || menv [i].m_class == 240) continue;
+                if (mons_flag(menv [i].m_class, M_INVIS)) continue; /* never runs out for these creatures */
                 if (menv [i].m_class >= MLAVA0 && menv [i].m_sec == 1) continue;
                 menv [i].m_ench [p] = 0;
                 if (menv [i].m_ench [0] == 0 && menv [i].m_ench [1] == 0 && menv [i].m_ench [2] == 0)
@@ -608,6 +609,13 @@ switch (menv [i].m_ench [p])
         }
  break;
 
+ case 38: // monster is a glowing shapeshifter. This ench never runs out.
+ if (random2(4) == 0 || menv [i].m_class == 98) monster_polymorph(i, 250, 0);
+ break;
+ case 39: // monster is a shapeshifter. This ench never runs out.
+ if (random2(15) == 0 || menv [i].m_class == 99) monster_polymorph(i, 250, 0);
+ break;
+
  case 40:
         monster_teleport(i, 1);
         menv [i].m_ench [p] = 0;
@@ -625,18 +633,16 @@ switch (menv [i].m_ench [p])
 } // end of for p
 } // end of if
 
+/* regenerate */
+if (menv [i].m_hp < menv [i].m_hp_max && (random2(25) == 0 || menv [i].m_class == 8 || menv [i].m_class == 45 || menv [i].m_class == 76 || menv [i].m_class == 135 || menv [i].m_class == 160 || menv [i].m_class == 234 || menv [i].m_class == 221 || menv [i].m_class == 227 || menv [i].m_class == 292 || menv [i].m_class == 168)) menv [i].m_hp ++;
+
 
 if (menv [i].m_speed >= 100) continue;
 
 if (menv [i].m_class == 25 || menv [i].m_class == 51 || menv [i].m_class == 107 || menv [i].m_class == 108) menv [i].m_hp_max = menv [i].m_hp;
 
 
-/* regenerate */
-if (menv [i].m_hp < menv [i].m_hp_max && (random2(25) == 0 || menv [i].m_class == 8 || menv [i].m_class == 45 || menv [i].m_class == 76 || menv [i].m_class == 135 || menv [i].m_class == 160 || menv [i].m_class == 234 || menv [i].m_class == 221 || menv [i].m_class == 227 || menv [i].m_class == 292 || menv [i].m_class == 168)) menv [i].m_hp ++;
-
-
-
-if (igrd [menv [i].m_x] [menv [i].m_y] != 501 && (gmon_use [menv [i].m_class] == 3 || menv [i].m_class == 35))
+if (igrd [menv [i].m_x] [menv [i].m_y] != 501 && (gmon_use [menv [i].m_class] == 3 || menv [i].m_class == 35 || menv [i].m_class == 13 || menv [i].m_class == 156))
 {
         mons_pickup(i);
 }
@@ -681,10 +687,8 @@ if (menv [i].m_beh == 4) /* confused */
 } /* end of if confused */
 if (brkk == 1) continue;
 
-
-
 /* for monsters who use spec abils even when next to you */
-if (mons_near(i) == 1)
+if (mons_near(i) == 1 && menv [i].m_beh != 0)
 {
 
 if (mons_flag(menv [i].m_class,M_SPEAKS) && random2(5) == 0)
@@ -732,16 +736,20 @@ case MWATER2:
 case MWATER3:
 case MWATER4:
 case MWATER5:
-if (menv [i].m_sec == 0) // visible
+if (grd [menv [i].m_x] [menv [i].m_y] == 65 || grd [menv [i].m_x] [menv [i].m_y] == 200)
 {
- if (random2(5) == 0)
+ menv [i].m_sec = 0;
+ menv [i].m_ench [2] = 0;
+} else
+ if (menv [i].m_sec == 0 && grd [menv [i].m_x] [menv [i].m_y] != 65 && grd [menv [i].m_x] [menv [i].m_y] != 200) // visible
  {
+  if (random2(5) == 0)
+  {
    menv [i].m_sec = 1;
    menv [i].m_ench [2] = 6;
    menv [i].m_ench_1 = 1;
-
- }
-} else
+  }
+ } else
 {
  if (random2(10) == 0 && (menv [i].m_x != you[0].x_pos || menv [i].m_y != you[0].y_pos)) menv [i].m_sec = 0;
 }
@@ -753,6 +761,10 @@ case 125: // air elemental
   menv [i].m_ench [2] = 6;
   menv [i].m_ench_1 = 1;
  }
+break;
+
+case 401: /* random demon */
+if (ghost.ghs [13] == 1) menv [i].m_sec = random2(15) + 1;
 break;
 
 } // end of switch
@@ -924,6 +936,7 @@ break;
 case 8: // imp
 case 15: // phantom
 case 140:
+case 180: // blink frog
 if (random2(7) == 0) // phantom
 {
    if (mons_near(i) == 1)
@@ -1002,7 +1015,7 @@ break;
 
 
 
-if (menv [i].m_inv [4] != 501 && random2(3) == 0)
+if (menv [i].m_inv [4] != 501 && random2(3) == 0 && menv [i].m_beh != 0)
 {
  switch(mitm.itype [menv [i].m_inv [4]])
  {
@@ -1047,7 +1060,7 @@ if (menv [i].m_inv [4] != 501 && random2(3) == 0)
 
 
 
-out_of_potion : if (menv [i].m_inv [6] != 501 && random2(3) == 0 && menv [i].m_beh != 4)
+out_of_potion : if (menv [i].m_inv [6] != 501 && random2(3) == 0 && menv [i].m_beh != 4 && menv [i].m_beh != 0)
 {
  switch(mitm.itype [menv [i].m_inv [6]])
  {
@@ -1097,7 +1110,7 @@ out_of_potion : if (menv [i].m_inv [6] != 501 && random2(3) == 0 && menv [i].m_b
 
 }
 
-out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0)
+out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0 && menv [i].m_beh != 0)
 {
  if (mitm.iplus [menv [i].m_inv [5]] > 0)
  {
@@ -1268,7 +1281,7 @@ out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0)
 /* Don't put stuff here, because of the jump to that label. */
 
 /* SPELLCASTER MOVED HERE */
-out_of_zap: if (mons_flag(menv [i].m_class,M_SPELLCASTER))
+out_of_zap: if (mons_flag(menv [i].m_class,M_SPELLCASTER) && menv [i].m_beh != 0)
 {
 spell_cast = 100;
 if (menv [i].m_class == 80)
@@ -1279,7 +1292,7 @@ if (menv [i].m_class == 80)
         case 2: menv [i].m_sec = YELLOW; break;
  }
 
-if (menv [i].m_beh == 4) goto end_switch;
+if (menv [i].m_beh == 4 && menv [i].m_class != 141) goto end_switch; /* vapours cast spells even if confused */
 
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) == 0) goto end_switch;
 
@@ -1288,6 +1301,12 @@ if ((menv [i].m_beh == 6 || menv [i].m_beh == 7) && menv [i].m_hit == MHITNOT) g
 
 msecc = menv [i].m_sec;
 if (menv [i].m_class == 80) msecc = 30; // burning devil
+if (menv [i].m_class == 401)
+{
+ msecc = 119;
+ if (ghost.ghs [9] == 0) goto end_switch; // random demon
+}
+
 
 //beem[0].aim_down = 1;
 
@@ -1388,21 +1407,18 @@ if (mons_near(i) == 1)
 {
         strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
 if (menv [i].m_class != 69) /* brain worm */
-if (spell_cast == 33 || spell_cast == 34)
+/*if (spell_cast == 33 || spell_cast == 34)
 {
- strcat(info, " opens a gate.");
+ strcat(info, " ");
  mpr(info);
 } else
-if (spell_cast == 27 && you[0].your_level < 50)
+if (spell_cast == 27)
 {
-  if (menv [i].m_ench [2] != 6)
-                        {
-                if (you[0].your_level < 50) strcat(info, " opens a gate!");
-                   else strcat(info, " calls for assistance.");
-                mpr(info);
-                        }
-} else
-if (menv [i].m_class == 101 || menv [i].m_class == 122 || menv [i].m_class == 132 || menv [i].m_class == 146 || menv [i].m_class == 165 || menv [i].m_class == 171 || menv [i].m_class == 172 || menv [i].m_class == 394) /* steam, mottled, storm and golden dragons, etc */
+
+ strcat(info, " opens a gate!");
+ mpr(info);
+} else*/
+if (menv [i].m_class == 101 || menv [i].m_class == 122 || menv [i].m_class == 132 || menv [i].m_class == 146 || menv [i].m_class == 165 || menv [i].m_class == 171 || menv [i].m_class == 172 || menv [i].m_class == 394 || menv [i].m_class == 395 || menv [i].m_class == 397 || menv [i].m_class == 398) /* steam, mottled, storm and golden dragons, etc */
  {
   if (menv [i].m_ench [2] != 6)
                         {
@@ -1411,7 +1427,7 @@ if (menv [i].m_class == 101 || menv [i].m_class == 122 || menv [i].m_class == 13
                         }
  } else
 
- if (menv [i].m_class == 79 || menv [i].m_class == 364) // great orb of eyes
+ if (menv [i].m_class == 79 || menv [i].m_class == 364 || menv [i].m_class == 385) // great orb of eyes etc
  {
   if (menv [i].m_ench [2] != 6)
                         {
@@ -1457,6 +1473,11 @@ if (menv [i].m_class == 101 || menv [i].m_class == 122 || menv [i].m_class == 13
                 strcat(info, " burns!");
                 mpr(info);
          } else
+     if (strstr(monam (menv [i].m_sec, menv [i].m_class, 0, 0), "priest") != NULL) /* various priestly types - assumes they're called 'something priest' */
+         {
+                strcat(info, " utters an invocation.");
+                mpr(info);
+         } else
                {
                     strcat(info, " casts a spell.");
                     mpr(info);
@@ -1488,7 +1509,7 @@ if (spell_cast == 16)
 }
 
 
- beem[0].damage = 10 * menv [i].m_HD; // really???
+ beem[0].damage = 8 * menv [i].m_HD; // really???
  beem[0].beam_source = i;
                 mons_cast(i, beem, spell_cast);
 
@@ -1499,7 +1520,7 @@ if (spell_cast == 16)
 
 /* note: are 'goto end_switch's in the spellcaster bit. */
 
-end_switch : if (gmon_use [menv [i].m_class] > 0 && menv [i].m_inv [1] != 501 && menv [i].m_class != 30 && (you[0].invis == 0 || mons_see_invis(menv [i].m_class) != 0) && menv [i].m_beh != 4) // 2-h ogre
+end_switch : if (gmon_use [menv [i].m_class] > 0 && menv [i].m_inv [1] != 501 && menv [i].m_class != 30 && (you[0].invis == 0 || mons_see_invis(menv [i].m_class) != 0) && menv [i].m_beh != 4 && menv [i].m_beh != 0) // 2-h ogre
 {
 if ((menv [i].m_beh == 6 || menv [i].m_beh == 7) && menv [i].m_hit == MHITNOT) goto end_throw;
 
@@ -1798,7 +1819,7 @@ switch(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]])
 
 
 
- case 14: if (menv [i].m_class != 13) return;
+ case 14: if (menv [i].m_class != 13 && menv [i].m_class != 156) return;
  menv [i].m_hp += random2(mons_weight(mitm.iplus [igrd [menv [i].m_x] [menv [i].m_y]])) / 100 + 1;
  if (menv [i].m_hp > 77) menv [i].m_hp = 77;
  if (menv [i].m_hp > menv [i].m_hp_max) menv [i].m_hp_max = menv [i].m_hp;
@@ -1829,7 +1850,8 @@ int count_x, count_y, vacated_x, vacated_y;
 //mmov_y = 0;
 
 
-int okmove = 66;
+int okmove = 65;
+if (random2(3) == 0 || menv [i].m_class == 124) okmove = 66; /* effectively slows down monster movement across water. Fire elementals can't cross */
 if (mons_flies(menv [i].m_class) > 0 || menv [i].m_class >= MLAVA0) okmove = MINMOVE;
 
 for (count_x = 0; count_x < 3; count_x ++)
@@ -2113,7 +2135,7 @@ unsigned char grik = grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y];
 
  mgrd [menv [i].m_x] [menv [i].m_y] = MNG;
 
-if (grik > okmove && mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == MNG)
+if (grik >= okmove && mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == MNG)
 {
 
         if (menv [i].m_x + mmov_x == you[0].x_pos && menv [i].m_y + mmov_y == you[0].y_pos)
@@ -2130,7 +2152,7 @@ if (grik > okmove && mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == MNG
   mmov_x = 0;
   mmov_y = 0;
  }
- if (menv [i].m_class >= MWATER0 && grik != 62)
+ if (menv [i].m_class >= MWATER0 && grik != 62 && grik != 65 && grik != 200)
  {
   mmov_x = 0;
   mmov_y = 0;

@@ -35,6 +35,7 @@
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
+#include "mons_lev.h"
 #include "mstruct.h"
 #include "mstuff2.h"
 #include "mutation.h"
@@ -86,6 +87,16 @@ if (menv [monster_attacked].m_beh == 7)
  naughty(5, 5);
 }
 
+if (grd [you[0].x_pos] [you[0].y_pos] == 65 && you[0].lev == 0)
+{
+ if (random2(you[0].dex) <= 3 || random2(5) == 0)
+ {
+  mpr("Unstable footing causes you to fumble your attack.");
+  return;
+ }
+}
+
+
 your_to_hit = 15 + you[0].dex / 2;// + (0.5 * you[0].strength);// + (you[0].f_abil / 10); // / 100
 
 if (wearing_amulet(43) == 1) your_to_hit -= 5;
@@ -99,7 +110,7 @@ if (you[0].equip [0] != -1)
   your_to_hit += random2(you[0].skills [weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]])] + 1);
 } else /* Unarmed... */
    {
-    if (you[0].species == 16) your_to_hit += 2;
+    if (you[0].species == 16 || you[0].species == 35) your_to_hit += 2;
     your_to_hit += 2 + random2(you[0].skills [19] + 1);
    }
 
@@ -135,6 +146,10 @@ if (you[0].special_wield != 0)
  }
 }
 
+if (you[0].mutation [37] != 0)
+{
+ if (random2(100) < (you[0].mutation [37] * 10) - 5) go_berserk();
+}
 
 if (you[0].equip [0] != -1)
 {
@@ -195,22 +210,27 @@ int damage = 1;
 if (you[0].equip [0] == -1) /* empty hands */
 {
  damage = 3;
+ if (you[0].mutation [54] != 0) special_brand = 8; /* demonic power */
  if (you[0].attribute [5] != 0)
  {
   switch(you[0].attribute [5])
   {
-   case 1: damage = 7; special_brand = 6; your_to_hit += random2(10); break;
-   case 2: damage = 15 + you[0].xl; your_to_hit += random2(20); break;
-   case 3: damage = 12 + you[0].strength; your_to_hit += random2(9); break;
-   case 4: damage = 10; special_brand = 2; your_to_hit += random2(10); break;
-   case 5: damage = 18 + you[0].strength; your_to_hit += random2(10); break;
-   case 6: damage = 5; special_brand = 8; your_to_hit += random2(10); break;
+   case 1: damage = 9; special_brand = 6; your_to_hit += random2(10); break; /* spider */
+   case 2: damage = 12 + (you[0].strength / 4) + (you[0].dex / 4); your_to_hit += random2(12); break; /* blade */
+   case 3: damage = 12 + you[0].strength; your_to_hit += random2(9); break; /* statue */
+   case 4: damage = 10; special_brand = 2; your_to_hit += random2(10); break; /* ice */
+   case 5: damage = 20 + you[0].strength; your_to_hit += random2(10); break; /* dragon */
+   case 6: damage = 5; special_brand = 8; your_to_hit += random2(10); break; /* necromutation */
   }
  } else
   {
-   if (you[0].species == 16)
+   if (you[0].species == 16) /* troll */
    {
     damage += 5;
+   }
+   if (you[0].species == 35) /* ghoul */
+   {
+    damage += 2;
    }
   }
   damage += you[0].skills [19];
@@ -328,9 +348,9 @@ damage_done /= 30;
                  in_name(you[0].equip [0], 3, str_pass);
                  strcat(info, str_pass);
                  strcat(info, ".");
-                 mpr(info);
+         mpr(info);
                  more();
-                 wield_change = 1;
+         wield_change = 1;
                 }
 
         }
@@ -348,7 +368,7 @@ damage_done /= 30;
             {
                  damage_done *= 10 + you[0].skills [16] / weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]);
                  damage_done /= 10;
-                 if (you[0].inv_type [you[0].equip [0]] == 3) ;
+                 if (you[0].inv_type [you[0].equip [0]] == 3)
                     {
                          damage_done *= 12 + you[0].skills [16];
                          damage_done /= 12;
@@ -809,10 +829,12 @@ switch(scount)
       break;
  case 1:
       if (unarmed_attack != 2)
-       if (you[0].mutation [32] == 0 || random2(3) != 0) continue;
+       if ((you[0].species != 33 && (you[0].mutation [32] == 0 && you[0].species != 36)) || random2(3) != 0) continue;
           if (you[0].attribute [5] == 1 || you[0].attribute [5] == 4 || you[0].attribute [5] == 5) continue;
-      strcpy(attack_name, "head-butt");
+      if (you[0].species == 36) strcat(attack_name, "peck"); else /* Kenku */
+       strcpy(attack_name, "head-butt");
       sc_dam = 5 + you[0].mutation [32] * 3;
+      if (you[0].species == 33) sc_dam += 5;
           if (you[0].equip [2] != -1 && you[0].inv_plus2 [you[0].equip [2]] <= 1)
       {
        sc_dam += 2;
@@ -838,7 +860,7 @@ switch(scount)
       if (you[0].attribute [5] == 2)
       {
        strcpy(attack_name, "slash");
-       sc_dam += 10;
+       sc_dam += 6;
       }
       break;
 /* To add more, add to while part of loop below as well */
@@ -976,7 +998,7 @@ char blocked = 0;
 char hit = 0;
 int mmov_x = 0;
 char str_pass [80];
-
+char water_attack = 0; /* Is the player being attacked by a water creature while standing in water? */
 int specdam = 0;
 
 char heads = 0;
@@ -1008,6 +1030,25 @@ if (wearing_amulet(38) == 1 || (you[0].religion == 6 && you[0].duration [3] != 0
    mpr(info);
    return;
   }
+}
+
+if (grd [menv [monster_attacking].m_x] [menv [monster_attacking].m_y] == 65 && mons_flies(menv [monster_attacking].m_class) == 0 && menv [monster_attacking].m_class < MLAVA0)
+{
+ if (random2(4) == 0)
+ {
+  strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
+  strcat(info, " splashes around in the water.");
+  mpr(info);
+  return;
+ }
+}
+
+if (grd [you[0].x_pos] [you[0].y_pos] == 65 && you[0].lev == 0 && menv [monster_attacking].m_class >= MWATER0)
+{
+ water_attack = 1;
+ strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
+ strcat(info, " uses the watery terrain to its advantage.");
+ mpr(info);
 }
 
 char runthru = 0;
@@ -1062,6 +1103,8 @@ damage_taken = 0;
 
 
 int mons_to_hit = 20 + menv [monster_attacking].m_HD; // * menv [monster_attacking].m_HD; // * 3  //you[0].strength + (0.5 * you[0].you[0].max_dex) + (you[0].f_abil);
+
+mons_to_hit += water_attack * 5;
 
 if (menv [monster_attacking].m_inv [hand_used] != 501)
 {
@@ -1146,6 +1189,8 @@ damage_taken -= random2(3) + 1;//1;
 }
 
 damage_taken += random2(mdam) + 1;
+
+damage_taken *= water_attack + 1;
 
 if (player_AC() > 0) damage_taken -= random2(player_AC() + 1);
 
@@ -1347,6 +1392,9 @@ if (hit == 1)
 
 
         case 42: /* Queen bee */
+        case 159: /* giant centipede */
+        case 173: /* soldier ant */
+        case 175: /* Queen ant */
 if (player_res_poison() == 0)
 {
  strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
@@ -1380,6 +1428,7 @@ if (player_res_poison() == 0)
  case 130: // spectre
  case 153: // orange rat
  case 240: // shadow wraith
+ case 356: // ancient lich
 //        if (runthru != 0) break; // shadow fiends have multiple attacks
         if (((damage_taken >= 6 && random2(2) == 0) || random2(30) == 0) && player_prot_life() == 0)
         {
@@ -1508,6 +1557,7 @@ if (player_res_poison() == 0)
 
  case 15: // phantom
  case 140: // wisp
+ case 180: // blink frog
  case 224: // less demon
  if (random2(3) == 0)
  {
@@ -1547,7 +1597,7 @@ if (player_res_poison() == 0)
 
 if (brek == 1)
 {
-drain_exp();
+        drain_exp();
 }
 
 }
@@ -1563,10 +1613,10 @@ char drained = 0;
 
 
 /* special weapons */
-if (hit == 1 && menv [monster_attacking].m_inv [hand_used] != 501 || (menv [monster_attacking].m_class == 400 && ghost.ghs [8] != 0))
+if (hit == 1 && (menv [monster_attacking].m_inv [hand_used] != 501 || ((menv [monster_attacking].m_class == 400 || menv [monster_attacking].m_class == 401) && ghost.ghs [8] != 0)))
 {
 unsigned char itdam;
-if (menv [monster_attacking].m_class == 400)
+if (menv [monster_attacking].m_class == 400 || menv [monster_attacking].m_class == 401)
 {
  itdam = ghost.ghs [8];
 } else
@@ -1578,7 +1628,7 @@ specdam = 0;
 
  if (itdam == 188) goto flaming; // sword of Okawaru
 
-if (menv [monster_attacking].m_class == 400 || mitm.idam [menv [monster_attacking].m_inv [hand_used]] < 180)
+if (menv [monster_attacking].m_class == 400 || menv [monster_attacking].m_class == 401 || mitm.idam [menv [monster_attacking].m_inv [hand_used]] < 180)
  switch(itdam % 30)
   {
    case 0: // nothing
@@ -1668,7 +1718,7 @@ if (menv [monster_attacking].m_class == 400 || mitm.idam [menv [monster_attackin
    case 4: // electrocution
    if (you[0].lev != 0) break; // you're not grounded
    if (you[0].attribute [0] != 0) break; // resist lightning
-   if (menv [monster_attacking].m_class == 400) break;
+//   if (menv [monster_attacking].m_class == 400) break;
    specdam = 0;
 
    if (mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] <= 50 || mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] > 130 && mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] <= 150) break;
@@ -1677,7 +1727,7 @@ if (menv [monster_attacking].m_class == 400 || mitm.idam [menv [monster_attackin
     strcpy(info, "You are electrocuted!");
     mpr(info);
     specdam += 10 + random2(15);
-    mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] --;
+//    mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] --;
    }
    break;
 
@@ -1801,7 +1851,7 @@ if (menv [monster_attacking].m_class == 400 || mitm.idam [menv [monster_attackin
    }
    if (random2(2) == 0)
    {
-    banished();
+    banished(96);
     break;
    }
    break;
@@ -1844,7 +1894,7 @@ int damage_taken = 0;
 char hit = 0;
 int mmov_x = 0;
 char str_pass [80];
-
+char water_attack = 0;
 int specdam = 0;
 
 int hand_used = 0;
@@ -1870,6 +1920,18 @@ if (menv [monster_attacked].m_beh == 6)
         if (menv [monster_attacked].m_beh != 7 && monster_attacked != menv [monster_attacking].m_hit)
                         return 0;
 }
+
+if (grd [menv [monster_attacking].m_x] [menv [monster_attacking].m_y] == 65 && mons_flies(menv [monster_attacking].m_class) == 0 && menv [monster_attacking].m_class < MLAVA0)
+{
+ if (random2(4) == 0)
+ {
+  mpr("You hear a splashing noise.");
+  return 1;
+ }
+}
+
+if (grd [menv [monster_attacked].m_x] [menv [monster_attacked].m_y] == 65 && mons_flies(menv [monster_attacked].m_class) == 0 && menv [monster_attacking].m_class >= MWATER0)
+  water_attack = 1;
 
 if (mons_near(monster_attacking) == 1 && mons_near(monster_attacked) == 1) sees = 1;
 
@@ -1916,6 +1978,8 @@ damage_taken = 0;
 
 
 int mons_to_hit = 20 + menv [monster_attacking].m_HD; // * menv [monster_attacking].m_HD; // * 3  //you[0].strength + (0.5 * you[0].you[0].max_dex) + (you[0].f_abil);
+
+mons_to_hit += 5 * water_attack;
 
 if (menv [monster_attacking].m_inv [hand_used] != 501)
 {
@@ -1974,6 +2038,9 @@ damage_taken -= random2(3) + 1;//1;
 }
 
 damage_taken += random2(mdam) + 1;
+
+damage_taken *= water_attack + 1;
+
 //gmon_att [menv [monster_attacking].m_class] [runthru]) + 1;
 //damage_taken /= (random2 (player_AC()) + 1); // / 3
 //damage_taken *= 2;
@@ -2174,14 +2241,18 @@ if (hit == 1) //(int) damage_taken >= 1)
    damage_taken += specdam;
  break;
 
-        case 42: // killer bee
+        case 42: // queen bee
+        case 159: // giant centipede
+        case 173: // soldier ant
+        case 175: /* Queen ant */
 //      if ((damage_taken >= 3 && random2(3) == 0) || random2(20) == 0)
 //      {
-        strcpy(info, "The queen bee stings ");
-   strcat(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 1));
-   strcat(info, ".");
-   if (sees == 1) mpr(info);
-   poison_monster(monster_attacked, 1);
+          strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
+              strcat(info, " stings ");
+              strcat(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 1));
+              strcat(info, ".");
+              if (sees == 1) mpr(info);
+              poison_monster(monster_attacked, 1);
 //      you[0].poison += 2;
 //      }
         break;
@@ -2214,6 +2285,7 @@ if (hit == 1) //(int) damage_taken >= 1)
         case 127: // sh F
         case 130: // spectre
             case 153: // orange rat
+                case 356: // ancient lich
         if (mons_holiness(menv [monster_attacked].m_class) >= 1) break;
         if ((damage_taken >= 6 && random2(2) == 0) || random2(30) == 0)
         {
@@ -2313,10 +2385,10 @@ if (hit == 1) //(int) damage_taken >= 1)
 
 }
 /* special weapons */
-if (hit == 1 && menv [monster_attacking].m_inv [hand_used] != 501 || (menv [monster_attacking].m_class == 400 && ghost.ghs [8] != 0))
+if (hit == 1 && (menv [monster_attacking].m_inv [hand_used] != 501 || ((menv [monster_attacking].m_class == 400 || menv [monster_attacking].m_class == 401) && ghost.ghs [8] != 0)))
 {
 unsigned char itdam;
-if (menv [monster_attacking].m_class == 400)
+if (menv [monster_attacking].m_class == 400 || menv [monster_attacking].m_class == 401)
 {
  itdam = ghost.ghs [8];
 } else
@@ -2328,7 +2400,7 @@ specdam = 0;
 
  if (itdam == 188) goto flaming; // sword of Okawaru
 
-if (menv [monster_attacking].m_class == 400 || mitm.idam [menv [monster_attacking].m_inv [hand_used]] < 180)
+if (menv [monster_attacking].m_class == 400 || menv [monster_attacking].m_class == 401 || mitm.idam [menv [monster_attacking].m_inv [hand_used]] < 180)
  switch(itdam % 30)
   {
 
@@ -2426,7 +2498,7 @@ if (menv [monster_attacking].m_class == 400 || mitm.idam [menv [monster_attackin
 
    case 4: // electrocution
 //   if (you[0].lev != 0) break; // you're not grounded
-   if (menv [monster_attacking].m_class == 400) break;
+//   if (menv [monster_attacking].m_class == 400) break;
    if (mons_flies(menv [monster_attacked].m_class) == 2) break;
    if (mons_res_elec(menv [monster_attacked].m_class) != 0) break;
    specdam = 0;
@@ -2437,7 +2509,7 @@ if (menv [monster_attacking].m_class == 400 || mitm.idam [menv [monster_attackin
     strcpy(info, "There is a sudden explosion of sparks!");
     if (sees == 1) mpr(info);
     specdam += 10 + random2(15);
-    mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] --;
+//    mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] --;
    }
    break;
 
@@ -2669,7 +2741,7 @@ if (you[0].duration [3] > 0)
 } else if (mons_holiness(menv [monster_killed].m_class) == -1)
           done_good(4, menv [monster_killed].m_HD);
 
-if (you[0].religion == 8 && you[0].duration [3] != 0 && random2(you[0].piety) >= 20)
+if ((you[0].religion == 8 && you[0].duration [3] != 0 && random2(you[0].piety) >= 30) || you[0].mutation [52] != 0)
 {/* Makhleb */
  if (you[0].hp < you[0].hp_max)
  {
@@ -2679,7 +2751,7 @@ if (you[0].religion == 8 && you[0].duration [3] != 0 && random2(you[0].piety) >=
   you[0].hp_ch = 1;
  }
 }
-if ((you[0].religion == 8 || you[0].religion == 6) && you[0].duration [3] != 0 && random2(you[0].piety) >= 20)
+if ((you[0].religion == 8 || you[0].religion == 6) && you[0].duration [3] != 0 && random2(you[0].piety) >= 30)
 { /* Makhleb or Vehumet */
  if (you[0].ep < you[0].ep_max)
  {
@@ -2995,10 +3067,15 @@ k = 0; /* to avoid that annoying warning */
 
 if (targetc == 250)
 {
+ loopy:
    do
    {
-      targetc = random2(52); /* I think. Shouldn't poly into eg orc _wizard_ */
-   } while (targetc == 31 || targetc == 25 || targetc == 51); /* no fiends or zombies */
+      targetc = random2(400);
+   } while (mons_rarity(targetc) == 0 || targetc == 99 || targetc == 25 || targetc == 51 || targetc == 367 || targetc == 107 || targetc == 108); /* no shapeshifters or zombies/skeletons/spectr */
+
+ if (grd [menv [monsc].m_x] [menv [monsc].m_y] == 61 || grd [menv [monsc].m_x] [menv [monsc].m_y] == 62)
+   if (mons_flies(targetc) == 0) goto loopy; /* Not fair to instakill a monster like this (actually, I can't be bothered implementing it) */
+ /* Too long to put in the loop thing */
 }
 
 /* if (power != -1) // automatic success */
@@ -3018,6 +3095,23 @@ menv [monsc].m_sec = 250;
 
 k = monsc;
 
+int unenc = 0;
+
+for (unenc = 0; unenc < 3; unenc++)
+{
+   if (menv [monsc].m_ench [unenc] >= 20 && menv [monsc].m_ench [unenc] <= 25)
+    continue; /* Summoned creatures are still going to disappear eventually */
+   if (menv [monsc].m_ench [unenc] != 39 && menv [monsc].m_ench [unenc] != 38) menv [monsc].m_ench [unenc] = 0; /* shapeshifters stay as such */
+}
+
+if (mons_flag(menv [monsc].m_class, M_INVIS))
+{
+        menv [monsc].m_ench_1 = 1;
+        menv [monsc].m_ench [2] = 6;
+}
+
+if (menv [monsc].m_ench [0] == 0 && menv [monsc].m_ench [1] == 0 && menv [monsc].m_ench [2] == 0) menv [monsc].m_ench_1 = 0;
+
 define_monster(monsc, menv);
 
 menv [monsc].m_hp = menv [monsc].m_hp_max * ((old_hp * 100) / old_hp_max) / 100;
@@ -3027,26 +3121,15 @@ menv [monsc].m_speed_inc = 70 + random2(5);
 
 monster_drop_ething(monsc);
 
-int unenc = 0;
-
-for (unenc = 0; unenc < 3; unenc++)
-{
-   if (menv [monsc].m_ench [unenc] >= 20 && menv [monsc].m_ench [unenc] <= 25)
-    continue; /* Summoned creatures are still going to disappear */
-   menv [monsc].m_ench [unenc] = 0;
-}
-
-menv [monsc].m_ench_1 = 0;
-/* need to tweak this for you[0].invis */
-
 strcpy(info, monam (old_sec, old_class, menv [monsc].m_ench [2], 0));
-if (targetc == 131) strcat(info, " degenerates into ");
- else strcat(info, " evaporates, and reforms as ");
+if (menv [monsc].m_ench [1] == 39 || menv [monsc].m_ench [1] == 38) strcat(info, " changes into ");
+ else if (targetc == 131) strcat(info, " degenerates into ");
+   else strcat(info, " evaporates, and reforms as ");
 
 strcat(info, monam (menv [monsc].m_sec, menv [monsc].m_class, menv [monsc].m_ench [2], 3));
 if (targetc == 131) strcat(info, " of flesh");
 strcat(info, "!");
-mpr(info);
+if (mons_near(monsc)) mpr(info);
 
 } /* end of monster_polymorph */
 
@@ -3109,6 +3192,8 @@ void place_monster_corpse(unsigned char mcr)
 {
 int corpse_class = mons_charclass(menv [mcr].m_class);
 
+if (menv [mcr].m_ench [1] == 39) corpse_class = 99; /* shapeshifter */
+if (menv [mcr].m_ench [1] == 38) corpse_class = 98; /* shapeshifter */
 
  if (mons_weight(corpse_class) == 0 || random2(2) == 0) return;
  if (grd [menv [mcr].m_x] [menv [mcr].m_y] == 61 || grd [menv [mcr].m_x] [menv [mcr].m_y] == 62) return;

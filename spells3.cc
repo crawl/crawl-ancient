@@ -263,7 +263,7 @@ unsigned char was_wielded = 0;
 
 if (you[0].equip [0] == -1 || you[0].inv_class [you[0].equip [0]] != 4 || you[0].inv_type [you[0].equip [0]] != 21)
 {
- if (player_prot_life() != 0 || you[0].deaths_door != 0)
+ if (you[0].deaths_door != 0)
  {
   strcpy(info, "A conflicting enchantment prevents the spell from coming into effect.");
   mpr(info);
@@ -287,6 +287,7 @@ if (you[0].equip [0] == -1 || you[0].inv_class [you[0].equip [0]] != 4 || you[0]
   if (random2(pow) < 6 && you[0].hp > 1) you[0].hp --;
   if (random2(pow) < 6 && you[0].hp > 1) you[0].hp --;
   if (random2(pow) < 6 && you[0].hp > 1) you[0].hp --;
+  if (random2(pow) < 6) break;
  }
 
  you[0].hp_ch = 1;
@@ -302,10 +303,10 @@ mpr(info);
 
 if (pow > 100) pow = 100;
 
-you[0].ep += 7;
+you[0].ep += 7 + random2(7);
+/*you[0].ep += random2(pow) / 3;
 you[0].ep += random2(pow) / 3;
-you[0].ep += random2(pow) / 3;
-you[0].ep += random2(pow) / 3;
+you[0].ep += random2(pow) / 3;*/
 
 was_wielded = you[0].equip [0];
 unwield_item(you[0].equip [0]);
@@ -461,7 +462,7 @@ mpr(info);
  you[0].x_pos = plox [0];
  you[0].y_pos = plox [1];
 
- if (grd [you[0].x_pos] [you[0].y_pos] != 67 || mgrd [you[0].x_pos] [you[0].y_pos] != MNG || env[0].cgrid [you[0].x_pos] [you[0].y_pos] != CNG)
+ if ((grd [you[0].x_pos] [you[0].y_pos] != 67 && grd [you[0].x_pos] [you[0].y_pos] != 65) || mgrd [you[0].x_pos] [you[0].y_pos] != MNG || env[0].cgrid [you[0].x_pos] [you[0].y_pos] != CNG)
  {
   strcpy(info, "Oops!");
   mpr(info);
@@ -478,7 +479,7 @@ mpr(info);
         {
                 you[0].x_pos = random2(70) + 10;
                 you[0].y_pos = random2(60) + 10;
-        } while (grd [you[0].x_pos] [you[0].y_pos] != 67 || mgrd [you[0].x_pos] [you[0].y_pos] != MNG || env[0].cgrid [you[0].x_pos] [you[0].y_pos] != CNG);
+        } while ((grd [you[0].x_pos] [you[0].y_pos] != 67 && grd [you[0].x_pos] [you[0].y_pos] != 65) || mgrd [you[0].x_pos] [you[0].y_pos] != MNG || env[0].cgrid [you[0].x_pos] [you[0].y_pos] != CNG);
 }
 
 if (you[0].level_type == 2)
@@ -510,7 +511,7 @@ for (srx = you[0].x_pos - 1; srx < you[0].x_pos + 2; srx ++)
 
   if (srx == you[0].x_pos && sry == you[0].y_pos) continue;
 
-  if (grd [srx] [sry] != 67 && grd [srx] [sry] != 70 && (grd [srx] [sry] < 75 || grd [srx] [sry] > 78)) continue;
+  if (grd [srx] [sry] != 67 && grd [srx] [sry] != 65 && grd [srx] [sry] != 70 && (grd [srx] [sry] < 75 || grd [srx] [sry] > 78)) continue;
   if (mgrd [srx] [sry] != MNG) continue;
 
    int objl = igrd [srx] [sry];

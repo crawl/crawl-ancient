@@ -247,8 +247,8 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
         43,     // Selective amnesia
                 52,             // Levitation
         4,              // Remove curse
+        159,    // Deflect missiles
         68,             // Extension
-        210,
         210 },
 
     // Book of poison
@@ -288,10 +288,10 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
         210 },
 
     // Book of changes
-    {   0,      // This wasn't set as 0 originally
+    {   0,      //
         150,    // Disrupt
-        152,    // Blade hands
         149,    // Spider form
+        152,    // Blade hands
         14,             // Dig
         154,    // Ice beast form
         210 },
@@ -314,13 +314,12 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
         4,              // Remove curse
         210 },
 
-        // 20 - no longer prayers
     // Book of war chants
     // Note: If any are added here, must chance Crusader in crawlfnc.cc
     {   0,
         124,    // Fire brand
         125,    // Freezing aura
-        83,             // Deflect missiles
+        83,             // Repel missiles
         84,             // Berserk
         111,    // Regeneration
         22 },   // Haste
@@ -354,12 +353,12 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
 
     // Necronomicon
     {   0,
+        158,    // Symbol of Torment
         69,     // Control undead
         42,             // Death's door
         72,             // Summon wraiths
         156,    // Lich form
-        157,    // Death channel
-        210 },
+        157 },  // Death channel
 
     // Book of summonings
     {   0,
@@ -372,7 +371,7 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
 
     // Book of charms
     {   0,
-        83,     // Deflect missiles
+        83,     // Repel missiles
         21,             // Slow
         63,             // Enslave
         25,             // Invisibility
@@ -392,7 +391,7 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
     {   0,
         132,    // Shock
         133,    // Swiftness
-        83,             // Deflect missiles
+        83,             // Repel missiles
         52,             // Levitation
         30,             // Mephitic cloud
         77 },   // Summon elemental
@@ -401,9 +400,9 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
     {   0,
         135,    // Insulation
         134,    // Fly
+        159,    // Deflect missiles
         17,             // Lightning bolt
         136,    // Orb of electroc
-        210,
         210 },
 
     // 30 - Book of divinations
@@ -444,10 +443,10 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
 
     // Book of unlife
     {   0,
+        116,    // Sublimation of Blood
         66,     // Animate dead
         110,    // Twisted resurrection
         74,             // Revivification
-        210,
         210,
         210 },
 
@@ -772,6 +771,9 @@ void join_the_dots(unsigned char dotx1, unsigned char doty1,
 void place_curse_skull(void);
 void place_altar(void);
 void prepare_swamp(void);
+void prepare_water(void);
+/*void item_bugs(void);
+void find_item(unsigned int found);*/
 
 
 int builder(unsigned int lev_numb, char level_type)
@@ -891,7 +893,14 @@ int builder(unsigned int lev_numb, char level_type)
                         goto skip_level;
 
                 }
-                normal_pan : plan_main(0);
+                normal_pan :
+        plan_main(0);
+//          if (random3(3) == 0)
+        {
+                        build_minivaults(300 + random3(9));
+                        done_city = 1;
+                        goto skip_level;
+                }
                 done_city = 1;
                 goto skip_level;
         }
@@ -1001,7 +1010,7 @@ where_are_you == 4 Cocytus 85 - 89
 where_are_you == 5 Tartarus 90 - 94*/
 
 //      if (many_many == 84 || many_many == 79 || many_many == 89 || many_many == 94)
-        if (many_many == 33 && you[0].where_are_you == 1 || you[0].where_are_you == 2 || you[0].where_are_you == 4 || you[0].where_are_you == 5)
+        if (many_many == 33 && (you[0].where_are_you == 1 || you[0].where_are_you == 2 || you[0].where_are_you == 4 || you[0].where_are_you == 5))
         {
                 char which_v = 0;
                 switch(you[0].where_are_you)
@@ -1047,19 +1056,27 @@ where_are_you == 5 Tartarus 90 - 94*/
         if (random3(3) == 0 && many_many > 2 && many_many < 23)
         {
                 plan_main(0);
+            if (random3(3) == 0) build_minivaults(200);
                 done_city = 1;
                 goto skip_level;
         }
 
 
             //V was 3
-        if ((random3(4) == 0 && skipped == 0))
+        if ((random3(7) == 0 && skipped == 0))
         {
 
         // is_a_specroom can be changed to 2 in this function:
         // in which case it shouldn't be done again.
 
                 roguey_level();
+
+                if (random3(4) == 0 && many_many > 6 && you[0].where_are_you == 0 && you[0].level_type == 0)
+                {
+                        build_minivaults(200);
+                        done_city = 1;
+                        goto skip_level;
+                }
 
                 if (skipped == 1)
                 goto skip_level;
@@ -1229,15 +1246,13 @@ basic_level:    doorlevel = random3(11);
                         continue;
                 }
 
-                if (random3(4) == 0 && many_many > 6 && you[0].where_are_you == 0 && you[0].level_type == 0)
-                {
-                        build_minivaults(200);
-                        done_city = 1;
-                        goto skip_level;
-                }
+        }
 
-
-
+        if (random3(3) == 0 && many_many > 6 && you[0].where_are_you == 0 && you[0].level_type == 0)
+        {
+                build_minivaults(200);
+                done_city = 1;
+                goto skip_level;
         }
 
         if (random3(10) == 0 && many_many > 5 && !(you[0].where_are_you == 1 || you[0].where_are_you == 2 || you[0].where_are_you == 4 || you[0].where_are_you == 5))
@@ -1285,6 +1300,10 @@ basic_level:    doorlevel = random3(11);
         int kloppo = 0;
 
         if (level_type == 3) goto finished_monsters;
+/*cprintf("1st:");
+if (getch() == 0) getch();
+ item_bugs();*/
+
 
         for (kloppo = 0; kloppo < bno_mons; kloppo ++)
         {
@@ -1303,6 +1322,11 @@ basic_level:    doorlevel = random3(11);
                         passed);
 
         }
+
+/*cprintf("2nd:");
+if (getch() == 0) getch();
+ item_bugs();*/
+
 // keep kloppo for later (aquatic monsters)
 
 // Unique beasties:
@@ -1358,7 +1382,7 @@ basic_level:    doorlevel = random3(11);
                 for (bcount_y = 0; bcount_y < 70; bcount_y ++)
                 {
                         if (grd [bcount_x] [bcount_y] == 61) lava_spaces ++;
-                        if (grd [bcount_x] [bcount_y] == 62) water_spaces ++;
+                        if (grd [bcount_x] [bcount_y] == 62 || grd [bcount_x] [bcount_y] == 65) water_spaces ++;
                 }
         }
 
@@ -1493,7 +1517,6 @@ basic_level:    doorlevel = random3(11);
         hide_doors();
 
         if (you[0].where_are_you != 18) place_traps();
-
 
         int no_it = random3 (12) + random3 (12) + random3(10);// + random3(many_many / 2);// + random3 (10);// + random3(30);
         if (random3(500 - many_many) <= 3 && many_many > 5) no_it += random3(100); // rich level!
@@ -1679,6 +1702,7 @@ depends on level: */
 
 
         link_items();
+    prepare_water();
 
         return 0;
 
@@ -2010,11 +2034,20 @@ int place_monster(
                 case 39: // hog
                         menv [bk].m_class = 157;
                         break;
-                case 40: // hog
+                case 40: // hell-hog
                         menv [bk].m_class = 394;
                         break;
                 case 41: // mosquito
                         menv [bk].m_class = 158;
+                        break;
+                case 42: // boggart
+                        menv [bk].m_class = 396;
+                        break;
+                case 43: // blink frog
+                        menv [bk].m_class = 180;
+                        break;
+                case 44: // skeletal warrior
+                        menv [bk].m_class = 399;
                         break;
 
         }
@@ -2041,10 +2074,22 @@ int place_monster(
                 menv [bk].m_class == 367)
     define_zombie(3, 250, 250);
 
-        if (menv [bk].m_class == 46 || menv [bk].m_class == 141 || menv [bk].m_class == 240)
+        if (mons_flag(menv [bk].m_class, M_INVIS)) //menv [bk].m_class == 46 || menv [bk].m_class == 141 || menv [bk].m_class == 240)
         {
                 menv [bk].m_ench_1 = 1;
                 menv [bk].m_ench [2] = 6;
+        }
+
+        if (menv [bk].m_class == 99)
+        {
+                menv [bk].m_ench_1 = 1;
+                menv [bk].m_ench [1] = 39;
+        }
+
+        if (menv [bk].m_class == 98)
+        {
+                menv [bk].m_ench_1 = 1;
+                menv [bk].m_ench [1] = 38;
         }
 
         if (menv [bk].m_class == 66 || menv [bk].m_class == 21 || menv [bk].m_class == 244 || menv [bk].m_class == 141) // butter, vort, vapour
@@ -2099,7 +2144,7 @@ int place_monster(
                                         {
                                         menv [bk].m_x = 10 + random3(70);
                                         menv [bk].m_y = 10 + random3(60);
-                                } while (grd [menv [bk].m_x] [menv [bk].m_y] != grid_ok || (menv [bk].m_x == you[0].x_pos && menv [bk].m_y == you[0].y_pos));
+                                } while ((grd [menv [bk].m_x] [menv [bk].m_y] != grid_ok && (grid_ok != 62 || grd [menv [bk].m_x] [menv [bk].m_y] != 65)) || (menv [bk].m_x == you[0].x_pos && menv [bk].m_y == you[0].y_pos));
                 }
 
 /*if (menv [bk].m_class == 56) //worm > 1) // worm test
@@ -2479,6 +2524,31 @@ mgrd [menv [bk].m_x] [menv [bk].m_y] = bk;
                                         }
                                         break;
 
+                case 396:
+                                        if (bk < MNST - 50 && band == 0 && band_no == 0)
+                                        {
+                                                band = 42; // boggart
+                                                band_no = 2 + random3(3);
+                                        }
+                                        break;
+
+                case 180:
+                                        if (bk < MNST - 50 && band == 0 && band_no == 0)
+                                        {
+                                                band = 43; // blink frog
+                                                band_no = 2 + random3(3);
+                                        }
+                                        break;
+
+                case 399:
+                                        if (bk < MNST - 50 && band == 0 && band_no == 0)
+                                        {
+                                                band = 44; // skeletal warrior
+                                                band_no = 2 + random3(3);
+                                        }
+                                        break;
+
+
 
 
                         } // end switch
@@ -2512,8 +2582,20 @@ mgrd [menv [bk].m_x] [menv [bk].m_y] = bk;
         menv [bk].m_hit = hitting;
 
 
-        if (menv [bk].m_class == 46)
+        if (menv [bk].m_class == 99)
         {
+                menv [bk].m_ench_1 = 1;
+                menv [bk].m_ench [1] = 39;
+        }
+
+        if (menv [bk].m_class == 98)
+        {
+                menv [bk].m_ench_1 = 1;
+                menv [bk].m_ench [1] = 38;
+        }
+
+        if (mons_flag(menv [bk].m_class, M_INVIS))
+    {
                 menv [bk].m_ench_1 = 1;
                 menv [bk].m_ench [2] = 6;
         }
@@ -2754,10 +2836,11 @@ void diamond_rooms(void)
 {
 
         char numb_diam = random3(10) + 1;
-        char type_floor = 67;
+        char type_floor = 62;
         int runthru = 0;
 
-        if (many_many >= 8 + random3(5) && random3(2) != 0) type_floor = 62; // water
+        if (many_many >= 6 + random3(5) && random3(2) != 0) type_floor = 65; // shallow water
+        if (many_many >= 11 + random3(5) && random3(2) != 0) type_floor = 62; // water
         if (many_many >= 18 && random3(2) == 0) type_floor = 61; // lava
         if (random3(15) == 0 && many_many > 10) type_floor = random3(2) + 1;
         if (random3(20) == 0 && many_many > 12) type_floor = 4;
@@ -2846,8 +2929,9 @@ void octa_room(unsigned char type_floor)
                 //if ((room_y2 - j) * -1 + room_x2 - 1 < oblique) continue;
 
                         if (grd [bi] [bj] == 1) grd [bi] [bj] = type_floor;
+            if (grd [bi] [bj] == 67 && type_floor == 65) grd [bi] [bj] = 65;
                         if (type_floor >= 10 && grd [bi] [bj] == 3) grd [bi] [bj] = 67; // ick
-                        if (type_floor < 10 && grd [bi] [bj] == 3) grd [bi] [bj] = 1; // ick!
+//                      if (type_floor < 10 && grd [bi] [bj] == 3) grd [bi] [bj] = 1; // ick!
 
 
                 } // end of for j
@@ -3034,7 +3118,7 @@ int items(unsigned char allow_uniques,
 
         for (bp = 0; bp < 400; bp ++)
         {
-                if (bp == 1) continue;
+/*              if (bp == 1) continue; */
                 if (mitm.iclass [bp] == 100 || mitm.iquant [bp] == 0) break;
                 if (bp == 380) return 501;
         }
@@ -3058,7 +3142,7 @@ int items(unsigned char allow_uniques,
 
 //      mitm.iclass [bp] = 10;
 
-        if (20 + many_many >= random3(4200) && many_many > 7) mitm.iclass [bp] = 13;
+        if (20 + many_many >= random3(3500) && many_many > 7) mitm.iclass [bp] = 13;
 
 //      mitm.iclass [bp] = random3 (3) + 3;
 
@@ -3287,7 +3371,7 @@ int items(unsigned char allow_uniques,
                         }
 
 
-                    if ((random3(250) <= 50 + many_many || many_many == 351 || mitm.itype [bp] == 32 || mitm.itype [bp] == 33) && mitm.itype [bp] != 0 && mitm.itype [bp] != 19 && mitm.itype [bp] != 20 && mitm.itype [bp] != 21) // nobody would bother enchanting a club
+                    if ((random3(200) <= 50 + many_many || many_many == 351 || mitm.itype [bp] == 32 || mitm.itype [bp] == 33) && mitm.itype [bp] != 0 && mitm.itype [bp] != 19 && mitm.itype [bp] != 20 && mitm.itype [bp] != 21) // nobody would bother enchanting a club
                     {
                         if (many_many == 351) many_many = 200;
                         mitm.iplus [bp] += random3(3);
@@ -3312,7 +3396,7 @@ int items(unsigned char allow_uniques,
                                 }
                         }
 
-                        if (random3(450) <= 100 + many_many || (many_many == 351 && random() % 2 == 0) || mitm.itype [bp] == 32 || mitm.itype [bp] == 33)
+                        if (random3(300) <= 100 + many_many || (many_many == 351 && random() % 2 == 0) || mitm.itype [bp] == 32 || mitm.itype [bp] == 33)
                         {
                          // note: even this doesn't guarantee special enchantment
                                 switch(mitm.itype [bp])
@@ -3326,7 +3410,7 @@ int items(unsigned char allow_uniques,
                                         case 4: // morningstar
                                                 if (random() % 4 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 6; // venom
                                                 if (random() % 4 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + random() % 2 + 1; // flaming/freezing
-                                                if (random() % 25 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 13; // vamp
+                                                if (random() % 20 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 13; // vamp
                                         case 1:
                           // mace of disruption
                                                 if (mitm.itype [bp] == 1 && random() % 4 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 14; // disruption
@@ -3343,7 +3427,7 @@ int items(unsigned char allow_uniques,
 
                                         case 3: // dagger
                                                 if (random() % 3 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 6; // venom
-                                                if (random() % 13 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 13; // vampiric
+                                                if (random() % 10 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 13; // vampiric
                                         case 5: // short sword
                                                 if (random() % 8 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 6; // venom
                                         case 8: // scimitar
@@ -3353,7 +3437,7 @@ int items(unsigned char allow_uniques,
                                         case 7: // great sword
                                                 case 26: // double blade
                                                 case 27: // triple blade
-                                                if (random() % 13 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 13; // vampiric
+                                                if (random() % 10 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 13; // vampiric
                                                 if (random() % 15 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 16; // distortion
                                                 if (random() % 25 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 15; // pain
                                                 if (random() % 5 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 1 + random() % 2; // flame_freez
@@ -3370,7 +3454,7 @@ int items(unsigned char allow_uniques,
                                                 if (random() % 25 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 3; // holy
                                                 if (random() % 14 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 8; // drain
                                         case 9: // h-axe
-                                                if (random() % 13 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 13; // vampiric
+                                                if (random() % 10 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 13; // vampiric
                                                 if (random() % 15 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 16; // distortion
                                                 if (random() % 25 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 15; // pain
                                                 if (random() % 6 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 5; // orc
@@ -3385,7 +3469,7 @@ int items(unsigned char allow_uniques,
                                                 if (random() % 30 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 3; // holy
                                                 if (random() % 4 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 7; // prot
                                         case 11: // spear
-                                                if (random() % 13 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 13; // vampiric
+                                                if (random() % 10 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 13; // vampiric
                                                 if (random() % 20 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 16; // distortion
                                                 if (random() % 25 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 15; // pain
                                                 if (random() % 6 == 0) mitm.idam [bp] = (mitm.idam [bp] / 30) * 30 + 5; // orc
@@ -3618,7 +3702,7 @@ int items(unsigned char allow_uniques,
                                 {
                                         mitm.iplus [bp] += random3 (3);
                                 if (mitm.itype [bp] <= 7 && 20 + many_many >= random3(300)) mitm.iplus [bp] += random3(3);
-                                        if (20 + many_many >= random3(400) && (mitm.idam [bp] != 180 || mitm.itype [bp] <= 7))
+                                        if (30 + many_many >= random3(350) && (mitm.idam [bp] != 180 || mitm.itype [bp] <= 7))
                                                 switch(mitm.itype [bp])
                                                 {
                                                         case 8: // shield - must do special things for this!
@@ -3650,7 +3734,7 @@ int items(unsigned char allow_uniques,
                                                                 switch(random3(2))
                                                                 {
                                                                         case 0: mitm.idam [bp] += 7; break;
-                                                                         case 1: mitm.idam [bp] += 8; break;
+                                                                        case 1: mitm.idam [bp] += 8; break;
                                                                 }
                                                                 break;
                                                         case 12: // boots
@@ -3675,6 +3759,9 @@ int items(unsigned char allow_uniques,
 
                                                         default: // other body armours:
                                                                 mitm.idam [bp] += 2 + random3(2);
+                                if (random3(9) == 0) mitm.idam [bp] = 16; /* prot_life */
+                                if (random3(5) == 0) mitm.idam [bp] = 12; /* magic res */
+                                if (random3(5) == 0) mitm.idam [bp] = 4; /* res poison */
                                                                 if (mitm.itype [bp] == 7 && random3(15) == 0)
                                                                 {
                                                                         mitm.idam [bp] += 10;
@@ -3720,6 +3807,7 @@ int items(unsigned char allow_uniques,
             if (force_type != 250) mitm.itype [bp] = force_type;
             mitm.iplus [bp] = random3 (6) + random3 (6) + random3 (6);
                         if (mitm.itype [bp] < 2 || mitm.itype [bp] == 4 || mitm.itype [bp] == 18) mitm.iplus [bp] = random3 (10) + random3(10) + random3(10);
+                        if (mitm.itype [bp] == 5) mitm.iplus [bp] = random3 (4) + random3(4) + random3(4); /* healing */
                         quant = 1;
                         break;
 
@@ -3754,7 +3842,7 @@ int items(unsigned char allow_uniques,
          // healing potions
                                 if (random3(3) == 0) mitm.itype [bp] = 1; // wound heal
                         else mitm.itype [bp] = 0; // healing
-                                        if (random3(10) == 0) mitm.itype [bp] = 22; // cure mutation
+                                        if (random3(20) == 0) mitm.itype [bp] = 22; // cure mutation
                                 break;
                 case 3:
                         case 4:
@@ -3971,10 +4059,11 @@ int items(unsigned char allow_uniques,
 
                 case 11: // staves
                         mitm.itype [bp] = random3(10);
-                        if (random3(7) == 0) mitm.itype [bp] = 10 + random3(9);
+                        if (random3(5) == 0) mitm.itype [bp] = 10 + random3(9);
                         if (random3(15) == 0) mitm.itype [bp] = 25 + random3(3);
 
                         if (mitm.itype [bp] >= 12 && mitm.itype [bp] <= 15 && random3(3) == 0) mitm.itype [bp] = random3(6);
+                        if (force_type != 250) mitm.itype [bp] = force_type;
                         mitm.idam [bp] = random3(9);
                         if (mitm.itype [bp] >= 10)
                         {
@@ -4027,10 +4116,19 @@ int items(unsigned char allow_uniques,
 
                 case 13: // Miscellaneous
                         mitm.itype [bp] = random3(6);
-                        if (random() % 6 == 0) mitm.itype [bp] = 7 + random() % 7;
+                        if (random() % 6 == 0) mitm.itype [bp] = 7 + random() % 10;
+            if (mitm.itype [bp] == 14) mitm.itype [bp] = 15;
+            if (random3(7) == 0) mitm.itype [bp] = 15 + random3(2);
+            if (random3(20) == 0) mitm.itype [bp] = 9;
                         if (force_type != 250) mitm.itype [bp] = force_type;
-                        if (mitm.itype [bp] == 8 || mitm.itype [bp] == 9) mitm.iplus [bp] = 4 + random() % 10;
-                        if (mitm.itype [bp] == 14) mitm.iplus [bp] = you[0].where_are_you;
+                        if (mitm.itype [bp] == 8 || mitm.itype [bp] == 9 || mitm.itype [bp] == 15) mitm.iplus [bp] = 4 + random() % 10;
+                        if (mitm.itype [bp] == 15) mitm.iplus [bp] = 6 + random() % 8 + random() % 8;
+                        if (mitm.itype [bp] == 14)
+                        {
+              mitm.iplus [bp] = you[0].where_are_you;
+              if (you[0].level_type == 3) mitm.iplus [bp] = 50; // pandem
+              if (you[0].level_type == 2) mitm.iplus [bp] = 51; // abyss
+            }
                         quant = 1;
                         break;
 
@@ -4725,6 +4823,7 @@ void specr_2(void)
 
 void give_item(void)
 {
+
         int iquan = 1;
         int bp = 0;
         int thing_created = 0;
@@ -4739,17 +4838,23 @@ void give_item(void)
 
         for (bp = 0; bp < ITEMS - 100; bp ++)
         {
-                if (bp == 1) continue;
-                if (mitm.iquant [bp] == 0) break;
+//              if (bp == 1) continue;
+                if (mitm.iquant [bp] == 0 || mitm.iquant [bp] == 100) break;
         }
 
         if (bp >= ITEMS - 101) return; // already too many.
 
+        mitm.iquant [bp] = 0;
+
         mitm.iplus [bp] = 50;
+        mitm.iplus2 [bp] = 50;
         mitm.idam [bp] = 0;
         mitm.iclass [bp] = 101;
+        mitm.ix [thing_created] = 1;
+        mitm.iy [thing_created] = 1;
 
         if (menv [bk].m_class == 144 && you[0].where_are_you == 16 && random3(3) == 0) give_level = 351;
+
 /* dancing weapon in the Hall of Blades */
         switch(menv [bk].m_class)
         {
@@ -4759,7 +4864,7 @@ void give_item(void)
                         {
                                 mitm.iclass [bp] = 0;
                                 mitm.icol [bp] = 11;
-                                switch(random3(6))
+                                switch(random3(5))
                                 {
                                         case 0: mitm.itype [bp] = 0; mitm.icol [bp] = 6;
                                                 break;
@@ -4934,6 +5039,7 @@ void give_item(void)
                 case 304:// Wayne
                 case 161:// naga
                 case 260:// naga mage
+                case 399:// skeletal warrior
                         mitm.iclass [bp] = 0;
                         mitm.icol [bp] = 11;
                         switch(random3(9))
@@ -5011,6 +5117,7 @@ void give_item(void)
 
 
                 case 40: // Ogre
+                case 174: // hill giant
                 case 287: // Erolcha
                         force_spec = 100;
                         mitm.iclass [bp] = 0;
@@ -5196,12 +5303,12 @@ void give_item(void)
                 goto give_armour;
         }
 
-        mitm.iquant [bp] = iquan;
+        if (force_item != 0) mitm.iquant [bp] = iquan;
 
         xitc = mitm.iclass [bp];
         xitt = mitm.itype [bp];
         if (force_item != 0) thing_created = bp;
-        else thing_created = items(0, xitc, xitt, 1, give_level, force_spec);
+         else thing_created = items(0, xitc, xitt, 1, give_level, force_spec);
 
         mitm.ix [thing_created] = 1;
         mitm.iy [thing_created] = 1;
@@ -5211,7 +5318,7 @@ void give_item(void)
         if (mitm.iclass [thing_created] == 6) menv [bk].m_inv[4] = thing_created;
         if (mitm.iclass [thing_created] == 15 || mitm.iclass [thing_created] == 13) menv [bk].m_inv[4] = thing_created;
 
-        if (mitm.iclass [thing_created] == 0 && mitm.idam [thing_created] % 30 == 7) menv [bk].m_AC += 3;
+        if (mitm.iclass [thing_created] == 0 && mitm.idam [thing_created] % 30 == 7) menv [bk].m_AC += 5;
 
         if (force_item == 0) item_colour(thing_created);
 
@@ -5230,8 +5337,8 @@ void give_item(void)
 
                 for (bp = 0; bp < ITEMS - 100; bp ++)
                 {
-                        if (bp == 1) continue;
-                        if (mitm.iquant [bp] == 0) break;
+//                      if (bp == 1) continue;
+                        if (mitm.iquant [bp] == 0 || mitm.iclass [bp] == 100) break;
                 }
 
 
@@ -5239,8 +5346,8 @@ void give_item(void)
 
 
                 mitm.iplus [bp] = 50;
+                mitm.iplus2 [bp] = 0;
                 mitm.idam [bp] = 0;
-                mitm.iclass [bp] = 101;
                 force_item = 0;
 
                 mitm.iclass [bp] = 1;
@@ -5267,7 +5374,7 @@ void give_item(void)
 
         mitm.idam [bp] = (mitm.idam [menv [bk].m_inv [0]] / 30) * 30;
 
-                mitm.iquant [bp] = iquan;
+                if (force_item != 0) mitm.iquant [bp] = iquan;
 
                 xitc = mitm.iclass [bp];
                 xitt = mitm.itype [bp];
@@ -5287,14 +5394,21 @@ void give_item(void)
 
         bp = 0;
 
+        for (bp = 0; bp < ITEMS - 100; bp ++)
+        {
+                if (mitm.iquant [bp] == 0 || mitm.iquant [bp] == 100) break;
+        }
+        if (bp >= ITEMS - 100) return; // already too many.
+
+/*
         while ((mitm.iclass [bp] != 100 || mitm.iquant [bp] != 0) && bp < ITEMS)
         {
                 bp++;
-        if (bp == 1) continue;
+//        if (bp == 1) continue;
         }
 
         if (bp > ITEMS - 100) return; // already too many.
-
+*/
         force_spec = 250;
 
         switch(menv [bk].m_class)
@@ -5802,7 +5916,7 @@ void item_colour(int p)
 
                 case 12: // Magical Orbs of Power
                         mitm.icol [bp] = LIGHTMAGENTA;
-                        if (mitm.itype [bp] == 1) mitm.icol [bp] = LIGHTBLUE;
+/*                      if (mitm.itype [bp] == 1) mitm.icol [bp] = LIGHTBLUE;
                         if (mitm.itype [bp] == 2) mitm.icol [bp] = CYAN;
                         if (mitm.itype [bp] == 3) mitm.icol [bp] = DARKGREY;
 
@@ -5826,7 +5940,7 @@ void item_colour(int p)
                         if (mitm.itype [bp] == 20) mitm.icol [bp] = LIGHTMAGENTA;
                         if (mitm.itype [bp] == 21) mitm.icol [bp] = LIGHTBLUE;
                         if (mitm.itype [bp] == 22) mitm.icol [bp] = RED;
-                        if (mitm.itype [bp] == 23) mitm.icol [bp] = DARKGREY;
+                        if (mitm.itype [bp] == 23) mitm.icol [bp] = DARKGREY;*/
 
                         break;
 
@@ -5848,6 +5962,7 @@ void item_colour(int p)
                         case 12: mitm.icol [bp] = LIGHTGREY; break; // orb of fixation
                         case 13: mitm.icol [bp] = LIGHTGREY; break; // disc of storms
                         case 14: mitm.icol [bp] = DARKGREY; break; // rune of Zot
+                default: mitm.icol [bp] = random() % 15 + 1; break;
                 }
                         break;
 
@@ -7935,7 +8050,7 @@ void build_vaults(int force_vault)
 
         int vx, vy;
 
-        int v1x, v1y, v2x, v2y;
+        int v1x = 0, v1y = 0, v2x = 0, v2y = 0;
 
 //int item_made;
 
@@ -8135,7 +8250,6 @@ void build_vaults(int force_vault)
 
 void build_minivaults(int force_vault)
 {
-
 // for some weird reason can't put a vault on level 1, because monster equip
 //  isn't generated.
 
@@ -8154,7 +8268,7 @@ void build_minivaults(int force_vault)
 
         char vgrid [81] [81];
 
-        force_vault = 200 + random3(29);
+        if (force_vault == 200) force_vault = 200 + random3(34);
 
 //char gluggy =
         vault_main(vgrid, mons_array, force_vault, many_many);
@@ -8245,8 +8359,8 @@ int vault_grid(int vx, int vy, int altar_count, char acq_item_class [7], int mon
                 case 'B':
                         grd [vx] [vy] = 180 + altar_count;
                         altar_count ++;
-                        if (altar_count == 3) altar_count ++;
-                        if (altar_count == 10) altar_count ++;
+//                      if (altar_count == 3) altar_count ++;
+//                      if (altar_count == 10) altar_count ++;
                         break;
                 case 'C':
                         do
@@ -8261,6 +8375,9 @@ int vault_grid(int vx, int vy, int altar_count, char acq_item_class [7], int mon
                 mitm.iy [item_made] = vy;
                         break;
                 case 'S': grd [vx] [vy] = 21; break; // silver statue
+                case 'T': grd [vx] [vy] = 200; break; // water fountain
+                case 'U': grd [vx] [vy] = 202; break; // magic fountain
+                case 'V': grd [vx] [vy] = 210; break; // dry fountain
                 case 'G': grd [vx] [vy] = 22; break; // granite statue
                 case 'H': grd [vx] [vy] = 23; break; // crystal statue
                 case '$': grd [vx] [vy] = 67;
@@ -8283,6 +8400,13 @@ int vault_grid(int vx, int vy, int altar_count, char acq_item_class [7], int mon
                 mitm.ix [item_made] = vx;
                         mitm.iy [item_made] = vy;
                         break;
+
+        case 'P': // maybe rune of Zot
+             if (random3(2) == 0)
+             {
+                          grd [vx] [vy] = 67;
+                          break;
+             }
                 case 'O': // rune of zot
                         grd [vx] [vy] = 67;
 /*   orb_type = 0; // 52 - Gehenna
@@ -8514,10 +8638,160 @@ for (i = 10; i < 70; i ++)
  for (j = 10; j < 60; j ++)
  {
   if (grd [i] [j] == 3 || grd [i] [j] == 5) grd [i] [j] = 67;
+  if (grd [i] [j] == 67 && random3(3) == 0) grd [i] [j] = 65;
   if (grd [i] [j] != 1) continue;
   if (random3(3) != 0) grd [i] [j] = 62;
+  if (random3(2) == 0) grd [i] [j] = 65;
+ }
+}
+
+}
+
+void prepare_water(void)
+{
+
+int i, j;
+int k, l;
+
+for (i = 10; i < 70; i ++)
+{
+ for (j = 10; j < 60; j ++)
+ {
+  if (grd [i] [j] != 62) continue;
+  for (k = -1; k < 2; k ++)
+  {
+   for (l = -1; l < 2; l ++)
+   {
+    if (k == 0 && l == 0) continue;
+    if (grd [i + k] [j + l] != 62 && grd [i + k] [j + l] != 65 && random3(6) != 0)
+    {
+      grd [i] [j] = 65; continue;
+    }
+    if (grd [i + k] [j + l] == 65 && random3(8) == 0)
+    {
+      grd [i] [j] = 65; continue;
+    }
+   }
+  }
+ }
+}
+
+}
+
+/*
+void item_bugs(void)
+{
+
+int i = 0;
+int total_number = 0;
+
+for (i = 0; i < ITEMS; i ++)
+{
+ if (mitm.iquant [i] <= 0) continue;
+ total_number ++;
+ itoa(i, st_prn, 10);
+ cprintf("item ");
+ cprintf(st_prn);
+ cprintf(" x ");
+ itoa(mitm.ix [i], st_prn, 10);
+ cprintf(st_prn);
+ cprintf(", y ");
+ itoa(mitm.iy [i], st_prn, 10);
+ cprintf(st_prn);
+ cprintf(", c ");
+ itoa(mitm.iclass [i], st_prn, 10);
+ cprintf(st_prn);
+ cprintf(", t ");
+ itoa(mitm.itype [i], st_prn, 10);
+ cprintf(st_prn);
+ cprintf(", p ");
+ itoa(mitm.iplus [i], st_prn, 10);
+ cprintf(st_prn);
+ cprintf(", p2 ");
+ itoa(mitm.iplus2 [i], st_prn, 10);
+ cprintf(st_prn);
+ cprintf(", d ");
+ itoa(mitm.idam [i], st_prn, 10);
+ cprintf(st_prn);
+ cprintf(", q ");
+ itoa(mitm.iquant [i], st_prn, 10);
+ cprintf(st_prn);
+ find_item(i);
+ cprintf("\n\r");
+// itoa(mitm.iy [i], st_prn, 10);
+ if (total_number % 10 == 0)
+ {
+  cprintf("Waiting...\n\r");
+  if (getch() == 0) getch();
+ }
+
+}
+
+ itoa(total_number, st_prn, 10);
+ cprintf("Total: ");
+ cprintf(st_prn);
+
+  cprintf("Waiting...\n\r");
+  if (getch() == 0) getch();
+
+  clrscr();
+
+}
+
+
+void find_item(unsigned int found)
+{
+
+int i = 0;
+
+int x = 0;
+int y = 0;
+
+for (x = 0; x < 80; x ++)
+{
+ for (y = 0; y < 70; y ++)
+ {
+  if (igrd [x] [y] == found)
+  {
+   cprintf(EOL"Item lying on floor at ");
+   itoa(x, st_prn, 10);
+   cprintf(st_prn);
+   cprintf(", ");
+   itoa(y, st_prn, 10);
+   cprintf(st_prn);
+   cprintf(".");
+  }
  }
 }
 
 
+for (i = 0; i < ITEMS; i ++)
+{
+ if (mitm.ilink [i] == found)
+ {
+  cprintf(EOL"Item linked from ");
+  itoa(i, st_prn, 10);
+  cprintf(st_prn);
+  cprintf(".");
+ }
 }
+
+for (x = 0; x < MNST; x ++)
+{
+ for (y = 0; y < 8; y ++)
+ {
+  if (menv[x].m_inv [y] == found)
+  {
+   cprintf(EOL"Item carried by monster ");
+   itoa(x, st_prn, 10);
+   cprintf(st_prn);
+   cprintf(" in inv slot ");
+   itoa(y, st_prn, 10);
+   cprintf(st_prn);
+   cprintf(".");
+  }
+ }
+}
+
+}
+*/

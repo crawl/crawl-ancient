@@ -19,7 +19,7 @@
 //#include "describe.h"
 #include "direct.h"
 //#include "dungeon.h"
-//#include "effects.h"
+#include "effects.h"
 #include "fight.h"
 //#include "files.h"
 //#include "food.h"
@@ -199,6 +199,7 @@ void beam(struct bolt beam [1])
                         {
                                 mpr("You hear a grinding noise.");
                                 crumble = 1;
+                    beam[0].wand_id = 1;
                         }
                         }
                 } else
@@ -214,12 +215,13 @@ void beam(struct bolt beam [1])
                         beam[0].aim_down = 0;
                         return;
                 }*/
-                                if (beam[0].colour == 15 && beam[0].hit >= 15) /* a powerful disruption works the same */
+                                if ((beam[0].colour == 15 && beam[0].hit >= 15) || beam[0].flavour == 27) /* disintegration (or powerful disruption), eye of devastation */
                 {
                  if ((grd [beam[0].bx + beam[0].move_x] [beam[0].by + beam[0].move_y] == 1 || grd [beam[0].bx + beam[0].move_x] [beam[0].by + beam[0].move_y] == 8) && !(beam[0].bx <= 6 || beam[0].by <= 6 || beam[0].bx >= GXM - 6 || beam[0].by >= GYM - 6))
                  {
                                    grd [beam[0].bx + beam[0].move_x] [beam[0].by + beam[0].move_y] = 67;
                            mpr("You hear a grinding noise.");
+                   beam[0].wand_id = 1;
                  }
                  if (grd [beam[0].bx + beam[0].move_x] [beam[0].by + beam[0].move_y] == 7 || (grd [beam[0].bx + beam[0].move_x] [beam[0].by + beam[0].move_y] >= 21 && grd [beam[0].bx + beam[0].move_x] [beam[0].by + beam[0].move_y] <= 39))
                  {
@@ -227,6 +229,7 @@ void beam(struct bolt beam [1])
                    if (see_grid(beam[0].bx + beam[0].move_x, beam[0].by + beam[0].move_y) == 0)
                             mpr("You hear a hideous screaming!");
                      else mpr("The statue screams as its substance crumbles away!");
+                   beam[0].wand_id = 1;
                  }
                  return;
                 }
@@ -342,6 +345,10 @@ void beam(struct bolt beam [1])
                         {
                                 if ((you[0].equip [6] == -1 || you[0].inv_type [you[0].equip [6]] < 2 || (you[0].inv_type [you[0].equip [6]] >= 22 && you[0].inv_type [you[0].equip [6]] <= 25) || you[0].inv_dam [you[0].equip [6]] / 30 == 4) && random() % 2 == 0 && beam[0].move_x != 0 || beam[0].move_y != 0)
                                 exercise(14, 1);
+
+                if (you[0].duration [2] != 0 || you[0].mutation [8] == 3) beam[0].hit -= random2(beam[0].hit / 4);
+                if (you[0].duration [20] != 0) beam[0].hit -= random2(beam[0].hit / 2);
+
                                 if (beam[0].hit < random2(player_evasion()) + random2(you[0].dex) / 3 - 2 && (beam[0].move_x != 0 || beam[0].move_y != 0))
                                 {
                                 strcpy(info, "The ");
@@ -358,30 +365,45 @@ void beam(struct bolt beam [1])
                         if (beam[0].beam_name [0] == 48)
                         {
                                 beam[0].aim_down = 0;
-                                if (beam[0].colour != 1 && beam[0].colour != 5 && beam[0].colour != 2 && (beam[0].colour != 7 || beam[0].move_x != 0 || beam[0].move_y != 0))
+                                if (beam[0].colour != 1 && beam[0].colour != 5 && beam[0].colour != 2 && ((beam[0].colour != 7 && beam[0].colour != 10) || beam[0].move_x != 0 || beam[0].move_y != 0))
 // if ((beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3) && you_resist_magic(beam[0].ench_power) == 1)
-                                if (you_resist_magic(beam[0].ench_power) == 1)
-                                {
+                                 if (you_resist_magic(beam[0].ench_power) == 1)
+                                 {
                                         strcpy(info, "You resist.");
                                         mpr(info);
                                         return;
-                                }
+                                 }
                                 switch(beam[0].colour)
                                 {
-                                        case 0: potion_effect(9, beam[0].ench_power); return; // slow
-                                        case 1: potion_effect(2, beam[0].ench_power); return; // haste
-                                        case 2: potion_effect(1, beam[0].ench_power); return; // heal (heal wounds potion eff)
-                                        case 3: potion_effect(10, beam[0].ench_power); return; // paralysis
-                                        case 4: potion_effect(11, beam[0].ench_power); return; // confusion
-                                        case 5: potion_effect(12, beam[0].ench_power); return; // invisibility
+                                        case 0: potion_effect(9, beam[0].ench_power); beam[0].wand_id = 1; return; // slow
+                                        case 1: potion_effect(2, beam[0].ench_power); beam[0].wand_id = 1; return; // haste
+                                        case 2: potion_effect(1, beam[0].ench_power); beam[0].wand_id = 1; return; // heal (heal wounds potion eff)
+                                        case 3: potion_effect(10, beam[0].ench_power); beam[0].wand_id = 1; return; // paralysis
+                                        case 4: potion_effect(11, beam[0].ench_power); beam[0].wand_id = 1; return; // confusion
+                                        case 5: potion_effect(12, beam[0].ench_power); beam[0].wand_id = 1; return; // invisibility
                         // 6 is used by digging
-                                        case 7: you_teleport(); return;
+                                        case 7: you_teleport();
+                         beam[0].wand_id = 1;
+                         return;
                         case 8: strcpy(info, "This is polymorph other only!");
                             mpr(info);
+                        beam[0].wand_id = 1;
                                 return;
-                                        case 9: potion_effect(11, beam[0].ench_power); return; // enslavement - confusion?
+                                        case 9: potion_effect(11, beam[0].ench_power);
+                        beam[0].wand_id = 1;
+                        return; // enslavement - confusion?
+                                        case 10:
+                        if (you[0].level_type == 2)
+                        {
+                          mpr("You feel trapped.");
+                          break;
+                        }
+                        mpr("You are cast into the Abyss!"); more();
+                        banished(96);
+                        beam[0].wand_id = 1;
+                        return; // banishment to the abyss
                                         case 13: // pain
-                                                if (you[0].is_undead != 0)
+                                                if (you[0].is_undead != 0 || you[0].mutation [43] != 0)
                                                 {
                                                 strcpy(info, "You are unaffected.");
                                                 mpr(info);
@@ -390,12 +412,20 @@ void beam(struct bolt beam [1])
                                                 strcpy(info, "Pain shoots through your body!");
                                                 mpr(info);
                                                 strcpy(beam[0].beam_name, "spell");
-                                                ouch(random2(beam[0].hit), 0, 3);
+                        if (beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3)
+                                                 ouch(random2(beam[0].hit), 0, 22);
+                          else
+                                                   ouch(random2(beam[0].hit), beam[0].beam_source, 3);
+                        beam[0].wand_id = 1;
                                                 return;
                                         case 15:
                                                 mpr("You are blasted!");
                                                 strcpy(beam[0].beam_name, "spell");
-                                                ouch(random2(beam[0].hit), 0, 3);
+                        if (beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3)
+                                                 ouch(random2(beam[0].hit), 0, 22);
+                          else
+                                                   ouch(random2(beam[0].hit), beam[0].beam_source, 3);
+                        beam[0].wand_id = 1;
                                                 return;
 
 
@@ -421,6 +451,11 @@ void beam(struct bolt beam [1])
 
                         hurted -= random2(player_AC() + 1);
                         hurted -= random2(player_shield_class()); // don't bother with + 1 here
+                        if (beam[0].flavour == 19) // shrapnel
+                        {
+                                hurted -= random2(player_AC() + 1);
+                                hurted -= random2(player_AC() + 1);
+                        }
 
                         strcat(info, "!");
                         mpr(info);
@@ -444,7 +479,10 @@ void beam(struct bolt beam [1])
                         if (beam[0].flavour == 2 || stricmp(beam[0].beam_name, "hellfire") == 0) scrolls_burn(3, 6); // also above
                         if (beam[0].flavour == 3) scrolls_burn(3, 8);
 
-                        ouch(hurted, 0, 3);
+            if (beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3)
+                         ouch(hurted, 0, 22);
+              else
+                           ouch(hurted, beam[0].beam_source, 3);
 
                         you[0].hp_ch = 1;
 
@@ -464,7 +502,7 @@ void beam(struct bolt beam [1])
 
                 out_of_hit_you :
 
-                        if (beam[0].target_x == beam[0].bx && beam[0].target_y == beam[0].by && beam[0].aim_down == 1 && ((grd [beam[0].bx] [beam[0].by] == 61 && beam[0].flavour == 3) || (grd [beam[0].bx] [beam[0].by] == 62 && beam[0].flavour == 2)))
+                        if (beam[0].target_x == beam[0].bx && beam[0].target_y == beam[0].by && beam[0].aim_down == 1 && ((grd [beam[0].bx] [beam[0].by] == 61 && beam[0].flavour == 3) || ((grd [beam[0].bx] [beam[0].by] == 62 || grd [beam[0].bx] [beam[0].by] == 65) && beam[0].flavour == 2)))
                                 place_cloud(8, beam[0].bx, beam[0].by, 2 + random2(5)); // steam
 
                         if (mgrd [beam[0].bx] [beam[0].by] != MNG && (beam[0].colour != 6 || beam[0].beam_name [0] != '0'))
@@ -517,6 +555,11 @@ void beam(struct bolt beam [1])
                                         } else hurted += random2(beam[0].damage);
 
                                         hurted -= random2(menv[o].m_AC + 1);
+                                        if (beam[0].flavour == 19) // shrapnel
+                                        {
+                                                hurted -= random2(menv [o].m_AC + 1);
+                                                hurted -= random2(menv [o].m_AC + 1);
+                                        }
                                         if (hurted <= 0) hurted = 0;
                                         hurted = check_mons_resists(beam, o, hurted);
 
@@ -616,6 +659,7 @@ void beam(struct bolt beam [1])
                                                 strcpy(info, monam (menv [o].m_sec, menv [o].m_class, menv [o].m_ench [2], 0));
                                                 strcat(info, " looks slightly unstable.");
                                                 mpr(info);
+                        beam[0].wand_id = 1;
                                         }
                                         monster_teleport(o, 0);
                                         beam[0].aim_down = 0;
@@ -627,14 +671,21 @@ void beam(struct bolt beam [1])
                             if (check_mons_magres(o, beam[0].ench_power) == 0) goto it_resists;
                             monster_polymorph(o, 250, 100);
                             beam[0].aim_down = 0;
+                    beam[0].wand_id = 1;
                             return;
                                 }
 
                             if (beam[0].colour == 10)
                         {
                             if (check_mons_magres(o, beam[0].ench_power) == 0) goto it_resists;
-                            monster_die(o, 6, beam[0].beam_source);
+                            if (you[0].level_type == 2)
+                    {
+                                         strcpy(info, monam (menv [o].m_sec, menv [o].m_class, menv [o].m_ench [2], 0));
+                                         strcat(info, " wobbles for a moment.");
+                                         mpr(info);
+                    } else monster_die(o, 6, beam[0].beam_source);
                             beam[0].aim_down = 0;
+                    beam[0].wand_id = 1;
                             return;
                             }
 
@@ -644,6 +695,7 @@ void beam(struct bolt beam [1])
                         if (check_mons_magres(o, beam[0].ench_power) == 0) goto it_resists;
                         monster_polymorph(o, 131, 100);
                         beam[0].aim_down = 0;
+                    beam[0].wand_id = 1;
                             return;
                         }
 
@@ -745,17 +797,19 @@ void beam(struct bolt beam [1])
                       if (menv [o].m_class >= 389 && menv [o].m_class <= 393) mimic_alert(o);
                     }
                                         beam[0].aim_down = 0;
+                    beam[0].wand_id = 1;
                                         return;
                                 }
 
                                 int func_pass [10];
 
-                                if (beam[0].colour == 12 && mons_holiness(menv [o].m_class) == 1)
+                                if ((beam[0].colour == 12 && mons_holiness(menv [o].m_class) == 1) || (beam[0].colour == 16 && mons_holiness(menv [o].m_class) == 2))
                                 {
                                         strcpy(info, monam (menv [o].m_sec, menv [o].m_class, menv [o].m_ench [2], 0));
                                         strcat(info, " is enslaved.");
                                         mpr(info);
                                         menv [o].m_beh = 7;
+                    beam[0].wand_id = 1;
                                         return;
                                 }
                                 if (beam[0].colour == 12)
@@ -1041,8 +1095,9 @@ brek = 0;*/
                                         if ((you[0].equip [6] == -1 || you[0].inv_type [you[0].equip [6]] < 2 || (you[0].inv_type [you[0].equip [6]] >= 22 && you[0].inv_type [you[0].equip [6]] <= 25) || you[0].inv_dam [you[0].equip [6]] / 30 == 4) && random() % 2 == 0 && beam[0].move_x != 0 || beam[0].move_y != 0)
                                                 exercise(14, 1);
 
+                    if (you[0].duration [2] != 0 || you[0].mutation [8] == 3) beam[0].hit = random2(beam[0].hit);
 
-                                        if (beam[0].hit >= random2(player_evasion()) + random2(you[0].dex) / 3 - 2 && you[0].duration [2] == 0)// || random2(6) == 0)
+                                        if (beam[0].hit >= random2(player_evasion()) + random2(you[0].dex) / 3 - 2 && you[0].duration [20] == 0)
                                         {
 
                                                 strcpy(info, "The ");
@@ -1089,7 +1144,10 @@ brek = 0;*/
                                                 if (random() % 1000 <= mass(2, you[0].inv_type [you[0].equip [6]]) && random() % 4 == 0)
                                                         exercise(13, 1);
 
-                                                ouch(hurted, 0, 3);
+                                if (beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3)
+                                                 ouch(hurted, 0, 22);
+                                      else
+                                                   ouch(hurted, beam[0].beam_source, 3);
 
                                                 you[0].hp_ch = 1;
 
@@ -1642,7 +1700,7 @@ void mass_enchantment(int wh_enchant, int pow)
                 if (menv [i].m_class == -1) continue;
         if (mons_near(i) == 0) continue;
 
-                if (wh_enchant == 30 && mons_holiness(menv [i].m_class) != 1) continue;
+                if (wh_enchant == 30 && (mons_holiness(menv [i].m_class) != 1 || menv [i].m_beh == 7)) continue;
   /* assuming that the only mass charm is control undead */
 
                 if (wh_enchant != 30 || mons_holiness(menv [i].m_class) != 1)
@@ -1684,7 +1742,8 @@ void mass_enchantment(int wh_enchant, int pow)
                                                         break;
                                                 case 5: strcat(info, " looks rather confused.");
                                                         break;
-                                                        case 30: strcat(info, " is charmed.");
+                                                        case 30: strcat(info, " submits to your will.");
+                                 menv [i].m_beh = 7;
                                                             break;
                                         }
                                         mpr(info);

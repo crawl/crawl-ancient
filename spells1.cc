@@ -45,6 +45,7 @@ void extension(int pow);
 void ice_armour(int pow, char extending);
 void stone_scales(int pow);
 void missile_prot(int pow);
+void deflection(int pow);
 void cast_regen(int pow);
 void cast_berserk(void);
 void cast_swiftness(int power);
@@ -89,9 +90,9 @@ if (see_grid(beam[0].target_x, beam[0].target_y) == 0)
 
 if (grd [beam[0].target_x] [beam[0].target_y] <= 10 || mgrd [beam[0].target_x] [beam[0].target_y] != MNG)
 {
-  strcpy(info, "Your body is wracked with pain!");
+  strcpy(info, "The blink fails. Your body is severely harmed!");
   mpr(info);
-/*  if (you[0].deaths_door == 0) you[0].hp = 1; */
+  if (you[0].deaths_door == 0) you[0].hp = 1;
   you[0].hp_ch = 1;
   you_teleport2(0); /* instantaneous teleport */
   return;
@@ -303,7 +304,7 @@ void identify(char pow)
    int id_used = 1;
 
         if (pow == 1 && random2(3) == 0) id_used = random2 (3) + 1;
-        unsigned char nthing;
+        unsigned char nthing = 0;
 
         do
         {
@@ -854,6 +855,11 @@ if (you[0].duration [4] > 0)
  cast_regen(pow);
 }
 
+if (you[0].duration [20] > 0)
+{
+ deflection(pow);
+}
+
 if (you[0].shock_shield > 0)
 {
  you[0].shock_shield += random2(pow) + 4;
@@ -975,6 +981,20 @@ mpr(info);
  you[0].duration [2] += 10 + random2(pow) + random2(pow);
 
  if (you[0].duration [2] >= 100) you[0].duration [2] = 100;
+
+}
+
+void deflection(int pow)
+{
+
+if (pow > 100) pow = 100;
+
+strcpy(info, "You feel very safe from missiles.");
+mpr(info);
+
+ you[0].duration [20] += 15 + random2(pow);
+
+ if (you[0].duration [20] >= 100) you[0].duration [20] = 100;
 
 }
 

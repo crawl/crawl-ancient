@@ -40,12 +40,21 @@
 #define MLAVA3 423
 #define MLAVA4 424
 #define MLAVA5 425
+#define MLAVA6 426
+#define MLAVA7 427
+#define MLAVA8 428
+#define MLAVA10 429
 #define MWATER0 430
 #define MWATER1 431
 #define MWATER2 432
 #define MWATER3 433
 #define MWATER4 434
 #define MWATER5 435
+#define MWATER6 436
+#define MWATER7 437
+#define MWATER8 438
+#define MWATER9 439
+#define MWATER10 440
 
 #define BLACK 0
 #define BLUE 1

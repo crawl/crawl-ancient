@@ -22,6 +22,7 @@
 #include "mutation.h"
 #include "player.h"
 #include "ouch.h"
+#include "religion.h"
 #include "spell.h"
 #include "spells.h"
 #include "spells0.h"
@@ -29,6 +30,9 @@
 #include "spells3.h"
 #include "stuff.h"
 #include "view.h"
+
+char mutate(int which_mutation);
+
 
 int learned = 0;
 int spell_container = 0;
@@ -296,7 +300,7 @@ switch(spec_effect)
   case 2:
   strcpy(info, "Space twists in upon itself!");
   mpr(info);
-  create_monster(244, 24, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(244, 24, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   break;
  }
  break;
@@ -324,7 +328,7 @@ switch(spec_effect)
   mpr(info);
   for (loopj = 0; loopj < 2 + random2(3); loopj ++)
   {
-   create_monster(244, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(244, 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   }
   break;
  }
@@ -341,18 +345,17 @@ switch(spec_effect)
   ouch(11 + random2(9) + random2(9), 0, 18);
   break;
   case 1:
-  warping : strcpy(info, "Space warps crazily around you!");
+  strcpy(info, "Space warps crazily around you!");
   mpr(info);
   you_teleport2(1);
   ouch(7 + random2(7) + random2(7), 0, 18);
   potion_effect(11, 30); // conf
   break;
   case 2:
-  if (random2(4) != 0) goto warping;
   strcpy(info, "You are cast into the Abyss!");
   mpr(info);
   more();
-  banished(); // sends you to the abyss
+  banished(96); // sends you to the abyss
   break;
   case 3:
   if (mutate(100) == 0) mpr("Nothing appears to happen.");
@@ -397,7 +400,7 @@ switch(spec_effect)
   case 1:
   strcpy(info, "Space twists in upon itself!");
   mpr(info);
-  create_monster(244, 24, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(244, 24, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   break;
  }
 
@@ -409,13 +412,13 @@ switch(spec_effect)
   mpr(info);
   for (loopj = 0; loopj < 2 + random2(3); loopj ++)
   {
-   create_monster(244, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(244, 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   }
   break;
   case 1:
   strcpy(info, "Something appears in a flash of light!");
   mpr(info);
-  create_monster(220 + random2(5), 24, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(220 + random2(5), 24, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   break;
  }
  break;
@@ -427,26 +430,25 @@ switch(spec_effect)
   case 0:
   strcpy(info, "Something forms out of thin air.");
   mpr(info);
-  create_monster(23, 0, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(23, 0, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   break;
   case 1:
   strcpy(info, "You sense a hostile presence.");
   mpr(info);
-  create_monster(220 + random2(10), 0, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(220 + random2(10), 0, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   break;
   case 2:
   strcpy(info, "Something turns its attention towards you...");
   mpr(info);
   for (loopj = 0; loopj < 2 + random2(3); loopj ++)
   {
-   create_monster(220 + random2(5), 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(220 + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   }
   break;
   case 3:
-  if (random2(4) != 0) goto warping;
   strcpy(info, "You are cast into the Abyss!");
   mpr(info);
-  banished(); // sends you to the abyss
+  banished(96); // sends you to the abyss
   break;
  }
  break;
@@ -622,7 +624,7 @@ break; // end divinations
    case 0:
    strcpy(info, "You are surrounded by flickering shadows.");
    mpr(info);
-   create_monster(63, 21, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(63, 21, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
    break;
    case 1:
    if (random2(3) == 0 && player_prot_life() == 0)
@@ -686,7 +688,7 @@ break; // end divinations
    case 4:
    strcpy(info, "Something reaches out for you...");
    mpr(info);
-   create_monster(48, 23, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(48, 23, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
    break;
   }
   break;
@@ -1014,7 +1016,7 @@ switch(spec_effect)
   mpr(info);
   beam[0].type = 43;
   beam[0].damage = 108;
-  beam[0].flavour = 0;
+  beam[0].flavour = 19; // shrapnel
   beam[0].bx = you[0].x_pos;
   beam[0].by = you[0].y_pos;
   strcpy(beam[0].beam_name, "explosion");
@@ -1313,7 +1315,7 @@ you[0].inv_plus [splbook] = numbo + 64;
 
 int which_spellbook(void)
 {
-unsigned char nthing;
+unsigned char nthing = 0;
 
 if (you[0].spell_levels <= 0)
 {
@@ -1579,12 +1581,12 @@ chance = spell_fail(specspell);
   strcpy(info, "This spell is quite difficult to commit to memory.");
   mpr(info);
  } else
- if (chance >= 50)
+ if (chance >= 45)
  {
   strcpy(info, "This spell is rather tricky to learn.");
   mpr(info);
  } else
- if (chance >= 40)
+ if (chance >= 30)
  {
   strcpy(info, "This spell is a little tricky to absorb.");
   mpr(info);
@@ -1610,7 +1612,15 @@ redraw_screen();
  return;
 }
 mesclr();
-if (random2(40) + random2(40) + random2(40) + random2(40) + random2(40) < chance) //powm <= random2(chance) && spell_value(specspell) > 3)
+
+if (you[0].mutation [39] > 0 && random2(4) < you[0].mutation [39])
+{
+ mpr("The writing blurs into unreadable gibberish.");
+ you[0].turnover = 1;
+ return;
+}
+
+if (random2(40) + random2(40) + random2(40) < chance) //powm <= random2(chance) && spell_value(specspell) > 3)
 {
 #ifdef PLAIN_TERM
 redraw_screen();
@@ -1618,6 +1628,22 @@ redraw_screen();
  strcpy(info, "You fail to memorise the spell.");
  mpr(info);
  you[0].turnover = 1;
+ if (you[0].inv_type [spell_container] == 24)
+ {
+   mpr("The pages of the Necronomicon glow with a malevolent light...");
+   miscast_effect(16, 8, random2(30) + random2(30) + random2(30), 100);
+ }
+ if (you[0].inv_type [spell_container] == 27) /* Demonology */
+ {
+   mpr("This book does not appreciate being disturbed by one of your ineptitude!");
+   miscast_effect(18, 7, random2(30) + random2(30) + random2(30), 100);
+ }
+ if (you[0].inv_type [spell_container] == 33) /* Annihilations */
+ {
+   mpr("This book does not appreciate being disturbed by one of your ineptitude!");
+   miscast_effect(11, 8, random2(30) + random2(30) + random2(30), 100);
+ }
+
 #ifndef DEBUG
  return;
 #endif
@@ -1651,5 +1677,7 @@ you[0].turnover = 1;
 #ifdef PLAIN_TERM
 redraw_screen();
 #endif
+
+naughty(9, 2 + random2(5));
 
 }

@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <stdlib.h>
+
 #include "beam.h"
 #include "effects.h"
 #include "externs.h"
@@ -130,13 +132,13 @@ if (you[0].conf != 0)
 
 switch(your_spells(you[0].spells [spc2], powc, 1))
 {
- case 1: exercise_spell(you[0].spells [spc2], 1, 1); break;
  case 0: exercise_spell(you[0].spells [spc2], 1, 0); break;
-/* -1 just falls through */
+ case 1: exercise_spell(you[0].spells [spc2], 1, 1); break;
 }
 
 you[0].turnover = 1;
 
+naughty(9, 1 + random2(5));
 
 } // end of void cast_a_spell
 
@@ -155,8 +157,24 @@ struct bolt beam [1];
 alert();
 
 powc = spell_spec(spc2, powc);
+
+/*strcpy(info, "Spell_spec: ");
+itoa(powc, st_prn, 10);
+strcat(info, st_prn);
+mpr(info);*/
+
 surge_power(spc2);
 powc = magic_ability(powc, you[0].intel);
+
+/*strcpy(info, "Magic_ability: ");
+itoa(powc, st_prn, 10);
+strcat(info, st_prn);
+mpr(info);
+
+strcpy(info, "Spell_fail: ");
+itoa(spell_fail(spc2), st_prn, 10);
+strcat(info, st_prn);
+mpr(info);*/
 
 if (allow_fail == 1)
 {
@@ -455,6 +473,11 @@ switch(spc2)
     mpr(info);
     return 1;
    }
+   if (you[0].level_type == 3)
+   {
+    mpr("Your Earth magic lacks the power to map Pandemonium.");
+    return 1;
+   }
    strcpy(info, "You feel aware of your surroundings.");
    mpr(info);
    magic_mapping((powc * 2 + 5), 40 + powc * 2);
@@ -548,7 +571,7 @@ switch(spc2)
            else summon_ice_beast_etc(powc, 8);
    return 1;
 
-   case 83: // deflect missiles
+   case 83: // repel missiles
    missile_prot(powc);
    return 1;
 
@@ -864,6 +887,22 @@ switch(spc2)
    case 157: // death chan
    cast_death_channel(powc);
    return 1;
+
+   case 158: // Symbol of Torment
+   if (you[0].is_undead != 0 || you[0].mutation [43] != 0)
+   {
+    mpr("This spell will not function for one who is immune to its effects.");
+    return 1;
+   }
+   torment();
+   return 1;
+
+   case 159: // deflect missiles
+   deflection(powc);
+   return 1;
+
+
+
 /*
    case 158: // Cross
    cross_direct : if (spell_direction(spd, beam) == -1) return 1;
@@ -1045,66 +1084,120 @@ int spellsy = 0;
 
 for (s = 11; s < 24; s ++)
 {
- if (s == 17) continue; // Holy magic has no skill
+ if (s == 17) continue; // Holy magic has no skill - actually, it no longer exists
  if (spell_type(spell_ex, s) == 1) spellsy ++;
 }
 
-if (divide == 1) spellsy += 2 + random2(10);
+if (divide == 0) spellsy += 4 + random2(10);
 
-// exercise(26, random2((spell_value(spell_ex)) * (10 + spell_value(spell_ex) * 2) / 10 / spellsy + 1);
 if (spellsy != 0)
 {
 if (spell_type(spell_ex, 11) == 1)
 {
- exercise(26, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(26, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 12) == 1)
 {
- exercise(27, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(27, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 15) == 1)
 {
- exercise(31, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(31, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 16) == 1)
 {
- exercise(29, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(29, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 18) == 1)
 {
- exercise(28, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(28, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 19) == 1)
 {
- exercise(32, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(32, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 20) == 1)
 {
- exercise(30, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(30, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 21) == 1)
 {
- exercise(37, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(37, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 22) == 1)
 {
- exercise(36, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(36, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 23) == 1)
 {
- exercise(35, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(35, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 13) == 1)
 {
- exercise(33, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(33, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 14) == 1)
 {
- exercise(34, (spell_value(spell_ex)) * (10 + spell_value(spell_ex)) / 10 / spellsy); // + 1);
+ exercise(34, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 
 } // end if spellsy != 0
 
+
+// exercise(26, random2((spell_value(spell_ex)) * (10 + spell_value(spell_ex) * 2) / 10 / spellsy + 1);
+/*if (spellsy != 0)
+{
+if (spell_type(spell_ex, 11) == 1)
+{
+ exercise(26, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 12) == 1)
+{
+ exercise(27, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 15) == 1)
+{
+ exercise(31, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 16) == 1)
+{
+ exercise(29, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 18) == 1)
+{
+ exercise(28, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 19) == 1)
+{
+ exercise(32, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 20) == 1)
+{
+ exercise(30, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 21) == 1)
+{
+ exercise(37, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 22) == 1)
+{
+ exercise(36, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 23) == 1)
+{
+ exercise(35, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 13) == 1)
+{
+ exercise(33, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+if (spell_type(spell_ex, 14) == 1)
+{
+ exercise(34, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+}
+
+} // end if spellsy != 0
+*/
 /*if (you[0].skills [25] > 0)
 {
  if (spellsy != 0)
@@ -1120,10 +1213,29 @@ if (spell_type(spell_ex, 14) == 1)
 
 //if (you[0].skills [25] > 0)
 //{
- if (spellsy != 0)
+
+
+//if (spellsy != 0)
+//{
+if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex) + 1)) + random2(3) == 0); // + 1);
+//} else if (spc == 1) exercise(25, random2(spell_value(spell_ex))); // + 1);
+
+/*
+3.02 was:
+if (spellsy != 0)
  {
-  if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)) / spellsy)); // + 1);
+  if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex) + 1) / spellsy)); // + 1);
  } else if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)))); // + 1);
+*/
+
+
+
+
+
+
+
+
+
 //}
 /* else
  if (spellsy != 0)

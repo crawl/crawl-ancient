@@ -54,6 +54,7 @@
 
 void throw_it(struct bolt beam [1], int throw_2);
 void use_randart(unsigned char item_wield_2);
+char drink_fountain(void);
 
 extern int book_thing; /* defined in spells.cc */
 extern char wield_change; /* defined in output.cc */
@@ -232,7 +233,7 @@ if (you[0].inv_class [item_wield_2] != 0)
       return;
    }
 
-   if (you[0].is_undead != 0 && (you[0].inv_dam [item_wield_2] % 30 == 3 || you[0].inv_dam [item_wield_2] % 30 == 14))
+   if ((you[0].is_undead != 0 || you[0].species == 34) && (you[0].inv_dam [item_wield_2] % 30 == 3 || you[0].inv_dam [item_wield_2] % 30 == 14))
    {
       strcpy(info, "This weapon will not allow you to wield it.");
       mpr(info);
@@ -542,7 +543,7 @@ if (you[0].inv_class [item_wield_2] == 11)
 void wear_armour(void)
 {
 
-unsigned char nthing;
+unsigned char nthing = 0;
 char armr = you[0].equip [6];
 /*char ev_change = 0;*/
 char wh_equip = 0;
@@ -686,8 +687,7 @@ if (
             || you[0].inv_type [armour_wear_2] == 13
             || you[0].inv_type [armour_wear_2] == 14
           )
-       && (
-               /* you are wielding a weapon */
+       && (    /* you are wielding a weapon */
                you[0].inv_class [you[0].equip [0]] == 0
             && (
                  /* and it's two handed */
@@ -700,10 +700,9 @@ if (
                  || you[0].inv_type [you[0].equip [0]] == 20
                  || you[0].inv_type [you[0].equip [0]] == 21
                )
-          )
-
        || /* you are wielding a staff */
           you[0].inv_class [you[0].equip [0]] == 11
+          )
      )
   {
      strcpy(info, "You can't wear a shield with a two-handed weapon.");
@@ -794,7 +793,7 @@ if (you[0].inv_type [armour_wear_2] == 17 && (you[0].skills [13] < 10 || you[0].
  }
 }
 
-if (you[0].species >= 15 && you[0].species <= 29)
+if ((you[0].species >= 15 && you[0].species <= 29) || you[0].species == 32)
 {
  if (you[0].inv_type [armour_wear_2] >= 1 && you[0].inv_type [armour_wear_2] <= 7 || you[0].inv_type [armour_wear_2] >= 10 && you[0].inv_type [armour_wear_2] <= 13 || you[0].inv_type [armour_wear_2] == 17)
  {
@@ -824,7 +823,7 @@ if (you[0].inv_type [armour_wear_2] == 6 || you[0].inv_type [armour_wear_2] == 5
 
 //if (you[0].inv_type [armour_wear_2] == 17 && you[0].skills [13] < 7)
 // crystal plate:
-if (you[0].inv_type [armour_wear_2] == 17 && (you[0].skills [13] < 8 || you[0].species == 14 || you[0].species == 9 || (you[0].species >= 2 && you[0].species <= 6)))
+if (you[0].inv_type [armour_wear_2] == 17 && (you[0].skills [13] < 8 || you[0].species == 14 || you[0].species == 9 || you[0].species == 32 || (you[0].species >= 2 && you[0].species <= 6)))
 {
 /* if (you[0].species == 14 || you[0].species == 9 || (you[0].species >= 2 && you[0].species <= 6))
  {
@@ -1181,7 +1180,7 @@ if (you[0].inv_dam [armour_wear_2] % 30 >= 25)
 void takeoff_armour(void)
 {
 
-unsigned char nthing;
+unsigned char nthing = 0;
 
 if (you[0].berserker != 0)
 {
@@ -1372,7 +1371,7 @@ unwear_armour(armour_wear_2);
 
 void throw_anything(void)
 {
-unsigned char nthing;
+unsigned char nthing = 0;
 struct bolt beam [1];
 
 if (you[0].berserker != 0)
@@ -1458,7 +1457,7 @@ void shoot_thing(void)
 struct bolt beam [1];
 
 int i;
-int throw_2;
+int throw_2 = 0;
 
 if (you[0].berserker != 0)
 {
@@ -1773,7 +1772,7 @@ you[0].turnover = 1;
 void puton_ring(void)
 {
 
-unsigned char nthing;
+unsigned char nthing = 0;
 
 if (you[0].inv_no == 0)
         {
@@ -1875,7 +1874,7 @@ if (you[0].equip [9] != -1)
         return;
 }
 
-int hand_used;
+int hand_used = 0;
 
 if (you[0].equip [7] != -1) hand_used = 1;
 if (you[0].equip [8] != -1) hand_used = 0;
@@ -1987,8 +1986,8 @@ switch(you[0].inv_type [ring_wear_2])
            {
                 mpr("You become transparent for a moment.");
            }
-                set_id(you[0].inv_class [ring_wear_2], you[0].inv_type [ring_wear_2], 1);
-                you[0].inv_ident [ring_wear_2] = 3;
+       set_id(you[0].inv_class [ring_wear_2], you[0].inv_type [ring_wear_2], 1);
+       you[0].inv_ident [ring_wear_2] = 3;
 //      you[0].invis --;
 //      you[0].hunger_inc += 4;
         break;
@@ -2078,6 +2077,7 @@ switch(you[0].inv_type [ring_wear_2])
         you[0].hunger_inc += 1;
         burden_change();*/
         mpr("You feel buoyant.");
+    set_id(you[0].inv_class [ring_wear_2], you[0].inv_type [ring_wear_2], 1);
         break;
 
  case 19: // player_prot_life()
@@ -2127,7 +2127,7 @@ if (you[0].inv_dam [ring_wear_2] == 200)
 void remove_ring(void)
 {
 
-unsigned char nthing;
+unsigned char nthing = 0;
 int hand_used = 10;
 unsigned char keyin;
 int ring_wear_2;
@@ -2382,7 +2382,7 @@ void zap_wand(void)
 {
 int zap_device_1;
 int zap_device_2;
-unsigned char nthing;
+unsigned char nthing = 0;
 
 struct bolt beam [1];
 struct dist zap_wand [1];
@@ -2509,12 +2509,18 @@ void eat_food(void)
 int food_eat_1;
 int food_eat_2;
 
-unsigned char nthing;
+unsigned char nthing = 0;
 
 if (you[0].is_undead == 2)
 {
  strcpy(info, "You can't eat.");
  mpr(info);
+ return;
+}
+
+if (you[0].hunger >= 11000) // || (you[0].hunger >= 7000 && you[0].species == 35))
+{
+ mpr("You're too full to eat anything.");
  return;
 }
 
@@ -2579,7 +2585,7 @@ if (you[0].inv_class [food_eat_2] != 4)
         return;
 }
 
-if (you[0].species == 11 || you[0].mutation [10] == 3) // kobold
+if (you[0].species == 35 || you[0].species == 11 || you[0].mutation [10] == 3) // kobold etc
 {
  if ((you[0].inv_type [food_eat_2] >= 1 && you[0].inv_type [food_eat_2] <= 4) || (you[0].inv_type [food_eat_2] >= 7 && you[0].inv_type [food_eat_2] <= 17))
  {
@@ -2596,7 +2602,7 @@ if (you[0].species == 11 || you[0].mutation [10] == 3) // kobold
     }
 
 
-if (you[0].inv_type [food_eat_2] == 21 && you[0].hung_state > 2 && wearing_amulet(40) == 0 && you[0].species != 11 && you[0].species != 15 && you[0].species != 16 && you[0].mutation [10] == 0)
+if (you[0].inv_type [food_eat_2] == 21 && you[0].hung_state > 2 && wearing_amulet(40) == 0 && you[0].species != 11 && you[0].species != 15 && you[0].species != 16 && you[0].species != 35 && you[0].mutation [10] == 0)
 {
  strcpy(info, "You aren't quite hungry enough to eat that!");
  mpr(info);
@@ -2635,7 +2641,7 @@ void drink(void)
 {
 int drink_1;
 int drink_2;
-unsigned char nthing;
+unsigned char nthing = 0;
 unsigned char keyin;
 
 if (you[0].is_undead == 2)
@@ -2643,6 +2649,11 @@ if (you[0].is_undead == 2)
  strcpy(info, "You can't drink.");
  mpr(info);
  return;
+}
+
+if (grd [you[0].x_pos] [you[0].y_pos] >= 200 && grd [you[0].x_pos] [you[0].y_pos] <= 209 && grd [you[0].x_pos] [you[0].y_pos] % 2 == 0)
+{
+ if (drink_fountain() == 1) return;
 }
 
 if (you[0].inv_no == 0)
@@ -2736,9 +2747,65 @@ food_change();
 } /* end of void drink() */
 
 
+char drink_fountain(void)
+{
+char dry = 0;
 
+switch(grd [you[0].x_pos] [you[0].y_pos])
+{
+ case 200: mpr("Drink from the fountain?"); break;
+ case 202: mpr("Drink from the sparkling fountain?"); break;
+}
 
+char keyin = get_ch();
+if (keyin == 'y' || keyin == 'Y')
+{
+ switch(grd [you[0].x_pos] [you[0].y_pos])
+ {
+  case 200: /* water fountain */
+  mpr("You drink the pure, clear water.");
+  if (random2(20) == 0) dry = 1;
+  break;
+  case 202: /* magic fountain */
+  mpr("You drink the sparkling water.");
+  switch(random2(25))
+  {
+   case 0:
+   case 1:
+   case 2:
+   case 3: potion_effect(random2(4), 100); break;
+   case 4: if (random2(3) == 0) potion_effect(4 + random2(3), 100); break;
+   case 5:
+   case 6:
+   case 7:
+   case 8: potion_effect(7 + random2(6), 100); break;
+   case 9: if (random2(5) == 0) potion_effect(15, 100); else potion_effect(14, 100); break;
+   case 10: potion_effect(15, 100); break;
+   case 11:
+   case 12: potion_effect(18 + random2(4), 100); break;
+   case 13: potion_effect(23, 100); break;
+   default: mpr("Nothing appears to happen."); break; /* Does nothing */
+  }
+  if (random2(10) == 0)
+  {
+    dry = 1;
+    if (random2(5) == 0) grd [you[0].x_pos] [you[0].y_pos] = 200; /* back to a normal fountain, but you won't know it yet */
+  }
+  break;
+ }
+} else return 0;
 
+if (dry == 1)
+{
+   mpr("The fountain dries up!");
+   grd [you[0].x_pos] [you[0].y_pos] ++;
+}
+
+you[0].turnover = 1;
+
+return 1;
+
+}
 
 void read_scroll(void)
 {
@@ -2747,7 +2814,7 @@ int sc_read_1;
 int sc_read_2;
 
 int id_used = 0;
-unsigned char nthing;
+unsigned char nthing = 0;
 
 char affected = 0;
 
@@ -2860,8 +2927,14 @@ if (you[0].inv_type [sc_read_2] == 15)
   return;
 }
 
-
-
+if (you[0].mutation [39] > 0 && random2(5) < you[0].mutation [39])
+{
+ if (you[0].mutation [39] == 3 && random2(3) == 0)
+   mpr("This scroll appears to be blank.");
+    else mpr("The writing blurs in front of your eyes.");
+ you[0].turnover = 1;
+ return;
+}
 
 you[0].inv_quant [sc_read_2] --;
 

@@ -303,6 +303,9 @@ int kbhit()
         return(i);
 }*/
 
+/*
+
+Now in stuff.cc, as it's a PLAIN_TERM rather than a Linux function
 
 #ifdef LINUX
 // this function is used for systems without gettext/puttext to redraw the
@@ -339,3 +342,4 @@ viewwindow(1);
 }
 
 #endif
+*/

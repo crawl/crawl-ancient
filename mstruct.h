@@ -18,8 +18,10 @@ typedef int MYINT; // used for flags and the like
 #define M_RES_FIRE (1<<3)
 #define M_RES_HELLFIRE (1<<4)
 #define M_RES_COLD (1<<5)
+// invisible
+#define M_INVIS (1<<6) // is created with invis enchantment set, and never runs out
 // vulnerabilities
-#define M_ED_ELEC (1<<6) // can this? - - Not as yet (LH)
+//#define M_ED_ELEC (1<<6) // never used
 #define M_ED_POISON (1<<7) // ???  - - This flag is now (2.50) set for insects (LH)
 #define M_ED_FIRE (1<<8)
 #define M_ED_COLD (1<<9)
@@ -68,6 +70,7 @@ typedef int MYINT; // used for flags and the like
 #define S_BUZZ 8 //8=buzz
 #define S_MOAN 9 //9=moan
 #define S_WHINE 10 //10=irritating whine (mosquito)
+#define S_CROAK 11 //11=frog croak
 // ai
 // So far this only affects a) chance to see stealthy player and b) chance to
 //  walk through damaging clouds (LH)

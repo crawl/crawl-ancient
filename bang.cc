@@ -345,7 +345,10 @@ void explosion(char ex_size, struct bolt beam [1])
                                 if (beam[0].flavour == 3) scrolls_burn(5, 8);
                                 if (beam[0].flavour == 11) scrolls_burn(2, 4); // spores!
 
-                                ouch(hurted, 0, 3);
+                if (beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3)
+                                 ouch(hurted, 0, 22);
+                  else
+                                   ouch(hurted, beam[0].beam_source, 3);
 
                                 you[0].hp_ch = 1;
 

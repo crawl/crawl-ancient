@@ -1,6 +1,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "monplace.h"
+#include "stuff.h"
+
 char vault_1(char vgrid [81] [81], int mons_array [7]);
 char vault_2(char vgrid [81] [81], int mons_array [7]);
 char vault_3(char vgrid [81] [81], int mons_array [7]);
@@ -71,7 +74,23 @@ char minivault_25(char vgrid [81] [81], int mons_array [7]);
 char minivault_26(char vgrid [81] [81], int mons_array [7]);
 char minivault_27(char vgrid [81] [81], int mons_array [7]);
 char minivault_28(char vgrid [81] [81], int mons_array [7]);
+char minivault_29(char vgrid [81] [81], int mons_array [7]);
+char minivault_30(char vgrid [81] [81], int mons_array [7]);
+char minivault_31(char vgrid [81] [81], int mons_array [7]);
+char minivault_32(char vgrid [81] [81], int mons_array [7]);
+char minivault_33(char vgrid [81] [81], int mons_array [7]);
+char minivault_34(char vgrid [81] [81], int mons_array [7]);
+char minivault_35(char vgrid [81] [81], int mons_array [7]);
 
+char rand_demon_1(char vgrid [81] [81], int mons_array [7]);
+char rand_demon_2(char vgrid [81] [81], int mons_array [7]);
+char rand_demon_3(char vgrid [81] [81], int mons_array [7]);
+char rand_demon_4(char vgrid [81] [81], int mons_array [7]);
+char rand_demon_5(char vgrid [81] [81], int mons_array [7]);
+char rand_demon_6(char vgrid [81] [81], int mons_array [7]);
+char rand_demon_7(char vgrid [81] [81], int mons_array [7]);
+char rand_demon_8(char vgrid [81] [81], int mons_array [7]);
+char rand_demon_9(char vgrid [81] [81], int mons_array [7]);
 
 char vault_main(char vgrid [81] [81], int mons_array [7], int vault_force, int many_many)
 {
@@ -174,6 +193,22 @@ switch(vault_force2)
  case 225: return minivault_26(vgrid, mons_array);
  case 226: return minivault_27(vgrid, mons_array);
  case 227: return minivault_28(vgrid, mons_array);
+ case 228: return minivault_29(vgrid, mons_array);
+ case 229: return minivault_30(vgrid, mons_array);
+ case 230: return minivault_31(vgrid, mons_array);
+ case 231: return minivault_32(vgrid, mons_array);
+ case 232: return minivault_33(vgrid, mons_array);
+
+ case 300: return rand_demon_1(vgrid, mons_array);
+ case 301: return rand_demon_2(vgrid, mons_array);
+ case 302: return rand_demon_3(vgrid, mons_array);
+ case 303: return rand_demon_4(vgrid, mons_array);
+ case 304: return rand_demon_5(vgrid, mons_array);
+ case 305: return rand_demon_6(vgrid, mons_array);
+ case 306: return rand_demon_7(vgrid, mons_array);
+ case 307: return rand_demon_8(vgrid, mons_array);
+ case 308: return rand_demon_9(vgrid, mons_array);
+
 }
 
 // make sure that vault_n, where n is a number, is a vault which can be put
@@ -211,6 +246,9 @@ C - Random Altar.
 G - Granite statue (does nothing)
 H - orange crystal statue (attacks mind)
 S - Silver statue (summons demons). Avoid using (rare).
+T - Water fountain
+U - Magic fountain
+V - Permenantly dry fountain
 
 Statues can't be walked over and are only destroyed by disintegration
 
@@ -218,7 +256,8 @@ $ - gold
 % - normal item
 * - higher level item (good)
 | - acquirement-level item (almost guaranteed excellent)
-O - place an appropriate orb here
+O - place an appropriate rune here
+P - maybe place a rune here (50%)
 R - honeycomb (2/3) or royal jelly (1/3)
 Z - the Orb of Zot
 
@@ -349,7 +388,7 @@ strcpy(vgrid [29], "xxxxxxxxcc.c....c.c....c.c..9.+.+....c.c");
 strcpy(vgrid [30], "xxxxxxxxcc.c.0..+.+....c.c9...c.c.0..c.c");
 strcpy(vgrid [31], "xxxxxxxxcc.c....c.c.8..c.c....c.c....c.c");
 strcpy(vgrid [32], "xxxxxxxxcc.cccccc.cccccc.cccccc.cccccc.c");
-strcpy(vgrid [33], "xxxxxxxxccw.......wwwwwc.cwwwww.......wc");
+strcpy(vgrid [33], "xxxxxxxxccw.......Twwwwc.cwwwwT.......wc");
 strcpy(vgrid [34], "xxxxxxxxcccccccccccccccc.ccccccccccccccc");
 strcpy(vgrid [35], "xxxxxxxxxxxxxxxxxxxxxxxc@cxxxxxxxxxxxxxx");
 
@@ -628,8 +667,8 @@ strcpy(vgrid [15], "xxxxxxxxx..xx......+xx....xx+......xx..x");
 strcpy(vgrid [16], "xxxxxxxxx..xx......x........x......xx..x");
 strcpy(vgrid [17], "xxxxxxxxx..xxxxxxxxx........xxxxxxxxx..x");
 strcpy(vgrid [18], "xxxxxxxxx..xxxxxxxx..........xxxxxxxx..x");
-strcpy(vgrid [19], "xxxxxxxxx..............99..............x");
-strcpy(vgrid [20], "xxxxxxxxx..............00..............x");
+strcpy(vgrid [19], "xxxxxxxxx..............TT..............x");
+strcpy(vgrid [20], "xxxxxxxxx..............TT..............x");
 strcpy(vgrid [21], "xxxxxxxxx..xxxxxxxx..........xxxxxxxx..x");
 strcpy(vgrid [22], "xxxxxxxxx..xxxxxxxxx........xxxxxxxxx..x");
 strcpy(vgrid [23], "xxxxxxxxx..xx......x........x......xx..x");
@@ -1388,11 +1427,11 @@ strcpy(vgrid [22], "xxxxxxxxxx...xx...llllllll..........................llllllll
 strcpy(vgrid [23], "xxxxxxxxx.......lllllll................................llll.......xxxxxxxxxxxxxx");
 strcpy(vgrid [24], "xxxxxxxxxx.....llllll...cccccccc+c+c+c+c+c+c+c+c+c+c....lll......xxxxxxxxxxxxxxx");
 strcpy(vgrid [25], "xxxxxxxxxxx..lllllll..4.c.....c....................c....llll.....xxxxxxxxxxxxxxx");
-strcpy(vgrid [26], "xxxxxxxxxx...llllll.....c.....+....................c.....llll....x..xxxxxxxxxxxx");
+strcpy(vgrid [26], "xxxxxxxxxx...llllll.....c.V.V.+....................c.....llll....x..xxxxxxxxxxxx");
 strcpy(vgrid [27], "xxxxxxxxx...llllll...l..c.....c....................c....lllll........xxxxxxxxxxx");
-strcpy(vgrid [28], "xxxxxxxxxx...lllll..ll..c.....cccccccccccccccccccccc.4..llllll........xxxxxxxxxx");
+strcpy(vgrid [28], "xxxxxxxxxx...lllll..ll..c..5..cccccccccccccccccccccc.4..llllll........xxxxxxxxxx");
 strcpy(vgrid [29], "xxxxxxxxx...lllll..llll.c.....c...............c....c....lllllll.......xxxxxxxxxx");
-strcpy(vgrid [30], "xxxxxxxxx...lllll..llll.c.....c...............c....c....lllllll.......xxxxxxxxxx");
+strcpy(vgrid [30], "xxxxxxxxx...lllll..llll.c.V.V.c...............c....c....lllllll.......xxxxxxxxxx");
 strcpy(vgrid [31], "xxxxxxxxxx...lllll..lll.c.....+...............+....c...lllllll........xxxxxxxxxx");
 strcpy(vgrid [32], "xxxxxxxxxxx..lllll...ll.cccccccccc............c....c...llllllll........xxxxxxxxx");
 strcpy(vgrid [33], "xxxxxxxxxx...lllll......c|$$||$$|c............c....c...llllllll........xxxxxxxxx");
@@ -1438,7 +1477,7 @@ mons_array [0] = 342; // Asmodeus
 mons_array [1] = 31; // fiend
 mons_array [2] = 100;
 mons_array [3] = 249; // molten gargoyle
-mons_array [4] = 250;
+mons_array [4] = 395; // Serpent of Hell
 mons_array [5] = 250;
 mons_array [6] = 250;
 
@@ -1476,7 +1515,7 @@ strcpy(vgrid [20], "xxxxxxxxxxxxxxx....cc...ww............................ww...c
 strcpy(vgrid [21], "xxxxxxxxxxxxxx....cc...ww....xxxxxxxxxx.2xxxxxxxxxx....ww...cc....xxxxxxxxxxxxxx");
 strcpy(vgrid [22], "xxxxxxxxxxxxx....cc...ww....xxxxxxxxxxx..xxxxxxxxxxx....ww...cc....xxxxxxxxxxxxx");
 strcpy(vgrid [23], "xxxxxxxxxxxx....cc...ww....xx1.....................xx....ww...cc....xxxxxxxxxxxx");
-strcpy(vgrid [24], "xxxxxxxxxxx....cc...ww....xxO.......................xx....ww...cc....xxxxxxxxxxx");
+strcpy(vgrid [24], "xxxxxxxxxxx....cc...ww....xxO..T................T...xx....ww...cc....xxxxxxxxxxx");
 strcpy(vgrid [25], "xxxxxxxxxx....cc...ww....xx..........wwwwww..........xx....ww...cc....xxxxxxxxxx");
 strcpy(vgrid [26], "xxxxxxxxx....cc....w....xx.......wwwwwwwwwwwwww.......xx....ww...cc....xxxxxxxxx");
 strcpy(vgrid [27], "xxxxxxxxx....cc...w....xx.....wwwwwwwwwwwwwwwwwwww.....xx...ww...cc....xxxxxxxxx");
@@ -1496,7 +1535,7 @@ strcpy(vgrid [40], "xxxxxxxxx....cc..www..xx....wwwwwwwwwwwwwwwwwwwwwwww....xx..
 strcpy(vgrid [41], "xxxxxxxxx....cc...ww...xx.....wwwwwwwwwwwwwwwwwwww.....xx...ww...cc....xxxxxxxxx");
 strcpy(vgrid [42], "xxxxxxxxx....cc...ww....xx.......wwwwwwwwwwwwww.......xx....ww...cc....xxxxxxxxx");
 strcpy(vgrid [43], "xxxxxxxxxx....cc...ww....xx..........wwwwww..........xx....ww...cc....xxxxxxxxxx");
-strcpy(vgrid [44], "xxxxxxxxxxx....cc...ww....xx........................xx....ww...cc....xxxxxxxxxxx");
+strcpy(vgrid [44], "xxxxxxxxxxx....cc...ww....xx...T................T...xx....ww...cc....xxxxxxxxxxx");
 strcpy(vgrid [45], "xxxxxxxxxxxx....cc...ww....xx......................xx....ww...cc....xxxxxxxxxxxx");
 strcpy(vgrid [46], "xxxxxxxxxxxxx....cc...ww....xxxxxxxxxxx..xxxxxxxxxxx....ww...cc....xxxxxxxxxxxxx");
 strcpy(vgrid [47], "xxxxxxxxxxxxxx....cc...ww....xxxxxxxxxx2.xxxxxxxxxx....ww...cc....xxxxxxxxxxxxxx");
@@ -1558,7 +1597,7 @@ strcpy(vgrid [8],  "xxxxxxxxx...................................................
 strcpy(vgrid [9],  "xxxxxxxxx.................xxxx..........xxx............................xxxxxxxxx");
 strcpy(vgrid [10], "xxxxxxxxx.............xxxxx..xxxx.....xxx.xxxx.........................xxxxxxxxx");
 strcpy(vgrid [11], "xxxxxxxxx...........xxx.........xxxxxxx.....xx.........................xxxxxxxxx");
-strcpy(vgrid [12], "xxxxxxxxx.........xxx.......................xx.........................xxxxxxxxx");
+strcpy(vgrid [12], "xxxxxxxxx.........xxx....................V..xx.........................xxxxxxxxx");
 strcpy(vgrid [13], "xxxxxxxxx........xx.........................xx...........xxxxxxxx......xxxxxxxxx");
 strcpy(vgrid [14], "xxxxxxxxx........xxxxxxx++xxx...............xx..........xx......xx.....xxxxxxxxx");
 strcpy(vgrid [15], "xxxxxxxxx........xxxxx......xxx.......xxx++xxx.........xx........xx....xxxxxxxxx");
@@ -1577,12 +1616,12 @@ strcpy(vgrid [27], "xxxxxxxxx........xxx=x......x=xxx...........................
 strcpy(vgrid [28], "xxxxxxxxx........xxx=xxxxxxxx=xxx......................................xxxxxxxxx");
 strcpy(vgrid [29], "xxxxxxxxx........xx||xxxxxxxx||xx......................................xxxxxxxxx");
 strcpy(vgrid [30], "xxxxxxxxx.........xx||||O|||||xx.......................................xxxxxxxxx");
-strcpy(vgrid [31], "xxxxxxxxx..........xxxxxxxxxxxx......x.........x.......................xxxxxxxxx");
+strcpy(vgrid [31], "xxxxxxxxx..........xxxxxxxxxxxx......x.........x............V..........xxxxxxxxx");
 strcpy(vgrid [32], "xxxxxxxxx..............................................................xxxxxxxxx");
 strcpy(vgrid [33], "xxxxxxxxx...........................................xxxxxxxxxxxxxxxx...xxxxxxxxx");
 strcpy(vgrid [34], "xxxxxxxxx...........................................xxxxxxxxxxxxxxxx...xxxxxxxxx");
 strcpy(vgrid [35], "xxxxxxxxx...........................................xx$$$$xxx|||||xx...xxxxxxxxx");
-strcpy(vgrid [36], "xxxxxxxxx............................x.........x....xx$$$$xxx|||||xx...xxxxxxxxx");
+strcpy(vgrid [36], "xxxxxxxxx.......V........V...........x.........x....xx$$$$xxx|||||xx...xxxxxxxxx");
 strcpy(vgrid [37], "xxxxxxxxx...........................................xxxxxxxxxxxxxxxx...xxxxxxxxx");
 strcpy(vgrid [38], "xxxxxxxxx...........................................xxxxxxxxxxxxxxxx...xxxxxxxxx");
 strcpy(vgrid [39], "xxxxxxxxx...........................................xx44444xx22222xx...xxxxxxxxx");
@@ -1731,18 +1770,18 @@ strcpy(vgrid [12], "xxxxxxxxxxxxwwwwwbbbb......bbbwwwwwwwwwwww...bbwwwww........
 strcpy(vgrid [13], "xxxxxxxxxxxxwwwbbb...........bbbwwwwww........bbwwwww.............wwxxxxxxxxxxxx");
 strcpy(vgrid [14], "xxxxxxxxxxxwwwbb...............bbwwww..........bwwwwww.............wwxxxxxxxxxxx");
 strcpy(vgrid [15], "xxxxxxxxxxxwwbb........1O.......bbww...........bbwwww..............wwxxxxxxxxxxx");
-strcpy(vgrid [16], "xxxxxxxxxxwwwb...................bw.............bwww................wwxxxxxxxxxx");
+strcpy(vgrid [16], "xxxxxxxxxxwwwb...................bw.............bwww.....U..........wwxxxxxxxxxx");
 strcpy(vgrid [17], "xxxxxxxxxxwwbb...................bb.............bww.................wwxxxxxxxxxx");
 strcpy(vgrid [18], "xxxxxxxxxxwwbb...................bbb............bbw.................wwxxxxxxxxxx");
 strcpy(vgrid [19], "xxxxxxxxxwwbbb...................b.b.................................wwxxxxxxxxx");
-strcpy(vgrid [20], "xxxxxxxxxwwbwbb.................bb....................................wxxxxxxxxx");
+strcpy(vgrid [20], "xxxxxxxxxwwbwbb.................bb.......U.................U..........wxxxxxxxxx");
 strcpy(vgrid [21], "xxxxxxxxxwwbwwbb...............bb..b............bbw....................xxxxxxxxx");
 strcpy(vgrid [22], "xxxxxxxxxwwbbwwbbb...........bbb..bb............bwww...................xxxxxxxxx");
 strcpy(vgrid [23], "xxxxxxxxxwwwbwwwwb..b.....bbbb....b.............bwww...................xxxxxxxxx");
-strcpy(vgrid [24], "xxxxxxxxxxwwbwwww...bbbbbbb.......bw...........bbwwww.................xxxxxxxxxx");
+strcpy(vgrid [24], "xxxxxxxxxxwwbwwww...bbbbbbb.......bw...........bbwwww...U.............xxxxxxxxxx");
 strcpy(vgrid [25], "xxxxxxxxxxwwbbww.................bbww........wwbwwwww.................xxxxxxxxxx");
 strcpy(vgrid [26], "xxxxxxxxxxwwwbbw................bbwwwww....wwwbbwwww..................xxxxxxxxxx");
-strcpy(vgrid [27], "xxxxxxxxxxwwwwbb................bwwwwwwwwwwwwbbwww....................xxxxxxxxxx");
+strcpy(vgrid [27], "xxxxxxxxxxwwwwbb.......U........bwwwwwwwwwwwwbbwww....................xxxxxxxxxx");
 strcpy(vgrid [28], "xxxxxxxxxxxwwwwbbb...........bbbbbwwwwwwwwwbbbwww....................xxxxxxxxxxx");
 strcpy(vgrid [29], "xxxxxxxxxxxwwwwwwbbbb.....bbbbwwwbbbbwwwbbbbwwww....................xxxxxxxxxxxx");
 strcpy(vgrid [30], "xxxxxxxxxxxwwwwwwwwwbbbbbbbwwwwwwwwwbbbbbwwwww.....................xxxxxxxxxxxxx");
@@ -1911,7 +1950,7 @@ strcpy(vgrid [16], "xxxxxxxxxxx.4aaaaaaa.222a3a.aaaRaaa.aaa.R3aa3a3aaaaaaaa.....
 strcpy(vgrid [17], "xxxxxxxxxx....aaaaaaa.aRa.a3aRaRa.a3a.a.a.a.aRa2aaaaaa....xxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [18], "xxxxxxxxxxx...aaaaaa3a3a.a.a.a3aRa2aRa3a.a.aRaRa.aaaaa...xxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [19], "xxxxxxxxxxxx...aa2aRa3a3a3aRa.a3a.a.a.a.a.a.a.a3a.aaa...xxxxxxxxxxxxxxxxxxxxxxxx");
-strcpy(vgrid [20], "xxxxxxxxxxxx...aaa.a.a.a2a.aaa.aRaRa2a.a2a3a.a2aaaa.....xxxxxxxxxxxxxxxxxxxxxxxx");
+strcpy(vgrid [20], "xxxxxxxxxxxx...aaa.a.a.a2a.aaa.aRaRa2a.a2a3a.a2aaaa..T..xxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [21], "xxxxxxxxxxx.....a2a.a2a.aRaaaaa3a.a.aaa3a3a3a3a.a.........xxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [22], "xxxxxxxxxxx.4...aaRRaa.a2a.a3a3a3a.aaa.a.aRa.a.aa..4.......xxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [23], "xxxxxxxxxx......a.a.aaa.a3a.a.a.a.aaa2a.a2a.a.aRaa.....4...xxxxxxxxxxxxxxxxxxxxx");
@@ -1926,21 +1965,21 @@ strcpy(vgrid [31], "xxxxxxxxxxx.............a.a.a.a.a.a.....4....xxxxxxxxxxxxxxx
 strcpy(vgrid [32], "xxxxxxxxxx..............4..a.a.a......4...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [33], "xxxxxxxxxx.................a.a.........xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [34], "xxxxxxxxxxx........................xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-strcpy(vgrid [35], "xxxxxxxxxxx.....4................xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+strcpy(vgrid [35], "xxxxxxxxxxx.....4...T............xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [36], "xxxxxxxxxxx.......................xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [37], "xxxxxxxxxxxx.........................xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-strcpy(vgrid [38], "xxxxxxxxxxxx...........................xxxxxxxx..xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+strcpy(vgrid [38], "xxxxxxxxxxxx.................T.........xxxxxxxx..xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [39], "xxxxxxxxxxxx.......4.....................xxxxxxx...xxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [40], "xxxxxxxxxxx..............xx...............xxxxxx....xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [41], "xxxxxxxxxxx............xxxxx........4......xxxx..4....xxxxxxxxxxxxxxxxxxxxxxxxxx");
-strcpy(vgrid [42], "xxxxxxxxxxx.............xxx................xxxxx.....xxxxxxxxxxxxxxxxxxxxxxxxxxx");
-strcpy(vgrid [43], "xxxxxxxxxxx............xxx..................xxx........xxxxxxxxxxxxxxxxxxxxxxxxx");
+strcpy(vgrid [42], "xxxxxxxxxxx..T..........xxx................xxxxx...T.xxxxxxxxxxxxxxxxxxxxxxxxxxx");
+strcpy(vgrid [43], "xxxxxxxxxxx............xxx........T.........xxx........xxxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [44], "xxxxxxxxxxx....4........xx....................x..........xxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [45], "xxxxxxxxxx...............x.x...xxx...............xx.xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [46], "xxxxxxxxxx.........4...........xxx..................xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [47], "xxxxxxxxx.....4.....................4......4...........4...xxxxxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [48], "xxxxxxxxx.................................................wwwwwwwwxxxxxxxxxxxxxx");
-strcpy(vgrid [49], "xxxxxxxxx............x...x.........xxxx.................wwwwwwwwwwwwxxxxxxxxxxxx");
+strcpy(vgrid [49], "xxxxxxxxx............x...x...T.....xxxx.................wwwwwwwwwwwwxxxxxxxxxxxx");
 strcpy(vgrid [50], "xxxxxxxxxx.........xx.............xxxxx................wwwwwwwwwwwwwwxxxxxxxxxxx");
 strcpy(vgrid [51], "xxxxxxxxxxx.......x..................xxx....4..........wwwwwwwwwwwwwwwxxxxxxxxxx");
 strcpy(vgrid [52], "xxxxxxxxxxx.....xxx...4...........................xxxx.4wwwwwwwwwwwwwwwxxxxxxxxx");
@@ -2083,7 +2122,7 @@ strcpy(vgrid [39], "xxxxxxxxxxxx....2.x.............x.2..xxx");
 strcpy(vgrid [40], "xxxxxxxxxxx.....2.x....x.....x..x..3.xxx");
 strcpy(vgrid [41], "xxxxxxxxxxx.....22x.............xx.2..xx");
 strcpy(vgrid [42], "xxxxxxxxxxx.......xx..x........xx..3..xx");
-strcpy(vgrid [43], "xxxxxxxxxx.....x23.xx........xxx.44...xx");
+strcpy(vgrid [43], "xxxxxxxxxx.....x23.xx....T...xxx.44...xx");
 strcpy(vgrid [44], "xxxxxxxxxx......4.4.x.........x.333....x");
 strcpy(vgrid [45], "xxxxxxxxxx......3.x4...x.......4x4.....x");
 strcpy(vgrid [46], "xxxxxxxxxx.......3.......x.............x");
@@ -2150,7 +2189,7 @@ strcpy(vgrid [16], "xxxxxxxxxcccccc$+ccc.....2....cc.....5cx");
 strcpy(vgrid [17], "xxxxxxxxxcccccc$c....5.......cc.......cx");
 strcpy(vgrid [18], "xxxxxxxxxcccccccc......5....cc.......ccx");
 strcpy(vgrid [19], "xxxxxxxxxcccccccc..........cc.......cccx");
-strcpy(vgrid [20], "xxxxxxxxxcccccccc..1.............4..cccx");
+strcpy(vgrid [20], "xxxxxxxxxcccccccc..1..U..........4..cccx");
 strcpy(vgrid [21], "xxxxxxxxxccccccc.....................ccx");
 strcpy(vgrid [22], "xxxxxxxxxcccccc...........3...........cx");
 strcpy(vgrid [23], "xxxxxxxxxcccccc.......2.......3.......cx");
@@ -2468,22 +2507,22 @@ strcpy(vgrid [17], "xxxxxxxxxxxxxxxxcc..........................................
 strcpy(vgrid [18], "xxxxxxxxxxxxxxxcc.............................................cxxxxxxxxxxxxxxxxx");
 strcpy(vgrid [19], "xxxxxxxxxxxxxxcc...............................................cxxxxxxxxxxxxxxxx");
 strcpy(vgrid [20], "xxxxxxxxxxxxxcc.................................................cxxxxxxxxxxxxxxx");
-strcpy(vgrid [21], "xxxxxxxxxxxxcc.........................B.........................cxxxxxxxxxxxxxx");
-strcpy(vgrid [22], "xxxxxxxxxxxcc.....................................................cxxxxxxxxxxxxx");
+strcpy(vgrid [21], "xxxxxxxxxxxxcc...................................................cxxxxxxxxxxxxxx");
+strcpy(vgrid [22], "xxxxxxxxxxxcc..........................B..........................cxxxxxxxxxxxxx");
 strcpy(vgrid [23], "xxxxxxxxxxcc.......................................................cxxxxxxxxxxxx");
-strcpy(vgrid [24], "xxxxxxxxxcc.........................................................cxxxxxxxxxxx");
+strcpy(vgrid [24], "xxxxxxxxxcc.....................B.............B.....................cxxxxxxxxxxx");
 strcpy(vgrid [25], "xxxxxxxxcc...........................................................cxxxxxxxxxx");
-strcpy(vgrid [26], "xxxxxxxxc..................B.......................B..................cxxxxxxxxx");
+strcpy(vgrid [26], "xxxxxxxxc.............................................................cxxxxxxxxx");
 strcpy(vgrid [27], "xxxxxxxxc.............................................................cxxxxxxxxx");
-strcpy(vgrid [28], "xxxxxxxxc.............................................................cxxxxxxxxx");
-strcpy(vgrid [29], "xxxxxxxxc.............................................................cxxxxxxxxx");
+strcpy(vgrid [28], "xxxxxxxxc.................B.........................B.................cxxxxxxxxx");
+strcpy(vgrid [29], "xxxxxxxxc..............................T..............................cxxxxxxxxx");
 strcpy(vgrid [30], "xxxxxxxxc.............................................................cxxxxxxxxx");
 strcpy(vgrid [31], "xxxxxxxxc.............................................................cxxxxxxxxx");
 strcpy(vgrid [32], "xxxxxxxxc.............................................................cxxxxxxxxx");
 strcpy(vgrid [33], "xxxxxxxxc.............................................................cxxxxxxxxx");
-strcpy(vgrid [34], "xxxxxxxxc..............................................B..............cxxxxxxxxx");
-strcpy(vgrid [35], "xxxxxxxxc..............B..............................................cxxxxxxxxx");
-strcpy(vgrid [36], "xxxxxxxxc(...........................................................{cxxxxxxxxx");
+strcpy(vgrid [34], "xxxxxxxxc.............................................................cxxxxxxxxx");
+strcpy(vgrid [35], "xxxxxxxxc..............B...............................B..............cxxxxxxxxx");
+strcpy(vgrid [36], "xxxxxxxxc(....................T.................T....................{cxxxxxxxxx");
 strcpy(vgrid [37], "xxxxxxxxc.............................................................cxxxxxxxxx");
 strcpy(vgrid [38], "xxxxxxxxc.............................................................cxxxxxxxxx");
 strcpy(vgrid [39], "xxxxxxxxc.............................................................cxxxxxxxxx");
@@ -2492,7 +2531,7 @@ strcpy(vgrid [41], "xxxxxxxxc...................................................
 strcpy(vgrid [42], "xxxxxxxxc.............................................................cxxxxxxxxx");
 strcpy(vgrid [43], "xxxxxxxxc................B...........................B................cxxxxxxxxx");
 strcpy(vgrid [44], "xxxxxxxxcc...........................................................ccxxxxxxxxx");
-strcpy(vgrid [45], "xxxxxxxxxcc.........................................................ccxxxxxxxxxx");
+strcpy(vgrid [45], "xxxxxxxxxcc............................T............................ccxxxxxxxxxx");
 strcpy(vgrid [46], "xxxxxxxxxxcc.......................................................ccxxxxxxxxxxx");
 strcpy(vgrid [47], "xxxxxxxxxxxcc.....................................................ccxxxxxxxxxxxx");
 strcpy(vgrid [48], "xxxxxxxxxxxxcc...................................................ccxxxxxxxxxxxxx");
@@ -2590,7 +2629,7 @@ strcpy(vgrid [51], "xxxxxxxxx.............................G...G.................
 strcpy(vgrid [52], "xxxxxxxxx...........................4.......4..........................xxxxxxxxx");
 strcpy(vgrid [53], "xxxxxxxxx..............................................................xxxxxxxxx");
 strcpy(vgrid [54], "xxxxxxxxx..............................................................xxxxxxxxx");
-strcpy(vgrid [55], "xxxxxxxxx..............................................................xxxxxxxxx");
+strcpy(vgrid [55], "xxxxxxxxx..............................V.V.............................xxxxxxxxx");
 strcpy(vgrid [56], "xxxxxxxxx..............................................................xxxxxxxxx");
 strcpy(vgrid [57], "xxxxxxxxx..............................................................xxxxxxxxx");
 strcpy(vgrid [58], "xxxxxxxxx..............................................................xxxxxxxxx");
@@ -2799,7 +2838,9 @@ return 6;
 
 }
 
-
+/*
+Note: most of the 'x's here will be set to water in dungeon.cc
+*/
 char swamp(char vgrid [81] [81], int mons_array [7])
 {
 int i;
@@ -2917,15 +2958,15 @@ char minivault_3(char vgrid [81] [81], int mons_array [7])
 {
 
 strcpy(vgrid [0],  "............");
-strcpy(vgrid [1],  ".cccG..Gccc.");
-strcpy(vgrid [2],  ".ccB....Bcc.");
-strcpy(vgrid [3],  ".cccc..cccc.");
-strcpy(vgrid [4],  ".ccB....Bcc.");
-strcpy(vgrid [5],  ".cccc..cccc.");
-strcpy(vgrid [6],  ".ccB....Bcc.");
-strcpy(vgrid [7],  ".cccc..cccc.");
-strcpy(vgrid [8],  ".ccB....Bcc.");
-strcpy(vgrid [9],  ".ccccBBcccc.");
+strcpy(vgrid [1],  ".cccccccccc.");
+strcpy(vgrid [2],  ".cccccccccc.");
+strcpy(vgrid [3],  ".cBcBcBcBcc.");
+strcpy(vgrid [4],  ".G.c.c.c.Bc.");
+strcpy(vgrid [5],  ".........Bc.");
+strcpy(vgrid [6],  ".........Bc.");
+strcpy(vgrid [7],  ".G.c.c.c.Bc.");
+strcpy(vgrid [8],  ".cBcBcBcBcc.");
+strcpy(vgrid [9],  ".cccccccccc.");
 strcpy(vgrid [10], ".cccccccccc.");
 strcpy(vgrid [11], "............");
 
@@ -3489,6 +3530,343 @@ return 1;
 
 }
 
+char minivault_29(char vgrid [81] [81], int mons_array [7])
+{
+
+strcpy(vgrid [0],  ".3......3...");
+strcpy(vgrid [1],  "...x.xx.x.2.");
+strcpy(vgrid [2],  ".xxx2xxxxx..");
+strcpy(vgrid [3],  ".xxxx42xxx2.");
+strcpy(vgrid [4],  ".2xx243432x3");
+strcpy(vgrid [5],  ".xx421424xx.");
+strcpy(vgrid [6],  "3xx423242x..");
+strcpy(vgrid [7],  ".x2x3243xxx.");
+strcpy(vgrid [8],  ".x2xx42422x.");
+strcpy(vgrid [9],  "..xxxxxxxx2.");
+strcpy(vgrid [10], "...x2xxxx3..");
+strcpy(vgrid [11], ".3.......33.");
+
+mons_array [0] = 175; // Queen ant
+mons_array [1] = 173; // soldier ant
+mons_array [2] = 0; // giant ant
+mons_array [3] = 175; // ant larva
+
+
+return 1;
+
+}
+
+char minivault_30(char vgrid [81] [81], int mons_array [7]) /* lava pond */
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  "............");
+strcpy(vgrid [2],  "............");
+strcpy(vgrid [3],  "............");
+strcpy(vgrid [4],  "............");
+strcpy(vgrid [5],  ".....T......");
+strcpy(vgrid [6],  "............");
+strcpy(vgrid [7],  "............");
+strcpy(vgrid [8],  "............");
+strcpy(vgrid [9],  "............");
+strcpy(vgrid [10], "............");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 250;
+
+return 1;
+
+}
+
+char minivault_31(char vgrid [81] [81], int mons_array [7]) /* lava pond */
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  "............");
+strcpy(vgrid [2],  "............");
+strcpy(vgrid [3],  "............");
+strcpy(vgrid [4],  "............");
+strcpy(vgrid [5],  ".....T......");
+strcpy(vgrid [6],  "............");
+strcpy(vgrid [7],  "............");
+strcpy(vgrid [8],  "............");
+strcpy(vgrid [9],  "............");
+strcpy(vgrid [10], "............");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 250;
+
+return 1;
+
+}
+
+char minivault_32(char vgrid [81] [81], int mons_array [7]) /* lava pond */
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  "............");
+strcpy(vgrid [2],  "............");
+strcpy(vgrid [3],  "............");
+strcpy(vgrid [4],  "............");
+strcpy(vgrid [5],  ".....U......");
+strcpy(vgrid [6],  "............");
+strcpy(vgrid [7],  "............");
+strcpy(vgrid [8],  "............");
+strcpy(vgrid [9],  "............");
+strcpy(vgrid [10], "............");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 250;
+
+return 1;
+
+}
+
+char minivault_33(char vgrid [81] [81], int mons_array [7]) /* lava pond */
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  "............");
+strcpy(vgrid [2],  "............");
+strcpy(vgrid [3],  "............");
+strcpy(vgrid [4],  "............");
+strcpy(vgrid [5],  ".....V......");
+strcpy(vgrid [6],  "............");
+strcpy(vgrid [7],  "............");
+strcpy(vgrid [8],  "............");
+strcpy(vgrid [9],  "............");
+strcpy(vgrid [10], "............");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 250;
+
+return 1;
+
+}
+
+char rand_demon_1(char vgrid [81] [81], int mons_array [7])
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  ".xx.xx.x.xx.");
+strcpy(vgrid [2],  "..x.x..x.x..");
+strcpy(vgrid [3],  "..x.x..x.x..");
+strcpy(vgrid [4],  "..x.x..x.x..");
+strcpy(vgrid [5],  "..x.x..x.x..");
+strcpy(vgrid [6],  "..x.x1.x.x..");
+strcpy(vgrid [7],  "..x.x..x.x..");
+strcpy(vgrid [8],  "..x.x..x.x..");
+strcpy(vgrid [9],  "..x.x..x.x..");
+strcpy(vgrid [10], ".xx.x.xx.xx.");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 401;
+mons_array [1] = 250;
+mons_array [2] = 250;
+mons_array [3] = 250;
+mons_array [4] = 250;
+mons_array [5] = 250;
+
+return 1;
+
+}
+
+char rand_demon_2(char vgrid [81] [81], int mons_array [7])
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  ".xxxxxxxx3x.");
+strcpy(vgrid [2],  ".3.....xx.x.");
+strcpy(vgrid [3],  ".xxxxxx4x.x.");
+strcpy(vgrid [4],  ".xx4x..xx.x.");
+strcpy(vgrid [5],  ".x.x.22.x.x.");
+strcpy(vgrid [6],  ".x.x.12.x.x.");
+strcpy(vgrid [7],  ".x.xx..x4xx.");
+strcpy(vgrid [8],  ".x.x4xxxxxx.");
+strcpy(vgrid [9],  ".x.xx.....3.");
+strcpy(vgrid [10], ".x3xxxxxxxx.");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 401;
+mons_array [1] = summon_any_demon(2);
+mons_array [2] = summon_any_demon(1);
+mons_array [3] = summon_any_demon(1);
+mons_array [4] = 250;
+mons_array [5] = 250;
+
+return 1;
+
+}
+
+char rand_demon_3(char vgrid [81] [81], int mons_array [7])
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  ".x.x.x3x.x..");
+strcpy(vgrid [2],  "..x.x3x3x.x.");
+strcpy(vgrid [3],  ".x.x.x2x.x..");
+strcpy(vgrid [4],  "..x3x2x2x3x.");
+strcpy(vgrid [5],  ".x3x2x1x2x3.");
+strcpy(vgrid [6],  "..x3x2x2x3x.");
+strcpy(vgrid [7],  ".x.x.x2x3x..");
+strcpy(vgrid [8],  "..x.x3x3x.x.");
+strcpy(vgrid [9],  ".x.x.x3x.x..");
+strcpy(vgrid [10], "..x.x.x.x.x.");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 401;
+mons_array [1] = summon_any_demon(1);
+mons_array [2] = summon_any_demon(1);
+
+return 1;
+
+}
+
+char rand_demon_4(char vgrid [81] [81], int mons_array [7])
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  ".xxxxxxxxx..");
+strcpy(vgrid [2],  ".x$=*=1=|x..");
+strcpy(vgrid [3],  ".xxxxxxx=x..");
+strcpy(vgrid [4],  ".x2=1=2x|x..");
+strcpy(vgrid [5],  ".x=xxxxx=x..");
+strcpy(vgrid [6],  ".x1=*x1=Px..");
+strcpy(vgrid [7],  ".x=x=xxxxx..");
+strcpy(vgrid [8],  ".x*x2=1=2=..");
+strcpy(vgrid [9],  ".xxxxxxxxx..");
+strcpy(vgrid [10], "............");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 401;
+mons_array [1] = summon_any_demon(random2(3));
+mons_array [2] = summon_any_demon(random2(3));
+
+return 1;
+
+}
+/*
+Is obviously possible to get stuck in here. Bad luck if you do (should've come prepared)
+*/
+char rand_demon_5(char vgrid [81] [81], int mons_array [7])
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  "...xxxxxx...");
+strcpy(vgrid [2],  "..xx....xx..");
+strcpy(vgrid [3],  ".xx......xx.");
+strcpy(vgrid [4],  ".x..3232..x.");
+strcpy(vgrid [5],  ".x..2|P3..x.");
+strcpy(vgrid [6],  ".x..3P|2..x.");
+strcpy(vgrid [7],  ".x..2123..x.");
+strcpy(vgrid [8],  ".xx......xx.");
+strcpy(vgrid [9],  "..xx....xx..");
+strcpy(vgrid [10], "...xxxxxx...");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 401;
+mons_array [1] = summon_any_demon(random2(3));
+mons_array [2] = summon_any_demon(random2(3));
+
+return 1;
+
+}
+
+char rand_demon_6(char vgrid [81] [81], int mons_array [7])
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  "............");
+strcpy(vgrid [2],  "......2.....");
+strcpy(vgrid [3],  "............");
+strcpy(vgrid [4],  ".3..........");
+strcpy(vgrid [5],  "..........2.");
+strcpy(vgrid [6],  ".....1......");
+strcpy(vgrid [7],  "............");
+strcpy(vgrid [8],  "............");
+strcpy(vgrid [9],  ".2.......3..");
+strcpy(vgrid [10], "............");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 401;
+mons_array [1] = summon_any_demon(random2(3));
+mons_array [2] = summon_any_demon(random2(3));
+
+return 1;
+
+}
+
+char rand_demon_7(char vgrid [81] [81], int mons_array [7])
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  ".xxx....xxx.");
+strcpy(vgrid [2],  ".x|xx=xxx|x.");
+strcpy(vgrid [3],  ".xx=....=xx.");
+strcpy(vgrid [4],  "..x.x==x.x..");
+strcpy(vgrid [5],  "..x.=12=.=..");
+strcpy(vgrid [6],  "..=.=23=.x..");
+strcpy(vgrid [7],  "..x.x==x.x..");
+strcpy(vgrid [8],  ".xx=....=xx.");
+strcpy(vgrid [9],  ".x|xxx=xx|x.");
+strcpy(vgrid [10], ".xxx....xxx.");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 401;
+mons_array [1] = summon_any_demon(random2(3));
+mons_array [2] = summon_any_demon(2);
+
+return 1;
+
+}
+
+char rand_demon_8(char vgrid [81] [81], int mons_array [7])
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  "....xxxxxxx.");
+strcpy(vgrid [2],  "..xxx....1x.");
+strcpy(vgrid [3],  ".xx..2....x.");
+strcpy(vgrid [4],  ".x........x.");
+strcpy(vgrid [5],  ".xx.......x.");
+strcpy(vgrid [6],  "..xx33..2.x.");
+strcpy(vgrid [7],  "....33...xx.");
+strcpy(vgrid [8],  ".....x...x..");
+strcpy(vgrid [9],  "..G..xx.xx..");
+strcpy(vgrid [10], "......xxx...");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 401;
+mons_array [1] = summon_any_demon(2);
+mons_array [2] = summon_any_demon(random2(3));
+
+return 1;
+
+}
+
+char rand_demon_9(char vgrid [81] [81], int mons_array [7])
+{
+
+strcpy(vgrid [0],  "............");
+strcpy(vgrid [1],  ".xxxxxxxxxx.");
+strcpy(vgrid [2],  ".x2=3=3=3xx.");
+strcpy(vgrid [3],  ".x=xxxxxx2x.");
+strcpy(vgrid [4],  ".x3x^^^^x=x.");
+strcpy(vgrid [5],  ".x=x^P^^x2x.");
+strcpy(vgrid [6],  ".x3x^^1^x=x.");
+strcpy(vgrid [7],  ".x=x^^^^x3x.");
+strcpy(vgrid [8],  ".x2xxxx=x=x.");
+strcpy(vgrid [9],  ".xx2=2=3x3x.");
+strcpy(vgrid [10], ".xxxxxxxx=x.");
+strcpy(vgrid [11], "............");
+
+mons_array [0] = 401;
+mons_array [1] = summon_any_demon(random2(3));
+mons_array [2] = summon_any_demon(2);
+
+return 1;
+
+}
 
 /*
 char minivault_1(char vgrid [81] [81], int mons_array [7])

@@ -67,7 +67,7 @@ int delete_node (node_s* del)
 
 int delete_list (node_s* begin)
 {
-        node_s* nxt;
+        node_s* nxt = NULL;
         if (begin->prev != begin) /* node must be the first node in a list */
           return -1;
         while (begin->next != begin)

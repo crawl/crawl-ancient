@@ -22,6 +22,7 @@ void restore_str(void);
 void restore_int(void);
 void restore_dex(void);
 void cast_refrigeration(int pow);
+void drain_life(int pow);
 void summon_things(int pow);
 void turn_undead(int pow); // what should I use for pow?
 void holy_word(int pow);

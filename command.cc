@@ -9,6 +9,7 @@
 #include "itemname.h"
 #include "invent.h"
 #include "spells0.h"
+#include "version.h"
 
 void adjust_item(void);
 void adjust_spells(void);
@@ -153,7 +154,7 @@ void quit_game(void)
 
 void version(void)
 {
-        strcpy(info, "This is Dungeon Crawl v3.02. (Last build 3/1/99)");
+        strcpy(info, "This is Dungeon Crawl v"VERSION". (Last build 9/2/99)");
         mpr(info);
 }
 
@@ -187,7 +188,8 @@ void adjust(void)
 void adjust_item(void)
 {
 
-        unsigned char throw_2, throw_3, nthing;
+        unsigned char throw_2, throw_3;
+    unsigned nthing = 0;
 
         if (you[0].inv_no == 0)
         {
@@ -319,7 +321,8 @@ void adjust_item(void)
 void adjust_spells(void)
 {
 
-        unsigned char throw_2, throw_3, nthing;
+        unsigned char throw_2, throw_3;
+    unsigned char nthing = 0;
 
         if (you[0].spell_no == 0)
         {

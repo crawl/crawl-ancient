@@ -127,6 +127,9 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 62: showed = 247; // this wavy thing also used for water elemental
   buffy [bufcount + 1] = BLUE; // water
   break;
+  case 65: showed = 247; // this wavy thing also used for water elemental
+  buffy [bufcount + 1] = CYAN; // shallow water
+  break;
 
                 case 67: buffy [bufcount + 1] = env[0].floor_colour; //LIGHTGREY;
                 showed = 249; break;
@@ -209,7 +212,9 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 180: buffy [bufcount + 1] = WHITE; showed = 220; break; /* Altar to Zin */
   case 181: buffy [bufcount + 1] = YELLOW; showed = 220; break; /* Altar to TSO */
   case 182: buffy [bufcount + 1] = DARKGREY; showed = 220; break; /* Altar to Kiku */
-  case 183: break;
+  case 183: buffy [bufcount + 1] = DARKGREY;
+  if (random2(3) == 0) buffy [bufcount + 1] = RED;
+  showed = 220; break; /* Altar to Yredelemnul */
   case 184: buffy [bufcount + 1] = random2(15) + 1; showed = 220; break; /* Altar to Xom */
   case 185: buffy [bufcount + 1] = LIGHTBLUE;
   if (random2(3) == 0) buffy [bufcount + 1] = LIGHTMAGENTA;
@@ -225,7 +230,15 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 190: buffy [bufcount + 1] = LIGHTMAGENTA; showed = 220; break; /* Altar to Nemelex */
   case 191: buffy [bufcount + 1] = LIGHTGREY; showed = 220; break; /* Altar to Elyvilon */
 
+  case 200: buffy [bufcount + 1] = BLUE; showed = 159; break; /* water fountain - looks like a weird f */
+  case 201: buffy [bufcount + 1] = LIGHTGREY; showed = 159; break; /* dry fountain */
+  case 202: buffy [bufcount + 1] = LIGHTBLUE; showed = 159; break; /* Magic fountain */
+  case 203: buffy [bufcount + 1] = LIGHTGREY; showed = 159; break; /* dry fountain */
+
+  case 210: buffy [bufcount + 1] = LIGHTGREY; showed = 159; break; /* permenantly dry fountain */
+
                 case 256: showed = '0'; break;
+  case 257: buffy [bufcount + 1] = CYAN; showed = '~'; break; /* Invis creature walking through water */
 
                 case 258: showed = 41; break; // weapon )
                 case 259: showed = 91; break; // armour [
@@ -238,10 +251,11 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
                 case 266: showed = 40; break; // stones
                 case 267: showed = '+'; break; // book +
                 case 268: showed = 37; break; // corpses part 1
-  case 269: showed = '\\'; break; // magical staves
-  case 270: showed = '}'; break; // gems
-  case 271: showed = '%'; break; // don't know ?
+        case 269: showed = '\\'; break; // magical staves
+        case 270: showed = '}'; break; // gems
+        case 271: showed = '%'; break; // don't know ?
                 case 272: showed = 36; break; // $ gold
+                case 273: showed = '"'; break; // amulet
 
 default:
         int mnr = env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9];
@@ -401,6 +415,7 @@ if (menv [s].m_class != -1)
    case 8: mpr("You hear an angry buzzing noise."); break;
    case 9: mpr("You hear a chilling moan."); break;
    case 10: mpr("You hear an irritating high-pitched whine."); break;
+   case 11: mpr("You hear a croak."); break;
   }
    noisy(8, menv [s].m_x, menv [s].m_y);
  }
@@ -409,6 +424,10 @@ if (menv [s].m_class != -1)
 /*      if (mons [s].m_ench [2] == 6 && (you[0].see_invis == 0 || (mons [s].m_class >= MLAVA0 && mons [s].m_sec == 1)))*/
         if (menv [s].m_ench [2] == 6 && (player_see_invis() == 0 || (menv [s].m_class >= MLAVA0 && menv [s].m_sec == 1)))
         {
+        if (grd [menv [s].m_x] [menv [s].m_y] == 65 && mons_flies(menv [s].m_class) == 0)
+        {
+             env[0].show [menv [s].m_x - you[0].x_pos + 9] [menv [s].m_y - you[0].y_pos + 9] = 257;
+        }
                 continue;
         } else if (menv [s].m_beh != 7 && (menv [s].m_class < 389 || menv [s].m_class > 393)) you[0].running = 0; /* Friendly monsters or mimics don't disturb */
         env[0].show [menv [s].m_x - you[0].x_pos + 9] [menv [s].m_y - you[0].y_pos + 9] = menv [s].m_class + 297;
@@ -466,6 +485,7 @@ for (count_y = (you[0].y_pos - 8); (count_y < you[0].y_pos + 9); count_y++)
                         if (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] != 0)
                         {
                                 env[0].show_col [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = mitm.icol [env[0].igrid [count_x] [count_y]];
+                if (grd [count_x] [count_y] == 65) env[0].show_col [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = CYAN;
                                 switch(mitm.iclass [env[0].igrid [count_x] [count_y]])
                                 {
                                 case 0: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 258; break;
@@ -476,14 +496,16 @@ for (count_y = (you[0].y_pos - 8); (count_y < you[0].y_pos + 9); count_y++)
                                 case 4: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 261; break;
                                 case 5: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 262; break;
                                 case 6: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 263; break;
-                                case 7: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 264; break;
+                                case 7: if (mitm.itype [env[0].igrid [count_x] [count_y]] >= 35) env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 273; else
+                     env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 264;
+                     break;
                                 case 8: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 265; break;
                                 case 9: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 266; break;
                                 case 10: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 267; break;
                                 case 11: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 269; break;
                                 case 12: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 256; break;
-    case 13: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 270; break;
-    case 14: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 271; break;
+                            case 13: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 270; break;
+                            case 14: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 271; break;
                                 case 15: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = 272;
                                          env[0].show_col [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = YELLOW; break;
                                 default: env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9] = '8'; break;
@@ -641,32 +663,24 @@ int p = 0;
 
 
 
-
-
+/*
+The losight function is so complex and tangled that I daren't even look at it.
+Good luck trying to work out what each bit does.
+*/
 void losight(unsigned int sh [19] [19], unsigned char gr [80] [70], int x_p, int y_p)
 {
 
 char shad;
 char see_section;
-char startPoint_x; // = 8;
-char startPoint_y; // = 7;
+char startPoint_x = 0; // = 8;
+char startPoint_y = 0; // = 7;
 char behind = 0;
-char xs; // the multiplier of the x addition thing
-char ys;
+char xs = 0; // the multiplier of the x addition thing
+char ys = 0;
 char cx = 0;
 char cy = 0;
 
 short int see; // see = 1 means 'visible'
-
-
-
-
-
-
-
-
-
-
 
 // first comes the horizontal east:
 see = 1;
@@ -1720,7 +1734,8 @@ unsigned char showed = 0;
   case 24: showed = '8'; break; //
   case 25: showed = '8'; break; //
                 case 61:
-                case 62: showed = 247; break;
+                case 62:
+                case 65: showed = 247; break;
                 case 67:        showed = 250; break;
                 //case 68: showed = '>'; break; // < (60)
                 case 69: showed = 239; break; // >
@@ -1802,6 +1817,18 @@ unsigned char showed = 0;
   case 190:
   case 191: showed = 220; break; /* Altars */
 
+  case 200:
+  case 201:
+  case 202:
+  case 203:
+  case 204:
+  case 205:
+  case 206:
+  case 207:
+  case 208:
+  case 209:
+  case 210: showed = 159; break; /* fountain */
+
                 default: showed = 0; break;
 }
 
@@ -1832,7 +1859,8 @@ unsigned char showed = 0;
   case 24: showed = '8'; break; //
   case 25: showed = '8'; break; //
                 case 61:
-                case 62: showed = 247; break;
+                case 62:
+                case 65: showed = 247; break;
                 case 67:        showed = 249; break;
                 case 68: showed = '>'; break; // <
                 case 69: showed = 239; break; // >
@@ -1914,6 +1942,17 @@ unsigned char showed = 0;
   case 190:
   case 191: showed = 220; break; /* Altars */
 
+  case 200:
+  case 201:
+  case 202:
+  case 203:
+  case 204:
+  case 205:
+  case 206:
+  case 207:
+  case 208:
+  case 209:
+  case 210: showed = 159; break; /* fountain */
              default: showed = 0; break;
 }
 
@@ -2033,6 +2072,9 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
    // note that some monsters which use IBM graphics aren't set for this function - too tricky for now.
   buffy [bufcount + 1] = BLUE; // water
   break;
+  case 65: showed = '{';
+  buffy [bufcount + 1] = CYAN; // shallow water
+  break;
 
                 case 67: buffy [bufcount + 1] = env[0].floor_colour; //LIGHTGREY;
                 showed = '.'; break;
@@ -2117,7 +2159,9 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 180: buffy [bufcount + 1] = WHITE; showed = '_'; break; /* Altar to Zin */
   case 181: buffy [bufcount + 1] = YELLOW; showed = '_'; break; /* Altar to TSO */
   case 182: buffy [bufcount + 1] = DARKGREY; showed = '_'; break; /* Altar to Kiku */
-  case 183: break;
+  case 183: buffy [bufcount + 1] = DARKGREY;
+  if (random2(3) == 0) buffy [bufcount + 1] = RED;
+  showed = '_'; break; /* Altar to Yredelemnul */
   case 184: buffy [bufcount + 1] = random2(15) + 1; showed = '_'; break; /* Altar to Xom */
   case 185: buffy [bufcount + 1] = LIGHTBLUE;
   if (random2(3) == 0) buffy [bufcount + 1] = LIGHTMAGENTA;
@@ -2133,8 +2177,16 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 190: buffy [bufcount + 1] = LIGHTMAGENTA; showed = '_'; break; /* Altar to Nemelex */
   case 191: buffy [bufcount + 1] = LIGHTGREY; showed = '_'; break; /* Altar to Elyvilon */
 
+  case 200: buffy [bufcount + 1] = BLUE; showed = '}'; break; /* Fountain */
+  case 201: buffy [bufcount + 1] = LIGHTGREY; showed = '}'; break; /* dry fountain */
+  case 202: buffy [bufcount + 1] = LIGHTBLUE; showed = '}'; break; /* Magic fountain */
+  case 203: buffy [bufcount + 1] = LIGHTGREY; showed = '}'; break; /* dry fountain */
+
+  case 210: buffy [bufcount + 1] = LIGHTGREY; showed = '}'; break; /* permenantly dry fountain */
 
                 case 256: showed = '0'; break;
+
+  case 257: buffy [bufcount + 1] = CYAN; showed = '~'; break; /* Invis creature walking through water */
 
                 case 258: showed = 41; break; // weapon )
                 case 259: showed = 91; break; // armour [
@@ -2147,10 +2199,11 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
                 case 266: showed = 40; break; // stones
                 case 267: showed = ':'; break; // book +
                 case 268: showed = 37; break; // corpses part 1
-  case 269: showed = '|'; break; // magical staves
-  case 270: showed = '}'; break; // gems
-  case 271: showed = '%'; break; // don't know ?
+            case 269: showed = '|'; break; // magical staves
+            case 270: showed = '}'; break; // gems
+            case 271: showed = '%'; break; // don't know ?
                 case 272: showed = 36; break; // $ gold
+                case 273: showed = '"'; break; // amulet
 
 default:
         int mnr = env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9];
@@ -2291,7 +2344,8 @@ unsigned char showed = 0;
   case 24: showed = '8'; break; //
   case 25: showed = '8'; break; //
                 case 61:
-                case 62: showed = '{'; break;
+                case 62:
+                case 65: showed = '{'; break;
                 case 67:        showed = ','; break;
                 //case 68: showed = '>'; break; // < (60)
                 case 69: showed = '\\'; break; // >
@@ -2373,6 +2427,17 @@ unsigned char showed = 0;
   case 190:
   case 191: showed = '_'; break; /* Altars */
 
+  case 200:
+  case 201:
+  case 202:
+  case 203:
+  case 204:
+  case 205:
+  case 206:
+  case 207:
+  case 208:
+  case 209:
+  case 210: showed = '}'; break; /* fountain */
 
                 default: showed = 0; break;
 }
@@ -2404,7 +2469,8 @@ unsigned char showed = 0;
   case 24: showed = '8'; break; //
   case 25: showed = '8'; break; //
                 case 61:
-                case 62: showed = '{'; break;
+                case 62:
+                case 65: showed = '{'; break;
                 case 67:        showed = '.'; break;
                 case 68: showed = '>'; break; // <
                 case 69: showed = '\\'; break; // >
@@ -2486,6 +2552,17 @@ unsigned char showed = 0;
   case 190:
   case 191: showed = '_'; break; /* Altars */
 
+  case 200:
+  case 201:
+  case 202:
+  case 203:
+  case 204:
+  case 205:
+  case 206:
+  case 207:
+  case 208:
+  case 209:
+  case 210: showed = '}'; break; /* fountain */
              default: showed = 0; break;
 }
 

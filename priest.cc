@@ -229,6 +229,7 @@ for (i = 0; i < 5; i ++)
  if (random() % 15 == 0) replaced [i] = 4;
  if (random() % 20 == 0) replaced [i] = 61;
  if (random() % 25 == 0) replaced [i] = 62;
+ if (random() % 15 == 0) replaced [i] = 65;
  if (random() % 1000 == 0) replaced [i] = 3;
 }
 

@@ -191,7 +191,7 @@ int poison ; // poison!!
 int rotting ;
 int berserker;
 
-unsigned char attribute [10]; // various attributes, eg resist lightning
+unsigned char attribute [30]; // various attributes, eg resist lightning
 /* list in player.cc */
 
 char is_undead;
@@ -220,9 +220,10 @@ unsigned char branch_stairs [30];
 
 char religion;
 unsigned char piety;
-unsigned char gods [20];
+unsigned char gods [100];
 
-unsigned char mutation [50];
+unsigned char mutation [100];
+unsigned char demon_pow [100];
 unsigned char mpower;
 
 unsigned char had_item [50];

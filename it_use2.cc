@@ -376,7 +376,7 @@ switch(z_type)
         strcpy(str_pass, "sticky flame");
         func_pass [1] = random2(5) + 9;
         func_pass [2] = 102 + func_pass [8] / 30;
-        func_pass [3] = 60;
+        func_pass [3] = 11 + func_pass [8] / 10;
         func_pass [4] = '#';
         func_pass [6] = 4;
         func_pass [5] = 2; // fire
@@ -622,7 +622,7 @@ switch(z_type)
         func_pass [0] = 12;
         func_pass [6] = 2;
         func_pass [2] = 50;
-        func_pass [8] *= 7;
+        func_pass [8] *= 15;
         func_pass [8] /= 10;
         func_pass [5] = 4; // magic
         return 2;
@@ -636,7 +636,7 @@ switch(z_type)
         func_pass [2] = 50;
         func_pass [3] = 6 + (func_pass [8] / 50);  //104 + (func_pass [8] / 150);
         func_pass [5] = 4; // magic
-    func_pass [8] *= 30;
+    func_pass [8] *= 50;
     func_pass [8] /= 10;
         return 2;
 
@@ -689,6 +689,20 @@ switch(z_type)
         func_pass [5] = 2; // fire
         func_pass [7] = 1; // wand_id
     return 1;
+
+        case 49: // control demon
+        strcpy(str_pass, "0");
+        func_pass [1] = random2(5) + 8;
+        func_pass [4] = 0;
+        func_pass [0] = 16; /* control demon */
+        func_pass [6] = 2;
+        func_pass [2] = 50;
+    func_pass [8] *= 17;
+    func_pass [8] /= 10;
+        func_pass [5] = 4; // magic
+        return 2;
+
+
 
 /*
 beam_colour = func_pass [0];
@@ -842,7 +856,7 @@ switch(pot_eff)
                 mpr(info);
         } else
               {
-              strcpy (info, "That potion tasted very nasty...");
+              strcpy (info, "That liquid tasted very nasty...");
               mpr(info);
               }
         you[0].poison += random2(3) + random2(3) + 1;
@@ -911,7 +925,7 @@ switch(pot_eff)
         break;
 
         case 14: // degeneration
-        strcpy(info, "There was something very wrong with that potion! ");
+        strcpy(info, "There was something very wrong with that liquid!");
         mpr(info);
         lose_stat(100, random2(3) + random2(2) + 1);
         break;
@@ -947,6 +961,7 @@ switch(pot_eff)
  strcpy(info, "You feel magical!");
  mpr(info);
         you[0].ep += random2(10) + random2(10) + 5;
+    if (you[0].ep > you[0].ep_max) you[0].ep = you[0].ep_max;
 /* if (you[0].ep > you[0].ep_max)
  {
   you[0].ep_max += (you[0].ep - you[0].ep_max) / 4 + 1;
@@ -976,7 +991,7 @@ switch(pot_eff)
                 mpr(info);
         } else
               {
-               strcpy(info, "That potion tasted extremely nasty...");
+               strcpy(info, "That liquid tasted extremely nasty...");
                mpr(info);
               }
         you[0].poison += random2(7) + random2(7) + 3;
@@ -1209,12 +1224,10 @@ if (you[0].inv_class [you[0].equip [0]] == 11)
  break;
 
  case 25:
- you[0].attribute [1] --;
  you[0].attribute [0] --; /* res elec */
  break;
 
  case 26:
- you[0].attribute [2] --;
  break;
 
         }

@@ -531,7 +531,7 @@ void turn_undead(int pow)
 {
 
 int tu = 0, p;
-char brek;
+char brek = 0;
 
 mpr("You attempt to repel the undead.");
 
@@ -539,7 +539,7 @@ for (tu = 0; tu < MNST; tu ++)
 {
  if (menv [tu].m_class == -1 || mons_near(tu) == 0) continue;
 
- if (mons_holiness(menv [tu].m_class) > 0)
+ if (mons_holiness(menv [tu].m_class) == 1)
  {
 /*  menv [tu].m_hp -= random2(5) + random2(pow) / 20;
   if (menv [tu].m_hp <= 0)
@@ -548,7 +548,7 @@ for (tu = 0; tu < MNST; tu ++)
    continue;
   }*/
 
- if (random2(pow) + you[0].xl < menv [tu].m_HD * 9) break;
+ if (random2(pow) + you[0].xl < menv [tu].m_HD * 5) break;
 
 
                         if (menv [tu].m_ench_1 == 1)
@@ -728,7 +728,7 @@ for (toxy = 0; toxy < MNST; toxy ++)
    if (menv [toxy].m_hp <= 0)
    {
                         monster_die(toxy, 1, 0);
-   }
+   } else print_wounds(toxy);
  // assumes only you can cast this spell (or would want to)
   }
 
@@ -736,7 +736,49 @@ for (toxy = 0; toxy < MNST; toxy ++)
 
 } // end toxic rad
 
+void drain_life(int pow)
+{
 
+unsigned char toxy = 0;
+int hp_gain = 0;
+
+strcpy(info, "You draw life from your surroundings.");
+mpr(info);
+
+show_green = DARKGREY;
+viewwindow(1);
+more();
+mesclr();
+
+for (toxy = 0; toxy < MNST; toxy ++)
+{
+  if (menv [toxy].m_class == -1) continue;
+  if (mons_holiness(menv [toxy].m_class) > 0) continue;
+  if (mons_near(toxy) == 1)
+  {
+   strcpy(info, "You draw life from ");
+   strcat(info, monam(menv [toxy].m_sec,menv[toxy].m_class, menv [toxy].m_ench [2], 1));
+   strcat(info, ".");
+   mpr(info);
+   int hurted = 3 + random2(7) + random2(pow);
+   menv [toxy].m_hp -= hurted;
+   hp_gain += hurted / 2;
+   if (menv [toxy].m_hp <= 0)
+   {
+                        monster_die(toxy, 1, 0);
+   } else print_wounds(toxy);
+ // assumes only you can cast this spell (or would want to)
+  }
+
+} // end loop
+
+if (hp_gain > pow * 2) hp_gain = pow * 2;
+you[0].hp += hp_gain;
+if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
+if (hp_gain != 0) mpr("You feel life flooding into your body.");
+you[0].hp_ch = 1;
+
+}
 
 int vampiric_drain(int pow)
 {
@@ -965,8 +1007,9 @@ if (grd [you[0].x_pos + smove[0].move_x] [you[0].y_pos + smove[0].move_y] >= 67 
  goto summon_it;
 }
 
-if (grd [you[0].x_pos + smove[0].move_x] [you[0].y_pos + smove[0].move_y] == 62)
+if (grd [you[0].x_pos + smove[0].move_x] [you[0].y_pos + smove[0].move_y] == 62 || grd [you[0].x_pos + smove[0].move_x] [you[0].y_pos + smove[0].move_y] == 65 || grd [you[0].x_pos + smove[0].move_x] [you[0].y_pos + smove[0].move_y] == 200)
 {
+ /* water squares or fountains */
  type_summoned = MWATER4;
  goto summon_it;
 }

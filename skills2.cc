@@ -22,29 +22,29 @@ char *skills[50][5] = {
 {"Short Blades",   "Stabber","Cutter","Slicer","Knifefighter"}, // short blades
 {"Long Swords",    "Slasher", "Cutter", "Slicer", "Eviscerator"}, // long swords
 {"Great Swords",   "Slasher", "Cutter", "Slicer", "Eviscerator"}, // great swords
-{"Axes",           "Chopper", "Cleaver", "Hacker", "Axe Maniac"}, // axes
+{"Axes",                   "Chopper", "Cleaver", "Hacker", "Axe Maniac"}, // axes
 {"Maces & Flails", "Basher", "Cruncher", "Smasher", "Crusher"}, //  maces & flails
 {"Polearms",       "Chopper", "Cleaver", "Hacker", "Axe Maniac"}, // polearms
-{"Staves",         "Basher", "Cruncher", "Stickfighter", "Pole Vaulter"}, // staves
+{"Staves",             "Basher", "Cruncher", "Smasher", "Stickfighter"}, // staves
 
 // 8:
-{"Slings",         "Slinger", "Bombardier", "Crazy Person", "Really Crazy Person"}, // slings - who would bother?
-{"Bows",           "Hunter", "Archer", "Sharpshooter", "Merry Person"}, // bows - as in 'Robin Hood and his...'
+{"Slings",             "Slinger", "Bombardier", "Crazy Person", "Really Crazy Person"}, // slings - who would bother?
+{"Bows",               "Hunter", "Archer", "Sharpshooter", "Merry Person"}, // bows - as in 'Robin Hood and his...'
 {"Crossbows",      "Hunter", "Archer", "Sharpshooter", "Ballista"/* silly */}, // xbows
-{"Darts",          "Thrower", "Hurler", "Hurler, First Class", "Darts Champion"}, // darts
+{"Darts",              "Thrower", "Hurler", "Hurler, First Class", "Darts Champion"}, // darts
 // 12
 {"Throwing",       "Thrower", "Chucker", "Chucker, First Class", "Catapult"}, // throwing
 
 // 13
-{"Armour",         "Grunt", "Heavy Grunt", "Tortoise", "Invulnerable"}, // armour
-{"Dodging",        "Ducker", "Dodger", "Avoider", "Evader"}, // dodging
-{"Stealth",        "Sneaker", "Thief", "Shadow", "Undetectable"}, // stealth
+{"Armour",             "Grunt", "Heavy Grunt", "Tortoise", "Invulnerable"}, // armour
+{"Dodging",            "Ducker", "Dodger", "Avoider", "Evader"}, // dodging
+{"Stealth",            "Sneaker", "Thief", "Shadow", "Undetectable"}, // stealth
 {"Stabbing",       "Backstabber", "Cutthroat", "Assassin", "Politician"}, // stabbing
 // 17
-{"Shields",        "Shield-Bearer", "Blocker", "Blocker, First Class", "Hoplite"}, // shields
-{"Traps & Doors",          "Disarmer", "Trapper", "Trapper", "Trapper"}, // traps
+{"Shields",            "Shield-Bearer", "Blocker", "Blocker, First Class", "Hoplite"}, // shields
+{"Traps & Doors",  "Disarmer", "Trapper", "Trapper", "Trapper"}, // traps
 
-{"Unarmed Combat",         "Brawler", "Boxer", "Martial Artist", "Martial Artist"},
+{"Unarmed Combat", "Brawler", "Boxer", "Martial Artist", "Martial Artist"},
 {NULL},
 {NULL},
 {NULL},
@@ -74,7 +74,10 @@ char *skills[50][5] = {
 
 /*{"",             "", "", "", ""},*/
 
-{NULL},
+// 38:
+
+{"Invocations",    "Believer", "Servant", "Worldly Agent", "Invoker"},
+
 {NULL},
 {NULL},
 {NULL},
@@ -93,10 +96,14 @@ char *skills[50][5] = {
 
 // human
 /* Note that this (humans have 100 for all skills) is assumed in the
-level_change function in crawl99.cc, if CLASSES is def'd */
+level_change function in crawl99.cc, if CLASSES is def'd
+
+3.10: but it never is, and CLASSES is probably broken now. Anyway,
+the Spellcasting skill (25) is actually about 130% of what is shown here.
+*/
 
 
-int spec_skills [31] [38] =
+int spec_skills [36] [39] =
 {
 
 // 1 human
@@ -139,6 +146,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 // 2: elf
@@ -181,6 +189,7 @@ int spec_skills [31] [38] =
  70, // Air
  130, // Earth
  110, // poison
+ 100, // Invocations
 },
 
 
@@ -225,6 +234,7 @@ int spec_skills [31] [38] =
  70, // Air
  130, // Earth
  130, // poison
+ 100, // Invocations
 },
 
 
@@ -269,6 +279,7 @@ int spec_skills [31] [38] =
  60, // Air
  150, // Earth
  110, // poison
+ 100, // Invocations
 },
 
 
@@ -313,6 +324,7 @@ int spec_skills [31] [38] =
  80, // Air
  100, // Earth
  80, // poison
+ 100, // Invocations
 },
 
 
@@ -357,6 +369,7 @@ int spec_skills [31] [38] =
  80, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 
@@ -403,6 +416,7 @@ int spec_skills [31] [38] =
  150, // Air
  70, // Earth
  130, // poison
+ 100, // Invocations
 },
 
 
@@ -447,6 +461,7 @@ int spec_skills [31] [38] =
  150, // Air
  70, // Earth
  130, // poison
+ 100, // Invocations
 },
 
 
@@ -491,6 +506,7 @@ int spec_skills [31] [38] =
  90, // Air
  100, // Earth
  120, // poison
+ 100, // Invocations
 },
 
 
@@ -536,6 +552,7 @@ int spec_skills [31] [38] =
  150, // Air
  100, // Earth
  110, // poison
+ 100, // Invocations
 },
 
 
@@ -581,6 +598,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 
@@ -625,13 +643,14 @@ int spec_skills [31] [38] =
  140, // Air
  140, // Earth
  140, // poison
+ 140, // Invocations
 },
 
 
 // 13: naga
 
 {
- 110, // fighting
+ 100, // fighting
  100, // short blades
  100, // long blades
  100, // great swords
@@ -669,6 +688,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  60, // poison
+ 100, // Invocations
 },
 
 
@@ -713,6 +733,7 @@ int spec_skills [31] [38] =
  170, // Air
  60, // Earth
  130, // poison
+ 120, // Invocations
 },
 
 
@@ -757,6 +778,7 @@ int spec_skills [31] [38] =
  200, // Air
  120, // Earth
  150, // poison
+ 130, // Invocations
 },
 
 
@@ -801,6 +823,7 @@ int spec_skills [31] [38] =
  200, // Air
  110, // Earth
  130, // poison
+ 150, // Invocations
 },
 
 
@@ -833,7 +856,7 @@ int spec_skills [31] [38] =
  100,
  100,
  100,
- 80, // spellcasting
+ 70, // spellcasting
  100, // conj
  80, // ench
  100, // summ
@@ -846,6 +869,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 
@@ -890,6 +914,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 // 19: White drac
@@ -932,6 +957,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 
@@ -975,6 +1001,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  70, // poison
+ 100, // Invocations
 },
 
 // 21: yellow
@@ -1017,6 +1044,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 // 22: grey
@@ -1059,6 +1087,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 // 23 black drac
@@ -1101,6 +1130,7 @@ int spec_skills [31] [38] =
  70, // Air
  150, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 
@@ -1144,6 +1174,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 // 25 mottled drac
@@ -1186,6 +1217,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 // 26 pale drac
@@ -1228,6 +1260,7 @@ int spec_skills [31] [38] =
  90, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
 // 27 drac
@@ -1270,48 +1303,7 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
-},
-
-// 27 drac
-{
- 90, // fighting
- 100, // short blades
- 100, // long blades
- 100, // great swords
- 100, // axes
- 100, // maces and flails
- 100, // polearms
- 100, // staves
- 120, // slings
- 120, // bows
- 120, // xbows
- 120, // darts
- 120, // throwing
- 200, // armour
- 120, // dodge
- 120, // stealth
- 100, // stab
- 100, // shields
- 100, // traps
- 100,
- 100,
- 100,
- 100,
- 100,
- 100,
- 100, // spellcasting
- 100, // conj
- 120, // ench
- 100, // summ
- 100, // necro
- 100, // transloc
- 100, // transmut
- 100, // divin
- 100, // fire
- 100, // Ice
- 100, // Air
- 100, // Earth
- 100, // poison
+ 100, // Invocations
 },
 
 // 28 drac
@@ -1354,18 +1346,62 @@ int spec_skills [31] [38] =
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 
-// 30 - Centaur
+// 29 drac
 {
- 85, // fighting
- 110, // short blades
+ 90, // fighting
+ 100, // short blades
  100, // long blades
  100, // great swords
  100, // axes
  100, // maces and flails
  100, // polearms
  100, // staves
+ 120, // slings
+ 120, // bows
+ 120, // xbows
+ 120, // darts
+ 120, // throwing
+ 200, // armour
+ 120, // dodge
+ 120, // stealth
+ 100, // stab
+ 100, // shields
+ 100, // traps
+ 100,
+ 100,
+ 100,
+ 100,
+ 100,
+ 100,
+ 100, // spellcasting
+ 100, // conj
+ 120, // ench
+ 100, // summ
+ 100, // necro
+ 100, // transloc
+ 100, // transmut
+ 100, // divin
+ 100, // fire
+ 100, // Ice
+ 100, // Air
+ 100, // Earth
+ 100, // poison
+ 100, // Invocations
+},
+
+// 30 - Centaur
+{
+ 100, // fighting
+ 120, // short blades
+ 110, // long blades
+ 110, // great swords
+ 110, // axes
+ 110, // maces and flails
+ 110, // polearms
+ 110, // staves
  75, // slings
  60, // bows
  85, // xbows
@@ -1375,7 +1411,7 @@ int spec_skills [31] [38] =
  170, // dodge
  200, // stealth
  170, // stab
- 100, // shields
+ 180, // shields
  150, // traps
  100, // unarmed combat
  100,
@@ -1383,19 +1419,20 @@ int spec_skills [31] [38] =
  100,
  100,
  100,
- 110, // spellcasting
- 110, // conj
- 100, // ench
- 110, // summ
- 110, // necro
- 110, // transloc
- 100, // transmut
- 100, // divin
- 100, // fire
- 100, // ice
- 100, // Air
- 100, // Earth
- 110, // poison
+ 140, // spellcasting
+ 120, // conj
+ 110, // ench
+ 120, // summ
+ 120, // necro
+ 120, // transloc
+ 120, // transmut
+ 130, // divin
+ 120, // fire
+ 120, // ice
+ 120, // Air
+ 120, // Earth
+ 130, // poison
+ 100, // Invocations
 },
 
 // 31 - demigod
@@ -1438,6 +1475,224 @@ int spec_skills [31] [38] =
  110, // Air
  110, // Earth
  110, // poison
+ 100, // Invocations - Irrelevant
+},
+
+// 32 Spriggan
+{
+ 150, // fighting
+ 90, // short blades
+ 140, // long blades
+ 160, // great swords
+ 150, // axes
+ 160, // maces and flails
+ 180, // polearms
+ 150, // staves
+ 70, // slings
+ 70, // bows
+ 100, // xbows
+ 70, // darts
+ 90, // throwing
+ 170, // armour
+ 50, // dodge
+ 50, // stealth
+ 50, // stab
+ 180, // shields
+ 60, // traps
+ 130, // unarmed combat
+ 100,
+ 100,
+ 100,
+ 100,
+ 100,
+ 60, // spellcasting
+ 160, // conj
+ 50, // ench
+ 150, // summ
+ 120, // necro
+ 50, // transloc
+ 60, // transmut
+ 70, // divin
+ 140, // fire
+ 140, // ice
+ 120, // Air
+ 120, // Earth
+ 100, // poison
+ 130, // Invocations
+},
+
+// 33 minotaur
+{
+ 70, // fighting
+ 70, // short blades
+ 70, // long blades
+ 70, // great swords
+ 70, // axes
+ 70, // maces and flails
+ 70, // polearms
+ 70, // staves
+ 90, // slings
+ 90, // bows
+ 90, // xbows
+ 90, // darts
+ 90, // throwing
+ 80, // armour
+ 80, // dodge
+ 130, // stealth
+ 100, // stab
+ 80, // shields
+ 120, // traps
+ 80, // unarmed combat
+ 100,
+ 100,
+ 100,
+ 100,
+ 100,
+ 180, // spellcasting
+ 170, // conj
+ 170, // ench
+ 170, // summ
+ 170, // necro
+ 170, // transloc
+ 170, // transmut
+ 170, // divin
+ 170, // fire
+ 170, // ice
+ 170, // Air
+ 170, // Earth
+ 170, // poison
+ 130, // Invocations
+},
+
+
+// 34 demonspawn
+{
+ 100, // fighting
+ 110, // short blades
+ 110, // long blades
+ 110, // great swords
+ 110, // axes
+ 110, // maces and flails
+ 110, // polearms
+ 110, // staves
+ 110, // slings
+ 110, // bows
+ 110, // xbows
+ 110, // darts
+ 110, // throwing
+ 110, // armour
+ 110, // dodge
+ 110, // stealth
+ 110, // stab
+ 110, // shields
+ 110, // traps
+ 110, // unarmed combat
+ 100,
+ 100,
+ 100,
+ 100,
+ 100,
+ 100, // spellcasting
+ 100, // conj
+ 110, // ench
+ 100, // summ
+ 90, // necro
+ 110, // transloc
+ 110, // transmut
+ 110, // divin
+ 110, // fire
+ 110, // ice
+ 110, // Air
+ 110, // Earth
+ 100, // poison
+ 80, // Invocations
+},
+
+// 35 ghoul
+{
+ 80, // fighting
+ 110, // short blades
+ 110, // long blades
+ 110, // great swords
+ 110, // axes
+ 110, // maces and flails
+ 110, // polearms
+ 110, // staves
+ 130, // slings
+ 130, // bows
+ 130, // xbows
+ 130, // darts
+ 130, // throwing
+ 110, // armour
+ 110, // dodge
+ 80, // stealth
+ 100, // stab
+ 110, // shields
+ 120, // traps
+ 80, // unarmed combat
+ 100,
+ 100,
+ 100,
+ 100,
+ 100,
+ 120, // spellcasting
+ 130, // conj
+ 130, // ench
+ 120, // summ
+ 100, // necro
+ 120, // transloc
+ 120, // transmut
+ 120, // divin
+ 150, // fire
+ 90, // ice
+ 150, // Air
+ 90, // Earth
+ 100, // poison
+ 120, // Invocations
+},
+
+// 36: Kenku
+
+{
+ 100, // fighting
+ 75, // short blades
+ 75, // long blades
+ 75, // great swords
+ 75, // axes
+ 75, // maces and flails
+ 75, // polearms
+ 75, // staves
+ 100, // slings
+ 80, // bows
+ 80, // xbows
+ 90, // darts
+ 90, // throwing
+ 90, // armour
+ 90, // dodge
+ 100, // stealth
+ 80, // stab
+ 100, // shields
+ 100, // traps
+ 80, // unarmed combat
+ 100,
+ 100,
+ 100,
+ 100,
+ 100,
+ 100, // spellcasting
+ 60, // conj
+ 160, // ench
+ 70, // summ
+ 80, // necro
+ 150, // transloc
+ 150, // transmut
+ 180, // divin
+ 90, // Fire
+ 120, // Ice
+ 90, // Air
+ 120, // Earth
+ 100, // poison
+ 160, // Invocations
 },
 
 
@@ -1483,6 +1738,7 @@ base drac
  100, // Air
  100, // Earth
  100, // poison
+ 100, // Invocations
 },
 */
 /*
@@ -1616,8 +1872,8 @@ reprint_stuff:
 #endif
                         scrln++;
                 }
-                /* Extra CR between classes of weapons */
-                if(x==7 || x==12 || x==18) scrln++;
+                /* Extra CR between classes of weapons and such things */
+                if(x==7 || x==12 || x==18 || x == 38) scrln++;
         }
 // if any more skills added, must adapt letters to go into caps
         gotoxy(1, 24);
@@ -1729,11 +1985,11 @@ if (you[0].skills [0] >= skmk && min_skill <= 0)
  skmk = you[0].skills [0];
 }
 
-if (you[0].skills [25] >= skmk && min_skill <= 25 && max_skill >= 25)
+/*if (you[0].skills [25] >= skmk && min_skill <= 25 && max_skill >= 25)
 {
  skillb = 25;
  skmk = you[0].skills [25];
-}
+}*/
 
 return skillb;
 
@@ -1748,12 +2004,14 @@ int hitp = you[0].hp_max;
 hitp = you[0].base_hp - 5000 + you[0].base_hp2 - 5000;
 hitp += you[0].xl * you[0].skills [0] / 5;
 
+/* being berserk makes you resistant to damage. I don't know why */
 if (you[0].berserker != 0)
 {
  hitp *= 15;
  hitp /= 10;
 }
 
+/* some transformations give you extra hp */
 if (you[0].duration [18] != 0)
 {
  switch(you[0].attribute [5])
@@ -1762,6 +2020,10 @@ if (you[0].duration [18] != 0)
   case 4: hitp *= 12; hitp /= 10; break;
  }
 }
+
+/* frail and robust mutations */
+hitp *= (10 + you[0].mutation [42] - you[0].mutation [41]);
+hitp /= 10;
 
 you[0].hp_max = hitp;
 if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
@@ -1776,7 +2038,11 @@ int calc_ep(void)
 int enp = you[0].ep_max;
 
 enp = you[0].base_ep - 5000 + you[0].base_ep2 - 5000;
-enp += you[0].xl * you[0].skills [25] / 6;
+
+int spell_extra = you[0].xl * you[0].skills [25] / 6;
+int invoc_extra = you[0].xl * you[0].skills [38] / 4;;
+
+if (invoc_extra > spell_extra) enp += invoc_extra; else enp += spell_extra;
 
 /*if (enp > 21) enp = ((enp - 27) / 2) + 27;
 if (enp > 36) enp = ((enp - 36) / 2) + 36;
@@ -1869,6 +2135,11 @@ return 0;
 
 int species_skills(char skill, char species)
 {
+
+if (skill == 25) return (spec_skills [species - 1] [skill] * 130) / 100;
+/* Spellcasting requires more practice */
+if (skill == 38) return (spec_skills [species - 1] [skill] * 70) / 100;
+/* Invocations requires less */
 
 return spec_skills [species - 1] [skill];
 

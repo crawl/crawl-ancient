@@ -1,6 +1,6 @@
 
 void torment(void);
-void banished(void);
+void banished(unsigned char gate_type);
 char forget_spell(void);
 char lose_stat(char force_stat, char stat_loss);
 void random_uselessness(unsigned char ru, unsigned char sc_read_2);

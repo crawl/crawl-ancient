@@ -26,7 +26,7 @@ void torment(void)
 {
  int dmi = 0;
 
- if (you[0].is_undead != 0)
+ if (you[0].is_undead != 0 || you[0].mutation [43] != 0)
  {
   strcpy(info, "You feel a surge of unholy energy.");
   mpr(info);
@@ -92,10 +92,10 @@ char go_berserk(void)
   return 1;
 }
 */
-void banished(void)
+void banished(unsigned char gate_type)
 {
- you_teleport2(0); // this is to ensure that you're standing on a suitable space
- grd [you[0].x_pos] [you[0].y_pos] = 96;
+ you_teleport2(0); // this is to ensure that you're standing on a suitable space (67)
+ grd [you[0].x_pos] [you[0].y_pos] = gate_type;
  down_stairs(1, you[0].your_level); // heh heh
 }
 

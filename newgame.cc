@@ -31,6 +31,7 @@
 #include "player.h"
 #include "skills2.h"
 #include "stuff.h"
+#include "version.h"
 
 char class_allowed(char speci, char clas);
 void init_player(void);
@@ -106,12 +107,21 @@ for (i = 0; i < 52; i ++)
 
 textcolor(7);
 
-cprintf(EOL"Hello, and welcome to Dungeon Crawl v3.02!");
+cprintf(EOL"Hello, and welcome to Dungeon Crawl v"VERSION"!");
 cprintf(EOL"(Copyright 1997, 1998, 1999 Linley Henzell)");
 cprintf(EOL"Please read Crawl.txt for instructions and legal details."EOL EOL);
 name_q : cprintf("What is your name today? ");
 //cin >> your_nam;
-#ifdef DOS_TERM
+#ifndef LINUX
+gets(your_nam);
+#endif
+
+#ifdef LINUX
+echo();
+getstr(your_nam);
+noecho();
+#endif
+/*#ifdef DOS_TERM
 gets(your_nam);
 #endif
 
@@ -119,7 +129,7 @@ gets(your_nam);
 echo();
 getstr(your_nam);
 noecho();
-#endif
+#endif*/
 
 
 if (strcmp(your_nam, "bones") == 0 || strlen(your_nam) == 0) /* this would cause big probs with ghosts */
@@ -135,6 +145,11 @@ for (glorpo = 0; glorpo < strlen(your_nam); glorpo ++)
  if (your_nam [glorpo] == ' ')
  {
   cprintf(EOL"No spaces, please."EOL);
+  goto name_q;
+ }
+ if (your_nam [glorpo] == '?')
+ {
+  cprintf(EOL"No question marks, please."EOL);
   goto name_q;
  }
 }
@@ -174,11 +189,11 @@ cprintf("You must be new here!"EOL);
 spec_query2 : cprintf("You can be:"EOL);
 cprintf("a - Human                     s - Centaur"EOL);
 cprintf("b - Elf                       t - Demigod"EOL);
-cprintf("c - High Elf                  "EOL);
-cprintf("d - Grey Elf"EOL);
-cprintf("e - Deep Elf"EOL);
-cprintf("f - Sludge Elf"EOL);
-cprintf("g - Hill Dwarf"EOL);
+cprintf("c - High Elf                  u - Spriggan"EOL);
+cprintf("d - Grey Elf                  v - Minotaur"EOL);
+cprintf("e - Deep Elf                  w - Demonspawn"EOL);
+cprintf("f - Sludge Elf                x - Ghoul"EOL);
+cprintf("g - Hill Dwarf                y - Kenku"EOL);
 cprintf("h - Mountain Dwarf"EOL);
 cprintf("i - Halfling"EOL);
 cprintf("j - Hill Orc"EOL);
@@ -305,14 +320,43 @@ switch_start : switch(keyn)
  break;
  case 's':
  you[0].species = 30; // centaur
- you[0].strength = 10;
- you[0].intel = 5;
+ you[0].strength = 8;
+ you[0].intel = 4;
  you[0].dex = 5;
  break;
  case 't':
  you[0].species = 31; // demigod - more is added to stats later
  you[0].strength = 7;
  you[0].intel = 7;
+ you[0].dex = 7;
+ break;
+ case 'u':
+ you[0].species = 32; // spriggan
+ you[0].strength = 3;
+ you[0].intel = 6;
+ you[0].dex = 8;
+ break;
+ case 'v':
+ you[0].species = 33; // minotaur
+ you[0].strength = 10;
+ you[0].intel = 3;
+ you[0].dex = 5;
+ break;
+ case 'w': you[0].species = 34; // demonspawn - more is added, like demigods
+ you[0].strength = 4;
+ you[0].intel = 4;
+ you[0].dex = 4;
+ break;
+ case 'x':
+ you[0].species = 35; // Ghoul
+ you[0].strength = 7;
+ you[0].intel = 1;
+ you[0].dex = 2;
+ break;
+ case 'y':
+ you[0].species = 36; // Kenku
+ you[0].strength = 5;
+ you[0].intel = 6;
  you[0].dex = 7;
  break;
  case '?':
@@ -458,7 +502,12 @@ query5: if (keyn == 'a') you[0].clas = 0;
   {
    do
    {
-    keyn = 97 + random2(20);
+    do
+    {
+     keyn = 97 + random2(28);
+    } while (keyn == 'x');
+    if (keyn == '{') keyn = 'A';
+    if (keyn == '|') keyn = 'B';
    } while (class_allowed(you[0].species, keyn - 97) == 0);
    goto query5;
   }
@@ -492,7 +541,7 @@ query5: if (keyn == 'a') you[0].clas = 0;
                 you [0].inv_col [i] = 0;
         }
 
-for (i = 0; i < 10; i ++)
+for (i = 0; i < 30; i ++)
 {
  you[0].attribute [i] = 0;
 }
@@ -594,6 +643,27 @@ if (you[0].species == 15 || you[0].species == 16 || (you[0].species >= 18 && you
 
 }
 else
+if (you[0].species == 35 || you[0].species == 12)
+{
+    you[0].inv_quant [1] = 1;
+        you[0].inv_class [1] = 2;
+        you[0].inv_type [1] = 0;
+        you[0].inv_plus [1] = 50;
+        you[0].inv_dam [1] = 0;
+        you[0].inv_col [1] = WHITE; /* grave shroud */
+
+ if (you[0].species == 12)
+ {
+        you[0].inv_quant [2] = 1;
+        you[0].inv_class [2] = 2;
+        you[0].inv_type [2] = 8;
+        you[0].inv_plus [2] = 50;
+        you[0].inv_dam [2] = 0;
+        you[0].inv_col [2] = LIGHTCYAN;
+ }
+
+}
+else
 if (you[0].species == 11)
 {
         you[0].inv_quant [1] = 1;
@@ -631,6 +701,7 @@ if (you[0].species == 11)
 /*      you[0].AC = 3;
         you[0].evasion = 9;*/
         choose_weapon();
+    cprintf(EOL"A fine choice.");
 }
 
         // 11 = spear
@@ -642,7 +713,7 @@ if (you[0].species == 11)
 
         if (you[0].species != 16) you[0].equip [0] = 0;
         you[0].equip [6] = 1;
-if (you[0].species != 11 && you[0].species != 15 && you[0].species != 16) you[0].equip [5] = 2;
+if (you[0].species != 11 && you[0].species != 15 && you[0].species != 16 && you[0].species != 35) you[0].equip [5] = 2;
         you[0].gp = random2(10);
 /* you[0].res_magic = 3;*/
 
@@ -819,13 +890,25 @@ case 2: // priest
  you[0].skills [0] = 2;
  you[0].skills [14] = 1;
  you[0].skills [17] = 1;
- you[0].skills [12] = 2;
+// you[0].skills [12] = 2;
  you[0].skills [5] = 2;
  you[0].skills [7] = 1;
 
- you[0].skills [25] = 2;
+ you[0].skills [38] = 4;
 
- you[0].religion = 1;
+clrscr();
+cprintf(EOL" Which God do you wish to serve?"EOL);
+cprintf("a - Zin (for traditional priests)"EOL);
+cprintf("b - Yredelemnul (for priests of death)"EOL);
+
+getkey : keyn = get_ch();
+switch(keyn)
+{
+ case 'a': you[0].religion = 1; cprintf(EOL"Spread the light, my child..."); break;
+ case 'b': you[0].religion = 4; you[0].inv_type [0] = 4; cprintf(EOL"Welcome..."); break;
+ default: goto getkey;
+}
+
 
 break;
 
@@ -933,6 +1016,7 @@ case 4: // Gladiator
   }
    else you[0].skills [1] = 3;*/
         choose_weapon();
+    cprintf(EOL"A fine choice.");
         weap_skill = 3;
 
 
@@ -1101,7 +1185,7 @@ case 6: // paladin
  you[0].skills [1] = 2;
  you[0].skills [2] = 1;
  you[0].skills [3] = 1;
- you[0].skills [25] = 1;
+ you[0].skills [38] = 1;
 break;
 
 case 7: // assassin
@@ -1288,8 +1372,8 @@ if (you[0].species != 15 && you[0].species != 16)
 } else you[0].skills [0] += 3;
 
 /* you[0].evasion ++;*/
- you[0].skills [5] = 2;
- you[0].skills [6] = 2;
+ you[0].skills [4] = 3;
+ you[0].skills [6] = 1;
 break;
 
 case 9: // Ranger
@@ -1363,7 +1447,7 @@ case 16:
 case 19:
 case 21:
 case 27:
-        if (you[0].clas == 10) strcpy(you[0].clasnam, "conjurer");
+    if (you[0].clas == 10) strcpy(you[0].clasnam, "conjurer");
         if (you[0].clas == 11) strcpy(you[0].clasnam, "Enchanter");
         if (you[0].clas == 12) strcpy(you[0].clasnam, "Fire Elementalist");
         if (you[0].clas == 13) strcpy(you[0].clasnam, "Ice Elementalist");
@@ -1372,7 +1456,7 @@ case 27:
         if (you[0].clas == 16) strcpy(you[0].clasnam, "Earth Elementalist");
         if (you[0].clas == 19) strcpy(you[0].clasnam, "Venom Mage");
         if (you[0].clas == 21) strcpy(you[0].clasnam, "transmuter");
-        if (you[0].clas == 28) strcpy(you[0].clasnam, "warper");
+        if (you[0].clas == 27) strcpy(you[0].clasnam, "warper");
 
         switch(random() % 8) /* get a random lvl 1 attack spell - later overwritten for most classes*/
         {
@@ -1586,6 +1670,7 @@ case 17: // Crusader
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
         choose_weapon();
+    cprintf(EOL"A fine choice.");
         weap_skill = 2;
         you[0].inv_quant [1] = 1;
         you[0].inv_class [1] = 2;
@@ -1635,6 +1720,7 @@ case 18: // Death knight
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
         choose_weapon();
+    cprintf(EOL"A fine choice.");
         weap_skill = 2;
 
         you[0].inv_quant [1] = 1;
@@ -1661,6 +1747,34 @@ case 18: // Death knight
         you[0].equip [6] = 1;
         you[0].gp = random2(10);
 
+
+clrscr();
+cprintf(EOL" From where do you draw your power?"EOL);
+cprintf("a - Necromantic magic"EOL);
+cprintf("b - the God Yredelemnul"EOL);
+
+getkey1 : keyn = get_ch();
+switch(keyn)
+{
+ case 'a': cprintf(EOL"Very well.");
+      you[0].skills [25] = 1;
+      you[0].skills [29] = 2;
+          you[0].spells [0] = 67;
+      break;
+ case 'b':
+      you[0].religion = 4;
+          you[0].inv_plus [0] = 51;
+          you[0].inv_plus2 [0] = 51;
+      you[0].inv_quant [2] = 0;
+      you[0].skills [38] = 3;
+      you[0].piety = 28;
+      cprintf(EOL"Welcome...");
+      break;
+ default: goto getkey1;
+}
+
+
+
  you[0].skills [0] = 2;
  you[0].skills [13] = 1;
  you[0].skills [14] = 1;
@@ -1669,10 +1783,7 @@ case 18: // Death knight
  you[0].skills [15] = 1;
 // you[0].skills [1] = 2;
  you[0].skills [16] = 1;
- you[0].skills [25] = 1;
- you[0].skills [29] = 2;
 
- you[0].spells [0] = 67;
 
 break;
 
@@ -1714,10 +1825,22 @@ case 20: // Chaos knight
  you[0].skills [13 + random() % 2] ++;
 
  you[0].skills [16] = 1;
- you[0].skills [25] = 1;
- you[0].skills [26] = 1;
 
- you[0].religion = 5;
+clrscr();
+cprintf(EOL" Which God of Chaos do you wish to serve?"EOL);
+cprintf("a - Xom of Chaos"EOL);
+cprintf("b - Makhleb the Destroyer"EOL);
+
+getkey2 : keyn = get_ch();
+switch(keyn)
+{
+ case 'a': you[0].religion = 5; you[0].skills [0] ++; cprintf(EOL"A new plaything! Welcome..."); break;
+ case 'b': you[0].religion = 8; you[0].skills [38] = 2; cprintf(EOL"Blood and souls for Makhleb!"); break;
+ default: goto getkey2;
+}
+
+you[0].piety = 25; /* Irrelevant for Xom, of course */
+
 break;
 
 
@@ -1776,7 +1899,7 @@ case 22: // Healer
  you[0].skills [12] = 2;
  you[0].skills [7] = 3;
 
- you[0].skills [25] = 2;
+ you[0].skills [38] = 2;
 
  you[0].religion = 12;
 
@@ -1796,6 +1919,7 @@ case 24: // Reaver
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
         choose_weapon();
+    cprintf(EOL"A fine choice.");
         weap_skill = 3;
 
         you[0].inv_quant [1] = 1;
@@ -1936,20 +2060,20 @@ Spellbook binary thing:
 
 char points_left = 8;
 
-if (you[0].species == 31) points_left += 7; /* demigod */
+if (you[0].species == 31 || you[0].species == 34) points_left += 7; /* demigod */
 
 //for (i = 0; i < 8; i ++)
       do
       {
-        switch(random2(3))
-        {
+                switch(random2(3))
+                {
                 case 0 : if (you[0].strength > 17 && random() % 2 != 0) continue;
-                you[0].strength ++; break;
-                case 1 : if (you[0].dex > 17 && random() % 2 != 0) continue;
-                you[0].dex ++; break;
-                case 2 : if (you[0].intel > 17 && random() % 2 != 0) continue;
-                you[0].intel ++; break;
-        }
+                        you[0].strength ++; break;
+                        case 1 : if (you[0].dex > 17 && random() % 2 != 0) continue;
+                        you[0].dex ++; break;
+                        case 2 : if (you[0].intel > 17 && random() % 2 != 0) continue;
+                        you[0].intel ++; break;
+                }
         points_left --;
       } while (points_left > 0);
 
@@ -2072,6 +2196,7 @@ case 30: // Centaur
 you[0].hp_max += 3;
 you[0].base_hp2 += 3;
 you[0].hunger_inc += 1;
+you[0].hunger_inc += 1;
 break;
 case 31: // Demigod
 you[0].hp_max += 3;
@@ -2079,6 +2204,23 @@ you[0].base_hp2 += 3;
 you[0].hunger_inc += 1;
 you[0].ep_max ++;
 you[0].base_ep2 ++;
+break;
+case 32: // spriggan
+you[0].hp_max -= 2;
+you[0].base_hp2 -= 2;
+break;
+case 33: // Minotaur
+you[0].hp_max += 2;
+you[0].base_hp2 += 2;
+break;
+case 35: // Ghoul
+you[0].hp_max += 2;
+you[0].base_hp2 += 2;
+you[0].is_undead = 1;
+break;
+case 36: // Kenku
+you[0].hp_max -= 2;
+you[0].base_hp2 -= 2;
 break;
 }
 
@@ -2091,7 +2233,7 @@ you[0].max_intel = you[0].intel;
 
 if (weap_skill != 0) you[0].skills [weapon_skill(0, you[0].inv_type [0])] = weap_skill;
 
-if (you[0].is_undead != 2)
+if (you[0].is_undead == 0) // != 2)
 {
  for (i = 0; i < 52; i ++)
  {
@@ -2236,7 +2378,7 @@ for (i = 0; i < 4; i ++)
    for (j = 0; j < 30; j ++)
    {
     you[0].item_description [i] [j] += 1; // NEED THIS BIT!
-                        }
+   }
 }
 
 for (i = 0; i < 50; i ++)
@@ -2246,6 +2388,14 @@ for (i = 0; i < 50; i ++)
 // you[0].skill_points [i] = skill_exp_needed(you[0].skills [i] + 1) * species_skills(i, you[0].species) / 100;
 
  you[0].skill_points [i] = skill_exp_needed(you[0].skills [i] + 1) + 1;
+ if (i == 25)
+ {
+  you[0].skill_points [i] = ((skill_exp_needed(you[0].skills [i] + 1) + 1) * 130) / 100;
+ }
+ if (i == 38)
+ {
+  you[0].skill_points [i] = ((skill_exp_needed(you[0].skills [i] + 1) + 1) * 70) / 100;
+ }
  if (you[0].skill_points [i] > skill_exp_needed(2) * species_skills(i, you[0].species) / 100) you[0].skills [i] = 1; else you[0].skills [i] = 0;
  if (you[0].skill_points [i] > skill_exp_needed(3) * species_skills(i, you[0].species) / 100) you[0].skills [i] = 2;
  if (you[0].skill_points [i] > skill_exp_needed(4) * species_skills(i, you[0].species) / 100) you[0].skills [i] = 3;
@@ -2403,7 +2553,8 @@ switch(clas)
 case 0: // fighter
 switch(speci)
 {
- case 17: return 0;
+ case 17: return 0; // O-mage
+ case 32: return 0; // spriggan
 }
 return 1;
 
@@ -2419,7 +2570,10 @@ switch(speci)
 // case 8:
  case 15:
  case 16:
- case 17:
+ case 32: // spriggan
+ case 33: // minotaur
+ case 35: // Ghoul
+ case 36: // Kenku
  return 0;
 }
 return 1;
@@ -2449,6 +2603,11 @@ switch(speci)
  case 29: /* Draconians */
  case 30: /* Centaur */
  case 31: /* Demigod */
+ case 32: /* spriggan */
+ case 33: // minotaur
+ case 34: // demonspawn
+ case 35: // Ghoul
+ case 36: // Kenku
  return 0;
 }
 return 1;
@@ -2461,6 +2620,10 @@ switch(speci)
  case 16:
  case 17:
  case 30: /* Centaur */
+ case 32: // spriggan
+ case 33: // minotaur
+ case 35: // Ghoul
+ case 36: // Kenku
  return 0;
 }
 return 1;
@@ -2486,6 +2649,10 @@ switch(speci)
  case 29: /* Draconians */
  case 30:
  case 31:
+ case 33: // minotaur
+ case 34: // demonspawn
+
+ case 36: // Kenku
  return 1;
 }
 return 0;
@@ -2497,9 +2664,14 @@ switch(speci)
  case 5:
  case 6:
  case 10:
+ case 11:
  case 12:
  case 13:
+ case 17: /* Ogre-mage */
  case 31: /* Demigod */
+ case 34: // demonspawn
+
+ case 36: // Kenku
  return 1;
 }
 return 0;
@@ -2526,6 +2698,9 @@ switch(speci)
  case 12:
  case 13:
  case 31: /* Demigod */
+ case 34: // demonspawn
+
+ case 36: // Kenku
  return 1;
 }
 return 0;
@@ -2539,6 +2714,9 @@ switch(speci)
  case 15:
  case 16:
  case 30: /* Centaur */
+ case 33: // minotaur
+ case 34: // demonspawn
+
  return 1;
 }
 return 0;
@@ -2567,6 +2745,10 @@ switch(speci)
  case 29: /* Draconians */
  case 30: /* Centaur */
  case 31: /* Demigod */
+ case 33: // minotaur
+ case 34: // demonspawn
+
+ case 36: // Kenku
  return 1;
 }
 return 0;
@@ -2580,8 +2762,10 @@ switch(speci)
  case 14: // gnome
  case 15:
  case 16:
- case 17:
  case 30: /* Centaur */
+ case 32: // spriggan
+ case 33: // minotaur
+ case 35: // Ghoul
  return 0;
 }
 return 1;
@@ -2595,6 +2779,9 @@ switch(speci)
  case 14: // gnome
  case 15:
  case 16:
+ case 33: // minotaur
+ case 35: // Ghoul
+ case 36: // Kenku
  return 0;
 }
 return 1;
@@ -2610,7 +2797,12 @@ switch(speci)
  case 7:
  case 8:
  case 10:
+ case 17: /* Ogre-mage */
+ case 30: /* Centaur */
  case 31: /* Demigod */
+ case 34: // demonspawn
+
+ case 36: // Kenku
  return 1;
 }
 return 0;
@@ -2623,7 +2815,11 @@ switch(speci)
  case 3:
  case 5:
  case 6:
+ case 17: /* Ogre-mage */
+ case 30: /* Centaur */
  case 31: /* Demigod */
+ case 34: // demonspawn
+
  return 1;
 }
 return 0;
@@ -2638,8 +2834,10 @@ switch(speci)
  case 14: // gnome
  case 15:
  case 16:
- case 17:
  case 30: /* Centaur */
+ case 32: // spriggan
+ case 33: // minotaur
+ case 35: // Ghoul
  return 0;
 }
 return 1;
@@ -2653,7 +2851,12 @@ switch(speci)
  case 4:
  case 5:
  case 6:
+ case 17: /* Ogre-mage */
+ case 30: /* Centaur */
  case 31: /* Demigod */
+ case 34: // demonspawn
+
+ case 36: // Kenku
  return 1;
 }
 return 0;
@@ -2669,7 +2872,11 @@ switch(speci)
  case 8:
  case 10:
  case 14: // gnome
+ case 17: /* Ogre-mage */
+ case 30: /* Centaur */
  case 31: /* Demigod */
+ case 34: // demonspawn
+
  return 1;
 }
 return 0;
@@ -2699,6 +2906,8 @@ switch(speci)
  case 29: /* Draconians */
  case 30: /* Centaur */
  case 31: /* Demigod */
+ case 34: // demonspawn
+
  return 1;
 }
 return 0;
@@ -2726,6 +2935,9 @@ switch(speci)
  case 29: /* Draconians */
  case 30: /* Centaur */
  case 31: /* Demigod */
+ case 34: // demonspawn
+
+ case 36: // Kenku
  return 1;
 }
 return 0;
@@ -2739,6 +2951,7 @@ switch(speci)
  case 10:
  case 11:
  case 13:
+ case 17: /* Ogre-mage */
  case 18: /* Drac */
  case 19:
  case 20:
@@ -2752,6 +2965,10 @@ switch(speci)
  case 28:
  case 29: /* Draconians */
  case 31: /* Demigod */
+ case 32: /* Spriggan */
+ case 34: // demonspawn
+
+ case 36: // Kenku
  return 1;
 }
 return 0;
@@ -2780,6 +2997,9 @@ switch(speci)
  case 28:
  case 29: /* Draconians */
  case 30: /* Centaur */
+ case 33: // minotaur
+ case 34: // demonspawn
+
  return 1;
 }
 return 0;
@@ -2795,7 +3015,6 @@ switch(speci)
  case 14: // gnome
  case 15:
  case 16:
- case 17:
  case 18: /* Drac */
  case 19:
  case 20:
@@ -2808,6 +3027,11 @@ switch(speci)
  case 27:
  case 28:
  case 29: /* Draconians */
+ case 33: // minotaur
+ case 34: // demonspawn
+
+ case 35: // Ghoul
+ case 36: // Kenku
  return 0;
 }
 return 1;
@@ -2836,6 +3060,12 @@ switch(speci)
  case 28:
  case 29: /* Draconians */
  case 31: /* Demigod */
+ case 32: // spriggan
+ case 33: // minotaur
+ case 34: // demonspawn
+
+ case 35: // Ghoul
+ case 36: // Kenku
  return 0;
 }
 return 1;
@@ -2865,6 +3095,9 @@ switch(speci)
  case 29: /* Draconians */
  case 30: /* Centaur */
  case 31: /* Demigod */
+ case 34: // demonspawn
+
+ case 36: // Kenku
  return 1;
 }
 return 0;
@@ -2882,6 +3115,9 @@ switch(speci)
  case 11:
  case 13:
  case 31: /* Demigod */
+ case 34: // demonspawn
+
+ case 36: // Kenku
  return 1;
 }
 return 0;
@@ -2898,6 +3134,8 @@ switch(speci)
  case 16:
  case 17:
  case 30:
+ case 32: // spriggan
+ case 35: // Ghoul
  return 0;
 }
 return 1;
@@ -2914,7 +3152,6 @@ switch(speci)
  case 14: // gnome
  case 15:
  case 16:
- case 17:
  case 18: /* Drac */
  case 19:
  case 20:
@@ -2927,6 +3164,9 @@ switch(speci)
  case 27:
  case 28:
  case 29: /* Draconians */
+ case 33: // minotaur
+ case 35: // Ghoul
+ case 36: // Kenku
  return 0;
 }
 return 1;
@@ -3129,9 +3369,14 @@ for (ic = 0; ic < 20; ic ++)
  ghost.ghs [ic] = 0;
 }
 
-for (ic = 0; ic < 50; ic ++)
+for (ic = 0; ic < 100; ic ++)
 {
  you[0].mutation [ic] = 0;
+}
+
+for (ic = 0; ic < 100; ic ++)
+{
+ you[0].demon_pow [ic] = 0;
 }
 
 for (ic = 0; ic < 50; ic ++)

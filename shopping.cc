@@ -10,6 +10,7 @@
 #include "itemname.h"
 #include "macro.h"
 #include "player.h"
+#include "stuff.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -1026,6 +1027,7 @@ case 0:
 // case 2: valued += 40; break; //strcat(glog, ""); break;
  case 6: valued += 1000; break; // silver horn
  case 14: valued += 1000; break; // rune
+ case 15: valued += 100; break; // deck of tricks
  default: valued += 400;
  }
 break;

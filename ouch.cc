@@ -468,6 +468,11 @@ if (points < 10) strcat(death_string, " ");
          case 29: strcat(death_string, "Dr"); break;
          case 30: strcat(death_string, "Ce"); break;
          case 31: strcat(death_string, "DG"); break;
+         case 32: strcat(death_string, "Sp"); break;
+         case 33: strcat(death_string, "Mi"); break;
+         case 34: strcat(death_string, "DS"); break;
+         case 35: strcat(death_string, "Gh"); break;
+         case 36: strcat(death_string, "Ke"); break;
         }
         death_string [strlen(death_string)] = you[0].clasnam [0];
 
@@ -494,9 +499,10 @@ strcat(death_string, point_print);
                 strcat(death_string, ", killed by a cloud");
         break;
 
-        case 3: // beam
-                strcat(death_string, ", killed by a bolt"); // an?
-/*                strcat(death_string, beam_name); */
+        case 3: // beam - beam[0].name is a local variable, so can't access it without horrible hacks
+                strcat(death_string, ", killed from afar by ");
+                if (menv [death_source].m_class < 250 || menv [death_source].m_class > 310 && menv [death_source].m_class != 400) strcat(death_string, "a");
+                strcat(death_string, monam(menv [death_source].m_sec, menv [death_source].m_class, 0, 99));
  break;
 
 /* case 4: // death's door running out - NOTE: This is no longer fatal
@@ -508,7 +514,8 @@ strcat(death_string, point_print);
  break;
 
  case 6: // falling into water
-  strcat(death_string, " drowned");
+ if (you[0].species == 12) strcat(death_string, " soaked and fell apart");
+   else strcat(death_string, " drowned");
  break;
 
 // these three are probably only possible if you wear a you[0].ring of >= +3 ability,
@@ -557,16 +564,25 @@ strcat(death_string, point_print);
  break;
 
  case 18: /* from function miscast_effect */
-  strcat(death_string, ", killed by wild magic ");
+  strcat(death_string, ", killed by wild magic");
  break;
 
  case 19:
-  strcat(death_string, ", killed by Xom ");
+  strcat(death_string, ", killed by Xom");
  break;
 
  case 20:
-  strcat(death_string, ", killed by a statue ");
+  strcat(death_string, ", killed by a statue");
  break;
+
+ case 21:
+  strcat(death_string, " rotted away");
+ break;
+
+ case 22:
+  strcat(death_string, ", killed by bad targetting");
+ break;
+
 
  } // end switch
 
@@ -896,7 +912,7 @@ out_of_inner : hc3 = 0;
 for (hc = 0; hc < 15; hc ++)
 {
  multip = 1;
- for (hc2 = 5; hc2 >= 0; hc2 --)
+ for (hc2 = 6; hc2 >= 0; hc2 --)
  {
   if (high_scores [hc] [hc2] == 32) continue;
   scores [hc] += (high_scores [hc] [hc2] - 48) * multip;

@@ -754,7 +754,7 @@ Remember, potions food and scrolls stack on the basis of class and type only.
       }
    }
 
-   if (ident_lev > 2)
+   if (ident_lev > 1 || id [2] [item_typ] > 0)
    {
       if (item_da == 200)
       {
@@ -937,7 +937,7 @@ case 0:
  switch(it_plus)
  {
   case 1: strcat(glog, "iron "); break;
-  case 2: strcat(glog, "basalt "); break;
+  case 2: strcat(glog, "obsidian "); break;
   case 4: strcat(glog, "icy "); break;
   case 5: strcat(glog, "bone "); break;
   case 13: strcat(glog, "slimy "); break;
@@ -946,9 +946,14 @@ case 0:
   case 20: strcat(glog, "elven "); break;
   case 21: strcat(glog, "golden "); break;
   case 22: strcat(glog, "decaying "); break;
+  case 50: strcat(glog, "demonic "); break; /* found in pandemonium */
+  case 51: strcat(glog, "abyssal "); break; /* found in abyss */
  } /* If more are added here, must also add below. */
  strcat(glog, "rune");
  break;
+ case 15: strcat(glog, "deck of cards"); break;
+ case 16: strcat(glog, "deck of cards"); break;
+ case 17: strcat(glog, "portable altar of Nemelex"); break;
 
  }
 break;
@@ -975,7 +980,7 @@ default:
  switch(it_plus)
  {
   case 1: strcat(glog, "iron "); break;
-  case 2: strcat(glog, "basalt "); break;
+  case 2: strcat(glog, "obsidian "); break;
   case 4: strcat(glog, "icy "); break;
   case 5: strcat(glog, "bone "); break;
   case 13: strcat(glog, "slimy "); break;
@@ -984,9 +989,14 @@ default:
   case 20: strcat(glog, "elven "); break;
   case 21: strcat(glog, "golden "); break;
   case 22: strcat(glog, "decaying "); break;
+  case 50: strcat(glog, "demonic "); break; /* found in pandemonium */
+  case 51: strcat(glog, "abyssal "); break; /* found in abyss */
  } /* If more are added here, must also add above. */
  strcat(glog, "rune of Zot");
  break;
+ case 15: strcat(glog, "deck of tricks"); break;
+ case 16: strcat(glog, "deck of power"); break;
+ case 17: strcat(glog, "portable altar of Nemelex"); break;
  }
 break;
 
@@ -1889,7 +1899,7 @@ unsigned char check_item_knowledge(void)
    int j;
    char lines = 0;
    unsigned char anything = 0;
-   char ft;
+   char ft = 0;
 
    char yps = 0;
 #ifdef DOS_TERM
@@ -1908,7 +1918,7 @@ unsigned char check_item_knowledge(void)
 
 
 int inv_count = 0;
-unsigned char ki;
+unsigned char ki = 0;
 
 
 

@@ -108,7 +108,7 @@ switch(which_trans)
  remove_equipment(rem_stuff);
  mpr("Your hands turn into razor-sharp scythe blades.");
  you[0].attribute [5] = 2;
- you[0].duration [18] = 10 + random2(pow) + random2(pow);
+ you[0].duration [18] = 10 + random2(pow);
  if (you[0].duration [18] > 100) you[0].duration [18] = 100;
  return 1;
 
@@ -258,7 +258,9 @@ if (you[0].attribute [5] == 0 || you[0].attribute [5] == 2 || you[0].attribute [
 /* if more cases are added to this if must also change in item_use for naga barding */
 {
  if (you[0].species == 13 && use_which == 4) return 0;
- if (you[0].species == 30 && use_which == 4) return 0;
+ if (you[0].species == 30 && use_which == 4) return 0; /* Neither nagas or centaurs can use boots */
+ if ((you[0].species == 33 || you[0].species == 36) && use_which == 2) return 0; /* Minotaurs/Kenku can't wear headgear */
+ if (you[0].species == 36 && use_which == 4) return 0; /* Kenku can't wear footgear */
 }
 
 if (use_which == 2 && you[0].mutation [32] != 0) return 0; /* horns prevent wearing a helmet */

@@ -394,6 +394,11 @@ if (you[0].religion == 6 && you[0].duration [3] != 0 && you[0].piety >= 50 && (s
  chance /= 2;
 }
 
+if (you[0].duration [18] > 0 && you[0].attribute [5] == 2)
+{
+ chance += 20;
+}
+
 return chance2;
 
 }
@@ -413,7 +418,7 @@ int spellsy = 0;
 for (s = 11; s < 24; s ++)
 {
 // if (s == 13 || s == 14 || s == 17) continue;
- if (s == 17 || s == 21) continue;
+ if (s == 17) continue;
  if (spell_type(spell, s) == 1) spellsy ++;
 }
 
@@ -527,15 +532,17 @@ if (spell_type(spell, 21) == 1)
 {
  enhanced += player_spec_poison();
 }
+
 if (spell_type(spell, 22) == 1)
 {
-  enhanced += you[0].attribute [2]; // spec_earth
-  enhanced -= you[0].attribute [1]; // spec_air
+  enhanced += player_spec_earth(); // spec_earth
+  enhanced -= player_spec_air(); // spec_air
 } // earth
+
 if (spell_type(spell, 23) == 1)
 {
-  enhanced -= you[0].attribute [2]; // spec_earth
-  enhanced += you[0].attribute [1]; // spec_air
+  enhanced -= player_spec_earth(); // spec_earth
+  enhanced += player_spec_air(); // spec_air
 } // air
 
 /* If the bit just above changes, remember to also change it in crawl99.cc */
@@ -697,7 +704,7 @@ switch(spell)
    case 80: stype = 1418; break; // ice beast
    case 81: stype = 1412; break; // ice armour
    case 82: stype = 18; break; // imp
-   case 83: stype = 1223; break; // deflect missiles
+   case 83: stype = 1223; break; // repel missiles
    case 84: stype = 12; break; // berserk
    case 85: stype = 16; break; // dispel undead
    case 86: stype = 17; break; // Guardian
@@ -758,8 +765,9 @@ switch(spell)
    case 154: stype = 1415; break; // Ice Form
    case 155: stype = 1315; break; // Dragon Form
    case 156: stype = 1615; break; // Lich Form
-
    case 157: stype = 16; break; // Death channel
+   case 158: stype = 16; break; // Symbol of Torment
+   case 159: stype = 1223; break; // deflect missiles
 
 /*
 types of spells:
@@ -1085,7 +1093,7 @@ switch(spell)
    case 80: return 5; // Ice beast
    case 81: return 3; // Ozocubu's Armour
    case 82: return 2; // imp
-   case 83: return 2; // deflect missiles
+   case 83: return 2; // repel missiles
    case 84: return 3; // berserker
    case 85: return 4; // dispel undead
     case 86: return 7; // Guardian
@@ -1140,21 +1148,15 @@ switch(spell)
    case 149: return 3; // Spider form
    case 150: return 1; // Disrupt
    case 151: return 6; // Disintegrate
-   case 152: return 3; // Blade Hands
+   case 152: return 4; // Blade Hands
    case 153: return 5; // Statue form
    case 154: return 5; // Ice beast form
    case 155: return 8; // Dragon Form
    case 156: return 8; // Lich Form
    case 157: return 9; // Death Channel
+   case 158: return 6; // Symbol of Torment
+   case 159: return 6; // deflect missiles
 
-   /*      case 86: strcpy(spln, "Guardian"); break;
-      case 87: strcpy(spln, "Pestilence"); break;
-      case 88: strcpy(spln, "Thunderbolt"); break;
-      case 89: strcpy(spln, "Flame of Cleansing"); break;
-      case 90: strcpy(spln, "Shining Light"); break;
-      case 91: strcpy(spln, "Summon Deva"); break;
-      case 92: strcpy(spln, "Abjuration"); break;
-*/
 default: return 2;
 
 }
@@ -1249,7 +1251,7 @@ void spell_name(unsigned char spell, char spln [60])
       case 80: strcpy(spln, "Summon Ice Beast"); break;
       case 81: strcpy(spln, "Ozocubu's Armour"); break;
       case 82: strcpy(spln, "Call Imp"); break;
-      case 83: strcpy(spln, "Deflect Missiles"); break;
+      case 83: strcpy(spln, "Repel Missiles"); break;
       case 84: strcpy(spln, "Berserker Rage"); break;
       case 85: strcpy(spln, "Dispel Undead"); break;
 
@@ -1310,8 +1312,10 @@ void spell_name(unsigned char spell, char spln [60])
       case 153: strcpy(spln, "Statue Form"); break;
       case 154: strcpy(spln, "Ice Form"); break;
       case 155: strcpy(spln, "Dragon Form"); break;
-      case 156: strcpy(spln, "Lich Form"); break;
+      case 156: strcpy(spln, "Necromutation"); break;
       case 157: strcpy(spln, "Death Channel"); break;
+      case 158: strcpy(spln, "Symbol of Torment"); break;
+      case 159: strcpy(spln, "Deflect Missiles"); break;
 
 
 /* When adding enchantments, must add them to extension as well */
@@ -1605,6 +1609,7 @@ switch(spell)
    case 154: return 1; // Ice beast form
    case 155: return 1; // Dragon Form
    case 156: return 2; // Lich Form
+   case 158: return 2; // Symbol of Torment
 
 default: return 0;
 

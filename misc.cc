@@ -581,6 +581,8 @@ for (count_x = 0; count_x < GXM; count_x ++)
           {
            mgrd [count_x] [count_y] = MNG; /* This is one of the worst things I've ever done */
           }
+      if (grd [count_x] [count_y] >= 200 && grd [count_x] [count_y] <= 209 && grd [count_x] [count_y] % 2 == 1)
+        if (random2(3) == 0) grd [count_x] [count_y] --; /* sometimes dry fountains will start flowing again */
         }
 }
 
@@ -880,6 +882,8 @@ for (count_x = 0; count_x < GXM; count_x ++)
           if (mgrd [count_x] [count_y] != MNG && (menv [mgrd [count_x] [count_y]].m_class == -1 || menv [mgrd [count_x] [count_y]].m_x != count_x || menv [mgrd [count_x] [count_y]].m_y != count_y))
           {
            mgrd [count_x] [count_y] = MNG; /* This is one of the worst things I've ever done */
+       if (grd [count_x] [count_y] >= 200 && grd [count_x] [count_y] <= 209 && grd [count_x] [count_y] % 2 == 1)
+        if (random2(3) == 0) grd [count_x] [count_y] --; /* sometimes dry fountains will start flowing again */
           }
         }
 }
@@ -943,7 +947,8 @@ void new_level(void)
  }
  else
  {
- if (you[0].where_are_you != 3) cprintf(temp_quant);
+// if (you[0].where_are_you != 3)
+                cprintf(temp_quant);
 
  switch(you[0].where_are_you)
  {
@@ -1482,6 +1487,12 @@ if (grype == 61 && player_res_fire() <= 100)
   ouch(-9999, 0, 5);
 }
 
+if (grype == 61)
+{
+  mpr("The lava burns you!");
+  ouch((10 + random2(20) + random2(20) + random2(20)) / (player_res_fire() - 99), 0, 5);
+}
+
 // a distinction between stepping and falling from you[0].lev stops you stepping into a thin stream of lava to get to the other side.
 
 if (place == 1 && scramble() == 1)
@@ -1603,7 +1614,7 @@ return;
 char go_berserk(void)
 {
   if (you[0].berserker != 0 || you[0].slow != 0) return 0;
-  if (you[0].is_undead == 2) return 0;
+  if (you[0].is_undead == 2 || you[0].species == 35) return 0;
   strcpy(info, "A red film seems to cover your vision as you go berserk!");
   mpr(info);
   strcpy(info, "You feel yourself moving faster!");

@@ -28,11 +28,13 @@
 #include "player.h"
 #include "randart.h"
 #include "skills2.h"
+#include "stuff.h"
 
 void print_description(char descr [1000]);
 void print_ench(char descpr [1000], unsigned char item_plus);
 void append_value(char descpr [1000], int valu, char plussed);
 void randart_descpr(char descpr [1000], int item_class, int item_type, int item_plus, int item_plus2, int item_dam);
+void describe_demon(char descpr [1000]);
 
 /*
 Contains sketchy descriptions of every monster in the game.
@@ -426,6 +428,14 @@ strcpy(descpr, "A hideous humanoid figure with metal skin.");
 break;
 
 
+case 98: // glowing (unstable) shapeshifter
+strcpy(descpr, "A shapeshifter who has lost control over his, her or its transformations, and is constantly changing form.");
+break;
+
+case 99: // shapeshifter
+strcpy(descpr, "A weird creature with the power to change its form. It is very rarely observed in its natural state.");
+break;
+
 case 100: // giant mite
 strcpy(descpr, "A large arachnid with vicious poisoned mouth-parts.");
 break;
@@ -657,6 +667,10 @@ case 158: // mosquito
 strcpy(descpr, "A huge, bloated mosquito. It looks diseased.");
 break;
 
+case 159: // giant centipede
+strcpy(descpr, "It has a lot of legs.");
+break;
+
 case 160: // iron troll
 strcpy(descpr, "A great troll covered in armour plates of rusty iron. ");
 break;
@@ -707,6 +721,38 @@ break;
 
 case 172: // swamp drake
 strcpy(descpr, "A small and slimy dragon, covered in swamp muck. It smells horrible.");
+break;
+
+case 173: // soldier ant
+strcpy(descpr, "A giant ant with large mandibles and a vicious sting.");
+break;
+
+case 174: // hill giant
+strcpy(descpr, "Although one of the smaller giant varieties, the hill giant is still big enough to be dangerous.");
+break;
+
+case 175: // Queen ant
+strcpy(descpr, "A bloated insect, covered in thick chitinous armour. Now you know where all those ants keep coming from!");
+break;
+
+case 176: // ant larva
+strcpy(descpr, "A baby ant. Isn't it cute?");
+break;
+
+case 177: // giant frog
+strcpy(descpr, "It probably didn't get this big by eating little insects.");
+break;
+
+case 178: // giant brown frog
+strcpy(descpr, "A very large and vicious-looking carnivorous frog. Its knobbly brown skin blends in with the rough rock of your surroundings.");
+break;
+
+case 179: // spiny frog
+strcpy(descpr, "Although slightly smaller than its cousin, the giant brown frog, the spiny frog makes up for lack of size by being covered in wickedly barbed spines and spurs.");
+break;
+
+case 180: // blink frog
+strcpy(descpr, "A weird-looking frog, constantly blinking in and out of reality.");
 break;
 
 case 240: // Shadow wraith
@@ -874,12 +920,21 @@ strcpy(descpr, "A long and bloated body, supported by dozens of short legs and t
 break;
 
 case 236: // sun demon
-strcpy(descpr, "A demonic figure shining with the light of the sun. ");
+strcpy(descpr, "A demonic figure shining with the light and fury of the sun. ");
 break;
 
 case 237: // shadow imp
 strcpy(descpr, "A small and shadowy figure. ");
 break;
+
+case 238: // shadow demon
+strcpy(descpr, "A mysterious demonic figure, constantly blurring into multiple shadows of iteself.");
+break;
+
+case 239: // Lorocyproca
+strcpy(descpr, "A tall and gaunt figure, draped in long robes which flow as if alive.");
+break;
+
 
 
 case 251: // Nemelex Xobeh
@@ -967,6 +1022,10 @@ break;
 
 case 344:
 strcpy(descpr, "A fearsome arch-fiend who rules the deathly netherworld of Tartarus. ");
+break;
+
+case 356:
+strcpy(descpr, "A lich who has grown mighty over countless years.");
 break;
 
 case 360:
@@ -1073,6 +1132,10 @@ strcpy(descpr, "A small marsupial mammal, altered by nanotechnological manipulat
 break;
 
 
+case 385: // eye of devastation
+strcpy(descpr, "A huge eyeball, encased in a levitating globe of incandescant energy. ");
+break;
+
 
 case 386: // moth of wrath
 strcpy(descpr, "A huge moth, as violent as it is hairy.");
@@ -1111,7 +1174,25 @@ case 394: // hell-hog
 strcpy(descpr, "A large, fat and very ugly pig, suckled in the pits of Hell. ");
 break;
 
+case 395: // Serpent of Hell
+strcpy(descpr, "A huge dragon, burning with hellfire. ");
+break;
 
+case 396: // boggart
+strcpy(descpr, "A twisted little sprite-goblin. Beware of its magical tricks!");
+break;
+
+case 397: // quicksilver D
+strcpy(descpr, "A long and sinuous dragon, seemingly more neck and tail than anything else. Its skin shines like molten mercury, and magical energies arc from its pointed snout.");
+break;
+
+case 398: // iron D
+strcpy(descpr, "A very heavy and apparently flightless dragon.");
+break;
+
+case 399: // skeletal warrior
+strcpy(descpr, "The vicious and heavily armed skeleton of a humanoid creature, animated by unholy power.");
+break;
 
 case 400:
 strcpy(descpr, "The ghost of ");
@@ -1129,6 +1210,10 @@ strcat(descpr, species_name(ghost.ghs [9]));
 strcat(descpr, " ");
 strcat(descpr, skill_title(ghost.ghs [10], ghost.ghs [11], you[0].clas, ghost.ghs [12]));
 strcat(descpr, ".");
+break;
+
+case 401: // random '&' in pandemonium
+describe_demon(descpr);
 break;
 
 case MLAVA0: // lava worm
@@ -2193,7 +2278,7 @@ break;
 case 41:
 strcat(descpr, "A valuable book of magic which allows one to practise a certain skill greatly. As it is used, it gradually disintegrates and will eventually fall apart. ");
 break;
-default: strcat(descpr, "A book of magic spells. "); break;
+default: strcat(descpr, "A book of magic spells. Beware, for some of the more powerful grimoires are not to be toyed with. "); break;
 }
 break;
 
@@ -2264,9 +2349,9 @@ default:
 strcat(descpr, "This spell staff contains spells of mayhem and destruction. ");
 break;
 }
-if (item_type >= 10)
+if (item_type >= 10 && item_type < 25)
 {
-strcat(descpr, "Casting a spell from it consumes no food, and will not fail. ");
+ strcat(descpr, "Casting a spell from it consumes no food, and will not fail. ");
 }
 strcat(descpr, "It falls into the 'staves' category.");
 break;
@@ -2289,33 +2374,39 @@ case 0:
  case 3: strcat(descpr, "A lamp. "); break;
  case 4: strcat(descpr, "A lump of rock. "); break;
  case 5: strcat(descpr, "A strange lantern made out of ancient bones. "); break;
- case 6: strcat(descpr, "A great silver horn, radiating unholy energies."); break;
- case 7: strcat(descpr, "A small black box. I wonder what's inside?"); break;
+ case 6: strcat(descpr, "A great silver horn, radiating unholy energies. "); break;
+ case 7: strcat(descpr, "A small black box. I wonder what's inside? "); break;
  case 8:
- case 9: strcat(descpr, "A deck of cards."); break;
- case 11: strcat(descpr, "A small black box. I wonder what's inside?"); break;
- case 13: strcat(descpr, "A grey disc."); break;
+ case 15:
+ case 16:
+ case 9: strcat(descpr, "A deck of cards. "); break;
+ case 11: strcat(descpr, "A small black box. I wonder what's inside? "); break;
+ case 13: strcat(descpr, "A grey disc. "); break;
+ case 17: strcat(descpr, "An altar to Nemelex Xobeh, built for easy assembly and disassembly. Invoke it to place on a clear patch of floor, then pick it up again when you've finished. "); break;
  }
 break;
 
 default:
  switch(item_type)
  {
- case 0: strcat(descpr, "A mighty efreet, captured by some wizard and bound into a bronze flask. Breaking the flask's seal will release it to wreak havoc - possibly on you."); break;
+ case 0: strcat(descpr, "A mighty efreet, captured by some wizard and bound into a bronze flask. Breaking the flask's seal will release it to wreak havoc - possibly on you. "); break;
  case 1: strcat(descpr, "A magical device which allows one to see the layout of their surroundings. It requires a degree of magical ability to be used reliably, otherwise it can produce unpredictable and possibly harmful results. "); break;
  case 2: strcat(descpr, "A magical device for summoning air elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries an element of risk, which is reduced if one is skilled in the appropriate elemental magic. "); break;
  case 3: strcat(descpr, "A magical device for summoning fire elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries an element of risk, which is reduced if one is skilled in the appropriate elemental magic. "); break;
  case 4: strcat(descpr, "A magical device for summoning earth elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries an element of risk, which is reduced if one is skilled in the appropriate elemental magic. "); break;
  case 5: strcat(descpr, "An unholy device which calls on the powers of darkness to assist its user, with a small cost attached. "); break;
  case 6: strcat(descpr, "The horn belonging to Geryon, guardian of the Vestibule of Hell. Legends say that a mortal who desires access into one of the Hells must use it in order to gain entry. "); break;
- case 7: strcat(descpr, "A magical box containing many wild beasts. One may allow them to escape by opening the box's lid."); break;
- case 8: strcat(descpr, "A deck of highly mysterious and magical cards. One may draw a random card from it, but should be prepared to suffer the possible consequences!"); break;
- case 9: strcat(descpr, "A deck of magical cards, depicting a range of weird and wondrous creatures."); break;
- case 10: strcat(descpr, "A magical device which can be used to restore one's reserves of magical energy, but the use of which carries the risk of draining all of those energies completely. This risk varies inversely with the proportion of their maximum energy which the user possesses; a user near his or her full potential will find this item most beneficial."); break;
- case 11: strcat(descpr, "A magical box after its power is spent."); break;
- case 12: strcat(descpr, "A dangerous item which hypnotises anyone so unwise as to gaze into it, leaving them helpless for a significant length of time."); break;
+ case 7: strcat(descpr, "A magical box containing many wild beasts. One may allow them to escape by opening the box's lid. "); break;
+ case 8: strcat(descpr, "A deck of highly mysterious and magical cards. One may draw a random card from it, but should be prepared to suffer the possible consequences! "); break;
+ case 9: strcat(descpr, "A deck of magical cards, depicting a range of weird and wondrous creatures. "); break;
+ case 10: strcat(descpr, "A magical device which can be used to restore one's reserves of magical energy, but the use of which carries the risk of draining all of those energies completely. This risk varies inversely with the proportion of their maximum energy which the user possesses; a user near his or her full potential will find this item most beneficial. "); break;
+ case 11: strcat(descpr, "A magical box after its power is spent. "); break;
+ case 12: strcat(descpr, "A dangerous item which hypnotises anyone so unwise as to gaze into it, leaving them helpless for a significant length of time. "); break;
  case 13: strcat(descpr, "This extremely powerful item can unleash a destructive storm of electricity. It is especially effective in the hands of one skilled in air elemental magic, but cannot be used by one protected from its effects. "); break;
  case 14: strcat(descpr, "A talisman which allows entry into Zot's domain. "); break;
+ case 15: strcat(descpr, "A deck of magical cards, full of amusing tricks. "); break;
+ case 16: strcat(descpr, "A deck of powerful magical cards. "); break;
+ case 17: strcat(descpr, "An altar to Nemelex Xobeh, built for easy assembly and disassembly. Invoke it to place on a clear patch of floor, then pick it up again when you've finished. "); break;
  }
 break;
 
@@ -2432,7 +2523,7 @@ void randart_descpr(char descpr [1000], int item_class, int item_type, int item_
  }
  if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 8) > 0)
  {
-  strcat(descpr, "$It insulates you. ");
+  strcat(descpr, "$It insulates you from electricity. ");
  }
  if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 9) > 0)
  {
@@ -2500,7 +2591,7 @@ void randart_descpr(char descpr [1000], int item_class, int item_type, int item_
  }
  if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 25) > 0)
  {
-  strcat(descpr, "$It emits mutagenic radiations. ");
+  strcat(descpr, "$It emits mutagenic radiations, which may remain in your system for quite some time. ");
  }
  strcat(descpr, "$");
 }
@@ -2764,13 +2855,13 @@ case 80:
 strcat(descpr, " calls forth a beast of ice to serve the caster. ");
 break;
 case 81:
-strcat(descpr, " covers the caster's body with a protective layer of ice, from which the caster sustains no harm. It will not function if the caster is already wearing heavy armour. ");
+strcat(descpr, " covers the caster's body with a protective layer of ice, the power of which depends on his or her skill with Ice magic. The caster and the caster's equipment are protected from the cold, but this spell will not function if the caster is already wearing heavy armour. ");
 break;
 case 82:
 strcat(descpr, " calls forth a minor demon from the pits of Hell. ");
 break;
 case 83:
-strcat(descpr, " protects the caster from projectile attacks. ");
+strcat(descpr, " reduces the chance of projectile attacks striking the caster. Even powerful attacks such as lightning bolts or dragon breath are affected, although smaller missiles are repelled to a much greater degree.");
 break;
 case 84:
 strcat(descpr, " sends the caster into a temporary psychotic rage. ");
@@ -2789,7 +2880,7 @@ case 112:
 strcat(descpr, " uses the bones of a skeleton (or the bone-like exoskeleton of, for example, an insect) as the raw materials for a lethal spray of slicing bone fragments, allowing its creator to dispense with conjuration magic entirely and use necromancy alone for a low-level but very powerful combat spell. Using a large and heavy skeleton (by wielding it) results in a more powerful effect. ");
 break;
 case 113:
-strcat(descpr, " banishes a creature to the Abyss. ");
+strcat(descpr, " banishes a creature to the Abyss. Magicians wishing to visit that unpleasant place may use it to banish themselves. ");
 break;
 case 114:
 strcat(descpr, " mutates a creature into a pulsating mass of flesh. ");
@@ -2798,7 +2889,8 @@ case 115:
 strcat(descpr, " throws a magical dart of poison. ");
 break;
 case 116:
-strcat(descpr, " converts flesh, blood, and other bodily fluids into magical energy. The caster must hold a piece of butchered flesh in his or her hand when casting, or the spell will feed directly on the caster's body; although not fatal, this could leave one very near death. ");
+//strcat(descpr, " converts flesh, blood, and other bodily fluids into magical energy. The caster must hold a piece of butchered flesh in his or her hand when casting, or the spell will feed directly on the caster's body; although never directly fatal, this could leave one very near death. ");
+strcat(descpr, " converts flesh, blood, and other bodily fluids into magical energy. The caster may use his or her own body as the focus for this spell (which can be dangerous but never directly lethal), or can wield a piece of butchered flesh and draw power from that. ");
 break;
 case 117:
 strcat(descpr, " causes a weapon held in the caster's hand to dance into the air and strike the caster's enemies. It will not function on magical staves or certain items of a unique nature. ");
@@ -2843,7 +2935,7 @@ case 130:
 strcat(descpr, " entombs the caster within four walls of rock. These walls will destroy most objects in their way, but their growth is obstructed by the presence of any creatures. Beware - one would be unwise to use this spell without a reliable escape route. ");
 break;
 case 131:
-strcat(descpr, " covers the caster with protective scales of stone. These scales can coexist with other forms of armour, but are extremely heavy and cumbersome. ");
+strcat(descpr, " protects the caster with chunky scales of stone, the power of which depends on his or her Earth magic skill. These scales can coexist with other forms of armour, but are extremely heavy and cumbersome. ");
 break;
 case 132:
 strcat(descpr, " throws a bolt of electricity. ");
@@ -2882,7 +2974,7 @@ case 143:
 strcat(descpr, " produces a noise emanating from a place of the caster's choice. ");
 break;
 case 144:
-strcat(descpr, " causes a weird alteration in the caster's body. It may fail to affect those who are heavily mutated already. ");
+strcat(descpr, " causes a weird alteration in the caster's body, leaving the caster in a weakened state (but never killing them). It may fail to affect those who are heavily mutated already. ");
 break;
 /* 145 - debugging ray */
 case 146:
@@ -2904,7 +2996,7 @@ case 151:
 strcat(descpr, " tears apart the matter making up an object (especially a creature's body), causing severe damage.");
 break;
 case 152:
-strcat(descpr, " temporarily transforms the caster's hands into long, scythe-shaped blades.");
+strcat(descpr, " causes long, scythe-shaped blades to grow from the caster's hands. It makes spellcasting a little difficult.");
 break;
 case 153:
 strcat(descpr, " temporarily transforms the caster into a slow-moving but extremely robust stone statue.");
@@ -2916,10 +3008,16 @@ case 155:
 strcat(descpr, " temporarily transforms the caster into a great fire-breathing dragon.");
 break;
 case 156:
-strcat(descpr, " infuses the caster's body with negative energies, changing him or her into a terrifying Lich-like undead. The caster becomes resistant to cold, poison, magic and hostile negative energies.");
+strcat(descpr, " first transforms the caster into a semi-corporeal apparition receptive to negative energy, then infuses that form with the powers of Death. The caster becomes resistant to cold, poison, magic and hostile negative energies.");
 break;
 case 157:
-strcat(descpr, " raises any living creature slain by the caster into a state of unliving slavery as a spectral horror.");
+strcat(descpr, " raises living creatures slain by the caster into a state of unliving slavery as spectral horrors.");
+break;
+case 158:
+strcat(descpr, " calls on the powers of Hell to cause agonising injuries to anyone or anything living in the caster's vicinity. It carries a degree of danger for any necromancer brave enough to invoke it, for the Symbol also affects its caller and indeed will not function if they are immune to its terrible effects. Despite its power, however, it is never lethal.");
+break;
+case 159:
+strcat(descpr, " protects the caster from any kind of projectile attack, although particular powerful attacks (lightning bolts, etcetera) are deflected less than lighter missiles. ");
 break;
 
 /*
@@ -2989,9 +3087,17 @@ strcpy(descpr, "Kikubaaqudgha is a terrible Demon-God, served by those who \
 seek knowledge of the powers of death. Followers gain special powers \
 over the undead, and especially favoured servants can call on mighty demons \
 to slay their foes. $Kikubaaqudgha requires the deaths of living creatures \
-and the offering of corpses, as often as possible.");
+as often as possible, but is not interested in the offering of corpses except \
+ at an appropriate altar.");
 if (you[0].piety >= 50 && you[0].religion == 3)
  strcat(descpr, "$Kikubaaqudgha is protecting you from the side-effects of death magic.");
+break;
+case 4:
+strcpy(descpr, "Yredelemnul is worshipped by those who seek powers over \
+death and the undead without having to learn to use necromancy. Followers \
+can raise legions of servile undead and gain a number of other useful (if \
+unpleasant) powers. Yredelemnul appreciates killing, but prefers corpses \
+to be put to use rather than sacrificed.");
 break;
 case 5:
 strcpy(descpr, "Xom is a wild and unpredictable God of chaos, who seeks not \
@@ -3039,7 +3145,15 @@ break;
 case 10:
 strcpy(descpr, "Trog is an ancient God of anger and violence. Followers are \
 expected to kill in Trog's name and sacrifice the dead, and in return gain \
-power in battle and occasional rewards.");
+power in battle and occasional rewards. Trog hates wizards, and followers \
+are forbidden the use of spell magic.");
+break;
+case 11:
+strcpy(descpr, "Nemelex is a strange and unpredictable trickster God, whose \
+powers can be invoked through the magical packs of cards which Nemelex \
+paints in the ichor of demons. Followers receive occasional gifts, and \
+should use these gifts as much as possible. Offerings of items are also \
+appreciated.");
 break;
 case 12:
 strcpy(descpr, "Elyvilon the Healer is worshipped by the healers (among \
@@ -3131,9 +3245,11 @@ j ++;
 
 }
 
+
+
 /*
 Appends a value to the string. If plussed == 1, will add a + to positive
-values.
+values (itoa always adds - to -ve ones).
 */
 void append_value(char descpr [1000], int valu, char plussed)
 {
@@ -3141,4 +3257,140 @@ char value_str [5];
 if (valu >= 0 && plussed == 1) strcat(descpr, "+");
 itoa(valu, value_str, 10);
 strcat(descpr, value_str);
+}
+
+
+
+/* Describes the random demons you find in Pandemonium */
+void describe_demon(char descpr [1000])
+{
+
+long globby = 0;
+long randstore = random();
+unsigned int i = 0;
+
+for (i = 0; i < strlen(ghost.gname); i ++)
+{
+ globby += ghost.gname [i];
+}
+
+globby *= strlen(ghost.gname);
+
+srandom(globby);
+
+strcpy(descpr, "A powerful demon, ");
+strcat(descpr, ghost.gname);
+strcat(descpr, " has a");
+
+switch(random2(31))
+{
+case 0: strcat(descpr, " huge, barrel-shaped "); break;
+case 1: strcat(descpr, " wispy, insubstantial "); break;
+case 2: strcat(descpr, " spindly "); break;
+case 3: strcat(descpr, " skeletal "); break;
+case 4: strcat(descpr, " horribly deformed "); break;
+case 5: strcat(descpr, " spiny "); break;
+case 6: strcat(descpr, " waif-like "); break;
+case 7: strcat(descpr, " scaly "); break;
+case 8: strcat(descpr, " sickeningly deformed "); break;
+case 9: strcat(descpr, " bruised and bleeding "); break;
+case 10: strcat(descpr, " sickly "); break;
+case 11: strcat(descpr, " mass of writhing tentacles for a "); break;
+case 12: strcat(descpr, " mass of ropey tendrils for a "); break;
+case 13: strcat(descpr, " tree trunk-like "); break;
+case 14: strcat(descpr, " hairy "); break;
+case 15: strcat(descpr, " furry "); break;
+case 16: strcat(descpr, " fuzzy "); break;
+case 17: strcat(descpr, "n obese "); break;
+case 18: strcat(descpr, " fat "); break;
+case 19: strcat(descpr, " slimey "); break;
+case 20: strcat(descpr, " wrinkled "); break;
+case 21: strcat(descpr, " metallic "); break;
+case 22: strcat(descpr, " glassy "); break;
+case 23: strcat(descpr, " crystalline "); break;
+case 24: strcat(descpr, " muscular "); break;
+case 25: strcat(descpr, "n icky "); break;
+case 26: strcat(descpr, " swollen "); break;
+case 27: strcat(descpr, " lumpy "); break;
+case 28: strcat(descpr, " armoured "); break;
+case 29: strcat(descpr, " carapaced "); break;
+case 30: strcat(descpr, " slender "); break;
+}
+
+strcat(descpr, "body");
+
+switch(random2(40))
+{
+ case 0: if (ghost.ghs [10] == 1) strcat(descpr, " with small insectoid wings"); break;
+ case 1: if (ghost.ghs [10] == 1) strcat(descpr, " with large insectoid wings"); break;
+ case 2: if (ghost.ghs [10] == 1) strcat(descpr, " with moth-like wings"); break;
+ case 3: if (ghost.ghs [10] == 1) strcat(descpr, " with buttefly wings"); break;
+ case 4: if (ghost.ghs [10] == 1) strcat(descpr, " with huge, bat-like wings"); break;
+ case 5: if (ghost.ghs [10] == 1) strcat(descpr, " with fleshy wings"); break;
+ case 6: if (ghost.ghs [10] == 1) strcat(descpr, " with small, bat-like wings"); break;
+ case 7: if (ghost.ghs [10] == 1) strcat(descpr, " with hairy wings"); break;
+ case 8: if (ghost.ghs [10] == 1) strcat(descpr, " with great feathered wings"); break;
+ case 9: if (ghost.ghs [10] == 1) strcat(descpr, " with shiny metal wings"); break;
+ case 10: if (ghost.ghs [10] == 2) strcat(descpr, " which hovers in mid-air"); break;
+ case 11: if (ghost.ghs [10] == 2) strcat(descpr, " with sacs of gas hanging from its back"); break;
+ case 12: strcat(descpr, " covered in tiny crawling spiders"); break;
+ case 13: strcat(descpr, " covered in tiny crawling insects"); break;
+ case 14: strcat(descpr, " and the head of a crocodile"); break;
+ case 15: strcat(descpr, " and the head of a hippopotamous"); break;
+ case 16: strcat(descpr, " and a cruel curved beak for a mouth"); break;
+ case 17: strcat(descpr, " and a straight sharp beak for a mouth"); break;
+ case 18: strcat(descpr, " and no head at all"); break;
+ case 19: strcat(descpr, " and a hideous tangle of tentacles for a mouth"); break;
+ case 20: strcat(descpr, " and an elephantine trunk"); break;
+ case 21: strcat(descpr, " and an evil-looking proboscis"); break;
+ case 22: strcat(descpr, " and dozens of eyes"); break;
+ case 23: strcat(descpr, " and two ugly heads"); break;
+ case 24: strcat(descpr, " and a long serpentine tail"); break;
+ case 25: strcat(descpr, " and a pair of huge tusks growing from its jaw"); break;
+ case 26: strcat(descpr, " and a single huge eye, in the centre of its forehead"); break;
+ case 27: strcat(descpr, " and spikes of black metal for teeth"); break;
+ case 28: strcat(descpr, " and a disc-shaped sucker for a head"); break;
+ case 29: strcat(descpr, " and huge, flapping ears"); break;
+ case 30: strcat(descpr, " and a huge, toothy maw in the centre of its chest"); break;
+ case 31: strcat(descpr, " and a giant snailshell on its back"); break;
+ case 32: strcat(descpr, " and a dozen heads"); break;
+ case 33: strcat(descpr, " and the head of a jackal"); break;
+ case 34: strcat(descpr, " and the head of a baboon"); break;
+ case 35: strcat(descpr, " and a huge, slobbery tongue"); break;
+ case 36: strcat(descpr, " which is covered in oozing lacerations"); break;
+ case 37: strcat(descpr, " and the head of a frog"); break;
+ case 38: strcat(descpr, " and the head of a yak"); break;
+ case 39: strcat(descpr, " and eyes out on stalks"); break;
+}
+/* Often won't get anything appended there. */
+
+strcat(descpr, ".");
+
+switch(random2(40))
+{
+ case 0: strcat(descpr, " It radiates an aura of extreme power."); break;
+ case 1: strcat(descpr, " It is surrounded by a sickening stench."); break;
+ case 2: strcat(descpr, " It is surrounded by a brilliant glow"); break;
+ case 3: strcat(descpr, " It radiates an aura of extreme hatred for all that lives."); break;
+ case 4: strcat(descpr, " Tiny orange flames dance around it."); break;
+ case 5: strcat(descpr, " Tiny purple flames dance around it."); break;
+ case 6: strcat(descpr, " It is surrounded by a weird haze."); break;
+ case 7: strcat(descpr, " It glows with a malevolent light."); break;
+ case 8: strcat(descpr, " It looks incredibly angry."); break;
+ case 9: strcat(descpr, " It oozes with slime."); break;
+ case 10: strcat(descpr, " It dribbles constantly."); break;
+ case 11: strcat(descpr, " Mould grows all over it."); break;
+ case 12: strcat(descpr, " It looks diseased."); break;
+ case 13: strcat(descpr, " It looks as frightened of you as you are of it."); break;
+ case 14: strcat(descpr, " It stinks."); break;
+ case 15: strcat(descpr, " It moves in a serious of hideous convulsions."); break;
+ case 16: strcat(descpr, " It moves with an unearthly grace."); break;
+ case 17: strcat(descpr, " It hungers for your soul!"); break;
+ case 18: strcat(descpr, " Its joints are swollen as if afflicted by arthritis."); break;
+ case 19: strcat(descpr, " smells like rotting flesh."); break;
+ case 20: strcat(descpr, " shimmers before your eyes."); break;
+}
+
+srandom(randstore);
+
 }

@@ -371,11 +371,11 @@ switch(you[0].inv_class [you[0].equip [0]])
  break;
 
  case 8: // deck of wonders
- deck_of_wonders();
+ deck_of_cards(0);
  break;
 
  case 9: // deck of summonings
- deck_of_summonings();
+ deck_of_cards(1);
  break;
 
  case 10: // crystal ball of energy
@@ -390,6 +390,32 @@ switch(you[0].inv_class [you[0].equip [0]])
  disc_of_storms();
  break;
 
+ case 15: // deck of tricks
+ deck_of_cards(2);
+ break;
+
+ case 16: // deck of power
+ deck_of_cards(3);
+ break;
+
+ case 17: // card table
+ if (you[0].where_are_you == 18)
+ {
+  mpr("Don't you think this level already has more than enough altars?");
+  return;
+ }
+ if (grd [you[0].x_pos] [you[0].y_pos] != 67)
+ {
+  mpr("You need a piece of empty floor to place this item.");
+  break;
+ }
+ mpr("You unfold the altar and place it on the floor.");
+ grd [you[0].x_pos] [you[0].y_pos] = 190;
+ unwield_item(you[0].equip [0]);
+ you[0].inv_quant [you[0].equip [0]] = 0;
+ you[0].equip [0] = -1;
+ you[0].inv_no --;
+ break;
 
  default: strcpy(info, "Nothing appears to happen.");
  mpr(info);
@@ -510,7 +536,7 @@ mpr(info);
 
 char disc_count = 0;
 char disc_count2 = 0;
-unsigned char which_zap_thing;
+unsigned char which_zap_thing = 0;
 
 disc_count2 = 2 + random2(4);
 
@@ -584,7 +610,7 @@ if (learn_a_spell(zap_device_2, sc_read_2) != 1)
 
 specspell = which_spell_in_book(you[0].inv_type [you[0].equip [0]] + 40, sc_read_2 + 1);
 
-if (you[0].ep < spell_value(specspell) / 2 + 1 || you[0].xl < spell_value(specspell))
+if (you[0].ep < spell_value(specspell) || you[0].xl < spell_value(specspell))
 {
    strcpy(info, "Your brain hurts!");
    mpr(info);
@@ -668,8 +694,14 @@ read_it:
 you[0].inv_ident [sc_read_2] = 3;
 you[0].turnover = 1;
 
-powc = magic_ability(player_mag_abil(), you[0].intel);
+if (you[0].mutation [39] > 0 && random2(4) < you[0].mutation [39])
+{
+ mpr("The page is too blurry for you to read.");
+ you[0].turnover = 1;
+ return;
+}
 
+powc = magic_ability(player_mag_abil(), you[0].intel);
 
 strcpy(info, "You find yourself reciting the magical words!");
 mpr(info);

@@ -14,6 +14,7 @@
 
 //#include "crawlfnc.h"
 #include "shopping.h"
+#include "stuff.h"
 
 void command_string(char comm [50], int i);
 //char invent(unsigned char inv_plus2 [52], int item_class_inv, int inv_quant [52], unsigned char inv_dam [52], unsigned char inv_class [52], unsigned char inv_type [52], unsigned char inv_plus [52], unsigned char inv_ident [52], char item_wielded, char body_armour, char shield_armour, char cloak_armour, char head_armour, char hand_armour, char foot_armour, char ring [2], char show_price);
@@ -88,7 +89,7 @@ char invent(int item_class_inv, char show_price)
 
 int Inv_class2 [15];
 int inv_count = 0;
-unsigned char ki;
+unsigned char ki = 0;
 
 //int ickyo = 0;
 
@@ -139,7 +140,7 @@ for (i = 0; i < 15; i++)
 //if (item_class_inv > 1) Inv_class2 [0] = 0;
 
 
-if ((item_class_inv == -1 && inv_count > 0) || (item_class_inv != -1 && Inv_class2 [item_class_inv] > 0) || (item_class_inv == 1 && (Inv_class2 [0] > 0 || Inv_class2 [1] > 0)) || (item_class_inv == 0 && (Inv_class2 [0] > 0 || Inv_class2 [11] > 0)) || (item_class_inv == 6 && (Inv_class2 [6] > 0 || Inv_class2 [10] > 0)))// || (item_class_inv == 3 && (Inv_class2 [3] > 0 || Inv_class2 [11] > 0)))
+if ((item_class_inv == -1 && inv_count > 0) || (item_class_inv != -1 && Inv_class2 [item_class_inv] > 0) || (item_class_inv == 1 && (Inv_class2 [0] > 0 || Inv_class2 [1] > 0)) || (item_class_inv == 0 && (Inv_class2 [0] > 0 || Inv_class2 [11] > 0)) || (item_class_inv == 0 && (Inv_class2 [0] > 0 || Inv_class2 [13] > 0)) || (item_class_inv == 6 && (Inv_class2 [6] > 0 || Inv_class2 [10] > 0)))// || (item_class_inv == 3 && (Inv_class2 [3] > 0 || Inv_class2 [11] > 0)))
 {
 
 //if (item_class_inv != 1) //this is so you can get the '?' invent from throw_it

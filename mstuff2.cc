@@ -19,6 +19,7 @@
 
 int mons_spells(char spell_cast, int func_pass [10], char beam_name [30]);
 void itrap(struct bolt beam [1], int trapped);
+unsigned char monster_abjuration(int pow, char test);
 
 /*
 NOTE: must fix species abils to not use duration 15
@@ -211,10 +212,15 @@ case 21: // vampire summoning
         return;
 
 
-case 24: // summon anything
+case 24: // summon anything appropriate for level
+ if (menv[0].m_beh == 1 && mons_near(i) == 1 && random2(2) == 0 && monster_abjuration(1, 1) >= 1)
+ {
+   monster_abjuration(menv [i].m_HD * 10, 0);
+   return;
+ }
  sumcount2 = random2(4) + 1;
  for (sumcount = 0; sumcount < sumcount2; sumcount ++)
-                        create_monster(random2(70), 24, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
+                        create_monster(250, 24, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
                         return;
 
 case 25: // summon fake R
@@ -224,10 +230,11 @@ case 25: // summon fake R
                         return;
 
 case 27: // summon demon
-/*    summonik = random2(8) + 80;
-    if (random2(4) == 0 || (summonik == 84 && random2(3) != 0)) summonik = 3;
-    if (random2(4) == 0) summonik = random2(15) + 220;
-    if (random2(20) == 0) summonik = random2(2) + 235;*/
+    if (menv[0].m_beh == 1 && mons_near(i) == 1 && random2(2) == 0 && monster_abjuration(1, 1) >= 1)
+    {
+     monster_abjuration(menv [i].m_HD * 10, 0);
+     return;
+    }
     create_monster(summon_any_demon(1), 22, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
     return;
 
@@ -258,7 +265,12 @@ case 36: // Geryon
  return;
 
 case 42: // summon undead around player
-  sumcount2 = random2(3) + 2;
+ if (menv[0].m_beh == 1 && mons_near(i) == 1 && random2(2) == 0 && monster_abjuration(1, 1) >= 1)
+ {
+   monster_abjuration(menv [i].m_HD * 10, 0);
+   return;
+ }
+ sumcount2 = random2(3) + 2;
  for (sumcount = 0; sumcount < sumcount2; sumcount ++)
  {
   do
@@ -271,7 +283,6 @@ case 42: // summon undead around player
 
 
 case 48: // torment
-
   if (mons_near(i) == 0 || menv [i].m_beh == 7) return;
   if (menv [i].m_ench [2] != 6)
   {
@@ -282,6 +293,18 @@ case 48: // torment
 /*  mmov_x = 0; mmov_y = 0;*/
   torment();
   return;
+
+case 51: // summon class 1 demon
+    if (menv[0].m_beh == 1 && mons_near(i) == 1 && random2(2) == 0 && monster_abjuration(1, 1) >= 1)
+    {
+     monster_abjuration(menv [i].m_HD * 10, 0);
+     return;
+    }
+    create_monster(summon_any_demon(2), 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
+    return;
+
+
+
 } // end switch
 
 //out_of_spec :
@@ -399,7 +422,7 @@ do
 {
         menv [monstel].m_x = random2(60) + 10;
         menv [monstel].m_y = random2(50) + 10;
-} while (grd [menv [monstel].m_x] [menv [monstel].m_y] != ogrid || mgrd [menv [monstel].m_x] [menv [monstel].m_y] != MNG);
+} while ((grd [menv [monstel].m_x] [menv [monstel].m_y] != ogrid && (ogrid != 62 || grd [menv [monstel].m_x] [menv [monstel].m_y] != 65)) || mgrd [menv [monstel].m_x] [menv [monstel].m_y] != MNG);
 
 mgrd [menv [monstel].m_x] [menv [monstel].m_y] = monstel;
 
@@ -753,7 +776,7 @@ return 1;
 case 7: // venom bolt
 strcpy(beam_name, "bolt of poison");
 func_pass [1] = random2(10) + 8;
-func_pass [2] = 106 + func_pass [8] / 10;
+func_pass [2] = 106 + func_pass [8] / 13;
 func_pass [0] = LIGHTGREEN;
 func_pass [4] = 35;
 func_pass [6] = 2;
@@ -765,7 +788,7 @@ return 1;
 case 8:
 strcpy(beam_name, "bolt of fire");
 func_pass [1] = random2(10) + 5;
-func_pass [2] = 108 + func_pass [8] / 9;
+func_pass [2] = 108 + func_pass [8] / 11;
 func_pass [0] = 4;
 func_pass [4] = 35; // 35
 func_pass [6] = 2;
@@ -778,7 +801,7 @@ return 1;
 case 9:
 strcpy(beam_name, "bolt of cold");
 func_pass [1] = random2(10) + 5;
-func_pass [2] = 108 + func_pass [8] / 9;
+func_pass [2] = 108 + func_pass [8] / 11;
 func_pass [0] = 15;
 func_pass [4] = 35;
 func_pass [6] = 2;
@@ -789,7 +812,7 @@ return 1;
 case 10: // lightning
 strcpy(beam_name, "bolt of lightning");
 func_pass [1] = random2(10) + 8;
-func_pass [2] = 110 + func_pass [8] / 7;
+func_pass [2] = 110 + func_pass [8] / 9;
 func_pass [0] = LIGHTCYAN;
 func_pass [4] = 35;
 func_pass [6] = 2;
@@ -851,7 +874,7 @@ return 0; // blink
 case 17: // was splinters
 strcpy(beam_name, "crystal spear");
 func_pass [1] = random2(10) + 8;
-func_pass [2] = 112 + func_pass [8] / 8;
+func_pass [2] = 112 + func_pass [8] / 10;
 func_pass [0] = WHITE;
 func_pass [4] = ')';
 func_pass [6] = 2;
@@ -872,7 +895,7 @@ return 1;
 case 19: // negative energy
 strcpy(beam_name, "bolt of negative energy");
 func_pass [1] = random2(10) + 8;
-func_pass [2] = 106 + func_pass [8] / 10;
+func_pass [2] = 106 + func_pass [8] / 13;
 func_pass [0] = DARKGREY;
 func_pass [4] = 35;
 func_pass [6] = 2;
@@ -886,7 +909,7 @@ case 22: // mystic blast
 func_pass [0] = 13;
 strcpy(beam_name, "orb of energy");
 func_pass [1] = random2(5) + 7;
-func_pass [2] = 107 + (func_pass [8] / 12);;
+func_pass [2] = 107 + (func_pass [8] / 14);
 func_pass [3] = 10 + (func_pass [8] / 20);
 func_pass [4] = 35;
 func_pass [6] = 4;
@@ -928,7 +951,7 @@ func_pass [0] = 4;
 strcpy(beam_name, "sticky flame");
 func_pass [1] = random2(5) + 7;
 func_pass [2] = 103 + func_pass [8] / 50;
-func_pass [3] = 8 + func_pass [8] / 25;
+func_pass [3] = 8 + func_pass [8] / 15;
 func_pass [4] = '#';
 func_pass [6] = 4;
 func_pass [5] = 2; // fire
@@ -957,6 +980,17 @@ func_pass [6] = 4;
 func_pass [5] = 10; // an exploding magical missile
 return 0;
 
+case 37: // eye of devastation
+func_pass [0] = YELLOW;
+strcpy(beam_name, "bolt of energy");
+func_pass [1] = random2(15) + 10;
+func_pass [2] = 120;
+func_pass [3] = 9;
+func_pass [4] = 35;
+func_pass [6] = 4;
+func_pass [5] = 27; // a magical missile which destroys walls
+return 1;
+
 
         case 38: // sting
         func_pass [0] = GREEN;
@@ -974,7 +1008,7 @@ return 0;
         func_pass [0] = LIGHTCYAN;
         strcpy(beam_name, "iron bolt");
         func_pass [1] = random2(5) + 5;
-        func_pass [2] = 108 + (func_pass [8] / 6);
+        func_pass [2] = 108 + (func_pass [8] / 9);
         func_pass [3] = 6 + (func_pass [8] / 25);
         func_pass [4] = ')';
         func_pass [6] = 4;
@@ -986,7 +1020,7 @@ return 0;
         func_pass [0] = LIGHTGREY;
         strcpy(beam_name, "stone arrow");
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 105 + (func_pass [8] / 8);
+        func_pass [2] = 105 + (func_pass [8] / 10);
         func_pass [3] = 5 + func_pass [8] / 47;
         func_pass [4] = ')';
         func_pass [6] = 4;
@@ -1042,6 +1076,17 @@ func_pass [3] = 7 + random2(func_pass [8]) / 80;
 return 0;
 
 
+case 47: // Quicksilver dragon
+func_pass [0] = 1 + random2(15);
+strcpy(beam_name, "bolt of energy");
+func_pass [1] = random2(15) + 10;
+func_pass [2] = 125;
+func_pass [3] = 9;
+func_pass [4] = 35;
+func_pass [6] = 4;
+func_pass [5] = 1; // a magical missile
+return 0;
+
 
 /*
 beam_colour = func_pass [0];
@@ -1066,7 +1111,26 @@ func_pass [6] = 2;
 func_pass [5] = 10; // hellfire
 return 1;
 
+case 50: // metal splinters
+strcpy(beam_name, "spray of metal splinters");
+func_pass [1] = random2(10) + 8;
+func_pass [2] = 120 + func_pass [8] / 20;
+func_pass [0] = CYAN;
+func_pass [4] = 35;
+func_pass [6] = 2;
+func_pass [5] = 19;
+func_pass [7] = 1;
+func_pass [3] = 15 + random2(func_pass [8]) / 50;
+return 1;
 
+case 52: // banishment
+strcpy(beam_name, "0");
+func_pass [1] = random2(5) + 6;
+func_pass [4] = 0;
+func_pass [0] = 10;
+func_pass [6] = 4;
+func_pass [5] = 4; // magic
+return 1;
 
 
 }
@@ -1074,3 +1138,40 @@ return 1;
 return 0; // Should never reach this. Stupid pedantic gcc warning thing.
 
 }
+
+
+unsigned char monster_abjuration(int pow, char test)
+{
+
+int ab = 0;
+unsigned char result = 0;
+
+if (test == 0)
+{
+ mpr("Send 'em back where they came from!");
+}
+
+for (ab = 0; ab < MNST; ab ++)
+{
+ if (menv [ab].m_class == -1) continue;
+ if (mons_near(ab) == 0) continue;
+ if (menv [ab].m_beh != 7) continue;
+ if (menv [ab].m_ench_1 == 0 || menv [ab].m_ench [1] < 20 || menv [ab].m_ench [1] > 25) continue;
+ result ++;
+ if (test == 1) continue;
+
+ menv [ab].m_ench [1] -= 1 + random2(pow) / 3;
+ if (menv [ab].m_ench [1] <= 19)
+ {
+  monster_die(ab, 6, 0);
+  continue;
+ }
+ strcpy(info, monam (menv [ab].m_sec, menv [ab].m_class, menv [ab].m_ench [2], 0));
+ strcat(info, " shudders.");
+ mpr(info);
+
+} // end of for ab
+
+return result;
+
+} // end of void abjuration

@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "externs.h"
 #include "macro.h"
@@ -20,7 +21,7 @@ void exercise2(char exsk, char deg);
 void exercise(char exsk, char deg)
 {
 
-do
+while (deg > 0)
 {
 #ifdef CLASSES
  exercise2(exsk, 1, 0);
@@ -28,7 +29,7 @@ do
  exercise2(exsk, 1);
 #endif
  deg --;
-} while (deg > 0);
+}
 
 }
 
@@ -43,6 +44,11 @@ void exercise2(char exsk, char deg)
  int skill_change = deg * (you[0].skills [exsk] + 1);// + 3;
  char title [40];
  char old_best_skill = best_skill(0, 50, 99);
+
+/*                itoa(skill_change, st_prn, 10);
+                strcpy(info, "skill_change (0): ");
+                strcat(info, st_prn);
+                mpr(info);*/
 
 
 #ifdef CLASSES
@@ -65,7 +71,7 @@ if (you[0].skills [exsk] >= 10) skill_change *= (you[0].skills [exsk] - 9) / 3;
  if (you[0].xl > 10) skill_change += you[0].xl - 10;
  if (you[0].xl > 11) skill_change += you[0].xl - 11;
 
- if (you[0].xl >= 12) skill_change *= (you[0].xl - 11) / 2;
+ if (you[0].xl >= 12) skill_change *= (you[0].xl - 10) / 2;
 /* if (you[0].xl > 10) skill_change ++;
  if (you[0].xl > 13) skill_change += 2;
  if (you[0].xl > 15) skill_change += 5;
@@ -81,6 +87,14 @@ if (you[0].skills [exsk] >= 10) skill_change *= (you[0].skills [exsk] - 9) / 3;
  if (you[0].skills [exsk] >= 12) skill_change += 3;
  if (you[0].skills [exsk] >= 14) skill_change += 4;
  if (you[0].skills [exsk] >= 16) skill_change += 5;
+
+ if (skill_change > 500) skill_change = 500;
+
+/*                itoa(skill_change, st_prn, 10);
+                strcpy(info, "skill_change (1): ");
+                strcat(info, st_prn);
+                mpr(info);*/
+
 
 if (exsk < 8) // being good at some weapons makes others easier to learn:
 {
@@ -108,19 +122,30 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
 
 // being good at elemental magic makes other elements harder to learn:
   if (exsk >= 33 && exsk <= 36 && (you[0].skills [33] > you[0].skills [exsk] || you[0].skills [34] > you[0].skills [exsk] || you[0].skills [35] > you[0].skills [exsk] || you[0].skills [36] > you[0].skills [exsk]))
-   if (random2(3) == 0) return;
-
-  if (exsk == 33 || exsk == 34 && (you[0].skills [33] > you[0].skills [exsk] || you[0].skills [34] > you[0].skills [exsk]))
   {
+//   mpr("Bad element 1.");
+   if (random2(3) == 0) return;
+  }
+
+  if ((exsk == 33 || exsk == 34) && (you[0].skills [33] > you[0].skills [exsk] || you[0].skills [34] > you[0].skills [exsk]))
+  {
+//   mpr("Bad element 2.");
    if (random2(3) != 0) return; // of course, this is cumulative with the one above.
   }
-  if (exsk == 35 || exsk == 36 && (you[0].skills [35] > you[0].skills [exsk] || you[0].skills [36] > you[0].skills [exsk]))
+  if ((exsk == 35 || exsk == 36) && (you[0].skills [35] > you[0].skills [exsk] || you[0].skills [36] > you[0].skills [exsk]))
   {
+//   mpr("Bad element 3.");
    if (random2(3) != 0) return;
   }
 
  }
  skill_change -= random2(5);
+
+/*                itoa(skill_change, st_prn, 10);
+                strcpy(info, "skill_change (2): ");
+                strcat(info, st_prn);
+                mpr(info);*/
+
 
  if (skill_change <= 0) skill_change = 0;
 
@@ -128,6 +153,11 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
 
  you[0].skill_points [exsk] += deg;
  you[0].exp_available -= skill_change;
+/*                itoa(skill_change, st_prn, 10);
+                strcpy(info, "skill_change (3): ");
+                strcat(info, st_prn);
+                mpr(info);
+*/
 
 #ifdef CLASSES
  cut_through:
@@ -152,7 +182,7 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
         if (exsk == 14) player_evasion(you) += ev_mod();*/
         if (exsk == 14) you[0].evasion_ch = 1;
 
-        if (exsk == 17 || exsk == 13)
+        if (exsk == 17 || exsk == 13 || exsk == 34 || exsk == 36)
         {
 /*         you[0].shield_class = get_shield_class();*/
          you[0].AC_ch = 1;

@@ -24,6 +24,7 @@
 #include "skills.h"
 #include "spells0.h"
 #include "shopping.h"
+#include "version.h"
 
 
 /*
@@ -33,7 +34,7 @@ char dump_char(char show_prices, char fname [30])
 {
         char st_prn [15];
 
-        char dmp [200] [120]; // second is length of line
+        char dmp [400] [120]; // second is length of line
 
         char lin = 0;
 
@@ -44,10 +45,14 @@ char dump_char(char show_prices, char fname [30])
         char title [40];
 
 
-        for (i = 0; i < 200; i ++)
+        for (i = 0; i < 400; i ++)
         {
                 strcpy(dmp [i], "");
         }
+
+        strcpy(dmp [lin], " Dungeon Crawl version "VERSION" character file.");
+    lin += 2;
+
 
         strcpy(dmp [lin], you[0].your_name);
         strcat(dmp [lin], " the ");
@@ -192,6 +197,58 @@ char dump_char(char show_prices, char fname [30])
         else if (you[0].where_are_you == 7)
         {
                 strcat(dmp [lin], "in the Pit");
+        }
+        else if (you[0].where_are_you == 10)
+        {
+                strcat(dmp [lin], "in the Mines");
+        }
+        else if (you[0].where_are_you == 11)
+        {
+                strcat(dmp [lin], "in the Hive");
+        }
+        else if (you[0].where_are_you == 12)
+        {
+                strcat(dmp [lin], "in the Lair");
+        }
+        else if (you[0].where_are_you == 13)
+        {
+                strcat(dmp [lin], "in the Slime Pits");
+        }
+        else if (you[0].where_are_you == 14)
+        {
+                strcat(dmp [lin], "in the Vaults");
+        }
+        else if (you[0].where_are_you == 15)
+        {
+                strcat(dmp [lin], "in the Crypt");
+        }
+        else if (you[0].where_are_you == 16)
+        {
+                strcat(dmp [lin], "in the Hall of Blades");
+        }
+        else if (you[0].where_are_you == 17)
+        {
+                strcat(dmp [lin], "in the Hall of Zot");
+        }
+        else if (you[0].where_are_you == 18)
+        {
+                strcat(dmp [lin], "in the Ecumenical Temple");
+        }
+        else if (you[0].where_are_you == 19)
+        {
+                strcat(dmp [lin], "in the Snake Pit");
+        }
+        else if (you[0].where_are_you == 20)
+        {
+                strcat(dmp [lin], "in the Elven Halls");
+        }
+        else if (you[0].where_are_you == 21)
+        {
+                strcat(dmp [lin], "in the Tomb");
+        }
+        else if (you[0].where_are_you == 22)
+        {
+                strcat(dmp [lin], "in the Swamp");
         }
         else
         {
@@ -503,10 +560,11 @@ finished_spells:
                 strcpy(dmp [lin], "           Mutations & Other Weirdness");
                 lin ++;
 
-                for (j = 0; j < 50; j ++)
+                for (j = 0; j < 100; j ++)
                 {
                         if (you[0].mutation [j] == 0) continue;
-                        strcpy(dmp [lin], mutation_name(j));
+            if (you[0].demon_pow [j] > 0) strcat(dmp [lin], "* ");
+                        strcat(dmp [lin], mutation_name(j));
                         lin ++;
                 }
 

@@ -28,9 +28,9 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*orc wiz              */ {  1,   1,      6,     11,      0,    100,    100},
 /*orc wiz              */ {  2,   2,    100,      5,      1,      0,    100},
 /*naga                 */ { 10,  15,     15,     13,      7,      4,     13},
-/*Lich                 */ { 20,   9,      3,     11,     28,     39,     14},
-/*Lich                 */ { 21,   8,      6,      5,     19,      0,    100},
-/*Lich                 */ { 22,  19,     28,      5,      2,     17,     16},
+/*Lich                 */ { 20,   9,      3,     51,     28,     39,     14},
+/*Lich                 */ { 21,   8,      6,      5,     19,     51,     52},
+/*Lich                 */ { 22,  19,     28,     51,      2,     17,     16},
 /*Lich                 */ { 23,  22,      9,     11,     28,     39,     11},
 /*burning devil        */ { 30,  20,     20,     20,     20,     20,     20},
 /*vampire              */ { 40,  21,    100,    100,    100,    100,     21},
@@ -39,7 +39,7 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*giant orange brain   */ { 53,  23,     43,      6,     24,     16,     14},
 /*R                    */ { 54,  25,     16,     11,     25,     16,     14},
 /*GooE                 */ { 55,   3,     45,    100,      4,      6,     15},
-/*orc sorceror         */ { 56,   8,     19,    100,     27,     20,     14},
+/*orc sorceror         */ { 56,   8,     19,     27,     52,     20,     14},
 /*steam dragon         */ { 57,  26,     26,    100,     26,     26,    100},
 /*hell knight          */ { 58, 100,     29,      5,    100,    100,    100},
 /*hell knight          */ { 59, 100,      8,    100,    100,    100,     16},
@@ -48,7 +48,7 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*wizard               */ { 62,   0,      3,      5,     10,      6,     14},
 /*wizard               */ { 63,   7,     22,     11,      6,      4,     14},
 /*wizard               */ { 64,   3,     17,     16,      8,      9,     13},
-/*wizard               */ { 65,  40,     38,     16,     10,      9,     13},
+/*wizard               */ { 65,  40,     38,     16,     10,     52,     13},
 /*wizard               */ { 66,   3,      1,     11,     15,     12,     11},
 /*orc priest           */ { 67,  29,    100,     30,    100,    100,     13},
 /*orc high priest      */ { 68,  29,     27,     30,     27,     28,     13},
@@ -56,7 +56,7 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*Ice Fiend            */ { 70,   9,      9,     48,    100,    100,     27},
 /*Shadow Fiend         */ { 71,   9,     19,     48,    100,    100,     27},
 /*tormentor            */ { 72,  29,    100,    100,    100,    100,    100},
-/*Storm D + vapour     */ { 73,  10,     10,    100,    100,    100,    100},
+/*Storm D + vapour     */ { 73,  10,     10,    100,     10,     10,    100},
 /*WHITE lesser demon   */ { 74,   2,    100,    100,    100,    100,    100},
 /*CYAN demon           */ { 75, 100,     39,     34,    100,     34,    100},
 /*MAGENTA demon        */ { 76,  43,    100,    100,     23,     33,    100},
@@ -67,8 +67,8 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*RED gr demon (233)   */ { 81,   8,     12,    100,     31,     30,     14},
 /*BLUE gr demon        */ { 82,  10,      9,    100,     33,     24,     15},
 /*Geryon               */ { 83,  36,    100,     36,     36,    100,     36},
-/*Dispater             */ { 84,  17,     39,     27,     10,     49,     27},
-/*Asmodeus             */ { 85,   8,     49,     27,     10,     19,     14},
+/*Dispater             */ { 84,  51,     39,     27,     10,     49,     27},
+/*Asmodeus             */ { 85,   8,     49,     27,     51,     19,     14},
 /*Ereshkigal           */ { 86,  19,      9,     27,     29,      3,     13},
 /*Antaeus              */ { 87,   9,     10,    100,    100,    100,    100},
 /*Nemelex Xobeh        */ { 90,  27,     30,     11,     43,     24,     14},
@@ -82,7 +82,7 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*deep elf conjurer 2  */ { 98,  31,     22,     11,     40,     19,     14},
 /*deep elf priest      */ { 99,  29,    100,     30,     13,     28,     13},
 /*deep elf high priest */ {100,  27,     20,     30,     13,     28,     13},
-/*deep elf demonologist*/ {101,  27,     34,     24,     27,     33,     14},
+/*deep elf demonologist*/ {101,  27,     52,     51,     27,     33,     14},
 /*deep elf annihilator */ {102,  10,     17,     16,     39,     32,     14},
 /*deep elf sorceror    */ {103,  19,      3,      5,     27,     28,     14},
 /*deep elf death mage  */ {104,  19,     19,     13,     28,     28,     14},
@@ -104,6 +104,12 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*Hell-hog             */ {120,  31,     31,    100,    100,    100,    100},
 /*Swamp Dragon         */ {121,  32,     32,    100,     32,     32,    100},
 /*Swamp Drake          */ {122,  46,     46,    100,     46,     46,    100},
+/*Serpent of Hell      */ {123,  49,     49,     49,     49,     49,     49},
+/*Boggart              */ {124,   6,      4,     11,     16,     24,     16},
+/*Eye of Devastation   */ {125,  37,     37,     37,     37,     37,     37},
+/*Quicksilver dragon   */ {126,  47,     47,    100,     47,     47,    100},
+/*Iron dragon          */ {127,  50,     50,    100,     50,     50,    100},
+/*Skeletal warrior     */ {128,  28,    100,     28,    100,    100,    100},
 };
 
 
@@ -132,10 +138,10 @@ case 20: // burst of hellfire
 case 21: // vampire's summoning
 case 22: // mystic blast
 case 23: // brain feeding
-case 24: // summon anything
+case 24: // summon anything appropriate for level
 case 25: // fake Rs
 case 26: // breathe steam
-case 27: // summon devils
+case 27: // summon demons
 case 28: // animate dead
 case 29: // pain
 case 30: // smiting
@@ -145,7 +151,7 @@ case 33: // summon lesser demon
 case 34: // summon LIGHTCYAN lesser demon
 case 35: // blast thing
 case 36: // Geryon's summoning
-
+case 37: // bolt of energy (eye of devastation)
 case 38: // sting
 case 39: // iron bolt
 case 40: // stone arrow
@@ -155,9 +161,16 @@ case 43: // mutation
 case 44: // fire zulzer
 case 45: // disintegrate
 case 46: // foul vapour
-
+case 47: // breathe energy
 case 48: // torment
 case 49: // fiend's hellfire
+case 50: // metal splinters
+case 51: // summon greater (class 1) demon
+case 52: // banishment (to the Abyss)
+
+Note: is assumed that most monsters capable of casting the more powerful
+summonings can also cast Abjuration (just for simplicity)
+
 */
 
 
@@ -218,12 +231,12 @@ int mons_corpse_thingy(int mc) { return smc->corpse_thingy; }
 int mons_charclass(int mc) { return smc->charclass; }
 char mons_shouts(int mc) {
         int u=smc->shouts;
-        if(u==-1) u=random()%8;
+        if(u==-1) u=random()%12;
         return u;
 }
 char mons_see_invis(int mc)
 {
- if (mc == 400) return ghost.ghs [3];
+ if (mc == 400 || mc == 401) return ghost.ghs [3];
  return mf(M_SEE_INVIS);
 }
 
@@ -233,7 +246,7 @@ unsigned char mons_char(int mc) { return (unsigned char) smc->showchar; }
 int mondamage(int mc, int rt)
 {
         if(rt<0 || rt>3) return 0; // make it fool-proof
-        if (mc == 400 && rt == 0) return ghost.ghs [7];
+        if ((mc == 400 || mc == 401) && rt == 0) return ghost.ghs [7];
         return smc->damage[rt];
 }
 
@@ -248,12 +261,12 @@ int u=smc->resist_magic;
 int mons_res_elec(int mc)
 {
 
-        if (mc == 400) return (ghost.ghs [6] > 0); /* this is a variable,
+        if (mc == 400 || mc == 401) return (ghost.ghs [6] > 0); /* this is a variable,
 not a player_xx() function, so can be above 1 */
 
 int u=0,f=smc->bitfields;
         // ofcourse it makes no sense setting them both :)
-        if(f&M_RES_ELEC) u++; if(f&M_ED_ELEC) u--;
+        if(f&M_RES_ELEC) u++; //if(f&M_ED_ELEC) u--;
         return u;
 }
 
@@ -267,7 +280,7 @@ int u=0,f=smc->bitfields;
 int mons_res_fire(int mc)
 {
 
-if (mc == 400)
+if (mc == 400 || mc == 401)
 {
  if (ghost.ghs [4] > 100) return 1;
  if (ghost.ghs [4] < 100) return -1;
@@ -284,7 +297,7 @@ int u=0,f=smc->bitfields;
 int mons_res_cold(int mc)
 {
 
-if (mc == 400)
+if (mc == 400 || mc == 401)
 {
  if (ghost.ghs [5] > 100) return 1;
  if (ghost.ghs [5] < 100) return -1;
@@ -306,6 +319,12 @@ int mons_skeleton(int mc)
 
 char mons_flies(int mc)
 {
+
+if (mc == 401)
+{
+ return ghost.ghs [10];
+}
+
 int f=smc->bitfields;
         if(f&M_LEVITATE) return 2;
         if(f&M_FLIES) return 1;
@@ -431,6 +450,8 @@ struct monsterentry *m = seekmonster(m2_class);
         case 342: m2_sec = 85; break; // Asmodeus
         case 343: m2_sec = 87; break; // Antaeus
         case 344: m2_sec = 86; break; // Ereshkigal
+
+        case 356: m2_sec = random() % 4 + 20; break; // ancient lich - same as normal one
 
     case 390:
     case 391: // mimics
@@ -559,6 +580,11 @@ char *monam(int mons_cla, int mons_e, char desc, char see_invis)
  {
   strcpy(gmo_n, ghost.gname);
   strcat(gmo_n, "'s ghost");
+  return gmo_n;
+ }
+ if (mons_e == 401)
+ {
+  strcpy(gmo_n, ghost.gname);
   return gmo_n;
  }
  moname(mons_e, desc, player_see_invis(), see_invis, gmo_n);

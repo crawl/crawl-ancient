@@ -24,6 +24,7 @@
 #include "skills.h"
 #include "stuff.h"
 
+char mutate(int which_mutation);
 
 
 int add_item(int item_got, int it_quant);
@@ -47,17 +48,17 @@ char str_pass [50];
 
 int counter = 0;
 int counter_max = 0;
-if (env[0].grid [you[0].x_pos] [you[0].y_pos] >= 69 && env[0].grid [you[0].x_pos] [you[0].y_pos] <= 200)
+if (env[0].grid [you[0].x_pos] [you[0].y_pos] >= 69 && env[0].grid [you[0].x_pos] [you[0].y_pos] <= 210)
 {
  if (env[0].grid [you[0].x_pos] [you[0].y_pos] >= 82 && env[0].grid [you[0].x_pos] [you[0].y_pos] <= 85)
  {
-  if (env[0].grid [you[0].x_pos] [you[0].y_pos] == 85) mpr("There is a ladder leading down here.");
-   else mpr("There is a staircase down here.");
+  if (env[0].grid [you[0].x_pos] [you[0].y_pos] == 85) mpr("There is a rock staircase leading down here.");
+   else mpr("There is a stone staircase down here.");
  } else
  if (env[0].grid [you[0].x_pos] [you[0].y_pos] >= 86 && env[0].grid [you[0].x_pos] [you[0].y_pos] <= 89)
  {
-  if (env[0].grid [you[0].x_pos] [you[0].y_pos] == 89) mpr("There is a ladder leading upwards here.");
-   else mpr("There is a staircase up here.");
+  if (env[0].grid [you[0].x_pos] [you[0].y_pos] == 89) mpr("There is a rock staircase leading upwards here.");
+   else mpr("There is a stone staircase up here.");
  } else
 switch(env[0].grid [you[0].x_pos] [you[0].y_pos])
 {
@@ -106,16 +107,24 @@ switch(env[0].grid [you[0].x_pos] [you[0].y_pos])
   case 180: mpr("There is a glowing white marble altar of Zin here."); break;
   case 181: mpr("There is a glowing golden altar of the Shining One here."); break;
   case 182: mpr("There is an ancient bone altar of Kikubaaqudgha here."); break;
-//  case 183:
+  case 183: mpr("There is a basalt altar of Yredelemnul here."); break;
   case 184: mpr("There is a shimmering altar of Xom here."); break;
   case 185: mpr("There is a shining altar of Vehumet here."); break;
-// case 185
   case 186: mpr("There is an iron altar of Okawaru here."); break;
   case 187: mpr("There is a burning altar of Makhleb here."); break;
   case 188: mpr("There is a deep blue altar of Sif Muna here."); break;
   case 189: mpr("There is a bloodstained altar of Trog here."); break;
   case 190: mpr("There is a sparkling altar of Nemelex Xobeh here."); break;
   case 191: mpr("There is a silver altar of Elyvilon here."); break;
+
+  case 200: mpr("There is a fountain here."); break;
+  case 202: mpr("There is a sparkling fountain here."); break;
+  case 201:
+  case 203:
+  case 205:
+  case 207:
+  case 209:
+  case 210: mpr("There is a dry fountain here."); break;
 
  }
 }
@@ -199,9 +208,10 @@ int counter = 0;
 int item_got = 0;
 int o = 0;
 int k = 0;
+int m = 0;
 int nothing = 0;
 char str_pass [50];
-char keyin;
+char keyin = 0;
 
 if (you[0].lev != 0 && wearing_amulet(42) == 0)
 {
@@ -209,9 +219,48 @@ if (you[0].lev != 0 && wearing_amulet(42) == 0)
         return;
 }
 
+if (grd [you[0].x_pos] [you[0].y_pos] == 190 && you[0].where_are_you != 18)
+{
+        if (you[0].inv_no >= 52)
+    {
+     mpr("There is a portable altar here, but you can't carry anything else.");
+     return;
+    }
+        mpr("There is a portable altar here. Pick it up?");
+        keyin = get_ch();
+    if (keyin == 'y' || keyin == 'Y')
+    {
+        for (m = 0; m < 52; m++)
+        {
+                if (you[0].inv_quant [m] == 0)
+                {
+                        you[0].inv_ident [m] = 3;
+                        you[0].inv_class [m] = 13;
+                        you[0].inv_type [m] = 17;
+                        you[0].inv_plus [m] = 0;
+                        you[0].inv_plus2 [m] = 0;
+                        you[0].inv_dam [m] = 0;
+                        you[0].inv_col [m] = LIGHTMAGENTA;
+                        you[0].inv_quant [m] = 1;
+                    you[0].inv_no++;
+                        burden_change();
+            if (m <= 25) info [0] = m + 97;
+                                else info [0] = m + 39;
+                        info [1] = 0;
+                        strcat(info, " - ");
+                    in_name(m, 3, str_pass);
+                        strcat(info, str_pass);
+                        mpr(info);
+                    break;
+          }
+     }
+     grd [you[0].x_pos] [you[0].y_pos] = 67;
+    }
+}
+
 if (env[0].igrid [you[0].x_pos] [you[0].y_pos] == ING)
 {
-        mpr("There isn't anything here.");
+        mpr("There are no items here.");
         return;
 }
 
@@ -897,6 +946,9 @@ if (you[0].disease == 0)
     }
    }
 
+if (you[0].mutation [38] > 0 && random2(100) <= you[0].mutation [38] * 5 - 2)
+     lose_stat(100, 1);
+
 
 if (you[0].invis > 0 || (you[0].haste > 0 && you[0].berserker == 0))
 {
@@ -939,32 +991,50 @@ if (you[0].religion != 0)
   break;
 
   case 1: /* These gods like long-standing worshippers */
-  case 2:
   case 12:
-  if (random2(20) == 0 && you[0].piety < 100) gain_piety(1);
+  if (random2(20) == 0 && you[0].piety < 150) gain_piety(1);
   break;
 
-  case 3: /* These gods require constant appeasement */
+  case 2: /* The Shining One */
+  if (random2(15) == 0 && you[0].piety < 150) gain_piety(1);
+  break;
+
+  case 4: /* Yredelemnul */
+  case 3: /* Kiku */
   case 6: /* Vehumet */
-  case 7:
-  case 10:
-  if (random2(9) == 0) lose_piety(1);
+  if (random2(17) == 0) lose_piety(1);
   if (you[0].piety <= 0) excommunication();
   break;
 
-  case 8:
-  if (random2(7) == 0) lose_piety(1);
+  case 7: /* These gods accept corpses, so they time-out faster: */
+  case 10:
+  if (random2(14) == 0) lose_piety(1);
+  if (you[0].piety <= 0) excommunication();
+  break;
+
+  case 8: /* Makhleb */
+  if (random2(16) == 0) lose_piety(1);
   if (you[0].piety <= 0) excommunication();
   break;
 
   case 9: /* Sif Muna */
-  if (random2(10) == 0) lose_piety(1);
+  if (random2(20) == 0) lose_piety(1);
+  if (you[0].piety <= 0) excommunication();
+  break;
+
+  case 11: /* Nemelex - relatively patient */
+  if (random2(35) == 0) lose_piety(1);
+  if (you[0].attribute [6] > 0 && random2(2) == 0) you[0].attribute [6] --;
   if (you[0].piety <= 0) excommunication();
   break;
 
  }
 }
 
+if (you[0].mutation [35] > 0)
+{
+ if (random2(100) <= you[0].mutation [35] * 5) forget_map(5 + random2(you[0].mutation [35] * 10));
+}
 
 int c = 0;
 int rotted = 0;
@@ -1055,13 +1125,13 @@ practise_stealth : if (you[0].burden_state != 0) return;
 if (you[0].equip [6] != -1)
 {
  if (you[0].inv_dam [you[0].equip [6]] / 30 != 4) /* elven armours don't hamper stealth */
-  if (you[0].inv_type [you[0].equip [6]] > 1 && (you[0].inv_type [you[0].equip [6]] < 22 || you[0].inv_type [you[0].equip [6]] > 25))
+  if (you[0].inv_type [you[0].equip [6]] > 1 && (you[0].inv_type [you[0].equip [6]] < 22 || you[0].inv_type [you[0].equip [6]] > 25)) /* neither do robes or steam/mottled DSM */
      if (random() % mass(2, you[0].inv_type [you[0].equip [6]]) >= 100 || random() % 3 != 0) return;
 }
 
 //if (you[0].lev != 0) return; // can't really practise stealth while floating, and an amulet of control flight shouldn't make much difference
 
-if (you[0].special_wield == 50) return; // shadow lantern
+if (you[0].special_wield == 50) return; // shadow lantern stops stealth
 
 if (random() % 6 == 0) exercise(15, 1);
 
