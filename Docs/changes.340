@@ -1,4 +1,10 @@
 Linley Henzell (linley.henzell@student.adelaide.edu.au)
+27/12/99
+* Fixed the USE_NEW_RANDOM code to work at a reasonable speed without an FP
+   coprocessor
+* Many minor tweaks
+
+Linley Henzell (linley.henzell@student.adelaide.edu.au)
 12/09/99
 * Fixed new berserk code to work with ctrl+direction attacks
 * Now deletes savefiles after death (under DOS, at least)
@@ -8,7 +14,7 @@ Linley Henzell (linley.henzell@student.adelaide.edu.au)
    - Colour-code play-screen map, like the 'X' map
    - Remove monsters & clouds from map
 * Horned characters can wear caps and hats
-* Class named were put back into lower case, where appropriate
+* Class names were put back into lower case, where appropriate
 * You are now told when a monster's enchantments wear off (if in view)
 * You get more information when you look at a monster
 * Monsters no longer cast animate dead when there aren't any corpses in sight
@@ -17,7 +23,8 @@ Linley Henzell (linley.henzell@student.adelaide.edu.au)
 * Deflect and repel missiles enchantments now affect missile traps
 * Dexterity affects your shield use
 * Monster AI improvements:
-   - Strong monsters no longer pick up missiles unless they're carrying some already
+   - Strong monsters no longer pick up missiles unless they're carrying some
+     already
    - Some improvements made to monster path-finding
 * USE_NEW_RANDOM rand() removed - the randart code relies on random()
 * Ghosts now only do 2/3 as much damage; xp value reduced, too

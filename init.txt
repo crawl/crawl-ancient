@@ -1,14 +1,16 @@
 #
 # Crawl Init file
 #
-# Uncomment and change appropriate lines
+# Lines preceded by # are comments, and are ignored. All others control
+# various user interface options
 #
-
 # Player name
+# If this line is absent, you are prompted for your name every time you
+# play. This allows you to keep multiple characters.
 #
 name=Scrumpy
-#
 
+#
 # Directory for reading macro.txt and init.txt, and dumping characters.
 # It should end with the path delimiter.
 #
@@ -32,19 +34,23 @@ name=Scrumpy
 #    X          Corpses
 #    $          Gold
 #
-autopickup=$?!:+="/0
+# If you add any one of these to the autopickup list below, items of that
+# type will be automatically picked up when you walk over them.
+#
+#autopickup=$?!:+="/0
 
-#How much information do we want in our character dumps?
-#With verbose_dump=1, all stats of special weapons (even generic
-#properties) are printed out.
-#Otherwise, only those properties which are specific to an "artefact" item
-#(ie one whose powers cannot be predicted from its name) are given.
+# How much information do we want in our character dumps?
+# With verbose_dump=1, all stats of special weapons (even generic
+# properties) and rings/amulets are printed out.
+# Otherwise, only those properties which are specific to an "artefact" item
+# (ie one whose powers cannot be predicted from its name) are given.
 #
 verbose_dump=0
 #
-#Do we want the play-screen map to be colour coded?
+# Do we want important locations (stairs etc) on the play-screen map to be
+# colour coded?
 colour_map=1
 #
-#Do we want monsters and clouds erased from the map?
+# Do we want monsters and clouds erased from the map?
 clean_map=1
 #

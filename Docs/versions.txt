@@ -1,0 +1,384 @@
+Log of Changes:
+The name after each bug is the person who found it and told me first. If you
+find a bug and for some reason don't want to be credited, just tell me on the
+bug report.
+
+1.0 (2/10/97)
+first (rather buggy) version
+
+1.01 (3/10/97)
+Shields were changed
+Items were made more common
+monsters were made less common (this was a bug)
+cursed weapons were made less common (this was just bad planning)
+I changed the name to make it a bit less egotistical
+Bugs removed include:
+ a debugging feature of the 'x' command was unintentionally left in;
+ the summon scorpions spell summoned a vampire (oops) (Haran Pilpel);
+ sometimes +50 armour could be generated (oops again) (Haran Pilpel);
+ the inventory item counter was not decremented when you dropped something!
+  This would lead to you being unable to pick things up after a while (Darren
+  Hebden);
+ a bug with detect curse scrolls (Darren Hebden)
+ slime creatures and jellies were a bit weak;
+ killing normal (not spitting) plants gave you far too much xp;
+ your rate of regeneration was not saved properly;
+ about half of the rings could never be generated;
+ the 's' command would sometimes make you repeat your last move (Haran
+  Pilpel);
+ I forgot to mention the walk-in-place function in any documentation;
+ I set the level builder to put 100 monsters on each new level for
+  debugging, and forgot to reset it - I really should playtest more!;
+ If you tried to cast spell 'z', you cast the identify spell (Lucas Ackerman);
+ plus a few more which I forget right now.
+
+1.02 (4/10/97)
+A few more items and traps have been added;
+The game now uses the rogue keys (hjklyubn) properly;
+You used to be able to throw and zap straight when confused. No longer!
+
+1.03 (4/10/97)
+Some unique items were added;
+A silly bug, by which your item knowledge was not saved, was fixed (Darren
+Hebden);
+Teleport traps now work properly;
+I think I fixed another bug, but I can't remember.
+
+1.04 (6/10/97)
+A few really nasty bugs with saved games were fixed. The game would not save
+ enchantments affecting monsters, and would mess up the items carried by the
+ monsters (Adam Horowitz);
+A bug with the enchanting/corroding of shields was fixed;
+A '<=' instead of a '<' led to characters not using shields occasionally
+ blocking trap missiles (Adam Horowitz);
+You can now type '+' or '-' in the map screen to move around faster (Adam
+ Horowitz);
+The direction function now accepts '.' as well as delete (Adam Horowitz);
+During your first step while long-walking, you can walk on anything (still
+ prompts for water etc, though) (Adam Horowitz);
+I think that was all.
+
+1.05 (7/10/97)
+A minor display bug was fixed;
+A bug with restoring clouds from saved games was fixed;
+A major bug which caused a segment violation when restoring saved games if
+ there were any magical traps on the level was finally discovered and fixed.
+Those pathetic worms you see around level 6 are now nastier, and jackals now
+ tend to appear in packs.
+This time, your item memory really does work.
+
+1.1 (14/10/97)
+Several new items and monsters were added;
+Labyrinths were added;
+Magical weapons are now less powerful;
+Some bugs have been fixed - I forget what they were right now;
+The source was released, and Crawl is now under the GPL (see Licence.txt for
+ details);
+
+1.2 (2/10/97)
+The monster and cloud location bits have been completely rewritten, a process
+ which turned out to be rather easier than I thought it would be. The new
+ system is much more flexible;
+Monsters are now a bit more intelligent, especially in the way they treat
+ clouds;
+Several monsters have been added;
+Several items and two new classes of items (Carrion and Miscellaneous) have
+ been added;
+Several spells, most of them necromantic, have been added;
+The Gladiator, Necromancer, and Paladin classes have been added;
+A spell type system has been implemented, and several new staves to specialise
+ in particular types of magic have been added (conjuration, summoning etc).
+New unique items have been added, and a bug (actually, a mistype) which
+ prevented some from being generated has been removed;
+A few bugs have been removed;
+Several other changes have been made, too numerous to mention here.
+
+2.0 (9/12/97)
+There have been so many additions in this version that I'm not going to list
+ them all, but here is a very incomplete list of bugs and things rectified:
+Characters could cause an excessive amount of damage empty-handed (Bridget
+ Farace);
+Darts didn't fire properly when character not wielding anything (Bridget
+ Farace);
+Hand crossbows didn't work properly;
+Fireballs always did the same amount of damage (0-27), regardless of who cast
+ them and how powerful they were;
+Going to Hell could have unexpected results due to an out-of-bounds reference
+ to levels_exist [].
+
+2.01 (12/12/97)
+I had wanted version 2.0 to be a stable and bug-less release, but this was not
+to be. Anyway, 2.01 fixes these bugs:
+Zapping a wand of polymorph at yourself caused problems (polymorph self hasn't
+ been implemented anyway) (Saradon);
+Polymorph other didn't work properly;
+Choosing a non-existent item in a shop crashed the game (but only sometimes,
+ which was why I didn't notice it) (Saradon);
+Spell descriptions weren't working properly (Saradon);
+Some messages were misspelt due to an indiscriminate search/replace (Adam
+ Horowitz);
+Detect curse didn't detect curses on unrecognised rings (this bug had
+ been present right from version 1.0);
+Sometimes, a special weapon in the hands of a monster would not function
+ properly (watch out for creatures wielding weapons of draining!);
+The use of the control key was not mentioned in the command list (it
+ opens/closes doors, like in Angband);
+And a few others (if I haven't credited someone, please tell me).
+Also, a few new things were added, as suggested by Saradon: A shout command
+('!') to attract your followers (and enemies!), and better equipment for the
+enchanter. Also, you are now given a difficulty message and prompted when
+memorising spells, so you will know which spells you won't be able to cast
+reliably before you memorise them.
+
+2.02 (13/12/97)
+I'm afraid that 2.01 didn't fully fix the bug in the shop code, but hopefully
+this version does. Just about the only differences between this version and
+2.01 are:
+Pressing r,s or t while in a shop really no longer crashes the game (Saradon &
+ Bridget Farace);
+If the Scores file is not present, a new one is generated. I've stopped
+ including a scores file in the distribution, so that you can unpack the zip
+ file into your old crawl directory and keep on using the old score file.
+Save games should be compatible with 2.01.
+
+2.03 (22/12/97)
+This version fixes a few bugs, and puts back the floating point emulation
+which was missing from previous version 2 releases (Daniel Josef Dekok and
+someone else noticed this). It also removes the debugging code which was
+accidentally included.
+Bugs fixed:
+Butterfly corpses were coloured black, making them invisible (Bridget
+ Farace);
+Shadow lanterns were also coloured black, and kept on working even after you
+ unwielded them (Bridget Farace);
+Items purchased from shops were not identified properly (Lord Gek, Timo
+ Laitila);
+Scrolls of acquirement weren't being identified after being read;
+When you got hit by a monster wielding a weapon of draining, events could
+ become confusing (Timo Laitila);
+Finally, the '5' key on the keypad works as a rest key (Timo Laitila);
+Names longer than 8 letters caused problems with saving and restoring games,
+ especially in Windows 95 (Lord Gek & Timo Laitila)
+
+The following new features were also added:
+When tame creatures kill monsters, you now get 1/3 xp (Howard Liu);
+Orcish spellcasters have been downgraded a bit (lots of people recommended
+ this);
+Specialist wizards are now slightly more powerful in their specialisation,
+ especially with magical staves (I can't find the usenet post which told me
+ about this).
+And a few other minor changes.
+
+2.10 (30/12/97)
+Sorry to all of the many people who've been sending me bug reports, but it's
+become too tricky to list all bugs and credit their finder. I'm just getting
+too much email, and my mail reader has a strange way of eating some messages
+and making them very difficult to find. So from now on, I'll just list some of
+the major bugs fixed and major features added:
+-A bug with wearing armour of fire/cold resistance was fixed;
+-The properties of several items and spells were tweaked a bit;
+-Specialist wizards were made even more powerful in their discipline;
+-The dungeon was made deeper (36 levels now), and lots of new monsters were
+added to fill in the deeper levels;
+-Several spells (mostly necromancy) were added;
+-The dungeon architecture is a bit more varied, especially as you get deeper;
+-A warning was added to labyrinths;
+among other things.
+
+2.11 - This was the first Linux release, ported to Linux by Svante Gerhard.
+
+2.20 - This fixed a few very minor bugs and added a vast number of new
+features, like vaults, unique monsters, skills, the Abyss, Pandemonium, etc
+etc etc. The dungeon architecture is also a lot more varied.
+
+2.21 - Various bugfixes and minor changes.
+
+2.30 - Lots of cool stuff added.
+
+2.31 - Lots of cool stuff fixed.
+
+2.32 - Even more cool stuff fixed.
+
+2.33, 2.34 - I forget right now, but these releases probably just fixed stuff.
+
+2.40 - Kobold and Mummy races added, as well as elementalist and crusader
+classes. Heaps of spells, items and monsters added (as usual).
+ - You now get 1/2 experience for monsters killed by tame monsters.
+ - A large part of the monster and skills code was rewritten and generally
+cleaned up by $pellbinder (Wladimir van der Laan).
+
+2.41 - bugs fixed
+
+2.50 (3/5/98) - Changes made:
+ - Character classes made much more relevant;
+ - Monsters can now use more items;
+ - Heaps of items, monsters, spells etc added;
+ - Naga and Gnome character species added;
+ - Bugs fixed (including, I hope, the infamous item bug);
+ - Etcetera.
+
+2.51 (18/5/98) - Purely a bug-fix version:
+ - Item 1 no longer turns green on saving;
+ - *Hopefully* the horrible item bug has been permanently removed (at least
+     parts of it have, anyway);
+ - Repeatedly casting Deflect Missiles no longer causes problems;
+ - Skill selection now works properly (there were some problems in 2.50);
+ - A couple of bugs in monster teleportation have been fixed.
+
+2.60 (1/9/98) - The Source Code Clean-up is finally finished!
+ - Functions have been split up into about 30 different modules, making coding
+    *much* easier.
+ - All functions are now available from any module.
+ - An alternative display set for non-IBM graphics displays included (activate
+    it with a -c command-line switch).
+ - Several minor balancing changes were made.
+ - If the game crashes, you can continue from the last save (unless it crashed
+    during saving). Your game is autosaved every time you climb stairs.
+ - A great number of interface changes were made, many of which were suggested
+    by Eino Keskitalo and Jim Baranovich. These include:
+     +The clumsy '^' untrap command has been replaced by a new use for the
+       control key;
+     +The character selection menus have been streamlined, with a new random
+       option;
+     +Shop displays are easier to read;
+     +The old message display has been rendered readable;
+     +It is now possible to reorder items and spells;
+     +And various other things.
+
+2.61 (6/9/98)
+ A bug-fix version:
+ - Levitation is no longer permanent;
+ - The recall message screen no longer crashes the game;
+ - Paralysis works again;
+ - Drained dexterity is now displayed properly;
+ - Something I forgot to mention in 2.60: most rings no longer use food. Check
+    them with 'V' when identified;
+ - A few other things.
+
+2.70 (22/9/98)
+ Heaps of new features (I almost called this version 3.0):
+ - New species to choose from: Ogre, Troll, Ogre Mage
+ - New class: Venom Mage
+ - Dungeon branches (several)
+ - New winning conditions
+ - Player ghosts
+ - Mutations
+ - Many new items, spells, monsters
+ - Several bugfixes
+ - ... and a heap of other stuff.
+
+2.71 (25/9/98)
+ - Bug fix version
+
+2.72 (??)
+ - Another bug fix version (there seem to be a lot of these)
+
+2.80 (18/10/98)
+ - New species: Draconian
+ - New classes: Healer, Chaos Knight, transmuter
+ - Religions and altars
+ - Greatly expanded Transmigration magic, including self-transformations
+ - New dungeon branches
+ - Significant balance changes - deep levels should be harder now
+ - Special abilities ordered in the 'a' abilities menu
+ - New items, spells, monsters etc as usual
+ - A number of bugs found in the source by Daniel Ligon were erased
+
+2.81 (20/10/98)
+ - Bugfix release
+
+2.82 (24/10/98)
+ - Another bugfix release
+
+2.83 (31/10/98)
+ - Yet another bugfix release
+ - Reaver class and some other stuff added
+ - The Dungeon is now only 27 levels deep again
+
+2.90 (13/11/98)
+ - Juho Snellman's macro-patch was added
+ - Random "artefact" weapons added
+ - Several new items
+ - Several new monsters
+ - The Realm of Zot is nastier now
+ - Considerable balance changes
+ - The 'V' command now gives more specific information for some items
+ - Bugs fixed
+
+2.91 (17/11/98)
+ - Bug fix version
+ - Trolls and Ogres can now be berserkers
+
+2.92 - I think I forgot to release this version.
+
+2.93 (??/12/98)
+ - Alexey Guzeev's OS/2 port integrated into the code.
+ - Many bugs fixed, and a few new features (mostly user interface).
+
+2.94 (9/12/98)
+ - All known bugs fixed (including, I hope, the notorious Item Link Error bug)
+ - Several interface improvements
+ - Several rebalancings
+ - File I/O rewritten by Alexey Guzeev; it's now several times faster
+
+2.95 (15/12/98)
+ - More bug fixes, and some code reorganisation
+ - Save files etc are now saved in binary rather than text form
+ - Sam Jansen's improved dungeon.cc module added
+ - A Linux message output bug fixed by Robert Glowczynski
+
+3.0 (23/12/98)
+ - Lots of bug fixes and new features: new items, monsters etc.
+ - Randart armours and rings
+ - 2 new races: centaur and demigod
+ - 3 new classes: stalker, warper and monk
+ - Unarmed Combat skill added
+ - Ghosts upgraded - they now remember a little more from their past lives...
+ - A new God to worship
+ - Several modules were rewritten by Sam Jansen
+
+3.01 (??/12/98)
+ - Bugfix version
+
+3.02 (3/12/98) This date is obviously wrong, but who knows what it should be?
+ - More bug fixes, and a lot of rebalancing
+
+3.10 (27/1/99)
+ - New races: Spriggan and Minotaur
+ - A new God
+ - Shallow water
+ - An Invocations skill was added, and many invocations have been tweaked
+ - Random demons in Pandemonium
+ - Many, many new monsters and several items added
+ - Plenty of rebalancing done - especially WRT those darn centaurs
+ - Heaps of new minor features
+ - Many bug fixes
+
+3.11 (31/1/99)
+ - Bug fixes and many rebalancings
+
+3.20 (9/2/99)
+ - New races: Demonspawn, Ghoul and Kenku
+ - A new God, Yredelemnul, and some changes to Nemelex
+ - I finally got around to upgrading the crappy armour spells
+ - Heaps of the usual rebalancing and some new features
+ - Many bugs found by Daniel Ligon and others fixed.
+
+3.30 (26/3/99)
+ - All known bugs (a *huge* list) fixed
+ - Several spells added, mostly to make Earth, Ice and Air magic viable in
+   comparison to Fire.
+ - Numerous rebalancings
+ - "Unrandom artefacts" added - see the source files randart.cc and unrand.h
+   for details. These are very easy for non-coders to add.
+ - 'V' command made available in shops
+ - Crossbows upgraded
+ - Characters with no magic skills can't learn spells
+ - It's now possible to get level 1 Spellcasting just by reading scrolls
+ - And a whole heap of other stuff.
+  * This is the last version which I (LH) will be releasing in the near
+future. I'm moving out of home to student accomodation near Adelaide Uni and I
+won't have my mother's computer to play with any more (Note change of email
+address: it's now linley.henzell@student.adelaide.edu.au). But hopefully Crawl
+will continue to be actively developed by others on the internet. Happy
+Crawling!

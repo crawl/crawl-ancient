@@ -2221,7 +2221,7 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
     case RED:                     /* confusion */
         for (p = 0; p < 3; p++)
         {
-            if (menv[o].enchantment[p] == 4)
+            if (menv[o].enchantment[p] == 5)
                 return 1;
         }                       /* end of for p */
         for (p = 0; p < 3; p++)
@@ -2284,7 +2284,7 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
     case LIGHTBLUE:                     /* charm */
         for (p = 0; p < 3; p++)
         {
-            if (menv[o].enchantment[p] == 7)
+            if (menv[o].enchantment[p] == 30)
                 return 1;
         }                       /* end of for p */
         for (p = 0; p < 4; p++)

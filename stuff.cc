@@ -39,15 +39,20 @@
 
 extern char wield_change;
 
-//#ifdef USE_NEW_RANDOM
-/*int random2(int max)
+#ifdef USE_NEW_RANDOM
+int random2(int max)
 {
-  if (max <= 0)
+  if (max <= 0 || max >= RAND_MAX)
     return 0;
   else
-    return (int) ((((float) max) * rand()) / RAND_MAX);
-}*/
-//#else
+//    return (int) ((((float) max) * rand()) / RAND_MAX); - this is bad!
+//  Uses FP, so is horribly slow on computers without coprocessors.
+          return (int) rand() / (RAND_MAX / max + 1);
+// Taken from the comp.lang.c FAQ. May have problems if max approaches
+//   RAND_MAX, but this is rather unlikely.
+//   We've used rand() rather than random() for the portability, I think.
+}
+#else
 int random2(int randmax)
 {
     if (randmax <= 0)
@@ -55,7 +60,7 @@ int random2(int randmax)
 
     return random() % randmax;
 }
-//#endif
+#endif
 
 int random22( int max )
 {
@@ -99,7 +104,7 @@ unsigned char get_ch()
 }
 
 
-
+/* Is a grid within character's line of sight? */
 char see_grid(unsigned char grx, unsigned char gry)
 {
 
@@ -111,7 +116,7 @@ char see_grid(unsigned char grx, unsigned char gry)
 
     return 0;
 
-}                               // end of char mons_near(char)
+}
 
 
 int magic_ability(int mag_abil, int intel)

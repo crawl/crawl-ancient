@@ -1102,100 +1102,6 @@ static bool Use_No_Black = false;
         break;
       #endif
 
-
-
-      /* Debug starts: * /
-
-
-      case '&': cast_spec_spell(); break;
-      case '%': create_spec_object2(); break;
-      case '*': grd [you.x_pos] [you.y_pos] = 82; break;
-      case '(':
-      char specs [3];
-      strcpy(info, "Create which feature? ");
-      mpr(info);
-      specs [0] = getche();
-      specs [1] = getche();
-      specs [2] = getche();
-      grd [you.x_pos] [you.y_pos] = atoi(specs); break;
-      case 'G': debug_add_skills(); break;
-      //  case '\"': grd [you.x_pos] [you.y_pos] = 99; break;
-      //  case '\'': grd [you.x_pos] [you.y_pos] = 101; break;
-      case '+': create_spec_monster(); break;
-
-      //case '`':
-      //   itoa(grd [you.x_pos] [you.y_pos], st_prn, 10);
-      //   itoa(you.magic_contamination, st_prn, 10);
-      //                   strcpy(info, st_prn);
-      //   mpr(info);
-      //break;
-
-      case '[':
-      itoa(you.x_pos, st_prn, 10);
-      strcpy(info, st_prn);
-      strcat(info, "/");
-      itoa(you.y_pos, st_prn, 10);
-      strcat(info, st_prn);
-      mpr(info);
-      itoa(player_res_fire(), st_prn, 10);
-      strcpy(info, st_prn);
-      mpr(info);
-      itoa(player_res_cold(), st_prn, 10);
-      strcpy(info, st_prn);
-      mpr(info);
-      itoa(player_res_poison(), st_prn, 10);
-      strcpy(info, st_prn);
-      mpr(info);
-      itoa(player_prot_life(), st_prn, 10);
-      strcpy(info, st_prn);
-      mpr(info);
-      break;
-
-      case ']':
-      char specx [2];
-      strcpy(info, "Gain which mutation? ");
-      mpr(info);
-      specx [0] = getche();
-      specx [1] = getche();
-      mutate(atoi(specx));
-      break;
-
-      case ')': you.experience += 5000; you.exp_available += 500; you.redraw_experience = 1;
-      level_change();
-      break;
-      case '\"': level_travel(); break;
-      case '-': you.hp = you.hp_max; you.redraw_hit_points = 1; break;
-      case '$': you.gold += 500; you.redraw_gold = 1; break;
-
-      case 'F':    stethoscope(250); break;
-
-      case ':':
-      int i, j;
-      j = 0;
-      for (i = 0; i < 20; i ++)
-      {
-      if (you.branch_stairs [i] == 0) continue;
-      strcpy(info, "Branch ");
-      itoa(i, st_prn, 10);
-      strcat(info, st_prn);
-      strcat(info, " is on level ");
-      itoa(you.branch_stairs [i], st_prn, 10);
-      strcat(info, st_prn);
-      strcat(info, ".");
-      mpr(info);
-      }
-      break;
-      case '{':
-      magic_mapping(99, 100);
-      break;
-      case '_':
-      mpr("You feel more pious! Well done.");
-      gain_piety(10);
-      break;
-      //  case '}': Xom_acts(1, 50, 1); break;
-      case '|': acquirement(250); break;
-      */
-
          case ')':
          case CMD_LIST_WEAPONS:
             list_weapons();
@@ -1273,6 +1179,9 @@ static bool Use_No_Black = false;
          case 'm':
             create_spec_monster();
             break;
+         case 'M':
+            create_spec_monster_name();
+            break;
          case '*':
          case 'd':
             grd[you.x_pos][you.y_pos] = 82;
@@ -1299,7 +1208,9 @@ static bool Use_No_Black = false;
             mpr(info);
             break;
           case 'z':
-            cast_spec_spell(); break;
+            cast_spec_spell(); break; /* cast spell by number */
+          case 'Z':
+            cast_spec_spell_name(); break; /* cast spell by name */
           case '(':
             char specs [3];
             mpr("Create which feature? ");

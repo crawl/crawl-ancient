@@ -3036,7 +3036,7 @@ void init_properties()
 
     // broad axe
     prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_DAMAGE] = 14;
-    prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_HIT] = 2;
+    prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_HIT] = 0;
     prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_SPEED] = 17;
     mss[OBJ_WEAPONS][WPN_BROAD_AXE] = 180;
 
@@ -3173,7 +3173,7 @@ void init_properties()
     mss[OBJ_WEAPONS][WPN_HAMMER] = 130;
 
     // ancus
-    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_DAMAGE] = 11;      // damage
+    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_DAMAGE] = 9;      // damage
     prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_HIT] = 1;
     prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_SPEED] = 14;      // speed
     mss[OBJ_WEAPONS][WPN_ANCUS] = 160;
@@ -3583,10 +3583,13 @@ int hands_required_for_weapon( char wclass, char wtype )
         case WPN_KATANA:
         case WPN_DOUBLE_SWORD:
 
-        case WPN_ANCUS:
+/*      case WPN_ANCUS:
         case WPN_SPIKED_FLAIL:
         case WPN_MORNINGSTAR:
         case WPN_EVENINGSTAR:
+These are all really just spiked versions of one-handed weapons, and so
+should probably just be one-handed as well.
+*/
             ret = HANDS_ONE_OR_TWO_HANDED;
             break;
 

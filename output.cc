@@ -82,6 +82,11 @@ void print_stats()
         itoa(you.max_magic_points, st_prn, 10);
         cprintf("/");
         cprintf(st_prn);
+#ifdef USE_CURSES
+        clrtoeol();
+#else
+        cprintf("        ");
+#endif
         you.redraw_magic_points = 0;
     }
 

@@ -1645,7 +1645,8 @@ void monster_attack(int monster_attacking)
 
     if (wearing_amulet(AMU_WARDING) == 1 || (you.religion == GOD_VEHUMET && you.duration[DUR_PRAYER] != 0 && you.piety >= 75))
     {
-        if (menv[monster_attacking].enchantment[1] >= 20 && menv[monster_attacking].enchantment[1] <= 25)
+        if ((menv[monster_attacking].enchantment[1] >= 20 && menv[monster_attacking].enchantment[1] <= 25)
+                        || (menv[monster_attacking].enchantment[1] >= ENCH_FRIEND_ABJ_I && menv[monster_attacking].enchantment[1] <= ENCH_FRIEND_ABJ_VI))
             if (random2(2) == 0)
             {
                 strcpy(info, monam(menv[monster_attacking].number, menv[monster_attacking].type, menv[monster_attacking].enchantment[2], 0));
@@ -1717,7 +1718,7 @@ void monster_attack(int monster_attacking)
         damage_taken = 0;
 
 
-        int mons_to_hit = 20 + menv[monster_attacking].hit_dice;        // * menv [monster_attacking].hit_dice; // * 3  //you.strength + (0.5 * you.you.max_dex) + (you.f_abil);
+        int mons_to_hit = 16 + menv[monster_attacking].hit_dice;        // * menv [monster_attacking].hit_dice; // * 3  //you.strength + (0.5 * you.you.max_dex) + (you.f_abil);
 
         mons_to_hit += water_attack * 5;
 
@@ -3839,7 +3840,10 @@ out_of_worm:
 
     if (killer != KILL_RESET)
     {
-        if (menv[monster_killed].enchantment[1] >= 20 && menv[monster_killed].enchantment[1] <= 25)
+        if ((menv[monster_killed].enchantment[1] >= ENCH_ABJ_I
+                        && menv[monster_killed].enchantment[1] <= ENCH_ABJ_VI)
+                         || (menv[monster_killed].enchantment[1] >= ENCH_FRIEND_ABJ_I
+              && menv[monster_killed].enchantment[1] <= ENCH_FRIEND_ABJ_VI))
         {
             if (mons_near(monster_killed) && mons_weight(mons_charclass(menv[monster_killed].type)) != 0)
             {

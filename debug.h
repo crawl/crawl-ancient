@@ -60,7 +60,9 @@ inline void __DUMMY_TRACE__(...)
 #endif
 
 void cast_spec_spell();
+void cast_spec_spell_name();
 void create_spec_monster();
+void create_spec_monster_name();
 void level_travel();
 void create_spec_object();
 void create_spec_object2();

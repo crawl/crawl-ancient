@@ -104,39 +104,6 @@ were being applied to my char. I don't know exactly what's
 going on here, but I'll check the next time I'm at my
 parents' house.
 
-* The game tells if a monster is a shapeshifter by looking at its
-mench values (ie the 3-element enchantment array). If enchantment
-1 indicates that it's a shapeshifter (I forget the value; it's
-thirty-something IIRC) it has a chance of polymorphing randomly
-every move it makes ("glowing shapeshifters" are similar; they
-just polymorph more often). The bug occurs when the shifter turns
-into a plant or a fungus; these monsters aren't checked for
-enchantments, so the shifter is trapped in a vegetable or fungus
-form forever.
-
-This should probably be fixed in monster_polymorph. I suggest
-that monster types with the NO_EXP flag (currently only the plant
-and fungus monsters) be made invalid target types for polymorph.
-Possibly this should only apply to shapeshifters, as it's kind of
-fun to zap something with a wand of polymorph and have it turn
-into a plant...
-
-* I've discovered another bug... It seems that some of the
-functions which should be checking all of the player's wielded
-or worn randarts for certain properties are still only checking
-weapons. In particular I notice that the "it prevents
-spellcasting" 'power' isn't being checked properly for armour
-at least... Could someone have a look at the code involved
-(it's either in the main input function or in the spellcasting
-function called from there) and change what I suspect is a simple
-call to randart_wpn_properties to a call to scan_randarts, which
-is what should be there?
-
-Could someone also check the teleport functions for the same
-problem? I think the "it prevents some forms of teleportation"
-power is working as advertised, but without access to the code
-or a debugging version I can't be entirely sure.
-
 * Sometimes when I target a spell like fireball, I can target a
 square that I can't see, and other times I can't.
 
@@ -171,12 +138,6 @@ that will light after waiting a turn.
 
 * Conjure flame should do damage at a constant rate, not when creatures
   in it move.
-
-* Geryon should only appear once
-
-* Sometimes fixed Runes aren't created (are destroyed?)
-
-* Multiple Orbs of Zot sometimes occur on the bottom level.
 
 * Friendly creatures become hostile... may occur when player loses
   invisibility while the creature is in view.

@@ -546,7 +546,10 @@
             strcpy(comm, "l    - ?");
             break;
          case 80:
-            strcpy(comm, "m/+  - create a (m)onster");
+            strcpy(comm, "m/+  - create a (m)onster by number");
+            break;
+         case 85:
+            strcpy(comm, "M    - create a (m)onster by name");
             break;
          case 90:
             strcpy(comm, "o/%%  - create an (o)bject");
@@ -561,7 +564,10 @@
             strcpy(comm, "X    - Receive a gift from (X)om");
             break;
          case 120:
-            strcpy(comm, "z    - cast any spell");
+            strcpy(comm, "z    - cast any spell by number");
+            break;
+         case 125:
+            strcpy(comm, "Z    - cast any spell by name");
             break;
          case 130:
             strcpy(comm, "$    - get heal + gold + xp");
@@ -762,7 +768,7 @@
             strcpy(comm, "Shift & 5 on keypad - rest 100 turns");
             break;
          case 451:
-            strcpy(comm, "Ctrl-X/S - (S)ave your game and exit");
+            strcpy(comm, "S - (S)ave your game and exit");
             break;
          case 462:
             strcpy(comm, "Ctrl-P - see old messages");
@@ -774,6 +780,9 @@
       #endif
          case 484:
             strcpy(comm, "Ctrl-A - toggle autopickup");
+            break;
+         case 488:
+            strcpy(comm, "Ctrl-X - Save game without query");
             break;
          case 493:
             strcpy(comm, "Ctrl & dir - door; untrap; attack");

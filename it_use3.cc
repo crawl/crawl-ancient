@@ -344,10 +344,17 @@
       int x_distance = abs(beam.target_x - you.x_pos);
       int y_distance = abs(beam.target_y - you.y_pos);
 
+          if (x_distance == 0 && y_distance == 0)
+          {
+        mpr("Why would you want to do that?");
+                return;
+          }
+
       if (   (x_distance > 2)
          || (y_distance > 2))
       {
          mpr( "Your weapon cannot reach that far!" );
+                 return;
       }
       else if (   beam.nothing != -1
               && mgrd[beam.target_x][beam.target_y] != MNG
@@ -371,23 +378,35 @@
             {
                int skill = weapon_skill(you.inv_class[you.equip[EQ_WEAPON]],
                                     you.inv_type[you.equip[EQ_WEAPON]]);
-               if (((skill * 3) + 5) < random2(100))
+               if (((skill * 3) + 5) > random2(100))
                {
                   mpr("You reach to attack!");
                   you_attack( mgrd[beam.target_x][beam.target_y], false );
+                                  return;
                }
                else
                {
                   mpr("You could not reach far enough!");
                   you_attack( mgrd[x_middle][y_middle], false );
+                                  return;
                }
             }
+                        else
+                        if (mgrd[beam.target_x][beam.target_y] != MNG)
+                                {
+                       mpr("You reach to attack!");
+                       you_attack( mgrd[beam.target_x][beam.target_y], false );
+                                   return;
+                                }
          }
          else
          {
             you_attack( mgrd[beam.target_x][beam.target_y], false );
+                    return;
          }
       }
+
+         mpr("You attack empty space.");
    }
 
    void invoke_wielded(void)

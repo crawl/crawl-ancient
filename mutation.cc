@@ -203,7 +203,7 @@ char *gain_mutation[][3] =
     {"You feel frail.", "You feel frail.", "You feel frail."},
     {"You feel robust.", "You feel robust.", "You feel robust."},
     {"You feel a strange anaesthesia.", "", ""},
-    {"You feel negative.", "", ""},
+    {"You feel negative.", "You feel negative.", "You feel negative."},
     {"A thousand chattering voices call out to you.", "", ""},
     {"Help is not far away!", "", ""},
     {"You smell fire and brimstone.", "", ""},
@@ -1259,11 +1259,21 @@ void demonspawn()
                 howm = 1;
             }
 
-            if (random2(3) == 0)
+            if (random2(4) == 0)
             {
-                whichm = MUT_COLD_RESISTANCE + random2(2);
+                whichm = MUT_POISON_RESISTANCE;
                 howm = 1;
-            }                   /* res fire or cold */
+            }
+            if (random2(4) == 0)
+            {
+                whichm = MUT_COLD_RESISTANCE;
+                howm = 1;
+            }
+            if (random2(4) == 0)
+            {
+                whichm = MUT_HEAT_RESISTANCE;
+                howm = 1;
+            }
             if (random2(5) == 0)
             {
                 whichm = MUT_ACUTE_VISION;
@@ -1289,7 +1299,7 @@ void demonspawn()
                 whichm = MUT_BREATHE_FLAMES;
                 howm = 2;
             }                   /* breathe fire */
-            if (random2(10) == 0)
+            if (random2(12) == 0)
             {
                 whichm = MUT_BLINK;
                 howm = 1;
@@ -1324,12 +1334,12 @@ void demonspawn()
                 whichm = MUT_BONEY_PLATES;
                 howm = 1 + random2(2);
             }                   /* bone plates */
-            if (random2(30) == 0)
+            if (random2(25) == 0)
             {
                 whichm = MUT_REPULSION_FIELD;
-                howm = 1 + random2(3);
+                howm = 2 + random2(2);
             }                   /* repulsion field */
-            if (random2(4) == 0)
+            if (random2(5) == 0)
             {
                 whichm = MUT_HORNS;
                 howm = 1 + random2(2);
@@ -1404,7 +1414,7 @@ void demonspawn()
         if (random2(10) == 0)
         {
             whichm = MUT_REGENERATION;
-            howm = 2;
+            howm = 2 + random2(2);
         }                       /* regenerate */
         if (random2(12) == 0)
         {

@@ -2361,7 +2361,7 @@ char mons_pickup(int i)
         // Nobody bothers to pick up rocks if they don't already have some.
         if (menv[i].inv[0] != 501 || mitm.quantity[igrd[menv[i].x][menv[i].y]] == 1)
             return 0;
-        if (mondamage(menv[i].type, 0) >= 7)
+        if (mondamage(menv[i].type, 0) >= 6)
             return 0; // monsters with powerful melee attacks don't bother
         menv[i].inv[1] = igrd[menv[i].x][menv[i].y];
         igrd[menv[i].x][menv[i].y] = mitm.link[igrd[menv[i].x][menv[i].y]];

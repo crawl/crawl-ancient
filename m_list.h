@@ -908,7 +908,7 @@
     54, 'o', MAGENTA, "orc wizard", M_SPELLCASTER,
         0, 10, 14, H_NORMAL, -5,
     {
-        10, 0, 0, 0
+        5, 0, 0, 0
     }
     ,
     {
@@ -1771,7 +1771,7 @@
     }
     ,
     {
-        10, 5, 5, 0
+        6, 5, 5, 0
     }
     ,14, 4, 6, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
 }
@@ -1785,7 +1785,7 @@
     }
     ,
     {
-        10, 3, 5, 0
+        6, 3, 5, 0
     }
     ,4, 12, 13, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
 }
@@ -1799,7 +1799,7 @@
     }
     ,
     {
-        10, 3, 5, 0
+        6, 3, 5, 0
     }
     ,2, 18, 25, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
 }
@@ -4620,7 +4620,7 @@
     }
     ,
     {
-        8, 5, 3, 0
+        6, 5, 3, 0
     }
     ,0, 7, 10, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
 }

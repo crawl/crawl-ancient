@@ -810,7 +810,7 @@ unknown:
             you.duration[DUR_BREATH_WEAPON] += random2(5) + 3 + random2(30 - you.experience_level);
         if (ability[abil_used] == ABIL_BREATHE_STEAM)
             you.duration[DUR_BREATH_WEAPON] /= 2;
-        you.hunger -= 200 + random2(100) + random2(100) - you.experience_level * random2(5);
+        you.hunger -= 200 + random2(50) + random2(50) - you.experience_level * random2(5);
         strcpy(info, "You feel slightly more hungry.");
         mpr(info);
         break;
@@ -914,7 +914,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hp -= 8;
         you.redraw_hit_points = 1;
-        you.hunger -= 200 + random2(300) + random2(300);
+        you.hunger -= 200 + random2(200) + random2(200);
         your_spells(SPELL_HELLFIRE, 100, 0);    // power (2nd number) is meaningless
 
         break;
@@ -932,7 +932,7 @@ unknown:
         }
         you.magic_points -= 9;
         you.redraw_magic_points = 1;
-        you.hunger -= 300 + random2(300) + random2(300);
+        you.hunger -= 200 + random2(300) + random2(300);
         torment();
         break;
 
@@ -976,7 +976,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hp -= 4;
         you.redraw_hit_points = 1;
-        you.hunger -= 100 + random2(100) + random2(100);
+        you.hunger -= 100 + random2(50) + random2(50);
         zapping(ZAP_CONTROL_DEMON, you.experience_level * 5, beam);
         break;
 

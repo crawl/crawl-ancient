@@ -887,16 +887,16 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
         switch (hands_required_for_weapon( item_class, item_type ))
         {
         case HANDS_ONE_HANDED:
-            description += " It is a one handed weapon.";
+            description += " It is a one handed weapon. ";
             break;
 
         case HANDS_ONE_OR_TWO_HANDED:
             description += " It can be used with one hand, or more "
-                    "effectively with two (if you're not using a shield).";
+                    "effectively with two (if you're not using a shield). ";
             break;
 
         case HANDS_TWO_HANDED:
-            description += " It is a two handed weapon.";
+            description += " It is a two handed weapon. ";
             break;
         }
     }
@@ -913,6 +913,32 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
         description += "$Speed multiplier (x10): ";
         append_value(description, property(0, item_type, 2), 1);
         description += "$";
+    }
+
+
+    if (item_dam % 30 < 25)
+    {
+    switch(item_dam / 30)
+        {
+            case DWPN_DWARVEN:
+                description += "It is well-crafted and very durable.$";
+                break;
+        }
+
+    if (item_type == WPN_BOW || item_type == WPN_SLING
+            || item_type == WPN_CROSSBOW || item_type == WPN_HAND_CROSSBOW)
+        switch(item_dam / 30)
+                {
+                case DWPN_DWARVEN:
+                    description += "It is most deadly when used with dwarven ammunition.$";
+                    break;
+                case DWPN_ELVEN:
+                    description += "It is most deadly when used with elven ammunition.$";
+                    break;
+                case DWPN_ORCISH:
+                    description += "It is most deadly when used with orcish ammunition.$";
+                    break;
+                }
     }
 
     if (item_dam >= 180)
@@ -1347,9 +1373,9 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
         case ARM_STEAM_DRAGON_ARMOUR:
             description += "A magical armour, made from the scales of a "
  "steam-breathing dragon. Although unlike the armour made from the scales "
- "of some larger dragons it does not provide its wearer with any special "
+ "of some larger dragons it does not provide its wearer with much in the way of special "
  "magical protection, it is extremely light and as supple as cloth. ";
-            break;
+            break; /* Actually, it protects from steam */
 
         case ARM_MOTTLED_DRAGON_HIDE:
             description += "The weirdly-patterned scaley skin of a mottled dragon. I suppose you could wear it if you really wanted to. ";
@@ -1358,10 +1384,10 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
         case ARM_MOTTLED_DRAGON_ARMOUR:
              description += "A magical armour made from the scales of a "
  "mottled dragon. Although unlike the armour made from the scales of some "
- "larger dragons it does not provide its wearer with any special magical "
+ "larger dragons it does not provide its wearer with much in the way of special magical "
  "protection, it is as light and relatively "
  "uncumbersome as leather armour. ";
-            break;
+            break; /* Protects from napalm */
 
         case ARM_STORM_DRAGON_HIDE:
             description += "The hide of a storm dragon, covered in extremely hard blue scales. I suppose you could wear it if you really wanted to. ";
@@ -1432,6 +1458,22 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
 
     if (item_id >= 2 && item_dam % 30 >= 25)
         randart_descpr(description, item_class, item_type, item_plus, item_plus2, item_dam);
+
+    if (item_dam % 30 < 25)
+    {
+        switch(item_dam / 30)
+                {
+                case DARM_ELVEN:
+                    description += "It is well-crafted and very light";
+                                        if (item_type == ARM_CLOAK || item_type == ARM_BOOTS)
+                                                description += ", and helps its wearer avoid being noticed";
+                                        description += ". ";
+                    break;
+                case DARM_DWARVEN:
+                    description += "It is well-crafted and very durable. ";
+                    break;
+                }
+    }
 
     if (item_id > 1 && (verbose == 1 || item_dam % 30 >= 25))
     {

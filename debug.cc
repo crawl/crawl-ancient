@@ -5,10 +5,11 @@
  *
  *  Change History (most recent first):
  *
- *               <3>     5/06/99        JDJ             Added TRACE.
- *               <2>     -/--/--        JDJ             Added a bunch od debugging macros.
- *                                                                      Old code is now #if WIZARD.
- *               <1>     -/--/--        LRH             Created
+ *               <4>     14/12/99       LRH             Added cast_spec_spell_name()
+ *               <3>     5/06/99        JDJ     Added TRACE.
+ *               <2>     -/--/--        JDJ     Added a bunch od debugging macros.
+ *                                                   Old code is now #if WIZARD.
+ *               <1>     -/--/--        LRH     Created
  */
 
 #include "AppHdr.h"
@@ -35,6 +36,7 @@
 #include "mstruct.h"
 #include "skills.h"
 #include "spell.h"
+#include "spells0.h"
 
 #ifndef WIZARD
   #define WIZARD
@@ -391,7 +393,7 @@ void cast_spec_spell()
 {
     char specs[3];
 
-    strcpy(info, "Cast which spell? ");
+    strcpy(info, "Cast which spell by number? ");
     mpr(info);
 
     specs[0] = getche();
@@ -399,6 +401,50 @@ void cast_spec_spell()
     specs[2] = getche();
 
     your_spells(atoi(specs), magic_ability(player_mag_abil(), you.intel), 0);
+}
+#endif
+
+
+//---------------------------------------------------------------
+//
+// cast_spec_spell_name
+//
+//---------------------------------------------------------------
+#ifdef WIZARD
+void cast_spec_spell_name()
+{
+    char specs[50];
+        char spname [60];
+
+    strcpy(info, "Cast which spell by name? ");
+    mpr(info);
+
+#if defined(LINUX)
+    echo();
+    getstr(specs);
+    noecho();
+#elif defined(MAC)
+    getstr(specs, sizeof(specs));
+#else
+    gets(specs);
+#endif
+
+        int i = 0;
+
+        for (i = 0; i < 250; i ++)
+        {
+        spell_name(i, spname);
+                if (strstr(strlwr(spname), strlwr(specs)) != NULL)
+                {
+                    your_spells(i, magic_ability(player_mag_abil(), you.intel), 0);
+                        return;
+                }
+
+        }
+
+        mpr("I couldn't find that spell.");
+        if (random2(20) == 0) mpr("Maybe you should go back to WIZARD school.");
+
 }
 #endif
 
@@ -413,7 +459,7 @@ void create_spec_monster()
 {
     char specs[3];
 
-    strcpy(info, "Create which monster? ");
+    strcpy(info, "Create which monster by number? ");
     mpr(info);
 
     specs[0] = getche();
@@ -422,6 +468,50 @@ void create_spec_monster()
 
     create_monster(atoi(specs), 0, 0, you.x_pos, you.y_pos, MHITNOT, 250);
 }
+
+
+
+//---------------------------------------------------------------
+//
+// cast_spec_spell_name
+//
+//---------------------------------------------------------------
+void create_spec_monster_name()
+{
+    char specs[50];
+        char spname [60];
+
+        mpr("(Hint: 'generated' names, eg 'orc zombie', won't work)");
+    mpr("Create which monster by name? ");
+
+#if defined(LINUX)
+    echo();
+    getstr(specs);
+    noecho();
+#elif defined(MAC)
+    getstr(specs, sizeof(specs));
+#else
+    gets(specs);
+#endif
+
+        int i = 0;
+
+        for (i = 0; i < 500; i ++)
+        {
+                moname(i, 0, 1, 100, spname);
+                if (strstr(strlwr(spname), strlwr(specs)) != NULL)
+                {
+                    create_monster(i, 0, 0, you.x_pos, you.y_pos, MHITNOT, 250);
+                        return;
+                }
+
+        }
+
+        mpr("I couldn't find that monster.");
+        if (random2(20) == 0) mpr("Maybe it's hiding.");
+
+}
+
 
 
 //---------------------------------------------------------------
@@ -441,6 +531,10 @@ void level_travel()
     specs[2] = 0;
 
     you.your_level = atoi(specs);
+
+        mpr("Your level has been reset.");
+        mpr("Enter a staircase for more obvious effects.");
+
 }
 
 

@@ -841,8 +841,6 @@
    char recharge_wand(void)
    {
 
-    // note that the scroll of recharging also recharges weapons of electrocution; see the scroll function
-
       if (you.equip[EQ_WEAPON] == -1)
       {
          return 0;
@@ -859,14 +857,10 @@
       if (you.inv_type[you.equip[EQ_WEAPON]] == WAND_FIRE || you.inv_type[you.equip[EQ_WEAPON]] == WAND_COLD)
          charge_gain = 5;
 
-      if (you.inv_type
-         [you.equip
-         [EQ_WEAPON]] == WAND_FIREBALL || you.inv_type
-         [you.equip
-         [EQ_WEAPON]] == WAND_LIGHTNING ||
-         you.
-         inv_type[you.equip[EQ_WEAPON]] ==
-         WAND_DRAINING)
+      if (you.inv_type[you.equip[EQ_WEAPON]] == WAND_FIREBALL
+                 || you.inv_type[you.equip[EQ_WEAPON]] == WAND_LIGHTNING
+                 || you.inv_type[you.equip[EQ_WEAPON]] == WAND_DRAINING
+                 || you.inv_type[you.equip[EQ_WEAPON]] == WAND_HEALING)
          charge_gain = 4;
 
       item_name(you.inv_plus2[you.equip[EQ_WEAPON]], you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON

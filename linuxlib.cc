@@ -12,7 +12,7 @@
  *      <3>     99/06/18        BCR     moved CHARACTER_SET #define to AppHdr.h
  *      <2>     99/05/12        BWR     Tchars, signals, solaris support
  *
- *      <1>      -/--/--        ?       Created
+ *      <1>      -/--/--   Svante Gerhard    Created
  *
  */
 

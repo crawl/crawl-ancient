@@ -345,19 +345,19 @@ spec_query2:
     cprintf("n - Gnome                     x - Ghoul" EOL);
     cprintf("o - Ogre                      y - Kenku" EOL);
 #else
-    cprintf("a - Human                     n - Gnome" EOL);
-    cprintf("b - Elf                       o - Ogre" EOL);
-    cprintf("c - High Elf                  p - Troll" EOL);
-    cprintf("d - Grey Elf                  q - Ogre-Mage" EOL);
-    cprintf("e - Deep Elf                  r - Draconian" EOL);
-    cprintf("f - Sludge Elf                s - Centaur" EOL);
-    cprintf("g - Hill Dwarf                t - Demigod" EOL);
-    cprintf("h - Mountain Dwarf            u - Spriggan" EOL);
-    cprintf("i - Halfling                  v - Minotaur" EOL);
-    cprintf("j - Hill Orc                  w - Demonspawn" EOL);
-    cprintf("k - Kobold                    x - Ghoul" EOL);
-    cprintf("l - Mummy                     y - Kenku" EOL);
-    cprintf("m - Naga" EOL);
+    cprintf("a - Human                     b - Elf" EOL);
+    cprintf("c - High Elf                  d - Grey Elf" EOL);
+    cprintf("e - Deep Elf                  f - Sludge Elf" EOL);
+    cprintf("g - Hill Dwarf                h - Mountain Dwarf" EOL);
+    cprintf("i - Halfling                  j - Hill Orc" EOL);
+    cprintf("k - Kobold                    l - Mummy" EOL);
+    cprintf("m - Naga                      n - Gnome" EOL);
+    cprintf("o - Ogre                      p - Troll" EOL);
+    cprintf("q - Ogre-Mage                 r - Draconian" EOL);
+    cprintf("s - Centaur                   t - Demigod" EOL);
+    cprintf("u - Spriggan                  v - Minotaur" EOL);
+    cprintf("w - Demonspawn                x - Ghoul" EOL);
+    cprintf("y - Kenku" EOL);
 #endif
 
     cprintf(EOL "? - Random                    X - Quit" EOL);
@@ -612,18 +612,21 @@ switch_start:
 
     case 'q':
         you.species = SP_OGRE_MAGE;     // ogre mage
-        you.strength = 8;
-        you.intel = 6;
-        you.dex = 2;
+        you.strength = 9;
+        you.intel = 7;
+        you.dex = 3;
         break;
 
     case 'r':                           // draconian
-        you.strength = 7;
+        you.strength = 9;
         you.intel = 6;
         you.dex = 2;
 
 #ifdef ALLOW_DRACONIAN_TYPE_SELECTION
-
+/*
+Note - this is a cheat. Draconians are supposed to be random (or why would
+the game go to such effort to conceal their type until maturity?)
+*/
         clrscr();
         cprintf("What type of draconian are you?" EOL EOL);
 
@@ -1734,13 +1737,13 @@ getkey:
         {
             you.inv_quantity[0] = 1;
             you.inv_class[0] = OBJ_WEAPONS;
-            you.inv_type[0] = WPN_HAND_AXE;
+            you.inv_type[0] = WPN_AXE;
             you.inv_plus[0] = 50;
             you.inv_plus2[0] = 50;
             you.inv_dam[0] = 0;
             you.inv_colour[0] = LIGHTCYAN;
 
-            you.inv_quantity[1] = 1;
+/*            you.inv_quantity[1] = 1;
             you.inv_class[1] = OBJ_WEAPONS;
             you.inv_type[1] = WPN_SPEAR;
             you.inv_plus[1] = 50;
@@ -1762,7 +1765,7 @@ getkey:
             you.inv_plus[3] = 50;
             you.inv_plus2[3] = 50;
             you.inv_dam[3] = 0;
-            you.inv_colour[3] = LIGHTCYAN;
+            you.inv_colour[3] = LIGHTCYAN;*/
 
 
             you.inv_quantity[4] = 1;
@@ -1809,7 +1812,7 @@ getkey:
             you.skills[SK_FIGHTING] += 3;
 
         you.skills[SK_AXES] = 3;
-        you.skills[SK_POLEARMS] = 1;
+        you.skills[SK_MACES_FLAILS] = 1;
         break;
 
     case JOB_HUNTER:
