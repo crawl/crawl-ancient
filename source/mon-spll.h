@@ -162,12 +162,12 @@
        MS_CONFUSE,
        MS_TELEPORT_OTHER  },
 
-    {  MST_ORC_SORCEROR,
+    {  MST_ORC_SORCERER,
        MS_FIRE_BOLT,
        MS_NEGATIVE_BOLT,
        MS_SUMMON_DEMON,
-       MS_BANISHMENT,
-       MS_HELLFIRE,
+       MS_PARALYSIS,
+       MS_ANIMATE_DEAD,
        MS_TELEPORT  },
 
     {  MST_STEAM_DRAGON,
@@ -522,12 +522,12 @@
        MS_POISON_BLAST,
        MS_TELEPORT  },
 
-    {  MST_DEEP_ELF_SORCEROR,
+    {  MST_DEEP_ELF_SORCERER,
        MS_NEGATIVE_BOLT,
-       MS_PARALYSIS,
+       MS_BANISHMENT,
        MS_HASTE,
        MS_SUMMON_DEMON,
-       MS_ANIMATE_DEAD,
+       MS_HELLFIRE,
        MS_TELEPORT  },
 
     {  MST_DEEP_ELF_DEATH_MAGE,

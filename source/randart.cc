@@ -820,8 +820,17 @@ void randart_wpn_properties( const item_def &item,
 
         if (launches_things(atype))
         {
-            proprt[RAP_BRAND] = ((random5(3) == 0) ? SPWPN_FLAME + random5(2)
-                                                   : SPWPN_NORMAL);
+            proprt[RAP_BRAND] = SPWPN_NORMAL;
+
+            if (random5(3) == 0)
+            {
+                int tmp = random5(20);
+
+                proprt[RAP_BRAND] = (tmp >= 18) ? SPWPN_SPEED :
+                                    (tmp >= 14) ? SPWPN_PROTECTION :
+                                    (tmp >= 10) ? SPWPN_VENOM
+                                                : SPWPN_FLAME + (tmp % 2);
+            }
         }
 
 
@@ -1600,8 +1609,8 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_MACE_OF_VARIABILITY:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_MACE;
-        item.plus  = random2(12) - 4;
-        item.plus2 = random2(12) - 4;
+        item.plus  = random2(16) - 4;
+        item.plus2 = random2(16) - 4;
         break;
 
     case SPWPN_GLAIVE_OF_PRUNE:
@@ -1626,17 +1635,10 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
         break;
 
     case SPWPN_SWORD_OF_POWER:
-        if (!one_chance_in(3) || force)
-        {
-            item.base_type = OBJ_WEAPONS;
-            item.sub_type = WPN_GREAT_SWORD;
-            item.plus  = 0; // set on wield
-            item.plus2 = 0; // set on wield
-        }
-        else
-        {
-            return (false);
-        }
+        item.base_type = OBJ_WEAPONS;
+        item.sub_type = WPN_GREAT_SWORD;
+        item.plus  = 0; // set on wield
+        item.plus2 = 0; // set on wield
         break;
 
     case SPWPN_KNIFE_OF_ACCURACY:

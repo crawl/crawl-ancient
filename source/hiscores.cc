@@ -197,7 +197,7 @@ void hiscores_print_list( int display_count, int format )
             textcolor(YELLOW);
 
         // print position (tracked implicitly by order score file)
-        snprintf( info, INFO_SIZE, "%3d.", i+1);
+        snprintf( info, INFO_SIZE, "%3d.", i + 1 );
         if (use_printf)
             printf(info);
         else
@@ -228,6 +228,21 @@ void hiscores_print_list( int display_count, int format )
     }
 }
 
+// Trying to supply an appropriate verb for the attack type. -- bwr
+static const char *const range_type_verb( const char *const aux )
+{
+    if (strncmp( aux, "Shot ", 5 ) == 0)                // launched
+        return ("shot");
+    else if (aux[0] == '\0'                             // unknown
+            || strncmp( aux, "Hit ", 4 ) == 0           // thrown
+            || strncmp( aux, "volley ", 7 ) == 0)       // manticore spikes
+    {
+        return ("hit from afar");
+    }
+
+    return ("blasted");                                 // spells, wands
+}
+
 void hiscores_format_single(char *buf, struct scorefile_entry &se)
 {
     char scratch[100];
@@ -254,15 +269,11 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
     int mon_type = se.death_source;
     int mon_number = se.mon_num;
 
+    // remember -- we have 36 characters (not including initial space):
     switch (se.death_type)
     {
     case KILLED_BY_MONSTER:
-        // GDL: here's an example of using final_hp.  Verbiage could be better.
-        // bwr: changed "blasted" since this is for melee
-        strcat( buf, (se.final_hp > -6)  ? " slain by "   :
-                     (se.final_hp > -14) ? " mangled by " :
-                     (se.final_hp > -22) ? " demolished by "
-                                         : " annihilated by " );
+        strcat( buf, " slain by " );
 
         // if death_source_name is non-null,  override lookup (names might have
         // changed!)
@@ -275,24 +286,30 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
 
     case KILLED_BY_POISON:
         //if (dam == -9999) strcat(buf, "an overload of ");
-        strcat( buf, " from poison" );
+        strcat( buf, " succumbed to poison" );
         break;
 
     case KILLED_BY_CLOUD:
         if (se.auxkilldata[0] == '\0')
-            strcat( buf, " by a cloud" );
+            strcat( buf, " engulfed by a cloud" );
         else
         {
-            snprintf( scratch, sizeof(scratch), " by a cloud of %s",
+            const int len = strlen( se.auxkilldata );
+
+            // Squeeze out "a cloud of" if required. -- bwr
+            snprintf( scratch, sizeof(scratch), " engulfed by %s%s",
+                      (len < 15) ? "a cloud of " : "",
                       se.auxkilldata );
+
             strcat( buf, scratch );
         }
         break;
 
-    // beam - beam[0].name is a local variable, so can't access it
-    // without horrible hacks
     case KILLED_BY_BEAM:
-        strcat( buf, " from afar by " );
+        // keeping this short to leave room for the deep elf spellcasters:
+        snprintf( scratch, sizeof(scratch), " %s by ",
+                  range_type_verb( se.auxkilldata ) );
+        strcat( buf, scratch );
 
         // if death_source_name is non-null,  override this
         if (se.death_source_name[0] != '\0')
@@ -331,7 +348,7 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
         break;
 
     case KILLED_BY_WEAKNESS:
-        strcat( buf, " too weak to continue" );
+        strcat( buf, " became too weak to continue" );
         break;
 
     case KILLED_BY_CLUMSINESS:
@@ -339,7 +356,9 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
         break;
 
     case KILLED_BY_TRAP:
-        strcat( buf, " killed by a trap" );
+        snprintf( scratch, sizeof(scratch), " triggered a%s trap",
+                 (se.auxkilldata[0] != '\0') ? se.auxkilldata : "" );
+        strcat( buf, scratch );
         break;
 
     case KILLED_BY_LEAVING:
@@ -351,7 +370,7 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
         break;
 
     case KILLED_BY_QUITTING:
-        strcat( buf, " quit" );
+        strcat( buf, " quit the game" );
         break;
 
     case KILLED_BY_DRAINING:
@@ -375,8 +394,13 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
             strcat( buf, " killed by wild magic" );
         else
         {
-            snprintf( scratch, sizeof(scratch), " killed %s%s",
-                      (strncmp( se.auxkilldata, "by ", 3 ) != 0) ? "by " : "",
+            const bool need_by = (strncmp( se.auxkilldata, "by ", 3 ) == 0);
+            const int  len = strlen( se.auxkilldata );
+
+            // Squeeze out "killed" if we're getting a bit long. -- bwr
+            snprintf( scratch, sizeof(scratch), " %s%s%s",
+                      (len + 3 * (need_by) < 30) ? "killed" : "",
+                      (need_by) ? "by " : "",
                       se.auxkilldata );
 
             strcat( buf, scratch );
@@ -420,11 +444,11 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
         break;
 
     case KILLED_BY_FALLING_DOWN_STAIRS:
-        strcat( buf, " fell down some stairs" );
+        strcat( buf, " fell down a flight of stairs" );
         break;
 
     case KILLED_BY_ACID:
-        strcat( buf, " killed by acid" );
+        strcat( buf, " splashed by acid" );
         break;
 
     default:
@@ -436,7 +460,7 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
     {
         if (se.level_type == LEVEL_ABYSS)
         {
-            strcat(buf, " (Aby)");
+            strcat(buf, " (Abyss)");
             return;
         }
         else if (se.level_type == LEVEL_PANDEMONIUM)
@@ -446,12 +470,12 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
         }
         else if (se.level_type == LEVEL_LABYRINTH)
         {
-            strcat(buf, " (lab)");
+            strcat(buf, " (Lab)");
             return;
         }
         else if (se.branch == BRANCH_VESTIBULE_OF_HELL)
         {
-            strcat(buf, " (Ves)");  // Gate?
+            strcat(buf, " (Hell)");  // Gate? Vest?
             return;
         }
         else if (se.branch == BRANCH_HALL_OF_BLADES)
@@ -643,15 +667,15 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
 
     case KILLED_BY_POISON:
         //if (dam == -9999) strcat(buf, "an overload of ");
-        strcat( buf, "Killed by a lethal dose of poison" );
+        strcat( buf, "Succumbed to poison" );
         break;
 
     case KILLED_BY_CLOUD:
         if (se.auxkilldata[0] == '\0')
-            strcat( buf, "Killed by a cloud" );
+            strcat( buf, "Engulfed by a cloud" );
         else
         {
-            snprintf( scratch, sizeof(scratch), "Killed by a cloud of %s",
+            snprintf( scratch, sizeof(scratch), "Engulfed by a cloud of %s",
                       se.auxkilldata );
             strcat( buf, scratch );
         }
@@ -716,7 +740,7 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
         break;
 
     case KILLED_BY_TRAP:
-        snprintf( scratch, sizeof(scratch), "Killed by a%s trap",
+        snprintf( scratch, sizeof(scratch), "Killed by triggering a%s trap",
                  (se.auxkilldata[0] != '\0') ? se.auxkilldata : "" );
         strcat( buf, scratch );
         needs_damage = true;
@@ -821,7 +845,7 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
         break;
 
     case KILLED_BY_ACID:
-        strcat( buf, "Killed by acid" );
+        strcat( buf, "Splashed by acid" );
         needs_damage = true;
         break;
 
@@ -1306,6 +1330,9 @@ static time_t hs_nextdate(char *&inbuf)
     struct tm  date;
 
     hs_nextstring( inbuf, buff );
+
+    if (strlen( buff ) < 15)
+        return (static_cast<time_t>(0));
 
     date.tm_year = val_char( buff[0] ) * 1000 + val_char( buff[1] ) * 100
                     + val_char( buff[2] ) * 10 + val_char( buff[3] ) - 1900;

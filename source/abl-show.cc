@@ -824,7 +824,11 @@ bool activate_ability(void)
         break;
 
     case ABIL_ZIN_PESTILENCE:
-        summon_swarm( you.skills[SK_INVOCATIONS] * 8, true );
+        mpr( "You call forth a swarm of pestilential beasts!" );
+
+        if (!summon_swarm( you.skills[SK_INVOCATIONS] * 8, false, true ))
+            mpr( "Nothing seems to have answered your call." );
+
         exercise( SK_INVOCATIONS, 2 + random2(4) );
         break;
 

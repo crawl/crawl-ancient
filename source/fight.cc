@@ -1247,6 +1247,8 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         else
         {
             // handle special brand damage (unarmed or armed non-staff ego):
+            int res = 0;
+
             switch (melee_brand)
             {
             case SPWPN_NORMAL:
@@ -1254,9 +1256,19 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
             case SPWPN_FLAMING:
                 specdam = 0;
-                if (mons_res_fire(defender) == 0)
+
+                res = mons_res_fire(defender);
+                if (ur_armed && you.inv[weapon].special == SPWPN_SWORD_OF_CEREBOV)
+                {
+                    if (res < 3 && res > 0)
+                        res = 0;
+                    else if (res == 0)
+                        res = -1;
+                }
+
+                if (res == 0)
                     specdam = random2(damage_done) / 2 + 1;
-                else if (mons_res_fire(defender) < 0)
+                else if (res < 0)
                     specdam = random2(damage_done) + 1;
 
                 if (specdam)
@@ -1277,9 +1289,11 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
             case SPWPN_FREEZING:
                 specdam = 0;
-                if (mons_res_cold(defender) == 0)
+
+                res = mons_res_cold(defender);
+                if (res == 0)
                     specdam = 1 + random2(damage_done) / 2;
-                else if (mons_res_cold(defender) < 0)
+                else if (res < 0)
                     specdam = 1 + random2(damage_done);
 
                 if (specdam)
@@ -1493,7 +1507,8 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
         /* remember, the hydra function sometimes skips straight to mons_dies */
 #if DEBUG_DIAGNOSTICS
-        snprintf( info, INFO_SIZE, "melee special damage: %d", specdam );
+        snprintf( info, INFO_SIZE, "brand: %d; melee special damage: %d",
+                  melee_brand, specdam );
         mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
@@ -2597,6 +2612,9 @@ void monster_attack(int monster_attacking)
                 specdam = 0;
                 resistValue = player_res_fire();
 
+                if (itdam == SPWPN_SWORD_OF_CEREBOV)
+                    resistValue -= 1;
+
                 if (resistValue > 0)
                 {
                     damage_taken += (random2(damage_taken) / 2 + 1) /
@@ -3373,8 +3391,11 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                 case SPWPN_FLAMING:
                     specdam = 0;
 
-                    if (mons_res_fire(defender) <= 0)
+                    if (itdam == SPWPN_SWORD_OF_CEREBOV
+                        || mons_res_fire(defender) <= 0)
+                    {
                         specdam = 1 + random2(damage_taken);
+                    }
 
                     if (specdam)
                     {
@@ -3965,14 +3986,14 @@ static void stab_message( struct monsters *defender, int stab_bonus )
             }
             else
             {
-                snprintf( info, INFO_SIZE, "You catch %s momentarily offguard.",
+                snprintf( info, INFO_SIZE, "You catch %s momentarily off-guard.",
                           ptr_monam(defender, DESC_NOCAP_THE) );
             }
             break;
         case 2:     // confused/fleeing
             if (r<4)
             {
-                snprintf( info, INFO_SIZE, "You catch %s completely offguard!",
+                snprintf( info, INFO_SIZE, "You catch %s completely off-guard!",
                            ptr_monam(defender, DESC_NOCAP_THE) );
             }
             else

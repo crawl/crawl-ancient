@@ -27,7 +27,6 @@ itemname.o \
 items.o \
 lev-pand.o \
 libutil.o \
-llist.o \
 macro.o \
 maps.o \
 message.o \

@@ -1558,7 +1558,7 @@ void init_player(void)
     {
         you.skills[i] = 0;
         you.skill_points[i] = 0;
-        you.skill_order[i] = 1000;
+        you.skill_order[i] = MAX_SKILL_ORDER;
         you.practise_skill[i] = 1;
     }
 

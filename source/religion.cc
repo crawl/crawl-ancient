@@ -1700,8 +1700,8 @@ void divine_retribution( int god )
     }
 
     // Just the thought of retribution (getting this far) mollifies the
-    // god a few points... the punishment might reduce penance further.
-    dec_penance(god, 1 + random2(3));
+    // god by a point... the punishment might reduce penance further.
+    dec_penance( god, 1 + random2(3) );
 
     switch (god)
     {
@@ -1791,12 +1791,8 @@ void divine_retribution( int god )
             }
             else
             {
-                how_many = 2 + (you.experience_level / 5);
-
-                for (loopy = 0; loopy < how_many; loopy++)
-                {
-                    summon_swarm(0);    // power = 0 gives unfriendly
-                }
+                // god_gift == false gives unfriendly
+                summon_swarm( you.experience_level * 20, true, false );
                 simple_god_message(" sends a plague down upon you!", god);
             }
         }
@@ -2163,21 +2159,21 @@ void excommunication(void)
     {
     case GOD_XOM:
         Xom_acts( false, (you.experience_level * 2), true );
-        inc_penance(50);
+        inc_penance( old_god, 50 );
         break;
 
     case GOD_KIKUBAAQUDGHA:
         simple_god_message( " does not appreciate desertion!", old_god );
         miscast_effect( SPTYP_NECROMANCY, 5 + you.experience_level,
                         random2avg(88, 3), 100, "the malice of Kikubaaqudgha" );
-        inc_penance(30);
+        inc_penance( old_god, 30 );
         break;
 
     case GOD_YREDELEMNUL:
         simple_god_message( " does not appreciate desertion!", old_god );
         miscast_effect( SPTYP_NECROMANCY, 5 + you.experience_level,
                         random2avg(88, 3), 100, "the anger of Yredelemnul" );
-        inc_penance(30);
+        inc_penance( old_god, 30 );
         break;
 
     case GOD_VEHUMET:
@@ -2185,7 +2181,7 @@ void excommunication(void)
         miscast_effect( (coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING),
                         8 + you.experience_level, random2avg(98, 3), 100,
                         "the wrath of Vehumet" );
-        inc_penance(25);
+        inc_penance( old_god, 25 );
         break;
 
     case GOD_MAKHLEB:
@@ -2193,25 +2189,28 @@ void excommunication(void)
         miscast_effect( (coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING),
                         8 + you.experience_level, random2avg(98, 3), 100,
                         "the fury of Makhleb" );
-        inc_penance(25);
+        inc_penance( old_god, 25 );
         break;
 
     case GOD_TROG:
         simple_god_message( " does not appreciate desertion!", old_god );
 
         // Penence has to come before retribution to prevent "mollify"
-        inc_penance(50);
-        divine_retribution(GOD_TROG);
+        inc_penance( old_god, 50 );
+        divine_retribution( old_god );
         break;
 
     // these like to haunt players for a bit more than the standard
     case GOD_NEMELEX_XOBEH:
     case GOD_SIF_MUNA:
-        inc_penance(50);
+        inc_penance( old_god, 50 );
         break;
 
     default:
-        inc_penance(15);
+        inc_penance( old_god, 25 );
+        break;
+
+    case GOD_ELYVILON:  // never seeks revenge
         break;
     }
 }                               // end excommunication()

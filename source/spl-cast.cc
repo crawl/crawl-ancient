@@ -1198,7 +1198,7 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         break;
 
     case SPELL_SWARM:
-        summon_swarm(powc);
+        summon_swarm( powc, false, false );
         break;
 
     case SPELL_SUMMON_HORRIBLE_THINGS:
@@ -2920,7 +2920,6 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
         break;                  // end transmigrations
 
     case SPTYP_FIRE:
-#if 0
         switch (spec_effect)
         {
         case 0:         // just a harmless message
@@ -3036,7 +3035,6 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 scrolls_burn( 10, OBJ_SCROLLS );
                 break;
             case 1:
-#endif
                 mpr("There is a sudden and violent explosion of flames!");
 
                 beam.type = SYM_BURST;
@@ -3053,7 +3051,6 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
 
                 explosion(beam);
                 break;
-#if 0
 
             case 2:
                 mpr("You are covered in liquid fire!");
@@ -3063,7 +3060,6 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             break;
         }
         break;                  // end fire
-#endif
 
     case SPTYP_ICE:
         switch (spec_effect)

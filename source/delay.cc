@@ -73,7 +73,7 @@ void stop_delay( void )
     case DELAY_MEMORIZE:
         // Losing work here is okay... having to start from
         // scratch is a reasonable behaviour. -- bwr
-        mpr( "Your memorization is interupted." );
+        mpr( "Your memorization is interrupted." );
         you.delay_queue.pop();
         break;
 
@@ -82,7 +82,7 @@ void stop_delay( void )
         // the player to "attune to the rock".  If changed, the
         // the delay should be increased to reduce the power of
         // this spell. -- bwr
-        mpr( "Your mediation is interupted." );
+        mpr( "Your meditation is interrupted." );
         you.delay_queue.pop();
         break;
 

@@ -139,12 +139,6 @@ void display_overmap( void )
                               god_name( altars_present[j][i] ) );
 
                     print_one_highlighted_line( "    - an ", info, ".", WHITE );
-#if 0
-                    strcpy(info, "    - an altar to ");
-                    strcat(info, god_name(altars_present[j][i]));
-                    strcat(info, ".");
-                    print_one_simple_line( info, LIGHTGREY );
-#endif
                 }
             }
 

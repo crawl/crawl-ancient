@@ -15,6 +15,7 @@
 
 #include <stddef.h>  // For NULL
 
+#define MAX_SKILL_ORDER         100
 
 // last_updated 24may2000 {dlb}
 /* ***********************************************************************

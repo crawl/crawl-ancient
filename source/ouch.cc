@@ -984,7 +984,8 @@ void end_game( struct scorefile_entry &se )
 
     cprintf( EOL "Best Crawlers -" EOL );
 
-    hiscores_print_list( get_number_of_lines() - lines - 4 );
+    // "- 5" gives us an extra line in case the description wraps on a line.
+    hiscores_print_list( get_number_of_lines() - lines - 5 );
 
     // just to pause, actual value returned does not matter {dlb}
     get_ch();

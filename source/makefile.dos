@@ -13,7 +13,7 @@ OS_TYPE = DOS
 CFLAGS = -D$(OS_TYPE) $(EXTRA_FLAGS)
 LDFLAGS = -Bc:/djgpp/contrib/pdcurs22/lib
 INSTALLDIR = c:\games\crawl
-LIB = -lcurso -lpano
+# LIB = -lcurso -lpano
 
 all:            $(APPNAME)
 

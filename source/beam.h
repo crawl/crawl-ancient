@@ -21,7 +21,7 @@ dice_def calc_dice( int num_dice, int max_damage );
 /* ***********************************************************************
  * called from: bang - it_use2 - monstuff - mstuff2
  * *********************************************************************** */
-void fire_beam( struct bolt &pbolt, int inv_number = -1 );
+void fire_beam( struct bolt &pbolt, item_def *item = NULL );
 
 // last updated 19apr2001 {gdl}
 /* ***********************************************************************

@@ -566,7 +566,7 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " says, \"A dead adventurer is good adventurer.\"");
                 break;
             case 15:
-                strcat(info, " says, \"Comming here was your last mistake.\"");
+                strcat(info, " says, \"Coming here was your last mistake.\"");
                 break;
             case 16:
                 strcat(info, " shouts, \"Intruder!\"");
@@ -658,7 +658,8 @@ bool mons_speaks(struct monsters *monster)
             }
             break;          // end priests
 
-        case MONS_ORC_SORCEROR:   // hateful wizards, using strange powers
+        case MONS_ORC_SORCERER:   // hateful wizards, using strange powers
+        case MONS_DEEP_ELF_SORCERER:
         case MONS_WIZARD:
             switch (random2(19))
             {
@@ -1906,7 +1907,7 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " screams, \"You nasty! Big nasty!\"");
                 break;
             case 12:
-                strcat(info, " screams, \"No! No,no,no,no!\"");
+                strcat(info, " screams, \"No! No, no, no, no!\"");
                 break;
             case 13:
                 strcat(info, " screams, \"I no like you!\"");

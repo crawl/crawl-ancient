@@ -544,7 +544,7 @@ bool brand_weapon(int which_brand, int power)
 
         // This brand is insanely powerful, this isn't even really
         // a start to balancing it, but it needs something. -- bwr
-        miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100, "a weapon of distortion");
+        miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100, "a distortion effect");
         break;
 
     case SPWPN_DUMMY_CRUSHING:  //jmf: added for Maxwell's Silver Hammer
@@ -1343,13 +1343,14 @@ void summon_ice_beast_etc(int pow, int ibc)
     create_monster( ibc, numsc, beha, you.x_pos, you.y_pos, MHITYOU, 250 );
 }                               // end summon_ice_beast_etc()
 
-void summon_swarm(int pow, bool god_gift)
+bool summon_swarm( int pow, bool unfriendly, bool god_gift )
 {
     int thing_called = MONS_PROGRAM_BUG;        // error trapping {dlb}
-    int numsc = 1 + random2(pow) / 25 + random2(pow) / 25;
+    int numsc = 2 + random2(pow) / 10 + random2(pow) / 25;
+    bool summoned = false;
 
     // see stuff.cc - 12jan2000 {dlb}
-    numsc = stepdown_value(numsc, 2, 2, 6, 8);
+    numsc = stepdown_value( numsc, 2, 2, 6, 8 );
 
     for (int scount = 0; scount < numsc; scount++)
     {
@@ -1401,17 +1402,22 @@ void summon_swarm(int pow, bool god_gift)
             break;
         }                       // end switch
 
-        int behaviour;
-        if (random2(pow) > 7)
-            behaviour = (god_gift) ? BEH_GOD_GIFT : BEH_FRIENDLY;
-        else
-            behaviour = BEH_HOSTILE;
+        int behaviour = BEH_HOSTILE;  // default to unfriendly
 
-        create_monster( thing_called, ENCH_ABJ_III, behaviour,
-                        you.x_pos, you.y_pos, MHITYOU, 250 );
+        // Note: friendly, non-god_gift means spell.
+        if (god_gift)
+            behaviour = BEH_GOD_GIFT;
+        else if (!unfriendly && random2(pow) > 7)
+            behaviour = BEH_FRIENDLY;
+
+        if (create_monster( thing_called, ENCH_ABJ_III, behaviour,
+                            you.x_pos, you.y_pos, MHITYOU, 250 ))
+        {
+            summoned = true;
+        }
     }
 
-    mpr("You call forth a swarm of pestilential beasts!");
+    return (summoned);
 }                               // end summon_swarm()
 
 void summon_undead(int pow)

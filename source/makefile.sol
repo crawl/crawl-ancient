@@ -1513,38 +1513,8 @@ libw32c.o: /usr/include/sys/types.h /usr/include/time.h /usr/include/unistd.h
 libw32c.o: /usr/include/wchar.h /usr/include/xlocale.h
 libw32c.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
 libw32c.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h version.h
-llist.o: AppHdr.h liblinux.h libutil.h llist.h /usr/include/alloca.h
-llist.o: /usr/include/asm/errno.h /usr/include/assert.h
-llist.o: /usr/include/bits/confname.h /usr/include/bits/endian.h
-llist.o: /usr/include/bits/environments.h /usr/include/bits/errno.h
-llist.o: /usr/include/bits/fcntl.h /usr/include/bits/posix_opt.h
-llist.o: /usr/include/bits/pthreadtypes.h /usr/include/bits/sched.h
-llist.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
-llist.o: /usr/include/bits/stat.h /usr/include/bits/time.h
-llist.o: /usr/include/bits/types.h /usr/include/bits/waitflags.h
-llist.o: /usr/include/bits/waitstatus.h /usr/include/bits/wchar.h
-llist.o: /usr/include/bits/wordsize.h /usr/include/ctype.h
-llist.o: /usr/include/endian.h /usr/include/errno.h /usr/include/fcntl.h
-llist.o: /usr/include/features.h /usr/include/g++-3/alloc.h
-llist.o: /usr/include/g++-3/cassert /usr/include/g++-3/cctype
-llist.o: /usr/include/g++-3/cstddef /usr/include/g++-3/cstring
-llist.o: /usr/include/g++-3/iostream.h /usr/include/g++-3/iterator
-llist.o: /usr/include/g++-3/std/bastring.cc /usr/include/g++-3/std/bastring.h
-llist.o: /usr/include/g++-3/std/straits.h /usr/include/g++-3/stl_alloc.h
-llist.o: /usr/include/g++-3/stl_config.h /usr/include/g++-3/stl_iterator.h
-llist.o: /usr/include/g++-3/stl_relops.h /usr/include/g++-3/streambuf.h
-llist.o: /usr/include/g++-3/string /usr/include/_G_config.h
-llist.o: /usr/include/gconv.h /usr/include/getopt.h /usr/include/gnu/stubs.h
-llist.o: /usr/include/libio.h /usr/include/linux/errno.h
-llist.o: /usr/include/stdlib.h /usr/include/string.h /usr/include/sys/cdefs.h
-llist.o: /usr/include/sys/select.h /usr/include/sys/stat.h
-llist.o: /usr/include/sys/sysmacros.h /usr/include/sys/types.h
-llist.o: /usr/include/time.h /usr/include/unistd.h /usr/include/wchar.h
-llist.o: /usr/include/xlocale.h
-llist.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
-llist.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
 macro.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-macro.o: liblinux.h libmac.h libutil.h llist.h macro.h message.h
+macro.o: liblinux.h libmac.h libutil.h macro.h message.h
 macro.o: /usr/include/alloca.h /usr/include/asm/errno.h /usr/include/assert.h
 macro.o: /usr/include/bits/confname.h /usr/include/bits/endian.h
 macro.o: /usr/include/bits/environments.h /usr/include/bits/errno.h

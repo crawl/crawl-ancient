@@ -312,7 +312,7 @@ static void randart_descpr( std::string &description, const item_def &item )
         description += "$It speeds your metabolism. ";
 
     if (proprt[ RAP_MUTAGENIC ] > 3)
-        description += "$It partically glows with mutagenic radiation.";
+        description += "$It glows with mutagenic radiation.";
     else if (proprt[ RAP_MUTAGENIC ])
         description += "$It emits mutagenic radiations.";
 
@@ -1058,7 +1058,10 @@ static std::string describe_weapon( const item_def &item, char verbose)
                     "all of orcish descent. ";
                 break;
             case SPWPN_VENOM:
-                description += "It poisons the flesh of those it strikes. ";
+                if (launches_things( item.sub_type ))
+                    description += "It poisons the unbranded ammo it fires. ";
+                else
+                    description += "It poisons the flesh of those it strikes. ";
                 break;
             case SPWPN_PROTECTION:
                 description += "It protects the one who wields it against "
@@ -1069,8 +1072,16 @@ static std::string describe_weapon( const item_def &item, char verbose)
                     "it drains the life of those it strikes. ";
                 break;
             case SPWPN_SPEED:
-                description += "It allows its wielder to attack twice when "
-                    "they would otherwise have struck only once. ";
+                if (launches_things( item.sub_type ))
+                {
+                    description += "It allows its wielder to fire twice when "
+                           "they would otherwise have fired only once. ";
+                }
+                else
+                {
+                    description += "It allows its wielder to attack twice when "
+                           "they would otherwise have struck only once. ";
+                }
                 break;
             case SPWPN_VORPAL:
                 description += "It inflicts extra damage upon your enemies. ";
@@ -3445,7 +3456,7 @@ void describe_spell(int spelled)
             "flame, and keeps other fire clouds away from the caster.  "
             "This spell attunes the caster to the forces of fire, "
             "increasing their fire magic and giving protection from fire.  "
-            "However, it also makes them much more susceptable to the forces "
+            "However, it also makes them much more susceptible to the forces "
             "of ice. "; // well, if it survives the fire wall it's a risk -- bwr
         break;
 
@@ -4608,7 +4619,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         description += "An exalted servant of the orc god.";
         break;
 
-    case MONS_ORC_SORCEROR:
+    case MONS_ORC_SORCERER:
         description += "An orc who draws magical power from Hell.";
         break;
 
@@ -4990,7 +5001,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_GIANT_GECKO:
         description += "A lizard with pads on its toes allowing it to cling "
             "to walls and ceilings.  It's much larger than a normal gecko... "
-            "perhaps this has something to do with the dungeon's water quality?";
+            "perhaps it's something in the water?";
         break;
 
     case MONS_GIANT_IGUANA:
@@ -5323,7 +5334,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_AIR_ELEMENTAL:
         description += "A spirit drawn from the elemental plane of air. "
             "It exists in this world as a swirling vortex of air, "
-            "often disapating and reforming.";
+            "often dissipating and reforming.";
         break;
 
     case MONS_WATER_ELEMENTAL:
@@ -5516,7 +5527,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_DEEP_ELF_HIGH_PRIEST:
     case MONS_DEEP_ELF_DEMONOLOGIST:
     case MONS_DEEP_ELF_ANNIHILATOR:
-    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_SORCERER:
     case MONS_DEEP_ELF_DEATH_MAGE:
         description +=
             "One of the race of elves which inhabits this dreary cave.$";
@@ -5569,9 +5580,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
                 "and is better at them.";
             break;
 
-        case MONS_DEEP_ELF_SORCEROR:
-            description += "This mighty spellcaster draws "
-                "power from Hell.";
+        case MONS_DEEP_ELF_SORCERER:
+            description += "This mighty spellcaster draws power from Hell.";
             break;
 
         case MONS_DEEP_ELF_DEATH_MAGE:
@@ -5586,7 +5596,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_WHITE_IMP:
-        description += "A small and mischeivous minor demon. ";
+        description += "A small and mischievous minor demon. ";
         break;
 
     case MONS_LEMURE:
@@ -5921,7 +5931,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_SIGMUND:
-        description += "An evil and spritely old human, whose eyes "
+        description += "An evil and spry old human, whose eyes "
                "twinkle with madness.  Sigmund wields a nasty looking scythe.";
         break;
 
@@ -6081,7 +6091,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_PROGRAM_BUG:
     default:
         description += "If this monster is a \"program bug\", then it's "
-            "recomended that you save your game and reload.  Please report "
+            "recommended that you save your game and reload.  Please report "
             "monsters who masquerade as program bugs or run around the "
             "dungeon without a proper description to the authorities.";
         break;
@@ -6458,16 +6468,19 @@ void describe_god( int which_god, bool give_title )
         // because god isn't really protecting player - he only sometimes
         // saves his life (probably it shouldn't be displayed at all).
         // What about this ?
-        if (((which_god == GOD_ZIN) || (which_god == GOD_SHINING_ONE)
-             || (which_god == GOD_ELYVILON) || (which_god == GOD_OKAWARU)
-             || (which_god == GOD_YREDELEMNUL)) && (you.piety >= 30))
+        if ((which_god == GOD_ZIN
+                || which_god == GOD_SHINING_ONE
+                || which_god == GOD_ELYVILON
+                || which_god == GOD_OKAWARU
+                || which_god == GOD_YREDELEMNUL)
+            && you.piety >= 30)
         {
             snprintf( info, INFO_SIZE,
-                      "%s %s watches over you during your prayer." EOL,
+                      "%s %s watches over you during prayer." EOL,
                       god_name(which_god),
-                      (you.piety>=150) ? "carefully":   // > 4/5
-                      (you.piety>=90 ) ? "often" :      // > 2/3
-                                         "sometimes"    //less than 2:3
+                      (you.piety >= 150) ? "carefully":   // > 4/5
+                      (you.piety >=  90) ? "often" :      // > 2/3
+                                           "sometimes"    // less than 2:3
                     );
 
             cprintf(info);

@@ -1073,7 +1073,7 @@
 },
 
 {
-    SPELL_SLEEP, "Ensorcled Hibernation",
+    SPELL_SLEEP, "Ensorcelled Hibernation",
      SPTYP_ENCHANTMENT | SPTYP_ICE,
      2
 },

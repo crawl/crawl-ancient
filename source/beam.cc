@@ -72,7 +72,7 @@ static void sticky_flame_monster( int mn, bool source, int hurt_final );
 static bool affectsWalls(struct bolt &beam);
 static int affect(struct bolt &beam, int x, int y);
 static bool isBouncy(struct bolt &beam);
-static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y);
+static void beam_drop_object( struct bolt &beam, item_def *item, int x, int y );
 static bool beam_term_on_target(struct bolt &beam);
 static void beam_explodes(struct bolt &beam, int x, int y);
 static int bounce(int &step1, int &step2, int w1, int w2, int &n1, int &n2,
@@ -761,6 +761,7 @@ static void zappy( char z_type, int power, struct bolt &pbolt )
         pbolt.colour = LIGHTBLUE;
         pbolt.range = 9 + random2(12);
         pbolt.damage = calc_dice( 1, 15 + (power * 4) / 5 );
+        pbolt.damage.num = 0;                    // only does explosion damage
         pbolt.hit = 40;                                 // hit: 40
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;
@@ -1117,10 +1118,9 @@ static void zappy( char z_type, int power, struct bolt &pbolt )
 
 /*  NEW (GDL):
  *  Now handles all beamed/thrown items and spells,  tracers, and their effects.
- *  inv_number is used to determine what, if anything, was actually 'thrown',
- *  either from monster or player inventory.
+ *  item is used for items actually thrown/launched
  *
- *  if inv_number is -1,  there is no physical object being thrown that could
+ *  if item is NULL,  there is no physical object being thrown that could
  *  land on the ground.
  */
 
@@ -1149,7 +1149,7 @@ static void zappy( char z_type, int power, struct bolt &pbolt )
  */
 
 
-void fire_beam(struct bolt &pbolt, int inv_number)
+void fire_beam( struct bolt &pbolt, item_def *item )
 {
     int dx, dy;             // total delta between source & target
     int lx, ly;             // last affected x,y
@@ -1439,7 +1439,8 @@ void fire_beam(struct bolt &pbolt, int inv_number)
     // the beam has finished,  and terminated at tx, ty
 
     // leave an object, if applicable
-    beam_drop_object(pbolt, inv_number, tx, ty);
+    if (item)
+        beam_drop_object( pbolt, item, tx, ty );
 
     // check for explosion.  NOTE that for tracers, we have to make a copy
     // of target co'ords and then reset after calling this -- tracers should
@@ -2283,10 +2284,12 @@ static bool beam_term_on_target(struct bolt &beam)
     return (false);
 }
 
-static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
+static void beam_drop_object( struct bolt &beam, item_def *item, int x, int y )
 {
-    // conditions: inv_number >= 0, beam is missile and not tracer.
-    if (inv_number < 0 || beam.isTracer || beam.flavour != BEAM_MISSILE)
+    ASSERT( item != NULL );
+
+    // conditions: beam is missile and not tracer.
+    if (beam.isTracer || beam.flavour != BEAM_MISSILE)
         return;
 
     if (YOU_KILL(beam.thrower) // ie if you threw it.
@@ -2295,7 +2298,7 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
         int chance;
 
         // Using Throwing skill as the fletching/ammo preserving skill. -- bwr
-        switch (you.inv[inv_number].sub_type)
+        switch (item->sub_type)
         {
         case MI_NEEDLE: chance = 6 + you.skills[SK_THROWING] / 6; break;
         case MI_STONE:  chance = 3 + you.skills[SK_THROWING] / 4; break;
@@ -2309,17 +2312,14 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
             break;
         }
 
-        if (you.inv[inv_number].base_type != OBJ_MISSILES
-            || !one_chance_in(chance))
-        {
-            copy_item_to_grid( you.inv[inv_number], x, y, 1 );
-        }
+        if (item->base_type != OBJ_MISSILES || !one_chance_in(chance))
+            copy_item_to_grid( *item, x, y, 1 );
     }
     else if (MON_KILL(beam.thrower) // monster threw it.
             && (grd[x][y] != DNGN_LAVA && grd[x][y] != DNGN_DEEP_WATER)
             && coinflip())
     {
-        copy_item_to_grid( mitm[inv_number], x, y, 1 );
+        copy_item_to_grid( *item, x, y, 1 );
     }                           // if (thing_throw == 2) ...
 }
 
@@ -3873,6 +3873,7 @@ static void explosion1(struct bolt &pbolt)
         pbolt.type = SYM_BURST;
         pbolt.flavour = BEAM_ELECTRICITY;
         pbolt.colour = LIGHTCYAN;
+        pbolt.damage.num = 1;
         ex_size = 2;
     }
 

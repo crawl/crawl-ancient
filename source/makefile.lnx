@@ -9,7 +9,8 @@ include makefile.obj
 
 OBJECTS += liblinux.o
 
-CXX = /usr/local/bin/g++
+# CXX = /usr/local/bin/g++
+CXX = g++
 DELETE = rm -f
 COPY = cp
 OS_TYPE = LINUX
@@ -18,7 +19,7 @@ CFLAGS = -Wall -Wwrite-strings -Wstrict-prototypes \
             -Wmissing-prototypes -Wmissing-declarations \
             -g -D$(OS_TYPE) $(EXTRA_FLAGS)
 
-LDFLAGS = -static -L/usr/lib
+# LDFLAGS = -static
 MCHMOD = 2755
 # INSTALLDIR = /usr/games
 INSTALLDIR = /opt/crawl/bin
@@ -66,289 +67,406 @@ profile:	$(OBJECTS)
 
 # DO NOT DELETE
 
-
-abl-show.o: abl-show.h AppHdr.h beam.h debug.h defines.h direct.h effects.h
-abl-show.o: enum.h externs.h FixAry.h FixVec.h food.h it_use2.h liblinux.h
-abl-show.o: libutil.h message.h misc.h monplace.h player.h religion.h
-abl-show.o: skills2.h skills.h spells1.h spells2.h spells3.h spells4.h
-abl-show.o: spl-cast.h spl-util.h stuff.h transfor.h
-abl-show.o: view.h
-abyss.o: abyss.h AppHdr.h cloud.h debug.h defines.h dungeon.h enum.h
-abyss.o: externs.h FixAry.h FixVec.h items.h lev-pand.h liblinux.h libutil.h
-abyss.o: message.h monplace.h randart.h stuff.h
-acr.o: abl-show.h abyss.h AppHdr.h chardump.h command.h debug.h defines.h
-acr.o: delay.h describe.h direct.h dungeon.h effects.h enum.h externs.h
-acr.o: fight.h files.h FixAry.h FixVec.h food.h hiscores.h initfile.h
-acr.o: invent.h itemname.h items.h item_use.h it_use2.h it_use3.h lev-pand.h
-acr.o: liblinux.h libutil.h message.h misc.h monplace.h monstuff.h mon-util.h
-acr.o: mutation.h newgame.h ouch.h output.h overmap.h player.h randart.h
-acr.o: religion.h shopping.h skills2.h skills.h spells1.h spells3.h spells4.h
-acr.o: spl-book.h spl-cast.h spl-util.h stuff.h tags.h transfor.h
-acr.o:  view.h
-acr.o: wpn-misc.h
-beam.o: AppHdr.h beam.h cloud.h debug.h defines.h direct.h effects.h enum.h
-beam.o: externs.h FixAry.h FixVec.h itemname.h items.h it_use2.h liblinux.h
-beam.o: libutil.h message.h misc.h monplace.h monstuff.h mon-util.h mstuff2.h
-beam.o: ouch.h player.h religion.h skills.h spells1.h spells3.h spells4.h
-beam.o: stuff.h
-beam.o:  view.h
-chardump.o: AppHdr.h chardump.h debug.h defines.h describe.h direct.h enum.h
-chardump.o: externs.h FixAry.h FixVec.h itemname.h items.h liblinux.h
-chardump.o: libutil.h message.h mutation.h player.h religion.h shopping.h
-chardump.o: skills2.h spl-book.h spl-cast.h spl-util.h stuff.h
-chardump.o: version.h
-cloud.o: AppHdr.h cloud.h debug.h defines.h enum.h externs.h FixAry.h
-cloud.o: FixVec.h liblinux.h libutil.h message.h stuff.h
-command.o: AppHdr.h command.h debug.h defines.h direct.h enum.h externs.h
-command.o: FixAry.h FixVec.h invent.h itemname.h items.h item_use.h
-command.o: liblinux.h libutil.h message.h ouch.h spl-cast.h spl-util.h
-command.o: stuff.h
-command.o: version.h wpn-misc.h
-debug.o: AppHdr.h debug.h defines.h direct.h dungeon.h enum.h externs.h
-debug.o: FixAry.h FixVec.h invent.h itemname.h items.h liblinux.h libutil.h
-debug.o: message.h misc.h monplace.h mon-util.h mutation.h player.h randart.h
-debug.o: religion.h skills2.h skills.h spl-cast.h spl-util.h stuff.h
-decks.o: AppHdr.h debug.h decks.h defines.h direct.h effects.h enum.h
-decks.o: externs.h FixAry.h FixVec.h food.h items.h it_use2.h liblinux.h
-decks.o: libutil.h message.h misc.h monplace.h mutation.h ouch.h player.h
-decks.o: religion.h spells1.h spells3.h spl-cast.h stuff.h
-delay.o: AppHdr.h debug.h defines.h delay.h enum.h externs.h FixAry.h
-delay.o: FixVec.h food.h itemname.h items.h item_use.h it_use2.h liblinux.h
-delay.o: libutil.h message.h misc.h monstuff.h ouch.h output.h player.h
-delay.o: randart.h stuff.h
-describe.o: abl-show.h AppHdr.h debug.h defines.h describe.h direct.h enum.h
-describe.o: externs.h fight.h FixAry.h FixVec.h itemname.h liblinux.h
-describe.o: libutil.h message.h mon-util.h player.h randart.h religion.h
-describe.o: skills2.h spl-util.h stuff.h
-describe.o: wpn-misc.h
-direct.o: AppHdr.h debug.h defines.h describe.h direct.h enum.h externs.h
-direct.o: FixAry.h FixVec.h itemname.h liblinux.h libutil.h message.h
-direct.o: monstuff.h mon-util.h player.h shopping.h spells4.h stuff.h
-direct.o:  view.h
-dungeon.o: abyss.h AppHdr.h debug.h defines.h dungeon.h enum.h externs.h
-dungeon.o: FixAry.h FixVec.h itemname.h items.h liblinux.h libutil.h maps.h
-dungeon.o: message.h mon-pick.h monplace.h mon-util.h player.h randart.h
-dungeon.o: spl-book.h stuff.h
-dungeon.o: wpn-misc.h
-effects.o: AppHdr.h beam.h debug.h defines.h direct.h dungeon.h effects.h
-effects.o: enum.h externs.h FixAry.h FixVec.h itemname.h items.h liblinux.h
-effects.o: libutil.h message.h misc.h monplace.h monstuff.h mon-util.h
-effects.o: mutation.h newgame.h ouch.h player.h randart.h skills2.h spells3.h
-effects.o: spells4.h spl-book.h spl-util.h stuff.h
-effects.o:  view.h
-effects.o: wpn-misc.h
-fight.o: AppHdr.h beam.h cloud.h debug.h defines.h delay.h direct.h effects.h
-fight.o: enum.h externs.h fight.h FixAry.h FixVec.h food.h itemname.h items.h
-fight.o: it_use2.h liblinux.h libutil.h message.h misc.h mon-pick.h
-fight.o: monplace.h monstuff.h mon-util.h mstuff2.h mutation.h ouch.h
-fight.o: player.h randart.h religion.h skills.h spells1.h spells3.h spells4.h
-fight.o: spl-cast.h stuff.h
-fight.o:  view.h
-fight.o: wpn-misc.h
-files.o: AppHdr.h cloud.h debug.h defines.h dungeon.h enum.h externs.h
-files.o: files.h FixAry.h FixVec.h itemname.h items.h liblinux.h libutil.h
-files.o: message.h misc.h monstuff.h mon-util.h mstuff2.h player.h randart.h
-files.o: skills2.h stuff.h tags.h
-files.o: wpn-misc.h
-food.o: AppHdr.h debug.h defines.h delay.h enum.h externs.h FixAry.h FixVec.h
-food.o: food.h invent.h itemname.h items.h item_use.h it_use2.h liblinux.h
-food.o: libutil.h message.h misc.h mon-util.h mutation.h player.h religion.h
-food.o: skills2.h spells2.h stuff.h
-food.o: wpn-misc.h
-hiscores.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-hiscores.o: hiscores.h liblinux.h libutil.h message.h mon-util.h player.h
-hiscores.o: tags.h
-hiscores.o: view.h
-initfile.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-initfile.o: initfile.h items.h liblinux.h libutil.h message.h player.h
-initfile.o: stuff.h
-initfile.o: view.h
-insult.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-insult.o: insult.h liblinux.h libutil.h message.h mon-util.h stuff.h
-invent.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-invent.o: invent.h itemname.h items.h liblinux.h libutil.h message.h player.h
-invent.o: shopping.h stuff.h
-invent.o:  view.h
-itemname.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-itemname.o: itemname.h liblinux.h libutil.h message.h mon-util.h randart.h
-itemname.o: skills2.h stuff.h
-itemname.o: view.h wpn-misc.h
-items.o: AppHdr.h beam.h cloud.h debug.h defines.h delay.h effects.h enum.h
-items.o: externs.h FixAry.h FixVec.h invent.h itemname.h items.h item_use.h
-items.o: it_use2.h liblinux.h libutil.h message.h misc.h monplace.h
-items.o: monstuff.h mon-util.h mstuff2.h mutation.h player.h randart.h
+abl-show.o: AppHdr.h libutil.h abl-show.h
+abl-show.o: externs.h
+abl-show.o: defines.h enum.h
+abl-show.o: FixAry.h FixVec.h debug.h message.h beam.h effects.h food.h
+abl-show.o: it_use2.h macro.h misc.h monplace.h player.h religion.h skills.h
+abl-show.o: skills2.h spl-cast.h spl-util.h direct.h spells1.h spells2.h
+abl-show.o: spells3.h spells4.h stuff.h transfor.h view.h liblinux.h
+abyss.o: AppHdr.h libutil.h abyss.h
+abyss.o: externs.h
+abyss.o: defines.h enum.h FixAry.h FixVec.h
+abyss.o: debug.h
+abyss.o: message.h cloud.h monplace.h dungeon.h items.h lev-pand.h randart.h
+abyss.o: stuff.h
+acr.o: AppHdr.h libutil.h
+acr.o: externs.h defines.h enum.h FixAry.h FixVec.h
+acr.o: debug.h message.h abl-show.h abyss.h chardump.h command.h delay.h
+acr.o: describe.h direct.h dungeon.h effects.h fight.h files.h food.h
+acr.o: hiscores.h initfile.h invent.h item_use.h it_use2.h it_use3.h
+acr.o: itemname.h items.h lev-pand.h macro.h misc.h monplace.h monstuff.h
+acr.o: mon-util.h mutation.h newgame.h ouch.h output.h overmap.h player.h
+acr.o: randart.h religion.h shopping.h skills.h skills2.h spells1.h spells3.h
+acr.o: spells4.h spl-book.h spl-cast.h spl-util.h stuff.h tags.h transfor.h
+acr.o: view.h wpn-misc.h
+beam.o: AppHdr.h libutil.h beam.h externs.h
+beam.o: defines.h enum.h
+beam.o: FixAry.h FixVec.h
+beam.o: debug.h
+beam.o: message.h
+beam.o: cloud.h effects.h
+beam.o: it_use2.h itemname.h items.h misc.h monplace.h monstuff.h mon-util.h
+beam.o: mstuff2.h ouch.h player.h religion.h skills.h spells1.h direct.h
+beam.o: spells3.h spells4.h stuff.h view.h
+chardump.o: AppHdr.h libutil.h chardump.h
+chardump.o: externs.h
+chardump.o: defines.h enum.h FixAry.h FixVec.h debug.h message.h describe.h
+chardump.o: itemname.h items.h macro.h mutation.h player.h religion.h
+chardump.o: shopping.h skills2.h spl-book.h spl-cast.h spl-util.h direct.h
+chardump.o: stuff.h version.h
+cloud.o: AppHdr.h libutil.h externs.h
+cloud.o: defines.h enum.h
+cloud.o: FixAry.h FixVec.h
+cloud.o: debug.h
+cloud.o: message.h cloud.h stuff.h
+command.o: AppHdr.h libutil.h command.h
+command.o: externs.h
+command.o: defines.h enum.h FixAry.h FixVec.h
+command.o: debug.h message.h abl-show.h invent.h itemname.h item_use.h
+command.o: items.h ouch.h spl-cast.h spl-util.h direct.h stuff.h version.h
+command.o: wpn-misc.h
+debug.o: AppHdr.h libutil.h debug.h
+debug.o: externs.h
+debug.o: defines.h enum.h
+debug.o: FixAry.h FixVec.h message.h direct.h dungeon.h invent.h itemname.h
+debug.o: items.h misc.h monplace.h monstuff.h mon-util.h mutation.h player.h
+debug.o: randart.h religion.h skills.h skills2.h spl-cast.h spl-util.h
+debug.o: stuff.h
+decks.o: AppHdr.h libutil.h decks.h
+decks.o: externs.h
+decks.o: defines.h enum.h FixAry.h FixVec.h
+decks.o: debug.h
+decks.o: message.h effects.h food.h it_use2.h items.h misc.h monplace.h
+decks.o: mutation.h ouch.h player.h religion.h spells1.h direct.h spells3.h
+decks.o: spl-cast.h stuff.h
+delay.o: AppHdr.h libutil.h externs.h
+delay.o: defines.h enum.h
+delay.o: FixAry.h FixVec.h
+delay.o: debug.h
+delay.o: message.h
+delay.o: delay.h food.h
+delay.o: items.h itemname.h item_use.h it_use2.h misc.h monstuff.h ouch.h
+delay.o: output.h player.h randart.h spl-util.h direct.h stuff.h
+describe.o: AppHdr.h libutil.h describe.h externs.h
+describe.o: defines.h
+describe.o: enum.h FixAry.h FixVec.h
+describe.o: debug.h
+describe.o: message.h
+describe.o: abl-show.h
+describe.o: fight.h itemname.h macro.h mon-util.h player.h randart.h
+describe.o: religion.h skills2.h stuff.h wpn-misc.h spl-util.h direct.h
+direct.o: AppHdr.h libutil.h direct.h externs.h
+direct.o: defines.h enum.h
+direct.o: FixAry.h FixVec.h
+direct.o: debug.h
+direct.o: message.h
+direct.o: describe.h itemname.h monstuff.h
+direct.o: mon-util.h player.h shopping.h stuff.h spells4.h view.h macro.h
+dungeon.o: AppHdr.h libutil.h abyss.h defines.h
+dungeon.o: enum.h externs.h FixAry.h FixVec.h debug.h message.h dungeon.h
+dungeon.o: itemname.h items.h maps.h mon-util.h mon-pick.h monplace.h
+dungeon.o: player.h randart.h spl-book.h stuff.h wpn-misc.h
+effects.o: AppHdr.h libutil.h effects.h externs.h
+effects.o: defines.h
+effects.o: enum.h FixAry.h FixVec.h
+effects.o: debug.h
+effects.o: message.h
+effects.o: beam.h direct.h dungeon.h itemname.h
+effects.o: items.h misc.h monplace.h monstuff.h mon-util.h mutation.h
+effects.o: newgame.h ouch.h player.h randart.h skills2.h spells3.h spells4.h
+effects.o: spl-book.h spl-util.h stuff.h view.h wpn-misc.h
+fight.o: AppHdr.h libutil.h fight.h externs.h
+fight.o: defines.h enum.h
+fight.o: FixAry.h FixVec.h
+fight.o: debug.h
+fight.o: message.h
+fight.o: beam.h cloud.h delay.h effects.h
+fight.o: food.h it_use2.h items.h itemname.h macro.h misc.h monplace.h
+fight.o: mon-pick.h monstuff.h mon-util.h mstuff2.h mutation.h ouch.h
+fight.o: player.h randart.h religion.h skills.h spells1.h direct.h spells3.h
+fight.o: spells4.h spl-cast.h stuff.h view.h wpn-misc.h
+files.o: AppHdr.h libutil.h files.h FixAry.h FixVec.h
+files.o: debug.h
+files.o: externs.h
+files.o: defines.h enum.h message.h cloud.h dungeon.h itemname.h items.h
+files.o: misc.h monstuff.h mon-util.h mstuff2.h player.h randart.h skills2.h
+files.o: stuff.h tags.h wpn-misc.h
+food.o: AppHdr.h libutil.h food.h
+food.o: externs.h
+food.o: defines.h enum.h
+food.o: FixAry.h FixVec.h debug.h message.h delay.h invent.h items.h
+food.o: itemname.h item_use.h it_use2.h macro.h misc.h mon-util.h mutation.h
+food.o: player.h religion.h skills2.h spells2.h stuff.h wpn-misc.h
+hiscores.o: AppHdr.h
+hiscores.o: libutil.h externs.h
+hiscores.o: defines.h enum.h FixAry.h FixVec.h debug.h message.h hiscores.h
+hiscores.o: itemname.h mon-util.h player.h religion.h stuff.h tags.h view.h
+hiscores.o: skills2.h
+initfile.o: AppHdr.h libutil.h initfile.h
+initfile.o: externs.h
+initfile.o: defines.h enum.h FixAry.h FixVec.h
+initfile.o: debug.h message.h player.h stuff.h items.h view.h
+insult.o: AppHdr.h libutil.h
+insult.o: externs.h
+insult.o: defines.h enum.h FixAry.h FixVec.h debug.h
+insult.o: message.h insult.h mon-util.h stuff.h
+invent.o: AppHdr.h libutil.h invent.h
+invent.o: externs.h
+invent.o: defines.h enum.h FixAry.h FixVec.h
+invent.o: debug.h
+invent.o: message.h itemname.h items.h macro.h player.h shopping.h stuff.h
+invent.o: view.h
+itemname.o: AppHdr.h libutil.h itemname.h externs.h
+itemname.o: defines.h
+itemname.o: enum.h FixAry.h FixVec.h
+itemname.o: debug.h
+itemname.o: message.h
+itemname.o: macro.h mon-util.h randart.h
+itemname.o: skills2.h stuff.h wpn-misc.h view.h
+items.o: AppHdr.h libutil.h items.h externs.h
+items.o: defines.h enum.h
+items.o: FixAry.h FixVec.h
+items.o: debug.h
+items.o: message.h
+items.o: beam.h cloud.h delay.h effects.h
+items.o: invent.h it_use2.h item_use.h itemname.h misc.h monplace.h
+items.o: monstuff.h mstuff2.h mon-util.h mutation.h player.h randart.h
 items.o: religion.h shopping.h skills.h spl-cast.h stuff.h
-item_use.o: AppHdr.h beam.h debug.h defines.h delay.h describe.h direct.h
-item_use.o: effects.h enum.h externs.h fight.h FixAry.h FixVec.h food.h
-item_use.o: invent.h itemname.h items.h item_use.h it_use2.h it_use3.h
-item_use.o: liblinux.h libutil.h message.h misc.h monplace.h monstuff.h
-item_use.o: mon-util.h mstuff2.h ouch.h player.h randart.h religion.h
-item_use.o: skills2.h skills.h spells1.h spells2.h spells3.h spl-book.h
-item_use.o: spl-cast.h stuff.h transfor.h
-item_use.o: view.h wpn-misc.h
-it_use2.o: AppHdr.h beam.h debug.h defines.h effects.h enum.h externs.h
-it_use2.o: FixAry.h FixVec.h food.h itemname.h it_use2.h liblinux.h libutil.h
-it_use2.o: message.h misc.h mutation.h player.h randart.h religion.h
-it_use2.o: skills2.h spells2.h spl-cast.h stuff.h
-it_use2.o:  view.h
-it_use3.o: AppHdr.h beam.h debug.h decks.h defines.h direct.h effects.h
-it_use3.o: enum.h externs.h fight.h FixAry.h FixVec.h food.h itemname.h
-it_use3.o: items.h it_use2.h it_use3.h liblinux.h libutil.h message.h misc.h
-it_use3.o: monplace.h monstuff.h player.h randart.h religion.h skills2.h
-it_use3.o: skills.h spells1.h spells2.h spl-book.h spl-cast.h spl-util.h
-it_use3.o: stuff.h
-it_use3.o:  view.h
-it_use3.o: wpn-misc.h
-lev-pand.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-lev-pand.o: lev-pand.h liblinux.h libutil.h message.h mon-pick.h monplace.h
-lev-pand.o: stuff.h
+item_use.o: AppHdr.h libutil.h item_use.h
+item_use.o: externs.h
+item_use.o: defines.h enum.h FixAry.h FixVec.h
+item_use.o: debug.h message.h beam.h delay.h describe.h direct.h effects.h
+item_use.o: fight.h food.h invent.h it_use2.h it_use3.h items.h itemname.h
+item_use.o: misc.h monplace.h monstuff.h mstuff2.h mon-util.h ouch.h player.h
+item_use.o: randart.h religion.h skills.h skills2.h spells1.h spells2.h
+item_use.o: spells3.h spl-book.h spl-cast.h stuff.h transfor.h view.h
+item_use.o: wpn-misc.h
+it_use2.o: AppHdr.h libutil.h it_use2.h externs.h
+it_use2.o: defines.h
+it_use2.o: enum.h FixAry.h FixVec.h
+it_use2.o: debug.h
+it_use2.o: message.h beam.h effects.h food.h itemname.h
+it_use2.o: misc.h mutation.h player.h randart.h religion.h skills2.h
+it_use2.o: spells2.h spl-cast.h stuff.h view.h
+it_use3.o: AppHdr.h libutil.h it_use3.h
+it_use3.o: externs.h
+it_use3.o: defines.h enum.h FixAry.h FixVec.h
+it_use3.o: debug.h
+it_use3.o: message.h beam.h decks.h direct.h effects.h fight.h food.h items.h
+it_use3.o: it_use2.h itemname.h misc.h monplace.h monstuff.h player.h
+it_use3.o: randart.h religion.h skills.h skills2.h spells1.h spells2.h
+it_use3.o: spl-book.h spl-cast.h spl-util.h stuff.h view.h wpn-misc.h
+lev-pand.o: AppHdr.h libutil.h lev-pand.h externs.h
+lev-pand.o: defines.h
+lev-pand.o: enum.h FixAry.h FixVec.h
+lev-pand.o: debug.h
+lev-pand.o: message.h monplace.h mon-pick.h stuff.h
 libemx.o: libemx.h
-liblinux.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-liblinux.o: liblinux.h libutil.h message.h
-libmac.o: AppHdr.h debug.h defines.h files.h FixAry.h FixVec.h liblinux.h
-libmac.o: libmac.h libutil.h
-libutil.o: AppHdr.h liblinux.h libutil.h
-libw32c.o: AppHdr.h defines.h liblinux.h libutil.h
-libw32c.o:  version.h
-llist.o: AppHdr.h liblinux.h libutil.h llist.h
-macro.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-macro.o: liblinux.h libmac.h libutil.h llist.h macro.h message.h
-maps.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-maps.o: liblinux.h libutil.h maps.h message.h monplace.h stuff.h
-message.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-message.o: liblinux.h libutil.h message.h religion.h stuff.h
-message.o:  view.h
-misc.o: AppHdr.h cloud.h debug.h defines.h enum.h externs.h fight.h files.h
-misc.o: FixAry.h FixVec.h food.h itemname.h items.h it_use2.h lev-pand.h
-misc.o: liblinux.h libutil.h message.h misc.h monplace.h monstuff.h
-misc.o: mon-util.h ouch.h player.h shopping.h skills2.h skills.h spells3.h
-misc.o: spl-cast.h stuff.h transfor.h
-misc.o:  view.h
-mon-pick.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-mon-pick.o: liblinux.h libutil.h message.h mon-pick.h
-monplace.o: AppHdr.h debug.h defines.h dungeon.h enum.h externs.h FixAry.h
-monplace.o: FixVec.h liblinux.h libutil.h message.h misc.h mon-pick.h
-monplace.o: monplace.h monstuff.h mon-util.h player.h spells4.h stuff.h
-monspeak.o: AppHdr.h beam.h debug.h defines.h enum.h externs.h fight.h
-monspeak.o: FixAry.h FixVec.h insult.h itemname.h liblinux.h libutil.h
-monspeak.o: message.h misc.h monplace.h monspeak.h monstuff.h mon-util.h
-monspeak.o: mstuff2.h player.h spells2.h spells4.h stuff.h
-monspeak.o: view.h
-monstuff.o: AppHdr.h beam.h cloud.h debug.h defines.h enum.h externs.h
-monstuff.o: fight.h FixAry.h FixVec.h itemname.h items.h liblinux.h libutil.h
-monstuff.o: message.h misc.h monplace.h monspeak.h monstuff.h mon-util.h
-monstuff.o: mstuff2.h player.h randart.h religion.h spells2.h spells4.h
-monstuff.o: spl-cast.h stuff.h
-monstuff.o: view.h
-mon-util.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-mon-util.o: itemname.h liblinux.h libutil.h message.h mon-data.h mon-spll.h
-mon-util.o: monstuff.h mon-util.h player.h randart.h stuff.h
-mon-util.o: view.h
-mstuff2.o: AppHdr.h beam.h debug.h defines.h effects.h enum.h externs.h
-mstuff2.o: FixAry.h FixVec.h itemname.h items.h liblinux.h libutil.h
-mstuff2.o: message.h misc.h monplace.h monstuff.h mon-util.h mstuff2.h
-mstuff2.o: player.h spells2.h spells4.h spl-cast.h stuff.h
-mstuff2.o:  view.h
-mstuff2.o: wpn-misc.h
-mutation.o: AppHdr.h debug.h defines.h effects.h enum.h externs.h FixAry.h
-mutation.o: FixVec.h liblinux.h libutil.h message.h mutation.h ouch.h
-mutation.o: player.h skills2.h stuff.h transfor.h
-mutation.o: view.h
-newgame.o: AppHdr.h debug.h defines.h dungeon.h enum.h externs.h fight.h
-newgame.o: files.h FixAry.h FixVec.h itemname.h items.h liblinux.h libutil.h
-newgame.o: message.h newgame.h player.h randart.h skills2.h skills.h stuff.h
-newgame.o: version.h wpn-misc.h
-ouch.o: AppHdr.h chardump.h debug.h defines.h delay.h enum.h externs.h
-ouch.o: files.h FixAry.h FixVec.h hiscores.h invent.h itemname.h items.h
-ouch.o: liblinux.h libutil.h message.h mon-util.h ouch.h player.h randart.h
-ouch.o: religion.h shopping.h skills2.h spells4.h stuff.h
-output.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-output.o: itemname.h liblinux.h libutil.h message.h ouch.h output.h player.h
-overmap.o: AppHdr.h debug.h defines.h enum.h externs.h files.h FixAry.h
-overmap.o: FixVec.h liblinux.h libutil.h message.h overmap.h religion.h
-overmap.o: stuff.h
-overmap.o:  view.h
-player.o: AppHdr.h debug.h defines.h direct.h enum.h externs.h FixAry.h
-player.o: FixVec.h itemname.h liblinux.h libutil.h message.h misc.h
-player.o: mon-util.h mutation.h output.h player.h randart.h religion.h
-player.o: skills2.h spells4.h spl-util.h stuff.h
-player.o:  view.h
-player.o: wpn-misc.h
-randart.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-randart.o: itemname.h liblinux.h libutil.h message.h randart.h stuff.h
+liblinux.o: AppHdr.h libutil.h
+liblinux.o: liblinux.h defines.h enum.h externs.h
+liblinux.o: FixAry.h FixVec.h
+liblinux.o: debug.h message.h
+libutil.o: AppHdr.h libutil.h
+macro.o: AppHdr.h libutil.h macro.h
+macro.o: externs.h
+macro.o: defines.h enum.h FixAry.h FixVec.h debug.h
+macro.o: message.h initfile.h
+maps.o: AppHdr.h libutil.h maps.h FixVec.h
+maps.o: debug.h
+maps.o: enum.h monplace.h stuff.h externs.h
+maps.o: defines.h FixAry.h message.h
+message.o: AppHdr.h libutil.h message.h externs.h
+message.o: defines.h
+message.o: enum.h FixAry.h FixVec.h
+message.o: debug.h
+message.o: religion.h macro.h stuff.h view.h
+misc.o: AppHdr.h libutil.h misc.h externs.h
+misc.o: defines.h enum.h
+misc.o: FixAry.h FixVec.h
+misc.o: debug.h
+misc.o: message.h
+misc.o: cloud.h delay.h fight.h files.h food.h
+misc.o: it_use2.h items.h itemname.h lev-pand.h macro.h monplace.h mon-util.h
+misc.o: monstuff.h ouch.h player.h shopping.h skills.h skills2.h spells3.h
+misc.o: spl-cast.h stuff.h transfor.h view.h
+mon-pick.o: AppHdr.h libutil.h mon-pick.h externs.h
+mon-pick.o: defines.h
+mon-pick.o: enum.h FixAry.h FixVec.h
+mon-pick.o: debug.h
+mon-pick.o: message.h
+monplace.o: AppHdr.h libutil.h monplace.h enum.h FixVec.h
+monplace.o: debug.h
+monplace.o: externs.h
+monplace.o: defines.h
+monplace.o: FixAry.h message.h dungeon.h monstuff.h mon-pick.h mon-util.h
+monplace.o: misc.h player.h stuff.h spells4.h
+monspeak.o: AppHdr.h libutil.h monspeak.h externs.h
+monspeak.o: defines.h
+monspeak.o: enum.h FixAry.h FixVec.h
+monspeak.o: debug.h
+monspeak.o: message.h
+monspeak.o: beam.h fight.h insult.h itemname.h
+monspeak.o: misc.h monplace.h monstuff.h mon-util.h mstuff2.h player.h
+monspeak.o: spells2.h spells4.h stuff.h view.h
+monstuff.o: AppHdr.h libutil.h monstuff.h externs.h
+monstuff.o: defines.h
+monstuff.o: enum.h FixAry.h FixVec.h
+monstuff.o: debug.h
+monstuff.o: message.h
+monstuff.o: beam.h cloud.h dungeon.h fight.h
+monstuff.o: itemname.h items.h misc.h monplace.h monspeak.h mon-util.h
+monstuff.o: mstuff2.h player.h randart.h religion.h spl-cast.h spells2.h
+monstuff.o: spells4.h stuff.h view.h
+mon-util.o: AppHdr.h libutil.h mon-util.h externs.h
+mon-util.o: defines.h
+mon-util.o: enum.h FixAry.h FixVec.h
+mon-util.o: debug.h
+mon-util.o: message.h monstuff.h
+mon-util.o: itemname.h mstuff2.h player.h
+mon-util.o: randart.h stuff.h view.h mon-data.h mon-spll.h
+mstuff2.o: AppHdr.h libutil.h mstuff2.h externs.h
+mstuff2.o: defines.h
+mstuff2.o: enum.h FixAry.h FixVec.h
+mstuff2.o: debug.h
+mstuff2.o: message.h
+mstuff2.o: beam.h effects.h itemname.h items.h
+mstuff2.o: misc.h monplace.h monstuff.h mon-util.h player.h spells2.h
+mstuff2.o: spells4.h spl-cast.h stuff.h view.h wpn-misc.h
+mutation.o: AppHdr.h libutil.h mutation.h
+mutation.o: liblinux.h externs.h
+mutation.o: defines.h enum.h FixAry.h FixVec.h
+mutation.o: debug.h message.h effects.h macro.h ouch.h player.h skills2.h
+mutation.o: stuff.h transfor.h view.h
+newgame.o: AppHdr.h libutil.h newgame.h
+newgame.o: externs.h defines.h enum.h FixAry.h
+newgame.o: FixVec.h debug.h message.h abl-show.h dungeon.h files.h fight.h
+newgame.o: itemname.h items.h macro.h player.h randart.h skills.h skills2.h
+newgame.o: spl-util.h direct.h stuff.h version.h wpn-misc.h
+ouch.o: AppHdr.h libutil.h ouch.h
+ouch.o: externs.h defines.h
+ouch.o: enum.h FixAry.h FixVec.h debug.h message.h chardump.h delay.h files.h
+ouch.o: hiscores.h invent.h itemname.h items.h macro.h mon-util.h player.h
+ouch.o: randart.h religion.h shopping.h skills2.h spells4.h stuff.h view.h
+output.o: AppHdr.h libutil.h output.h
+output.o: externs.h
+output.o: defines.h enum.h FixAry.h FixVec.h
+output.o: debug.h
+output.o: message.h itemname.h ouch.h player.h
+overmap.o: AppHdr.h libutil.h overmap.h
+overmap.o: externs.h
+overmap.o: defines.h enum.h FixAry.h FixVec.h
+overmap.o: debug.h message.h files.h religion.h stuff.h view.h
+player.o: AppHdr.h libutil.h player.h externs.h
+player.o: defines.h enum.h
+player.o: FixAry.h FixVec.h
+player.o: debug.h
+player.o: message.h
+player.o: itemname.h macro.h
+player.o: misc.h mon-util.h mutation.h output.h randart.h religion.h
+player.o: skills2.h spl-util.h direct.h spells4.h stuff.h view.h wpn-misc.h
+randart.o: AppHdr.h libutil.h randart.h enum.h externs.h
+randart.o: defines.h
+randart.o: FixAry.h FixVec.h
+randart.o: debug.h
+randart.o: message.h
+randart.o: itemname.h stuff.h wpn-misc.h
 randart.o: unrand.h
-randart.o: wpn-misc.h
-religion.o: AppHdr.h beam.h debug.h decks.h defines.h describe.h direct.h
-religion.o: dungeon.h effects.h enum.h externs.h FixAry.h FixVec.h food.h
-religion.o: itemname.h items.h it_use2.h liblinux.h libutil.h message.h
-religion.o: misc.h monplace.h mutation.h newgame.h ouch.h player.h religion.h
-religion.o: shopping.h spells1.h spells2.h spells3.h spl-cast.h stuff.h
-shopping.o: AppHdr.h debug.h defines.h describe.h enum.h externs.h FixAry.h
-shopping.o: FixVec.h invent.h itemname.h items.h liblinux.h libutil.h
-shopping.o: message.h player.h randart.h shopping.h spl-book.h stuff.h
-skills2.o: AppHdr.h debug.h defines.h enum.h externs.h fight.h FixAry.h
-skills2.o: FixVec.h liblinux.h libutil.h message.h player.h randart.h
-skills2.o: religion.h skills2.h stuff.h
-skills2.o:  view.h
-skills2.o: wpn-misc.h
-skills.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-skills.o: liblinux.h libutil.h message.h player.h skills2.h skills.h stuff.h
-spells1.o: abyss.h AppHdr.h beam.h cloud.h debug.h defines.h direct.h enum.h
-spells1.o: externs.h FixAry.h FixVec.h invent.h itemname.h it_use2.h
-spells1.o: liblinux.h libutil.h message.h misc.h monplace.h monstuff.h
-spells1.o: mon-util.h player.h skills2.h spells1.h spells3.h spells4.h
-spells1.o: spl-util.h stuff.h
-spells1.o:  view.h
-spells1.o: wpn-misc.h
-spells2.o: AppHdr.h beam.h cloud.h debug.h defines.h direct.h effects.h
-spells2.o: enum.h externs.h FixAry.h FixVec.h itemname.h items.h liblinux.h
-spells2.o: libutil.h message.h misc.h monplace.h monstuff.h mon-util.h ouch.h
-spells2.o: player.h randart.h spells2.h spells4.h spl-cast.h stuff.h
-spells2.o:  view.h
-spells2.o: wpn-misc.h
-spells3.o: abyss.h AppHdr.h beam.h cloud.h debug.h defines.h delay.h direct.h
-spells3.o: enum.h externs.h FixAry.h FixVec.h itemname.h items.h it_use2.h
-spells3.o: liblinux.h libutil.h message.h misc.h mon-pick.h monplace.h
-spells3.o: monstuff.h mon-util.h player.h randart.h spells1.h spells3.h
-spells3.o: spl-cast.h spl-util.h stuff.h
-spells3.o:  view.h
-spells3.o: wpn-misc.h
-spells4.o: abyss.h AppHdr.h beam.h cloud.h debug.h defines.h delay.h
-spells4.o: describe.h direct.h dungeon.h effects.h enum.h externs.h FixAry.h
-spells4.o: FixVec.h invent.h itemname.h items.h it_use2.h liblinux.h
-spells4.o: libutil.h message.h misc.h monplace.h monstuff.h mon-util.h
-spells4.o: mstuff2.h ouch.h player.h randart.h religion.h skills.h spells1.h
-spells4.o: spells4.h spl-cast.h spl-util.h stuff.h
-spells4.o:  view.h
-spl-book.o: AppHdr.h debug.h defines.h delay.h direct.h enum.h externs.h
-spl-book.o: FixAry.h FixVec.h invent.h itemname.h items.h it_use3.h
-spl-book.o: liblinux.h libutil.h message.h player.h religion.h spl-book.h
-spl-book.o: spl-cast.h spl-util.h stuff.h
-spl-cast.o: AppHdr.h beam.h cloud.h debug.h defines.h direct.h effects.h
-spl-cast.o: enum.h externs.h fight.h FixAry.h FixVec.h food.h itemname.h
-spl-cast.o: it_use2.h liblinux.h libutil.h message.h monplace.h monstuff.h
-spl-cast.o: mutation.h ouch.h player.h religion.h skills.h spells1.h
-spl-cast.o: spells2.h spells3.h spells4.h spl-cast.h spl-util.h stuff.h
-spl-cast.o: transfor.h
+religion.o: AppHdr.h libutil.h religion.h enum.h
+religion.o: externs.h
+religion.o: defines.h FixAry.h FixVec.h debug.h
+religion.o: message.h abl-show.h beam.h decks.h describe.h dungeon.h
+religion.o: effects.h food.h it_use2.h itemname.h items.h misc.h monplace.h
+religion.o: mutation.h newgame.h ouch.h player.h shopping.h skills2.h
+religion.o: spells1.h direct.h spells2.h spells3.h spl-cast.h stuff.h
+shopping.o: AppHdr.h libutil.h shopping.h externs.h
+shopping.o: defines.h
+shopping.o: enum.h FixAry.h FixVec.h
+shopping.o: debug.h
+shopping.o: message.h
+shopping.o: describe.h invent.h items.h itemname.h
+shopping.o: macro.h player.h randart.h spl-book.h stuff.h
+skills2.o: AppHdr.h libutil.h skills2.h
+skills2.o: externs.h
+skills2.o: defines.h enum.h FixAry.h FixVec.h
+skills2.o: debug.h message.h fight.h player.h randart.h religion.h stuff.h
+skills2.o: wpn-misc.h view.h
+skills.o: AppHdr.h libutil.h skills.h
+skills.o: externs.h
+skills.o: defines.h enum.h
+skills.o: FixAry.h FixVec.h
+skills.o: debug.h
+skills.o: message.h macro.h player.h skills2.h stuff.h
+spells1.o: AppHdr.h libutil.h spells1.h externs.h
+spells1.o: defines.h
+spells1.o: enum.h FixAry.h FixVec.h
+spells1.o: debug.h
+spells1.o: message.h direct.h
+spells1.o: abyss.h beam.h
+spells1.o: cloud.h invent.h it_use2.h itemname.h misc.h monplace.h monstuff.h
+spells1.o: mon-util.h player.h skills2.h spells3.h spells4.h spl-util.h
+spells1.o: stuff.h view.h wpn-misc.h
+spells2.o: AppHdr.h libutil.h spells2.h
+spells2.o: externs.h
+spells2.o: defines.h enum.h
+spells2.o: FixAry.h FixVec.h debug.h message.h beam.h cloud.h direct.h
+spells2.o: effects.h itemname.h items.h misc.h monplace.h monstuff.h
+spells2.o: mon-util.h ouch.h player.h randart.h spells4.h spl-cast.h stuff.h
+spells2.o: view.h wpn-misc.h
+spells3.o: AppHdr.h libutil.h spells3.h
+spells3.o: externs.h
+spells3.o: defines.h enum.h
+spells3.o: FixAry.h FixVec.h debug.h message.h abyss.h beam.h cloud.h
+spells3.o: direct.h delay.h itemname.h items.h it_use2.h misc.h monplace.h
+spells3.o: mon-pick.h monstuff.h mon-util.h player.h randart.h spells1.h
+spells3.o: spl-cast.h spl-util.h stuff.h view.h wpn-misc.h
+spells4.o: AppHdr.h libutil.h
+spells4.o: externs.h
+spells4.o: defines.h enum.h FixAry.h FixVec.h
+spells4.o: debug.h message.h abyss.h beam.h cloud.h delay.h describe.h
+spells4.o: direct.h dungeon.h effects.h it_use2.h itemname.h items.h invent.h
+spells4.o: misc.h monplace.h monstuff.h mon-util.h mstuff2.h ouch.h player.h
+spells4.o: randart.h religion.h skills.h spells1.h spells4.h spl-cast.h
+spells4.o: spl-util.h stuff.h view.h
+spl-book.o: AppHdr.h libutil.h spl-book.h externs.h
+spl-book.o: defines.h
+spl-book.o: enum.h FixAry.h FixVec.h
+spl-book.o: debug.h
+spl-book.o: message.h
+spl-book.o: delay.h invent.h itemname.h items.h
+spl-book.o: it_use3.h player.h religion.h spl-cast.h spl-util.h direct.h
+spl-book.o: stuff.h
+spl-cast.o: AppHdr.h libutil.h spl-cast.h
+spl-cast.o: externs.h
+spl-cast.o: defines.h enum.h FixAry.h FixVec.h
+spl-cast.o: debug.h message.h beam.h cloud.h effects.h fight.h food.h
+spl-cast.o: it_use2.h itemname.h macro.h monplace.h monstuff.h mutation.h
+spl-cast.o: ouch.h player.h religion.h skills.h spells1.h direct.h spells2.h
+spl-cast.o: spells3.h spells4.h spl-book.h spl-util.h stuff.h transfor.h
 spl-cast.o: view.h
-spl-util.o: AppHdr.h debug.h defines.h direct.h enum.h externs.h FixAry.h
-spl-util.o: FixVec.h itemname.h liblinux.h libutil.h message.h monstuff.h
-spl-util.o: player.h spl-book.h spl-data.h spl-util.h stuff.h
-spl-util.o: view.h
-stuff.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-stuff.o: liblinux.h libutil.h message.h misc.h monstuff.h mon-util.h output.h
-stuff.o: skills2.h stuff.h
-stuff.o:  view.h
-tags.o: AppHdr.h debug.h defines.h enum.h externs.h files.h FixAry.h FixVec.h
-tags.o: itemname.h liblinux.h libutil.h message.h monstuff.h mon-util.h
-tags.o: randart.h skills.h stuff.h tags.h
-transfor.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-transfor.o: itemname.h items.h it_use2.h liblinux.h libutil.h message.h
-transfor.o: misc.h player.h skills2.h stuff.h transfor.h
-view.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-view.o: insult.h liblinux.h libutil.h message.h monstuff.h mon-util.h
-view.o: overmap.h player.h spells4.h stuff.h
-view.o:  view.h
-wpn-misc.o: AppHdr.h debug.h defines.h enum.h externs.h FixAry.h FixVec.h
-wpn-misc.o: liblinux.h libutil.h message.h
-wpn-misc.o: wpn-misc.h
+spl-util.o: AppHdr.h libutil.h spl-util.h enum.h direct.h externs.h
+spl-util.o: defines.h
+spl-util.o: FixAry.h FixVec.h
+spl-util.o: debug.h
+spl-util.o: message.h
+spl-util.o: stuff.h
+spl-util.o: itemname.h macro.h monstuff.h player.h spl-book.h view.h
+spl-util.o: spl-data.h
+stuff.o: AppHdr.h libutil.h stuff.h externs.h
+stuff.o: defines.h enum.h
+stuff.o: FixAry.h FixVec.h
+stuff.o: debug.h
+stuff.o: message.h
+stuff.o: liblinux.h macro.h misc.h monstuff.h
+stuff.o: mon-util.h output.h skills2.h view.h
+tags.o: AppHdr.h
+tags.o: libutil.h abl-show.h enum.h externs.h defines.h FixAry.h FixVec.h
+tags.o: debug.h message.h files.h itemname.h monstuff.h mon-util.h randart.h
+tags.o: skills.h skills2.h stuff.h tags.h
+transfor.o: AppHdr.h libutil.h transfor.h FixVec.h
+transfor.o: debug.h
+transfor.o: externs.h
+transfor.o: defines.h enum.h
+transfor.o: FixAry.h message.h it_use2.h itemname.h items.h misc.h player.h
+transfor.o: skills2.h stuff.h
+view.o: AppHdr.h libutil.h view.h externs.h
+view.o: defines.h enum.h
+view.o: FixAry.h FixVec.h
+view.o: debug.h
+view.o: message.h insult.h macro.h monstuff.h
+view.o: mon-util.h overmap.h player.h skills2.h stuff.h spells4.h
+wpn-misc.o: AppHdr.h libutil.h wpn-misc.h externs.h
+wpn-misc.o: defines.h
+wpn-misc.o: enum.h FixAry.h FixVec.h
+wpn-misc.o: debug.h
+wpn-misc.o: message.h

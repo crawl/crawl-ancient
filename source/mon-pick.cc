@@ -1137,7 +1137,7 @@ static int mons_mineorc_level(int mcls)
     case MONS_IRON_TROLL:
     case MONS_OGRE_MAGE:
     case MONS_ORC_HIGH_PRIEST:
-    case MONS_ORC_SORCEROR:
+    case MONS_ORC_SORCERER:
     case MONS_ORC_WARLORD:
     case MONS_ROCK_TROLL:
     case MONS_STONE_GIANT:
@@ -1179,7 +1179,7 @@ static int mons_mineorc_rare(int mcls)
     case MONS_FUNGUS:
     case MONS_ORC_KNIGHT:
     case MONS_ORC_PRIEST:
-    case MONS_ORC_SORCEROR:
+    case MONS_ORC_SORCERER:
     case MONS_ORC_WIZARD:
         return 10;
 
@@ -1796,7 +1796,7 @@ static int mons_hallelf_level(int mcls)
         mlev += 3;
         break;
 
-    case MONS_ORC_SORCEROR:
+    case MONS_ORC_SORCERER:
     case MONS_DEEP_ELF_PRIEST:
     case MONS_GLOWING_SHAPESHIFTER:
     case MONS_DEEP_ELF_KNIGHT:
@@ -1811,7 +1811,7 @@ static int mons_hallelf_level(int mcls)
     case MONS_DEEP_ELF_HIGH_PRIEST:
     case MONS_DEEP_ELF_DEMONOLOGIST:
     case MONS_DEEP_ELF_ANNIHILATOR:
-    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_SORCERER:
     case MONS_DEEP_ELF_DEATH_MAGE:
         mlev += 7;
         break;
@@ -1855,7 +1855,7 @@ static int mons_hallelf_rare(int mcls)
         return 20;
 
     case MONS_DEEP_ELF_DEMONOLOGIST:
-    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_SORCERER:
         return 17;
 
     case MONS_DEEP_ELF_ANNIHILATOR:
@@ -1867,7 +1867,7 @@ static int mons_hallelf_rare(int mcls)
         return 11;
 
     case MONS_DEEP_ELF_HIGH_PRIEST:
-    case MONS_ORC_SORCEROR:
+    case MONS_ORC_SORCERER:
     case MONS_GLOWING_SHAPESHIFTER:
         return 10;
 
@@ -2150,7 +2150,7 @@ static int mons_hallzot_level(int mcls)
     case MONS_DEEP_ELF_DEATH_MAGE:
     case MONS_DEEP_ELF_DEMONOLOGIST:
     case MONS_DEEP_ELF_HIGH_PRIEST:
-    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_SORCERER:
     case MONS_TENTACLED_MONSTROSITY:
         mlev += 3;
         break;
@@ -2191,7 +2191,7 @@ static int mons_hallzot_rare(int mcls)
     case MONS_DEEP_ELF_DEATH_MAGE:
     case MONS_DEEP_ELF_DEMONOLOGIST:
     case MONS_DEEP_ELF_HIGH_PRIEST:
-    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_SORCERER:
         return 29;
     case MONS_GUARDIAN_MUMMY:
     case MONS_ELECTRIC_GOLEM:
@@ -2393,7 +2393,7 @@ static int mons_standard_level(int mcls)
     case MONS_VAPOUR:
         return 22;
 
-    case MONS_ORC_SORCEROR:
+    case MONS_ORC_SORCERER:
     case MONS_SHINING_EYE:
         return 23;
 
@@ -2428,7 +2428,7 @@ static int mons_standard_level(int mcls)
     case MONS_DEEP_ELF_DEATH_MAGE:
     case MONS_DEEP_ELF_DEMONOLOGIST:
     case MONS_DEEP_ELF_HIGH_PRIEST:
-    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_SORCERER:
     case MONS_GOLDEN_DRAGON:
     case MONS_IRON_DRAGON:
     case MONS_QUICKSILVER_DRAGON:
@@ -2674,7 +2674,7 @@ static int mons_standard_rare(int mcls)
     case MONS_HELL_KNIGHT:
     case MONS_IRON_GOLEM:
     case MONS_OKLOB_PLANT:
-    case MONS_ORC_SORCEROR:
+    case MONS_ORC_SORCERER:
     case MONS_SHADOW_WRAITH:
     case MONS_STONE_GOLEM:
     case MONS_TITAN:
@@ -2712,7 +2712,7 @@ static int mons_standard_rare(int mcls)
     case MONS_DEEP_ELF_DEATH_MAGE:
     case MONS_DEEP_ELF_DEMONOLOGIST:
     case MONS_DEEP_ELF_PRIEST:
-    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_SORCERER:
     case MONS_GUARDIAN_NAGA:
         return 3;
 

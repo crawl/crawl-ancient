@@ -48,7 +48,6 @@
 #include "items.h"
 #include "macro.h"
 #include "mutation.h"
-#include "new.h"
 #include "player.h"
 #include "religion.h"
 #include "shopping.h"

@@ -1774,7 +1774,7 @@ static void input(void)
             break;
         case SPWPN_DISTORTION:
             strcat( info, " seems straighter." );
-            miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a weapon of distortion" );
+            miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a distortion effect" );
             break;
         default:
             strcat(info, " seems inexplicably less special.");
@@ -1892,7 +1892,7 @@ static void input(void)
         if (player_res_cold() < 0)
         {
             mpr( "You feel very cold." );
-            ouch( 2 + random2avg(13, 2), 0, KILLED_BY_WILD_MAGIC );
+            ouch( 2 + random2avg(13, 2), 0, KILLED_BY_FREEZING );
         }
     }
     else if (you.duration[DUR_CONDENSATION_SHIELD] == 1)

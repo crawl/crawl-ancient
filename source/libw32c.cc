@@ -10,6 +10,56 @@
  *
  */
 
+// WINDOWS INCLUDES GO HERE
+/*
+ * Exclude parts of WINDOWS.H that are not needed
+ */
+#define NOCOMM            /* Comm driver APIs and definitions */
+#define NOLOGERROR        /* LogError() and related definitions */
+#define NOPROFILER        /* Profiler APIs */
+#define NOLFILEIO         /* _l* file I/O routines */
+#define NOOPENFILE        /* OpenFile and related definitions */
+#define NORESOURCE        /* Resource management */
+#define NOATOM            /* Atom management */
+#define NOLANGUAGE        /* Character test routines */
+#define NOLSTRING         /* lstr* string management routines */
+#define NODBCS            /* Double-byte character set routines */
+#define NOKEYBOARDINFO    /* Keyboard driver routines */
+#define NOCOLOR           /* COLOR_* color values */
+#define NODRAWTEXT        /* DrawText() and related definitions */
+#define NOSCALABLEFONT    /* Truetype scalable font support */
+#define NOMETAFILE        /* Metafile support */
+#define NOSYSTEMPARAMSINFO /* SystemParametersInfo() and SPI_* definitions */
+#define NODEFERWINDOWPOS  /* DeferWindowPos and related definitions */
+#define NOKEYSTATES       /* MK_* message key state flags */
+#define NOWH              /* SetWindowsHook and related WH_* definitions */
+#define NOCLIPBOARD       /* Clipboard APIs and definitions */
+#define NOICONS           /* IDI_* icon IDs */
+#define NOMDI             /* MDI support */
+#define NOCTLMGR          /* Control management and controls */
+#define NOHELP            /* Help support */
+
+/*
+ * Exclude parts of WINDOWS.H that are not needed (Win32)
+ */
+#define WIN32_LEAN_AND_MEAN
+#define NONLS             /* All NLS defines and routines */
+#define NOSERVICE         /* All Service Controller routines, SERVICE_ equates, etc. */
+#define NOKANJI           /* Kanji support stuff. */
+#define NOMCX             /* Modem Configuration Extensions */
+#define _X86_                     /* target architecture */
+
+#include <excpt.h>
+#include <stdarg.h>
+#include <windef.h>
+#include <winbase.h>
+#include <wingdi.h>
+#include <winuser.h>
+#include <winnls.h>
+#include <wincon.h>
+
+// END -- WINDOWS INCLUDES
+
 #include <string.h>
 #ifdef __BCPLUSPLUS__
 #include <stdio.h>
@@ -17,6 +67,7 @@
 #include "AppHdr.h"
 #include "version.h"
 #include "defines.h"
+#include "view.h"
 
 char oldTitle[80];
 
@@ -36,12 +87,34 @@ static CHAR_INFO screen[80 * WIN_NUMBER_OF_LINES];
 static COORD screensize;
 #define SCREENINDEX(x,y) (x)+80*(y)
 static bool buffering = false;
+static const char *windowTitle = "Crawl " VERSION;
 
-// function prototype to make BCPP happy
-static WORD translatecolor(int col);
+// we can do straight translation of DOS color to win32 console color.
+#define WIN32COLOR(col) (WORD)(col)
 static void writeChar(char c);
 static void bFlush(void);
 static void _setcursortype_internal(int curstype);
+static void init_colors(void);
+static DWORD crawlColorData[16] =
+// BGR data, easier to put in registry
+{
+   0x00000000,  // BLACK
+   0x00ff00cd,  // BLUE
+   0x0046b964,  // GREEN
+   0x00b4b400,  // CYAN
+   0x000085ff,  // RED
+   0x00ee82ee,  // MAGENTA
+   0x005a6fcd,  // BROWN
+   0x00c0c0c0,  // LT GREY
+   0x00808080,  // DK GREY
+   0x00ff8600,  // LT BLUE
+   0x0000ff85,  // LT GREEN
+   0x00ffff00,  // LT CYAN
+   0x000000ff,  // LT RED
+   0x00bf7091,  // LT MAGENTA
+   0x0000ffff,  // YELLOW
+   0x00ffffff   // WHITE
+};
 
 //#define TIMING_INFO
 #ifdef TIMING_INFO
@@ -136,7 +209,7 @@ void writeChar(char c)
       return;
    }
 
-   int tc = translatecolor(current_color);
+   int tc = WIN32COLOR(current_color);
    pci = &screen[SCREENINDEX(cx,cy)];
 
    // is this a no-op?
@@ -232,6 +305,20 @@ void setStringInput(bool value)
    FlushConsoleInputBuffer( inbuf );
 }
 
+// this apparently only works for Win2K+ and ME+
+
+void init_colors(char *windowTitle)
+{
+   int i;
+
+   // look up the Crawl shortcut
+
+   // if found, modify the colortable entries in the NT_CONSOLE_PROPS
+   // structure.
+
+   // if not found, quit.
+}
+
 void init_libw32c(void)
 {
    inbuf = GetStdHandle( STD_INPUT_HANDLE );
@@ -243,8 +330,10 @@ void init_libw32c(void)
    }
 
    GetConsoleTitle( oldTitle, 78 );
-
    SetConsoleTitle( "Crawl " VERSION );
+
+   init_colors(oldTitle);
+
    // by default,  set string input to false:  use char-input only
    setStringInput( false );
    if (SetConsoleMode( outbuf, 0 ) == 0) {
@@ -387,7 +476,7 @@ void textcolor(int c)
    current_color = c;
 }
 
-static void cprintf(const char *s)
+static void cprintf_aux(const char *s)
 {
    // early out -- not initted yet
    if (outbuf == NULL)
@@ -603,76 +692,7 @@ void textbackground(int c)
    // do nothing
 }
 
-// Translate DOS colors.
-static WORD translatecolor(int col)
-{
-    // all we have to work with are:
-    // FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_RED, and FOREGROUND_INTENSITY
-
-    const WORD blue = FOREGROUND_BLUE;
-    const WORD green = FOREGROUND_GREEN;
-    const WORD red = FOREGROUND_RED;
-    const WORD bright = FOREGROUND_INTENSITY;
-
-    WORD tcol = 0;
-
-    switch (col)
-    {
-    case BLACK:
-        break;
-    case BLUE:
-        tcol = blue;
-        break;
-    case GREEN:
-        tcol = green;
-        break;
-    case CYAN:
-        tcol = blue | green;
-        break;
-    case RED:
-        tcol = red;
-        break;
-    case MAGENTA:
-        tcol = red;
-        break;
-    case BROWN:
-        tcol = red | green;
-        break;
-    case LIGHTGREY:
-        tcol = red | blue | green | bright;
-        break;
-    case DARKGREY:
-        tcol = red | blue | green;
-        break;
-    case LIGHTBLUE:
-        tcol = blue | bright;
-        break;
-    case LIGHTGREEN:
-        tcol = green | bright;
-        break;
-    case LIGHTCYAN:
-        tcol = blue | green | bright;
-        break;
-    case LIGHTRED:
-        tcol = red | bright;
-        break;
-    case LIGHTMAGENTA:
-        tcol = red | bright;
-        break;
-    case YELLOW:
-        tcol =  green | red | bright;
-        break;
-    case WHITE:
-        tcol = red | blue | green | bright;
-        break;
-    default:
-        tcol = green;
-        break;                  //mainly for debugging
-    }
-    return tcol;
-}
-
-DWORD getConsoleString(char *buf, DWORD maxlen)
+int getConsoleString(char *buf, int maxlen)
 {
    DWORD nread;
    // set console input to line mode
@@ -683,9 +703,9 @@ DWORD getConsoleString(char *buf, DWORD maxlen)
    _setcursortype_internal(_NORMALCURSOR);
 
    // set actual screen color to current color
-   SetConsoleTextAttribute( outbuf, translatecolor(current_color) );
+   SetConsoleTextAttribute( outbuf, WIN32COLOR(current_color) );
 
-   if (ReadConsole( inbuf, buf, maxlen-1, &nread, NULL) == 0)
+   if (ReadConsole( inbuf, buf, (DWORD)(maxlen-1), &nread, NULL) == 0)
       fputs("Error in ReadConsole()!", stderr);
 
    // terminate string,  then strip CRLF, replace with \0
@@ -708,7 +728,7 @@ DWORD getConsoleString(char *buf, DWORD maxlen)
    _setcursortype_internal(oldValue);
 
    // return # of bytes read
-   return nread;
+   return (int)nread;
 }
 
 bool setBuffering( bool value )

@@ -774,7 +774,12 @@ static char item_name_2( const item_def &item, char buff[ITEMNAME_SIZE],
             case SPWPN_FROST:
                 strncat(buff, (terse) ? " (frost)" : " of frost", ITEMNAME_SIZE );
                 break;          // bows/xbows
-                /* 13 - vamp */
+
+            case SPWPN_VAMPIRICISM:
+                if (terse)
+                    strncat( buff, " (vamp)", ITEMNAME_SIZE );
+                break;
+
             case SPWPN_DISRUPTION:
                 strncat(buff, (terse) ? " (disrupt)" : " of disruption", ITEMNAME_SIZE );
                 break;

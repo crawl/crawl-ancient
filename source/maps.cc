@@ -836,7 +836,7 @@ static char orc_temple(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[3] = MONS_ORC_WARRIOR;
     mons_array[4] = MONS_ORC_WIZARD;
     mons_array[5] = MONS_ORC_KNIGHT;
-    mons_array[6] = MONS_ORC_SORCEROR;
+    mons_array[6] = MONS_ORC_SORCERER;
 
     return MAP_SOUTHWEST;
 }
@@ -1993,7 +1993,7 @@ static char elf_hall(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[0] = MONS_DEEP_ELF_HIGH_PRIEST;
     mons_array[1] = MONS_DEEP_ELF_DEMONOLOGIST;
     mons_array[2] = MONS_DEEP_ELF_ANNIHILATOR;
-    mons_array[3] = MONS_DEEP_ELF_SORCEROR;
+    mons_array[3] = MONS_DEEP_ELF_SORCERER;
     mons_array[4] = MONS_DEEP_ELF_DEATH_MAGE;
     mons_array[5] = RANDOM_MONSTER;
     mons_array[6] = RANDOM_MONSTER;

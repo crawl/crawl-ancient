@@ -589,7 +589,7 @@ void cast_detect_secret_doors(int pow)
     {
         redraw_screen();
 
-        snprintf( info, INFO_SIZE, "You detect %s sercet door%s.",
+        snprintf( info, INFO_SIZE, "You detect %s secret door%s.",
                  (found > 1) ? "some" : "a", (found > 1) ? "s" : "" );
         mpr( info );
     }
@@ -1337,12 +1337,12 @@ static int distortion_monsters(int x, int y, int pow, int message)
         if (you.skills[SK_TRANSLOCATIONS] < random2(8))
         {
             miscast_effect( SPTYP_TRANSLOCATION, pow / 9 + 1, pow, 100,
-                            "a weapon of distortion" );
+                            "a distortion effect" );
         }
         else
         {
             miscast_effect( SPTYP_TRANSLOCATION, 1, 1, 100,
-                            "a weapon of distortion" );
+                            "a distortion effect" );
         }
 
         return 1;
@@ -1865,11 +1865,6 @@ void cast_evaporate(int pow)
     struct dist spelld;
     struct bolt beem;
 
-#if 0
-    // Old style: potion must come from hand...
-    const int potion = you.equip[EQ_WEAPON];
-#endif
-
     const int potion = prompt_invent_item( "Throw which potion?", OBJ_POTIONS );
 
     if (potion == -1)
@@ -1996,73 +1991,6 @@ void cast_evaporate(int pow)
         exercise( SK_THROWING, 1 );
 
     fire_beam(beem);
-
-#if 0
-
-    // This old code:
-
-    switch (you.inv[you.equip[EQ_WEAPON]].sub_type)
-    {
-    case POT_DEGENERATION:
-    case POT_STRONG_POISON:
-        apply_area_cloud(make_a_normal_cloud, you.x_pos, you.y_pos,
-                         3 + pow * 3, 5 + random2avg(9, 2), CLOUD_POISON);
-        break;
-
-    case POT_POISON:
-        apply_area_cloud(make_a_normal_cloud, you.x_pos, you.y_pos, 5 + pow,
-                         3 + random2avg(7, 2), CLOUD_POISON);
-        break;
-
-    case POT_DECAY:
-        apply_area_cloud(make_a_normal_cloud, you.x_pos, you.y_pos, 2 + pow,
-                         6 + random2avg(5, 2), CLOUD_MIASMA);
-
-        if (you.species != SP_MUMMY)
-        {
-            mpr("You smell decay.");
-            if (one_chance_in(4))
-                rot_player( 1 + random2(5) );
-        }
-        break;
-
-    case POT_CONFUSION:
-    case POT_SLOWING:
-    case POT_PARALYSIS:
-        if (you.species != SP_MUMMY)    // mummies can't smell
-            mpr("Whew! That stinks!");
-
-        apply_area_cloud(make_a_normal_cloud, you.x_pos, you.y_pos,
-                         8 + pow / 3, 3 + random2avg(7, 2), CLOUD_STINK);
-        break;
-
-    case POT_MUTATION:
-    case POT_MAGIC:
-        apply_area_cloud(make_a_random_cloud, you.x_pos, you.y_pos, 5 + pow,
-                         5 + random2avg(7, 2), CLOUD_STEAM);
-        break;
-
-    case POT_WATER:
-        apply_area_cloud(make_a_normal_cloud, you.x_pos, you.y_pos,
-                         5 + pow / 2, 3 + random2avg(7, 2), CLOUD_STEAM);
-        break;
-
-    default:
-        if (coinflip())
-        {
-            apply_area_cloud(make_a_random_cloud, you.x_pos, you.y_pos,
-                             5 + pow, 5 + random2avg(7, 2),
-                             CLOUD_BLACK_SMOKE);
-        }
-        else
-        {
-            apply_area_cloud(make_a_normal_cloud, you.x_pos, you.y_pos,
-                             5 + pow / 2, 3 + random2avg(7, 2), CLOUD_STEAM);
-        }
-        break;
-    }
-
-#endif
 
     // both old and new code use up a potion:
     dec_inv_item_quantity( potion, 1 );

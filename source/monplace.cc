@@ -796,7 +796,7 @@ static int band_member(int band, int power)
                     (temp_rand >  2) ? MONS_ORC_PRIEST :   //  2 in 30
                     (temp_rand >  1) ? MONS_OGRE :         //  1 in 30
                     (temp_rand >  0) ? MONS_TROLL          //  1 in 30
-                                     : MONS_ORC_SORCEROR); //  1 in 30
+                                     : MONS_ORC_SORCERER); //  1 in 30
         break;
 
     case BAND_KILLER_BEES:
@@ -924,7 +924,7 @@ static int band_member(int band, int power)
                  (temp_rand >   3) ? MONS_DEEP_ELF_SUMMONER :    // 7.69%
                  (temp_rand ==  3) ? MONS_DEEP_ELF_DEMONOLOGIST :// 0.48%
                  (temp_rand ==  2) ? MONS_DEEP_ELF_ANNIHILATOR : // 0.48%
-                 (temp_rand ==  1) ? MONS_DEEP_ELF_SORCEROR      // 0.48%
+                 (temp_rand ==  1) ? MONS_DEEP_ELF_SORCERER      // 0.48%
                                    : MONS_DEEP_ELF_DEATH_MAGE);  // 0.48%
         break;
 
@@ -939,7 +939,7 @@ static int band_member(int band, int power)
                  (temp_rand == 4) ? MONS_DEEP_ELF_CONJURER :    // 1 in 16
                  (temp_rand == 3) ? MONS_DEEP_ELF_DEMONOLOGIST :// 1 in 16
                  (temp_rand == 2) ? MONS_DEEP_ELF_ANNIHILATOR : // 1 in 16
-                 (temp_rand == 1) ? MONS_DEEP_ELF_SORCEROR      // 1 in 16
+                 (temp_rand == 1) ? MONS_DEEP_ELF_SORCERER      // 1 in 16
                                   : MONS_DEEP_ELF_DEATH_MAGE);  // 1 in 16
         break;
 

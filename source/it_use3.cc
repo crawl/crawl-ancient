@@ -126,13 +126,13 @@ void special_wielded(void)
 
         if (you.inv[wpn].plus < -4)
             you.inv[wpn].plus = -4;
-        else if (you.inv[wpn].plus > 9)
-            you.inv[wpn].plus = 9;
+        else if (you.inv[wpn].plus > 16)
+            you.inv[wpn].plus = 16;
 
         if (you.inv[wpn].plus2 < -4)
             you.inv[wpn].plus2 = -4;
-        else if (you.inv[wpn].plus2 > 9)
-            you.inv[wpn].plus2 = 9;
+        else if (you.inv[wpn].plus2 > 16)
+            you.inv[wpn].plus2 = 16;
 
         you.inv[wpn].colour = random_colour();
         break;
@@ -160,13 +160,7 @@ void special_wielded(void)
     case SPWLD_POWER:
         makes_noise = false;
 
-        you.inv[wpn].plus = -3 + (you.hp / 11);
-
-        // Placed cap on effect to weaken it (max at 243 HPs, so its not
-        // too much of a cap). -- bwr
-        if (you.inv[wpn].plus > 20)
-            you.inv[wpn].plus = 20;
-
+        you.inv[wpn].plus = stepdown_value( -4 + (you.hp / 5), 4, 4, 4, 20 );
         you.inv[wpn].plus2 = you.inv[wpn].plus;
         break;
 

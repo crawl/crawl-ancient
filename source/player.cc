@@ -3473,7 +3473,7 @@ static const char * Class_Name_List[ NUM_JOBS ] =
       "Paladin", "Assassin", "Berserker", "Hunter", "Conjurer", "Enchanter",
       "Fire Elementalist", "Ice Elementalist", "Summoner", "Air Elementalist",
       "Earth Elementalist", "Crusader", "Death Knight", "Venom Mage",
-      "Chaos Knight", "Transmuter", "Healer", "Quiter", "Reaver", "Stalker",
+      "Chaos Knight", "Transmuter", "Healer", "Quitter", "Reaver", "Stalker",
       "Monk", "Warper", "Wanderer" };
 
 int get_class_index_by_abbrev( const char *abbrev )
@@ -3814,7 +3814,7 @@ void haste_player( int amount )
         mpr( "You already have as much speed as you can handle." );
     else
     {
-        mpr( "You feel as though your hasted speed will last longer." );
+        mpr( "You feel as though your hastened speed will last longer." );
         contaminate_player(1);
     }
 

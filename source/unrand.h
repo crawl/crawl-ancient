@@ -242,7 +242,7 @@
         OBJ_ARMOUR, ARM_PLATE_MAIL, +6, 0, YELLOW,
     {
         0, 0, 0, 3, 0, 0,       // str
-        0, 0, 0, 0, 1, 50,      // life prot, magic
+        0, 0, 0, 0, 2, 50,      // life prot, magic
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -258,7 +258,7 @@
 /* 7 */
 {
     "robe of Augmentation", "silk robe",
-        OBJ_ARMOUR, ARM_ROBE, +0, 0, LIGHTRED,
+        OBJ_ARMOUR, ARM_ROBE, +4, 0, LIGHTRED,
     {
         0, 0, 0, 2, 2, 2,       // str, int, dex
         0, 0, 0, 0, 0, 0,
@@ -300,13 +300,13 @@
     {
         0, 0, 2, 0, 0, 2,       // EV, dex
         0, 0, 0, 0, 0, 0,
-        1, 1, 0, 0, 0, 0,       // see invis, turn invis
+        1, 1, 1, 0, 0, 0,       // see invis, turn invis, levitate
         0, 0, 0, 0, 0,
         0, 0, 0, 0, -3,         // to dam
         0, 60                   // stealth
     }
     ,
-        "It allows its wearer to excell in the arts of thievery.",
+        "It allows its wearer to excel in the arts of thievery.",
         "",
         ""
 }
@@ -415,11 +415,11 @@
 ,
 /* 15 */
 {
-    "dagger of Chilly Death", "saphire dagger",
-        OBJ_WEAPONS, WPN_DAGGER, +2, +5, LIGHTBLUE,
+    "dagger of Chilly Death", "sapphire dagger",
+        OBJ_WEAPONS, WPN_DAGGER, +2, +6, LIGHTBLUE,
     {
         SPWPN_FREEZING, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0,
+        -1, 2, 0, 1, 0, 20,     // res fire, cold, poison, magic
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -427,13 +427,13 @@
     }
     ,
         "",
-        "A dagger made of one huge piece of saphire.",
+        "A dagger made of one huge piece of sapphire.",
         ""
 }
 ,
 /* 16 */
 {
-    "amulet of Four Winds", "jade amulet",
+    "amulet of the Four Winds", "jade amulet",
         OBJ_JEWELLERY, AMU_CLARITY, +0, 0, LIGHTGREEN,
     {
         0, 0, 0, 0, 0, 0,
@@ -455,8 +455,8 @@
     "dagger \"Morg\"", "rusty dagger",
         OBJ_WEAPONS, WPN_DAGGER, -1, +4, LIGHTRED,
     {
-        SPWPN_PAIN, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0,
+        SPWPN_PAIN, 0, 0, 0, 5, 0,      // int
+        0, 0, 0, 0, 0, 30,              // res magic
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -495,7 +495,7 @@
         OBJ_WEAPONS, WPN_SLING, +3, +4, LIGHTBLUE,
     {
         SPWPN_FROST, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0, 0,               // res cold
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -509,10 +509,10 @@
 ,
 /* 20 */
 {
-    "Krishna's bow", "golden bow",
+    "bow of Krishna \"Sharnga\"", "golden bow",
         OBJ_WEAPONS, WPN_BOW, +8, +8, YELLOW,
     {
-        0, 0, 0, 0, 0, 3,       // dex
+        SPWPN_SPEED, 0, 0, 0, 0, 3,       // dex
         0, 0, 0, 0, 0, 0,
         1, 0, 0, 0, 0, 0,       // see invis
         0, 0, 0, 0, 0,
@@ -533,7 +533,7 @@
     {
         0, 0, 4, 0, 0, 0,       // EV
         0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 1, 0,       // teleport
+        0, 0, 1, 0, 1, 0,       // levitate, teleport
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0
@@ -549,7 +549,7 @@
     "giant club \"Skullcrusher\"", "brutal giant club",
         OBJ_WEAPONS, WPN_GIANT_CLUB, +0, +5, BROWN,
     {
-        0, 0, 0, 5, 0, 0,       // str
+        SPWPN_VORPAL, 0, 0, 5, 0, 0,       // str
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -564,7 +564,7 @@
 ,
 /* 23 */
 {
-    "boots of Assassin", "soft boots",
+    "boots of the Assassin", "soft boots",
         OBJ_ARMOUR, ARM_BOOTS, +2, 0, BROWN,
     {
         0, 0, 0, 0, 0, 3,       // dex
@@ -575,7 +575,7 @@
         0, 80                   // stealth
     }
     ,
-        "These boots were specially designed by Assasin's Guild.",
+        "These boots were specially designed by the Assassin's Guild.",
         "Some soft boots.",
         ""
 }
@@ -587,7 +587,7 @@
     {
         SPWPN_PROTECTION, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 1,       // go berserk
+        1, 0, 0, 0, 0, 1,       // see invis, go berserk
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0
@@ -605,7 +605,7 @@
         OBJ_WEAPONS, WPN_LONG_SWORD, +4, +4, WHITE,
     {
         SPWPN_HOLY_WRATH, 0, 3, 0, 0, 0,        // EV
-        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 20,                      // life prot, res magic
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         1, 0, 0, 0, 0,                          // force berserk
@@ -638,10 +638,10 @@
 /* 27 */
 {
     "skin of Zhor", "smelly skin",
-        OBJ_ARMOUR, ARM_ANIMAL_SKIN, +3, 0, BROWN,
+        OBJ_ARMOUR, ARM_ANIMAL_SKIN, +4, 0, BROWN,
     {
         0, 0, 0, 0, 0, 0,
-        0, 1, 0, 0, 0, 0,       // res cold
+        0, 2, 0, 0, 0, 0,       // res cold
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -659,7 +659,7 @@
         OBJ_WEAPONS, WPN_CROSSBOW, +4, +0, LIGHTRED,
     {
         SPWPN_FLAME, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0,               // res fire
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -673,8 +673,8 @@
 ,
 /* 29 */
 {
-    "salamander's hide armour", "red leather armour",
-        OBJ_ARMOUR, ARM_LEATHER_ARMOUR, +2, 0, RED,
+    "salamander hide armour", "red leather armour",
+        OBJ_ARMOUR, ARM_LEATHER_ARMOUR, +3, 0, RED,
     {
         0, 0, 0, 0, 0, 0,
         2, 0, 0, 0, 0, 0,       // res fire
@@ -784,9 +784,9 @@
     "\"Eos\"", "encrusted morningstar",
         OBJ_WEAPONS, WPN_MORNINGSTAR, +5, +5, LIGHTCYAN,
     {
-        0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0,
+        SPWPN_ELECTROCUTION, 0, 0, 0, 0, 0,  // morning -> bring light/sparks?
+        0, 0, 1, 0, 0, 0,       // res elec
+        1, 0, 0, 0, 0, 0,       // see invis
         0, 0, 0, 0, 1,          // prevent teleportation
         0, 0, 0, 0, 0,
         0, 0
@@ -836,7 +836,7 @@
 /* 38 */
 {
     "Edison's patent armour", "weird-looking armour",
-        OBJ_ARMOUR, ARM_PLATE_MAIL, +0, 0, LIGHTGREEN,
+        OBJ_ARMOUR, ARM_PLATE_MAIL, +10, 0, LIGHTGREEN,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
@@ -854,10 +854,10 @@
 /* 39 */
 {
     "spear of Voo-Doo", "ebony spear",
-        OBJ_WEAPONS, WPN_SPEAR, +2, +4, DARKGRAY,
+        OBJ_WEAPONS, WPN_SPEAR, +2, +10, DARKGRAY,
     {
         SPWPN_VAMPIRICISM, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 1, 0,       // prot life
+        0, 0, 0, 1, 1, 0,       // res poison, prot life
         0, 0, 0, 0, 0, 0,
         0, 3, 0, 0, 0,          // noise
         0, 0, 0, 0, 0,
@@ -872,10 +872,10 @@
 /* 40 */
 {
     "trident of the Octopus king", "mangy trident",
-        OBJ_WEAPONS, WPN_TRIDENT, +4, +4, CYAN,
+        OBJ_WEAPONS, WPN_TRIDENT, +10, +4, CYAN,
     {
         SPWPN_VENOM, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 1, 0, 50,              // res poison, res magic
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -910,10 +910,10 @@
 /* 42 */
 {
     "mithril axe \"Arga\"", "mithril axe",
-        OBJ_WEAPONS, WPN_WAR_AXE, +3, +3, WHITE,
+        OBJ_WEAPONS, WPN_WAR_AXE, +10, +6, WHITE,
     {
-        SPWPN_SPEED, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0,
+        SPWPN_SPEED, 0, 0, 2, 0, 0,     // str
+        0, 0, 0, 0, 0, 30,              // resist magic
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -947,9 +947,9 @@
 /* 44 */
 {
     "hand crossbow \"Sniper\"", "black crossbow",
-        OBJ_WEAPONS, WPN_HAND_CROSSBOW, +8, +0, DARKGRAY,
+        OBJ_WEAPONS, WPN_HAND_CROSSBOW, +10, +0, DARKGRAY,
     {
-        0, 0, 0, 0, 0, 0,
+        SPWPN_VENOM, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         1, 0, 0, 0, 0, 0,       // see invis
         0, 0, 0, 0, 0,
@@ -967,7 +967,7 @@
     "bow \"Erchidel\"", "metal bow",
         OBJ_WEAPONS, WPN_BOW, +5, +3, CYAN,
     {
-        0, 0, 0, 3, 0, 0,       // str
+        SPWPN_PROTECTION, 0, 0, 3, 0, 0,       // str
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -983,7 +983,7 @@
 /* 46 */
 {
     "robe of Night", "black robe",
-        OBJ_ARMOUR, ARM_ROBE, +3, 0, DARKGRAY,
+        OBJ_ARMOUR, ARM_ROBE, +4, 0, DARKGRAY,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 30,      // res magic
@@ -1002,7 +1002,7 @@
 /* 47 */
 {
     "plutonium sword", "glowing long sword",
-        OBJ_WEAPONS, WPN_LONG_SWORD, +5, +7, LIGHTGREEN,
+        OBJ_WEAPONS, WPN_LONG_SWORD, +5, +10, LIGHTGREEN,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
@@ -1023,7 +1023,7 @@
         OBJ_WEAPONS, WPN_MACE, +4, +6, LIGHTGRAY,
     {
         SPWPN_DISRUPTION, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0,       // life prot
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -1041,7 +1041,7 @@
         OBJ_ARMOUR, ARM_GOLD_DRAGON_ARMOUR, +5, 0, YELLOW,
     {
         0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 50,      // res magic
+        0, 0, 0, 0, 0, 50,      // res magic (base gives fire, cold, poison)
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -1074,9 +1074,9 @@
 /* 51 */
 {
     "Fencer's gloves", "silk gloves",
-        OBJ_ARMOUR, ARM_GLOVES, +0, 0, WHITE,
+        OBJ_ARMOUR, ARM_GLOVES, +2, 0, WHITE,
     {
-        0, 0, 3, 0, 0, 0,       // EV
+        0, 0, 3, 0, 0, 3,       // EV, dex
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -1091,10 +1091,10 @@
 ,
 /* 52 */
 {
-    "ring of the Mage", "saphire ring",
+    "ring of the Mage", "sapphire ring",
         OBJ_JEWELLERY, RING_WIZARDRY, +0, 0, LIGHTBLUE,
     {
-        0, 0, 0, 0, 3, 0,       // 3
+        0, 0, 0, 0, 3, 0,       // int
         0, 0, 0, 0, 0, 50,      // res magic
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,

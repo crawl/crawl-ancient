@@ -2518,7 +2518,7 @@ void cmd_destroy_item( void )
         if (you.equip[i] == item)
         {
             // mesclr();
-            mpr( "You can't destroy equiped items!" );
+            mpr( "You can't destroy equipped items!" );
             return;
         }
     }

@@ -17,6 +17,7 @@
 #include "AppHdr.h"
 #include "it_use2.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "externs.h"
@@ -332,6 +333,7 @@ void unwield_item(char unw)
 
             switch (brand)
             {
+            case SPWPN_SWORD_OF_CEREBOV:
             case SPWPN_FLAMING:
                 strcat(info, " stops flaming.");
                 mpr(info);
@@ -376,7 +378,7 @@ void unwield_item(char unw)
                 // if it's to be allowed as a player spell. -- bwr
 
                 // int effect = 9 - random2avg( you.skills[SK_TRANSLOCATIONS] * 2, 2 );
-                miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a weapon of distortion" );
+                miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a distortion effect" );
                 break;
 
                 // when more are added here, *must* duplicate unwielding

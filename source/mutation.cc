@@ -660,7 +660,7 @@ const char *lose_mutation[][3] = {
 // 40
 
     {"You feel genetically unstable.", "You feel genetically unstable.",
-     "You should not be reading this message. Bug reports to zel@olis.net.au."},
+     "You feel genetically unstable."},
 
     {"You feel robust.", "You feel robust.", "You feel robust."},
     {"You feel frail.", "You feel frail.", "You feel frail."},
@@ -954,7 +954,7 @@ void display_mutations(void)
 
         if (you.experience_level >= 12)
         {
-            cprintf("You can restore your body by infusing magicial energy." EOL);
+            cprintf("You can restore your body by infusing magical energy." EOL);
             j++;
         }
         break;

@@ -539,7 +539,7 @@ CApplication::CApplication()
         }
         catch (...)
         {
-        WarnUser("Couln't initialize the application");
+        WarnUser("Couldn't initialize the application.");
         ExitToShell();
         }
 }

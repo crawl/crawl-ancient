@@ -1092,20 +1092,21 @@ int items( int allow_uniques,       // not just true-false,
 
 
                     case WPN_SLING:
-                        if (!one_chance_in(4))
-                            break;
-                        // **** possible intentional fall through here ****
                     case WPN_HAND_CROSSBOW:
                         if (coinflip())
                             break;
                         // **** possible intentional fall through here ****
                     case WPN_BOW:
                     case WPN_CROSSBOW:
+                        if (one_chance_in(30))
+                            set_weapon_special( p, SPWPN_SPEED );
+
+                        if (one_chance_in(5))
+                            set_weapon_special( p, SPWPN_PROTECTION );
+
                         if (coinflip())
-                        {
                             set_weapon_special(p, (coinflip() ? SPWPN_FLAME
                                                               : SPWPN_FROST));
-                        }
                         break;
 
                     case WPN_BLOWGUN:
@@ -2687,7 +2688,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     case MONS_DEEP_ELF_DEATH_MAGE:
     case MONS_DEEP_ELF_DEMONOLOGIST:
     case MONS_DEEP_ELF_MAGE:
-    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_SORCERER:
     case MONS_DEEP_ELF_SUMMONER:
         item_race = MAKE_ITEM_ELVEN;
         mitm[bp].base_type = OBJ_WEAPONS;
@@ -2737,7 +2738,9 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         break;
 
     case MONS_ORC_WARLORD:
-        give_level = MAKE_GOOD_ITEM;  // being at the top has it's priviledges
+        // being at the top has it's priviledges
+        if (one_chance_in(3))
+            give_level = MAKE_GOOD_ITEM;
         // deliberate fall-through
     case MONS_ORC_KNIGHT:
         item_race = MAKE_ITEM_ORCISH;
@@ -2978,7 +2981,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
 
     case MONS_KOBOLD_DEMONOLOGIST:
     case MONS_ORC_WIZARD:
-    case MONS_ORC_SORCEROR:
+    case MONS_ORC_SORCERER:
         item_race = MAKE_ITEM_ORCISH;
         // deliberate fall-through, I guess {dlb}
     case MONS_NECROMANCER:
@@ -3154,7 +3157,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     case MONS_DEEP_ELF_MAGE:
     case MONS_DEEP_ELF_PRIEST:
     case MONS_DEEP_ELF_SOLDIER:
-    case MONS_DEEP_ELF_SORCEROR:
+    case MONS_DEEP_ELF_SORCERER:
     case MONS_DEEP_ELF_SUMMONER:
         if (item_race == MAKE_ITEM_RANDOM_RACE)
             item_race = MAKE_ITEM_ELVEN;
@@ -3163,7 +3166,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     case MONS_ORC:
     case MONS_ORC_HIGH_PRIEST:
     case MONS_ORC_PRIEST:
-    case MONS_ORC_SORCEROR:
+    case MONS_ORC_SORCERER:
         if (item_race == MAKE_ITEM_RANDOM_RACE)
             item_race = MAKE_ITEM_ORCISH;
         // deliberate fall through {dlb}
@@ -3213,7 +3216,9 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         break;
 
     case MONS_ORC_WARLORD:
-        give_level = MAKE_GOOD_ITEM;  // being at the top has it's priviledges
+        // being at the top has it's priviledges
+        if (one_chance_in(3))
+            give_level = MAKE_GOOD_ITEM;
         // deliberate fall through
     case MONS_ORC_KNIGHT:
     case MONS_ORC_WARRIOR:

@@ -318,6 +318,7 @@ void wield_effects(int item_wield_2, bool showMsgs)
             {
                 switch (i_dam)
                 {
+                case SPWPN_SWORD_OF_CEREBOV:
                 case SPWPN_FLAMING:
                     mpr("It bursts into flame!");
                     break;
@@ -436,7 +437,7 @@ void wield_effects(int item_wield_2, bool showMsgs)
                 break;
 
             case SPWPN_DISTORTION:
-                miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a weapon of distortion" );
+                miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a distortion effect" );
                 break;
 
             case SPWPN_SINGING_SWORD:
@@ -1125,6 +1126,10 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     bool launched = false;      // item is launched
     bool thrown = false;        // item is sensible thrown item
 
+    // Making a copy of the item: changed only for venom launchers
+    item_def item = you.inv[throw_2];
+    item.quantity = 1;
+
     char str_pass[ ITEMNAME_SIZE ];
 
     mpr( STD_DIRECTION_PROMPT, MSGCH_PROMPT );
@@ -1156,7 +1161,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     pbolt.flavour = BEAM_MISSILE;
     // pbolt.range is set below
 
-    switch (you.inv[throw_2].base_type)
+    switch (item.base_type)
     {
     case OBJ_WEAPONS:    pbolt.type = SYM_WEAPON;  break;
     case OBJ_MISSILES:   pbolt.type = SYM_MISSILE; break;
@@ -1176,17 +1181,17 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
     pbolt.source_x = you.x_pos;
     pbolt.source_y = you.y_pos;
-    pbolt.colour = you.inv[throw_2].colour;
+    pbolt.colour = item.colour;
 
-    quant_name( you.inv[throw_2], 1, DESC_PLAIN, str_pass );
-    strcpy(pbolt.beam_name, str_pass);
+    item_name( item, DESC_PLAIN, str_pass );
+    strcpy( pbolt.beam_name, str_pass );
 
     pbolt.thrower = KILL_YOU_MISSILE;
     pbolt.aux_source = NULL;
 
     // get the ammo/weapon type.  Convenience.
-    wepClass = you.inv[throw_2].base_type;
-    wepType = you.inv[throw_2].sub_type;
+    wepClass = item.base_type;
+    wepType = item.sub_type;
 
     // get the launcher class,type.  Convenience.
     if (you.equip[EQ_WEAPON] < 0)
@@ -1203,17 +1208,17 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     }
 
     // baseHit and damage for generic objects
-    baseHit = you.strength - mass_item( you.inv[throw_2] ) / 10;
+    baseHit = you.strength - mass_item(item) / 10;
     if (baseHit > 0)
         baseHit = 0;
 
-    baseDam = mass_item( you.inv[throw_2] ) / 100;
+    baseDam = mass_item(item) / 100;
 
     // special: might be throwing generic weapon;
     // use base wep. damage, w/ penalty
     if (wepClass == OBJ_WEAPONS)
     {
-        baseDam = property( you.inv[throw_2], PWPN_DAMAGE ) - 4;
+        baseDam = property( item, PWPN_DAMAGE ) - 4;
         if (baseDam < 0)
             baseDam = 0;
     }
@@ -1229,16 +1234,21 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     }
 
     // extract weapon/ammo bonuses due to magic
-    ammoHitBonus = you.inv[throw_2].plus;
-    ammoDamBonus = you.inv[throw_2].plus2;
+    ammoHitBonus = item.plus;
+    ammoDamBonus = item.plus2;
 
     // CALCULATIONS FOR LAUNCHED WEAPONS
     if (launched)
     {
+        const int bow_brand = get_weapon_brand( you.inv[you.equip[EQ_WEAPON]] );
+        const int ammo_brand = get_ammo_brand( item );
+        bool poisoned = (ammo_brand == SPMSL_POISONED
+                            || ammo_brand == SPMSL_POISONED_II);
+
         // this is deliberately confusing: the 'hit' value for
         // ammo is the _damage_ when used with a launcher.  Geez.
         baseHit = 0;
-        baseDam = property( you.inv[throw_2], PWPN_HIT );
+        baseDam = property( item, PWPN_HIT );
 
         // fix ammo damage bonus, since missiles only use inv_plus
         ammoDamBonus = ammoHitBonus;
@@ -1247,7 +1257,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         if (!cmp_equip_race( you.inv[you.equip[EQ_WEAPON]], 0 ))
         {
             if (get_equip_race( you.inv[you.equip[EQ_WEAPON]] )
-                        == get_equip_race( you.inv[throw_2] ))
+                        == get_equip_race( item ))
             {
                 baseHit += 1;
                 baseDam += 1;
@@ -1268,6 +1278,12 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
             you.time_taken = (100 + extraTime) * you.time_taken;
             you.time_taken /= 100;
+        }
+
+        if (bow_brand == SPWPN_SPEED)
+        {
+            you.time_taken *= 5;
+            you.time_taken /= 10;
         }
 
         // for all launched weapons,  maximum effective specific skill
@@ -1391,21 +1407,12 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         exHitBonus += (3 * you.skills[SK_THROWING]) / 4;
 
         // special cases for flame, frost, poison, etc.
-        int bow_brand = get_weapon_brand( you.inv[you.equip[EQ_WEAPON]] );
-
-        const int ammo_brand = get_ammo_brand( you.inv[throw_2] );
-
-        const bool poisoned = (ammo_brand == SPMSL_POISONED
-                                || ammo_brand == SPMSL_POISONED_II);
-
         // check for venom brand (usually only available for blowguns)
-        if (bow_brand == SPWPN_VENOM
-            && !(ammo_brand == SPMSL_FLAME || ammo_brand == SPMSL_ICE || poisoned))
+        if (bow_brand == SPWPN_VENOM && ammo_brand == SPMSL_NORMAL)
         {
             // poison brand the ammo
-            set_item_ego_type( you.inv[throw_2], OBJ_MISSILES, SPMSL_POISONED );
-
-            quant_name( you.inv[throw_2], 1, DESC_PLAIN, str_pass );
+            set_item_ego_type( item, OBJ_MISSILES, SPMSL_POISONED );
+            item_name( item, DESC_PLAIN, str_pass );
             strcpy( pbolt.beam_name, str_pass );
         }
 
@@ -1427,8 +1434,11 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             pbolt.aux_source = NULL;
 
             // ammo known if we can't attribute it to the bow
-            if (bow_brand != SPWPN_FLAME && !poisoned)
+            if (bow_brand != SPWPN_FLAME)
+            {
+                set_ident_flags( item, ISFLAG_KNOW_TYPE );
                 set_ident_flags( you.inv[throw_2], ISFLAG_KNOW_TYPE );
+            }
         }
 
         if ((bow_brand == SPWPN_FROST || ammo_brand == SPMSL_ICE)
@@ -1448,14 +1458,18 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             pbolt.aux_source = NULL;
 
             // ammo known if we can't attribute it to the bow
-            if (bow_brand != SPWPN_FROST && !poisoned)
+            if (bow_brand != SPWPN_FROST)
+            {
+                set_ident_flags( item, ISFLAG_KNOW_TYPE );
                 set_ident_flags( you.inv[throw_2], ISFLAG_KNOW_TYPE );
+            }
         }
 
         // ammo known if it cancels the effect of the bow
         if ((bow_brand == SPWPN_FLAME && ammo_brand == SPMSL_ICE)
             || (bow_brand == SPWPN_FROST && ammo_brand == SPMSL_FLAME))
         {
+            set_ident_flags( item, ISFLAG_KNOW_TYPE );
             set_ident_flags( you.inv[throw_2], ISFLAG_KNOW_TYPE );
         }
 
@@ -1497,11 +1511,8 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             || (wepClass == OBJ_MISSILES && wepType == MI_STONE))
         {
             // elves with elven weapons
-            if (cmp_equip_race( you.inv[throw_2], ISFLAG_ELVEN )
-                && player_genus(GENPC_ELVEN))
-            {
+            if (cmp_equip_race(item, ISFLAG_ELVEN) && player_genus(GENPC_ELVEN))
                 baseHit += 1;
-            }
 
             // give an appropriate 'tohit' -
             // hand axes and clubs are -5
@@ -1526,7 +1537,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
             exHitBonus = you.skills[SK_THROWING] * 2;
 
-            baseDam = property( you.inv[throw_2], PWPN_DAMAGE );
+            baseDam = property( item, PWPN_DAMAGE );
             exDamBonus =
                 (10 * (you.skills[SK_THROWING] / 2 + you.strength - 10)) / 12;
 
@@ -1540,7 +1551,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         {
             // give an appropriate 'tohit' & damage
             baseHit = 2;
-            baseDam = property( you.inv[throw_2], PWPN_DAMAGE );
+            baseDam = property( item, PWPN_DAMAGE );
 
             exHitBonus = you.skills[SK_DARTS] * 2;
             exHitBonus += (you.skills[SK_THROWING] * 2) / 3;
@@ -1583,7 +1594,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     else
     {
         // range based on mass & strength, between 1 and 9
-        pbolt.range = you.strength - mass_item( you.inv[throw_2] ) / 10 + 3;
+        pbolt.range = you.strength - mass_item(item) / 10 + 3;
         if (pbolt.range < 1)
             pbolt.range = 1;
 
@@ -1642,7 +1653,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     else
         strcpy(info, "You throw ");
 
-    quant_name( you.inv[throw_2], 1, DESC_NOCAP_A, str_pass );
+    item_name( item,  DESC_NOCAP_A, str_pass );
 
     strcat(info, str_pass);
     strcat(info, ".");
@@ -1652,7 +1663,8 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     pbolt.isBeam = false;
     pbolt.isTracer = false;
 
-    fire_beam(pbolt, throw_2);
+    // using copy, since the launched item might be differect (venom blowgun)
+    fire_beam( pbolt, &item );
 
     dec_inv_item_quantity( throw_2, 1 );
 
@@ -2434,7 +2446,7 @@ static bool affix_weapon_enchantment( void )
         mpr(info);
 
         // from unwield_item
-        miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a weapon of distortion" );
+        miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a distortion effect" );
         break;
 
     default:

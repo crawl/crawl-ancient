@@ -1959,6 +1959,14 @@ const char *skill_title( unsigned char best_skill, unsigned char skill_lev,
 
     static char title_buff[80];
 
+    // paranoia
+    if (best_skill == SK_UNUSED_1
+        || (best_skill > SK_UNARMED_COMBAT && best_skill < SK_SPELLCASTING)
+        || best_skill >= NUM_SKILLS)
+    {
+        return ("Adventurer");
+    }
+
     if (species == -1)
         species = you.species;
 
@@ -2065,7 +2073,7 @@ unsigned char best_skill( unsigned char min_skill, unsigned char max_skill,
 // Calculate the skill_order array from scratch.
 //
 // The skill order array is used for breaking ties in best_skill.
-// This is done by ranking reach skill by the order in which it
+// This is done by ranking each skill by the order in which it
 // has attained its current level (the values are the number of
 // skills at or above that level when the current skill reached it).
 //
@@ -2086,7 +2094,7 @@ void init_skill_order( void )
         if (i == SK_UNUSED_1
             || (i > SK_UNARMED_COMBAT && i < SK_SPELLCASTING))
         {
-            you.skill_order[i] = 1000;
+            you.skill_order[i] = MAX_SKILL_ORDER;
             continue;
         }
 

@@ -1022,11 +1022,6 @@ static void tag_convert_to_4_3_item( item_def &item )
     if (item.quantity <= 0)
         return;
 
-#if 0
-    fprintf( stderr, "\nin: plus %d; plus2 %d; ident %d; special %d\n",
-                      plus, plus2, ident, special );
-#endif
-
     // First, convert ident into flags:
     item.flags = (ident == 3) ? ISFLAG_IDENT_MASK :
                  (ident >  0) ? ISFLAG_KNOW_CURSE
@@ -1243,14 +1238,6 @@ static void tag_convert_to_4_3_item( item_def &item )
             item.plus2 = 0;
         }
     }
-
-#if 0
-    fprintf( stderr, "out: plus %d; plus2 %d; flags 0x%08lx; special %ld\n",
-             item.plus, item.plus2, item.flags, item.special );
-
-    item_name( item, DESC_PLAIN, info );
-    fprintf( stderr, "%s\n", info );
-#endif
 }
 
 static void tag_read_you_items(struct tagHeader &th, char minorVersion)

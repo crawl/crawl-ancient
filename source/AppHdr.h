@@ -243,7 +243,7 @@
     #define DEBUG       1
 
     // Outputs many "hidden" details, defaults to wizard on.
-    // #define DEBUG_DIAGNOSTICS   1
+    #define DEBUG_DIAGNOSTICS   1
 
     // Scan for bad items before every input (may be slow)
     //

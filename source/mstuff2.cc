@@ -853,17 +853,20 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     int lnchClass = (weapon != NON_ITEM) ? mitm[weapon].base_type : -1;
     int lnchType  = (weapon != NON_ITEM) ? mitm[weapon].sub_type  :  0;
 
+    item_def item = mitm[hand_used];  // copy changed for venom launchers
+    item.quantity = 1;
+
     pbolt.range = 9;
     pbolt.beam_source = monster_index(monster);
 
     pbolt.type = SYM_MISSILE;
-    pbolt.colour = mitm[hand_used].colour;
+    pbolt.colour = item.colour;
     pbolt.flavour = BEAM_MISSILE;
     pbolt.thrower = KILL_MON_MISSILE;
     pbolt.aux_source = NULL;
 
     // figure out if we're thrown or launched
-    throw_type(lnchClass, lnchType, wepClass, wepType, launched, thrown);
+    throw_type( lnchClass, lnchType, wepClass, wepType, launched, thrown );
 
     // extract launcher bonuses due to magic
     if (launched)
@@ -873,8 +876,8 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     }
 
     // extract weapon/ammo bonuses due to magic
-    ammoHitBonus = mitm[hand_used].plus;
-    ammoDamBonus = mitm[hand_used].plus2;
+    ammoHitBonus = item.plus;
+    ammoDamBonus = item.plus2;
 
     if (thrown)
     {
@@ -892,7 +895,7 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
             damMult = 25;
         }
 
-        baseDam = property( mitm[hand_used], PWPN_DAMAGE );
+        baseDam = property( item, PWPN_DAMAGE );
 
         if (wepClass == OBJ_MISSILES)   // throw missile
             // ammo damage needs adjusting here - OBJ_MISSILES
@@ -942,7 +945,7 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
             break;
         }
 
-        baseDam = property( mitm[hand_used], PWPN_HIT );
+        baseDam = property( item, PWPN_HIT );
 
         // missiles don't have pluses2;  use hit bonus
         ammoDamBonus = ammoHitBonus;
@@ -966,18 +969,14 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
 
         const int bow_brand = get_weapon_brand(mitm[monster->inv[MSLOT_WEAPON]]);
 
-        const int ammo_brand = get_ammo_brand( mitm[hand_used] );
+        const int ammo_brand = get_ammo_brand( item );
 
-        const bool poison = (ammo_brand == SPMSL_POISONED
-                            || ammo_brand == SPMSL_POISONED_II);
+        bool poison = (ammo_brand == SPMSL_POISONED
+                        || ammo_brand == SPMSL_POISONED_II);
 
-        // POISON brand: note that this is overridden by special ammo
-        if (bow_brand == SPWPN_VENOM
-            && ammo_brand != SPMSL_ICE && ammo_brand != SPMSL_FLAME)
-        {
-            // poison it
-            set_item_ego_type( mitm[hand_used], OBJ_MISSILES, SPMSL_POISONED );
-        }
+        // POISON brand launchers poison ammo
+        if (bow_brand == SPWPN_VENOM && ammo_brand == SPMSL_NORMAL)
+            set_item_ego_type( item, OBJ_MISSILES, SPMSL_POISONED );
 
 
         // WEAPON or AMMO of FIRE
@@ -1013,6 +1012,12 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
             pbolt.colour = WHITE;
             pbolt.type = SYM_ZAP;
         }
+
+        // Note: we already have 10 energy taken off.  -- bwr
+        if (lnchType == WPN_CROSSBOW)
+            monster->speed_increment += ((bow_brand == SPWPN_SPEED) ? 4 : -2);
+        else if (bow_brand == SPWPN_SPEED)
+            monster->speed_increment += 5;
     }
 
     // monster intelligence bonus
@@ -1034,11 +1039,11 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     {
         // build shoot message
         char str_pass[ ITEMNAME_SIZE ];
-        quant_name( mitm[hand_used], 1, DESC_NOCAP_A, str_pass );
+        item_name( item, DESC_NOCAP_A, str_pass );
         strcat(info, str_pass);
 
         // build beam name
-        quant_name( mitm[hand_used], 1, DESC_PLAIN, str_pass );
+        item_name( item, DESC_PLAIN, str_pass );
         strcpy(pbolt.beam_name, str_pass);
     }
 
@@ -1072,14 +1077,11 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     }
 
     // decrease inventory
-    fire_beam(pbolt, hand_used);
+    fire_beam( pbolt, &item );
 
     if (dec_mitm_item_quantity( hand_used, 1 ))
         monster->inv[MSLOT_MISSILE] = NON_ITEM;
 
-    // adjust speed for centaurs - quickest guns in the west?  :)
-    if (monster->type == MONS_CENTAUR && monster->speed_increment > 10)
-        monster->speed_increment -= 10;
 
     return (true);
 }                               // end mons_throw()

@@ -270,22 +270,7 @@ static void exercise2( char exsk )
             return;
     }
 
-#if 0
-    // experimental class "restriction" (fighter, mage, priest class) -- bwr
-    if (exsk == SK_SPELLCASTING || exsk == SK_INVOCATIONS || exsk == SK_FIGHTING)
-    {
-        if (you.skills[exsk] < you.skills[SK_SPELLCASTING]
-            || you.skills[exsk] < you.skills[SK_INVOCATIONS]
-            || you.skills[exsk] < you.skills[SK_FIGHTING])
-        {
-            if (one_chance_in(6))
-                return;
-        }
-    }
-#endif
-
     int fraction = 0;
-
     int spending_limit = (you.exp_available < MAX_SPENDING_LIMIT)
                                     ? you.exp_available : MAX_SPENDING_LIMIT;
 
@@ -401,8 +386,8 @@ static void exercise2( char exsk )
 
         you.skills[exsk]++;
 
-        // Recalculate this skills order for tie breaking skills
-        // at its new level.   See skills2.cc::init_skill_order(0
+        // Recalculate this skill's order for tie breaking skills
+        // at its new level.   See skills2.cc::init_skill_order()
         // for more details.  -- bwr
         you.skill_order[exsk] = 0;
         for (i = SK_FIGHTING; i < NUM_SKILLS; i++)
