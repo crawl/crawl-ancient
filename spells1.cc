@@ -91,7 +91,7 @@ void blink(void)
         return;
     }
 
-        if (you.your_level == LEVEL_ABYSS && random2(3) != 0)
+        if (you.level_type == LEVEL_ABYSS && random2(3) != 0)
     {
         mpr("The power of the Abyss keeps you in your place!");
         return;
@@ -162,7 +162,7 @@ void random_blink(void)
         return;
     }
 
-        if (you.your_level == LEVEL_ABYSS && random2(3) != 0)
+        if (you.level_type == LEVEL_ABYSS && random2(3) != 0)
     {
         mpr("The power of the Abyss keeps you in your place!");
         return;
@@ -188,7 +188,7 @@ void random_blink(void)
 
 void fireball(int power)
 {
-    strcpy(info, "Which direction? (* to target)");
+    strcpy(info, "Which direction? (*/+ to target)");
     mpr(info);
 
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
@@ -305,7 +305,7 @@ void cast_fire_storm(int powc)
 char spell_direction(struct dist spelld[1], struct bolt beam[1])
 {
 
-    strcpy(info, "Which direction? (* to target)");
+    strcpy(info, "Which direction? (*/+ to target)");
     mpr(info);
 
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
@@ -496,7 +496,7 @@ void stinking_cloud(void)
     struct dist spelld[1];
     struct bolt beam[1];
 
-    strcpy(info, "Which direction? (* to target)");
+    strcpy(info, "Which direction? (*/+ to target)");
     mpr(info);
 
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <3>      9/21/99        LRH             Added many new scales
  *      <2>      5/20/99        BWR             Fixed it so demonspwan should
  *                                              always get a mutation, 3 level
  *                                              perma_mutations now work.
@@ -37,7 +38,7 @@
   #include "macro.h"
 #endif
 
-#define NO_MUT 57
+#define NO_MUT 86
 
 int how_mutated(void);
 char delete_mutation(char which_mutation);
@@ -52,7 +53,7 @@ char *mutation_descrip[][3] =
     {"Your muscles are strong (Str +", "", ""},
     {"Your mind is acute (Int +", "", ""},
     {"You are agile (Dex +", "", ""},
-    {"You are partially covered in green scales (AC +1).", "You are mostly covered in green scales (AC +3).", "You are covered in green scales (AC +5)."},
+    {"You are partially covered in green scales (AC + 1).", "You are mostly covered in green scales (AC + 3).", "You are covered in green scales (AC + 5)."},
     {"You are partially covered in thick black scales (AC + 3, dex - 1).", "You are mostly covered in thick black scales (AC + 6, dex - 2).", "You are completely covered in thick black scales (AC + 9, dex - 3)."},
     {"You are partially covered in supple grey scales (AC + 1).", "You are mostly covered in supple grey scales (AC + 2).", "You are completely covered in supple grey scales (AC + 3)."},
     {"You are protected by plates of bone (AC + 2, dex - 1).", "You are protected by plates of bone (AC + 3, dex - 2).", "You are protected by plates of bone (AC + 4, dex - 3)."},
@@ -114,7 +115,7 @@ char *mutation_descrip[][3] =
 {"You can invoke the powers of Tartarus to smite your living foes.", "", ""},
     {"", "", ""},
     {"", "", ""},
-// 60
+// 60 - leave some space for more demonic powers...
     {"", "", ""},
     {"", "", ""},
     {"", "", ""},
@@ -125,7 +126,24 @@ char *mutation_descrip[][3] =
     {"", "", ""},
     {"", "", ""},
     {"", "", ""},
-
+// 70
+    {"You are partially covered in red scales (AC + 1).", "You are mostly covered in red scales (AC + 2).", "You are covered in red scales (AC + 4)."},
+    {"You are partially covered in smooth nacreous scales (AC + 1).", "You are mostly covered in smooth nacreous scales (AC + 3).", "You are completely covered in smooth nacreous scales (AC + 5)."},
+    {"You are partially covered in ridged grey scales (AC + 2, dex - 1).", "You are mostly covered in ridged grey scales (AC + 4, dex - 1).", "You are completely covered in ridged grey scales (AC + 6, dex - 2)."},
+    {"You are partially covered in metallic scales (AC + 3, dex - 2).", "You are mostly covered in metallic scales (AC + 7, dex - 3).", "You are completely covered in metallic scales (AC + 10, dex - 4)."},
+    {"You are partially covered in black scales (AC + 1).", "You are mostly covered in black scales (AC + 3).", "You are completely covered in black scales (AC + 5)."},
+    {"You are partially covered in white scales (AC + 1).", "You are mostly covered in white scales (AC + 3).", "You are completely covered in white scales (AC + 5)."},
+    {"You are partially covered in yellow scales (AC + 2).", "You are mostly covered in yellow scales (AC + 4, dex - 1).", "You are completely covered in yellow scales (AC + 6, dex - 2)."},
+    {"You are partially covered in brown scales (AC + 2).", "You are mostly covered in brown scales (AC + 4).", "You are completely covered in brown scales (AC + 5)."},
+    {"You are partially covered in blue scales (AC + 1).", "You are mostly covered in blue scales (AC + 2).", "You are completely covered in blue scales (AC + 3)."},
+    {"You are partially covered in purple scales (AC + 2).", "You are mostly covered in purple scales (AC + 4).", "You are completely covered in purple scales (AC + 6)."},
+// 80
+    {"You are partially covered in speckled scales (AC + 1).", "You are mostly covered in speckled scales (AC + 2).", "You are covered in speckled scales (AC + 3)."},
+    {"You are partially covered in orange scales (AC + 1).", "You are mostly covered in orange scales (AC + 3).", "You are completely covered in orange scales (AC + 4)."},
+    {"You are partially covered in indigo scales (AC + 2).", "You are mostly covered in indigo scales (AC + 3).", "You are completely covered in indigo scales (AC + 5)."},
+    {"You are partially covered in knobbly red scales (AC + 2).", "You are mostly covered in knobbly red scales (AC + 5, dex - 1).", "You are completely covered in knobbly red scales (AC + 7, dex - 2)."},
+    {"You are partially covered in iridescent scales (AC + 1).", "You are mostly covered in iridescent scales (AC + 2).", "You are completely covered in iridescent scales (AC + 3)."},
+    {"You are partially covered in patterned scales (AC + 1).", "You are mostly covered in patterned scales (AC + 2).", "You are completely covered in patterned scales (AC + 3)."},
 };
 
 /*
@@ -192,14 +210,13 @@ char *gain_mutation[][3] =
     {"You feel an affinity for the dead.", "", ""},
 // 50
     {"You feel an affinity for all demonkind.", "", ""},
-{"You feel something pulling you to a strange and terrible place.", "", ""},
+        {"You feel something pulling you to a strange and terrible place.", "", ""},
     {"You feel hungry for death.", "", ""},
     {"You feel a flux of magical energy.", "", ""},
     {"Your skin tingles in a strangely unpleasant way.", "", ""},
     {"You smell the fires of Gehenna.", "", ""},
     {"You feel the icy cold of Cocytus chill your soul.", "", ""},
     {"A shadow passes over the world around you.", "", ""},
-    {"", "", ""},
     {"", "", ""},
     {"", "", ""},
 // 60
@@ -213,9 +230,27 @@ char *gain_mutation[][3] =
     {"", "", ""},
     {"", "", ""},
     {"", "", ""},
-
+// 70
+    {"Red scales grow over part of your body.", "Red scales spread over more of your body.", "Red scales cover you completely."},
+    {"Smooth nacreous scales grow over part of your body.", "Smooth nacreous scales spread over more of your body.", "Smooth nacreous scales cover you completely."},
+    {"Ridged grey scales grow over part of your body.", "Ridged grey scales spread over more of your body.", "Ridged grey scales cover you completely."},
+    {"Metallic scales grow over part of your body.", "Metallic scales spread over more of your body.", "Metallic scales cover you completely."},
+    {"Black scales grow over part of your body.", "Black scales spread over more of your body.", "Black scales cover you completely."},
+    {"White scales grow over part of your body.", "White scales spread over more of your body.", "White scales cover you completely."},
+    {"Yellow scales grow over part of your body.", "Yellow scales spread over more of your body.", "Yellow scales cover you completely."},
+    {"Brown scales grow over part of your body.", "Brown scales spread over more of your body.", "Brown scales cover you completely."},
+    {"Blue scales grow over part of your body.", "Blue scales spread over more of your body.", "Blue scales cover you completely."},
+    {"Purple scales grow over part of your body.", "Purple scales spread over more of your body.", "Purple scales cover you completely."},
+// 80
+    {"Speckled scales grow over part of your body.", "Speckled scales spread over more of your body.", "Speckled scales cover you completely."},
+    {"Orange scales grow over part of your body.", "Orange scales spread over more of your body.", "Orange scales cover you completely."},
+    {"Indigo scales grow over part of your body.", "Indigo scales spread over more of your body.", "Indigo scales cover you completely."},
+    {"Knobbly red scales grow over part of your body.", "Knobbly red scales spread over more of your body.", "Knobbly red scales cover you completely."},
+    {"Iridescent scales grow over part of your body.", "Iridescent scales spread over more of your body.", "Iridescent scales cover you completely."},
+    {"Patterned scales grow over part of your body.", "Patterned scales spread over more of your body.", "Patterned scales cover you completely."},
 
 };
+
 
 
 char *lose_mutation[][3] =
@@ -266,11 +301,55 @@ char *lose_mutation[][3] =
     {"You feel genetically unstable.", "You feel genetically unstable.", "You should not be reading this message. Bug reports to zel@olis.net.au."},
     {"You feel robust.", "You feel robust.", "You feel robust."},
     {"You feel frail.", "You feel frail.", "You feel frail."},
-/* Some demonic powers start here... */
+/* Some demonic powers (which can't be lost) start here... */
     {"", "", ""},
     {"", "", ""},
     {"", "", ""},
     {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+// 50
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+// 60
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+    {"", "", ""},
+// 70
+    {"Your red scales disappear.", "Your red scales recede somewhat.", "Your red scales recede somewhat."},
+    {"Your smooth nacreous scales disappear.", "Your smooth nacreous scales recede somewhat.", "Your smooth nacreous scales recede somewhat."},
+    {"Your ridged grey scales disappear.", "Your ridged grey scales recede somewhat.", "Your ridged grey scales recede somewhat."},
+    {"Your metallic scales disappear.", "Your metallic scales recede somewhat.", "Your metallic scales recede somewhat."},
+    {"Your black scales disappear.", "Your black scales recede somewhat.", "Your black scales recede somewhat."},
+    {"Your white scales disappear.", "Your white scales recede somewhat.", "Your white scales recede somewhat."},
+    {"Your yellow scales disappear.", "Your yellow scales recede somewhat.", "Your yellow scales recede somewhat."},
+    {"Your brown scales disappear.", "Your brown scales recede somewhat.", "Your brown scales recede somewhat."},
+    {"Your blue scales disappear.", "Your blue scales recede somewhat.", "Your blue scales recede somewhat."},
+    {"Your purple scales disappear.", "Your purple scales recede somewhat.", "Your purple scales recede somewhat."},
+// 80
+    {"Your speckled scales disappear.", "Your speckled scales recede somewhat.", "Your speckled scales recede somewhat."},
+    {"Your orange scales disappear.", "Your orange scales recede somewhat.", "Your orange scales recede somewhat."},
+    {"Your indigo scales disappear.", "Your indigo scales recede somewhat.", "Your indigo scales recede somewhat."},
+    {"Your knobbly red scales disappear.", "Your knobbly red scales recede somewhat.", "Your knobbly red scales recede somewhat."},
+    {"Your iridescent scales disappear.", "Your iridescent scales recede somewhat.", "Your iridescent scales recede somewhat."},
+    {"Your patterned scales disappear.", "Your patterned scales recede somewhat.", "Your patterned scales recede somewhat."},
+
 };
 
 
@@ -283,8 +362,8 @@ char mutation_rarity[] =
      8,                         // str
      8,                         // int
      8,                         // dex
-     3,                         // gr scales
-     2,                         // bl scales
+     2,                         // gr scales
+     1,                         // bl scales
      2,                         // grey scales
      1,                         // bone
      1,                         // repuls field
@@ -346,8 +425,40 @@ char mutation_rarity[] =
     0,
     0,
 // 60
-    0
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+// 70
+    2,                          // red scales
+    1,                          // nac scales
+    2,                          // r-grey scales
+    1,                          // metal scales
+    2,                          // black scales
+    2,                          // wh scales
+    2,                          // yel scales
+    2,                          // brown scales
+    2,                          // blue scales
+    2,                          // purple scales
+// 80
+    2,                          // speckled scales
+    2,                          // orange scales
+    2,                          // indigo scales
+    1,                          // kn red scales
+    1,                          // irid scales
+    1,                          // pattern scales
+    0,                          //
+    0,                          //
+    0,                          //
+    0                           //
 };
+
 
 void display_mutations(void)
 {
@@ -467,13 +578,14 @@ char mutate(int which_mutation)
         return 0;
 
     // These can be forced by demonspawn
-    if (mutat == MUT_TOUGH_SKIN
+    if ((mutat == MUT_TOUGH_SKIN
                 || (mutat >= MUT_GREEN_SCALES && mutat <= MUT_BONEY_PLATES)
+                || (mutat >= MUT_RED_SCALES && mutat <= MUT_PATTERNED_SCALES))
                 && body_covered() > 2 && force == 0)
         return 0;
 
     if (mutat == MUT_HORNS && you.species == SP_MINOTAUR)
-        return 0;
+                return 0;
 
     if ((mutat == MUT_ACUTE_VISION || mutat == MUT_POISON_RESISTANCE || mutat == MUT_SPIT_POISON) && you.species == SP_NAGA)
         return 0;               // nagas have see invis and res poison and can spit poison
@@ -744,6 +856,45 @@ char mutate(int which_mutation)
     default:
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
+
+
+    case MUT_GREY2_SCALES:
+        if (you.mutation[mutat] != 1)
+        {
+                you.dex--;
+                you.max_dex--;
+                you.redraw_dexterity = 1;
+        }
+        mpr(gain_mutation[mutat][you.mutation[mutat]]);
+        break;
+
+    case MUT_METALLIC_SCALES:
+        if (you.mutation[mutat] == 0)
+        {
+                you.dex-=2;
+                you.max_dex-=2;
+                you.redraw_dexterity = 1;
+        } else
+        {
+                you.dex--;
+                you.max_dex--;
+                you.redraw_dexterity = 1;
+        }
+        mpr(gain_mutation[mutat][you.mutation[mutat]]);
+        break;
+
+    case MUT_RED2_SCALES:
+    case MUT_YELLOW_SCALES:
+        if (you.mutation[mutat] != 0)
+        {
+                you.dex--;
+                you.max_dex--;
+                you.redraw_dexterity = 1;
+        }
+        mpr(gain_mutation[mutat][you.mutation[mutat]]);
+        break;
+
+
     }
 
     you.mutation[mutat]++;
@@ -958,6 +1109,46 @@ char delete_mutation(char which_mutation)
     default:
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
+
+
+
+    case MUT_GREY2_SCALES:
+        if (you.mutation[mutat] != 2)
+        {
+                you.dex++;
+                you.max_dex++;
+                you.redraw_dexterity = 1;
+        }
+        mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
+        break;
+
+    case MUT_METALLIC_SCALES:
+        if (you.mutation[mutat] == 1)
+        {
+                you.dex+=2;
+                you.max_dex+=2;
+                you.redraw_dexterity = 1;
+        } else
+        {
+                you.dex++;
+                you.max_dex++;
+                you.redraw_dexterity = 1;
+        }
+        mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
+        break;
+
+    case MUT_RED2_SCALES:
+    case MUT_YELLOW_SCALES:
+        if (you.mutation[mutat] != 1)
+        {
+                you.dex++;
+                you.max_dex++;
+                you.redraw_dexterity = 1;
+        }
+        mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
+        break;
+
+
     }
 
     you.redraw_hit_points = 1;
@@ -996,6 +1187,23 @@ char body_covered(void)
     covered += you.mutation[MUT_BLACK_SCALES];
     covered += you.mutation[MUT_GREY_SCALES];
     covered += you.mutation[MUT_BONEY_PLATES];
+    covered += you.mutation[MUT_RED_SCALES];
+    covered += you.mutation[MUT_NACREOUS_SCALES];
+    covered += you.mutation[MUT_GREY2_SCALES];
+    covered += you.mutation[MUT_METALLIC_SCALES];
+    covered += you.mutation[MUT_BLACK2_SCALES];
+    covered += you.mutation[MUT_WHITE_SCALES];
+    covered += you.mutation[MUT_YELLOW_SCALES];
+    covered += you.mutation[MUT_BROWN_SCALES];
+    covered += you.mutation[MUT_BLUE_SCALES];
+    covered += you.mutation[MUT_PURPLE_SCALES];
+    covered += you.mutation[MUT_SPECKLED_SCALES];
+    covered += you.mutation[MUT_ORANGE_SCALES];
+    covered += you.mutation[MUT_INDIGO_SCALES];
+    covered += you.mutation[MUT_RED2_SCALES];
+    covered += you.mutation[MUT_IRIDESCENT_SCALES];
+    covered += you.mutation[MUT_PATTERNED_SCALES];
+
 
     return covered;
 }
@@ -1083,22 +1291,27 @@ void demonspawn()
             if (random2(10) == 0)
             {
                 whichm = MUT_TOUGH_SKIN;
-                howm = 2 + random2(2);
+                howm = 1 + random2(2);
             }                   /* tough skin */
-            if (random2(12) == 0)
+            if (random2(24) == 0)
             {
                 whichm = MUT_GREEN_SCALES;
                 howm = 1 + random2(2);
             }                   /* green scales */
-            if (random2(12) == 0)
+            if (random2(24) == 0)
             {
                 whichm = MUT_BLACK_SCALES;
-                howm = 1;
+                howm = 1 + random2(2);
+            }                   /* scales */
+            if (random2(24) == 0)
+            {
+                whichm = MUT_GREY_SCALES;
+                howm = 1 + random2(2);
             }                   /* scales */
             if (random2(12) == 0)
             {
-                whichm = MUT_GREY_SCALES;
-                howm = 1 + random2(3);
+                whichm = MUT_RED_SCALES + random2(16);
+                howm = 1 + random2(2);
             }                   /* scales */
             if (random2(30) == 0)
             {

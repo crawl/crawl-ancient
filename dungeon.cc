@@ -6694,11 +6694,22 @@ void give_item(void)
         break;
 
     case MONS_RED_DEVIL:
-        force_spec = 100;
-        mitm.base_type[bp] = OBJ_WEAPONS;
-        mitm.sub_type[bp] = WPN_DEMON_TRIDENT;
-        mitm.colour[bp] = RED;
-        iquan = 1;
+        if (random3(3) != 0)
+        {
+            force_spec = 100;
+            mitm.base_type[bp] = OBJ_WEAPONS;
+            if (random3(3) == 0)
+            {
+                mitm.sub_type[bp] = WPN_DEMON_TRIDENT;
+                mitm.colour[bp] = 1 + random3(15);
+            }
+            else
+            {
+                mitm.sub_type[bp] = WPN_TRIDENT;
+                mitm.colour[bp] = LIGHTCYAN;
+            }
+            iquan = 1;
+        }
         break;
 
     case MONS_OGRE:                    // Ogre
@@ -7352,7 +7363,7 @@ void item_colour(int p)
 
     switch (mitm.base_type[bp])
     {
-    case 0:
+    case OBJ_WEAPONS:
         if (mitm.special[bp] % 30 == 25)
             break;              /* unrandarts have already been coloured */
 
@@ -7360,41 +7371,41 @@ void item_colour(int p)
         {
             switch (mitm.special[bp] - 180)
             {
-            case 1:
+            case NWPN_SINGING_SWORD:
                 mitm.colour[bp] = YELLOW;
                 break;
-            case 2:
+            case NWPN_WRATH_OF_TROG:
                 mitm.colour[bp] = RED;
                 break;
-            case 3:
+            case NWPN_SCYTHE_OF_CURSES:
                 mitm.colour[bp] = DARKGREY;
                 break;
-            case 4:
+            case NWPN_MACE_OF_VARIABILITY:
                 mitm.colour[bp] = random3(15) + 1;
                 break;
-            case 5:
+            case NWPN_GLAIVE_OF_PRUNE:
                 mitm.colour[bp] = MAGENTA;
                 break;
-            case 6:
+            case NWPN_SCEPTRE_OF_TORMENT:
                 mitm.colour[bp] = YELLOW;
                 break;
-            case 7:
+            case NWPN_SWORD_OF_ZONGULDROK:
                 mitm.colour[bp] = LIGHTGREY;
                 break;
 
-            case 11:
+            case NWPN_SWORD_OF_POWER:
                 mitm.colour[bp] = RED;
                 break;
-            case 12:
+            case NWPN_KNIFE_OF_ACCURACY:
                 mitm.colour[bp] = LIGHTCYAN;
                 break;
-            case 13:
+            case NWPN_STAFF_OF_OLGREB:
                 mitm.colour[bp] = GREEN;
                 break;
-            case 14:
+            case NWPN_VAMPIRE_S_TOOTH:
                 mitm.colour[bp] = WHITE;
                 break;
-            case 15:
+            case NWPN_STAFF_OF_WUCAD_MU:
                 mitm.colour[bp] = BROWN;
                 break;
             }
@@ -7403,33 +7414,30 @@ void item_colour(int p)
 
         switch (mitm.sub_type[bp])
         {
-
-        case 0:
-        case 13:
-        case 14:
-        case 15:
-        case 16:
-        case 18:
-        case 20:
-        case 21:
-        case 29:
-        case 30:
+        case WPN_CLUB:
+        case WPN_SLING:
+        case WPN_BOW:
+        case WPN_CROSSBOW:
+        case WPN_HAND_CROSSBOW:
+        case WPN_QUARTERSTAFF:
+        case WPN_GIANT_CLUB:
+        case WPN_GIANT_SPIKED_CLUB:
+        case WPN_ANCUS:
+        case WPN_WHIP:
             mitm.colour[bp] = BROWN;
             break;
 
-        case 23:                // quick blade
-
+        case WPN_QUICK_BLADE:                // quick blade
             mitm.colour[bp] = LIGHTBLUE;
             break;
 
-        case 25:                // exec axe
-
+        case WPN_EXECUTIONERS_AXE:                // exec axe
             mitm.colour[bp] = RED;
             break;
 
-        case 32:
-        case 33:                // demon blade/whip
-
+        case WPN_DEMON_BLADE:
+        case WPN_DEMON_WHIP:
+        case WPN_DEMON_TRIDENT:
             mitm.colour[bp] = random3(15) + 1;
             break;
 
@@ -7440,11 +7448,12 @@ void item_colour(int p)
 
             break;
         }
+
         if (random3(5) == 0 && mitm.special[bp] % 30 >= 25)
             mitm.colour[bp] = random3(15) + 1;
         break;
 
-    case 1:
+    case OBJ_MISSILES:
         switch (mitm.sub_type[bp])
         {
         case 0:
@@ -7466,7 +7475,7 @@ void item_colour(int p)
         }
         break;
 
-    case 2:
+    case OBJ_ARMOUR:
         if (mitm.special[bp] % 30 == 25)
             break;              /* unrandarts have already been coloured */
         switch (mitm.sub_type[bp])
@@ -7553,7 +7562,7 @@ void item_colour(int p)
             mitm.colour[bp] = random3(15) + 1;
         break;
 
-    case 3:
+    case OBJ_WANDS:
         mitm.special[bp] = you.item_description[0][mitm.sub_type[bp]];
         switch (mitm.special[bp] % 12)
         {
@@ -7616,7 +7625,7 @@ void item_colour(int p)
 
 
 
-    case 8:
+    case OBJ_POTIONS:
         mitm.special[bp] = you.item_description[1][mitm.sub_type[bp]];
 
         switch (mitm.special[bp] % 14)
@@ -7683,24 +7692,24 @@ void item_colour(int p)
 
         break;
 
-    case 4:                     // food
+    case OBJ_FOOD:                     // food
 
         mitm.colour[bp] = 6;
         switch (mitm.sub_type[bp])
         {
-        case 0:
+        case FOOD_MEAT_RATION:
             mitm.colour[bp] = BROWN;
             break;              //strcpy(fake_name [bp], "meat ration"); break;
 
-        case 1:
+        case FOOD_BREAD_RATION:
             mitm.colour[bp] = BROWN;
             break;              //strcpy(fake_name [bp], "bread ration"); break;
 
-        case 2:
+        case FOOD_PEAR:
             mitm.colour[bp] = LIGHTGREEN;
             break;              //strcpy(fake_name [bp], "pear"); break;
 
-        case 3:
+        case FOOD_APPLE:
             switch (random3(2))
             {
             case 0:
@@ -7712,51 +7721,52 @@ void item_colour(int p)
             }
             break;
             //strcpy(fake_name [bp], "apple"); break; // make this less common.
-        case 4:
+
+        case FOOD_CHOKO:
             mitm.colour[bp] = GREEN;
             break;              //strcpy(fake_name [bp], "choko"); break;
 
-        case 5:
+        case FOOD_HONEYCOMB:
             mitm.colour[bp] = YELLOW;
             break;              //strcpy(fake_name [bp], "honeycomb"); break;
 
-        case 6:
+        case FOOD_ROYAL_JELLY:
             mitm.colour[bp] = YELLOW;
             break;              //strcpy(fake_name [bp], "royal jelly"); break;
 
-        case 7:
+        case FOOD_SNOZZCUMBER:
             mitm.colour[bp] = GREEN;
             break;              // snozzcumber//strcpy(fake_name [bp], ""); break;
 
-        case 8:
+        case FOOD_PIZZA:
             mitm.colour[bp] = YELLOW;
             break;              // pizza???
 
-        case 9:
+        case FOOD_APRICOT:
             mitm.colour[bp] = LIGHTRED;
             break;              // apricot
 
-        case 10:
+        case FOOD_ORANGE:
             mitm.colour[bp] = LIGHTRED;
             break;              // orange
 
-        case 11:
+        case FOOD_BANANA:
             mitm.colour[bp] = YELLOW;
             break;              // banana
 
-        case 12:
+        case FOOD_STRAWBERRY:
             mitm.colour[bp] = RED;
             break;              // strawberry
 
-        case 13:
+        case FOOD_RAMBUTAN:
             mitm.colour[bp] = BROWN;
             break;              // rambutan
 
-        case 14:
+        case FOOD_LEMON:
             mitm.colour[bp] = YELLOW;
             break;              // lemon
 
-        case 15:
+        case FOOD_GRAPE:
             switch (random3(2))
             {
             case 0:
@@ -7769,23 +7779,23 @@ void item_colour(int p)
             }
             break;              // grape
 
-        case 16:
+        case FOOD_SULTANA:
             mitm.colour[bp] = BROWN;
             break;              // sultana
 
-        case 17:
+        case FOOD_LYCHEE:
             mitm.colour[bp] = BROWN;
             break;              // lychee
 
-        case 18:
+        case FOOD_BEEF_JERKY:
             mitm.colour[bp] = BROWN;
             break;              // beef jerky
 
-        case 19:
+        case FOOD_CHEESE:
             mitm.colour[bp] = YELLOW;
             break;              // cheese
 
-        case 20:
+        case FOOD_SAUSAGE:
             mitm.colour[bp] = BROWN;
             break;              // saus
             //              case 21: mitm.colour [bp] = BROWN; break;
@@ -7916,13 +7926,13 @@ void item_colour(int p)
         break;
 
 
-    case 6:                     // scrolls
+    case OBJ_SCROLLS:                     // scrolls
         mitm.colour[bp] = LIGHTGREY;
         mitm.special[bp] = you.item_description[2][mitm.sub_type[bp]];
         mitm.pluses[bp] = you.item_description[4][mitm.sub_type[bp]];
         break;
 
-    case 10:                    // books
+    case OBJ_BOOKS:                    // books
         switch (mitm.special[bp] % 10)
         {
         case 0:         //strcat(glog , "paperback book");
@@ -7951,11 +7961,11 @@ void item_colour(int p)
         }
         break;
 
-    case 11:                    // staves
+    case OBJ_STAVES:                    // staves
         mitm.colour[bp] = BROWN;
         break;
 
-    case 12:                    // Magical Orbs of Power
+    case OBJ_ORBS:                    // Magical Orbs of Power
         mitm.colour[bp] = LIGHTMAGENTA;
 /* if (mitm.sub_type [bp] == 1) mitm.colour [bp] = LIGHTBLUE;
    if (mitm.sub_type [bp] == 2) mitm.colour [bp] = CYAN;
@@ -7985,7 +7995,7 @@ void item_colour(int p)
 
         break;
 
-    case 13:                    // Misc
+    case OBJ_MISCELLANY:                    // Misc
 
         switch (mitm.sub_type[bp])
         {
@@ -8052,8 +8062,7 @@ void item_colour(int p)
         }
         break;
 
-    case 14:                    // carrion
-
+    case OBJ_CORPSES:                    // carrion
         mitm.colour[bp] = RED;
         break;
 
@@ -10641,10 +10650,16 @@ void prepare_water(void)
 char rare_weapon(unsigned char w_type)
 {
 
- switch(w_type)
- {
+    switch(w_type)
+    {
+    case WPN_DEMON_WHIP:
+        return 0;
+
     case WPN_CLUB:
         return 10;
+
+    case WPN_HAMMER:
+        return 8;
 
     case WPN_MACE:
         return 9;
@@ -10652,14 +10667,45 @@ char rare_weapon(unsigned char w_type)
     case WPN_FLAIL:
         return 8;
 
+    case WPN_MORNINGSTAR:
+        return 7;
+
+    case WPN_GIANT_CLUB:
+        return 1;
+
+    case WPN_GIANT_SPIKED_CLUB:
+        return 1;
+
+    case WPN_EVENINGSTAR:
+        return 0;
+
+    case WPN_ANCUS:
+        return 2;
+
+    case WPN_WHIP:
+        return 4;
+
+    case WPN_SPIKED_FLAIL:
+        return 4;
+
+    case WPN_GREAT_MACE:
+        return 3;
+
+    case WPN_GREAT_FLAIL:
+        return 2;
+
+
+    case WPN_SABRE:
+        return 8;
+
+    case WPN_DEMON_BLADE:
+        return 0;
+
     case WPN_KNIFE:
         return 0; /* special routines for placing this one */
 
     case WPN_DAGGER:
         return 10;
-
-    case WPN_MORNINGSTAR:
-        return 8;
 
     case WPN_SHORT_SWORD:
         return 8;
@@ -10673,11 +10719,34 @@ char rare_weapon(unsigned char w_type)
     case WPN_SCIMITAR:
         return 6;
 
+    case WPN_QUICK_BLADE:
+        return 0;
+
+    case WPN_KATANA:
+        return 0;
+
+    case WPN_DOUBLE_SWORD:
+        return 0;
+
+    case WPN_TRIPLE_SWORD:
+        return 0;
+
+
     case WPN_HAND_AXE:
         return 9;
 
+    case WPN_AXE:
+        return 7;
+
+    case WPN_BROAD_AXE:
+        return 4;
+
     case WPN_BATTLEAXE:
         return 6;
+
+    case WPN_EXECUTIONERS_AXE:
+        return 0;
+
 
     case WPN_SPEAR:
         return 8;
@@ -10685,8 +10754,18 @@ char rare_weapon(unsigned char w_type)
     case WPN_TRIDENT:
         return 6;
 
+    case WPN_DEMON_TRIDENT:
+        return 0;
+
     case WPN_HALBERD:
         return 5;
+
+    case WPN_GLAIVE:
+        return 5;
+
+    case WPN_SCYTHE:
+        return 2;
+
 
     case WPN_SLING:
         return 8;
@@ -10700,79 +10779,13 @@ char rare_weapon(unsigned char w_type)
     case WPN_HAND_CROSSBOW:
         return 4;
 
-    case WPN_GLAIVE:
-        return 5;
 
     case WPN_QUARTERSTAFF:
         return 9;
 
-    case WPN_SCYTHE:
-        return 2;
-
-    case WPN_GIANT_CLUB:
-        return 1;
-
-    case WPN_GIANT_SPIKED_CLUB:
-        return 1;
-
-    case WPN_EVENINGSTAR:
-        return 0;
-
-    case WPN_QUICK_BLADE:
-        return 0;
-
-    case WPN_KATANA:
-        return 0;
-
-    case WPN_EXECUTIONERS_AXE:
-        return 0;
-
-    case WPN_DOUBLE_SWORD:
-        return 0;
-
-    case WPN_TRIPLE_SWORD:
-        return 0;
-
-    case WPN_HAMMER:
-        return 8;
-
-    case WPN_ANCUS:
-        return 2;
-
-    case WPN_WHIP:
-        return 4;
-
-    case WPN_SABRE:
-        return 8;
-
-    case WPN_DEMON_BLADE:
-        return 0;
-
-    case WPN_DEMON_WHIP:
-        return 0;
-
-    case WPN_DEMON_TRIDENT:
-        return 0;
-
-    case WPN_BROAD_AXE:
-        return 6;
-
-    case WPN_AXE:
-        return 7;
-
-    case WPN_SPIKED_FLAIL:
-        return 6;
-
-    case WPN_GREAT_MACE:
-        return 3;
-
-    case WPN_GREAT_FLAIL:
-        return 3;
-
-    default: return -1;
-
- }
-
+    default:
+        return -1;
+    }
 }
 
 

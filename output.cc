@@ -39,18 +39,38 @@ void print_stats()
 
     if (you.redraw_hit_points == 1)
     {
+        int max_max_hp = you.hp_max - you.base_hp + 5000;
+
         if (you.hp <= you.hp_max / 4)
             textcolor(YELLOW);
+
         if (you.hp <= you.hp_max / 10)
             textcolor(RED);
+
         itoa(you.hp, st_prn, 10);
         gotoxy(44, 3);
         cprintf(st_prn);
+
         textcolor(LIGHTGREY);
         itoa(you.hp_max, st_prn, 10);
-        cprintf("(");
+
+        cprintf("/");
         cprintf(st_prn);
-        cprintf(")    ");
+
+        if (max_max_hp != you.hp_max)
+        {
+            cprintf(" (");
+            itoa(max_max_hp, st_prn, 10);
+            cprintf(st_prn);
+            cprintf(")");
+        }
+
+#ifdef USE_CURSES
+        clrtoeol();
+#else
+        cprintf("        ");
+#endif
+
         you.redraw_hit_points = 0;
     }
 
@@ -60,9 +80,8 @@ void print_stats()
         gotoxy(47, 4);
         cprintf(st_prn);
         itoa(you.max_magic_points, st_prn, 10);
-        cprintf("(");
+        cprintf("/");
         cprintf(st_prn);
-        cprintf(")   ");
         you.redraw_magic_points = 0;
     }
 
@@ -83,12 +102,12 @@ void print_stats()
         {
             textcolor(LIGHTGREY);
             itoa(you.max_strength, st_prn, 10);
-            cprintf("(");
+            cprintf(" (");
             cprintf(st_prn);
             cprintf(")   ");
         }
         else
-            cprintf("      ");
+            cprintf("       ");
         you.redraw_strength = 0;
         if (you.strength <= 0)
             ouch(-9999, 0, 8);
@@ -112,12 +131,12 @@ void print_stats()
         {
             textcolor(LIGHTGREY);
             itoa(you.max_intel, st_prn, 10);
-            cprintf("(");
+            cprintf(" (");
             cprintf(st_prn);
             cprintf(")   ");
         }
         else
-            cprintf("      ");
+            cprintf("       ");
         you.redraw_intelligence = 0;
         if (you.intel <= 0)
             ouch(-9999, 0, 7);
@@ -140,12 +159,12 @@ void print_stats()
         {
             textcolor(LIGHTGREY);
             itoa(you.max_dex, st_prn, 10);
-            cprintf("(");
+            cprintf(" (");
             cprintf(st_prn);
             cprintf(")   ");
         }
         else
-            cprintf("      ");
+            cprintf("       ");
         you.redraw_dexterity = 0;
         if (you.dex <= 0)
             ouch(-9999, 0, 9);

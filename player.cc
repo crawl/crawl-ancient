@@ -953,10 +953,49 @@ int player_AC(void)
         AC += you.mutation[MUT_GREEN_SCALES] * 2 - 1;
 
     AC += you.mutation[MUT_BLACK_SCALES] * 3;
+
     AC += you.mutation[MUT_GREY_SCALES];
 
     if (you.mutation[MUT_BONEY_PLATES] > 0)
         AC += you.mutation[MUT_BONEY_PLATES] + 1;
+
+    AC += you.mutation [MUT_RED_SCALES] + (you.mutation [MUT_RED_SCALES] == 3);
+
+    if (you.mutation[MUT_NACREOUS_SCALES] > 0)
+        AC += you.mutation[MUT_NACREOUS_SCALES] * 2 - 1;
+
+    AC += you.mutation[MUT_GREY2_SCALES] * 2;
+
+    AC += you.mutation[MUT_METALLIC_SCALES] * 3 + (you.mutation [MUT_METALLIC_SCALES] > 1);
+
+    if (you.mutation[MUT_BLACK2_SCALES] > 0)
+        AC += you.mutation[MUT_BLACK2_SCALES] * 2 - 1;
+
+    if (you.mutation[MUT_WHITE_SCALES] > 0)
+        AC += you.mutation[MUT_WHITE_SCALES] * 2 - 1;
+
+    AC += you.mutation[MUT_YELLOW_SCALES] * 2;
+
+    if (you.mutation[MUT_BROWN_SCALES] > 0)
+        AC += you.mutation[MUT_BROWN_SCALES] * 2 - (you.mutation [MUT_METALLIC_SCALES] == 3);
+
+    AC += you.mutation[MUT_BLUE_SCALES];
+
+    AC += you.mutation[MUT_PURPLE_SCALES] * 2;
+
+    AC += you.mutation[MUT_SPECKLED_SCALES];
+
+    AC += you.mutation [MUT_ORANGE_SCALES] + (you.mutation [MUT_ORANGE_SCALES] >= 2);
+
+    if (you.mutation[MUT_INDIGO_SCALES] > 0)
+        AC += you.mutation[MUT_INDIGO_SCALES] + 1 + (you.mutation [MUT_INDIGO_SCALES] == 3);
+
+    AC += you.mutation [MUT_RED2_SCALES] * 2 + (you.mutation [MUT_RED2_SCALES] >= 2);
+
+    AC += you.mutation[MUT_IRIDESCENT_SCALES];
+
+    AC += you.mutation[MUT_PATTERNED_SCALES];
+
 
     /* transformations */
     switch (you.attribute[ATTR_TRANSFORMATION])
@@ -1010,28 +1049,43 @@ int player_evasion(void)
 
     if (you.species == SP_CENTAUR)
         ev = 7;
-    int ev_change = 0;
 
-    ev_change = property(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]], 1);
-    ev_change += you.skills[SK_ARMOUR] / 2;   // lowered from / 3 -- bwross
-    if (ev_change > property(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]], 1) / 3)
-        ev_change = property(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]], 1) / 3;
-    ev += ev_change;            /* remember that it's negative */
+    if (you.equip[EQ_BODY_ARMOUR] != -1)
+    {
+        int ev_change = 0;
 
-    if (you.equip[EQ_RIGHT_RING] != -1 && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_EVASION)
+        ev_change = property(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]], 1);
+        ev_change += you.skills[SK_ARMOUR] / 2;  // lowered from / 3 -- bwross
+
+        if (ev_change
+                > property(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]], 1) / 3)
+        {
+            ev_change
+                = property(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]], 1) / 3;
+        }
+
+        ev += ev_change;            /* remember that it's negative */
+    }
+
+    if (you.equip[EQ_RIGHT_RING] != -1
+                && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_EVASION)
     {
         if (you.inv_plus[you.equip[EQ_RIGHT_RING]] > 130)
             ev -= 100;
         ev += you.inv_plus[you.equip[EQ_RIGHT_RING]];
         ev -= 50;
     }
-    if (you.equip[EQ_LEFT_RING] != -1 && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_EVASION)
+
+    if (you.equip[EQ_LEFT_RING] != -1
+                && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_EVASION)
     {
         if (you.inv_plus[you.equip[EQ_LEFT_RING]] > 130)
             ev -= 100;
+
         ev += you.inv_plus[you.equip[EQ_LEFT_RING]];
         ev -= 50;
     }
+
     if (you.duration[DUR_STONEMAIL] > 0)
         ev -= 2;                // stonemail
 
@@ -1054,7 +1108,7 @@ int player_evasion(void)
     if (you.mutation[MUT_REPULSION_FIELD] > 0)
         ev += you.mutation[MUT_REPULSION_FIELD] * 2 - 1;
 
-/* transformations */
+    /* transformations */
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
     case TRAN_NONE:
@@ -1069,7 +1123,9 @@ int player_evasion(void)
         ev -= 3;
         break;                  /* Dragon */
     }
+
     ev += scan_randarts(RAP_EVASION);
+
     return ev;
 }
 

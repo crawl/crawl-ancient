@@ -28,7 +28,8 @@
   #include "macro.h"
 #endif
 
-#define MAX_SPENDING_LIMIT       100
+#define MAX_COST_LIMIT           250
+#define MAX_SPENDING_LIMIT       250
 
 #ifdef CLASSES
 void exercise2(char exsk, char deg, char cutting);
@@ -122,8 +123,8 @@ void exercise2(char exsk, char deg)
  * MAX_SPENDING_LIMIT doesn't seem to affect the actual xp cost per
  * skill_point. Am I misreading this?
 */
-    if (skill_change > 150)
-        skill_change = 150;
+    if (skill_change > MAX_COST_LIMIT)
+        skill_change = MAX_COST_LIMIT;
 
 /*
  * New (LH): If the pool is filling up, you use more xp. I think this is

@@ -1102,46 +1102,59 @@ void update_corpses(double elapsedTime)
 {
     ASSERT(elapsedTime >= 0.0);
 
-    const int rot_time = (int) (elapsedTime / 20.0);
-
-    for (int c = 0; c < ITEMS && elapsedTime > 0.0; c++)
+    if (elapsedTime > 0.0)
     {
-        if (mitm.quantity[c] <= 0)
-            continue;
-        if (mitm.base_type[c] != OBJ_CORPSES && mitm.base_type[c] != OBJ_FOOD)
-            continue;
-        if (mitm.base_type[c] == OBJ_CORPSES && mitm.sub_type[c] > CORPSE_SKELETON)
-            continue;
-        if (mitm.base_type[c] == OBJ_FOOD && mitm.sub_type[c] != FOOD_CHUNK)
-            continue;
+        const int rot_time = (int) (elapsedTime / 20.0);
 
-        if (rot_time >= mitm.special[c])
+        for (int c = 0; c < ITEMS; c++)
         {
-            if (mitm.base_type[c] == OBJ_FOOD)
-            {
-                destroy_item(c);
+            if (mitm.quantity[c] <= 0)
+                continue;
 
-            }
-            else
+            if (mitm.base_type[c] != OBJ_CORPSES
+                                        && mitm.base_type[c] != OBJ_FOOD)
             {
-                if (mitm.sub_type[c] == CORPSE_SKELETON || mons_skeleton(mitm.pluses[c]) == 0)
+                continue;
+            }
+
+            if (mitm.base_type[c] == OBJ_CORPSES
+                                        && mitm.sub_type[c] > CORPSE_SKELETON)
+            {
+                continue;
+            }
+
+            if (mitm.base_type[c] == OBJ_FOOD && mitm.sub_type[c] != FOOD_CHUNK)
+                continue;
+
+            if (rot_time >= mitm.special[c])
+            {
+                if (mitm.base_type[c] == OBJ_FOOD)
                 {
                     destroy_item(c);
 
                 }
                 else
                 {
-                    mitm.sub_type[c] = CORPSE_SKELETON;
-                    mitm.special[c] = 200;
-                    mitm.colour[c] = LIGHTGREY;
-                }
-            }
+                    if (mitm.sub_type[c] == CORPSE_SKELETON
+                                    || mons_skeleton(mitm.pluses[c]) == 0)
+                    {
+                        destroy_item(c);
 
-        }
-        else
-        {
-            ASSERT(rot_time < 256);
-            mitm.special[c] -= rot_time;
+                    }
+                    else
+                    {
+                        mitm.sub_type[c] = CORPSE_SKELETON;
+                        mitm.special[c] = 200;
+                        mitm.colour[c] = LIGHTGREY;
+                    }
+                }
+
+            }
+            else
+            {
+                ASSERT(rot_time < 256);
+                mitm.special[c] -= rot_time;
+            }
         }
     }
 }

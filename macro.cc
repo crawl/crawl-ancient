@@ -284,29 +284,20 @@ static int getch_mul(int size, int *buf)
 {
     signed int a;
 
-// *BCR*    int i = 0, b;
-// that b variable looks useless
+    int i = 0, b;
 
-    int i = 0;
+    buf[i++] = b = a = getch();
 
-// *BCR*    buf[i++] = b = a = getch();
-    buf[i++] = a = getch();
-
-
-/* *BCR*
-#ifdef DOS
-#elif defined(LINUX)
-#else
+#ifndef DOS
     b = -1;
 #endif
-*/
 
     buf[i] = -1;
 
-    while ((kbhit() || a == 0) && i < size)
+    while ((kbhit() || b == 0) && i < size)
     {
         a = getch();
-// *BCR*        b = a;
+        b = a;
         buf[i++] = a;
         buf[i] = -1;
     }

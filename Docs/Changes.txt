@@ -1,50 +1,22 @@
-Linley Henzell (linley.henzell@student.adelaide.edu.au)
-12/09/99
+Brent Ross (bwross@csclub.uwaterloo.ca)
+24/09/99
 
--- "Over-map" added
+-- fixed evasion bug
+-- reverted getch_mul function in macro.cc
+-- red devils now have probablistic chance on trident/demon trident/no weapon
+-- demon tridents are now correctly coloured
+-- xp spending cap/MAX_SPENDING_LIMIT
+-- made broad axe, spiked flail, great flail less common
+-- reduced floating point operations in update_corpses()
+-- all demonspawn scales/plates can be given at one or two levels
+-- max max hit points are now displayed when the player's max is down
+-- From Linley:
+    -- fixed portal so that it doesn't go below level 27
+    -- Fixed the checks for translocating in the abyss
+    -- added fix for going to pandemonium or the abyss from hell
+    -- added note about using + for targeting to various prompts
+    -- ghosts now fade away only if they have less than half their hps
 
--- Messages can now be coloured. Just call set_colour before mpr.
-
--- Made wild magic effects do more harm, and increased likelihood of the
-   higher levels of effect.
-
--- In the Abyss, blink may not work and teleport takes longer
-
--- Tweaked a few unrandarts
-
--- Rewrote part of the weapon generation function in dungeon.cc. Add a weapon
-   rarity function.
-
--- Some monsters can now get a wider range of weapons.
-
--- Many high-powered demons increased in speed
-
--- Several changes to skills.cc. Now having many xp in the pool increases
-   the cost of exercising.
-
--- Increased the threshold values for special "you hit" messages in fight.cc
-   and patched some grammar.
-
--- Removed three 'silly' monsters (dorgi, Sword, Guardian robot)
-
--- Now, haste has a direct effect on time_taken, rather than being treated
-   separately. See player_speed().
-
--- Boots of levitation now allow permanent hovering.
-
--- The random events in Hell are now much nastier
-
--- Clouds can now be overwritten by other clouds, sometimes (see place_cloud)
-
--- The monster mutation spell now affects monsters as polymorph
-
--- A new init-file variable (verbose) determines how much info about
-   randarts and other magical items in the char dump.
-
-- bugs fixed:
-    -- monsters can now cast 'direct' spells (eg smiting) over other monsters
-        if targetting the player.
-    -- giants are now given the correct number of rocks.
 
 Brent Ross (bwross@csclub.uwaterloo.ca)
 09/09/99

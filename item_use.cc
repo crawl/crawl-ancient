@@ -1299,7 +1299,7 @@ void throw_it(struct bolt beam[1], int throw_2)
 
     char shoot_skill = 0;
 
-    mpr("Which direction? (* to target)");
+    mpr("Which direction? (*/+ to target)");
 
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
         if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != 6 || player_see_invis() != 0))
@@ -2410,7 +2410,7 @@ void zap_wand()
         return;
     }
 
-    mpr("Which direction? (* to target)");
+    mpr("Which direction? (*/+ to target)");
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
         if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != 6 || player_see_invis() != 0))
         {

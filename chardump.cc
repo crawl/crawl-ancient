@@ -215,11 +215,23 @@ static void dump_stats(string & text)
     text += "Hit Points : ";
     itoa(you.hp, st_prn, 10);
     text += st_prn;
-    if (you.hp < you.hp_max)
+
+    int max_max_hp = you.hp_max - you.base_hp + 5000;
+
+    if (you.hp < you.hp_max || max_max_hp != you.hp_max)
     {
         text += "/";
         itoa(you.hp_max, st_prn, 10);
         text += st_prn;
+
+        if (max_max_hp != you.hp_max)
+        {
+            text += " (";
+            itoa(max_max_hp, st_prn, 10);
+            text += st_prn;
+            text += ")";
+        }
+
         if (you.hp <= 0)
         {
             if (you.deaths_door == 0)

@@ -957,6 +957,13 @@ void down_stairs(char remove_stairs, int old_level)
         grd[you.x_pos][you.y_pos] = 67;
         you.your_level--;
         init_pandemonium();     /* colours only */
+
+        if (you.where_are_you > 0 && you.where_are_you < 10)
+        {
+            // ie if you're in Hell
+            you.where_are_you = BRANCH_MAIN_DUNGEON;
+            you.your_level = 25;
+        }
     }
     else if (you.level_type == LEVEL_PANDEMONIUM)
     {
@@ -975,6 +982,13 @@ void down_stairs(char remove_stairs, int old_level)
             init_pandemonium();
             for (pc = 0; pc < pt; pc++)
                 pandemonium_mons();
+
+            if (you.where_are_you > 0 && you.where_are_you < 10)
+            {
+                // ie if you're in Hell
+                you.where_are_you = BRANCH_MAIN_DUNGEON;
+                you.your_level = 25;
+            }
         }
     }
     else

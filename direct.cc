@@ -41,6 +41,10 @@
   #include "debug.h"
 #endif
 
+
+char mons_find(unsigned char xps, unsigned char yps, char mfp [2], char direction);
+
+
 //---------------------------------------------------------------
 //
 // direction
@@ -57,9 +61,12 @@ void direction(char rnge, struct dist moves[1])
     moves[0].nothing = dir_cursor(rnge);
     char info[200];
 
-    if (moves[0].nothing == -9999)
+    if (moves[0].nothing == -9999 || moves[0].nothing == -10000 || moves[0].nothing == -10001)
     {
-        mpr( "Select target (move cursor, then 'p', '.', or '>')" );
+        mpr( "Aim (move cursor or select with '-' or '+'/'=', then 'p', '.', or '>')" );
+        moves[0].prev_targ = 0;
+        if (moves[0].nothing == -10000) moves[0].prev_targ = 1;
+        if (moves[0].nothing == -10001) moves[0].prev_targ = 2;
         moves[0].nothing = look_around(moves);
         looked = 1;
     }
@@ -248,6 +255,13 @@ getkey:
         case 'p':
             return 253;
 
+        case '=':
+        case '+':
+            return -10000;
+
+        case '-':
+            return -10001;
+
         case 27:
             return 254;
 
@@ -348,6 +362,12 @@ int look_around(struct dist moves[1])
     char mve_x = 0;
     char mve_y = 0;
     int trf = 0;
+    char monsfind_pos [2];
+
+    char printed_already = 1;
+
+    monsfind_pos [0] = you.x_pos;
+    monsfind_pos [1] = you.y_pos;
 
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
         if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != 6 || player_see_invis() != 0))
@@ -368,11 +388,21 @@ int look_around(struct dist moves[1])
 
     do
     {
+
+      if (moves[0].prev_targ == 0)
+      {
         gotch = getch();
 
 #ifdef LINUX
         gotch = translate_keypad( gotch );
 #endif
+      } else
+             {
+          if (moves[0].prev_targ == 1) gotch = '+'; else gotch = '-';
+          moves[0].prev_targ = 0;
+          printed_already = 0;
+         }
+
 
         if (gotch != 0 && gotch != 13)
         {
@@ -460,6 +490,27 @@ int look_around(struct dist moves[1])
             case '>':
                 goto finished_looking;
 
+            case '-':
+                mve_x = 0;
+                mve_y = 0;
+                if (mons_find(xps, yps, monsfind_pos, -1) == 1)
+                {
+                    xps = monsfind_pos [0];
+                    yps = monsfind_pos [1];
+                }
+                break;
+
+            case '+':
+            case '=':
+                mve_x = 0;
+                mve_y = 0;
+                if (mons_find(xps, yps, monsfind_pos, 1) == 1)
+                {
+                    xps = monsfind_pos [0];
+                    yps = monsfind_pos [1];
+                }
+                break;
+
             default:
                 return -1;
             }
@@ -536,7 +587,8 @@ gotchy:
         if (yps + mve_y >= 1 && yps + mve_y < 18)
             yps += mve_y;
 
-        mesclr();
+        if (printed_already == 1) mesclr();
+        printed_already = 1;
 
         if (env.show[xps - 8][yps] == 0 && (xps != 17 || yps != 9))
         {
@@ -967,3 +1019,152 @@ finished_looking:
     return 0;                   //mve_x * 100 + mve_y + 707 + 10000;
 
 }                               // end of look_around
+
+
+
+
+
+//---------------------------------------------------------------
+//
+// mons_find
+//
+// Finds the next monster (moving in a spiral outwards from the
+// player, so closer monsters are chosen first; starts to player's
+// left) and puts its coordinates in mfp. Returns 1 if it found
+// a monster, zero otherwise. If direction is -1, goes backwards.
+//
+//---------------------------------------------------------------
+char mons_find(unsigned char xps, unsigned char yps, char mfp [2], char direction)
+{
+
+        unsigned char temp_xps = xps;
+        unsigned char temp_yps = yps;
+    char x_change = 0;
+    char y_change = 0;
+
+    int i, j;
+
+    if (direction == 1 && temp_xps == 9 && temp_yps == 17) return 0; // end of spiral
+
+        while(temp_xps >= 8 && temp_xps <= 25 && temp_yps <= 17) // yps always >= 0
+        {
+
+    if (direction == -1 && temp_xps == 17 && temp_yps == 9) return 0; // can't go backwards from you
+
+if (direction == 1)
+{
+    if (temp_xps == 8)
+    {
+        x_change = 0;
+        y_change = -1;
+    } else
+        if (temp_xps - 17 == 0 && temp_yps - 9 == 0)
+    {
+        x_change = -1;
+        y_change = 0;
+    } else
+    if (abs(temp_xps - 17) <= abs(temp_yps - 9))
+    {
+        if (temp_xps - 17 >= 0 && temp_yps - 9 <= 0)
+        {
+                if (abs(temp_xps - 17) > abs(temp_yps - 9 + 1))
+            {
+                                x_change = 0;
+                                y_change = -1;
+                            if (temp_xps - 17 > 0) y_change = 1;
+                goto finished_spiralling;
+            }
+        }
+                x_change = -1;
+        if (temp_yps - 9 < 0) x_change = 1;
+                y_change = 0;
+        } else
+        {
+                x_change = 0;
+                y_change = -1;
+            if (temp_xps - 17 > 0) y_change = 1;
+        }
+} // end if (direction == 1)
+else
+  {
+/*
+This part checks all eight surrounding squares to find the one that
+leads on to the present square.
+*/
+  for (i = -1; i < 2; i ++)
+  {
+  for (j = -1; j < 2; j ++)
+  {
+   if (i == 0 && j == 0) continue;
+
+    if (temp_xps + i == 8)
+    {
+        x_change = 0;
+        y_change = -1;
+    } else
+        if (temp_xps + i - 17 == 0 && temp_yps + j - 9 == 0)
+    {
+        x_change = -1;
+        y_change = 0;
+    } else
+    if (abs(temp_xps + i - 17) <= abs(temp_yps + j - 9))
+    {
+        if (temp_xps + i - 17 >= 0 && temp_yps + j - 9 <= 0)
+        {
+                if (abs(temp_xps + i - 17) > abs(temp_yps + j - 9 + 1))
+            {
+                                x_change = 0;
+                                y_change = -1;
+                            if (temp_xps + i - 17 > 0) y_change = 1;
+                goto finished_spiralling;
+            }
+        }
+                x_change = -1;
+        if (temp_yps + j - 9 < 0) x_change = 1;
+                y_change = 0;
+        } else
+        {
+                x_change = 0;
+                y_change = -1;
+            if (temp_xps + i - 17 > 0) y_change = 1;
+        }
+
+  if (temp_xps + i + x_change == temp_xps && temp_yps + j + y_change == temp_yps)
+   goto finished_spiralling;
+  }
+  }
+  } // end else
+
+
+finished_spiralling:
+    x_change *= direction;
+    y_change *= direction;
+
+    temp_xps += x_change;
+    if (temp_yps + y_change <= 17) // it can wrap, unfortunately
+            temp_yps += y_change;
+
+    // We don't want to be looking outside the bounds of the arrays:
+    if (temp_xps <= 25 && temp_xps >= 8 && temp_yps <= 17 // && temp_yps >= 1
+        && you.x_pos + temp_xps - 17 >= 0 && you.x_pos + temp_xps - 17 < GXM
+        && you.y_pos + temp_yps - 9 >= 0 && you.y_pos + temp_yps - 9 < GYM)
+      {
+            if (mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9] != MNG
+            && env.show [temp_xps - 8] [temp_yps] != 0
+            && (menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].enchantment[2] != 6 || player_see_invis() != 0)
+            && (menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].type < MLAVA0 || menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].number != 1))
+              // & not invis etc
+            {
+//       mpr("Found something!");
+//       more();
+                    mfp [0] = temp_xps;
+                    mfp [1] = temp_yps;
+                    return 1;
+            }
+     }
+}
+
+
+ return 0;
+
+}

@@ -371,7 +371,8 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
 
                 fmenv = mgrd[count_x][count_y];
 
-                if (menv[fmenv].type == MONS_PLAYER_GHOST)
+                if (menv[fmenv].type == MONS_PLAYER_GHOST &&
+                    menv[fmenv].hit_points < menv[fmenv].max_hit_points / 2)
                 {
                     mpr( "The ghost fades into the shadows." );
                     monster_teleport(fmenv, 1);

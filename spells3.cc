@@ -567,7 +567,7 @@ void you_teleport()
 
     mpr("You feel strangely unstable.");
     you.duration[DUR_TELEPORT] = 4 + random2(3);
-    if (you.your_level == LEVEL_ABYSS && random2(3) != 0)
+    if (you.level_type == LEVEL_ABYSS && random2(3) != 0)
     {
      mpr("You have a feeling this translocation may take a while to kick in...");
      you.duration[DUR_TELEPORT] += 3 + random2(3);
@@ -933,8 +933,8 @@ get_dir:
     {
         if (target_level < 0)
             target_level = 0;
-        if (target_level > 35)
-            target_level = 35;
+        if (target_level > 26)
+            target_level = 26;
     }
 
     mpr("You fall through a mystic portal, and materialise at the foot of a staircase.");
