@@ -28,6 +28,7 @@
 
 #include "debug.h"
 #include "itemname.h"
+#include "mstuff2.h"
 #include "player.h"
 #include "randart.h"
 #include "stuff.h"
@@ -184,6 +185,11 @@ int mons_holiness(int mc)
     return (smc->holiness);
 }                               // end mons_holiness()
 
+bool mons_is_mimic( int mc )
+{
+    return (mons_charclass( mc ) == MONS_GOLD_MIMIC);
+}
+
 bool mons_is_demon( int mc )
 {
     const int show_char = mons_char( mc );
@@ -279,7 +285,7 @@ bool mons_is_unique( int mc )
 char mons_see_invis( struct monsters *mon )
 {
     if (mon->type == MONS_PLAYER_GHOST || mon->type == MONS_PANDEMONIUM_DEMON)
-        return (ghost.values[3]);
+        return (ghost.values[ GVAL_SEE_INVIS ]);
     else if (((seekmonster(&mon->type))->bitfields & M_SEE_INVIS) != 0)
         return (1);
     else if (scan_mon_inv_randarts( mon, RAP_EYESIGHT ) > 0)
@@ -302,6 +308,23 @@ bool mons_monster_visible( struct monsters *mon, struct monsters *targ )
     return (true);
 }
 
+// This does NOT do line of sight!  It checks the player's visibility
+// with respect to mon's perception, but doesn't do walls or range.
+bool mons_player_visible( struct monsters *mon )
+{
+    if (you.invis)
+    {
+        if (player_in_water())
+            return (true);
+
+        if (mons_see_invis( mon ))
+            return (true);
+
+        return (false);
+    }
+
+    return (true);
+}
 
 unsigned char mons_char(int mc)
 {
@@ -327,13 +350,11 @@ int mons_damage(int mc, int rt)
 
     if (rt < 0 || rt > 3)       // make it fool-proof
         return (0);
-    else if (rt == 0
-                && (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON))
-    {
-        return (ghost.values[7]);
-    }
-    else
-        return (smc->damage[rt]);
+
+    if (rt == 0 && (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON))
+        return (ghost.values[ GVAL_DAMAGE ]);
+
+    return (smc->damage[rt]);
 }                               // end mons_damage()
 
 int mons_resist_magic( struct monsters *mon )
@@ -404,7 +425,7 @@ int mons_res_elec( struct monsters *mon )
     int mc = mon->type;
 
     if (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON)
-        return (ghost.values[6] > 0);
+        return (ghost.values[ GVAL_RES_ELEC ]);
 
     /* this is a variable, not a player_xx() function, so can be above 1 */
     int u = 0, f = (seekmonster(&mc))->bitfields;
@@ -473,14 +494,7 @@ int mons_res_fire( struct monsters *mon )
     int mc = mon->type;
 
     if (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON)
-    {
-        if (ghost.values[4] > 100)
-            return 1;
-        else if (ghost.values[4] < 100)
-            return -1;
-        else
-            return 0;
-    }
+        return (ghost.values[ GVAL_RES_FIRE ]);
 
     int u = 0, f = (seekmonster(&mc))->bitfields;
 
@@ -528,14 +542,7 @@ int mons_res_cold( struct monsters *mon )
     int mc = mon->type;
 
     if (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON)
-    {
-        if (ghost.values[5] > 100)
-            return (1);
-        else if (ghost.values[5] < 100)
-            return (-1);
-        else
-            return (0);
-    }
+        return (ghost.values[ GVAL_RES_COLD ]);
 
     int u = 0, f = (seekmonster(&mc))->bitfields;
 
@@ -617,8 +624,8 @@ int mons_skeleton(int mc)
 
 char mons_class_flies(int mc)
 {
-    if (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON)
-        return (ghost.values[10]);
+    if (mc == MONS_PANDEMONIUM_DEMON)
+        return (ghost.values[ GVAL_DEMONLORD_FLY ]);
 
     int f = smc->bitfields;
 
@@ -848,9 +855,7 @@ void mons_spell_list( unsigned char sec, int splist[6] )
     if (sec == MST_GHOST)             /* ghost */
     {
         for (x = 0; x < 6; x++)
-        {
-            splist[x] = ghost.values[x + 14];
-        }
+            splist[x] = ghost.values[ GVAL_SPELL_1 + x ];
     }
 }                               // end mons_spell_list()
 
@@ -884,7 +889,7 @@ void define_monster(int k)
 
     // some monsters are randomized:
     // did I get them all?    // I don't think so {dlb}
-    if (mons_charclass( m2_class ) == MONS_GOLD_MIMIC)
+    if (mons_is_mimic( m2_class ))
         m2_sec = get_mimic_colour( &menv[k] );
     else
     {
@@ -962,6 +967,7 @@ void define_monster(int k)
 
         case MONS_BUTTERFLY:
         case MONS_SPATIAL_VORTEX:
+        case MONS_KILLER_KLOWN:
             m2_sec = random_colour();
             break;
 
@@ -1020,8 +1026,7 @@ const char *ptr_monam( struct monsters *mon, char desc )
     // since gold mimics only have one description (to match the
     // examine code in direct.cc), we won't bother going through
     // this for them. -- bwr
-    if (mons_charclass( mon->type ) == MONS_GOLD_MIMIC
-        && mon->type != MONS_GOLD_MIMIC)
+    if (mons_is_mimic( mon->type ) && mon->type != MONS_GOLD_MIMIC)
     {
         static char mimic_name_buff[ ITEMNAME_SIZE ];
 
@@ -1101,11 +1106,15 @@ const char *monam( int mons_num, int mons, bool vis, char desc, int mons_wpn )
         break;
 
     case MONS_DANCING_WEAPON:
-        // safety check -- if we don't know the weapon use default name
-        if (mons_wpn != NON_ITEM)
-            it_name( mons_wpn, desc, gmo_n );
-        else
+        // safety check -- if we don't have/know the weapon use default name
+        if (mons_wpn == NON_ITEM)
             moname( mons, vis, desc, gmo_n );
+        else
+        {
+            item_def item = mitm[mons_wpn];
+            unset_ident_flags( item, ISFLAG_KNOW_CURSE | ISFLAG_KNOW_PLUSES );
+            item_name( item, desc, gmo_n );
+        }
         break;
 
     case MONS_PLAYER_GHOST:
@@ -1846,6 +1855,71 @@ bool ms_waste_of_time( struct monsters *mon, int monspell )
     }
 
     return (ret);
+}
+
+static bool ms_ranged_spell( int monspell )
+{
+    switch (monspell)
+    {
+    case MS_HASTE:
+    case MS_HEAL:
+    case MS_TELEPORT:
+    case MS_INVIS:
+    case MS_BLINK:
+        return (false);
+
+    default:
+        break;
+    }
+
+    return (true);
+}
+
+bool mons_has_ranged_spell( struct monsters *mon )
+{
+    const int  mclass = mon->type;
+
+    if (mons_flag( mclass, M_SPELLCASTER ))
+    {
+        const int  msecc = ((mclass == MONS_HELLION) ? MST_BURNING_DEVIL :
+                  (mclass == MONS_PANDEMONIUM_DEMON) ? MST_GHOST
+                                                     : mon->number);
+
+        int hspell_pass[6] = { MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL,
+                               MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL };
+
+        mons_spell_list( msecc, hspell_pass );
+
+        for (int i = 0; i < 6; i++)
+        {
+            if (ms_ranged_spell( hspell_pass[i] ))
+                return (true);
+        }
+    }
+
+    return (false);
+}
+
+bool mons_has_ranged_attack( struct monsters *mon )
+{
+    const int weapon = mon->inv[MSLOT_WEAPON];
+    const int ammo = mon->inv[MSLOT_MISSILE];
+
+    const int lnchClass = (weapon != NON_ITEM) ? mitm[weapon].base_type : -1;
+    const int lnchType  = (weapon != NON_ITEM) ? mitm[weapon].sub_type  :  0;
+
+    const int ammoClass = (ammo != NON_ITEM) ? mitm[ammo].base_type : -1;
+    const int ammoType  = (ammo != NON_ITEM) ? mitm[ammo].sub_type  :  0;
+
+    bool launched = false;
+    bool thrown = false;
+
+    throw_type( lnchClass, lnchType, ammoClass, ammoType, launched, thrown );
+
+    if (launched || thrown)
+        return (true);
+
+    return (false);
 }
 
 

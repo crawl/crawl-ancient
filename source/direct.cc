@@ -38,7 +38,7 @@
 #include "spells4.h"
 #include "view.h"
 
-#ifdef MACROS
+#ifdef USE_MACROS
 #include "macro.h"
 #endif
 
@@ -51,9 +51,9 @@ static const char DOSidiocy[10] = { "OPQKSMGHI" };
 static const char *aim_prompt = "Aim (move cursor or -/+/=, change mode with CTRL-F, select with . or >)";
 
 static void describe_cell(int mx, int my);
-char mons_find( unsigned char xps, unsigned char yps,
-                FixedVector<char, 2> &mfp, char direction,
-                int mode = TARG_ANY );
+static char mons_find( unsigned char xps, unsigned char yps,
+                       FixedVector<char, 2> &mfp, char direction,
+                       int mode = TARG_ANY );
 
 //---------------------------------------------------------------
 //
@@ -368,7 +368,9 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
                         break;
 
                     case '-':
-                        if (mons_find( cx, cy, monsfind_pos, -1, mode ) == 1)
+                        if (mons_find( cx, cy, monsfind_pos, -1, mode ) == 0)
+                            flush_input_buffer( FLUSH_ON_FAILURE );
+                        else
                         {
                             newcx = monsfind_pos[0];
                             newcy = monsfind_pos[1];
@@ -378,7 +380,9 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
 
                     case '+':
                     case '=':
-                        if (mons_find( cx, cy, monsfind_pos, 1, mode ) == 1)
+                        if (mons_find( cx, cy, monsfind_pos, 1, mode ) == 0)
+                            flush_input_buffer( FLUSH_ON_FAILURE );
+                        else
                         {
                             newcx = monsfind_pos[0];
                             newcy = monsfind_pos[1];
@@ -434,7 +438,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
 
         // now we have parsed the input character completely. Reset & Evaluate:
         keyin = 0;
-        if (!(targChosen || dirChosen))
+        if (!targChosen && !dirChosen)
             break;
 
         // check for SELECTION
@@ -515,8 +519,8 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
 // a monster, zero otherwise. If direction is -1, goes backwards.
 //
 //---------------------------------------------------------------
-char mons_find( unsigned char xps, unsigned char yps,
-                FixedVector<char, 2> &mfp, char direction, int mode )
+static char mons_find( unsigned char xps, unsigned char yps,
+                       FixedVector<char, 2> &mfp, char direction, int mode )
 {
     unsigned char temp_xps = xps;
     unsigned char temp_yps = yps;
@@ -526,12 +530,12 @@ char mons_find( unsigned char xps, unsigned char yps,
     int i, j;
 
     if (direction == 1 && temp_xps == 9 && temp_yps == 17)
-        return 0;               // end of spiral
+        return (0);               // end of spiral
 
     while (temp_xps >= 8 && temp_xps <= 25 && temp_yps <= 17) // yps always >= 0
     {
         if (direction == -1 && temp_xps == 17 && temp_yps == 9)
-            return 0;           // can't go backwards from you
+            return (0);           // can't go backwards from you
 
         if (direction == 1)
         {
@@ -656,7 +660,8 @@ char mons_find( unsigned char xps, unsigned char yps,
 
         if (targ_mon != NON_MONSTER
             && env.show[temp_xps - 8][temp_yps] != 0
-            && player_monster_visible( &(menv[ targ_mon ]) )
+            && player_monster_visible( &(menv[targ_mon]) )
+            && !mons_is_mimic( menv[targ_mon].type )
             && (mode == TARG_ANY
                 || (mode == TARG_FRIEND && mons_friendly( &menv[targ_mon] ))
                 || (mode == TARG_ENEMY && !mons_friendly( &menv[targ_mon] ))))
@@ -665,11 +670,11 @@ char mons_find( unsigned char xps, unsigned char yps,
             //more();
             mfp[0] = temp_xps;
             mfp[1] = temp_yps;
-            return 1;
+            return (1);
         }
     }
 
-    return 0;
+    return (0);
 }
 
 static void describe_cell(int mx, int my)
@@ -701,55 +706,44 @@ static void describe_cell(int mx, int my)
         const int mon_wep = menv[i].inv[MSLOT_WEAPON];
         const int mon_arm = menv[i].inv[MSLOT_ARMOUR];
 
-        if (menv[i].type == MONS_DANCING_WEAPON)
-        {
-            // strcpy(info, ptr_monam( &(menv[i]), DESC_CAP_A ));
-            it_name(mon_wep, DESC_CAP_A, str_pass);
-            strcpy(info, str_pass);
-            strcat(info, ".");
-            mpr(info);
-        }
-        else
-        {
-            strcpy(info, ptr_monam( &(menv[i]), DESC_CAP_A ));
-            strcat(info, ".");
-            mpr(info);
+        strcpy(info, ptr_monam( &(menv[i]), DESC_CAP_A ));
+        strcat(info, ".");
+        mpr(info);
 
-            if (mon_wep != NON_ITEM)
+        if (menv[i].type != MONS_DANCING_WEAPON && mon_wep != NON_ITEM)
+        {
+            snprintf( info, INFO_SIZE, "%s is wielding ", mons_pronoun( menv[i].type,
+                                                           PRONOUN_CAP ));
+            it_name(mon_wep, DESC_NOCAP_A, str_pass);
+            strcat(info, str_pass);
+
+            // 2-headed ogres can wield 2 weapons
+            if ((menv[i].type == MONS_TWO_HEADED_OGRE
+                    || menv[i].type == MONS_ETTIN)
+                && menv[i].inv[MSLOT_MISSILE] != NON_ITEM)
             {
-                snprintf( info, INFO_SIZE, "%s is wielding ", mons_pronoun( menv[i].type,
-                                                               PRONOUN_CAP ));
-                it_name(mon_wep, DESC_NOCAP_A, str_pass);
+                strcat( info, " and " );
+                it_name(menv[i].inv[MSLOT_MISSILE], DESC_NOCAP_A, str_pass);
                 strcat(info, str_pass);
+                strcat(info, ".");
 
-                // 2-headed ogres can wield 2 weapons
-                if ((menv[i].type == MONS_TWO_HEADED_OGRE
-                        || menv[i].type == MONS_ETTIN)
-                    && menv[i].inv[MSLOT_MISSILE] != NON_ITEM)
-                {
-                    strcat( info, " and " );
-                    it_name(menv[i].inv[MSLOT_MISSILE], DESC_NOCAP_A, str_pass);
-                    strcat(info, str_pass);
-                    strcat(info, ".");
-
-                    mpr(info);
-                }
-                else
-                {
-                    strcat(info, ".");
-                    mpr(info);
-                }
+                mpr(info);
             }
-
-            if (mon_arm != NON_ITEM)
+            else
             {
-                it_name( mon_arm, DESC_PLAIN, str_pass );
-                snprintf( info, INFO_SIZE, "%s is wearing %s.",
-                          mons_pronoun( menv[i].type, PRONOUN_CAP ),
-                          str_pass );
-
-                mpr( info );
+                strcat(info, ".");
+                mpr(info);
             }
+        }
+
+        if (mon_arm != NON_ITEM)
+        {
+            it_name( mon_arm, DESC_PLAIN, str_pass );
+            snprintf( info, INFO_SIZE, "%s is wearing %s.",
+                      mons_pronoun( menv[i].type, PRONOUN_CAP ),
+                      str_pass );
+
+            mpr( info );
         }
 
 
@@ -762,10 +756,8 @@ static void describe_cell(int mx, int my)
         print_wounds(&menv[i]);
 
 
-        if (mons_charclass( menv[i].type ) == MONS_GOLD_MIMIC)
-        {
+        if (mons_is_mimic( menv[i].type ))
             mimic_item = true;
-        }
         else if (!mons_flag(menv[i].type, M_NO_EXP_GAIN))
         {
             if (menv[i].behaviour == BEH_SLEEP)

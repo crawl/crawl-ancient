@@ -28,6 +28,7 @@
 #include "externs.h"
 
 #include "cloud.h"
+#include "delay.h"
 #include "fight.h"
 #include "files.h"
 #include "food.h"
@@ -35,6 +36,7 @@
 #include "items.h"
 #include "itemname.h"
 #include "lev-pand.h"
+#include "macro.h"
 #include "monplace.h"
 #include "mon-util.h"
 #include "monstuff.h"
@@ -49,13 +51,10 @@
 #include "transfor.h"
 #include "view.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 bool scramble(void);
 bool trap_item(char base_type, char sub_type, char beam_x, char beam_y);
-static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt);
+static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt, bool poison);
 
 // void place_chunks(int mcls, unsigned char rot_status, unsigned char chx,
 //                   unsigned char chy, unsigned char ch_col)
@@ -127,11 +126,17 @@ void turn_corpse_into_chunks( item_def &item )
     }
 }                               // end place_chunks()
 
-char search_around(void)
+void search_around(void)
 {
     char srx = 0;
     char sry = 0;
     int i;
+
+    // Never if doing something else... this prevents a slight asymetry
+    // where using autopickup was giving free searches in comparison to
+    // not using autopickup.  -- bwr
+    if (you_are_delayed())
+        return;
 
     for (srx = you.x_pos - 1; srx < you.x_pos + 2; srx++)
     {
@@ -159,8 +164,7 @@ char search_around(void)
         }
     }
 
-    you.turn_is_over = 1;
-    return 1;
+    return;
 }                               // end search_around()
 
 void in_a_cloud(void)
@@ -199,14 +203,14 @@ void in_a_cloud(void)
             if (hurted < 1)
                 hurted = 0;
             else
-                ouch( hurted, cl, KILLED_BY_CLOUD );
+                ouch( hurted, cl, KILLED_BY_CLOUD, "flame" );
         }
         else
         {
             canned_msg(MSG_YOU_RESIST);
             hurted += ((random2avg(23, 3) + 10) * you.time_taken) / 10;
             hurted /= (1 + resist * resist);
-            ouch( hurted, cl, KILLED_BY_CLOUD );
+            ouch( hurted, cl, KILLED_BY_CLOUD, "flame" );
         }
         scrolls_burn(7, OBJ_SCROLLS);
         break;
@@ -222,7 +226,8 @@ void in_a_cloud(void)
         if (hurted < 1)
             hurted = 0;
         else
-            ouch((hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
+            ouch( (hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD,
+                    "noxious fumes" );
 
         if (1 + random2(27) >= you.experience_level)
         {
@@ -248,14 +253,15 @@ void in_a_cloud(void)
             if (hurted < 0)
                 hurted = 0;
 
-            ouch((hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
+            ouch( (hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD,
+                  "freezing vapour" );
         }
         else
         {
             canned_msg(MSG_YOU_RESIST);
             hurted += ((random2avg(23, 3) + 10) * you.time_taken) / 10;
             hurted /= (1 + resist * resist);
-            ouch(hurted, cl, KILLED_BY_CLOUD);
+            ouch( hurted, cl, KILLED_BY_CLOUD, "freezing vapour" );
         }
         scrolls_burn(7, OBJ_POTIONS);
         break;
@@ -266,7 +272,8 @@ void in_a_cloud(void)
         mpr("You are engulfed in poison gas!");
         if (!player_res_poison())
         {
-            ouch((random2(10) * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
+            ouch( (random2(10) * you.time_taken) / 10, cl, KILLED_BY_CLOUD,
+                  "poison gas" );
             poison_player(1);
         }
         break;
@@ -301,7 +308,7 @@ void in_a_cloud(void)
         if (hurted < 0 || player_res_fire() > 0)
             hurted = 0;
 
-        ouch((hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
+        ouch( (hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD, "poison gas" );
         break;
 
     case CLOUD_MIASMA:
@@ -318,7 +325,7 @@ void in_a_cloud(void)
         if (hurted < 0)
             hurted = 0;
 
-        ouch(hurted, cl, KILLED_BY_CLOUD);
+        ouch( hurted, cl, KILLED_BY_CLOUD, "foul pestilence" );
         potion_effect(POT_SLOWING, 5);
 
         if (you.hp_max > 4 && coinflip())
@@ -509,13 +516,14 @@ void up_stairs(void)
 
     load(stair_taken, LOAD_ENTER_LEVEL, was_a_labyrinth, old_level, old_where);
 
+    you.turn_is_over = 1;
+
+    save_game(false);
+
     new_level();
 
     viewwindow(1, true);
 
-    you.turn_is_over = 1;
-
-    save_game(false);
 
     if (you.skills[SK_TRANSLOCATIONS] > 0 && !allow_control_teleport( true ))
         mpr( "You sense a powerful magical force warping space.", MSGCH_WARN );
@@ -840,10 +848,6 @@ void down_stairs( bool remove_stairs, int old_level )
 
     load(stair_taken, LOAD_ENTER_LEVEL, was_a_labyrinth, old_level, old_where);
 
-    new_level();
-
-    viewwindow(1, true);
-
     unsigned char pc = 0;
     unsigned char pt = random2avg(28, 3);
 
@@ -902,6 +906,10 @@ void down_stairs( bool remove_stairs, int old_level )
     you.turn_is_over = 1;
 
     save_game(false);
+
+    new_level();
+
+    viewwindow(1, true);
 
     if (you.skills[SK_TRANSLOCATIONS] > 0 && !allow_control_teleport( true ))
         mpr( "You sense a powerful magical force warping space.", MSGCH_WARN );
@@ -1100,32 +1108,30 @@ void new_level(void)
     }                           // end else
 }                               // end new_level()
 
-static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
+static void dart_trap( bool trap_known, int trapped, struct bolt &pbolt,
+                       bool poison )
 {
     int damage_taken = 0;
     int trap_hit, your_dodge;
 
     if (random2(10) < 2 || (trap_known && !one_chance_in(4)))
     {
-        strcpy(info, "You avoid triggering a");
-        strcat(info, pbolt.beam_name);
-        strcat(info, " trap.");
+        snprintf( info, INFO_SIZE, "You avoid triggering a%s trap.",
+                                    pbolt.beam_name );
         mpr(info);
         return;
     }
 
-    if (you.equip[EQ_SHIELD] != -1)
-        exercise(SK_SHIELDS, (random2(3)) / 2);
+    if (you.equip[EQ_SHIELD] != -1 && one_chance_in(3))
+        exercise( SK_SHIELDS, 1 );
 
-    strcpy(info, "A");
-    strcat(info, pbolt.beam_name);
-    strcat(info, " shoots out and ");
+    snprintf( info, INFO_SIZE, "A%s shoots out and ", pbolt.beam_name );
 
-    if (random2(50 + 10 * you.shield_blocks * you.shield_blocks)
+    if (random2( 50 + 10 * you.shield_blocks * you.shield_blocks )
                                                 < player_shield_class())
     {
         you.shield_blocks++;
-        strcat(info, "hits your shield.");
+        strcat( info, "hits your shield." );
         mpr(info);
         goto out_of_trap;
     }
@@ -1138,30 +1144,29 @@ static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
 
     if (trap_hit >= your_dodge && you.duration[DUR_DEFLECT_MISSILES] == 0)
     {
-        strcat(info, "hits you!");
+        strcat( info, "hits you!" );
         mpr(info);
 
-        if ((strstr( pbolt.beam_name, "needle" ) != NULL)
-                && random2(100) < 50 - (3 * player_AC()) / 2
+        if (poison && random2(100) < 50 - (3 * player_AC()) / 2
                 && !player_res_poison())
         {
             poison_player( 1 + random2(3) );
         }
 
         damage_taken = roll_dice( pbolt.damage );
-        damage_taken -= random2(player_AC() + 1);
+        damage_taken -= random2( player_AC() + 1 );
 
         if (damage_taken > 0)
-            ouch(damage_taken, 0, KILLED_BY_TRAP);
+            ouch( damage_taken, 0, KILLED_BY_TRAP, pbolt.beam_name );
     }
     else
     {
-        strcat(info, "misses you.");
+        strcat( info, "misses you." );
         mpr(info);
     }
 
     if (player_light_armour() && coinflip())
-        exercise(SK_DODGING, 1);
+        exercise( SK_DODGING, 1 );
 
   out_of_trap:
 
@@ -1169,7 +1174,7 @@ static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
     pbolt.target_y = you.y_pos;
 
     if (coinflip())
-        itrap(pbolt, trapped);
+        itrap( pbolt, trapped );
 }                               // end dart_trap()
 
 //
@@ -1225,37 +1230,37 @@ void handle_traps(char trt, int i, bool trap_known)
     case TRAP_DART:
         strcpy(beam.beam_name, " dart");
         beam.damage = dice_def( 1, 4 + (you.your_level / 2) );
-        dart_trap(trap_known, i, beam);
+        dart_trap(trap_known, i, beam, false);
         break;
 
     case TRAP_NEEDLE:
         strcpy(beam.beam_name, " needle");
         beam.damage = dice_def( 1, 0 );
-        dart_trap(trap_known, i, beam);
+        dart_trap(trap_known, i, beam, true);
         break;
 
     case TRAP_ARROW:
         strcpy(beam.beam_name, "n arrow");
         beam.damage = dice_def( 1, 7 + you.your_level );
-        dart_trap(trap_known, i, beam);
+        dart_trap(trap_known, i, beam, false);
         break;
 
     case TRAP_BOLT:
         strcpy(beam.beam_name, " bolt");
         beam.damage = dice_def( 1, 13 + you.your_level );
-        dart_trap(trap_known, i, beam);
+        dart_trap(trap_known, i, beam, false);
         break;
 
     case TRAP_SPEAR:
         strcpy(beam.beam_name, " spear");
         beam.damage = dice_def( 1, 10 + you.your_level );
-        dart_trap(trap_known, i, beam);
+        dart_trap(trap_known, i, beam, false);
         break;
 
     case TRAP_AXE:
         strcpy(beam.beam_name, "n axe");
         beam.damage = dice_def( 1, 15 + you.your_level );
-        dart_trap(trap_known, i, beam);
+        dart_trap(trap_known, i, beam, false);
         break;
 
     case TRAP_TELEPORT:
@@ -1264,7 +1269,7 @@ void handle_traps(char trt, int i, bool trap_known)
         if (scan_randarts(RAP_PREVENT_TELEPORTATION))
             mpr("You feel a weird sense of stasis.");
         else
-            you_teleport2(true);
+            you_teleport2( true );
         break;
 
     case TRAP_AMNESIA:
@@ -1285,7 +1290,7 @@ void handle_traps(char trt, int i, bool trap_known)
         {
             mpr("A huge blade swings out and slices into you!");
             ouch( (you.your_level * 2) + random2avg(29, 2)
-                    - random2(1 + player_AC()), 0, KILLED_BY_TRAP );
+                    - random2(1 + player_AC()), 0, KILLED_BY_TRAP, " blade" );
         }
         break;
 
@@ -1294,7 +1299,7 @@ void handle_traps(char trt, int i, bool trap_known)
         mpr((trap_known) ? "You enter the Zot trap."
                          : "Oh no! You have blundered into a Zot trap!");
         miscast_effect( SPTYP_RANDOM, random2(30) + you.your_level,
-                        75 + random2(100), 3 );
+                        75 + random2(100), 3, "a Zot trap" );
         break;
     }
 }                               // end handle_traps()
@@ -1330,8 +1335,7 @@ void disarm_trap( struct dist &disa )
         return;
     }
 
-    if (random2(you.skills[SK_TRAPS_DOORS] + 2) <=
-        random2(you.your_level + 5))
+    if (random2(you.skills[SK_TRAPS_DOORS] + 2) <= random2(you.your_level + 5))
     {
         mpr("You failed to disarm the trap.");
 
@@ -1641,7 +1645,7 @@ bool go_berserk(bool intentional)
         return false;
     }
 
-    if (you.is_undead == US_UNDEAD || you.species == SP_GHOUL)
+    if (you.is_undead)
     {
         if (intentional)
             mpr("You cannot raise a blood rage in your lifeless body.");

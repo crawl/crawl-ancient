@@ -27,7 +27,7 @@
  *       <4>     9/25/99    CDL     linuxlib -> liblinux
  *       <3>     6/18/99    BCR     Moved the CHARACTER_SET #define here from
  *                                  linuxlib.cc.  Also wrapped the #define
- *                                  MACROS to prevent it from being used by
+ *                                  USE_MACROS to prevent it from being used by
  *                                  Linux.
  *       <2>     6/17/99    BCR     Removed 'linux' check, replaced it with
  *                                  'LINUX' check.  Now need to be -DLINUX
@@ -53,7 +53,7 @@
 #ifdef LINUX
 
     #define PLAIN_TERM
-    //#define CHARACTER_SET           A_ALTCHARSET
+    // #define CHARACTER_SET           A_ALTCHARSET
     #define CHARACTER_SET           0
     #define USE_ASCII_CHARACTERS
     #define MULTIUSER
@@ -168,7 +168,7 @@
     // This is used for BSD tchars type ioctl, use this if you can't
     // use the Posix support above.
     #define USE_TCHARS_IOCTL
-    //
+
     // This uses Unix signal control to block some things, may be
     // useful in conjunction with USE_TCHARS_IOCTL.
     //
@@ -196,15 +196,20 @@
 
 // macintosh is predefined on all the common Mac compilers
 #elif defined(macintosh)
-    #define MAC 1
     #define PLAIN_TERM
     #define HAS_NAMESPACES  1
     #define EOL "\r"
     #define CHARACTER_SET           A_ALTCHARSET
-
     #include <string>
-    #include "MacHdr.h"
     #include "libmac.h"
+
+#if OSX
+    #define USE_8_COLOUR_TERM_MAP
+
+    // Darkgrey is a particular problem in the 8 colour mode.  Popular v
+    // alues for replacing it around here are: WHITE, BLUE, and MAGENTA.
+    #define COL_TO_REPLACE_DARKGREY     MAGENTA
+#endif
 
 #elif defined(DOS)
     #define DOS_TERM
@@ -238,7 +243,7 @@
     #define DEBUG       1
 
     // Outputs many "hidden" details, defaults to wizard on.
-    #define DEBUG_DIAGNOSTICS   1
+    // #define DEBUG_DIAGNOSTICS   1
 
     // Scan for bad items before every input (may be slow)
     //
@@ -285,12 +290,21 @@
 // if this works out okay, eventually we can change this to USE_OLD_RANDOM
 #define USE_NEW_RANDOM
 
+// For cases when the game will be played on terms that don't support the
+// curses "bold == lighter" 16 colour mode. -- bwr
+// #define USE_8_COLOUR_TERM_MAP
+
+// Darkgrey is a particular problem in the 8 colour mode.  Popular values
+// for replacing it around here are: WHITE, BLUE, and MAGENTA.  THis
+// option has no affect in 16 colour mode. -- bwr
+// #define COL_TO_REPLACE_DARKGREY     MAGENTA
+
 // Uncomment this if you find the labyrinth to be buggy and what to
 // remove it from the game.
 // #define SHUT_LABYRINTH
 
-// Define MACRO if you want to use the macro patch in macro.cc.
-// #define MACROS
+// Define USE_MACRO if you want to use the macro patch in macro.cc.
+#define USE_MACROS
 
 // Set this to the number of runes that will be required to enter Zot's
 // domain.  You shouldn't set this really high unless you want to
@@ -344,6 +358,10 @@
 // bwr: allow player to destroy items in inventory (but not equiped items)
 // See comment at items.cc::cmd_destroy_item() for details/issues.
 #define ALLOW_DESTROY_ITEM_COMMAND
+
+// bwr: set this to non-zero if you want to know the pluses, "runed" status
+// of the monster's weapons in the hiscore file.
+// #define HISCORE_WEAPON_DETAIL   1
 
 // ====================== -----------------------------------------------------
 //jmf: end of new defines

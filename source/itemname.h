@@ -14,6 +14,8 @@
 
 #include "externs.h"
 
+bool is_vowel( const char chr );
+
 /* ***********************************************************************
  * called from: describe - effects - item_use - shopping
  * *********************************************************************** */
@@ -25,7 +27,8 @@ char get_ident_type(char cla, char ty);
  *              it_use2 - item_use - items - monstuff - mstuff2 - ouch -
  *              shopping - spells1 - spells2 - spells3
  * *********************************************************************** */
-char item_name( const item_def &item, char descrip, char buff[ITEMNAME_SIZE] );
+char item_name( const item_def &item, char descrip, char buff[ITEMNAME_SIZE],
+                bool terse = false );
 
 
 /* ***********************************************************************
@@ -58,20 +61,20 @@ void clear_ids(void);
  * called from: direct - fight - food - items - monstuff - religion -
  *              shopping
  * *********************************************************************** */
-void it_name(int itn, char des, char buff[ITEMNAME_SIZE]);
+void it_name(int itn, char des, char buff[ITEMNAME_SIZE], bool terse = false);
 
 /* ***********************************************************************
  * called from: acr - chardump - command - effects - fight - invent -
  *              it_use2 - it_use3 - item_use - items - ouch - output -
  *              spell - spells1 - spells2 - spells3 - spells4 - transfor
  * *********************************************************************** */
-void in_name(int inn, char des, char buff[ITEMNAME_SIZE]);
+void in_name(int inn, char des, char buff[ITEMNAME_SIZE], bool terse = false);
 
 /* ***********************************************************************
  * called from: itemname.cc items.cc item_use.cc mstuff2.cc
  * *********************************************************************** */
 void quant_name( const item_def &item, int quant, char des,
-                 char buff[ITEMNAME_SIZE] );
+                 char buff[ITEMNAME_SIZE], bool terse = false );
 
 /* ***********************************************************************
  * bit operations called from a large number of files
@@ -81,7 +84,7 @@ bool item_uncursed( const item_def &item );
 
 bool item_known_cursed( const item_def &item );
 bool item_known_uncursed( const item_def &item );
-bool fully_indentified( const item_def &item );
+// bool fully_indentified( const item_def &item );
 
 bool item_ident( const item_def &item, unsigned long flags );
 bool item_not_ident( const item_def &item, unsigned long flags );

@@ -33,6 +33,7 @@
 #include "debug.h"
 #include "fight.h"
 #include "itemname.h"
+#include "macro.h"
 #include "mon-util.h"
 #include "player.h"
 #include "randart.h"
@@ -42,9 +43,6 @@
 #include "wpn-misc.h"
 #include "spl-util.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 // ========================================================================
 //      Internal Functions
@@ -219,7 +217,7 @@ static void randart_descpr( std::string &description, const item_def &item )
         description += "$It makes you highly vulnerable to fire. ";
     else if (proprt[ RAP_FIRE ] == -2)
         description += "$It makes you greatly susceptible to fire. ";
-    else if (proprt[ RAP_FIRE ] < -1)
+    else if (proprt[ RAP_FIRE ] == -1)
         description += "$It makes you susceptible to fire. ";
     else if (proprt[ RAP_FIRE ] == 1)
         description += "$It protects you from fire. ";
@@ -232,7 +230,7 @@ static void randart_descpr( std::string &description, const item_def &item )
         description += "$It makes you highly susceptible to cold. ";
     else if (proprt[ RAP_COLD ] == -2)
         description += "$It makes you greatly susceptible to cold. ";
-    else if (proprt[ RAP_COLD ] < -1)
+    else if (proprt[ RAP_COLD ] == -1)
         description += "$It makes you susceptible to cold. ";
     else if (proprt[ RAP_COLD ] == 1)
         description += "$It protects you from cold. ";
@@ -256,6 +254,21 @@ static void randart_descpr( std::string &description, const item_def &item )
 
     if (proprt[ RAP_MAGIC ])
         description += "$It protects you from magic. ";
+
+    if (proprt[ RAP_STEALTH ] < 0)
+    {
+        if (proprt[ RAP_STEALTH ] < -20)
+            description += "$It makes you much less stealthy. ";
+        else
+            description += "$It makes you less stealthy. ";
+    }
+    else if (proprt[ RAP_STEALTH ] > 0)
+    {
+        if (proprt[ RAP_STEALTH ] > 20)
+            description += "$It makes you much more stealthy. ";
+        else
+            description += "$It makes you more stealthy. ";
+    }
 
     if (proprt[ RAP_EYESIGHT ])
         description += "$It enhances your eyesight. ";
@@ -329,12 +342,12 @@ static std::string describe_demon(void)
 {
     long globby = 0;
 
-    for (unsigned int i = 0; i < strlen(ghost.name); i++)
+    for (unsigned int i = 0; i < strlen( ghost.name ); i++)
         globby += ghost.name[i];
 
-    globby *= strlen(ghost.name);
+    globby *= strlen( ghost.name );
 
-    srand(globby);
+    srand( globby );
 
     std::string description = "A powerful demon, ";
 
@@ -440,143 +453,147 @@ static std::string describe_demon(void)
 
     description += "body";
 
-    switch (random2(40))
+
+    switch (ghost.values[GVAL_DEMONLORD_FLY])
     {
-    case 0:
-        if (ghost.values[10] == 1)
+    case 1: // proper flight
+        switch (random2(10))
+        {
+        case 0:
             description += " with small insectoid wings";
-        break;
-    case 1:
-        if (ghost.values[10] == 1)
+            break;
+        case 1:
             description += " with large insectoid wings";
-        break;
-    case 2:
-        if (ghost.values[10] == 1)
+            break;
+        case 2:
             description += " with moth-like wings";
-        break;
-    case 3:
-        if (ghost.values[10] == 1)
+            break;
+        case 3:
             description += " with butterfly wings";
-        break;
-    case 4:
-        if (ghost.values[10] == 1)
+            break;
+        case 4:
             description += " with huge, bat-like wings";
-        break;
-    case 5:
-        if (ghost.values[10] == 1)
+            break;
+        case 5:
             description += " with fleshy wings";
-        break;
-    case 6:
-        if (ghost.values[10] == 1)
+            break;
+        case 6:
             description += " with small, bat-like wings";
-        break;
-    case 7:
-        if (ghost.values[10] == 1)
+            break;
+        case 7:
             description += " with hairy wings";
-        break;
-    case 8:
-        if (ghost.values[10] == 1)
+            break;
+        case 8:
             description += " with great feathered wings";
-        break;
-    case 9:
-        if (ghost.values[10] == 1)
+            break;
+        case 9:
             description += " with shiny metal wings";
+            break;
+        default:
+            break;
+        }
         break;
-    case 10:
-        if (ghost.values[10] == 2)
+
+    case 2: // levitation
+        if (coinflip())
             description += " which hovers in mid-air";
-        break;
-    case 11:
-        if (ghost.values[10] == 2)
+        else
             description += " with sacs of gas hanging from its back";
         break;
-    case 12:
-        description += " covered in tiny crawling spiders";
-        break;
-    case 13:
-        description += " covered in tiny crawling insects";
-        break;
-    case 14:
-        description += " and the head of a crocodile";
-        break;
-    case 15:
-        description += " and the head of a hippopotamus";
-        break;
-    case 16:
-        description += " and a cruel curved beak for a mouth";
-        break;
-    case 17:
-        description += " and a straight sharp beak for a mouth";
-        break;
-    case 18:
-        description += " and no head at all";
-        break;
-    case 19:
-        description += " and a hideous tangle of tentacles for a mouth";
-        break;
-    case 20:
-        description += " and an elephantine trunk";
-        break;
-    case 21:
-        description += " and an evil-looking proboscis";
-        break;
-    case 22:
-        description += " and dozens of eyes";
-        break;
-    case 23:
-        description += " and two ugly heads";
-        break;
-    case 24:
-        description += " and a long serpentine tail";
-        break;
-    case 25:
-        description += " and a pair of huge tusks growing from its jaw";
-        break;
-    case 26:
-        description +=
-            " and a single huge eye, in the centre of its forehead";
-        break;
-    case 27:
-        description += " and spikes of black metal for teeth";
-        break;
-    case 28:
-        description += " and a disc-shaped sucker for a head";
-        break;
-    case 29:
-        description += " and huge, flapping ears";
-        break;
-    case 30:
-        description += " and a huge, toothy maw in the centre of its chest";
-        break;
-    case 31:
-        description += " and a giant snail shell on its back";
-        break;
-    case 32:
-        description += " and a dozen heads";
-        break;
-    case 33:
-        description += " and the head of a jackal";
-        break;
-    case 34:
-        description += " and the head of a baboon";
-        break;
-    case 35:
-        description += " and a huge, slobbery tongue";
-        break;
-    case 36:
-        description += " which is covered in oozing lacerations";
-        break;
-    case 37:
-        description += " and the head of a frog";
-        break;
-    case 38:
-        description += " and the head of a yak";
-        break;
-    case 39:
-        description += " and eyes out on stalks";
+
+    default:  // does not fly
+        switch (random2(40))
+        {
+        default:
+            break;
+        case 12:
+            description += " covered in tiny crawling spiders";
+            break;
+        case 13:
+            description += " covered in tiny crawling insects";
+            break;
+        case 14:
+            description += " and the head of a crocodile";
+            break;
+        case 15:
+            description += " and the head of a hippopotamus";
+            break;
+        case 16:
+            description += " and a cruel curved beak for a mouth";
+            break;
+        case 17:
+            description += " and a straight sharp beak for a mouth";
+            break;
+        case 18:
+            description += " and no head at all";
+            break;
+        case 19:
+            description += " and a hideous tangle of tentacles for a mouth";
+            break;
+        case 20:
+            description += " and an elephantine trunk";
+            break;
+        case 21:
+            description += " and an evil-looking proboscis";
+            break;
+        case 22:
+            description += " and dozens of eyes";
+            break;
+        case 23:
+            description += " and two ugly heads";
+            break;
+        case 24:
+            description += " and a long serpentine tail";
+            break;
+        case 25:
+            description += " and a pair of huge tusks growing from its jaw";
+            break;
+        case 26:
+            description +=
+                " and a single huge eye, in the centre of its forehead";
+            break;
+        case 27:
+            description += " and spikes of black metal for teeth";
+            break;
+        case 28:
+            description += " and a disc-shaped sucker for a head";
+            break;
+        case 29:
+            description += " and huge, flapping ears";
+            break;
+        case 30:
+            description += " and a huge, toothy maw in the centre of its chest";
+            break;
+        case 31:
+            description += " and a giant snail shell on its back";
+            break;
+        case 32:
+            description += " and a dozen heads";
+            break;
+        case 33:
+            description += " and the head of a jackal";
+            break;
+        case 34:
+            description += " and the head of a baboon";
+            break;
+        case 35:
+            description += " and a huge, slobbery tongue";
+            break;
+        case 36:
+            description += " which is covered in oozing lacerations";
+            break;
+        case 37:
+            description += " and the head of a frog";
+            break;
+        case 38:
+            description += " and the head of a yak";
+            break;
+        case 39:
+            description += " and eyes out on stalks";
+            break;
+        }
         break;
     }
-    // Often won't get anything appended there.
 
     description += ".";
 
@@ -2007,10 +2024,8 @@ static std::string describe_potion( const item_def &item )
 
     description.reserve(64);
 
-    if (get_ident_type( OBJ_POTIONS, item.sub_type ) != ID_UNKNOWN_TYPE)
-    {
+    if (get_ident_type( OBJ_POTIONS, item.sub_type ) != ID_KNOWN_TYPE)
         description += "A small bottle of liquid.";
-    }
     else
     {
         description += "A";
@@ -2236,10 +2251,8 @@ static std::string describe_scroll( const item_def &item )
 
     description.reserve(64);
 
-    if (get_ident_type( OBJ_SCROLLS, item.sub_type ) != ID_UNKNOWN_TYPE)
-    {
+    if (get_ident_type( OBJ_SCROLLS, item.sub_type ) != ID_KNOWN_TYPE)
         description += "A scroll of paper covered in magical writing.";
-    }
     else
     {
         switch (item.sub_type)
@@ -3001,13 +3014,12 @@ static std::string describe_misc_item( const item_def &item )
         case MISC_PORTABLE_ALTAR_OF_NEMELEX:
             description +=
                 "An altar to Nemelex Xobeh, built for easy assembly and "
-                "disassembly. Invoke it to place it on a clear patch of floor, "
+                "disassembly.  Evoke it to place it on a clear patch of floor, "
                 "then pick it up again when you've finished. ";
             break;
         default:
             DEBUGSTR("Unknown misc item (2)");
         }
-
     }
     else
     {
@@ -3055,7 +3067,7 @@ static std::string describe_misc_item( const item_def &item )
         case MISC_PORTABLE_ALTAR_OF_NEMELEX:
             description +=
                 "An altar to Nemelex Xobeh, built for easy assembly and "
-                "disassembly. Invoke it to place on a clear patch of floor, "
+                "disassembly.  Evoke it to place on a clear patch of floor, "
                 "then pick it up again when you've finished. ";
             break;
         default:
@@ -3450,7 +3462,11 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_VENOM_BOLT:
-        description += "throws a bolt of deadly poison. ";
+        description += "throws a bolt of poison. ";
+        break;
+
+    case SPELL_POISON_ARROW:
+        description += "hurls an arrow of extremely powerful poison. ";
         break;
 
     case SPELL_OLGREBS_TOXIC_RADIANCE:
@@ -3589,10 +3605,9 @@ void describe_spell(int spelled)
 
     case SPELL_SUMMON_HORRIBLE_THINGS:
         description += "opens a gate to the Abyss and calls through "
-            "one or more hideous abominations from "
-            "that dreadful place. The powers who answer "
-            "this invocation require of casters a portion "
-            "of their intellect in exchange for this service. ";
+            "one or more hideous abominations from that dreadful place."
+            "  The powers who answer this invocation require of casters "
+            "a portion of their intellect in exchange for this service.";
         break;
 
     case SPELL_ENSLAVEMENT:
@@ -5031,20 +5046,20 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_VAMPIRE:
         description += "A powerful undead.";
-        if (you.is_undead == 0)
+        if (you.is_undead == US_ALIVE)
             description += " It wants to drink your blood! ";
         break;
 
     case MONS_VAMPIRE_KNIGHT:
         description +=
             "A powerful warrior, with skills undiminished by undeath.";
-        if (you.is_undead == 0)
+        if (you.is_undead == US_ALIVE)
             description += " It wants to drink your blood! ";
         break;
 
     case MONS_VAMPIRE_MAGE:
         description += "Undeath has not lessened this powerful mage.";
-        if (you.is_undead == 0)
+        if (you.is_undead == US_ALIVE)
             description += " It wants to drink your blood! ";
         break;
 
@@ -5077,7 +5092,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_WYVERN:
         description += "A dragon-like creature with long sharply pointed tail."
-            "Although smaller and less formidable than true dragons, "
+            " Although smaller and less formidable than true dragons, "
             "wyverns are nonetheless a foe to be reckoned with.";
         break;
 
@@ -5191,7 +5206,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_REAPER:
         description += "A skeletal form wielding a giant scythe. ";
-        if (you.is_undead == 0)
+        if (you.is_undead == US_ALIVE)
             description += "It has come for your soul!";
         break;
 
@@ -5724,9 +5739,10 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_KILLER_KLOWN:
         description += "A comical figure full of life and laughter.  It"
-            " looks very happy to see you.$But is there a slightly malicious cast to"
-            " its features?  Is that red facepaint or something altogether less"
-            " pleasant? Join in the fun, and maybe you'll find out!";
+            " looks very happy to see you... but is there a slightly malicious"
+            " cast to its features?  Is that red facepaint or something"
+            " altogether less pleasant?  Join in the fun, and maybe you'll"
+            " find out!";
         break;
 
     case MONS_MOTH_OF_WRATH:
@@ -5760,38 +5776,75 @@ void describe_monsters(int class_described, unsigned char which_mons)
             "A small and slimy eel, crackling with electrical discharge.";
         break;
 
-// randomly generated descriptions
     case MONS_PLAYER_GHOST:
-        description += "The ghost of ";
-        description += ghost.name;
-        description += ", a";
-        if (ghost.values[12] < 4)
-            description += " weakling ";
-        else if (ghost.values[12] < 7)
-            description += "n average ";
-        else if (ghost.values[12] < 11)
-            description += "n experienced ";
-        else if (ghost.values[12] < 16)
-            description += " powerful ";
-        else if (ghost.values[12] < 22)
-            description += " mighty ";
-        else if (ghost.values[12] < 26)
-            description += " great ";
-        else if (ghost.values[12] < 27)
-            description += "n awesomely powerful ";
-        else
-            description += " legendary ";
-        description += species_name(ghost.values[9]);
-        description += " ";
-        description += skill_title(ghost.values[10], ghost.values[11]);
-        description += ".";
+        {
+            char tmp_buff[ INFO_SIZE ];
+
+            // We're fudgins stats so that unarmed combat gets based off
+            // of the ghost's species, not the player's stats... exact
+            // stats are required anyways, all that matters is whether
+            // dex >= str. -- bwr
+            const int dex = 10;
+            int str;
+            switch (ghost.values[GVAL_SPECIES])
+            {
+            case SP_HILL_DWARF:
+            case SP_MOUNTAIN_DWARF:
+            case SP_TROLL:
+            case SP_OGRE:
+            case SP_OGRE_MAGE:
+            case SP_MINOTAUR:
+            case SP_HILL_ORC:
+            case SP_CENTAUR:
+            case SP_NAGA:
+            case SP_MUMMY:
+            case SP_GHOUL:
+                str = 15;
+                break;
+
+            case SP_HUMAN:
+            case SP_DEMIGOD:
+            case SP_DEMONSPAWN:
+                str = 10;
+                break;
+
+            default:
+                str = 5;
+                break;
+            }
+
+            snprintf( tmp_buff, sizeof(tmp_buff),
+                  "The apparition of %s the %s, a%s %s %s.$",
+                  ghost.name,
+
+                  skill_title( ghost.values[GVAL_BEST_SKILL],
+                               ghost.values[GVAL_SKILL_LEVEL],
+                               ghost.values[GVAL_SPECIES],
+                               str, dex, GOD_NO_GOD ),
+
+                  (ghost.values[GVAL_EXP_LEVEL] <  4) ? " weakling" :
+                  (ghost.values[GVAL_EXP_LEVEL] <  7) ? "n average" :
+                  (ghost.values[GVAL_EXP_LEVEL] < 11) ? "n experienced" :
+                  (ghost.values[GVAL_EXP_LEVEL] < 16) ? " powerful" :
+                  (ghost.values[GVAL_EXP_LEVEL] < 22) ? " mighty" :
+                  (ghost.values[GVAL_EXP_LEVEL] < 26) ? " great" :
+                  (ghost.values[GVAL_EXP_LEVEL] < 27) ? "n awesomely powerful"
+                                                      : " legendary",
+
+                  species_name( ghost.values[GVAL_SPECIES],
+                                ghost.values[GVAL_EXP_LEVEL] ),
+
+                  get_class_name( ghost.values[GVAL_CLASS] ) );
+
+            description += tmp_buff;
+        }
         break;
 
     case MONS_PANDEMONIUM_DEMON:
         description += describe_demon();
         break;
 
-// mimics -- I'm not considering these descriptions a bug. -- bwr
+    // mimics -- I'm not considering these descriptions a bug. -- bwr
     case MONS_GOLD_MIMIC:
         description +=
             "An apparently harmless pile of gold coins hides a nasty "
@@ -5831,9 +5884,9 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     // the quokka is no more ... {dlb}
-    // the quokka is back -- bwr
+    // the quokka is back, without cyberware -- bwr
     case MONS_QUOKKA:
-        description += "A small marsupial mammal.  Don't call it a rat.";
+        description += "A small marsupial.  Don't call it a rat.";
         break;
 
     // uniques
@@ -5869,7 +5922,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_SIGMUND:
         description += "An evil and spritely old human, whose eyes "
-                   "twinkle with madness.  Sigmund wields a nasty looking scythe.";
+               "twinkle with madness.  Sigmund wields a nasty looking scythe.";
         break;
 
     case MONS_EDMUND:
@@ -5917,8 +5970,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_MAUD:
-        description +=
-            "An evil warrior who looks inexplicably like a rodent.";
+        description += "An evil warrior who looks inexplicably like a rodent.";
         break;
 
     case MONS_LOUISE:
@@ -5958,8 +6010,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_IJYB:
-        description +=
-            "A small and twisted goblin, wearing some ugly blue rags.";
+        description += "A small and twisted goblin, wearing some ugly blue rags.";
         break;
 
     case MONS_BLORK_THE_ORC:
@@ -6050,12 +6101,18 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
         mons_spell_list(msecc, hspell_pass);
 
-        description += "$Monster Spells:$";
+        bool found_spell = false;
 
         for (int i = 0; i < 6; i++)
         {
             if (hspell_pass[i] != MS_NO_SPELL)
             {
+                if (!found_spell)
+                {
+                    description += "$Monster Spells:$";
+                    found_spell = true;
+                }
+
                 snprintf( info, INFO_SIZE, "    %d: %s$", i,
                          mons_spell_name( hspell_pass[i] ) );
 
@@ -6100,7 +6157,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 }                               // end describe_monsters
 
 
-void print_god_abil_desc( int abil )
+static void print_god_abil_desc( int abil )
 {
     const ability_def &abil_info = get_ability_def( abil );
 
@@ -6123,24 +6180,30 @@ void print_god_abil_desc( int abil )
 //
 //---------------------------------------------------------------
 
-void describe_god( int which_god )
+void describe_god( int which_god, bool give_title )
 {
 
-    const char *description; //mv: temporary string used for printing description
-    int colour; //mv: colour used for some messages
-
-
+    const char *description; // mv: tmp string used for printing description
+    int         colour;      // mv: colour used for some messages
 
 #ifdef DOS_TERM
     char buffer[4000];
-    gettext(1, 1, 80, 25, buffer);
-    window(1, 1, 80, 25);
+    gettext( 1, 1, 80, 25, buffer );
+    window( 1, 1, 80, 25 );
 #endif
+
     clrscr();
+
+    if (give_title)
+    {
+        textcolor( WHITE );
+        cprintf( "                                  Religion" EOL );
+        textcolor( LIGHTGREY );
+    }
 
     if (which_god == GOD_NO_GOD) //mv:no god -> say it and go away
     {
-        cprintf("You are not religious.");
+        cprintf( EOL "You are not religious." );
         goto end_god_info;
     }
 
@@ -6338,9 +6401,10 @@ void describe_god( int which_god )
         snprintf( info, INFO_SIZE,
                  (you.penance[which_god] >= 50) ? "%s's wrath is upon you!" :
                  (you.penance[which_god] >= 20) ? "%s is annoyed with you." :
-                 (you.penance[which_god] >= 5 ) ? "%s well remembers your sins." :
-                 (you.penance[which_god] > 0  ) ? "%s is ready to forgive your sins." :
-                                                  "%s is ambivalent towards you.",
+                 (you.penance[which_god] >=  5) ? "%s well remembers your sins." :
+                 (you.penance[which_god] >   0) ? "%s is ready to forgive your sins." :
+                 (you.worshipped[which_god])    ? "%s is ambivalent towards you."
+                                                : "%s is neutral towards you.",
                  god_name(which_god) );
 
         cprintf(info);

@@ -31,7 +31,7 @@ void area_shift(void);
 /* ***********************************************************************
  * called from: spells1 - spells3 - spells4
  * *********************************************************************** */
-void abyss_teleport(void);
+void abyss_teleport( bool new_area );
 
 
 #endif

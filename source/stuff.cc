@@ -33,6 +33,7 @@
 
 #include "externs.h"
 
+#include "macro.h"
 #include "misc.h"
 #include "monstuff.h"
 #include "mon-util.h"
@@ -40,15 +41,34 @@
 #include "skills2.h"
 #include "view.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 // required for stuff::coinflip() and cf_setseed()
 unsigned long cfseed;
 
 // unfortunately required for near_stairs(ugh!):
 extern unsigned char (*mapch) (unsigned char);
+
+// Crude, but functional.
+char *const make_time_string( time_t abs_time, char *const buff, int buff_size )
+{
+    const int days  = abs_time / 86400;
+    const int hours = (abs_time % 86400) / 3600;
+    const int mins  = (abs_time % 3600) / 60;
+    const int secs  = abs_time % 60;
+
+    char day_buff[32];
+
+    if (days > 0)
+    {
+        snprintf( day_buff, sizeof(day_buff), "%d day%s, ",
+                  days, (days > 1) ? "s" : "" );
+    }
+
+    snprintf( buff, buff_size, "%s%02d:%02d:%02d",
+              (days > 0) ? day_buff : "", hours, mins, secs );
+
+    return (buff);
+}
 
 void set_redraw_status( unsigned long flags )
 {
@@ -254,12 +274,7 @@ void redraw_screen(void)
 #ifdef PLAIN_TERM
 // this function is used for systems without gettext/puttext to redraw the
 // playing screen after a call to for example inventory.
-    char title[40];
-
-    const unsigned char best = best_skill( SK_FIGHTING, (NUM_SKILLS - 1), 99 );
-    strncpy( title, skill_title( best, you.skills[ best ] ), sizeof(title) );
-
-    draw_border( you.your_name, title, you.species );
+    draw_border();
 
     you.redraw_hit_points = 1;
     you.redraw_magic_points = 1;

@@ -104,6 +104,7 @@ bool transform(int pow, char which_trans)
         return (false);
     }
 
+    // This must occur before the untransform() and the is_undead check.
     if (you.attribute[ATTR_TRANSFORMATION] == which_trans)
     {
         if (you.duration[DUR_TRANSFORMATION] < 100)
@@ -126,7 +127,6 @@ bool transform(int pow, char which_trans)
     if (you.attribute[ATTR_TRANSFORMATION] != TRAN_NONE)
         untransform();
 
-
     if (you.is_undead)
     {
         mpr("Your unliving flesh cannot be transformed in this way.");
@@ -135,7 +135,6 @@ bool transform(int pow, char which_trans)
 
     //jmf: silently discard this enchantment
     you.duration[DUR_STONESKIN] = 0;
-
 
     FixedVector < char, 8 > rem_stuff;
 
@@ -157,10 +156,10 @@ bool transform(int pow, char which_trans)
         remove_equipment( rem_stuff );
 
         you.attribute[ATTR_TRANSFORMATION] = TRAN_SPIDER;
-        you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+        you.duration[DUR_TRANSFORMATION] = 10 + random2(pow) + random2(pow);
 
-        if (you.duration[DUR_TRANSFORMATION] > 100)
-            you.duration[DUR_TRANSFORMATION] = 100;
+        if (you.duration[DUR_TRANSFORMATION] > 60)
+            you.duration[DUR_TRANSFORMATION] = 60;
 
         modify_stat( STAT_DEXTERITY, 5, true );
 
@@ -176,7 +175,7 @@ bool transform(int pow, char which_trans)
         remove_equipment( rem_stuff );
 
         you.attribute[ATTR_TRANSFORMATION] = TRAN_ICE_BEAST;
-        you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+        you.duration[DUR_TRANSFORMATION] = 30 + random2(pow) + random2(pow);
 
         if (you.duration[ DUR_TRANSFORMATION ] > 100)
             you.duration[ DUR_TRANSFORMATION ] = 100;
@@ -276,6 +275,16 @@ bool transform(int pow, char which_trans)
 
         mpr("Your body is suffused with negative energy!");
 
+        // undead cannot regenerate -- bwr
+        if (you.duration[DUR_REGENERATION])
+        {
+            mpr( "You stop regenerating.", MSGCH_DURATION );
+            you.duration[DUR_REGENERATION] = 0;
+        }
+
+        // silently removed since undead automatically resist poison -- bwr
+        you.duration[DUR_RESIST_POISON] = 0;
+
         /* no remove_equip */
         you.attribute[ATTR_TRANSFORMATION] = TRAN_LICH;
         you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
@@ -286,7 +295,9 @@ bool transform(int pow, char which_trans)
         modify_stat( STAT_STRENGTH, 3, true );
         your_sign = 'L';
         your_colour = LIGHTGREY;
-        you.is_undead = US_HUNGRY_DEAD;
+        you.is_undead = US_UNDEAD;
+        you.hunger_state = HS_SATIATED;  // no hunger effects while transformed
+        set_redraw_status( REDRAW_HUNGER );
         return (true);
 
     case TRAN_AIR:

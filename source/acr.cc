@@ -67,7 +67,7 @@
 #include <sys/types.h>
 #endif
 
-#ifdef MAC
+#ifdef OS9
 #include <stat.h>
 #else
 #include <sys/stat.h>
@@ -97,6 +97,7 @@
 #include "itemname.h"
 #include "items.h"
 #include "lev-pand.h"
+#include "macro.h"
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
@@ -124,10 +125,6 @@
 #include "view.h"
 #include "wpn-misc.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
-
 struct crawl_environment env;
 struct player you;
 struct system_environment SysEnv;
@@ -136,7 +133,8 @@ char info[ INFO_SIZE ];         // messaging queue extern'd everywhere {dlb}
 
 int stealth;                    // externed in view.h     // no it is not {dlb}
 char use_colour = 1;
-FixedVector < char, 10 > visible;
+
+FixedVector< char, NUM_STATUE_TYPES >  Visible_Statue;
 
 // set to true once a new game starts or an old game loads
 bool game_has_started = false;
@@ -218,17 +216,21 @@ int main(int argc, char *argv[])
     {
         // print help
         puts("Command line options:");
-        puts("  -scores [N]         highscore list");
-        puts("  -name <string>      character name");
-        puts("  -race <letter>      preselect race");
-        puts("  -class <letter>     preselect class");
-        puts("  -pizza <string>     crawl pizza");
-        puts("  -plain              don't use IBM extended characters");
-        puts("  -dir <path>         crawl directory");
-        puts("  -rc <file>          init file name");
+        puts("  -name <string>   character name");
+        puts("  -race <arg>      preselect race (by letter, abbreviation, or name)");
+        puts("  -class <arg>     preselect class (by letter, abbreviation, or name)");
+        puts("  -pizza <string>  crawl pizza");
+        puts("  -plain           don't use IBM extended characters");
+        puts("  -dir <path>      crawl directory");
+        puts("  -rc <file>       init file name");
         puts("");
         puts("Command line options override init file options, which override");
         puts("environment options (CRAWL_NAME, CRAWL_PIZZA, CRAWL_DIR, CRAWL_RC).");
+        puts("");
+        puts("Highscore list options: (Can now be redirected to more, etc)");
+        puts("  -scores [N]      highscore list");
+        puts("  -tscores [N]     terse highscore list");
+        puts("  -vscores [N]     verbose highscore list");
         exit(1);
     }
 
@@ -236,7 +238,14 @@ int main(int argc, char *argv[])
     read_init_file();
 
     // now parse the args again, looking for everything else.
-    parse_args(argc, argv, false);
+    parse_args( argc, argv, false );
+
+    if (Options.sc_entries > 0)
+    {
+        printf( " Best Crawlers -" EOL );
+        hiscores_print_list( Options.sc_entries, Options.sc_format );
+        exit(0);
+    }
 
 #ifdef LINUX
     lincurses_startup();
@@ -246,19 +255,11 @@ int main(int argc, char *argv[])
     init_mac();
 #endif
 
-    // check for highscore list - should be done BEFORE libw32c init
-    if (Options.sc_entries > 0)
-    {
-        cprintf(" Best Crawlers -"EOL);
-        hiscores_print_list();
-        end(0);
-    }
-
 #ifdef WIN32CONSOLE
     init_libw32c();
 #endif
 
-#ifdef MACROS
+#ifdef USE_MACROS
     // Load macros
     macro_init();
 #endif
@@ -271,7 +272,7 @@ int main(int argc, char *argv[])
     if (game_start || Options.always_greet)
     {
         snprintf( info, INFO_SIZE, "Welcome, %s the %s %s.",
-                  you.your_name, species_name( you.species ), you.class_name );
+                  you.your_name, species_name( you.species,you.experience_level ), you.class_name );
 
         mpr( info );
 
@@ -335,6 +336,7 @@ int main(int argc, char *argv[])
         default:
             break;
         }
+
         // warn player about their weapon, if unsuitable
         wield_warning(false);
     }
@@ -366,7 +368,7 @@ int main(int argc, char *argv[])
 #ifdef WIZARD
 static void handle_wizard_command( void )
 {
-    int   wiz_command, i, j, art;
+    int   wiz_command, i, j, tmp;
     char  specs[256];
 
     // WIZ_NEVER gives protection for those who have wiz compiles,
@@ -399,8 +401,11 @@ static void handle_wizard_command( void )
         redraw_screen();
         break;
 
+    case CONTROL('G'):
+        save_ghost(true);
+        break;
+
     case 'x':
-        // this gives better control:
         you.experience = 1 + exp_needed( 2 + you.experience_level );
         level_change();
         break;
@@ -477,13 +482,13 @@ static void handle_wizard_command( void )
 
     case '|':
         // create all unrand arts
-        for (art = 1; art < NO_UNRANDARTS; art++)
+        for (tmp = 1; tmp < NO_UNRANDARTS; tmp++)
         {
             int islot = get_item_slot();
             if (islot == NON_ITEM)
                 break;
 
-            make_item_unrandart( mitm[islot], art );
+            make_item_unrandart( mitm[islot], tmp );
 
             mitm[ islot ].quantity = 1;
             set_ident_flags( mitm[ islot ], ISFLAG_IDENT_MASK );
@@ -492,13 +497,13 @@ static void handle_wizard_command( void )
         }
 
         // create all fixed artefacts
-        for (art = SPWPN_SINGING_SWORD; art <= SPWPN_STAFF_OF_WUCAD_MU; art++)
+        for (tmp = SPWPN_SINGING_SWORD; tmp <= SPWPN_STAFF_OF_WUCAD_MU; tmp++)
         {
             int islot = get_item_slot();
             if (islot == NON_ITEM)
                 break;
 
-            if (make_item_fixed_artefact( mitm[ islot ], false, art ))
+            if (make_item_fixed_artefact( mitm[ islot ], false, tmp ))
             {
                 mitm[ islot ].quantity = 1;
                 item_colour( mitm[ islot ] );
@@ -854,6 +859,7 @@ static void input(void)
 #endif
 
     you.shield_blocks = 0;              // no blocks this round
+
     you.time_taken = player_speed();
 
 #ifdef LINUX
@@ -884,7 +890,7 @@ static void input(void)
 
             if (you.running > 0)
             {
-                keyin = 125;    // a closed curly brace
+                keyin = 128;
 
                 move_x = you.run_x;
                 move_y = you.run_y;
@@ -915,7 +921,8 @@ static void input(void)
 #endif
 
               gutch:
-                keyin = getch();
+                flush_input_buffer( FLUSH_BEFORE_COMMAND );
+                keyin = getch_with_command_macros();
             }
 
             mesclr();
@@ -970,13 +977,14 @@ static void input(void)
                     keyin = '.';
                     goto get_keyin_again;
                 }
-                keyin = 125;
+
+                keyin = 128;
             }
 #endif
         }
     }
 
-    if (keyin != 125)
+    if (keyin != 128)
     {
         move_x = 0;
         move_y = 0;
@@ -1159,10 +1167,12 @@ static void input(void)
     case CMD_DROP:
         drop();
         break;
+
     case 'D':
     case CMD_BUTCHER:
         butchery();
         break;
+
     case 'i':
     case CMD_DISPLAY_INVENTORY:
         get_invent(-1);
@@ -1178,7 +1188,8 @@ static void input(void)
 
     case 'E':
     case CMD_EVOKE:
-        evoke_wielded();
+        if (!evoke_wielded())
+            flush_input_buffer( FLUSH_ON_FAILURE );
         break;
 
     case 'g':
@@ -1191,14 +1202,17 @@ static void input(void)
     case CMD_INSPECT_FLOOR:
         item_check(';');
         break;
+
     case 'w':
     case CMD_WIELD_WEAPON:
         wield_weapon(false);
         break;
+
     case 't':
     case CMD_THROW:
         throw_anything();
         break;
+
     case 'f':
     case CMD_FIRE:
         shoot_thing();
@@ -1208,6 +1222,7 @@ static void input(void)
     case CMD_WEAR_ARMOUR:
         wear_armour();
         break;
+
     case 'T':
     case CMD_REMOVE_ARMOUR:
         {
@@ -1231,21 +1246,27 @@ static void input(void)
     case CMD_ADJUST_INVENTORY:
         adjust();
         return;
+
     case 'M':
     case CMD_MEMORISE_SPELL:
-        learn_spell();
+        if (!learn_spell())
+            flush_input_buffer( FLUSH_ON_FAILURE );
         break;
+
     case 'z':
     case CMD_ZAP_WAND:
         zap_wand();
         break;
+
     case 'e':
     case CMD_EAT:
         eat_food();
         break;
+
     case 'a':
     case CMD_USE_ABILITY:
-        activate_ability();
+        if (!activate_ability())
+            flush_input_buffer( FLUSH_ON_FAILURE );
         break;
 
     case 'A':
@@ -1258,6 +1279,7 @@ static void input(void)
     case CMD_EXAMINE_OBJECT:
         original_name();
         break;
+
     case 'p':
     case CMD_PRAY:
         pray();
@@ -1265,7 +1287,7 @@ static void input(void)
 
     case '^':
     case CMD_DISPLAY_RELIGION:
-        describe_god(you.religion);
+        describe_god( you.religion, true );
         redraw_screen();
         break;
 
@@ -1281,6 +1303,7 @@ static void input(void)
     case CMD_QUAFF:
         drink();
         break;
+
     case 'r':
     case CMD_READ:
         read_scroll();
@@ -1307,9 +1330,12 @@ static void input(void)
         if (scan_randarts(RAP_PREVENT_SPELLCASTING))
         {
             mpr("Something interferes with your magic!");
+            flush_input_buffer( FLUSH_ON_FAILURE );
             break;
         }
-        cast_a_spell();
+
+        if (!cast_a_spell())
+            flush_input_buffer( FLUSH_ON_FAILURE );
         break;
 
     case '\'':
@@ -1364,10 +1390,9 @@ static void input(void)
 #ifdef USE_UNIX_SIGNALS
     case CONTROL('Z'):
     case CMD_SUSPEND_GAME:
-        // CTRL-Z suspend behaviour is implemented here.
+        // CTRL-Z suspend behaviour is implemented here,
         // because we want to have CTRL-Y available...
-        // we have to stop both from sending the signals,
-        // so we reimplement here
+        // and unfortuantely they tend to be stuck together.
         clrscr();
         lincurses_shutdown();
         kill(0, SIGTSTP);
@@ -1385,7 +1410,7 @@ static void input(void)
     case 'C':
     case CMD_EXPERIENCE_CHECK:
         snprintf( info, INFO_SIZE, "You are a level %d %s %s.", you.experience_level,
-                species_name(you.species), you.class_name);
+                species_name(you.species,you.experience_level), you.class_name);
         mpr(info);
 
         if (you.experience_level < 27)
@@ -1403,6 +1428,19 @@ static void input(void)
             mpr( "I'm sorry, level 27 is as high as you can go." );
             mpr( "With the way you've been playing, I'm surprised you got this far." );
         }
+
+        if (you.real_time != -1)
+        {
+            const time_t curr = you.real_time + (time(NULL) - you.start_time);
+            char buff[200];
+
+            make_time_string( curr, buff, sizeof(buff) );
+
+            snprintf( info, INFO_SIZE, "Play time: %s (%ld turns)",
+                      buff, you.num_turns );
+
+            mpr( info );
+        }
         break;
 
 
@@ -1410,6 +1448,7 @@ static void input(void)
     case CMD_SHOUT:
         yell();                 /* in effects.cc */
         break;
+
     case '@':
     case CMD_DISPLAY_CHARACTER_STATUS:
         display_char_status();
@@ -1434,7 +1473,7 @@ static void input(void)
         mpr(info);
         break;
 
-#ifdef MACROS
+#ifdef USE_MACROS
     case '`':
     case CMD_MACRO_ADD:
         macro_add_query();
@@ -1485,8 +1524,7 @@ static void input(void)
         version();
         break;
 
-    case '}':
-        //        Can't use this char -- it's the special value 125
+    case 128:   // Can't use this char -- it's the special value 128
         break;
 
     default:
@@ -1538,18 +1576,29 @@ static void input(void)
         return;
     }
 
+    if (you.num_turns != -1)
+        you.num_turns++;
+
     //if (random2(10) < you.skills [SK_TRAPS_DOORS] + 2) search_around();
 
     stealth = check_stealth();
 
+#if 0
+    // too annoying for regular diagnostics
+    snprintf( info, INFO_SIZE, "stealth: %d", stealth );
+    mpr( info, MSGCH_DIAGNOSTICS );
+#endif
+
     if (you.special_wield != SPWLD_NONE)
         special_wielded();
 
-    if (one_chance_in(10)
-        && ((player_teleport() > 0 && one_chance_in(100 / player_teleport()))
-            || (you.level_type == LEVEL_ABYSS && one_chance_in(30))))
+    if (one_chance_in(10))
     {
-        you_teleport2(true);    // this is instantaneous
+        // this is instantaneous
+        if (player_teleport() > 0 && one_chance_in(100 / player_teleport()))
+            you_teleport2( true );
+        else if (you.level_type == LEVEL_ABYSS && one_chance_in(30))
+            you_teleport2( false, true ); // to new area of the Abyss
     }
 
     if (env.cgrid[you.x_pos][you.y_pos] != EMPTY_CLOUD)
@@ -1724,8 +1773,8 @@ static void input(void)
             strcat(info, " stops crackling.");
             break;
         case SPWPN_DISTORTION:
-            strcat(info, " seems straighter.");
-            miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100 );
+            strcat( info, " seems straighter." );
+            miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a weapon of distortion" );
             break;
         default:
             strcat(info, " seems inexplicably less special.");
@@ -1799,6 +1848,7 @@ static void input(void)
         if (you.duration[DUR_STONEMAIL] == 6)
         {
             mpr("Your scaley stone armour is starting to flake away.", MSGCH_DURATION);
+            you.redraw_armour_class = 1;
             if (coinflip())
                 you.duration[DUR_STONEMAIL]--;
         }
@@ -1807,6 +1857,7 @@ static void input(void)
     {
         mpr("Your scaley stone armour disappears.", MSGCH_DURATION);
         you.duration[DUR_STONEMAIL] = 0;
+        you.redraw_armour_class = 1;
         burden_change();
     }
 
@@ -1872,7 +1923,8 @@ static void input(void)
         you.duration[DUR_TELEPORT]--;
     else if (you.duration[DUR_TELEPORT] == 1)
     {
-        you_teleport2(true);
+        // only to a new area of the abyss sometimes (for abyss teleports)
+        you_teleport2( true, one_chance_in(5) );
         you.duration[DUR_TELEPORT] = 0;
     }
 
@@ -1938,14 +1990,6 @@ static void input(void)
         mpr("A horrible thing bursts from your chest!", MSGCH_WARN);
         ouch(1 + you.hp / 2, 0, KILLED_BY_SHUGGOTH);
         make_shuggoth(you.x_pos, you.y_pos, 1 + you.hp / 2);
-    }
-
-    if (you.duration[DUR_TELEPORT] > 1)
-        you.duration[DUR_TELEPORT]--;
-    else if (you.duration[DUR_TELEPORT] == 1)
-    {
-        you_teleport2(true);
-        you.duration[DUR_TELEPORT] = 0;
     }
 
     if (you.invis > 1)
@@ -2198,17 +2242,10 @@ static void input(void)
         }
     }
 
-    if (you.is_undead != US_UNDEAD)
-    {
-        const int food_use = player_hunger_rate();
+    const int food_use = player_hunger_rate();
 
-        if (food_use > 0 && you.hunger >= 40)
-            make_hungry(food_use, true);
-    }
-    else
-    {
-        you.hunger = 6000;      // this is a kludge {dlb}
-    }
+    if (food_use > 0 && you.hunger >= 40)
+        make_hungry( food_use, true );
 
     // XXX: using an int tmp to fix the fact that hit_points_regeneration
     // is only an unsigned char and is thus likely to overflow. -- bwr
@@ -2279,57 +2316,44 @@ static void input(void)
     if (you.fire_shield > 0)
         manage_fire_shield();
 
-    /*
-       If visible [0] is 1, at least one statue is visible.
-       This was supposed to be more complex (with values of 2 etc), but I
-       couldn't get it to work.
-     */
-    if (visible[0])
+    // There used to be signs of intent to have statues as some sort
+    // of more complex state machine... I'm boiling them down to bare
+    // basics for now.  -- bwr
+    if (Visible_Statue[ STATUE_SILVER ])
     {
-        char wc[30];
-
-        if (visible[1])
+        if ((!you.invis && one_chance_in(3)) || one_chance_in(5))
         {
-            switch (visible[1])
-            {
-            case 0:
-                break;
-            //case 1: mpr("You feel a pleasing absence."); break;
-            case 2:
-                if (one_chance_in(4) && (!you.invis || one_chance_in(3)))
-                {
-                    strcpy( info, "The silver statue's eyes glow a " );
-                    weird_colours( random2(256), wc );
-                    strcat( info, wc );
-                    strcat( info, " colour." );
-                    mpr( info, MSGCH_WARN );
-                    create_monster(
-                        summon_any_demon((coinflip() ? DEMON_COMMON
-                                                     : DEMON_LESSER)),
-                                             ENCH_ABJ_V, BEH_HOSTILE,
-                                             you.x_pos, you.y_pos,
-                                             MHITYOU, 250 );
-                }
-                break;
-            //case 3: mpr("You feel a terrible presence observing you."); break;
-            }
+            char wc[30];
 
-            visible[1]--;
+            weird_colours( random2(256), wc );
+            snprintf(info, INFO_SIZE, "The silver statue's eyes glow %s.", wc);
+            mpr( info, MSGCH_WARN );
+
+            create_monster( summon_any_demon((coinflip() ? DEMON_COMMON
+                                                         : DEMON_LESSER)),
+                                     ENCH_ABJ_V, BEH_HOSTILE,
+                                     you.x_pos, you.y_pos,
+                                     MHITYOU, 250 );
         }
 
-        if (visible[2])
-        {
-            if (one_chance_in(3) && (!you.invis || coinflip()))
-            {
-                mpr("A hostile presence attacks your mind!", MSGCH_WARN);
-                miscast_effect(SPTYP_DIVINATION, random2(15), random2(150), 100);
-            }
-            visible[2]--;
-        }
-        visible[0]--;
+        Visible_Statue[ STATUE_SILVER ] = 0;
     }
 
-    if (you.hunger <= 500)
+    if (Visible_Statue[ STATUE_ORANGE_CRYSTAL ])
+    {
+        if ((!you.invis && coinflip()) || one_chance_in(4))
+        {
+            mpr("A hostile presence attacks your mind!", MSGCH_WARN);
+
+            miscast_effect( SPTYP_DIVINATION, random2(15), random2(150), 100,
+                            "an orange crystal statue" );
+        }
+
+        Visible_Statue[ STATUE_ORANGE_CRYSTAL ] = 0;
+    }
+
+    // food death check:
+    if (you.is_undead != US_UNDEAD && you.hunger <= 500)
     {
         if (!you.paralysis && one_chance_in(40))
         {
@@ -2342,8 +2366,8 @@ static void input(void)
 
         if (you.hunger <= 100)
         {
-            mpr("You have starved to death.", MSGCH_FOOD);
-            ouch(-9999, 0, KILLED_BY_STARVATION);
+            mpr( "You have starved to death.", MSGCH_FOOD );
+            ouch( -9999, 0, KILLED_BY_STARVATION );
         }
     }
 
@@ -2462,7 +2486,7 @@ static void open_door(char move_x, char move_y)
 
     if (grd[dx][dy] == DNGN_CLOSED_DOOR)
     {
-        int skill = you.dex + (SK_TRAPS_DOORS + SK_STEALTH) / 2;
+        int skill = you.dex + (you.skills[SK_TRAPS_DOORS] + you.skills[SK_STEALTH]) / 2;
 
         if (one_chance_in(skill) && !silenced(you.x_pos, you.y_pos))
         {
@@ -2481,10 +2505,8 @@ static void open_door(char move_x, char move_y)
     else
     {
         mpr("You swing at nothing.");
+        make_hungry(3, true);
         you.turn_is_over = 1;
-
-        if (you.is_undead != US_UNDEAD)
-            make_hungry(3, true);
     }
 }                               // end open_door()
 
@@ -2536,7 +2558,7 @@ static void close_door(char door_x, char door_y)
             return;
         }
 
-        int skill = you.dex + (SK_TRAPS_DOORS + SK_STEALTH) / 2;
+        int skill = you.dex + (you.skills[SK_TRAPS_DOORS] + you.skills[SK_STEALTH]) / 2;
 
         if (one_chance_in(skill) && !silenced(you.x_pos, you.y_pos))
         {
@@ -2632,10 +2654,8 @@ static bool initialise(void)
         you.unique_items[i] = UNIQ_NOT_EXISTS;
     }
 
-    for (i = 0; i < 10; i++)
-    {
-        visible[i] = 0;
-    }
+    for (i = 0; i < NUM_STATUE_TYPES; i++)
+        Visible_Statue[i] = 0;
 
     // initialize tag system before we try loading anything!
     tag_init();
@@ -2652,12 +2672,6 @@ static bool initialise(void)
     calc_hp();
     calc_mp();
 
-    //if ( newc )
-    //  stair_taken = 82;
-
-    //load(82, moving_level, level_saved, was_a_labyrinth, old_level, just_made_new_lev);
-    // load( 82, newc, false, 0, false, !newc, you.where_are_you );
-
     load( 82, (newc ? LOAD_START_GAME : LOAD_RESTART_GAME), false, 0,
           you.where_are_you );
 
@@ -2666,35 +2680,9 @@ static bool initialise(void)
     you.wizard = true;
 #endif
 
-#if 0
-    // Given this... (see only use of newc past this point)
-    newc = false;
-#endif
-
     init_properties();
     burden_change();
     make_hungry(0,true);
-
-#if 0
-    // ... this will never actually happen!
-    if (newc)
-    {
-        for (i = 0; i < GXM; i++)
-        {
-            for (j = 0; j < GYM; j++)
-                if (grd[i][j] == 68)
-                {
-                    you.x_pos = i;
-                    you.y_pos = j;
-                }
-
-            if (grd[i][j] == DNGN_FLOOR)
-                break;
-        }
-
-        new_level();
-    }                           // end if (newc)
-#endif
 
     you.redraw_strength = 1;
     you.redraw_intelligence = 1;
@@ -2705,11 +2693,13 @@ static bool initialise(void)
     you.redraw_gold = 1;
     you.wield_change = true;
 
-    draw_border(you.your_name, player_title(), you.species);
+    you.start_time = time( NULL );      // start timer on session
+
+    draw_border();
     new_level();
 
     // set vision radius to player's current vision
-    setLOSRadius(you.current_vision);
+    setLOSRadius( you.current_vision );
     viewwindow(1, false);   // This just puts the view up for the first turn.
     item();
 
@@ -2778,12 +2768,6 @@ static void move_player(char move_x, char move_y)
     bool attacking = false;
     bool moving = true;         // used to prevent eventual movement (swap)
 
-    const int targ_x = you.x_pos + move_x;
-    const int targ_y = you.y_pos + move_y;
-    const unsigned char old_grid   =  grd[ you.x_pos ][ you.y_pos ];
-    const unsigned char targ_grid  =  grd[ targ_x ][ targ_y ];
-    const unsigned char targ_monst = mgrd[ targ_x ][ targ_y ];
-
     int i;
     bool trap_known;
 
@@ -2842,6 +2826,12 @@ static void move_player(char move_x, char move_y)
         you.turn_is_over = 0;
         return;
     }
+
+    const int targ_x = you.x_pos + move_x;
+    const int targ_y = you.y_pos + move_y;
+    const unsigned char old_grid   =  grd[ you.x_pos ][ you.y_pos ];
+    const unsigned char targ_grid  =  grd[ targ_x ][ targ_y ];
+    const unsigned char targ_monst = mgrd[ targ_x ][ targ_y ];
 
     if (targ_monst != NON_MONSTER)
     {
@@ -3020,7 +3010,7 @@ static void move_player(char move_x, char move_y)
         you.running = 1;
 
     if (you.level_type == LEVEL_ABYSS
-            && (you.x_pos <= 21 || you.x_pos >= (GXM - 21)
+            && (you.x_pos <= 15 || you.x_pos >= (GXM - 16)
                     || you.y_pos <= 15 || you.y_pos >= (GYM - 16)))
     {
         area_shift();

@@ -25,6 +25,9 @@
 
 #define INFO_SIZE       200          // size of message buffers
 #define ITEMNAME_SIZE   200          // size of item names/shop names/etc
+#define HIGHSCORE_SIZE  800          // <= 10 Lines for long format scores
+
+#define MAX_NUM_GODS    21
 
 extern char info[INFO_SIZE];         // defined in acr.cc {dlb}
 
@@ -108,7 +111,7 @@ struct bolt
     int         beam_source;           // NON_MONSTER or monster index #
     char        beam_name[40];
     bool        isBeam;                // beams? (can hits multiple targets?)
-
+    const char *aux_source;            // source of KILL_MISC beams
 
     // OUTPUT parameters (tracing, ID)
     bool        obviousEffect;         // did an 'obvious' effect happen?
@@ -280,6 +283,7 @@ struct player
   FixedVector<unsigned char, 50>  skills;
   FixedVector<unsigned char, 50>  practise_skill;
   FixedVector<unsigned int, 50>   skill_points;
+  FixedVector<unsigned char, 50>  skill_order;
   int  skill_cost_level;
   int  total_skill_points;
   int  exp_available;
@@ -296,7 +300,9 @@ struct player
   char religion;
   unsigned char piety;
   unsigned char gift_timeout;
-  FixedVector<unsigned char, 100> penance;
+  FixedVector<unsigned char, MAX_NUM_GODS>  penance;
+  FixedVector<unsigned char, MAX_NUM_GODS>  worshipped;
+
 
   FixedVector<unsigned char, 100> mutation;
   FixedVector<unsigned char, 100> demon_pow;
@@ -318,7 +324,21 @@ struct player
   bool          wizard;               // true if player has entered wiz mode.
   time_t        birth_time;           // start time of game
 
+  time_t        start_time;           // start time of session
+  long          real_time;            // real time played (in seconds)
+  long          num_turns;            // number of turns taken
+
   int           old_hunger;  // used for hunger delta-meter (see output.cc)
+
+  // Warning: these two are quite different.
+  //
+  // The spell table is an index to a specific spell slot (you.spells).
+  // The ability table lists the ability (ABIL_*) which prefers that letter.
+  //
+  // In other words, the spell table contains hard links and the ability
+  // table contains soft links.
+  FixedVector<int, 52>  spell_letter_table;   // ref to spell by slot
+  FixedVector<int, 52>  ability_letter_table; // ref to ability by enum
 };
 
 extern struct player you;
@@ -409,7 +429,7 @@ extern struct crawl_environment env;
 struct ghost_struct
 {
     char name[20];
-    FixedVector<unsigned char, 20> values;
+    FixedVector< short, NUM_GHOST_VALUES > values;
 };
 
 
@@ -425,7 +445,8 @@ struct system_environment
     char *crawl_pizza;
     char *crawl_rc;
     char *crawl_dir;
-    char *home;
+    char *home;                 // only used by MULTIUSER systems
+    bool  board_with_nail;      // Easter Egg silliness
 };
 
 extern system_environment SysEnv;
@@ -455,7 +476,7 @@ struct game_options
     int         hp_attention;   // percentage hp for danger attention
     char        race;           // preselected race
     char        cls;            // preselected class
-    int         sc_entries;     // # of score entries
+    bool        terse_hand;     // use terse description for wielded item
     unsigned int friend_brand;  // Attribute for branding friendly monsters
     bool        no_dark_brand;  // Attribute for branding friendly monsters
 
@@ -464,9 +485,20 @@ struct game_options
 
     bool        auto_list;      // automatically jump to appropriate item lists
 
+    bool        flush_input[NUM_FLUSH_REASONS]; // when to flush input buff
+    bool        lowercase_invocations;          // prefer lowercase invocations
+
+#ifdef CURSES
+    int         num_colours;    // used for setting up colour table (8 or 16)
+#endif
+
 #ifdef WIZARD
     int         wiz_mode;       // yes, no, never in wiz mode to start
 #endif
+
+    // internal use only:
+    int         sc_entries;     // # of score entries
+    int         sc_format;      // Format for score entries
 };
 
 extern game_options  Options;
@@ -494,13 +526,25 @@ struct scorefile_entry
     int         death_source;       // 0 or monster TYPE
     int         mon_num;            // sigh...
     char        death_source_name[40];    // overrides death_source
+    char        auxkilldata[ITEMNAME_SIZE]; // weapon wielded, spell cast, etc
     char        dlvl;               // dungeon level (relative)
     char        level_type;         // what kind of level died on..
     char        branch;             // dungeon branch
-    int         final_hp;
+    int         final_hp;           // actual current HPs (probably <= 0)
+    int         final_max_hp;       // net HPs after rot
+    int         final_max_max_hp;   // gross HPs before rot
+    int         damage;             // damage of final attack
+    int         str;                // final str (useful for nickname)
+    int         intel;              // final int
+    int         dex;                // final dex (useful for nickname)
+    int         god;                // god
+    int         piety;              // piety
+    int         penance;            // penance
     char        wiz_mode;           // character used wiz mode
     time_t      birth_time;         // start time of character
     time_t      death_time;         // end time of character
+    long        real_time;          // real playing time in seconds
+    long        num_turns;          // number of turns taken
     int         num_diff_runes;     // number of rune types in inventory
     int         num_runes;          // total number of runes in inventory
 };

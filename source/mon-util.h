@@ -18,7 +18,7 @@
 
 // ****remember***** must make an hardcopy of this sometime
 
-#if defined(macintosh) || defined(__IBMCPP__) || defined(SOLARIS) || defined(__BCPLUSPLUS__)
+#if defined(macintosh) || defined(__IBMCPP__) || defined(SOLARIS) || defined(__BCPLUSPLUS__) || defined(BSD)
 #define PACKED
 #else
 #define PACKED __attribute__ ((packed))
@@ -196,6 +196,7 @@ char mons_itemuse(int mc);
 char mons_see_invis( struct monsters *mon );
 
 bool mons_monster_visible( struct monsters *mon, struct monsters *targ );
+bool mons_player_visible( struct monsters *mon );
 
 
 // last updated 12may2000 {dlb}
@@ -266,6 +267,7 @@ int mons_flag(int mc, int bf);
  * *********************************************************************** */
 int mons_holiness(int mclass);
 
+bool mons_is_mimic( int mc );
 bool mons_is_demon( int mc );
 bool mons_is_humanoid( int mc );
 
@@ -421,6 +423,9 @@ bool ms_requires_tracer(int mons_spell);
 bool ms_useful_fleeing_out_of_sight( struct monsters *mon, int monspell );
 bool ms_waste_of_time( struct monsters *mon, int monspell );
 bool ms_low_hitpoint_cast( struct monsters *mon, int monspell );
+
+bool mons_has_ranged_spell( struct monsters *mon );
+bool mons_has_ranged_attack( struct monsters *mon );
 
 // last updated 06mar2001 (gdl)
 /* ***********************************************************************

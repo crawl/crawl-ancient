@@ -17,7 +17,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "externs.h"
 #include "itemname.h"
@@ -756,7 +755,7 @@ void randart_wpn_properties( const item_def &item,
     const int atype  = item.sub_type;
 
     int i = 0;
-    int power_level;
+    int power_level = 0;
 
     if (is_unrandom_artefact( item ))
     {
@@ -784,9 +783,7 @@ void randart_wpn_properties( const item_def &item,
         power_level = 0;
 
     for (i = 0; i < RA_PROPERTIES; i++)
-    {
         proprt[i] = 0;
-    }
 
     if (aclass == OBJ_WEAPONS)  /* Only weapons get brands, of course */
     {
@@ -1039,7 +1036,7 @@ void randart_wpn_properties( const item_def &item,
     if (random5(4 + power_level) == 0
         && (aclass != OBJ_JEWELLERY || atype != RING_PROTECTION_FROM_MAGIC))
     {
-        proprt[RAP_MAGIC] = 20 + random5(100);
+        proprt[RAP_MAGIC] = 20 + random5(40);
         power_level++;
     }
 
@@ -1177,6 +1174,28 @@ void randart_wpn_properties( const item_def &item,
  */
 
 finished_curses:
+    if (random5(10) == 0
+        && (aclass != OBJ_ARMOUR
+            || atype != ARM_CLOAK
+            || !cmp_equip_race( item, ISFLAG_ELVEN ))
+        && (aclass != OBJ_ARMOUR
+            || atype != ARM_BOOTS
+            || !cmp_equip_race( item, ISFLAG_ELVEN )
+        && get_armour_ego_type( item ) != SPARM_STEALTH))
+    {
+        power_level++;
+        proprt[RAP_STEALTH] = 10 + random5(70);
+
+        if (random5(4) == 0)
+        {
+            proprt[RAP_STEALTH] = -proprt[RAP_STEALTH] - random5(20);
+            power_level--;
+        }
+    }
+
+    if ((power_level < 2 && random5(5) == 0) || random5(30) == 0)
+        proprt[RAP_CURSED] = 1;
+
     srand(randstore);
 
 }
@@ -1781,11 +1800,13 @@ void standard_name_weap(unsigned char item_typ, char glorg[ITEMNAME_SIZE])
                    (item_typ == WPN_GREAT_FLAIL) ? "great flail" :
                    (item_typ == WPN_FALCHION) ? "falchion" :
 
-           (item_typ == WPN_GIANT_CLUB) ? ((getenv("BOARD_WITH_NAIL"))
-                                   ? "two-by-four" : "giant club") :
+           (item_typ == WPN_GIANT_CLUB)
+                           ? (SysEnv.board_with_nail ? "two-by-four"
+                                                     : "giant club") :
 
-           (item_typ == WPN_GIANT_SPIKED_CLUB) ? ((getenv("BOARD_WITH_NAIL"))
-                                   ? "board with nail" : "giant spiked club")
+           (item_typ == WPN_GIANT_SPIKED_CLUB)
+                           ? (SysEnv.board_with_nail ? "board with nail"
+                                                     : "giant spiked club")
 
                                    : "unknown weapon");
 }                               // end standard_name_weap()

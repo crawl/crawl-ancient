@@ -70,7 +70,7 @@ static int compass_y[8] = { -1, -1, -1, 0, 1, 1, 1, 0 };
 // there'd only be one type and it would look like the item it carries. -- bwr
 void get_mimic_item( const struct monsters *mimic, item_def &item )
 {
-    ASSERT( mimic != NULL && mons_charclass( mimic->type ) == MONS_GOLD_MIMIC );
+    ASSERT( mimic != NULL && mons_is_mimic( mimic->type ) );
 
     item.base_type = OBJ_UNASSIGNED;
     item.sub_type = 0;
@@ -160,7 +160,7 @@ void get_mimic_item( const struct monsters *mimic, item_def &item )
 // whenever a mimic is created or teleported. -- bwr
 int get_mimic_colour( struct monsters *mimic )
 {
-    ASSERT( mimic != NULL && mons_charclass( mimic->type ) == MONS_GOLD_MIMIC );
+    ASSERT( mimic != NULL && mons_is_mimic( mimic->type ) );
 
     if (mimic->type == MONS_SCROLL_MIMIC)
         return (LIGHTGREY);
@@ -588,7 +588,7 @@ void monster_die(struct monsters *monster, char killer, int i)
             miscast_effect( SPTYP_NECROMANCY,
                             3 + (monster->type == MONS_GREATER_MUMMY) * 8
                               + (monster->type == MONS_MUMMY_PRIEST) * 5,
-                            random2avg(88, 3), 100 );
+                            random2avg(88, 3), 100, "a mummy death curse" );
         }
     }
     else if (monster->type == MONS_BORIS)
@@ -859,7 +859,7 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
     // the player gets the opportunity to use draining more
     // effectively against shapeshifters. -- bwr
     source_power = monster->hit_dice;
-    relax = 3;
+    relax = 2;
 
     if (targetc == RANDOM_MONSTER)
     {
@@ -872,8 +872,11 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
 
             target_power = mons_power( targetc );
 
-            if (one_chance_in(10) && valid_morph( monster, targetc ))
+            if (one_chance_in(100))
                 relax++;
+
+            if (relax > 50)
+                return (simple_monster_message( monster, " shudders." ));
         }
         while (!valid_morph( monster, targetc )
                 || target_power < source_power - relax
@@ -1354,12 +1357,8 @@ static void handle_behaviour(struct monsters *mon)
     // in shallow water
     if (proxPlayer && you.invis)
     {
-        if (!(mons_see_invis(mon)
-            || (grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER
-                && !player_is_levitating())))
-        {
+        if (!mons_player_visible( mon ))
             proxPlayer = false;
-        }
 
         // must be able to see each other
         if (!see_grid(mon->x, mon->y))
@@ -1573,7 +1572,7 @@ static void handle_behaviour(struct monsters *mon)
                 mon->target_y = menv[mon->foe].y;
             }
 
-            if (isHurt && isSmart && isMobile)
+            if (isHurt && !isSmart && isMobile)
                 new_beh = BEH_FLEE;
             break;
 
@@ -1794,7 +1793,7 @@ static bool handle_enchantment(struct monsters *monster)
             // Badly injured monsters prefer to stay submerged...
             // electrical eels and lava snakes have ranged attacks
             // and are more likely to surface.  -- bwr
-            if (habitat != DNGN_FLOOR && habitat != grid)
+            if (habitat == DNGN_FLOOR || habitat != grid)
                 mons_del_ench( monster, ENCH_SUBMERGED ); // forced to surface
             else if (monster->hit_points <= monster->max_hit_points / 2)
                 break;
@@ -1823,10 +1822,10 @@ static bool handle_enchantment(struct monsters *monster)
             if (poisonval < 0 || poisonval > 3)
                 poisonval = monster->enchantment[p] - ENCH_YOUR_POISON_I;
 
-            dam = 0;
+            dam = (poisonval >= 3) ? 1 : 0;
 
             if (coinflip())
-                dam = roll_dice( 1, poisonval + 2 );
+                dam += roll_dice( 1, poisonval + 2 );
 
             if (mons_res_poison(monster) < 0)
                 dam += roll_dice( 2, poisonval ) - 1;
@@ -2104,18 +2103,24 @@ static void handle_movement(struct monsters *monster)
     // reproduced here is some semi-legacy code that makes monsters
     // move somewhat randomly along oblique paths.  It is an exceedingly
     // good idea,  given crawl's unique line of sight properties.
-    if (abs(dx) > abs(dy))
+    //
+    // Added a check so that oblique movement paths aren't used when
+    // close to the target square. -- bwr
+    if (grid_distance( dx, dy, 0, 0 ) > 3)
     {
-        // sometimes we'll just move parallel the x axis
-        if (coinflip())
-            mmov_y = 0;
-    }
+        if (abs(dx) > abs(dy))
+        {
+            // sometimes we'll just move parallel the x axis
+            if (coinflip())
+                mmov_y = 0;
+        }
 
-    if (abs(dy) > abs(dx))
-    {
-        // sometimes we'll just move parallel the y axis
-        if (coinflip())
-            mmov_x = 0;
+        if (abs(dy) > abs(dx))
+        {
+            // sometimes we'll just move parallel the y axis
+            if (coinflip())
+                mmov_x = 0;
+        }
     }
 }                               // end handle_movement()
 
@@ -2129,97 +2134,100 @@ static void handle_movement(struct monsters *monster)
 //---------------------------------------------------------------
 static void handle_nearby_ability(struct monsters *monster)
 {
-
-    if (mons_near(monster) && monster->behaviour != BEH_SLEEP)
+    if (!mons_near( monster )
+        || monster->behaviour == BEH_SLEEP
+        || mons_has_ench( monster, ENCH_SUBMERGED ))
     {
-        if (mons_flag(monster->type, M_SPEAKS) && one_chance_in(21)
+        return;
+    }
+
+    if (mons_flag(monster->type, M_SPEAKS) && one_chance_in(21)
+        && monster->behaviour != BEH_WANDER)
+    {
+        mons_speaks(monster);
+    }
+
+    switch (monster->type)
+    {
+    case MONS_SPATIAL_VORTEX:
+    case MONS_KILLER_KLOWN:
+        // used for colour (butterflies too, but they don't change)
+        monster->number = random_colour();
+        break;
+
+    case MONS_GIANT_EYEBALL:
+        if (coinflip() && !mons_friendly(monster)
             && monster->behaviour != BEH_WANDER)
         {
-            mons_speaks(monster);
-        }
+            simple_monster_message(monster, " stares at you.");
 
-        switch (monster->type)
+            if (you.paralysis < 10)
+                you.paralysis += 2 + random2(3);
+        }
+        break;
+
+    case MONS_EYE_OF_DRAINING:
+        if (coinflip() && !mons_friendly(monster)
+            && monster->behaviour != BEH_WANDER)
         {
-        case MONS_SPATIAL_VORTEX:
-        case MONS_KILLER_KLOWN:
-            // I think it is used for colouring {dlb}
-            monster->number = random_colour();
-            break;
+            simple_monster_message(monster, " stares at you.");
 
-        case MONS_GIANT_EYEBALL:
-            if (coinflip() && !mons_friendly(monster)
-                && monster->behaviour != BEH_WANDER)
-            {
-                simple_monster_message(monster, " stares at you.");
+            dec_mp(5 + random2avg(13, 3));
 
-                if (you.paralysis < 10)
-                    you.paralysis += 2 + random2(3);
-            }
-            break;
-
-        case MONS_EYE_OF_DRAINING:
-            if (coinflip() && !mons_friendly(monster)
-                && monster->behaviour != BEH_WANDER)
-            {
-                simple_monster_message(monster, " stares at you.");
-
-                dec_mp(5 + random2avg(13, 3));
-
-                heal_monster(monster, 10, true); // heh heh {dlb}
-            }
-            break;
-
-        case MONS_LAVA_WORM:
-        case MONS_LAVA_FISH:
-        case MONS_LAVA_SNAKE:
-        case MONS_SALAMANDER:
-        case MONS_BIG_FISH:
-        case MONS_GIANT_GOLDFISH:
-        case MONS_ELECTRICAL_EEL:
-        case MONS_JELLYFISH:
-        case MONS_WATER_ELEMENTAL:
-        case MONS_SWAMP_WORM:
-            // XXX: We're being a bit player-centric here right now...
-            // really we should replace the grid_distance() check
-            // with one that checks for unaligned monsters as well. -- bwr
-            if (mons_has_ench( monster, ENCH_SUBMERGED))
-            {
-                if (grd[monster->x][monster->y] == DNGN_SHALLOW_WATER
-                    || grd[monster->x][monster->y] == DNGN_BLUE_FOUNTAIN
-                    || (!mons_friendly(monster)
-                        && grid_distance( monster->x, monster->y,
-                                          you.x_pos, you.y_pos ) == 1
-                        && (monster->hit_points == monster->max_hit_points
-                            || (monster->hit_points > monster->max_hit_points / 2
-                                && coinflip()))))
-                {
-                    mons_del_ench( monster, ENCH_SUBMERGED );
-                }
-            }
-            else if (monster_habitat(monster->type) == grd[monster->x][monster->y]
-                     && (one_chance_in(5)
-                         || (grid_distance( monster->x, monster->y,
-                                            you.x_pos, you.y_pos ) > 1
-                                && monster->type != MONS_ELECTRICAL_EEL
-                                && monster->type != MONS_LAVA_SNAKE
-                                && !one_chance_in(20))
-                         || monster->hit_points <= monster->max_hit_points / 2)
-                         || env.cgrid[monster->x][monster->y] != EMPTY_CLOUD)
-            {
-                mons_add_ench( monster, ENCH_SUBMERGED );
-            }
-            break;
-
-        case MONS_AIR_ELEMENTAL:
-            if (one_chance_in(5))
-                mons_add_ench( monster, ENCH_SUBMERGED );
-            break;
-
-        case MONS_PANDEMONIUM_DEMON:
-            if (ghost.values[13])
-                monster->number = random_colour();
-            break;
+            heal_monster(monster, 10, true); // heh heh {dlb}
         }
+        break;
+
+    case MONS_LAVA_WORM:
+    case MONS_LAVA_FISH:
+    case MONS_LAVA_SNAKE:
+    case MONS_SALAMANDER:
+    case MONS_BIG_FISH:
+    case MONS_GIANT_GOLDFISH:
+    case MONS_ELECTRICAL_EEL:
+    case MONS_JELLYFISH:
+    case MONS_WATER_ELEMENTAL:
+    case MONS_SWAMP_WORM:
+        // XXX: We're being a bit player-centric here right now...
+        // really we should replace the grid_distance() check
+        // with one that checks for unaligned monsters as well. -- bwr
+        if (mons_has_ench( monster, ENCH_SUBMERGED))
+        {
+            if (grd[monster->x][monster->y] == DNGN_SHALLOW_WATER
+                || grd[monster->x][monster->y] == DNGN_BLUE_FOUNTAIN
+                || (!mons_friendly(monster)
+                    && grid_distance( monster->x, monster->y,
+                                      you.x_pos, you.y_pos ) == 1
+                    && (monster->hit_points == monster->max_hit_points
+                        || (monster->hit_points > monster->max_hit_points / 2
+                            && coinflip()))))
+            {
+                mons_del_ench( monster, ENCH_SUBMERGED );
+            }
+        }
+        else if (monster_habitat(monster->type) == grd[monster->x][monster->y]
+                 && (one_chance_in(5)
+                     || (grid_distance( monster->x, monster->y,
+                                        you.x_pos, you.y_pos ) > 1
+                            && monster->type != MONS_ELECTRICAL_EEL
+                            && monster->type != MONS_LAVA_SNAKE
+                            && !one_chance_in(20))
+                     || monster->hit_points <= monster->max_hit_points / 2)
+                     || env.cgrid[monster->x][monster->y] != EMPTY_CLOUD)
+        {
+            mons_add_ench( monster, ENCH_SUBMERGED );
+        }
+        break;
+
+    case MONS_AIR_ELEMENTAL:
+        if (one_chance_in(5))
+            mons_add_ench( monster, ENCH_SUBMERGED );
+        break;
+
+    case MONS_PANDEMONIUM_DEMON:
+        if (ghost.values[ GVAL_DEMONLORD_CYCLE_COLOUR ])
+            monster->number = random_colour();
+        break;
     }
 }                               // end handle_nearby_ability()
 
@@ -2235,6 +2243,13 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
     bool used = false;
 
     FixedArray < unsigned int, 19, 19 > show;
+
+    if (!mons_near( monster )
+        || monster->behaviour == BEH_SLEEP
+        || mons_has_ench( monster, ENCH_SUBMERGED ))
+    {
+        return (false);
+    }
 
 //    losight(show, grd, you.x_pos, you.y_pos);
 
@@ -2290,10 +2305,10 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         if (mons_has_ench(monster, ENCH_CONFUSION))
             break;
 
-        if (you.invis && !mons_see_invis(monster))
+        if (!mons_player_visible( monster ))
             break;
 
-        if (mons_has_ench( monster, ENCH_SUBMERGED ) || coinflip())
+        if (coinflip())
             break;
 
         // setup tracer
@@ -2307,6 +2322,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         beem.hit = 20;
         beem.beam_source = monster_index(monster);
         beem.thrower = KILL_MON;
+        beem.aux_source = "glob of lava";
 
         // fire tracer
         fire_tracer(monster, beem);
@@ -2324,10 +2340,10 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         if (mons_has_ench(monster, ENCH_CONFUSION))
             break;
 
-        if (you.invis && !mons_see_invis(monster))
+        if (!mons_player_visible( monster ))
             break;
 
-        if (mons_has_ench( monster, ENCH_SUBMERGED ) || coinflip())
+        if (coinflip())
             break;
 
         // setup tracer
@@ -2339,6 +2355,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         beem.hit = 150;
         beem.beam_source = monster_index(monster);
         beem.thrower = KILL_MON;
+        beem.aux_source = "bolt of electricity";
         beem.range = 4;
         beem.rangeMax = 13;
         beem.isBeam = true;
@@ -2360,7 +2377,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         if (mons_has_ench(monster, ENCH_CONFUSION))
             break;
 
-        if (you.invis && !mons_see_invis(monster))
+        if (!mons_player_visible( monster ))
             break;
 
         if (one_chance_in(3))
@@ -2424,6 +2441,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
     case MONS_PHANTOM:
     case MONS_INSUBSTANTIAL_WISP:
     case MONS_BLINK_FROG:
+    case MONS_KILLER_KLOWN:
         if (one_chance_in(7))
         {
             simple_monster_message(monster, " blinks.");
@@ -2432,7 +2450,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         break;
 
     case MONS_MANTICORE:
-        if (you.invis && !mons_see_invis(monster))
+        if (!mons_player_visible( monster ))
             break;
 
         if (mons_has_ench(monster, ENCH_CONFUSION))
@@ -2460,6 +2478,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         beem.colour = LIGHTGREY;
         beem.flavour = BEAM_MISSILE;
         beem.thrower = KILL_MON;
+        beem.aux_source = "volley of spikes";
         beem.isBeam = false;
 
         // fire tracer
@@ -2483,7 +2502,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
     case MONS_LINDWURM:
     case MONS_FIREDRAKE:
     case MONS_XTAHUA:
-        if (you.invis && !mons_see_invis(monster))
+        if (!mons_player_visible( monster ))
             break;
 
         if (mons_has_ench(monster, ENCH_CONFUSION))
@@ -2598,6 +2617,9 @@ static bool handle_reaching(struct monsters *monster)
     if (mons_aligned(monster_index(monster), monster->foe))
         return (false);
 
+    if (mons_has_ench( monster, ENCH_SUBMERGED ))
+        return (false);
+
     if (wpn != NON_ITEM && get_weapon_brand( mitm[wpn] ) == SPWPN_REACHING )
     {
         if (monster->foe == MHITYOU)
@@ -2646,8 +2668,12 @@ static bool handle_reaching(struct monsters *monster)
 static bool handle_scroll(struct monsters *monster)
 {
     // yes, there is a logic to this ordering {dlb}:
-    if (mons_has_ench(monster, ENCH_CONFUSION) || monster->behaviour == BEH_SLEEP)
+    if (mons_has_ench(monster, ENCH_CONFUSION)
+        || monster->behaviour == BEH_SLEEP
+        || mons_has_ench( monster, ENCH_SUBMERGED ))
+    {
         return (false);
+    }
     else if (monster->inv[MSLOT_SCROLL] == NON_ITEM)
         return (false);
     else if (!one_chance_in(3))
@@ -2721,6 +2747,8 @@ static bool handle_wand(struct monsters *monster, bolt &beem)
         return (false);
     else if (!mons_near(monster))
         return (false);
+    else if (mons_has_ench( monster, ENCH_SUBMERGED ))
+        return (false);
     else if (monster->inv[MSLOT_WAND] == NON_ITEM
              || mitm[monster->inv[MSLOT_WAND]].plus <= 0)
     {
@@ -2740,6 +2768,9 @@ static bool handle_wand(struct monsters *monster, bolt &beem)
         int power = 30 + monster->hit_dice;
         struct SBeam theBeam = mons_spells(mzap, power);
 
+        // XXX: ugly hack this:
+        static char wand_buff[ ITEMNAME_SIZE ];
+
         strcpy( beem.beam_name, theBeam.name.c_str() );
         beem.beam_source = monster_index(monster);
         beem.source_x = monster->x;
@@ -2754,6 +2785,19 @@ static bool handle_wand(struct monsters *monster, bolt &beem)
         beem.flavour = theBeam.flavour;
         beem.thrower = theBeam.thrown;
         beem.isBeam = theBeam.isBeam;
+
+        item_def item = mitm[ monster->inv[MSLOT_WAND] ];
+
+#if HISCORE_WEAPON_DETAIL
+        set_ident_flags( item, ISFLAG_IDENT_MASK );
+#else
+        unset_ident_flags( item, ISFLAG_IDENT_MASK );
+        set_ident_flags( item, ISFLAG_KNOW_TYPE );
+#endif
+
+        item_name( item, DESC_PLAIN, wand_buff );
+
+        beem.aux_source = wand_buff;
 
         switch (mitm[monster->inv[MSLOT_WAND]].sub_type)
         {
@@ -2860,7 +2904,8 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
 
     // yes, there is a logic to this ordering {dlb}:
     if (monster->behaviour == BEH_SLEEP
-        || !mons_flag(monster->type, M_SPELLCASTER))
+        || !mons_flag( monster->type, M_SPELLCASTER )
+        || mons_has_ench( monster, ENCH_SUBMERGED ))
     {
         return (false);
     }
@@ -2877,7 +2922,8 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
     {
         return (false);
     }
-    else if (monster->type == MONS_PANDEMONIUM_DEMON && ghost.values[9] == 0)
+    else if (monster->type == MONS_PANDEMONIUM_DEMON
+            && !ghost.values[ GVAL_DEMONLORD_SPELLCASTER ])
     {
         return (false);
     }
@@ -3017,8 +3063,27 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
                 {
                     // all direct-effect/summoning/self-enchantments/etc
                     spellOK = true;
+
                     if (ms_direct_nasty(spell_cast)
                         && mons_aligned(monster_index(monster), monster->foe))
+                    {
+                        spellOK = false;
+                    }
+                    else if (monster->foe == MHITYOU || monster->foe == MHITNOT)
+                    {
+                        // XXX: Note the crude hack so that monsters can
+                        // use ME_ALERT to target (we should really have
+                        // a measure of time instead of peeking to see
+                        // if the player is still there). -- bwr
+                        if (!mons_player_visible( monster )
+                            && (monster->target_x != you.x_pos
+                                || monster->target_y != you.y_pos
+                                || coinflip()))
+                        {
+                            spellOK = false;
+                        }
+                    }
+                    else if (!mons_monster_visible( monster, &menv[monster->foe] ))
                     {
                         spellOK = false;
                     }
@@ -3208,8 +3273,12 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
 static bool handle_throw(struct monsters *monster, bolt & beem)
 {
     // yes, there is a logic to this ordering {dlb}:
-    if (mons_has_ench(monster, ENCH_CONFUSION) || monster->behaviour == BEH_SLEEP)
+    if (mons_has_ench(monster, ENCH_CONFUSION)
+        || monster->behaviour == BEH_SLEEP
+        || mons_has_ench( monster, ENCH_SUBMERGED ))
+    {
         return (false);
+    }
 
     if (mons_itemuse(monster->type) < MONUSE_OPEN_DOORS)
         return (false);
@@ -3637,6 +3706,9 @@ static bool handle_pickup(struct monsters *monster)
     char str_pass[ ITEMNAME_SIZE ];
     bool monsterNearby = mons_near(monster);
     int  item = NON_ITEM;
+
+    if (mons_has_ench( monster, ENCH_SUBMERGED ))
+        return (false);
 
     if (monster->type == MONS_JELLY
         || monster->type == MONS_BROWN_OOZE
@@ -4472,6 +4544,7 @@ static bool plant_spit(struct monsters *monster, struct bolt &pbolt)
     pbolt.damage = dice_def( 3, 7 );
     pbolt.hit = 20 + (3 * monster->hit_dice);
     pbolt.thrower = KILL_MON_MISSILE;
+    pbolt.aux_source = NULL;
 
     // fire tracer
     fire_tracer(monster, pbolt);
@@ -4500,7 +4573,7 @@ static void mons_in_cloud(struct monsters *monster)
 
     const int speed = ((monster->speed > 0) ? monster->speed : 10);
 
-    if (mons_charclass(monster->type) == MONS_GOLD_MIMIC)
+    if (mons_is_mimic( monster->type ))
     {
         mimic_alert(monster);
         return;
@@ -4722,6 +4795,8 @@ bool monster_descriptor(int which_class, unsigned char which_descriptor)
         case MONS_SLIME_CREATURE:
         case MONS_SNORG:
         case MONS_TROLL:
+        case MONS_HYDRA:
+        case MONS_KILLER_KLOWN:
             return (true);
         default:
             return (false);

@@ -163,7 +163,7 @@
     0, 10, MONS_ETTIN, MH_NATURAL, -3,
     { 18, 12, 0, 0 },
     { 7, 3, 5, 0 },
-    3, 4, 10, 7, MST_NO_SPELLS, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL,
+    3, 4, 10, 7, MST_NO_SPELLS, CE_CONTAMINATED, Z_BIG, S_SHOUT2, I_NORMAL,
     MONUSE_STARTING_EQUIPMENT
 }
 ,
@@ -837,7 +837,7 @@
 
 {
     MONS_HUNGRY_GHOST, 'p', GREEN, "hungry ghost",
-    M_RES_POISON | M_RES_COLD | M_SEE_INVIS,
+    M_RES_POISON | M_RES_COLD | M_SEE_INVIS | M_FLIES,
     0, 10, MONS_HUNGRY_GHOST, MH_UNDEAD, -4,
     { 5, 0, 0, 0 },
     { 7, 3, 5, 0 },
@@ -1213,7 +1213,7 @@
 
 {
     MONS_HYDRA, 'D', LIGHTGREEN, "hydra",
-    M_RES_POISON,
+    M_RES_POISON | M_AMPHIBIOUS,  // because it likes the swamp -- bwr
     1800, 11, MONS_HYDRA, MH_NATURAL, -3,
     { 18, 0, 0, 0 },
     { 13, 3, 5, 0 },
@@ -1564,7 +1564,7 @@
 
 {
     MONS_FLAYED_GHOST, 'p', RED, "flayed ghost",
-    M_RES_POISON,
+    M_RES_POISON | M_FLIES,
     0, 10, MONS_FLAYED_GHOST, MH_UNDEAD, -4,
     { 30, 0, 0, 0 },
     { 11, 3, 5, 0 },
@@ -2188,11 +2188,11 @@
 
 {
     MONS_EXECUTIONER, '1', LIGHTGREY, "Executioner",
-    M_RES_ELEC | M_RES_FIRE | M_RES_COLD | M_RES_POISON | M_SEE_INVIS,
+    M_SPELLCASTER | M_RES_ELEC | M_RES_FIRE | M_RES_COLD | M_RES_POISON | M_SEE_INVIS,
     0, 14, MONS_EXECUTIONER, MH_DEMONIC, -9,
     { 30, 10, 10, 0 },
     { 12, 3, 5, 0 },
-    10, 15, 20, 7, MST_NO_SPELLS, CE_CONTAMINATED, Z_NOZOMBIE, S_SCREAM, I_HIGH,
+    10, 15, 20, 7, MST_HELL_KNIGHT_I, CE_CONTAMINATED, Z_NOZOMBIE, S_SCREAM, I_HIGH,
     MONUSE_OPEN_DOORS
 }
 ,
@@ -2210,7 +2210,7 @@
 
 {
     MONS_BLUE_DEATH, '1', BLUE, "Blue Death",
-    M_RES_POISON | M_ED_FIRE | M_RES_COLD | M_RES_ELEC | M_FLIES | M_SEE_INVIS,
+    M_RES_POISON | M_SPELLCASTER | M_ED_FIRE | M_RES_COLD | M_RES_ELEC | M_FLIES | M_SEE_INVIS,
     0, 14, MONS_BLUE_DEATH, MH_DEMONIC, -9,
     { 20, 20, 0, 0 },
     { 12, 3, 5, 0 },
@@ -2718,7 +2718,7 @@
 
 {
     MONS_SIGMUND, '@', YELLOW, "Sigmund",
-      M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS | M_WARM_BLOOD,
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS | M_WARM_BLOOD,
     0, 20, MONS_HUMAN, MH_NATURAL, -3,
     { 5, 0, 0, 0 },
     { 3, 0, 0, 25 },
@@ -3307,11 +3307,11 @@
 
 {
     MONS_KILLER_KLOWN, '@', BLACK, "Killer Klown",
-    M_SEE_INVIS | M_SPEAKS | M_WARM_BLOOD,
+    M_RES_FIRE | M_RES_COLD | M_RES_POISON | M_SEE_INVIS | M_SPEAKS | M_WARM_BLOOD,
     0, 15, MONS_KILLER_KLOWN, MH_NATURAL, 5000,
     { 30, 0, 0, 0 },
     { 20, 5, 5, 0 },
-    10, 15, 15, 7, MST_ORC_WIZARD_II, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH,
+    10, 15, 15, 7, MST_NO_SPELLS, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH,
     MONUSE_OPEN_DOORS
 }
 ,
@@ -3530,7 +3530,7 @@
 /* player ghost - only one per level. stats are stored in ghost struct */
 {
     MONS_PLAYER_GHOST, 'p', DARKGREY, "",
-    M_RES_POISON | M_SPEAKS | M_SPELLCASTER | M_ACTUAL_SPELLS,
+    M_RES_POISON | M_SPEAKS | M_SPELLCASTER | M_ACTUAL_SPELLS | M_FLIES,
     0, 15, MONS_PLAYER_GHOST, MH_UNDEAD, -5,
     { 5, 0, 0, 0 },
     { 4, 2, 3, 0 },
@@ -3542,7 +3542,7 @@
 /* random demon in pan - only one per level. stats are stored in ghost struct */
 {
     MONS_PANDEMONIUM_DEMON, '&', BLACK, "&",
-    M_SPELLCASTER | M_SPEAKS,
+    M_SPELLCASTER | M_RES_POISON | M_SPEAKS,
     0, 14, MONS_PANDEMONIUM_DEMON, MH_DEMONIC, -5,
     { 5, 0, 0, 0 },
     { 4, 2, 3, 0 },
@@ -3656,7 +3656,7 @@
 
 {
     MONS_SWAMP_WORM, 'w', BROWN, "swamp worm",
-    M_NO_FLAGS,
+    M_AMPHIBIOUS,
     0, 10, MONS_SWAMP_WORM, MH_NATURAL, -3,
     { 20, 0, 0, 0 },
     { 5, 5, 5, 0 },

@@ -46,7 +46,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef MAC
+#ifdef OS9
 #include <stat.h>
 #else
 #include <sys/stat.h>
@@ -164,14 +164,12 @@ static void redraw_all(void)
 
 struct ghost_struct ghost;
 
-bool find_spell(unsigned char which_sp);
-
 unsigned char translate_spell(unsigned char spel);
 unsigned char search_third_list(unsigned char ignore_spell);
 unsigned char search_second_list(unsigned char ignore_spell);
 unsigned char search_first_list(unsigned char ignore_spell);
 
-void add_spells(struct ghost_struct &gh);
+void add_spells( struct ghost_struct &gs );
 void generate_random_demon();
 
 static bool determine_version( FILE *restoreFile,
@@ -429,7 +427,7 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
 
     // clear out ghost/demon lord information:
     strcpy( ghost.name, "" );
-    for (ic = 0; ic < 20; ++ic)
+    for (ic = 0; ic < NUM_GHOST_VALUES; ++ic)
         ghost.values[ic] = 0;
 
 #ifdef DOS
@@ -444,7 +442,7 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
     {
         strcpy(ghost.name, "");
 
-        for (imn = 0; imn < 20; ++imn)
+        for (imn = 0; imn < NUM_GHOST_VALUES; ++imn)
             ghost.values[imn] = 0;
 
         builder( you.your_level, you.level_type );
@@ -895,8 +893,10 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
     // 4.1 added attitude tag
     // 4.2 replaced old 'enchantment1' and with 'flags' (bitfield)
     // 4.3 changes to make the item structure more sane
+    // 4.4 changes to the ghost save section
+    // 4.5 spell and ability letter arrays
 
-    write_tagged_file( saveFile, 4, 3, TAGTYPE_LEVEL );
+    write_tagged_file( saveFile, 4, 5, TAGTYPE_LEVEL );
 
     fclose(saveFile);
 
@@ -945,8 +945,9 @@ void save_game(bool leave_game)
 
     // 4.0 initial genesis of saved format
     // 4.1 changes to make the item structure more sane
+    // 4.2 spell and ability tables
 
-    write_tagged_file( saveFile, 4, 1, TAGTYPE_PLAYER );
+    write_tagged_file( saveFile, 4, 2, TAGTYPE_PLAYER );
 
     fclose(saveFile);
 
@@ -983,7 +984,7 @@ void save_game(bool leave_game)
 
 #endif
 
-    cprintf( "See you soon, %s!", you.your_name );
+    cprintf( "See you soon, %s!" EOL , you.your_name );
 
     end(0);
 }                               // end save_game()
@@ -1006,10 +1007,12 @@ void load_ghost(void)
     if (!determine_ghost_version(gfile, majorVersion, minorVersion))
     {
         fclose(gfile);
+#if DEBUG_DIAGNOSTICS
         snprintf( info, INFO_SIZE, "Ghost file \"%s\" seems to be invalid.",
             cha_fil);
-        mpr(info, MSGCH_WARN);
+        mpr( info, MSGCH_DIAGNOSTICS );
         more();
+#endif
         return;
     }
 
@@ -1019,13 +1022,19 @@ void load_ghost(void)
     if (!feof(gfile))
     {
         fclose(gfile);
+#if DEBUG_DIAGNOSTICS
         snprintf( info, INFO_SIZE, "Incomplete read of \"%s\".", cha_fil);
-        mpr(info, MSGCH_WARN);
+        mpr( info, MSGCH_DIAGNOSTICS );
         more();
+#endif
         return;
     }
 
     fclose(gfile);
+
+#if DEBUG_DIAGNOSTICS
+        mpr( "Loaded ghost.", MSGCH_DIAGNOSTICS );
+#endif
 
     // remove bones file - ghosts are hardly permanent.
     unlink(cha_fil);
@@ -1037,11 +1046,11 @@ void load_ghost(void)
             continue;
 
         menv[imn].type = MONS_PLAYER_GHOST;
-        menv[imn].hit_dice = ghost.values[12];
-        menv[imn].hit_points = ghost.values[0];
-        menv[imn].max_hit_points = ghost.values[0];
-        menv[imn].armour_class = ghost.values[2];
-        menv[imn].evasion = ghost.values[1];
+        menv[imn].hit_dice = ghost.values[ GVAL_EXP_LEVEL ];
+        menv[imn].hit_points = ghost.values[ GVAL_MAX_HP ];
+        menv[imn].max_hit_points = ghost.values[ GVAL_MAX_HP ];
+        menv[imn].armour_class = ghost.values[ GVAL_AC];
+        menv[imn].evasion = ghost.values[ GVAL_EV ];
         menv[imn].speed = 10;
         menv[imn].speed_increment = 70;
         menv[imn].attitude = ATT_HOSTILE;
@@ -1051,7 +1060,8 @@ void load_ghost(void)
         menv[imn].foe_memory = 0;
 
         menv[imn].number = 250;
-        for(int i=14; i<20; i++)
+
+        for (int i = GVAL_SPELL_1; i <= GVAL_SPELL_6; i++)
         {
             if (ghost.values[i] != MS_NO_SPELL)
             {
@@ -1280,13 +1290,20 @@ static bool determine_ghost_version( FILE *ghostFile,
 static void restore_old_ghost( FILE *ghostFile )
 {
     char buf[41];
+
     read2(ghostFile, buf, 41);  // 41 causes EOF. 40 will not.
 
     // translate
-    memcpy(ghost.name, buf, 20);
+    memcpy( ghost.name, buf, 20 );
 
-    for(int i=0; i<20; i++)
-        ghost.values[i] = buf[i+20];
+    for (int i = 0; i < 20; i++)
+        ghost.values[i] = static_cast< unsigned short >( buf[i+20] );
+
+    if (ghost.values[ GVAL_RES_FIRE ] >= 97)
+        ghost.values[ GVAL_RES_FIRE ] -= 100;
+
+    if (ghost.values[ GVAL_RES_COLD ] >= 97)
+        ghost.values[ GVAL_RES_COLD ] -= 100;
 }
 
 static void restore_ghost_version( FILE *ghostFile,
@@ -1306,12 +1323,12 @@ static void restore_ghost_version( FILE *ghostFile,
     }
 }
 
-void save_ghost(void)
+void save_ghost( bool force )
 {
     char cha_fil[kFileNameSize];
     const int wpn = you.equip[EQ_WEAPON];
 
-    if (you.your_level < 2 || you.is_undead)
+    if (!force && (you.your_level < 2 || you.is_undead))
         return;
 
     make_filename( cha_fil, "bones", you.your_level, you.where_are_you,
@@ -1328,14 +1345,15 @@ void save_ghost(void)
 
     memcpy(ghost.name, you.your_name, 20);
 
-    ghost.values[0] = (you.hp_max >= 150) ? (150) : (you.hp_max);
-    ghost.values[1] = player_evasion();
-    ghost.values[2] = player_AC();
-    ghost.values[3] = player_see_invis();
-    ghost.values[4] = player_res_fire();
+    ghost.values[ GVAL_MAX_HP ]    = ((you.hp_max >= 150) ? 150 : you.hp_max);
+    ghost.values[ GVAL_EV ]        = player_evasion();
+    ghost.values[ GVAL_AC ]        = player_AC();
+    ghost.values[ GVAL_SEE_INVIS ] = player_see_invis();
+    ghost.values[ GVAL_RES_FIRE ]  = player_res_fire();
+    ghost.values[ GVAL_RES_COLD ]  = player_res_cold();
+    ghost.values[ GVAL_RES_ELEC ]  = player_res_electricity();
+
     /* note - as ghosts, automatically get res poison + prot_life */
-    ghost.values[5] = player_res_cold();
-    ghost.values[6] = player_res_electricity();
 
     int d = 4;
     int e = 0;
@@ -1377,13 +1395,14 @@ void save_ghost(void)
     if (d > 50)
         d = 50;
 
-    ghost.values[7] = d;
-    ghost.values[8] = e;
-    ghost.values[9] = you.species;
-    ghost.values[10] = best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99);
-    ghost.values[11] = you.skills[best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99)];
-    ghost.values[12] = you.experience_level;
-    ghost.values[13] = you.char_class;
+    ghost.values[ GVAL_DAMAGE ] = d;
+    ghost.values[ GVAL_BRAND ]  = e;
+    ghost.values[ GVAL_SPECIES ] = you.species;
+    ghost.values[ GVAL_BEST_SKILL ] = best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99);
+    ghost.values[ GVAL_SKILL_LEVEL ] = you.skills[best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99)];
+    ghost.values[ GVAL_EXP_LEVEL ] = you.experience_level;
+    ghost.values[ GVAL_CLASS ] = you.char_class;
+
     add_spells(ghost);
 
     gfile = fopen(cha_fil, "wb");
@@ -1397,9 +1416,15 @@ void save_ghost(void)
         return;
     }
 
-    write_tagged_file( gfile, 4, 0, TAGTYPE_GHOST );
+    // 4.0-4.3  old tagged savefile (values as unsigned char)
+    // 4.4      new tagged savefile (values as signed short)
+    write_tagged_file( gfile, 4, 4, TAGTYPE_GHOST );
 
     fclose(gfile);
+
+#if DEBUG_DIAGNOSTICS
+    mpr( "Saved ghost.", MSGCH_DIAGNOSTICS );
+#endif
 
 #ifdef SHARED_FILES_CHMOD_PUBLIC
     chmod(cha_fil, SHARED_FILES_CHMOD_PUBLIC);
@@ -1410,55 +1435,54 @@ void save_ghost(void)
    Used when creating ghosts: goes through and finds spells for the ghost to
    cast. Death is a traumatic experience, so ghosts only remember a few spells.
  */
-void add_spells(struct ghost_struct &gs)
+void add_spells( struct ghost_struct &gs )
 {
     int i = 0;
 
-    gs.values[14] = SPELL_NO_SPELL;
-    gs.values[15] = SPELL_NO_SPELL;
-    gs.values[16] = SPELL_NO_SPELL;
-    gs.values[17] = SPELL_NO_SPELL;
-    gs.values[18] = SPELL_NO_SPELL;
-    gs.values[19] = SPELL_NO_SPELL;
+    for (i = GVAL_SPELL_1; i <= GVAL_SPELL_6; i++)
+        gs.values[i] = SPELL_NO_SPELL;
 
-    gs.values[14] = search_first_list(SPELL_NO_SPELL);
-    gs.values[15] = search_first_list(gs.values[14]);
-    gs.values[16] = search_second_list(SPELL_NO_SPELL);
-    gs.values[17] = search_third_list(SPELL_NO_SPELL);
+    gs.values[ GVAL_SPELL_1 ] = search_first_list(SPELL_NO_SPELL);
+    gs.values[ GVAL_SPELL_2 ] = search_first_list(gs.values[GVAL_SPELL_1]);
+    gs.values[ GVAL_SPELL_3 ] = search_second_list(SPELL_NO_SPELL);
+    gs.values[ GVAL_SPELL_4 ] = search_third_list(SPELL_NO_SPELL);
 
-    if (gs.values[17] == SPELL_NO_SPELL)
-        gs.values[17] = search_first_list(SPELL_NO_SPELL);
+    if (gs.values[ GVAL_SPELL_4 ] == SPELL_NO_SPELL)
+        gs.values[ GVAL_SPELL_4 ] = search_first_list(SPELL_NO_SPELL);
 
-    gs.values[18] = search_first_list(gs.values[17]);
+    gs.values[ GVAL_SPELL_5 ] = search_first_list(gs.values[GVAL_SPELL_4]);
 
-    if (gs.values[18] == SPELL_NO_SPELL)
-        gs.values[18] = search_first_list(gs.values[17]);
+    if (gs.values[ GVAL_SPELL_5 ] == SPELL_NO_SPELL)
+        gs.values[ GVAL_SPELL_5 ] = search_first_list(gs.values[GVAL_SPELL_4]);
 
-    if (find_spell(SPELL_DIG))
-        gs.values[18] = SPELL_DIG;
+    if (player_has_spell( SPELL_DIG ))
+        gs.values[ GVAL_SPELL_5 ] = SPELL_DIG;
 
     /* Looks for blink/tport for emergency slot */
-    if (find_spell(SPELL_CONTROLLED_BLINK) || find_spell(SPELL_BLINK))
-        gs.values[19] = SPELL_CONTROLLED_BLINK;
+    if (player_has_spell( SPELL_CONTROLLED_BLINK )
+        || player_has_spell( SPELL_BLINK ))
+    {
+        gs.values[ GVAL_SPELL_6 ] = SPELL_CONTROLLED_BLINK;
+    }
 
-    if (find_spell(SPELL_TELEPORT_SELF))
-        gs.values[19] = SPELL_TELEPORT_SELF;
+    if (player_has_spell( SPELL_TELEPORT_SELF ))
+        gs.values[ GVAL_SPELL_6 ] = SPELL_TELEPORT_SELF;
 
-    for (i = 14; i < 20; i++)
-        gs.values[i] = translate_spell(gs.values[i]);
+    for (i = GVAL_SPELL_1; i <= GVAL_SPELL_6; i++)
+        gs.values[i] = translate_spell( gs.values[i] );
 }                               // end add_spells()
 
 unsigned char search_first_list(unsigned char ignore_spell)
 {
     for (int i = 0; i < 20; i++)
-    {
+     {
         if (search_order_conj[i] == SPELL_NO_SPELL)
             return SPELL_NO_SPELL;
 
         if (search_order_conj[i] == ignore_spell)
             continue;
 
-        if (find_spell(search_order_conj[i]))
+        if (player_has_spell(search_order_conj[i]))
             return search_order_conj[i];
     }
 
@@ -1475,7 +1499,7 @@ unsigned char search_second_list(unsigned char ignore_spell)
         if (search_order_third[i] == ignore_spell)
             continue;
 
-        if (find_spell(search_order_third[i]))
+        if (player_has_spell(search_order_third[i]))
             return search_order_third[i];
     }
 
@@ -1492,27 +1516,13 @@ unsigned char search_third_list(unsigned char ignore_spell)
         if (search_order_misc[i] == ignore_spell)
             continue;
 
-        if (find_spell(search_order_misc[i]))
+        if (player_has_spell(search_order_misc[i]))
             return search_order_misc[i];
     }
 
     return SPELL_NO_SPELL;
 }                               // end search_third_list()
 
-/*
-   Searches for a specific spell, according to search order in the global arrays
-   defined start of file (top to bottom).
- */
-bool find_spell(unsigned char which_sp)
-{
-    for (int i = 0; i < 21; i++)
-    {
-        if (you.spells[i] == which_sp)
-            return true;
-    }
-
-    return false;
-}                               // end find_spell()
 
 /*
    When passed the number for a player spell, returns the equivalent monster
@@ -1632,101 +1642,94 @@ void generate_random_demon(void)
     strcpy(ghost.name, st_p);
 
     // hp - could be defined below (as could ev, AC etc). Oh well, too late:
-    ghost.values[0] = 50 + (one_chance_in(3) ? random2avg(295, 6)
-                                             : random2avg(197, 4));
+    ghost.values[ GVAL_MAX_HP ] = 100 + roll_dice( 3, 50 );
 
-    // evasion:
-    ghost.values[1] = 5 + random2(10);
+    ghost.values[ GVAL_EV ] = 5 + random2(20);
+    ghost.values[ GVAL_AC ] = 5 + random2(20);
 
-    // AC:
-    ghost.values[2] = 0;        // was random2(0), which simply returns 0 {dlb}
-
-    // see invisible:
-    ghost.values[3] = (one_chance_in(3) ? 1 : 0);
+    ghost.values[ GVAL_SEE_INVIS ] = (one_chance_in(10) ? 0 : 1);
 
     if (!one_chance_in(3))
-    {
-        ghost.values[4] = 0;    /* res_fire */
-
-        if (one_chance_in(4))
-            ghost.values[4] = 99;
-
-        if (one_chance_in(4))
-            ghost.values[4] = 102;
-    }
+        ghost.values[ GVAL_RES_FIRE ] = (coinflip() ? 2 : 3);
     else
-        ghost.values[4] = 101;
+    {
+        ghost.values[ GVAL_RES_FIRE ] = 0;    /* res_fire */
+
+        if (one_chance_in(10))
+            ghost.values[ GVAL_RES_FIRE ] = -1;
+    }
 
     if (!one_chance_in(3))
-    {
-        ghost.values[5] = 0;    /* res_cold */
-        if (one_chance_in(4))
-            ghost.values[5] = 99;
-    }
+        ghost.values[ GVAL_RES_COLD ] = 2;
     else
-        ghost.values[5] = 101;
+    {
+        ghost.values[ GVAL_RES_COLD ] = 0;    /* res_cold */
+
+        if (one_chance_in(10))
+            ghost.values[ GVAL_RES_COLD ] = -1;
+    }
 
     // demons, like ghosts, automatically get poison res. and life prot.
 
     // resist electricity:
-    ghost.values[6] = (one_chance_in(3) ? 1 : 0);
+    ghost.values[ GVAL_RES_ELEC ] = (!one_chance_in(3) ? 1 : 0);
 
     // HTH damage:
-    ghost.values[7] = 10 + random2avg(58, 3);
+    ghost.values[ GVAL_DAMAGE ] = 20 + roll_dice( 2, 20 );
 
     // special attack type (uses weapon brand code):
-    ghost.values[8] = 0;
+    ghost.values[ GVAL_BRAND ] = SPWPN_NORMAL;
 
-    if (coinflip())
+    if (!one_chance_in(3))
     {
-        ghost.values[8] = random2(17);
+        ghost.values[ GVAL_BRAND ] = random2(17);
 
-        if (ghost.values[8] == 3 || ghost.values[8] == 5
-            || ghost.values[8] == 7 || ghost.values[8] == 11
-            || ghost.values[8] == 12 || ghost.values[8] == 14)
+        /* some brands inappropriate (eg holy wrath) */
+        if (ghost.values[ GVAL_BRAND ] == SPWPN_HOLY_WRATH
+            || ghost.values[ GVAL_BRAND ] == SPWPN_ORC_SLAYING
+            || ghost.values[ GVAL_BRAND ] == SPWPN_PROTECTION
+            || ghost.values[ GVAL_BRAND ] == SPWPN_FLAME
+            || ghost.values[ GVAL_BRAND ] == SPWPN_FROST
+            || ghost.values[ GVAL_BRAND ] == SPWPN_DISRUPTION)
         {
-            /* some brands inappropriate (eg holy wrath) */
-            ghost.values[8] = 0;
+            ghost.values[ GVAL_BRAND ] = SPWPN_SPEED;
         }
     }
 
     // is demon a spellcaster?
     // upped from one_chance_in(3)... spellcasters are more interesting
     // and I expect named demons to typically have a trick or two -- bwr
-    ghost.values[9] = (one_chance_in(10) ? 0 : 1);
+    ghost.values[GVAL_DEMONLORD_SPELLCASTER] = (one_chance_in(10) ? 0 : 1);
 
-    // does demon fly?
-    ghost.values[10] = (one_chance_in(3) ? 0 : random2(3));
+    // does demon fly? (0 = no, 1 = fly, 2 = levitate)
+    ghost.values[GVAL_DEMONLORD_FLY] = (one_chance_in(3) ? 0 :
+                                        one_chance_in(5) ? 2 : 1);
 
     // vacant <ghost best skill level>:
-    ghost.values[11] = 0;
+    ghost.values[GVAL_DEMONLORD_UNUSED] = 0;
 
     // hit dice:
-    ghost.values[12] = 10 + random2(10);
+    ghost.values[GVAL_DEMONLORD_HIT_DICE] = 10 + roll_dice(2, 10);
 
     // does demon cycle colours?
-    ghost.values[13] = (one_chance_in(10) ? 1 : 0);
+    ghost.values[GVAL_DEMONLORD_CYCLE_COLOUR] = (one_chance_in(10) ? 1 : 0);
 
-    menv[rdem].hit_dice = ghost.values[12];
-    menv[rdem].hit_points = ghost.values[0];
-    menv[rdem].max_hit_points = ghost.values[0];
-    menv[rdem].armour_class = ghost.values[2];
-    menv[rdem].evasion = ghost.values[1];
-    menv[rdem].speed = (one_chance_in(3) ? 10 : 8 + random2(10));
+    menv[rdem].hit_dice = ghost.values[ GVAL_DEMONLORD_HIT_DICE ];
+    menv[rdem].hit_points = ghost.values[ GVAL_MAX_HP ];
+    menv[rdem].max_hit_points = ghost.values[ GVAL_MAX_HP ];
+    menv[rdem].armour_class = ghost.values[ GVAL_AC ];
+    menv[rdem].evasion = ghost.values[ GVAL_EV ];
+    menv[rdem].speed = (one_chance_in(3) ? 10 : 6 + roll_dice(2, 9));
     menv[rdem].speed_increment = 70;
     menv[rdem].number = random_colour();        // demon's colour
 
-    ghost.values[14] = SPELL_NO_SPELL;
-    ghost.values[15] = SPELL_NO_SPELL;
-    ghost.values[16] = SPELL_NO_SPELL;
-    ghost.values[17] = SPELL_NO_SPELL;
-    ghost.values[18] = SPELL_NO_SPELL;
-    ghost.values[19] = SPELL_NO_SPELL;
+    for (i = GVAL_SPELL_1; i <= GVAL_SPELL_6; i++)
+        ghost.values[i] = SPELL_NO_SPELL;
 
     /* This bit uses the list of player spells to find appropriate spells
        for the demon, then converts those spells to the monster spell indices.
        Some special monster-only spells are at the end. */
-    if (ghost.values[9] == 1)
+    if (ghost.values[ GVAL_DEMONLORD_SPELLCASTER ] == 1)
     {
         if (coinflip())
         {
@@ -1735,7 +1738,7 @@ void generate_random_demon(void)
                 if (one_chance_in(3))
                     break;
 
-                ghost.values[14] = search_order_conj[i];
+                ghost.values[ GVAL_SPELL_1 ] = search_order_conj[i];
                 i++;
 
                 if (search_order_conj[i] == SPELL_NO_SPELL)
@@ -1750,8 +1753,7 @@ void generate_random_demon(void)
                 if (one_chance_in(3))
                     break;
 
-                ghost.values[15] = search_order_conj[i];
-                i++;
+                ghost.values[ GVAL_SPELL_2 ] = search_order_conj[i];
 
                 if (search_order_conj[i] == SPELL_NO_SPELL)
                     break;
@@ -1765,7 +1767,7 @@ void generate_random_demon(void)
                 if (one_chance_in(3))
                     break;
 
-                ghost.values[16] = search_order_third[i];
+                ghost.values[ GVAL_SPELL_3 ] = search_order_third[i];
                 i++;
 
                 if (search_order_third[i] == SPELL_NO_SPELL)
@@ -1780,7 +1782,7 @@ void generate_random_demon(void)
                 if (one_chance_in(3))
                     break;
 
-                ghost.values[17] = search_order_misc[i];
+                ghost.values[ GVAL_SPELL_4 ] = search_order_misc[i];
                 i++;
 
                 if (search_order_misc[i] == SPELL_NO_SPELL)
@@ -1795,7 +1797,7 @@ void generate_random_demon(void)
                 if (one_chance_in(3))
                     break;
 
-                ghost.values[18] = search_order_misc[i];
+                ghost.values[ GVAL_SPELL_5 ] = search_order_misc[i];
                 i++;
 
                 if (search_order_misc[i] == SPELL_NO_SPELL)
@@ -1804,46 +1806,49 @@ void generate_random_demon(void)
         }
 
         if (coinflip())
-            ghost.values[19] = SPELL_BLINK;
+            ghost.values[ GVAL_SPELL_6 ] = SPELL_BLINK;
         if (coinflip())
-            ghost.values[19] = SPELL_TELEPORT_SELF;
+            ghost.values[ GVAL_SPELL_6 ] = SPELL_TELEPORT_SELF;
 
         /* Converts the player spell indices to monster spell ones */
-        for (i = 14; i < 20; i++)
-            ghost.values[i] = translate_spell(ghost.values[i]);
+        for (i = GVAL_SPELL_1; i <= GVAL_SPELL_6; i++)
+            ghost.values[i] = translate_spell( ghost.values[i] );
 
         /* give demon a chance for some monster-only spells: */
-        if (one_chance_in(25))
-            ghost.values[14] = MS_HELLFIRE_BURST;
-        if (one_chance_in(25))
-            ghost.values[14] = MS_METAL_SPLINTERS;
-        if (one_chance_in(25))
-            ghost.values[14] = MS_ENERGY_BOLT;  /* eye of devas */
-        if (one_chance_in(25))
-            ghost.values[15] = MS_STEAM_BALL;
-        if (one_chance_in(25))
-            ghost.values[15] = MS_PURPLE_BLAST;
-        if (one_chance_in(25))
-            ghost.values[15] = MS_HELLFIRE;
-        if (one_chance_in(25))
-            ghost.values[16] = MS_SMITE;
-        if (one_chance_in(25))
-            ghost.values[16] = MS_HELLFIRE_BURST;
-        if (one_chance_in(15))
-            ghost.values[18] = MS_DIG;
-
         /* and demon-summoning should be fairly common: */
+        if (one_chance_in(25))
+            ghost.values[GVAL_SPELL_1] = MS_HELLFIRE_BURST;
+        if (one_chance_in(25))
+            ghost.values[GVAL_SPELL_1] = MS_METAL_SPLINTERS;
+        if (one_chance_in(25))
+            ghost.values[GVAL_SPELL_1] = MS_ENERGY_BOLT;  /* eye of devas */
+
+        if (one_chance_in(25))
+            ghost.values[GVAL_SPELL_2] = MS_STEAM_BALL;
+        if (one_chance_in(25))
+            ghost.values[GVAL_SPELL_2] = MS_PURPLE_BLAST;
+        if (one_chance_in(25))
+            ghost.values[GVAL_SPELL_2] = MS_HELLFIRE;
+
+        if (one_chance_in(25))
+            ghost.values[GVAL_SPELL_3] = MS_SMITE;
+        if (one_chance_in(25))
+            ghost.values[GVAL_SPELL_3] = MS_HELLFIRE_BURST;
         if (one_chance_in(12))
-            ghost.values[16] = MS_SUMMON_DEMON_GREATER;
+            ghost.values[GVAL_SPELL_3] = MS_SUMMON_DEMON_GREATER;
         if (one_chance_in(12))
-            ghost.values[16] = MS_SUMMON_DEMON;
+            ghost.values[GVAL_SPELL_3] = MS_SUMMON_DEMON;
+
         if (one_chance_in(20))
-            ghost.values[17] = MS_SUMMON_DEMON_GREATER;
+            ghost.values[GVAL_SPELL_4] = MS_SUMMON_DEMON_GREATER;
         if (one_chance_in(20))
-            ghost.values[17] = MS_SUMMON_DEMON;
+            ghost.values[GVAL_SPELL_4] = MS_SUMMON_DEMON;
 
         /* at least they can summon demons */
         if (ghost.values[17] == SPELL_NO_SPELL)
-            ghost.values[17] = MS_SUMMON_DEMON;
+            ghost.values[GVAL_SPELL_4] = MS_SUMMON_DEMON;
+
+        if (one_chance_in(15))
+            ghost.values[GVAL_SPELL_5] = MS_DIG;
     }
 }                               // end generate_random_demon()

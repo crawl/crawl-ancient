@@ -54,7 +54,7 @@ void scrolls_burn(char burn_strength, char target_class);
  * called from: acr - bang - beam - command - effects - fight - misc -
  *              ouch - output - religion - spells - spells2 - spells4
  * *********************************************************************** */
-void ouch(int dam, int death_source, char death_type);
+void ouch(int dam, int death_source, char death_type, const char *aux = NULL);
 
 
 // last updated 12may2000 {dlb}

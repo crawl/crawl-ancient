@@ -28,6 +28,12 @@ struct playerspell
 //* * called from: acr
 void init_playerspells(void);
 
+int get_spell_slot_by_letter( char letter );
+int get_spell_by_letter( char letter );
+
+bool add_spell_to_memory( int spell );
+bool del_spell_from_memory_by_slot( int slot );
+
 // * called from: spell
 int spell_hunger(int which_spell);
 

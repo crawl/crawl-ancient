@@ -70,7 +70,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef MAC
+#ifdef OS9
 #include <stat.h>
 #else
 #include <sys/stat.h>
@@ -78,22 +78,24 @@
 
 #include "externs.h"
 
+#include "abl-show.h"
 #include "dungeon.h"
 #include "files.h"
 #include "fight.h"
 #include "itemname.h"
 #include "items.h"
+#include "macro.h"
 #include "player.h"
 #include "randart.h"
 #include "skills.h"
 #include "skills2.h"
+#include "spl-util.h"
 #include "stuff.h"
 #include "version.h"
 #include "wpn-misc.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
+
+#define MIN_START_STAT       1
 
 bool class_allowed(unsigned char speci, int char_class);
 bool verifyPlayerName(void);
@@ -275,6 +277,7 @@ bool new_game(void)
     ASSERT(NUM_DURATIONS > DUR_LAST_DUR);
     ASSERT(NUM_JOBS < JOB_UNKNOWN);
     ASSERT(NUM_ATTRIBUTES < 30);
+
     init_player();
 
     you.exp_available = 25;     // now why is this all the way up here? {dlb}
@@ -285,10 +288,12 @@ bool new_game(void)
     // note that you.your_name could already be set from init.txt
     // this, clearly, will overwrite such information {dlb}
     if (SysEnv.crawl_name)
-        strncpy(you.your_name, SysEnv.crawl_name, kNameLen);
+    {
+        strncpy( you.your_name, SysEnv.crawl_name, kNameLen );
+        you.your_name[ kNameLen - 1 ] = '\0';
+    }
 
     openingScreen();
-
     enterPlayerName(true);
 
     if (you.your_name[0] != '\0')
@@ -296,10 +301,10 @@ bool new_game(void)
         if (check_saved_game())
         {
             textcolor( BROWN );
-            cprintf(EOL "Welcome back, ");
+            cprintf( EOL "Welcome back, " );
             textcolor( YELLOW );
-            cprintf(you.your_name);
-            cprintf("!");
+            cprintf( you.your_name );
+            cprintf( "!" );
             textcolor( LIGHTGREY );
 
             return (false);
@@ -322,18 +327,19 @@ bool new_game(void)
         }
     }
 
-    strcpy(you.class_name, job_title(you.char_class));
+    strcpy( you.class_name, get_class_name( you.char_class ) );
 
     // new: pick name _after_ race and class choices
     if (you.your_name[0] == '\0')
     {
         clrscr();
-        // hack for proper grammar (argh) -- GDL
-        strcpy(info, species_name(you.species));
-        bool startVowel = (strchr("aeiouAEIOU", info[0]) != NULL);
 
-        snprintf( info, INFO_SIZE, "You are a%s %s %s."EOL, (startVowel)?"n":"",
-                  species_name(you.species), you.class_name);
+        char spec_buff[80];
+        strncpy(spec_buff, species_name(you.species, you.experience_level), 80);
+
+        snprintf( info, INFO_SIZE, "You are a%s %s %s." EOL,
+                  (is_vowel( spec_buff[0] )) ? "n" : "", spec_buff,
+                  you.class_name );
 
         cprintf( info );
 
@@ -378,29 +384,54 @@ bool new_game(void)
     unsigned char points_left = (you.species == SP_DEMIGOD
                                  || you.species == SP_DEMONSPAWN) ? 15 : 8;
 
-    do
+    // first spend points to get us to the minimum allowed value -- bwr
+    if (you.strength < MIN_START_STAT)
+    {
+        points_left -= (MIN_START_STAT - you.strength);
+        you.strength = MIN_START_STAT;
+    }
+
+    if (you.intel < MIN_START_STAT)
+    {
+        points_left -= (MIN_START_STAT - you.intel);
+        you.intel = MIN_START_STAT;
+    }
+
+    if (you.dex < MIN_START_STAT)
+    {
+        points_left -= (MIN_START_STAT - you.dex);
+        you.dex = MIN_START_STAT;
+    }
+
+    // now randomly assign the remaining points --bwr
+    while (points_left > 0)
     {
         switch (random2( NUM_STATS ))
         {
         case STAT_STRENGTH:
             if (you.strength > 17 && coinflip())
                 continue;
+
             you.strength++;
             break;
+
         case STAT_DEXTERITY:
             if (you.dex > 17 && coinflip())
                 continue;
+
             you.dex++;
             break;
+
         case STAT_INTELLIGENCE:
             if (you.intel > 17 && coinflip())
                 continue;
+
             you.intel++;
             break;
         }
+
         points_left--;
     }
-    while (points_left > 0);
 
     // this function depends on stats being finalized
     give_items_skills();
@@ -720,6 +751,10 @@ bool new_game(void)
     return (true);
 }                               // end of new_game()
 
+static bool species_is_undead( unsigned char speci )
+{
+    return (speci == SP_MUMMY || speci == SP_GHOUL);
+}
 
 bool class_allowed( unsigned char speci, int char_class )
 {
@@ -735,7 +770,7 @@ bool class_allowed( unsigned char speci, int char_class )
         return true;
 
     case JOB_WIZARD:
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -757,7 +792,7 @@ bool class_allowed( unsigned char speci, int char_class )
     case JOB_PRIEST:
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -780,7 +815,7 @@ bool class_allowed( unsigned char speci, int char_class )
         return true;
 
     case JOB_THIEF:
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -799,7 +834,7 @@ bool class_allowed( unsigned char speci, int char_class )
     case JOB_GLADIATOR:
         if (player_genus(GENPC_ELVEN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -874,7 +909,7 @@ bool class_allowed( unsigned char speci, int char_class )
             return false;
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -925,7 +960,7 @@ bool class_allowed( unsigned char speci, int char_class )
         return false;
 
     case JOB_CONJURER:
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -947,7 +982,7 @@ bool class_allowed( unsigned char speci, int char_class )
     case JOB_ENCHANTER:
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -967,7 +1002,7 @@ bool class_allowed( unsigned char speci, int char_class )
     case JOB_FIRE_ELEMENTALIST:
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -991,7 +1026,7 @@ bool class_allowed( unsigned char speci, int char_class )
             return false;
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1014,7 +1049,7 @@ bool class_allowed( unsigned char speci, int char_class )
     case JOB_SUMMONER:
         if (player_genus(GENPC_DWARVEN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1035,7 +1070,7 @@ bool class_allowed( unsigned char speci, int char_class )
             return false;
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1057,7 +1092,7 @@ bool class_allowed( unsigned char speci, int char_class )
     case JOB_EARTH_ELEMENTALIST:
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1081,7 +1116,7 @@ bool class_allowed( unsigned char speci, int char_class )
     case JOB_CRUSADER:
         if (player_genus(GENPC_DWARVEN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
@@ -1129,7 +1164,7 @@ bool class_allowed( unsigned char speci, int char_class )
     case JOB_VENOM_MAGE:
         if (player_genus(GENPC_DWARVEN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1150,7 +1185,7 @@ bool class_allowed( unsigned char speci, int char_class )
     case JOB_CHAOS_KNIGHT:
         if (player_genus(GENPC_DWARVEN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1170,7 +1205,7 @@ bool class_allowed( unsigned char speci, int char_class )
         return true;
 
     case JOB_TRANSMUTER:
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1189,7 +1224,7 @@ bool class_allowed( unsigned char speci, int char_class )
     case JOB_HEALER:
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1211,7 +1246,7 @@ bool class_allowed( unsigned char speci, int char_class )
         return true;
 
     case JOB_REAVER:
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1237,7 +1272,7 @@ bool class_allowed( unsigned char speci, int char_class )
             return false;
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1254,7 +1289,7 @@ bool class_allowed( unsigned char speci, int char_class )
         return true;
 
     case JOB_MONK:
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1277,7 +1312,7 @@ bool class_allowed( unsigned char speci, int char_class )
             return false;
         if (player_genus(GENPC_DRACONIAN, speci))
             return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
+        if (species_is_undead( speci ))
             return false;
 
         switch (speci)
@@ -1397,6 +1432,8 @@ void init_player(void)
     unsigned char i = 0;        // loop variable
 
     you.birth_time = time( NULL );
+    you.real_time = 0;
+    you.num_turns = 0;
 
 #ifdef WIZARD
     you.wizard = (Options.wiz_mode == WIZ_YES) ? true : false;
@@ -1479,12 +1516,15 @@ void init_player(void)
 
     you.gift_timeout = 0;
 
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < MAX_NUM_GODS; i++)
+    {
         you.penance[i] = 0;
+        you.worshipped[i] = 0;
+    }
 
-    strcpy(ghost.name, "");
+    ghost.name[0] = '\0';
 
-    for (i = 0; i < 20; i++)
+    for (i = 0; i < NUM_GHOST_VALUES; i++)
         ghost.values[i] = 0;
 
     for (i = EQ_WEAPON; i < NUM_EQUIP; i++)
@@ -1492,6 +1532,12 @@ void init_player(void)
 
     for (i = 0; i < 25; i++)
         you.spells[i] = SPELL_NO_SPELL;
+
+    for (i = 0; i < 52; i++)
+    {
+        you.spell_letter_table[i] = -1;
+        you.ability_letter_table[i] = ABIL_NON_ABILITY;
+    }
 
     for (i = 0; i < 100; i++)
         you.mutation[i] = 0;
@@ -1512,6 +1558,7 @@ void init_player(void)
     {
         you.skills[i] = 0;
         you.skill_points[i] = 0;
+        you.skill_order[i] = 1000;
         you.practise_skill[i] = 1;
     }
 
@@ -1597,11 +1644,11 @@ void species_stat_init(unsigned char which_species)
     case SP_HILL_DWARF:         sb = 10; ib =  3; db =  4;      break;  // 17
     case SP_MOUNTAIN_DWARF:     sb =  9; ib =  4; db =  5;      break;  // 18
 
-    case SP_TROLL:              sb = 13; ib =  3; db =  0;      break;  // 16
-    case SP_OGRE:               sb = 12; ib =  3; db =  1;      break;  // 16
+    case SP_TROLL:              sb = 13; ib =  2; db =  3;      break;  // 18
+    case SP_OGRE:               sb = 12; ib =  3; db =  3;      break;  // 18
     case SP_OGRE_MAGE:          sb =  9; ib =  7; db =  3;      break;  // 19
 
-    case SP_MINOTAUR:           sb = 10; ib =  3; db =  5;      break;  // 16
+    case SP_MINOTAUR:           sb = 10; ib =  3; db =  3;      break;  // 16
     case SP_HILL_ORC:           sb =  9; ib =  3; db =  4;      break;  // 16
     case SP_CENTAUR:            sb =  8; ib =  5; db =  2;      break;  // 15
     case SP_NAGA:               sb =  8; ib =  6; db =  4;      break;  // 18
@@ -1610,12 +1657,12 @@ void species_stat_init(unsigned char which_species)
     case SP_MERFOLK:            sb =  6; ib =  5; db =  7;      break;  // 18
     case SP_KENKU:              sb =  6; ib =  6; db =  7;      break;  // 19
 
-    case SP_KOBOLD:             sb =  4; ib =  4; db =  8;      break;  // 16
-    case SP_HALFLING:           sb =  4; ib =  6; db =  9;      break;  // 19
+    case SP_KOBOLD:             sb =  5; ib =  4; db =  8;      break;  // 17
+    case SP_HALFLING:           sb =  3; ib =  6; db =  9;      break;  // 18
     case SP_SPRIGGAN:           sb =  2; ib =  7; db =  9;      break;  // 18
 
     case SP_MUMMY:              sb =  7; ib =  3; db =  3;      break;  // 13
-    case SP_GHOUL:              sb =  7; ib =  1; db =  2;      break;  // 10
+    case SP_GHOUL:              sb =  9; ib =  1; db =  2;      break;  // 13
 
     case SP_RED_DRACONIAN:
     case SP_WHITE_DRACONIAN:
@@ -1658,8 +1705,8 @@ void jobs_stat_init(int which_job)
     case JOB_HEALER:            s =  4; i =  4; d =  2; hp = 13; mp = 1; break;
     case JOB_PRIEST:            s =  4; i =  4; d =  2; hp = 12; mp = 1; break;
 
-    case JOB_THIEF:             s =  3; i =  2; d =  5; hp = 13; mp = 0; break;
     case JOB_ASSASSIN:          s =  2; i =  2; d =  6; hp = 12; mp = 0; break;
+    case JOB_THIEF:             s =  3; i =  2; d =  5; hp = 13; mp = 0; break;
     case JOB_STALKER:           s =  2; i =  3; d =  5; hp = 12; mp = 1; break;
 
     case JOB_HUNTER:            s =  3; i =  3; d =  4; hp = 13; mp = 0; break;
@@ -1668,7 +1715,7 @@ void jobs_stat_init(int which_job)
     case JOB_MONK:              s =  2; i =  2; d =  6; hp = 13; mp = 0; break;
     case JOB_TRANSMUTER:        s =  2; i =  4; d =  4; hp = 12; mp = 1; break;
 
-    case JOB_WIZARD:            s = -1; i =  8; d =  3; hp =  8; mp = 4; break;
+    case JOB_WIZARD:            s = -1; i =  8; d =  3; hp =  8; mp = 5; break;
     case JOB_CONJURER:          s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
     case JOB_ENCHANTER:         s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
     case JOB_FIRE_ELEMENTALIST: s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
@@ -1775,8 +1822,9 @@ void give_basic_spells(int which_job)
         break;
     }
 
-    you.spells[0] = which_spell;
-    you.spell_no = ((you.spells[0] != SPELL_NO_SPELL) ? 1 : 0);
+    if (which_spell != SPELL_NO_SPELL)
+        add_spell_to_memory( which_spell );
+
     return;
 }                               // end give_basic_spells()
 
@@ -1832,7 +1880,7 @@ void openingScreen(void)
     textcolor( YELLOW );
     cprintf("Hello, welcome to Dungeon Crawl " VERSION "!");
     textcolor( BROWN );
-    cprintf(EOL "(c) Copyright 1997-2001 Linley Henzell");
+    cprintf(EOL "(c) Copyright 1997-2002 Linley Henzell");
     cprintf(EOL "Please consult crawl.txt for instructions and legal details."
             EOL);
     textcolor( LIGHTGREY );
@@ -1871,7 +1919,8 @@ void enterPlayerName(bool blankOK)
             textcolor( LIGHTGREY );
             get_input_line( name_entered, sizeof( name_entered ) );
 
-            strncpy(you.your_name, name_entered, kNameLen);
+            strncpy( you.your_name, name_entered, kNameLen );
+            you.your_name[ kNameLen - 1 ] = '\0';
         }
 
         // verification begins here {dlb}:
@@ -2435,9 +2484,7 @@ static void create_wanderer( void )
         else
         {
             // Give them an appropriate spell
-            // you.spells[0] = spell_list[ school ];
-            you.spells[0] = spell_list[ school ];
-            you.spell_no = 1;
+            add_spell_to_memory( spell_list[ school ] );
         }
     }
     else if (you.skills[ SK_THROWING ] && one_chance_in(3)) // these are rare
@@ -2719,7 +2766,7 @@ job_query:
             cprintf(you.your_name);
             cprintf(" the ");
         }
-        cprintf(species_name(you.species));
+        cprintf(species_name(you.species,you.experience_level));
         cprintf("." EOL EOL);
 
         textcolor( CYAN );
@@ -2735,7 +2782,7 @@ job_query:
 
             putch( index_to_letter(i) );
             cprintf( " - " );
-            cprintf( job_title(i) );
+            cprintf( get_class_name(i) );
 
             if (j % 2)
                 cprintf(EOL);
@@ -2886,7 +2933,8 @@ void give_items_skills()
     char keyn;
     int weap_skill = 0;
     int to_hit_bonus;           // used for assigning primary weapons {dlb}
-    int  choice;                // used for third-screen choices
+    int choice;                 // used for third-screen choices
+    int tmp;
 
     switch (you.char_class)
     {
@@ -3051,8 +3099,7 @@ void give_items_skills()
             you.inv[0].sub_type = WPN_QUARTERSTAFF;
             you.inv[0].colour = BROWN;
         }
-        else if (you.species == SP_HILL_DWARF ||
-                 you.species == SP_MOUNTAIN_DWARF)
+        else if (player_genus(GENPC_DWARVEN))
         {
             you.inv[0].sub_type = WPN_HAMMER;
             you.inv[0].colour = CYAN;
@@ -3114,7 +3161,7 @@ void give_items_skills()
         you.skills[SK_SPELLCASTING + random2(3)]++;
         you.skills[SK_SUMMONINGS + random2(5)]++;
 
-        if (you.species == SP_HILL_DWARF || you.species == SP_MOUNTAIN_DWARF)
+        if (player_genus(GENPC_DWARVEN))
             you.skills[SK_MACES_FLAILS] = 1;
         else
             you.skills[SK_SHORT_BLADES] = 1;
@@ -3692,34 +3739,17 @@ void give_items_skills()
         }
 
         you.inv[1].special = 0;
-        you.inv[1].colour = random_colour();
-
-        if (you.char_class == JOB_FIRE_ELEMENTALIST)
-            you.inv[1].colour = RED;
-
-        if (you.char_class == JOB_ICE_ELEMENTALIST)
-            you.inv[1].colour = LIGHTCYAN;
-
-        if (you.char_class == JOB_AIR_ELEMENTALIST)
-            you.inv[1].colour = LIGHTBLUE;
-
-        if (you.char_class == JOB_EARTH_ELEMENTALIST)
-            you.inv[1].colour = BROWN;
-
-        if (you.char_class == JOB_VENOM_MAGE)
-            you.inv[1].colour = GREEN;
 
         you.equip[EQ_WEAPON] = 0;
         you.equip[EQ_BODY_ARMOUR] = 1;
         you.inv[2].base_type = OBJ_BOOKS;
         you.inv[2].sub_type = give_first_conjuration_book();
-        you.inv[2].plus = 0;    // = 127
+        you.inv[2].plus = 0;
 
         switch (you.char_class)
         {
         case JOB_SUMMONER:
             you.inv[2].sub_type = BOOK_CALLINGS;
-            you.inv[2].plus = 0;
 
             you.skills[SK_SUMMONINGS] = 4;
 
@@ -3738,7 +3768,6 @@ void give_items_skills()
 
         case JOB_ENCHANTER:
             you.inv[2].sub_type = BOOK_CHARMS;
-            you.inv[2].plus = 0;
 
             you.skills[SK_ENCHANTMENTS] = 4;
 
@@ -3760,31 +3789,31 @@ void give_items_skills()
 
         case JOB_FIRE_ELEMENTALIST:
             you.inv[2].sub_type = BOOK_FLAMES;
-            you.inv[2].plus = 0;
+
             you.skills[SK_CONJURATIONS] = 1;
-            //you.skills [SK_ENCHANTMENTS] = 1;
             you.skills[SK_FIRE_MAGIC] = 3;
+            //you.skills [SK_ENCHANTMENTS] = 1;
             break;
 
         case JOB_ICE_ELEMENTALIST:
             you.inv[2].sub_type = BOOK_FROST;
-            you.inv[2].plus = 0;
+
             you.skills[SK_CONJURATIONS] = 1;
-            //you.skills [SK_ENCHANTMENTS] = 1;
             you.skills[SK_ICE_MAGIC] = 3;
+            //you.skills [SK_ENCHANTMENTS] = 1;
             break;
 
         case JOB_AIR_ELEMENTALIST:
             you.inv[2].sub_type = BOOK_AIR;
-            you.inv[2].plus = 0;
+
             you.skills[SK_CONJURATIONS] = 1;
-            //you.skills [SK_ENCHANTMENTS] = 1;
             you.skills[SK_AIR_MAGIC] = 3;
+            //you.skills [SK_ENCHANTMENTS] = 1;
             break;
 
         case JOB_EARTH_ELEMENTALIST:
             you.inv[2].sub_type = BOOK_GEOMANCY;
-            you.inv[2].plus = 0;
+
             you.inv[3].quantity = random2avg(12, 2) + 6;
             you.inv[3].base_type = OBJ_MISSILES;
             you.inv[3].sub_type = MI_STONE;
@@ -3819,7 +3848,6 @@ void give_items_skills()
 
         case JOB_VENOM_MAGE:
             you.inv[2].sub_type = BOOK_YOUNG_POISONERS;
-            you.inv[2].plus = 0;
             you.skills[SK_POISON_MAGIC] = 4;
             break;
         }
@@ -3829,8 +3857,7 @@ void give_items_skills()
             you.inv[0].sub_type = WPN_QUARTERSTAFF;
             you.inv[0].colour = BROWN;
         }
-        else if (you.species == SP_HILL_DWARF ||
-                 you.species == SP_MOUNTAIN_DWARF)
+        else if (player_genus(GENPC_DWARVEN))
         {
             you.inv[0].sub_type = WPN_HAMMER;
             you.inv[0].colour = CYAN;
@@ -3838,16 +3865,19 @@ void give_items_skills()
 
         you.inv[2].quantity = 1;
         you.inv[2].special = 0;
-        you.inv[2].colour = random_colour();
 
-        if (you.char_class == JOB_FIRE_ELEMENTALIST)
-            you.inv[2].colour = RED;
+        switch (you.char_class)
+        {
+        case JOB_FIRE_ELEMENTALIST:  tmp = RED;                 break;
+        case JOB_ICE_ELEMENTALIST:   tmp = LIGHTCYAN;           break;
+        case JOB_AIR_ELEMENTALIST:   tmp = LIGHTBLUE;           break;
+        case JOB_EARTH_ELEMENTALIST: tmp = BROWN;               break;
+        case JOB_VENOM_MAGE:         tmp = GREEN;               break;
+        default:                     tmp = random_colour();     break;
+        }
 
-        if (you.char_class == JOB_ICE_ELEMENTALIST)
-            you.inv[2].colour = LIGHTCYAN;
-
-        if (you.char_class == JOB_VENOM_MAGE)
-            you.inv[2].colour = GREEN;
+        you.inv[1].colour = tmp;        // robe
+        you.inv[2].colour = tmp;        // book
 
         you.skills[SK_SPELLCASTING] = 1;
 
@@ -3865,8 +3895,7 @@ void give_items_skills()
 
             you.skills[SK_POLEARMS] = 1;
         }
-        else if (you.species == SP_HILL_DWARF ||
-                 you.species == SP_MOUNTAIN_DWARF)
+        else if (player_genus(GENPC_DWARVEN))
         {
             you.skills[SK_MACES_FLAILS] = 1;
         }
@@ -3890,8 +3919,7 @@ void give_items_skills()
         if (you.species == SP_GNOME && you.char_class == JOB_EARTH_ELEMENTALIST)
             you.skills[SK_THROWING]++;
         else
-            you.skills[ (coinflip() ? SK_DODGING : SK_STEALTH) ]++;
-
+            you.skills[ coinflip() ? SK_DODGING : SK_STEALTH ]++;
         break;
 
     case JOB_TRANSMUTER:
@@ -4392,4 +4420,11 @@ void give_items_skills()
     if (weap_skill)
         you.skills[weapon_skill(OBJ_WEAPONS, you.inv[0].sub_type)] = weap_skill;
 
+    init_skill_order();
+
+    if (you.religion != GOD_NO_GOD)
+    {
+        you.worshipped[you.religion] = 1;
+        set_god_ability_slots();
+    }
 }

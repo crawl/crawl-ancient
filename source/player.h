@@ -20,6 +20,7 @@ bool player_in_hell( void );
 int player_equip( int slot, int sub_type );
 int player_equip_ego_type( int slot, int sub_type );
 int player_damage_type( void );
+int player_damage_brand( void );
 
 bool player_is_shapechanged(void);
 
@@ -58,8 +59,7 @@ bool wearing_amulet(char which_am);
 /* ***********************************************************************
  * called from: acr - chardump - describe - newgame - view
  * *********************************************************************** */
-char *species_name( unsigned char speci,
-                    bool genus = false, bool adj = false, bool cap = true );
+char *species_name( int speci, int level, bool genus = false, bool adj = false, bool cap = true );
 
 
 /* ***********************************************************************
@@ -324,7 +324,7 @@ void level_change(void);
 /* ***********************************************************************
  * called from: skills
  * *********************************************************************** */
-void redraw_skill(const char your_name[kNameLen], const char class_name[40]);
+void redraw_skill(const char your_name[kNameLen], const char class_name[80]);
 
 
 /* ***********************************************************************
@@ -403,33 +403,15 @@ void set_mp(int new_amount, bool max_too);
 /* ***********************************************************************
  * called from: newgame
  * *********************************************************************** */
-const char *job_title(int which_job);
-
-int get_species_index( const char *abbrev );
+int get_species_index_by_abbrev( const char *abbrev );
+int get_species_index_by_name( const char *name );
 const char *get_species_abbrev( int which_species );
 
-int get_class_index( const char *abbrev );
+int get_class_index_by_abbrev( const char *abbrev );
+int get_class_index_by_name( const char *name );
 const char *get_class_abbrev( int which_job );
+const char *get_class_name( int which_job );
 
-#if 0
-/* ***********************************************************************
- * called from: ouch
- * *********************************************************************** */
-char *species_abbrev(unsigned char which_species);
-
-
-/* ***********************************************************************
- * called from: ouch
- * *********************************************************************** */
-char *class_abbrev(unsigned char which_class);
-#endif
-
-
-/* ***********************************************************************
- * called from: newgame
- * *********************************************************************** */
-bool player_descriptor( unsigned char which_descriptor,
-                        unsigned char species = SP_UNKNOWN );
 
 // last updated 19apr2001 {gdl}
 /* ***********************************************************************
@@ -451,6 +433,8 @@ void dec_haste_player();
 
 void disease_player( int amount );
 void dec_disease_player();
+
+void rot_player( int amount );
 
 // last updated 15sep2001 {bwr}
 /* ***********************************************************************

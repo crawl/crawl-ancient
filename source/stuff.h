@@ -16,6 +16,8 @@
 
 #include "externs.h"
 
+char *const make_time_string(time_t abs_time, char *const buff, int buff_size);
+
 void set_redraw_status( unsigned long flags );
 
 void tag_followers( void );

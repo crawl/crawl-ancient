@@ -47,7 +47,7 @@ unsigned char read_book( item_def &item, int action );
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void learn_spell(void);
+bool learn_spell(void);
 
 
 // updated 24may2000 {dlb}
@@ -57,5 +57,7 @@ void learn_spell(void);
 int which_spell_in_book(int sbook_type, int spl);
 
 int staff_spell( int zap_device_2 );
+
+bool undead_cannot_memorise(unsigned char spell, unsigned char being);
 
 #endif

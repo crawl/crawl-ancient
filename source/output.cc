@@ -56,20 +56,17 @@ void print_stats(void)
 
     if (you.redraw_hit_points)
     {
-        int max_max_hp = you.hp_max + player_rotted();
-
-        if (Options.hp_warning
-            && (you.hp <= (you.hp_max * Options.hp_warning) / 100))
-        {
-            textcolor(RED);
-        }
-        else if (Options.hp_attention
-            && (you.hp <= (you.hp_max * Options.hp_attention) / 100))
-        {
-            textcolor(YELLOW);
-        }
+        const int max_max_hp = you.hp_max + player_rotted();
+        const int hp_warn = MAXIMUM( 25, Options.hp_warning );
+        const int hp_attent = MAXIMUM( 10, Options.hp_attention );
 
         gotoxy(44, 3);
+
+        if (you.hp <= (you.hp_max * hp_warn) / 100)
+            textcolor(RED);
+        else if (you.hp <= (you.hp_max * hp_attent) / 100)
+            textcolor(YELLOW);
+
         cprintf( "%d", you.hp );
 
         textcolor(LIGHTGREY);
@@ -196,16 +193,23 @@ void print_stats(void)
     if (you.redraw_armour_class)
     {
         gotoxy(44, 5);
+
+        if (you.duration[DUR_STONEMAIL])
+            dur_colour( BLUE, (you.duration[DUR_STONEMAIL] <= 6) );
+        else if (you.duration[DUR_ICY_ARMOUR] || you.duration[DUR_STONESKIN])
+            textcolor( LIGHTBLUE );  // no end of effect warning
+
         cprintf( "%d  ", player_AC() );
+        textcolor( LIGHTGREY );
 
         gotoxy(50, 5);
 
         if (you.duration[DUR_CONDENSATION_SHIELD])      //jmf: added 24mar2000
-            textcolor(LIGHTBLUE);  // no end of effect warning
+            textcolor( LIGHTBLUE );  // no end of effect warning
 
         cprintf( "(%d) ", player_shield_class() );
+        textcolor( LIGHTGREY );
 
-        textcolor(LIGHTGREY);
         you.redraw_armour_class = 0;
     }
 
@@ -265,8 +269,8 @@ void print_stats(void)
             textcolor(you.inv[you.equip[EQ_WEAPON]].colour);
 
             char str_pass[ ITEMNAME_SIZE ];
-            in_name( you.equip[EQ_WEAPON], DESC_INVENTORY, str_pass );
-            str_pass[35] = '\0';
+            in_name( you.equip[EQ_WEAPON], DESC_INVENTORY, str_pass, Options.terse_hand );
+            str_pass[39] = '\0';
 
             cprintf(str_pass);
             textcolor(LIGHTGREY);
@@ -470,7 +474,7 @@ void print_stats(void)
         if (you.duration[DUR_LIQUID_FLAMES])
         {
             textcolor( RED );   // no different levels
-            cprintf( "OnFire " );
+            cprintf( "Fire " );
         }
 
         if (you.poison)
@@ -486,6 +490,12 @@ void print_stats(void)
         {
             textcolor( bad_ench_colour( you.disease, 40, 120 ) );
             cprintf( "Sick " );
+        }
+
+        if (you.rotting)
+        {
+            textcolor( bad_ench_colour( you.rotting, 4, 8 ) );
+            cprintf( "Rot " );
         }
 
         if (you.magic_contamination > 5)

@@ -13,6 +13,7 @@
 #include "AppHdr.h"
 #include "spells3.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -46,7 +47,6 @@ static bool monster_on_level(int monster);
 void cast_selective_amnesia(bool force)
 {
     char ep_gain = 0;
-    char index_value = 0;
     unsigned char keyin = 0;
 
     if (you.spell_no == 0)
@@ -56,8 +56,7 @@ void cast_selective_amnesia(bool force)
         // query - conditional ordering is important {dlb}:
         for (;;)
         {
-            mpr( "Forget which spell ([a-y] spell [?*] list [ESC] exit)? ",
-                 MSGCH_PROMPT );
+            mpr( "Forget which spell ([?*] list [ESC] exit)? ", MSGCH_PROMPT );
 
             keyin = (unsigned char) get_ch();
 
@@ -72,33 +71,32 @@ void cast_selective_amnesia(bool force)
                 redraw_screen();
             }
 
-            if (keyin < 'a' || keyin > 'y')
+            if (!isalpha( keyin ))
                 mesclr();
             else
                 break;
         }
 
         // actual handling begins here {dlb}:
-        index_value = letter_to_index(keyin);
+        const int spell = get_spell_by_letter( keyin );
+        const int slot  = get_spell_slot_by_letter( keyin );
 
-        if (index_value >= 25 || you.spells[index_value] == SPELL_NO_SPELL)
-            mpr("You don't know that spell.");
+        if (spell == SPELL_NO_SPELL)
+            mpr( "You don't know that spell." );
         else
         {
             if (!force
                  && (you.religion != GOD_SIF_MUNA
                      && random2(you.skills[SK_SPELLCASTING])
-                         < random2(spell_difficulty(you.spells[index_value]))))
+                         < random2(spell_difficulty( spell ))))
             {
                 mpr("Oops! This spell sure is a blunt instrument.");
                 forget_map(20 + random2(50));
             }
             else
             {
-                ep_gain = spell_mana(you.spells[index_value]);
-
-                you.spell_no--;
-                you.spells[index_value] = SPELL_NO_SPELL;
+                ep_gain = spell_mana( spell );
+                del_spell_from_memory_by_slot( slot );
 
                 if (ep_gain > 0)
                 {
@@ -586,20 +584,19 @@ void you_teleport(void)
     {
         mpr("You feel strangely unstable.");
 
-        you.duration[DUR_TELEPORT] = 4 + random2(3);
+        you.duration[DUR_TELEPORT] = 3 + random2(3);
 
-        if (you.level_type == LEVEL_ABYSS && !one_chance_in(3))
+        if (you.level_type == LEVEL_ABYSS && !one_chance_in(5))
         {
-            mpr
-                ("You have a feeling this translocation may take a while to kick in...");
-            you.duration[DUR_TELEPORT] += 3 + random2(3);
+            mpr("You have a feeling this translocation may take a while to kick in...");
+            you.duration[DUR_TELEPORT] += 5 + random2(10);
         }
     }
 
     return;
 }                               // end you_teleport()
 
-void you_teleport2(bool allow_control)
+void you_teleport2( bool allow_control, bool new_abyss_area )
 {
     bool is_controlled = (allow_control && !you.conf
                               && you.attribute[ATTR_CONTROL_TELEPORT]
@@ -624,7 +621,7 @@ void you_teleport2(bool allow_control)
 
     if (you.level_type == LEVEL_ABYSS)
     {
-        abyss_teleport();
+        abyss_teleport( new_abyss_area );
         you.pet_target = MHITNOT;
         return;
     }
@@ -696,8 +693,8 @@ void you_teleport2(bool allow_control)
 
         do
         {
-            you.x_pos = 10 + random2(GXM - 10);
-            you.y_pos = 10 + random2(GYM - 10);
+            you.x_pos = 5 + random2( GXM - 10 );
+            you.y_pos = 5 + random2( GYM - 10 );
         }
         while ((grd[you.x_pos][you.y_pos] != DNGN_FLOOR
                    && grd[you.x_pos][you.y_pos] != DNGN_SHALLOW_WATER)

@@ -7,7 +7,7 @@ Notes for building crawl with VACPP
   ignore the other lib*.cc files
 * define the macro WIN32CONSOLE
 * MUST build with signedchars = yes
-* MUST build with emumsize = 4
+* MUST build with enumsize = 4
 * target architecture should probably be 486 machines.
 
   According to jmf,  targetting Pentium class machines
@@ -36,3 +36,19 @@ Notes for building crawl with Borland C++ 5.01
   - Win32 Console Application (.exe)
   - _Everything_ unchecked
   - Static linking
+
+Notes for building crawl with mingw
+------------------------------------------
+* In makefile specify makefile.w32. Other notes:
+  - make sure your path includes mingw binaries
+  - set LIB to your mingw lib directory
+  - set INCLUDE to your mingw include directory
+  - the makefile defines WIN32CONSOLE like above
+  - -Wall will generate a fair number of warnings
+* Tested on Win98 and Win2000.
+* Current build is not statically linked.
+* See notes above for target arch code gen switches
+* This is currently tested only with 2.95.2
+  I anticipate no problems with mingw 3.0.1 but
+  haven't had time to update yet.
+* This also currently doesn't statically link

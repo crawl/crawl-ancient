@@ -33,7 +33,7 @@ std::string get_item_description( const item_def &item, char verbose,
 /* ***********************************************************************
  * called from: acr - religion
  * *********************************************************************** */
-void describe_god(int which_god);
+void describe_god( int which_god, bool give_title );
 
 
 // last updated 12may2000 {dlb}

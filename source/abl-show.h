@@ -28,13 +28,19 @@ struct ability_def
 
 const struct ability_def & get_ability_def( int abil );
 
+const char * get_ability_name_by_index( char index );
+
 const std::string   make_cost_description( const struct ability_def &abil );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void activate_ability(void);     // handles all special abilities now
+bool activate_ability( void );     // handles all special abilities now
+char show_abilities( void );
+bool generate_abilities( void );
+
+void set_god_ability_slots( void );
 
 
 #endif

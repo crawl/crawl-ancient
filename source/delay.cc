@@ -27,6 +27,7 @@
 #include "output.h"
 #include "player.h"
 #include "randart.h"
+#include "spl-util.h"
 #include "stuff.h"
 
 void start_delay( int type, int turns, int parm1, int parm2 )
@@ -138,7 +139,6 @@ int current_delay_action( void )
 void handle_delay( void )
 /***********************/
 {
-    int   i;
     int   ego;
     char  str_pass[ ITEMNAME_SIZE ];
 
@@ -330,6 +330,9 @@ void handle_delay( void )
                 if (is_random_artefact( you.inv[ delay.parm1 ] ))
                     use_randart( delay.parm1 );
 
+                if (item_cursed( you.inv[ delay.parm1 ] ))
+                    mpr( "Oops, that feels deathly cold." );
+
                 you.redraw_armour_class = 1;
                 you.redraw_evasion = 1;
                 break;
@@ -390,15 +393,7 @@ void handle_delay( void )
 
             case DELAY_MEMORIZE:
                 mpr( "You finish memorising." );
-
-                for (i = 0; i < 25; i++)
-                {
-                    if (you.spells[i] == SPELL_NO_SPELL)
-                        break;
-                }
-
-                you.spells[i] = delay.parm1;
-                you.spell_no++;
+                add_spell_to_memory( delay.parm1 );
                 break;
 
             case DELAY_PASSWALL:

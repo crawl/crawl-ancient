@@ -27,6 +27,7 @@
 
 #include "externs.h"
 
+#include "abl-show.h"
 #include "beam.h"
 #include "debug.h"
 #include "decks.h"
@@ -44,6 +45,7 @@
 #include "ouch.h"
 #include "player.h"
 #include "shopping.h"
+#include "skills2.h"
 #include "spells1.h"
 #include "spells2.h"
 #include "spells3.h"
@@ -146,8 +148,10 @@ void pray(void)
     if (you.religion == GOD_NO_GOD)
     {
         strcpy(info, "You spend a moment contemplating the meaning of ");
+
         if (you.is_undead)
             strcat(info, "un");
+
         strcat(info, "life.");
         mpr(info);
         return;
@@ -160,17 +164,17 @@ void pray(void)
             // This is for flavour, not effect, so praying should not be
             // encouraged.
 
-            // Xom is nicer to experienced players  (0 is bad, 1 is nice)
-            bool nice = 27 <= random2(27 + you.experience_level);
+            // Xom is nicer to experienced players
+            bool nice = (27 <= random2( 27 + you.experience_level ));
 
             // and he's not very nice even then
-            int sever = (nice) ? random2(random2(you.experience_level))
+            int sever = (nice) ? random2( random2( you.experience_level ) )
                                : you.experience_level;
 
             // bad results are enforced, good are not
             bool force = !nice;
 
-            Xom_acts(nice, 1 + sever, force);
+            Xom_acts( nice, 1 + sever, force );
         }
         else
             mpr("Xom ignores you.");
@@ -178,9 +182,9 @@ void pray(void)
         return;
     }
 
-    strcpy(info, "You offer a prayer to ");
-    strcat(info, god_name(you.religion));
-    strcat(info, ".");
+    strcpy( info, "You offer a prayer to " );
+    strcat( info, god_name( you.religion ) );
+    strcat( info, "." );
     mpr(info);
 
     you.duration[DUR_PRAYER] = 9 + (random2(you.piety) / 20)
@@ -579,7 +583,8 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
                 (temp_rand == 2) ? "Xom's power touches on you for a moment."
                                  : "You hear Xom's maniacal laughter.");
 
-            miscast_effect(SPTYP_RANDOM, 5 + random2(10), random2(100), 0);
+            miscast_effect( SPTYP_RANDOM, 5 + random2(10), random2(100), 0,
+                            "the capriciousness of Xom" );
 
             done_bad = true;
         }
@@ -607,7 +612,8 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
                 (temp_rand == 2) ? "Xom's power touches on you for a moment."
                                  : "You hear Xom's maniacal laughter.");
 
-            miscast_effect(SPTYP_RANDOM, 5 + random2(15), random2(250), 0);
+            miscast_effect( SPTYP_RANDOM, 5 + random2(15), random2(250), 0,
+                            "the capriciousness of Xom" );
 
             done_bad = true;
         }
@@ -635,8 +641,8 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
 
             done_bad = true;
         }
-                else if (!you.is_undead && random2(sever) <= 3)
-                {
+        else if (!you.is_undead && random2(sever) <= 3)
+        {
             temp_rand = random2(4);
 
             god_speaks(GOD_XOM,
@@ -904,6 +910,7 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
             strcpy(beam.beam_name, "blast of lightning");
             beam.colour = LIGHTCYAN;
             beam.thrower = KILL_YOU;    // your explosion
+            beam.aux_source = "Xom's lightning strike";
             beam.ex_size = 2;
             beam.isTracer = false;
 
@@ -992,6 +999,18 @@ void done_good(char thing_done, int pgain)
             simple_god_message(" did not appreciate that!");
             naughty(NAUGHTY_ATTACK_HOLY, (you.conf ? 3 : pgain * 3));
             break;
+        }
+        break;
+
+    case GOOD_KILLED_WIZARD:
+        // hooking this up, but is it too good?
+        // enjoy it while you can -- bwr
+        if (you.religion == GOD_TROG)
+        {
+            simple_god_message( " appreciates your killing of a magic user." );
+
+            if (random2( 5 + pgain ) > 5)
+                gain_piety(1);
         }
         break;
 
@@ -1727,7 +1746,7 @@ void divine_retribution( int god )
                 divine_hurt = 10 + random2(10);
 
                 for (loopy = 0; loopy < 5; loopy++)
-                    divine_hurt += random2(you.experience_level);
+                    divine_hurt += random2( you.experience_level );
 
                 if (!player_under_penance() && you.piety > random2(400))
                 {
@@ -1737,9 +1756,9 @@ void divine_retribution( int god )
                 }
                 else
                 {
-                    simple_god_message(" smites you!", god);
-                    ouch(divine_hurt, 0, KILLED_BY_TSO_SMITING);
-                    dec_penance(GOD_SHINING_ONE, 1);
+                    simple_god_message( " smites you!", god );
+                    ouch( divine_hurt, 0, KILLED_BY_TSO_SMITING );
+                    dec_penance( GOD_SHINING_ONE, 1 );
                 }
             }
         }
@@ -1838,8 +1857,8 @@ void divine_retribution( int god )
             god_speaks(god, (coinflip()) ? "You hear Kikubaaqudgha cackling."
                                          : "Kikubaaqudgha's malice focuses upon you.");
 
-            miscast_effect(SPTYP_NECROMANCY, 5 + you.experience_level,
-                           random2avg(88, 3), 100);
+            miscast_effect( SPTYP_NECROMANCY, 5 + you.experience_level,
+                            random2avg(88, 3), 100, "the malice of Kikubaaqudgha" );
         }
         break;
 
@@ -1879,8 +1898,8 @@ void divine_retribution( int god )
             simple_god_message("'s anger turns toward you for a moment.",
                                god);
 
-            miscast_effect(SPTYP_NECROMANCY, 5 + you.experience_level,
-                           random2avg(88, 3), 100);
+            miscast_effect( SPTYP_NECROMANCY, 5 + you.experience_level,
+                            random2avg(88, 3), 100, "the anger of Yredelemnul" );
         }
         break;
 
@@ -1999,15 +2018,15 @@ void divine_retribution( int god )
                 break;
             };
             break;
-
         //jmf: returned Trog's old Fire damage
         // -- actually, this function partially exists to remove that,
         //    we'll leave this effect in, but we'll remove the wild
         //    fire magic. -- bwr
         case 5:
             dec_penance(GOD_TROG, 2);
-            simple_god_message(" hurls flames of wrath!", god);
-            you.duration[DUR_LIQUID_FLAMES] += random2avg(7, 3) + 1;
+            mpr( "You feel Trog's fiery rage upon you!", MSGCH_WARN );
+            miscast_effect( SPTYP_FIRE, 8 + you.experience_level,
+                            random2avg(98, 3), 100, "the fiery rage of Trog" );
             break;
         }
         break;
@@ -2048,8 +2067,9 @@ void divine_retribution( int god )
     case GOD_VEHUMET:
         // conjuration and summoning theme
         simple_god_message("'s vengence finds you.", god);
-        miscast_effect(coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING,
-                       8 + you.experience_level, random2avg(98, 3), 100);
+        miscast_effect( coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING,
+                        8 + you.experience_level, random2avg(98, 3), 100,
+                        "the wrath of Vehumet" );
         break;
 
     case GOD_NEMELEX_XOBEH:
@@ -2079,7 +2099,7 @@ void divine_retribution( int god )
 
         case 5:
         case 6:
-            miscast_effect( SK_DIVINATIONS, 9, 90, 100 );
+            miscast_effect(SK_DIVINATIONS, 9, 90, 100, "the will of Sif Muna");
             break;
 
         case 7:
@@ -2129,37 +2149,58 @@ void divine_retribution( int god )
 
 void excommunication(void)
 {
+    const int old_god = you.religion;
+
     you.duration[DUR_PRAYER] = 0;
+    you.religion = GOD_NO_GOD;
+    you.piety = 0;
+    redraw_skill( you.your_name, player_title() );
+
     mpr("You have lost your religion!");
     more();
 
-    switch (you.religion)
+    switch (old_god)
     {
     case GOD_XOM:
-        Xom_acts(false, (you.experience_level * 2), true);
+        Xom_acts( false, (you.experience_level * 2), true );
         inc_penance(50);
         break;
 
     case GOD_KIKUBAAQUDGHA:
+        simple_god_message( " does not appreciate desertion!", old_god );
+        miscast_effect( SPTYP_NECROMANCY, 5 + you.experience_level,
+                        random2avg(88, 3), 100, "the malice of Kikubaaqudgha" );
+        inc_penance(30);
+        break;
+
     case GOD_YREDELEMNUL:
-        simple_god_message(" does not appreciate desertion!");
-        miscast_effect(SPTYP_NECROMANCY, 5 + you.experience_level,
-                       random2avg(88, 3), 100);
+        simple_god_message( " does not appreciate desertion!", old_god );
+        miscast_effect( SPTYP_NECROMANCY, 5 + you.experience_level,
+                        random2avg(88, 3), 100, "the anger of Yredelemnul" );
         inc_penance(30);
         break;
 
     case GOD_VEHUMET:
+        simple_god_message( " does not appreciate desertion!", old_god );
+        miscast_effect( (coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING),
+                        8 + you.experience_level, random2avg(98, 3), 100,
+                        "the wrath of Vehumet" );
+        inc_penance(25);
+        break;
+
     case GOD_MAKHLEB:
-        simple_god_message(" does not appreciate desertion!");
-        miscast_effect((coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING),
-                       8 + you.experience_level, random2avg(98, 3), 100);
+        simple_god_message( " does not appreciate desertion!", old_god );
+        miscast_effect( (coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING),
+                        8 + you.experience_level, random2avg(98, 3), 100,
+                        "the fury of Makhleb" );
         inc_penance(25);
         break;
 
     case GOD_TROG:
+        simple_god_message( " does not appreciate desertion!", old_god );
+
         // Penence has to come before retribution to prevent "mollify"
         inc_penance(50);
-        // This is a better thing for Trog to do than wild fire magic
         divine_retribution(GOD_TROG);
         break;
 
@@ -2173,9 +2214,6 @@ void excommunication(void)
         inc_penance(15);
         break;
     }
-
-    you.religion = GOD_NO_GOD;
-    you.piety = 0;
 }                               // end excommunication()
 
 
@@ -2294,6 +2332,9 @@ void god_pitch(unsigned char which_god)
 
     more();
 
+    // Note: using worship we could make some gods not allow followers to
+    // return, or not allow worshippers from other religions.  -- bwr
+
     if ((you.is_undead || you.species == SP_DEMONSPAWN)
         && (which_god == GOD_ZIN || which_god == GOD_SHINING_ONE
             || which_god == GOD_ELYVILON))
@@ -2303,9 +2344,12 @@ void god_pitch(unsigned char which_god)
         return;
     }
 
-    describe_god(which_god);
+    describe_god( which_god, false );
 
-    if (!yesno("Do you wish to join this religion?"))
+    snprintf( info, INFO_SIZE, "Do you wish to %sjoin this religion?",
+              (you.worshipped[which_god]) ? "re" : "" );
+
+    if (!yesno( info ))
     {
         redraw_screen();
         return;
@@ -2317,18 +2361,23 @@ void god_pitch(unsigned char which_god)
         return;
     }
 
+    redraw_screen();
     if (you.religion != GOD_NO_GOD)
         excommunication();
 
     you.religion = which_god;   //jmf: moved up so god_speaks gives right colour
     you.piety = 15;             // to prevent near instant excommunication
     you.gift_timeout = 0;
+    set_god_ability_slots();    // remove old god's slots, reserve new god's
 
-    simple_god_message(" welcomes you!");
+    snprintf( info, INFO_SIZE, " welcomes you%s!",
+              (you.worshipped[which_god]) ? " back" : "" );
 
+    simple_god_message( info );
     more();
 
-    redraw_screen();
+    if (you.worshipped[you.religion] < 100)
+        you.worshipped[you.religion]++;
 
     // Currently penance is just zeroed, this could be much more interesting.
     you.penance[you.religion] = 0;
@@ -2336,12 +2385,15 @@ void god_pitch(unsigned char which_god)
     if (you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_YREDELEMNUL
         || you.religion == GOD_VEHUMET || you.religion == GOD_MAKHLEB)
     {
+        // Note:  Using worshipped[] we could make this sort of grudge
+        // permanent instead of based off of penance. -- bwr
         if (you.penance[GOD_SHINING_ONE] > 0)
         {
             inc_penance(GOD_SHINING_ONE, 30);
             god_speaks(GOD_SHINING_ONE, "\"You will pay for your evil ways, mortal!\"");
         }
     }
+    redraw_skill( you.your_name, player_title() );
 }                               // end god_pitch()
 
 void offer_corpse(int corpse)
@@ -2473,13 +2525,14 @@ void handle_god_time(void)
 // yet another wrapper for mpr() {dlb}:
 void simple_god_message(const char *event, int which_deity)
 {
+    char buff[ INFO_SIZE ];
+
     if (which_deity == GOD_NO_GOD)
         which_deity = you.religion;
 
-    strcpy(info, god_name(which_deity));
-    strcat(info, event);
+    snprintf( buff, sizeof(buff), "%s%s", god_name( which_deity ), event );
 
-    god_speaks(which_deity, info);
+    god_speaks( which_deity, buff );
 }
 
 char god_colour( char god ) //mv - added

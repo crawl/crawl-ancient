@@ -15,6 +15,8 @@
 #include "FixVec.h"
 #include "externs.h"
 
+#define MAKE_GOOD_ITEM          351
+
 void item_colour( item_def &item );
 
 // last updated 12may2000 {dlb}
@@ -29,7 +31,7 @@ void builder(int level_number, char level_type);
  * called from: abyss - debug - dungeon - effects - religion - spells4
  * *********************************************************************** */
 int items( int allow_uniques, int force_class, int force_type,
-           bool dont_place, int item_power, int force_spec );
+           bool dont_place, int item_level, int item_race );
 
 // last updated 13mar2001 {gdl}
 /* ***********************************************************************

@@ -26,6 +26,7 @@
 #include "view.h"
 
 game_options    Options;
+
 extern void (*viewwindow) (char, bool);
 extern unsigned char (*mapch) (unsigned char);
 extern unsigned char (*mapch2) (unsigned char);
@@ -41,7 +42,8 @@ static std::string & tolower_string( std::string &str );
 const static char *obj_syms = ")([/%.?=!.+\\0}X$";
 const static int   obj_syms_len = 16;
 
-static std::string & trim_string( std::string &str )
+// also used with macros
+std::string & trim_string( std::string &str )
 {
     // OK,  this is really annoying.  Borland C++ seems to define
     // basic_string::erase to take iterators,  and basic_string::remove
@@ -193,45 +195,47 @@ static void str_to_fire_order( const std::string &str,
 
 static char str_to_race( const std::string &str )
 {
+    int index = -1;
+
     if (str.length() == 1)      // old system of using menu letter
         return (str[0]);
-    else // if (str.length() == 2)
-    {
-        int index = get_species_index( str.c_str() );
+    else if (str.length() == 2) // scan abbreviations
+        index = get_species_index_by_abbrev( str.c_str() );
 
-        // skip over the extra draconians here
-        if (index > SP_RED_DRACONIAN)
-            index -= (SP_CENTAUR - SP_RED_DRACONIAN - 1);
+    // if we don't have a match, scan the full names
+    if (index == -1)
+        index = get_species_index_by_name( str.c_str() );
 
-        // SP_HUMAN is at 1, therefore we must subtract one.
-        return ((index != -1) ? index_to_letter( index - 1 ) : '\0');
-    }
+    // skip over the extra draconians here
+    if (index > SP_RED_DRACONIAN)
+        index -= (SP_CENTAUR - SP_RED_DRACONIAN - 1);
 
-    return ('\0');
+    // SP_HUMAN is at 1, therefore we must subtract one.
+    return ((index != -1) ? index_to_letter( index - 1 ) : '\0');
 }
 
 static char str_to_class( const std::string &str )
 {
+    int index = -1;
+
     if (str.length() == 1)      // old system of using menu letter
         return (str[0]);
-    else // if (str.length() == 2)
-    {
-        int index = get_class_index( str.c_str() );
+    else if (str.length() == 2) // scan abbreviations
+        index = get_class_index_by_abbrev( str.c_str() );
 
-        // ignore the fake "Quitter" hack
-        if (index == JOB_QUITTER)
-            index = -1;
+    // if we don't have a match, scan the full names
+    if (index == -1)
+        index = get_class_index_by_name( str.c_str() );
 
-        return ((index != -1) ? index_to_letter( index ) : '\0');
-    }
-
-    return ('\0');
+    return ((index != -1) ? index_to_letter( index ) : '\0');
 }
 
 static std::string & tolower_string( std::string &str )
 {
-    if (str.length()) {
-        for (std::string::iterator cp = str.begin(); cp != str.end(); cp++) {
+    if (str.length())
+    {
+        for (std::string::iterator cp = str.begin(); cp != str.end(); cp++)
+        {
             *cp = tolower( *cp );
         }
     }
@@ -277,8 +281,14 @@ void read_init_file(void)
     Options.hp_attention           = 25;
     Options.race                   = '\0';
     Options.cls                    = '\0';
-    Options.sc_entries             = 0;
+    Options.terse_hand             = true;
     Options.auto_list              = false;
+
+    Options.flush_input[ FLUSH_ON_FAILURE ]     = true;
+    Options.flush_input[ FLUSH_BEFORE_COMMAND ] = false;
+    Options.flush_input[ FLUSH_ON_MESSAGE ]     = false;
+
+    Options.lowercase_invocations  = false;
 
     // Note: These fire options currently match the old behaviour. -- bwr
     Options.fire_items_start       = 0;           // start at slot 'a'
@@ -290,6 +300,11 @@ void read_init_file(void)
     for (i = 2; i < NUM_FIRE_TYPES; i++)
         Options.fire_order[i] = FIRE_NONE;
 
+    // These are only used internally, and only from the commandline:
+    // XXX: These need a better place.
+    Options.sc_entries             = 0;
+    Options.sc_format              = SCORE_REGULAR;
+
 #ifdef USE_COLOUR_OPTS
     Options.friend_brand  = CHATTR_NORMAL;
     Options.no_dark_brand = 0;
@@ -300,8 +315,15 @@ void read_init_file(void)
 #endif
 
     // map each colour to itself as default
-    for (int i = 0; i < 16; i++)
+#ifdef USE_8_COLOUR_TERM_MAP
+    for (i = 0; i < 16; i++)
+        Options.colour[i] = i % 8;
+
+    Options.colour[ DARKGREY ] = COL_TO_REPLACE_DARKGREY;
+#else
+    for (i = 0; i < 16; i++)
         Options.colour[i] = i;
+#endif
 
     // map each channel to plain (well, default for now since I'm testing)
     for (int i = 0; i < NUM_MESSAGE_CHANNELS; i++)
@@ -393,9 +415,10 @@ void read_init_file(void)
         tolower_string( trim_string( key ) );
         tolower_string( trim_string( subkey ) );
 
-        // some fields want capitals
+        // some fields want capitals... none care about external spaces
         trim_string( field );
-        if (key != "name" && key != "crawl_dir" && key != "race" && key != "class")
+        if (key != "name" && key != "crawl_dir"
+            && key != "race" && key != "class")
         {
             tolower_string( field );
         }
@@ -675,6 +698,33 @@ void read_init_file(void)
         {
             Options.auto_list = read_bool( field, Options.auto_list );
         }
+        else if (key == "terse_hand")
+        {
+            Options.terse_hand = read_bool( field, Options.terse_hand );
+        }
+        else if (key == "flush")
+        {
+            if (subkey == "failure")
+            {
+                Options.flush_input[FLUSH_ON_FAILURE]
+                    = read_bool(field, Options.flush_input[FLUSH_ON_FAILURE]);
+            }
+            else if (subkey == "command")
+            {
+                Options.flush_input[FLUSH_BEFORE_COMMAND]
+                    = read_bool(field, Options.flush_input[FLUSH_BEFORE_COMMAND]);
+            }
+            else if (subkey == "message")
+            {
+                Options.flush_input[FLUSH_ON_MESSAGE]
+                    = read_bool(field, Options.flush_input[FLUSH_ON_MESSAGE]);
+            }
+        }
+        else if (key == "lowercase_invocations")
+        {
+            Options.lowercase_invocations
+                    = read_bool(field, Options.lowercase_invocations);
+        }
         else if (key == "wiz_mode")
         {
             // wiz_mode is recognized as a legal key in all compiles -- bwr
@@ -709,6 +759,9 @@ void get_system_environment(void)
     // The full path to the init file -- this over-rides CRAWL_DIR
     SysEnv.crawl_rc = getenv("CRAWL_RC");
 
+    // rename giant and giant spiked clubs
+    SysEnv.board_with_nail = (getenv("BOARD_WITH_NAIL") != NULL);
+
 #ifdef MULTIUSER
     // The user's home directory (used to look for ~/.crawlrc file)
     SysEnv.home = getenv("HOME");
@@ -720,20 +773,21 @@ void get_system_environment(void)
 // returns true if no unknown or malformed arguments were found.
 
 static const char *cmd_ops[] = { "scores", "name", "race", "class",
-                                 "pizza", "plain", "dir", "rc",
-                                 "wiz" };
+                                 "pizza", "plain", "dir", "rc", "tscores",
+                                 "vscores" };
 
-const int num_cmd_ops = 8;
+const int num_cmd_ops = 10;
 bool arg_seen[num_cmd_ops];
 
-bool parse_args(int argc, char **argv, bool rc_only)
+bool parse_args( int argc, char **argv, bool rc_only )
 {
     if (argc < 2)           // no args!
-        return true;
+        return (true);
 
     char *arg, *next_arg;
     int current = 1;
     bool nextUsed = false;
+    int ecount;
 
     // initialize
     for(int i=0; i<num_cmd_ops; i++)
@@ -755,7 +809,7 @@ bool parse_args(int argc, char **argv, bool rc_only)
         // arg MUST begin with '-' or '/'
         char c = arg[0];
         if (c != '-' && c != '/')
-            return false;
+            return (false);
 
         // look for match (now we also except --scores)
         if (arg[1] == '-')
@@ -771,11 +825,11 @@ bool parse_args(int argc, char **argv, bool rc_only)
         }
 
         if (o == num_cmd_ops)
-            return false;
+            return (false);
 
         // disallow options specified more than once.
         if (arg_seen[o] == true)
-            return false;
+            return (false);
 
         // set arg to 'seen'
         arg_seen[o] = true;
@@ -792,8 +846,11 @@ bool parse_args(int argc, char **argv, bool rc_only)
         switch(o)
         {
         case 0:             // scores
-            int ecount;
-            if (next_is_param)      // optional number
+        case 8:             // tscores
+        case 9:             // vscores
+            if (!next_is_param)
+                ecount = SCORE_FILE_ENTRIES;            // default
+            else // optional number given
             {
                 ecount = atoi(next_arg);
                 if (ecount < 1)
@@ -804,18 +861,22 @@ bool parse_args(int argc, char **argv, bool rc_only)
 
                 nextUsed = true;
             }
-            else
-            {
-                ecount = 20;            // default
-            }
 
             if (!rc_only)
+            {
                 Options.sc_entries = ecount;
+
+                if (o == 8)
+                    Options.sc_format = SCORE_TERSE;
+                else if (o == 9)
+                    Options.sc_format = SCORE_VERBOSE;
+
+            }
             break;
 
         case 1:             // name
             if (!next_is_param)
-                return false;
+                return (false);
 
             if (!rc_only)
             {
@@ -829,10 +890,10 @@ bool parse_args(int argc, char **argv, bool rc_only)
         case 2:             // race
         case 3:             // class
             if (!next_is_param)
-                return false;
+                return (false);
 
             // if (strlen(next_arg) != 1)
-            //    return false;
+            //    return (false);
 
             if (!rc_only)
             {
@@ -847,7 +908,7 @@ bool parse_args(int argc, char **argv, bool rc_only)
 
         case 4:             // pizza
             if (!next_is_param)
-                return false;
+                return (false);
 
             if (!rc_only)
                 SysEnv.crawl_pizza = next_arg;
@@ -857,7 +918,7 @@ bool parse_args(int argc, char **argv, bool rc_only)
 
         case 5:             // plain
             if (next_is_param)
-                return false;
+                return (false);
 
             if (!rc_only)
             {
@@ -873,7 +934,7 @@ bool parse_args(int argc, char **argv, bool rc_only)
         case 6:             // dir
             // ALWAYS PARSE
             if (!next_is_param)
-                return false;
+                return (false);
 
             SysEnv.crawl_dir = next_arg;
             nextUsed = true;
@@ -882,12 +943,11 @@ bool parse_args(int argc, char **argv, bool rc_only)
         case 7:
             // ALWAYS PARSE
             if (!next_is_param)
-                return false;
+                return (false);
 
             SysEnv.crawl_rc = next_arg;
             nextUsed = true;
             break;
-
         } // end switch -- which option?
 
         // update position

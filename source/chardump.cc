@@ -30,7 +30,7 @@
 #include <sys/types.h>
 #endif
 
-#ifdef MAC
+#ifdef OS9
 #include <stat.h>
 #else
 #include <sys/stat.h>
@@ -46,6 +46,7 @@
 #include "describe.h"
 #include "itemname.h"
 #include "items.h"
+#include "macro.h"
 #include "mutation.h"
 #include "new.h"
 #include "player.h"
@@ -58,9 +59,6 @@
 #include "stuff.h"
 #include "version.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
  // ========================================================================
  //      Internal Functions
@@ -174,7 +172,7 @@ static void dump_stats( std::string & text )
 
     text += player_title();
     text += " (";
-    text += species_name(you.species);
+    text += species_name(you.species, you.experience_level);
     text += ")";
     text += EOL;
 
@@ -184,7 +182,23 @@ static void dump_stats( std::string & text )
     text += " ";
     text += you.class_name;
     text += ")";
-    text += EOL;
+    text += EOL EOL;
+
+    if (you.real_time != -1)
+    {
+        const time_t curr = you.real_time + (time(NULL) - you.start_time);
+        char buff[200];
+
+        make_time_string( curr, buff, sizeof(buff) );
+
+        text += "Play time: ";
+        text += buff;
+
+        text += "       Number of turns: ";
+        itoa( you.num_turns, st_prn, 10 );
+        text += st_prn;
+        text += EOL EOL;
+    }
 
     text += "Experience : ";
     itoa(you.experience_level, st_prn, 10);
@@ -277,7 +291,7 @@ static void dump_stats( std::string & text )
     text += EOL;
 
     text += "GP : ";
-    itoa(you.gold, st_prn, 10);
+    itoa( you.gold, st_prn, 10 );
     text += st_prn;
     text += EOL;
     text += EOL;
@@ -290,7 +304,7 @@ static void dump_stats( std::string & text )
  //---------------------------------------------------------------
 static void dump_location( std::string & text )
 {
-    if (you.your_level != -1)
+    if (you.level_type != LEVEL_DUNGEON || you.your_level != -1)
         text += "You are ";
 
     if (you.level_type == LEVEL_PANDEMONIUM)
@@ -342,9 +356,7 @@ static void dump_location( std::string & text )
     else
     {
         if (you.your_level == -1)
-        {
-            text += "You escaped.";
-        }
+            text += "You escaped";
         else
         {
             text += "on level ";
@@ -355,6 +367,7 @@ static void dump_location( std::string & text )
         }
     }
 
+    text += ".";
     text += EOL;
 }                               // end dump_location()
 
@@ -492,7 +505,7 @@ static void dump_inventory( std::string & text, bool show_prices )
                                   tmp_quant, 10 );
 
                             text += tmp_quant;
-                            text += "gold)";
+                            text += " gold)";
                         }
 
                         if (is_dumpable_artifact( you.inv[j],
@@ -604,7 +617,7 @@ static void dump_spells( std::string & text )
     else
     {
         text += "You have ";
-        itoa(spell_levels, tmp_quant, 10);
+        itoa( spell_levels, tmp_quant, 10 );
         text += tmp_quant;
         text += " spell levels left.";
     }
@@ -624,21 +637,22 @@ static void dump_spells( std::string & text )
 
         text += "  Your Spells                       Type                  Success   Level" EOL;
 
-        for (unsigned char j = 0; j < 25; j++)
+        for (int j = 0; j < 52; j++)
         {
-            if (you.spells[j] != SPELL_NO_SPELL)
+            const char letter = index_to_letter( j );
+            const int  spell  = get_spell_by_letter( letter );
+
+            if (spell != SPELL_NO_SPELL)
             {
                 std::string spell_line = " ";
 
                 char strng[2];
-                char ft;
-                ft = index_to_letter(j);
-                strng[0] = ft;
+                strng[0] = letter;
                 strng[1] = '\0';
 
                 spell_line += strng;
                 spell_line += " - ";
-                spell_line += spell_title(you.spells[j]);
+                spell_line += spell_title( spell );
 
                 for (int i = spell_line.length(); i < 34; i++)
                 {
@@ -649,7 +663,7 @@ static void dump_spells( std::string & text )
 
                 for (int i = 0; spell_type_index[i] != 0; i++)
                 {
-                    if (spell_typematch(you.spells[j], spell_type_index[i]))
+                    if (spell_typematch( spell, spell_type_index[i] ))
                     {
                         spell_line +=
                                 spell_type_name(spell_type_index[i], already);
@@ -662,7 +676,7 @@ static void dump_spells( std::string & text )
                     spell_line += ' ';
                 }
 
-                int fail_rate = spell_fail(you.spells[j]);
+                int fail_rate = spell_fail( spell );
 
                 spell_line += (fail_rate == 100) ? "Useless"   :
                               (fail_rate >   90) ? "Terrible"  :
@@ -680,7 +694,7 @@ static void dump_spells( std::string & text )
                 for (int i = spell_line.length(); i < 70; i++)
                     spell_line += ' ';
 
-                itoa((int) spell_difficulty(you.spells[j]), tmp_quant, 10);
+                itoa((int) spell_difficulty( spell ), tmp_quant, 10 );
                 spell_line += tmp_quant;
                 spell_line += EOL;
 

@@ -10,6 +10,7 @@
 
 #include "AppHdr.h"
 #include <stdio.h>
+#include <ctype.h>
 
 void get_input_line( char *const buff, int len )
 {
@@ -17,13 +18,27 @@ void get_input_line( char *const buff, int len )
 
 #if defined(LINUX)
     get_input_line_from_curses( buff, len ); // inplemented in liblinux.cc
-#elif defined(MAC)
+#elif defined(MAC) || defined(WIN32CONSOLE)
     getstr( buff, len );        // implemented in libmac.cc
 #else
     fgets( buff, len, stdin );  // much safer than gets()
 #endif
 
     buff[ len - 1 ] = '\0';  // just in case
+
+    // Removing white space from the end in order to get rid of any
+    // newlines or carriage returns that any of the above might have
+    // left there (ie fgets especially).  -- bwr
+    const int end = strlen( buff );
+    int i;
+
+    for (i = end - 1; i >= 0; i++)
+    {
+        if (isspace( buff[i] ))
+            buff[i] = '\0';
+        else
+            break;
+    }
 }
 
 // The old school way of doing short delays via low level I/O sync.

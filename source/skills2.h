@@ -13,6 +13,8 @@
 #ifndef SKILLS2_H
 #define SKILLS2_H
 
+#include <stddef.h>  // For NULL
+
 
 // last_updated 24may2000 {dlb}
 /* ***********************************************************************
@@ -25,7 +27,9 @@ const char *skill_name(unsigned char which_skill);
 /* ***********************************************************************
  * called from: describe
  * *********************************************************************** */
-const char *skill_title(unsigned char best_skill, unsigned char skill_lev);
+const char * skill_title( unsigned char best_skill, unsigned char skill_lev,
+                 // these used for ghosts and hiscores:
+                 int species = -1, int str = -1, int dex = -1, int god = -1 );
 
 // last_updated Sept 20 -- bwr
 /* ***********************************************************************
@@ -40,6 +44,8 @@ const char *player_title( void );
  *              skills2 - stuff
  * *********************************************************************** */
 unsigned char best_skill(unsigned char min_skill, unsigned char max_skill, unsigned char excl_skill);
+
+void init_skill_order( void );
 
 
 // last_updated 24may2000 {dlb}

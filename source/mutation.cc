@@ -33,6 +33,7 @@
 
 #include "defines.h"
 #include "effects.h"
+#include "macro.h"
 #include "ouch.h"
 #include "player.h"
 #include "skills2.h"
@@ -40,9 +41,6 @@
 #include "transfor.h"
 #include "view.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 int how_mutated(void);
 char body_covered(void);
@@ -197,7 +195,7 @@ const char *mutation_descrip[][3] = {
      "You are quite resistant to negative energy.",
      "You are immune to negative energy."},
 
-    /* Use find_spell in files.cc to avoid duplication */
+    /* Use player_has_spell() to avoid duplication */
     {"You can summon minor demons to your aid.", "", ""},
     {"You can summon demons to your aid.", "", ""},
     {"You can hurl blasts of hellfire.", "", ""},
@@ -895,29 +893,40 @@ void display_mutations(void)
         cprintf("You revert to your normal form in water." EOL);
         j++;
         break;
+
     case SP_NAGA:
-        cprintf("You can spit poison." EOL);
-        cprintf("You can see invisible." EOL);
+        // breathe poison replaces spit poison:
+        if (!you.mutation[MUT_BREATHE_POISON])
+            cprintf("You can spit poison." EOL);
+        else
+            cprintf("You can exhale a cloud of poison." EOL);
+
         cprintf("Your system is immune to poisons." EOL);
+        cprintf("You can see invisible." EOL);
         j += 3;
         break;
+
     case SP_GNOME:
         cprintf("You can sense your surroundings." EOL);
         j++;
         break;
+
     case SP_TROLL:
         cprintf("Your body regenerates quickly." EOL);
         j++;
         break;
+
     case SP_GHOUL:
         cprintf("Your body is rotting away." EOL);
         cprintf("You are carnivorous." EOL);
         j += 2;
         break;
+
     case SP_KOBOLD:
         cprintf("You are carnivorous." EOL);
         j++;
         break;
+
     case SP_GREY_ELF:
         if (you.experience_level > 4)
         {
@@ -925,6 +934,7 @@ void display_mutations(void)
             j++;
         }
         break;
+
     case SP_KENKU:
         if (you.experience_level > 4)
         {
@@ -934,6 +944,7 @@ void display_mutations(void)
             j++;
         }
         break;
+
     case SP_MUMMY:
         cprintf("You are");
         cprintf((you.experience_level > 25) ? " very strongly" :
@@ -947,6 +958,7 @@ void display_mutations(void)
             j++;
         }
         break;
+
     case SP_GREEN_DRACONIAN:
         if (you.experience_level > 6)
         {
@@ -955,6 +967,7 @@ void display_mutations(void)
             j += 2;
         }
         break;
+
     case SP_RED_DRACONIAN:
         if (you.experience_level > 6)
         {
@@ -967,6 +980,7 @@ void display_mutations(void)
             j++;
         }
         break;
+
     case SP_WHITE_DRACONIAN:
         if (you.experience_level > 6)
         {
@@ -979,6 +993,7 @@ void display_mutations(void)
             j++;
         }
         break;
+
     case SP_BLACK_DRACONIAN:
         if (you.experience_level > 6)
         {
@@ -991,6 +1006,7 @@ void display_mutations(void)
             j++;
         }
         break;
+
     case SP_GOLDEN_DRACONIAN:
         if (you.experience_level > 6)
         {
@@ -998,6 +1014,7 @@ void display_mutations(void)
             j++;
         }
         break;
+
     case SP_PURPLE_DRACONIAN:
         if (you.experience_level > 6)
         {
@@ -1005,6 +1022,7 @@ void display_mutations(void)
             j++;
         }
         break;
+
     case SP_MOTTLED_DRACONIAN:
         if (you.experience_level > 6)
         {
@@ -1012,6 +1030,7 @@ void display_mutations(void)
             j++;
         }
         break;
+
     case SP_PALE_DRACONIAN:
         if (you.experience_level > 6)
         {
@@ -1027,6 +1046,10 @@ void display_mutations(void)
     {
         if (you.mutation[i] != 0)
         {
+            // this is already handled above:
+            if (you.species == SP_NAGA && i == MUT_BREATHE_POISON)
+                continue;
+
             j++;
             textcolor(LIGHTGREY);
 
@@ -1067,7 +1090,7 @@ void display_mutations(void)
     }
 
     if (j == 0)
-        cprintf("You aren't a mutant." EOL);
+        cprintf( "You are not a mutant." EOL );
 
     if (getch() == 0)
         getch();
@@ -1085,6 +1108,7 @@ bool mutate(int which_mutation, bool failMsg)
 {
     char mutat = which_mutation;
     bool force_mutation = false;        // is mutation forced?
+    int  i;
 
     if (which_mutation >= 1000) // must give mutation without failure
     {
@@ -1195,9 +1219,17 @@ bool mutate(int which_mutation, bool failMsg)
         if (mutat == MUT_SPIT_POISON)
         {
             if (coinflip())
-                mutat = MUT_BREATHE_POISON;
-            else
                 return false;
+            {
+                mutat = MUT_BREATHE_POISON;
+
+                // breathe poison replaces spit poison (so it takes the slot)
+                for (i = 0; i < 52; i++)
+                {
+                    if (you.ability_letter_table[i] == ABIL_SPIT_POISON)
+                        you.ability_letter_table[i] = ABIL_BREATHE_POISON;
+                }
+            }
         }
     }
 
@@ -1569,6 +1601,7 @@ int how_mutated(void)
 bool delete_mutation(char which_mutation)
 {
     char mutat = which_mutation;
+    int i;
 
     if (you.mutation[MUT_MUTATION_RESISTANCE] > 1
         && (you.mutation[MUT_MUTATION_RESISTANCE] == 3 || coinflip()))
@@ -1585,11 +1618,9 @@ bool delete_mutation(char which_mutation)
             if (one_chance_in(1000))
                 return false;
         }
-        while ((you.mutation[mutat] == MUT_TOUGH_SKIN
-                && (mutat != MUT_STRONG && mutat != MUT_CLEVER
-                    && mutat != MUT_AGILE) && (mutat != MUT_WEAK
-                                               && mutat != MUT_DOPEY
-                                               && mutat != MUT_CLUMSY))
+        while ((you.mutation[mutat] == 0
+                   && (mutat != MUT_STRONG && mutat != MUT_CLEVER && mutat != MUT_AGILE)
+                   && (mutat != MUT_WEAK && mutat != MUT_DOPEY && mutat != MUT_CLUMSY))
                || random2(10) >= mutation_rarity[mutat]
                || you.demon_pow[mutat] >= you.mutation[mutat]);
     }
@@ -1605,73 +1636,29 @@ bool delete_mutation(char which_mutation)
     switch (mutat)
     {
     case MUT_STRONG:
-/*
-        if ( you.mutation [MUT_WEAK] > 0 )
-          {
-            mutate(MUT_WEAK);
-            break;
-          }
-*/
         modify_stat(STAT_STRENGTH, -1, true);
         mpr(lose_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
     case MUT_CLEVER:
-/*
-        if ( you.mutation [MUT_DOPEY] > 0 )
-          {
-            mutate(MUT_DOPEY);
-            break;
-          }
-*/
         modify_stat(STAT_INTELLIGENCE, -1, true);
         mpr(lose_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
     case MUT_AGILE:
-/*
-        if ( you.mutation [MUT_CLUMSY] > 0 )
-          {
-            mutate(MUT_CLUMSY);
-            break;
-          }
-*/
         modify_stat(STAT_DEXTERITY, -1, true);
         mpr(lose_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
     case MUT_WEAK:
-/*
-        if ( you.mutation [MUT_STRONG] > 0 )
-          {
-            mutate(MUT_STRONG);
-            break;
-          }
-*/
-        // replaces earlier, redundant code - 12mar2000 {dlb}
         modify_stat(STAT_STRENGTH, 1, false);
         break;
 
     case MUT_DOPEY:
-/*
-        if ( you.mutation [MUT_CLEVER] > 0 )
-          {
-            mutate(MUT_CLEVER);
-            break;
-          }
-*/
-        // replaces earlier, redundant code - 12mar2000 {dlb}
         modify_stat(STAT_INTELLIGENCE, 1, false);
         break;
 
     case MUT_CLUMSY:
-/*
-        if ( you.mutation [MUT_AGILE] > 0 )
-          {
-            mutate(MUT_AGILE);
-            break;
-          }
-*/
         // replaces earlier, redundant code - 12mar2000 {dlb}
         modify_stat(STAT_DEXTERITY, 1, false);
         break;
@@ -1681,25 +1668,10 @@ bool delete_mutation(char which_mutation)
         break;
 
     case MUT_FAST_METABOLISM:
-/*
-        if ( you.mutation [MUT_SLOW_METABOLISM] > 0 )
-          {
-            mutate(MUT_SLOW_METABOLISM);
-            break;
-          }
-*/
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1], MSGCH_MUTATION);
         break;
 
     case MUT_SLOW_METABOLISM:
-/*
-        if ( you.mutation [MUT_FAST_METABOLISM] > 0 )
-          {
-            mutate(MUT_FAST_METABOLISM);
-            break;
-          }
-*/
-        //if ( you.mutation[mutat] == 1 || you.mutation[mutat] == 3 )
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1], MSGCH_MUTATION);
         break;
 
@@ -1761,10 +1733,23 @@ bool delete_mutation(char which_mutation)
     case MUT_YELLOW_SCALES:
         if (you.mutation[mutat] != 1)
             modify_stat(STAT_DEXTERITY, 1, true);
+
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1], MSGCH_MUTATION);
         break;
-    }
 
+    case MUT_BREATHE_POISON:
+        // can't be removed yet, but still covered:
+        if (you.species == SP_NAGA)
+        {
+            // natural ability to spit poison retakes the slot
+            for (i = 0; i < 52; i++)
+            {
+                if (you.ability_letter_table[i] == ABIL_BREATHE_POISON)
+                    you.ability_letter_table[i] = ABIL_SPIT_POISON;
+            }
+        }
+        break;
+    }
 
     // find where these things are actually altered
     /// -- do not globally force redraw {dlb}
@@ -1857,19 +1842,147 @@ void demonspawn(void)
 
     mpr("Your demonic ancestry asserts itself...", MSGCH_INTRINSIC_GAIN);
 
-    if (you.experience_level < 10)
+    // Merged the demonspawn lists into a single loop.  Now a high level
+    // character can potentially get mutations from the low level list if
+    // its having trouble with the high level list.
+    do
     {
-        do
+        if (you.experience_level >= 10)
         {
-            if (!you.skills[SK_CONJURATIONS])
-            {                   /* conjurers don't get throw fr/fl */
-                whichm = coinflip()? MUT_THROW_FLAMES : MUT_THROW_FROST;
+            if (you.skills[SK_CONJURATIONS] < 5)
+            {                       // good conjurers don't get bolt of draining
+                whichm = MUT_SMITE;
+                howm = 1;
+            }
+
+            if (you.skills[SK_CONJURATIONS] < 10 && one_chance_in(4))
+            {                       // good conjurers don't get hellfire
+                whichm = MUT_HURL_HELLFIRE;
+                howm = 1;
+            }
+
+            if (you.skills[SK_SUMMONINGS] < 5 && one_chance_in(3))
+            {                       // good summoners don't get summon demon
+                whichm = MUT_SUMMON_DEMONS;
+                howm = 1;
+            }
+
+            if (one_chance_in(8))
+            {
+                whichm = MUT_MAGIC_RESISTANCE;
+                howm = (coinflip() ? 2 : 3);
+            }
+
+            if (one_chance_in(12))
+            {
+                whichm = MUT_FAST;
+                howm = 1;
+            }
+
+            if (one_chance_in(7))
+            {
+                whichm = MUT_TELEPORT_AT_WILL;
+                howm = 2;
+            }
+
+            if (one_chance_in(10))
+            {
+                whichm = MUT_REGENERATION;
+                howm = (coinflip() ? 2 : 3);
+            }
+
+            if (one_chance_in(12))
+            {
+                whichm = MUT_SHOCK_RESISTANCE;
+                howm = 1;
+            }
+
+            if (!you.mutation[MUT_CALL_TORMENT] && one_chance_in(15))
+            {
+                whichm = MUT_TORMENT_RESISTANCE;
+                howm = 1;
+            }
+
+            if (one_chance_in(12))
+            {
+                whichm = MUT_NEGATIVE_ENERGY_RESISTANCE;
+                howm = 1 + random2(3);
+            }
+
+            if (!you.mutation[MUT_TORMENT_RESISTANCE] && one_chance_in(20))
+            {
+                whichm = MUT_CALL_TORMENT;
+                howm = 1;
+            }
+
+            if (you.skills[SK_SUMMONINGS] < 5 && you.skills[SK_NECROMANCY] < 5
+                && one_chance_in(12))
+            {
+                whichm = MUT_CONTROL_DEMONS;
+                howm = 1;
+            }
+
+            if (you.skills[SK_TRANSLOCATIONS] < 5 && one_chance_in(15))
+            {
+                whichm = MUT_PANDEMONIUM;
+                howm = 1;
+            }
+
+            if (you.religion != GOD_VEHUMET && one_chance_in(11))
+            {
+                whichm = MUT_DEATH_STRENGTH;
+                howm = 1;
+            }
+
+            if (you.religion != GOD_VEHUMET && one_chance_in(11))
+            {
+                whichm = MUT_CHANNEL_HELL;
+                howm = 1;
+            }
+
+            if (you.skills[SK_SUMMONINGS] < 3 && you.skills[SK_NECROMANCY] < 3
+                && one_chance_in(10))
+            {
+                whichm = MUT_RAISE_DEAD;
+                howm = 1;
+            }
+
+            if (you.skills[SK_UNARMED_COMBAT] > 5 && one_chance_in(14))
+            {
+                whichm = MUT_DRAIN_LIFE;
+                howm = 1;
+            }
+        }
+
+        // check here so we can see if we need to extent our options:
+        if (whichm != -1 && you.mutation[whichm] != 0)
+            whichm = -1;
+
+        if (you.experience_level < 10 || (counter > 0 && whichm == -1))
+        {
+            if ((!you.mutation[MUT_THROW_FROST]         // only one of these
+                    && !you.mutation[MUT_THROW_FLAMES]
+                    && !you.mutation[MUT_BREATHE_FLAMES])
+                && (!you.skills[SK_CONJURATIONS]        // conjurers seldomly
+                    || one_chance_in(5))
+                && (!you.skills[SK_ICE_MAGIC]           // already ice & fire?
+                    || !you.skills[SK_FIRE_MAGIC]))
+            {
+                // try to give the flavour the character doesn't have:
+                if (!you.skills[SK_FIRE_MAGIC])
+                    whichm = MUT_THROW_FLAMES;
+                else if (!you.skills[SK_ICE_MAGIC])
+                    whichm = MUT_THROW_FROST;
+                else
+                    whichm = (coinflip() ? MUT_THROW_FLAMES : MUT_THROW_FROST);
+
                 howm = 1;
             }
 
             if (!you.skills[SK_SUMMONINGS] && one_chance_in(3))
-            {                   /* summoners don't get summon imp */
-                whichm = MUT_SUMMON_MINOR_DEMONS;
+            {                           /* summoners don't get summon imp */
+                whichm = (you.experience_level < 10) ? MUT_SUMMON_MINOR_DEMONS
+                                                     : MUT_SUMMON_DEMONS;
                 howm = 1;
             }
 
@@ -1897,10 +2010,10 @@ void demonspawn(void)
                 howm = 1;
             }
 
-            if (one_chance_in(7))
+            if (!you.skills[SK_POISON_MAGIC] && one_chance_in(7))
             {
                 whichm = MUT_SPIT_POISON;
-                howm = 1;
+                howm = (you.experience_level < 10) ? 1 : 3;
             }
 
             if (one_chance_in(10))
@@ -1915,77 +2028,84 @@ void demonspawn(void)
                 howm = 1;
             }
 
-            if (one_chance_in(5))
+            if (!you.mutation[MUT_THROW_FROST]         // not with these
+                && !you.mutation[MUT_THROW_FLAMES]
+                && !you.mutation[MUT_BREATHE_FLAMES]
+                && !you.skills[SK_FIRE_MAGIC]          // or with fire already
+                && one_chance_in(5))
             {
                 whichm = MUT_BREATHE_FLAMES;
                 howm = 2;
             }
 
-            if (one_chance_in(12))
+            if (!you.skills[SK_TRANSLOCATIONS] && one_chance_in(12))
             {
-                whichm = MUT_BLINK;
-                howm = 1;
+                whichm = (you.experience_level < 10) ? MUT_BLINK
+                                                     : MUT_TELEPORT_AT_WILL;
+                howm = 2;
             }
 
-            if (one_chance_in(10) && scale_levels < 3)
+            if (scale_levels < 3 && one_chance_in( 1 + scale_levels * 5 ))
             {
-                whichm = MUT_TOUGH_SKIN;
-                howm = (coinflip() ? 2 : 3);
-                howm = MINIMUM( 3 - scale_levels, howm );
-            }
+                const int bonus = (you.experience_level < 10) ? 0 : 1;
+                int levels = 0;
 
-            if (one_chance_in(24) && scale_levels < 3)
-            {
-                whichm = MUT_GREEN_SCALES;
-                howm = (coinflip() ? 2 : 3);
-                howm = MINIMUM( 3 - scale_levels, howm );
-            }
-
-            if (one_chance_in(24) && scale_levels < 3)
-            {
-                whichm = MUT_BLACK_SCALES;
-                howm = (coinflip() ? 2 : 3);
-                howm = MINIMUM( 3 - scale_levels, howm );
-            }
-
-            if (one_chance_in(24) && scale_levels < 3)
-            {
-                whichm = MUT_GREY_SCALES;
-                howm = (coinflip() ? 2 : 3);
-                howm = MINIMUM( 3 - scale_levels, howm );
-            }
-
-            if (one_chance_in(12) && scale_levels < 3)
-            {
-                whichm = MUT_RED_SCALES + random2(16);
-
-                switch (whichm)
+                if (one_chance_in(10))
                 {
-                case MUT_RED_SCALES:
-                case MUT_NACREOUS_SCALES:
-                case MUT_BLACK2_SCALES:
-                case MUT_WHITE_SCALES:
-                case MUT_BLUE_SCALES:
-                case MUT_SPECKLED_SCALES:
-                case MUT_ORANGE_SCALES:
-                case MUT_IRIDESCENT_SCALES:
-                case MUT_PATTERNED_SCALES:
-                    howm = (coinflip() ? 2 : 3);
-                    break;
-
-                default:
-                    howm = (coinflip() ? 2 : 1);
-                    break;
+                    whichm = MUT_TOUGH_SKIN;
+                    levels = (coinflip() ? 2 : 3);
                 }
 
-                howm = MINIMUM( 3 - scale_levels, howm );
-            }
+                if (one_chance_in(24))
+                {
+                    whichm = MUT_GREEN_SCALES;
+                    levels = (coinflip() ? 2 : 3);
+                }
 
-            if (one_chance_in(30) && scale_levels < 3)
-            {
-                whichm = MUT_BONEY_PLATES;
-                howm = (coinflip() ? 1 : 2);
-                howm = MINIMUM( 3 - scale_levels, howm );
+                if (one_chance_in(24))
+                {
+                    whichm = MUT_BLACK_SCALES;
+                    levels = (coinflip() ? 2 : 3);
+                }
+
+                if (one_chance_in(24))
+                {
+                    whichm = MUT_GREY_SCALES;
+                    levels = (coinflip() ? 2 : 3);
+                }
+
+                if (one_chance_in(12))
+                {
+                    whichm = MUT_RED_SCALES + random2(16);
+
+                    switch (whichm)
+                    {
+                    case MUT_RED_SCALES:
+                    case MUT_NACREOUS_SCALES:
+                    case MUT_BLACK2_SCALES:
+                    case MUT_WHITE_SCALES:
+                    case MUT_BLUE_SCALES:
+                    case MUT_SPECKLED_SCALES:
+                    case MUT_ORANGE_SCALES:
+                    case MUT_IRIDESCENT_SCALES:
+                    case MUT_PATTERNED_SCALES:
+                        levels = (coinflip() ? 2 : 3);
+                        break;
+
+                    default:
+                        levels = (coinflip() ? 1 : 2);
+                        break;
+                    }
+                }
+
+                if (one_chance_in(30))
+                {
+                    whichm = MUT_BONEY_PLATES;
+                    levels = (coinflip() ? 1 : 2);
+                }
+
+                if (levels)
+                    howm = MINIMUM( 3 - scale_levels, levels + bonus );
             }
 
             if (one_chance_in(25))
@@ -1994,141 +2114,14 @@ void demonspawn(void)
                 howm = (coinflip() ? 2 : 3);
             }
 
-            if (one_chance_in(5))
+            if (one_chance_in( (you.experience_level < 10) ? 5 : 20 ))
             {
                 whichm = MUT_HORNS;
                 howm = (coinflip() ? 1 : 2);
 
-                if (you.experience_level > 4)
-                    howm = (coinflip()? 2 : 3);
+                if (you.experience_level > 4 || one_chance_in(5))
+                    howm++;
             }
-
-            if (whichm != -1 && you.mutation[whichm] != 0)
-                whichm = -1;
-
-            counter++;
-        }
-        while (whichm == -1 && counter < 5000);
-
-        if (whichm == -1)       /* unlikely but remotely possible */
-        {
-            /* I know this is a cop-out */
-            modify_stat(STAT_STRENGTH, 1, true);
-            modify_stat(STAT_INTELLIGENCE, 1, true);
-            modify_stat(STAT_DEXTERITY, 1, true);
-            mpr("You feel much better now.", MSGCH_INTRINSIC_GAIN);
-            return;
-        }
-        else if (perma_mutate(whichm, howm))
-        {
-            return;
-        }
-    }
-
-    do
-    {
-        if (you.skills[SK_CONJURATIONS] < 3)
-        {                       // good conjurers don't get bolt of draining
-            whichm = MUT_SMITE;
-            howm = 1;
-        }
-
-        if (you.skills[SK_CONJURATIONS] < 4 && one_chance_in(4))
-        {                       // good conjurers don't get hellfire
-            whichm = MUT_HURL_HELLFIRE;
-            howm = 1;
-        }
-
-        if (you.skills[SK_SUMMONINGS] < 3 && one_chance_in(3))
-        {                       // good summoners don't get summon demon
-            whichm = MUT_SUMMON_DEMONS;
-            howm = 1;
-        }
-
-        if (one_chance_in(8))
-        {
-            whichm = MUT_MAGIC_RESISTANCE;
-            howm = 3;
-        }
-
-        if (one_chance_in(12))
-        {
-            whichm = MUT_FAST;
-            howm = 1;
-        }
-
-        if (one_chance_in(7))
-        {
-            whichm = MUT_TELEPORT_AT_WILL;
-            howm = 2;
-        }
-
-        if (one_chance_in(10))
-        {
-            whichm = MUT_REGENERATION;
-            howm = (coinflip() ? 3 : 2);
-        }
-
-        if (one_chance_in(12))
-        {
-            whichm = MUT_SHOCK_RESISTANCE;
-            howm = 1;
-        }
-
-        if (!you.mutation[MUT_CALL_TORMENT] && one_chance_in(15))
-        {
-            whichm = MUT_TORMENT_RESISTANCE;
-            howm = 1;
-        }
-
-        if (one_chance_in(12))
-        {
-            whichm = MUT_NEGATIVE_ENERGY_RESISTANCE;
-            howm = 1 + random2(3);
-        }
-
-        if (!you.mutation[MUT_TORMENT_RESISTANCE] && one_chance_in(20))
-        {
-            whichm = MUT_CALL_TORMENT;
-            howm = 1;
-        }
-
-        if (you.skills[SK_SUMMONINGS] < 3 && you.skills[SK_NECROMANCY] < 3
-            && one_chance_in(12))
-        {
-            whichm = MUT_CONTROL_DEMONS;
-            howm = 1;
-        }
-
-        if (you.skills[SK_TRANSLOCATIONS] < 3 && one_chance_in(15))
-        {
-            whichm = MUT_PANDEMONIUM;
-            howm = 1;
-        }
-
-        if (you.religion != GOD_VEHUMET && one_chance_in(11))
-        {
-            whichm = MUT_DEATH_STRENGTH;
-            howm = 1;
-        }
-
-        if (you.religion != GOD_VEHUMET && one_chance_in(11))
-        {
-            whichm = MUT_CHANNEL_HELL;
-            howm = 1;
-        }
-
-        if (you.skills[SK_SUMMONINGS] < 3 && you.skills[SK_NECROMANCY] < 3
-            && one_chance_in(10))
-        {
-            whichm = MUT_RAISE_DEAD;
-            howm = 1;
-        }
-
-        if (you.skills[SK_UNARMED_COMBAT] > 5 && one_chance_in(14))
-        {
-            whichm = MUT_DRAIN_LIFE;
-            howm = 1;
         }
 
         if (whichm != -1 && you.mutation[whichm] != 0)
@@ -2138,7 +2131,7 @@ void demonspawn(void)
     }
     while (whichm == -1 && counter < 5000);
 
-    if (whichm == -1 || !perma_mutate(whichm, howm))
+    if (whichm == -1 || !perma_mutate( whichm, howm ))
     {
         /* unlikely but remotely possible */
         /* I know this is a cop-out */

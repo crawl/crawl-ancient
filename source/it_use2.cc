@@ -141,21 +141,21 @@ bool potion_effect( char pot_eff, int pow )
     case POT_STRONG_POISON:
         if (player_res_poison())
         {
-            strcpy(info, "You feel ");
-            strcat(info, (pot_eff == POT_POISON) ? "slightly" : "extremely");
-            strcat(info, " nauseous.");
+            snprintf( info, INFO_SIZE, "You feel %s nauseous.",
+                        (pot_eff == POT_POISON) ? "slightly" : "quite" );
+
+            mpr(info);
         }
         else
         {
-            strcpy(info, "That liquid tasted ");
-            strcat(info, (pot_eff == POT_POISON) ? "very" : "extremely");
-            strcat(info, " nasty...");
+            snprintf( info, INFO_SIZE, "That liquid tasted %s nasty...",
+                        (pot_eff == POT_POISON) ? "very" : "extremely" );
+
+            mpr(info);
 
             poison_player( ((pot_eff == POT_POISON) ? 1 + random2avg(5, 2)
                                                     : 3 + random2avg(13, 2)) );
         }
-
-        mpr(info);
         break;
 
     case POT_SLOWING:
@@ -163,12 +163,12 @@ bool potion_effect( char pot_eff, int pow )
         break;
 
     case POT_PARALYSIS:
-        strcpy(info, "You ");
-        strcat(info, (you.paralysis) ? "still haven't" : "suddenly lose");
-        strcat(info, " the ability to move!");
-        mpr(info, MSGCH_WARN);
+        snprintf( info, INFO_SIZE, "You %s the ability to move!",
+                    (you.paralysis) ? "still haven't" : "suddenly lose" );
 
-        new_value = 2 + random2(6 + you.paralysis);
+        mpr( info, MSGCH_WARN );
+
+        new_value = 2 + random2( 6 + you.paralysis );
 
         if (new_value > you.paralysis)
             you.paralysis = new_value;
@@ -208,13 +208,10 @@ bool potion_effect( char pot_eff, int pow )
 
     // Don't generate randomly - should be rare and interesting
     case POT_DECAY:
-        strcpy(info, "You feel ");
-        strcat(info, (you.is_undead) ? "terrible."
-               : "your flesh start to rot away!");
-        mpr(info);
-
-        if (!you.is_undead)
-            you.rotting += 10 + random2(10);
+        if (you.is_undead)
+            mpr( "You feel terrible." );
+        else
+            rot_player( 10 + random2(10) );
         break;
 
     case POT_WATER:
@@ -313,7 +310,7 @@ void unwield_item(char unw)
             case SPWPN_STAFF_OF_WUCAD_MU:
                 you.inv[unw].plus = 0;
                 you.inv[unw].plus2 = 0;
-                miscast_effect(SPTYP_DIVINATION, 9, 90, 100);
+                miscast_effect( SPTYP_DIVINATION, 9, 90, 100, "the Staff of Wucad Mu" );
                 break;
             default:
                 break;
@@ -379,7 +376,7 @@ void unwield_item(char unw)
                 // if it's to be allowed as a player spell. -- bwr
 
                 // int effect = 9 - random2avg( you.skills[SK_TRANSLOCATIONS] * 2, 2 );
-                miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100);
+                miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a weapon of distortion" );
                 break;
 
                 // when more are added here, *must* duplicate unwielding

@@ -90,7 +90,7 @@ void blink(void)
         }
         else if (you.level_type == LEVEL_ABYSS)
         {
-            abyss_teleport();
+            abyss_teleport( false );
             you.pet_target = MHITNOT;
         }
         else
@@ -149,7 +149,7 @@ void random_blink(bool allow_partial_control)
 
         if (you.level_type == LEVEL_ABYSS)
         {
-            abyss_teleport();
+            abyss_teleport( false );
             you.pet_target = MHITNOT;
         }
     }
@@ -214,6 +214,7 @@ void cast_fire_storm(int powc)
     beam.colour = RED;
     beam.beam_source = MHITYOU;
     beam.thrower = KILL_YOU_MISSILE;
+    beam.aux_source = NULL;
     beam.obviousEffect = false;
     beam.isBeam = false;
     beam.isTracer = false;
@@ -346,7 +347,9 @@ void stinking_cloud( int pow )
     beem.type = SYM_ZAP;
     beem.flavour = BEAM_MMISSILE;
     beem.ench_power = pow;
+    beem.beam_source = MHITYOU;
     beem.thrower = KILL_YOU;
+    beem.aux_source = NULL;
     beem.isBeam = false;
     beem.isTracer = false;
 

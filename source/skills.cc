@@ -20,13 +20,11 @@
 
 #include "externs.h"
 
+#include "macro.h"
 #include "player.h"
 #include "skills2.h"
 #include "stuff.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 // MAX_COST_LIMIT is the maximum XP amount it will cost to raise a skill
 //                by 10 skill points (ie one standard practice).
@@ -402,6 +400,19 @@ static void exercise2( char exsk )
         mpr(info, MSGCH_INTRINSIC_GAIN);
 
         you.skills[exsk]++;
+
+        // Recalculate this skills order for tie breaking skills
+        // at its new level.   See skills2.cc::init_skill_order(0
+        // for more details.  -- bwr
+        you.skill_order[exsk] = 0;
+        for (i = SK_FIGHTING; i < NUM_SKILLS; i++)
+        {
+            if (i == exsk)
+                continue;
+
+            if (you.skills[i] >= you.skills[exsk])
+                you.skill_order[exsk]++;
+        }
 
         if (exsk == SK_FIGHTING)
             calc_hp();

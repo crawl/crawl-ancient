@@ -27,28 +27,26 @@
 
 #include "itemname.h"
 #include "items.h"
+#include "macro.h"
 #include "player.h"
 #include "shopping.h"
 #include "stuff.h"
 #include "view.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 const char *command_string( int i );
 const char *wizard_string( int i );
 
-unsigned char get_invent(int invent_type)
+unsigned char get_invent( int invent_type )
 {
-    unsigned char nothing = invent(invent_type, false);
+    unsigned char nothing = invent( invent_type, false );
 
     redraw_screen();
 
     return (nothing);
 }                               // end get_invent()
 
-unsigned char invent(int item_class_inv, bool show_price)
+unsigned char invent( int item_class_inv, bool show_price )
 {
     char st_pass[ ITEMNAME_SIZE ] = "";
 
@@ -260,7 +258,7 @@ unsigned char invent(int item_class_inv, bool show_price)
                                   tmp_quant, 10 );
 
                             cprintf( tmp_quant );
-                            cprintf("gold)");
+                            cprintf( " gold)" );
                         }
 
                         if (wherey() != yps)
@@ -516,8 +514,7 @@ const char *wizard_string( int i )
            (i ==  40) ? "h/H  : heal yourself (super-Heal)"   :
            (i ==  50) ? "i/I  : identify/unidentify inventory":
            (i ==  70) ? "l    : make entrance to labyrinth"   :
-           (i ==  80) ? "m    : create a monster by number"   :
-           (i ==  85) ? "M    : create a monster by name"     :
+           (i ==  80) ? "m/M  : create monster by number/name":
            (i ==  90) ? "o/%%  : create an object"            :
            (i == 100) ? "p    : make entrance to pandemonium" :
            (i == 110) ? "x    : gain an experience level"     :
@@ -526,8 +523,7 @@ const char *wizard_string( int i )
            (i == 130) ? "S    : set skill to level"           :
            (i == 140) ? "t    : tweak object properties"      :
            (i == 150) ? "X    : Receive a gift from Xom"      :
-           (i == 160) ? "z    : cast any spell by number"     :
-           (i == 170) ? "Z    : cast any spell by name"       :
+           (i == 160) ? "z/Z  : cast any spell by number/name":
            (i == 200) ? "$    : get 1000 gold"                :
            (i == 210) ? "</>  : create up/down staircase"     :
            (i == 220) ? "u/d  : shift up/down one level"      :
@@ -584,7 +580,7 @@ const char *command_string( int i )
            (i == 142) ? "D    : dissect a corpse"                 :
            (i == 145) ? "E    : evoke power of wielded item"      :
            (i == 150) ? "M    : memorise a spell"                 :
-           (i == 155) ? "O    : view level map"                   :
+           (i == 155) ? "O    : overview of the dungeon"          :
            (i == 160) ? "P/R  : put on / remove jewellery"        :
            (i == 165) ? "Q    : quit without saving"              :
            (i == 168) ? "S    : save game and exit"               :
@@ -607,7 +603,7 @@ const char *command_string( int i )
            (i == 340) ? "#    : dump character to file"           :
            (i == 350) ? "=    : reassign inventory/spell letters" :
            (i == 360) ? "\'    : wield item a, or switch to b"    :
-#ifdef MACROS
+#ifdef USE_MACROS
            (i == 380) ? "`    : add macro"                        :
            (i == 390) ? "~    : save macros"                      :
 #endif

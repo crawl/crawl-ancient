@@ -34,16 +34,15 @@
 
 #include "debug.h"
 #include "insult.h"
+#include "macro.h"
 #include "monstuff.h"
 #include "mon-util.h"
 #include "overmap.h"
 #include "player.h"
+#include "skills2.h"
 #include "stuff.h"
 #include "spells4.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 unsigned char your_sign;        // accessed as extern in transfor.cc and acr.cc
 unsigned char your_colour;      // accessed as extern in transfor.cc and acr.cc
@@ -52,7 +51,7 @@ FixedArray < unsigned int, 20, 19 > show_backup;
 
 unsigned char show_green;
 extern int stealth;             // defined in acr.cc
-extern FixedVector < char, 10 > visible;        // defined in acr.cc
+extern FixedVector<char, 10>  Visible_Statue;        // defined in acr.cc
 
 // char colour_code_map(unsigned char map_value);
 char colour_code_map( int x, int y );
@@ -107,7 +106,7 @@ int get_number_of_lines(void)
 // with the IBM graphics option.
 //
 //---------------------------------------------------------------
-void get_ibm_symbol(unsigned int object, unsigned short *ch,
+static void get_ibm_symbol(unsigned int object, unsigned short *ch,
                            unsigned short *color)
 {
     ASSERT(color != NULL);
@@ -166,13 +165,7 @@ void get_ibm_symbol(unsigned int object, unsigned short *ch,
     case DNGN_SILVER_STATUE:
         *ch = '8';
         *color = WHITE;
-
-        if (visible[1] == 0)
-            visible[1] = 3;
-        else
-            visible[1] = 2;
-
-        visible[0] = 2;
+        Visible_Statue[ STATUE_SILVER ] = 1;
         break;
 
     case DNGN_GRANITE_STATUE:
@@ -183,13 +176,7 @@ void get_ibm_symbol(unsigned int object, unsigned short *ch,
     case DNGN_ORANGE_CRYSTAL_STATUE:
         *ch = '8';
         *color = LIGHTRED;
-
-        if (visible[2] == 0)
-            visible[2] = 3;
-        else
-            visible[2] = 2;
-
-        visible[0] = 2;
+        Visible_Statue[ STATUE_ORANGE_CRYSTAL ] = 1;
         break;
 
     case DNGN_LAVA:
@@ -1017,9 +1004,9 @@ void monster_grid(bool do_updates)
                 }
                 continue;
             }
-            else if (!mons_friendly(monster)
-                     && mons_charclass(monster->type) != MONS_GOLD_MIMIC
-                     && !mons_flag(monster->type, M_NO_EXP_GAIN)
+            else if (!mons_friendly( monster )
+                     && !mons_is_mimic( monster->type )
+                     && !mons_flag( monster->type, M_NO_EXP_GAIN )
                      && you.running > 0)
             {
                 // Friendly monsters, mimics, or harmless monsters
@@ -1037,7 +1024,7 @@ void monster_grid(bool do_updates)
             }
 
             // mimics are always left on map
-            if (mons_charclass(monster->type) != MONS_GOLD_MIMIC)
+            if (!mons_is_mimic( monster->type ))
             {
                 show_backup[monster->x - you.x_pos + 9]
                            [monster->y - you.y_pos + 9]
@@ -1095,7 +1082,7 @@ bool check_awaken(int mons_aw)
     if (monster->behaviour == BEH_WANDER && monster->foe == MHITYOU)
         mons_perc += 15;
 
-    if (you.invis && !mons_see_invis(monster))
+    if (!mons_player_visible(monster))
         mons_perc -= 75;
 
     if (monster->behaviour == BEH_SLEEP)
@@ -1730,80 +1717,26 @@ void losight(FixedArray < unsigned int, 19, 19 > &sh,
 }
 
 
-void draw_border(const char your_name[kNameLen], const char class_name[40],
-                 const char tspecies)
+void draw_border(void)
 {
-
-    textcolor(BORDER_COLOR);
-// this bit draws the borders:
-#ifdef DOS_TERM
-    window(1, 1, 80, 25);
-#endif
-
+    textcolor( BORDER_COLOR );
     clrscr();
-    gotoxy(40, 1);
-    textcolor(LIGHTGREY);
-    char print_it[80];
-    char print_it2[42];
+    redraw_skill( you.your_name, player_title() );
 
-    int i = 0;
-    bool spaces = false;
-
-    strcpy(print_it, your_name);
-    strcat(print_it, " the ");
-    strcat(print_it, class_name);
-
-    for (i = 0; i < 39; i++)
-    {
-        print_it2[i] = print_it[i];
-
-        if (print_it[i] == 0)
-            break;
-    }
-
-    for (i = 0; i < 40; i++)
-    {
-        if (print_it2[i] == 0)
-            spaces = true;
-
-        if (spaces)
-            print_it2[i] = ' ';
-    }
-
-    print_it2[39] = 0;
-
-    textcolor(LIGHTGREY);
-
-#ifdef DOS_TERM
-    window(1, 1, 80, 25);
-#endif
-
-    gotoxy(40, 1);
-    textcolor(LIGHTGREY);
-    cprintf(print_it2);
     gotoxy(40, 2);
-    cprintf("%s %s", species_name(tspecies), (you.wizard ? "*WIZARD*" : "" ));
-    gotoxy(40, 3);
-    cprintf("HP:");
-    gotoxy(40, 4);
-    cprintf("Magic:");
-    gotoxy(40, 5);
-    cprintf("AC:");
-    gotoxy(40, 6);
-    cprintf("EV:");
-    gotoxy(40, 7);
-    cprintf("Str:");
-    gotoxy(40, 8);
-    cprintf("Int:");
-    gotoxy(40, 9);
-    cprintf("Dex:");
-    gotoxy(40, 10);
-    cprintf("Gold:");
-    gotoxy(40, 11);
-    cprintf("Experience:");
-    gotoxy(40, 12);
-    cprintf("Level");
+    cprintf( "%s %s", species_name( you.species, you.experience_level ),
+                     (you.wizard ? "*WIZARD*" : "" ) );
 
+    gotoxy(40,  3); cprintf("HP:");
+    gotoxy(40,  4); cprintf("Magic:");
+    gotoxy(40,  5); cprintf("AC:");
+    gotoxy(40,  6); cprintf("EV:");
+    gotoxy(40,  7); cprintf("Str:");
+    gotoxy(40,  8); cprintf("Int:");
+    gotoxy(40,  9); cprintf("Dex:");
+    gotoxy(40, 10); cprintf("Gold:");
+    gotoxy(40, 11); cprintf("Experience:");
+    gotoxy(40, 12); cprintf("Level");
 }                               // end draw_border()
 
 // show_map() now centers the known map along x or y.  This prevents
@@ -2616,7 +2549,7 @@ bool mons_near(struct monsters *monster, unsigned int foe)
 // without the IBM graphics option.
 //
 //---------------------------------------------------------------
-void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
+static void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
                                unsigned short *color)
 {
     ASSERT(color != NULL);
@@ -2675,13 +2608,7 @@ void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
     case DNGN_SILVER_STATUE:
         *ch = '8';
         *color = WHITE;
-
-        if (visible[1] == 0)
-            visible[1] = 3;
-        else
-            visible[1] = 2;
-
-        visible[0] = 2;
+        Visible_Statue[ STATUE_SILVER ] = 1;
         break;
 
     case DNGN_GRANITE_STATUE:
@@ -2692,13 +2619,7 @@ void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
     case DNGN_ORANGE_CRYSTAL_STATUE:
         *ch = '8';
         *color = LIGHTRED;
-
-        if (visible[2] == 0)
-            visible[2] = 3;
-        else
-            visible[2] = 2;
-
-        visible[0] = 2;
+        Visible_Statue[ STATUE_ORANGE_CRYSTAL ] = 1;
         break;
 
     case DNGN_LAVA:

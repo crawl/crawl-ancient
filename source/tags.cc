@@ -69,13 +69,15 @@
 #include <unistd.h>
 #endif
 
-#ifdef MAC
+#ifdef OS9
 #include <stat.h>
 #else
 #include <sys/stat.h>
 #endif
 
 #include "AppHdr.h"
+
+#include "abl-show.h"
 #include "enum.h"
 #include "externs.h"
 #include "files.h"
@@ -84,6 +86,7 @@
 #include "mon-util.h"
 #include "randart.h"
 #include "skills.h"
+#include "skills2.h"
 #include "stuff.h"
 #include "tags.h"
 
@@ -121,7 +124,7 @@ static void tag_read_level_attitude(struct tagHeader &th);
 static void tag_missing_level_attitude();
 
 static void tag_construct_ghost(struct tagHeader &th);
-static void tag_read_ghost(struct tagHeader &th);
+static void tag_read_ghost(struct tagHeader &th, char minorVersion);
 
 // provide a wrapper for file writing, just in case.
 int write2(FILE * file, char *buffer, unsigned int count)
@@ -278,6 +281,13 @@ bool unmarshallBoolean(struct tagHeader &th)
 // Saving the date as a string so we're not reliant on a particular epoch.
 void make_date_string( time_t in_date, char buff[20] )
 {
+    if (in_date <= 0)
+    {
+        buff[0] = '\0';
+        return;
+    }
+
+
     struct tm *date = localtime( &in_date );
 
     snprintf( buff, 20,
@@ -453,7 +463,7 @@ int tag_read(FILE *fp, char minorVersion)
             tag_read_level_attitude(th);
             break;
         case TAG_GHOST:
-            tag_read_ghost(th);
+            tag_read_ghost(th, minorVersion);
             break;
         default:
             // I don't know how to read that!
@@ -625,7 +635,15 @@ static void tag_construct_you(struct tagHeader &th)
     // how many spells?
     marshallByte(th, 25);
     for (i = 0; i < 25; ++i)
-        marshallByte(th,you.spells[i]);
+        marshallByte(th, you.spells[i]);
+
+    marshallByte(th, 52);
+    for (i = 0; i < 52; i++)
+        marshallByte( th, you.spell_letter_table[i] );
+
+    marshallByte(th, 52);
+    for (i = 0; i < 52; i++)
+        marshallShort( th, you.ability_letter_table[i] );
 
     // how many skills?
     marshallByte(th, 50);
@@ -634,6 +652,7 @@ static void tag_construct_you(struct tagHeader &th)
         marshallByte(th,you.skills[j]);   /* skills! */
         marshallByte(th,you.practise_skill[j]);   /* skills! */
         marshallLong(th,you.skill_points[j]);
+        marshallByte(th,you.skill_order[j]);   /* skills ordering */
     }
 
     // how many durations?
@@ -655,9 +674,14 @@ static void tag_construct_you(struct tagHeader &th)
     }
 
     // how many penances?
-    marshallByte(th, 21);
-    for (i = 0; i < 21; i++)
+    marshallByte(th, MAX_NUM_GODS);
+    for (i = 0; i < MAX_NUM_GODS; i++)
         marshallByte(th, you.penance[i]);
+
+    // which gods have been worshipped by this character?
+    marshallByte(th, MAX_NUM_GODS);
+    for (i = 0; i < MAX_NUM_GODS; i++)
+        marshallByte(th, you.worshipped[i]);
 
     marshallByte(th, you.gift_timeout);
     marshallByte(th, you.normal_vision);
@@ -673,6 +697,20 @@ static void tag_construct_you(struct tagHeader &th)
     // time of game start
     make_date_string( you.birth_time, buff );
     marshallString(th, buff, 20);
+
+    // real_time == -1 means game was started before this feature
+    if (you.real_time != -1)
+    {
+        const time_t now = time(NULL);
+        you.real_time += (now - you.start_time);
+
+        // Reset start_time now that real_time is being saved out...
+        // this may just be a level save.
+        you.start_time = now;
+    }
+
+    marshallLong( th, you.real_time );
+    marshallLong( th, you.num_turns );
 }
 
 static void tag_construct_you_items(struct tagHeader &th)
@@ -856,7 +894,35 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
     {
         you.spells[i] = unmarshallByte(th);
         if (you.spells[i] != SPELL_NO_SPELL)
-            you.spell_no ++;
+            you.spell_no++;
+    }
+
+    if (minorVersion >= 2)
+    {
+        count_c = unmarshallByte(th);
+        for (i = 0; i < count_c; i++)
+            you.spell_letter_table[i] = unmarshallByte(th);
+
+        count_c = unmarshallByte(th);
+        for (i = 0; i < count_c; i++)
+            you.ability_letter_table[i] = unmarshallShort(th);
+    }
+    else
+    {
+        for (i = 0; i < 52; i++)
+        {
+            you.spell_letter_table[i] = -1;
+            you.ability_letter_table[i] = ABIL_NON_ABILITY;
+        }
+
+        for (i = 0; i < 25; i++)
+        {
+            if (you.spells[i] != SPELL_NO_SPELL)
+                you.spell_letter_table[i] = i;
+        }
+
+        if (you.religion != GOD_NO_GOD)
+            set_god_ability_slots();
     }
 
     // how many skills?
@@ -866,7 +932,14 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
         you.skills[j] = unmarshallByte(th);
         you.practise_skill[j] = unmarshallByte(th);
         you.skill_points[j] = unmarshallLong(th);
+
+        if (minorVersion >= 2)
+            you.skill_order[j] = unmarshallByte(th);
     }
+
+    // initialize ordering when we don't read it in:
+    if (minorVersion < 2)
+        init_skill_order();
 
     // set up you.total_skill_points and you.skill_cost_level
     calc_total_skill_points();
@@ -894,6 +967,21 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
     for (i = 0; i < count_c; i++)
         you.penance[i] = unmarshallByte(th);
 
+    if (minorVersion >= 2)
+    {
+        count_c = unmarshallByte(th);
+        for (i = 0; i < count_c; i++)
+            you.worshipped[i] = unmarshallByte(th);
+    }
+    else
+    {
+        for (i = 0; i < count_c; i++)
+            you.worshipped[i] = false;
+
+        if (you.religion != GOD_NO_GOD)
+            you.worshipped[you.religion] = true;
+    }
+
     you.gift_timeout = unmarshallByte(th);
     you.normal_vision = unmarshallByte(th);
     you.current_vision = unmarshallByte(th);
@@ -910,6 +998,17 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
         // time of character creation
         unmarshallString( th, buff, 20 );
         you.birth_time = parse_date_string( buff );
+    }
+
+    if (minorVersion >= 2)
+    {
+        you.real_time = unmarshallLong(th);
+        you.num_turns = unmarshallLong(th);
+    }
+    else
+    {
+        you.real_time = -1;
+        you.num_turns = -1;
     }
 }
 
@@ -1705,20 +1804,39 @@ static void tag_construct_ghost(struct tagHeader &th)
     // how many ghost values?
     marshallByte(th, 20);
 
-    for(i=0; i<20; i++)
-        marshallByte(th, ghost.values[i]);
+    for (i = 0; i < 20; i++)
+        marshallShort( th, ghost.values[i] );
 }
 
-static void tag_read_ghost(struct tagHeader &th)
+static void tag_read_ghost(struct tagHeader &th, char minorVersion)
 {
-    char i, count_c;
+    int i, count_c;
+
+    snprintf( info, INFO_SIZE, "minor version = %d", minorVersion );
 
     unmarshallString(th, ghost.name, 20);
 
     // how many ghost values?
     count_c = unmarshallByte(th);
-    for(i=0; i<count_c; i++)
-        ghost.values[i] = unmarshallByte(th);
+
+    for (i = 0; i < count_c; i++)
+    {
+        // for version 4.4 we moved from unsigned char to shorts -- bwr
+        if (minorVersion < 4)
+            ghost.values[i] = unmarshallByte(th);
+        else
+            ghost.values[i] = unmarshallShort(th);
+    }
+
+    if (minorVersion < 4)
+    {
+        // Getting rid 9of hopefulling the last) of this silliness -- bwr
+        if (ghost.values[ GVAL_RES_FIRE ] >= 97)
+            ghost.values[ GVAL_RES_FIRE ] -= 100;
+
+        if (ghost.values[ GVAL_RES_COLD ] >= 97)
+            ghost.values[ GVAL_RES_COLD ] -= 100;
+    }
 }
 
 // ----------------------------------------------------------------------- //

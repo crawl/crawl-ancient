@@ -54,39 +54,6 @@
 
 static void autopickup(void);
 
-// This function is currently unused... data structures should have
-// their integrity maintained. -- bwr
-#if 0
-// This function goes through the list of items at a cell and
-// relinks it without any zero quantity items.
-static void relink_cell(int x, int y)
-{
-    int o = igrd[x][y];
-    int last_item = NON_ITEM;
-
-    while (o != NON_ITEM)
-    {
-        if (is_valid_item( mitm[o] ))
-        {
-            // link in
-            if (last_item == NON_ITEM)
-                igrd[x][y] = o;
-            else
-                mitm[last_item].link = o;
-
-            last_item = o;
-        }
-
-        o = mitm[o].link;
-    }
-
-    if (last_item == NON_ITEM)
-        igrd[x][y] = NON_ITEM;
-    else
-        mitm[last_item].link = NON_ITEM;
-}
-#endif
-
 // Used to be called "unlink_items", but all it really does is make
 // sure item coordinates are correct to the stack they're in. -- bwr
 void fix_item_coordinates(void)
@@ -1820,10 +1787,15 @@ void update_level( double elapsedTime )
         if (mon->behaviour == BEH_SLEEP)
             continue;
 
+
         const int range = (turns * mon->speed) / 10;
         const int moves = (range > 50) ? 50 : range;
+
         // const bool short_time = (range >= 5 + random2(10));
         const bool long_time  = (range >= (500 + roll_dice( 2, 500 )));
+
+        const bool ranged_attack = (mons_has_ranged_spell( mon )
+                                    || mons_has_ranged_attack( mon ));
 
 #if DEBUG_DIAGNOSTICS
         // probably too annoying even for DEBUG_DIAGNOSTICS
@@ -1838,11 +1810,11 @@ void update_level( double elapsedTime )
         if (range <= 0)
             continue;
 
-
         if (long_time
             && (mon->behaviour == BEH_FLEE
                 || mon->behaviour == BEH_CORNERED
                 || testbits( mon->flags, MF_BATTY )
+                || ranged_attack
                 || coinflip()))
         {
             if (mon->behaviour != BEH_WANDER)
@@ -1856,6 +1828,48 @@ void update_level( double elapsedTime )
             {
                 // monster will be sleeping after we move it
                 mon->behaviour = BEH_SLEEP;
+            }
+        }
+        else if (ranged_attack)
+        {
+            // if we're doing short time movement and the monster has a
+            // ranged attack (missile or spell), then the monster will
+            // flee to gain distance if its "too close", else it will
+            // just shift its position rather than charge the player. -- bwr
+            if (grid_distance(mon->x, mon->y, mon->target_x, mon->target_y) < 3)
+            {
+                mon->behaviour = BEH_FLEE;
+
+                // if the monster is on the target square, fleeing won't work
+                if (mon->x == mon->target_x && mon->y == mon->target_y)
+                {
+                    if (you.x_pos != mon->x || you.y_pos != mon->y)
+                    {
+                        // flee from player's position if different
+                        mon->target_x = you.x_pos;
+                        mon->target_y = you.y_pos;
+                    }
+                    else
+                    {
+                        // randomize the target so we have a direction to flee
+                        mon->target_x += (random2(3) - 1);
+                        mon->target_y += (random2(3) - 1);
+                    }
+                }
+
+#if DEBUG_DIAGNOSTICS
+                mpr( "backing off...", MSGCH_DIAGNOSTICS );
+#endif
+            }
+            else
+            {
+                shift_monster( mon, mon->x, mon->y );
+
+#if DEBUG_DIAGNOSTICS
+                snprintf(info, INFO_SIZE, "shifted to (%d,%d)", mon->x, mon->y);
+                mpr( info, MSGCH_DIAGNOSTICS );
+#endif
+                continue;
             }
         }
 
@@ -1976,7 +1990,7 @@ void handle_time( long time_delta )
                 which_miscast = SPTYP_ENCHANTMENT;
 
             miscast_effect( which_miscast, 4 + random2(6), random2avg(97, 3),
-                            100 );
+                            100, "the effects of Hell" );
         }
         else if (temp_rand > 7) // 10 in 27 odds {dlb}
         {
@@ -2025,7 +2039,7 @@ void handle_time( long time_delta )
             else
             {
                 miscast_effect( which_miscast, 4 + random2(6),
-                                random2avg(97, 3), 100 );
+                                random2avg(97, 3), 100, "the effects of Hell" );
             }
         }
 
@@ -2119,7 +2133,7 @@ void handle_time( long time_delta )
     if (coinflip())
     {
         if (you.magic_contamination >= 5
-            && random2(150) <= you.magic_contamination)
+            /* && random2(150) <= you.magic_contamination */)
         {
             mpr("Your body shudders with the violent release of wild energies!", MSGCH_WARN);
 
@@ -2133,7 +2147,8 @@ void handle_time( long time_delta )
                 boom.target_x = you.x_pos;
                 boom.target_y = you.y_pos;
                 boom.damage = dice_def( 3, (you.magic_contamination / 2) );
-                boom.thrower = KILL_YOU;
+                boom.thrower = KILL_MISC;
+                boom.aux_source = "a magical explosion";
                 boom.beam_source = NON_MONSTER;
                 boom.isBeam = false;
                 boom.isTracer = false;

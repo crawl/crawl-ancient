@@ -14,6 +14,7 @@
 #include "AppHdr.h"
 #include "spl-cast.h"
 
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -27,6 +28,7 @@
 #include "food.h"
 #include "it_use2.h"
 #include "itemname.h"
+#include "macro.h"
 #include "monplace.h"
 #include "monstuff.h"
 #include "mutation.h"
@@ -38,6 +40,7 @@
 #include "spells2.h"
 #include "spells3.h"
 #include "spells4.h"
+#include "spl-book.h"
 #include "spl-util.h"
 #include "stuff.h"
 #include "transfor.h"
@@ -45,10 +48,6 @@
 
 #ifdef DOS
 #include <conio.h>
-#endif
-
-#ifdef MACROS
-#include "macro.h"
 #endif
 
 #define WILD_MAGIC_NASTINESS 150
@@ -102,7 +101,7 @@ char list_spells(void)
     cprintf( " Your Spells                      Type                          Success   Level" );
     lines++;
 
-    for (j = 0; j < 25; j++)
+    for (j = 0; j < 52; j++)
     {
         if (lines > num_lines - 2)
         {
@@ -116,15 +115,15 @@ char list_spells(void)
 #ifdef DOS_TERM
                 puttext(1, 1, 80, 25, buffer);
 #endif
-                return ESCAPE;
+                return (ESCAPE);
             }
 
-            if (ki >= 'A' && ki <= 'z')
+            if (isalpha( ki ))
             {
 #ifdef DOS_TERM
                 puttext(1, 1, 80, 25, buffer);
 #endif
-                return ki;
+                return (ki);
             }
 
             if (ki == 0)
@@ -136,7 +135,10 @@ char list_spells(void)
             anything = 0;
         }
 
-        if (you.spells[j] != SPELL_NO_SPELL)
+        const char letter = index_to_letter(j);
+        const int  spell  = get_spell_by_letter(letter);
+
+        if (spell != SPELL_NO_SPELL)
         {
             anything++;
 
@@ -145,18 +147,19 @@ char list_spells(void)
 
             lines++;
 
-            cprintf(" %c - %s", index_to_letter(j), spell_title(you.spells[j]));
+            cprintf( " %c - %s", letter, spell_title( spell ) );
             gotoxy(35, wherey());
 
             already = false;
 
             for (i = 0; i <= SPTYP_LAST_EXPONENT; i++)
             {
-                if (spell_typematch(you.spells[j], 1 << i))
+                if (spell_typematch( spell, (1 << i) ))
                 {
                     if (already)
                         cprintf( "/" );
-                    cprintf(spelltype_name(1 << i));
+
+                    cprintf( spelltype_name( 1 << i ) );
                     already = true;
                 }
             }
@@ -166,7 +169,7 @@ char list_spells(void)
             //gotoxy(58, wherey());
             gotoxy(65, wherey());
 
-            int spell_f = spell_fail(you.spells[j]);
+            int spell_f = spell_fail( spell );
 
             cprintf( (spell_f == 100) ? "Useless"   :
                      (spell_f >   90) ? "Terrible"  :
@@ -183,7 +186,7 @@ char list_spells(void)
 
             gotoxy(77, wherey());
 
-            itoa((int) spell_difficulty(you.spells[j]), sval, 10);
+            itoa( (int) spell_difficulty( spell ), sval, 10 );
             cprintf(sval);
         }
     }                           // end of j loop
@@ -197,7 +200,7 @@ char list_spells(void)
 #ifdef DOS_TERM
             puttext(1, 1, 80, 25, buffer);
 #endif
-            return ki;
+            return (ki);
         }
 
         if (ki == 0)
@@ -207,7 +210,7 @@ char list_spells(void)
         puttext(1, 1, 80, 25, buffer);
 #endif
 
-        return anything;
+        return (anything);
     }
 
 #ifdef DOS_TERM
@@ -216,7 +219,7 @@ char list_spells(void)
     // was 35
     ki = getch();
 
-    return ki;
+    return (ki);
 }                               // end list_spells()
 
 int spell_fail(int spell)
@@ -512,7 +515,8 @@ int spell_enhancement( unsigned int typeflags )
     return (enhanced);
 }                               // end spell_enhancement()
 
-void cast_a_spell(void)
+// returns false if spell failed, and true otherwise
+bool cast_a_spell(void)
 {
     char spc = 0;
     char spc2 = 0;
@@ -523,26 +527,26 @@ void cast_a_spell(void)
     if (!you.spell_no)
     {
         mpr("You don't know any spells.");
-        return;
+        return (false);
     }
 
     if (you.berserker)
     {
         canned_msg(MSG_TOO_BERSERK);
-        return;
+        return (false);
     }
 
     if (silenced(you.x_pos, you.y_pos))
     {
         mpr("You cannot cast spells when silenced!");
-        return;
+        return (false);
     }
 
     // first query {dlb}:
     for (;;)
     {
         //jmf: FIXME: change to reflect range of known spells
-        mpr( "Cast which spell ([a-y] spell [?*] list)? ", MSGCH_PROMPT );
+        mpr( "Cast which spell ([?*] list)? ", MSGCH_PROMPT );
 
         keyin = get_ch();
 
@@ -552,7 +556,7 @@ void cast_a_spell(void)
 
             redraw_screen();
             if (unthing == 2)
-                return;
+                return (false);
 
             if (unthing >= 'a' && unthing <= 'y')
             {
@@ -570,42 +574,46 @@ void cast_a_spell(void)
     }
 
     if (keyin == ESCAPE)
-        return;
+        return (false);
 
     spc = (int) keyin;
 
-    if (spc < 'a' || spc > 'y')
+    if (!isalpha(spc))
     {
         mpr("You don't know that spell.");
-        return;
+        return (false);
     }
+
+    const int spell = get_spell_by_letter( spc );
 
     spc2 = letter_to_index(spc);
 
-    if (you.spells[spc2] == SPELL_NO_SPELL)
+    if (spell == SPELL_NO_SPELL)
     {
         mpr("You don't know that spell.");
-        return;
+        return (false);
     }
 
-    if (spell_mana(you.spells[spc2]) > you.magic_points)
+    if (spell_mana( spell ) > you.magic_points)
     {
         mpr("You don't have enough magic to cast that spell.");
-        return;
+        return (false);
     }
 
-    if (you.hunger_state < HS_HUNGRY
-        || you.hunger <= spell_hunger(you.spells[spc2]))
+    if (you.is_undead != US_UNDEAD
+        && (you.hunger_state < HS_HUNGRY
+            || you.hunger <= spell_hunger( spell )))
     {
         mpr("You don't have the energy to cast that spell.");
-        return;
+        return (false);
     }
 
-    dec_mp(spell_mana(you.spells[spc2]));
+    dec_mp( spell_mana(spell) );
 
     if (!player_energy() && you.is_undead != US_UNDEAD)
     {
-        spellh = spell_hunger(you.spells[spc2]);
+        spellh = spell_hunger( spell );
+
         // I wonder if a better algorithm is called for? {dlb}
         spellh -= you.intel * you.skills[SK_SPELLCASTING];
 
@@ -622,13 +630,15 @@ void cast_a_spell(void)
         random_uselessness( 2 + random2(7), 0 );
     else
     {
-        exercise_spell( you.spells[spc2], true,
-                        your_spells( you.spells[spc2] ) );
-
+        exercise_spell( spell, true, your_spells( spell ) );
         naughty( NAUGHTY_SPELLCASTING, 1 + random2(5) );
     }
+
+    return (true);
 }                               // end cast_a_spell()
 
+// returns true if spell if spell is successfully cast for purposes of
+// exercising and false otherwise (note: false == less exercise, not none).
 bool your_spells( int spc2, int powc, bool allow_fail )
 {
     int dem_hor = 0;
@@ -742,14 +752,15 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
         if (spfl < spell_fail(spc2))
         {
-            mpr("You miscast the spell.");
+            mpr( "You miscast the spell." );
+            flush_input_buffer( FLUSH_ON_FAILURE );
 
             if (you.religion == GOD_SIF_MUNA
                 && (!player_under_penance()
                     && you.piety >= 100 && random2(150) <= you.piety))
             {
                 canned_msg(MSG_NOTHING_HAPPENS);
-                return false;
+                return (false);
             }
 
             unsigned int sptype = 0;
@@ -774,20 +785,29 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
             contaminate_player( cont_points );
 
-            miscast_effect( sptype, spell_mana(spc2),
-                                        spell_fail(spc2) - spfl, 100 );
+            miscast_effect( sptype, spell_mana(spc2), spell_fail(spc2) - spfl, 100 );
 
             if (you.religion == GOD_XOM && random2(75) < spell_mana(spc2))
                 Xom_acts(coinflip(), spell_mana(spc2), false);
 
-            return false;
+            return (false);
         }
     }
 
-    if (you.species == SP_MUMMY && spell_typematch(spc2, SPTYP_HOLY))
+    if (you.is_undead && spell_typematch( spc2, SPTYP_HOLY ))
     {
         mpr( "You can't use this type of magic!" );
-        return false;
+        return (false);         // XXX: still gets trained!
+    }
+
+    // Normally undead can't memorize these spells, so this check is
+    // to catch those in Lich form.  As such, we allow the Lich form
+    // to be extended here. -- bwr
+    if (spc2 != SPELL_NECROMUTATION
+        && undead_cannot_memorise( spc2, you.is_undead ))
+    {
+        mpr( "You cannot cast that spell in your current form!" );
+        return (false);         // XXX: still gets trained!
     }
 
     // Linley says: Condensation Shield needs some disadvantages to keep
@@ -809,8 +829,16 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         naughty(NAUGHTY_UNHOLY, 10 + spell_difficulty(spc2));
     }
 
-    if (spell_typematch(spc2, SPTYP_NECROMANCY))
-        naughty(NAUGHTY_NECROMANCY, 10 + spell_difficulty(spc2));
+    if (spell_typematch( spc2, SPTYP_NECROMANCY ))
+        naughty( NAUGHTY_NECROMANCY, 10 + spell_difficulty(spc2) );
+
+    if (spc2 == SPELL_NECROMUTATION
+        && (you.religion == GOD_ELYVILON
+            || you.religion == GOD_SHINING_ONE
+            || you.religion == GOD_ZIN))
+    {
+        excommunication();
+    }
 
     if (you.religion == GOD_SIF_MUNA
         && you.piety < 200 && random2(12) <= spell_difficulty(spc2))
@@ -827,20 +855,18 @@ bool your_spells( int spc2, int powc, bool allow_fail )
     {
     case SPELL_IDENTIFY:
         identify(powc);
-        return true;
+        break;
 
     case SPELL_TELEPORT_SELF:
         you_teleport();
-        return true;
+        break;
 
     case SPELL_CAUSE_FEAR:
         mass_enchantment(ENCH_FEAR, powc, MHITYOU);
-        return true;
+        break;
 
     case SPELL_CREATE_NOISE:  // unused, the player can shout to do this - bwr
-        if (silenced(you.x_pos, you.y_pos))
-            return true;
-        else
+        if (!silenced(you.x_pos, you.y_pos))
         {
             mpr("You hear a voice call your name!");
             noisy( 25, you.x_pos, you.y_pos );
@@ -849,18 +875,18 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
     case SPELL_REMOVE_CURSE:
         remove_curse(false);
-        return true;
+        break;
 
     case SPELL_MAGIC_DART:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         zapping(ZAP_MAGIC_DARTS, powc, beam);
-        return true;
+        break;
 
     case SPELL_FIREBALL:
         fireball(powc);
-        return true;
+        break;
 
     case SPELL_DELAYED_FIREBALL:
         // This spell has two main advantages over Fireball:
@@ -899,164 +925,163 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         {
             canned_msg( MSG_NOTHING_HAPPENS );
         }
-        return true;
+        break;
 
     case SPELL_STRIKING:
         if (spell_direction( spd, beam ) == -1)
-            return true;
+            return (false);
 
         zapping( ZAP_STRIKING, powc, beam );
-        return true;
+        break;
 
     case SPELL_CONJURE_FLAME:
         conjure_flame(powc);
-        return true;
+        break;
 
     case SPELL_DIG:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
-            return true;
+            return (false);
         }
         zapping(ZAP_DIGGING, powc, beam);
-        return true;
+        break;
 
     case SPELL_BOLT_OF_FIRE:
         if (spell_direction(spd, beam) == -1)
-
-            return true;
+            return (false);
         zapping(ZAP_FIRE, powc, beam);
-        return true;
+        break;
 
     case SPELL_BOLT_OF_COLD:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_COLD, powc, beam);
-        return true;
+        break;
 
     case SPELL_LIGHTNING_BOLT:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_LIGHTNING, powc, beam);
-        return true;
+        break;
 
     case SPELL_BOLT_OF_MAGMA:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_MAGMA, powc, beam);
-        return true;
+        break;
 
     case SPELL_POLYMORPH_OTHER:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         if (spd.isMe)
         {
             mpr("Sorry, it doesn't work like that.");
-            return true;
+            return (false);
         }
         zapping(ZAP_POLYMORPH_OTHER, powc, beam);
-        return true;
+        break;
 
     case SPELL_SLOW:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_SLOWING, powc, beam);
-        return true;
+        break;
 
     case SPELL_HASTE:
         if (spell_direction(spd, beam, DIR_NONE, TARG_FRIEND) == -1)
-            return true;
+            return (false);
         zapping(ZAP_HASTING, powc, beam);
-        return true;
+        break;
 
     case SPELL_PARALYZE:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_PARALYSIS, powc, beam);
-        return true;
+        break;
 
     case SPELL_CONFUSE:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_CONFUSION, powc, beam);
-        return true;
+        break;
 
     case SPELL_CONFUSING_TOUCH:
         cast_confusing_touch(powc);
-        return true;
+        break;
 
     case SPELL_SURE_BLADE:
         cast_sure_blade(powc);
-        return true;
+        break;
 
     case SPELL_INVISIBILITY:
         if (spell_direction(spd, beam, DIR_NONE, TARG_FRIEND) == -1)
-            return true;
+            return (false);
         zapping(ZAP_INVISIBILITY, powc, beam);
-        return true;            // you.invis
+        break;
 
     case SPELL_THROW_FLAME:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_FLAME, powc, beam);
-        return true;
+        break;
 
     case SPELL_THROW_FROST:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_FROST, powc, beam);
-        return true;
+        break;
 
     case SPELL_CONTROLLED_BLINK:
         blink();
-        return true;
+        break;
 
     case SPELL_FREEZING_CLOUD:
         cast_big_c(powc, CLOUD_COLD);
-        return true;
+        break;
 
     case SPELL_MEPHITIC_CLOUD:
         stinking_cloud(powc);
-        return true;
+        break;
 
     case SPELL_RING_OF_FLAMES:
         cast_ring_of_flames(powc);
-        return true;
+        break;
 
     case SPELL_RESTORE_STRENGTH:
         restore_stat(STAT_STRENGTH, false);
-        return true;
+        break;
 
     case SPELL_RESTORE_INTELLIGENCE:
         restore_stat(STAT_INTELLIGENCE, false);
-        return true;
+        break;
 
     case SPELL_RESTORE_DEXTERITY:
         restore_stat(STAT_DEXTERITY, false);
-        return true;
+        break;
 
     case SPELL_VENOM_BOLT:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_VENOM_BOLT, powc, beam);
-        return true;
+        break;
 
     case SPELL_OLGREBS_TOXIC_RADIANCE:
         cast_toxic_radiance();
-        return true;
+        break;
 
     case SPELL_TELEPORT_OTHER:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         if (spd.isMe)
         {
             mpr("Sorry, it doesn't work like that.");
-            return true;
+            return (false);
         }
         // teleport creature (I think)
         zapping(ZAP_TELEPORTATION, powc, beam);
@@ -1124,64 +1149,72 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
     case SPELL_BOLT_OF_DRAINING:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_NEGATIVE_ENERGY, powc, beam);
-        return true;
+        break;
 
     case SPELL_LEHUDIBS_CRYSTAL_SPEAR:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_CRYSTAL_SPEAR, powc, beam);
-        return true;
+        break;
 
     case SPELL_BOLT_OF_INACCURACY:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_BEAM_OF_ENERGY, powc, beam);
-        return true;
+        break;
 
     case SPELL_POISONOUS_CLOUD:
         cast_big_c(powc, CLOUD_POISON);
-        return true;
+        break;
+
+    case SPELL_POISON_ARROW:
+        if (spell_direction(spd, beam) == -1)
+            return (false);
+
+        zapping( ZAP_POISON_ARROW, powc, beam );
+        break;
 
     case SPELL_FIRE_STORM:
         cast_fire_storm(powc);
-        return true;
+        break;
 
     case SPELL_DETECT_TRAPS:
         strcpy(info, "You detect ");
         strcat(info, (detect_traps(powc) > 0) ? "some traps!" : "nothing.");
         mpr(info);
-        return true;
+        break;
 
     case SPELL_BLINK:
         random_blink(true);
-        return true;
+        break;
 
     case SPELL_ISKENDERUNS_MYSTIC_BLAST:
         if (spell_direction(spd, beam) == -1)
-            return true;
-        zapping(ZAP_ORB_OF_ENERGY, powc, beam);
-        return true;
+            return (false);
+
+        zapping( ZAP_MYSTIC_BLAST, powc, beam );
+        break;
 
     case SPELL_SWARM:
         summon_swarm(powc);
-        return true;
+        break;
 
     case SPELL_SUMMON_HORRIBLE_THINGS:
         summon_things(powc);
-        return true;
+        break;
 
     case SPELL_ENSLAVEMENT:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
-            return true;
+            return (false);
         }
         zapping(ZAP_ENSLAVEMENT, powc, beam);
-        return true;
+        break;
 
     case SPELL_MAGIC_MAPPING:
         if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
@@ -1194,69 +1227,69 @@ bool your_spells( int spc2, int powc, bool allow_fail )
             powc = stepdown_value( powc, 10, 10, 40, 45 );
             magic_mapping( 5 + powc, 50 + random2avg( powc * 2, 2 ) );
         }
-        return true;
+        break;
 
     case SPELL_HEAL_OTHER:
         if (spell_direction(spd, beam, DIR_NONE, TARG_FRIEND) == -1)
-            return true;
+            return (false);
 
         if (spd.isMe)
         {
             mpr("Sorry, it doesn't work like that.");
-            return true;
+            return (false);
         }
         zapping(ZAP_HEALING, powc, beam);
-        return true;
+        break;
 
     case SPELL_ANIMATE_DEAD:
         mpr("You call on the dead to walk for you.");
         animate_dead(powc + 1, BEH_FRIENDLY, you.pet_target, 1);
-        return true;
+        break;
 
     case SPELL_PAIN:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         dec_hp(1, false);
         zapping(ZAP_PAIN, powc, beam);
-        return true;
+        break;
 
     case SPELL_EXTENSION:
         extension(powc);
-        return true;
+        break;
 
     case SPELL_CONTROL_UNDEAD:
         mass_enchantment(ENCH_CHARM, powc, MHITYOU);
-        return true;
+        break;
 
     case SPELL_ANIMATE_SKELETON:
         mpr("You attempt to give life to the dead...");
         animate_a_corpse(you.x_pos, you.y_pos, BEH_FRIENDLY, you.pet_target,
                          CORPSE_SKELETON);
-        return true;
+        break;
 
     case SPELL_VAMPIRIC_DRAINING:
         vampiric_drain(powc);
-        return true;
+        break;
 
     case SPELL_SUMMON_WRAITHS:
         summon_undead(powc);
-        return true;
+        break;
 
     case SPELL_DETECT_ITEMS:
         detect_items(powc);
-        return true;
+        break;
 
     case SPELL_BORGNJORS_REVIVIFICATION:
         cast_revivification(powc);
-        return true;
+        break;
 
     case SPELL_BURN:
         burn_freeze(powc, BEAM_FIRE);
-        return true;
+        break;
 
     case SPELL_FREEZE:
         burn_freeze(powc, BEAM_COLD);
-        return true;
+        break;
 
     case SPELL_SUMMON_ELEMENTAL:
         summon_elemental(powc, 0, 2);
@@ -1264,21 +1297,21 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
     case SPELL_OZOCUBUS_REFRIGERATION:
         cast_refrigeration(powc);
-        return true;
+        break;
 
     case SPELL_STICKY_FLAME:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_STICKY_FLAME, powc, beam);
-        return true;
+        break;
 
     case SPELL_SUMMON_ICE_BEAST:
         summon_ice_beast_etc(powc, MONS_ICE_BEAST);
-        return true;
+        break;
 
     case SPELL_OZOCUBUS_ARMOUR:
         ice_armour(powc, false);
-        return true;
+        break;
 
     case SPELL_CALL_IMP:
         if (one_chance_in(3))
@@ -1287,45 +1320,45 @@ bool your_spells( int spc2, int powc, bool allow_fail )
             summon_ice_beast_etc(powc, MONS_SHADOW_IMP);
         else
             summon_ice_beast_etc(powc, MONS_IMP);
-        return true;
+        break;
 
     case SPELL_REPEL_MISSILES:
         missile_prot(powc);
-        return true;
+        break;
 
     case SPELL_BERSERKER_RAGE:
         cast_berserk();
-        return true;
+        break;
 
     case SPELL_DISPEL_UNDEAD:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_DISPEL_UNDEAD, powc, beam);
-        return true;
+        break;
 
     case SPELL_GUARDIAN:
         summon_ice_beast_etc(powc, MONS_ANGEL);
-        return true;
+        break;
 
     //jmf: FIXME: SPELL_PESTILENCE?
 
     case SPELL_THUNDERBOLT:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_LIGHTNING, powc, beam);
-        return true;
+        break;
 
     case SPELL_FLAME_OF_CLEANSING:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_CLEANSING_FLAME, powc, beam);
-        return true;
+        break;
 
     //jmf: FIXME: SPELL_SHINING_LIGHT?
 
     case SPELL_SUMMON_DAEVA:
         summon_ice_beast_etc(powc, MONS_DAEVA);
-        return true;
+        break;
 
     case SPELL_ABJURATION_II:
         abjuration(powc);
@@ -1339,57 +1372,57 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
     case SPELL_REGENERATION:
         cast_regen(powc);
-        return true;
+        break;
 
     case SPELL_BONE_SHARDS:
         cast_bone_shards(powc);
-        return true;
+        break;
 
     case SPELL_BANISHMENT:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_BANISHMENT, powc, beam);
-        return true;
+        break;
 
     case SPELL_CIGOTUVIS_DEGENERATION:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
-            return true;
+            return (false);
         }
         zapping(ZAP_DEGENERATION, powc, beam);
-        return true;
+        break;
 
     case SPELL_STING:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_STING, powc, beam);
-        return true;
+        break;
 
     case SPELL_SUBLIMATION_OF_BLOOD:
         sublimation(powc);
-        return true;
+        break;
 
     case SPELL_TUKIMAS_DANCE:
         dancing_weapon(powc, false);
-        return true;
+        break;
 
     case SPELL_HELLFIRE:
         // should only be available from:
         // staff of Dispater & Sceptre of Asmodeus
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         zapping(ZAP_HELLFIRE, powc, beam);
-        return true;
+        break;
 
     case SPELL_SUMMON_DEMON:
         mpr("You open a gate to Pandemonium!");
         summon_ice_beast_etc(powc, summon_any_demon(DEMON_COMMON));
-        return true;
+        break;
 
     case SPELL_DEMONIC_HORDE:
         mpr("You open a gate to Pandemonium!");
@@ -1398,7 +1431,7 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         {
             summon_ice_beast_etc(powc, summon_any_demon(DEMON_LESSER));
         }
-        return true;
+        break;
 
     case SPELL_SUMMON_GREATER_DEMON:
         mpr("You open a gate to Pandemonium!");
@@ -1411,93 +1444,93 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         create_monster( summon_any_demon(DEMON_GREATER), ENCH_ABJ_V, dem_hor,
                         you.x_pos, you.y_pos, MHITYOU, 250 );
 
-        return true;
+        break;
 
     case SPELL_CORPSE_ROT:
         corpse_rot(0);
-        return true;
+        break;
 
     case SPELL_TUKIMAS_VORPAL_BLADE:
         if (!brand_weapon(SPWPN_VORPAL, powc))
             canned_msg(MSG_SPELL_FIZZLES);
-        return true;
+        break;
 
     case SPELL_FIRE_BRAND:
         if (!brand_weapon(SPWPN_FLAMING, powc))
             canned_msg(MSG_SPELL_FIZZLES);
-        return true;
+        break;
 
     case SPELL_FREEZING_AURA:
         if (!brand_weapon(SPWPN_FREEZING, powc))
             canned_msg(MSG_SPELL_FIZZLES);
-        return true;
+        break;
 
     case SPELL_LETHAL_INFUSION:
         if (!brand_weapon(SPWPN_DRAINING, powc))
             canned_msg(MSG_SPELL_FIZZLES);
-        return true;
+        break;
 
     case SPELL_MAXWELLS_SILVER_HAMMER:
         if (!brand_weapon(SPWPN_DUMMY_CRUSHING, powc))
             canned_msg(MSG_SPELL_FIZZLES);
-        return true;
+        break;
 
     case SPELL_POISON_WEAPON:
         if (!brand_weapon(SPWPN_VENOM, powc))
             canned_msg(MSG_SPELL_FIZZLES);
-        return true;
+        break;
 
     case SPELL_CRUSH:
         burn_freeze(powc, BEAM_MISSILE);
-        return true;
+        break;
 
     case SPELL_BOLT_OF_IRON:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_IRON_BOLT, powc, beam);
-        return true;
+        break;
 
     case SPELL_STONE_ARROW:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_STONE_ARROW, powc, beam);
-        return true;
+        break;
 
     case SPELL_TOMB_OF_DOROKLOHE:
         entomb();
-        return true;
+        break;
 
     case SPELL_STONEMAIL:
         stone_scales(powc);
-        return true;
+        break;
 
     case SPELL_SHOCK:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_ELECTRICITY, powc, beam);
-        return true;
+        break;
 
     case SPELL_SWIFTNESS:
         cast_swiftness(powc);
-        return true;
+        break;
 
     case SPELL_FLY:
         cast_fly(powc);
-        return true;
+        break;
 
     case SPELL_INSULATION:
         cast_insulation(powc);
-        return true;
+        break;
 
     case SPELL_ORB_OF_ELECTROCUTION:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_ORB_OF_ELECTRICITY, powc, beam);
-        return true;
+        break;
 
     case SPELL_DETECT_CREATURES:
         detect_creatures(powc);
-        return true;
+        break;
 
     case SPELL_CURE_POISON_II:  // poison magic version of cure poison
         cast_cure_poison(powc);
@@ -1505,19 +1538,19 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
     case SPELL_CONTROL_TELEPORT:
         cast_teleport_control(powc);
-        return true;
+        break;
 
     case SPELL_POISON_AMMUNITION:
         cast_poison_ammo();
-        return true;
+        break;
 
     case SPELL_RESIST_POISON:
         cast_resist_poison(powc);
-        return true;
+        break;
 
     case SPELL_PROJECTED_NOISE:
         project_noise();
-        return true;
+        break;
 
     case SPELL_ALTER_SELF:
         if (!enough_hp( you.hp_max / 2, true ))
@@ -1525,7 +1558,7 @@ bool your_spells( int spc2, int powc, bool allow_fail )
             mpr( "Your body is in too poor a condition "
                  "for this spell to function." );
 
-            return true;
+            return (false);
         }
 
         mpr("Your body is suffused with transfigurative energy!");
@@ -1534,135 +1567,135 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
         if (!mutate(100, false))
             mpr("Odd... you don't feel any different.");
-        return true;
+        break;
 
     case SPELL_DEBUGGING_RAY:
         if (spell_direction(spd, beam, DIR_NONE, TARG_ANY) == -1)
-            return true;
+            return (false);
         zapping(ZAP_DEBUGGING_RAY, powc, beam);
-        return true;
+        break;
 
     case SPELL_RECALL:
         recall(0);
-        return true;
+        break;
 
     case SPELL_PORTAL:
         portal();
-        return true;
+        break;
 
     case SPELL_AGONY:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
-            return true;
+            return (false);
         }
         zapping(ZAP_AGONY, powc, beam);
-        return true;
+        break;
 
     case SPELL_SPIDER_FORM:
         transform(powc, TRAN_SPIDER);
-        return true;
+        break;
 
     case SPELL_DISRUPT:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         zapping(ZAP_DISRUPTION, powc, beam);
-        return true;
+        break;
 
     case SPELL_DISINTEGRATE:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
-            return true;
+            return (false);
         }
         zapping(ZAP_DISINTEGRATION, powc, beam);
-        return true;
+        break;
 
     case SPELL_BLADE_HANDS:
         transform(powc, TRAN_BLADE_HANDS);
-        return true;
+        break;
 
     case SPELL_STATUE_FORM:
         transform(powc, TRAN_STATUE);
-        return true;
+        break;
 
     case SPELL_ICE_FORM:
         transform(powc, TRAN_ICE_BEAST);
-        return true;
+        break;
 
     case SPELL_DRAGON_FORM:
         transform(powc, TRAN_DRAGON);
-        return true;
+        break;
 
     case SPELL_NECROMUTATION:
         transform(powc, TRAN_LICH);
-        return true;
+        break;
 
     case SPELL_DEATH_CHANNEL:
         cast_death_channel(powc);
-        return true;
+        break;
 
     case SPELL_SYMBOL_OF_TORMENT:
         if (you.is_undead || you.mutation[MUT_TORMENT_RESISTANCE])
         {
             mpr("To torment others, one must first know what torment means. ");
-            return true;
+            return (false);
         }
         torment(you.x_pos, you.y_pos);
-        return true;
+        break;
 
     case SPELL_DEFLECT_MISSILES:
         deflection(powc);
-        return true;
+        break;
 
     case SPELL_ORB_OF_FRAGMENTATION:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_ORB_OF_FRAGMENTATION, powc, beam);
-        return true;
+        break;
 
     case SPELL_ICE_BOLT:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_ICE_BOLT, powc, beam);
-        return true;
+        break;
 
     case SPELL_ARC:
         burn_freeze(powc, BEAM_ELECTRICITY);
-        return true;
+        break;
 
     case SPELL_AIRSTRIKE:
         airstrike(powc);
-        return true;
+        break;
 
     case SPELL_ICE_STORM:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         zapping(ZAP_ICE_STORM, powc, beam);
-        return true;
+        break;
 
     case SPELL_SHADOW_CREATURES:
         mpr( "Wisps of shadow whirl around you..." );
         create_monster( RANDOM_MONSTER, ENCH_ABJ_II, BEH_FRIENDLY,
                         you.x_pos, you.y_pos, you.pet_target, 250 );
-        return true;
+        break;
 
     //jmf: new spells 19mar2000
     case SPELL_FLAME_TONGUE:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
-            return true;
+            return (false);
         }
         zapping(ZAP_FLAME_TONGUE, powc, beam);
 
@@ -1672,183 +1705,183 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         zapping(ZAP_FLAME_TONGUE, 2 + random2(4) + random2(4)
                                             + random2(powc) / 25, beam);
         */
-        return true;
+        break;
 
     case SPELL_PASSWALL:
         cast_passwall(powc);
-        return true;
+        break;
 
     case SPELL_IGNITE_POISON:
         cast_ignite_poison(powc);
-        return true;
+        break;
 
     case SPELL_STICKS_TO_SNAKES:
         cast_sticks_to_snakes(powc);
-        return true;
+        break;
 
     case SPELL_SUMMON_LARGE_MAMMAL:
         cast_summon_large_mammal(powc);
-        return true;
+        break;
 
     case SPELL_SUMMON_DRAGON:
         cast_summon_dragon(powc);
-        return true;
+        break;
 
     case SPELL_TAME_BEASTS:
         cast_tame_beasts(powc);
-        return true;
+        break;
 
     case SPELL_SLEEP:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
 
         if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
-            return true;
+            return (false);
         }
 
         zapping(ZAP_SLEEP, powc, beam);
-        return true;
+        break;
 
     case SPELL_MASS_SLEEP:
         cast_mass_sleep(powc);
-        return true;
+        break;
 
     case SPELL_DETECT_MAGIC:
         mpr("FIXME: implement!");
-        return true;
+        break;
 
     case SPELL_DETECT_SECRET_DOORS:
         cast_detect_secret_doors(powc);
-        return true;
+        break;
 
     case SPELL_SEE_INVISIBLE:
         cast_see_invisible(powc);
-        return true;
+        break;
 
     case SPELL_FORESCRY:
         cast_forescry(powc);
-        return true;
+        break;
 
     case SPELL_SUMMON_BUTTERFLIES:
         cast_summon_butterflies(powc);
-        return true;
+        break;
 
     case SPELL_WARP_BRAND:
         if (!brand_weapon(SPWPN_DISTORTION, powc))
             canned_msg(MSG_SPELL_FIZZLES);
-        return true;
+        break;
 
     case SPELL_SILENCE:
         cast_silence(powc);
-        return true;
+        break;
 
     case SPELL_SHATTER:
         cast_shatter(powc);
-        return true;
+        break;
 
     case SPELL_DISPERSAL:
         cast_dispersal(powc);
-        return true;
+        break;
 
     case SPELL_DISCHARGE:
         cast_discharge(powc);
-        return true;
+        break;
 
     case SPELL_BEND:
         cast_bend(powc);
-        return true;
+        break;
 
     case SPELL_BACKLIGHT:
         if (spell_direction(spd, beam) == -1)
-            return true;
+            return (false);
         if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
-            return true;
+            return (false);
         }
         zapping(ZAP_BACKLIGHT, powc + 10, beam);
-        return true;
+        break;
 
     case SPELL_INTOXICATE:
         cast_intoxicate(powc);
-        return true;
+        break;
 
     case SPELL_GLAMOUR:
         cast_glamour(powc);
-        return true;
+        break;
 
     case SPELL_EVAPORATE:
         cast_evaporate(powc);
-        return true;
+        break;
 
     case SPELL_FULSOME_DISTILLATION:
         cast_fulsome_distillation(powc);
-        return true;
+        break;
 
     case SPELL_FRAGMENTATION:
         cast_fragmentation(powc);
-        return true;
+        break;
 
     case SPELL_AIR_WALK:
         transform(powc, TRAN_AIR);
-        return true;
+        break;
 
     case SPELL_SANDBLAST:
         cast_sandblast(powc);
-        return true;
+        break;
 
     case SPELL_ROTTING:
         cast_rotting(powc);
-        return true;
+        break;
 
     case SPELL_SHUGGOTH_SEED:
         cast_shuggoth_seed(powc);
-        return true;
+        break;
 
     case SPELL_CONDENSATION_SHIELD:
         cast_condensation_shield(powc);
-        return true;
+        break;
 
     case SPELL_SEMI_CONTROLLED_BLINK:
         cast_semi_controlled_blink(powc);       //jmf: powc is ignored
-        return true;
+        break;
 
     case SPELL_STONESKIN:
         cast_stoneskin(powc);
-        return true;
+        break;
 
     case SPELL_SIMULACRUM:
         simulacrum(powc);
-        return true;
+        break;
 
     case SPELL_CONJURE_BALL_LIGHTNING:
         cast_conjure_ball_lightning(powc);
-        return true;
+        break;
 
     case SPELL_TWIST:
         cast_twist(powc);
-        return true;
+        break;
 
     case SPELL_FAR_STRIKE:
         cast_far_strike(powc);
-        return true;
+        break;
 
     case SPELL_SWAP:
         cast_swap(powc);
-        return true;
+        break;
 
     case SPELL_APPORTATION:
         cast_apportation(powc);
-        return true;
+        break;
 
     default:
         mpr("Invalid spell!");
         break;
     }                           // end switch
 
-    return false;               // this should never(!) happen
+    return (true);
 }                               // end you_spells()
 
 void exercise_spell( int spell, bool spc, bool success )
@@ -1919,7 +1952,7 @@ void exercise_spell( int spell, bool spc, bool success )
  */
 
 bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
-                     int force_effect )
+                     int force_effect, const char *cause )
 {
 /*  sp_type is the type of the spell
  *  mag_pow is overall power of the spell or effect (ie its level)
@@ -1943,7 +1976,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
         && random2(40) > spec_effect && random2(40) > spec_effect)
     {
         canned_msg(MSG_NOTHING_HAPPENS);
-        return false;
+        return (false);
     }
 
     // setup beam
@@ -2034,8 +2067,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 break;
             case 1:
                 mpr("A wave of violent energy washes through your body!");
-                mpr("Ouch.");
-                ouch(6 + random2avg(7, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(6 + random2avg(7, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             }
             break;
@@ -2045,12 +2077,10 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             {
             case 0:
                 mpr("Energy rips through your body!");
-                mpr("Ouch!");
-                ouch(9 + random2avg(17, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(9 + random2avg(17, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             case 1:
                 mpr("You are caught in a violent explosion!");
-                mpr("Oops.");
                 beam.type = SYM_BURST;
                 beam.damage = dice_def( 3, 12 );
                 beam.flavour = BEAM_MISSILE; // unsure about this
@@ -2060,7 +2090,9 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = random_colour();
-                beam.thrower = KILL_YOU;
+                beam.beam_source = NON_MONSTER;
+                beam.thrower = (cause) ? KILL_MISC : KILL_YOU;
+                beam.aux_source = cause;
                 beam.ex_size = 1;
 
                 explosion(beam);
@@ -2073,7 +2105,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             {
             case 0:
                 mpr("You are blasted with magical energy!");
-                ouch(12 + random2avg(29, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(12 + random2avg(29, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             case 1:
                 mpr("There is a sudden explosion of magical energy!");
@@ -2085,7 +2117,9 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = random_colour();
-                beam.thrower = KILL_YOU;
+                beam.beam_source = NON_MONSTER;
+                beam.thrower = (cause) ? KILL_MISC : KILL_YOU;
+                beam.aux_source = cause;
                 beam.ex_size = coinflip()?1:2;
 
                 explosion(beam);
@@ -2247,14 +2281,13 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             case 1:
             case 2:
                 mpr("You are caught in a localised field of spatial distortion.");
-                mpr("Ouch!");
-                ouch(4 + random2avg(9, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(4 + random2avg(9, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             case 3:
             case 4:
                 mpr("Space bends around you!");
                 random_blink(false);
-                ouch(4 + random2avg(7, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(4 + random2avg(7, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             case 5:
                 mpr("Space twists in upon itself!");
@@ -2271,17 +2304,18 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             case 1:
             case 2:
                 mpr("You are caught in a strong localised spatial distortion.");
-                mpr("Ouch!!");
-                ouch(9 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(9 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             case 3:
             case 4:
                 mpr("Space warps around you!");
+
                 if (one_chance_in(3))
-                    you_teleport2(true);
+                    you_teleport2( true );
                 else
-                    random_blink(false);
-                ouch(5 + random2avg(9, 2), 0, KILLED_BY_WILD_MAGIC);
+                    random_blink( false );
+
+                ouch(5 + random2avg(9, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 potion_effect(POT_CONFUSION, 40);
                 break;
             case 5:
@@ -2308,13 +2342,13 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             {
             case 0:
                 mpr("You are caught in an extremely strong localised spatial distortion!");
-                mpr("Ouch!!!");
-                ouch(15 + random2avg(29, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(15 + random2avg(29, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             case 1:
                 mpr("Space warps crazily around you!");
-                you_teleport2(true);
-                ouch(9 + random2avg(17, 2), 0, KILLED_BY_WILD_MAGIC);
+                you_teleport2( true );
+
+                ouch(9 + random2avg(17, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 potion_effect(POT_CONFUSION, 60);
                 break;
             case 2:
@@ -2380,8 +2414,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             case 1:
             case 2:
                 mpr("You are caught in a localised spatial distortion.");
-                mpr("Ouch!");
-                ouch(5 + random2avg(9, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(5 + random2avg(9, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
 
             case 3:
@@ -2665,7 +2698,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                     break;
                 }
                 mpr("Pain shoots through your body!");
-                ouch(5 + random2avg(15, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(5 + random2avg(15, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             case 1:
                 mpr("You feel horribly lethargic.");
@@ -2718,7 +2751,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                     break;
                 }
                 mpr("You convulse helplessly as pain tears through your body!");
-                ouch(15 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(15 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             }
             break;
@@ -2756,8 +2789,8 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                     mpr("You feel terrible.");
                     break;
                 }
-                mpr("You feel your flesh start to rot away!");
-                you.rotting += random2avg(7, 2) + 1;
+
+                rot_player( random2avg(7, 2) + 1 );
                 break;
 
             case 4:
@@ -2828,7 +2861,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             {
             case 0:
                 mpr("Your body is twisted painfully.");
-                ouch(1 + random2avg(11, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(1 + random2avg(11, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             case 1:
                 random_uselessness(2 + random2(7), 0);
@@ -2841,7 +2874,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             {
             case 0:
                 mpr("Your body is twisted very painfully!");
-                ouch(3 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(3 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             case 1:
                 mpr("You feel saturated with unharnessed energies!");
@@ -2864,13 +2897,13 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 mpr("Your body is flooded with distortional energies!");
                 you.magic_contamination += random2avg(35, 3);
 
-                ouch(3 + random2avg(18, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(3 + random2avg(18, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
 
             case 1:
                 mpr("You feel very strange.");
                 delete_mutation(100);
-                ouch(5 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(5 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
 
             case 2:
@@ -2879,7 +2912,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 if (coinflip())
                     give_bad_mutation(false, failMsg);
 
-                ouch(5 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(5 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             }
             break;
@@ -2887,6 +2920,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
         break;                  // end transmigrations
 
     case SPTYP_FIRE:
+#if 0
         switch (spec_effect)
         {
         case 0:         // just a harmless message
@@ -2952,7 +2986,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
 
                 if (player_res_fire() < 0)
                 {
-                    ouch(2 + random2avg(13, 2), 0, KILLED_BY_WILD_MAGIC);
+                    ouch(2 + random2avg(13, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 }
                 break;
             }
@@ -2964,14 +2998,14 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             case 0:
                 mpr("You are blasted with fire.");
 
-                ouch(check_your_resists(5 + random2avg(29, 2), 2), 0,
-                     KILLED_BY_WILD_MAGIC);
+                ouch( check_your_resists( 5 + random2avg(29, 2), 2 ), 0,
+                      KILLED_BY_WILD_MAGIC, cause );
 
-                scrolls_burn(5, OBJ_SCROLLS);
+                scrolls_burn( 5, OBJ_SCROLLS );
                 break;
+
             case 1:
                 mpr("You are caught a fiery explosion!");
-                mpr("Oops.");
 
                 beam.type = SYM_BURST;
                 beam.damage = dice_def( 3, 14 );
@@ -2980,7 +3014,9 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = RED;
-                beam.thrower = KILL_YOU;
+                beam.beam_source = NON_MONSTER;
+                beam.thrower = (cause) ? KILL_MISC : KILL_YOU;
+                beam.aux_source = cause;
                 beam.ex_size = 1;
 
                 explosion(beam);
@@ -2994,12 +3030,13 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             case 0:
                 mpr("You are blasted with searing flames!");
 
-                ouch(check_your_resists(9 + random2avg(33, 2), 2), 0,
-                     KILLED_BY_WILD_MAGIC);
+                ouch( check_your_resists( 9 + random2avg(33, 2), 2 ), 0,
+                      KILLED_BY_WILD_MAGIC, cause );
 
-                scrolls_burn(10, OBJ_SCROLLS);
+                scrolls_burn( 10, OBJ_SCROLLS );
                 break;
             case 1:
+#endif
                 mpr("There is a sudden and violent explosion of flames!");
 
                 beam.type = SYM_BURST;
@@ -3007,13 +3044,16 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 beam.flavour = BEAM_FIRE;
                 beam.target_x = you.x_pos;
                 beam.target_y = you.y_pos;
-                strcpy(beam.beam_name, "fireball");
+                strcpy( beam.beam_name, "fireball" );
                 beam.colour = RED;
-                beam.thrower = KILL_YOU;
+                beam.beam_source = NON_MONSTER;
+                beam.thrower = (cause) ? KILL_MISC : KILL_YOU;
+                beam.aux_source = cause;
                 beam.ex_size = coinflip()?1:2;
 
                 explosion(beam);
                 break;
+#if 0
 
             case 2:
                 mpr("You are covered in liquid fire!");
@@ -3023,6 +3063,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             break;
         }
         break;                  // end fire
+#endif
 
     case SPTYP_ICE:
         switch (spec_effect)
@@ -3081,7 +3122,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 scrolls_burn(2, OBJ_POTIONS);
 
                 if (player_res_cold() < 0)
-                    ouch(4 + random2avg(5, 2), 0, KILLED_BY_WILD_MAGIC);
+                    ouch(4 + random2avg(5, 2), 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             }
             break;
@@ -3093,14 +3134,13 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 mpr("Heat is drained from your body.");
 
                 ouch(check_your_resists(5 + random2(6) + random2(7), 3), 0,
-                     KILLED_BY_WILD_MAGIC);
+                     KILLED_BY_WILD_MAGIC, cause);
 
                 scrolls_burn(4, OBJ_POTIONS);
                 break;
 
             case 1:
                 mpr("You are caught in an explosion of ice and frost!");
-                mpr("Oops.");
 
                 beam.type = SYM_BURST;
                 beam.damage = dice_def( 3, 11 );
@@ -3109,7 +3149,9 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = WHITE;
-                beam.thrower = KILL_YOU;
+                beam.beam_source = NON_MONSTER;
+                beam.thrower = (cause) ? KILL_MISC : KILL_YOU;
+                beam.aux_source = cause;
                 beam.ex_size = 1;
 
                 explosion(beam);
@@ -3124,7 +3166,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 mpr("You are blasted with ice!");
 
                 ouch(check_your_resists(9 + random2avg(23, 2), 3), 0,
-                     KILLED_BY_WILD_MAGIC);
+                     KILLED_BY_WILD_MAGIC, cause);
 
                 scrolls_burn(9, OBJ_POTIONS);
                 break;
@@ -3211,7 +3253,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 hurted = random2avg(13, 2) + 10;
                 hurted -= random2(1 + player_AC());
 
-                ouch(hurted, 0, KILLED_BY_WILD_MAGIC);
+                ouch(hurted, 0, KILLED_BY_WILD_MAGIC, cause);
                 break;
             }
             break;
@@ -3221,7 +3263,6 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             {
             case 0:
                 mpr("You are caught in an explosion of flying shrapnel!");
-                mpr("Oops.");
 
                 beam.type = SYM_BURST;
                 beam.damage = dice_def( 3, 15 );
@@ -3236,7 +3277,9 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 if (one_chance_in(5))
                     beam.colour = LIGHTCYAN;
 
-                beam.thrower = KILL_YOU;
+                beam.beam_source = NON_MONSTER;
+                beam.thrower = (cause) ? KILL_MISC : KILL_YOU;
+                beam.aux_source = cause;
                 beam.ex_size = 1;
 
                 explosion(beam);
@@ -3317,7 +3360,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             case 0:
                 mpr("Electricity courses through your body.");
                 ouch(check_your_resists(4 + random2avg(9, 2), 5), 0,
-                     KILLED_BY_WILD_MAGIC);
+                     KILLED_BY_WILD_MAGIC, cause);
                 break;
             case 1:
                 snprintf( info, INFO_SIZE, "Noxious gasses pour from your %s!",
@@ -3335,7 +3378,6 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
             {
             case 0:
                 mpr("You are caught in an explosion of electrical discharges!");
-                mpr("Oops.");
 
                 beam.type = SYM_BURST;
                 beam.damage = dice_def( 3, 8 );
@@ -3344,7 +3386,9 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = LIGHTBLUE;
-                beam.thrower = KILL_YOU;
+                beam.beam_source = NON_MONSTER;
+                beam.thrower = (cause) ? KILL_MISC : KILL_YOU;
+                beam.aux_source = cause;
                 beam.ex_size = one_chance_in(4)?1:2;
 
                 explosion(beam);
@@ -3413,7 +3457,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 if (player_res_poison())
                 {
                     canned_msg(MSG_NOTHING_HAPPENS);
-                    return false;
+                    return (false);
                 }
 
                 mpr("You feel sick.");
@@ -3438,7 +3482,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 if (player_res_poison())
                 {
                     canned_msg(MSG_NOTHING_HAPPENS);
-                    return false;
+                    return (false);
                 }
 
                 mpr("You feel very sick.");
@@ -3455,7 +3499,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 if (player_res_poison())
                 {
                     canned_msg(MSG_NOTHING_HAPPENS);
-                    return false;
+                    return (false);
                 }
                 lose_stat(STAT_RANDOM, 1);
                 break;
@@ -3469,7 +3513,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 if (player_res_poison())
                 {
                     canned_msg(MSG_NOTHING_HAPPENS);
-                    return false;
+                    return (false);
                 }
 
                 mpr("You feel incredibly sick.");
@@ -3487,7 +3531,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
                 if (player_res_poison())
                 {
                     canned_msg(MSG_NOTHING_HAPPENS);
-                    return false;
+                    return (false);
                 }
 
                 lose_stat(STAT_RANDOM, 1 + random2avg(5, 2));
@@ -3498,5 +3542,5 @@ bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
         break;                  // end poison
     }
 
-    return true;
+    return (true);
 }                               // end miscast_effect()

@@ -31,6 +31,7 @@
 #include "itemname.h"
 #include "item_use.h"
 #include "it_use2.h"
+#include "macro.h"
 #include "misc.h"
 #include "mon-util.h"
 #include "mutation.h"
@@ -40,10 +41,6 @@
 #include "spells2.h"
 #include "stuff.h"
 #include "wpn-misc.h"
-
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 static bool  can_ingest(int what_isit, int kindof_thing, bool suppress_msg);
 static bool  eat_from_floor(void);
@@ -63,60 +60,55 @@ static bool  food_change(bool suppress_message);
  **************************************************
 */
 
-void make_hungry(int hunger_amount, bool suppress_msg)
+void make_hungry( int hunger_amount, bool suppress_msg )
 {
-    bool state_message = false;
+    if (you.is_undead == US_UNDEAD)
+        return;
 
-    if (you.is_undead != US_UNDEAD)
-    {
 #if DEBUG_DIAGNOSTICS
-        set_redraw_status( REDRAW_HUNGER );
+    set_redraw_status( REDRAW_HUNGER );
 #endif
-        you.hunger -= hunger_amount;
 
-        if (you.hunger < 0)
-            you.hunger = 0;
+    you.hunger -= hunger_amount;
 
-        // so we don't get two messages, ever.
-        state_message = food_change(false);
+    if (you.hunger < 0)
+        you.hunger = 0;
 
-        if (!(suppress_msg || state_message))
-            describe_food_change(-hunger_amount);
-    }
+    // so we don't get two messages, ever.
+    bool state_message = food_change(false);
+
+    if (!suppress_msg && !state_message)
+        describe_food_change( -hunger_amount );
 }                               // end make_hungry()
 
-void lessen_hunger(int satiated_amount, bool suppress_msg)
+void lessen_hunger( int satiated_amount, bool suppress_msg )
 {
-    bool state_message = false;
+    if (you.is_undead == US_UNDEAD)
+        return;
 
-    if (you.is_undead != US_UNDEAD)
-    {
-        you.hunger += satiated_amount;
+    you.hunger += satiated_amount;
 
-        if (you.hunger > 12000)
-            you.hunger = 12000;
+    if (you.hunger > 12000)
+        you.hunger = 12000;
 
-        // so we don't get two messages, ever
-        state_message = food_change(false);
+    // so we don't get two messages, ever
+    bool state_message = food_change(false);
 
-        if (!(suppress_msg || state_message))
-            describe_food_change(satiated_amount);
-    }
+    if (!suppress_msg && !state_message)
+        describe_food_change(satiated_amount);
 }                               // end lessen_hunger()
 
-void set_hunger(int new_hunger_level, bool suppress_msg)
+void set_hunger( int new_hunger_level, bool suppress_msg )
 {
+    if (you.is_undead == US_UNDEAD)
+        return;
+
     int hunger_difference = (new_hunger_level - you.hunger);
 
-    if (you.is_undead != US_UNDEAD)
-    {
-        if (hunger_difference < 0)
-            make_hungry(abs(hunger_difference), suppress_msg);
-        else if (hunger_difference > 0)
-            lessen_hunger(hunger_difference, suppress_msg);
-    }
-
-    return;
+    if (hunger_difference < 0)
+        make_hungry( abs(hunger_difference), suppress_msg );
+    else if (hunger_difference > 0)
+        lessen_hunger( hunger_difference, suppress_msg );
 }                               // end set_hunger()
 
 // more of a "weapon_switch back from butchering" function, switching
@@ -571,16 +563,13 @@ static bool food_change(bool suppress_message)
     char newstate = HS_ENGORGED;
     bool state_changed = false;
 
-    // take care of undead
+    // this case shouldn't actually happen:
     if (you.is_undead == US_UNDEAD)
-    {
         you.hunger = 6000;
-        return state_changed;
-    }
 
     // take care of ghouls - they can never be 'full'
-    if (you.species == SP_GHOUL)
-        if (you.hunger > 6999) you.hunger = 6999;
+    if (you.species == SP_GHOUL && you.hunger > 6999)
+        you.hunger = 6999;
 
     // get new hunger state
     if (you.hunger <= 1000)
@@ -613,7 +602,8 @@ static bool food_change(bool suppress_message)
             }
         }
     }
-    return state_changed;
+
+    return (state_changed);
 }                               // end food_change()
 
 
@@ -749,9 +739,7 @@ static void eat_chunk( int chunk_effect )
             break;
 
         case CE_HCL:
-            mpr("You feel your flesh start to rot away!");
-
-            you.rotting += 10 + random2(10);
+            rot_player( 10 + random2(10) );
             disease_player( 50 + random2(100) );
             break;
 
@@ -995,7 +983,7 @@ static void eating(unsigned char item_class, int item_type)
                 mpr(info);
                 break;
             case FOOD_BANANA:
-                mpr("That banana was delicious!");
+                strcpy(info, "That banana was delicious!");
                 if (one_chance_in(8))
                     strcat(info, " Even the peel tasted good!");
                 mpr(info);

@@ -5,395 +5,520 @@
  *
  *  Change History (most recent first):
  *
+ *      <3>     6/25/02         JS              Completely rewritten
  *      <2>     6/13/99         BWR             SysEnv.crawl_dir support
  *      <1>     -/--/--         JS              Created
  */
 
-#define _LIBLINUX_IMPLEMENTATION
-#include "AppHdr.h"
-#undef _LIBLINUX_IMPLEMENTATION
+/*
+ * The macro-implementation works like this:
+ *   - For generic game code, #define getch() getchm().
+ *   - getchm() works by reading characters from an internal
+ *     buffer. If none are available, new characters are read into
+ *     the buffer with getch_mul().
+ *   - getch_mul() reads at least one character, but will read more
+ *     if available (determined using kbhit(), which should be defined
+ *     in the platform specific libraries).
+ *   - Before adding the characters read into the buffer, any macros
+ *     in the sequence are replaced (see macro_add_buf_long for the
+ *     details).
+ *
+ * (When the above text mentions characters, it actually means int).
+ */
 
-#define MACRO_C
+#include "AppHdr.h"
+
+#ifdef USE_MACROS
+#define MACRO_CC
 #include "macro.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#if !(defined(__IBMCPP__) || defined(__BCPLUSPLUS__))
-#include <unistd.h>
-#endif
-#include <stdarg.h>
-#include <ctype.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <map>
+#include <deque>
+
+#include <stdio.h>      // for snprintf
 
 #include "externs.h"
-#include "libmac.h"
-#include "llist.h"
 
-#ifdef USE_CURSES
+// for trim_string:
+#include "initfile.h"
 
-  #ifndef CURSES_INCLUDE_FILE
-    #include <curses.h>
-  #else
-    #include CURSES_INCLUDE_FILE
-  #endif
+typedef std::deque<int> keyseq;
+typedef std::deque<int> keybuf;
+typedef std::map<keyseq,keyseq> macromap;
 
-#elif defined(MAC)|| defined(__IBMCPP__) || defined(__BCPLUSPLUS__)
-#else
-#include <conio.h>
-#endif
+static macromap Keymaps;
+static macromap Macros;
 
-int *i_strrev(int *str, int len);
+static keybuf Buffer;
 
-/* A linked list is not really appropriate for this purpose, should
- * use a hash-table (FIXME)*/
-node_s *macro_list;
-node_s *macro_buf;
-
-int macro_init(void)
+/*
+ * Returns the name of the file that contains macros.
+ */
+static std::string get_macro_file()
 {
-    FILE *f;
-    char *s;
-    unsigned int ssize;
-
-    macro_list = new_list();
-    macro_buf = new_list();
-    macro_buf->data = macro_buf->next;
-
-    s = (char *) malloc(255);
-    ssize = 255;
-
-    char file_name[kPathLen] = "\0";
+    std::string s;
 
     if (SysEnv.crawl_dir)
-        strncpy(file_name, SysEnv.crawl_dir, kPathLen);
+        s = SysEnv.crawl_dir;
 
-    strncat(file_name, "macro.txt", kPathLen);
+    return (s + "macro.txt");
+}
 
-    f = fopen(file_name, "r");
-    if (f != NULL)
+/*
+ * Takes as argument a string, and returns a sequence of keys described
+ * by the string. Most characters produce their own ASCII code. There
+ * are two special cases:
+ *   \\ produces the ASCII code of a single \
+ *   \{123} produces 123 (decimal)
+ */
+static keyseq parse_keyseq( std::string s )
+{
+    int state = 0;
+    keyseq v;
+    int num;
+
+    for (std::string::iterator i = s.begin(); i != s.end(); i++)
     {
-        char *key;
-        int *rkey;
-        char *act;
-        int *ract;
-        unsigned int a, len, rlen, tlen;
+        char c = *i;
 
-        /* Fixes a crash with empty macro-file. */
-        a = len = rlen = tlen = 0;
-
-        key = (char *) malloc(ssize);
-        act = (char *) malloc(ssize);
-        rkey = (int *) malloc(ssize * sizeof(int));
-        ract = (int *) malloc(ssize * sizeof(int));
-
-        key[0] = 0;
-        act[0] = 0;
-
-        do
+        switch (state)
         {
-            a = 0;
-            do
-            {
-                if (a == ssize - 1)
-                {
-                    s = (char *) realloc(s, ssize + 255);
-                    key = (char *) realloc(key, ssize + 255);
-                    act = (char *) realloc(act, ssize + 255);
-                    rkey = (int *) realloc(rkey, (ssize + 255) * sizeof(int));
-                    ract = (int *) realloc(rkey, (ssize + 255) * sizeof(int));
-                }
-
-                fgets(s + a, 255, f);
-                a += strlen(s + a);
+        case 0: // Normal state
+            if (c == '\\') {
+                state = 1;
+            } else {
+                v.push_back(c);
             }
-            while (a == ssize - 1);
+            break;
 
-            if (sscanf(s, "K:%[^\n]%n", key, &len))
-            {
-                key[len - 2] = 0;
-                //printf("[%d][%s]\n", len, key);
+        case 1: // Last char is a '\'
+            if (c == '\\') {
+                state = 0;
+                v.push_back(c);
+            } else if (c == '{') {
+                state = 2;
+                num = 0;
             }
-            else if (sscanf( s, "A:%[^\n]%n", act, &len ))
-            {
-                act[len - 2] = 0;
+            // XXX Error handling
+            break;
+
+        case 2: // Inside \{}
+            if (c == '}') {
+                v.push_back(num);
+                state = 0;
+            } else if (c >= '0' && c <= '9') {
+                num = num * 10 + c - '0';
             }
-
-            if (key[0] != 0 && act[0] != 0)
-            {
-                //rkey[0] = -1;
-                len = 0;
-                rlen = 0;
-                tlen = 1;
-
-                while (len < strlen(key) && tlen > 0)
-                {
-                    if (sscanf(&key[len], "\\%i%n", &rkey[rlen], &tlen) == 0)
-                    {
-                        rkey[rlen] = key[len];
-                        tlen = 1;
-                    }
-                    rlen++;
-                    len += tlen;
-                }
-
-                rkey[rlen] = -1;
-
-                //ract[0] = 0;
-                len = 0;
-                rlen = 0;
-                tlen = 1;
-
-                while (len < strlen(act) && tlen > 0)
-                {
-                    if (sscanf(&act[len], "\\%i%n", &ract[rlen], &tlen) == 0)
-                    {
-                        ract[rlen] = act[len];
-                        tlen = 1;
-                    }
-
-                    rlen++;
-                    len += tlen;
-                }
-
-                ract[rlen] = -1;
-
-                macro_add(rkey, ract);
-                key[0] = 0;
-                act[0] = 0;
-            }
+            // XXX Error handling
+            break;
         }
-        while (!feof(f));
     }
 
-    return 0;
+    return (v);
 }
 
-int macro_add(int *key, int *action)
+/*
+ * Serializes a key sequence into a string of the format described
+ * above.
+ */
+static std::string vtostr( keyseq v )
 {
-    node_s *node, *node2;
-    macro_s *nmacro;
-    int *str1, *str2;
+    std::string s;
 
-    node = new_node();
-    nmacro = (macro_s *) malloc( sizeof(macro_s) );
-
-    if (node == NULL || nmacro == NULL)
-        return -1;
-
-    node->data = nmacro;
-    nmacro->node = node;
-    nmacro->final = 0;
-
-    str1 = (int *) malloc( (i_strlen(key) + 1) * sizeof(int) );
-    str2 = (int *) malloc( (i_strlen(action) + 1) * sizeof(int) );
-
-    if (str1 == NULL || str2 == NULL)
-        return -1;
-
-    i_strcpy(str1, key);
-    i_strcpy(str2, action);
-
-    nmacro->key = str1;
-    nmacro->action = str2;
-
-    node2 = macro_list->next;
-
-    while (node2 != node2->next
-                && i_strcmp(((macro_s *) node2->data)->key, nmacro->key) < 1)
+    for (keyseq::iterator i = v.begin(); i != v.end(); i++)
     {
-        node2 = node2->next;
+        if (*i < 32 || *i > 127) {
+            char buff[10];
+
+            snprintf( buff, sizeof(buff), "\\{%d}", *i );
+            s += std::string( buff );
+
+            // Removing the stringstream code because its highly
+            // non-portable.  For starters, people and compilers
+            // are supposed to be using the <sstream> implementation
+            // (with the ostringstream class) not the old <strstream>
+            // version, but <sstream> is not as available as it should be.
+            //
+            // The strstream implementation isn't very standard
+            // either:  some compilers require the "ends" marker,
+            // others don't (and potentially fatal errors can
+            // happen if you don't have it correct for the system...
+            // ie its hard to make portable).  It also isn't a very
+            // good implementation to begin with.
+            //
+            // Everyone should have snprintf()... we supply a version
+            // in libutil.cc to make sure of that! -- bwr
+            //
+            // std::ostrstream ss;
+            // ss << "\\{" << *i << "}" << ends;
+            // s += ss.str();
+        } else if (*i == '\\') {
+            s += "\\\\";
+        } else {
+            s += *i;
+        }
     }
 
-    insert_node(node, node2->prev);
-
-    return 0;
+    return (s);
 }
 
-static int macro_buf_add(int *actions)
+/*
+ * Add a macro (suprise, suprise).
+ */
+static void macro_add( macromap &mapref, keyseq key, keyseq action )
 {
-    int i, l = i_strlen(actions);
-    node_s *node;
-
-    for (i = 0; i < l; i++)
-    {
-        node = new_node();
-        // We don't need no stinking structs for one value...
-        node->data = (void *) actions[i];
-
-        insert_node(node, ((node_s *) macro_buf->data)->prev);
-    }
-
-    return 0;
+    mapref[key] = action;
 }
 
-static int macro_buf_get(void)
+/*
+ * Remove a macro.
+ */
+static void macro_del( macromap &mapref, keyseq key )
+{
+    mapref.erase( key );
+}
+
+
+/*
+ * Adds keypresses from a sequence into the internal keybuffer. Ignores
+ * macros.
+ */
+static void macro_buf_add( keyseq actions )
+{
+    for (keyseq::iterator i = actions.begin(); i != actions.end(); i++)
+        Buffer.push_back(*i);
+}
+
+/*
+ * Adds a single keypress into the internal keybuffer.
+ */
+static void macro_buf_add( int key )
+{
+    Buffer.push_back( key );
+}
+
+
+/*
+ * Adds keypresses from a sequence into the internal keybuffer. Does some
+ * O(N^2) analysis to the sequence to replace macros.
+ */
+static void macro_buf_add_long( keyseq actions )
+{
+    keyseq tmp;
+
+    // debug << "Adding: " << vtostr(actions) << endl;
+    // debug.flush();
+
+    // Check whether any subsequences of the sequence are macros.
+    // The matching starts from as early as possible, and is
+    // as long as possible given the first constraint. I.e from
+    // the sequence "abcdef" and macros "ab", "bcde" and "de"
+    // "ab" and "de" are recognized as macros.
+
+    while (actions.size() > 0)
+    {
+        tmp = actions;
+
+        while (tmp.size() > 0)
+        {
+            keyseq result = Keymaps[tmp];
+
+            // Found a macro. Add the expansion (action) of the
+            // macro into the buffer.
+            if (result.size() > 0) {
+                macro_buf_add( result );
+                break;
+            }
+
+            // Didn't find a macro. Remove a key from the end
+            // of the sequence, and try again.
+            tmp.pop_back();
+        }
+
+        if (tmp.size() == 0) {
+            // Didn't find a macro. Add the first keypress of the sequence
+            // into the buffer, remove it from the sequence, and try again.
+            macro_buf_add( actions.front() );
+            actions.pop_front();
+
+        } else {
+            // Found a macro, which has already been added above. Now just
+            // remove the macroed keys from the sequence.
+            for (unsigned int i = 0; i < tmp.size(); i++)
+                actions.pop_front();
+        }
+    }
+}
+
+/*
+ * Command macros are only applied from the immediate front of the
+ * buffer, and only when the game is expecting a command.
+ */
+static void macro_buf_apply_command_macro( void )
+{
+    keyseq  tmp = Buffer;
+
+    // find the longest match from the start of the buffer and replace it
+    while (tmp.size() > 0)
+    {
+        keyseq  result = Macros[tmp];
+
+        if (result.size() > 0)
+        {
+            // Found macro, remove match from front:
+            for (unsigned int i = 0; i < tmp.size(); i++)
+                Buffer.pop_front();
+
+            // Add macro to front:
+            for (keyseq::reverse_iterator k = result.rbegin(); k != result.rend(); k++)
+                Buffer.push_front(*k);
+
+            break;
+        }
+
+        tmp.pop_back();
+    }
+}
+
+/*
+ * Removes the earlies keypress from the keybuffer, and returns its
+ * value. If buffer was empty, returns -1;
+ */
+static int macro_buf_get( void )
+{
+    if (Buffer.size() == 0)
+        return (-1);
+
+    int key = Buffer.front();
+    Buffer.pop_front();
+
+    return (key);
+}
+
+/*
+ * Saves macros into the macrofile, overwriting the old one.
+ */
+void macro_save( void )
+{
+    std::ofstream f;
+    f.open( get_macro_file().c_str() );
+
+    f << "# WARNING: This file is entirely auto-generated." << std::endl
+      << std::endl << "# Key Mappings:" << std::endl;
+
+    for (macromap::iterator i = Keymaps.begin(); i != Keymaps.end(); i++)
+    {
+        // Need this check, since empty values are added into the
+        // macro struct for all used keyboard commands.
+        if ((*i).second.size() > 0)
+        {
+            f << "K:" << vtostr((*i).first) << std::endl
+              << "A:" << vtostr((*i).second) << std::endl << std::endl;
+        }
+    }
+
+    f << "# Command Macros:" << std::endl;
+
+    for (macromap::iterator i = Macros.begin(); i != Macros.end(); i++)
+    {
+        // Need this check, since empty values are added into the
+        // macro struct for all used keyboard commands.
+        if ((*i).second.size() > 0)
+        {
+            f << "M:" << vtostr((*i).first) << std::endl
+              << "A:" << vtostr((*i).second) << std::endl << std::endl;
+        }
+    }
+
+    f.close();
+}
+
+/*
+ * Reads as many keypresses as are available (waiting for at least one),
+ * and returns them as a single keyseq.
+ */
+static keyseq getch_mul( void )
+{
+    keyseq keys;
+    int a;
+
+    keys.push_back( a = getch() );
+
+    // The a == 0 test is legacy code that I don't dare to remove. I
+    // have a vague recollection of it being a kludge for conio support.
+    while ((kbhit() || a == 0)) {
+        keys.push_back( a = getch() );
+    }
+
+    return (keys);
+}
+
+/*
+ * Replacement for getch(). Returns keys from the key buffer if available.
+ * If not, adds some content to the buffer, and returns some of it.
+ */
+int getchm( void )
 {
     int a;
 
-    if (macro_buf->next == macro_buf->next->next)
-        return -1;
-
-    a = int (macro_buf->next->data);
-
-    delete_node(macro_buf->next);
-
-    return a;
-}
-
-static int macro_retrieve(int *key)
-{
-    node_s *node = macro_list->next;
-
-    while (node != node->next
-           && i_strcmp(((macro_s *) node->data)->key, key) != 0)
-    {
-        node = node->next;
-    }
-
-    if (node == node->next)
-        return 0;
-
-    macro_buf_add(((macro_s *) node->data)->action);
-
-    return 1;
-}
-
-int macro_save(void)
-{
-    FILE *f = fopen("macro.txt", "w");
-    node_s *node = macro_list->next;
-    int i, c;
-
-    if (f == NULL)
-        return -1;
-
-    while (node != node->next)
-    {
-        fprintf(f, "K:");
-
-        for (i = 0; i < i_strlen(((macro_s *) node->data)->key); i++)
-        {
-            c = ((macro_s *) node->data)->key[i];
-
-            /* It might be a good idea to allow some escaping of '\'
-             * too :-) */
-
-            if (c >= 32 && c < 128 && c != '\\')
-                fprintf(f, "%c", c);
-            else if (c < 0)
-                fprintf(f, "\\-0%o", -c);
-            else
-                fprintf(f, "\\0%o", c);
-        }
-
-        fprintf(f, "\n");
-        fprintf(f, "A:");
-
-        for (i = 0; i < i_strlen(((macro_s *) node->data)->action); i++)
-        {
-            c = ((macro_s *) node->data)->action[i];
-
-            if (c >= 32 && c < 128)
-                fprintf(f, "%c", c);
-            else if (c < 0)
-                fprintf(f, "\\-%o", -i);
-            else
-                fprintf(f, "\\%o", i);
-        }
-
-        fprintf(f, "\n\n");
-        node = node->next;
-    }
-
-    return 0;
-}
-
-static int getch_mul(int size, int *buf)
-{
-    int a;
-    int i = 0;
-
-    buf[i++] = a = getch();
-    buf[i] = -1;
-
-    while ((kbhit() || a == 0) && i < size)
-    {
-        a = getch();
-
-        buf[i++] = a;
-        buf[i] = -1;
-    }
-
-    return i;
-}
-
-int getchm(void)
-{
-    int buf[255];
-    int a;
-
+    // Got data from buffer.
     if ((a = macro_buf_get()) != -1)
-        return a;
+        return (a);
 
-    getch_mul(sizeof(buf), buf);
+    // Read some keys...
+    keyseq keys = getch_mul();
+    // ... and add them into the buffer
+    macro_buf_add_long( keys );
 
-    if (!macro_retrieve(buf))
-        macro_buf_add(buf);
-
-    return macro_buf_get();
+    return (macro_buf_get());
 }
 
-int macro_add_query(void)
+/*
+ * Replacement for getch(). Returns keys from the key buffer if available.
+ * If not, adds some content to the buffer, and returns some of it.
+ */
+int getch_with_command_macros( void )
 {
-    int key[255], act[255];
-
-    mpr("Key: ");
-    getch_mul(sizeof(key), key);
-
-    if (macro_retrieve(key) != 0)
+    if (Buffer.size() == 0)
     {
-        while (macro_buf->next != macro_buf->next->next)
-            macro_buf_get();
-
-        mpr("That key already has an action assigned to it.");
-
-        return -1;
+        // Read some keys...
+        keyseq keys = getch_mul();
+        // ... and add them into the buffer (apply keymaps)
+        macro_buf_add_long( keys );
     }
 
-    mpr("Action: ");
-    getch_mul(sizeof(act), act);
+    // Apply longest matching macro at front of buffer:
+    macro_buf_apply_command_macro();
 
-    macro_add(key, act);
-    return 0;
+    return (macro_buf_get());
 }
 
-/* I think these should work... */
-int i_strlen(int *str)
+/*
+ * Flush the buffer.  Later we'll probably want to give the player options
+ * as to when this happens (ex. always before command input, casting failed).
+ */
+void flush_input_buffer( int reason )
 {
-    int len = 0;
-
-    while (*(str++) != -1)
-        len++;
-
-    return len;
+    if (Options.flush_input[ reason ])
+        Buffer.clear();
 }
 
-int *i_strcpy(int *str1, int *str2)
+void macro_add_query( void )
 {
-    int i = 0;
+    unsigned char input;
+    bool keymap = false;
 
-    while ((str1[i] = str2[i]) != -1)
-        i++;
+    mpr( "Command (m)acro or (k)eymap? ", MSGCH_PROMPT );
+    input = getch();
+    if (input == 0)
+        input = getch();
 
-    return str1;
+    input = tolower( input );
+    if (input == 'k')
+        keymap = true;
+    else if (input == 'm')
+        keymap = false;
+    else
+    {
+        mpr( "Aborting." );
+        return;
+    }
+
+    // reference to the appropriate mapping
+    macromap &mapref = (keymap ? Keymaps : Macros);
+
+    snprintf( info, INFO_SIZE, "Input %s trigger key: ",
+              (keymap ? "keymap" : "macro") );
+
+    mpr( info, MSGCH_PROMPT );
+    keyseq key = getch_mul();
+
+    cprintf( "%s" EOL, (vtostr( key )).c_str() ); // echo key to screen
+
+    if (mapref[key].size() > 0)
+    {
+        snprintf( info, INFO_SIZE, "Current Action: %s",
+                  (vtostr( mapref[key] )).c_str() );
+
+        mpr( info, MSGCH_WARN );
+        mpr( "Do you wish to (r)edefine, (c)lear, or (a)bort?", MSGCH_PROMPT );
+
+        input = getch();
+        if (input == 0)
+            input = getch();
+
+        input = tolower( input );
+        if (input == 'a' || input == ESCAPE)
+        {
+            mpr( "Aborting." );
+            return;
+        }
+        else if (input == 'c')
+        {
+            mpr( "Cleared." );
+            macro_del( mapref, key );
+            return;
+        }
+    }
+
+    mpr( "Input Macro Action: ", MSGCH_PROMPT );
+
+    // Using getch_mul() here isn't very useful...  We'd like the
+    // flexibility to define multicharacter macros without having
+    // to resort to editing files and restarting the game.  -- bwr
+    // keyseq act = getch_mul();
+
+    keyseq  act;
+    char    buff[4096];
+
+    get_input_line( buff, sizeof(buff) );
+
+    // convert c_str to keyseq
+    const int len = strlen( buff );
+    for (int i = 0; i < len; i++)
+        act.push_back( buff[i] );
+
+    macro_add( mapref, key, act );
 }
 
-int i_strcmp(int *str1, int *str2)
+
+/*
+ * Initializes the macros.
+ */
+int macro_init( void )
 {
-    int i = 0;
+    std::string s;
+    std::ifstream f;
+    keyseq key, action;
+    bool keymap = false;
 
-    while (str1[i] == str2[i] && str1[i] != -1 && str2[i] != -1)
-        i++;
+    f.open( get_macro_file().c_str() );
 
-    return str1[i] - str2[i];
+    while (f >> s)
+    {
+        trim_string(s);  // remove white space from ends
+
+        if (s[0] == '#') {
+            continue;                   // skip comments
+
+        } else if (s.substr(0, 2) == "K:") {
+            key = parse_keyseq(s.substr(2));
+            keymap = true;
+
+        } else if (s.substr(0, 2) == "M:") {
+            key = parse_keyseq(s.substr(2));
+            keymap = false;
+
+        } else if (s.substr(0, 2) == "A:") {
+            action = parse_keyseq(s.substr(2));
+            macro_add( (keymap ? Keymaps : Macros), key, action );
+        }
+    }
+
+    return (0);
 }
+
+#endif

@@ -291,12 +291,39 @@ void area_shift(void)
 }
 
 
-void abyss_teleport(void)
-/***********************/
+void abyss_teleport( bool new_area )
+/**********************************/
 {
-    int i, j, k;
+    int x, y, i, j, k;
 
-    init_pandemonium();         /* changes colours */
+    if (!new_area)
+    {
+        // try to find a good spot within the shift zone:
+        for (i = 0; i < 100; i++)
+        {
+            x = 16 + random2( GXM - 32 );
+            y = 16 + random2( GYM - 32 );
+
+            if ((grd[x][y] == DNGN_FLOOR
+                    || grd[x][y] == DNGN_SHALLOW_WATER)
+                && mgrd[x][y] == NON_MONSTER
+                && env.cgrid[x][y] == EMPTY_CLOUD)
+            {
+                break;
+            }
+        }
+
+        if (i < 100)
+        {
+            you.x_pos = x;
+            you.y_pos = y;
+            return;
+        }
+    }
+
+    // teleport to a new area of the abyss:
+
+    init_pandemonium();                         /* changes colours */
 
     env.floor_colour = (mcolour[env.mons_alloc[9]] == BLACK)
                                 ? LIGHTGREY : mcolour[env.mons_alloc[9]];
@@ -325,14 +352,10 @@ void abyss_teleport(void)
     }
 
     for (i = 0; i < MAX_MONSTERS; i++)
-    {
         menv[i].type = -1;
-    }
 
     for (i = 0; i < MAX_CLOUDS; i++)
-    {
         delete_cloud( i );
-    }
 
     for (i = 10; i < (GXM - 9); i++)
     {
@@ -353,5 +376,4 @@ void abyss_teleport(void)
     generate_area( 10, 10, (GXM - 10), (GYM - 10) );
 
     grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
-
 }

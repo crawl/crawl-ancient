@@ -27,14 +27,12 @@
 #include "invent.h"
 #include "items.h"
 #include "itemname.h"
+#include "macro.h"
 #include "player.h"
 #include "randart.h"
 #include "spl-book.h"
 #include "stuff.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 static char in_a_shop(char shoppy, char id[4][50]);
 static char more3(void);
@@ -1421,8 +1419,10 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
         {
             switch (item.sub_type)
             {
-            case MISC_HORN_OF_GERYON:
             case MISC_RUNE_OF_ZOT:  // upped from 1200 to encourage collecting
+                valued += 10000;
+                break;
+            case MISC_HORN_OF_GERYON:
                 valued += 5000;
                 break;
             case MISC_DISC_OF_STORMS:
@@ -1446,8 +1446,10 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
         {
             switch (item.sub_type)
             {
-            case MISC_HORN_OF_GERYON:
             case MISC_RUNE_OF_ZOT:
+                valued += 5000;
+                break;
+            case MISC_HORN_OF_GERYON:
                 valued += 1000;
                 break;
             case MISC_CRYSTAL_BALL_OF_SEEING:
@@ -1487,7 +1489,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
         break;
 
     case OBJ_ORBS:
-        valued = 10000;
+        valued = 250000;
         break;
     }                           // end switch
 

@@ -19,6 +19,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "externs.h"
 
@@ -52,22 +53,30 @@ FixedArray<unsigned char, MAX_LEVELS, MAX_BRANCHES> feature;
 
 int map_lines = 0; //mv: number of lines already printed on "over-map" screen
 
-//mv: prints one line in specified color
-void print_one_map_line( const char *line, int color );
+//mv: prints one line in specified colour
+// void print_one_map_line( const char *line, int colour );
+// void print_branch_entrance_line( const char *area );
 
-static bool print_level_name(int i, int j, bool already_printed);
+void print_one_simple_line( const char *line, int colour );
+void print_one_highlighted_line( const char *pre, const char *text,
+                                 const char *post, int colour );
+
+static void print_level_name( int branch, int depth,
+                              bool &printed_branch, bool &printed_level );
 
 void init_overmap( void )
 {
     for (int i = 0; i < MAX_LEVELS; i++)
-      for (int j = 0; j < MAX_BRANCHES; j++)
-      {
-          altars_present[i][j] = 0;
-          feature[i][j] = 0;
-      }
+    {
+        for (int j = 0; j < MAX_BRANCHES; j++)
+        {
+            altars_present[i][j] = 0;
+            feature[i][j] = 0;
+        }
+    }
 
     for (int i = 0; i < MAX_BRANCHES; i++)
-      stair_level[i] = -1;
+        stair_level[i] = -1;
 }          // end init_overmap()
 
 void display_overmap( void )
@@ -85,63 +94,105 @@ void display_overmap( void )
     map_lines = 0;
 
     clrscr();
-    bool already_printed = false;
     bool pr_lev = false;
+    bool output = false;
 
-    print_one_map_line("                                    Over-map", WHITE);
-    print_one_map_line("",LIGHTGREY);
-    //mv: this empty line must be done this way
-    //so number of line stored in map_lines fit
+    print_one_simple_line("                            Overview of the Dungeon", WHITE);
 
-    for (int i = 0; i < MAX_BRANCHES; i++)
+    // This is a more sensible order than the order of the enums -- bwr
+    const int list_order[] =
     {
+        BRANCH_MAIN_DUNGEON,
+        BRANCH_ECUMENICAL_TEMPLE,
+        BRANCH_ORCISH_MINES, BRANCH_ELVEN_HALLS,
+        BRANCH_LAIR, BRANCH_SWAMP, BRANCH_SLIME_PITS, BRANCH_SNAKE_PIT,
+        BRANCH_HIVE,
+        BRANCH_VAULTS, BRANCH_HALL_OF_BLADES, BRANCH_CRYPT, BRANCH_TOMB,
+        BRANCH_VESTIBULE_OF_HELL,
+        BRANCH_DIS, BRANCH_GEHENNA, BRANCH_COCYTUS, BRANCH_TARTARUS,
+        BRANCH_HALL_OF_ZOT
+    };
+
+    for (unsigned int index = 0; index < sizeof(list_order) / sizeof(int); index++)
+    {
+        const int i = list_order[index];
+        bool printed_branch = false;
+
         for (int j = 0; j < MAX_LEVELS; j++)
         {
-            already_printed = false;
+            bool printed_level = false;
 
             if (altars_present[j][i] != 0)
             {
-                already_printed = print_level_name(i, j, already_printed);
+                print_level_name( i, j, printed_branch, printed_level );
+                output = true;
 
                 if (altars_present[j][i] == 100)
-                    print_one_map_line("  - some altars to the gods.", LIGHTGREY);
+                {
+                    print_one_highlighted_line( "    - some ",
+                                                "altars to the gods", ".",
+                                                WHITE );
+                }
                 else
                 {
-                    strcpy(info, "  - an altar to ");
+                    snprintf( info, INFO_SIZE, "altar to %s",
+                              god_name( altars_present[j][i] ) );
+
+                    print_one_highlighted_line( "    - an ", info, ".", WHITE );
+#if 0
+                    strcpy(info, "    - an altar to ");
                     strcat(info, god_name(altars_present[j][i]));
                     strcat(info, ".");
-                    print_one_map_line(info,LIGHTGREY);
+                    print_one_simple_line( info, LIGHTGREY );
+#endif
                 }
             }
 
             if ( (feature[j][i] & FEATURE_SHOP) )
             {
-                already_printed = print_level_name(i, j, already_printed);
-                print_one_map_line("  - facilities for the purchase of goods.",LIGHTGREY);
+                print_level_name( i, j, printed_branch, printed_level );
+
+                // print_one_simple_line("    - facilities for the purchase of goods.",LIGHTGREY);
+
+                print_one_highlighted_line( "    - facilities for the ",
+                                            "purchase of goods", ".", LIGHTGREEN );
+                output = true;
             }
 
             if ( (feature[j][i] & FEATURE_ABYSS) )
             {
-                already_printed = print_level_name(i, j, already_printed);
-                print_one_map_line("  - a gateway into the Abyss.", LIGHTRED);
+                print_level_name( i, j, printed_branch, printed_level );
+                // print_one_simple_line("    - a gateway into the Abyss.", LIGHTRED);
+                print_one_highlighted_line( "    - a gateway into ",
+                                            "the Abyss", ".", MAGENTA );
+                output = true;
             }
 
             if ( (feature[j][i] & FEATURE_PANDEMONIUM) )
             {
-                already_printed = print_level_name(i, j, already_printed);
-                print_one_map_line("  - a link to Pandemonium.", LIGHTRED);
+                print_level_name( i, j, printed_branch, printed_level );
+                // print_one_simple_line("    - a link to Pandemonium.", LIGHTRED);
+
+                print_one_highlighted_line( "    - a link to ", "Pandemonium",
+                                            ".", LIGHTBLUE );
+                output = true;
             }
 
             if ( (feature[j][i] & FEATURE_HELL) )
             {
-                already_printed = print_level_name(i, j, already_printed);
-                print_one_map_line("  - a mouth of Hell.", LIGHTRED);
+                print_level_name( i, j, printed_branch, printed_level );
+                // print_one_simple_line("    - a mouth of Hell.", LIGHTRED);
+                print_one_highlighted_line( "    - a mouth of ", "Hell", ".", RED );
+                output = true;
             }
 
             if ( (feature[j][i] & FEATURE_LABYRINTH) )
             {
-                already_printed = print_level_name(i, j, already_printed);
-                print_one_map_line("  - the entrance of a Labyrinth.", LIGHTRED);
+                print_level_name( i, j, printed_branch, printed_level );
+                // print_one_simple_line("    - the entrance of a Labyrinth.", LIGHTRED);
+                print_one_highlighted_line( "    - an entrance to ",
+                                            "a Labyrinth", ".", CYAN );
+                output = true;
             }
 
 
@@ -150,24 +201,26 @@ void display_overmap( void )
             for (int k = 1; k < MAX_BRANCHES; k++)
             {
                 pr_lev = false;
-                strcpy(info, "  - a staircase leading to ");
+                // strcpy(info, "    - a staircase leading to ");
+                info[0] = '\0';
 
-                if ( stair_level[k] == j )
-                    switch ( i )
+                if (stair_level[k] == j)
+                {
+                    switch (i)
                     {
                     case BRANCH_LAIR:
                         switch (k)
                         {
                         case BRANCH_SLIME_PITS:
-                            strcat(info, "the Slime Pits.");
+                            strcat(info, "the Slime Pits");
                             pr_lev = true;
                             break;
                         case BRANCH_SNAKE_PIT:
-                            strcat(info, "the Snake Pit.");
+                            strcat(info, "the Snake Pit");
                             pr_lev = true;
                             break;
                         case BRANCH_SWAMP:
-                            strcat(info, "the Swamp.");
+                            strcat(info, "the Swamp");
                             pr_lev = true;
                             break;
                         }
@@ -177,11 +230,11 @@ void display_overmap( void )
                         switch (k)
                         {
                         case BRANCH_HALL_OF_BLADES:
-                            strcat(info, "the Hall of Blades.");
+                            strcat(info, "the Hall of Blades");
                             pr_lev = true;
                             break;
                         case BRANCH_CRYPT:
-                            strcat(info, "the Crypt.");
+                            strcat(info, "the Crypt");
                             pr_lev = true;
                             break;
                         }
@@ -191,7 +244,7 @@ void display_overmap( void )
                         switch (k)
                         {
                         case BRANCH_TOMB:
-                            strcat(info, "the Tomb.");
+                            strcat(info, "the Tomb");
                             pr_lev = true;
                             break;
                         }
@@ -201,7 +254,7 @@ void display_overmap( void )
                         switch (k)
                         {
                         case BRANCH_ELVEN_HALLS:
-                            strcat(info, "the Elven Halls.");
+                            strcat(info, "the Elven Halls");
                             pr_lev = true;
                             break;
                         }
@@ -211,42 +264,49 @@ void display_overmap( void )
                         switch (k)
                         {
                         case BRANCH_ORCISH_MINES:
-                            strcat(info, "the Orcish Mines.");
+                            strcat(info, "the Orcish Mines");
                             pr_lev = true;
                             break;
                         case BRANCH_HIVE:
-                            strcat(info, "the Hive.");
+                            strcat(info, "the Hive");
                             pr_lev = true;
                             break;
                         case BRANCH_LAIR:
-                            strcat(info, "the Lair.");
+                            strcat(info, "the Lair");
                             pr_lev = true;
                             break;
                         case BRANCH_VAULTS:
-                            strcat(info, "the Vaults.");
+                            strcat(info, "the Vaults");
                             pr_lev = true;
                             break;
                         case BRANCH_HALL_OF_ZOT:
-                            strcat(info, "the Hall of Zot.");
+                            strcat(info, "the Hall of Zot");
                             pr_lev = true;
                             break;
                         case BRANCH_ECUMENICAL_TEMPLE:
-                            strcat(info, "the Ecumenical Temple.");
+                            strcat(info, "the Ecumenical Temple");
                             pr_lev = true;
                             break;
                         }
                         break;
                     }
+                }
 
-                if ( pr_lev )
+                if (pr_lev)
                 {
-                    already_printed = print_level_name(i, j, already_printed);
-                    print_one_map_line(info, YELLOW);
-
+                    print_level_name( i, j, printed_branch, printed_level );
+                    print_one_highlighted_line( "    - the entrance to ", info,
+                                                ".", YELLOW );
+                    output = true;
                 }
             }
         }
     }
+
+    textcolor( LIGHTGREY );
+
+    if (!output)
+        cprintf( EOL "You have yet to discover anything worth noting." EOL );
 
     getch();
 
@@ -258,43 +318,65 @@ void display_overmap( void )
 }          // end display_overmap()
 
 
-static bool print_level_name( int i, int j, bool already_printed )
+static void print_level_name( int branch, int depth,
+                              bool &printed_branch, bool &printed_level )
 {
-    if ( already_printed )
-        return true;
+    if (!printed_branch)
+    {
+        printed_branch = true;
 
-    char level_name[100];
-    char temp_quant[5];
+        print_one_simple_line( "", YELLOW );
+        print_one_simple_line(
+                (branch == BRANCH_MAIN_DUNGEON)      ? "Main Dungeon" :
+                (branch == BRANCH_ORCISH_MINES)      ? "The Orcish Mines" :
+                (branch == BRANCH_HIVE)              ? "The Hive" :
+                (branch == BRANCH_LAIR)              ? "The Lair" :
+                (branch == BRANCH_SLIME_PITS)        ? "The Slime Pits" :
+                (branch == BRANCH_VAULTS)            ? "The Vaults" :
+                (branch == BRANCH_CRYPT)             ? "The Crypt" :
+                (branch == BRANCH_HALL_OF_BLADES)    ? "The Hall of Blades" :
+                (branch == BRANCH_HALL_OF_ZOT)       ? "The Hall of Zot" :
+                (branch == BRANCH_ECUMENICAL_TEMPLE) ? "The Ecumenical Temple" :
+                (branch == BRANCH_SNAKE_PIT)         ? "The Snake Pit" :
+                (branch == BRANCH_ELVEN_HALLS)       ? "The Elven Halls" :
+                (branch == BRANCH_TOMB)              ? "The Tomb" :
+                (branch == BRANCH_SWAMP)             ? "The Swamp" :
 
-    strcpy(level_name, "Level ");
+                (branch == BRANCH_DIS)               ? "The Iron City of Dis" :
+                (branch == BRANCH_GEHENNA)           ? "Gehenna" :
+                (branch == BRANCH_VESTIBULE_OF_HELL) ? "The Vestibule of Hell" :
+                (branch == BRANCH_COCYTUS)           ? "Cocytus" :
+                (branch == BRANCH_TARTARUS)          ? "Tartarus"
+                                                     : "Unknown Area",
 
-    itoa(j + 1, temp_quant, 10);
+                YELLOW );
+    }
 
-    // replaces lengthy switch 11mar2000 {dlb}
-    if ( i >= BRANCH_ORCISH_MINES && i <= BRANCH_SWAMP )
-        itoa(j - you.branch_stairs[(i - 10)], temp_quant, 10);
+    if (!printed_level)
+    {
+        printed_level = true;
 
-    strcat(level_name, temp_quant);
+        if (branch == BRANCH_ECUMENICAL_TEMPLE
+            || branch == BRANCH_HALL_OF_BLADES
+            || branch == BRANCH_VESTIBULE_OF_HELL)
+        {
+            // these areas only have one level... let's save the space
+            return;
+        }
 
-    strcat(level_name, (i == BRANCH_ORCISH_MINES)      ? " of the Mines" :
-                       (i == BRANCH_HIVE)              ? " of the Hive" :
-                       (i == BRANCH_LAIR)              ? " of the Lair" :
-                       (i == BRANCH_SLIME_PITS)        ? " of the Slime Pits" :
-                       (i == BRANCH_VAULTS)            ? " of the Vaults" :
-                       (i == BRANCH_CRYPT)             ? " of the Crypt" :
-                       (i == BRANCH_HALL_OF_BLADES)    ? " of the Hall of Blades" :
-                       (i == BRANCH_HALL_OF_ZOT)       ? " of the Hall of Zot" :
-                       (i == BRANCH_ECUMENICAL_TEMPLE) ? " of the Temple" :
-                       (i == BRANCH_SNAKE_PIT)         ? " of the Snake Pit" :
-                       (i == BRANCH_ELVEN_HALLS)       ? " of the Elven Halls" :
-                       (i == BRANCH_TOMB)              ? " of the Tomb" :
-                       (i == BRANCH_SWAMP)             ? " of the Swamp"
-                                                       : "" );
+        // we need our own buffer in here (info is used):
+        char buff[ INFO_SIZE ] = "\0";;
 
-    strcat(level_name, " :");
-    print_one_map_line(level_name, LIGHTGREY);
+        if (branch == BRANCH_MAIN_DUNGEON)
+            depth += 1;
+        else if (branch >= BRANCH_ORCISH_MINES && branch <= BRANCH_SWAMP)
+            depth -= you.branch_stairs[ branch - BRANCH_ORCISH_MINES ];
+        else // branch is in hell (all of which start at depth 28)
+            depth -= 26;
 
-    return true;
+        snprintf( buff, INFO_SIZE, "  Level %d:", depth );
+        print_one_simple_line( buff, LIGHTRED );
+    }
 }
 
 void seen_staircase( unsigned char which_staircase )
@@ -405,16 +487,16 @@ void seen_other_thing( unsigned char which_thing )
 }          // end seen_other_thing()
 
 
-/* mv: this function prints one line at "Over-map screen" in specified color.
+/* mv: this function prints one line at "Over-map screen" in specified colour.
  * If map_lines = maximum number of lines (it means the screen is full) it
  * prints "More..." message, read key, clear screen and after that prints new
  * line
  */
-void print_one_map_line( const char *line , int color)
+void print_one_simple_line( const char *line , int colour)
 {
     if (map_lines == (get_number_of_lines() - 2))
     {
-        textcolor (LIGHTGREY);
+        textcolor( LIGHTGREY );
         cprintf(EOL);
         cprintf("More...");
         getch();
@@ -422,11 +504,42 @@ void print_one_map_line( const char *line , int color)
         map_lines = 0;
     }
 
-    textcolor (color);
-    cprintf(line);
-    cprintf(EOL);
+    textcolor( colour );
+    cprintf( line );
+    cprintf( EOL );
 
     map_lines++;
+}
 
-    return;
-} // end print_one_map_line()
+void print_one_highlighted_line( const char *pre, const char *text,
+                                 const char *post, int colour )
+{
+    if (map_lines == (get_number_of_lines() - 2))
+    {
+        textcolor( LIGHTGREY );
+        cprintf(EOL);
+        cprintf("More...");
+        getch();
+        clrscr();
+        map_lines = 0;
+    }
+
+    if (pre[0] != '\0')
+    {
+        textcolor( LIGHTGREY );
+        cprintf( pre );
+    }
+
+    textcolor( colour );
+    cprintf( text );
+
+    if (post[0] != '\0')
+    {
+        textcolor( LIGHTGREY );
+        cprintf( post );
+    }
+
+    cprintf( EOL );
+
+    map_lines++;
+}

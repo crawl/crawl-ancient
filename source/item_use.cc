@@ -365,7 +365,7 @@ void wield_effects(int item_wield_2, bool showMsgs)
                     break;
 
                 case SPWPN_VAMPIRICISM:
-                    if (you.species != SP_MUMMY)
+                    if (!you.is_undead)
                         mpr("You feel a strange hunger.");
                     else
                         mpr("You feel strangely empty.");
@@ -417,7 +417,7 @@ void wield_effects(int item_wield_2, bool showMsgs)
 
                 case SPWPN_VAMPIRES_TOOTH:
                     // mummies cannot smell, and do not hunger {dlb}
-                    if (you.species != SP_MUMMY)
+                    if (!you.is_undead)
                         mpr("You feel a strange hunger, and smell blood on the air...");
                     else
                         mpr("You feel strangely empty.");
@@ -436,7 +436,7 @@ void wield_effects(int item_wield_2, bool showMsgs)
                 break;
 
             case SPWPN_DISTORTION:
-                miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100);
+                miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a weapon of distortion" );
                 break;
 
             case SPWPN_SINGING_SWORD:
@@ -479,16 +479,14 @@ void wield_effects(int item_wield_2, bool showMsgs)
                 break;
 
             case SPWPN_STAFF_OF_WUCAD_MU:
-                miscast_effect(SPTYP_DIVINATION, 9, 90, 100);
+                miscast_effect( SPTYP_DIVINATION, 9, 90, 100, "the Staff of Wucad Mu" );
                 you.special_wield = SPWLD_WUCAD_MU;
                 break;
             }
         }
 
         if (item_cursed( you.inv[item_wield_2] ))
-        {
             mpr("It sticks to your hand!");
-        }
     }
 }                               // end wield_weapon()
 
@@ -525,7 +523,7 @@ bool armour_prompt( const std::string & mesg, int *index )
     return (succeeded);
 }                               // end armour_prompt()
 
-bool cloak_is_being_removed( void )
+static bool cloak_is_being_removed( void )
 {
     if (current_delay_action() != DELAY_ARMOUR_OFF)
         return (false);
@@ -1184,6 +1182,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     strcpy(pbolt.beam_name, str_pass);
 
     pbolt.thrower = KILL_YOU_MISSILE;
+    pbolt.aux_source = NULL;
 
     // get the ammo/weapon type.  Convenience.
     wepClass = you.inv[throw_2].base_type;
@@ -1370,14 +1369,14 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
         case WPN_CROSSBOW:
             exercise(SK_CROSSBOWS, (coinflip()? 2 : 1));
-            baseHit = 2;
+            baseHit += 2;
             exHitBonus = (3 * effSkill) / 2 + 6;
             exDamBonus = effSkill / 2 + 4;
             break;
 
         case WPN_HAND_CROSSBOW:
             exercise(SK_CROSSBOWS, (coinflip()? 2 : 1));
-            baseHit = 1;
+            baseHit += 1;
             exHitBonus = (3 * effSkill) / 2 + 4;
             exDamBonus = effSkill / 2 + 2;
             break;
@@ -1425,6 +1424,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             pbolt.colour = RED;
             pbolt.type = SYM_BOLT;
             pbolt.thrower = KILL_YOU_MISSILE;
+            pbolt.aux_source = NULL;
 
             // ammo known if we can't attribute it to the bow
             if (bow_brand != SPWPN_FLAME && !poisoned)
@@ -1445,6 +1445,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             pbolt.colour = WHITE;
             pbolt.type = SYM_BOLT;
             pbolt.thrower = KILL_YOU_MISSILE;
+            pbolt.aux_source = NULL;
 
             // ammo known if we can't attribute it to the bow
             if (bow_brand != SPWPN_FROST && !poisoned)
@@ -2403,6 +2404,7 @@ static bool affix_weapon_enchantment( void )
         strcpy(beam.beam_name, "fiery explosion");
         beam.colour = RED;
         beam.thrower = KILL_YOU;
+        beam.aux_source = "a fiery explosion";
         beam.ex_size = 2;
         beam.isTracer = false;
 
@@ -2432,7 +2434,7 @@ static bool affix_weapon_enchantment( void )
         mpr(info);
 
         // from unwield_item
-        miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100);
+        miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a weapon of distortion" );
         break;
 
     default:
@@ -2732,8 +2734,8 @@ void read_scroll(void)
         return;
     }
 
-    if (!(you.inv[item_slot].base_type == OBJ_BOOKS
-         || you.inv[item_slot].base_type == OBJ_SCROLLS))
+    if (you.inv[item_slot].base_type != OBJ_BOOKS
+        && you.inv[item_slot].base_type != OBJ_SCROLLS)
     {
         mpr("You can't read that!");
         return;
@@ -2885,6 +2887,7 @@ void read_scroll(void)
         beam.colour = RED;
         // your explosion, (not someone else's explosion)
         beam.thrower = KILL_YOU;
+        beam.aux_source = "reading a scroll of immolation";
         beam.ex_size = 2;
 
         explosion(beam);

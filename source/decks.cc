@@ -306,7 +306,7 @@ static void cards(unsigned char which_card)
     int loopy = 0;              // general purpose loop variable {dlb}
     bool success = false;       // for summoning messages {dlb}
     bool failMsg = true;
-    int summ_dur;
+    int summ_dur, summ_beh, summ_num;
 
     if (which_card == CARD_BLANK && one_chance_in(10))
         which_card = CARD_RULES_FOR_BRIDGE;
@@ -391,6 +391,9 @@ static void cards(unsigned char which_card)
         if (you.intel < 4)
             you.intel = 0;
 
+        if (you.skills[SK_EVOCATIONS] < random2(30))
+            you.max_intel--;
+
         you.redraw_intelligence = 1;
         break;
 
@@ -401,6 +404,9 @@ static void cards(unsigned char which_card)
         if (you.strength < 4)
             you.strength = 0;
 
+        if (you.skills[SK_EVOCATIONS] < random2(30))
+            you.max_strength--;
+
         you.redraw_strength = 1;
         break;
 
@@ -410,6 +416,9 @@ static void cards(unsigned char which_card)
         you.dex -= (2 + random2avg(5, 2));
         if (you.dex < 4)
             you.dex = 0;
+
+        if (you.skills[SK_EVOCATIONS] < random2(30))
+            you.max_dex--;
 
         you.redraw_dexterity = 1;
         break;
@@ -535,8 +544,9 @@ static void cards(unsigned char which_card)
         if (summ_dur > ENCH_ABJ_VI)
             summ_dur = ENCH_ABJ_VI;
 
-        if (create_monster( MONS_WHITE_IMP + random2(5), summ_dur, BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
+        if (create_monster( summon_any_demon( DEMON_LESSER ), summ_dur,
+                            BEH_FRIENDLY, you.x_pos, you.y_pos, you.pet_target,
+                            250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -549,8 +559,9 @@ static void cards(unsigned char which_card)
         if (summ_dur > ENCH_ABJ_VI)
             summ_dur = ENCH_ABJ_VI;
 
-        if (create_monster( MONS_NEQOXEC + random2(5), summ_dur, BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
+        if (create_monster( summon_any_demon( DEMON_COMMON ), summ_dur,
+                            BEH_FRIENDLY, you.x_pos, you.y_pos, you.pet_target,
+                            250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -559,12 +570,15 @@ static void cards(unsigned char which_card)
     case CARD_DEMON_GREATER:
         mpr("On the card is a picture of a huge demon.");
 
-        summ_dur = ENCH_ABJ_I + random2(3) + you.skills[SK_EVOCATIONS] / 6;
-        if (summ_dur > ENCH_ABJ_VI)
-            summ_dur = ENCH_ABJ_VI;
+        summ_beh = (you.skills[SK_EVOCATIONS] > random2(30)) ? BEH_FRIENDLY
+                                                             : BEH_CHARMED;
 
-        if (create_monster( MONS_NEQOXEC + random2(5), summ_dur, BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
+        if (summ_beh == BEH_CHARMED)
+            mpr( "You don't feel so good about this..." );
+
+        if (create_monster( summon_any_demon( DEMON_GREATER ), ENCH_ABJ_V,
+                            summ_beh, you.x_pos, you.y_pos,
+                            you.pet_target, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -575,13 +589,11 @@ static void cards(unsigned char which_card)
 
         success = false;
 
-        for (loopy = 0; loopy < 7; loopy++)
-        {
-            summ_dur = ENCH_ABJ_I + random2(3) + you.skills[SK_EVOCATIONS] / 4;
-            if (summ_dur > ENCH_ABJ_VI)
-                summ_dur = ENCH_ABJ_VI;
+        summ_num = 7 + random2(6);
 
-            if (create_monster( MONS_WHITE_IMP + random2(5), summ_dur,
+        for (loopy = 0; loopy < summ_num; loopy++)
+        {
+            if (create_monster( summon_any_demon( DEMON_LESSER ), ENCH_ABJ_VI,
                                 BEH_HOSTILE, you.x_pos, you.y_pos,
                                 MHITYOU, 250 ) != -1)
             {
@@ -610,7 +622,7 @@ static void cards(unsigned char which_card)
     case CARD_FIEND:
         mpr("On the card is a picture of a huge scaly devil.");
 
-        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 10;
+        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 6;
         if (summ_dur > ENCH_ABJ_VI)
             summ_dur = ENCH_ABJ_VI;
 
@@ -624,7 +636,7 @@ static void cards(unsigned char which_card)
     case CARD_DRAGON:
         mpr("On the card is a picture of a huge scaly dragon.");
 
-        summ_dur = ENCH_ABJ_III + you.skills[SK_EVOCATIONS] / 10;
+        summ_dur = ENCH_ABJ_III + you.skills[SK_EVOCATIONS] / 6;
         if (summ_dur > ENCH_ABJ_VI)
             summ_dur = ENCH_ABJ_VI;
 
@@ -639,7 +651,7 @@ static void cards(unsigned char which_card)
     case CARD_GOLEM:
         mpr("On the card is a picture of a statue.");
 
-        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 10;
+        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 4;
         if (summ_dur > ENCH_ABJ_VI)
             summ_dur = ENCH_ABJ_VI;
 
@@ -654,7 +666,7 @@ static void cards(unsigned char which_card)
     case CARD_THING_FUGLY:
         mpr("On the card is a picture of a very ugly thing.");
 
-        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 10;
+        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 4;
         if (summ_dur > ENCH_ABJ_VI)
             summ_dur = ENCH_ABJ_VI;
 
@@ -682,7 +694,7 @@ static void cards(unsigned char which_card)
         else
             mpr("On the card is a picture of a hideous abomination.");
 
-        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 10;
+        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 4;
         if (summ_dur > ENCH_ABJ_VI)
             summ_dur = ENCH_ABJ_VI;
 
@@ -708,8 +720,8 @@ static void cards(unsigned char which_card)
         break;
 
     case CARD_TELEPORT_NOW:
-        mpr("You have drawn the Portal of Instantaneous Transposition.");
-        you_teleport2(true);
+        mpr( "You have drawn the Portal of Instantaneous Transposition." );
+        you_teleport2( true, true );  // in abyss, always to new area
         break;
 
     case CARD_RAGE:
@@ -747,10 +759,7 @@ static void cards(unsigned char which_card)
         if (you.is_undead)
             mpr("You feel terrible.");
         else
-        {
-            mpr("You feel your flesh start to rot away!");
-            you.rotting += 4 + random2( 5 - you.skills[SK_EVOCATIONS] / 7 );
-        }
+            rot_player( 2 + random2( 7 - you.skills[SK_EVOCATIONS] / 4 ) );
         break;
 
     case CARD_HEALING:
@@ -843,7 +852,7 @@ static void cards(unsigned char which_card)
         break;
 
     case CARD_WILD_MAGIC:
-        mpr("You have drawn Wild Magic.");
+        mpr( "You have drawn Wild Magic." );
         miscast_effect( SPTYP_RANDOM, random2(15) + 5, random2(250), 0 );
         break;
 

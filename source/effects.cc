@@ -86,8 +86,7 @@ void torment(int tx, int ty)
 
 void banished(unsigned char gate_type)
 {
-
-    you_teleport2(false);
+    you_teleport2( false );
 
     // this is to ensure that you're standing on a suitable space (67)
     grd[you.x_pos][you.y_pos] = gate_type;
@@ -98,29 +97,29 @@ void banished(unsigned char gate_type)
 
 bool forget_spell(void)
 {
-    unsigned char spc2;
-    unsigned int safety = 0;    // to prevent infinite looping {dlb}
+    if (!you.spell_no)
+        return (false);
 
-    if (you.spell_no < 1)
-        return false;
+    // find a random spell to forget:
+    int slot = -1;
+    int num  = 0;
 
-    do
+    for (int i = 0; i < 25; i++)
     {
-        spc2 = random2(25);
-
-        // begin safety check -- {dlb}
-        safety++;
-
-        if (safety > 1000)
-            return false;
-        // -- end safety check {dlb}
-
+        if (you.spells[i] != SPELL_NO_SPELL)
+        {
+            num++;
+            if (one_chance_in( num ))
+                slot = i;
+        }
     }
-    while (you.spells[spc2] == SPELL_NO_SPELL);
 
-    you.spell_no--;
-    you.spells[spc2] = SPELL_NO_SPELL;
-    return true;
+    if (slot == -1)              // should never happen though
+        return (false);
+
+    del_spell_from_memory_by_slot( slot );
+
+    return (true);
 }                               // end forget_spell()
 
 // use player::decrease_stats() instead iff:
@@ -212,22 +211,25 @@ void direct_effect(struct bolt &pbolt)
     {
     case DMNBM_HELLFIRE:
         mpr( "You are engulfed in a burst of hellfire!" );
-        strcpy( pbolt.beam_name,  "hellfire" );
+        strcpy( pbolt.beam_name, "hellfire" );
         pbolt.ex_size = 1;
         pbolt.flavour = BEAM_EXPLOSION;
         pbolt.type = SYM_ZAP;
         pbolt.colour = RED;
         pbolt.thrower = KILL_MON_MISSILE;
+        pbolt.aux_source = NULL;
         pbolt.isBeam = false;
         pbolt.isTracer = false;
         pbolt.hit = 20;
         pbolt.damage = dice_def( 3, 20 );
+        pbolt.aux_source = "burst of hellfire";
         explosion( pbolt );
         break;
 
     case DMNBM_SMITING:
-        mpr("Something smites you!");
-        strcpy(pbolt.beam_name, "smiting");    // for ouch
+        mpr( "Something smites you!" );
+        strcpy( pbolt.beam_name, "smiting" );    // for ouch
+        pbolt.aux_source = "by divine providence";
         damage_taken = 7 + random2avg(11, 2);
         break;
 
@@ -241,13 +243,16 @@ void direct_effect(struct bolt &pbolt)
 
     case DMNBM_MUTATION:
         mpr("Strange energies course through your body.");
-        mutate(100);
+        if (one_chance_in(5))
+            mutate(100);
+        else
+            give_bad_mutation();
         break;
     }
 
     // apply damage and handle death, where appropriate {dlb}
     if (damage_taken > 0)
-        ouch(damage_taken, pbolt.beam_source, KILLED_BY_BEAM);
+        ouch(damage_taken, pbolt.beam_source, KILLED_BY_BEAM, pbolt.aux_source);
 
     return;
 }                               // end direct_effect()
@@ -537,11 +542,6 @@ bool acquirement(unsigned char force_class)
     {
         // Now asking for a weapon is biased towards your skills,
         // although launchers are right out for now. -- bwr
-
-        // Accepting the shortcoming of occasionally providing
-        // weapons that are unwieldable by the character (happened
-        // before as well)... don't feel like compilcating things
-        // with more duplicate code. -- bwr
         int count = 0;
         int skill = SK_FIGHTING;
 
@@ -731,6 +731,8 @@ bool acquirement(unsigned char force_class)
                         // new spellcaster who's asking for a book -- bwr
                         type_wanted = BOOK_CANTRIPS;
                     }
+                    else if (!you.had_book[BOOK_MINOR_MAGIC_I])
+                        type_wanted = BOOK_MINOR_MAGIC_I + random2(3);
                     else if (!you.had_book[BOOK_WIZARDRY])
                         type_wanted = BOOK_WIZARDRY;
                     else if (!you.had_book[BOOK_CONTROL])
@@ -813,9 +815,6 @@ bool acquirement(unsigned char force_class)
                         type_wanted = BOOK_HINDERANCE;
                     else if (!you.had_book[BOOK_ENCHANTMENTS])
                         type_wanted = BOOK_ENCHANTMENTS;
-                    else if (!you.had_book[BOOK_CONTROL])
-                        type_wanted = BOOK_CONTROL;
-
                     break;
 
                 case SK_CONJURATIONS:
@@ -1015,13 +1014,14 @@ bool acquirement(unsigned char force_class)
                 }
                 break;
 
-            case OBJ_MISCELLANY: //mv: slightly changed
+            case OBJ_MISCELLANY:
                 do
                     type_wanted = random2(NUM_MISCELLANY);
-                while
-                ((type_wanted == MISC_HORN_OF_GERYON) //never
-                    || (type_wanted == MISC_RUNE_OF_ZOT) //never
-                    || (type_wanted == MISC_PORTABLE_ALTAR_OF_NEMELEX)); //never
+                while (type_wanted == MISC_HORN_OF_GERYON
+                    || type_wanted == MISC_RUNE_OF_ZOT
+                    || type_wanted == MISC_PORTABLE_ALTAR_OF_NEMELEX
+                    || type_wanted == MISC_CRYSTAL_BALL_OF_FIXATION
+                    || type_wanted == MISC_EMPTY_EBONY_CASKET);
                 break;
 
             default:
@@ -1043,7 +1043,7 @@ bool acquirement(unsigned char force_class)
     {
         // BCR - unique is now used for food quantity.
         thing_created = items( unique, class_wanted, type_wanted, true,
-                               351, 250 );
+                               MAKE_GOOD_ITEM, 250 );
 
         if (thing_created == NON_ITEM)
         {
@@ -1056,7 +1056,24 @@ bool acquirement(unsigned char force_class)
 
         if (mitm[thing_created].base_type == OBJ_BOOKS)
         {
-            you.had_book[ mitm[thing_created].sub_type ] = 1;
+            if (mitm[thing_created].base_type == BOOK_MINOR_MAGIC_I
+                || mitm[thing_created].base_type == BOOK_MINOR_MAGIC_II
+                || mitm[thing_created].base_type == BOOK_MINOR_MAGIC_III)
+            {
+                you.had_book[ BOOK_MINOR_MAGIC_I ] = 1;
+                you.had_book[ BOOK_MINOR_MAGIC_II ] = 1;
+                you.had_book[ BOOK_MINOR_MAGIC_III ] = 1;
+            }
+            else if (mitm[thing_created].base_type == BOOK_CONJURATIONS_I
+                || mitm[thing_created].base_type == BOOK_CONJURATIONS_II)
+            {
+                you.had_book[ BOOK_CONJURATIONS_I ] = 1;
+                you.had_book[ BOOK_CONJURATIONS_II ] = 1;
+            }
+            else
+            {
+                you.had_book[ mitm[thing_created].sub_type ] = 1;
+            }
         }
         else if (mitm[thing_created].base_type == OBJ_JEWELLERY)
         {
@@ -1091,9 +1108,82 @@ bool acquirement(unsigned char force_class)
                 break;
             }
         }
-        else if (mitm[thing_created].base_type == OBJ_ARMOUR)
+        else if (mitm[thing_created].base_type == OBJ_WEAPONS
+                    && !is_fixed_artefact( mitm[thing_created] ))
+        {
+            // HACK: make unwieldable weapons wieldable
+            // Note: messing with fixed artefacts is probably very bad.
+            switch (you.species)
+            {
+            case SP_DEMONSPAWN:
+            case SP_MUMMY:
+            case SP_GHOUL:
+                {
+                    int brand = get_weapon_brand( mitm[thing_created] );
+                    if (brand == SPWPN_HOLY_WRATH
+                            || brand == SPWPN_DISRUPTION)
+                    {
+                        if (!is_random_artefact( mitm[thing_created] ))
+                        {
+                            set_item_ego_type( mitm[thing_created],
+                                               OBJ_WEAPONS, SPWPN_VORPAL );
+                        }
+                        else
+                        {
+                            // keep reseting seed until it's good:
+                            for (; brand == SPWPN_HOLY_WRATH
+                                      || brand == SPWPN_DISRUPTION;
+                                  brand = get_weapon_brand(mitm[thing_created]))
+                            {
+                                make_item_randart( mitm[thing_created] );
+                            }
+                        }
+                    }
+                }
+                break;
+
+            case SP_HALFLING:
+            case SP_GNOME:
+            case SP_KOBOLD:
+            case SP_SPRIGGAN:
+                switch (mitm[thing_created].sub_type)
+                {
+                case WPN_GREAT_SWORD:
+                case WPN_TRIPLE_SWORD:
+                    mitm[thing_created].sub_type =
+                            (coinflip() ? WPN_FALCHION : WPN_LONG_SWORD);
+                    break;
+
+                case WPN_GREAT_MACE:
+                case WPN_GREAT_FLAIL:
+                    mitm[thing_created].sub_type =
+                            (coinflip() ? WPN_MACE : WPN_FLAIL);
+                    break;
+
+                case WPN_BATTLEAXE:
+                case WPN_EXECUTIONERS_AXE:
+                    mitm[thing_created].sub_type =
+                            (coinflip() ? WPN_HAND_AXE : WPN_WAR_AXE);
+                    break;
+
+                case WPN_HALBERD:
+                case WPN_GLAIVE:
+                case WPN_SCYTHE:
+                    mitm[thing_created].sub_type =
+                            (coinflip() ? WPN_SPEAR : WPN_TRIDENT);
+                    break;
+                }
+                break;
+
+            default:
+                break;
+            }
+        }
+        else if (mitm[thing_created].base_type == OBJ_ARMOUR
+                    && !is_fixed_artefact( mitm[thing_created] ))
         {
             // HACK: make unwearable hats and boots wearable
+            // Note: messing with fixed artefacts is probably very bad.
             switch (mitm[thing_created].sub_type)
             {
             case ARM_HELMET:

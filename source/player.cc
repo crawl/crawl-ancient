@@ -31,6 +31,7 @@
 #include "externs.h"
 
 #include "itemname.h"
+#include "macro.h"
 #include "misc.h"
 #include "mon-util.h"
 #include "mutation.h"
@@ -44,9 +45,6 @@
 #include "view.h"
 #include "wpn-misc.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 /*
    you.duration []: //jmf: obsolete, see enum.h instead
@@ -353,6 +351,42 @@ int player_damage_type( void )
     return (DVORP_CRUSHING);
 }
 
+// returns band of player's melee damage
+int player_damage_brand( void )
+{
+    int ret = SPWPN_NORMAL;
+    const int wpn = you.equip[ EQ_WEAPON ];
+
+    if (wpn != -1)
+        ret = get_weapon_brand( you.inv[wpn] );
+    else if (you.confusing_touch)
+        ret = SPWPN_CONFUSE;
+    else if (you.mutation[MUT_DRAIN_LIFE])
+        ret = SPWPN_DRAINING;
+    else
+    {
+        switch (you.attribute[ATTR_TRANSFORMATION])
+        {
+        case TRAN_SPIDER:
+            ret = SPWPN_VENOM;
+            break;
+
+        case TRAN_ICE_BEAST:
+            ret = SPWPN_FREEZING;
+            break;
+
+        case TRAN_LICH:
+            ret = SPWPN_DRAINING;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    return (ret);
+}
+
 int player_teleport(void)
 {
     int tp = 0;
@@ -563,10 +597,10 @@ int player_res_magic(void)
     rm += scan_randarts(RAP_MAGIC);
 
     /* Enchantment skill */
-    rm += you.skills[SK_ENCHANTMENTS];
+    rm += 2 * you.skills[SK_ENCHANTMENTS];
 
     /* Mutations */
-    rm += you.mutation[MUT_MAGIC_RESISTANCE] * 30;
+    rm += 30 * you.mutation[MUT_MAGIC_RESISTANCE];
 
     /* transformations */
     if (you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH)
@@ -708,9 +742,6 @@ int player_res_electricity(void)
     if (you.duration[DUR_INSULATION])
         re++;
 
-    if (you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION])
-        re++;
-
     // staff
     re += player_equip( EQ_STAFF, STAFF_AIR );
 
@@ -735,8 +766,10 @@ int player_res_electricity(void)
     if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR)
         re += 2;  // mutliple levels currently meaningless
 
-    if (re > 3)
+    if (you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] > 0)
         re = 3;
+    else if (re > 1)
+        re = 1;
 
     return (re);
 }                               // end player_res_electricity()
@@ -1313,12 +1346,12 @@ int player_AC(void)
             break;
 
 
-        case TRAN_SPIDER: // low level (small bonus)
-            AC += (3 + you.skills[SK_POISON_MAGIC] / 5);        // max 8
+        case TRAN_SPIDER: // low level (small bonus), also gets EV
+            AC += (2 + you.skills[SK_POISON_MAGIC] / 6);        // max 6
             break;
 
         case TRAN_ICE_BEAST:
-            AC += (3 + you.skills[SK_ICE_MAGIC] / 4);           // max 9
+            AC += (5 + (you.skills[SK_ICE_MAGIC] + 1) / 4);     // max 12
 
             if (you.duration[DUR_ICY_ARMOUR])
                 AC += (1 + you.skills[SK_ICE_MAGIC] / 4);       // max +7
@@ -2312,6 +2345,8 @@ void level_change(void)
         if (you.religion == GOD_XOM)
             Xom_acts(true, you.experience_level, true);
     }
+
+    redraw_skill( you.your_name, player_title() );
 }                               // end level_change()
 
 // here's a question for you: does the ordering of mods make a difference?
@@ -2360,6 +2395,9 @@ int check_stealth(void)
     else if (you.burden_state == BS_OVERLOADED)
         stealth /= 5;
 
+    if (you.conf)
+        stealth /= 3;
+
     const int arm   = you.equip[EQ_BODY_ARMOUR];
     const int cloak = you.equip[EQ_CLOAK];
     const int boots = you.equip[EQ_BOOTS];
@@ -2378,6 +2416,8 @@ int check_stealth(void)
         if (cmp_equip_race( you.inv[boots], ISFLAG_ELVEN ))
             stealth += 20;
     }
+
+    stealth += scan_randarts( RAP_STEALTH );
 
     if (player_is_levitating())
         stealth += 10;
@@ -2625,56 +2665,60 @@ void display_char_status(void)
     }
 }                               // end display_char_status()
 
-void redraw_skill(const char your_name[kNameLen], const char class_name[40])
+void redraw_skill(const char your_name[kNameLen], const char class_name[80])
 {
     char print_it[80];
-    char print_it2[42];
 
-    int i = 0;
-    bool spaces = false;
+    memset( print_it, ' ', sizeof(print_it) );
+    snprintf( print_it, sizeof(print_it), "%s the %s", your_name, class_name );
 
-    strcpy(print_it, your_name);
-    strcat(print_it, " the ");
-    strcat(print_it, class_name);
-
-    strncpy(print_it2, print_it, 39);
-
-    for (i = 0; i < 40; i++)
+    int in_len = strlen( print_it );
+    if (in_len > 40)
     {
-        if (print_it2[i] == 0)
-            spaces = true;
-        if (spaces)
-            print_it2[i] = ' ';
+        in_len -= 3;  // what we're getting back from removing "the"
+
+        const int name_len = strlen(your_name);
+        char name_buff[kNameLen];
+        strncpy( name_buff, your_name, kNameLen );
+
+        // squeeze name if required, the "- 8" is too not squueze too much
+        if (in_len > 40 && (name_len - 8) > (in_len - 40))
+            name_buff[ name_len - (in_len - 40) - 1 ] = '\0';
+        else
+            name_buff[ kNameLen - 1 ] = '\0';
+
+        snprintf( print_it, sizeof(print_it), "%s, %s", name_buff, class_name );
     }
 
-    print_it2[39] = 0;
+    for (int i = strlen(print_it); i < 41; i++)
+        print_it[i] = ' ';
 
-    textcolor(LIGHTGREY);
+    print_it[40] = '\0';
+
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
 #endif
     gotoxy(40, 1);
-    textcolor(LIGHTGREY);
-    cprintf(print_it2);
+
+    textcolor( LIGHTGREY );
+    cprintf( print_it );
 }                               // end redraw_skill()
 
 // Note that this function only has the one static buffer, so if you
 // want to use the results, you'll want to make a copy.
-char *species_name( unsigned char speci, bool genus, bool adj, bool cap )
-// defaults:                             false       false     true
+char *species_name( int  speci, int level, bool genus, bool adj, bool cap )
+// defaults:                               false       false     true
 {
     static char species_buff[80];
-    int i;
 
     if (player_genus( GENPC_DRACONIAN, speci ))
     {
-        if (genus || adj)
+        if (adj || genus)  // adj doesn't care about exact species
             strcpy( species_buff, "Draconian" );
         else
         {
-            // Causes minor problems with ghosts, but nevermind
-            // still the case? - 12mar200 {dlb}
-            if (you.experience_level < 7)
+            // No longer have problems with ghosts here -- Sharp Aug2002
+            if (level < 7)
                 strcpy( species_buff, "Draconian" );
             else
             {
@@ -2719,7 +2763,7 @@ char *species_name( unsigned char speci, bool genus, bool adj, bool cap )
     }
     else if (player_genus( GENPC_ELVEN, speci ))
     {
-        if (adj)
+        if (adj)  // doesn't care about species/genus
             strcpy( species_buff, "Elven" );
         else if (genus)
             strcpy( species_buff, "Elf" );
@@ -2748,7 +2792,7 @@ char *species_name( unsigned char speci, bool genus, bool adj, bool cap )
     }
     else if (player_genus( GENPC_DWARVEN, speci ))
     {
-        if (adj)
+        if (adj)  // doesn't care about species/genus
             strcpy( species_buff, "Dwarven" );
         else if (genus)
             strcpy( species_buff, "Dwarf" );
@@ -2766,7 +2810,6 @@ char *species_name( unsigned char speci, bool genus, bool adj, bool cap )
                 strcpy( species_buff, "Dwarf" );
                 break;
             }
-
         }
     }
     else
@@ -2838,11 +2881,7 @@ char *species_name( unsigned char speci, bool genus, bool adj, bool cap )
     }
 
     if (!cap)
-    {
-        // it's easier to uncapitalize -- bwr
-        for (i = 0; species_buff[i] != '\0'; i++)
-            species_buff[i] = tolower( species_buff[i] );
-    }
+        strlwr( species_buff );
 
     return (species_buff);
 }                               // end species_name()
@@ -3368,70 +3407,6 @@ void set_mp(int new_amount, bool max_too)
     return;
 }                               // end set_mp()
 
-const char *job_title(int which_job)
-{
-    switch (which_job)
-    {
-    case JOB_FIGHTER:
-        return "Fighter";
-    case JOB_WIZARD:
-        return "Wizard";
-    case JOB_PRIEST:
-        return "Priest";
-    case JOB_THIEF:
-        return "Thief";
-    case JOB_GLADIATOR:
-        return "Gladiator";
-    case JOB_NECROMANCER:
-        return "Necromancer";
-    case JOB_PALADIN:
-        return "Paladin";
-    case JOB_ASSASSIN:
-        return "Assassin";
-    case JOB_BERSERKER:
-        return "Berserker";
-    case JOB_HUNTER:
-        return "Hunter";
-    case JOB_CONJURER:
-        return "Conjurer";
-    case JOB_ENCHANTER:
-        return "Enchanter";
-    case JOB_FIRE_ELEMENTALIST:
-        return "Fire Elementalist";
-    case JOB_ICE_ELEMENTALIST:
-        return "Ice Elementalist";
-    case JOB_SUMMONER:
-        return "Summoner";
-    case JOB_AIR_ELEMENTALIST:
-        return "Air Elementalist";
-    case JOB_EARTH_ELEMENTALIST:
-        return "Earth Elementalist";
-    case JOB_CRUSADER:
-        return "Crusader";
-    case JOB_DEATH_KNIGHT:
-        return "Death Knight";
-    case JOB_VENOM_MAGE:
-        return "Venom Mage";
-    case JOB_CHAOS_KNIGHT:
-        return "Chaos Knight";
-    case JOB_TRANSMUTER:
-        return "Transmuter";
-    case JOB_HEALER:
-        return "Healer";
-    case JOB_REAVER:
-        return "Reaver";
-    case JOB_STALKER:
-        return "Stalker";
-    case JOB_MONK:
-        return "Monk";
-    case JOB_WARPER:
-        return "Warper";
-    case JOB_WANDERER:
-        return "Wanderer";
-    default:
-        return "bug hunter";
-    }
-}                               // end job_title()
 
 static const char * Species_Abbrev_List[ NUM_SPECIES ] =
     { "XX", "Hu", "El", "HE", "GE", "DE", "SE", "HD", "MD", "Ha",
@@ -3439,16 +3414,45 @@ static const char * Species_Abbrev_List[ NUM_SPECIES ] =
       "Dr", "Dr", "Dr", "Dr", "Dr", "Dr", "Dr", "Dr", "Dr", "Dr",
       "Ce", "DG", "Sp", "Mi", "DS", "Gh", "Ke", "Mf" };
 
-int get_species_index( const char *abbrev )
+int get_species_index_by_abbrev( const char *abbrev )
 {
     int i;
     for (i = SP_HUMAN; i < NUM_SPECIES; i++)
     {
-        if (strncmp( abbrev, Species_Abbrev_List[i], 2 ) == 0)
+        if (tolower( abbrev[0] ) == tolower( Species_Abbrev_List[i][0] )
+            && tolower( abbrev[1] ) == tolower( Species_Abbrev_List[i][1] ))
+        {
             break;
+        }
     }
 
     return ((i < NUM_SPECIES) ? i : -1);
+}
+
+int get_species_index_by_name( const char *name )
+{
+    int i;
+    int sp = -1;
+
+    char *ptr;
+    char lowered_buff[80];
+
+    strncpy( lowered_buff, name, sizeof( lowered_buff ) );
+    strlwr( lowered_buff );
+
+    for (i = SP_HUMAN; i < NUM_SPECIES; i++)
+    {
+        char *lowered_species = species_name( i, 0, false, false, false );
+        ptr = strstr( lowered_species, lowered_buff );
+        if (ptr != NULL)
+        {
+            sp = i;
+            if (ptr == lowered_species)  // prefix takes preference
+                break;
+        }
+    }
+
+    return (sp);
 }
 
 const char *get_species_abbrev( int which_species )
@@ -3458,60 +3462,34 @@ const char *get_species_abbrev( int which_species )
     return (Species_Abbrev_List[ which_species ]);
 }
 
-#if 0
-// Try to keep all species and class abbreviations different, as
-// it will make things a bit easier (ie. avoid HuTr (Human-Troll?)) -- bwr
-char *species_abbrev(unsigned char which_species)
-{
-    // was this further differentiated? {dlb}
-    if (player_genus(GENPC_DRACONIAN, which_species))
-        return "Dr";
-
-    switch (which_species)
-    {
-    case SP_CENTAUR:            return "Ce";
-    case SP_DEEP_ELF:           return "DE";
-    case SP_DEMIGOD:            return "DG";
-    case SP_DEMONSPAWN:         return "DS";
-    case SP_ELF:                return "El";
-    case SP_GHOUL:              return "Gh";
-    case SP_GNOME:              return "Gn";
-    case SP_HALFLING:           return "Ha";
-    case SP_HILL_DWARF:         return "HD";
-    case SP_HIGH_ELF:           return "HE";
-    case SP_HILL_ORC:           return "HO";
-    case SP_HUMAN:              return "Hu";
-    case SP_KENKU:              return "Ke";
-    case SP_KOBOLD:             return "Ko";
-    case SP_GREY_ELF:           return "GE";
-    case SP_MOUNTAIN_DWARF:     return "MD";
-    case SP_MERFOLK:            return "Mf";
-    case SP_MINOTAUR:           return "Mi";
-    case SP_MUMMY:              return "Mu";
-    case SP_NAGA:               return "Na";
-    case SP_OGRE:               return "Og";
-    case SP_OGRE_MAGE:          return "OM";
-    case SP_SLUDGE_ELF:         return "SE";
-    case SP_SPRIGGAN:           return "Sp";
-    case SP_TROLL:              return "Tr";
-    default:                    return "XX";
-    }
-}                               // end species_abbrev()
-#endif
 
 static const char * Class_Abbrev_List[ NUM_JOBS ] =
     { "Fi", "Wz", "Pr", "Th", "Gl", "Ne", "Pa", "As", "Be", "Hu",
       "Cj", "En", "FE", "IE", "Su", "AE", "EE", "Cr", "DK", "VM",
       "CK", "Tm", "He", "XX", "Re", "St", "Mo", "Wr", "Wn" };
 
-int get_class_index( const char *abbrev )
+static const char * Class_Name_List[ NUM_JOBS ] =
+    { "Fighter", "Wizard", "Priest", "Thief", "Gladiator", "Necromancer",
+      "Paladin", "Assassin", "Berserker", "Hunter", "Conjurer", "Enchanter",
+      "Fire Elementalist", "Ice Elementalist", "Summoner", "Air Elementalist",
+      "Earth Elementalist", "Crusader", "Death Knight", "Venom Mage",
+      "Chaos Knight", "Transmuter", "Healer", "Quiter", "Reaver", "Stalker",
+      "Monk", "Warper", "Wanderer" };
+
+int get_class_index_by_abbrev( const char *abbrev )
 {
     int i;
 
     for (i = 0; i < NUM_JOBS; i++)
     {
-        if (strncmp( abbrev, Class_Abbrev_List[i], 2 ) == 0)
+        if (i == JOB_QUITTER)
+            continue;
+
+        if (tolower( abbrev[0] ) == tolower( Class_Abbrev_List[i][0] )
+            && tolower( abbrev[1] ) == tolower( Class_Abbrev_List[i][1] ))
+        {
             break;
+        }
     }
 
     return ((i < NUM_JOBS) ? i : -1);
@@ -3524,62 +3502,44 @@ const char *get_class_abbrev( int which_job )
     return (Class_Abbrev_List[ which_job ]);
 }
 
-#if 0
-char *class_abbrev( unsigned char which_class )
+int get_class_index_by_name( const char *name )
 {
-    switch (which_class)
+    int i;
+    int cl = -1;
+
+    char *ptr;
+    char lowered_buff[80];
+    char lowered_class[80];
+
+    strncpy( lowered_buff, name, sizeof( lowered_buff ) );
+    strlwr( lowered_buff );
+
+    for (i = 0; i < NUM_JOBS; i++)
     {
-    case JOB_AIR_ELEMENTALIST:    return "AE";
-    case JOB_ASSASSIN:            return "As";
-    case JOB_BERSERKER:           return "Be";
-    case JOB_CONJURER:            return "Cj";
-    case JOB_CHAOS_KNIGHT:        return "CK";
-    case JOB_CRUSADER:            return "Cr";
-    case JOB_DEATH_KNIGHT:        return "DK";
-    case JOB_EARTH_ELEMENTALIST:  return "EE";
-    case JOB_ENCHANTER:           return "En";
-    case JOB_FIRE_ELEMENTALIST:   return "FE";
-    case JOB_FIGHTER:             return "Fi";
-    case JOB_GLADIATOR:           return "Gl";
-    case JOB_HEALER:              return "He";
-    case JOB_HUNTER:              return "Hn";
-    case JOB_ICE_ELEMENTALIST:    return "IE";
-    case JOB_MONK:                return "Mo";
-    case JOB_NECROMANCER:         return "Ne";
-    case JOB_PALADIN:             return "Pa";
-    case JOB_PRIEST:              return "Pr";
-    case JOB_REAVER:              return "Re";
-    case JOB_STALKER:             return "St";
-    case JOB_SUMMONER:            return "Su";
-    case JOB_THIEF:               return "Th";
-    case JOB_TRANSMUTER:          return "Tm";
-    case JOB_VENOM_MAGE:          return "VM";
-    case JOB_WANDERER:            return "Wn";
-    case JOB_WARPER:              return "Wr";
-    case JOB_WIZARD:              return "Wz";
-    default:                      return "XX";
-    }
-}                               // end class_abbrev()
-#endif
+        if (i == JOB_QUITTER)
+            continue;
 
-bool player_descriptor(unsigned char which_descriptor, unsigned char species)
-{
-    if (species == SP_UNKNOWN)
-        species = you.species;
+        strncpy( lowered_class, Class_Name_List[i], sizeof( lowered_class ) );
+        strlwr( lowered_class );
 
-    switch (which_descriptor)
-    {
-    case PDSC_UNDEAD:
-        if (species == SP_GHOUL || species == SP_MUMMY)
-            return true;
-        break;
-
-    default:
-        return false;
+        ptr = strstr( lowered_class, lowered_buff );
+        if (ptr != NULL)
+        {
+            cl = i;
+            if (ptr == lowered_class)  // prefix takes preference
+                break;
+        }
     }
 
-    return false;
-}                               // end player_descriptor()
+    return (cl);
+}
+
+const char *get_class_name( int which_job )
+{
+    ASSERT( which_job < NUM_JOBS && which_job != JOB_QUITTER );
+
+    return (Class_Name_List[ which_job ]);
+}
 
 /* ******************************************************************
 
@@ -3639,6 +3599,7 @@ void priest_spells( int priest_pass[10], char religious )
 //   95 something else
 
 ****************************************************************** */
+
 void contaminate_player(int change, bool statusOnly)
 {
     // get current contamination level
@@ -3905,12 +3866,31 @@ void dec_disease_player( void )
         you.disease--;
 
         if (you.disease > 5
-            && (you.species == SP_KOBOLD || you.duration[ DUR_REGENERATION ]))
+            && (you.species == SP_KOBOLD
+                || you.duration[ DUR_REGENERATION ]
+                || you.mutation[ MUT_REGENERATION ] == 3))
         {
             you.disease -= 2;
         }
 
         if (!you.disease)
             mpr("You feel your health improve.", MSGCH_RECOVERY);
+    }
+}
+
+void rot_player( int amount )
+{
+    if (amount <= 0)
+        return;
+
+    if (you.rotting < 40)
+    {
+        // Either this, or the actual rotting message should probably
+        // be changed so that they're easier to tell apart. -- bwr
+        snprintf( info, INFO_SIZE, "You feel your flesh %s away!",
+                  (you.rotting) ? "rotting" : "start to rot" );
+        mpr( info, MSGCH_WARN );
+
+        you.rotting += amount;
     }
 }

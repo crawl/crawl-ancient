@@ -21,12 +21,11 @@
 #endif
 
 #include "externs.h"
+
+#include "macro.h"
 #include "stuff.h"
 #include "view.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 // circular buffer for keeping past messages
 message_item Store_Message[ NUM_STORED_MESSAGES ];    // buffer of old messages
@@ -220,6 +219,7 @@ void mpr(const char *inf, int channel, int param)
         return;
 
     you.running = 0;
+    flush_input_buffer( FLUSH_ON_MESSAGE );
 
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
@@ -319,8 +319,6 @@ void more(void)
 
     textcolor(LIGHTGREY);
 
-    //cdl -- cprintf("\r--more--");
-
 #ifdef DOS
     cprintf(EOL);
 #endif
@@ -330,9 +328,7 @@ void more(void)
     {
         keypress = getch();
     }
-    while (keypress != 32 && keypress != 13);
-
-    /* Juho Snellman rewrote this part of the function: */
+    while (keypress != ' ' && keypress != '\r' && keypress != '\n');
 
     mesclr();
 }                               // end more()

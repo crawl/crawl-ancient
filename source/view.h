@@ -33,8 +33,7 @@ bool mons_near(struct monsters *monster, unsigned int foe = MHITYOU);
 /* ***********************************************************************
  * called from: acr - player - stuff
  * *********************************************************************** */
-void draw_border(const char your_name[kNameLen], const char class_name[40],
-                 const char tspecies);
+void draw_border(void);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -90,22 +89,6 @@ void viewwindow3(char draw_it, bool do_updates);        // non-IBM graphics
  * called from: acr view
  * *********************************************************************** */
 void setLOSRadius(int newLR);
-
-// last updated 17jan2001 (gdl)
-/* ***********************************************************************
- * called from: beam view
- * *********************************************************************** */
-void get_ibm_symbol(unsigned int object, unsigned char *ch,
-    unsigned char *color);
-
-
-// last updated 17jan2001 (gdl)
-/* ***********************************************************************
- * called from: beam view
- * *********************************************************************** */
-void get_non_ibm_symbol(unsigned int object, unsigned char *ch,
-    unsigned char *color);
-
 
 // last updated 02apr2001 (gdl)
 /* ***********************************************************************

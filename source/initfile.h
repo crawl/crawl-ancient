@@ -12,6 +12,10 @@
 #ifndef INITFILE_H
 #define INITFILE_H
 
+#include <string>
+
+std::string & trim_string( std::string &str );
+
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: acr

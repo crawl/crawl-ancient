@@ -544,7 +544,7 @@ bool brand_weapon(int which_brand, int power)
 
         // This brand is insanely powerful, this isn't even really
         // a start to balancing it, but it needs something. -- bwr
-        miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100);
+        miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100, "a weapon of distortion");
         break;
 
     case SPWPN_DUMMY_CRUSHING:  //jmf: added for Maxwell's Silver Hammer
@@ -1434,15 +1434,15 @@ void summon_undead(int pow)
 
         if (random2(pow) < 6)
         {
-            if (create_monster(thing_called, ENCH_ABJ_III, BEH_HOSTILE,
-                               you.x_pos, you.y_pos, MHITYOU, 250) != -1)
+            if (create_monster( thing_called, ENCH_ABJ_V, BEH_HOSTILE,
+                                you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
             {
                 mpr("You sense a hostile presence.");
             }
         }
         else
         {
-            if (create_monster( thing_called, ENCH_ABJ_III, BEH_FRIENDLY,
+            if (create_monster( thing_called, ENCH_ABJ_V, BEH_FRIENDLY,
                                 you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
             {
                 mpr("An insubstantial figure forms in the air.");
@@ -1456,61 +1456,53 @@ void summon_undead(int pow)
              && (!player_under_penance()
                  && you.piety >= 100 && random2(200) <= you.piety)))
     {
-        disease_player( 200 );
+        disease_player( 25 + random2(50) );
     }
 }                               // end summon_undead()
 
-void summon_things(int pow)
+void summon_things( int pow )
 {
-    int numsc = 1 + (random2(pow) / 30) + (random2(pow) / 30);
     int big_things = 0;
-    bool plural = false;
+    int numsc = 2 + (random2(pow) / 10) + (random2(pow) / 10);
 
-    if (!lose_stat(STAT_INTELLIGENCE, 1))
-        //jmf: FIXME: return Vehumet's intelligence protection
-        //     rationale: Vehumet loves summoned things
-    {
+    if (one_chance_in(3) && !lose_stat( STAT_INTELLIGENCE, 1, true ))
         mpr("Your call goes unanswered.");
-    }
     else
     {
-        numsc = stepdown_value(numsc, 2, 2, 6, -1);
-        //see stuff.cc - 16jan2000 {dlb}
+        numsc = stepdown_value( numsc, 2, 2, 6, -1 );
 
         while (numsc > 2)
         {
             if (one_chance_in(4))
                 break;
+
             numsc -= 2;
             big_things++;
         }
 
         if (numsc > 8)
             numsc = 8;
+
         if (big_things > 8)
             big_things = 8;
-        if ((numsc + big_things) > 1)
-            plural = true;
 
         while (big_things > 0)
         {
-            create_monster( MONS_ABOMINATION_LARGE, ENCH_ABJ_III, BEH_FRIENDLY,
+            create_monster( MONS_TENTACLED_MONSTROSITY, 0, BEH_FRIENDLY,
                             you.x_pos, you.y_pos, you.pet_target, 250 );
             big_things--;
         }
 
         while (numsc > 0)
         {
-            create_monster( MONS_ABOMINATION_SMALL, ENCH_ABJ_III, BEH_FRIENDLY,
+            create_monster( MONS_ABOMINATION_LARGE, 0, BEH_FRIENDLY,
                             you.x_pos, you.y_pos, you.pet_target, 250 );
             numsc--;
         }
 
-        strcpy(info, "Some Thing");
-        if (plural)
-            strcat(info, "s");
+        snprintf( info, INFO_SIZE, "Some Thing%s answered your call!",
+                  (numsc + big_things > 1) ? "s" : "" );
 
-        strcat(info, " answered your call!");
         mpr(info);
     }
 

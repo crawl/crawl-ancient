@@ -1974,7 +1974,7 @@ bool mons_speaks(struct monsters *monster)
                 break;
             case 19:
                 strcat(info,
-                       " screams, \"I'll cover dungeon with your blood!\"");
+                       " screams, \"I'll cover the dungeon with your blood!\"");
                 break;
             case 20:
                 strcat(info, " screams, \"I'll drink your blood! Soon!\"");

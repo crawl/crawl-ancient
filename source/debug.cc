@@ -34,6 +34,7 @@
 #include "items.h"
 #include "misc.h"
 #include "monplace.h"
+#include "monstuff.h"
 #include "mon-util.h"
 #include "mutation.h"
 #include "player.h"
@@ -72,18 +73,24 @@ static HANDLE sConsole = NULL;
 #if DEBUG
 static void BreakStrToDebugger(const char *mesg)
 {
-#if MAC
-    unsigned char s[50];
 
-    int len = strlen(mesg);
+#if OSX
+    fprintf(stderr, mesg);
+// raise(SIGINT);               // this is what DebugStr() does on OS X according to Tech Note 2030
+    int* p = NULL;              // but this gives us a stack crawl...
+    *p = 0;
+#elif MAC
+     unsigned char s[50];
 
-    if (len > 255)
-        len = 255;
+     int len = strlen(mesg);
 
-    s[0] = (Byte) len;
-    BlockMoveData(mesg, s + 1, len);
+     if (len > 255)
+         len = 255;
 
-    DebugStr(s);
+     s[0] = (Byte) len;
+     BlockMoveData(mesg, s + 1, len);
+
+     DebugStr(s);
 
 #elif WIN
     MSG msg;    // remove pending quit messages so the message box displays
@@ -490,7 +497,7 @@ void debug_change_species( void )
     for (int i = SP_HUMAN; i < NUM_SPECIES; i++)
     {
         char sp_name[80];
-        strncpy( sp_name, species_name(i), sizeof( sp_name ) );
+        strncpy( sp_name, species_name(i, you.experience_level), sizeof( sp_name ) );
 
         char *ptr = strstr( strlwr(sp_name), strlwr(specs) );
         if (ptr != NULL)
@@ -1181,7 +1188,13 @@ void stethoscope(int mwh)
     mpr( info, MSGCH_DIAGNOSTICS );
 
     // print behaviour information
-    snprintf( info, INFO_SIZE, "beh=%s(%d) foe=%s(%d) mem=%d target=(%d,%d)",
+
+    const int hab = monster_habitat( menv[i].type );
+
+    snprintf( info, INFO_SIZE, "hab=%s beh=%s(%d) foe=%s(%d) mem=%d target=(%d,%d)",
+             ((hab == DNGN_DEEP_WATER)            ? "water" :
+              (hab == DNGN_LAVA)                  ? "lava"
+                                                  : "floor"),
 
              ((menv[i].behaviour == BEH_SLEEP)    ? "sleep" :
               (menv[i].behaviour == BEH_WANDER)   ? "wander" :
@@ -1234,10 +1247,11 @@ void stethoscope(int mwh)
 
     mpr( info, MSGCH_DIAGNOSTICS );
 
-    if (menv[i].type == MONS_PLAYER_GHOST)
+    if (menv[i].type == MONS_PLAYER_GHOST
+        || menv[i].type == MONS_PANDEMONIUM_DEMON)
     {
         snprintf( info, INFO_SIZE, "Ghost damage: %d; brand: %d",
-                  ghost.values[7], ghost.values[8] );
+                  ghost.values[ GVAL_DAMAGE ], ghost.values[ GVAL_BRAND ] );
         mpr( info, MSGCH_DIAGNOSTICS );
     }
 }                               // end stethoscope()

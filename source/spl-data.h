@@ -1265,6 +1265,12 @@
 },
 
 {
+  SPELL_POISON_ARROW, "Poison Arrow",
+    SPTYP_CONJURATION | SPTYP_POISON,
+    6
+},
+
+{
   SPELL_STRIKING, "Striking",
     0,
     1

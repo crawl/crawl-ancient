@@ -5,41 +5,36 @@
  *
  *  Change History (most recent first):
  *
+ *               <2>     6/25/02        JS              Removed old cruft
  *               <1>     -/--/--        JS              Created
  */
 
+#ifdef USE_MACROS
 
 #ifndef MACRO_H
 #define MACRO_H
 
-#ifndef MACRO_C
+#ifndef MACRO_CC
+
 #undef getch
 #define getch() getchm()
+
 #endif
 
+int getchm(void);       // keymaps applied (ie for prompts)
+int getch_with_command_macros(void);  // keymaps and macros (ie for commands)
 
-#include "llist.h"
+void flush_input_buffer( int reason );
 
-
-typedef struct
-{
-    node_s *node;
-    int *key;
-    int *action;
-    int final;
-}
-macro_s;
-
-
-int *i_strcpy(int *, int *);
-int getchm(void);
-int i_strcmp(int *, int *);
-int i_strlen(int *);
-int kbhit2();
-int macro_add(int *, int *);
-int macro_add_query(void);
+void macro_add_query(void);
 int macro_init(void);
-int macro_save(void);
+void macro_save(void);
 
+#endif
+
+#else
+
+#define getch_with_command_macros()     getch()
+#define flush_input_buffer(XXX)         ;
 
 #endif

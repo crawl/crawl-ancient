@@ -81,7 +81,7 @@ short FG_COL = WHITE;
 short BG_COL = BLACK;
 
 // a lookup table to convert keypresses to command enums
-int key_to_command_table[KEY_MAX];
+static int key_to_command_table[KEY_MAX];
 
 static unsigned int convert_to_curses_attr( int chattr )
 {
@@ -103,7 +103,7 @@ static inline short macro_colour( short col )
 }
 
 // Translate DOS colors to curses.
-short translatecolor(short col)
+static short translate_colour( short col )
 {
     switch (col)
     {
@@ -162,7 +162,7 @@ short translatecolor(short col)
 }
 
 
-void setupcolorpairs( void )
+static void setup_colour_pairs( void )
 {
 
     short i, j;
@@ -177,12 +177,12 @@ void setupcolorpairs( void )
     }
 
     init_pair(63, COLOR_BLACK, Options.background);
-}          // end setupcolorpairs()
+}          // end setup_colour_pairs()
 
 
 #if defined(USE_POSIX_TERMIOS)
 
-void termio_init()
+static void termio_init()
 {
     tcgetattr(0, &def_term);
     memcpy(&game_term, &def_term, sizeof(struct termios));
@@ -203,7 +203,7 @@ void termio_init()
 
 #elif defined(USE_TCHARS_IOCTL)
 
-void termio_init()
+static void termio_init()
 {
     ioctl(0, TIOCGLTC, &def_term);
     memcpy(&game_term, &def_term, sizeof(struct ltchars));
@@ -381,7 +381,7 @@ void init_key_to_command()
 
     // these are invalid keys, but to help kludge running
     // pass them through unmolested
-    key_to_command_table[125] = 125;
+    key_to_command_table[128] = 128;
     key_to_command_table['*'] = '*';
     key_to_command_table['/'] = '/';
 }
@@ -419,7 +419,7 @@ void lincurses_startup( void )
 
     meta(stdscr, TRUE);
     start_color();
-    setupcolorpairs();
+    setup_colour_pairs();
 
     init_key_to_command();
 
@@ -606,8 +606,8 @@ void textcolor(int col)
     short fg, bg;
 
     FG_COL = col & 0x00ff;
-    fg = translatecolor( macro_colour( FG_COL ) );
-    bg = translatecolor( (BG_COL == BLACK) ? Options.background : BG_COL );
+    fg = translate_colour( macro_colour( FG_COL ) );
+    bg = translate_colour( (BG_COL == BLACK) ? Options.background : BG_COL );
 
     // calculate which curses flags we need...
     unsigned int flags = 0;
@@ -655,8 +655,8 @@ void textbackground(int col)
     short fg, bg;
 
     BG_COL = col & 0x00ff;
-    fg = translatecolor( macro_colour( FG_COL ) );
-    bg = translatecolor( (BG_COL == BLACK) ? Options.background : BG_COL );
+    fg = translate_colour( macro_colour( FG_COL ) );
+    bg = translate_colour( (BG_COL == BLACK) ? Options.background : BG_COL );
 
     unsigned int flags = 0;
 
@@ -743,8 +743,6 @@ int kbhit()
 {
     int i;
 
-    return 0;
-
     nodelay(stdscr, TRUE);
     i = wgetch(stdscr);
     nodelay(stdscr, FALSE);
@@ -756,15 +754,3 @@ int kbhit()
 
     return (i);
 }
-
-/*int kbhit()
-   {
-   int i;
-
-   nodelay(stdscr, TRUE);
-   i = getch();
-   nodelay(stdscr, FALSE);
-   if (i == -1)
-   i = 0;
-   return(i);
-   } */

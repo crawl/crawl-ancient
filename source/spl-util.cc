@@ -25,14 +25,12 @@
 #include "debug.h"
 #include "stuff.h"
 #include "itemname.h"
+#include "macro.h"
 #include "monstuff.h"
 #include "player.h"
 #include "spl-book.h"
 #include "view.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 #ifdef DOS
 #include <conio.h>
@@ -77,6 +75,73 @@ void init_playerspells(void)
 
     return;                     // return value should not matter here {dlb}
 };                              // end init_playerspells()
+
+int get_spell_slot_by_letter( char letter )
+{
+    ASSERT( isalpha( letter ) );
+
+    const int index = letter_to_index( letter );
+
+    if (you.spell_letter_table[ index ] == -1)
+        return (-1);
+
+    return (you.spell_letter_table[index]);
+}
+
+int get_spell_by_letter( char letter )
+{
+    ASSERT( isalpha( letter ) );
+
+    const int slot = get_spell_slot_by_letter( letter );
+
+    return ((slot == -1) ? SPELL_NO_SPELL : you.spells[slot]);
+}
+
+bool add_spell_to_memory( int spell )
+{
+    int i, j;
+
+    // first we find a slot in our head:
+    for (i = 0; i < 25; i++)
+    {
+        if (you.spells[i] == SPELL_NO_SPELL)
+            break;
+    }
+
+    you.spells[i] = spell;
+
+    // now we find an available label:
+    for (j = 0; j < 52; j++)
+    {
+        if (you.spell_letter_table[j] == -1)
+            break;
+    }
+
+    you.spell_letter_table[j] = i;
+
+    you.spell_no++;
+
+    return (true);
+}
+
+bool del_spell_from_memory_by_slot( int slot )
+{
+    int j;
+
+    you.spells[ slot ] = SPELL_NO_SPELL;
+
+    for (j = 0; j < 52; j++)
+    {
+        if (you.spell_letter_table[j] == slot)
+            you.spell_letter_table[j] = -1;
+
+    }
+
+    you.spell_no--;
+
+    return (true);
+}
+
 
 int spell_hunger(int which_spell)
 {
@@ -307,13 +372,13 @@ int apply_random_around_square( int (*func) (int, int, int, int),
             //    So the probablity is uniform (ie. any element has
             //    a 1/(m+1) chance of being in the unchosen slot).
             //
-            // 2) Assume the distrobution is uniform at n = m+k.
+            // 2) Assume the distribution is uniform at n = m+k.
             //    (ie. the probablity that any of the found elements
             //     was chosen = m / (m+k) (the slots are symetric,
             //     so it's the sum of the probabilities of being in
             //     any of them)).
             //
-            // 3) Show n = m + k + 1 gives a uniform distrobution.
+            // 3) Show n = m + k + 1 gives a uniform distribution.
             //    P(new one chosen) = m / (m + k + 1)
             //    P(any specific previous choice remaining chosen)
             //    = [1 - P(swaped into m+k+1 position)] * P(prev. chosen)
@@ -338,7 +403,7 @@ int apply_random_around_square( int (*func) (int, int, int, int),
             // The new item can, of course, be placed in any slot,
             // swapping the value there into the new slot... we
             // just don't care about the non-chosen slots enough
-            // to store them so it might look like the item
+            // to store them, so it might look like the item
             // automatically takes the new slot when not chosen
             // (although, by symetry all the non-chosen slots are
             // the same... and similarly, by symetry, all chosen

@@ -28,7 +28,7 @@ void exercise_spell( int spell_ex, bool spc, bool divide );
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void cast_a_spell( void );
+bool cast_a_spell( void );
 
 
 // last updaetd 12may2000 {dlb}
@@ -43,7 +43,7 @@ bool your_spells( int spc2, int powc = 0, bool allow_fail = true );
  *              misc - mstuff2 - religion - spell - spl-book - spells4
  * *********************************************************************** */
 bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
-                     int force_effect );
+                     int force_effect, const char *cause = NULL );
 
 
 #endif

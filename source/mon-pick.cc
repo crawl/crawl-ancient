@@ -2106,7 +2106,7 @@ static int mons_swamp_rare(int mcls)
 static int mons_hallblade_level(int mcls)
 {
     if (mcls == MONS_DANCING_WEAPON)
-        return you.branch_stairs[STAIRS_HALL_OF_BLADES] + 1;
+        return (you.branch_stairs[STAIRS_HALL_OF_BLADES] + 1);
     else
         return 0;
 }                               // end mons_hallblade_level

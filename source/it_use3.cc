@@ -325,7 +325,8 @@ static void reaching_weapon_attack(void)
     return;
 }                               // end reaching_weapon_attack()
 
-void evoke_wielded(void)
+// returns true if item successfully evoked.
+bool evoke_wielded( void )
 {
     char opened_gates = 0;
     unsigned char spell_casted = random2(21);
@@ -343,12 +344,12 @@ void evoke_wielded(void)
     if (you.berserker)
     {
         canned_msg( MSG_TOO_BERSERK );
-        return;
+        return (false);
     }
     else if (wield == -1)
     {
         mpr("You aren't wielding anything!");
-        return;
+        return (false);
     }
 
     switch (you.inv[wield].base_type)
@@ -475,7 +476,7 @@ void evoke_wielded(void)
                 if (one_chance_in(3))
                 {
                     miscast_effect( SPTYP_DIVINATION, random2(9),
-                                    random2(70), 100 );
+                                    random2(70), 100, "the Staff of Wucad Mu" );
                 }
                 break;
 
@@ -521,27 +522,6 @@ void evoke_wielded(void)
             }
         }
         break;
-
-#if 0
-        // old code -- now handled automagically as a rod/spell staff -- bwr
-        case STAFF_SMITING:
-            if (!enough_mp(4, true) || you.skills[SK_EVOCATIONS] < random2(10))
-            {
-                miscast_effect(SPTYP_CONJURATION, random2(5), random2(50), 100);
-                pract = (one_chance_in(5) ? 1 : 0);
-            }
-            else
-            {
-                dec_mp(4);
-                make_hungry( 200, false );
-                pract = (coinflip() ? 1 : 0);
-
-                power = 5 + roll_dice( 3, you.skills[SK_EVOCATIONS] );
-                your_spells( SPELL_SMITING, power, false );
-                ident = true;
-            }
-            break;
-#endif
 
     case OBJ_MISCELLANY:
         did_work = true; // easier to do it this way for misc items
@@ -708,6 +688,8 @@ void evoke_wielded(void)
         exercise( SK_EVOCATIONS, pract );
 
     you.turn_is_over = 1;
+
+    return (did_work);
 }                               // end evoke_wielded()
 
 static bool efreet_flask(void)
@@ -897,7 +879,9 @@ void tome_of_power(char sc_read_2)
         strcpy( beam.beam_name, "fiery explosion" );
         beam.colour = RED;
         // your explosion, (not someone else's explosion)
+        beam.beam_source = NON_MONSTER;
         beam.thrower = KILL_YOU;
+        beam.aux_source = "an exploding Tome of Power";
         beam.ex_size = 2;
         beam.isTracer = false;
 
@@ -1010,6 +994,7 @@ static bool box_of_beasts(void)
                             you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("...and something leaps out!");
+            ret = true;
         }
     }
     else

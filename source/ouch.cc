@@ -48,7 +48,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef MAC
+#ifdef OS9
 #include <stat.h>
 #else
 #include <sys/stat.h>
@@ -63,6 +63,7 @@
 #include "invent.h"
 #include "itemname.h"
 #include "items.h"
+#include "macro.h"
 #include "mon-util.h"
 #include "player.h"
 #include "randart.h"
@@ -71,10 +72,8 @@
 #include "skills2.h"
 #include "spells4.h"
 #include "stuff.h"
+#include "view.h"
 
-#ifdef MACROS
-#include "macro.h"
-#endif
 
 void end_game( struct scorefile_entry &se );
 void item_corrode( char itco );
@@ -136,7 +135,12 @@ int check_your_resists(int hurted, int flavour)
 
     case BEAM_ELECTRICITY:
         resist = player_res_electricity();
-        if (resist > 0)
+        if (resist >= 3)
+        {
+            canned_msg(MSG_YOU_RESIST);
+            hurted = 0;
+        }
+        else if (resist > 0)
         {
             canned_msg(MSG_YOU_RESIST);
             hurted /= 3;
@@ -148,11 +152,23 @@ int check_your_resists(int hurted, int flavour)
         resist = player_res_poison();
 
         if (!resist)
-            poison_player( (coinflip() ? 2 : 1) );
+            poison_player( coinflip() ? 2 : 1 );
         else
         {
             canned_msg(MSG_YOU_RESIST);
             hurted /= 3;
+        }
+        break;
+
+    case BEAM_POISON_ARROW:
+        resist = player_res_poison();
+
+        if (!resist)
+            poison_player( 6 + random2(3) );
+        else
+        {
+            canned_msg(MSG_YOU_RESIST);
+            hurted /= 2;
         }
         break;
 
@@ -434,7 +450,7 @@ void lose_level(void)
     // because you.experience is unsigned long, if it's going to be -ve
     // must die straightaway.
     if (you.experience_level == 1)
-        ouch(-9999, 0, KILLED_BY_DRAINING);
+        ouch( -9999, 0, KILLED_BY_DRAINING );
 
     you.experience = exp_needed( you.experience_level + 1 ) - 1;
     you.experience_level--;
@@ -519,7 +535,7 @@ void drain_exp(void)
 }                               // end drain_exp()
 
 // death_source should be set to zero for non-monsters {dlb}
-void ouch(int dam, int death_source, char death_type)
+void ouch( int dam, int death_source, char death_type, const char *aux )
 {
     int d = 0;
     int e = 0;
@@ -530,8 +546,14 @@ void ouch(int dam, int death_source, char death_type)
         return;
     }
 
+    // assumed bug for high damage amounts
     if (dam > 300)
-        return;                 // assumed bug for high damage amounts
+    {
+        snprintf( info, INFO_SIZE,
+                  "Potential bug: Unexpectedly high damage = %d", dam );
+        mpr( info, MSGCH_DANGER );
+        return;
+    }
 
     if (you_are_delayed())
     {
@@ -566,7 +588,7 @@ void ouch(int dam, int death_source, char death_type)
         }
 
         // Damage applied here:
-        dec_hp(dam, true);
+        dec_hp( dam, true );
 
         // Even if we have low HP messages off, we'll still give a
         // big hit warning (in this case, a hit for half our HPs) -- bwr
@@ -632,10 +654,18 @@ void ouch(int dam, int death_source, char death_type)
 
     // CONSTRUCT SCOREFILE ENTRY
     struct scorefile_entry se;
+
+    // Score file entry version:
+    //
+    // 4.0      - original versioned entry
+    // 4.1      - added real_time and num_turn fields
+    // 4.2      - stats and god info
+
     se.version = 4;
-    se.release = 0;
-    strncpy(se.name, you.your_name, kNameLen);
-    se.name[kNameLen - 1] = '\0';
+    se.release = 2;
+
+    strncpy( se.name, you.your_name, kNameLen );
+    se.name[ kNameLen - 1 ] = '\0';
 #ifdef MULTIUSER
     se.uid = (int) getuid();
 #else
@@ -670,22 +700,17 @@ void ouch(int dam, int death_source, char death_type)
                 }
             }
         }
+
+        // Bonus for exploring different areas, not for collecting a
+        // huge stack of demonic runes in Pandemonium (gold value
+        // is enough for those). -- bwr
+        if (se.num_diff_runes >= 3)
+            points += ((se.num_diff_runes + 2) * (se.num_diff_runes + 2) * 1000);
     }
 
     // Players will have a hard time getting 1/10 of this (see XP cap):
     if (points > 99999999)
         points = 99999999;
-
-    // for death by monster
-    struct monsters *monster = NULL;
-
-    // oh, oh, oh, this is really Bad.  XXX
-    if (death_source >= 0 && death_source < MAX_MONSTERS)
-    {
-        monster = &menv[death_source];
-        if (monster->type < 0 || monster->type >= NUM_MONSTERS)
-            monster = NULL;
-    }
 
     se.points = points;
     se.race = you.species;
@@ -695,28 +720,73 @@ void ouch(int dam, int death_source, char death_type)
     se.race_class_name[0] = '\0';
 
     se.lvl = you.experience_level;
-    se.best_skill = best_skill(SK_FIGHTING, NUM_SKILLS-1, 99);
+    se.best_skill = best_skill( SK_FIGHTING, NUM_SKILLS - 1, 99 );
     se.best_skill_lvl = you.skills[ se.best_skill ];
     se.death_type = death_type;
 
-    if (monster != NULL)
+    // for death by monster
+
+    // Set the default aux data value...
+    // If aux is passed in (ie for a trap), we'll default to that.
+    if (aux == NULL)
+        se.auxkilldata[0] = '\0';
+    else
     {
-        se.death_source = monster->type;
-        se.mon_num = monster->number;
+        strncpy( se.auxkilldata, aux, ITEMNAME_SIZE );
+        se.auxkilldata[ ITEMNAME_SIZE - 1 ] = '\0';
+    }
 
-        // Right now the weapon is only used for dancing weapons,
-        // but we might include this later for other cases. -- bwr
-        if (monster->inv[MSLOT_WEAPON] != NON_ITEM)
+    if ((death_type == KILLED_BY_MONSTER || death_type == KILLED_BY_BEAM)
+        && death_source >= 0 && death_source < MAX_MONSTERS)
+    {
+        struct monsters *monster = &menv[death_source];
+
+        if (monster->type > 0 || monster->type <= NUM_MONSTERS)
         {
-            set_ident_flags( mitm[monster->inv[MSLOT_WEAPON]],
-                             ISFLAG_IDENT_MASK );
+            se.death_source = monster->type;
+            se.mon_num = monster->number;
+
+            // Previously the weapon was only used for dancing weapons,
+            // but now we pass it in as a string through the scorefile
+            // entry to be appended in hiscores_format_single in long or
+            // medium scorefile formats.
+            // It still isn't used in monam for anything but flying weapons
+            // though
+            if (death_type == KILLED_BY_MONSTER
+                && monster->inv[MSLOT_WEAPON] != NON_ITEM)
+            {
+#if HISCORE_WEAPON_DETAIL
+                set_ident_flags( mitm[monster->inv[MSLOT_WEAPON]],
+                                 ISFLAG_IDENT_MASK );
+#else
+                // changing this to ignore the pluses to keep it short
+                unset_ident_flags( mitm[monster->inv[MSLOT_WEAPON]],
+                                   ISFLAG_IDENT_MASK );
+
+                set_ident_flags( mitm[monster->inv[MSLOT_WEAPON]],
+                                 ISFLAG_KNOW_TYPE );
+
+                // clear "runed" description text to make shorter yet
+                set_equip_desc( mitm[monster->inv[MSLOT_WEAPON]], 0 );
+#endif
+
+                // Setting this is redundant for dancing weapons, however
+                // we do care about the above indentification. -- bwr
+                if (monster->type != MONS_DANCING_WEAPON)
+                {
+                    it_name( monster->inv[MSLOT_WEAPON], DESC_NOCAP_A, info );
+                    strncpy( se.auxkilldata, info, ITEMNAME_SIZE );
+                    se.auxkilldata[ ITEMNAME_SIZE - 1 ] = '\0';
+                }
+            }
+
+            strcpy( info,
+                    monam( monster->number, monster->type, true, DESC_NOCAP_A,
+                           monster->inv[MSLOT_WEAPON] ) );
+
+            strncpy( se.death_source_name, info, 40 );
+            se.death_source_name[39] = '\0';
         }
-
-        strcpy(info, monam( monster->number, monster->type, true, DESC_NOCAP_A,
-                            monster->inv[MSLOT_WEAPON] ));
-
-        strncpy(se.death_source_name, info, 40);
-        se.death_source_name[39] = '\0';
     }
     else
     {
@@ -725,9 +795,23 @@ void ouch(int dam, int death_source, char death_type)
         se.death_source_name[0] = '\0';
     }
 
+    se.damage = dam;
     se.final_hp = you.hp;
+    se.final_max_hp = you.hp_max;
+    se.final_max_max_hp = you.hp_max + player_rotted();
+    se.str = you.strength;
+    se.intel = you.intel;
+    se.dex = you.dex;
+
+    se.god = you.religion;
+    if (you.religion != GOD_NO_GOD)
+    {
+        se.piety = you.piety;
+        se.penance = you.penance[you.religion];
+    }
+
     // main dungeon: level is simply level
-    se.dlvl = you.your_level;
+    se.dlvl = you.your_level + 1;
     switch (you.where_are_you)
     {
         case BRANCH_ORCISH_MINES:
@@ -753,7 +837,7 @@ void ouch(int dam, int death_source, char death_type)
         case BRANCH_TARTARUS:
         case BRANCH_INFERNO:
         case BRANCH_THE_PIT:
-            se.dlvl = you.your_level + 1 - 26;
+            se.dlvl = you.your_level - 26;
             break;
     }
 
@@ -762,6 +846,13 @@ void ouch(int dam, int death_source, char death_type)
 
     se.birth_time = you.birth_time;     // start time of game
     se.death_time = time( NULL );         // end time of game
+
+    if (you.real_time != -1)
+        se.real_time = you.real_time + (se.death_time - you.start_time);
+    else
+        se.real_time = -1;
+
+    se.num_turns = you.num_turns;
 
 #ifdef WIZARD
     se.wiz_mode = (you.wizard ? 1 : 0);
@@ -789,7 +880,7 @@ void ouch(int dam, int death_source, char death_type)
     end_game(se);
 }
 
-void end_game(struct scorefile_entry &se)
+void end_game( struct scorefile_entry &se )
 {
     int i;
     char del_file[300];         // massive overkill!
@@ -841,9 +932,10 @@ void end_game(struct scorefile_entry &se)
 
     // death message
     if (dead)
+    {
         mpr("You die...");      // insert player name here? {dlb}
-
-    viewwindow(1, false);
+        viewwindow(1, false);   // don't do this for leaving/winning characters
+    }
     more();
 
     for (i = 0; i < ENDOFPACK; i++)
@@ -858,7 +950,7 @@ void end_game(struct scorefile_entry &se)
         }
     }
 
-    invent(-1, !dead);
+    invent( -1, !dead );
     clrscr();
 
     if (!dump_char( "morgue.txt", !dead ))
@@ -875,21 +967,24 @@ void end_game(struct scorefile_entry &se)
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
 #endif
-    clrscr();
-    cprintf("Goodbye, ");
-    cprintf(you.your_name);
-    cprintf(".");
-    cprintf(EOL EOL);
 
-    hiscores_format_single(info, se);
+    clrscr();
+    cprintf( "Goodbye, " );
+    cprintf( you.your_name );
+    cprintf( "." );
+    cprintf( EOL EOL "    " ); // Space padding where # would go in list format
+
+    char scorebuff[ HIGHSCORE_SIZE ];
+
+    const int lines = hiscores_format_single_long( scorebuff, se, true );
 
     // truncate
-    info[79] = '\0';
-    cprintf(info);
+    scorebuff[ HIGHSCORE_SIZE - 1 ] = '\0';
+    cprintf( scorebuff );
 
-    cprintf(EOL EOL " Best Crawlers - " EOL);
+    cprintf( EOL "Best Crawlers -" EOL );
 
-    hiscores_print_list();
+    hiscores_print_list( get_number_of_lines() - lines - 4 );
 
     // just to pause, actual value returned does not matter {dlb}
     get_ch();

@@ -20,6 +20,7 @@
 
 #include "externs.h"
 
+#include "abl-show.h"
 #include "invent.h"
 #include "itemname.h"
 #include "item_use.h"
@@ -31,8 +32,9 @@
 #include "version.h"
 #include "wpn-misc.h"
 
-void adjust_item(void);
-void adjust_spells(void);
+static void adjust_item(void);
+static void adjust_spells(void);
+static void adjust_ability(void);
 
 void quit_game(void)
 {
@@ -47,7 +49,7 @@ void version(void)
 
 void adjust(void)
 {
-    mpr("Adjust (i)tems or (s)pells?", MSGCH_PROMPT);
+    mpr( "Adjust (i)tems, (s)pells, or (a)bilities?", MSGCH_PROMPT );
 
     unsigned char keyin = tolower( get_ch() );
 
@@ -55,13 +57,15 @@ void adjust(void)
         adjust_item();
     else if (keyin == 's')
         adjust_spells();
+    else if (keyin == 'a')
+        adjust_ability();
     else if (keyin == ESCAPE)
         canned_msg( MSG_OK );
     else
         canned_msg( MSG_HUH );
 }                               // end adjust()
 
-void adjust_item(void)
+static void adjust_item(void)
 {
     int from_slot, to_slot;
     char str_pass[ ITEMNAME_SIZE ];
@@ -124,9 +128,9 @@ static void adjust_spells_cleanup(bool needs_redraw)
         redraw_screen();
 }
 
-void adjust_spells(void)
+static void adjust_spells(void)
 {
-    unsigned char throw_2, throw_3;
+    unsigned char index_1, index_2;
     unsigned char nthing = 0;
 
     bool needs_redraw = false;
@@ -150,11 +154,8 @@ void adjust_spells(void)
             needs_redraw = true;
         }
 
-        if ((nthing >= 'A' && nthing <= 'Z')
-            || (nthing >= 'a' && nthing <= 'z'))
-        {
+        if (isalpha( nthing ) || nthing == ESCAPE)
             keyin = nthing;
-        }
         else
         {
             mesclr();
@@ -164,37 +165,35 @@ void adjust_spells(void)
 
     if (keyin == ESCAPE)
     {
+        adjust_spells_cleanup(needs_redraw);
         canned_msg( MSG_OK );
         return;
     }
 
-    int throw_1 = (int) keyin;
+    int input_1 = (int) keyin;
 
-    if (throw_1 < 'a' || throw_1 > 'v')
+    if (!isalpha( input_1 ))
     {
         adjust_spells_cleanup(needs_redraw);
         mpr("You don't know that spell.");
         return;
     }
 
-    throw_2 = letter_to_index(throw_1);
+    index_1 = letter_to_index( input_1 );
+    int spell = get_spell_by_letter( input_1 );
 
-    if (you.spells[throw_2] == SPELL_NO_SPELL)
+    if (spell == SPELL_NO_SPELL)
     {
         adjust_spells_cleanup(needs_redraw);
-        strcpy(info, "You don't know that spell.");
-        mpr(info);
+        mpr("You don't know that spell.");
         return;
     }
 
-    strcpy(info, " ");
-    info[0] = index_to_letter(throw_2);
-    info[1] = '\0';
-    strcat(info, " - ");
-    strcat(info, spell_title(you.spells[throw_2]));
+    // print out targeted spell:
+    snprintf( info, INFO_SIZE, "%c - %s", input_1, spell_title( spell ) );
     mpr(info);
 
-    mpr("Adjust to which letter?", MSGCH_PROMPT);
+    mpr( "Adjust to which letter?", MSGCH_PROMPT );
 
     keyin = get_ch();
 
@@ -206,11 +205,8 @@ void adjust_spells(void)
             needs_redraw = true;
         }
 
-        if ((nthing >= 'A' && nthing <= 'Z')
-            || (nthing >= 'a' && nthing <= 'z'))
-        {
+        if (isalpha( nthing ) || nthing == ESCAPE)
             keyin = nthing;
-        }
         else
         {
             mesclr();
@@ -220,14 +216,14 @@ void adjust_spells(void)
 
     if (keyin == ESCAPE)
     {
+        adjust_spells_cleanup(needs_redraw);
         canned_msg( MSG_OK );
         return;
     }
 
-    throw_1 = (int) keyin;
+    int input_2 = (int) keyin;
 
-    //if (throw_1 < 'a' || throw_1 > 'z' )
-    if (throw_1 < 'a' || throw_1 > 'v')
+    if (!isalpha( input_2 ))
     {
         adjust_spells_cleanup(needs_redraw);
         mpr("What?");
@@ -236,31 +232,156 @@ void adjust_spells(void)
 
     adjust_spells_cleanup(needs_redraw);
 
-    throw_3 = letter_to_index(throw_1);
+    index_2 = letter_to_index( input_2 );
 
-    int backup = you.spells[throw_3];
+    // swap references in the letter table:
+    int tmp = you.spell_letter_table[index_2];
+    you.spell_letter_table[index_2] = you.spell_letter_table[index_1];
+    you.spell_letter_table[index_1] = tmp;
 
-    you.spells[throw_3] = you.spells[throw_2];
-    you.spells[throw_2] = backup;
+    // print out spell in new slot (now at input_2)
+    snprintf( info, INFO_SIZE, "%c - %s", input_2,
+              spell_title( get_spell_by_letter(input_2) ) );
 
-    strcpy(info, " ");
-    info[0] = index_to_letter(throw_3);
-    info[1] = '\0';
-    strcat(info, " - ");
-    strcat(info, spell_title(you.spells[throw_3]));
     mpr(info);
 
-    if (you.spells[throw_2] != SPELL_NO_SPELL)
+    // print out other spell if one was involved (now at input_1)
+    spell = get_spell_by_letter( input_1 );
+    if (spell != SPELL_NO_SPELL)
     {
-        strcpy(info, " ");
-        info[0] = index_to_letter(throw_2);
-        info[1] = '\0';
-        strcat(info, " - ");
-        strcat(info, spell_title(you.spells[throw_2]));
+        snprintf( info, INFO_SIZE, "%c - %s", input_1, spell_title(spell) );
         mpr(info);
     }
-
 }                               // end adjust_spells()
+
+static void adjust_ability(void)
+{
+    unsigned char index_1, index_2;
+    unsigned char nthing = 0;
+
+    bool needs_redraw = false;
+
+    if (!generate_abilities())
+    {
+        mpr( "You don't currently have any abilities." );
+        return;
+    }
+
+  query:
+    mpr( "Adjust which ability?", MSGCH_PROMPT );
+
+    unsigned char keyin = get_ch();
+
+    if (keyin == '?' || keyin == '*')
+    {
+        if (keyin == '*' || keyin == '?')
+        {
+            nthing = show_abilities();
+            needs_redraw = true;
+        }
+
+        if (isalpha( nthing ) || nthing == ESCAPE)
+            keyin = nthing;
+        else
+        {
+            mesclr();
+            goto query;
+        }
+    }
+
+    if (keyin == ESCAPE)
+    {
+        adjust_spells_cleanup(needs_redraw);
+        canned_msg( MSG_OK );
+        return;
+    }
+
+    int input_1 = (int) keyin;
+
+    if (!isalpha( input_1 ))
+    {
+        adjust_spells_cleanup(needs_redraw);
+        mpr("You don't have that ability.");
+        return;
+    }
+
+    index_1 = letter_to_index( input_1 );
+
+    if (you.ability_letter_table[index_1] == ABIL_NON_ABILITY)
+    {
+        adjust_spells_cleanup(needs_redraw);
+        mpr("You don't have that ability.");
+        return;
+    }
+
+    // print out targeted spell:
+    snprintf( info, INFO_SIZE, "%c - %s", input_1,
+              get_ability_name_by_index( index_1 ) );
+
+    mpr(info);
+
+    mpr( "Adjust to which letter?", MSGCH_PROMPT );
+
+    keyin = get_ch();
+
+    if (keyin == '?' || keyin == '*')
+    {
+        if (keyin == '*' || keyin == '?')
+        {
+            nthing = show_abilities();
+            needs_redraw = true;
+        }
+
+        if (isalpha( nthing ) || nthing == ESCAPE)
+            keyin = nthing;
+        else
+        {
+            mesclr();
+            goto query;
+        }
+    }
+
+    if (keyin == ESCAPE)
+    {
+        adjust_spells_cleanup(needs_redraw);
+        canned_msg( MSG_OK );
+        return;
+    }
+
+    int input_2 = (int) keyin;
+
+    if (!isalpha( input_2 ))
+    {
+        adjust_spells_cleanup(needs_redraw);
+        mpr("What?");
+        return;
+    }
+
+    adjust_spells_cleanup(needs_redraw);
+
+    index_2 = letter_to_index( input_2 );
+
+    // swap references in the letter table:
+    int tmp = you.ability_letter_table[index_2];
+    you.ability_letter_table[index_2] = you.ability_letter_table[index_1];
+    you.ability_letter_table[index_1] = tmp;
+
+    // Note:  the input_2/index_1 and input_1/index_2 here is intentional.
+    // This is because nothing actually moves until generate_abilities is
+    // called again... fortunately that has to be done everytime because
+    // that's the silly way this system currently works.  -- bwr
+    snprintf( info, INFO_SIZE, "%c - %s", input_2,
+              get_ability_name_by_index( index_1 ) );
+
+    mpr(info);
+
+    if (you.ability_letter_table[index_1] != ABIL_NON_ABILITY)
+    {
+        snprintf( info, INFO_SIZE, "%c - %s", input_1,
+                  get_ability_name_by_index( index_2 ) );
+        mpr(info);
+    }
+}                               // end adjust_ability()
 
 void list_armour(void)
 {

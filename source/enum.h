@@ -271,7 +271,8 @@ enum BEAMS                        // beam[].flavour
     BEAM_ACID,                    //    8
     BEAM_EXPLOSION = 10,          //   10
     BEAM_SPORE,                   //   11
-    BEAM_HELLFIRE = 13,           //   13 - found 11jan2000 {dlb}
+    BEAM_POISON_ARROW,            //   12
+    BEAM_HELLFIRE,                //   13 - found 11jan2000 {dlb}
     BEAM_ENERGY = 17,
     BEAM_HOLY = 18,               //   18 - aka beam of cleansing, golden flame
     BEAM_FRAG,
@@ -898,6 +899,14 @@ enum FIRE_TYPES
     NUM_FIRE_TYPES
 };
 
+enum FLUSH_REASONS
+{
+    FLUSH_ON_FAILURE,                  // spell/ability failed to cast
+    FLUSH_BEFORE_COMMAND,              // flush before getting a command
+    FLUSH_ON_MESSAGE,                  // flush when printing a message
+    NUM_FLUSH_REASONS
+};
+
 enum FOODS                             // mitm[].sub_type[]
 {
     FOOD_MEAT_RATION,                  //    0
@@ -937,6 +946,38 @@ enum GENDER
     GENDER_NEUTER,
     GENDER_MALE,
     GENDER_FEMALE
+};
+
+enum GHOST_VALUES
+{
+    GVAL_MAX_HP,        // 0
+    GVAL_EV,
+    GVAL_AC,
+    GVAL_SEE_INVIS,
+    GVAL_RES_FIRE,
+    GVAL_RES_COLD,      // 5
+    GVAL_RES_ELEC,
+    GVAL_DAMAGE,
+    GVAL_BRAND,
+    GVAL_SPECIES,
+    GVAL_BEST_SKILL,    // 10
+    GVAL_SKILL_LEVEL,
+    GVAL_EXP_LEVEL,
+    GVAL_CLASS,
+    GVAL_SPELL_1,       // 14
+    GVAL_SPELL_2,
+    GVAL_SPELL_3,
+    GVAL_SPELL_4,
+    GVAL_SPELL_5,
+    GVAL_SPELL_6,       // 19
+    NUM_GHOST_VALUES,   // should always be last value
+
+    // these values are for demonlords, which override the above:
+    GVAL_DEMONLORD_SPELLCASTER = 9,
+    GVAL_DEMONLORD_FLY,                 // 10
+    GVAL_DEMONLORD_UNUSED,              // 11
+    GVAL_DEMONLORD_HIT_DICE,            // 12
+    GVAL_DEMONLORD_CYCLE_COLOUR         // 13
 };
 
 enum GODS                              //  you.religion
@@ -1067,8 +1108,8 @@ enum ITEM_STATUS_FLAGS      // per item flags: ie. ident status, cursed status
     ISFLAG_EQ_JEWELLERY_MASK = 0x0000000F,  // mask of flags for known jewellery
 
     ISFLAG_CURSED            = 0x00000100,  // cursed
-    ISFLAG_RESERVED_1        = 0x00000200,  // reserved (heavy cursed?)
-    ISFLAG_RESERVED_2        = 0x00000400,  // reserved (re-cursing? :) )
+    ISFLAG_RESERVED_1        = 0x00000200,  // reserved (re-curses on wield?)
+    ISFLAG_RESERVED_2        = 0x00000400,  // reserved (heavy cursed?)
     ISFLAG_RESERVED_3        = 0x00000800,  // reserved (perma-cursed?)
     ISFLAG_CURSE_MASK        = 0x00000F00,  // mask of all curse related flags
 
@@ -1098,6 +1139,16 @@ enum ITEM_DESCRIPTIONS
     IDESC_SCROLLS,                      // special field (like the others)
     IDESC_RINGS,
     IDESC_SCROLLS_II                    // pluses field
+};
+
+enum ITEM_MAKE_SPECIES                  // used only for race during creation
+{
+    MAKE_ITEM_ELVEN       = 1,
+    MAKE_ITEM_DWARVEN     = 2,
+    MAKE_ITEM_ORCISH      = 3,
+
+    MAKE_ITEM_NO_RACE     = 100,
+    MAKE_ITEM_RANDOM_RACE = 250
 };
 
 enum ITEM_TYPE_ID       // used for first index of id[4][50]
@@ -2107,11 +2158,6 @@ enum ORBS
     ORB_ZOT                            //    0
 };
 
-enum PLAYER_DESCRIPTORS
-{
-    PDSC_UNDEAD                        //    0
-};
-
 enum POTIONS
 {
     POT_HEALING,                       //    0
@@ -2188,7 +2234,8 @@ enum RANDART_PROP
     RAP_MUTAGENIC,                     //   25
     RAP_ACCURACY,
     RAP_DAMAGE,
-    RAP_CURSED
+    RAP_CURSED,
+    RAP_STEALTH
 };
 
 enum READ_BOOK_ACTION
@@ -2236,6 +2283,13 @@ enum RUNE_TYPES
     RUNE_CEREBOV,
     RUNE_GLOORX_VLOQ,
     NUM_RUNE_TYPES              // should always be last
+};
+
+enum SCORE_FORMAT
+{
+    SCORE_TERSE,                // one line
+    SCORE_REGULAR,              // two lines (name, cause, blank)
+    SCORE_VERBOSE               // everything (dates, times, god, etc)
 };
 
 enum SCROLLS
@@ -2587,6 +2641,7 @@ enum SPELLS
     SPELL_SUMMON_DAEVA,
     SPELL_ABJURATION_II,
     SPELL_FULSOME_DISTILLATION,        //   93
+    SPELL_POISON_ARROW,                //   94
     SPELL_TWISTED_RESURRECTION = 110,  //  110
     SPELL_REGENERATION,
     SPELL_BONE_SHARDS,
@@ -2715,6 +2770,13 @@ enum STATS
   NUM_STATS, // added for increase_stats() {dlb}
   STAT_ALL, // must remain after NUM_STATS -- added to handle royal jelly, etc. {dlb}
   STAT_RANDOM = 255 // leave at 255, added for increase_stats() handling {dlb}
+};
+
+enum STATUE_TYPES
+{
+    STATUE_SILVER,
+    STATUE_ORANGE_CRYSTAL,
+    NUM_STATUE_TYPES
 };
 
 enum STATUS_REDRAW_FLAGS
@@ -3007,7 +3069,7 @@ enum ZAPS                              // zapping(), zappy()
     ZAP_NEGATIVE_ENERGY,
     ZAP_CRYSTAL_SPEAR,
     ZAP_BEAM_OF_ENERGY,
-    ZAP_ORB_OF_ENERGY,                 //   20
+    ZAP_MYSTIC_BLAST,                  //   20
     ZAP_ENSLAVEMENT,
     ZAP_PAIN,
     ZAP_STICKY_FLAME,
@@ -3046,6 +3108,7 @@ enum ZAPS                              // zapping(), zappy()
     ZAP_SANDBLAST,
     ZAP_SMALL_SANDBLAST,
     ZAP_MAGMA,
+    ZAP_POISON_ARROW,
     NUM_ZAPS                           // must remain last member {dlb}
 };
 

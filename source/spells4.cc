@@ -787,7 +787,7 @@ void cast_summon_dragon(int pow)
     mpr(info);
 }                               // end cast_summon_dragon()
 
-void cast_conjure_ball_lightning(int pow)
+void cast_conjure_ball_lightning( int pow )
 {
     int num = 3 + random2( 2 + pow / 50 );
 
@@ -1003,7 +1003,7 @@ static int ignite_poison_monsters(int x, int y, int pow, int garbage)
         || mon->type == MONS_SMALL_SNAKE
         || mon->type == MONS_SNAKE
         || mon->type == MONS_JELLYFISH
-        || mons_charclass( mon->type ) == MONS_GOLD_MIMIC)
+        || mons_is_mimic( mon->type ))
     {
         dam_dice.num = 3;
     }
@@ -1335,9 +1335,15 @@ static int distortion_monsters(int x, int y, int pow, int message)
     if (x == you.x_pos && y == you.y_pos)
     {
         if (you.skills[SK_TRANSLOCATIONS] < random2(8))
-            miscast_effect(SPTYP_TRANSLOCATION, pow / 9 + 1, pow, 100);
+        {
+            miscast_effect( SPTYP_TRANSLOCATION, pow / 9 + 1, pow, 100,
+                            "a weapon of distortion" );
+        }
         else
-            miscast_effect(SPTYP_TRANSLOCATION, 1, 1, 100);
+        {
+            miscast_effect( SPTYP_TRANSLOCATION, 1, 1, 100,
+                            "a weapon of distortion" );
+        }
 
         return 1;
     }
@@ -1904,7 +1910,9 @@ void cast_evaporate(int pow)
     beem.range = 9;
     beem.rangeMax = 9;
     beem.type = SYM_FLASK;
+    beem.beam_source = MHITYOU;
     beem.thrower = KILL_YOU_MISSILE;
+    beem.aux_source = NULL;
     beem.isBeam = false;
     beem.isTracer = false;
 
@@ -2014,7 +2022,7 @@ void cast_evaporate(int pow)
         {
             mpr("You smell decay.");
             if (one_chance_in(4))
-                you.rotting += 1 + random2(5);
+                rot_player( 1 + random2(5) );
         }
         break;
 
@@ -2398,7 +2406,9 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
     }
 
     //FIXME: if (player typed '>' to attack floor) goto do_terrain;
+    blast.beam_source = MHITYOU;
     blast.thrower = KILL_YOU;
+    blast.aux_source = NULL;
     blast.ex_size = 1;              // default
     blast.type = '#';
     blast.colour = 0;
@@ -2940,9 +2950,10 @@ void cast_apportation(int pow)
     if (item == NON_ITEM)
     {
         const int  mon = mgrd[ beam.tx ][ beam.ty ];
+
         if (mon == NON_MONSTER)
             mpr( "There are no items there." );
-        else if (mons_charclass( menv[ mon ].type ) == MONS_GOLD_MIMIC)
+        else if (mons_is_mimic( menv[ mon ].type ))
         {
             snprintf( info, INFO_SIZE, "%s twitches.",
                       ptr_monam( &(menv[ mon ]), DESC_CAP_THE ) );
@@ -3118,7 +3129,14 @@ void cast_condensation_shield(int pow)
 static int quadrant_blink(int x, int y, int pow, int garbage)
 {
     if (x == you.x_pos && y == you.y_pos)
-        return 0;
+        return (0);
+
+    if (you.level_type == LEVEL_ABYSS)
+    {
+        abyss_teleport( false );
+        you.pet_target = MHITNOT;
+        return (1);
+    }
 
     if (pow > 100)
         pow = 100;
@@ -3177,13 +3195,7 @@ static int quadrant_blink(int x, int y, int pow, int garbage)
     you.x_pos = bx;
     you.y_pos = by;
 
-    if (you.level_type == LEVEL_ABYSS)
-    {
-        abyss_teleport();
-        you.pet_target = MHITNOT;
-    }
-
-    return 1;
+    return (1);
 }
 
 void cast_semi_controlled_blink(int pow)
@@ -3194,7 +3206,7 @@ void cast_semi_controlled_blink(int pow)
 
 void cast_stoneskin(int pow)
 {
-    if (you.is_undead != 0)
+    if (you.is_undead)
     {
         mpr("This spell does not affect your undead flesh.");
         return;

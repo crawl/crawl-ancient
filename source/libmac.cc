@@ -1,54 +1,51 @@
 /*
  *  File:       libmac.cc
  *  Summary:    Mac specific routines used by Crawl.
- *  Written by: Jesse Jones (jesjones@halcyon.com)
+ *  Written by: Jesse Jones (jesjones@mindspring.com)
  *
  *  Change History (most recent first):
  *
- *      <4>     9/25/99         CDL             linuxlib -> liblinux
+ *      <5>     5/25/02     JDJ     Rewrote to use Carbon Events and Mach-O.
+ *      <4>     9/25/99     CDL     linuxlib -> liblinux
  *
- *      <3>     5/30/99         JDJ             Quit only pops up save changes dialog if game_has_started is true.
- *      <2>     4/24/99         JDJ             HandleMenu calls save_game instead of returning a 'S'
- *                                                                      character ('S' now prompts). kTermHeight is now initialized
- *                                                                      to NUMBER_OF_LINES.
- *      <2>     4/24/99         JDJ             getstr only adds printable characters to the buffer.
- *              <1>     3/23/99         JDJ             Created
+ *      <3>     5/30/99     JDJ     Quit only pops up save changes dialog if game_has_started is true.
+ *      <2>     4/24/99     JDJ     HandleMenu calls save_game instead of returning a 'S'
+ *                                  character ('S' now prompts). kTermHeight is now initialized
+ *                                  to NUMBER_OF_LINES.
+ *      <2>     4/24/99     JDJ     getstr only adds printable characters to the buffer.
+ *      <1>     3/23/99     JDJ     Created
  */
 
 #include "AppHdr.h"
 #include "libmac.h"
 
+#if macintosh
+
 #include <cstdarg>
 #include <ctype.h>
-#include <path2fss.h>
 #include <string.h>
 #include <vector.h>
 
-#include <Appearance.h>
-#include <Sioux.h>
-#include <Sound.h>
+#include <CarbonCore/StringCompare.h>
+#include <HIToolbox/CarbonEvents.h>
+#include <HIToolbox/Dialogs.h>
 
 #include "debug.h"
 #include "defines.h"
 #include "files.h"
+#include "MacString.h"
+#include "version.h"
 
-
-#if macintosh
 
 //-----------------------------------
 //      Forward References
 //
-class CWindow;
+class CApplication;
 
 
 //-----------------------------------
 //      Constants
 //
-const int kAppleMenu = 256;
-const int kFileMenu = 257;
-const int kFontMenu = 258;
-const int kSizeMenu = 259;
-
 const int kTermWidth = 80;
 const int kTermHeight = MAC_NUMBER_OF_LINES;
 
@@ -77,10 +74,16 @@ const int kNumPadDivideKey = 0x4B;
 const char kEnterChar = 0x03;
 const short kEscapeKey = 0x35;
 const char kCheckMarkChar = 0x12;
+const char kNoMarkChar    = 0x00;
 
 const short kSaveBtn = 1;
 const short kCancelBtn = 2;
 const short kDontSaveBtn = 3;
+
+const Rect kBigRect = {0, 0, 32000, 32000};
+
+const RGBColor kBlack = {0, 0, 0};
+const RGBColor kWhite = {65535, 65535, 65535};
 
 enum EAskSaveResult
 {
@@ -93,179 +96,72 @@ enum EAskSaveResult
 //-----------------------------------
 //      Variables
 //
-static bool sHasAM = false;
-
-static MenuHandle sAppleMenu = NULL;
-static MenuHandle sFileMenu = NULL;
-static MenuHandle sFontMenu = NULL;
-static MenuHandle sSizeMenu = NULL;
-
-static CWindow *sWindow = NULL;
+static CApplication* sApp = NULL;
 static CTabHandle sColors = NULL;
 
+static bool sInDialog = false;
+
 extern bool game_has_started;
-
-
-// ========================================================================
-//      class CWindow
-// ========================================================================
-class CWindow
-{
-
-//-----------------------------------
-    //      Initialization/Destruction
-    //
-    public:
-    ~CWindow();
-
-    CWindow();
-
-    private:
-    CWindow(const CWindow & rhs);
-
-      CWindow & operator = (const CWindow & rhs);
-
-//-----------------------------------
-    //      API
-    //
-      public:
-    void Show(bool show = true);
-
-    void HandleUpdate();
-    void HandleActivate(const EventRecord & event);
-    void Invalidate();
-
-    void Clear();
-    void SetCursor(int x, int y);
-    Point GetCursor() const
-    {
-        return mCursor;
-    }
-    void SetChar(unsigned char ch);
-    void Print(const char *buffer);
-    void ShowCursor(bool show)
-    {
-        mShowCursor = show;
-    }
-
-    void SetForeColor(const RGBColor & color);
-    void SetBackColor(const RGBColor & color);
-
-    void SetFont(const unsigned char *name)
-    {
-        this->DoSetFont(name, mPointSize);
-    }
-    void SetFontSize(int size)
-    {
-        this->DoSetFont(mFontName, size);
-    }
-
-//-----------------------------------
-    //      Internal Types
-    //
-    protected:
-    struct SCell
-    {
-        unsigned char ch;
-        RGBColor color;
-
-          SCell()
-        {
-            ch = ' ';
-            color.red = color.green = color.blue = 65535;
-        }
-    };
-
-    typedef vector < SCell > Line;
-
-//-----------------------------------
-    //      Internal API
-    //
-  protected:
-    void DoScroll();
-
-    void DoClearToEOL();
-
-    void DoSetChar(unsigned char ch);
-
-    void DoSetFont(const unsigned char *name, int size);
-
-    void DoDrawCell(const Rect & area, const SCell & cell);
-
-    void DoWritePrefs();
-
-    bool DoReadPrefs();
-
-//-----------------------------------
-    //      Member Data
-    //
-  protected:
-    vector < Line > mLines;
-    Point mCursor;
-    bool mShowCursor;
-
-    int mCellWidth;
-    int mCellHeight;
-
-    Str255 mFontName;
-    short mFontNum;
-    int mPointSize;
-    int mAscent;
-
-    RGBColor mForeColor;
-    RGBColor mBackColor;
-
-    WindowRef mWindow;
-    GWorldPtr mPixMap;
-};
 
 
 // ========================================================================
 //      Internal Functions
 // ========================================================================
 
-inline void CopyColorBits(CGrafPtr srcBits, CGrafPtr dstBits, const Rect * srcRect,
-                          const Rect * dstRect, int mode, RgnHandle maskRgn)
-{
-    CopyBits((BitMap *) & (srcBits->portPixMap), (BitMap *) & (dstBits->portPixMap), srcRect, dstRect, mode, maskRgn);
-}
-
 //---------------------------------------------------------------
 //
-// TestGestaltMask
+// CreateSpec
 //
 //---------------------------------------------------------------
-static bool TestGestaltMask(unsigned long selector, long bitmap)
+static EventTypeSpec CreateSpec(UInt32 c, UInt32 k)
 {
-    long result;
-    OSErr err = Gestalt(selector, &result);
+        EventTypeSpec spec;
 
-    bool has = err == noErr && (result & bitmap) == bitmap;
+        spec.eventClass = c;
+        spec.eventKind = k;
 
-    return has;
+        return spec;
 }
 
 
 //---------------------------------------------------------------
 //
-// GetControl
+// DrawChar
 //
 //---------------------------------------------------------------
-static ControlHandle GetControl(DialogPtr dialog, short item)
+inline void DrawChar(short x, short y, char ch)
 {
-    ASSERT(dialog != nil);
-    ASSERT(item >= 1 && item <= CountDITL(dialog));
+    MoveTo(x, y);
+    DrawText(&ch, 0, 1);
+}
 
-    short itemType;
-    Handle itemHandle;
-    Rect itemRect;
 
-    GetDialogItem(dialog, item, &itemType, &itemHandle, &itemRect);
-    if (itemType > itemDisable)
-        itemType -= itemDisable;
-    ASSERT(itemType >= ctrlItem + btnCtrl && itemType <= ctrlItem + resCtrl);
+//---------------------------------------------------------------
+//
+// ThrowIf
+//
+//---------------------------------------------------------------
+static void ThrowIf(bool predicate, const std::string& text)
+{
+        if (predicate)
+                throw std::runtime_error(text);
+}
 
-    return reinterpret_cast < ControlHandle > (itemHandle);
+
+//---------------------------------------------------------------
+//
+// ThrowIfOSErr
+//
+//---------------------------------------------------------------
+static void ThrowIfOSErr(OSErr err, const std::string& text)
+{
+        if (err != noErr)
+        {
+                char buffer[256];
+                sprintf(buffer, "%s (%d)", text.c_str(), err);
+
+                throw std::runtime_error(buffer);
+        }
 }
 
 
@@ -276,126 +172,22 @@ static ControlHandle GetControl(DialogPtr dialog, short item)
 //---------------------------------------------------------------
 static void FlashButton(DialogPtr dialog, short item)
 {
-    ASSERT(dialog != nil);
-    ASSERT(item >= 1 && item <= CountDITL(dialog));
+        ASSERT(dialog != nil);
+        ASSERT(item >= 1 && item <= CountDITL(dialog));
 
-    unsigned long ticks;
+        ControlRef control;
+        (void) GetDialogItemAsControl(dialog, item, &control);
 
-    ControlHandle control = GetControl(dialog, item);
+        HiliteControl(control, 1);
+//      QDAddRectToDirtyRegion(GetDialogPort(dialog), &kBigRect);
+        QDFlushPortBuffer(GetDialogPort(dialog), NULL);
 
-    HiliteControl(control, kControlEntireControl);
-    Delay(8, &ticks);
-    HiliteControl(control, 0);
-}
+        unsigned long ticks;
+        Delay(8, &ticks);
 
-
-//---------------------------------------------------------------
-//
-// ExtractChar
-//
-// Returns the ASCII character corresponding to the keyDown or
-// keyUp event. This function can be used to find the character
-// that was pressed with the option key or to find out if the
-// shift key was held down with the command key. Note that this
-// code is adapted from MacApp's TDispatcher::KeyEventToComponents.
-//
-//---------------------------------------------------------------
-static char ExtractChar(const EventRecord & event)
-{
-    ASSERT(event.what == keyDown || event.what == keyUp || event.what == autoKey);
-
-    const int kMaskModifier = 0xF600;   // strip command and options keys from Modifiers
-
-    const int kMaskASCII1 = 0x000000FF;         // get key from KeyTranslate return
-
-    const int kMaskASCII2 = 0x00FF0000;         // get key from KeyTranslate return
-
-    const short kUpKeyMask = 0x0080;
-
-    // Now see if the command key is down. If it is, get the correct ASCII translation by
-    // masking the command key out and re-translating because the command key will
-    // mask the shift modifier.
-
-    char theChar = (char) (event.message & charCodeMask);
-    unsigned short theKey = (unsigned short) ((event.message & keyCodeMask) >> 8);
-
-    if ((event.modifiers & cmdKey) != 0 || (event.modifiers & optionKey) != 0)
-    {
-        // Set the upkey bit so KeyTranslate doesn't do special deadkey processing.
-        // See IM-V pp. 195
-        unsigned short keyCodeParameter = (unsigned short) ((event.modifiers & kMaskModifier) | theKey | kUpKeyMask);
-
-        Ptr keyTransTable = (Ptr) (GetScriptManagerVariable(smKCHRCache));
-
-        unsigned long state = 0;
-        unsigned long keyInfo = KeyTranslate(keyTransTable, keyCodeParameter, &state);
-
-        theChar = (char) (keyInfo & kMaskASCII1);
-        if (theChar == 0)
-            theChar = (char) ((keyInfo & kMaskASCII2) & 16);
-    }
-
-    return theChar;
-}
-
-
-//---------------------------------------------------------------
-//
-// IsCommandPeriod
-//
-// Non-US keyboards sometimes use option key to generate period
-// so we'll strip off all the modifier keys before checking.
-//
-//---------------------------------------------------------------
-static bool IsCommandPeriod(const EventRecord & event)
-{
-    bool cmdPeriod = false;
-
-    if (event.what == keyDown)
-        if ((event.modifiers & cmdKey) != 0 && ExtractChar(event) == '.')
-            cmdPeriod = true;
-
-    return cmdPeriod;
-}
-
-
-//---------------------------------------------------------------
-//
-// WarnUserFilter
-//
-//---------------------------------------------------------------
-static int HandleEvent(const EventRecord & event);
-static pascal Boolean WarnUserFilter(DialogPtr dptr, EventRecord * event, short *item)
-{
-    bool handled = false;
-
-    if (event->what == keyDown)
-    {
-        char ch = (char) toupper((char) (event->message & charCodeMask));
-        short key = (short) ((event->message & keyCodeMask) >> 8);
-
-        if (ch == '\r' || ch == kEnterChar)
-        {
-            *item = 1;
-            handled = true;
-        }
-
-        if (handled)
-            FlashButton(dptr, *item);
-
-    }
-    else if (event->what == updateEvt || event->what == activateEvt)
-    {
-        GrafPtr oldPort;
-
-        GetPort(&oldPort);
-
-        (void) HandleEvent(*event);
-
-        SetPort(oldPort);
-    }
-
-    return handled;
+        HiliteControl(control, 0);
+//      QDAddRectToDirtyRegion(GetDialogPort(dialog), &kBigRect);
+        QDFlushPortBuffer(GetDialogPort(dialog), NULL);
 }
 
 
@@ -406,55 +198,33 @@ static pascal Boolean WarnUserFilter(DialogPtr dptr, EventRecord * event, short 
 // Pops up an error dialog.
 //
 //---------------------------------------------------------------
-static void WarnUser(const char *message)
+static void WarnUser(const char* message)
 {
-    int len = strlen(message);
+        int len = strlen(message);
+        if (len > 250)
+                len = 250;
 
-    if (len > 250)
-        len = 250;
+        Str255 text;
+        for (int i = 0; i < len; i++)
+                text[i + 1] = message[i];
+        text[0] = len;
 
-    Str255 text;
-
-    for (int i = 0; i < len; i++)
-        text[i + 1] = message[i];
-    text[0] = len;
-
-    if (sHasAM)
-    {
-#if GENERATINGCFM
-        RoutineDescriptor desc = BUILD_ROUTINE_DESCRIPTOR(uppModalFilterProcInfo, WarnUserFilter);
-        ModalFilterUPP theFilter = (ModalFilterUPP) & desc;
-
-#else
-        ModalFilterUPP theFilter = WarnUserFilter;
-
-#endif
-
-        OSErr err = noErr;
-        short item;
         AlertStdAlertParamRec params;
-
-        params.movable = true;
-        params.helpButton = false;
-        params.filterProc = theFilter;
-        params.defaultText = (StringPtr) - 1L;  // use default (ie "OK")
-
-        params.cancelText = nil;
-        params.otherText = nil;
+        params.movable       = true;
+        params.helpButton    = false;
+        params.filterProc    = NULL;
+        params.defaultText   = (StringPtr) -1L;  // use default (ie "OK")
+        params.cancelText    = NULL;
+        params.otherText     = NULL;
         params.defaultButton = 1;
-        params.cancelButton = 0;
-        params.position = kWindowAlertPositionParentWindowScreen;
+        params.cancelButton  = 0;
+        params.position      = kWindowAlertPositionParentWindowScreen;
 
-        err = StandardAlert(kAlertCautionAlert, text, "\p", &params, &item);
+        short item;
+        sInDialog = true;
+        OSErr err = StandardAlert(kAlertCautionAlert, text, "\p", &params, &item);
         ASSERT(err == noErr);   // seems kind of pointless to throw
-
-    }
-    else
-    {
-        ParamText(text, "\p", "\p", "\p");
-
-        Alert(129, 0L);
-    }
+        sInDialog = false;
 }
 
 
@@ -463,61 +233,41 @@ static void WarnUser(const char *message)
 // SaveChangesFilter
 //
 //---------------------------------------------------------------
-static pascal Boolean SaveChangesFilter(DialogPtr dptr, EventRecord * event, short *item)
+static pascal Boolean SaveChangesFilter(DialogPtr dptr, EventRecord* event, short* item)
 {
-    bool handled = false;
+        bool handled = false;
 
-    if (event->what == keyDown)
-    {
-        char ch = (char) toupper((char) (event->message & charCodeMask));
-        short key = (short) ((event->message & keyCodeMask) >> 8);
-
-        if (ch == 'S')
+        if (event->what == keyDown)
         {
-            *item = 1;
-            handled = true;
+                char ch = (char) toupper((char) (event->message & charCodeMask));
+                short key = (short) ((event->message & keyCodeMask) >> 8);
 
-        }
-        else if (ch == 'D')
-        {
-            *item = 3;
-            handled = true;
+                if (ch == 'S')
+                {
+                        *item = 1;
+                        handled = true;
+                }
+                else if (ch == 'D')
+                {
+                        *item = 3;
+                        handled = true;
+                }
+                else if (ch == '\r' || ch == kEnterChar)
+                {
+                        *item = 1;
+                        handled = true;
+                }
+                else if (key == kEscapeKey)
+                {
+                        *item = 2;
+                        handled = true;
+                }
 
-        }
-        else if (ch == '\r' || ch == kEnterChar)
-        {
-            *item = 1;
-            handled = true;
-
-        }
-        else if (key == kEscapeKey)
-        {
-            *item = 2;
-            handled = true;
-
-        }
-        else if (IsCommandPeriod(*event))
-        {
-            *item = 2;
-            handled = true;
+                if (handled)
+                        FlashButton(dptr, *item);
         }
 
-        if (handled)
-            FlashButton(dptr, *item);
-
-    }
-    else if (event->what == updateEvt || event->what == activateEvt)
-    {
-        GrafPtr oldPort;
-
-        GetPort(&oldPort);
-
-        (void) HandleEvent(*event);
-
-        SetPort(oldPort);
-    }
-
-    return handled;
+        return handled;
 }
 
 
@@ -528,427 +278,59 @@ static pascal Boolean SaveChangesFilter(DialogPtr dptr, EventRecord * event, sho
 //---------------------------------------------------------------
 static EAskSaveResult AskSaveChanges()
 {
-    InitCursor();
-
-    OSErr err = noErr;
-    EAskSaveResult result = kCancelSave;
-
-    short item = kSaveBtn;
-
-    if (sHasAM)
-    {
-#if GENERATINGCFM
-        RoutineDescriptor desc = BUILD_ROUTINE_DESCRIPTOR(uppModalFilterProcInfo, SaveChangesFilter);
-        ModalFilterUPP theFilter = (ModalFilterUPP) & desc;
-
-#else
-        ModalFilterUPP theFilter = SaveChangesFilter;
-
-#endif
+#if 1
+        static ModalFilterUPP filterProc = NewModalFilterUPP(SaveChangesFilter);
 
         AlertStdAlertParamRec params;
-
-        params.movable = true;
-        params.helpButton = false;
-        params.filterProc = theFilter;
-        params.defaultText = "\pSave";
-        params.cancelText = "\pCancel";
-        params.otherText = "\pDon't Save";
+        params.movable       = true;
+        params.helpButton    = false;
+        params.filterProc    = filterProc;
+        params.defaultText   = "\pSave";
+        params.cancelText    = "\pCancel";
+        params.otherText     = "\pDon't Save";
         params.defaultButton = kSaveBtn;
-        params.cancelButton = kCancelBtn;
-        params.position = kWindowAlertPositionParentWindowScreen;
+        params.cancelButton  = kCancelBtn;
+        params.position      = kWindowAlertPositionParentWindowScreen;
 
-        err = StandardAlert(kAlertStopAlert, "\pDo you want to save your game before quitting?", "\p", &params, &item);
+        short item = kSaveBtn;
+        sInDialog = true;
+        OSErr err = StandardAlert(kAlertStopAlert, "\pDo you want to save your game before quitting?", "\p", &params, &item);
         ASSERT(err == noErr);   // seems kind of pointless to throw
+        sInDialog = false;
 
-    }
-    else
-    {
-        ParamText("\pDo you want to save your game before quitting?", "\p", "\p", "\p");
-
-        item = CautionAlert(131, NULL);
-    }
-
-    if (item == kSaveBtn)
-        result = kSaveChanges;
-    else if (item == kDontSaveBtn)
-        result = kDontSave;
-
-    return result;
-}
-
-
-//---------------------------------------------------------------
-//
-// HandleUpdateMenus
-//
-//---------------------------------------------------------------
-static void HandleUpdateMenus(const unsigned char *fontName, short fontNum, int pointSize)
-{
-    ASSERT(fontName != NULL);
-
-    Str255 name;
-
-    short numItems = CountMItems(sFontMenu);
-
-    for (short index = 1; index <= numItems; ++index)
-    {
-        GetMenuItemText(sFontMenu, index, name);
-
-        if (EqualString(fontName, name, true, true))
-            SetItemMark(sFontMenu, index, kCheckMarkChar);
+        EAskSaveResult result;
+        if (item == kSaveBtn)
+                result = kSaveChanges;
+        else if (item == kDontSaveBtn)
+                result = kDontSave;
         else
-            SetItemMark(sFontMenu, index, noMark);
-    }
+                result = kCancelSave;
 
-    numItems = CountMItems(sSizeMenu);
-    for (short index = 1; index <= numItems; ++index)
-    {
-        GetMenuItemText(sSizeMenu, index, name);
+        return result;
 
-        long size;
+#else
+        NavDialogOptions options;
+        OSStatus err = NavGetDefaultDialogOptions(&options);
+        ASSERT(err == noErr);                                           // seems kind of pointless to throw
 
-        StringToNum(name, &size);
-
-        if (size == pointSize)
-            SetItemMark(sSizeMenu, index, kCheckMarkChar);
-        else
-            SetItemMark(sSizeMenu, index, noMark);
-
-        if (RealFont(fontNum, size))
-            SetItemStyle(sSizeMenu, index, outline);
-        else
-            SetItemStyle(sSizeMenu, index, normal);
-    }
-}
-
-
-//---------------------------------------------------------------
-//
-// HandleMenu
-//
-//---------------------------------------------------------------
-static int HandleMenu(int menuID, int item)
-{
-    int ch = '\0';
-
-    switch (menuID)
-    {
-    case kAppleMenu:
-        if (item == 1)
-            (void) Alert(256, NULL);
-
-        else
+        NavAskSaveChangesResult reply = kSaveChanges;
+        if (err == noErr)
         {
-            Str255 daName;
+                std::string name = "foobar";
+                UInt32 length = std::min(name.size(), sizeof(options.savedFileName) - 1);
+                BlockMoveData(name.c_str(), options.savedFileName + 1, length);
+                options.savedFileName[0] = length;
 
-            GetMenuItemText(sAppleMenu, item, daName);
-            OpenDeskAcc(daName);
+                err = NavAskSaveChanges(&options,
+                                                                action,
+                                                                &reply,
+                                                                NULL,
+                                                                0UL);
+                ASSERT(err == noErr);                                   // seems kind of pointless to throw
         }
-        break;
 
-    case kFileMenu:
-        if (item == 1)
-            save_game(false);
-
-        else if (item == 3)
-        {
-            if (game_has_started)
-            {
-                EAskSaveResult answer = AskSaveChanges();
-
-                if (answer == kSaveChanges)
-                {
-                    save_game(true);
-                }
-                else if (answer == kDontSave)
-                {
-                    deinit_mac();
-                    ExitToShell();
-                }
-            }
-            else
-            {
-                deinit_mac();
-                ExitToShell();
-            }
-        }
-        break;
-
-    case kFontMenu:
-        {
-            Str255 fontName;
-
-            GetMenuItemText(sFontMenu, item, fontName);
-            sWindow->SetFont(fontName);
-        }
-        break;
-
-    case kSizeMenu:
-        {
-            Str255 sizeName;
-
-            GetMenuItemText(sSizeMenu, item, sizeName);
-
-            long size;
-
-            StringToNum(sizeName, &size);
-
-            sWindow->SetFontSize(size);
-        }
-        break;
-
-    default:
-        ASSERT(false);
-    }
-
-    return ch;
-}
-
-
-//---------------------------------------------------------------
-//
-// HandleMouseDown
-//
-//---------------------------------------------------------------
-static int HandleMouseDown(const EventRecord & event)
-{
-    int ch = '\0';
-
-    WindowRef wptr;
-    int partCode = ::FindWindow(event.where, &wptr);
-
-    switch (partCode)
-    {
-    case inMenuBar:
-        {
-            int result = MenuSelect(event.where);
-            int menuID = HiWord(result);
-            int item = LoWord(result);
-
-            if (menuID != 0)
-                ch = HandleMenu(menuID, item);
-            HiliteMenu(0);
-        }
-        break;
-
-    case inSysWindow:
-        ::SystemClick(&event, wptr);
-        break;
-
-    case inDesk:
-        ::SysBeep(1);
-        break;
-
-    case inContent:
-        // fall thru
-
-    case inDrag:
-#if DEBUG
-        if (!SIOUXHandleOneEvent(const_cast < EventRecord * >(&event)))
+        return (EAskSaveResult) reply;
 #endif
-        {
-            Rect dragRect = (**(GetGrayRgn())).rgnBBox;
-
-            InsetRect(&dragRect, 4, 4);
-            ::DragWindow(wptr, event.where, &dragRect);
-        }
-        break;
-
-    case inGoAway:
-    case inGrow:
-    case inZoomIn:
-    case inZoomOut:
-#if DEBUG
-        (void) SIOUXHandleOneEvent(const_cast < EventRecord * >(&event));
-#endif
-        break;
-
-    default:
-        ASSERT(false);
-    }
-
-    return ch;
-}
-
-
-//---------------------------------------------------------------
-//
-// HandleEvent
-//
-//---------------------------------------------------------------
-static int HandleEvent(const EventRecord & event)
-{
-    ASSERT(sWindow != NULL);
-
-    int ch = '\0';
-
-    switch (event.what)
-    {
-    case mouseDown:
-        ch = HandleMouseDown(event);
-        break;
-
-    case keyDown:
-        if (event.modifiers & cmdKey)
-        {
-            int c = event.message & charCodeMask;
-
-            int result = MenuKey(c);
-            int menuID = HiWord(result);
-            int item = LoWord(result);
-
-            if (menuID != 0)
-                ch = HandleMenu(menuID, item);
-            HiliteMenu(0);
-        }
-        // fall thru
-
-    case autoKey:
-        if ((event.modifiers & cmdKey) == 0)
-        {
-            int key = (event.message & keyCodeMask) >> 8;
-
-            switch (key)
-            {
-            case kNumPad1Key:
-                if (event.modifiers & shiftKey)
-                    ch = 'B';
-                else if (event.modifiers & controlKey)
-                    ch = 2;
-                else
-                    ch = 'b';
-                break;
-
-            case kNumPad2Key:
-            case kDownArrowKey:
-                if (event.modifiers & shiftKey)
-                    ch = 'J';
-                else if (event.modifiers & controlKey)
-                    ch = 10;
-                else
-                    ch = 'j';
-                break;
-
-            case kNumPad3Key:
-                if (event.modifiers & shiftKey)
-                    ch = 'N';
-                else if (event.modifiers & controlKey)
-                    ch = 14;
-                else
-                    ch = 'n';
-                break;
-
-            case kNumPad4Key:
-            case kLeftArrowKey:
-                if (event.modifiers & shiftKey)
-                    ch = 'H';
-                else if (event.modifiers & controlKey)
-                    ch = 8;
-                else
-                    ch = 'h';
-                break;
-
-            case kNumPad5Key:
-                if (event.modifiers & shiftKey)
-                    ch = '5';
-                else
-                    ch = '.';
-                break;
-
-            case kNumPad6Key:
-            case kRightArrowKey:
-                if (event.modifiers & shiftKey)
-                    ch = 'L';
-                else if (event.modifiers & controlKey)
-                    ch = 12;
-                else
-                    ch = 'l';
-                break;
-
-            case kNumPad7Key:
-                if (event.modifiers & shiftKey)
-                    ch = 'Y';
-                else if (event.modifiers & controlKey)
-                    ch = 25;
-                else
-                    ch = 'y';
-                break;
-
-            case kNumPad8Key:
-            case kUpArrowKey:
-                if (event.modifiers & shiftKey)
-                    ch = 'K';
-                else if (event.modifiers & controlKey)
-                    ch = 11;
-                else
-                    ch = 'k';
-                break;
-
-            case kNumPad9Key:
-                if (event.modifiers & shiftKey)
-                    ch = 'U';
-                else if (event.modifiers & controlKey)
-                    ch = 21;
-                else
-                    ch = 'u';
-                break;
-
-            default:
-                ch = event.message & charCodeMask;
-#if 0
-                if (event.modifiers & controlKey)
-                {
-                    if (ch == 'p')
-                        ch = 16;
-                    else
-                        ch = 0;
-                }
-#endif
-            }
-        }
-        break;
-
-    case updateEvt:
-        sWindow->HandleUpdate();
-#if DEBUG
-        (void) SIOUXHandleOneEvent(const_cast < EventRecord * >(&event));
-#endif
-        break;
-
-    case diskEvt:
-        if (HiWord(event.message) != noErr)
-        {
-            Point pt =
-            {120, 120};         // System 7 will auto-center dialog
-
-            ::DILoad();
-            ::DIBadMount(pt, event.message);
-            ::DIUnload();
-        }
-        break;
-
-    case activateEvt:
-        sWindow->HandleActivate(event);
-#if DEBUG
-        (void) SIOUXHandleOneEvent(const_cast < EventRecord * >(&event));
-#endif
-        break;
-
-    case mouseUp:
-    case keyUp:
-    case osEvt:
-    case kHighLevelEvent:
-        break;
-
-    case nullEvent:
-        break;
-
-    default:
-        ASSERT(false);
-    }
-
-    return ch;
 }
 
 
@@ -975,245 +357,259 @@ static RGBColor ConvertColor(int c)
     return color;
 }
 
+#if __MWERKS__
 #pragma mark -
+#endif
 
-// ========================================================================
-//      class CWindow
-// ========================================================================
+// ============================================================================
+//      class CApplication
+// ============================================================================
+class CApplication {
+
+//-----------------------------------
+//      Initialization/Destruction
+//
+public:
+                                ~CApplication();
+                                CApplication();
+
+//-----------------------------------
+//      API
+//
+public:
+        void            Quit();
+
+        char            GetChar();
+                                // Block until a key is pressed.
+
+        bool            PeekChar();
+                                // Return true if a key event is on the event queue.
+
+        void            Clear();
+        void            SetCursor(int x, int y);
+        Point           GetCursor() const                                               {return mCursor;}
+        void            SetChar(unsigned char ch);
+        void            Print(const char* buffer);
+        void            ShowCursor(bool show)                                   {mShowCursor = show;}
+
+        void            SetForeColor(const RGBColor& color);
+        void            SetBackColor(const RGBColor& color);
+
+    void                SetFont(const unsigned char *name)              {this->DoSetFont(name, mPointSize);}
+    void                SetFontSize(int size)                                   {this->DoSetFont(mFontName, size);}
+
+//-----------------------------------
+//      Internal Types
+//
+private:
+    struct SCell {
+                unsigned char ch;
+                RGBColor color;
+
+                SCell()
+                {
+                        ch = ' ';
+                        color.red = color.green = color.blue = 65535;
+                }
+    };
+
+    typedef vector<SCell> Line;
+
+//-----------------------------------
+//      Internal API
+//
+private:
+        void            DoAbout();
+    void                DoClearToEOL();
+    void                DoDrawCell(const Rect& area, const SCell& cell);
+        OSStatus        DoEnableCommand(MenuRef menuH, MenuCommand command, MenuItemIndex index);
+        OSStatus        DoHandleCommand(MenuCommand command);
+    void                DoInitMenus();
+    void                DoInitWindows();
+        char            DoMungeChar(char inChar, UInt32 inKey, UInt32 modifiers) const;
+        OSStatus        DoOpenMenu(MenuRef menuH);
+        void            DoReadPrefs();
+        void            DoRender();
+    void                DoScroll();
+    void                DoSetChar(unsigned char ch);
+        void            DoSetFont(const unsigned char* name, int size);
+        void            DoWritePrefs();
+
+        static pascal OSStatus  DoKeyDown(EventHandlerCallRef handler, EventRef event, void* refCon);
+        static pascal OSStatus  DoMenuEvent(EventHandlerCallRef handler, EventRef event, void* refCon);
+        static pascal OSErr     DoQuit(const AppleEvent* event, AppleEvent* reply, SInt32 refCon);
+        static pascal OSStatus  DoWindowEvent(EventHandlerCallRef handler, EventRef event, void* refCon);
+
+//-----------------------------------
+//      Member Data
+//
+private:
+        WindowRef               mWindow;
+    vector<Line>        mLines;
+    char                        mChar;
+
+    Point                       mCursor;
+    bool                        mShowCursor;
+
+    RGBColor            mForeColor;
+    RGBColor            mBackColor;
+
+    Str255                      mFontName;
+    int                         mPointSize;
+    UInt32                      mNumFonts;
+    MenuRef             mFontMenu;
+
+    short                       mFontNum;
+        int                             mAscent;
+        int                             mCellHeight;
+        int                             mCellWidth;
+};
 
 //---------------------------------------------------------------
 //
-// CWindow::~CWindow
+// CApplication::~CApplication
 //
 //---------------------------------------------------------------
-CWindow::~CWindow()
+CApplication::~CApplication()
 {
     this->DoWritePrefs();
 
-    DisposeWindow(mWindow);
-    DisposeGWorld(mPixMap);
+        DisposeWindow(mWindow);
 }
 
 
 //---------------------------------------------------------------
 //
-// CWindow::CWindow
+// CApplication::CApplication
 //
 //---------------------------------------------------------------
-CWindow::CWindow()
+CApplication::CApplication()
 {
+        InitCursor();
+
     mCursor.h = 0;
     mCursor.v = 0;
+    mShowCursor = false;
+    mChar = 0;
 
-    mForeColor.red = 65535;
-    mForeColor.green = 65535;
-    mForeColor.blue = 65535;
-
-    mBackColor.red = 0;
-    mBackColor.green = 0;
-    mBackColor.blue = 0;
-
+        mNumFonts = 0;
     mFontName[0] = '\0';
     mFontNum = -2;
     mPointSize = 0;
-    mShowCursor = false;
+        mAscent = 0;
+        mCellHeight = 0;
+        mCellWidth = 0;
+        mFontMenu = NULL;
 
-    Rect bounds =
-    {48, 16, 49, 17};
+    mForeColor = kWhite;
+    mBackColor = kBlack;
 
-    mWindow = NewCWindow(NULL, &bounds, "\pCrawl", false, noGrowDocProc, NULL, false, 0);
-    if (mWindow == NULL)
-    {
-        WarnUser("Couldn't create the main window!");
-        ExitToShell();
-    }
-
-    mPixMap = NULL;
-    OSErr err = NewGWorld(&mPixMap, 4, &bounds, sColors, NULL, 0);
-
-    if (err != noErr)
-    {
-        WarnUser("Couldn't create the offscreen!");
-        ExitToShell();
-    }
-
-    if (!this->DoReadPrefs())
-        this->DoSetFont("\pMonaco", 12);
-    this->Clear();
-
-    this->Show();
-}
-
-
-//---------------------------------------------------------------
-//
-// CWindow::Show
-//
-//---------------------------------------------------------------
-void CWindow::Show(bool show)
-{
-    if (show)
-        ShowWindow(mWindow);
-    else
-        HideWindow(mWindow);
-}
-
-
-//---------------------------------------------------------------
-//
-// CWindow::HandleUpdate
-//
-//---------------------------------------------------------------
-void CWindow::HandleUpdate()
-{
-    ASSERT(mLines.size() == kTermHeight);
-
-    SetPort(mWindow);
-    BeginUpdate(mWindow);
-
-    RgnHandle dirtyRgn = mWindow->visRgn;
-
-    ASSERT(dirtyRgn != NULL);
-
-    PixMapHandle pixels = GetGWorldPixMap(mPixMap);
-
-    (void) LockPixels(pixels);
-    SetGWorld(mPixMap, GetMainDevice());
-
-    TextFont(mFontNum);
-    TextSize(mPointSize);
-
-    RGBBackColor(&mBackColor);
-    EraseRgn(dirtyRgn);
-
-    Rect area;
-
-    RGBColor black =
-    {0, 0, 0};
-    RGBColor white =
-    {65535, 65535, 65535};
-
-    for (int y = 0; y < mLines.size(); ++y)
-    {
-        area.top = y * mCellHeight;
-        area.bottom = area.top + mCellHeight;
-
-        area.left = 0;
-        area.right = area.left + mCellWidth;
-
-        const Line & line = mLines[y];
-
-        ASSERT(line.size() == kTermWidth);
-
-        for (int x = 0; x < line.size(); ++x)
+        try
         {
-            if (RectInRgn(&area, dirtyRgn))
-            {
-                const SCell & cell = line[x];
+                // install a handler for the quit apple event
+                OSStatus err = AEInstallEventHandler(kCoreEventClass, kAEQuitApplication, NewAEEventHandlerUPP(DoQuit), 0, false);
+                ThrowIfOSErr(err, "Couldn't install the quit handler!");
 
-                this->DoDrawCell(area, cell);
+                // install a custom key handler
+                std::vector<EventTypeSpec> specs;
+                specs.push_back(CreateSpec(kEventClassKeyboard, kEventRawKeyDown));
+                specs.push_back(CreateSpec(kEventClassKeyboard, kEventRawKeyRepeat));
 
-                if (x == mCursor.h && y == mCursor.v && mShowCursor)
-                {
-                    ::RGBForeColor(&white);
-                    ::MoveTo(area.left + 1, area.top + mAscent);
-                    ::Line(area.right - area.left - 2, 0);
-                }
-            }
+                err = InstallApplicationEventHandler(NewEventHandlerUPP(DoKeyDown), specs.size(), &specs[0], this, NULL);
+                ThrowIfOSErr(err, "Couldn't install the key handler!");
 
-            area.left += mCellWidth;
-            area.right += mCellWidth;
+                // create the window
+                this->DoInitWindows();
+
+                // init the menus
+                this->DoInitMenus();
+
+                // update some state
+        this->DoReadPrefs();
+
+            this->Clear();
+
+                // show the window
+                ShowWindow(mWindow);
+        }
+        catch (const std::exception& e)
+        {
+        WarnUser(e.what());
+        ExitToShell();
+        }
+        catch (...)
+        {
+        WarnUser("Couln't initialize the application");
+        ExitToShell();
+        }
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::Quit
+//
+//---------------------------------------------------------------
+void CApplication::Quit()
+{
+    if (game_has_started)
+    {
+        EAskSaveResult answer = AskSaveChanges();
+
+        if (answer == kSaveChanges)
+        {
+            save_game(true);
+        }
+        else if (answer == kDontSave)
+        {
+            deinit_mac();
+            ExitToShell();
         }
     }
-
-    SetGWorld((CGrafPtr) mWindow, GetMainDevice());
-
-    RGBForeColor(&black);
-    RGBBackColor(&white);
-
-    Rect bounds;
-
-    bounds.left = 0;
-    bounds.top = 0;
-    bounds.right = mPixMap->portRect.right - mPixMap->portRect.left;
-    bounds.bottom = mPixMap->portRect.bottom - mPixMap->portRect.top;
-    CopyColorBits(mPixMap, (CGrafPtr) mWindow, &bounds, &bounds, srcCopy, dirtyRgn);
-
-    UnlockPixels(pixels);
-
-    EndUpdate(mWindow);
+    else
+    {
+        deinit_mac();
+        ExitToShell();
+    }
 }
 
 
 //---------------------------------------------------------------
 //
-// CWindow::HandleActivate
+// CApplication::Clear
 //
 //---------------------------------------------------------------
-void CWindow::HandleActivate(const EventRecord & event)
+void CApplication::Clear()
 {
-    HiliteWindow(mWindow, event.modifiers & activeFlag);
-}
-
-
-//---------------------------------------------------------------
-//
-// CWindow::Invalidate
-//
-//---------------------------------------------------------------
-void CWindow::Invalidate()
-{
-    SetPort(mWindow);
-
-    Rect area =
-    {0, 0, 16000, 16000};
-
-    InvalRect(&area);
-}
-
-
-//---------------------------------------------------------------
-//
-// CWindow::Clear
-//
-//---------------------------------------------------------------
-void CWindow::Clear()
-{
-    RGBColor color;
-
-    color.red = 65535;
-    color.green = 65535;
-    color.blue = 65535;
-
     mLines.resize(kTermHeight);
 
     for (int y = 0; y < mLines.size(); ++y)
     {
-        Line & line = mLines[y];
+        Line& line = mLines[y];
         line.resize(kTermWidth);
 
         for (int x = 0; x < line.size(); ++x)
         {
-            SCell & cell = line[x];
+            SCell& cell = line[x];
 
             cell.ch = ' ';
-            cell.color = color;
+            cell.color = kWhite;
         }
     }
 
     mCursor.h = 0;
     mCursor.v = 0;
 
-    this->Invalidate();
+        (void) InvalWindowRect(mWindow, &kBigRect);
 }
 
 
 //---------------------------------------------------------------
 //
-// CWindow::SetCursor
+// CApplication::SetCursor
 //
 //---------------------------------------------------------------
-void CWindow::SetCursor(int x, int y)
+void CApplication::SetCursor(int x, int y)
 {
     ASSERT(x >= 0);
     ASSERT(x < kTermWidth);
@@ -1225,14 +621,12 @@ void CWindow::SetCursor(int x, int y)
         if (mShowCursor)
         {
             Rect area;
-
-            area.top = mCursor.v * mCellHeight;
+            area.top    = mCursor.v * mCellHeight;
             area.bottom = area.top + mCellHeight;
-            area.left = mCursor.h * mCellWidth;
-            area.right = area.left + mCellWidth;
+            area.left   = mCursor.h * mCellWidth;
+            area.right  = area.left + mCellWidth;
 
-            SetPort(mWindow);
-            InvalRect(&area);
+            (void) InvalWindowRect(mWindow, &area);
         }
 
         mCursor.h = x;
@@ -1241,14 +635,12 @@ void CWindow::SetCursor(int x, int y)
         if (mShowCursor)
         {
             Rect area;
-
-            area.top = mCursor.v * mCellHeight;
+            area.top    = mCursor.v * mCellHeight;
             area.bottom = area.top + mCellHeight;
-            area.left = mCursor.h * mCellWidth;
-            area.right = area.left + mCellWidth;
+            area.left   = mCursor.h * mCellWidth;
+            area.right  = area.left + mCellWidth;
 
-            SetPort(mWindow);
-            InvalRect(&area);
+            (void) InvalWindowRect(mWindow, &area);
         }
     }
 }
@@ -1256,10 +648,10 @@ void CWindow::SetCursor(int x, int y)
 
 //---------------------------------------------------------------
 //
-// CWindow::SetChar
+// CApplication::SetChar
 //
 //---------------------------------------------------------------
-void CWindow::SetChar(unsigned char ch)
+void CApplication::SetChar(unsigned char ch)
 {
     ASSERT(ch != '\t');
     ASSERT(mLines.size() == kTermHeight);
@@ -1267,106 +659,100 @@ void CWindow::SetChar(unsigned char ch)
     const int TABSIZE = 8;
 
     int x = mCursor.h;          // this is from the ncurses source
-
     int y = mCursor.v;
 
-    switch (ch)
-    {
-    case '\t':
-        x += (TABSIZE - (x % TABSIZE));
+    switch (ch) {
+            case '\t':
+                x += (TABSIZE - (x % TABSIZE));
 
-        // Space-fill the tab on the bottom line so that we'll get the
-        // "correct" cursor position.
-        if (x < kTermWidth)
-        {
-            char blank = ' ';
+                // Space-fill the tab on the bottom line so that we'll get the
+                // "correct" cursor position.
+                if (x < kTermWidth)
+                {
+                    char blank = ' ';
 
-            while (mCursor.h < x)
-            {
-                this->DoSetChar(blank);
-            }
-            break;
+                    while (mCursor.h < x)
+                        this->DoSetChar(blank);
+                    break;
 
-        }
-        else
-        {
-            this->DoClearToEOL();
-            if (++y >= kTermHeight)
-            {
-                x = kTermWidth - 1;
-                y--;
-                this->DoScroll();
-                x = 0;
-            }
-            else
-            {
-                x = 0;
-            }
-        }
-        break;
+                }
+                else
+                {
+                    this->DoClearToEOL();
+                    if (++y >= kTermHeight)
+                    {
+                        x = kTermWidth - 1;
+                        y--;
+                        this->DoScroll();
+                        x = 0;
+                    }
+                    else
+                        x = 0;
+                }
+                break;
 
 #if 1
-    case '\n':
-    case '\r':
-        this->DoClearToEOL();
-        if (++y >= kTermHeight)
-        {
-            y--;
-            this->DoScroll();
-        }
-        x = 0;
-        break;
+            case '\n':
+            case '\r':
+                this->DoClearToEOL();
+                if (++y >= kTermHeight)
+                {
+                    y--;
+                    this->DoScroll();
+                }
+                x = 0;
+                break;
 
 #else
-    case '\n':
-        this->DoClearToEOL();
-        if (++y >= kTermHeight)
-        {
-            y--;
-            this->DoScroll();
-        }
-        /* FALLTHRU */
+            case '\n':
+                this->DoClearToEOL();
+                if (++y >= kTermHeight)
+                {
+                    y--;
+                    this->DoScroll();
+                }
+                /* FALLTHRU */
 
-    case '\r':
-        x = 0;
-        break;
+            case '\r':
+                x = 0;
+                break;
 #endif
 
-    case '\b':
-        if (x == 0)
-            return;
-        mCursor.h--;
-        this->DoSetChar(' ');
-        x--;
-        break;
+            case '\b':
+                if (x == 0)
+                    return;
+                mCursor.h--;
+                this->DoSetChar(' ');
+                x--;
+                break;
 
-    case 159:
-    case 176:
-    case 177:
-    case 220:
-    case 239:
-    case 240:
-    case 247:
-    case 249:
-    case 250:
-    case 206:
-    case 254:
-        this->DoSetChar(ch);
-        return;
-        break;
+            case 159:
+            case 176:
+            case 177:
+            case 220:
+            case 239:
+            case 240:
+            case 247:
+            case 249:
+            case 250:
+            case 206:
+            case 254:
+                this->DoSetChar(ch);
+                return;
+                break;
 
-    default:
-        if (ch == '\0')
-            ch = ' ';
+            default:
+                if (ch == '\0')
+                    ch = ' ';
 
-//                      ASSERT(ch >= ' ');
-        //                      ASSERT(ch <= '~');
+//              ASSERT(ch >= ' ');
+//              ASSERT(ch <= '~');
 
-        if (ch >= ' ' && ch <= '~')
-            this->DoSetChar(ch);
-        else
-            this->DoSetChar('¿');
-        return;
+                if (ch >= ' ' && ch <= '~')
+                    this->DoSetChar(ch);
+                else
+                    this->DoSetChar('¿');
+                return;
     }
 
     mCursor.h = x;
@@ -1376,14 +762,14 @@ void CWindow::SetChar(unsigned char ch)
 
 //---------------------------------------------------------------
 //
-// CWindow::Print
+// CApplication::Print
 //
 //---------------------------------------------------------------
-void CWindow::Print(const char *buffer)
+void CApplication::Print(const char* buffer)
 {
     ASSERT(buffer != NULL);
 
-    const char *p = buffer;
+    const char* p = buffer;
 
     while (*p != '\0')
     {
@@ -1396,42 +782,754 @@ void CWindow::Print(const char *buffer)
 
 //---------------------------------------------------------------
 //
-// CWindow::SetForeColor
+// CApplication::SetForeColor
 //
 //---------------------------------------------------------------
-void CWindow::SetForeColor(const RGBColor & color)
+void CApplication::SetForeColor(const RGBColor & color)
 {
     if (color.red != mForeColor.red || color.green != mForeColor.green || color.blue != mForeColor.blue)
     {
         mForeColor = color;
 
-        this->Invalidate();
+                (void) InvalWindowRect(mWindow, &kBigRect);
     }
 }
 
 
 //---------------------------------------------------------------
 //
-// CWindow::SetBackColor
+// CApplication::SetBackColor
 //
 //---------------------------------------------------------------
-void CWindow::SetBackColor(const RGBColor & color)
+void CApplication::SetBackColor(const RGBColor & color)
 {
     if (color.red != mBackColor.red || color.green != mBackColor.green || color.blue != mBackColor.blue)
     {
         mBackColor = color;
 
-        this->Invalidate();
+                (void) InvalWindowRect(mWindow, &kBigRect);
     }
 }
 
 
 //---------------------------------------------------------------
 //
-// CWindow::DoSetChar
+// CApplication::GetChar
 //
 //---------------------------------------------------------------
-void CWindow::DoSetChar(unsigned char ch)
+char CApplication::GetChar()
+{
+        mChar = 0;
+        RunApplicationEventLoop();
+
+        (void) InvalWindowRect(mWindow, &kBigRect);
+
+        return mChar;
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::PeekChar
+//
+//---------------------------------------------------------------
+bool CApplication::PeekChar()
+{
+        EventTypeSpec specs[2];
+        specs[0] = CreateSpec(kEventClassKeyboard, kEventRawKeyDown);
+        specs[1] = CreateSpec(kEventClassKeyboard, kEventRawKeyRepeat);
+
+        EventRef event = NULL;
+        OSStatus err = ReceiveNextEvent(2, specs, kEventDurationNoWait, false, &event);
+
+        return err == noErr;
+}
+
+#if __MWERKS__
+#pragma mark ~
+#endif
+
+//---------------------------------------------------------------
+//
+// CApplication::DoAbout
+//
+//---------------------------------------------------------------
+void CApplication::DoAbout()
+{
+        AlertStdAlertParamRec params;
+        params.movable       = true;
+        params.helpButton    = false;
+        params.filterProc    = NULL;
+        params.defaultText   = (StringPtr) -1L;  // use default (ie "OK")       VERSION
+        params.cancelText    = NULL;
+        params.otherText     = NULL;
+        params.defaultButton = 1;
+        params.cancelButton  = 0;
+        params.position      = kWindowAlertPositionParentWindowScreen;
+
+        short item;
+        sInDialog = true;
+        OSErr err = StandardAlert(kAlertNoteAlert, "\p Crawl " VERSION, "\p© 1997-2002 by Linley Henzell\nMac Port by Jesse Jones", &params, &item);
+        ASSERT(err == noErr);   // seems kind of pointless to throw
+        sInDialog = false;
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoClearToEOL
+//
+//---------------------------------------------------------------
+void CApplication::DoClearToEOL()
+{
+    ASSERT(mCursor.h < kTermWidth);
+    ASSERT(mCursor.v < kTermHeight);
+
+    Line& line = mLines[mCursor.v];
+    for (int x = mCursor.h; x < kTermWidth; ++x)
+    {
+        SCell& cell = line[x];
+        cell.ch = ' ';
+    }
+
+    Rect area;
+    area.top    = mCursor.v * mCellHeight;
+    area.bottom = area.top + mCellHeight;
+    area.left   = mCursor.h * mCellWidth;
+    area.right  = 16000;
+
+        (void) InvalWindowRect(mWindow, &kBigRect);
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoDrawCell
+//
+//---------------------------------------------------------------
+void CApplication::DoDrawCell(const Rect& area, const SCell& cell)
+{
+    RGBForeColor(&cell.color);
+
+    switch (cell.ch) {
+            case 159:                   // fountain
+            DrawChar(area.left, area.top + mAscent, '¥');
+                break;
+
+            case 177:                   // wall
+            case 176:
+                PaintRect(&area);
+                break;
+
+            case 247:                   // water/lava
+                PaintRect(&area);
+                break;
+
+            case 249:                   // floor
+            case 250:                   // undiscovered trap?
+//              FillRect(&area, &qd.gray);
+            DrawChar(area.left, area.top + mAscent, '.');
+                break;
+
+            case 206:
+            case 254:                   // door
+                {
+                Rect temp = area;
+                InsetRect(&temp, 2, 2);
+                PaintRect(&temp);
+                }
+                break;
+
+            case 220:                   // altar
+            DrawChar(area.left, area.top + mAscent, '∆');
+                break;
+
+            case 239:                   // staircase to hell
+            case 240:                   // branch staircase
+            DrawChar(area.left, area.top + mAscent, '≤');
+                break;
+
+            default:
+            DrawChar(area.left, area.top + mAscent, cell.ch);
+    }
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoEnableCommand
+//
+//---------------------------------------------------------------
+OSStatus CApplication::DoEnableCommand(MenuRef menuH, MenuCommand command, MenuItemIndex index)
+{
+        OSStatus err = noErr;
+
+        if (command == 'Abut')
+        {
+                EnableMenuItem(menuH, index);
+        }
+        else if (command == 'Save')
+        {
+                if (game_has_started)
+                        EnableMenuItem(menuH, index);
+                else
+                        DisableMenuItem(menuH, index);
+        }
+        else if (command >= 'Size' && command <= 'Size'+128)
+        {
+                if (mPointSize == command - 'Size')
+                        SetItemMark(menuH, index, kCheckMarkChar);
+                else
+                        SetItemMark(menuH, index, kNoMarkChar);
+        }
+        else if (command >= 'Font' && command <= 'Font'+128)
+        {
+                Str255 name;
+                GetMenuItemText(menuH, index, name);
+
+                if (EqualString(mFontName, name, true, true))
+                        SetItemMark(menuH, index, kCheckMarkChar);
+                else
+                        SetItemMark(menuH, index, noMark);
+        }
+        else
+                err = eventNotHandledErr;
+
+        return err;
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoHandleCommand
+//
+//---------------------------------------------------------------
+OSStatus CApplication::DoHandleCommand(MenuCommand command)
+{
+        OSStatus err = noErr;
+
+        if (command == 'Abut')
+        {
+                this->DoAbout();
+        }
+        else if (command == 'Save')
+        {
+                save_game(false);
+        }
+        else if (command >= 'Size' && command <= 'Size'+128)
+        {
+                int size = command - 'Size';
+
+                this->SetFontSize(size);
+        }
+        else if (command >= 'Font' && command <= 'Font'+128)
+        {
+                int index = command - 'Font';
+
+                Str255 name;
+                GetMenuItemText(mFontMenu, index, name);
+
+                this->SetFont(name);
+        }
+        else if (command == kHICommandQuit)
+        {
+                this->Quit();
+        }
+        else
+                err = eventNotHandledErr;
+
+        return err;
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoInitMenus
+//
+//---------------------------------------------------------------
+void CApplication::DoInitMenus()
+{
+        const int kFileMenu = 257;
+        const int kFontMenu = 258;
+        const int kSizeMenu = 259;
+
+        // add the About menu item
+        MenuRef menuH = NewMenu(0, "\p");
+
+        OSStatus err = InsertMenuItemTextWithCFString(menuH, MacString("About Crawl"), 0, kMenuItemAttrIgnoreMeta, 'Abut');
+        ThrowIfOSErr(err, "Couldn't add the about menu item!");
+
+        InsertMenu(menuH, 0);
+
+        // create the File menu
+        err = CreateNewMenu(kFileMenu, kMenuAttrAutoDisable, &menuH);
+        ThrowIfOSErr(err, "Couldn't create the file menu!");
+
+        err = SetMenuTitleWithCFString(menuH, MacString("File"));
+        ThrowIfOSErr(err, "Couldn't set the file menu name!");
+
+        InsertMenu(menuH, 0);
+
+        // add the File menu items
+        err = AppendMenuItemTextWithCFString(menuH, MacString("Save"), kMenuItemAttrIgnoreMeta, 'Save', NULL);
+        ThrowIfOSErr(err, "Couldn't add the save menu item!");
+
+        err = SetMenuItemCommandKey(menuH, 1, false, 'S');
+        ThrowIfOSErr(err, "Couldn't set the save menu item's command key!");
+
+        // create the Font menu
+        err = CreateNewMenu(kFontMenu, kMenuAttrAutoDisable, &mFontMenu);
+        ThrowIfOSErr(err, "Couldn't create the font menu!");
+
+        err = CreateStandardFontMenu(mFontMenu, 0, 0, kNilOptions, &mNumFonts);
+        ThrowIfOSErr(err, "Couldn't initialize the font menu!");
+
+        err = SetMenuTitleWithCFString(mFontMenu, MacString("Font"));
+        ThrowIfOSErr(err, "Couldn't set the font menu name!");
+
+        UInt16 numItems = CountMenuItems(mFontMenu);
+        for (UInt16 index = 1; index <= numItems; ++index)
+        {
+                // set the font for each menu item so we're WYSIWYG
+                Str255 fontName;
+                GetMenuItemText(mFontMenu, index, fontName);
+
+                short fontNum;
+                GetFNum(fontName, &fontNum);
+
+                SetMenuItemFontID(mFontMenu, index, fontNum);
+
+                // set the command id so we can process the items (CreateStandardFontMenu
+                // leaves all of these at 0)
+                err = SetMenuItemCommandID(mFontMenu, index, 'Font' + index);
+                ThrowIfOSErr(err, "Couldn't set the font menu item's command ids!");
+        }
+
+        InsertMenu(mFontMenu, 0);
+
+        // create the Size menu
+        err = CreateNewMenu(kSizeMenu, kMenuAttrAutoDisable, &menuH);
+        ThrowIfOSErr(err, "Couldn't create the size menu!");
+
+        err = SetMenuTitleWithCFString(menuH, MacString("Size"));
+        ThrowIfOSErr(err, "Couldn't set the size menu name!");
+
+        InsertMenu(menuH, 0);
+
+        // add the Size menu items
+        const char* items[] = {"9", "10", "12", "16", "18", "20", "32", "48", "64", NULL};
+        int sizes[] = {9, 10, 12, 16, 18, 20, 32, 48, 64};
+        for (int i = 0; items[i] != NULL; ++i)
+        {
+                err = AppendMenuItemTextWithCFString(menuH, MacString(items[i]), kMenuItemAttrIgnoreMeta, 'Size' + sizes[i], NULL);
+                ThrowIfOSErr(err, "Couldn't add a size menu item!");
+        }
+
+        // install a custom menu handler
+        std::vector<EventTypeSpec> specs;
+        specs.push_back(CreateSpec(kEventClassCommand, kEventCommandProcess));
+        specs.push_back(CreateSpec(kEventClassCommand, kEventCommandUpdateStatus));
+        specs.push_back(CreateSpec(kEventClassMenu, kEventMenuOpening));
+
+        err = InstallApplicationEventHandler(NewEventHandlerUPP(DoMenuEvent), specs.size(), &specs[0], this, NULL);
+        ThrowIfOSErr(err, "Couldn't install the menu handlers!");
+
+        // draw the new menubar
+        DrawMenuBar();
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoInitWindows
+//
+//---------------------------------------------------------------
+void CApplication::DoInitWindows()
+{
+        // create the window
+        Rect bounds = {32, 32, 64, 64}; // we position properly later
+
+        WindowAttributes attrs = kWindowCollapseBoxAttribute | kWindowStandardHandlerAttribute;
+        OSStatus err = CreateNewWindow(kDocumentWindowClass, attrs, &bounds, &mWindow);
+        ThrowIfOSErr(err, "Couldn't create the window!");
+
+        // install a custom window handler
+        std::vector<EventTypeSpec> specs;
+        specs.push_back(CreateSpec(kEventClassWindow, kEventWindowDrawContent));
+
+        err = InstallWindowEventHandler(mWindow, NewEventHandlerUPP(DoWindowEvent), specs.size(), &specs[0], this, NULL);
+        ThrowIfOSErr(err, "Couldn't install the window event handler!");
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoKeyDown                                                              [static]
+//
+//---------------------------------------------------------------
+pascal OSStatus CApplication::DoKeyDown(EventHandlerCallRef handler, EventRef event, void* refCon)
+{
+        OSStatus err = eventNotHandledErr;
+
+        if (!sInDialog)
+        {
+                CApplication* thisPtr = static_cast<CApplication*>(refCon);
+
+                try
+                {
+                        char ch;
+                        (void) GetEventParameter(event, kEventParamKeyMacCharCodes, typeChar, NULL, sizeof(ch), NULL, &ch);
+
+                        UInt32 key;
+                        (void) GetEventParameter(event, kEventParamKeyCode, typeUInt32, NULL, sizeof(key), NULL, &key);
+
+                        UInt32 modifiers;
+                        (void) GetEventParameter(event, kEventParamKeyModifiers, typeUInt32, NULL, sizeof(modifiers), NULL, &modifiers);
+
+                if ((modifiers & cmdKey) == 0)
+                                thisPtr->mChar = thisPtr->DoMungeChar(ch, key, modifiers);
+
+                        if (thisPtr->mChar != 0)
+                                QuitApplicationEventLoop();
+
+                        err = noErr;
+                }
+                catch (const std::exception& e)
+                {
+                        DEBUGSTR((std::string("Couldn't complete the operation (") + e.what() + ").").c_str());
+                        err = eventNotHandledErr;
+                }
+                catch (...)
+                {
+                        DEBUGSTR("Couldn't complete the operation.");
+                        err = eventNotHandledErr;
+                }
+        }
+
+        return err;
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoMenuEvent                                                    [static]
+//
+//---------------------------------------------------------------
+pascal OSStatus CApplication::DoMenuEvent(EventHandlerCallRef handler, EventRef event, void* refCon)
+{
+        OSStatus err = noErr;
+        CApplication* thisPtr = static_cast<CApplication*>(refCon);
+
+        UInt32 kind = GetEventKind(event);
+        try
+        {
+                HICommand command;
+
+                if (kind == kEventCommandUpdateStatus)
+                {
+                        err = GetEventParameter(event, kEventParamDirectObject, typeHICommand, NULL, sizeof(command), NULL, &command);
+                        ThrowIfOSErr(err, "Couldn't get the direct object in DoMenuEvent");
+
+                        err = thisPtr->DoEnableCommand(command.menu.menuRef, command.commandID, command.menu.menuItemIndex);
+                }
+                else if (kind == kEventCommandProcess)
+                {
+                        err = GetEventParameter(event, kEventParamDirectObject, typeHICommand, NULL, sizeof(command), NULL, &command);
+                        ThrowIfOSErr(err, "Couldn't get the direct object in DoMenuEvent");
+
+                        err = thisPtr->DoHandleCommand(command.commandID);
+                }
+                else if (kind == kEventMenuOpening)
+                {
+                        Boolean firstTime;
+                        err = GetEventParameter(event, kEventParamMenuFirstOpen, typeBoolean, NULL, sizeof(firstTime), NULL, &firstTime);
+                        ThrowIfOSErr(err, "Couldn't get the first open flag in DoMenuEvent");
+
+                        if (firstTime)          // only call the callbacks the first time we open the menu (during this drag)
+                        {
+                                MenuRef menuH;
+                                err = GetEventParameter(event, kEventParamDirectObject, typeMenuRef, NULL, sizeof(MenuRef), NULL, &menuH);
+                                ThrowIfOSErr(err, "Couldn't get the direct object in DoMenuEvent");
+
+                                err = thisPtr->DoOpenMenu(menuH);
+                        }
+                }
+                else
+                        err = eventNotHandledErr;
+        }
+        catch (const std::exception& e)
+        {
+                DEBUGSTR((std::string("Couldn't complete the operation (") + e.what() + ").").c_str());
+                err = eventNotHandledErr;
+        }
+        catch (...)
+        {
+                DEBUGSTR("Couldn't complete the operation.");
+                err = eventNotHandledErr;
+        }
+
+        if (kind == kEventCommandProcess)
+                HiliteMenu(0);
+
+        return err;
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoMungeChar
+//
+//---------------------------------------------------------------
+char CApplication::DoMungeChar(char ch, UInt32 key, UInt32 modifiers) const
+{
+    switch (key) {
+            case kNumPad1Key:
+                if (modifiers & shiftKey)
+                    ch = 'B';
+                else if (modifiers & controlKey)
+                    ch = 2;
+                else
+                    ch = 'b';
+                break;
+
+            case kNumPad2Key:
+            case kDownArrowKey:
+                if (modifiers & shiftKey)
+                    ch = 'J';
+                else if (modifiers & controlKey)
+                    ch = 10;
+                else
+                    ch = 'j';
+                break;
+
+            case kNumPad3Key:
+                if (modifiers & shiftKey)
+                    ch = 'N';
+                else if (modifiers & controlKey)
+                    ch = 14;
+                else
+                    ch = 'n';
+                break;
+
+            case kNumPad4Key:
+            case kLeftArrowKey:
+                if (modifiers & shiftKey)
+                    ch = 'H';
+                else if (modifiers & controlKey)
+                    ch = 8;
+                else
+                    ch = 'h';
+                break;
+
+            case kNumPad5Key:
+                if (modifiers & shiftKey)
+                    ch = '5';
+                else
+                    ch = '.';
+                break;
+
+            case kNumPad6Key:
+            case kRightArrowKey:
+                if (modifiers & shiftKey)
+                    ch = 'L';
+                else if (modifiers & controlKey)
+                    ch = 12;
+                else
+                    ch = 'l';
+                break;
+
+            case kNumPad7Key:
+                if (modifiers & shiftKey)
+                    ch = 'Y';
+                else if (modifiers & controlKey)
+                    ch = 25;
+                else
+                    ch = 'y';
+                break;
+
+            case kNumPad8Key:
+            case kUpArrowKey:
+                if (modifiers & shiftKey)
+                    ch = 'K';
+                else if (modifiers & controlKey)
+                    ch = 11;
+                else
+                    ch = 'k';
+                break;
+
+            case kNumPad9Key:
+                if (modifiers & shiftKey)
+                    ch = 'U';
+                else if (modifiers & controlKey)
+                    ch = 21;
+                else
+                    ch = 'u';
+                break;
+        }
+
+        return ch;
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoOpenMenu
+//
+//---------------------------------------------------------------
+OSStatus CApplication::DoOpenMenu(MenuRef menuH)
+{
+        // select the curret font
+
+        return noErr;
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoQuit                                                                 [static]
+//
+//---------------------------------------------------------------
+pascal OSErr CApplication::DoQuit(const AppleEvent* event, AppleEvent* reply, SInt32 refCon)
+{
+        CApplication* thisPtr = reinterpret_cast<CApplication*>(refCon);
+        thisPtr->Quit();
+
+        return noErr;
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoReadPrefs
+//
+//---------------------------------------------------------------
+void CApplication::DoReadPrefs()
+{
+        MacString appID("Crawl4");
+
+        // window location
+        Rect bounds;
+
+        MacString name("window_x");
+        Boolean existsX = false;
+        bounds.left = CFPreferencesGetAppIntegerValue(name, appID, &existsX);
+
+        name = MacString("window_y");
+        Boolean existsY = false;
+        bounds.top = CFPreferencesGetAppIntegerValue(name, appID, &existsY);
+
+        if (existsX && existsY)
+        {
+                bounds.right  = bounds.left + 32;               // DoSetFont will reset the window dimensions
+                bounds.bottom = bounds.top + 32;
+
+                OSStatus err = SetWindowBounds(mWindow, kWindowStructureRgn, &bounds);
+                ASSERT(err == noErr);
+        }
+        else
+        {
+                OSStatus err = RepositionWindow(mWindow, NULL, kWindowCenterOnMainScreen);
+                ASSERT(err == noErr);
+        }
+
+        // mFontName
+        name = MacString("font_name");
+
+        CFTypeRef dataRef = CFPreferencesCopyAppValue(name, appID);
+        if (dataRef != NULL && CFGetTypeID(dataRef) == CFStringGetTypeID())
+        {
+                MacString data(static_cast<CFStringRef>(dataRef));
+
+                Str255 fontName;
+                data.CopyTo(fontName, sizeof(fontName));
+                CFRelease(dataRef);
+
+                // mPointSize
+                name = MacString("font_size");
+                CFIndex fontSize = CFPreferencesGetAppIntegerValue(name, appID, NULL);
+                if (fontSize > 0)
+                    this->DoSetFont(fontName, fontSize);
+                else
+                    this->DoSetFont(fontName, 12);
+        }
+        else
+                this->DoSetFont("\pMonaco", 12);
+
+        // make sure the window isn't off-screen
+        Rect area;
+        OSStatus err = GetWindowGreatestAreaDevice(mWindow, kWindowStructureRgn, NULL, &area);
+        if (err == noErr)
+        {
+                err = GetWindowBounds(mWindow, kWindowDragRgn, &bounds);
+                if (err == noErr)
+                {
+                        SectRect(&area, &bounds, &bounds);
+
+                        int pixels = (bounds.right - bounds.left)*(bounds.bottom - bounds.top);
+                        if (pixels < 64)        // only move the window if there are fewer than 64 draggable pixels
+                        {
+                                err = ConstrainWindowToScreen(mWindow, kWindowStructureRgn, kWindowConstrainStandardOptions, NULL, NULL);
+                                ASSERT(err == noErr);
+                        }
+                }
+        }
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoRender
+//
+//---------------------------------------------------------------
+void CApplication::DoRender()
+{
+    ASSERT(mLines.size() == kTermHeight);
+
+        SetPortWindowPort(mWindow);
+
+    TextFont(mFontNum);
+    TextSize(mPointSize);
+
+    RGBBackColor(&mBackColor);
+    EraseRect(&kBigRect);
+
+    Rect area;
+    for (int y = 0; y < mLines.size(); ++y)
+    {
+        area.top    = y*mCellHeight;
+        area.bottom = area.top + mCellHeight;
+        area.left   = 0;
+        area.right  = area.left + mCellWidth;
+
+        const Line& line = mLines[y];
+        ASSERT(line.size() == kTermWidth);
+
+        for (int x = 0; x < line.size(); ++x)
+        {
+            const SCell& cell = line[x];
+
+            this->DoDrawCell(area, cell);
+
+            if (x == mCursor.h && y == mCursor.v && mShowCursor)
+            {
+                ::RGBForeColor(&kWhite);
+                ::MoveTo(area.left + 1, area.top + mAscent);
+                ::Line(area.right - area.left - 2, 0);
+            }
+
+            area.left  += mCellWidth;
+            area.right += mCellWidth;
+        }
+    }
+}
+
+
+//---------------------------------------------------------------
+//
+// CApplication::DoSetChar
+//
+//---------------------------------------------------------------
+void CApplication::DoSetChar(unsigned char ch)
 {
     ASSERT(mCursor.h < kTermWidth);
     ASSERT(mCursor.v < kTermHeight);
@@ -1440,22 +1538,20 @@ void CWindow::DoSetChar(unsigned char ch)
 
     int x = mCursor.h;
 
-    Line & line = mLines[mCursor.v];
+    Line& line = mLines[mCursor.v];
     ASSERT(line.size() == kTermWidth);
 
-    SCell & cell = line[x++];
+    SCell& cell = line[x++];
     cell.ch = ch;
     cell.color = mForeColor;
 
     Rect area;
-
-    area.top = mCursor.v * mCellHeight;
+    area.top    = mCursor.v * mCellHeight;
     area.bottom = area.top + mCellHeight;
-    area.left = mCursor.h * mCellWidth;
-    area.right = area.left + mCellWidth;
+    area.left   = mCursor.h * mCellWidth;
+    area.right  = area.left + mCellWidth;
 
-    SetPort(mWindow);
-    InvalRect(&area);
+        (void) InvalWindowRect(mWindow, &kBigRect);
 
     if (x >= kTermWidth)
     {
@@ -1474,60 +1570,31 @@ void CWindow::DoSetChar(unsigned char ch)
 
 //---------------------------------------------------------------
 //
-// CWindow::DoClearToEOL
+// CApplication::DoScroll
 //
 //---------------------------------------------------------------
-void CWindow::DoClearToEOL()
-{
-    ASSERT(mCursor.h < kTermWidth);
-    ASSERT(mCursor.v < kTermHeight);
-
-    Line & line = mLines[mCursor.v];
-    for (int x = mCursor.h; x < kTermWidth; ++x)
-    {
-        SCell & cell = line[x];
-        cell.ch = ' ';
-    }
-
-    Rect area;
-
-    area.top = mCursor.v * mCellHeight;
-    area.bottom = area.top + mCellHeight;
-    area.left = mCursor.h * mCellWidth;
-    area.right = 16000;
-
-    SetPort(mWindow);
-    InvalRect(&area);
-}
-
-
-//---------------------------------------------------------------
-//
-// CWindow::DoScroll
-//
-//---------------------------------------------------------------
-void CWindow::DoScroll()
+void CApplication::DoScroll()
 {
     mLines.erase(mLines.begin());
 
     mLines.push_back(Line());
     mLines.back().resize(kTermWidth);
 
-    this->Invalidate();
+        (void) InvalWindowRect(mWindow, &kBigRect);
 }
 
 
 //---------------------------------------------------------------
 //
-// CWindow::DoSetFont
+// CApplication::DoSetFont
 //
 //---------------------------------------------------------------
-void CWindow::DoSetFont(const unsigned char *name, int size)
+void CApplication::DoSetFont(const unsigned char* name, int size)
 {
     ASSERT(name != NULL);
+    ASSERT(size > 0);
 
     short fontNum;
-
     GetFNum(name, &fontNum);
 
     if (fontNum != mFontNum || size != mPointSize)
@@ -1537,352 +1604,131 @@ void CWindow::DoSetFont(const unsigned char *name, int size)
         mFontNum = fontNum;
         mPointSize = size;
 
-        SetPort(mWindow);
+                SetPortWindowPort(mWindow);
         TextFont(mFontNum);
         TextSize(mPointSize);
 
         FontInfo info;
-
         GetFontInfo(&info);
 
         mCellHeight = info.ascent + info.descent;
         mAscent = info.ascent;
 
         short width = StringWidth("\pMMMMM");   // widMax is usually much too wide so we'll compute this ourselves...
-
-        mCellWidth = width / 5 + 1;
+        mCellWidth = width/5 + 1;
 
         Rect bounds;
-
-        bounds.top = 0;
-        bounds.left = 0;
+        bounds.top    = 0;
+        bounds.left   = 0;
         bounds.bottom = mCellHeight * kTermHeight;
-        bounds.right = mCellWidth * kTermWidth;
+        bounds.right  = mCellWidth * kTermWidth;
         SizeWindow(mWindow, bounds.right, bounds.bottom, false);
 
-        GWorldFlags flags;
-
-        flags = UpdateGWorld(&mPixMap, 8, &bounds, NULL, NULL, 0);
-        QDErr err = (QDErr) ((flags & gwFlagErr) ? flags : noErr);
-
-        if (err != noErr)
-        {
-            WarnUser("Not enough memory!");
-            ExitToShell();
-        }
-
-        if (sFontMenu != NULL)
-            HandleUpdateMenus(mFontName, mFontNum, mPointSize);
-
-        this->Invalidate();
+                (void) InvalWindowRect(mWindow, &kBigRect);
     }
 }
 
 
 //---------------------------------------------------------------
 //
-// CWindow::DoDrawCell
+// CApplication::DoWindowEvent                                                  [static]
 //
 //---------------------------------------------------------------
-void CWindow::DoDrawCell(const Rect & area, const SCell & cell)
+pascal OSStatus CApplication::DoWindowEvent(EventHandlerCallRef handler, EventRef event, void* refCon)
 {
-    RGBForeColor(&cell.color);
+        OSStatus err = noErr;
+        CApplication* thisPtr = static_cast<CApplication*>(refCon);
 
-    switch (cell.ch)
-    {
-    case 159:                   // fountain
-
+        try
         {
-            char ch = '¥';
+                WindowRef window = NULL;
+                (void) GetEventParameter(event, kEventParamDirectObject, typeWindowRef, NULL, sizeof(window), NULL, &window);
+                ASSERT(window == thisPtr->mWindow);
 
-            MoveTo(area.left, area.top + mAscent);
-            DrawText(&ch, 0, 1);
+                UInt32 kind = GetEventKind(event);
+                switch (kind) {
+//                      case kEventWindowBoundsChanging:
+//                              thisPtr->DoConstrainWindow(event);
+//                              break;
+
+                        case kEventWindowDrawContent:
+                                thisPtr->DoRender();
+                                break;
+
+//                      case kEventWindowGetIdealSize:
+//                      case kEventWindowGetMaximumSize:
+//                              {
+//                              ::Point maxSize = thisPtr->OnGetMaxSize();
+//                              SetEventParameter(event, kEventParamDimensions, &maxSize);
+//                              }
+//                              break;
+
+//                      case kEventWindowGetMinimumSize:
+//                              {
+//                              ::Point minSize = thisPtr->OnGetMinSize();
+//                              SetEventParameter(event, kEventParamDimensions, &minSize);
+//                              }
+//                              break;
+
+                        default:
+                                err = eventNotHandledErr;
+                }
         }
-        break;
-
-    case 177:                   // wall
-
-    case 176:
-        PaintRect(&area);
-        break;
-
-    case 247:                   // water/lava
-
-        PaintRect(&area);
-        break;
-
-    case 249:                   // floor
-
-    case 250:                   // undiscovered trap?
-        //                      FillRect(&area, &qd.gray);
-
+        catch (const std::exception& e)
         {
-            char ch = '.';
-
-            MoveTo(area.left, area.top + mAscent);
-            DrawText(&ch, 0, 1);
+                DEBUGSTR((std::string("Couldn't complete the operation (") + e.what() + ").").c_str());
+                err = eventNotHandledErr;
         }
-
-#if 0
-        for (int y = area.top; y < area.bottom; y += 4)
+        catch (...)
         {
-            for (int x = area.left; x < area.right; x += 4)
-            {
-              ::MoveTo(x, y);
-              ::Line(0, 0);
-            }
+                DEBUGSTR("Couldn't complete the operation.");
+                err = eventNotHandledErr;
         }
-#endif
-        break;
 
-    case 206:
-    case 254:                   // door
-
-        {
-            Rect temp = area;
-
-            InsetRect(&temp, 2, 2);
-            PaintRect(&temp);
-        }
-        break;
-
-    case 220:                   // altar
-
-        {
-            char ch = '∆';
-
-            MoveTo(area.left, area.top + mAscent);
-            DrawText(&ch, 0, 1);
-        }
-        break;
-
-    case 239:                   // staircase to hell
-
-    case 240:                   // branch staircase
-
-        {
-            char ch = '≤';
-
-            MoveTo(area.left, area.top + mAscent);
-            DrawText(&ch, 0, 1);
-        }
-        break;
-
-    default:
-        MoveTo(area.left, area.top + mAscent);
-        DrawText(&cell.ch, 0, 1);
-    }
+        return err;
 }
 
 
 //---------------------------------------------------------------
 //
-// CWindow::DoWritePrefs
+// CApplication::DoWritePrefs   , , mWindow->location
 //
 //---------------------------------------------------------------
-void CWindow::DoWritePrefs()
+void CApplication::DoWritePrefs()
 {
-    // Find the prefs folder
-    short vRefNum;
-    long dirID;
-    OSErr err = FindFolder(kOnSystemDisk, kPreferencesFolderType, true, &vRefNum, &dirID);
+        MacString appID("Crawl4");
 
-    if (err != noErr)
-        goto done;
+        // mFontName
+        MacString name("font_name");
+        MacString data(mFontName);
+        CFPreferencesSetAppValue(name, data, appID);
 
-    // Create a spec for our pref file
-    FSSpec spec;
+        // mPointSize
+        name = MacString("font_size");
+        data = MacString(mPointSize);
+        CFPreferencesSetAppValue(name, data, appID);
 
-    err = FSMakeFSSpec(vRefNum, dirID, "\pCrawl Prefs", &spec);
-    if (err != noErr && err != fnfErr)
-        goto done;
-
-    // Open the file
-    short refNum = -1;
-
-    err = FSpOpenDF(&spec, fsWrPerm, &refNum);
-    if (err == fnfErr)
-    {
-        err = FSpCreate(&spec, 'Crwl', 'pref', smSystemScript);
-
+        // window location
+        Rect bounds;
+        OSStatus err = GetWindowBounds(mWindow, kWindowStructureRgn, &bounds);
         if (err == noErr)
-            err = FSpOpenDF(&spec, fsWrPerm, &refNum);
-    }
-    if (err != noErr)
-        goto done;
+        {
+                name = MacString("window_x");
+                data = MacString(bounds.left);
+                CFPreferencesSetAppValue(name, data, appID);
 
-    // Write our preferences
-    long version = 1;           // major version
+                name = MacString("window_y");
+                data = MacString(bounds.top);
+                CFPreferencesSetAppValue(name, data, appID);
+        }
 
-    long bytes = sizeof(version);
-
-    err = FSWrite(refNum, &bytes, &version);
-    if (err != noErr)
-        goto fail;
-
-    version = 1;                // minor version
-
-    bytes = sizeof(version);
-    err = FSWrite(refNum, &bytes, &version);
-    if (err != noErr)
-        goto fail;
-
-    bytes = 256;                // font name
-
-    err = FSWrite(refNum, &bytes, mFontName);
-    if (err != noErr)
-        goto fail;
-
-    bytes = sizeof(mPointSize); // font size
-
-    err = FSWrite(refNum, &bytes, &mPointSize);
-    if (err != noErr)
-        goto fail;
-
-    Point loc =
-    {48, 16};                   // window position
-
-    WindowPeek wpeek = (WindowPeek) mWindow;
-
-    if (wpeek->contRgn != NULL)
-    {
-        loc.h = (**wpeek->contRgn).rgnBBox.left;
-        loc.v = (**wpeek->contRgn).rgnBBox.top;
-    }
-
-    bytes = sizeof(loc);
-    err = FSWrite(refNum, &bytes, &loc);
-    if (err != noErr)
-        goto fail;
-
-  fail:
-    // Close the file
-    err = FSClose(refNum);
-    VERIFY(err == noErr);
-
-  done:
-    ;
+        // flush
+        VERIFY(CFPreferencesAppSynchronize(appID));
 }
 
-
-//---------------------------------------------------------------
-//
-// CWindow::DoReadPrefs
-//
-//---------------------------------------------------------------
-bool CWindow::DoReadPrefs()
-{
-    bool read = false;
-
-    // Find the prefs folder
-    short vRefNum;
-    long dirID;
-    OSErr err = FindFolder(kOnSystemDisk, kPreferencesFolderType, true, &vRefNum, &dirID);
-
-    if (err != noErr)
-        goto done;
-
-    // Create a spec for our pref file
-    FSSpec spec;
-
-    err = FSMakeFSSpec(vRefNum, dirID, "\pCrawl Prefs", &spec);
-    if (err != noErr)
-        goto done;
-
-    // Open the file
-    short refNum = -1;
-
-    err = FSpOpenDF(&spec, fsRdPerm, &refNum);
-    if (err != noErr)
-        goto done;
-
-    // Read our preferences
-    long version;               // major version (has to match exactly)
-
-    long bytes = sizeof(version);
-
-    err = FSRead(refNum, &bytes, &version);
-    if (err != noErr)
-        goto fail;
-    if (version != 1)
-        goto fail;
-
-    bytes = sizeof(version);    // minor version (incremented as new fields are added)
-
-    err = FSRead(refNum, &bytes, &version);
-    if (err != noErr)
-        goto fail;
-
-    Str255 fontName;
-
-    bytes = 256;                // font name
-
-    err = FSRead(refNum, &bytes, fontName);
-    if (err != noErr)
-        goto fail;
-
-    int pointSize;
-
-    bytes = sizeof(pointSize);  // font size
-
-    err = FSRead(refNum, &bytes, &pointSize);
-    if (err != noErr)
-        goto fail;
-
-    Point loc;                  // window position
-
-    bytes = sizeof(loc);
-    err = FSRead(refNum, &bytes, &loc);
-    if (err != noErr)
-        goto fail;
-
-    // Update the window's font
-    this->DoSetFont(fontName, pointSize);
-
-    // If both the window's top left and top right points
-    // are outside the desktop region then offset the
-    // window so that it's visible.
-    RgnHandle deskTopRgn = GetGrayRgn();
-
-    Point p2;
-
-    p2.h = loc.h + mCellWidth * kTermWidth;
-    p2.v = loc.v;
-
-    if (!PtInRgn(loc, deskTopRgn) && !PtInRgn(p2, deskTopRgn))
-    {
-        Rect deskTopBounds = (**deskTopRgn).rgnBBox;
-
-        InsetRect(&deskTopBounds, 4, 4);
-
-        if (loc.v > deskTopBounds.bottom - mCellHeight * kTermHeight)
-            loc.v = deskTopBounds.bottom - mCellHeight * kTermHeight;
-
-        if (loc.v < deskTopBounds.top + 30)
-            loc.v = deskTopBounds.top + 30;
-
-        if (loc.h > deskTopBounds.right - mCellWidth * kTermWidth)
-            loc.h = deskTopBounds.right - mCellWidth * kTermWidth;
-
-        if (loc.h < deskTopBounds.left)
-            loc.h = deskTopBounds.left;
-    }
-
-    // Restore the window to the old location.
-  ::MoveWindow(mWindow, loc.h, loc.v, false);
-
-    read = true;
-
-  fail:
-    // Close the file
-    err = FSClose(refNum);
-    VERIFY(err == noErr);
-
-  done:
-    return read;
-}
-
+#if __MWERKS__
 #pragma mark -
+#endif
 
 // ========================================================================
 //      Non-ANSI Functions
@@ -1896,13 +1742,13 @@ bool CWindow::DoReadPrefs()
 // is why it looks so dorky).
 //
 //---------------------------------------------------------------
-int stricmp(const char *lhs, const char *rhs)
+int stricmp(const char* lhs, const char* rhs)
 {
     ASSERT(lhs != NULL);
     ASSERT(rhs != NULL);
 
-    const unsigned char *p1 = (unsigned char *) lhs - 1;
-    const unsigned char *p2 = (unsigned char *) rhs - 1;
+    const unsigned char* p1 = (unsigned char*) lhs - 1;
+    const unsigned char* p2 = (unsigned char*) rhs - 1;
     unsigned long c1, c2;
 
     while ((c1 = tolower(*++p1)) == (c2 = tolower(*++p2)))
@@ -1920,7 +1766,7 @@ int stricmp(const char *lhs, const char *rhs)
 // In place conversion to lower case.
 //
 //---------------------------------------------------------------
-char *strlwr(char *str)
+char* strlwr(char* str)
 {
     ASSERT(str != NULL);
 
@@ -1938,7 +1784,7 @@ char *strlwr(char *str)
 // Converts an integer to a string (after liblinux.cc).
 //
 //---------------------------------------------------------------
-void itoa(int value, char *buffer, int radix)
+void itoa(int value, char* buffer, int radix)
 {
     ASSERT(buffer != NULL);
     ASSERT(radix == 10 || radix == 2);
@@ -1977,166 +1823,9 @@ void itoa(int value, char *buffer, int radix)
     }
 }
 
-
-//---------------------------------------------------------------
-//
-// open
-//
-//---------------------------------------------------------------
-int open(const char *path, int openFlags, int permissions, int mysteryFlags)
-{
-    (void) mysteryFlags;        // not used
-
-    return open(path, openFlags, permissions);
-}
-
-
-//---------------------------------------------------------------
-//
-// open
-//
-// These file routines are not ANSI-C. They are however Posix
-// routines. Unfortunately Posix leaves the permissions argument
-// undefined. Crawl often uses open like this: open(path, S_IWRITE, S_IREAD).
-// S_IWRITE and S_IREAD are not mentioned in my Posix book, so
-// I'm assuming this is supposed to open the file for read/write
-// access (although it looks ill-formed...).
-//
-//---------------------------------------------------------------
-int open(const char *path, int flags, int permissions)
-{
-    ASSERT(path != NULL);
-    ASSERT(flags > 0);
-    (void) permissions;         // not used
-
-    int perm;
-
-    if (flags & O_RDONLY)
-    {
-        ASSERT((flags & O_CREAT) == 0);
-        ASSERT((flags & O_TRUNC) == 0);
-//              ASSERT((flags & O_BINARY) != 0);
-
-        perm = fsRdPerm;
-
-    }
-    else if (flags & O_WRONLY)
-    {
-//              ASSERT((flags & O_BINARY) != 0);
-
-        perm = fsWrPerm;
-
-    }
-    else if ((flags & O_RDWR) || (flags & S_IWRITE))
-    {
-        perm = fsRdPerm + fsWrPerm;
-
-    }
-    else
-        ASSERT(false);
-
-    FSSpec spec;
-    OSErr err = __path2fss(path, &spec);
-
-    short refNum = -1;
-
-    err = FSpOpenDF(&spec, perm, &refNum);
-    if (err == fnfErr && (flags & O_CREAT))
-    {
-        OSType creator = 'Crwl';
-        OSType type = 'CrlF';
-
-        int len = strlen(path);
-
-        if (len > 4 && tolower(path[len - 4]) == '.' && tolower(path[len - 3]) == 't' && tolower(path[len - 2]) == 'x' && tolower(path[len - 1]) == 't')
-        {
-            creator = 'ttxt';   // TeachText
-
-            type = 'TEXT';
-        }
-
-        err = FSpCreate(&spec, creator, type, smSystemScript);
-
-        if (err == noErr)
-            err = FSpOpenDF(&spec, perm, &refNum);
-
-    }
-    else if (err == noErr)
-        if (flags & O_TRUNC)
-            err = SetEOF(refNum, 0);
-
-    if (err != noErr)
-        refNum = -1;            // FSpOpenDF will set this if err == fnfErr :-(
-
-    return refNum;
-}
-
-
-//---------------------------------------------------------------
-//
-// close
-//
-//---------------------------------------------------------------
-int close(int desc)
-{
-    OSErr err = fnfErr;
-
-    if (desc != 0 && desc != -1)
-        err = FSClose(desc);
-
-    return err == noErr ? 0 : -1;
-}
-
-
-//---------------------------------------------------------------
-//
-// read
-//
-//---------------------------------------------------------------
-int read(int desc, void *buffer, unsigned int inBytes)
-{
-    ASSERT(desc != 0);
-    ASSERT(desc != -1);
-    ASSERT(buffer != NULL);
-
-    long bytes = inBytes;
-    OSErr err = FSRead(desc, &bytes, buffer);
-
-    return err == noErr ? bytes : -1;
-}
-
-
-//---------------------------------------------------------------
-//
-// write
-//
-//---------------------------------------------------------------
-int write(int desc, const void *buffer, unsigned int inBytes)
-{
-    ASSERT(desc != 0);
-    ASSERT(desc != -1);
-    ASSERT(buffer != NULL);
-
-    long bytes = inBytes;
-    OSErr err = FSWrite(desc, &bytes, buffer);
-
-    return err == noErr ? bytes : -1;
-}
-
-
-//---------------------------------------------------------------
-//
-// unlink
-//
-//---------------------------------------------------------------
-int unlink(const char *path)
-{
-    ASSERT(path != NULL);
-
-    return remove(path);
-}
-
+#if __MWERKS__
 #pragma mark -
+#endif
 
 // ========================================================================
 //      Curses(?) Functions
@@ -2149,14 +1838,10 @@ int unlink(const char *path)
 //---------------------------------------------------------------
 void window(int x, int y, int lx, int ly)
 {
-    ASSERT(lx == kTermWidth);   // CWindow hardcodes size
-
+    ASSERT(lx == kTermWidth);   // window size is hard-coded
     ASSERT(ly == kTermHeight);
-    ASSERT(sWindow != nil);
 
     gotoxy(x, y);
-
-    sWindow->Show();
 }
 
 
@@ -2167,9 +1852,9 @@ void window(int x, int y, int lx, int ly)
 //---------------------------------------------------------------
 void clrscr()
 {
-    ASSERT(sWindow != nil);
+    ASSERT(sApp != NULL);
 
-    sWindow->Clear();
+    sApp->Clear();
 }
 
 
@@ -2182,11 +1867,10 @@ void textcolor(int c)
 {
     ASSERT(c >= 0);
     ASSERT(c < 16);
-    ASSERT(sWindow != nil);
+    ASSERT(sApp != NULL);
 
     RGBColor color = ConvertColor(c);
-
-    sWindow->SetForeColor(color);
+    sApp->SetForeColor(color);
 }
 
 
@@ -2199,11 +1883,10 @@ void textbackground(int c)
 {
     ASSERT(c >= 0);
     ASSERT(c < 16);
-    ASSERT(sWindow != nil);
+    ASSERT(sApp != NULL);
 
     RGBColor color = ConvertColor(c);
-
-    sWindow->SetBackColor(color);
+    sApp->SetBackColor(color);
 }
 
 
@@ -2216,9 +1899,9 @@ void gotoxy(int x, int y)
 {
     ASSERT(x >= 1);
     ASSERT(y >= 1);
-    ASSERT(sWindow != nil);
+    ASSERT(sApp != NULL);
 
-    sWindow->SetCursor(x - 1, y - 1);
+    sApp->SetCursor(x - 1, y - 1);
 }
 
 
@@ -2229,9 +1912,9 @@ void gotoxy(int x, int y)
 //---------------------------------------------------------------
 int wherex()
 {
-    ASSERT(sWindow != nil);
+    ASSERT(sApp != NULL);
 
-    Point pos = sWindow->GetCursor();
+    Point pos = sApp->GetCursor();
 
     return pos.h + 1;
 }
@@ -2244,9 +1927,9 @@ int wherex()
 //---------------------------------------------------------------
 int wherey()
 {
-    ASSERT(sWindow != nil);
+    ASSERT(sApp != NULL);
 
-    Point pos = sWindow->GetCursor();
+    Point pos = sApp->GetCursor();
 
     return pos.v + 1;
 }
@@ -2259,15 +1942,15 @@ int wherey()
 //---------------------------------------------------------------
 void putch(char ch)
 {
-    ASSERT(sWindow != nil);
+    ASSERT(sApp != NULL);
 
     char buffer[2];
 
     buffer[0] = ch;
     buffer[1] = '\0';
 
-    sWindow->SetChar(ch);
-//      sWindow->Print(buffer);
+    sApp->SetChar(ch);
+//  sApp->Print(buffer);
 }
 
 
@@ -2276,9 +1959,9 @@ void putch(char ch)
 // cprintf
 //
 //---------------------------------------------------------------
-void cprintf(const char *format,...)
+void cprintf(const char* format,...)
 {
-    ASSERT(sWindow != nil);
+    ASSERT(sApp != NULL);
 
     char buffer[2048];
 
@@ -2288,7 +1971,7 @@ void cprintf(const char *format,...)
     vsprintf(buffer, format, argp);
     va_end(argp);
 
-    sWindow->Print(buffer);
+    sApp->Print(buffer);
 }
 
 
@@ -2299,20 +1982,7 @@ void cprintf(const char *format,...)
 //---------------------------------------------------------------
 int kbhit()
 {
-    bool found = false;
-
-    QHdrPtr eventQHead = LMGetEventQueue();     // this is more efficient than EventAvail since it avoids a mode switch (although it's unlikely to make much of a difference...)
-
-    EvQElPtr eventQPtr = reinterpret_cast < EvQElPtr > (eventQHead->qHead);
-
-    while (eventQPtr != nil && !found)
-    {
-        found = eventQPtr->evtQWhat == keyDown || eventQPtr->evtQWhat == autoKey;
-
-        eventQPtr = reinterpret_cast < EvQElPtr > (eventQPtr->qLink);
-    }
-
-    return found;
+    return sApp->PeekChar();
 }
 
 
@@ -2337,7 +2007,7 @@ char getche()
 // getstr
 //
 //---------------------------------------------------------------
-void getstr(char *buffer, int bufferSize)
+void getstr(char* buffer, int bufferSize)
 {
     ASSERT(buffer != NULL);
     ASSERT(bufferSize > 1);
@@ -2368,9 +2038,9 @@ void getstr(char *buffer, int bufferSize)
 void _setcursortype(int curstype)
 {
     ASSERT(curstype == _NORMALCURSOR || curstype == _NOCURSOR);
-    ASSERT(sWindow != NULL);
+    ASSERT(sApp != NULL);
 
-    sWindow->ShowCursor(curstype == _NORMALCURSOR);
+    sApp->ShowCursor(curstype == _NORMALCURSOR);
 }
 
 
@@ -2381,23 +2051,14 @@ void _setcursortype(int curstype)
 //---------------------------------------------------------------
 int getch()
 {
-    ASSERT(sWindow != NULL);
+    ASSERT(sApp != NULL);
 
-    int ch = '\0';
-
-    while (ch == '\0')
-    {
-        EventRecord event;
-        bool gotEvent =::WaitNextEvent(everyEvent, &event, 10, NULL);
-
-        if (gotEvent)
-            ch = HandleEvent(event);
-    }
-
-    return ch;
+    return sApp->GetChar();
 }
 
+#if __MWERKS__
 #pragma mark -
+#endif
 
 // ========================================================================
 //      Misc Functions
@@ -2412,10 +2073,7 @@ void delay(int ms)
 {
     ASSERT(ms >= 0);
 
-    unsigned long ticks = 60 * ms / 1000;
-    unsigned long final;
-
-    Delay(ticks, &final);
+        usleep(1000*ms);
 }
 
 
@@ -2426,77 +2084,18 @@ void delay(int ms)
 //---------------------------------------------------------------
 void init_mac()
 {
-    ASSERT(sWindow == NULL);
+    ASSERT(sApp == NULL);
 
-    // Initialize toolbox
-    MaxApplZone();
-    InitGraf((Ptr) & qd.thePort);
-    InitFonts();
-    InitWindows();
-    InitMenus();
-    TEInit();
-    InitDialogs(nil);
-    InitCursor();
-
-    sHasAM = TestGestaltMask(gestaltAppearanceAttr, gestaltAppearanceExists);
-
-    // Initialize SIOUX
-#if DEBUG
-    SIOUXSettings.initializeTB = false;
-    SIOUXSettings.standalone = false;
-    SIOUXSettings.setupmenus = false;
-    SIOUXSettings.asktosaveonclose = false;
-#endif
-
-    // Add some menus
-  sAppleMenu =::GetMenu(kAppleMenu);
-  sFileMenu =::GetMenu(kFileMenu);
-  sFontMenu =::GetMenu(kFontMenu);
-  sSizeMenu =::GetMenu(kSizeMenu);
-    if (sAppleMenu == NULL || sFileMenu == NULL || sFontMenu == NULL || sSizeMenu == NULL)
-    {
-        WarnUser("Couldn't load the menus!");
-        ExitToShell();
-    }
-
-    AppendResMenu(sAppleMenu, 'DRVR');
-    AppendResMenu(sFontMenu, 'FONT');
-
-    if (sHasAM)
-    {
-        int numItems = CountMItems(sFontMenu);
-
-        for (int i = 1; i <= numItems; i++)
+        // Read in the color table
+        sColors = GetCTable(256);
+        if (sColors == NULL)
         {
-            Str255 fontName;
-
-            GetMenuItemText(sFontMenu, i, fontName);
-
-            short fontNum;
-
-            GetFNum(fontName, &fontNum);
-
-            SetMenuItemFontID(sFontMenu, i, fontNum);
+                WarnUser("Couldn't load the colour table!");
+                ExitToShell();
         }
-    }
 
-    InsertMenu(sAppleMenu, 0);
-    InsertMenu(sFileMenu, 0);
-    InsertMenu(sFontMenu, 0);
-    InsertMenu(sSizeMenu, 0);
-
-  ::InvalMenuBar();
-
-    // Read in the color table
-    sColors = GetCTable(256);
-    if (sColors == NULL)
-    {
-        WarnUser("Couldn't load the colour table!");
-        ExitToShell();
-    }
-
-    // Create a window
-    sWindow = new CWindow;
+        // Create the application object
+        sApp = new CApplication;
 }
 
 
@@ -2507,9 +2106,8 @@ void init_mac()
 //---------------------------------------------------------------
 void deinit_mac()
 {
-    delete sWindow;
-
-    sWindow = NULL;
+    delete sApp;
+    sApp = NULL;
 }
 
 

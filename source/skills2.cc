@@ -1951,42 +1951,70 @@ const char *skill_name(unsigned char which_skill)
 }                               // end skill_name()
 
 
-const char *skill_title( unsigned char best_skill, unsigned char skill_lev )
+const char *skill_title( unsigned char best_skill, unsigned char skill_lev,
+                         int species, int str, int dex, int god )
 {
     unsigned char skill_rank;
     const char *tempstr = NULL;
 
     static char title_buff[80];
 
-    // translate skill level into skill ranking {dlb}:
-    skill_rank = ((skill_lev <= 7)  ? 0 :
-                  (skill_lev <= 14) ? 1 :
-                  (skill_lev <= 20) ? 2 :
-                  (skill_lev <= 26) ? 3
-                   /* level 27 */   : 4);
+    if (species == -1)
+        species = you.species;
 
+    if (str == -1)
+        str = you.strength;
+
+    if (dex == -1)
+        dex = you.dex;
+
+    if (god == -1)
+        god = you.religion;
+
+    // translate skill level into skill ranking {dlb}:
     // increment rank by one to "skip" skill name in array {dlb}:
-    skill_rank++;
+    skill_rank = ((skill_lev <= 7)  ? 1 :
+                  (skill_lev <= 14) ? 2 :
+                  (skill_lev <= 20) ? 3 :
+                  (skill_lev <= 26) ? 4
+                   /* level 27 */   : 5);
 
     if (best_skill < NUM_SKILLS)
     {
-        if (best_skill == SK_UNARMED_COMBAT && you.dex >= you.strength)
-            tempstr = martial_arts_titles[skill_rank];
-        if (best_skill == SK_INVOCATIONS && you.religion == GOD_NO_GOD)
-            tempstr = "Godless";
-        else
+        // Note that ghosts default to (dex == str) and god == no_god, due
+        // to a current lack of that information... the god case is probably
+        // suitable for most cases (TSO/Zin/Ely at the very least). -- bwr
+        switch (best_skill)
+        {
+        case SK_UNARMED_COMBAT:
+            tempstr = (dex >= str) ? martial_arts_titles[skill_rank]
+                                   : skills[best_skill][skill_rank];
+
+            break;
+
+        case SK_INVOCATIONS:
+            if (god == GOD_NO_GOD)
+                tempstr = "Godless";
+            else
+                tempstr = skills[best_skill][skill_rank];
+            break;
+
+        default:
             tempstr = skills[best_skill][skill_rank];
+            break;
+        }
     }
 
-    char *ptr = strchr( tempstr, '%' );
+    char *const ptr = strchr( tempstr, '%' );
+    const bool species_found = (ptr != NULL);
 
-    if (ptr != NULL)
+    if (species_found)
     {
         // need species name
         snprintf( title_buff, sizeof(title_buff), tempstr,
-                  species_name(you.species, true,
-                       (ptr == tempstr && best_skill != SK_NECROMANCY)) );
-
+                  species_name(species, 0, true,
+                                (ptr == tempstr && best_skill != SK_NECROMANCY)) );
+                  // The above code only capitalises start-of-string racenames
         tempstr = title_buff;
     }
 
@@ -2004,42 +2032,90 @@ unsigned char best_skill( unsigned char min_skill, unsigned char max_skill,
                           unsigned char excl_skill )
 {
     unsigned char ret = SK_FIGHTING;
-    unsigned int highest_level = 0;
-    unsigned int highest_points = 0;
+    unsigned int best_skill_level = 0;
+    unsigned int best_position = 1000;
 
     for (int i = min_skill; i <= max_skill; i++)    // careful!!!
     {
-        if (i == excl_skill)
+        if (i == excl_skill
+            || i == SK_UNUSED_1
+            || (i > SK_UNARMED_COMBAT && i < SK_SPELLCASTING))
+        {
             continue;
-
-        // Skill points aquired are adjusted for species difficulty here...
-        // ie. 100 pts at difficulty 200 is worth 50 and not as good as
-        // 100 points at difficulty 100.  This should be better than the
-        // old system which just compared the overall level, resulting
-        // cases where the order of the skills was important (and annoyingly
-        // so in cases where one skill is at 9(0) and a 9(9) is chosen
-        // solely because it clobered the first).  Ties are handled by
-        // switching if the new skill is easier for the character's
-        // species. -- bwr
-        const int diff = species_skills( i, you.species );
-        const unsigned int points = (you.skill_points[i] * 100) / diff;
-
-        if (points > highest_points && you.skills[i] >= highest_level)
-        {
-            ret = i;
-            highest_level = you.skills[i];
-            highest_points = points;
         }
-        else if (points == highest_points
-                && diff < species_skills( ret, you.species ))
+
+        if (you.skills[i] > best_skill_level)
         {
             ret = i;
+            best_skill_level = you.skills[i];
+            best_position = you.skill_order[i];
+
+        }
+        else if (you.skills[i] == best_skill_level
+                && you.skill_order[i] < best_position)
+        {
+            ret = i;
+            best_position = you.skill_order[i];
         }
     }
 
     return (ret);
 }                               // end best_skill()
 
+// Calculate the skill_order array from scratch.
+//
+// The skill order array is used for breaking ties in best_skill.
+// This is done by ranking reach skill by the order in which it
+// has attained its current level (the values are the number of
+// skills at or above that level when the current skill reached it).
+//
+// In this way, the skill which has been at a level for the longest
+// is judged to be the best skill (thus, nicknames are sticky)...
+// other skills will have to attain the next level higher to be
+// considered a better skill (thus, the first skill to reach level 27
+// becomes the characters final nickname).
+//
+// As for other uses of best_skill:  this method is still appropriate
+// in that there is no additional advantage anywhere else in the game
+// for partial skill levels.  Besides, its probably best if the player
+// isn't able to micromanage at that level.  -- bwr
+void init_skill_order( void )
+{
+    for (int i = SK_FIGHTING; i < NUM_SKILLS; i++)
+    {
+        if (i == SK_UNUSED_1
+            || (i > SK_UNARMED_COMBAT && i < SK_SPELLCASTING))
+        {
+            you.skill_order[i] = 1000;
+            continue;
+        }
+
+        const int i_diff = species_skills( i, you.species );
+        const unsigned int i_points = (you.skill_points[i] * 100) / i_diff;
+
+        you.skill_order[i] = 0;
+
+        for (int j = SK_FIGHTING; j < NUM_SKILLS; j++)
+        {
+            if (i == j
+                || j == SK_UNUSED_1
+                || (j > SK_UNARMED_COMBAT && j < SK_SPELLCASTING))
+            {
+                continue;
+            }
+
+            const int j_diff = species_skills( j, you.species );
+            const unsigned int j_points = (you.skill_points[j] * 100) / j_diff;
+
+            if (you.skills[j] == you.skills[i]
+                && (j_points > i_points
+                    || (j_points == i_points && j > i)))
+            {
+                you.skill_order[i]++;
+            }
+        }
+    }
+}
 
 int calc_hp(void)
 {
@@ -2231,12 +2307,17 @@ void wield_warning(bool newWeapon)
             else
             {
                 if (you.dex < 11)
-                    snprintf( info, INFO_SIZE, "Wielding %s is %s awkward.", wepstr,
-                        (you.dex < 7)?"fairly":"a little");
+                {
+                    snprintf( info, INFO_SIZE, "Wielding %s is %s awkward.",
+                              wepstr, (you.dex < 7) ? "fairly" : "a little" );
+                }
                 else
+                {
                     snprintf( info, INFO_SIZE, "You'd be more effective with "
-                        "%s if you were nimbler.", wepstr);
+                        "%s if you were nimbler.", wepstr );
+                }
             }
+
             mpr( info, MSGCH_WARN );
         }
 #endif
