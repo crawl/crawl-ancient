@@ -137,25 +137,46 @@ int player_regen(void)
 
     if (rr > 20)
         rr = 20 + ((rr - 20) / 2);
-/* rings */
-    if (you.equip[EQ_LEFT_RING] != -1 && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_REGENERATION)
+
+    /* rings */
+    if (you.equip[EQ_LEFT_RING] != -1
+                && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_REGENERATION)
+    {
         rr += 40;
-    if (you.equip[EQ_RIGHT_RING] != -1 && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_REGENERATION)
+    }
+
+    if (you.equip[EQ_RIGHT_RING] != -1
+                && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_REGENERATION)
+    {
         rr += 40;
-/* spell */
+    }
+
+    /* spell */
     if (you.duration[DUR_REGENERATION] != 0)
+    {
         rr += 100;
-/* troll leather */
-    if (you.equip[EQ_BODY_ARMOUR] != -1 && you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_TROLL_LEATHER_ARMOUR)
-        rr += 30;
-    else
-        /* trolls gain no benefit from troll leather */ if (you.species == SP_TROLL)
+    }
+
+    /* troll leather */
+    if (you.species == SP_TROLL)
+    {
         rr += 40;
-/* fast heal mutation */
+    }
+    else if (you.equip[EQ_BODY_ARMOUR] != -1
+        && you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_TROLL_LEATHER_ARMOUR)
+    {
+        /* trolls gain no benefit from troll leather */
+        rr += 30;
+    }
+
+
+    /* fast heal mutation */
     rr += you.mutation[MUT_REGENERATION] * 20;
-/* ghouls heal slowly */
+
+    /* ghouls heal slowly */
     if (you.species == SP_GHOUL)
         rr /= 2;
+
     return rr;
 }
 
@@ -220,11 +241,15 @@ int player_hunger_rate(void)
     if (you.equip[EQ_WEAPON] != -1
                         && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
     {
-        if (you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_VAMPIRICISM)
-            hunger += 6;
-
-        if (you.inv_dam[you.equip[EQ_WEAPON]] == NWPN_VAMPIRE_S_TOOTH)
+        if (you.inv_dam[you.equip[EQ_WEAPON]] < 180)
+        {
+            if (you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_VAMPIRICISM)
+                hunger += 6;
+        }
+        else if (you.inv_dam[you.equip[EQ_WEAPON]] == NWPN_VAMPIRE_S_TOOTH)
+        {
             hunger += 9;
+        }
     }
 
     hunger += scan_randarts( RAP_METABOLISM );
@@ -775,9 +800,15 @@ int player_fast_run(void)
 
 int player_speed(void)
 {
+        int ps = 10;
+    if (you.haste != 0) ps /= 2;
+
     if (you.attribute[ATTR_TRANSFORMATION] == TRAN_STATUE)
-        return 15;
-    return 10;
+    {
+        ps *= 15;
+        ps /= 10;
+    }
+    return ps;
 }
 
 int player_AC(void)

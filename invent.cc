@@ -575,6 +575,9 @@ void command_string(char comm[50], int i)
     case 150:
         strcpy(comm, "M - Memorise a spell");
         break;
+    case 155:
+        strcpy(comm, "O - View Over-map of important things");
+        break;
     case 160:
         strcpy(comm, "P/R - Put on/Remove a ring");
         break;

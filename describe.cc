@@ -152,6 +152,12 @@ static void print_description(const string & description)
 //---------------------------------------------------------------
 static void randart_descpr(string & description, int item_class, int item_type, int item_plus, int item_plus2, int item_dam)
 {
+
+    // If description is already $-terminated, remove the $.
+    if (description.length() > 0 && description [description.length() - 1] == '$') description [description.length() - 1] = 0;
+
+    unsigned int old_length = description.length();
+
     if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_AC) != 0)
     {
         description += "$It affects your AC (";
@@ -321,11 +327,15 @@ static void randart_descpr(string & description, int item_class, int item_type, 
         description += "$It emits mutagenic radiations, which may remain in your system for quite some time. ";
     }
 
-    description += "$";
+    if (old_length != description.length()) description += "$";
+
     if ((item_dam == 25 && (item_class == OBJ_WEAPONS || item_class == OBJ_ARMOUR)) || (item_dam == 201 && item_class == OBJ_JEWELLERY))
     {
-        description += unrandart_descrip(0, item_class, item_type, item_plus, item_plus2);
-        description += "$";
+        if (strlen(unrandart_descrip(0, item_class, item_type, item_plus, item_plus2)) > 0)
+        {
+         description += unrandart_descrip(0, item_class, item_type, item_plus, item_plus2);
+         description += "$";
+        }
     }
 }
 
@@ -673,11 +683,13 @@ static string describe_demon()
 // describe_weapon
 //
 //---------------------------------------------------------------
-static string describe_weapon(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id)
+static string describe_weapon(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id, char verbose)
 {
     string description;
 
     description.reserve(200);
+
+    description = "";
 
     if (item_dam % 30 == 25 && strlen(unrandart_descrip(1, item_class, item_type, item_plus, item_plus2)) != 0)
     {
@@ -686,6 +698,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
     }
     else
     {
+      if (verbose == 1)
         switch (item_type)
         {
         case WPN_CLUB:
@@ -721,7 +734,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
             break;
 
         case WPN_GREAT_SWORD:
-            description = "A sword with a very long, heavy blade and a long handle, designed to be wielded with two hands. ";
+            description = "A sword with a very long, heavy blade and a long handle. ";
             break;
 
         case WPN_SCIMITAR:
@@ -733,7 +746,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
             break;
 
         case WPN_BATTLEAXE:
-            description = "A large axe with a double-headed blade, held with two hands. ";
+            description = "A large axe with a double-headed blade. ";
             break;
 
         case WPN_SPEAR:
@@ -849,11 +862,11 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
             break;
 
         case WPN_GREAT_MACE:
-            description = "A large two-handed mace.";
+            description = "A large and heavy mace.";
             break;
 
         case WPN_GREAT_FLAIL:
-            description = "A large two-handed flail.";
+            description = "A large and heavy flail.";
             break;
 
         default:
@@ -861,7 +874,28 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
         }
     }
 
-    if (item_type < 13 || item_type > 16)
+    if (verbose == 1 &&
+        item_type != WPN_BOW && item_type != WPN_SLING
+            && item_type != WPN_CROSSBOW && item_type != WPN_HAND_CROSSBOW)
+    {
+        switch (hands_required_for_weapon( item_class, item_type ))
+        {
+        case HANDS_ONE_HANDED:
+            description += " It is a one handed weapon.";
+            break;
+
+        case HANDS_ONE_OR_TWO_HANDED:
+            description += " It can be used with one hand, or more "
+                    "effectively with two (if you're not using a shield).";
+            break;
+
+        case HANDS_TWO_HANDED:
+            description += " It is a two handed weapon.";
+            break;
+        }
+    }
+
+    if (verbose == 1 && (item_type < 13 || item_type > 16))
     {                           // ie is not a missile device
 
         description += "$Damage rating: ";
@@ -873,37 +907,6 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
         description += "$Speed multiplier (x10): ";
         append_value(description, property(0, item_type, 2), 1);
         description += "$";
-    }
-
-    if (item_plus >= 100 && item_id >= 1)
-    {
-        description += "It has a curse placed upon it. ";
-        item_plus -= 100;
-    }
-
-    if (item_id >= 3 && !(item_class == 0 && item_dam % 30 >= 25))
-    {
-        if (item_plus < 50)
-            description += "It has been damaged to be less accurate. ";
-
-        if (item_plus > 50)
-        {
-            description += "It has been ";
-            print_ench(description, item_plus);
-            description += "to be more accurate. ";
-        }
-
-        if (item_plus2 < 50)
-        {
-            description += "It has been damaged to cause less damage. ";
-        }
-
-        if (item_plus2 > 50)
-        {
-            description += "It has been ";
-            print_ench(description, item_plus2);
-            description += "to inflict greater damage. ";
-        }
     }
 
     if (item_dam >= 180)
@@ -960,6 +963,39 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
             }
         }
 
+
+
+    if (item_plus >= 100 && item_id >= 1)
+    {
+        description += "It has a curse placed upon it. ";
+        item_plus -= 100;
+    }
+
+    if (verbose == 1 && item_id >= 3 && !(item_class == 0 && item_dam % 30 >= 25))
+    {
+        if (item_plus < 50)
+            description += "It has been damaged to be less accurate. ";
+
+        if (verbose == 1 && item_plus > 50)
+        {
+            description += "It has been ";
+            print_ench(description, item_plus);
+            description += "to be more accurate. ";
+        }
+
+        if (verbose == 1 && item_plus2 < 50)
+        {
+            description += "It has been damaged to cause less damage. ";
+        }
+
+        if (verbose == 1 && item_plus2 > 50)
+        {
+            description += "It has been ";
+            print_ench(description, item_plus2);
+            description += "to inflict greater damage. ";
+        }
+    }
+
     }
     else
     {
@@ -967,6 +1003,8 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
 
         if (item_dam % 30 >= 25)
             spec_ench = randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_BRAND);
+             else if (verbose == 0) spec_ench = 0;
+               // don't bother printing this generic info if not a randart
 
         if (spec_ench != 0 && item_id >= 2)
         {
@@ -1030,6 +1068,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
         if (item_id >= 2 && item_dam % 30 >= 25)
             randart_descpr(description, item_class, item_type, item_plus, item_plus2, item_dam);
 
+     if (verbose == 1)
         switch (item_type)
         {
         case WPN_SLING:
@@ -1055,9 +1094,9 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
             case SK_LONG_SWORDS:
                 description += "It falls into the 'long swords' category. ";
                 break;
-            case SK_GREAT_SWORDS:
-                description += "It falls into the 'great swords' category. ";
-                break;
+            // case SK_GREAT_SWORDS:
+            //    description += "It falls into the 'great swords' category. ";
+            //    break;
             case SK_AXES:
                 description += "It falls into the 'axes' category. ";
                 break;
@@ -1140,11 +1179,20 @@ static string describe_ammo(int item_type, int item_plus, int item_dam, unsigned
         }
     }
 
-    if (item_id == 3 && item_plus > 50)
+    if (item_id == 3)
     {
-        description += "It has been ";
-        print_ench(description, item_plus);
-        description += "to be more accurate and cause more damage. ";
+        if (item_plus > 50)
+        {
+            description += "It has been ";
+            print_ench(description, item_plus);
+            description += "to be more accurate and cause more damage. ";
+        }
+
+        if (item_plus < 50)
+        {
+            description += "It has been damaged to be less accurate "
+                           "and cause less damage. ";
+        }
     }
 
     return description;
@@ -1156,7 +1204,7 @@ static string describe_ammo(int item_type, int item_plus, int item_dam, unsigned
 // describe_armour
 //
 //---------------------------------------------------------------
-static string describe_armour(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id)
+static string describe_armour(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id, char verbose)
 {
     string description;
 
@@ -1169,6 +1217,7 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
     }
     else
     {
+      if (verbose == 1)
         switch (item_type)
         {
         case ARM_ROBE:
@@ -1204,7 +1253,7 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             break;
 
         case ARM_SHIELD:
-            description += "A piece of metal, to be strapped on one's arm. ";
+            description += "A piece of metal, to be strapped on one's arm. It is cumbersome to wear, and slightly slows the rate at which you may attack.";
             break;
 
         case ARM_CLOAK:
@@ -1240,7 +1289,7 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             break;
 
         case ARM_LARGE_SHIELD:
-            description += "Like a normal shield, only larger. ";
+            description += "Like a normal shield, only larger. It is very cumbersome to wear, and slows the rate at which you may attack.";
             break;
 
         case ARM_DRAGON_HIDE:
@@ -1320,7 +1369,7 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
         }
     }
 
-    if (item_type != 8 && item_type != 13 && item_type != 14)
+    if (verbose == 1 && item_type != 8 && item_type != 13 && item_type != 14)
     {
         description += "$Armour rating: ";
 
@@ -1335,13 +1384,13 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
         description += "$";
     }
 
-    if (item_plus >= 100 && item_id >= 1)
+    if (verbose == 1 && item_plus >= 100 && item_id >= 1)
     {
         description += "It has a curse placed upon it. ";
         item_plus -= 100;
     }
 
-    if (item_id >= 3)
+    if (verbose == 1 && item_id >= 3)
     {
         if (item_plus < 50)
             description += "It has been damaged to offer less protection against injury. ";
@@ -1357,7 +1406,7 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
     if (item_id >= 2 && item_dam % 30 >= 25)
         randart_descpr(description, item_class, item_type, item_plus, item_plus2, item_dam);
 
-    if (item_id > 1)
+    if (item_id > 1 && (verbose == 1 || item_dam % 30 >= 25))
     {
         switch (item_dam % 30)
         {
@@ -1392,7 +1441,7 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             description += "It is highly cumbersome. ";
             break;
         case 11:
-            description += "It can be activated to allow its wearer to float above the ground. ";
+            description += "It can be activated to allow its wearer to float above the ground and remain so indefinitely. ";
             break;
         case 12:
             description += "It increases its wearer's resistance to enchantments. ";
@@ -1623,7 +1672,7 @@ static string describe_food(int item_type, int item_dam)
         break;
 
     case 18:
-        description += "A strip of preserved dead cow. ";
+        description += "A strip of preserved dead cow or bull. ";
         break;
 
     case 19:
@@ -1900,7 +1949,7 @@ static string describe_scroll(int item_type)
 // describe_jewellery
 //
 //---------------------------------------------------------------
-static string describe_jewellery(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id)
+static string describe_jewellery(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id, char verbose)
 {
     string description;
 
@@ -1918,6 +1967,7 @@ static string describe_jewellery(int item_class, int item_type, int item_plus, i
     }
     else
     {
+      if (verbose == 1 || (item_dam == 200 || item_dam == 201))
         switch (item_type)
         {
         case 0:
@@ -2295,7 +2345,7 @@ static string describe_misc_item(int item_type, unsigned char item_id)
             description += "A deck of powerful magical cards. ";
             break;
         case 17:
-            description += "An altar to Nemelex Xobeh, built for easy assembly and disassembly. Invoke it to place on a clear patch of floor, then pick it up again when you've finished. ";
+            description += "An altar to Nemelex Xobeh, built for easy assembly and disassembly. Invoke it to place on a clear patch of floor, then pick it up again when you've finished. Due to its portable nature it is not noted on the over-map.";
             break;
 
         default:
@@ -2388,7 +2438,8 @@ bool is_artifact(int item_class, int item_type, int item_plus, int item_plus2, i
 
 
 bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
-                        int item_plus2, int item_dam, unsigned char item_id)
+                        int item_plus2, int item_dam, unsigned char item_id,
+                        char verbose)
 {
     UNUSED(item_plus);
     UNUSED(item_plus2);
@@ -2399,7 +2450,7 @@ bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
 
     switch (item_class) {
         case 0:             // weapon
-            if (spec_ench >= 25 || item_dam == 180)
+            if (spec_ench >= 25 || item_dam >= 180)
                 is = item_id >= 2; // first check is for randarts, second
                                    // for fixed arts.
             break;
@@ -2408,7 +2459,7 @@ bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
             if (spec_ench >= 25)
                 is = item_id >= 2; // randarts.
 
-            else if (item_id >= 2)
+            else if (verbose == 1 && item_id >= 2)
                 is = spec_ench >= 1 && spec_ench <= 18;
             break;
 
@@ -2418,7 +2469,7 @@ bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
 #if 1
             // include this bit if descriptions of all rings and
             // amulets are desired
-            else if (get_id(7, item_type))
+            else if (verbose == 1 && get_id(7, item_type))
                 is = true;
 #endif
             break;
@@ -2436,7 +2487,7 @@ bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
 // be interpreted as carriage returns.
 //
 //---------------------------------------------------------------
-string get_item_description(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id)
+string get_item_description(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id, char verbose)
 {
     string description;
 
@@ -2451,7 +2502,7 @@ string get_item_description(int item_class, int item_type, int item_plus, int it
     switch (item_class)
     {
     case 0:
-        description += describe_weapon(item_class, item_type, item_plus, item_plus2, item_dam, item_id);
+        description += describe_weapon(item_class, item_type, item_plus, item_plus2, item_dam, item_id, verbose);
         break;
 
     case 1:
@@ -2459,7 +2510,7 @@ string get_item_description(int item_class, int item_type, int item_plus, int it
         break;
 
     case 2:
-        description += describe_armour(item_class, item_type, item_plus, item_plus2, item_dam, item_id);
+        description += describe_armour(item_class, item_type, item_plus, item_plus2, item_dam, item_id, verbose);
         break;
 
     case 3:
@@ -2479,7 +2530,7 @@ string get_item_description(int item_class, int item_type, int item_plus, int it
         break;
 
     case 7:
-        description += describe_jewellery(item_class, item_type, item_plus, item_plus2, item_dam, item_id);
+        description += describe_jewellery(item_class, item_type, item_plus, item_plus2, item_dam, item_id, verbose);
         break;
 
     case 10:
@@ -2523,21 +2574,24 @@ string get_item_description(int item_class, int item_type, int item_plus, int it
         description += "This item should not exist. Mayday! Mayday!";
     }
 
-    description += "It weighs around ";
-    char item_mass[7];
-
-    if (item_class == 14)
+    if (verbose == 1)
     {
+     description += "It weighs around ";
+     char item_mass[7];
+
+     if (item_class == 14)
+     {
         if (item_type == 0)
             itoa(mons_weight(item_plus) / 10, item_mass, 10);
         else
             itoa(mons_weight(item_plus) / 20, item_mass, 10);
-    }
-    else
+     }
+     else
         itoa(mass(item_class, item_type) / 10, item_mass, 10);
 
-    description += item_mass;
-    description += " aum. ";    // arbitrary unit of mass
+     description += item_mass;
+     description += " aum. ";    // arbitrary unit of mass
+    }
 
     return description;
 }
@@ -2550,7 +2604,7 @@ string get_item_description(int item_class, int item_type, int item_plus, int it
 // Describes all items in the game.
 //
 //---------------------------------------------------------------
-void describe_item(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id)   //, int property [4] [50] [3], int mass [20] [50])
+void describe_item(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id)
  {
 #ifdef DOS_TERM
     char buffer[3400];
@@ -2562,7 +2616,7 @@ void describe_item(int item_class, int item_type, int item_plus, int item_plus2,
 
     clrscr();
 
-    string description = get_item_description(item_class, item_type, item_plus, item_plus2, item_dam, item_id);
+    string description = get_item_description(item_class, item_type, item_plus, item_plus2, item_dam, item_id, 1);
 
     print_description(description);
 
@@ -4521,7 +4575,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 382:                   // quokka
 
-        description = "A small marsupial mammal, altered by nanotechnological manipulators.";
+        description = "A small marsupial mammal. "; //, altered by nanotechnological manipulators.";
         break;
 
     case 385:                   // eye of devastation
@@ -4840,8 +4894,8 @@ void describe_god(int which_god)
         description += "Nemelex is a strange and unpredictable trickster God, whose "
             "powers can be invoked through the magical packs of cards which Nemelex "
             "paints in the ichor of demons. Followers receive occasional gifts, and "
-            "should use these gifts as much as possible. Offerings of items are also "
-            "appreciated.";
+            "should use these gifts as much as possible. Offerings of any type of "
+            "item are also appreciated.";
         break;
 
     case 12:

@@ -931,7 +931,7 @@ void end_game(char end_status)
     // the variable ones
     for (int level = 0; level < MAX_LEVELS; level++)
     {
-        for (int dungeon = 0; dungeon < MAX_DUNGEONS; dungeon++)
+        for (int dungeon = 0; dungeon < MAX_BRANCHES; dungeon++)
         {
             if (tmp_file_pairs[ level ][ dungeon ])
             {
@@ -946,21 +946,6 @@ void end_game(char end_status)
 #ifdef PACKAGE_SUFFIX
     // this is to catch the game package if it still exists.
     del_file[point] = '\0';
-
-#ifdef DO_ANTICHEAT_CHECKS
-    GDBM_FILE  dbf = gdbm_open( SAVE_DIR_PATH "savegame.db", 0, GDBM_WRITER,
-                                                            0660, NULL );
-
-    if (dbf) {
-        datum  key;
-
-        key.dsize = point;
-        key.dptr = del_file;
-
-        gdbm_delete( dbf, key );
-        gdbm_close(dbf);
-    }
-#endif
 
     strcat( del_file, PACKAGE_SUFFIX );
     unlink(del_file);

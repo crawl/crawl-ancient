@@ -1255,8 +1255,9 @@ void dart_trap(int trap_known, int trapped, struct bolt beam[1])
     strcat(info, beam[0].beam_name);
     strcat(info, " shoots out and ");
 
-    if (random2(50) < player_shield_class())
+    if (random2(50 + 5 * you.shield_blocks) < player_shield_class())
     {
+        you.shield_blocks++;
         strcat(info, "hits your shield.");
         mpr(info);
         goto out_of_trap;
@@ -1573,17 +1574,11 @@ int manage_clouds(void)
 
         cchck++;
 
-        if (you.haste == 0)
             env.cloud_decay[cc] -= you.time_taken;
-        else
-            env.cloud_decay[cc] -= you.time_taken / 2;
 
         if ((env.cloud_type[cc] == 1 && grd[env.cloud_x[cc]][env.cloud_y[cc]] == 12) || (env.cloud_type[cc] == 3 && grd[env.cloud_x[cc]][env.cloud_y[cc]] == 11))
         {
-            if (you.haste == 0)
-                env.cloud_decay[cc] -= you.time_taken * 2;
-            else
-                env.cloud_decay[cc] -= you.time_taken;
+                env.cloud_decay[cc] -= you.time_taken * 3;
         }
 
         if (you.slow != 0)

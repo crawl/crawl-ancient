@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <4>      9/09/99        BWR             Added hands_required function
  *      <3>      6/13/99        BWR             Upped the base AC for heavy armour
  *      <2>      5/20/99        BWR             Extended screen lines support
  *      <1>      -/--/--        LRH             Created
@@ -2974,7 +2975,7 @@ void init_properties()
     mss[OBJ_WEAPONS][WPN_SPIKED_FLAIL] = 170;
 
     // great flail
-    prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_DAMAGE] = 18;      // damage
+    prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_DAMAGE] = 17;      // damage
     prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_HIT] = -4;
     prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_SPEED] = 19;      // speed
     mss[OBJ_WEAPONS][WPN_GREAT_FLAIL] = 300;
@@ -2992,7 +2993,7 @@ void init_properties()
     mss[OBJ_WEAPONS][WPN_KNIFE] = 10;
 
     // morningstar
-    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_DAMAGE] = 11;        // damage
+    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_DAMAGE] = 10;        // damage
     prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_HIT] = 2;
     prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_SPEED] = 15;        // speed
     mss[OBJ_WEAPONS][WPN_MORNINGSTAR] = 150;
@@ -3028,14 +3029,14 @@ void init_properties()
     mss[OBJ_WEAPONS][WPN_HAND_AXE] = 110;
 
     // axe
-    prop[OBJ_WEAPONS][WPN_AXE][PWPN_DAMAGE] = 12;
+    prop[OBJ_WEAPONS][WPN_AXE][PWPN_DAMAGE] = 11;
     prop[OBJ_WEAPONS][WPN_AXE][PWPN_HIT] = 1;
-    prop[OBJ_WEAPONS][WPN_AXE][PWPN_SPEED] = 15;
+    prop[OBJ_WEAPONS][WPN_AXE][PWPN_SPEED] = 16;
     mss[OBJ_WEAPONS][WPN_AXE] = 150;
 
-    // axe
-    prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_DAMAGE] = 15;
-    prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_HIT] = 3;
+    // broad axe
+    prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_DAMAGE] = 14;
+    prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_HIT] = 2;
     prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_SPEED] = 17;
     mss[OBJ_WEAPONS][WPN_BROAD_AXE] = 180;
 
@@ -3055,13 +3056,13 @@ void init_properties()
     prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_DAMAGE] = 9;      // damage
     prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_HIT] = -2;
     prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_SPEED] = 17;      // speed
-    mss[OBJ_WEAPONS][WPN_TRIDENT] = 110;
+    mss[OBJ_WEAPONS][WPN_TRIDENT] = 160;
 
     // demon trident
     prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_DAMAGE] = 15;      // damage
     prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_HIT] = -2;
     prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_SPEED] = 17;      // speed
-    mss[OBJ_WEAPONS][WPN_DEMON_TRIDENT] = 110;
+    mss[OBJ_WEAPONS][WPN_DEMON_TRIDENT] = 160;
 
     // halberd
     prop[OBJ_WEAPONS][WPN_HALBERD][PWPN_DAMAGE] = 13;   // damage
@@ -3440,11 +3441,9 @@ char weapon_skill(char wclass, char wtype)
     case WPN_KATANA:
     case WPN_DOUBLE_SWORD:
     case WPN_DEMON_BLADE:
-        return SK_LONG_SWORDS;
-
     case WPN_GREAT_SWORD:
     case WPN_TRIPLE_SWORD:
-        return SK_GREAT_SWORDS;
+        return SK_LONG_SWORDS;
 
     case WPN_HAND_AXE:
     case WPN_AXE:
@@ -3547,35 +3546,69 @@ char damage_type(char wclass, char wtype)
 
 int hands_required_for_weapon( char wclass, char wtype )
 {
+    int ret = HANDS_ONE_HANDED;
+
     switch (wclass)
     {
     case OBJ_WEAPONS:
         switch (wtype)
         {
-        case WPN_EXECUTIONERS_AXE:
         case WPN_HALBERD:
         case WPN_SCYTHE:
         case WPN_GLAIVE:
+
         case WPN_QUARTERSTAFF:
+
         case WPN_BATTLEAXE:
+        case WPN_EXECUTIONERS_AXE:
+
         case WPN_GREAT_SWORD:
         case WPN_TRIPLE_SWORD:
+
         case WPN_GREAT_MACE:
         case WPN_GREAT_FLAIL:
         case WPN_GIANT_CLUB:
         case WPN_GIANT_SPIKED_CLUB:
-            return 2;
+            ret = HANDS_TWO_HANDED;
+            break;
+
+
+        case WPN_SPEAR:
+        case WPN_TRIDENT:
+        case WPN_DEMON_TRIDENT:
+
+        case WPN_AXE:
+        case WPN_BROAD_AXE:
+
+        case WPN_KATANA:
+        case WPN_DOUBLE_SWORD:
+
+        case WPN_ANCUS:
+        case WPN_SPIKED_FLAIL:
+        case WPN_MORNINGSTAR:
+        case WPN_EVENINGSTAR:
+            ret = HANDS_ONE_OR_TWO_HANDED;
+            break;
+
 
         default:
-            return 1;
+            ret = HANDS_ONE_HANDED;
+            break;
         }
+        break;
+
 
     case OBJ_STAVES:
-        return 2;
+        ret = HANDS_TWO_HANDED;
+        break;
+
 
     default:
-        return 1;
+        ret = HANDS_ONE_HANDED;
+        break;
     }
+
+    return ret;
 }
 
 void make_name(unsigned char var1, unsigned char var2, unsigned char var3, char ncase, char str_pass[50])

@@ -27,6 +27,7 @@
  *                          linuxlib.cc
  *       <1>     5/30/99    JDJ     Created (from config.h)
  */
+
 #ifndef APPHDR_H
 #define APPHDR_H
 
@@ -156,6 +157,14 @@
   #define NUMBER_OF_LINES   25
 #endif
 
+// Uncomment this line to separate the elf and dwarf races from then
+// species list.
+// #define SEPARATE_SELECTION_SCREENS_FOR_SUBSPECIES
+
+// Uncomment this line to allow the player to select his draconian's colour.
+// #define ALLOW_DRACONIAN_TYPE_SELECTION
+
+
 // Uncomment this if you find the labyrinth to be buggy and what to
 // remove it from the game.
 // #define SHUT_LABYRINTH
@@ -205,7 +214,6 @@
     // This provides some rudimentary protection against people using
     // save file cheats on multi-user systems.
     #define DO_ANTICHEAT_CHECKS
-    #include "/opt/include/gdbm.h"
 
 #endif
 

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <2>     9/11/99        LRH             Teleportation takes longer in the Abyss
  *      <2>     8/05/99        BWR             Added allow_control_teleport
  *      <1>     -/--/--        LRH             Created
  */
@@ -566,6 +567,11 @@ void you_teleport()
 
     mpr("You feel strangely unstable.");
     you.duration[DUR_TELEPORT] = 4 + random2(3);
+    if (you.your_level == LEVEL_ABYSS && random2(3) != 0)
+    {
+     mpr("You have a feeling this translocation may take a while to kick in...");
+     you.duration[DUR_TELEPORT] += 3 + random2(3);
+    }
 }
 
 

@@ -429,6 +429,7 @@ void invoke_wielded(void)
                     spell_casted = MONS_HELLION + random2(10);
                     if (random2(4) == 0)
                     {
+            set_colour(RED);
                         strcpy(info, "\"Your arrogance condemns you, mortal!\"");
                         spell_casted = MONS_FIEND;        /* Fiend! */
                     }
@@ -711,6 +712,7 @@ void efreet_flask(void)
 
     if (random2(5) != 0)
     {
+        set_colour(RED);
         strcpy(info, "\"Thank you for releasing me!\"");
         mpr(info);
         create_monster(MONS_EFREET, 24, 7, you.x_pos, you.y_pos, MHITNOT, 250);

@@ -43,6 +43,7 @@
 #include "randart.h"
 #include "religion.h"
 #include "skills.h"
+#include "spells.h"
 #include "stuff.h"
 
 char mutate(int which_mutation);
@@ -1156,21 +1157,24 @@ void update_corpses(double elapsedTime)
 void handle_time(int time_delta)
 {
     // Nasty things happen to people who spend too long in Hell
-    if (you.where_are_you > 0 && you.where_are_you < 10 && you.where_are_you != 3 && random2(3) == 0)
+    if (you.where_are_you > 0 && you.where_are_you < 10 && you.where_are_you != 3 && random2(2) == 0)
     {
-        switch (random2(10))
+        switch (random2(17))
         {
         case 0:
             mpr("You hear diabolical laughter!");
             break;
         case 1:
+            set_colour(RED);
             mpr("\"Die, mortal!\"");
             break;
         case 2:
+            set_colour(RED);
             mpr("\"Trespassers are not welcome here!\"");
             break;
         case 3:
-            mpr("Twisted shapes form in the air around you.");
+            set_colour(RED);
+            mpr("\"You do not belong in this place!\"");
             break;
         case 4:
             mpr("You feel a terrible foreboding...");
@@ -1184,8 +1188,76 @@ void handle_time(int time_delta)
         case 7:
             mpr("Something frightening happens.");
             break;
+        case 8:
+            mpr("You sense an ancient evil watching you...");
+            break;
+        case 9:
+            mpr("You feel lost and a long, long way from home...");
+            break;
+        case 10:
+            mpr("You suddenly feel all small and vulnerable.");
+            break;
+        case 11:
+            mpr("A gut-wrenching scream fills the air!");
+            break;
+        case 12:
+            mpr("You shiver with fear.");
+            break;
+        case 13:
+            mpr("You sense a hostile presence.");
+            break;
+        case 14:
+            set_colour(RED);
+            mpr("\"Leave now, before it is too late!\"");
+            break;
+        case 15:
+            set_colour(RED);
+            mpr("\"You will not leave this place.\"");
+            break;
+        case 16:
+            set_colour(RED);
+            mpr("\"We have you now!\"");
+            break;
         }
 
+        if (random2(3) == 0)
+        {
+         if (random2(2) == 0) miscast_effect(SPTYP_NECROMANCY, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+          else if (random2(2) == 0) miscast_effect(SPTYP_SUMMONING, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                else if (random2(2) == 0) miscast_effect(SPTYP_CONJURATION, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                        else if (random2(2) == 0) miscast_effect(SPTYP_ENCHANTMENT, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+        }
+        else
+                if (random2(3) == 0)
+                switch(you.where_are_you)
+                {
+                 case BRANCH_DIS: miscast_effect(SPTYP_EARTH, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                      break;
+                 case BRANCH_GEHENNA: miscast_effect(SPTYP_FIRE, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                      break;
+                 case BRANCH_COCYTUS: miscast_effect(SPTYP_ICE, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                      break;
+                 case BRANCH_TARTARUS: miscast_effect(SPTYP_NECROMANCY, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                      break;
+                }
+        else
+          if (random2(3) == 0)
+            switch(you.where_are_you)
+                {
+                 case BRANCH_DIS: create_monster(summon_any_demon(2), 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+                      break;
+                 case BRANCH_GEHENNA: create_monster(MONS_FIEND, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+                      break;
+                 case BRANCH_COCYTUS: create_monster(MONS_ICE_FIEND, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+                      break;
+                 case BRANCH_TARTARUS: create_monster(MONS_SHADOW_FIEND, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
+                      break;
+                }
+
+// Note no "else". This can happen in addition to the above...
+
+        if (random2(3) == 0)
+    {
         create_monster(250, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
         if (random2(3) == 0)
             create_monster(250, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
@@ -1198,14 +1270,10 @@ void handle_time(int time_delta)
 
         if (random2(3) == 0)
             create_monster(250, 0, 1, you.x_pos, you.y_pos, MHITYOU, 250);
-
-        /* mons_place(2500, 1, you.x_pos, you.y_pos, 0, MHITNOT, 250, you.your_level);
-           if (random2(3) == 0) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, you.your_level);
-           if (random2(3) == 0) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, you.your_level);
-           if (random2(3) == 0) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, you.your_level); */
     }
+    } // End of special Hellish things
 
-    // Adjust the player's stats if he's deseased (or recovering).
+    // Adjust the player's stats if s/he's deseased (or recovering).
     if (you.disease == 0)
     {
         if (you.strength < you.max_strength && random2(100) == 0)
@@ -1239,7 +1307,7 @@ void handle_time(int time_delta)
         }
     }
 
-    // Adjust the player's stats if he has the deterioration mutation
+    // Adjust the player's stats if s/he has the deterioration mutation
     if (you.mutation[MUT_DETERIORATION] > 0 && random2(200) <= you.mutation[MUT_DETERIORATION] * 5 - 2)
         lose_stat(100, 1);
 
@@ -1263,7 +1331,7 @@ void handle_time(int time_delta)
         you.magic_contamination--;
     }
 
-    // Random change to identify staff in hand based off of Spellcasting
+    // Random chance to identify staff in hand based off of Spellcasting
     // and an appropriate other spell skill... is 1/20 too fast?
     if (you.equip[EQ_WEAPON] != -1
         && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES

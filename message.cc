@@ -37,6 +37,7 @@ char scrloc = 1;                /* Line of next (previous?) message */
 char store_message[30][200];    /* buffer of old messages */
 char store_count = 0;           /* current position in store_message */
 
+char message_colour;                    /* What colour to print the next message */
 
 void mpr(const char *inf)
 {
@@ -105,7 +106,10 @@ void mpr(const char *inf)
     gotoxy(1, scrloc + 18);
     strncpy(info2, inf, 78);
     info2[78] = 0;
+    textcolor(message_colour);
     cprintf(info2);
+    message_colour = LIGHTGREY;
+    textcolor(LIGHTGREY);
 
 /* Put the message into store_message, and move the '---' line forward */
     strncpy(store_message[store_count], inf, 78);
@@ -164,7 +168,7 @@ void more()
 #endif
 #ifdef DOS_TERM
     window(1, 18, 80, 25);
-    gotoxy(2, 8);
+    gotoxy(2, 7);
 #endif
     _setcursortype(_NORMALCURSOR);
     textcolor(7);
@@ -297,4 +301,10 @@ void replay_messages(void)
 
     return;
 
+}
+
+
+void set_colour(char set_message_colour)
+{
+ message_colour = set_message_colour;
 }

@@ -56,6 +56,12 @@
   #include "macro.h"
 #endif
 
+
+
+char verbose_dump;
+
+
+
 // ========================================================================
 //      Internal Functions
 // ========================================================================
@@ -67,7 +73,9 @@
 // Convert dollar signs to EOL and word wrap to 80 characters.
 // (for some obscure reason get_item_description uses dollar
 // signs instead of EOL).
-//
+//  - It uses $ signs because they're easier to manipulate than the EOL
+//  macro, which is of uncertain length (well, that and I didn't know how
+//  to do it any better at the time) (LH)
 //---------------------------------------------------------------
 static string munge_description(const string & inStr)
 {
@@ -385,6 +393,8 @@ static void dump_inventory(string & text, char show_prices)
     int i, j;
     char temp_id[4][50];
 
+    string text2;
+
     for (i = 0; i < 4; i++)
         for (j = 0; j < 50; j++)
             temp_id[i][j] = 1;
@@ -523,13 +533,32 @@ static void dump_inventory(string & text, char show_prices)
                             text += "gold)";
                         }
 
-                        text += EOL;
+//                        text += EOL;
 
-                        if (is_dumpable_artifact(you.inv_class[j], you.inv_type[j], you.inv_plus[j], you.inv_plus2[j], you.inv_dam[j], you.inv_ident[j]))
+                        if (is_dumpable_artifact(you.inv_class[j], you.inv_type[j], you.inv_plus[j], you.inv_plus2[j], you.inv_dam[j], you.inv_ident[j], verbose_dump))
                         {
-                            text += munge_description(get_item_description(you.inv_class[j], you.inv_type[j], you.inv_plus[j], you.inv_plus2[j], you.inv_dam[j], you.inv_ident[j]));
-                            text += EOL;
-                        }
+                            text2 = get_item_description(you.inv_class[j], you.inv_type[j], you.inv_plus[j], you.inv_plus2[j], you.inv_dam[j], you.inv_ident[j], verbose_dump);
+
+                            if (text2.length() > 0 && text2 [text2.length() - 1] == '$')
+                              text2 [text2.length() - 1] = '\0';
+
+                            // For some reason, this must be done twice
+                            //  or it doesn't work properly for unrandarts
+                            if (text2.length() > 0 && text2 [text2.length() - 1] == '$')
+                              text2 [text2.length() - 1] = '\0';
+
+//                            if (text2 [0] == '$')
+//                              text2 [0] = 32;
+
+                            if (text2 [0] != '$' && text2.length() > 0)
+                              text += EOL;
+
+/*                            if (text2.length() > 0 && text2 [text2.length() - 1] != '$')
+                                    text2 += '$';*/
+                            text += munge_description(text2); // get_item_description(you.inv_class[j], you.inv_type[j], you.inv_plus[j], you.inv_plus2[j], you.inv_dam[j], you.inv_ident[j], verbose_dump));
+                        } else text += EOL;
+
+
                     }
                 }
             }

@@ -370,6 +370,23 @@ char spell_fail(unsigned char spell)
                             PARM_EVASION)) * 5) - 2;
     }
 
+    if (you.equip[EQ_WEAPON] != -1
+                    && you.inv_class[you.equip[EQ_WEAPON]] != OBJ_STAVES)
+    {
+        int wpn_penalty = 0;
+
+        if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
+        {
+            wpn_penalty = (5 * (property(OBJ_WEAPONS,
+                                        you.inv_type[you.equip[EQ_WEAPON]],
+                                        PWPN_SPEED) - 12)) / 2;
+
+        }
+
+        if (wpn_penalty > 0)
+            chance += wpn_penalty;
+    }
+
     if (you.equip[EQ_SHIELD] != -1)
     {
         switch (you.inv_type[you.equip[EQ_SHIELD]])

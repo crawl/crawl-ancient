@@ -33,3 +33,12 @@
 #    $          Gold
 #
 #autopickup=$?!:"/0
+
+#How much information do we want in our character dumps?
+#With verbose on, all stats of special weapons (even generic
+#properties) are printed out.
+#Otherwise, only those properties which are specific to an "artefact" item
+#(ie one whose powers cannot be predicted from its name) are given.
+#
+verbose=0
+#

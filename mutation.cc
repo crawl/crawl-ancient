@@ -472,6 +472,9 @@ char mutate(int which_mutation)
                 && body_covered() > 2 && force == 0)
         return 0;
 
+    if (mutat == MUT_HORNS && you.species == SP_MINOTAUR)
+        return 0;
+
     if ((mutat == MUT_ACUTE_VISION || mutat == MUT_POISON_RESISTANCE || mutat == MUT_SPIT_POISON) && you.species == SP_NAGA)
         return 0;               // nagas have see invis and res poison and can spit poison
 

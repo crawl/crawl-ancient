@@ -255,7 +255,7 @@ void wield_weapon(char auto_wield)
         }
 
         if (hands_required_for_weapon( you.inv_class[item_wield_2],
-                                        you.inv_type[item_wield_2] ) == 2
+                            you.inv_type[item_wield_2] ) == HANDS_TWO_HANDED
                 && you.equip[EQ_SHIELD] != -1)
         {
             mpr("You can't wield that with a shield.");
@@ -628,7 +628,7 @@ void wear_armour()
 
     // weapon is two-handed
         hands_required_for_weapon( you.inv_class[you.equip[EQ_WEAPON]],
-                                    you.inv_type[you.equip[EQ_WEAPON]] ) == 2)
+                    you.inv_type[you.equip[EQ_WEAPON]] ) == HANDS_TWO_HANDED)
     {
         mpr("You can't wear a shield with a two-handed weapon.");
         return;
@@ -897,7 +897,7 @@ void wear_armour()
 
     if (removedCloak)
     {
-        strcpy(info, "Your cloak hinders you, but you put on the ");
+        strcpy(info, "Your cloak hinders you, but you put on ");
 
         // if we are exhanging body armor then we've already
         // accounted for taking the cloak on and off
@@ -905,7 +905,7 @@ void wear_armour()
             you.delay_t += 2 * property(you.inv_class[you.equip[EQ_CLOAK]], you.inv_type[you.equip[EQ_CLOAK]], 0);
     }
     else
-        strcpy(info, "You put on the ");
+        strcpy(info, "You put on ");
 
     in_name(armour_wear_2, 5, str_pass);
     strcat(info, str_pass);

@@ -248,8 +248,9 @@ void direct_effect(struct bolt beam[1])
         break;
 
     case DMNBM_MUTATION:
+        mpr("Strange energies course through your body.");
         if (mutate(100) == 0)
-            mpr("You feel very strange for a moment.");
+            mpr("You feel very weird for a moment.");
         break;
     }
 
@@ -310,6 +311,20 @@ void mons_direct_effect(struct bolt beam[1], int i)
     case DMNBM_BRAIN_FEED:      // brain feed - not implemented here (nor, probably, can be)
 
         break;
+
+    case DMNBM_MUTATION:
+        if (check_mons_magres(o, beam[0].ench_power) == 0)
+        {
+                if (mons_near(o))
+                {
+                    strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
+                    strcat(info, " resists.");
+                    mpr(info);
+                }
+                break;
+        }
+        monster_polymorph(o, 250, 100);
+                break;
 
     }                           // end switch
 

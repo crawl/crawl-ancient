@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <5>     9/9/99          BWR             Removed Great Swords skill
  *      <4>     8/6/99          BWR             added branch and level types
  *      <3>     6/2/99          DML             beams, clouds, ench, ms, kill,
                                                 other minor changes
@@ -224,17 +225,6 @@ enum BRANCH_STAIRS
     STAIRS_ELVEN_HALLS,
     STAIRS_TOMB,
     STAIRS_SWAMP
-};
-
-//
-// The various types of level (you.level_type).
-//
-enum LEVEL_TYPES
-{
-    LEVEL_DUNGEON,
-    LEVEL_LABYRINTH,
-    LEVEL_ABYSS,
-    LEVEL_PANDEMONIUM
 };
 
 enum BOOKS
@@ -559,6 +549,13 @@ enum GOOD_THINGS
     GOOD_CARDS
 };
 
+enum HANDS_REQUIRED
+{
+    HANDS_ONE_HANDED = 1,
+    HANDS_TWO_HANDED,
+    HANDS_ONE_OR_TWO_HANDED,
+};
+
 enum HELMET_DESCRIPTIONS
 {
     DHELM_WINGED = 1,
@@ -647,6 +644,17 @@ enum KILLER
      KILL_MON_MISSILE,
      KILL_MISC,
      KILL_RESET  /*abjuration, etc.*/
+};
+
+//
+// The various types of level (you.level_type).
+//
+enum LEVEL_TYPES
+{
+    LEVEL_DUNGEON,
+    LEVEL_LABYRINTH,
+    LEVEL_ABYSS,
+    LEVEL_PANDEMONIUM
 };
 
 #define YOU_KILL(x) ((x) == KILL_YOU || (x) == KILL_YOU_MISSILE)
@@ -1289,7 +1297,7 @@ enum SKILLS
     SK_FIGHTING,
     SK_SHORT_BLADES,
     SK_LONG_SWORDS,
-    SK_GREAT_SWORDS,
+    SK_UNUSED_1,          // SK_GREAT_SWORDS,  is now unused
     SK_AXES,
     SK_MACES_FLAILS,
     SK_POLEARMS,
@@ -1655,7 +1663,8 @@ enum TRAPS
 
 enum UNARMED_ATTACKS
 {
-    UNAT_KICK = 1,
+    UNAT_NO_ATTACK,
+    UNAT_KICK,
     UNAT_HEADBUTT,
     UNAT_TAILSLAP,
     UNAT_PUNCH

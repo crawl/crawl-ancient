@@ -322,7 +322,7 @@ void beam(struct bolt beam[1])
             if (beam[0].beam_name[0] == '0' && beam[0].colour == DARKGREY)
             {
                 env.cloud_type[env.cgrid[beam[0].bx][beam[0].by]] = random2(8) + 1;
-            }
+            } /* polymorph randomly changes clouds in its path */
 
             if (beam[0].colour == 200 || beam[0].beam_name[0] == '0')
                 goto out_of_cloud_bit;
@@ -517,7 +517,9 @@ out_of_cloud_bit:
                 hurted += random2(beam[0].damage);
 
             hurted -= random2(player_AC() + 1);
-            hurted -= random2(player_shield_class());   // don't bother with + 1 here
+            // don't bother with + 1 here
+            hurted -= random2(player_shield_class());
+            you.shield_blocks++;
 
             // shrapnel
             if (beam[0].flavour == BEAM_FRAG && !player_light_armour())
@@ -1247,15 +1249,17 @@ void missile(struct bolt beam[1], int throw_2)
                     }
                 }
                 else
-                    /* Start of : if it's not a tracer */
                 {
-
+                    /* Start of : if it's not a tracer */
                     if (you.equip[EQ_SHIELD] != -1)
                         if (beam[0].move_x != 0 || beam[0].move_y != 0)
                             exercise(SK_SHIELDS, random() % 2);
 
-                    if (player_shield_class() > 0 && random2(beam[0].hit * 5) <= random2(player_shield_class()))
+                    if (player_shield_class() > 0
+                            && random2(beam[0].hit * 5 + 5 * you.shield_blocks)
+                                        <= random2(player_shield_class()))
                     {
+                        you.shield_blocks++;
                         strcpy(info, "You block the ");
                         strcat(info, beam[0].beam_name);
                         strcat(info, ".");
@@ -2459,8 +2463,8 @@ void sticky_flame_monster(int mn, char source, int power)       /* modelled on t
 
 /*
    Places a cloud with the given stats. May delete old clouds to make way if
-   there are too many (30) on level, but won't place a cloud over another
-   cloud.
+   there are too many (30) on level. Will overwrite an old cloud under some
+   circumstances.
  */
 void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char ctarget_y, unsigned char cl_range)       // if env.cloud_type > 100, it is a monster's cloud
  {
@@ -2472,7 +2476,20 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
         c_deleted = random2(30);
 
     if (env.cgrid[ctarget_x][ctarget_y] != CNG)
-        return;                 // hmmm...
+    {
+     if ((env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] >= 5 // smoke
+         && env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] <= 8)
+         || env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] == 2 // stink
+         || env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] == 10 // smoke
+         || env.cloud_decay[env.cgrid[ctarget_x][ctarget_y]] <= 20)//soon gone
+     {
+            env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] = CLOUD_NONE;
+            env.cgrid[ctarget_x][ctarget_y] = CNG;
+            env.cloud_decay[env.cgrid[ctarget_x][ctarget_y]] = 0;
+            env.cloud_no--;
+     } else return;
+    }
+
 
     for (ci = 0; ci < CLOUDS; ci++)
     {

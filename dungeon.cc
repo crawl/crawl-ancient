@@ -218,7 +218,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][7] =
       27,                       // Throw frost
       81,                       // Ice armour
       SPELL_ICE_BOLT,
-     16,                        // Frost bolt
+      80,                        // Ice beast
       29},                      // freez cloud
 
         // Book of invocations
@@ -243,7 +243,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][7] =
     {0,
      125,                       // Freezing aura
       77,                       // Summon elemental
-      80,                       // Ice beast
+      16,                       // Frost bolt
       78,                       // Refrigeration
       SPELL_ICE_STORM,
      210},
@@ -797,6 +797,7 @@ void place_curse_skull(void);
 void place_altar(void);
 void prepare_swamp(void);
 void prepare_water(void);
+char rare_weapon(unsigned char w_type);
 
 /*void item_bugs(void);
    void find_item(unsigned int found); */
@@ -1710,7 +1711,8 @@ finished_monsters:
 
         // Add some guaranteed knives
         if (you.where_are_you == BRANCH_MAIN_DUNGEON
-                        && level_type == LEVEL_DUNGEON && many_many < 3)
+                        && level_type == LEVEL_DUNGEON
+                        && many_many < 5 && random3(many_many) == 0)
         {
             int item_no = items(0, OBJ_WEAPONS, WPN_KNIFE, 0, 0, 250);
 
@@ -3747,40 +3749,48 @@ int items(unsigned char allow_uniques,
 
     switch (mitm.base_type[bp])
     {
+
     case OBJ_WEAPONS:
-        mitm.sub_type[bp] = random3(19);
+
+     do
+     {
+                mitm.sub_type [bp] = random3(50);
+     } while(random3(11) >= rare_weapon(mitm.sub_type [bp]));
+
+
+/*        mitm.sub_type[bp] = random3(19);
 
         if (random3(6) == 0)
         {
-            switch (random3(11))
+            switch (random3(10))
             {
             case 0:
                 mitm.sub_type[bp] = WPN_GREAT_FLAIL;
                 break;
 
             case 1:
-            case 2:
                 mitm.sub_type[bp] = WPN_SPIKED_FLAIL;
                 break;
 
+            case 2:
             case 3:
-            case 4:
                 mitm.sub_type[bp] = WPN_GREAT_MACE;
                 break;
 
+            case 4:
             case 5:
             case 6:
-            case 7:
                 mitm.sub_type[bp] = WPN_AXE;
                 break;
 
+            case 7:
             case 8:
             case 9:
-            case 10:
                 mitm.sub_type[bp] = WPN_TRIDENT;
                 break;
             }
         }
+*/
 
         if (random3(200) < 20 - many_many)
             mitm.sub_type[bp] = WPN_KNIFE;
@@ -3808,7 +3818,12 @@ int items(unsigned char allow_uniques,
             mitm.sub_type[bp] = WPN_SABRE;
 
         if (many_many > 6 && random3(100) < 10 + many_many && random3(30) == 0)
-            mitm.sub_type[bp] = WPN_EVENINGSTAR + random3(14);
+        {
+             do
+             {
+                        mitm.sub_type [bp] = random3(50);
+             } while(rare_weapon(mitm.sub_type [bp]) > 0 || rare_weapon(mitm.sub_type [bp]) == -1);
+        }
 
         if (allow_uniques == 1)
         {
@@ -3936,7 +3951,6 @@ int items(unsigned char allow_uniques,
                     mitm.pluses[bp] += 9;
                     mitm.pluses2[bp] += 9;
                     break;
-                    // 7 - 23 are abyss orbs
                     // dam 188 - sword of Okawaru. This is not a 'unique_items' item because it's only ever generated with Okawaru
                     // talking axe, muttering club, sword of terror?
                 case 7:
@@ -4450,12 +4464,16 @@ out_of_uniques:
 
                 case WPN_DEMON_TRIDENT:
                 case WPN_DEMON_WHIP:
-                    if (random() % 2 == 0)
-                        set_weapon_special( bp, SPWPN_REACHING );
-
                 case WPN_DEMON_BLADE:
                     if (mitm.special[bp] >= 90)
                         mitm.special[bp] = mitm.special[bp] % 30;
+
+                    if (random() % 3 == 0
+                            && (mitm.sub_type[bp] == WPN_DEMON_WHIP
+                                || mitm.sub_type[bp] == WPN_DEMON_TRIDENT))
+                    {
+                        set_weapon_special( bp, SPWPN_REACHING );
+                    }
 
                     if (random() % 5 == 0)
                         set_weapon_special( bp, SPWPN_DRAINING );
@@ -4522,6 +4540,7 @@ out_of_uniques:
 
         if (force_type != 250)
             mitm.sub_type[bp] = force_type;
+
         if (force_spec != 250)
             switch (force_spec)
             {
@@ -4554,15 +4573,30 @@ out_of_uniques:
 
         }
 
-        if (random() % 7 == 0 && mitm.sub_type[bp] >= 1 && mitm.sub_type[bp] <= 3)
+        if (random() % 7 == 0 && mitm.sub_type[bp] >= 1
+                                                && mitm.sub_type[bp] <= 3)
+        {
             mitm.special[bp] = mitm.special[bp] % 30 + 1;
-        if (random() % 7 == 0 && mitm.sub_type[bp] >= 1 && mitm.sub_type[bp] <= 3)
+        }
+
+        if (random() % 7 == 0 && mitm.sub_type[bp] >= 1
+                                                && mitm.sub_type[bp] <= 3)
+        {
             mitm.special[bp] = mitm.special[bp] % 30 + 2;
-        if ((random() % 5 == 0 || mitm.special[bp] == 90 && random() % 3 == 0) && mitm.sub_type[bp] >= 1 && mitm.sub_type[bp] <= 3)
+        }
+
+        if ((random() % 5 == 0 || mitm.special[bp] == 90 && random() % 3 == 0)
+                        && mitm.sub_type[bp] >= 1 && mitm.sub_type[bp] <= 3)
+        {
             mitm.special[bp] = mitm.special[bp] % 30 + 3;
+        }
+
         quant = random3(9) + random3(12) + random3(15) + random3(12) + 1;
+        if (mitm.sub_type [bp] == MI_LARGE_ROCK) quant = 1 + random3(3) + random3(3);
+
         if (10 + many_many >= random3(100))
             mitm.pluses[bp] = random3(5);
+
         mitm.pluses[bp] += 50;
         break;
 
@@ -5102,7 +5136,7 @@ out_of_uniques:
 
     case OBJ_JEWELLERY: // rings
 
-        if (random3(2000) <= 100 + many_many * 3 && random() % 2 == 0
+        if (random3(2000) <= 100 + many_many * 3 && random() % 4 == 0
                 && many_many > 2 && you.level_type != 2 && you.level_type != 3)
         {
             icky = find_okay_unrandart(OBJ_JEWELLERY);
@@ -6308,7 +6342,7 @@ void give_item(void)
     case MONS_NORRIS:                   // Norris
         mitm.base_type[bp] = 0;
         mitm.colour[bp] = 11;
-        if (random3(4) == 0)
+        if (random3(6) == 0)
             mitm.sub_type[bp] = WPN_AXE + random3(4);
         else
             mitm.sub_type[bp] = 1 + random3(12);
@@ -6366,7 +6400,7 @@ void give_item(void)
         {
             mitm.base_type[bp] = 0;
             mitm.colour[bp] = 11;
-            switch (random3(7))
+            switch (random3(8))
             {
             case 0:
                 if (random3(10) == 0)
@@ -6390,7 +6424,7 @@ void give_item(void)
                 break;
 
             case 3:
-                if (random3(3) == 0)
+                if (random3(5) == 0)
                     mitm.sub_type[bp] = WPN_AXE;
                 else
                     mitm.sub_type[bp] = WPN_HAND_AXE;
@@ -6410,6 +6444,15 @@ void give_item(void)
             case 6:
                 mitm.sub_type[bp] = WPN_CLUB;
                 break;
+
+            case 7:
+                if (random3(3) == 0)
+                    mitm.sub_type[bp] = WPN_WHIP;
+                else
+                    mitm.sub_type[bp] = WPN_HAMMER;
+                break;
+
+
             }
         }
         else
@@ -6463,16 +6506,16 @@ void give_item(void)
         switch (random3(2))
         {
         case 0:
-            mitm.sub_type[bp] = WPN_BOW;
+            mitm.sub_type[bp] = WPN_SABRE;
             break;
-        case 6:
         case 1:
-            mitm.sub_type[bp] = WPN_HAND_CROSSBOW;
+            mitm.sub_type[bp] = WPN_WHIP;
             break;
         case 2:
             mitm.sub_type[bp] = WPN_SHORT_SWORD;
             break;
         case 3:
+        case 6:
             mitm.sub_type[bp] = WPN_LONG_SWORD;
             break;
         case 4:
@@ -6560,7 +6603,7 @@ void give_item(void)
     case MONS_VAMPIRE_KNIGHT:   // vampire knight
         mitm.base_type[bp] = 0;
         mitm.colour[bp] = LIGHTCYAN;
-        switch (random3(4))
+        switch (random3(6))
         {
         case 0:
             mitm.sub_type[bp] = WPN_LONG_SWORD;
@@ -6575,8 +6618,20 @@ void give_item(void)
             break;              // battleaxe
 
         case 3:
-            mitm.sub_type[bp] = WPN_GREAT_MACE;
+            if (random3(2) == 0) mitm.sub_type[bp] = WPN_GREAT_MACE;
+             else mitm.sub_type[bp] = WPN_GREAT_FLAIL;
             break;
+
+        case 4:
+            if (random3(2) == 0) mitm.sub_type[bp] = WPN_GLAIVE;
+             else if (random3(2) == 0) mitm.sub_type[bp] = WPN_HALBERD;
+              else mitm.sub_type[bp] = WPN_BROAD_AXE;
+            break;
+
+        case 5:
+            mitm.sub_type[bp] = WPN_AXE;
+            break;
+
         }
 
         if (random3(3) == 0)
@@ -6729,7 +6784,8 @@ void give_item(void)
 
     case MONS_DAEVA:                   // Daeva
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = WPN_LONG_SWORD;  /* longsword */
+        mitm.sub_type[bp] = WPN_LONG_SWORD;
+        if (random3(4) == 0) mitm.sub_type[bp] = WPN_GREAT_SWORD;
         mitm.special[bp] = 63;  /* glowing, holy wrath */
         mitm.pluses[bp] = 51 + random3(3);
         mitm.pluses2[bp] = 51 + random3(3);
@@ -6744,7 +6800,7 @@ void give_item(void)
     case MONS_MARGERY:                   // Margery
         mitm.base_type[bp] = 0;
 
-        // longsword, great sword, of scimitar
+        // longsword, great sword, scimitar
         mitm.sub_type[bp] = WPN_LONG_SWORD + random3(3);
 
         if (random3(7) == 0)
@@ -6755,8 +6811,10 @@ void give_item(void)
             mitm.sub_type[bp] = WPN_GREAT_MACE;
         if (random3(7) == 0)
             mitm.sub_type[bp] = WPN_BATTLEAXE;
+            if (random3(7) == 0)
+            mitm.sub_type[bp] = WPN_AXE;
         if (random3(7) == 0)
-            mitm.sub_type[bp] = WPN_EVENINGSTAR;
+            mitm.sub_type[bp] = WPN_BROAD_AXE;
         if (random3(7) == 0)
             mitm.sub_type[bp] = WPN_DEMON_TRIDENT;
         if (random3(7) == 0)
@@ -7423,6 +7481,10 @@ void item_colour(int p)
             {
                 // caps and wizard's hats are random coloured
                 mitm.colour[bp] = random3(15) + 1;
+            }
+            else
+            {
+                mitm.colour[bp] = LIGHTCYAN;
             }
             break;
 
@@ -10534,6 +10596,10 @@ void prepare_swamp(void)
 
 }
 
+
+/* Gives water which is next to ground/shallow water a chance of being
+ * shallow. Checks each water space.
+ */
 void prepare_water(void)
 {
 
@@ -10568,6 +10634,147 @@ void prepare_water(void)
     }
 
 }
+
+/* Checks how rare a weapon is. Many of these have special routines for
+ * placement, especially those with a rarity of zero. Chance is out of 10.
+ */
+char rare_weapon(unsigned char w_type)
+{
+
+ switch(w_type)
+ {
+    case WPN_CLUB:
+        return 10;
+
+    case WPN_MACE:
+        return 9;
+
+    case WPN_FLAIL:
+        return 8;
+
+    case WPN_KNIFE:
+        return 0; /* special routines for placing this one */
+
+    case WPN_DAGGER:
+        return 10;
+
+    case WPN_MORNINGSTAR:
+        return 8;
+
+    case WPN_SHORT_SWORD:
+        return 8;
+
+    case WPN_LONG_SWORD:
+        return 8;
+
+    case WPN_GREAT_SWORD:
+        return 6;
+
+    case WPN_SCIMITAR:
+        return 6;
+
+    case WPN_HAND_AXE:
+        return 9;
+
+    case WPN_BATTLEAXE:
+        return 6;
+
+    case WPN_SPEAR:
+        return 8;
+
+    case WPN_TRIDENT:
+        return 6;
+
+    case WPN_HALBERD:
+        return 5;
+
+    case WPN_SLING:
+        return 8;
+
+    case WPN_BOW:
+        return 8;
+
+    case WPN_CROSSBOW:
+        return 6;
+
+    case WPN_HAND_CROSSBOW:
+        return 4;
+
+    case WPN_GLAIVE:
+        return 5;
+
+    case WPN_QUARTERSTAFF:
+        return 9;
+
+    case WPN_SCYTHE:
+        return 2;
+
+    case WPN_GIANT_CLUB:
+        return 1;
+
+    case WPN_GIANT_SPIKED_CLUB:
+        return 1;
+
+    case WPN_EVENINGSTAR:
+        return 0;
+
+    case WPN_QUICK_BLADE:
+        return 0;
+
+    case WPN_KATANA:
+        return 0;
+
+    case WPN_EXECUTIONERS_AXE:
+        return 0;
+
+    case WPN_DOUBLE_SWORD:
+        return 0;
+
+    case WPN_TRIPLE_SWORD:
+        return 0;
+
+    case WPN_HAMMER:
+        return 8;
+
+    case WPN_ANCUS:
+        return 2;
+
+    case WPN_WHIP:
+        return 4;
+
+    case WPN_SABRE:
+        return 8;
+
+    case WPN_DEMON_BLADE:
+        return 0;
+
+    case WPN_DEMON_WHIP:
+        return 0;
+
+    case WPN_DEMON_TRIDENT:
+        return 0;
+
+    case WPN_BROAD_AXE:
+        return 6;
+
+    case WPN_AXE:
+        return 7;
+
+    case WPN_SPIKED_FLAIL:
+        return 6;
+
+    case WPN_GREAT_MACE:
+        return 3;
+
+    case WPN_GREAT_FLAIL:
+        return 3;
+
+    default: return -1;
+
+ }
+
+}
+
 
 /*
    void item_bugs(void)

@@ -232,6 +232,22 @@ query:
     strcat(info, str_pass);
     mpr(info);
 
+    if (you.inv_quantity[throw_2] > 0)
+    {
+        strcpy(info, " ");
+        if (throw_2 <= 25)
+            info[0] = throw_2 + 97;
+        else
+            info[0] = throw_2 + 39;
+
+        info[1] = '\0';                /* This null-terminates it, right? */
+        strcat(info, " - ");
+
+        in_name(throw_2, 3, str_pass);
+        strcat(info, str_pass);
+        mpr(info);
+    }
+
     if (throw_3 == you.equip[EQ_WEAPON] || throw_2 == you.equip[EQ_WEAPON])
         wield_change = 1;
 

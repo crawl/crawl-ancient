@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <3>      9/11/99        LRH             Can't blink in the Abyss
  *      <3>      6/22/99        BWR             Removed teleport control from
  *                                              random_blink().
  *      <2>      5/20/99        BWR             Increased greatest healing.
@@ -90,6 +91,12 @@ void blink(void)
         return;
     }
 
+        if (you.your_level == LEVEL_ABYSS && random2(3) != 0)
+    {
+        mpr("The power of the Abyss keeps you in your place!");
+        return;
+    }
+
     if (you.conf != 0)
     {
         random_blink();
@@ -154,6 +161,14 @@ void random_blink(void)
         mpr(info);
         return;
     }
+
+        if (you.your_level == LEVEL_ABYSS && random2(3) != 0)
+    {
+        mpr("The power of the Abyss keeps you in your place!");
+        return;
+    }
+
+
 
     strcpy(info, "You blink.");
     mpr(info);
@@ -272,7 +287,7 @@ void cast_fire_storm(int powc)
                 summd = mons_place(21, 1, beam[0].target_x, beam[0].target_y, 4, MHITNOT, 250, you.your_level);
             }
 
-            if (grd[beam[0].target_x][beam[0].target_y] > 10 && env.cgrid[beam[0].target_x][beam[0].target_y] == CNG && (beam[0].target_x != you.x_pos || beam[0].target_y != you.y_pos))
+            if (grd[beam[0].target_x][beam[0].target_y] > 10 && (beam[0].target_x != you.x_pos || beam[0].target_y != you.y_pos))
             {
                 place_cloud(1, beam[0].target_x, beam[0].target_y, beam[0].range);
             }
@@ -551,7 +566,7 @@ void stinkcl(char cl_x, char cl_y, struct bolt beam[1])
             beam[0].target_x = cl_x + stx;
             beam[0].target_y = cl_y + sty;
 
-            if (grd[beam[0].target_x][beam[0].target_y] > 10 && env.cgrid[beam[0].target_x][beam[0].target_y] == CNG)
+            if (grd[beam[0].target_x][beam[0].target_y] > 10)
             {
 //               place_cloud();
                 place_cloud(2, beam[0].target_x, beam[0].target_y, beam[0].range);
@@ -613,7 +628,7 @@ void big_cloud(char clouds, char cl_x, char cl_y, int pow)      //, struct bolt 
             if (lasts > 12)
                 lasts = 12 + random2(4);
 
-            if (grd[cl_x + stx][cl_y + sty] > 10 && env.cgrid[cl_x + stx][cl_y + sty] == CNG)
+            if (grd[cl_x + stx][cl_y + sty] > 10)
             {
                 place_cloud(clouds, cl_x + stx, cl_y + sty, lasts);
             }

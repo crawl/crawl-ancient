@@ -1512,7 +1512,7 @@ int find_okay_unrandart(unsigned char aclass)
 
     for (x = 0, count = 0; x < NO_UNRANDARTS; x++)
     {
-        if (unranddata[x].ura_cl = aclass && does_unrandart_exist(x) == 0)
+        if (unranddata[x].ura_cl == aclass && does_unrandart_exist(x) == 0)
         {
             count++;
             if (random4(count) == 0)

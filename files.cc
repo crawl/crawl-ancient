@@ -67,13 +67,21 @@
 #include "mstruct.h"
 #include "mstuff2.h"
 #include "output.h"
+#include "overmap.h"
 #include "player.h"
 #include "randart.h"
 #include "skills2.h"
 #include "stuff.h"
 #include "view.h"
 
-bool tmp_file_pairs[MAX_LEVELS][MAX_DUNGEONS];
+
+// These three are defined in overmap.cc
+extern unsigned char altars_present [MAX_LEVELS] [MAX_BRANCHES];
+extern char stair_level [MAX_BRANCHES];
+extern unsigned char feature [MAX_LEVELS] [MAX_BRANCHES];
+
+
+bool tmp_file_pairs[MAX_LEVELS][MAX_BRANCHES];
 
 /*
    Order for looking for conjurations for the 1st & 2nd spell slots,
@@ -1448,7 +1456,7 @@ void save_game(char leave_game)
 #endif
 #endif
 
-    int datalen = 42 + 30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25 + 12 * 52 + 50 * 5 + 50 * 4 + 50 + 50 + 6 * 50 + 50 + 50 + 30 + 30 + 30 + 100 + 50 + 100 + NO_UNRANDARTS + MAX_LEVELS * MAX_DUNGEONS;
+    int datalen = 42 + 30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25 + 12 * 52 + 50 * 5 + 50 * 4 + 50 + 50 + 6 * 50 + 50 + 50 + 30 + 30 + 30 + 100 + 50 + 100 + NO_UNRANDARTS + MAX_LEVELS * MAX_BRANCHES + MAX_BRANCHES + (2 * (MAX_LEVELS * MAX_BRANCHES));
     char *buf = (char *) malloc(datalen);
     char *p = buf;
 
@@ -1463,7 +1471,7 @@ void save_game(char leave_game)
         *p++ = 0;               // reserved
 
     for (i = 0; i < MAX_LEVELS; i++)
-        for (j = 0; j < MAX_DUNGEONS; j++)
+        for (j = 0; j < MAX_BRANCHES; j++)
             *p++ = (char) tmp_file_pairs[ i ][ j ];
 
     for (j = 0; j < 30; ++j)
@@ -1664,6 +1672,19 @@ void save_game(char leave_game)
     for (j = 0; j < NO_UNRANDARTS; ++j)
         *p++ = does_unrandart_exist(j);
 
+    for (j = 0; j < MAX_BRANCHES; ++j)
+        *p++ = stair_level [j];
+
+    for (i = 0; i < MAX_LEVELS; ++i)
+    {
+        for (j = 0; j < MAX_BRANCHES; ++j)
+        {
+                *p++ = altars_present [i] [j];
+                *p++ = feature [i] [j];
+        }
+    }
+
+
     if (p != buf + datalen)
     {
         perror("opa (3)...");
@@ -1715,59 +1736,6 @@ void save_game(char leave_game)
 
     clrscr();
 
-#if defined(SAVE_PACKAGE_CMD) && defined(DO_ANTICHEAT_CHECKS)
-    struct stat stat_buff;
-    char  zip_buff[kFileNameLen];
-
-    strcpy( zip_buff, name_buff );
-    strcat( zip_buff, PACKAGE_SUFFIX );
-
-    if (stat( zip_buff, &stat_buff ) == 0)
-    {
-        int i = 0;
-        for ( ; i < 100; i++ ) {
-            GDBM_FILE  dbf = gdbm_open( SAVE_DIR_PATH "savegame.db", 0,
-                                                GDBM_WRCREAT, 0660, NULL );
-            datum  key, content;
-
-            if (dbf)
-            {
-                key.dsize = strlen( name_buff );
-                key.dptr = name_buff;
-
-                char num_buff[ sizeof( int ) * 2 + 1 ];
-                content.dsize = sizeof( int ) * 2 + 1;
-
-                sprintf( num_buff, "%x", stat_buff.st_ctime );
-                content.dptr = num_buff;
-
-                gdbm_store( dbf, key, content, GDBM_REPLACE );
-
-                gdbm_close( dbf );
-            }
-
-            // We only want to delay and loop if we might be locked out
-            // from being a writer.  Other errors or success will break
-            // out of the loop.
-            if (gdbm_errno != GDBM_CANT_BE_WRITER)
-                break;
-
-            delay(20);
-        }
-
-        if (i == 100)
-        {
-            cprintf( "Error opening database: %s", gdbm_strerror(gdbm_errno) );
-            more();
-        }
-    }
-    else
-    {
-        cprintf( "Saving error: Cannot stat savefile!" );
-        more();
-    }
-#endif
-
     cprintf("See you soon!");
 
     end(0);
@@ -1804,9 +1772,9 @@ void restore_game()
         end(-1);
     }
 
-    int oldlen = 30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25 + 12 * 52 + 50 * 5 + 50 * 4 + 50 + 50 + 6 * 50 + 50 + 50 + 30 + 30 + 30 + 100 + 50 + 100 + NO_UNRANDARTS;
+    int oldlen = 30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25 + 12 * 52 + 50 * 5 + 50 * 4 + 50 + 50 + 6 * 50 + 50 + 50 + 30 + 30 + 30 + 100 + 50 + 100 + NO_UNRANDARTS + MAX_BRANCHES + (2 * (MAX_LEVELS * MAX_BRANCHES));
 
-    int datalen = oldlen + 42 + MAX_LEVELS * MAX_DUNGEONS;
+    int datalen = oldlen + 42 + MAX_LEVELS * MAX_BRANCHES;
     char *buf = (char *) malloc(datalen);
     char *p = buf;
 
@@ -1846,7 +1814,7 @@ void restore_game()
         if (minorVersion >= 2)
         {
             for (int level = 0; level < MAX_LEVELS; level++)
-                for (int dungeon = 0; dungeon < MAX_DUNGEONS; dungeon++)
+                for (int dungeon = 0; dungeon < MAX_BRANCHES; dungeon++)
                     tmp_file_pairs[ level ][ dungeon ] = *p++;
         }
 
@@ -2044,6 +2012,18 @@ void restore_game()
 
     for (j = 0; j < NO_UNRANDARTS; ++j)
         set_unrandart_exist(j, *p++);
+
+    for (i = 0; i < MAX_BRANCHES; ++i)
+        stair_level[i] = *p++;
+
+    for (i = 0; i < MAX_LEVELS; ++i)
+    {
+        for (j = 0; j < MAX_BRANCHES; ++j)
+        {
+                altars_present [i] [j] = *p++;
+                feature [i] [j] = *p++;
+        }
+    }
 
     if (p != buf + datalen && p != buf + oldlen && p != (buf + oldlen + 42))
     {
@@ -2447,7 +2427,7 @@ void generate_random_demon(void)
     }
     else
         ghost.values[5] = 101;
-/* demons, as ghosts, automatically get res poison + prot_life */
+/* demons, like ghosts, automatically get res poison + prot_life */
     if (random2(3) != 0)
     {
         ghost.values[6] = 0;    /* res_elec */
@@ -2481,8 +2461,8 @@ void generate_random_demon(void)
     menv[rdem].armor_class = ghost.values[2];
     menv[rdem].evasion = ghost.values[1];
     menv[rdem].speed = 10;
-    if (random2(3) == 0)
-        menv[rdem].speed = 6 + random2(13);
+    if (random2(3) != 0)
+        menv[rdem].speed = 8 + random2(10);
     menv[rdem].speed_increment = 70;
     menv[rdem].number = 1 + random2(15);        /* demon's colour */
 

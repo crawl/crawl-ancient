@@ -1279,7 +1279,7 @@
     {
         7, 3, 5, 0
     }
-    ,5, 10, 10, 7, RED, C_NOCORPSE, Z_NOZOMBIE, S_SCREAM, I_HIGH, 1
+    ,5, 10, 13, 7, RED, C_NOCORPSE, Z_NOZOMBIE, S_SCREAM, I_HIGH, 1
 }
 ,
 
@@ -2736,7 +2736,7 @@
     {
         12, 3, 5, 0
     }
-    ,7, 8, 8, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SCREAM, I_HIGH, 1
+    ,7, 8, 15, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SCREAM, I_HIGH, 1
 }
 ,
 
@@ -2764,7 +2764,7 @@
     {
         12, 3, 5, 0
     }
-    ,10, 10, 10, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
+    ,10, 10, 12, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
 }
 ,
 
@@ -2778,7 +2778,7 @@
     {
         14, 3, 5, 0
     }
-    ,5, 12, 10, 7, 81, C_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+    ,5, 12, 12, 7, 81, C_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
 }
 ,
 

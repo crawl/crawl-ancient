@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <6>      9/09/99        BWR             Code for 1-1/2 hand weapons
  *      <5>      8/08/99        BWR             Reduced power of EV/shields
  *      <4>      6/22/99        BWR             Changes to stabbing code, made
  *                                              most gods not care about the
@@ -69,14 +70,16 @@
   #include "macro.h"
 #endif
 
-#define HIT_WEAK 5
-#define HIT_MED 12
-#define HIT_STRONG 21
+#define HIT_WEAK 7
+#define HIT_MED 18
+#define HIT_STRONG 36
+// ... was 5, 12, 21
 
 int jelly_divide(int jel);
 void place_monster_corpse(unsigned char mcr);
 extern char wield_change;       /* defined in output.cc */
-int weapon_type_modify(int weap, char *st_prn, int damage);
+int weapon_type_modify(int weap, char *st_prn, char *noise2, int damage);
+
 
 void you_attack(int monster_attacked, bool unarmed_attacks )
 {
@@ -86,8 +89,56 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
     char stab_bonus = 0;
 
 //int mmov_x = 0;
-    char str_pass[80],damage_noise[20];
+    char str_pass[80],damage_noise[20],damage_noise2[20];
     int special_brand = 0;
+
+    int heavy_armour = 0;
+
+    if (you.equip[EQ_SHIELD] != -1)
+    {
+        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_SHIELD && you.skills[SK_SHIELDS] < random2(7))
+            heavy_armour++;
+        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD && you.skills[SK_SHIELDS] < random2(13))
+            heavy_armour++;
+        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD && you.skills[SK_SHIELDS] < random2(13))
+            heavy_armour++;
+        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD && you.skills[SK_SHIELDS] < random2(13))
+            heavy_armour += random2(4);
+    }
+    if (you.equip[EQ_BODY_ARMOUR] != -1)
+    {
+        if (property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION) < 0 && random2(you.skills[SK_ARMOUR]) < abs(property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION)))
+            heavy_armour += random2(abs(property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION)));
+    }
+
+    if (you.equip[EQ_WEAPON] == -1)
+        heavy_armour *= 2 + random2(2);
+
+    // We calculate these up here so that we know about what we'll be doing
+    // this combat turn.
+    bool can_do_unarmed_combat = false;
+    bool use_hand_and_a_half_bonus = false;
+
+    if (you.burden_state == 0
+                    && random2(20) < you.skills[SK_UNARMED_COMBAT]
+                    && random2(heavy_armour + 1) <= 1)
+    {
+        can_do_unarmed_combat = true;
+    }
+
+    // if we're not getting potential unarmed attacks, and not wearing a
+    // shield, and have a suitable uncursed weapon we get the bonus.
+    if (unarmed_attacks && !can_do_unarmed_combat
+            && you.equip[EQ_SHIELD] == -1
+            && you.equip[EQ_WEAPON] != -1
+            && you.inv_plus[you.equip[EQ_WEAPON]] < 130    // is uncursed
+            && hands_required_for_weapon( you.inv_class[you.equip[EQ_WEAPON]],
+                                you.inv_type[you.equip[EQ_WEAPON]] )
+                                            == HANDS_ONE_OR_TWO_HANDED)
+    {
+        // this is currently a +1 dam, +1 to hit, -1 speed bonus
+        use_hand_and_a_half_bonus = true;
+    }
 
 /*
    IMPORTANT: If damage routines are changed, must also change in ouch.cc
@@ -217,30 +268,13 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
         your_to_hit -= 3;
     }
 
-    int heavy_armour = 0;
-
-    if (you.equip[EQ_SHIELD] != -1)
-    {
-        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_SHIELD && you.skills[SK_SHIELDS] < random2(7))
-            heavy_armour++;
-        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD && you.skills[SK_SHIELDS] < random2(13))
-            heavy_armour++;
-        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD && you.skills[SK_SHIELDS] < random2(13))
-            heavy_armour++;
-        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD && you.skills[SK_SHIELDS] < random2(13))
-            heavy_armour += random2(4);
-    }
-    if (you.equip[EQ_BODY_ARMOUR] != -1)
-    {
-        if (property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION) < 0 && random2(you.skills[SK_ARMOUR]) < abs(property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION)))
-            heavy_armour += random2(abs(property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION)));
-    }
-    if (you.equip[EQ_WEAPON] == -1)
-        heavy_armour *= 2 + random2(2);
 
     your_to_hit -= heavy_armour;
 
     your_to_hit = random2(your_to_hit);
+
+    if (use_hand_and_a_half_bonus)
+        your_to_hit += random2(3);
 
     int damage = 1;
 
@@ -297,6 +331,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
         }
         damage += you.skills[SK_UNARMED_COMBAT];
     }
+
     if (you.equip[EQ_WEAPON] != -1)
     {
         if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
@@ -322,13 +357,46 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
 
             weapon_speed2 -= you.skills[weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]])] / 2;
 
+            int min_speed = 10;
+
             if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES)
             {
-                if (weapon_speed2 < property(OBJ_WEAPONS, WPN_QUARTERSTAFF, PWPN_SPEED) / 2)
-                    weapon_speed2 = property(OBJ_WEAPONS, WPN_QUARTERSTAFF, PWPN_SPEED) / 2;
+                min_speed = property(OBJ_WEAPONS, WPN_QUARTERSTAFF,
+                                                        PWPN_SPEED) / 2;
             }
-            else if (weapon_speed2 < property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_SPEED) / 2)
-                weapon_speed2 = property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_SPEED) / 2;
+            else
+            {
+                min_speed = property(you.inv_class[you.equip[EQ_WEAPON]],
+                    you.inv_type[you.equip[EQ_WEAPON]], PWPN_SPEED) / 2;
+            }
+
+            // Using both hands can get a weapon up to speed 7
+            if ((hands_required_for_weapon(
+                        you.inv_class[you.equip[EQ_WEAPON]],
+                        you.inv_type[you.equip[EQ_WEAPON]]) == HANDS_TWO_HANDED
+                    || use_hand_and_a_half_bonus)
+                && min_speed > 7)
+            {
+                min_speed = 7;
+            }
+
+
+            if (weapon_speed2 < min_speed)
+                weapon_speed2 = min_speed;
+
+            if (you.equip[EQ_SHIELD] != -1)
+            {
+                switch (you.inv_type[you.equip[EQ_SHIELD]])
+                {
+                case ARM_SHIELD:
+                    weapon_speed2 += 1;
+                    break;
+
+                case ARM_LARGE_SHIELD:
+                    weapon_speed2 += 2;
+                    break;
+                }
+            }
         }
     }
     else
@@ -340,6 +408,11 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
                 weapon_speed2 = 4;
         }
     }
+
+    // Hand and a half bonus only helps speed up to a point, any more
+    // than speed 10 must come from skill and the weapon
+    if (use_hand_and_a_half_bonus && weapon_speed2 > 10)
+        weapon_speed2--;
 
     ASSERT(weapon_speed2 > 0);
     you.time_taken *= weapon_speed2;
@@ -442,14 +515,27 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
             else
                 damage_done += hoggl;
 
-            if (you.inv_dam[you.equip[EQ_WEAPON]] / 30 == DWPN_DWARVEN && you.species >= SP_HILL_DWARF && you.species <= SP_MOUNTAIN_DWARF)
+            if (use_hand_and_a_half_bonus
+                    || hands_required_for_weapon(
+                        you.inv_class[you.equip[EQ_WEAPON]],
+                        you.inv_type[you.equip[EQ_WEAPON]]) == HANDS_TWO_HANDED)
             {
                 damage_done += random2(3);
             }
-            if (you.inv_dam[you.equip[EQ_WEAPON]] / 30 == DWPN_ORCISH && you.species == SP_HILL_ORC)
+
+            if (you.inv_dam[you.equip[EQ_WEAPON]] / 30 == DWPN_DWARVEN
+                        && you.species >= SP_HILL_DWARF
+                                && you.species <= SP_MOUNTAIN_DWARF)
+            {
+                damage_done += random2(3);
+            }
+
+            if (you.inv_dam[you.equip[EQ_WEAPON]] / 30 == DWPN_ORCISH
+                        && you.species == SP_HILL_ORC)
             {
                 damage_done += random2(2);
             }
+
             if (you.inv_ident[you.equip[EQ_WEAPON]] < 3 && random2(100) < you.skills[weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]])])
             {
                 you.inv_ident[you.equip[EQ_WEAPON]] = 3;
@@ -515,7 +601,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
         }
 
         damage_done = weapon_type_modify(you.equip[EQ_WEAPON],damage_noise,
-                                                               damage_done);
+                                                 damage_noise2, damage_done);
         if (damage_done < 0)
             damage_done = 0;
         menv[monster_attacked].hit_points -= damage_done;
@@ -590,7 +676,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
     else
     {
         hit = 0;
-        if (your_to_hit + heavy_armour >= menv[monster_attacked].evasion)
+        if (your_to_hit + heavy_armour / 2 >= menv[monster_attacked].evasion)
         {
             strcpy(info, "Your armour prevents you from hitting ");
         }
@@ -607,6 +693,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
         strcat(info,damage_noise);
         strcat(info," ");
         strcat(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 1));
+        strcat(info,damage_noise2);
 #ifdef WIZARD
         itoa(damage_done, st_prn, 10);
         strcat(info, " for ");
@@ -1072,11 +1159,9 @@ mons_dies:
         char attack_name[20] = "";
         int sc_dam = 0;
 
-        int unarmed_attack = 0;
+        int unarmed_attack = UNAT_NO_ATTACK;
 
-        if (you.burden_state == 0
-                        && random2(20) < you.skills[SK_UNARMED_COMBAT]
-                        && random2(heavy_armour + 1) <= 1)
+        if (can_do_unarmed_combat)
         {
             unarmed_attack = random2(2) + 1;
 
@@ -1197,8 +1282,9 @@ mons_dies:
                 if (random2(2) == 0 || you.equip[EQ_SHIELD] != -1
                     || (you.equip[EQ_WEAPON] != -1
                         && hands_required_for_weapon(
-                                    you.inv_class[you.equip[EQ_WEAPON]],
-                                    you.inv_type[you.equip[EQ_WEAPON]] ) == 2))
+                                you.inv_class[you.equip[EQ_WEAPON]],
+                                you.inv_type[you.equip[EQ_WEAPON]] )
+                                                        == HANDS_TWO_HANDED))
                 {
                     continue;
                 }
@@ -1379,7 +1465,7 @@ mons_dies:
 
 
 
-int weapon_type_modify(int weapnum, char *noise, int damage)
+int weapon_type_modify(int weapnum, char *noise, char *noise2, int damage)
 {
      /* Added by DML 6/10/99.
         For now, always returns damage: that is, it never modifies values,
@@ -1397,6 +1483,8 @@ int weapon_type_modify(int weapnum, char *noise, int damage)
           }
      }
 
+         strcpy(noise2, "");
+
      switch(weap_type)
      {
      case WPN_KNIFE:
@@ -1409,7 +1497,11 @@ int weapon_type_modify(int weapnum, char *noise, int damage)
                strcpy(noise,"puncture");
           else if(damage<HIT_STRONG)
                strcpy(noise,"impale");
-          else strcpy(noise,"spit like a pig");
+          else
+          {
+            strcpy(noise,"spit");
+            strcpy(noise2, " like a pig");
+          }
           return damage;
      case WPN_BOW:
      case WPN_CROSSBOW:
@@ -1440,7 +1532,11 @@ int weapon_type_modify(int weapnum, char *noise, int damage)
                strcpy(noise,"slice");
           else if(damage<HIT_STRONG)
                strcpy(noise,"slash");
-          else strcpy(noise,"open like a pillowcase");
+          else
+          {
+            strcpy(noise,"open");
+            strcpy(noise2," like a pillowcase");
+          }
           return damage;
      case WPN_SLING:
      case WPN_CLUB:
@@ -1460,7 +1556,11 @@ int weapon_type_modify(int weapnum, char *noise, int damage)
                strcpy(noise,"sock");
           else if(damage<HIT_STRONG)
                strcpy(noise,"bludgeon");
-          else strcpy(noise,"crush like a grape");
+          else
+          {
+            strcpy(noise,"crush");
+            strcpy(noise2," like a grape");
+          }
           return damage;
      case WPN_WHIP:
      case WPN_DEMON_WHIP:
@@ -1637,10 +1737,11 @@ void monster_attack(int monster_attacking)
         }
 
         if (player_shield_class() > 0 && you.paralysis == 0 && you.conf == 0
-                    // Raised this from +10 -- bwross
-                    && random2(menv[monster_attacking].hit_dice + 15)
-                                        <= random2(player_shield_class()))
+                && random2(menv[monster_attacking].hit_dice + 15
+                                    + 5 * you.shield_blocks)
+                                            <= random2(player_shield_class()))
         {
+            you.shield_blocks++;
             strcpy(info, "You block ");
             int mmov_x = menv[monster_attacking].inv[hand_used];
 
@@ -3887,6 +3988,7 @@ void monster_polymorph(unsigned char monsc, unsigned char targetc, int power)
         }
         while (mons_rarity(targetc) == 0
                 || targetc == MONS_SHAPESHIFTER
+                || targetc == MONS_GLOWING_SHAPESHIFTER
                 || targetc == MONS_SMALL_ZOMBIE
                 || targetc == MONS_BIG_ZOMBIE
                 || targetc == MONS_SPECTRAL_THING

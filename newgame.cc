@@ -5,6 +5,9 @@
  *
  *  Change History (most recent first):
  *
+ *      <8>      9/09/99        BWR             Changed character selection
+ *                                              screens look (added sub-species
+ *                                              menus from Dustin Ragan)
  *      <7>      7/13/99        BWR             Changed assassins to use
  *                                              hand crossbows, changed
  *                                              rangers into hunters.
@@ -256,58 +259,6 @@ name_q:
     {
         cprintf(EOL "Loading game..." EOL);
 
-#ifdef DO_ANTICHEAT_CHECKS
-        // We make the assumption here that if the file cannot be stat'ed,
-        // or the savegame db cannot be opened that these are system
-        // problems and don't punish the player for it.
-        struct stat  stat_buff;
-
-        if (stat( zip_buff, &stat_buff ) == 0)
-        {
-            GDBM_FILE  dbf = gdbm_open( SAVE_DIR_PATH "savegame.db", 0,
-                                                 GDBM_READER, 0660, NULL );
-            datum      key, content;
-
-            if (dbf)
-            {
-                key.dsize = strlen( name_buff );
-                key.dptr = name_buff;
-
-                content = gdbm_fetch( dbf, key );
-
-                if (!content.dptr)
-                {
-                    cprintf( EOL "Could not find game %s in database" EOL,
-                                                                    key.dptr );
-                    end(-1);
-                }
-                else
-                {
-                    int db_ctime = strtol( content.dptr, NULL, 16 );
-                    if ((int) stat_buff.st_ctime != db_ctime)
-                    {
-                        cprintf( EOL "Invalid time stamp %d != %d" EOL,
-                                            stat_buff.st_ctime, db_ctime );
-                        end(-1);
-                    }
-                }
-
-                gdbm_close( dbf );
-            }
-            else
-            {
-                cprintf( EOL "Error opening database: %s" EOL,
-                                                gdbm_strerror(gdbm_errno) );
-                end(-1);
-            }
-        }
-        else
-        {
-            cprintf( EOL "Could not stat saved game." EOL );
-            end(-1);
-        }
-#endif
-
         // Create command
         char cmd_buff[1024];
 
@@ -322,12 +273,15 @@ name_q:
     }
     else
     {
-#ifdef DO_ANTICHEAT_CHECKS
+  #ifdef DO_ANTICHEAT_CHECKS
         // Simple security patch -- must have zip file otherwise invalidate
-        // the character.
+        // the character.  Right now this just renames the .sav file to
+        // .bak, allowing anyone with the appropriate permissions to
+        // fix a character in the case of a bug.  This could be changed
+        // to unlinking the file(s) which would remove the character.
         strcat( name_buff, ".bak" );
         rename( char_fil, name_buff );
-#endif
+  #endif
     }
 
 #else
@@ -361,32 +315,48 @@ name_q:
     cprintf(EOL EOL "");
 #endif
 
+// Same with DOS
+#ifdef DOS_TERM
+    clrscr();
+#endif
+
     cprintf("You must be new here!" EOL);
 
 spec_query2:
-    cprintf("You can be:" EOL);
-    cprintf("a - Human                     s - Centaur" EOL);
-    cprintf("b - Elf                       t - Demigod" EOL);
-    cprintf("c - High Elf                  u - Spriggan" EOL);
-    cprintf("d - Grey Elf                  v - Minotaur" EOL);
-    cprintf("e - Deep Elf                  w - Demonspawn" EOL);
-    cprintf("f - Sludge Elf                x - Ghoul" EOL);
-    cprintf("g - Hill Dwarf                y - Kenku" EOL);
-    cprintf("h - Mountain Dwarf" EOL);
-    cprintf("i - Halfling" EOL);
-    cprintf("j - Hill Orc" EOL);
-    cprintf("k - Kobold" EOL);
-    cprintf("l - Mummy" EOL);
+
+    cprintf("You can be:" EOL EOL);
+
+#ifdef SEPARATE_SELECTION_SCREENS_FOR_SUBSPECIES
+    cprintf("a - Human                     p - Troll" EOL);
+    cprintf("E - Elf                       q - Ogre-Mage" EOL);
+    cprintf("D - Dwarf                     r - Draconian" EOL);
+    cprintf("i - Halfling                  s - Centaur" EOL);
+    cprintf("j - Hill Orc                  t - Demigod" EOL);
+    cprintf("k - Kobold                    u - Spriggan" EOL);
+    cprintf("l - Mummy                     v - Minotaur" EOL);
+    cprintf("m - Naga                      w - Demonspawn" EOL);
+    cprintf("n - Gnome                     x - Ghoul" EOL);
+    cprintf("o - Ogre                      y - Kenku" EOL);
+#else
+    cprintf("a - Human                     n - Gnome" EOL);
+    cprintf("b - Elf                       o - Ogre" EOL);
+    cprintf("c - High Elf                  p - Troll" EOL);
+    cprintf("d - Grey Elf                  q - Ogre-Mage" EOL);
+    cprintf("e - Deep Elf                  r - Draconian" EOL);
+    cprintf("f - Sludge Elf                s - Centaur" EOL);
+    cprintf("g - Hill Dwarf                t - Demigod" EOL);
+    cprintf("h - Mountain Dwarf            u - Spriggan" EOL);
+    cprintf("i - Halfling                  v - Minotaur" EOL);
+    cprintf("j - Hill Orc                  w - Demonspawn" EOL);
+    cprintf("k - Kobold                    x - Ghoul" EOL);
+    cprintf("l - Mummy                     y - Kenku" EOL);
     cprintf("m - Naga" EOL);
-    cprintf("n - Gnome" EOL);
-    cprintf("o - Ogre" EOL);
-    cprintf("p - Troll" EOL);
-    cprintf("q - Ogre-Mage" EOL);
-    cprintf("r - Draconian" EOL);
-    cprintf("? - Random" EOL);
-    cprintf("X - Quit" EOL);
+#endif
+
+    cprintf(EOL "? - Random                    X - Quit" EOL);
 
     cprintf(EOL "Which one? ");
+
 
 spec_query:
     keyn = getch();
@@ -399,6 +369,128 @@ spec_query:
 switch_start:
     switch (keyn)
     {
+    case 'E':
+        clrscr();
+        cprintf("What type of elf?" EOL EOL);
+
+        cprintf("a - Common Elf" EOL);
+        cprintf("b - High Elf" EOL);
+        cprintf("c - Grey Elf" EOL);
+        cprintf("d - Deep Elf" EOL);
+        cprintf("e - Sludge Elf" EOL);
+
+        cprintf(EOL "? - Random; x - Back to species selection; X - Quit" EOL);
+        cprintf(EOL "Which one? ");
+
+        do {
+            keyn = getch();
+        } while (keyn != '?' && keyn != 'x' && keyn != 'X'
+                                        && !(keyn >= 'a' && keyn <= 'e'));
+
+        if (keyn == '?')
+        {
+            keyn = 'a' + random2(5);
+        }
+        else if (keyn == 'x')
+        {
+            clrscr();
+            cprintf(EOL EOL);
+            goto spec_query2;
+        }
+        else if (keyn == 'X')
+        {
+            cprintf(EOL "Goodbye!");
+            end(0);
+        }
+
+        switch (keyn)
+        {
+        case 'a':
+            you.species = SP_ELF;   // elf
+            you.strength = 5;
+            you.intel = 8;
+            you.dex = 8;
+            break;
+
+        case 'b':
+            you.species = SP_HIGH_ELF;      // high-elf
+            you.strength = 5;
+            you.intel = 9;
+            you.dex = 8;
+            break;
+
+        case 'c':
+            you.species = SP_GREY_ELF;      // grey-elf
+            you.strength = 4;
+            you.intel = 9;
+            you.dex = 8;
+            break;
+
+        case 'd':
+            you.species = SP_DEEP_ELF;      // deep elf
+            you.strength = 4;
+            you.intel = 10;
+            you.dex = 7;
+            break;
+
+        case 'e':
+            you.species = SP_SLUDGE_ELF;    // sludge elf
+            you.strength = 5;
+            you.intel = 7;
+            you.dex = 8;
+            break;
+        }
+        break;
+
+    case 'D':
+        clrscr();
+        cprintf("What type of dwarf?" EOL EOL);
+
+        cprintf("a - Hill Dwarf" EOL);
+        cprintf("b - Mountain Dwarf" EOL);
+
+        cprintf(EOL "? - Random; x - Back to species selection; X - Quit" EOL);
+        cprintf(EOL "Which one? ");
+
+        do {
+            keyn = getch();
+        } while (keyn != '?' && keyn != 'x' && keyn != 'X'
+                                        && !(keyn >= 'a' && keyn <= 'b'));
+
+        if (keyn == '?')
+        {
+            keyn = 'a' + random2(2);
+        }
+        else if (keyn == 'x')
+        {
+            clrscr();
+            cprintf(EOL EOL);
+            goto spec_query2;
+        }
+        else if (keyn == 'X')
+        {
+            cprintf(EOL "Goodbye!");
+            end(0);
+        }
+
+        switch (keyn)
+        {
+        case 'a':
+            you.species = SP_HILL_DWARF;    // hill dwarf
+            you.strength = 9;
+            you.intel = 3;
+            you.dex = 4;
+            break;
+
+        case 'b':
+            you.species = SP_MOUNTAIN_DWARF;        // mountain dwarf
+            you.strength = 9;
+            you.intel = 4;
+            you.dex = 5;
+            break;
+        }
+        break;
+
     case 'a':
         you.species = SP_HUMAN; // human
         you.strength = 6;
@@ -463,14 +555,12 @@ switch_start:
         break;
 
     case 'j':
-    case 'J':
         you.species = SP_HILL_ORC;      // hill orc
         you.strength = 9;
         you.intel = 3;
         you.dex = 4;
         break;
 
-    case 'K':
     case 'k':
         you.species = SP_KOBOLD;        // kobold
         you.strength = 4;
@@ -486,7 +576,6 @@ switch_start:
         break;
 
     case 'm':
-    case 'M':
         you.species = SP_NAGA;  // Naga
         you.strength = 8;
         you.intel = 6;
@@ -501,7 +590,6 @@ switch_start:
         break;
 
     case 'o':
-    case 'O':
         you.species = SP_OGRE;  // ogre
         you.strength = 12;
         you.intel = 3;
@@ -509,14 +597,12 @@ switch_start:
         break;
 
     case 'p':
-    case 'P':
         you.species = SP_TROLL; // troll
         you.strength = 13;
         you.intel = 3;
         you.dex = 0;
         break;
 
-    case 'Q':
     case 'q':
         you.species = SP_OGRE_MAGE;     // ogre mage
         you.strength = 8;
@@ -524,12 +610,57 @@ switch_start:
         you.dex = 2;
         break;
 
-    case 'r':
-    case 'R':
-        you.species = SP_RED_DRACONIAN + random2(9);    // Draconian
+    case 'r':                           // draconian
         you.strength = 7;
         you.intel = 6;
         you.dex = 2;
+
+#ifdef ALLOW_DRACONIAN_TYPE_SELECTION
+
+        clrscr();
+        cprintf("What type of draconian are you?" EOL EOL);
+
+        cprintf("a - Red Draconian" EOL);
+        cprintf("b - White Draconian" EOL);
+        cprintf("c - Green Draconian" EOL);
+        cprintf("d - Gold Draconian" EOL);
+        cprintf("e - Grey Draconian" EOL);
+        cprintf("f - Black Draconian" EOL);
+        cprintf("g - Purple Draconian" EOL);
+        cprintf("h - Mottled Draconian" EOL);
+        cprintf("i - Pale Draconian" EOL);
+
+        cprintf(EOL "? - Random; x - Back to species selection; X - Quit" EOL);
+        cprintf(EOL "Which one? ");
+
+        do {
+            keyn = getch();
+        } while (keyn != '?' && keyn != 'x' && keyn != 'X'
+                                            && !(keyn >= 'a' && keyn <= 'i'));
+
+        if (keyn == '?')
+        {
+            you.species = SP_RED_DRACONIAN + random2(9);
+        }
+        else if (keyn == 'x')
+        {
+            clrscr();
+            cprintf(EOL EOL);
+            goto spec_query2;
+        }
+        else if (keyn == 'X')
+        {
+            cprintf(EOL "Goodbye!");
+            end(0);
+        }
+        else
+        {
+            you.species = SP_RED_DRACONIAN + keyn - 'a';
+        }
+
+#else
+        you.species = SP_RED_DRACONIAN + random2(9);    // Draconian
+#endif
         break;
 
     case 's':
@@ -721,7 +852,7 @@ switch_start:
     if (wherex() >= 40)
         cprintf(EOL);
 
-    cprintf("? - Random; x - Back to species selection; X - Quit" EOL);
+    cprintf(EOL "? - Random; x - Back to species selection; X - Quit" EOL);
     //cprintf("x - Back to species selection\n\r");
     //cprintf("X - Quit\n\r");
 
@@ -918,7 +1049,7 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
             {
                 you.inv_quantity[2] = 1;
                 you.inv_class[2] = OBJ_ARMOUR;
-                you.inv_type[2] = 8;
+                you.inv_type[2] = ARM_SHIELD;
                 you.inv_plus[2] = 50;
                 you.inv_dam[2] = 0;
                 you.inv_colour[2] = LIGHTCYAN;
@@ -998,15 +1129,13 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
         }
         else if (you.species != SP_OGRE && you.species != SP_TROLL)
         {
-            if (you.species >= SP_RED_DRACONIAN
-                                        && you.species <= SP_UNK2_DRACONIAN)
-            {
+            // Players get dodging or armour skill depending on their
+            // starting armour now (note: the armour has to be quiped
+            // for this function to work)
+            if (player_light_armour())
                 you.skills[SK_DODGING] = 2;
-            }
             else
-            {
                 you.skills[SK_ARMOUR] = 2;
-            }
 
             you.skills[SK_SHIELDS] = 2;
             you.skills[SK_STABBING + random() % 2]++;
@@ -1032,14 +1161,19 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
         you.inv_class[0] = OBJ_WEAPONS;
 
         if (you.species == SP_OGRE_MAGE)
-            you.inv_type[0] = WPN_SHORT_SWORD;
+        {
+            you.inv_type[0] = WPN_QUARTERSTAFF;
+            you.inv_colour[0] = BROWN;
+        }
         else
+        {
             you.inv_type[0] = WPN_DAGGER;
+            you.inv_colour[0] = LIGHTCYAN;
+        }
 
         you.inv_plus[0] = 50;
         you.inv_plus2[0] = 50;
         you.inv_dam[0] = 0;
-        you.inv_colour[0] = LIGHTCYAN;
 
         // Robe
         you.inv_quantity[1] = 1;
@@ -1429,10 +1563,7 @@ getkey:
         you.hp_max = 14;
         you.magic_points = 0;
         you.max_magic_points = 0;
-/*      you.f_abil = 9;
-   you.mag_abil = 6;
-   you.thr_abil = 4;
-   you.speed = 10; */
+
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_SHORT_SWORD;
@@ -1440,23 +1571,25 @@ getkey:
         you.inv_plus2[0] = 50;
         you.inv_dam[0] = 0;
         you.inv_colour[0] = LIGHTCYAN;
+
         you.inv_quantity[1] = 1;
         you.inv_class[1] = OBJ_ARMOUR;
         you.inv_type[1] = ARM_ROBE;
         you.inv_plus[1] = 50;
         you.inv_dam[1] = 0;
         you.inv_colour[1] = WHITE;
+
         you.inv_quantity[2] = 1;
         you.inv_class[2] = OBJ_ARMOUR;
         you.inv_type[2] = ARM_SHIELD;
         you.inv_plus[2] = 50;
         you.inv_dam[2] = 0;
         you.inv_colour[2] = LIGHTCYAN;
-/*      you.AC = 1;
-   you.evasion = 10; */
+
         you.strength += 6;
         you.dex += 2;
         you.intel += 2;
+
         you.equip[EQ_WEAPON] = 0;
         you.equip[EQ_BODY_ARMOUR] = 1;
         you.gold = random2(10);
@@ -1473,12 +1606,10 @@ getkey:
         you.skills[SK_ARMOUR] = 1;
         you.skills[SK_DODGING] = 1;
         you.skills[SK_ARMOUR + random() % 2]++;
-/*  if (you.skills [SK_DODGING] == 2) you.evasion ++; */
 
-        you.skills[SK_SHIELDS] = 1;
+        you.skills[SK_SHIELDS] = 2;
         you.skills[SK_SHORT_BLADES] = 2;
-        you.skills[SK_LONG_SWORDS] = 1;
-        you.skills[SK_GREAT_SWORDS] = 1;
+        you.skills[SK_LONG_SWORDS] = 2;
         you.skills[SK_INVOCATIONS] = 1;
         break;
 
@@ -1488,10 +1619,6 @@ getkey:
         you.hp_max = 12;
         you.magic_points = 0;
         you.max_magic_points = 0;
-/*      you.f_abil = 9;
-   you.mag_abil = 6;
-   you.thr_abil = 12;
-   you.speed = 10; */
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
@@ -1531,8 +1658,6 @@ getkey:
         you.inv_dam[4] = 3;
         you.inv_colour[4] = LIGHTCYAN;
 
-/* you.AC = 2;
-   you.evasion = 10; */
         you.strength += 2;
         you.dex += 6;
         you.intel += 2;
@@ -1541,7 +1666,6 @@ getkey:
         you.equip[EQ_BODY_ARMOUR] = 2;
         you.equip[EQ_CLOAK] = 3;
         you.gold = random2(10);
-/* you.res_magic = 3; */
 
         you.skills[SK_FIGHTING] = 2;
         you.skills[SK_SHORT_BLADES] = 2;
@@ -1549,8 +1673,6 @@ getkey:
         you.skills[SK_DODGING] = 1;
         you.skills[SK_STEALTH] = 3;
         you.skills[SK_STABBING] = 2;
-
-/* if (you.skills [SK_DODGING] == 2) you.evasion ++; */
 
         you.skills[SK_THROWING] = 1;
         you.skills[SK_DARTS] = 1;
@@ -1566,10 +1688,6 @@ getkey:
         you.hp_max = 15;
         you.magic_points = 0;
         you.max_magic_points = 0;
-/*      you.f_abil = 10;
-   you.mag_abil = 2;
-   you.thr_abil = 10;
-   you.speed = 10; */
 
         if (you.species == SP_OGRE)
         {
@@ -1648,15 +1766,11 @@ getkey:
             you.inv_colour[4] = BROWN;
         }
 
-
-/*      you.AC = 2;
-   you.evasion = 9; */
         you.strength += 7;
         you.dex += 4;
         you.intel -= 1;
         you.equip[EQ_WEAPON] = 0;
         you.gold = random2(10);
-/* you.res_magic = 5; */
 
         you.skills[SK_FIGHTING] = 2;
 
@@ -1687,7 +1801,6 @@ getkey:
         else
             you.skills[SK_FIGHTING] += 3;
 
-/* you.evasion ++; */
         you.skills[SK_AXES] = 3;
         you.skills[SK_POLEARMS] = 1;
         break;
@@ -1699,10 +1812,6 @@ getkey:
         you.hp_max = 13;
         you.magic_points = 0;
         you.max_magic_points = 0;
-/*      you.f_abil = 9;
-   you.mag_abil = 6;
-   you.thr_abil = 11;
-   you.speed = 10; */
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
@@ -1743,15 +1852,12 @@ getkey:
             you.inv_colour[3] = GREEN;
         }
 
-/*      you.AC = 2;
-   you.evasion = 9; */
         you.strength += 3;
         you.dex += 4;
         you.intel += 3;
         you.equip[EQ_WEAPON] = 0;
         you.equip[EQ_BODY_ARMOUR] = 3;
         you.gold = random2(10);
-/* you.res_magic = 4; */
 
         you.skills[SK_FIGHTING] = 2;
         you.skills[SK_THROWING] = 2;
@@ -1764,6 +1870,7 @@ getkey:
                 you.inv_type[1] = WPN_SLING;
                 you.inv_type[2] = MI_STONE;
                 you.inv_colour[2] = BROWN;
+                you.inv_quantity[2] += 10 + random2(10);
 
                 you.skills[SK_DODGING] = 2;
                 you.skills[SK_STEALTH] = 2;
@@ -1862,10 +1969,7 @@ getkey:
         you.hp_max = 10;
         you.magic_points = 3;
         you.max_magic_points = 3;
-/*      you.f_abil = 5;
-   you.mag_abil = 7;
-   you.thr_abil = 5;
-   you.speed = 10; */
+
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
 
@@ -1882,8 +1986,6 @@ getkey:
             you.inv_plus2[0] = 51;
         you.inv_dam[0] = 0;
         you.inv_colour[0] = LIGHTCYAN;
-
-//      if (you.species == 17) you.inv_type [0] = 17;
 
         you.inv_quantity[1] = 1;
         you.inv_class[1] = OBJ_ARMOUR;
@@ -2972,7 +3074,7 @@ getkey:
 
     // tmpfile purging removed in favour of marking
     for (int lvl= 0; lvl < MAX_LEVELS; lvl++)
-        for (int dng= 0; dng < MAX_DUNGEONS; dng++)
+        for (int dng= 0; dng < MAX_BRANCHES; dng++)
             tmp_file_pairs[ lvl ][ dng ] = false;
 
 // This is the temporary file purging code
@@ -3822,30 +3924,6 @@ void choose_weapon(void)
 
     char keyin = 0;
 
-/*
-   switch(you.char_class)
-   {
-   case 0: / * fighter * /
-   case 6:
-   case 17:
-   case 20:
-   case 18: / * others * /
-   weap_type [0] = 5;
-   weap_type [1] = 1;
-   weap_type [2] = 9;
-   weap_type [3] = 11;
-   weap_type [4] = 11;
-   break;
-   case 4: / * gladiator * /
-   weap_type [0] = 5;
-   weap_type [1] = 2;
-   weap_type [2] = 4;
-   weap_type [3] = 9;
-   weap_type [4] = 11;
-   break;
-   default: return;
-   } */
-
     if (you.char_class == JOB_CHAOS_KNIGHT)
     {
         switch (random2(4))
@@ -3874,9 +3952,9 @@ void choose_weapon(void)
     cprintf("d - spear" EOL);
 
     if (you.char_class == JOB_GLADIATOR)
-    {
         cprintf("e - trident" EOL);
-    }
+
+    cprintf(EOL "Which weapon? ");
 
 getkey:
     keyin = get_ch();

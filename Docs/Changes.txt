@@ -1,5 +1,93 @@
+Linley Henzell (linley.henzell@student.adelaide.edu.au)
+12/09/99
+
+-- "Over-map" added
+
+-- Messages can now be coloured. Just call set_colour before mpr.
+
+-- Made wild magic effects do more harm, and increased likelihood of the
+   higher levels of effect.
+
+-- In the Abyss, blink may not work and teleport takes longer
+
+-- Tweaked a few unrandarts
+
+-- Rewrote part of the weapon generation function in dungeon.cc. Add a weapon
+   rarity function.
+
+-- Some monsters can now get a wider range of weapons.
+
+-- Many high-powered demons increased in speed
+
+-- Several changes to skills.cc. Now having many xp in the pool increases
+   the cost of exercising.
+
+-- Increased the threshold values for special "you hit" messages in fight.cc
+   and patched some grammar.
+
+-- Removed three 'silly' monsters (dorgi, Sword, Guardian robot)
+
+-- Now, haste has a direct effect on time_taken, rather than being treated
+   separately. See player_speed().
+
+-- Boots of levitation now allow permanent hovering.
+
+-- The random events in Hell are now much nastier
+
+-- Clouds can now be overwritten by other clouds, sometimes (see place_cloud)
+
+-- The monster mutation spell now affects monsters as polymorph
+
+-- A new init-file variable (verbose) determines how much info about
+   randarts and other magical items in the char dump.
+
+- bugs fixed:
+    -- monsters can now cast 'direct' spells (eg smiting) over other monsters
+        if targetting the player.
+    -- giants are now given the correct number of rocks.
+
 Brent Ross (bwross@csclub.uwaterloo.ca)
-8/27/99
+09/09/99
+
+-- lowered the damage of some of the new weapons, made tridents heavier.
+-- added some changes to the newgame screens from Dustin Ragan
+
+-- spellcasting reduced by weapon size (weight and/or speed)
+
+- from Linley:
+    -- made sure helmet/helm colour is initialised to LIGHTCYAN
+    -- made it so that swapping item letters prints both affected items.
+    -- fixed '=' --> '==' in randart.cc line 1515
+    -- fixed more scrolling problem under DOS
+    -- fixed problem with the ctrl-direction keys under DOS
+    -- made subspecies selection a compile time option
+    -- removed possibility of horns mutation for minotaurs
+
+-- removed Great Swords skill
+    -- great swords/triple swords are now long swords
+
+-- changed Trolls + troll leather to have no effect
+-- removed gdbm stuff -- makes things simpler, better security can wait
+   until a new savefile system is done.
+
+-- hand and a half weapons
+    -- no bonus if weapon is cursed.
+    -- 1-1/2 hand weapons don't get the speed bonus past 10
+    -- 2 handed weapons can get as fast as speed 7 with skill
+    -- +random2(3) to hit
+    -- +random2(3) to dam (all two handed weapons) applied after skill
+       multipliers (ie. with the dwarf and orc modifiers).
+
+-- added code so that multiple shield blocks in a turn becomes increasingly
+   difficult.
+
+-- fighters now get dodging or armour based off of starting armour
+
+-- shields and large shields now slow down attacks
+
+
+Brent Ross (bwross@csclub.uwaterloo.ca)
+08/27/99
 
 -- added '*' for level 27 skills in character dump
 -- removing the "skill_change /= 2" line from the spell skills was a bit
@@ -55,7 +143,7 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
 
 
 Brent Ross (bwross@csclub.uwaterloo.ca)
-8/08/99
+08/08/99
 
 -- bug fix: Orange Brains could hang game (MS_SUMMON_LEVEL spell in abyss)
 
@@ -123,7 +211,7 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
 -- Moved the .h guards to after the headers (cosmetic)
 
 Brent Ross (bwross@csclub.uwaterloo.ca)
-7/30/99
+07/30/99
 
 -- fixed bug: visiting the abyss from the hall of blades results in the
    abyss being populated by blades
@@ -211,7 +299,7 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
 
 
 Brent Ross (bwross@csclub.uwaterloo.ca)
-7/13/99
+07/13/99
 
 -- blocked entrance to the labyrinth until its debugged
 
@@ -262,7 +350,7 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
 
 
 Brent Ross (bwross@csclub.uwaterloo.ca)
-7/07/99
+07/07/99
 
 -- fixed ice breathing dragon breath so it doesn't destroy walls
 
@@ -345,7 +433,7 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
 
 
 Brent Ross (bwross@csclub.uwaterloo.ca)
-6/22/99
+06/22/99
 
 -- Ranger weapon variations (halfling slingers, dwarven crossbowers)
 
@@ -397,7 +485,7 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
 
 
 Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
-6/17/99
+06/17/99
 
 (Note: I've tried to annotate all my changes in the code  with my initials
        (BCR), so you can grep for them to find my changes.)
@@ -421,7 +509,7 @@ Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
   See Bugs.txt for more details.
 
 Brent Ross (bwross@csclub.uwaterloo.ca)
-6/14/99
+06/14/99
 
 Some changes I added from Linley:
     * a fix for the geryon bug
@@ -510,7 +598,7 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
 
 
 David Loewenstern <loewenstern@home.com>
-6/2/99
+06/02/99
 * added Makefile.dos
 * updated define.h for compatibility with DJGPP
 * cleaned up items.cc,monstuff.cc, mstuff2.cc,spells.cc,
@@ -526,7 +614,7 @@ David Loewenstern <loewenstern@home.com>
 
 Jesse Jones (jesjones@halcyon.com)
 
-5/30/99
+05/30/99
 * highscore() will print more scores on larger windows.
 * wearing cloaks no longer prevents wearing or removing body armor
 * armor can be dropped if it's worn and not cursed

@@ -385,6 +385,9 @@ void explosion(char ex_size, struct bolt beam[1])
                         case BEAM_FIRE:
                             mpr("You see a puff of smoke.");
                             break;
+                        case BEAM_COLD:
+                            mpr("You hear glass shatter.");
+                            break;
                         }
                     }
                 }

@@ -24,9 +24,14 @@
 char *obj_syms = ")([/%.?=!.+\\0}X$";
 int obj_syms_len = 16;
 
+extern char verbose_dump; /* defined in chardump.cc*/
+
 
 void read_init_file()
 {
+
+        verbose_dump = 0;
+
     FILE *f;
     char s[255], field[100];
     int i, j, line = 0;
@@ -105,10 +110,14 @@ void read_init_file()
         {
             strncpy( you.your_name, field, kNameLen );
         }
+        else if (sscanf(s, "verbose=%s", field))
+        {
+            verbose_dump = (atoi(field) == 1); // gives verbose info in char dumps
+        }
         else if (sscanf(s, "crawl_dir=%s", field))
         {
             // We shouldn't bother to allocate this a second time
-            // if the user puts two crawl_dir lines in his init file.
+            // if the user puts two crawl_dir lines in the init file.
             if (!sys_env.crawl_dir)
                 sys_env.crawl_dir = (char *) calloc( kPathLen, sizeof(char) );
 

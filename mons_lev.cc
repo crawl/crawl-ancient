@@ -1608,12 +1608,12 @@ int mons_level(int mcls)
             return 32;
         case 378:
             return 31;
-        case 379:
+/*        case 379:
             return 29;
         case 380:
             return 32;
         case 381:
-            return 27;
+            return 27;*/
         case 386:
             return 28;
         case 387:
@@ -2238,12 +2238,12 @@ int mons_rarity(int mcls)
             return 20;
         case 378:
             return 15;
-        case 379:
+/*        case 379:
             return 10;
         case 380:
             return 13;
         case 381:
-            return 15;
+            return 15;*/
         case 386:
             return 88;
         case 387:

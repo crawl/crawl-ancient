@@ -151,6 +151,11 @@ struct player
     char speed;
     int time_taken;
 
+    char shield_blocks;         // number of shield blocks since last action
+                                // this field is transient, its not saved
+                                // out but is set to zero at the start of the
+                                // input loop.
+
     unsigned char inv_class[52];
     unsigned char inv_type[52];
     unsigned char inv_plus[52];

@@ -41,11 +41,12 @@
 
    * Note * any exact combination of class, type, plus & plus2 must be unique,
    so (for example) you can't have two +5, +5 long swords in the list. Curses
-   don't count for this.
+   don't count as distinguishing factors.
 
    brand: Weapons only. Have a look in enum.h for a list, and look in fight.cc
    and describe.cc for the effects.
    Range of possible values: see enum.h
+
    +/- to AC, ev, str, int, dex - These are pretty obvious. Be careful - a player
    with a negative str, int or dex dies instantly, so avoid high penalties
    to these stats.
@@ -98,7 +99,7 @@
 
    Some currently unused properties follow, then:
 
-   First string: is appended to the unrandart's 'V' description.
+   First string: is appended to the unrandart's 'V' description when id'd.
 
    Second string: replaces the thing at the start of a 'V' description.
    If empty, uses the description of the unrandart's base type. Note: the
@@ -195,7 +196,7 @@
 /* sense surroundings, make noise, no spells, teleport, no teleprt */
             0, 0, 0, 0, 0,
 /* force berserk, speed metabolism, mutate, +/- to hit, +/- to dam (not weapons) */
-            0, 0, 0, -1, -1,
+            0, 0, 0, -3, 0,
 /* some as yet unused properties */
             0, 0
     }
@@ -251,7 +252,7 @@
     "Holy Armour of Zin", "glowing golden plate mail",
         OBJ_ARMOUR, ARM_PLATE_MAIL, 56, 0, YELLOW,
     {
-        0, 0, 0, 4, 0, 0,
+        0, 0, 0, 3, 0, 0,
             0, 0, 0, 0, 1, 50,
             0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0,
@@ -270,7 +271,7 @@
     "robe of Augmentation", "silk robe",
         OBJ_ARMOUR, ARM_ROBE, 50, 0, LIGHTRED,
     {
-        0, 0, 0, 3, 3, 3,
+        0, 0, 0, 2, 2, 2,
             0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0,
@@ -308,11 +309,11 @@
     "cloak of the Thief", "tattered cloak",
         OBJ_ARMOUR, ARM_CLOAK, 51, 0, DARKGREY,
     {
-        0, 0, 5, 0, 1, 3,
+        0, 0, 3, 0, 1, 3,
             0, 0, 0, 1, 0, 0,
             1, 1, 0, 1, 0, 0,
             0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
+            0, 0, 0, 0, -3,
             0, 0
     }
     ,
@@ -321,6 +322,9 @@
         ""
 }
 ,
+
+
+
 
 /* 10 */
 {
@@ -348,7 +352,7 @@
     {
         0, 0, 0, 0, 2, 0,
             0, 0, 1, 0, 0, 0,
-            1, 0, 0, 0, 1, 0,
+            1, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0,
             0, 1, 0, 0, 0,
             0, 0
@@ -359,6 +363,7 @@
         ""
 }
 ,
+
 
 /* 12 */
 {
@@ -388,7 +393,7 @@
             0, 0, 1, 1, 1, 0,
             0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 1,
-            0, 1, 0, 0, 0,
+            0, 2, 0, 0, 0,
             0, 0
     }
     ,
@@ -397,6 +402,7 @@
         ""
 }
 ,
+
 
 /* 14 */
 {

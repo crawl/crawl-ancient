@@ -118,8 +118,27 @@ void exercise2(char exsk, char deg)
     if (you.skills[exsk] >= 16)
         skill_change += 5;
 
-    if (skill_change > 500)
-        skill_change = 500;
+/* New (LH): Reduced the spending cap from 500. I'm not sure, but the
+ * MAX_SPENDING_LIMIT doesn't seem to affect the actual xp cost per
+ * skill_point. Am I misreading this?
+*/
+    if (skill_change > 150)
+        skill_change = 150;
+
+/*
+ * New (LH): If the pool is filling up, you use more xp. I think this is
+ * quite reasonable, as it will just get ignored past the 20K cut-off anyway.
+ * Actually, trying to apply mathematical/logical rigour to the xp pool
+ * system doesn't work - it's meant to be arbitrary. The only reason for its
+ * existence is to give players a reason to go out and kill things and
+ * explore instead of sitting around practising their skills.
+*/
+        if (you.exp_available >= 1000) skill_change += 20;
+        if (you.exp_available >= 2500) skill_change += 50;
+        if (you.exp_available >= 5000) skill_change += 75;
+        if (you.exp_available >= 8000) skill_change += 110;
+        if (you.exp_available >= 12000) skill_change += 150;
+        if (you.exp_available >= 15000) skill_change += 200;
 
 // being good at some weapons makes others easier to learn:
     if (exsk < SK_SLINGS)
@@ -127,13 +146,10 @@ void exercise2(char exsk, char deg)
         /* blades to blades */
         if (
                (exsk == SK_SHORT_BLADES
-                || exsk == SK_LONG_SWORDS
-                || exsk == SK_GREAT_SWORDS
-               )
+                || exsk == SK_LONG_SWORDS)
                &&
                (you.skills[SK_SHORT_BLADES] > you.skills[exsk]
                 || you.skills[SK_LONG_SWORDS] > you.skills[exsk]
-                || you.skills[SK_GREAT_SWORDS] > you.skills[exsk]
                )
             )
         {
@@ -313,6 +329,23 @@ void exercise2(char exsk, char deg)
     you.skill_points[exsk] += skill_inc;
     you.exp_available -= skill_change;
     you.redraw_experience = 1;
+
+/*
+New (LH): debugging bit: when you exercise a skill, displays the skill
+exercised and how much you spent on it. Too irritating to be a regular WIZARD
+feature.
+
+   strcpy(info, "Exercised ");
+   strcat(info, skill_name(exsk));
+   strcat(info, " * ");
+   itoa(skill_inc, st_prn, 10);
+   strcat(info, st_prn);
+   strcat(info, " for ");
+   itoa(skill_change, st_prn, 10);
+   strcat(info, st_prn);
+   strcat(info, " xp.");
+   mpr(info);*/
+
 
 #ifdef CLASSES
 cut_through:

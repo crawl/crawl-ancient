@@ -1615,7 +1615,8 @@ static bool handle_spell(int i, bolt &beem)
 
         if (func_pass_2[4] == 18 && !mons_near(i) && monster.behavior == BEH_CHASING_I)
         {
-            spell_cast = 18;    // This is EVIL!
+            spell_cast = 18;    /* Casts dig even when player not visible.
+                                                 * This is EVIL! */
 
             goto casted;
         }
@@ -1634,7 +1635,8 @@ static bool handle_spell(int i, bolt &beem)
 
            tracer_mons = 1 = hits monster specified in trac_targ
 
-           tracer_hit_mons now holds value of mons_see_invis of attacking monster.
+           tracer_hit_mons now holds value of mons_see_invis of attacking
+           monster. This is used in missile().
            If it's 0, won't register invis monsters or you
 
            Note: only the missile() function is used for tracers. The tracer code
@@ -1646,14 +1648,21 @@ static bool handle_spell(int i, bolt &beem)
         if (beem.tracer == 0)
             goto bail;
 
-        if (monster.behavior == BEH_ENSLAVED && (beem.tracer == 1 || beem.tracer == 2))
-            goto bail;
-
         if (beem.tracer == 3 && beem.tracer_mons == 0 && monster.behavior != BEH_ENSLAVED)
-            goto bail;
+        {
+         spell_cast = func_pass_2 [2];
+         goto casted;
+        } /* Is a monster in between, so cast a direct spell (smiting etc)
+                   * or a self-enchantment */
 
-        if (func_pass_2[4] == 18)
-            func_pass_2[4] = 100;
+        if (monster.behavior == BEH_ENSLAVED && (beem.tracer == 1 || beem.tracer == 2))
+                goto bail;
+            /* Although it would be nice if friendly monsters also cast
+             * smiting etc like this, too tricky right now. */
+
+
+        if (func_pass_2 [4] == 18)
+            func_pass_2 [4] = 100; /* Had your chance to cast dig. */
 
         if (monster.behavior != BEH_FLEE)
         {
@@ -1669,7 +1678,7 @@ static bool handle_spell(int i, bolt &beem)
                 goto casted;
             }
 
-            if (monster.behavior == BEH_ENSLAVED && beem.tracer_mons == 4)
+            if (monster.behavior == BEH_ENSLAVED && beem.tracer_mons == 0)
             {
                 spell_cast = func_pass_2[2];
                 goto casted;
@@ -1705,7 +1714,7 @@ casted:
                     {
                         strcat(info, " breathes.");
                         mpr(info);
-                    }
+                    } else mpr("You hear a roar.");
 
                 }
                 else if (monster.type == MONS_GREAT_ORB_OF_EYES || monster.type == MONS_SHINING_EYE || monster.type == MONS_EYE_OF_DEVASTATION)
@@ -1933,10 +1942,7 @@ void monster()
                 continue;
             }
 
-            if (you.haste == 0)
                 monster.speed_increment += (monster.speed * you.time_taken / 10);
-            else
-                monster.speed_increment += (monster.speed * (you.time_taken / 2) / 10);
 
             if (you.slow > 0)
                 monster.speed_increment += (monster.speed * you.time_taken / 10);

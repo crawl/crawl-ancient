@@ -21,6 +21,7 @@
  *      <1>     -/--/--         LRH             Created
  */
 
+
 #include "AppHdr.h"
 
 #ifdef DOS
@@ -94,6 +95,7 @@
 #include "newgame.h"
 #include "ouch.h"
 #include "output.h"
+#include "overmap.h"
 #include "player.h"
 #include "abyss.h"
 #include "randart.h"
@@ -109,6 +111,7 @@
 #include "stuff.h"
 #include "transfor.h"
 #include "view.h"
+
 
 /*
    #include "player.h"
@@ -285,6 +288,8 @@ int main(int argc, char *argv[])
 
 //new_game();
 
+    set_colour(LIGHTGREY);
+    init_overmap();
     initial();
     initialise();
 
@@ -330,6 +335,8 @@ void input()
     bool running = false;
     bool opening = false;
 #endif
+
+    you.shield_blocks = 0;
 
     you.time_taken = player_speed();
 
@@ -484,12 +491,12 @@ void input()
                     move_x = 0;
                     move_y = 0;
                     break;
-                case -115:
+                case 141:
                     open_door(0, -1);
                     move_x = 0;
                     move_y = 0;
                     break;
-                case -124:
+                case 132:
                     open_door(1, -1);
                     move_x = 0;
                     move_y = 0;
@@ -504,7 +511,7 @@ void input()
                     move_x = 0;
                     move_y = 0;
                     break;
-                case -111:
+                case 145:
                     open_door(0, 1);
                     move_x = 0;
                     move_y = 0;
@@ -795,6 +802,9 @@ get_keyin_again:
         break;
     case 'o':
         open_door(100, 100);
+        break;
+    case 'O':
+        display_overmap();
         break;
     case 'c':
         close_door(100, 100);
@@ -1158,6 +1168,7 @@ get_keyin_again:
 
 #ifdef WIZARD
     case 23:
+    case '&': // for DOS people like me who don't know what ASCII 23 is (LH)
         mpr( "Enter Wizard Command: " );
         wiz_command = getch();
 
@@ -1208,6 +1219,8 @@ get_keyin_again:
             acquirement(250);
             break;                  //animate_dead(5, 7, you.pet_target, 1); break;
 
+            case 'G': debug_add_skills(); break;
+
         case 'h':
             you.hp = you.hp_max;
             you.redraw_hit_points = 1;
@@ -1246,6 +1259,53 @@ get_keyin_again:
             strcat(info, " skill points.");
             mpr(info);
             break;
+
+
+                    case 'z': cast_spec_spell(); break;
+                        case '%': create_spec_object2(); break;
+                    case '*': grd [you.x_pos] [you.y_pos] = 82; break;
+                    case '(':
+                    char specs [3];
+                    strcpy(info, "Create which feature? ");
+                    mpr(info);
+                    specs [0] = getche();
+                    specs [1] = getche();
+                    specs [2] = getche();
+                    grd [you.x_pos] [you.y_pos] = atoi(specs); break;
+                    case '+': create_spec_monster(); break;
+                    case ']':
+                    char specx [2];
+                    strcpy(info, "Gain which mutation? ");
+                    mpr(info);
+                    specx [0] = getche();
+                    specx [1] = getche();
+                    mutate(atoi(specx));
+                    break;
+                    case '\"': level_travel(); break;
+                    case ':':
+                    int i, j;
+                    j = 0;
+                    for (i = 0; i < 20; i ++)
+                    {
+                    if (you.branch_stairs [i] == 0) continue;
+                    strcpy(info, "Branch ");
+                    itoa(i, st_prn, 10);
+                    strcat(info, st_prn);
+                    strcat(info, " is on level ");
+                    itoa(you.branch_stairs [i], st_prn, 10);
+                    strcat(info, st_prn);
+                    strcat(info, ".");
+                    mpr(info);
+                    }
+                    break;
+                    case '{':
+                    magic_mapping(99, 100);
+                    break;
+                    case '^':
+                    mpr("You feel more pious! Well done.");
+                    gain_piety(10);
+                    break;
+
     /*  case '=':
        new_level();
        strcpy(info, "");
@@ -1858,6 +1918,11 @@ get_keyin_again:
     {
         if (you.species != SP_KENKU || you.experience_level < 15)
             you.levitation--;
+
+        if (you.equip[EQ_BOOTS] != -1
+            && you.inv_dam[you.equip[EQ_BOOTS]] % 30 == SPARM_LEVITATION)
+          you.levitation = 2;
+
         if (you.levitation == 10)
         {
             strcpy(info, "You are starting to lose your buoyancy!");
