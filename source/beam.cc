@@ -1325,7 +1325,8 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
         // it is thrown.
         if (mitm.quantity[inv_number] > 0)
         {
-            if (igrd[x][y] != NON_ITEM)
+            int itm = igrd[x][y];
+            while(itm != NON_ITEM)
             {
                 if ((mitm.base_type[inv_number] == OBJ_MISSILES
                         || mitm.base_type[inv_number] == OBJ_FOOD
@@ -1333,19 +1334,20 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
                         || mitm.base_type[inv_number] == OBJ_POTIONS
                         || mitm.base_type[inv_number] == OBJ_UNKNOWN_II)
                     && mitm.base_type[inv_number] ==
-                                mitm.base_type[igrd[x][y]]
+                                mitm.base_type[itm]
                     && mitm.sub_type[inv_number] ==
-                                mitm.sub_type[igrd[x][y]]
+                                mitm.sub_type[itm]
                     && mitm.pluses[inv_number] ==
-                                mitm.pluses[igrd[x][y]]
+                                mitm.pluses[itm]
                     && mitm.pluses2[inv_number] ==
-                                mitm.pluses2[igrd[x][y]]
+                                mitm.pluses2[itm]
                     && mitm.special[inv_number] ==
-                                mitm.special[igrd[x][y]])
+                                mitm.special[itm])
                 {
-                    mitm.quantity[igrd[x][y]]++;
+                    mitm.quantity[itm]++;
                     return;
                 }
+                itm = mitm.link[itm];
             }                   // end of if igrd != NON_ITEM
 
             int o;
@@ -1367,17 +1369,9 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
                 }
             }                   // end of o loop
 
-            if (igrd[x][y] == NON_ITEM)
-            {
-                igrd[x][y] = o;
-            }
-            else
-            {
-                int hug = igrd[x][y];
-
-                igrd[x][y] = o;
-                mitm.link[o] = hug;
-            }
+            // add to top
+            mitm.link[o] = igrd[x][y];
+            igrd[x][y] = o;
         }                       // end of else
     }                           // if (thing_throw == 2) ...
 }
@@ -1591,8 +1585,9 @@ static bool affectsWalls(struct bolt &beam)
         return true;
 
     // disintegration (or powerful disruption)
+    // but not needles (which happen to be white.  Argh!  What a hack.
     if (beam.colour == WHITE && beam.flavour != BEAM_COLD
-        && beam.hit >= 20)
+        && beam.hit >= 20 && beam.type != SYM_MISSILE)
         return true;
 
     // eye of devestation?

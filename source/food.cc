@@ -136,17 +136,18 @@ static void weapon_switch( int targ )
 
         sprintf( info, "Switching back to %c - %s.", let, buff );
         mpr( info );
-
-        // unwield the old weapon and wield the new.
-        // XXX This is a pretty dangerous hack;  I don't like it.--GDL
-        if (you.equip[EQ_WEAPON] != -1)
-            unwield_item(you.equip[EQ_WEAPON]);
-
-        you.equip[EQ_WEAPON] = targ;
-
-        // special checks: staves of power, etc
-        wield_effects( targ, false );
     }
+
+    // unwield the old weapon and wield the new.
+    // XXX This is a pretty dangerous hack;  I don't like it.--GDL
+    if (you.equip[EQ_WEAPON] != -1)
+        unwield_item(you.equip[EQ_WEAPON]);
+
+    you.equip[EQ_WEAPON] = targ;
+
+    // special checks: staves of power, etc
+    if (targ != -1)
+        wield_effects( targ, false );
 }
 
 bool butchery(void)

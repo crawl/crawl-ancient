@@ -52,7 +52,6 @@ static unsigned char mspell_list[][7] = {
 };
 
 static int mons_exp_mod(int mclass);
-static int mons_speed(int mc);
 static monsterentry *seekmonster(int *p_monsterid);
 
 // macro that saves some typing, nothing more
@@ -659,6 +658,10 @@ void define_monster(int k)
     menv[k].speed_increment = m2_speed_inc;
     menv[k].number = m2_sec;
     menv[k].flags = 0;
+    // reset monster enchantments
+    for(int i=0; i<NUM_MON_ENCHANTS; i++)
+        menv[k].enchantment[i] = ENCH_NONE;
+
 }                               // end define_monster()
 
 
@@ -1164,6 +1167,9 @@ const char *mons_pronoun(int mon_type, int variant)
         case 3:
             return (gender==0)?"its":
                    (gender==1)?"his":"her";
+        case 4:
+            return (gender==0)?"itself":
+                   (gender==1)?"himself":"herself";
     }
 
     return "";

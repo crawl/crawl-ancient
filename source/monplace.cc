@@ -115,7 +115,6 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
             {
                 do
                 {
-                    // was: random2(400) {dlb}
                     mon_type = random2(NUM_MONSTERS);
                 }
                 while (mons_rarity(mon_type) == 0);

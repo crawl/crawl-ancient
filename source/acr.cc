@@ -972,9 +972,11 @@ static void input(void)
 
         if (you.experience_level < 27)
         {
-            sprintf(info, "Level %d requires %d experience (%d points to go!)",
+            int xp_needed = (exp_needed(you.experience_level+2)
+                - you.experience) + 1;
+            sprintf(info, "Level %d requires %d experience (%d point%s to go!)",
                 you.experience_level + 1, exp_needed(you.experience_level+2)+1,
-                (exp_needed(you.experience_level+2) - you.experience) + 1);
+                xp_needed, (xp_needed>1)?"s":"");
             mpr(info);
         }
         break;

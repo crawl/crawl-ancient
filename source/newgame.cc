@@ -752,11 +752,11 @@ bool new_game(void)
     you.branch_stairs[STAIRS_CRYPT] =
         you.branch_stairs[STAIRS_VAULTS] + 2 + random2(3);      // avg: 18.5
 
+    you.branch_stairs[STAIRS_HALL_OF_BLADES] =
+        you.branch_stairs[STAIRS_VAULTS] + 4;   // avg: 19.5
+
     you.branch_stairs[STAIRS_TOMB] =
         you.branch_stairs[STAIRS_CRYPT] + ((coinflip()) ? 3 : 2);   // avg: 20.0
-
-    you.branch_stairs[STAIRS_HALL_OF_BLADES] =
-        you.branch_stairs[STAIRS_VAULTS] + 4;   // avg: 22.5
 
     you.branch_stairs[STAIRS_HALL_OF_ZOT] = 26; // always 26
 

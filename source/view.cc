@@ -544,7 +544,13 @@ void get_ibm_symbol(unsigned int object, unsigned short *ch,
 void viewwindow2(char draw_it, bool do_updates)
 {
     const long BUFFER_SIZE = 1550;
+#ifdef DOS_TERM
+    // DOS functions like gettext() and puttext() can only
+    // work with arrays of characters, not shorts.
+    FixedVector < unsigned char, BUFFER_SIZE > buffy;   //[800]; //392];
+#else
     FixedVector < unsigned short, BUFFER_SIZE > buffy;   //[800]; //392];
+#endif
 
     unsigned short ch, color;
 

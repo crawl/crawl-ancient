@@ -2657,6 +2657,7 @@ void read_scroll(void)
     struct bolt beam;
     // added: scroll effects are never tracers.
     beam.isTracer = false;
+    bool ok_to_curse[NUM_EQUIP];
 
     if (you.berserker)
     {
@@ -3328,27 +3329,32 @@ void read_scroll(void)
         return;                 // end of ench you.equip
 
 
-    case SCR_CURSE_ARMOUR:      // curse you.equip
-        for (i = EQ_CLOAK; i < EQ_RIGHT_RING; i++)
+    case SCR_CURSE_ARMOUR:
+        // make sure there's something to curse first
+        affected = 0;
+        for (i = EQ_CLOAK; i < EQ_LEFT_RING; i++)
         {
-            if (i == EQ_LEFT_RING)
-            {
-                canned_msg(MSG_NOTHING_HAPPENS);
-                return;
-            }
+            ok_to_curse[i] == (you.equip[i] != -1
+                && you.inv_plus[you.equip[i]] < 130);
 
-            if (you.equip[i] != -1 && you.inv_plus[you.equip[i]] < 130)
-                break;
+            if (ok_to_curse[i])
+                affected = 1;
         }
 
+        if (affected == 0)
+        {
+            canned_msg(MSG_NOTHING_HAPPENS);
+            return;
+        }
+
+        // now select a victim..
         do
         {
             affected = 1 + random2(6);
         }
-        while (you.equip[affected] == -1
-               || you.inv_plus[you.equip[affected]] > 130);
+        while (!ok_to_curse[affected]);
 
-        // vVvVv    This is *here* for a reason!
+        // make the name _before_ we curse it
         in_name(you.equip[affected], 4, str_pass);
         you.inv_plus[you.equip[affected]] += 100;
         set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);

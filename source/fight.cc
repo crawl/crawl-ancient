@@ -80,6 +80,8 @@ extern bool wield_change;       // defined in output.cc
 static int weapon_type_modify(int weap, char *st_prn, char *noise2, int damage);
 static void monster_drop_ething(struct monsters *monster);
 static void place_monster_corpse(struct monsters *monster);
+static void stab_message(char *buffer, struct monsters *defender,
+    int stab_bonus);
 
 int weapon_str_weight( int wpn_class, int wpn_type );
 
@@ -571,8 +573,8 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
     // fleeing
     if (defender->behavior == BEH_FLEE)
     {
-        stab_bonus = 2;
         stabAttempt = true;
+        stab_bonus = 2;
     }
 
     // sleeping
@@ -591,9 +593,17 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
     if (stabAttempt && rollNeeded)
         stabAttempt = (random2(200) <= you.skills[SK_STABBING] + you.dex);
 
+    // check for invisibility - no stabs on invisible monsters.
+    if (mons_has_ench(defender, ENCH_INVIS) && !player_see_invis())
+    {
+        stabAttempt = false;
+        stab_bonus = 0;
+    }
+
     if (stabAttempt)
     {
-        simple_monster_message(defender, " fails to defend itself.");
+        // construct reasonable message
+        stab_message(info, defender, stab_bonus);
 
         exercise(SK_STABBING, 1 + random2avg(5, 4));
 
@@ -3569,8 +3579,8 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                     break;
 
                 case SPWPN_VENOM:
-                    if (one_chance_in(3))
-                        poison_monster(defender, true);
+                    if (!one_chance_in(3))
+                        poison_monster(defender, false);
                     break;
 
                     //case 7: // protection
@@ -4165,9 +4175,9 @@ static bool valid_morph( struct monsters *monster, int new_mclass )
     unsigned char current_tile = grd[monster->x][monster->y];
 
     /* various inappropriate polymorph targets */
-    if ( mons_rarity(new_mclass) == 0
+    if ( mons_charclass(new_mclass) == MONS_PROGRAM_BUG
           || mons_flag(new_mclass, M_NO_EXP_GAIN)
-          || new_mclass == monster->type         // no "in-place" poly {dlb}
+          || mons_charclass(new_mclass) == mons_charclass(monster->type) // no "in-place" poly {dlb}
           || new_mclass == MONS_SHAPESHIFTER
           || new_mclass == MONS_GLOWING_SHAPESHIFTER
           || new_mclass == MONS_ZOMBIE_SMALL
@@ -4181,6 +4191,9 @@ static bool valid_morph( struct monsters *monster, int new_mclass )
     {
         return false;
     }
+
+    // morph targets are _always_ "base" classes,  not derived ones.
+    new_mclass = mons_charclass(new_mclass);
 
     /* Not fair to instakill a monster like this --
      order of evaluation of inner conditional important */
@@ -4224,7 +4237,7 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
         do
         {
             targetc = random2(NUM_MONSTERS);     // was: random2(400) {dlb}
-            target_power = mons_power(targetc);
+            target_power = mons_power(mons_charclass(targetc));
 
             if (one_chance_in(10) && valid_morph(monster, targetc))
                 relax++;
@@ -4234,8 +4247,10 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
             || target_power > source_power + relax );
     }
 
-    // messaging: {dlb}
+    // valid targets are always base classes
+    targetc = mons_charclass(targetc);
 
+    // messaging: {dlb}
     if (mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER, ENCH_SHAPESHIFTER))
     {
         strcat(str_polymon, " changes into ");
@@ -4543,9 +4558,6 @@ static void place_monster_corpse(struct monsters *monster)
 
     for (o = 0; o < MAX_ITEMS; o++)
     {
-        // seems to me that this should be translated to a probability
-        // calculation outside the loop (why keep calling random2() with
-        // each iteration?) {dlb}
         if (o > MAX_ITEMS - 10)
             return;
 
@@ -4696,3 +4708,36 @@ static inline int calc_stat_to_dam_base( void )
     return (you.strength);
 #endif
 }
+
+static void stab_message(char *buf, struct monsters *defender,
+    int stab_bonus)
+{
+    int r = random2(6);     // for randomness
+
+    switch(stab_bonus)
+    {
+        case 3:     // big melee, monster surrounded/not paying attention
+            if (r<3)
+                sprintf(buf, "You strike %s from a blind spot!",
+                    ptr_monam(defender, 1));
+            else
+                sprintf(buf, "You catch %s momentarily offguard.",
+                    ptr_monam(defender, 1));
+            break;
+        case 2:     // confused/fleeing
+            if (r<4)
+                sprintf(buf, "You catch %s completely offguard!",
+                    ptr_monam(defender, 1));
+            else
+                sprintf(buf, "You strike %s from behind!",
+                    ptr_monam(defender, 1));
+            break;
+        case 1:
+            sprintf(buf, "%s fails to defend %s.",
+                ptr_monam(defender, 0), mons_pronoun(defender->type, 4));
+            break;
+    } // end switch
+
+    mpr(buf);
+}
+

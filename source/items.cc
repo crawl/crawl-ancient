@@ -50,8 +50,6 @@
 
 extern bool wield_change;       // defined in output.cc
 
-int last_item = NON_ITEM;
-
 void autopickup(void);
 int add_item(int item_got, int it_quant);
 
@@ -279,7 +277,6 @@ void item_check(char keyin)
     autopickup();
 
     int objl = igrd[you.x_pos][you.y_pos];
-    int hrg = 0;
 
     while (objl != NON_ITEM)
     {
@@ -299,15 +296,14 @@ void item_check(char keyin)
             if (mitm.quantity[objl] > 1)
                 strcat(item_show[counter], "s");
 
-            goto linking;       //continue;
+        }
+        else
+        {
+            it_name(objl, 3, str_pass);
+            strcpy(item_show[counter], str_pass);
         }
 
-        it_name(objl, 3, str_pass);
-        strcpy(item_show[counter], str_pass);
-
-      linking:
-        hrg = mitm.link[objl];
-        objl = hrg;
+        objl = mitm.link[objl];
     }
 
     counter_max = counter;
@@ -341,6 +337,31 @@ void item_check(char keyin)
 
     if (counter_max > 5 && keyin != ';')
         mpr("There are several objects here.");
+}
+
+static void relink_cell(int x, int y)
+{
+    int o = igrd[x][y];
+    int last_item = NON_ITEM;
+
+    while(o != NON_ITEM)
+    {
+        if (mitm.quantity[o] > 0)
+        {
+            // link in
+            if (last_item == NON_ITEM)
+                igrd[x][y] = o;
+            else
+                mitm.link[last_item] = o;
+
+            last_item = o;
+        }
+        o = mitm.link[o];
+    }
+    if (last_item == NON_ITEM)
+        igrd[x][y] = NON_ITEM;
+    else
+        mitm.link[last_item] = NON_ITEM;
 }
 
 void pickup(void)
@@ -402,128 +423,83 @@ void pickup(void)
         }
     }
 
-    if (igrd[you.x_pos][you.y_pos] == NON_ITEM)
+    o = igrd[you.x_pos][you.y_pos];
+
+    if (o == NON_ITEM)
     {
         mpr("There are no items here.");
         return;
     }
 
-    last_item = NON_ITEM;
-
-    int objl = igrd[you.x_pos][you.y_pos];
-    int hrg = 0;
-
-    while (objl != NON_ITEM)
+    if (mitm.link[o] == NON_ITEM)      // just one item?
     {
-        counter++;
-
-        last_item = objl;
-
-        hrg = mitm.link[objl];
-        objl = hrg;
-        items_here++;
-
-        if (counter > 1000)
-        {
-            error_message_to_player();
-            return;
-        }
-    }
-
-    // Anywhere which calls add_item() doesn't need to arrange it[0].link etc.
-    if (items_here == 1)
-    {
-        item_got = igrd[you.x_pos][you.y_pos];
-        last_item = NON_ITEM;
-        nothing = add_item(item_got, mitm.quantity[igrd[you.x_pos][you.y_pos]]);
+        nothing = add_item(o, mitm.quantity[o]);
 
         if (nothing == NON_ITEM)
             mpr("You can't carry that many items.");
         else if (nothing != 1)
             mpr("You can't carry that much weight.");
 
+        // relink
+        relink_cell(you.x_pos, you.y_pos);
+
         return;
     }                           // end of if items_here
 
-    last_item = NON_ITEM;
+    mpr("There are several objects here.");
 
-    if (items_here > 1)
+    while(o != NON_ITEM)
     {
-        mpr("There are several objects here.");
-
-        o = igrd[you.x_pos][you.y_pos];
-
-        for (k = 0; k < items_here; k++)
+        if (keyin != 'a')
         {
-            if (keyin != 'a')
+            strcpy(info, "Pick up ");
+
+            if (mitm.base_type[o] == OBJ_GOLD)
             {
-                strcpy(info, "pick up ");
+                itoa(mitm.quantity[o], st_prn, 10);
+                strcat(info, st_prn);
+                strcat(info, " gold piece");
 
-                if (mitm.base_type[o] == OBJ_GOLD)
-                {
-                    itoa(mitm.quantity[o], st_prn, 10);
-                    strcat(info, st_prn);
-                    strcat(info, " gold piece");
-
-                    if (mitm.quantity[o] > 1)
-                        strcat(info, "s");
-                }
-                else
-                {
-                    it_name(o, 3, str_pass);
-                    strcat(info, str_pass);
-                }
-
-                strcat(info, "\? (y,n,a,q)");
-                mpr(info);
+                if (mitm.quantity[o] > 1)
+                    strcat(info, "s");
+            }
+            else
+            {
+                it_name(o, 3, str_pass);
+                strcat(info, str_pass);
             }
 
-            if (keyin != 'a')
-                keyin = get_ch();
+            strcat(info, "\? (y,n,a,q)");
+            mpr(info);
+        }
 
-            if (keyin == 'q')
-                return;
+        if (keyin != 'a')
+            keyin = get_ch();
 
-            if (keyin == 'y' || keyin == 'a')
+        if (keyin == 'q')
+            break;
+
+        if (keyin == 'y' || keyin == 'a')
+        {
+            int result = add_item(o, mitm.quantity[o]);
+
+            if (result == 0)
             {
-                item_got = o;
-
-                int grunk = add_item(o, mitm.quantity[o]);
-
-                if (grunk == 0)
-                {
-                    mpr("You can't carry that much weight.");
-                    keyin = 'x';        // resets from 'a'
-                }
-
-                if (grunk == NON_ITEM)
-                {
-                    mpr("You can't carry that many items.");
-                    keyin = 'x';        // resets from 'a'
-                }
-
-                if (grunk != 1) // ie if the item picked up is still there.
-                    last_item = item_got;
+                mpr("You can't carry that much weight.");
+                keyin = 'x';        // resets from 'a'
             }
 
-            if (mitm.quantity[o] > 0)
-                last_item = o;
-
-            hrg = mitm.link[o];
-
-            if (mitm.quantity[o] == 0)
-                mitm.link[o] = NON_ITEM;
-
-            o = hrg;
-            if (o == NON_ITEM)
-                return;
-
-            if (items_here == 0)
+            if (result == NON_ITEM)
+            {
+                mpr("You can't carry that many items.");
                 break;
-        }                       // end of while k loop
+            }
+        }
+        o = mitm.link[o];
+    }
 
-        mpr("That's all.");
-    }                           // end of if items_here
+    relink_cell(you.x_pos, you.y_pos);
+
 }                               // end pickup()
 
 int add_item(int item_got, int quant_got)
@@ -534,7 +510,6 @@ int add_item(int item_got, int quant_got)
     char brek = 0;
     bool partialPickup = false;
 
-    //int last_item = NON_ITEM;
     int m = 0;
     char str_pass[50];
 
@@ -547,35 +522,23 @@ int add_item(int item_got, int quant_got)
 
     if ((int) you.burden + item_mass > carrying_capacity())
     {
-        if (mitm.quantity[item_got] == 1)
+        // calculate quantity we can actually pick up
+        int part = (carrying_capacity() - (int)you.burden) / unit_mass;
+
+        if (part < 1)
             return 0;
 
-        for (m = mitm.quantity[item_got]; m > 0; m--)
-        {
-            if (m == 0)
-                break;
+        // only pickup 'part' items
+        quant_got = part;
+        partialPickup = true;
 
-            if (unit_mass * m + you.burden <= carrying_capacity())
-            {
-                quant_got = m;
-                brek = 1;
-                item_mass = unit_mass * m;
-                partialPickup = true;
-                break;
-            }
-        }
-
-        if (brek == 0)
-            return 0;
-        else
-            retval = 2;
+        retval = 2;
     }
-
-    brek = 0;
 
     if (mitm.base_type[item_got] == OBJ_GOLD)
     {
         you.gold += quant_got;
+        mitm.quantity[item_got] -= quant_got;
         you.redraw_gold = 1;
         strcpy(info, "You pick up ");
         itoa(quant_got, st_prn, 10);
@@ -585,9 +548,7 @@ int add_item(int item_got, int quant_got)
         mpr(info);
 
         you.turn_is_over = 1;
-        alert();
-
-        goto change_igrid;
+        return retval;
     }
 
     for (m = 0; m < ENDOFPACK; m++)
@@ -621,6 +582,7 @@ int add_item(int item_got, int quant_got)
                     mpr("You can only carry some of what is here.");
 
                 you.inv_quantity[m] += quant_got;
+                mitm.quantity[item_got] -= quant_got;
                 burden_change();
 
                 info[0] = index_to_letter(m);
@@ -633,8 +595,7 @@ int add_item(int item_got, int quant_got)
                 mpr(info);
 
                 you.turn_is_over = 1;
-                alert();
-                goto change_igrid;
+                return retval;
             }
         }
     }                           // end of for m loop.
@@ -647,7 +608,8 @@ int add_item(int item_got, int quant_got)
         mpr("You can only carry some of what is here.");
 
     for (m = 0; m < ENDOFPACK; m++)
-        if (!you.inv_quantity[m])
+    {
+        if (you.inv_quantity[m] == 0)
         {
             you.inv_ident[m] = mitm.id[item_got];
             you.inv_class[m] = mitm.base_type[item_got];
@@ -657,10 +619,8 @@ int add_item(int item_got, int quant_got)
             you.inv_dam[m] = mitm.special[item_got];
             you.inv_colour[m] = mitm.colour[item_got];
             you.inv_quantity[m] = quant_got;
+            mitm.quantity[item_got] -= quant_got;
             burden_change();
-
-            //strcpy(info, " ");
-            //strncpy(info, letters [m], 1);
 
             info[0] = index_to_letter(m);
             info[1] = '\0';
@@ -678,27 +638,17 @@ int add_item(int item_got, int quant_got)
             }
             break;
         }
+    }
+
 
     you.turn_is_over = 1;
-
-  change_igrid:
-    mitm.quantity[item_got] -= quant_got;       //= 0;
-
-    if (mitm.quantity[item_got] == 0)
-    {
-        // is this (last_item) ever set or even used properly? {dlb}
-        if (last_item == NON_ITEM)
-            igrd[you.x_pos][you.y_pos] = mitm.link[item_got];
-        else
-            mitm.link[last_item] = mitm.link[item_got];
-    }
 
     return retval;
 }                               // end add_item()
 
 void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
 {
-    int m = 0, i = 0;
+    int i = 0;
     const int base_type = you.inv_class[item_drop_2];
     const int sub_type  = you.inv_type[item_drop_2];
 
@@ -754,9 +704,8 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
     }
 
     // link item to top of list.
-    m = igrd[x_plos][y_plos];
+    mitm.link[i] = igrd[x_plos][y_plos];
     igrd[x_plos][y_plos] = i;
-    mitm.link[i] = m;
 
     you.turn_is_over = 1;
 }                               // end item_place()
@@ -1580,55 +1529,35 @@ void autopickup(void)
         return;
 
     o = igrd[you.x_pos][you.y_pos];
-    if (o == NON_ITEM)          //no objs
-        return;
-
-    last_item = NON_ITEM;
 
     while (o != NON_ITEM)
     {
-        items_here++;
         if (Options.autopickups & (1L << mitm.base_type[o]))
         {
             result = add_item(o, mitm.quantity[o]);
             if (result == 0)
             {
                 mpr("You can't carry any more.");
-                return;
+                break;
             }
 
             if (result == NON_ITEM)
             {
                 mpr("Your pack is full.");
-                return;
+                break;
             }
-
-            if (result != 1)    //item still there?
-                last_item = o;
 
             did_pickup = true;
         }
 
-        if (items_here > 1000)
-        {
-            error_message_to_player();
-            return;
-        }
-
-        if (mitm.quantity[o] > 0)
-            last_item = o;
-
-        hrg = mitm.link[o];
-
-        if (mitm.quantity[o] == 0)
-            mitm.link[o] = NON_ITEM;
-
-        o = hrg;
+        o = mitm.link[o];
     }
+
+    relink_cell(you.x_pos, you.y_pos);
 
     if (did_pickup && you.delay_t == 0)
     {
-        you.delay_t = 3;
+        you.delay_t = 2;
         you.delay_doing = DELAY_AUTOPICKUP;
     }
 }
@@ -1677,7 +1606,6 @@ int cull_items(void)
 
     int x,y, item;
     int first_cleaned = NON_ITEM;
-    int last;
 
     // 2. avoid shops by avoiding (0,5..9)
     // 3. avoid monster inventory by iterating over the dungeon grid
@@ -1691,7 +1619,6 @@ int cull_items(void)
                 continue;
 
             item = igrd[x][y];
-            last = NON_ITEM;    // ie top of the pile
             while(item != NON_ITEM)
             {
                 if (item_ok_to_clean(item) && random2(100) < 15)
@@ -1722,25 +1649,13 @@ int cull_items(void)
                     }
 
                     // POOF!
-                    mitm.base_type[item] = OBJ_UNASSIGNED;
                     mitm.quantity[item] = 0;
                     if (first_cleaned == NON_ITEM)
                         first_cleaned = item;
 
-                    // unlink (careful!)
-                    if (last == NON_ITEM)
-                        igrd[x][y] = mitm.link[item];
-                    else
-                        mitm.link[last] = mitm.link[item];
-
-                    item = mitm.link[item];
+                    relink_cell(x,y);
                 }
-                else
-                {
-                    last = item;
-                    // next item
-                    item = mitm.link[item];
-                }
+                item = mitm.link[item];
             }
         } // end y
     } // end x

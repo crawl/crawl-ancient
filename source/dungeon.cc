@@ -181,8 +181,7 @@ void link_items(void)
 
     for (i = 0; i < MAX_ITEMS; i++)
     {
-        if (mitm.base_type[i] == OBJ_UNASSIGNED || mitm.quantity[i] == 0
-            || mitm.y[i] == 0)
+        if (mitm.quantity[i] == 0 || mitm.y[i] == 0)
         {
             // item is not assigned,  or is monster item.  ignore.
             mitm.link[i] = NON_ITEM;
@@ -466,7 +465,7 @@ int items(unsigned char allow_uniques,  // not just true-false,
     // find an emtpy space for the item:
     for (p = 0; p < MAX_ITEMS; p++)
     {
-        if (mitm.base_type[p] == OBJ_UNASSIGNED || mitm.quantity[p] == 0)
+        if (mitm.quantity[p] == 0)
             break;
         if (p > MAX_ITEMS - 10)
         {
@@ -482,6 +481,7 @@ int items(unsigned char allow_uniques,  // not just true-false,
     mitm.special[p] = 0;
     mitm.pluses[p] = 0;
     mitm.pluses2[p] = 0;
+    mitm.link[p] = NON_ITEM;
 
     // cap item_power unless an acquirement-level item {dlb}:
     if (item_power > 50 && item_power != 351)
@@ -7638,6 +7638,7 @@ void define_zombie(int mid, int ztype, int cs, int power)
 {
     int mons_sec2 = 0;
     int zombie_size = 0;
+    bool ignore_rarity = false;
 
     // set size based on zombie class (cs)
     switch(cs)
@@ -7683,14 +7684,38 @@ void define_zombie(int mid, int ztype, int cs, int power)
             if (cls == MONS_PROGRAM_BUG)
                 continue;
 
-            // don't make odd zombies on normal dungeon levels.
-            if (you.level_type == LEVEL_DUNGEON && mons_rarity(cls) == 0)
+            // on certain branches,  zombie creation will fail if we use
+            // the mons_rarity() functions,  because (for example) there
+            // are NO zombifiable "native" abyss creatures. Other branches
+            // where this is a problem are hell levels and the crypt.
+            // we have to watch for summoned zombies on other levels, too,
+            // such as the Temple, HoB, and Slime Pits.
+            if (you.level_type != LEVEL_DUNGEON
+                || you.where_are_you == BRANCH_DIS
+                || you.where_are_you == BRANCH_GEHENNA
+                || you.where_are_you == BRANCH_COCYTUS
+                || you.where_are_you == BRANCH_TARTARUS
+                || you.where_are_you == BRANCH_INFERNO
+                || you.where_are_you == BRANCH_THE_PIT
+                || you.where_are_you == BRANCH_DIS
+                || you.where_are_you == BRANCH_CRYPT
+                || you.where_are_you == BRANCH_ECUMENICAL_TEMPLE
+                || you.where_are_you == BRANCH_TOMB
+                || you.where_are_you == BRANCH_HALL_OF_BLADES
+                || you.where_are_you == BRANCH_SLIME_PITS)
+            {
+                ignore_rarity = true;
+            }
+
+            // don't make out-of-rarity zombies when we don't have to
+            if (!ignore_rarity && mons_rarity(cls) == 0)
                 continue;
 
-            // monster class must be zombifiable and match class size
+            // monster class must be zombifiable
             if (!mons_zombie_size(cls))
                 continue;
 
+            // if skeleton, monster must have a skeleton
             if ((cs == MONS_SKELETON_SMALL || cs == MONS_SKELETON_LARGE)
                 && !mons_skeleton(cls))
                 continue;
@@ -7709,7 +7734,7 @@ void define_zombie(int mid, int ztype, int cs, int power)
 
             level  = mons_level( cls ) - 4;
             diff   = level - power;
-            chance = mons_rarity( cls ) - (diff * diff) / 2;
+            chance = (ignore_rarity)?100:mons_rarity(cls) - (diff * diff) / 2;
 
             if (power > level - relax && power < level + relax
                 && random2avg(100, 2) <= chance)

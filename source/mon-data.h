@@ -1034,7 +1034,7 @@
     600, 10, 99, MH_NATURAL, -6,
     { 15, 0, 0, 0 },
     { 10, 3, 5, 0 },
-    0, 10, 10, 7, 250, CE_MUTAGEN_RANDOM, Z_SMALL, S_SILENT, I_HIGH, 1
+    0, 10, 10, 7, 250, CE_MUTAGEN_RANDOM, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
 }
 ,
 
@@ -1044,7 +1044,7 @@
     600, 10, 99, MH_NATURAL, -6,
     { 5, 0, 0, 0 },
     { 5, 3, 5, 0 },
-    0, 10, 10, 7, 250, CE_MUTAGEN_RANDOM, Z_SMALL, S_SILENT, I_HIGH, 1
+    0, 10, 10, 7, 250, CE_MUTAGEN_RANDOM, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
 }
 ,
 

@@ -392,6 +392,7 @@ void behavior_event(struct monsters *mon, int event, int param)
     bool isFriendly = mons_friendly(mon);
     bool sourceFriendly = false;
     bool setTarget = false;
+    bool breakCharm = false;
 
     if (param == MHITYOU)
         sourceFriendly = true;
@@ -408,16 +409,28 @@ void behavior_event(struct monsters *mon, int event, int param)
             if (mon->behavior == BEH_SLEEP)
                 mon->behavior = BEH_WANDER;
             break;
+        case ME_WHACK:
         case ME_ANNOY:
             // will turn monster against <param1>,  unless they
-            // are BOTH friendly and stupid.
-            if (isFriendly != sourceFriendly || isSmart)
+            // are BOTH friendly and stupid.   Hitting someone
+            // over the head, of course, always triggers this code.
+            if (isFriendly != sourceFriendly || isSmart
+                || event == ME_WHACK)
             {
                 mon->foe = param;
                 if (mon->behavior != BEH_CORNERED)
                     mon->behavior = BEH_SEEK;
                 if (param == MHITYOU)
+                {
                     mon->attitude = ATT_HOSTILE;
+                    breakCharm = true;
+                }
+            }
+            if (event == ME_WHACK)
+            {
+                // now set target x,y so that monster can whack
+                // back (once) at an invisible foe
+                setTarget = true;
             }
             break;
         case ME_ALERT:
@@ -428,15 +441,6 @@ void behavior_event(struct monsters *mon, int event, int param)
                 mon->behavior = BEH_SEEK;
             if (mon->foe == MHITNOT)
                 mon->foe = param;
-            break;
-        case ME_WHACK:
-            // will turn monster against <param1>
-            mon->foe = param;
-            if (mon->behavior != BEH_CORNERED)
-                mon->behavior = BEH_SEEK;
-            // now set target x,y so that monster can whack
-            // back (once) at an invisible foe
-            setTarget = true;
             break;
         case ME_SCARE:
             mon->foe = param;
@@ -468,6 +472,12 @@ void behavior_event(struct monsters *mon, int event, int param)
             mon->target_x = menv[param].x;
             mon->target_y = menv[param].y;
         }
+    }
+
+    // now, break charms if appropriate
+    if (breakCharm)
+    {
+        mons_del_ench(mon, ENCH_CHARM);
     }
 
     // do any resultant foe or state changes
@@ -1007,8 +1017,8 @@ static bool handle_enchantment(struct monsters *monster)
             break;
 
         case ENCH_TP_I:
-            monster_teleport(monster, true);
             mons_del_ench(monster, ENCH_TP_I);
+            monster_teleport(monster, true);
             break;
 
         case ENCH_TP_II:
@@ -1094,7 +1104,8 @@ static void handle_nearby_ability(struct monsters *monster)
 
     if (mons_near(monster) && monster->behavior != BEH_SLEEP)
     {
-        if (mons_flag(monster->type, M_SPEAKS) && one_chance_in(21))
+        if (mons_flag(monster->type, M_SPEAKS) && one_chance_in(21)
+            && monster->behavior != BEH_WANDER)
             mons_speaks(monster);
 
         switch (monster->type)
@@ -1106,7 +1117,8 @@ static void handle_nearby_ability(struct monsters *monster)
             break;
 
         case MONS_GIANT_EYEBALL:
-            if (coinflip())
+            if (coinflip() && !mons_friendly(monster)
+                && monster->behavior != BEH_WANDER)
             {
                 simple_monster_message(monster, " stares at you.");
 
@@ -1116,7 +1128,8 @@ static void handle_nearby_ability(struct monsters *monster)
             break;
 
         case MONS_EYE_OF_DRAINING:
-            if (coinflip())
+            if (coinflip() && !mons_friendly(monster)
+                && monster->behavior != BEH_WANDER)
             {
                 simple_monster_message(monster, " stares at you.");
 
@@ -2062,11 +2075,7 @@ static bool handle_throw(struct monsters *monster, bolt & beem)
     // good idea?
     if (mons_should_fire(beem))
     {
-        item_name(mitm.pluses2[mon_item], mitm.base_type[mon_item],
-                  mitm.sub_type[mon_item], mitm.special[mon_item],
-                  mitm.pluses[mon_item], 1, mitm.id[mon_item], 6, str_pass);
-        strcpy(beem.beam_name, str_pass);
-
+        beem.beam_name[0] = '\0';
         return mons_throw(monster, beem, mon_item);
     }
     else
@@ -2230,7 +2239,10 @@ void monster(void)
                 if (brkk)
                     continue;
 
-                handle_nearby_ability(monster);
+                // shapeshifters don't get special abilities
+                if (!mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER,
+                    ENCH_SHAPESHIFTER))
+                    handle_nearby_ability(monster);
 
                 beem.target_x = monster->target_x;
                 beem.target_y = monster->target_y;
@@ -2242,8 +2254,11 @@ void monster(void)
                     // How nice!
                     if (mons_friendly(monster) || mons_near(monster))
                     {
-                        if (handle_special_ability(monster, beem))
-                            continue;
+                        // shapeshifters don't get special abilities
+                        if (!mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER,
+                            ENCH_SHAPESHIFTER))
+                            if (handle_special_ability(monster, beem))
+                                continue;
 
                         if (handle_potion(monster, beem))
                             continue;
@@ -2254,8 +2269,11 @@ void monster(void)
                         if (handle_wand(monster, beem))
                             continue;
 
-                        if (handle_spell(monster, beem))
-                            continue;
+                        // shapeshifters don't get spells
+                        if (!mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER,
+                            ENCH_SHAPESHIFTER))
+                            if (handle_spell(monster, beem))
+                                continue;
 
                         if (handle_reaching(monster))
                             continue;
@@ -2498,10 +2516,9 @@ static bool handle_pickup(struct monsters *monster)
             return false;
 
         // don't pick up if we're in combat, and there isn't
-        // much there,  and we already have ammo.
+        // much there
         if (mitm.quantity[igrd[monster->x][monster->y]] < 5
-            && monster->behavior != BEH_WANDER
-            && monster->inv[MSLOT_MISSILE] != NON_ITEM)
+            && monster->behavior != BEH_WANDER)
         {
             return false;
         }

@@ -2561,7 +2561,7 @@ static string describe_jewellery(int item_class, int item_type, int item_plus,
             case RING_SLAYING:
                 description +=
                     "This ring increases the hand-to-hand and missile combat "
-                    "skills of its wearer.   Multiple rings are not cumulative.";
+                    "skills of its wearer.";
                 break;
 
             case RING_SEE_INVISIBLE:

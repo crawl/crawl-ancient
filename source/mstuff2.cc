@@ -905,11 +905,26 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
 
     strcat(info, (launched) ? " shoots " : " throws ");
 
-    item_name( mitm.pluses2[hand_used], mitm.base_type[hand_used],
+    if (strlen(pbolt.beam_name) > 0)
+    {
+        strcat(info, "a ");
+        strcat(info, pbolt.beam_name);
+    }
+    else
+    {
+        // build shoot message
+        item_name( mitm.pluses2[hand_used], mitm.base_type[hand_used],
                mitm.sub_type[hand_used], mitm.special[hand_used],
                mitm.pluses[hand_used], 1, mitm.id[hand_used], 3, str_pass );
+        strcat(info, str_pass);
 
-    strcat(info, str_pass);
+        // build beam name
+        item_name(mitm.pluses2[hand_used], mitm.base_type[hand_used],
+              mitm.sub_type[hand_used], mitm.special[hand_used],
+              mitm.pluses[hand_used], 1, mitm.id[hand_used], 6, str_pass);
+        strcpy(pbolt.beam_name, str_pass);
+    }
+
     strcat(info, ".");
     mpr(info);
 
