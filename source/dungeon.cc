@@ -139,7 +139,6 @@ static void clear_area(unsigned char x_min, unsigned char y_min,
                        unsigned char x_max, unsigned char y_max,
                        unsigned char deleting, unsigned char replacing);
 
-static void define_zombie(char not_zombsize, int ztype, int cs);
 static void diamond_rooms(void);
 static void generate_abyss(void);
 static void hide_doors(void);
@@ -4083,7 +4082,7 @@ static void morgue(void)
                                               : MONS_VAMPIRE);       //  4.2%
 
             if (menv[bk].type == MONS_ZOMBIE_SMALL)
-                define_zombie(3, 250, 250);
+                define_zombie(bk, 3, 250, 250);
             else
                 define_monster(bk, menv);
 
@@ -4100,7 +4099,7 @@ static void morgue(void)
     }
 }                               // end morgue()
 
-void define_zombie(char not_zombsize,    /* 1=2, 2=1, 3=1 or 2 */
+void define_zombie(int mid, char not_zombsize,    /* 1=2, 2=1, 3=1 or 2 */
                           int ztype, int cs)
 {
     int mons_sec2 = 0;
@@ -4111,85 +4110,85 @@ void define_zombie(char not_zombsize,    /* 1=2, 2=1, 3=1 or 2 */
         do
         {
             // seems to me like this value needs to be updated {dlb}
-            menv[bk].number = random2(80);
+            menv[mid].number = random2(80);
         }
-        while (!mons_zombie_size(menv[bk].number)
-               || mons_zombie_size(menv[bk].number) == not_zombsize
-               || (cs > MONS_GIANT_MITE && !mons_skeleton(menv[bk].number)));
+        while (!mons_zombie_size(menv[mid].number)
+               || mons_zombie_size(menv[mid].number) == not_zombsize
+               || (cs > MONS_GIANT_MITE && !mons_skeleton(menv[mid].number)));
 
-        mons_sec2 = menv[bk].number;
+        mons_sec2 = menv[mid].number;
     }
     else
     {
         mons_sec2 = ztype;
-        menv[bk].number = ztype;
+        menv[mid].number = ztype;
     }
 
-    menv[bk].number = mons_charclass(menv[bk].number);
-    menv[bk].type = menv[bk].number;
+    menv[mid].number = mons_charclass(menv[mid].number);
+    menv[mid].type = menv[mid].number;
 
-    define_monster(bk, menv);
+    define_monster(mid, menv);
 
-    menv[bk].hit_points = hit_points(menv[bk].hit_dice, 6, 5);
-    menv[bk].max_hit_points = menv[bk].hit_points;
+    menv[mid].hit_points = hit_points(menv[mid].hit_dice, 6, 5);
+    menv[mid].max_hit_points = menv[mid].hit_points;
 
-    menv[bk].armor_class -= 2;
+    menv[mid].armor_class -= 2;
 
-    if (menv[bk].armor_class < 0)
-        menv[bk].armor_class = 0;
+    if (menv[mid].armor_class < 0)
+        menv[mid].armor_class = 0;
 
-    menv[bk].evasion -= 5;
+    menv[mid].evasion -= 5;
 
-    if (menv[bk].evasion < 0)
-        menv[bk].evasion = 0;
+    if (menv[mid].evasion < 0)
+        menv[mid].evasion = 0;
 
-    menv[bk].speed -= 2;
+    menv[mid].speed -= 2;
 
-    if (menv[bk].speed < 3)
-        menv[bk].speed = 3;
+    if (menv[mid].speed < 3)
+        menv[mid].speed = 3;
 
-    menv[bk].speed_increment = 70;
-    menv[bk].number = mons_sec2;
+    menv[mid].speed_increment = 70;
+    menv[mid].number = mons_sec2;
 
     if (cs == MONS_ZOMBIE_SMALL || cs == MONS_ZOMBIE_LARGE)
     {
-        menv[bk].type = ((mons_zombie_size(menv[bk].number) == 2)
+        menv[mid].type = ((mons_zombie_size(menv[mid].number) == 2)
                                     ? MONS_ZOMBIE_LARGE : MONS_ZOMBIE_SMALL);
     }
     else if (cs == MONS_SKELETON_SMALL || cs == MONS_SKELETON_LARGE)
     {
-        menv[bk].hit_points = hit_points(menv[bk].hit_dice, 5, 4);
-        menv[bk].max_hit_points = menv[bk].hit_points;
+        menv[mid].hit_points = hit_points(menv[mid].hit_dice, 5, 4);
+        menv[mid].max_hit_points = menv[mid].hit_points;
 
-        menv[bk].armor_class -= 4;
+        menv[mid].armor_class -= 4;
 
-        if (menv[bk].armor_class < 0)
-            menv[bk].armor_class = 0;
+        if (menv[mid].armor_class < 0)
+            menv[mid].armor_class = 0;
 
-        menv[bk].evasion -= 2;
+        menv[mid].evasion -= 2;
 
-        if (menv[bk].evasion < 0)
-            menv[bk].evasion = 0;
+        if (menv[mid].evasion < 0)
+            menv[mid].evasion = 0;
 
-        menv[bk].type = ((mons_zombie_size(menv[bk].number) == 2)
+        menv[mid].type = ((mons_zombie_size(menv[mid].number) == 2)
                             ? MONS_SKELETON_LARGE : MONS_SKELETON_SMALL);
     }
     else if (cs == MONS_SIMULACRUM_SMALL || cs == MONS_SIMULACRUM_LARGE)
     {
-        menv[bk].hit_points = hit_points(menv[bk].hit_dice, 4, 4);
-        menv[bk].max_hit_points = menv[bk].hit_points;
-        menv[bk].type = ((mons_zombie_size(menv[bk].number) == 2)
+        menv[mid].hit_points = hit_points(menv[mid].hit_dice, 4, 4);
+        menv[mid].max_hit_points = menv[mid].hit_points;
+        menv[mid].type = ((mons_zombie_size(menv[mid].number) == 2)
                             ? MONS_SIMULACRUM_LARGE : MONS_SIMULACRUM_SMALL);
     }
     else if (cs == MONS_SPECTRAL_THING)
     {
-        menv[bk].hit_points = hit_points(menv[bk].hit_dice, 4, 4);
-        menv[bk].max_hit_points = menv[bk].hit_points;
-        menv[bk].armor_class += 4;
-        menv[bk].type = MONS_SPECTRAL_THING;
+        menv[mid].hit_points = hit_points(menv[mid].hit_dice, 4, 4);
+        menv[mid].max_hit_points = menv[mid].hit_points;
+        menv[mid].armor_class += 4;
+        menv[mid].type = MONS_SPECTRAL_THING;
     }
 
-    menv[bk].number = mons_sec2;
+    menv[mid].number = mons_sec2;
 }                               // end define_zombie()
 
 static void specr_2(void)

@@ -282,7 +282,7 @@ static int place_monster_aux(int mon_type, char behavior, int target,
     else
         menv[id].number = 250;
 
-    // generate a brand shiny new monster
+    // generate a brand shiny new monster, or zombie
     if (mon_type == MONS_ZOMBIE_SMALL
         || mon_type == MONS_ZOMBIE_LARGE
         || mon_type == MONS_SIMULACRUM_SMALL
@@ -291,11 +291,11 @@ static int place_monster_aux(int mon_type, char behavior, int target,
         || mon_type == MONS_SKELETON_LARGE
         || mon_type == MONS_SPECTRAL_THING)
     {
-        define_zombie( 3, extra,
-                          ((extra == 250) ? 250 : mon_type ) );
+        define_zombie( id, 3, extra, ((extra == 250) ? 250 : mon_type ) );
     }
     else
         define_monster(id, menv);
+
 
     // NOTE: Boris is actually a unique,  but we let him come back... :)
     if (mon_type >= MONS_TERENCE && mon_type <= MONS_MARGERY)

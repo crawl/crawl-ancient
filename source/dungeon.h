@@ -41,6 +41,6 @@ void give_item(int mid);
 /* ***********************************************************************
  * called from: dungeon monplace
  * *********************************************************************** */
-void define_zombie(char not_zombsize, int ztype, int cs);
+void define_zombie(int mid, char not_zombsize, int ztype, int cs);
 
 #endif
