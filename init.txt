@@ -5,14 +5,15 @@
 # various user interface options
 #
 # Player name
-# If this line is absent, you are prompted for your name every time you
-# play. This allows you to keep multiple characters.
+# If this line is absent or you leave the space after the = blank,
+# you are prompted for your name every time you play.
+# If there is a name after the =, this will be used every time.
 #
-name=Scrumpy
+name=
 
 #
 # Directory for reading macro.txt and init.txt, and dumping characters.
-# It should end with the path delimiter.
+# It should end with the path delimiter.  You may not need this
 #
 #crawl_dir=/u/bwross/crawl/
 #
@@ -37,7 +38,7 @@ name=Scrumpy
 # If you add any one of these to the autopickup list below, items of that
 # type will be automatically picked up when you walk over them.
 #
-#autopickup=$?!:+="/0
+autopickup=$?!:+="/0
 
 # How much information do we want in our character dumps?
 # With verbose_dump=1, all stats of special weapons (even generic
@@ -45,12 +46,12 @@ name=Scrumpy
 # Otherwise, only those properties which are specific to an "artefact" item
 # (ie one whose powers cannot be predicted from its name) are given.
 #
-verbose_dump=0
+verbose_dump=1
 #
 # Do we want important locations (stairs etc) on the play-screen map to be
 # colour coded?
 colour_map=1
 #
 # Do we want monsters and clouds erased from the map?
-clean_map=1
+clean_map=0
 #

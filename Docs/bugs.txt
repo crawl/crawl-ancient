@@ -5,10 +5,8 @@ Bugs:
 * Sometimes when I'm in the Abyss and I use an exit, it goes into an
   infinite loop.  This is hard to replicate, though.
 
-* I think I fixed weapons of reaching but haven't been able to test them yet.
-
-* DJGPP (dos compiler) may puke up a lung on some of the very long function if
-  you try to compile using certain options.  Sometimes simply running make
+* DJGPP (dos compiler) may puke up a lung on some of the very long functions
+  if you try to compile using certain options.  Sometimes simply running make
   again will work, sometimes you will have to change the options.
 
 * values 250 - 310 should be reserved for Uniques in the monsters enum,
@@ -23,8 +21,6 @@ Bugs:
 
 *  "+6" was missile weapon generated in a jewellery shop
 
-*  miscast effects are too weak?
-
 *  targeting is off at times (possible rounding errors)
 
 *  fired beams sometimes take the wrong route and can't hit targets in los
@@ -33,7 +29,7 @@ Bugs:
 
 *  fix keypad... still broken
 
-* Skeletal Warrior cast a spell and seg faulted the game in the abyss.
+*  Skeletal Warrior cast a spell and seg faulted the game in the abyss.
 
 * Makleb's Minor Destruction (first prompt '8' crashes game under DOS?)
 

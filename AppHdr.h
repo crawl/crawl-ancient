@@ -18,7 +18,6 @@
  *
  *       <5>     10/12/99   BCR     Added USE_NEW_RANDOM #define
  *       <4>     9/25/99    CDL     linuxlib -> liblinux
- *
  *       <3>     6/18/99    BCR     Moved the CHARACTER_SET #define here from
  *                                  linuxlib.cc.  Also wrapped the #define
  *                                  MACROS to prevent it from being used by

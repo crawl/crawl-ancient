@@ -4,15 +4,11 @@ Enhancements:
 
 * Some commands in wizard help are still undefined.
 
-* Documentation needs to be updated for the upcoming release.
-
 * file locking for the high score file
 
 * adjust EV for low levels.
 
 * repopulate levels on the way out
-
-* monsters have too high a preference for missile weapons
 
 * should species armour bonus work on EV instead of AC?
 
@@ -53,10 +49,6 @@ Enhancements:
 
 * Blink prompt is bogus (probably also happens elsewhere). Can probably
   fix this by adding a prompt argument to look_around.
-
-* There have been some comments on the newsgroup about adding some new low
-  level monsters. I think this is a good idea and would give us a chance to
-  cleanup the monster definition code.
 
 * Some of the more important messages should be in color?
 

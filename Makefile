@@ -1,7 +1,7 @@
 #Makefile chooser.  Choose one:
 
-MAKEFILE = makefile.lnx
-#MAKEFILE = makefile.sgi
+#MAKEFILE = makefile.lnx
+MAKEFILE = makefile.sgi
 #MAKEFILE = makefile.dos
 #MAKEFILE = makefile.emx
 #MAKEFILE = makefile.sol

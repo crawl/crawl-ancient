@@ -1,7 +1,23 @@
+Note: This is the list of changes we used in the development of v3.40 of
+      Crawl.  Much of it talks about specific changes to the code that
+      may not be interesting to non-programmers.  We will make no
+      attempt to clean this file up, but you can see the biggest and
+      most visible changes in the versions.txt file.
+
+Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
+12/30/99
+
+* Axed linuxlib.*
+* Changed versions.txt to reflect new release
+* updated version and build date defines in version.h
+* added a little more info to init.txt to explain the options
+* eliminated some done stuff from todo.txt and bugs.txt
+* added disclaimer at top of this file
+
 Linley Henzell (linley.henzell@student.adelaide.edu.au)
 27/12/99
 * Fixed the USE_NEW_RANDOM code to work at a reasonable speed without an FP
-   coprocessor
+  coprocessor
 * Many minor tweaks
 
 Linley Henzell (linley.henzell@student.adelaide.edu.au)
@@ -225,7 +241,7 @@ Linley Henzell (linley.henzell@student.adelaide.edu.au)
 -- The monster mutation spell now affects monsters as polymorph
 -- A new init-file variable (verbose) determines how much info about
    randarts and other magical items in the char dump.
-- bugs fixed:
+-- bugs fixed:
     -- monsters can now cast 'direct' spells (eg smiting) over other monsters
         if targetting the player.
     -- giants are now given the correct number of rocks.
@@ -561,7 +577,7 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
 -- assassins now start with a dagger, thieves start with short sword and dagger
 -- reversed stats for thief and assassin, gave assassins unarmed combat
 
--- change wizards to be +7 int/+3 dex, thus making them smarter than
+-- changed wizards to be +7 int/+3 dex, thus making them smarter than
    the other spellcasters
 
 -- draconian rangers no longer start with leather armour
@@ -970,8 +986,7 @@ an int
 get_ibm_symbol().
 * Reformatted monster() and split out 10(!) new functions.
 * Reformatted mons_spells() and mons_cast(). mons_spells() case 49 uses
-RED instead
-  of (bogus) 20 for color.
+  RED instead of (bogus) 20 for color.
 * Added some ASSERTs to seekmonster().
 * Renamed DEBUG WIZARD.
 * Renamed DEBUG_BUILD DEBUG.
