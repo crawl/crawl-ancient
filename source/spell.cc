@@ -305,14 +305,12 @@ bool your_spells(int spc2, int powc, bool allow_fail)
                 return false;
             }
 
-            char sptype = 0;
+            unsigned int sptype = 0;
 
             do
             {
-                // ewww! I need to write a function for this {dlb}
-                sptype = 1 + random2(SPTYP_RANDOM - 1);
-            }
-            while (!spell_typematch(spc2, sptype));
+                sptype = 1 << (random2(SPTYP_LAST_EXPONENT+1));
+            } while (!spell_typematch(spc2, sptype));
 
             // all spell failures give a bit of magical radiation..
             // failure is a function of power squared multiplied

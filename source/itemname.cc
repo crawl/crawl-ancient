@@ -459,6 +459,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ,
                (item_typ == MI_ARROW) ? "arrow" :
                (item_typ == MI_BOLT) ? "bolt" :
                (item_typ == MI_DART) ? "dart" :
+               (item_typ == MI_NEEDLE) ? "needle" :
                (item_typ == MI_EGGPLANT) ? "eggplant" :
                (item_typ == MI_LARGE_ROCK) ? "large rock" : "program bug");
                // this should probably be "" {dlb}
@@ -2096,6 +2097,11 @@ void init_properties(void)
     prop[OBJ_WEAPONS][WPN_BOW][PWPN_SPEED] = 11;
     mss[OBJ_WEAPONS][WPN_BOW] = 100;
 
+    prop[OBJ_WEAPONS][WPN_BLOWGUN][PWPN_DAMAGE] = 1;
+    prop[OBJ_WEAPONS][WPN_BLOWGUN][PWPN_HIT] = 0;  // helps to get past evasion
+    prop[OBJ_WEAPONS][WPN_BLOWGUN][PWPN_SPEED] = 10;
+    mss[OBJ_WEAPONS][WPN_BLOWGUN] = 50;
+
     prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_DAMAGE] = 2;
     prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_HIT] = -1;
     prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_SPEED] = 15;
@@ -2204,6 +2210,10 @@ void init_properties(void)
     prop[OBJ_MISSILES][MI_ARROW][PWPN_DAMAGE] = 2;
     prop[OBJ_MISSILES][MI_ARROW][PWPN_HIT] = 6;
     mss[OBJ_MISSILES][MI_ARROW] = 10;
+
+    prop[OBJ_MISSILES][MI_NEEDLE][PWPN_DAMAGE] = 0;
+    prop[OBJ_MISSILES][MI_NEEDLE][PWPN_HIT] = 1;
+    mss[OBJ_MISSILES][MI_NEEDLE] = 1;
 
     prop[OBJ_MISSILES][MI_BOLT][PWPN_DAMAGE] = 2;
     prop[OBJ_MISSILES][MI_BOLT][PWPN_HIT] = 8;

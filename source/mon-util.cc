@@ -659,6 +659,7 @@ void define_monster(int k)
     menv[k].speed = m2_speed;
     menv[k].speed_increment = m2_speed_inc;
     menv[k].number = m2_sec;
+    menv[k].flags = 0;
 }                               // end define_monster()
 
 

@@ -68,6 +68,10 @@ autopickup = $?!:"/0}%
 #       safe = force only on questions that will end game
 #       all  = never force capitals
 
+# WARNING TO KEYPAD USERS: The number 7 is mapped to the letter 'y',
+# which can result in accidentally answering yes to questions; it is
+# suggested that you use a value of 'none'
+
 # easy_confirm  = safe
 
 # This option adds the text "uncursed" to items where the

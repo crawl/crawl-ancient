@@ -41,6 +41,7 @@
 #include "mon-util.h"
 #include "mutation.h"
 #include "player.h"
+#include "randart.h"
 #include "religion.h"
 #include "shopping.h"
 #include "skills.h"
@@ -1643,5 +1644,107 @@ int inv_count(void)
     }
 
     return count;
+}
+
+static bool item_ok_to_clean(int item)
+{
+    // 5. never clean food or Orbs
+    if (mitm.base_type[item] == OBJ_FOOD || mitm.base_type[item] == OBJ_ORBS)
+        return false;
+
+    // never clean runes
+    if (mitm.base_type[item] == OBJ_MISCELLANY
+        && mitm.sub_type[item] == MISC_RUNE_OF_ZOT)
+        return false;
+
+    return true;
+}
+
+// returns index number of first available space, or -1 for
+// unsuccessful cleanup (should be exceedingly rare!)
+int cull_items(void)
+{
+    /* rules:
+       1. Don't cleanup anything nearby the player
+       2. Don't cleanup shops
+       3. Don't cleanup monster inventory
+       4. Clean 15% of items
+       5. never remove food, orbs, runes
+       7. uniques weapons are moved to the abyss
+       8. randarts are simply lost
+       9. unrandarts are 'destroyed', but may be generated again
+    */
+
+    int x,y, item;
+    int first_cleaned = NON_ITEM;
+    int last;
+
+    // 2. avoid shops by avoiding (0,5..9)
+    // 3. avoid monster inventory by iterating over the dungeon grid
+    for(x=5; x<GXM; x++)
+    {
+        for(y=5; y<GYM; y++)
+        {
+            // 1. not near player!
+            if (x > you.x_pos - 9 && x < you.x_pos + 9
+                && y > you.y_pos - 9 && y < you.y_pos + 9)
+                continue;
+
+            item = igrd[x][y];
+            last = NON_ITEM;    // ie top of the pile
+            while(item != NON_ITEM)
+            {
+                if (item_ok_to_clean(item) && random2(100) < 15)
+                {
+                    if (mitm.base_type[item] == OBJ_WEAPONS &&
+                        mitm.special[item] >= NWPN_SINGING_SWORD)
+                    {
+                        // 7. move uniques to abyss
+                        if (mitm.special[item] >= NWPN_SINGING_SWORD
+                            && mitm.special[item] <= NWPN_SWORD_OF_ZONGULDROK)
+                            you.unique_items[mitm.special[item] - NWPN_SINGING_SWORD] = 2;
+                        if (mitm.special[item] >= NWPN_SWORD_OF_POWER
+                            && mitm.special[item] <= NWPN_STAFF_OF_WUCAD_MU)
+                            you.unique_items[mitm.special[item] - NWPN_SWORD_OF_POWER + 24] = 2;
+                    }
+                    else if (((mitm.base_type[item] == OBJ_WEAPONS ||
+                             mitm.base_type[item] == OBJ_ARMOUR)
+                             && mitm.special[item] % 30 == SPWPN_RANDART_I)
+                             ||
+                            (mitm.base_type[item] == OBJ_JEWELLERY
+                            && mitm.special[item] == 201))
+                    {
+
+                        // 9. unmark unrandart
+                        int x = find_unrandart_index(item);
+                        if (x >= 0)
+                            set_unrandart_exist(x, 0);
+                    }
+
+                    // POOF!
+                    mitm.base_type[item] == OBJ_UNASSIGNED;
+                    mitm.quantity[item] = 0;
+                    if (first_cleaned == NON_ITEM)
+                        first_cleaned = item;
+
+                    // unlink (careful!)
+                    if (last == NON_ITEM)
+                        igrd[x][y] = mitm.link[item];
+                    else
+                        mitm.link[last] = mitm.link[item];
+
+                    item = mitm.link[item];
+                }
+                else
+                {
+                    last = item;
+                    // next item
+                    item = mitm.link[item];
+                }
+            }
+        } // end y
+    } // end x
+
+    return first_cleaned;
 }
 

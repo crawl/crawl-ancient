@@ -93,6 +93,13 @@ void mons_trap(struct monsters *monster)
         beem.colour = OBJ_MISSILES;
         beem.type = MI_DART;
         break;
+    case TRAP_NEEDLE:
+        projectileFired = true;
+        strcpy(beem.beam_name, " needle");
+        beem.damage = 0;
+        beem.colour = OBJ_MISSILES;
+        beem.type = MI_NEEDLE;
+        break;
     case TRAP_ARROW:
         projectileFired = true;
         strcpy(beem.beam_name, "n arrow");
@@ -249,6 +256,13 @@ void mons_trap(struct monsters *monster)
         {
             damage_taken = random2(beem.damage);
             damage_taken -= random2(1 + monster->armor_class);
+            if (beem.colour == OBJ_MISSILES
+                && beem.type == MI_NEEDLE
+                && random2(100) < 50 - (3*monster->armor_class/2))
+            {
+                damage_taken = 1;
+                poison_monster( monster, false );
+            }
         }
         else
         {
@@ -768,6 +782,12 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     {
         switch (lnchType)
         {
+        case WPN_BLOWGUN:
+            baseHit = 2;
+            damMult = 0;
+            hitMult = 20;
+            lnchDamBonus = 0;
+            break;
         case WPN_BOW:
             baseHit = 0;
             damMult = 12;
@@ -815,6 +835,16 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
 
         // monsters no longer gain unfair advantages with weapons of fire/ice and
         // incorrect ammo.  They now have same restriction as players.
+
+        // POISON brand: note that this is overridden by special ammo
+        if (mitm.special[monster->inv[MSLOT_WEAPON]] % 30 == SPWPN_VENOM
+                && !(mitm.special[hand_used] % 30 != SPMSL_ICE
+            || mitm.special[hand_used] % 30 == SPMSL_FLAME))
+        {
+            // poison it
+            mitm.special[hand_used] = mitm.special[hand_used] / 30 + SPMSL_POISONED;
+        }
+
 
         // WEAPON or AMMO of FIRE
         if ((mitm.special[monster->inv[MSLOT_WEAPON]] % 30 == SPWPN_FLAME

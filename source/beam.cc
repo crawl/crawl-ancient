@@ -681,16 +681,14 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
     return hurted;
 }                               // end mons_adjust_flavoured()
 
-// these return values seem "backward" to me {dlb}:
-
-// Returns 0 if the monster made its save against hostile
+// Returns true if the monster made its save against hostile
 // enchantments/some other magics.
 bool check_mons_magres(struct monsters * monster, int pow)
 {
     int mrs = mon_resist_mag(monster->type, monster->hit_dice);
 
     if (mrs == 5000)
-        return false;
+        return true;
 
     // Evil, evil hack to make weak one hd monsters easier for first
     // level characters who have resistable 1st level spells. Six is
@@ -704,7 +702,7 @@ bool check_mons_magres(struct monsters * monster, int pow)
     // them out (or building a level or two of their base skill so they
     // aren't resisted as often). -- bwr
     if (mrs < 6 && coinflip())
-        return (true);
+        return (false);
 
     if (pow > 40)               // nested if's rather than stacked 'em
     {                           // uglier than before but slightly
@@ -743,7 +741,7 @@ bool check_mons_magres(struct monsters * monster, int pow)
     mpr(info);
 #endif
 
-    return ((mrch2 < mrchance) ? false : true);
+    return ((mrch2 < mrchance) ? true : false);
 }                               // end check_mons_magres()
 
 // Enchants all monsters in player's sight.
@@ -775,7 +773,7 @@ bool mass_enchantment(int wh_enchant, int pow, int origin)
         if (wh_enchant != ENCH_CHARM
             || mons_holiness(monster->type) != MH_UNDEAD)
         {
-            if (!check_mons_magres(monster, pow))
+            if (check_mons_magres(monster, pow))
             {
                 simple_monster_message(monster, " resists.");
                 continue;
@@ -1321,7 +1319,8 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
     {
         if (grd[x][y] != DNGN_LAVA && grd[x][y] != DNGN_DEEP_WATER)
             if (you.inv_class[inv_number] != OBJ_MISSILES
-                || !one_chance_in((you.inv_type[inv_number] == MI_STONE) ? 3 : 2))
+                || !one_chance_in((you.inv_type[inv_number] == MI_NEEDLE) ? 5 :
+                    (you.inv_type[inv_number] == MI_STONE)? 3 : 2))
                 item_place(inv_number, x, y, 1);
     }
 
@@ -2135,11 +2134,15 @@ static int  affect_player(struct bolt &beam)
 
     // poisoning
     if (strstr(beam.beam_name, "poison") != NULL
-        && beam.flavour != BEAM_POISON && !player_res_poison()
-        && random2(hurted) - random2(player_AC()) > 0)
+        && beam.flavour != BEAM_POISON && !player_res_poison())
     {
-        mpr("You are poisoned.");
-        you.poison += 1 + random2(3);
+        if ((random2(hurted) - random2(player_AC()) > 0)
+            || (strstr(beam.beam_name, "needle") != NULL
+                && random2(100) < 50 - (3*player_AC()/2)))
+        {
+            mpr("You are poisoned.");
+            you.poison += 1 + random2(3);
+        }
     }
 
     // sticky flame
@@ -2226,9 +2229,20 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
 
         // BEGIN non-tracer enchantment
 
-        // if a monster is hit with something, annoy it
-        behavior_event(mon, ME_ANNOY, YOU_KILL(beam.thrower)?MHITYOU:
-            beam.beam_source);
+        // nasty enchantments will annoy the monster, and are considered
+        // naughty (even if a monster might resist)
+        if (nasty_beam(mon, beam))
+        {
+            if (mons_friendly(mon) &&  YOU_KILL(beam.thrower))
+                naughty(NAUGHTY_ATTACK_FRIEND, 5);
+            behavior_event(mon, ME_ANNOY, YOU_KILL(beam.thrower)?MHITYOU:
+                beam.beam_source);
+        }
+        else
+        {
+            behavior_event(mon, ME_ALERT, YOU_KILL(beam.thrower)?MHITYOU:
+                beam.beam_source);
+        }
 
         // !@#*( affect_monster_enchantment() has side-effects on
         // the beam structure which screw up range_used_on_hit(),
@@ -2331,9 +2345,30 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
 
     // BEGIN real non-enchantment beam
 
-    // even if the beam misses,  annoy the monster!
-    behavior_event(mon, ME_ANNOY, YOU_KILL(beam.thrower)?MHITYOU:
-        beam.beam_source);
+    // player beams which hit friendly MIGHT annoy them and be considered
+    // naughty if they do much damage (this is so as not to penalize
+    // players that fling fireballs into a melee with fire elementals
+    // on their side - the elementals won't give a sh*t,  after all)
+
+    if (nasty_beam(mon, beam))
+    {
+        // could be naughty if it's your beam & the montster is friendly
+        if (mons_friendly(mon) && YOU_KILL(beam.thrower))
+        {
+            // but did you do enough damage to piss them off?
+            if (hurt_final > mon->hit_dice / 3)
+            {
+                naughty(NAUGHTY_ATTACK_FRIEND, 5);
+                behavior_event(mon, ME_ANNOY, YOU_KILL(beam.thrower)?MHITYOU:
+                    beam.beam_source);
+            }
+        }
+        else
+        {
+            behavior_event(mon, ME_ANNOY, YOU_KILL(beam.thrower)?MHITYOU:
+                beam.beam_source);
+        }
+    }
 
     // explosions always 'hit'
     if (!beam.isExplosion && beam.hit < random2(mon->evasion))
@@ -2400,14 +2435,18 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
         if (strcmp(beam.beam_name, "sticky flame") == 0)
             sticky_flame_monster(tid, YOU_KILL(beam.thrower), hurt_final);
 
+
         /* looks for missiles which aren't poison but
            are poison*ed* */
         if (strstr(beam.beam_name, "poison") != NULL
-            && beam.flavour != BEAM_POISON
-            && random2(hurt_final) -
-            random2(mon->armor_class) > 0)
+            && beam.flavour != BEAM_POISON)
         {
-            poison_monster( mon, YOU_KILL(beam.thrower) );
+            if ((random2(hurt_final) - random2(mon->armor_class) > 0)
+                || (strstr(beam.beam_name, "needle") != NULL
+                    && random2(100) < 50 - (3*mon->armor_class/2)))
+            {
+                poison_monster( mon, YOU_KILL(beam.thrower) );
+            }
         }
 
         if (mons_category(mon->type) == MC_MIMIC)
@@ -2421,7 +2460,7 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
 {
     if (beam.colour == LIGHTGREY) // teleportation
     {
-        if (!check_mons_magres(mon, beam.ench_power)
+        if (check_mons_magres(mon, beam.ench_power)
             && !beam.aimedAtFeet)
             return MON_RESIST;
 
@@ -2434,7 +2473,7 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
 
     if (beam.colour == DARKGREY)
     {
-        if (!check_mons_magres(mon, beam.ench_power))
+        if (check_mons_magres(mon, beam.ench_power))
             return MON_RESIST;
 
         if (monster_polymorph(mon, RANDOM_MONSTER, 100))
@@ -2445,7 +2484,7 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
 
     if (beam.colour == LIGHTGREEN)
     {
-        if (!check_mons_magres(mon, beam.ench_power))
+        if (check_mons_magres(mon, beam.ench_power))
             return MON_RESIST;
 
         if (you.level_type == LEVEL_ABYSS)
@@ -2465,7 +2504,7 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
             || mon->type == MONS_PULSATING_LUMP)
             return MON_UNAFFECTED;
 
-        if (!check_mons_magres(mon, beam.ench_power))
+        if (check_mons_magres(mon, beam.ench_power))
             return MON_RESIST;
 
         if (monster_polymorph(mon, MONS_PULSATING_LUMP, 100))
@@ -2488,7 +2527,7 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         goto deathCheck;
     }
 
-    if (!check_mons_magres(mon, beam.ench_power)
+    if (check_mons_magres(mon, beam.ench_power)
         && beam.colour != BLUE && beam.colour != GREEN
         && beam.colour != MAGENTA)
         return MON_RESIST;
@@ -2750,7 +2789,7 @@ static void explosion1(struct bolt &pbolt)
     if (stricmp(pbolt.beam_name, "ball of vapour") == 0)
     {
         seeMsg = "The ball expands into a vile cloud!";
-        hearMsg = "You hear a gentle \'poof\'";
+        hearMsg = "You hear a gentle \'poof\'.";
         strcpy(pbolt.beam_name, "stinking cloud");
     }
 
@@ -2967,4 +3006,49 @@ static void explosion_map(struct bolt &beam, int x, int y,
                 count + cadd, opdir[i], r);
         }
     }
+}
+
+// returns true if the beam is harmful (ignoring monster
+// resists) -- mon is given for 'special' cases where,
+// for example,  "Heal" might actually hurt undead, or
+// "Holy Word" being ignored by holy monsters,  etc.
+//
+// only enchantments should need the actual monster type
+// to determine this;  non-enchantments are pretty
+// straightforward.
+bool nasty_beam(struct monsters *mon, struct bolt &beam)
+{
+    // take care of non-enchantments
+    if (beam.beam_name[0] != '0')
+        return true;
+
+    // now for some non-hurtful enchantments
+
+    // degeneration / sleep
+    if (beam.colour == LIGHTCYAN || beam.flavour == BEAM_SLEEP)
+        return (mons_holiness(mon->type) == MH_NATURAL);
+
+    // dispel undead / control undead
+    if (beam.colour == YELLOW || beam.colour == LIGHTRED)
+        return (mons_holiness(mon->type) == MH_UNDEAD);
+
+    // pain/agony
+    if (beam.colour == LIGHTMAGENTA)
+        return !(mons_holiness(mon->type) == MH_UNDEAD
+            || mons_holiness(mon->type) == MH_DEMONIC);
+
+    // control demon
+    if (beam.colour == 16)
+        return (mons_holiness(mon->type) == MH_DEMONIC);
+
+    // haste
+    if (beam.colour == BLUE && beam.flavour != BEAM_BACKLIGHT)
+        return false;
+
+    // healing
+    if (beam.colour == GREEN || beam.colour == MAGENTA)
+        return false;
+
+    // everything else is considered nasty by everyone
+    return true;
 }

@@ -968,6 +968,9 @@ static void describe_cell(int mx, int my)
         case TRAP_ZOT:
             mpr("A Zot trap.");
             break;
+        case TRAP_NEEDLE:
+            mpr("A needle trap.");
+            break;
         default:
             mpr("An undefined trap. Huh?");
             error_message_to_player();

@@ -196,7 +196,7 @@ int mons_has_ench(struct monsters *mon, int ench, int ench2)
 
 bool mons_del_ench(struct monsters *mon, int ench, int ench2)
 {
-         int p;
+    int p;
 
     // silliness
     if (ench == ENCH_NONE)
@@ -1278,7 +1278,8 @@ void cast_sticks_to_snakes(int pow)
             || you.inv_type[ weapon ] == WPN_BOW
             || you.inv_type[ weapon ] == WPN_ANCUS
             || you.inv_type[ weapon ] == WPN_HALBERD
-            || you.inv_type[ weapon ] == WPN_GLAIVE))
+            || you.inv_type[ weapon ] == WPN_GLAIVE
+            || you.inv_type[ weapon ] == WPN_BLOWGUN))
     {
         how_many = 1;
 
@@ -1414,7 +1415,7 @@ static int sleep_monsters(char x, char y, int pow, int garbage)
         return 0;
     if (mons_holiness(menv[mnstr].type) != MH_NATURAL)
         return 0;
-    if (!check_mons_magres(&menv[mnstr], pow))
+    if (check_mons_magres(&menv[mnstr], pow))
         return 0;
     if (mons_friendly(&menv[mnstr]))
         return 0;
@@ -1460,7 +1461,7 @@ static int tame_beast_monsters(char x, char y, int pow, int garbage)
     if (monster->type == MONS_HOUND || monster->type == MONS_WAR_DOG)
         pow += (pow / 2);
 
-    if (!check_mons_magres(monster, pow))
+    if (check_mons_magres(monster, pow))
         return 0;
 
     // I'd like to make the monsters affected permanently, but that's
@@ -1959,7 +1960,8 @@ static int disperse_monsters(char x, char y, int pow, int message)
 
 void cast_dispersal(int pow)
 {
-    apply_area_around_player( disperse_monsters, pow );
+    if (apply_area_around_player( disperse_monsters, pow ) == 0)
+        mpr("There is a brief shimmering around you.");
 }
 
 static int spell_swap_func(char x, char y, int pow, int message)
@@ -2260,7 +2262,7 @@ static int glamour_monsters(char x, char y, int pow, int garbage)
         return 0;
     }
 
-    if (!check_mons_magres(&menv[mon], pow))
+    if (check_mons_magres(&menv[mon], pow))
         return 0;
 
     switch (random2(6))
@@ -2482,7 +2484,7 @@ static int rot_living(char x, char y, int pow, int message)
     if (mons_holiness(menv[mon].type) != MH_NATURAL)
         return 0;
 
-    if (!check_mons_magres(&menv[mon], pow))
+    if (check_mons_magres(&menv[mon], pow))
         return 0;
 
     ench = ((random2(pow) + random2(pow) + random2(pow) + random2(pow)) / 4);
@@ -2512,7 +2514,7 @@ static int rot_undead(char x, char y, int pow, int garbage)
     if (mons_holiness(menv[mon].type) != MH_UNDEAD)
         return 0;
 
-    if (!check_mons_magres(&menv[mon], pow))
+    if (check_mons_magres(&menv[mon], pow))
         return 0;
 
     // this does not make sense -- player mummies are
@@ -2607,7 +2609,7 @@ static int snake_charm_monsters(char x, char y, int pow, int message)
         return 0;
     if (mons_charclass(menv[mon].type) != 'S')
         return 0;
-    if (!check_mons_magres(&menv[mon], pow))
+    if (check_mons_magres(&menv[mon], pow))
         return 0;
 
     menv[mon].attitude = ATT_FRIENDLY;
@@ -3185,12 +3187,14 @@ void cast_sandblast(int pow)
     // currently over in it_use2.cc (ack) -- bwr
     // int hurt = 2 + random2(5) + random2(4) + random2(pow) / 20;
 
-    if (you.inv_class[you.equip[EQ_WEAPON]] == 0
-        || (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_MISSILES
-            && (you.inv_type[you.equip[EQ_WEAPON]] != MI_STONE
-                || you.inv_type[you.equip[EQ_WEAPON]] != MI_LARGE_ROCK)))
+    big = false;
+
+    if (you.equip[EQ_WEAPON] != -1)
     {
-        big = false;
+        int wep = you.equip[EQ_WEAPON];
+        if (you.inv_class[wep] == OBJ_MISSILES
+           && (you.inv_type[wep] == MI_STONE || you.inv_type[wep] == MI_LARGE_ROCK))
+           big = true;
     }
 
     if (spell_direction(spd, beam) == -1)
@@ -3224,7 +3228,7 @@ static bool mons_can_host_shuggoth(int type)    //jmf: simplified
 {
     if (mons_holiness(type) != MH_NATURAL)
         return false;
-    if (mons_flag((type), M_WARM_BLOOD))
+    if (mons_flag(type, M_WARM_BLOOD))
         return true;
 
     return false;
@@ -3301,43 +3305,76 @@ void cast_condensation_shield(int pow)
 
 static int quadrant_blink(char x, char y, int pow, int garbage)
 {
-    bool done = false;
-    bool down = (you.y_pos > y);
-    bool left = (you.x_pos < x);
-    bool right = (you.x_pos > x);
-    bool up = (you.y_pos < y);
-
     if (x == you.x_pos && y == you.y_pos)
         return 0;
 
-    // use dx, dy since x,y are type 'char'
-    int dx = x;
-    int dy = y;
+    if (pow > 100)
+        pow = 100;
 
-    // I'll accept that 98 is a magic number for the cap here -- bwr
-    if (pow > 98)
-        pow = 98;
+    // setup: Brent's new algorithm
 
-    while(!random_near_space(you.x_pos, you.y_pos, dx, dy))
+    // please note: this is really a simple vector projection using
+    // x,y as a basis vector.  But I can't remember the bloody maths,
+    // so I've hacked it in this way.  Feel free to correct;  the matrix
+    // in question is undoubtably simple. -- GDL
+    int m, b, tries;
+    bool vert = false;
+    if (x == you.x_pos)
+        vert = true;
+    else
     {
-        done = true;
-
-        if (up && dy < you.y_pos)
-            done = false;
-        if (down && dy > you.y_pos)
-            done = false;
-        if (right && dx < you.x_pos)
-            done = false;
-        if (left && dx > you.x_pos)
-            done = false;
+        m = ((int)y - you.y_pos) * 100 / ((int)x - you.x_pos);      // * 100
+        b = 100 * ((int)y - you.y_pos) - m * ((int)x - you.x_pos);  // * 100
     }
-    while (!done && random2(100) < pow--);
 
-    if (!done)
-        return 0;
+    int tx, ty;         // test x,y
+    int bx, by;         // best x,y
+    int best_dist = 1000000;
 
-    you.x_pos = dx;
-    you.y_pos = dy;
+    for(tries = pow * pow / 500 + 3; tries > 0; tries--)
+    {
+        if (!random_near_space(you.x_pos, you.y_pos, tx, ty))
+            return 0;
+
+        // get intersection point
+        int ix, iy;
+        if (vert)
+        {
+            ix = you.x_pos;
+            iy = ty;
+        }
+        else
+        {
+            if (m == 0)
+            {
+                ix = tx;
+                iy = you.y_pos;
+            }
+            else
+            {
+                ix = (100 * (ty - you.y_pos) + m * (tx + you.x_pos)) / ( 2 * m );
+                iy = (m * ix + 100 * b) / 100;
+            }
+        }
+
+        // check distance between intersection and point
+        int dist = distance(ix, iy, tx, ty);
+
+        // attempt to be on the 'correct' side of the line
+        if (((ix >= you.x_pos) ^ (x >= you.x_pos))
+            || ((iy >= you.y_pos) ^ (y >= you.y_pos)))
+            dist += 100;
+
+        if (dist < best_dist)
+        {
+            best_dist = dist;
+            bx = tx;
+            by = ty;
+        }
+    }
+
+    you.x_pos = bx;
+    you.y_pos = by;
 
     if (you.level_type == LEVEL_ABYSS)
     {

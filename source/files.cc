@@ -510,12 +510,6 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
             }
         }
 
-        for (i = 0; i < MAX_MONSTERS; i++)
-        {
-            if (menv[i].type == MONS_MOLLUSC_LORD)
-                menv[i].type = -1;
-        }
-
         if (!just_made_new_lev)
         {
             if (stair_taken == DNGN_ENTER_HELL
@@ -1026,7 +1020,7 @@ void load_ghost(void)
         {
             if (ghost.values[i] != MS_NO_SPELL)
             {
-                menv[i].number = MST_GHOST;
+                menv[imn].number = MST_GHOST;
                 break;
             }
         }

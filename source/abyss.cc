@@ -254,12 +254,12 @@ char area_shift(void)
                         if (mitm.special[k] - NWPN_SINGING_SWORD <= 6)
                         {
                             you.unique_items[mitm.special[k]
-                                             - NWPN_SINGING_SWORD] = 1;
+                                             - NWPN_SINGING_SWORD] = 2;
                         }
                         else
                         {
                             you.unique_items[24 + mitm.special[k]
-                                             - NWPN_SINGING_SWORD - 7] = 1;
+                                             - NWPN_SINGING_SWORD - 7] = 2;
                         }
                     }
 
@@ -383,12 +383,12 @@ void abyss_teleport(void)
                 if (mitm.special[k] - NWPN_SINGING_SWORD <= 6)
                 {
                     you.unique_items[ mitm.special[k]
-                                             - NWPN_SINGING_SWORD ] = 1;
+                                             - NWPN_SINGING_SWORD ] = 2;
                 }
                 else
                 {
                     you.unique_items[ 24 + mitm.special[k]
-                                             - NWPN_SINGING_SWORD - 7 ] = 1;
+                                             - NWPN_SINGING_SWORD - 7 ] = 2;
                 }
             }
         }

@@ -22,6 +22,7 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
+#define ESCAPE '\x1b'           // most ansi-friendly way I can think of defining this.
 
 // there's got to be a better way...
 #ifdef _LIBLINUX_IMPLEMENTATION

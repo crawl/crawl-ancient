@@ -87,21 +87,6 @@ void init_pandemonium(void)
             env.mons_alloc[9] = MONS_EXECUTIONER;
             return;
         }
-
-        if (monster->type == MONS_MOLLUSC_LORD)
-        {
-            env.mons_alloc[0] = MONS_GIANT_SLUG;
-            env.mons_alloc[1] = MONS_ABOMINATION_SMALL;
-            env.mons_alloc[2] = MONS_ABOMINATION_SMALL;
-            env.mons_alloc[3] = MONS_GIANT_SLUG;
-            env.mons_alloc[4] = MONS_GIANT_SNAIL;
-            env.mons_alloc[5] = MONS_GIANT_SLUG;
-            env.mons_alloc[6] = MONS_GIANT_SNAIL;
-            env.mons_alloc[7] = MONS_ABOMINATION_LARGE;
-            env.mons_alloc[8] = MONS_ABOMINATION_LARGE;
-            env.mons_alloc[9] = MONS_ABOMINATION_LARGE;
-            return;
-        }
     }
 
 // colour of monster 9 is colour of floor, 8 is colour of rock

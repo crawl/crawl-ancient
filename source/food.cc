@@ -545,6 +545,9 @@ void eat_food(void)
 
     food_eat_1 = (int) keyin;
 
+    if (keyin == ESCAPE)
+        return;
+
     if (food_eat_1 < 'A' || (food_eat_1 > 'Z' && food_eat_1 < 'a')
         || food_eat_1 > 'z')
     {

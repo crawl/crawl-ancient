@@ -31,6 +31,7 @@
 #include "externs.h"
 #include "dungeon.h"
 #include "itemname.h"
+#include "items.h"
 #include "maps.h"
 #include "mon-util.h"
 #include "mon-pick.h"
@@ -107,7 +108,6 @@ static unsigned char item_in_shop(unsigned char shop_type);
 static bool treasure_area(int level_number, unsigned char ta1_x,
                           unsigned char ta2_x, unsigned char ta1_y,
                           unsigned char ta2_y);
-static void link_items(void);
 static void item_colour(int p);
 static char rare_weapon(unsigned char w_type);
 static bool is_weapon_special(int the_weapon);
@@ -468,8 +468,12 @@ int items(unsigned char allow_uniques,  // not just true-false,
     {
         if (mitm.base_type[p] == OBJ_UNASSIGNED || mitm.quantity[p] == 0)
             break;
-        if (p > MAX_ITEMS - 100)
-            return NON_ITEM;
+        if (p > MAX_ITEMS - 10)
+        {
+            p = cull_items();
+            if (p == NON_ITEM)
+                return p;
+        }
     }
 
     // clear all properties except mitm.base_type <used in switch below> {dlb}:
@@ -897,6 +901,13 @@ int items(unsigned char allow_uniques,  // not just true-false,
                 if (one_chance_in(3))
                     mitm.special[p] = DWPN_ELVEN * 30;
                 break;
+
+            case WPN_BLOWGUN:
+                if (one_chance_in(10))
+                    mitm.special[p] = DWPN_ELVEN * 30;
+                if (one_chance_in(4))
+                    mitm.special[p] = DWPN_ORCISH * 30;
+                break;
             }
         }
 
@@ -1213,6 +1224,10 @@ int items(unsigned char allow_uniques,  // not just true-false,
                                                            : SPWPN_FROST));
                     }
                     break;
+                case WPN_BLOWGUN:
+                    if (one_chance_in(7))
+                        set_weapon_special(p, SPWPN_VENOM);
+                    break;
 
                 // quarterstaff - not powerful, as this would make
                 // the 'staves' skill just too good
@@ -1319,7 +1334,10 @@ int items(unsigned char allow_uniques,  // not just true-false,
 
     case OBJ_MISSILES:
         mitm.pluses[p] = 0;
-        mitm.sub_type[p] = random2(4);
+        mitm.sub_type[p] = random2(5);
+        // ARGH
+        if (mitm.sub_type[p] == MI_EGGPLANT)
+            mitm.sub_type[p] == MI_NEEDLE;
         quant = 0;
 
         if (force_type != OBJ_RANDOM)
@@ -1365,16 +1383,29 @@ int items(unsigned char allow_uniques,  // not just true-false,
             {
                 mitm.special[p] = DAMMO_DWARVEN * 30;
             }
+
+            if (mitm.sub_type[p] == MI_NEEDLE)
+            {
+                if (one_chance_in(10))
+                    mitm.special[p] = DAMMO_ELVEN * 30;
+                if (one_chance_in(6))
+                    mitm.special[p] = DAMMO_ORCISH * 30;
+            }
         }
 
         if (mitm.sub_type[p] == MI_ARROW
             || mitm.sub_type[p] == MI_BOLT
-            || mitm.sub_type[p] == MI_DART)
+            || mitm.sub_type[p] == MI_DART
+            || mitm.sub_type[p] == MI_NEEDLE)
         {
             if (item_power == 351)
                 temp_rand = random2(150);
             else
                 temp_rand = random2(2000 - 55 * item_power);
+
+            // note that needles can only be poisoned
+            if (mitm.sub_type[p] == MI_NEEDLE && temp_rand < 120)
+                temp_rand = 120;
 
             mitm.special[p] += (temp_rand < 60) ? SPMSL_FLAME :
                                  (temp_rand < 120) ? SPMSL_ICE  :
@@ -1385,6 +1416,10 @@ int items(unsigned char allow_uniques,  // not just true-false,
             // code it was poisoned every time!?
             if (mitm.special[p] == DAMMO_ORCISH * 30 && one_chance_in(3))
                 mitm.special[p] += SPMSL_POISONED_II;
+
+            // needles are poisoned a little more often
+            if (mitm.sub_type[p] && one_chance_in(4))
+                mitm.special[p] = 30 * (mitm.special[p] / 30) + SPMSL_POISONED_II;
 
             // reduce quantity if special
             if (mitm.special[p] % 30 != SPMSL_NORMAL)
@@ -1502,7 +1537,6 @@ int items(unsigned char allow_uniques,  // not just true-false,
             mitm.pluses2[p] = random2(4);
 
         // 180 - orc, 150 - dwar, 120 - elf
-        // XXX: "* 30" important!  please fix -- bwr
         if (force_spec == 250 && coinflip())
         {
             switch (mitm.sub_type[p])
@@ -2149,45 +2183,6 @@ int items(unsigned char allow_uniques,  // not just true-false,
         if (book_rarity(mitm.sub_type[p]) == 100)
             goto create_book;
 
-// now why isn't the same sequence #ifdef'd out for staves??? {dlb}
-#if 0
-        mitm.pluses[p] = 127;
-        itoa(127, strungy, 2);
-
-        if (force_type != OBJ_RANDOM)
-            mitm.sub_type[p] = force_type;
-
-        // shouldn't let spell no 1 be erased
-
-        spellbook_template(mitm.sub_type[p], fpass);
-
-        for (bkk = 1; bkk < SPELLBOOK_SIZE; bkk++)
-            if (fpass[bkk] == SPELL_NO_SPELL)
-                strungy[bkk] = '0';
-
-        icky = strlen(strungy);
-
-        multip = 1;
-        numbo = 0;
-
-        for (xj = icky; xj >= 1; xj--)
-        {
-            if (strungy[xj] == '0')
-            {
-                multip *= 2;
-            }
-            else if (strungy[xj] == '1')
-            {
-                numbo += multip;
-                multip *= 2;
-            }
-        }
-
-        strcpy(strungy, "");
-
-        mitm.pluses[p] = numbo + 64;
-#endif
-
         mitm.special[p] = random2(5);
 
         if (one_chance_in(10))
@@ -2241,58 +2236,6 @@ int items(unsigned char allow_uniques,  // not just true-false,
             mitm.sub_type[p] = force_type;
 
         mitm.special[p] = random2(9);
-
-        // do we need all this special stuff for staves if it was removed
-        // for spellbooks? {dlb}
-        // Hopefully, not... that was an ugly hack I removed -- bwr
-#if 0
-        if (mitm.sub_type[p] >= STAFF_SMITING   // that is, spell staves {dlb}
-                && mitm.sub_type[p] <= STAFF_DEMONOLOGY)
-        {
-            mitm.pluses[p] = 127;
-
-            if (force_type != OBJ_RANDOM)
-                mitm.sub_type[p] = force_type;
-
-            itoa(127, strungy, 2);
-
-            if (force_type != OBJ_RANDOM)
-                mitm.sub_type[p] = force_type;
-
-            spellbook_template(mitm.sub_type[p] + 40, fpass);
-
-            for (bkk = 1; bkk < SPELLBOOK_SIZE; bkk++)
-            {
-                if (fpass[bkk] == SPELL_NO_SPELL)
-                    strungy[bkk] = '0';
-            }
-
-            icky = strlen(strungy);
-
-            multip = 1;
-            numbo = 0;
-
-            for (xj = icky; xj >= 1; xj--)
-            {
-                if (strungy[xj] == '0')
-                {
-                    multip *= 2;
-                }
-                else if (strungy[xj] == '1')
-                {
-                    numbo += multip;
-                    multip *= 2;
-                }
-            }
-
-            strcpy(strungy, "");
-
-            mitm.pluses[p] = numbo + 64;
-        }
-#endif
-        // XXX: Is this the only magic we need from above? -- bwr
-        if (force_type != OBJ_RANDOM)
-            mitm.sub_type[p] = force_type;
 
         quant = 1;
         break;
@@ -2439,6 +2382,14 @@ void give_item(int mid, int level_number)
     switch (menv[mid].type)
     {
     case MONS_KOBOLD:
+        // a few of the smarter kobolds have blowguns.
+        if (one_chance_in(10))
+        {
+            mitm.base_type[bp] = OBJ_WEAPONS;
+            mitm.sub_type[bp] = WPN_BLOWGUN;
+            break;
+        }
+        // intentional fallthrough
     case MONS_BIG_KOBOLD:
         if (random2(5) < 3)     // give hand weapon
         {
@@ -2476,6 +2427,12 @@ void give_item(int mid, int level_number)
     case MONS_GOBLIN:
         if (one_chance_in(3))
             force_spec = 3;
+        if (one_chance_in(12))
+        {
+            mitm.base_type[bp] = OBJ_WEAPONS;
+            mitm.base_type[bp] = WPN_BLOWGUN;
+            break;
+        }
         // deliberate fall through {dlb}
     case MONS_JESSICA:
     case MONS_IJYB:
@@ -2527,6 +2484,13 @@ void give_item(int mid, int level_number)
         break;
 
     case MONS_ORC:
+        if (one_chance_in(15))
+        {
+            mitm.base_type[bp] = OBJ_WEAPONS;
+            mitm.base_type[bp] = WPN_BLOWGUN;
+            break;
+        }
+        // deliberate fall through {gdl}
     case MONS_ORC_PRIEST:
         force_spec = 3;
         // deliberate fall through {dlb}
@@ -2961,54 +2925,37 @@ void give_item(int mid, int level_number)
     if (menv[mid].inv[MSLOT_WEAPON] != NON_ITEM
         && launches_things(mitm.sub_type[menv[mid].inv[MSLOT_WEAPON]]))
     {
-        for (bp = 0; bp < MAX_ITEMS - 100; bp++)
+        xitc = OBJ_MISSILES;
+        xitt = launched_by(mitm.sub_type[menv[mid].inv[MSLOT_WEAPON]]);
+
+        thing_created = items( 0, xitc, xitt, 1, give_level, force_spec );
+
+        if (thing_created != NON_ITEM)
         {
-            if (mitm.quantity[bp] == 0 || mitm.base_type[bp] == OBJ_UNASSIGNED)
-                break;
+            // monsters will always have poisoned needles -- otherwise
+            // they are just going to behave badly --GDL
+            if (xitt == MI_NEEDLE)
+                mitm.special[thing_created] = 30 * (mitm.special[thing_created] / 30)
+                    + SPMSL_POISONED;
+
+            mitm.x[thing_created] = 0;
+            mitm.y[thing_created] = 0;
+            mitm.id[thing_created] = 0;
+            menv[mid].inv[MSLOT_MISSILE] = thing_created;
+
+            // again, SPWPN_PROTECTION + ???, I think {dlb}
+            if (mitm.base_type[thing_created] == OBJ_WEAPONS
+                && mitm.special[thing_created] % 30 == SPWPN_PROTECTION)
+            {
+                menv[mid].armor_class += 3;
+            }
+
+            item_colour(thing_created);
         }
-
-        if (bp >= MAX_ITEMS - 100)
-            return;             // already too many.
-
-        mitm.pluses[bp] = 50;
-        mitm.pluses2[bp] = 0;
-        mitm.special[bp] = SPWPN_NORMAL;
-        force_item = 0;
-
-        mitm.base_type[bp] = OBJ_MISSILES;
-        mitm.sub_type[bp] = launched_by(mitm.sub_type[menv[mid].inv[MSLOT_WEAPON]]);
-        iquan = 3 + random2avg(16, 2);
-
-        // that is, lose SPWPN's, I think, but retain racial typing {dlb}
-        mitm.special[bp] = (mitm.special[menv[mid].inv[MSLOT_WEAPON]] / 30) * 30;
-
-        if (force_item)
-            mitm.quantity[bp] = iquan;
-
-        xitc = mitm.base_type[bp];
-        xitt = mitm.sub_type[bp];
-
-        thing_created = ((force_item) ? bp : items( 0, xitc, xitt, 1,
-                                                    give_level, force_spec ));
-
-        mitm.x[thing_created] = 0;
-        mitm.y[thing_created] = 0;
-        mitm.id[thing_created] = 0;
-        menv[mid].inv[MSLOT_MISSILE] = thing_created;
-
-        // again, SPWPN_PROTECTION + ???, I think {dlb}
-        if (mitm.base_type[thing_created] == OBJ_WEAPONS
-            && mitm.special[thing_created] % 30 == SPWPN_PROTECTION)
-        {
-            menv[mid].armor_class += 3;
-        }
-
-        item_colour(thing_created);
     }                           // end if needs ammo
 
 
     // now, the section that gives armour out {dlb}:
-    //bp = 0;    // I do not think this is necessary, see following loop: {dlb}
     for (bp = 0; bp < MAX_ITEMS - 100; bp++)
     {
         if (mitm.quantity[bp] == 0 || mitm.base_type[bp] == OBJ_UNASSIGNED)
@@ -3631,7 +3578,7 @@ static int builder_normal(int level_number, char level_type, spec_room &sr)
     bool done_city = false;
 
     if (you.where_are_you == BRANCH_MAIN_DUNGEON && level_type == LEVEL_DUNGEON
-        && level_number > 7 && level_number < 23 && one_chance_in(9))
+        && level_number > 10 && level_number < 23 && one_chance_in(9))
     {
         // Can't have vaults on you.where_are_you != BRANCH_MAIN_DUNGEON levels
         build_vaults(level_number, 100);
@@ -3665,7 +3612,7 @@ static int builder_normal(int level_number, char level_type, spec_room &sr)
     if (level_number > 2 && level_number < 23 && one_chance_in(3))
     {
         plan_main(level_number, 0);
-        if (one_chance_in(3))
+        if (one_chance_in(3) && level_number > 6)
             build_minivaults(level_number, 200);
         return 1;
     }
@@ -3841,6 +3788,8 @@ static void place_traps(int level_number)
             env.trap_type[i] = TRAP_ARROW;
         if (random2(1 + level_number) > 3)
             env.trap_type[i] = TRAP_SPEAR;
+        if ((random2(1 + level_number) > 4) && one_chance_in(5))
+            env.trap_type[i] = TRAP_NEEDLE;
         if (random2(1 + level_number) > 5)
             env.trap_type[i] = TRAP_AXE;
         if (random2(1 + level_number) > 7)
@@ -3858,6 +3807,8 @@ static void place_traps(int level_number)
             env.trap_type[i] = TRAP_TELEPORT;
         if (one_chance_in(40))
             env.trap_type[i] = TRAP_AMNESIA;
+
+        env.trap_type[i] = TRAP_NEEDLE;
 
         grd[env.trap_x[i]][env.trap_y[i]] = DNGN_UNDISCOVERED_TRAP;
     }                           // end "for i"
@@ -4289,6 +4240,9 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
     // do aquatic and lava monsters:
 
     // count the number of lava and water tiles {dlb}:
+    lava_spaces = 0;
+    water_spaces = 0;
+
     for (x = 0; x < GXM; x++)
     {
         for (y = 0; y < GYM; y++)
@@ -5541,6 +5495,9 @@ static void item_colour(int p)
         case MI_LARGE_ROCK:
             mitm.colour[p] = BROWN;
             break;
+        case MI_NEEDLE:
+            mitm.colour[p] = WHITE;
+            break;
         default:
             mitm.colour[p] = LIGHTCYAN;
             if (mitm.special[p] / 30 == DAMMO_DWARVEN)
@@ -5967,6 +5924,7 @@ static char rare_weapon(unsigned char w_type)
     case WPN_HAND_CROSSBOW:
     case WPN_SPIKED_FLAIL:
     case WPN_WHIP:
+    case WPN_BLOWGUN:
         return 4;
     case WPN_GREAT_MACE:
         return 3;
@@ -7683,7 +7641,7 @@ static bool place_specific_trap(unsigned char spec_x, unsigned char spec_y,
     return false;
 }                               // end place_specific_trap()
 
-void define_zombie(int mid, int ztype, int cs)
+void define_zombie(int mid, int ztype, int cs, int power)
 {
     int mons_sec2 = 0;
     int zombie_size;
@@ -7718,12 +7676,18 @@ void define_zombie(int mid, int ztype, int cs)
     // that is, random creature from which to fashion undead
     if (ztype == 250)
     {
+        // how OOD this zombie can be.
+        int relax = 5;
+
+        // pick an appropriate creature to make a zombie out of,
+        // levelwise.  The old code was generating absolutely
+        // incredible OOD zombies.
         while(true)
         {
             // this limit can be updated if mons->number goes >8 bits..
-            test = random2(182);            // not guaranteed to be valid!
+            test = random2(182);            // not guaranteed to be valid, so..
             cls = mons_charclass(test);
-            if (cls == MONS_PROGRAM_BUG)
+            if (cls == MONS_PROGRAM_BUG || mons_rarity(cls) == 0)
                 continue;
 
             // monster class must be zombifiable and match class size
@@ -7734,13 +7698,26 @@ void define_zombie(int mid, int ztype, int cs)
                 && !mons_skeleton(cls))
                 continue;
 
-            // size must match
-            if (mons_zombie_size(cls) == zombie_size)
+            // size must match, but you can make a spectral thing out of anything.
+            if (mons_zombie_size(cls) != zombie_size && zombie_size >= 0)
+                continue;
+
+            // check for rarity.. and OOD - identical to mons_place()
+            int level, diff, chance;
+
+            level  = mons_level( cls );
+            diff   = level - power;
+            chance = mons_rarity( cls ) - (diff * diff);
+
+            if (power > level - relax && power < level + relax
+                && random2avg(100, 2) <= chance)
                 break;
 
-            // can make a spectral thing out of anything, I think.
-            if (zombie_size < 0)
-                break;
+            // every so often,  we'll relax the OOD restrictions.  Avoids
+            // infinite loops (if we don't do this,  things like creating
+            // a large skeleton on level 1 may hang the game!
+            if (one_chance_in(15))
+                relax++;
         }
 
         // set type and secondary appropriately

@@ -2169,6 +2169,9 @@ void wield_warning(bool newWeapon)
         case WPN_HAND_CROSSBOW:
             shoot_skill = you.skills[SK_CROSSBOWS];
             break;
+        case WPN_BLOWGUN:
+            shoot_skill = you.skills[SK_DARTS];
+            break;
         default:
             shoot_skill = 0;
             break;

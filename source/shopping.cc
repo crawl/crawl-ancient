@@ -486,6 +486,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
 
         case WPN_QUARTERSTAFF:
         case WPN_WHIP:
+        case WPN_BLOWGUN:
             valued += 25;
             break;
 
@@ -731,6 +732,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
             break;
         case MI_ARROW:
         case MI_BOLT:
+        case MI_NEEDLE:
             valued += 2;
             break;
         default:

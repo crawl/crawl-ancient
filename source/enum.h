@@ -1097,6 +1097,7 @@ enum MISSILES                          // (unsigned char)
     MI_DART,
     MI_EGGPLANT,
     MI_LARGE_ROCK, //jmf: it'd be nice to move MI_LARGE_ROCK to DEBRIS_ROCK
+    MI_NEEDLE,
     NUM_MISSILES
 };
 
@@ -2306,15 +2307,15 @@ enum SPELLS
     SPELL_ERINGYAS_SURPRISING_BOUQUET, // turn sticks into herbivore food
     SPELL_FRAGMENTATION,               // replacement for "orb of frag"
     SPELL_AIR_WALK,                    // "dematerialize" (air/transmigration)
-    SPELL_SANDBLAST,     // mini-frag; can use stones for material component
-    SPELL_ROTTING,       // evil god power or necromantic transmigration  201
+    SPELL_SANDBLAST,     // mini-frag; can use stones for material comp   195
+    SPELL_ROTTING,       // evil god power or necromantic transmigration
     SPELL_SHUGGOTH_SEED, // evil god power or necromantic summoning
     SPELL_MAXWELLS_SILVER_HAMMER,      // vorpal-brand maces etc.
     SPELL_CONDENSATION_SHIELD,         // "shield" of icy vapour
-    SPELL_SEMI_CONTROLLED_BLINK,       //jmf: to test effect              205
+    SPELL_SEMI_CONTROLLED_BLINK,       //jmf: to test effect              200
     SPELL_STONESKIN,
     SPELL_SIMULACRUM,
-    SPELL_CONJURE_BALL_LIGHTNING,     // 208 (be wary of 210, see below)
+    SPELL_CONJURE_BALL_LIGHTNING,     // 203 (be wary of 210, see below)
     NUM_SPELLS,
     SPELL_NO_SPELL = 210              //  210 - added 22jan2000 {dlb}
 };
@@ -2441,6 +2442,7 @@ enum TRAPS                             // env.trap_type[]
     TRAP_BLADE,
     TRAP_BOLT,
     TRAP_ZOT,
+    TRAP_NEEDLE,
     NUM_TRAPS,                         // must remain last 'regular' member {dlb}
     TRAP_UNASSIGNED = 100,             // keep set at 100 for now {dlb}
     TRAP_RANDOM = 255                  // set at 255 to avoid potential conflicts {dlb}
@@ -2543,7 +2545,8 @@ enum WEAPONS
     WPN_GREAT_MACE,
     WPN_GREAT_FLAIL,                   //   40
     WPN_KNIFE,
-    NUM_WEAPONS,                       //   42 - must remain last regular member {dlb}
+    WPN_BLOWGUN,
+    NUM_WEAPONS,                       //   43 - must remain last regular member {dlb}
 // special cases
     WPN_UNARMED = 500,                 //  500
     WPN_UNKNOWN = 1000,                // 1000

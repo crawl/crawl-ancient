@@ -1001,6 +1001,7 @@ bool class_allowed(unsigned char speci, int char_class)
         case SP_SPRIGGAN:
         case SP_TROLL:
         case SP_MERFOLK:
+        case SP_SLUDGE_ELF:
             return false;
         }
         return true;
@@ -1020,6 +1021,7 @@ bool class_allowed(unsigned char speci, int char_class)
         case SP_MINOTAUR:
         case SP_OGRE:
         case SP_TROLL:
+        case SP_SLUDGE_ELF:
             return false;
         }
         return true;
@@ -1158,6 +1160,7 @@ bool class_allowed(unsigned char speci, int char_class)
         case SP_SPRIGGAN:
         case SP_TROLL:
         case SP_MERFOLK:
+        case SP_SLUDGE_ELF:
             return false;
         }
         return true;
@@ -1288,6 +1291,7 @@ bool class_allowed(unsigned char speci, int char_class)
         case SP_SPRIGGAN:
         case SP_TROLL:
         case SP_MERFOLK:
+        case SP_SLUDGE_ELF:
             return false;
         }
         return true;
@@ -3403,7 +3407,10 @@ void give_items_skills()
         you.skills[SK_ENCHANTMENTS] = 1;
         you.skills[SK_SPELLCASTING + random2(3)]++;
         you.skills[SK_SUMMONINGS + random2(5)]++;
-        you.skills[SK_SHORT_BLADES] = 1;
+        if (you.species == SP_HILL_DWARF || you.species == SP_MOUNTAIN_DWARF)
+            you.skills[SK_MACES_FLAILS] = 1;
+        else
+            you.skills[SK_SHORT_BLADES] = 1;
         you.skills[SK_STAVES] = 1;
         break;
 
@@ -3681,11 +3688,11 @@ void give_items_skills()
 
         you.inv_quantity[1] = 1;
         you.inv_class[1] = OBJ_WEAPONS;
-        you.inv_type[1] = WPN_HAND_CROSSBOW;
+        you.inv_type[1] = WPN_BLOWGUN;
         you.inv_plus[1] = 50;
         you.inv_plus2[1] = 50;
         you.inv_dam[1] = 0;
-        you.inv_colour[1] = BROWN;
+        you.inv_colour[1] = LIGHTGREY;
 
         you.inv_quantity[2] = 1;
         you.inv_class[2] = OBJ_ARMOUR;
@@ -3703,11 +3710,23 @@ void give_items_skills()
 
         you.inv_quantity[4] = random2avg(19, 2) + 10;
         you.inv_class[4] = OBJ_MISSILES;
-        you.inv_type[4] = MI_DART;
-
+        you.inv_type[4] = MI_NEEDLE;
         you.inv_plus[4] = 50;
         you.inv_dam[4] = SPMSL_POISONED;
-        you.inv_colour[4] = LIGHTCYAN;
+        you.inv_colour[4] = WHITE;
+
+        // deep elves get hand crossbows, everyone else gets blowguns
+        // (deep elves tend to suck at melee and need something that
+        // can do ranged damage)
+        if (you.species == SP_DEEP_ELF)
+        {
+            you.inv_type[1] = WPN_HAND_CROSSBOW;
+            you.inv_colour[1] = BROWN;
+
+            you.inv_type[4] = MI_DART;
+            you.inv_colour[4] = LIGHTCYAN;
+        }
+
 
         you.equip[EQ_WEAPON] = 0;
         you.equip[EQ_BODY_ARMOUR] = 2;
@@ -3720,7 +3739,11 @@ void give_items_skills()
         you.skills[SK_STABBING] = 2;
         you.skills[SK_THROWING] = 1;
         you.skills[SK_DARTS] = 1;
-        you.skills[SK_CROSSBOWS] = 1;
+        if (you.species == SP_DEEP_ELF)
+            you.skills[SK_CROSSBOWS] = 1;
+        else
+            you.skills[SK_DARTS] += 1;
+
         break;
 
     case JOB_BERSERKER:
@@ -3742,16 +3765,6 @@ void give_items_skills()
         else if (you.species == SP_TROLL)
         {
             you.equip[EQ_WEAPON] = -1;
-            // *BCR* Looks like Troll berserkers don't get weapons;
-            // should get unarmed?
-            /*
-               you.inv_quantity[0] = 0;
-               you.inv_class[0] = OBJ_WEAPONS;
-               you.inv_type[0] = WPN_CLUB;
-               you.inv_plus[0] = 50;
-               you.inv_dam[0] = 0;
-               you.inv_colour[0] = BROWN;
-             */
         }
         else
         {
@@ -3805,8 +3818,7 @@ void give_items_skills()
 
         if (you.species == SP_TROLL)
         {
-            // *BCR* Troll Berserkers get no weapon, so I gave them
-            // unarmed/dodging
+            // no wep - give them unarmed.
             you.skills[SK_FIGHTING] += 3;
             you.skills[SK_DODGING] = 2;
             you.skills[SK_UNARMED_COMBAT] = 2;

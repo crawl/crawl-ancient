@@ -296,8 +296,6 @@ int animate_a_corpse(char axps, char ayps, int corps_beh, int corps_hit,
             (igrd[axps][ayps], axps, ayps, corps_beh, corps_hit, 1) > 0)
     {
         mpr("The dead are walking!");
-        //else
-        //  mpr("You receive no reply.");
     }
 
     return 0;
@@ -312,8 +310,22 @@ int raise_corpse(int corps, char corx, char cory, int corps_beh,
         returnVal = 0;
     else if (actual != 0)
     {
-        const int type = (mitm.sub_type[corps] == CORPSE_BODY)
-                                    ? MONS_ZOMBIE_SMALL : MONS_SKELETON_SMALL;
+        int type;
+        if (mitm.sub_type[corps] == CORPSE_BODY)
+        {
+            if (mons_zombie_size(mitm.pluses[corps]) == Z_SMALL)
+                type = MONS_ZOMBIE_SMALL;
+            else
+                type = MONS_ZOMBIE_LARGE;
+        }
+        else
+        {
+            if (mons_zombie_size(mitm.pluses[corps]) == Z_SMALL)
+                type = MONS_SKELETON_SMALL;
+            else
+                type = MONS_SKELETON_LARGE;
+        }
+
         create_monster( type, 0, corps_beh, corx, cory, corps_hit,
                         mitm.pluses[corps] );
         destroy_item(corps);

@@ -66,9 +66,7 @@ bool curse_an_item(char which, char power)
 
     /* I think this is wrong??? */
     FixedVector < char, ENDOFPACK > possib;
-    char cu = power;
-
-    cu;
+    char cu;
     char cu1;
     char cu2 = 0;
     char cu3;
@@ -449,7 +447,7 @@ void behavior_event(struct monsters *mon, int event, int param)
             break;
         case ME_CORNERED:
             // just set behavior.. foe doesn't change.
-            if (mon->behavior != BEH_CORNERED)
+            if (mon->behavior != BEH_CORNERED && !mons_has_ench(mon,ENCH_FEAR))
                 simple_monster_message(mon, " turns to fight!");
             mon->behavior = BEH_CORNERED;
             break;
@@ -871,12 +869,12 @@ static bool handle_enchantment(struct monsters *monster)
                     poisonval = monster->enchantment[p] - ENCH_YOUR_POISON_I;
 
                 if (coinflip())
-                    hurt_monster(monster, 1 + random2(poisonval - 3));
+                    hurt_monster(monster, 1 + random2(poisonval + 3));
 
                 if (mons_res_poison(monster->type) < 0)
                 {
-                    hurt_monster(monster, 1 + random2(poisonval - 5)
-                                            + random2(poisonval - 5));
+                    hurt_monster(monster, 1 + random2(poisonval + 1)
+                                            + random2(poisonval + 1));
                 }
 
                 if (monster->hit_points < 1)
@@ -1769,7 +1767,8 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
         return false;           //jmf: shapeshiftes don't get spells, just
                                 //     physical powers.
     }
-    else if (mons_has_ench(monster, ENCH_CONFUSION) && monster->type != MONS_VAPOUR)
+    else if (mons_has_ench(monster, ENCH_CONFUSION) && !mons_flag(monster->type,
+        M_CONFUSED))
         return false;
     else if (monster->type == MONS_PANDEMONIUM_DEMON && ghost.values[9] == 0)
         return false;
@@ -2295,22 +2294,15 @@ void monster(void)
                 {
                     bool isFriendly = mons_friendly(monster);
                     bool attacked = false;
-                    if (testbits(monster->flags, MF_BATTY))
+                    if (!isFriendly)
                     {
-                        if (!isFriendly)
+                        monster_attack(i);
+                        attacked = true;
+
+                        if (testbits(monster->flags, MF_BATTY))
                         {
-                            monster_attack(i);
                             monster->behavior = BEH_WANDER;
                             monster->foe = MHITNOT;
-                            attacked = true;
-                        }
-                    }
-                    else
-                    {
-                        if (!isFriendly)
-                        {
-                            monster_attack(i);
-                            attacked = true;
                         }
                     }
 
@@ -2404,7 +2396,13 @@ static bool mons_pickup(struct monsters *monster)
             hps_gained /= 20;
         }
         else
-            hps_gained = 1;  // seems a bit of a trifle not to scale this {dlb}
+        {
+            // shouldn't be much trouble to digest a huge pile of gold!
+            quant_eated = mitm.quantity[igrd[monster->x][monster->y]];
+            if (quant_eated > 500)
+                quant_eated = 500 + random2avg(quant_eated - 500,2);
+            hps_gained = quant_eated / 10;
+        }
 
         if (hps_gained < 1)
             hps_gained = 1;
@@ -2754,6 +2752,18 @@ static void monster_move(struct monsters *monster)
                 }
             }
 
+            // wandering through a trap is OK if we're pretty healthy, or
+            // really stupid.
+            if (trap_at_xy(targ_x,targ_y) >= 0
+                && mons_intel(monster->type) != I_PLANT)
+            {
+                if (monster->hit_points < monster->max_hit_points / 2)
+                {
+                    good_move[count_x][count_y] = false;
+                    continue;
+                }
+            }
+
             const int targ_cloud = env.cgrid[ targ_x ][ targ_y ];
             const int curr_cloud = env.cgrid[ monster->x ][ monster->y ];
 
@@ -2813,13 +2823,12 @@ static void monster_move(struct monsters *monster)
                         continue;
                     break;
 
-                // dumb monsters can be fooled by smoke
-                if (mons_intel(monster->type) > I_ANIMAL || coinflip())
-                    continue;
-
                 // this isn't harmful,  but dumb critters might think so.
                 case CLOUD_GREY_SMOKE:
                 case CLOUD_GREY_SMOKE_MON:
+                    if (mons_intel(monster->type) > I_ANIMAL || coinflip())
+                        continue;
+
                     if (mons_res_fire(monster->type) > 0
                         || (monster->inv[MSLOT_ARMOUR] != NON_ITEM
                             && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30
@@ -2836,7 +2845,10 @@ static void monster_move(struct monsters *monster)
                     continue;   // harmless clouds
                 }
 
-                good_move[count_x][count_y] = false;
+                // if we get here, the cloud is potentially harmful.
+                // exceedingly dumb creatures will still wander in.
+                if (mons_intel(monster->type) != I_PLANT)
+                    good_move[count_x][count_y] = false;
             }
         }
     } // now we know where we _can_ move.

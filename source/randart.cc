@@ -1413,6 +1413,24 @@ static struct unrandart_entry *seekunrandart(unsigned char aclass,
     return seekunrandart(250, 250, 250, 250);   /* Should *never* happen */
 }                               // end seekunrandart()
 
+int find_unrandart_index(int item_number)
+{
+    int x;
+
+    for(x=0; x < NO_UNRANDARTS; x++)
+    {
+        if (unranddata[x].ura_cl == mitm.base_type[item_number]
+            && unranddata[x].ura_ty == mitm.sub_type[item_number]
+            && unranddata[x].ura_pl % 100 == mitm.pluses[item_number] % 100
+            && unranddata[x].ura_pl2 == mitm.pluses2[item_number])
+        {
+            return x;
+        }
+    }
+
+    return -1;
+}
+
 int find_okay_unrandart(unsigned char aclass)
 {
     int x, count;
@@ -1479,6 +1497,7 @@ void standard_name_weap(unsigned char item_typ, char glorg[80])
                    (item_typ == WPN_HALBERD) ? "halberd" :
                    (item_typ == WPN_SLING) ? "sling" :
                    (item_typ == WPN_BOW) ? "bow" :
+                   (item_typ == WPN_BLOWGUN) ? "blowgun" :
                    (item_typ == WPN_CROSSBOW) ? "crossbow" :
                    (item_typ == WPN_HAND_CROSSBOW) ? "hand crossbow" :
                    (item_typ == WPN_GLAIVE) ? "glaive" :

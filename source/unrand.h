@@ -116,7 +116,7 @@
 
    Done! Now recompile and wait years for it to turn up.
 
-   Note: changing NO_UNRANDARTS probably makes savefiles incompatible.
+   Note: changing NO_UNRANDARTS does NOT make savefiles incompatible.
 
  */
 
@@ -317,7 +317,7 @@
             0, 0
     }
     ,
-        "It allows its wearer to excell in the arts of thievery.",
+        "It allows its wearer to excel in the arts of thievery.",
         "",
         ""
 }

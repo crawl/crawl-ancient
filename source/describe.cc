@@ -878,6 +878,12 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
                     "and a skilled user can use it to great effect. ";
                 break;
 
+            case WPN_BLOWGUN:
+                description += "A long, light tube, open at both ends.  Doing "
+                    "very little damage,  its main use is to fire poisoned "
+                    "needles from afar.  It makes very little noise. ";
+                break;
+
             case WPN_CROSSBOW:
                 description += "A piece of machinery used for firing bolts, "
                     "which takes some time to load and fire. "
@@ -1304,6 +1310,9 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
             case WPN_CROSSBOW:
                 description += " 'crossbows' category. ";
                 break;
+            case WPN_BLOWGUN:
+                description += " 'darts' category. ";
+                break;
             default:
                 // Melee weapons
                 switch (weapon_skill(item_class, item_type))
@@ -1358,6 +1367,9 @@ static string describe_ammo(int item_type, int item_plus, int item_dam,
         break;
     case MI_ARROW:
         description += "An arrow. ";
+        break;
+    case MI_NEEDLE:
+        description += "A needle. ";
         break;
     case MI_BOLT:
         description += "A crossbow bolt. ";
@@ -1632,7 +1644,9 @@ static string describe_armour(int item_class, int item_type, int item_plus,
     {
         description += "$Armour rating: ";
 
-        if (item_type == ARM_BOOTS && item_plus2 != 0)
+        if (item_type == ARM_HELMET && item_plus2 >= 2) // caps, wizard hats
+            append_value(description, 0, false);
+        else if (item_type == ARM_BOOTS && item_plus2 != 0)
             // Barding has AC value 4.
             append_value(description, 4, false);
         else
@@ -2890,9 +2904,9 @@ static string describe_staff(int item_type, unsigned char item_id)
         }
 
         description +=
-            "$Damage rating: 7 $Accuracy rating: +6 $Speed multiplier (x10): +12";
+            "$$Damage rating: 7 $Accuracy rating: +6 $Attack delay: 120%";
 
-        description += "$It falls into the 'staves' category. ";
+        description += "$$It falls into the 'staves' category. ";
     }
 
     return description;
@@ -4151,9 +4165,9 @@ void describe_spell(int spelled)
             "reading scrolls, casting spells, praying or yelling "
             "in the caster's vicinity impossible. (Applies to "
             "caster too, of course.)  This spell will not hide your "
-            "presence, since it's sudden and complete quieting effect "
+            "presence, since its sudden and complete effect "
             "will almost certainly alert any living creature that something "
-            "is very, very wrong. ";
+            "is very wrong. ";
         break;
 
     case SPELL_SHATTER:

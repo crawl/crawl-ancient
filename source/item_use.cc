@@ -282,6 +282,9 @@ void wield_weapon(bool auto_wield)
         you.equip[EQ_WEAPON] = item_wield_2;
     }
 
+    // any oddness on wielding taken care of here
+    wield_effects(item_wield_2, true);
+
     strcpy(info, " ");
 
     info[0] = index_to_letter(item_wield_2);
@@ -296,9 +299,6 @@ void wield_weapon(bool auto_wield)
 
     // warn player about low str/dex or throwing skill
     wield_warning();
-
-    // any oddness on wielding taken care of here
-    wield_effects(item_wield_2, true);
 
     // time calculations
     you.time_taken *= 5;
@@ -336,18 +336,7 @@ void wield_effects(int item_wield_2, bool showMsgs)
             calc_mp();
 
             if (you.inv_ident[you.equip[EQ_WEAPON]] < 3)
-            {
                 you.inv_ident[you.equip[EQ_WEAPON]] = 3;
-                strcpy(info, "You are wielding ");
-                in_name(you.equip[EQ_WEAPON], 3, str_pass);
-                strcat(info, str_pass);
-                strcat(info, ".");
-                mpr(info);
-
-                more();
-
-                wield_change = true;
-            }
         }
     }
 
@@ -1435,6 +1424,9 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         case WPN_BOW:
             shoot_skill = you.skills[SK_BOWS];
             break;
+        case WPN_BLOWGUN:
+            shoot_skill = you.skills[SK_DARTS];
+            break;
         case WPN_CROSSBOW:
         case WPN_HAND_CROSSBOW:
             shoot_skill = you.skills[SK_CROSSBOWS];
@@ -1470,10 +1462,28 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             // add skill for slings.. helps to find those vulnerable spots
             exDamBonus += effSkill / 2;
 
-            // now kill the launcher damage bonus (slings, bows only)
+            // now kill the launcher damage bonus
             if (lnchDamBonus > 0)
                 lnchDamBonus = 0;
             break;
+
+            // blowguns take a _very_ steady hand;  a lot of the bonus
+            // comes from dexterity.  (Dex bonus here as well as below)
+        case WPN_BLOWGUN:
+            exercise(SK_DARTS, (coinflip()? 2 : 1));
+            baseHit -= 2;
+            exHitBonus = (effSkill * 3) / 2 + you.dex / 2;
+
+            // no extra damage for blowguns
+            exDamBonus = 0;
+
+            // now kill the launcher damage and ammo bonuses
+            if (lnchDamBonus > 0)
+                lnchDamBonus = 0;
+            if (ammoDamBonus > 0)
+                ammoDamBonus = 0;
+            break;
+
 
         case WPN_BOW:
             exercise(SK_BOWS, (coinflip()? 2 : 1));
@@ -1491,7 +1501,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             // add in skill for bows.. help you to find those vulnerable spots.
             exDamBonus += effSkill;
 
-            // now kill the launcher damage bonus (slings, bows only)
+            // now kill the launcher damage bonus
             if (lnchDamBonus > 0)
                 lnchDamBonus = 0;
             break;
@@ -1530,6 +1540,19 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
         const bool poisoned = (you.inv_dam[throw_2] % 30 == SPMSL_POISONED
                             || you.inv_dam[throw_2] % 30 == SPMSL_POISONED_II);
+
+        // check for venom brand (usually only available for blowguns)
+        if (bow_brand == SPWPN_VENOM && !(ammo_brand == SPMSL_FLAME
+            || ammo_brand == SPMSL_ICE || poisoned))
+        {
+            // poison brand the ammo
+            you.inv_dam[throw_2] = you.inv_dam[throw_2] / 30 + SPMSL_POISONED;
+
+            item_name(you.inv_plus2[throw_2], you.inv_class[throw_2],
+              you.inv_type[throw_2], you.inv_dam[throw_2],
+              you.inv_plus[throw_2], 1, you.inv_ident[throw_2], 6, str_pass);
+            strcpy(pbolt.beam_name, str_pass);
+        }
 
         if ((bow_brand == SPWPN_FLAME
                 || ammo_brand == SPMSL_FLAME
@@ -1672,7 +1695,8 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         exHitBonus += you.dex / 2;
 
         // slaying bonuses
-        baseDam += slaying_bonus(PWPN_DAMAGE);
+        if (!(launched && wepType == MI_NEEDLE))
+            baseDam += slaying_bonus(PWPN_DAMAGE);
         baseHit += slaying_bonus(PWPN_HIT);
 
     }
@@ -1765,6 +1789,8 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
     burden_change();
 
+    // blowguns are fairly silent
+    if (!(launched && you.inv_class[you.equip[EQ_WEAPON]] == WPN_BLOWGUN && !one_chance_in(10)))
     alert();
 
     you.turn_is_over = 1;

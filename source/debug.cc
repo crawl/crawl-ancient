@@ -383,13 +383,14 @@ void TRACE(const char *format, ...)
 #ifdef WIZARD
 void cast_spec_spell(void)
 {
-    char specs[3];
+    char specs[4];
 
     mpr("Cast which spell by number? ");
 
     specs[0] = getche();
     specs[1] = getche();
     specs[2] = getche();
+    specs[3] = '\0';
 
     your_spells(atoi(specs), 0, false);
 }
@@ -673,23 +674,22 @@ void stethoscope(int mwh)
 
     strcpy(info, ptr_monam( &(menv[i]), 0));
 
-    strcat(info, ": ");
-
+    strcat(info, ". ID#");
     itoa(i, st_prn, 10);
     strcat(info, st_prn);
-    strcat(info, ": cl ");
 
+    strcat(info, ", type ");
     itoa(menv[i].type, st_prn, 10);
     strcat(info, st_prn);
-    strcat(info, " - ");
 
+    strcat(info, "   ");
     itoa(menv[i].hit_points, st_prn, 10);
     strcat(info, st_prn);
     strcat(info, "/");
     itoa(menv[i].max_hit_points, st_prn, 10);
     strcat(info, st_prn);
-    strcat(info, "   ");
 
+    strcat(info, " hp.  b/foe= ");
     itoa(menv[i].behavior, st_prn, 10);
     strcat(info, st_prn);
     strcat(info, "/");
@@ -697,17 +697,16 @@ void stethoscope(int mwh)
     strcat(info, st_prn);
     mpr(info);
 
-    strcpy(info, "speed:");
+    strcpy(info, "speed ");
     itoa(menv[i].speed, st_prn, 10);
     strcat(info, st_prn);
-    strcat(info, "/");
+    strcat(info, ", inc ");
     itoa(menv[i].speed_increment, st_prn, 10);
     strcat(info, st_prn);
     mpr(info);
 
-    strcpy(info, "sec:");
-    itoa(menv[i].number, st_prn, 10);
-    strcat(info, st_prn);
+    sprintf(info, "number: %d   flags: %02x", menv[i].number,
+        menv[i].flags);
     mpr(info);
 
     strcpy(info, "target: ");
@@ -718,29 +717,19 @@ void stethoscope(int mwh)
     strcat(info, st_prn);
     mpr(info);
 
-    strcpy(info, "ench0: ");
-    itoa(menv[i].enchantment[0], st_prn, 10);
-    strcat(info, st_prn);
-    strcat(info, " ench1: ");
-    itoa(menv[i].enchantment[1], st_prn, 10);
-    strcat(info, st_prn);
-    strcat(info, " ench2: ");
-    itoa(menv[i].enchantment[2], st_prn, 10);
-    strcat(info, st_prn);
-    strcat(info, " ench3: ");
-    itoa(menv[i].enchantment[3], st_prn, 10);
-    strcat(info, st_prn);
-    strcat(info, " ench4: ");
-    itoa(menv[i].enchantment[4], st_prn, 10);
-    strcat(info, st_prn);
+    sprintf(info, "enchts: [ %d %d %d %d %d %d ]",
+        menv[i].enchantment[0], menv[i].enchantment[1],
+        menv[i].enchantment[2], menv[i].enchantment[3],
+        menv[i].enchantment[4], menv[i].enchantment[5]);
     mpr(info);
 
-    strcpy(info, "Ghost damage: ");
-    itoa(ghost.values[7], st_prn, 10);
-    strcat(info, st_prn);
-    mpr(info);
-
-    return;
+    if (menv[i].type == MONS_PLAYER_GHOST)
+    {
+        strcpy(info, "Ghost damage: ");
+        itoa(ghost.values[7], st_prn, 10);
+        strcat(info, st_prn);
+        mpr(info);
+    }
 }                               // end stethoscope()
 
 

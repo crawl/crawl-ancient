@@ -3648,5 +3648,5 @@ void contaminate_player(int change, bool statusOnly)
 
     sprintf(info, "You feel %s contaminated with magical energies.",
         (change < 0)?"less":"more");
-    mpr(info);
+    mpr(info, change>0?MSGCH_WARN:MSGCH_RECOVERY);
 }

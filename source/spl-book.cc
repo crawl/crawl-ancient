@@ -337,7 +337,6 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      },
 
     // 20 - Book of War Chants
-    // NB: If anything added here, *must* change Crusader in crawlfnc.cc (no longer extant - {dlb})
     {0,
      SPELL_FIRE_BRAND,
      SPELL_FREEZING_AURA,
@@ -977,6 +976,7 @@ char book_rarity(unsigned char which_book)
 
     case BOOK_YOUNG_POISONERS:
     case BOOK_STALKING:    //jmf: added 24jun2000
+    case BOOK_WAR_CHANTS:
         return 5;
 
     case BOOK_CLOUDS:

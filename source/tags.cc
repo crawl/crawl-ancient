@@ -921,6 +921,11 @@ static void tag_read_you_items(struct tagHeader &th)
     count_s = unmarshallShort(th);
     for (j = 0; j < count_s; ++j)
         set_unrandart_exist(j, unmarshallBoolean(th));
+
+    // # of unrandarts could certainly change.  If it does,
+    // the new ones won't exist yet - zero them out.
+    for (; j < NO_UNRANDARTS; j++)
+        set_unrandart_exist(j, 0);
 }
 
 static void tag_read_you_dungeon(struct tagHeader &th)

@@ -3815,11 +3815,11 @@ void monster_die(struct monsters *monster, char killer, int i)
                         done_good(GOOD_KILLED_ANGEL_II, monster->hit_dice);
 
                     //jmf: Trog hates wizards
-                    if (mons_flag(monster_killed, M_ACTUAL_SPELLS))
+                    if (mons_flag(monster->type, M_ACTUAL_SPELLS))
                         done_good(GOOD_KILLED_WIZARD, monster->hit_dice);
 
                     //jmf: maybe someone hates priests?
-                    if (mons_flag(monster_killed, M_PRIEST))
+                    if (mons_flag(monster->type, M_PRIEST))
                         done_good(GOOD_KILLED_PRIEST, monster->hit_dice);
                 }
                 else if (mons_holiness(monster->type) == MH_HOLY)
@@ -4236,7 +4236,7 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
     int ench = mons_has_ench(monster, ENCH_ABJ_I, ENCH_ABJ_VI);
     int ench2 = mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER, ENCH_SHAPESHIFTER);
 
-    for (unsigned char unenc = 0; unenc < 5; unenc++)
+    for (unsigned char unenc = 0; unenc < NUM_MON_ENCHANTS; unenc++)
         monster->enchantment[unenc] = ENCH_NONE;
 
     mons_add_ench(monster, ench);

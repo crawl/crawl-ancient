@@ -277,7 +277,7 @@ void mons_direct_effect(struct bolt &pbolt, int i)
         break;
 
     case DMNBM_MUTATION:
-        if (!check_mons_magres(monster, pbolt.ench_power))
+        if (check_mons_magres(monster, pbolt.ench_power))
             simple_monster_message(monster, " resists.");
         else
             monster_polymorph(monster, RANDOM_MONSTER, 100);

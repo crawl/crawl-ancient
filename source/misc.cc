@@ -1181,6 +1181,13 @@ static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
         strcat(info, "hits you!");
         mpr(info);
 
+        if ((strstr(pbolt.beam_name, "needle") != NULL)
+                && random2(100) < 50 - (3*player_AC()/2))
+        {
+            mpr("You are poisoned.");
+            you.poison += 1 + random2(3);
+        }
+
         damage_taken = random2(pbolt.damage);
         damage_taken -= random2(player_AC() + 1);
 
@@ -1233,6 +1240,10 @@ void itrap(struct bolt &pbolt, int trapped)
         pbolt.colour = OBJ_WEAPONS;
         pbolt.damage = WPN_HAND_AXE;
         break;
+    case TRAP_NEEDLE:
+        pbolt.colour = OBJ_MISSILES;
+        pbolt.damage = MI_NEEDLE;
+        break;
     default:
         return;
     }
@@ -1241,56 +1252,6 @@ void itrap(struct bolt &pbolt, int trapped)
 
     return;
 }                               // end itrap()
-
-void cull_items(void)
-{
-    int destr = 0;
-    unsigned int county = 0;
-    int cull;
-
-    for (cull = 0; cull < MAX_ITEMS; cull++)
-    {
-        if (mitm.quantity[cull] != 0)
-            county++;
-    }
-
-    if (county < 350)
-        return;
-    else if (county < 400)
-        destr = 1;
-    else if (county < 450)
-        destr = 2;
-    else
-        destr = 3;
-
-    mpr("The floor strains under the combined weight of items on this level!");
-    more();
-    mpr("The dungeon's self-correcting mechanism removes a few of them.");
-
-    for (cull = 0; cull < MAX_ITEMS; cull++)
-    {
-        if (mitm.quantity[cull] < 1)
-            continue;
-        if (mitm.base_type[cull] == OBJ_CORPSES)
-            destroy_item(cull);
-        if (mitm.base_type[cull] == OBJ_MISSILES && mitm.quantity[cull] != 3)
-            destroy_item(cull);
-        if (mitm.base_type[cull] == OBJ_FOOD
-                && mitm.sub_type[cull] == FOOD_CHUNK)
-        {
-            destroy_item(cull);
-        }
-
-        if (mitm.base_type[cull] == OBJ_WANDS && mitm.pluses[cull] == 0)
-            destroy_item(cull);
-
-        if (mitm.base_type[cull] == OBJ_WEAPONS
-                && mitm.pluses[cull] % 100 == 50 && one_chance_in(3))
-        {
-            destroy_item(cull);
-        }
-    }
-}                               // end cull_items()
 
 void handle_traps(char trt, int i, bool trap_known)
 {
@@ -1301,6 +1262,12 @@ void handle_traps(char trt, int i, bool trap_known)
     case TRAP_DART:
         strcpy(beam.beam_name, " dart");
         beam.damage = 4 + (you.your_level / 2);
+        dart_trap(trap_known, i, beam);
+        break;
+
+    case TRAP_NEEDLE:
+        strcpy(beam.beam_name, " needle");
+        beam.damage = 0;
         dart_trap(trap_known, i, beam);
         break;
 
@@ -1757,7 +1724,9 @@ bool trap_item(char base_type, char sub_type, char beam_x, char beam_y)
             && base_type == mitm.base_type[igrd[beam_x][beam_y]]
             && sub_type == mitm.sub_type[igrd[beam_x][beam_y]]
             && mitm.pluses[igrd[beam_x][beam_y]] == 50
-            && mitm.special[igrd[beam_x][beam_y]] == 0)
+            && (mitm.special[igrd[beam_x][beam_y]] == 0
+                || (mitm.special[igrd[beam_x][beam_y]] == SPMSL_POISONED
+                    && base_type == OBJ_MISSILES && sub_type == MI_NEEDLE)))
         {
             mitm.quantity[igrd[beam_x][beam_y]]++;
             return false;
@@ -1792,8 +1761,10 @@ bool trap_item(char base_type, char sub_type, char beam_x, char beam_y)
             mitm.sub_type[o] = sub_type;
             mitm.pluses[o] = 50;
             mitm.pluses2[o] = 50;
-            mitm.special[o] = 0;
-            mitm.colour[o] = LIGHTCYAN;
+            mitm.special[o] = (base_type == OBJ_MISSILES && sub_type == MI_NEEDLE)
+                ?SPMSL_POISONED:0;
+            mitm.colour[o] = (base_type == OBJ_MISSILES && sub_type == MI_NEEDLE)
+                ?WHITE:LIGHTCYAN;
             mitm.quantity[o] = 1;
             mitm.link[o] = NON_ITEM;
             break;
@@ -1829,6 +1800,7 @@ unsigned char trap_category(unsigned char trap_type)
     case TRAP_AXE:
     case TRAP_BLADE:
     case TRAP_BOLT:
+    case TRAP_NEEDLE:
     default:                    // what *would* be the default? {dlb}
         return DNGN_TRAP_MECHANICAL;
     }

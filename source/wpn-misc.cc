@@ -150,6 +150,7 @@ bool launches_things(unsigned char weapon_subtype)
     case WPN_BOW:
     case WPN_CROSSBOW:
     case WPN_HAND_CROSSBOW:
+    case WPN_BLOWGUN:
         return true;
 
     default:
@@ -161,6 +162,8 @@ unsigned char launched_by(unsigned char weapon_subtype)
 {
     switch (weapon_subtype)
     {
+    case WPN_BLOWGUN:
+        return MI_NEEDLE;
     case WPN_SLING:
         return MI_STONE;
     case WPN_BOW:
@@ -202,6 +205,7 @@ char weapon_skill(unsigned char wclass, unsigned char wtype)
         case WPN_GREAT_FLAIL:
         case WPN_GREAT_MACE:
         case WPN_BOW:
+        case WPN_BLOWGUN:
         case WPN_CROSSBOW:
         case WPN_HAND_CROSSBOW:
             skill2use = SK_MACES_FLAILS;

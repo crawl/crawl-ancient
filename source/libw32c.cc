@@ -275,8 +275,6 @@ void deinit_libw32c(void)
    if (inbuf == NULL || outbuf == NULL)
       return;
 
-   clrscr();
-
    // restore console attributes for normal function
    setStringInput(true);
 

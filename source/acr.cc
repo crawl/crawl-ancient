@@ -2031,9 +2031,6 @@ static void input(void)
     {
         handle_time(200 + (you.time_taken - you.synch_time));
         you.synch_time = 200;
-
-        if (one_chance_in(50))
-            cull_items();
     }
     else
     {
@@ -2383,7 +2380,6 @@ static bool initialise(void)
     {
         menv[i].type = -1;
         menv[i].speed_increment = 10;
-        menv[i].target_x = 155;
         menv[i].flags = 0;
         menv[i].behavior = BEH_SLEEP;
 

@@ -97,4 +97,9 @@ void standard_name_armour(unsigned char item_typ, unsigned char item_plus2,
 void standard_name_weap(unsigned char item_typ, char glog[80]);
 
 
+/* ***********************************************************************
+ * called from: items
+ * *********************************************************************** */
+int find_unrandart_index(int item_index);
+
 #endif

@@ -226,7 +226,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
         } // end while.. place first monster
     }
 
-    id = place_monster_aux(mon_type, behavior, target, px, py, power, extra, true);
+    id = place_monster_aux(mon_type, behavior, target, px, py, lev_mons, extra, true);
 
     // now, forget about banding if the first placement failed,  or there's too
     // many monsters already,  or we successfully placed by stairs
@@ -235,7 +235,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
 
     // (5) for each band monster, loop call to place_monster_aux().
     for(i=1; i<band_size; i++)
-        place_monster_aux(band_monsters[i], behavior, target, px, py, power, extra, false);
+        place_monster_aux(band_monsters[i], behavior, target, px, py, lev_mons, extra, false);
 
     // return id of first monster placed
     return id;
@@ -322,7 +322,7 @@ static int place_monster_aux(int mon_type, char behavior, int target,
         || mon_type == MONS_SKELETON_LARGE
         || mon_type == MONS_SPECTRAL_THING)
     {
-        define_zombie( id, extra, mon_type );
+        define_zombie( id, extra, mon_type, power );
     }
     else
         define_monster(id);
@@ -349,7 +349,6 @@ static int place_monster_aux(int mon_type, char behavior, int target,
     if (mon_type == MONS_GIANT_BAT || mon_type == MONS_UNSEEN_HORROR
         || mon_type == MONS_GIANT_BLOWFLY)
         menv[id].flags |= MF_BATTY;
-
 
     menv[id].x = fx;
     menv[id].y = fy;

@@ -41,7 +41,7 @@ void give_item(int mid, int level_number);
 /* ***********************************************************************
  * called from: dungeon monplace
  * *********************************************************************** */
-void define_zombie(int mid, int ztype, int cs);
+void define_zombie(int mid, int ztype, int cs, int power);
 
 // last updated 13mar2001 {gdl}
 /* ***********************************************************************
