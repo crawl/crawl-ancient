@@ -159,7 +159,7 @@ void special_wielded(void)
         makes_noise = false;
 
         if (one_chance_in(5))
-            animate_dead(1 + random2(3), BEH_CHASING_I, MHITYOU, 1);
+            animate_dead(1 + random2(3), BEH_HOSTILE, MHITYOU, 1);
         break;
 
     case SPWLD_POWER:
@@ -197,7 +197,7 @@ void special_wielded(void)
 
         if (random2(8) <= player_spec_death())
         {
-            create_monster( MONS_SHADOW, 21, BEH_ENSLAVED,
+            create_monster( MONS_SHADOW, ENCH_ABJ_II, BEH_FRIENDLY,
                                     you.x_pos, you.y_pos, MHITNOT, 250 );
         }
         //naughty(NAUGHTY_ATTACK_FRIEND,1);
@@ -390,7 +390,7 @@ void invoke_wielded(void)
                                                   : MONS_HELLION + random2(10));
 
                     bool good_summon =
-                            (create_monster( spell_casted, 25, BEH_CHASING_I,
+                            (create_monster( spell_casted, ENCH_ABJ_VI, BEH_HOSTILE,
                                     you.x_pos, you.y_pos, MHITNOT, 250) != -1);
 
                     if (good_summon)
@@ -594,7 +594,7 @@ void invoke_wielded(void)
             else
             {
                 mpr("You produce a hideous howling noise!");
-                create_monster( MONS_BEAST, 23, BEH_CHASING_I, you.x_pos,
+                create_monster( MONS_BEAST, ENCH_ABJ_IV, BEH_HOSTILE, you.x_pos,
                                                you.y_pos, MHITYOU, 250 );
             }
             break;
@@ -665,7 +665,7 @@ void invoke_wielded(void)
 
 static void efreet_flask(void)
 {
-    int behavior = (!one_chance_in(5) ? BEH_ENSLAVED : BEH_CHASING_I);
+    int behavior = (!one_chance_in(5) ? BEH_FRIENDLY : BEH_HOSTILE);
 
     mpr("You open the flask...");
 
@@ -673,12 +673,12 @@ static void efreet_flask(void)
     you.inv_quantity[you.equip[EQ_WEAPON]] = 0;
     you.equip[EQ_WEAPON] = -1;
 
-    if (create_monster( MONS_EFREET, 24, behavior, you.x_pos,
-                                            you.y_pos, MHITYOU, 250 ) != -1)
+    if (create_monster( MONS_EFREET, ENCH_ABJ_V, behavior, you.x_pos,
+        you.y_pos, MHITYOU, 250 ) != -1)
     {
         mpr( "...and a huge efreet comes out." );
 
-        mpr( (behavior == BEH_ENSLAVED) ? "\"Thank you for releasing me!\""
+        mpr( (behavior == BEH_FRIENDLY) ? "\"Thank you for releasing me!\""
                                         : "It howls insanely!" );
     }
     else
@@ -939,7 +939,7 @@ void tome_of_power(char sc_read_2)
 
     case 10:
         if (create_monster
-            (MONS_ABOMINATION_SMALL, 25, BEH_CHASING_I, you.x_pos, you.y_pos,
+            (MONS_ABOMINATION_SMALL, ENCH_ABJ_VI, BEH_HOSTILE, you.x_pos, you.y_pos,
              MHITNOT, 250) != -1)
         {
             mpr("A horrible Thing appears!");
@@ -1047,7 +1047,7 @@ static void box_of_beasts(void)
                   (temp_rand == 8) ? MONS_HELL_HOUND :
                   (temp_rand == 9) ? MONS_BROWN_SNAKE : MONS_GIANT_LIZARD);
 
-        if (create_monster( beasty, 21 + random2(4), BEH_ENSLAVED,
+        if (create_monster( beasty, ENCH_ABJ_II + random2(4), BEH_FRIENDLY,
                                 you.x_pos, you.y_pos, you.pet_target, 250 )
                 != -1)
         {

@@ -188,8 +188,8 @@ char area_shift(void)
 
             for (unsigned int j = 0; j < MAX_MONSTERS; j++)
             {
-                if (menv[j].monster_foe == i)
-                    menv[j].monster_foe = MHITNOT;
+                if (menv[j].foe == i)
+                    menv[j].foe = MHITNOT;
             }
         }
         else
@@ -330,7 +330,7 @@ char area_shift(void)
 
     for (unsigned int mcount = 0; mcount < 15; mcount++)
     {
-        mons_place(RANDOM_MONSTER, BEH_CHASING_I, MHITNOT, false, 1,1,
+        mons_place(RANDOM_MONSTER, BEH_HOSTILE, MHITNOT, false, 1,1,
             LEVEL_ABYSS, 1);
     }
 

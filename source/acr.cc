@@ -2072,7 +2072,7 @@ static void input(void)
                     create_monster(
                         summon_any_demon((coinflip() ? DEMON_COMMON
                                                      : DEMON_LESSER)),
-                                             25, BEH_CHASING_I,
+                                             ENCH_ABJ_V, BEH_HOSTILE,
                                              you.x_pos, you.y_pos,
                                              MHITYOU, 250);
                 }
@@ -2135,7 +2135,7 @@ static void input(void)
 
     viewwindow(1, false);
 
-    if (you.paralysis > 0)
+    if (you.paralysis > 0 && any_messages())
         more();
 
     // place normal dungeon monsters,  but not in player LOS
@@ -2143,14 +2143,14 @@ static void input(void)
         && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE
         && one_chance_in(240))
     {
-        mons_place(WANDERING_MONSTER, BEH_CHASING_I, MHITNOT, false,
+        mons_place(WANDERING_MONSTER, BEH_HOSTILE, MHITNOT, false,
             50,50, LEVEL_DUNGEON, 2);
     }
 
     // place Abyss monsters.
     if (you.level_type == LEVEL_ABYSS && one_chance_in(5))
     {
-        mons_place(WANDERING_MONSTER, BEH_CHASING_I, MHITNOT, false,
+        mons_place(WANDERING_MONSTER, BEH_HOSTILE, MHITNOT, false,
             50,50, LEVEL_ABYSS);
     }
 
@@ -2381,7 +2381,8 @@ static bool initialise(void)
         menv[i].enchantment1 = 0;
         menv[i].behavior = BEH_SLEEP;
 
-        menv[i].monster_foe = NON_MONSTER;
+        menv[i].foe = NON_MONSTER;
+        menv[i].attitude = ATT_HOSTILE;
 
         for (j = 0; j < 3; j++)
             menv[i].enchantment[j] = ENCH_NONE;
@@ -2608,16 +2609,18 @@ static void move_player(char move_x, char move_y)
 
     if (targ_monst != NON_MONSTER)
     {
+        struct monsters *mon = &menv[targ_monst];
+
         if (monster_habitat( menv[ targ_monst ].type ) != DNGN_FLOOR
                           && menv[ targ_monst ].number == 1)
         {
             goto break_out;
         }
 
-        if (menv[ targ_monst ].behavior == BEH_ENSLAVED
-            && (menv[ targ_monst ].enchantment[2] != ENCH_INVIS
-                    || player_see_invis())
-            && !you.conf)
+        // you can swap places with a friendly monster if you
+        // can see it and you're not confused
+        if (mons_friendly(mon) && (!monster_has_enchantment(mon, ENCH_INVIS)
+            || player_see_invis()) && !you.conf)
         {
             if (!swap_places( &menv[ targ_monst ] ))
                 moving = false;

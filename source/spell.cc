@@ -686,7 +686,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
     case SPELL_ANIMATE_DEAD:
         mpr("You call on the dead to walk for you.");
-        animate_dead(powc + 1, BEH_ENSLAVED, you.pet_target, 1);
+        animate_dead(powc + 1, BEH_FRIENDLY, you.pet_target, 1);
         return true;
 
     case SPELL_PAIN:
@@ -706,7 +706,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
     case SPELL_ANIMATE_SKELETON:
         mpr("You attempt to give life to the dead...");
-        animate_a_corpse(you.x_pos, you.y_pos, BEH_ENSLAVED, you.pet_target,
+        animate_a_corpse(you.x_pos, you.y_pos, BEH_FRIENDLY, you.pet_target,
                          CORPSE_SKELETON);
         return true;
 
@@ -810,7 +810,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     // Remember that most holy spells above don't yet use powc!
 
     case SPELL_TWISTED_RESURRECTION:
-        cast_twisted(powc, BEH_ENSLAVED, you.pet_target);
+        cast_twisted(powc, BEH_FRIENDLY, you.pet_target);
         break;
 
     case SPELL_REGENERATION:
@@ -877,12 +877,12 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     case SPELL_SUMMON_GREATER_DEMON:
         mpr("You open a gate to Pandemonium!");
 
-        dem_hor = ((random2(powc) <= 5) ? BEH_CHASING_I : BEH_CHASING_II);
+        dem_hor = ((random2(powc) <= 5) ? BEH_HOSTILE : BEH_CHARMED);
 
-        if (dem_hor == BEH_CHASING_I)
+        if (dem_hor == BEH_CHARMED)
             mpr("You don't feel so good about this...");
 
-        create_monster(summon_any_demon(DEMON_GREATER), 24, dem_hor,
+        create_monster(summon_any_demon(DEMON_GREATER), ENCH_ABJ_V, dem_hor,
                        you.x_pos, you.y_pos, MHITNOT, 250);
 
         return true;
@@ -1127,7 +1127,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
     case SPELL_SHADOW_CREATURES:
         mpr("Wisps of shadow whirl around you...");
-        create_monster(RANDOM_MONSTER, 24, BEH_ENSLAVED, you.x_pos, you.y_pos,
+        create_monster(RANDOM_MONSTER, ENCH_ABJ_V, BEH_FRIENDLY, you.x_pos, you.y_pos,
                        MHITNOT, 250);
         return true;
 

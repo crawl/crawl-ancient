@@ -157,7 +157,8 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
             py = 10 + random2(GYM - 10);
 
             // occupied?
-            if (mgrd[px][py] != NON_MONSTER)
+            if (mgrd[px][py] != NON_MONSTER
+                || (px == you.x_pos && py == you.y_pos))
                 continue;
 
             // compatible - floor?
@@ -294,7 +295,7 @@ static int place_monster_aux(int mon_type, char behavior, int target,
         define_zombie( id, 3, extra, ((extra == 250) ? 250 : mon_type ) );
     }
     else
-        define_monster(id, menv);
+        define_monster(id);
 
 
     // NOTE: Boris is actually a unique,  but we let him come back... :)
@@ -349,9 +350,20 @@ static int place_monster_aux(int mon_type, char behavior, int target,
     if (mon_type == MONS_MANTICORE)
         menv[id].number = 8 + random2(9);
 
-    // set behavior and target
+    // set attitude, behavior and target
+    menv[id].attitude = ATT_HOSTILE;
     menv[id].behavior = behavior;
-    menv[id].monster_foe = target;
+    // setting attitude will always make the
+    // monster wander.. if you want sleeping
+    // hostiles,  use BEH_SLEEP since the default
+    // attitude is hostile.
+    if (behavior > NUM_BEHAVIORS)
+    {
+        if (behavior == BEH_FRIENDLY)
+            menv[id].attitude = ATT_FRIENDLY;
+        menv[id].behavior = BEH_WANDER;
+    }
+    menv[id].foe = target;
 
     if (mon_type == MONS_SHAPESHIFTER)
     {
@@ -912,7 +924,6 @@ int create_monster(int cls, int dur, int beha, int cr_x, int cr_y,
                    int hitting, int zsec)
 {
     int summd;
-    int dem_beha = beha;
     FixedVector < char, 2 > empty;
     struct monsters *creation;      // NULL {dlb}
 
@@ -922,15 +933,6 @@ int create_monster(int cls, int dur, int beha, int cr_x, int cr_y,
 
     empty[0] = 0;
     empty[1] = 0;
-
-    // This is for the summon greater demons spell,
-    // where monsters are hostile but charmed:
-    if (beha == BEH_CHASING_II)
-        beha = BEH_ENSLAVED;
-
-int mons_place(int mon_type, char behavior, int target, bool summoned,
-    int px, int py, int level_type = LEVEL_DUNGEON, int proximity = 0,
-    unsigned char extra = 250);
 
     // determine whether creating a monster is successful (summd != -1) {dlb}:
     if (!empty_surrounds(cr_x, cr_y, spcw, true, empty))
@@ -949,24 +951,34 @@ int mons_place(int mon_type, char behavior, int target, bool summoned,
     {
         creation = &menv[summd];
 
-        // This is for the summon greater demons spell,
-        // where monsters are hostile but charmed:
-        if (dem_beha == BEH_CHASING_II)
-            creation->enchantment[0] = ENCH_CHARM;
-
+        // for abjurations (non-permanent summonings where dur != 0)
         if (dur)
         {
             // some monsters (eg butterflies) use enchantment[0] for confusion
             creation->enchantment[1] = dur;
             creation->enchantment1 = 1;
 
-            if (beha == BEH_ENSLAVED)
+            if (beha == BEH_FRIENDLY)
                 creation->enchantment[1] += ENCH_FRIEND_ABJ_I - ENCH_ABJ_I;
         }
         else
         {
-            if (beha == BEH_ENSLAVED)
+            if (beha == BEH_FRIENDLY)
                 creation->enchantment[1] = ENCH_CREATED_FRIENDLY;
+        }
+
+        // look at special cases: CHARMED, FRIENDLY, HOSTILE
+        // alert summoned being to player's presence
+        if (beha > NUM_BEHAVIORS)
+        {
+            if (beha == BEH_CHARMED)
+            {
+                creation->attitude = ATT_HOSTILE;
+                creation->enchantment[0] = ENCH_CHARM;
+            }
+
+            // make summoned being aware of player's presence
+            behavior_event(creation, ME_ALERT, MHITYOU);
         }
 
         if (creation->type == MONS_RAKSHASA_FAKE && !one_chance_in(3))
@@ -986,69 +998,72 @@ bool empty_surrounds(int emx, int emy, unsigned char spc_wanted,
                      bool allow_centre, FixedVector < char, 2 > &empty)
 {
     bool success = false;
+    // assume all player summoning originates from player x,y
+    bool playerSummon = (emx == you.x_pos && emy == you.y_pos);
 
-    int count_x, count_y = 0;
+    int xpos[25];   // good x pos
+    int ypos[25];   // good y pos
+    int good_count = 0;
+    int count_x, count_y;
 
-    char minx = -1;
-    char maxx = 3;
-    char miny = -1;
+    char minx = -2;
+    char maxx = 2;
+    char miny = -2;
     char maxy = 2;
-    char xinc = 1;
-    char yinc = 1;
 
-    if (coinflip())
+    for (count_x = minx; count_x <= maxx; count_x++)
     {
-        minx = 1;
-        maxx = -3;
-        xinc = -1;
-    }
-
-    if (coinflip())
-    {
-        miny = 1;
-        maxy = -2;
-        yinc = -1;
-    }
-
-    for (count_x = minx; count_x != maxx; count_x += xinc)
-    {
-        for (count_y = miny; count_y != maxy; count_y += yinc)
+        for (count_y = miny; count_y <= maxy; count_y++)
         {
+            success = false;
+
             if (!allow_centre && count_x == 0 && count_y == 0)
                 continue;
 
-            if (emx + count_x == you.x_pos && emy + count_y == you.y_pos)
+            int tx = emx + count_x;
+            int ty = emy + count_y;
+
+            if (tx == you.x_pos && ty == you.y_pos)
                 continue;
 
-            if (mgrd[emx + count_x][emy + count_y] != NON_MONSTER)
+            if (mgrd[tx][ty] != NON_MONSTER)
                 continue;
 
-            if (grd[emx + count_x][emy + count_y] == spc_wanted)
+            // players won't summon out of LOS
+            if (env.show[tx - you.x_pos + 9][ty - you.y_pos + 9] == 0
+                && playerSummon)
+                continue;
+
+            if (grd[tx][ty] == spc_wanted)
             {
                 success = true;
-                break;          // out of inner loop {dlb}
             }
 
             // second chance - those seeking ground can stand anywhere {dlb}:
-            if (spc_wanted == DNGN_FLOOR
+            if (!success && spc_wanted == DNGN_FLOOR
                 && grd[emx + count_x][emy + count_y] >= DNGN_SHALLOW_WATER)
             {
                 success = true;
-                break;          // out of inner loop {dlb}
+            }
+
+            if (success)
+            {
+                // add point to list of good points
+                xpos[good_count] = tx;
+                ypos[good_count] = ty;
+                good_count ++;
             }
         }                       // end "for count_y"
-
-        if (success)
-            break;              // out of outer loop {dlb}
     }                           // end "for count_x"
 
-    if (success)
+    if (good_count > 0)
     {
-        empty[0] = emx + count_x;
-        empty[1] = emy + count_y;
+        int pick = random2(good_count);
+        empty[0] = xpos[pick];
+        empty[1] = ypos[pick];
     }
 
-    return (success);
+    return (good_count > 0);
 }                               // end empty_surrounds()
 
 int summon_any_demon(char demon_class)

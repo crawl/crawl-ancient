@@ -279,11 +279,12 @@ struct monsters
     unsigned char target_x;
     unsigned char target_y;
     FixedVector<int, 8> inv;
+    unsigned char attitude;            // from MONS_ATTITUDE
     unsigned int behavior;
-    unsigned int number;               // #heads (hydra), etc.
-    unsigned int monster_foe;
+    unsigned int foe;
     FixedVector<unsigned int, 3> enchantment;
     unsigned int enchantment1;         //
+    unsigned int number;               // #heads (hydra), etc.
 };
 
 

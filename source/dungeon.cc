@@ -176,11 +176,6 @@ static void specr_2(void);
 static void spotty_level(bool seeded, int iterations, bool boxy);
 static void place_branch_entrances(int dlevel, char level_type);
 
-static int choose_band( int mon_type, int &band_size );
-static int band_member(int band, int power);
-static int place_monster_aux(int mon_type, char behavior, int target,
-    int px, int py, unsigned char extra, bool first_band_member);
-
 /*
  **************************************************
  *                                                *
@@ -266,6 +261,7 @@ int builder(unsigned int lev_numb, char level_type)
         menv[loopy].target_x = random2(GXM);
         menv[loopy].target_y = random2(GYM);
         menv[loopy].behavior = (one_chance_in(10) ? BEH_WANDER : BEH_SLEEP);
+        menv[loopy].attitude = ATT_HOSTILE;
         menv[loopy].enchantment1 = 0;
         menv[loopy].enchantment[0] = ENCH_NONE;
         menv[loopy].enchantment[1] = ENCH_NONE;
@@ -3842,7 +3838,7 @@ static void special_room(void)
                 }
 
                 menv[bk].type = mons_alloc[random2(10)];
-                define_monster(bk, menv);
+                define_monster(bk);
 
                 menv[bk].x = bcount_x;
                 menv[bk].y = bcount_y;
@@ -3897,7 +3893,7 @@ static void special_room(void)
                 else
                     menv[bk].type = mons_alloc[random2(10)];
 
-                define_monster(bk, menv);
+                define_monster(bk);
 
                 menv[bk].x = bcount_x;
                 menv[bk].y = bcount_y;
@@ -3947,7 +3943,7 @@ static void special_room(void)
         }
 
         menv[bk].type = MONS_GUARDIAN_NAGA;
-        define_monster(bk, menv);
+        define_monster(bk);
 
         menv[bk].x = x1;
         menv[bk].y = y1;
@@ -4034,7 +4030,7 @@ static void beehive(void)
             else if (bcount_x == x2 - 1 && bcount_y == y2 - 1)
                 menv[bk].type = MONS_QUEEN_BEE;
 
-            define_monster(bk, menv);
+            define_monster(bk);
 
             menv[bk].x = bcount_x;
             menv[bk].y = bcount_y;
@@ -4084,17 +4080,15 @@ static void morgue(void)
             if (menv[bk].type == MONS_ZOMBIE_SMALL)
                 define_zombie(bk, 3, 250, 250);
             else
-                define_monster(bk, menv);
+                define_monster(bk);
 
             menv[bk].x = bcount_x;
             menv[bk].y = bcount_y;
+            menv[bk].behavior = BEH_SLEEP;
 
             mgrd[menv[bk].x][menv[bk].y] = bk;
 
             bno_mons++;
-
-            // who wrote this and why? {dlb}
-            menv[bk].behavior = BEH_CHASING_II; // should be sleeping
         }
     }
 }                               // end morgue()
@@ -4127,7 +4121,7 @@ void define_zombie(int mid, char not_zombsize,    /* 1=2, 2=1, 3=1 or 2 */
     menv[mid].number = mons_charclass(menv[mid].number);
     menv[mid].type = menv[mid].number;
 
-    define_monster(mid, menv);
+    define_monster(mid);
 
     menv[mid].hit_points = hit_points(menv[mid].hit_dice, 6, 5);
     menv[mid].max_hit_points = menv[mid].hit_points;

@@ -12,10 +12,11 @@
 #ifndef SPELLS4_H
 #define SPELLS4_H
 
+#include "externs.h"
 
 bool backlight_monsters(char x, char y, int pow, int garbage);
 int torment_monsters(char x, char y, int pow, int message);
-bool monster_has_enchantment( int mon, int ench );
+bool monster_has_enchantment( struct monsters *mon, int ench );
 int enchant_monster( int mon, int ench );
 
 int make_a_normal_cloud(char x, char y, int pow, int ctype);

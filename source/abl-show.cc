@@ -796,7 +796,7 @@ void activate_ability(void)
 
         mpr("You call on the dead to walk for you...");
 
-        animate_a_corpse(you.x_pos, you.y_pos, BEH_ENSLAVED, you.pet_target,
+        animate_a_corpse(you.x_pos, you.y_pos, BEH_FRIENDLY, you.pet_target,
                          CORPSE_BODY);
 
         dec_mp(3);
@@ -821,7 +821,7 @@ void activate_ability(void)
 
         mpr("You call on the dead to walk for you...");
 
-        animate_dead(1 + you.skills[SK_INVOCATIONS], BEH_ENSLAVED,
+        animate_dead(1 + you.skills[SK_INVOCATIONS], BEH_FRIENDLY,
                      you.pet_target, 1);
 
         dec_mp(7);

@@ -60,6 +60,7 @@
 #include "spells.h"
 #include "spells1.h"
 #include "spells3.h"
+#include "spells4.h"
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
@@ -225,23 +226,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
  */
     bool helpless = mons_flag(defender->type, M_NO_EXP_GAIN);
 
-    if (defender->behavior != BEH_ENSLAVED)
+    if (!mons_friendly(defender))
         you.pet_target = monster_attacked;
-
-    if (defender->behavior == BEH_ENSLAVED)
-    {
-        defender->behavior = BEH_CHASING_I;
+    else
         naughty(NAUGHTY_ATTACK_FRIEND, 5);
-
-/* ************************************************************************
-// jmf seems to have added this,
-// but done_good() has no handle on it {dlb}
-
-        if ( ( defender->enchantment[1] < ENCH_FRIEND_ABJ_I || defender->enchantment[1] > ENCH_FRIEND_ABJ_VI )
-            && defender->enchantment[1] != ENCH_CREATED_FRIENDLY )
-          done_good(GOOD_ATTACKED_FRIEND, 5);
-************************************************************************ */
-    }
 
     // fumbling in shallow water <early return>:
     if (player_in_water() && you.species != SP_MERFOLK)
@@ -567,8 +555,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
     if (defender->speed_increment <= 40
         || ((defender->behavior == BEH_FLEE
-         // || defender->behavior == BEH_WANDER
-            || defender->behavior == BEH_CONFUSED)
+            || monster_has_enchantment(defender, ENCH_CONFUSION))
                 && random2(200) <= you.skills[SK_STABBING] + you.dex)
         || defender->behavior == BEH_SLEEP)
     {
@@ -582,7 +569,6 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             break;
 
         case BEH_FLEE:
-        case BEH_CONFUSED:
             // monster has limited control of his actions
             stab_bonus = 2;
             break;
@@ -591,6 +577,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             // monster is in control of his actions
             stab_bonus = 3;
         }
+
+        // can't do this in the case statement
+        if (monster_has_enchantment(defender, ENCH_CONFUSION))
+            stab_bonus = 2;
 
         simple_monster_message(defender, " fails to defend itself.");
 
@@ -603,8 +593,13 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         }
     }
     else
+        // ok.. if you didn't backstab, you wake up the neighborhood.
+        // I can live with that.
         alert();
 
+    // now, whether or not you 'hit' the monster in question,  you've
+    // pissed them off
+    behavior_event(defender, ME_WHACK, MHITYOU);
 
     if ((your_to_hit >= defender->evasion || one_chance_in(15))
         || ((defender->speed_increment <= 60
@@ -692,8 +687,6 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             if (defender->behavior == BEH_SLEEP)
             {
                 // Sleeping moster wakes up when stabbed but may be groggy
-                defender->behavior = BEH_CHASING_I;
-
                 if (random2(200) <= you.skills[SK_STABBING] + you.dex)
                 {
                     int stun = random2(you.dex + 1);
@@ -1454,16 +1447,6 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         return;
     }
 
-    if (you.invis && defender->behavior == BEH_SLEEP)
-        defender->behavior = BEH_CHASING_I;
-
-    if (you.invis && coinflip())
-    {
-        defender->target_x = you.x_pos;
-        defender->target_y = you.y_pos;
-        defender->behavior = BEH_CHASING_I;
-    }
-
     if (unarmed_attacks)
     {
         char attack_name[20] = "";
@@ -1818,7 +1801,7 @@ void monster_attack(int monster_attacking)
 
     you.pet_target = monster_attacking; // ??? {dlb}
 
-    if (attacker->behavior == BEH_ENSLAVED)
+    if (mons_friendly(attacker))
         return;
 
     if (monster_habitat(attacker->type) != DNGN_FLOOR && attacker->number == 1)
@@ -2865,23 +2848,9 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
         return false;
     }
 
-    if (attacker->behavior == BEH_ENSLAVED)
-    {
-        if (defender->behavior == BEH_ENSLAVED)
-            return false;
-
-        attacker->monster_foe = monster_attacked;
-    }
-
-    // is this correct? see nested conditional! {dlb}
-    if (defender->behavior == BEH_FIGHT)
-    {
-        if (defender->behavior != BEH_ENSLAVED
-            && monster_attacked != attacker->monster_foe)
-        {
-            return false;
-        }
-    }
+    // don't attack friend
+    if (mons_aligned(attacker, defender))
+        return false;
 
     if (grd[attacker->x][attacker->y] == DNGN_SHALLOW_WATER
         && !mons_flies(attacker->type)
@@ -2900,6 +2869,9 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
 
     if (mons_near(attacker) && mons_near(defender))
         sees = true;
+
+    // now disturb defender, regardless
+    behavior_event(defender, ME_WHACK, monster_attacking);
 
     char runthru;
 
@@ -3724,24 +3696,6 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
         }
     }                           // end of for runthru
 
-    if (defender->behavior == BEH_ENSLAVED)
-    {
-        defender->monster_foe = monster_attacking;
-        attacker->monster_foe = monster_attacked;
-    }
-
-    if (attacker->behavior != BEH_CONFUSED)
-       // && attacker->behavior != 7)
-       // the latter is so that mons_beh[attacker] doesn't get reset to 6
-    {
-        if (defender->behavior <= BEH_WANDER
-            && distance(you.x_pos, you.y_pos, defender->x, defender->y) > 2)
-        {
-            defender->behavior = BEH_FIGHT;
-            defender->monster_foe = monster_attacking;  // This'll do for now.
-        }
-    }
-
     return true;
 }                               // end monsters_fight()
 
@@ -3899,7 +3853,7 @@ void monster_die(struct monsters *monster, char killer, int i)
                 && mons_holiness(monster->type) == MH_NATURAL
                 && mons_weight(mons_charclass(monster->type)))
             {
-                if (create_monster( MONS_SPECTRAL_THING, 0, BEH_ENSLAVED,
+                if (create_monster( MONS_SPECTRAL_THING, 0, BEH_FRIENDLY,
                                     monster->x, monster->y, you.pet_target,
                                     mons_charclass(monster->type)) != -1)
                 {
@@ -3913,10 +3867,10 @@ void monster_die(struct monsters *monster, char killer, int i)
             simple_monster_message(monster, " dies!", MSGCH_MONSTER_DAMAGE,
                                    MDAM_DEAD);
 
-            if (monster->behavior == BEH_ENSLAVED)
+            if (mons_friendly(monster))
                 naughty(NAUGHTY_FRIEND_DIES, 1 + (monster->hit_dice / 2));
 
-            if ((i >= 0 && i < 200) && menv[i].behavior == BEH_ENSLAVED)
+            if ((i >= 0 && i < 200) && mons_friendly(monster))
             {
                 // Trying to prevent summoning abuse here, so we're trying to
                 // prevent summoned creatures from being being done_good kills.
@@ -4089,8 +4043,8 @@ void monster_cleanup(struct monsters *monster)
 
     for (dmi = 0; dmi < MAX_MONSTERS; dmi++)
     {
-        if (menv[dmi].monster_foe == monster_killed)
-            menv[dmi].monster_foe = MHITNOT;
+        if (menv[dmi].foe == monster_killed)
+            menv[dmi].foe = MHITNOT;
     }
 
     if (you.pet_target == monster_killed)
@@ -4162,6 +4116,8 @@ bool jelly_divide(struct monsters * parent)
     child->speed = 5;
     child->speed_increment = 70 + random2(5);
     child->behavior = parent->behavior; /* Look at this! */
+    child->foe = parent->foe;
+    child->attitude = parent->attitude;
 
     child->x = parent->x + jex;
     child->y = parent->y + jey;
@@ -4187,20 +4143,7 @@ void alert(void)
         monster = &menv[it];
 
         if (monster->type != -1 && mons_near(monster))
-        {
-            if (monster->behavior == BEH_CHASING_I
-                || monster->behavior == BEH_WANDER
-                || monster->behavior == BEH_SLEEP)
-            {
-                monster->behavior = BEH_CHASING_I;
-
-                if (!you.invis || mons_see_invis(monster->type))
-                {
-                    monster->target_x = you.x_pos;
-                    monster->target_y = you.y_pos;
-                }
-            }
-        }
+            behavior_event(monster, ME_ALERT, MHITYOU);
     }
 }                               // end alert()
 
@@ -4317,7 +4260,7 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
         monster->enchantment1 = 0;
     }
 
-    define_monster(monster_index(monster), menv);
+    define_monster(monster_index(monster));
 
     monster->hit_points = monster->max_hit_points
                                 * ((old_hp * 100) / old_hp_max) / 100

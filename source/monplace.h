@@ -73,6 +73,4 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
     int target, bool summoned, int px, int py, bool allow_bands,
     int proximity = 0, unsigned char extra = 250);
 
-
-
-#endif
+#endif  // MONPLACE_H

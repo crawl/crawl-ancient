@@ -216,8 +216,7 @@ void mons_trap(struct monsters *monster)
 
         beem.thrower = KILL_MON;        // probably unnecessary
 
-        if (monster->behavior == BEH_ENSLAVED
-                || monster->behavior == BEH_FLEE_FRIEND)
+        if (mons_friendly(monster))
         {
             beem.colour = ((temp_rand < 3) ? CYAN :  //paralyze - 3 in 16
                               (temp_rand < 7) ? RED     // confuse - 4 in 16
@@ -313,7 +312,7 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
         || spell_cast == MS_BRAIN_FEED
         || spell_cast == MS_SMITE || spell_cast == MS_MUTATION)
     {                           // etc.
-        if (monster->monster_foe == MHITYOU || monster->monster_foe == MHITNOT)
+        if (monster->foe == MHITYOU || monster->foe == MHITNOT)
         {
             if (monsterNearby)
                 direct_effect(pbolt);
@@ -331,15 +330,15 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
         {
-            create_monster((one_chance_in(3) ? MONS_RAT : MONS_GIANT_BAT), 24,
-                           monster->behavior, monster->x, monster->y,
-                           monster->monster_foe, 250);
+            create_monster((one_chance_in(3) ? MONS_RAT : MONS_GIANT_BAT),
+                ENCH_ABJ_V, SAME_ATTITUDE(monster), monster->x, monster->y,
+                monster->foe, 250);
         }
         return;
 
     case MS_LEVEL_SUMMON:       // summon anything appropriate for level
-        if (monster->behavior == BEH_CHASING_I  // was menv[0] {dlb}
-            && monsterNearby && monster_abjuration(1, true) > 0 && coinflip())
+        if (!mons_friendly(monster) && monsterNearby
+            && monster_abjuration(1, true) > 0 && coinflip())
         {
             monster_abjuration(monster->hit_dice * 10, false);
             return;
@@ -349,8 +348,8 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
         {
-            create_monster(RANDOM_MONSTER, 24, monster->behavior, monster->x,
-                           monster->y, monster->monster_foe, 250);
+            create_monster(RANDOM_MONSTER, ENCH_ABJ_V, SAME_ATTITUDE(monster),
+                monster->x, monster->y, monster->foe, 250);
         }
         return;
 
@@ -359,47 +358,46 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
         {
-            create_monster(MONS_RAKSHASA_FAKE, 21, monster->behavior,
-                           monster->x, monster->y, monster->monster_foe, 250);
+            create_monster(MONS_RAKSHASA_FAKE, ENCH_ABJ_II, SAME_ATTITUDE(monster),
+                monster->x, monster->y, monster->foe, 250);
         }
         return;
 
     case MS_SUMMON_DEMON:
-        if (monster->behavior == BEH_CHASING_I  // was menv[0] {dlb}
-            && monsterNearby && monster_abjuration(1, true) > 0 && coinflip())
+        if (!mons_friendly(monster) && monsterNearby
+            && monster_abjuration(1, true) > 0 && coinflip())
         {
             monster_abjuration(monster->hit_dice * 10, false);
             return;
         }
 
-        create_monster(summon_any_demon(DEMON_COMMON), 22, monster->behavior,
-                       monster->x, monster->y, monster->monster_foe, 250);
+        create_monster(summon_any_demon(DEMON_COMMON), ENCH_ABJ_III,
+            SAME_ATTITUDE(monster), monster->x, monster->y, monster->foe, 250);
         return;
 
     case MS_ANIMATE_DEAD:
         // see special handling in monstuff::handle_spell {dlb}
-        animate_dead(5 + random2(5), monster->behavior, monster->monster_foe,
-                     1);
+        animate_dead(5 + random2(5), SAME_ATTITUDE(monster), monster->foe, 1);
         return;
 
     case MS_SUMMON_DEMON_LESSER:
-        create_monster(summon_any_demon(DEMON_LESSER), 21, monster->behavior,
-                       monster->x, monster->y, monster->monster_foe, 250);
+        create_monster(summon_any_demon(DEMON_LESSER), ENCH_ABJ_II,
+            SAME_ATTITUDE(monster), monster->x, monster->y, monster->foe, 250);
         return;
 
     case MS_SUMMON_UFETUBUS:
-        create_monster(MONS_UFETUBUS, 21, monster->behavior, monster->x,
-                       monster->y, monster->monster_foe, 250);
+        create_monster(MONS_UFETUBUS, ENCH_ABJ_II, SAME_ATTITUDE(monster),
+            monster->x, monster->y, monster->foe, 250);
         return;
 
     case MS_SUMMON_BEAST:       // Geryon
-        create_monster(MONS_BEAST, 23, monster->behavior, monster->x,
-                       monster->y, monster->monster_foe, 250);
+        create_monster(MONS_BEAST, ENCH_ABJ_IV, SAME_ATTITUDE(monster),
+            monster->x, monster->y, monster->foe, 250);
         return;
 
     case MS_SUMMON_UNDEAD:      // summon undead around player
-        if (monster->behavior == BEH_CHASING_I  // was menv[0] {dlb}
-            && monsterNearby && monster_abjuration(1, true) > 0 && coinflip())
+        if (!mons_friendly(monster) && monsterNearby
+            && monster_abjuration(1, true) > 0 && coinflip())
         {
             monster_abjuration(monster->hit_dice * 10, false);
             return;
@@ -415,13 +413,13 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
             }
             while (mons_holiness(summonik) != MH_UNDEAD);
 
-            create_monster(summonik, 21, monster->behavior, you.x_pos,
-                           you.y_pos, monster->monster_foe, 250);
+            create_monster(summonik, ENCH_ABJ_II, SAME_ATTITUDE(monster),
+                you.x_pos, you.y_pos, monster->foe, 250);
         }
         return;
 
     case MS_TORMENT:
-        if (!monsterNearby || monster->behavior == BEH_ENSLAVED)
+        if (!monsterNearby || mons_friendly(monster))
             return;
 
         simple_monster_message(monster, " calls on the powers of Hell!");
@@ -430,16 +428,15 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
         return;
 
     case MS_SUMMON_DEMON_GREATER:
-        if (monster->behavior == BEH_CHASING_I  // was menv[0] {dlb}
-            && !monsterNearby &&
+        if (!mons_friendly(monster) && !monsterNearby &&
             monster_abjuration(1, true) > 0 && coinflip())
         {
             monster_abjuration(monster->hit_dice * 10, false);
             return;
         }
 
-        create_monster(summon_any_demon(DEMON_GREATER), 21, monster->behavior,
-                       monster->x, monster->y, monster->monster_foe, 250);
+        create_monster(summon_any_demon(DEMON_GREATER), ENCH_ABJ_II,
+            SAME_ATTITUDE(monster), monster->x, monster->y, monster->foe, 250);
         return;
     }
 
@@ -1476,7 +1473,7 @@ static unsigned char monster_abjuration(int pow, bool test)
         if (monster->type == -1 || !mons_near(monster))
             continue;
 
-        if (monster->behavior != BEH_ENSLAVED)
+        if (!mons_friendly(monster))
             continue;
 
         if (monster->enchantment1 == 0

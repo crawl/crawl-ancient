@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *   <2>   16 Mar 2001      GDL    Added TAG_LEVEL_ATTITUDE
  *   <1>   27 Jan 2001      GDL    Created
  */
 
@@ -81,6 +82,7 @@
 #include "monstuff.h"
 #include "randart.h"
 #include "stuff.h"
+#include "spells4.h"
 #include "tags.h"
 
 // THE BIG IMPORTANT TAG CONSTRUCTION/PARSE BUFFER
@@ -109,9 +111,12 @@ static void tag_read_you_dungeon(struct tagHeader &th);
 static void tag_construct_level(struct tagHeader &th);
 static void tag_construct_level_items(struct tagHeader &th);
 static void tag_construct_level_monsters(struct tagHeader &th);
+static void tag_construct_level_attitude(struct tagHeader &th);
 static void tag_read_level(struct tagHeader &th);
 static void tag_read_level_items(struct tagHeader &th);
 static void tag_read_level_monsters(struct tagHeader &th);
+static void tag_read_level_attitude(struct tagHeader &th);
+static void tag_missing_level_attitude();
 
 static void tag_construct_ghost(struct tagHeader &th);
 static void tag_read_ghost(struct tagHeader &th);
@@ -302,6 +307,9 @@ void tag_construct(struct tagHeader &th, int tagID)
         case TAG_LEVEL_MONSTERS:
             tag_construct_level_monsters(th);
             break;
+        case TAG_LEVEL_ATTITUDE:
+            tag_construct_level_attitude(th);
+            break;
         case TAG_GHOST:
             tag_construct_ghost(th);
             break;
@@ -395,6 +403,9 @@ int tag_read(FILE *fp)
         case TAG_LEVEL_MONSTERS:
             tag_read_level_monsters(th);
             break;
+        case TAG_LEVEL_ATTITUDE:
+            tag_read_level_attitude(th);
+            break;
         case TAG_GHOST:
             tag_read_ghost(th);
             break;
@@ -410,10 +421,21 @@ int tag_read(FILE *fp)
 // older savefiles might want to call this to get a tag
 // properly initialized if it wasn't part of the savefile.
 // For now, none are supported.
+
+// This function will be called AFTER all other tags for
+// the savefile are read,  so everything that can be
+// initialized should have been by now.
 void tag_missing(int tag)
 {
-    perror("There shouldn't be any missing tags yet!");
-    end(-1);
+    switch(tag)
+    {
+        case TAG_LEVEL_ATTITUDE:
+            tag_missing_level_attitude();
+            break;
+        default:
+            perror("Tag %d is missing;  file is likely corrupt.");
+            end(-1);
+    }
 }
 
 // utility
@@ -431,7 +453,7 @@ void tag_set_expected(char tags[], int fileType)
                     tags[i] = 1;
                 break;
             case TAGTYPE_LEVEL:
-                if (i >= TAG_LEVEL && i <= TAG_GHOST)
+                if (i >= TAG_LEVEL && i <= TAG_LEVEL_ATTITUDE)
                     tags[i] = 1;
                 break;
             case TAGTYPE_GHOST:
@@ -1059,6 +1081,20 @@ static void tag_construct_level_monsters(struct tagHeader &th)
     }
 }
 
+void tag_construct_level_attitude(struct tagHeader &th)
+{
+    int i;
+
+    // how many monsters?
+    marshallShort(th, MAX_MONSTERS);
+
+    for (i = 0; i < MAX_MONSTERS; i++)
+    {
+        marshallByte(th, menv[i].attitude);
+        marshallShort(th, menv[i].foe);
+    }
+}
+
 
 static void tag_read_level(struct tagHeader &th)
 {
@@ -1223,6 +1259,70 @@ static void tag_read_level_monsters(struct tagHeader &th)
                 }
             }
         }
+    }
+}
+
+void tag_read_level_attitude(struct tagHeader &th)
+{
+    int i, count;
+
+    // how many monsters?
+    count = unmarshallShort(th);
+
+    for (i = 0; i < count; i++)
+    {
+        menv[i].attitude = unmarshallByte(th);
+        menv[i].foe = unmarshallShort(th);
+    }
+}
+
+void tag_missing_level_attitude()
+{
+    // we don't really have to do a lot here.
+    // just set foe to MHITNOT;  they'll pick up
+    // a foe first time through monster() if
+    // there's one around.
+
+    // as for attitude,  a couple simple checks
+    // can be used to determine friendly/neutral/
+    // hostile.
+    int i;
+    bool isFriendly;
+    unsigned int new_beh = BEH_WANDER;
+
+    for(i=0; i<MAX_MONSTERS; i++)
+    {
+        // only do actual monsters
+        if (menv[i].type < 0)
+            continue;
+
+        isFriendly = (menv[i].enchantment[1] == ENCH_CREATED_FRIENDLY);
+
+        menv[i].foe = MHITNOT;
+
+        switch(menv[i].behavior)
+        {
+            case 0:         // old BEH_SLEEP
+                new_beh = BEH_SLEEP;    // don't wake sleepers
+                break;
+            case 3:         // old BEH_FLEE
+            case 10:        // old BEH_FLEE_FRIEND
+                new_beh = BEH_FLEE;
+                break;
+            case 1:         // old BEH_CHASING_I
+            case 6:         // old BEH_FIGHT
+                new_beh = BEH_SEEK;
+                break;
+            case 7:         // old BEH_ENSLAVED
+                if (!monster_has_enchantment(&menv[i], ENCH_CHARM))
+                    isFriendly = true;
+                break;
+            default:
+                break;
+        }
+
+        menv[i].attitude = (isFriendly)?ATT_FRIENDLY : ATT_HOSTILE;
+        menv[i].behavior = new_beh;
     }
 }
 

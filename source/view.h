@@ -25,7 +25,7 @@
  * called from: bang - beam - direct - effects - fight - monstuff -
  *              mstuff2 - spells1 - spells2
  * *********************************************************************** */
-bool mons_near(struct monsters *monster);
+bool mons_near(struct monsters *monster, unsigned int foe = MHITYOU);
 
 
 // last updated 12may2000 {dlb}

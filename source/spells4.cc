@@ -11,7 +11,6 @@
  */
 
 #include "AppHdr.h"
-#include "spells4.h"
 
 #include <string>
 #include <stdio.h>
@@ -40,6 +39,7 @@
 #include "religion.h"
 #include "spells.h"
 #include "spells1.h"
+#include "spells4.h"
 #include "stuff.h"
 #include "view.h"
 
@@ -182,18 +182,13 @@ inline void player_hurt_monster(int monster, int damage)
     return;
 }                               // end player_hurt_monster()
 
-bool monster_has_enchantment(int mon, int ench)
+bool monster_has_enchantment(struct monsters *mon, int ench)
 {
-    if (menv[mon].enchantment1 == 1)
-    {
-        for (int p = 0; p < 3; p++)
-        {
-            if (menv[mon].enchantment[p] == ench)
-                return (true);
-        }
-    }
+    for (int p = 0; p < 3; p++)
+        if (mon->enchantment[p] == ench)
+            return true;
 
-    return (false);
+    return false;
 }
 
 int enchant_monster(int mon, int ench)
@@ -202,7 +197,7 @@ int enchant_monster(int mon, int ench)
 
     ASSERT(mon != NON_MONSTER);
 
-    if (monster_has_enchantment(mon, ench))
+    if (monster_has_enchantment(&menv[mon], ench))
         return 0;
 
     for (p = 0; p < 3; p++)
@@ -1088,7 +1083,7 @@ void cast_summon_butterflies(int pow)
 
     for (int scount = 1; scount < num; scount++)
     {
-        create_monster( MONS_BUTTERFLY, 22, BEH_ENSLAVED,
+        create_monster( MONS_BUTTERFLY, ENCH_ABJ_III, BEH_FRIENDLY,
                         you.x_pos, you.y_pos, MHITNOT, 250 );
     }
 }
@@ -1126,7 +1121,8 @@ void cast_summon_large_mammal(int pow)
         }
     }
 
-    create_monster(mon, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
+    create_monster(mon, ENCH_ABJ_III, BEH_FRIENDLY, you.x_pos,
+        you.y_pos, MHITNOT, 250);
 }
 
 void cast_sticks_to_snakes(int pow)
@@ -1154,8 +1150,8 @@ void cast_sticks_to_snakes(int pow)
     }
 
     //jmf: FIXME: is this correct for missiles and melee weapons?
-    behaviour = (you.inv_plus[ weapon ] > 130) ? BEH_CHASING_I
-                                               : BEH_ENSLAVED;
+    behaviour = (you.inv_plus[ weapon ] > 130) ? BEH_HOSTILE
+                                               : BEH_FRIENDLY;
 
     if ((you.inv_class[ weapon ] == OBJ_MISSILES
          && (you.inv_type[ weapon ] == MI_ARROW)))
@@ -1171,9 +1167,8 @@ void cast_sticks_to_snakes(int pow)
             else
                 mon = MONS_SMALL_SNAKE;
 
-            if (create_monster(mon, 22, behaviour, you.x_pos, you.y_pos,
-                                                        MHITNOT, 250) != -1
-                || !nice)
+            if (create_monster(mon, ENCH_ABJ_III, behaviour, you.x_pos,
+                you.y_pos, MHITNOT, 250) != -1 || !nice)
             {
                 how_many++;
             }
@@ -1213,7 +1208,8 @@ void cast_sticks_to_snakes(int pow)
         if (pow > 20 && one_chance_in(3))
             mon = MONS_BROWN_SNAKE;
 
-        create_monster(mon, 22, behaviour, you.x_pos, you.y_pos, MHITNOT, 250);
+        create_monster(mon, ENCH_ABJ_III, behaviour, you.x_pos,
+            you.y_pos, MHITNOT, 250);
     }
 
 #ifdef USE_DEBRIS_CODE
@@ -1263,8 +1259,8 @@ void cast_summon_dragon(int pow)
     // a very high level spell so it might be okay).  -- bwr
     happy = random2(pow) > 10;
 
-    if (create_monster(MONS_DRAGON, 22,
-                        (happy ? BEH_ENSLAVED : BEH_CHASING_I),
+    if (create_monster(MONS_DRAGON, ENCH_ABJ_III,
+                        (happy ? BEH_FRIENDLY : BEH_HOSTILE),
                         you.x_pos, you.y_pos, MHITNOT, 250) != -1)
     {
         strcpy(info, "A dragon appears.");
@@ -1303,7 +1299,7 @@ void cast_conjure_ball_lightning(int pow)
             targ[1] = you.y_pos;
         }
 
-        if (create_monster(MONS_BALL_LIGHTNING, 0, BEH_CONFUSED,
+        if (create_monster(MONS_BALL_LIGHTNING, 0, BEH_FRIENDLY,
                            targ[0], targ[1], MHITNOT, 250) != -1)
         {
             summoned = true;
@@ -1326,12 +1322,12 @@ static int sleep_monsters(char x, char y, int pow, int garbage)
         return 0;
     if (!check_mons_magres(&menv[mnstr], pow))
         return 0;
-    if (menv[mnstr].behavior == BEH_ENSLAVED)
+    if (mons_friendly(&menv[mnstr]))
         return 0;
     //jmf: now that sleep == hibernation:
     if ((mons_res_cold(menv[mnstr].type) > 0) && coinflip())
         return 0;
-    if (monster_has_enchantment(mnstr, ENCH_SLEEP_WARY))
+    if (monster_has_enchantment(&menv[mnstr], ENCH_SLEEP_WARY))
         return 0;
 
     if (mons_flag(menv[mnstr].type, M_COLD_BLOOD))
@@ -1367,7 +1363,7 @@ static int tame_beast_monsters(char x, char y, int pow, int garbage)
         return 0;
     if (mons_intel_type(monster->type) != I_ANIMAL)
         return 0;
-    if (monster->behavior == BEH_ENSLAVED)
+    if (mons_friendly(monster))
         return 0;
 
     // 50% bonus for dogs, add cats if they get implemented
@@ -1383,7 +1379,7 @@ static int tame_beast_monsters(char x, char y, int pow, int garbage)
     simple_monster_message(monster, " is tamed!");
 
     if (random2(100) < random2(pow / 10))
-        monster->behavior = BEH_ENSLAVED;       // permanent, right?
+        monster->attitude = ATT_FRIENDLY;       // permanent, right?
     else
     {
         for (unsigned char i = 0; i < 3; i++)
@@ -1392,7 +1388,6 @@ static int tame_beast_monsters(char x, char y, int pow, int garbage)
             {
                 monster->enchantment[i] = ENCH_CHARM;
                 monster->enchantment1 = 1;
-                monster->behavior = BEH_ENSLAVED;
                 break;
             }
         }
@@ -2185,8 +2180,7 @@ static int glamour_monsters(char x, char y, int pow, int garbage)
         break;
     case 2:
     case 5:
-        if (enchant_monster(mon, ENCH_CHARM))
-            menv[mon].behavior = BEH_ENSLAVED;
+        enchant_monster(mon, ENCH_CHARM);
         break;
     case 3:
         menv[mon].behavior = BEH_SLEEP;
@@ -2377,7 +2371,7 @@ void cast_evaporate(int pow)
 void make_shuggoth(char x, char y, int hp)
 {
     int mon = create_monster( MONS_SHUGGOTH, 100 + random2avg(58, 3),
-                              BEH_INSANE, x, y, MHITNOT, 250 );
+        BEH_HOSTILE, x, y, MHITNOT, 250 );
 
     if (mon != -1)
     {
@@ -2518,7 +2512,7 @@ static int snake_charm_monsters(char x, char y, int pow, int message)
 
     if (mon == NON_MONSTER)
         return 0;
-    if (menv[mon].behavior == BEH_ENSLAVED)
+    if (mons_friendly(&menv[mon]))
         return 0;
     if (one_chance_in(4))
         return 0;
@@ -2527,7 +2521,7 @@ static int snake_charm_monsters(char x, char y, int pow, int message)
     if (!check_mons_magres(&menv[mon], pow))
         return 0;
 
-    menv[mon].behavior = BEH_ENSLAVED;
+    menv[mon].attitude = ATT_FRIENDLY;
     sprintf(info, "%s sways back and forth.", ptr_monam( &(menv[mon]), 0 ));
     mpr(info);
 

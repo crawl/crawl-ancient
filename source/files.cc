@@ -277,6 +277,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     unsigned char foll_targ_1_y[8];
     int foll_inv[8][8];
     unsigned char foll_beh[8];
+    unsigned char foll_att[8];
     int foll_sec[8];
     unsigned char foll_hit[8];
 
@@ -425,8 +426,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 }
 
                 foll_beh[following] = fmenv->behavior;
+                foll_att[following] = fmenv->attitude;
                 foll_sec[following] = fmenv->number;
-                foll_hit[following] = fmenv->monster_foe;
+                foll_hit[following] = fmenv->foe;
                 foll_ench_1[following] = fmenv->enchantment1;
                 foll_ench[following][0] = fmenv->enchantment[0];
                 foll_ench[following][1] = fmenv->enchantment[1];
@@ -678,8 +680,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                             }
 
                             menv[following].behavior = foll_beh[fmenv];
+                            menv[following].attitude = foll_att[fmenv];
                             menv[following].number = foll_sec[fmenv];
-                            menv[following].monster_foe = foll_hit[fmenv];
+                            menv[following].foe = foll_hit[fmenv];
                             menv[following].enchantment1 = foll_ench_1[fmenv];
                             menv[following].enchantment[0] = foll_ench[fmenv][0];
                             menv[following].enchantment[1] = foll_ench[fmenv][1];
@@ -801,7 +804,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     {
         for (j = 0; j < GYM; j++)
         {
-            if (igrd[i][j] < 0 | igrd[i][j] > NON_ITEM)
+            if (igrd[i][j] < 0 || igrd[i][j] > NON_ITEM)
                 igrd[i][j] = NON_ITEM;
         }
     }
@@ -990,10 +993,7 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
         {
             int count_out = 0;
 
-            if (igrd[count_x][count_y] < 0 | igrd[count_x][count_y] > NON_ITEM)
-                igrd[count_x][count_y] = NON_ITEM;
-
-            if (igrd[count_x][count_y] > NON_ITEM)
+            if (igrd[count_x][count_y] < 0 || igrd[count_x][count_y] > NON_ITEM)
                 igrd[count_x][count_y] = NON_ITEM;
 
             if (igrd[count_x][count_y] == NON_ITEM)
@@ -1006,7 +1006,7 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
                 mitm.x[frx] = count_x;
                 mitm.y[frx] = count_y;
 
-                if (frx > NON_ITEM | frx < 0)
+                if (frx > NON_ITEM || frx < 0)
                 {
                     cprintf("Error! Item out of bounds: ");
                     itoa(frx, st_prn, 10);
@@ -1046,7 +1046,7 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
         end(-1);
     }
 
-    write_tagged_file(saveFile, 4, 0, TAGTYPE_LEVEL);
+    write_tagged_file(saveFile, 4, 1, TAGTYPE_LEVEL);
 
     fclose(saveFile);
 

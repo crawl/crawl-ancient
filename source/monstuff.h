@@ -13,9 +13,18 @@
 #define MONSTUFF_H
 
 
+// useful macro
+#define SAME_ATTITUDE(x) (mons_friendly(x)?BEH_FRIENDLY:BEH_HOSTILE)
+
 // for definition of type monsters {dlb}
 #include "externs.h"
 // for definition of type monsters {dlb}
+
+/* ***********************************************************************
+ * called from: monstuff beam effects fight view
+ * *********************************************************************** */
+void behavior_event(struct monsters *mon, int event_type, int param = 0);
+
 
 /* ***********************************************************************
  * called from: fight - it_use3 - spells

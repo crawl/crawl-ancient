@@ -314,7 +314,7 @@ static void cards(unsigned char which_card)
     case CARD_BUTTERFLY:
         mpr("You have drawn the Butterfly.");
 
-        if (create_monster( MONS_BUTTERFLY, 21 + random2(4), BEH_CHASING_I,
+        if (create_monster( MONS_BUTTERFLY, ENCH_ABJ_II + random2(4), BEH_FRIENDLY,
                                 you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("A brightly coloured insect flies from the card!");
@@ -453,7 +453,7 @@ static void cards(unsigned char which_card)
 
         for (loopy = 0; loopy < 5; loopy++)
         {
-            create_monster( MONS_REAPER, 0, BEH_CHASING_I, you.x_pos,
+            create_monster( MONS_REAPER, 0, BEH_HOSTILE, you.x_pos,
                                you.y_pos, MHITYOU, 250 );
         }
         break;
@@ -468,7 +468,7 @@ static void cards(unsigned char which_card)
 
     case CARD_SHADOW:
         mpr("You have drawn the Shadow.");
-        create_monster( MONS_SOUL_EATER, 0, BEH_CHASING_I, you.x_pos,
+        create_monster( MONS_SOUL_EATER, 0, BEH_HOSTILE, you.x_pos,
                                you.y_pos, MHITYOU, 250 );
         break;
 
@@ -486,7 +486,7 @@ static void cards(unsigned char which_card)
 
     case CARD_STATUE:
         mpr("You have drawn the Crystal Statue.");
-        create_monster( MONS_CRYSTAL_GOLEM, 0, BEH_ENSLAVED, you.x_pos,
+        create_monster( MONS_CRYSTAL_GOLEM, 0, BEH_FRIENDLY, you.x_pos,
                            you.y_pos, you.pet_target, 250 );
         break;
 
@@ -504,8 +504,8 @@ static void cards(unsigned char which_card)
     case CARD_DEMON_LESSER:
         mpr("On the card is a picture of a little demon.");
 
-        if (create_monster( MONS_WHITE_IMP + random2(5), 21 + random2(4),
-                    BEH_ENSLAVED, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        if (create_monster( MONS_WHITE_IMP + random2(5), ENCH_ABJ_II + random2(4),
+            BEH_FRIENDLY, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -514,8 +514,8 @@ static void cards(unsigned char which_card)
     case CARD_DEMON_COMMON:
         mpr("On the card is a picture of a demon.");
 
-        if (create_monster( MONS_NEQOXEC + random2(5), 21 + random2(3),
-                    BEH_ENSLAVED, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        if (create_monster( MONS_NEQOXEC + random2(5), ENCH_ABJ_II + random2(3),
+                    BEH_FRIENDLY, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -524,8 +524,8 @@ static void cards(unsigned char which_card)
     case CARD_DEMON_GREATER:
         mpr("On the card is a picture of a huge demon.");
 
-        if (create_monster( MONS_NEQOXEC + random2(5), 20 + random2(3),
-                    BEH_ENSLAVED, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        if (create_monster( MONS_NEQOXEC + random2(5), ENCH_ABJ_I + random2(3),
+                    BEH_FRIENDLY, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -538,8 +538,8 @@ static void cards(unsigned char which_card)
 
         for (loopy = 0; loopy < 7; loopy++)
         {
-            if (create_monster( MONS_WHITE_IMP + random2(5), 21 + random2(4),
-                    BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+            if (create_monster( MONS_WHITE_IMP + random2(5), ENCH_ABJ_II + random2(4),
+                    BEH_HOSTILE, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
             {
                  success = true;
             }
@@ -552,7 +552,7 @@ static void cards(unsigned char which_card)
     case CARD_YAK:
         mpr("On the card is a picture of a huge shaggy yak.");
 
-        if (create_monster( MONS_DEATH_YAK, 25, BEH_ENSLAVED,
+        if (create_monster( MONS_DEATH_YAK, ENCH_ABJ_VI, BEH_FRIENDLY,
                                 you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
@@ -562,7 +562,7 @@ static void cards(unsigned char which_card)
     case CARD_FIEND:
         mpr("On the card is a picture of a huge scaly devil.");
 
-        if (create_monster( MONS_FIEND, 21, BEH_ENSLAVED,
+        if (create_monster( MONS_FIEND, ENCH_ABJ_II, BEH_FRIENDLY,
                                 you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
@@ -572,8 +572,8 @@ static void cards(unsigned char which_card)
     case CARD_DRAGON:
         mpr("On the card is a picture of a huge scaly dragon.");
 
-        if (create_monster( (coinflip()? MONS_DRAGON : MONS_ICE_DRAGON), 22,
-                    BEH_ENSLAVED, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        if (create_monster( (coinflip()? MONS_DRAGON : MONS_ICE_DRAGON),
+            ENCH_ABJ_III, BEH_FRIENDLY, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -582,7 +582,7 @@ static void cards(unsigned char which_card)
     case CARD_GOLEM:
         mpr("On the card is a picture of a statue.");
 
-        if (create_monster( MONS_CLAY_GOLEM + random2(6), 21, BEH_ENSLAVED,
+        if (create_monster( MONS_CLAY_GOLEM + random2(6), ENCH_ABJ_II, BEH_FRIENDLY,
                                     you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
@@ -592,7 +592,7 @@ static void cards(unsigned char which_card)
     case CARD_THING_FUGLY:
         mpr("On the card is a picture of a very ugly thing.");
 
-        if (create_monster( MONS_VERY_UGLY_THING, 21, BEH_ENSLAVED,
+        if (create_monster( MONS_VERY_UGLY_THING, ENCH_ABJ_II, BEH_FRIENDLY,
                                     you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
@@ -603,7 +603,7 @@ static void cards(unsigned char which_card)
         mpr( "On the card is a picture of a very irritated-looking "
              "skeletal thing." );
 
-        if (create_monster( MONS_LICH, 0, BEH_CHASING_I,
+        if (create_monster( MONS_LICH, 0, BEH_HOSTILE,
                                 you.x_pos, you.y_pos, MHITYOU, 250) != -1)
         {
             mpr("The picture comes to life!");
@@ -616,13 +616,13 @@ static void cards(unsigned char which_card)
         else
             mpr("On the card is a picture of a hideous abomination.");
 
-        // it is *VERY* important that the call to create_monster comes
-        // first here {dlb}
-        if (create_monster( MONS_UNSEEN_HORROR, 21, BEH_ENSLAVED,
-                                you.x_pos, you.y_pos, MHITYOU, 250 ) != -1
-                && player_see_invis())
+        if (create_monster( MONS_UNSEEN_HORROR, ENCH_ABJ_II, BEH_FRIENDLY,
+                                you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
-            mpr("The picture comes to life!");
+            if (player_see_invis())
+            {
+                mpr("The picture comes to life!");
+            }
         }
         break;
 

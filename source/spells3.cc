@@ -429,7 +429,7 @@ void simulacrum(int power)
         {
             // yes, the snowmen eventually melt away... -- bwr
             if (create_monster( MONS_SIMULACRUM_SMALL, ENCH_ABJ_VI,
-                                BEH_ENSLAVED, you.x_pos, you.y_pos,
+                                BEH_FRIENDLY, you.x_pos, you.y_pos,
                                 MHITNOT, mons_type ) != -1)
             {
                 summoned++;
@@ -464,7 +464,7 @@ void dancing_weapon(int pow, bool force_hostile)
 
     int summs = 0;
     int i = 0;
-    char behavi = BEH_ENSLAVED;
+    char behavi = BEH_FRIENDLY;
     FixedVector < char, 2 > empty;
 
     if (!empty_surrounds(you.x_pos, you.y_pos, DNGN_FLOOR, false, empty))
@@ -487,7 +487,7 @@ void dancing_weapon(int pow, bool force_hostile)
     }
 
     if (you.inv_plus[you.equip[EQ_WEAPON]] >= 100 || force_hostile)
-        behavi = BEH_CHASING_I; // cursed weapons become hostile
+        behavi = BEH_HOSTILE; // cursed weapons become hostile
 
     if ((summs = create_monster( MONS_DANCING_WEAPON, numsc, behavi, empty[0],
                                         empty[1], you.pet_target, 1) ) != -1)
@@ -929,7 +929,7 @@ bool recall(char type_recalled)
         if (monster->type == -1)
             continue;
 
-        if (monster->behavior != BEH_ENSLAVED)
+        if (!mons_friendly(monster))
             continue;
 
         if (monster_habitat(monster->type) != DNGN_FLOOR)

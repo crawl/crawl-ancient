@@ -401,12 +401,16 @@ void beam(struct bolt &pbolt, int inv_number)
 int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                        int hurted, bool doFlavouredEffects)
 {
+    // if we're not doing flavored effects,  must be preliminary
+    // damage check only;  do not print messages or apply any side
+    // effects!
+
     switch (pbolt.flavour)
     {
     case BEAM_FIRE:
         if (mons_res_fire(monster->type) > 0)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
@@ -414,7 +418,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                  && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30
                                                  == SPARM_FIRE_RESISTANCE)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " resists.");
             hurted /= 3;
         }
@@ -428,12 +432,12 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                 || monster->type == MONS_SIMULACRUM_SMALL
                 || monster->type == MONS_SIMULACRUM_LARGE)
             {
-                if (!pbolt.isTracer)
+                if (doFlavouredEffects)
                     simple_monster_message(monster, " melts!");
             }
             else
             {
-                if (!pbolt.isTracer)
+                if (doFlavouredEffects)
                     simple_monster_message(monster, " is burned terribly!");
             }
             hurted *= 15;
@@ -445,7 +449,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
     case BEAM_COLD:
         if (mons_res_cold(monster->type) > 0)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
@@ -453,7 +457,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                  && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30
                                                  == SPARM_COLD_RESISTANCE)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " resists.");
             hurted /= 3;
         }
@@ -463,7 +467,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                 || mitm.special[monster->inv[MSLOT_ARMOUR]] % 30
                                                 != SPARM_COLD_RESISTANCE))
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " is frozen!");
             hurted *= 15;
             hurted /= 10;
@@ -473,7 +477,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
     case BEAM_ELECTRICITY:
         if (mons_res_elec(monster->type) > 0)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
@@ -481,12 +485,12 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
 
 
     case BEAM_POISON:
-        if (doFlavouredEffects && !pbolt.isTracer && !one_chance_in(3))
+        if (doFlavouredEffects && !one_chance_in(3))
             poison_monster(monster, YOU_KILL(pbolt.thrower));
 
         if (mons_res_poison(monster->type) > 0)
         {
-            if (doFlavouredEffects && !pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
@@ -496,14 +500,14 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
         if (mons_holiness(monster->type) == MH_UNDEAD
             || mons_holiness(monster->type) == MH_DEMONIC)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
         else
         {
             // early out for tracer/no side effects
-            if (pbolt.isTracer || !doFlavouredEffects)
+            if (!doFlavouredEffects)
                 return hurted;
 
             simple_monster_message(monster, " is drained.");
@@ -526,7 +530,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
         if (mons_holiness(monster->type) == MH_NATURAL
             || mons_holiness(monster->type) == MH_HOLY)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
@@ -537,7 +541,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
            can't be resisted (except by AC, of course) */
         if (mons_res_cold(monster->type) > 0)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " partially resists.");
             hurted /= 2;
         }
@@ -545,7 +549,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                  && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 ==
                  SPARM_COLD_RESISTANCE)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " partially resists.");
             hurted /= 2;
         }
@@ -555,7 +559,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                 || mitm.special[monster->inv[MSLOT_ARMOUR]] % 30
                                                 != SPARM_COLD_RESISTANCE))
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " is frozen!");
             hurted *= 13;
             hurted /= 10;
@@ -570,7 +574,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                 && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30
                                                 == SPARM_FIRE_RESISTANCE))
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " partially resists.");
             hurted /= 2;
         }
@@ -584,12 +588,12 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                 || monster->type == MONS_SIMULACRUM_SMALL
                 || monster->type == MONS_SIMULACRUM_LARGE)
             {
-                if (!pbolt.isTracer)
+                if (doFlavouredEffects)
                     simple_monster_message(monster, " melts!");
             }
             else
             {
-                if (!pbolt.isTracer)
+                if (doFlavouredEffects)
                     simple_monster_message(monster, " is burned terribly!");
             }
 
@@ -601,7 +605,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
     {
         if (mons_res_fire(monster->type) >= 2)
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
@@ -611,7 +615,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                 && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30
                                                 == SPARM_FIRE_RESISTANCE))
         {
-            if (!pbolt.isTracer)
+            if (doFlavouredEffects)
                 simple_monster_message(monster, " partially resists.");
             hurted /= 2;
         }
@@ -625,12 +629,12 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
                 || monster->type == MONS_SIMULACRUM_SMALL
                 || monster->type == MONS_SIMULACRUM_LARGE)
             {
-                if (!pbolt.isTracer)
+                if (doFlavouredEffects)
                     simple_monster_message(monster, " melts!");
             }
             else
             {
-                if (!pbolt.isTracer)
+                if (doFlavouredEffects)
                     simple_monster_message(monster, " is burned terribly!");
             }
 
@@ -728,7 +732,7 @@ bool mass_enchantment(int wh_enchant, int pow)
         // assuming that the only mass charm is control undead:
         if (wh_enchant == ENCH_CHARM
             && (mons_holiness(monster->type) != MH_UNDEAD
-                || monster->behavior == BEH_ENSLAVED))
+                || !mons_friendly(monster)))
         {
             continue;
         }
@@ -785,7 +789,6 @@ bool mass_enchantment(int wh_enchant, int pow)
                         case ENCH_CHARM:
                             simple_monster_message(monster,
                                                    " submits to your will.");
-                            monster->behavior = BEH_ENSLAVED;
                             break;
                         default:
                             // oops, I guess not!
@@ -1060,7 +1063,6 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
             {
                 monster->enchantment[p] = ENCH_CHARM;
                 monster->enchantment1 = 1;
-                monster->behavior = BEH_ENSLAVED;
                 break;
             }
         }
@@ -1299,7 +1301,7 @@ void fire_tracer(struct monsters *monster, struct bolt &pbolt)
     pbolt.canSeeInvis = (mons_see_invis(monster->type) != 0);
     pbolt.smartMonster = (mons_intel(monster->type) == I_HIGH ||
                           mons_intel(monster->type) == I_NORMAL);
-    pbolt.isFriendly = (monster->behavior == BEH_ENSLAVED);
+    pbolt.isFriendly = mons_friendly(monster);
 
     // init tracer variables
     pbolt.foe_count = pbolt.fr_count = 0;
@@ -2323,7 +2325,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
         if (beam.isTracer)
         {
             // enchant case -- enchantments always hit, so update target immed.
-            if (beam.isFriendly ^ mon->behavior == BEH_ENSLAVED)
+            if (beam.isFriendly ^ mons_friendly(mon))
             {
                 beam.foe_count += 1;
                 beam.foe_power += mons_power(tid);
@@ -2338,10 +2340,9 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
 
         // BEGIN non-tracer enchantment
 
-        // if a monster is hit with something and they can't see
-        // you, they'll chase you anyway.  What!?
-        if (you.invis && mon->behavior == BEH_SLEEP && !beam.canSeeInvis)
-            mon->behavior = BEH_CHASING_I;
+        // if a monster is hit with something, annoy it
+        behavior_event(mon, ME_ANNOY, YOU_KILL(beam.thrower)?MHITYOU:
+            beam.beam_source);
 
         // !@#*( affect_monster_enchantment() has side-effects on
         // the beam structure which screw up range_used_on_hit(),
@@ -2425,7 +2426,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
             // fireball at another fire giant,  and it only took
             // 1/3 damage,  then power of 5 would be applied to
             // foe_power or fr_power.
-            if (beam.isFriendly ^ mon->behavior == BEH_ENSLAVED)
+            if (beam.isFriendly ^ mons_friendly(mon))
             {
                 beam.foe_count += 1;
                 beam.foe_power += hurt_final * mons_power(tid) / hurt;
@@ -2442,6 +2443,10 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
     // END non-enchantment (could still be tracer)
 
     // BEGIN real non-enchantment beam
+
+    // even if the beam misses,  annoy the monster!
+    behavior_event(mon, ME_ANNOY, YOU_KILL(beam.thrower)?MHITYOU:
+        beam.beam_source);
 
     // explosions always 'hit'
     if (!beam.isExplosion && beam.hit < random2(mon->evasion))
@@ -2495,17 +2500,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
     // now hurt monster
     hurt_monster(mon, hurt_final);
 
-    if (mon->behavior == BEH_SLEEP)
-        mon->behavior = BEH_CHASING_I;
-
     int thrower = YOU_KILL(beam.thrower)?KILL_YOU_MISSILE:KILL_MON_MISSILE;
-
-    if (thrower == KILL_YOU_MISSILE && mon->behavior == BEH_ENSLAVED
-        && hurt_final > 0)
-    {
-        mon->behavior = BEH_CHASING_I;
-        //naughty(NAUGHTY_STABBING, 5);
-    }
 
     if (mon->hit_points < 1)
         monster_die(mon, thrower, beam.beam_source);
@@ -2655,7 +2650,8 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         if (simple_monster_message(mon, " is enslaved."))
             beam.obviousEffect = true;
 
-        mon->behavior = BEH_ENSLAVED;
+        // wow, permanent enslaving
+        mon->attitude = ATT_FRIENDLY;
         return MON_AFFECTED;
     }
 

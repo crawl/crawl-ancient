@@ -348,9 +348,6 @@ void cast_twisted(int power, int corps_beh, int corps_hit)
         if (mitm.base_type[objl] == OBJ_CORPSES
                 && mitm.sub_type[objl] == CORPSE_BODY)
         {
-            //number_raised += raise_corpse(objl, adx, ady, corps_beh,
-            //                              corps_hit, actual);
-            //power --;
             total_mass += mons_weight(mitm.pluses[objl]);
 
             if (mitm.special[objl] < 100)
@@ -1062,10 +1059,10 @@ int summon_elemental(int pow, unsigned char restricted_type,
     char summ_success = 0;
     struct dist smove;
 
-    int numsc = 21 + (random2(pow) / 5);
+    int numsc = ENCH_ABJ_II + (random2(pow) / 5);
 
-    if (numsc > 25)
-        numsc = 25;
+    if (numsc > ENCH_ABJ_VI)
+        numsc = ENCH_ABJ_VI;
 
   dirc:
     mpr("Summon from material in which direction?", MSGCH_PROMPT);
@@ -1175,12 +1172,12 @@ int summon_elemental(int pow, unsigned char restricted_type,
         || random2(100) < unfriendly)
     {
         mpr("The elemental doesn't seem to appreciate being summoned.");
-        summ_success = create_monster(type_summoned, numsc, BEH_CHASING_I,
+        summ_success = create_monster(type_summoned, numsc, BEH_HOSTILE,
                                        targ_x, targ_y, MHITYOU, 250);
     }
     else
     {
-        summ_success = create_monster(type_summoned, numsc, BEH_ENSLAVED,
+        summ_success = create_monster(type_summoned, numsc, BEH_FRIENDLY,
                                        targ_x, targ_y, MHITNOT, 250);
     }
 
@@ -1245,7 +1242,7 @@ void summon_small_mammals(int pow)
             break;
         }
 
-        create_monster(thing_called, 22, BEH_ENSLAVED,
+        create_monster(thing_called, ENCH_ABJ_III, BEH_FRIENDLY,
                        you.x_pos, you.y_pos, MHITNOT, 250);
     }
 }                               // end summon_small_mammals()
@@ -1260,7 +1257,7 @@ void summon_scorpions(int pow)
     {
         if (random2(pow) <= 3)
         {
-            if (create_monster( MONS_SCORPION, 22, BEH_CHASING_I,
+            if (create_monster( MONS_SCORPION, ENCH_ABJ_III, BEH_HOSTILE,
                                 you.x_pos, you.y_pos, MHITYOU, 250) != -1)
             {
                 mpr("A scorpion appears. It doesn't look very happy.");
@@ -1268,7 +1265,7 @@ void summon_scorpions(int pow)
         }
         else
         {
-            if (create_monster( MONS_SCORPION, 22, BEH_ENSLAVED,
+            if (create_monster( MONS_SCORPION, ENCH_ABJ_III, BEH_FRIENDLY,
                                 you.x_pos, you.y_pos, MHITNOT, 250) != -1)
             {
                 mpr("A scorpion appears.");
@@ -1279,11 +1276,11 @@ void summon_scorpions(int pow)
 
 void summon_ice_beast_etc(int pow, int ibc)
 {
-    int numsc = 21 + (random2(pow) / 4);
-    int beha = BEH_ENSLAVED;
+    int numsc = ENCH_ABJ_II + (random2(pow) / 4);
+    int beha = BEH_FRIENDLY;
 
-    if (numsc > 25)
-        numsc = 25;
+    if (numsc > ENCH_ABJ_VI)
+        numsc = ENCH_ABJ_VI;
 
     switch (ibc)
     {
@@ -1315,7 +1312,7 @@ void summon_ice_beast_etc(int pow, int ibc)
         mpr("A demon appears!");
         if (random2(pow) < 4)
         {
-            beha = BEH_CHASING_I;
+            beha = BEH_HOSTILE;
             mpr("It doesn't look very happy.");
         }
         break;
@@ -1383,8 +1380,8 @@ void summon_swarm(int pow)
             break;
         }                       // end switch
 
-        create_monster( thing_called, 22,
-                        (random2(pow) > 7) ? BEH_ENSLAVED : BEH_CHASING_I,
+        create_monster( thing_called, ENCH_ABJ_III,
+                        (random2(pow) > 7) ? BEH_FRIENDLY : BEH_HOSTILE,
                         you.x_pos, you.y_pos, MHITNOT, 250);
     }
 
@@ -1411,7 +1408,7 @@ void summon_undead(int pow)
 
         if (random2(pow) < 6)
         {
-            if (create_monster(thing_called, 22, BEH_CHASING_I,
+            if (create_monster(thing_called, ENCH_ABJ_III, BEH_HOSTILE,
                                you.x_pos, you.y_pos, MHITYOU, 250) != -1)
             {
                 mpr("You sense a hostile presence.");
@@ -1419,7 +1416,7 @@ void summon_undead(int pow)
         }
         else
         {
-            if (create_monster(thing_called, 22, BEH_ENSLAVED,
+            if (create_monster(thing_called, ENCH_ABJ_III, BEH_FRIENDLY,
                                 you.x_pos, you.y_pos, MHITNOT, 250) != -1)
             {
                 mpr("An insubstantial figure forms in the air.");
@@ -1472,14 +1469,14 @@ void summon_things(int pow)
 
         while (big_things > 0)
         {
-            create_monster(MONS_ABOMINATION_LARGE, 22, BEH_ENSLAVED,
+            create_monster(MONS_ABOMINATION_LARGE, ENCH_ABJ_III, BEH_FRIENDLY,
                            you.x_pos, you.y_pos, MHITNOT, 250);
             big_things--;
         }
 
         while (numsc > 0)
         {
-            create_monster(MONS_ABOMINATION_SMALL, 22, BEH_ENSLAVED,
+            create_monster(MONS_ABOMINATION_SMALL, ENCH_ABJ_III, BEH_FRIENDLY,
                            you.x_pos, you.y_pos, MHITNOT, 250);
             numsc--;
         }

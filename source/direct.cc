@@ -382,6 +382,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
 
                         describe_monsters( menv[ mid ].type, mid );
                         redraw_screen();
+                        mesclr();
                         // describe the cell again.
                         describe_cell(you.x_pos + cx - 17, you.y_pos + cy - 9);
                         break;
@@ -639,7 +640,6 @@ char mons_find(unsigned char xps, unsigned char yps,
 static void describe_cell(int mx, int my)
 {
     int trf;            // used for trap type??
-    bool isCharmed = false;
 
     if (mgrd[mx][my] != NON_MONSTER)
     {
@@ -711,6 +711,22 @@ static void describe_cell(int mx, int my)
             mpr(info);
         }
 
+        // special case: wandering hostile with no target in LOS
+        if (menv[i].behavior == BEH_WANDER && !mons_friendly(&menv[i])
+            && menv[i].foe == MHITNOT)
+        {
+            strcpy(info, mons_pronoun(menv[i].type, 0));
+            strcat(info, " doesn't appear to be interested in you.");
+            mpr(info);
+        }
+
+        if (menv[i].attitude == ATT_FRIENDLY)
+        {
+            strcpy(info, mons_pronoun(menv[i].type, 0));
+            strcat(info, " is friendly.");
+            mpr(info);
+        }
+
         if (menv[i].enchantment1)
         {
             for (int p = 0; p < 3; p++)
@@ -744,7 +760,6 @@ static void describe_cell(int mx, int my)
                     break;
                 case ENCH_CHARM:
                     strcat(info, " is in your thrall.");
-                    isCharmed = true;
                     break;
                 case ENCH_YOUR_STICKY_FLAME_I:
                 case ENCH_YOUR_STICKY_FLAME_II:
@@ -763,13 +778,6 @@ static void describe_cell(int mx, int my)
                 if (info[0])
                     mpr(info);
             }
-        }
-
-        if (menv[i].behavior == BEH_ENSLAVED && !isCharmed)
-        {
-            strcpy(info, mons_pronoun(menv[i].type, 0));
-            strcat(info, " is friendly.");
-            mpr(info);
         }
 
 #ifdef WIZARD

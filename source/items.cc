@@ -1219,7 +1219,7 @@ void handle_time(int time_delta)
 
             if (summon_instead)
             {
-                create_monster(which_beastie, 0, BEH_CHASING_I, you.x_pos,
+                create_monster(which_beastie, 0, BEH_HOSTILE, you.x_pos,
                                you.y_pos, MHITYOU, 250);
             }
             else
@@ -1237,14 +1237,14 @@ void handle_time(int time_delta)
         // try to summon at least one and up to five random monsters {dlb}
         if (one_chance_in(3))
         {
-            create_monster(RANDOM_MONSTER, 0, BEH_CHASING_I, you.x_pos,
+            create_monster(RANDOM_MONSTER, 0, BEH_HOSTILE, you.x_pos,
                            you.y_pos, MHITYOU, 250);
 
             for (i = 0; i < 4; i++)
             {
                 if (one_chance_in(3))
                 {
-                    create_monster(RANDOM_MONSTER, 0, BEH_CHASING_I,
+                    create_monster(RANDOM_MONSTER, 0, BEH_HOSTILE,
                                    you.x_pos, you.y_pos, MHITYOU, 250);
                 }
             }

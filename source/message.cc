@@ -36,7 +36,7 @@
 #include <curses.h>
 #endif
 
-char scrloc = 1;                // line of next (previous?) message
+char scrloc = 0;                // line of next (previous?) message
 message_item store_message[30];    // buffer of old messages
 char store_count = 0;           // current position in store_message
 
@@ -203,7 +203,6 @@ static char channel_to_colour( int channel, int param )
 
 void mpr(const char *inf, int channel, int param)
 {
-    char inf_screens = 0;
     char info2[80];
 
     int colour = channel_to_colour( channel, param );
@@ -244,9 +243,13 @@ void mpr(const char *inf, int channel, int param)
     store_message[store_count].channel = MSGCH_PLAIN;
     store_message[store_count].param = 0;
 
-    inf_screens = 0;
     scrloc++;
 }                               // end mpr()
+
+bool any_messages(void)
+{
+    return (scrloc > 0);
+}
 
 void mesclr(void)
 {

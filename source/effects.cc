@@ -243,12 +243,16 @@ void direct_effect(struct bolt &pbolt)
     return;
 }                               // end direct_effect()
 
+// monster-to-monster
 void mons_direct_effect(struct bolt &pbolt, int i)
 {
     // note the translation here - important {dlb}
-    int o = menv[i].monster_foe;
+    int o = menv[i].foe;
     struct monsters *monster = &menv[o];
     int damage_taken = 0;
+
+    // annoy the target
+    behavior_event(monster, ME_ANNOY, i);
 
     switch (pbolt.type)
     {
@@ -259,9 +263,6 @@ void mons_direct_effect(struct bolt &pbolt, int i)
 
         damage_taken = 5 + random2(10) + random2(5);
         damage_taken = mons_adjust_flavoured(monster, pbolt, damage_taken);
-
-        if (monster->behavior == BEH_SLEEP)
-            monster->behavior = BEH_CHASING_I;
         break;
 
     case DMNBM_SMITING:
@@ -873,20 +874,7 @@ void yell(void)
         return;
     }
 
-    for (int i = 0; i < MAX_MONSTERS; i++)
-    {
-        called = &menv[i];
-
-        if (called->type == -1 || !mons_near(called))
-            continue;
-
-        if (called->behavior != BEH_ENSLAVED)
-            continue;
-
-        called->monster_foe = mons_targd;
-        called->target_x = menv[mons_targd].x;
-        called->target_y = menv[mons_targd].y;
-    }
+    you.pet_target = mons_targd;
 
     noisy(10, you.x_pos, you.y_pos);
     mpr("Attack!");
@@ -898,7 +886,7 @@ void summon_butter(void)
 {
     for (int scount = 0; scount < 8; scount++)
     {
-        create_monster( MONS_BUTTERFLY, 22, BEH_ENSLAVED,
-                                        you.x_pos, you.y_pos, MHITNOT, 250 );
+        create_monster( MONS_BUTTERFLY, ENCH_ABJ_III, BEH_FRIENDLY,
+            you.x_pos, you.y_pos, MHITNOT, 250 );
     }
 }                               // end summon_butter()

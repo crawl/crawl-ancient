@@ -915,7 +915,7 @@ static void hs_search_death(char *inbuf, struct scorefile_entry &se)
         se.death_type = KILLED_BY_STATUE;
     else if (strstr(inbuf, "rotted away") != NULL)
         se.death_type = KILLED_BY_ROTTING;
-    else if (strstr(inbuf, "killed by bad targetting") != NULL)
+    else if (strstr(inbuf, "killed by bad target") != NULL)
         se.death_type = KILLED_BY_TARGETTING;
     else if (strstr(inbuf, "killed by an exploding spore") != NULL)
         se.death_type = KILLED_BY_SPORE;
@@ -923,7 +923,7 @@ static void hs_search_death(char *inbuf, struct scorefile_entry &se)
         se.death_type = KILLED_BY_TSO_SMITING;
     else if (strstr(inbuf, "turned to stone") != NULL)
         se.death_type = KILLED_BY_PETRIFICATION;
-    else if (strstr(inbuf, "eviscerated by a hatching shuggoth") != NULL)
+    else if (strstr(inbuf, "eviscerated by a hatching") != NULL)
         se.death_type = KILLED_BY_SHUGGOTH;
 
     // whew!

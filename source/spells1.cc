@@ -230,7 +230,7 @@ void cast_fire_storm(int powc)
                     && mgrd[beam.target_x][beam.target_y] == NON_MONSTER
                     && one_chance_in(4))
             {
-                mons_place( MONS_FIRE_VORTEX, BEH_CONFUSED, MHITNOT, true,
+                mons_place( MONS_FIRE_VORTEX, BEH_WANDER, MHITNOT, true,
                     beam.target_x, beam.target_y);
             }
 
@@ -657,7 +657,7 @@ void abjuration(int pow)
         if (monster->type == -1 || !mons_near(monster))
             continue;
 
-        if (monster->behavior == BEH_ENSLAVED)
+        if (mons_friendly(monster))
             continue;
 
         if (monster->enchantment1 == 0)

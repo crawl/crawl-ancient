@@ -679,7 +679,7 @@ void stethoscope(int mwh)
     itoa(menv[i].behavior, st_prn, 10);
     strcat(info, st_prn);
     strcat(info, "/");
-    itoa(menv[i].monster_foe, st_prn, 10);
+    itoa(menv[i].foe, st_prn, 10);
     strcat(info, st_prn);
     mpr(info);
 
@@ -720,9 +720,6 @@ void stethoscope(int mwh)
     strcat(info, st_prn);
     mpr(info);
 
-    // these two lines can't be important -- bwr
-    // stth.move_x = 0;
-    // stth.move_y = 0;
     return;
 }                               // end stethoscope()
 

@@ -1444,18 +1444,32 @@ enum MONSTERS                          // (int) menv[].type
 enum MONSTER_BEHAVIOR                  // create_monster()
 {
     BEH_SLEEP,                         //    0
-    BEH_CHASING_I,
     BEH_WANDER,
+    BEH_SEEK,
     BEH_FLEE,
-    BEH_CONFUSED,                      //    4
-    BEH_CONFUSED_FRIEND,               //    5 - jmf: for state recovery
-    BEH_FIGHT = 6,                     //    6
-    BEH_ENSLAVED,                      //    7
-    BEH_NEUTRAL,                       //    8 - jmf: unused
-    BEH_ANGRY,                         //    9 - jmf: for berserk monsters?
-    BEH_FLEE_FRIEND,                   //   10 - jmf: for state recovery
-    BEH_INSANE,                        //   11 - jmf: for Shuggothim
-    BEH_CHASING_II = 100               //  100
+    BEH_CORNERED,
+    NUM_BEHAVIORS,                     //  max # of legal states
+    BEH_CHARMED,                       //  hostile-but-charmed; create only
+    BEH_FRIENDLY,                      //  used during creation only
+    BEH_HOSTILE                        //  creation only
+};
+
+enum MONSTER_ATTITUDES
+{
+    ATT_HOSTILE,                       // 0, default in most cases
+    ATT_FRIENDLY,                      // created friendly (or tamed?)
+    ATT_NEUTRAL
+};
+
+enum MONSTER_EVENTS
+{
+    ME_EVAL,                            // 0, evaluate monster AI state
+    ME_DISTURB,                         // noisy
+    ME_ANNOY,                           // annoy at range
+    ME_ALERT,                           // alert to presence
+    ME_WHACK,                           // physical attack
+    ME_SCARE,                           // frighten monster
+    ME_CORNERED                         // cannot flee
 };
 
 enum MONSTER_CATEGORIES
@@ -1653,7 +1667,8 @@ enum MONSTER_SPELL_TEMPLATES
     MST_EYE_OF_DEVASTATION,             // 125
     MST_QUICKSILVER_DRAGON,
     MST_IRON_DRAGON,
-    MST_SKELETAL_WARRIOR                // 127
+    MST_SKELETAL_WARRIOR,               // 127
+    NUM_MSTYPES
 };
 
 enum MUTATIONS
@@ -2379,6 +2394,7 @@ enum TAGS   // used during save/load process to identify data blocks
     TAG_LEVEL_ITEMS,                    // items/traps
     TAG_LEVEL_MONSTERS,                 // monsters
     TAG_GHOST,                          // ghost
+    TAG_LEVEL_ATTITUDE,                 // monster attitudes
     NUM_TAGS
 };
 

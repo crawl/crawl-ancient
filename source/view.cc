@@ -864,29 +864,19 @@ void monster_grid(bool do_updates)
     //int mnc = 0;
     struct monsters *monster = 0;       // NULL {dlb}
 
-    //jmf: commented out this because it prevents 5-resting in debug-builds
-    //#ifdef DEBUG
-    //    if ( do_updates )
-    //      mpr("Stealth checks...");
-    //#endif
-
     for (int s = 0; s < MAX_MONSTERS; s++)
     {
         monster = &menv[s];
 
         if (monster->type != -1)
         {
-            //mnc++;
-
             if (mons_near(monster))
             {
                 if (do_updates &&
                     (monster->behavior == BEH_SLEEP
                      || monster->behavior == BEH_WANDER) && check_awaken(s))
                 {
-                    monster->behavior = BEH_CHASING_I;
-                    monster->target_x = you.x_pos;
-                    monster->target_y = you.y_pos;
+                    behavior_event(monster, ME_ALERT, MHITYOU);
 
                     if (you.turn_is_over == 1
                         && mons_shouts(monster->type) > 0
@@ -969,7 +959,7 @@ void monster_grid(bool do_updates)
                     }
                     continue;
                 }
-                else if (monster->behavior != BEH_ENSLAVED
+                else if (!mons_friendly(monster)
                          && mons_category(monster->type) != MC_MIMIC)
                 {
                     // Friendly monsters or mimics don't disturb
@@ -1239,9 +1229,6 @@ void cloud_grid(void)
 }                               // end cloud_grid()
 
 
-// All items must have show values >= 38, all grid squares must be < 38
-// because of monster invisibility.
-//jmf: does above comment refer to noisy in some way?
 void noisy(char loudness, char nois_x, char nois_y)
 {
     int p;
@@ -1256,18 +1243,10 @@ void noisy(char loudness, char nois_x, char nois_y)
     {
         monster = &menv[p];
 
-        //if (monster->x >= nois_x - loudness && monster->x <= nois_x + loudness
-        //  && monster->y >= nois_y - loudness && monster->y <= nois_y + loudness)
-        //jmf: now that we have a working distance function ... 26mar2000
-
         if (distance(monster->x, monster->y, nois_x, nois_y) <= dist
             && !silenced(monster->x, monster->y))
         {
-            if (monster->behavior == BEH_SLEEP)
-                monster->behavior = BEH_CHASING_I;
-
-            monster->target_x = nois_x;
-            monster->target_y = nois_y;
+            behavior_event(monster, ME_DISTURB);
         }
     }
 }                               // end noisy()
@@ -2391,12 +2370,28 @@ unsigned char mapchar2(unsigned char ldfk)
 
 // realize that this is simply a repackaged version of
 // stuff::see_grid() -- make certain they correlate {dlb}:
-bool mons_near(struct monsters * monster)
+bool mons_near(struct monsters *monster, unsigned int foe)
 {
-    if (monster->x > you.x_pos - 9 && monster->x < you.x_pos + 9
-        && monster->y > you.y_pos - 9 && monster->y < you.y_pos + 9)
+    // early out -- no foe!
+    if (foe == MHITNOT)
+        return false;
+
+    if (foe == MHITYOU)
     {
-        if (env.show[monster->x - you.x_pos + 9][monster->y - you.y_pos + 9])
+        if (monster->x > you.x_pos - 9 && monster->x < you.x_pos + 9
+            && monster->y > you.y_pos - 9 && monster->y < you.y_pos + 9)
+        {
+            if (env.show[monster->x - you.x_pos + 9][monster->y - you.y_pos + 9])
+                return true;
+        }
+        return false;
+    }
+    // must be a monster
+    struct monsters *myFoe = &menv[foe];
+    if (myFoe->type >= 0)
+    {
+        if (monster->x > myFoe->x - 9 && monster->x < myFoe->x + 9
+            && monster->y > myFoe->y - 9 && monster->y < myFoe->y + 9)
             return true;
     }
 

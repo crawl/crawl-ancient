@@ -349,7 +349,7 @@ unsigned char mons_colour(int mc);
 /* ***********************************************************************
  * called from: dungeon - fight
  * *********************************************************************** */
-void define_monster(int k, FixedVector<monsters, MAX_MONSTERS>& mns);
+void define_monster(int mid);
 
 
 // last updated 12may2000 {dlb}
@@ -385,5 +385,16 @@ bool ms_always_fire(int mons_spell);
  * *********************************************************************** */
 const char *mons_pronoun(int mon_type, int variant);
 
+// last updated 14mar2001 (gdl)
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+bool mons_aligned(struct monsters *m1, struct monsters *m2);
+
+// last updated 14mar2001 (gdl)
+/* ***********************************************************************
+ * called from: monstuff acr
+ * *********************************************************************** */
+bool mons_friendly(struct monsters *m);
 
 #endif

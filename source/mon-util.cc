@@ -28,6 +28,7 @@
 #include "debug.h"
 #include "player.h"
 #include "stuff.h"
+#include "spells4.h"
 
 //jmf: moved from inside function
 static FixedVector < int, NUM_MONSTERS > mon_entry;
@@ -48,8 +49,6 @@ static struct monsterentry mondata[] = {
 static unsigned char mspell_list[][7] = {
 #include "mon-spll.h"
 };
-
-#define SPELLS (sizeof(mspell_list)/(sizeof(unsigned char)*7))
 
 static int mons_exp_mod(int mclass);
 static int mons_speed(int mc);
@@ -397,13 +396,13 @@ void mons_spell_list(unsigned char sec, int splist[6])
 {
     unsigned int x;
 
-    for (x = 0; x < SPELLS; x++)
+    for (x = 0; x < NUM_MSTYPES; x++)
     {
         if (mspell_list[x][0] == sec)
             break;
     }
 
-    if (x >= SPELLS)
+    if (x >= NUM_MSTYPES)
         return;
 
     // I *KNOW* this can easily be done in a loop
@@ -425,12 +424,12 @@ void mons_spell_list(unsigned char sec, int splist[6])
 
 
 // generate a shiny new and unscarred monster
-void define_monster(int k, FixedVector < monsters, MAX_MONSTERS > &mns)
+void define_monster(int k)
 {
     int temp_rand = 0;          // probability determination {dlb}
-    int m2_class = mns[k].type;
+    int m2_class = menv[k].type;
     int m2_HD, m2_hp, m2_hp_max, m2_AC, m2_ev, m2_speed, m2_speed_inc;
-    int m2_sec = mns[k].number;
+    int m2_sec = menv[k].number;
     struct monsterentry *m = seekmonster(&m2_class);
 
     m2_HD = m->hpdice[0];
@@ -638,14 +637,14 @@ void define_monster(int k, FixedVector < monsters, MAX_MONSTERS > &mns)
     m2_speed_inc += random2(10);
 
     // so let it be written, so let it be done
-    mns[k].hit_dice = m2_HD;
-    mns[k].hit_points = m2_hp;
-    mns[k].max_hit_points = m2_hp_max;
-    mns[k].armor_class = m2_AC;
-    mns[k].evasion = m2_ev;
-    mns[k].speed = m2_speed;
-    mns[k].speed_increment = m2_speed_inc;
-    mns[k].number = m2_sec;
+    menv[k].hit_dice = m2_HD;
+    menv[k].hit_points = m2_hp;
+    menv[k].max_hit_points = m2_hp_max;
+    menv[k].armor_class = m2_AC;
+    menv[k].evasion = m2_ev;
+    menv[k].speed = m2_speed;
+    menv[k].speed_increment = m2_speed_inc;
+    menv[k].number = m2_sec;
 }                               // end define_monster()
 
 
@@ -866,6 +865,21 @@ int mons_power(int mc)
 {
     // for now,  just return monster hit dice.
     return (smc->hpdice[0]);
+}
+
+bool mons_aligned(struct monsters *m1, struct monsters *m2)
+{
+    bool fr1 = (m1->attitude == ATT_FRIENDLY) ||
+        monster_has_enchantment(m1, ENCH_CHARM);
+    bool fr2 = (m2->attitude == ATT_FRIENDLY) ||
+        monster_has_enchantment(m2, ENCH_CHARM);
+
+    return fr1 == fr2;
+}
+
+bool mons_friendly(struct monsters *m)
+{
+    return (m->attitude == ATT_FRIENDLY || monster_has_enchantment(m, ENCH_CHARM));
 }
 
 /* ******************************************************************

@@ -68,4 +68,10 @@ void replay_messages(void);
 void set_colour(char set_message_colour);
 
 
+// last updated 18mar2001 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+bool any_messages(void);
+
 #endif

@@ -310,7 +310,7 @@ void pray(void)
                             (temp_rand >  4) ? MONS_MUMMY               //  6%
                                              : MONS_FLAYED_GHOST);      //  5%
 
-            if (create_monster(thing_called, 0, BEH_ENSLAVED, you.x_pos,
+            if (create_monster(thing_called, 0, BEH_FRIENDLY, you.x_pos,
                                you.y_pos, you.pet_target, 250) != -1)
             {
                 simple_god_message(" grants you an undead servant!");
@@ -605,28 +605,24 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
                 dancing_weapon(100, true);      // nasty, but fun
             else
             {
-                create_monster(MONS_NEQOXEC + random2(5), 22, BEH_CHASING_I,
-                               you.x_pos, you.y_pos, MHITNOT, 250);
+                create_monster(MONS_NEQOXEC + random2(5), ENCH_ABJ_III,
+                    BEH_HOSTILE, you.x_pos, you.y_pos, MHITNOT, 250);
 
                 if (one_chance_in(3))
-                    create_monster(MONS_NEQOXEC + random2(5), 22,
-                                   BEH_CHASING_I, you.x_pos, you.y_pos,
-                                   MHITNOT, 250);
+                    create_monster(MONS_NEQOXEC + random2(5), ENCH_ABJ_III,
+                        BEH_HOSTILE, you.x_pos, you.y_pos, MHITNOT, 250);
 
                 if (one_chance_in(4))
-                    create_monster(MONS_NEQOXEC + random2(5), 22,
-                                   BEH_CHASING_I, you.x_pos, you.y_pos,
-                                   MHITNOT, 250);
+                    create_monster(MONS_NEQOXEC + random2(5), ENCH_ABJ_III,
+                        BEH_HOSTILE, you.x_pos, you.y_pos, MHITNOT, 250);
 
                 if (one_chance_in(3))
-                    create_monster(MONS_HELLION + random2(10), 22,
-                                   BEH_CHASING_I, you.x_pos, you.y_pos,
-                                   MHITNOT, 250);
+                    create_monster(MONS_HELLION + random2(10), ENCH_ABJ_III,
+                        BEH_HOSTILE, you.x_pos, you.y_pos, MHITNOT, 250);
 
                 if (one_chance_in(4))
-                    create_monster(MONS_HELLION + random2(10), 22,
-                                   BEH_CHASING_I, you.x_pos, you.y_pos,
-                                   MHITNOT, 250);
+                    create_monster(MONS_HELLION + random2(10), ENCH_ABJ_III,
+                        BEH_HOSTILE, you.x_pos, you.y_pos, MHITNOT, 250);
             }
 
             done_bad = true;
@@ -705,21 +701,21 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
                 (temp_rand == 1) ? "Xom grants you some temporary aid."
                                  : "Xom opens a gate.");
 
-            create_monster(MONS_NEQOXEC + random2(5), 22, BEH_ENSLAVED,
+            create_monster(MONS_NEQOXEC + random2(5), ENCH_ABJ_III, BEH_FRIENDLY,
                            you.x_pos, you.y_pos, you.pet_target, 250);
-            create_monster(MONS_NEQOXEC + random2(5), 22, BEH_ENSLAVED,
+            create_monster(MONS_NEQOXEC + random2(5), ENCH_ABJ_III, BEH_FRIENDLY,
                            you.x_pos, you.y_pos, you.pet_target, 250);
 
             if (random2(you.experience_level) >= 8)
-                create_monster(MONS_NEQOXEC + random2(5), 22, BEH_ENSLAVED,
+                create_monster(MONS_NEQOXEC + random2(5), ENCH_ABJ_III, BEH_FRIENDLY,
                                you.x_pos, you.y_pos, you.pet_target, 250);
 
             if (random2(you.experience_level) >= 8)
-                create_monster(MONS_HELLION + random2(10), 22, BEH_ENSLAVED,
+                create_monster(MONS_HELLION + random2(10), ENCH_ABJ_III, BEH_FRIENDLY,
                                you.x_pos, you.y_pos, you.pet_target, 250);
 
             if (random2(you.experience_level) >= 8)
-                create_monster(MONS_HELLION + random2(10), 22, BEH_ENSLAVED,
+                create_monster(MONS_HELLION + random2(10), ENCH_ABJ_III, BEH_FRIENDLY,
                                you.x_pos, you.y_pos, you.pet_target, 250);
 
             done_good = true;
@@ -760,7 +756,7 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
                                                 ? MONS_WHITE_IMP + random2(5)
                                                 : MONS_NEQOXEC + random2(5);
 
-            if (create_monster( demon, 0, BEH_ENSLAVED, you.x_pos, you.y_pos,
+            if (create_monster( demon, 0, BEH_FRIENDLY, you.x_pos, you.y_pos,
                                                  you.pet_target, 250) != -1)
             {
                 temp_rand = random2(3);
@@ -1627,7 +1623,7 @@ void divine_retribution(int god)
 
                 for (loopy = 0; loopy < how_many; loopy++)
                 {
-                    if (create_monster( MONS_DAEVA, 0, BEH_CHASING_I,
+                    if (create_monster( MONS_DAEVA, 0, BEH_HOSTILE,
                                     you.x_pos, you.y_pos, MHITNOT, 250) != -1)
                     {
                         success = true;
@@ -1674,7 +1670,7 @@ void divine_retribution(int god)
 
                 for (loopy = 0; loopy < how_many; loopy++)
                 {
-                    if (create_monster(MONS_ANGEL, 0, BEH_CHASING_I,
+                    if (create_monster(MONS_ANGEL, 0, BEH_HOSTILE,
                                     you.x_pos, you.y_pos, MHITNOT, 250) != -1)
                     {
                         success = true;
@@ -1703,7 +1699,7 @@ void divine_retribution(int god)
         if (random2(you.experience_level) > 7)
         {
             if (create_monster(MONS_EXECUTIONER + random2(5), 0,
-                               BEH_CHASING_I, you.x_pos, you.y_pos,
+                               BEH_HOSTILE, you.x_pos, you.y_pos,
                                MHITNOT, 250) != -1)
             {
                 simple_god_message(" sends a greater servant after you!",
@@ -1717,7 +1713,7 @@ void divine_retribution(int god)
 
             for (loopy = 0; loopy < how_many; loopy++)
             {
-                if (create_monster(MONS_NEQOXEC + random2(5), 0, BEH_CHASING_I,
+                if (create_monster(MONS_NEQOXEC + random2(5), 0, BEH_HOSTILE,
                                     you.x_pos, you.y_pos, MHITNOT, 250) != -1)
                 {
                     success = true;
@@ -1737,7 +1733,7 @@ void divine_retribution(int god)
 
             for (loopy = 0; loopy < how_many; loopy++)
             {
-                if (create_monster(MONS_REAPER, 0, BEH_CHASING_I, you.x_pos,
+                if (create_monster(MONS_REAPER, 0, BEH_HOSTILE, you.x_pos,
                                    you.y_pos, MHITNOT, 250) != -1)
                 {
                     success = true;
@@ -1777,7 +1773,7 @@ void divine_retribution(int god)
                             (temp_rand >  4) ? MONS_MUMMY               //  6%
                                              : MONS_FLAYED_GHOST);      //  5%
 
-                if (create_monster(punisher, 0, BEH_CHASING_I, you.x_pos,
+                if (create_monster(punisher, 0, BEH_HOSTILE, you.x_pos,
                                    you.y_pos, MHITNOT, 250) != -1)
                 {
                     success = true;
@@ -1859,7 +1855,7 @@ void divine_retribution(int god)
                         }
                     }
 
-                    if (create_monster(punisher, 0, BEH_CHASING_I, you.x_pos,
+                    if (create_monster(punisher, 0, BEH_HOSTILE, you.x_pos,
                                        you.y_pos, MHITNOT, 250) != -1)
                     {
                         success = true;
@@ -1943,7 +1939,7 @@ void divine_retribution(int god)
                             (temp_rand >  9) ? MONS_CYCLOPS
                                              : MONS_HILL_GIANT);
 
-                if (create_monster(punisher, 0, BEH_CHASING_I,
+                if (create_monster(punisher, 0, BEH_HOSTILE,
                                    you.x_pos, you.y_pos, MHITNOT, 250) != -1)
                 {
                     success = true;
