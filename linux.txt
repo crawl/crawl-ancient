@@ -1,0 +1,73 @@
+Some notes about the Linux port of Dungeon Crawl:
+
+Numpad won't work for normal walking. Linux specific code will have to
+be written to handle the different escape codes. Use vi-like movement for
+now:
+
+            y k u
+             \|/
+            h-O-l
+             /|\
+            b j n
+
+To compile source I recommend the following versions or later:
+g++ 2.7.2.3      (2.7.0 might get confused, haven't tried others)
+ncurses 1.9.9e   (1.9.9g also tested sucessfully)
+libc5.4.33       (glibc2 also tested sucessfully)
+
+Very little testing has been done so far, so please report bugs to:
+Svante Gerhard <svante@algonet.se>       (Linux specific problems)
+Linley Henzell <zel@olis.net.au>         (General Q's, and perhaps a CC:)
+
+Thanks to Fredrik Estreen for letting me rave on his machine when testing
+the crawl port!
+
+
+[from the 2.10 linux.txt]
+Porting to other unixes:
+
+Just for fun, I tried to compile the game on a machine like this:
+SunOS kairos 5.5.1 Generic_103640-14 sun4u sparc SUNW,Ultra-1
+This is one of the servers that my ISP uses.
+With very minor modifications, I got it to compile.
+
+Then I tried the game and it seemed to run great. Of course, I got no fancy
+high ascii since I was running over a modemline with vt100 emulation, so
+I can't say I really tried it out, but porting should be trivial.
+
+All of my work is donated to Linley Henzell, and thus follows whatever
+licensing he chooses for his game.
+
+Svante Gerhard Jan 20 1998.
+
+
+
+
+
+
+
+history:
+--------
+
+2.10 beta 1-3: Internal testing. Only partly working, never released.
+
+2.10 beta   4: First version released to public. Feedback wanted.
+
+2.20 Since no serious bug reports were received from the 2.10 release
+     this port has now left beta stage. 2.20 was never released however
+     since Linley had some problems with bugs. They should be fixed now
+     however in...
+
+2.21 All the new features of the DOS 2.21 release. No real LINUX specific
+     news however. This version handed over to Linley on Feb 21 1998.
+
+2.30 - 2.32 : Never released for various reasons, mainly due to known bugs
+     found in the DOS version. Also, some version had trouble compiling.
+
+2.33 MAJOR code cleanup, mainly by Linley of course. However, also the
+     linuxlib had some minor tweaking now when all the warnings are gone.
+     (Made my own mistakes stand out :) )
+     Also, I noticed Ctrl-j now works for open-door-south. Linley, what did
+     you do? ;)
+
+-EOF-
