@@ -1,14 +1,15 @@
 /* Some replacement routines missing in gcc */
 
-#include "defines.h"
 #define _NORMALCURSOR 1
 #define _NOCURSOR 0
 #define O_BINARY O_RDWR
-
+//#include "colours.h"
 
 void lincurses_startup();
 
 int itoa(int value, char *strptr, int radix);
+
+char * strlwr(char *str);
 
 int cprintf (char *format, ... );
 
@@ -42,7 +43,7 @@ void lincurses_shutdown();
 
 void redraw_screen(void);
 
-#ifndef _IMPLEMENTATION
+#ifndef _LINUXLIB_IMPLEMENTATION
 /* Some stuff from curses, to remove compiling warnings.. */
 extern "C" {
 int getstr(char *);

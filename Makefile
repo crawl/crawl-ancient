@@ -21,11 +21,11 @@ clean:
 		rm -f *.o
 
 distclean:
-		rm -f *.o morgue.txt scores crawl
+		rm -f *.o bones.* morgue.txt scores crawl
 
 
-crawl:		acr.o bang.o beam.o chardump.o command.o debug.o decks.o describe.o direct.o dungeon.o effects.o fight.o files.o food.o invent.o it_use2.o it_use3.o item_use.o itemname.o items.o levels.o linuxlib.o maps.o message.o misc.o monplace.o mons_lev.o monstuff.o mstat2.o mstruct.o mstuff2.o newgame.o ouch.o output.o player.o priest.o shopping.o skills.o skills2.o spell.o spells.o spells0.o spells1.o spells2.o spells3.o stuff.o view.o
-		${C_COMP} ${L_ARGS} -o crawl acr.o bang.o beam.o chardump.o command.o debug.o decks.o describe.o direct.o dungeon.o effects.o fight.o files.o food.o invent.o it_use2.o it_use3.o item_use.o itemname.o items.o levels.o linuxlib.o maps.o message.o misc.o monplace.o mons_lev.o monstuff.o mstat2.o mstruct.o mstuff2.o newgame.o ouch.o output.o player.o priest.o shopping.o skills.o skills2.o spell.o spells.o spells0.o spells1.o spells2.o spells3.o stuff.o view.o ${LIB}
+crawl:		acr.o bang.o beam.o chardump.o command.o debug.o decks.o describe.o direct.o dungeon.o effects.o fight.o files.o food.o invent.o it_use2.o it_use3.o item_use.o itemname.o items.o levels.o linuxlib.o maps.o message.o misc.o monplace.o mons_lev.o monstuff.o mstruct.o mstuff2.o mutation.o newgame.o ouch.o output.o player.o priest.o religion.o rumours.o shopping.o skills.o skills2.o spell.o spells.o spells0.o spells1.o spells2.o spells3.o stuff.o view.o
+		${C_COMP} ${L_ARGS} -o crawl acr.o bang.o beam.o chardump.o command.o debug.o decks.o describe.o direct.o dungeon.o effects.o fight.o files.o food.o invent.o it_use2.o it_use3.o item_use.o itemname.o items.o levels.o linuxlib.o maps.o message.o misc.o monplace.o mons_lev.o monstuff.o mstruct.o mstuff2.o mutation.o newgame.o ouch.o output.o player.o priest.o religion.o rumours.o shopping.o skills.o skills2.o spell.o spells.o spells0.o spells1.o spells2.o spells3.o stuff.o view.o ${LIB}
 		strip crawl
 		chmod ${MCHMOD} crawl
 
@@ -114,14 +114,14 @@ mons_lev.o:	mons_lev.cc
 monstuff.o:	monstuff.cc
 		${C_COMP} ${C_ARGS} -c monstuff.cc ${INCLUDE}
 
-mstat2.o:	mstat2.cc
-		${C_COMP} ${C_ARGS} -c mstat2.cc ${INCLUDE}
-
 mstruct.o:	mstruct.cc
 		${C_COMP} ${C_ARGS} -c mstruct.cc ${INCLUDE}
 
 mstuff2.o:	mstuff2.cc
 		${C_COMP} ${C_ARGS} -c mstuff2.cc ${INCLUDE}
+
+mutation.o:	mutation.cc
+		${C_COMP} ${C_ARGS} -c mutation.cc ${INCLUDE}
 
 newgame.o:	newgame.cc
 		${C_COMP} ${C_ARGS} -c newgame.cc ${INCLUDE}
@@ -137,6 +137,12 @@ player.o:	player.cc
 
 priest.o:	priest.cc
 		${C_COMP} ${C_ARGS} -c priest.cc ${INCLUDE}
+
+religion.o:	religion.cc
+		${C_COMP} ${C_ARGS} -c religion.cc ${INCLUDE}
+
+rumours.o:	rumours.cc
+		${C_COMP} ${C_ARGS} -c rumours.cc ${INCLUDE}
 
 shopping.o:	shopping.cc
 		${C_COMP} ${C_ARGS} -c shopping.cc ${INCLUDE}

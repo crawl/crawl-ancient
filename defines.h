@@ -1,7 +1,9 @@
 
 #define NO_EQUIP 10
+#ifndef _LINUXLIB_IMPLEMENTATION
 #define TRUE 1
 #define FALSE 0
+#endif
 #define MNST 200
 #define MNG 201
 #define ITEMS 500

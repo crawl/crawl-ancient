@@ -14,8 +14,10 @@
 #include <unistd.h>
 #include <curses.h>
 #include <stdarg.h>
-#define _IMPLEMENTATION
+#include <ctype.h>
+#define _LINUXLIB_IMPLEMENTATION
 #include "linuxlib.h"
+#include "defines.h"
 
 // Globals holding current text/backg. colors
 short FG_COL = COLOR_WHITE;
@@ -34,8 +36,8 @@ short translatecolor(short col)
                case RED          : return COLOR_RED;           break;
                case MAGENTA      : return COLOR_MAGENTA;       break;
                case BROWN        : return COLOR_YELLOW;        break;
-               case LIGHTGRAY    : return COLOR_WHITE;         break;
-               case DARKGRAY     : return COLOR_BLACK   + 128; break;
+               case LIGHTGREY    : return COLOR_WHITE;         break;
+               case DARKGREY     : return COLOR_BLACK   + 128; break;
                case LIGHTBLUE    : return COLOR_BLUE    + 128; break;
                case LIGHTGREEN   : return COLOR_GREEN   + 128; break;
                case LIGHTCYAN    : return COLOR_CYAN    + 128; break;
@@ -116,6 +118,17 @@ int itoa(int value, char *strptr, int radix)
                 strptr[ctr] = (char) NULL;
         }
         return(OK);                     /* Me? Fail? Nah. */
+}
+
+
+// Convert string to lowercase.
+char * strlwr(char *str)
+{
+        unsigned int i;
+
+        for(i = 0; i < strlen(str); i++)
+                str[i] = tolower(str[i]);
+        return(str);
 }
 
 

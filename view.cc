@@ -90,7 +90,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
                 case 0: showed = 0; break;
                 case 1: buffy [bufcount + 1] = env[0].rock_colour;
                 showed = 177; break; // rock wall - remember earth elementals
-                case 2: buffy [bufcount + 1] = LIGHTGRAY;
+                case 2: buffy [bufcount + 1] = LIGHTGREY;
                 showed = 177; break; // stone wall
                 case 3: showed = 254; break;
   case 4: showed = 177;
@@ -100,7 +100,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 6: showed = 177;
   buffy [bufcount + 1] = GREEN; break; // green crystal wall
   case 7: showed = '1';
-  buffy [bufcount + 1] = DARKGRAY; // orcish idol
+  buffy [bufcount + 1] = DARKGREY; // orcish idol
   break;
   case 8: showed = 177;
   buffy [bufcount + 1] = YELLOW; break; // wax wall
@@ -108,7 +108,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   buffy [bufcount + 1] = WHITE; // silver statue
   break;
   case 22: showed = 219; // filled square
-  buffy [bufcount + 1] = LIGHTGRAY; // granite monolith
+  buffy [bufcount + 1] = LIGHTGREY; // granite monolith
   break;
   case 35: showed = '#'; break;
   case 61: showed = 247;
@@ -118,7 +118,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   buffy [bufcount + 1] = BLUE; // water
   break;
 
-                case 67: buffy [bufcount + 1] = env[0].floor_colour; //LIGHTGRAY;
+                case 67: buffy [bufcount + 1] = env[0].floor_colour; //LIGHTGREY;
                 showed = 249; break;
                 case 69: showed = 239; buffy [bufcount + 1] = RED; break; // staircase to hell
                 case 70: showed = 39; break; // open door
@@ -127,7 +127,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
                 showed = 94; break; // ^ dart trap
                 case 76: buffy [bufcount + 1] = MAGENTA;
                 showed = 94; break;
-                case 77: buffy [bufcount + 1] = LIGHTGRAY;
+                case 77: buffy [bufcount + 1] = LIGHTGREY;
                 showed = 94; break;
                 case 78: showed = 249; buffy [bufcount + 1] = env[0].floor_colour;
                 break; // undiscovered trap
@@ -135,7 +135,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 80: showed = 239; buffy [bufcount + 1] = YELLOW;
        break;
 // if I change anything above here, must also change magic mapping!
-  case 81: showed = 239; buffy [bufcount + 1] = LIGHTGRAY; break; // labyrinth
+  case 81: showed = 239; buffy [bufcount + 1] = LIGHTGREY; break; // labyrinth
   case 85: buffy [bufcount + 1] = BROWN; // ladder
   case 82:
   case 83:
@@ -150,10 +150,10 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 92: buffy [bufcount + 1] = CYAN; showed = 239; break; // Stairway to Dis
   case 93: buffy [bufcount + 1] = RED; showed = 239; break; // Gehenna
   case 94: buffy [bufcount + 1] = LIGHTCYAN; showed = 239; break; // Cocytus
-  case 95: buffy [bufcount + 1] = DARKGRAY; showed = 239; break; // Tartarus
+  case 95: buffy [bufcount + 1] = DARKGREY; showed = 239; break; // Tartarus
   case 96: buffy [bufcount + 1] = LIGHTMAGENTA; showed = 239; break; // To Abyss
   case 97: buffy [bufcount + 1] = LIGHTMAGENTA; showed = 239; break; // From Abyss
-  case 98: buffy [bufcount + 1] = LIGHTGRAY; showed = 239; break; // Closed gate to hell
+  case 98: buffy [bufcount + 1] = LIGHTGREY; showed = 239; break; // Closed gate to hell
   case 99: buffy [bufcount + 1] = LIGHTBLUE; showed = 239; break; // gate to pandemonium
   case 100: buffy [bufcount + 1] = LIGHTBLUE; showed = 239; break; // gate out of pandemonium
   case 101: buffy [bufcount + 1] = LIGHTGREEN; showed = 239; break; // gate to other part of pandemonium
@@ -210,7 +210,7 @@ default:
 /*              showed = your_sign;
               buffy [bufcount + 1] = your_colour;*/
                 showed = '@';
-                buffy [bufcount + 1] = LIGHTGRAY;
+                buffy [bufcount + 1] = LIGHTGREY;
       }
 
 
@@ -257,7 +257,7 @@ bufcount = 0;
             continue;
        }
          buffy [bufcount] = env[0].map [count_x + you[0].x_pos - 17] [count_y + you[0].y_pos - 9];
-         buffy [bufcount + 1] = DARKGRAY;
+         buffy [bufcount + 1] = DARKGREY;
                                                                         bufcount += 2;
                         }
                 }
@@ -503,11 +503,11 @@ if (env[0].cloud_type [s] != 0)
             if (random2(3) != 0) env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = GREEN;
             else env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTGREEN;
               break;
-        case 5: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTGRAY; break;
+        case 5: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTGREY; break;
   case 6: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTBLUE; break;
   case 7: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = MAGENTA; break;
-  case 8: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTGRAY; break;
-  case 9: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = DARKGRAY; break; // miasma
+  case 8: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTGREY; break;
+  case 9: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = DARKGREY; break; // miasma
    }
 
         }
@@ -1501,7 +1501,13 @@ goto print_it;
   buffer2 [bufcount2] = (env[0].map [i] [j + screen_y - 12]);
   bufcount2 += 2;
 #ifdef LINUX
-print_it: if (j == 24 && i == 79) continue;
+print_it:
+if (i == 79)
+{
+  cprintf("\n");
+  continue;
+}
+if (j == 24 && i == 79) continue;
 textcolor(buffer2 [bufcount2 - 1]);
 putch(buffer2 [bufcount2 - 2]);
 #endif
@@ -1864,7 +1870,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
                 case 0: showed = 0; break;
                 case 1: buffy [bufcount + 1] = env[0].rock_colour;
                 showed = '#'; break; // rock wall - remember earth elementals
-                case 2: buffy [bufcount + 1] = LIGHTGRAY;
+                case 2: buffy [bufcount + 1] = LIGHTGREY;
                 showed = '#'; break; // stone wall
                 case 3: showed = '+'; break;
   case 4: showed = '#';
@@ -1874,7 +1880,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 6: showed = '#';
   buffy [bufcount + 1] = GREEN; break; // green crystal wall
   case 7: showed = '1';
-  buffy [bufcount + 1] = DARKGRAY; // orcish idol
+  buffy [bufcount + 1] = DARKGREY; // orcish idol
   break;
   case 8: showed = '#';
   buffy [bufcount + 1] = YELLOW; break; // wax wall
@@ -1882,7 +1888,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   buffy [bufcount + 1] = WHITE; // silver statue
   break;
   case 22: showed = '#'; // filled square
-  buffy [bufcount + 1] = LIGHTGRAY; // granite monolith
+  buffy [bufcount + 1] = LIGHTGREY; // granite monolith
   break;
   case 35: showed = '#'; break;
   case 61: showed = '{';
@@ -1893,7 +1899,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   buffy [bufcount + 1] = BLUE; // water
   break;
 
-                case 67: buffy [bufcount + 1] = env[0].floor_colour; //LIGHTGRAY;
+                case 67: buffy [bufcount + 1] = env[0].floor_colour; //LIGHTGREY;
                 showed = '.'; break;
                 case 69: showed = '\\'; buffy [bufcount + 1] = RED; break; // staircase to hell
                 case 70: showed = 39; break; // open door
@@ -1902,7 +1908,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
                 showed = 94; break; // ^ dart trap
                 case 76: buffy [bufcount + 1] = MAGENTA;
                 showed = 94; break;
-                case 77: buffy [bufcount + 1] = LIGHTGRAY;
+                case 77: buffy [bufcount + 1] = LIGHTGREY;
                 showed = 94; break;
                 case 78: showed = '.'; buffy [bufcount + 1] = env[0].floor_colour;
                 break; // undiscovered trap
@@ -1910,7 +1916,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 80: showed = '\\'; buffy [bufcount + 1] = YELLOW;
        break;
 // if I change anything above here, must also change magic mapping!
-  case 81: showed = '\\'; buffy [bufcount + 1] = LIGHTGRAY; break; // labyrinth
+  case 81: showed = '\\'; buffy [bufcount + 1] = LIGHTGREY; break; // labyrinth
   case 85: buffy [bufcount + 1] = BROWN; // ladder
   case 82:
   case 83:
@@ -1925,10 +1931,10 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 92: buffy [bufcount + 1] = CYAN; showed = '\\'; break; // Stairway to Dis
   case 93: buffy [bufcount + 1] = RED; showed = '\\'; break; // Gehenna
   case 94: buffy [bufcount + 1] = LIGHTCYAN; showed = '\\'; break; // Cocytus
-  case 95: buffy [bufcount + 1] = DARKGRAY; showed = '\\'; break; // Tartarus
+  case 95: buffy [bufcount + 1] = DARKGREY; showed = '\\'; break; // Tartarus
   case 96: buffy [bufcount + 1] = LIGHTMAGENTA; showed = '\\'; break; // To Abyss
   case 97: buffy [bufcount + 1] = LIGHTMAGENTA; showed = '\\'; break; // From Abyss
-  case 98: buffy [bufcount + 1] = LIGHTGRAY; showed = '\\'; break; // Closed gate to hell
+  case 98: buffy [bufcount + 1] = LIGHTGREY; showed = '\\'; break; // Closed gate to hell
   case 99: buffy [bufcount + 1] = LIGHTBLUE; showed = '\\'; break; // gate to pandemonium
   case 100: buffy [bufcount + 1] = LIGHTBLUE; showed = '\\'; break; // gate out of pandemonium
   case 101: buffy [bufcount + 1] = LIGHTGREEN; showed = '\\'; break; // gate to other part of pandemonium
@@ -1981,7 +1987,7 @@ default:
 /*              showed = your_sign;
               buffy [bufcount + 1] = your_colour;*/
                 showed = '@';
-                buffy [bufcount + 1] = LIGHTGRAY;
+                buffy [bufcount + 1] = LIGHTGREY;
       }
 
 
@@ -2028,7 +2034,7 @@ bufcount = 0;
             continue;
        }
          buffy [bufcount] = env[0].map [count_x + you[0].x_pos - 17] [count_y + you[0].y_pos - 9];
-         buffy [bufcount + 1] = DARKGRAY;
+         buffy [bufcount + 1] = DARKGREY;
                                                                         bufcount += 2;
                         }
                 }
