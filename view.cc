@@ -1438,11 +1438,12 @@ void show_map(int spec_place [2])
    char move_x = 0;
    char move_y = 0;
    char getty = 0;
+char buffer[4800];
+char buffer2[4800];
+
 
 #ifdef DOS
-   char buffer[4800];
-   char buffer2[4800];
-   gettext(1, 1, 80, 25, buffer);
+  gettext(1, 1, 80, 25, buffer);
    window(1, 1, 80, 25);
 #endif
 

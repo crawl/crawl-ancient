@@ -650,6 +650,14 @@ case 161: // Naga
 strcpy(descpr, "A weird hybrid; human from the waist up, it has a snake tail instead of legs.");
 break;
 
+case 162: // Fire giant
+strcpy(descpr, "A red giant, breathing clouds of smoke.");
+break;
+
+case 163: // Frost giant
+strcpy(descpr, "A frozen giant.");
+break;
+
 case 240: // Shadow wraith
 strcpy(descpr, "A skeletal shadow hanging in mid-air, this creature is almost invisible even to your magically enhanced sight. "); // assumes: to read this message, has see invis
 break;

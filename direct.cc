@@ -477,8 +477,11 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   break;
 
   case 135:
-  case 136:
   strcpy(info, "A staircase back to the Vaults.");
+  break;
+
+  case 136:
+  strcpy(info, "A staircase back to the Crpyt.");
   break;
 
 }

@@ -91,6 +91,7 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*naga mage            */ {107,  22,     22,      5,     22,     15,     14},
 /*curse skull          */ {108,  42,     42,     48,    100,     42,    100},
 /*shining eye          */ {109,  43,     43,    100,    100,    100,    100},
+/*frost giant          */ {110,   9,      9,    100,    100,    100,    100},
 };
 
 
@@ -447,7 +448,7 @@ struct monsterentry *m = seekmonster(m2_class);
 #define SPELLS (sizeof(spell_list)/(sizeof(unsigned char)*7))
 void mons_spell_list(unsigned char sec, int splist [6])
 {
-int x;
+unsigned int x;
         for (x = 0; x < SPELLS; x++) if (spell_list [x] [0] == sec) break;
         if (x >= SPELLS) return;
         // I *KNOW* this can easily be done in a loop
@@ -495,7 +496,7 @@ char *monam(int mons_cla, int mons_e, char desc, char see_invis)
 
 // char gmo_n [40];
  free(gmo_n);
- gmo_n = malloc(sizeof(char) * 40);
+ gmo_n = (char *)malloc(sizeof(char) * 40);
  if (gmo_n == NULL)
  {
   return "Malloc Failed Error";

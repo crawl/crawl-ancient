@@ -550,7 +550,7 @@ mpr(info);
 }
 
 
-void cast_poison_ammo(int powc)
+void cast_poison_ammo(void)
 {
 
 if (you[0].equip [0] == -1 | you[0].inv_class [you[0].equip [0]] != 1 | you[0].inv_dam [you[0].equip [0]] != 0 | you[0].inv_type [you[0].equip [0]] == 0 | you[0].inv_type [you[0].equip [0]] == 5)

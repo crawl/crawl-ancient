@@ -221,11 +221,11 @@ if (menv[wounded].m_hp <= menv[wounded].m_hp_max / 3)
  goto wounded_print;
 }
 
-if (menv[wounded].m_hp <= menv[wounded].m_hp_max / 2)
+/*if (menv[wounded].m_hp <= menv[wounded].m_hp_max / 2)
 {
  strcat(info, " somewhat ");
  goto wounded_print;
-}
+}*/
 
 if (menv[wounded].m_hp <= (menv[wounded].m_hp_max / 4) * 3)
 {
@@ -247,7 +247,7 @@ int wounded_damaged(int wound_class)
 {
  if (mons_holiness(wound_class) == 1) return 1;
  if (wound_class >= 116 && wound_class <= 121) return 1;
- if (wound_class == 5 | wound_class == 49 | wound_class == 41 | wound_class == 21 | wound_class == 23 | wound_class == 244)
+ if (wound_class == 5 | wound_class == 49 | wound_class == 41 | wound_class == 21 | wound_class == 23 | wound_class == 144 | wound_class == 244)
    return 1; // 'damaged'
 
  return 0; // 'wounded'
@@ -812,6 +812,7 @@ beem[0].aim_down = 1;
                 beem[0].hit = 20;
                 strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
                 strcat(info, " spits lava!");
+                beem[0].beam_source = i;
                 mpr(info);
         beem[0].thing_thrown = 4;
         missile(beem, 0);
@@ -840,7 +841,8 @@ viewwindow(1);
                 beem[0].colour = LIGHTCYAN;
                 beem[0].type = 35; // hash #
                 beem[0].flavour = 5; // elec
-  beem[0].hit = 150;
+                beem[0].hit = 150;
+                beem[0].beam_source = i;
                 strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0)); //gmon_name [mons_class [i]]);
                 strcat(info, " shoots out a bolt of electricity!");
                 mpr(info);
@@ -1191,8 +1193,8 @@ out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0)
         beem[0].type = func_pass [4];
         beem[0].flavour = func_pass [5];
         beem[0].thing_thrown = func_pass [6];
-
         beem[0].ench_power = 20; // I think
+        beem[0].beam_source = i;
 
         if (mzap == 3 | mzap == 5 | mzap == 10 | mzap == 13)
         {
@@ -2127,6 +2129,7 @@ beam[0].move_y = beam[0].trac_targ_y - menv [i].m_y;
  beam[0].range = 10;
         beam[0].colour = YELLOW;
  beam[0].flavour = 8;
+ beam[0].beam_source = i;
 
         beam[0].damage = 107;
 

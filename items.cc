@@ -80,10 +80,10 @@ switch(env[0].grid [you[0].x_pos] [you[0].y_pos])
   case 131:
   case 134:
   case 137:
-  case 132: mpr("There is a staircase back to the dungeon here."); break;
+  case 132: mpr("There is a staircase back to the Dungeon here."); break;
   case 133: mpr("There is a staircase back to the Lair here."); break;
-  case 136:
   case 135: mpr("There is a staircase back to the Vaults here."); break;
+  case 136: mpr("There is a staircase back to the Crypt here."); break;
 
  }
 }

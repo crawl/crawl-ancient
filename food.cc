@@ -101,7 +101,8 @@ if (food_eat_3 == 6)
 char eat_from_floor(void)
 {
 int gloggj;
-int o, k;
+int o = igrd [you[0].x_pos] [you[0].y_pos];
+int k;
 unsigned char keyin;
 //gloggo = 0;
 int items_here = 0;

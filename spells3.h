@@ -9,5 +9,5 @@ void cast_smiting(int pow);
 void detect_curse(void);
 void remove_curse(void);
 void cast_selective_amnesia(void);
-void cast_poison_ammo(int powc);
+void cast_poison_ammo(void);
 void create_noise2(void);

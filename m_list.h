@@ -280,7 +280,7 @@ gmon_use
 400, 10, 36, H_NORMAL, -3, {4,0,0,0},
 {1,2,3,0}, 2, 14, 10, 7, 250, C_POISON, Z_SMALL, S_SHOUT, I_NORMAL, 3},
 
-{37, 'L', 15, "lich", M_RES_POISON|M_RES_COLD|M_SPELLCASTER,
+{37, 'L', 15, "lich", M_RES_POISON|M_RES_COLD|M_SPELLCASTER|M_SEE_INVIS,
 0, 16, 37, H_UNDEAD, -11, {15,0,0,0},
 {16,2,4,0}, 10, 10, 10, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1},
 
@@ -745,6 +745,14 @@ gmon_use
 750, 10, 161, H_NORMAL, -6, {6,0,0,0},
 {5,3,5,0}, 6, 10, 8, 7, 106, C_POISON, Z_SMALL, S_SHOUT, I_NORMAL, 3},
 
+{162, 'C', RED, "fire giant", M_RES_FIRE|M_SPELLCASTER,
+2400, 11, 162, H_NORMAL, -4, {30,0,0,0},
+{16,3,6,0}, 8, 4, 10, 7, 50, C_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 3},
+
+{163, 'C', LIGHTBLUE, "frost giant", M_RES_COLD|M_SPELLCASTER,
+2600, 11, 163, H_NORMAL, -4, {35,0,0,0},
+{16,4,5,0}, 9, 3, 10, 7, 110, C_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 3},
+
 
 
 // I need to think of names for these.
@@ -1085,9 +1093,10 @@ hp_dice[4], AC, ev, speed, speed_inc, sec (spell), corpse_thingy, zombie_size, s
 0, 20, 114, H_NORMAL, -3, {18,0,0,0},
 {22,0,0,119}, 0, 10, 10, 7, 50, C_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3},
 
-{310, 'L', RED, "Boris", M_RES_POISON|M_RES_COLD,
-0, 10, 37, H_UNDEAD, 200, {15,0,0,0},
+{310, 'L', RED, "Boris", M_RES_POISON|M_RES_COLD|M_SPELLCASTER|M_SEE_INVIS,
+0, 23, 37, H_UNDEAD, 300, {15,0,0,0},
 {22,0,0,99}, 12, 10, 10, 7, 23, C_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 1},
+
 
 {340, '&', GREEN, "Geryon", M_SPELLCASTER,
 0, 25, 340, H_DEMONIC, -5, {30,0,0,0},

@@ -22,7 +22,7 @@ void cast_deaths_door(int pow);
 void abjuration(int pow);
 void extension(int pow);
 void ice_armour(int pow, char extending);
-void stone_scales(int pow, char extending);
+void stone_scales(int pow);
 void missile_prot(int pow);
 void cast_regen(int pow);
 void cast_berserk(void);

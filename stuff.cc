@@ -4,6 +4,10 @@
 #include <conio.h>
 #endif
 
+#ifdef LINUX
+#include "linuxlib.h"
+#endif
+
 #include "externs.h"
 #include <stdlib.h>
 
@@ -11,6 +15,8 @@
 #include "output.h"
 #include "view.h"
 #include "skills2.h"
+
+
 
 int random2(unsigned int randmax)
 {
@@ -52,6 +58,15 @@ retv /= 10;
 return retv;
 
 }
+
+void end(int end_arg)
+{
+#ifdef LINUX
+lincurses_shutdown();
+#endif
+ exit(end_arg);
+}
+
 
 #ifdef LINUX
 // this function is used for systems without gettext/puttext to redraw the

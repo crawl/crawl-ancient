@@ -40,7 +40,7 @@ void cast_deaths_door(int pow);
 void abjuration(int pow);
 void extension(int pow);
 void ice_armour(int pow, char extending);
-void stone_scales(int pow, char extending);
+void stone_scales(int pow);
 void missile_prot(int pow);
 void cast_regen(int pow);
 void cast_berserk(void);
@@ -777,7 +777,7 @@ if (you[0].duration [8] > 0 && you[0].duration [8] < 80) you[0].duration [8] += 
 
 if (you[0].duration [9] > 0) cast_swiftness(pow);
 if (you[0].duration [10] > 0) cast_insulation(pow);
-if (you[0].duration [11] > 0) stone_scales(pow, 1);
+if (you[0].duration [11] > 0) stone_scales(pow);
 if (you[0].duration [12] > 0) cast_fly(pow);
 // 13 is teleport countdown
 if (you[0].duration [14] > 0) cast_teleport_control(pow);
@@ -829,7 +829,7 @@ mpr(info);
 */
 }
 
-void stone_scales(int pow, char extending)
+void stone_scales(int pow)
 {
 
 //if (pow > 100) pow = 100;

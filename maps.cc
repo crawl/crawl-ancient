@@ -2035,7 +2035,7 @@ strcat(vgrid [33],  "...ccccccccccc..ccccccccccc....xxxxxxxxx");
 strcat(vgrid [34],  ".8.......8............8...8.8..xxxxxxxxx");
 strcat(vgrid [35],  "..8.88.8....8...8...8.........8xxxxxxxxx");
 
-mons_array [0] = 279; /* the royal jelly * /
+mons_array [0] = 279; / * the royal jelly * /
 mons_array [1] = 250;
 mons_array [2] = 250;
 mons_array [3] = 250;

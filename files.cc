@@ -66,7 +66,7 @@
 
 struct ghost_struct ghost;
 
-void load(unsigned char stair_taken, char moving_level, char level_saved, char was_a_labyrinth, char old_level, char want_followers, char just_made_new_lev, char where_were_you2)
+void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, char old_level, char want_followers, char just_made_new_lev, char where_were_you2)
 {
 int j = 0;
 int i, count_x, count_y;
@@ -112,12 +112,6 @@ unsigned char foll_beh [8];
 
 int itmf = 0;
 int ic = 0;
-
-strcpy(ghost.gname, "");
-for (ic = 0; ic < 20; ic ++)
-{
- ghost.ghs [ic] = 0;
-}
 
 
 
@@ -261,6 +255,12 @@ already_saved = 1;
 was_a_labyrinth = 0;
 } /* end if level_type == 0*/
 
+strcpy(ghost.gname, "");
+for (ic = 0; ic < 20; ic ++)
+{
+ ghost.ghs [ic] = 0;
+}
+
 
 #ifdef DOS
 strupr(cha_fil);
@@ -288,7 +288,7 @@ for (imn = 0; imn < 20; imn ++)
 
 builder(you[0].your_level, you[0].level_type);
 
-if (random2(3) == 0 && you[0].your_level > 3)
+//if (random2(3) == 0 && you[0].your_level > 1)
 {
 
 strcpy(corr_level, "");
@@ -490,8 +490,8 @@ if (stair_taken == 69 | stair_taken == 81) stair_taken = 86;
      else
       if (stair_taken >= 110 && stair_taken < 130) stair_taken += 20;
        else
-        if (stair_taken == -1) stair_taken = 69;
-         else
+//        if (stair_taken == -1) stair_taken = 69;
+//         else
           if (stair_taken > 90)
           {
            stair_taken = 86;
@@ -674,7 +674,7 @@ if (you[0].level_type == 3)
 }
 
  //if (was_a_labyrinth == 0)
- save_level(you[0].your_level, (you[0].level_type == 1), you[0].where_are_you);
+ save_level(you[0].your_level, (you[0].level_type != 0), you[0].where_are_you);
 
  return;
 
@@ -697,7 +697,7 @@ handle = open(cha_fil, O_RDONLY, O_CREAT | O_TRUNC | O_BINARY, 0660);
 if (handle == -1)
 {
         perror("Errghor");
-        exit(-1);
+        end(-1);
 }
 
 
@@ -735,6 +735,7 @@ for (count_x = 0; count_x < GXM; count_x ++)
 
         grd [count_x] [count_y] = rm [0] - 30;
  env[0].map [count_x] [count_y] = rm [1] - 30;
+ if (env[0].map [count_x] [count_y] == 201) env[0].map [count_x] [count_y] = 239;
  mgrd [count_x] [count_y] = MNG; //rm [2] - 30;
   if (mgrd [count_x] [count_y] != MNG && (menv [mgrd [count_x] [count_y]].m_class == -1 | menv [mgrd [count_x] [count_y]].m_x != count_x | menv [mgrd [count_x] [count_y]].m_y != count_y))
   {
@@ -1021,7 +1022,7 @@ for (j = 0; j < MNST; j ++)
 else
 {
   cprintf("Error opening file\n");
-  exit(-1);
+  end(-1);
 }
 
 reset_ch();
@@ -1297,7 +1298,7 @@ handle = open(cha_fil, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0660);
         if (handle == -1)
         {
                 perror("Oh dear... ");
-                exit(-1);
+                end(-1);
         }
 
 
@@ -1853,7 +1854,7 @@ for (p = 0; p < 69; p ++)
 if (handle == -1)
 {
         perror("Unable to open file for writing");
-        exit(-1);
+        end(-1);
 }
 
 for (p = 0; p < 30; p ++)
@@ -1865,13 +1866,13 @@ write(handle, rm, 30);
 
 rm [0] = you[0].religion + 40;
 rm [1] = you[0].piety + 40;
-/*rm [2] = you[0].res_fire + 40;
-rm [3] = you[0].res_poison + 40;
-rm [4] = you[0].res_cold + 40;
-rm [5] = you[0].fast_run + 40;*/
+rm [2] = you[0].invis + 40;
+rm [3] = you[0].conf + 40;
+rm [4] = you[0].paralysis + 40;
+rm [5] = you[0].slow + 40;
 rm [6] = you[0].shock_shield + 40;
-/*rm [7] = you[0].sust_abil + 40;
-rm [8] = you[0].magic_battery + 40;*/
+rm [7] = you[0].rotting + 40;
+/*rm [8] = you[0].magic_battery + 40;*/
 rm [9] = you[0].deaths_door + 40;
 /*rm [10] = you[0].spec_fire + 40;
 rm [11] = you[0].spec_cold + 40;
@@ -2252,7 +2253,7 @@ clrscr();
 
 cprintf("See you soon!");
 
-exit(0);
+end(0);
 
 } /* end of save_game() */
 
@@ -2306,7 +2307,7 @@ handle = open(char_f, O_RDONLY, S_IWRITE, S_IREAD);
 if (handle == -1)
 {
         perror("Unable to open file for reading");
-        exit(-1);
+        end(-1);
 }
 
 for (p = 0; p < 69; p ++)
@@ -2323,13 +2324,13 @@ for (p = 0; p < 30; p ++)
 read(handle, rm, 35);
 you[0].religion = rm [0] - 40;
 you[0].piety = rm [1] - 40;
-/*you[0].res_fire = rm [2] - 40;
-you[0].res_poison = rm [3] - 40;
-you[0].res_cold = rm [4] - 40;
-you[0].fast_run = rm [5] - 40;*/
+you[0].invis = rm [2] - 40;
+you[0].conf = rm [3] - 40;
+you[0].paralysis = rm [4] - 40;
+you[0].slow = rm [5] - 40;
 you[0].shock_shield = rm [6] - 40;
-/*you[0].sust_abil = rm [7] - 40;
-you[0].magic_battery = rm [8] - 40;*/
+you[0].rotting = rm [7] - 40;
+/*you[0].magic_battery = rm [8] - 40;*/
 you[0].deaths_door = rm [9] - 40;
 /*you[0].spec_fire = rm [10] - 40;
 you[0].spec_cold = rm [11] - 40;

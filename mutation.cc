@@ -188,18 +188,19 @@ char *lose_mutation [] [3] =
 
 char mutation_rarity [] =
 {
-10,
-10,
-10,
-10,
-3,
-2,
-2,
-1,
-1,
-4,
-5,
-5,
+10, // tough skin
+10, // str
+10, // int
+10, // dex
+3, // gr scales
+2, // bl scales
+2, // grey scales
+1, // bone
+1, // repuls field
+4, // res poison
+// 10
+5, // carn
+5, // herb
 4, // res fire
 4, // res cold
 2, // res elec
@@ -208,11 +209,19 @@ char mutation_rarity [] =
 10, // fast meta
 10, // abil loss
 10, // ""
+// 20
 10, // ""
 2, // tele control
 3, // teleport
 5, // res magic
-8 // deformation
+1, // run
+2, // see invis
+8, // deformation
+0,
+0,
+0,
+0,
+0
 };
 
 
@@ -386,6 +395,24 @@ switch(mutat)
  you[0].max_dex --;
  you[0].dex_ch = 1;
  mpr(gain_mutation [mutat] [0]);
+ break;
+
+ case 10: // carnivorous
+ if (you[0].mutation [11] > 0)
+ {
+  delete_mutation(11);
+  return 1;
+ }
+ mpr(gain_mutation [mutat] [you[0].mutation [mutat]]);
+ break;
+
+ case 11: // herbivorous
+ if (you[0].mutation [10] > 0)
+ {
+  delete_mutation(10);
+  return 1;
+ }
+ mpr(gain_mutation [mutat] [you[0].mutation [mutat]]);
  break;
 
  case 14: // res elec

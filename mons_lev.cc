@@ -720,6 +720,9 @@ case 145: return 38; // Titan
 case 146: return 10; // Golden dragon
 
 case 160: return 32; // iron Troll
+case 162: return 34; // fire giant
+case 163: return 34; // frost giant
+
 case 240: return 30; // shadow wraith
 case 241: return 27; // giant amoeba
 case 242: return 22; // giant slug
@@ -924,6 +927,9 @@ case 144: return 5; // dancing weapon
 case 145: return 15; // Titan
 case 146: return 10; // Golden dragon
 case 160: return 25; // iron Troll
+case 162: return 25; // fire giant
+case 163: return 25; // frost giant
+
 case 240: return 10; // shadow wraith
 case 241: return 35; // giant amoeba
 case 242: return 32; // giant slug

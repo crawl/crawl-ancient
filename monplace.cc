@@ -54,35 +54,6 @@ lev_mons, passed
 );
 
 
-/*
-place_monster(
-it_no,
-you[0].unique_items,
-you[0].item_description,
-property,
-plus_seventy, /* used for mons_sec for zombies * /
-typed,
-type_place,
-px,
-py,
-behaviour,
-hitting,
-bands,
-gmon_use,
-grd,
-passed,
-you[0].x_pos,
-you[0].y_pos,
-mgrd,
-menv,
-unique_creatures,
-it,
-lev_mons
-);
-*/
-//no_mons += glokp;
-//mn_no += glokp;
-
 if (glokp > 0) return passed [0];
                 else return -1;
 

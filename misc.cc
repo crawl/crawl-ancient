@@ -60,10 +60,11 @@ for (c = 0; c < MNST; c++)
  }
 }
 
+unsigned int udest = dest;
 
 for (c = 0; c < ITEMS; c++)
 {
-  if (mitm.ilink [c] == dest)
+  if (mitm.ilink [c] == udest)
   {
    mitm.ilink [c] = mitm.ilink [dest];
    mitm.iquant [dest] = 0;
@@ -443,7 +444,7 @@ if (you[0].where_are_you == 3)
 {
  mpr("Thank you for visiting Hell. Please come again soon.");
  you[0].where_are_you = 0;
- stair_find = -1;
+ stair_find = 69;
 }
 
 if (you[0].where_are_you > 0 && you[0].where_are_you != 3 && you[0].where_are_you < 10)
@@ -469,16 +470,19 @@ switch(stair_find)
  you[0].where_are_you = 12;
  break;
  case 135:
- case 136:
  mpr("Welcome back to the Vaults!");
  you[0].where_are_you = 14;
+ break;
+ case 136:
+ mpr("Welcome back to the Crypt!");
+ you[0].where_are_you = 15;
  break;
 }
 char stair_taken = stair_find;
 char moving_level = 1;
 char want_followers = 1;
 /*load(stair_taken, moving_level, level_saved, was_a_labyrinth, old_level, want_followers, just_made_new_lev);*/
-load(stair_taken, moving_level, old_level, 0, old_level, want_followers, 0, old_level_where);
+load(stair_taken, moving_level, 0, old_level, want_followers, 0, old_level_where);
 moving_level = 0;
 
 int j = 0;
@@ -548,7 +552,7 @@ for (count_x = 0; count_x < GXM; count_x ++)
 void down_stairs(char remove_stairs)
 {
 
-int i, j;
+int i;
 char old_level_type = you[0].level_type;
 char was_a_labyrinth = 0;
 unsigned char stair_find = grd [you[0].x_pos] [you[0].y_pos];
@@ -732,7 +736,7 @@ if (remove_stairs == 1)
 }
 
 /*load(you[0].your_level);*/
-load(stair_taken, moving_level, old_level, was_a_labyrinth, old_level, want_followers, 0, old_where);
+load(stair_taken, moving_level, was_a_labyrinth, old_level, want_followers, 0, old_where);
 
 moving_level = 0;
 

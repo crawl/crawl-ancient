@@ -121,6 +121,8 @@ char gmon_use [1000];
 
 int stealth; /* externed in view.h */
 
+char use_colour = 1;
+
 /*
 
 Functions needed:
@@ -161,18 +163,25 @@ mapch2 = &mapchar2;
 
 if (argc > 1)
 {
- if (stricmp(argv [1], "-c") == 0)
+ if (stricmp(argv [1], "-c") == 0 | stricmp(argv [1], "-nc") == 0)
  {
   viewwindow = &viewwindow3;
   mapch = &mapchar3;
   mapch2 = &mapchar4;
+  if (stricmp(argv [1], "-nc") == 0)
+  {
+   use_colour = 0; /* this is global to this function, so can either be
+                      passed eg to lincurses_startup or defined as an
+                      extern in another module */
+  }
  }
   else
   {
-   cprintf("\n\rCrawl accepts the following argument only:\n\r");
+   cprintf("\n\rCrawl accepts the following arguments only:\n\r");
    cprintf(" -c   Use non-ibm character set\n\r");
+   cprintf(" -nc  Use non-ibm character set, but no colour\n\r");
    cprintf("\n\rAny others will cause this message to be printed again.\n\r");
-   exit(0);
+   end(0);
   }
 }
 
@@ -1594,7 +1603,7 @@ if (newc == 1) moving_level = 1;
 
 /*load(82, moving_level, level_saved, was_a_labyrinth, old_level, just_made_new_lev);*/
 //load(82, moving_level, 0, 0, 0, 0, just_made_new_lev);
-load(82, moving_level, 0, 0, 0, 0, just_made_new_lev, you[0].where_are_you);
+load(82, moving_level, 0, 0, 0, just_made_new_lev, you[0].where_are_you);
 
 moving_level = 0;
 just_made_new_lev = 0;

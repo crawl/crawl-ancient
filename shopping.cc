@@ -290,6 +290,8 @@ itty = igrd [0] [5 + shoppy];
       more3();
 #ifdef DOS
       puttext(1, 1, 80, 25, buffer);
+      gotoxy(1,1);
+      cprintf(" ");
 #endif
 //      for (i = 0; i < 4; i ++)
 //      {

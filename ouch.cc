@@ -153,7 +153,7 @@ void splash_with_acid(char acid_strength)
 
 char splc = 0;
 
-for (splc = 0; splc < 6; splc++)
+for (splc = 1; splc < 7; splc++)
 {
         if (you[0].equip [splc] == -1)
  {
@@ -572,7 +572,7 @@ switch (you[0].where_are_you)
 
 /* Maybe place a ghost: */
 
-if (you[0].your_level > 3 && you[0].is_undead == 0)
+//if (you[0].your_level > 1 && you[0].is_undead == 0)
 {
 strcpy(corr_level, "");
 
@@ -844,8 +844,7 @@ for (i = 0; i < ITEMS; i++)
 
 
 highscore(death_string, points);
-
-        exit(0);
+        end(0);
 }
 
 

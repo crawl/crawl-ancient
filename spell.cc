@@ -710,7 +710,7 @@ switch(spc2)
    return 1;
 
    case 131: // stone scales
-   stone_scales(powc, 0);
+   stone_scales(powc);
    return 1;
 
 
@@ -749,7 +749,7 @@ switch(spc2)
    return 1;
 
    case 140: // poison ammunition
-   cast_poison_ammo(powc);
+   cast_poison_ammo();
    return 1;
 
    case 141: // poison blade

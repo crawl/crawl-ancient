@@ -176,24 +176,27 @@ if (beam[0].colour == 6 && beam[0].beam_name [0] == '0')
         beam[0].bx += beam[0].move_x;
         beam[0].by += beam[0].move_y;
 
-#ifndef DEBUG
-        if (grd [beam[0].bx] [beam[0].by] == 2 | grd [beam[0].bx] [beam[0].by] == 4 | beam[0].bx <= 5 | beam[0].by <= 5 | beam[0].bx >= GXM - 1 | beam[0].by >= GYM - 1)
+//#ifndef DEBUG
+ if (grd [beam[0].bx] [beam[0].by] == 2 | grd [beam[0].bx] [beam[0].by] == 4 | beam[0].bx <= 5 | beam[0].by <= 5 | beam[0].bx >= GXM - 1 | beam[0].by >= GYM - 1)
  {
    beam[0].aim_down = 0;
    return;
  }
-#else
-        if (beam[0].bx < 0 | beam[0].by < 0 | beam[0].bx > GXM - 1 | beam[0].by > GYM - 1)
+//#else
+ if (beam[0].bx < 0 | beam[0].by < 0 | beam[0].bx > GXM - 1 | beam[0].by > GYM - 1)
  {
    beam[0].aim_down = 0;
    return;
  }
-#endif
-        if (grd [beam[0].bx] [beam[0].by] == 1) grd [beam[0].bx] [beam[0].by] = 67;
-        if (crumble == 0 && see_grid(beam[0].bx, beam[0].by) == 1)
+//#endif
+        if (grd [beam[0].bx] [beam[0].by] == 1)
         {
+         grd [beam[0].bx] [beam[0].by] = 67;
+         if (crumble == 0 && see_grid(beam[0].bx, beam[0].by) == 1)
+         {
           mpr("You hear a grinding noise.");
           crumble = 1;
+         }
         }
 } else
        if (grd [beam[0].bx + beam[0].move_x] [beam[0].by + beam[0].move_y] > 10)
@@ -910,7 +913,7 @@ hurted = 0;
 
  check_your_resists(hurted, beam[0].flavour);
 
- if (strstr(beam[0].beam_name, "poison") != NULL && beam[0].flavour != 6)
+ if (strstr(beam[0].beam_name, "poison") != NULL && beam[0].flavour != 6 && player_res_poison() == 0)
  {
   you[0].poison += 1 + random2(3);
  }
@@ -1771,6 +1774,8 @@ void poison_monster(int mn, char source)
 int p;
 int brek = 0;
 
+if (menv [mn].m_class == -1) return;
+
 if (mons_res_poison(menv [mn].m_class) > 0) return;
 if (menv [mn].m_inv [2] != 501 && mitm.idam [menv [mn].m_inv [2]] % 30 == 4) return;
 
@@ -1827,6 +1832,8 @@ void sticky_flame_monster(int mn, char source, int power) /* modelled on the poi
 int long_last = 0;
 int brek = 0;
 int p;
+
+if (menv [mn].m_class == -1) return;
 
 if (mons_res_fire(menv [mn].m_class) > 0) return;
 if (menv [mn].m_inv [2] != 501 && mitm.idam [menv [mn].m_inv [2]] % 30 == 2) return;

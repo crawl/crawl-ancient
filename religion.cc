@@ -103,6 +103,9 @@ case 10: return "Lugafu";
 case 11: return "Nemelex Xobeh";
 case 12: return "Elyvilon";
 }
+
+return "Illegal god";
+
 }
 
 
@@ -125,4 +128,7 @@ case 10: return "Lugafu the Hairy";
 case 11: return "Nemelex the Trickster";
 case 12: return "Elyvilon the Healer";
 }
+
+return "Illegal God";
+
 }

@@ -793,6 +793,19 @@ int mons_to_hit = 20 + menv [monster_attacking].m_HD; // * menv [monster_attacki
 
 if (menv [monster_attacking].m_inv [hand_used] != 501)
 {
+
+item_name(mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]], mitm.iclass [menv [monster_attacking].m_inv [hand_used]], mitm.itype [menv [monster_attacking].m_inv [hand_used]], mitm.idam [menv [monster_attacking].m_inv [hand_used]], mitm.iplus [menv [monster_attacking].m_inv [hand_used]], mitm.iquant [menv [monster_attacking].m_inv [hand_used]], mitm.iid [menv [monster_attacking].m_inv [hand_used]], 0, str_pass);
+
+  if (mitm.iclass [menv [monster_attacking].m_inv [hand_used]] != 0 | strstr(str_pass, "questionable item") != NULL)
+  {
+   destroy_item(menv [monster_attacking].m_inv [hand_used]);
+   menv [monster_attacking].m_inv [hand_used] = 501;
+  }
+}
+
+
+if (menv [monster_attacking].m_inv [hand_used] != 501)
+{
         if (mitm.iplus [menv [monster_attacking].m_inv [hand_used]] - 50 > 130)
         {
                 mons_to_hit += mitm.iplus [menv [monster_attacking].m_inv [hand_used]] - 50 - 100; // + 1; //random2(mitm.iplus [menv [monster_attacking].m_inv [hand_used]] - 50 - 100 + 1);
@@ -803,7 +816,7 @@ if (menv [monster_attacking].m_inv [hand_used] != 501)
 
         mons_to_hit += property(0, mitm.itype [menv [monster_attacking].m_inv [0]], 1);
 
-   if (menv [monster_attacking].m_speed_inc >= 25) menv [monster_attacking].m_speed_inc -= (property(mitm.iclass [menv [monster_attacking].m_inv [0]], mitm.itype [menv [monster_attacking].m_inv [0]], 2) - 10); // / 10);
+   if (menv [monster_attacking].m_speed_inc >= 50) menv [monster_attacking].m_speed_inc -= (property(mitm.iclass [menv [monster_attacking].m_inv [0]], mitm.itype [menv [monster_attacking].m_inv [0]], 2) - 10); // / 10);
 }
 
 mons_to_hit = random2(mons_to_hit);
@@ -811,7 +824,7 @@ mons_to_hit = random2(mons_to_hit);
         if (menv [monster_attacking].m_class == 10 | menv [monster_attacking].m_class == 22)
         {
                 /* maybe this will work better: */
-  if (menv [monster_attacking].m_speed_inc >= 15)
+  if (menv [monster_attacking].m_speed_inc >= 20)
                                                 menv [monster_attacking].m_speed_inc -= 10; //--
         }
 
@@ -2334,7 +2347,7 @@ void monster_die(int monster_killed, char killer, int i)
 
 int dmi; /* dead monster's inventory */
 
-if (you[0].prev_targ == monster_killed) you[0].prev_targ = 500;
+if (you[0].prev_targ == monster_killed) you[0].prev_targ = MHITNOT;
 
 if (menv [monster_killed].m_class == 32)
 {

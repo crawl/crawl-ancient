@@ -667,6 +667,7 @@ bno_mons = 0;
 bno_mons += random3(25) + random3 (20) + random3 (15);// + random3 (many_many);// + random3 (15);
 
 if (you[0].where_are_you == 1 | you[0].where_are_you == 2 | you[0].where_are_you == 4 | you[0].where_are_you == 5 | you[0].where_are_you == 16) bno_mons += random3(10) + random3(20) + random3(20);
+if (you[0].where_are_you == 16) bno_mons += random3(10) + random3(20) + random3(20);
 
 if (bno_mons > 120) bno_mons = 120; // unlikely
 if (level_type == 2) bno_mons = 0;
@@ -856,7 +857,8 @@ for (count_x = 0; count_x < 20; count_x ++)
 {
 if (you[0].branch_stairs [count_x] == 0) break;
 if (count_x != 7)
- if ((count_x == 3 && you[0].where_are_you == 12 && level_type == 0 && many_many == you[0].branch_stairs [3]) | (count_x == 5 && you[0].where_are_you == 14 && level_type == 0 && many_many == you[0].branch_stairs [5]) | (count_x == 6 && you[0].where_are_you == 14 && level_type == 0 && many_many == you[0].branch_stairs [6]))
+{
+ if ((count_x == 3 && you[0].where_are_you == 12 && level_type == 0 && many_many == you[0].branch_stairs [3]) | (count_x == 5 && you[0].where_are_you == 14 && level_type == 0 && many_many == you[0].branch_stairs [5]) | (count_x == 6 && you[0].where_are_you == 15 && level_type == 0 && many_many == you[0].branch_stairs [6]))
  {
   do
   {
@@ -875,7 +877,7 @@ if (count_x != 7)
   } while (grd [bi] [bj] != 67 | mgrd [bi] [bj] != MNG);
   grd [bi] [bj] = 110 + count_x; //you[0].branch_stairs [count_x]; // staircase to branch level
  }
-
+} // end if (count_x != 7)
 } /* end for loop */
 
   check_doors();
@@ -1030,6 +1032,39 @@ for (count_x = 0; count_x < 20; count_x ++)
 if (you[0].where_are_you == 15 && random3(3) == 0) place_curse_skull();
 if (you[0].where_are_you == 15 && random3(7) == 0) place_curse_skull();
 
+if (you[0].where_are_you == 0)
+{
+ for (bi = 1; bi < 80; bi ++)
+ {
+  for (bj = 1; bj < 70; bj ++)
+  {
+   switch(grd [bi] [bj])
+   {
+    case 113: // slime
+    case 115: // crypt
+    case 116: // hall of blades
+    grd [bi] [bj] = 67;
+    break; /* this shouldn't be necessary, but is */
+   }
+  }
+ }
+}
+
+if (you[0].where_are_you == 16 | you[0].where_are_you == 17)
+{
+ for (bj = 1; bj < 70; bj ++)
+ {
+  for (bi = 1; bi < 80; bi ++)
+  {
+        if (grd [bi] [bj] >= 82 && grd [bi] [bj] <= 89)
+           {
+             grd [bi] [bj] = 67;
+           }
+  }
+ }
+}
+
+
 
 return 0;
 
@@ -1087,7 +1122,7 @@ monster_cla :
 if (random3(4) == 0 && you[0].where_are_you == 0 && lev_mons != 51) lev_mons = random3(many_many);
         else lev_mons = many_many;
 
-if (lev_mons <= 35)
+if (lev_mons <= 35 && you[0].where_are_you == 0)
 {
  if (random3(5000) == 0) lev_mons = random3(36);
  // a potentially nasty surprise, but very rare
@@ -2550,7 +2585,7 @@ if (allow_uniques == 1)
           }
          }
 
-         if (random3(400) <= 20 + many_many | (many_many == 351 && random() % 2 == 0))
+         if (random3(400) <= 30 + many_many | (many_many == 351 && random() % 2 == 0))
          {
          // note: even this doesn't guarantee special enchantment
          switch(mitm.itype [bp])
@@ -3878,7 +3913,7 @@ mitm.iplus [bp] = 50;
 mitm.idam [bp] = 0;
 mitm.iclass [bp] = 101;
 
-if (menv [bk].m_class == 144 && you[0].where_are_you == 16) give_level = 351;
+if (menv [bk].m_class == 144 && you[0].where_are_you == 16 && random3(3) == 0) give_level = 351;
 /* dancing weapon in the Hall of Blades */
 switch(menv [bk].m_class)
 {
@@ -4105,7 +4140,7 @@ force_spec = 100;
         mitm.iclass [bp] = 1;
         mitm.itype [bp] = 5;
         mitm.icol [bp] = LIGHTGREY;
-        iquan = random3(5) + 1;
+        iquan = random3(3) + 1;
 break;
 
 
@@ -4202,6 +4237,33 @@ if (random3(5) == 0) mitm.icol [bp] = CYAN;
 iquan = 1;
 force_item = 1;
 break;
+
+case 162:// Fire giant
+mitm.iclass [bp] = 0;
+mitm.itype [bp] = 7;
+mitm.idam [bp] = 151;
+mitm.iplus [bp] = 50;
+mitm.iplus2 [bp] = 50;
+mitm.icol [bp] = RED;
+if (random3(3) == 0) mitm.icol [bp] = DARKGREY;
+if (random3(5) == 0) mitm.icol [bp] = CYAN;
+iquan = 1;
+force_item = 1;
+break;
+
+case 163:// Frost giant
+mitm.iclass [bp] = 0;
+mitm.itype [bp] = 10;
+mitm.idam [bp] = 152;
+mitm.iplus [bp] = 50;
+mitm.iplus2 [bp] = 50;
+mitm.icol [bp] = CYAN;
+if (random3(3) == 0) mitm.icol [bp] = WHITE;
+iquan = 1;
+force_item = 1;
+break;
+
+
 
 case 53: // kobold demonologist
 case 54: // orc wiz

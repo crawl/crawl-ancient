@@ -1,6 +1,6 @@
 /* Some replacement routines missing in gcc */
 
-#include "colours.h"
+#include "defines.h"
 #define _NORMALCURSOR 1
 #define _NOCURSOR 0
 #define O_BINARY O_RDWR

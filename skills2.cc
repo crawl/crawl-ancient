@@ -122,6 +122,7 @@ reprint_stuff:
                 if(you[0].skills [x] > 0)
                 {
                         if (you[0].practise_skill[x] == 0) textcolor(DARKGREY); else textcolor(LIGHTGREY);
+                        if (you[0].skills [x] == 27) textcolor(YELLOW);
                         putch(lcount + 97); lcount++;
                         cprintf(" - %-14s Skill ",skills[x][0]);
                         itoa(you[0].skills[x], strng, 10);
@@ -358,7 +359,7 @@ switch(lev)
         case 11: return 375;
         case 12: return 440;
         case 13: return 525;
-        default: return 620 + 100 * (lev - 14);
+        default: return 620 + 130 * (lev - 14);
 
 }
 

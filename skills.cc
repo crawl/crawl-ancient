@@ -50,6 +50,7 @@ if (cutting == 1) goto cut_through;
 
 // does not yet allow for loss of skill levels.
  if (you[0].exp_available <= 0) return;
+ if (you[0].skills [exsk] == 27) return; // already maximum
 
  if (you[0].practise_skill [exsk] == 0 && random2(4) != 0) return;
 

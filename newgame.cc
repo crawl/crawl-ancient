@@ -94,7 +94,7 @@ for (i = 0; i < 52; i ++)
 
 textcolor(7);
 
-cprintf("\n\rHello, and welcome to Dungeon Crawl v2.70!");
+cprintf("\n\rHello, and welcome to Dungeon Crawl v2.72!");
 cprintf("\n\r(Copyright 1997 Linley Henzell)");
 cprintf("\n\rPlease read Crawl.txt for instructions and legal details.\n\r\n\r");
 name_q : cprintf("What is your name today? ");
@@ -292,7 +292,7 @@ switch_start : switch(keyn)
  goto switch_start;
  case 'X':
  cprintf("\n\rGoodbye!");
- exit(0);
+ end(0);
  break;
  default:
 // cprintf("\n\rDon't be silly. ");
@@ -426,7 +426,7 @@ query5: if (keyn == 'a') you[0].clas = 0;
   else if (keyn == 'X')
    {
     cprintf("\n\rGoodbye!");
-    exit(0);
+    end(0);
    }
                 else
                 {
@@ -1946,7 +1946,7 @@ you[0].branch_stairs [2] = 8 + random2(6); // lair
 you[0].branch_stairs [3] = you[0].branch_stairs [2] + random2(4) + 3; // slime pits
 you[0].branch_stairs [4] = 20 + random2(6); // vaults
 you[0].branch_stairs [5] = you[0].branch_stairs [4] + random2(3) + 3; // crypt
-you[0].branch_stairs [6] = you[0].branch_stairs [4] + random2(2) + 4; // hall of blades
+you[0].branch_stairs [6] = you[0].branch_stairs [5] + 4; // hall of blades
 you[0].branch_stairs [7] = 35; // hall of Zot
                 return 1;
 

@@ -39,8 +39,6 @@ you[0].duration []:
 17 - species ability
 */
 
-/* Executioner demon, w/axe */
-
 /* attributes
 0 - resist lightning
 1 - spec_air
@@ -86,19 +84,6 @@ int player_teleport(void)
 
 int player_regen(void)
 {
-// int rr = 6;
-/* rr += you[0].xl;
- if (you[0].xl < 5) rr += you[0].xl * 2;
-  else
-   {
-    rr += 8; /* 4 * 2 * /
-    rr += (you[0].xl - 4) / 2;
-   }*/
-
-/*if (you[0].xl < 5) you[0].rate_regen += 2;
-if (you[0].xl > 4 && you[0].xl <= 10 && you[0].xl % 2 == 0) you[0].rate_regen += 2;
-if (you[0].xl > 10 && you[0].xl % 2 == 0) you[0].rate_regen ++;*/
-
  int rr = you[0].hp_max / 3;
  /* rings */
  if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 0) rr += 40;
@@ -774,8 +759,8 @@ void gain_exp(unsigned int exp_gained)
   if (you[0].inv_dam [you[0].equip [6]] % 30 == 17) return; // robe of archmagi
  }
 
- if (you[0].xp + exp_gained > 600000)
-    you[0].xp = 600000; else
+ if (you[0].xp + exp_gained > 999999)
+    you[0].xp = 999999; else
  you[0].xp += exp_gained;
  if (you[0].exp_available + exp_gained > 20000)
     you[0].exp_available = 20000; else
@@ -1348,7 +1333,7 @@ break;
 case 17: // ogre-mage
 you[0].hp_max += 2;
 you[0].base_hp2 += 2;
-if (you[0].xl % 5 == 0) increase_stats(random2(2));
+if (you[0].xl % 5 == 0) increase_stats(random2(2) * 2);
 break;
 }
 }
@@ -1787,7 +1772,7 @@ switch(lev)
 //      case 16: return 163840;
 //      case 17: return 327760;
  default: //return 14000 * (lev - 11);
- level = 15000 * (lev - 11) + ((lev - 11) * (lev - 11) * (lev - 11)) * 80;
+ level = 15000 * (lev - 11) + ((lev - 11) * (lev - 11) * (lev - 11)) * 100;
  break;
 }
 
