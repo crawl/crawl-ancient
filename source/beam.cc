@@ -623,6 +623,8 @@ static void zappy( char z_type, int power, struct bolt &pbolt )
         pbolt.hit = 9 + power / 12;                     // 50: 13   100: 17
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ICE;                       // half resistable
+
+        pbolt.obviousEffect = true;
         break;
 
     case ZAP_DISPEL_UNDEAD:                             // cap 100
@@ -754,6 +756,8 @@ static void zappy( char z_type, int power, struct bolt &pbolt )
         pbolt.hit = 40;                                 // hit: 40
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_EXPLOSION;                 // fire
+
+        pbolt.obviousEffect = true;
         break;
 
     case ZAP_ORB_OF_ELECTRICITY:                        // cap 150
@@ -765,6 +769,8 @@ static void zappy( char z_type, int power, struct bolt &pbolt )
         pbolt.hit = 40;                                 // hit: 40
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;
+
+        pbolt.obviousEffect = true;
         break;
 
     case ZAP_ORB_OF_FRAGMENTATION:                      // cap 150
@@ -825,6 +831,8 @@ static void zappy( char z_type, int power, struct bolt &pbolt )
         pbolt.ench_power = power;                       // used for radius
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ICE;                       // half resisted
+
+        pbolt.obviousEffect = true;
         break;
 
     case ZAP_BEAM_OF_ENERGY:    // bolt of innacuracy
@@ -2532,6 +2540,15 @@ static int affect(struct bolt &beam, int x, int y)
 
 static bool affectsWalls(struct bolt &beam)
 {
+    /* burn wood walls */
+    /* note that the explosion of fireball can burn wood walls */
+    if ((strcmp(beam.beam_name, "sticky flame") == 0)
+        || (beam.flavour == BEAM_LAVA)
+        || (stricmp(beam.beam_name, "hellfire") == 0)
+        || ((beam.flavour == BEAM_FIRE)
+            && (strcmp(beam.beam_name, "ball of steam") != 0)))
+        return (true);
+
     // don't know of any explosion that affects walls.  But change it here
     // if there is.
     if (beam.isExplosion)
@@ -2595,7 +2612,8 @@ static int affect_wall(struct bolt &beam, int x, int y)
     {
         int targ_grid = grd[x][y];
 
-        if ((targ_grid == DNGN_ROCK_WALL || targ_grid == DNGN_WAX_WALL)
+        if ((targ_grid == DNGN_ROCK_WALL || targ_grid == DNGN_WAX_WALL
+             || targ_grid == DNGN_WOOD_WALL)
              && !(x <= 6 || y <= 6 || x >= (GXM - 6) || y >= (GYM - 6)))
         {
             grd[ x ][ y ] = DNGN_FLOOR;
@@ -2633,6 +2651,25 @@ static int affect_wall(struct bolt &beam, int x, int y)
         }
 
         return (BEAM_STOP);
+    }
+
+    /* burn wood walls */
+    if (((strcmp(beam.beam_name, "sticky flame") == 0)
+         || (beam.flavour == BEAM_LAVA)
+         || (stricmp(beam.beam_name, "hellfire") == 0)
+         || ((beam.flavour == BEAM_FIRE)
+             && (strcmp(beam.beam_name, "ball of steam") != 0)))
+        && !(x <= 5 || y <= 5 || x >= (GXM - 5) || y >= (GYM - 5)))
+    {
+      if (grd[x][y] == DNGN_WOOD_WALL)
+      {
+        grd[x][y] = DNGN_FLOOR;
+        place_cloud(CLOUD_FIRE_MON, x, y, 2 + random2(4));
+        if (!beam.msgGenerated)
+          mpr("The wood wall burns.");
+        beam.msgGenerated = true;
+      }
+      return (rangeUsed);
     }
 
     return (rangeUsed);
@@ -2944,8 +2981,16 @@ static int affect_player( struct bolt &beam )
         if (!beam.isExplosion && !beam.aimedAtFeet)
         {
             // BEGIN BEAM/MISSILE
+          /*
             int dodge = random2limit( player_evasion(), 40 )
                         + random2( you.dex ) / 3 - 2;
+          */
+          int dodge = player_evasion();
+          if (dodge > 40)
+            dodge = 40;
+          dodge += you.dex / 3 - 2;
+          if (dodge < 0)
+            dodge = 0;
 
             if (beam.isBeam)
             {
@@ -2965,7 +3010,10 @@ static int affect_player( struct bolt &beam )
                 if (you.duration[DUR_DEFLECT_MISSILES])
                     beamHit = random2(beamHit / 3);
 
+                /*
                 if (beamHit < dodge)
+                */
+                if (beamHit * beamHit < random2(dodge * dodge))
                 {
                     strcpy(info, "The ");
                     strcat(info, beam.beam_name);
@@ -3015,7 +3063,11 @@ static int affect_player( struct bolt &beam )
 
 
                 // miss message
+                /*
                 if (beamHit < dodge || you.duration[DUR_DEFLECT_MISSILES])
+                */
+                if ((beamHit * beamHit< random2(dodge * dodge))
+                    || you.duration[DUR_DEFLECT_MISSILES])
                 {
                     strcpy(info, "The ");
                     strcat(info, beam.beam_name);
@@ -3168,20 +3220,29 @@ static int affect_player( struct bolt &beam )
     int burn_power = (beam.isExplosion) ? 5 : ((beam.isBeam) ? 3 : 2);
 
     // Roll the damage
+    /*
     hurted += roll_dice( beam.damage );
+    */
+    hurted += (roll_dice(beam.damage.num * 3, beam.damage.size) + 2) / 3;
 
 #if DEBUG_DIAGNOSTICS
     int roll = hurted;
 #endif
 
+    /*
     hurted -= random2( 1 + player_AC() );
-
+    */
+    hurted -= random2avg( 1 + player_AC(), 3);
 
     // shrapnel
     if (beam.flavour == BEAM_FRAG && !player_light_armour())
     {
+      /*
         hurted -= random2( 1 + player_AC() );
         hurted -= random2( 1 + player_AC() );
+      */
+      hurted -= random2avg( 1 + player_AC(), 3);
+      hurted -= random2avg( 1 + player_AC(), 3);
     }
 
 #if DEBUG_DIAGNOSTICS
@@ -3262,6 +3323,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
     int tid = mgrd[mon->x][mon->y];
     int hurt;
     int hurt_final;
+    int beam_hit;
 
     // digging -- don't care.
     if (beam.flavour == BEAM_DIGGING)
@@ -3356,19 +3418,33 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
     // we decide if it actually hits.
 
     // Roll the damage:
+    /*
     hurt = roll_dice( beam.damage );
+    */
+    hurt = (roll_dice(beam.damage.num * 3, beam.damage.size) + 2) / 3;
 
     hurt_final = hurt;
 
     if (beam.isTracer)
-        hurt_final -= mon->armour_class / 2;
+    {
+      hurt_final -= mon->armour_class / 2;
+    }
     else
-        hurt_final -= random2(1 + mon->armour_class);
+    {
+      /*
+      hurt_final -= random2(1 + mon->armour_class);
+      */
+      hurt_final -= random2avg(1 + mon->armour_class, 3);
+    }
 
     if (beam.flavour == BEAM_FRAG)
     {
+      /*
         hurt_final -= random2(1 + mon->armour_class);
         hurt_final -= random2(1 + mon->armour_class);
+      */
+      hurt_final -= random2avg(1 + mon->armour_class, 3);
+      hurt_final -= random2avg(1 + mon->armour_class, 3);
     }
 
     if (hurt_final < 1)
@@ -3450,7 +3526,21 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
     }
 
     // explosions always 'hit'
+    beam_hit = beam.hit;
+    if ((mon->type == MONS_MNOLEG)
+        || (mon->type == MONS_LOM_LOBON)
+        || (mon->type == MONS_CEREBOV)
+        || (mon->type == MONS_GLOORX_VLOQ)
+        || (mon->type == MONS_PANDEMONIUM_DEMON))
+    {
+      beam_hit -= random2(beam_hit / 2);
+    }
+    /*
     if (!beam.isExplosion && beam.hit < random2(mon->evasion))
+    */
+    /* it's very hard for you to have a beam of hit 15 */
+    if (!beam.isExplosion
+        && (2 * beam_hit * beam_hit < random2(mon->evasion * mon->evasion)))
     {
         // if the PLAYER cannot see the monster, don't tell them anything!
         if (player_monster_visible( &menv[tid] ) && mons_near(mon))

@@ -1121,7 +1121,7 @@ bool mutate(int which_mutation, bool failMsg)
     if (you.is_undead)
     {
         if (force_mutation
-            || (wearing_amulet(AMU_RESIST_MUTATION) && coinflip()))
+            || ((!wearing_amulet(AMU_RESIST_MUTATION)) && coinflip()))
         {
             mpr( "Your body decomposes!" );
 

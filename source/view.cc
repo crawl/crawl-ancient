@@ -64,6 +64,7 @@ unsigned char mapchar3(unsigned char ldfk);
 unsigned char mapchar4(unsigned char ldfk);
 void cloud_grid(void);
 void monster_grid(bool do_updates);
+static void near_trap(void);
 
 //---------------------------------------------------------------
 //
@@ -161,6 +162,11 @@ static void get_ibm_symbol(unsigned int object, unsigned short *ch,
         break;                  // wax wall
         /* Anything added here must also be added to the PLAIN_TERMINAL
            viewwindow2 below */
+
+    case DNGN_WOOD_WALL:
+        *ch = 177;
+        *color = YELLOW;
+        break;
 
     case DNGN_SILVER_STATUE:
         *ch = '8';
@@ -332,9 +338,9 @@ static void get_ibm_symbol(unsigned int object, unsigned short *ch,
     case DNGN_ENTER_ELVEN_HALLS:
     case DNGN_ENTER_TOMB:
     case DNGN_ENTER_SWAMP:
-    case 123:
-    case 124:
-    case 125:
+    case DNGN_ENTER_BIG_ROOM:
+    case DNGN_ENTER_JADE_CAVE:
+    case DNGN_ENTER_FAIRYLAND:
     case 126:
         *color = YELLOW;
         *ch = '>';
@@ -359,9 +365,9 @@ static void get_ibm_symbol(unsigned int object, unsigned short *ch,
     case DNGN_RETURN_FROM_ELVEN_HALLS:
     case DNGN_RETURN_FROM_TOMB:
     case DNGN_RETURN_FROM_SWAMP:
-    case 143:
-    case 144:
-    case 145:
+    case DNGN_RETURN_FROM_BIG_ROOM:
+    case DNGN_RETURN_FROM_JADE_CAVE:
+    case DNGN_RETURN_FROM_FAIRYLAND:
     case 146:
         *color = YELLOW;
         *ch = '<';
@@ -587,6 +593,7 @@ void viewwindow2(char draw_it, bool do_updates)
     }
 
     item();
+    near_trap();
     cloud_grid();
     monster_grid(do_updates);
     int bufcount = 0;
@@ -850,9 +857,9 @@ char colour_code_map( int x, int y )
     case DNGN_ENTER_ELVEN_HALLS:
     case DNGN_ENTER_TOMB:
     case DNGN_ENTER_SWAMP:
-    case 123:
-    case 124:
-    case 125:
+    case DNGN_ENTER_BIG_ROOM:
+    case DNGN_ENTER_JADE_CAVE:
+    case DNGN_ENTER_FAIRYLAND:
     case 126:
         return (LIGHTRED);
 
@@ -868,9 +875,9 @@ char colour_code_map( int x, int y )
     case DNGN_RETURN_FROM_ELVEN_HALLS:
     case DNGN_RETURN_FROM_TOMB:
     case DNGN_RETURN_FROM_SWAMP:
-    case 143:
-    case 144:
-    case 145:
+    case DNGN_RETURN_FROM_BIG_ROOM:
+    case DNGN_RETURN_FROM_JADE_CAVE:
+    case DNGN_RETURN_FROM_FAIRYLAND:
     case 146:
         return (LIGHTBLUE);
 
@@ -2196,6 +2203,7 @@ unsigned char mapchar(unsigned char ldfk)
     case DNGN_METAL_WALL:
     case DNGN_GREEN_CRYSTAL_WALL:
     case DNGN_WAX_WALL:
+    case DNGN_WOOD_WALL:
         showed = 176;
         break;
 
@@ -2255,9 +2263,9 @@ unsigned char mapchar(unsigned char ldfk)
     case DNGN_ENTER_ELVEN_HALLS:
     case DNGN_ENTER_TOMB:
     case DNGN_ENTER_SWAMP:
-    case 123:
-    case 124:
-    case 125:
+    case DNGN_ENTER_BIG_ROOM:
+    case DNGN_ENTER_JADE_CAVE:
+    case DNGN_ENTER_FAIRYLAND:
     case 126:
         showed = '>';
         break;
@@ -2278,9 +2286,9 @@ unsigned char mapchar(unsigned char ldfk)
     case DNGN_RETURN_FROM_ELVEN_HALLS:
     case DNGN_RETURN_FROM_TOMB:
     case DNGN_RETURN_FROM_SWAMP:
-    case 143:
-    case 144:
-    case 145:
+    case DNGN_RETURN_FROM_BIG_ROOM:
+    case DNGN_RETURN_FROM_JADE_CAVE:
+    case DNGN_RETURN_FROM_FAIRYLAND:
     case 146:
         showed = '<';
         break;
@@ -2358,6 +2366,7 @@ unsigned char mapchar2(unsigned char ldfk)
     case DNGN_METAL_WALL:
     case DNGN_GREEN_CRYSTAL_WALL:
     case DNGN_WAX_WALL:
+    case DNGN_WOOD_WALL:
         showed = 177;
         break;
 
@@ -2422,9 +2431,9 @@ unsigned char mapchar2(unsigned char ldfk)
     case DNGN_ENTER_ELVEN_HALLS:
     case DNGN_ENTER_TOMB:
     case DNGN_ENTER_SWAMP:
-    case 123:
-    case 124:
-    case 125:
+    case DNGN_ENTER_BIG_ROOM:
+    case DNGN_ENTER_JADE_CAVE:
+    case DNGN_ENTER_FAIRYLAND:
     case 126:
         showed = '>';
         break;
@@ -2445,9 +2454,9 @@ unsigned char mapchar2(unsigned char ldfk)
     case DNGN_RETURN_FROM_ELVEN_HALLS:
     case DNGN_RETURN_FROM_TOMB:
     case DNGN_RETURN_FROM_SWAMP:
-    case 143:
-    case 144:
-    case 145:
+    case DNGN_RETURN_FROM_BIG_ROOM:
+    case DNGN_RETURN_FROM_JADE_CAVE:
+    case DNGN_RETURN_FROM_FAIRYLAND:
     case 146:
         showed = '<';
         break;
@@ -2601,6 +2610,11 @@ static void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
         break;
 
     case DNGN_WAX_WALL:
+        *ch = '#';
+        *color = YELLOW;
+        break;
+
+    case DNGN_WOOD_WALL:
         *ch = '#';
         *color = YELLOW;
         break;
@@ -2773,9 +2787,9 @@ static void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
     case DNGN_ENTER_ELVEN_HALLS:
     case DNGN_ENTER_TOMB:
     case DNGN_ENTER_SWAMP:
-    case 123:
-    case 124:
-    case 125:
+    case DNGN_ENTER_BIG_ROOM:
+    case DNGN_ENTER_JADE_CAVE:
+    case DNGN_ENTER_FAIRYLAND:
     case 126:
         *color = YELLOW;
         *ch = '>';
@@ -2800,9 +2814,9 @@ static void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
     case DNGN_RETURN_FROM_ELVEN_HALLS:
     case DNGN_RETURN_FROM_TOMB:
     case DNGN_RETURN_FROM_SWAMP:
-    case 143:
-    case 144:
-    case 145:
+    case DNGN_RETURN_FROM_BIG_ROOM:
+    case DNGN_RETURN_FROM_JADE_CAVE:
+    case DNGN_RETURN_FROM_FAIRYLAND:
     case 146:
         *color = YELLOW;
         *ch = '<';
@@ -3018,6 +3032,7 @@ void viewwindow3(char draw_it, bool do_updates)
     }
 
     item();
+    near_trap();
     cloud_grid();
     monster_grid(do_updates);
     bufcount = 0;
@@ -3213,6 +3228,7 @@ unsigned char mapchar3(unsigned char ldfk)
     case DNGN_METAL_WALL:
     case DNGN_GREEN_CRYSTAL_WALL:
     case DNGN_WAX_WALL:
+    case DNGN_WOOD_WALL:
         showed = '*';
         break;
 
@@ -3272,9 +3288,9 @@ unsigned char mapchar3(unsigned char ldfk)
     case DNGN_ENTER_ELVEN_HALLS:
     case DNGN_ENTER_TOMB:
     case DNGN_ENTER_SWAMP:
-    case 123:
-    case 124:
-    case 125:
+    case DNGN_ENTER_BIG_ROOM:
+    case DNGN_ENTER_JADE_CAVE:
+    case DNGN_ENTER_FAIRYLAND:
     case 126:
         showed = '>';
         break;
@@ -3295,9 +3311,9 @@ unsigned char mapchar3(unsigned char ldfk)
     case DNGN_RETURN_FROM_ELVEN_HALLS:
     case DNGN_RETURN_FROM_TOMB:
     case DNGN_RETURN_FROM_SWAMP:
-    case 143:
-    case 144:
-    case 145:
+    case DNGN_RETURN_FROM_BIG_ROOM:
+    case DNGN_RETURN_FROM_JADE_CAVE:
+    case DNGN_RETURN_FROM_FAIRYLAND:
     case 146:
         showed = '<';
         break;
@@ -3379,6 +3395,7 @@ unsigned char mapchar4(unsigned char ldfk)
     case DNGN_METAL_WALL:
     case DNGN_GREEN_CRYSTAL_WALL:
     case DNGN_WAX_WALL:
+    case DNGN_WOOD_WALL:
         showed = '#';
         break;
 
@@ -3438,9 +3455,9 @@ unsigned char mapchar4(unsigned char ldfk)
     case DNGN_ENTER_ELVEN_HALLS:
     case DNGN_ENTER_TOMB:
     case DNGN_ENTER_SWAMP:
-    case 123:
-    case 124:
-    case 125:
+    case DNGN_ENTER_BIG_ROOM:
+    case DNGN_ENTER_JADE_CAVE:
+    case DNGN_ENTER_FAIRYLAND:
     case 126:
         showed = '>';
         break;
@@ -3461,9 +3478,9 @@ unsigned char mapchar4(unsigned char ldfk)
     case DNGN_RETURN_FROM_ELVEN_HALLS:
     case DNGN_RETURN_FROM_TOMB:
     case DNGN_RETURN_FROM_SWAMP:
-    case 143:
-    case 144:
-    case 145:
+    case DNGN_RETURN_FROM_BIG_ROOM:
+    case DNGN_RETURN_FROM_JADE_CAVE:
+    case DNGN_RETURN_FROM_FAIRYLAND:
     case 146:
         showed = '<';
         break;
@@ -3521,4 +3538,32 @@ unsigned char mapchar4(unsigned char ldfk)
     }
 
     return showed;
+}
+
+static void
+near_trap(void)
+{
+  unsigned char gv;
+  int i;
+  int j;
+
+  for (j = -3; j <= 3; j++)
+  {
+    for (i = -3; i <= 3; i++)
+    {
+      if ((i == 0) && (j == 0))
+        continue;
+      if (!see_grid(you.x_pos + i, you.y_pos + j))
+        continue;
+
+      gv = grd[you.x_pos + i][you.y_pos + j];
+      if ((gv != DNGN_TRAP_MECHANICAL)
+          && (gv != DNGN_TRAP_MAGICAL)
+          && (gv != DNGN_TRAP_III))
+        continue;
+
+      show_backup[9 + i][9 + j] = env.show[9 + i][9 + j];
+      env.show[9 + i][9 + j] = grd[you.x_pos + i][you.y_pos + j];
+    }
+  }
 }

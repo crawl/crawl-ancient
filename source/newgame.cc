@@ -722,9 +722,13 @@ bool new_game(void)
     you.branch_stairs[STAIRS_ELVEN_HALLS] =
         you.branch_stairs[STAIRS_ORCISH_MINES] + (coinflip() ? 4 : 3);  // 11.0
 
+    you.branch_stairs[STAIRS_BIG_ROOM] = 6 + random2(6);    // avg:  8.5
+
     you.branch_stairs[STAIRS_LAIR] = 7 + random2(6);    // avg:  9.5
 
     you.branch_stairs[STAIRS_HIVE] = 10 + random2(6);   // avg: 12.5
+
+    you.branch_stairs[STAIRS_JADE_CAVE] = 11 + random2(6);    // avg:  13.5
 
     you.branch_stairs[STAIRS_SLIME_PITS] =
         you.branch_stairs[STAIRS_LAIR] + 3 + random2(4);        // avg: 14.0
@@ -745,6 +749,7 @@ bool new_game(void)
 
     you.branch_stairs[STAIRS_TOMB] =
         you.branch_stairs[STAIRS_CRYPT] + ((coinflip()) ? 3 : 2);   // avg: 20.0
+    you.branch_stairs[STAIRS_FAIRYLAND] = 19 + random2(6); // avg: 21.5
 
     you.branch_stairs[STAIRS_HALL_OF_ZOT] = 26; // always 26
 
@@ -1340,6 +1345,30 @@ bool class_allowed( unsigned char speci, int char_class )
         }
         return false;
 
+    case JOB_TRICKSTER:
+        if (species_is_undead( speci ))
+            return false;
+
+        switch (speci)
+        {
+        case SP_CENTAUR:
+        case SP_DEMIGOD:
+          // case SP_DEMONSPAWN:
+          // case SP_GNOME:
+          // case SP_HALFLING:
+        case SP_KENKU:
+          // case SP_KOBOLD:
+        case SP_MINOTAUR:
+          // case SP_NAGA:
+        case SP_OGRE:
+          // case SP_OGRE_MAGE:
+          // case SP_SPRIGGAN:
+        case SP_TROLL:
+            return false;
+        }
+        return true;
+        break;
+
     case JOB_QUITTER:   // shouldn't happen since 'x' is handled specially
     default:
         return false;
@@ -1727,6 +1756,7 @@ void jobs_stat_init(int which_job)
     case JOB_NECROMANCER:       s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
 
     case JOB_WANDERER:          s =  2; i =  2; d =  2; hp = 11; mp = 1; break;
+    case JOB_TRICKSTER:         s =  4; i =  4; d =  2; hp = 12; mp = 1; break;
     default:                    s =  0; i =  0; d =  0; hp = 10; mp = 0; break;
     }
 
@@ -1877,10 +1907,20 @@ void openingScreen(void)
     }
 ********************************************** */
 
+/*
     textcolor( YELLOW );
     cprintf("Hello, welcome to Dungeon Crawl " VERSION "!");
     textcolor( BROWN );
     cprintf(EOL "(c) Copyright 1997-2002 Linley Henzell");
+    cprintf(EOL "Please consult crawl.txt for instructions and legal details."
+            EOL);
+    textcolor( LIGHTGREY );
+*/
+    textcolor( YELLOW );
+    cprintf("Hello, welcome to Dungeon Crawl Alternative " VERSION "!");
+    textcolor( BROWN );
+    cprintf(EOL "(c) Copyright 1997-2002 Linley Henzell");
+    cprintf(EOL "(c) Copyright 2005 Oohara Yuuma");
     cprintf(EOL "Please consult crawl.txt for instructions and legal details."
             EOL);
     textcolor( LIGHTGREY );
@@ -2875,6 +2915,8 @@ job_query:
         you.char_class = JOB_WARPER;
     else if (keyn == 'C')
         you.char_class = JOB_WANDERER;
+    else if (keyn == 'D')
+        you.char_class = JOB_TRICKSTER;
     else if (keyn == '?')
     {
         // pick a job at random... see god retribution for proof this
@@ -4414,6 +4456,62 @@ void give_items_skills()
 
     case JOB_WANDERER:
         create_wanderer();
+        break;
+
+    case JOB_TRICKSTER:
+        you.religion = GOD_NEMELEX_XOBEH;
+        you.piety = 45;
+
+        you.inv[0].quantity = 1;
+        you.inv[0].base_type = OBJ_WEAPONS;
+        you.inv[0].sub_type = WPN_DAGGER;
+        you.inv[0].plus = 0;
+        you.inv[0].plus2 = 0;
+        you.inv[0].special = 0;
+        you.inv[0].colour = LIGHTCYAN;
+
+        you.inv[1].base_type = OBJ_MISCELLANY;
+        you.inv[1].sub_type = MISC_PORTABLE_ALTAR_OF_NEMELEX;
+        you.inv[1].plus = 0;
+        you.inv[1].plus2 = 0;
+        you.inv[1].special = 0;
+        you.inv[1].colour = LIGHTMAGENTA;
+        you.inv[1].quantity = 1;
+        you.attribute[ATTR_CARD_TABLE] = 1;
+
+        you.inv[2].quantity = 1;
+        you.inv[2].base_type = OBJ_ARMOUR;
+        you.inv[2].sub_type = ARM_ROBE;
+        you.inv[2].plus = 0;
+        you.inv[2].special = 0;
+        you.inv[2].colour = LIGHTMAGENTA;
+        you.equip[EQ_WEAPON] = 0;
+        you.equip[EQ_BODY_ARMOUR] = 2;
+
+        you.inv[3].base_type = OBJ_BOOKS;
+        you.inv[3].sub_type = BOOK_PARTY_TRICKS;
+        you.inv[3].quantity = 1;
+        you.inv[3].plus = 0;    // = 127
+        you.inv[3].special = 0;     // = 1;
+        you.inv[3].colour = LIGHTMAGENTA;
+
+        you.inv[4].base_type = OBJ_MISCELLANY;
+        you.inv[4].sub_type = MISC_DECK_OF_TRICKS;
+        you.inv[4].plus = 6 + random2avg(15, 2);
+        you.inv[4].plus2 = 0;
+        you.inv[4].special = 0;
+        you.inv[4].colour = LIGHTMAGENTA;
+        you.inv[4].quantity = 1;
+        you.attribute[ATTR_CARD_COUNTDOWN] = 10;
+        you.gift_timeout = 5 + random2avg(9, 2);
+
+        you.skills[SK_FIGHTING] = 2;
+        you.skills[SK_ARMOUR] = 1;
+        you.skills[SK_DODGING] = 1;
+        you.skills[SK_STEALTH] = 1;
+
+        you.skills[SK_SPELLCASTING] = 1;
+        you.skills[SK_EVOCATIONS] = 4;
         break;
     }
 

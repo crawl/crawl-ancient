@@ -45,6 +45,7 @@
 #include "view.h"
 #include "wpn-misc.h"
 
+static void my_mpr(const char *text, FILE *handle);
 
 /*
    you.duration []: //jmf: obsolete, see enum.h instead
@@ -456,6 +457,7 @@ int player_hunger_rate(void)
     case SP_OGRE:
     case SP_OGRE_MAGE:
     case SP_DEMIGOD:
+    case SP_DEMONSPAWN:
         hunger++;
         break;
 
@@ -657,6 +659,12 @@ int player_res_fire(void)
         rf = -3;
     else if (rf > 3)
         rf = 3;
+
+    if (you.species == SP_MUMMY)
+    {
+      if (rf > 0)
+        rf = 0;
+    }
 
     return (rf);
 }
@@ -2476,130 +2484,148 @@ void ability_increase(void)
 /* this is an infinite loop because it is reasonable to assume that you're not going to want to leave it prematurely. */
 }                               // end ability_increase()
 
+static void
+my_mpr(const char *text, FILE *handle)
+{
+  if (handle != NULL)
+  {
+    fputs(text, handle);
+    fputs("\n", handle);
+    return;
+  }
+  mpr(text);
+}
+
+/*
 void display_char_status(void)
+*/
+void display_char_status(FILE *handle)
 {
     if (you.is_undead)
-        mpr( "You are undead." );
+      my_mpr( "You are undead.", handle);
     else if (you.deaths_door)
-        mpr( "You are standing in death's doorway." );
+      my_mpr( "You are standing in death's doorway.", handle);
     else
-        mpr( "You are alive." );
+      /*
+      my_mpr( "You are alive.", handle);
+      */
+      my_mpr( "You are not undead.", handle);
 
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
     case TRAN_SPIDER:
-        mpr( "You are in spider-form." );
+        my_mpr( "You are in spider-form.", handle);
         break;
     case TRAN_BLADE_HANDS:
-        mpr( "You have blades for hands." );
+        my_mpr( "You have blades for hands.", handle);
         break;
     case TRAN_STATUE:
-        mpr( "You are a statue." );
+        my_mpr( "You are a statue.", handle);
         break;
     case TRAN_ICE_BEAST:
-        mpr( "You are an ice creature." );
+        my_mpr( "You are an ice creature.", handle);
         break;
     case TRAN_DRAGON:
-        mpr( "You are in dragon-form." );
+        my_mpr( "You are in dragon-form.", handle);
         break;
     case TRAN_LICH:
-        mpr( "You are in lich-form." );
+        my_mpr( "You are in lich-form.", handle);
         break;
     case TRAN_SERPENT_OF_HELL:
-        mpr( "You are a huge demonic serpent." );
+        my_mpr( "You are a huge demonic serpent.", handle);
         break;
     case TRAN_AIR:
-        mpr( "You are a cloud of diffuse gas." );
+        my_mpr( "You are a cloud of diffuse gas.", handle);
         break;
     }
 
     if (you.duration[DUR_BREATH_WEAPON])
-        mpr( "You are short of breath." );
+        my_mpr( "You are short of breath.", handle);
 
     if (you.duration[DUR_REPEL_UNDEAD])
-        mpr( "You have a holy aura protecting you from undead." );
+        my_mpr( "You have a holy aura protecting you from undead.", handle);
 
     if (you.duration[DUR_LIQUID_FLAMES])
-        mpr( "You are covered in liquid flames." );
+        my_mpr( "You are covered in liquid flames.", handle);
 
     if (you.duration[DUR_ICY_ARMOUR])
-        mpr( "You are protected by an icy shield." );
+        my_mpr( "You are protected by an icy shield.", handle);
 
     if (you.duration[DUR_REPEL_MISSILES])
-        mpr( "You are protected from missiles." );
+        my_mpr( "You are protected from missiles.", handle);
 
     if (you.duration[DUR_DEFLECT_MISSILES])
-        mpr( "You deflect missiles." );
+        my_mpr( "You deflect missiles.", handle);
 
     if (you.duration[DUR_PRAYER])
-        mpr( "You are praying." );
+        my_mpr( "You are praying.", handle);
 
     if (you.duration[DUR_REGENERATION])
-        mpr( "You are regenerating." );
+        my_mpr( "You are regenerating.", handle);
 
     if (you.duration[DUR_SWIFTNESS])
-        mpr( "You can move swiftly." );
+        my_mpr( "You can move swiftly.", handle);
 
     if (you.duration[DUR_INSULATION])
-        mpr( "You are insulated." );
+        my_mpr( "You are insulated.", handle);
 
     if (you.duration[DUR_STONEMAIL])
-        mpr( "You are covered in scales of stone." );
+        my_mpr( "You are covered in scales of stone.", handle);
 
     if (you.duration[DUR_CONTROLLED_FLIGHT])
-        mpr( "You can control your flight." );
+        my_mpr( "You can control your flight.", handle);
 
     if (you.duration[DUR_TELEPORT])
-        mpr( "You are about to teleport." );
+        my_mpr( "You are about to teleport.", handle);
 
     if (you.duration[DUR_CONTROL_TELEPORT])
-        mpr( "You can control teleportation." );
+        my_mpr( "You can control teleportation.", handle);
 
     if (you.duration[DUR_DEATH_CHANNEL])
-        mpr( "You are channeling the dead." );
+        my_mpr( "You are channeling the dead.", handle);
 
     if (you.duration[DUR_FORESCRY])     //jmf: added 19mar2000
-        mpr( "You are forewarned." );
+        my_mpr( "You are forewarned.", handle);
 
     if (you.duration[DUR_SILENCE])      //jmf: added 27mar2000
-        mpr( "You radiate silence." );
+        my_mpr( "You radiate silence.", handle);
 
     if (you.duration[DUR_INFECTED_SHUGGOTH_SEED])       //jmf: added 19mar2000
-        mpr( "You are infected with a shuggoth parasite." );
+        my_mpr( "You are infected with a shuggoth parasite.", handle);
 
     if (you.duration[DUR_STONESKIN])
-        mpr( "Your skin is tough as stone." );
+        my_mpr( "Your skin is tough as stone.", handle);
 
     if (you.duration[DUR_SEE_INVISIBLE])
-        mpr( "You can see invisible." );
+        my_mpr( "You can see invisible.", handle);
 
     if (you.invis)
-        mpr( "You are invisible." );
+        my_mpr( "You are invisible.", handle);
 
     if (you.conf)
-        mpr( "You are confused." );
+        my_mpr( "You are confused.", handle);
 
     if (you.paralysis)
-        mpr( "You are paralysed." );
+        my_mpr( "You are paralysed.", handle);
 
     if (you.exhausted)
-        mpr( "You are exhausted." );
+        my_mpr( "You are exhausted.", handle);
 
     if (you.slow && you.haste)
-        mpr( "You are under both slowing and hasting effects." );
+        my_mpr( "You are under both slowing and hasting effects." , handle);
     else if (you.slow)
-        mpr( "You are moving very slowly." );
+        my_mpr( "You are moving very slowly." , handle);
     else if (you.haste)
-        mpr( "You are moving very quickly." );
+        my_mpr( "You are moving very quickly." , handle);
 
     if (you.might)
-        mpr( "You are mighty." );
+        my_mpr( "You are mighty." , handle);
 
     if (you.berserker)
-        mpr( "You are possessed by a berserker rage." );
+        my_mpr( "You are possessed by a berserker rage." , handle);
 
     if (player_is_levitating())
-        mpr( "You are hovering above the floor." );
+        my_mpr( "You are hovering above the floor." , handle);
 
     if (you.poison)
     {
@@ -2608,7 +2634,7 @@ void display_char_status(void)
                   (you.poison > 5)  ? "very" :
                   (you.poison > 3)  ? "quite"
                                     : "mildly" );
-        mpr(info);
+        my_mpr(info, handle);
     }
 
     if (you.disease)
@@ -2617,7 +2643,7 @@ void display_char_status(void)
                   (you.disease > 120) ? "badly " :
                   (you.disease >  40) ? ""
                                       : "mildly " );
-        mpr(info);
+        my_mpr(info, handle);
     }
 
     if (you.rotting || you.species == SP_GHOUL)
@@ -2630,10 +2656,22 @@ void display_char_status(void)
                   (you.rotting > 4)  ? " badly."
              : ((you.species == SP_GHOUL && you.rotting > 0)
                         ? " faster than usual." : ".") );
-        mpr(info);
+        my_mpr(info, handle);
     }
 
+    /*
     contaminate_player( 0, true );
+    */
+    if (you.magic_contamination > 60)
+      my_mpr("You are engulfed in a nimbus of crackling magics!", handle);
+    else if (you.magic_contamination > 40)
+      my_mpr("Your entire body has taken on an eerie glow!", handle);
+    else if (you.magic_contamination > 25)
+      my_mpr("You are practically glowing with residual magics!", handle);
+    else if (you.magic_contamination > 15)
+      my_mpr("You are heavily infused with residual magics.", handle);
+    else if (you.magic_contamination > 5)
+      my_mpr("You are contaminated with residual magics.", handle);
 
     if (you.confusing_touch)
     {
@@ -2641,7 +2679,7 @@ void display_char_status(void)
                   (you.confusing_touch > 40) ? "an extremely bright" :
                   (you.confusing_touch > 20) ? "bright"
                                              : "a soft" );
-        mpr(info);
+        my_mpr(info, handle);
     }
 
     if (you.sure_blade)
@@ -2650,7 +2688,7 @@ void display_char_status(void)
                   (you.sure_blade > 15) ? "strong " :
                   (you.sure_blade >  5) ? ""
                                         : "weak " );
-        mpr(info);
+        my_mpr(info, handle);
     }
 }                               // end display_char_status()
 
@@ -3455,7 +3493,7 @@ const char *get_species_abbrev( int which_species )
 static const char * Class_Abbrev_List[ NUM_JOBS ] =
     { "Fi", "Wz", "Pr", "Th", "Gl", "Ne", "Pa", "As", "Be", "Hu",
       "Cj", "En", "FE", "IE", "Su", "AE", "EE", "Cr", "DK", "VM",
-      "CK", "Tm", "He", "XX", "Re", "St", "Mo", "Wr", "Wn" };
+      "CK", "Tm", "He", "XX", "Re", "St", "Mo", "Wr", "Wn", "Ts" };
 
 static const char * Class_Name_List[ NUM_JOBS ] =
     { "Fighter", "Wizard", "Priest", "Thief", "Gladiator", "Necromancer",
@@ -3463,7 +3501,7 @@ static const char * Class_Name_List[ NUM_JOBS ] =
       "Fire Elementalist", "Ice Elementalist", "Summoner", "Air Elementalist",
       "Earth Elementalist", "Crusader", "Death Knight", "Venom Mage",
       "Chaos Knight", "Transmuter", "Healer", "Quitter", "Reaver", "Stalker",
-      "Monk", "Warper", "Wanderer" };
+      "Monk", "Warper", "Wanderer", "Trickster" };
 
 int get_class_index_by_abbrev( const char *abbrev )
 {

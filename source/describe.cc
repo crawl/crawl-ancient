@@ -5052,6 +5052,11 @@ void describe_monsters(int class_described, unsigned char which_mons)
             "rocky hide seems to heal almost instantaneously from most wounds.";
         break;
 
+    case MONS_GREATER_UNSEEN_HORROR:
+        description +=
+          "A creature you don't want to see again.";
+        break;
+
     case MONS_UNSEEN_HORROR:
         description +=
             "These creatures are usually unseen by the eyes of most,"
@@ -5313,6 +5318,10 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_CRYSTAL_GOLEM:
         description += "A huge animated crystal statue.";
+        break;
+
+    case MONS_VOID_GOLEM:
+        description += "A huge animated statue made from pure void.";
         break;
 
     case MONS_TOENAIL_GOLEM:
@@ -6091,6 +6100,55 @@ void describe_monsters(int class_described, unsigned char which_mons)
             "covered in thick red scales and thorns.";
         break;
 
+    case MONS_FAIRY_SNIPER:
+    case MONS_FAIRY_ASSASSIN:
+    case MONS_FAIRY_BEAST_TAMER:
+    case MONS_FAIRY_SWORD_DANCER:
+    case MONS_FAIRY_FIRE_STARTER:
+    case MONS_FAIRY_SNOW_MAGE:
+    case MONS_FAIRY_WIND_RIDER:
+    case MONS_FAIRY_SCULPTOR:
+    case MONS_FAIRY_RANDOMIZER:
+    case MONS_FAIRY_TIME_TWISTER:
+      description += "A small flying humanoid.$";
+      switch (class_described)
+      {
+      case MONS_FAIRY_SNIPER:
+        description += "This one is famous for accurate shooting.";
+        break;
+      case MONS_FAIRY_ASSASSIN:
+        description += "This one is skilled at hit-and-run tactics.";
+        break;
+      case MONS_FAIRY_BEAST_TAMER:
+        description += "This one can command various animals.";
+        break;
+      case MONS_FAIRY_SWORD_DANCER:
+        description += "This one fights as if it were dancing.";
+        break;
+      case MONS_FAIRY_FIRE_STARTER:
+        description += "This one is a mage specialized in fire magic.";
+        break;
+      case MONS_FAIRY_SNOW_MAGE:
+        description += "This one is a mage specialized in ice magic.";
+        break;
+      case MONS_FAIRY_WIND_RIDER:
+        description += "This one is a mage specialized in air magic.";
+        break;
+      case MONS_FAIRY_SCULPTOR:
+        description += "This one is an enchanter as well as an artist.";
+        break;
+      case MONS_FAIRY_RANDOMIZER:
+        description += "This one draws its power from randomness.";
+        break;
+      case MONS_FAIRY_TIME_TWISTER:
+        description += "This one knows how to bend the flow of time.";
+        break;
+      default:
+        description += "This one is completely forgotten.";
+        break;
+      }
+      break;
+
     case MONS_PROGRAM_BUG:
     default:
         description += "If this monster is a \"program bug\", then it's "
@@ -6489,6 +6547,20 @@ void describe_god( int which_god, bool give_title )
             cprintf(info);
         }
 
+        if (which_god == GOD_TROG)
+        {
+            snprintf( info, INFO_SIZE,
+                      "%s %s saves you from fainting after berserk rage." EOL,
+                      god_name(which_god),
+                      (you.piety >= 150) ? "always":   // 100%
+                      (you.piety >= 120) ? "carefully":   // > 4/5
+                      (you.piety >= 100) ? "often" :      // > 2/3
+                                           "sometimes"    // less than 2:3
+                    );
+
+            cprintf(info);
+        }
+
         // mv: No abilities (except divine protection)
         // under penance (fix me if I'm wrong)
         if (player_under_penance())
@@ -6501,12 +6573,18 @@ void describe_god( int which_god, bool give_title )
             {
             case GOD_ZIN:
                 if (you.piety >= 30)
+                    print_god_abil_desc( ABIL_ZIN_REVEAL_WAY );
+                  /*
                     print_god_abil_desc( ABIL_ZIN_REPEL_UNDEAD );
+                  */
                 else
                     cprintf( "None." EOL );
 
                 if (you.piety >= 50)
+                    print_god_abil_desc(ABIL_ZIN_PURIFY_RAW_FLESH);
+                  /*
                     print_god_abil_desc( ABIL_ZIN_HEALING );
+                  */
 
                 if (you.piety >= 75)
                     print_god_abil_desc( ABIL_ZIN_PESTILENCE );
@@ -6520,16 +6598,22 @@ void describe_god( int which_god, bool give_title )
 
             case GOD_SHINING_ONE:
                 if (you.piety >= 30)
+                  /*
                     print_god_abil_desc( ABIL_TSO_REPEL_UNDEAD );
+                  */
+                    print_god_abil_desc( ABIL_TSO_SMITING );
                 else
                     cprintf( "None." EOL );
 
                 if (you.piety >= 50)
+                  /*
                     print_god_abil_desc( ABIL_TSO_SMITING );
-
+                  */
+                    print_god_abil_desc( ABIL_TSO_ANNIHILATE_UNDEAD );
+                /*
                 if (you.piety >= 75)
                     print_god_abil_desc( ABIL_TSO_ANNIHILATE_UNDEAD );
-
+                */
                 if (you.piety >= 100)
                     print_god_abil_desc( ABIL_TSO_THUNDERBOLT );
 
@@ -6595,13 +6679,18 @@ void describe_god( int which_god, bool give_title )
 
             case GOD_OKAWARU:
                 if (you.piety >= 30)
+                    print_god_abil_desc( ABIL_OKAWARU_REGENERATION );
+                  /*
                     print_god_abil_desc( ABIL_OKAWARU_MIGHT );
+                  */
                 else
                     cprintf( "None." EOL );
 
                 if (you.piety >= 50)
+                    print_god_abil_desc( ABIL_OKAWARU_MIGHT );
+                /*
                     print_god_abil_desc( ABIL_OKAWARU_HEALING );
-
+                */
                 if (you.piety >= 120)
                     print_god_abil_desc( ABIL_OKAWARU_HASTE );
                 break;
@@ -6641,14 +6730,22 @@ void describe_god( int which_god, bool give_title )
             case GOD_TROG:
                 if (you.piety >= 30)
                     print_god_abil_desc( ABIL_TROG_BERSERK );
+                /*
                 else
                     cprintf( "None." EOL );
+                */
 
+                if (you.piety >= 75)
+                  cprintf( "You can gain power from the deaths " EOL
+                           "   of the living you kill in Trog's name." EOL );
+                /*
                 if (you.piety >= 50)
                     print_god_abil_desc( ABIL_TROG_MIGHT );
 
                 if (you.piety >= 100)
                     print_god_abil_desc( ABIL_TROG_HASTE_SELF );
+                */
+
                 break;
 
             case GOD_ELYVILON:

@@ -375,9 +375,10 @@ static void exercise2( char exsk )
 #endif
 */
 
-    if (you.skill_points[exsk] >
+    if ((you.skills[exsk] < 27)
+        && (you.skill_points[exsk] >
                     (skill_exp_needed(you.skills[exsk] + 2)
-                            * species_skills(exsk, you.species) / 100))
+                     * species_skills(exsk, you.species) / 100)))
     {
         strcpy(info, "Your ");
         strcat(info, skill_name(exsk));

@@ -105,6 +105,14 @@ static const char *monster_spell_name[] = {
     "Metal Splinters",
     "Summon Demon Greater",
     "Banishment",
+    "Fairy Beast Tamer Summon",
+    "Fairy Fire Starter Conjuration",
+    "Fairy Snow Mage Conjuration",
+    "Orb of Electrocution",
+    "Randomizer",
+    "Wizard's Bane",
+    "Time Twist",
+    "Freeze Time",
 };
 #endif
 
@@ -931,7 +939,10 @@ void define_monster(int k)
             break;
 
         case MONS_HYDRA:
+          /*
             m2_sec = 4 + random2(5);
+          */
+            m2_sec = 3 + random2(3);
             break;
 
         case MONS_DEEP_ELF_FIGHTER:

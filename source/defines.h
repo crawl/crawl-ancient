@@ -74,7 +74,7 @@
 #define MINMOVE 31
 
 // lowest grid value which can be seen through
-#define MINSEE 11
+#define MINSEE 12 /* 11 */
 
 
 // some shortcuts:

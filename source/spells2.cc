@@ -148,15 +148,15 @@ int corpse_rot(int power)
 {
     UNUSED( power );
 
-    char adx = 0;
-    char ady = 0;
+    int adx = 0;
+    int ady = 0;
 
-    char minx = you.x_pos - 6;
-    char maxx = you.x_pos + 7;
-    char miny = you.y_pos - 6;
-    char maxy = you.y_pos + 6;
-    char xinc = 1;
-    char yinc = 1;
+    int minx = you.x_pos - 6;
+    int maxx = you.x_pos + 7;
+    int miny = you.y_pos - 6;
+    int maxy = you.y_pos + 7;
+    int xinc = 1;
+    int yinc = 1;
 
     if (coinflip())
     {
@@ -172,26 +172,51 @@ int corpse_rot(int power)
         yinc = -1;
     }
 
+    if (minx < 0)
+      minx = 0;
+    if (minx > GXM - 1)
+      minx = GXM - 1;
+    if (maxx < 0)
+      maxx = 0;
+    if (maxx > GXM - 1)
+      maxx = GXM - 1;
+    if (miny < 0)
+      miny = 0;
+    if (miny > GYM - 1)
+      miny = GYM - 1;
+    if (maxy < 0)
+      maxy = 0;
+    if (maxy > GYM - 1)
+      maxy = GYM - 1;
+
     for (adx = minx; adx != maxx; adx += xinc)
     {
+      /*
         if (adx == 7 || adx == -7)
             return 0;
+      */
 
         for (ady = miny; ady != maxy; ady += yinc)
         {
             if (see_grid(adx, ady))
             {
+              /*
                 if (igrd[adx][ady] == NON_ITEM
                     || env.cgrid[adx][ady] != EMPTY_CLOUD)
                 {
                     continue;
                 }
+              */
+              if (env.cgrid[adx][ady] != EMPTY_CLOUD)
+                continue;
 
                 int objl = igrd[adx][ady];
-                int hrg = 0;
+                int hrg = NON_ITEM;
 
                 while (objl != NON_ITEM)
                 {
+                    hrg = mitm[objl].link;
+
                     if (mitm[objl].base_type == OBJ_CORPSES
                         && mitm[objl].sub_type == CORPSE_BODY)
                     {
@@ -207,14 +232,18 @@ int corpse_rot(int power)
                         place_cloud(CLOUD_MIASMA, adx, ady,
                                     4 + random2avg(16, 3));
 
+                        break;
+                        /*
                         goto out_of_raise;
+                        */
                     }
-                    hrg = mitm[objl].link;
+
                     objl = hrg;
                 }
-
+                /*
               out_of_raise:
                 objl = 1;
+                */
             }
         }
     }
@@ -237,7 +266,7 @@ int animate_dead( int power, int corps_beh, int corps_hit, int actual )
     int minx = you.x_pos - 6;
     int maxx = you.x_pos + 7;
     int miny = you.y_pos - 6;
-    int maxy = you.y_pos + 6;
+    int maxy = you.y_pos + 7;
     int xinc = 1;
     int yinc = 1;
 
@@ -257,35 +286,59 @@ int animate_dead( int power, int corps_beh, int corps_hit, int actual )
         yinc = -1;
     }
 
+    if (minx < 0)
+      minx = 0;
+    if (minx > GXM - 1)
+      minx = GXM - 1;
+    if (maxx < 0)
+      maxx = 0;
+    if (maxx > GXM - 1)
+      maxx = GXM - 1;
+    if (miny < 0)
+      miny = 0;
+    if (miny > GYM - 1)
+      miny = GYM - 1;
+    if (maxy < 0)
+      maxy = 0;
+    if (maxy > GYM - 1)
+      maxy = GYM - 1;
+
     for (adx = minx; adx != maxx; adx += xinc)
     {
+      /*
         if ((adx == 7) || (adx == -7))
             return 0;
-
+      */
         for (ady = miny; ady != maxy; ady += yinc)
         {
             if (see_grid(adx, ady))
             {
+              /*
                 if (igrd[adx][ady] != NON_ITEM)
+              */
                 {
                     int objl = igrd[adx][ady];
-                    int hrg = 0;
+                    int hrg = NON_ITEM;
 
                     //this searches all the items on the ground for a corpse
                     while (objl != NON_ITEM)
                     {
+                        hrg = mitm[objl].link;
+
                         if (mitm[objl].base_type == OBJ_CORPSES)
                         {
                             number_raised += raise_corpse(objl, adx, ady,
                                                 corps_beh, corps_hit, actual);
+                            /*
                             break;
+                            */
                         }
 
-                        hrg = mitm[objl].link;
                         objl = hrg;
                     }
-
+                    /*
                     objl = 1;
+                    */
                 }
             }
         }
@@ -312,6 +365,26 @@ int animate_dead( int power, int corps_beh, int corps_hit, int actual )
 int animate_a_corpse( int axps,  int ayps, int corps_beh, int corps_hit,
                       int class_allowed )
 {
+  int objl;
+
+  for (objl = igrd[axps][ayps];
+       objl != NON_ITEM;
+       objl = mitm[objl].link)
+  {
+    if (mitm[objl].base_type != OBJ_CORPSES)
+      continue;
+    if (class_allowed == CORPSE_SKELETON
+        && mitm[objl].sub_type != CORPSE_SKELETON)
+      continue;
+    if (raise_corpse( objl, axps, ayps,
+                      corps_beh, corps_hit, 1 ) > 0)
+    {
+      mpr("The dead are walking!");
+      break;
+    }
+  }
+
+#if 0
     if (igrd[axps][ayps] == NON_ITEM)
         return 0;
     else if (mitm[igrd[axps][ayps]].base_type != OBJ_CORPSES)
@@ -325,6 +398,7 @@ int animate_a_corpse( int axps,  int ayps, int corps_beh, int corps_hit,
     {
         mpr("The dead are walking!");
     }
+#endif /* 0 */
 
     return 0;
 }                               // end animate_a_corpse()
@@ -1083,7 +1157,11 @@ char burn_freeze(int pow, char flavour)
 //              postal on the caster (after taking into account
 //              chance of that happening to unskilled casters
 //              anyway)
+/*
 int summon_elemental(int pow, unsigned char restricted_type,
+                     unsigned char unfriendly)
+*/
+int summon_elemental(int pow, int restricted_type,
                      unsigned char unfriendly)
 {
     int type_summoned = MONS_PROGRAM_BUG;       // error trapping {dlb}

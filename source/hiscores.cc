@@ -489,6 +489,11 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
             strcat(buf, " (Temple)");
             return;
         }
+        else if (se.branch == BRANCH_BIG_ROOM)
+        {
+            strcat(buf, " (Room)");
+            return;
+        }
 
         snprintf( scratch, sizeof(scratch), " (%s%d)",
                     (se.branch == BRANCH_DIS)          ? "Dis " :
@@ -505,6 +510,8 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
                     (se.branch == BRANCH_SNAKE_PIT)    ? "Snake " :
                     (se.branch == BRANCH_ELVEN_HALLS)  ? "Elf " :
                     (se.branch == BRANCH_TOMB)         ? "Tomb " :
+                    (se.branch == BRANCH_JADE_CAVE)    ? "Jade " :
+                    (se.branch == BRANCH_FAIRYLAND)    ? "Fairy " :
                     (se.branch == BRANCH_SWAMP)        ? "Swamp " : "DLv ",
                     se.dlvl );
 
@@ -1016,6 +1023,15 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
             case BRANCH_SWAMP:
                 strcat( buf, " on Swamp" );
                 break;
+            case BRANCH_BIG_ROOM:
+                strcat( buf, " on Big Room" );
+                break;
+            case BRANCH_JADE_CAVE:
+                strcat( buf, " on Jade Cave" );
+                break;
+            case BRANCH_FAIRYLAND:
+                strcat( buf, " on Fairyland" );
+                break;
             case BRANCH_MAIN_DUNGEON:
                 strcat( buf, " on Dungeon" );
                 break;
@@ -1023,7 +1039,8 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
 
             if (se.branch != BRANCH_VESTIBULE_OF_HELL
                 && se.branch != BRANCH_ECUMENICAL_TEMPLE
-                && se.branch != BRANCH_HALL_OF_BLADES)
+                && se.branch != BRANCH_HALL_OF_BLADES
+                && se.branch != BRANCH_BIG_ROOM)
             {
                 snprintf( scratch, sizeof(scratch), " Level %d", se.dlvl );
                 strcat( buf, scratch );
@@ -1825,4 +1842,10 @@ static void hs_search_where(char *inbuf, struct scorefile_entry &se)
         se.branch = BRANCH_TOMB;
     else if (strstr(inbuf, "of the Swamp") != NULL)
         se.branch = BRANCH_SWAMP;
+    else if (strstr(inbuf, "of the Big Room") != NULL)
+        se.branch = BRANCH_BIG_ROOM;
+    else if (strstr(inbuf, "of the Jade Cave") != NULL)
+        se.branch = BRANCH_JADE_CAVE;
+    else if (strstr(inbuf, "of the Fairyland") != NULL)
+        se.branch = BRANCH_FAIRYLAND;
 }

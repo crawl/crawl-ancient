@@ -40,6 +40,7 @@
 #include "monplace.h"
 #include "monspeak.h"
 #include "mon-util.h"
+#include "mon-pick.h"
 #include "mstuff2.h"
 #include "player.h"
 #include "randart.h"
@@ -326,6 +327,9 @@ void monster_die(struct monsters *monster, char killer, int i)
             you.might += bonus;
             haste_player( bonus );
 
+            if ((you.piety >= 75) && (you.duration[DUR_SWIFTNESS] > 0))
+              you.duration[DUR_SWIFTNESS] += bonus;
+
             mpr( "You feel the power of Trog in you as your rage grows.",
                  MSGCH_GOD, GOD_TROG );
         }
@@ -466,7 +470,13 @@ void monster_die(struct monsters *monster, char killer, int i)
 
             if (you.mutation[MUT_DEATH_STRENGTH]
                 || (you.religion == GOD_MAKHLEB && you.duration[DUR_PRAYER]
-                    && (!player_under_penance() && random2(you.piety) >= 30)))
+                    && (!player_under_penance() && random2(you.piety) >= 30))
+                || (you.religion == GOD_TROG && you.duration[DUR_PRAYER]
+                    && mons_holiness(monster->type) == MH_NATURAL
+                    && !player_under_penance() && you.piety >= 75
+                    && ((mons_flag(monster->type, M_ACTUAL_SPELLS)
+                         && !one_chance_in(8))
+                        || (random2(you.piety) >= 75))))
             {
                 if (you.hp < you.hp_max)
                 {
@@ -857,6 +867,7 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
     bool player_messaged = false;
     int source_power, target_power, relax;
     int tries = 1000;
+    int wanted_level;
 
     UNUSED( power );
 
@@ -869,6 +880,20 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
 
     if (targetc == RANDOM_MONSTER)
     {
+      wanted_level = you.your_level;
+      if (mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER))
+      {
+        wanted_level += 5;
+        if (one_chance_in(50))
+          wanted_level += random2(6);
+      }
+      else if (mons_has_ench(monster, ENCH_SHAPESHIFTER))
+      {
+        wanted_level += 2;
+      }
+      if (wanted_level > 30)
+        wanted_level = 30;
+
         do
         {
             targetc = random2( NUM_MONSTERS );
@@ -884,9 +909,16 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
             if (relax > 50)
                 return (simple_monster_message( monster, " shudders." ));
         }
-        while (tries-- && (!valid_morph( monster, targetc )
-                || target_power < source_power - relax
-                || target_power > source_power + (relax * 3) / 2));
+        while ((tries--)
+               && ((!valid_morph( monster, targetc ))
+                   /*
+                   || (target_power < source_power - relax)
+                   || (target_power > source_power + (relax * 3) / 2)
+                   */
+                   || (mons_rarity(targetc) == 0)
+                   || (mons_level(targetc) < wanted_level - 5)
+                   || (mons_level(targetc) > wanted_level + 1)
+                   || (random2avg(100, 2) > mons_rarity(targetc))));
     }
 
     if(!valid_morph( monster, targetc )) {
@@ -898,6 +930,9 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
     // messaging: {dlb}
     bool invis = mons_flag( targetc, M_INVIS )
                     || mons_has_ench( monster, ENCH_INVIS );
+
+    if (tries <= 0)
+        strcat( str_polymon, " weirdly" );
 
     if (mons_has_ench( monster, ENCH_GLOWING_SHAPESHIFTER, ENCH_SHAPESHIFTER ))
         strcat( str_polymon, " changes into " );
@@ -931,6 +966,7 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
     int abj = mons_has_ench( monster, ENCH_ABJ_I, ENCH_ABJ_VI );
     int shifter = mons_has_ench( monster, ENCH_GLOWING_SHAPESHIFTER,
                                           ENCH_SHAPESHIFTER );
+    int glowing_shifter = mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER);
 
     // Note: define_monster() will clear out all enchantments! -- bwr
     define_monster( monster_index(monster) );
@@ -946,8 +982,11 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
         mons_add_ench( monster, ENCH_INVIS );
 
     monster->hit_points = monster->max_hit_points
-                                * ((old_hp * 100) / old_hp_max) / 100
-                                + random2(monster->max_hit_points);
+      * ((old_hp * 100) / old_hp_max) / 100;
+    if (glowing_shifter != ENCH_NONE)
+      monster->hit_points += random2avg((monster->max_hit_points + 1) / 2, 3);
+    else if (shifter != ENCH_NONE)
+      monster->hit_points += random2avg((monster->max_hit_points + 4) / 5, 3);
 
     if (monster->hit_points > monster->max_hit_points)
         monster->hit_points = monster->max_hit_points;
@@ -1970,8 +2009,12 @@ static bool handle_enchantment(struct monsters *monster)
 
         case ENCH_SHORT_LIVED:
             // This should only be used for ball lightning -- bwr
+          /*
             if (random2(1000) < mod_speed( 200, speed ))
                monster->hit_points = -1;
+          */
+            if (random2(1000) < mod_speed( 100, speed ))
+               hurt_monster(monster, 1);
             break;
 
         // 19 is taken by summoning:
@@ -2169,7 +2212,8 @@ static void handle_nearby_ability(struct monsters *monster)
 
     case MONS_GIANT_EYEBALL:
         if (coinflip() && !mons_friendly(monster)
-            && monster->behaviour != BEH_WANDER)
+            && monster->behaviour != BEH_WANDER
+            && (you.paralysis == 0))
         {
             simple_monster_message(monster, " stares at you.");
 
@@ -2182,11 +2226,24 @@ static void handle_nearby_ability(struct monsters *monster)
         if (coinflip() && !mons_friendly(monster)
             && monster->behaviour != BEH_WANDER)
         {
+          int amount;
+          bool permit_growth = false;
+
             simple_monster_message(monster, " stares at you.");
 
-            dec_mp(5 + random2avg(13, 3));
+            amount = 5 + random2avg(13, 3);
+            if (you.magic_points < amount)
+              amount = you.magic_points;
+            if (amount >= 10)
+              permit_growth = true;
 
-            heal_monster(monster, 10, true); // heh heh {dlb}
+            if (amount > 0)
+            {
+              dec_mp(amount);
+              heal_monster(monster, amount, permit_growth);
+            }
+
+            // heal_monster(monster, 10, true); // heh heh {dlb}
         }
         break;
 
@@ -2240,6 +2297,79 @@ static void handle_nearby_ability(struct monsters *monster)
         if (ghost.values[ GVAL_DEMONLORD_CYCLE_COLOUR ])
             monster->number = random_colour();
         break;
+
+    case MONS_VOID_GOLEM:
+      if (one_chance_in(5) && !mons_friendly(monster)
+          && monster->behaviour != BEH_WANDER
+          && (you.duration[DUR_SILENCE] == 0))
+      {
+        simple_monster_message(monster, " stares at you.");
+        mpr("You suddenly feel your surroundings are unnaturally quiet.");
+
+        you.duration[DUR_SILENCE] += 5 + random2avg(13, 3);
+      }
+      break;
+
+    case MONS_FAIRY_SWORD_DANCER:
+      if (one_chance_in(5) && monster->behaviour != BEH_WANDER)
+      {
+        int summs = -1;
+        int obj = NON_ITEM;
+
+        if (item_cursed(mitm[monster->inv[MSLOT_WEAPON]]))
+          return;
+
+        simple_monster_message(monster, " gestures.");
+
+        obj = get_item_slot();
+        if (obj == NON_ITEM)
+          return;
+
+        summs = create_monster(MONS_DANCING_WEAPON, ENCH_ABJ_II,
+                               SAME_ATTITUDE(monster),
+                               monster->x, monster->y, monster->foe, 250);
+        if (summs < 0)
+        {
+          mitm[obj].base_type = OBJ_UNASSIGNED;
+          mitm[obj].quantity = 0;
+          return;
+        }
+
+        mitm[obj] = mitm[monster->inv[MSLOT_WEAPON]];
+        mitm[obj].quantity = 1;
+        mitm[obj].x = 0;
+        mitm[obj].y = 0;
+        mitm[obj].link = NON_ITEM;
+
+        menv[summs].inv[MSLOT_WEAPON] = obj;
+        menv[summs].number = mitm[obj].colour;
+      }
+      break;
+
+    case MONS_FAIRY_SCULPTOR:
+      if (one_chance_in(11) && monster->behaviour != BEH_WANDER)
+      {
+        int cls;
+        switch (random2(6))
+        {
+        case 0:
+        case 1:
+        case 2:
+          cls = MONS_STONE_GOLEM;
+          break;
+        case 3:
+        case 4:
+          cls = MONS_IRON_GOLEM;
+          break;
+        default:
+          cls = MONS_CRYSTAL_GOLEM;
+          break;
+        }
+        simple_monster_message(monster, " gestures.");
+        create_monster(cls, ENCH_ABJ_V, SAME_ATTITUDE(monster),
+                       monster->x, monster->y, monster->foe, 250);
+      }
+      break;
     }
 }                               // end handle_nearby_ability()
 
@@ -2449,6 +2579,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         }
         break;
 
+    case MONS_FAIRY_ASSASSIN:
     case MONS_IMP:
     case MONS_PHANTOM:
     case MONS_INSUBSTANTIAL_WISP:
@@ -3194,7 +3325,9 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
                     break;
 
                 case MONS_BALL_LIGHTNING:
+                  /*
                     monster->hit_points = -1;
+                  */
                     break;
 
                 case MONS_STEAM_DRAGON:
@@ -3491,7 +3624,8 @@ void handle_monsters(void)
                     || monster->type == MONS_SIMULACRUM_SMALL
                     || monster->type == MONS_SIMULACRUM_LARGE
                     || monster->type == MONS_SKELETON_SMALL
-                    || monster->type == MONS_SKELETON_LARGE)
+                    || monster->type == MONS_SKELETON_LARGE
+                    || monster->type == MONS_BALL_LIGHTNING)
                 {
                     monster->max_hit_points = monster->hit_points;
                 }
@@ -3915,6 +4049,9 @@ static bool handle_pickup(struct monsters *monster)
 
     case OBJ_WANDS:
         if (monster->inv[MSLOT_WAND] != NON_ITEM)
+            return (false);
+
+        if (monster->hit_dice < 5)
             return (false);
 
         monster->inv[MSLOT_WAND] = item;
@@ -4809,6 +4946,7 @@ bool monster_descriptor(int which_class, unsigned char which_descriptor)
         case MONS_TROLL:
         case MONS_HYDRA:
         case MONS_KILLER_KLOWN:
+        case MONS_ANGEL:
             return (true);
         default:
             return (false);
@@ -4827,6 +4965,7 @@ bool monster_descriptor(int which_class, unsigned char which_descriptor)
         case MONS_ZOMBIE_SMALL:
         case MONS_SIMULACRUM_SMALL:
         case MONS_SIMULACRUM_LARGE:
+        case MONS_BALL_LIGHTNING:
             return (true);
         default:
             return (false);

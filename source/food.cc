@@ -151,6 +151,12 @@ void weapon_switch( int targ )
 
 bool butchery(void)
 {
+    int last_item = NON_ITEM;
+
+    int objl = igrd[you.x_pos][you.y_pos];
+    int hrg = 0;
+    int counter = 0;
+
     char str_pass[ ITEMNAME_SIZE ];
     int items_here = 0;
     int o = igrd[you.x_pos][you.y_pos];
@@ -170,11 +176,25 @@ bool butchery(void)
                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON
                     || you.mutation[MUT_CLAWS]);
 
+    int rotten = 0;
 
-    if (igrd[you.x_pos][you.y_pos] == NON_ITEM)
+    objl = igrd[you.x_pos][you.y_pos];
+    if (objl == NON_ITEM)
     {
         mpr("There isn't anything here!");
         return (false);
+    }
+    items_here = 0;
+    for (; objl != NON_ITEM; objl = mitm[objl].link)
+    {
+      if (mitm[objl].base_type == OBJ_CORPSES
+          && mitm[objl].sub_type == CORPSE_BODY)
+        items_here++;
+    }
+    if (items_here < 1)
+    {
+      mpr("There isn't anything to dissect here.");
+      return false;
     }
 
     if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
@@ -308,11 +328,12 @@ bool butchery(void)
     // No turning back at this point, we better be qualified.
     ASSERT( can_butcher );
 
-    int last_item = NON_ITEM;
+    last_item = NON_ITEM;
 
-    int objl = igrd[you.x_pos][you.y_pos];
-    int hrg = 0;
-    int counter = 0;
+    objl = igrd[you.x_pos][you.y_pos];
+    hrg = 0;
+    counter = 0;
+    items_here = 0;
 
     while (objl != NON_ITEM)
     {
@@ -384,7 +405,12 @@ bool butchery(void)
             if (work_req < 0)
                 work_req = 0;
 
+            /*
             start_delay( DELAY_BUTCHER, work_req, item_got );
+            */
+            if (mitm[item_got].special < 100)
+              rotten = 1;
+            start_delay( DELAY_BUTCHER, work_req, item_got, rotten);
         }
 
         // cue up switching weapon back
@@ -454,7 +480,12 @@ bool butchery(void)
                     if (work_req < 0)
                         work_req = 0;
 
+                    /*
                     start_delay( DELAY_BUTCHER, work_req, item_got );
+                    */
+                    if (mitm[item_got].special < 100)
+                      rotten = 1;
+                    start_delay( DELAY_BUTCHER, work_req, item_got, rotten);
                 }
 
                 if (wpn_switch && !new_cursed)
@@ -1097,7 +1128,10 @@ static bool can_ingest(int what_isit, int kindof_thing, bool suppress_msg)
                            || you.species == SP_KOBOLD
                            || you.mutation[MUT_CARNIVOROUS] == 3);
 
+    /*
     bool ur_herbivorous = (you.mutation[MUT_HERBIVOROUS] > 1);
+    */
+    bool ur_herbivorous = (you.mutation[MUT_HERBIVOROUS] > 2);
 
     // ur_chunkslover not defined in terms of ur_carnivorous because
     // a player could be one and not the other IMHO - 13mar2000 {dlb}
@@ -1293,7 +1327,11 @@ static int determine_chunk_effect(int which_chunk_type, bool rotten_chunk)
         }
         else
         {
+          /*
             if (this_chunk_effect == CE_ROTTEN)
+          */
+          if ((this_chunk_effect == CE_ROTTEN)
+              || (this_chunk_effect == CE_CONTAMINATED))
                 this_chunk_effect = CE_CLEAN;
         }
     }

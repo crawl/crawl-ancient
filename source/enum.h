@@ -71,9 +71,11 @@ enum ABILITIES
     ABIL_EVOKE_LEVITATE,
     ABIL_EVOKE_STOP_LEVITATING,
     ABIL_END_TRANSFORMATION,           //   55
-    ABIL_ZIN_REPEL_UNDEAD = 110,       //  110
-    ABIL_ZIN_HEALING,
-    ABIL_ZIN_PESTILENCE,
+    // ABIL_ZIN_REPEL_UNDEAD = 110,
+    ABIL_ZIN_REVEAL_WAY = 110,         //  110
+    ABIL_ZIN_PURIFY_RAW_FLESH,         //  111
+    // ABIL_ZIN_HEALING,
+    ABIL_ZIN_PESTILENCE,               //  112
     ABIL_ZIN_HOLY_WORD,
     ABIL_ZIN_SUMMON_GUARDIAN,          //  114
     ABIL_TSO_REPEL_UNDEAD = 120,       //  120
@@ -90,8 +92,9 @@ enum ABILITIES
     ABIL_YRED_DRAIN_LIFE,
     ABIL_YRED_CONTROL_UNDEAD,               //  144
     ABIL_VEHUMET_CHANNEL_ENERGY = 160,         //  160
-    ABIL_OKAWARU_MIGHT = 170,                //  170
-    ABIL_OKAWARU_HEALING,
+    ABIL_OKAWARU_REGENERATION = 170,           //  170
+    ABIL_OKAWARU_MIGHT,                //  171
+    // ABIL_OKAWARU_HEALING,
     ABIL_OKAWARU_HASTE,                        //  172
     ABIL_MAKHLEB_MINOR_DESTRUCTION = 180,      //  180
     ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB,
@@ -99,8 +102,8 @@ enum ABILITIES
     ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB,   //  183
     ABIL_SIF_MUNA_FORGET_SPELL = 190,           //  190
     ABIL_TROG_BERSERK = 200,          //  200
-    ABIL_TROG_MIGHT,
-    ABIL_TROG_HASTE_SELF,                   //  202
+    // ABIL_TROG_MIGHT,
+    // ABIL_TROG_HASTE_SELF,
     ABIL_ELYVILON_LESSER_HEALING = 220,         //  220
     ABIL_ELYVILON_PURIFICATION,
     ABIL_ELYVILON_HEALING,
@@ -390,7 +393,10 @@ enum BRANCHES                          // you.where_are_you
     BRANCH_SNAKE_PIT,
     BRANCH_ELVEN_HALLS,                //   20
     BRANCH_TOMB,
-    BRANCH_SWAMP
+    BRANCH_SWAMP,
+    BRANCH_BIG_ROOM,                   //   23
+    BRANCH_JADE_CAVE,                  //   24
+    BRANCH_FAIRYLAND                   //   25
 };
 
 enum BRANCH_STAIRS // you.branch_stairs[] - 10 less than BRANCHES {dlb}
@@ -407,7 +413,10 @@ enum BRANCH_STAIRS // you.branch_stairs[] - 10 less than BRANCHES {dlb}
     STAIRS_SNAKE_PIT,
     STAIRS_ELVEN_HALLS,                //   10
     STAIRS_TOMB,
-    STAIRS_SWAMP
+    STAIRS_SWAMP,
+    STAIRS_BIG_ROOM,                   //   13
+    STAIRS_JADE_CAVE,                  //   14
+    STAIRS_FAIRYLAND                   //   15
 };
 
 enum BURDEN_STATES                     // you.burden_state
@@ -657,13 +666,17 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_ORCISH_IDOL,
     DNGN_WAX_WALL,                     //    8
     DNGN_PERMAROCK_WALL,               //    9 - for undiggable walls
-    DNGN_LAST_SOLID_TILE = 10,         //   10 - just here temporarily {dlb}
+    DNGN_WOOD_WALL,                    //   10
+    DNGN_LAST_SOLID_TILE /* = 10 */,   //   11 - just here temporarily {dlb}
 
-    DNGN_LAVA_X = 11,                  //   11
-    DNGN_WATER_X,                      //   12
+    // 12 (MINSEE) beginning of the "can see through" grid (does not block LOS) (see los_octant() in view.cc)
+    DNGN_LAVA_X = 12,                  //   12
+    DNGN_WATER_X,                      //   13
     DNGN_SILVER_STATUE = 21,           //   21
     DNGN_GRANITE_STATUE,
     DNGN_ORANGE_CRYSTAL_STATUE,        //   23
+    // 31 (MINMOVE) beginning of the "unoccupied" grid (see monster_move() in monstuff.cc or move_player() in acr.cc)
+    // 35 (ascii '#') reserved for cloud
     DNGN_STATUE_39 = 39,               //   39
 
     DNGN_LAVA = 61,                    //   61
@@ -720,6 +733,9 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_ENTER_ELVEN_HALLS,            //  120
     DNGN_ENTER_TOMB,
     DNGN_ENTER_SWAMP,                  //  122
+    DNGN_ENTER_BIG_ROOM,               //  123
+    DNGN_ENTER_JADE_CAVE,              //  124
+    DNGN_ENTER_FAIRYLAND,              //  124
 
     DNGN_RETURN_FROM_ORCISH_MINES = 130, //  130
     DNGN_RETURN_FROM_HIVE,
@@ -733,7 +749,10 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_RETURN_FROM_SNAKE_PIT,
     DNGN_RETURN_FROM_ELVEN_HALLS,      //  140
     DNGN_RETURN_FROM_TOMB,
-    DNGN_RETURN_FROM_SWAMP,               //  142
+    DNGN_RETURN_FROM_SWAMP,            //  142
+    DNGN_RETURN_FROM_BIG_ROOM,         //  143
+    DNGN_RETURN_FROM_JADE_CAVE,        //  144
+    DNGN_RETURN_FROM_FAIRYLAND,        //  145
 
     DNGN_ALTAR_ZIN = 180,              //  180
     DNGN_ALTAR_SHINING_ONE,
@@ -1235,7 +1254,8 @@ enum JOB
     JOB_STALKER,                       //   25
     JOB_MONK,
     JOB_WARPER,
-    JOB_WANDERER,                      //   23
+    JOB_WANDERER,                      //   28
+    JOB_TRICKSTER,                     //   29
     NUM_JOBS,                          // always after the last job
 
     JOB_UNKNOWN = 100
@@ -1592,6 +1612,20 @@ enum MONSTERS                          // (int) menv[].type
     MONS_SIMULACRUM_SMALL,
     MONS_SIMULACRUM_LARGE,
     //jmf: end new monsters
+
+    MONS_GREATER_UNSEEN_HORROR,       //  192
+    MONS_VOID_GOLEM,                  //  193
+    MONS_FAIRY_SNIPER,                //  194
+    MONS_FAIRY_ASSASSIN,              //  195
+    MONS_FAIRY_BEAST_TAMER,           //  196
+    MONS_FAIRY_SWORD_DANCER,          //  197
+    MONS_FAIRY_FIRE_STARTER,          //  198
+    MONS_FAIRY_SNOW_MAGE,             //  199
+    MONS_FAIRY_WIND_RIDER,            //  200
+    MONS_FAIRY_SCULPTOR,              //  201
+    MONS_FAIRY_RANDOMIZER,            //  202
+    MONS_FAIRY_TIME_TWISTER,          //  203
+
     MONS_WHITE_IMP = 220,              //  220
     MONS_LEMURE,
     MONS_UFETUBUS,
@@ -1925,6 +1959,14 @@ enum MONSTER_SPELLS   // mons_cast(), mspell_list[], mons_spells()
     MS_METAL_SPLINTERS,                //   50
     MS_SUMMON_DEMON_GREATER, // [foo]_1 was confusing - renamed 13jan2000 {dlb}
     MS_BANISHMENT,
+    MS_FAIRY_BEAST_TAMER_SUMMON,       //   53
+    MS_FAIRY_FIRE_STARTER_CONJURATION, //   54
+    MS_FAIRY_SNOW_MAGE_CONJURATION,    //   55
+    MS_ORB_OF_ELECTROCUTION,           //   56
+    MS_RANDOMIZE,                      //   57
+    MS_WIZARDS_BANE,                   //   58
+    MS_TIME_TWIST,                     //   59
+    MS_FREEZE_TIME,                    //   60
     NUM_MONSTER_SPELLS,
     MS_NO_SPELL = 100
 };
@@ -2020,6 +2062,13 @@ enum MONSTER_SPELL_TEMPLATES
     MST_QUICKSILVER_DRAGON,
     MST_IRON_DRAGON,                    // 127
     MST_SKELETAL_WARRIOR,
+    MST_FAIRY_BEAST_TAMER,              // 129
+    MST_FAIRY_FIRE_STARTER,             // 130
+    MST_FAIRY_SNOW_MAGE,                // 131
+    MST_FAIRY_WIND_RIDER,               // 132
+    MST_FAIRY_SCULPTOR,                 // 133
+    MST_FAIRY_RANDOMIZER,               // 134
+    MST_FAIRY_TIME_TWISTER,             // 135
     NUM_MSTYPES,
     MST_NO_SPELLS = 250
 };
@@ -2201,7 +2250,8 @@ enum PROXIMITY   // proximity to player to create monster
     PROX_ANYWHERE,
     PROX_CLOSE_TO_PLAYER,
     PROX_AWAY_FROM_PLAYER,
-    PROX_NEAR_STAIRS
+    PROX_NEAR_STAIRS,
+    PROX_NEAR_ORB
 };
 
 enum RANDART_PROP
@@ -2271,6 +2321,8 @@ enum RUNE_TYPES
     RUNE_ELVEN_HALLS,                   // unused
     RUNE_TOMB,
     RUNE_SWAMP,
+    RUNE_JADE_CAVE              = 24,
+    RUNE_FAIRYLAND,             // 25
 
     // Runes 50 and 51 are for Pandemonium (general demon) and the Abyss
     RUNE_DEMONIC                = 50,

@@ -525,3 +525,57 @@ void replay_messages(void)
 
     return;
 }                               // end replay_messages()
+
+void
+dump_messages(FILE *handle, int n)
+{
+  int i;
+  int j;
+  int line_start;
+  bool full_buffer = true;
+
+  if (handle == NULL)
+    return;
+  if (n <= 0)
+    return;
+
+  if (Store_Message[NUM_STORED_MESSAGES - 1].text.length() == 0)
+    full_buffer = false;
+  if ((!full_buffer) && (Next_Message <= 0))
+    return;
+
+  line_start = Next_Message - n;
+  if (line_start < 0)
+  {
+    if (full_buffer)
+    {
+      while (line_start < 0)
+        line_start += NUM_STORED_MESSAGES;
+    }
+    else
+    {
+      line_start = 0;
+    }
+  }
+  if (line_start >= NUM_STORED_MESSAGES)
+    line_start = NUM_STORED_MESSAGES - 1;
+
+  if ((!full_buffer) && (line_start + n >= NUM_STORED_MESSAGES))
+    return;
+
+  /*
+  fprintf(handle, "[last messages (line %d-%d)]\n",
+          line_start + 1,
+          (line_start + n - 1) % NUM_STORED_MESSAGES + 1);
+  */
+  fprintf(handle, "[last messages]\n");
+
+  for (i = 0; i < n; i++)
+  {
+    j = (line_start + i) % NUM_STORED_MESSAGES;
+    if (Store_Message[j].text.length() == 0)
+      continue;
+    fputs(Store_Message[j].text.c_str(), handle);
+    fputs("\n", handle);
+  }
+}

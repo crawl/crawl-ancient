@@ -251,6 +251,10 @@ void builder(int level_number, char level_type)
             mon_wanted += roll_dice( 3, 8 );
         else if (player_in_branch( BRANCH_HALL_OF_BLADES ))
             mon_wanted += roll_dice( 6, 8 );
+        else if (player_in_branch(BRANCH_JADE_CAVE))
+            mon_wanted += roll_dice( 3, 8 );
+        else if (player_in_branch(BRANCH_BIG_ROOM))
+            mon_wanted += roll_dice( 6, 8 );
 
         // unlikely - now only possible in HoB {dlb} 10mar2000
         if (mon_wanted > 60)
@@ -269,7 +273,9 @@ void builder(int level_number, char level_type)
 
     int items_wanted = 3 + roll_dice( 3, 11 );
 
-    if (level_number > 5 && one_chance_in(500 - 5 * level_number))
+    if ((!player_in_branch(BRANCH_BIG_ROOM))
+        && (level_number > 5)
+        && (one_chance_in(500 - 5 * level_number)))
         items_wanted = 10 + random2avg( 90, 2 );  // rich level!
 
     // change pre-rock (105) to rock,  and pre-floor (106) to floor
@@ -289,7 +295,8 @@ void builder(int level_number, char level_type)
          || player_in_branch( BRANCH_LAIR )
          || player_in_branch( BRANCH_VAULTS )
          || player_in_branch( BRANCH_SNAKE_PIT )
-         || player_in_branch( BRANCH_SWAMP ))
+         || player_in_branch( BRANCH_SWAMP )
+         || player_in_branch( BRANCH_FAIRYLAND ))
     {
         place_shops(level_number);
     }
@@ -297,9 +304,13 @@ void builder(int level_number, char level_type)
     // If level part of Dis -> all walls metal;
     // If part of vaults -> walls depend on level;
     // If part of crypt -> all walls stone:
+    // If part of jade cave -> all walls green crystal
+    // If part of fairyland -> all walls wood
     if (player_in_branch( BRANCH_DIS )
         || player_in_branch( BRANCH_VAULTS )
-        || player_in_branch( BRANCH_CRYPT ))
+        || player_in_branch( BRANCH_CRYPT )
+        || player_in_branch(BRANCH_JADE_CAVE)
+        || player_in_branch(BRANCH_FAIRYLAND))
     {
         // always the case with Dis {dlb}
         unsigned char vault_wall = DNGN_METAL_WALL;
@@ -323,6 +334,14 @@ void builder(int level_number, char level_type)
         else if (player_in_branch( BRANCH_CRYPT ))
         {
             vault_wall = DNGN_STONE_WALL;
+        }
+        else if (player_in_branch(BRANCH_JADE_CAVE))
+        {
+          vault_wall = DNGN_GREEN_CRYSTAL_WALL;
+        }
+        else if (player_in_branch(BRANCH_FAIRYLAND))
+        {
+          vault_wall = DNGN_WOOD_WALL;
         }
 
         replace_area(0,0,GXM-1,GYM-1,DNGN_ROCK_WALL,vault_wall);
@@ -387,7 +406,8 @@ void builder(int level_number, char level_type)
         place_altar();
 
     // hall of blades (1 level deal) - no down staircases, thanks!
-    if (player_in_branch( BRANCH_HALL_OF_BLADES ))
+    if ((player_in_branch( BRANCH_HALL_OF_BLADES ))
+        || (player_in_branch(BRANCH_BIG_ROOM)))
     {
         for (x = 1; x < GXM; x++)
         {
@@ -2475,7 +2495,12 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     }
 
     //mv - give wand
+    /*
     if (mons_is_unique( menv[mid].type ) && one_chance_in(5))
+    */
+    if ((mons_is_unique( menv[mid].type ))
+        && (menv[mid].hit_dice >= 5)
+        && (one_chance_in(5)))
     {
         thing_created = items(0, OBJ_WANDS, OBJ_RANDOM, true, give_level, 0);
         if (thing_created == NON_ITEM)
@@ -2574,7 +2599,10 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         if (one_chance_in(12) && level_number > 1)
         {
             mitm[bp].base_type = OBJ_WEAPONS;
+            mitm[bp].sub_type = WPN_BLOWGUN;
+            /*
             mitm[bp].base_type = WPN_BLOWGUN;
+            */
             break;
         }
         // deliberate fall through {dlb}
@@ -2634,7 +2662,10 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         if (one_chance_in(15) && level_number > 1)
         {
             mitm[bp].base_type = OBJ_WEAPONS;
+            mitm[bp].sub_type = WPN_BLOWGUN;
+            /*
             mitm[bp].base_type = WPN_BLOWGUN;
+            */
             break;
         }
         // deliberate fall through {gdl}
@@ -3041,6 +3072,67 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         mitm[bp].plus2 = random2(5);
         mitm[bp].colour = RED;  // forced by force_item above {dlb}
         break;
+
+    case MONS_FAIRY_SNIPER:
+      item_race = MAKE_ITEM_ELVEN;
+      mitm[bp].base_type = OBJ_WEAPONS;
+      mitm[bp].sub_type = WPN_BOW;
+      break;
+
+    case MONS_FAIRY_ASSASSIN:
+      item_race = MAKE_ITEM_ELVEN;
+      mitm[bp].base_type = OBJ_WEAPONS;
+      mitm[bp].sub_type = WPN_DAGGER;
+      temp_rand = random2(3);
+      set_equip_desc( mitm[bp], (temp_rand == 1) ? ISFLAG_GLOWING :
+                                (temp_rand == 2) ? ISFLAG_RUNED
+                                                 : ISFLAG_NO_DESC );
+      temp_rand = random2(24);
+      if (temp_rand > 14)
+        set_item_ego_type(mitm[bp], OBJ_WEAPONS, SPWPN_VENOM);
+      else if (temp_rand > 7)
+        set_item_ego_type(mitm[bp], OBJ_WEAPONS, SPWPN_ELECTROCUTION);
+      else if (temp_rand > 2)
+        set_item_ego_type(mitm[bp], OBJ_WEAPONS, SPWPN_DRAINING);
+      else
+        set_item_ego_type(mitm[bp], OBJ_WEAPONS, SPWPN_DISTORTION);
+      if (one_chance_in(3))
+      {
+        set_equip_desc(mitm[bp], ISFLAG_NO_DESC);
+        set_item_ego_type(mitm[bp], OBJ_WEAPONS, SPWPN_NORMAL);
+      }
+      break;
+
+    case MONS_FAIRY_BEAST_TAMER:
+      item_race = MAKE_ITEM_NO_RACE;
+      mitm[bp].base_type = OBJ_WEAPONS;
+      mitm[bp].sub_type = WPN_WHIP;
+      break;
+
+    case MONS_FAIRY_SWORD_DANCER:
+      item_race = MAKE_ITEM_ELVEN;
+      mitm[bp].base_type = OBJ_WEAPONS;
+      if (one_chance_in(3))
+        mitm[bp].sub_type = WPN_SCIMITAR;
+      else
+        mitm[bp].sub_type = WPN_LONG_SWORD;
+      break;
+
+    case MONS_FAIRY_SCULPTOR:
+      item_race = MAKE_ITEM_ELVEN;
+      mitm[bp].base_type = OBJ_WEAPONS;
+      mitm[bp].sub_type = WPN_MACE;
+      break;
+
+    case MONS_FAIRY_FIRE_STARTER:
+    case MONS_FAIRY_SNOW_MAGE:
+    case MONS_FAIRY_WIND_RIDER:
+    case MONS_FAIRY_RANDOMIZER:
+    case MONS_FAIRY_TIME_TWISTER:
+      item_race = MAKE_ITEM_ELVEN;
+      mitm[bp].base_type = OBJ_WEAPONS;
+      mitm[bp].sub_type = WPN_DAGGER;
+      break;
     }                           // end "switch(menv[mid].type)"
 
     // only happens if something in above switch doesn't set it {dlb}
@@ -3277,6 +3369,44 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         force_colour = DARKGREY; //mv: always darkgrey
         break;
 
+    case MONS_FAIRY_SNIPER:
+    case MONS_FAIRY_ASSASSIN:
+    case MONS_FAIRY_SWORD_DANCER:
+    case MONS_FAIRY_FIRE_STARTER:
+    case MONS_FAIRY_SNOW_MAGE:
+    case MONS_FAIRY_WIND_RIDER:
+    case MONS_FAIRY_SCULPTOR:
+    case MONS_FAIRY_RANDOMIZER:
+    case MONS_FAIRY_TIME_TWISTER:
+      item_race = MAKE_ITEM_ELVEN;
+      mitm[bp].base_type = OBJ_ARMOUR;
+      switch (random2(8))
+      {
+      case 0:
+      case 1:
+      case 2:
+      case 3:
+        mitm[bp].sub_type = ARM_LEATHER_ARMOUR;
+        break;
+      case 4:
+      case 5:
+        mitm[bp].sub_type = ARM_RING_MAIL;
+        break;
+      case 6:
+        mitm[bp].sub_type = ARM_SCALE_MAIL;
+        break;
+      case 7:
+        mitm[bp].sub_type = ARM_CHAIN_MAIL;
+        break;
+      }
+      break;
+
+    case MONS_FAIRY_BEAST_TAMER:
+      item_race = MAKE_ITEM_NO_RACE;
+      mitm[bp].base_type = OBJ_ARMOUR;
+      mitm[bp].sub_type = ARM_ANIMAL_SKIN;
+      break;
+
     default:
         return;
     }                           // end of switch(menv [mid].type)
@@ -3466,7 +3596,7 @@ static void prepare_water( int level_number )
                             {
                                 grd[i][j] = DNGN_SHALLOW_WATER;
                             }
-                            else if (which_grid >= DNGN_FLOOR
+                            else if (which_grid == DNGN_FLOOR
                                      && random2(100) < 80 - level_number * 4)
                             {
                                 grd[i][j] = DNGN_SHALLOW_WATER;
@@ -3550,7 +3680,10 @@ static int builder_by_type(int level_number, char level_type)
     if (level_type == LEVEL_ABYSS)
     {
         generate_abyss();
+        /*
         return 1;
+        */
+        return -1;
     }
 
     if (level_type == LEVEL_PANDEMONIUM)
@@ -3604,7 +3737,10 @@ static int builder_by_branch(int level_number)
             + branch_depth(STAIRS_HIVE))
             build_vaults(level_number, 80);
         else
+          /*
             spotty_level(false, 100 + random2(500), false);
+          */
+            spotty_level(false, 200 + random2avg(300, 3), false);
         return 1;
 
     case BRANCH_SLIME_PITS:
@@ -3614,7 +3750,10 @@ static int builder_by_branch(int level_number)
             build_vaults(level_number, 81);
         }
         else
+          /*
             spotty_level(false, 100 + random2(500), false);
+          */
+            spotty_level(false, 300 + random2avg(300, 3), false);
         return 1;
 
     case BRANCH_VAULTS:
@@ -3699,13 +3838,61 @@ static int builder_by_branch(int level_number)
         break;
 
     case BRANCH_ORCISH_MINES:
+      /*
         spotty_level(false, 100 + random2(500), false);
-        return 1;
+      */
+      /*
+        spotty_level(false, 200 + random2avg(300, 3), false);
+      */
+      {
+        int i;
+        int j;
+        unsigned char dotx1[3];
+        unsigned char doty1[3];
+        unsigned char dotx2[3];
+        unsigned char doty2[3];
+        for (i = 0; i < 3; i++)
+        {
+          do
+          {
+            dotx1[i] = random2(GXM - 20) + 10;
+            doty1[i] = random2(GYM - 20) + 10;
+            dotx2[i] = random2(GXM - 20) + 10;
+            doty2[i] = random2(GYM - 20) + 10;
+          } while (((dotx1[i] == dotx2[i]) && (doty1[i] == doty2[i]))
+                   || (grd[dotx1[i]][doty1[i]] != DNGN_ROCK_WALL)
+                   || (grd[dotx2[i]][doty2[i]] != DNGN_ROCK_WALL));
+          grd[dotx1[i]][doty1[i]] = DNGN_FLOOR;
+          grd[dotx2[i]][doty2[i]] = DNGN_FLOOR;
+        }
+        spotty_level(true, 150 + random2avg(150, 3), false);
+        for (i = 0; i < 3; i++)
+          join_the_dots(dotx1[i], doty1[i],
+                        dotx2[(i + 1) % 3], doty2[(i + 1) % 3],
+                        0, 0, 0, 0);
+        for (i = 0; i < 3; i++)
+        {
+          for (j = i + 1; j < 3; j++)
+          {
+            join_the_dots(dotx1[i], doty1[i], dotx1[j], doty1[j], 0, 0, 0, 0);
+            join_the_dots(dotx2[i], doty2[i], dotx2[j], doty2[j], 0, 0, 0, 0);
+          }
+        }
+        for (i = 0; i < 3; i++)
+        {
+          grd[dotx1[i]][doty1[i]] = DNGN_STONE_STAIRS_UP_I + i;
+          grd[dotx2[i]][doty2[i]] = DNGN_STONE_STAIRS_DOWN_I + i;
+        }
+      }
+      return 1;
 
     case BRANCH_LAIR:
         if (!one_chance_in(3))
         {
+          /*
             spotty_level(false, 100 + random2(500), false);
+          */
+            spotty_level(false, 400 + random2avg(200, 3), false);
             return 1;
         }
         break;
@@ -3746,6 +3933,82 @@ static int builder_by_branch(int level_number)
             return 1;
         }
         break;
+
+    case BRANCH_BIG_ROOM:
+      replace_area(10, 10, GXM - 11, GYM - 11, DNGN_ROCK_WALL, DNGN_FLOOR);
+      grd[20 + random2(GXM - 40)][20 + random2(GYM - 40)]
+        = DNGN_STONE_STAIRS_UP_I;
+      /* the guaranteed ring of poison resistance is non-unique */
+      items(0, OBJ_JEWELLERY, RING_POISON_RESISTANCE, false,
+            0, MAKE_ITEM_RANDOM_RACE);
+      return 1;
+      break;
+
+    case BRANCH_JADE_CAVE:
+      if (level_number == you.branch_stairs[STAIRS_JADE_CAVE]
+          + branch_depth(STAIRS_JADE_CAVE))
+      {
+        build_vaults(level_number, 92);
+        spotty_level(true, 200 + random2avg(200, 3), true);
+        return 1;
+      }
+
+      spotty_level(false, 200 + random2avg(200, 3), true);
+      {
+        /* place some statues */
+        int i;
+        int j;
+        int k;
+        for (i = 3 + random2(3); i > 0; i--)
+        {
+          do
+          {
+            j = 10 + random2(GXM - 20);
+            k = 10 + random2(GYM - 20);
+          } while (grd[j][k] != DNGN_FLOOR);
+
+          if (one_chance_in(30))
+            grd[j][k] = DNGN_ORANGE_CRYSTAL_STATUE;
+          else
+            grd[j][k] = DNGN_GRANITE_STATUE;
+
+          if (grd[j][k - 1] == DNGN_ROCK_WALL)
+            grd[j][k - 1] = DNGN_FLOOR;
+          if (grd[j][k + 1] == DNGN_ROCK_WALL)
+            grd[j][k + 1] = DNGN_FLOOR;
+          if (grd[j - 1][k] == DNGN_ROCK_WALL)
+            grd[j - 1][k] = DNGN_FLOOR;
+          if (grd[j + 1][k] == DNGN_ROCK_WALL)
+            grd[j + 1][k] = DNGN_FLOOR;
+
+          if (grd[j - 1][k - 1] == DNGN_ROCK_WALL)
+            grd[j - 1][k - 1] = DNGN_FLOOR;
+          if (grd[j + 1][k + 1] == DNGN_ROCK_WALL)
+            grd[j + 1][k + 1] = DNGN_FLOOR;
+          if (grd[j - 1][k + 1] == DNGN_ROCK_WALL)
+            grd[j - 1][k + 1] = DNGN_FLOOR;
+          if (grd[j + 1][k - 1] == DNGN_ROCK_WALL)
+            grd[j + 1][k - 1] = DNGN_FLOOR;
+        }
+      }
+      return 1;
+      break;
+
+    case BRANCH_FAIRYLAND:
+      if (level_number == you.branch_stairs[STAIRS_FAIRYLAND]
+          + branch_depth(STAIRS_FAIRYLAND))
+      {
+        build_vaults(level_number, 93);
+        return 1;
+      }
+      else
+      {
+        int i;
+        for (i = 2 + random2(3); i > 0; i--)
+          build_lake(DNGN_DEEP_WATER);
+        spotty_level(false, 300 + random2avg(300, 3), false);
+      }
+      return 1;
 
     default:
         break;
@@ -4015,6 +4278,12 @@ static void place_traps(int level_number)
     int i;
     int num_traps = random2avg(9, 2);
 
+    if (player_in_branch(BRANCH_BIG_ROOM))
+      num_traps = MAX_TRAPS;
+
+    if (num_traps > MAX_TRAPS)
+      num_traps = MAX_TRAPS;
+
     for (i = 0; i < num_traps; i++)
     {
         // traps can be placed in vaults
@@ -4133,6 +4402,9 @@ static void place_branch_entrances(int dlevel, char level_type)
             case STAIRS_LAIR:
             case STAIRS_VAULTS:
             case STAIRS_ECUMENICAL_TEMPLE:
+            case STAIRS_BIG_ROOM:
+            case STAIRS_JADE_CAVE:
+            case STAIRS_FAIRYLAND:
                 entrance = BRANCH_MAIN_DUNGEON;
                 break;
 
@@ -4460,7 +4732,9 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
         && !player_in_branch( BRANCH_HIVE )
         && !player_in_branch( BRANCH_LAIR )
         && !player_in_branch( BRANCH_SLIME_PITS )
-        && !player_in_branch( BRANCH_ECUMENICAL_TEMPLE ))
+        && !player_in_branch( BRANCH_ECUMENICAL_TEMPLE )
+        && !player_in_branch( BRANCH_BIG_ROOM )
+        && !player_in_branch( BRANCH_JADE_CAVE ))
     {
         while(one_chance_in(3))
         {
@@ -4617,6 +4891,52 @@ static void builder_items(int level_number, char level_type, int items_wanted)
     {
         /* No items in hell, the slime pits, the Hall */
         return;
+    }
+    else if (player_in_branch(BRANCH_BIG_ROOM))
+    {
+      for (i = 0; i < items_wanted; i++)
+      {
+        if (i % 2 == 0)
+        {
+          /* ring */
+          items(1, OBJ_JEWELLERY, random2(24), false, items_levels, 250);
+        }
+        else
+        {
+          /* dart (toy of the imps) */
+          items(1, OBJ_MISSILES, MI_DART, false, items_levels, 250);
+        }
+      }
+    }
+    else if (player_in_branch(BRANCH_JADE_CAVE))
+    {
+      /* _good_ item in the jade cave */
+      for (i = 0; i < items_wanted; i++)
+      {
+        items_levels = level_number * 2 + 5;
+        switch (random2(5))
+        {
+        case 0:
+          specif_type = OBJ_WEAPONS;
+          break;
+        case 1:
+          specif_type = OBJ_ARMOUR;
+          break;
+        case 2:
+          specif_type = OBJ_SCROLLS;
+          break;
+        case 3:
+          specif_type = OBJ_POTIONS;
+          break;
+        default:
+          specif_type = OBJ_GOLD;
+          break;
+        }
+        if (((specif_type == OBJ_WEAPONS) || (specif_type == OBJ_ARMOUR))
+            && (one_chance_in(3)))
+        items_levels = MAKE_GOOD_ITEM;
+        items( 1, specif_type, OBJ_RANDOM, false, items_levels, 250 );
+      }
     }
     else
     {
@@ -5526,6 +5846,11 @@ static int vault_grid( int level_number, int vx, int vy, int altar_count,
                 mitm[item_made].x = vx;
                 mitm[item_made].y = vy;
             }
+
+            if ((vgrid == 'O') && (player_in_branch(BRANCH_FAIRYLAND)))
+              grd[vx][vy] = DNGN_BLUE_FOUNTAIN;
+            if (vgrid == 'Z')
+              place_specific_trap(vx, vy, TRAP_BLADE);
         }
         break;
     }
@@ -6232,6 +6557,14 @@ void item_colour( item_def &item )
                 item.colour = BROWN;
                 break;
 
+            case RUNE_JADE_CAVE:                // transparent
+                item.colour = WHITE;
+                break;
+
+            case RUNE_FAIRYLAND:                // verdant
+                item.colour = LIGHTGREEN;
+                break;
+
             // These two are hardly unique, but since colour isn't used for
             // stacking, so we don't have to worry to much about this. -- bwr
             case RUNE_DEMONIC:             // random pandemonium demonlords
@@ -6691,9 +7024,14 @@ static void spotty_level(bool seeded, int iterations, bool boxy)
 {
     // assumes starting with a level full of rock walls (1)
     int i, j, k, l;
+    unsigned char dotx1[3];
+    unsigned char doty1[3];
+    unsigned char dotx2[3];
+    unsigned char doty2[3];
 
     if (!seeded)
     {
+#if 0
         for (i = DNGN_STONE_STAIRS_DOWN_I; i < DNGN_ROCK_STAIRS_UP; i++)
         {
             if (i == DNGN_ROCK_STAIRS_DOWN
@@ -6729,13 +7067,60 @@ static void spotty_level(bool seeded, int iterations, bool boxy)
             if (grd[j + 1][k] == DNGN_ROCK_WALL)
                 grd[j + 1][k] = DNGN_FLOOR;
         }
+#endif /* 0 */
+        for (i = 0; i < 3; i++)
+        {
+          do
+          {
+            dotx1[i] = random2(GXM - 20) + 10;
+            doty1[i] = random2(GYM - 20) + 10;
+            dotx2[i] = random2(GXM - 20) + 10;
+            doty2[i] = random2(GYM - 20) + 10;
+            if ((i == 0)
+                && (you.level_type == LEVEL_DUNGEON)
+                && (!player_in_branch(BRANCH_MAIN_DUNGEON))
+                && (!player_in_branch(BRANCH_SLIME_PITS))
+                && (!player_in_branch(BRANCH_HALL_OF_ZOT))
+                && (!player_in_branch(BRANCH_FAIRYLAND)))
+            {
+              dotx1[i] = dotx2[i] + 1;
+              doty1[i] = doty2[i];
+            }
+          } while (((dotx1[i] == dotx2[i]) && (doty1[i] == doty2[i]))
+                   || (grd[dotx1[i]][doty1[i]] != DNGN_ROCK_WALL)
+                   || (grd[dotx2[i]][doty2[i]] != DNGN_ROCK_WALL));
+          grd[dotx1[i]][doty1[i]] = DNGN_FLOOR;
+          grd[dotx2[i]][doty2[i]] = DNGN_FLOOR;
+        }
+        for (i = 0; i < 3; i++)
+          join_the_dots(dotx1[i], doty1[i],
+                        dotx2[(i + 1) % 3], doty2[(i + 1) % 3],
+                        0, 0, 0, 0);
+        if (player_in_branch(BRANCH_JADE_CAVE))
+        {
+          for (i = 0; i < 3; i++)
+          {
+            for (j = i + 1; j < 3; j++)
+            {
+              join_the_dots(dotx1[i], doty1[i], dotx1[j], doty1[j],
+                            0, 0, 0, 0);
+              join_the_dots(dotx2[i], doty2[i], dotx2[j], doty2[j],
+                            0, 0, 0, 0);
+            }
+          }
+        }
+        for (i = 0; i < 3; i++)
+        {
+          grd[dotx1[i]][doty1[i]] = DNGN_STONE_STAIRS_UP_I + i;
+          grd[dotx2[i]][doty2[i]] = DNGN_STONE_STAIRS_DOWN_I + i;
+        }
     }                           // end if !seeded
 
     l = iterations;
 
     // boxy levels have more clearing, so they get fewer iterations:
     if (l == 0)
-        l = 200 + random2( (boxy ? 750 : 1500) );
+        l = 200 + random2avg( (boxy ? 750 : 1500) , 3 );
 
     for (i = 0; i < l; i++)
     {
@@ -7468,6 +7853,7 @@ static bool is_wall(int x, int y)
         case DNGN_METAL_WALL:
         case DNGN_GREEN_CRYSTAL_WALL:
         case DNGN_WAX_WALL:
+        case DNGN_WOOD_WALL:
             return true;
         default:
             return false;
@@ -8205,6 +8591,9 @@ void define_zombie( int mid, int ztype, int cs, int power )
                 || player_in_branch( BRANCH_HALL_OF_BLADES )
                 || player_in_branch( BRANCH_SNAKE_PIT )
                 || player_in_branch( BRANCH_SLIME_PITS )
+                || player_in_branch( BRANCH_BIG_ROOM )
+                || player_in_branch( BRANCH_JADE_CAVE )
+                || player_in_branch( BRANCH_HALL_OF_ZOT )
                 || one_chance_in(1000))
             {
                 ignore_rarity = true;

@@ -394,13 +394,16 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
     // why does this come here and not later? {dlb}
     // apparently to give the following pluses more significance -- bwr
+    /*
     your_to_hit = random2(your_to_hit);
+    */
 
 #if DEBUG_DIAGNOSTICS
+    /*
     snprintf( info, INFO_SIZE, "to hit die: %d; rolled value: %d",
               roll_hit, your_to_hit );
-
     mpr( info, MSGCH_DIAGNOSTICS );
+    */
 #endif
 
     if (use_hand_and_a_half_bonus)
@@ -635,14 +638,30 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         stab_bonus = 0;
     }
 
+    int your_to_hit_final = random2(your_to_hit * your_to_hit);
+
 #if DEBUG_DIAGNOSTICS
+    /*
     snprintf( info, INFO_SIZE, "your to-hit: %d; defender EV: %d",
               your_to_hit, defender->evasion );
-
+    */
+    snprintf( info, INFO_SIZE, "to hit die: %d; your to-hit: %d/%d (%d); "
+              "defender EV: %d (%d)",
+              roll_hit, your_to_hit_final, your_to_hit * your_to_hit,
+              your_to_hit,
+              defender->evasion * defender->evasion,
+              defender->evasion );
     mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
+    /*
     if ((your_to_hit >= defender->evasion || one_chance_in(30))
+        || ((defender->speed_increment <= 60
+             || defender->behaviour == BEH_SLEEP)
+            && !one_chance_in(10 + you.skills[SK_STABBING])))
+    */
+    if (((your_to_hit_final >= defender->evasion * defender->evasion)
+         || one_chance_in(30))
         || ((defender->speed_increment <= 60
              || defender->behaviour == BEH_SLEEP)
             && !one_chance_in(10 + you.skills[SK_STABBING])))
@@ -690,8 +709,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
         mpr( info, MSGCH_DIAGNOSTICS );
 #endif
-
+        /*
         damage_done = random2(damage);
+        */
+        damage_done = random2avg(damage, 3);
 
 #if DEBUG_DIAGNOSTICS
         const int roll_damage = damage_done;
@@ -854,14 +875,24 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                             - random2( you.skills[SK_STABBING] / stab_bonus );
 
                 if (ac > 0)
-                    damage_done -= random2(1 + ac);
+                {
+                  /*
+                  damage_done -= random2(1 + ac);
+                  */
+                  damage_done -= random2avg(1 + ac, 3);
+                }
             }
         }
         else
         {
             // apply AC normally
             if (defender->armour_class > 0)
-                damage_done -= random2(1 + defender->armour_class);
+            {
+              /*
+              damage_done -= random2(1 + defender->armour_class);
+              */
+              damage_done -= random2avg(1 + defender->armour_class, 3);
+            }
         }
 
 #if DEBUG_DIAGNOSTICS
@@ -966,7 +997,13 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         if (defender->behaviour != BEH_SLEEP)
             behaviour_event( defender, ME_WHACK, MHITYOU );
 
+        /*
         if ((your_to_hit + heavy_armour / 2) >= defender->evasion)
+        */
+        if (your_to_hit_final
+            + ((your_to_hit + heavy_armour) * (your_to_hit + heavy_armour)
+               - your_to_hit * your_to_hit) / 2
+            >= defender->evasion * defender->evasion)
             strcpy(info, "Your armour prevents you from hitting ");
         else
             strcpy(info, "You miss ");
@@ -1676,7 +1713,9 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
                 /* no punching with a shield or 2-handed wpn, except staves */
                 if (bearing_shield || coinflip()
-                    || (ur_armed && hands_reqd == HANDS_TWO_HANDED))
+                    || (ur_armed && hands_reqd == HANDS_TWO_HANDED
+                        && weapon_skill(you.inv[weapon].base_type,
+                                        you.inv[weapon].sub_type) !=SK_STAVES))
                 {
                     continue;
                 }
@@ -1711,13 +1750,20 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 your_to_hit -= 3;
 
             your_to_hit += slaying_bonus(PWPN_HIT);
+            /*
             your_to_hit = random2(your_to_hit);
+            */
+            your_to_hit = random2(your_to_hit * your_to_hit);
 
             damage = sc_dam;    //4 + you.experience_level / 3;
 
             alert_nearby_monsters();
 
+            /*
             if (your_to_hit >= defender->evasion || one_chance_in(30))
+            */
+            if ((your_to_hit >= defender->evasion * defender->evasion)
+                || one_chance_in(30))
             {
                 bool hit = true;
                 int dammod = 10;
@@ -1734,7 +1780,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
                 damage += slaying_bonus(PWPN_DAMAGE);
 
+                /*
                 damage_done = (int) random2(damage);
+                */
+                damage_done = (int) random2avg(damage, 3);
 
                 damage_done *= 40 + (random2(you.skills[SK_FIGHTING] + 1));
                 damage_done /= 40;
@@ -1748,7 +1797,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 if (you.hunger_state == HS_STARVING)
                     damage_done -= random2(5);
 
+                /*
                 damage_done -= random2(1 + defender->armour_class);
+                */
+                damage_done -= random2avg(1 + defender->armour_class, 3);
 
                 if (damage_done < 1)
                     damage_done = 0;
@@ -2019,10 +2071,25 @@ void monster_attack(int monster_attacking)
         // Factors for blocking
         const int pro_block = player_shield_class() + (random2(you.dex) / 5);
 
+        const int con_block_rolled = random2(con_block);
+        const int pro_block_rolled = random2(pro_block);
+
+#if DEBUG_DIAGNOSTICS
+        if (!you.paralysis && !you_are_delayed() && !you.conf
+            && player_monster_visible( attacker )
+            && player_shield_class() > 0)
+        {
+          snprintf( info, INFO_SIZE, "con_block: %d/%d; pro_block: %d/%d",
+                    con_block_rolled, con_block,
+                    pro_block_rolled, pro_block);
+          mpr( info, MSGCH_DIAGNOSTICS );
+        }
+#endif
+
         if (!you.paralysis && !you_are_delayed() && !you.conf
             && player_monster_visible( attacker )
             && player_shield_class() > 0
-            && random2(con_block) <= random2(pro_block))
+            && (con_block_rolled <= pro_block_rolled))
         {
             you.shield_blocks++;
 
@@ -2042,13 +2109,44 @@ void monster_attack(int monster_attacking)
             exercise(SK_DODGING, 1);
         }
 
+        /*
         const int player_dodge = random2limit(player_evasion(), 40)
                                 + random2(you.dex) / 3
                                 - (player_monster_visible(attacker) ? 2 : 14)
                                 - (you_are_delayed() ? 5 : 0);
-
+        */
+        int player_dodge = player_evasion();
+        if (player_dodge > 40)
+          player_dodge = 40;
+        player_dodge += you.dex / 3;
+        if (player_monster_visible(attacker))
+          player_dodge -= 2;
+        else
+          player_dodge -= 14;
+        if (you_are_delayed())
+          player_dodge -= 5;
+        if (player_dodge < 0)
+          player_dodge = 0;
+        const int player_dodge_rolled = random2(player_dodge * player_dodge);
+        const int mons_to_hit_rolled = random2(mons_to_hit * mons_to_hit);
+#if DEBUG_DIAGNOSTICS
+        if (!blocked)
+        {
+          snprintf(info, INFO_SIZE, "mons_to_hit: %d/%d; "
+                   "your dodge: %d/%d (%d)",
+                   mons_to_hit_rolled, mons_to_hit * mons_to_hit,
+                   player_dodge_rolled,
+                   player_dodge * player_dodge, player_dodge);
+          mpr( info, MSGCH_DIAGNOSTICS );
+        }
+#endif
+        /*
         if (!blocked
             && (random2(mons_to_hit) >= player_dodge || one_chance_in(30)))
+        */
+        if (!blocked
+            && ((mons_to_hit_rolled >= player_dodge_rolled)
+                || one_chance_in(30)))
         {
             hit = true;
 
@@ -2061,8 +2159,10 @@ void monster_attack(int monster_attacking)
             {
                 damage_size = property( mitm[attacker->inv[hand_used]],
                                         PWPN_DAMAGE );
-
+                /*
                 damage_taken = random2(damage_size);
+                */
+                damage_taken = random2avg(damage_size, 3);
 
                 if (cmp_equip_race(mitm[attacker->inv[hand_used]],ISFLAG_ORCISH)
                     && mons_charclass(attacker->type) == MONS_ORC
@@ -2086,7 +2186,10 @@ void monster_attack(int monster_attacking)
             }
 
             damage_size += mdam;
+            /*
             damage_taken += 1 + random2(mdam);
+            */
+            damage_taken += 1 + random2avg(mdam, 3);
 
             if (water_attack)
                 damage_taken *= 2;
@@ -2095,7 +2198,10 @@ void monster_attack(int monster_attacking)
 
             if (ac > 0)
             {
+              /*
                 int damage_reduction = random2(ac + 1);
+              */
+                int damage_reduction = random2avg(ac + 1, 3);
 
                 if (!player_light_armour())
                 {
@@ -2266,6 +2372,18 @@ void monster_attack(int monster_attacking)
                     disease_player( 50 + random2(100) );
                 break;
 
+            case MONS_GREATER_UNSEEN_HORROR:
+              if ((!one_chance_in(3)) && (you.magic_points > 0))
+              {
+                strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
+                strcat(info, " drains your magical power!");
+                mpr(info);
+                dec_mp(5 + random2avg(13, 3));
+              }
+              /* intentional fall through */
+            case MONS_UNSEEN_HORROR:
+            case MONS_SLIME_CREATURE:
+            case MONS_SKELETAL_DRAGON:
             case MONS_KOMODO_DRAGON:
             case MONS_GIANT_MOSQUITO:
                 if (!one_chance_in(3))
@@ -2537,6 +2655,7 @@ void monster_attack(int monster_attacking)
             case MONS_GUARDIAN_NAGA:
                 break;
 
+            case MONS_FAIRY_ASSASSIN:
             case MONS_PHANTOM:
             case MONS_INSUBSTANTIAL_WISP:
             case MONS_BLINK_FROG:
@@ -2577,6 +2696,30 @@ void monster_attack(int monster_attacking)
                         give_bad_mutation();
                 }
                 break;
+
+            case MONS_FAIRY_RANDOMIZER:
+              if (!one_chance_in(3))
+              {
+                if (you_resist_magic(100))
+                  canned_msg(MSG_YOU_RESIST);
+                else if (you.conf == 0)
+                  confuse_player( 3 + random2(8) );
+              }
+              break;
+
+            case MONS_FAIRY_TIME_TWISTER:
+              if (!one_chance_in(3))
+              {
+                antimagic();
+                mpr( "You sense a dampening of magic.", MSGCH_WARN );
+              }
+              break;
+
+            case MONS_MOTH_OF_WRATH:
+              if ((!player_res_poison()) && (!wearing_amulet(AMU_CLARITY))
+                  && (one_chance_in(3)))
+                go_berserk(false);
+              break;
             }                   // end of switch for special attacks.
             /* use brek for level drain, maybe with beam variables,
                because so many creatures use it. */
@@ -3359,6 +3502,35 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                 if (heal_monster(attacker, random2(damage_taken), true))
                     simple_monster_message(attacker, " is healed.");
                 break;
+
+            case MONS_FAIRY_RANDOMIZER:
+              if (!one_chance_in(3))
+              {
+                if (check_mons_resist_magic(defender, 100))
+                {
+                  simple_monster_message(defender, " resists.");
+                }
+                else if (mons_has_ench(defender, ENCH_CONFUSION))
+                {
+                  /* do nothing */
+                  ;
+                }
+                else if (mons_add_ench(defender, ENCH_CONFUSION))
+                {
+                  if (player_monster_visible(defender))
+                    simple_monster_message(defender,
+                                           " looks rather confused.");
+                }
+              }
+              break;
+
+            case MONS_FAIRY_TIME_TWISTER:
+              if (!one_chance_in(3))
+              {
+                if (mons_has_ench(defender, ENCH_ABJ_I, ENCH_ABJ_VI))
+                  monster_die(defender, KILL_RESET, 0);
+              }
+              break;
             }
         }
 

@@ -1126,9 +1126,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     bool launched = false;      // item is launched
     bool thrown = false;        // item is sensible thrown item
 
-    // Making a copy of the item: changed only for venom launchers
-    item_def item = you.inv[throw_2];
-    item.quantity = 1;
+    item_def item;
 
     char str_pass[ ITEMNAME_SIZE ];
 
@@ -1152,6 +1150,18 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         thr.tx = you.x_pos + random2(13) - 6;
         thr.ty = you.y_pos + random2(13) - 6;
     }
+
+    // Must unwield before fire_beam() makes a copy in order to remove things
+    // like temporary branding. -- bwr
+    if (throw_2 == you.equip[EQ_WEAPON] && you.inv[throw_2].quantity == 1)
+    {
+        unwield_item( throw_2 );
+        you.equip[EQ_WEAPON] = -1;
+        canned_msg( MSG_EMPTY_HANDED );
+    }
+    // Making a copy of the item: changed only for venom launchers
+    item = you.inv[throw_2];
+    item.quantity = 1;
 
     // even though direction is allowed,  we're throwing so we
     // want to use tx, ty to make the missile fly to map edge.
@@ -1177,6 +1187,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         // this does not seem right, but value was 11 {dlb}
         // notice how the .type does not match the class -- hmmm... {dlb}
     case OBJ_STAVES:      pbolt.type = SYM_CHUNK;  break;
+    default:             pbolt.type = SYM_OBJECT;  break;
     }
 
     pbolt.source_x = you.x_pos;
@@ -1616,10 +1627,16 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     else
         pbolt.hit = baseHit - random2avg(0 - (exHitBonus - 1), 2);
 
+    /*
     if (exDamBonus >= 0)
         pbolt.damage = dice_def( 1, baseDam + random2(exDamBonus + 1) );
     else
         pbolt.damage = dice_def( 1, baseDam - random2(0 - (exDamBonus - 1)) );
+    */
+    if (exDamBonus >= 0)
+        pbolt.damage = dice_def( 3, (baseDam + random2(exDamBonus + 1) + 2) / 3);
+    else
+        pbolt.damage = dice_def( 3, (baseDam - random2(0 - (exDamBonus - 1)) + 2) / 3 );
 
     // only add bonuses if we're throwing something sensible
     if (thrown || launched || wepClass == OBJ_WEAPONS)
@@ -1637,15 +1654,6 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
     mpr( info, MSGCH_DIAGNOSTICS );
 #endif
-
-    // Must unwield before fire_beam() makes a copy in order to remove things
-    // like temporary branding. -- bwr
-    if (throw_2 == you.equip[EQ_WEAPON] && you.inv[throw_2].quantity == 1)
-    {
-        unwield_item( throw_2 );
-        you.equip[EQ_WEAPON] = -1;
-        canned_msg( MSG_EMPTY_HANDED );
-    }
 
     // create message
     if (launched)
@@ -2111,12 +2119,18 @@ void zap_wand(void)
         return;
     }
 
-    if (you.inv[item_slot].base_type != OBJ_WANDS
-        || you.inv[item_slot].plus < 1)
+    if (you.inv[item_slot].base_type != OBJ_WANDS)
     {
-        canned_msg(MSG_NOTHING_HAPPENS);
-        you.turn_is_over = 1;
-        return;
+      canned_msg(MSG_NOTHING_HAPPENS);
+      you.turn_is_over = 1;
+      return;
+    }
+    else if (you.inv[item_slot].plus < 1)
+    {
+      mpr("It has no charges left.");
+      set_ident_flags( you.inv[item_slot], ISFLAG_KNOW_PLUSES );
+      you.turn_is_over = 1;
+      return;
     }
 
     if (item_ident( you.inv[item_slot], ISFLAG_KNOW_TYPE ))

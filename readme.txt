@@ -1,5 +1,6 @@
                             Crawl Quick-Start Guide
                         (Copyright 1999 Linley Henzell)
+                       (updated in 2005 by Oohara Yuuma)
 
 So, you want to start playing Crawl straight away without bothering with the
 manual? Read this, the guide to starting Crawl with a minimum of preparation.
@@ -27,7 +28,7 @@ name. Don't spend too much time over this, as your first character will *not*
 last very long (sorry, but it's true).
 
 Next you are given menus of species and character classes from which to
-choose. A dwarf, orc, ogre or troll Fighter is a good bet. Elves are quite
+choose. A dwarf or orc Fighter is a good bet. Elves are quite
 fragile, humans are pretty average at everything, and the weirder species are
 mostly too tricky for beginning players. Finally, you may be given a choice of
 weapons. I suggest an axe (axes are fun).
@@ -104,7 +105,7 @@ you escape.
 
 There are a few other types of item, but you will discover these as you play.
 
-One vital command to remember when dealing with items is 'V' (View), which
+One vital command to remember when dealing with items is 'v' (View), which
 gives you a short description of any item. Use it on everything you find. The
 magical Scroll of Identify can also help for identifying magical items of
 uncertain nature.

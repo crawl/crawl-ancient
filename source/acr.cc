@@ -101,6 +101,7 @@
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
+#include "mon-pick.h"
 #include "mon-util.h"
 #include "mutation.h"
 #include "newgame.h"
@@ -936,17 +937,34 @@ static void input(void)
 
             if (keyin == '*')
             {
+              mpr("Open/close/untrap/attack in which direction?",
+                  MSGCH_PROMPT);
                 opening = true;
                 keyin = getch();
             }
             else if (keyin == '/')
             {
+              mpr("Run in which direction?", MSGCH_PROMPT);
                 running = true;
                 keyin = getch();
             }
 
             // Translate keypad codes into command enums
             keyin = key_to_command(keyin);
+
+            if (running || opening)
+            {
+              if ((keyin != CMD_MOVE_DOWN_LEFT)
+                  && (keyin != CMD_MOVE_DOWN)
+                  && (keyin != CMD_MOVE_UP_RIGHT)
+                  && (keyin != CMD_MOVE_UP)
+                  && (keyin != CMD_MOVE_UP_LEFT)
+                  && (keyin != CMD_MOVE_LEFT)
+                  && (keyin != CMD_MOVE_DOWN_RIGHT)
+                  && (keyin != CMD_MOVE_RIGHT)
+                  && (keyin != CMD_REST))
+                keyin = CMD_NO_CMD;
+            }
 #else
             // Old DOS keypad support
             if (keyin == 0)     // ALT also works - see ..\KEYTEST.CPP
@@ -1151,7 +1169,7 @@ static void input(void)
 
     case 'O':
     case CMD_DISPLAY_OVERMAP:
-        display_overmap();
+        display_overmap(NULL);
         break;
 
     case 'o':
@@ -1451,7 +1469,7 @@ static void input(void)
 
     case '@':
     case CMD_DISPLAY_CHARACTER_STATUS:
-        display_char_status();
+        display_char_status(NULL);
         break;
 
     case 'm':
@@ -1529,9 +1547,17 @@ static void input(void)
 
     default:
     case CMD_NO_CMD:
+      if (!running && !opening)
+      {
         mpr("Unknown command.");
-        break;
-
+      }
+      else
+      {
+        canned_msg(MSG_OK);
+        running = false;
+        opening = false;
+      }
+      break;
     }
 
 #ifdef LINUX
@@ -1599,6 +1625,8 @@ static void input(void)
             you_teleport2( true );
         else if (you.level_type == LEVEL_ABYSS && one_chance_in(30))
             you_teleport2( false, true ); // to new area of the Abyss
+        else if (you.level_type == LEVEL_LABYRINTH && one_chance_in(30))
+          you_teleport2(false);
     }
 
     if (env.cgrid[you.x_pos][you.y_pos] != EMPTY_CLOUD)
@@ -1887,10 +1915,14 @@ static void input(void)
     {
         you.duration[DUR_CONDENSATION_SHIELD]--;
 
+        /*
         scrolls_burn( 1, OBJ_POTIONS );
+        */
 
         if (player_res_cold() < 0)
         {
+          scrolls_burn( 1, OBJ_POTIONS );
+
             mpr( "You feel very cold." );
             ouch( 2 + random2avg(13, 2), 0, KILLED_BY_FREEZING );
         }
@@ -2396,6 +2428,7 @@ static void input(void)
     if (you.paralysis > 0 && any_messages())
         more();
 
+#if 0
     // place normal dungeon monsters,  but not in player LOS
     if (you.level_type == LEVEL_DUNGEON
         && !player_in_branch( BRANCH_ECUMENICAL_TEMPLE )
@@ -2408,6 +2441,57 @@ static void input(void)
         if (you.char_direction == DIR_ASCENDING)
             prox = (one_chance_in(10) ? PROX_CLOSE_TO_PLAYER : PROX_ANYWHERE);
 
+        mons_place( WANDERING_MONSTER, BEH_HOSTILE, MHITNOT, false,
+                    50, 50, LEVEL_DUNGEON, prox );
+    }
+#endif /* 0 */
+    if (you.level_type == LEVEL_DUNGEON
+        && !player_in_branch( BRANCH_ECUMENICAL_TEMPLE ))
+    {
+      int prox;
+      int chance_monster;
+
+      if (you.char_direction == DIR_DESCENDING)
+      {
+        chance_monster = 240;
+        if (one_chance_in(10))
+          prox = PROX_NEAR_STAIRS;
+        else
+          prox = PROX_AWAY_FROM_PLAYER;
+
+        if (player_in_branch(BRANCH_VESTIBULE_OF_HELL)
+            || player_in_hell())
+        {
+          if (!one_chance_in(10))
+            prox = PROX_NEAR_STAIRS;
+          else
+            prox = PROX_ANYWHERE;
+        }
+
+        if (player_in_branch(BRANCH_HALL_OF_ZOT))
+        {
+          chance_monster -= (you.your_level
+                             - you.branch_stairs[STAIRS_HALL_OF_ZOT]) * 40;
+          if (you.your_level == you.branch_stairs[STAIRS_HALL_OF_ZOT]
+              + branch_depth(STAIRS_HALL_OF_ZOT))
+          {
+            if (one_chance_in(3))
+              prox = PROX_NEAR_ORB;
+          }
+        }
+      }
+      else
+      {
+        chance_monster = 10;
+        if (one_chance_in(10))
+          prox = PROX_CLOSE_TO_PLAYER;
+        else
+          prox = PROX_ANYWHERE;
+      }
+
+      if (chance_monster < 10)
+        chance_monster = 10;
+      if (one_chance_in(chance_monster))
         mons_place( WANDERING_MONSTER, BEH_HOSTILE, MHITNOT, false,
                     50, 50, LEVEL_DUNGEON, prox );
     }

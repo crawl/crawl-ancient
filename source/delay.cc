@@ -476,6 +476,16 @@ void handle_delay( void )
                 strcat( info, " the corpse into pieces." );
                 mpr( info );
 
+                if ((delay.parm2 == 0) && (mitm[delay.parm1 ].special < 100))
+                {
+                  strcpy( info, "It has rotten while you are ");
+                  strcat( info, (you.species == SP_TROLL
+                                || you.species == SP_GHOUL) ? "ripping"
+                                                            : "chopping" );
+                  strcat(info, " it.");
+                  mpr(info, MSGCH_WARN);
+                }
+
                 turn_corpse_into_chunks( mitm[ delay.parm1 ] );
 
                 if (you.berserker && you.berserk_penalty != NO_BERSERK_PENALTY)

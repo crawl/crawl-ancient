@@ -46,6 +46,12 @@ static int mons_tartarus_level(int mcls);
 static int mons_tartarus_rare(int mcls);
 static int mons_tomb_level(int mcls);
 static int mons_tomb_rare(int mcls);
+static int mons_bigroom_level(int mcls);
+static int mons_bigroom_rare(int mcls);
+static int mons_jadecave_level(int mcls);
+static int mons_jadecave_rare(int mcls);
+static int mons_fairyland_level(int mcls);
+static int mons_fairyland_rare(int mcls);
 
 /* ******************* BEGIN EXTERNAL FUNCTIONS ******************* */
 int branch_depth(int branch)
@@ -59,6 +65,7 @@ int branch_depth(int branch)
         return 8;
 
     case STAIRS_ELVEN_HALLS:
+    case STAIRS_FAIRYLAND:
         return 7;
 
     case STAIRS_SLIME_PITS:
@@ -72,6 +79,7 @@ int branch_depth(int branch)
 
     case STAIRS_HIVE:
     case STAIRS_ORCISH_MINES:
+    case STAIRS_JADE_CAVE:
         return 4;
 
     case STAIRS_TOMB:
@@ -79,6 +87,7 @@ int branch_depth(int branch)
 
     case STAIRS_ECUMENICAL_TEMPLE:
     case STAIRS_HALL_OF_BLADES:
+    case STAIRS_BIG_ROOM:
         return 1;
 
     default:
@@ -116,6 +125,9 @@ int mons_level(int mcls)
              (you.where_are_you == BRANCH_ELVEN_HALLS)  ? mons_hallelf_level :
              (you.where_are_you == BRANCH_TOMB)         ? mons_tomb_level :
              (you.where_are_you == BRANCH_SWAMP)        ? mons_swamp_level :
+             (you.where_are_you == BRANCH_BIG_ROOM)     ? mons_bigroom_level :
+             (you.where_are_you == BRANCH_JADE_CAVE)    ? mons_jadecave_level :
+             (you.where_are_you == BRANCH_FAIRYLAND)    ? mons_fairyland_level :
              (you.where_are_you == BRANCH_VAULTS)       ? mons_standard_level
                                                         : mons_standard_level);
 
@@ -153,6 +165,9 @@ int mons_rarity(int mcls)
               (you.where_are_you == BRANCH_ELVEN_HALLS)   ? mons_hallelf_rare :
               (you.where_are_you == BRANCH_TOMB)          ? mons_tomb_rare :
               (you.where_are_you == BRANCH_SWAMP)         ? mons_swamp_rare :
+              (you.where_are_you == BRANCH_BIG_ROOM)      ? mons_bigroom_rare :
+              (you.where_are_you == BRANCH_JADE_CAVE)     ? mons_jadecave_rare :
+              (you.where_are_you == BRANCH_FAIRYLAND)     ? mons_fairyland_rare :
               (you.where_are_you == BRANCH_VAULTS)        ? mons_standard_rare
                                                           : mons_standard_rare);
 
@@ -2108,7 +2123,7 @@ static int mons_hallblade_level(int mcls)
     if (mcls == MONS_DANCING_WEAPON)
         return (you.branch_stairs[STAIRS_HALL_OF_BLADES] + 1);
     else
-        return 0;
+        return 99;
 }                               // end mons_hallblade_level
 
 static int mons_hallblade_rare(int mcls)
@@ -2117,12 +2132,18 @@ static int mons_hallblade_rare(int mcls)
 }                               // end mons_hallblade_rare()
 
 //    New branch must be added in:
+//    - enum.h BRANCH_*, STAIRS_*, DNGN_ENTER_*, DNGN_RETURN_FROM_*
 //    - new_game stair location
 //    - down/up stairs (to and back) misc.cc
-//    - new_level (2 places) (misc.cc)
+//    - new_level (2 places) (floor/wall color, location display) (misc.cc)
 //    - item_check items.cc
 //    - look_around (direct.cc)
 //    - ouch ouch.cc (death message)
+//    - chardump.cc (player location)
+//    - overmap.cc
+//    - view.cc (7x2 places)
+//    - highscore.cc (3 places)
+//    - dungeon.cc (dungeon generation)
 //    - and here...
 
 static int mons_hallzot_level(int mcls)
@@ -2155,10 +2176,12 @@ static int mons_hallzot_level(int mcls)
         mlev += 3;
         break;
     case MONS_MOTH_OF_WRATH:
+    case MONS_GLOWING_SHAPESHIFTER:
         mlev += 2;
         break;
     case MONS_ORB_OF_FIRE:
     case MONS_ELECTRIC_GOLEM:
+    case MONS_ACID_BLOB:
         mlev += 1;
         break;
     default:
@@ -2177,6 +2200,7 @@ static int mons_hallzot_rare(int mcls)
         return 88;
     case MONS_STORM_DRAGON:
     case MONS_TENTACLED_MONSTROSITY:
+    case MONS_ACID_BLOB:
         return 50;
     case MONS_GOLDEN_DRAGON:
         return 42;
@@ -2186,6 +2210,7 @@ static int mons_hallzot_rare(int mcls)
     case MONS_SKELETAL_DRAGON:
         return 40;
     case MONS_SHADOW_DRAGON:
+    case MONS_GLOWING_SHAPESHIFTER:
         return 30;
     case MONS_DEEP_ELF_ANNIHILATOR:
     case MONS_DEEP_ELF_DEATH_MAGE:
@@ -2725,3 +2750,230 @@ static int mons_standard_rare(int mcls)
         return 0;
     }
 }                               // end mons_standard_rare()
+
+static int
+mons_bigroom_level(int mcls)
+{
+  int mlev = you.branch_stairs[STAIRS_BIG_ROOM];
+
+  switch (mcls)
+  {
+  case MONS_IMP:
+  case MONS_WHITE_IMP:
+  case MONS_SHADOW_IMP:
+    mlev += 1;
+    break;
+  default:
+    mlev += 99;
+    break;
+  }
+  return mlev;
+}
+
+static int
+mons_bigroom_rare(int mcls)
+{
+  switch (mcls)
+  {
+  case MONS_IMP:
+    return 99;
+  case MONS_WHITE_IMP:
+    return 60;
+  case MONS_SHADOW_IMP:
+    return 13;
+  default:
+    return 0;
+  }
+  return 0;
+}
+
+static int
+mons_jadecave_level(int mcls)
+{
+  int mlev = you.branch_stairs[STAIRS_JADE_CAVE];
+
+  switch (mcls)
+  {
+  case MONS_ARMOUR_MIMIC:
+  case MONS_GOLD_MIMIC:
+  case MONS_POTION_MIMIC:
+  case MONS_SCROLL_MIMIC:
+  case MONS_WEAPON_MIMIC:
+  case MONS_CLAY_GOLEM:
+  case MONS_WOOD_GOLEM:
+    mlev += 1;
+    break;
+
+  case MONS_UNSEEN_HORROR:
+  case MONS_STONE_GOLEM:
+    mlev += 2;
+    break;
+
+  case MONS_VAPOUR:
+  case MONS_IRON_GOLEM:
+    mlev += 3;
+    break;
+
+  case MONS_DANCING_WEAPON:
+  case MONS_TOENAIL_GOLEM:
+  case MONS_CRYSTAL_GOLEM:
+    mlev += 4;
+    break;
+
+  case MONS_GREATER_UNSEEN_HORROR:
+    mlev += 6;
+    break;
+
+  default:
+    mlev += 99;
+    break;
+  }
+  return mlev;
+}
+
+static int
+mons_jadecave_rare(int mcls)
+{
+  switch (mcls)
+  {
+  case MONS_UNSEEN_HORROR:
+    return 500;
+
+  case MONS_ARMOUR_MIMIC:
+  case MONS_GOLD_MIMIC:
+  case MONS_POTION_MIMIC:
+  case MONS_SCROLL_MIMIC:
+  case MONS_WEAPON_MIMIC:
+    return 45;
+
+  case MONS_GREATER_UNSEEN_HORROR:
+    return 40;
+
+  case MONS_CLAY_GOLEM:
+  case MONS_WOOD_GOLEM:
+  case MONS_STONE_GOLEM:
+    return 35;
+
+  case MONS_VAPOUR:
+    return 30;
+
+  case MONS_DANCING_WEAPON:
+  case MONS_IRON_GOLEM:
+    return 20;
+
+  case MONS_CRYSTAL_GOLEM:
+    return 10;
+
+  case MONS_TOENAIL_GOLEM:
+    return 2;
+
+  default:
+    return 0;
+  }
+  return 0;
+}
+
+static int
+mons_fairyland_level(int mcls)
+{
+  int mlev = you.branch_stairs[STAIRS_FAIRYLAND];
+
+  switch (mcls)
+  {
+  case MONS_BUTTERFLY:
+  case MONS_PLANT:
+  case MONS_FUNGUS:
+    mlev += 1;
+    break;
+  case MONS_FAIRY_SNIPER:
+  case MONS_FAIRY_ASSASSIN:
+  case MONS_FAIRY_BEAST_TAMER:
+  case MONS_OKLOB_PLANT:
+  case MONS_WANDERING_MUSHROOM:
+    mlev += 2;
+    break;
+  case MONS_FAIRY_SWORD_DANCER:
+  case MONS_POLAR_BEAR:
+  case MONS_STONE_GOLEM:
+    mlev += 3;
+    break;
+  case MONS_FAIRY_FIRE_STARTER:
+  case MONS_FAIRY_SNOW_MAGE:
+  case MONS_FAIRY_WIND_RIDER:
+  case MONS_IRON_GOLEM:
+  case MONS_YELLOW_WASP:
+    mlev += 4;
+    break;
+  case MONS_FAIRY_SCULPTOR:
+  case MONS_DEATH_YAK:
+  case MONS_CRYSTAL_GOLEM:
+  case MONS_RED_WASP:
+    mlev += 5;
+    break;
+  case MONS_FAIRY_RANDOMIZER:
+  case MONS_FAIRY_TIME_TWISTER:
+    mlev += 9;
+    break;
+  default:
+    mlev += 99;
+    break;
+  }
+  return mlev;
+}
+
+static int
+mons_fairyland_rare(int mcls)
+{
+  switch (mcls)
+  {
+  case MONS_FAIRY_SNIPER:
+  case MONS_FAIRY_ASSASSIN:
+    return 500;
+
+  case MONS_FAIRY_BEAST_TAMER:
+    return 80;
+
+  case MONS_FAIRY_SWORD_DANCER:
+    return 70;
+
+  case MONS_FAIRY_FIRE_STARTER:
+  case MONS_FAIRY_SNOW_MAGE:
+  case MONS_FAIRY_WIND_RIDER:
+    return 60;
+
+  case MONS_FAIRY_SCULPTOR:
+    return 50;
+
+  case MONS_BUTTERFLY:
+    return 30;
+
+  case MONS_YELLOW_WASP:
+  case MONS_RED_WASP:
+    return 20;
+
+  case MONS_PLANT:
+  case MONS_FUNGUS:
+    return 18;
+
+  case MONS_POLAR_BEAR:
+  case MONS_DEATH_YAK:
+    return 13;
+
+  case MONS_FAIRY_RANDOMIZER:
+  case MONS_FAIRY_TIME_TWISTER:
+    return 10;
+
+  case MONS_OKLOB_PLANT:
+  case MONS_WANDERING_MUSHROOM:
+    return 9;
+
+  case MONS_STONE_GOLEM:
+  case MONS_IRON_GOLEM:
+  case MONS_CRYSTAL_GOLEM:
+    return 5;
+
+  default:
+    return 0;
+  }
+  return 0;
+}

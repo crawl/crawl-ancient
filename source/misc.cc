@@ -198,7 +198,9 @@ void in_a_cloud(void)
             if (resist < 0)
                 hurted += ((random2avg(14, 2) + 3) * you.time_taken) / 10;
 
+            /*
             hurted -= random2(player_AC());
+            */
 
             if (hurted < 1)
                 hurted = 0;
@@ -249,7 +251,9 @@ void in_a_cloud(void)
             if (resist < 0)
                 hurted += ((random2avg(14, 2) + 3) * you.time_taken) / 10;
 
+            /*
             hurted -= random2(player_AC());
+            */
             if (hurted < 0)
                 hurted = 0;
 
@@ -298,7 +302,7 @@ void in_a_cloud(void)
             return;
         }
 
-        if (!player_equip( EQ_BODY_ARMOUR, ARM_STEAM_DRAGON_ARMOUR ))
+        if (player_equip( EQ_BODY_ARMOUR, ARM_STEAM_DRAGON_ARMOUR ))
         {
             mpr("It doesn't seem to affect you.");
             return;
@@ -389,6 +393,54 @@ void up_stairs(void)
         return;
     }
 
+    if (stair_find == DNGN_RETURN_FROM_ZOT)
+    {
+      int i;
+      bool orb_found = false;
+      int num_runes = 0;
+
+      for (i = 0; i < ENDOFPACK; i++)
+      {
+        if (is_valid_item( you.inv[i] )
+            && you.inv[i].base_type == OBJ_ORBS
+            && you.inv[i].sub_type == ORB_ZOT)
+        {
+          orb_found = true;
+        }
+        if (is_valid_item( you.inv[i] )
+            && you.inv[i].base_type == OBJ_MISCELLANY
+            && you.inv[i].sub_type == MISC_RUNE_OF_ZOT)
+        {
+          num_runes += you.inv[i].quantity;
+        }
+      }
+
+      if ((!orb_found) && (num_runes < NUMBER_OF_RUNES_NEEDED))
+      {
+        switch (NUMBER_OF_RUNES_NEEDED)
+        {
+        case 1:
+          mpr("You need to carry a Rune to enter this place again.");
+          break;
+
+        default:
+          snprintf( info, INFO_SIZE,
+                    "You need to carry at least %d Runes to enter "
+                    "this place again.",
+                    NUMBER_OF_RUNES_NEEDED );
+          mpr(info);
+          break;
+        }
+        if (!yesno("Do you really want to leave?"))
+        {
+          /*
+            redraw_screen();
+          */
+          return;
+        }
+      }
+    }
+
     // Since the overloaded message set turn_is_over, I'm assuming that
     // the overloaded character makes an attempt... so we're doing this
     // check before that one. -- bwr
@@ -432,7 +484,8 @@ void up_stairs(void)
         was_a_labyrinth = true;
     }
 
-    you.your_level--;
+    if (!was_a_labyrinth)
+      you.your_level--;
 
     int i = 0;
 
@@ -478,6 +531,9 @@ void up_stairs(void)
     case DNGN_RETURN_FROM_VAULTS:
     case DNGN_RETURN_FROM_TEMPLE:
     case DNGN_RETURN_FROM_ZOT:
+    case DNGN_RETURN_FROM_BIG_ROOM:
+    case DNGN_RETURN_FROM_JADE_CAVE:
+    case DNGN_RETURN_FROM_FAIRYLAND:
         mpr("Welcome back to the Dungeon!");
         you.where_are_you = BRANCH_MAIN_DUNGEON;
         break;
@@ -684,6 +740,10 @@ void down_stairs( bool remove_stairs, int old_level )
             strcpy(info, "You hear a buzzing sound coming from all directions.");
             you.where_are_you = BRANCH_HIVE;
             break;
+        case DNGN_ENTER_JADE_CAVE:
+            strcpy(info, "Behold, they are out to get you!");
+            you.where_are_you = BRANCH_JADE_CAVE;
+            break;
         case DNGN_ENTER_LAIR:
             strcat(info, "the Lair of Beasts!");
             you.where_are_you = BRANCH_LAIR;
@@ -727,6 +787,14 @@ void down_stairs( bool remove_stairs, int old_level )
         case DNGN_ENTER_SWAMP:
             strcat(info, "the Swamp!");
             you.where_are_you = BRANCH_SWAMP;
+            break;
+        case DNGN_ENTER_BIG_ROOM:
+            strcat(info, "the Big Room!");
+            you.where_are_you = BRANCH_BIG_ROOM;
+            break;
+        case DNGN_ENTER_FAIRYLAND:
+            strcat(info, "the Fairyland!");
+            you.where_are_you = BRANCH_FAIRYLAND;
             break;
         }
 
@@ -804,7 +872,10 @@ void down_stairs( bool remove_stairs, int old_level )
               KILLED_BY_FALLING_DOWN_STAIRS );
     }
 
+    /*
     if (you.level_type == LEVEL_DUNGEON)
+    */
+    if ((you.level_type == LEVEL_DUNGEON) && (!leave_abyss_pan))
         you.your_level++;
 
     int stair_taken = stair_find;
@@ -854,14 +925,19 @@ void down_stairs( bool remove_stairs, int old_level )
     switch (you.level_type)
     {
     case LEVEL_LABYRINTH:
+      /*
         you.your_level++;
+      */
         break;
 
     case LEVEL_ABYSS:
         grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
 
+        // Linley-suggested addition 17jan2000 {dlb}
+        /*
         if (old_level_type != LEVEL_PANDEMONIUM)
-            you.your_level--;   // Linley-suggested addition 17jan2000 {dlb}
+          you.your_level--;
+        */
 
         init_pandemonium();     /* colours only */
 
@@ -882,8 +958,10 @@ void down_stairs( bool remove_stairs, int old_level )
         else
         {
             // Linley-suggested addition 17jan2000 {dlb}
+          /*
             if (old_level_type != LEVEL_ABYSS)
-                you.your_level--;
+              you.your_level--;
+          */
 
             init_pandemonium();
 
@@ -913,6 +991,13 @@ void down_stairs( bool remove_stairs, int old_level )
 
     if (you.skills[SK_TRANSLOCATIONS] > 0 && !allow_control_teleport( true ))
         mpr( "You sense a powerful magical force warping space.", MSGCH_WARN );
+
+    if (you.level_type == LEVEL_LABYRINTH)
+    {
+      int hunger_amount = you.hunger - 1000 - random2avg(200, 3);
+      if (hunger_amount > 0)
+        make_hungry(hunger_amount, false);
+    }
 }                               // end down_stairs()
 
 void new_level(void)
@@ -927,7 +1012,7 @@ void new_level(void)
 
     /* Remember, must add this to the death_string in ouch */
     if (you.where_are_you >= BRANCH_ORCISH_MINES
-        && you.where_are_you <= BRANCH_SWAMP)
+        && you.where_are_you <= BRANCH_FAIRYLAND)
     {
         curr_subdungeon_level = you.your_level
                                     - you.branch_stairs[you.where_are_you - 10];
@@ -1022,6 +1107,11 @@ void new_level(void)
             env.rock_colour = BROWN;
             cprintf(" of the Hive                  ");
             break;
+        case BRANCH_JADE_CAVE:
+            env.floor_colour = LIGHTGREY;
+            env.rock_colour = LIGHTGREY;
+            cprintf(" of the Jade Cave             ");
+            break;
         case BRANCH_LAIR:
             env.floor_colour = GREEN;
             env.rock_colour = BROWN;
@@ -1104,6 +1194,27 @@ void new_level(void)
             env.rock_colour = BROWN;
             cprintf(" of the Swamp                 ");
             break;
+        case BRANCH_BIG_ROOM:
+            env.floor_colour = BROWN;
+            env.rock_colour = LIGHTGREY;
+            cprintf(" of the Big Room              ");
+            break;
+        case BRANCH_FAIRYLAND:
+          switch (random2(3))
+          {
+          case 0:
+            env.floor_colour = LIGHTGREY;
+            break;
+          case 1:
+            env.floor_colour = GREEN;
+            break;
+          default:
+            env.floor_colour = BROWN;
+            break;
+          }
+            env.rock_colour = LIGHTGREY;
+            cprintf(" of the Fairyland             ");
+            break;
         }
     }                           // end else
 }                               // end new_level()
@@ -1154,7 +1265,7 @@ static void dart_trap( bool trap_known, int trapped, struct bolt &pbolt,
         }
 
         damage_taken = roll_dice( pbolt.damage );
-        damage_taken -= random2( player_AC() + 1 );
+        damage_taken -= random2avg( player_AC() + 1, 3 );
 
         if (damage_taken > 0)
             ouch( damage_taken, 0, KILLED_BY_TRAP, pbolt.beam_name );
@@ -1290,7 +1401,8 @@ void handle_traps(char trt, int i, bool trap_known)
         {
             mpr("A huge blade swings out and slices into you!");
             ouch( (you.your_level * 2) + random2avg(29, 2)
-                    - random2(1 + player_AC()), 0, KILLED_BY_TRAP, " blade" );
+                    - random2avg(1 + player_AC(), 3), 0, KILLED_BY_TRAP,
+                  " blade" );
         }
         break;
 
@@ -1316,17 +1428,20 @@ void disarm_trap( struct dist &disa )
 
     for (i = 0; i < MAX_TRAPS; i++)
     {
+      if (env.trap[i].type == TRAP_UNASSIGNED)
+        continue;
+
         if (env.trap[i].x == you.x_pos + disa.dx
             && env.trap[i].y == you.y_pos + disa.dy)
         {
             break;
         }
+    }
 
-        if (i == MAX_TRAPS - 1)
-        {
-            mpr("Error - couldn't find that trap.");
-            return;
-        }
+    if (i == MAX_TRAPS)
+    {
+      mpr("Error - couldn't find that trap.");
+      return;
     }
 
     if (trap_category(env.trap[i].type) == DNGN_TRAP_MAGICAL)
@@ -1755,6 +1870,9 @@ int trap_at_xy(int which_x, int which_y)
 
     for (int which_trap = 0; which_trap < MAX_TRAPS; which_trap++)
     {
+      if (env.trap[which_trap].type == TRAP_UNASSIGNED)
+        continue;
+
         if (env.trap[which_trap].x == which_x
             && env.trap[which_trap].y == which_y)
         {

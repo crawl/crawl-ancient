@@ -60,7 +60,8 @@ static char tomb_2(char vgrid[81][81], FixedVector<int, 7>& mons_array);
 static char tomb_3(char vgrid[81][81], FixedVector<int, 7>& mons_array);
 static char vaults_vault(char vgrid[81][81], FixedVector<int, 7>& mons_array);
 static char vestibule_map(char vgrid[81][81], FixedVector<int, 7>& mons_array);
-
+static char jade_cave(char vgrid[81][81], FixedVector<int, 7>& mons_array);
+static char fairyland(char vgrid[81][81], FixedVector<int, 7>& mons_array);
 
 static char minivault_1(char vgrid[81][81], FixedVector<int, 7>& mons_array);
 static char minivault_2(char vgrid[81][81], FixedVector<int, 7>& mons_array);
@@ -207,6 +208,8 @@ char vault_main( char vgrid[81][81], FixedVector<int, 7>& mons_array, int vault_
           (which_vault ==  89) ? tomb_2 :
           (which_vault ==  90) ? tomb_3 :
           (which_vault ==  91) ? swamp :
+          (which_vault ==  92) ? jade_cave :
+          (which_vault ==  93) ? fairyland :
           (which_vault == 200) ? minivault_1 :
           (which_vault == 201) ? minivault_2 :
           (which_vault == 202) ? minivault_3 :
@@ -1208,6 +1211,176 @@ static char vestibule_map(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_ENCOMPASS;
 }
 
+static char jade_cave(char vgrid[81][81], FixedVector<int, 7>& mons_array)
+{
+  int i;
+  int j;
+  int x_start;
+  int y_start;
+  int x;
+  int y;
+
+  x_start = 13 + random2(GXM - 40);
+  y_start = 13 + random2(GYM - 40);
+
+  strcpy(vgrid[y_start +  0] + x_start, "...............");
+  strcpy(vgrid[y_start +  1] + x_start, ".......2.......");
+  strcpy(vgrid[y_start +  2] + x_start, "..G..1...1..G..");
+  strcpy(vgrid[y_start +  3] + x_start, "...G..2.2..G...");
+  strcpy(vgrid[y_start +  4] + x_start, "....G.....G....");
+  strcpy(vgrid[y_start +  5] + x_start, "..1..H.1.H..1..");
+  strcpy(vgrid[y_start +  6] + x_start, "...2..2.2..2...");
+  strcpy(vgrid[y_start +  7] + x_start, ".2...1.O.1...2.");
+  strcpy(vgrid[y_start +  8] + x_start, "...2..2.2..2...");
+  strcpy(vgrid[y_start +  9] + x_start, "..1..H.1.H..1..");
+  strcpy(vgrid[y_start + 10] + x_start, "....G.....G....");
+  strcpy(vgrid[y_start + 11] + x_start, "...G..2.2..G...");
+  strcpy(vgrid[y_start + 12] + x_start, "..G..1...1..G..");
+  strcpy(vgrid[y_start + 13] + x_start, ".......2.......");
+  strcpy(vgrid[y_start + 14] + x_start, "...............");
+
+  for (i = 0; i <= 14; i++)
+    vgrid[y_start + i][x_start + 15] = 'x';
+
+  x = x_start + random2(15);
+  y = y_start + random2(15);
+  for (j = 10; j < GXM - 10; j++)
+  {
+    if ((j >= x_start) && (j < x_start + 15)
+        && (y >= y_start) && (y < y_start + 15))
+      continue;
+    vgrid[y][j] = '.';
+  }
+  for (j = 10; j < GYM - 10; j++)
+  {
+    if ((x >= x_start) && (x < x_start + 15)
+        && (j >= y_start) && (j < y_start + 15))
+      continue;
+    vgrid[j][x] = '.';
+  }
+
+  for (i = 0; i < 3; i++)
+  {
+    do
+    {
+      x = random2(GXM - 20) + 10;
+      y = random2(GYM - 20) + 10;
+    }
+    while ((x >= x_start) && (x < x_start + 15)
+           && (y >= y_start) && (y < y_start + 15));
+    switch (i)
+    {
+    case 0:
+      vgrid[y][x] = '{';
+      break;
+    case 1:
+      vgrid[y][x] = '(';
+      break;
+    default:
+      vgrid[y][x] = '[';
+      break;
+    }
+
+    for (j = 10; j < GXM - 10; j++)
+    {
+      if ((j >= x_start) && (j < x_start + 15)
+           && (y >= y_start) && (y < y_start + 15))
+        continue;
+      if (j == x)
+        continue;
+      vgrid[y][j] = '.';
+    }
+    for (j = 10; j < GYM - 10; j++)
+    {
+      if ((x >= x_start) && (x < x_start + 15)
+           && (j >= y_start) && (j < y_start + 15))
+        continue;
+      if (j == y)
+        continue;
+      vgrid[j][x] = '.';
+    }
+  }
+
+  mons_array[0] = MONS_VOID_GOLEM;
+  mons_array[1] = MONS_GREATER_UNSEEN_HORROR;
+  mons_array[2] = RANDOM_MONSTER;
+  mons_array[3] = RANDOM_MONSTER;
+  mons_array[4] = RANDOM_MONSTER;
+  mons_array[5] = RANDOM_MONSTER;
+  mons_array[6] = RANDOM_MONSTER;
+
+  return MAP_ENCOMPASS;
+}
+
+static char
+fairyland(char vgrid[81][81], FixedVector<int, 7>& mons_array)
+{
+  int i;
+  int n;
+  int x_start = 25;
+  int y_start = 25;
+
+  strcpy(vgrid[y_start +  0] + x_start, "xxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start +  1] + x_start, "xxxxxxxxxx..xxxxxxxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start +  2] + x_start, "xxxxxxxxxx1..xxxxxxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start +  3] + x_start, "xxxxxxxxx....2xxxxxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start +  4] + x_start, "xxxxxxxxx.2....xxxxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start +  5] + x_start, "xxxxxxxxx.....1.xxxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start +  6] + x_start, "xxxxxxxx...7.....xxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start +  7] + x_start, "xxxxxxxx.6....6.7.xxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start +  8] + x_start, "xxxxxxxx...........xxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start +  9] + x_start, "xxxxxxx.............xxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start + 10] + x_start, "xxxxxxx..............xxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start + 11] + x_start, "xxxxxxx.2......4......xxxxxxxxxxxxx");
+  strcpy(vgrid[y_start + 12] + x_start, "xxxxxx....4......2.....xxxxxxxxxxxx");
+  strcpy(vgrid[y_start + 13] + x_start, "xxxxxx...3...........3..xxxxxxxxxxx");
+  strcpy(vgrid[y_start + 14] + x_start, "xxxxxx.....wwww..........xxxxxxxxxx");
+  strcpy(vgrid[y_start + 15] + x_start, "xxxxx.....wwwwww..7.......xxxxxxxxx");
+  strcpy(vgrid[y_start + 16] + x_start, "xxxxx....www..www..........xxxxxxxx");
+  strcpy(vgrid[y_start + 17] + x_start, "xxxxx...ww..........6...2...xxxxxxx");
+  strcpy(vgrid[y_start + 18] + x_start, "xxxx..6.ww...{....ww......4..xxxxxx");
+  strcpy(vgrid[y_start + 19] + x_start, "xxxx7........w(...www......6..xxxxx");
+  strcpy(vgrid[y_start + 20] + x_start, "xxxx.4.ww...[......ww..3.......xxxx");
+  strcpy(vgrid[y_start + 21] + x_start, "xxx....ww.........www......7..2.xxx");
+  strcpy(vgrid[y_start + 22] + x_start, "xxx.3..www.......www............1xx");
+  strcpy(vgrid[y_start + 23] + x_start, "xxx..2..wwwwwww..ww......7........x");
+  strcpy(vgrid[y_start + 24] + x_start, "xx........wwww.......4..6..1.2.xxxx");
+  strcpy(vgrid[y_start + 25] + x_start, "xx..6...........7..........xxxxxxxx");
+  strcpy(vgrid[y_start + 26] + x_start, "xx...7.........6...3..2.xxxxxxxxxxx");
+  strcpy(vgrid[y_start + 27] + x_start, "x..2........3.......xxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start + 28] + x_start, "x1...7....4.....xxxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start + 29] + x_start, "x.....6....2.xxxxxxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start + 30] + x_start, "....1....xxxxxxxxxxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start + 31] + x_start, "...2..xxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+  strcpy(vgrid[y_start + 32] + x_start, "..xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+  for (i = 0; i <= 32; i++)
+    vgrid[y_start + i][x_start + 35] = 'x';
+
+  n = random2(3);
+  if (n == 0)
+    vgrid[y_start - 6][x_start + 10] = 'O';
+  else
+    vgrid[y_start - 6][x_start + 10] = 'T';
+  if (n == 1)
+    vgrid[y_start + 23][x_start + 40] = 'O';
+  else
+    vgrid[y_start + 23][x_start + 40] = 'T';
+  if (n == 2)
+    vgrid[y_start + 37][x_start - 3] = 'O';
+  else
+    vgrid[y_start + 37][x_start - 3] = 'T';
+
+  mons_array[0] = MONS_FAIRY_RANDOMIZER;
+  mons_array[1] = MONS_FAIRY_TIME_TWISTER;
+  mons_array[2] = MONS_FAIRY_FIRE_STARTER;
+  mons_array[3] = MONS_FAIRY_SNOW_MAGE;
+  mons_array[4] = MONS_FAIRY_WIND_RIDER;
+  mons_array[5] = MONS_FAIRY_SCULPTOR;
+  mons_array[6] = MONS_FAIRY_SWORD_DANCER;
+
+  return MAP_ENCOMPASS;
+}
 
 static char castle_dis(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // Dispater's castle - rest of level filled up with plan_4 (irregular city)
@@ -2044,7 +2217,7 @@ static char slime_pit(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[24], "xxxxxxxxxxxxxx...................cc*cc..cc*cc....................xxxxxxxxxxxxxxx");
     strcpy(vgrid[25], "xxxxxxxxxxxxxx..................cc***cc4c***cc..................xxxxxxxxxxxxxxxx");
     strcpy(vgrid[26], "xxxxxxxxxxxxx..................cc*|*cc..cc*|*cc..................xxxxxxxxxxxxxxx");
-    strcpy(vgrid[27], "xxxxxxxxxxxxx.................cc*|P|*c4cc*|P|*cc.................xxxxxxxxxxxxxxx");
+    strcpy(vgrid[27], "xxxxxxxxxxxxx.................cc*|||*c4cc*|||*cc.................xxxxxxxxxxxxxxx");
     strcpy(vgrid[28], "xxxxxxxxxxxxx.................cc**|*cc..cc*|**cc....................xxxxxxxxxxxx");
     strcpy(vgrid[29], "xxxxxxxxxxxx..................ccc**c|cc4c|c**ccc...................xxxxxxxxxxxxx");
     strcpy(vgrid[30], "xxxxxxxxxxxx..................cccccccc..cccccccc....................xxxxxxxxxxxx");
@@ -2053,7 +2226,7 @@ static char slime_pit(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[33], "xxxxxxxxxxx..........)........cccccccc..cccccccc.....................xxxxxxxxxxx");
     strcpy(vgrid[34], "xxxxxxxxxxx...................ccc**c|cc4c|c**ccc.....................xxxxxxxxxxx");
     strcpy(vgrid[35], "xxxxxxxxxx....................cc**|*cc..cc*|**cc....................xxxxxxxxxxxx");
-    strcpy(vgrid[36], "xxxxxxxxxx....................cc*|P|*c4cc*|P|*cc....................xxxxxxxxxxxx");
+    strcpy(vgrid[36], "xxxxxxxxxx....................cc*|||*c4cc*|||*cc....................xxxxxxxxxxxx");
     strcpy(vgrid[37], "xxxxxxxxxx.....................cc*|*cc..cc*|*cc....................xxxxxxxxxxxxx");
     strcpy(vgrid[38], "xxxxxxxxxxx.....................cc***cc4c***cc.....................xxxxxxxxxxxxx");
     strcpy(vgrid[39], "xxxxxxxxxxxx.....................cc*cc..cc*cc......................xxxxxxxxxxxxx");
@@ -2087,6 +2260,24 @@ static char slime_pit(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[67], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[68], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[69], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+    switch (random2(4))
+    {
+    case 0:
+      vgrid[27][34] = 'O';
+      break;
+    case 1:
+      vgrid[36][34] = 'O';
+      break;
+    case 2:
+      vgrid[27][43] = 'O';
+      break;
+    case 3:
+      vgrid[36][43] = 'O';
+      break;
+    default:
+      break;
+    }
 
     mons_array[0] = MONS_ROYAL_JELLY;
     mons_array[1] = MONS_ACID_BLOB;

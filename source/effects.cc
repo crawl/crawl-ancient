@@ -18,6 +18,7 @@
 #include "externs.h"
 
 #include "beam.h"
+#include "debug.h"
 #include "direct.h"
 #include "dungeon.h"
 #include "itemname.h"
@@ -37,6 +38,7 @@
 #include "spl-book.h"
 #include "spl-util.h"
 #include "stuff.h"
+#include "transfor.h"
 #include "view.h"
 #include "wpn-misc.h"
 
@@ -91,10 +93,36 @@ void torment(int tx, int ty)
 
 void banished(unsigned char gate_type)
 {
+    if (scan_randarts(RAP_PREVENT_TELEPORTATION))
+    {
+        mpr("You feel a strange sense of stasis.");
+        return;
+    }
+
     you_teleport2( false );
+
+    ASSERT((grd[you.x_pos][you.y_pos] == DNGN_FLOOR)
+           || (grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER));
+    ASSERT(mgrd[you.x_pos][you.y_pos] == NON_MONSTER);
+    ASSERT(env.cgrid[you.x_pos][you.y_pos] == EMPTY_CLOUD);
 
     // this is to ensure that you're standing on a suitable space (67)
     grd[you.x_pos][you.y_pos] = gate_type;
+
+    if (player_is_levitating())
+    {
+      mpr("You feel you are falling!");
+      if (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
+      {
+        untransform();
+        you.duration[DUR_BREATH_WEAPON] = 0;
+      }
+      you.levitation = 0;
+      you.duration[DUR_CONTROLLED_FLIGHT] = 0;
+      burden_change();
+    }
+
+    ASSERT(!player_is_levitating());
 
     down_stairs(true, you.your_level);  // heh heh
     untag_followers(); // safety
@@ -226,7 +254,11 @@ void direct_effect(struct bolt &pbolt)
         pbolt.isBeam = false;
         pbolt.isTracer = false;
         pbolt.hit = 20;
+        /* too strong for a mid-class demon (that is, hellion) */
+        /*
         pbolt.damage = dice_def( 3, 20 );
+        */
+        pbolt.damage = dice_def( 3, 10 );
         pbolt.aux_source = "burst of hellfire";
         explosion( pbolt );
         break;
@@ -647,6 +679,24 @@ bool acquirement(unsigned char force_class)
         default:
             break;
         }
+
+        if (player_genus(GENPC_DRACONIAN))
+        {
+          if (type_wanted == ARM_GLOVES || type_wanted == ARM_BOOTS)
+          {
+            type_wanted = OBJ_RANDOM;
+          }
+          else if (type_wanted == ARM_SHIELD)
+          {
+            if (coinflip()) // giant races: 50/50 shield/large shield
+              type_wanted = ARM_LARGE_SHIELD;
+          }
+          else if (type_wanted == OBJ_RANDOM)
+          {
+            type_wanted = ARM_ROBE;  // no heavy armour, see below
+          }
+        }
+
 
         // Now we'll randomly pick a body armour (light only in the
         // case of ARM_ROBE).  Unlike before, now we're only giving

@@ -1,5 +1,11 @@
-                     Dungeon Crawl version 3.40
-            (Copyright 1997, 1998, 1999 Linley Henzell)
+                      Dungeon Crawl Alternative
+                           by Oohara Yuuma
+               based on Dungeon Crawl by Linley Henzell
+             (Copyright 1997, 1998, 1999 Linley Henzell)
+                    (Copyright 2005 Oohara Yuuma)
+
+This is a variant (that is, a modified version) of Dungeon Crawl, a dungeon
+exploring game by Linley Henzell.  Report bugs to <oohara@libra.interq.or.jp>.
 
 Crawl is a fun game in the grand tradition of games like Rogue, Hack and
 Moria. Your objective is to travel deep into a subterranean cave complex and
@@ -535,6 +541,12 @@ Wanderers:
   expect human wanderers to be easy either, as this class is typically
   harder to play than the other classes.
 
+Trickster:
+
+  A trickster is a worshiper of Nemelex Xobeh, the god known for its magical
+  packs of cards.  He or she enters the dungeon with a dagger, a robe, a book
+  of party tricks, a deck of trick, and a portable altar of Nemelex.
+
 ----------------------------------------------------------------------------
                                 EXPERIENCE
 ----------------------------------------------------------------------------
@@ -920,7 +932,7 @@ Staves:
   to memorise them first, and also without consuming food. You must wield a
   staff like a weapon in order to gain from its power, and magical staves
   are as effective as +0 quarterstaves in combat. Spell staves can be
-  Invoked with the 'I' command while you are wielding them.
+  Evoked with the 'E' command while you are wielding them.
 
 Books:
 
@@ -942,8 +954,8 @@ Carrion:
 Miscellaneous:
 
   These are items which don't fall into any other category. You can use many
-  of them by wielding and 'I'nvoking them. You can also use some other
-  special items (such as some weapons) by invoking them in this way.
+  of them by wielding and 'E'voking them. You can also use some other
+  special items (such as some weapons) by evoking them in this way.
 
 Racial Items:
 
@@ -1192,14 +1204,12 @@ version are usable by any later version).
 
 The initfile, INIT.TXT, lets you set various options affecting the game's user
 interface, like the conditions for Autopickup and a default name for your
-character. You can alter it with any reputable text editor.
+character. You can alter it with any reputable text editor. The 'Ctrl-A'
+command toggles the autopickup mode.
 
 As of 2.60, a -c command line switch activates the alternative character set
 for non-IBM graphics displays. A -nc switch activates the non-IBM char set
 and, for Linux systems, disables colour.
-
-Crawl is available for a number of different systems, including Linux, DOS,
-the Mac, etc.
 
 One strange thing you may notice about Crawl is that it does not keep your
 saved games if you die. This is not a bug, it is a feature! If you could
@@ -1210,38 +1220,25 @@ is possible to cheat by messing around with the save files, but you're only
 cheating yourself out of experiencing this game as it was supposed to be
 played. If you think Crawl is too difficult, tell me!
 
-Crawl was compiled using the djgpp compiler, and comes with the files
-CWSDPMI.EXE and CWSDPMI.DOC. You can contact the author of CWSDPMI.EXE at
-sandmann@clio.rice.edu. Read CWSDPMI.DOC for more details.
-
-Although version 3 of Crawl is a complete and finished game, it probably
-contains a few unwanted features which crept in without me noticing (all of
-the earlier versions did). So, if you find anything which you think may be a
-bug, please send details of it to me, including version number, details of
-your system, what you were doing (in the game) when it happened, and just what
-exactly did happen. Hopefully this will never be necessary, but if it is you
-can (as of 26/3/99) reach me at:
-linley.henzell@student.adelaide.edu.au
-
-You can also discuss this game on the newsgroup rec.games.roguelike.misc.
-
 The object of your quest in Crawl (the Orb of Zot) was taken from Wizard's
 Castle, a text adventure written in BASIC.
 
-A lot of people have been sending me feedback and bug reports, which is
-extremely encouraging. I really appreciate that people have been taking the
-time to play my game. Keep it up!
-
 Licence:
-Read Licence.txt for information about the Crawl licence (which is practically
-identical to the nethack GPL).
+Dungeon Crawl Alternative follows the same licence as the original Dungeon
+Crawl.  Read Licence.txt for information about the Crawl licence (which is
+practically identical to the nethack GPL).
 
 Source Code:
-The source code for the current version of Crawl is, at the time of writing
-(30/12/97) available from the Crawl web site:
-http://olis.net.au/~zel/index.html
-Source for some earlier versions can be obtained from me, although
-unfortunately I've lost most of it.
+As of Feb 2005, the source code of the original Dungeon Crawl by Linley Henzell
+can be downloaded at the Crawl website:
+http://www.dungeoncrawl.org/
+This modified version is based on the Debian package of Crawl, version
+4.0.0beta26-4.  See the Debian website for more information:
+http://www.debian.org/
+The source code of Dungeon Crawl Alternative can be downloaded at:
+http://www.interq.or.jp/libra/oohara/crawl-alternative/index.html
+See debian-upstream/changelog of the source tarball for the complete list of
+changes.
 
 Disclaimer:
 

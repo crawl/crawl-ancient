@@ -15,6 +15,7 @@
 
 #include "externs.h"
 #include "dungeon.h"
+#include "items.h"
 #include "monstuff.h"
 #include "mon-pick.h"
 #include "mon-util.h"
@@ -38,17 +39,19 @@
 static int band_member(int band, int power);
 static int choose_band( int mon_type, int power, int &band_size );
 static int place_monster_aux(int mon_type, char behaviour, int target,
-    int px, int py, int power, int extra, bool first_band_member);
+    int px, int py, int power, int extra, bool first_band_member, int dur);
 
 bool place_monster(int &id, int mon_type, int power, char behaviour,
     int target, bool summoned, int px, int py, bool allow_bands,
-    int proximity, int extra)
+    int proximity, int extra, int dur)
 {
     int band_size = 0;
     int band_monsters[BIG_BAND];        // band monster types
     int lev_mons = power;               // final 'power'
     int count;
     int i;
+    int orb_x = -1;
+    int orb_y = -1;
 
     // set initial id to -1  (unsuccessful create)
     id = -1;
@@ -145,6 +148,9 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
             if (i == 10000)
                 return (false);
         }
+
+        if ((proximity == PROX_NEAR_ORB) && (!one_chance_in(3)))
+          mon_type = MONS_ORB_GUARDIAN;
     }
 
     // (3) decide on banding (good lord!)
@@ -163,6 +169,32 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
     // Monsters that can't move shouldn't be taking the stairs -- bwr
     if (proximity == PROX_NEAR_STAIRS && mons_speed( mon_type ) == 0)
         proximity = PROX_AWAY_FROM_PLAYER;
+
+    if (proximity == PROX_NEAR_ORB)
+    {
+      int obj;
+      if (you.char_direction == DIR_ASCENDING)
+        proximity = PROX_AWAY_FROM_PLAYER;
+      for (obj = 0; obj < MAX_ITEMS; obj++)
+      {
+        if (!is_valid_item(mitm[obj]))
+          continue;
+        if (mitm[obj].base_type != OBJ_ORBS)
+          continue;
+        if (mitm[obj].sub_type != ORB_ZOT)
+          continue;
+        if (mitm[obj].x < 0)
+          continue;
+        if (mitm[obj].y < 0)
+          continue;
+        orb_x = mitm[obj].x;
+        orb_y = mitm[obj].y;
+        break;
+      }
+      if (obj >= MAX_ITEMS)
+        proximity = PROX_AWAY_FROM_PLAYER;
+    }
+
 
     // (4) for first monster, choose location.  This is pretty intensive.
     bool proxOK;
@@ -185,7 +217,8 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
         {
             tries ++;
             // give up on stair placement?
-            if (proximity == PROX_NEAR_STAIRS)
+            if ((proximity == PROX_NEAR_STAIRS)
+                || (proximity == PROX_NEAR_ORB))
             {
                 if (tries > 320)
                 {
@@ -278,6 +311,18 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
 
                     proxOK = (pval > 0);
                     break;
+
+            case PROX_NEAR_ORB:
+              if (grid_distance(orb_x, orb_y, px, py ) >= 2 + random2(3))
+              {
+                proxOK = false;
+              }
+              if ((px == orb_x) && (py == orb_y))
+              {
+                proxOK = false;
+              }
+              break;
+
                 default:
                     break;
             }
@@ -291,7 +336,7 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
     }
 
     id = place_monster_aux( mon_type, behaviour, target, px, py, lev_mons,
-                            extra, true );
+                            extra, true, dur);
 
     // now, forget about banding if the first placement failed,  or there's too
     // many monsters already,  or we successfully placed by stairs
@@ -327,6 +372,14 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
         viewwindow(1, false);
     }
 
+    if (proximity == PROX_NEAR_ORB)
+    {
+      if (see_grid(orb_x, orb_y))
+        mpr("The Orb glows for a while.");
+      if (see_grid(px, py))
+        viewwindow(1, false);
+    }
+
     // monsters placed by stairs don't bring the whole band up/down/through
     // with them
     if (proximity == PROX_NEAR_STAIRS)
@@ -336,7 +389,7 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
     for(i = 1; i < band_size; i++)
     {
         place_monster_aux( band_monsters[i], behaviour, target, px, py,
-                           lev_mons, extra, false );
+                           lev_mons, extra, false, dur);
     }
 
     // placement of first monster, at least, was a success.
@@ -345,7 +398,7 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
 
 static int place_monster_aux( int mon_type, char behaviour, int target,
                               int px, int py, int power, int extra,
-                              bool first_band_member )
+                              bool first_band_member, int dur)
 {
     int id, i;
     char grid_wanted;
@@ -463,6 +516,8 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
         mons_add_ench(&menv[id], ENCH_GLOWING_SHAPESHIFTER);
 
     if (mon_type == MONS_GIANT_BAT || mon_type == MONS_UNSEEN_HORROR
+        || mon_type == MONS_GREATER_UNSEEN_HORROR
+        || mon_type == MONS_FAIRY_ASSASSIN
         || mon_type == MONS_GIANT_BLOWFLY)
     {
         menv[id].flags |= MF_BATTY;
@@ -535,6 +590,35 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
 
     menv[id].foe = target;
 
+
+    {
+        struct monsters *const creation = &menv[id];
+
+        // dur should always be ENCH_ABJ_xx
+        if (dur >= ENCH_ABJ_I && dur <= ENCH_ABJ_VI)
+            mons_add_ench(creation, dur );
+
+        // look at special cases: CHARMED, FRIENDLY, HOSTILE, GOD_GIFT
+        // alert summoned being to player's presence
+        if (behaviour > NUM_BEHAVIOURS)
+        {
+            if (behaviour == BEH_FRIENDLY || behaviour == BEH_GOD_GIFT)
+                creation->flags |= MF_CREATED_FRIENDLY;
+
+            if (behaviour == BEH_GOD_GIFT)
+                creation->flags |= MF_GOD_GIFT;
+
+            if (behaviour == BEH_CHARMED)
+            {
+                creation->attitude = ATT_HOSTILE;
+                mons_add_ench(creation, ENCH_CHARM);
+            }
+
+            // make summoned being aware of player's presence
+            behaviour_event(creation, ME_ALERT, MHITYOU);
+        }
+    }
+
     return (id);
 }                               // end place_monster_aux()
 
@@ -573,8 +657,11 @@ static int choose_band( int mon_type, int power, int &band_size )
         break;
 
     case MONS_KILLER_BEE:
+      if (power > 8)
+      {
         band = BAND_KILLER_BEES;       // killer bees
         band_size = 2 + random2(4);
+      }
         break;
 
     case MONS_FLYING_SKULL:
@@ -598,8 +685,11 @@ static int choose_band( int mon_type, int power, int &band_size )
         band_size = 2 + random2(3);
         break;
     case MONS_JACKAL:
+      if (power > 2)
+      {
         band = BAND_JACKALS;      // jackal
         band_size = 1 + random2(3);
+      }
         break;
     case MONS_HELL_KNIGHT:
     case MONS_MARGERY:
@@ -617,8 +707,11 @@ static int choose_band( int mon_type, int power, int &band_size )
         band_size = 4 + random2(4);
         break;
     case MONS_GNOLL:
+      if (power > 2)
+      {
         band = BAND_GNOLLS;      // gnoll
         band_size = ((coinflip())? 3 : 2);
+      }
         break;
     case MONS_BUMBLEBEE:
         band = BAND_BUMBLEBEES;      // bumble bees
@@ -896,9 +989,9 @@ static int band_member(int band, int power)
 
     case BAND_ORCS:
         mon_type = MONS_ORC;
-        if (one_chance_in(5))
+        if ((power > 3) && (one_chance_in(5)))
             mon_type = MONS_ORC_WIZARD;
-        if (one_chance_in(7))
+        if ((power > 6) && (one_chance_in(7)))
             mon_type = MONS_ORC_PRIEST;
         break;
 
@@ -1007,7 +1100,8 @@ static int band_member(int band, int power)
 // PUBLIC FUNCTION -- mons_place().
 
 int mons_place( int mon_type, char behaviour, int target, bool summoned,
-                int px, int py, int level_type, int proximity, int extra )
+                int px, int py, int level_type, int proximity, int extra,
+                int dur)
 {
     int mon_count = 0;
     int temp_rand;          // probabilty determination {dlb}
@@ -1070,7 +1164,7 @@ int mons_place( int mon_type, char behaviour, int target, bool summoned,
     }
 
     if (place_monster( mid, mon_type, power, behaviour, target, summoned,
-                       px, py, permit_bands, proximity, extra ) == false)
+                       px, py, permit_bands, proximity, extra, dur) == false)
     {
         return (-1);
     }
@@ -1122,7 +1216,7 @@ int create_monster( int cls, int dur, int beha, int cr_x, int cr_y,
     if (empty_surrounds( cr_x, cr_y, spcw, true, empty ))
     {
         summd = mons_place( cls, beha, hitting, true, empty[0], empty[1],
-                            you.level_type, 0, zsec );
+                            you.level_type, 0, zsec, dur);
     }
 
     // determine whether creating a monster is successful (summd != -1) {dlb}:

@@ -24,6 +24,9 @@
 #include "randart.h"
 #include "stuff.h"
 
+static void generate_area(unsigned char gx1, unsigned char gy1,
+                          unsigned char gx2, unsigned char gy2);
+
 // public for abyss generation
 void generate_abyss(void)
 {
@@ -47,7 +50,7 @@ void generate_abyss(void)
     grd[45][35] = DNGN_FLOOR;
 }                               // end generate_abyss()
 
-
+#if 0
 static void generate_area(unsigned char gx1, unsigned char gy1,
                           unsigned char gx2, unsigned char gy2)
 {
@@ -179,7 +182,81 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
         }
     }
 }
+#endif /* 0 */
 
+/* no water, no lava, no room, no item, no altar
+ * --- just plain wall and floor
+ */
+static void
+generate_area(unsigned char gx1, unsigned char gy1,
+              unsigned char gx2, unsigned char gy2)
+{
+  unsigned char i, j;
+  int temp_rand;
+  int n;
+  bool exit_found = false;
+  int thing_created;
+
+  // nuke map
+  for (i = 0; i < GXM; i++)
+  {
+    for (j = 0; j < GYM; j++)
+    {
+      env.map[i][j] = 0;
+    }
+  }
+
+  /* make sure there _is_ an exit */
+  for (i = gx1; (!exit_found) && (i < gx2 + 1); i++)
+  {
+    for (j = gy1; (!exit_found) && (j < gy2 + 1); j++)
+    {
+      if (grd[i][j] == DNGN_EXIT_ABYSS)
+      {
+        exit_found = true;
+      }
+    }
+  }
+  if (!exit_found)
+  {
+    for (n = 0; n < 1000; n++)
+    {
+      i = random2(GXM);
+      j = random2(GYM);
+      if ((i >= gx1) && (i < gx2 + 1)
+          && (j >= gy1) && (j < gy2 + 1)
+          && (grd[i][j] == DNGN_UNSEEN))
+      {
+        grd[i][j] = DNGN_EXIT_ABYSS;
+        break;
+      }
+    }
+  }
+
+  for (i = gx1; i < gx2 + 1; i++)
+  {
+    for (j = gy1; j < gy2 + 1; j++)
+    {
+      if (grd[i][j] == DNGN_UNSEEN)
+      {
+        temp_rand = random2(4000);
+
+        grd[i][j] = ((temp_rand > 999) ? DNGN_FLOOR :       // 75.0%
+                     (temp_rand > 400) ? DNGN_ROCK_WALL :   // 15.0%
+                     (temp_rand > 100) ? DNGN_STONE_WALL :  //  7.5%
+                     (temp_rand >   0) ? DNGN_METAL_WALL    //  2.5%
+                     : DNGN_CLOSED_DOOR); // 1 in 4000
+
+        if ((grd[i][j] == DNGN_FLOOR) && one_chance_in(100000))
+        {
+          thing_created = items(1, OBJ_MISCELLANY,
+                                MISC_RUNE_OF_ZOT, true, 51, 51);
+          move_item_to_grid( &thing_created, i, j );
+        }
+      }
+    }
+  }
+}
 
 void area_shift(void)
 /*******************/

@@ -35,6 +35,7 @@
 #include "mon-util.h"
 #include "player.h"
 #include "randart.h"
+#include "religion.h"
 #include "spells1.h"
 #include "spl-cast.h"
 #include "spl-util.h"
@@ -188,6 +189,12 @@ bool cast_smiting(int power)
     bool success = false;
     struct dist beam;
     struct monsters *monster = 0;       // NULL {dlb}
+    bool attacked_holy = false;
+    bool attacked_friend = false;
+    bool stabbed = false;
+
+    if (power > 50)
+      power = 50;
 
     mpr("Smite whom?", MSGCH_PROMPT);
 
@@ -203,12 +210,61 @@ bool cast_smiting(int power)
     {
         monster = &menv[mgrd[beam.tx][beam.ty]];
 
-        strcpy(info, "You smite ");
-        strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
+        // not paying attention (but not batty)
+        if (monster->foe != MHITYOU && !testbits(monster->flags, MF_BATTY))
+          stabbed = true;
+        // confused (but not perma-confused)
+        if (mons_has_ench(monster, ENCH_CONFUSION)
+            && !mons_flag(monster->type, M_CONFUSED))
+          stabbed = true;
+        // fleeing
+        if (monster->behaviour == BEH_FLEE)
+          stabbed = true;
+        // sleeping
+        if (monster->behaviour == BEH_SLEEP)
+          stabbed = true;
+        // helpless (plants, etc)
+        if (mons_flag(monster->type, M_NO_EXP_GAIN))
+          stabbed = false;
+
+        if (mons_holiness(monster->type) == MH_HOLY)
+          attacked_holy = true;
+        if (mons_friendly(monster))
+          attacked_friend = true;
+
+        strcpy(info, "You ");
+        if (attacked_holy)
+          strcat(info, "dare to ");
+        strcat(info, "smite ");
+        if (attacked_friend)
+        {
+          strcat(info, "your ");
+          strcat(info, ptr_monam( monster, DESC_PLAIN ));
+        }
+        else
+        {
+          strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
+        }
+        if (stabbed)
+          strcat(info, " from a blind spot");
         strcat(info, "!");
         mpr(info);
 
+        if (attacked_holy)
+          naughty(NAUGHTY_ATTACK_HOLY, monster->hit_dice);
+        if (attacked_friend)
+          naughty(NAUGHTY_ATTACK_FRIEND, 5);
+        if ((stabbed)
+            && (mons_holiness(monster->type) == MH_NATURAL
+                || mons_holiness(monster->type) == MH_HOLY))
+        {
+          naughty(NAUGHTY_STABBING, 4);
+        }
+
+        /*
         hurt_monster(monster, random2(8) + (random2(power) / 3));
+        */
+        hurt_monster(monster, random2avg(8 + power / 3, 3));
 
         if (monster->hit_points < 1)
             monster_die(monster, KILL_YOU, 0);

@@ -648,7 +648,7 @@ int near_stairs(int px, int py, int max_dist, unsigned char &stair_gfx)
 
             // very simple check
             if (grd[x][y] >= DNGN_STONE_STAIRS_DOWN_I
-                && grd[x][y] <= DNGN_RETURN_FROM_SWAMP
+                && grd[x][y] <= DNGN_RETURN_FROM_FAIRYLAND
                 && grd[x][y] != DNGN_ENTER_SHOP)        // silly
             {
                 stair_gfx = mapch(grd[x][y]);

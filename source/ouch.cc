@@ -445,6 +445,19 @@ void scrolls_burn(char burn_strength, char target_class)
             mpr("Some of your food is covered with spores!");
     }
     /* burn_no could be 0 */
+
+    if ((you.species == SP_MUMMY) && (target_class == OBJ_SCROLLS))
+    {
+      int i;
+      bool hurted = false;
+      for (i = 0; (i < 100) && (random2(i * i + 2) < burn_strength); i++)
+      {
+        rot_hp(1);
+        hurted = true;
+      }
+      if (hurted)
+        mpr("Your body burns!");
+    }
 }
 
                             // end scrolls_burn()
@@ -550,7 +563,11 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
     }
 
     // assumed bug for high damage amounts
+    /* make sure the game can kill the player*/
+    /*
     if (dam > 300)
+    */
+    if (dam > 2999)
     {
         snprintf( info, INFO_SIZE,
                   "Potential bug: Unexpectedly high damage = %d", dam );
@@ -596,12 +613,24 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
         // Even if we have low HP messages off, we'll still give a
         // big hit warning (in this case, a hit for half our HPs) -- bwr
         if (dam > 0 && you.hp_max <= dam * 2)
-            mpr( "Ouch!  That really hurt!", MSGCH_DANGER );
+        {
+          /*
+          mpr( "Ouch!  That really hurt!", MSGCH_DANGER );
+          */
+          snprintf(info, INFO_SIZE, "Ouch!  That really hurt! (%d damage)",
+                   dam);
+          mpr( info, MSGCH_DANGER );
+        }
 
         if (you.hp > 0 && Options.hp_warning
             && you.hp <= (you.hp_max * Options.hp_warning) / 100)
         {
+          /*
             mpr( "* * * LOW HITPOINT WARNING * * *", MSGCH_DANGER );
+          */
+          snprintf(info, INFO_SIZE, "* * * LOW HITPOINT WARNING * * * (%d/%d)",
+                   you.hp, you.hp_max);
+          mpr( info, MSGCH_DANGER );
         }
 
         if (you.hp > 0)
@@ -830,6 +859,9 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
         case BRANCH_ELVEN_HALLS:
         case BRANCH_TOMB:
         case BRANCH_SWAMP:
+        case BRANCH_BIG_ROOM:
+        case BRANCH_JADE_CAVE:
+        case BRANCH_FAIRYLAND:
             se.dlvl = you.your_level - you.branch_stairs[you.where_are_you - 10];
             break;
 
@@ -936,10 +968,42 @@ void end_game( struct scorefile_entry &se )
     // death message
     if (dead)
     {
-        mpr("You die...");      // insert player name here? {dlb}
+      char text[100];
+      if (se.damage > -9000)
+      {
+        if (se.death_type == KILLED_BY_MONSTER && se.auxkilldata[0])
+          snprintf(text, 99, "You die... (%d damage with %s)", se.damage,
+                   se.auxkilldata);
+        else if (se.death_type != KILLED_BY_QUITTING && se.auxkilldata[0])
+          snprintf(text, 99, "You die... (%d damage with %s %s)", se.damage,
+                   (is_vowel(se.auxkilldata[0])) ? "an" : "a",
+                   se.auxkilldata);
+        else
+          snprintf(text, 99, "You die... (%d damage)", se.damage);
+      }
+      else
+        snprintf(text, 99, "You die...");
+      mpr(text);
+        // insert player name here? {dlb}
+        /*
+        mpr("You die...");
+        */
         viewwindow(1, false);   // don't do this for leaving/winning characters
     }
     more();
+
+    /* se.auxkilldata is already set, so we don't need
+     * #ifdef HISCORE_WEAPON_DETAIL here
+     */
+  for (i = 0; i < MAX_ITEMS; i++)
+  {
+    if (!is_valid_item(mitm[i]))
+      continue;
+    set_ident_flags(mitm[i], ISFLAG_IDENT_MASK);
+    if (mitm[i].base_type != 0)
+      set_ident_type(mitm[i].base_type,
+                     mitm[i].sub_type, ID_KNOWN_TYPE);
+  }
 
     for (i = 0; i < ENDOFPACK; i++)
         set_ident_flags( you.inv[i], ISFLAG_IDENT_MASK );

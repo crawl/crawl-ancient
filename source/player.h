@@ -290,8 +290,10 @@ unsigned long exp_needed(int lev);
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
+/*
 void display_char_status(void);
-
+*/
+void display_char_status(FILE *handle);
 
 /* ***********************************************************************
  * called from: item_use - items - misc - spells - spells3

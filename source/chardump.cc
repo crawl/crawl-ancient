@@ -48,6 +48,7 @@
 #include "items.h"
 #include "macro.h"
 #include "mutation.h"
+#include "overmap.h"
 #include "player.h"
 #include "religion.h"
 #include "shopping.h"
@@ -58,6 +59,7 @@
 #include "stuff.h"
 #include "version.h"
 
+extern unsigned char your_sign; /* defined in view.cc */
 
  // ========================================================================
  //      Internal Functions
@@ -216,6 +218,8 @@ static void dump_stats( std::string & text )
         itoa(you.max_strength, st_prn, 10);
         text += st_prn;
     }
+    if (you.strength < 1)
+      text += " (dead)";
 
     text += "     Dexterity ";
     itoa(you.dex, st_prn, 10);
@@ -226,6 +230,8 @@ static void dump_stats( std::string & text )
         itoa(you.max_dex, st_prn, 10);
         text += st_prn;
     }
+    if (you.dex < 1)
+      text += " (dead)";
 
     text += "     Intelligence ";
     itoa(you.intel, st_prn, 10);
@@ -236,6 +242,9 @@ static void dump_stats( std::string & text )
         itoa(you.max_intel, st_prn, 10);
         text += st_prn;
     }
+    if (you.intel < 1)
+      text += " (dead)";
+
     text += EOL;
 
     text += "Hit Points : ";
@@ -303,6 +312,8 @@ static void dump_stats( std::string & text )
  //---------------------------------------------------------------
 static void dump_location( std::string & text )
 {
+  int dlvl;
+
     if (you.level_type != LEVEL_DUNGEON || you.your_level != -1)
         text += "You are ";
 
@@ -352,18 +363,61 @@ static void dump_location( std::string & text )
         text += "in the Tomb";
     else if (you.where_are_you == BRANCH_SWAMP)
         text += "in the Swamp";
+    else if (you.where_are_you == BRANCH_BIG_ROOM)
+        text += "in the Big Room";
+    else if (you.where_are_you == BRANCH_JADE_CAVE)
+        text += "in the Jade Cave";
+    else if (you.where_are_you == BRANCH_FAIRYLAND)
+        text += "in the Fairyland";
+    else if (you.your_level == -1)
+      text += "You escaped";
     else
-    {
-        if (you.your_level == -1)
-            text += "You escaped";
-        else
-        {
-            text += "on level ";
+      text += "in the Dungeon";
 
-            char st_prn[20];
-            itoa(you.your_level + 1, st_prn, 10);
-            text += st_prn;
-        }
+    dlvl = you.your_level + 1;
+    switch (you.where_are_you)
+    {
+    case BRANCH_ORCISH_MINES:
+    case BRANCH_HIVE:
+    case BRANCH_LAIR:
+    case BRANCH_SLIME_PITS:
+    case BRANCH_VAULTS:
+    case BRANCH_CRYPT:
+    case BRANCH_HALL_OF_BLADES:
+    case BRANCH_HALL_OF_ZOT:
+    case BRANCH_ECUMENICAL_TEMPLE:
+    case BRANCH_SNAKE_PIT:
+    case BRANCH_ELVEN_HALLS:
+    case BRANCH_TOMB:
+    case BRANCH_SWAMP:
+    case BRANCH_BIG_ROOM:
+    case BRANCH_JADE_CAVE:
+    case BRANCH_FAIRYLAND:
+      dlvl = you.your_level - you.branch_stairs[you.where_are_you - 10];
+      break;
+    case BRANCH_DIS:
+    case BRANCH_GEHENNA:
+    case BRANCH_VESTIBULE_OF_HELL:
+    case BRANCH_COCYTUS:
+    case BRANCH_TARTARUS:
+    case BRANCH_INFERNO:
+    case BRANCH_THE_PIT:
+      dlvl = you.your_level - 26;
+      break;
+    }
+
+    if (you.where_are_you != BRANCH_VESTIBULE_OF_HELL
+        && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE
+        && you.where_are_you != BRANCH_HALL_OF_BLADES
+        && you.where_are_you != BRANCH_BIG_ROOM
+        && you.your_level != -1)
+    {
+      text += " (level ";
+
+      char st_prn[20];
+      itoa(dlvl, st_prn, 10);
+      text += st_prn;
+      text += ")";
     }
 
     text += ".";
@@ -740,6 +794,71 @@ static void dump_mutations( std::string & text )
     }
 }                               // end dump_mutations()
 
+static void dump_near_item(FILE *handle)
+{
+  int i;
+  int j;
+  int item_count;
+  char st_pass[ITEMNAME_SIZE];
+  std::string description;
+  std::string description2;
+
+  if (you.your_level < 0)
+    return;
+
+  item_count = 0;
+  for (i = 0; i < MAX_ITEMS; i++)
+  {
+    if (!is_valid_item(mitm[i]))
+      continue;
+    if (mitm[i].x < 0)
+      continue;
+    if (mitm[i].y < 0)
+      continue;
+    if (!see_grid(mitm[i].x, mitm[i].y))
+      continue;
+    item_count++;
+  }
+
+  fputs("[items near you]\n", handle);
+
+  if (item_count <= 0)
+  {
+    fputs("You see no item near you.\n", handle);
+    return;
+  }
+
+  for (j = 0; j <= OBJ_GOLD; j++)
+  {
+    for (i = 0; i < MAX_ITEMS; i++)
+    {
+      if (!is_valid_item(mitm[i]))
+        continue;
+      if (mitm[i].x < 0)
+        continue;
+      if (mitm[i].y < 0)
+        continue;
+      if (!see_grid(mitm[i].x, mitm[i].y))
+        continue;
+      if (mitm[i].base_type != j)
+        continue;
+      item_name(mitm[i] , DESC_NOCAP_A, st_pass);
+      fputs(st_pass, handle);
+      if (is_dumpable_artifact(mitm[i], Options.verbose_dump))
+      {
+        description2 = get_item_description(mitm[i], Options.verbose_dump,
+                                            true);
+        description = munge_description(description2);
+        fputs(description.c_str(), handle);
+      }
+      else
+      {
+        fputs("\n", handle);
+      }
+    }
+  }
+}
+
 #if MAC
 #pragma mark -
 #endif
@@ -765,7 +884,7 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
     // start with enough room for 100 80 character lines
     text.reserve(100 * 80);
 
-    text += " Dungeon Crawl version " VERSION " character file.";
+    text += " Dungeon Crawl Alternative version " VERSION " character file.";
     text += EOL;
     text += EOL;
 
@@ -796,6 +915,7 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
     text += EOL;
     text += EOL;
 
+    /*
     if (you.attribute[ATTR_TRANSFORMATION])
     {
         switch (you.attribute[ATTR_TRANSFORMATION])
@@ -829,6 +949,7 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
         text += EOL;
         text += EOL;
     }
+    */
 
     dump_inventory(text, show_prices);
 
@@ -883,6 +1004,44 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
             begin = end;
             end = text.find(EOL, end);
         }
+
+        fputs("\n", handle);
+        display_char_status(handle);
+
+        fputs("\n", handle);
+        fputs("[screen shot]\n\n", handle);
+        {
+          int c;
+          int i;
+          int j;
+          for (j = you.y_pos - 8; j < you.y_pos + 9; j++)
+          {
+            for (i = you.x_pos - 8; i < you.x_pos + 9; i++)
+            {
+              if ((i == you.x_pos) && (j == you.y_pos))
+                c = your_sign;
+              else if (you.level_type != LEVEL_LABYRINTH
+                  && you.level_type != LEVEL_ABYSS)
+                c = env.map[i - 1][j - 1];
+              else
+                c = env.show[i + you.x_pos - 9][j + you.y_pos - 9];
+              if (isprint(c))
+                fputc(c, handle);
+              else
+                fputc(' ', handle);
+            }
+            fputs("\n", handle);
+          }
+        }
+
+        fputs("\n", handle);
+        dump_near_item(handle);
+
+        fputs("\n", handle);
+        display_overmap(handle);
+
+        fputs("\n\n", handle);
+        dump_messages(handle, 50);
 
         fclose(handle);
         succeeded = true;

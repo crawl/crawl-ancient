@@ -148,15 +148,24 @@ static const struct ability_def Ability_List[] =
 
     // INVOCATIONS:
     // Zin
+    { ABIL_ZIN_REVEAL_WAY, "Reveal Way", 1, 0, 100, 0, ABFLAG_NONE },
+    /*
     { ABIL_ZIN_REPEL_UNDEAD, "Repel Undead", 1, 0, 100, 0, ABFLAG_NONE },
+    */
+    { ABIL_ZIN_PURIFY_RAW_FLESH, "Purify Raw Flesh", 2, 0, 200, 1, ABFLAG_NONE },
+    /*
     { ABIL_ZIN_HEALING, "Minor Healing", 2, 0, 50, 1, ABFLAG_NONE },
+    */
     { ABIL_ZIN_PESTILENCE, "Pestilence", 3, 0, 100, 2, ABFLAG_NONE },
     { ABIL_ZIN_HOLY_WORD, "Holy Word", 6, 0, 150, 3, ABFLAG_NONE },
     { ABIL_ZIN_SUMMON_GUARDIAN, "Summon Guardian", 7, 0, 150, 4, ABFLAG_NONE },
 
     // The Shining One
+    /*
     { ABIL_TSO_REPEL_UNDEAD, "Repel Undead", 1, 0, 100, 0, ABFLAG_NONE },
     { ABIL_TSO_SMITING, "Smiting", 3, 0, 50, 2, ABFLAG_NONE },
+    */
+    { ABIL_TSO_SMITING, "Smiting", 0, 0, 200, 0, ABFLAG_NONE },
     { ABIL_TSO_ANNIHILATE_UNDEAD, "Annihilate Undead", 3, 0, 50, 2, ABFLAG_NONE },
     { ABIL_TSO_THUNDERBOLT, "Thunderbolt", 5, 0, 100, 2, ABFLAG_NONE },
     { ABIL_TSO_SUMMON_DAEVA, "Summon Daeva", 8, 0, 150, 4, ABFLAG_NONE },
@@ -177,8 +186,11 @@ static const struct ability_def Ability_List[] =
     { ABIL_VEHUMET_CHANNEL_ENERGY, "Channel Energy", 0, 0, 50, 0, ABFLAG_NONE },
 
     // Okawaru
+    { ABIL_OKAWARU_REGENERATION, "Regeneration", 1, 0, 50, 0, ABFLAG_NONE },
     { ABIL_OKAWARU_MIGHT, "Might", 2, 0, 50, 1, ABFLAG_NONE },
+    /*
     { ABIL_OKAWARU_HEALING, "Healing", 2, 0, 75, 1, ABFLAG_NONE },
+    */
     { ABIL_OKAWARU_HASTE, "Haste", 5, 0, 100, 3, ABFLAG_NONE },
 
     // Makhleb
@@ -192,8 +204,10 @@ static const struct ability_def Ability_List[] =
 
     // Trog
     { ABIL_TROG_BERSERK, "Berserk", 0, 0, 200, 0, ABFLAG_NONE },
+    /*
     { ABIL_TROG_MIGHT, "Might", 0, 0, 200, 1, ABFLAG_NONE },
     { ABIL_TROG_HASTE_SELF, "Haste Self", 0, 0, 250, 3, ABFLAG_NONE },
+    */
 
     // Elyvilon
     { ABIL_ELYVILON_LESSER_HEALING, "Lesser Healing", 1, 0, 100, 0, ABFLAG_NONE },
@@ -800,7 +814,9 @@ bool activate_ability(void)
         break;
 
     // INVOCATIONS:
+        /*
     case ABIL_ZIN_REPEL_UNDEAD:
+        */
     case ABIL_TSO_REPEL_UNDEAD:
         turn_undead(you.piety);
 
@@ -816,12 +832,35 @@ bool activate_ability(void)
         exercise(SK_INVOCATIONS, 1);
         break;
 
+    case ABIL_ZIN_REVEAL_WAY:
+      if (detect_traps(you.skills[SK_INVOCATIONS] * 8) > 0)
+        mpr("You detect some traps!");
+
+      cast_see_invisible(you.skills[SK_INVOCATIONS] * 8);
+
+        if (!you.duration[DUR_REPEL_UNDEAD])
+            mpr( "You feel a holy aura protecting you." );
+        you.duration[DUR_REPEL_UNDEAD] += 8
+                                + roll_dice(2, 2 * you.skills[SK_INVOCATIONS]);
+        if (you.duration[ DUR_REPEL_UNDEAD ] > 50)
+            you.duration[ DUR_REPEL_UNDEAD ] = 50;
+
+        exercise(SK_INVOCATIONS, 1);
+        break;
+
+        /*
     case ABIL_ZIN_HEALING:
         if (!cast_healing( 3 + (you.skills[SK_INVOCATIONS] / 6) ))
             break;
 
         exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
+        */
+
+    case ABIL_ZIN_PURIFY_RAW_FLESH:
+      cast_purify_flesh(you.skills[SK_INVOCATIONS] * 8);
+      exercise(SK_INVOCATIONS, 1 + random2(3));
+      break;
 
     case ABIL_ZIN_PESTILENCE:
         mpr( "You call forth a swarm of pestilential beasts!" );
@@ -844,7 +883,10 @@ bool activate_ability(void)
 
     case ABIL_TSO_SMITING:
         cast_smiting( you.skills[SK_INVOCATIONS] * 6 );
+        /*
         exercise( SK_INVOCATIONS, (coinflip()? 3 : 2) );
+        */
+        exercise( SK_INVOCATIONS, 1 );
         break;
 
     case ABIL_TSO_ANNIHILATE_UNDEAD:
@@ -855,7 +897,10 @@ bool activate_ability(void)
         }
 
         zapping(ZAP_DISPEL_UNDEAD, you.skills[SK_INVOCATIONS] * 6, beam);
+        /*
         exercise(SK_INVOCATIONS, 2 + random2(4));
+        */
+        exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
     case ABIL_TSO_THUNDERBOLT:
@@ -865,7 +910,10 @@ bool activate_ability(void)
             return (false);
         }
 
+        you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 1;
         zapping(ZAP_LIGHTNING, you.skills[SK_INVOCATIONS] * 6, beam);
+        mpr("Your divine protection wanes.");
+        you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
         exercise(SK_INVOCATIONS, 3 + random2(6));
         break;
 
@@ -935,18 +983,23 @@ bool activate_ability(void)
         exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
+    case ABIL_OKAWARU_REGENERATION:
+      cast_regen(you.skills[SK_INVOCATIONS] * 8);
+      exercise(SK_INVOCATIONS, 1);
+      break;
+
     case ABIL_OKAWARU_MIGHT:
         potion_effect( POT_MIGHT, you.skills[SK_INVOCATIONS] * 8 );
         exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
-
+        /*
     case ABIL_OKAWARU_HEALING:
         if (!cast_healing( 3 + (you.skills[SK_INVOCATIONS] / 6) ))
             break;
 
         exercise(SK_INVOCATIONS, 2 + random2(5));
         break;
-
+        */
     case ABIL_OKAWARU_HASTE:
         potion_effect( POT_SPEED, you.skills[SK_INVOCATIONS] * 8 );
         exercise(SK_INVOCATIONS, 3 + random2(7));
@@ -1051,6 +1104,7 @@ bool activate_ability(void)
         go_berserk(true);
         break;
 
+#if 0
     case ABIL_TROG_MIGHT:
         // Trog abilities don't use or train invocations.
         potion_effect( POT_MIGHT, 150 );
@@ -1060,6 +1114,7 @@ bool activate_ability(void)
         // Trog abilities don't use or train invocations.
         potion_effect( POT_SPEED, 150 );
         break;
+#endif /* 0 */
 
     case ABIL_SIF_MUNA_FORGET_SPELL:
         cast_selective_amnesia(true);
@@ -1498,9 +1553,17 @@ bool generate_abilities( void )
         {
         case GOD_ZIN:
             if (you.piety >= 30)
+                insert_ability( ABIL_ZIN_REVEAL_WAY );
+          /*
+            if (you.piety >= 30)
                 insert_ability( ABIL_ZIN_REPEL_UNDEAD );
+          */
+            if (you.piety >= 50)
+                insert_ability( ABIL_ZIN_PURIFY_RAW_FLESH );
+            /*
             if (you.piety >= 50)
                 insert_ability( ABIL_ZIN_HEALING );
+            */
             if (you.piety >= 75)
                 insert_ability( ABIL_ZIN_PESTILENCE );
             if (you.piety >= 100)
@@ -1511,11 +1574,19 @@ bool generate_abilities( void )
 
         case GOD_SHINING_ONE:
             if (you.piety >= 30)
+              /*
                 insert_ability( ABIL_TSO_REPEL_UNDEAD );
-            if (you.piety >= 50)
+              */
                 insert_ability( ABIL_TSO_SMITING );
+            if (you.piety >= 50)
+              /*
+                insert_ability( ABIL_TSO_SMITING );
+              */
+                insert_ability( ABIL_TSO_ANNIHILATE_UNDEAD );
+            /*
             if (you.piety >= 75)
                 insert_ability( ABIL_TSO_ANNIHILATE_UNDEAD );
+            */
             if (you.piety >= 100)
                 insert_ability( ABIL_TSO_THUNDERBOLT );
             if (you.piety >= 120)
@@ -1564,15 +1635,18 @@ bool generate_abilities( void )
                 insert_ability( ABIL_KIKU_RECALL_UNDEAD_SLAVES );
             if (you.piety >= 75)
                 insert_ability( ABIL_KIKU_ENSLAVE_UNDEAD );
+            /*
             if (you.piety >= 120)
+            */
+            if (you.piety >= 100)
                 insert_ability( ABIL_KIKU_INVOKE_DEATH );
             break;
 
         case GOD_OKAWARU:
             if (you.piety >= 30)
-                insert_ability( ABIL_OKAWARU_MIGHT );
+                insert_ability( ABIL_OKAWARU_REGENERATION );
             if (you.piety >= 50)
-                insert_ability( ABIL_OKAWARU_HEALING );
+                insert_ability( ABIL_OKAWARU_MIGHT );
             if (you.piety >= 120)
                 insert_ability( ABIL_OKAWARU_HASTE );
             break;
@@ -1580,10 +1654,12 @@ bool generate_abilities( void )
         case GOD_TROG:
             if (you.piety >= 30)
                 insert_ability( ABIL_TROG_BERSERK );
+            /*
             if (you.piety >= 50)
                 insert_ability( ABIL_TROG_MIGHT );
             if (you.piety >= 100)
                 insert_ability( ABIL_TROG_HASTE_SELF );
+            */
             break;
 
         case GOD_SIF_MUNA:
@@ -1720,13 +1796,20 @@ void set_god_ability_slots( void )
     switch (you.religion)
     {
     case GOD_ZIN:
+      /*
         abil_start = ABIL_ZIN_REPEL_UNDEAD;
+      */
+      abil_start = ABIL_ZIN_REVEAL_WAY;
         num_abil = 5;
         break;
 
     case GOD_SHINING_ONE:
+      /*
         abil_start = ABIL_TSO_REPEL_UNDEAD;
         num_abil = 5;
+      */
+        abil_start = ABIL_TSO_SMITING;
+        num_abil = 4;
         break;
 
     case GOD_KIKUBAAQUDGHA:
@@ -1745,7 +1828,10 @@ void set_god_ability_slots( void )
         break;
 
     case GOD_OKAWARU:
+      /*
         abil_start = ABIL_OKAWARU_MIGHT;
+      */
+        abil_start = ABIL_OKAWARU_REGENERATION;
         num_abil = 3;
         break;
 
@@ -1761,7 +1847,10 @@ void set_god_ability_slots( void )
 
     case GOD_TROG:
         abil_start = ABIL_TROG_BERSERK;
+        num_abil = 1;
+        /*
         num_abil = 3;
+        */
         break;
 
     case GOD_ELYVILON:
@@ -1780,7 +1869,7 @@ void set_god_ability_slots( void )
     {
         const int abil = you.ability_letter_table[i];
 
-        if ((abil >= ABIL_ZIN_REPEL_UNDEAD      // is a god ability
+        if ((abil >= ABIL_ZIN_REVEAL_WAY      // is a god ability
                     && abil <= ABIL_ELYVILON_GREATER_HEALING)
             && (num_abil == 0           // current god does have abilities
                 || abil < abil_start    // not one of current god's abilities
@@ -2027,16 +2116,28 @@ static bool insert_ability( int which_ability )
         // end item abilities - some possibly mutagenic {dlb}
 
         // begin invocations {dlb}
+    case ABIL_ELYVILON_LESSER_HEALING:
+        /*
     case ABIL_ELYVILON_PURIFICATION:
+        */
         invoc = true;
-        failure = 20 - (you.piety / 20) - (5 * you.skills[SK_INVOCATIONS]);
+        failure = 20 - (you.piety / 20) - (6 * you.skills[SK_INVOCATIONS]);
         break;
 
+    case ABIL_ZIN_REVEAL_WAY:
+        /*
     case ABIL_ZIN_REPEL_UNDEAD:
+        */
     case ABIL_TSO_REPEL_UNDEAD:
     case ABIL_KIKU_RECALL_UNDEAD_SLAVES:
+    case ABIL_OKAWARU_REGENERATION:
+      /*
     case ABIL_OKAWARU_MIGHT:
+      */
+    case ABIL_ELYVILON_PURIFICATION:
+      /*
     case ABIL_ELYVILON_LESSER_HEALING:
+      */
         invoc = true;
         failure = 30 - (you.piety / 20) - (6 * you.skills[SK_INVOCATIONS]);
         break;
@@ -2047,6 +2148,7 @@ static bool insert_ability( int which_ability )
         failure = 30 - you.piety;       // starts at 0%
         break;
 
+#if 0
     case ABIL_TROG_MIGHT:         // piety >= 50
         invoc = true;
         failure = 80 - you.piety;       // starts at 30%
@@ -2056,15 +2158,22 @@ static bool insert_ability( int which_ability )
         invoc = true;
         failure = 160 - you.piety;      // starts at 60%
         break;
+#endif /* 0 */
 
     case ABIL_YRED_ANIMATE_CORPSE:
         invoc = true;
         failure = 40 - (you.piety / 20) - (3 * you.skills[SK_INVOCATIONS]);
         break;
 
+        /*
     case ABIL_ZIN_HEALING:
+        */
+    case ABIL_ZIN_PURIFY_RAW_FLESH:
     case ABIL_TSO_SMITING:
+    case ABIL_OKAWARU_MIGHT:
+      /*
     case ABIL_OKAWARU_HEALING:
+      */
     case ABIL_MAKHLEB_MINOR_DESTRUCTION:
     case ABIL_SIF_MUNA_FORGET_SPELL:
     case ABIL_KIKU_ENSLAVE_UNDEAD:

@@ -453,7 +453,9 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
         if (you.level_type == LEVEL_PANDEMONIUM)
             generate_random_demon();
 
-        if (you.your_level > 1 && one_chance_in(3))
+        if ((you.level_type == LEVEL_DUNGEON)
+            && (you.your_level > 1)
+            && (one_chance_in(3)))
             load_ghost();
     }
     else
@@ -678,8 +680,10 @@ found_stair:
     if (mgrd[you.x_pos][you.y_pos] != NON_MONSTER)
         monster_teleport(&menv[mgrd[you.x_pos][you.y_pos]], true);
 
+    /*
     if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
         grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
+    */
 
     following = 0;
     fmenv = -1;
@@ -1653,7 +1657,10 @@ void generate_random_demon(void)
     // hp - could be defined below (as could ev, AC etc). Oh well, too late:
     ghost.values[ GVAL_MAX_HP ] = 100 + roll_dice( 3, 50 );
 
+    /*
     ghost.values[ GVAL_EV ] = 5 + random2(20);
+    */
+    ghost.values[ GVAL_EV ] = 15 + random2(5) * random2(5);
     ghost.values[ GVAL_AC ] = 5 + random2(20);
 
     ghost.values[ GVAL_SEE_INVIS ] = (one_chance_in(10) ? 0 : 1);

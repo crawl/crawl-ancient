@@ -288,6 +288,7 @@ void pray(void)
             && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER
             && one_chance_in(4))
         {
+          /*
             if (you.religion == GOD_TROG
                 || (you.religion == GOD_OKAWARU && coinflip()))
             {
@@ -297,6 +298,36 @@ void pray(void)
             {
                 success = acquirement(OBJ_ARMOUR);
             }
+          */
+          if (you.religion == GOD_TROG)
+          {
+            if ((you.is_undead) || (coinflip()))
+            {
+              success = acquirement(OBJ_WEAPONS);
+            }
+            else
+            {
+              switch (random2(3))
+              {
+              case 0:
+                success = mutate(MUT_STRONG, false);
+                break;
+              case 1:
+                success = mutate(MUT_AGILE, false);
+                break;
+              default:
+                success = mutate(MUT_ROBUST, false);
+                break;
+              }
+            }
+          }
+          else if (you.religion == GOD_OKAWARU)
+          {
+            if (coinflip())
+              success = acquirement(OBJ_WEAPONS);
+            else
+              success = acquirement(OBJ_ARMOUR);
+          }
 
             if (success)
             {
@@ -703,7 +734,7 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
 
             done_bad = true;
         }
-        else if (you.your_level == 0)
+        else /* if (you.your_level == 0) */
         {
             // this should remain the last possible outcome {dlb}
             temp_rand = random2(3);
@@ -837,6 +868,8 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
                 }
             }
 
+            you.running = 0;
+
             done_good = true;
         }
         else if (random2(sever) <= 4)
@@ -870,6 +903,8 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
 
             if (acquirement(OBJ_WEAPONS))
                 more();
+
+            you.running = 0;
 
             done_good = true;
         }
@@ -1111,6 +1146,8 @@ void gain_piety(char pgn)
     int old_piety = you.piety;
 
     you.piety += pgn;
+    if (you.piety > 199)
+      you.piety = 199;
 
     if (you.piety >= 30 && old_piety < 30)
     {
@@ -1124,9 +1161,10 @@ void gain_piety(char pgn)
         default:
             strcpy(info, "You can now ");
             strcat(info,
-                    (you.religion == GOD_ZIN || you.religion == GOD_SHINING_ONE)
-                            ? "repel the undead" :
-
+                    (you.religion == GOD_ZIN)
+                            ? "reveal your way" /* "repel the undead" */ :
+                    (you.religion == GOD_SHINING_ONE)
+                            ? "smite your foes" :
                     (you.religion == GOD_KIKUBAAQUDGHA)
                             ? "recall your undead slaves" :
                     (you.religion == GOD_YREDELEMNUL)
@@ -1136,7 +1174,8 @@ void gain_piety(char pgn)
                     (you.religion == GOD_MAKHLEB)
                             ? "gain power from killing in Makhleb's name" :
                     (you.religion == GOD_OKAWARU)
-                            ? "give your great, but temporary, body strength" :
+                            ? "increase your recuperative abilities"
+                        /* "give your great, but temporary, body strength" */ :
                     (you.religion == GOD_TROG)
                             ? "go berserk at will" :
                     (you.religion == GOD_ELYVILON)
@@ -1157,6 +1196,7 @@ void gain_piety(char pgn)
         case GOD_NO_GOD:
         case GOD_XOM:
         case GOD_NEMELEX_XOBEH:
+        case GOD_TROG:
             break;
         case GOD_KIKUBAAQUDGHA:
             simple_god_message(" is protecting you from some side-effects of death magic.");
@@ -1171,19 +1211,23 @@ void gain_piety(char pgn)
 
             strcat(info,
                    (you.religion == GOD_ZIN)
-                           ? "call upon Zin for minor healing" :
+                           ? "purify raw flesh to eat it"
+                           /* "call upon Zin for minor healing" */ :
                    (you.religion == GOD_SHINING_ONE)
-                           ? "smite your foes" :
+                           ? "dispel the undead" /* "smite your foes" */ :
                    (you.religion == GOD_YREDELEMNUL)
                            ? "recall your undead slaves" :
                    (you.religion == GOD_OKAWARU)
-                           ? "call upon Okawaru for minor healing" :
+                           ? "give your body great, but temporary, strength"
+                          /* "call upon Okawaru for minor healing" */ :
                    (you.religion == GOD_MAKHLEB)
                            ? "harness Makhleb's destructive might" :
                    (you.religion == GOD_SIF_MUNA)
                            ? "freely open your mind to new spells" :
+                   /*
                    (you.religion == GOD_TROG)
                            ? "give your body great, but temporary, strength" :
+                   */
                    (you.religion == GOD_ELYVILON)
                            ? "call upon Elyvilon for purification"
                    // Unknown god
@@ -1204,7 +1248,10 @@ void gain_piety(char pgn)
         case GOD_OKAWARU:
         case GOD_NEMELEX_XOBEH:
         case GOD_SIF_MUNA:
+          /*
         case GOD_TROG:
+          */
+        case GOD_SHINING_ONE:
             break;
         case GOD_VEHUMET:
             god_speaks(you.religion,"During prayer you have some protection from summoned creatures.");
@@ -1215,14 +1262,18 @@ void gain_piety(char pgn)
             strcat(info,
                      (you.religion == GOD_ZIN)
                                  ? "call down a plague" :
+                   /*
                      (you.religion == GOD_SHINING_ONE)
                                  ? "dispel the undead" :
+                   */
                      (you.religion == GOD_KIKUBAAQUDGHA)
                                  ? "permanently enslave the undead" :
                      (you.religion == GOD_YREDELEMNUL)
                                  ? "animate legions of the dead" :
                      (you.religion == GOD_MAKHLEB)
                                  ? "summon a lesser servant of Makhleb" :
+                     (you.religion == GOD_TROG)
+                                 ? "gain power from killing in Trog's name" :
                      (you.religion == GOD_ELYVILON)
                                  ? "call upon Elyvilon for moderate healing"
                      // Unknown god
@@ -1241,7 +1292,10 @@ void gain_piety(char pgn)
         case GOD_XOM:
         case GOD_OKAWARU:
         case GOD_NEMELEX_XOBEH:
+        case GOD_TROG:
+          /*
         case GOD_KIKUBAAQUDGHA:
+          */
             break;
         case GOD_SIF_MUNA:
             simple_god_message
@@ -1256,14 +1310,18 @@ void gain_piety(char pgn)
                                 ? "utter a Holy Word" :
                         (you.religion == GOD_SHINING_ONE)
                                 ? "hurl bolts of divine anger" :
+                        (you.religion == GOD_KIKUBAAQUDGHA)
+                                ? "summon an emissary of Death" :
                         (you.religion == GOD_YREDELEMNUL)
                                 ? "drain ambient lifeforce" :
                         (you.religion == GOD_VEHUMET)
                                 ? "tap ambient magical fields" :
                         (you.religion == GOD_MAKHLEB)
                                 ? "hurl Makhleb's greater destruction" :
+                   /*
                         (you.religion == GOD_TROG)
                                 ? "haste yourself" :
+                   */
                         (you.religion == GOD_ELYVILON)
                                 ? "call upon Elyvilon to restore your abilities"
                         // Unknown god
@@ -1282,6 +1340,7 @@ void gain_piety(char pgn)
         case GOD_NO_GOD:
         case GOD_XOM:
         case GOD_NEMELEX_XOBEH:
+        case GOD_KIKUBAAQUDGHA:
         case GOD_VEHUMET:
         case GOD_SIF_MUNA:
         case GOD_TROG:
@@ -1294,8 +1353,10 @@ void gain_piety(char pgn)
                                 ? "summon a guardian angel" :
                      (you.religion == GOD_SHINING_ONE)
                                 ? "summon a divine warrior" :
+                   /*
                      (you.religion == GOD_KIKUBAAQUDGHA)
                                 ? "summon an emissary of Death" :
+                   */
                      (you.religion == GOD_YREDELEMNUL)
                                 ? "control the undead" :
                      (you.religion == GOD_OKAWARU)
@@ -1487,6 +1548,7 @@ void lose_piety(char pgn)
             case GOD_NO_GOD:
             case GOD_XOM:
             case GOD_NEMELEX_XOBEH:
+            case GOD_KIKUBAAQUDGHA:
             case GOD_VEHUMET:
             case GOD_SIF_MUNA:
             case GOD_TROG:
@@ -1499,8 +1561,10 @@ void lose_piety(char pgn)
                                 ? "summon guardian angels" :
                            (you.religion == GOD_SHINING_ONE)
                                 ? "summon divine warriors" :
+                       /*
                            (you.religion == GOD_KIKUBAAQUDGHA)
                                 ? "summon Death's emissaries" :
+                       */
                            (you.religion == GOD_YREDELEMNUL)
                                 ? "control undead beings" :
                            (you.religion == GOD_OKAWARU)
@@ -1526,7 +1590,10 @@ void lose_piety(char pgn)
             case GOD_XOM:
             case GOD_OKAWARU:
             case GOD_NEMELEX_XOBEH:
+            case GOD_TROG:
+              /*
             case GOD_KIKUBAAQUDGHA:
+              */
                 break;
             case GOD_SIF_MUNA:
                 god_speaks(you.religion,"Sif Muna is no longer protecting you from miscast magic.");
@@ -1540,14 +1607,18 @@ void lose_piety(char pgn)
                             ? "call upon Elyvilon to restore your abilities" :
                         (you.religion == GOD_SHINING_ONE)
                             ? "hurl bolts of divine anger" :
+                        (you.religion == GOD_KIKUBAAQUDGHA)
+                            ? "summon Death's emissaries" :
                         (you.religion == GOD_YREDELEMNUL)
                             ? "drain ambient life force" :
                         (you.religion == GOD_VEHUMET)
                             ? "tap ambient magical fields" :
-                        (you.religion == GOD_MAKHLEB)
-                            ? "direct Makhleb's greater destructive powers" :
+                       /*
                         (you.religion == GOD_TROG)
-                            ? "haste yourself"
+                            ? "haste yourself" :
+                       */
+                        (you.religion == GOD_MAKHLEB)
+                            ? "direct Makhleb's greater destructive powers"
                         // Unknown god
                             : "endure this program bug @100");
 
@@ -1566,7 +1637,10 @@ void lose_piety(char pgn)
             case GOD_OKAWARU:
             case GOD_NEMELEX_XOBEH:
             case GOD_SIF_MUNA:
+              /*
             case GOD_TROG:
+              */
+            case GOD_SHINING_ONE:
                 break;
             case GOD_VEHUMET:
                 simple_god_message(" will longer shield you from summoned creatures.");
@@ -1577,14 +1651,18 @@ void lose_piety(char pgn)
                 strcat(info,
                        (you.religion == GOD_ZIN)
                                 ? "call down a plague" :
+                       /*
                        (you.religion == GOD_SHINING_ONE)
                                 ? "dispel undead" :
+                       */
                        (you.religion == GOD_KIKUBAAQUDGHA)
                                 ? "enslave undead" :
                        (you.religion == GOD_YREDELEMNUL)
                                 ? "animate legions of the dead" :
                        (you.religion == GOD_MAKHLEB)
                                 ? "summon a servant of Makhleb" :
+                       (you.religion == GOD_TROG)
+                                ? "gain power from killing in Trog's name" :
                        (you.religion == GOD_ELYVILON)
                                 ? "call upon Elyvilon for moderate healing"
                        // Unknown god
@@ -1603,6 +1681,7 @@ void lose_piety(char pgn)
             case GOD_NO_GOD:
             case GOD_XOM:
             case GOD_NEMELEX_XOBEH:
+            case GOD_TROG:
                 break;
             case GOD_KIKUBAAQUDGHA:
                 simple_god_message(" is no longer shielding you from miscast death magic.");
@@ -1616,19 +1695,22 @@ void lose_piety(char pgn)
 
                 strcat(info,
                        (you.religion == GOD_ZIN)
-                            ? "call upon Zin for minor healing" :
+                            ? "purify raw flesh to eat it" :
                        (you.religion == GOD_SHINING_ONE)
-                            ? "smite your foes" :
+                            ? "dispel undead" /* "smite your foes" */ :
                        (you.religion == GOD_YREDELEMNUL)
                             ? "recall your undead slaves" :
                        (you.religion == GOD_OKAWARU)
-                            ? "call upon Okawaru for minor healing" :
+                            ? "give your body great, but temporary, strength"
+                       /* "call upon Okawaru for minor healing" */ :
                        (you.religion == GOD_MAKHLEB)
                             ? "hurl Makhleb's destruction" :
                        (you.religion == GOD_SIF_MUNA)
                             ? "forget spells at will" :
+                       /*
                        (you.religion == GOD_TROG)
                             ? "give your body great, but temporary, strength" :
+                       */
                        (you.religion == GOD_ELYVILON)
                             ? "call upon Elyvilon for Purification"
                        // Unknown god
@@ -1653,8 +1735,10 @@ void lose_piety(char pgn)
                 strcpy(info, "You can no longer ");
 
                 strcat(info,
-                    (you.religion == GOD_ZIN || you.religion == GOD_SHINING_ONE)
-                            ? "repel the undead" :
+                    (you.religion == GOD_ZIN)
+                            ? "reveal your way" /* "repel the undead" */ :
+                    (you.religion == GOD_SHINING_ONE)
+                            ? "smite your foes" :
                     (you.religion == GOD_KIKUBAAQUDGHA)
                             ? "recall your undead slaves" :
                     (you.religion == GOD_YREDELEMNUL)
@@ -1664,7 +1748,8 @@ void lose_piety(char pgn)
                     (you.religion == GOD_MAKHLEB)
                             ? "gain power from killing in Makhleb's name" :
                     (you.religion == GOD_OKAWARU)
-                            ? "give your body great, but temporary, strength" :
+                            ? "increase your recuperative abilities"
+                       /* "give your body great, but temporary, strength" */ :
                     (you.religion == GOD_TROG)
                             ? "go berserk at will" :
                     (you.religion == GOD_ELYVILON)

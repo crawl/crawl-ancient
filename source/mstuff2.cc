@@ -26,6 +26,7 @@
 #include "beam.h"
 #include "debug.h"
 #include "effects.h"
+#include "food.h"
 #include "itemname.h"
 #include "items.h"
 #include "misc.h"
@@ -33,14 +34,17 @@
 #include "monstuff.h"
 #include "mon-util.h"
 #include "player.h"
+#include "spells1.h"
 #include "spells2.h"
 #include "spells4.h"
 #include "spl-cast.h"
+#include "spl-util.h"
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
 
 static unsigned char monster_abjuration(int pow, bool test);
+static int time_twist_items(int x, int y, int pow, int garbage);
 
 // XXX: must fix species abils to not use duration 15
 // -- ummm ... who wrote this? {dlb}
@@ -184,7 +188,7 @@ void mons_trap(struct monsters *monster)
             }
 
             damage_taken = 10 + random2avg(29, 2);
-            damage_taken -= random2(1 + monster->armour_class);
+            damage_taken -= random2avg(1 + monster->armour_class, 3);
 
             if (damage_taken < 0)
                 damage_taken = 0;
@@ -263,7 +267,7 @@ void mons_trap(struct monsters *monster)
                                                     >= monster->evasion)
         {
             damage_taken = roll_dice( beem.damage );
-            damage_taken -= random2(1 + monster->armour_class);
+            damage_taken -= random2avg(1 + monster->armour_class, 3);
 
             if (damage_taken < 0)
                 damage_taken = 0;
@@ -362,6 +366,274 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 
     switch (spell_cast)
     {
+    case MS_FAIRY_BEAST_TAMER_SUMMON:
+      {
+        int mons = MONS_BUTTERFLY;
+
+        if (!mons_friendly(monster) && monsterNearby
+            && monster_abjuration(1, true) > 0 && coinflip())
+        {
+          monster_abjuration( monster->hit_dice * 10, false );
+          return;
+        }
+
+        if (!one_chance_in(20))
+        {
+          switch (random2(14))
+          {
+          case 0:
+            mons = MONS_HOUND;
+            break;
+          case 1:
+          case 2:
+            mons = MONS_WOLF;
+            break;
+          case 3:
+          case 4:
+            mons = MONS_WAR_DOG;
+            break;
+          case 5:
+            mons = MONS_BLACK_BEAR;
+            break;
+          case 6:
+            mons = MONS_BEAR;
+            break;
+          case 7:
+          case 8:
+            mons = MONS_GRIZZLY_BEAR;
+            break;
+          case 9:
+            mons = MONS_POLAR_BEAR;
+            break;
+          case 10:
+          case 11:
+            mons = MONS_YAK;
+            break;
+          case 12:
+            mons = MONS_DEATH_YAK;
+            break;
+          default:
+            mons = MONS_JACKAL;
+            break;
+          }
+        }
+        create_monster( mons, ENCH_ABJ_V, SAME_ATTITUDE(monster),
+                        monster->x, monster->y, monster->foe, 250 );
+        return;
+      }
+      break;
+
+    case MS_FAIRY_FIRE_STARTER_CONJURATION:
+      if (mons_friendly(monster))
+        return;
+
+      sumcount2 = 3 + random2(3);
+      for (sumcount = 0; sumcount < sumcount2; sumcount++)
+      {
+        create_monster(MONS_FIRE_VORTEX, 0, SAME_ATTITUDE(monster),
+                       you.x_pos, you.y_pos, monster->foe, 250 );
+      }
+      noisy(30, you.x_pos, you.y_pos);
+      return;
+      break;
+
+    case MS_FAIRY_SNOW_MAGE_CONJURATION:
+      if (mons_friendly(monster))
+        return;
+
+      big_cloud(CLOUD_COLD_MON, you.x_pos, you.y_pos, 100, 3 + random2(3) );
+      return;
+      break;
+
+    case MS_RANDOMIZE:
+      if (mons_friendly(monster))
+        return;
+
+      miscast_effect( SPTYP_RANDOM, random2(30) + you.your_level,
+                      75 + random2(100), 3, "randomizer" );
+      return;
+      break;
+
+    case MS_WIZARDS_BANE:
+      if (!mons_friendly(monster))
+      {
+        int spell = SPELL_NO_SPELL;
+        char ztype = ZAP_MAGIC_DARTS;
+        int power = 0;
+        struct bolt beam;
+
+        if (you_resist_magic(100))
+        {
+          canned_msg(MSG_YOU_RESIST);
+          return;
+        }
+
+        if (player_has_spell(SPELL_STICKY_FLAME)
+            && coinflip())
+        {
+          spell = SPELL_STICKY_FLAME;
+          ztype = ZAP_STICKY_FLAME;
+        }
+        if (player_has_spell(SPELL_ISKENDERUNS_MYSTIC_BLAST)
+            && coinflip())
+        {
+          spell = SPELL_ISKENDERUNS_MYSTIC_BLAST;
+          ztype = ZAP_MYSTIC_BLAST;
+        }
+        if (player_has_spell(SPELL_BOLT_OF_MAGMA)
+            && coinflip())
+        {
+          spell = SPELL_BOLT_OF_MAGMA;
+          ztype = ZAP_MAGMA;
+        }
+        if (player_has_spell(SPELL_BOLT_OF_FIRE)
+            && coinflip())
+        {
+          spell = SPELL_BOLT_OF_FIRE;
+          ztype = ZAP_FIRE;
+        }
+        if (player_has_spell(SPELL_BOLT_OF_COLD)
+            && coinflip())
+        {
+          spell = SPELL_BOLT_OF_COLD;
+          ztype = ZAP_COLD;
+        }
+        if (player_has_spell(SPELL_BOLT_OF_IRON)
+            && coinflip())
+        {
+          spell = SPELL_BOLT_OF_IRON;
+          ztype = ZAP_IRON_BOLT;
+        }
+        if (player_has_spell(SPELL_VENOM_BOLT)
+            && coinflip())
+        {
+          spell = SPELL_VENOM_BOLT;
+          ztype = ZAP_VENOM_BOLT;
+        }
+        if (player_has_spell(SPELL_LIGHTNING_BOLT)
+            && coinflip())
+        {
+          spell = SPELL_LIGHTNING_BOLT;
+          ztype = ZAP_LIGHTNING;
+        }
+        if (player_has_spell(SPELL_BOLT_OF_DRAINING)
+            && coinflip())
+        {
+          spell = SPELL_BOLT_OF_DRAINING;
+          ztype = ZAP_NEGATIVE_ENERGY;
+        }
+        if (player_has_spell(SPELL_FIREBALL)
+            && coinflip())
+        {
+          spell = SPELL_FIREBALL;
+          ztype = ZAP_FIREBALL;
+        }
+        if (player_has_spell(SPELL_ORB_OF_ELECTROCUTION)
+            && coinflip())
+        {
+          spell = SPELL_ORB_OF_ELECTROCUTION;
+          ztype = ZAP_ORB_OF_ELECTRICITY;
+        }
+        if (player_has_spell(SPELL_LEHUDIBS_CRYSTAL_SPEAR)
+            && coinflip())
+        {
+          spell = SPELL_LEHUDIBS_CRYSTAL_SPEAR;
+          ztype = ZAP_CRYSTAL_SPEAR;
+        }
+        if (player_has_spell(SPELL_AGONY)
+            && coinflip())
+        {
+          spell = SPELL_AGONY;
+          ztype = ZAP_AGONY;
+        }
+        if (player_has_spell(SPELL_ICE_STORM)
+            && coinflip())
+        {
+          spell = SPELL_ICE_STORM;
+          ztype = ZAP_ICE_STORM;
+        }
+
+        if (spell == SPELL_NO_SPELL)
+        {
+          canned_msg(MSG_SPELL_FIZZLES);
+          return;
+        }
+
+        beam.target_x = you.x_pos;
+        beam.target_y = you.y_pos;
+        beam.source_x = you.x_pos;
+        beam.source_y = you.y_pos;
+
+        power = calc_spell_power(spell, true);
+        mpr("A magical beam pops out from your body, aiming at you!");
+        zapping(ztype, power, beam);
+      }
+      return;
+      break;
+
+    case MS_TIME_TWIST:
+      if (mons_friendly(monster))
+        return;
+
+      if (!mons_friendly(monster) && monsterNearby
+          && monster_abjuration(1, true) > 0 && coinflip())
+      {
+        monster_abjuration( monster->hit_dice * 10, false );
+        return;
+      }
+
+      mpr("You see time flies under your very eyes!");
+      apply_area_within_radius(time_twist_items, you.x_pos, you.y_pos, 100,
+                               3, 0);
+      if (!wearing_amulet(AMU_CONSERVATION))
+      {
+        int i;
+        char name[ITEMNAME_SIZE];
+        for (i = 0; i < ENDOFPACK; i++)
+        {
+          if (!you.inv[i].quantity)
+            continue;
+          if ((you.inv[i].base_type != OBJ_FOOD)
+              && (you.inv[i].base_type != OBJ_SCROLLS)
+              && (you.inv[i].base_type != OBJ_POTIONS)
+              && (you.inv[i].base_type != OBJ_CORPSES))
+            continue;
+          if (!one_chance_in(3))
+            continue;
+
+          item_name(you.inv[i], DESC_CAP_THE, name);
+          dec_inv_item_quantity(i, you.inv[i].quantity);
+          snprintf(info, INFO_SIZE, "%s you are carrying crumbles to dust.", name);
+          mpr(info);
+        }
+      }
+      make_hungry(400, false);
+      return;
+      break;
+
+    case MS_FREEZE_TIME:
+      if (mons_friendly(monster))
+        return;
+
+      if ((wearing_amulet(AMU_RESIST_SLOW)) || (you_resist_magic(100)))
+      {
+        canned_msg(MSG_YOU_RESIST);
+        return;
+      }
+
+      if ((you.paralysis > 0) || (you.slow > 0))
+      {
+        canned_msg(MSG_SPELL_FIZZLES);
+        return;
+      }
+
+      mpr("Time freezes around you!");
+      if (you.paralysis < 10)
+        you.paralysis += 2 + random2(3);
+      slow_player(10 + random2avg(40, 3));
+      return;
+      break;
+
     case MS_VAMPIRE_SUMMON:
         sumcount2 = 3 + random2(3) + monster->hit_dice / 5;
 
@@ -597,7 +869,10 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 {
     // always set these -- used by things other than fire_beam()
+  /*
     pbolt.ench_power = 12 * monster->hit_dice;
+  */
+  pbolt.ench_power = stepdown_value(12 * monster->hit_dice, 50, 50, 150, 200);
 
     if (spell_cast == MS_TELEPORT)
         pbolt.ench_power = 2000;
@@ -633,6 +908,13 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
     // fire_tracer, or beam.
     switch (spell_cast)
     {
+    case MS_FAIRY_BEAST_TAMER_SUMMON:
+    case MS_FAIRY_FIRE_STARTER_CONJURATION:
+    case MS_FAIRY_SNOW_MAGE_CONJURATION:
+    case MS_RANDOMIZE:
+    case MS_WIZARDS_BANE:
+    case MS_TIME_TWIST:
+    case MS_FREEZE_TIME:
     case MS_VAMPIRE_SUMMON:
     case MS_LEVEL_SUMMON:       // summon anything appropriate for level
     case MS_FAKE_RAKSHASA_SUMMON:
@@ -652,6 +934,7 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
 
     // Need to correct this for power of spellcaster
     int power = 12 * monster->hit_dice;
+    power = stepdown_value( power, 50, 50, 150, 200 );
 
     struct SBeam theBeam = mons_spells(spell_cast, power);
 
@@ -769,7 +1052,11 @@ void setup_dragon(struct monsters *monster, struct bolt &pbolt)
 
     pbolt.range = 4;
     pbolt.rangeMax = 13;
+    /*
     pbolt.damage = dice_def( 3, (monster->hit_dice * 2) );
+    */
+    pbolt.damage = dice_def( 3, stepdown_value(monster->hit_dice * 2,
+                                               4, 4, 20, 30) );
     pbolt.type = SYM_ZAP;
     pbolt.hit = 30;
     pbolt.beam_source = monster_index(monster);
@@ -1065,10 +1352,13 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
 
     pbolt.aux_source = throw_buff;
 
+    exHitBonus = stepdown_value(exHitBonus, 9, 6, 45, 100);
     // add everything up.
     pbolt.hit = baseHit + random2avg(exHitBonus, 2) + ammoHitBonus;
+    /*
     pbolt.damage = dice_def( 1, baseDam + random2avg(exDamBonus, 2) + ammoDamBonus );
-
+    */
+    pbolt.damage = dice_def( 3, (baseDam + random2avg(exDamBonus, 2) + ammoDamBonus + 2) / 3 );
     if (launched)
     {
         pbolt.damage.size += lnchDamBonus;
@@ -1153,7 +1443,10 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "magic dart";       // inv_name [throw_2]);
         beam.range = 6;
         beam.rangeMax = 10;
+        /*
         beam.damage = dice_def( 3, 4 + (power / 100) );
+        */
+        beam.damage = dice_def( 2, 3 + (power / 100) );
         beam.hit = 1500;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
@@ -1172,7 +1465,10 @@ struct SBeam mons_spells( int spell_cast, int power )
         // high to-hit value, so these should do more damage -- bwr
         beam.damage = dice_def( 3, 5 + (power / 40) );
 
+        /*
         beam.hit = 60;
+        */
+        beam.hit = 7 + random2(power) / 80;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
         beam.flavour = BEAM_FIRE;
@@ -1350,7 +1646,10 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "crystal spear";
         beam.range = 7;
         beam.rangeMax = 16;
+        /*
         beam.damage = dice_def( 3, 12 + power / 10 );
+        */
+        beam.damage = dice_def( 4, 15 + power / 7 );
         beam.colour = WHITE;
         beam.type = SYM_MISSILE;
         beam.thrown = KILL_MON;
@@ -1565,7 +1864,10 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.name = "bolt of energy";
         beam.range = 9;
         beam.rangeMax = 23;
+        /*
         beam.damage = dice_def( 3, 25 );
+        */
+        beam.damage = dice_def( 3, 8 + (power / 9) );
         beam.hit = 9;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
@@ -1578,7 +1880,10 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.colour = RED;
         beam.range = 4;
         beam.rangeMax = 13;
+        /*
         beam.damage = dice_def( 3, 25 );
+        */
+        beam.damage = dice_def( 3, 8 + (power / 9) );
         beam.hit = 20;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1608,6 +1913,21 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.thrown = KILL_MON_MISSILE;
         beam.isBeam = true;
         break;
+
+    case MS_ORB_OF_ELECTROCUTION:
+        beam.name = "orb of electricity";
+        beam.range = 9 + random2(12);
+        beam.rangeMax = 20;
+        beam.damage = calc_dice( 1, 7 + (power * 2) / 5 );
+        beam.damage.num = 0;                    // only does explosion damage
+        beam.colour = LIGHTBLUE;
+        beam.type = SYM_ZAP;
+        beam.thrown = KILL_MON;
+        beam.flavour = BEAM_ELECTRICITY;
+        beam.hit = 40;
+        beam.isBeam = false;
+        break;
+      break;
 
     default:
         DEBUGSTR("Unknown spell");
@@ -1663,3 +1983,52 @@ static unsigned char monster_abjuration(int pow, bool test)
 
     return result;
 }                               // end monster_abjuration()
+
+static int
+time_twist_items(int x, int y, int pow, int garbage)
+{
+  UNUSED( pow );
+  UNUSED( garbage );
+
+  bool stuff_broken = false;
+  int obj;
+  int next;
+  char name[ITEMNAME_SIZE];
+
+  obj = igrd[x][y];
+
+  if (obj == NON_ITEM)
+    return 0;
+
+  while (obj != NON_ITEM)
+  {
+    next = mitm[obj].link;
+    it_name(obj, DESC_CAP_THE, name);
+
+    switch (mitm[obj].base_type)
+    {
+    case OBJ_FOOD:
+    case OBJ_SCROLLS:
+    case OBJ_POTIONS:
+    case OBJ_CORPSES:
+      if ((see_grid(x, y)) && (!one_chance_in(10)))
+      {
+        stuff_broken = true;
+        destroy_item(obj);
+        snprintf(info, INFO_SIZE, "%s crumbles to dust.", name);
+        mpr(info);
+      }
+      break;
+
+    default:
+      break;
+    }
+
+    obj = next;
+  }
+
+  if (stuff_broken)
+    return 1;
+
+  return 0;
+}

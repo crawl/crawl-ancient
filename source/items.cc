@@ -542,45 +542,45 @@ void item_check(char keyin)
             switch (grid)
             {
             case DNGN_ENTER_HELL:
-                mpr("There is a gateway to Hell here.");
+                mpr("There is a gateway to Hell here (> to enter).");
                 break;
             case DNGN_ENTER_GEHENNA:
-                mpr("There is a gateway to Gehenna here.");
+                mpr("There is a gateway to Gehenna here (> to enter).");
                 break;
             case DNGN_ENTER_COCYTUS:
-                mpr("There is a gateway to the frozen wastes of Cocytus here.");
+                mpr("There is a gateway to the frozen wastes of Cocytus here (> to enter).");
                 break;
             case DNGN_ENTER_TARTARUS:
-                mpr("There is a gateway to Tartarus here.");
+                mpr("There is a gateway to Tartarus here (> to enter).");
                 break;
             case DNGN_ENTER_DIS:
-                mpr("There is a gateway to the Iron City of Dis here.");
+                mpr("There is a gateway to the Iron City of Dis here (> to enter).");
                 break;
             case DNGN_ENTER_SHOP:
-                snprintf( info, INFO_SIZE, "There is an entrance to %s here.", shop_name(you.x_pos, you.y_pos));
+                snprintf( info, INFO_SIZE, "There is an entrance to %s here (< to enter).", shop_name(you.x_pos, you.y_pos));
                 mpr(info);
                 break;
             case DNGN_ENTER_LABYRINTH:
-                mpr("There is an entrance to a labyrinth here.");
+                mpr("There is an entrance to a labyrinth here (> to enter).");
                 mpr("Beware, for starvation awaits!");
                 break;
             case DNGN_ENTER_ABYSS:
-                mpr("There is a one-way gate to the infinite horrors of the Abyss here.");
+                mpr("There is a one-way gate to the infinite horrors of the Abyss here (> to enter).");
                 break;
             case DNGN_STONE_ARCH:
                 mpr("There is an empty stone archway here.");
                 break;
             case DNGN_EXIT_ABYSS:
-                mpr("There is a gateway leading out of the Abyss here.");
+                mpr("There is a gateway leading out of the Abyss here (> to enter).");
                 break;
             case DNGN_ENTER_PANDEMONIUM:
-                mpr("There is a gate leading to the halls of Pandemonium here.");
+                mpr("There is a gate leading to the halls of Pandemonium here (> to enter).");
                 break;
             case DNGN_EXIT_PANDEMONIUM:
-                mpr("There is a gate leading out of Pandemonium here.");
+                mpr("There is a gate leading out of Pandemonium here (> to enter).");
                 break;
             case DNGN_TRANSIT_PANDEMONIUM:
-                mpr("There is a gate leading to another region of Pandemonium here.");
+                mpr("There is a gate leading to another region of Pandemonium here (> to enter).");
                 break;
             case DNGN_ENTER_ORCISH_MINES:
                 mpr("There is a staircase to the Orcish Mines here.");
@@ -604,7 +604,7 @@ void item_check(char keyin)
                 mpr("There is a staircase to the Hall of Blades here.");
                 break;
             case DNGN_ENTER_ZOT:
-                mpr("There is a gate to the Realm of Zot here.");
+                mpr("There is a gate to the Realm of Zot here (> to enter).");
                 break;
             case DNGN_ENTER_TEMPLE:
                 mpr("There is a staircase to the Ecumenical Temple here.");
@@ -621,11 +621,23 @@ void item_check(char keyin)
             case DNGN_ENTER_SWAMP:
                 mpr("There is a staircase to the Swamp here.");
                 break;
+            case DNGN_ENTER_BIG_ROOM:
+                mpr("There is a staircase to the Big Room here.");
+                break;
+            case DNGN_ENTER_JADE_CAVE:
+                mpr("There is a staircase to the Jade Cave here.");
+                break;
+            case DNGN_ENTER_FAIRYLAND:
+                mpr("There is a staircase to the Fairyland here.");
+                break;
             case DNGN_RETURN_FROM_ORCISH_MINES:
             case DNGN_RETURN_FROM_HIVE:
             case DNGN_RETURN_FROM_LAIR:
             case DNGN_RETURN_FROM_VAULTS:
             case DNGN_RETURN_FROM_TEMPLE:
+            case DNGN_RETURN_FROM_BIG_ROOM:
+            case DNGN_RETURN_FROM_JADE_CAVE:
+            case DNGN_RETURN_FROM_FAIRYLAND:
                 mpr("There is a staircase back to the Dungeon here.");
                 break;
             case DNGN_RETURN_FROM_SLIME_PITS:
@@ -644,7 +656,7 @@ void item_check(char keyin)
                 mpr("There is a staircase back to the Mines here.");
                 break;
             case DNGN_RETURN_FROM_ZOT:
-                mpr("There is a gate leading back out of this place here.");
+                mpr("There is a gate leading back out of this place here (< to enter).");
                 break;
             case DNGN_ALTAR_ZIN:
                 mpr("There is a glowing white marble altar of Zin here.");
@@ -2143,7 +2155,7 @@ void handle_time( long time_delta )
     // only check for badness once every other turn
     if (coinflip())
     {
-        if (you.magic_contamination >= 5
+        if (you.magic_contamination > 5
             /* && random2(150) <= you.magic_contamination */)
         {
             mpr("Your body shudders with the violent release of wild energies!", MSGCH_WARN);
@@ -2423,6 +2435,11 @@ static void autopickup(void)
 
     if (autopickup_on == 0 || Options.autopickups == 0L)
         return;
+    /*
+    if ((Options.hp_warning)
+        && (you.hp <= (you.hp_max * Options.hp_warning) / 100))
+      return;
+    */
 
     if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR
         && you.duration[DUR_TRANSFORMATION] > 0)

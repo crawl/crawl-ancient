@@ -756,16 +756,28 @@ void read_init_file(void)
 void get_system_environment(void)
 {
     // The player's name
+  SysEnv.crawl_name = NULL;
     SysEnv.crawl_name = getenv("CRAWL_NAME");
 
     // The player's pizza
+    SysEnv.crawl_pizza = NULL;
     SysEnv.crawl_pizza = getenv("CRAWL_PIZZA");
 
     // The directory which contians init.txt, macro.txt, morgue.txt
     // This should end with the appropriate path delimiter.
+    SysEnv.crawl_dir = NULL;
     SysEnv.crawl_dir = getenv("CRAWL_DIR");
+    if (SysEnv.crawl_dir == NULL)
+    {
+      SysEnv.crawl_dir = strdup(getenv("HOME"));
+      SysEnv.crawl_dir = (char *) realloc(SysEnv.crawl_dir,
+                                          sizeof(char) * (strlen(SysEnv.crawl_dir)
+                                                 + strlen("/.crawl/") + 1));
+      strcpy(SysEnv.crawl_dir + strlen(SysEnv.crawl_dir), "/.crawl/");
+    }
 
     // The full path to the init file -- this over-rides CRAWL_DIR
+    SysEnv.crawl_rc = NULL;
     SysEnv.crawl_rc = getenv("CRAWL_RC");
 
     // rename giant and giant spiked clubs
@@ -773,6 +785,7 @@ void get_system_environment(void)
 
 #ifdef MULTIUSER
     // The user's home directory (used to look for ~/.crawlrc file)
+    SysEnv.home = NULL;
     SysEnv.home = getenv("HOME");
 #endif
 }                               // end get_system_environment()

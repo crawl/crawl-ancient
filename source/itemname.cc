@@ -1683,6 +1683,8 @@ static char item_name_2( const item_def &item, char buff[ITEMNAME_SIZE],
                           (it_plus == RUNE_ELVEN_HALLS)  ? "elven" :
                           (it_plus == RUNE_TOMB)         ? "golden" :
                           (it_plus == RUNE_SWAMP)        ? "decaying" :
+                          (it_plus == RUNE_JADE_CAVE)    ? "transparent" :
+                          (it_plus == RUNE_FAIRYLAND)    ? "verdant" :
 
                           // pandemonium and abyss runes:
                           (it_plus == RUNE_DEMONIC)      ? "demonic" :

@@ -82,8 +82,14 @@ void blink(void)
             }
         }
 
+        /*
         if (grd[beam.tx][beam.ty] <= DNGN_LAST_SOLID_TILE
             || mgrd[beam.tx][beam.ty] != NON_MONSTER)
+        */
+        if ((grd[beam.tx][beam.ty] != DNGN_FLOOR
+             && grd[beam.tx][beam.ty] != DNGN_SHALLOW_WATER)
+            || mgrd[beam.tx][beam.ty] != NON_MONSTER
+            || env.cgrid[beam.tx][beam.ty] != EMPTY_CLOUD)
         {
             mpr("Oops! Maybe something was there already.");
             random_blink(false);

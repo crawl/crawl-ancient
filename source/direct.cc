@@ -937,6 +937,9 @@ static void describe_cell(int mx, int my)
     case DNGN_WAX_WALL:
         mpr("A wall of solid wax.");
         break;
+    case DNGN_WOOD_WALL:
+        mpr("A wall of wood.");
+        break;
     case DNGN_SILVER_STATUE:
         mpr("A silver statue.");
         break;
@@ -1006,37 +1009,70 @@ static void describe_cell(int mx, int my)
         switch (env.trap[trf].type)
         {
         case TRAP_DART:
+          /*
             mpr("A dart trap.");
+          */
+            mpr("A dart trap.", MSGCH_WARN);
             break;
         case TRAP_ARROW:
+          /*
             mpr("An arrow trap.");
+          */
+            mpr("An arrow trap.", MSGCH_WARN);
             break;
         case TRAP_SPEAR:
+          /*
             mpr("A spear trap.");
+          */
+            mpr("A spear trap.", MSGCH_WARN);
             break;
         case TRAP_AXE:
+          /*
             mpr("An axe trap.");
+          */
+            mpr("An axe trap.", MSGCH_WARN);
             break;
         case TRAP_TELEPORT:
+          /*
             mpr("A teleportation trap.");
+          */
+            mpr("A teleportation trap.", MSGCH_WARN);
             break;
         case TRAP_AMNESIA:
+          /*
             mpr("An amnesia trap.");
+          */
+            mpr("An amnesia trap.", MSGCH_WARN);
             break;
         case TRAP_BLADE:
+          /*
             mpr("A blade trap.");
+          */
+            mpr("A blade trap.", MSGCH_WARN);
             break;
         case TRAP_BOLT:
+          /*
             mpr("A bolt trap.");
+          */
+            mpr("A bolt trap.", MSGCH_WARN);
             break;
         case TRAP_ZOT:
+          /*
             mpr("A Zot trap.");
+          */
+            mpr("A Zot trap.", MSGCH_WARN);
             break;
         case TRAP_NEEDLE:
+          /*
             mpr("A needle trap.");
+          */
+            mpr("A needle trap.", MSGCH_WARN);
             break;
         default:
+          /*
             mpr("An undefined trap. Huh?");
+          */
+            mpr("An undefined trap. Huh?", MSGCH_WARN);
             error_message_to_player();
             break;
         }
@@ -1116,11 +1152,23 @@ static void describe_cell(int mx, int my)
     case DNGN_ENTER_SWAMP:
         mpr("A staircase to the Swamp.");
         break;
+    case DNGN_ENTER_BIG_ROOM:
+        mpr("A staircase to the Big Room.");
+        break;
+    case DNGN_ENTER_JADE_CAVE:
+        mpr("A staircase to the Jade Cave.");
+        break;
+    case DNGN_ENTER_FAIRYLAND:
+        mpr("A staircase to the Fairyland.");
+        break;
     case DNGN_RETURN_FROM_ORCISH_MINES:
     case DNGN_RETURN_FROM_HIVE:
     case DNGN_RETURN_FROM_LAIR:
     case DNGN_RETURN_FROM_VAULTS:
     case DNGN_RETURN_FROM_TEMPLE:
+    case DNGN_RETURN_FROM_BIG_ROOM:
+    case DNGN_RETURN_FROM_JADE_CAVE:
+    case DNGN_RETURN_FROM_FAIRYLAND:
         mpr("A staircase back to the Dungeon.");
         break;
     case DNGN_RETURN_FROM_SLIME_PITS:

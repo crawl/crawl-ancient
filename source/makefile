@@ -31,7 +31,10 @@ wizard:
 
 # DEBUG mode includes WIZARD mode as well as copious debugging input
 debug:
-	$(MAKE) $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-g -DFULLDEBUG -DWIZARD'
+#	$(MAKE) $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-g -DFULLDEBUG -DWIZARD'
+	$(MAKE) $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-O2 -g -DFULLDEBUG -DWIZARD'
+#	$(MAKE) $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-O2 -g -DFULLDEBUG'
+
 
 # DO NOT DELETE THIS LINE -- $(MAKE) depend depends on it.
 

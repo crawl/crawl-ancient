@@ -337,6 +337,11 @@ static int shatter_walls(int x, int y, int pow, int garbage)
         chance = 100;
         break;
 
+    case DNGN_WOOD_WALL:
+        stuff = DEBRIS_WOOD;
+        chance = 100;
+        break;
+
     case DNGN_METAL_WALL:
     case DNGN_SILVER_STATUE:
         stuff = DEBRIS_METAL;
@@ -454,9 +459,14 @@ void cast_forescry(int pow)
 
 void cast_see_invisible(int pow)
 {
+  /*
     if (player_see_invis())
         mpr("Nothing seems to happen.");
     else
+        mpr("Your vision seems to sharpen.");
+  */
+
+  if (!player_see_invis())
         mpr("Your vision seems to sharpen.");
 
     // no message if you already are under the spell
@@ -806,6 +816,7 @@ void cast_conjure_ball_lightning( int pow )
         num = 8;
 
     bool summoned = false;
+    bool lost_control = false;
 
     for (int i = 0; i < num; i++)
     {
@@ -837,13 +848,24 @@ void cast_conjure_ball_lightning( int pow )
         {
             mons_add_ench( &menv[mon], ENCH_SHORT_LIVED );
             summoned = true;
+
+            if (random2(pow) > 15)
+              mons_del_ench(&menv[mon], ENCH_CONFUSION, ENCH_NONE, true);
+            else
+              lost_control = true;
         }
     }
 
     if (summoned)
-        mpr( "You create some ball lightning!" );
+    {
+      mpr( "You create some ball lightning!" );
+      if (lost_control)
+        mpr( "You fail to control them!" );
+    }
     else
-        canned_msg( MSG_NOTHING_HAPPENS );
+    {
+      canned_msg( MSG_NOTHING_HAPPENS );
+    }
 }
 
 static int sleep_monsters(int x, int y, int pow, int garbage)
@@ -1862,6 +1884,7 @@ bool backlight_monsters(int x, int y, int pow, int garbage)
     case MONS_SPECTRAL_THING:
     case MONS_ORB_OF_FIRE:
     case MONS_EYE_OF_DEVASTATION:
+    case MONS_ORB_GUARDIAN:
         return (false);               // already glowing or invisible
     default:
         break;
@@ -2638,6 +2661,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
 
     case DNGN_OPEN_DOOR:
     case DNGN_CLOSED_DOOR:
+    case DNGN_WOOD_WALL:
         // Doors always blow up, stone arches never do (would cause problems)
         if (okay_to_dest)
             grd[beam.tx][beam.ty] = DNGN_FLOOR;
@@ -3209,4 +3233,173 @@ void cast_stoneskin(int pow)
 
     if (you.duration[DUR_STONESKIN] > 50)
         you.duration[DUR_STONESKIN] = 50;
+}
+
+void
+cast_purify_flesh(int pow)
+{
+  int objl;
+  int objl_next;
+  int thing_created;
+  int sub_type;
+  int food_value;
+  int quant_flesh;
+  int quant_created;
+  int quant_created_max;
+  char name_flesh[ITEMNAME_SIZE];
+  char name_created[ITEMNAME_SIZE];
+  char wc[30];
+  bool purified = false;
+
+  if (pow > 100)
+    pow = 100;
+
+  if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+  {
+    mpr("You can't reach the floor from up here.");
+    return;
+  }
+
+  objl = igrd[you.x_pos][you.y_pos];
+
+  while (objl != NON_ITEM)
+  {
+    objl_next = mitm[objl].link;
+
+    if ((mitm[objl].base_type == OBJ_FOOD)
+        && (mitm[objl].sub_type == FOOD_CHUNK)
+        && (mitm[objl].quantity >= 1))
+    {
+      quant_flesh = mitm[objl].quantity;
+      it_name(objl, DESC_CAP_THE, name_flesh);
+      destroy_item(objl);
+
+      switch (random2(10))
+      {
+      case 0:
+        sub_type = FOOD_PEAR;
+        break;
+      case 1:
+        sub_type = FOOD_APPLE;
+        break;
+      case 2:
+        sub_type = FOOD_APRICOT;
+        break;
+      case 3:
+        sub_type = FOOD_ORANGE;
+        break;
+      case 4:
+        sub_type = FOOD_BANANA;
+        break;
+      case 5:
+        sub_type = FOOD_STRAWBERRY;
+        break;
+      case 6:
+        sub_type = FOOD_RAMBUTAN;
+        break;
+      case 7:
+        sub_type = FOOD_LEMON;
+        break;
+      case 8:
+        sub_type = FOOD_GRAPE;
+        break;
+      case 9:
+        sub_type = FOOD_LYCHEE;
+        break;
+      default:
+        sub_type = FOOD_SULTANA;
+        break;
+      }
+
+      if (random2(pow) < 7)
+      {
+        if (coinflip())
+          sub_type = FOOD_GRAPE;
+        else
+          sub_type = FOOD_SULTANA;
+      }
+      else if (random2(pow) < 15)
+        sub_type = FOOD_STRAWBERRY;
+
+      switch (sub_type)
+      {
+      case FOOD_PEAR:
+        food_value = 700;
+        break;
+      case FOOD_APPLE:
+        food_value = 700;
+        break;
+      case FOOD_APRICOT:
+        food_value = 700;
+        break;
+      case FOOD_ORANGE:
+        food_value = 1000;
+        break;
+      case FOOD_BANANA:
+        food_value = 1000;
+        break;
+      case FOOD_STRAWBERRY:
+        food_value = 200;
+        break;
+      case FOOD_RAMBUTAN:
+        food_value = 600;
+        break;
+      case FOOD_LEMON:
+        food_value = 1000;
+        break;
+      case FOOD_GRAPE:
+        food_value = 100;
+        break;
+      case FOOD_LYCHEE:
+        food_value = 600;
+        break;
+      case FOOD_SULTANA:
+        food_value = 70;
+        break;
+      default:
+        food_value = 1000;
+        break;
+      }
+
+      thing_created = items(0, OBJ_FOOD, sub_type, true,
+                            you.your_level, MAKE_ITEM_RANDOM_RACE);
+
+      if (thing_created == NON_ITEM)
+      {
+        weird_colours(random2(256), wc);
+        snprintf(info, INFO_SIZE, "%s glows %s and vanishes.",
+                 name_flesh, wc);
+        mpr(info);
+      }
+      else
+      {
+        quant_created_max = 2 * pow * quant_flesh;
+        quant_created_max /= 100 * food_value;
+        if (quant_created_max < 1)
+          quant_created_max = 1;
+        quant_created = random2(quant_created_max);
+        while ((quant_created > 1)
+               && (quant_created * food_value > quant_flesh * 1000))
+          quant_created--;
+        quant_created_max = 3 + random2avg(15, 2);
+        if (quant_created > quant_created_max)
+          quant_created = quant_created_max;
+        if (quant_created < 1)
+          quant_created = 1;
+        mitm[thing_created].quantity = quant_created;
+        move_item_to_grid(&thing_created, you.x_pos, you.y_pos);
+        it_name(thing_created, DESC_NOCAP_A, name_created);
+        snprintf(info, INFO_SIZE, "%s glows softly and changes into %s.",
+                 name_flesh, name_created);
+        mpr(info);
+      }
+
+      purified = true;
+    }
+
+    objl = objl_next;
+  }
+
+  if (!purified)
+    canned_msg(MSG_SPELL_FIZZLES);
 }

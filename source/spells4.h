@@ -57,5 +57,6 @@ void make_shuggoth(int x, int y, int hp);
 
 void cast_semi_controlled_blink(int pow);
 
+void cast_purify_flesh(int pow);
 
 #endif

@@ -120,7 +120,7 @@ void print_stats(void)
         textcolor(LIGHTGREY);
 
         if (you.strength != you.max_strength)
-            cprintf( " (%d)", you.max_strength );
+            cprintf( " (%d)  ", you.max_strength );
         else
             cprintf( "       " );
 
@@ -151,7 +151,7 @@ void print_stats(void)
         textcolor(LIGHTGREY);
 
         if (you.intel != you.max_intel)
-            cprintf( " (%d)", you.max_intel );
+            cprintf( " (%d)  ", you.max_intel );
         else
             cprintf( "       " );
 
@@ -180,7 +180,7 @@ void print_stats(void)
         textcolor(LIGHTGREY);
 
         if (you.dex != you.max_dex)
-            cprintf( " (%d)", you.max_dex );
+            cprintf( " (%d)  ", you.max_dex );
         else
             cprintf( "       " );
 
@@ -238,11 +238,11 @@ void print_stats(void)
         gotoxy(52, 11);
 
 #if DEBUG_DIAGNOSTICS
-        cprintf( "%d/%d  (%d/%d)",
+        cprintf( "%d/%d  (%d/%d)   ",
                  you.experience_level, you.experience,
                  you.skill_cost_level, you.exp_available );
 #else
-        cprintf( "%d/%d  (%d)",
+        cprintf( "%d/%d  (%d)   ",
                  you.experience_level, you.experience, you.exp_available );
 #endif
 
