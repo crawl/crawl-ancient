@@ -54,7 +54,7 @@ int bi, bj, bk;
 int bp;                   // *not* global (I think) in [at least] items(), give_item() {dlb}
 
 // these are the variables for individual levels.
-static int corrlength;              // used in builder() and make_trail() only, I think {dlb}
+static int corrlength;    // used in builder() and make_trail() only, I think {dlb}
 static int intersect_chance = 0;    // used in builder() and make_trail() only, I think {dlb}
 static int no_corr;                 // used in builder() and make_trail() only, I think {dlb}
 static int x_ps, y_ps;              // used in builder() and make_trail() only, I think {dlb}
@@ -63,9 +63,9 @@ static char is_a_specroom = 0;      // used in builder() and roguey_level() only
 static int time_run = 0;            // for repeating search for 1-door rooms
 int many_many = 0;                  // for multiple levels
 
-int dir_x, dir_y;                   // possibly needs to remain global for make_trail to work {dlb}
-static int finish = 0;              // oddball usage in builder() and make_trail() only, I think -- explore {dlb}
-static int bno_mons = 0;            // confusing usage in builder(), special_room(), beehive(), and morgue() {dlb}
+int dir_x, dir_y; // possibly needs to remain global for make_trail to work {dlb}
+static int finish = 0; // oddball usage in builder() and make_trail() only, I think -- explore {dlb}
+static int bno_mons = 0; // confusing usage in builder(), special_room(), beehive(), and morgue() {dlb}
 int length;
 int count_x;
 
@@ -82,17 +82,21 @@ static int vsx, vsy;                // used in vaults function
 
 
 static bool is_weapon_special(int the_weapon);
-static bool place_specific_trap(unsigned char spec_x, unsigned char spec_y, unsigned char spec_type);
-static bool treasure_area(int many_many, unsigned char ta1_x, unsigned char ta2_x,unsigned char ta1_y, unsigned char ta2_y);
+static bool place_specific_trap(unsigned char spec_x, unsigned char spec_y,
+                                unsigned char spec_type);
+static bool treasure_area(int many_many, unsigned char ta1_x, unsigned char ta2_x,
+                          unsigned char ta1_y, unsigned char ta2_y);
 static char plan_3(void);
 static char plan_6(void);
 static char rare_weapon(unsigned char w_type);
 static int pick_an_altar(void);
-static int vault_grid(int vx, int vy, int altar_count, char acq_item_class[7], int mons_array[10], char vgrid);
+static int vault_grid(int vx, int vy, int altar_count, char acq_item_class[7],
+                      int mons_array[10], char vgrid);
 static unsigned char item_in_shop(unsigned char shop_type);
 static unsigned char plan_1(void);
 static unsigned char plan_2(void);
-static unsigned char plan_4(char forbid_x1, char forbid_y1, char forbid_x2, char forbid_y2, unsigned char force_wall);
+static unsigned char plan_4(char forbid_x1, char forbid_y1, char forbid_x2,
+                            char forbid_y2, unsigned char force_wall);
 static unsigned char plan_5(void);
 static void beehive(void);
 static void big_room(void);
@@ -101,16 +105,23 @@ static void box_room(int bx1, int bx2, int by1, int by2, int wall_type);
 static void build_minivaults(int force_vault);
 static void build_vaults(int force_vault);
 static void check_doors(void);
-static void chequerboard(unsigned char cheq1, unsigned char cheq2, unsigned char deleted, unsigned char chx1, unsigned char chy1, unsigned char chx2, unsigned char chy2);
+static void chequerboard(unsigned char cheq1, unsigned char cheq2,
+                         unsigned char deleted, unsigned char chx1,
+                         unsigned char chy1, unsigned char chx2, unsigned char chy2);
 static void city_level(void);
-static void clear_area(unsigned char x_min, unsigned char y_min, unsigned char x_max, unsigned char y_max, unsigned char deleting, unsigned char replacing);
+static void clear_area(unsigned char x_min, unsigned char y_min,
+                       unsigned char x_max, unsigned char y_max,
+                       unsigned char deleting, unsigned char replacing);
 static void define_zombie(char not_zombsize, int ztype, int cs);
 static void diamond_rooms(void);
 static void generate_abyss(void);
 static void give_item(void);
 static void hide_doors(void);
 static void item_colour(int p);
-static void join_the_dots(unsigned char dotx1, unsigned char doty1, unsigned char dotx2, unsigned char doty2, char forbid_x1, char forbid_y1, char forbid_x2, char forbid_y2);
+static void join_the_dots(unsigned char dotx1, unsigned char doty1,
+                          unsigned char dotx2, unsigned char doty2,
+                          char forbid_x1, char forbid_y1, char forbid_x2,
+                          char forbid_y2);
 static void labyrinth_level(void);
 static void link_items(void);
 static void make_room(int max_doors, int doorlevel);
@@ -120,9 +131,12 @@ static void morgue(void);
 static void octa_room(unsigned char type_floor);
 static void place_altar(void);
 static void place_curse_skull(void);
-static void place_pool(unsigned char pool_type, unsigned char pool_x1, unsigned char pool_y1, unsigned char pool_x2, unsigned char pool_y2);
+static void place_pool(unsigned char pool_type, unsigned char pool_x1,
+                       unsigned char pool_y1, unsigned char pool_x2,
+                       unsigned char pool_y2);
 static void place_shops(void);
-static void place_spec_shop(unsigned char shop_x, unsigned char shop_y, unsigned char force_s_type);
+static void place_spec_shop(unsigned char shop_x, unsigned char shop_y,
+                            unsigned char force_s_type);
 static void place_traps(void);
 static void plan_main(char force_plan);
 static void prepare_swamp(void);
@@ -177,7 +191,8 @@ int builder( unsigned int lev_numb, char level_type )
 
       // better than before - border not drawn on *every* iteration {dlb}
       // either fill with border or rock wall:
-          if ( ( bcount_x == 6 || bcount_x == (GXM - 7) ) || ( bcount_y == 6 || bcount_y == (GYM - 7) ) )
+          if ( ( bcount_x == 6 || bcount_x == (GXM - 7) )
+               || ( bcount_y == 6 || bcount_y == (GYM - 7) ) )
             grd[bcount_x][bcount_y] = border_type;
           else
             grd[bcount_x][bcount_y] = DNGN_ROCK_WALL;   // must be value 1
@@ -266,7 +281,7 @@ int builder( unsigned int lev_numb, char level_type )
 
         }
 
-normal_pan:
+    normal_pan:
         plan_main(0);
         //if ( one_chance_in(3) )
         {
@@ -443,10 +458,10 @@ normal_pan:
         && level_type == LEVEL_DUNGEON
         && (many_many > 7 && many_many < 23) && one_chance_in(7) )
     {
-        /* Can't have vaults on you.where_are_you != BRANCH_MAIN_DUNGEON levels */
-        build_vaults(100);
-        done_city = true;
-        goto skip_level;
+      // Can't have vaults on you.where_are_you != BRANCH_MAIN_DUNGEON levels
+      build_vaults(100);
+      done_city = true;
+      goto skip_level;
     }
 
     if ( many_many != 65 && one_chance_in(3) )
@@ -513,7 +528,7 @@ normal_pan:
                  || you.where_are_you == BRANCH_TARTARUS)
             && one_chance_in(8) )
         {
-do_city:
+        do_city:
             if ( many_many == 33 && you.where_are_you == BRANCH_DIS )
               build_vaults(51);
             else if ( one_chance_in(3) )
@@ -713,7 +728,10 @@ basic_level:
         many_pools(( coinflip() ? DNGN_DEEP_WATER : DNGN_LAVA ));
     }
 
-    if (many_many >= 11 && many_many <= 23 && !(you.where_are_you == BRANCH_DIS || you.where_are_you == BRANCH_GEHENNA || you.where_are_you == BRANCH_COCYTUS || you.where_are_you == BRANCH_TARTARUS) && one_chance_in(15))
+    if (many_many >= 11 && many_many <= 23 &&
+        !(you.where_are_you == BRANCH_DIS || you.where_are_you == BRANCH_GEHENNA
+          || you.where_are_you == BRANCH_COCYTUS || you.where_are_you == BRANCH_TARTARUS)
+        && one_chance_in(15))
     {
         do
         {
@@ -1049,7 +1067,7 @@ finished_monsters:
       env.sh_type[shcount] = SHOP_UNASSIGNED;
 
     if ( level_type == LEVEL_DUNGEON
-        && !( you.where_are_you == BRANCH_DIS
+         && !( you.where_are_you == BRANCH_DIS
                || you.where_are_you == BRANCH_GEHENNA
                || you.where_are_you == BRANCH_COCYTUS
                || you.where_are_you == BRANCH_TARTARUS
@@ -7177,17 +7195,17 @@ static void generate_abyss( void )
 
 
 
-static void clear_area( unsigned char x_min, unsigned char y_min, unsigned char x_max, unsigned char y_max, unsigned char deleting, unsigned char replacing )
+static void clear_area( unsigned char x_min, unsigned char y_min,
+                        unsigned char x_max, unsigned char y_max,
+                        unsigned char deleting, unsigned char replacing )
 {
+  // first coordinates *must* be top left
+  unsigned char loop_x = 0, loop_y = 0;
 
-// first coordinates *must* be top left
-
-    unsigned char loop_x = 0, loop_y = 0;
-
-    for (loop_x = x_min; loop_x < x_max; loop_x++)
-      for (loop_y = y_min; loop_y < y_max; loop_y++)
-        if ( grd[loop_x][loop_y] == deleting )
-          grd[loop_x][loop_y] = replacing;
+  for (loop_x = x_min; loop_x < x_max; loop_x++)
+    for (loop_y = y_min; loop_y < y_max; loop_y++)
+      if ( grd[loop_x][loop_y] == deleting )
+        grd[loop_x][loop_y] = replacing;
 
 }          // end clear_area()
 
@@ -7196,59 +7214,54 @@ static void clear_area( unsigned char x_min, unsigned char y_min, unsigned char 
 
 static void plan_main( char force_plan )
 {
+  // possible values for do_stairs:
+  //  0 - stairs already done
+  //  1 - stairs already done, do spotty
+  //  2 - no stairs
+  //  3 - no stairs, do spotty
 
-/*
+  char do_stairs = 0;
+  unsigned char pos_x;
+  unsigned char pos_y;
+  unsigned char special_grid = ( one_chance_in(3)
+                                 ? DNGN_METAL_WALL : DNGN_STONE_WALL );
 
-possible values for do_stairs:
+  if ( !force_plan )
+    force_plan = 1 + random2(12);
 
-  0 - stairs already done
-  1 - stairs already done, do spotty
-  2 - no stairs
-  3 - no stairs, do spotty
+  do_stairs = ( (force_plan == 1) ? plan_1() :
+                (force_plan == 2) ? plan_2() :
+                (force_plan == 3) ? plan_3() :
+                (force_plan == 4) ? plan_4(0, 0, 0, 0, 99) :
+                (force_plan == 5) ? (one_chance_in(9) ? plan_5() : plan_3()):
+                (force_plan == 6) ? plan_6()
+                : plan_3() );
 
-*/
+  if ( do_stairs == 3 || do_stairs == 1 )
+    spotty_level( true, 0, coinflip() );
 
-    char do_stairs = 0;
-    unsigned char pos_x;
-    unsigned char pos_y;
-    unsigned char special_grid = ( one_chance_in(3) ? DNGN_METAL_WALL : DNGN_STONE_WALL );
-
-    if ( !force_plan )
-      force_plan = 1 + random2(12);
-
-    do_stairs = ( (force_plan == 1) ? plan_1() :
-                  (force_plan == 2) ? plan_2() :
-                  (force_plan == 3) ? plan_3() :
-                  (force_plan == 4) ? plan_4(0, 0, 0, 0, 99) :
-                  (force_plan == 5) ? (one_chance_in(9) ? plan_5() : plan_3()) :
-                  (force_plan == 6) ? plan_6()
-                                    : 0 );
-
-    if ( do_stairs == 3 || do_stairs == 1 )
-      spotty_level( true, 0, coinflip() );
-
-    if ( do_stairs == 2 || do_stairs == 3 )
-      for (bj = 0; bj < ( coinflip() ? 4 : 3 ); bj++)
-        for (bi = 0; bi < 2; bi++)
+  if ( do_stairs == 2 || do_stairs == 3 )
+    for (bj = 0; bj < ( coinflip() ? 4 : 3 ); bj++)
+      for (bi = 0; bi < 2; bi++)
         {
-            do
+          do
             {
-                pos_x = 10 + random2(GXM - 20);
-                pos_y = 10 + random2(GYM - 20);
+              pos_x = 10 + random2(GXM - 20);
+              pos_y = 10 + random2(GYM - 20);
             }
-            while ( grd[pos_x][pos_y] != DNGN_FLOOR );    // this could cause a hang ... should cap loop {dlb}
+          while ( grd[pos_x][pos_y] != DNGN_FLOOR );
+          // this could cause a hang ... should cap loop {dlb}
 
-            grd[pos_x][pos_y] = bj + ( (bi == 0) ? DNGN_STONE_STAIRS_DOWN_I
-                                                 : DNGN_STONE_STAIRS_UP_I );
+          grd[pos_x][pos_y] = bj + ( (bi == 0) ? DNGN_STONE_STAIRS_DOWN_I
+                                     : DNGN_STONE_STAIRS_UP_I );
         }
 
-
-    if ( one_chance_in(20) )
+  if ( one_chance_in(20) )
     {
-        for (bi = 0; bi < GXM; bi++)
-          for (bj = 0; bj < GYM; bj++)
-            if ( grd[bi][bj] == DNGN_ROCK_WALL )
-              grd[bi][bj] = special_grid;
+      for (bi = 0; bi < GXM; bi++)
+        for (bj = 0; bj < GYM; bj++)
+          if ( grd[bi][bj] == DNGN_ROCK_WALL )
+            grd[bi][bj] = special_grid;
     }
 
 }          // end plan_main()
@@ -7258,18 +7271,19 @@ possible values for do_stairs:
 
 static unsigned char plan_1( void )
 {
-
     int temp_rand = 0;    // probability determination {dlb}
 
-    unsigned char width = ( 10 - random2(7) );    // value range of [4,10] {dlb}
+    unsigned char width = ( 10 - random2(7) );  // value range of [4,10] {dlb}
 
     clear_area(10, 10, (GXM - 10), (10 + width), DNGN_ROCK_WALL, DNGN_FLOOR);
-    clear_area(10, (60 - width), (GXM - 10), (GYM - 10), DNGN_ROCK_WALL, DNGN_FLOOR);
+    clear_area(10, (60 - width), (GXM - 10), (GYM - 10), DNGN_ROCK_WALL,
+               DNGN_FLOOR);
     clear_area(10, 10, (10 + width), (GYM - 10), DNGN_ROCK_WALL, DNGN_FLOOR);
-    clear_area((60 - width), 10, (GXM - 10), (GYM - 10), DNGN_ROCK_WALL, DNGN_FLOOR);
+    clear_area((60 - width), 10, (GXM - 10), (GYM - 10), DNGN_ROCK_WALL,
+               DNGN_FLOOR);
 
 
-// possible early returns {dlb}:
+    // possible early returns {dlb}:
     temp_rand = random2(4);
 
     if ( temp_rand > 2 )         // 25% chance {dlb}
@@ -7278,10 +7292,12 @@ static unsigned char plan_1( void )
       return 2;
     else                         // 50% chance {dlb}
     {
-        unsigned char width2 = ( coinflip() ? (5 - random2(5)) : 5 );    // value range of [1,5] {dlb}
+        unsigned char width2 = ( coinflip() ? (1 + random2(5)) : 5 );
 
-        clear_area(10, (35 - width2), (GXM - 10), (35 + width2), DNGN_ROCK_WALL, DNGN_FLOOR);
-        clear_area((40 - width2), 10, (40 + width2), (GYM - 10), DNGN_ROCK_WALL, DNGN_FLOOR);
+        clear_area(10, (35 - width2), (GXM - 10), (35 + width2),
+                   DNGN_ROCK_WALL, DNGN_FLOOR);
+        clear_area((40 - width2), 10, (40 + width2), (GYM - 10),
+                   DNGN_ROCK_WALL, DNGN_FLOOR);
     }
 
 // possible early returns {dlb}:
@@ -7305,19 +7321,18 @@ static unsigned char plan_1( void )
 
         if ( temp_rand > 7 )    // 7 in 15 odds {dlb}
         {
-            temp_rand = random2(7);
+          temp_rand = random2(7);
 
-            unsigned char floor_type = ( (temp_rand > 1) ? DNGN_FLOOR :       // 5 in 7 odds {dlb}
-                                         (temp_rand > 0) ? DNGN_DEEP_WATER    // 1 in 7 odds {dlb}
-                                                         : DNGN_LAVA );       // 1 in 7 odds {dlb}
+          unsigned char floor_type = ( (temp_rand > 1) ? DNGN_FLOOR :    // 5/7
+                                       (temp_rand > 0) ? DNGN_DEEP_WATER // 1/7
+                                       : DNGN_LAVA );                    // 1/7
 
-            octa_room(floor_type);
+          octa_room(floor_type);
         }
     }
 
-// final return {dlb}:
+    // final return {dlb}:
     return ( one_chance_in(5) ? 3 : 2 );
-
 }          // end plan_1()
 
 
@@ -7342,8 +7357,8 @@ static unsigned char plan_2( void )
 static char plan_3( void )
 {
 
-    /* Draws a room, then another and links them together, then another and etc
-       Of course, this can easily end up looking just like a make_trail level. */
+  /* Draws a room, then another and links them together, then another and etc
+     Of course, this can easily end up looking just like a make_trail level. */
 
 
     char cnx, cny;
@@ -7868,8 +7883,15 @@ static void build_minivaults( int force_vault )
 
     char vgrid[81][81];
 
-    if ( force_vault == 200 )
-      force_vault = 200 + random2(33);    // was "+ random2(34)" but that would attempt to generate an undefined vault {dlb}
+    if ( force_vault == 200 ) {
+#ifdef USE_NEW_MINIVAULTS
+      force_vault = 200 + random2(37);
+#else
+      force_vault = 200 + random2(33);
+#endif
+    }
+
+    // was "+ random2(34)" but that would attempt to generate an undefined vault {dlb}
 
     vault_main(vgrid, mons_array, force_vault, many_many);
 
@@ -7958,8 +7980,8 @@ static int vault_grid( int vx, int vy, int altar_count, char acq_item_class[7], 
                     (vgrid == ']' ) ? DNGN_STONE_STAIRS_DOWN_III :
                     (vgrid == '[' ) ? DNGN_STONE_STAIRS_UP_III :
                     (vgrid == 'A' ) ? DNGN_STONE_ARCH :
-                    (vgrid == 'B' ) ? (DNGN_ALTAR_ZIN + altar_count) :    // see below {dlb}
-                    (vgrid == 'C' ) ? pick_an_altar() :                   // f(x) elsewhere {dlb}
+                    (vgrid == 'B' ) ? (DNGN_ALTAR_ZIN + altar_count) : // see below {dlb}
+                    (vgrid == 'C' ) ? pick_an_altar() : // f(x) elsewhere {dlb}
                     (vgrid == 'I' ) ? DNGN_ORCISH_IDOL :
                     (vgrid == 'S' ) ? DNGN_SILVER_STATUE :
                     (vgrid == 'G' ) ? DNGN_GRANITE_STATUE :
@@ -7967,7 +7989,7 @@ static int vault_grid( int vx, int vy, int altar_count, char acq_item_class[7], 
                     (vgrid == 'T' ) ? DNGN_BLUE_FOUNTAIN :
                     (vgrid == 'U' ) ? DNGN_SPARKLING_FOUNTAIN :
                     (vgrid == 'V' ) ? DNGN_PERMADRY_FOUNTAIN
-                                    : DNGN_FLOOR );            // includes everything else {dlb}
+                                    : DNGN_FLOOR ); // includes everything else {dlb}
 
 // then, handle oddball grids {dlb}:
     switch ( vgrid )
@@ -8034,11 +8056,11 @@ static int vault_grid( int vx, int vy, int altar_count, char acq_item_class[7], 
             }
 
             which_depth = ( (vgrid == '|'
-                              || vgrid == 'P'
-                              || vgrid == 'O'
-                              || vgrid == 'Z') ? 351 :
+                             || vgrid == 'P'
+                             || vgrid == 'O'
+                             || vgrid == 'Z') ? 351 :
                             (vgrid == '*')     ? 5 + (many_many << 1)
-                                               : many_many );
+                            : many_many );
 
             item_made = items(1, which_class, which_type, 1, which_depth, 250);
 

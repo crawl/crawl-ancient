@@ -17,7 +17,8 @@
  * called from: acr - decks - fight - it_use2 - it_use3 - item_use - items -
  *              misc - mstuff2 - religion - spell - spl-book - spells4
  * *********************************************************************** */
-bool miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect);
+bool miscast_effect(unsigned int sp_type, int mag_pow,
+                    int mag_fail, int force_effect);
 
 
 #endif

@@ -847,10 +847,11 @@ void monster_grid( bool do_updates )
     //int mnc = 0;
     struct monsters *monster = 0;    // NULL {dlb}
 
-#ifdef DEBUG
-    if ( do_updates )
-      mpr("Stealth checks...");
-#endif
+    //jmf: commented out this because it prevents 5-resting in debug-builds
+    //#ifdef DEBUG
+    //    if ( do_updates )
+    //      mpr("Stealth checks...");
+    //#endif
 
     for (int s = 0; s < MNST; s++)
     {
@@ -862,7 +863,10 @@ void monster_grid( bool do_updates )
 
             if ( mons_near(monster) )
             {
-                if ( do_updates && ( monster->behavior == BEH_SLEEP || monster->behavior == BEH_WANDER ) && check_awaken(s) )
+                if ( do_updates &&
+                     ( monster->behavior == BEH_SLEEP
+                       || monster->behavior == BEH_WANDER )
+                     && check_awaken(s) )
                 {
                     monster->behavior = BEH_CHASING_I;
                     monster->target_x = you.x_pos;
@@ -872,24 +876,74 @@ void monster_grid( bool do_updates )
                         && mons_shouts(monster->type) > 0
                         && random2(30) >= you.skills[SK_STEALTH] )
                     {
-                        if ( !silenced(you.x_pos, you.y_pos) && !silenced(monster->x, monster->y) )
+                        if ( !silenced(you.x_pos, you.y_pos) &&
+                             !silenced(monster->x, monster->y) )
                         {
-                             char the_shout = mons_shouts(monster->type);
+                          int the_shout = mons_shouts(monster->type);
 
-                             strcpy(info, "You hear ");
-                             strcat(info, (the_shout ==  1) ? "a shout!" :
-                                          (the_shout ==  2) ? "a bark!" :
-                                          (the_shout ==  3) ? "two shouts!" :
-                                          (the_shout ==  4) ? "a roar!" :
-                                          (the_shout ==  5) ? "a hideous shriek!" :
-                                          (the_shout ==  6) ? "a bellow!" :
-                                          (the_shout ==  7) ? "a screech!" :
-                                          (the_shout ==  8) ? "an angry buzzing noise." :
-                                          (the_shout ==  9) ? "a chilling moan." :
-                                          (the_shout == 10) ? "an irritating high-pitched whine." :
-                                          (the_shout == 11) ? "a croak."
-                                                            : "buggy behavior!" );
-                             mpr(info);
+                          strcpy(info, "You hear ");
+#if 0
+                          strcat(info, (the_shout ==  1) ? "a shout!" :
+                                 (the_shout ==  2) ? "a bark!" :
+                                 (the_shout ==  3) ? "two shouts!" :
+                                 (the_shout ==  4) ? "a roar!" :
+                                 (the_shout ==  5) ? "a hideous shriek!" :
+                                 (the_shout ==  6) ? "a bellow!" :
+                                 (the_shout ==  7) ? "a screech!" :
+                                 (the_shout ==  8) ? "an angry buzzing noise." :
+                                 (the_shout ==  9) ? "a chilling moan." :
+                                 (the_shout == 10) ? "an irritating high-pitched whine." :
+                                 (the_shout == 11) ? "a croak."
+                                 : "buggy behavior!" );
+#else
+                          switch (the_shout)
+                            {
+                            case S_SILENT:
+                            default:
+                              strcat(info, "buggy behaviour!");
+                              break;
+                            case S_SHOUT:
+                              strcat(info, "a shout!");
+                              break;
+                            case S_BARK:
+                              strcat(info, "a bark!");
+                              break;
+                            case S_SHOUT2:
+                              strcat(info, "two shouts!");
+                              break;
+                            case S_ROAR:
+                              strcat(info, "a roar!");
+                              break;
+                            case S_SCREAM:
+                              strcat(info, "a hideous shriek!");
+                              break;
+                            case S_BELLOW:
+                              strcat(info, "a bellow!");
+                              break;
+                            case S_SCREECH:
+                              strcat(info, "a screech!");
+                              break;
+                            case S_BUZZ:
+                              strcat(info, "an angry buzzing noise.");
+                              break;
+                            case S_MOAN:
+                              strcat(info, "a chilling moan.");
+                              break;
+                            case S_WHINE:
+                              strcat(info,"an irritating high-pitched whine.");
+                              break;
+                            case S_CROAK:
+                              if (coinflip())
+                                strcat(info, "a loud, deep croak!");
+                              else
+                                strcat(info, "a croak.");
+                              break;
+                            case S_GROWL:
+                              strcat(info, "an angry growl!");
+                              break;
+                            }
+#endif
+                          mpr(info);
                         }
 
                         noisy(8, monster->x, monster->y);
@@ -907,7 +961,7 @@ void monster_grid( bool do_updates )
                     continue;
                 }
                 else if ( monster->behavior != BEH_ENSLAVED && mons_category( monster->type ) != MC_MIMIC )
-                  you.running = 0;    /* Friendly monsters or mimics don't disturb */
+                  you.running = 0; // Friendly monsters or mimics don't disturb
 
                 if ( mons_category( monster->type ) != MC_MIMIC )         // mimics are always left on map
                   show_backup[monster->x - you.x_pos + 9][monster->y - you.y_pos + 9] = env.show[monster->x - you.x_pos + 9][monster->y - you.y_pos + 9];
@@ -928,7 +982,6 @@ void monster_grid( bool do_updates )
 
 bool check_awaken( int mons_aw )
 {
-
     int mons_perc = 0;
     struct monsters *monster = &menv[mons_aw];
 
@@ -1047,7 +1100,7 @@ void cloud_grid( void )
 
     for (int s = 0; s < CLOUDS; s++)
     {
-        if ( mnc > env.cloud_no )    // can anyoneexplain this??? {dlb}
+        if ( mnc > env.cloud_no )    // can anyone explain this??? {dlb}
           break;
 
         if ( env.cloud_type[s] != CLOUD_NONE )
@@ -1151,24 +1204,22 @@ void noisy( char loudness, char nois_x, char nois_y )
 
     for (p = 0; p < MNST; p++)
     {
-        monster = &menv[p];
+      monster = &menv[p];
 
-        //if (monster->x >= nois_x - loudness && monster->x <= nois_x + loudness
-        //  && monster->y >= nois_y - loudness && monster->y <= nois_y + loudness)
-        //jmf: now that we have a working distance function ... 26mar2000
+    //if (monster->x >= nois_x - loudness && monster->x <= nois_x + loudness
+    //  && monster->y >= nois_y - loudness && monster->y <= nois_y + loudness)
+      //jmf: now that we have a working distance function ... 26mar2000
 
-        if ( dist <= distance(monster->x, monster->y, nois_x, nois_y)
-            && !silenced(monster->x, monster->y) )
+      if ( dist <= distance(monster->x, monster->y, nois_x, nois_y)
+           && !silenced(monster->x, monster->y) )
         {
-            if ( monster->behavior == BEH_SLEEP )
-              monster->behavior = BEH_CHASING_I;
+          if ( monster->behavior == BEH_SLEEP )
+            monster->behavior = BEH_CHASING_I;
 
-            monster->target_x = nois_x;
-            monster->target_y = nois_y;
+          monster->target_x = nois_x;
+          monster->target_y = nois_y;
         }
-
     }
-
 }          // end noisy()
 
 
@@ -1352,7 +1403,7 @@ void losight( unsigned int sh[19][19], unsigned char gr[GXM][GYM], int x_p, int 
 
 // Wider:
 
-        // This is done in a different way: see the >= MINSEE instead of < MINSEE
+     // This is done in a different way: see the >= MINSEE instead of < MINSEE
 
         if ( gr[x_p + startPoint_x + xsmult[2] - 9][y_p + startPoint_y + ysmult[2] - 9] >= MINSEE )     //see = false;
         {
@@ -2063,191 +2114,185 @@ static int xycomp[8] = { 0, 1, -1, 0, 0, -1, 1, 0 };
 static int yxcomp[8] = { 0, 1, 1, 0, 0, -1, -1, 0 };
 static int yycomp[8] = { 1, 0, 0, 1, -1, 0, 0, -1 };
 
-static void los_octant(int o, unsigned int sh[19][19], unsigned char gr[80][70],
-        int x_p, int y_p)
+static void los_octant(int o, unsigned int sh[19][19],
+                       unsigned char gr[80][70], int x_p, int y_p)
 {
-        int row, cell, top, south;
-        int tx, ty;                             // translated x, y deltas for this octant
-        unsigned char gv;               // grid value
-        bool row_dark, all_dark;
-        bool blocker, vis_corner;
-        int up_inc, low_inc;
-   int upper, lower;
+  int row, cell, top, south;
+  int tx, ty;           // translated x, y deltas for this octant
+  unsigned char gv;       // grid value
+  bool row_dark, all_dark;
+  bool blocker, vis_corner;
+  int up_inc, low_inc;
+  int upper, lower;
 
-        // leave [0,0] alone,  because the old LOS code seems to.
+  // leave [0,0] alone,  because the old LOS code seems to.
 
-        // init cell[0].  this is the only one that needs clearing.
-        cells[0].init();
-   all_dark = false;
-   vis_corner = false;
+  // init cell[0].  this is the only one that needs clearing.
+  cells[0].init();
+  all_dark = false;
+  vis_corner = false;
 
-        // loop through each row
-        for(row = 1; row <= LR; row++)
+  // loop through each row
+  for(row = 1; row <= LR; row++)
+    {
+      row_dark = true;
+      // loop through each cell,  up to the max allowed by circle[]
+      top = circle[row];
+      if (top > row) top = row;
+      for(cell = 0; cell <= top; cell++)
         {
-                row_dark = true;
-                // loop through each cell,  up to the max allowed by circle[]
-                top = circle[row];
-                if (top > row) top = row;
-                for(cell = 0; cell <= top; cell++)
-                {
-                        // translate X,Y co'ord + bounds check
-                        tx = row * xxcomp[o] + cell * xycomp[o];
-                        ty = row * yxcomp[o] + cell * yycomp[o];
+          // translate X,Y co'ord + bounds check
+          tx = row * xxcomp[o] + cell * xycomp[o];
+          ty = row * yxcomp[o] + cell * yycomp[o];
 
-                        if (x_p + tx < 0 || x_p + tx > 79 ||
-                            y_p + ty < 0 || y_p + ty > 69)
-                                continue;
-
-         // check for all_dark - we've finished the octant but
-         // have yet to fill in '0' for the rest of the sight grid
-         if (all_dark == true)
-         {
-                        sh[sh_xo + tx][sh_yo + ty] = 0;
+          if (x_p + tx < 0 || x_p + tx > 79 ||
+              y_p + ty < 0 || y_p + ty > 69)
             continue;
-         }
 
-                        // get grid value.. see if it blocks LOS
-                        gv = gr[x_p + tx][y_p + ty];
-         blocker = (gv < MINSEE);
-
-         // init some other variables
-                        up_inc = 10;
-         low_inc = 10;
-                        south = cell - 1;
-
-                        // STEP 1 - inherit values from immediate West, if possible
-                        if (cell < row)
-                        {
-                                // check for delayed lighting
-                                if (cells[cell].lit_delay)
-                                {
-               if (!blocker)              // blockers don't light up with lit_delay.
-               {
-                                        if (cells[south].lit)
-                                        {
-                                                if (cells[south].low_max != 0)
-                                                {
-                                                        cells[cell].lit = false;
-                                                        // steal lower values
-                                                        cells[cell].low_max = cells[south].low_max;
-                                                        cells[cell].low_count = cells[south].low_count;
-                                                        cells[south].low_count = cells[south].low_max = 0;
-                                                        low_inc = 0;            // avoid double-inc.
-                                                }
-                                                else
-                                                        cells[cell].lit = true;
-                  }
-                                        }
-                                        cells[cell].lit_delay = false;
-                                }
-                        }
-                else
-                        {
-                                // initialize new cell.
-                                cells[cell].init();
-                        }
-
-                        // STEP 2 - check for blocker
-                        // a dark blocker in shadow's edge will be visible
-                        if (blocker)
-                        {
-                                if (cells[cell].lit || (cell != 0 && cells[south].lit) || vis_corner)
-                      {
-               vis_corner = cells[cell].lit;       // hack: make 'corners' visible
-                                        cells[cell].lit = false;
-               cells[cell].visible = true;
-
-                                        int upper = calcUpper(row, cell);
-                                        int lower = calcLower(row, cell);
-                                        if (upper < cells[cell].up_max || cells[cell].up_max == 0)
-                                        {
-                                                // new upper shadow
-                                                cells[cell].up_max = upper;
-                                                cells[cell].up_count = 0;
-                                                up_inc = 0;
-                                        }
-
-                                        if (lower > cells[cell].low_max || cells[cell].low_max == 0)
-                                        {
-                                                // new lower shadow
-                                                cells[cell].low_max = lower;
-                                                cells[cell].low_count = -10;
-                                                low_inc = 0;
-                                                if (lower <= 30)                // somewhat arbitrary
-                                                        cells[cell].lit_delay = true;
-                                                // set dark_delay if lower > 20?? how to decide?
-                                        }
-                                }
-            else
+          // check for all_dark - we've finished the octant but
+          // have yet to fill in '0' for the rest of the sight grid
+          if (all_dark == true)
             {
-                                        cells[cell].visible = false;
+              sh[sh_xo + tx][sh_yo + ty] = 0;
+              continue;
             }
-                        }
-         else
-         {
-                                cells[cell].visible = false;            // special flags for blockers
-                   }
 
-                        // STEP 3 - add increments to upper, lower counts
-                        cells[cell].up_count += up_inc;
-                        cells[cell].low_count += low_inc;
+          // get grid value.. see if it blocks LOS
+          gv = gr[x_p + tx][y_p + ty];
+          blocker = (gv < MINSEE);
 
-                        // STEP 4 - check south for dark
-                        if (south >=0)
-         if ( cells[south].reachedUpper() == true)
-                        {
-                                if (cells[cell].reachedUpper() == false)
-                                {
-                                        cells[cell].up_max = cells[south].up_max;
-                                        cells[cell].up_count = cells[south].up_count;
-                                        cells[cell].up_count -= cells[south].up_max;
-                                }
-                                cells[cell].lit = false;
-                                cells[cell].visible = false;
-                        }
+          // init some other variables
+          up_inc = 10;
+          low_inc = 10;
+          south = cell - 1;
 
-                        // STEP 5 - nuke lower if south lower
-                        if (south >= 0)
-                        {
-                                if (cells[south].reachedLower())
-                                {
-                                        cells[cell].low_max = cells[south].low_max;
-                                        cells[cell].low_count = cells[south].low_count;
-                                        cells[cell].low_count -= cells[south].low_max;
-                                        cells[south].low_count = cells[south].low_max = 0;
-                                }
-                                if (cells[south].low_max != 0 || (cells[south].lit == false
-                                        && cells[south].low_max == 0))
-                                {
-                                        cells[cell].low_count = cells[cell].low_max + 10;
-                                }
-                        }
+          // STEP 1 - inherit values from immediate West, if possible
+          if (cell < row) {
+            // check for delayed lighting
+            if (cells[cell].lit_delay) {
+              if (!blocker) { // blockers don't light up with lit_delay.
+                if (cells[south].lit) {
+                  if (cells[south].low_max != 0) {
+                    cells[cell].lit = false;
+                    // steal lower values
+                    cells[cell].low_max = cells[south].low_max;
+                    cells[cell].low_count = cells[south].low_count;
+                    cells[south].low_count = cells[south].low_max = 0;
+                    low_inc = 0;                // avoid double-inc.
+                  }
+                  else
+                    cells[cell].lit = true;
+                }
+              }
+              cells[cell].lit_delay = false;
+            }
+          }
+          else
+            {
+              // initialize new cell.
+              cells[cell].init();
+            }
 
-                        // STEP 6 - light up if we've reached lower bound
-                        if (cells[cell].reachedLower() == true)
-                                cells[cell].lit = true;
+          // STEP 2 - check for blocker
+          // a dark blocker in shadow's edge will be visible
+          if (blocker) {
+            if (cells[cell].lit || (cell != 0 && cells[south].lit)
+                || vis_corner) {
+              vis_corner = cells[cell].lit; // hack: make 'corners' visible
+              cells[cell].lit = false;
+              cells[cell].visible = true;
 
-                        // now place appropriate value in sh
-                        if (cells[cell].lit == true || (blocker == true && cells[cell].visible == true))
-                                sh[sh_xo + tx][sh_yo + ty] = gv;
-                        else
-                                sh[sh_xo + tx][sh_yo + ty] = 0;
+              int upper = calcUpper(row, cell);
+              int lower = calcLower(row, cell);
+              if (upper < cells[cell].up_max || cells[cell].up_max == 0) {
+                // new upper shadow
+                cells[cell].up_max = upper;
+                cells[cell].up_count = 0;
+                up_inc = 0;
+              }
 
-                        if (cells[cell].lit == true)
-                        row_dark = false;
-                } // end for - cells
+              if (lower > cells[cell].low_max || cells[cell].low_max == 0)
+                {
+                  // new lower shadow
+                  cells[cell].low_max = lower;
+                  cells[cell].low_count = -10;
+                  low_inc = 0;
+                  if (lower <= 30)              // somewhat arbitrary
+                    cells[cell].lit_delay = true;
+                  // set dark_delay if lower > 20?? how to decide?
+                }
+            }
+            else
+              {
+                cells[cell].visible = false;
+              }
+          }
+          else
+            {
+              cells[cell].visible = false;              // special flags for blockers
+            }
+
+          // STEP 3 - add increments to upper, lower counts
+          cells[cell].up_count += up_inc;
+          cells[cell].low_count += low_inc;
+
+          // STEP 4 - check south for dark
+          if (south >=0)
+            if ( cells[south].reachedUpper() == true)
+              {
+                if (cells[cell].reachedUpper() == false)
+                  {
+                    cells[cell].up_max = cells[south].up_max;
+                    cells[cell].up_count = cells[south].up_count;
+                    cells[cell].up_count -= cells[south].up_max;
+                  }
+                cells[cell].lit = false;
+                cells[cell].visible = false;
+              }
+
+          // STEP 5 - nuke lower if south lower
+          if (south >= 0)
+            {
+              if (cells[south].reachedLower())
+                {
+                  cells[cell].low_max = cells[south].low_max;
+                  cells[cell].low_count = cells[south].low_count;
+                  cells[cell].low_count -= cells[south].low_max;
+                  cells[south].low_count = cells[south].low_max = 0;
+                }
+              if (cells[south].low_max != 0 || (cells[south].lit == false
+                                                && cells[south].low_max == 0))
+                {
+                  cells[cell].low_count = cells[cell].low_max + 10;
+                }
+            }
+
+          // STEP 6 - light up if we've reached lower bound
+          if (cells[cell].reachedLower() == true)
+            cells[cell].lit = true;
+
+          // now place appropriate value in sh
+          if (cells[cell].lit == true || (blocker == true
+                                          && cells[cell].visible == true))
+            sh[sh_xo + tx][sh_yo + ty] = gv;
+          else
+            sh[sh_xo + tx][sh_yo + ty] = 0;
+
+          if (cells[cell].lit == true)
+            row_dark = false;
+        } // end for - cells
       vis_corner = false;           // don't carry over to next row. :)
       if (row_dark == true)
-         all_dark = true;
-        } // end for - rows
+        all_dark = true;
+    } // end for - rows
 }
 
 extern void losight(unsigned int sh[19][19],
-             unsigned char gr[80][70], int x_p, int y_p)
+                    unsigned char gr[80][70], int x_p, int y_p)
 {
-        int o;
-        for (o=0; o<8; o++)
-                los_octant(o, sh, gr, x_p, y_p);
+  int o;
+  for (o=0; o<8; o++)
+    los_octant(o, sh, gr, x_p, y_p);
 }
 
 #endif // USE_OLD_LOS

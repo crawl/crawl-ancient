@@ -47,28 +47,29 @@ extern bool wield_change;    // defined in output.cc
 
 
 // this does not belong in enum.h until well-implemented(!!!) {dlb}:
-enum DEBRIS                            // jmf: add for shatter, dig, and Giants to throw
+//jmf: why not? there's tons of stuff in there that isn't.
+//     including your CE_foos, for a pointed example.
+enum DEBRIS // jmf: add for shatter, dig, and Giants to throw
 {
     DEBRIS_METAL,                      //    0
     DEBRIS_ROCK,
     DEBRIS_STONE,
     DEBRIS_WOOD,
     DEBRIS_CRYSTAL,
-    NUM_DEBRIS                        // must always remain last member {dlb}
-};                                    // jmf: ...and I'll actually implement the items Real Soon Now...
+    NUM_DEBRIS
+}; // jmf: ...and I'll actually implement the items Real Soon Now...
 
 
-static bool mons_is_animal(int type);        // see: cast_shuggoth_seed() - does not work {dlb}
+static bool mons_can_host_shuggoth(int type);
 static int make_a_random_cloud(char x, char y, int pow, int ctype);
 static int make_a_rot_cloud(char x, char y, int pow, int ctype);
 static int quadrant_blink(char x, char y, int pow, int garbage);
 static void apply_area_square(int (*func)(char, char, int, int), char cx, char cy, int power);
 static void apply_area_visible(int (*func)(char, char, int, int), int power);
-//void cast_animate_golem(int pow);    // see actual function for reasoning {dlb}
-//void cast_detect_magic(int pow);    // see actual function for reasoning {dlb}
-//void cast_eringyas_surprising_bouquet(int powc);    // see actual function for reasoning {dlb}
-//void cast_summon_serpents(int powc);    // see actual function for reasoning {dlb}
-//void do_monster_rot(int mon);    // see actual function for reasoning {dlb}
+//void cast_animate_golem(int pow); // see actual function for reasoning {dlb}
+//void cast_detect_magic(int pow);  //jmf: as above...
+//void cast_eringyas_surprising_bouquet(int powc);
+void do_monster_rot(int mon);
 
 
 
@@ -77,8 +78,7 @@ static void apply_area_visible(int (*func)(char, char, int, int), int power);
 // A feeble attempt at Nethack-like completeness for cute messages.
 const char *your_hand( int plural )
 {
-
-    static char buffer[40];
+    static char buffer[80];
 
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
@@ -105,6 +105,9 @@ const char *your_hand( int plural )
       case TRAN_BLADE_HANDS:
         strcpy(buffer, "scythe-like blade");
         break;
+      case TRAN_AIR:
+        strcpy(buffer, "misty tendril");
+        break;
     }
 
     if (plural)
@@ -129,11 +132,12 @@ void place_debris( char x, char y, int debris_type )
     switch( debris_type )
     {
     // hate to say this, but the first parameter only allows specific quantity
-    // for *food* and nothing else -- and I would hate to see that parameter (force_unique)
-    // abused any more than it already has been ... {dlb}:
+    // for *food* and nothing else -- and I would hate to see that parameter
+    // (force_unique) abused any more than it already has been ... {dlb}:
         case DEBRIS_STONE:
           large = items(random2(3), OBJ_MISSILES, MI_LARGE_ROCK, 1, 1, 250);
-          small = items(3 + random2(6) + random2(6) + random2(6), OBJ_MISSILES, MI_STONE, 1, 1, 250);
+          small = items(3 + random2(6) + random2(6) + random2(6),
+                        OBJ_MISSILES, MI_STONE, 1, 1, 250);
           break;
         case DEBRIS_METAL:
         case DEBRIS_WOOD:
@@ -167,7 +171,6 @@ void place_debris( char x, char y, int debris_type )
 // just to avoid typing this over and over
 inline void player_hurt_monster( int monster, int damage )
 {
-
     ASSERT(monster != MNG);
 
     if (damage > 0)
@@ -181,7 +184,6 @@ inline void player_hurt_monster( int monster, int damage )
     }
 
     return;
-
 }          // end player_hurt_monster()
 
 
@@ -189,7 +191,6 @@ inline void player_hurt_monster( int monster, int damage )
 
 int enchant_monster( int mon, int ench )
 {
-
     int p;
 
     ASSERT(mon != MNG);
@@ -212,7 +213,6 @@ int enchant_monster( int mon, int ench )
     }
 
     return 0;
-
 }          // end enchant_monster()
 
 
@@ -230,7 +230,7 @@ static void apply_area_visible( int (*func)(char, char, int, int), int power )
 
     int x, y;
 
-//jmf: FIXME: randomly start from other quadrants, like raise_dead?
+    //jmf: FIXME: randomly start from other quadrants, like raise_dead?
 
     for (x = you.x_pos -8; x <= you.x_pos + 8; x++)
       for (y = you.y_pos -8; y <= you.y_pos + 8; y++)
@@ -243,15 +243,16 @@ static void apply_area_visible( int (*func)(char, char, int, int), int power )
 
 
 // NB: this actually has yet to be used {dlb}:
-static void apply_area_square( int (*func)(char, char, int, int), char cx, char cy, int power )
+//jmf: It's for Fireball and Mephitic Cloud, if we incorporate those
+//     into this ugly function-pointer system.
+static void apply_area_square( int (*func)(char, char, int, int),
+                               char cx, char cy, int power )
 {
-
     char x,y;
 
     for (x = cx-1; x <= cx+1; x++)
       for (y = cy-1; y <= cy+1; y++)
         func(x,y,power,0);
-
 }          // end apply_area_square()
 
 
@@ -259,7 +260,6 @@ static void apply_area_square( int (*func)(char, char, int, int), char cx, char 
 
 void apply_area_around_player( int (*func)(char, char, int, int), int power )
 {
-
     char x, y;
 
     for (x = you.x_pos -1; x <= you.x_pos +1; x++)
@@ -268,7 +268,6 @@ void apply_area_around_player( int (*func)(char, char, int, int), int power )
           continue;
         else
          func(x,y,power,0);
-
 }          // end apply_area_around_player()
 
 
@@ -276,40 +275,37 @@ void apply_area_around_player( int (*func)(char, char, int, int), int power )
 
 void apply_one_neighboring_square( int (*func)(char,char,int,int), int power)
 {
+  struct dist bmove[1];
 
-    struct dist bmove[1];
+ try_again:
+  mpr("Which direction? [ESC to cancel]");
+  direction(0, bmove);
 
-try_again:
-
-    mpr("Which direction?");
-
-    direction(0, bmove);
-
-    if (bmove[0].nothing == -1)
+  if (bmove[0].nothing == -1)
     {
-        canned_msg(MSG_SPELL_FIZZLES);
-        return;
-    }
-
-    if ( (abs(bmove[0].move_x) > 1) || (abs(bmove[0].move_y) > 1) )
-    {
-        mpr("This spell doesn't reach that far.");
-        return;
-    }
-
-    if ( func(you.x_pos + bmove[0].move_x, you.y_pos + bmove[0].move_y, power, 1) )
+      canned_msg(MSG_SPELL_FIZZLES);
       return;
-    else
-      goto try_again;
+    }
 
+  if ( (abs(bmove[0].move_x) > 1) || (abs(bmove[0].move_y) > 1) )
+    {
+      mpr("This spell doesn't reach that far.");
+      return;
+    }
+
+  if( func(you.x_pos + bmove[0].move_x, you.y_pos + bmove[0].move_y, power, 1))
+    return;
+  else
+    canned_msg(MSG_NOTHING_HAPPENS);
+    //goto try_again; //jmf: used to keep giving chances...
 }          // end apply_one_neighboring_square()
 
 
 
 
-void apply_area_within_radius( int (*func)(char,char,int,int),char x, char y, int pow, int radius, int ctype )
+void apply_area_within_radius( int (*func)(char,char,int,int),
+                               char x, char y, int pow, int radius, int ctype )
 {
-
     int ix, iy;
     int sq_radius = radius * radius;
 
@@ -320,15 +316,14 @@ void apply_area_within_radius( int (*func)(char,char,int,int),char x, char y, in
       for (iy = 0; iy < GYM; iy++)    // was "iy < 80" but that is WRONG {dlb}
         if ( distance(x,y,ix,iy) <= sq_radius )
           func(ix,iy,pow,ctype);
-
 }          // end apply_area_within_radius()
 
 
 
 
-static inline bool cloud_helper(int (*func)(char,char,int,int),char x, char y, int pow, int ctype)
+static inline bool cloud_helper(int (*func)(char,char,int,int),
+                                char x, char y, int pow, int ctype)
 {
-
   if ( grd[x][y] > DNGN_LAST_SOLID_TILE && env.cgrid[x][y] == CNG )
   {
       func(x,y,pow,ctype);
@@ -336,7 +331,6 @@ static inline bool cloud_helper(int (*func)(char,char,int,int),char x, char y, i
   }
   else
     return false;
-
 }
 
 
@@ -430,7 +424,7 @@ void apply_area_cloud( int (*func)(char,char,int,int),char x, char y, int pow, i
         }
     }
 
-// now diagonals; we could randomize dx & dy again here
+    // now diagonals; we could randomize dx & dy again here
     if (clouds_left && cloud_helper(func, x+dx, y+dy, pow, ctype))
     {
         clouds_left--;
@@ -523,7 +517,7 @@ int shatter_monsters(char x, char y, int pow, int garbage)
     case MONS_ICE_DRAGON:
     //case MONS_ROCK_TROLL: //jmf: not actually rock, is it?
     case MONS_DANCING_WEAPON:
-    case MONS_METAL_GARGOYLE:
+    //case MONS_METAL_GARGOYLE:
     case MONS_MOLTEN_GARGOYLE:
     case MONS_QUICKSILVER_DRAGON:
       damage *= 15;
@@ -542,7 +536,7 @@ int shatter_monsters(char x, char y, int pow, int garbage)
     case MONS_SKELETAL_DRAGON:
     case MONS_SKELETAL_WARRIOR:
     case MONS_IRON_DRAGON:
-      damage <<= 1;
+      damage *= 2;
       break;
     case MONS_VAPOUR:
     case MONS_INSUBSTANTIAL_WISP:
@@ -590,8 +584,7 @@ int shatter_items(char x, char y, int pow, int garbage)
 
     int broke_stuff = 0, next, obj = igrd[x][y];
 
-    if ( obj == 501 )
-      return 0;
+    if ( obj == 501 )                   return 0;
 
     while (obj != 501)
     {
@@ -767,7 +760,7 @@ void cast_see_invisible(int pow)
     else
       mpr("Your vision seems to sharpen.");
 
-// no message if you already are under the spell
+    // no message if you already are under the spell
 
     you.duration[DUR_SEE_INVISIBLE] += 10 + random2(2 + (pow / 2));
 
@@ -778,10 +771,6 @@ void cast_see_invisible(int pow)
 
 
 
-
-/* ******************************************************************
-
-// commented out until fully functional 21may2000 {dlb}
 
 // FIXME: This would be kinda cool if implemented right.
 //        The idea is that, like detect_secret_doors, the spell gathers all
@@ -888,7 +877,6 @@ void cast_detect_magic(int pow)
   return;
 }
 
-****************************************************************** */
 
 
 
@@ -899,13 +887,13 @@ void cast_detect_secret_doors(int pow)
     int tmp, x, y, dy, dx, i =0;
     int xfound[30], yfound[30];
 
-    for (tmp = 0; tmp <= 30; tmp++)
+    for (tmp = 0; tmp < 30; tmp++)
     {
         xfound[tmp] = 0;
         yfound[tmp] = 0;
     }
 
-// potentially may produce out-of-bounds on grd[][] {dlb}:
+    // potentially may produce out-of-bounds on grd[][] {dlb}:
     for (x = you.x_pos - 6; x < you.x_pos + 7; x++)
       for (y = you.y_pos - 6; y < you.y_pos + 7; y++)
       {
@@ -926,6 +914,9 @@ void cast_detect_secret_doors(int pow)
     if ( i ) // found something
     {
         tmp = (i > 1) ? random2(i-1) : 0;
+
+        grd[xfound[tmp]][yfound[tmp]] = DNGN_CLOSED_DOOR;
+
         dx = you.x_pos - xfound[tmp];
         dy = you.y_pos - yfound[tmp];
         strcpy(info, "You sense a secret door ");
@@ -961,45 +952,42 @@ void cast_detect_secret_doors(int pow)
 
 
 
-// there must be some way of merging the following
-// with spells2::summon_butter() or picking one
-// implementation over the other {dlb}
 void cast_summon_butterflies( int pow )
 {
-
     for (int scount = 1 + (pow/2); scount > 0; scount--)
       if ( scount > random2(10) )
-        create_monster(MONS_BUTTERFLY, 22, BEH_ENSLAVED, you.x_pos, you.y_pos,MHITNOT, 250);
-
-}          // end summon_butterflies()
-
-
+        create_monster(MONS_BUTTERFLY, 22, BEH_ENSLAVED,
+                       you.x_pos, you.y_pos,MHITNOT, 250);
+}
 
 
-void summon_large_mammal( int pow )
+
+
+void cast_summon_large_mammal( int pow )
 {
-
     int mon;
-    int temp_rand = 0;
+    int temp_rand = random2(pow);
 
-    temp_rand = random2(11);
-
-    mon = ( (temp_rand > 5) ? MONS_HOUND :      // 5 in 11 odds {dlb}
-            (temp_rand > 2) ? MONS_JACKAL :     // 3 in 11 odds {dlb}
-            (temp_rand > 1) ? MONS_WAR_DOG :    // 1 in 11 odds {dlb}
-            (temp_rand > 0) ? MONS_HOG          // 1 in 11 odds {dlb}
-                            : MONS_SHEEP );     // 1 in 11 odds {dlb}
+    if (temp_rand < 10)
+      mon = MONS_JACKAL;
+    else if (temp_rand < 15)
+      mon = MONS_HOUND;
+    else switch (temp_rand % 5)
+      {
+      case 0:  mon = MONS_WAR_DOG; break;
+      case 1:
+      case 2:  mon = MONS_HOUND;   break;
+      default: mon = MONS_JACKAL;  break;
+      }
 
     create_monster(mon, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
-
-}          // end summon_large_mammal()
+}
 
 
 
 
 void cast_sticks_to_snakes( int pow )
 {
-
     int mon, i, how_many = 0, max, behaviour;
     bool NICE = true; // delete all ammo?
 
@@ -1028,8 +1016,8 @@ void cast_sticks_to_snakes( int pow )
 
         for (i = 0; i <= max; i++)
         {
-            if (pow > 25 && one_chance_in(3))
-              mon = MONS_SNAKE;
+            if (pow > 35 && one_chance_in(3))
+              mon = MONS_SNAKE; //jmf: perhaps also check for poison ammo?
             else
               mon = MONS_SMALL_SNAKE;
 
@@ -1050,16 +1038,16 @@ void cast_sticks_to_snakes( int pow )
              || you.inv_type[you.equip[EQ_WEAPON]] == WPN_GLAIVE ))
     {
         how_many = 1;
-        mon = MONS_BROWN_SNAKE;
+        mon = MONS_SNAKE;
 
-        if (pow > 100 && one_chance_in(3))
-          mon = MONS_GREY_SNAKE;
+        if (pow > 80 && one_chance_in(3))
+          mon = MONS_BLACK_SNAKE;
 
-        if (pow > 75  && one_chance_in(3))
+        if (pow > 40  && one_chance_in(3))
           mon = MONS_YELLOW_SNAKE;
 
-        if (pow > 50  && one_chance_in(3))
-          mon = MONS_BLACK_SNAKE;
+        if (pow > 15  && one_chance_in(3))
+          mon = MONS_BROWN_SNAKE;
 
         create_monster(mon, 22, behaviour, you.x_pos, you.y_pos, MHITNOT, 250);
     }
@@ -1089,9 +1077,9 @@ void cast_sticks_to_snakes( int pow )
 
         wield_change = true;
         burden_change();
-        sprintf(info, "You create %s snake%s!", how_many > 1 ? "some"
-                                                             : "a", how_many > 1 ? "s"
-                                                                                 : "");
+        sprintf(info, "You create %s snake%s!",
+                how_many > 1 ? "some" : "a",
+                how_many > 1 ? "s"    : "");
     }
     else
     {
@@ -1109,34 +1097,33 @@ void cast_sticks_to_snakes( int pow )
 
 void cast_summon_dragon(int pow)
 {
+  int num, happy, i;
 
-    int num, happy, i;
+  num = (pow / 16);
 
-    num = (pow / 16);
+  if (num < 1)
+    num = 1;
 
-    if (num < 1)
-      num = 1;
+  if (num > 4)
+    num = 4;
 
-    if (num > 4)
-      num = 4;
+  for (i = 0; i < num ; i++)
+  {
+    happy = random2(pow) > 3;
 
-    for (i = 0; i < num ; i++)
-    {
-        happy = random2(pow) > 3;
+    if ( create_monster(MONS_DRAGON, 22, happy ? BEH_ENSLAVED : BEH_CHASING_I,
+                        you.x_pos, you.y_pos, MHITNOT, 250) != -1)
+      {
+        strcpy(info, "A dragon appears.");
 
-        if ( create_monster(MONS_DRAGON, 22, happy ? BEH_ENSLAVED : BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1)
-        {
-            strcpy(info, "A dragon appears.");
+        if ( !happy )
+          strcat(info, " It doesn't look very happy.");
+      }
+    else
+      strcpy(info, "Nothing happens.");
 
-            if ( !happy )
-              strcat(info, " It doesn't look very happy.");
-        }
-        else
-          strcpy(info, "Nothing happens.");
-
-        mpr(info);
-    }
-
+    mpr(info);
+  }
 }          // end cast_summon_dragon()
 
 
@@ -1144,25 +1131,20 @@ void cast_summon_dragon(int pow)
 
 int sleep_monsters( char x, char y, int pow, int garbage )
 {
-
     int mnstr = mgrd[x][y];
 
-    if ( mnstr == MNG )
-      return 0;
+    if ( mnstr == MNG )                                      return 0;
+    if ( mons_holiness(menv[mnstr].type) != MH_NATURAL )     return 0;
+    if ( !check_mons_magres(&menv[mnstr], pow) )             return 0;
+    if ( menv[mnstr].behavior == BEH_ENSLAVED )              return 0;
+    //jmf: now that sleep == hibernation:
+    if ((mons_res_cold(menv[mnstr].type) > 0) && coinflip()) return 0;
 
-    if ( mons_holiness(menv[mnstr].type) != MH_NATURAL )
-      return 0;
-
-    if ( !check_mons_magres(&menv[mnstr], pow) )
-      return 0;
-
-    if ( menv[mnstr].behavior == BEH_ENSLAVED )
-      return 0;
-
+    if ( mons_flag(menv[mnstr].type, M_COLD_BLOOD ) )
+      enchant_monster( mnstr, ENCH_SLOW );
     menv[mnstr].behavior = BEH_SLEEP;
 
     return 1;
-
 }          // end sleep_monsters()
 
 
@@ -1180,27 +1162,18 @@ void cast_mass_sleep( int pow )
 
 int tame_beast_monsters(char x, char y, int pow, int garbage)
 {
-
     int which_mons = mgrd[x][y];
     struct monsters *monster = &menv[which_mons];
 
-    if ( which_mons == MNG )
-      return 0;
-
-    if ( mons_holiness(monster->type) != MH_NATURAL )
-      return 0;
-
-    if ( mons_intel_type(monster->type) != I_ANIMAL )    // this is an abuse of the I_foo data {dlb}
-      return 0;                                          // I_ANIMAL != something is an animal (!!!)
-
-    if ( monster->behavior == BEH_ENSLAVED )
-      return 0;
+    if ( which_mons == MNG )                               return 0;
+    if ( mons_holiness(monster->type) != MH_NATURAL )      return 0;
+    if ( mons_intel_type(monster->type) != I_ANIMAL )      return 0;
+    if ( monster->behavior == BEH_ENSLAVED )               return 0;
 
     if ( monster->type == MONS_HOUND || monster->type == MONS_WAR_DOG )
-      pow += pow / 4;    // 25% bonus for dogs, add cats if they get implemented
+      pow += pow / 4; // 25% bonus for dogs, add cats if they get implemented
 
-    if ( !check_mons_magres(monster, pow) )
-      return 0;
+    if ( !check_mons_magres(monster, pow) )                return 0;
 
 // I'd like to make the monsters affected permanently, but that's
 // pretty powerful. Maybe a small (pow/10) chance of being permanently
@@ -1208,7 +1181,7 @@ int tame_beast_monsters(char x, char y, int pow, int garbage)
 
     simple_monster_message(monster, " is tamed!");
 
-    if ( random2(100) < (pow/10) )
+    if ( random2(100) < random2(pow/10) )
       monster->behavior = BEH_ENSLAVED;    // permanent, right?
     else
       for (unsigned char i = 0; i < 3; i++)
@@ -1239,19 +1212,14 @@ void cast_tame_beasts( int pow )
 
 int ignite_poison_objects( char x, char y, int pow, int garbage )
 {
-
     int obj = igrd[x][y], next, strength = 0;
 
-    if ( obj == ING )
-      return 0;
-
+    if ( obj == ING ) return 0;
     while (obj != 501)
     {
         next = mitm.link[obj];
-
         if ( mitm.base_type[obj] == OBJ_POTIONS )
         {
-
             switch ( mitm.sub_type[obj] )
             {
             // intentional fall-through all the way down
@@ -1784,10 +1752,10 @@ int passwall( char x, char y, int pow, int garbage )
     while ( !done )
     {
     // I'm trying to figure proper borders out {dlb}
-        if ( nx > (GXM - 1) || ny > (GYM - 1) || nx < 2 || ny < 2 ) // FIXME: dungeon border?
+      if ( nx > (GXM - 1) || ny > (GYM - 1) || nx < 2 || ny < 2 ) // FIXME: dungeon border?
         {
-            mpr("You sense an overwhelming volume of rock.");
-            return 0;
+          mpr("You sense an overwhelming volume of rock.");
+          return 0;
         }
 
         switch ( grd[nx][ny] )
@@ -1827,11 +1795,11 @@ int passwall( char x, char y, int pow, int garbage )
               mpr("Wuss.");
             else
               canned_msg(MSG_OK);
-              return 1;
+            return 1;
         }
     }
 
-transport:
+ transport:
 
     switch ( grd[nx][ny] )
     {
@@ -1887,25 +1855,15 @@ void cast_passwall( int pow )
 
 int intoxicate_monsters( char x, char y, int pow, int garbage )
 {
-
     int mon = mgrd[x][y];
 
-    if ( mon == MNG )
-      return 0;
-
-    if ( mons_intel(menv[mon].type) < I_NORMAL )
-      return 0;
-
-    if ( mons_holiness(menv[mon].type) != MH_NATURAL )
-      return 0;
-
-    if ( mons_res_poison(menv[mon].type) > 0 )
-      return 0;
+    if ( mon == MNG )                                  return 0;
+    if ( mons_intel(menv[mon].type) < I_NORMAL )       return 0;
+    if ( mons_holiness(menv[mon].type) != MH_NATURAL ) return 0;
+    if ( mons_res_poison(menv[mon].type) > 0 )         return 0;
 
     enchant_monster(mon, ENCH_CONFUSION);
-
     return 1;
-
 }          // end intoxicate_monsters()
 
 
@@ -1930,17 +1888,11 @@ void cast_intoxicate( int pow )
 // intended as a high-level Elven (a)bility
 int glamour_monsters( char x, char y, int pow, int garbage )
 {
-
     int mon = mgrd[x][y];
 
-    if ( mon == MNG )
-      return 0;
-
-    if ( mons_intel(menv[mon].type) < I_NORMAL )
-      return 0;
-
-    if ( one_chance_in(3) )
-      return 0;
+    if ( mon == MNG )                              return 0;
+    if ( mons_intel(menv[mon].type) < I_NORMAL )   return 0;
+    if ( one_chance_in(3) )                        return 0;
 
     switch ( mons_charclass(menv[mon].type) )
     {
@@ -1961,11 +1913,9 @@ int glamour_monsters( char x, char y, int pow, int garbage )
         if ( menv[mon].type == MONS_GARGOYLE
               || menv[mon].type == MONS_METAL_GARGOYLE
               || menv[mon].type == MONS_MOLTEN_GARGOYLE
-              || menv[mon].type == MONS_BOGGART )
-          return 0;
+              || menv[mon].type == MONS_BOGGART ) return 0;
         break;
-      default:
-        return 0;
+      default:                                    return 0;
     }
 
     if ( !check_mons_magres(&menv[mon], pow) )
@@ -2006,8 +1956,8 @@ int glamour_monsters( char x, char y, int pow, int garbage )
             break;
           case 2:
             strcat(info, " rubs its eye");
-            if (menv[mon].type != MONS_CYCLOPS) strcat(info, "s");    // btw, there are other one-eyed monsters, and monsters incapable of rubbing whatever eyes they happen to have {dlb}
-              strcat(info, ".");
+            if (menv[mon].type != MONS_CYCLOPS) strcat(info, "s");
+            strcat(info, ".");
             break;
           case 4:
             strcat(info, " tilts its head.");
@@ -2049,32 +1999,32 @@ int backlight_monsters( char x, char y, int pow, int garbage )
 
     switch (menv[mon].type)
     {
-        //case MONS_INSUBSTANTIAL_WISP: //jmf: I'm not sure if these glow or not
-        //case MONS_VAPOUR:
-        case MONS_UNSEEN_HORROR: // consider making this visible? probably not.
-          return 0;
-        case MONS_FIRE_VORTEX:
-        case MONS_ANGEL:
-        case MONS_FIEND:
-        case MONS_SHADOW:
-        case MONS_EFREET:
-        case MONS_HELLION:
-        case MONS_GLOWING_SHAPESHIFTER:
-        case MONS_FIRE_ELEMENTAL:
-        case MONS_AIR_ELEMENTAL:
-        case MONS_SHADOW_FIEND:
-        case MONS_SPECTRAL_WARRIOR:
-        case MONS_ORANGE_RAT:
-        case MONS_BALRUG:
-        case MONS_SPATIAL_VORTEX:
-        case MONS_PIT_FIEND:
-        case MONS_SHINING_EYE:
-        case MONS_DAEVA:
-        case MONS_SPECTRAL_THING:
-        case MONS_EYE_OF_DEVASTATION:
-          return 0; // already glowing or invisible
-        default:
-          break;
+      //case MONS_INSUBSTANTIAL_WISP: //jmf: I'm not sure if these glow or not
+      //case MONS_VAPOUR:
+    case MONS_UNSEEN_HORROR: // consider making this visible? probably not.
+      return 0;
+    case MONS_FIRE_VORTEX:
+    case MONS_ANGEL:
+    case MONS_FIEND:
+    case MONS_SHADOW:
+    case MONS_EFREET:
+    case MONS_HELLION:
+    case MONS_GLOWING_SHAPESHIFTER:
+    case MONS_FIRE_ELEMENTAL:
+    case MONS_AIR_ELEMENTAL:
+    case MONS_SHADOW_FIEND:
+    case MONS_SPECTRAL_WARRIOR:
+    case MONS_ORANGE_RAT:
+    case MONS_BALRUG:
+    case MONS_SPATIAL_VORTEX:
+    case MONS_PIT_FIEND:
+    case MONS_SHINING_EYE:
+    case MONS_DAEVA:
+    case MONS_SPECTRAL_THING:
+    case MONS_EYE_OF_DEVASTATION:
+      return 0; // already glowing or invisible
+    default:
+      break;
     }
 
     strcpy(info, monam(menv[mon].number, menv[mon].type, menv[mon].enchantment[2], 0));
@@ -2122,11 +2072,10 @@ void cast_evaporate( int pow )
           apply_area_cloud(make_a_normal_cloud, you.x_pos, you.y_pos, 5 + pow, 3 + random2avg(7,2), CLOUD_POISON);
           break;
         case POT_DECAY:
-          apply_area_cloud(make_a_rot_cloud, you.x_pos, you.y_pos, 2 + pow, 6 + random2avg(5,2), CLOUD_MIASMA);
-          if ( you.species != SP_MUMMY )    // josh declares mummies cannot smell, and they do not rot {dlb}
+          apply_area_cloud(make_a_normal_cloud, you.x_pos, you.y_pos, 2 + pow, 6 + random2avg(5,2), CLOUD_MIASMA);
+          if ( you.species != SP_MUMMY )
           {
               mpr("You smell decay.");
-
               if ( one_chance_in(4) )
                 you.rotting += 1 + random2(5);
           }
@@ -2176,7 +2125,8 @@ void cast_evaporate( int pow )
 void make_shuggoth( char x, char y, int hp )
 {
 
-    int mon = create_monster(MONS_SHUGGOTH, 100 + random2avg(58,3), BEH_INSANE, x, y, MHITNOT, 250);
+    int mon = create_monster(MONS_SHUGGOTH, 100 + random2avg(58,3), BEH_INSANE,
+                             x, y, MHITNOT, 250);
 
     if ( mon != -1 )
     {
@@ -2245,6 +2195,14 @@ int rot_undead(char x, char y, int pow, int garbage)
 // this does not make sense -- player mummies are
 // immune to rotting (or have been) -- so what is
 // the schema in use here to determine rotting??? {dlb}
+
+    //jmf: up for discussion. it is clearly unfair to
+    //     rot player mummies.
+    //     the `shcema' here is: corporeal non-player undead
+    //     rot, discorporeal undead don't rot. if you wanna
+    //     insist that monsters get the same treatment as
+    //     players, I demand my player mummies get to worship
+    //     the evil mummy & orc god.
     switch(menv[mon].type)
     {
         case MONS_NECROPHAGE:
@@ -2313,74 +2271,45 @@ void cast_rotting( int pow )
 
 
 
-/* ******************************************************************
-
-// commented out until actual implementation exists 21may2000 {dlb}
-
 void do_monster_rot( int mon )
 {
-
     int damage = 1 + random2(3);
 
     if (mons_holiness(menv[mon].type) == MH_UNDEAD && random2(5))
-      apply_area_cloud(make_a_normal_cloud, menv[mon].x, menv[mon].y, 10, 1, CLOUD_MIASMA);
+      apply_area_cloud(make_a_normal_cloud, menv[mon].x, menv[mon].y,
+                       10, 1, CLOUD_MIASMA);
 
     player_hurt_monster(mon, damage);
 
     return;
-
 }          // end do_monster_rot()
 
-****************************************************************** */
 
 
-
-/* ******************************************************************
-
-// commented out until there is an actual function here 21may2000 {dlb}
-
-//jmf: Okay, yes, I want a food creation spell. But I want it specifically for
-//     herbivores, so ... this will make flowers, which act like chunks in that
-//     the player can't eat them unless it's hungry (or has the appropriate
-//     mutation). Future Considerations: flower breathing dragon?
-void cast_eringyas_surprising_bouquet( int powc )
+int snake_charm_monsters( char x, char y, int pow, int message )
 {
+  int mon = mgrd[x][y];
 
-}          // end cast_eringyas_surprising_bouquet()
+  if ( mon == MNG )                              return 0;
+  if ( menv[mon].behavior == BEH_ENSLAVED )      return 0;
+  if ( one_chance_in(4) )                        return 0;
+  if ( mons_charclass(menv[mon].type) != 'S' )   return 0;
+  if ( !check_mons_magres(&menv[mon], pow ) )    return 0;
+
+  menv[mon].behavior = BEH_ENSLAVED;
+  sprintf(info, "%s sways back and forth a few times.",
+          monam(menv[mon].number, menv[mon].type, menv[mon].enchantment[2],0));
+  mpr(info);
+
+  return 1;
+}
 
 
-****************************************************************** */
-
-
-/* ******************************************************************
-
-// commented out until actual implementation exists 21may2000 {dlb}
-
-void cast_summon_serpents( int pow ) // Lsha follower power
+void cast_snake_charm( int pow )
 {
-
-  // powc = (you.experience_level << 1) + you.skills[SK_INVOCATIONS] * 3;
-  int how_many, mons, temp, pow_left = pow;
-  how_many = pow / 15;
-  if (how_many < 2)
-    how_many = 2;
-  else if (how_many > 8)
-    how_many = 8;
-
-  for (int i = 0; i < how_many && pow_left > 0; i++)
-  {
-    mons = MONS_BROWN_SNAKE;
-    temp = random2(1+pow_left/2);
-    if (temp >= 10) mons = MONS_YELLOW_SNAKE;
-    if (temp >= 20) mons = MONS_BLACK_SNAKE;
-    if (temp >= 30) mons = MONS_GREY_SNAKE;
-    pow_left -= temp;
-    create_monster(mons, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
-  }
-
-}          // end cast_summon_serpents()
-
-****************************************************************** */
+  // powc = (you.experience_level * 2) + (you.skills[SK_INVOCATIONS] * 3);
+  apply_one_neighboring_square( snake_charm_monsters, pow );
+}
 
 
 
@@ -2442,7 +2371,8 @@ void cast_fragmentation(int pow) // jmf: ripped idea from airstrike
             case MONS_SKELETON_SMALL:
             case MONS_SKELETON_LARGE: // blast of bone
               explode = true;
-              sprintf(info, "The sk%s explodes into sharp fragments of bone!", (menv[i].type == MONS_FLYING_SKULL) ? "ull" : "eleton");
+              sprintf(info, "The sk%s explodes into sharp fragments of bone!",
+                      (menv[i].type == MONS_FLYING_SKULL) ? "ull" : "eleton");
               strcpy(blast[0].beam_name, "blast of bone shards");
 
               blast[0].colour = LIGHTGREY;
@@ -2458,6 +2388,7 @@ void cast_fragmentation(int pow) // jmf: ripped idea from airstrike
             case MONS_WOOD_GOLEM:
             case MONS_MOLTEN_GARGOYLE: // major damage; monster only
               explode = false;
+              //FIXME: simple_monster_message(monster, " shudders violently!");
               player_hurt_monster(i, hurted + hurted / 2);
               break;
 
@@ -2507,102 +2438,104 @@ void cast_fragmentation(int pow) // jmf: ripped idea from airstrike
         goto all_done;
     }
 
-do_terrain:
-// FIXME: do nothing in Abyss & Pandemonium?
+ do_terrain:
+    // FIXME: do nothing in Abyss & Pandemonium?
     i = grd[beam[0].target_x][beam[0].target_y];
 
     switch (i)
     {
-        case DNGN_ROCK_WALL:
-        case DNGN_STONE_WALL:
-        case DNGN_SECRET_DOOR:
-          what = "wall";
-        case DNGN_ORCISH_IDOL:
-          if (what == 0)
-            what = "stone idol";
-        case DNGN_GRANITE_STATUE: // normal rock -- big explosion
-          if (what == 0)
-            what = "statue";
-          explode = true;
-          size = true;
-          strcpy(blast[0].beam_name, "blast of rock fragments");
-          blast[0].colour = BROWN; // FIXME: colour of actual wall?
-          blast[0].damage = hurted / 4;
-          blast[0].flavour = BEAM_FRAG;
+    case DNGN_ROCK_WALL:
+    case DNGN_STONE_WALL:
+    case DNGN_SECRET_DOOR:
+      what = "wall";
+    case DNGN_ORCISH_IDOL:
+      if (what == 0)
+        what = "stone idol";
+    case DNGN_GRANITE_STATUE: // normal rock -- big explosion
+      if (what == 0)
+        what = "statue";
+      explode = true;
+      size = true;
+      strcpy(blast[0].beam_name, "blast of rock fragments");
+      blast[0].colour = BROWN; // FIXME: colour of actual wall?
+      blast[0].damage = hurted / 4;
+      blast[0].flavour = BEAM_FRAG;
 
-          if ( coinflip() )
-          {
-              grd[beam[0].target_x][beam[0].target_y] = DNGN_FLOOR;
-              debris = DEBRIS_ROCK;
-          }
-          break;
+      if ( coinflip() )
+        {
+          grd[beam[0].target_x][beam[0].target_y] = DNGN_FLOOR;
+          debris = DEBRIS_ROCK;
+        }
+      break;
 
-        case DNGN_METAL_WALL: // metal -- small but nasty explosion
-          what = "metal wall";
-          if ( one_chance_in(3) )
-          {
-              grd[beam[0].target_x][beam[0].target_y] = DNGN_FLOOR;
-              debris = DEBRIS_METAL;
-          }
+    case DNGN_METAL_WALL: // metal -- small but nasty explosion
+      what = "metal wall";
+      if ( one_chance_in(3) )
+        {
+          grd[beam[0].target_x][beam[0].target_y] = DNGN_FLOOR;
+          debris = DEBRIS_METAL;
+        }
 
-          blast[0].colour = CYAN;
-        case DNGN_SILVER_STATUE: //FIXME: is it safe to destroy statues?
-          if (what == 0)
-          {
-              what = "silver statue";
-              blast[0].colour = WHITE;
-          }
-          explode = true;
-          strcpy(blast[0].beam_name, "blast of metal fragments");
-          blast[0].damage = hurted;
-          blast[0].flavour = BEAM_FRAG;
-          break;
+      blast[0].colour = CYAN;
+      // fallthru
+    case DNGN_SILVER_STATUE: //jmf: statue not destroyed
+      if (what == 0)
+        {
+          what = "silver statue";
+          blast[0].colour = WHITE;
+        }
+      explode = true;
+      strcpy(blast[0].beam_name, "blast of metal fragments");
+      blast[0].damage = hurted;
+      blast[0].flavour = BEAM_FRAG;
+      break;
 
-        case DNGN_GREEN_CRYSTAL_WALL: // crystal -- large & nasty explosion
-          what = "crystal wall";
-          blast[0].colour = GREEN;
+    case DNGN_GREEN_CRYSTAL_WALL: // crystal -- large & nasty explosion
+      what = "crystal wall";
+      blast[0].colour = GREEN;
 
-          if ( one_chance_in(3) )
-          {
-              grd[beam[0].target_x][beam[0].target_y] = DNGN_FLOOR;
-              debris = DEBRIS_CRYSTAL;
-          }
-        case DNGN_ORANGE_CRYSTAL_STATUE: //FIXME: is it safe to destroy statues?
-          if (what == 0)
-            what = "crystal statue";
-          if (blast[0].colour == 0)
-            blast[0].colour = LIGHTRED; //jmf: == orange, right?
+      if ( one_chance_in(3) )
+        {
+          grd[beam[0].target_x][beam[0].target_y] = DNGN_FLOOR;
+          debris = DEBRIS_CRYSTAL;
+        }
+      // fallthru
+    case DNGN_ORANGE_CRYSTAL_STATUE:
+      if (what == 0)
+        what = "crystal statue";
+      if (blast[0].colour == 0)
+        blast[0].colour = LIGHTRED; //jmf: == orange, right?
 
-          explode = true;
-          size = true;
-          strcpy(blast[0].beam_name, "blast of crystal shards");
-          blast[0].damage = hurted;
-          blast[0].flavour = BEAM_FRAG;
-          break;
+      explode = true;
+      size = true;
+      strcpy(blast[0].beam_name, "blast of crystal shards");
+      blast[0].damage = hurted;
+      blast[0].flavour = BEAM_FRAG;
+      break;
 
-        case DNGN_TRAP_MECHANICAL:
-        case DNGN_TRAP_MAGICAL:
-        case DNGN_TRAP_III:
-        case DNGN_UNDISCOVERED_TRAP: // only way to destroy magic traps?
-        case DNGN_FLOOR:
-        case DNGN_OPEN_DOOR:
-          if ( coinflip() )
-            grd[beam[0].target_x][beam[0].target_y] = DNGN_FLOOR;
-        case DNGN_STONE_ARCH: // floor -- small explosion
-          what = "floor";
-          explode = true;
-          strcpy(blast[0].beam_name, "blast of rock fragments");
-          blast[0].colour = BROWN; // FIXME: colour of actual dungeon floor?
-          blast[0].damage = hurted / 4;
-          blast[0].flavour = BEAM_FRAG;
-          break;
+    case DNGN_TRAP_MECHANICAL:
+      if ( coinflip() )
+        grd[beam[0].target_x][beam[0].target_y] = DNGN_FLOOR;
+    case DNGN_TRAP_MAGICAL:
+    case DNGN_TRAP_III:
+    case DNGN_UNDISCOVERED_TRAP:
+    case DNGN_FLOOR:
+    case DNGN_OPEN_DOOR:
+    case DNGN_STONE_ARCH: // floor -- small explosion
+      what = "floor";
+      explode = true;
+      strcpy(blast[0].beam_name, "blast of rock fragments");
+      blast[0].colour = BROWN; // FIXME: colour of actual dungeon floor?
+      blast[0].damage = hurted / 4;
+      blast[0].flavour = BEAM_FRAG;
+      break;
 
-        default:
+    default:
       // FIXME: cute message for water?
-          break;
+      break;
     }
 
-all_done:
+ all_done:
     if ( explode )
     {
         if ( what != 0 )
@@ -2670,72 +2603,14 @@ void cast_sandblast( int pow )
 
 
 
-// there has to be a better way to do this!!! I know --
-// I'll fold this into another function yet-to-be-written {dlb}
-static bool mons_is_animal( int type )
+static bool mons_can_host_shuggoth( int type ) //jmf: simplified
 {
-
     if ( mons_holiness(type) != MH_NATURAL )
       return false;
-    if ( mons_intel_type(type) == I_PLANT )    // this does not work -- check mon-data.h!!! {dlb}
-      return false;
-    if ( mons_category(type) == MC_MIMIC )
-      return false;
-
-    switch ( type )
-    {
-      case MONS_ABOMINATION_LARGE:
-      case MONS_ABOMINATION_SMALL:
-      case MONS_ACID_BLOB:
-      case MONS_AIR_ELEMENTAL:
-      case MONS_AZURE_JELLY:
-      case MONS_BROWN_OOZE:
-      case MONS_CLAY_GOLEM:
-      case MONS_CRYSTAL_GOLEM:
-      case MONS_DANCING_WEAPON:
-      case MONS_DEATH_OOZE:
-      case MONS_EARTH_ELEMENTAL:
-      case MONS_EFREET:
-      case MONS_EYE_OF_DEVASTATION:
-      case MONS_FIRE_ELEMENTAL:
-      case MONS_FIRE_VORTEX:
-      case MONS_GARGOYLE:
-      case MONS_GIANT_SPORE:
-      case MONS_HELL_HOUND:
-      case MONS_ICE_BEAST:
-      case MONS_INSUBSTANTIAL_WISP:
-      case MONS_IRON_DRAGON:
-      case MONS_IRON_GOLEM:
-      case MONS_JELLY:
-      case MONS_METAL_GARGOYLE:
-      case MONS_MOLTEN_GARGOYLE:
-      case MONS_OKLOB_PLANT:
-      case MONS_OOZE:
-      case MONS_ORB_GUARDIAN:
-      case MONS_PANDEMONIUM_DEMON:
-      case MONS_PLANT:
-      case MONS_QUICKSILVER_DRAGON:
-      case MONS_RAKSHASA:
-      case MONS_RAKSHASA_FAKE:
-      case MONS_ROYAL_JELLY:
-      case MONS_SHADOW_DRAGON:
-      case MONS_SHINING_EYE:
-      case MONS_SHUGGOTH:
-      case MONS_SPATIAL_VORTEX:
-      case MONS_STONE_GOLEM:
-      case MONS_TENTACLED_MONSTROSITY:
-      case MONS_TOENAIL_GOLEM:
-      case MONS_UNSEEN_HORROR:
-      case MONS_VAPOUR:
-      case MONS_WANDERING_MUSHROOM:
-      case MONS_WATER_ELEMENTAL:
-      case MONS_WOOD_GOLEM:
-      return false;
-    default:
+    if ( mons_flag((type), M_WARM_BLOOD ) )
       return true;
-    }
-
-}          // end mons_is_animal()
+    return false;
+}
 
 
 
@@ -2769,7 +2644,7 @@ void cast_shuggoth_seed( int powc )
         return;
     }
 
-    if ( mons_is_animal(menv[i].type) )
+    if ( mons_can_host_shuggoth(menv[i].type) )
     {
         if (random2(powc) > 100)
           enchant_monster(i, ENCH_YOUR_SHUGGOTH_III);
@@ -2781,7 +2656,7 @@ void cast_shuggoth_seed( int powc )
 
     return;
 
-}          // cast_shuggoth_seed()
+}
 
 
 
@@ -2870,26 +2745,22 @@ static int quadrant_blink( char x, char y, int pow, int garbage )
 
     return 1;
 
-}     // end quadrant_blink()
+}
 
 
 
 
 void cast_semi_controlled_blink( int pow )
 {
-
     apply_one_neighboring_square(quadrant_blink, pow);
-
     return;
-
-}          // end cast_semi_controlled_blink()
+}
 
 
 
 
 int torment_monsters( char x, char y, int pow, int garbage )
 {
-
     int mon = mgrd[x][y];
     struct monsters *monster = &menv[mon];
 
@@ -2900,26 +2771,20 @@ int torment_monsters( char x, char y, int pow, int garbage )
         else
         {
             mpr("Your body is wracked with pain!");
-
             dec_hp((you.hp / 2) - 1, false);
         }
 
         return 1;
     }
 
-    if ( mon == MNG )    // how could this be? - because it is being applied blindly to an area (duh!) {dlb}
-      return 0;
-
-    if ( monster->type == -1 )
-      return 0;
-
-    if ( mons_holiness(monster->type) == MH_UNDEAD || mons_holiness(monster->type) == MH_DEMONIC )
-      return 0;
+    if ( mon == MNG )                                     return 0;
+    if ( monster->type == -1 )                            return 0;
+    if ( mons_holiness(monster->type) == MH_UNDEAD
+         || mons_holiness(monster->type) == MH_DEMONIC )  return 0;
 
     monster->hit_points = 1 + (monster->hit_points / 2);
 
     simple_monster_message(monster, " convulses!");
 
     return 1;
-
-}          // end torment_monsters()
+}

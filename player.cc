@@ -398,15 +398,11 @@ static int player_res_magic( void )
 /* transformations */
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
-      case TRAN_LICH:
-        rm += 50;
-        break;
-      case TRAN_SERPENT_OF_HELL:
-        rm++;
-        break;
-      case TRAN_AIR:
-        rm++;
-        break;
+    case TRAN_LICH:
+      rm += 50;
+      break;
+    default:
+      break;
     }
 
     return rm;
@@ -656,11 +652,12 @@ int player_res_poison( void )
 // transformations:
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
-      case TRAN_LICH:
-      case TRAN_SERPENT_OF_HELL:
-      case TRAN_AIR:
-        rp++;
-        break;
+    case TRAN_LICH:
+    case TRAN_DRAGON: //jmf: monster dragons are immune to poison
+    case TRAN_SERPENT_OF_HELL:
+    case TRAN_AIR:
+      rp++;
+      break;
     }
 
     return rp;
@@ -793,8 +790,9 @@ unsigned char player_spec_air( void )
     if (you.equip[EQ_WEAPON] != -1 && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_AIR)
         sa++;
 
-    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR)
-      sa++;
+    //jmf: this was too good
+    //if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR)
+    //  sa++;
 
     return sa;
 }
@@ -951,8 +949,8 @@ unsigned char player_fast_run( void )
 /* transformations */
     switch ( you.attribute[ATTR_TRANSFORMATION] )
     {
-    case TRAN_NONE:
-      /* Centaurs & Spriggans */ //jmf: only while untransformed
+    case TRAN_NONE:        // Centaurs & Spriggans
+    case TRAN_BLADE_HANDS: //jmf: only while untransformed
       if ( you.species == SP_CENTAUR || you.species == SP_SPRIGGAN )
         fr++;
       break;

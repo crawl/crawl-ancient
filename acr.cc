@@ -5,36 +5,37 @@
  *
  *  Change History (most recent first):
  *
- *     <17>    19jun2000        GDL             added Windows console support
- *     <16>    06mar2000        bwr             changes to berserk
- *     <15>    09jan2000        BCR             new Wiz command: blink
- *     <14>     10/13/99        BCR             Added auto door opening,
- *                                              move "you have no
- *                                              religion" to describe.cc
- *     <13>     10/11/99        BCR             Added Daniel's wizard patch
- *     <12>     10/9/99         BCR             swapped 'v' and 'V' commands,
- *                                              added wizard help command
- *     <11>     10/7/99         BCR             haste and slow now take amulet of
- *                                              resist slow into account
- *     <10>     9/25/99         CDL             Changes to Linux input
- *                                              switch on command enums
- *      <9>     6/12/99         BWR             New init code, restructured
- *                                              wiz commands, added equipment
- *                                              listing commands
- *      <8>     6/7/99          DML             Autopickup
- *      <7>     5/30/99         JDJ             Added game_has_started.
- *      <6>     5/25/99         BWR             Changed move() to move_player()
- *      <5>     5/20/99         BWR             New berserk code, checking
- *                                              scan_randarts for NO_TELEPORT
- *                                              and NO_SPELLCASTING.
- *      <4>     5/12/99         BWR             Solaris support.
- *      <3>     5/09/99         JDJ             look_around no longer prints a prompt.
- *      <2>     5/08/99         JDJ             you and env are no longer arrays.
- *      <1>     -/--/--         LRH             Created
+ * <17> 19jun2000        GDL             added Windows console support
+ * <16> 06mar2000        bwr             changes to berserk
+ * <15> 09jan2000        BCR             new Wiz command: blink
+ * <14> 10/13/99        BCR             Added auto door opening,
+ *                                       move "you have no
+ *                                       religion" to describe.cc
+ * <13> 10/11/99        BCR             Added Daniel's wizard patch
+ * <12> 10/9/99         BCR             swapped 'v' and 'V' commands,
+ *                                       added wizard help command
+ * <11> 10/7/99         BCR             haste and slow now take amulet of
+ *                                       resist slow into account
+ * <10> 9/25/99         CDL             Changes to Linux input
+ *                                       switch on command enums
+ * <9>  6/12/99         BWR             New init code, restructured
+ *                                       wiz commands, added equipment
+ *                                       listing commands
+ * <8>   6/7/99         DML             Autopickup
+ * <7>  5/30/99         JDJ             Added game_has_started.
+ * <6>  5/25/99         BWR             Changed move() to move_player()
+ * <5>  5/20/99         BWR             New berserk code, checking
+ *                                       scan_randarts for NO_TELEPORT
+ *                                       and NO_SPELLCASTING.
+ * <4>  5/12/99         BWR             Solaris support.
+ * <3>  5/09/99         JDJ             look_around no longer prints a prompt.
+ * <2>  5/08/99         JDJ             you and env are no longer arrays.
+ * <1>  -/--/--         LRH             Created
  */
 
 #include "AppHdr.h"
 
+#include <values.h>
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1083,11 +1084,11 @@ gutch:
             gain_exp(5000);
             break;
         case '$':
-            inc_hp(50, true);
-            lessen_hunger(1000, true);
-            you.gold += 50;
-            gain_exp(500);
-            break;
+          //inc_hp(50, true);
+          //lessen_hunger(1000, true);
+          you.gold += 1000;
+          //gain_exp(500);
+          break;
         case 'a':
             acquirement(OBJ_RANDOM);
             break;
@@ -1986,12 +1987,13 @@ gutch:
 
     while (you.magic_points_regeneration >= 100)
     {
-        if ( you.magic_points == you.max_magic_points - 1 && you.running && you.run_x == 0 && you.run_y == 0 )
-          you.running = 0;
+      if ( you.magic_points == you.max_magic_points - 1 && you.running
+           && you.run_x == 0 && you.run_y == 0 )
+        you.running = 0;
 
-        inc_mp(1, false);
+      inc_mp(1, false);
 
-        you.magic_points_regeneration -= 100;
+      you.magic_points_regeneration -= 100;
     }
 
     //losight(show, grid, you.x_pos, you.y_pos);
@@ -2000,7 +2002,7 @@ gutch:
     monster();
 
     ASSERT(you.time_taken >= 0);
-    ASSERT(DBL_MAX - you.elapsed_time > you.time_taken);        // make sure we don't overflow
+    ASSERT(DBL_MAX - you.elapsed_time > you.time_taken); // make sure we don't overflow
 
     you.elapsed_time += you.time_taken;
 

@@ -8,7 +8,7 @@ MAKEFILE = makefile.lnx
 
 #jmf: number of concurrent jobs -- good value is (#_of_CPUs * 2) + 1
 #     cuts build time a lot on multi-cpu machines
-OTHER = -j3
+OTHER=-j3
 
 all:
 	make $(OTHER) -f $(MAKEFILE) EXTRA_FLAGS=-O3
@@ -21,7 +21,7 @@ clean:
 distclean:
 	make $(OTHER) -f $(MAKEFILE) distclean
 debug:
-	make $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS=-g
+	make $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-g -DDEBUG'
 wizard:
-	make $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-g -DWIZARD'
+	make $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-g -DWIZARD -DDEBUG'
 # DO NOT DELETE THIS LINE -- make depend depends on it.

@@ -76,6 +76,7 @@ void cast_a_spell( void )
 // first query {dlb}:
     for (;;)
     {
+      //jmf: FIXME: change to reflect range of known spells
         mpr("Cast which spell? [a-y] spell [?|*] list");
 
         keyin = get_ch();
@@ -106,7 +107,7 @@ void cast_a_spell( void )
 
     spc = (int) keyin;
 
-    if ( spc < 'a' || spc > 'y' )     // I guess 'y' and not 'z' because one can only know 25 spells? {dlb}
+    if ( spc < 'a' || spc > 'y' )
     {
         mpr("You don't know that spell.");
         return;
@@ -175,7 +176,7 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
     alert();
 
-// determine base power -- modified by skills, magic ability, enhancements {dlb}:
+// determine base power: modified by skills, magic ability, enhancements {dlb}:
     powc = spell_spec(spc2);
 
 // further modify base power by weighting against intelligence {dlb}:
@@ -398,6 +399,12 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         zapping(ZAP_LIGHTNING, powc, &beam[0]);
         return true;
 
+    case SPELL_BOLT_OF_MAGMA:
+      if (spell_direction(spd, &beam[0]) == -1)
+        return true;
+      zapping(ZAP_MAGMA, powc, &beam[0]);
+      return true;
+
     case SPELL_POLYMORPH_OTHER:
         if (spell_direction(spd, &beam[0]) == -1)
             return true;
@@ -554,7 +561,7 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         break;
 
     case SPELL_SUMMON_SMALL_MAMMAL:
-        summon_small_mammals(powc);     //jmf: hmm, that's definately *plural* ;-)
+        summon_small_mammals(powc); //jmf: hmm, that's definately *plural* ;-)
         break;
 
     case SPELL_ABJURATION_I:    //jmf: why not group with SPELL_ABJURATION_II?
@@ -1121,7 +1128,7 @@ bool your_spells( int spc2, int powc, bool allow_fail )
       return true;
 
     case SPELL_SUMMON_LARGE_MAMMAL:
-      summon_large_mammal(powc);
+      cast_summon_large_mammal(powc);
       return true;
 
     case SPELL_SUMMON_DRAGON:
@@ -1298,15 +1305,13 @@ void exercise_spell( int spell_ex, bool spc, bool divide )
 
     if ( spellsy )
     {
-        for (loopy = SPTYP_CONJURATION; loopy < NUM_SPELL_TYPES; loopy++)
-          if ( ar_spltyp[loopy] && loopy != SPTYP_HOLY )
+      for (loopy = SPTYP_CONJURATION; loopy < NUM_SPELL_TYPES; loopy<<=1)
+        if ( ar_spltyp[loopy] && loopy != SPTYP_HOLY )
           {
-              workout = ( random2(1 + spell_difficulty(spell_ex)) / spellsy );
-
-              if ( !one_chance_in(5) )    // most recently, this was an automatic add {dlb}
-                workout++;
-
-              exercise(spell_type2skill(loopy), workout);
+            workout = ( random2(1 + spell_difficulty(spell_ex)) / spellsy );
+            if ( !one_chance_in(5) ) // most recently, this was an automatic add {dlb}
+              workout++;
+            exercise(spell_type2skill(loopy), workout);
           }
     }
 

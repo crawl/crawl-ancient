@@ -9,7 +9,7 @@ extern char info[200];               // defined in acr.cc {dlb}
 extern char st_prn[20];              // defined in acr.cc {dlb}
 extern char str_pass[80];            // defined in acr.cc {dlb}
 extern unsigned char show_green;     // defined in view.cc {dlb}
-extern unsigned char mcolour[1000];           // defined in mon-util.cc -- w/o this screen redraws *really* slow {dlb}
+extern unsigned char mcolour[1000];  // defined in mon-util.cc -- w/o this screen redraws *really* slow {dlb}
 
 #ifdef SHORT_FILE_NAMES
 
@@ -77,159 +77,158 @@ struct bolt
 
 struct player
 {
-    char turn_is_over; // flag signaling that player has performed a timed action
+  char turn_is_over; // flag signaling that player has performed a timed action
 
-    unsigned char prev_targ;
+  unsigned char prev_targ;
+  char your_name[kNameLen];
 
-    char your_name[kNameLen];
+  unsigned char species;
+  char run_x;
+  char run_y;
+  char running;
 
-    unsigned char species;
-    char run_x;
-    char run_y;
-    char running;
+  char special_wield;
+  char deaths_door;
+  char shock_shield;
 
-    char special_wield;
-    char deaths_door;
-    char shock_shield;
+  double elapsed_time;        // total amount of elapsed time in the game
 
-    double elapsed_time;        // total amount of elapsed time in the game
+  unsigned char synch_time;   // amount to wait before calling handle_time
 
-    unsigned char synch_time;   // amount to wait before calling handle_time
+  unsigned char disease;
 
-    unsigned char disease;
+  char max_level;
 
-    char max_level;
+  int x_pos;
+  int y_pos;
 
-    int x_pos;
-    int y_pos;
+  int hunger;
+  char equip[NUM_EQUIP];
 
-    int hunger;
-    char equip[NUM_EQUIP];
+  int hp;
+  int hp_max;
+  int base_hp;                // this is what is affected by necrophages etc
+  int base_hp2;
 
-    int hp;
-    int hp_max;
-    int base_hp;                // this is what is affected by necrophages etc
-    int base_hp2;
+  int magic_points;
+  int max_magic_points;
+  int base_magic_points;
+  int base_magic_points2;
 
-    int magic_points;
-    int max_magic_points;
-    int base_magic_points;
-    int base_magic_points2;
+  char strength;
+  char intel;
+  char dex;
+  char max_strength;
+  char max_intel;
+  char max_dex;
 
-    char strength;
-    char intel;
-    char dex;
-    char max_strength;
-    char max_intel;
-    char max_dex;
+  char redraw_hunger;
+  char hunger_state;
 
-    char redraw_hunger;
-    char hunger_state;
+  char redraw_burden;
+  char redraw_hit_points;
+  char redraw_magic_points;
+  char redraw_strength;
+  char redraw_intelligence;
+  char redraw_dexterity;
+  char redraw_experience;
+  char redraw_armor_class;    // remember that the AC shown = 10 - AC
 
-    char redraw_burden;
-    char redraw_hit_points;
-    char redraw_magic_points;
-    char redraw_strength;
-    char redraw_intelligence;
-    char redraw_dexterity;
-    char redraw_experience;
-    char redraw_armor_class;    // remember that the AC shown = 10 - AC
+  char redraw_gold;
+  char redraw_evasion;
 
-    char redraw_gold;
-    char redraw_evasion;
+  unsigned char hit_points_regeneration;
+  unsigned char magic_points_regeneration;
 
-    unsigned char hit_points_regeneration;
-    unsigned char magic_points_regeneration;
+  unsigned long experience;
+  int experience_level;
+  unsigned int gold;
+  int char_class;
+  char class_name[30];
+  char speed;
+  int time_taken;
 
-    unsigned long experience;
-    int experience_level;
-    unsigned int gold;
-    int char_class;
-    char class_name[30];
-    char speed;
-    int time_taken;
+  char shield_blocks;         // number of shield blocks since last action
+  // this field is transient, its not saved
+  // out but is set to zero at the start of the
+  // input loop.
 
-    char shield_blocks;         // number of shield blocks since last action
-    // this field is transient, its not saved
-    // out but is set to zero at the start of the
-    // input loop.
+  unsigned char inv_class[ENDOFPACK];
+  unsigned char inv_type[ENDOFPACK];
+  unsigned char inv_plus[ENDOFPACK];
+  unsigned char inv_plus2[ENDOFPACK];
+  unsigned char inv_dam[ENDOFPACK];
+  unsigned char inv_ident[ENDOFPACK];
+  char inv_colour[ENDOFPACK];
+  int inv_quantity[ENDOFPACK];
+  char num_inv_items;                    // number of items carried
 
-    unsigned char inv_class[ENDOFPACK];
-    unsigned char inv_type[ENDOFPACK];
-    unsigned char inv_plus[ENDOFPACK];
-    unsigned char inv_plus2[ENDOFPACK];
-    unsigned char inv_dam[ENDOFPACK];
-    unsigned char inv_ident[ENDOFPACK];
-    char inv_colour[ENDOFPACK];
-    int inv_quantity[ENDOFPACK];
-    char num_inv_items;                    // number of items carried
+  int burden;
+  char burden_state;
+  unsigned char spells[25];
+  char spell_no;
+  unsigned char char_direction;          //
 
-    int burden;
-    char burden_state;
-    unsigned char spells[25];
-    char spell_no;
-    unsigned char char_direction;          //
+  unsigned char pet_target;
 
-    unsigned char pet_target;
+  int your_level; // offset by one (-1 == 0, 0 == 1, etc.) for display
 
-    int your_level;                        // offset by one (-1 == 0, 0 == 1, etc.) for display purposes
+  int duration[NUM_DURATIONS]; // durational things. Why didn't I do this for haste etc right from the start? Oh well.
 
-    int duration[NUM_DURATIONS];           // durational things. Why didn't I do this for haste etc right from the start? Oh well.
+  int invis;
+  int conf;
+  int paralysis;
+  int slow;
+  int haste;
+  int might;
+  int levitation;
 
-    int invis;
-    int conf;
-    int paralysis;
-    int slow;
-    int haste;
-    int might;
-    int levitation;
+  int poison;
+  int rotting;
+  int berserker;
 
-    int poison;
-    int rotting;
-    int berserker;
+  int exhausted;                      // fatigue counter for berserk
 
-    int exhausted;                      // fatigue counter for berserk
+  int berserk_penalty;                // pelnalty for moving while berserk
 
-    int berserk_penalty;                // pelnalty for moving while berserk
+  unsigned char attribute[30];        // see ATTRIBUTES in enum.h
 
-    unsigned char attribute[30];        // see ATTRIBUTES in enum.h
+  char is_undead;                     // see UNDEAD_STATES in enum.h
 
-    char is_undead;                     // see UNDEAD_STATES in enum.h
+  char delay_doing;
+  char delay_t;
 
-    char delay_doing;
-    char delay_t;
+  unsigned char skills[50];
+  unsigned char practise_skill[50];
+  unsigned int skill_points[50];
+  int exp_available;
 
-    unsigned char skills[50];
-    unsigned char practise_skill[50];
-    unsigned int skill_points[50];
-    int exp_available;
+  unsigned char item_description[5][50];
+  char unique_items[50];
+  char unique_creatures[50];
+  char level_type;
 
-    unsigned char item_description[5][50];
-    char unique_items[50];
-    char unique_creatures[50];
-    char level_type;
+  char where_are_you;
 
-    char where_are_you;
+  unsigned char branch_stairs[30];
 
-    unsigned char branch_stairs[30];
+  char religion;
+  unsigned char piety;
+  unsigned char gift_timeout;
+  unsigned char penance[100];
 
-    char religion;
-    unsigned char piety;
-    unsigned char gift_timeout;
-    unsigned char penance[100];
+  unsigned char mutation[100];
+  unsigned char demon_pow[100];
+  unsigned char magic_contamination;
 
-    unsigned char mutation[100];
-    unsigned char demon_pow[100];
-    unsigned char magic_contamination;
+  char confusing_touch;
+  char sure_blade;
 
-    char confusing_touch;
-    char sure_blade;
+  unsigned char had_item[50];
 
-    unsigned char had_item[50];
-
-    unsigned char betrayal;
-    unsigned char normal_vision;        // how far the species gets to see
-    unsigned char current_vision;       // current sight radius (cells)
+  unsigned char betrayal;
+  unsigned char normal_vision;        // how far the species gets to see
+  unsigned char current_vision;       // current sight radius (cells)
 };
 
 extern struct player you;
@@ -240,37 +239,37 @@ struct monsters
     int type;
     int hit_points;
     int max_hit_points;
-    unsigned char hit_dice;
+    unsigned int hit_dice;
     int armor_class;
-    char evasion;
-    unsigned char speed;
-    unsigned char speed_increment;
+    int evasion;
+    unsigned int speed;
+    unsigned int speed_increment;
     unsigned char x;
     unsigned char y;
     unsigned char target_x;
     unsigned char target_y;
     int inv[8];
-    unsigned char behavior;
-    unsigned char number;               // #heads (hydra), etc.
-    unsigned char monster_foe;
-    unsigned char enchantment[3];
-    unsigned char enchantment1;         //
+    unsigned int behavior;
+    unsigned int number;               // #heads (hydra), etc.
+    unsigned int monster_foe;
+    unsigned int enchantment[3];
+    unsigned int enchantment1;         //
 };
 
 
-struct item_struct                      // argh! why a struct of arrays and not an array of structs? {dlb}
+struct item_struct // argh! why a struct of arrays and not an array of structs? {dlb}
 {
-    unsigned char base_type[ITEMS];     /* basic class (eg weapon) */
-    unsigned char sub_type[ITEMS];      /* type within that class (eg dagger) */
-    unsigned char pluses[ITEMS];        /* hit+, charges */
-    unsigned char pluses2[ITEMS];       /* dam+ etc */
-    unsigned char special[ITEMS];       /* special stuff */
-    unsigned int quantity[ITEMS];       /* multiple items */
-    unsigned char x[ITEMS];             /* x-location */
-    unsigned char y[ITEMS];             /* y-location */
-    unsigned char colour[ITEMS];        /* colour */
-    unsigned char id[ITEMS];            /* identification */
-    unsigned int link[ITEMS];           /* next item in stack */
+  unsigned char base_type[ITEMS]; /* basic class (eg weapon) */
+  unsigned char sub_type[ITEMS];  /* type within that class (eg dagger) */
+  unsigned char pluses[ITEMS];        /* hit+, charges */
+  unsigned char pluses2[ITEMS];       /* dam+ etc */
+  unsigned char special[ITEMS];       /* special stuff */
+  unsigned int quantity[ITEMS];       /* multiple items */
+  unsigned char x[ITEMS];             /* x-location */
+  unsigned char y[ITEMS];             /* y-location */
+  unsigned char colour[ITEMS];        /* colour */
+  unsigned char id[ITEMS];            /* identification */
+  unsigned int link[ITEMS];           /* next item in stack */
 };
 
 

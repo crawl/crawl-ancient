@@ -516,7 +516,7 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth, c
                 ghost.values[6] = buf1[26];
                 ghost.values[7] = buf1[27];
                 ghost.values[8] = buf1[28];
-                /* note - as ghosts, automatically get res poison + prot_life */
+                // note - as ghosts, automatically get res poison + prot_life
                 ghost.values[9] = buf1[29];
                 ghost.values[10] = buf1[30];
                 ghost.values[11] = buf1[31];

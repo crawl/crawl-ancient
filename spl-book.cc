@@ -5,26 +5,11 @@
  *
  *  Change History (most recent first):
  *
+ *      24jun2000  jmf  Changes to many books; addition of Assassinations;
+ *                      alteration of type-printout to match new bitfield.
  *  <1> 19mar2000  jmf  Created by taking stuff from dungeon.cc, spells0.cc,
  *                      spells.cc, shopping.cc
  */
-
-
-// This really needs to go somewhere else.
-// jmf: hey, look, it's somewhere else!
-
-
-/*
-Spellbook binary thing:
-6 spells: 127
-5 spells: 126
-4 spells: 124
-3 spells: 120
-2 spells: 112
-1 spells: 96
-0 spells: 64
-(assuming all from start, no empty spaces)
-*/
 
 
 #include "AppHdr.h"
@@ -55,7 +40,6 @@ Spellbook binary thing:
 
 
 // jmf: these were globals in spells.cc
-// but should they be global at all? {dlb}
 int learned = 0;             // used in learn_a_spell() and which_spell() {dlb}
 int spell_container = 0;     // used in which_spell() and which_spellbook()
 int book_thing;              // definite externed variable - grep for it {dlb}
@@ -65,21 +49,18 @@ static bool which_spellbook(void);
 unsigned char spellbook_contents(unsigned char plus, unsigned char type);
 
 
-
-
 int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
 {
 
 #ifdef USE_BETTER_MINOR_MAGIC_BOOKS
-
     // 0 - Minor Magic I
     {0,
      SPELL_MAGIC_DART,
+     SPELL_SUMMON_SMALL_MAMMAL,
      SPELL_THROW_FLAME,
      SPELL_BLINK,
-     SPELL_CALL_IMP,
-     SPELL_SLEEP,
-     SPELL_SPIDER_FORM,
+     SPELL_SLOW,
+     SPELL_MEPHITIC_CLOUD,
      SPELL_CONJURE_FLAME,
      SPELL_NO_SPELL,
     },
@@ -88,32 +69,32 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_MAGIC_DART,
      SPELL_THROW_FROST,
      SPELL_BLINK,
-     SPELL_CALL_IMP,
+     SPELL_STICKS_TO_SNAKES,
      SPELL_SLOW,
      SPELL_MEPHITIC_CLOUD,
-     SPELL_CONDENSATION_SHIELD,
+     SPELL_OZOCUBUS_ARMOUR,
      SPELL_NO_SPELL,
     },
     // 2 - Minor Magic III
     {0,
      SPELL_MAGIC_DART,
+     SPELL_SUMMON_SMALL_MAMMAL,
      SPELL_BLINK,
-     SPELL_STICKS_TO_SNAKES,
-     SPELL_LEVITATION,
+     SPELL_SLEEP,
+     SPELL_SUMMON_LARGE_MAMMAL,
      SPELL_MEPHITIC_CLOUD,
-     SPELL_SLOW,
-     SPELL_CONJURE_FLAME,
+     SPELL_DISCHARGE,
      SPELL_NO_SPELL,
     },
     // 3 - Book of Conjurations I
     {0,
      SPELL_MAGIC_DART,
      SPELL_THROW_FLAME,
-     SPELL_MEPHITIC_CLOUD,
      SPELL_STONE_ARROW,
      SPELL_CONJURE_FLAME,
-     SPELL_VENOM_BOLT,
-     SPELL_BOLT_OF_FIRE,
+     SPELL_BOLT_OF_MAGMA,
+     SPELL_FIREBALL,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
     // 4 - Book of Conjurations II
@@ -121,10 +102,10 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_MAGIC_DART,
      SPELL_THROW_FROST,
      SPELL_MEPHITIC_CLOUD,
-     SPELL_CONJURE_FLAME,
-     SPELL_BOLT_OF_INACCURACY, //jmf: otherwise no one will ever see the descr.
-     SPELL_VENOM_BOLT,
+     SPELL_DISCHARGE,
      SPELL_BOLT_OF_COLD,
+     SPELL_FREEZING_CLOUD,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
 
@@ -190,12 +171,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
 
     // 5 - Book of Flames
     {0,
-     //SPELL_BURN,
      SPELL_FLAME_TONGUE,
      SPELL_THROW_FLAME,
      SPELL_CONJURE_FLAME,
      SPELL_STICKY_FLAME,
-     SPELL_BOLT_OF_FIRE,
+     SPELL_BOLT_OF_MAGMA,
      SPELL_FIREBALL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -204,10 +184,10 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_FREEZE,
      SPELL_THROW_FROST,
+     SPELL_SLEEP,
      SPELL_OZOCUBUS_ARMOUR,
      SPELL_ICE_BOLT,
      SPELL_SUMMON_ICE_BEAST,
-     SPELL_FREEZING_CLOUD,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
@@ -238,10 +218,10 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_FREEZING_AURA,
      SPELL_CONDENSATION_SHIELD,
      SPELL_BOLT_OF_COLD,
+     SPELL_MASS_SLEEP,
      SPELL_OZOCUBUS_REFRIGERATION,
+     SPELL_FREEZING_CLOUD,
      SPELL_ICE_STORM,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
 
@@ -259,12 +239,17 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     },
     // 11 - Book of Spatial Translocations
     {0,
+#ifdef USE_WARPER_SPELL_BEND
      SPELL_BEND,
+#endif
      SPELL_BLINK,
      SPELL_WARP_BRAND,
-     //SPELL_CONTROLLED_BLINK, //jmf: moved to Book of the Warp
      SPELL_CONTROL_TELEPORT,
+     //SPELL_CONTROLLED_BLINK, //jmf: moved to Book of the Warp
      SPELL_TELEPORT_SELF,
+#ifndef USE_WARPER_SPELL_BEND
+     SPELL_NO_SPELL,
+#endif
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -294,21 +279,21 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     // 14 - Book of the Tempests
     {0,
      SPELL_DISCHARGE,
-     SPELL_LIGHTNING_BOLT,      // Thunderbolt
+     SPELL_LIGHTNING_BOLT,
      SPELL_FIREBALL,
      SPELL_SHATTER,
-     SPELL_FIRE_STORM,
-     SPELL_ICE_STORM,           //jmf: added
+     SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
     // 15 - Book of Death
     {0,
-     SPELL_BOLT_OF_DRAINING,
-     SPELL_BONE_SHARDS,
      SPELL_CORPSE_ROT,
+     SPELL_BONE_SHARDS,
      SPELL_LETHAL_INFUSION,
      SPELL_AGONY,
+     SPELL_BOLT_OF_DRAINING,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -316,9 +301,9 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     // 16 - Book of Hinderance
     {0,
      SPELL_CONFUSING_TOUCH,
+     SPELL_SLEEP,
      SPELL_SLOW,
      SPELL_CONFUSE,             //jmf: added
-     SPELL_SLEEP,
      SPELL_PARALYZE,
      SPELL_NO_SPELL, // jmf: was SPELL_TELEPORT_OTHER, but didn't fit
      SPELL_NO_SPELL,
@@ -327,24 +312,23 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     // 17 - Book of Changes
     {0,
      SPELL_DISRUPT,
-     //SPELL_SANDBLAST, //jmf: maybe not put in here?
      SPELL_STICKS_TO_SNAKES,
-     SPELL_PASSWALL,
+     SPELL_EVAPORATE,
      SPELL_SPIDER_FORM,
      SPELL_BLADE_HANDS,
-     SPELL_POISON_AMMUNITION,
+     SPELL_DIG,
      SPELL_ICE_FORM,
      SPELL_NO_SPELL,
     },
     // 18 - Book of Transfigurations
     {0,
-     SPELL_EVAPORATE,
-     SPELL_DIG,
+     SPELL_SANDBLAST,
      SPELL_POLYMORPH_OTHER,
      SPELL_STATUE_FORM,
      SPELL_ALTER_SELF,
      SPELL_DRAGON_FORM,
      SPELL_NECROMUTATION,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
     // 19 - Book of Practical Magic
@@ -362,15 +346,14 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     // 20 - Book of War Chants
     // NB: If anything added here, *must* change Crusader in crawlfnc.cc (no longer extant - {dlb})
     {0,
-     SPELL_BACKLIGHT,
-     SPELL_SURE_BLADE,
      SPELL_FIRE_BRAND,
      SPELL_FREEZING_AURA,
      SPELL_REPEL_MISSILES,
      SPELL_BERSERKER_RAGE,
      SPELL_REGENERATION,
      SPELL_FORESCRY,
-     //SPELL_HASTE, //jmf: removed to make room for 1st level spell BACKLIGHT
+     SPELL_HASTE,
+     SPELL_NO_SPELL,
     },
     // 21 - Book of Clouds
     {0,
@@ -431,8 +414,6 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     // 26 - Book of Charms
     {0,
      SPELL_BACKLIGHT,
-     SPELL_CONFUSING_TOUCH,
-     SPELL_SURE_BLADE,
      SPELL_REPEL_MISSILES,
 #ifdef USE_SILENCE_CODE
      SPELL_SILENCE,
@@ -443,6 +424,8 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
 #ifndef USE_SILENCE_CODE
      SPELL_NO_SPELL,
 #endif
+     SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
     },
     // 27 - Book of Demonology
     {0,
@@ -457,12 +440,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     },
     // 28 - Book of Air
     {0,
-     //SPELL_ARC,
      SPELL_SHOCK,  //jmf: moved back to level 1
      SPELL_SWIFTNESS,
      SPELL_REPEL_MISSILES,
      SPELL_LEVITATION,
-     SPELL_DISCHARGE,      //jmf: added
+     SPELL_DISCHARGE,
      SPELL_MEPHITIC_CLOUD,
      SPELL_SUMMON_ELEMENTAL,
      SPELL_NO_SPELL,
@@ -489,27 +471,28 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_DETECT_CREATURES,
      SPELL_DETECT_CURSE,
      SPELL_SEE_INVISIBLE,
+     SPELL_DETECT_ITEMS,
      SPELL_FORESCRY,
      SPELL_IDENTIFY,
-     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
     // 31 - Book of the Warp
     {0,
      SPELL_RECALL,
-     SPELL_WARP_FIELD,
+     //SPELL_WARP_FIELD, //jmf: removed 24jun2000
      SPELL_CONTROLLED_BLINK,
      SPELL_TELEPORT_OTHER,
      SPELL_BANISHMENT,
      SPELL_PORTAL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
     },
     // 32 - Book of Toxins
     {0,
-     SPELL_POISON_AMMUNITION,
      SPELL_SPIDER_FORM,
+     SPELL_POISON_AMMUNITION,
      SPELL_SUMMON_SCORPIONS,
      SPELL_RESIST_POISON,
      SPELL_OLGREBS_TOXIC_RADIANCE,
@@ -539,6 +522,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
+
     // 35 - Tome of Destruction
     {0,
      SPELL_NO_SPELL,
@@ -552,11 +536,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     },
     // 36 - Book of Control
     {0,
-     SPELL_CONFUSE,
-     SPELL_ENSLAVEMENT,
      SPELL_CONTROL_TELEPORT,    //jmf: added
+     SPELL_ENSLAVEMENT,
      SPELL_TAME_BEASTS,         //jmf: added
      SPELL_MASS_CONFUSION,
+     SPELL_MASS_SLEEP,          //jmf: added
      SPELL_CONTROL_UNDEAD,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -575,8 +559,8 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     // 38 - Book of Tukima
     {0,
      SPELL_TUKIMAS_VORPAL_BLADE,
+     SPELL_SURE_BLADE,
      SPELL_TUKIMAS_DANCE,
-     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -585,7 +569,6 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     },
     // 39 - Book of Geomancy
     {0,
-     //SPELL_CRUSH,
      SPELL_SANDBLAST,
      SPELL_PASSWALL,
      SPELL_STONE_ARROW,
@@ -596,6 +579,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_SUMMON_ELEMENTAL,
      SPELL_NO_SPELL,
     },
+
     // 40 - Book of Earth
     {0,
      SPELL_MAXWELLS_SILVER_HAMMER,
@@ -603,7 +587,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_DIG,
      SPELL_STONEMAIL,
      SPELL_TOMB_OF_DOROKLOHE,
-     //SPELL_ORB_OF_FRAGMENTATION,
+     //SPELL_ORB_OF_FRAGMENTATION, //jmf: deprecated by Fragmentation
      SPELL_LEHUDIBS_CRYSTAL_SPEAR,
      SPELL_SHATTER,
      SPELL_NO_SPELL,
@@ -634,11 +618,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_ANIMATE_DEAD,
      SPELL_VENOM_BOLT,
-     SPELL_BOLT_OF_DRAINING,
      SPELL_BOLT_OF_IRON,
      SPELL_INVISIBILITY,
      SPELL_MASS_CONFUSION,
      SPELL_POISONOUS_CLOUD,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
     // 44 - Book of Cantrips      //jmf: added 04jan2000
@@ -648,10 +632,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_STING,
      SPELL_SUMMON_SMALL_MAMMAL,
      SPELL_DISRUPT,
-     SPELL_BACKLIGHT,
      SPELL_DETECT_SECRET_DOORS,
      SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
     },
+
     // 45 - Book of Party Tricks  //jmf: added 04jan2000
     {0,
      SPELL_SUMMON_BUTTERFLIES,
@@ -682,23 +667,23 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     // 47 - Book of Beasts //jmf: added 19mar2000
     {0,
      SPELL_SUMMON_SMALL_MAMMAL,
-     SPELL_SUMMON_LARGE_MAMMAL,
      SPELL_DETECT_CREATURES,
      SPELL_STICKS_TO_SNAKES,
+     SPELL_SUMMON_LARGE_MAMMAL,
      SPELL_TAME_BEASTS,
-     SPELL_SUMMON_DRAGON,
+     SPELL_DRAGON_FORM,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
-    // 48 - unused
+    // 48 - Book of Assassination //jmf: 24jun2000
     {0,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
+     SPELL_STING,
+     SPELL_SURE_BLADE,
+     SPELL_SILENCE,
+     SPELL_MEPHITIC_CLOUD,
+     SPELL_POISON_WEAPON,
+     SPELL_PARALYZE,
+     SPELL_INVISIBILITY,
      SPELL_NO_SPELL,
     },
     // 49 - unused
@@ -712,6 +697,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
+
     // 50 - Staff of Smiting
     {0,
      SPELL_SMITING,
@@ -749,7 +735,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_THROW_FROST,
      SPELL_BOLT_OF_COLD,
-     SPELL_LIGHTNING_BOLT, // value (17) and label do not match 22jan2000 {dlb}
+     SPELL_LIGHTNING_BOLT,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -759,8 +745,8 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     // 54 - Staff of Destruction
     {0,
      SPELL_FIREBALL,
-     SPELL_LIGHTNING_BOLT,      // Thunderbolt     // see above 22jan2000 {dlb}
-     SPELL_LEHUDIBS_CRYSTAL_SPEAR,     // Throw splinters
+     SPELL_LIGHTNING_BOLT,
+     SPELL_LEHUDIBS_CRYSTAL_SPEAR,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -816,7 +802,8 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
 
 
 
-void spellbook_template( int sbook_type, int sbtemplate_pass[SPELLBOOK_SIZE] )    // was foo[10] {dlb}
+void spellbook_template( int sbook_type, int sbtemplate_pass[SPELLBOOK_SIZE] )
+                                      // was foo[10] {dlb}
 {
 
     ASSERT(sbook_type >= 0);
@@ -826,7 +813,7 @@ void spellbook_template( int sbook_type, int sbtemplate_pass[SPELLBOOK_SIZE] )  
     if ( sbook_type == BOOK_DESTRUCTION || sbook_type == BOOK_MANUAL )
       return;
 
-    for (int i = 1; i < SPELLBOOK_SIZE; i++)
+    for (int i = 0; i < SPELLBOOK_SIZE; i++) //jmf: was i = 1
       sbtemplate_pass[i] = spellbook_template_array[sbook_type][i];
 
 }          // end spellbook_template()
@@ -836,13 +823,9 @@ void spellbook_template( int sbook_type, int sbtemplate_pass[SPELLBOOK_SIZE] )  
 
 int which_spell_in_book( int sbook_type, int spl )
 {
-
     int wsib_pass[SPELLBOOK_SIZE];    // was 10 {dlb}
-
     spellbook_template(sbook_type, wsib_pass);
-
     return wsib_pass[spl];
-
 }          // end which_spell_in_book()
 
 
@@ -851,11 +834,11 @@ int which_spell_in_book( int sbook_type, int spl )
 unsigned char spellbook_contents(unsigned char plus, unsigned char type)
 {
 
-    unsigned char i;     // loop variable {dlb}
-    char already = 0;
+    unsigned int i;
+    int already = 0;
     int spell_types[SPELLBOOK_SIZE];    // was 10 {dlb}
-    char stringy[10];
     int spelcount = 0;
+    char stringy[10];
 
 
 #ifdef DOS_TERM
@@ -886,7 +869,8 @@ unsigned char spellbook_contents(unsigned char plus, unsigned char type)
         for (i = 0; i < 25 && !knowsSpell; i++)
           knowsSpell = (you.spells[i] == spell_types[j]);
 
-        textcolor(knowsSpell ? DARKGREY : LIGHTGREY);    // was: ? LIGHTGREY : LIGHTBLUE
+        textcolor(knowsSpell ? DARKGREY : LIGHTGREY);
+        //              was: ? LIGHTGREY : LIGHTBLUE
 
         char strng[2];
 
@@ -901,7 +885,7 @@ unsigned char spellbook_contents(unsigned char plus, unsigned char type)
 
         already = 0;
 
-        for (i = SPTYP_CONJURATION; i < NUM_SPELL_TYPES; i++)
+        for (i = SPTYP_CONJURATION; i < NUM_SPELL_TYPES; i<<=1)
           if ( spell_typematch(spell_types[j], i) )
           {
               print_slash(already);
@@ -936,7 +920,7 @@ unsigned char spellbook_contents(unsigned char plus, unsigned char type)
 
 
 
-// jmf: was in shopping.cc
+//jmf: was in shopping.cc
 char book_rarity( unsigned char which_book )
 {
 
@@ -970,6 +954,7 @@ char book_rarity( unsigned char which_book )
         return 4;
 
       case BOOK_SPATIAL_TRANSLOCATIONS:
+      case BOOK_ASSASSINATION:  //jmf: added 24jun2000
         return 5;
 
       case BOOK_CLOUDS:
@@ -1034,7 +1019,7 @@ char book_rarity( unsigned char which_book )
 
 
 
-bool learn_a_spell( unsigned char splbook, char bitty )
+bool learn_a_spell( unsigned int splbook, int bitty )
 {
 
     int spells[SPELLBOOK_SIZE];
@@ -1072,7 +1057,7 @@ static bool which_spellbook( void )
         return false;
       }
 
-query:
+ query:
     strcpy(info, "You can memorise ");
     itoa(player_spell_levels(), st_prn, 10);
     strcat(info, st_prn);
@@ -1146,14 +1131,17 @@ query:
 
 
 
-void read_book( unsigned char book_read )
+void read_book( unsigned int book_read )
 {
 
     unsigned char key2 = 0;
     unsigned char keyin;
 
-// remember that this function is called from staff spells as well:
-    key2 = spellbook_contents(you.inv_plus[book_read], ( (you.inv_class[book_read] == OBJ_STAVES) ? 40 + you.inv_type[book_read] : you.inv_type[book_read] ));
+    // remember that this function is called from staff spells as well:
+    key2 = spellbook_contents(you.inv_plus[book_read],
+                              ( (you.inv_class[book_read] == OBJ_STAVES)
+                                ? 40 + you.inv_type[book_read]
+                                : you.inv_type[book_read] ));
 
     if ( you.inv_class[book_read] == OBJ_BOOKS )
     {
@@ -1208,11 +1196,10 @@ void which_spell( void )
       if ( you.skills[i] )
         j++;
 
-    if (j == 0)
-      {
-        mpr("You can't use spell magic! I'm afraid it's scrolls only for now.");
-        return;
-      }
+    if (j == 0) {
+      mpr("You can't use spell magic! I'm afraid it's scrolls only for now.");
+      return;
+    }
 
     if ( !which_spellbook() )
       return;
@@ -1239,7 +1226,7 @@ whatt:
     if ( !learn_a_spell(spell_container, sc_read_2) )
       goto whatt;
 
-    unsigned char specspell = which_spell_in_book(you.inv_type[spell_container], learned);
+    unsigned int specspell = which_spell_in_book(you.inv_type[spell_container], learned);
 
     if ( specspell == SPELL_NO_SPELL )
       goto whatt;
@@ -1423,39 +1410,40 @@ whatt:
 
 
 
-char *spelltype_name( unsigned char which_spelltype )
+char *spelltype_name( unsigned int which_spelltype )
 {
+  static char bug_string[80];
 
-    switch ( which_spelltype )
-    {
-      case SPTYP_CONJURATION:
-        return "Conjuration";
-      case SPTYP_ENCHANTMENT:
-        return "Enchantment";
-      case SPTYP_FIRE:
-        return "Fire";
-      case SPTYP_ICE:
-        return "Ice";
-      case SPTYP_TRANSMIGRATION:
-        return "Transmigration";
-      case SPTYP_NECROMANCY:
-        return "Necromancy";
-      case SPTYP_HOLY:
-        return "Holy";
-      case SPTYP_SUMMONING:
-        return "Summoning";
-      case SPTYP_DIVINATION:
-        return "Divination";
-      case SPTYP_TRANSLOCATION:
-        return "Translocation";
-      case SPTYP_POISON:
-        return "Poison";
-      case SPTYP_EARTH:
-        return "Earth";
-      case SPTYP_AIR:
-        return "Air";
-      default:
-        return "Bugation";
-    }
+  switch ( which_spelltype ) {
+  case SPTYP_CONJURATION:
+    return "Conjuration";
+  case SPTYP_ENCHANTMENT:
+    return "Enchantment";
+  case SPTYP_FIRE:
+    return "Fire";
+  case SPTYP_ICE:
+    return "Ice";
+  case SPTYP_TRANSMIGRATION:
+    return "Transmigration";
+  case SPTYP_NECROMANCY:
+    return "Necromancy";
+  case SPTYP_HOLY:
+    return "Holy";
+  case SPTYP_SUMMONING:
+    return "Summoning";
+  case SPTYP_DIVINATION:
+    return "Divination";
+  case SPTYP_TRANSLOCATION:
+    return "Translocation";
+  case SPTYP_POISON:
+    return "Poison";
+  case SPTYP_EARTH:
+    return "Earth";
+  case SPTYP_AIR:
+    return "Air";
+  default:
+    sprintf(bug_string, "invalid(%d)", which_spelltype);
+    return bug_string;
+  }
 
 }          // end spelltype_name()

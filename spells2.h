@@ -17,7 +17,7 @@
 /* ***********************************************************************
  * called from: spell
  * *********************************************************************** */
-bool brand_weapon(char which_brand, int power);
+bool brand_weapon(int which_brand, int power);
 
 
 // last updated 24may2000 {dlb}

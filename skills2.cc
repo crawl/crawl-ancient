@@ -5,11 +5,11 @@
  *
  *  Change History (most recent first):
  *
- *      <3>      5/20/99        BWR             Changed Trapper titles, avoided
- *                                              overflow on the weapon skill
- *                                              column.
- *      <2>      -/--/--        WL              Extensive mods from Wladimir van der Laan.
- *      <1>      -/--/--        LRH             Created
+ * <3> 5/20/99   BWR             Changed Trapper titles, avoided
+ *                               overflow on the weapon skill
+ *                               column.
+ * <2> -/--/--   WL              Extensive mods from Wladimir van der Laan.
+ * <1> -/--/--   LRH             Created
  */
 
 #include "AppHdr.h"
@@ -335,7 +335,7 @@ int spec_skills[36][39] =
         100,               // SK_STABBING
         130,               // SK_SHIELDS
         100,               // SK_TRAPS_DOORS
-        100,               // SK_UNARMED_COMBAT
+         90,               // SK_UNARMED_COMBAT
         100,               // undefined
         100,               // undefined
         100,               // undefined
@@ -343,16 +343,16 @@ int spec_skills[36][39] =
         100,               // undefined
          70,               // SK_SPELLCASTING
          90,               // SK_CONJURATIONS
-         80,               // SK_ENCHANTMENTS
+        110,               // SK_ENCHANTMENTS
          90,               // SK_SUMMONINGS
         100,               // SK_NECROMANCY
         100,               // SK_TRANSLOCATIONS
-        100,               // SK_TRANSMIGRATION
+         60,               // SK_TRANSMIGRATION
         100,               // SK_DIVINATIONS
-         90,               // SK_FIRE_MAGIC
-         90,               // SK_ICE_MAGIC
-         80,               // SK_AIR_MAGIC
-        100,               // SK_EARTH_MAGIC
+         95,               // SK_FIRE_MAGIC
+         95,               // SK_ICE_MAGIC
+         95,               // SK_AIR_MAGIC
+         95,               // SK_EARTH_MAGIC
         100,               // SK_POISON_MAGIC
         100,               // SK_INVOCATIONS
     },

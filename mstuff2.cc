@@ -179,14 +179,14 @@ void mons_trap( struct monsters *monster )
         {
             if ( one_chance_in(5) )
             {
-                mpr("Something invokes the power of Zot against you.");
+                mpr("The power of Zot is invoked against you!");
                 miscast_effect(SPTYP_RANDOM, 10 + random2(30), 75 + random2(100), 0);
                 return;     // early return {dlb}
             }
         }
 
     // output triggering message to player, where appropriate: {dlb}
-        if ( !silenced(monster->x, monster->y) )
+     if ( !silenced(monster->x, monster->y) && !silenced(you.x_pos, you.y_pos))
         {
             strcpy(info, "You hear");
             if ( !monsterNearby )
@@ -1121,7 +1121,7 @@ struct SBeam mons_spells( char spell_cast, int power )
         beam.hit = 9;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
-        beam.flavour = BEAM_NUKE;       // a magical missile which destroys walls
+        beam.flavour = BEAM_NUKE; // a magical missile which destroys walls
         beam.isBeam = true;
         break;
 

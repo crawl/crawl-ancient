@@ -178,7 +178,7 @@
 // #define SEPARATE_SELECTION_SCREENS_FOR_SUBSPECIES
 
 // Uncomment this line to allow the player to select his draconian's colour.
-// #define ALLOW_DRACONIAN_TYPE_SELECTION
+#define ALLOW_DRACONIAN_TYPE_SELECTION
 
 // if this works out okay, eventually we can change this to USE_OLD_RANDOM
 #define USE_NEW_RANDOM
@@ -226,10 +226,6 @@
 // A few new mini-vaults, featuring altars
 #define USE_NEW_MINIVAULTS
 
-// Use the old LOS code.  Warning: the old code does not support
-// variable radius lightsources, or wraithform/passwall.
-// #define USE_OLD_LOS
-
 // Use special colours for all god-related messages
 #define USE_GOD_COLOURS
 
@@ -244,6 +240,29 @@
 
 // Semi-Controlled Blink
 #define USE_SEMI_CONTROLLED_BLINK
+
+// LRH's skill-pool drainer for high skill pools
+// #define USE_SKILL_POOL_DRAIN
+
+
+//jmf: Disable gordon lipford's new LOS -- new as of 22jun2000
+// Use the old LOS code.  Warning: the old code does not support
+// variable radius lightsources, or wraithform/passwall.
+// #define USE_OLD_LOS
+
+
+//jmf: new as of 24jun2000
+//
+// USE_WARPER_BETTER_WEAPON gives Warpers a dagger of Distortion to start with.
+// Changing the Warper's starting weapon to something without an edge would
+// make this a more `interesting' (i.e. evil) option.
+#define USE_WARPER_BETTER_WEAPON
+//
+// USE_WARPER_SPELL_BEND gives Warpers a first-level spell, Bend, which
+// duplicates many of the effects of a weapon of distortion.
+#define USE_WARPER_SPELL_BEND
+//
+// I recommend you uncomment only one of the above.
 
 // ====================== -----------------------------------------------------
 //jmf: end of new defines

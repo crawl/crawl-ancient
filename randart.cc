@@ -449,7 +449,7 @@ char *rand_wpn_names[] =
     " \"Aubergine\"",
     " \"Z\"",
     " \"X\"",
-    " \"O\"",
+    " \"Q\"",
     " \"Ox\"",
     " \"Death Rattle\"",
     " \"Tattletale\"",
@@ -734,7 +734,7 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
         proprt[RAP_BRAND] = SPWPN_FLAMING + random5(15);        /* brand */
 
         if (random5(6) == 0)
-            proprt[RAP_BRAND] = SPWPN_FLAMING + random5(2);
+          proprt[RAP_BRAND] = SPWPN_FLAMING + random5(2);
 
         if (random5(6) == 0)
             proprt[RAP_BRAND] = SPWPN_ORC_SLAYING + random5(4);
@@ -744,14 +744,14 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
 
         if (proprt[RAP_BRAND] == SPWPN_FLAME
             || proprt[RAP_BRAND] == SPWPN_FROST)
-            proprt[RAP_BRAND] = 0;      /* missile wpns */
+          proprt[RAP_BRAND] = 0;      /* missile wpns */
 
         if (proprt[RAP_BRAND] == SPWPN_PROTECTION)
-            proprt[RAP_BRAND] = 0;      /* no protection */
+          proprt[RAP_BRAND] = 0;      /* no protection */
 
         if (proprt[RAP_BRAND] == SPWPN_DISRUPTION &&
-            (atype != WPN_MACE && atype != WPN_GREAT_MACE))
-            proprt[RAP_BRAND] = SPWPN_NORMAL;   /* Only maces get disruption */
+            ! (atype == WPN_MACE || atype == WPN_GREAT_MACE || atype == WPN_HAMMER))
+          proprt[RAP_BRAND] = SPWPN_NORMAL;
 
         if ( launches_things(atype) )
           proprt[RAP_BRAND] = ( (random5(3) == 0) ? SPWPN_FLAME + random5(2) : SPWPN_NORMAL );

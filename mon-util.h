@@ -50,8 +50,9 @@
 #define M_SPEAKS (1<<15)
 //jmf: M_SPELLCASTER was taken ... :-b
 #define M_ACTUAL_SPELLS (1<<16)  // monster is a wizard
-#define M_PRIEST (1<<17)         // monster is a priest of the Dungeon God
+#define M_PRIEST (1<<17)      // monster is a priest of Brian's Orc God (BOG)
 #define M_COLD_BLOOD (1<<18)
+#define M_WARM_BLOOD (1<<19)
 //jmf: it'd be nice if these next two were implimented ...
 #define M_ON_FIRE (1<<29)        // flag for Hellion-like colour shift
 #define M_FROZEN (1<<30)         // flag for ice-like colour shift
@@ -77,6 +78,7 @@
 #define S_WHINE 10              //10=irritating whine (mosquito)
 #define S_CROAK 11              //11=frog croak
 #define S_GROWL 12              //jmf: for bears
+
 // ai
 // So far this only affects a) chance to see stealthy player and b) chance to
 //  walk through damaging clouds (LRH)

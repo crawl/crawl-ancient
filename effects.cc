@@ -145,10 +145,10 @@ bool forget_spell( void )
 bool lose_stat( unsigned char which_stat, unsigned char stat_loss )
 {
 
-    bool statLowered = false;    // must initialize to false {dlb}
-    char *ptr_stat = 0;          // NULL {dlb}
-    char *ptr_redraw = 0;        // NULL {dlb}
-    char newValue = 0;           // holds new value, for comparison to old {dlb}
+    bool statLowered = false; // must initialize to false {dlb}
+    char *ptr_stat = 0;       // NULL {dlb}
+    char *ptr_redraw = 0;     // NULL {dlb}
+    char newValue = 0;        // holds new value, for comparison to old {dlb}
 
 // begin outputing message: {dlb}
     strcpy(info, "You feel ");
@@ -269,7 +269,7 @@ void direct_effect( struct bolt *pbolt )
 void mons_direct_effect( struct bolt *pbolt, int i )
 {
 
-    int o = menv[i].monster_foe;          // note the translation here - important {dlb}
+    int o = menv[i].monster_foe; // note the translation here - important {dlb}
     struct monsters *monster = &menv[o];
     int damage_taken = 0;
 
@@ -295,7 +295,7 @@ void mons_direct_effect( struct bolt *pbolt, int i )
         damage_taken += 7 + random2avg(11,2);
         break;
 
-      case DMNBM_BRAIN_FEED:      // not implemented here (nor, probably, can be)
+      case DMNBM_BRAIN_FEED: // not implemented here (nor, probably, can be)
         break;
 
       case DMNBM_MUTATION:
@@ -380,7 +380,7 @@ void random_uselessness( unsigned char ru, unsigned char sc_read_2 )
         break;
 
       case 4:
-        if ( you.species != SP_MUMMY )    // josh declares mummies can't smell {dlb}
+        if ( you.species != SP_MUMMY ) // josh declares mummies can't smell {dlb}
         {
             strcpy(info, "You smell ");
 

@@ -333,11 +333,12 @@ void beam( struct bolt *pbolt )
             clouty = env.cgrid[pbolt->bx][pbolt->by];
 
             if ( ( ( env.cloud_type[clouty] == CLOUD_COLD || env.cloud_type[clouty] == CLOUD_COLD_MON )
-                   && pbolt->flavour == BEAM_FIRE )
+                   && (pbolt->flavour == BEAM_FIRE || pbolt->flavour == BEAM_LAVA) )
                 || ( ( env.cloud_type[clouty] == CLOUD_FIRE || env.cloud_type[clouty] == CLOUD_FIRE_MON )
                      && pbolt->flavour == BEAM_COLD ) )
             {
-                if ( !silenced(pbolt->bx, pbolt->by) )
+                if ( !silenced(pbolt->bx, pbolt->by)
+                     && !silenced(you.x_pos, you.y_pos) )
                   mpr("You hear a sizzling sound!");
 
                 env.cloud_type[clouty] = CLOUD_NONE;
@@ -552,8 +553,10 @@ out_of_cloud_bit:
 
             n++;                // reduces beam's range
 
-            if ( pbolt->flavour != BEAM_ELECTRICITY )
-              n += random2(4) + 2;    /* If it isn't lightning, reduce range by a lot */
+            if ( pbolt->flavour == BEAM_LAVA )
+              n += 1; // lava doesn't go far, but it goes through most stuff
+            else if ( pbolt->flavour != BEAM_ELECTRICITY )
+              n += random2(4) + 2; /* If it isn't lightning, reduce range by a lot */
 
             if ( pbolt->flavour == BEAM_EXPLOSION )
             {
@@ -580,13 +583,13 @@ out_of_hit_you:
               goto enchanting;
             else
             {
-                // tracer = 0 = run out of range
-                // tracer = 1 = hits you in range
-                // tracer_mons = 0 = hits no monsters
-                //       "     = 1 = hits monster before you (possibly also after)
-                //       "     = 2 = hits monster after but not before
-                //       "     = 3 = hits tamed monster(s) but no others
-                //       "     = 4 = hits tamed monster(s) + possibly other things
+            // tracer = 0 = run out of range
+            // tracer = 1 = hits you in range
+            // tracer_mons = 0 = hits no monsters
+            //       "     = 1 = hits monster before you (possibly also after)
+            //       "     = 2 = hits monster after but not before
+            //       "     = 3 = hits tamed monster(s) but no others
+            //       "     = 4 = hits tamed monster(s) + possibly other things
 
                 if ( monster_habitat(monster->type) != DNGN_FLOOR && monster->number == 1 && (pbolt->bx != pbolt->target_x || pbolt->by != pbolt->target_y || pbolt->aim_down != 1) )
                   goto check_aimed;
@@ -956,7 +959,7 @@ it_resists:
                     return;
                 }
 
-                if ( pbolt->colour == BEAM_BACKLIGHT )    // I do not think this is right -- should that not be "flavour" and not "colour" {dlb}
+                if ( pbolt->colour == BEAM_BACKLIGHT ) // I do not think this is right -- should that not be "flavour" and not "colour" {dlb}
                 {
                     if ( backlight_monsters(monster->x, monster->y, pbolt->hit, 0) )
                       return;
@@ -1767,7 +1770,21 @@ int check_mons_resists( struct monsters *monster, struct bolt *pbolt, int hurted
     }                           /* end of switch */
 
 
-    if ( stricmp(pbolt->beam_name, "hellfire") == 0 || pbolt->flavour == BEAM_LAVA )
+    if ( pbolt->flavour == BEAM_LAVA ) //jmf: lava != hellfire
+      {
+        if (mons_res_fire(monster->type) > 0 || (monster->inv[MSLOT_ARMOUR] != ING && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 == SPARM_FIRE_RESISTANCE))
+        {
+            simple_monster_message(monster, " partially resists.");
+            hurted /= 2;
+        }
+        if (mons_res_fire(monster->type) == -1 && (monster->inv[MSLOT_ARMOUR] == ING || mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 != SPARM_FIRE_RESISTANCE))
+        {
+            simple_monster_message(monster, " is burned terribly!");
+            hurted *= 12;
+            hurted /= 10;
+        }
+      }
+    else if ( stricmp(pbolt->beam_name, "hellfire") == 0 )
     {
         if (mons_res_fire(monster->type) == 2)
         {

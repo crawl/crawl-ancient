@@ -3563,18 +3563,17 @@ void alert( void )
 // so I'll still let the parameter exist for the time being {dlb}
 bool monster_polymorph( struct monsters *monster, int targetc, int power )
 {
+  char str_polymon[200]; // prevents segfaults -- cannot use info[] here {dlb}
 
-    char str_polymon[200];                     // prevents segfaults -- cannot use info[] here {dlb}
-
-    if ( targetc == RANDOM_MONSTER )
+  if ( targetc == RANDOM_MONSTER )
     {
-loopy:
-        do
+    loopy:
+      do
         {
-            targetc = random2(NUM_MONSTERS);     // was: random2(400) {dlb}
+          targetc = random2(NUM_MONSTERS);     // was: random2(400) {dlb}
         }
-        while ( mons_rarity(targetc) == 0            // not the best possible check routine? {dlb}
-                 || targetc != monster->type         // added this {dlb}
+        while ( mons_rarity(targetc) == 0 // not the best possible check routine? {dlb}
+                 || targetc == monster->type         // added this {dlb}
                  || targetc == MONS_SHAPESHIFTER
                  || targetc == MONS_GLOWING_SHAPESHIFTER
                  || targetc == MONS_ZOMBIE_SMALL
@@ -3585,7 +3584,8 @@ loopy:
                  || targetc == MONS_DANCING_WEAPON
                  || mons_flag(targetc, M_NO_EXP_GAIN) );
 
-        if ( grd[monster->x][monster->y] == DNGN_LAVA || grd[monster->x][monster->y] == DNGN_DEEP_WATER )
+        if ( grd[monster->x][monster->y] == DNGN_LAVA
+             || grd[monster->x][monster->y] == DNGN_DEEP_WATER )
           if ( !mons_flies(targetc) )
             goto loopy;     /* Not fair to instakill a monster like this (actually, I can't be bothered implementing it) */
         /* Too long to put in the loop thing */
@@ -3596,17 +3596,19 @@ loopy:
     int old_hp_max = monster->max_hit_points;
     unsigned char old_sec = monster->number;
 
-/* deal with mons_sec */
+    /* deal with mons_sec */
 
     monster->type = targetc;
     monster->number = 250;
 
     for (unsigned char unenc = 0; unenc < 3; unenc++)
     {
-        if ( monster->enchantment[unenc] >= ENCH_ABJ_I && monster->enchantment[unenc] <= ENCH_ABJ_VI )
-          continue;           /* Summoned creatures are still going to disappear eventually */
-        if ( monster->enchantment[unenc] != ENCH_SHAPESHIFTER && monster->enchantment[unenc] != ENCH_GLOWING_SHAPESHIFTER )
-          monster->enchantment[unenc] = 0;         /* shapeshifters stay as such */
+      if ( monster->enchantment[unenc] >= ENCH_ABJ_I
+          && monster->enchantment[unenc] <= ENCH_ABJ_VI )
+        continue; // Summoned creatures are still going to disappear eventually
+        if ( monster->enchantment[unenc] != ENCH_SHAPESHIFTER
+             && monster->enchantment[unenc] != ENCH_GLOWING_SHAPESHIFTER )
+          monster->enchantment[unenc] = 0; /* shapeshifters stay as such */
     }
 
     if ( mons_flag(monster->type, M_INVIS) )

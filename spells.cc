@@ -53,7 +53,8 @@
 
 
 
-bool miscast_effect( char sp_type, char mag_pow, char mag_fail, char force_effect )
+bool miscast_effect( unsigned int sp_type, int mag_pow,
+                     int mag_fail, int force_effect )
 {
 
 /*  sp_type is the type of the spell
@@ -64,12 +65,12 @@ bool miscast_effect( char sp_type, char mag_pow, char mag_fail, char force_effec
 
     struct bolt beam[1];
 
-    char loopj = 0;
+    int loopj = 0;
     int spec_effect = 0;
     int hurted = 0;
 
     if ( sp_type == SPTYP_RANDOM )
-      sp_type = 10 + random2(14);
+      sp_type = 1<<(random2(12));
 
     spec_effect = (mag_pow * mag_fail * (10 + mag_pow) / 7 * WILD_MAGIC_NASTINESS) / 100;
 

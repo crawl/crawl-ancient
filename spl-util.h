@@ -1,55 +1,57 @@
 /*
- *********************************************************************
- *  File:       spl-util.h                                           *
- *  Summary:    data handlers for player spell list                  *
- *  Written by: don brodale <dbrodale@bigfootinteractive.com>        *
- *                                                                   *
- *  Changelog(most recent first):                                    *
- *                                                                   *
- *  <00>     12jun2000     dlb     created after much thought        *
- *********************************************************************
-*/
+ *  File:       spl-util.h
+ *  Summary:    data handlers for player spell list
+ *  Written by: don brodale <dbrodale@bigfootinteractive.com>
+ *
+ *  Changelog(most recent first):
+ *
+ *           24jun2000     jmf     simplified structures
+ *  <00>     12jun2000     dlb     created after much thought
+ */
 
 
 #ifndef SPLUTIL_H
 #define SPLUTIL_H
 
 
-struct spellfields
-{
-    unsigned int primary    : 4;
-    unsigned int secondary  : 4;
-    unsigned int tertiary   : 4;
-    unsigned int quaternary : 4;
-};
-
-struct spellstats
-{
-    unsigned int difficulty : 4;    // traditionally, the following three fields are synonymous {dlb}
-    unsigned int mana_cost  : 4;
-    unsigned int food_cost  : 4;
-    unsigned int exclusion  : 4;    // still working this one out {dlb}
-};
-
 /*
-struct spellcharacteristics
-{
-    target (none, tile, item, being, any, global, foo, foo)        = 3 (level?)
-    ownership (none, self, other, self/other)                      = 2
-    multiple (none, single, multiple, all)                         = 2 (all+tile = level)
-    effect type (none, beam, cone, blast, cloud, foo, foo, foo)    = 3
-    effect range (none, ranged, touch, foo)                        = 2 (is touch == range 0)?
-    color (colours)                                                = 4
-};
+  struct spellfields
+  {
+  unsigned int primary    : 4;
+  unsigned int secondary  : 4;
+  unsigned int tertiary   : 4;
+  unsigned int quaternary : 4;
+  };
+
+  struct spellstats
+  {
+  unsigned int difficulty : 4;
+  unsigned int mana_cost  : 4;
+  unsigned int food_cost  : 4;
+  unsigned int exclusion  : 4;    // still working this one out {dlb}
+  };
+
+  struct spellcharacteristics
+  {
+  target (none, tile, item, being, any, global, foo, foo) = 3 (level?)
+  ownership (none, self, other, self/other) = 2
+  multiple (none, single, multiple, all) = 2 (all+tile = level)
+  effect type (none, beam, cone, blast, cloud, foo, foo, foo)    = 3
+  effect range (none, ranged, touch, foo) = 2 (is touch == range 0)?
+  color (colours) = 4
+  };
 */
 
-struct plyrspell
+//jmf: changes are fairly self-explanatory
+struct playerspell
 {
-    short id;
-    char *title;
-    struct spellfields disciplines;
-    //struct spellcharacteristics qualities;
-    struct spellstats parameters;
+  int id;
+  char *title;
+  //struct spellfields disciplines;
+  unsigned int disciplines; //jmf: now a bitfield
+  //struct spellcharacteristics qualities;
+  //struct spellstats parameters;
+  unsigned int level;
 };
 
 

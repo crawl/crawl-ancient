@@ -940,50 +940,50 @@ static void eating( unsigned char item_class, int item_type )
       // apply base sustenance {dlb}:
           switch ( item_type )
           {
-              case FOOD_MEAT_RATION:
-              case FOOD_ROYAL_JELLY:
+          case FOOD_MEAT_RATION:
+          case FOOD_ROYAL_JELLY:
                 hunger_level_now += 5000;
                 break;
-              case FOOD_BREAD_RATION:
+          case FOOD_BREAD_RATION:
                 hunger_level_now += 4400;
                 break;
-              case FOOD_HONEYCOMB:
+          case FOOD_HONEYCOMB:
                 hunger_level_now += 2000;
                 break;
-              case FOOD_SNOZZCUMBER:    // maybe a nasty side-effect from RD's book?
-              case FOOD_PIZZA:
-              case FOOD_BEEF_JERKY:
+          case FOOD_SNOZZCUMBER: // maybe a nasty side-effect from RD's book?
+          case FOOD_PIZZA:
+          case FOOD_BEEF_JERKY:
                 hunger_level_now += 1500;
                 break;
-              case FOOD_CHEESE:
-              case FOOD_SAUSAGE:
+          case FOOD_CHEESE:
+          case FOOD_SAUSAGE:
                 hunger_level_now += 1200;
                 break;
-              case FOOD_ORANGE:
-              case FOOD_BANANA:
-              case FOOD_LEMON:
+          case FOOD_ORANGE:
+          case FOOD_BANANA:
+          case FOOD_LEMON:
                 hunger_level_now += 1000;
                 break;
-              case FOOD_PEAR:
-              case FOOD_APPLE:
-              case FOOD_APRICOT:
+          case FOOD_PEAR:
+          case FOOD_APPLE:
+          case FOOD_APRICOT:
                 hunger_level_now += 700;
                 break;
-              case FOOD_CHOKO:
-              case FOOD_RAMBUTAN:
-              case FOOD_LYCHEE:
+          case FOOD_CHOKO:
+          case FOOD_RAMBUTAN:
+          case FOOD_LYCHEE:
                 hunger_level_now += 600;
                 break;
-              case FOOD_STRAWBERRY:
+          case FOOD_STRAWBERRY:
                 hunger_level_now += 200;
                 break;
-              case FOOD_GRAPE:
+          case FOOD_GRAPE:
                 hunger_level_now += 100;
                 break;
-              case FOOD_SULTANA:
+          case FOOD_SULTANA:
                 hunger_level_now += 70;    // will not save you from starvation
                 break;
-              default:
+          default:
                 break;
           }        // end base sustenance listing {dlb}
 

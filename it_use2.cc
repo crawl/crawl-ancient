@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      26jun2000   jmf   added ZAP_MAGMA
  *  <4> 19mar2000   jmf   Added ZAP_BACKLIGHT and ZAP_SLEEP
  *  <3>     10/1/99         BCR             Changed messages for speed and
  *                                          made amulet resist slow up speed
@@ -45,28 +46,30 @@ static char zappy(char z_type, int power, struct bolt *pbolt);
 
 void zapping( char ztype, int power, struct bolt *pbolt )
 {
+  // all of the following might be changed by zappy():
+    pbolt->range = 9 + random2(5);    // default for "0" beams (I think)
+    pbolt->damage = power;
+    pbolt->hit = 0;                   // default for "0" beams (I think)
+    pbolt->type = 0;                  // default for "0" beams
+    pbolt->flavour = BEAM_MAGIC;      // default for "0" beams
+    pbolt->ench_power = power;
+    pbolt->wand_id = 0;
 
-    pbolt->range = 9 + random2(5);    // default for "0" beams (I think) - zappy() may overwrite {dlb}
-    pbolt->damage = power;            // may be modified in zappy() {dlb}
-    pbolt->hit = 0;                   // default for "0" beams (I think) - zappy() may overwrite {dlb}
-    pbolt->type = 0;                  // default for "0" beams - zappy() may overwrite {dlb}
-    pbolt->flavour = BEAM_MAGIC;      // default for "0" beams - zappy() may overwrite {dlb}
-    pbolt->ench_power = power;        // may be modified in zappy() {dlb}
-    pbolt->wand_id = 0;               // may be modified in zappy() {dlb}
 
+    // see any similarities to the parent function declaration ??? {dlb}
+    int beam_or_missile = zappy(ztype, power, pbolt);
 
-// see any similarities to the parent function declaration ??? {dlb}
-    char luggy = zappy(ztype, power, pbolt);    // whether to call missile() (== 1) or beam() (== 2) {dlb}
-
-    if ( ztype == ZAP_LIGHTNING && !silenced(you.x_pos, you.y_pos) ) // needs to check silenced at other location, too {dlb}
+    if ( ztype == ZAP_LIGHTNING && !silenced(you.x_pos, you.y_pos) )
+      // needs to check silenced at other location, too {dlb}
     {
         mpr("You hear a mighty clap of thunder!");
         noisy(25, you.x_pos, you.y_pos);
     }
 
-    pbolt->thing_thrown = KILL_YOU_MISSILE;    // here's a question - zappy sets it, why reset all to this? {dlb}
+    pbolt->thing_thrown = KILL_YOU_MISSILE;
+    // here's a question - zappy sets it, why reset all to this? {dlb}
 
-    switch ( luggy )
+    switch ( beam_or_missile )
     {
       case 1:
         missile(pbolt, 0);
@@ -178,6 +181,18 @@ static char zappy( char z_type, int power, struct bolt *pbolt )
         pbolt->thing_thrown = KILL_MON;
         pbolt->wand_id = 1;
         return 2;
+
+    case ZAP_MAGMA:
+      strcpy(pbolt->beam_name, "bolt of magma");
+      pbolt->colour  = RED;
+      pbolt->range   = random2(4) + 6;
+      pbolt->damage  = 107 + (power / 11);
+      pbolt->hit     = 12 + (random2(power) / 70);
+      pbolt->type    = SYM_ZAP;
+      pbolt->flavour = BEAM_LAVA;
+      pbolt->thing_thrown = KILL_MON;
+      pbolt->wand_id = 1;
+      return 2;
 
     case ZAP_COLD:
         strcpy(pbolt->beam_name, "bolt of cold");
@@ -368,7 +383,7 @@ static char zappy( char z_type, int power, struct bolt *pbolt )
         pbolt->colour = YELLOW;
         pbolt->range = 8 + random2(8);
 
-        pbolt->hit = 9 + (power / 5);          // is this right? other "0" beams do not define ->hit {dlb}
+        pbolt->hit = 9 + (power / 5); // is this right? other "0" beams do not define ->hit {dlb}
 
         pbolt->thing_thrown = KILL_MON;
         pbolt->ench_power *= 3;
@@ -392,7 +407,7 @@ static char zappy( char z_type, int power, struct bolt *pbolt )
         strcpy(pbolt->beam_name, "spray of bone shards");
         pbolt->colour = LIGHTGREY;
         pbolt->range = 8 + random2(10);
-        pbolt->damage = 102 + (power / 150);        // note that f_p[2] has a high value for this spell
+        pbolt->damage = 102 + (power / 150); // note that f_p[2] has a high value for this spell
         pbolt->hit = 55 + (random2(power) / 850);
         pbolt->type = SYM_ZAP;
         pbolt->flavour = BEAM_MAGIC;
@@ -541,7 +556,7 @@ static char zappy( char z_type, int power, struct bolt *pbolt )
         strcpy(pbolt->beam_name, "fiery breath");
         pbolt->colour = RED;
         pbolt->range = 4 + random2(1 + (power / 2));
-        pbolt->damage = 104 + (power / 3);              // NB: experience_level + mut * 4
+        pbolt->damage = 104 + (power / 3); // NB: experience_level + mut * 4
         pbolt->hit = 8 + random2(1 + (power / 3));
         pbolt->type = SYM_ZAP;
         pbolt->flavour = BEAM_FIRE;
@@ -554,7 +569,7 @@ static char zappy( char z_type, int power, struct bolt *pbolt )
         strcpy(pbolt->beam_name, "freezing breath");
         pbolt->colour = WHITE;
         pbolt->range = 4 + random2(1 + (power / 2));
-        pbolt->damage = 104 + (power / 3);              // NB: experience_level + mut * 4
+        pbolt->damage = 104 + (power / 3); // NB: experience_level + mut * 4
         pbolt->hit = 8 + random2(1 + (power / 3));
         pbolt->type = SYM_ZAP;
         pbolt->flavour = BEAM_COLD;
@@ -747,38 +762,38 @@ static char zappy( char z_type, int power, struct bolt *pbolt )
         return 2;
 
     case ZAP_SANDBLAST:    //jmf: ought to be a weak, short-range missile
-        strcpy(pbolt->beam_name, coinflip()  ? "blast of sand" : "rocky blast" );
-        pbolt->colour = BROWN;
-        pbolt->range = 4 + random2(3);
-        pbolt->damage = 104 + power;
-        pbolt->hit = power;
-        pbolt->type = SYM_BOLT;
-        pbolt->flavour = BEAM_FRAG;
+      strcpy(pbolt->beam_name, coinflip()  ? "blast of sand" : "rocky blast" );
+      pbolt->colour = BROWN;
+      pbolt->range = 4 + random2(3);
+      pbolt->damage = 104 + power;
+      pbolt->hit = power;
+      pbolt->type = SYM_BOLT;
+      pbolt->flavour = BEAM_FRAG;
 
-        pbolt->thing_thrown = KILL_MON_MISSILE;
-        pbolt->wand_id = 1;
-        return 2;
+      pbolt->thing_thrown = KILL_MON_MISSILE;
+      pbolt->wand_id = 1;
+      return 2;
 
     case ZAP_SMALL_SANDBLAST:    //jmf: ought to be a weak, short-range missile
-        strcpy(pbolt->beam_name, "blast of ");
+      strcpy(pbolt->beam_name, "blast of ");
 
-        temp_rand = random2(4);
+      temp_rand = random2(4);
 
-        strcat(pbolt->beam_name, (temp_rand == 0) ? "dust" :
-                                 (temp_rand == 1) ? "dirt" :
-                                 (temp_rand == 2) ? "grit"
-                                                  : "sand" );
+      strcat(pbolt->beam_name, (temp_rand == 0) ? "dust" :
+             (temp_rand == 1) ? "dirt" :
+             (temp_rand == 2) ? "grit"
+             : "sand" );
 
-        pbolt->colour = BROWN;
-        pbolt->range = ( coinflip() ? 3 : 2 );
-        pbolt->damage = 104 + power;
-        pbolt->hit = power;
-        pbolt->type = SYM_BOLT;
-        pbolt->flavour = BEAM_FRAG;
+      pbolt->colour = BROWN;
+      pbolt->range = ( one_chance_in(4) ? 3 : 2 );
+      pbolt->damage = 104 + power;
+      pbolt->hit = power;
+      pbolt->type = SYM_BOLT;
+      pbolt->flavour = BEAM_FRAG;
 
-        pbolt->thing_thrown = KILL_MON_MISSILE;
-        pbolt->wand_id = 1;
-        return 2;
+      pbolt->thing_thrown = KILL_MON_MISSILE;
+      pbolt->wand_id = 1;
+      return 2;
 
     }                           // end of switch
 
@@ -880,29 +895,32 @@ void potion_effect( char pot_eff, int pow )
         break;
 
       case POT_MIGHT:
-        strcpy(info, "You feel ");
-        strcat(info, (you.might) ? "pretty" : "very");
-        strcat(info, " mighty");
-        strcat(info, (you.might) ? ", still" : " all of a sudden");
-        strcat(info, ".");
-        mpr(info);
-
-        you.might += 35 + random2(pow);    // conceivable max gain of +184 {dlb}
-
-        if ( !you.might )
         {
-            increase_stats(STAT_STRENGTH, 5, true);
+          bool were_mighty = you.might > 0;
+          strcpy(info, "You feel ");
+          strcat(info, (you.might) ? "pretty" : "very");
+          strcat(info, " mighty");
+          strcat(info, (you.might) ? ", still" : " all of a sudden");
+          strcat(info, ".");
+          mpr(info);
 
-            if ( you.might > 75 )
-              you.might = 75;
-        }
-        else
-        {
-            if ( you.might > 150 )     // files.cc permits values up to 215, but ... {dlb}
-              you.might = 150;
-        }
+          you.might += 35 + random2(pow); // conceivable max gain of +184 {dlb}
 
-        naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
+          if ( ! were_mighty )
+            {
+              increase_stats(STAT_STRENGTH, 5, true);
+
+              if ( you.might > 75 )
+                you.might = 75;
+            }
+          else
+            { // files.cc permits values up to 215, but ... {dlb}
+              if ( you.might > 150 )
+                you.might = 150;
+            }
+
+          naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
+        }
         break;
 
       case POT_GAIN_STRENGTH:
@@ -953,7 +971,8 @@ void potion_effect( char pot_eff, int pow )
                 strcat(info, " nasty...");
             }
 
-            you.poison += 1 + ( (pot_eff == POT_POISON) ? random2avg(5,2) : 2 + random2avg(13,2) );
+            you.poison += 1 + ( (pot_eff == POT_POISON) ?
+                                random2avg(5,2) : 2 + random2avg(13,2) );
         }
 
         mpr(info);
@@ -1081,7 +1100,7 @@ void potion_effect( char pot_eff, int pow )
       case POT_CURE_MUTATION:
         mpr("It has a very clean taste.");
         for (unsigned char i = 0; i < 7; i++)
-          if ( random2(10) > i )     //jmf: added [this bit of - dlb] randomness
+          if ( random2(10) > i )
             delete_mutation(100);
         break;
 

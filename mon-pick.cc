@@ -478,7 +478,7 @@ bool mons_pan( int mcls )
 // malign beings
       case MONS_EFREET:
       case MONS_RAKSHASA:
-      case MONS_RAKSHASA_FAKE:
+    case MONS_RAKSHASA_FAKE: //jmf: FIXME: really create these?
 // golems
       case MONS_CLAY_GOLEM:
       case MONS_CRYSTAL_GOLEM:
@@ -1186,6 +1186,7 @@ static int mons_mineorc_level( int mcls )
 
       case MONS_GNOLL:
       case MONS_OGRE:
+      case MONS_WARG:
         mlev += 2;
         break;
 
@@ -1232,6 +1233,7 @@ static int mons_mineorc_rare( int mcls )
 
       case MONS_HOBGOBLIN:
       case MONS_OGRE:
+      case MONS_WARG:
         return 20;
 
       case MONS_TROLL:
@@ -1340,10 +1342,12 @@ static int mons_lair_level( int mcls )
       case MONS_GIANT_FROG:
       case MONS_GREY_RAT:
       case MONS_HOUND:
+      case MONS_BLACK_BEAR:
         mlev += 2;
         break;
 
       case MONS_WORM:
+      case MONS_WOLF:
         mlev += 3;
         break;
 
@@ -1366,6 +1370,7 @@ static int mons_lair_level( int mcls )
       case MONS_SPINY_FROG:
       case MONS_WAR_DOG:
       case MONS_YELLOW_WASP:
+      case MONS_BEAR:
         mlev += 5;
         break;
 
@@ -1377,6 +1382,7 @@ static int mons_lair_level( int mcls )
       case MONS_STEAM_DRAGON:
       case MONS_WOLF_SPIDER:
       case MONS_YAK:
+      case MONS_GRIZZLY_BEAR:
         mlev += 6;
         break;
 
@@ -1391,6 +1397,7 @@ static int mons_lair_level( int mcls )
         break;
 
       case MONS_ELEPHANT_SLUG:
+      case MONS_POLAR_BEAR:
       case MONS_GRIFFON:
       case MONS_LINDWORM:
       case MONS_REDBACK:
@@ -1488,7 +1495,14 @@ static int mons_lair_rare( int mcls )
       case MONS_WYVERN:
       case MONS_BOULDER_BEETLE:
       case MONS_HYDRA:
+      case MONS_WOLF:
         return 20;
+
+      case MONS_BLACK_BEAR:
+      case MONS_BEAR:
+      case MONS_GRIZZLY_BEAR:
+      case MONS_POLAR_BEAR:
+        return 15;
 
       case MONS_GIANT_BEETLE:
       case MONS_SCORPION:

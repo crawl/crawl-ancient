@@ -116,6 +116,7 @@ static void exercise2( char exsk, char deg )
  * existence is to give players a reason to go out and kill things and
  * explore instead of sitting around practising their skills.
  */
+#ifdef USE_SKILL_POOL_DRAIN
     if ( you.exp_available >= 1000 )
       skill_change += 20;
     if ( you.exp_available >= 2500 )
@@ -128,6 +129,7 @@ static void exercise2( char exsk, char deg )
       skill_change += 150;
     if ( you.exp_available >= 15000 )
       skill_change += 200;
+#endif // USE_SKILL_POOL_DRAIN
 
 // being good at some weapons makes others easier to learn:
     if ( exsk < SK_SLINGS )

@@ -299,15 +299,16 @@ void explosion( bool is5x5, struct bolt *pbolt )
 
     switch ( pbolt->flavour )
     {
-      case BEAM_FIRE:
-        objs_vulnerable = OBJ_SCROLLS;
-        break;
-      case BEAM_COLD:
-        objs_vulnerable = OBJ_POTIONS;
-        break;
-      case BEAM_SPORE:
-        objs_vulnerable = OBJ_FOOD;
-        break;
+    case BEAM_FIRE:
+    case BEAM_LAVA:
+      objs_vulnerable = OBJ_SCROLLS;
+      break;
+    case BEAM_COLD:
+      objs_vulnerable = OBJ_POTIONS;
+      break;
+    case BEAM_SPORE:
+      objs_vulnerable = OBJ_FOOD;
+      break;
     }
 
     if ( stricmp(pbolt->beam_name, "hellfire") == 0 )
@@ -338,7 +339,9 @@ void explosion( bool is5x5, struct bolt *pbolt )
                           mpr("You see a puff of smoke.");
                           break;
                         case BEAM_COLD:
-                          if ( !silenced(pbolt->bx, pbolt->by) )    // see_grid() check seems contrary to this {dlb}
+                          if ( !silenced(pbolt->bx, pbolt->by)
+                               && !silenced(you.x_pos, you.y_pos))
+                            // see_grid() check seems contrary to this {dlb}
                             mpr("You hear glass shatter.");
                           break;
                       }
@@ -385,7 +388,8 @@ void explosion( bool is5x5, struct bolt *pbolt )
                 hurted = 0;
 
               if ( pbolt->flavour == BEAM_FIRE
-                    || stricmp(pbolt->beam_name, "hellfire") == 0 )
+                   || pbolt->flavour == BEAM_LAVA
+                   || stricmp(pbolt->beam_name, "hellfire") == 0 )
                 scrolls_burn(5, OBJ_SCROLLS);
               else if ( pbolt->flavour == BEAM_COLD )
                 scrolls_burn(5, OBJ_POTIONS);
@@ -416,7 +420,7 @@ void explosion( bool is5x5, struct bolt *pbolt )
                         || env.cloud_type[clouty] == CLOUD_FIRE_MON )
                      && pbolt->flavour == BEAM_COLD ) )
               {
-                  if ( see_grid(pbolt->bx, pbolt->by) && !silenced(pbolt->bx, pbolt->by) )    // what is the range of hearing? {dlb}
+                  if ( see_grid(pbolt->bx, pbolt->by) && !silenced(pbolt->bx, pbolt->by) && !silenced(you.x_pos, you.y_pos) )    // what is the range of hearing? {dlb}
                     mpr("You hear a sizzling sound!");
 
                   env.cloud_type[clouty] = CLOUD_NONE;

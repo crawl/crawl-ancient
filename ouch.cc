@@ -5,20 +5,20 @@
  *
  *  Change History (most recent first):
  *
- *      <7>      19 June 2000   GDL             Changed handle to FILE *
- *      <6>      11/23/99       LRH             Fixed file purging for DOS?
- *      <5>      9/29/99        BCR             Fixed highscore so that it
- *                                              doesn't take so long.  Also
- *                                              added some whitespace to the scores.
- *                                              Fixed problem with uniques and 'a'.
- *      <4>      6/13/99        BWR             applied a mix of DML and my tmp
- *                                              file purging improvements.
- *      <3>      5/26/99        JDJ             highscore() will print more scores on
- *                                              larger windows.
- *      <2>      5/21/99        BWR             Added SCORE_FILE_ENTRIES, so
- *                                              that more top scores can be
+ *      <7>      19 June 2000   GDL Changed handle to FILE *
+ *      <6>      11/23/99       LRH Fixed file purging for DOS?
+ *      <5>      9/29/99        BCR Fixed highscore so that it
+ *                                  doesn't take so long.  Also
+ *                                  added some whitespace to the scores.
+ *                                  Fixed problem with uniques and 'a'.
+ *      <4>      6/13/99        BWR applied a mix of DML and my tmp
+ *                                  file purging improvements.
+ *      <3>      5/26/99        JDJ highscore() will print more scores on
+ *                                  larger windows.
+ *      <2>      5/21/99        BWR Added SCORE_FILE_ENTRIES, so
+ *                                  that more top scores can be
  *                                              saved.
- *      <1>      -/--/--        LRH             Created
+ *      <1>      -/--/--        LRH Created
  */
 
 #include "AppHdr.h"
@@ -473,7 +473,7 @@ void ouch( int dam, int death_source, char death_type )
                 && you.duration[DUR_PRAYER]
                 && random2(you.piety) >= 30 )
               {
-                simple_god_message(you.religion, false, " protects you from harm!");
+                simple_god_message(" protects you from harm!");
                 return;
               }
             break;
@@ -1036,12 +1036,19 @@ void end_game(char end_status)
     clear();
 #endif
 
-    if ( dump_char((status2 == 0), "morgue.txt") )
-      mpr("Char dump successful! (morgue.txt).");
+    if (! dump_char((status2 == 0), "morgue.txt") )
+      {
+        mpr("Char dump unsuccessful! Sorry about that.");
+        more();
+      }
+#ifdef DEBUG
+    //jmf: switched logic and moved "success" message to debug-only
     else
-      mpr("Char dump unsuccessful! Sorry about that.");
-
-    more();
+      {
+        mpr("Char dump successful! (morgue.txt).");
+        more();
+      }
+#endif // DEBUG
 
     int p = 0;
 
@@ -1222,10 +1229,13 @@ void end_game(char end_status)
     clear();
 #endif
 
-    if ( dump_char((status2 == 0), "morgue.txt") )
-      mpr("Char dump successful! (morgue.txt).");
-    else
+    if (! dump_char((status2 == 0), "morgue.txt") )
       mpr("Char dump unsuccessful! Sorry about that.");
+#ifdef DEBUG
+    //jmf: switched logic and moved "success" message to debug-only
+    else
+      mpr("Char dump successful! (morgue.txt).");
+#endif // DEBUG
 
     more();
 
@@ -1536,7 +1546,7 @@ void drain_exp( void )
         && ( you.religion == GOD_ZIN || you.religion == GOD_SHINING_ONE )
         && random2(150) < you.piety )
     {
-        simple_god_message(you.religion, false, " protects your life force!");
+        simple_god_message(" protects your life force!");
         return;
     }
 

@@ -1616,7 +1616,7 @@ query:
         || ring_wear_2 == you.equip[EQ_RIGHT_RING]
         || ring_wear_2 == you.equip[EQ_AMULET])
     {
-        mpr("You are already wearing that!");
+        mpr("You've already put that on!");
         return;
     }
 
@@ -1634,38 +1634,40 @@ query:
 
     if (you.inv_class[ring_wear_2] != OBJ_JEWELLERY)
     {
-        mpr("You're sadly mistaken if you consider that jewellery.");
-        return;
+      //jmf: let's not take our inferiority complex out on players, eh? :-p
+      //mpr("You're sadly mistaken if you consider that jewellery.")
+      mpr("You can only put on jewelry.");
+      return;
     }
 
     if (you.inv_type[ring_wear_2] < AMU_RAGE)
     {
-        if (you.equip[EQ_GLOVES] != -1 && you.inv_plus[you.equip[EQ_GLOVES]] > 80)
+      if (you.equip[EQ_GLOVES] != -1 && you.inv_plus[you.equip[EQ_GLOVES]] >80)
         {
-            mpr("You can't take your gloves off to wear a ring!");
-            return;
+          mpr("You can't take your gloves off to put on a ring!");
+          return;
         }
 
-        if (you.inv_class[ring_wear_2] == OBJ_JEWELLERY
-            && you.equip[EQ_LEFT_RING] != -1
-            && you.equip[EQ_RIGHT_RING] != -1)
+      if (you.inv_class[ring_wear_2] == OBJ_JEWELLERY
+          && you.equip[EQ_LEFT_RING] != -1
+          && you.equip[EQ_RIGHT_RING] != -1)
         {
-            // and you are trying to wear body you.equip.
-            mpr("You are already wearing a ring on each hand.");
-            return;
+          // and you are trying to wear body you.equip.
+          mpr("You've already put a ring on each hand.");
+          return;
         }
     }
     else if (you.equip[EQ_AMULET] != -1)
     {
-        strcpy(info, "You are already wearing an amulet.");
+      strcpy(info, "You are already wearing an amulet.");
 
-        if (!one_chance_in(20))
-        {
-            strcat(info, " And I must say it looks quite fetching.");
-        }
+      if (one_chance_in(20))
+      {
+        strcat(info, " And I must say it looks quite fetching.");
+      }
 
-        mpr(info);
-        return;
+      mpr(info);
+      return;
     }
 
     int hand_used = 0;
@@ -2591,17 +2593,20 @@ query:
           break;
 
         case SCR_SUMMONING:
-          if ( create_monster(MONS_ABOMINATION_SMALL, 25, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
+          if ( create_monster(MONS_ABOMINATION_SMALL, 25, BEH_ENSLAVED,
+                              you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
             mpr("A horrible Thing appears!");
           break;
 
         case SCR_FORGETFULNESS:
           mpr("You feel momentarily disoriented.");
-          forget_map(50 + random2(50));
+          if ( !wearing_amulet(AMU_CLARITY) )
+            forget_map(50 + random2(50));
           break;
 
         case SCR_MAGIC_MAPPING:
-          if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
+          if (you.level_type == LEVEL_LABYRINTH
+              || you.level_type == LEVEL_ABYSS)
           {
               mpr("You feel momentarily disoriented.");
               id_the_scroll = false;

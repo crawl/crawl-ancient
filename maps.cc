@@ -5,9 +5,9 @@
  *
  *  Change History (most recent first):
  *
- *      <2>      5/20/99        BWR             Added stone lining to Zot vault,
- *                                              this should prevent digging?
- *      <1>      -/--/--        LRH             Created
+ * <2>      5/20/99        BWR Added stone lining to Zot vault,
+ *                             this should prevent digging?
+ * <1>      -/--/--        LRH             Created
  */
 
 #include "AppHdr.h"
@@ -95,9 +95,14 @@ static char minivault_30(char vgrid[81][81], int mons_array[7]);
 static char minivault_31(char vgrid[81][81], int mons_array[7]);
 static char minivault_32(char vgrid[81][81], int mons_array[7]);
 static char minivault_33(char vgrid[81][81], int mons_array[7]);
+
+//jmf: originals and slim wrappers to fit into don's non-switch
 static char minivault_34(char vgrid[81][81], int mons_array[7], bool orientation);
 static char minivault_35(char vgrid[81][81], int mons_array[7], bool orientation);
-
+static char minivault_34_a(char vgrid[81][81], int mons_array[7]);
+static char minivault_34_b(char vgrid[81][81], int mons_array[7]);
+static char minivault_35_a(char vgrid[81][81], int mons_array[7]);
+static char minivault_35_b(char vgrid[81][81], int mons_array[7]);
 
 static char rand_demon_1(char vgrid[81][81], int mons_array[7]);
 static char rand_demon_2(char vgrid[81][81], int mons_array[7]);
@@ -145,11 +150,6 @@ char vault_main( char vgrid[81][81], int mons_array[7], int vault_force, int man
     {
         which_vault = ( (vault_force == 100) ? random2(14) : vault_force );
 
-#ifdef USE_NEW_MINIVAULTS
-        if ( vault_force == 100 )
-          which_vault = random2(18);
-#endif
-
     // NB - endless loops result if forced vault cannot pass these tests {dlb}:
         if ( which_vault == 9 )
         {
@@ -161,117 +161,98 @@ char vault_main( char vgrid[81][81], int mons_array[7], int vault_force, int man
             if ( many_many > 20 )
               break;
         }
-        else if ( which_vault == 14 || which_vault == 16 )
-        {
-            if ( many_many > 4 )
-              break;
-        }
-        else if ( which_vault == 15 || which_vault == 17 )
-        {
-            if ( many_many > 6 )
-              break;
-        }
         else
           break;
     }
 
 // then, determine which drawing routine to use {dlb}:
 
-// these four additions by josh utilize a non-standard routine -- not fully implemented(?) {dlb}:
-    if ( which_vault >= 14 && which_vault <= 17 )
-    {
-        if ( which_vault == 14 || which_vault == 16 )
-          return minivault_34(vgrid, mons_array, false);
-        if ( which_vault == 15 || which_vault == 17 )
-          return minivault_35(vgrid, mons_array, true);
-    }
-    else
-    {
-        fnc_vault = ( (which_vault ==   0) ? vault_1 :
-                      (which_vault ==   1) ? vault_2 :
-                      (which_vault ==   2) ? vault_3 :
-                      (which_vault ==   3) ? vault_4 :
-                      (which_vault ==   4) ? vault_5 :
-                      (which_vault ==   5) ? vault_6 :
-                      (which_vault ==   6) ? vault_7 :
-                      (which_vault ==   7) ? vault_8 :
-                      (which_vault ==   8) ? vault_9 :
-                      (which_vault ==   9) ? ( (many_many > 23) ? my_map : orc_temple ) :
-                      (which_vault ==  10) ? vault_10 :
-                      (which_vault ==  11) ? farm_and_country :
-                      (which_vault ==  12) ? fort_yaktaur :
-                      (which_vault ==  13) ? box_level :
-                      (which_vault ==  50) ? vestibule_map :
-                      (which_vault ==  51) ? castle_dis :
-                      (which_vault ==  52) ? asmodeus :
-                      (which_vault ==  53) ? antaeus :
-                      (which_vault ==  54) ? ereshkigal :
-                      (which_vault ==  60) ? nemelex :
-                      (which_vault ==  61) ? sif_muna :
-                      (which_vault ==  62) ? okawaru :
-                      (which_vault ==  63) ? kikuba :
-                      //(which_vault ==  64) ? mollusc :
-                      (which_vault ==  80) ? beehive :
-                      (which_vault ==  81) ? slime_pit :
-                      (which_vault ==  82) ? vaults_vault :
-                      (which_vault ==  83) ? hall_of_blades :
-                      (which_vault ==  84) ? hall_of_Zot :
-                      (which_vault ==  85) ? temple :
-                      (which_vault ==  86) ? snake_pit :
-                      (which_vault ==  87) ? elf_hall :
-                      (which_vault ==  88) ? tomb_1 :
-                      (which_vault ==  89) ? tomb_2 :
-                      (which_vault ==  90) ? tomb_3 :
-                      (which_vault ==  91) ? swamp :
-                      (which_vault == 200) ? minivault_1 :
-                      (which_vault == 201) ? minivault_2 :
-                      (which_vault == 202) ? minivault_3 :
-                      (which_vault == 203) ? minivault_4 :
-                      (which_vault == 204) ? minivault_5 :
-                      (which_vault == 205) ? ( (many_many > 15) ? minivault_6 : minivault_1 ) :
-                      (which_vault == 206) ? ( (many_many > 10) ? minivault_7 : minivault_2 ) :
-                      (which_vault == 207) ? ( (many_many > 15) ? minivault_8 : minivault_3 ) :
-                      (which_vault == 208) ? ( (many_many > 15) ? minivault_9 : minivault_4 ) :
-                      (which_vault == 209) ? minivault_10 :
-                      (which_vault == 210) ? minivault_11 :
-                      (which_vault == 211) ? minivault_12 :
-                      (which_vault == 212) ? minivault_13 :
-                      (which_vault == 213) ? minivault_14 :
-                      (which_vault == 214) ? minivault_15 :
-                      (which_vault == 215) ? minivault_16 :
-                      (which_vault == 216) ? minivault_17 :
-                      (which_vault == 217) ? minivault_18 :
-                      (which_vault == 218) ? minivault_19 :
-                      (which_vault == 219) ? minivault_20 :
-                      (which_vault == 220) ? minivault_21 :
-                      (which_vault == 221) ? minivault_22 :
-                      (which_vault == 222) ? minivault_23 :
-                      (which_vault == 223) ? minivault_24 :
-                      (which_vault == 224) ? minivault_25 :
-                      (which_vault == 225) ? minivault_26 :
-                      (which_vault == 226) ? minivault_27 :
-                      (which_vault == 227) ? minivault_28 :
-                      (which_vault == 228) ? minivault_29 :
-                      (which_vault == 229) ? minivault_30 :
-                      (which_vault == 230) ? minivault_31 :
-                      (which_vault == 231) ? minivault_32 :
-                      (which_vault == 232) ? minivault_33 :
-                      (which_vault == 300) ? rand_demon_1 :
-                      (which_vault == 301) ? rand_demon_2 :
-                      (which_vault == 302) ? rand_demon_3 :
-                      (which_vault == 303) ? rand_demon_4 :
-                      (which_vault == 304) ? rand_demon_5 :
-                      (which_vault == 305) ? rand_demon_6 :
-                      (which_vault == 306) ? rand_demon_7 :
-                      (which_vault == 307) ? rand_demon_8 :
-                      (which_vault == 308) ? rand_demon_9
-                                           : 0 );    // yep, NULL -- original behavior {dlb}
+    fnc_vault = ( (which_vault ==   0) ? vault_1 :
+                  (which_vault ==   1) ? vault_2 :
+                  (which_vault ==   2) ? vault_3 :
+                  (which_vault ==   3) ? vault_4 :
+                  (which_vault ==   4) ? vault_5 :
+                  (which_vault ==   5) ? vault_6 :
+                  (which_vault ==   6) ? vault_7 :
+                  (which_vault ==   7) ? vault_8 :
+                  (which_vault ==   8) ? vault_9 :
+                  (which_vault ==   9) ? ( (many_many > 23) ? my_map : orc_temple ) :
+                  (which_vault ==  10) ? vault_10 :
+                  (which_vault ==  11) ? farm_and_country :
+                  (which_vault ==  12) ? fort_yaktaur :
+                  (which_vault ==  13) ? box_level :
+                  (which_vault ==  50) ? vestibule_map :
+                  (which_vault ==  51) ? castle_dis :
+                  (which_vault ==  52) ? asmodeus :
+                  (which_vault ==  53) ? antaeus :
+                  (which_vault ==  54) ? ereshkigal :
+                  (which_vault ==  60) ? nemelex :
+                  (which_vault ==  61) ? sif_muna :
+                  (which_vault ==  62) ? okawaru :
+                  (which_vault ==  63) ? kikuba :
+                  //(which_vault ==  64) ? mollusc :
+                  (which_vault ==  80) ? beehive :
+                  (which_vault ==  81) ? slime_pit :
+                  (which_vault ==  82) ? vaults_vault :
+                  (which_vault ==  83) ? hall_of_blades :
+                  (which_vault ==  84) ? hall_of_Zot :
+                  (which_vault ==  85) ? temple :
+                  (which_vault ==  86) ? snake_pit :
+                  (which_vault ==  87) ? elf_hall :
+                  (which_vault ==  88) ? tomb_1 :
+                  (which_vault ==  89) ? tomb_2 :
+                  (which_vault ==  90) ? tomb_3 :
+                  (which_vault ==  91) ? swamp :
+                  (which_vault == 200) ? minivault_1 :
+                  (which_vault == 201) ? minivault_2 :
+                  (which_vault == 202) ? minivault_3 :
+                  (which_vault == 203) ? minivault_4 :
+                  (which_vault == 204) ? minivault_5 :
+                  (which_vault == 205) ? ( (many_many > 15) ? minivault_6 : minivault_1 ) :
+                  (which_vault == 206) ? ( (many_many > 10) ? minivault_7 : minivault_2 ) :
+                  (which_vault == 207) ? ( (many_many > 15) ? minivault_8 : minivault_3 ) :
+                  (which_vault == 208) ? ( (many_many > 15) ? minivault_9 : minivault_4 ) :
+                  (which_vault == 209) ? minivault_10 :
+                  (which_vault == 210) ? minivault_11 :
+                  (which_vault == 211) ? minivault_12 :
+                  (which_vault == 212) ? minivault_13 :
+                  (which_vault == 213) ? minivault_14 :
+                  (which_vault == 214) ? minivault_15 :
+                  (which_vault == 215) ? minivault_16 :
+                  (which_vault == 216) ? minivault_17 :
+                  (which_vault == 217) ? minivault_18 :
+                  (which_vault == 218) ? minivault_19 :
+                  (which_vault == 219) ? minivault_20 :
+                  (which_vault == 220) ? minivault_21 :
+                  (which_vault == 221) ? minivault_22 :
+                  (which_vault == 222) ? minivault_23 :
+                  (which_vault == 223) ? minivault_24 :
+                  (which_vault == 224) ? minivault_25 :
+                  (which_vault == 225) ? minivault_26 :
+                  (which_vault == 226) ? minivault_27 :
+                  (which_vault == 227) ? minivault_28 :
+                  (which_vault == 228) ? minivault_29 :
+                  (which_vault == 229) ? minivault_30 :
+                  (which_vault == 230) ? minivault_31 :
+                  (which_vault == 231) ? minivault_32 :
+                  (which_vault == 232) ? minivault_33 :
+                  (which_vault == 233) ? minivault_34_a :
+                  (which_vault == 234) ? minivault_34_b :
+                  (which_vault == 235) ? minivault_35_a :
+                  (which_vault == 236) ? minivault_35_b :
+                  (which_vault == 300) ? rand_demon_1 :
+                  (which_vault == 301) ? rand_demon_2 :
+                  (which_vault == 302) ? rand_demon_3 :
+                  (which_vault == 303) ? rand_demon_4 :
+                  (which_vault == 304) ? rand_demon_5 :
+                  (which_vault == 305) ? rand_demon_6 :
+                  (which_vault == 306) ? rand_demon_7 :
+                  (which_vault == 307) ? rand_demon_8 :
+                  (which_vault == 308) ? rand_demon_9
+                  : 0 );    // yep, NULL -- original behavior {dlb}
 
     // NB - a return value of zero is not handled well by dungeon.cc (but there it is) 10mar2000 {dlb}
-        return ( (fnc_vault == 0) ? 0 : fnc_vault(vgrid, mons_array) );
-    }
-
-    return 0;    // this is so the compiler will shut up already {dlb}
+    return ( (fnc_vault == 0) ? 0 : fnc_vault(vgrid, mons_array) );
 
 }          // end vault_main()
 
@@ -1063,7 +1044,6 @@ static char fort_yaktaur(char vgrid[81][81], int mons_array[7])
     strcat(vgrid[42], ".ccccc.....ww..ccccccc....c|=|cxxxxxxxxx");
     strcat(vgrid[43], "............ww.......c5...cxx=cxxxxxxxxx");
     strcat(vgrid[44], "....6.ccccc.ww.w...2.+51..c|1.cxxxxxxxxx");      // last 1 here was 7
-
     strcat(vgrid[45], "....63+...c..wwww..21+51..c2.2cxxxxxxxxx");
     strcat(vgrid[46], "....6.ccccc..wwwwww..c5...cc+ccxxxxxxxxx");
     strcat(vgrid[47], "............wwwwwww..c........cxxxxxxxxx");
@@ -2325,7 +2305,7 @@ static char temple(char vgrid[81][81], int mons_array[7])
     strcpy(vgrid[5], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[6], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[7], "xxxxxxxxxxxxxxxxxxxxxxxxxxccccccccccccccccccccccccccxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-    strcpy(vgrid[8], "xxxxxxxxxxxxxxxxxxxxxxxxxcc.........................cxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    strcpy(vgrid[8], "xxxxxxxxxxxxxxxxxxxxxxxxxcc............<............cxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[9], "xxxxxxxxxxxxxxxxxxxxxxxxcc...........................cxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[10], "xxxxxxxxxxxxxxxxxxxxxxxcc.............................cxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[11], "xxxxxxxxxxxxxxxxxxxxxxcc...............................cxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -3081,7 +3061,7 @@ static char minivault_15(char vgrid[81][81], int mons_array[7])
 
 #else
 
-static char minivault_15(char vgrid[81][81], int mons_array[7])        /* lava pond */
+static char minivault_15(char vgrid[81][81], int mons_array[7]) /* lava pond */
 {
 
     strcpy(vgrid[0], "............");
@@ -3548,8 +3528,13 @@ static char minivault_34(char vgrid[81][81], int mons_array[7], bool orientation
   }
 
     return MAP_NORTH;
-
 }
+
+static char minivault_34_a(char vgrid[81][81], int mons_array[7])
+{ return minivault_34(vgrid, mons_array, true); }
+
+static char minivault_34_b(char vgrid[81][81], int mons_array[7])
+{ return minivault_34(vgrid, mons_array, false); }
 
 static char minivault_35(char vgrid[81][81], int mons_array[7], bool orientation)
 { //jmf: another multi-god temple thing
@@ -3563,22 +3548,28 @@ static char minivault_35(char vgrid[81][81], int mons_array[7], bool orientation
   for (int c=0; c <= 11; c++, i += di)
   {
     strcpy(vgrid[i], "............");
-    strcpy(vgrid[i], ".vvvvvvvvvv.");
-    strcpy(vgrid[i], "vvT8....8Tvv");
-    strcpy(vgrid[i], "v...v..v...v");
-    strcpy(vgrid[i], "v.C.v..v.C.v");
-    strcpy(vgrid[i], "v...v..v...v");
-    strcpy(vgrid[i], "vvT8v..v8Tvv");
-    strcpy(vgrid[i], ".vvvv..vvvv.");
-    strcpy(vgrid[i], "..xxx==xxx..");
-    strcpy(vgrid[i], "..Gx*99*xG..");
-    strcpy(vgrid[i], "...+9999+...");
-    strcpy(vgrid[i], "..GxxxxxxG..");
+    strcpy(vgrid[i], "..vvvvvvvv..");
+    strcpy(vgrid[i], ".vv......vv.");
+    strcpy(vgrid[i], ".v..x..x..v.");
+    strcpy(vgrid[i], ".v.Cx..xC.v.");
+    strcpy(vgrid[i], ".v..x..x..v.");
+    strcpy(vgrid[i], ".vT8x..x8Tv.");
+    strcpy(vgrid[i], ".vvvx==xvvv.");
+    strcpy(vgrid[i], "...Gx99xG...");
+    strcpy(vgrid[i], "...+*99*+...");
+    strcpy(vgrid[i], "...GxxxxG...");
+    strcpy(vgrid[i], "............");
   }
 
     return MAP_NORTH;
-
 }
+
+static char minivault_35_a(char vgrid[81][81], int mons_array[7])
+{ return minivault_35(vgrid, mons_array, true); }
+
+static char minivault_35_b(char vgrid[81][81], int mons_array[7])
+{ return minivault_35(vgrid, mons_array, false); }
+
 
 
 

@@ -46,12 +46,12 @@ char spell_list( void )
 
     char st_pass[60];
     int j;
-    char lines = 0;
-    unsigned char anything = 0;
-    unsigned char i;     // loop variable {dlb}
+    int lines = 0;
+    unsigned int anything = 0;
+    unsigned int i;
     char strng[5] = "";
-    char ft, ki;
-    char already = 0;
+    int ft, ki;
+    bool already = false;
 
 #ifdef DOS_TERM
     char buffer[4800];
@@ -157,14 +157,14 @@ char spell_list( void )
 
             gotoxy(35, wherey());
 
-            already = 0;
+            already = false;
 
-            for (i = SPTYP_CONJURATION; i < NUM_SPELL_TYPES; i++)
+            for (i = SPTYP_CONJURATION; i < NUM_SPELL_TYPES; i<<=1)
               if ( spell_typematch(you.spells[j], i) )
               {
                   print_slash(already);
                   cprintf(spelltype_name(i));
-                  already = 1;
+                  already = true;
               }
 
             char sval[4];
@@ -232,7 +232,7 @@ char spell_list( void )
 
 
 
-void print_slash( char already )
+void print_slash( bool already )
 {
 
     if ( already )
@@ -470,48 +470,47 @@ char spell_fail( unsigned char spell )
 int spell_spec( int spell )
 {
 
-    int s = 0;                                          // general purpose loop variable {dlb}
-    int power = 0;
-    int spellsy = 0;
-    int enhanced = 0;
-    int ar_spltyp[NUM_SPELL_TYPES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};    // to limit calls to spell_typematch() {dlb}
-                                                                       // note that the first member is skipped {dlb}
+  unsigned int s = 0;
+  int power = 0;
+  int spellsy = 0;
+  int enhanced = 0;
+  int ar_spltyp[NUM_SPELL_TYPES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  // to limit calls to spell_typematch() {dlb}
+  // note that the first member is skipped {dlb}
 
 
-// determine actual power levels {dlb}:
-    power = (you.skills[SK_SPELLCASTING] / 2) + player_mag_abil(false);
+  // determine actual power levels {dlb}:
+  power = (you.skills[SK_SPELLCASTING] / 2) + player_mag_abil(false);
 
-    spellsy = set_spellflags(spell, ar_spltyp);
+  spellsy = set_spellflags(spell, ar_spltyp);
 
-    if ( spellsy )
+  if ( spellsy )
     {
-        for (s = SPTYP_CONJURATION; s < NUM_SPELL_TYPES; s++)
-          if ( ar_spltyp[s] && s != SPTYP_HOLY )
-            power += (you.skills[spell_type2skill(s)] << 1) / spellsy;
+      for (s = SPTYP_CONJURATION; s < NUM_SPELL_TYPES; s<<=1)
+        if ( ar_spltyp[s] && s != SPTYP_HOLY )
+          power += (you.skills[spell_type2skill(s)] << 1) / spellsy;
     }
 
 
-// determine appropriate enhancements {dlb}:
-    enhanced += spell_enhancement(ar_spltyp);
+  // determine appropriate enhancements {dlb}:
+  enhanced += spell_enhancement(ar_spltyp);
 
-// apply enhancements to power {dlb}:
-    if ( enhanced > 0 )
+  // apply enhancements to power {dlb}:
+  if ( enhanced > 0 )
     {
-        for (s = 0; s < enhanced; s++)
+      for (s = 0; s < enhanced; s++)
         {
-            power *= 15;
-            power /= 10;
+          power *= 15;
+          power /= 10;
         }
     }
-    else if ( enhanced < 0 )
+  else if ( enhanced < 0 )
     {
-        for (s = enhanced; s < 0; s++)
-          power /= 2;
+      for (s = enhanced; s < 0; s++)
+        power /= 2;
     }
 
-
-    return ( power );
-
+  return power;
 }          // end spell_spec()
 
 
@@ -808,10 +807,10 @@ int spell_enhancement ( int ar_typeflags[NUM_SPELL_TYPES] )
 int set_spellflags ( int which_spell, int ar_spelltypes[NUM_SPELL_TYPES] )
 {
 
-    int s = 0;             // generic looping variable {dlb}
-    int spellcount = 0;    // summing variable {dlb}
+  unsigned int s = 0;             // generic looping variable {dlb}
+  int spellcount = 0;    // summing variable {dlb}
 
-    for (s = SPTYP_CONJURATION; s < NUM_SPELL_TYPES; s++)
+    for (s = SPTYP_CONJURATION; s < NUM_SPELL_TYPES; s<<=1)
       if ( spell_typematch(which_spell, s) )
       {
           ar_spelltypes[s] = 1;    // set appropriate flag with proper offset {dlb}

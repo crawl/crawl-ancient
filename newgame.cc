@@ -600,7 +600,7 @@ query5:
             }
             while (keyn == 'x');
 
-            if (keyn == '{')    // what the fsck are these for? {dlb}
+            if (keyn == '{') // as ASCII is not contiguously alphebetized...
               keyn = 'A';
             else if (keyn == '|')
               keyn = 'B';
@@ -665,7 +665,8 @@ cant_be_that:
         you.inv_dam[0] = 0;
         you.inv_colour[0] = LIGHTCYAN;
 
-        if ( you.species == SP_OGRE || you.species == SP_TROLL || player_genus(GENPC_DRACONIAN) )
+        if ( you.species == SP_OGRE || you.species == SP_TROLL
+             || player_genus(GENPC_DRACONIAN) )
         {
             you.inv_quantity[1] = 1;
             you.inv_class[1] = OBJ_ARMOUR;
@@ -860,6 +861,7 @@ cant_be_that:
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
+        you.inv_type[0] = WPN_MACE; //jmf: moved from being in "case 'b'" below
         you.inv_plus[0] = 50;
         you.inv_plus2[0] = 50;
         you.inv_dam[0] = 0;
@@ -896,7 +898,7 @@ cant_be_that:
         cprintf("a - Zin (for traditional priests)" EOL);
         cprintf("b - Yredelemnul (for priests of death)" EOL);
 
-getkey:
+    getkey:
         keyn = get_ch();
         switch (keyn)
         {
@@ -906,7 +908,6 @@ getkey:
             break;
         case 'b':
             you.religion = GOD_YREDELEMNUL;
-            you.inv_type[0] = WPN_MACE;
             cprintf(EOL "Welcome...");
             break;
         default:
@@ -1378,12 +1379,14 @@ getkey:
         if (you.species == SP_OGRE_MAGE)
           {
     // Enchanters have a low level spell that wants a short blade
-    // jmf: ...but also one that does not require it.
+    //jmf: 24jun2000 No longer the case. Commented out.
+            /*
             if (you.char_class == JOB_ENCHANTER)
               {
                 you.inv_type[0] = WPN_SHORT_SWORD;
               }
             else
+            */
              {
                you.inv_type[0] = WPN_QUARTERSTAFF;
                you.inv_colour[0] = BROWN;
@@ -1409,6 +1412,13 @@ getkey:
             you.inv_plus2[0] = 51;
             you.inv_plus[1] = 51;
           }
+#ifdef USE_WARPER_BETTER_WEAPON
+        else if (you.char_class == JOB_WARPER)
+          {
+            you.inv_plus[0]  = 51;
+            you.inv_dam[0]  += SPWPN_DISTORTION;
+          }
+#endif
 
         you.inv_dam[1] = 0;
         you.inv_colour[1] = random_colour();
@@ -1427,15 +1437,16 @@ getkey:
         you.equip[EQ_WEAPON] = 0;
         you.equip[EQ_BODY_ARMOUR] = 1;
         you.inv_class[2] = OBJ_BOOKS;
-        you.inv_type[2] = ( (coinflip()) ? BOOK_CONJURATIONS_I : BOOK_CONJURATIONS_II );
+        you.inv_type[2] = coinflip() ? BOOK_CONJURATIONS_I : BOOK_CONJURATIONS_II;
         you.inv_plus[2] = 0;    // = 127
 
+#if 0 // moved to switch, below
         if (you.char_class == JOB_SUMMONER)
           {
             you.inv_type[2] = BOOK_SUMMONINGS;
             you.inv_plus[2] = 0;
             you.skills[SK_SUMMONINGS] = 4;
-// gets some darts - this class is difficult to start off with
+            // gets some darts - this class is difficult to start off with
             you.inv_quantity[3] = random2avg(9,2) + 7;
             you.inv_class[3] = OBJ_MISSILES;
             you.inv_type[3] = MI_DART;
@@ -1443,9 +1454,23 @@ getkey:
             you.inv_dam[3] = 0;
             you.inv_colour[3] = LIGHTCYAN;
           }
+#endif // 0
 
         switch (you.char_class)
-        {
+          {
+          case JOB_SUMMONER:
+            you.inv_type[2] = BOOK_SUMMONINGS;
+            you.inv_plus[2] = 0;
+            you.skills[SK_SUMMONINGS] = 4;
+            // gets some darts - this class is difficult to start off with
+            you.inv_quantity[3] = random2avg(9,2) + 7;
+            you.inv_class[3] = OBJ_MISSILES;
+            you.inv_type[3] = MI_DART;
+            you.inv_plus[3] = 50;
+            you.inv_dam[3] = 0;
+            you.inv_colour[3] = LIGHTCYAN;
+            break;
+
           case JOB_CONJURER:
             you.skills[SK_CONJURATIONS] = 4;
             break;
@@ -1839,7 +1864,8 @@ getkey2:
         you.inv_dam[2] = 0;
         you.inv_colour[2] = DARKGREY;
         you.inv_class[3] = OBJ_BOOKS;
-        you.inv_type[3] = BOOK_YOUNG_POISONERS;
+        //you.inv_type[3] = BOOK_YOUNG_POISONERS;
+        you.inv_type[3] = BOOK_ASSASSINATION; //jmf: new book!
         you.inv_quantity[3] = 1;
         you.inv_plus[3] = 126;
         you.inv_dam[3] = 0;
@@ -1855,8 +1881,10 @@ getkey2:
         you.skills[SK_STEALTH] = 2;
         you.skills[SK_STABBING] = 2;
         you.skills[SK_DODGING + random2(3)]++;
-        you.skills[SK_THROWING] = 1;
-        you.skills[SK_DARTS] = 1;
+        //you.skills[SK_THROWING] = 1; //jmf: removed these, added magic below
+        //you.skills[SK_DARTS] = 1;
+        you.skills[SK_SPELLCASTING] = 1;
+        you.skills[SK_ENCHANTMENTS] = 1;
         break;
 
     case JOB_MONK:
@@ -2543,6 +2571,8 @@ bool class_allowed( unsigned char speci, int char_class )
         return true;
 
       case JOB_ENCHANTER:
+        if ( player_genus(GENPC_DRACONIAN) )
+          return false;
         if ( player_descriptor(PDSC_UNDEAD) )
           return false;
 
@@ -2675,7 +2705,7 @@ bool class_allowed( unsigned char speci, int char_class )
         switch (speci)
         {
           case SP_GNOME:
-          case SP_HALFLING:
+          //case SP_HALFLING: //jmf: they're such good enchanters...
           case SP_KENKU:
           case SP_KOBOLD:
           case SP_MINOTAUR:
@@ -2699,7 +2729,7 @@ bool class_allowed( unsigned char speci, int char_class )
           case SP_GREY_ELF:
           case SP_HALFLING:
           case SP_HIGH_ELF:
-          case SP_KOBOLD:
+         // case SP_KOBOLD:
           case SP_MINOTAUR:
           case SP_OGRE:
           case SP_OGRE_MAGE:
@@ -2752,8 +2782,6 @@ bool class_allowed( unsigned char speci, int char_class )
         return true;
 
       case JOB_TRANSMUTER:
-        if ( player_genus(GENPC_DRACONIAN) )
-          return false;
         if ( player_descriptor(PDSC_UNDEAD) )
           return false;
 
@@ -3541,13 +3569,8 @@ void give_basic_knowledge( int which_job )
 
 void give_basic_spells( int which_job )
 {
-
     unsigned char which_spell = SPELL_NO_SPELL;
 
-// spells dependent upon coinflip() are ordered [old spell : jmf spell]
-// although I have not heard anything to the contrary from others, some
-// of jmf's changes do not strike me as quite right -- consider the coin
-// toss a compromise solution until a final decision is reached {dlb}
     switch ( which_job )
     {
          case JOB_CONJURER:
@@ -3568,26 +3591,28 @@ void give_basic_spells( int which_job )
          case JOB_TRANSMUTER:
            which_spell = SPELL_DISRUPT;
            break;
+#ifdef USE_WARPER_SPELL_BEND
          case JOB_WARPER:
            which_spell = SPELL_BEND;
            break;
+#endif
          case JOB_NECROMANCER:
-           which_spell = coinflip() ? SPELL_ANIMATE_SKELETON : SPELL_PAIN;    // compromise {dlb}
+           which_spell = SPELL_PAIN;
            break;
          case JOB_ENCHANTER:
-           which_spell = coinflip() ? SPELL_CONFUSING_TOUCH : SPELL_BACKLIGHT;    // compromise {dlb}
+           which_spell = SPELL_BACKLIGHT;
            break;
          case JOB_FIRE_ELEMENTALIST:
-           which_spell = coinflip() ? SPELL_BURN : SPELL_FLAME_TONGUE;    // compromise {dlb}
+           which_spell = SPELL_FLAME_TONGUE;
            break;
          case JOB_AIR_ELEMENTALIST:
-           which_spell = coinflip() ? SPELL_ARC : SPELL_SHOCK;    // compromise {dlb}
+           which_spell = SPELL_SHOCK;
            break;
          case JOB_EARTH_ELEMENTALIST:
-           which_spell = coinflip() ? SPELL_CRUSH : SPELL_SANDBLAST;    // compromise {dlb}
+           which_spell = SPELL_SANDBLAST;
            break;
          case JOB_DEATH_KNIGHT:
-           if ( you.species == SP_DEMIGOD || you.religion != GOD_YREDELEMNUL )  // not the best test {dlb}
+           if ( you.species == SP_DEMIGOD || you.religion != GOD_YREDELEMNUL )
              which_spell = SPELL_PAIN;
            break;
          default:
@@ -3595,11 +3620,8 @@ void give_basic_spells( int which_job )
     }
 
     you.spells[0] = which_spell;
-
     you.spell_no = ( (you.spells[0] != SPELL_NO_SPELL) ? 1 : 0 );
-
     return;
-
 }          // end give_basic_spells()
 
 

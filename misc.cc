@@ -1343,7 +1343,8 @@ void handle_traps( char trt, int i, bool trap_known )
 
       case TRAP_AMNESIA:
         mpr("You feel momentarily disoriented.");
-        forget_map(random2avg(100,2));
+        if ( !wearing_amulet(AMU_CLARITY) )
+          forget_map(random2avg(100,2));
         break;
 
       case TRAP_BLADE:

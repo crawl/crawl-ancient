@@ -1345,54 +1345,56 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
         else if ( item_typ == BOOK_YOUNG_POISONERS )
           strcat(glog, "Young Poisoner's Handbook");
         else if ( item_typ == BOOK_BEASTS )
-          strcat(glog, "Monster Manual");    //jmf: or "book of Beasts"    // NO! {dlb}
-        else
-          {
-            strcat(glog, "book of ");
-            strcat(glog, (item_typ == BOOK_MINOR_MAGIC_I
-                           || item_typ == BOOK_MINOR_MAGIC_II
-                           || item_typ == BOOK_MINOR_MAGIC_III)    ? "Minor Magic" :
-                         (item_typ == BOOK_CONJURATIONS_I
-                           || item_typ == BOOK_CONJURATIONS_II)    ? "Conjurations" :
-                         (item_typ == BOOK_FLAMES)                 ? "Flames" :
-                         (item_typ == BOOK_FROST)                  ? "Frost" :
-                         (item_typ == BOOK_INVOCATIONS)            ? "Summonings" :    // "Invocations"
-                         (item_typ == BOOK_FIRE)                   ? "Fire" :
-                         (item_typ == BOOK_ICE)                    ? "Ice" :
-                         (item_typ == BOOK_SURVEYANCES)            ? "Surveyances" :
-                         (item_typ == BOOK_SPATIAL_TRANSLOCATIONS) ? "Spatial Translocations" :
-                         (item_typ == BOOK_ENCHANTMENTS)           ? "Enchantments" :
-                         (item_typ == BOOK_TEMPESTS)               ? "the Tempests" :
-                         (item_typ == BOOK_DEATH)                  ? "Death" :
-                         (item_typ == BOOK_HINDERANCE)             ? "Hinderance" :
-                         (item_typ == BOOK_CHANGES)                ? "Changes" :
-                         (item_typ == BOOK_TRANSFIGURATIONS)       ? "Transfigurations" :
-                         (item_typ == BOOK_PRACTICAL_MAGIC)        ? "Practical Magic" :
-                         (item_typ == BOOK_WAR_CHANTS)             ? "War Chants" :
-                         (item_typ == BOOK_CLOUDS)                 ? "Clouds" :
-                         (item_typ == BOOK_HEALING)                ? "Healing" :
-                         (item_typ == BOOK_NECROMANCY)             ? "Necromancy" :
-                         (item_typ == BOOK_SUMMONINGS)             ? "Callings" :    // "Summonings"
-                         (item_typ == BOOK_CHARMS)                 ? "Charms" :
-                         (item_typ == BOOK_DEMONOLOGY)             ? "Demonology" :
-                         (item_typ == BOOK_AIR)                    ? "Air" :
-                         (item_typ == BOOK_SKY)                    ? "the Sky" :
-                         (item_typ == BOOK_DIVINATIONS)            ? "Divinations" :
-                         (item_typ == BOOK_WARP)                   ? "the Warp" :
-                         (item_typ == BOOK_TOXINS)                 ? "Toxins" :
-                         (item_typ == BOOK_ANNIHILATIONS)          ? "Annihilations" :
-                         (item_typ == BOOK_UNLIFE)                 ? "Unlife" :
-                         (item_typ == BOOK_CONTROL)                ? "Control" :
-                         (item_typ == BOOK_MUTATIONS)              ? "Morphology" :    // "Mutations"
-                         (item_typ == BOOK_TUKIMA)                 ? "Tukima" :
-                         (item_typ == BOOK_GEOMANCY)               ? "Geomancy" :
-                         (item_typ == BOOK_EARTH)                  ? "the Earth" :
-                         (item_typ == BOOK_WIZARDRY)               ? "Wizardry" :
-                         (item_typ == BOOK_POWER)                  ? "Power" :
-                         (item_typ == BOOK_CANTRIPS)               ? "Cantrips" :
-                         (item_typ == BOOK_PARTY_TRICKS)           ? "Party Tricks" :
-                         (item_typ == BOOK_INOBTRUSIVENESS)        ? "Inobtrusiveness"    // jmf: added 23mar2000
-                                                                   : "Bugginess" );
+          strcat(glog, "Monster Manual");
+                     //jmf: or "book of Beasts"      // NO! {dlb}
+                     //jmf: dude, what's your problem?
+        else {
+          strcat(glog, "book of ");
+          strcat(glog, (item_typ == BOOK_MINOR_MAGIC_I
+                        || item_typ == BOOK_MINOR_MAGIC_II
+                        || item_typ == BOOK_MINOR_MAGIC_III) ? "Minor Magic" :
+                 (item_typ == BOOK_CONJURATIONS_I
+                  || item_typ == BOOK_CONJURATIONS_II)     ? "Conjurations" :
+                 (item_typ == BOOK_FLAMES)                 ? "Flames" :
+                 (item_typ == BOOK_FROST)                  ? "Frost" :
+                 (item_typ == BOOK_INVOCATIONS)            ? "Summonings" :
+                 (item_typ == BOOK_FIRE)                   ? "Fire" :
+                 (item_typ == BOOK_ICE)                    ? "Ice" :
+                 (item_typ == BOOK_SURVEYANCES)            ? "Surveyances" :
+                 (item_typ == BOOK_SPATIAL_TRANSLOCATIONS) ? "Spatial Translocations" :
+                 (item_typ == BOOK_ENCHANTMENTS)           ? "Enchantments" :
+                 (item_typ == BOOK_TEMPESTS)               ? "the Tempests" :
+                 (item_typ == BOOK_DEATH)                  ? "Death" :
+                 (item_typ == BOOK_HINDERANCE)             ? "Hinderance" :
+                 (item_typ == BOOK_CHANGES)                ? "Changes" :
+                 (item_typ == BOOK_TRANSFIGURATIONS)       ? "Transfigurations" :
+                 (item_typ == BOOK_PRACTICAL_MAGIC)        ? "Practical Magic" :
+                 (item_typ == BOOK_WAR_CHANTS)             ? "War Chants" :
+                 (item_typ == BOOK_CLOUDS)                 ? "Clouds" :
+                 (item_typ == BOOK_HEALING)                ? "Healing" :
+                 (item_typ == BOOK_NECROMANCY)             ? "Necromancy" :
+                 (item_typ == BOOK_SUMMONINGS)             ? "Callings" :
+                 (item_typ == BOOK_CHARMS)                 ? "Charms" :
+                 (item_typ == BOOK_DEMONOLOGY)             ? "Demonology" :
+                 (item_typ == BOOK_AIR)                    ? "Air" :
+                 (item_typ == BOOK_SKY)                    ? "the Sky" :
+                 (item_typ == BOOK_DIVINATIONS)            ? "Divinations" :
+                 (item_typ == BOOK_WARP)                   ? "the Warp" :
+                 (item_typ == BOOK_TOXINS)                 ? "Toxins" :
+                 (item_typ == BOOK_ANNIHILATIONS)          ? "Annihilations" :
+                 (item_typ == BOOK_UNLIFE)                 ? "Unlife" :
+                 (item_typ == BOOK_CONTROL)                ? "Control" :
+                 (item_typ == BOOK_MUTATIONS)              ? "Morphology" :
+                 (item_typ == BOOK_TUKIMA)                 ? "Tukima" :
+                 (item_typ == BOOK_GEOMANCY)               ? "Geomancy" :
+                 (item_typ == BOOK_EARTH)                  ? "the Earth" :
+                 (item_typ == BOOK_WIZARDRY)               ? "Wizardry" :
+                 (item_typ == BOOK_POWER)                  ? "Power" :
+                 (item_typ == BOOK_CANTRIPS)               ? "Cantrips" :
+                 (item_typ == BOOK_PARTY_TRICKS)           ? "Party Tricks" :
+                 (item_typ == BOOK_INOBTRUSIVENESS)        ? "Inobtrusiveness" :
+                 (item_typ == BOOK_ASSASSINATION)          ? "Assassination"
+                 : "Bugginess" );
           }
         break;
 
@@ -1452,29 +1454,29 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
           {
             strcat(glog, " of ");
 
-            strcat(glog, (item_typ == STAFF_WIZARDRY)           ? "wizardry" :
-                         (item_typ == STAFF_POWER)              ? "power" :
-                         (item_typ == STAFF_FIRE)               ? "fire" :
-                         (item_typ == STAFF_COLD)               ? "cold" :
-                         (item_typ == STAFF_POISON)             ? "poison" :
-                         (item_typ == STAFF_ENERGY)             ? "energy" :
-                         (item_typ == STAFF_DEATH)              ? "death" :
-                         (item_typ == STAFF_CONJURATION)        ? "conjuration" :
-                         (item_typ == STAFF_ENCHANTMENT)        ? "enchantment" :
-                         (item_typ == STAFF_SMITING)            ? "smiting" :
-                         (item_typ == STAFF_WARDING)            ? "warding" :
-                         (item_typ == STAFF_DISCOVERY)          ? "discovery" :
-                         (item_typ == STAFF_DEMONOLOGY)         ? "demonology" :
-                         (item_typ == STAFF_AIR)                ? "air" :
-                         (item_typ == STAFF_EARTH)              ? "earth" :
-                         (item_typ == STAFF_SUMMONING_I
-                           || item_typ == STAFF_SUMMONING_II)   ? "summoning" :
-                         (item_typ == STAFF_DESTRUCTION_I
-                           || item_typ == STAFF_DESTRUCTION_II
-                           || item_typ == STAFF_DESTRUCTION_III
-                           || item_typ == STAFF_DESTRUCTION_IV) ? "destruction" :
-                         (item_typ == STAFF_CHANNELING)         ? "channeling"
-                                                                : "bugginess" );
+            strcat(glog, (item_typ == STAFF_WIZARDRY)     ? "wizardry" :
+                   (item_typ == STAFF_POWER)              ? "power" :
+                   (item_typ == STAFF_FIRE)               ? "fire" :
+                   (item_typ == STAFF_COLD)               ? "cold" :
+                   (item_typ == STAFF_POISON)             ? "poison" :
+                   (item_typ == STAFF_ENERGY)             ? "energy" :
+                   (item_typ == STAFF_DEATH)              ? "death" :
+                   (item_typ == STAFF_CONJURATION)        ? "conjuration" :
+                   (item_typ == STAFF_ENCHANTMENT)        ? "enchantment" :
+                   (item_typ == STAFF_SMITING)            ? "smiting" :
+                   (item_typ == STAFF_WARDING)            ? "warding" :
+                   (item_typ == STAFF_DISCOVERY)          ? "discovery" :
+                   (item_typ == STAFF_DEMONOLOGY)         ? "demonology" :
+                   (item_typ == STAFF_AIR)                ? "air" :
+                   (item_typ == STAFF_EARTH)              ? "earth" :
+                   (item_typ == STAFF_SUMMONING_I
+                    || item_typ == STAFF_SUMMONING_II)    ? "summoning" :
+                   (item_typ == STAFF_DESTRUCTION_I
+                    || item_typ == STAFF_DESTRUCTION_II
+                    || item_typ == STAFF_DESTRUCTION_III
+                    || item_typ == STAFF_DESTRUCTION_IV)  ? "destruction" :
+                   (item_typ == STAFF_CHANNELING)         ? "channeling"
+                   : "bugginess" );
           }
         break;
 
@@ -1508,7 +1510,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                      (item_typ == 22)      ? "Okawaru" :
                      (item_typ == 23)      ? "Kikubaaqudgha" :
 ****************************************************************** */
-                                             "Bugginess" );    // change back to "Zot" if source of problems cannot be found {dlb}
+               "Bugginess" ); // change back to "Zot" if source of problems cannot be found {dlb}
         break;
 
       case OBJ_GOLD:
@@ -1532,7 +1534,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
         strcat(glog, " ");
         strcat(glog, (item_typ == CORPSE_BODY)     ? "corpse" :
                      (item_typ == CORPSE_SKELETON) ? "skeleton"
-                                                   : "program bug" );
+                                                   : "corpse bug" );
         break;
 
       default:
@@ -1889,7 +1891,7 @@ void init_properties( void )
 
 
     // weapons: blunt weapons are first to help grouping them together
-    //  note: AC prop can't be 0 or -ve because of division.
+    //  note: AC prop can't be 0 or less because of division.
     //        If it's 1, makes no difference
 
     // NOTE: I have *removed* AC bit for weapons - just doesn't work

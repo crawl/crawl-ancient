@@ -12,12 +12,13 @@
 #ifndef RELIGION_H
 #define RELIGION_H
 
+#include "enum.h"
 
 // last updated 03jun2000 {dlb}
 /* ***********************************************************************
  * called from: ouch - religion
  * *********************************************************************** */
-bool simple_god_message(char which_deity, bool colour_message, const char *event);
+void simple_god_message( const char *event, int which_deity = GOD_NO_GOD );
 
 
 // last updated 03jun2000 {dlb}

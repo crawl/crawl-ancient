@@ -217,7 +217,7 @@ char *gain_mutation[][3] =
     {"You smell the fires of Gehenna.", "", ""},
     {"You feel the icy cold of Cocytus chill your soul.", "", ""},
     {"A shadow passes over the world around you.", "", ""},
-  {"Your fingernails lengthen.", "Your fingernails feel sharper.", "Your hands twist into claws."},
+  {"Your fingernails lengthen.", "Your fingernails sharpen.", "Your hands twist into claws."},
   {"Your feet shrivel into cloven hooves.", "", ""},
   // 60
   {"You taste something nasty.", "You taste something very nasty.", "You taste something extremely nasty."},
@@ -317,7 +317,7 @@ char *lose_mutation[][3] =
     {"", "", ""},
     {"", "", ""},
     {"", "", ""},
-    {"Your fingernails shrink to normal size.", "Your fingernails look less sharp.", "Your hands feel fleshier."},
+    {"Your fingernails shrink to normal size.", "Your fingernails look duller.", "Your hands feel fleshier."},
     {"Your hooves expand and flesh out into feet!", "", ""},
     // 60
     {"", "", ""},

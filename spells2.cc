@@ -35,6 +35,7 @@
 #include "mon-util.h"
 #include "ouch.h"
 #include "player.h"
+#include "spells4.h"
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
@@ -426,12 +427,10 @@ void cast_twisted( int power, int corps_beh, int corps_hit )
 
 
 
-bool brand_weapon( char which_brand, int power )
+bool brand_weapon( int which_brand, int power )
 {
-    int temp_rand;              // probability determination {dlb}
-    char duration_affected = 0; //jmf: NB: now HOW LONG, not WHICH BRAND.
-
-    //if (you.duration[DUR_VORPAL_BLADE] != 0 || you.duration[DUR_FIRE_BRAND] != 0 || you.duration[DUR_ICE_BRAND] != 0 || you.duration[DUR_LETHAL_INFUSION] != 0)
+    int temp_rand;             // probability determination {dlb}
+    int duration_affected = 0; //jmf: NB: now HOW LONG, not WHICH BRAND.
 
     if ( you.duration[DUR_WEAPON_BRAND] )
       return false;
@@ -445,8 +444,8 @@ bool brand_weapon( char which_brand, int power )
       return false;
 
     if ( you.inv_dam[you.equip[EQ_WEAPON]] % 30 != SPWPN_NORMAL
-          || you.inv_dam[you.equip[EQ_WEAPON]] >= NWPN_SINGING_SWORD
-          || you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I )    // do you mean to include "dummy crushing" here, too? {dlb}
+         || you.inv_dam[you.equip[EQ_WEAPON]] >= NWPN_SINGING_SWORD
+         || you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I )    // do you mean to include "dummy crushing" here, too? {dlb}
       return false;
 
     in_name(you.equip[EQ_WEAPON], 4, str_pass);
@@ -455,13 +454,11 @@ bool brand_weapon( char which_brand, int power )
     switch ( which_brand )        // use SPECIAL_WEAPONS here?
     {
       case SPWPN_FLAMING:
-        you.inv_dam[you.equip[EQ_WEAPON]]++;
         strcat(info, " bursts into flame!");
         duration_affected = 7;
         break;
 
       case SPWPN_FREEZING:
-        you.inv_dam[you.equip[EQ_WEAPON]] += 2;
         strcat(info, " glows blue.");
         duration_affected = 7;
         break;
@@ -469,13 +466,11 @@ bool brand_weapon( char which_brand, int power )
       case SPWPN_VENOM:
         if (damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == DVORP_CRUSHING )
           return false;
-        you.inv_dam[you.equip[EQ_WEAPON]] += 6;
         strcat(info, " starts dripping with poison.");
         duration_affected = 30;
         break;
 
       case SPWPN_DRAINING:
-        you.inv_dam[you.equip[EQ_WEAPON]] += 8;
         strcat(info, " crackles with unholy energy.");
         duration_affected = 18;
         break;
@@ -483,7 +478,6 @@ bool brand_weapon( char which_brand, int power )
       case SPWPN_VORPAL:
         if ( damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) != DVORP_SLICING )
           return false;
-        you.inv_dam[you.equip[EQ_WEAPON]] += 10;
         strcat(info, " glows silver and looks extremely sharp.");
         duration_affected = 10;
         break;
@@ -504,14 +498,15 @@ bool brand_weapon( char which_brand, int power )
       case SPWPN_DUMMY_CRUSHING:      //jmf: added for Maxwell's Silver Hammer
         if (damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) != DVORP_CRUSHING )
           return false;
-        you.inv_dam[you.equip[EQ_WEAPON]] += 10;
         which_brand = SPWPN_VORPAL;
         strcat(info, " glows silver and feels heavier.");
         duration_affected = 10;
         break;
     }
 
-    //you.inv_dam[you.equip[EQ_WEAPON]] += which_brand;    // bad bad bad - enums may change place {dlb}
+    you.inv_dam[you.equip[EQ_WEAPON]] += which_brand;
+    // bad bad bad - enums may change place {dlb}
+    //jmf: what are you talking about? did you read the code?
     mpr(info);
     wield_change = true;
 
@@ -774,7 +769,6 @@ void cast_toxic_radiance( void )
 
 void cast_refrigeration( int pow )
 {
-
     struct monsters *monster = 0;    // NULL {dlb}
     int hurted = 0;
     struct bolt beam[1];
@@ -826,8 +820,13 @@ void cast_refrigeration( int pow )
 
             if ( monster->hit_points < 1 )
               monster_die(monster, KILL_YOU, 0);
-            else
+            else {
               print_wounds(monster);
+
+              //jmf: "slow snakes" finally available
+              if ( mons_flag(monster->type, M_COLD_BLOOD) )
+                enchant_monster( toxy, ENCH_SLOW );
+            }
         }
     }
 
@@ -1051,8 +1050,14 @@ char burn_freeze( int pow, char flavour )
 
         if (monster->hit_points < 1)
           monster_die(monster, KILL_YOU, 0);
-        else
+        else {
           print_wounds(monster);
+
+          //jmf: slow snakes
+          if (flavour == BEAM_COLD && mons_flag(monster->type, M_COLD_BLOOD)
+              && coinflip())
+            enchant_monster( mgr, ENCH_SLOW );
+        }
     }
 
     return 1;
@@ -1066,7 +1071,8 @@ char burn_freeze( int pow, char flavour )
 //              postal on the caster (after taking into account
 //              chance of that happening to unskilled casters
 //              anyway)
-int summon_elemental( int pow, unsigned char restricted_type, unsigned char unfriendly )
+int summon_elemental( int pow, unsigned char restricted_type,
+                      unsigned char unfriendly )
 {
 
     int type_summoned = MONS_PROGRAM_BUG;    // error trapping {dlb}
@@ -1149,16 +1155,20 @@ fizzles:
     }
     goto fizzles;
 
-summon_it:
+ summon_it:
     if ( restricted_type != 0 && type_summoned != restricted_type )
     {
         canned_msg(MSG_NOTHING_HAPPENS);
         return 0;
     }
-    if ((type_summoned == MONS_FIRE_ELEMENTAL && random2(5) >= you.skills[SK_FIRE_MAGIC])
-        || (type_summoned == MONS_WATER_ELEMENTAL && random2(5) >= you.skills[SK_ICE_MAGIC])    // silly - ice for water? 15jan2000 {dlb}
-         || (type_summoned == MONS_AIR_ELEMENTAL && random2(5) >= you.skills[SK_AIR_MAGIC])
-        || (type_summoned == MONS_EARTH_ELEMENTAL && random2(5) >= you.skills[SK_EARTH_MAGIC])
+    if ((type_summoned == MONS_FIRE_ELEMENTAL
+         && random2(5) >= you.skills[SK_FIRE_MAGIC])
+        || (type_summoned == MONS_WATER_ELEMENTAL
+            && random2(5) >= you.skills[SK_ICE_MAGIC]) // silly - ice for water? 15jan2000 {dlb}
+        || (type_summoned == MONS_AIR_ELEMENTAL
+            && random2(5) >= you.skills[SK_AIR_MAGIC])
+        || (type_summoned == MONS_EARTH_ELEMENTAL
+            && random2(5) >= you.skills[SK_EARTH_MAGIC])
         || random2(100) < unfriendly)
 
     {
@@ -1177,17 +1187,15 @@ summon_it:
 
 
 //jmf: beefed up higher-level casting of this (formerly lame) spell
-//jmf: ought to give vampires access to better rats, too
-//dlb: vampires unaffected because they use another function
 void summon_small_mammals( int pow )
 {
 
     int thing_called = MONS_PROGRAM_BUG;    // error trapping{dlb}
 
     int pow_spent = 0;
-    int pow_left = ( (pow > 0) ? pow : 1 );
+    int pow_left = pow + 1;
     int summoned = 0;
-    int summoned_max = (pow / 16);        // since pow is unsigned this will not always work as intended {dlb}
+    int summoned_max = pow / 16;
 
     if (summoned_max > 5)
       summoned_max = 5;
@@ -1233,11 +1241,12 @@ void summon_small_mammals( int pow )
             break;
 
         default:
-            thing_called = ( (pow_spent % 2) ? MONS_GIANT_BAT : MONS_RAT );
-            break;
+          thing_called = coinflip() ? MONS_GIANT_BAT : MONS_RAT;
+          break;
         }
 
-        create_monster(thing_called, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
+        create_monster(thing_called, 22, BEH_ENSLAVED,
+                       you.x_pos, you.y_pos, MHITNOT, 250);
     }
 
 }          // end summon_small_mammals()
@@ -1328,7 +1337,7 @@ void summon_swarm(int pow)
 
     int numsc = 1 + random2(pow) / 25 + random2(pow) / 25;
 
-    numsc = stepdown_value(numsc, 2, 2, 6, 8);  // see stuff.cc - 12jan2000 {dlb}
+    numsc = stepdown_value(numsc, 2, 2, 6, 8);// see stuff.cc - 12jan2000 {dlb}
 
     for (int scount = 0; scount < numsc; scount++)
     {
@@ -1343,7 +1352,7 @@ void summon_swarm(int pow)
             thing_called = MONS_SCORPION;
             break;              // think: "The Arrival" {dlb}
 
-        case 3: // jmf: technically not insects but still cool
+        case 3: //jmf: technically not insects but still cool
             thing_called = MONS_WORM;
             break;              // but worms kinda "swarm" so s'ok {dlb}
 
@@ -1355,13 +1364,13 @@ void summon_swarm(int pow)
             thing_called = MONS_GIANT_BEETLE;
             break;
 
-        case 6:         // jmf: blowfly instead of queen bee
+        case 6:         //jmf: blowfly instead of queen bee
             thing_called = MONS_GIANT_BLOWFLY;
              break; // queen bee added if more than x bees in swarm? {dlb}
                    // the above would require code rewrite - worth it? {dlb}
 
-        case 8:         // jmf: changed to red wasp; was wolf spider
-            thing_called = MONS_WOLF_SPIDER;    // jmf: spiders aren't insects
+        case 8:         //jmf: changed to red wasp; was wolf spider
+            thing_called = MONS_WOLF_SPIDER;    //jmf: spiders aren't insects
             break;              // think: "Kingdom of the Spiders" {dlb}
             // not just insects!!! - changed back {dlb}
 
@@ -1378,7 +1387,9 @@ void summon_swarm(int pow)
             break;
         }                       // end switch
 
-        create_monster( thing_called, 22, (random2(pow) > 7) ? BEH_ENSLAVED : BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250 );
+        create_monster( thing_called, 22,
+                        (random2(pow) > 7) ? BEH_ENSLAVED : BEH_CHASING_I,
+                        you.x_pos, you.y_pos, MHITNOT, 250 );
     }
 
     mpr("You call forth a swarm of pestilential beasts!");
@@ -1404,13 +1415,14 @@ void summon_undead( int pow )
     {
         temp_rand = random2(25);
 
-        thing_called = ( (temp_rand > 8) ? MONS_WRAITH :              // 64% chance {dlb}
-                         (temp_rand > 3) ? MONS_SPECTRAL_WARRIOR      // 20% chance {dlb}
-                                         : MONS_FREEZING_WRAITH );    // 16% chance {dlb}
+        thing_called = ( (temp_rand > 8) ? MONS_WRAITH :    // 64% chance {dlb}
+                         (temp_rand > 3) ? MONS_SPECTRAL_WARRIOR // 20%
+                         : MONS_FREEZING_WRAITH );          // 16% chance {dlb}
 
         if (random2(pow) < 6)
         {
-            if (create_monster(thing_called, 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250) != -1)
+            if (create_monster(thing_called, 22, BEH_CHASING_I,
+                               you.x_pos, you.y_pos, MHITYOU, 250) != -1)
               mpr("You sense a hostile presence.");
         }
         else
@@ -1421,7 +1433,7 @@ void summon_undead( int pow )
 
     }                           // end for loop
 
-    //jmf: Kiku has some chance of deflecting this
+    //jmf: Kiku sometimes deflects this
     if ( !you.is_undead
         && !( you.religion == GOD_KIKUBAAQUDGHA
              && ( !player_under_penance()
@@ -1439,53 +1451,56 @@ void summon_undead( int pow )
 
 void summon_things( int pow )
 {
-
     int numsc = 1 + (random2(pow) / 30) + (random2(pow) / 30);
     int big_things = 0;
     bool plural = false;
 
     if ( !lose_stat(STAT_INTELLIGENCE, 1) )
+      //jmf: FIXME: return Vehumet's intelligence protection
+      //     rationale: Vehumet loves summoned things
     {
-        mpr("Your call goes unanswered.");
+      mpr("Your call goes unanswered.");
     }
     else
     {
-        numsc = stepdown_value(numsc, 2, 2, 6, -1);//see stuff.cc - 16jan2000 {dlb}
+      numsc = stepdown_value(numsc, 2, 2, 6, -1);
+      //see stuff.cc - 16jan2000 {dlb}
 
-        while (numsc > 2)
+      while (numsc > 2)
         {
-            if ( one_chance_in(4) )
-              break;
-            numsc -= 2;
-            big_things++;
+          if ( one_chance_in(4) )
+            break;
+          numsc -= 2;
+          big_things++;
         }
 
-        if ( numsc > 8 )
-          numsc = 8;
-        if ( big_things > 8 )
-          big_things = 8;
-        if ( numsc > 1 || big_things > 1 )
-          plural = true;
+      if ( numsc > 8 )
+        numsc = 8;
+      if ( big_things > 8 )
+        big_things = 8;
+      if ( (numsc + big_things) > 1 )
+        plural = true;
 
-        while ( big_things > 0 )
+      while ( big_things > 0 )
         {
-            create_monster(MONS_ABOMINATION_LARGE, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
-            big_things--;
+          create_monster(MONS_ABOMINATION_LARGE, 22, BEH_ENSLAVED,
+                         you.x_pos, you.y_pos, MHITNOT, 250);
+          big_things--;
         }
 
-        while ( numsc > 0 )
+      while ( numsc > 0 )
         {
-            create_monster(MONS_ABOMINATION_SMALL, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
-            numsc--;
+          create_monster(MONS_ABOMINATION_SMALL, 22, BEH_ENSLAVED,
+                         you.x_pos, you.y_pos, MHITNOT, 250);
+          numsc--;
         }
 
-        strcpy(info, "Some Thing");
-        if ( plural )
-          strcat(info, "s");
-        strcat(info, " answered your call!");
-        mpr(info);
+      strcpy(info, "Some Thing");
+      if ( plural )
+        strcat(info, "s");
+      strcat(info, " answered your call!");
+      mpr(info);
     }
 
     return;
-
-}          // end summon_things()
+}

@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -79,13 +80,13 @@ bool curse_an_item(char which, char power)
 
 /*  if (cu1 == OBJ_WEAPONS || cu1 == OBJ_ARMOUR)
    {
-   if (you.inv_dam [cu] % 30 >= 25) continue; / * no randarts * /
+   if (you.inv_dam [cu] % 30 >= 25) continue; //no randarts
    } */
 
         if (cu1 == OBJ_JEWELLERY)
         {
             if (you.inv_dam[cu] == 200)
-                continue;       /* no randarts */
+              continue;       // no randarts
         }
 
         if (cu1 == OBJ_WEAPONS || cu1 == OBJ_ARMOUR || cu1 == OBJ_JEWELLERY)
@@ -230,7 +231,7 @@ void print_wounds( struct monsters *monster )
     }
     else
     {
-        strcat(str_wound, (monster->hit_points <= monster->max_hit_points / 4)     ? "horribly " :
+        strcat(str_wound, (monster->hit_points <= monster->max_hit_points / 6)     ? "horribly " :
                           (monster->hit_points <= monster->max_hit_points / 3)     ? "heavily " :
                           (monster->hit_points <= 3*(monster->max_hit_points / 4)) ? "moderately "
                                                                                    : "lightly " );
@@ -333,7 +334,7 @@ static void handle_behavior( struct monsters *monster )
         }
         break;
 
-    case BEH_ENSLAVED:          //To be nice (although not strictly accurate) they should follow you even when they can't see you
+    case BEH_ENSLAVED: //To be nice (although not strictly accurate) they should follow you even when they can't see you
         if ( you.pet_target != MHITNOT )
         {
             if ( monster->monster_foe == MHITNOT )
@@ -746,14 +747,15 @@ static void handle_nearby_ability( struct monsters *monster )
 
     if ( mons_near(monster) && monster->behavior != BEH_SLEEP )
     {
-        if ( mons_flag(monster->type, M_SPEAKS) && one_chance_in(7) )
+        if ( mons_flag(monster->type, M_SPEAKS) && one_chance_in(21)
+             && !silenced(monster->x, monster->y))
           mons_speaks(monster); // mv: removed silence check
 
         switch ( monster->type )
         {
             case MONS_SPATIAL_VORTEX:
             case MONS_KILLER_KLOWN:
-                monster->number = random_colour();    // I think it is used for colouring {dlb}
+                monster->number = random_colour(); // I think it is used for colouring {dlb}
                 break;
 
             case MONS_GIANT_EYEBALL:
@@ -1430,10 +1432,12 @@ static bool handle_wand( struct monsters *monster, bolt & beem )
             strcpy(beem.beam_name, theBeam.name.c_str());
 
             beem.beam_source = monster_index(monster);
-            beem.ench_power = beem.damage;               // !!!    // was set to 20 immediately prior to this,
-                                                                   // but this is the value passed along {dlb}
+            beem.ench_power = beem.damage;
+            // !!!    // was set to 20 immediately prior to this,
+            // but this is the value passed along {dlb}
 
-            if ( mzap == MS_HASTE || mzap == MS_HEAL || mzap == MS_INVIS || mzap == MS_TELEPORT_OTHER )
+            if ( mzap == MS_HASTE || mzap == MS_HEAL || mzap == MS_INVIS
+                 || mzap == MS_TELEPORT_OTHER )
             {
                 beem.move_x = 0;
                 beem.move_y = 0;
@@ -1450,7 +1454,7 @@ static bool handle_wand( struct monsters *monster, bolt & beem )
                   if ( !silenced(you.x_pos, you.y_pos) )
                     mpr("You hear a zap.");
 
-                mitm.pluses[monster->inv[MSLOT_WAND]]--;    // charge expenditure {dlb}
+                mitm.pluses[monster->inv[MSLOT_WAND]]--; // charge expenditure {dlb}
 
                 if (theBeam.isBeam)
                   beam(&beem);
@@ -1482,18 +1486,27 @@ static bool handle_wand( struct monsters *monster, bolt & beem )
 static bool handle_spell( struct monsters *monster, bolt & beem )
 {
 
-    int temp_rand = 0;                          // probability determination {dlb}
-    bool monsterNearby = mons_near(monster);    // single calculation permissible {dlb}
-    bool finalAnswer = false;                   // as in: "Is that your ... ?" {dlb}
+    int temp_rand = 0; // probability determination {dlb}
+    bool monsterNearby = mons_near(monster);
+    bool finalAnswer = false; // as in: "Is that your ... ?" {dlb}
 
-// yes, there is a logic to this ordering {dlb}:
-    if ( monster->behavior == BEH_SLEEP || !mons_flag(monster->type, M_SPELLCASTER) )    // oopsie - bug waiting to happen - I'll fix this with the new monster struct {dlb}
+    // yes, there is a logic to this ordering {dlb}:
+    if ( monster->behavior == BEH_SLEEP
+         || !mons_flag(monster->type, M_SPELLCASTER) ) // oopsie - bug waiting to happen - I'll fix this with the new monster struct {dlb}
       return false;
+    if ( ( mons_flag(monster->type, M_ACTUAL_SPELLS)
+           || mons_flag(monster->type, M_PRIEST ) )
+         && ( monster->enchantment[1] == ENCH_GLOWING_SHAPESHIFTER
+              || monster->enchantment[1] == ENCH_SHAPESHIFTER ))
+      return false; //jmf: shapeshiftes don't get spells, just
+                    //     physical powers.
     else if ( you.invis && !mons_see_invis(monster->type) )
       return false;
-    else if ( monster->behavior == BEH_CONFUSED && monster->type != MONS_VAPOUR )
+    else if (monster->behavior == BEH_CONFUSED && monster->type != MONS_VAPOUR)
       return false;
-    else if ( ( monster->behavior == BEH_FIGHT || monster->behavior == BEH_ENSLAVED ) && monster->monster_foe == MHITNOT )
+    else if ( ( monster->behavior == BEH_FIGHT
+                || monster->behavior == BEH_ENSLAVED )
+              && monster->monster_foe == MHITNOT )
       return false;
     else if ( monster->type == MONS_PANDEMONIUM_DEMON && ghost.values[9] == 0 )
       return false;
@@ -1518,7 +1531,7 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
 
         int msecc = ( (monster->type == MONS_HELLION)           ? 30 :
                       (monster->type == MONS_PANDEMONIUM_DEMON) ? 119
-                                                                : monster->number );
+                                                         : monster->number );
 
         // tracer = 0 = run out of range
         // tracer = 1 = hits you in range
@@ -1532,13 +1545,13 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
     // forces the casting of dig when player not visible - this is EVIL!
         if ( !monsterNearby )
         {
-            if ( hspell_pass[4] == MS_DIG && monster->behavior == BEH_CHASING_I )
+          if ( hspell_pass[4] == MS_DIG && monster->behavior == BEH_CHASING_I )
             {
-                spell_cast = MS_DIG;
-                finalAnswer = true;
+              spell_cast = MS_DIG;
+              finalAnswer = true;
             }
-            else if ( beem.trac_targ == MHITYOU )
-              return false;
+          else if ( beem.trac_targ == MHITYOU )
+            return false;
         }
 
         /*
@@ -1598,28 +1611,30 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
         // select which spell to cast {dlb}:
             if ( monster->behavior != BEH_FLEE )
             {
-                if ( ( monster->behavior != BEH_ENSLAVED
-                      && (beem.tracer == 1 || beem.tracer == 2 || beem.tracer_mons == 1) )
-                    || (monster->behavior == BEH_ENSLAVED && beem.tracer == 3) )
+              if ( ( monster->behavior != BEH_ENSLAVED
+                     && (beem.tracer == 1 || beem.tracer == 2
+                         || beem.tracer_mons == 1) )
+                   || (monster->behavior == BEH_ENSLAVED && beem.tracer == 3) )
                 {
                 // monsters get up to three tries to pick a spell {dlb}:
-                    for (int loopy = 0; loopy < 3; loopy++)
+                  for (int loopy = 0; loopy < 3; loopy++)
                     {
-                        spell_cast = hspell_pass[random2(5)];
+                      spell_cast = hspell_pass[random2(5)];
 
-                        if ( spell_cast != 100 )
-                          break;
+                      if ( spell_cast != 100 )
+                        break;
                     }
                 }
-                else if ( ( monster->behavior == BEH_ENSLAVED && beem.tracer_mons == 0 ) || coinflip() )
-                  spell_cast = hspell_pass[2];
-                else
-                  spell_cast = 100;
+              else if ( ( monster->behavior == BEH_ENSLAVED
+                          && beem.tracer_mons == 0 ) || coinflip() )
+                spell_cast = hspell_pass[2];
+              else
+                spell_cast = 100;
             }
             else
-            {
+              {
                 spell_cast = ( one_chance_in(5) ? 100 : hspell_pass[5] );
-            }
+              }
 
             finalAnswer = true;
         }
@@ -1631,7 +1646,8 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
 
     // can't see anything to animate:
         if ( spell_cast == MS_ANIMATE_DEAD
-            && ( !monsterNearby || !animate_dead(100, monster->behavior, monster->monster_foe, 0) ) )
+             && ( !monsterNearby || !animate_dead(100, monster->behavior,
+                                                  monster->monster_foe, 0) ) )
           return false;
 
         if ( monsterNearby )    // handle monsters within range of player
@@ -1642,8 +1658,7 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
                   if ( silenced(monster->x, monster->y) )
                     return false;
 
-                  simple_monster_message(monster, (mons_flag(monster->type, M_PRIEST)) ? " utters an invocation."
-                                                                                       : " casts a spell." );
+                  simple_monster_message(monster, (mons_flag(monster->type, M_PRIEST)) ? " utters an invocation." : " casts a spell." );
                   break;
 
                 case MONS_STEAM_DRAGON:
@@ -1722,27 +1737,28 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
         }
         else    // handle far-away monsters
         {
-            if ( monster->type == MONS_GERYON && !silenced(you.x_pos, you.y_pos) )
+            if ( monster->type == MONS_GERYON
+                 && !silenced(you.x_pos, you.y_pos) )
               mpr("You hear a weird and mournful sound.");
         }
 
 
     // FINALLY! determine primary spell effects {dlb}:
-        if ( spell_cast == MS_BLINK && monsterNearby )    // why only cast blink if nearby? {dlb}
+        if ( spell_cast == MS_BLINK && monsterNearby ) // why only cast blink if nearby? {dlb}
         {
             simple_monster_message(monster, " blinks!");
             monster_blink(monster);
         }
         else
         {
-            beem.damage = 8 * monster->hit_dice;         // really???    // hmmm... {dlb}
+            beem.damage = 8 * monster->hit_dice; // really??? // hmmm... {dlb}
             beem.beam_source = monster_index(monster);
             mons_cast(monster, &beem, spell_cast);
             mmov_x = 0;
             beem.trac_hit_tamed = 0;
         }
 
-    }        // end "if mons_flag(monster->type, M_SPELLCASTER) && monster->behavior != BEH_SLEEP"
+    } // end "if mons_flag(monster->type, M_SPELLCASTER) && monster->behavior != BEH_SLEEP"
 
     return true;
 
@@ -2989,16 +3005,16 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
          BEH_FLEE:
          BEH_FLEE_FRIEND:
                  temp_rand = random2(10);
-                 strcat(info, (temp_rand < 3) ? " tries to hide somewhere." :
-                     (temp_rand == 3) ? " screams. Or at least tries to do it." :
-                     (temp_rand == 4) ? " looks carefuly around." :
-                     (temp_rand == 5) ? " looks frightened." :
+                 strcat(info, (temp_rand < 3) ? " glances furtively about." :
+                     (temp_rand == 3) ? " opens its mouth, as if shouting." :
+                     (temp_rand == 4) ? " looks around." :
+                     (temp_rand == 5) ? " appears indicisive." :
                      (temp_rand == 6) ? " ponders situation." :
-                     " says something but you don't hear anything." );
+                     " seems to says something." );
                  break;
          BEH_ENSLAVED:
                  temp_rand = random2(10);
-                 strcat(info, (temp_rand < 4) ? " gestures." :
+                 strcat(info, (temp_rand < 4) ? " gives you a thumbs up." :
                      (temp_rand == 4) ? " looks at you." :
                      (temp_rand == 5) ? " waves at you." :
                      (temp_rand == 6) ? " smiles happily." :
@@ -3016,50 +3032,78 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
                      " says something but you don't hear anything." );
                  break;
          default:
-                 temp_rand = random2(10);
-                 strcat(info, (temp_rand < 3) ? " gestures." :
-                     (temp_rand == 3) ? " screams. Or at least tries to do it." :
-                     (temp_rand == 4) ? " grins evilly." :
-                     (temp_rand == 5) ? " looks upset." :
-                     (temp_rand == 6) ? " tries to listen something." :
-                     " says something but you don't hear anything." );
-                 break;
+           temp_rand = random2(10);
+           strcat(info, (temp_rand < 3) ? " gestures." :
+                  (temp_rand == 3) ? " gestures obscenely." :
+                  (temp_rand == 4) ? " grins." :
+                  (temp_rand == 5) ? " looks angry." :
+                  (temp_rand == 6) ? " seems to be listening." :
+                  " says something but you don't hear anything." );
+           break;
          } //end switch silenced monster's behaviour
         mpr (info);
         return true;
         } // end silenced monster
 
     switch ( monster->behavior )
-     {
-    case BEH_FLEE:
-       {
-       switch (random2(14)) // speaks for unfriendly fleeing monsters
-               {
-               case 0:
-               case 1:
-                    strcat(info, " screams \"Help ! \""); break;
-               case 2:
-                    strcat(info, " shouts \"Please, could any one help me ?\""); break;
-               case 3:
-                    strcat(info, " looks carefuly around."); break;
+      {
+      case BEH_FLEE:
+        {
+          switch (random2(14)) // speaks for unfriendly fleeing monsters
+            {
+            case 0:
+              sprintf(info, " %s \"Help!\"",
+                      coinflip() ? "yells" : "wails"); break;
+            case 1:
+              sprintf(info, " %s \"Help!\"",
+                      coinflip() ? "crys" : "screams"); break;
+            case 2:
+              sprintf(info, " %s \"Why can't we all just get along?\"",
+                      coinflip() ? "begs" : "pleads");
+              break;
+            case 3:
+              sprintf(info, " %s trips in trying to escape.",
+                      coinflip() ? "nearly" : "almost");
+                 break;
                case 4:
                case 5:
                case 6:
-                    strcat(info, " tries to hide somewhere."); break;
+                 sprintf(info, " %s, \"oh %s oh %s oh %s oh no.\"",
+                         coinflip() ? "mutters" : "mumbles",
+                         coinflip() ? "god" : "damn",
+                         coinflip() ? "god" : "hell",
+                         coinflip() ? "no"  : "frig");
+                 //jmf: messages like this can be spiced up if we want to
+                 //     violate the game's current G rating (violence, no
+                 //     sex or swearing).
+                 break;
                case 7:
                     strcat(info, " prays for help."); break;
                case 8:
-                    strcat(info, " shouts \"No ! I'll never do that again !\""); break;
+                    strcat(info, " shouts \"No! I'll never do that again!\"");
+                    break;
                case 9:
-                    strcat(info, " screams \"Mercy !\""); break;
+                    sprintf(info, " %s \"Mercy!\"",
+                            coinflip() ? "begs for" : "cries");
+                    break;
                case 10:
-                    strcat(info, " screams \"Mom !\""); break;
+                 sprintf(info, " %s \"%s%s!\"",
+                         coinflip() ? "blubbers" : "cries",
+                         coinflip() ? "Mom" : "Dad",
+                         coinflip() ? "ie" : "");
+                 break;
                case 11:
-                    strcat(info, " begs \"Please, don't kill me.\""); break;
+                 sprintf(info, " %s \"Please don't kill me!\"",
+                         coinflip() ? "begs" : "pleads");
+                 break;
                case 12:
-                    strcat(info, " begs \"Please, don't hurt me.\""); break;
+                 sprintf(info, " %s \"Please don't hurt me!\"",
+                         coinflip() ? "begs" : "pleads");
+                 break;
                case 13:
-                    strcat(info, " begs \"Please, I have a lot of children ...\""); break;
+                 sprintf(info, " %s \"Please, I have a lot of children...\"",
+                         coinflip() ? "begs" : "pleads");
+                 break;
                     }
        } break; // end BEH_FLEE
      case BEH_FLEE_FRIEND: // speaks for friendly fleeing monsters
@@ -3067,17 +3111,18 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
         switch (random2(11))
                {
                case 0:
-                    strcat(info, " screams \"");
+                    sprintf(info, " %s \"WAIT FOR ME!\"",
+                            coinflip() ? "shouts" : "yells");
                     strcat(info, you.your_name);
-                    strcat(info,", could you help me ?\""); break;
+                    strcat(info,", could you help me?\""); break;
                case 1:
-                    strcat(info, " screams \"Help ! \""); break;
+                    strcat(info, " screams \"Help!\""); break;
                case 2:
-                    strcat(info, " shouts \"Cover me !\""); break;
+                    strcat(info, " shouts \"Cover me!\""); break;
                case 3:
                     strcat(info, " screams \"");
                     strcat(info, you.your_name);
-                    strcat(info,"! Help me ! \""); break;
+                    strcat(info,"! Help me!\""); break;
                case 4:
                case 5:
                case 6:
@@ -3085,11 +3130,12 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
                case 7:
                     strcat(info, " prays for help."); break;
                case 8:
-                    strcat(info, " looks at you."); break;
+                    strcat(info, " looks at you beseechingly."); break;
                case 9:
-                    strcat(info, " shouts \"Protect me !\""); break;
+                    strcat(info, " shouts \"Protect me!\""); break;
                case 10:
-                    strcat(info, " cries \"Don't forget your friends !\""); break;
+                    strcat(info, " cries \"Don't forget your friends!\"");
+                    break;
                     }
        } break;//end BEH_FLEE_FRIEND
 
@@ -3100,11 +3146,12 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
        switch (random2(16))
               {
                case 0:
-                    strcat(info, " screams \"Run ! I'll cover you !\""); break;
+                    strcat(info, " yells \"Run! I'll cover you!\""); break;
                case 1:
-                    strcat(info, " shouts \"Die, monster !\""); break;
+                    strcat(info, " shouts \"Die, monster!\""); break;
                case 2:
-                    strcat(info, " says \"It's nice to have friends.\""); break;
+                    strcat(info, " says \"It's nice to have friends.\"");
+                    break;
                case 3:
                case 4:
                case 5:
@@ -3126,23 +3173,25 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
                case 12:
                     strcat(info, " waves at you."); break;
                case 13:
-                    strcat(info, " says \"Be careful !\""); break;
+                    strcat(info, " says \"Be careful!\""); break;
                case 14:
-                    strcat(info, " says \"Don't worry. I'm here with you.\""); break;
+                    strcat(info, " says \"Don't worry. I'm here with you.\"");
+                    break;
                case 15:
                     strcat(info, " smiles happily."); break;
                case 16:
-                    strcat(info, " shouts \"No mercy ! Kill them all !"); break;
+                    strcat(info, " shouts \"No mercy! Kill them all!"); break;
                case 17:
                     strcat(info, " winks at you."); break;
                case 18:
-                    strcat(info, " says \"Me and you. It sounds cool.\""); break;
+                    strcat(info, " says \"Me and you. It sounds cool.\"");
+                    break;
                case 19:
                     strcat(info, " says \"I'll never leave you.\""); break;
                case 20:
                     strcat(info, " says \"I would die for you.\""); break;
                case 21:
-                    strcat(info, " shouts \"Beware of monsters !\""); break;
+                    strcat(info, " shouts \"Beware of monsters!\""); break;
                case 22:
                case 23:
                case 24:
@@ -3158,11 +3207,11 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
        switch (random2(15)) // speaks for unfriendly confused monsters
                {
                case 0:
-                    strcat(info, " prays for help."); break;
+                    strcat(info, " yells \"Get them off of me!\""); break;
                case 1:
-                    strcat(info, " screams \"I kill you anyway ! \""); break;
+                    strcat(info, " screams \"I kill you anyway!\""); break;
                case 2:
-                    strcat(info, " shouts \"What's happening ?\""); break;
+                    strcat(info, " shouts \"What's happening?\""); break;
                case 3:
                case 4:
                case 5:
@@ -3170,9 +3219,9 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
                case 6:
                     strcat(info, " cries."); break;
                case 7:
-                    strcat(info, " shouts \"NO !\""); break;
+                    strcat(info, " shouts \"NO!\""); break;
                case 8:
-                    strcat(info, " shouts \"YES !\""); break;
+                    strcat(info, " shouts \"YES!\""); break;
                case 9:
                     strcat(info, " laughs crazily."); break;
                case 10:
@@ -3185,7 +3234,7 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
                     strcat(info, " mumbles something."); break;
                case 14:
                     strcat(info, " says \"I'm little bit confused.\""); break;
-                    }
+               }
        } break; // end BEH_CONFUSED
 
      case BEH_CONFUSED_FRIEND:
@@ -3195,18 +3244,18 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
                case 0:
                     strcat(info, " prays for help."); break;
                case 1:
-                    strcat(info, " screams \" Help ! \""); break;
+                    strcat(info, " screams \" Help!\""); break;
                case 2:
-                    strcat(info, " shouts \"I'm loosing control !\""); break;
+                    strcat(info, " shouts \"I'm losing control!\""); break;
                case 3:
-                    strcat(info, " shouts \"What's happening ?\""); break;
+                    strcat(info, " shouts \"What's happening?\""); break;
                case 4:
                case 5:
                     strcat(info, " wildly gestures."); break;
                case 6:
                     strcat(info, " cries."); break;
                case 7:
-                    strcat(info, " shouts \"Yeah !\""); break;
+                    strcat(info, " shouts \"Yeah!\""); break;
                case 8:
                     strcat(info, " sings."); break;
                case 9:
@@ -3224,11 +3273,11 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
                case 15:
                     strcat(info, " screams \"");
                     strcat(info, you.your_name);
-                    strcat(info,"! Help !\""); break;
+                    strcat(info,"! Help!\""); break;
                case 16:
                     strcat(info, " screams \"");
                     strcat(info, you.your_name);
-                    strcat(info,"! What's going on ?\""); break;
+                    strcat(info,"! What's going on?\""); break;
                case 17:
                     strcat(info, " says \"");
                     strcat(info, you.your_name);
@@ -3272,31 +3321,31 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
              switch (random2(15))
              {
                case 0:
-                 strcat(info, " screams \"I'm going to kill you ! Now !\""); break;
+                 strcat(info, " screams \"I'm going to kill you! Now!\""); break;
                case 1:
-                 strcat(info, " shouts \"Return immediately or I'll kill you !\""); break;
+                 strcat(info, " shouts \"Return immediately or I'll kill you!\""); break;
                case 2:
                  strcat(info, " says \"Now you've reached the end of your way.\""); break;
                case 3:
-                 strcat(info, " screams \"One false step and I'll kill you !\""); break;
+                 strcat(info, " screams \"One false step and I'll kill you!\""); break;
                case 4:
                  strcat(info, " says \"Drop everything you've found here and go home.\""); break;
                case 5:
-                 strcat(info, " shouts \"You will never get the ORB.\""); break;
+                 strcat(info, " shouts \"You will never get the Orb.\""); break;
                case 6:
                  strcat(info, " looks very unfriendly."); break;
                case 7:
                  strcat(info, " looks very cold."); break;
                case 8:
-                 strcat(info, " shouts \"It's the end of the party !\""); break;
+                 strcat(info, " shouts \"It's the end of the party!\""); break;
                case 9:
-                 strcat(info, " says \"Return every stolen item !\""); break;
+                 strcat(info, " says \"Return every stolen item!\""); break;
                case 10:
                  strcat(info, " says \"No trespassers are allowed here.\""); break;
                case 11:
                  strcat(info, " grins evilly."); break;
                case 12:
-                 strcat(info, " screams \"You must be punished !\""); break;
+                 strcat(info, " screams \"You must be punished!\""); break;
                case 13:
                  strcat(info, " says \"It's nothing personal...\""); break;
                case 14:
@@ -3315,21 +3364,21 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
                case 3:
                  strcat(info, " says \"It's nothing personal but I kill you.\""); break;
                case 5:
-                 strcat(info, " says \"You will never get the ORB, sorry.\""); break;
+                 strcat(info, " says \"You will never get the Orb, sorry.\""); break;
                case 9:
-                 strcat(info, " shouts \"I love fight ! I love killing !\""); break;
+                 strcat(info, " shouts \"I love fight! I love killing!\""); break;
                case 10:
                  strcat(info, " says \"I'm here to kill trespassers. I like my job.\""); break;
                case 11:
                  strcat(info, " tries to grin evilly."); break;
                case 12:
-                 strcat(info, " says \"You must be punished ! Or... I want to punish you !\""); break;
+                 strcat(info, " says \"You must be punished! Or... I want to punish you!\""); break;
                case 13:
-                 strcat(info, " sighs \"Being guard is usually so boring... \""); break;
+                 strcat(info, " sighs \"Being guard is usually so boring...\""); break;
                case 14:
-                 strcat(info, " shouts \"At last some action !\""); break;
+                 strcat(info, " shouts \"At last some action!\""); break;
                case 15:
-                 strcat(info, " shouts \"Wow !\""); break;
+                 strcat(info, " shouts \"Wow!\""); break;
              } break; // end Joseph
 
              case MONS_ORC_HIGH_PRIEST: // priest, servants of dark ancient God
@@ -3339,15 +3388,15 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
                case 0:
                  strcat(info, " prays."); break;
                case 1:
-                 strcat(info, " says \"My Lord, aid me.\""); break;
+                 strcat(info, " says \"My Lord BOG, aid me.\""); break;
                case 2:
                  strcat(info, " mumbles some strange prayers."); break;
                case 3:
                  strcat(info, " shouts \"You are heretic. And you must be destroyed.\""); break;
                case 4:
-                 strcat(info, " shouts \"Confess !\""); break;
+                 strcat(info, " shouts \"Confess!\""); break;
                case 5:
-                 strcat(info, " says \" All sinners must die.\""); break;
+                 strcat(info, " says \"All sinners must die.\""); break;
                case 6:
                  strcat(info, " looks excited."); break;
                case 7:
@@ -4320,7 +4369,8 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
                  strcat(info, " says \"Come and play with me!\""); break;
              } break; // end Killer Klown
         default :
-                strcat(info, " says \"I don't know what to say. It's bug.\""); break;
+          strcat(info, " says \"I don't know what to say. It's a bug.\"");
+          break;
         } // end monster->type - monster type switch
      } // end default
    } // end switch monster->behavior
@@ -4341,8 +4391,8 @@ unsigned char monster_habitat( int which_class )
       case MONS_JELLYFISH:
       case MONS_WATER_ELEMENTAL:
       case MONS_SWAMP_WORM:
-        return DNGN_DEEP_WATER;    // no shallow water (only) monsters? {dlb}
-                                   // must remain DEEP_WATER for now, else breaks code {dlb}
+        return DNGN_DEEP_WATER; // no shallow water (only) monsters? {dlb}
+                 // must remain DEEP_WATER for now, else breaks code {dlb}
 
       case MONS_LAVA_WORM:
       case MONS_LAVA_FISH:

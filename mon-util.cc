@@ -29,9 +29,10 @@
 #include "player.h"
 #include "stuff.h"
 
+static int mon_entry[NUM_MONSTERS]; //jmf: moved from inside function
 
-unsigned char mcolour[1000];             // really important extern -- screen redraws suck w/o it {dlb}
-char *gmo_n;                    /* used in monam - could possibly be static to that function */
+unsigned char mcolour[1000]; // really important extern -- screen redraws suck w/o it {dlb}
+char *gmo_n;   /* used in monam - could possibly be static to that function */
 
 
 static struct monsterentry mondata[] =
@@ -45,13 +46,11 @@ static struct monsterentry mondata[] =
 
 // will do as long as spell/sec numbers don't come above 255 or below 0:
 /*
-
    Note: is assumed that most monsters capable of casting the more powerful
    summonings can also cast Abjuration (just for simplicity)
-
  */
 static unsigned char mspell_list[][7] =
-{                               // sec  bolt   ench  selfench  misc   misc2  emergency
+{  // sec  bolt   ench  selfench  misc   misc2  emergency
 /*orc wiz              */
     {0,
      MS_MMISSILE,
@@ -830,14 +829,31 @@ static monsterentry *seekmonster(int *p_monsterid);
 
 void mon_init( unsigned char mcolour[1000] )
 {
-
     unsigned int x;    // must be unsigned to match size_t {dlb}
 
     for (x = 0; x < MONDATASIZE; x++)
       mcolour[mondata[x].mc] = mondata[x].colour;
 
+#if 0
     seekmonster((int *) 0);    // this forces a refresh of internal entry tracking {dlb}
+#else
+    //unsigned int x = 0;    // must be unsigned to match size_t {dlb}
 
+    // first, fill static array with dummy values {dlb};
+    for (x = 0; x < NUM_MONSTERS; x++)
+      mon_entry[x] = -1;
+
+    // next, fill static array with location of entry in mondata[] {dlb}:
+    for (x = 0; x < MONDATASIZE; x++)
+      mon_entry[mondata[x].mc] = x;
+
+    // finally, monsters yet with dummy entries point to TTTSNB(tm) {dlb}:
+    for (x = 0; x < NUM_MONSTERS; x++)
+      if ( mon_entry[x] == -1 )
+        mon_entry[x] = mon_entry[MONS_PROGRAM_BUG];
+
+    //return (monsterentry *) 0; // return value should not matter here {dlb}
+#endif
 }          // end mon_init()
 
 
@@ -985,7 +1001,7 @@ int mon_resist_mag( int mc, char mhd )
     int u = smc->resist_magic;
 
     if (u < 0)
-      return mhd * (abs(u) << 1);        // negative values get multiplied with mhd
+      return mhd * (abs(u) << 1); // negative values get multiplied with mhd
     else
       return u;
 
@@ -998,8 +1014,8 @@ int mons_res_elec( int mc )
 {
 
     if ( mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON )
-      return (ghost.values[6] > 0);   /* this is a variable,
-                                           not a player_xx() function, so can be above 1 */
+      return (ghost.values[6] > 0);
+    /* this is a variable, not a player_xx() function, so can be above 1 */
     int u = 0, f = smc->bitfields;
 
     // of course it makes no sense setting them both :)
@@ -1607,7 +1623,7 @@ void moname( int mons_num, char mench, char see_inv, char descrip, char glog[40]
 
     if ( mons_num < 250
           || mons_num > 355
-          || ( mons_num >= 260 && mons_num < 280 ) )        // note is also a limit for uniques below.
+          || ( mons_num >= 260 && mons_num < 280 ) ) // note is also a limit for uniques below.
 
       switch ( descrip )
       {
@@ -1664,8 +1680,6 @@ void moname( int mons_num, char mench, char see_inv, char descrip, char glog[40]
 /* ********************* END PUBLIC FUNCTIONS ********************* */
 
 
-
-
 // a kludge, I admit, but why should the entire mondata[]
 // array be searched each and every time we need info on
 // a monster? hoping this will speed things up a bit w/o
@@ -1673,30 +1687,31 @@ void moname( int mons_num, char mench, char see_inv, char descrip, char glog[40]
 // I like, btw, for the flexibility it affords. {dlb}
 static struct monsterentry *seekmonster( int *p_monsterid )
 {
-
-    static int mon_entry[NUM_MONSTERS];
-
 // passing null pointer forces refresh -- typically, at gamestart, only {dlb}
+#if 1
+  ASSERT( p_monsterid != 0 );
+#else
     if ( p_monsterid == 0 )
     {
-        unsigned int x = 0;    // must be unsigned to match size_t {dlb}
+      unsigned int x = 0;    // must be unsigned to match size_t {dlb}
 
-    // first, fill static array with dummy values {dlb};
-        for (x = 0; x < NUM_MONSTERS; x++)
-          mon_entry[x] = -1;
+      // first, fill static array with dummy values {dlb};
+      for (x = 0; x < NUM_MONSTERS; x++)
+        mon_entry[x] = -1;
 
-    // next, fill static array with location of entry in mondata[] {dlb}:
-        for (x = 0; x < MONDATASIZE; x++)
-          mon_entry[mondata[x].mc] = x;
+      // next, fill static array with location of entry in mondata[] {dlb}:
+      for (x = 0; x < MONDATASIZE; x++)
+        mon_entry[mondata[x].mc] = x;
 
-    // finally, monsters yet with dummy entries point to TTTSNB(tm) {dlb}:
-        for (x = 0; x < NUM_MONSTERS; x++)
-          if ( mon_entry[x] == -1 )
-            mon_entry[x] = mon_entry[MONS_PROGRAM_BUG];
+      // finally, monsters yet with dummy entries point to TTTSNB(tm) {dlb}:
+      for (x = 0; x < NUM_MONSTERS; x++)
+        if ( mon_entry[x] == -1 )
+          mon_entry[x] = mon_entry[MONS_PROGRAM_BUG];
 
-        return (monsterentry *) 0;    // return value should not matter here {dlb}
+      return (monsterentry *) 0; // return value should not matter here {dlb}
     }
     else
+#endif
       return &mondata[mon_entry[(*p_monsterid)]];    // not as safe (or cute) as before, but we'll give it a shot {dlb}
 
 }          // end seekmonster()
@@ -1735,7 +1750,9 @@ int mons_intel( int mc ) //jmf: "fixed" to work with new I_ types
       case I_REPTILE:
         return I_INSECT;
       case I_ANIMAL:
-      case I_ANIMAL_LIKE:    // I don't see the distinction, they are synonymous {dlb}
+      case I_ANIMAL_LIKE:
+        // I don't see the distinction, they are synonymous {dlb}
+        //jmf: look harder; it'd been explained to you twice
         return I_ANIMAL;
       case I_NORMAL:
         return I_NORMAL;

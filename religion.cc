@@ -72,7 +72,6 @@ void inc_penance(int val);
 
 
 
-
 void dec_penance( int god, int val )
 {
 
@@ -80,7 +79,7 @@ void dec_penance( int god, int val )
     {
         if ( you.penance[god] <= val )
         {
-            simple_god_message(god, false, " seems mollified.");
+            simple_god_message(" seems mollified.", god);
             you.penance[god] = 0;
         }
         else
@@ -213,7 +212,7 @@ void pray( void )
 
 
     if ( player_under_penance() )
-      simple_god_message(you.religion, true, "demands penance!");
+      simple_god_message("demands penance!");
     else
     {
         strcpy(info, god_name(you.religion));
@@ -249,8 +248,9 @@ void pray( void )
     {
     //   Remember to check for water/lava
 
-    //jmf: "good" gods will sometimes feed you (a la Nethack)
-        if ( you.religion == GOD_ZIN && you.hunger_state == HS_STARVING && random2(200) <= you.piety )
+    //jmf: "good" god will sometimes feed you (a la Nethack)
+        if ( you.religion == GOD_ZIN && you.hunger_state == HS_STARVING
+             && random2(200) <= you.piety )
         {
             god_speaks(you.religion);
             mpr("Your stomach feels content.");
@@ -306,7 +306,7 @@ void pray( void )
             && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER
             && one_chance_in(4) )
         {
-            simple_god_message(you.religion, false, " grants you a gift!");
+            simple_god_message(" grants you a gift!");
 
             more();
 
@@ -321,26 +321,24 @@ void pray( void )
             && random2(you.piety) > 80
             && one_chance_in(10) )
         {
-            int thing_called = MONS_PROGRAM_BUG;    // error trapping 15jan2000 {dlb}
+          int thing_called = MONS_PROGRAM_BUG;// error trapping 15jan2000 {dlb}
 
-            temp_rand = random2(100);
+          temp_rand = random2(100); //jmf: trimmed next comments to fit screen
+          thing_called = ( (temp_rand > 66) ? MONS_WRAITH :           // 33%
+                           (temp_rand > 52) ? MONS_WIGHT :            // 12%
+                           (temp_rand > 40) ? MONS_SPECTRAL_WARRIOR : // 16%
+                           (temp_rand > 31) ? MONS_ROTTING_HULK :     //  9%
+                           (temp_rand > 23) ? MONS_SKELETAL_WARRIOR : //  8%
+                           (temp_rand > 16) ? MONS_VAMPIRE :          //  7%
+                           (temp_rand > 10) ? MONS_GHOUL :            //  6%
+                           (temp_rand >  4) ? MONS_MUMMY              //  6%
+                                            : MONS_FLAYED_GHOST );    //  5%
 
-            thing_called = ( (temp_rand > 66) ? MONS_WRAITH :              // 33% chance {dlb}
-                             (temp_rand > 52) ? MONS_WIGHT :               // 12% chance {dlb}
-                             (temp_rand > 40) ? MONS_SPECTRAL_WARRIOR :    // 16% chance {dlb}
-                             (temp_rand > 31) ? MONS_ROTTING_HULK :        //  9% chance {dlb}
-                             (temp_rand > 23) ? MONS_SKELETAL_WARRIOR :    //  8% chance {dlb}
-                             (temp_rand > 16) ? MONS_VAMPIRE :             //  7% chance {dlb}
-                             (temp_rand > 10) ? MONS_GHOUL :               //  6% chance {dlb}
-                             (temp_rand >  4) ? MONS_MUMMY                 //  6% chance {dlb}
-                                              : MONS_FLAYED_GHOST );       //  5% chance {dlb}
-
-            if ( create_monster(thing_called, 0, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250) != -1 )
+            if ( create_monster(thing_called, 0, BEH_ENSLAVED, you.x_pos,
+                                you.y_pos, you.pet_target, 250) != -1 )
             {
-                simple_god_message(you.religion, false, " grants you an undead servant!");
-
+                simple_god_message( " grants you an undead servant!");
                 more();
-
                 inc_gift_timeout(4 + random2avg(7,2));
             }
         }
@@ -351,8 +349,8 @@ void pray( void )
             && you.piety > 160
             && random2(you.piety) > 100 )
           {
-            unsigned char gift = NUM_BOOKS; // jmf: want to catch errors; Vehumet
-                                            //      just gave me a Book of Minor Magic
+            unsigned char gift = NUM_BOOKS;
+            //jmf: error check; Vehumet just gave me a Book of Minor Magic
 
             switch (you.religion)
             {
@@ -396,7 +394,7 @@ void pray( void )
             if ( gift != NUM_BOOKS
                 && ( grd[you.x_pos][you.y_pos] != DNGN_LAVA && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER ) )
             {
-                simple_god_message(you.religion, false, " grants you a gift!");
+                simple_god_message(" grants you a gift!");
 
                 more();
 
@@ -471,8 +469,8 @@ char *god_name( int which_god )
         return buffer;
     }
 
-// abyss.cc also had: Jurubetut (Fire),
-// Vuhemeti (Ice), and Lugafu the Hairy {dlb}
+  // abyss.cc also had: Jurubetut (Fire),
+  // Vuhemeti (Ice), and Lugafu the Hairy {dlb}
 
 }          // end god_name()
 
@@ -484,7 +482,7 @@ char *god_name( int which_god )
 //jmf: I moved colors around, and assigned only one colour per god.
 //     since the whole point of XOM_ACTS_YELLOW was to set Xom messages
 //     reliably apart from the stream of other messages, using random
-//     colours would only confuse things.
+//     colours would IMO only confuse things.
 void god_speaks( int god )
 {
 
@@ -493,29 +491,23 @@ void god_speaks( int god )
       case GOD_SHINING_ONE:
       case GOD_ZIN:
       case GOD_ELYVILON:
-        set_colour( WHITE );
-        break;
-
-      case GOD_YREDELEMNUL:
-      case GOD_KIKUBAAQUDGHA:
-        set_colour( DARKGREY );
-        break;
-
-      case GOD_XOM:
-        set_colour( YELLOW );
-        break;
-
-      case GOD_MAKHLEB:
-      case GOD_VEHUMET:
-        set_colour( LIGHTRED );
-        break;
-
       case GOD_OKAWARU:
         set_colour( CYAN );
         break;
 
+      case GOD_YREDELEMNUL:
+      case GOD_KIKUBAAQUDGHA:
+        //jmf: some reported DARKGREY was hard to read, which defeats purpose
+        //set_colour( DARKGREY );
+        //        break;
+      case GOD_MAKHLEB:
+      case GOD_VEHUMET:
       case GOD_TROG:
-        set_colour( RED );
+        set_colour( LIGHTRED );
+        break;
+
+      case GOD_XOM:
+        set_colour( YELLOW );
         break;
 
       case GOD_NEMELEX_XOBEH:
@@ -537,9 +529,7 @@ void god_speaks( int god )
 
 inline void god_speaks( int god )
 {
-
   return;
-
 }          // end god_speaks()
 
 #endif
@@ -907,7 +897,7 @@ void done_good( char thing_done, int pgain )
         switch (you.religion)
         {
           case GOD_ELYVILON:
-            simple_god_message(you.religion, true, " did not appreciate that!");
+            simple_god_message(" did not appreciate that!");
             naughty(NAUGHTY_KILLING, 10);
             break;
           case GOD_KIKUBAAQUDGHA:
@@ -916,7 +906,7 @@ void done_good( char thing_done, int pgain )
           case GOD_OKAWARU:
           case GOD_MAKHLEB:
           case GOD_TROG:
-            simple_god_message(you.religion, true, " accepts your kill.");
+            simple_god_message(" accepts your kill.");
 
             if (random2(18 + pgain) > 5)
               gain_piety(1);
@@ -931,7 +921,7 @@ void done_good( char thing_done, int pgain )
           case GOD_SHINING_ONE:
           case GOD_VEHUMET:
           case GOD_MAKHLEB:
-            simple_god_message(you.religion, true, " accepts your kill.");
+            simple_god_message(" accepts your kill.");
 
             if (random2(18 + pgain) > 4)
               gain_piety(1);
@@ -946,7 +936,7 @@ void done_good( char thing_done, int pgain )
           case GOD_SHINING_ONE:
           case GOD_VEHUMET:
           case GOD_MAKHLEB:
-            simple_god_message(you.religion, true, " accepts your kill.");
+            simple_god_message(" accepts your kill.");
 
             if (random2(18 + pgain) > 3)
               gain_piety(1);
@@ -961,7 +951,7 @@ void done_good( char thing_done, int pgain )
           case GOD_ZIN:
           case GOD_SHINING_ONE:
           case GOD_ELYVILON:
-            simple_god_message(you.religion, true, " did not appreciate that!");
+            simple_god_message(" did not appreciate that!");
 
             naughty(NAUGHTY_ATTACK_HOLY, (you.conf ? 3 : pgain * 3));
             break;
@@ -975,7 +965,7 @@ void done_good( char thing_done, int pgain )
           case GOD_OKAWARU:
           case GOD_MAKHLEB:
           case GOD_TROG:
-            simple_god_message(you.religion, true, " accepts your offering.");
+            simple_god_message(" accepts your offering.");
 
             if (random2(10 + pgain) > 5)
               gain_piety(1);
@@ -983,7 +973,7 @@ void done_good( char thing_done, int pgain )
           case GOD_ZIN:
           case GOD_SHINING_ONE:
           case GOD_ELYVILON:
-            simple_god_message(you.religion, false, " did not appreciate that!");
+            simple_god_message(" did not appreciate that!");
 
             naughty(NAUGHTY_BUTCHER, 8);
             break;
@@ -991,7 +981,7 @@ void done_good( char thing_done, int pgain )
         break;
 
       case GOOD_OFFER_STUFF:
-        simple_god_message(you.religion, true, " is pleased with your offering.");
+        simple_god_message(" is pleased with your offering.");
 
         gain_piety(1);
         break;
@@ -1002,7 +992,7 @@ void done_good( char thing_done, int pgain )
           case GOD_KIKUBAAQUDGHA:
           case GOD_YREDELEMNUL:
           case GOD_VEHUMET:
-            simple_god_message(you.religion, true, " accepts your slave's kill.");
+            simple_god_message(" accepts your slave's kill.");
 
             if (random2(pgain + 18) > 5)
               gain_piety(1);
@@ -1015,7 +1005,7 @@ void done_good( char thing_done, int pgain )
         {
           case GOD_VEHUMET:
           case GOD_MAKHLEB:
-            simple_god_message(you.religion, true, " accepts your collateral kill.");
+            simple_god_message(" accepts your collateral kill.");
 
             if (random2(pgain + 18) > 5)
               gain_piety(1);
@@ -1086,15 +1076,15 @@ void gain_piety( char pgn )
             god_speaks(you.religion);
             strcpy(info, "You can now ");
             strcat(info, (you.religion == GOD_ZIN
-                           || you.religion == GOD_SHINING_ONE) ? "repel the undead" :
-                         (you.religion == GOD_KIKUBAAQUDGHA)   ? "recall undead servitors" :
-                         (you.religion == GOD_YREDELEMNUL)     ? "animate corpses" :
-                         (you.religion == GOD_VEHUMET
-                          || you.religion == GOD_MAKHLEB)      ? "gain power from killing in the name of your deity" :
-                         (you.religion == GOD_OKAWARU)         ? "give your great, but temporary, body strength" :
-                         (you.religion == GOD_TROG)            ? "willfully trigger berserk rage" :
-                         (you.religion == GOD_ELYVILON)        ? "practice lesser healing arts"
-                                                               : "endure this program bug" );
+                          || you.religion == GOD_SHINING_ONE) ? "repel the undead" :
+                   (you.religion == GOD_KIKUBAAQUDGHA) ? "recall your undead slaves" :
+                   (you.religion == GOD_YREDELEMNUL) ? "animate corpses" :
+                   (you.religion == GOD_VEHUMET) ? "gain power from killing in Vehumet's name" :
+                   (you.religion == GOD_MAKHLEB) ? "gain power from killing in Makhleb's name" :
+                   (you.religion == GOD_OKAWARU) ? "give your great, but temporary, body strength" :
+                   (you.religion == GOD_TROG) ? "go berserk at will" :
+                   (you.religion == GOD_ELYVILON) ? "call upon Elyvilon for minor healing"
+                   : "endure this program bug" );
             strcat(info, ".");
             mpr(info);
             break;
@@ -1103,26 +1093,33 @@ void gain_piety( char pgn )
 
     if ( you.piety >= 50 && old_piety < 50 )
     {
-        switch ( you.religion )
-        {
-          case GOD_NO_GOD:
-          case GOD_XOM:
-          case GOD_NEMELEX_XOBEH:
-            break;
-          default:
-            god_speaks(you.religion);
-            strcpy(info, "You can now ");
-            strcat(info, (you.religion == GOD_ZIN)           ? "request Zin's curative presence" :
-                         (you.religion == GOD_SHINING_ONE)   ? "smite your foes" :
-                         (you.religion == GOD_KIKUBAAQUDGHA) ? "practice necromancy secure from some of its side-effects" :
-                         (you.religion == GOD_YREDELEMNUL)   ? "recall undead servitors" :
-                         (you.religion == GOD_VEHUMET)       ? "weave nearly infallible destructive magics in Vehumet's name" :
-                         (you.religion == GOD_OKAWARU)       ? "call upon Okawaru for minor healing" :
-                         (you.religion == GOD_MAKHLEB)       ? "harness Makhleb's destructive might" :
-                         (you.religion == GOD_SIF_MUNA)      ? "freely open your mind to new spells" :
-                         (you.religion == GOD_TROG)          ? "give your body great, but temporary, strength" :
-                         (you.religion == GOD_ELYVILON)      ? "perform Purification rites"
-                                                             : "endure this program bug" );
+      switch ( you.religion )
+{
+        case GOD_NO_GOD:
+        case GOD_XOM:
+        case GOD_NEMELEX_XOBEH:
+          break;
+        case GOD_KIKUBAAQUDGHA:
+          simple_god_message(" is protecting you from some side-effects of death magic.");
+          break;
+
+        case GOD_VEHUMET:
+          god_speaks(you.religion);
+          mpr("You can call upon Vehumet to aid your destructive magics with prayer.");
+          break;
+
+        default:
+          god_speaks(you.religion);
+          strcpy(info, "You can now ");
+          strcat(info, (you.religion == GOD_ZIN) ? "call upon Zin for minor healing" :
+                 (you.religion == GOD_SHINING_ONE) ? "smite your foes" :
+                 (you.religion == GOD_YREDELEMNUL) ? "recall your undead slaves" :
+                 (you.religion == GOD_OKAWARU) ? "call upon Okawaru for minor healing" :
+                 (you.religion == GOD_MAKHLEB) ? "harness Makhleb's destructive might" :
+                 (you.religion == GOD_SIF_MUNA) ? "freely open your mind to new spells" :
+                 (you.religion == GOD_TROG) ? "give your body great, but temporary, strength" :
+                 (you.religion == GOD_ELYVILON) ? "call upon Elyvilon for purification"
+                 : "endure this program bug" );
             strcat(info, ".");
             mpr(info);
             break;
@@ -1131,57 +1128,64 @@ void gain_piety( char pgn )
 
     if ( you.piety >= 75 && old_piety < 75 )
     {
-        switch ( you.religion )
-        {
-          case GOD_NO_GOD:
-          case GOD_XOM:
-          case GOD_OKAWARU:
-          case GOD_NEMELEX_XOBEH:
-          case GOD_SIF_MUNA:
-          case GOD_TROG:
-            break;
-          default:
-            god_speaks(you.religion);
-            strcpy(info, "You can now ");
-            strcat(info, (you.religion == GOD_ZIN)           ? "call forth the creeping death" :
-                         (you.religion == GOD_SHINING_ONE)   ? "dispel unliving beings" :
-                         (you.religion == GOD_KIKUBAAQUDGHA) ? "bind the undead to your will" :
-                         (you.religion == GOD_YREDELEMNUL)   ? "animate legions of the dead" :
-                         (you.religion == GOD_VEHUMET)       ? "protect yourself from summoned creatures with prayer" :
-                         (you.religion == GOD_MAKHLEB)       ? "summon a lesser servant of Makhleb" :
-                         (you.religion == GOD_ELYVILON)      ? "practice greater healing arts"
-                                                             : "endure this program bug" );
-            strcat(info, ".");
-            mpr(info);
-            break;
-        }
+      switch ( you.religion )
+      {
+      case GOD_NO_GOD:
+      case GOD_XOM:
+      case GOD_OKAWARU:
+      case GOD_NEMELEX_XOBEH:
+      case GOD_SIF_MUNA:
+      case GOD_TROG:
+        break;
+      case GOD_VEHUMET:
+        god_speaks(you.religion);
+        mpr("During prayer you have some protection from summoned creatures.");
+        break;
+
+      default:
+        god_speaks(you.religion);
+        strcpy(info, "You can now ");
+        strcat(info, (you.religion == GOD_ZIN) ? "call down a plague" :
+               (you.religion == GOD_SHINING_ONE) ? "dispel the undead" :
+               (you.religion == GOD_KIKUBAAQUDGHA) ? "permanently enslave the undead" :
+               (you.religion == GOD_YREDELEMNUL) ? "animate legions of the dead" :
+               (you.religion == GOD_MAKHLEB) ? "summon a lesser servant of Makhleb" :
+               (you.religion == GOD_ELYVILON) ? "call upon Elyvilon for moderate healing"
+               : "endure this program bug" );
+        strcat(info, ".");
+        mpr(info);
+        break;
+      }
     }
 
     if ( you.piety >= 100 && old_piety < 100 )
     {
-        switch ( you.religion )
-        {
-          case GOD_NO_GOD:
-          case GOD_XOM:
-          case GOD_OKAWARU:
-          case GOD_NEMELEX_XOBEH:
-          case GOD_KIKUBAAQUDGHA:
-            break;
-          default:
-            god_speaks(you.religion);
-            strcpy(info, "You can now ");
-            strcat(info, (you.religion == GOD_ZIN)           ? "utter the \"H Word\"" :
-                         (you.religion == GOD_SHINING_ONE)   ? "hurl bolts of divine anger" :
-                         (you.religion == GOD_YREDELEMNUL)   ? "drain the lifeforce of others" :
-                         (you.religion == GOD_VEHUMET)       ? "tap into surrounding magical fields" :
-                         (you.religion == GOD_MAKHLEB)       ? "direct Makleb's withering gaze" :
-                         (you.religion == GOD_SIF_MUNA)      ? "consider yourself immune to magical mishaps" :
-                         (you.religion == GOD_TROG)          ? "hasten your actions" :
-                         (you.religion == GOD_ELYVILON)      ? "channel restorative energies"
-                                                             : "endure this program bug" );
-            strcat(info, ".");
-            mpr(info);
-            break;
+      switch ( you.religion )
+      {
+      case GOD_NO_GOD:
+      case GOD_XOM:
+      case GOD_OKAWARU:
+      case GOD_NEMELEX_XOBEH:
+      case GOD_KIKUBAAQUDGHA:
+        break;
+      case GOD_SIF_MUNA:
+        simple_god_message(" is protecting you from some side-effects of spellcasting.");
+        break;
+
+      default:
+        god_speaks(you.religion);
+        strcpy(info, "You can now ");
+        strcat(info, (you.religion == GOD_ZIN) ? "utter a Holy Word" :
+               (you.religion == GOD_SHINING_ONE) ? "hurl bolts of divine anger" :
+               (you.religion == GOD_YREDELEMNUL) ? "drain ambient lifeforce" :
+               (you.religion == GOD_VEHUMET) ? "tap ambient magical fields" :
+               (you.religion == GOD_MAKHLEB) ? "hurl Makleb's greater destruction" :
+               (you.religion == GOD_TROG) ? "haste yourself" :
+               (you.religion == GOD_ELYVILON) ? "call upon Elyvilon to restore your abilities"
+               : "endure this program bug" );
+        strcat(info, ".");
+        mpr(info);
+        break;
         }
     }
 
@@ -1189,27 +1193,27 @@ void gain_piety( char pgn )
     {
         switch ( you.religion )
         {
-          case GOD_NO_GOD:
-          case GOD_XOM:
-          case GOD_NEMELEX_XOBEH:
-          case GOD_VEHUMET:
-          case GOD_SIF_MUNA:
-          case GOD_TROG:
-            break;
-          default:
-            god_speaks(you.religion);
-            strcpy(info, "You can now ");
-            strcat(info, (you.religion == GOD_ZIN)           ? "summon a guardian angel" :
-                         (you.religion == GOD_SHINING_ONE)   ? "summon a divine warrior" :
-                         (you.religion == GOD_KIKUBAAQUDGHA) ? "summon an emmisary of Death" :
-                         (you.religion == GOD_YREDELEMNUL)   ? "control the undead" :
-                         (you.religion == GOD_OKAWARU)       ? "hasten yourself" :
-                         (you.religion == GOD_MAKHLEB)       ? "summon a greater servant of Makhleb" :
-                         (you.religion == GOD_ELYVILON)      ? "wield incredible healing powers"
-                                                             : "endure this program bug" );
-            strcat(info, ".");
-            mpr(info);
-            break;
+        case GOD_NO_GOD:
+        case GOD_XOM:
+        case GOD_NEMELEX_XOBEH:
+        case GOD_VEHUMET:
+        case GOD_SIF_MUNA:
+        case GOD_TROG:
+          break;
+        default:
+          god_speaks(you.religion);
+          strcpy(info, "You can now ");
+          strcat(info, (you.religion == GOD_ZIN) ? "summon a guardian angel" :
+                 (you.religion == GOD_SHINING_ONE) ? "summon a divine warrior":
+                 (you.religion == GOD_KIKUBAAQUDGHA) ? "summon an emmisary of Death" :
+                 (you.religion == GOD_YREDELEMNUL) ? "control the undead" :
+                 (you.religion == GOD_OKAWARU) ? "haste yourself" :
+                 (you.religion == GOD_MAKHLEB) ? "summon a greater servant of Makhleb" :
+                 (you.religion == GOD_ELYVILON) ? "call upon Elyvilon for incredible healing"
+                 : "endure this program bug" );
+          strcat(info, ".");
+          mpr(info);
+          break;
         }
     }
 
@@ -1277,7 +1281,7 @@ void naughty( char type_naughty, int naughtiness )
                 break;
               case NAUGHTY_STABBING:
                 piety_loss = naughtiness;
-                if ( one_chance_in(5) )    // can be accidental so we're nice here
+                if ( one_chance_in(5) ) // can be accidental so we're nice here
                   penance = piety_loss;
                 break;
               case NAUGHTY_POISON:
@@ -1361,14 +1365,13 @@ void naughty( char type_naughty, int naughtiness )
 
     if ( you.piety < 1 )
       excommunication();
-    else if ( penance )    //Don't bother with penance unless we're not kicking them out
+    else if ( penance ) // Don't bother with penance unless we're not kicking them out
       {
           god_speaks(you.religion);
       //jmf: FIXME: add randomness to following message:
           mpr("\"You will pay for your transgression, mortal!\"");
           inc_penance(penance);
       }
-
 }          // end naughty()
 
 
@@ -1376,7 +1379,6 @@ void naughty( char type_naughty, int naughtiness )
 
 void lose_piety( char pgn )
 {
-
     int old_piety = you.piety;
 
     if ( you.piety - pgn < 0 )
@@ -1393,108 +1395,117 @@ void lose_piety( char pgn )
         {
             switch ( you.religion )
             {
-              case GOD_NO_GOD:
-              case GOD_XOM:
-              case GOD_NEMELEX_XOBEH:
-              case GOD_VEHUMET:
-              case GOD_SIF_MUNA:
-              case GOD_TROG:
-                break;
-              default:
-                god_speaks(you.religion);
-                strcpy(info, "You can no longer ");
-                strcat(info, (you.religion == GOD_ZIN)           ? "summon guardian angels" :
-                             (you.religion == GOD_SHINING_ONE)   ? "summon divine warriors" :
-                             (you.religion == GOD_KIKUBAAQUDGHA) ? "summon Death's emissaries" :
-                             (you.religion == GOD_YREDELEMNUL)   ? "control undead beings" :
-                             (you.religion == GOD_OKAWARU)       ? "hasten yourself" :
-                             (you.religion == GOD_MAKHLEB)       ? "summon Makhleb's greater servants" :
-                             (you.religion == GOD_ELYVILON)      ? "wield incredible healing powers"
-                                                                 : "endure this program bug" );
-                strcat(info, ".");
-                mpr(info);
-                break;
+            case GOD_NO_GOD:
+            case GOD_XOM:
+            case GOD_NEMELEX_XOBEH:
+            case GOD_VEHUMET:
+            case GOD_SIF_MUNA:
+            case GOD_TROG:
+              break;
+            default:
+              god_speaks(you.religion);
+              strcpy(info, "You can no longer ");
+              strcat(info, (you.religion == GOD_ZIN) ? "summon guardian angels" :
+                     (you.religion == GOD_SHINING_ONE) ? "summon divine warriors" :
+                     (you.religion == GOD_KIKUBAAQUDGHA) ? "summon Death's emissaries" :
+                     (you.religion == GOD_YREDELEMNUL) ? "control undead beings" :
+                     (you.religion == GOD_OKAWARU) ? "haste yourself" :
+                     (you.religion == GOD_MAKHLEB) ? "summon a greater servent of Makhleb" :
+                     (you.religion == GOD_ELYVILON) ? "call upon Elyvilon for incredible healing"
+                     : "endure this program bug" );
+              strcat(info, ".");
+              mpr(info);
+              break;
             }
         }
 
         if ( you.piety < 100 && old_piety >= 100 )
         {
-            switch ( you.religion )
-            {
-              case GOD_NO_GOD:
-              case GOD_XOM:
-              case GOD_OKAWARU:
-              case GOD_NEMELEX_XOBEH:
-              case GOD_KIKUBAAQUDGHA:
-                break;
-              default:
-                god_speaks(you.religion);
-                strcpy(info, "You can no longer ");
-                strcat(info, (you.religion == GOD_ZIN)           ? "utter the \"H Word\"" :
-                             (you.religion == GOD_SHINING_ONE)   ? "hurl bolts of divine anger" :
-                             (you.religion == GOD_YREDELEMNUL)   ? "drain the lifeforce of others" :
-                             (you.religion == GOD_VEHUMET)       ? "tap into surrounding magical fields" :
-                             (you.religion == GOD_MAKHLEB)       ? "direct Makleb's withering gaze" :
-                             (you.religion == GOD_SIF_MUNA)      ? "consider yourself immune to magical mishaps" :
-                             (you.religion == GOD_TROG)          ? "hasten your actions" :
-                             (you.religion == GOD_ELYVILON)      ? "channel restorative energies"
-                                                                 : "endure this program bug" );
-                strcat(info, ".");
-                mpr(info);
-                break;
-            }
+          switch ( you.religion )
+          {
+          case GOD_NO_GOD:
+          case GOD_XOM:
+          case GOD_OKAWARU:
+          case GOD_NEMELEX_XOBEH:
+          case GOD_KIKUBAAQUDGHA:
+            break;
+          case GOD_SIF_MUNA:
+            god_speaks(you.religion);
+            mpr("Sif Muna is no longer protecting you from miscast magic.");
+            break;
+          default:
+            god_speaks(you.religion);
+            strcpy(info, "You can no longer ");
+            strcat(info, (you.religion == GOD_ZIN) ? "utter a Holy Word" :
+                   (you.religion == GOD_ELYVILON) ? "call upon Elyvilon to restore your abilities" :
+                   (you.religion == GOD_SHINING_ONE) ? "hurl bolts of divine anger" :
+                   (you.religion == GOD_YREDELEMNUL) ? "drain ambient life force" :
+                   (you.religion == GOD_VEHUMET) ? "tap ambient magical fields" :
+                   (you.religion == GOD_MAKHLEB) ? "direct Makleb's greater destructive powers" :
+                   (you.religion == GOD_TROG) ? "haste yourself"
+                   : "endure this program bug" );
+            strcat(info, ".");
+            mpr(info);
+            break;
+          }
         }
 
         if ( you.piety < 75 && old_piety >= 75 )
         {
             switch ( you.religion )
             {
-              case GOD_NO_GOD:
-              case GOD_XOM:
-              case GOD_OKAWARU:
-              case GOD_NEMELEX_XOBEH:
-              case GOD_SIF_MUNA:
-              case GOD_TROG:
-                break;
-              default:
-                god_speaks(you.religion);
-                strcpy(info, "You can no longer ");
-                strcat(info, (you.religion == GOD_ZIN)           ? "call forth the creeping death" :
-                             (you.religion == GOD_SHINING_ONE)   ? "dispel unliving beings" :
-                             (you.religion == GOD_KIKUBAAQUDGHA) ? "bind the undead to your will" :
-                             (you.religion == GOD_YREDELEMNUL)   ? "animate legions of the dead" :
-                             (you.religion == GOD_VEHUMET)       ? "act with such wild abandon" :
-                             (you.religion == GOD_MAKHLEB)       ? "summon the servants of Makhleb" :
-                             (you.religion == GOD_ELYVILON)      ? "practice greater healing arts"
-                                                                 : "endure this program bug" );
-                strcat(info, ".");
-                mpr(info);
-                break;
+            case GOD_NO_GOD:
+            case GOD_XOM:
+            case GOD_OKAWARU:
+            case GOD_NEMELEX_XOBEH:
+            case GOD_SIF_MUNA:
+            case GOD_TROG:
+              break;
+            case GOD_VEHUMET:
+              simple_god_message(" will longer shield you from summoned creatures.");
+              break;
+            default:
+              god_speaks(you.religion);
+              strcpy(info, "You can no longer ");
+              strcat(info, (you.religion == GOD_ZIN) ? "call down a plague" :
+                     (you.religion == GOD_SHINING_ONE) ? "dispel undead" :
+                     (you.religion == GOD_KIKUBAAQUDGHA) ? "enslave undead" :
+                     (you.religion == GOD_YREDELEMNUL)   ? "animate legions of the dead" :
+                     (you.religion == GOD_MAKHLEB) ? "summon a servant of Makhleb" :
+                     (you.religion == GOD_ELYVILON) ? "call upon Elyvilon for moderate healing"
+                     : "endure this program bug" );
+              strcat(info, ".");
+              mpr(info);
+              break;
             }
         }
 
         if ( you.piety < 50 && old_piety >= 50 )
         {
-            switch ( you.religion )
+          switch ( you.religion )
             {
-              case GOD_NO_GOD:
-              case GOD_XOM:
-              case GOD_NEMELEX_XOBEH:
-                break;
-              default:
-                god_speaks(you.religion);
-                strcpy(info, "You can no longer ");
-                strcat(info, (you.religion == GOD_ZIN)           ? "request Zin's curative presence" :
-                             (you.religion == GOD_SHINING_ONE)   ? "smite your foes" :
-                             (you.religion == GOD_KIKUBAAQUDGHA) ? "carelessly practice necromancy" :
-                             (you.religion == GOD_YREDELEMNUL)   ? "recall undead servitors" :
-                             (you.religion == GOD_VEHUMET)       ? "consider yourself infallible" :
-                             (you.religion == GOD_OKAWARU)       ? "call upon Okawaru for minor healing" :
-                             (you.religion == GOD_MAKHLEB)       ? "harness Makhleb's destructive might" :
-                             (you.religion == GOD_SIF_MUNA)      ? "freely open your mind to new spells" :
-                             (you.religion == GOD_TROG)          ? "give your body great, but temporary, strength" :
-                             (you.religion == GOD_ELYVILON)      ? "perform Purification rites"
-                                                                 : "endure this program bug" );
+            case GOD_NO_GOD:
+            case GOD_XOM:
+            case GOD_NEMELEX_XOBEH:
+              break;
+            case GOD_KIKUBAAQUDGHA:
+              simple_god_message(" is no longer shielding you from miscast death magic.");
+              break;
+            case GOD_VEHUMET:
+              simple_god_message(" will no longer aid your destructive magics.");
+              break;
+            default:
+              god_speaks(you.religion);
+              strcpy(info, "You can no longer ");
+              strcat(info, (you.religion == GOD_ZIN) ? "call upon Zin for minor healing" :
+                     (you.religion == GOD_SHINING_ONE) ? "smite your foes" :
+                     (you.religion == GOD_YREDELEMNUL) ? "recall your undead slaves" :
+                     (you.religion == GOD_OKAWARU) ? "call upon Okawaru for minor healing" :
+                     (you.religion == GOD_MAKHLEB) ? "hurl Makhleb's destruction" :
+                     (you.religion == GOD_SIF_MUNA) ? "forget spells at will" :
+                     (you.religion == GOD_TROG) ? "give your body great, but temporary, strength" :
+                     (you.religion == GOD_ELYVILON) ? "call upon Elyvilon for Purification"
+                     : "endure this program bug" );
                 strcat(info, ".");
                 mpr(info);
                 break;
@@ -1503,33 +1514,32 @@ void lose_piety( char pgn )
 
         if ( you.piety < 30 && old_piety >= 30 )
         {
-            switch ( you.religion )
-            {
-              case GOD_NO_GOD:
-              case GOD_XOM:
-              case GOD_NEMELEX_XOBEH:
-              case GOD_SIF_MUNA:
-                break;
-              default:
-                god_speaks(you.religion);
-                strcpy(info, "You can no longer ");
-                strcat(info, (you.religion == GOD_ZIN
-                               || you.religion == GOD_SHINING_ONE) ? "repel the undead" :
-                             (you.religion == GOD_KIKUBAAQUDGHA)   ? "recall undead servitors" :
-                             (you.religion == GOD_YREDELEMNUL)     ? "animate corpses" :
-                             (you.religion == GOD_VEHUMET
-                               || you.religion == GOD_MAKHLEB)     ? "gain power from killing in the name of your deity" :
-                             (you.religion == GOD_OKAWARU)         ? "give your body great, but temporary, strength" :
-                             (you.religion == GOD_TROG)            ? "willfully trigger berserk rage" :
-                             (you.religion == GOD_ELYVILON)        ? "practice lesser healing arts"
-                                                                   : "endure this program bug" );
+          switch ( you.religion )
+          {
+          case GOD_NO_GOD:
+          case GOD_XOM:
+          case GOD_NEMELEX_XOBEH:
+          case GOD_SIF_MUNA:
+            break;
+          default:
+            god_speaks(you.religion);
+            strcpy(info, "You can no longer ");
+            strcat(info, (you.religion == GOD_ZIN
+                          || you.religion == GOD_SHINING_ONE) ? "repel the undead" :
+                   (you.religion == GOD_KIKUBAAQUDGHA) ? "recall your undead slaves" :
+                   (you.religion == GOD_YREDELEMNUL) ? "animate corpses" :
+                   (you.religion == GOD_VEHUMET) ? "gain power from killing in Vehumet's name" :
+                   (you.religion == GOD_MAKHLEB) ? "gain power from killing in Makhleb's name" :
+                   (you.religion == GOD_OKAWARU) ? "give your body great, but temporary, strength" :
+                   (you.religion == GOD_TROG) ? "go berserk at will" :
+                   (you.religion == GOD_ELYVILON) ? "call upon Elyvilon for minor healing."
+                   : "endure this program bug" );
                 strcat(info, ".");
                 mpr(info);
                 break;
             }
         }
     }
-
 }          // end lose_piety()
 
 
@@ -1540,12 +1550,12 @@ void divine_retribution( int god )
 
     ASSERT( god != GOD_NO_GOD );
 
-    int loopy = 0;                      // general purpose loop variable {dlb}
-    int temp_rand = 0;                  // probability determination {dlb}
-    int punisher = MONS_PROGRAM_BUG;    // why have many instance variables? {dlb}
-    bool success = false;               // ... again, why? ... {dlb}
-    int how_many = 0;                   // need I ask thrice? {dlb}
-    int divine_hurt = 0;                // or even a fourth time? {dlb}
+    int loopy = 0;                   // general purpose loop variable {dlb}
+    int temp_rand = 0;               // probability determination {dlb}
+    int punisher = MONS_PROGRAM_BUG; // why have many instance variables? {dlb}
+    bool success = false;            // ... again, why? ... {dlb}
+    int how_many = 0;                // need I ask thrice? {dlb}
+    int divine_hurt = 0;             // or even a fourth time? {dlb}
 
 
 // Sif Muna punishes only when you cast spells, we let
@@ -1571,16 +1581,18 @@ void divine_retribution( int god )
       // One in ten chance that Xom might do something good...
       // but that isn't forced, bad things are though
           bool nice = one_chance_in(10);
+          bool force = ! nice;
 
-          Xom_acts(nice, you.experience_level, !nice);
+          Xom_acts(nice, you.experience_level, force);
         }
         break;
 
       case GOD_SHINING_ONE:
         // Doesn't care unless you've gone over to evil
-        // jmf: expanded definition of evil above to include Vehumet and Makhleb
-        if ( you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_YREDELEMNUL || you.religion == GOD_VEHUMET || you.religion == GOD_MAKHLEB )
-        {
+        //jmf: expanded definition of evil above to include Vehumet and Makhleb
+        if (you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_MAKHLEB
+            ||you.religion == GOD_YREDELEMNUL || you.religion == GOD_VEHUMET)
+          {
             if ( coinflip() )
             {
                 success = false;
@@ -1591,7 +1603,7 @@ void divine_retribution( int god )
                     success = true;
 
                 if ( success )
-                  simple_god_message(god, true, " summons the divine host to punish your evil ways!");
+                  simple_god_message(" sends the divine host to punish your evil ways!", god);
             }
             else
             {
@@ -1602,15 +1614,15 @@ void divine_retribution( int god )
 
                 if ( !player_under_penance() && you.piety > random2(400) )
                 {
-                    strcpy(info, "The Shinging One tried to smite you, but I, ");
-                    strcat(info, god_name(you.religion));
-                    strcat(info, ", have interceded.");
-                    god_speaks(you.religion);
-                    mpr(info);
+                  strcpy(info, "The Shinging One tried to smite you, but I, ");
+                  strcat(info, god_name(you.religion));
+                  strcat(info, ", have interceded.");
+                  god_speaks(you.religion);
+                  mpr(info);
                 }
                 else
                 {
-                    simple_god_message(god, true, "smites you!");
+                    simple_god_message("smites you!",god);
                     ouch(divine_hurt, 0, KILLED_BY_TSO_SMITING);
                     dec_penance(GOD_SHINING_ONE, 1);
                 }
@@ -1620,7 +1632,8 @@ void divine_retribution( int god )
 
       case GOD_ZIN:
         // Doesn't care unless you've gone over to evil
-        if ( you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_MAKHLEB || you.religion == GOD_YREDELEMNUL || you.religion == GOD_VEHUMET )
+        if ( you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_MAKHLEB
+             || you.religion == GOD_YREDELEMNUL || you.religion == GOD_VEHUMET)
         {
             if ( random2(you.experience_level) > 7 )
             {
@@ -1628,20 +1641,21 @@ void divine_retribution( int god )
                 how_many = 1 + (you.experience_level / 10) + random2(3);
 
                 for (loopy = 0; loopy < how_many; loopy++)
-                  if ( create_monster(MONS_ANGEL, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
+                  if ( create_monster(MONS_ANGEL, 0, BEH_CHASING_I, you.x_pos,
+                                      you.y_pos, MHITNOT, 250) != -1 )
                     success = true;
 
                 if ( success )
-                  simple_god_message(god, true, " summons the divine host to punish you for your evil ways!" );
+                  simple_god_message(" sends the divine host to punish you for your evil ways!", god);
             }
             else
             {
                how_many = 2 + (you.experience_level / 5);
 
                for (loopy = 0; loopy < how_many; loopy++)
-                 summon_swarm(0);                            // power = 0 gives unfriendly
+                 summon_swarm(0); // power = 0 gives unfriendly
 
-               simple_god_message(god, true, " lets loose a plague upon you!");
+               simple_god_message(" sends down a plague upon you!", god);
              }
         }
         break;
@@ -1649,8 +1663,10 @@ void divine_retribution( int god )
       case GOD_MAKHLEB:
         if ( random2(you.experience_level) > 7 )
         {
-            if ( create_monster(MONS_EXECUTIONER + random2(5), 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
-              simple_god_message(god, true, " sends a greater servant against you!");
+            if ( create_monster(MONS_EXECUTIONER + random2(5), 0,
+                                BEH_CHASING_I, you.x_pos, you.y_pos,
+                                MHITNOT, 250) != -1 )
+              simple_god_message(" sends a greater servant against you!", god);
         }
         else
         {
@@ -1662,7 +1678,7 @@ void divine_retribution( int god )
                 success = true;
 
             if ( success )
-              simple_god_message(god, true, " calls servents against you.");
+              simple_god_message(" sets servents against you.", god);
         }
         break;
 
@@ -1673,11 +1689,12 @@ void divine_retribution( int god )
             how_many = 1 + (you.experience_level / 7) + random2(3);
 
             for (loopy = 0; loopy < how_many; loopy++)
-              if ( create_monster(MONS_REAPER, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
+              if ( create_monster(MONS_REAPER, 0, BEH_CHASING_I, you.x_pos,
+                                  you.y_pos, MHITNOT, 250) != -1 )
                 success = true;
 
             if ( success )
-              simple_god_message(god, true, " summons Death upon you!" );
+              simple_god_message(" unleashes Death upon you!", god);
         }
         else
         {
@@ -1685,7 +1702,8 @@ void divine_retribution( int god )
             mpr( (coinflip()) ? "You hear Kikubaaqudgha cackling."
                               : "Kikubaaqudgha's malice focuses upon you." );
 
-            miscast_effect(SPTYP_NECROMANCY, 5 + you.experience_level, random2avg(88,3), 100);
+            miscast_effect(SPTYP_NECROMANCY, 5 + you.experience_level,
+                           random2avg(88,3), 100);
         }
         break;
 
@@ -1697,29 +1715,31 @@ void divine_retribution( int god )
 
             for (loopy = 0; loopy < how_many; loopy++)
             {
-                temp_rand = random2(100);
+              temp_rand = random2(100);
 
-                punisher = ( (temp_rand > 66) ? MONS_WRAITH :              // 33% chance {dlb}
-                             (temp_rand > 52) ? MONS_WIGHT :               // 12% chance {dlb}
-                             (temp_rand > 40) ? MONS_SPECTRAL_WARRIOR :    // 16% chance {dlb}
-                             (temp_rand > 31) ? MONS_ROTTING_HULK :        //  9% chance {dlb}
-                             (temp_rand > 23) ? MONS_SKELETAL_WARRIOR :    //  8% chance {dlb}
-                             (temp_rand > 16) ? MONS_VAMPIRE :             //  7% chance {dlb}
-                             (temp_rand > 10) ? MONS_GHOUL :               //  6% chance {dlb}
-                             (temp_rand >  4) ? MONS_MUMMY                 //  6% chance {dlb}
-                                              : MONS_FLAYED_GHOST );       //  5% chance {dlb}
+              punisher = ( (temp_rand > 66) ? MONS_WRAITH : // 33% chance {dlb}
+                           (temp_rand > 52) ? MONS_WIGHT : // 12% chance {dlb}
+                           (temp_rand > 40) ? MONS_SPECTRAL_WARRIOR : // 16%
+                           (temp_rand > 31) ? MONS_ROTTING_HULK : //  9%
+                           (temp_rand > 23) ? MONS_SKELETAL_WARRIOR : //  8%
+                           (temp_rand > 16) ? MONS_VAMPIRE : //  7%
+                           (temp_rand > 10) ? MONS_GHOUL : //  6% chance {dlb}
+                           (temp_rand >  4) ? MONS_MUMMY //  6% chance {dlb}
+                           : MONS_FLAYED_GHOST );       //  5% chance {dlb}
 
-                if ( create_monster(punisher, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
+                if ( create_monster(punisher, 0, BEH_CHASING_I, you.x_pos,
+                                    you.y_pos, MHITNOT, 250) != -1 )
                   success = true;
             }
 
             if ( success )
-              simple_god_message(god, true, " calls a servent to punish you." );
+              simple_god_message(" sends a servent to punish you.", god );
         }
         else
         {
-            simple_god_message(god, true, "'s anger turns toward you for a moment.");
-            miscast_effect(SPTYP_NECROMANCY, 5 + you.experience_level,random2avg(88,3), 100);
+            simple_god_message("'s anger turns toward you for a moment.",god);
+            miscast_effect(SPTYP_NECROMANCY, 5 + you.experience_level,
+                           random2avg(88,3), 100);
         }
         break;
 
@@ -1785,24 +1805,26 @@ void divine_retribution( int god )
                       }
                   }
 
-                  if ( create_monster(punisher, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
+                  if ( create_monster(punisher, 0, BEH_CHASING_I, you.x_pos,
+                                      you.y_pos, MHITNOT, 250) != -1 )
                     success = true;
               }
 
               if ( success )
-                simple_god_message(god, true, " sends monsters to punish you.");
+                simple_god_message(" sends monsters to punish you.", god);
             }
             break;
       //jmf: returned Trog's old Fire damage
           case 3:
             dec_penance(GOD_TROG, 2);
-            simple_god_message(god, true, " hurls flames of wrath!");
+            simple_god_message(" hurls flames of wrath!", god);
             you.duration[DUR_LIQUID_FLAMES] += random2avg(7,3) + 1;
             break;
           case 4:
           case 5:
-            simple_god_message(god, true, "'s anger focuses upon you.");
-            miscast_effect(SPTYP_FIRE, 8 + you.experience_level, random2avg(98,3), 100);
+            simple_god_message("'s anger focuses upon you.", god);
+            miscast_effect(SPTYP_FIRE, 8 + you.experience_level,
+                           random2avg(98,3), 100);
             break;
         }
         break;
@@ -1826,33 +1848,34 @@ void divine_retribution( int god )
                              (temp_rand >  9) ? MONS_CYCLOPS
                                               : MONS_HILL_GIANT );
 
-                if ( create_monster(punisher, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
+                if ( create_monster(punisher, 0, BEH_CHASING_I,
+                                    you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
                   success = true;
             }
 
             if ( success )
-              simple_god_message(god, true, " decides to test your mettle." );
+              simple_god_message(" decides to test your mettle.", god);
         }
         break;
 
       case GOD_VEHUMET:
-        simple_god_message(god, true, "'s vengence finds you." );
-        miscast_effect(coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING, 8 + you.experience_level, random2avg(98,3), 100);
+        simple_god_message("'s vengence finds you.", god);
+        miscast_effect(coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING,
+                       8 + you.experience_level, random2avg(98,3), 100);
         break;
 
-      case GOD_NEMELEX_XOBEH:
-        simple_god_message(god, true, " forces you to draw from the Deck of Punishment." );
-        deck_of_cards(DECK_OF_PUNISHMENT);
-        break;
+    case GOD_NEMELEX_XOBEH:
+      simple_god_message(" forces you to draw from the Deck of Punishment.", god );
+      deck_of_cards(DECK_OF_PUNISHMENT);
+      break;
 
-      case GOD_SIF_MUNA: // should never get here, Sif Muna is handled elsewhere.
-      case GOD_ELYVILON: // Elyvilon doesn't seek revenge
-      default:
+    case GOD_SIF_MUNA: // should never get here, Sif Muna is handled elsewhere.
+    case GOD_ELYVILON: // Elyvilon doesn't seek revenge
+    default:
         break;
     }
 
     return;
-
 }          // end divine_retribution()
 
 
@@ -1873,23 +1896,25 @@ void excommunication( void )
 
       case GOD_KIKUBAAQUDGHA:
       case GOD_YREDELEMNUL:
-        simple_god_message(you.religion, false, " does not appreciate desertion!");
+        simple_god_message(" does not appreciate desertion!");
         miscast_effect(SPTYP_NECROMANCY, 5 + you.experience_level, random2avg(88,3), 100);
         inc_penance(30);
         break;
 
       case GOD_VEHUMET:
       case GOD_MAKHLEB:
-        simple_god_message(you.religion, false, " does not appreciate desertion!");
-        miscast_effect((coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING), 8 + you.experience_level, random2avg(98,3), 100);
+        simple_god_message(" does not appreciate desertion!");
+        miscast_effect((coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING),
+                       8 + you.experience_level, random2avg(98,3), 100);
         inc_penance(25);
         break;
 
       case GOD_TROG:
 #if 0
         /* Trog uses fire wild magic - is this right? */
-        simple_god_message(you.religion, false, " does not appreciate desertion!");
-        miscast_effect(SPTYP_FIRE, 8 + you.experience_level, random2avg(98,3), 100);
+        simple_god_message(" does not appreciate desertion!");
+        miscast_effect(SPTYP_FIRE, 8 + you.experience_level,
+                       random2avg(98,3), 100);
 #endif
         // Penence has to come before retribution to prevent "mollify"
         inc_penance(50);
@@ -2025,7 +2050,7 @@ void god_pitch( unsigned char which_god )
     if ( ( you.is_undead || you.species == SP_DEMONSPAWN )
         && ( which_god == GOD_ZIN || which_god == GOD_SHINING_ONE || which_god == GOD_ELYVILON ) )
     {
-        simple_god_message(which_god, true, " does not accept worship from those such as you!");
+        simple_god_message(" does not accept worship from those such as you!", which_god);
         return;
     }
 
@@ -2050,10 +2075,10 @@ void god_pitch( unsigned char which_god )
     if ( you.religion != GOD_NO_GOD )
       excommunication();
 
-    you.religion = which_god;    //jmf: moved up so god_speaks gives right colour
-    you.piety = 15;              // hmmmm ....
+    you.religion = which_god; //jmf: moved up so god_speaks gives right colour
+    you.piety = 15;           // hmmmm ....
 
-    simple_god_message(which_god, true, " welcomes you!");
+    simple_god_message(" welcomes you!");
 
     more();
 
@@ -2066,7 +2091,7 @@ void god_pitch( unsigned char which_god )
     you.penance[you.religion] = 0;
 
     if ( you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_YREDELEMNUL
-          || you.religion == GOD_VEHUMET || you.religion == GOD_MAKHLEB )
+         || you.religion == GOD_VEHUMET || you.religion == GOD_MAKHLEB )
     {
         if (you.penance[GOD_SHINING_ONE] > 0)
         {
@@ -2191,17 +2216,14 @@ void handle_god_time( void )
 
 
 // yet another wrapper for mpr() {dlb}:
-bool simple_god_message( char which_deity, bool colour_message, const char *event )
+void simple_god_message( const char *event, int which_deity = GOD_NO_GOD )
 {
+  if (which_deity == GOD_NO_GOD)
+    which_deity = you.religion;
 
-    strcpy(info, god_name(which_deity));
-    strcat(info, event);
+  strcpy(info, god_name(which_deity));
+  strcat(info, event);
 
-    if ( colour_message )
-      god_speaks(which_deity);
-
-    mpr(info);
-
-    return true;
-
-}          // end simple_god_message()
+  god_speaks(which_deity);
+  mpr(info);
+}

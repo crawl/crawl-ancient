@@ -6,491 +6,491 @@
  *  Change History (most recent first):
  *
  *
- *      <4>     19 June 2000    GDL             Changed handles to FILE *
- *      <3>     6/13/99         BWR             Improved spell listing
- *      <2>     5/30/99         JDJ             dump_spells dumps failure rates (from Brent).
- *      <1>     4/20/99         JDJ             Reformatted, uses string objects, split out 7
- *                                              functions from dump_char, dumps artifact info.
- */
-
-#include "AppHdr.h"
-#include "chardump.h"
-
-#include <string>
-#include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#ifndef __IBMCPP__
-#include <unistd.h>
-#endif
-#include <ctype.h>
-
-#ifdef USE_EMX
-#include <sys/types.h>
-#endif
-
-#ifdef MAC
-#include <stat.h>
-#else
-#include <sys/stat.h>
-#endif
-
-#ifdef DOS
-#include <conio.h>
-#endif
-
-#include "externs.h"
-
-#include "debug.h"
-#include "describe.h"
-#include "itemname.h"
-#include "mutation.h"
-#include "new.h"
-#include "player.h"
-#include "religion.h"
-#include "shopping.h"
-#include "skills2.h"
-#include "spells0.h"
-#include "spl-book.h"
-#include "spl-util.h"
-#include "stuff.h"
-#include "version.h"
-
-#ifdef MACROS
-#include "macro.h"
-#endif
-
-
-char verbose_dump;
-
-
-
-// ========================================================================
-//      Internal Functions
-// ========================================================================
-
-//---------------------------------------------------------------
-//
-// munge_description
-//
-// Convert dollar signs to EOL and word wrap to 80 characters.
-// (for some obscure reason get_item_description uses dollar
-// signs instead of EOL).
-//  - It uses $ signs because they're easier to manipulate than the EOL
-//  macro, which is of uncertain length (well, that and I didn't know how
-//  to do it any better at the time) (LH)
-//---------------------------------------------------------------
-static string munge_description(const string & inStr)
-{
-    string outStr;
-
-    outStr.reserve(inStr.length() + 32);
-
-    const long kIndent = 3;
-
-    outStr += string(kIndent, ' ');
-    long lineLen = kIndent;
-
-    long i = 0;
-
-    while (i < (long) inStr.length())
-    {
-        char ch = inStr[i];
-
-        if (ch == '$')
-        {
-            outStr += EOL;
-            outStr += string(kIndent, ' ');
-            lineLen = kIndent;
-            ++i;
-
-        }
-        else if ( isspace(ch) )
-        {
-            if (lineLen >= 79)
-            {
-                outStr += EOL;
-                outStr += string(kIndent, ' ');
-                lineLen = kIndent;
-
-            }
-            else if (lineLen > 0)
-            {
-                outStr += ch;
-                ++lineLen;
-            }
-            ++i;
-
-        }
-        else
-        {
-            string word;
-
-            while (i < (long) inStr.length() && lineLen + (long) word.length() < 79 && !isspace(inStr[i]) && inStr[i] != '$')
-            {
-                word += inStr[i++];
-            }
-
-            if (lineLen + word.length() >= 79)
-            {
-                outStr += EOL;
-                outStr += string(kIndent, ' ');
-                lineLen = kIndent;
-            }
-
-            outStr += word;
-            lineLen += word.length();
-        }
-    }
-
-    outStr += EOL;
-
-    return outStr;
-
-}          // end munge_description()
-
-
-
-
-//---------------------------------------------------------------
-//
-// dump_stats
-//
-//---------------------------------------------------------------
-static void dump_stats( string & text )
-{
-
-    char st_prn[15];
-    char title[40];
-
-    text += you.your_name;
-    text += " the ";
-    strcpy(title, skill_title(best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99), you.skills[best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99)]));
-    text += title;
-    text += " (";
-    text += species_name(you.species);
-    text += ")";
-    text += EOL;
-
-    text += "(Level ";
-    itoa(you.experience_level, st_prn, 10);
-    text += st_prn;
-    text += " ";
-    text += you.class_name;
-    text += ")";
-    text += EOL;
-
-    text += "Experience : ";
-    itoa(you.experience_level, st_prn, 10);
-    text += st_prn;
-    text += "/";
-    itoa(you.experience, st_prn, 10);
-    text += st_prn;
-    text += EOL;
-
-    text += "Strength ";
-    itoa(you.strength, st_prn, 10);
-    text += st_prn;
-    if (you.strength < you.max_strength)
-    {
-        text += "/";
-        itoa(you.max_strength, st_prn, 10);
-        text += st_prn;
-    }
-
-    text += "     Dexterity ";
-    itoa(you.dex, st_prn, 10);
-    text += st_prn;
-    if (you.dex < you.max_dex)
-    {
-        text += "/";
-        itoa(you.max_dex, st_prn, 10);
-        text += st_prn;
-    }
-
-    text += "     Intelligence ";
-    itoa(you.intel, st_prn, 10);
-    text += st_prn;
-    if (you.intel < you.max_intel)
-    {
-        text += "/";
-        itoa(you.max_intel, st_prn, 10);
-        text += st_prn;
-    }
-    text += EOL;
-
-    text += "Hit Points : ";
-    itoa(you.hp, st_prn, 10);
-    text += st_prn;
-
-    int max_max_hp = you.hp_max - you.base_hp + 5000;
-
-    if (you.hp < you.hp_max || max_max_hp != you.hp_max)
-    {
-        text += "/";
-        itoa(you.hp_max, st_prn, 10);
-        text += st_prn;
-
-        if (max_max_hp != you.hp_max)
-        {
-            text += " (";
-            itoa(max_max_hp, st_prn, 10);
-            text += st_prn;
-            text += ")";
-        }
-
-        if ( you.hp < 1 )
-        {
-            text += " ";
-            text += ( (!you.deaths_door) ? "(dead)" : "(almost dead)" );
-        }
-    }
-
-    text += "          Magic Points : ";
-    itoa(you.magic_points, st_prn, 10);
-    text += st_prn;
-    if (you.magic_points < you.max_magic_points)
-    {
-        text += "/";
-        itoa(you.max_magic_points, st_prn, 10);
-        text += st_prn;
-    }
-    text += EOL;
-
-    text += "AC : ";
-    itoa(player_AC(), st_prn, 10);
-    text += st_prn;
-
-    text += "          Evasion : ";
-    itoa(player_evasion(), st_prn, 10);
-    text += st_prn;
-
-    text += "          Shield : ";
-    itoa(player_shield_class(), st_prn, 10);
-    text += st_prn;
-    text += EOL;
-
-    text += "GP : ";
-    itoa(you.gold, st_prn, 10);
-    text += st_prn;
-    text += EOL;
-    text += EOL;
-
-}          // end dump_stats()
-
-
-
-
-//---------------------------------------------------------------
-//
-// dump_location
-//
-//---------------------------------------------------------------
-static void dump_location( string & text )
-{
-
-    if (you.your_level != -1)
-        text += "You are ";
-
-    if (you.level_type == LEVEL_PANDEMONIUM)
-        text += "in Pandemonium";
-    else if (you.level_type == LEVEL_ABYSS)
-        text += "in the Abyss";
-    else if (you.level_type == LEVEL_LABYRINTH)
-        text += "in a labyrinth";
-    else if (you.where_are_you == BRANCH_DIS)
-        text += "in Dis";
-    else if (you.where_are_you == BRANCH_GEHENNA)
-        text += "in Gehenna";
-    else if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
-        text += "in the Vestibule of Hell";
-    else if (you.where_are_you == BRANCH_COCYTUS)
-        text += "in Cocytus";
-    else if (you.where_are_you == BRANCH_TARTARUS)
-        text += "in Tartarus";
-    else if (you.where_are_you == BRANCH_INFERNO)
-        text += "in the Inferno";
-    else if (you.where_are_you == BRANCH_THE_PIT)
-        text += "in the Pit";
-    else if (you.where_are_you == BRANCH_ORCISH_MINES)
-        text += "in the Mines";
-    else if (you.where_are_you == BRANCH_HIVE)
-        text += "in the Hive";
-    else if (you.where_are_you == BRANCH_LAIR)
-        text += "in the Lair";
-    else if (you.where_are_you == BRANCH_SLIME_PITS)
-        text += "in the Slime Pits";
-    else if (you.where_are_you == BRANCH_VAULTS)
-        text += "in the Vaults";
-    else if (you.where_are_you == BRANCH_CRYPT)
-        text += "in the Crypt";
-    else if (you.where_are_you == BRANCH_HALL_OF_BLADES)
-        text += "in the Hall of Blades";
-    else if (you.where_are_you == BRANCH_HALL_OF_ZOT)
-        text += "in the Hall of Zot";
-    else if (you.where_are_you == BRANCH_ECUMENICAL_TEMPLE)
-        text += "in the Ecumenical Temple";
-    else if (you.where_are_you == BRANCH_SNAKE_PIT)
-        text += "in the Snake Pit";
-    else if (you.where_are_you == BRANCH_ELVEN_HALLS)
-        text += "in the Elven Halls";
-    else if (you.where_are_you == BRANCH_TOMB)
-        text += "in the Tomb";
-    else if (you.where_are_you == BRANCH_SWAMP)
-        text += "in the Swamp";
-    else
-    {
-        if (you.your_level == -1)
-        {
-            text += "You escaped.";
-        }
-        else
-        {
-            char st_prn[15];
-
-            text += "on level ";
-            itoa(you.your_level + 1, st_prn, 10);
-            text += st_prn;
-        }
-    }
-
-    text += EOL;
-
-}          // end dump_location()
-
-
-
-
-//---------------------------------------------------------------
-//
-// dump_religion
-//
-//---------------------------------------------------------------
-static void dump_religion( string & text )
-{
-
-    if ( you.religion != GOD_NO_GOD )
-    {
-        text += "You worship ";
-        text += god_name(you.religion);
-        text += ".";
-        text += EOL;
-
-        if ( !player_under_penance() )
-        {
-            if (you.religion != GOD_XOM)
-            {                   // Xom doesn't care
-                text += god_name(you.religion);
-                text += " is ";
-                text += ( (you.piety <=   5) ? "displeased" :
-                          (you.piety <=  20) ? "noncommittal" :
-                          (you.piety <=  40) ? "pleased with you" :
-                          (you.piety <=  70) ? "most pleased with you" :
-                          (you.piety <= 100) ? "greatly pleased with you" :
-                          (you.piety <= 130) ? "extremely pleased with you"
-                                             : "exalted by your worship" );
-                text += ".";
-                text += EOL;
-            }
-        }
-        else
-        {
-            text += god_name(you.religion);
-            text += " is demanding penance.";
-            text += EOL;
-        }
-    }
-
-}          // end dump_religion()
-
-
-
-
-//---------------------------------------------------------------
-//
-// dump_inventory
-//
-//---------------------------------------------------------------
-static void dump_inventory( string & text, char show_prices )
-{
-
-    int i, j;
-    char temp_id[4][50];
-
-    string text2;
-
-    for (i = 0; i < 4; i++)
-      for (j = 0; j < 50; j++)
-         temp_id[i][j] = 1;
-
-    char st_pass[60];
-
-    strcpy(st_pass, "");
-
-    int inv_class2[OBJ_GOLD];
-    int inv_count = 0;
-    char strng[80];
-
-    for (i = 0; i < OBJ_GOLD; i++)
-      inv_class2[i] = 0;
-
-    for (i = 0; i < ENDOFPACK; i++)
-      if (you.inv_quantity[i] != 0)
-      {
-          inv_class2[you.inv_class[i]]++;     // adds up number of each class in invent.
-          inv_count++;
-      }
-
-    if ( !inv_count )
-    {
-        text += "You aren't carrying anything.";
-        text += EOL;
-    }
-    else
-    {
-        text += "  Inventory:";
-        text += EOL;
-
-        for (i = 0; i < OBJ_GOLD; i++)
-        {
-            if ( inv_class2[i] != 0 )
-            {
-                switch ( i )
-                {
-                  case OBJ_WEAPONS:
-                    text += "Hand weapons";
-                    break;
-                  case OBJ_MISSILES:
-                    text += "Missiles";
-                    break;
-                  case OBJ_ARMOUR:
-                    text += "Armour";
-                    break;
-                  case OBJ_WANDS:
-                    text += "Magical devices";
-                    break;
-                  case OBJ_FOOD:
-                    text += "Comestibles";
-                    break;
-                  case OBJ_SCROLLS:
-                    text += "Scrolls";
-                    break;
-                  case OBJ_JEWELLERY:
-                    text += "Jewellery";
-                    break;
-                  case OBJ_POTIONS:
-                    text += "Potions";
-                    break;
-                  case OBJ_BOOKS:
-                    text += "Books";
-                    break;
-                  case OBJ_STAVES:
-                    text += "Magical staves";
-                    break;
-                  case OBJ_ORBS:
-                    text += "Orbs of Power";
-                    break;
+ * <4> 19 June 2000    GDL Changed handles to FILE *
+ * <3> 6/13/99         BWR Improved spell listing
+ * <2> 5/30/99         JDJ dump_spells dumps failure rates (from Brent).
+ * <1> 4/20/99         JDJ Reformatted, uses string objects, split out 7
+ *                         functions from dump_char, dumps artifact info.
+  */
+
+ #include "AppHdr.h"
+ #include "chardump.h"
+
+ #include <string>
+ #include <stdio.h>
+ #include <string.h>
+ #include <fcntl.h>
+ #include <stdlib.h>
+ #ifndef __IBMCPP__
+ #include <unistd.h>
+ #endif
+ #include <ctype.h>
+
+ #ifdef USE_EMX
+ #include <sys/types.h>
+ #endif
+
+ #ifdef MAC
+ #include <stat.h>
+ #else
+ #include <sys/stat.h>
+ #endif
+
+ #ifdef DOS
+ #include <conio.h>
+ #endif
+
+ #include "externs.h"
+
+ #include "debug.h"
+ #include "describe.h"
+ #include "itemname.h"
+ #include "mutation.h"
+ #include "new.h"
+ #include "player.h"
+ #include "religion.h"
+ #include "shopping.h"
+ #include "skills2.h"
+ #include "spells0.h"
+ #include "spl-book.h"
+ #include "spl-util.h"
+ #include "stuff.h"
+ #include "version.h"
+
+ #ifdef MACROS
+ #include "macro.h"
+ #endif
+
+
+ char verbose_dump;
+
+
+
+ // ========================================================================
+ //      Internal Functions
+ // ========================================================================
+
+ //---------------------------------------------------------------
+ //
+ // munge_description
+ //
+ // Convert dollar signs to EOL and word wrap to 80 characters.
+ // (for some obscure reason get_item_description uses dollar
+ // signs instead of EOL).
+ //  - It uses $ signs because they're easier to manipulate than the EOL
+ //  macro, which is of uncertain length (well, that and I didn't know how
+ //  to do it any better at the time) (LH)
+ //---------------------------------------------------------------
+ static string munge_description(const string & inStr)
+ {
+     string outStr;
+
+     outStr.reserve(inStr.length() + 32);
+
+     const long kIndent = 3;
+
+     outStr += string(kIndent, ' ');
+     long lineLen = kIndent;
+
+     long i = 0;
+
+     while (i < (long) inStr.length())
+     {
+         char ch = inStr[i];
+
+         if (ch == '$')
+         {
+             outStr += EOL;
+             outStr += string(kIndent, ' ');
+             lineLen = kIndent;
+             ++i;
+
+         }
+         else if ( isspace(ch) )
+         {
+             if (lineLen >= 79)
+             {
+                 outStr += EOL;
+                 outStr += string(kIndent, ' ');
+                 lineLen = kIndent;
+
+             }
+             else if (lineLen > 0)
+             {
+                 outStr += ch;
+                 ++lineLen;
+             }
+             ++i;
+
+         }
+         else
+         {
+             string word;
+
+             while (i < (long) inStr.length() && lineLen + (long) word.length() < 79 && !isspace(inStr[i]) && inStr[i] != '$')
+             {
+                 word += inStr[i++];
+             }
+
+             if (lineLen + word.length() >= 79)
+             {
+                 outStr += EOL;
+                 outStr += string(kIndent, ' ');
+                 lineLen = kIndent;
+             }
+
+             outStr += word;
+             lineLen += word.length();
+         }
+     }
+
+     outStr += EOL;
+
+     return outStr;
+
+ }          // end munge_description()
+
+
+
+
+ //---------------------------------------------------------------
+ //
+ // dump_stats
+ //
+ //---------------------------------------------------------------
+ static void dump_stats( string & text )
+ {
+
+     char st_prn[15];
+     char title[40];
+
+     text += you.your_name;
+     text += " the ";
+     strcpy(title, skill_title(best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99), you.skills[best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99)]));
+     text += title;
+     text += " (";
+     text += species_name(you.species);
+     text += ")";
+     text += EOL;
+
+     text += "(Level ";
+     itoa(you.experience_level, st_prn, 10);
+     text += st_prn;
+     text += " ";
+     text += you.class_name;
+     text += ")";
+     text += EOL;
+
+     text += "Experience : ";
+     itoa(you.experience_level, st_prn, 10);
+     text += st_prn;
+     text += "/";
+     itoa(you.experience, st_prn, 10);
+     text += st_prn;
+     text += EOL;
+
+     text += "Strength ";
+     itoa(you.strength, st_prn, 10);
+     text += st_prn;
+     if (you.strength < you.max_strength)
+     {
+         text += "/";
+         itoa(you.max_strength, st_prn, 10);
+         text += st_prn;
+     }
+
+     text += "     Dexterity ";
+     itoa(you.dex, st_prn, 10);
+     text += st_prn;
+     if (you.dex < you.max_dex)
+     {
+         text += "/";
+         itoa(you.max_dex, st_prn, 10);
+         text += st_prn;
+     }
+
+     text += "     Intelligence ";
+     itoa(you.intel, st_prn, 10);
+     text += st_prn;
+     if (you.intel < you.max_intel)
+     {
+         text += "/";
+         itoa(you.max_intel, st_prn, 10);
+         text += st_prn;
+     }
+     text += EOL;
+
+     text += "Hit Points : ";
+     itoa(you.hp, st_prn, 10);
+     text += st_prn;
+
+     int max_max_hp = you.hp_max - you.base_hp + 5000;
+
+     if (you.hp < you.hp_max || max_max_hp != you.hp_max)
+     {
+         text += "/";
+         itoa(you.hp_max, st_prn, 10);
+         text += st_prn;
+
+         if (max_max_hp != you.hp_max)
+         {
+             text += " (";
+             itoa(max_max_hp, st_prn, 10);
+             text += st_prn;
+             text += ")";
+         }
+
+         if ( you.hp < 1 )
+         {
+             text += " ";
+             text += ( (!you.deaths_door) ? "(dead)" : "(almost dead)" );
+         }
+     }
+
+     text += "          Magic Points : ";
+     itoa(you.magic_points, st_prn, 10);
+     text += st_prn;
+     if (you.magic_points < you.max_magic_points)
+     {
+         text += "/";
+         itoa(you.max_magic_points, st_prn, 10);
+         text += st_prn;
+     }
+     text += EOL;
+
+     text += "AC : ";
+     itoa(player_AC(), st_prn, 10);
+     text += st_prn;
+
+     text += "          Evasion : ";
+     itoa(player_evasion(), st_prn, 10);
+     text += st_prn;
+
+     text += "          Shield : ";
+     itoa(player_shield_class(), st_prn, 10);
+     text += st_prn;
+     text += EOL;
+
+     text += "GP : ";
+     itoa(you.gold, st_prn, 10);
+     text += st_prn;
+     text += EOL;
+     text += EOL;
+
+ }          // end dump_stats()
+
+
+
+
+ //---------------------------------------------------------------
+ //
+ // dump_location
+ //
+ //---------------------------------------------------------------
+ static void dump_location( string & text )
+ {
+
+     if (you.your_level != -1)
+         text += "You are ";
+
+     if (you.level_type == LEVEL_PANDEMONIUM)
+         text += "in Pandemonium";
+     else if (you.level_type == LEVEL_ABYSS)
+         text += "in the Abyss";
+     else if (you.level_type == LEVEL_LABYRINTH)
+         text += "in a labyrinth";
+     else if (you.where_are_you == BRANCH_DIS)
+         text += "in Dis";
+     else if (you.where_are_you == BRANCH_GEHENNA)
+         text += "in Gehenna";
+     else if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
+         text += "in the Vestibule of Hell";
+     else if (you.where_are_you == BRANCH_COCYTUS)
+         text += "in Cocytus";
+     else if (you.where_are_you == BRANCH_TARTARUS)
+         text += "in Tartarus";
+     else if (you.where_are_you == BRANCH_INFERNO)
+         text += "in the Inferno";
+     else if (you.where_are_you == BRANCH_THE_PIT)
+         text += "in the Pit";
+     else if (you.where_are_you == BRANCH_ORCISH_MINES)
+         text += "in the Mines";
+     else if (you.where_are_you == BRANCH_HIVE)
+         text += "in the Hive";
+     else if (you.where_are_you == BRANCH_LAIR)
+         text += "in the Lair";
+     else if (you.where_are_you == BRANCH_SLIME_PITS)
+         text += "in the Slime Pits";
+     else if (you.where_are_you == BRANCH_VAULTS)
+         text += "in the Vaults";
+     else if (you.where_are_you == BRANCH_CRYPT)
+         text += "in the Crypt";
+     else if (you.where_are_you == BRANCH_HALL_OF_BLADES)
+         text += "in the Hall of Blades";
+     else if (you.where_are_you == BRANCH_HALL_OF_ZOT)
+         text += "in the Hall of Zot";
+     else if (you.where_are_you == BRANCH_ECUMENICAL_TEMPLE)
+         text += "in the Ecumenical Temple";
+     else if (you.where_are_you == BRANCH_SNAKE_PIT)
+         text += "in the Snake Pit";
+     else if (you.where_are_you == BRANCH_ELVEN_HALLS)
+         text += "in the Elven Halls";
+     else if (you.where_are_you == BRANCH_TOMB)
+         text += "in the Tomb";
+     else if (you.where_are_you == BRANCH_SWAMP)
+         text += "in the Swamp";
+     else
+     {
+         if (you.your_level == -1)
+         {
+             text += "You escaped.";
+         }
+         else
+         {
+             char st_prn[15];
+
+             text += "on level ";
+             itoa(you.your_level + 1, st_prn, 10);
+             text += st_prn;
+         }
+     }
+
+     text += EOL;
+
+ }          // end dump_location()
+
+
+
+
+ //---------------------------------------------------------------
+ //
+ // dump_religion
+ //
+ //---------------------------------------------------------------
+ static void dump_religion( string & text )
+ {
+
+     if ( you.religion != GOD_NO_GOD )
+     {
+         text += "You worship ";
+         text += god_name(you.religion);
+         text += ".";
+         text += EOL;
+
+         if ( !player_under_penance() )
+         {
+             if (you.religion != GOD_XOM)
+             {                   // Xom doesn't care
+                 text += god_name(you.religion);
+                 text += " is ";
+                 text += ( (you.piety <=   5) ? "displeased" :
+                           (you.piety <=  20) ? "noncommittal" :
+                           (you.piety <=  40) ? "pleased with you" :
+                           (you.piety <=  70) ? "most pleased with you" :
+                           (you.piety <= 100) ? "greatly pleased with you" :
+                           (you.piety <= 130) ? "extremely pleased with you"
+                                              : "exalted by your worship" );
+                 text += ".";
+                 text += EOL;
+             }
+         }
+         else
+         {
+             text += god_name(you.religion);
+             text += " is demanding penance.";
+             text += EOL;
+         }
+     }
+
+ }          // end dump_religion()
+
+
+
+
+ //---------------------------------------------------------------
+ //
+ // dump_inventory
+ //
+ //---------------------------------------------------------------
+ static void dump_inventory( string & text, char show_prices )
+ {
+
+     int i, j;
+     char temp_id[4][50];
+
+     string text2;
+
+     for (i = 0; i < 4; i++)
+       for (j = 0; j < 50; j++)
+          temp_id[i][j] = 1;
+
+     char st_pass[60];
+
+     strcpy(st_pass, "");
+
+     int inv_class2[OBJ_GOLD];
+     int inv_count = 0;
+     char strng[80];
+
+     for (i = 0; i < OBJ_GOLD; i++)
+       inv_class2[i] = 0;
+
+     for (i = 0; i < ENDOFPACK; i++)
+       if (you.inv_quantity[i] != 0)
+       {
+           inv_class2[you.inv_class[i]]++;     // adds up number of each class in invent.
+           inv_count++;
+       }
+
+     if ( !inv_count )
+     {
+         text += "You aren't carrying anything.";
+         text += EOL;
+     }
+     else
+     {
+         text += "  Inventory:";
+         text += EOL;
+
+         for (i = 0; i < OBJ_GOLD; i++)
+         {
+             if ( inv_class2[i] != 0 )
+             {
+                 switch ( i )
+                 {
+                   case OBJ_WEAPONS:
+                     text += "Hand weapons";
+                     break;
+                   case OBJ_MISSILES:
+                     text += "Missiles";
+                     break;
+                   case OBJ_ARMOUR:
+                     text += "Armour";
+                     break;
+                   case OBJ_WANDS:
+                     text += "Magical devices";
+                     break;
+                   case OBJ_FOOD:
+                     text += "Comestibles";
+                     break;
+                   case OBJ_SCROLLS:
+                     text += "Scrolls";
+                     break;
+                   case OBJ_JEWELLERY:
+                     text += "Jewellery";
+                     break;
+                   case OBJ_POTIONS:
+                     text += "Potions";
+                     break;
+                   case OBJ_BOOKS:
+                     text += "Books";
+                     break;
+                   case OBJ_STAVES:
+                     text += "Magical staves";
+                     break;
+                   case OBJ_ORBS:
+                     text += "Orbs of Power";
+                                         break;
                   case OBJ_MISCELLANY:
                     text += "Miscellaneous";
                     break;
@@ -827,136 +827,137 @@ static void dump_mutations( string & text )
 //
 //---------------------------------------------------------------
 bool dump_char( char show_prices, char fname[30] )        // $$$ a try block?
- {
-    bool succeeded = false;
+{
+  bool succeeded = false;
 
-    string text;
+  string text;
 
-    text.reserve(100 * 80);     // start with enough room for 100 80 character lines
+  text.reserve(100 * 80); // start with enough room for 100 80 character lines
 
-    text += " Dungeon Crawl version " VERSION " character file.";
-    text += EOL;
-    text += EOL;
+  text += " Dungeon Crawl version " VERSION " character file.";
+  text += EOL;
+  text += EOL;
 
-    dump_stats(text);
-    dump_location(text);
-    dump_religion(text);
+  dump_stats(text);
+  dump_location(text);
+  dump_religion(text);
 
-    switch (you.burden_state)
+  switch (you.burden_state)
     {
     case BS_OVERLOADED:
-        text += "You are overloaded with stuff.";
-        text += EOL;
-        break;
+      text += "You are overloaded with stuff.";
+      text += EOL;
+      break;
     case BS_ENCUMBERED:
-        text += "You are encumbered.";
-        text += EOL;
-        break;
+      text += "You are encumbered.";
+      text += EOL;
+      break;
     }
 
-    text += "You are ";
+  text += "You are ";
 
-    text += ( (you.hunger <= 1000) ? "starving" :
-              (you.hunger <= 2600) ? "hungry" :
-              (you.hunger <  7000) ? "not hungry" :
-              (you.hunger < 11000) ? "full"
-                                   : "completely stuffed" );
+  text += ( (you.hunger <= 1000) ? "starving" :
+            (you.hunger <= 2600) ? "hungry" :
+            (you.hunger <  7000) ? "not hungry" :
+            (you.hunger < 11000) ? "full"
+            : "completely stuffed" );
 
-    text += ".";
-    text += EOL;
-    text += EOL;
+  text += ".";
+  text += EOL;
+  text += EOL;
 
-    if ( you.attribute[ATTR_TRANSFORMATION] )
+  if ( you.attribute[ATTR_TRANSFORMATION] )
     {
-        switch ( you.attribute[ATTR_TRANSFORMATION] )
+      switch ( you.attribute[ATTR_TRANSFORMATION] )
         {
-          case TRAN_SPIDER:
-            text += "You are in spider-form.";
-            break;
-          case TRAN_BLADE_HANDS:
-            text += "Your hands are blades.";
-            break;
-          case TRAN_STATUE:
-            text += "You are a stone statue.";
-            break;
-          case TRAN_ICE_BEAST:
-            text += "You are a creature of crystalline ice.";
-            break;
-          case TRAN_DRAGON:
-            text += "You are a fearsome dragon!";
-            break;
-          case TRAN_LICH:
-            text += "You are in lich-form.";
-            break;
-          case TRAN_SERPENT_OF_HELL:
-            text += "You are a huge, demonic serpent!";
-            break;
-          case TRAN_AIR:
-            text += "You are a cloud of diffuse gas.";
-            break;
+        case TRAN_SPIDER:
+          text += "You are in spider-form.";
+          break;
+        case TRAN_BLADE_HANDS:
+          text += "Your hands are blades.";
+          break;
+        case TRAN_STATUE:
+          text += "You are a stone statue.";
+          break;
+        case TRAN_ICE_BEAST:
+          text += "You are a creature of crystalline ice.";
+          break;
+        case TRAN_DRAGON:
+          text += "You are a fearsome dragon!";
+          break;
+        case TRAN_LICH:
+          text += "You are in lich-form.";
+          break;
+        case TRAN_SERPENT_OF_HELL:
+          text += "You are a huge, demonic serpent!";
+          break;
+        case TRAN_AIR:
+          text += "You are a cloud of diffuse gas.";
+          break;
         }
 
-        text += EOL;
-        text += EOL;
+      text += EOL;
+      text += EOL;
     }
 
-    dump_inventory(text, show_prices);
+  dump_inventory(text, show_prices);
 
-    char strng[80];
+  char strng[80];
 
-    text += EOL;
-    text += EOL;
-    text += " You have ";
-    itoa(you.exp_available, strng, 10);
-    text += strng;
-    text += " experience left.";
+  text += EOL;
+  text += EOL;
+  text += " You have ";
+  itoa(you.exp_available, strng, 10);
+  text += strng;
+  text += " experience left.";
 
-    dump_skills(text);
-    dump_spells(text);
-    dump_mutations(text);
+  dump_skills(text);
+  dump_spells(text);
+  dump_mutations(text);
 
-    char file_name[kPathLen] = "\0";
+  char file_name[kPathLen] = "\0";
 
-    if (sys_env.crawl_dir)
-        strncpy(file_name, sys_env.crawl_dir, kPathLen);
+  if (sys_env.crawl_dir)
+    strncpy(file_name, sys_env.crawl_dir, kPathLen);
 
-    strncat(file_name, fname, kPathLen);
+  strncat(file_name, fname, kPathLen);
 
-    if (strcmp(fname, "morgue.txt") != 0)
-        strncat(file_name, ".txt", kPathLen);
+  if (strcmp(fname, "morgue.txt") != 0)
+    strncat(file_name, ".txt", kPathLen);
 
-    FILE *handle = fopen(file_name, "wb");
+  FILE *handle = fopen(file_name, "wb");
 
-    strcpy(info, "File name: ");
-    strcat(info, file_name);
-    mpr(info);
+#ifdef DEBUG
+  strcpy(info, "File name: ");
+  strcat(info, file_name);
+  mpr(info);
+#endif
 
-    if (handle != NULL)
+  if (handle != NULL)
     {
-        size_t begin = 0;
-        size_t end = text.find(EOL);
+      size_t begin = 0;
+      size_t end = text.find(EOL);
 
       while (end != string::npos)
         {
-            end += strlen(EOL);
+          end += strlen(EOL);
 
-            size_t len = end - begin;
+          size_t len = end - begin;
 
-            if (len > 80)
-                len = 80;
-            fwrite(text.c_str()+begin, len, 1, handle);
+          if (len > 80)
+            len = 80;
+          fwrite(text.c_str()+begin, len, 1, handle);
 
-            begin = end;
-            end = text.find(EOL, end);
+          begin = end;
+          end = text.find(EOL, end);
         }
 
-        fclose(handle);
-        succeeded = true;
+      fclose(handle);
+      succeeded = true;
 
     }
-    else
-      mpr("Error opening file.");
+  else
+    mpr("Error opening file.");
 
-    return succeeded;
-
+  return succeeded;
 }          // end dump_char()

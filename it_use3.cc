@@ -52,7 +52,7 @@ static void ball_of_seeing(void);
 static void box_of_beasts(void);
 static void disc_of_storms(void);
 static void efreet_flask(void);
-static void staff_spell(char zap_device_2);
+static void staff_spell(int zap_device_2);
 
 
 
@@ -64,7 +64,7 @@ void special_wielded( void )
     int old_plus = you.inv_plus[you.equip[EQ_WEAPON]];
     int old_plus2 = you.inv_plus2[you.equip[EQ_WEAPON]];
     char old_colour = you.inv_colour[you.equip[EQ_WEAPON]];
-    bool makes_noise = ( one_chance_in(20) && !silenced(you.x_pos, you.y_pos) );
+    bool makes_noise = (one_chance_in(20) && !silenced(you.x_pos, you.y_pos));
 
     switch ( you.special_wield )
     {
@@ -377,19 +377,19 @@ void invoke_wielded( void )
                 temp_rand = random2(240);
 
                 if ( temp_rand > 125 )
-                  spell_casted = SPELL_BOLT_OF_FIRE;        // 114 in 240 chance {dlb}
+                  spell_casted = SPELL_BOLT_OF_FIRE; // 114 in 240 chance {dlb}
                 else if ( temp_rand > 68 )
-                  spell_casted = SPELL_LIGHTNING_BOLT;      //  57 in 240 chance {dlb}
+                  spell_casted = SPELL_LIGHTNING_BOLT; //57 in 240 chance {dlb}
                 else if ( temp_rand > 11 )
-                  spell_casted = SPELL_BOLT_OF_DRAINING;    //  57 in 240 chance {dlb}
+                  spell_casted = SPELL_BOLT_OF_DRAINING;//57 in 240 chance{dlb}
                 else
-                  spell_casted = SPELL_HELLFIRE;            //  12 in 240 chance {dlb}
+                  spell_casted = SPELL_HELLFIRE;     //  12 in 240 chance {dlb}
 
                 your_spells(spell_casted, 10, false);
                 break;
 
               case NWPN_STAFF_OF_OLGREB:
-                if ( !enough_mp(6, true) || you.skills[SK_SPELLCASTING] <= random2(11) )
+                if ( !enough_mp(4, true) || you.skills[SK_SPELLCASTING] <= random2(11) )
                   goto nothing_hap;
 
                 dec_mp(4);
@@ -411,7 +411,7 @@ void invoke_wielded( void )
                 break;
 
             default:
-nothing_hap:
+            nothing_hap:
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             }
@@ -419,14 +419,14 @@ nothing_hap:
         break;
 
       case OBJ_STAVES:
-        if ( you.inv_type[you.equip[EQ_WEAPON]] == STAFF_CHANNELING )
-        {
+        switch( you.inv_type[you.equip[EQ_WEAPON]] )
+          {
+          case STAFF_CHANNELING:
             if ( you.magic_points == you.max_magic_points || one_chance_in(4) )
               canned_msg(MSG_NOTHING_HAPPENS);
             else
-            {
+              {
                 mpr("You channel some magical energy.");
-
                 inc_mp(1 + random2(3), false);
 
                 if ( you.inv_ident[you.equip[EQ_WEAPON]] < 3 )
@@ -442,12 +442,36 @@ nothing_hap:
 
                     wield_change = true;
                 }
-            }
-
+              }
             break;
-        }
 
-        staff_spell(you.equip[EQ_WEAPON]);
+          case STAFF_SMITING:
+            if (enough_mp(4,true)) {
+              dec_mp(4);
+              your_spells( SPELL_SMITING, 5 + you.experience_level, false );
+
+              if ( you.inv_ident[you.equip[EQ_WEAPON]] < 3 )
+                {
+                  you.inv_ident[you.equip[EQ_WEAPON]] = 3;
+                  strcpy(info, "You are wielding ");
+                  in_name(you.equip[EQ_WEAPON], 3, str_pass);
+                  strcat(info, str_pass);
+                  strcat(info, ".");
+
+                  mpr(info);
+                  more();
+
+                  wield_change = true;
+                }
+            }
+            else
+              miscast_effect(SPTYP_CONJURATION, random2(5), random2(50), 100);
+            break;
+
+          default:
+            staff_spell(you.equip[EQ_WEAPON]);
+            break;
+          }
         break;
 
       case OBJ_MISCELLANY:
@@ -706,7 +730,7 @@ static void disc_of_storms( void )
 
 
 
-static void staff_spell( char zap_device_2 )
+static void staff_spell( int zap_device_2 )
 {
 
     int sc_read_1, sc_read_2;
@@ -715,19 +739,21 @@ static void staff_spell( char zap_device_2 )
           || you.inv_type[zap_device_2] < STAFF_SMITING
           || you.inv_type[zap_device_2] >= STAFF_AIR )
     {
-        mpr("That staff has no spells in it.");
-        return;
+      //mpr("That staff has no spells in it.");
+      canned_msg(MSG_NOTHING_HAPPENS);
+      return;
     }
 
     you.inv_ident[zap_device_2] = 3;
     wield_change = true;
     read_book(zap_device_2);
     unsigned char specspell;
-    int powc = player_mag_abil(true);
+    int powc = 1 + player_mag_abil(true) + you.experience_level;
 
     sc_read_1 = book_thing; // book_thing is got in read_book
 
-    if ( sc_read_1 < 'A' || ( sc_read_1 > 'Z' && sc_read_1 < 'a' ) || sc_read_1 > 'z' )
+    if ( sc_read_1 < 'A' || ( sc_read_1 > 'Z' && sc_read_1 < 'a' )
+         || sc_read_1 > 'z' )
       goto whattt;
 
     sc_read_2 = letter_to_index(sc_read_1);
@@ -738,7 +764,8 @@ static void staff_spell( char zap_device_2 )
     if ( !learn_a_spell(zap_device_2, sc_read_2) )
       goto whattt;
 
-    specspell = which_spell_in_book(you.inv_type[you.equip[EQ_WEAPON]] + 40, 1 + sc_read_2);
+    specspell = which_spell_in_book(you.inv_type[you.equip[EQ_WEAPON]] + 40,
+                                    1 + sc_read_2);
 
     if ( specspell == SPELL_NO_SPELL )
       goto whattt;

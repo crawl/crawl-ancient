@@ -46,7 +46,7 @@ int spell_spec(int spell);
 /* ***********************************************************************
  * called from: spl-book - spells0
  * *********************************************************************** */
-void print_slash(char already);
+void print_slash(bool already);
 
 
 // last updated 04jun2000 {dlb}
