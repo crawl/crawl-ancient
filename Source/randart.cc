@@ -1142,7 +1142,7 @@ char *randart_name(unsigned char aclass, unsigned char atype,
         case  5: strcat(art_n, "shimmering "); break;
         case  6: strcat(art_n, "warped "); break;
         case  7: strcat(art_n, "crystal "); break;
-        case  8: strcat(art_n, "jewelled "); break;
+        case  8: strcat(art_n, "jeweled "); break;
         case  9: strcat(art_n, "transparent "); break;
         case 10: strcat(art_n, "encrusted "); break;
         case 11: strcat(art_n, "pitted "); break;
@@ -1242,7 +1242,7 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype,
         case  5: strcat(art_n, "shimmering "); break;
         case  6: strcat(art_n, "warped "); break;
         case  7: strcat(art_n, "heavily runed "); break;
-        case  8: strcat(art_n, "jewelled "); break;
+        case  8: strcat(art_n, "jeweled "); break;
         case  9: strcat(art_n, "transparent "); break;
         case 10: strcat(art_n, "encrusted "); break;
         case 11: strcat(art_n, "pitted "); break;

@@ -549,7 +549,7 @@ void command_string(char comm[50], int i)
            (i == 410) ? "~    - save macros"                        :
 #endif
            (i == 420) ? "]    - list armour"                        :
-           (i == 425) ? "\"    - list jewellery"                    :
+           (i == 425) ? "\"    - list jewelry"                      :
            (i == 430) ? "Shift & direction   - long walk"           :
            (i == 440) ? "Shift & 5 on keypad - rest 100 turns"      :
            (i == 451) ? "S    - (S)ave your game and exit"          :

@@ -293,7 +293,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ,
                        (item_da == NWPN_SCYTHE_OF_CURSES) ? "warped scythe" :
                        (item_da == NWPN_MACE_OF_VARIABILITY) ? "shimmering mace" :
                        (item_da == NWPN_GLAIVE_OF_PRUNE) ? "purple glaive" :
-                       (item_da == NWPN_SCEPTRE_OF_TORMENT) ? "jewelled golden mace" :
+                       (item_da == NWPN_SCEPTRE_OF_TORMENT) ? "jeweled golden mace" :
                        (item_da == NWPN_SWORD_OF_ZONGULDROK) ? "bone long sword" :
                        (item_da == NWPN_SWORD_OF_CEREBOV) ? "great serpentine sword" :
                        (item_da == NWPN_STAFF_OF_DISPATER) ? "golden staff" :
@@ -569,7 +569,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ,
                            (dhelm == DHELM_PLUMED) ? "plumed " :
                            (dhelm == DHELM_SPIKED) ? "spiked " :
                            (dhelm == DHELM_VISORED) ? "visored " :
-                           (dhelm == DHELM_JEWELLED) ? "jewelled " :
+                           (dhelm == DHELM_JEWELLED) ? "jeweled " :
                            // these three were single spaces {dlb}
                            (dhelm == 13) ? " " :
                            (dhelm == 14) ? " " : (dhelm == 15) ? " " : "buggy ");
@@ -641,7 +641,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ,
             char secondary = (item_da / 12);
 
             strcat(glog, (secondary == 0) ? "" :        // hope this works {dlb}
-                   (secondary == 1) ? "jewelled" :
+                   (secondary == 1) ? "jeweled" :
                    (secondary == 2) ? "curved" :
                    (secondary == 3) ? "long" :
                    (secondary == 4) ? "short" :
@@ -1503,7 +1503,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ,
                    (item_da == 3) ? "thin" :
                    (item_da == 4) ? "long" :
                    (item_da == 5) ? "twisted" :
-                   (item_da == 6) ? "jewelled" :
+                   (item_da == 6) ? "jeweled" :
                    (item_da == 7) ? "runed" :
                    (item_da == 8) ? "smoking" :
                    (item_da == 9) ? "gnarled" :    // was "" {dlb}

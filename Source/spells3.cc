@@ -628,6 +628,12 @@ void you_teleport2(bool allow_control)
                               && you.attribute[ATTR_CONTROL_TELEPORT]
                               && allow_control_teleport());
 
+    if (scan_randarts(RAP_PREVENT_TELEPORTATION))
+    {
+        mpr("You feel a strange sense of stasis.");
+        return;
+    }
+
     FixedVector < int, 2 > plox;
 
     plox[0] = 1;

@@ -96,6 +96,7 @@ void _setcursortype(int curstype)
 void clrscr(void)
 {
    int i;
+   _setcursortype(_NOCURSOR);
    for (i=0; i<NUMBER_OF_LINES; i++)
    {
        gotoxy(1, i+1);
@@ -103,6 +104,7 @@ void clrscr(void)
                "                                        ");
    }
    gotoxy(1,1);
+   _setcursortype(_NORMALCURSOR);
 }
 
 void gotoxy(int x, int y)

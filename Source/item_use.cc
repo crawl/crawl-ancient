@@ -1731,6 +1731,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 void puton_ring(void)
 {
     unsigned char nthing = 0;
+    bool is_amulet = false;
 
     if (you.num_inv_items < 1)
     {
@@ -1804,11 +1805,13 @@ void puton_ring(void)
     {
         //jmf: let's not take our inferiority complex out on players, eh? :-p
         //mpr("You're sadly mistaken if you consider that jewellery.")
-        mpr("You can only put on jewellry.");
+        mpr("You can only put on jewelry.");
         return;
     }
 
-    if (you.inv_type[ring_wear_2] < AMU_RAGE)
+    is_amulet = (you.inv_type[ring_wear_2] >= AMU_RAGE);
+
+    if (!is_amulet)     // ie it's a ring
     {
         if (you.equip[EQ_GLOVES] != -1
             && you.inv_plus[you.equip[EQ_GLOVES]] > 80)
@@ -1847,7 +1850,7 @@ void puton_ring(void)
     if (you.equip[EQ_RIGHT_RING] != -1)
         hand_used = 0;
 
-    if (you.inv_type[ring_wear_2] >= AMU_RAGE)
+    if (is_amulet)
         hand_used = 2;
     else if (you.equip[EQ_LEFT_RING] == -1 && you.equip[EQ_RIGHT_RING] == -1)
     {
@@ -1981,7 +1984,10 @@ void puton_ring(void)
 
     if (you.inv_plus[ring_wear_2] > 80) // cursed
     {
-        mpr("Oops, that ring feels deathly cold.");
+        strcpy(info, "Oops, that ");
+        strcat(info, is_amulet?"amulet":"ring");
+        strcat(info, " feels deathly cold.");
+        mpr(info);
 
         if (you.inv_ident[ring_wear_2] == 0)
             you.inv_ident[ring_wear_2] = 1;
@@ -2053,7 +2059,7 @@ void remove_ring(void)
     if (hand_used == 10)
     {
       query:
-        mpr("Remove which piece of jewellery?", MSGCH_PROMPT);
+        mpr("Remove which piece of jewelry?", MSGCH_PROMPT);
 
         keyin = get_ch();
 
@@ -2087,7 +2093,7 @@ void remove_ring(void)
 
         if (you.inv_class[equipn] != OBJ_JEWELLERY)
         {
-            mpr("That isn't a piece of jewellry.");
+            mpr("That isn't a piece of jewelry.");
             return;
         }
 

@@ -8501,8 +8501,9 @@ static int vault_grid(int vx, int vy, int altar_count, FixedVector < char,
                    (vgrid == 'H') ? DNGN_ORANGE_CRYSTAL_STATUE :
                    (vgrid == 'T') ? DNGN_BLUE_FOUNTAIN :
                    (vgrid == 'U') ? DNGN_SPARKLING_FOUNTAIN :
-                   (vgrid == 'V') ? DNGN_PERMADRY_FOUNTAIN
-                                  : DNGN_FLOOR); // includes everything else
+                   (vgrid == 'V') ? DNGN_PERMADRY_FOUNTAIN :
+                   (vgrid == '\0')? DNGN_ROCK_WALL :
+                                    DNGN_FLOOR); // includes everything else
 
     // then, handle oddball grids {dlb}:
     switch (vgrid)

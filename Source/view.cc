@@ -77,9 +77,12 @@ void monster_grid(bool do_updates);
 // multiple putc() calls before making an expensive system call
 // (GDL)
 //
+// also turns cursor off/on depending on buffering value
+//
 //---------------------------------------------------------------
 static void doOutputBuffering(bool newValue)
 {
+    _setcursortype(newValue?_NOCURSOR:_NORMALCURSOR);
 #ifdef WIN32CONSOLE
     setBuffering(newValue);
 #endif
@@ -569,8 +572,6 @@ void viewwindow2(char draw_it, bool do_updates)
     FixedVector < unsigned char, BUFFER_SIZE > buffy;   //[800]; //392];
 
     unsigned char ch, color;
-
-    _setcursortype(_NOCURSOR);
 
 #ifdef WIZARD
     //memset(buffy, 255, sizeof(buffy)); //jmf: this won't compile for me
@@ -1301,7 +1302,7 @@ void noisy(char loudness, char nois_x, char nois_y)
         //  && monster->y >= nois_y - loudness && monster->y <= nois_y + loudness)
         //jmf: now that we have a working distance function ... 26mar2000
 
-        if (dist <= distance(monster->x, monster->y, nois_x, nois_y)
+        if (distance(monster->x, monster->y, nois_x, nois_y) <= dist
             && !silenced(monster->x, monster->y))
         {
             if (monster->behavior == BEH_SLEEP)
@@ -1807,7 +1808,7 @@ void show_map(FixedVector < int, 2 > &spec_place)
 
     for (j = 0; j < NUMBER_OF_LINES; j++)
     {
-        for (i = 0; i < 79; i++)
+        for (i = 0; i < 80; i++)
         {
             if (screen_y + j - 12 >= 65 || screen_y + j - 12 <= 4)
             {
@@ -1839,14 +1840,11 @@ void show_map(FixedVector < int, 2 > &spec_place)
 #ifdef PLAIN_TERM
 
           print_it:
-            if (j == NUMBER_OF_LINES - 1 && i == 78)
+            if (j == NUMBER_OF_LINES - 1 && i == 79)
                 continue;
 
-            if (i == 78)
-            {
-                cprintf(EOL);
-                continue;
-            }                   /* needed for screens >80 width */
+            if (i == 0 && j > 0)
+                gotoxy(1,j+1);
 
             textcolor(buffer2[bufcount2 - 1]);
             putch(buffer2[bufcount2 - 2]);
@@ -1857,7 +1855,7 @@ void show_map(FixedVector < int, 2 > &spec_place)
     }
 
 #ifdef DOS_TERM
-    puttext(1, 1, 80, 25, buffer2.buffer());
+    puttext(1, 1, 80, 25, buffer2);
 #endif
 
     gotoxy(curs_x, curs_y);
@@ -2046,7 +2044,7 @@ void show_map(FixedVector < int, 2 > &spec_place)
   putty:
 
 #ifdef DOS_TERM
-    puttext(1, 1, 80, 25, buffer.buffer());
+    puttext(1, 1, 80, 25, buffer);
 #endif
 
     return;
@@ -3087,6 +3085,7 @@ void viewwindow3(char draw_it, bool do_updates)
 
         if (!you.running)       // this line is purely optional
         {
+            doOutputBuffering(true);
             for (count_x = 0; count_x < 1120; count_x += 2)     // 1056
             {
                 textcolor(buffy[count_x + 1]);
@@ -3101,6 +3100,7 @@ void viewwindow3(char draw_it, bool do_updates)
                 gotoxy(2, wherey() + 1);
 #endif
             }
+            doOutputBuffering(false);
         }
 #endif
     }                           // end of (if brek...)

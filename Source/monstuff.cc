@@ -933,7 +933,8 @@ static void handle_nearby_ability(struct monsters *monster)
         case MONS_LAVA_WORM:
         case MONS_LAVA_FISH:
         case MONS_LAVA_SNAKE:
-        case MONS_ANOTHER_LAVA_THING:
+//      "another lava thing" has no stats! (GDL)
+//        case MONS_ANOTHER_LAVA_THING:
         case MONS_BIG_FISH:
         case MONS_GIANT_GOLDFISH:
         case MONS_ELECTRICAL_EEL:
@@ -3405,7 +3406,8 @@ unsigned char monster_habitat(int which_class)
     case MONS_LAVA_WORM:
     case MONS_LAVA_FISH:
     case MONS_LAVA_SNAKE:
-    case MONS_ANOTHER_LAVA_THING:
+// "another lava thing" has no stats! (GDL)
+//    case MONS_ANOTHER_LAVA_THING:
         return DNGN_LAVA;
 
     default:

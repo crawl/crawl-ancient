@@ -1221,26 +1221,28 @@ char mons_find(unsigned char xps, unsigned char yps,
 
         const int targ_x = you.x_pos + temp_xps - 17;
         const int targ_y = you.y_pos + temp_yps - 9;
-        const int targ_mon = mgrd[ targ_x ][ targ_y ];
 
         // We don't want to be looking outside the bounds of the arrays:
-        if (temp_xps <= 25 && temp_xps >= 8 && temp_yps <= 17// && temp_yps >= 1
-            && targ_x >= 0 && targ_x < GXM && targ_y >= 0 && targ_y < GYM)
+        if (temp_xps > 25 || temp_xps < 8 || temp_yps > 17 || temp_yps < 1)
+            continue;
+        if (targ_x < 0 || targ_x >= GXM || targ_y < 0 || targ_y >= GYM)
+            continue;
+
+        const int targ_mon = mgrd[ targ_x ][ targ_y ];
+        if (targ_mon != NON_MONSTER && env.show[temp_xps - 8][temp_yps] != 0
+            && (menv[ targ_mon ].enchantment[2] != ENCH_INVIS
+                || player_see_invis())
+            && (monster_habitat(menv[ targ_mon ].type) == DNGN_FLOOR
+                || menv[ targ_mon ].number != 1))
         {
-            if (targ_mon != NON_MONSTER && env.show[temp_xps - 8][temp_yps] != 0
-                && (menv[ targ_mon ].enchantment[2] != ENCH_INVIS
-                    || player_see_invis())
-                && (monster_habitat(menv[ targ_mon ].type) == DNGN_FLOOR
-                    || menv[ targ_mon ].number != 1))
-            {
-                //mpr("Found something!");
-                //more();
-                mfp[0] = temp_xps;
-                mfp[1] = temp_yps;
-                return 1;
-            }
+            //mpr("Found something!");
+            //more();
+            mfp[0] = temp_xps;
+            mfp[1] = temp_yps;
+            return 1;
         }
     }
+
 
     return 0;
 }

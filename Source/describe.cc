@@ -2493,7 +2493,7 @@ static string describe_jewellery(int item_class, int item_type, int item_plus,
     }
     else if (!get_id(OBJ_JEWELLERY, item_type))
     {
-        description += "A piece of jewellery. ";
+        description += "A piece of jewelry. ";
     }
     else
     {
@@ -2723,7 +2723,7 @@ static string describe_jewellery(int item_class, int item_type, int item_plus,
                 break;
 
             default:
-                DEBUGSTR("Unknown jewellry");
+                DEBUGSTR("Unknown jewelry");
             }
         }
     }
@@ -4359,6 +4359,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         // give it an entry anyway? {dlb}
         // (missing) case 423 - MONS_ANOTHER_LAVA_THING ??? 15jan2000 {dlb}
         //                      no entry in m_list.h 17jan200 {dlb}
+        //          monster has no stats!
         // (missing) case 250 - MONS_PROGRAM_BUG ??? 16jan2000 {dlb}
 
     case MONS_KILLER_BEE_LARVA:

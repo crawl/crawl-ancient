@@ -2023,7 +2023,6 @@ static void input(void)
         you.magic_points_regeneration -= 100;
     }
 
-    //losight(show, grid, you.x_pos, you.y_pos);
     viewwindow(0, true);
 
     monster();
@@ -2140,9 +2139,7 @@ static void input(void)
         you.attribute[ATTR_WAS_SILENCED] = its_quiet;
     }
 
-    _setcursortype(_NOCURSOR);
     viewwindow(1, false);
-    _setcursortype(_NORMALCURSOR);
 
     if (you.paralysis > 0)
         more();
