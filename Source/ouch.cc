@@ -1368,7 +1368,7 @@ void highscore(char death_string[256], long points)
     for (i = 0; i < SCORE_FILE_ENTRIES; i++)
     {
         strcpy(high_scores[i], "0       empty");
-        scores[i] = 0;
+        scores[i] = -1;
     }
 
 #ifdef SAVE_DIR_PATH
@@ -1406,15 +1406,14 @@ void highscore(char death_string[256], long points)
             char *targ = high_scores[i];
             for (j = 0; j < 80; j++)
             {
-                if (isspace(ready[j]) || isalpha(ready[j])
-                    || isdigit(ready[j]) || ispunct(ready[j]))
+                if (isprint(ready[j]))
                     *targ++ = ready[j];
             }
             *targ = 0;
-        }                       // end for i
 
-        for (i = 0; i < SCORE_FILE_ENTRIES; i++)
-        {
+            // get score from this new entry
+            scores[i] = 0;
+
             int multip = 1;
 
             for (j = 6; j >= 0; j--)
@@ -1424,7 +1423,8 @@ void highscore(char death_string[256], long points)
                 scores[i] += (high_scores[i][j] - 48) * multip;
                 multip *= 10;
             }
-        }
+
+        }                       // end for i
 
         // finished file read - close it.
 
@@ -1505,7 +1505,7 @@ void highscore(char death_string[256], long points)
     if (handle != NULL)
     {
         has_printed = 0;
-        for (i = 0; i < SCORE_FILE_ENTRIES && scores[i] > 0; i++)
+        for (i = 0; i < SCORE_FILE_ENTRIES; i++)
         {
             if (points >= scores[i] && has_printed == 0)
             {
@@ -1513,10 +1513,14 @@ void highscore(char death_string[256], long points)
                 death_string[79] = '\0';
                 fputs(death_string, handle);
                 fputs("\n", handle);
-                i--;
                 has_printed = 1;
             }
-            else
+
+            // don't print dummy entries
+            if (has_printed && scores[i] < 0)
+                break;
+
+            if (i + (int)has_printed < SCORE_FILE_ENTRIES)
             {
                 // truncate after 79th character
                 high_scores[i][79] = '\0';

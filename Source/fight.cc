@@ -304,7 +304,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         if (inv_randart_wpn_properties( weapon, 0, RAP_ANGRY) >= 1)
         {
             if (random2(1 + inv_randart_wpn_properties( weapon, 0, RAP_ANGRY )))
-                go_berserk();
+                go_berserk(false);
         }
     }
 
@@ -312,7 +312,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
     {
     case SPWLD_TROG:
         if (coinflip())
-            go_berserk();
+            go_berserk(false);
         break;
     case SPWLD_WUCAD_MU:
         if (one_chance_in(9))
@@ -325,7 +325,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
     if (you.mutation[MUT_BERSERK])
     {
         if (random2(100) < (you.mutation[MUT_BERSERK] * 10) - 5)
-            go_berserk();
+            go_berserk(false);
     }
 
     if (ur_armed)
@@ -767,7 +767,6 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
         if (defender->hit_points < 1)
         {
-            /* thing_thrown = 1; */
 #ifdef WIZARD
             itoa(damage_done, st_prn, 10);
             strcpy(info, "Hit for ");
@@ -4046,8 +4045,6 @@ void monster_die(struct monsters *monster, char killer, int i)
 
     monster_drop_ething(monster);
     monster_cleanup(monster);
-
-    viewwindow(1, false);
 }                                                   // end monster_die
 
 void monster_cleanup(struct monsters *monster)

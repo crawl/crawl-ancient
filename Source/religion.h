@@ -21,11 +21,11 @@
 void simple_god_message( const char *event, int which_deity = GOD_NO_GOD );
 
 
-// last updated 03jun2000 {dlb}
+// last updated 11jan2001 {mv}
 /* ***********************************************************************
  * called from: chardump - overmap - religion
  * *********************************************************************** */
-char *god_name(int which_god);
+char *god_name(int which_god,bool long_name=false); //mv
 
 
 // last updated 24may2000 {dlb}
@@ -104,6 +104,12 @@ void pray(void);
  * called from: items
  * *********************************************************************** */
 void handle_god_time(void);
+
+// created 5jan2001 {mv}
+/* ***********************************************************************
+ * called from: message, describe
+ * *********************************************************************** */
+char god_colour(char god);
 
 
 #endif

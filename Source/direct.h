@@ -22,13 +22,17 @@
  *              spells2 - spells3 - spells4
  * *********************************************************************** */
 
-void direction(char rnge, struct dist &moves);
+#define DIR_NONE    0
+#define DIR_TARGET  1
+#define DIR_DIR     2
+
+void direction(struct dist &moves, int restricts = DIR_NONE);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: acr - direct
  * *********************************************************************** */
-int look_around(struct dist &moves);
+void look_around(struct dist &moves, int first_move = -1);
 
 
 #endif

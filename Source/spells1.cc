@@ -43,7 +43,6 @@
 extern bool wield_change;       // defined in output.cc
 
 char healing_spell(int healed);
-void stinkcl(char cl_x, char cl_y, struct bolt beam);
 
 void blink(void)
 {
@@ -68,15 +67,15 @@ void blink(void)
         {
             mpr("Blink to where?", MSGCH_PROMPT);
 
-            direction(100, beam);
+            direction(beam, DIR_TARGET);
 
-            if (beam.nothing == -1)
+            if (!beam.isValid)
             {
                 canned_msg(MSG_SPELL_FIZZLES);
                 return;         // early return {dlb}
             }
 
-            if (see_grid(beam.target_x, beam.target_y))
+            if (see_grid(beam.tx, beam.ty))
                 break;
             else
             {
@@ -85,16 +84,16 @@ void blink(void)
             }
         }
 
-        if (grd[beam.target_x][beam.target_y] <= DNGN_LAST_SOLID_TILE
-            || mgrd[beam.target_x][beam.target_y] != NON_MONSTER)
+        if (grd[beam.tx][beam.ty] <= DNGN_LAST_SOLID_TILE
+            || mgrd[beam.tx][beam.ty] != NON_MONSTER)
         {
             mpr("Oops! Maybe something was there already.");
             random_blink(false);
         }
         else
         {
-            you.x_pos = beam.target_x;
-            you.y_pos = beam.target_y;
+            you.x_pos = beam.tx;
+            you.y_pos = beam.ty;
 
             if (you.level_type == LEVEL_ABYSS)
             {
@@ -160,9 +159,9 @@ void fireball(int power)
 
     message_current_target();
 
-    direction(1, fire_ball);
+    direction(fire_ball);
 
-    if (fire_ball.nothing == -1)
+    if (!fire_ball.isValid)
         canned_msg(MSG_SPELL_FIZZLES);
     else
     {
@@ -170,10 +169,8 @@ void fireball(int power)
 
         beam.source_x = you.x_pos;
         beam.source_y = you.y_pos;
-        beam.move_x = fire_ball.move_x;
-        beam.move_y = fire_ball.move_y;
-        beam.target_x = fire_ball.target_x;
-        beam.target_y = fire_ball.target_y;
+        beam.target_x = fire_ball.tx;
+        beam.target_y = fire_ball.ty;
 
         zapping(ZAP_FIREBALL, power, beam);
     }
@@ -191,14 +188,12 @@ void cast_fire_storm(int powc)
 
     mpr("Where?");
 
-    direction(100, fire_storm);
+    direction(fire_storm, DIR_TARGET);
 
-    beam.move_x = fire_storm.move_x;
-    beam.move_y = fire_storm.move_y;
-    beam.target_x = fire_storm.target_x;
-    beam.target_y = fire_storm.target_y;
+    beam.target_x = fire_storm.tx;
+    beam.target_y = fire_storm.ty;
 
-    if (fire_storm.nothing == -1)
+    if (!fire_storm.isValid)
     {
         canned_msg(MSG_SPELL_FIZZLES);
         return;
@@ -259,18 +254,17 @@ char spell_direction(struct dist &spelld, struct bolt &pbolt)
 
     message_current_target();
 
-    direction(1, spelld);
+    direction(spelld);
 
-    if (spelld.nothing == -1)
+    if (!spelld.isValid)
     {
+        // check for user cancel
         canned_msg(MSG_SPELL_FIZZLES);
         return -1;
     }
 
-    pbolt.move_x = spelld.move_x;
-    pbolt.move_y = spelld.move_y;
-    pbolt.target_y = spelld.target_y;
-    pbolt.target_x = spelld.target_x;
+    pbolt.target_x = spelld.tx;
+    pbolt.target_y = spelld.ty;
     pbolt.source_x = you.x_pos;
     pbolt.source_y = you.y_pos;
 
@@ -370,23 +364,23 @@ void conjure_flame(int pow)
     mpr("You cast a flaming cloud spell! But where?", MSGCH_PROMPT);
 
   direc:
-    direction(100, spelld);
+    direction(spelld, DIR_TARGET);
 
-    if (spelld.nothing == -1)
+    if (!spelld.isValid)
     {
         canned_msg(MSG_SPELL_FIZZLES);
         return;
     }
 
-    if (!see_grid(spelld.target_x, spelld.target_y))
+    if (!see_grid(spelld.tx, spelld.ty))
     {
         mpr("You can't see that place!");
         goto direc;
     }
 
-    if (grd[spelld.target_x][spelld.target_y] <= DNGN_LAST_SOLID_TILE
-        || mgrd[spelld.target_x][spelld.target_y] != NON_MONSTER
-        || env.cgrid[spelld.target_x][spelld.target_y] != EMPTY_CLOUD)
+    if (grd[spelld.tx][spelld.ty] <= DNGN_LAST_SOLID_TILE
+        || mgrd[spelld.tx][spelld.ty] != NON_MONSTER
+        || env.cgrid[spelld.tx][spelld.ty] != EMPTY_CLOUD)
     {
         mpr("There's already something there!");
         goto direc;
@@ -397,96 +391,62 @@ void conjure_flame(int pow)
     if (durat > 23)
         durat = 23;
 
-    place_cloud(CLOUD_FIRE, spelld.target_x, spelld.target_y, durat);
+    place_cloud(CLOUD_FIRE, spelld.tx, spelld.ty, durat);
 }                               // end cast_conjure_flame()
 
 void stinking_cloud(void)
 {
     struct dist spelld;
-    struct bolt beam;
+    struct bolt beem;
 
     mpr("Which direction? (*/+ to target)", MSGCH_PROMPT);
 
     message_current_target();
 
-    direction(1, spelld);
+    direction(spelld);
 
-    if (spelld.nothing == -1)
+    if (!spelld.isValid)
     {
         canned_msg(MSG_SPELL_FIZZLES);
         return;
     }
 
-    beam.move_x = spelld.move_x;
-    beam.move_y = spelld.move_y;
-    beam.target_x = spelld.target_x;
-    beam.target_y = spelld.target_y;
+    beem.target_x = spelld.tx;
+    beem.target_y = spelld.ty;
 
-    beam.source_x = you.x_pos;
-    beam.source_y = you.y_pos;
+    beem.source_x = you.x_pos;
+    beem.source_y = you.y_pos;
 
-    strcpy(beam.beam_name, "ball of vapour");
-    beam.colour = GREEN;
-    beam.range = 7;
-    beam.damage = 0;
-    beam.hit = 20;
-    beam.type = SYM_ZAP;
-    // exploding gas on target // 7;
-    // <- I wonder if 7 == (new) BEAM_CLOUD {dlb}
-    beam.flavour = BEAM_ACID;
-    beam.thing_thrown = KILL_MON_MISSILE;    //? ???? ?
+    strcpy(beem.beam_name, "ball of vapour");
+    beem.colour = GREEN;
+    beem.range = 7;
+    beem.rangeMax = 7;
+    beem.damage = 0;
+    beem.hit = 20;
+    beem.type = SYM_ZAP;
+    beem.flavour = BEAM_ACID;
+    beem.ench_power = 3 * you.intel;
+    beem.thrower = KILL_YOU;
+    beem.isBeam = false;
+    beem.isTracer = false;
 
-    missile(beam, -1);
-
-    // yep, that's what it broke down to {dlb}
-    beam.damage = 3 * you.intel;
-
-    stinkcl(beam.bx, beam.by, beam);
+    beam(beem);
 }                               // end stinking_cloud()
-
-void stinkcl(char cl_x, char cl_y, struct bolt beam)
-{
-    char stx = 0;
-    char sty = 0;
-
-    for (stx = -1; stx < 2; stx++)
-    {
-        for (sty = -1; sty < 2; sty++)
-        {
-            beam.range = 1 + random2(5) + random2(beam.damage / 50);
-
-            if (beam.range > 10)
-                beam.range = 10 + random2(3);
-
-            beam.type = 2;   // which is ?
-
-            beam.target_x = cl_x + stx;
-            beam.target_y = cl_y + sty;
-
-            if (grd[beam.target_x][beam.target_y] > DNGN_LAST_SOLID_TILE)
-            {
-                place_cloud( CLOUD_STINK, beam.target_x, beam.target_y,
-                                                            beam.range );
-            }
-        }                       // end "for stx, sty"
-    }
-}                               // end stinkcl()
 
 void cast_big_c(int pow, char cty)
 {
     struct dist cdis;
 
     mpr("Where do you want to put it?", MSGCH_PROMPT);
-    direction(100, cdis);
+    direction(cdis, DIR_TARGET);
 
-    if (cdis.nothing == -1)
+    if (!cdis.isValid)
     {
         canned_msg(MSG_SPELL_FIZZLES);
         return;
     }
 
-    //beam.damage = pow;
-    big_cloud( cty, cdis.target_x, cdis.target_y, pow, 8 + random2(3) );
+    big_cloud( cty, cdis.tx, cdis.ty, pow, 8 + random2(3) );
 }                               // end cast_big_c()
 
 void big_cloud(char clouds, char cl_x, char cl_y, int pow, int size)
@@ -539,23 +499,17 @@ char healing_spell(int healed)
 
   dirc:
     mpr("Which direction?", MSGCH_PROMPT);
-    direction(0, bmove);
+    direction(bmove, DIR_DIR);
 
-    mgr = mgrd[you.x_pos + bmove.move_x][you.y_pos + bmove.move_y];
-
-    if (bmove.nothing == -1)
+    if (!bmove.isValid)
     {
         mpr("Huh?!");
         return 0;
     }
 
-    if (bmove.move_x > 1 || bmove.move_y > 1)
-    {
-        mpr("This spell doesn't reach that far.");
-        goto dirc;
-    }
+    mgr = mgrd[you.x_pos + bmove.dx][you.y_pos + bmove.dy];
 
-    if (bmove.move_x == 0 && bmove.move_y == 0)
+    if (bmove.dx == 0 && bmove.dy == 0)
     {
         mpr("You are healed.");
         inc_hp(healed, false);
@@ -1017,9 +971,7 @@ void cast_regen(int pow)
 
 void cast_berserk(void)
 {
-    // I don't like how this will stack messages {dlb}
-    if (!go_berserk())
-        mpr("You fail to go berserk.");
+    go_berserk(true);
 }                               // end cast_berserk()
 
 void cast_swiftness(int power)

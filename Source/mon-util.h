@@ -324,6 +324,13 @@ int mons_zombie_size(int mclass);
 unsigned char mons_category(int which_mons);
 
 
+// last updated 07jan2001 (gdl)
+/* ***********************************************************************
+ * called from: beam
+ * *********************************************************************** */
+int mons_power(int mclass);
+
+
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: spells2 - view
@@ -358,5 +365,11 @@ void moname(int mcl, char mench, char see_inv, char descrip, char glog[40]);
  * *********************************************************************** */
 void mons_spell_list(unsigned char sec, int splist[6]);
 
+
+// last updated 4jan2001 (gdl)
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+bool mons_should_fire(struct bolt &beam);
 
 #endif

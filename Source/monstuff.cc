@@ -46,7 +46,8 @@ static void flag_ench(struct monsters *monster, int p);
 static void handle_behavior(struct monsters *monster);
 static void mons_in_cloud(struct monsters *monster);
 static void monster_move(struct monsters *monster);
-static void plant_spit(struct monsters *monster, struct bolt &pbolt);
+static bool plant_spit(struct monsters *monster, struct bolt &pbolt);
+static int map_wand_to_mspell(int wand_type);
 
 char mmov_x, mmov_y;
 
@@ -1012,36 +1013,27 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
             break;
         }
 
-        // viewwindow was here.
-        if (show[monster->x - you.x_pos + 9][monster->y - you.y_pos + 9])
+        // setup tracer
+        strcpy(beem.beam_name, "glob of lava");
+        beem.range = 5;
+        beem.rangeMax = 14;
+        beem.damage = 108;
+        beem.colour = RED;
+        beem.type = SYM_ZAP;
+        beem.flavour = BEAM_LAVA;
+        beem.hit = 20;
+        beem.beam_source = monster_index(monster);
+        beem.thrower = KILL_MON;
+
+        // fire tracer
+        fire_tracer(monster, beem);
+
+        // good idea?
+        if (mons_should_fire(beem))
         {
-            beem.move_x = 0;
-            beem.move_y = 0;
-
-            beem.move_x = beem.trac_targ_x - monster->x;
-            beem.move_y = beem.trac_targ_y - monster->y;
-
-            if (beem.move_x || beem.move_y)
-            {
-                viewwindow(1, false);
-                beem.target_x = beem.trac_targ_x;
-                beem.target_y = beem.trac_targ_y;
-                beem.aim_down = 1;
-                beem.range = 5 + random2(10);
-                beem.source_x = monster->x;
-                beem.source_y = monster->y;
-                strcpy(beem.beam_name, "glob of lava");
-                beem.damage = 108;
-                beem.colour = RED;
-                beem.type = SYM_ZAP;
-                beem.flavour = BEAM_LAVA;
-                beem.hit = 20;
-                beem.beam_source = monster_index(monster);
-                beem.thing_thrown = 4;
-
-                simple_monster_message(monster, " spits lava!");
-                missile(beem, 0);
-            }
+            simple_monster_message(monster, " spits lava!");
+            beam(beem);
+            used = true;
         }
         break;
 
@@ -1055,36 +1047,28 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         if (monster->number == 1 || monster->enchantment[2] == ENCH_INVIS)
             break;
 
-        if (show[monster->x - you.x_pos + 9][monster->y - you.y_pos + 9])
+        // setup tracer
+        strcpy(beem.beam_name, "bolt of electricity");
+        beem.damage = 105;
+        beem.colour = LIGHTCYAN;
+        beem.type = SYM_ZAP;
+        beem.flavour = BEAM_ELECTRICITY;
+        beem.hit = 150;
+        beem.beam_source = monster_index(monster);
+        beem.thrower = KILL_MON;
+        beem.range = 5;
+        beem.rangeMax = 14;
+        beem.isBeam = true;
+
+        // fire tracer
+        fire_tracer(monster, beem);
+
+        // good idea?
+        if (mons_should_fire(beem))
         {
-            beem.move_x = 0;
-            beem.move_y = 0;
-            beem.move_x = beem.trac_targ_x - monster->x;
-            beem.move_y = beem.trac_targ_y - monster->y;
-
-            if (beem.move_x || beem.move_y)
-            {
-                beem.target_x = beem.trac_targ_x;
-                beem.target_y = beem.trac_targ_y;
-                beem.aim_down = 1;
-                viewwindow(1, false);
-                beem.range = 5 + random2(10);
-                beem.source_x = monster->x;
-                beem.source_y = monster->y;
-                strcpy(beem.beam_name, "bolt of electricity");
-                beem.damage = 105;
-                beem.colour = LIGHTCYAN;
-                beem.type = SYM_ZAP;
-                beem.flavour = BEAM_ELECTRICITY;
-                beem.hit = 150;
-                beem.beam_source = monster_index(monster);
-                beem.thing_thrown = 2;
-
-                simple_monster_message(monster,
-                                       " shoots out a bolt of electricity!");
-
-                beam(beem);
-            }
+            simple_monster_message(monster, " shoots out a bolt of electricity!");
+            beam(beem);
+            used = true;
         }
         break;
 
@@ -1096,7 +1080,8 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
             break;
 
         if (one_chance_in(3))
-            plant_spit(monster, beem);
+            used = plant_spit(monster, beem);
+
         break;
 
     case MONS_PIT_FIEND:
@@ -1117,21 +1102,23 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
                 spell_cast = MS_TORMENT;
                 /* beem should be irrelevant here */
                 mons_cast(monster, beem, spell_cast);
+                used = true;
                 break;
             case 1:
             case 2:
             case 3:
-                tracer_f(monster, beem);
-                if (monster->behavior == BEH_ENSLAVED
-                    && (beem.tracer == 1 || beem.tracer == 2))
-                    break;
+                spell_cast = MS_HELLFIRE;
+                setup_mons_cast(monster, beem, spell_cast);
 
-                if (beem.tracer != 0)
-                // || (beem.trac_targ != MHITYOU && beem.trac_hit_mons != 0)
+                // fire tracer
+                fire_tracer(monster, beem);
+
+                // good idea?
+                if (mons_should_fire(beem))
                 {
                     simple_monster_message(monster, " makes a gesture!");
-                    spell_cast = MS_HELLFIRE;
                     mons_cast(monster, beem, spell_cast);
+                    used = true;
                 }
                 break;
             }
@@ -1162,12 +1149,6 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         if (!mons_near(monster))
             break;
 
-        // calculate deltaX and deltaY, quit if blocked.
-        beem.move_x = beem.trac_targ_x - monster->x;
-        beem.move_y = beem.trac_targ_y - monster->y;
-        if (beem.move_x == 0 && beem.move_y == 0)
-            break;
-
         // the fewer spikes the manticore has left,  the less
         // likely it will use them.
         if (random2(16) >= monster->number)
@@ -1176,28 +1157,30 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         // do the throwing right here,  since the beam is so
         // easy to set up and doesn't involve inventory.
 
-        // message
-        simple_monster_message(monster, " flicks its tail!");
-
         // set up the beam
-        beem.range = 9;
         strcpy(beem.beam_name, "volley of spikes");
+        beem.range = 9;
+        beem.rangeMax = 9;
         beem.hit = 14;
         beem.damage = 10;
         beem.beam_source = monster_index(monster);
         beem.type = SYM_MISSILE;
-        beem.source_x = monster->x;
-        beem.source_y = monster->y;
         beem.colour = LIGHTGREY;
         beem.flavour = BEAM_MISSILE;
-        beem.thing_thrown = KILL_MON;
+        beem.thrower = KILL_MON;
 
-        // call missile direct, with -1 to indicate 'fake' item.
-        missile(beem, -1);
+        // fire tracer
+        fire_tracer(monster, beem);
 
-        // decrement # of volleys left
-        monster->number -= 1;
-        used = true;
+        // good idea?
+        if (mons_should_fire(beem))
+        {
+            simple_monster_message(monster, " flicks its tail!");
+            beam(beem);
+            used = true;
+            // decrement # of volleys left
+            monster->number -= 1;
+        }
         break;
 
     // dragon breath weapon:
@@ -1216,36 +1199,19 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         if ((monster->type != MONS_HELL_HOUND && random2(13) < 3)
             || one_chance_in(10))
         {
-            if (monster->behavior == BEH_FIGHT
-                || monster->behavior == BEH_ENSLAVED)
+            setup_dragon(monster, beem);
+
+            // fire tracer
+            fire_tracer(monster, beem);
+
+            // good idea?
+            if (mons_should_fire(beem))
             {
-                beem.trac_targ = monster->monster_foe;
-                tracer_f(monster, beem);
-
-                if (beem.tracer == 0)
-                    break;
-
-                if (monster->behavior == BEH_ENSLAVED)
-                {
-                    if (beem.tracer == 1 || beem.tracer == 2
-                        || beem.tracer == 4)
-                    {
-                        break;
-                    }
-                }
-
-                if (monster->behavior == BEH_FIGHT)
-                {
-                    if (beem.tracer == 3 && beem.tracer_mons == 0)
-                    {
-                        break;
-                    }
-                }
+                simple_monster_message(monster, " breathes.");
+                beam(beem);
+                mmov_x = 0;
+                used = true;
             }
-
-            dragon(monster, beem);
-            mmov_x = 0;
-            used = true;        // $$$ why don't more of these cases set this?
         }
         break;
     }
@@ -1455,7 +1421,8 @@ static bool handle_wand(struct monsters *monster, bolt & beem)
         return false;
     else
     {
-        bool zap = false;
+        bool niceWand = false;
+        bool zap = true;
 
         switch (mitm.sub_type[monster->inv[MSLOT_WAND]])
         {
@@ -1463,7 +1430,6 @@ static bool handle_wand(struct monsters *monster, bolt & beem)
         case WAND_POLYMORPH_OTHER:
         case WAND_ENSLAVEMENT:
         case WAND_DIGGING:
-        case WAND_FIREBALL:
         case WAND_RANDOM_EFFECTS:
             return false;
             break;
@@ -1477,7 +1443,7 @@ static bool handle_wand(struct monsters *monster, bolt & beem)
                 beem.target_x = monster->x;
                 beem.target_y = monster->y;
 
-                zap = true;
+                niceWand = true;
             }
             break;
 
@@ -1487,17 +1453,16 @@ static bool handle_wand(struct monsters *monster, bolt & beem)
                 beem.target_x = monster->x;
                 beem.target_y = monster->y;
 
-                zap = true;
+                niceWand = true;
             }
             break;
 
         case WAND_INVISIBILITY:
-            // added this second bit, a cheat, I know {dlb}
-            if (monster->enchantment[2] != ENCH_INVIS && !player_see_invis())
+            if (monster->enchantment[2] != ENCH_INVIS)
             {
                 beem.target_x = monster->x;
                 beem.target_y = monster->y;
-                zap = true;
+                niceWand = true;
             }
             break;
 
@@ -1511,148 +1476,52 @@ static bool handle_wand(struct monsters *monster, bolt & beem)
                     beem.target_x = monster->x;
                     beem.target_y = monster->y;
 
-                    zap = true;
+                    niceWand = true;
                 }
             }
             break;
-
-        // every other wand will be aimed at something else {dlb}:
-        default:
-            zap = true;
-
-            tracer_f(monster, beem);
-
-            if (beem.tracer == 0)
-                zap = false;
-
-            if (monster->behavior == BEH_ENSLAVED)
-            {
-                if (beem.tracer == 1 || beem.tracer == 2)
-                    zap = false;
-
-                if (beem.tracer_mons == 4)
-                    zap = false;
-            }
-            else
-            {
-                if (beem.tracer == 3 && beem.tracer_mons == 0)
-                    zap = false;
-            }
-            break;
-
         }            // end "switch mitm.sub_type[monster->inv[MSLOT_WAND]]"
 
-        // now the monster will attempt to actually zap the wand {dlb}:
-        if (zap)
+        // map wand type to monster spell type
+        int mzap = map_wand_to_mspell(mitm.sub_type[monster->inv[MSLOT_WAND]]);
+        if (mzap == 0)
+            return false;
+
+        // set up the beam
+        int power = 25;
+        struct SBeam theBeam = mons_spells(mzap, power);
+
+        strcpy(beem.beam_name, theBeam.name.c_str());
+        beem.beam_source = monster_index(monster);
+        beem.colour = theBeam.colour;
+        beem.range = theBeam.range;
+        beem.rangeMax = theBeam.rangeMax;
+        beem.damage = theBeam.damage;
+        beem.ench_power = beem.damage;
+        beem.hit = theBeam.hit;
+        beem.type = theBeam.type;
+        beem.flavour = theBeam.flavour;
+        beem.thrower = theBeam.thrown;
+        beem.isBeam = theBeam.isBeam;
+
+        // fire tracer, if necessary
+        if (!niceWand)
+            fire_tracer(monster, beem);
+
+        // good idea?
+        zap = mons_should_fire(beem);
+        if (niceWand || zap)
         {
-            int mzap = 0;
-
-            switch (mitm.sub_type[monster->inv[MSLOT_WAND]])
+            if (!simple_monster_message(monster, " zaps a wand."))
             {
-            case WAND_FLAME:
-                mzap = MS_FLAME;
-                break;
-            case WAND_FROST:
-                mzap = MS_FROST;
-                break;
-            case WAND_SLOWING:
-                mzap = MS_SLOW;
-                break;
-            case WAND_HASTING:
-                mzap = MS_HASTE;
-                break;
-            case WAND_MAGIC_DARTS:
-                mzap = MS_MMISSILE;
-                break;
-            case WAND_HEALING:
-                mzap = MS_HEAL;
-                break;
-            case WAND_PARALYSIS:
-                mzap = MS_PARALYSIS;
-                break;
-            case WAND_FIRE:
-                mzap = MS_FIRE_BOLT;
-                break;
-            case WAND_COLD:
-                mzap = MS_COLD_BOLT;
-                break;
-            case WAND_CONFUSION:
-                mzap = MS_CONFUSE;
-                break;
-            case WAND_INVISIBILITY:
-                mzap = MS_INVIS;
-                break;
-            case WAND_TELEPORTATION:
-                mzap = MS_TELEPORT_OTHER;
-                break;
-            case WAND_LIGHTNING:
-                mzap = MS_LIGHTNING_BOLT;
-                break;
-            case WAND_DRAINING:
-                mzap = MS_NEGATIVE_BOLT;
-                break;
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear a zap.");
             }
 
-            viewwindow(1, false);
-
-            beem.move_x = beem.trac_targ_x - monster->x;
-            beem.move_y = beem.trac_targ_y - monster->y;
-
-            beem.target_x = beem.trac_targ_x;
-            beem.target_y = beem.trac_targ_y;
-
-            beem.source_x = monster->x;
-            beem.source_y = monster->y;
-
-            int power = 25;
-
-            struct SBeam theBeam = mons_spells(mzap, power);
-
-            beem.colour = theBeam.colour;
-            beem.range = theBeam.range;
-            beem.damage = theBeam.damage;
-            beem.hit = theBeam.hit;
-            beem.type = theBeam.type;
-            beem.flavour = theBeam.flavour;
-            beem.thing_thrown = theBeam.thrown;
-
-            strcpy(beem.beam_name, theBeam.name.c_str());
-
-            beem.beam_source = monster_index(monster);
-            beem.ench_power = beem.damage;
-            // !!!    // was set to 20 immediately prior to this,
-            // but this is the value passed along {dlb}
-
-            if (mzap == MS_HASTE || mzap == MS_HEAL || mzap == MS_INVIS
-                || mzap == MS_TELEPORT_OTHER)
-            {
-                beem.move_x = 0;
-                beem.move_y = 0;
-            }
-            else
-            {
-                if (beem.move_x == 0 && beem.move_y == 0)
-                    zap = false;
-            }
-
-            if (zap)
-            {
-                if (!simple_monster_message(monster, " zaps a wand."))
-                {
-                    if (!silenced(you.x_pos, you.y_pos))
-                        mpr("You hear a zap.");
-                }
-
-                // charge expenditure {dlb}
-                mitm.pluses[monster->inv[MSLOT_WAND]]--;
-
-                if (theBeam.isBeam)
-                    beam(beem);
-                else
-                    missile(beem, 0);
-            }
-            // remember: the monster may well be dead here (eg if it zapped
-            // a /o lightning)
+            // charge expenditure {dlb}
+            mitm.pluses[monster->inv[MSLOT_WAND]]--;
+            beam(beem);
+            zap = true;
         }
 
         return zap;
@@ -1674,9 +1543,6 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
     bool finalAnswer = false;   // as in: "Is that your...?" {dlb}
 
     // yes, there is a logic to this ordering {dlb}:
-
-    // XXX: oopsie - bug waiting to happen - I'll fix this with the new monster
-    // struct {dlb}
     if (monster->behavior == BEH_SLEEP
         || !mons_flag(monster->type, M_SPELLCASTER))
     {
@@ -1691,8 +1557,6 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
         return false;           //jmf: shapeshiftes don't get spells, just
                                 //     physical powers.
     }
-    else if (you.invis && !mons_see_invis(monster->type))
-        return false;
     else if (monster->behavior == BEH_CONFUSED && monster->type != MONS_VAPOUR)
         return false;
     else if ((monster->behavior == BEH_FIGHT
@@ -1726,13 +1590,6 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                      (monster->type == MONS_PANDEMONIUM_DEMON) ? MST_GHOST
                                                             : monster->number);
 
-        // tracer = 0 = run out of range
-        // tracer = 1 = hits you in range
-        // tracer_mons = 0 = hits no monsters
-        //       "     = 1 = hits monster before you (possibly also after)
-        //       "     = 2 = hits monster after but not before
-        //       "     = 3 = hits tamed monster(s) but no others
-
         mons_spell_list(msecc, hspell_pass);
 
         // forces the casting of dig when player not visible - this is EVIL!
@@ -1744,94 +1601,45 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                 spell_cast = MS_DIG;
                 finalAnswer = true;
             }
-            else if (beem.trac_targ == MHITYOU)
+            else if (monster->monster_foe == MHITYOU)
                 return false;
         }
 
-        /*
-           Used by monsters in "planning" which spell to cast. Fires off a
-           "tracer" which tells the monster what it'll hit if it breathes/casts
-
-           tracer = 0 = run out of range or hits a wall
-           tracer = 1 = hits you in range
-           tracer = 2 = hits friendly monster
-           tracer = 3 = hits hostile monster
-
-           tracer_mons = 1 = hits monster specified in trac_targ
-
-           tracer_hit_mons now holds value of mons_see_invis of attacking
-           monster -- This is used in missile().
-           If it's 0, won't register invis monsters or you
-
-           Note: only the missile() function is used for tracers. The tracer
-           code in beam() is obsolete and useless.
-         */
-
-        if (!finalAnswer)
-        {
-            tracer_f(monster, beem);
-
-            if (beem.tracer == 0)
-                return false;
-
-            if (monster->behavior == BEH_ENSLAVED)
-            {
-                // Although it would be nice if friendly monsters also cast
-                // smiting etc like this, too tricky right now.
-                if (beem.tracer == 1 || beem.tracer == 2)
-                    return false;
-            }
-            else
-            {
-                // Is a monster in between? Then cast
-                // a direct spell (smiting etc) or a self-enchantment:
-                if (beem.tracer == 3 && beem.tracer_mons == 0)
-                {
-                    spell_cast = hspell_pass[2];
-                    finalAnswer = true;
-                }
-            }
-        }
-
-        // yes, this all needs to be kept apart from the above {dlb}:
         if (!finalAnswer)
         {
             // should monster not have selected dig by now, it never will:
             if (hspell_pass[4] == MS_DIG)
                 hspell_pass[4] = MS_NO_SPELL;
 
-            // select which spell to cast {dlb}:
-            if (monster->behavior != BEH_FLEE)
-            {
-                if ((monster->behavior != BEH_ENSLAVED
-                    && (beem.tracer == 1 || beem.tracer == 2
-                        || beem.tracer_mons == 1))
-                    || (monster->behavior == BEH_ENSLAVED
-                        && beem.tracer == 3))
-                {
-                    // monsters get up to three tries to pick a spell {dlb}:
-                    for (int loopy = 0; loopy < 3; loopy++)
-                    {
-                        spell_cast = hspell_pass[random2(5)];
-
-                        if (spell_cast != MS_NO_SPELL)
-                            break;
-                    }
-                }
-                else if ((monster->behavior == BEH_ENSLAVED
-                          && beem.tracer_mons == 0) || coinflip())
-                {
-                    spell_cast = hspell_pass[2];
-                }
-                else
-                    spell_cast = MS_NO_SPELL;
-            }
-            else
+            if (monster->behavior == BEH_FLEE)
             {
                 spell_cast = (one_chance_in(5) ? MS_NO_SPELL : hspell_pass[5]);
             }
+            else
+            {
+                // up to four tries to pick a spell.
+                for (int loopy = 0; loopy < 4; loopy ++)
+                {
+                    // setup spell
+                    spell_cast = hspell_pass[random2(5)];
+                    if (spell_cast == MS_NO_SPELL)
+                        continue;
 
-            finalAnswer = true;
+                    setup_mons_cast(monster, beem, spell_cast);
+
+                    // fire tracer
+                    fire_tracer(monster, beem);
+
+                    // good idea?
+                    if (mons_should_fire(beem))
+                        break;
+
+                    spell_cast = MS_NO_SPELL;
+                    // ok, maybe we'll cast a defensive spell
+                    if (coinflip())
+                        spell_cast = hspell_pass[2];
+                }
+            }
         }
 
         // should the monster *still* not have a spell, well, too bad {dlb}:
@@ -1969,12 +1777,8 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
         }
         else
         {
-            // really??? // hmmm... {dlb}
-            beem.damage = 8 * monster->hit_dice;
-            beem.beam_source = monster_index(monster);
             mons_cast(monster, beem, spell_cast);
             mmov_x = 0;
-            beem.trac_hit_tamed = 0;
         }
     } // end "if mons_flag(monster->type, M_SPELLCASTER) ...
 
@@ -2000,8 +1804,6 @@ static bool handle_throw(struct monsters *monster, bolt & beem)
     {
         return false;
     }
-    else if (you.invis && !mons_see_invis(monster->type))
-        return false;
     else if (!mons_itemuse(monster->type))
         return false;
     else if (monster->inv[MSLOT_MISSILE] == NON_ITEM
@@ -2009,8 +1811,8 @@ static bool handle_throw(struct monsters *monster, bolt & beem)
     {
         return false;
     }
-    else if (beem.trac_targ == MHITYOU
-             && (beem.tracer_mons == 1 || !mons_near(monster)))
+    // don't allow offscreen throwing.. for now.
+    else if (monster->monster_foe == MHITYOU && !mons_near(monster))
     {
         return false;
     }
@@ -2020,42 +1822,21 @@ static bool handle_throw(struct monsters *monster, bolt & beem)
         return false;
     else
     {
-        tracer_f(monster, beem);
+        setup_generic_throw(monster, beem);
 
-        if (beem.tracer == 0)
-            return false;
+        // fire tracer
+        fire_tracer(monster, beem);
 
-        if (monster->behavior == BEH_ENSLAVED)
+        // good idea?
+        if (mons_should_fire(beem))
         {
-            if ((beem.tracer == 1 || beem.tracer == 2))
-                return false;
-
-            if (beem.tracer == 1 && beem.tracer_mons != 1)
-                return false;
-
-            if (beem.tracer_mons == 4)
-                return false;
-        }
-        else
-        {
-            if (beem.tracer == 3 && beem.tracer_mons == 0)
-                return false;
-        }
-
-        if (beem.tracer != 0
-            || (beem.trac_targ != MHITYOU && beem.trac_hit_mons != 0))
-        {                       // doesn't need to worry about you.haste
-            beem.range = 6;
-
-            item_name(mitm.pluses2[monster->inv[MSLOT_MISSILE]],
-                      mitm.base_type[monster->inv[MSLOT_MISSILE]],
-                      mitm.sub_type[monster->inv[MSLOT_MISSILE]],
-                      mitm.special[monster->inv[MSLOT_MISSILE]],
-                      mitm.pluses[monster->inv[MSLOT_MISSILE]], 1,
-                      mitm.id[monster->inv[MSLOT_MISSILE]], 6, str_pass);
+            int mon_item = monster->inv[MSLOT_MISSILE];
+            item_name(mitm.pluses2[mon_item], mitm.base_type[mon_item],
+                      mitm.sub_type[mon_item], mitm.special[mon_item],
+                      mitm.pluses[mon_item], 1, mitm.id[mon_item], 6, str_pass);
             strcpy(beem.beam_name, str_pass);
 
-            return mons_throw(monster, beem, monster->inv[MSLOT_MISSILE]);
+            return mons_throw(monster, beem, mon_item);
         }
     }
 
@@ -2249,30 +2030,35 @@ void monster(void)
                         goto end_switch;
                     }
 
+                    // VERY IMPORTANT BIT HERE -- set up the beam target.
+                    // normally set to monster foe (either player or another
+                    // monster),  will be set to acting monster x,y if monster
+                    // has no foe.  Which is fine - there's enough checks so
+                    // that monsters shouldn't be blowing themselves to bits.
+
                     if (monster->behavior == BEH_FIGHT
                         || monster->behavior == BEH_ENSLAVED)
                     {
-                        beem.trac_targ = monster->monster_foe;
-
                         if (monster->monster_foe == MHITNOT)
                         {
-                            beem.trac_targ_x = monster->x;
-                            beem.trac_targ_y = monster->y;
+                            beem.target_x = monster->x;  // aim at self
+                            beem.target_y = monster->y;
                         }
                         else
                         {
-                            beem.trac_targ_x = menv[monster->monster_foe].x;
-                            beem.trac_targ_y = menv[monster->monster_foe].y;
+                            beem.target_x = menv[monster->monster_foe].x;
+                            beem.target_y = menv[monster->monster_foe].y;
                         }
                     }
                     else
                     {
-                        beem.trac_targ = MHITYOU;
-                        beem.trac_targ_x = you.x_pos;
-                        beem.trac_targ_y = you.y_pos;
+                        beem.target_x = you.x_pos;
+                        beem.target_y = you.y_pos;
                     }
 
-                    if (beem.trac_targ == MHITYOU && !mons_near(monster)
+                    // this seems to prevent monsters from hitting you from
+                    // offscreen.
+                    if (monster->monster_foe == MHITYOU && !mons_near(monster)
                         && monster->type != MONS_CACODEMON)
                     {
                         goto end_switch;
@@ -2289,11 +2075,6 @@ void monster(void)
 
                     if (handle_wand(monster, beem))
                         continue;
-                    else if (monster->behavior == BEH_ENSLAVED
-                             && beem.tracer_mons == 4)
-                    {
-                        goto end_throw; // XXX: is this right?
-                    }
 
                     if (handle_spell(monster, beem))
                         continue;
@@ -3156,34 +2937,42 @@ static void monster_move(struct monsters *monster)
     }
 }                               // end monster_move()
 
-// I suppose some day this will have to be rewritten
-// so plants can spit at other monsters, too {dlb}
-static void plant_spit(struct monsters *monster, struct bolt &pbolt)
+
+static bool plant_spit(struct monsters *monster, struct bolt &pbolt)
 {
-    if (mons_near(monster))
+    bool didSpit = false;
+
+    char spit_string[100];
+
+    // setup plant spit
+    strcpy(pbolt.beam_name, "plant spit");
+    pbolt.type = SYM_ZAP;
+    pbolt.range = 10;
+    pbolt.rangeMax = 10;
+    pbolt.colour = YELLOW;
+    pbolt.flavour = BEAM_ACID;
+    pbolt.beam_source = monster_index(monster);
+    pbolt.damage = 107;
+    pbolt.hit = 20 + (3 * monster->hit_dice);
+    pbolt.thrower = KILL_MON_MISSILE;
+
+    // fire tracer
+    fire_tracer(monster, pbolt);
+
+    if (mons_should_fire(pbolt))
     {
-        simple_monster_message(monster, " spits at you.");
+        strcpy(spit_string, " spits");
+        if (pbolt.target_x == you.x_pos && pbolt.target_y == you.y_pos)
+            strcat(spit_string, " at you");
 
-        pbolt.move_x = pbolt.trac_targ_x - monster->x;
-        pbolt.move_y = pbolt.trac_targ_y - monster->y;
+        strcat(spit_string, ".");
+        simple_monster_message(monster, spit_string);
 
-        strcpy(pbolt.beam_name, "plant spit");
-
-        pbolt.type = SYM_ZAP;
-        pbolt.source_x = monster->x;
-        pbolt.source_y = monster->y;
-        pbolt.range = 10;
-        pbolt.colour = YELLOW;
-        pbolt.flavour = BEAM_ACID;
-        pbolt.beam_source = monster_index(monster);
-        pbolt.damage = 107;
-        pbolt.hit = 20 + (3 * monster->hit_dice);
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-
-        missile(pbolt, 0);
+        beam(pbolt);
+        didSpit = true;
     }
 
-    return;
+    return didSpit;
 }                               // end plant_spit()
 
 static void mons_in_cloud(struct monsters *monster)
@@ -3540,3 +3329,61 @@ bool heal_monster(struct monsters * patient, int health_boost,
 
     return true;
 }                               // end heal_monster()
+
+static int map_wand_to_mspell(int wand_type)
+{
+    int mzap = 0;
+
+    switch (wand_type)
+    {
+        case WAND_FLAME:
+            mzap = MS_FLAME;
+            break;
+        case WAND_FROST:
+            mzap = MS_FROST;
+            break;
+        case WAND_SLOWING:
+            mzap = MS_SLOW;
+            break;
+        case WAND_HASTING:
+            mzap = MS_HASTE;
+            break;
+        case WAND_MAGIC_DARTS:
+            mzap = MS_MMISSILE;
+            break;
+        case WAND_HEALING:
+            mzap = MS_HEAL;
+            break;
+        case WAND_PARALYSIS:
+            mzap = MS_PARALYSIS;
+            break;
+        case WAND_FIRE:
+            mzap = MS_FIRE_BOLT;
+            break;
+        case WAND_COLD:
+            mzap = MS_COLD_BOLT;
+            break;
+        case WAND_CONFUSION:
+            mzap = MS_CONFUSE;
+            break;
+        case WAND_INVISIBILITY:
+            mzap = MS_INVIS;
+            break;
+        case WAND_TELEPORTATION:
+            mzap = MS_TELEPORT_OTHER;
+            break;
+        case WAND_LIGHTNING:
+            mzap = MS_LIGHTNING_BOLT;
+            break;
+        case WAND_DRAINING:
+            mzap = MS_NEGATIVE_BOLT;
+            break;
+        default:
+            mzap = 0;
+            break;
+    }
+
+    return mzap;
+}
+
+

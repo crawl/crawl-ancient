@@ -1262,12 +1262,16 @@ static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
 
   out_of_trap:
 
-    pbolt.bx = you.x_pos;
-    pbolt.by = you.y_pos;
+    pbolt.target_x = you.x_pos;
+    pbolt.target_y = you.y_pos;
 
     if (coinflip())
         itrap(pbolt, trapped);
 }                               // end dart_trap()
+
+//
+// itrap takes location from target_x, target_y of bolt strcture.
+//
 
 void itrap(struct bolt &pbolt, int trapped)
 {
@@ -1297,7 +1301,7 @@ void itrap(struct bolt &pbolt, int trapped)
         return;
     }
 
-    trap_item(pbolt.colour, pbolt.damage, pbolt.bx, pbolt.by);
+    trap_item(pbolt.colour, pbolt.damage, pbolt.target_x, pbolt.target_y);
 
     return;
 }                               // end itrap()
@@ -1441,8 +1445,8 @@ void disarm_trap( struct dist &disa )
 
     for (i = 0; i < MAX_TRAPS; i++)
     {
-        if (env.trap_x[i] == you.x_pos + disa.move_x
-            && env.trap_y[i] == you.y_pos + disa.move_y)
+        if (env.trap_x[i] == you.x_pos + disa.dx
+            && env.trap_y[i] == you.y_pos + disa.dy)
         {
             break;
         }
@@ -1484,8 +1488,8 @@ void disarm_trap( struct dist &disa )
 
     struct bolt beam;
 
-    beam.bx = you.x_pos + disa.move_x;
-    beam.by = you.y_pos + disa.move_y;
+    beam.target_x = you.x_pos + disa.dx;
+    beam.target_y = you.y_pos + disa.dy;
 
     if (env.trap_type[i] != TRAP_BLADE
         && trap_category(env.trap_type[i]) == DNGN_TRAP_MECHANICAL)
@@ -1500,7 +1504,7 @@ void disarm_trap( struct dist &disa )
         }
     }
 
-    grd[you.x_pos + disa.move_x][you.y_pos + disa.move_y] = DNGN_FLOOR;
+    grd[you.x_pos + disa.dx][you.y_pos + disa.dy] = DNGN_FLOOR;
     env.trap_type[i] = TRAP_UNASSIGNED;
     you.turn_is_over = 1;
 
@@ -1754,41 +1758,54 @@ void weird_colours(unsigned char coll, char wc[30])
     return;
 }                               // end weird_colours()
 
-bool go_berserk(void)
+bool go_berserk(bool intentional)
 {
     if (you.berserker)
-        mpr("You're already berserk!");
-    else if (you.exhausted)
-        mpr("You're too exhausted to go berserk.");
-    else if (you.is_undead == US_UNDEAD || you.species == SP_GHOUL)
-        mpr("You cannot raise a blood rage in your lifeless body.");
-    else
     {
-        mpr("A red film seems to cover your vision as you go berserk!");
-        mpr("You feel yourself moving faster!");
-        mpr("You feel mighty!");
-
-        you.berserker += 20 + random2avg(19, 2);
-
-        calc_hp();
-        you.hp *= 15;
-        you.hp /= 10;
-
-        deflate_hp(you.hp_max, false);
-
-        if (!you.might)
-            modify_stat(STAT_STRENGTH, 5, true);
-
-        you.might += you.berserker;
-        you.haste += you.berserker;
-
-        if (you.berserk_penalty != NO_BERSERK_PENALTY)
-            you.berserk_penalty = 0;
-
-        return true;
+        if (intentional)
+            mpr("You're already berserk!");
+        // or else you won't notice -- no message here.
+        return false;
     }
 
-    return false;
+    if (you.exhausted)
+    {
+        if (intentional)
+            mpr("You're too exhausted to go berserk.");
+        // or else they won't notice -- no message here
+        return false;
+    }
+
+    if (you.is_undead == US_UNDEAD || you.species == SP_GHOUL)
+    {
+        if (intentional)
+            mpr("You cannot raise a blood rage in your lifeless body.");
+        // or else you won't notice -- no message here
+        return false;
+    }
+
+    mpr("A red film seems to cover your vision as you go berserk!");
+    mpr("You feel yourself moving faster!");
+    mpr("You feel mighty!");
+
+    you.berserker += 20 + random2avg(19, 2);
+
+    calc_hp();
+    you.hp *= 15;
+    you.hp /= 10;
+
+    deflate_hp(you.hp_max, false);
+
+    if (!you.might)
+        modify_stat(STAT_STRENGTH, 5, true);
+
+    you.might += you.berserker;
+    you.haste += you.berserker;
+
+    if (you.berserk_penalty != NO_BERSERK_PENALTY)
+        you.berserk_penalty = 0;
+
+    return true;
 }                               // end go_berserk()
 
 bool trap_item(char base_type, char sub_type, char beam_x, char beam_y)

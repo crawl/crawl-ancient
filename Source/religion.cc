@@ -6,6 +6,8 @@
  *  Change History (most recent first):
  *
  *
+ *   <7>   11jan2001     gdl    added M. Valvoda's changes to
+ *                              god_colour() and god_name()
  *   <6>   06-Mar-2000   bwr    added penance, gift_timeout,
  *                              divine_retribution(), god_speaks()
  *   <5>   11/15/99      cdl    Fixed Daniel's yellow Xom patch  :)
@@ -25,7 +27,7 @@
 
 #include "externs.h"
 
-#include "bang.h"
+#include "beam.h"
 #include "debug.h"
 #include "decks.h"
 #include "describe.h"
@@ -398,47 +400,56 @@ void pray(void)
     }                           // end of gift giving
 }                               // end pray()
 
-// comments represent old source material retrieved from
-// scattered references throughout the sourcecode {dlb}:
-char *god_name(int which_god)
+char *god_name(int which_god,bool long_name) // mv - rewritten
 {
     static char buffer[80];
 
     switch (which_god)
     {
     case GOD_NO_GOD:
-        return "You aren't religious!";
+        sprintf(buffer, "No God");
+        break;
     case GOD_ZIN:
-        return "Zin";           // " the Law-Giver" -- old priest
+        sprintf(buffer, "Zin%s", long_name?" the Law-Giver":"");
+        break;
     case GOD_SHINING_ONE:
-        return "The Shining One";
+        sprintf(buffer, "The Shining One");
+        break;
     case GOD_KIKUBAAQUDGHA:
-        return "Kikubaaqudgha"; // " the Vile" -- death
+        sprintf(buffer, "Kikubaaqudgha%s", long_name?" the Vile":"");
+        break;
     case GOD_YREDELEMNUL:
-        return "Yredelemnul";
+        sprintf(buffer, "Yredelemnul%s", long_name?" the Dark":"");
+        break;
     case GOD_XOM:
-        return "Xom";           // " of Chaos"
+        sprintf(buffer, "Xom%s", long_name?" of Chaos":"");
+        break;
     case GOD_VEHUMET:
-        return "Vehumet";
+        sprintf(buffer, "Vehumet%s", long_name?" the Annihilator":"");
+        break;
     case GOD_OKAWARU:
-        return "Okawaru";       // war/chaos
+        sprintf(buffer, "Okawaru%s", long_name?" the Warmaster":"");
+        break;
     case GOD_MAKHLEB:
-        return "Makhleb";       // " the Destroyer"
+        sprintf(buffer, "Makhleb%s", long_name?" the Destroyer":"");
+        break;
     case GOD_SIF_MUNA:
-        return "Sif Muna";      // magic
+        sprintf(buffer, "Sif Muna%s", long_name?" the Eldritch":"");
+        break;
     case GOD_TROG:
-        return "Trog";          // " the Disgruntled"
+        sprintf(buffer, "Trog%s", long_name?" the Fierce":"");
+        break;
     case GOD_NEMELEX_XOBEH:
-        return "Nemelex Xobeh"; // trickster
+        sprintf(buffer, "Nemelex Xobeh%s", long_name?" the Trickster":"");
+        break;
     case GOD_ELYVILON:
-        return "Elyvilon";      // " the Healer"
+        sprintf(buffer, "Elyvilon%s", long_name?" the Healer":"");
+        break;
     default:
-        sprintf(buffer, "Illegal god (%d)", which_god);
-        return buffer;
-    }
+        sprintf(buffer, "Lord of Bugs (%d)", which_god);
 
-    // abyss.cc also had: Jurubetut (Fire),
-    // Vuhemeti (Ice), and Lugafu the Hairy {dlb}
+    }
+        return buffer;
 }                               // end god_name()
 
 #ifdef USE_GOD_COLOURS
@@ -811,13 +822,14 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
             beam.type = SYM_BURST;
             beam.damage = 130;
             beam.flavour = BEAM_ELECTRICITY;
-            beam.bx = you.x_pos;
-            beam.by = you.y_pos;
+            beam.target_x = you.x_pos;
+            beam.target_y = you.y_pos;
             strcpy(beam.beam_name, "blast of lightning");
             beam.colour = LIGHTCYAN;
-            beam.thing_thrown = KILL_YOU;    // your explosion
+            beam.thrower = KILL_YOU;    // your explosion
+            beam.ex_size = 2;
 
-            explosion(true, beam);
+            explosion(beam);
 
             you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
 
@@ -2392,4 +2404,41 @@ void simple_god_message(const char *event, int which_deity)
     strcat(info, event);
 
     god_speaks(which_deity, info);
+}
+
+char god_colour( char god ) //mv - added
+{
+    switch (god)
+    {
+    case GOD_SHINING_ONE:
+    case GOD_ZIN:
+    case GOD_ELYVILON:
+    case GOD_OKAWARU:
+        return(CYAN);
+        break;
+
+    case GOD_YREDELEMNUL:
+    case GOD_KIKUBAAQUDGHA:
+    case GOD_MAKHLEB:
+    case GOD_VEHUMET:
+    case GOD_TROG:
+        return(LIGHTRED);
+        break;
+
+    case GOD_XOM:
+        return(YELLOW);
+        break;
+
+    case GOD_NEMELEX_XOBEH:
+        return(LIGHTMAGENTA);
+        break;
+
+    case GOD_SIF_MUNA:
+        return(LIGHTBLUE);
+        break;
+
+    case GOD_NO_GOD:
+    default:
+        return(YELLOW);
+    }
 }

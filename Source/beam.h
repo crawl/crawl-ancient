@@ -17,21 +17,23 @@
 
 
 /* ***********************************************************************
- * called from: it_use2 - item_use - monstuff - mstuff2 - spells1
- * *********************************************************************** */
-void missile(struct bolt &pbolt, int throw_2);
-
-
-/* ***********************************************************************
- * called from: bang - effects - spells2
- * *********************************************************************** */
-int check_mons_resists(struct monsters *monster, struct bolt &pbolt, int hurted);
-
-
-/* ***********************************************************************
  * called from: bang - it_use2 - monstuff - mstuff2
  * *********************************************************************** */
-void beam(struct bolt &pbolt);
+void beam(struct bolt &pbolt, int inv_number = -1);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - it_use3 - item_use - mstuff2 - religion -
+ *              spells - spells4
+ * *********************************************************************** */
+void explosion(struct bolt &pbolt);
+
+
+/* ***********************************************************************
+ * called from: effects - spells2
+ * *********************************************************************** */
+int check_mons_resists(struct monsters *monster, struct bolt &pbolt, int hurted);
 
 
 /* ***********************************************************************
@@ -49,7 +51,7 @@ void mass_enchantment(int wh_enchant, int pow);
 /* ***********************************************************************
  * called from: fight - monstuff - mstuff2
  * *********************************************************************** */
-bool mons_ench_f2(struct monsters *monster, struct bolt &pbolt);
+int mons_ench_f2(struct monsters *monster, struct bolt &pbolt);
 
 
 /* ***********************************************************************
@@ -67,11 +69,11 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-void tracer_f(struct monsters *monster, struct bolt &pbolt);
+void fire_tracer(struct monsters *monster, struct bolt &pbolt);
 
 
 /* ***********************************************************************
- * called from: bang - monstuff
+ * called from: monstuff
  * *********************************************************************** */
 void mimic_alert(struct monsters *mimic);
 

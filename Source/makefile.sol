@@ -1,6 +1,6 @@
 # Make file for Dungeon Crawl (solaris)
 
-APPNAME = newcrawl
+APPNAME = crawl
 
 # this file contains a list of the libraries.
 # it will make a variable called OBJECTS that contains all the libraries

@@ -31,7 +31,6 @@
 
 #include "externs.h"
 
-#include "bang.h"
 #include "beam.h"
 #include "debug.h"
 #include "describe.h"
@@ -1235,27 +1234,33 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     bool launched = false;      // item is launched
     bool thrown = false;        // item is sensible thrown item
 
-    mpr("Which direction? (*/+ to target)", MSGCH_PROMPT);
+    mpr("Which direction? (*/+/- to target)", MSGCH_PROMPT);
 
     message_current_target();
 
-    direction(1, thr);
+    direction(thr);
 
-    if (thr.nothing == -1)
+    if (!thr.isValid)
+    {
+        if (thr.isCancel)
+            canned_msg(MSG_OK);
         return;
+    }
 
     if (you.conf)
     {
-        thr.move_x = random2(13) - 6;
-        thr.move_y = random2(13) - 6;
+        thr.isTarget = true;
+        thr.tx = you.x_pos + random2(13) - 6;
+        thr.ty = you.y_pos + random2(13) - 6;
     }
 
-    pbolt.move_x = thr.move_x;
-    pbolt.move_y = thr.move_y;
-    pbolt.target_x = thr.target_x;
-    pbolt.target_y = thr.target_y;
-    pbolt.range = 5;           /* provisional until mass variable used */
+    // even though direction is allowed,  we're throwing so we
+    // want to use tx, ty to make the missile fly to map edge.
+    pbolt.target_x = thr.tx;
+    pbolt.target_y = thr.ty;
+
     pbolt.flavour = BEAM_MISSILE;
+    // pbolt.range is set below
 
     switch (you.inv_class[throw_2])
     {
@@ -1284,7 +1289,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
               you.inv_plus[throw_2], 1, you.inv_ident[throw_2], 6, str_pass);
     strcpy(pbolt.beam_name, str_pass);
 
-    pbolt.thing_thrown = KILL_YOU;
+    pbolt.thrower = KILL_YOU_MISSILE;
 
     // get the ammo/weapon type.  Convenience.
     wepClass = you.inv_class[throw_2];
@@ -1530,7 +1535,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             strcat(pbolt.beam_name, "flame");
             pbolt.colour = RED;
             pbolt.type = SYM_BOLT;
-            pbolt.thing_thrown = KILL_YOU_MISSILE;
+            pbolt.thrower = KILL_YOU_MISSILE;
             you.inv_ident[throw_2] = 2;
         }
 
@@ -1549,7 +1554,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             strcat(pbolt.beam_name, "frost");
             pbolt.colour = WHITE;
             pbolt.type = SYM_BOLT;
-            pbolt.thing_thrown = KILL_YOU_MISSILE;
+            pbolt.thrower = KILL_YOU_MISSILE;
             you.inv_ident[throw_2] = 2;
         }
 
@@ -1580,6 +1585,10 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     if (thrown)
     {
         baseHit = 0;
+
+        // since darts/rocks are missiles, they only use inv_plus
+        if (wepClass == OBJ_MISSILES)
+            ammoDamBonus = ammoHitBonus;
 
         // all weapons that use 'throwing' go here..
         if (wepClass == OBJ_WEAPONS
@@ -1626,16 +1635,13 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         // exercise skill
         if (coinflip())
             exercise(SK_THROWING, 1);
-
-        // since darts/rocks are missiles, they only use inv_plus
-        if (wepClass == OBJ_MISSILES)
-            ammoDamBonus = ammoHitBonus;
     }
 
     // range, dexterity bonus, possible skill increase for silly throwing
     if (thrown || launched)
     {
         pbolt.range = 9;
+        pbolt.rangeMax = 9;
         exHitBonus += you.dex / 2;
 
         // slaying bonuses
@@ -1652,6 +1658,9 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
         if (pbolt.range > 9)
             pbolt.range = 9;
+
+        // set max range equal to range for this
+        pbolt.rangeMax = pbolt.range;
 
         if (one_chance_in(20))
             exercise(SK_THROWING, 1);
@@ -1706,7 +1715,11 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     if (you.equip[EQ_WEAPON] == throw_2)
         unwield_item(throw_2);
 
-    missile(pbolt, throw_2);
+    // ensure we're firing a missile
+    pbolt.isBeam = false;
+    pbolt.isTracer = false;
+
+    beam(pbolt, throw_2);
 
     you.inv_quantity[throw_2]--;
 
@@ -2222,7 +2235,7 @@ void zap_wand(void)
     struct bolt beam;
     struct dist zap_wand;
 
-    beam.wand_id = 0;
+    beam.obviousEffect = false;
 
     if (you.num_inv_items < 1)
     {
@@ -2291,19 +2304,20 @@ void zap_wand(void)
 
     message_current_target();
 
-    direction(1, zap_wand);
+    direction(zap_wand);
 
-    if (zap_wand.nothing == -1)
+    if (!zap_wand.isValid)
+    {
+        if (zap_wand.isCancel)
+            canned_msg(MSG_OK);
         return;
+    }
 
     if (you.conf)
     {
-        zap_wand.move_x = random2(13) - 6;
-        zap_wand.move_y = random2(13) - 6;
+        zap_wand.tx = you.x_pos + random2(13) - 6;
+        zap_wand.ty = you.y_pos + random2(13) - 6;
     }
-
-    beam.source_x = you.x_pos;
-    beam.source_y = you.y_pos;
 
     // blargh! blech! this is just begging to be a problem ...
     // not to mention work-around after work-around as wands are
@@ -2328,14 +2342,14 @@ void zap_wand(void)
             type_zapped = ZAP_ENSLAVEMENT;
     }
 
-    beam.move_x = zap_wand.move_x;
-    beam.move_y = zap_wand.move_y;
-    beam.target_x = zap_wand.target_x;
-    beam.target_y = zap_wand.target_y;
+    beam.source_x = you.x_pos;
+    beam.source_y = you.y_pos;
+    beam.target_x = zap_wand.tx;
+    beam.target_y = zap_wand.ty;
 
     zapping(type_zapped, 40, beam);
 
-    if (beam.wand_id == 1 || you.inv_type[zap_device_2] == WAND_FIREBALL)
+    if (beam.obviousEffect == 1 || you.inv_type[zap_device_2] == WAND_FIREBALL)
     {
         if (!get_id(you.inv_class[zap_device_2], you.inv_type[zap_device_2]))
         {
@@ -2833,14 +2847,15 @@ void read_scroll(void)
         beam.damage = 110;
         // unsure about this    // BEAM_EXPLOSION instead? {dlb}
         beam.flavour = BEAM_FIRE;
-        beam.bx = you.x_pos;
-        beam.by = you.y_pos;
+        beam.target_x = you.x_pos;
+        beam.target_y = you.y_pos;
         strcpy(beam.beam_name, "fiery explosion");
         beam.colour = RED;
         // your explosion, (not someone else's explosion)
-        beam.thing_thrown = KILL_YOU;
+        beam.thrower = KILL_YOU;
+        beam.ex_size = 2;
 
-        explosion(true, beam);
+        explosion(beam);
         break;
 
     case SCR_IDENTIFY:
@@ -2986,12 +3001,14 @@ void read_scroll(void)
                             beam.type = SYM_BURST;
                             beam.damage = 110;
                             beam.flavour = 2;
-                            beam.bx = you.x_pos;
-                            beam.by = you.y_pos;
+                            beam.target_x = you.x_pos;
+                            beam.target_y = you.y_pos;
                             strcpy(beam.beam_name, "fiery explosion");
                             beam.colour = RED;
-                            beam.thing_thrown = 1;
-                            explosion(true, beam);
+                            beam.thrower = KILL_YOU;
+                            beam.ex_size = 2;
+
+                            explosion(beam);
                             break;
 
                         case SPWPN_FREEZING:

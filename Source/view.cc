@@ -1810,7 +1810,8 @@ void show_map(FixedVector < int, 2 > &spec_place)
     {
         for (i = 0; i < 80; i++)
         {
-            if (screen_y + j - 12 >= 65 || screen_y + j - 12 <= 4)
+            if (screen_y + j - 12 >= 65 || screen_y + j - 12 <= 4
+                || i >= GXM - 1)
             {
                 buffer2[bufcount2 + 1] = DARKGREY;
                 buffer2[bufcount2] = 0;
@@ -1840,9 +1841,11 @@ void show_map(FixedVector < int, 2 > &spec_place)
 #ifdef PLAIN_TERM
 
           print_it:
-            if (j == NUMBER_OF_LINES - 1 && i == 79)
+            // avoid line wrap
+            if (i == 79)
                 continue;
 
+            // newline
             if (i == 0 && j > 0)
                 gotoxy(1,j+1);
 

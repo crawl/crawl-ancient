@@ -21,7 +21,7 @@
 #ifdef DOS
 #include <conio.h>
 #endif
-#ifdef WIN32CONSOLE
+#if defined(WIN32CONSOLE) || defined(DOS)
 #include <stdio.h>
 #endif
 

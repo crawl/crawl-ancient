@@ -605,22 +605,29 @@ void create_spec_object2(void)
 //---------------------------------------------------------------
 void stethoscope(int mwh)
 {
-    // STETH can't examine spaces in cardinal directions more
-    // than 1 space from you
     struct dist stth;
+    int steth_x, steth_y;
     int i;
 
     if (mwh == RANDOM_MONSTER)
     {
         mpr("Which monster?");
 
-        direction(1, stth);
+        direction(stth);
 
-        if (stth.nothing == -1)
+        if (!stth.isValid)
             return;
 
-        const int steth_x = you.x_pos + stth.move_x;
-        const int steth_y = you.y_pos + stth.move_y;
+        if (stth.isTarget)
+        {
+            steth_x = stth.tx;
+            steth_y = stth.ty;
+        }
+        else
+        {
+            steth_x = you.x_pos + stth.dx;
+            steth_y = you.x_pos + stth.dy;
+        }
 
         if (env.cgrid[steth_x][steth_y] != EMPTY_CLOUD)
         {

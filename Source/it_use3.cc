@@ -18,7 +18,7 @@
 
 #include "externs.h"
 
-#include "bang.h"
+#include "beam.h"
 #include "decks.h"
 #include "direct.h"
 #include "effects.h"
@@ -260,18 +260,22 @@ static void reaching_weapon_attack(void)
 
     mpr("Attack whom?", MSGCH_PROMPT);
 
-    direction(100, beam);
+    direction(beam, DIR_TARGET);
+    if (!beam.isValid)
+        return;
 
-    x_distance = abs(beam.target_x - you.x_pos);
-    y_distance = abs(beam.target_y - you.y_pos);
-
-    if (x_distance == 0 && y_distance == 0)
+    if (beam.isMe)
+    {
         canned_msg(MSG_UNTHINKING_ACT);
-    else if (x_distance > 2 || y_distance > 2)
+        return;
+    }
+
+    x_distance = abs(beam.tx - you.x_pos);
+    y_distance = abs(beam.ty - you.y_pos);
+
+    if (x_distance > 2 || y_distance > 2)
         mpr("Your weapon cannot reach that far!");
-    else if (beam.nothing == -1
-             || mgrd[beam.target_x][beam.target_y] == NON_MONSTER
-             || (beam.target_x == you.x_pos && beam.target_y == you.y_pos))
+    else if (mgrd[beam.tx][beam.ty] == NON_MONSTER)
     {
         mpr("You attack empty space.");
     }
@@ -287,12 +291,12 @@ static void reaching_weapon_attack(void)
         {
 
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
-            x_middle = MAX(beam.target_x, you.x_pos) - (x_distance / 2);
-            y_middle = MAX(beam.target_y, you.y_pos) - (y_distance / 2);
+            x_middle = MAX(beam.tx, you.x_pos) - (x_distance / 2);
+            y_middle = MAX(beam.ty, you.y_pos) - (y_distance / 2);
 #undef MAX
             // if either the x or the y is the same, we should check for
             // a monster:
-            if (((beam.target_x == you.x_pos) || (beam.target_y == you.y_pos))
+            if (((beam.tx == you.x_pos) || (beam.ty == you.y_pos))
                     && (mgrd[x_middle][y_middle] != NON_MONSTER))
             {
                 skill = weapon_skill( you.inv_class[you.equip[EQ_WEAPON]],
@@ -301,7 +305,7 @@ static void reaching_weapon_attack(void)
                 if ((5 + (3 * skill)) > random2(100))
                 {
                     mpr("You reach to attack!");
-                    you_attack(mgrd[beam.target_x][beam.target_y], false);
+                    you_attack(mgrd[beam.tx][beam.ty], false);
                 }
                 else
                 {
@@ -312,12 +316,12 @@ static void reaching_weapon_attack(void)
             else
             {
                 mpr("You reach to attack!");
-                you_attack(mgrd[beam.target_x][beam.target_y], false);
+                you_attack(mgrd[beam.tx][beam.ty], false);
             }
         }
         else
         {
-            you_attack(mgrd[beam.target_x][beam.target_y], false);
+            you_attack(mgrd[beam.tx][beam.ty], false);
         }
     }
 
@@ -751,12 +755,11 @@ static void disc_of_storms(void)
                          (temp_rand > 0) ? ZAP_ELECTRICITY
                                          : ZAP_ORB_OF_ELECTRICITY);
 
-            beam.target_x = 0;
-            beam.target_y = 0;
-            beam.move_x = random2(13) - 6;
-            beam.move_y = random2(13) - 6;
             beam.source_x = you.x_pos;
             beam.source_y = you.y_pos;
+            beam.target_x = you.x_pos + random2(13) - 6;
+            beam.target_y = you.y_pos + random2(13) - 6;
+
             zapping(which_zap, 30 + random2(20), beam);
 
             disc_count--;
@@ -901,14 +904,15 @@ void tome_of_power(char sc_read_2)
         beam.damage = 115;
         // unsure about this    // BEAM_EXPLOSION instead? [dlb]
         beam.flavour = BEAM_FIRE;
-        beam.bx = you.x_pos;
-        beam.by = you.y_pos;
+        beam.target_x = you.x_pos;
+        beam.target_y = you.y_pos;
         strcpy(beam.beam_name, "fiery explosion");
         beam.colour = RED;
         // your explosion, (not someone else's explosion)
-        beam.thing_thrown = KILL_YOU;
+        beam.thrower = KILL_YOU;
+        beam.ex_size = 2;
 
-        explosion(true, beam);
+        explosion(beam);
         return;
 
     case 1:

@@ -32,7 +32,6 @@
 
 #include "externs.h"
 
-#include "bang.h"
 #include "beam.h"
 #include "effects.h"
 #include "it_use2.h"
@@ -180,16 +179,14 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 beam.flavour = BEAM_MISSILE; // unsure about this
                 // BEAM_EXPLOSION instead? {dlb}
 
-                beam.bx = you.x_pos;
-                beam.by = you.y_pos;
+                beam.target_x = you.x_pos;
+                beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = random_colour();
-                beam.thing_thrown = KILL_YOU; // your explosion(this right?)
+                beam.thrower = KILL_YOU;
+                beam.ex_size = 1;
 
-                explosion(false, beam);
-
-                if (!silenced(you.x_pos, you.y_pos))
-                    noisy(10, you.x_pos, you.y_pos);
+                explosion(beam);
                 break;
             }
             break;
@@ -207,16 +204,14 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 beam.damage = 120;
                 beam.flavour = BEAM_MISSILE; // unsure about this
                 // BEAM_EXPLOSION instead? {dlb}
-                beam.bx = you.x_pos;
-                beam.by = you.y_pos;
+                beam.target_x = you.x_pos;
+                beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = random_colour();
-                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
+                beam.thrower = KILL_YOU;
+                beam.ex_size = coinflip()?1:2;
 
-                explosion(coinflip(), beam);
-
-                if (!silenced(you.x_pos, you.y_pos))
-                    noisy(20, you.x_pos, you.y_pos);
+                explosion(beam);
                 break;
             }
             break;
@@ -1077,16 +1072,14 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 beam.type = SYM_BURST;
                 beam.damage = 114;
                 beam.flavour = BEAM_FIRE;
-                beam.bx = you.x_pos;
-                beam.by = you.y_pos;
+                beam.target_x = you.x_pos;
+                beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = RED;
-                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
+                beam.thrower = KILL_YOU;
+                beam.ex_size = 1;
 
-                explosion(false, beam);
-
-                if (!silenced(you.x_pos, you.y_pos))
-                    noisy(10, you.x_pos, you.y_pos);
+                explosion(beam);
                 break;
             }
             break;
@@ -1108,16 +1101,14 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 beam.type = SYM_BURST;
                 beam.damage = 120;
                 beam.flavour = BEAM_FIRE;
-                beam.bx = you.x_pos;
-                beam.by = you.y_pos;
+                beam.target_x = you.x_pos;
+                beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "fireball");
                 beam.colour = RED;
-                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
+                beam.thrower = KILL_YOU;
+                beam.ex_size = coinflip()?1:2;
 
-                explosion(coinflip(), beam);
-
-                if (!silenced(you.x_pos, you.y_pos))
-                    noisy(20, you.x_pos, you.y_pos);
+                explosion(beam);
                 break;
 
             case 2:
@@ -1206,16 +1197,14 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 beam.type = SYM_BURST;
                 beam.damage = 111;
                 beam.flavour = BEAM_COLD;
-                beam.bx = you.x_pos;
-                beam.by = you.y_pos;
+                beam.target_x = you.x_pos;
+                beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = WHITE;
-                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
+                beam.thrower = KILL_YOU;
+                beam.ex_size = 1;
 
-                explosion(false, beam);
-
-                if (!silenced(you.x_pos, you.y_pos))
-                    noisy(10, you.x_pos, you.y_pos);
+                explosion(beam);
                 break;
             }
             break;
@@ -1325,8 +1314,8 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 beam.type = SYM_BURST;
                 beam.damage = 115;
                 beam.flavour = BEAM_FRAG;
-                beam.bx = you.x_pos;
-                beam.by = you.y_pos;
+                beam.target_x = you.x_pos;
+                beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = CYAN;
 
@@ -1335,12 +1324,10 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 if (one_chance_in(5))
                     beam.colour = LIGHTCYAN;
 
-                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
+                beam.thrower = KILL_YOU;
+                beam.ex_size = 1;
 
-                explosion(false, beam);
-
-                if (!silenced(you.x_pos, you.y_pos))
-                    noisy(10, you.x_pos, you.y_pos);
+                explosion(beam);
                 break;
             }
             break;
@@ -1432,16 +1419,14 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 beam.type = SYM_BURST;
                 beam.damage = 108;
                 beam.flavour = BEAM_ELECTRICITY;
-                beam.bx = you.x_pos;
-                beam.by = you.y_pos;
+                beam.target_x = you.x_pos;
+                beam.target_y = you.y_pos;
                 strcpy(beam.beam_name, "explosion");
                 beam.colour = LIGHTBLUE;
-                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
+                beam.thrower = KILL_YOU;
+                beam.ex_size = one_chance_in(4)?1:2;
 
-                explosion(!one_chance_in(4), beam);
-
-                if (!silenced(you.x_pos, you.y_pos))
-                    noisy(10, you.x_pos, you.y_pos);
+                explosion(beam);
                 break;
             case 1:
                 mpr("Venomous gasses pour from your hands!");

@@ -642,7 +642,7 @@ static void cards(unsigned char which_card)
 
     case CARD_RAGE:
         mpr("You have drawn Rage.");
-        if (!go_berserk())
+        if (!go_berserk(false))
             canned_msg(MSG_NOTHING_HAPPENS);
         else
             you.berserk_penalty = NO_BERSERK_PENALTY;

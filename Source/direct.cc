@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ * <5>  01/08/01       GDL   complete rewrite of direction()
  * <4>  11/23/99       LRH   Looking at monsters now
  *                           displays more info
  * <3>  5/12/99        BWR   changes to allow for space selection of target.
@@ -38,7 +39,16 @@
 #include "macro.h"
 #endif
 
-int dir_cursor(char rng);
+// x and y offsets in the following order:
+// SW, S, SE, W, E, NW, N, NE
+static char xcomp[9] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+static char ycomp[9] = { 1, 1, 1, 0, 0, 0, -1, -1, -1 };
+static char dirchars[19] = { "b1j2n3h4.5l6y7k8u9" };
+static char DOSidiocy[10] = { "OPQKSMGHI" };
+static char *aim_prompt = "Aim (move cursor or select with '-','+','=', "
+    "then '.', or '>')";
+
+static void describe_cell(int mx, int my);
 char mons_find(unsigned char xps, unsigned char yps, FixedVector < char,
                2 > &mfp, char direction);
 
@@ -46,296 +56,189 @@ char mons_find(unsigned char xps, unsigned char yps, FixedVector < char,
 //
 // direction
 //
-// Handles entering of directions. Passes to look_around for cursor
-// aiming.
+// input: restricts : DIR_NONE      accepts keypad dir or targetting
+//                    DIR_TARGET    must use targetting
+//                    DIR_DIR       must use keypad direction
 //
+//
+// outputs: dist structure:
+//
+//           isValid        a valid target or direction was chosen
+//           isCancel       player hit 'escape'
+//           isTarget       targetting was used
+//           tx,ty          target x,y or logical beam extension to
+//                             edge of map if keypad direction used.
+//           dx,dy          direction delta if keypad used {-1,0,1}
+//
+// SYNOPSIS:
+//
+// gets a direction, or any of the follwing:
+//
+// *     go to targetting mode
+// +,=   go to targetting mode, next monster
+// -               "          , prev monster
+// t,p   auto-select previous target
+//
+//
+// targetting mode is handled by look_around()
 //---------------------------------------------------------------
-void direction( char rnge, struct dist &moves )
+void direction( struct dist &moves, int restrict )
 {
-    char ink = 0;
-    char looked = 0;
+    bool dirChosen = false;
+    bool targChosen = false;
+    int dir = 0;
 
-    moves.nothing = dir_cursor(rnge);
+    // init
+    moves.isValid       = false;
+    moves.isTarget      = false;
+    moves.isMe          = false;
+    moves.isCancel      = false;
+    moves.dx = moves.dy = 0;
+    moves.tx = moves.ty = 0;
 
-    if (moves.nothing == -9999 || moves.nothing == -10000
-        || moves.nothing == -10001)
+    int keyin = getch();
+#ifdef LINUX
+    keyin = translate_keypad(keyin);
+    //keyy = key_to_command(keyy);     // maybe replace with this? {dlb}
+#endif
+    if (keyin == 0)             // DOS idiocy (emulated by win32 console)
     {
-        mpr("Aim (move cursor or select with '-' or '+'/'=', then 'p', '.', or '>')");
-        moves.prev_targ = 0;
-
-        if (moves.nothing == -10000)
-            moves.prev_targ = 1;
-
-        if (moves.nothing == -10001)
-            moves.prev_targ = 2;
-
-        moves.nothing = look_around(moves);
-        looked = 1;
+        keyin = getch();        // grrr.
+        if (keyin == '*')
+        {
+            targChosen = true;
+            dir = 0;
+        }
+        else
+        {
+            if (strchr(DOSidiocy, keyin) == NULL)
+                return;
+            dirChosen = true;
+            dir = (int)(strchr(DOSidiocy, keyin) - DOSidiocy);
+        }
+    }
+    else
+    {
+        if (strchr(dirchars, keyin) != NULL)
+        {
+            dirChosen = true;
+            dir = (int)(strchr(dirchars, keyin) - dirchars) / 2;
+        }
+        else
+        {
+            switch (keyin)
+            {
+                case '-':
+                    targChosen = true;
+                    dir = -1;
+                    break;
+                case '*':
+                    targChosen = true;
+                    dir = 0;
+                    break;
+                case '+':
+                case '=':
+                    targChosen = true;
+                    dir = 1;
+                    break;
+                case 't':
+                case 'p':
+                    targChosen = true;
+                    dir = 2;
+                    break;
+                case 27:
+                    moves.isCancel = true;
+                    return;
+                default:
+                    break;
+            }
+        }
     }
 
-    if (moves.nothing > 50000)
-        moves.nothing -= 50000;
-
-    if (moves.nothing > 10000)
-    {
-        moves.nothing -= 10000;
-        ink = 1;
-    }
-
-    if (moves.nothing == -1)
+    // at this point, we know exactly the input - validate
+    if (!(targChosen || dirChosen) ||
+        (targChosen && restrict == DIR_DIR))
     {
         mpr("What an unusual direction.");
         return;
     }
 
-    if (moves.nothing == 253)
+    // special case: they typed a dir key, but they're in target-only mode
+    if (dirChosen && restrict == DIR_TARGET)
     {
+        mpr(aim_prompt);
+        look_around(moves, dir);
+        return;
+    }
+
+    if (targChosen)
+    {
+        if (dir < 2)
+        {
+            mpr(aim_prompt);
+            moves.prev_target = dir;
+            look_around(moves);
+            if (moves.prev_target != -1)      // -1 means they pressed 'p'
+                return;
+        }
+
+        // chose to aim at previous target.  do we have one?
         if (you.prev_targ == MHITNOT || you.prev_targ == MHITYOU)
         {
             mpr("You haven't got a target.");
-            moves.nothing = -1;
+            return;
+        }
+
+        // we have a valid previous target (maybe)
+        struct monsters *montarget = &menv[you.prev_targ];
+        if (!mons_near(montarget)
+            || (montarget->enchantment[2] == ENCH_INVIS
+                && !player_see_invis()))
+        {
+            mpr("You can't see that creature any more.");
+            return;
         }
         else
         {
-            struct monsters *montarget = &menv[you.prev_targ];
-
-            if (!mons_near(montarget)
-                || (montarget->enchantment[2] == ENCH_INVIS
-                    && !player_see_invis()))
-            {
-                mpr("You can't see that creature any more.");
-                moves.nothing = -1;
-            }
-            else
-            {
-                moves.move_x = montarget->x - you.x_pos;
-                moves.move_y = montarget->y - you.y_pos;
-                moves.target_x = moves.move_x + you.x_pos;
-                moves.target_y = moves.move_y + you.y_pos;
-            }
+            moves.isValid = true;
+            moves.isTarget = true;
+            moves.tx = montarget->x;
+            moves.ty = montarget->y;
         }
         return;
     }
 
-    if (moves.nothing == 254)
+    // at this point, we have a direction, and direction is allowed.
+    moves.isValid = true;
+    moves.isTarget = false;
+    moves.dx = xcomp[dir];
+    moves.dy = ycomp[dir];
+    if (xcomp[dir] == 0 && ycomp[dir] == 0)
+        moves.isMe = true;
+
+    // now the tricky bit - extend the target x,y out to map edge.
+    int mx, my;
+    mx = my = 0;
+
+    if (moves.dx > 0)
+        mx = (GXM  - 1) - you.x_pos;
+    if (moves.dx < 0)
+        mx = you.x_pos;
+
+    if (moves.dy > 0)
+        my = (GYM - 1) - you.y_pos;
+    if (moves.dy < 0)
+        my = you.y_pos;
+
+    if (!(mx == 0 || my == 0))
     {
-        moves.nothing = -1;
-        return;
+        if (mx < my)
+            my = mx;
+        else
+            mx = my;
     }
-
-    if (looked == 0)
-    {
-        moves.move_x = ((int) (moves.nothing / 100)) - 7;
-        moves.move_y = moves.nothing - (((int) moves.nothing / 100) * 100) - 7;
-    }
-
-    /*target_x = move_x + you.x_pos;
-       target_y = move_y + you.y_pos; */
-
-    if (ink == 1)
-    {
-        moves.target_x = 1;
-        moves.target_y = 1;
-    }
-
-    if (moves.move_x == 0)
-    {
-        if (moves.move_y > 0)
-            moves.move_y = 1;
-        if (moves.move_y < 0)
-            moves.move_y = -1;
-    }
-
-    if (moves.move_y == 0)
-    {
-        if (moves.move_x > 0)
-            moves.move_x = 1;
-        if (moves.move_x < 0)
-            moves.move_x = -1;
-    }
-
-    if (abs(moves.move_x) == abs(moves.move_y))
-    {
-        if (moves.move_y > 0)
-            moves.move_y = 1;
-        if (moves.move_y < 0)
-            moves.move_y = -1;
-        if (moves.move_x > 0)
-            moves.move_x = 1;
-        if (moves.move_x < 0)
-            moves.move_x = -1;
-    }
-
-    if (mgrd[moves.target_x][moves.target_y] != NON_MONSTER
-        && rnge != 100)
-        you.prev_targ = mgrd[moves.target_x][moves.target_y];
-
-}                               // end of direction()
-
-//---------------------------------------------------------------
-//
-// dir_cursor
-//
-// Another cursor input thing.
-//
-//---------------------------------------------------------------
-int dir_cursor(char rng)
-{
-    char mve_x = 0, mve_y = 0;
-    char bk = 0;
-    int keyy;
-
-    if (rng == 100)
-        return -9999;
-
-  getkey:
-    keyy = getch();
-
-#ifdef LINUX
-    keyy = translate_keypad(keyy);
-    //keyy = key_to_command(keyy);     // maybe replace with this? {dlb}
-#endif
-
-    if (keyy != 0 && keyy != '*' && keyy != '.')
-    {
-        switch (keyy)
-        {
-        case 'b':
-        case '1':
-            mve_x = -1;
-            mve_y = 1;
-            break;
-
-        case 'j':
-        case '2':
-            mve_y = 1;
-            mve_x = 0;
-            break;
-
-        case 'u':
-        case '9':
-            mve_x = 1;
-            mve_y = -1;
-            break;
-
-        case 'k':
-        case '8':
-            mve_y = -1;
-            mve_x = 0;
-            break;
-
-        case 'y':
-        case '7':
-            mve_y = -1;
-            mve_x = -1;
-            break;
-
-        case 'h':
-        case '4':
-            mve_x = -1;
-            mve_y = 0;
-            break;
-
-        case 'n':
-        case '3':
-            mve_y = 1;
-            mve_x = 1;
-            break;
-
-        case 'l':
-        case '6':
-            mve_x = 1;
-            mve_y = 0;
-            break;
-
-        case 't':
-        case 'p':
-            return 253;
-
-        case '=':
-        case '+':
-            return -10000;
-
-        case '-':
-            return -10001;
-
-        case 27:
-            return 254;
-
-        default:
-            goto getkey;
-        }
-        return mve_x * 100 + mve_y + 707 + 10000;
-    }
-
-    if (keyy != '*' && keyy != '.')
-        keyy = getch();
-
-    switch (keyy)
-    {
-    case 'O':
-        mve_x = -1;
-        mve_y = 1;
-        bk = 1;
-        break;
-    case 'P':
-        mve_y = 1;
-        mve_x = 0;
-        bk = 1;
-        break;
-    case 'I':
-        mve_x = 1;
-        mve_y = -1;
-        bk = 1;
-        break;
-    case 'H':
-        mve_y = -1;
-        mve_x = 0;
-        bk = 1;
-        break;
-    case 'G':
-        mve_y = -1;
-        mve_x = -1;
-        bk = 1;
-        break;
-    case 'K':
-        mve_x = -1;
-        mve_y = 0;
-        bk = 1;
-        break;
-    case 'Q':
-        mve_y = 1;
-        mve_x = 1;
-        bk = 1;
-        break;
-    case 'M':
-        mve_x = 1;
-        mve_y = 0;
-        bk = 1;
-        break;
-    case '.':
-    case 'S':
-        bk = 1;
-        mve_x = 0;
-        mve_y = 0;
-        break;
-    case '*':
-        bk = 0;
-        break;                  // was 'L'
-
-    default:
-        return -1;
-    }
-
-    if (bk == 1)
-    {
-        return mve_x * 100 + mve_y + 707 + 10000;
-    }
-
-    if (rng == 0)
-        return 254;
-
-    return -9999;
+    moves.tx = you.x_pos + moves.dx * mx;
+    moves.ty = you.y_pos + moves.dy * my;
 }
 
 //---------------------------------------------------------------
@@ -346,740 +249,225 @@ int dir_cursor(char rng)
 // find out what symbols mean, and is the way to access monster
 // descriptions.
 //
+// input: dist.prev_target : -1 is last monster
+//                          0 is no monster selected
+//                          1 is next monster
+//
+// input: first_move is -1 if no initial cursor move, otherwise
+// make 1 move in that direction.
+//
+//
+// output: if dist.prev_target is -1 on OUTPUT, it means that
+//   player selected 'p' ot 't' for last targetted monster.
+//
+//   otherwise, usual dist fields are filled in (dx and dy are
+//   always zero coming back from this function)
+//
 //---------------------------------------------------------------
-int look_around(struct dist &moves)
-{
-    int xps = 17;
-    int yps = 9;
-    int gotch;
-    char mve_x = 0;
-    char mve_y = 0;
-    int trf = 0;
-    FixedVector < char, 2 > monsfind_pos;
-    int p = 0;
-    unsigned int targ_item;
 
-    bool printed_already = true;
+void look_around(struct dist &moves, int first_move)
+{
+    int keyin = 0;
+    bool dirChosen = false;
+    bool targChosen = false;
+    int dir = 0;
+    int cx = 17;
+    int cy = 9;
+    int newcx, newcy;
+    int mx, my;         // actual map x,y (scratch)
+    int mid;            // monster id (scratc)
+    FixedVector < char, 2 > monsfind_pos;
 
     monsfind_pos[0] = you.x_pos;
     monsfind_pos[1] = you.y_pos;
 
     message_current_target();
 
-    gotoxy(xps, yps);
-    gotoxy(xps + 1, yps);
+    _setcursortype(_NORMALCURSOR);
 
-//    losight(env.show, grd, you.x_pos, you.y_pos);  // why??? (GDL)
+    // setup initial keystroke
+    if (first_move >= 0)
+        keyin = (int)'1' + first_move;
+    if (moves.prev_target == -1)
+        keyin = '-';
+    if (moves.prev_target == 1)
+        keyin = '+';
+    // reset
+    moves.prev_target = 0;
 
-    do
+    // loop until some exit criteria reached
+    while(true)
     {
-        if (moves.prev_targ == 0)
-        {
-            gotch = getch();
+        dirChosen = false;
+        targChosen = false;
+        newcx = cx;
+        newcy = cy;
 
+        // move cursor to current position
+        gotoxy(cx+1, cy);
+
+        if (keyin == 0)
+        {
+            keyin = getch();
 #ifdef LINUX
-            gotch = translate_keypad(gotch);
+            keyin = translate_keypad(keyin);
 
             // maybe replace with this? {dlb}
             //gotch = key_to_command(gotch);
 #endif
         }
+        // DOS idiocy
+        if (keyin == 0)
+        {
+            // get the extended key
+            keyin = getch();
+
+            // look for CR - change to '5' to indicate selection
+            if (keyin == 13)
+                keyin = 'S';
+
+            if (strchr(DOSidiocy, keyin) == NULL)
+                break;
+            dirChosen = true;
+            dir = (int)(strchr(DOSidiocy, keyin) - DOSidiocy);
+        }
         else
         {
-            if (moves.prev_targ == 1)
-                gotch = '+';
-            else
-                gotch = '-';
-            moves.prev_targ = 0;
-            printed_already = false;
-        }
-
-        if (gotch != 0 && gotch != 13)
-        {
-            switch (gotch)
+            if (strchr(dirchars, keyin) != NULL)
             {
-            case '.':
-            case ' ':
-            case '\n':
-            case '5':
-                mve_x = 0;
-                mve_y = 0;
-                gotch = 'S';
-                goto thingy;
-
-            case 'b':
-            case '1':
-                mve_x = -1;
-                mve_y = 1;
-                break;
-
-            case 'j':
-            case '2':
-                mve_y = 1;
-                mve_x = 0;
-                break;
-
-            case 'u':
-            case '9':
-                mve_x = 1;
-                mve_y = -1;
-                break;
-
-            case 'k':
-            case '8':
-                mve_y = -1;
-                mve_x = 0;
-                break;
-
-            case 'y':
-            case '7':
-                mve_y = -1;
-                mve_x = -1;
-                break;
-
-            case 'h':
-            case '4':
-                mve_x = -1;
-                mve_y = 0;
-                break;
-
-            case 'n':
-            case '3':
-                mve_y = 1;
-                mve_x = 1;
-                break;
-
-            case 'l':
-            case '6':
-                mve_x = 1;
-                mve_y = 0;
-                break;
-
-            case '?':
-                {
-                    const int tx = you.x_pos + xps - 17;
-                    const int ty = you.y_pos + yps - 9;
-                    const unsigned char tmon = mgrd[ tx ][ ty ];
-
-                    mve_x = 0;
-                    mve_y = 0;
-                    if (mgrd[ tx ][ ty ] == NON_MONSTER)
-                        continue;
-
-                    if (menv[ tmon ].enchantment[2] == ENCH_INVIS
-                        && !player_see_invis())
-                    {
-                        continue;
-                    }
-
-                    if (monster_habitat( menv[ tmon ].type ) != DNGN_FLOOR
-                        && menv[ tmon ].number == 1)
-                    {
-                        continue;
-                    }
-
-                    describe_monsters( menv[ tmon ].type, tmon );
-                    redraw_screen();
-                }
-                break;
-
-            case 'p':
-            case '>':
-                goto finished_looking;
-
-            case '-':
-                mve_x = 0;
-                mve_y = 0;
-                if (mons_find(xps, yps, monsfind_pos, -1) == 1)
-                {
-                    xps = monsfind_pos[0];
-                    yps = monsfind_pos[1];
-                }
-                break;
-
-            case '+':
-            case '=':
-                mve_x = 0;
-                mve_y = 0;
-                if (mons_find(xps, yps, monsfind_pos, 1) == 1)
-                {
-                    xps = monsfind_pos[0];
-                    yps = monsfind_pos[1];
-                }
-                break;
-
-            default:
-                return -1;
+                dirChosen = true;
+                dir = (int)(strchr(dirchars, keyin) - dirchars) / 2;
             }
+            else
+            {
+                // handle non-directional keys
+                switch (keyin)
+                {
+                    case '-':
+                        if (mons_find(cx, cy, monsfind_pos, -1) == 1)
+                        {
+                            newcx = monsfind_pos[0];
+                            newcy = monsfind_pos[1];
+                        }
+                        targChosen = true;
+                        break;
+                    case '+':
+                    case '=':
+                        if (mons_find(cx, cy, monsfind_pos, 1) == 1)
+                        {
+                            newcx = monsfind_pos[0];
+                            newcy = monsfind_pos[1];
+                        }
+                        targChosen = true;
+                        break;
+                    case 't':
+                    case 'p':
+                        moves.prev_target = -1;
+                        break;
+                    case '?':
+                        targChosen = true;
+                        mx = you.x_pos + cx - 17;
+                        my = you.y_pos + cy - 9;
+                        mid = mgrd[mx][my];
+                        if (mid == NON_MONSTER)
+                            break;
 
-            goto gotchy;
+                        if (menv[ mid ].enchantment[2] == ENCH_INVIS
+                            && !player_see_invis())
+                            break;
+
+                        if (monster_habitat( menv[ mid ].type ) != DNGN_FLOOR
+                            && menv[ mid ].number == 1)
+                            break;
+
+                        describe_monsters( menv[ mid ].type, mid );
+                        redraw_screen();
+                        // describe the cell again.
+                        describe_cell(you.x_pos + cx - 17, you.y_pos + cy - 9);
+                        break;
+                    case 13:
+                    case '>':
+                    case ' ':
+                    case '.':
+                        dirChosen = true;
+                        dir = 4;
+                    default:
+                        break;
+                }
+            }
         }
 
-        if (gotch != 13)
-            gotch = getch();
+        // now we have parsed the input character completely. Reset & Evaluate:
+        keyin = 0;
+        if (!(targChosen || dirChosen))
+            break;
 
-        mve_x = 0;
-        mve_y = 0;
-
-      thingy:
-        switch (gotch)
+        // check for SELECTION
+        if (dirChosen && dir == 4)
         {
-        case 13:
-            gotch = 'S';
-            break;
+            // RULE: cannot target what you cannot see
+            if (env.show[cx - 8][cy] == 0 && !(cx == 17 && cy == 9))
+            {
+                mpr("Sorry, you can't target what you can't see.");
+                return;
+            }
+            moves.isValid = true;
+            moves.isTarget = true;
+            moves.tx = you.x_pos + cx - 17;
+            moves.ty = you.y_pos + cy - 9;
+            if (moves.tx == you.x_pos && moves.ty == you.y_pos)
+                moves.isMe = true;
+            else
+            {
+                // try to set you.previous target
+                mx = you.x_pos + cx - 17;
+                my = you.y_pos + cy - 9;
+                mid = mgrd[mx][my];
+                if (mid == NON_MONSTER)
+                    break;
 
-        case 'O':
-            mve_x = -1;
-            mve_y = 1;
-            break;
+                if (menv[ mid ].enchantment[2] == ENCH_INVIS
+                    && !player_see_invis())
+                    break;
 
-        case 'P':
-            mve_y = 1;
-            mve_x = 0;
-            break;
+                if (monster_habitat( menv[ mid ].type ) != DNGN_FLOOR
+                    && menv[ mid ].number == 1)
+                    break;
 
-        case 'I':
-            mve_x = 1;
-            mve_y = -1;
+                you.prev_targ = mid;
+            }
             break;
-
-        case 'H':
-            mve_y = -1;
-            mve_x = 0;
-            break;
-
-        case 'G':
-            mve_y = -1;
-            mve_x = -1;
-            break;
-
-        case 'K':
-            mve_x = -1;
-            mve_y = 0;
-            break;
-
-        case 'Q':
-            mve_y = 1;
-            mve_x = 1;
-            break;
-
-        case 'M':
-            mve_x = 1;
-            mve_y = 0;
-            break;
-
-        case 'S':
-            break;
-            // need <, > etc
-
-        default:
-            return -1;
         }
 
-      gotchy:
-        gotoxy(xps, yps);
+        // check for MOVE
+        if (dirChosen)
+        {
+            newcx = cx + xcomp[dir];
+            newcy = cy + ycomp[dir];
+        }
 
-        if (xps + mve_x >= 9 && xps + mve_x < 26)
-            xps += mve_x;
-        if (yps + mve_y >= 1 && yps + mve_y < 18)
-            yps += mve_y;
+        // bounds check for newcx, newcy
+        if (newcx < 9)  newcx = 9;
+        if (newcx > 25) newcx = 25;
+        if (newcy < 1)  newcy = 1;
+        if (newcy > 17) newcy = 17;
 
-        if (printed_already)
-            mesclr();
+        // no-op if the cursor doesn't move.
+        if (newcx == cx && newcy == cy)
+            continue;
 
-        printed_already = true;
-
-        if (env.show[xps - 8][yps] == 0 && (xps != 17 || yps != 9))
+        // CURSOR MOVED - describe new cell.
+        cx = newcx;
+        cy = newcy;
+        mesclr();
+        if (env.show[cx - 8][cy] == 0 && !(cx == 17 && cy == 9))
         {
             mpr("You can't see that place.");
-            goto glogokh;
+            continue;
         }
-
-        if (mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9] != NON_MONSTER)
-        {
-            int i = mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9];
-
-            if (grd[you.x_pos + xps - 17][you.y_pos + yps - 9]
-                                                    == DNGN_SHALLOW_WATER)
-            {
-                if (menv[i].enchantment[2] == ENCH_INVIS
-                    && mons_flies(menv[i].type) == 0 && !player_see_invis())
-                {
-                    mpr("There is a strange disturbance in the water here.");
-                }
-            }
-
-            if (menv[i].enchantment[2] == ENCH_INVIS && !player_see_invis())
-                goto look_clouds;
-
-            // and how the hell does a variable named mmov_x communicate
-            // this? :P {dlb}
-            int mmov_x = menv[i].inv[MSLOT_WEAPON];
-
-            if (menv[i].type == MONS_DANCING_WEAPON)
-            {
-                it_name(mmov_x, 2, str_pass);
-                strcpy(info, str_pass);
-                strcat(info, ".");
-                mpr(info);
-            }
-            else
-            {
-                strcpy(info, ptr_monam( &(menv[i]), 2 ));
-                strcat(info, ".");
-                mpr(info);
-
-                if (mmov_x != NON_ITEM)
-                {
-                    strcpy(info, "It is wielding ");
-                    it_name(mmov_x, 3, str_pass);
-                    strcat(info, str_pass);
-
-                    // 2-headed ogres can wield 2 weapons
-                    if (menv[i].type == MONS_TWO_HEADED_OGRE
-                        && menv[i].inv[MSLOT_MISSILE] != NON_ITEM)
-                    {
-                        strcat(info, ",");
-                        mpr(info);
-                        strcpy(info, " and ");
-                        it_name(menv[i].inv[MSLOT_MISSILE], 3, str_pass);
-                        strcat(info, str_pass);
-                    }
-                    strcat(info, ".");
-                    mpr(info);
-                }
-            }
-
-            if (menv[i].type == MONS_HYDRA)
-            {
-                strcpy(info, "It has ");
-                itoa(menv[i].number, st_prn, 10);
-                strcat(info, st_prn);
-                strcat(info, " heads.");
-                mpr(info);
-            }
-
-            print_wounds(&menv[i]);
-
-            if (menv[i].behavior == BEH_ENSLAVED)
-                mpr("It is friendly.");
-
-            if (menv[i].behavior == BEH_SLEEP)
-                mpr("It doesn't appear to have noticed you.");
-
-            if (menv[i].enchantment1)
-            {
-                for (p = 0; p < 3; p++)
-                {
-                    switch (menv[i].enchantment[p])
-                    {
-                    case ENCH_YOUR_ROT_I:
-                    case ENCH_YOUR_ROT_II:
-                    case ENCH_YOUR_ROT_III:
-                    case ENCH_YOUR_ROT_IV:
-                        mpr("It is rotting away."); //jmf: "covered in sores"?
-                        break;
-                    case ENCH_BACKLIGHT_I:
-                    case ENCH_BACKLIGHT_II:
-                    case ENCH_BACKLIGHT_III:
-                    case ENCH_BACKLIGHT_IV:
-                        mpr("It is softly glowing.");
-                        break;
-                    case ENCH_SLOW:
-                        mpr("It is moving slowly.");
-                        break;
-                    case ENCH_HASTE:
-                        mpr("It is moving very quickly.");
-                        break;
-                    case ENCH_CONFUSION:
-                        mpr("It appears to be bewildered and confused.");
-                        break;
-                    case ENCH_INVIS:
-                        mpr("It is slightly transparent.");
-                        break;
-                    case ENCH_CHARM:
-                        mpr("It is in your thrall.");
-                        break;
-                    case ENCH_YOUR_STICKY_FLAME_I:
-                    case ENCH_YOUR_STICKY_FLAME_II:
-                    case ENCH_YOUR_STICKY_FLAME_III:
-                    case ENCH_YOUR_STICKY_FLAME_IV:
-                    case ENCH_STICKY_FLAME_I:
-                    case ENCH_STICKY_FLAME_II:
-                    case ENCH_STICKY_FLAME_III:
-                    case ENCH_STICKY_FLAME_IV:
-                        mpr("It is covered in liquid flames.");
-                        break;
-                    }
-                }
-            }
-#ifdef WIZARD
-            stethoscope(i);
-#endif
-        }
-
-      look_clouds:
-        if (env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9]
-                                                        != EMPTY_CLOUD)
-        {
-            const char cloud_inspected = env.cgrid[you.x_pos + xps - 17]
-                                                  [you.y_pos + yps - 9];
-
-            const char cloud_type = env.cloud_type[ cloud_inspected ];
-
-            strcpy(info, "There is a cloud of ");
-            strcat(info,
-                (cloud_type == CLOUD_FIRE
-                  || cloud_type == CLOUD_FIRE_MON) ? "flame" :
-                (cloud_type == CLOUD_STINK
-                  || cloud_type == CLOUD_STINK_MON) ? "noxious fumes" :
-                (cloud_type == CLOUD_COLD
-                  || cloud_type == CLOUD_COLD_MON) ? "freezing vapour" :
-                (cloud_type == CLOUD_POISON
-                  || cloud_type == CLOUD_POISON_MON) ? "poison gases" :
-                (cloud_type == CLOUD_GREY_SMOKE
-                  || cloud_type == CLOUD_GREY_SMOKE_MON) ? "grey smoke" :
-                (cloud_type == CLOUD_BLUE_SMOKE
-                  || cloud_type == CLOUD_BLUE_SMOKE_MON) ? "blue smoke" :
-                (cloud_type == CLOUD_PURP_SMOKE
-                  || cloud_type == CLOUD_PURP_SMOKE_MON) ? "purple smoke" :
-                (cloud_type == CLOUD_STEAM
-                  || cloud_type == CLOUD_STEAM_MON) ? "steam" :
-                (cloud_type == CLOUD_MIASMA
-                  || cloud_type == CLOUD_MIASMA_MON) ? "foul pestilence" :
-                (cloud_type == CLOUD_BLACK_SMOKE
-                  || cloud_type == CLOUD_BLACK_SMOKE_MON) ? "black smoke"
-                                                          : "buggy goodness");
-            strcat(info, " here.");
-            mpr(info);
-        }
-
-        targ_item = igrd[ you.x_pos + xps - 17 ][ you.y_pos + yps - 9 ];
-
-        if (targ_item != NON_ITEM)
-        {
-            if (mitm.base_type[ targ_item ] == OBJ_GOLD)
-            {
-                mpr("You see some money here.");
-            }
-            else
-            {
-                strcpy(info, "You see ");
-                it_name( targ_item, 3, str_pass);
-                strcat(info, str_pass);
-                strcat(info, " here.");
-                mpr(info);
-            }
-
-            if (mitm.link[ targ_item ] != NON_ITEM)
-                mpr("There is something else lying underneath.");
-        }
-
-        switch (grd[you.x_pos + xps - 17][you.y_pos + yps - 9])
-        {
-        case DNGN_STONE_WALL:
-            mpr("A stone wall.");
-            break;
-        case DNGN_ROCK_WALL:
-        case DNGN_SECRET_DOOR:
-            if (you.level_type == LEVEL_PANDEMONIUM)
-                mpr("A wall of the weird stuff which makes up Pandemonium.");
-            else
-                mpr("A rock wall.");
-            break;
-        case DNGN_CLOSED_DOOR:
-            mpr("A closed door.");
-            break;
-        case DNGN_METAL_WALL:
-            mpr("A metal wall.");
-            break;
-        case DNGN_GREEN_CRYSTAL_WALL:
-            mpr("A wall of green crystal.");
-            break;
-        case DNGN_ORCISH_IDOL:
-            mpr("An orcish idol.");
-            break;
-        case DNGN_WAX_WALL:
-            mpr("A wall of solid wax.");
-            break;
-        case DNGN_SILVER_STATUE:
-            mpr("A silver statue.");
-            break;
-        case DNGN_GRANITE_STATUE:
-            mpr("A granite statue.");
-            break;
-        case DNGN_ORANGE_CRYSTAL_STATUE:
-            mpr("An orange crystal statue.");
-            break;
-        case DNGN_LAVA:
-            mpr("Some lava.");
-            break;
-        case DNGN_DEEP_WATER:
-            mpr("Some deep water.");
-            break;
-        case DNGN_SHALLOW_WATER:
-            mpr("Some shallow water.");
-            break;
-        case DNGN_UNDISCOVERED_TRAP:
-        case DNGN_FLOOR:
-            mpr("Floor.");
-            break;
-        case DNGN_OPEN_DOOR:
-            mpr("An open door.");
-            break;
-        case DNGN_ROCK_STAIRS_DOWN:
-            mpr("A rock staircase leading down.");
-            break;
-        case DNGN_STONE_STAIRS_DOWN_I:
-        case DNGN_STONE_STAIRS_DOWN_II:
-        case DNGN_STONE_STAIRS_DOWN_III:
-            mpr("A stone staircase leading down.");
-            break;
-        case DNGN_ROCK_STAIRS_UP:
-            mpr("A rock staircase leading upwards.");
-            break;
-        case DNGN_STONE_STAIRS_UP_I:
-        case DNGN_STONE_STAIRS_UP_II:
-        case DNGN_STONE_STAIRS_UP_III:
-            mpr("A stone staircase leading up.");
-            break;
-        case DNGN_ENTER_HELL:
-            mpr("A gateway to hell.");
-            break;
-        case DNGN_BRANCH_STAIRS:
-            mpr("A staircase to a branch level.");
-            break;
-        case DNGN_TRAP_MECHANICAL:
-        case DNGN_TRAP_MAGICAL:
-        case DNGN_TRAP_III:
-            for (trf = 0; trf < MAX_TRAPS; trf++)
-            {
-                if (env.trap_x[trf] == you.x_pos + xps - 17
-                    && env.trap_y[trf] == you.y_pos + yps - 9)
-                {
-                    break;
-                }
-
-                if (trf == MAX_TRAPS - 1)
-                {
-                    mpr("Error - couldn't find that trap.");
-                    error_message_to_player();
-                    break;
-                }
-            }
-
-            switch (env.trap_type[trf])
-            {
-            case TRAP_DART:
-                mpr("A dart trap.");
-                break;
-            case TRAP_ARROW:
-                mpr("An arrow trap.");
-                break;
-            case TRAP_SPEAR:
-                mpr("A spear trap.");
-                break;
-            case TRAP_AXE:
-                mpr("An axe trap.");
-                break;
-            case TRAP_TELEPORT:
-                mpr("A teleportation trap.");
-                break;
-            case TRAP_AMNESIA:
-                mpr("An amnesia trap.");
-                break;
-            case TRAP_BLADE:
-                mpr("A blade trap.");
-                break;
-            case TRAP_BOLT:
-                mpr("A bolt trap.");
-                break;
-            case TRAP_ZOT:
-                mpr("A Zot trap.");
-                break;
-            default:
-                mpr("An undefined trap. Huh?");
-                error_message_to_player();
-                break;
-            }
-            break;
-        case DNGN_ENTER_SHOP:
-            mpr("A shop.");
-            break;
-        case DNGN_ENTER_LABYRINTH:
-            mpr("A labyrinth entrance.");
-            break;
-        case DNGN_ENTER_DIS:
-            mpr("A gateway to the Iron City of Dis.");
-            break;
-        case DNGN_ENTER_GEHENNA:
-            mpr("A gateway to Gehenna.");
-            break;
-        case DNGN_ENTER_COCYTUS:
-            mpr("A gateway to the freezing wastes of Cocytus.");
-            break;
-        case DNGN_ENTER_TARTARUS:
-            mpr("A gateway to the decaying netherworld of Tartarus.");
-            break;
-        case DNGN_ENTER_ABYSS:
-            mpr("A gateway to the infinite Abyss.");
-            break;
-        case DNGN_EXIT_ABYSS:
-            mpr("A gateway leading out of the Abyss.");
-            break;
-        case DNGN_STONE_ARCH:
-            mpr("An empty arch of ancient stone.");
-            break;
-        case DNGN_ENTER_PANDEMONIUM:
-            mpr("A gate leading to the halls of Pandemonium.");
-            break;
-        case DNGN_EXIT_PANDEMONIUM:
-            mpr("A gate leading out of Pandemonium.");
-            break;
-        case DNGN_TRANSIT_PANDEMONIUM:
-            mpr("A gate leading to another region of Pandemonium.");
-            break;
-        case DNGN_ENTER_ORCISH_MINES:
-            mpr("A staircase to the Orcish Mines.");
-            break;
-        case DNGN_ENTER_HIVE:
-            mpr("A staircase to the Hive.");
-            break;
-        case DNGN_ENTER_LAIR_I:
-            mpr("A staircase to the Lair.");
-            break;
-        case DNGN_ENTER_SLIME_PITS:
-            mpr("A staircase to the Slime Pits.");
-            break;
-        case DNGN_ENTER_VAULTS:
-            mpr("A staircase to the Vaults.");
-            break;
-        case DNGN_ENTER_CRYPT_I:
-            mpr("A staircase to the Crypt.");
-            break;
-        case DNGN_ENTER_HALL_OF_BLADES:
-            mpr("A staircase to the Hall of Blades.");
-            break;
-        case DNGN_ENTER_ZOT:
-            mpr("A gate to the Realm of Zot.");
-            break;
-        case DNGN_ENTER_TEMPLE:
-            mpr("A staircase to the Ecumenical Temple.");
-            break;
-        case DNGN_ENTER_SNAKE_PIT:
-            mpr("A staircase to the Snake Pit.");
-            break;
-        case DNGN_ENTER_ELVEN_HALLS:
-            mpr("A staircase to the Elven Halls.");
-            break;
-        case DNGN_ENTER_TOMB:
-            mpr("A staircase to the Tomb.");
-            break;
-        case DNGN_ENTER_SWAMP:
-            mpr("A staircase to the Swamp.");
-            break;
-        case DNGN_RETURN_DUNGEON_I:
-        case DNGN_RETURN_DUNGEON_II:
-        case DNGN_RETURN_DUNGEON_III:
-        case DNGN_RETURN_DUNGEON_IV:
-        case DNGN_RETURN_DUNGEON_V:
-            mpr("A staircase back to the Dungeon.");
-            break;
-        case DNGN_RETURN_LAIR_II:
-            mpr("A staircase back to the Lair.");
-            break;
-        case DNGN_RETURN_VAULTS:
-            mpr("A staircase back to the Vaults.");
-            break;
-        case DNGN_RETURN_CRYPT_II:
-            mpr("A staircase back to the Crpyt.");
-            break;
-        case DNGN_RETURN_LAIR_III:
-            mpr("A staircase back to the Lair.");
-            break;
-        case DNGN_RETURN_MINES:
-            mpr("A staircase back to the Mines.");
-            break;
-        case DNGN_RETURN_CRYPT_III:
-            mpr("A staircase back to the Crypt.");
-            break;
-        case DNGN_EXIT_ZOT:
-            mpr("A gate leading back out of this place.");
-            break;
-        case DNGN_RETURN_LAIR_IV:
-            mpr("A staircase back to the Lair.");
-            break;
-        case DNGN_ALTAR_ZIN:
-            mpr("A glowing white marble altar of Zin.");
-            break;
-        case DNGN_ALTAR_SHINING_ONE:
-            mpr("A glowing golden altar of the Shining One.");
-            break;
-        case DNGN_ALTAR_KIKUBAAQUDGHA:
-            mpr("An ancient bone altar of Kikubaaqudgha.");
-            break;
-        case DNGN_ALTAR_YREDELEMNUL:
-            mpr("A basalt altar of Yredelemnul.");
-            break;
-        case DNGN_ALTAR_XOM:
-            mpr("A shimmering altar of Xom.");
-            break;
-        case DNGN_ALTAR_VEHUMET:
-            mpr("A shining altar of Vehumet.");
-            break;
-        case DNGN_ALTAR_OKAWARU:
-            mpr("An iron altar of Okawaru.");
-            break;
-        case DNGN_ALTAR_MAKHLEB:
-            mpr("A burning altar of Makhleb.");
-            break;
-        case DNGN_ALTAR_SIF_MUNA:
-            mpr("A deep blue altar of Sif Muna.");
-            break;
-        case DNGN_ALTAR_TROG:
-            mpr("A bloodstained altar of Trog.");
-            break;
-        case DNGN_ALTAR_NEMELEX_XOBEH:
-            mpr("A sparkling altar of Nemelex Xobeh.");
-            break;
-        case DNGN_ALTAR_ELYVILON:
-            mpr("A silver altar of Elyvilon.");
-            break;
-        case DNGN_BLUE_FOUNTAIN:
-            mpr("A fountain of clear blue water.");
-            break;
-        case DNGN_SPARKLING_FOUNTAIN:
-            mpr("A fountain of sparkling water.");
-            break;
-        case DNGN_DRY_FOUNTAIN_I:
-        case DNGN_DRY_FOUNTAIN_II:
-        case DNGN_DRY_FOUNTAIN_IV:
-        case DNGN_DRY_FOUNTAIN_VI:
-        case DNGN_DRY_FOUNTAIN_VIII:
-        case DNGN_PERMADRY_FOUNTAIN:
-            mpr("A dry fountain.");
-            break;
-        }
-
-      glogokh:
-        itoa((int) grd[you.x_pos + xps - 17][you.y_pos + yps - 9], st_prn, 10);
-        strcpy(info, st_prn);
-        gotoxy(xps + 1, yps);
-    }
-    while (gotch != 'S');
-
-  finished_looking:
-    moves.move_x = xps - 17;
-    moves.move_y = yps - 9;
-    moves.target_x = you.x_pos + xps - 17;
-    moves.target_y = you.y_pos + yps - 9;
-
-    if (gotch == 'p')
-        return 253;
-    if (gotch == '>')
-        return 50001;
-
-    return 0;                   //mve_x * 100 + mve_y + 707 + 10000;
+        describe_cell(you.x_pos + cx - 17, you.y_pos + cy - 9);
+    } // end WHILE
+    mesclr();
 }                               // end look_around()
 
 //---------------------------------------------------------------
@@ -1245,4 +633,472 @@ char mons_find(unsigned char xps, unsigned char yps,
 
 
     return 0;
+}
+
+static void describe_cell(int mx, int my)
+{
+    int trf;            // used for trap type??
+
+    if (mgrd[mx][my] != NON_MONSTER)
+    {
+        int i = mgrd[mx][my];
+
+        if (grd[mx][my] == DNGN_SHALLOW_WATER)
+        {
+            if (menv[i].enchantment[2] == ENCH_INVIS
+                && mons_flies(menv[i].type) == 0 && !player_see_invis())
+            {
+                mpr("There is a strange disturbance in the water here.");
+            }
+        }
+
+        if (menv[i].enchantment[2] == ENCH_INVIS && !player_see_invis())
+            goto look_clouds;
+
+        int mon_wep = menv[i].inv[MSLOT_WEAPON];
+
+        if (menv[i].type == MONS_DANCING_WEAPON)
+        {
+            it_name(mon_wep, 2, str_pass);
+            strcpy(info, str_pass);
+            strcat(info, ".");
+            mpr(info);
+        }
+        else
+        {
+            strcpy(info, ptr_monam( &(menv[i]), 2 ));
+            strcat(info, ".");
+            mpr(info);
+
+            if (mon_wep != NON_ITEM)
+            {
+                strcpy(info, "It is wielding ");
+                it_name(mon_wep, 3, str_pass);
+                strcat(info, str_pass);
+
+                // 2-headed ogres can wield 2 weapons
+                if (menv[i].type == MONS_TWO_HEADED_OGRE
+                    && menv[i].inv[MSLOT_MISSILE] != NON_ITEM)
+                {
+                    strcat(info, ",");
+                    mpr(info);
+                    strcpy(info, " and ");
+                    it_name(menv[i].inv[MSLOT_MISSILE], 3, str_pass);
+                    strcat(info, str_pass);
+                }
+                strcat(info, ".");
+                mpr(info);
+            }
+        }
+
+        if (menv[i].type == MONS_HYDRA)
+        {
+            strcpy(info, "It has ");
+            itoa(menv[i].number, st_prn, 10);
+            strcat(info, st_prn);
+            strcat(info, " heads.");
+            mpr(info);
+        }
+
+        print_wounds(&menv[i]);
+
+        if (menv[i].behavior == BEH_ENSLAVED)
+            mpr("It is friendly.");
+
+        if (menv[i].behavior == BEH_SLEEP)
+            mpr("It doesn't appear to have noticed you.");
+
+        if (menv[i].enchantment1)
+        {
+            for (int p = 0; p < 3; p++)
+            {
+                switch (menv[i].enchantment[p])
+                {
+                case ENCH_YOUR_ROT_I:
+                case ENCH_YOUR_ROT_II:
+                case ENCH_YOUR_ROT_III:
+                case ENCH_YOUR_ROT_IV:
+                    mpr("It is rotting away."); //jmf: "covered in sores"?
+                    break;
+                case ENCH_BACKLIGHT_I:
+                case ENCH_BACKLIGHT_II:
+                case ENCH_BACKLIGHT_III:
+                case ENCH_BACKLIGHT_IV:
+                    mpr("It is softly glowing.");
+                    break;
+                case ENCH_SLOW:
+                    mpr("It is moving slowly.");
+                    break;
+                case ENCH_HASTE:
+                    mpr("It is moving very quickly.");
+                    break;
+                case ENCH_CONFUSION:
+                    mpr("It appears to be bewildered and confused.");
+                    break;
+                case ENCH_INVIS:
+                    mpr("It is slightly transparent.");
+                    break;
+                case ENCH_CHARM:
+                    mpr("It is in your thrall.");
+                    break;
+                case ENCH_YOUR_STICKY_FLAME_I:
+                case ENCH_YOUR_STICKY_FLAME_II:
+                case ENCH_YOUR_STICKY_FLAME_III:
+                case ENCH_YOUR_STICKY_FLAME_IV:
+                case ENCH_STICKY_FLAME_I:
+                case ENCH_STICKY_FLAME_II:
+                case ENCH_STICKY_FLAME_III:
+                case ENCH_STICKY_FLAME_IV:
+                    mpr("It is covered in liquid flames.");
+                    break;
+                }
+            }
+        }
+#ifdef WIZARD
+        stethoscope(i);
+#endif
+    }
+
+  look_clouds:
+    if (env.cgrid[mx][my]
+                                                    != EMPTY_CLOUD)
+    {
+        const char cloud_inspected = env.cgrid[mx]
+                                              [my];
+
+        const char cloud_type = env.cloud_type[ cloud_inspected ];
+
+        strcpy(info, "There is a cloud of ");
+        strcat(info,
+            (cloud_type == CLOUD_FIRE
+              || cloud_type == CLOUD_FIRE_MON) ? "flame" :
+            (cloud_type == CLOUD_STINK
+              || cloud_type == CLOUD_STINK_MON) ? "noxious fumes" :
+            (cloud_type == CLOUD_COLD
+              || cloud_type == CLOUD_COLD_MON) ? "freezing vapour" :
+            (cloud_type == CLOUD_POISON
+              || cloud_type == CLOUD_POISON_MON) ? "poison gases" :
+            (cloud_type == CLOUD_GREY_SMOKE
+              || cloud_type == CLOUD_GREY_SMOKE_MON) ? "grey smoke" :
+            (cloud_type == CLOUD_BLUE_SMOKE
+              || cloud_type == CLOUD_BLUE_SMOKE_MON) ? "blue smoke" :
+            (cloud_type == CLOUD_PURP_SMOKE
+              || cloud_type == CLOUD_PURP_SMOKE_MON) ? "purple smoke" :
+            (cloud_type == CLOUD_STEAM
+              || cloud_type == CLOUD_STEAM_MON) ? "steam" :
+            (cloud_type == CLOUD_MIASMA
+              || cloud_type == CLOUD_MIASMA_MON) ? "foul pestilence" :
+            (cloud_type == CLOUD_BLACK_SMOKE
+              || cloud_type == CLOUD_BLACK_SMOKE_MON) ? "black smoke"
+                                                      : "buggy goodness");
+        strcat(info, " here.");
+        mpr(info);
+    }
+
+    int targ_item = igrd[ mx ][ my ];
+
+    if (targ_item != NON_ITEM)
+    {
+        if (mitm.base_type[ targ_item ] == OBJ_GOLD)
+        {
+            mpr("You see some money here.");
+        }
+        else
+        {
+            strcpy(info, "You see ");
+            it_name( targ_item, 3, str_pass);
+            strcat(info, str_pass);
+            strcat(info, " here.");
+            mpr(info);
+        }
+
+        if (mitm.link[ targ_item ] != NON_ITEM)
+            mpr("There is something else lying underneath.");
+    }
+
+    switch (grd[mx][my])
+    {
+    case DNGN_STONE_WALL:
+        mpr("A stone wall.");
+        break;
+    case DNGN_ROCK_WALL:
+    case DNGN_SECRET_DOOR:
+        if (you.level_type == LEVEL_PANDEMONIUM)
+            mpr("A wall of the weird stuff which makes up Pandemonium.");
+        else
+            mpr("A rock wall.");
+        break;
+    case DNGN_CLOSED_DOOR:
+        mpr("A closed door.");
+        break;
+    case DNGN_METAL_WALL:
+        mpr("A metal wall.");
+        break;
+    case DNGN_GREEN_CRYSTAL_WALL:
+        mpr("A wall of green crystal.");
+        break;
+    case DNGN_ORCISH_IDOL:
+        mpr("An orcish idol.");
+        break;
+    case DNGN_WAX_WALL:
+        mpr("A wall of solid wax.");
+        break;
+    case DNGN_SILVER_STATUE:
+        mpr("A silver statue.");
+        break;
+    case DNGN_GRANITE_STATUE:
+        mpr("A granite statue.");
+        break;
+    case DNGN_ORANGE_CRYSTAL_STATUE:
+        mpr("An orange crystal statue.");
+        break;
+    case DNGN_LAVA:
+        mpr("Some lava.");
+        break;
+    case DNGN_DEEP_WATER:
+        mpr("Some deep water.");
+        break;
+    case DNGN_SHALLOW_WATER:
+        mpr("Some shallow water.");
+        break;
+    case DNGN_UNDISCOVERED_TRAP:
+    case DNGN_FLOOR:
+        mpr("Floor.");
+        break;
+    case DNGN_OPEN_DOOR:
+        mpr("An open door.");
+        break;
+    case DNGN_ROCK_STAIRS_DOWN:
+        mpr("A rock staircase leading down.");
+        break;
+    case DNGN_STONE_STAIRS_DOWN_I:
+    case DNGN_STONE_STAIRS_DOWN_II:
+    case DNGN_STONE_STAIRS_DOWN_III:
+        mpr("A stone staircase leading down.");
+        break;
+    case DNGN_ROCK_STAIRS_UP:
+        mpr("A rock staircase leading upwards.");
+        break;
+    case DNGN_STONE_STAIRS_UP_I:
+    case DNGN_STONE_STAIRS_UP_II:
+    case DNGN_STONE_STAIRS_UP_III:
+        mpr("A stone staircase leading up.");
+        break;
+    case DNGN_ENTER_HELL:
+        mpr("A gateway to hell.");
+        break;
+    case DNGN_BRANCH_STAIRS:
+        mpr("A staircase to a branch level.");
+        break;
+    case DNGN_TRAP_MECHANICAL:
+    case DNGN_TRAP_MAGICAL:
+    case DNGN_TRAP_III:
+        for (trf = 0; trf < MAX_TRAPS; trf++)
+        {
+            if (env.trap_x[trf] == mx
+                && env.trap_y[trf] == my)
+            {
+                break;
+            }
+
+            if (trf == MAX_TRAPS - 1)
+            {
+                mpr("Error - couldn't find that trap.");
+                error_message_to_player();
+                break;
+            }
+        }
+
+        switch (env.trap_type[trf])
+        {
+        case TRAP_DART:
+            mpr("A dart trap.");
+            break;
+        case TRAP_ARROW:
+            mpr("An arrow trap.");
+            break;
+        case TRAP_SPEAR:
+            mpr("A spear trap.");
+            break;
+        case TRAP_AXE:
+            mpr("An axe trap.");
+            break;
+        case TRAP_TELEPORT:
+            mpr("A teleportation trap.");
+            break;
+        case TRAP_AMNESIA:
+            mpr("An amnesia trap.");
+            break;
+        case TRAP_BLADE:
+            mpr("A blade trap.");
+            break;
+        case TRAP_BOLT:
+            mpr("A bolt trap.");
+            break;
+        case TRAP_ZOT:
+            mpr("A Zot trap.");
+            break;
+        default:
+            mpr("An undefined trap. Huh?");
+            error_message_to_player();
+            break;
+        }
+        break;
+    case DNGN_ENTER_SHOP:
+        mpr("A shop.");
+        break;
+    case DNGN_ENTER_LABYRINTH:
+        mpr("A labyrinth entrance.");
+        break;
+    case DNGN_ENTER_DIS:
+        mpr("A gateway to the Iron City of Dis.");
+        break;
+    case DNGN_ENTER_GEHENNA:
+        mpr("A gateway to Gehenna.");
+        break;
+    case DNGN_ENTER_COCYTUS:
+        mpr("A gateway to the freezing wastes of Cocytus.");
+        break;
+    case DNGN_ENTER_TARTARUS:
+        mpr("A gateway to the decaying netherworld of Tartarus.");
+        break;
+    case DNGN_ENTER_ABYSS:
+        mpr("A gateway to the infinite Abyss.");
+        break;
+    case DNGN_EXIT_ABYSS:
+        mpr("A gateway leading out of the Abyss.");
+        break;
+    case DNGN_STONE_ARCH:
+        mpr("An empty arch of ancient stone.");
+        break;
+    case DNGN_ENTER_PANDEMONIUM:
+        mpr("A gate leading to the halls of Pandemonium.");
+        break;
+    case DNGN_EXIT_PANDEMONIUM:
+        mpr("A gate leading out of Pandemonium.");
+        break;
+    case DNGN_TRANSIT_PANDEMONIUM:
+        mpr("A gate leading to another region of Pandemonium.");
+        break;
+    case DNGN_ENTER_ORCISH_MINES:
+        mpr("A staircase to the Orcish Mines.");
+        break;
+    case DNGN_ENTER_HIVE:
+        mpr("A staircase to the Hive.");
+        break;
+    case DNGN_ENTER_LAIR_I:
+        mpr("A staircase to the Lair.");
+        break;
+    case DNGN_ENTER_SLIME_PITS:
+        mpr("A staircase to the Slime Pits.");
+        break;
+    case DNGN_ENTER_VAULTS:
+        mpr("A staircase to the Vaults.");
+        break;
+    case DNGN_ENTER_CRYPT_I:
+        mpr("A staircase to the Crypt.");
+        break;
+    case DNGN_ENTER_HALL_OF_BLADES:
+        mpr("A staircase to the Hall of Blades.");
+        break;
+    case DNGN_ENTER_ZOT:
+        mpr("A gate to the Realm of Zot.");
+        break;
+    case DNGN_ENTER_TEMPLE:
+        mpr("A staircase to the Ecumenical Temple.");
+        break;
+    case DNGN_ENTER_SNAKE_PIT:
+        mpr("A staircase to the Snake Pit.");
+        break;
+    case DNGN_ENTER_ELVEN_HALLS:
+        mpr("A staircase to the Elven Halls.");
+        break;
+    case DNGN_ENTER_TOMB:
+        mpr("A staircase to the Tomb.");
+        break;
+    case DNGN_ENTER_SWAMP:
+        mpr("A staircase to the Swamp.");
+        break;
+    case DNGN_RETURN_DUNGEON_I:
+    case DNGN_RETURN_DUNGEON_II:
+    case DNGN_RETURN_DUNGEON_III:
+    case DNGN_RETURN_DUNGEON_IV:
+    case DNGN_RETURN_DUNGEON_V:
+        mpr("A staircase back to the Dungeon.");
+        break;
+    case DNGN_RETURN_LAIR_II:
+        mpr("A staircase back to the Lair.");
+        break;
+    case DNGN_RETURN_VAULTS:
+        mpr("A staircase back to the Vaults.");
+        break;
+    case DNGN_RETURN_CRYPT_II:
+        mpr("A staircase back to the Crpyt.");
+        break;
+    case DNGN_RETURN_LAIR_III:
+        mpr("A staircase back to the Lair.");
+        break;
+    case DNGN_RETURN_MINES:
+        mpr("A staircase back to the Mines.");
+        break;
+    case DNGN_RETURN_CRYPT_III:
+        mpr("A staircase back to the Crypt.");
+        break;
+    case DNGN_EXIT_ZOT:
+        mpr("A gate leading back out of this place.");
+        break;
+    case DNGN_RETURN_LAIR_IV:
+        mpr("A staircase back to the Lair.");
+        break;
+    case DNGN_ALTAR_ZIN:
+        mpr("A glowing white marble altar of Zin.");
+        break;
+    case DNGN_ALTAR_SHINING_ONE:
+        mpr("A glowing golden altar of the Shining One.");
+        break;
+    case DNGN_ALTAR_KIKUBAAQUDGHA:
+        mpr("An ancient bone altar of Kikubaaqudgha.");
+        break;
+    case DNGN_ALTAR_YREDELEMNUL:
+        mpr("A basalt altar of Yredelemnul.");
+        break;
+    case DNGN_ALTAR_XOM:
+        mpr("A shimmering altar of Xom.");
+        break;
+    case DNGN_ALTAR_VEHUMET:
+        mpr("A shining altar of Vehumet.");
+        break;
+    case DNGN_ALTAR_OKAWARU:
+        mpr("An iron altar of Okawaru.");
+        break;
+    case DNGN_ALTAR_MAKHLEB:
+        mpr("A burning altar of Makhleb.");
+        break;
+    case DNGN_ALTAR_SIF_MUNA:
+        mpr("A deep blue altar of Sif Muna.");
+        break;
+    case DNGN_ALTAR_TROG:
+        mpr("A bloodstained altar of Trog.");
+        break;
+    case DNGN_ALTAR_NEMELEX_XOBEH:
+        mpr("A sparkling altar of Nemelex Xobeh.");
+        break;
+    case DNGN_ALTAR_ELYVILON:
+        mpr("A silver altar of Elyvilon.");
+        break;
+    case DNGN_BLUE_FOUNTAIN:
+        mpr("A fountain of clear blue water.");
+        break;
+    case DNGN_SPARKLING_FOUNTAIN:
+        mpr("A fountain of sparkling water.");
+        break;
+    case DNGN_DRY_FOUNTAIN_I:
+    case DNGN_DRY_FOUNTAIN_II:
+    case DNGN_DRY_FOUNTAIN_IV:
+    case DNGN_DRY_FOUNTAIN_VI:
+    case DNGN_DRY_FOUNTAIN_VIII:
+    case DNGN_PERMADRY_FOUNTAIN:
+        mpr("A dry fountain.");
+        break;
+    }
 }

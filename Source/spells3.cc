@@ -188,17 +188,17 @@ bool cast_smiting(int power)
 
     mpr("Smite whom?", MSGCH_PROMPT);
 
-    direction(100, beam);
+    direction(beam, DIR_TARGET);
 
-    if (beam.nothing == -1
-        || mgrd[beam.target_x][beam.target_y] == NON_MONSTER
-        || (beam.target_x == you.x_pos && beam.target_y == you.y_pos))
+    if (!beam.isValid
+        || mgrd[beam.tx][beam.ty] == NON_MONSTER
+        || beam.isMe)
     {
         canned_msg(MSG_SPELL_FIZZLES);
     }
     else
     {
-        monster = &menv[mgrd[beam.target_x][beam.target_y]];
+        monster = &menv[mgrd[beam.tx][beam.ty]];
 
         strcpy(info, "You smite ");
         strcat(info, ptr_monam( monster, 1 ));
@@ -230,17 +230,17 @@ bool airstrike(int power)
 
     mpr("Strike whom?", MSGCH_PROMPT);
 
-    direction(100, beam);
+    direction(beam, DIR_TARGET);
 
-    if (beam.nothing == -1
-        || mgrd[beam.target_x][beam.target_y] == NON_MONSTER
-        || (beam.target_x == you.x_pos && beam.target_y == you.y_pos))
+    if (!beam.isValid
+        || mgrd[beam.tx][beam.ty] == NON_MONSTER
+        || beam.isMe)
     {
         canned_msg(MSG_SPELL_FIZZLES);
     }
     else
     {
-        monster = &menv[mgrd[beam.target_x][beam.target_y]];
+        monster = &menv[mgrd[beam.tx][beam.ty]];
 
         strcpy(info, "The air twists around and strikes ");
         strcat(info, ptr_monam( monster, 1 ));

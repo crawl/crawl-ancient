@@ -16,11 +16,11 @@
 #include "externs.h"
 
 
-// last updated 12may2000 {dlb}
+// last updated 08jan2001 {gdl}
 /* ***********************************************************************
  * called from: ability - decks - fight - it_use2 - spells1
  * *********************************************************************** */
-bool go_berserk(void);
+bool go_berserk(bool intentional);
 
 
 // last updated 12may2000 {dlb}
@@ -46,7 +46,7 @@ void cull_items(void);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
- * called from: bang - fight - files - food - items - misc - monstuff -
+ * called from: beam - fight - files - food - items - misc - monstuff -
  *              religion - spells2 - spells3 - spells4
  * *********************************************************************** */
 void destroy_item(int dest);

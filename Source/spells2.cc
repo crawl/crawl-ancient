@@ -906,25 +906,19 @@ int vampiric_drain(int pow)
 
   dirc:
     mpr("Which direction?", MSGCH_PROMPT);
-    direction(0, vmove);
+    direction(vmove, DIR_DIR);
 
-    if (vmove.nothing == -1)
+    if (!vmove.isValid)
     {
         canned_msg(MSG_SPELL_FIZZLES);
         return -1;
     }
 
-    if (abs(vmove.move_x) > 1 || abs(vmove.move_y) > 1)
-    {
-        mpr("This spell doesn't reach that far.");
-        return -1;
-    }
+    mgr = mgrd[you.x_pos + vmove.dx][you.y_pos + vmove.dy];
 
-    mgr = mgrd[you.x_pos + vmove.move_x][you.y_pos + vmove.move_y];
-
-    if (vmove.move_x == 0 && vmove.move_y == 0)
+    if (vmove.dx == 0 && vmove.dy == 0)
     {
-        mpr("That would be silly!");
+        mpr("You can't do that.");
         goto dirc;
     }
 
@@ -939,7 +933,7 @@ int vampiric_drain(int pow)
     if (mons_holiness(monster->type) == MH_UNDEAD
         || mons_holiness(monster->type) == MH_DEMONIC)
     {
-        mpr("Oops! That was rather foolish.");
+        mpr("Aaaarggghhhhh!");
         dec_hp(random2avg(39, 2) + 10, false);
         return -1;
     }
@@ -972,9 +966,6 @@ int vampiric_drain(int pow)
 
     inc_hp(inflicted / 2, false);
 
-    vmove.move_x = 0;
-    vmove.move_y = 0;
-
     return 1;
 }                               // end vampiric_drain()
 
@@ -990,36 +981,26 @@ char burn_freeze(int pow, char flavour)
     while (mgr == NON_MONSTER)
     {
         mpr("Which direction?", MSGCH_PROMPT);
-        direction(0, bmove);
+        direction(bmove, DIR_DIR);
 
-        if (bmove.nothing == -1)
+        if (!bmove.isValid)
         {
             canned_msg(MSG_SPELL_FIZZLES);
-            bmove.move_x = 0;
-            bmove.move_y = 0;
             return -1;
         }
 
-        if ((abs(bmove.move_x) > 1) || (abs(bmove.move_y) > 1))
-        {
-            mpr("This spell doesn't reach that far.");
-            return -1;
-        }
-
-        if (bmove.move_x == 0 && bmove.move_y == 0)
+        if (bmove.dx == 0 && bmove.dy == 0)
         {
             mpr("That would be silly!");
             continue;
         }
 
-        mgr = mgrd[you.x_pos + bmove.move_x][you.y_pos + bmove.move_y];
+        mgr = mgrd[you.x_pos + bmove.dx][you.y_pos + bmove.dy];
 
         // Yes, this is strange, but it does maintain the original behaviour
         if (mgr == NON_MONSTER)
         {
             mpr("There isn't anything close enough!");
-            bmove.move_x = 0;
-            bmove.move_y = 0;
             return -1;
         }
     }
@@ -1087,24 +1068,24 @@ int summon_elemental(int pow, unsigned char restricted_type,
         numsc = 25;
 
   dirc:
-    mpr("Summon from what material?", MSGCH_PROMPT);
+    mpr("Summon from material in which direction?", MSGCH_PROMPT);
     // cannot summon earth elemental if you are floating in the air.
     // problem: what if you're floating over water/lava and are surrounded
     // by it and a wall, and summon an earth elemental? hmmm...
     //strcat(info, ", < for air)");
-    mpr("Which direction?", MSGCH_PROMPT);
+    //mpr("Which direction?", MSGCH_PROMPT);
 
-    direction(0, smove);
+    direction(smove, DIR_DIR);
 
-    if (smove.nothing == -1)
+    if (!smove.isValid)
     {
       fizzles:
         canned_msg(MSG_NOTHING_HAPPENS);
         return -1;
     }
 
-    const int dir_x  = smove.move_x;
-    const int dir_y  = smove.move_y;
+    const int dir_x  = smove.dx;
+    const int dir_y  = smove.dy;
     const int targ_x = you.x_pos + dir_x;
     const int targ_y = you.y_pos + dir_y;
 
@@ -1112,12 +1093,6 @@ int summon_elemental(int pow, unsigned char restricted_type,
     {
         mpr("Not there!");
         goto dirc;
-    }
-
-    if (abs( dir_x ) > 1 || abs( dir_y ) > 1)
-    {
-        mpr("This spell doesn't reach that far.");
-        return -1;
     }
 
     if (dir_x == 0 && dir_y == 0)

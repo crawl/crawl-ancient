@@ -12,6 +12,7 @@
 
 #include "AppHdr.h"
 #include "message.h"
+#include "religion.h"
 
 #include <string.h>
 
@@ -39,42 +40,6 @@ char scrloc = 1;                // line of next (previous?) message
 message_item store_message[30];    // buffer of old messages
 char store_count = 0;           // current position in store_message
 
-static char god_message_colour( char god )
-{
-    switch (god)
-    {
-    case GOD_SHINING_ONE:
-    case GOD_ZIN:
-    case GOD_ELYVILON:
-    case GOD_OKAWARU:
-        return(CYAN);
-        break;
-
-    case GOD_YREDELEMNUL:
-    case GOD_KIKUBAAQUDGHA:
-    case GOD_MAKHLEB:
-    case GOD_VEHUMET:
-    case GOD_TROG:
-        return(LIGHTRED);
-        break;
-
-    case GOD_XOM:
-        return(YELLOW);
-        break;
-
-    case GOD_NEMELEX_XOBEH:
-        return(LIGHTMAGENTA);
-        break;
-
-    case GOD_SIF_MUNA:
-        return(LIGHTBLUE);
-        break;
-
-    case GOD_NO_GOD:
-    default:
-        return(YELLOW);
-    }
-}
 
 static char god_message_altar_colour( char god )
 {
@@ -154,7 +119,7 @@ static char channel_to_colour( int channel, int param )
         {
         case MSGCH_GOD:
             ret = (Options.channels[ channel ] == MSGCOL_DEFAULT)
-                                    ? god_message_colour( param )
+                                    ? god_colour( param )
                                     : god_message_altar_colour( param );
             break;
 

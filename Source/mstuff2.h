@@ -24,6 +24,7 @@ struct SBeam
     string name;
     int colour;
     int range;
+    int rangeMax;
     int damage;
     int hit;
     int type;
@@ -55,7 +56,7 @@ struct SBeam mons_spells(char spell_cast, int power);
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-void dragon(struct monsters *monster, struct bolt &pbolt);
+void setup_dragon(struct monsters *monster, struct bolt &pbolt);
 
 
 // last updated 12may2000 {dlb}
@@ -64,6 +65,11 @@ void dragon(struct monsters *monster, struct bolt &pbolt);
  * *********************************************************************** */
 void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast);
 
+// last updated 7jan2001 {gdl}
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast);
 
 // last updated 28july2000 (gdl)
 /* ***********************************************************************
@@ -71,6 +77,11 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast);
  * *********************************************************************** */
 bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used);
 
+// last updated 07jan2001 (gdl)
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+void setup_generic_throw(struct monsters *monster, struct bolt &pbolt);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************

@@ -845,16 +845,21 @@ void yell(void)
 
     case 'a':
         mpr("Gang up on whom?", MSGCH_PROMPT);
-        direction(100, targ);
+        direction(targ, DIR_TARGET);
 
-        if (targ.nothing == -1 || mgrd[targ.target_x]
-                                      [targ.target_y] == NON_MONSTER)
+        if (targ.isCancel)
+        {
+            canned_msg(MSG_OK);
+            return;
+        }
+
+        if (!targ.isValid || mgrd[targ.tx][targ.ty] == NON_MONSTER)
         {
             mpr("Yeah, whatever.");
             return;
         }
 
-        mons_targd = mgrd[targ.target_x][targ.target_y];
+        mons_targd = mgrd[targ.tx][targ.ty];
         break;
 
     case 'p':

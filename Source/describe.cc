@@ -20,6 +20,7 @@
 #include "describe.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string>
 
 #ifdef DOS
@@ -34,6 +35,7 @@
 #include "mon-util.h"
 #include "player.h"
 #include "randart.h"
+#include "religion.h"
 #include "skills2.h"
 #include "stuff.h"
 #include "wpn-misc.h"
@@ -5974,6 +5976,8 @@ void describe_god( int which_god )
     char *description  = ""; //mv: temporary string used for printing description
     int god_color; //mv:color used for some messages
 
+
+
 #ifdef DOS_TERM
     char buffer[4000];
     gettext(1, 1, 80, 25, buffer);
@@ -5982,66 +5986,22 @@ void describe_god( int which_god )
     clrscr();
 
     if (which_god == GOD_NO_GOD) //mv:no god -> say it and go away
-       {
+    {
         cprintf("You are not religious.");
         goto end_god_info;
-       }
+    }
 
-    switch ( which_god ) //mv:pick up color for god's name and messages
-                         //btw. I've changed here CYAN to LIGHTCYAN and
-                         //made ELYVILON LIGHTGREEN. It looks much netter ;-)
-    {
-      case GOD_SHINING_ONE:
-      case GOD_ZIN:
-      case GOD_OKAWARU:
-        god_color = LIGHTCYAN;
-        break;
-      case GOD_ELYVILON:
-        god_color = LIGHTGREEN;
-        break;
-      case GOD_YREDELEMNUL:
-      case GOD_KIKUBAAQUDGHA:
-      case GOD_MAKHLEB:
-      case GOD_VEHUMET:
-      case GOD_TROG:
-        god_color = LIGHTRED;
-        break;
-      case GOD_XOM:
-        god_color = YELLOW;
-        break;
-      case GOD_NEMELEX_XOBEH:
-        god_color = LIGHTMAGENTA;
-        break;
-      case GOD_SIF_MUNA:
-        god_color =  LIGHTBLUE;
-        break;
-      default:
-        god_color =  YELLOW;
-    } // end pick up color
+    god_color = god_colour (which_god);
 
     //mv: print god's name and title - if you can think up better titles
     //I have nothing against
     textcolor(god_color);
-    switch ( which_god )
-      {
-      case GOD_ZIN:             cprintf ("Zin the Law-Giver"); break;
-      case GOD_SHINING_ONE:     cprintf ("The Shining One"); break;
-      case GOD_KIKUBAAQUDGHA:   cprintf ("Kikubaaqudgha the Vile"); break;
-      case GOD_YREDELEMNUL:     cprintf ("Yredelemnul the Dark"); break;
-      case GOD_XOM:             cprintf ("Xom the Psychotic"); break;
-      case GOD_VEHUMET:         cprintf ("Vehumet the Annihilator"); break;
-      case GOD_OKAWARU:         cprintf ("Okawaru the Warmaster"); break;
-      case GOD_MAKHLEB:         cprintf ("Makhleb the Destroyer"); break;
-      case GOD_SIF_MUNA:        cprintf ("Sif Muna the Eldritch"); break;
-      case GOD_TROG:            cprintf ("Trog the Fierce"); break;
-      case GOD_NEMELEX_XOBEH:   cprintf ("Nemelex Xobeh the Trickster"); break;
-      case GOD_ELYVILON:        cprintf ("Elyvilon the Healer"); break;
-      default : cprintf ("God of Program Bugs"); break;
-      } // end print title
+
+    cprintf (god_name(which_god,true)); //print long god's name
+    cprintf (EOL EOL);
 
     //mv: print god's description
     textcolor (LIGHTGRAY);
-    cprintf (EOL EOL);
     switch (which_god)
     {
     case GOD_ZIN:
@@ -6132,29 +6092,18 @@ void describe_god( int which_god )
       description = "God of Program Bugs is a weird and dangerous God and his presence should" EOL
                     "be reported to dev-team.";
     }
-
     cprintf(description);
     //end of printing description
 
-    if ( you.religion != which_god ) goto end_god_info;
-     //mv: player is praying at altar without appropriate religion
-     //it means player isn't checking his own religion and so we only
-     //display god's name and description and go out
-
+    if ( you.religion != which_god ) goto god_favour;
+          //no status shown when praying at altar of some other god
 
     //mv: print title based on piety
-    cprintf(EOL EOL);
-    cprintf("Status - ");
+    cprintf(EOL EOL "Status - ");
     textcolor (god_color);
 
-    if ( which_god == GOD_XOM ) // mv: Xom doesn't cares about your piety
-                                // but slightly cares about your level
-       cprintf((you.experience_level>20) ? "Xom's Favorite Toy" : "Toy");
-       else
-        {
-
-        if (you.piety > 160) // mv: if your piety is high enough you get title
-                             // based on your god
+     if (you.piety > 160) // mv: if your piety is high enough you get title
+                          // based on your god
           { cprintf((which_god == GOD_SHINING_ONE) ? "Champion of Law" :
                     (which_god == GOD_ZIN) ? "Divine Warrior" :
                     (which_god == GOD_ELYVILON) ? "Champion of Light" :
@@ -6166,78 +6115,123 @@ void describe_god( int which_god )
                     (which_god == GOD_TROG) ? "Great Slayer" :
                     (which_god == GOD_NEMELEX_XOBEH) ? "Great Trickster" :
                     (which_god == GOD_SIF_MUNA) ? "Master of Arcane" :
+                    (which_god == GOD_XOM) ? "Teddy Bear" : // this really shouldn't
+                                                            // happen but ... You know.
                     "Bogy the Lord of the Bugs"); // Xom and no god is handled before
           }
-          //mv: universal titles - if any one wants to he might write
-          //specific titles for all gods
+          //mv: most titles are still universal - if any one wants to
+          //he might write specific titles for all gods or rewrite current
+          //ones (I know they are not perfect)
           //btw. titles are divided according to piety levels on which you get
           //new abilities.In the main it means - new ability = new title
-          else cprintf ( (you.piety >= 120) ? "High Priest" :
-                         (you.piety >= 100) ? "Elder" :
-                         (you.piety >=  75) ? "Priest" :
-                         (you.piety >=  50) ? "Deacon" :
-                         (you.piety >=  30) ? "Novice" :
-                         (you.piety >    5) ? "Believer"
-                                            : "Sinner" );
-        }
+          else
+              switch (which_god)
+              {
+              case GOD_ZIN:
+              case GOD_SHINING_ONE:
+              case GOD_KIKUBAAQUDGHA:
+              case GOD_YREDELEMNUL:
+              case GOD_VEHUMET:
+              case GOD_OKAWARU:
+              case GOD_MAKHLEB:
+              case GOD_SIF_MUNA:
+              //mv: what about
+              //sinner, believer, apprentice, disciple, adept, scholar, oracle
+              case GOD_TROG:
+              case GOD_NEMELEX_XOBEH:
+              case GOD_ELYVILON:
+                cprintf ( (you.piety >= 120) ? "High Priest" :
+                          (you.piety >= 100) ? "Elder" :
+                          (you.piety >=  75) ? "Priest" :
+                          (you.piety >=  50) ? "Deacon" :
+                          (you.piety >=  30) ? "Novice" :
+                          (you.piety >    5) ? "Believer"
+                                             : "Sinner" );
+                break;
+              case GOD_XOM:
+                cprintf ( (you.experience_level >= 20) ? "Xom's favourite toy"
+                                                       : "Toy" );
+                break;
+              default : cprintf ("Bug");
+              }
+     //end of print status
 
-    cprintf(EOL);
-    //mv: misc messages
-    if (player_under_penance()) //mv: penance check
+god_favour:     //mv: now let's print favor as Brent suggested
+                //I know these messages aren't perfect so if you can
+                //think up something better, do it
+    textcolor(LIGHTGRAY);
+    cprintf(EOL EOL "Favour - ");
+        textcolor(god_color);
+    if ( you.religion != which_god )
+     //mv: player is praying at altar without appropriate religion
+     //it means player isn't checking his own religion and so we only
+     //display favour and will go out
        {
-       cprintf ( (you.penance[which_god] >= 50) ? "Godly wrath is upon you !" EOL:
-                 (you.penance[which_god] >= 20) ? "You've transgressed heavily ! Be penitent !" EOL :
-                                         //mv: Is this possible to say in English ?
-                 (you.penance[which_god] >= 5 ) ? "You are under penance." EOL:
-                                                  "You should show more of discipline." EOL);
+       textcolor (god_color);
+       sprintf ( info, (you.penance[which_god] >= 50) ? "%s's wrath is upon you!" :
+                 (you.penance[which_god] >= 20) ? "%s is annoyed with you." :
+                 (you.penance[which_god] >= 5 ) ? "%s well remembers your sins." :
+                 (you.penance[which_god] > 0  ) ? "%s is ready to forgive your sins." :
+                                                  "%s doesn't care about you.",
+                                                  god_name(which_god));
+        cprintf(info);
 
+       goto end_god_info;
        }
 
-    if ( (which_god == GOD_ZIN) || (which_god == GOD_SHINING_ONE)
+    if (player_under_penance()) //mv: penance check
+    {
+        cprintf ( (you.penance[which_god] >= 50) ? "Godly wrath is upon you !" :
+                 (you.penance[which_god] >= 20) ? "You've transgressed heavily! Be penitent!" :
+                 (you.penance[which_god] >= 5 ) ? "You are under penance." :
+                                                  "You should show more discipline.");
+
+    }
+    else
+    {
+        if (which_god == GOD_XOM)
+            cprintf("You are ignored.");
+        else
+        {
+            sprintf(info,  (you.piety >= 30 ) ? "You are walking the right path." :
+                                              "%s is ambivalent.",
+                                              god_name(which_god));
+            cprintf(info);
+        }
+    }
+    //end of favour
+
+    //mv: following code shows abilities given from god (if any)
+
+
+    textcolor(LIGHTGRAY);
+    cprintf(EOL EOL "Granted powers :                                                         (Cost)" EOL);
+    textcolor(god_color);
+
+
+    if ( ((which_god == GOD_ZIN) || (which_god == GOD_SHINING_ONE)
          || (which_god == GOD_ELYVILON) || (which_god == GOD_OKAWARU)
-         || (which_god == GOD_KIKUBAAQUDGHA) )
+         || (which_god == GOD_KIKUBAAQUDGHA)) && (you.piety >= 30))
        //mv: these gods protects you during your prayer (not mentioning XOM)
        //chance for doing so is (random2(you.piety) >= 30)
        //Note that it's not depending on penance.
+       //Btw. I'm not sure how to explain such divine protection
+       //because god isn't really protecting player - he only sometimes
+       //saves his life (probably it shouldn't be displayed at all).
+       //What about this ?
        {
-       if (you.duration[DUR_PRAYER])
-               cprintf ( (you.piety>=150) ? "You feel invulnerable." EOL:  // > 4/5
-                         (you.piety>=90 ) ? "You feel warded." EOL : // > 2/3
-                                            "You feel watched."); //less than 2:3
+        sprintf ( info, "%s %s watches you during your prayer." EOL,
+                   god_name(which_god),
+                   (you.piety>=150) ? "carefully":  // > 4/5
+                   (you.piety>=90 ) ? "often" : // > 2/3
+                   "sometimes"    //less than 2:3
+                );
+        cprintf(info);
+       if (player_under_penance()) goto end_god_info; //no other abilities
        }
 
-    if ( (which_god == GOD_XOM) && one_chance_in(30) ) //mv: just kidding
-       cprintf ( (coinflip()) ? "You feel watched." EOL:
-                                "You feel like a puppet." EOL);
-
-    if ( !you.penance[you.religion] && !you.gift_timeout )
-       {
-       //mv:chance of getting these messages is the same as chance of getting
-       //appropriate gift.
-       if ( ( you.religion == GOD_OKAWARU || you.religion == GOD_TROG )
-            && (you.piety > 130) && (random2(you.piety) > 120) )
-            cprintf ( "You feel unrewarded." );
-
-       if ( you.religion == GOD_YREDELEMNUL && random2(you.piety) > 80
-            && one_chance_in(10) )
-            cprintf ( "You feel cumulation of dark powers." );
-
-       if ( ( you.religion == GOD_KIKUBAAQUDGHA
-                || you.religion == GOD_SIF_MUNA
-                || you.religion == GOD_VEHUMET )
-            && you.piety > 160 && random2(you.piety) > 100 )
-            cprintf ( "You forelook with hope." );
-       }
-
-    //end misc. messages
-
-    //mv: following code shows abilities given from god (if any)
-    textcolor(LIGHTGRAY);
-    cprintf(EOL EOL "Granted powers :" EOL);
-    textcolor(god_color);
-
-    if (player_under_penance()) //mv: No abilities under penance
-                                //(fix me if I'm wrong)
+    if (player_under_penance()) //mv: No abilities (except divine protection)
+                                // under penance (fix me if I'm wrong)
        { cprintf ("None.");
          goto end_god_info;
        }
@@ -6245,84 +6239,93 @@ void describe_god( int which_god )
     switch (which_god) //mv: finaly let's print abilities
       {
       case GOD_ZIN:
-         if ( you.piety >= 30 ) cprintf ("You can repel the undead." EOL);
+         if ( you.piety >= 30 )  cprintf ("You can repel the undead.                                       (1 Magic, Food)" EOL);
             else cprintf ("None.");
-         if ( you.piety >= 50 ) cprintf ("You can call upon Zin for minor healing." EOL);
-         if ( you.piety >= 75 ) cprintf ("You can call down a plague." EOL);
-         if ( you.piety >= 100 ) cprintf ("You can utter a Holy Word." EOL);
-         if ( you.piety >= 120 ) cprintf ("You are able to summon a guardian angel." EOL);
+         if ( you.piety >= 50 )  cprintf ("You can call upon Zin for minor healing.                 (2 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 75 )  cprintf ("You can call down a plague.                              (3 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 100 ) cprintf ("You can utter a Holy Word.                               (6 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 120 ) cprintf ("You are able to summon a guardian angel.                 (7 Magic, Food, Piety)" EOL);
          break;
+
       case GOD_SHINING_ONE:
-         if ( you.piety >= 30 ) cprintf ("You can repel the undead." EOL);
+         if ( you.piety >= 30 )  cprintf ("You can repel the undead.                                       (1 Magic, Food)" EOL);
             else cprintf ("None.");
-         if ( you.piety >= 50 ) cprintf ("You can smite your foes." EOL);
-         if ( you.piety >= 75 ) cprintf ("You can dispel the undead." EOL);
-         if ( you.piety >= 100 ) cprintf ("You can hurl bolts of divine anger." EOL);
-         if ( you.piety >= 120 ) cprintf ("You are able to summon a divine warrior." EOL);
+         if ( you.piety >= 50 )  cprintf ("You can smite your foes.                                 (3 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 75 )  cprintf ("You can dispel the undead.                               (3 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 100 ) cprintf ("You can hurl bolts of divine anger.                      (5 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 120 ) cprintf ("You are able to summon a divine warrior.                 (8 Magic, Food, Piety)" EOL);
          break;
+
       case GOD_KIKUBAAQUDGHA:
-         if ( you.piety >= 30 ) cprintf ("You can recall your undead slaves." EOL);
+         if ( you.piety >= 30 )  cprintf ("You can recall your undead slaves.                                    (1 Magic)" EOL);
             else cprintf ("None.");
-         if ( you.piety >= 50 ) cprintf ("You are protected from some of the side-effects of death magic." EOL);
-         if ( you.piety >= 75 ) cprintf ("You can permanently enslave the undead." EOL);
-         if ( you.piety >= 120 ) cprintf ("You are able to summon an emmisary of Death." EOL);
+         if ( you.piety >= 50 )  cprintf ("You are protected from some of the side-effects of death magic." EOL);
+         if ( you.piety >= 75 )  cprintf ("You can permanently enslave the undead.                  (2 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 120 ) cprintf ("You are able to summon an emmisary of Death.             (3 Magic, Food, Piety)" EOL);
          break;
+
       case GOD_YREDELEMNUL:
-         if ( you.piety >= 30 ) cprintf ("You can animate corpses." EOL);
+         if ( you.piety >= 30 )  cprintf ("You can animate corpses.                                        (3 Magic, Food)" EOL);
             else cprintf ("None.");
-         if ( you.piety >= 50 ) cprintf ("You can recall your undead slaves" EOL);
-         if ( you.piety >= 75 ) cprintf ("You can animate legions of the dead." EOL);
-         if ( you.piety >= 100 ) cprintf ("You can drain ambient lifeforce." EOL);
-         if ( you.piety >= 120 ) cprintf ("You can control the undead." EOL);
+         if ( you.piety >= 50 )  cprintf ("You can recall your undead slaves.                              (4 Magic, Food)" EOL);
+         if ( you.piety >= 75 )  cprintf ("You can animate legions of the dead.                     (7 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 100 ) cprintf ("You can drain ambient lifeforce.                         (6 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 120 ) cprintf ("You can control the undead.                              (5 Magic, Food, Piety)" EOL);
          break;
       case GOD_VEHUMET:
-         if ( you.piety >= 30 ) cprintf ("You can gain power from the those you kill "
-                                         "in Vehumet's name, or those slain by your servants." EOL);
+         if ( you.piety >= 30 )  cprintf ("You can gain power from the those you kill "EOL
+                                          "   in Vehumet's name, or those slain by your servants." EOL);
             else cprintf ("None.");
-         if ( you.piety >= 50 ) cprintf ("Praying in your God aids you in your destructive magics." EOL);
-         if ( you.piety >= 75 ) cprintf ("During prayer you have some protection from summoned creatures." EOL);
-         if ( you.piety >= 100 ) cprintf ("You are able to tap ambient magical fields." EOL);
+         if ( you.piety >= 50 )  cprintf ("Praying in your God aids you in your destructive magics." EOL);
+         if ( you.piety >= 75 )  cprintf ("During prayer you have some protection from summoned creatures." EOL);
+         if ( you.piety >= 100 ) cprintf ("You are able to tap ambient magical fields.                              (Food)" EOL);
          break;
+
       case GOD_OKAWARU:
-         if ( you.piety >= 30 ) cprintf ("You can gain great, albeit temporary, body strength." EOL);
+         if ( you.piety >= 30 )  cprintf ("You can gain great, albeit temporary, body strength.     (2 Magic, Food, Piety)" EOL);
             else cprintf ("None.");
-         if ( you.piety >= 50 ) cprintf ("You can call upon Okawaru for minor healing." EOL);
-         if ( you.piety >= 120 ) cprintf ("You can haste yourself." EOL);
+         if ( you.piety >= 50 )  cprintf ("You can call upon Okawaru for minor healing.             (2 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 120 ) cprintf ("You can haste yourself.                                  (5 Magic, Food, Piety)" EOL);
          break;
+
       case GOD_MAKHLEB:
-         if ( you.piety >= 30 ) cprintf ("You can gain power from the deaths "
-                                         "of those you kill in Makhleb's name." EOL);
+         if ( you.piety >= 30 )  cprintf ("You can gain power from the deaths " EOL
+                                          "   of those you kill in Makhleb's name." EOL);
             else cprintf ("None.");
-         if ( you.piety >= 50 ) cprintf ("You can throw some minor destruction on your foes." EOL);
-         if ( you.piety >= 75 ) cprintf ("You can summon a lesser demon to your aid." EOL);
-         if ( you.piety >= 100 ) cprintf ("You can invoke a great divine destruction." EOL);
-         if ( you.piety >= 120 ) cprintf ("You can summon a greater servant of Makhleb." EOL);
+         if ( you.piety >= 50 )  cprintf ("You can throw some minor destruction on your foes.              (1 Magic, Food)" EOL);
+         if ( you.piety >= 75 )  cprintf ("You can summon a lesser demon to your aid.               (2 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 100 ) cprintf ("You can invoke a great divine destruction.               (4 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 120 ) cprintf ("You can summon a greater servant of Makhleb.             (6 Magic, Food, Piety)" EOL);
          break;
+
       case GOD_SIF_MUNA:
-         if ( you.piety >= 50 ) cprintf ("You can freely open your mind to new spells." EOL);
+         if ( you.piety >= 50 )  cprintf ("You can freely open your mind to new spells.                   (2 Magic, Piety)" EOL);
             else cprintf ("None.");
          if ( you.piety >= 100 ) cprintf ("You are protected from some side-effects of spellcasting." EOL);
          break;
+
       case GOD_TROG:
-         if ( you.piety >= 30 ) cprintf ("You are able to go berserk at will." EOL);
+         if ( you.piety >= 30 )  cprintf ("You are able to go berserk at will.                                      (Food)" EOL);
             else cprintf ("None.");
-         if ( you.piety >= 50 ) cprintf ("You can give your body great, but temporary, strength." EOL);
-         if ( you.piety >= 100 ) cprintf ("You are able to haste yourself." EOL);
+         if ( you.piety >= 50 )  cprintf ("You can give your body great, but temporary, strength.            (Food, Piety)" EOL);
+         if ( you.piety >= 100 ) cprintf ("You are able to haste yourself.                                   (Food, Piety)" EOL);
          break;
+
       case GOD_ELYVILON:
-         if ( you.piety >= 30 ) cprintf ("You can do some minor healing." EOL);
+         if ( you.piety >= 30 )  cprintf ("You can do some minor healing.                                  (1 Magic, Food)" EOL);
             else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("You are able purify yourself." EOL);
-         if ( you.piety >= 75 )  cprintf ("You can pray for moderate healing." EOL);
-         if ( you.piety >= 100 ) cprintf ("You can restore your abilities." EOL);
-         if ( you.piety >= 120 ) cprintf ("You can call upon Elyvilon for incredible healing." EOL);
+         if ( you.piety >= 50 )  cprintf ("You are able purify yourself.                            (2 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 75 )  cprintf ("You can pray for moderate healing.                       (2 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 100 ) cprintf ("You can restore your abilities.                          (3 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 120 ) cprintf ("You can call upon Elyvilon for incredible healing.       (6 Magic, Food, Piety)" EOL);
          break;
+
       default:   //mv: default is Xom, Nemelex and all bugs.
          cprintf ("None.");
       } //end of printing abilities
 
 
-    end_god_info: //end of everything
+    end_god_info: //end of everything (life, world, universe etc.)
 
     getch(); // wait until keypressed
 

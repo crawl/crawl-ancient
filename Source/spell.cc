@@ -393,7 +393,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     case SPELL_DIG:
         if (spell_direction(spd, beam) == -1)
             return true;
-        if (beam.move_x == 0 && beam.move_y == 0)
+        if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
@@ -429,7 +429,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         if (spell_direction(spd, beam) == -1)
             return true;
 
-        if (beam.move_x == 0 && beam.move_y == 0)
+        if (spd.isMe)
         {
             mpr("Sorry, it doesn't work like that.");
             return true;
@@ -529,7 +529,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         if (spell_direction(spd, beam) == -1)
             return true;
 
-        if (beam.move_x == 0 && beam.move_y == 0)
+        if (spd.isMe)
         {
             mpr("Sorry, it doesn't work like that.");
             return true;
@@ -652,6 +652,11 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     case SPELL_ENSLAVEMENT:
         if (spell_direction(spd, beam) == -1)
             return true;
+        if (spd.isMe)
+        {
+            canned_msg(MSG_UNTHINKING_ACT);
+            return true;
+        }
         zapping(ZAP_ENSLAVEMENT, powc, beam);
         return true;
 
@@ -671,7 +676,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         if (spell_direction(spd, beam) == -1)
             return true;
 
-        if (beam.move_x == 0 && beam.move_y == 0)
+        if (spd.isMe)
         {
             mpr("Sorry, it doesn't work like that.");
             return true;
@@ -819,11 +824,6 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     case SPELL_BANISHMENT:
         if (spell_direction(spd, beam) == -1)
             return true;
-        /*   if (beam.move_x == 0 && beam.move_y == 0)
-           {
-           canned_msg(MSG_UNTHINKING_ACT);
-           return true;
-           } */
         zapping(ZAP_BANISHMENT, powc, beam);
         return true;
 
@@ -831,7 +831,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         if (spell_direction(spd, beam) == -1)
             return true;
 
-        if (beam.move_x == 0 && beam.move_y == 0)
+        if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
@@ -1026,7 +1026,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         if (spell_direction(spd, beam) == -1)
             return true;
 
-        if (beam.move_x == 0 && beam.move_y == 0)
+        if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
@@ -1042,7 +1042,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         if (spell_direction(spd, beam) == -1)
             return true;
 
-        if (beam.move_x == 0 && beam.move_y == 0)
+        if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
@@ -1054,7 +1054,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         if (spell_direction(spd, beam) == -1)
             return true;
 
-        if (beam.move_x == 0 && beam.move_y == 0)
+        if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
@@ -1136,12 +1136,13 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         if (spell_direction(spd, beam) == -1)
             return true;
 
-        if (beam.move_x == 0 && beam.move_y == 0)
+        if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
         }
         zapping(ZAP_FLAME_TONGUE, powc, beam);
+
         /*
         // This is not the place for this sort of power adjustment,
         // it just makes it harder to balance -- bwr
@@ -1177,6 +1178,11 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     case SPELL_SLEEP:
         if (spell_direction(spd, beam) == -1)
             return true;
+        if (spd.isMe)
+        {
+            canned_msg(MSG_UNTHINKING_ACT);
+            return true;
+        }
         zapping(ZAP_SLEEP, powc, beam);
         return true;
 
@@ -1232,6 +1238,11 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     case SPELL_BACKLIGHT:
         if (spell_direction(spd, beam) == -1)
             return true;
+        if (spd.isMe)
+        {
+            canned_msg(MSG_UNTHINKING_ACT);
+            return true;
+        }
         zapping(ZAP_BACKLIGHT, powc + 10, beam);
         return true;
 

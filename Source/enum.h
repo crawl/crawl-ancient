@@ -1002,6 +1002,7 @@ enum KILLER                            // monster_die(), thing_thrown
 };
 
 #define YOU_KILL(x) ((x) == KILL_YOU || (x) == KILL_YOU_MISSILE)
+#define MON_KILL(x) ((x) == KILL_MON || (x) == KILL_MON_MISSILE)
 
 enum LEVEL_TYPES                       // you.level_type
 {

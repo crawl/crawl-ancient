@@ -66,9 +66,6 @@ void mon_init(FixedVector < unsigned char, 1000 > &colour)
     for (x = 0; x < MONDATASIZE; x++)
         colour[mondata[x].mc] = mondata[x].colour;
 
-#if 0
-    seekmonster((int *) 0);     // this forces a refresh of internal entry tracking {dlb}
-#else
     //unsigned int x = 0;    // must be unsigned to match size_t {dlb}
 
     // first, fill static array with dummy values {dlb};
@@ -86,7 +83,6 @@ void mon_init(FixedVector < unsigned char, 1000 > &colour)
             mon_entry[x] = mon_entry[MONS_PROGRAM_BUG];
     }
     //return (monsterentry *) 0; // return value should not matter here {dlb}
-#endif
 }                               // end mon_init()
 
 
@@ -814,45 +810,16 @@ void moname(int mons_num, char mench, char see_inv, char descrip,
 
 /* ********************* END PUBLIC FUNCTIONS ********************* */
 
-// a kludge, I admit, but why should the entire mondata[]
-// array be searched each and every time we need info on
-// a monster? hoping this will speed things up a bit w/o
-// forcing the entries into any particular order -- which
-// I like, btw, for the flexibility it affords. {dlb}
+// see mon_init for initialization of mon_entry array.
 static struct monsterentry *seekmonster(int *p_monsterid)
 {
-// passing null pointer forces refresh -- typically, at gamestart, only {dlb}
-#if 1
     ASSERT(p_monsterid != 0);
-#else
-    if (p_monsterid == 0)
-    {
-        unsigned int x = 0;     // must be unsigned to match size_t {dlb}
-
-        // first, fill static array with dummy values {dlb};
-        for (x = 0; x < NUM_MONSTERS; x++)
-            mon_entry[x] = -1;
-
-        // next, fill static array with location of entry in mondata[] {dlb}:
-        for (x = 0; x < MONDATASIZE; x++)
-            mon_entry[mondata[x].mc] = x;
-
-        // finally, monsters yet with dummy entries point to TTTSNB(tm) {dlb}:
-        for (x = 0; x < NUM_MONSTERS; x++)
-        {
-            if (mon_entry[x] == -1)
-                mon_entry[x] = mon_entry[MONS_PROGRAM_BUG];
-        }
-
-        // return value should not matter here {dlb}
-        return (monsterentry *) 0;
-    }
-    else
-#endif
-        // not as safe (or cute) as before, but we'll give it a shot {dlb}
+    int me = mon_entry[(*p_monsterid)];
+    if (me >= 0)                // PARANOIA
         return &mondata[mon_entry[(*p_monsterid)]];
+    else
+        return NULL;
 }                               // end seekmonster()
-
 
 static int mons_exp_mod(int mc)
 {
@@ -895,6 +862,12 @@ int mons_intel_type(int mc)     //jmf: new, used by my spells
     return (smc->intel);
 }                               // end mons_intel_type()
 
+int mons_power(int mc)
+{
+    // for now,  just return monster hit dice.
+    return (smc->hpdice[0]);
+}
+
 /* ******************************************************************
 
 // In the name of England, I declare this function wasteful! {dlb}
@@ -935,3 +908,29 @@ inline char *mons_name( int mc )
 
 }          // end mons_name()
 ****************************************************************** */
+
+/*****************************************************************
+
+  Used to determine whether or not a monster should fire a beam (MUST be
+  called _after_ fire_tracer() for meaningful result.
+
+*/
+
+bool mons_should_fire(struct bolt &beam)
+{
+    // quick check - did we in fact get any foes?
+    if (beam.foe_count == 0)
+        return false;
+
+    // if we either hit no friends, or monster is stupid
+    // and doesn't care if we hit friends:
+    if (beam.fr_count == 0 || (!beam.smartMonster))
+        return true;
+
+    // smart monsters will only fire if they
+    // do minimal collateral damage
+    if (beam.foe_power >= 3 * beam.fr_power)
+        return true;
+
+    return false;
+}

@@ -38,21 +38,24 @@
 
 extern bool wield_change;       // defined in output.cc
 
-static char zappy(char z_type, int power, struct bolt &pbolt);
+static void zappy(char z_type, int power, struct bolt &pbolt);
 
 void zapping(char ztype, int power, struct bolt &pbolt)
 {
     // all of the following might be changed by zappy():
-    pbolt.range = 9 + random2(5);      // default for "0" beams (I think)
+    pbolt.range = 9 + random2(5);       // default for "0" beams (I think)
     pbolt.damage = power;
-    pbolt.hit = 0;                     // default for "0" beams (I think)
-    pbolt.type = 0;                    // default for "0" beams
-    pbolt.flavour = BEAM_MAGIC;        // default for "0" beams
+    pbolt.hit = 0;                      // default for "0" beams (I think)
+    pbolt.type = 0;                     // default for "0" beams
+    pbolt.flavour = BEAM_MAGIC;         // default for "0" beams
     pbolt.ench_power = power;
-    pbolt.wand_id = 0;
+    pbolt.obviousEffect = false;
+    pbolt.isBeam = false;               // default for all beams.
+    pbolt.isTracer = false;             // default for all player beams
+    pbolt.thrower = KILL_YOU_MISSILE;   // missile from player
 
-    // see any similarities to the parent function declaration ??? {dlb}
-    int beam_or_missile = zappy(ztype, power, pbolt);
+    // fill in the bolt structure
+    zappy(ztype, power, pbolt);
 
     if (ztype == ZAP_LIGHTNING && !silenced(you.x_pos, you.y_pos))
         // needs to check silenced at other location, too {dlb}
@@ -61,25 +64,14 @@ void zapping(char ztype, int power, struct bolt &pbolt)
         noisy(25, you.x_pos, you.y_pos);
     }
 
-    pbolt.thing_thrown = KILL_YOU_MISSILE;
-    // here's a question - zappy sets it, why reset all to this? {dlb}
-
-    switch (beam_or_missile)
-    {
-    case 1:
-        missile(pbolt, 0);
-        break;
-    case 2:
-        beam(pbolt);
-        break;
-    }
+    beam(pbolt);
 
     return;
 }                               // end zapping()
 
 // *do not* call this function directly (duh - it's static), need to
 // see zapping() for default values not set within this function {dlb}
-static char zappy(char z_type, int power, struct bolt &pbolt)
+static void zappy(char z_type, int power, struct bolt &pbolt)
 {
     int temp_rand = 0;          // probability determination {dlb}
 
@@ -241,9 +233,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_FROST:
         strcpy(pbolt.beam_name, "puff of frost");
@@ -254,21 +245,20 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_COLD;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_SLOWING:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = BLACK;
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_HASTING:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = BLUE;
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_MAGIC_DARTS:
         strcpy(pbolt.beam_name, "magic dart");
@@ -278,22 +268,20 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.hit = 1500;                               // hits always
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
-
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_HEALING:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = GREEN;
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_PARALYSIS:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = CYAN;
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_FIRE:
         strcpy(pbolt.beam_name, "bolt of fire");
@@ -304,9 +292,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_COLD:
         strcpy(pbolt.beam_name, "bolt of cold");
@@ -317,9 +305,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_COLD;
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_MAGMA:
         strcpy(pbolt.beam_name, "bolt of magma");
@@ -330,29 +318,29 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_LAVA;
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_CONFUSION:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = RED;
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_INVISIBILITY:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = MAGENTA;
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_DIGGING:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = BROWN;
         // not ordinary "0" beam range {dlb}
         pbolt.range = 4 + random2(power) + random2(5);
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_FIREBALL:
         strcpy(pbolt.beam_name, "fireball");
@@ -363,15 +351,14 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_EXPLOSION;                 // fire
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        return 1;
+        break;
 
     case ZAP_TELEPORTATION:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = LIGHTGREY;
         pbolt.range = 8 + random2(5);
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_LIGHTNING:
         strcpy(pbolt.beam_name, "bolt of lightning");
@@ -382,16 +369,16 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;               // beams & reflects
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_POLYMORPH_OTHER:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = DARKGREY;
         pbolt.range = 8 + random2(5);
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_VENOM_BOLT:
         strcpy(pbolt.beam_name, "bolt of poison");
@@ -402,9 +389,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;                    // extra damage
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_NEGATIVE_ENERGY:
         strcpy(pbolt.beam_name, "bolt of negative energy");
@@ -415,9 +402,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_NEG;                       // drains levels
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_BEAM_OF_ENERGY:    // bolt of innacuracy
         strcpy(pbolt.beam_name, "narrow beam of energy");
@@ -428,9 +415,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = 17;    // whatever
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_ORB_OF_ENERGY:     // Mystic Bolt
         strcpy(pbolt.beam_name, "orb of energy");
@@ -441,16 +428,15 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_ENSLAVEMENT:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = LIGHTBLUE;
         pbolt.range = 8 + random2(5);
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_PAIN:
         strcpy(pbolt.beam_name, "0");
@@ -461,10 +447,10 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         // actually, it's used for damage (the spell always hits)
         pbolt.hit = 8 + (power / 5);                   // max dam: 17
 
-        pbolt.thing_thrown = KILL_MON;
         pbolt.ench_power *= 7;
         pbolt.ench_power /= 2;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_STICKY_FLAME:
         strcpy(pbolt.beam_name, "sticky flame");        // extra damage
@@ -475,9 +461,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_DISPEL_UNDEAD:
         strcpy(pbolt.beam_name, "0");
@@ -485,8 +470,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.range = 8 + random2(8);
         // is this right? other "0" beams do not define ->hit {dlb}
         pbolt.hit = 9 + (power / 5);
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_CLEANSING_FLAME:
         strcpy(pbolt.beam_name, "golden flame");
@@ -497,9 +482,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_HOLY;
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_BONE_SHARDS:
         strcpy(pbolt.beam_name, "spray of bone shards");
@@ -515,23 +500,23 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MAGIC;                     // unresisted
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_BANISHMENT:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = LIGHTGREEN;
         pbolt.range = 8 + random2(5);
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_DEGENERATION:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = LIGHTCYAN;
         pbolt.range = 8 + random2(5);
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_STING:
         strcpy(pbolt.beam_name, "sting");
@@ -542,9 +527,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;                    // extra damage
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_HELLFIRE:
         strcpy(pbolt.beam_name, "hellfire");
@@ -555,9 +539,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_EXPLOSION;
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_PEBBLE:
         strcpy(pbolt.beam_name, "pebble");
@@ -568,9 +552,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_MISSILE;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_STONE_ARROW:
         strcpy(pbolt.beam_name, "stone arrow");
@@ -581,9 +564,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_MISSILE;                       // unresistable
         pbolt.flavour = BEAM_MMISSILE;
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_IRON_BOLT:
         strcpy(pbolt.beam_name, "iron bolt");
@@ -594,9 +576,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_MISSILE;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_CRYSTAL_SPEAR:
         strcpy(pbolt.beam_name, "crystal spear");
@@ -607,9 +588,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_MISSILE;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_ELECTRICITY:
         strcpy(pbolt.beam_name, "zap");
@@ -620,9 +600,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;               // beams & reflects
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_ORB_OF_ELECTRICITY:
         strcpy(pbolt.beam_name, "orb of electricity");
@@ -633,8 +613,7 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;
 
-        pbolt.thing_thrown = KILL_MON;
-        return 1;
+        break;
 
     case ZAP_SPIT_POISON:
         // power is different here (level based, I believe)
@@ -646,9 +625,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_DEBUGGING_RAY:
         strcpy(pbolt.beam_name, "debugging ray");
@@ -659,9 +637,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_DEBUG;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
 
-        pbolt.thing_thrown = KILL_MON;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_BREATHE_FIRE:
         strcpy(pbolt.beam_name, "fiery breath");
@@ -672,9 +649,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_BREATHE_FROST:
         strcpy(pbolt.beam_name, "freezing breath");
@@ -685,9 +662,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_COLD;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_BREATHE_ACID:
         strcpy(pbolt.beam_name, "acid");
@@ -698,9 +675,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ACID;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_BREATHE_POISON:    // leaves clouds of gas
         strcpy(pbolt.beam_name, "poison gas");
@@ -711,9 +687,8 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_BREATHE_POWER:
         strcpy(pbolt.beam_name, "bolt of energy");
@@ -732,16 +707,15 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_ENSLAVE_UNDEAD:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = LIGHTRED;
         pbolt.range = 8 + random2(5);
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_AGONY:
         strcpy(pbolt.beam_name, "0agony");
@@ -749,9 +723,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.range = 8 + random2(8);
         // is this right? other "0" beams do not define ->hit {dlb}
         pbolt.hit = 6 + (power / 50);
-        pbolt.thing_thrown = KILL_MON;
         pbolt.ench_power *= 5;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_DISRUPTION:
         strcpy(pbolt.beam_name, "0");
@@ -760,9 +734,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         // is this right? other "0" beams do not define ->hit {dlb}
         // actually, it's used for damage (the spell always hits)
         pbolt.hit = 5 + (power / 5);                   // max dam: 14
-        pbolt.thing_thrown = KILL_MON;
         pbolt.ench_power *= 3;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_DISINTEGRATION:
         strcpy(pbolt.beam_name, "0");
@@ -771,10 +745,10 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         // is this right? other "0" beams do not define ->hit {dlb}
         // actually, it's used for damage (the spell always hits)
         pbolt.hit = 15 + (power / 3);                   // max dam: 80
-        pbolt.thing_thrown = KILL_MON;
         pbolt.ench_power *= 5;
         pbolt.ench_power /= 2;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_BREATHE_STEAM:
         strcpy(pbolt.beam_name, "ball of steam");
@@ -784,18 +758,17 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.hit = 10 + random2(1 + (power / 5));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 1;
+        pbolt.obviousEffect = true;
+        break;
 
     case ZAP_CONTROL_DEMON:
         strcpy(pbolt.beam_name, "0");
         pbolt.colour = 16;     // this is not a color !!! {dlb}
         pbolt.range = 8 + random2(5);
-        pbolt.thing_thrown = KILL_MON;
         pbolt.ench_power *= 17;
         pbolt.ench_power /= 10;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_ORB_OF_FRAGMENTATION:
         strcpy(pbolt.beam_name, "metal orb");
@@ -805,8 +778,7 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.hit = 20;                                 // hit: 20
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;
-        pbolt.thing_thrown = KILL_MON;
-        return 1;
+        break;
 
     case ZAP_ICE_BOLT:
         strcpy(pbolt.beam_name, "bolt of ice");
@@ -816,8 +788,7 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.hit = 9 + (power / 12);                   // max hit: 21
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ICE;
-        pbolt.thing_thrown = KILL_MON;
-        return 1;
+        break;
 
     case ZAP_ICE_STORM:
         strcpy(pbolt.beam_name, "great blast of cold");
@@ -828,22 +799,21 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_ZAP;
         /* ice */// <- changed from BEAM_COLD b/c of comment 13jan2000 {dlb}
         pbolt.flavour = BEAM_ICE;
-        pbolt.thing_thrown = KILL_MON;
-        return 1;
+        break;
 
     case ZAP_SLEEP:             //jmf: added
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BEAM_SLEEP;
+        pbolt.flavour = BEAM_SLEEP;
         pbolt.range = 8 + random2(5);
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_BACKLIGHT: //jmf: added
         strcpy(pbolt.beam_name, "0");
-        pbolt.colour = BEAM_BACKLIGHT;
+        pbolt.flavour = BEAM_BACKLIGHT;
         pbolt.range = 8 + random2(5);
-        pbolt.thing_thrown = KILL_MON;
-        return 2;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_FLAME_TONGUE:      //jmf: ought to be a weak, short-range missile
         strcpy(pbolt.beam_name, "flame");
@@ -858,9 +828,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_BOLT;
         pbolt.flavour = BEAM_FIRE;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_SANDBLAST: //jmf: ought to be a weak, short-range missile
         strcpy(pbolt.beam_name, coinflip() ? "blast of sand" : "rocky blast");
@@ -876,9 +846,9 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_BOLT;
         pbolt.flavour = BEAM_FRAG;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
 
     case ZAP_SMALL_SANDBLAST:   //jmf: ought to be a weak, short-range missile
         strcpy(pbolt.beam_name, "blast of ");
@@ -896,11 +866,10 @@ static char zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.type = SYM_BOLT;
         pbolt.flavour = BEAM_FRAG;
 
-        pbolt.thing_thrown = KILL_MON_MISSILE;
-        pbolt.wand_id = 1;
-        return 2;
+        pbolt.obviousEffect = true;
+        pbolt.isBeam = true;
+        break;
     }                           // end of switch
-    return 0;
 }                               // end zappy()
 
 void potion_effect(char pot_eff, int pow)
@@ -1208,8 +1177,7 @@ void potion_effect(char pot_eff, int pow)
         break;
 
     case POT_BERSERK_RAGE:
-        if (!go_berserk())
-            mpr("You feel angry!");
+        go_berserk(true);
         break;
 
     case POT_CURE_MUTATION:

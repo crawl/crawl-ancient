@@ -50,18 +50,23 @@ const int kPathLen = 256;
 // penalty (Xom's granted or from a deck of cards).
 #define NO_BERSERK_PENALTY    -1
 
-
+// output from direction() function:
 struct dist
 {
-    char move_x;
-    char move_y;
-    char target_x;
-    char target_y;
-    char prev_targ;
-    long nothing;
+    bool isValid;       // valid target chosen?
+    bool isTarget;      // target (true), or direction (false)?
+    bool isMe;          // selected self (convenience: tx == you.x_pos,
+                        // ty == you.y_pos)
+    bool isCancel;      // user cancelled (usually <ESC> key)
+    int  tx,ty;         // target x,y or logical extension of beam to map edge
+    int  dx,dy;         // delta x and y if direction - always -1,0,1
+
+    // internal use - ignore
+    int  prev_target;   // previous target
 };
 
-
+/*
+ * old bolt structure
 struct bolt
 {
     int range, type, colour, flavour, source_x, source_y;
@@ -78,12 +83,46 @@ struct bolt
     int tracer;
     int trac_targ_x, trac_targ_y;
 
-    /* If a monster fired it, which monster? */
+    // If a monster fired it, which monster?
     int beam_source;
 
     char beam_name[40];
 };
+*/
 
+struct bolt
+{
+    // INPUT parameters set by caller
+    int range;                  // minimum range
+    int rangeMax;               // maximum range
+    int type;                   // missile gfx
+    int colour;
+    int flavour;
+    int source_x, source_y;     // beam origin
+    int damage, ench_power, hit;
+    int target_x, target_y;     // intended target
+    char thrower;               // what kind of thing threw this?
+    char ex_size;               // explosion radius (0==none)
+    int beam_source;            // NON_MONSTER or monster index #
+    char beam_name[40];
+    bool isBeam;                // beams? (can hits multiple targets?)
+
+
+    // OUTPUT parameters (tracing, ID)
+    bool obviousEffect;         // did an 'obvious' effect happen?
+    int fr_count, foe_count;    // # of times a friend/foe is "hit"
+    int fr_power, foe_power;    // total levels/hit dice affected
+
+    // INTERNAL use - please do not read/set outside
+    // of beam.cc and bang.cc !!
+    bool isTracer;              // is this a tracer?
+    bool aimedAtFeet;           // this was aimed at self!
+    bool msgGenerated;          // an appropriate msg was already mpr'd
+    bool isExplosion;           // explosion phase (as opposed to beam phase)
+    bool smartMonster;          // tracer firer can guess at other mons. resists?
+    bool canSeeInvis;           // tracer firer can see invisible?
+    bool isFriendly;            // tracer firer is enslaved or pet
+};
 
 struct player
 {

@@ -744,11 +744,11 @@ static void input(void)
 
     case 'o':
     case CMD_OPEN_DOOR:
-        open_door(100, 100);
+        open_door(0, 0);
         break;
     case 'c':
     case CMD_CLOSE_DOOR:
-        close_door(100, 100);
+        close_door(0, 0);
         break;
 
     case 'd':
@@ -2177,29 +2177,29 @@ static void input(void)
 }
 
 /*
-   Opens doors and handles some aspects of untrapping. If move_x != 100, it
-   carries a specific direction for the door to be opened (eg if you type
-   ctrl - dir).
+   Opens doors and handles some aspects of untrapping. If either move_x or
+   move_y are non-zero,  the pair carries a specific direction for the door
+   to be opened (eg if you type ctrl - dir).
  */
 static void open_door(char move_x, char move_y)
 {
     struct dist door_move;
+    int dx, dy;             // door x, door y
 
-    door_move.move_x = move_x;
-    door_move.move_y = move_y;
+    door_move.dx = move_x;
+    door_move.dy = move_y;
 
-    if (move_x != 100)
+    if (move_x || move_y)
     {
-        if (mgrd[you.x_pos + door_move.move_x]
-                [you.y_pos + door_move.move_y] != NON_MONSTER
-            && (monster_habitat(
-                    menv[ mgrd[you.x_pos + door_move.move_x]
-                              [you.y_pos + door_move.move_y] ].type )
-                                                              == DNGN_FLOOR
-                ||  menv[ mgrd[you.x_pos + door_move.move_x]
-                              [you.y_pos + door_move.move_y] ].number == 0))
+        // convenience
+        dx = you.x_pos + move_x;
+        dy = you.y_pos + move_y;
+
+        if (mgrd[dx][dy] != NON_MONSTER
+            && (monster_habitat( menv[ mgrd[dx][dy]].type ) == DNGN_FLOOR
+            ||  menv[ mgrd[dx][dy]].number == 0))
         {
-            you_attack(mgrd[you.x_pos + move_x][you.y_pos + move_y], true);
+            you_attack(mgrd[dx][dy], true);
             you.turn_is_over = 1;
 
             if (you.berserk_penalty != NO_BERSERK_PENALTY)
@@ -2212,13 +2212,10 @@ static void open_door(char move_x, char move_y)
             return;
         }
 
-        if (grd[you.x_pos + door_move.move_x]
-               [you.y_pos + door_move.move_y] >= DNGN_TRAP_MECHANICAL
-            && grd[you.x_pos + door_move.move_x]
-                  [you.y_pos + door_move.move_y] <= DNGN_TRAP_III)
+        if (grd[dx][dy] >= DNGN_TRAP_MECHANICAL
+            && grd[dx][dy] <= DNGN_TRAP_III)
         {
-            if (env.cgrid[you.x_pos + door_move.move_x]
-                         [you.y_pos + door_move.move_y] != EMPTY_CLOUD)
+            if (env.cgrid[dx][dy] != EMPTY_CLOUD)
             {
                 mpr("You can't get to that trap right now.");
                 return;
@@ -2229,27 +2226,20 @@ static void open_door(char move_x, char move_y)
         }
     }
 
-    if (move_x == 100)
+    if (!(move_x || move_y))
     {
-        door_move.move_x = 0;
-        door_move.move_y = 0;
         mpr("Which direction?", MSGCH_PROMPT);
-        direction(0, door_move);
+        direction(door_move, DIR_DIR);
+        if (!door_move.isValid)
+            return;
+
+        // convenience
+        dx = you.x_pos + door_move.dx;
+        dy = you.y_pos + door_move.dy;
+
     }
 
-// BCR - what is this doing?  It's preventing easy crawl from working in wizard
-    //if (door_move[0].nothing == -1)
-    //return;
-
-    if (door_move.move_x > 1 || door_move.move_y > 1
-        || door_move.move_x < -1 || door_move.move_y < -1)
-    {
-        mpr("I'm afraid your arm isn't that long.");
-        return;
-    }
-
-    if (grd[you.x_pos + door_move.move_x][you.y_pos + door_move.move_y]
-                                                        == DNGN_CLOSED_DOOR)
+    if (grd[dx][dy] == DNGN_CLOSED_DOOR)
     {
         int skill = you.dex + (SK_TRAPS_DOORS + SK_STEALTH) / 2;
 
@@ -2264,8 +2254,7 @@ static void open_door(char move_x, char move_y)
                                  : "You open the door." );
         }
 
-        grd[you.x_pos + door_move.move_x][you.y_pos + door_move.move_y]
-                                                            = DNGN_OPEN_DOOR;
+        grd[dx][dy] = DNGN_OPEN_DOOR;
         you.turn_is_over = 1;
     }
     else
@@ -2284,51 +2273,46 @@ static void open_door(char move_x, char move_y)
 static void close_door(char door_x, char door_y)
 {
     struct dist door_move;
+    int dx, dy;             // door x, door y
 
-    door_move.move_x = door_x;
-    door_move.move_y = door_y;
+    door_move.dx = door_x;
+    door_move.dy = door_y;
 
-    if (door_move.move_x == 100)
+    if (!(door_x || door_y))
     {
-        door_move.move_x = 0;
-        door_move.move_y = 0;
         mpr("Which direction?", MSGCH_PROMPT);
-        direction(0, door_move);
+        direction(door_move, DIR_DIR);
+        if (!door_move.isValid)
+            return;
     }
 
-    if (door_move.move_x > 1 || door_move.move_y > 1)
-    {
-        mpr("I'm afraid your arm isn't that long.");
-        return;
-    }
-
-    if (door_move.move_x == 0 && door_move.move_y == 0)
+    if (door_move.dx == 0 && door_move.dy == 0)
     {
         mpr("You can't close doors on yourself!");
         return;
     }
 
-    //if (env.eenv[0].mgrid [you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y] != NON_MONSTER)
-    if (mgrd[you.x_pos + door_move.move_x][you.y_pos + door_move.move_y]
-                                                                != NON_MONSTER)
+    // convenience
+    dx = you.x_pos + door_move.dx;
+    dy = you.y_pos + door_move.dy;
+
+    if (mgrd[dx][dy] != NON_MONSTER)
     {
         // Need to make sure that turn_is_over = 1 if creature is invisible
         mpr("There's a creature in the doorway!");
-        door_move.move_x = 0;
-        door_move.move_y = 0;
+        door_move.dx = 0;
+        door_move.dy = 0;
         return;
     }
 
-    if (grd[you.x_pos + door_move.move_x][you.y_pos + door_move.move_y]
-                                                            == DNGN_OPEN_DOOR)
+    if (grd[dx][dy] == DNGN_OPEN_DOOR)
     {
 
-        if (igrd[you.x_pos + door_move.move_x]
-                [you.y_pos + door_move.move_y] != NON_ITEM)
+        if (igrd[dx][dy] != NON_ITEM)
         {
             mpr("There's something blocking the doorway.");
-            door_move.move_x = 0;
-            door_move.move_y = 0;
+            door_move.dx = 0;
+            door_move.dy = 0;
             return;
         }
 
@@ -2345,8 +2329,7 @@ static void close_door(char door_x, char door_y)
                                  : "You close the door.");
         }
 
-        grd[you.x_pos + door_move.move_x][you.y_pos + door_move.move_y]
-                                                        = DNGN_CLOSED_DOOR;
+        grd[dx][dy] = DNGN_CLOSED_DOOR;
         you.turn_is_over = 1;
     }
     else
@@ -2354,8 +2337,6 @@ static void close_door(char door_x, char door_y)
         mpr("There isn't anything that you can close there!");
     }
 }                               // end open_door()
-
-
 
 
 // initialise whole lot of stuff...

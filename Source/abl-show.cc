@@ -30,7 +30,6 @@
 
 #include "externs.h"
 
-#include "bang.h"
 #include "beam.h"
 #include "effects.h"
 #include "food.h"
@@ -387,8 +386,7 @@ void activate_ability(void)
             return;
         }
 
-        if (!go_berserk())
-            mpr("You fail to go berserk.");
+        go_berserk(true);
         break;
 
     // fly (kenku) -- eventually becomes permanent (see acr.cc)
@@ -958,14 +956,15 @@ void activate_ability(void)
             beam.type = SYM_BURST;
             beam.damage = 130;
             beam.flavour = BEAM_ELECTRICITY;
-            beam.bx = you.x_pos;
-            beam.by = you.y_pos;
+            beam.target_x = you.x_pos;
+            beam.target_y = you.y_pos;
             strcpy(beam.beam_name, "blast of lightning");
             beam.colour = LIGHTCYAN;
-            beam.thing_thrown = 1;   /* your expl */
+            beam.thrower = KILL_YOU;
+            beam.ex_size = 1 + you.skills[SK_INVOCATIONS] / 8;
 
             // ... and fire!
-            explosion(true, beam);
+            explosion(beam);
             // protection down
             you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
             break;
@@ -997,8 +996,7 @@ void activate_ability(void)
             return;
         }
 
-        if (!go_berserk())
-            mpr("You fail to go berserk.");
+        go_berserk(true);
 
         make_hungry(100 + random2avg(199, 2), true);
         //exercise(SK_INVOCATIONS, 1 + random2(3));

@@ -14,18 +14,18 @@
 #define VERSION_H
 
 
-// last updated 19dec2000 {dlb}
+// last updated 11jan2001 {gdl}
 /* ***********************************************************************
  * called from: chardump - command - newgame
  * *********************************************************************** */
-#define VERSION "4.0pr3"
+#define VERSION "4.0pr4"
 
 
-// last updated 19Dec2000 {GDL}
+// last updated 11jan2001 {GDL}
 /* ***********************************************************************
  * called from: command
  * *********************************************************************** */
-#define BUILD_DATE "29 Dec 2000"
+#define BUILD_DATE "11 Jan 2001"
 
 
 #endif

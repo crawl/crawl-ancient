@@ -19,7 +19,6 @@
 #include "externs.h"
 
 #include "abyss.h"
-#include "bang.h"
 #include "beam.h"
 #include "debug.h"
 #include "describe.h"
@@ -426,21 +425,15 @@ static void apply_one_neighbouring_square(int (*func) (char, char, int, int),
     struct dist bmove;
 
     mpr("Which direction? [ESC to cancel]", MSGCH_PROMPT);
-    direction(0, bmove);
+    direction(bmove, DIR_DIR);
 
-    if (bmove.nothing == -1)
+    if (!bmove.isValid)
     {
         canned_msg(MSG_SPELL_FIZZLES);
         return;
     }
 
-    if ((abs(bmove.move_x) > 1) || (abs(bmove.move_y) > 1))
-    {
-        mpr("This spell doesn't reach that far.");
-        return;
-    }
-
-    if (func(you.x_pos + bmove.move_x, you.y_pos + bmove.move_y, power, 1))
+    if (func(you.x_pos + bmove.dx, you.y_pos + bmove.dy, power, 1))
         return;
     else
         canned_msg(MSG_NOTHING_HAPPENS);
@@ -934,30 +927,22 @@ static void cast_detect_magic(int pow)
     }
 
     mpr("Which direction?", MSGCH_PROMPT);
-    direction(0, bmove);
+    direction(bmove, DIR_DIR);
 
-    if (bmove.nothing == -1)
+    if (!bmove.isValid)
     {
-        bmove.move_x = 0;
-        bmove.move_y = 0;
         canned_msg(MSG_SPELL_FIZZLES);
         return;
     }
 
-    if ((abs(bmove.move_x) > 1) || (abs(bmove.move_y) > 1))
-    {
-        mpr("This spell doesn't reach that far.");
-        return;
-    }
-
-    if (bmove.move_x == 0 && bmove.move_y == 0)
+    if (bmove.dx == 0 && bmove.dy == 0)
     {
         mpr("You detect a divination in progress.");
         return;
     }
 
-    x = you.x_pos + bmove.move_x;
-    y = you.y_pos + bmove.move_y;
+    x = you.x_pos + bmove.dx;
+    y = you.y_pos + bmove.dy;
 
     monster = mgrd[x][y];
     if (monster == NON_MONSTER)
@@ -2544,7 +2529,6 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
     struct bolt blast;
     int debris = 0;
     int i, hurted;
-    bool size = false;
     bool explode = false;
     char *what = 0;
 
@@ -2560,22 +2544,23 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
     hurted = 1 + random2avg(20,2) + (pow / 5);
 
     mpr("Fragment what (e.g. a wall)?", MSGCH_PROMPT);
-    direction(100, beam);
+    direction(beam, DIR_TARGET);
 
-    if (beam.nothing == -1)
+    if (!beam.isValid)
     {
         canned_msg(MSG_SPELL_FIZZLES);
         return;
     }
 
     //FIXME: if (player typed '>' to attack floor) goto do_terrain;
-    blast.bx = beam.target_x;
-    blast.by = beam.target_y;
-    blast.thing_thrown = 1;
+    blast.thrower = KILL_YOU;
+    blast.ex_size = 1;              // default
     blast.type = '#';
     blast.colour = 0;
+    blast.target_x = beam.tx;
+    blast.target_y = beam.ty;
 
-    i = mgrd[beam.target_x][beam.target_y];
+    i = mgrd[beam.tx][beam.ty];
 
     if (i != NON_MONSTER)
     {
@@ -2636,7 +2621,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
         case MONS_EARTH_ELEMENTAL:
         case MONS_GARGOYLE:
             explode = true;
-            size = true;
+            blast.ex_size = 2;
             strcpy(blast.beam_name, "blast of rock fragments");
             blast.colour = BROWN;
             blast.damage = hurted / 2 + 1;
@@ -2646,7 +2631,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
 
         case MONS_CRYSTAL_GOLEM:
             explode = true;
-            size = true;
+            blast.ex_size = true;
             strcpy(blast.beam_name, "blast of crystal shards");
             blast.colour = WHITE;
             blast.damage = hurted;
@@ -2666,7 +2651,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
 
   do_terrain:
     // FIXME: do nothing in Abyss & Pandemonium?
-    i = grd[beam.target_x][beam.target_y];
+    i = grd[beam.tx][beam.ty];
 
     switch (i)
     {
@@ -2684,7 +2669,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
             what = "statue";
 
         explode = true;
-        size = (i == DNGN_ORCISH_IDOL || i == DNGN_GRANITE_STATUE);
+        blast.ex_size = (i == DNGN_ORCISH_IDOL || i == DNGN_GRANITE_STATUE);
         strcpy(blast.beam_name, "blast of rock fragments");
         blast.colour = BROWN;        // FIXME: colour of actual wall?
         blast.damage = hurted;
@@ -2694,7 +2679,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
         {
             // digging limited to just rock
             if (i != DNGN_STONE_WALL)
-                grd[beam.target_x][beam.target_y] = DNGN_FLOOR;
+                grd[beam.tx][beam.ty] = DNGN_FLOOR;
 
             debris = DEBRIS_ROCK;
         }
@@ -2705,7 +2690,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
         if (one_chance_in(5))
         {
             // digging limited to just rock
-            // grd[beam.target_x][beam.target_y] = DNGN_FLOOR;
+            // grd[beam.tx][beam.target_y] = DNGN_FLOOR;
             debris = DEBRIS_METAL;
         }
 
@@ -2729,7 +2714,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
 
         if (one_chance_in(2))
         {
-            grd[beam.target_x][beam.target_y] = DNGN_FLOOR;
+            grd[beam.tx][beam.ty] = DNGN_FLOOR;
             debris = DEBRIS_CRYSTAL;
         }
         // fallthru
@@ -2741,7 +2726,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
             blast.colour = LIGHTRED; //jmf: == orange, right?
 
         explode = true;
-        size = true;
+        blast.ex_size = true;
         strcpy(blast.beam_name, "blast of crystal shards");
         blast.damage = (hurted * 3) / 2;
         blast.flavour = BEAM_FRAG;
@@ -2749,7 +2734,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
 
     case DNGN_TRAP_MECHANICAL:
         if (coinflip())
-            grd[beam.target_x][beam.target_y] = DNGN_FLOOR;
+            grd[beam.tx][beam.ty] = DNGN_FLOOR;
 
         // fall-through
     // case DNGN_FLOOR:  // Avoiding Linley's floor material issues -- bwr
@@ -2792,11 +2777,11 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
                 blast.damage = 104;
         }
 
-        explosion(size, blast);
+        explosion(blast);
     }
 
     if (debris)
-        place_debris(beam.target_x, beam.target_y, debris);
+        place_debris(beam.tx, beam.ty, debris);
 
     return;
 }                               // end cast_fragmentation()
@@ -2815,15 +2800,14 @@ void cast_twist(int pow)
         return;
 
     // Get the target monster...
-    if (targ.nothing == -1
-        || mgrd[targ.target_x][targ.target_y] == NON_MONSTER
-        || (targ.target_x == you.x_pos && targ.target_y == you.y_pos))
+    if (mgrd[targ.tx][targ.ty] == NON_MONSTER
+        || targ.isMe)
     {
         mpr("There is no monster there!");
         return;
     }
 
-    struct monsters *monster = &menv[ mgrd[targ.target_x][targ.target_y] ];
+    struct monsters *monster = &menv[ mgrd[targ.tx][targ.ty] ];
 
     // Monster can magically save vs attack.
     if (check_mons_magres( monster, pow * 2 ))
@@ -2873,9 +2857,8 @@ void cast_far_strike(int pow)
         return;
 
     // Get the target monster...
-    if (targ.nothing == -1
-        || mgrd[targ.target_x][targ.target_y] == NON_MONSTER
-        || (targ.target_x == you.x_pos && targ.target_y == you.y_pos))
+    if (mgrd[targ.tx][targ.ty] == NON_MONSTER
+        || targ.isMe)
     {
         mpr("There is no monster there!");
         return;
@@ -2953,7 +2936,7 @@ void cast_far_strike(int pow)
     damage *= dammod;
     damage /= 78;
 
-    struct monsters *monster = &menv[ mgrd[targ.target_x][targ.target_y] ];
+    struct monsters *monster = &menv[ mgrd[targ.tx][targ.ty] ];
 
     // apply monster's AC
     if (monster->armor_class > 0)
@@ -2993,16 +2976,16 @@ void cast_apportation(int pow)
 {
     struct dist beam;
 
-    direction(100, beam);
+    direction(beam, DIR_TARGET);
 
-    if (beam.nothing == -1)
+    if (!beam.isValid)
     {
         canned_msg(MSG_SPELL_FIZZLES);
         return;
     }
 
     // it's already here!
-    if (beam.move_x == 0 && beam.move_y == 0)
+    if (beam.isMe)
     {
         mpr( "That's just silly." );
         return;
@@ -3035,14 +3018,14 @@ void cast_apportation(int pow)
     // of sight to the object first so it will only help a little
     // with snatching runes or the orb (although it can be quite
     // useful for getting items out of statue rooms or the abyss). -- bwr
-    if (!see_grid( beam.target_x, beam.target_y ))
+    if (!see_grid( beam.tx, beam.ty ))
     {
         mpr( "You cannot see there!" );
         return;
     }
 
     // Let's look at the top item in that square...
-    const int item = igrd[ beam.target_x ][ beam.target_y ];
+    const int item = igrd[ beam.tx ][ beam.ty ];
     if (item == NON_ITEM)
     {
         mpr( "There are no items there." );
@@ -3063,7 +3046,7 @@ void cast_apportation(int pow)
 
     // Failure should never really happen after all the above checking,
     // but we'll handle it anyways...
-    if (move_top_item( beam.target_x, beam.target_y, you.x_pos, you.y_pos ))
+    if (move_top_item( beam.tx, beam.ty, you.x_pos, you.y_pos ))
     {
         if (max_units < mitm.quantity[ item ])
         {
@@ -3102,7 +3085,7 @@ void cast_sandblast(int pow)
     if (spell_direction(spd, beam) == -1)
         return;
 
-    if (beam.move_x == 0 && beam.move_y == 0)
+    if (spd.isMe)
     {
         canned_msg(MSG_UNTHINKING_ACT);
         return;
@@ -3144,9 +3127,15 @@ void cast_shuggoth_seed(int powc)
 
     mpr("Sow seed in whom?", MSGCH_PROMPT);
 
-    direction(100, beam);
+    direction(beam, DIR_TARGET);
 
-    if (beam.target_x == you.x_pos && beam.target_y == you.y_pos)
+    if (!beam.isValid)
+    {
+        mpr("You feel a distant frustration.");
+        return;
+    }
+
+    if (beam.isMe)
     {
         if (!you.is_undead)
         {
@@ -3157,9 +3146,9 @@ void cast_shuggoth_seed(int powc)
             mpr("You feel a distant frustration.");
     }
 
-    i = mgrd[beam.target_x][beam.target_y];
+    i = mgrd[beam.tx][beam.ty];
 
-    if (beam.nothing == -1 || i == NON_MONSTER)
+    if (i == NON_MONSTER)
     {
         mpr("You feel a distant frustration.");
         return;
