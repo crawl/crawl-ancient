@@ -1,4 +1,4 @@
-# Make file for Dungeon Crawl (linux)
+# Make file for Dungeon Crawl (solaris)
 
 APPNAME = crawl
 
@@ -11,6 +11,8 @@ OBJECTS += liblinux.o
 CXX = g++
 DELETE = rm -f
 COPY = cp
+GROUP = games
+MOVE = mv
 OS_TYPE = SOLARIS
 CFLAGS = -Wall -D$(OS_TYPE) $(EXTRA_FLAGS)
 LDFLAGS = -static
@@ -21,8 +23,9 @@ LIB = -lcurses
 all:            $(APPNAME)
 
 install:        $(APPNAME)
-		$(COPY) ${INSTALLDIR}/${APPNAME} ${INSTALLDIR}/${APPNAME}.old
+		$(MOVE) ${INSTALLDIR}/${APPNAME} ${INSTALLDIR}/${APPNAME}.old
 		$(COPY) $(APPNAME) ${INSTALLDIR}
+		chgrp ${GROUP} ${INSTALLDIR}/${APPNAME}
 		chmod ${MCHMOD} ${INSTALLDIR}/$(APPNAME)
 
 clean:
@@ -43,6 +46,7 @@ distclean:
 $(APPNAME):	$(OBJECTS)
 		${CXX} ${LDFLAGS} $(INCLUDES) $(CFLAGS) $(OBJECTS) -o $(APPNAME) $(LIB)
 		strip $(APPNAME)
+		chgrp ${GROUP} ${APPNAME}
 		chmod ${MCHMOD} $(APPNAME)
 
 debug:		$(OBJECTS)
@@ -56,3 +60,4 @@ profile:	$(OBJECTS)
 
 .h.cc:
 		touch $@
+# DO NOT DELETE THIS LINE -- make depend depends on it.

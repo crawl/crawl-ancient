@@ -53,7 +53,7 @@
 #include "new.h"
 
 #ifdef MACROS
-  #include "macro.h"
+#include "macro.h"
 #endif
 
 
@@ -90,7 +90,7 @@ static string munge_description(const string & inStr)
 
     long i = 0;
 
-    while (i < (long)inStr.length())
+    while (i < (long) inStr.length())
     {
         char ch = inStr[i];
 
@@ -123,7 +123,7 @@ static string munge_description(const string & inStr)
         {
             string word;
 
-            while (i < (long)inStr.length() && lineLen + (long)word.length() < 79 && !isspace(inStr[i]) && inStr[i] != '$')
+            while (i < (long) inStr.length() && lineLen + (long) word.length() < 79 && !isspace(inStr[i]) && inStr[i] != '$')
             {
                 word += inStr[i++];
             }
@@ -370,25 +370,34 @@ static void dump_religion(string & text)
         text += ".";
         text += EOL;
 
-        if (you.religion != GOD_XOM)
-        {                       // Xom doesn't care
+        if (!player_under_penance())
+        {
+            if (you.religion != GOD_XOM)
+            {                   // Xom doesn't care
 
+                text += god_name(you.religion);
+                if (you.piety <= 5)
+                    text += " is displeased.";
+                else if (you.piety <= 20)
+                    text += " is noncommittal.";
+                else if (you.piety <= 40)
+                    text += " is pleased with you.";
+                else if (you.piety <= 70)
+                    text += " is most pleased with you.";
+                else if (you.piety <= 100)
+                    text += " is greatly pleased with you.";
+                else if (you.piety <= 130)
+                    text += " is extremely pleased with you.";
+                else
+                    text += " is exalted by your worship.";
+
+                text += EOL;
+            }
+        }
+        else
+        {
             text += god_name(you.religion);
-            if (you.piety <= 5)
-                text += " is displeased.";
-            else if (you.piety <= 20)
-                text += " is noncommittal.";
-            else if (you.piety <= 40)
-                text += " is pleased with you.";
-            else if (you.piety <= 70)
-                text += " is most pleased with you.";
-            else if (you.piety <= 100)
-                text += " is greatly pleased with you.";
-            else if (you.piety <= 130)
-                text += " is extremely pleased with you.";
-            else
-                text += " is exalted by your worship.";
-
+            text += " is demanding penance.";
             text += EOL;
         }
     }
@@ -513,9 +522,9 @@ static void dump_inventory(string & text, char show_prices)
                         text += " - ";
 
                         /*
-                          Remove DML 6/2/99: not used!
-                          char yps = wherey();
-                        */
+                           Remove DML 6/2/99: not used!
+                           char yps = wherey();
+                         */
 
                         item_name(you.inv_plus2[j], you.inv_class[j], you.inv_type[j], you.inv_dam[j], you.inv_plus[j], you.inv_quantity[j], you.inv_ident[j], 3, st_pass);
                         text += st_pass;
@@ -551,24 +560,27 @@ static void dump_inventory(string & text, char show_prices)
                         {
                             text2 = get_item_description(you.inv_class[j], you.inv_type[j], you.inv_plus[j], you.inv_plus2[j], you.inv_dam[j], you.inv_ident[j], verbose_dump);
 
-                            if (text2.length() > 0 && text2 [text2.length() - 1] == '$')
-                              text2 [text2.length() - 1] = '\0';
+                            if (text2.length() > 0 && text2[text2.length() - 1] == '$')
+                                text2[text2.length() - 1] = '\0';
 
                             // For some reason, this must be done twice
                             //  or it doesn't work properly for unrandarts
-                            if (text2.length() > 0 && text2 [text2.length() - 1] == '$')
-                              text2 [text2.length() - 1] = '\0';
+                            if (text2.length() > 0 && text2[text2.length() - 1] == '$')
+                                text2[text2.length() - 1] = '\0';
 
 //                            if (text2 [0] == '$')
-//                              text2 [0] = 32;
+                            //                              text2 [0] = 32;
 
-                            if (text2 [0] != '$' && text2.length() > 0)
-                              text += EOL;
+                            if (text2[0] != '$' && text2.length() > 0)
+                                text += EOL;
 
 /*                            if (text2.length() > 0 && text2 [text2.length() - 1] != '$')
-                                    text2 += '$';*/
-                            text += munge_description(text2); // get_item_description(you.inv_class[j], you.inv_type[j], you.inv_plus[j], you.inv_plus2[j], you.inv_dam[j], you.inv_ident[j], verbose_dump));
-                        } else text += EOL;
+   text2 += '$'; */
+                            text += munge_description(text2);   // get_item_description(you.inv_class[j], you.inv_type[j], you.inv_plus[j], you.inv_plus2[j], you.inv_dam[j], you.inv_ident[j], verbose_dump));
+
+                        }
+                        else
+                            text += EOL;
 
 
                     }
@@ -597,11 +609,10 @@ static void dump_skills(string & text)
         {
             if (you.skills[i] == 27)
                 text += " * ";
+            else if (you.practise_skill[i] == 0)
+                text += " - ";
             else
-                if (you.practise_skill[i] == 0)
-                    text += " - ";
-                else
-                    text += " + ";
+                text += " + ";
 
             char strng[80];
 
@@ -623,14 +634,15 @@ static void dump_skills(string & text)
 // Return string of the i-th spell type, with slash if required
 //
 //---------------------------------------------------------------
-static string spell_type_name( int spell_class, bool slash )
+static string spell_type_name(int spell_class, bool slash)
 {
-    string  ret;
+    string ret;
 
     if (slash)
         ret = "/";
 
-    switch (spell_class) {
+    switch (spell_class)
+    {
     case SPTYP_CONJURATION:
         ret += "Conjuration";
         break;
@@ -684,7 +696,7 @@ static string spell_type_name( int spell_class, bool slash )
         break;
     }
 
-    return( ret );
+    return (ret);
 }
 
 
@@ -695,10 +707,10 @@ static string spell_type_name( int spell_class, bool slash )
 //---------------------------------------------------------------
 static void dump_spells(string & text)
 {
-    char  strng[80];
+    char strng[80];
 
     // This array helps output the spell types in the traditional order.
-    const int  spell_type_index[] =
+    const int spell_type_index[] =
     {
         SPTYP_HOLY,
         SPTYP_POISON,
@@ -773,12 +785,13 @@ static void dump_spells(string & text)
                 }
 
                 bool already = false;
+
                 for (int i = 0; spell_type_index[i] != 0; i++)
                 {
-                    if ( spell_type(you.spells[j], spell_type_index[i]) )
+                    if (spell_type(you.spells[j], spell_type_index[i]))
                     {
-                        spell_line += spell_type_name( spell_type_index[i],
-                                                                    already );
+                        spell_line += spell_type_name(spell_type_index[i],
+                                                      already);
 
                         already = true;
                     }
@@ -845,7 +858,7 @@ static void dump_spells(string & text)
                     spell_line += ' ';
                 }
 
-                itoa( (int) spell_value( you.spells[j] ), st_pass, 10 );
+                itoa((int) spell_value(you.spells[j]), st_pass, 10);
                 spell_line += st_pass;
                 spell_line += EOL;
 
@@ -983,10 +996,10 @@ bool dump_char(char show_prices, char fname[30])        // $$$ a try block?
     dump_spells(text);
     dump_mutations(text);
 
-    char  file_name [kPathLen] = "\0";
+    char file_name[kPathLen] = "\0";
 
     if (sys_env.crawl_dir)
-        strncpy( file_name, sys_env.crawl_dir, kPathLen );
+        strncpy(file_name, sys_env.crawl_dir, kPathLen);
 
     strncat(file_name, fname, kPathLen);
 

@@ -19,4 +19,5 @@ void ball_of_seeing(void);
 void efreet_flask(void);
 void invoke_wielded(void);
 void special_wielded(void);
+
 #endif

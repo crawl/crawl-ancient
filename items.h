@@ -19,8 +19,9 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop);
 void drop();
 int conv_lett(int item_drop_3);
 void update_corpses(double elapsedTime);
-void handle_time( int time_delta );
+void handle_time(int time_delta);
 
 extern long autopickups;
 extern int autopickup_on;
+
 #endif

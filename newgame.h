@@ -12,4 +12,5 @@
 #define NEWGAME_H
 
 char new_game(void);
+
 #endif

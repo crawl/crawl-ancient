@@ -39,7 +39,7 @@
 #include "spells0.h"
 
 #ifndef WIZARD
-  #define WIZARD
+#define WIZARD
 #endif
 
 #if DEBUG && WIN
@@ -227,7 +227,7 @@ static void CreateConsoleWindow()
         if (sConsole != NULL)
         {
           VERIFY(::SetConsoleTextAttribute(sConsole, FOREGROUND_GREEN));
-                                                                        // green text on a black background (there doesn't appear to be a way to get black text)
+            // green text on a black background (there doesn't appear to be a way to get black text)
 
           VERIFY(::SetConsoleTitle("Debug Log"));
 
@@ -414,7 +414,7 @@ void cast_spec_spell()
 void cast_spec_spell_name()
 {
     char specs[50];
-        char spname [60];
+    char spname[60];
 
     strcpy(info, "Cast which spell by name? ");
     mpr(info);
@@ -429,21 +429,22 @@ void cast_spec_spell_name()
     gets(specs);
 #endif
 
-        int i = 0;
+    int i = 0;
 
-        for (i = 0; i < 250; i ++)
-        {
+    for (i = 0; i < 250; i++)
+    {
         spell_name(i, spname);
-                if (strstr(strlwr(spname), strlwr(specs)) != NULL)
-                {
-                    your_spells(i, magic_ability(player_mag_abil(), you.intel), 0);
-                        return;
-                }
-
+        if (strstr(strlwr(spname), strlwr(specs)) != NULL)
+        {
+            your_spells(i, magic_ability(player_mag_abil(), you.intel), 0);
+            return;
         }
 
-        mpr("I couldn't find that spell.");
-    if ( one_chance_in(20) ) mpr("Maybe you should go back to WIZARD school.");
+    }
+
+    mpr("I couldn't find that spell.");
+    if (one_chance_in(20))
+        mpr("Maybe you should go back to WIZARD school.");
 
 }
 #endif
@@ -479,9 +480,9 @@ void create_spec_monster()
 void create_spec_monster_name()
 {
     char specs[50];
-        char spname [60];
+    char spname[60];
 
-        mpr("(Hint: 'generated' names, eg 'orc zombie', won't work)");
+    mpr("(Hint: 'generated' names, eg 'orc zombie', won't work)");
     mpr("Create which monster by name? ");
 
 #if defined(LINUX)
@@ -494,21 +495,22 @@ void create_spec_monster_name()
     gets(specs);
 #endif
 
-        int i = 0;
+    int i = 0;
 
-        for (i = 0; i < 500; i ++)
+    for (i = 0; i < 500; i++)
+    {
+        moname(i, 0, 1, 100, spname);
+        if (strstr(strlwr(spname), strlwr(specs)) != NULL)
         {
-                moname(i, 0, 1, 100, spname);
-                if (strstr(strlwr(spname), strlwr(specs)) != NULL)
-                {
-                    create_monster(i, 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
-                        return;
-                }
-
+            create_monster(i, 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
+            return;
         }
 
-        mpr("I couldn't find that monster.");
-    if ( one_chance_in(20) ) mpr("Maybe it's hiding.");
+    }
+
+    mpr("I couldn't find that monster.");
+    if (one_chance_in(20))
+        mpr("Maybe it's hiding.");
 
 }
 
@@ -532,8 +534,8 @@ void level_travel()
 
     you.your_level = atoi(specs);
 
-        mpr("Your level has been reset.");
-        mpr("Enter a staircase for more obvious effects.");
+    mpr("Your level has been reset.");
+    mpr("Enter a staircase for more obvious effects.");
 
 }
 
@@ -777,6 +779,6 @@ void debug_add_skills()
 
 void error_message_to_player()
 {
-  mpr("Oh dear. There appears to be a bug in the program.");
-  mpr("I suggest you leave this level then save as soon as possible.");
+    mpr("Oh dear. There appears to be a bug in the program.");
+    mpr("I suggest you leave this level then save as soon as possible.");
 }

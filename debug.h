@@ -15,21 +15,21 @@
 
 // Synch with ANSI definitions.
 #if DEBUG && defined(NDEBUG)
-        #error DEBUG and NDEBUG are out of sync!
+#error DEBUG and NDEBUG are out of sync!
 #endif
 
 #if !DEBUG && !defined(NDEBUG)
-        #error DEBUG and NDEBUG are out of sync!
+#error DEBUG and NDEBUG are out of sync!
 #endif
 
 // Synch with MSL definitions.
 #if __MSL__ && DEBUG != defined(MSIPL_DEBUG_MODE)
-        #error DEBUG and MSIPL_DEBUG_MODE are out of sync!
+#error DEBUG and MSIPL_DEBUG_MODE are out of sync!
 #endif
 
 // Synch with MSVC.
 #if _MSC_VER >= 1100 && DEBUG != defined(_DEBUG)
-        #error DEBUG and _DEBUG are out of sync!
+#error DEBUG and _DEBUG are out of sync!
 #endif
 
 

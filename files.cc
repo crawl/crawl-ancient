@@ -7,7 +7,7 @@
  *
  *   <6>   11/14/99      cdl    Don't let player ghosts follow you up/down
  *   <5>    7/13/99      BWR    Monsters now regenerate hps off level &
-                                  ghosts teleport
+ ghosts teleport
  *   <4>    6/13/99      BWR    Added tmp file pairs to save file.
  *   <3>    6/11/99      DML    Replaced temp file deletion code.
  *
@@ -27,26 +27,26 @@
 #endif
 
 #ifdef DOS
-  #include <file.h>
+#include <file.h>
 #endif
 
 #ifdef LINUX
-  #include <sys/types.h>
-  #include <sys/stat.h>
-  #include <fcntl.h>
-  #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 #ifdef USE_EMX
-  #include <sys/types.h>
-  #include <fcntl.h>
-  #include <unistd.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 #ifdef MAC
-  #include <stat.h>
+#include <stat.h>
 #else
-  #include <sys/stat.h>
+#include <sys/stat.h>
 #endif
 
 #include <string.h>
@@ -74,9 +74,9 @@
 
 
 // These three are defined in overmap.cc
-extern unsigned char altars_present [MAX_LEVELS] [MAX_BRANCHES];
-extern char stair_level [MAX_BRANCHES];
-extern unsigned char feature [MAX_LEVELS] [MAX_BRANCHES];
+extern unsigned char altars_present[MAX_LEVELS][MAX_BRANCHES];
+extern char stair_level[MAX_BRANCHES];
+extern unsigned char feature[MAX_LEVELS][MAX_BRANCHES];
 
 
 bool tmp_file_pairs[MAX_LEVELS][MAX_BRANCHES];
@@ -324,7 +324,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
     else
     {
         strcat(cha_fil, corr_level);
-        if (tmp_file_pairs[ you.your_level ][ you.where_are_you ] == false )
+        if (tmp_file_pairs[you.your_level][you.where_are_you] == false)
         {
             // make sure old file is gone
             unlink(cha_fil);
@@ -372,22 +372,22 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
                 if (menv[fmenv].type == MONS_PLAYER_GHOST &&
                     menv[fmenv].hit_points < menv[fmenv].max_hit_points / 2)
                 {
-                    mpr( "The ghost fades into the shadows." );
+                    mpr("The ghost fades into the shadows.");
                     monster_teleport(fmenv, 1);
                     continue;
                 }
 
-                if (    (menv[fmenv].type == MONS_TUNNELING_WORM)
-                     || (menv[fmenv].type == MONS_WORM_TAIL)
-                     || (menv[fmenv].type == MONS_PANDEMONIUM_DEMON)
-                     || (menv[fmenv].type == MONS_PLANT)
-                     || (menv[fmenv].type == MONS_FUNGUS)
-                     || (menv[fmenv].type == MONS_OKLOB_PLANT)
-                     || (menv[fmenv].type == MONS_CURSE_SKULL)
-                     || (menv[fmenv].type == MONS_PLAYER_GHOST)   // cdl
+                if ((menv[fmenv].type == MONS_TUNNELING_WORM)
+                    || (menv[fmenv].type == MONS_WORM_TAIL)
+                    || (menv[fmenv].type == MONS_PANDEMONIUM_DEMON)
+                    || (menv[fmenv].type == MONS_PLANT)
+                    || (menv[fmenv].type == MONS_FUNGUS)
+                    || (menv[fmenv].type == MONS_OKLOB_PLANT)
+                    || (menv[fmenv].type == MONS_CURSE_SKULL)
+                    || (menv[fmenv].type == MONS_PLAYER_GHOST)  // cdl
                      || ((menv[fmenv].type == MONS_CURSE_TOE)
-                        && (menv[fmenv].type == MONS_POTION_MIMIC))
-                     || (menv[fmenv].type == -1))
+                         && (menv[fmenv].type == MONS_POTION_MIMIC))
+                    || (menv[fmenv].type == -1))
                     continue;
 
                 if (menv[fmenv].type >= MONS_LAVA_WORM)
@@ -484,7 +484,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
         if (you.level_type == LEVEL_PANDEMONIUM)
             generate_random_demon();
 
-        if ( you.your_level > 1 && one_chance_in(3) )
+        if (you.your_level > 1 && one_chance_in(3))
         {
             strcpy(corr_level, "");
             if (you.your_level < 10)
@@ -585,12 +585,12 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
             {
                 env.map[i][j] = 0;
                 if ((you.char_direction == 1)
-                                    && (you.level_type != LEVEL_PANDEMONIUM))
+                    && (you.level_type != LEVEL_PANDEMONIUM))
                 {
                     /* closes all the gates if you're on the way out */
                     if ((grd[i][j] == DNGN_ENTER_HELL)
-                                || (grd[i][j] == DNGN_ENTER_ABYSS)
-                                || (grd[i][j] == DNGN_ENTER_PANDEMONIUM))
+                        || (grd[i][j] == DNGN_ENTER_ABYSS)
+                        || (grd[i][j] == DNGN_ENTER_PANDEMONIUM))
                         grd[i][j] = DNGN_STONE_ARCH;
                 }
                 env.cgrid[i][j] = CNG;
@@ -606,7 +606,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
         if (just_made_new_lev == 0)
         {
             if (stair_taken == DNGN_ENTER_HELL
-                                    || stair_taken == DNGN_ENTER_LABYRINTH)
+                || stair_taken == DNGN_ENTER_LABYRINTH)
                 stair_taken = DNGN_STONE_STAIRS_UP_I;
             else if (stair_taken <= DNGN_ROCK_STAIRS_DOWN)
                 stair_taken += 4;
@@ -654,7 +654,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
             }
         }
 
-found_stair:
+      found_stair:
         if (just_made_new_lev == 0)
         {
             you.x_pos = count_x;
@@ -663,19 +663,19 @@ found_stair:
 
         // This should fix the "monster occuring under the player" bug?
         if (mgrd[you.x_pos][you.y_pos] != MNG)
-            monster_teleport( mgrd[you.x_pos][you.y_pos], 1 );
+            monster_teleport(mgrd[you.x_pos][you.y_pos], 1);
 
 
         if ((you.level_type == LEVEL_LABYRINTH)
-                                        || (you.level_type == LEVEL_ABYSS))
+            || (you.level_type == LEVEL_ABYSS))
             grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
 
         following = 0;
         fmenv = -1;
 
         if (((you.level_type == LEVEL_DUNGEON)
-                || (you.level_type == LEVEL_PANDEMONIUM))
-                        && (want_followers == 1) && (just_made_new_lev == 0))
+             || (you.level_type == LEVEL_PANDEMONIUM))
+            && (want_followers == 1) && (just_made_new_lev == 0))
         {
             for (ic = 0; ic < 2; ic++)
             {
@@ -756,7 +756,7 @@ found_stair:
             }
         }                       /* end if level_type == 0 */
 
-out_of_foll:
+      out_of_foll:
         reset_ch();
         moving_level = 0;
 
@@ -783,15 +783,15 @@ out_of_foll:
                 for (count_y = 0; count_y < GYM; count_y++)
                 {
                     if ((grd[count_x][count_y] >= DNGN_STONE_STAIRS_UP_I)
-                            && (grd[count_x][count_y] <= DNGN_ROCK_STAIRS_UP))
+                        && (grd[count_x][count_y] <= DNGN_ROCK_STAIRS_UP))
                     {
                         grd[count_x][count_y] = DNGN_FLOOR;
-                        if ( one_chance_in(50) )
+                        if (one_chance_in(50))
                             grd[count_x][count_y] = DNGN_EXIT_PANDEMONIUM;
                     }
 
                     if ((grd[count_x][count_y] >= DNGN_ENTER_LABYRINTH)
-                            && (grd[count_x][count_y] <= DNGN_ROCK_STAIRS_DOWN))
+                        && (grd[count_x][count_y] <= DNGN_ROCK_STAIRS_DOWN))
                     {
                         grd[count_x][count_y] = DNGN_TRANSIT_PANDEMONIUM;
                     }
@@ -809,7 +809,7 @@ out_of_foll:
         }
 
         save_level(you.your_level, (you.level_type != LEVEL_DUNGEON),
-                                                        you.where_are_you);
+                   you.where_are_you);
         return;
     }
 
@@ -1016,8 +1016,8 @@ out_of_foll:
                     {
                         // player ghosts included here because they cannot
                         // leave the level to follow the player.
-                        if (monster_regenerates( menv[count_x].type )
-                                || menv[count_x].type == MONS_PLAYER_GHOST)
+                        if (monster_regenerates(menv[count_x].type)
+                            || menv[count_x].type == MONS_PLAYER_GHOST)
                         {
                             menv[count_x].hit_points += turns;
                         }
@@ -1027,10 +1027,10 @@ out_of_foll:
                         }
 
                         if (menv[count_x].hit_points >
-                                                menv[count_x].max_hit_points)
+                            menv[count_x].max_hit_points)
                         {
                             menv[count_x].hit_points =
-                                                menv[count_x].max_hit_points;
+                                menv[count_x].max_hit_points;
                         }
                     }
                 }
@@ -1094,12 +1094,12 @@ out_of_foll:
         for (int j = 0; j < GYM; j++)
         {
             if ((you.char_direction == 1)
-                                && (you.level_type != LEVEL_PANDEMONIUM))
+                && (you.level_type != LEVEL_PANDEMONIUM))
             {
                 /* closes all the gates if you're on the way out */
                 if ((grd[i][j] == DNGN_ENTER_HELL)
-                                || (grd[i][j] == DNGN_ENTER_ABYSS)
-                                || (grd[i][j] == DNGN_ENTER_PANDEMONIUM))
+                    || (grd[i][j] == DNGN_ENTER_ABYSS)
+                    || (grd[i][j] == DNGN_ENTER_PANDEMONIUM))
                 {
                     grd[i][j] = DNGN_STONE_ARCH;
                 }
@@ -1167,9 +1167,9 @@ out_of_foll:
         for (count_y = 0; count_y < GYM; count_y++)
         {
             if ((mgrd[count_x][count_y] != MNG)
-                    && ((menv[mgrd[count_x][count_y]].type == -1)
-                        || (menv[mgrd[count_x][count_y]].x != count_x)
-                        || (menv[mgrd[count_x][count_y]].y != count_y)))
+                && ((menv[mgrd[count_x][count_y]].type == -1)
+                    || (menv[mgrd[count_x][count_y]].x != count_x)
+                    || (menv[mgrd[count_x][count_y]].y != count_y)))
             {
                 /* This is one of the worst things I've ever done */
                 mgrd[count_x][count_y] = MNG;
@@ -1431,6 +1431,10 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
         end(-1);
     }
     fclose(handle);
+
+#ifdef SHARED_FILES_CHMOD_VAL
+    chmod(cha_fil, SHARED_FILES_CHMOD_VAL);
+#endif
 }
 
 
@@ -1462,17 +1466,21 @@ void save_game(char leave_game)
 
     *p++ = 1;                   // major version number
 
-    *p++ = 3;                   // minor version number
+    *p++ = 4;                   // minor version number
 
     save_int(p, 42, 4);         // chunk size
 
     save_double(p, you.elapsed_time, 14);
-    for (i = 0; i < 22; ++i)
-        *p++ = 0;               // reserved
 
+    // minor version >= 4
+    *p++ = you.gift_timeout;
+    for (i = 0; i < 21; i++)
+        *p++ = you.penance[i];
+
+    // minor version >= 2
     for (i = 0; i < MAX_LEVELS; i++)
         for (j = 0; j < MAX_BRANCHES; j++)
-            *p++ = (char) tmp_file_pairs[ i ][ j ];
+            *p++ = (char) tmp_file_pairs[i][j];
 
     for (j = 0; j < 30; ++j)
     {
@@ -1503,7 +1511,8 @@ void save_game(char leave_game)
     *p++ = 0;
     *p++ = 0;
     *p++ = 0;
-    *p++ = 0; // *p++ = you.spell_levels;
+    *p++ = 0;                   // *p++ = you.spell_levels;
+
     *p++ = you.max_level;
     *p++ = you.where_are_you;
     *p++ = you.char_direction;
@@ -1549,8 +1558,8 @@ void save_game(char leave_game)
     *p++ = 0;
     *p++ = 0;
     *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
+    *p++ = you.confusing_touch;
+    *p++ = you.sure_blade;
     *p++ = you.hit_points_regeneration;
     *p++ = 0;
     *p++ = 0;
@@ -1583,7 +1592,8 @@ void save_game(char leave_game)
     *p++ = you.max_strength;
     *p++ = you.max_intel;
     *p++ = you.max_dex;
-    *p++ = 0;  // *p++ = you.hunger_inc;
+    *p++ = 0;                   // *p++ = you.hunger_inc;
+
     *p++ = you.magic_points_regeneration;
 
     *p++ = 0;
@@ -1673,14 +1683,14 @@ void save_game(char leave_game)
         *p++ = does_unrandart_exist(j);
 
     for (j = 0; j < MAX_BRANCHES; ++j)
-        *p++ = stair_level [j];
+        *p++ = stair_level[j];
 
     for (i = 0; i < MAX_LEVELS; ++i)
     {
         for (j = 0; j < MAX_BRANCHES; ++j)
         {
-                *p++ = altars_present [i] [j];
-                *p++ = feature [i] [j];
+            *p++ = altars_present[i][j];
+            *p++ = feature[i][j];
         }
     }
 
@@ -1713,6 +1723,10 @@ void save_game(char leave_game)
         end(-1);
     }
     fclose(handle);
+
+#ifdef SHARED_FILES_CHMOD_VAL
+    chmod(char_f, SHARED_FILES_CHMOD_VAL);
+#endif
 
     if (!leave_game)
         return;
@@ -1808,14 +1822,44 @@ void restore_game()
         if (you.elapsed_time < 0.01)
             you.elapsed_time = load_double(p, 14);
 
-        for (i = 0; i < (chunkSize - 20); i++)
+        int used_chunk = 20;
+
+        if (minorVersion >= 4)
+        {
+            used_chunk++;
+            you.gift_timeout = *p++;
+
+            for (i = 0; i < 21; i++)
+            {
+                you.penance[i] = *p++;
+                used_chunk++;
+            }
+        }
+        else
+        {
+            you.gift_timeout = 0;
+
+            for (i = 0; i < 21; i++)
+            {
+                you.penance[i] = 0;
+            }
+        }
+
+        for (i = 0; i < (chunkSize - used_chunk); i++)
+        {
             *p++;               // reserved
+
+        }
 
         if (minorVersion >= 2)
         {
             for (int level = 0; level < MAX_LEVELS; level++)
+            {
                 for (int dungeon = 0; dungeon < MAX_BRANCHES; dungeon++)
-                    tmp_file_pairs[ level ][ dungeon ] = *p++;
+                {
+                    tmp_file_pairs[level][dungeon] = *p++;
+                }
+            }
         }
 
     }
@@ -1841,7 +1885,8 @@ void restore_game()
     you.pet_target = *p++;
 /*you.prot_life=*p++-40; */ ++p;
 /*  you.res_magic=load_int(p, 5); */ p += 5;
-    ++p;  //you.spell_levels = *p++;
+    ++p;                        //you.spell_levels = *p++;
+
     you.max_level = *p++;
     you.where_are_you = *p++;
     you.char_direction = *p++;
@@ -1879,7 +1924,14 @@ void restore_game()
 /*you.AC=*p++-80; */ ++p;
 /*you.evasion=*p++; */ ++p;
 /*you.damage=*p++; */ ++p;
-    p += 2;
+    if (minorVersion >= 4) {
+        you.confusing_touch = *p++;
+        you.sure_blade = *p++;
+    } else {
+        you.confusing_touch = 0;
+        you.sure_blade = 0;
+        p += 2;
+    }
     you.hit_points_regeneration = *p++;
     p += 3;
     p += 5;
@@ -1896,7 +1948,8 @@ void restore_game()
     you.max_strength = *p++;
     you.max_intel = *p++;
     you.max_dex = *p++;
-    ++p;  // you.hunger_inc = *p++;
+    ++p;                        // you.hunger_inc = *p++;
+
     you.magic_points_regeneration = *p++;
 
     p += 5;
@@ -2020,8 +2073,8 @@ void restore_game()
     {
         for (j = 0; j < MAX_BRANCHES; ++j)
         {
-                altars_present [i] [j] = *p++;
-                feature [i] [j] = *p++;
+            altars_present[i][j] = *p++;
+            feature[i][j] = *p++;
         }
     }
 
@@ -2118,8 +2171,8 @@ void save_ghost()
 
     d += you.strength / 4;
 
-        d /= 3;
-        d *= 2; // ghosts were doing too much damage
+    d /= 3;
+    d *= 2;                     // ghosts were doing too much damage
 
     if (d > 50)
         d = 50;
@@ -2327,15 +2380,15 @@ unsigned char translate_spell(unsigned char spel)
     case SPELL_THROW_FROST:
         return MS_FROST;
     case SPELL_CONTROLLED_BLINK:
-        return MS_BLINK;              /* approximate */
+        return MS_BLINK;        /* approximate */
 /*  case FREEZING_CLOUD: return ; no freezing/mephitic cloud yet
-    case MEPHITIC_CLOUD: return ; */
+   case MEPHITIC_CLOUD: return ; */
     case SPELL_VENOM_BOLT:
         return MS_VENOM_BOLT;
     case SPELL_TELEPORT_OTHER:
         return MS_TELEPORT_OTHER;
     case SPELL_SUMMON_SMALL_MAMMAL:
-        return MS_VAMPIRE_SUMMON;            /* approximate */
+        return MS_VAMPIRE_SUMMON;       /* approximate */
     case SPELL_BOLT_OF_DRAINING:
         return MS_NEGATIVE_BOLT;
     case SPELL_LEHUDIBS_CRYSTAL_SPEAR:
@@ -2345,13 +2398,13 @@ unsigned char translate_spell(unsigned char spel)
     case SPELL_ISKENDERUNS_MYSTIC_BLAST:
         return MS_ORB_ENERGY;
     case SPELL_SUMMON_HORRIBLE_THINGS:
-        return MS_LEVEL_SUMMON;              /* approximate */
+        return MS_LEVEL_SUMMON; /* approximate */
     case SPELL_ANIMATE_DEAD:
         return MS_ANIMATE_DEAD;
     case SPELL_PAIN:
         return MS_PAIN;
     case SPELL_SUMMON_WRAITHS:
-        return MS_SUMMON_UNDEAD;              /* approximate */
+        return MS_SUMMON_UNDEAD;        /* approximate */
     case SPELL_STICKY_FLAME:
         return MS_STICKY_FLAME;
     case SPELL_CALL_IMP:
@@ -2371,7 +2424,7 @@ unsigned char translate_spell(unsigned char spel)
     case SPELL_STONE_ARROW:
         return MS_STONE_ARROW;
     case SPELL_AGONY:
-        return MS_TORMENT;              /* Too powerful to give ghosts Torment for Agony? Nah. */
+        return MS_TORMENT;      /* Too powerful to give ghosts Torment for Agony? Nah. */
     case SPELL_DISINTEGRATE:
         return MS_DISINTEGRATE;
     case SPELL_SYMBOL_OF_TORMENT:
@@ -2405,36 +2458,36 @@ void generate_random_demon(void)
     strcpy(ghost.name, st_prn);
 
     ghost.values[0] = 50 + random2(50) + random2(50) + random2(50) + random2(50);
-    if ( one_chance_in(3) )
+    if (one_chance_in(3))
         ghost.values[0] += random2(50) + random2(50);
 /* hp - could be defined below (as could ev, AC etc). Oh well, too late */
 
     ghost.values[1] = 5 + random2(10);  /* evasion */
     ghost.values[2] = random2(0);       /* AC */
-    if ( one_chance_in(3) )
+    if (one_chance_in(3))
         ghost.values[3] = 1;
     else
         ghost.values[3] = 0;    /* see inv */
-    if ( !one_chance_in(3) )
+    if (!one_chance_in(3))
     {
         ghost.values[4] = 0;    /* res_fire */
-        if ( one_chance_in(4) )
+        if (one_chance_in(4))
             ghost.values[4] = 99;
-        if ( one_chance_in(4) )
+        if (one_chance_in(4))
             ghost.values[4] = 102;
     }
     else
         ghost.values[4] = 101;
-    if ( !one_chance_in(3) )
+    if (!one_chance_in(3))
     {
         ghost.values[5] = 0;    /* res_cold */
-        if ( one_chance_in(4) )
+        if (one_chance_in(4))
             ghost.values[5] = 99;
     }
     else
         ghost.values[5] = 101;
 /* demons, like ghosts, automatically get res poison + prot_life */
-    if ( !one_chance_in(3) )
+    if (!one_chance_in(3))
     {
         ghost.values[6] = 0;    /* res_elec */
     }
@@ -2443,22 +2496,22 @@ void generate_random_demon(void)
 
     ghost.values[7] = 10 + random2(20) + random2(20) + random2(20);     /* damage in combat */
     ghost.values[8] = 0;        /* special attack type (uses weapon brand code) */
-    if ( coinflip() )
+    if (coinflip())
     {
         ghost.values[8] = random2(17);
         if (ghost.values[8] == 3 || ghost.values[8] == 5 || ghost.values[8] == 7 || ghost.values[8] == 11 || ghost.values[8] == 12 || ghost.values[8] == 14)
             ghost.values[8] = 0;        /* some brands inappropriate (eg holy wrath) */
     }
     ghost.values[9] = 0;        /* ghost species - used for: is demon a spellcaster? */
-    if ( !one_chance_in(3) )
+    if (!one_chance_in(3))
         ghost.values[9] = 1;
     ghost.values[10] = random2(3);      /* ghost best skill - used for: does demon fly? */
-    if ( one_chance_in(3) )
+    if (one_chance_in(3))
         ghost.values[10] = 0;
     ghost.values[11] = 0;       /* vacant - ghost best skill level */
     ghost.values[12] = 10 + random2(10);        /* Hit Dice */
     ghost.values[13] = 0;       /* ghost class - used for: does demon cycle colours? */
-    if ( one_chance_in(10) )
+    if (one_chance_in(10))
         ghost.values[13] = 1;
 
     menv[rdem].hit_dice = ghost.values[12];
@@ -2467,7 +2520,7 @@ void generate_random_demon(void)
     menv[rdem].armor_class = ghost.values[2];
     menv[rdem].evasion = ghost.values[1];
     menv[rdem].speed = 10;
-    if ( !one_chance_in(3) )
+    if (!one_chance_in(3))
         menv[rdem].speed = 8 + random2(10);
     menv[rdem].speed_increment = 70;
     menv[rdem].number = 1 + random2(15);        /* demon's colour */
@@ -2484,10 +2537,10 @@ void generate_random_demon(void)
    Some special monster-only spells are at the end. */
     if (ghost.values[9] == 1)
     {
-        if ( coinflip() )
+        if (coinflip())
             do
             {
-                if ( one_chance_in(3) )
+                if (one_chance_in(3))
                     break;
                 ghost.values[14] = search_order_conj[i];
                 i++;
@@ -2496,10 +2549,10 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if ( coinflip() )
+        if (coinflip())
             do
             {
-                if ( one_chance_in(3) )
+                if (one_chance_in(3))
                     break;
                 ghost.values[15] = search_order_conj[i];
                 i++;
@@ -2508,10 +2561,10 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if ( !one_chance_in(4) )
+        if (!one_chance_in(4))
             do
             {
-                if ( one_chance_in(3) )
+                if (one_chance_in(3))
                     break;
                 ghost.values[16] = search_order_third[i];
                 i++;
@@ -2520,10 +2573,10 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if ( coinflip() )
+        if (coinflip())
             do
             {
-                if ( one_chance_in(3) )
+                if (one_chance_in(3))
                     break;
                 ghost.values[17] = search_order_misc[i];
                 i++;
@@ -2532,10 +2585,10 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if ( coinflip() )
+        if (coinflip())
             do
             {
-                if ( one_chance_in(3) )
+                if (one_chance_in(3))
                     break;
                 ghost.values[18] = search_order_misc[i];
                 i++;
@@ -2544,9 +2597,9 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if ( coinflip() )
+        if (coinflip())
             ghost.values[19] = SPELL_BLINK;
-        if ( coinflip() )
+        if (coinflip())
             ghost.values[19] = SPELL_TELEPORT_SELF;
 
         for (i = 14; i < 20; i++)
@@ -2555,37 +2608,37 @@ void generate_random_demon(void)
         }                       /* Converts the player spell indices to monster spell ones */
 
 /* give demon a chance for some monster-only spells: */
-        if ( one_chance_in(25) )
+        if (one_chance_in(25))
             ghost.values[14] = MS_METAL_SPLINTERS;
-        if ( one_chance_in(25) )
-            ghost.values[14] = MS_ENERGY_BOLT;      /* eye of devas */
-        if ( one_chance_in(25) )
+        if (one_chance_in(25))
+            ghost.values[14] = MS_ENERGY_BOLT;  /* eye of devas */
+        if (one_chance_in(25))
             ghost.values[15] = MS_STEAM_BALL;
-        if ( one_chance_in(25) )
+        if (one_chance_in(25))
             ghost.values[15] = MS_PURPLE_BLAST;
-        if ( one_chance_in(25) )
+        if (one_chance_in(25))
             ghost.values[15] = MS_HELLFIRE;
-        if ( one_chance_in(25) )
+        if (one_chance_in(25))
             ghost.values[16] = MS_SMITE;
-        if ( one_chance_in(25) )
+        if (one_chance_in(25))
             ghost.values[16] = MS_HELLFIRE_BURST;
-        if ( one_chance_in(25) )
+        if (one_chance_in(25))
             ghost.values[16] = MS_HELLFIRE_BURST;
-        if ( one_chance_in(15) )
+        if (one_chance_in(15))
             ghost.values[18] = MS_DIG;
 
 /* and demon-summoning should be fairly common: */
-        if ( one_chance_in(12) )
+        if (one_chance_in(12))
             ghost.values[16] = MS_SUMMON_DEMON_GREATER;
-        if ( one_chance_in(12) )
+        if (one_chance_in(12))
             ghost.values[16] = MS_SUMMON_DEMON;
-        if ( one_chance_in(20) )
+        if (one_chance_in(20))
             ghost.values[17] = MS_SUMMON_DEMON_GREATER;
-        if ( one_chance_in(20) )
+        if (one_chance_in(20))
             ghost.values[17] = MS_SUMMON_DEMON;
 
         if (ghost.values[17] == 250)
-            ghost.values[17] = MS_SUMMON_DEMON;      /* at least they can summon demons */
+            ghost.values[17] = MS_SUMMON_DEMON;         /* at least they can summon demons */
 
     }
 

@@ -28,4 +28,5 @@ char *skill_name(char which_skill);
 
 int add_skill(int min_skill, int max_skill, int sk_tot);
 void class_sk(int clsk[8][3], int chcls);
+
 #endif

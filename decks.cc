@@ -25,14 +25,16 @@
 #include "player.h"
 #include "religion.h"
 #include "spells.h"
+#include "spells1.h"
 #include "spells3.h"
 #include "stuff.h"
 
 /* Number of cards. This number includes the first (number zero) card */
-#define DECK_WONDERS 27
-#define DECK_SUMMONING 11
-#define DECK_TRICKS 11
-#define DECK_POWER 17
+#define DECK_WONDERS_SIZE 27
+#define DECK_SUMMONING_SIZE 11
+#define DECK_TRICKS_SIZE 11
+#define DECK_POWER_SIZE 17
+#define DECK_PUNISHMENT_SIZE 23
 
 #define TOTAL_CARDS 55
 
@@ -129,6 +131,39 @@ unsigned char deck_of_power[] =
     0                           /* */
 };
 
+
+//
+// This deck is supposed to be bad, with a small chance of okay.
+//
+unsigned char deck_of_punishment[] =
+{
+    0,                          /* Blank */
+    1,                          /* Butterfly */
+    2,                          /* Wraith */
+    4,                          /* Wealth   (good)  */
+    8,                          /* Stupid */
+    9,                          /* Weak */
+    10,                         /* Slug */
+    11,                         /* Shuffle  (might be good) */
+    12,                         /* Freak    (might be good)*/
+    13,                         /* Death */
+    14,                         /* Normalisation  (might be good) */
+    15,                         /* Shadow */
+    16,                         /* Gate */
+    23,                         /* Demon Swarm */
+    34,                         /* Rage     (often good/not bad) */
+    36,                         /* Venom */
+    38,                         /* Slowness */
+    39,                         /* Decay */
+    42,                         /* Torment */
+    45,                         /* Famine */
+    47,                         /* Wild Magic */
+    51,                         /* Maze */
+    52,                         /* Pandemonium */
+    0,                          /* Sanity buffer... */
+    0                           /* */
+};
+
 void cards(unsigned char which_card);
 
 
@@ -136,7 +171,7 @@ void cards(unsigned char which_card);
 
 void deck_of_cards(unsigned char which_deck)
 {
-    int card[50];
+    unsigned char * card = deck_of_wonders;
     unsigned char max_card = 0;
     int i = 0;
 
@@ -145,39 +180,31 @@ void deck_of_cards(unsigned char which_deck)
 
     switch (which_deck)
     {
-    case 0:
-        for (i = 0; i < DECK_WONDERS; i++)
-        {
-            card[i] = deck_of_wonders[i];
-        }
-        max_card = DECK_WONDERS;
+    case DECK_OF_WONDERS:
+        card = deck_of_wonders;
+        max_card = DECK_WONDERS_SIZE;
         break;
-    case 1:
-        for (i = 0; i < DECK_SUMMONING; i++)
-        {
-            card[i] = deck_of_summoning[i];
-        }
-        max_card = DECK_SUMMONING;
+    case DECK_OF_SUMMONING:
+        card = deck_of_summoning;
+        max_card = DECK_SUMMONING_SIZE;
         break;
-    case 2:
-        for (i = 0; i < DECK_TRICKS; i++)
-        {
-            card[i] = deck_of_tricks[i];
-        }
-        max_card = DECK_TRICKS;
+    case DECK_OF_TRICKS:
+        card = deck_of_tricks;
+        max_card = DECK_TRICKS_SIZE;
         break;
-    case 3:
-        for (i = 0; i < DECK_POWER; i++)
-        {
-            card[i] = deck_of_power[i];
-        }
-        max_card = DECK_POWER;
+    case DECK_OF_POWER:
+        card = deck_of_power;
+        max_card = DECK_POWER_SIZE;
+        break;
+    case DECK_OF_PUNISHMENT:
+        card = deck_of_punishment;
+        max_card = DECK_PUNISHMENT_SIZE;
         break;
     }
 
-    i = card[random2(max_card)];
+    i = (int) card[random2(max_card)];
 
-    if ( one_chance_in(250) )
+    if (one_chance_in(250))
     {
         mpr("This card doesn't seem to belong here.");
         i = random2(TOTAL_CARDS);
@@ -185,33 +212,37 @@ void deck_of_cards(unsigned char which_deck)
 
     cards(i);
 
-    you.inv_plus[you.equip[EQ_WEAPON]]--;
-    if (you.inv_plus[you.equip[EQ_WEAPON]] == 0)
+    // decks of punishment aren't objects in the game,
+    // its just Nemelex's form of punishment
+    if (which_deck != DECK_OF_PUNISHMENT)
     {
-        strcpy(info, "The deck of cards disappears in a puff of smoke.");
-        mpr(info);
-        unwield_item(you.equip[EQ_WEAPON]);
-        you.inv_quantity[you.equip[EQ_WEAPON]]--;
-        if (you.inv_quantity[you.equip[EQ_WEAPON]] == 0)        // can this be false?
-
+        you.inv_plus[you.equip[EQ_WEAPON]]--;
+        if (you.inv_plus[you.equip[EQ_WEAPON]] == 0)
         {
-            you.num_inv_items--;
-            you.equip[EQ_WEAPON] = -1;
-            strcpy(info, "You are now empty handed.");
+            strcpy(info, "The deck of cards disappears in a puff of smoke.");
             mpr(info);
+            unwield_item(you.equip[EQ_WEAPON]);
+            you.inv_quantity[you.equip[EQ_WEAPON]]--;
+            if (you.inv_quantity[you.equip[EQ_WEAPON]] == 0)        // can this be false?
+
+            {
+                you.num_inv_items--;
+                you.equip[EQ_WEAPON] = -1;
+                strcpy(info, "You are now empty handed.");
+                mpr(info);
+            }
+            done_good(GOOD_CARDS, ((coinflip())? 2 : 1));
+            if (which_deck == DECK_OF_WONDERS)
+                done_good(GOOD_CARDS, 2);
+            if (which_deck == DECK_OF_POWER)
+                done_good(GOOD_CARDS, 1);
         }
-        done_good( GOOD_CARDS, ( (coinflip()) ? 2 : 1 ) );
-        if (which_deck == 0)
-            done_good( GOOD_CARDS, 2 );
-        if (which_deck == 3)
-            done_good( GOOD_CARDS, 1 );
+        burden_change();
+
+        if (which_deck == DECK_OF_WONDERS || one_chance_in(3))
+            done_good(GOOD_CARDS, 1);
+        /* Using cards pleases Nemelex */
     }
-    burden_change();
-
-    if ( which_deck == 0 || one_chance_in(3) )
-        done_good( GOOD_CARDS, 1 );
-    /* Using cards pleases Nemelex */
-
 }
 
 
@@ -243,12 +274,12 @@ void cards(unsigned char which_card)
     case 3:
         mpr("You have drawn Experience.");
         if (you.experience < 27)
-          you.experience = exp_needed(you.experience_level + 2, you.species) + 1;
+            you.experience = exp_needed(you.experience_level + 2, you.species) + 1;
         level_change();
         break;
     case 4:
         mpr("You have drawn Wealth.");
-        you.gold += 800 + random2avg(500,2);
+        you.gold += 800 + random2avg(500, 2);
         you.redraw_gold = 1;
         break;
     case 5:
@@ -270,24 +301,25 @@ void cards(unsigned char which_card)
         mpr("You have drawn Stupidity!");
         you.intel -= 2 + random2(2) + random2(2);
         if (you.intel < 4)
-          you.intel = 0;
+            you.intel = 0;
         you.redraw_intelligence = 1;
         break;
     case 9:
         mpr("You have drawn Weakness.");
         you.strength -= 2 + random2(2) + random2(2);
         if (you.strength < 4)
-          you.strength = 0;
+            you.strength = 0;
         you.redraw_strength = 1;
         break;
     case 10:
         mpr("You have drawn the Slug.");
         you.dex -= 2 + random2(2) + random2(2);
         if (you.dex < 4)
-          you.dex = 0;
+            you.dex = 0;
         you.redraw_dexterity = 1;
         break;
     case 11:                    // shuffle stats
+
         mpr("You have drawn the Shuffle card!");
         //you.strength = you.max_strength;
         //you.intel = you.max_intel;
@@ -323,7 +355,8 @@ void cards(unsigned char which_card)
             }
             dvar[dvar1] = 101;
 
-        } while (dvar[0] != 101 || dvar[1] != 101 || dvar[2] != 101);
+        }
+        while (dvar[0] != 101 || dvar[1] != 101 || dvar[2] != 101);
 
         you.redraw_strength = 1;
         you.redraw_intelligence = 1;
@@ -331,6 +364,7 @@ void cards(unsigned char which_card)
         burden_change();
         break;
     case 12:                    // mutation
+
         mpr("You have drawn the Freak!");
         mutate(100);
         mutate(100);
@@ -340,6 +374,7 @@ void cards(unsigned char which_card)
         mutate(100);
         break;
     case 13:                    // reaper
+
         strcpy(info, "Oh no! You have drawn the Death card!");
         if (you.duration[DUR_TELEPORT] != 0)
             you_teleport();     /* heh heh heh */
@@ -350,6 +385,7 @@ void cards(unsigned char which_card)
         create_monster(MONS_REAPER, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
         break;
     case 14:                    // lose mutations
+
         mpr("You have drawn Normalisation.");
         delete_mutation(100);
         delete_mutation(100);
@@ -359,34 +395,39 @@ void cards(unsigned char which_card)
         delete_mutation(100);
         break;
     case 15:                    // soul eater
+
         mpr("You have drawn the Shadow.");
         create_monster(MONS_SOUL_EATER, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
         break;
     case 16:                    // gate to abyss
+
         mpr("You have drawn the Gate!");
         more();
         if (you.level_type == LEVEL_ABYSS)
-          {
+        {
             banished(97);
             break;
-          }
+        }
         if (you.level_type == LEVEL_LABYRINTH)
-          {
+        {
             mpr("Nothing appears to happen.");
             break;
-          }
+        }
         banished(96);
         break;
     case 17:                    // pet
+
         mpr("You have drawn the Crystal Statue.");
         create_monster(MONS_CRYSTAL_GOLEM, 0, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
         break;
     case 18:                    // acquirement
+
         mpr("You have drawn Acquisition!");
         mpr("The card unfolds to form a scroll of paper.");
         acquirement(250);
         break;
     case 19:                    // Haste
+
         mpr("You have drawn Haste.");
         potion_effect(POT_SPEED, 150);
         break;
@@ -443,10 +484,10 @@ void cards(unsigned char which_card)
         mpr(info);
         strcpy(info, "The picture comes to life!");
         mpr(info);
-        if ( coinflip() )
-          create_monster(MONS_DRAGON, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITYOU, 250);
+        if (coinflip())
+            create_monster(MONS_DRAGON, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITYOU, 250);
         else
-          create_monster(MONS_ICE_DRAGON, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITYOU, 250);
+            create_monster(MONS_ICE_DRAGON, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITYOU, 250);
         break;
     case 27:
         strcpy(info, "On the card is a picture of a statue.");
@@ -486,6 +527,7 @@ void cards(unsigned char which_card)
         create_monster(MONS_UNSEEN_HORROR, 21, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITYOU, 250);
         break;
     case 31:                    // Blink
+
         mpr("You have drawn Blink.");
         random_blink();
         break;
@@ -502,9 +544,10 @@ void cards(unsigned char which_card)
 
     case 34:
         mpr("You have drawn Rage.");
-        if ( !go_berserk() )
-          mpr("Nothing appears to happen.");
-        else {
+        if (!go_berserk())
+            mpr("Nothing appears to happen.");
+        else
+        {
             // No penalty if you go berserk from a card
             you.berserk_penalty = NO_BERSERK_PENALTY;
         }

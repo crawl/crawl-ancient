@@ -700,8 +700,9 @@ int random5(unsigned int randmax)
         return 0;
 
     return (int) rand() / (RAND_MAX / randmax + 1);     //return rand() % randmax;
-        // must use random (not rand) for the predictable-results-from-known
-        //  -srandom-seeds thing to work.
+    // must use random (not rand) for the predictable-results-from-known
+    //  -srandom-seeds thing to work.
+
 }
 
 
@@ -762,14 +763,14 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
             proprt[RAP_BRAND] = SPWPN_VORPAL;
 
         if (proprt[RAP_BRAND] == SPWPN_FLAME
-                                        || proprt[RAP_BRAND] == SPWPN_FROST)
+            || proprt[RAP_BRAND] == SPWPN_FROST)
             proprt[RAP_BRAND] = 0;      /* missile wpns */
 
         if (proprt[RAP_BRAND] == SPWPN_PROTECTION)
             proprt[RAP_BRAND] = 0;      /* no protection */
 
         if (proprt[RAP_BRAND] == SPWPN_DISRUPTION &&
-                             (atype != WPN_MACE && atype != WPN_GREAT_MACE))
+            (atype != WPN_MACE && atype != WPN_GREAT_MACE))
             proprt[RAP_BRAND] = SPWPN_NORMAL;   /* Only maces get disruption */
 
         if (atype >= WPN_SLING && atype <= WPN_HAND_CROSSBOW)
@@ -781,7 +782,7 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
         }
 
         if (atype == WPN_DEMON_BLADE || atype == WPN_DEMON_WHIP
-                                                || atype == WPN_DEMON_TRIDENT)
+            || atype == WPN_DEMON_TRIDENT)
         {
             switch (random5(9))
             {
@@ -875,7 +876,7 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
         }
     }
 
-skip_mods:
+  skip_mods:
     if (random5(15) < power_level || aclass == OBJ_WEAPONS)
         goto skip_combat;
 /* Weapons can't get these */
@@ -902,7 +903,7 @@ skip_mods:
         }
     }
 
-skip_combat:
+  skip_combat:
     if (random5(12) < power_level)
         goto finished_powers;
 
@@ -1001,7 +1002,7 @@ skip_combat:
     }
 
 
-finished_powers:
+  finished_powers:
     if (aclass == OBJ_ARMOUR)
         power_level -= 4;       /* Armours get less powers, and are also less likely to be cursed that wpns */
 
@@ -1067,7 +1068,7 @@ finished_powers:
    27 - +to-dam (no wpns)
  */
 
-finished_curses:
+  finished_curses:
     srand(randstore);
 
     return proprt[prop];
@@ -1642,16 +1643,22 @@ void standard_name_weap(unsigned char item_typ, char glorg[80])
         strcat(glorg, "scythe");
         break;
     case WPN_GIANT_CLUB:
-        if (getenv( "BOARD_WITH_NAIL" )) {
+        if (getenv("BOARD_WITH_NAIL"))
+        {
             strcat(glorg, "two-by-four");
-        } else {
+        }
+        else
+        {
             strcat(glorg, "giant club");
         }
         break;
     case WPN_GIANT_SPIKED_CLUB:
-        if (getenv( "BOARD_WITH_NAIL" )) {
+        if (getenv("BOARD_WITH_NAIL"))
+        {
             strcat(glorg, "board with nail");
-        } else {
+        }
+        else
+        {
             strcat(glorg, "giant spiked club");
         }
         break;

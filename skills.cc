@@ -25,7 +25,7 @@
 #include "stuff.h"
 
 #ifdef MACROS
-  #include "macro.h"
+#include "macro.h"
 #endif
 
 #define MAX_COST_LIMIT           250
@@ -64,6 +64,7 @@ void exercise2(char exsk, char deg)
 {
 
     int skill_change = deg * (you.skills[exsk] + 1);    // + 3;
+
     int bonus = 0;
 
     char title[40];
@@ -86,7 +87,7 @@ void exercise2(char exsk, char deg)
     if (you.skills[exsk] == 27)
         return;                 // already maximum
 
-    if ( you.practise_skill[exsk] == 0 && !one_chance_in(4) )
+    if (you.practise_skill[exsk] == 0 && !one_chance_in(4))
         return;
 
 
@@ -122,7 +123,7 @@ void exercise2(char exsk, char deg)
 /* New (LH): Reduced the spending cap from 500. I'm not sure, but the
  * MAX_SPENDING_LIMIT doesn't seem to affect the actual xp cost per
  * skill_point. Am I misreading this?
-*/
+ */
     if (skill_change > MAX_COST_LIMIT)
         skill_change = MAX_COST_LIMIT;
 
@@ -133,13 +134,19 @@ void exercise2(char exsk, char deg)
  * system doesn't work - it's meant to be arbitrary. The only reason for its
  * existence is to give players a reason to go out and kill things and
  * explore instead of sitting around practising their skills.
-*/
-        if (you.exp_available >= 1000) skill_change += 20;
-        if (you.exp_available >= 2500) skill_change += 50;
-        if (you.exp_available >= 5000) skill_change += 75;
-        if (you.exp_available >= 8000) skill_change += 110;
-        if (you.exp_available >= 12000) skill_change += 150;
-        if (you.exp_available >= 15000) skill_change += 200;
+ */
+    if (you.exp_available >= 1000)
+        skill_change += 20;
+    if (you.exp_available >= 2500)
+        skill_change += 50;
+    if (you.exp_available >= 5000)
+        skill_change += 75;
+    if (you.exp_available >= 8000)
+        skill_change += 110;
+    if (you.exp_available >= 12000)
+        skill_change += 150;
+    if (you.exp_available >= 15000)
+        skill_change += 200;
 
 // being good at some weapons makes others easier to learn:
     if (exsk < SK_SLINGS)
@@ -194,6 +201,12 @@ void exercise2(char exsk, char deg)
         }
     }
 
+    // Quick fix for the fact that stealth can't be gained fast enough to
+    // keep up with the levels of monsters, this should speed its advancement
+    if (exsk == SK_STEALTH)
+    {
+        bonus += random2(3);
+    }
 
     if (exsk >= SK_SPELLCASTING)
     {
@@ -216,7 +229,7 @@ void exercise2(char exsk, char deg)
             )
             )
         {
-            if ( one_chance_in(3) )
+            if (one_chance_in(3))
                 return;
         }
 
@@ -228,7 +241,7 @@ void exercise2(char exsk, char deg)
             )
         {
             // of course, this is cumulative with the one above.
-            if ( !one_chance_in(3) )
+            if (!one_chance_in(3))
                 return;
         }
 
@@ -238,7 +251,7 @@ void exercise2(char exsk, char deg)
             )
             )
         {
-            if ( !one_chance_in(3) )
+            if (!one_chance_in(3))
                 return;
         }
     }
@@ -251,7 +264,7 @@ void exercise2(char exsk, char deg)
     // limit of 100 count for more than 1/10 so the spending_limit should
     // never result in a skill never being able to advance.
     int spending_limit = (you.exp_available < MAX_SPENDING_LIMIT) ?
-                                        you.exp_available : MAX_SPENDING_LIMIT;
+    you.exp_available : MAX_SPENDING_LIMIT;
 
     if (skill_change > spending_limit)
     {
@@ -261,7 +274,7 @@ void exercise2(char exsk, char deg)
         // weapons too easy earlier on, so instead we're giving them
         // a special case here.
         if ((exsk != SK_DARTS && exsk != SK_BOWS && exsk != SK_CROSSBOWS)
-                                        || skill_change > you.exp_available)
+            || skill_change > you.exp_available)
         {
             fraction = (spending_limit * 10) / skill_change;
             skill_change = (skill_change * fraction) / 10;
@@ -332,9 +345,9 @@ void exercise2(char exsk, char deg)
     you.redraw_experience = 1;
 
 /*
-New (LH): debugging bit: when you exercise a skill, displays the skill
-exercised and how much you spent on it. Too irritating to be a regular WIZARD
-feature.
+   New (LH): debugging bit: when you exercise a skill, displays the skill
+   exercised and how much you spent on it. Too irritating to be a regular WIZARD
+   feature.
 
    strcpy(info, "Exercised ");
    strcat(info, skill_name(exsk));
@@ -345,11 +358,11 @@ feature.
    itoa(skill_change, st_prn, 10);
    strcat(info, st_prn);
    strcat(info, " xp.");
-   mpr(info);*/
+   mpr(info); */
 
 
 #ifdef CLASSES
-cut_through:
+  cut_through:
 // if (you.skill_points [exsk] > (skill_exp_needed(you.skills [exsk] + 2) * species_skills(exsk, you.species) / 40) && you.skills [exsk] < 27)
 #endif
 //#else

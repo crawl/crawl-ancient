@@ -22,4 +22,5 @@ char recharge_wand(void);
 void direct_effect(struct bolt beam[1]);
 void mons_direct_effect(struct bolt beam[1], int i);
 void yell(void);
+
 #endif

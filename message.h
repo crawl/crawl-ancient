@@ -18,4 +18,5 @@ void more();
 void mesclr();
 void replay_messages();
 void set_colour(char set_message_colour);
+
 #endif

@@ -67,7 +67,7 @@ void priest_spells(int func_pass[10], char religious)
    func_pass [8] = -1; //
    func_pass [9] = -1; //
    break;
-*/
+ */
     }
 
 }
@@ -84,7 +84,7 @@ void priest_spells(int func_pass[10], char religious)
    92 abjuration
    93 another healing spell
    94 something else healing
-*/
+ */
 
 
 
@@ -118,38 +118,38 @@ void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsi
     unsigned char replaced[5];
     unsigned char base_type = DNGN_ROCK_WALL;
 
-    if ( one_chance_in(4) )
+    if (one_chance_in(4))
         base_type = DNGN_STONE_WALL;
-    if ( one_chance_in(15) )
+    if (one_chance_in(15))
         base_type = DNGN_METAL_WALL;
-    if ( one_chance_in(20) )
+    if (one_chance_in(20))
         base_type = DNGN_LAVA;
-    if ( one_chance_in(25) )
+    if (one_chance_in(25))
         base_type = DNGN_DEEP_WATER;
-    if ( one_chance_in(1000) )
+    if (one_chance_in(1000))
         base_type = DNGN_CLOSED_DOOR;
 
     for (i = 0; i < 5; i++)
     {
         replaced[i] = base_type;
-        if ( one_chance_in(5) )
+        if (one_chance_in(5))
             replaced[i] = DNGN_ROCK_WALL;
-        if ( one_chance_in(10) )
+        if (one_chance_in(10))
             replaced[i] = DNGN_STONE_WALL;
-        if ( one_chance_in(15) )
+        if (one_chance_in(15))
             replaced[i] = DNGN_METAL_WALL;
-        if ( one_chance_in(20) )
+        if (one_chance_in(20))
             replaced[i] = DNGN_LAVA;
-        if ( one_chance_in(25) )
+        if (one_chance_in(25))
             replaced[i] = DNGN_DEEP_WATER;
-        if ( one_chance_in(15) )
+        if (one_chance_in(15))
             replaced[i] = DNGN_SHALLOW_WATER;
-        if ( one_chance_in(1000) )
+        if (one_chance_in(1000))
             replaced[i] = DNGN_CLOSED_DOOR;
     }
 
 
-    if ( one_chance_in(3) )
+    if (one_chance_in(3))
     {
         rooms_to_do = 1 + random2(10);
         do
@@ -158,7 +158,7 @@ void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsi
             y1 = 10 + random2(50);
             x2 = x1 + 1 + random2(10);
             y2 = y1 + 1 + random2(10);
-            if ( one_chance_in(100) )
+            if (one_chance_in(100))
                 goto out_of_rooms;
             for (i = x1; i < x2; i++)
             {
@@ -185,7 +185,7 @@ void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsi
     }
 
 
-out_of_rooms:
+  out_of_rooms:
     for (i = gx1; i < gx2 + 1; i++)
     {
         for (j = gy1; j < gy2 + 1; j++)
@@ -193,10 +193,10 @@ out_of_rooms:
             if (grd[i][j] == 30 && random2(100) <= thickness)
             {
                 grd[i][j] = DNGN_FLOOR;
-                if ( items_placed < 150 && one_chance_in(200) )  // % 200
+                if (items_placed < 150 && one_chance_in(200))   // % 200
 
                 {
-                    if ( one_chance_in(500) )
+                    if (one_chance_in(500))
                     {
 /*         do
    {
@@ -227,9 +227,9 @@ out_of_rooms:
         {
             if (grd[i][j] == 30)
                 grd[i][j] = replaced[random2(5)];
-            if ( one_chance_in(7500) )
-                grd[i][j] = DNGN_EXIT_ABYSS; /* gate out of abyss */
-            if ( one_chance_in(10000) )  /* altar */
+            if (one_chance_in(7500))
+                grd[i][j] = DNGN_EXIT_ABYSS;    /* gate out of abyss */
+            if (one_chance_in(10000))   /* altar */
             {
                 do
                 {
@@ -277,6 +277,7 @@ char area_shift(void)
         else
         {
             menv[i].target_x = menv[i].x;       // this will make it find a new target
+
             menv[i].target_y = menv[i].y;
         }
     }
@@ -323,12 +324,12 @@ char area_shift(void)
 
     for (i = you.x_pos - 10; i < you.x_pos + 11; i++)
     {
-        if ( i < 0 || i >= GXM )
-          continue;
+        if (i < 0 || i >= GXM)
+            continue;
         for (j = you.y_pos - 10; j < you.y_pos + 11; j++)
         {
-            if ( j < 0 || j >= GYM )
-              continue;
+            if (j < 0 || j >= GYM)
+                continue;
             grd[45 + i - you.x_pos][35 + j - you.y_pos] = grd[i][j];
             igrd[45 + i - you.x_pos][35 + j - you.y_pos] = igrd[i][j];
             igrd[i][j] = ING;

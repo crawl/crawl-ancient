@@ -19,4 +19,5 @@ char *mutation_name(char which_mutat);
 char give_good_mutation(void);
 char give_bad_mutation(void);
 void demonspawn(void);
+
 #endif

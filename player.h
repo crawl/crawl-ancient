@@ -12,6 +12,7 @@
 
 #include "externs.h"
 
+bool player_under_penance(void);
 int player_spell_levels(void);
 int player_hunger_rate(void);
 int player_teleport(void);
@@ -56,4 +57,5 @@ int player_spec_poison(void);
 int player_energy(void);
 int slaying_bonus(char which_affected);         /* returns bonuses from rings of slaying etc */
 int scan_randarts(char which_property);
+
 #endif

@@ -36,10 +36,10 @@
 #include "stuff.h"
 
 #ifdef MACROS
-  #include "macro.h"
+#include "macro.h"
 #endif
 
-char mons_find(unsigned char xps, unsigned char yps, char mfp [2], char direction);
+char mons_find(unsigned char xps, unsigned char yps, char mfp[2], char direction);
 
 
 //---------------------------------------------------------------
@@ -60,12 +60,12 @@ void direction(char rnge, struct dist moves[1])
 
     if (moves[0].nothing == -9999 || moves[0].nothing == -10000 || moves[0].nothing == -10001)
     {
-        mpr( "Aim (move cursor or select with '-' or '+'/'=', then 'p', '.', or '>')" );
+        mpr("Aim (move cursor or select with '-' or '+'/'=', then 'p', '.', or '>')");
         moves[0].prev_targ = 0;
         if (moves[0].nothing == -10000)
-          moves[0].prev_targ = 1;
+            moves[0].prev_targ = 1;
         if (moves[0].nothing == -10001)
-          moves[0].prev_targ = 2;
+            moves[0].prev_targ = 2;
         moves[0].nothing = look_around(moves);
         looked = 1;
     }
@@ -97,8 +97,8 @@ void direction(char rnge, struct dist moves[1])
             return;
         }
 
-        if (   !mons_near(you.prev_targ)
-            || (   menv[you.prev_targ].enchantment[2] == ENCH_INVIS
+        if (!mons_near(you.prev_targ)
+            || (menv[you.prev_targ].enchantment[2] == ENCH_INVIS
                 && player_see_invis() == 0))
         {
             strcpy(info, "You can't see that creature any more.");
@@ -192,11 +192,11 @@ int dir_cursor(char rng)
     if (rng == 100)
         return -9999;
 
-getkey:
+  getkey:
     keyy = getch();
 
 #ifdef LINUX
-    keyy = translate_keypad( keyy );
+    keyy = translate_keypad(keyy);
 #endif
 
     if (keyy != 0 && keyy != '*' && keyy != '.')
@@ -362,18 +362,18 @@ int look_around(struct dist moves[1])
     char mve_x = 0;
     char mve_y = 0;
     int trf = 0;
-    char monsfind_pos [2];
-        int p = 0;
+    char monsfind_pos[2];
+    int p = 0;
 
     char printed_already = 1;
 
-    monsfind_pos [0] = you.x_pos;
-    monsfind_pos [1] = you.y_pos;
+    monsfind_pos[0] = you.x_pos;
+    monsfind_pos[1] = you.y_pos;
 
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
     {
-        if (   mons_near(you.prev_targ)
-            && (   menv[you.prev_targ].enchantment[2] != ENCH_INVIS
+        if (mons_near(you.prev_targ)
+            && (menv[you.prev_targ].enchantment[2] != ENCH_INVIS
                 || player_see_invis() != 0))
         {
             strcpy(info, "You are currently targetting ");
@@ -393,19 +393,23 @@ int look_around(struct dist moves[1])
 
     do
     {
-      if (moves[0].prev_targ == 0)
-      {
-        gotch = getch();
+        if (moves[0].prev_targ == 0)
+        {
+            gotch = getch();
 
 #ifdef LINUX
-        gotch = translate_keypad( gotch );
+            gotch = translate_keypad(gotch);
 #endif
-      } else
-             {
-          if (moves[0].prev_targ == 1) gotch = '+'; else gotch = '-';
-          moves[0].prev_targ = 0;
-          printed_already = 0;
-         }
+        }
+        else
+        {
+            if (moves[0].prev_targ == 1)
+                gotch = '+';
+            else
+                gotch = '-';
+            moves[0].prev_targ = 0;
+            printed_already = 0;
+        }
 
 
         if (gotch != 0 && gotch != 13)
@@ -478,10 +482,10 @@ int look_around(struct dist moves[1])
                 if (menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].enchantment[2] == ENCH_INVIS && player_see_invis() == 0)
                     continue;
 
-                if (menv [mgrd [you.x_pos + xps - 17] [you.y_pos + yps - 9]].type >= MONS_LAVA_WORM && menv [mgrd [you.x_pos + xps - 17][you.y_pos + yps - 9]].number == 1)
+                if (menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].type >= MONS_LAVA_WORM && menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].number == 1)
                     continue;
 
-                describe_monsters(menv [mgrd [you.x_pos + xps - 17] [you.y_pos + yps - 9]].type, mgrd [you.x_pos + xps - 17][you.y_pos + yps - 9]);
+                describe_monsters(menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].type, mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]);
 
 #ifdef PLAIN_TERM
                 redraw_screen();
@@ -499,8 +503,8 @@ int look_around(struct dist moves[1])
                 mve_y = 0;
                 if (mons_find(xps, yps, monsfind_pos, -1) == 1)
                 {
-                    xps = monsfind_pos [0];
-                    yps = monsfind_pos [1];
+                    xps = monsfind_pos[0];
+                    yps = monsfind_pos[1];
                 }
                 break;
 
@@ -510,8 +514,8 @@ int look_around(struct dist moves[1])
                 mve_y = 0;
                 if (mons_find(xps, yps, monsfind_pos, 1) == 1)
                 {
-                    xps = monsfind_pos [0];
-                    yps = monsfind_pos [1];
+                    xps = monsfind_pos[0];
+                    yps = monsfind_pos[1];
                 }
                 break;
 
@@ -528,7 +532,7 @@ int look_around(struct dist moves[1])
         mve_x = 0;
         mve_y = 0;
 
-thingy:
+      thingy:
         switch (gotch)
         {
         case 13:
@@ -583,7 +587,7 @@ thingy:
             return -1;
         }
 
-gotchy:
+      gotchy:
         gotoxy(xps, yps);
 
         if (xps + mve_x >= 9 && xps + mve_x < 26)
@@ -591,7 +595,8 @@ gotchy:
         if (yps + mve_y >= 1 && yps + mve_y < 18)
             yps += mve_y;
 
-        if (printed_already == 1) mesclr();
+        if (printed_already == 1)
+            mesclr();
         printed_already = 1;
 
         if (env.show[xps - 8][yps] == 0 && (xps != 17 || yps != 9))
@@ -624,34 +629,34 @@ gotchy:
                           mitm.id[mmov_x], 2, str_pass);
                 strcpy(info, str_pass);
                 strcat(info, ".");
-                    mpr(info);
+                mpr(info);
             }
             else
-                        {
+            {
                 strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 2));
-                    strcat(info, ".");
-                    mpr(info);
+                strcat(info, ".");
+                mpr(info);
                 if (mmov_x != ING)
-                                {
-                                        strcpy(info, "It is wielding ");
-                        item_name(mitm.pluses2[mmov_x], mitm.base_type[mmov_x], mitm.sub_type[mmov_x],
+                {
+                    strcpy(info, "It is wielding ");
+                    item_name(mitm.pluses2[mmov_x], mitm.base_type[mmov_x], mitm.sub_type[mmov_x],
                               mitm.special[mmov_x], mitm.pluses[mmov_x], mitm.quantity[mmov_x],
                               mitm.id[mmov_x], 3, str_pass);
-                            strcat(info, str_pass);
-                                        if (menv[i].type == MONS_TWO_HEADED_OGRE && menv[i].inv[1] != ING)
-                                        {
+                    strcat(info, str_pass);
+                    if (menv[i].type == MONS_TWO_HEADED_OGRE && menv[i].inv[1] != ING)
+                    {
                         strcat(info, ",");
-                                                mpr(info);
-                                                strcpy(info, " and ");
-                                item_name(mitm.pluses2[menv[i].inv[1]], mitm.base_type[menv[i].inv[1]], mitm.sub_type[menv[i].inv[1]],
-                              mitm.special[menv[i].inv[1]], mitm.pluses[menv[i].inv[1]], mitm.quantity[menv[i].inv[1]],
-                              mitm.id[menv[i].inv[1]], 3, str_pass);
-                                    strcat(info, str_pass);
-                                            // 2-headed ogres can wield 2 weapons
-                                        }
-                                        strcat(info, ".");
-                                        mpr(info);
-                                }
+                        mpr(info);
+                        strcpy(info, " and ");
+                        item_name(mitm.pluses2[menv[i].inv[1]], mitm.base_type[menv[i].inv[1]], mitm.sub_type[menv[i].inv[1]],
+                                  mitm.special[menv[i].inv[1]], mitm.pluses[menv[i].inv[1]], mitm.quantity[menv[i].inv[1]],
+                                  mitm.id[menv[i].inv[1]], 3, str_pass);
+                        strcat(info, str_pass);
+                        // 2-headed ogres can wield 2 weapons
+                    }
+                    strcat(info, ".");
+                    mpr(info);
+                }
             }
 
             if (menv[i].type == 106)
@@ -671,38 +676,51 @@ gotchy:
             if (menv[i].behavior == 0)
                 mpr("It doesn't appear to have noticed you.");
 
-                        if (menv[i].enchantment1)
-                        {
-                                for (p = 0; p < 3; p ++)
-                                {
-                        switch(menv[i].enchantment[p])
-                                        {
-                        case ENCH_SLOW: mpr("It is moving slowly."); break;
-                        case ENCH_HASTE: mpr("It is moving very quickly."); break;
-                        case ENCH_CONFUSION: mpr("It appears to be bewildered and confused."); break;
-                        case ENCH_INVIS: mpr("It is slightly transparent."); break;
-                        case ENCH_CHARM: mpr("It is in your thrall."); break;
-                        case ENCH_YOUR_STICKY_FLAME_I:
-                        case ENCH_YOUR_STICKY_FLAME_II:
-                        case ENCH_YOUR_STICKY_FLAME_III:
-                        case ENCH_YOUR_STICKY_FLAME_IV:
-                        case ENCH_STICKY_FLAME_I:
-                        case ENCH_STICKY_FLAME_II:
-                        case ENCH_STICKY_FLAME_III:
-                        case ENCH_STICKY_FLAME_IV: mpr("It is covered in liquid flames."); break;
-                                        }
-                                }
-                        }
+            if (menv[i].enchantment1)
+            {
+                for (p = 0; p < 3; p++)
+                {
+                    switch (menv[i].enchantment[p])
+                    {
+                    case ENCH_SLOW:
+                        mpr("It is moving slowly.");
+                        break;
+                    case ENCH_HASTE:
+                        mpr("It is moving very quickly.");
+                        break;
+                    case ENCH_CONFUSION:
+                        mpr("It appears to be bewildered and confused.");
+                        break;
+                    case ENCH_INVIS:
+                        mpr("It is slightly transparent.");
+                        break;
+                    case ENCH_CHARM:
+                        mpr("It is in your thrall.");
+                        break;
+                    case ENCH_YOUR_STICKY_FLAME_I:
+                    case ENCH_YOUR_STICKY_FLAME_II:
+                    case ENCH_YOUR_STICKY_FLAME_III:
+                    case ENCH_YOUR_STICKY_FLAME_IV:
+                    case ENCH_STICKY_FLAME_I:
+                    case ENCH_STICKY_FLAME_II:
+                    case ENCH_STICKY_FLAME_III:
+                    case ENCH_STICKY_FLAME_IV:
+                        mpr("It is covered in liquid flames.");
+                        break;
+                    }
+                }
+            }
 
 #ifdef WIZARD
             stethoscope(i);
 #endif
         }
 
-look_clouds:
+      look_clouds:
         if (env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9] != CNG)
         {
-            switch (env.cloud_type[env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9]] % 100)  // (!!!) {dlb}
+            switch (env.cloud_type[env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9]] % 100)         // (!!!) {dlb}
+
             {
             case CLOUD_FIRE:
                 strcpy(info, "There is a cloud of flame here.");
@@ -815,6 +833,7 @@ look_clouds:
             mpr("Some shallow water.");
             break;
         case 78:                // undiscovered trap
+
         case 67:
             mpr("Floor.");
             break;
@@ -1050,7 +1069,7 @@ look_clouds:
             break;
         }
 
-glogokh:                        // test relay_message();
+      glogokh:                  // test relay_message();
         itoa((int) grd[you.x_pos + xps - 17][you.y_pos + yps - 9], st_prn, 10);
         strcpy(info, st_prn);
 
@@ -1058,7 +1077,7 @@ glogokh:                        // test relay_message();
     }
     while (gotch != 'S');
 
-finished_looking:
+  finished_looking:
     moves[0].move_x = xps - 17;
     moves[0].move_y = yps - 9;
     moves[0].target_x = you.x_pos + xps - 17;
@@ -1087,137 +1106,151 @@ finished_looking:
 // a monster, zero otherwise. If direction is -1, goes backwards.
 //
 //---------------------------------------------------------------
-char mons_find(unsigned char xps, unsigned char yps, char mfp [2], char direction)
+char mons_find(unsigned char xps, unsigned char yps, char mfp[2], char direction)
 {
 
-        unsigned char temp_xps = xps;
-        unsigned char temp_yps = yps;
+    unsigned char temp_xps = xps;
+    unsigned char temp_yps = yps;
     char x_change = 0;
     char y_change = 0;
 
     int i, j;
 
-    if (direction == 1 && temp_xps == 9 && temp_yps == 17) return 0; // end of spiral
+    if (direction == 1 && temp_xps == 9 && temp_yps == 17)
+        return 0;               // end of spiral
 
-        while(temp_xps >= 8 && temp_xps <= 25 && temp_yps <= 17) // yps always >= 0
+    while (temp_xps >= 8 && temp_xps <= 25 && temp_yps <= 17)   // yps always >= 0
+
+    {
+
+        if (direction == -1 && temp_xps == 17 && temp_yps == 9)
+            return 0;           // can't go backwards from you
+
+        if (direction == 1)
         {
-
-    if (direction == -1 && temp_xps == 17 && temp_yps == 9) return 0; // can't go backwards from you
-
-if (direction == 1)
-{
-    if (temp_xps == 8)
-    {
-        x_change = 0;
-        y_change = -1;
-    } else
-        if (temp_xps - 17 == 0 && temp_yps - 9 == 0)
-    {
-        x_change = -1;
-        y_change = 0;
-    } else
-    if (abs(temp_xps - 17) <= abs(temp_yps - 9))
-    {
-        if (temp_xps - 17 >= 0 && temp_yps - 9 <= 0)
-        {
-                if (abs(temp_xps - 17) > abs(temp_yps - 9 + 1))
+            if (temp_xps == 8)
             {
-                                x_change = 0;
-                                y_change = -1;
-                            if (temp_xps - 17 > 0) y_change = 1;
-                goto finished_spiralling;
-            }
-        }
-                x_change = -1;
-        if (temp_yps - 9 < 0) x_change = 1;
-                y_change = 0;
-        } else
-        {
                 x_change = 0;
                 y_change = -1;
-            if (temp_xps - 17 > 0) y_change = 1;
-        }
-} // end if (direction == 1)
-else
-  {
+            }
+            else if (temp_xps - 17 == 0 && temp_yps - 9 == 0)
+            {
+                x_change = -1;
+                y_change = 0;
+            }
+            else if (abs(temp_xps - 17) <= abs(temp_yps - 9))
+            {
+                if (temp_xps - 17 >= 0 && temp_yps - 9 <= 0)
+                {
+                    if (abs(temp_xps - 17) > abs(temp_yps - 9 + 1))
+                    {
+                        x_change = 0;
+                        y_change = -1;
+                        if (temp_xps - 17 > 0)
+                            y_change = 1;
+                        goto finished_spiralling;
+                    }
+                }
+                x_change = -1;
+                if (temp_yps - 9 < 0)
+                    x_change = 1;
+                y_change = 0;
+            }
+            else
+            {
+                x_change = 0;
+                y_change = -1;
+                if (temp_xps - 17 > 0)
+                    y_change = 1;
+            }
+        }                       // end if (direction == 1)
+
+        else
+        {
 /*
-This part checks all eight surrounding squares to find the one that
-leads on to the present square.
-*/
-  for (i = -1; i < 2; i ++)
-  {
-  for (j = -1; j < 2; j ++)
-  {
-   if (i == 0 && j == 0) continue;
-
-    if (temp_xps + i == 8)
-    {
-        x_change = 0;
-        y_change = -1;
-    } else
-        if (temp_xps + i - 17 == 0 && temp_yps + j - 9 == 0)
-    {
-        x_change = -1;
-        y_change = 0;
-    } else
-    if (abs(temp_xps + i - 17) <= abs(temp_yps + j - 9))
-    {
-        if (temp_xps + i - 17 >= 0 && temp_yps + j - 9 <= 0)
-        {
-                if (abs(temp_xps + i - 17) > abs(temp_yps + j - 9 + 1))
+   This part checks all eight surrounding squares to find the one that
+   leads on to the present square.
+ */
+            for (i = -1; i < 2; i++)
             {
+                for (j = -1; j < 2; j++)
+                {
+                    if (i == 0 && j == 0)
+                        continue;
+
+                    if (temp_xps + i == 8)
+                    {
+                        x_change = 0;
+                        y_change = -1;
+                    }
+                    else if (temp_xps + i - 17 == 0 && temp_yps + j - 9 == 0)
+                    {
+                        x_change = -1;
+                        y_change = 0;
+                    }
+                    else if (abs(temp_xps + i - 17) <= abs(temp_yps + j - 9))
+                    {
+                        if (temp_xps + i - 17 >= 0 && temp_yps + j - 9 <= 0)
+                        {
+                            if (abs(temp_xps + i - 17) > abs(temp_yps + j - 9 + 1))
+                            {
                                 x_change = 0;
                                 y_change = -1;
-                            if (temp_xps + i - 17 > 0) y_change = 1;
-                goto finished_spiralling;
+                                if (temp_xps + i - 17 > 0)
+                                    y_change = 1;
+                                goto finished_spiralling;
+                            }
+                        }
+                        x_change = -1;
+                        if (temp_yps + j - 9 < 0)
+                            x_change = 1;
+                        y_change = 0;
+                    }
+                    else
+                    {
+                        x_change = 0;
+                        y_change = -1;
+                        if (temp_xps + i - 17 > 0)
+                            y_change = 1;
+                    }
+
+                    if (temp_xps + i + x_change == temp_xps && temp_yps + j + y_change == temp_yps)
+                        goto finished_spiralling;
+                }
             }
-        }
-                x_change = -1;
-        if (temp_yps + j - 9 < 0) x_change = 1;
-                y_change = 0;
-        } else
-        {
-                x_change = 0;
-                y_change = -1;
-            if (temp_xps + i - 17 > 0) y_change = 1;
-        }
-
-  if (temp_xps + i + x_change == temp_xps && temp_yps + j + y_change == temp_yps)
-   goto finished_spiralling;
-  }
-  }
-  } // end else
+        }                       // end else
 
 
-finished_spiralling:
-    x_change *= direction;
-    y_change *= direction;
+      finished_spiralling:
+        x_change *= direction;
+        y_change *= direction;
 
-    temp_xps += x_change;
-    if (temp_yps + y_change <= 17) // it can wrap, unfortunately
+        temp_xps += x_change;
+        if (temp_yps + y_change <= 17)  // it can wrap, unfortunately
+
             temp_yps += y_change;
 
-    // We don't want to be looking outside the bounds of the arrays:
-    if (temp_xps <= 25 && temp_xps >= 8 && temp_yps <= 17 // && temp_yps >= 1
-        && you.x_pos + temp_xps - 17 >= 0 && you.x_pos + temp_xps - 17 < GXM
-        && you.y_pos + temp_yps - 9 >= 0 && you.y_pos + temp_yps - 9 < GYM)
-      {
-            if (mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9] != MNG
-            && env.show [temp_xps - 8] [temp_yps] != 0
-            && (menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].enchantment[2] != ENCH_INVIS || player_see_invis() != 0)
-            && (menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].type < MONS_LAVA_WORM || menv[mgrd [you.x_pos + temp_xps - 17] [you.y_pos + temp_yps - 9]].number != 1))
-              // & not invis etc
+        // We don't want to be looking outside the bounds of the arrays:
+        if (temp_xps <= 25 && temp_xps >= 8 && temp_yps <= 17   // && temp_yps >= 1
+         && you.x_pos + temp_xps - 17 >= 0 && you.x_pos + temp_xps - 17 < GXM
+         && you.y_pos + temp_yps - 9 >= 0 && you.y_pos + temp_yps - 9 < GYM)
+        {
+            if (mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9] != MNG
+                && env.show[temp_xps - 8][temp_yps] != 0
+                && (menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].enchantment[2] != ENCH_INVIS || player_see_invis() != 0)
+                && (menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].type < MONS_LAVA_WORM || menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].number != 1))
+                // & not invis etc
             {
 //       mpr("Found something!");
-//       more();
-                    mfp [0] = temp_xps;
-                    mfp [1] = temp_yps;
-                    return 1;
+                //       more();
+                mfp[0] = temp_xps;
+                mfp[1] = temp_yps;
+                return 1;
             }
-     }
-}
+        }
+    }
 
 
- return 0;
+    return 0;
 
 }

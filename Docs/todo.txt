@@ -411,3 +411,9 @@ resist fire..., also some healing spells - neutralize poison etc...
 
    -- add special attacks to weapons and allow them to be accessed by the
       player via SHIFT-<move> onto an adjacent monster.
+
+- fix monster enchantments to have proper timeouts and a better structure
+
+- score file still gets messed up from time to time... should probably
+  change the format into something that can be expanded and contains more
+  information that might be printed (user id on multiuser systems, time, etc)

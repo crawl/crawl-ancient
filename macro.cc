@@ -24,10 +24,10 @@
 #include <ctype.h>
 
 #ifdef LINUX
-  #include <curses.h>
+#include <curses.h>
 #elif MAC
 #else
-  #include <conio.h>
+#include <conio.h>
 #endif
 
 #include "externs.h"
@@ -58,13 +58,14 @@ int macro_init(void)
     s = (char *) malloc(255);
     ssize = 255;
 
-    char  file_name [kPathLen] = "\0";
+    char file_name[kPathLen] = "\0";
+
     if (sys_env.crawl_dir)
-        strncpy( file_name, sys_env.crawl_dir, kPathLen );
+        strncpy(file_name, sys_env.crawl_dir, kPathLen);
 
-    strncat( file_name, "macro.txt", kPathLen );
+    strncat(file_name, "macro.txt", kPathLen);
 
-    f = fopen( file_name, "r" );
+    f = fopen(file_name, "r");
     if (f != NULL)
     {
         char *key;

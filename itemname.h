@@ -27,4 +27,5 @@ char weapon_skill(char wclass, char wtype);
 char damage_type(char wclass, char wtype);
 int hands_required_for_weapon(char wclass, char wtype);
 void make_name(unsigned char var1, unsigned char var2, unsigned char var3, char ncase, char str_pass[50]);
+
 #endif

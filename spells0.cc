@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <5>    06Mar2000        bwr   adjustments to spellcasting armour penalty
  *      <4>    05jan2000        jmf   Changed many numbers to enums
  *      <3>      5/20/99        BWR   Extend screen lines support.
  *      <2>      5/09/99        JDJ   spellbook_contents prints unknown spells
@@ -32,7 +33,7 @@
 #include "dungeon.h"
 
 #ifdef MACROS
-  #include "macro.h"
+#include "macro.h"
 #endif
 
 int spell_hunger(int spell_value, unsigned char spell);
@@ -43,6 +44,7 @@ bool spell_type(unsigned char spell, unsigned char typy);
 int spell_spec(int spell, int power);
 char spell_fail(unsigned char spell);
 void print_slash(char already);
+
 //char spell_list(void);     // already declared in header {dlb}
 
 
@@ -59,6 +61,7 @@ char spell_list(void)
 
 #ifdef DOS_TERM
     char buffer[4800];
+
     gettext(1, 1, 80, 25, buffer);
 #endif
 
@@ -130,7 +133,7 @@ char spell_list(void)
             anything = 0;
         }
 
-        if ( you.spells[j] != SPELL_NO_SPELL )
+        if (you.spells[j] != SPELL_NO_SPELL)
         {
             anything++;
             if (lines > 0)
@@ -152,112 +155,113 @@ char spell_list(void)
 
             already = 0;
 
-            if ( spell_type(you.spells[j], SPTYP_HOLY) )
-              {
+            if (spell_type(you.spells[j], SPTYP_HOLY))
+            {
                 cprintf("Holy");
                 already = 1;
-              }
-            if ( spell_type(you.spells[j], SPTYP_POISON) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_POISON))
+            {
                 print_slash(already);
                 cprintf("Poison");
                 already = 1;
-              }
-            if ( spell_type(you.spells[j], SPTYP_FIRE) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_FIRE))
+            {
                 print_slash(already);
                 cprintf("Fire");
                 already = 1;
-              }
-            if ( spell_type(you.spells[j], SPTYP_ICE) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_ICE))
+            {
                 print_slash(already);
                 cprintf("Ice");
                 already = 1;
-              }
-            if ( spell_type(you.spells[j], SPTYP_EARTH) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_EARTH))
+            {
                 print_slash(already);
                 cprintf("Earth");
                 already = 1;
-             }
-            if ( spell_type(you.spells[j], SPTYP_AIR) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_AIR))
+            {
                 print_slash(already);
                 cprintf("Air");
                 already = 1;
-              }
-            if ( spell_type(you.spells[j], SPTYP_CONJURATION) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_CONJURATION))
+            {
                 print_slash(already);
                 cprintf("Conjuration");
                 already = 1;
-              }
-            if ( spell_type(you.spells[j], SPTYP_ENCHANTMENT) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_ENCHANTMENT))
+            {
                 print_slash(already);
                 cprintf("Enchantment");
                 already = 1;
-              }
-            if ( spell_type(you.spells[j], SPTYP_DIVINATION) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_DIVINATION))
+            {
                 print_slash(already);
                 cprintf("Divination");
                 already = 1;
-              }
-            if ( spell_type(you.spells[j], SPTYP_TRANSLOCATION) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_TRANSLOCATION))
+            {
                 print_slash(already);
                 cprintf("Translocation");
                 already = 1;
-             }
-            if ( spell_type(you.spells[j], SPTYP_SUMMONING) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_SUMMONING))
+            {
                 print_slash(already);
                 cprintf("Summoning");
                 already = 1;
-              }
-            if ( spell_type(you.spells[j], SPTYP_TRANSMIGRATION) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_TRANSMIGRATION))
+            {
                 print_slash(already);
                 cprintf("Transmigration");
                 already = 1;
-              }
-            if ( spell_type(you.spells[j], SPTYP_NECROMANCY) )
-              {
+            }
+            if (spell_type(you.spells[j], SPTYP_NECROMANCY))
+            {
                 print_slash(already);
                 cprintf("Necromancy");
                 already = 1;
-              }
+            }
 
             char sval[4];
+
             gotoxy(58, wherey());
             int spell_f = spell_fail(you.spells[j]);
 
             if (spell_f == 100)
-              cprintf("Useless");
+                cprintf("Useless");
             else if (spell_f > 90)
-              cprintf("Terrible");
+                cprintf("Terrible");
             else if (spell_f > 80)
-              cprintf("Cruddy");
+                cprintf("Cruddy");
             else if (spell_f > 70)
-              cprintf("Bad");
+                cprintf("Bad");
             else if (spell_f > 60)
-              cprintf("Very Poor");
+                cprintf("Very Poor");
             else if (spell_f > 50)
-              cprintf("Poor");
+                cprintf("Poor");
             else if (spell_f > 40)
-              cprintf("Fair");
+                cprintf("Fair");
             else if (spell_f > 30)
-              cprintf("Good");
+                cprintf("Good");
             else if (spell_f > 20)
-              cprintf("Very Good");
+                cprintf("Very Good");
             else if (spell_f > 10)
-              cprintf("Great");
+                cprintf("Great");
             else if (spell_f > 0)
-              cprintf("Excellent");
+                cprintf("Excellent");
             else
-              cprintf("Perfect");
+                cprintf("Perfect");
 
             gotoxy(70, wherey());
             itoa((int) spell_value(you.spells[j]), sval, 10);
@@ -296,8 +300,8 @@ char spell_list(void)
 
 void print_slash(char already)
 {
-  if (already == 1)
-    cprintf("/");
+    if (already == 1)
+        cprintf("/");
 }
 
 
@@ -314,53 +318,113 @@ char spell_fail(unsigned char spell)
     //chance -= (you.intel - 10) * abs(you.intel - 10);
     //chance += spell_value(spell) * spell_value(spell) * 3; //spell_value(spell);
 
-    if (you.equip[EQ_BODY_ARMOUR] != -1) {
-      //jmf: armour skill now reduces failure due to armour
-      armour += ( abs( property( OBJ_ARMOUR,
-                                 you.inv_type[you.equip[EQ_BODY_ARMOUR]],
-                                 PARM_EVASION ) ) * 5 ) - 2;
-      if (armour > 0)
-        armour -= you.skills[SK_ARMOUR] * (you.strength / 5 + 1);
-      if (armour > 0)
-        chance += armour;
+    if (you.equip[EQ_BODY_ARMOUR] != -1)
+    {
+
+        int ev_penalty = abs(property(OBJ_ARMOUR,
+                    you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION));
+
+        // The minus 15 is to make the -1 light armours not so bad
+        armour += (ev_penalty * 20) - 15;
+
+        //jmf: armour skill now reduces failure due to armour
+        //bwr: this was far too good, an armour skill of 5 was
+        //     completely negating plate mail.  Plate mail should
+        //     hardly be completely negated, it should still be
+        //     an important consideration for even high level characters.
+        //     Truth is, even a much worse penalty than the above can
+        //     easily be overcome by gaining spell skills... and a lot
+        //     faster than any reasonable rate of bonus here.
+        int lim_str = (you.strength > 30) ? 30 :
+        (you.strength < 10) ? 10 : you.strength;
+
+        armour -= (you.skills[SK_ARMOUR] * lim_str / 15);
+
+        int racial_type = 0;
+
+        switch (you.species)
+        {
+        case SP_ELF:
+        case SP_HIGH_ELF:
+        case SP_GREY_ELF:
+        case SP_DEEP_ELF:
+        case SP_SLUDGE_ELF:
+            racial_type = DARM_ELVEN;
+            break;
+
+        case SP_HILL_DWARF:
+        case SP_MOUNTAIN_DWARF:
+            racial_type = DARM_DWARVEN;
+            break;
+
+        case SP_HILL_ORC:
+            racial_type = DARM_ORCISH;
+            break;
+        }
+
+        //
+        // Elven armour gives everyone some benefit to spellcasting,
+        // Dwarven armour hinders everyone.
+        //
+        switch ((int) (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30))
+        {
+        case DARM_ELVEN:
+            armour -= 10;
+            break;
+
+        case DARM_DWARVEN:
+            armour += 10;
+            break;
+        }
+
+        //
+        // Armour of the same racial type reduces penalty.
+        //
+        if (racial_type != 0 && (int) (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30) == racial_type)
+        {
+            armour -= 10;
+        }
+
+        if (armour > 0)
+            chance += armour;
     }
 
-    if ( you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] != OBJ_STAVES )
-      {
+    if (you.equip[EQ_WEAPON] != -1
+        && you.inv_class[you.equip[EQ_WEAPON]] != OBJ_STAVES)
+    {
         int wpn_penalty = 0;
 
         if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
-          {
-            wpn_penalty = ( 5 *
-                             ( property( OBJ_WEAPONS,
-                                         you.inv_type[you.equip[EQ_WEAPON]],
-                                         PWPN_SPEED ) - 12 ) ) / 2;
-          }
+        {
+            wpn_penalty = (5 *
+                           (property(OBJ_WEAPONS,
+                                     you.inv_type[you.equip[EQ_WEAPON]],
+                                     PWPN_SPEED) - 12)) / 2;
+        }
 
         if (wpn_penalty > 0)
-          chance += wpn_penalty;
-      }
+            chance += wpn_penalty;
+    }
 
     if (you.equip[EQ_SHIELD] != -1)
     {
         switch (you.inv_type[you.equip[EQ_SHIELD]])
         {
-            case ARM_BUCKLER:
-                chance += 5;
-                break;
+        case ARM_BUCKLER:
+            chance += 5;
+            break;
 
-            case ARM_SHIELD:
-                chance += 15;
-                break;
+        case ARM_SHIELD:
+            chance += 15;
+            break;
 
-            case ARM_LARGE_SHIELD:
-                // *BCR* Large chars now get a lower penalty for large shields
-                if (you.species >= SP_OGRE && you.species <= SP_UNK2_DRACONIAN)
-                    chance += 20;
-                else
-                    chance += 30;
-                break;
+        case ARM_LARGE_SHIELD:
+            // *BCR* Large chars now get a lower penalty for large shields
+            if (you.species >= SP_OGRE && you.species <= SP_UNK2_DRACONIAN)
+                chance += 20;
+            else
+                chance += 30;
+            break;
         }
     }
 
@@ -406,7 +470,7 @@ char spell_fail(unsigned char spell)
 
     //if (chance <= 0) chance = 0;
     if (chance > 100)
-      chance = 100;
+        chance = 100;
 
     chance2 = chance;
 
@@ -459,19 +523,19 @@ char spell_fail(unsigned char spell)
     if (chance < -180)
         chance2 = 0;
 
-    if ( you.religion == GOD_VEHUMET
+    if (you.religion == GOD_VEHUMET
         && you.duration[DUR_PRAYER] != 0
-        && you.piety >= 50
-        && ( spell_type(spell, SPTYP_CONJURATION) || spell_type(spell, SPTYP_SUMMONING) ) )
+        && (!player_under_penance() && you.piety >= 50)
+        && (spell_type(spell, SPTYP_CONJURATION) || spell_type(spell, SPTYP_SUMMONING)))
     {
-      chance2 /= 2;
+        chance2 /= 2;
     }
 
-    if ( you.duration[DUR_TRANSFORMATION] > 0
-        && you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS )
-      {
+    if (you.duration[DUR_TRANSFORMATION] > 0
+        && you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
+    {
         chance2 += 20;
-      }
+    }
 
     return chance2;
 }
@@ -482,123 +546,128 @@ char spell_fail(unsigned char spell)
 int spell_spec(int spell, int power)
 {
 
-    int s = 0;            // loop variable
+    int s = 0;                  // loop variable
+
     int spellsy = 0;
     int enhanced = 0;
 
-    power = 0;            // then why is this even passed? {dlb}
+    power = 0;                  // then why is this even passed? {dlb}
 
     for (s = SPTYP_CONJURATION; s <= SPTYP_AIR; s++)
-      {
+    {
         //if (s == SPTYP_FIRE || s == SPTYP_ICE || s == SPTYP_HOLY) continue;
-        if ( s == SPTYP_HOLY )
+        if (s == SPTYP_HOLY)
             continue;
-        if ( spell_type(spell, s) )
+        if (spell_type(spell, s))
             spellsy++;
-      }
+    }
 
     if (spellsy != 0)
-      {
-        if ( spell_type(spell, SPTYP_CONJURATION) )
-          power += (you.skills[SK_CONJURATIONS] * 2) / spellsy;
+    {
+        if (spell_type(spell, SPTYP_CONJURATION))
+            power += (you.skills[SK_CONJURATIONS] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_ENCHANTMENT) )
-          power += (you.skills[SK_ENCHANTMENTS] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_ENCHANTMENT))
+            power += (you.skills[SK_ENCHANTMENTS] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_TRANSMIGRATION) )
-          power += (you.skills[SK_TRANSMIGRATION] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_TRANSMIGRATION))
+            power += (you.skills[SK_TRANSMIGRATION] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_NECROMANCY) )
-          power += (you.skills[SK_NECROMANCY] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_NECROMANCY))
+            power += (you.skills[SK_NECROMANCY] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_SUMMONING) )
-          power += (you.skills[SK_SUMMONINGS] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_SUMMONING))
+            power += (you.skills[SK_SUMMONINGS] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_DIVINATION) )
-          power += (you.skills[SK_DIVINATIONS] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_DIVINATION))
+            power += (you.skills[SK_DIVINATIONS] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_TRANSLOCATION) )
-          power += (you.skills[SK_TRANSLOCATIONS] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_TRANSLOCATION))
+            power += (you.skills[SK_TRANSLOCATIONS] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_POISON) )
-          power += (you.skills[SK_POISON_MAGIC] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_POISON))
+            power += (you.skills[SK_POISON_MAGIC] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_EARTH) )
-          power += (you.skills[SK_EARTH_MAGIC] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_EARTH))
+            power += (you.skills[SK_EARTH_MAGIC] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_AIR) )
-          power += (you.skills[SK_AIR_MAGIC] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_AIR))
+            power += (you.skills[SK_AIR_MAGIC] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_FIRE) )
-          power += (you.skills[SK_FIRE_MAGIC] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_FIRE))
+            power += (you.skills[SK_FIRE_MAGIC] * 2) / spellsy;
 
-        if ( spell_type(spell, SPTYP_ICE) )
-          power += (you.skills[SK_ICE_MAGIC] * 2) / spellsy;
+        if (spell_type(spell, SPTYP_ICE))
+            power += (you.skills[SK_ICE_MAGIC] * 2) / spellsy;
 
-      }     // end if spellsy != 0
+    }                           // end if spellsy != 0
 
-    power += ( you.skills[SK_SPELLCASTING] * 5 ) / 10;
+    power += (you.skills[SK_SPELLCASTING] * 5) / 10;
 
-    power += player_mag_abil();     // currently only affected by staves/rings of wizardry
+    power += player_mag_abil(); // currently only affected by staves/rings of wizardry
 
-    if ( spell_type(spell, SPTYP_NECROMANCY) )
-      {
+    if (spell_type(spell, SPTYP_NECROMANCY))
+    {
         enhanced += player_spec_death();
         enhanced -= player_spec_holy();
         //naughty(spell_value(spell) * 2, 1);
-      }
+    }
 
-    if ( spell_type(spell, SPTYP_FIRE) )
-      {
+    if (spell_type(spell, SPTYP_FIRE))
+    {
         enhanced += player_spec_fire();
         enhanced -= player_spec_cold();
-      }
+    }
 
-    if ( spell_type(spell, SPTYP_ICE) )
-      {
+    if (spell_type(spell, SPTYP_ICE))
+    {
         enhanced += player_spec_cold();
         enhanced -= player_spec_fire();
-      }
+    }
 
-    if ( spell_type(spell, SPTYP_HOLY) )
-      {
+    if (spell_type(spell, SPTYP_HOLY))
+    {
         enhanced -= player_spec_death();
         enhanced += player_spec_holy();
         if (you.special_wield == 50)
             enhanced -= 2;
-      }          // holy - signs switched!
+    }                           // holy - signs switched!
 
-    if ( spell_type(spell, SPTYP_CONJURATION) )
-      {
+    if (spell_type(spell, SPTYP_CONJURATION))
+    {
         enhanced += player_spec_conj();
-      }
+    }
 
-    if ( spell_type(spell, SPTYP_ENCHANTMENT) )
-      {
+    if (spell_type(spell, SPTYP_ENCHANTMENT))
+    {
         enhanced += player_spec_ench();
-      }
+    }
 
-    if ( spell_type(spell, SPTYP_SUMMONING) )
-      {
+    if (spell_type(spell, SPTYP_SUMMONING))
+    {
         enhanced += player_spec_summ();
-      }
+    }
 
-    if ( spell_type(spell, SPTYP_POISON) )
-      {
+    if (spell_type(spell, SPTYP_POISON))
+    {
         enhanced += player_spec_poison();
-      }
+    }
 
-    if ( spell_type(spell, SPTYP_EARTH) )
-      {
+    if (spell_type(spell, SPTYP_EARTH))
+    {
         enhanced += player_spec_earth();        // spec_earth
-        enhanced -= player_spec_air();          // spec_air
-      }
 
-    if ( spell_type(spell, SPTYP_AIR) )
-      {
+        enhanced -= player_spec_air();  // spec_air
+
+    }
+
+    if (spell_type(spell, SPTYP_AIR))
+    {
         enhanced -= player_spec_earth();        // spec_earth
-        enhanced += player_spec_air();          // spec_air
-      }
+
+        enhanced += player_spec_air();  // spec_air
+
+    }
 
 
 /* If the bit just above changes, remember to also change it in crawl99.cc */
@@ -616,7 +685,8 @@ int spell_spec(int spell, int power)
     {
         for (s = enhanced; s < 0; s++)
         {
-            power /= 2;     // /= 10;
+            power /= 2;         // /= 10;
+
         }
     }
 
@@ -643,6 +713,8 @@ bool spell_type(unsigned char spell, unsigned char typy)
     case SPELL_BERSERKER_RAGE:
     case SPELL_CAUSE_FEAR:
     case SPELL_CONFUSE:
+    case SPELL_CONFUSING_TOUCH:
+    case SPELL_SURE_BLADE:
     case SPELL_CREATE_NOISE:
     case SPELL_ENSLAVEMENT:
     case SPELL_EXTENSION:
@@ -771,7 +843,8 @@ bool spell_type(unsigned char spell, unsigned char typy)
         stype = 1611;
         break;
 
-    case SPELL_SHADOW_CREATURES:          //jmf: was just 18
+    case SPELL_SHADOW_CREATURES:        //jmf: was just 18
+
         stype = 1811;
         break;
 
@@ -888,7 +961,8 @@ bool spell_type(unsigned char spell, unsigned char typy)
         break;
 
     case SPELL_DIG:
-    case SPELL_TOMB_OF_DOROKLOHE:          //jmf: changed from 1122
+    case SPELL_TOMB_OF_DOROKLOHE:       //jmf: changed from 1122
+
         stype = 1522;
         break;
 
@@ -930,8 +1004,8 @@ bool spell_type(unsigned char spell, unsigned char typy)
         // Make restore abilities necromancy?
 
     default:
-      stype = 0;
-      break;
+        stype = 0;
+        break;
 
     }
 
@@ -962,11 +1036,11 @@ bool spell_type(unsigned char spell, unsigned char typy)
 //if (stype % 100 == typy || stype / 100 == typy) return 1;
 
     if (stype % 100 == typy || (stype / 100) % 100 == typy || (stype / 10000) % 100 == typy)
-      return true;
+        return true;
     else
-      return false;
+        return false;
 
-}          // end spell_type
+}                               // end spell_type
 
 
 
@@ -1183,6 +1257,7 @@ char spell_value(unsigned char spell)
 
     switch (spell)
     {
+    case SPELL_CONFUSING_TOUCH:
     case SPELL_ANIMATE_SKELETON:
     case SPELL_ARC:
     case SPELL_BURN:
@@ -1202,6 +1277,7 @@ char spell_value(unsigned char spell)
     case SPELL_DETECT_CREATURES:
     case SPELL_DETECT_ITEMS:
     case SPELL_DETECT_TRAPS:
+    case SPELL_SURE_BLADE:
     case SPELL_FIRE_BRAND:
     case SPELL_FREEZING_AURA:
     case SPELL_LESSER_HEALING:
@@ -1347,7 +1423,7 @@ char spell_value(unsigned char spell)
 
     }
 
-    return 1;
+    return 2;
 
 }
 
@@ -1410,6 +1486,15 @@ void spell_name(unsigned char spell, char spln[60])
     case SPELL_PARALYZE:
         strcpy(spln, "Paralyze");
         break;
+
+    case SPELL_CONFUSING_TOUCH:
+        strcpy(spln, "Confusing Touch");
+        break;
+
+    case SPELL_SURE_BLADE:
+        strcpy(spln, "Sure Blade");
+        break;
+
     case SPELL_CONFUSE:
         strcpy(spln, "Confuse");
         break;
@@ -1504,7 +1589,8 @@ void spell_name(unsigned char spell, char spln[60])
         strcpy(spln, "Lehudib's Crystal Spear");
         break;
     case SPELL_BOLT_OF_INACCURACY:
-      strcpy(spln, "Jagged Bolt"); //"Bolt of Inaccuracy");
+        strcpy(spln, "Jagged Bolt");    //"Bolt of Inaccuracy");
+
         break;
     case SPELL_POISONOUS_CLOUD:
         strcpy(spln, "Poisonous Cloud");
@@ -1520,7 +1606,8 @@ void spell_name(unsigned char spell, char spln[60])
         break;
     case SPELL_ISKENDERUNS_MYSTIC_BLAST:
         strcpy(spln, "Iskenderun's Mystic Blast");
-        break; // this name was found in the hack.exe file of an early version of PCHACK. Credit goes to its creator (whoever that may be).
+        break;                  // this name was found in the hack.exe file of an early version of PCHACK. Credit goes to its creator (whoever that may be).
+
     case SPELL_SWARM:
         strcpy(spln, "Swarm");
         break;
@@ -1641,7 +1728,8 @@ void spell_name(unsigned char spell, char spln[60])
     case SPELL_TUKIMAS_DANCE:
         strcpy(spln, "Tukima's Dance");
         break;
-    case SPELL_HELLFIRE:          // Staff of Dispater
+    case SPELL_HELLFIRE:        // Staff of Dispater
+
         strcpy(spln, "Hellfire");
         break;
     case SPELL_SUMMON_DEMON:
@@ -1824,7 +1912,7 @@ char spellbook_contents(unsigned char plus, unsigned char type)
 
     spellbook_template(type, spell_types);
 
-    char stringy[9];
+    char stringy[10];
 
     itoa(plus, stringy, 2);
 
@@ -1833,17 +1921,18 @@ char spellbook_contents(unsigned char plus, unsigned char type)
 
     int spelcount = 0;
 
-    for (int j = 1; j < 7; j++)
+    for (int j = 1; j < SPELLBOOK_SIZE; j++)
     {
-        if (stringy[j] != 49)
-          continue;
+        // if (stringy[j] != 49)
+        if (spell_types[j] == SPELL_NO_SPELL)
+            continue;
 
         cprintf(" ");
         bool knowsSpell = false;
 
         for (int i = 0; i < 25 && !knowsSpell; i++)
         {
-          knowsSpell = you.spells[i] == spell_types[j];
+            knowsSpell = you.spells[i] == spell_types[j];
         }
 
         //textcolor(knowsSpell ? LIGHTGREY : LIGHTBLUE);
@@ -1860,103 +1949,105 @@ char spellbook_contents(unsigned char plus, unsigned char type)
         cprintf(strng);
         cprintf(" - ");
         char st_pass[60];
+
         spell_name(spell_types[j], st_pass);
         cprintf(st_pass);
         gotoxy(35, wherey());
         char already = 0;
 
-        if ( spell_type(spell_types[j], SPTYP_HOLY) )
-          {
+        if (spell_type(spell_types[j], SPTYP_HOLY))
+        {
             cprintf("Holy");
             already = 1;
-          }
+        }
 
-        if ( spell_type(spell_types[j], SPTYP_POISON) )
-          {
+        if (spell_type(spell_types[j], SPTYP_POISON))
+        {
             print_slash(already);
             cprintf("Poison");
             already = 1;
-          }
+        }
 
-        if ( spell_type(spell_types[j], SPTYP_FIRE) )
-          {
+        if (spell_type(spell_types[j], SPTYP_FIRE))
+        {
             print_slash(already);
             cprintf("Fire");
             already = 1;
-          }
+        }
 
-        if ( spell_type(spell_types[j], SPTYP_ICE) )
-          {
+        if (spell_type(spell_types[j], SPTYP_ICE))
+        {
             print_slash(already);
             cprintf("Ice");
             already = 1;
-          }
+        }
 
-        if ( spell_type(spell_types[j], SPTYP_EARTH) )
-          {
+        if (spell_type(spell_types[j], SPTYP_EARTH))
+        {
             print_slash(already);
             cprintf("Earth");
             already = 1;
-          }
+        }
 
-        if ( spell_type(spell_types[j], SPTYP_AIR) )
-          {
+        if (spell_type(spell_types[j], SPTYP_AIR))
+        {
             print_slash(already);
             cprintf("Air");
             already = 1;
-          }
+        }
 
-        if ( spell_type(spell_types[j], SPTYP_CONJURATION) )
-          {
+        if (spell_type(spell_types[j], SPTYP_CONJURATION))
+        {
             print_slash(already);
             cprintf("Conjuration");
             already = 1;
-          }
+        }
 
-        if (spell_type(spell_types[j], SPTYP_ENCHANTMENT) )
-          {
+        if (spell_type(spell_types[j], SPTYP_ENCHANTMENT))
+        {
             print_slash(already);
             cprintf("Enchantment");
             already = 1;
-          }
+        }
 
-        if (spell_type(spell_types[j], SPTYP_DIVINATION) )
-          {
+        if (spell_type(spell_types[j], SPTYP_DIVINATION))
+        {
             print_slash(already);
             cprintf("Divination");
             already = 1;
-          }
+        }
 
-        if (spell_type(spell_types[j], SPTYP_TRANSLOCATION) )
-          {
+        if (spell_type(spell_types[j], SPTYP_TRANSLOCATION))
+        {
             print_slash(already);
             cprintf("Translocation");
             already = 1;
-          }
+        }
 
-        if (spell_type(spell_types[j], SPTYP_SUMMONING) )
-          {
+        if (spell_type(spell_types[j], SPTYP_SUMMONING))
+        {
             print_slash(already);
             cprintf("Summoning");
             already = 1;
-          }
+        }
 
-        if (spell_type(spell_types[j], SPTYP_TRANSMIGRATION) )
-          {
+        if (spell_type(spell_types[j], SPTYP_TRANSMIGRATION))
+        {
             print_slash(already);
             cprintf("Transmigration");
             already = 1;
-          }
+        }
 
-        if (spell_type(spell_types[j], SPTYP_NECROMANCY) )
-          {
+        if (spell_type(spell_types[j], SPTYP_NECROMANCY))
+        {
             print_slash(already);
             cprintf("Necromancy");
             already = 1;
-          }
+        }
 
         gotoxy(65, wherey());
         char sval[2];
+
         itoa((int) spell_value(spell_types[j]), sval, 10);
         cprintf(sval);
         cprintf(EOL);
@@ -1979,6 +2070,7 @@ char spellbook_contents(unsigned char plus, unsigned char type)
 int which_spell_in_book(int sbook_type, int spl)
 {
     int func_pass[10];
+
     spellbook_template(sbook_type, func_pass);
     return func_pass[spl];
 }
@@ -2023,7 +2115,7 @@ int spell_hunger(int spell_value, unsigned char spell)
     }
 
     return spell;
-}          // end of spell_hunger()
+}                               // end of spell_hunger()
 
 
 
@@ -2033,7 +2125,7 @@ char undead_can_memorise(unsigned char spell)
 
     switch (spell)
     {
-    //case SPELL_REGENERATION:
+        //case SPELL_REGENERATION:
     case SPELL_BORGNJORS_REVIVIFICATION:
     case SPELL_CURE_POISON_II:
     case SPELL_DEATHS_DOOR:

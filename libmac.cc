@@ -113,22 +113,22 @@ class CWindow
 {
 
 //-----------------------------------
-//      Initialization/Destruction
-//
-public:
+    //      Initialization/Destruction
+    //
+    public:
     ~CWindow();
 
     CWindow();
 
-private:
+    private:
     CWindow(const CWindow & rhs);
 
       CWindow & operator = (const CWindow & rhs);
 
 //-----------------------------------
-//      API
-//
-public:
+    //      API
+    //
+      public:
     void Show(bool show = true);
 
     void HandleUpdate();
@@ -137,21 +137,33 @@ public:
 
     void Clear();
     void SetCursor(int x, int y);
-    Point GetCursor() const                                             {return mCursor;}
+    Point GetCursor() const
+    {
+        return mCursor;
+    }
     void SetChar(unsigned char ch);
     void Print(const char *buffer);
-    void ShowCursor(bool show)                                  {mShowCursor = show;}
+    void ShowCursor(bool show)
+    {
+        mShowCursor = show;
+    }
 
     void SetForeColor(const RGBColor & color);
     void SetBackColor(const RGBColor & color);
 
-    void SetFont(const unsigned char *name)             {this->DoSetFont(name, mPointSize);}
-    void SetFontSize(int size)                                  {this->DoSetFont(mFontName, size);}
+    void SetFont(const unsigned char *name)
+    {
+        this->DoSetFont(name, mPointSize);
+    }
+    void SetFontSize(int size)
+    {
+        this->DoSetFont(mFontName, size);
+    }
 
 //-----------------------------------
-//      Internal Types
-//
-protected:
+    //      Internal Types
+    //
+    protected:
     struct SCell
     {
         unsigned char ch;
@@ -164,12 +176,12 @@ protected:
         }
     };
 
-    typedef vector<SCell> Line;
+    typedef vector < SCell > Line;
 
 //-----------------------------------
-//      Internal API
-//
-protected:
+    //      Internal API
+    //
+  protected:
     void DoScroll();
 
     void DoClearToEOL();
@@ -185,26 +197,26 @@ protected:
     bool DoReadPrefs();
 
 //-----------------------------------
-//      Member Data
-//
-protected:
-    vector<Line>        mLines;
-    Point                       mCursor;
-    bool                        mShowCursor;
+    //      Member Data
+    //
+  protected:
+    vector < Line > mLines;
+    Point mCursor;
+    bool mShowCursor;
 
-    int                         mCellWidth;
-    int                         mCellHeight;
+    int mCellWidth;
+    int mCellHeight;
 
-    Str255                      mFontName;
-    short                       mFontNum;
-    int                         mPointSize;
-    int                         mAscent;
+    Str255 mFontName;
+    short mFontNum;
+    int mPointSize;
+    int mAscent;
 
-    RGBColor            mForeColor;
-    RGBColor            mBackColor;
+    RGBColor mForeColor;
+    RGBColor mBackColor;
 
-    WindowRef           mWindow;
-    GWorldPtr           mPixMap;
+    WindowRef mWindow;
+    GWorldPtr mPixMap;
 };
 
 
@@ -641,25 +653,25 @@ static int HandleMenu(int menuID, int item)
 
         else if (item == 3)
         {
-                        if (game_has_started)
-                        {
-                    EAskSaveResult answer = AskSaveChanges();
+            if (game_has_started)
+            {
+                EAskSaveResult answer = AskSaveChanges();
 
-                    if (answer == kSaveChanges)
-                    {
-                                        save_game(1);
-                                }
-                    else if (answer == kDontSave)
-                    {
-                        deinit_mac();
-                        ExitToShell();
-                    }
-                        }
-                        else
-                        {
+                if (answer == kSaveChanges)
+                {
+                    save_game(1);
+                }
+                else if (answer == kDontSave)
+                {
+                    deinit_mac();
+                    ExitToShell();
+                }
+            }
+            else
+            {
                 deinit_mac();
                 ExitToShell();
-                        }
+            }
         }
         break;
 
@@ -704,7 +716,7 @@ static int HandleMouseDown(const EventRecord & event)
     int ch = '\0';
 
     WindowRef wptr;
-    int partCode =::FindWindow(event.where, &wptr);
+    int partCode = ::FindWindow(event.where, &wptr);
 
     switch (partCode)
     {
@@ -721,11 +733,11 @@ static int HandleMouseDown(const EventRecord & event)
         break;
 
     case inSysWindow:
-      ::SystemClick(&event, wptr);
+        ::SystemClick(&event, wptr);
         break;
 
     case inDesk:
-      ::SysBeep(1);
+        ::SysBeep(1);
         break;
 
     case inContent:
@@ -739,7 +751,7 @@ static int HandleMouseDown(const EventRecord & event)
             Rect dragRect = (**(GetGrayRgn())).rgnBBox;
 
             InsetRect(&dragRect, 4, 4);
-          ::DragWindow(wptr, event.where, &dragRect);
+            ::DragWindow(wptr, event.where, &dragRect);
         }
         break;
 
@@ -910,9 +922,9 @@ static int HandleEvent(const EventRecord & event)
             Point pt =
             {120, 120};         // System 7 will auto-center dialog
 
-          ::DILoad();
-          ::DIBadMount(pt, event.message);
-          ::DIUnload();
+            ::DILoad();
+            ::DIBadMount(pt, event.message);
+            ::DIUnload();
         }
         break;
 
@@ -1103,9 +1115,9 @@ void CWindow::HandleUpdate()
 
                 if (x == mCursor.h && y == mCursor.v && mShowCursor)
                 {
-                  ::RGBForeColor(&white);
-                  ::MoveTo(area.left + 1, area.top + mAscent);
-                  ::Line(area.right - area.left - 2, 0);
+                    ::RGBForeColor(&white);
+                    ::MoveTo(area.left + 1, area.top + mAscent);
+                    ::Line(area.right - area.left - 2, 0);
                 }
             }
 
@@ -1743,12 +1755,12 @@ void CWindow::DoWritePrefs()
     if (err != noErr)
         goto fail;
 
-fail:
+  fail:
     // Close the file
     err = FSClose(refNum);
     VERIFY(err == noErr);
 
-done:
+  done:
     ;
 }
 
@@ -1861,12 +1873,12 @@ bool CWindow::DoReadPrefs()
 
     read = true;
 
-fail:
+  fail:
     // Close the file
     err = FSClose(refNum);
     VERIFY(err == noErr);
 
-done:
+  done:
     return read;
 }
 
@@ -2202,8 +2214,8 @@ void textbackground(int c)
 //---------------------------------------------------------------
 void gotoxy(int x, int y)
 {
-        ASSERT(x >= 1);
-        ASSERT(y >= 1);
+    ASSERT(x >= 1);
+    ASSERT(y >= 1);
     ASSERT(sWindow != nil);
 
     sWindow->SetCursor(x - 1, y - 1);
@@ -2437,10 +2449,10 @@ void init_mac()
 #endif
 
     // Add some menus
-  sAppleMenu = ::GetMenu(kAppleMenu);
-  sFileMenu = ::GetMenu(kFileMenu);
-  sFontMenu = ::GetMenu(kFontMenu);
-  sSizeMenu = ::GetMenu(kSizeMenu);
+  sAppleMenu =::GetMenu(kAppleMenu);
+  sFileMenu =::GetMenu(kFileMenu);
+  sFontMenu =::GetMenu(kFontMenu);
+  sSizeMenu =::GetMenu(kSizeMenu);
     if (sAppleMenu == NULL || sFileMenu == NULL || sFontMenu == NULL || sSizeMenu == NULL)
     {
         WarnUser("Couldn't load the menus!");

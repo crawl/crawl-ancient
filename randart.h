@@ -26,4 +26,5 @@ char does_unrandart_exist(int whun);
 int find_okay_unrandart(unsigned char aclass);
 void make_item_unrandart(int x, int ura_item);
 char *unrandart_descrip(char which_descrip, unsigned char aclass, unsigned char atype, unsigned char aplus, unsigned char aplus2);
+
 #endif

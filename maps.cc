@@ -134,7 +134,7 @@ char vault_main(char vgrid[81][81], int mons_array[7], int vault_force, int many
     mons_array[6] = 250;
 
 
-random_vault:
+  random_vault:
     if (vault_force == 100)
         vault_force2 = random2(14);
     else
@@ -326,7 +326,7 @@ random_vault:
 
 
 /*
-    key:
+   key:
    x - rock wall 1
    c - stone wall 2
    v - metal wall 4
@@ -2585,16 +2585,16 @@ char hall_of_blades(char vgrid[81][81], int mons_array[7])
 char hall_of_Zot(char vgrid[81][81], int mons_array[7])
 {
 
-    strcpy(vgrid[0],  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-    strcpy(vgrid[1],  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-    strcpy(vgrid[2],  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-    strcpy(vgrid[3],  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-    strcpy(vgrid[4],  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-    strcpy(vgrid[5],  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-    strcpy(vgrid[6],  "xxxxxxxxxxxxxxccccccccccccccccxxxxxxxxxxxxxxxxxxxxxxxccccccccccccccxxxxxxxxxxxxx");
-    strcpy(vgrid[7],  "xxxxxxxxxxxcccc..............ccccxxxxxxxxxxxxxxxxxcccc............ccccxxxxxxxxxx");
-    strcpy(vgrid[8],  "xxxxxxxxxxcc....................cccxxxxxxxxxxxxxccc..................ccxxxxxxxxx");
-    strcpy(vgrid[9],  "xxxxxxxxxcc.......................ccxxxxxxxxxxxcc.....................ccxxxxxxxx");
+    strcpy(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    strcpy(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    strcpy(vgrid[2], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    strcpy(vgrid[3], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    strcpy(vgrid[4], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    strcpy(vgrid[5], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    strcpy(vgrid[6], "xxxxxxxxxxxxxxccccccccccccccccxxxxxxxxxxxxxxxxxxxxxxxccccccccccccccxxxxxxxxxxxxx");
+    strcpy(vgrid[7], "xxxxxxxxxxxcccc..............ccccxxxxxxxxxxxxxxxxxcccc............ccccxxxxxxxxxx");
+    strcpy(vgrid[8], "xxxxxxxxxxcc....................cccxxxxxxxxxxxxxccc..................ccxxxxxxxxx");
+    strcpy(vgrid[9], "xxxxxxxxxcc.......................ccxxxxxxxxxxxcc.....................ccxxxxxxxx");
     strcpy(vgrid[10], "xxxxxxxxxc.........................cxcccccccccxc.......................cxxxxxxxx");
     strcpy(vgrid[11], "xxxxxxxxxc.........................ccc...1...ccc.......................cxxxxxxxx");
     strcpy(vgrid[12], "xxxxxxxxxcc........................cc..1...1..cc......................ccxxxxxxxx");

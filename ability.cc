@@ -58,7 +58,7 @@
 #include "view.h"
 
 #ifdef MACROS
-  #include "macro.h"
+#include "macro.h"
 #endif
 
 /*
@@ -220,7 +220,7 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if (you.species == SP_KENKU && you.experience_level > 4 && you.duration[DUR_CONTROLLED_FLIGHT] == 0 && you.levitation == 0)        // kenku can fly, but only from the ground (until levitation 15, when it becomes permanent until revoked)
+    if (you.species == SP_KENKU && you.experience_level > 4 && you.duration[DUR_CONTROLLED_FLIGHT] == 0 && you.levitation == 0)         // kenku can fly, but only from the ground (until levitation 15, when it becomes permanent until revoked)
 
     {
         ability[abil_c] = ABIL_FLY;
@@ -323,14 +323,14 @@ void species_ability()          /* Now handles all special abilities */
    always changing around */
 
     if (((you.equip[EQ_LEFT_RING] != -1
-                && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_INVISIBILITY)
-            || (you.equip[EQ_RIGHT_RING] != -1
-                && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_INVISIBILITY)
-            || (you.equip[EQ_CLOAK] != -1
-                && you.inv_dam[you.equip[EQ_CLOAK]] % 30 == SPARM_DARKNESS)
-            || (you.equip[EQ_HELMET] != -1
-                && you.inv_dam[you.equip[EQ_HELMET]] % 30 == SPARM_DARKNESS)
-            || scan_randarts(RAP_INVISIBLE) > 0)
+          && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_INVISIBILITY)
+         || (you.equip[EQ_RIGHT_RING] != -1
+             && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_INVISIBILITY)
+         || (you.equip[EQ_CLOAK] != -1
+             && you.inv_dam[you.equip[EQ_CLOAK]] % 30 == SPARM_DARKNESS)
+         || (you.equip[EQ_HELMET] != -1
+             && you.inv_dam[you.equip[EQ_HELMET]] % 30 == SPARM_DARKNESS)
+         || scan_randarts(RAP_INVISIBLE) > 0)
         && you.invis == 0)
     {
         ability[abil_c] = ABIL_TURN_INVISIBLE;
@@ -346,7 +346,7 @@ void species_ability()          /* Now handles all special abilities */
     }
 
     if ((you.equip[EQ_LEFT_RING] != -1
-            && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_LEVITATION)
+         && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_LEVITATION)
         || (you.equip[EQ_RIGHT_RING] != -1
             && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_LEVITATION)
         || (you.equip[EQ_BOOTS] != -1
@@ -373,7 +373,7 @@ void species_ability()          /* Now handles all special abilities */
     }
 
     if ((you.equip[EQ_LEFT_RING] != -1
-            && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_TELEPORTATION)
+         && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_TELEPORTATION)
         || (you.equip[EQ_RIGHT_RING] != -1
             && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_TELEPORTATION)
         || you.mutation[MUT_TELEPORT_AT_WILL] != 0
@@ -388,213 +388,217 @@ void species_ability()          /* Now handles all special abilities */
 
     abil_c = 26;
 
-    if (you.piety >= 30)
+    // God takes abilities away until you pay your penance
+    if (!player_under_penance())
     {
-        switch (you.religion)
+        if (you.piety >= 30)
         {
-        case GOD_ZIN:
-            ability[abil_c] = ABIL_REPEL_UNDEAD_I;
-            ability_fail[abil_c] = 30 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 6;
-            abil_c++;
-            break;
-        case GOD_SHINING_ONE:
-            ability[abil_c] = ABIL_REPEL_UNDEAD_II;
-            ability_fail[abil_c] = 30 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 6;
-            abil_c++;
-            break;
-        case GOD_KIKUBAAQUDGHA:
-            ability[abil_c] = ABIL_RECALL_UNDEAD_SLAVES;
-            ability_fail[abil_c] = 30 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 6;
-            abil_c++;
-            break;
-        case GOD_YREDELEMNUL:
-            ability[abil_c] = ABIL_ANIMATE_CORPSE;
-            ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 3;
-            abil_c++;
-            break;
-        case GOD_OKAWARU:
-            ability[abil_c] = ABIL_MIGHT_I;
-            ability_fail[abil_c] = 30 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 6;
-            abil_c++;
-            break;
-        case GOD_TROG:
-            ability[abil_c] = ABIL_GO_BERSERK_II;
-            ability_fail[abil_c] = 30 - you.piety;
-            abil_c++;
-            break;
-        case GOD_ELYVILON:
-            ability[abil_c] = ABIL_LESSER_HEALING;
-            ability_fail[abil_c] = 30 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 6;
-            abil_c++;
-            break;
+            switch (you.religion)
+            {
+            case GOD_ZIN:
+                ability[abil_c] = ABIL_REPEL_UNDEAD_I;
+                ability_fail[abil_c] = 30 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 6;
+                abil_c++;
+                break;
+            case GOD_SHINING_ONE:
+                ability[abil_c] = ABIL_REPEL_UNDEAD_II;
+                ability_fail[abil_c] = 30 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 6;
+                abil_c++;
+                break;
+            case GOD_KIKUBAAQUDGHA:
+                ability[abil_c] = ABIL_RECALL_UNDEAD_SLAVES;
+                ability_fail[abil_c] = 30 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 6;
+                abil_c++;
+                break;
+            case GOD_YREDELEMNUL:
+                ability[abil_c] = ABIL_ANIMATE_CORPSE;
+                ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 3;
+                abil_c++;
+                break;
+            case GOD_OKAWARU:
+                ability[abil_c] = ABIL_MIGHT_I;
+                ability_fail[abil_c] = 30 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 6;
+                abil_c++;
+                break;
+            case GOD_TROG:
+                ability[abil_c] = ABIL_GO_BERSERK_II;
+                ability_fail[abil_c] = 30 - you.piety;
+                abil_c++;
+                break;
+            case GOD_ELYVILON:
+                ability[abil_c] = ABIL_LESSER_HEALING;
+                ability_fail[abil_c] = 30 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 6;
+                abil_c++;
+                break;
+            }
         }
-    }
 
-    if (you.piety >= 50)
-    {
-        switch (you.religion)
+        if (you.piety >= 50)
         {
-        case GOD_ZIN:
-            ability[abil_c] = ABIL_MINOR_HEALING;
-            ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
-        case GOD_SHINING_ONE:
-            ability[abil_c] = ABIL_SMITING;
-            ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
-        case GOD_YREDELEMNUL:
-            ability[abil_c] = ABIL_RECALL_UNDEAD;
-            ability_fail[abil_c] = 50 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_OKAWARU:
-            ability[abil_c] = ABIL_HEALING_I;
-            ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
-        case GOD_MAKHLEB:
-            ability[abil_c] = ABIL_MINOR_DESTRUCTION;
-            ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
-        case GOD_SIF_MUNA:
-            ability[abil_c] = ABIL_FORGET_SPELL;
-            ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
-        case GOD_TROG:
-            ability[abil_c] = ABIL_MIGHT_II;
-            ability_fail[abil_c] = 40 - (you.piety / 3);
-            abil_c++;
-            break;
-        case GOD_ELYVILON:
-            ability[abil_c] = ABIL_PURIFICATION;
-            ability_fail[abil_c] = 20 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
+            switch (you.religion)
+            {
+            case GOD_ZIN:
+                ability[abil_c] = ABIL_MINOR_HEALING;
+                ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            case GOD_SHINING_ONE:
+                ability[abil_c] = ABIL_SMITING;
+                ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            case GOD_YREDELEMNUL:
+                ability[abil_c] = ABIL_RECALL_UNDEAD;
+                ability_fail[abil_c] = 50 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_OKAWARU:
+                ability[abil_c] = ABIL_HEALING_I;
+                ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            case GOD_MAKHLEB:
+                ability[abil_c] = ABIL_MINOR_DESTRUCTION;
+                ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            case GOD_SIF_MUNA:
+                ability[abil_c] = ABIL_FORGET_SPELL;
+                ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            case GOD_TROG:
+                ability[abil_c] = ABIL_MIGHT_II;
+                ability_fail[abil_c] = 40 - (you.piety / 3);
+                abil_c++;
+                break;
+            case GOD_ELYVILON:
+                ability[abil_c] = ABIL_PURIFICATION;
+                ability_fail[abil_c] = 20 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            }
         }
-    }
 
-    if (you.piety >= 75)
-    {
-        switch (you.religion)
+        if (you.piety >= 75)
         {
-        case GOD_ZIN:
-            ability[abil_c] = ABIL_PESTILENCE;
-            ability_fail[abil_c] = 60 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
-        case GOD_SHINING_ONE:
-            ability[abil_c] = ABIL_ANNIHILATE_UNDEAD;
-            ability_fail[abil_c] = 60 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
-        case GOD_KIKUBAAQUDGHA:
-            ability[abil_c] = ABIL_ENSLAVE_UNDEAD;
-            ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
-        case GOD_YREDELEMNUL:
-            ability[abil_c] = ABIL_ANIMATE_DEAD;
-            ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
-        case GOD_MAKHLEB:
-            ability[abil_c] = ABIL_LESSER_SERVANT_OF_MAKHLEB;
-            ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
-        case GOD_ELYVILON:
-            ability[abil_c] = ABIL_HEALING_II;
-            ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
-            abil_c++;
-            break;
+            switch (you.religion)
+            {
+            case GOD_ZIN:
+                ability[abil_c] = ABIL_PESTILENCE;
+                ability_fail[abil_c] = 60 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            case GOD_SHINING_ONE:
+                ability[abil_c] = ABIL_ANNIHILATE_UNDEAD;
+                ability_fail[abil_c] = 60 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            case GOD_KIKUBAAQUDGHA:
+                ability[abil_c] = ABIL_ENSLAVE_UNDEAD;
+                ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            case GOD_YREDELEMNUL:
+                ability[abil_c] = ABIL_ANIMATE_DEAD;
+                ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            case GOD_MAKHLEB:
+                ability[abil_c] = ABIL_LESSER_SERVANT_OF_MAKHLEB;
+                ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            case GOD_ELYVILON:
+                ability[abil_c] = ABIL_HEALING_II;
+                ability_fail[abil_c] = 40 - (you.piety / 10) - you.skills[SK_INVOCATIONS] * 5;
+                abil_c++;
+                break;
+            }
         }
-    }
 
-    if (you.piety >= 100)
-    {
-        switch (you.religion)
+        if (you.piety >= 100)
         {
-        case GOD_ZIN:
-            ability[abil_c] = ABIL_HOLY_WORD;
-            ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_SHINING_ONE:
-            ability[abil_c] = ABIL_THUNDERBOLT;
-            ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_YREDELEMNUL:
-            ability[abil_c] = ABIL_DRAIN_LIFE;
-            ability_fail[abil_c] = 60 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_VEHUMET:
-            ability[abil_c] = ABIL_CHANNEL_ENERGY;
-            ability_fail[abil_c] = 40 - you.intel - you.skills[SK_INVOCATIONS];
-            abil_c++;
-            break;
-        case GOD_MAKHLEB:
-            ability[abil_c] = ABIL_MAJOR_DESTRUCTION;
-            ability_fail[abil_c] = 60 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_TROG:
-            ability[abil_c] = ABIL_HASTE_SELF;
-            ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_ELYVILON:
-            ability[abil_c] = ABIL_RESTORATION;
-            ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
+            switch (you.religion)
+            {
+            case GOD_ZIN:
+                ability[abil_c] = ABIL_HOLY_WORD;
+                ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_SHINING_ONE:
+                ability[abil_c] = ABIL_THUNDERBOLT;
+                ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_YREDELEMNUL:
+                ability[abil_c] = ABIL_DRAIN_LIFE;
+                ability_fail[abil_c] = 60 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_VEHUMET:
+                ability[abil_c] = ABIL_CHANNEL_ENERGY;
+                ability_fail[abil_c] = 40 - you.intel - you.skills[SK_INVOCATIONS];
+                abil_c++;
+                break;
+            case GOD_MAKHLEB:
+                ability[abil_c] = ABIL_MAJOR_DESTRUCTION;
+                ability_fail[abil_c] = 60 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_TROG:
+                ability[abil_c] = ABIL_HASTE_SELF;
+                ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_ELYVILON:
+                ability[abil_c] = ABIL_RESTORATION;
+                ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            }
         }
-    }
 
-    if (you.piety >= 120)
-    {
-        switch (you.religion)
+        if (you.piety >= 120)
         {
-        case GOD_ZIN:
-            ability[abil_c] = ABIL_SUMMON_GUARDIAN;
-            ability_fail[abil_c] = 80 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_SHINING_ONE:
-            ability[abil_c] = ABIL_SUMMON_DAEVA;
-            ability_fail[abil_c] = 80 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_KIKUBAAQUDGHA:
-            ability[abil_c] = ABIL_INVOKE_DEATH;
-            ability_fail[abil_c] = 80 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_YREDELEMNUL:
-            ability[abil_c] = ABIL_CONTROL_UNDEAD;
-            ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_OKAWARU:
-            ability[abil_c] = ABIL_HASTE;
-            ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_MAKHLEB:
-            ability[abil_c] = ABIL_GREATER_SERVANT_OF_MAKHLEB;
-            ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
-        case GOD_ELYVILON:
-            ability[abil_c] = ABIL_GREATER_HEALING;
-            ability_fail[abil_c] = 80 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
-            abil_c++;
-            break;
+            switch (you.religion)
+            {
+            case GOD_ZIN:
+                ability[abil_c] = ABIL_SUMMON_GUARDIAN;
+                ability_fail[abil_c] = 80 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_SHINING_ONE:
+                ability[abil_c] = ABIL_SUMMON_DAEVA;
+                ability_fail[abil_c] = 80 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_KIKUBAAQUDGHA:
+                ability[abil_c] = ABIL_INVOKE_DEATH;
+                ability_fail[abil_c] = 80 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_YREDELEMNUL:
+                ability[abil_c] = ABIL_CONTROL_UNDEAD;
+                ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_OKAWARU:
+                ability[abil_c] = ABIL_HASTE;
+                ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_MAKHLEB:
+                ability[abil_c] = ABIL_GREATER_SERVANT_OF_MAKHLEB;
+                ability_fail[abil_c] = 70 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            case GOD_ELYVILON:
+                ability[abil_c] = ABIL_GREATER_HEALING;
+                ability_fail[abil_c] = 80 - (you.piety / 15) - you.skills[SK_INVOCATIONS] * 4;
+                abil_c++;
+                break;
+            }
         }
     }
 
@@ -635,7 +639,7 @@ void species_ability()          /* Now handles all special abilities */
    }
  */
 
-query:
+  query:
     strcpy(info, "Use which ability? (? or * to list)");
     mpr(info);
 
@@ -667,7 +671,7 @@ query:
 
     if ((spc < 97 || spc > 121) && (spc < 65 || spc > 90))
     {
-unknown:
+      unknown:
         strcpy(info, "You can't do that.");
         mpr(info);
         return;
@@ -835,8 +839,8 @@ unknown:
             mpr(info);
             return;
         }
-        if ( !go_berserk() )
-          mpr("You fail to go berserk.");
+        if (!go_berserk())
+            mpr("You fail to go berserk.");
         break;
 
     case ABIL_FLY:              // Fly (kenku). Eventually becomes permanent (handled in acr.cc)
@@ -1150,7 +1154,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 100 + random2(100) + random2(100);
         summon_swarm(you.piety);
-        lose_piety( ( (coinflip()) ? 3 : 2 ) );
+        lose_piety(((coinflip())? 3 : 2));
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
@@ -1164,7 +1168,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 150 + random2(150) + random2(150);
         holy_word(you.piety);
-        lose_piety( ( (coinflip()) ? 4 : 3 ) );
+        lose_piety(((coinflip())? 4 : 3));
         exercise(SK_INVOCATIONS, 3 + random2(5));
         break;
 
@@ -1193,7 +1197,7 @@ unknown:
         you.hunger -= 50 + random2(50) + random2(50);
         cast_smiting(you.skills[SK_INVOCATIONS] * 8);
         lose_piety(1);
-        exercise( SK_INVOCATIONS, ( (coinflip()) ? 3 : 2 ) );
+        exercise(SK_INVOCATIONS, ((coinflip())? 3 : 2));
         break;
 
     case ABIL_ANNIHILATE_UNDEAD:
@@ -1211,7 +1215,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 50 + random2(50) + random2(50);
         zapping(ZAP_DISPEL_UNDEAD, you.skills[SK_INVOCATIONS] * 6, beam);
-        lose_piety( ( (coinflip()) ? 2 : 1 ) );
+        lose_piety(((coinflip())? 2 : 1));
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
@@ -1230,7 +1234,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 100 + random2(100) + random2(100);
         zapping(ZAP_LIGHTNING, you.skills[SK_INVOCATIONS] * 6, beam);
-        lose_piety( ( (coinflip()) ? 2 : 1 ) );
+        lose_piety(((coinflip())? 2 : 1));
         exercise(SK_INVOCATIONS, 3 + random2(6));
         break;
 
@@ -1276,7 +1280,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 150 + random2(150) + random2(150);
         zapping(ZAP_ENSLAVE_UNDEAD, you.skills[SK_INVOCATIONS] * 8, beam);
-        lose_piety( ( (coinflip()) ? 3 : 2 ) );
+        lose_piety(((coinflip())? 3 : 2));
         exercise(SK_INVOCATIONS, 5 + random2(5));
         break;
 
@@ -1295,7 +1299,8 @@ unknown:
         break;
 
 
-    case ABIL_ANIMATE_CORPSE:   /* Animate Skeleton */  // but class allowed is body, so which is it? 19jan2000 {dlb}
+    case ABIL_ANIMATE_CORPSE:   /* Animate Skeleton */// but class allowed is body, so which is it? 19jan2000 {dlb}
+
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1334,7 +1339,7 @@ unknown:
         mpr("You call on the dead to walk for you...");
         animate_dead(you.skills[SK_INVOCATIONS] + 1, 7, you.pet_target, 1);
         exercise(SK_INVOCATIONS, 2 + random2(4));
-        lose_piety( ( (coinflip()) ? 2 : 1 ) );
+        lose_piety(((coinflip())? 2 : 1));
         break;
 
     case ABIL_DRAIN_LIFE:
@@ -1435,7 +1440,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 20 + random2(20) + random2(20);
 
-        power = random2avg( (you.skills[SK_INVOCATIONS] * 6), 2 );
+        power = random2avg((you.skills[SK_INVOCATIONS] * 6), 2);
 
         switch (random2(5))
         {
@@ -1456,7 +1461,7 @@ unknown:
             zapping(ZAP_BREATHE_ACID, power, beam);
             break;
         }
-        exercise( SK_INVOCATIONS, ( (coinflip()) ? 2 : 1 ) );
+        exercise(SK_INVOCATIONS, ((coinflip())? 2 : 1));
         break;
 
     case ABIL_LESSER_SERVANT_OF_MAKHLEB:        /* minor summoning */
@@ -1469,7 +1474,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 50 + random2(50) + random2(50);
         summon_ice_beast_etc(20 + you.skills[SK_INVOCATIONS] * 3, 225 + random2(5));
-        lose_piety( ( (coinflip()) ? 2 : 1 ) );
+        lose_piety(((coinflip())? 2 : 1));
         exercise(SK_INVOCATIONS, 2 + random2(3));
         break;
 
@@ -1526,7 +1531,7 @@ unknown:
             you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
             break;
         }
-        lose_piety( ( (coinflip()) ? 2 : 1 ) );
+        lose_piety(((coinflip())? 2 : 1));
         exercise(SK_INVOCATIONS, 3 + random2(5));
         break;
 
@@ -1540,7 +1545,7 @@ unknown:
         you.redraw_magic_points = 1;
         you.hunger -= 100 + random2(50) + random2(50);
         summon_ice_beast_etc(20 + you.skills[SK_INVOCATIONS] * 3, 230 + random2(5));
-        lose_piety( ( (coinflip()) ? 3 : 2 ) );
+        lose_piety(((coinflip())? 3 : 2));
         exercise(SK_INVOCATIONS, 6 + random2(6));
         break;
 
@@ -1553,15 +1558,15 @@ unknown:
             mpr(info);
             return;
         }
-        if ( !go_berserk() )
-          mpr("You fail to go berserk.");
+        if (!go_berserk())
+            mpr("You fail to go berserk.");
         you.hunger -= 100 + random2(100) + random2(100);
         //exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
     case ABIL_MIGHT_II: /* might */
         potion_effect(POT_MIGHT, you.skills[SK_INVOCATIONS] * 6);
-        lose_piety( ( (coinflip()) ? 2 : 1 ) );
+        lose_piety(((coinflip())? 2 : 1));
         you.hunger -= 200 + random2(200) + random2(200);
         //exercise(SK_INVOCATIONS, 2 + random2(5));
         break;
@@ -1593,7 +1598,7 @@ unknown:
         if (cast_lesser_healing() == 0)
             break;
         you.hunger -= 100 + random2(100) + random2(100);
-        exercise( SK_INVOCATIONS, ( (coinflip()) ? 2 : 1 ) );
+        exercise(SK_INVOCATIONS, ((coinflip())? 2 : 1));
         break;
 
     case ABIL_PURIFICATION:

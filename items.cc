@@ -70,8 +70,8 @@ void item_check(char keyin)
     int counter = 0;
     int counter_max = 0;
 
-    if ( env.grid[you.x_pos][you.y_pos] >= DNGN_ENTER_HELL
-        && env.grid[you.x_pos][you.y_pos] <= DNGN_PERMADRY_FOUNTAIN )
+    if (env.grid[you.x_pos][you.y_pos] >= DNGN_ENTER_HELL
+        && env.grid[you.x_pos][you.y_pos] <= DNGN_PERMADRY_FOUNTAIN)
     {
         if (env.grid[you.x_pos][you.y_pos] >= DNGN_STONE_STAIRS_DOWN_I && env.grid[you.x_pos][you.y_pos] <= DNGN_ROCK_STAIRS_DOWN)
         {
@@ -285,7 +285,7 @@ void item_check(char keyin)
         it_name(objl, 3, str_pass);
         strcpy(item_show[counter], str_pass);
 
-linking:
+      linking:
         hrg = mitm.link[objl];
         objl = hrg;
     }
@@ -336,7 +336,7 @@ void pickup()
     char str_pass[50];
     char keyin = 0;
 
-    if ( you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT) )
+    if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
     {
         mpr("You can't reach the floor from up here.");
         return;
@@ -547,8 +547,8 @@ int add_item(int item_got, int quant_got)
     }
 
     if (mitm.base_type[item_got] <= OBJ_ARMOUR
-                || mitm.base_type[item_got] == OBJ_FOOD
-                || mitm.base_type[item_got] == OBJ_MISCELLANY)
+        || mitm.base_type[item_got] == OBJ_FOOD
+        || mitm.base_type[item_got] == OBJ_MISCELLANY)
     {
         unit_mass = mass(mitm.base_type[item_got], mitm.sub_type[item_got]);
     }
@@ -646,26 +646,26 @@ int add_item(int item_got, int quant_got)
     for (m = 0; m < 52; m++)
     {
 
-        if ( ( mitm.base_type[item_got] == OBJ_MISSILES
-                || (mitm.base_type[item_got] == OBJ_FOOD && mitm.sub_type[item_got] != FOOD_CHUNK)
-                || mitm.base_type[item_got] == OBJ_SCROLLS
-                || mitm.base_type[item_got] == OBJ_POTIONS
-                || (mitm.base_type[item_got] == OBJ_MISCELLANY && mitm.sub_type[item_got] == MISC_RUNE_OF_ZOT)
-                || mitm.base_type[item_got] == OBJ_UNKNOWN_II )
+        if ((mitm.base_type[item_got] == OBJ_MISSILES
+             || (mitm.base_type[item_got] == OBJ_FOOD && mitm.sub_type[item_got] != FOOD_CHUNK)
+             || mitm.base_type[item_got] == OBJ_SCROLLS
+             || mitm.base_type[item_got] == OBJ_POTIONS
+             || (mitm.base_type[item_got] == OBJ_MISCELLANY && mitm.sub_type[item_got] == MISC_RUNE_OF_ZOT)
+             || mitm.base_type[item_got] == OBJ_UNKNOWN_II)
             && you.inv_class[m] == mitm.base_type[item_got]
             && you.inv_type[m] == mitm.sub_type[item_got]
-            && ( ( (mitm.base_type[item_got] == OBJ_FOOD && mitm.sub_type[item_got] != FOOD_CHUNK)
-                    || mitm.base_type[item_got] == OBJ_SCROLLS
-                    || mitm.base_type[item_got] == OBJ_POTIONS)
-                || ( you.inv_plus[m] == mitm.pluses[item_got]
+            && (((mitm.base_type[item_got] == OBJ_FOOD && mitm.sub_type[item_got] != FOOD_CHUNK)
+                 || mitm.base_type[item_got] == OBJ_SCROLLS
+                 || mitm.base_type[item_got] == OBJ_POTIONS)
+                || (you.inv_plus[m] == mitm.pluses[item_got]
                     && you.inv_plus2[m] == mitm.pluses2[item_got]
-                    && you.inv_dam[m] == mitm.special[item_got] ) )
-            && you.inv_quantity[m] > 0 )
+                    && you.inv_dam[m] == mitm.special[item_got]))
+            && you.inv_quantity[m] > 0)
         {
             if (mitm.id[item_got] == you.inv_ident[m]
-                    || mitm.base_type[item_got] == OBJ_FOOD
-                    || mitm.base_type[item_got] == OBJ_SCROLLS
-                    || mitm.base_type[item_got] == OBJ_POTIONS)
+                || mitm.base_type[item_got] == OBJ_FOOD
+                || mitm.base_type[item_got] == OBJ_SCROLLS
+                || mitm.base_type[item_got] == OBJ_POTIONS)
             {
                 you.inv_quantity[m] += quant_got;
                 burden_change();
@@ -742,7 +742,7 @@ int add_item(int item_got, int quant_got)
 
     you.turn_is_over = 1;
 
-change_igrid:
+  change_igrid:
     mitm.quantity[item_got] -= quant_got;       //= 0;
 
     if (mitm.quantity[item_got] == 0)
@@ -821,17 +821,17 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
 
     if (igrd[x_plos][y_plos] != ING)
     {
-        if ( ( you.inv_class[item_drop_2] == OBJ_MISSILES
-                || you.inv_class[item_drop_2] == OBJ_FOOD
-                || you.inv_class[item_drop_2] == OBJ_SCROLLS
-                || you.inv_class[item_drop_2] == OBJ_POTIONS
-                || you.inv_class[item_drop_2] == OBJ_UNKNOWN_II )
-            && you.inv_class[item_drop_2] == mitm.base_type[igrd[x_plos][y_plos]]
-            && you.inv_type[item_drop_2] == mitm.sub_type[igrd[x_plos][y_plos]]
+        if ((you.inv_class[item_drop_2] == OBJ_MISSILES
+             || you.inv_class[item_drop_2] == OBJ_FOOD
+             || you.inv_class[item_drop_2] == OBJ_SCROLLS
+             || you.inv_class[item_drop_2] == OBJ_POTIONS
+             || you.inv_class[item_drop_2] == OBJ_UNKNOWN_II)
+        && you.inv_class[item_drop_2] == mitm.base_type[igrd[x_plos][y_plos]]
+         && you.inv_type[item_drop_2] == mitm.sub_type[igrd[x_plos][y_plos]]
             && you.inv_plus[item_drop_2] == mitm.pluses[igrd[x_plos][y_plos]]
-            && you.inv_plus2[item_drop_2] == mitm.pluses2[igrd[x_plos][y_plos]]
+         && you.inv_plus2[item_drop_2] == mitm.pluses2[igrd[x_plos][y_plos]]
             && you.inv_dam[item_drop_2] == mitm.special[igrd[x_plos][y_plos]]
-            && mitm.quantity[igrd[x_plos][y_plos]] > 0 )
+            && mitm.quantity[igrd[x_plos][y_plos]] > 0)
         {
             if (you.inv_ident[item_drop_2] == mitm.id[igrd[x_plos][y_plos]])
             {
@@ -1108,13 +1108,13 @@ void update_corpses(double elapsedTime)
                 continue;
 
             if (mitm.base_type[c] != OBJ_CORPSES
-                                        && mitm.base_type[c] != OBJ_FOOD)
+                && mitm.base_type[c] != OBJ_FOOD)
             {
                 continue;
             }
 
             if (mitm.base_type[c] == OBJ_CORPSES
-                                        && mitm.sub_type[c] > CORPSE_SKELETON)
+                && mitm.sub_type[c] > CORPSE_SKELETON)
             {
                 continue;
             }
@@ -1132,7 +1132,7 @@ void update_corpses(double elapsedTime)
                 else
                 {
                     if (mitm.sub_type[c] == CORPSE_SKELETON
-                                    || mons_skeleton(mitm.pluses[c]) == 0)
+                        || mons_skeleton(mitm.pluses[c]) == 0)
                     {
                         destroy_item(c);
 
@@ -1166,7 +1166,7 @@ void update_corpses(double elapsedTime)
 void handle_time(int time_delta)
 {
     // Nasty things happen to people who spend too long in Hell
-    if (you.where_are_you > 0 && you.where_are_you < 10 && you.where_are_you != BRANCH_VESTIBULE_OF_HELL && coinflip() )
+    if (you.where_are_you > 0 && you.where_are_you < 10 && you.where_are_you != BRANCH_VESTIBULE_OF_HELL && coinflip())
     {
         switch (random2(17))
         {
@@ -1229,77 +1229,87 @@ void handle_time(int time_delta)
             break;
         }
 
-        if ( one_chance_in(3) )
+        if (one_chance_in(3))
         {
-         if ( coinflip() ) miscast_effect(SPTYP_NECROMANCY, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-          else if ( coinflip() ) miscast_effect(SPTYP_SUMMONING, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-            else if ( coinflip() ) miscast_effect(SPTYP_CONJURATION, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-                else if ( coinflip() ) miscast_effect(SPTYP_ENCHANTMENT, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+            if (coinflip())
+                miscast_effect(SPTYP_NECROMANCY, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+            else if (coinflip())
+                miscast_effect(SPTYP_SUMMONING, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+            else if (coinflip())
+                miscast_effect(SPTYP_CONJURATION, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+            else if (coinflip())
+                miscast_effect(SPTYP_ENCHANTMENT, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
         }
-        else
-            if ( one_chance_in(3) )
-                switch(you.where_are_you)
-                {
-                 case BRANCH_DIS: miscast_effect(SPTYP_EARTH, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-                      break;
-                 case BRANCH_GEHENNA: miscast_effect(SPTYP_FIRE, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-                      break;
-                 case BRANCH_COCYTUS: miscast_effect(SPTYP_ICE, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-                      break;
-                 case BRANCH_TARTARUS: miscast_effect(SPTYP_NECROMANCY, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-                      break;
-                }
-        else
-          if ( one_chance_in(3) )
-            switch(you.where_are_you)
-                {
-                 case BRANCH_DIS: create_monster(summon_any_demon(DEMON_GREATER), 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-                      break;
-                 case BRANCH_GEHENNA: create_monster(MONS_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-                      break;
-                 case BRANCH_COCYTUS: create_monster(MONS_ICE_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-                      break;
-                 case BRANCH_TARTARUS: create_monster(MONS_SHADOW_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-                      break;
-                }
+        else if (one_chance_in(3))
+            switch (you.where_are_you)
+            {
+            case BRANCH_DIS:
+                miscast_effect(SPTYP_EARTH, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                break;
+            case BRANCH_GEHENNA:
+                miscast_effect(SPTYP_FIRE, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                break;
+            case BRANCH_COCYTUS:
+                miscast_effect(SPTYP_ICE, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                break;
+            case BRANCH_TARTARUS:
+                miscast_effect(SPTYP_NECROMANCY, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+                break;
+            }
+        else if (one_chance_in(3))
+            switch (you.where_are_you)
+            {
+            case BRANCH_DIS:
+                create_monster(summon_any_demon(DEMON_GREATER), 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+                break;
+            case BRANCH_GEHENNA:
+                create_monster(MONS_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+                break;
+            case BRANCH_COCYTUS:
+                create_monster(MONS_ICE_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+                break;
+            case BRANCH_TARTARUS:
+                create_monster(MONS_SHADOW_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+                break;
+            }
 
 // Note no "else". This can happen in addition to the above...
 
-    if ( one_chance_in(3) )
-    {
-        create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-        if ( one_chance_in(3) )
+        if (one_chance_in(3))
+        {
             create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+            if (one_chance_in(3))
+                create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
 
-        if ( one_chance_in(3) )
-            create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+            if (one_chance_in(3))
+                create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
 
-        if ( one_chance_in(3) )
-            create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+            if (one_chance_in(3))
+                create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
 
-        if ( one_chance_in(3) )
-            create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-    }
-    } // End of special Hellish things
+            if (one_chance_in(3))
+                create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+        }
+    }                           // End of special Hellish things
 
     // Adjust the player's stats if s/he's diseased (or recovering).
     if (you.disease == 0)
     {
-        if (you.strength < you.max_strength && one_chance_in(100) )
+        if (you.strength < you.max_strength && one_chance_in(100))
         {
             mpr("You feel your strength returning.");
             you.strength++;
             you.redraw_strength = 1;
         }
 
-        if (you.dex < you.max_dex && one_chance_in(100) )
+        if (you.dex < you.max_dex && one_chance_in(100))
         {
             mpr("You feel your dexterity returning.");
             you.dex++;
             you.redraw_dexterity = 1;
         }
 
-        if (you.intel < you.max_intel && one_chance_in(100) )
+        if (you.intel < you.max_intel && one_chance_in(100))
         {
             mpr("You feel your intelligence returning.");
             you.intel++;
@@ -1309,7 +1319,7 @@ void handle_time(int time_delta)
     }
     else
     {
-        if ( one_chance_in(30) )
+        if (one_chance_in(30))
         {
             mpr("Your disease is taking its toll.");
             lose_stat(100, 1);
@@ -1321,18 +1331,18 @@ void handle_time(int time_delta)
         lose_stat(100, 1);
 
     // Account for mutagenic radiation
-    if ( you.invis > 0 || (you.haste > 0 && you.berserker == 0))
-        if ( you.magic_contamination < 100 && one_chance_in(10) )
+    if (you.invis > 0 || (you.haste > 0 && you.berserker == 0))
+        if (you.magic_contamination < 100 && one_chance_in(10))
             you.magic_contamination++;
 
     you.magic_contamination += random2(scan_randarts(RAP_MUTAGENIC) + 1);
 
-    if ( you.magic_contamination > 0 && coinflip() )
+    if (you.magic_contamination > 0 && coinflip())
     {
         if (you.magic_contamination > 4 && random2(150) <= you.magic_contamination)
         {
             mpr("You've accumulated too much magical radiation!");
-            if ( coinflip() )
+            if (coinflip())
                 mutate(100);
             else
                 give_bad_mutation();
@@ -1342,10 +1352,10 @@ void handle_time(int time_delta)
 
     // Random chance to identify staff in hand based off of Spellcasting
     // and an appropriate other spell skill... is 1/20 too fast?
-    if ( you.equip[EQ_WEAPON] != -1
+    if (you.equip[EQ_WEAPON] != -1
         && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
         && you.inv_ident[you.equip[EQ_WEAPON]] == 0
-        && one_chance_in(20) )
+        && one_chance_in(20))
     {
         int total_skill = you.skills[SK_SPELLCASTING];
 
@@ -1421,31 +1431,59 @@ void handle_time(int time_delta)
         }
     }
 
+    //
+    // Check to see if an upset god wants to do something to the player
+    //
+    if (one_chance_in(100))
+    {
+        int which_god = GOD_NO_GOD;
+        int count = 0;
+
+        // Choose a god randomly from those we owe penance to.
+        for (int i = GOD_NO_GOD; i <= GOD_ELYVILON; i++)
+        {
+            if (you.penance[i])
+            {
+                count++;
+                if (one_chance_in(count))
+                {
+                    which_god = i;
+                }
+            }
+        }
+
+        if (which_god != GOD_NO_GOD)
+        {
+            divine_retribution( which_god );
+        }
+    }
+
     // Update the god's opinion of the player
     if (you.religion != GOD_NO_GOD)
     {
         switch (you.religion)
         {
         case GOD_XOM:
-            if ( one_chance_in(75) )
+            if (one_chance_in(75))
                 Xom_acts(1, you.experience_level + random2(15), 1);
             break;
 
         case GOD_ZIN:           // These gods like long-standing worshippers
+
         case GOD_ELYVILON:
-            if ( you.piety < 150 && one_chance_in(20) )
+            if (you.piety < 150 && one_chance_in(20))
                 gain_piety(1);
             break;
 
         case GOD_SHINING_ONE:
-            if ( you.piety < 150 && one_chance_in(15) )
+            if (you.piety < 150 && one_chance_in(15))
                 gain_piety(1);
             break;
 
         case GOD_YREDELEMNUL:
         case GOD_KIKUBAAQUDGHA:
         case GOD_VEHUMET:
-            if ( one_chance_in(17) )
+            if (one_chance_in(17))
                 lose_piety(1);
             if (you.piety <= 0)
                 excommunication();
@@ -1454,30 +1492,31 @@ void handle_time(int time_delta)
         case GOD_OKAWARU:       // These gods accept corpses, so they time-out faster:
 
         case GOD_TROG:
-            if ( one_chance_in(14) )
+            if (one_chance_in(14))
                 lose_piety(1);
             if (you.piety <= 0)
                 excommunication();
             break;
 
         case GOD_MAKHLEB:
-            if ( one_chance_in(16) )
+            if (one_chance_in(16))
                 lose_piety(1);
             if (you.piety <= 0)
                 excommunication();
             break;
 
         case GOD_SIF_MUNA:
-            if ( one_chance_in(20) )
+            if (one_chance_in(20))
                 lose_piety(1);
             if (you.piety <= 0)
                 excommunication();
             break;
 
         case GOD_NEMELEX_XOBEH: // relatively patient
-            if ( one_chance_in(35) )
+
+            if (one_chance_in(35))
                 lose_piety(1);
-            if (you.attribute[ATTR_CARD_COUNTDOWN] > 0 && coinflip() )
+            if (you.attribute[ATTR_CARD_COUNTDOWN] > 0 && coinflip())
                 you.attribute[ATTR_CARD_COUNTDOWN]--;
             if (you.piety <= 0)
                 excommunication();
@@ -1559,11 +1598,11 @@ void handle_time(int time_delta)
         goto practise_stealth;
 
     // lowered the random roll from % 7 to % 6 -- bwross
-    if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && one_chance_in(6) )
+    if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && one_chance_in(6))
         exercise(SK_ARMOUR, 1);
 
     // also skills:
-practise_stealth:
+  practise_stealth:
     if (you.burden_state || you.berserker)
         return;
 
@@ -1571,7 +1610,7 @@ practise_stealth:
     {
         if (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30 != 4)   /* elven armours don't hamper stealth */
             if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 1 && (you.inv_type[you.equip[EQ_BODY_ARMOUR]] < 22 || you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 25))  /* neither do robes or steam/mottled DSM */
-                if (random2( mass(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) ) >= 100 || !one_chance_in(3) )
+                if (random2(mass(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]])) >= 100 || !one_chance_in(3))
                     return;
     }
 
@@ -1580,7 +1619,7 @@ practise_stealth:
     if (you.special_wield == 50)
         return;                 // shadow lantern stops stealth
 
-    if ( one_chance_in(6) )
+    if (one_chance_in(6))
         exercise(SK_STEALTH, 1);
 }                               // end handle_time
 
@@ -1592,18 +1631,19 @@ int autopickup_on = 1;
 void autopickup()
 {
     //David Loewenstern 6/99
-    int  items_here = 0;
-    int  result, o, hrg;
+    int items_here = 0;
+    int result, o, hrg;
     bool did_pickup = false;
 
     if (autopickup_on == 0 || autopickups == 0L)
         return;
 
-    if ( you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT) )
+    if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
         return;                 //flying
 
     o = env.igrid[you.x_pos][you.y_pos];
     if (o == ING)               //no objs
+
         return;
 
     last_item = ING;
@@ -1626,6 +1666,7 @@ void autopickup()
             }
 
             if (result != 1)    //item still there?
+
                 last_item = o;
 
             did_pickup = true;

@@ -23,4 +23,5 @@ void sticky_flame_monster(int mn, char source, int power);
 void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char ctarget_y, unsigned char cl_range);
 void tracer_f(int i, struct bolt beem[1]);
 void mimic_alert(int mimic);
+
 #endif

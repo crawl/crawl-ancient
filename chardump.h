@@ -12,4 +12,5 @@
 #define CHARDUMP_H
 
 bool dump_char(char show_prices, char fname[30]);
+
 #endif

@@ -27,4 +27,5 @@ void scrolls_burn(char burn_strength, char target_class);
 void ouch(int dam, char death_source, char death_type);
 void lose_level(void);
 void drain_exp(void);
+
 #endif

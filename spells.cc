@@ -29,6 +29,7 @@
 
 #include "bang.h"
 #include "beam.h"
+#include "dungeon.h"
 #include "effects.h"
 #include "invent.h"
 #include "items.h"
@@ -49,7 +50,7 @@
 #include "view.h"
 
 #ifdef MACROS
-  #include "macro.h"
+#include "macro.h"
 #endif
 
 char mutate(int which_mutation);
@@ -161,7 +162,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
 
         case 1:         // a bit less harmless stuff
 
-            switch ( random2(2) )
+            switch (random2(2))
             {
             case 0:
                 strcpy(info, "Smoke pours from your fingertips!");
@@ -178,7 +179,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
 
         case 2:         // rather less harmless stuff
 
-            switch ( random2(2) )
+            switch (random2(2))
             {
             case 0:
                 mpr("Energy rips through your body!");
@@ -192,8 +193,9 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 beam[0].type = 43;
                 beam[0].damage = 112;
-                beam[0].flavour = BEAM_MISSILE;    // unsure about this
-                                                   // BEAM_EXPLOSION instead? {dlb}
+                beam[0].flavour = BEAM_MISSILE;         // unsure about this
+                // BEAM_EXPLOSION instead? {dlb}
+
                 beam[0].bx = you.x_pos;
                 beam[0].by = you.y_pos;
                 strcpy(beam[0].beam_name, "explosion");
@@ -208,7 +210,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
 
         case 3:         // considerably less harmless stuff
 
-            switch ( random2(2) )
+            switch (random2(2))
             {
             case 0:
                 strcpy(info, "You are blasted with magical energy!");
@@ -220,8 +222,9 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 beam[0].type = 43;
                 beam[0].damage = 120;
-                beam[0].flavour = BEAM_MISSILE;    // unsure about this
-                                                   // BEAM_EXPLOSION instead? {dlb}
+                beam[0].flavour = BEAM_MISSILE;         // unsure about this
+                // BEAM_EXPLOSION instead? {dlb}
+
                 beam[0].bx = you.x_pos;
                 beam[0].by = you.y_pos;
                 strcpy(beam[0].beam_name, "explosion");
@@ -293,9 +296,11 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // much more annoying
+
             switch (random2(3))
             {
             case 0:             // curse
+
                 curse_an_item(0, 0);
                 strcpy(info, "You sense a malignant aura.");
                 mpr(info);
@@ -310,16 +315,20 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // potentially lethal
+
             switch (random2(4))
             {
             case 0:             // curse
-              do {
-                curse_an_item(0, 0);
-                loopj = random2(3);
-              } while (loopj != 0);
-              strcpy(info, "You sense an overwhelmingly malignant aura!");
-              mpr(info);
-              break;
+
+                do
+                {
+                    curse_an_item(0, 0);
+                    loopj = random2(3);
+                }
+                while (loopj != 0);
+                strcpy(info, "You sense an overwhelmingly malignant aura!");
+                mpr(info);
+                break;
             case 1:
                 potion_effect(POT_PARALYSIS, 10);
                 break;
@@ -340,6 +349,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         switch (spec_effect)
         {
         case 0:         // harmless messages only
+
             switch (random2(10))
             {
             case 0:
@@ -377,6 +387,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // mostly harmless
+
             switch (random2(3))
             {
             case 0:
@@ -401,6 +412,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // less harmless
+
             switch (random2(2))
             {
             case 0:
@@ -413,12 +425,13 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             case 1:
                 strcpy(info, "Space warps around you!");
                 mpr(info);
-                if ( one_chance_in(3) )
+                if (one_chance_in(3))
                     you_teleport2(true);
                 else
                     random_blink();
                 ouch(5 + random2(5) + random2(5), 0, KILLED_BY_WILD_MAGIC);
                 potion_effect(POT_CONFUSION, 10);       // conf
+
                 break;
             case 2:
                 strcpy(info, "Space twists in upon itself!");
@@ -432,6 +445,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // much less harmless
+
             switch (random2(4))
             {
             case 0:
@@ -453,6 +467,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 more();
                 banished(96);   // sends you to the abyss
+
                 break;
             case 3:
                 if (mutate(100) == 0)
@@ -467,6 +482,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         switch (spec_effect)
         {
         case 0:         // harmless messages only
+
             switch (random2(10))
             {
             case 0:
@@ -504,9 +520,11 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a little bad
+
             switch (random2(3))
             {
             case 0:             // identical to translocation
+
                 strcpy(info, "You create a localised field of spatial distortion.");
                 mpr(info);
                 strcpy(info, "Ouch!");
@@ -526,6 +544,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             }
 
         case 2:         // more bad
+
             switch (random2(3))
             {
             case 0:
@@ -546,13 +565,16 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
                 create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
-                if ( coinflip() ) create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
-                if ( coinflip() ) create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                if (coinflip())
+                    create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                if (coinflip())
+                    create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
                 break;
             }
             break;
 
         case 3:         // more bad
+
             switch (random2(4))
             {
             case 0:
@@ -570,23 +592,27 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 create_monster(summon_any_demon(DEMON_COMMON), 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
                 create_monster(summon_any_demon(DEMON_COMMON), 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
-                if ( coinflip() ) create_monster(summon_any_demon(DEMON_COMMON), 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                if (coinflip())
+                    create_monster(summon_any_demon(DEMON_COMMON), 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
                 break;
             case 3:
                 strcpy(info, "You are cast into the Abyss!");
                 mpr(info);
                 banished(96);   // sends you to the abyss
+
                 break;
             }
             break;
 // A powerful entity turns its attention onto you
         }                       // end Summonings
+
         break;
 
     case SPTYP_DIVINATION:
         switch (spec_effect)
         {
         case 0:         // just a harmless message
+
             switch (random2(10))
             {
             case 0:
@@ -624,6 +650,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // more annoying things
+
             switch (random2(2))
             {
             case 0:
@@ -638,6 +665,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // even more annoying things
+
             switch (random2(2))
             {
             case 0:
@@ -655,7 +683,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 }
                 strcpy(info, "You have damaged your brain!");
                 mpr(info);
-                you.intel-= random2(3) + 1;
+                you.intel -= random2(3) + 1;
                 you.redraw_intelligence = 1;
                 potion_effect(POT_CONFUSION, 1);
                 break;
@@ -669,6 +697,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // nasty
+
             switch (random2(3))
             {
             case 0:
@@ -703,9 +732,9 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 you.intel -= 3 + random2(3);
 /*                if (you.intel <= 3)
-                    you.intel = 3;
-                    No, let's not be this kind.
-                    */
+   you.intel = 3;
+   No, let's not be this kind.
+ */
                 you.redraw_intelligence = 1;
                 potion_effect(POT_CONFUSION, 100);
                 break;
@@ -715,13 +744,14 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         break;                  // end divinations
 
     case SPTYP_NECROMANCY:
-        if ( you.religion == GOD_KIKUBAAQUDGHA
-            && you.piety >= 50
-            && random2(150) <= you.piety)
+        if (you.religion == GOD_KIKUBAAQUDGHA
+            && (!player_under_penance()
+                && you.piety >= 50 && random2(150) <= you.piety))
         {
             mpr("Nothing appears to happen.");
             break;
         }
+
         switch (spec_effect)
         {
         case 0:
@@ -762,6 +792,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a bit nasty
+
             switch (random2(3))
             {
             case 0:
@@ -782,6 +813,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 break;
             case 2:
                 strcpy(info, "You smell decay.");       // identical to a harmless message
+
                 mpr(info);
                 you.rotting++;
                 break;
@@ -789,23 +821,25 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // much nastier
+
             switch (random2(3))
             {
             case 0:
                 strcpy(info, "You are surrounded by flickering shadows.");
                 mpr(info);
                 create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
-                if ( coinflip() )
-                  create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
-                if ( coinflip() )
-                  create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                if (coinflip())
+                    create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                if (coinflip())
+                    create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
                 break;
             case 1:
-                if ( player_prot_life() == 0 && one_chance_in(3) )
+                if (player_prot_life() == 0 && one_chance_in(3))
                 {
                     drain_exp();
                     break;
                 }               // otherwise it just flows through...
+
             case 2:
                 if (you.is_undead)
                 {
@@ -821,6 +855,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // even nastier
+
             switch (random2(6))
             {
             case 0:
@@ -835,7 +870,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 loopj = (you.hp / 2) - 1;
                 if (loopj <= 0)
                     loopj = 0;
-                ouch(loopj, 0, KILLED_BY_MONSTER); // can never die from this, right?
+                ouch(loopj, 0, KILLED_BY_MONSTER);      // can never die from this, right?
 
                 you.redraw_hit_points = 1;
                 break;
@@ -847,6 +882,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                     drain_exp();
                     break;
                 }               // otherwise it just flows through...
+
             case 2:
                 lose_stat(100, 1 + random2(4) + random2(4));
                 break;
@@ -880,6 +916,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         switch (spec_effect)
         {
         case 0:         // just a harmless message
+
             switch (random2(10))
             {
             case 0:
@@ -917,6 +954,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // slightly annoying
+
             switch (random2(2))
             {
             case 0:
@@ -930,6 +968,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // much more annoying
+
             switch (random2(4))
             {
             case 0:
@@ -950,12 +989,14 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // even nastier
+
             switch (random2(3))
             {
             case 0:
                 mpr("Your body is distorted in a weird and horrible way!");
-                for (int i = 0; i < 4; i++) //jmf: changed to loop
-                  mutate(100);
+                for (int i = 0; i < 4; i++)     //jmf: changed to loop
+
+                    mutate(100);
                 //mutate(100);
                 //mutate(100);
                 //mutate(100);
@@ -968,9 +1009,10 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 break;
             case 2:
                 mpr("Your body is distorted in a weirdly horrible way!");
-                for (int i = 0; i < 4; i++) //jmf: changed to loop
-                  if (give_bad_mutation() != 0)
-                    break;
+                for (int i = 0; i < 4; i++)     //jmf: changed to loop
+
+                    if (give_bad_mutation() != 0)
+                        break;
                 //if (give_bad_mutation() == 0)
                 //    if (give_bad_mutation() == 0)
                 //        if (give_bad_mutation() == 0)
@@ -986,6 +1028,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         switch (spec_effect)
         {
         case 0:         // just a harmless message
+
             switch (random2(10))
             {
             case 0:
@@ -1023,6 +1066,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a bit less harmless stuff
+
             switch (random2(2))
             {
             case 0:
@@ -1041,6 +1085,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // rather less harmless stuff
+
             switch (random2(2))
             {
             case 0:
@@ -1061,7 +1106,8 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 beam[0].by = you.y_pos;
                 strcpy(beam[0].beam_name, "explosion");
                 beam[0].colour = RED;
-                beam[0].thing_thrown = 1;   // your explosion (is this right?)
+                beam[0].thing_thrown = 1;       // your explosion (is this right?)
+
                 explosion(0, beam);
                 noisy(10, you.x_pos, you.y_pos);
                 break;
@@ -1069,6 +1115,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // considerably less harmless stuff
+
             switch (random2(3))
             {
             case 0:
@@ -1086,7 +1133,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 beam[0].by = you.y_pos;
                 strcpy(beam[0].beam_name, "fireball");
                 beam[0].colour = RED;
-                beam[0].thing_thrown = 1;  // your explosion (is this right?)
+                beam[0].thing_thrown = 1;       // your explosion (is this right?)
 
                 explosion(random2(2), beam);
                 noisy(20, you.x_pos, you.y_pos);
@@ -1105,6 +1152,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         switch (spec_effect)
         {
         case 0:         // just a harmless message
+
             switch (random2(10))
             {
             case 0:
@@ -1142,6 +1190,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a bit less harmless stuff
+
             switch (random2(2))
             {
             case 0:
@@ -1159,6 +1208,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // rather less harmless stuff
+
             switch (random2(2))
             {
             case 0:
@@ -1178,7 +1228,8 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 beam[0].by = you.y_pos;
                 strcpy(beam[0].beam_name, "explosion");
                 beam[0].colour = WHITE;
-                beam[0].thing_thrown = 1;   // your explosion (is this right?)
+                beam[0].thing_thrown = 1;       // your explosion (is this right?)
+
                 explosion(0, beam);
                 noisy(10, you.x_pos, you.y_pos);
                 break;
@@ -1186,6 +1237,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // less harmless stuff
+
             switch (random2(2))
             {
             case 0:
@@ -1207,6 +1259,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         switch (spec_effect)
         {
         case 0:         // just a harmless message
+
         case 1:
             switch (random2(10))
             {
@@ -1245,6 +1298,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // slightly less harmless stuff
+
             switch (random2(1))
             {
             case 0:
@@ -1270,10 +1324,11 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // less harmless stuff
+
             switch (random2(1))
             {
             case 0:
-              strcpy(info, "You conjure up an explosion of flying shrapnel!");
+                strcpy(info, "You conjure up an explosion of flying shrapnel!");
                 mpr(info);
                 strcpy(info, "Oops.");
                 mpr(info);
@@ -1284,11 +1339,12 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 beam[0].by = you.y_pos;
                 strcpy(beam[0].beam_name, "explosion");
                 beam[0].colour = CYAN;
-                if ( one_chance_in(5) )
+                if (one_chance_in(5))
                     beam[0].colour = BROWN;
-                if ( one_chance_in(5) )
+                if (one_chance_in(5))
                     beam[0].colour = LIGHTCYAN;
-                beam[0].thing_thrown = 1;  // your explosion (is this right?)
+                beam[0].thing_thrown = 1;       // your explosion (is this right?)
+
                 explosion(0, beam);
                 noisy(10, you.x_pos, you.y_pos);
                 break;
@@ -1301,6 +1357,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         switch (spec_effect)
         {
         case 0:         // just a harmless message
+
             switch (random2(10))
             {
             case 0:
@@ -1338,6 +1395,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a bit less harmless stuff
+
             switch (random2(2))
             {
             case 0:
@@ -1352,6 +1410,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // rather less harmless stuff
+
             switch (random2(2))
             {
             case 0:
@@ -1367,6 +1426,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // less harmless stuff
+
             switch (random2(2))
             {
             case 0:
@@ -1382,7 +1442,8 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 strcpy(beam[0].beam_name, "explosion");
                 beam[0].colour = LIGHTBLUE;
                 beam[0].thing_thrown = 1;       // your explosion (is this right?)
-                explosion(0 + ( !one_chance_in(4) ), beam);
+
+                explosion(0 + (!one_chance_in(4)), beam);
                 noisy(10, you.x_pos, you.y_pos);
                 break;
             case 1:
@@ -1399,6 +1460,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         switch (spec_effect)
         {
         case 0:         // just a harmless message
+
             switch (random2(10))
             {
             case 0:
@@ -1436,6 +1498,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a bit less harmless stuff
+
             switch (random2(2))
             {
             case 0:
@@ -1453,6 +1516,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // rather less harmless stuff
+
             switch (random2(3))
             {
             case 0:
@@ -1475,6 +1539,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // less harmless stuff
+
             switch (random2(3))
             {
             case 0:
@@ -1522,93 +1587,46 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
 
     return 1;
 
-nothing_happening:
+  nothing_happening:
     mpr("Nothing appears to happen.");
 
     return 0;
 }
 
-
 bool learn_a_spell(unsigned char splbook, char bitty)
 {
-    bitty++;
+    int spells [SPELLBOOK_SIZE];
 
-    unsigned int numbo = you.inv_plus[splbook];
+    spellbook_template( you.inv_type[splbook], spells );
 
-    char strungy[9];
-
-    itoa(numbo, strungy, 2);
-
-    int kl = 0;
-
-    for (int h = 1; h < 7; h++)
+    if (spells [bitty] != SPELL_NO_SPELL)
     {
-        if (strungy[h] == '1')
-            kl++;
-
-        if (kl == bitty)
-        {
-            learned = h;
-            goto succes;
-        }
+        learned = bitty + 1;
+        return true;
     }
-
-    return false;
-
-succes:
-    int multip = 1;
-
-    numbo = 0;
-    int icky = strlen(strungy);
-
-    multip = 1;
-    numbo = 0;
-
-    for (int j = icky; j >= 1; j--)
+    else
     {
-        if (strungy[j] != '1' && strungy[j] != '0')
-            continue;
-
-        if (strungy[j] == '0')
-        {
-            multip *= 2;
-            continue;
-        }
-
-        if (strungy[j] == '1')
-        {
-            numbo += multip;
-            multip *= 2;
-        }
+        return false;
     }
-
-    strcpy(strungy, "");
-
-    you.inv_plus[splbook] = numbo + 64;
-
-    return true;
-}                               // end of learn_a_spell
-
-
-
+}
 
 bool which_spellbook()
 {
     unsigned char nthing = 0;
 
-    if ( player_spell_levels() < 1 )
+    if (player_spell_levels() < 1)
     {
         mpr("You can't memorise any more spells yet.");
         return false;
     }
 
-    if ( you.num_inv_items == 0 )
+    if (you.num_inv_items == 0)
     {
         mpr("You aren't carrying anything.");
         return false;
     }
 
-query:
+  query:
     strcpy(info, "You can memorise ");
     itoa(player_spell_levels(), st_prn, 10);
     strcat(info, st_prn);
@@ -1652,34 +1670,28 @@ query:
 
     sc_read_2 = conv_lett(sc_read_1);
 
-    if ( you.inv_quantity[sc_read_2] == 0 )
-      {
+    if (you.inv_quantity[sc_read_2] == 0)
+    {
         mpr("You haven't any such object.");
         return false;
-      }
+    }
 
-    if ( you.inv_class[sc_read_2] != OBJ_BOOKS
-          || you.inv_type[sc_read_2] == BOOK_MANUAL )
-      {
+    if (you.inv_class[sc_read_2] != OBJ_BOOKS
+        || you.inv_type[sc_read_2] == BOOK_MANUAL)
+    {
         mpr("That isn't a spellbook!");
         return false;
-      }
+    }
 
-    if ( you.inv_type[sc_read_2] == BOOK_DESTRUCTION )
-      {
+    if (you.inv_type[sc_read_2] == BOOK_DESTRUCTION)
+    {
         tome_of_power(sc_read_2);
         return false;
-      }
+    }
 
     spell_container = sc_read_2;
 
     read_book(spell_container);
-
-    if ( you.inv_plus[spell_container] == SPBK_NO_SLOTS )
-      {
-        mpr("That spellbook is empty.");
-        return false;
-      }
 
     clrscr();
     return true;
@@ -1693,30 +1705,30 @@ void read_book(char book_read)
     char key2 = 0;
 
     /* remember that this function is called from staff spells as well. */
-    if ( you.inv_class[book_read] == OBJ_STAVES )
-      key2 = spellbook_contents(you.inv_plus[book_read], you.inv_type[book_read] + 40);
+    if (you.inv_class[book_read] == OBJ_STAVES)
+        key2 = spellbook_contents(you.inv_plus[book_read], you.inv_type[book_read] + 40);
     else
-      key2 = spellbook_contents(you.inv_plus[book_read], you.inv_type[book_read]);
+        key2 = spellbook_contents(you.inv_plus[book_read], you.inv_type[book_read]);
 
-    if ( you.inv_class[book_read] == OBJ_BOOKS )
+    if (you.inv_class[book_read] == OBJ_BOOKS)
     {
         you.had_item[you.inv_type[book_read]] = 1;
 
-        if ( you.inv_type[book_read] == BOOK_MINOR_MAGIC_I
-              || you.inv_type[book_read] == BOOK_MINOR_MAGIC_II
-              || you.inv_type[book_read] == BOOK_MINOR_MAGIC_III )
-          {
+        if (you.inv_type[book_read] == BOOK_MINOR_MAGIC_I
+            || you.inv_type[book_read] == BOOK_MINOR_MAGIC_II
+            || you.inv_type[book_read] == BOOK_MINOR_MAGIC_III)
+        {
             you.had_item[BOOK_MINOR_MAGIC_I] = 1;
             you.had_item[BOOK_MINOR_MAGIC_II] = 1;
             you.had_item[BOOK_MINOR_MAGIC_III] = 1;
-          }
+        }
 
-        else if ( you.inv_type[book_read] == BOOK_CONJURATIONS_I
-                   || you.inv_type[book_read] == BOOK_CONJURATIONS_II )
-         {
+        else if (you.inv_type[book_read] == BOOK_CONJURATIONS_I
+                 || you.inv_type[book_read] == BOOK_CONJURATIONS_II)
+        {
             you.had_item[BOOK_CONJURATIONS_I] = 1;
             you.had_item[BOOK_CONJURATIONS_II] = 1;
-         }
+        }
     }
 
 #ifdef PLAIN_TERM
@@ -1756,14 +1768,14 @@ void which_spell()
         return;
     }
 
-    if ( !which_spellbook() )
+    if (!which_spellbook())
         return;
 
     sc_read_1 = (int) book_thing;
 
     if (sc_read_1 < 65 || (sc_read_1 > 90 && sc_read_1 < 97) || sc_read_1 > 122)
     {
-whatt:
+      whatt:
 #ifdef PLAIN_TERM
         redraw_screen();
 #endif
@@ -1773,32 +1785,35 @@ whatt:
 
     sc_read_2 = conv_lett(sc_read_1);
 
-    if (sc_read_2 > 7)
+    if (sc_read_2 > SPELLBOOK_SIZE)
         goto whatt;
 
-    if ( !learn_a_spell(spell_container, sc_read_2) )
+    if (!learn_a_spell(spell_container, sc_read_2))
         goto whatt;
 
     unsigned char specspell = which_spell_in_book(you.inv_type[spell_container], learned);
-    char is_good = 1;
 
-    if ( you.spell_no == 21 && specspell != SPELL_SELECTIVE_AMNESIA )
-      {   // if changed, must also change for priest in level_change. You can always memorise selective amnesia
+    if (specspell == SPELL_NO_SPELL)
+        goto whatt;
+
+    if (you.spell_no == 21 && specspell != SPELL_SELECTIVE_AMNESIA)
+    {                           // if changed, must also change for priest in level_change. You can always memorise selective amnesia
+
         mpr("Your head is already too full of spells!");
         return;
-      }
+    }
 
-    if (you.species == SP_MUMMY && spell_type(specspell, SPTYP_HOLY) )
-      {
+    if (you.species == SP_MUMMY && spell_type(specspell, SPTYP_HOLY))
+    {
         mpr("You can't use this type of magic!");
         return;
-      }
+    }
 
     if ((you.is_undead == US_HUNGRY_DEAD && undead_can_memorise(specspell) == 2) || (you.is_undead == US_UNDEAD && undead_can_memorise(specspell) != 0))
-      {
+    {
         mpr("You can't use this spell.");
         return;
-      }
+    }
 
     for (i = 0; i < 25; i++)
     {
@@ -1815,21 +1830,27 @@ whatt:
 
     levels_needed = spell_value(specspell);
 
-
     if (player_spell_levels() < levels_needed)
     {
-too_high:
 #ifdef PLAIN_TERM
         redraw_screen();
 #endif
         mpr("You can't memorise that many levels of magic yet!");
+        //sprintf( info, "levels: %d  needed: %d  spec_spells: %d", player_spell_levels(), levels_needed, specspell);
+        //mpr(info);
         you.turn_is_over = 1;
         return;
     }
 
-    if ( you.experience_level < spell_value(specspell)
-         || ( is_good == 0 && you.experience_level < spell_value(specspell) * 2 ) )
-        goto too_high;
+    if (you.experience_level < spell_value(specspell))
+    {
+#ifdef PLAIN_TERM
+        redraw_screen();
+#endif
+        mpr("You're too inexperienced to learn that spell!");
+        you.turn_is_over = 1;
+        return;
+    }
 
     chance = 0;
 
@@ -1889,19 +1910,19 @@ too_high:
         mpr("You fail to memorise the spell.");
         you.turn_is_over = 1;
 
-        if ( you.inv_type[spell_container] == BOOK_NECRONOMICON )
+        if (you.inv_type[spell_container] == BOOK_NECRONOMICON)
         {
             mpr("The pages of the Necronomicon glow with a malevolent light...");
             miscast_effect(SPTYP_NECROMANCY, 8, random2(30) + random2(30) + random2(30), 100);
         }
 
-        if ( you.inv_type[spell_container] == BOOK_DEMONOLOGY )
+        if (you.inv_type[spell_container] == BOOK_DEMONOLOGY)
         {
             mpr("This book does not appreciate being disturbed by one of your ineptitude!");
             miscast_effect(SPTYP_SUMMONING, 7, random2(30) + random2(30) + random2(30), 100);
         }
 
-        if ( you.inv_type[spell_container] == BOOK_ANNIHILATIONS )
+        if (you.inv_type[spell_container] == BOOK_ANNIHILATIONS)
         {
             mpr("This book does not appreciate being disturbed by one of your ineptitude!");
             miscast_effect(SPTYP_CONJURATION, 8, random2(30) + random2(30) + random2(30), 100);
@@ -1935,5 +1956,5 @@ too_high:
     redraw_screen();
 #endif
 
-    naughty( NAUGHTY_SPELLCASTING, 2 + random2(5) );
+    naughty(NAUGHTY_SPELLCASTING, 2 + random2(5));
 }

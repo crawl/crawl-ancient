@@ -29,4 +29,5 @@ void recall(char type_recalled);
 void portal();
 void cast_death_channel(int pow);
 void airstrike(int pow);
+
 #endif

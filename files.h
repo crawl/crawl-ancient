@@ -11,7 +11,7 @@
 #define FILES_H
 
 #define MAX_LEVELS 50
-#define MAX_BRANCHES 30 // there must be a way this can be extracted from other data
+#define MAX_BRANCHES 30         // there must be a way this can be extracted from other data
 
 
 extern bool tmp_file_pairs[MAX_LEVELS][MAX_BRANCHES];

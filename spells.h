@@ -16,4 +16,5 @@ bool learn_a_spell(unsigned char splbook, char bitty);
 bool which_spellbook(void);
 void read_book(char book_read);
 void which_spell(void);
+
 #endif

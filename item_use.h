@@ -17,7 +17,7 @@
 void wield_weapon(char auto_wield);
 void wear_armour();
 
-bool armour_prompt(const string& mesg, int* index);
+bool armour_prompt(const string & mesg, int *index);
 bool takeoff_armour(int index);
 
 void throw_anything();
@@ -32,4 +32,4 @@ void drink();
 void read_scroll();
 void original_name();
 
-#endif  // ITEM_USE_H
+#endif // ITEM_USE_H

@@ -10,7 +10,7 @@
 #ifndef INITFILE_H
 #define INITFILE_H
 
-extern char* obj_syms;
+extern char *obj_syms;
 extern int obj_syms_len;
 
 void read_init_file(void);

@@ -21,4 +21,5 @@ unsigned char get_invent(int invent_type);
 
 // BCR - Default argument of 0 to keep code compatibility
 void list_commands(int wizard = 0);
+
 #endif

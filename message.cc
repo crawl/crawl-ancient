@@ -26,7 +26,7 @@
 #include <string.h>
 
 #ifdef MACROS
-  #include "macro.h"
+#include "macro.h"
 #endif
 
 void more(void);
@@ -36,7 +36,7 @@ char scrloc = 1;                /* Line of next (previous?) message */
 char store_message[30][200];    /* buffer of old messages */
 char store_count = 0;           /* current position in store_message */
 
-char message_colour;                    /* What colour to print the next message */
+char message_colour;            /* What colour to print the next message */
 
 void mpr(const char *inf)
 {
@@ -76,6 +76,7 @@ void mpr(const char *inf)
         while (keypress != 32 && keypress != 13);
 
         int startLine = 18;
+
         gotoxy(1, startLine);
 #ifdef USE_CURSES
         clrtobot();
@@ -134,12 +135,14 @@ void mesclr()
 
 #ifdef PLAIN_TERM
     int startLine = 18;
+
     gotoxy(1, startLine);
 
 #ifdef USE_CURSES
     clrtobot();
 #else
     int numLines = NUMBER_OF_LINES - startLine + 1;
+
     for (int i = 0; i < numLines; i++)
     {
         cprintf("                                                                               ");
@@ -195,6 +198,7 @@ void more()
      * redraw bug whenever the more-prompt showed up. -- jsnell */
 #ifdef PLAIN_TERM
     int startLine = 18;
+
     gotoxy(1, startLine);
 
 #ifdef USE_CURSES
@@ -305,5 +309,5 @@ void replay_messages(void)
 
 void set_colour(char set_message_colour)
 {
- message_colour = set_message_colour;
+    message_colour = set_message_colour;
 }

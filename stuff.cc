@@ -38,29 +38,30 @@
 #include "skills2.h"
 
 #ifdef MACROS
-  #include "macro.h"
+#include "macro.h"
 #endif
 
-unsigned long cfseed;     // required for stuff::coinflip() and cf_setseed()
+unsigned long cfseed;           // required for stuff::coinflip() and cf_setseed()
+
 extern char wield_change;
 
 #ifdef USE_NEW_RANDOM
-int random2( int max )
+int random2(int max)
 {
-  if (max <= 0 || max >= RAND_MAX)
-    return 0;
-  else
+    if (max <= 0 || max >= RAND_MAX)
+        return 0;
+    else
 //    return (int) ((((float) max) * rand()) / RAND_MAX); - this is bad!
-//      Uses FP, so is horribly slow on computers without coprocessors.
-      return (int) rand() / (RAND_MAX / max + 1);
+        //      Uses FP, so is horribly slow on computers without coprocessors.
+        return (int) rand() / (RAND_MAX / max + 1);
 // Taken from comp.lang.c FAQ. May have problems as max approaches
-//   RAND_MAX, but this is rather unlikely.
-//   We've used rand() rather than random() for the portability, I think.
+    //   RAND_MAX, but this is rather unlikely.
+    //   We've used rand() rather than random() for the portability, I think.
 }
 #else
-int random2( int randmax )
+int random2(int randmax)
 {
-    if ( randmax <= 0 )
+    if (randmax <= 0)
         return 0;
 
     return random() % randmax;
@@ -70,42 +71,42 @@ int random2( int randmax )
 
 
 
-int random2avg( int max , int rolls )
+int random2avg(int max, int rolls)
 {
-  // this has the same mean as random2(), but a lower variance
-  // never use with rolls < 2! that would be silly - use random2() {dlb}
-  int sum = 0;
+    // this has the same mean as random2(), but a lower variance
+    // never use with rolls < 2! that would be silly - use random2() {dlb}
+    int sum = 0;
 
-  sum += random2(max);
+    sum += random2(max);
 
-  for (int i = 0; i < (rolls - 1); i++ )
-    sum += random2(max+1);
+    for (int i = 0; i < (rolls - 1); i++)
+        sum += random2(max + 1);
 
-  return (sum/rolls);
+    return (sum / rolls);
 }
 
 
 
 
-int random2limit( int max, int limit )
+int random2limit(int max, int limit)
 {
-  // designed to randomize evasion.
-  // low values of max are slightly lowered
-  // high values tend to max out near LIMIT/2
+    // designed to randomize evasion.
+    // low values of max are slightly lowered
+    // high values tend to max out near LIMIT/2
 
-  int i;
-  int sum = 0;
+    int i;
+    int sum = 0;
 
-  if (max <= 0)
-    return 0;
+    if (max <= 0)
+        return 0;
 
-  for ( i = 0; i < max; i++ )
-  {
-     if ( random2( limit ) >= i )
-       sum++;
-  }
+    for (i = 0; i < max; i++)
+    {
+        if (random2(limit) >= i)
+            sum++;
+    }
 
-  return sum;
+    return sum;
 
 }
 
@@ -117,7 +118,7 @@ unsigned char get_ch()
     unsigned char gotched = getch();
 
     if (gotched == 0)
-      gotched = getch();
+        gotched = getch();
     return gotched;
 }
 
@@ -223,59 +224,64 @@ void redraw_screen(void)
 // ex(1): stepdown_value (foo, 2, 2, 6, 8) replaces the following block:
 //
 /*
-  if (foo > 2)
-    foo = (foo - 2) / 2 + 2;
-  if (foo > 4)
-    foo = (foo - 4) / 2 + 4;
-  if (foo > 6)
-    foo = (foo - 6) / 2 + 6;
-  if (foo > 8)
-    foo = 8;
-*/
+   if (foo > 2)
+   foo = (foo - 2) / 2 + 2;
+   if (foo > 4)
+   foo = (foo - 4) / 2 + 4;
+   if (foo > 6)
+   foo = (foo - 6) / 2 + 6;
+   if (foo > 8)
+   foo = 8;
+ */
 //
 // ex(2): bar = stepdown_value(bar, 2, 2, 6, -1) replaces the following block:
 //
 /*
-  if (bar > 2)
-    bar = (bar - 2) / 2 + 2;
-  if (bar > 4)
-    bar = (bar - 4) / 2 + 4;
-  if (bar > 6)
-    bar = (bar - 6) / 2 + 6;
-*/
+   if (bar > 2)
+   bar = (bar - 2) / 2 + 2;
+   if (bar > 4)
+   bar = (bar - 4) / 2 + 4;
+   if (bar > 6)
+   bar = (bar - 6) / 2 + 6;
+ */
 //
 // I hope this permits easier/more experimentation with value stepdowns in the code
 // it really needs to be rewritten to accept arbitrary (unevenly spaced) steppings
 
-int stepdown_value (int base_value, int stepping, int first_step, int last_step, int ceiling_value)
+int stepdown_value(int base_value, int stepping, int first_step, int last_step, int ceiling_value)
 {
     int return_value = base_value;
 
-    if (return_value <= first_step)   // values up to the first "step" returned unchanged
-      {
-          return return_value;
-      }
+    if (return_value <= first_step)     // values up to the first "step" returned unchanged
+
+    {
+        return return_value;
+    }
 
     for (int this_step = first_step; this_step <= last_step; this_step += stepping)
-       {
-           if (return_value > this_step)
-             {
-                 return_value = ( (return_value - this_step) / 2 ) + this_step;
-             }
-           else
-             {
-                 break;               // exit loop iff value fully "stepped down"
-             }
-       }
+    {
+        if (return_value > this_step)
+        {
+            return_value = ((return_value - this_step) / 2) + this_step;
+        }
+        else
+        {
+            break;              // exit loop iff value fully "stepped down"
 
-    if (ceiling_value != -1 && return_value > ceiling_value)     // "no final ceiling" == -1
-      {
-          return ceiling_value;       // highest value to return is "ceiling"
-      }
+        }
+    }
+
+    if (ceiling_value != -1 && return_value > ceiling_value)    // "no final ceiling" == -1
+
+    {
+        return ceiling_value;   // highest value to return is "ceiling"
+
+    }
     else
-      {
-          return return_value;        // otherwise, value returned "as is"
-      }
+    {
+        return return_value;    // otherwise, value returned "as is"
+
+    }
 
 }
 
@@ -291,12 +297,12 @@ int stepdown_value (int base_value, int stepping, int first_step, int last_step,
 //                                                      -- 14jan2000 {dlb}
 
 
-  bool one_chance_in (int a_million)
-  {
+bool one_chance_in(int a_million)
+{
 
-      return ( random2(a_million) == 0 );     // that's it? :P {dlb}
+    return (random2(a_million) == 0);   // that's it? :P {dlb}
 
-  }
+}
 
 
 
@@ -337,37 +343,41 @@ int stepdown_value (int base_value, int stepping, int first_step, int last_step,
 //        that cf_setseed() requires rand() - random2 returns int
 //        but a long can't hurt there).
 
-  bool coinflip ( void )
-  {
-    extern unsigned long cfseed;             // defined atop stuff.cc
+bool coinflip(void)
+{
+    extern unsigned long cfseed;        // defined atop stuff.cc
+
     unsigned long *ptr_cfseed = &cfseed;
 
-    if ( *ptr_cfseed & IB18 )
-      {
-        *ptr_cfseed = (( *ptr_cfseed ^ MASK) << 1 ) | IB1;
+    if (*ptr_cfseed & IB18)
+    {
+        *ptr_cfseed = ((*ptr_cfseed ^ MASK) << 1) | IB1;
         return true;
-      }
+    }
     else
-      {
+    {
         *ptr_cfseed <<= 1;
         return false;
-      }
-  }
+    }
+}
 
 // cf_setseed should only be called but once in all of Crawl!!! {dlb}
 
-  void cf_setseed ( void )
-  {
-    extern unsigned long cfseed;             // defined atop stuff.cc
+void cf_setseed(void)
+{
+    extern unsigned long cfseed;        // defined atop stuff.cc
+
     unsigned long *ptr_cfseed = &cfseed;
 
-    do {
+    do
+    {
 
         *ptr_cfseed = rand();
 
-    } while (*ptr_cfseed == 0);
+    }
+    while (*ptr_cfseed == 0);
 
-  }
+}
 
 
 
@@ -402,21 +412,21 @@ int stepdown_value (int base_value, int stepping, int first_step, int last_step,
 // suitably replaces the following code block (from spells2):
 
 /*
-       int temp_rand = random2(25);
-                                                          // recreated odds 14jan2000 {dlb}
-       if (temp_rand > 8)                                 // 64% chance {dlb}
-         {
-           thing_called = MONS_WRAITH;
-         }
-       else if (temp_rand > 3)                            // 20% chance {dlb}
-         {
-               thing_called = MONS_SPECTRAL_WARRIOR;
-         }
-            else                                          // 16% chance {dlb}
-              {
-                thing_called = MONS_FREEZING_WRAITH;
-              }
-*/
+   int temp_rand = random2(25);
+   // recreated odds 14jan2000 {dlb}
+   if (temp_rand > 8)                                 // 64% chance {dlb}
+   {
+   thing_called = MONS_WRAITH;
+   }
+   else if (temp_rand > 3)                            // 20% chance {dlb}
+   {
+   thing_called = MONS_SPECTRAL_WARRIOR;
+   }
+   else                                          // 16% chance {dlb}
+   {
+   thing_called = MONS_FREEZING_WRAITH;
+   }
+ */
 
 // the original is quite efficient compared to table_lookup(),
 // which has to pass all the values to a function for processing
@@ -442,24 +452,26 @@ int stepdown_value (int base_value, int stepping, int first_step, int last_step,
 // may be best for unbalanced lists of 4 to 9 members, inclusive???
 // (wow - the comments far surpass the actual function in size!)
 
-  int table_lookup (int die_roll, ...)
-  {
+int table_lookup(int die_roll,...)
+{
     va_list which_entry;
     int outcome = random2(die_roll);
     int result = 0;
 
-    va_start (which_entry, die_roll);
+    va_start(which_entry, die_roll);
 
-    do {
-      result = va_arg (which_entry, int);
-      if ( outcome >= va_arg (which_entry, int) )
-        break;
-    } while (1);
+    do
+    {
+        result = va_arg(which_entry, int);
+        if (outcome >= va_arg(which_entry, int))
+              break;
+    }
+    while (1);
 
-    va_end (which_entry);
+    va_end(which_entry);
 
     return result;
-  }
+}
 
 
 
@@ -470,23 +482,23 @@ int stepdown_value (int base_value, int stepping, int first_step, int last_step,
 // used in conjunction with newgame::species_stat_init() and
 // newgame::job_stat_init() routines 24jan2000 {dlb}
 
-  void modify_stats (int STmod, int IQmod, int DXmod)
-  {
-       if ( STmod != 0 )
-         {
-           you.strength += STmod;
-           you.max_strength += STmod;
-         }
-       if ( IQmod != 0 )
-         {
-           you.intel += IQmod;
-           you.max_intel += IQmod;
-         }
-       if ( DXmod != 0 )
-         {
-           you.dex += DXmod;
-           you.max_dex += DXmod;
-         }
+void modify_stats(int STmod, int IQmod, int DXmod)
+{
+    if (STmod != 0)
+    {
+        you.strength += STmod;
+        you.max_strength += STmod;
+    }
+    if (IQmod != 0)
+    {
+        you.intel += IQmod;
+        you.max_intel += IQmod;
+    }
+    if (DXmod != 0)
+    {
+        you.dex += DXmod;
+        you.max_dex += DXmod;
+    }
 
-       return;
-  }
+    return;
+}

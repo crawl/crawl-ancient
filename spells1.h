@@ -49,4 +49,7 @@ void cast_teleport_control(int power);
 void cast_ring_of_flames(int power);
 void cast_insulation(int power);
 void cast_resist_poison(int power);
+void cast_confusing_touch(int power);
+bool cast_sure_blade(int power);
+
 #endif

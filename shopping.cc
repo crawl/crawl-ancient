@@ -29,7 +29,7 @@
 #include "stuff.h"
 
 #ifdef MACROS
-  #include "macro.h"
+#include "macro.h"
 #endif
 
 /*#include "crawlfnc.h"
@@ -185,7 +185,7 @@ char in_a_shop(char shoppy, char id[4][50])
      */
     save_id(id);
 
-print_stock:
+  print_stock:
     clrscr();
     itty = igrd[0][5 + shoppy];
 
@@ -249,7 +249,7 @@ print_stock:
             gp_value = 1;
         gotoxy(60, i);
         // cdl - itoa(gp_value, st_pass, 10);
-        sprintf( st_pass, "%5d", gp_value );
+        sprintf(st_pass, "%5d", gp_value);
         cprintf(st_pass);
         cprintf(" gold");
         if (mitm.link[itty] == ING)
@@ -263,7 +263,7 @@ print_stock:
 
     shop_print("Type letter to buy item, x/Esc to leave, ?/* for inventory, v to examine.", 23);
 
-purchase:
+  purchase:
     strcpy(sh_name, "You have ");
     itoa(you.gold, gold_p, 10);
     strcat(sh_name, gold_p);
@@ -280,10 +280,10 @@ purchase:
 
     ft = get_ch();
 
-    if ( ft == 'x' || ft == 27 )
+    if (ft == 'x' || ft == 27)
         goto goodbye;
 
-    if ( ft == 'v' )
+    if (ft == 'v')
     {
         shop_print("Examine which item?", 20);
         ft = get_ch();
@@ -363,7 +363,7 @@ purchase:
 
     goto print_stock;
 
-goodbye:
+  goodbye:
     clear_line();
     shop_print("Goodbye!", 20);
     more3();
@@ -385,9 +385,9 @@ void shop_init_id(int i, int shop_id[4][50])
 {
     int j = 0;
 
-    if ( env.sh_type[i] != SHOP_WEAPON_ANTIQUE
+    if (env.sh_type[i] != SHOP_WEAPON_ANTIQUE
         && env.sh_type[i] != SHOP_ARMOUR_ANTIQUE
-        && env.sh_type[i] != SHOP_GENERAL_ANTIQUE )
+        && env.sh_type[i] != SHOP_GENERAL_ANTIQUE)
         for (j = 0; j < 50; j++)
         {
             shop_id[0][j] = get_id(OBJ_WANDS, j);
@@ -407,9 +407,9 @@ void shop_uninit_id(int i, int shop_id[4][50])
 {
     int j = 0;
 
-    if ( env.sh_type[i] != SHOP_WEAPON_ANTIQUE
+    if (env.sh_type[i] != SHOP_WEAPON_ANTIQUE
         && env.sh_type[i] != SHOP_ARMOUR_ANTIQUE
-        && env.sh_type[i] != SHOP_GENERAL_ANTIQUE )
+        && env.sh_type[i] != SHOP_GENERAL_ANTIQUE)
         for (j = 0; j < 50; j++)
         {
 //        shop_id [i] [j] = get_id(i, j);
@@ -423,50 +423,50 @@ void shop_uninit_id(int i, int shop_id[4][50])
 
 
 
-void shop_set_id( int i, int shop_id[4][50], unsigned char base_type, unsigned char sub_type )
+void shop_set_id(int i, int shop_id[4][50], unsigned char base_type, unsigned char sub_type)
 {
 
-    if ( env.sh_type[i] != SHOP_WEAPON_ANTIQUE
+    if (env.sh_type[i] != SHOP_WEAPON_ANTIQUE
         && env.sh_type[i] != SHOP_ARMOUR_ANTIQUE
-        && env.sh_type[i] != SHOP_GENERAL_ANTIQUE )
+        && env.sh_type[i] != SHOP_GENERAL_ANTIQUE)
+    {
+        switch (base_type)
         {
-            switch (base_type)
-            {
-                case OBJ_WANDS:
-                    shop_id[0][sub_type] = 1;
-                    break;
-                case OBJ_SCROLLS:
-                    shop_id[1][sub_type] = 1;
-                    break;
-                case OBJ_JEWELLERY:
-                    shop_id[2][sub_type] = 1;
-                    break;
-                case OBJ_POTIONS:
-                    shop_id[3][sub_type] = 1;
-                    break;
-            }
-            set_id(base_type, sub_type, 1);
+        case OBJ_WANDS:
+            shop_id[0][sub_type] = 1;
+            break;
+        case OBJ_SCROLLS:
+            shop_id[1][sub_type] = 1;
+            break;
+        case OBJ_JEWELLERY:
+            shop_id[2][sub_type] = 1;
+            break;
+        case OBJ_POTIONS:
+            shop_id[3][sub_type] = 1;
+            break;
         }
+        set_id(base_type, sub_type, 1);
+    }
 
 }
 
 
 
 
-void shop_print( char *shoppy, char sh_lines )
+void shop_print(char *shoppy, char sh_lines)
 {
 
     gotoxy(1, sh_lines);
     cprintf(shoppy);
     for (int i = strlen(shoppy); i < 80; i++)
-      cprintf(" ");
+        cprintf(" ");
 
 }
 
 
 
 
-char more3( void )
+char more3(void)
 {
     char keyin = 0;
 
@@ -482,7 +482,7 @@ char more3( void )
 
 
 
-void clear_line( void )
+void clear_line(void)
 {
     //int i;
     //window(1, 20, 80, 21);
@@ -499,7 +499,7 @@ void clear_line( void )
 
 
 
-void purchase( int item_got )
+void purchase(int item_got)
 {
 
     int i = 0;
@@ -513,7 +513,7 @@ void purchase( int item_got )
             return;
         }
         if (you.inv_quantity[i] <= 0)
-          break;
+            break;
     }
 
     you.inv_ident[i] = mitm.id[item_got];
@@ -783,16 +783,18 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
         }
 
         if (item_da / 30 == DWPN_ELVEN || item_da / 30 == DWPN_DWARVEN)         // elf/dwarf
-          {
-             valued *= 12;
-             valued /= 10;
-          }
+
+        {
+            valued *= 12;
+            valued /= 10;
+        }
 
         if (item_da / 30 == 6)  // orc        // this confuses me 15jan2000 {dlb}
-          {
-             valued *= 8;
-             valued /= 10;
-          }
+
+        {
+            valued *= 8;
+            valued /= 10;
+        }
 
 
         if (ident_lev > 2)
@@ -861,11 +863,11 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
 
         }
 
-        if ( ident_lev > 0 && it_plus >= 130 )
-          {
-             valued *= 6;
-             valued /= 10;
-          }
+        if (ident_lev > 0 && it_plus >= 130)
+        {
+            valued *= 6;
+            valued /= 10;
+        }
 
 
         break;
@@ -900,8 +902,10 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
             break;              //strcat(glog , "eggplant"); break;
 
         default:                // was: cases 6 through 16 with empty strcat()'s 15jan2000 {dlb}
+
             valued += 5;
             break;              //strcat(glog , ""); break;
+
         }
 
         break;
@@ -1117,7 +1121,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
 
  */
 
-        if ( ident_lev > 1 )
+        if (ident_lev > 1)
         {
             valued += 5;
             if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150))
@@ -1136,11 +1140,11 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
             }
         }
 
-        if ( ident_lev != 0 && it_plus >= 130 )
-          {
-             valued *= 6;
-             valued /= 10;
-          }
+        if (ident_lev != 0 && it_plus >= 130)
+        {
+            valued *= 6;
+            valued /= 10;
+        }
 
         break;
 
@@ -1149,7 +1153,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
 
         charge_value = 0;
 
-        if ( id[0][item_typ] != 0 )
+        if (id[0][item_typ] != 0)
         {
             switch (item_typ)
             {
@@ -1226,22 +1230,23 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
                 break;
 
             default:
-                valued += 10;    // no default charge_value ??? 15jan2000 {dlb}
+                valued += 10;   // no default charge_value ??? 15jan2000 {dlb}
+
                 break;
             }
 
             if (ident_lev > 1)
-              valued += it_plus * charge_value;
+                valued += it_plus * charge_value;
 
             valued *= 3;
 
             if (it_plus == 0)
-              valued = 3;     // change if wands are rechargeable!
+                valued = 3;     // change if wands are rechargeable!
 
         }
 
         else
-          valued = 35;          // = 10;
+            valued = 35;        // = 10;
 
         break;
 
@@ -1383,7 +1388,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
     case OBJ_SCROLLS:
 
         if (id[1][item_typ] == 0)
-          valued += 10;
+            valued += 10;
 
         switch (item_typ)
         {
@@ -1455,10 +1460,10 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
     case OBJ_JEWELLERY:
 
         if (id[2][item_typ] == 0)
-          valued += 50;
+            valued += 50;
 
         if (ident_lev > 0 && it_plus >= 130)
-          valued -= 10;
+            valued -= 10;
 
         if (id[2][item_typ] > 0)
         {
@@ -1563,12 +1568,12 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
             }
 
             if (item_da == 200)
-              valued += 50;
+                valued += 50;
 
             valued *= 7;
 
             if (valued <= 0)
-              valued = 1;
+                valued = 1;
 
         }                       // end of if ident_lev
 
@@ -1599,7 +1604,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
                 valued += 100;
                 break;
 
-            //case 2: valued += 40; break; //strcat(glog, ""); break;
+                //case 2: valued += 40; break; //strcat(glog, ""); break;
 
             default:
                 valued += 400;
@@ -1629,7 +1634,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
                 valued += 400;
                 break;
 
-            //case 2: valued += 40; break; //strcat(glog, ""); break;
+                //case 2: valued += 40; break; //strcat(glog, ""); break;
 
             case MISC_CRYSTAL_BALL_OF_FIXATION:
             case MISC_EMPTY_EBONY_CASKET:
@@ -1649,32 +1654,32 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
 
     case OBJ_BOOKS:
         if (ident_lev == 0)
-          valued = 150;
+            valued = 150;
         else
-          valued = 150 + book_rarity(item_typ) * 50;
+            valued = 150 + book_rarity(item_typ) * 50;
 
 /*
    valued = 210;
 
    if (item_typ < 7 || item_typ == 23 || item_typ == 25)
-     valued = 150;
+   valued = 150;
    else if (item_typ == 14 || item_typ == 15 || item_typ == 24)
-     valued = 550;
+   valued = 550;
    else if (item_typ == 17 || item_typ == 35)
-     valued = 470;
+   valued = 470;
 
    break;
-*/
+ */
         break;
 
 
     case OBJ_STAVES:
         if (ident_lev == 0)
-          valued = 120;
-        else if ( item_typ == STAFF_SMITING || item_typ == STAFF_WARDING || item_typ == STAFF_DISCOVERY )
-          valued = 150;
+            valued = 120;
+        else if (item_typ == STAFF_SMITING || item_typ == STAFF_WARDING || item_typ == STAFF_DISCOVERY)
+            valued = 150;
         else
-          valued = 250;
+            valued = 250;
 
         break;
 
@@ -1688,7 +1693,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
     }                           // end switch
 
     if (valued < 1)
-      valued = 1;
+        valued = 1;
 
     valued *= item_quant;
 
@@ -1699,7 +1704,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
 
 
 
-char book_rarity( char which_book )
+char book_rarity(char which_book)
 {
 
     switch (which_book)
@@ -1710,7 +1715,8 @@ char book_rarity( char which_book )
     case BOOK_SURVEYANCES:
     case BOOK_YOUNG_POISONERS:
     case BOOK_HINDERANCE:
-    case BOOK_CANTRIPS:                     //jmf: added 04jan2000
+    case BOOK_CANTRIPS: //jmf: added 04jan2000
+
         return 1;
 
     case BOOK_CHANGES:
@@ -1740,7 +1746,8 @@ char book_rarity( char which_book )
         return 6;
 
     case BOOK_ENCHANTMENTS:
-    case BOOK_PARTY_TRICKS:                 //jmf: added 04jan2000
+    case BOOK_PARTY_TRICKS:     //jmf: added 04jan2000
+
         return 7;
 
     case BOOK_TRANSFIGURATIONS:
@@ -1779,12 +1786,15 @@ char book_rarity( char which_book )
         return 20;
 
     case BOOK_MANUAL:           // manuals
+
         return 20;
 
     case BOOK_DESTRUCTION:      // tome of destruction
+
         return 30;
 
     case BOOK_HEALING:          // never created naturally
+
         return 100;
 
     }
@@ -1795,7 +1805,7 @@ char book_rarity( char which_book )
 
 
 
-void shop( void )
+void shop(void)
 {
     int i = 0;
 

@@ -25,16 +25,16 @@
 char *obj_syms = ")([/%.?=!.+\\0}X$";
 int obj_syms_len = 16;
 
-extern char verbose_dump; /* defined in chardump.cc */
-extern char colour_map; /* defined in view.cc */
-extern char clean_map; /* also defined in view.cc */
+extern char verbose_dump;       /* defined in chardump.cc */
+extern char colour_map;         /* defined in view.cc */
+extern char clean_map;          /* also defined in view.cc */
 
 
 void read_init_file()
 {
 
-        verbose_dump = 0;
-        colour_map = 0;
+    verbose_dump = 0;
+    colour_map = 0;
 
     FILE *f;
     char s[255], field[100];
@@ -44,20 +44,20 @@ void read_init_file()
 
     if (sys_env.crawl_rc)
     {
-        f = fopen(sys_env.crawl_rc, "r" );
+        f = fopen(sys_env.crawl_rc, "r");
     }
     else if (sys_env.crawl_dir)
     {
-        char name_buff [kPathLen];
+        char name_buff[kPathLen];
 
-        strncpy( name_buff, sys_env.crawl_dir, kPathLen );
-        strncat( name_buff, "init.txt", kPathLen );
+        strncpy(name_buff, sys_env.crawl_dir, kPathLen);
+        strncat(name_buff, "init.txt", kPathLen);
 
-        f = fopen( name_buff, "r" );
+        f = fopen(name_buff, "r");
     }
     else
     {
-        f = fopen( "init.txt", "r" );
+        f = fopen("init.txt", "r");
     }
 
     if (f == NULL)
@@ -68,7 +68,8 @@ void read_init_file()
         fgets(s, 255, f);
 
         // This is to make some efficient comments
-        if (s[0] == '#' || s[0] == '\0')  continue;
+        if (s[0] == '#' || s[0] == '\0')
+            continue;
 
         line++;
 
@@ -80,25 +81,25 @@ void read_init_file()
                 // Make the amulet symbol equiv to ring -- bwross
                 switch (field[i])
                 {
-                    case '"':
-                        // also represents jewellery
-                        field[i] = '=';
-                        break;
+                case '"':
+                    // also represents jewellery
+                    field[i] = '=';
+                    break;
 
-                    case '|':
-                        // also represents staves
-                        field[i] = '\\';
-                        break;
+                case '|':
+                    // also represents staves
+                    field[i] = '\\';
+                    break;
 
-                    case ':':
-                        // Also represents books
-                        field[i] = '+';
-                        break;
+                case ':':
+                    // Also represents books
+                    field[i] = '+';
+                    break;
 
-                    case 'x':
-                        // also corpses
-                        field[i] = 'X';
-                        break;
+                case 'x':
+                    // also corpses
+                    field[i] = 'X';
+                    break;
                 }
 
                 for (j = 0; j < obj_syms_len && field[i] != obj_syms[j]; j++)
@@ -112,29 +113,32 @@ void read_init_file()
         }
         else if (sscanf(s, "name=%s", field))
         {
-            strncpy( you.your_name, field, kNameLen );
+            strncpy(you.your_name, field, kNameLen);
         }
         else if (sscanf(s, "verbose_dump=%s", field))
         {
-            verbose_dump = (atoi(field) == 1); // gives verbose info in char dumps
+            verbose_dump = (atoi(field) == 1);  // gives verbose info in char dumps
+
         }
         else if (sscanf(s, "colour_map=%s", field))
         {
-             colour_map = (atoi(field) == 1); // colour-codes play-screen map
+            colour_map = (atoi(field) == 1);    // colour-codes play-screen map
+
         }
         else if (sscanf(s, "clean_map=%s", field))
         {
-             clean_map = (atoi(field) == 1); // removes monsters/clouds from map
+            clean_map = (atoi(field) == 1);     // removes monsters/clouds from map
+
         }
         else if (sscanf(s, "crawl_dir=%s", field))
         {
             // We shouldn't bother to allocate this a second time
             // if the user puts two crawl_dir lines in the init file.
             if (!sys_env.crawl_dir)
-                sys_env.crawl_dir = (char *) calloc( kPathLen, sizeof(char) );
+                sys_env.crawl_dir = (char *) calloc(kPathLen, sizeof(char));
 
             if (sys_env.crawl_dir)
-                strncpy( sys_env.crawl_dir, field, kNameLen );
+                strncpy(sys_env.crawl_dir, field, kNameLen);
         }
     }
     fclose(f);
@@ -144,16 +148,16 @@ void read_init_file()
 void get_system_environment()
 {
     // The player's name
-    sys_env.crawl_name = getenv( "CRAWL_NAME" );
+    sys_env.crawl_name = getenv("CRAWL_NAME");
 
     // The player's pizza
-    sys_env.crawl_pizza = getenv( "CRAWL_PIZZA" );
+    sys_env.crawl_pizza = getenv("CRAWL_PIZZA");
 
     // The directory which contians init.txt, macro.txt, morgue.txt
     // This should end with the appropriate path delimiter.
-    sys_env.crawl_dir = getenv( "CRAWL_DIR");
+    sys_env.crawl_dir = getenv("CRAWL_DIR");
 
     // The full path to the init file -- this over-rides CRAWL_DIR
-    sys_env.crawl_rc = getenv( "CRAWL_RC" );
+    sys_env.crawl_rc = getenv("CRAWL_RC");
 
 }

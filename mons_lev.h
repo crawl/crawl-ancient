@@ -26,4 +26,5 @@ int mons_rare_dis(int mcls);
 int mons_rare_tartarus(int mcls);
 int mons_rare_abyss(int mcls);
 int branch_depth(int branch);
+
 #endif

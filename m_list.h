@@ -3911,7 +3911,7 @@
 
 {
     357, 'J', LIGHTGREY, "ooze", M_RES_POISON | M_NO_SKELETON,
-    0, 5, 357, H_NORMAL, -6,
+        0, 5, 357, H_NORMAL, -6,
     {
         5, 0, 0, 0
     }

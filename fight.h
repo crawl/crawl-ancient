@@ -19,4 +19,5 @@ bool jelly_divide(int jel);
 void alert(void);
 void monster_polymorph(unsigned char monsc, unsigned char targetc, int power);
 void monster_drop_ething(int monster_killed);
+
 #endif

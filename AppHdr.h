@@ -32,8 +32,8 @@
 #ifndef APPHDR_H
 #define APPHDR_H
 
-#if _MSC_VER >= 1100        // note that we can't just check for _MSC_VER: most compilers will wind up defining this in order to work with the SDK headers...
-    #pragma message("Compiling AppHeader.h (this message should only appear once)")
+#if _MSC_VER >= 1100            // note that we can't just check for _MSC_VER: most compilers will wind up defining this in order to work with the SDK headers...
+#pragma message("Compiling AppHeader.h (this message should only appear once)")
 #endif
 
 
@@ -43,17 +43,17 @@
 
 #ifdef SOLARIS
     // Most of the linux stuff applies, and so we want it
-    #define LINUX
-    #define PLAIN_TERM
-    #include "liblinux.h"
+#define LINUX
+#define PLAIN_TERM
+#include "liblinux.h"
     // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
-    #define CHARACTER_SET           0
+#define CHARACTER_SET           0
 
-    #define USE_CURSES
-    #define EOL "\n"
+#define USE_CURSES
+#define EOL "\n"
 
     // This is used for Posix termios.
-    #define USE_POSIX_TERMIOS
+#define USE_POSIX_TERMIOS
 
     // This is used for BSD tchars type ioctl, use this if you can't
     // use the Posix support above.
@@ -63,87 +63,87 @@
     // useful in conjunction with USE_TCHARS_IOCTL, but not required
     // with USE_POSIX_TERMIOS
     //
-    #define USE_UNIX_SIGNALS
+#define USE_UNIX_SIGNALS
 
     // This is for systems with no usleep... uncomment if you have it.
-    #define USE_SELECT_FOR_DELAY
+#define USE_SELECT_FOR_DELAY
 
     // Default to non-ibmn character set
-    #define USE_ASCII_CHARACTERS
+#define USE_ASCII_CHARACTERS
 
     // This defines the chmod permissions for score and bones files.
-    #define SHARED_FILES_CHMOD_VAL  0664
+#define SHARED_FILES_CHMOD_VAL  0664
 
 // Define plain_term for linux and similar, and dos_term for DOS and EMX.
 #elif defined(LINUX)
-    #define PLAIN_TERM
-    #define CHARACTER_SET           0
-    #define USE_ASCII_CHARACTERS
+#define PLAIN_TERM
+#define CHARACTER_SET           0
+#define USE_ASCII_CHARACTERS
 
-    #define USE_CURSES
-    #define EOL "\n"
+#define USE_CURSES
+#define EOL "\n"
 
-    #include <string>
-    #include "liblinux.h"
+#include <string>
+#include "liblinux.h"
 
 // To compile with EMX for OS/2 define USE_EMX macro with compiler command line
 // (already defined in supplied makefile.emx)
 #elif defined(USE_EMX)
-    #define DOS_TERM
-    #define EOL "\n"
-    #define CHARACTER_SET           A_ALTCHARSET
+#define DOS_TERM
+#define EOL "\n"
+#define CHARACTER_SET           A_ALTCHARSET
 
-    #include <string>
-    #include "libemx.h"
+#include <string>
+#include "libemx.h"
 
 #elif _MSC_VER >= 1100
-    #include <string>
-    #include "WinHdr.h"
-    #error MSVC isn''t supported yet
-    #define CHARACTER_SET           A_ALTCHARSET
+#include <string>
+#include "WinHdr.h"
+#error MSVC isn''t supported yet
+#define CHARACTER_SET           A_ALTCHARSET
 
 // macintosh is predefined on all the common Mac compilers
 #elif defined(macintosh)
-    #define MAC 1
-    #define PLAIN_TERM
-    #define HAS_NAMESPACES  1
-    #define EOL "\r"
-    #define CHARACTER_SET           A_ALTCHARSET
+#define MAC 1
+#define PLAIN_TERM
+#define HAS_NAMESPACES  1
+#define EOL "\r"
+#define CHARACTER_SET           A_ALTCHARSET
 
-    #include <string>
-    #include "MacHdr.h"
-    #include "libmac.h"
+#include <string>
+#include "MacHdr.h"
+#include "libmac.h"
 
 #elif defined(DOS)
-    #define DOS_TERM
-    #define SHORT_FILE_NAMES
-    #define EOL "\n\r"
-    #define CHARACTER_SET           A_ALTCHARSET
+#define DOS_TERM
+#define SHORT_FILE_NAMES
+#define EOL "\n\r"
+#define CHARACTER_SET           A_ALTCHARSET
 
-    #include <string>
+#include <string>
 
 #else
-    #error unsupported compiler
+#error unsupported compiler
 #endif
 
 
 // =========================================================================
 //  Debugging Defines
 // =========================================================================
-#ifdef _DEBUG                                   // this is how MSVC signals a debug build
-    #define DEBUG                   1
+#ifdef _DEBUG                   // this is how MSVC signals a debug build
+#define DEBUG                   1
 #else
 //  #define DEBUG                   0           // leave this undefined for those lamers who use #ifdef
 #endif
 
 #if DEBUG
-    #if __MWERKS__
-        #define MSIPL_DEBUG_MODE
-    #endif
+#if __MWERKS__
+#define MSIPL_DEBUG_MODE
+#endif
 #else
-    #if !defined(NDEBUG)
-        #define NDEBUG                          // used by <assert.h>
-    #endif
+#if !defined(NDEBUG)
+#define NDEBUG                  // used by <assert.h>
+#endif
 #endif
 
 
@@ -151,11 +151,11 @@
 //  Game Play Defines
 // =========================================================================
 #ifdef USE_CURSES
-  #define NUMBER_OF_LINES   LINES
+#define NUMBER_OF_LINES   LINES
 #elif MAC
-  #define NUMBER_OF_LINES   30
+#define NUMBER_OF_LINES   30
 #else
-  #define NUMBER_OF_LINES   25
+#define NUMBER_OF_LINES   25
 #endif
 
 // Uncomment this line to separate the elf and dwarf races from then
@@ -197,7 +197,7 @@
     // Setting it to nothing or not setting it will cause all game files to
     // be dumped in the current directory.
     //
-    #define SAVE_DIR_PATH       "/opt/crawl/lib/"
+#define SAVE_DIR_PATH       "/opt/crawl/lib/"
 
     // This is very kludgy for now... hopefully, a new save file system
     // will make this little thing go away.  Define SAVE_PACKAGE_CMD
@@ -210,15 +210,15 @@
     //
     // Comment these lines out if you want to leave the save files uncompressed.
     //
-    #define SAVE_PACKAGE_CMD    "/opt/bin/zip -m -q -j -1 %s.zip %s.*"
+#define SAVE_PACKAGE_CMD    "/opt/bin/zip -m -q -j -1 %s.zip %s.*"
 
-    #define LOAD_UNPACKAGE_CMD  "/opt/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
+#define LOAD_UNPACKAGE_CMD  "/opt/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
 
-    #define PACKAGE_SUFFIX      ".zip"
+#define PACKAGE_SUFFIX      ".zip"
 
     // This provides some rudimentary protection against people using
     // save file cheats on multi-user systems.
-    #define DO_ANTICHEAT_CHECKS
+#define DO_ANTICHEAT_CHECKS
 
 #endif
 
@@ -227,7 +227,8 @@
 //  Misc
 // ===================================================================================
 #if HAS_NAMESPACES
-    using namespace std;
+using namespace std;
+
 #endif
 
 template < class T >
@@ -236,4 +237,4 @@ inline void UNUSED(const volatile T &)
 }                               // Note that this generates no code with CodeWarrior or MSVC (if inlining is on).
 
 
-#endif  // APPHDR_H
+#endif // APPHDR_H

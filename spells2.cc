@@ -47,36 +47,36 @@ extern char wield_change;       /* defined in output.cc */
 
 
 
-unsigned char detect_traps( void )
+unsigned char detect_traps(void)
 {
-  unsigned char traps_found = 0;
+    unsigned char traps_found = 0;
 
-  for (int count_x = 0; count_x < NTRAPS; count_x++)
-  {
-    if ( env.trap_x[count_x] > you.x_pos - 15
-        && env.trap_x[count_x] < you.x_pos + 15
-        && env.trap_y[count_x] > you.y_pos - 8
-        && env.trap_y[count_x] < you.y_pos + 8 )
-      {
-        if ( grd[env.trap_x[count_x]][env.trap_y[count_x]] == DNGN_UNDISCOVERED_TRAP )
-          {
-            if ( env.trap_type[count_x] < TRAP_TELEPORT
-                  || env.trap_type[count_x] == TRAP_BLADE
-                  || env.trap_type[count_x] == TRAP_BOLT )
-              grd[env.trap_x[count_x]][env.trap_y[count_x]] = DNGN_TRAP_I;
+    for (int count_x = 0; count_x < NTRAPS; count_x++)
+    {
+        if (env.trap_x[count_x] > you.x_pos - 15
+            && env.trap_x[count_x] < you.x_pos + 15
+            && env.trap_y[count_x] > you.y_pos - 8
+            && env.trap_y[count_x] < you.y_pos + 8)
+        {
+            if (grd[env.trap_x[count_x]][env.trap_y[count_x]] == DNGN_UNDISCOVERED_TRAP)
+            {
+                if (env.trap_type[count_x] < TRAP_TELEPORT
+                    || env.trap_type[count_x] == TRAP_BLADE
+                    || env.trap_type[count_x] == TRAP_BOLT)
+                    grd[env.trap_x[count_x]][env.trap_y[count_x]] = DNGN_TRAP_I;
 
-            if ( env.trap_type[count_x] == TRAP_TELEPORT
-                  || env.trap_type[count_x] == TRAP_AMNESIA
-                  || env.trap_type[count_x] == TRAP_ZOT )
-              grd[env.trap_x[count_x]][env.trap_y[count_x]] = DNGN_TRAP_II;
+                if (env.trap_type[count_x] == TRAP_TELEPORT
+                    || env.trap_type[count_x] == TRAP_AMNESIA
+                    || env.trap_type[count_x] == TRAP_ZOT)
+                    grd[env.trap_x[count_x]][env.trap_y[count_x]] = DNGN_TRAP_II;
 
-            env.map[env.trap_x[count_x] - 1][env.trap_y[count_x] - 1] = '^';
-            traps_found++;
-          }
-      }
-  }
+                env.map[env.trap_x[count_x] - 1][env.trap_y[count_x] - 1] = '^';
+                traps_found++;
+            }
+        }
+    }
 
-  return traps_found;
+    return traps_found;
 }
 
 
@@ -84,25 +84,25 @@ unsigned char detect_traps( void )
 
 unsigned char detect_items(int map_radius)
 {
-  unsigned char items_found = 0;
+    unsigned char items_found = 0;
 
-  mpr("You detect items!");
+    mpr("You detect items!");
 
-  if (map_radius >= 50)
-    map_radius = 50;
+    if (map_radius >= 50)
+        map_radius = 50;
 
-  for (int i = you.x_pos - map_radius; i < you.x_pos + map_radius; i++)
+    for (int i = you.x_pos - map_radius; i < you.x_pos + map_radius; i++)
     {
-      for (int j = you.y_pos - map_radius; j < you.y_pos + map_radius; j++)
+        for (int j = you.y_pos - map_radius; j < you.y_pos + map_radius; j++)
         {
-          if (i < 5 || j < 5 || i > 75 || j > 65)
-            continue;
-          if (igrd[i][j] != ING)
-            env.map[i - 1][j - 1] = '~';
+            if (i < 5 || j < 5 || i > 75 || j > 65)
+                continue;
+            if (igrd[i][j] != ING)
+                env.map[i - 1][j - 1] = '~';
         }
     }
 
-  return items_found;
+    return items_found;
 }
 
 
@@ -110,24 +110,24 @@ unsigned char detect_items(int map_radius)
 
 unsigned char detect_creatures(int map_radius)
 {
-  unsigned char creatures_found = 0;
+    unsigned char creatures_found = 0;
 
-  mpr("You detect creatures!");
+    mpr("You detect creatures!");
 
-  map_radius = 50;
+    map_radius = 50;
 
-  for (int i = you.x_pos - map_radius; i < you.x_pos + map_radius; i++)
+    for (int i = you.x_pos - map_radius; i < you.x_pos + map_radius; i++)
     {
-      for (int j = you.y_pos - map_radius; j < you.y_pos + map_radius; j++)
+        for (int j = you.y_pos - map_radius; j < you.y_pos + map_radius; j++)
         {
-          if (i < 5 || j < 5 || i > 75 || j > 65)
-            continue;
-          if (mgrd[i][j] != MNG)
-            env.map[i - 1][j - 1] = mons_char(menv[mgrd[i][j]].type);
+            if (i < 5 || j < 5 || i > 75 || j > 65)
+                continue;
+            if (mgrd[i][j] != MNG)
+                env.map[i - 1][j - 1] = mons_char(menv[mgrd[i][j]].type);
         }
     }
 
-  return creatures_found;
+    return creatures_found;
 }
 
 
@@ -135,78 +135,78 @@ unsigned char detect_creatures(int map_radius)
 
 int corpse_rot(int power)
 {
-  char adx = 0;
-  char ady = 0;
+    char adx = 0;
+    char ady = 0;
 
-  char minx = you.x_pos - 6;
-  char maxx = you.x_pos + 7;
-  char miny = you.y_pos - 6;
-  char maxy = you.y_pos + 6;
-  char xinc = 1;
-  char yinc = 1;
+    char minx = you.x_pos - 6;
+    char maxx = you.x_pos + 7;
+    char miny = you.y_pos - 6;
+    char maxy = you.y_pos + 6;
+    char xinc = 1;
+    char yinc = 1;
 
-  if ( coinflip() )
+    if (coinflip())
     {
-      minx = you.x_pos + 6;
-      maxx = you.x_pos - 7;
-      xinc = -1;
+        minx = you.x_pos + 6;
+        maxx = you.x_pos - 7;
+        xinc = -1;
     }
 
-  if ( coinflip() )
+    if (coinflip())
     {
-      miny = you.y_pos + 6;
-      maxy = you.y_pos - 7;
-      yinc = -1;
+        miny = you.y_pos + 6;
+        maxy = you.y_pos - 7;
+        yinc = -1;
     }
 
-  for (adx = minx; adx != maxx; adx += xinc)
+    for (adx = minx; adx != maxx; adx += xinc)
     {
-      if (adx == 7 || adx == -7)
-        return 0;
+        if (adx == 7 || adx == -7)
+            return 0;
 
-      for (ady = miny; ady != maxy; ady += yinc)
+        for (ady = miny; ady != maxy; ady += yinc)
         {
-          if ( see_grid(adx, ady) )
+            if (see_grid(adx, ady))
             {
-              if (igrd[adx][ady] == ING || env.cgrid[adx][ady] != CNG)
-                continue;
+                if (igrd[adx][ady] == ING || env.cgrid[adx][ady] != CNG)
+                    continue;
 
-              int objl = igrd[adx][ady];
-              int hrg = 0;
+                int objl = igrd[adx][ady];
+                int hrg = 0;
 
-              while (objl != ING)
+                while (objl != ING)
                 {
-                  if (mitm.base_type[objl] == OBJ_CORPSES && mitm.sub_type[objl] == CORPSE_BODY)
+                    if (mitm.base_type[objl] == OBJ_CORPSES && mitm.sub_type[objl] == CORPSE_BODY)
                     {
-                      if (mons_skeleton(mitm.pluses[objl]) == 0)
-                        destroy_item(objl);
-                      else
+                        if (mons_skeleton(mitm.pluses[objl]) == 0)
+                            destroy_item(objl);
+                        else
                         {
-                          mitm.sub_type[objl] = CORPSE_SKELETON;
-                          mitm.special[objl] = 200;
-                          mitm.colour[objl] = LIGHTGREY;
+                            mitm.sub_type[objl] = CORPSE_SKELETON;
+                            mitm.special[objl] = 200;
+                            mitm.colour[objl] = LIGHTGREY;
                         }
 
-                      place_cloud(CLOUD_MIASMA, adx, ady, 4 + random2(6) + random2(6) + random2(6));
+                        place_cloud(CLOUD_MIASMA, adx, ady, 4 + random2(6) + random2(6) + random2(6));
 
-                      goto out_of_raise;
+                        goto out_of_raise;
                     }
-                  hrg = mitm.link[objl];
-                  objl = hrg;
+                    hrg = mitm.link[objl];
+                    objl = hrg;
                 }
 
-out_of_raise:
-              objl = 1;
+              out_of_raise:
+                objl = 1;
 
             }
         }
     }
 
-  strcpy(info, "You smell decay.");
-  mpr(info);
-  power = 0;
-  // should make zombies decay into skeletons
-  return 0;
+    strcpy(info, "You smell decay.");
+    mpr(info);
+    power = 0;
+    // should make zombies decay into skeletons
+    return 0;
 }
 
 
@@ -214,126 +214,128 @@ out_of_raise:
 
 int animate_dead(int power, int corps_beh, int corps_hit, int actual)
 {
-  char adx = 0;
-  char ady = 0;
+    char adx = 0;
+    char ady = 0;
 
-  char minx = you.x_pos - 6;
-  char maxx = you.x_pos + 7;
-  char miny = you.y_pos - 6;
-  char maxy = you.y_pos + 6;
-  char xinc = 1;
-  char yinc = 1;
+    char minx = you.x_pos - 6;
+    char maxx = you.x_pos + 7;
+    char miny = you.y_pos - 6;
+    char maxy = you.y_pos + 6;
+    char xinc = 1;
+    char yinc = 1;
 
-  char number_raised = 0;
+    char number_raised = 0;
 
-  if ( coinflip() ) {
-    minx = you.x_pos + 6;
-    maxx = you.x_pos - 7;
-    xinc = -1;
-  }
-
-  if ( coinflip() ) {
-    miny = you.y_pos + 6;
-    maxy = you.y_pos - 7;
-    yinc = -1;
-  }
-
-  for (adx = minx; adx != maxx; adx += xinc)
-  {
-    if ((adx == 7) || (adx == -7))
-      return 0;
-
-    for (ady = miny; ady != maxy; ady += yinc)
+    if (coinflip())
     {
-      if ( see_grid(adx, ady) )
+        minx = you.x_pos + 6;
+        maxx = you.x_pos - 7;
+        xinc = -1;
+    }
+
+    if (coinflip())
+    {
+        miny = you.y_pos + 6;
+        maxy = you.y_pos - 7;
+        yinc = -1;
+    }
+
+    for (adx = minx; adx != maxx; adx += xinc)
+    {
+        if ((adx == 7) || (adx == -7))
+            return 0;
+
+        for (ady = miny; ady != maxy; ady += yinc)
         {
-          if (igrd[adx][ady] != ING)
+            if (see_grid(adx, ady))
             {
-              int objl = igrd[adx][ady];
-              int hrg = 0;
+                if (igrd[adx][ady] != ING)
+                {
+                    int objl = igrd[adx][ady];
+                    int hrg = 0;
 
-              //this searches thru all the items on the ground for a corpse
-              while (objl != ING)
-              {
-                if (mitm.base_type[objl] == OBJ_CORPSES)
-                  {
-                    number_raised += raise_corpse(objl, adx, ady, corps_beh, corps_hit, actual);
-                    power--;
-                    break;
-                  }
+                    //this searches thru all the items on the ground for a corpse
+                    while (objl != ING)
+                    {
+                        if (mitm.base_type[objl] == OBJ_CORPSES)
+                        {
+                            number_raised += raise_corpse(objl, adx, ady, corps_beh, corps_hit, actual);
+                            power--;
+                            break;
+                        }
 
-                hrg = mitm.link[objl];
-                objl = hrg;
-              }
+                        hrg = mitm.link[objl];
+                        objl = hrg;
+                    }
 
-              objl = 1;
+                    objl = 1;
+                }
             }
         }
     }
-  }
 
-  if (actual == 0)
-    return number_raised;
+    if (actual == 0)
+        return number_raised;
 
-  if (number_raised > 0)
+    if (number_raised > 0)
     {
-      strcpy(info, "The dead are walking!");
-      //else
-      //  strcpy(info, "The dark energy consumes the dead!"); - no, this
-      // means that no corpses were found. Better to say:
-      // strcpy(info, "You receive no reply.");
-      //jmf: Why do I have to get an uninformative message when some random
-      //jmf: monster fails to do something? IMHO there's too much noise already.
-      mpr(info);
+        strcpy(info, "The dead are walking!");
+        //else
+        //  strcpy(info, "The dark energy consumes the dead!"); - no, this
+        // means that no corpses were found. Better to say:
+        // strcpy(info, "You receive no reply.");
+        //jmf: Why do I have to get an uninformative message when some random
+        //jmf: monster fails to do something? IMHO there's too much noise already.
+        mpr(info);
     }
 
-  return number_raised;
+    return number_raised;
 }
 
 
 
 
 int animate_a_corpse(char axps, char ayps, int corps_beh,
-                        int corps_hit, char class_allowed)
+                     int corps_hit, char class_allowed)
 {
-  if (igrd[axps][ayps] == ING)
-    return 0;
-  else if (mitm.base_type[igrd[axps][ayps]] != OBJ_CORPSES)
-    return 0;
-  else if (class_allowed == CORPSE_SKELETON && mitm.sub_type[igrd[axps][ayps]] != CORPSE_SKELETON)
-    return 0;
-  else if (raise_corpse(igrd[axps][ayps], axps, ayps, corps_beh, corps_hit, 1) > 0)
+    if (igrd[axps][ayps] == ING)
+        return 0;
+    else if (mitm.base_type[igrd[axps][ayps]] != OBJ_CORPSES)
+        return 0;
+    else if (class_allowed == CORPSE_SKELETON && mitm.sub_type[igrd[axps][ayps]] != CORPSE_SKELETON)
+        return 0;
+    else if (raise_corpse(igrd[axps][ayps], axps, ayps, corps_beh, corps_hit, 1) > 0)
     {
-      strcpy(info, "The dead are walking!");
-      //      else
-      //         strcpy(info, "You receive no reply.");
-      mpr(info);
+        strcpy(info, "The dead are walking!");
+        //      else
+        //         strcpy(info, "You receive no reply.");
+        mpr(info);
     }
 
-  return 0;
-}           // end of animate_a_corpse()
+    return 0;
+}                               // end of animate_a_corpse()
 
 
 
 
 int raise_corpse(int corps, char corx, char cory,
-                  int corps_beh, int corps_hit, int actual)
+                 int corps_beh, int corps_hit, int actual)
 {
-  int returnVal = 1;
+    int returnVal = 1;
 
-  if (mons_zombie_size(mitm.pluses[corps]) == 0)
-    returnVal =  0;
-  else if (actual != 0)
+    if (mons_zombie_size(mitm.pluses[corps]) == 0)
+        returnVal = 0;
+    else if (actual != 0)
     {
-      if (mitm.sub_type[corps] == CORPSE_BODY)
-        create_monster(MONS_ZOMBIE_SMALL, 0, corps_beh, corx, cory,
-                        corps_hit, mitm.pluses[corps]);
-      else
-        create_monster(MONS_SMALL_SKELETON, 0, corps_beh, corx, cory,
-                        corps_hit, mitm.pluses[corps]);
-      destroy_item(corps);
+        if (mitm.sub_type[corps] == CORPSE_BODY)
+            create_monster(MONS_ZOMBIE_SMALL, 0, corps_beh, corx, cory,
+                           corps_hit, mitm.pluses[corps]);
+        else
+            create_monster(MONS_SMALL_SKELETON, 0, corps_beh, corx, cory,
+                           corps_hit, mitm.pluses[corps]);
+        destroy_item(corps);
     }
-  return returnVal;
+    return returnVal;
 }
 
 
@@ -341,163 +343,165 @@ int raise_corpse(int corps, char corx, char cory,
 
 void cast_twisted(int power, int corps_beh, int corps_hit)
 {
-  int total_mass = 0;
-  int old_item = ING;
-  int number_raised = 0;
-  char type_resurr = MONS_ABOMINATION_SMALL;
-  char coloured = corps_hit;
+    int total_mass = 0;
+    int old_item = ING;
+    int number_raised = 0;
+    char type_resurr = MONS_ABOMINATION_SMALL;
+    char coloured = corps_hit;
 
-  coloured = 0;
+    coloured = 0;
 
-  unsigned char rotted = 0;
+    unsigned char rotted = 0;
 
-  if (igrd[you.x_pos][you.y_pos] == ING)
+    if (igrd[you.x_pos][you.y_pos] == ING)
     {
-      strcpy(info, "There's nothing here!");
-      mpr(info);
-      return;
+        strcpy(info, "There's nothing here!");
+        mpr(info);
+        return;
     }
 
-  int objl = igrd[you.x_pos][you.y_pos];
-  int hrg = 0;
+    int objl = igrd[you.x_pos][you.y_pos];
+    int hrg = 0;
 
-  while (objl != ING) {
-    if (mitm.base_type[objl] == OBJ_CORPSES && mitm.sub_type[objl] == CORPSE_BODY)
+    while (objl != ING)
     {
-      //number_raised += raise_corpse(objl, adx, ady, corps_beh, corps_hit, actual);
-      //power --;
-      total_mass += mons_weight(mitm.pluses[objl]);
-      if (mitm.special[objl] < 100)
-        rotted++;
-      old_item = objl;
-      hrg = mitm.link[objl];
-      objl = hrg;
-      destroy_item(old_item);
-      number_raised++;
-      if (power <= 0)
-        goto finished;
-      continue;
-      //goto out_of_raise;
+        if (mitm.base_type[objl] == OBJ_CORPSES && mitm.sub_type[objl] == CORPSE_BODY)
+        {
+            //number_raised += raise_corpse(objl, adx, ady, corps_beh, corps_hit, actual);
+            //power --;
+            total_mass += mons_weight(mitm.pluses[objl]);
+            if (mitm.special[objl] < 100)
+                rotted++;
+            old_item = objl;
+            hrg = mitm.link[objl];
+            objl = hrg;
+            destroy_item(old_item);
+            number_raised++;
+            if (power <= 0)
+                goto finished;
+            continue;
+            //goto out_of_raise;
+        }
+        hrg = mitm.link[objl];
+        objl = hrg;
     }
-    hrg = mitm.link[objl];
-    objl = hrg;
-  }
-  //   out_of_raise : objl = 1;
-  //  }
-  // }
+    //   out_of_raise : objl = 1;
+    //  }
+    // }
 
-  //if (total_mass == 0) return;
+    //if (total_mass == 0) return;
 
- finished:                       // now to raise the thing
+  finished:                     // now to raise the thing
 #ifdef WIZARD
-  sprintf( info, "Total mass: %d", total_mass );
-  mpr(info);
+    sprintf(info, "Total mass: %d", total_mass);
+    mpr(info);
 #endif
 
-  total_mass += random2(power) * 3
-                 + random2(power) + random2(power) + random2(power)
-                 + random2(power) + random2(power) + random2(power)
-                 + random2(power) + random2(power)
-                 + random2(power) * 3 + random2(power) * 3 + random2(power) * 3;
+    total_mass += random2(power) * 3
+        + random2(power) + random2(power) + random2(power)
+        + random2(power) + random2(power) + random2(power)
+        + random2(power) + random2(power)
+        + random2(power) * 3 + random2(power) * 3 + random2(power) * 3;
 
-  if ( total_mass < 401 + random2(500) + random2(500) || number_raised < 2 + random2(2) )
+    if (total_mass < 401 + random2(500) + random2(500) || number_raised < 2 + random2(2))
     {
-      strcpy(info, "The spell fails.");
-      mpr(info);
-      strcpy(info, "The corpses collapse into a pulpy mess.");
-      mpr(info);
-      return;
+        strcpy(info, "The spell fails.");
+        mpr(info);
+        strcpy(info, "The corpses collapse into a pulpy mess.");
+        mpr(info);
+        return;
     }
 
-  if ( total_mass > 499 + random2(700) + random2(900) + random2(1000) )
-    type_resurr = MONS_ABOMINATION_LARGE;
+    if (total_mass > 499 + random2(700) + random2(900) + random2(1000))
+        type_resurr = MONS_ABOMINATION_LARGE;
 
-  strcpy(info, "The heap of corpses melds into an "
-               "agglomeration of writhing flesh!");
-  mpr(info);
+    strcpy(info, "The heap of corpses melds into an "
+           "agglomeration of writhing flesh!");
+    mpr(info);
 
-  coloured = LIGHTRED;
-  if (rotted >= random2(number_raised))
-    coloured = RED;
-  if (rotted >= number_raised)
-    coloured = BROWN;
+    coloured = LIGHTRED;
+    if (rotted >= random2(number_raised))
+        coloured = RED;
+    if (rotted >= number_raised)
+        coloured = BROWN;
 
-  create_monster(type_resurr, 0, corps_beh, you.x_pos, you.y_pos, you.pet_target, coloured);
+    create_monster(type_resurr, 0, corps_beh, you.x_pos, you.y_pos, you.pet_target, coloured);
 }
 
 
 bool brand_weapon(char which_brand, int power)
 {
 
-  char duration_affected = 0;
+    char duration_affected = 0;
 
-  if (you.duration[DUR_VORPAL_BLADE] != 0 || you.duration[DUR_FIRE_BRAND] != 0 || you.duration[DUR_ICE_BRAND] != 0 || you.duration[DUR_LETHAL_INFUSION] != 0)
-    return false;
+    if (you.duration[DUR_VORPAL_BLADE] != 0 || you.duration[DUR_FIRE_BRAND] != 0 || you.duration[DUR_ICE_BRAND] != 0 || you.duration[DUR_LETHAL_INFUSION] != 0)
+        return false;
 
-  if (you.equip[EQ_WEAPON] == -1)
+    if (you.equip[EQ_WEAPON] == -1)
     {
-      return false;
+        return false;
     }
 
-  if (you.inv_class[you.equip[EQ_WEAPON]] != 0 || (you.inv_type[you.equip[EQ_WEAPON]] >= 13 && you.inv_type[you.equip[EQ_WEAPON]] <= 16) || you.inv_type[you.equip[EQ_WEAPON]] == 0)
+    if (you.inv_class[you.equip[EQ_WEAPON]] != 0 || (you.inv_type[you.equip[EQ_WEAPON]] >= 13 && you.inv_type[you.equip[EQ_WEAPON]] <= 16) || you.inv_type[you.equip[EQ_WEAPON]] == 0)
     {
-      return false;
+        return false;
     }
 
-  if (you.inv_dam[you.equip[EQ_WEAPON]] % 30 != 0 || you.inv_dam[you.equip[EQ_WEAPON]] > 180 || you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25)
+    if (you.inv_dam[you.equip[EQ_WEAPON]] % 30 != 0 || you.inv_dam[you.equip[EQ_WEAPON]] > 180 || you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25)
     {
-      return false;
+        return false;
     }
 
-  item_name(you.inv_plus2[you.equip[EQ_WEAPON]], you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_quantity[you.equip[EQ_WEAPON]], you.inv_ident[you.equip[EQ_WEAPON]], 4, str_pass);
-  strcpy(info, str_pass);
+    item_name(you.inv_plus2[you.equip[EQ_WEAPON]], you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_quantity[you.equip[EQ_WEAPON]], you.inv_ident[you.equip[EQ_WEAPON]], 4, str_pass);
+    strcpy(info, str_pass);
 
-  switch (which_brand)                      // use SPECIAL_WEAPONS here?
+    switch (which_brand)        // use SPECIAL_WEAPONS here?
+
     {
     case SPWPN_FLAMING:
-      you.inv_dam[you.equip[EQ_WEAPON]] += 1;
-      strcat(info, " bursts into flame!");
-      duration_affected = 6;
-      break;
+        you.inv_dam[you.equip[EQ_WEAPON]] += 1;
+        strcat(info, " bursts into flame!");
+        duration_affected = 6;
+        break;
 
     case SPWPN_FREEZING:
-      you.inv_dam[you.equip[EQ_WEAPON]] += 2;
-      strcat(info, " glows blue.");
-      duration_affected = 7;
-      break;
+        you.inv_dam[you.equip[EQ_WEAPON]] += 2;
+        strcat(info, " glows blue.");
+        duration_affected = 7;
+        break;
 
     case SPWPN_VENOM:
-      if (damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == 0)
-        return false;
-      you.inv_dam[you.equip[EQ_WEAPON]] += 6;
-      strcat(info, " starts dripping with poison.");
-      duration_affected = 15;
-      break;
+        if (damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == 0)
+            return false;
+        you.inv_dam[you.equip[EQ_WEAPON]] += 6;
+        strcat(info, " starts dripping with poison.");
+        duration_affected = 15;
+        break;
 
     case SPWPN_DRAINING:
-      you.inv_dam[you.equip[EQ_WEAPON]] += 8;
-      strcat(info, " crackles with unholy energy.");
-      duration_affected = 8;
-      break;
+        you.inv_dam[you.equip[EQ_WEAPON]] += 8;
+        strcat(info, " crackles with unholy energy.");
+        duration_affected = 8;
+        break;
 
     case SPWPN_VORPAL:
-      if (damage_type(0, you.inv_type[you.equip[EQ_WEAPON]]) != 1)
-        return false;
-      you.inv_dam[you.equip[EQ_WEAPON]] += 10;
-      strcat(info, " glows silver and looks extremely sharp.");
-      duration_affected = 5;
-      break;
+        if (damage_type(0, you.inv_type[you.equip[EQ_WEAPON]]) != 1)
+            return false;
+        you.inv_dam[you.equip[EQ_WEAPON]] += 10;
+        strcat(info, " glows silver and looks extremely sharp.");
+        duration_affected = 5;
+        break;
     }
 
-  mpr(info);
-  wield_change = 1;
-  int dur_change = 7 + random2(power) + random2(power);
+    mpr(info);
+    wield_change = 1;
+    int dur_change = 7 + random2(power) + random2(power);
 
-  if (dur_change + you.duration[duration_affected] >= 100)
-    you.duration[duration_affected] = 100;
-  else
-    you.duration[duration_affected] += dur_change;
-  return true;
+    if (dur_change + you.duration[duration_affected] >= 100)
+        you.duration[duration_affected] = 100;
+    else
+        you.duration[duration_affected] += dur_change;
+    return true;
 }
 
 
@@ -505,46 +509,47 @@ bool brand_weapon(char which_brand, int power)
 
 void manage_shock_shield(void)
 {
-  you.shock_shield--;
-  if (you.shock_shield == 0)
-    return;
+    you.shock_shield--;
+    if (you.shock_shield == 0)
+        return;
 
-  char stx = 0;
-  char sty = 0;
+    char stx = 0;
+    char sty = 0;
 
-  for (stx = -1; stx < 2; stx++)
+    for (stx = -1; stx < 2; stx++)
     {
-      for (sty = -1; sty < 2; sty++)
+        for (sty = -1; sty < 2; sty++)
         {
-          if (sty == 0 && stx == 0)
-            continue;
-          //if ( one_chance_in(3) ) beam[0].range ++;
+            if (sty == 0 && stx == 0)
+                continue;
+            //if ( one_chance_in(3) ) beam[0].range ++;
 
-          if (grd[you.x_pos + stx][you.y_pos + sty] > DNGN_WAX_WALL
-               && env.cgrid[you.x_pos + stx][you.y_pos + sty] == CNG)
+            if (grd[you.x_pos + stx][you.y_pos + sty] > DNGN_WAX_WALL
+                && env.cgrid[you.x_pos + stx][you.y_pos + sty] == CNG)
             {
-              place_cloud( CLOUD_FIRE,           // is this right? {dlb}
-                           you.x_pos + stx,
-                           you.y_pos + sty,
-                           1 + random2(2) + ( (one_chance_in(3)) ? 1 : 0  ) );
+                place_cloud(CLOUD_FIRE,         // is this right? {dlb}
+                             you.x_pos + stx,
+                            you.y_pos + sty,
+                            1 + random2(2) + ((one_chance_in(3)) ? 1 : 0));
             }
-        }     // end of sty
-    }     // end of stx
+        }                       // end of sty
 
-}     // end of manage_shock_shield()
+    }                           // end of stx
+
+}                               // end of manage_shock_shield()
 
 
 
 
 void restore_str(void)
 {
-  if (you.strength < you.max_strength)
+    if (you.strength < you.max_strength)
     {
-      strcpy(info, "You feel your strength returning.");
-      mpr(info);
+        strcpy(info, "You feel your strength returning.");
+        mpr(info);
     }
-  you.strength = you.max_strength;
-  you.redraw_strength = 1;
+    you.strength = you.max_strength;
+    you.redraw_strength = 1;
 }
 
 
@@ -552,13 +557,13 @@ void restore_str(void)
 
 void restore_int(void)
 {
-  if (you.intel < you.max_intel)
+    if (you.intel < you.max_intel)
     {
-      strcpy(info, "You feel your intelligence returning.");
-      mpr(info);
+        strcpy(info, "You feel your intelligence returning.");
+        mpr(info);
     }
-  you.intel = you.max_intel;
-  you.redraw_intelligence = 1;
+    you.intel = you.max_intel;
+    you.redraw_intelligence = 1;
 }
 
 
@@ -566,13 +571,13 @@ void restore_int(void)
 
 void restore_dex(void)
 {
-  if (you.dex < you.max_dex)
+    if (you.dex < you.max_dex)
     {
-      strcpy(info, "You feel your dexterity returning.");
-      mpr(info);
+        strcpy(info, "You feel your dexterity returning.");
+        mpr(info);
     }
-  you.dex = you.max_dex;
-  you.redraw_dexterity = 1;
+    you.dex = you.max_dex;
+    you.redraw_dexterity = 1;
 }
 
 
@@ -580,154 +585,160 @@ void restore_dex(void)
 
 void turn_undead(int pow)
 {
-  int tu = 0, p;
-  char brek = 0;
+    int tu = 0, p;
+    char brek = 0;
 
-  mpr("You attempt to repel the undead.");
+    mpr("You attempt to repel the undead.");
 
-  for (tu = 0; tu < MNST; tu++)
+    for (tu = 0; tu < MNST; tu++)
     {
-      if (menv[tu].type == -1 || !mons_near(tu))
-        continue;
+        if (menv[tu].type == -1 || !mons_near(tu))
+            continue;
 
-      if (mons_holiness(menv[tu].type) == MH_UNDEAD)
+        if (mons_holiness(menv[tu].type) == MH_UNDEAD)
         {
-        /*  menv [tu].hit_points -= random2(5) + random2(pow) / 20;
-            if (menv [tu].hit_points <= 0)
-              {
-                monster_die(tu, KILL_YOU, 0);
-                continue;
-              }
-        */
+            /*  menv [tu].hit_points -= random2(5) + random2(pow) / 20;
+               if (menv [tu].hit_points <= 0)
+               {
+               monster_die(tu, KILL_YOU, 0);
+               continue;
+               }
+             */
 
-          if (random2(pow) + you.experience_level < menv[tu].hit_dice * 5)
-            break;
+            if (random2(pow) + you.experience_level < menv[tu].hit_dice * 5)
+                break;
 
-          if (menv[tu].enchantment1 == 1)
+            if (menv[tu].enchantment1 == 1)
+                for (p = 0; p < 3; p++)
+                {
+                    if (menv[tu].enchantment[p] == ENCH_FEAR)
+                        brek = 1;
+                }               // end of for p
+
             for (p = 0; p < 3; p++)
-              {
-                if (menv[tu].enchantment[p] == ENCH_FEAR)
-                  brek = 1;
-              }               // end of for p
-
-          for (p = 0; p < 3; p++)
             {
-              if (brek == 1)
+                if (brek == 1)
                 {
-                  brek = 0;
-                  break;
+                    brek = 0;
+                    break;
                 }
-              if (menv[tu].enchantment[p] == ENCH_NONE)
+                if (menv[tu].enchantment[p] == ENCH_NONE)
                 {
-                  menv[tu].enchantment[p] = ENCH_FEAR;
-                  menv[tu].enchantment1 = 1;
-                  strcpy(info, monam(menv[tu].number, menv[tu].type, menv[tu].enchantment[2], 0));
-                  strcat(info, " is repelled.");
-                  mpr(info);
-                  break;
+                    menv[tu].enchantment[p] = ENCH_FEAR;
+                    menv[tu].enchantment1 = 1;
+                    strcpy(info, monam(menv[tu].number, menv[tu].type, menv[tu].enchantment[2], 0));
+                    strcat(info, " is repelled.");
+                    mpr(info);
+                    break;
                 }
             }
-        }     // end of if mons_holiness
-    }     // end of for tu
-}     // end of turn_undead
+        }                       // end of if mons_holiness
+
+    }                           // end of for tu
+
+}                               // end of turn_undead
 
 
 
 
 void holy_word(int pow)
 {
-  int tu = 0, p;
-  char brek = 0;
+    int tu = 0, p;
+    char brek = 0;
 
-  strcpy(info, "You speak a Word of immense power!");
-  mpr(info);
+    strcpy(info, "You speak a Word of immense power!");
+    mpr(info);
 
-  for (tu = 0; tu < MNST; tu++)
+    for (tu = 0; tu < MNST; tu++)
     {
-      if (menv[tu].type == -1 || !mons_near(tu))
-        continue;
+        if (menv[tu].type == -1 || !mons_near(tu))
+            continue;
 
-      if (mons_holiness(menv[tu].type) > MH_NORMAL)
+        if (mons_holiness(menv[tu].type) > MH_NORMAL)
         {
-          menv[tu].hit_points -= random2(15) + random2(15) + random2(pow) / 3;
-          if (menv[tu].enchantment[2] == ENCH_INVIS && player_see_invis() == 0)
+            menv[tu].hit_points -= random2(15) + random2(15) + random2(pow) / 3;
+            if (menv[tu].enchantment[2] == ENCH_INVIS && player_see_invis() == 0)
             {
-              strcpy(info, monam(menv[tu].number, menv[tu].type, menv[tu].enchantment[2], 0));
-              strcat(info, " convulses!");
-              mpr(info);
+                strcpy(info, monam(menv[tu].number, menv[tu].type, menv[tu].enchantment[2], 0));
+                strcat(info, " convulses!");
+                mpr(info);
             }
-          if (menv[tu].hit_points <= 0)
+            if (menv[tu].hit_points <= 0)
             {
-              monster_die(tu, KILL_YOU, 0);
-              continue;
+                monster_die(tu, KILL_YOU, 0);
+                continue;
             }
 
-          if (menv[tu].speed_increment >= 25)
-            menv[tu].speed_increment -= 20;
+            if (menv[tu].speed_increment >= 25)
+                menv[tu].speed_increment -= 20;
 
-          if (menv[tu].enchantment1 == 1)
+            if (menv[tu].enchantment1 == 1)
+                for (p = 0; p < 3; p++)
+                {
+                    if (menv[tu].enchantment[p] == ENCH_FEAR)
+                        brek = 1;
+                }               // end of for p
+
             for (p = 0; p < 3; p++)
-              {
-                if (menv[tu].enchantment[p] == ENCH_FEAR)
-                  brek = 1;
-              }               // end of for p
-
-          for (p = 0; p < 3; p++)
             {
-              if (brek == 1)
+                if (brek == 1)
                 {
-                  brek = 0;
-                  break;
+                    brek = 0;
+                    break;
                 }
-              if (menv[tu].enchantment[p] == ENCH_NONE)
+                if (menv[tu].enchantment[p] == ENCH_NONE)
                 {
-                  menv[tu].enchantment[p] = ENCH_FEAR;
-                  menv[tu].enchantment1 = 1;
-                  break;
+                    menv[tu].enchantment[p] = ENCH_FEAR;
+                    menv[tu].enchantment1 = 1;
+                    break;
                 }
             }
         }                       // end of if mons_holiness
+
     }                           // end of for tu
+
 }                               // end of holy word
 
 
 void cast_toxic_radiance(void)
 {
-  unsigned char toxy = 0;
+    unsigned char toxy = 0;
 
-  strcpy(info, "You radiate a sickly green light!");
-  mpr(info);
-  show_green = GREEN;
-  viewwindow(1, false);
-  more();
-  mesclr();
+    strcpy(info, "You radiate a sickly green light!");
+    mpr(info);
+    show_green = GREEN;
+    viewwindow(1, false);
+    more();
+    mesclr();
 
-  if (you.invis)
+    if (you.invis)
     {
-      strcpy(info, "The light passes straight through your body.");
-      mpr(info);
+        strcpy(info, "The light passes straight through your body.");
+        mpr(info);
     }
-  else if (player_res_poison() == 0)
+    else if (player_res_poison() == 0)
     {
-      you.poison += 2;
-      strcpy(info, "You feel rather sick.");
-      mpr(info);
+        you.poison += 2;
+        strcpy(info, "You feel rather sick.");
+        mpr(info);
     }
 
 
-  for (toxy = 0; toxy < MNST; toxy++)
+    for (toxy = 0; toxy < MNST; toxy++)
     {
-      if (menv[toxy].type == -1)
-        continue;
-      if (mons_near(toxy))
+        if (menv[toxy].type == -1)
+            continue;
+        if (mons_near(toxy))
         {
-          if (menv[toxy].enchantment[2] != ENCH_INVIS)
-            poison_monster(toxy, 0);        // assumes only you can cast this spell (or would want to)
+            if (menv[toxy].enchantment[2] != ENCH_INVIS)
+                poison_monster(toxy, 0);        // assumes only you can cast this spell (or would want to)
 
-          if ( menv[toxy].enchantment[2] != ENCH_INVIS && coinflip() )
-            poison_monster(toxy, 0);        // assumes only you can cast this spell (or would want to)
+            if (menv[toxy].enchantment[2] != ENCH_INVIS && coinflip())
+                poison_monster(toxy, 0);        // assumes only you can cast this spell (or would want to)
+
         }
     }                           // end loop
+
 }                               // end toxic rad
 
 
@@ -735,59 +746,60 @@ void cast_toxic_radiance(void)
 
 void cast_refrigeration(int pow)
 {
-  unsigned char toxy = 0;
-  struct bolt beam[1];
+    unsigned char toxy = 0;
+    struct bolt beam[1];
 
-  strcpy(info, "The heat is drained from your surroundings.");
-  mpr(info);
-  show_green = LIGHTCYAN;
-  viewwindow(1, false);
-  more();
-  mesclr();
+    strcpy(info, "The heat is drained from your surroundings.");
+    mpr(info);
+    show_green = LIGHTCYAN;
+    viewwindow(1, false);
+    more();
+    mesclr();
 
-  if (player_res_cold() <= 100)
+    if (player_res_cold() <= 100)
     {
-      strcpy(info, "You freeze!");
-      mpr(info);
-      ouch(3 + random2(7) + random2(7) + random2(pow) / 20, 0, KILLED_BY_FREEZING);
+        strcpy(info, "You freeze!");
+        mpr(info);
+        ouch(3 + random2(7) + random2(7) + random2(pow) / 20, 0, KILLED_BY_FREEZING);
     }
-  if (player_res_cold() > 100)
+    if (player_res_cold() > 100)
     {
-      strcpy(info, "You feel very cold.");
-      mpr(info);
-      ouch((3 + random2(7) + random2(7) + random2(pow) / 20) / (2 + (player_res_cold() - 100) * (player_res_cold() - 100)), 0, KILLED_BY_FREEZING);
+        strcpy(info, "You feel very cold.");
+        mpr(info);
+        ouch((3 + random2(7) + random2(7) + random2(pow) / 20) / (2 + (player_res_cold() - 100) * (player_res_cold() - 100)), 0, KILLED_BY_FREEZING);
     }
-  if (player_res_cold() < 100)
+    if (player_res_cold() < 100)
     {
-      ouch(3 + random2(7) + random2(pow) / 30, 0, KILLED_BY_FREEZING);        /* this is extra damage */
+        ouch(3 + random2(7) + random2(pow) / 30, 0, KILLED_BY_FREEZING);        /* this is extra damage */
     }
-  scrolls_burn(12, OBJ_POTIONS);
+    scrolls_burn(12, OBJ_POTIONS);
 
-  for (toxy = 0; toxy < MNST; toxy++)
+    for (toxy = 0; toxy < MNST; toxy++)
     {
-      if (menv[toxy].type == -1)
-        continue;
-      if (mons_near(toxy))
+        if (menv[toxy].type == -1)
+            continue;
+        if (mons_near(toxy))
         {
-          strcpy(info, "You freeze ");
-          strcat(info, monam(menv[toxy].number, menv[toxy].type, menv[toxy].enchantment[2], 1));
-          strcat(info, ".");
-          mpr(info);
-          int hurted = 3 + random2(7) + random2(pow) / 20;
+            strcpy(info, "You freeze ");
+            strcat(info, monam(menv[toxy].number, menv[toxy].type, menv[toxy].enchantment[2], 1));
+            strcat(info, ".");
+            mpr(info);
+            int hurted = 3 + random2(7) + random2(pow) / 20;
 
-          beam[0].flavour = BEAM_COLD;
-          //   o = toxy;
-          hurted = check_mons_resists(beam, toxy, hurted);
-          menv[toxy].hit_points -= hurted;
-          if (menv[toxy].hit_points <= 0)
+            beam[0].flavour = BEAM_COLD;
+            //   o = toxy;
+            hurted = check_mons_resists(beam, toxy, hurted);
+            menv[toxy].hit_points -= hurted;
+            if (menv[toxy].hit_points <= 0)
             {
-              monster_die(toxy, KILL_YOU, 0);
+                monster_die(toxy, KILL_YOU, 0);
             }
-          else
-            print_wounds(toxy);
-          // assumes only you can cast this spell (or would want to)
+            else
+                print_wounds(toxy);
+            // assumes only you can cast this spell (or would want to)
         }
     }                           // end loop
+
 }                               // end toxic rad
 
 
@@ -795,224 +807,224 @@ void cast_refrigeration(int pow)
 
 void drain_life(int pow)
 {
-  unsigned char toxy = 0;
-  int hp_gain = 0;
+    unsigned char toxy = 0;
+    int hp_gain = 0;
 
-  strcpy(info, "You draw life from your surroundings.");
-  mpr(info);
+    strcpy(info, "You draw life from your surroundings.");
+    mpr(info);
 
-  show_green = DARKGREY;
-  viewwindow(1, false);
-  more();
-  mesclr();
+    show_green = DARKGREY;
+    viewwindow(1, false);
+    more();
+    mesclr();
 
-  for (toxy = 0; toxy < MNST; toxy++)
+    for (toxy = 0; toxy < MNST; toxy++)
     {
-      if (menv[toxy].type == -1)
-        continue;
-      if (mons_holiness(menv[toxy].type) > MH_NORMAL)
-        continue;
-      if (mons_near(toxy))
+        if (menv[toxy].type == -1)
+            continue;
+        if (mons_holiness(menv[toxy].type) > MH_NORMAL)
+            continue;
+        if (mons_near(toxy))
         {
-          strcpy(info, "You draw life from ");
-          strcat(info, monam(menv[toxy].number, menv[toxy].type, menv[toxy].enchantment[2], 1));
-          strcat(info, ".");
-          mpr(info);
-          int hurted = 3 + random2(7) + random2(pow);
+            strcpy(info, "You draw life from ");
+            strcat(info, monam(menv[toxy].number, menv[toxy].type, menv[toxy].enchantment[2], 1));
+            strcat(info, ".");
+            mpr(info);
+            int hurted = 3 + random2(7) + random2(pow);
 
-          menv[toxy].hit_points -= hurted;
-          hp_gain += hurted / 2;
-          if (menv[toxy].hit_points <= 0)
+            menv[toxy].hit_points -= hurted;
+            hp_gain += hurted / 2;
+            if (menv[toxy].hit_points <= 0)
             {
-              monster_die(toxy, KILL_YOU, 0);
+                monster_die(toxy, KILL_YOU, 0);
             }
-          else
-            print_wounds(toxy);
-          // assumes only you can cast this spell (or would want to)
+            else
+                print_wounds(toxy);
+            // assumes only you can cast this spell (or would want to)
         }
     }                           // end loop
 
-  if (hp_gain > pow * 2)
-    hp_gain = pow * 2;
-  you.hp += hp_gain;
-  if (you.hp > you.hp_max)
-    you.hp = you.hp_max;
-  if (hp_gain != 0)
-    mpr("You feel life flooding into your body.");
-  you.redraw_hit_points = 1;
+    if (hp_gain > pow * 2)
+        hp_gain = pow * 2;
+    you.hp += hp_gain;
+    if (you.hp > you.hp_max)
+        you.hp = you.hp_max;
+    if (hp_gain != 0)
+        mpr("You feel life flooding into your body.");
+    you.redraw_hit_points = 1;
 }
 
 int vampiric_drain(int pow)
 {
-  int inflicted = 0, mgr = 0;
-  struct dist vmove[1];
+    int inflicted = 0, mgr = 0;
+    struct dist vmove[1];
 
- dirc:
-  strcpy(info, "Which direction?");
-  mpr(info);
-  direction(0, vmove);
+  dirc:
+    strcpy(info, "Which direction?");
+    mpr(info);
+    direction(0, vmove);
 
-  if (vmove[0].nothing == -1)
+    if (vmove[0].nothing == -1)
     {
-      strcpy(info, "The spell fizzles!");
-      mpr(info);
-      return -1;
+        strcpy(info, "The spell fizzles!");
+        mpr(info);
+        return -1;
     }
 
-  if (abs(vmove[0].move_x) > 1 || abs(vmove[0].move_y) > 1)
+    if (abs(vmove[0].move_x) > 1 || abs(vmove[0].move_y) > 1)
     {
-      mpr("This spell doesn't reach that far.");
-      return -1;
+        mpr("This spell doesn't reach that far.");
+        return -1;
     }
 
-  mgr = mgrd[you.x_pos + vmove[0].move_x][you.y_pos + vmove[0].move_y];
+    mgr = mgrd[you.x_pos + vmove[0].move_x][you.y_pos + vmove[0].move_y];
 
 
-  if (vmove[0].move_x == 0 && vmove[0].move_y == 0)
+    if (vmove[0].move_x == 0 && vmove[0].move_y == 0)
     {
-      strcpy(info, "That would be silly!");
-      mpr(info);
-      goto dirc;
+        strcpy(info, "That would be silly!");
+        mpr(info);
+        goto dirc;
     }
 
-  if (mgr == MNG)
+    if (mgr == MNG)
     {
-      mpr("There isn't anything there!");
-      return -1;
+        mpr("There isn't anything there!");
+        return -1;
     }
 
-  if (mons_holiness(menv[mgr].type) > MH_NORMAL)
+    if (mons_holiness(menv[mgr].type) > MH_NORMAL)
     {
-      strcpy(info, "Oops! That was rather foolish.");
-      mpr(info);
-      you.hp -= random2(20) + random2(20) + 10;
-      if (you.hp <= 1)
-        you.hp = 1;
-      you.redraw_hit_points = 1;
-      return -1;
+        strcpy(info, "Oops! That was rather foolish.");
+        mpr(info);
+        you.hp -= random2(20) + random2(20) + 10;
+        if (you.hp <= 1)
+            you.hp = 1;
+        you.redraw_hit_points = 1;
+        return -1;
     }
 
-  inflicted = 3 + random2(5) + random2(5) + random2(pow) / 7;
-  if (inflicted >= menv[mgr].hit_points)
-    inflicted = menv[mgr].hit_points;
-  if (inflicted >= you.hp_max - you.hp)
-    inflicted = you.hp_max - you.hp;
-  if (inflicted == 0)
+    inflicted = 3 + random2(5) + random2(5) + random2(pow) / 7;
+    if (inflicted >= menv[mgr].hit_points)
+        inflicted = menv[mgr].hit_points;
+    if (inflicted >= you.hp_max - you.hp)
+        inflicted = you.hp_max - you.hp;
+    if (inflicted == 0)
     {
-      mpr("Nothing appears to happen.");
-      return -1;
+        mpr("Nothing appears to happen.");
+        return -1;
     }
 
-  menv[mgr].hit_points -= inflicted;
+    menv[mgr].hit_points -= inflicted;
 
-  strcpy(info, "You feel life coursing from ");
-  strcat(info, monam(menv[mgr].number, menv[mgr].type, menv[mgr].enchantment[2], 1));
-  strcat(info, " into your body!");
-  mpr(info);
-  print_wounds(mgr);
+    strcpy(info, "You feel life coursing from ");
+    strcat(info, monam(menv[mgr].number, menv[mgr].type, menv[mgr].enchantment[2], 1));
+    strcat(info, " into your body!");
+    mpr(info);
+    print_wounds(mgr);
 
-  if (menv[mgr].hit_points <= 0)
+    if (menv[mgr].hit_points <= 0)
     {
-      monster_die(mgr, KILL_YOU, 0);
+        monster_die(mgr, KILL_YOU, 0);
     }
 
-  you.hp += inflicted / 2;
-  if (you.hp > you.hp_max)
-    you.hp = you.hp_max;
-  you.redraw_hit_points = 1;
+    you.hp += inflicted / 2;
+    if (you.hp > you.hp_max)
+        you.hp = you.hp_max;
+    you.redraw_hit_points = 1;
 
-  vmove[0].move_x = 0;
-  vmove[0].move_y = 0;
+    vmove[0].move_x = 0;
+    vmove[0].move_y = 0;
 
-  return 1;
+    return 1;
 
-}      // end vamp drain
+}                               // end vamp drain
 
 
 
 
 int burn_freeze(int pow, char flavour)
 {
-  int mgr = MNG;
-  struct dist bmove[1];
+    int mgr = MNG;
+    struct dist bmove[1];
 
-  while (mgr == MNG)
-  {
-    mpr("Which direction?");
-    direction(0, bmove);
-
-    if (bmove[0].nothing == -1)
-      {
-        mpr("The spell fizzles!");
-        bmove[0].move_x = 0;
-        bmove[0].move_y = 0;
-        return -1;
-      }
-
-    if ( (abs(bmove[0].move_x) > 1) || (abs(bmove[0].move_y) > 1) )
-      {
-        mpr("This spell doesn't reach that far.");
-        return -1;
-      }
-
-    if (bmove[0].move_x == 0 && bmove[0].move_y == 0)
-      {
-        mpr("That would be silly!");
-        continue;
-      }
-
-    mgr = mgrd [you.x_pos+bmove[0].move_x] [you.y_pos+bmove[0].move_y];
-
-    // Yes, this is stange, but it does maintain the original behaviour
-    if (mgr == MNG)
-      {
-        mpr("There isn't anything close enough!");
-        bmove[0].move_x = 0;
-        bmove[0].move_y = 0;
-        return -1;
-      }
-  }
-
-  switch (flavour)
-  {
-    case BEAM_FIRE:
-      strcpy(info, "You burn ");
-      break;
-    case BEAM_COLD:
-      strcpy(info, "You freeze ");
-      break;
-    case BEAM_MISSILE:
-      strcpy(info, "You crush ");
-      break;
-    case BEAM_ELECTRICITY:
-      strcpy(info, "You zap ");
-      break;
-  };
-
-  strcat( info, monam(menv[mgr].number, menv[mgr].type, menv[mgr].enchantment[2], 1) );
-  strcat(info, ".");
-  mpr(info);
-
-  int hurted = 1 + random2(4) + random2(3) + random2(pow) / 25;
-
-  struct bolt beam[1];
-
-  beam[0].flavour = flavour;
-
-  if (flavour != BEAM_MISSILE)
-    hurted = check_mons_resists(beam, mgr, hurted);
-
-  if (hurted)
+    while (mgr == MNG)
     {
-      menv[mgr].hit_points -= hurted;
+        mpr("Which direction?");
+        direction(0, bmove);
 
-      if (menv[mgr].hit_points <= 0)
-        monster_die(mgr, KILL_YOU, 0);
-      else
-        print_wounds(mgr);
+        if (bmove[0].nothing == -1)
+        {
+            mpr("The spell fizzles!");
+            bmove[0].move_x = 0;
+            bmove[0].move_y = 0;
+            return -1;
+        }
+
+        if ((abs(bmove[0].move_x) > 1) || (abs(bmove[0].move_y) > 1))
+        {
+            mpr("This spell doesn't reach that far.");
+            return -1;
+        }
+
+        if (bmove[0].move_x == 0 && bmove[0].move_y == 0)
+        {
+            mpr("That would be silly!");
+            continue;
+        }
+
+        mgr = mgrd[you.x_pos + bmove[0].move_x][you.y_pos + bmove[0].move_y];
+
+        // Yes, this is stange, but it does maintain the original behaviour
+        if (mgr == MNG)
+        {
+            mpr("There isn't anything close enough!");
+            bmove[0].move_x = 0;
+            bmove[0].move_y = 0;
+            return -1;
+        }
     }
 
-  return 1;
+    switch (flavour)
+    {
+    case BEAM_FIRE:
+        strcpy(info, "You burn ");
+        break;
+    case BEAM_COLD:
+        strcpy(info, "You freeze ");
+        break;
+    case BEAM_MISSILE:
+        strcpy(info, "You crush ");
+        break;
+    case BEAM_ELECTRICITY:
+        strcpy(info, "You zap ");
+        break;
+    };
+
+    strcat(info, monam(menv[mgr].number, menv[mgr].type, menv[mgr].enchantment[2], 1));
+    strcat(info, ".");
+    mpr(info);
+
+    int hurted = 1 + random2(4) + random2(3) + random2(pow) / 25;
+
+    struct bolt beam[1];
+
+    beam[0].flavour = flavour;
+
+    if (flavour != BEAM_MISSILE)
+        hurted = check_mons_resists(beam, mgr, hurted);
+
+    if (hurted)
+    {
+        menv[mgr].hit_points -= hurted;
+
+        if (menv[mgr].hit_points <= 0)
+            monster_die(mgr, KILL_YOU, 0);
+        else
+            print_wounds(mgr);
+    }
+
+    return 1;
 }                               // end burn_freeze
 
 
@@ -1020,114 +1032,114 @@ int burn_freeze(int pow, char flavour)
 
 int summon_elemental(int pow, unsigned char restricted_type, unsigned char unfriendly)
 {
-  int type_summoned = 0;
-  int numsc = 21 + random2(pow) / 5;
+    int type_summoned = 0;
+    int numsc = 21 + random2(pow) / 5;
 
-  char summ_success = 0;
-  struct dist smove[1];
+    char summ_success = 0;
+    struct dist smove[1];
 
-  if (numsc > 25)
-    numsc = 25;
+    if (numsc > 25)
+        numsc = 25;
 
- dirc:
-  strcpy(info, "Summon from what material?");
-  // cannot summon earth elemental if you are floating in the air.
-  // problem: what if you're floating over water/lava and are surrounded by it and a wall, and summon an earth elemental? hmmm...
-  //strcat(info, ", < for air)");
-  mpr(info);
-  strcpy(info, "Which direction?");
-  mpr(info);
-  direction(0, smove);
+  dirc:
+    strcpy(info, "Summon from what material?");
+    // cannot summon earth elemental if you are floating in the air.
+    // problem: what if you're floating over water/lava and are surrounded by it and a wall, and summon an earth elemental? hmmm...
+    //strcat(info, ", < for air)");
+    mpr(info);
+    strcpy(info, "Which direction?");
+    mpr(info);
+    direction(0, smove);
 
-  if (smove[0].nothing == -1)
+    if (smove[0].nothing == -1)
     {
-    fizzles:
-      strcpy(info, "Nothing appears to happen.");
-      mpr(info);
-      return -1;
+      fizzles:
+        strcpy(info, "Nothing appears to happen.");
+        mpr(info);
+        return -1;
     }
 
-  if (mgrd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] != MNG)
+    if (mgrd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] != MNG)
     {
-      strcpy(info, "Not there!");
-      mpr(info);
-      goto dirc;
+        strcpy(info, "Not there!");
+        mpr(info);
+        goto dirc;
     }
 
-  if (abs(smove[0].move_x) > 1 || abs(smove[0].move_y) > 1)
+    if (abs(smove[0].move_x) > 1 || abs(smove[0].move_y) > 1)
     {
-      strcpy(info, "This spell doesn't reach that far.");
-      mpr(info);
-      return -1;
+        strcpy(info, "This spell doesn't reach that far.");
+        mpr(info);
+        return -1;
     }
 
-  if (smove[0].move_x == 0 && smove[0].move_y == 0)
+    if (smove[0].move_x == 0 && smove[0].move_y == 0)
     {
-      strcpy(info, "You can't summon an elemental from yourself!");
-      mpr(info);
-      goto dirc;
+        strcpy(info, "You can't summon an elemental from yourself!");
+        mpr(info);
+        goto dirc;
     }
 
-  if (grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] == DNGN_ROCK_WALL)
+    if (grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] == DNGN_ROCK_WALL)
     {
-      type_summoned = MONS_EARTH_ELEMENTAL;
-      if (restricted_type != 0 && type_summoned != restricted_type)
+        type_summoned = MONS_EARTH_ELEMENTAL;
+        if (restricted_type != 0 && type_summoned != restricted_type)
+            goto summon_it;
+        if (you.x_pos + smove[0].move_x > 6 && you.x_pos + smove[0].move_x < 74 && you.y_pos + smove[0].move_y > 6 && you.y_pos + smove[0].move_y < 64)
+            grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] = DNGN_FLOOR;
         goto summon_it;
-      if (you.x_pos + smove[0].move_x > 6 && you.x_pos + smove[0].move_x < 74 && you.y_pos + smove[0].move_y > 6 && you.y_pos + smove[0].move_y < 64)
-        grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] = DNGN_FLOOR;
-      goto summon_it;
     }
 
-  if (env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] != CNG && env.cloud_type[env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y]] % 100 == CLOUD_FIRE)
+    if (env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] != CNG && env.cloud_type[env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y]] % 100 == CLOUD_FIRE)
     {
-      type_summoned = MONS_FIRE_ELEMENTAL;
-      if (restricted_type != 0 && type_summoned != restricted_type)
+        type_summoned = MONS_FIRE_ELEMENTAL;
+        if (restricted_type != 0 && type_summoned != restricted_type)
+            goto summon_it;
+        env.cloud_type[env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y]] = CLOUD_NONE;
+        env.cloud_decay[env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y]] = 0;
+        env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] = CNG;
+        env.cloud_no--;
         goto summon_it;
-      env.cloud_type[env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y]] = CLOUD_NONE;
-      env.cloud_decay[env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y]] = 0;
-      env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] = CNG;
-      env.cloud_no--;
-      goto summon_it;
     }
 
-  if (grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] >= DNGN_FLOOR && env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] == CNG)
+    if (grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] >= DNGN_FLOOR && env.cgrid[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] == CNG)
     {
-      type_summoned = MONS_AIR_ELEMENTAL;
-      goto summon_it;
+        type_summoned = MONS_AIR_ELEMENTAL;
+        goto summon_it;
     }
 
-  if (grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] == DNGN_DEEP_WATER || grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] == DNGN_SHALLOW_WATER || grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] == DNGN_BLUE_FOUNTAIN)
+    if (grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] == DNGN_DEEP_WATER || grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] == DNGN_SHALLOW_WATER || grd[you.x_pos + smove[0].move_x][you.y_pos + smove[0].move_y] == DNGN_BLUE_FOUNTAIN)
     {
-      type_summoned = MONS_WATER_ELEMENTAL;
-      goto summon_it;
+        type_summoned = MONS_WATER_ELEMENTAL;
+        goto summon_it;
     }
-  goto fizzles;
+    goto fizzles;
 
- summon_it:
-  if (restricted_type != 0 && type_summoned != restricted_type)
+  summon_it:
+    if (restricted_type != 0 && type_summoned != restricted_type)
     {
-      strcpy(info, "Nothing appears to happen.");
-      mpr(info);
-      return 0;
+        strcpy(info, "Nothing appears to happen.");
+        mpr(info);
+        return 0;
     }
-  if ( (type_summoned == MONS_FIRE_ELEMENTAL && random2(5) >= you.skills[SK_FIRE_MAGIC])
+    if ((type_summoned == MONS_FIRE_ELEMENTAL && random2(5) >= you.skills[SK_FIRE_MAGIC])
         || (type_summoned == MONS_WATER_ELEMENTAL && random2(5) >= you.skills[SK_ICE_MAGIC])    // silly - ice for water? 15jan2000 {dlb}
-        || (type_summoned == MONS_AIR_ELEMENTAL && random2(5) >= you.skills[SK_AIR_MAGIC])
+         || (type_summoned == MONS_AIR_ELEMENTAL && random2(5) >= you.skills[SK_AIR_MAGIC])
         || (type_summoned == MONS_EARTH_ELEMENTAL && random2(5) >= you.skills[SK_EARTH_MAGIC])
-        || random2(100) <= unfriendly )
+        || random2(100) <= unfriendly)
 
     {
-      strcpy(info, "The elemental doesn't seem to appreciate being summoned.");
-      mpr(info);
-      summ_success = create_monster(type_summoned, numsc, BEH_CHASING_I, you.x_pos + smove[0].move_x, you.y_pos + smove[0].move_y, MHITYOU, 250);
+        strcpy(info, "The elemental doesn't seem to appreciate being summoned.");
+        mpr(info);
+        summ_success = create_monster(type_summoned, numsc, BEH_CHASING_I, you.x_pos + smove[0].move_x, you.y_pos + smove[0].move_y, MHITYOU, 250);
     }
-  else
-    summ_success = create_monster(type_summoned, numsc, BEH_ENSLAVED, you.x_pos + smove[0].move_x, you.y_pos + smove[0].move_y, MHITNOT, 250);
+    else
+        summ_success = create_monster(type_summoned, numsc, BEH_ENSLAVED, you.x_pos + smove[0].move_x, you.y_pos + smove[0].move_y, MHITNOT, 250);
 
 
-  return 1;
+    return 1;
 
-}                  // end summon_elemental()
+}                               // end summon_elemental()
 
 
 
@@ -1144,319 +1156,344 @@ int summon_elemental(int pow, unsigned char restricted_type, unsigned char unfri
 
 void summon_small_mammals(int pow)
 {
-  int thing_called = MONS_PROGRAM_BUG;           // to trap misassignments 12jan2000 {dlb}
-  int pow_spent = 0;
-  int pow_left = pow;
-  int summoned = 0;
-  int summoned_max = pow >>4;
+    int thing_called = MONS_PROGRAM_BUG;        // to trap misassignments 12jan2000 {dlb}
 
-  if (summoned_max > 5) summoned_max = 5;
-  if (summoned_max < 1) summoned_max = 1;
+    int pow_spent = 0;
+    int pow_left = pow;
+    int summoned = 0;
+    int summoned_max = pow >> 4;
 
-  while (pow_left > 0 && summoned < summoned_max) {
-    summoned++;
-    pow_spent = random2(pow_left) + 1;
-    pow_left -= pow_spent;
-    switch(pow_spent)
-      {
-      case 75:
-      case 74:
-      case 38:
-        thing_called = MONS_ORANGE_RAT;
-        break;
+    if (summoned_max > 5)
+        summoned_max = 5;
+    if (summoned_max < 1)
+        summoned_max = 1;
 
-      case 65:
-      case 64:
-      case 63:
-      case 27:
-      case 26:
-      case 25:
-        thing_called = MONS_GREEN_RAT;
-        break;
+    while (pow_left > 0 && summoned < summoned_max)
+    {
+        summoned++;
+        pow_spent = random2(pow_left) + 1;
+        pow_left -= pow_spent;
+        switch (pow_spent)
+        {
+        case 75:
+        case 74:
+        case 38:
+            thing_called = MONS_ORANGE_RAT;
+            break;
 
-      case 57:
-      case 56:
-      case 55:
-      case 54:
-      case 53:
-      case 52:
-      case 20:
-      case 18:
-      case 16:
-      case 14:
-      case 12:
-      case 10:
-        thing_called = MONS_GREY_RAT;
-        break;
+        case 65:
+        case 64:
+        case 63:
+        case 27:
+        case 26:
+        case 25:
+            thing_called = MONS_GREEN_RAT;
+            break;
 
-      default:
-        if (pow_spent % 2)
-          thing_called = MONS_GIANT_BAT;
-        else
-          thing_called = MONS_RAT;
-        break;
-      }
+        case 57:
+        case 56:
+        case 55:
+        case 54:
+        case 53:
+        case 52:
+        case 20:
+        case 18:
+        case 16:
+        case 14:
+        case 12:
+        case 10:
+            thing_called = MONS_GREY_RAT;
+            break;
 
-    create_monster(thing_called, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
-  }
+        default:
+            if (pow_spent % 2)
+                thing_called = MONS_GIANT_BAT;
+            else
+                thing_called = MONS_RAT;
+            break;
+        }
 
-}                  // end of [NEW!] summon_small_mammals()
+        create_monster(thing_called, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
+    }
+
+}                               // end of [NEW!] summon_small_mammals()
 
 
 
 
 void summon_scorpions(int pow)
 {
-  int numsc = 1 + random2(pow) / 10 + random2(pow) / 10;
+    int numsc = 1 + random2(pow) / 10 + random2(pow) / 10;
 
-  numsc = stepdown_value(numsc, 2, 2, 6, 8);      // see stuff.cc - 12jan2000 {dlb}
+    numsc = stepdown_value(numsc, 2, 2, 6, 8);  // see stuff.cc - 12jan2000 {dlb}
 
-  for (int scount = 0; scount < numsc; scount++)
+    for (int scount = 0; scount < numsc; scount++)
     {
-      if (random2(pow) <= 3)
+        if (random2(pow) <= 3)
         {
-          if (create_monster(MONS_SCORPION, 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250) != -1)
+            if (create_monster(MONS_SCORPION, 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250) != -1)
             {
-              strcpy(info, "A scorpion appears. It doesn't look very happy.");
-              mpr(info);
+                strcpy(info, "A scorpion appears. It doesn't look very happy.");
+                mpr(info);
             }
         }
-      else
-         {
-           if (create_monster(MONS_SCORPION, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250) != -1)
-             {
-               strcpy(info, "A scorpion appears.");
-               mpr(info);
-             }
-         }
+        else
+        {
+            if (create_monster(MONS_SCORPION, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250) != -1)
+            {
+                strcpy(info, "A scorpion appears.");
+                mpr(info);
+            }
+        }
     }
 
-}                  // end of summon_scorpions()
+}                               // end of summon_scorpions()
 
 
 
 
 void summon_ice_beast_etc(int pow, int ibc)
 {
-  int numsc = 21 + random2(pow) / 4;
-  int beha = BEH_ENSLAVED;
+    int numsc = 21 + random2(pow) / 4;
+    int beha = BEH_ENSLAVED;
 
-  if (numsc > 25)
-    numsc = 25;
+    if (numsc > 25)
+        numsc = 25;
 
-  switch (ibc)
-  {
+    switch (ibc)
+    {
     case MONS_ICE_BEAST:
-      mpr("A chill wind blows around you.");
-      break;
+        mpr("A chill wind blows around you.");
+        break;
 
     case MONS_IMP:
-      mpr("A beastly little devil appears in a puff of flame.");
-      break;
+        mpr("A beastly little devil appears in a puff of flame.");
+        break;
 
     case MONS_WHITE_IMP:
-      mpr("A beastly little devil appears in a puff of frigid air.");
-      break;
+        mpr("A beastly little devil appears in a puff of frigid air.");
+        break;
 
     case MONS_SHADOW_IMP:
-      mpr("A shadowy apparition takes form in the air.");
-      break;
+        mpr("A shadowy apparition takes form in the air.");
+        break;
 
     case MONS_ANGEL:
-      mpr("You open a gate to the realm of Zin!");
-      break;
+        mpr("You open a gate to the realm of Zin!");
+        break;
 
     case MONS_DAEVA:
-      mpr("You are momentarily dazzled by a brilliant golden light.");
-      break;
+        mpr("You are momentarily dazzled by a brilliant golden light.");
+        break;
 
     default:
-      mpr("A demon appears!");
-      if (random2(pow) <= 3)
+        mpr("A demon appears!");
+        if (random2(pow) <= 3)
         {
-          beha = BEH_CHASING_I;
-          mpr("It doesn't look very happy.");
+            beha = BEH_CHASING_I;
+            mpr("It doesn't look very happy.");
         }
-      break;
+        break;
 
-  }
+    }
 
-  create_monster(ibc, numsc, beha, you.x_pos, you.y_pos, MHITNOT, 250);
+    create_monster(ibc, numsc, beha, you.x_pos, you.y_pos, MHITNOT, 250);
 
-}                  // end of summon_ice_beast_etc()
+}                               // end of summon_ice_beast_etc()
 
 
 
 
 void summon_swarm(int pow)
 {
-  int thing_called = MONS_PROGRAM_BUG;           // to trap misassignments 11jan2000 {dlb}
-  int numsc = 1 + random2(pow) / 25 + random2(pow) / 25;
+    int thing_called = MONS_PROGRAM_BUG;        // to trap misassignments 11jan2000 {dlb}
 
-  numsc = stepdown_value(numsc, 2, 2, 6, 8);      // see stuff.cc - 12jan2000 {dlb}
+    int numsc = 1 + random2(pow) / 25 + random2(pow) / 25;
 
-  for (int scount = 0; scount < numsc; scount++)
+    numsc = stepdown_value(numsc, 2, 2, 6, 8);  // see stuff.cc - 12jan2000 {dlb}
+
+    for (int scount = 0; scount < numsc; scount++)
     {
-      switch (random2(14))
+        switch (random2(14))
         {
-          case 0:
-          case 1:
-            thing_called = MONS_KILLER_BEE;      // prototypical swarming creature {dlb}
+        case 0:
+        case 1:
+            thing_called = MONS_KILLER_BEE;     // prototypical swarming creature {dlb}
+
             break;
 
-          case 2:
-            thing_called = MONS_SCORPION;        // comment said "larva", code read scorpion {dlb}
-            break;                               // think: "The Arrival" {dlb}
+        case 2:
+            thing_called = MONS_SCORPION;       // comment said "larva", code read scorpion {dlb}
 
-          case 3:
-            thing_called = MONS_WORM;            // jmf: technically not insects but still cool
-            break;                               // but worms kinda "swarm" so s'ok {dlb}
+            break;              // think: "The Arrival" {dlb}
 
-          case 4:
-            thing_called = MONS_GIANT_MOSQUITO;  // comment read "larva", code was for scorpion
-            break;                               // changed into giant mosquito 12jan2000 {dlb}
+        case 3:
+            thing_called = MONS_WORM;   // jmf: technically not insects but still cool
 
-          case 5:
-            thing_called = MONS_GIANT_BEETLE;    // think: scarabs in "The Mummy" {dlb}
+            break;              // but worms kinda "swarm" so s'ok {dlb}
+
+        case 4:
+            thing_called = MONS_GIANT_MOSQUITO;         // comment read "larva", code was for scorpion
+
+            break;              // changed into giant mosquito 12jan2000 {dlb}
+
+        case 5:
+            thing_called = MONS_GIANT_BEETLE;   // think: scarabs in "The Mummy" {dlb}
+
             break;
 
-          case 6:                                // jmf: blowfly instead of queen bee
-            thing_called = MONS_GIANT_BLOWFLY;   // queen bee added if more than x bees in swarm? {dlb}
-            break;                               // the above would require code rewrite - worth it? {dlb}
+        case 6:         // jmf: blowfly instead of queen bee
 
-          case 8:                                // jmf: changed to red wasp; was wolf spider
-            thing_called = MONS_WOLF_SPIDER;     // jmf: spiders aren't insects
-            break;                               // think: "Kingdom of the Spiders" {dlb}
-                                                 // not just insects!!! - changed back {dlb}
-          case 9:
-            thing_called = MONS_BUTTERFLY;       // comic relief? {dlb}
+            thing_called = MONS_GIANT_BLOWFLY;  // queen bee added if more than x bees in swarm? {dlb}
+
+            break;              // the above would require code rewrite - worth it? {dlb}
+
+        case 8:         // jmf: changed to red wasp; was wolf spider
+
+            thing_called = MONS_WOLF_SPIDER;    // jmf: spiders aren't insects
+
+            break;              // think: "Kingdom of the Spiders" {dlb}
+            // not just insects!!! - changed back {dlb}
+
+        case 9:
+            thing_called = MONS_BUTTERFLY;      // comic relief? {dlb}
+
             break;
 
-          case 10:                               // do wasps swarm? {dlb}
-            thing_called = MONS_YELLOW_WASP;     // change into some kind of snake -- {dlb}
-            break;                               // think: "Indiana Jones" and snakepit? {dlb}
+        case 10:                // do wasps swarm? {dlb}
 
-          default:                               // 3 in 14 chance, 12jan2000 {dlb}
+            thing_called = MONS_YELLOW_WASP;    // change into some kind of snake -- {dlb}
+
+            break;              // think: "Indiana Jones" and snakepit? {dlb}
+
+        default:                // 3 in 14 chance, 12jan2000 {dlb}
+
             thing_called = MONS_GIANT_ANT;
             break;
-        }                                   // end switch
+        }                       // end switch
 
-      create_monster(thing_called, 22, 1 + (random2(pow) > 7) * 6, you.x_pos, you.y_pos, MHITNOT, 250);
+        create_monster(thing_called, 22,
+                        (random2(pow) > 7) ? BEH_ENSLAVED : BEH_CHASING_I,
+                        you.x_pos, you.y_pos, MHITNOT, 250);
     }
 
-  strcpy(info, "You call forth a swarm of pestilential beasts!");
-  mpr(info);
+    strcpy(info, "You call forth a swarm of pestilential beasts!");
+    mpr(info);
 
-}                  // end of summon_swarm()
+}                               // end of summon_swarm()
 
 
 
 
 void summon_undead(int pow)
 {
-  int thing_called = MONS_PROGRAM_BUG;            // to trap misassignments 11jan2000 {dlb}
-  int numsc = 1 + random2(pow) / 30 + random2(pow) / 30;
+    int thing_called = MONS_PROGRAM_BUG;        // to trap misassignments 11jan2000 {dlb}
 
-  numsc = stepdown_value(numsc, 2, 2, 6, 8);      // see stuff.cc - 12jan2000 {dlb}
+    int numsc = 1 + random2(pow) / 30 + random2(pow) / 30;
 
-  strcpy(info, "You call on the undead to aid you!");
-  mpr(info);
+    numsc = stepdown_value(numsc, 2, 2, 6, 8);  // see stuff.cc - 12jan2000 {dlb}
 
-  for (int scount = 0; scount < numsc; scount++)
+    strcpy(info, "You call on the undead to aid you!");
+    mpr(info);
+
+    for (int scount = 0; scount < numsc; scount++)
     {
 
-      thing_called = table_lookup( 25,                // see stuff.cc {dlb}
-                                   MONS_WRAITH, 9,            // 64% chance
-                                   MONS_SPECTRAL_WARRIOR, 4,  // 20% chance
-                                   MONS_FREEZING_WRAITH, 0 ); // 16% chance
+        thing_called = table_lookup(25,         // see stuff.cc {dlb}
+                                     MONS_WRAITH, 9,    // 64% chance
+                                     MONS_SPECTRAL_WARRIOR, 4,  // 20% chance
+                                     MONS_FREEZING_WRAITH, 0);  // 16% chance
 
-      if (random2(pow) < 6)
+        if (random2(pow) < 6)
         {
-          if (create_monster(thing_called, 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250) != -1)
+            if (create_monster(thing_called, 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250) != -1)
             {
-              strcpy(info, "You sense a hostile presence.");
-              mpr(info);
+                strcpy(info, "You sense a hostile presence.");
+                mpr(info);
             }
         }
-      else
+        else
         {
-          if (create_monster(thing_called, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250) != -1)
+            if (create_monster(thing_called, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250) != -1)
             {
-              strcpy(info, "An insubstantial figure forms in the air.");
-              mpr(info);
+                strcpy(info, "An insubstantial figure forms in the air.");
+                mpr(info);
             }
         }
 
-    }                                       // end for loop
+    }                           // end for loop
 
-  if ( !you.is_undead
-       && ! (you.religion == GOD_KIKUBAAQUDGHA
-              && you.piety >= 100
-              && random2(200) <= you.piety) )    //jmf: Kiku has some chance of deflecting this
+    //jmf: Kiku has some chance of deflecting this
+    if (!you.is_undead
+        && !(you.religion == GOD_KIKUBAAQUDGHA
+             && (!player_under_penance()
+                 && you.piety >= 100 && random2(200) <= you.piety)))
     {
-      strcpy(info, "You feel rather ill.");
-      mpr(info);
-      you.disease = 200;
+        strcpy(info, "You feel rather ill.");
+        mpr(info);
+        you.disease = 200;
     }
 
-}                  // end summon_undead()
+}                               // end summon_undead()
 
 
 
 
 void summon_things(int pow)
 {
-  int numsc = 1 + random2(pow) / 30 + random2(pow) / 30;
-  int big_things = 0;
-  int plural = 0;
+    int numsc = 1 + random2(pow) / 30 + random2(pow) / 30;
+    int big_things = 0;
+    int plural = 0;
 
-  numsc = stepdown_value(numsc, 2, 2, 6, -1);      // see stuff.cc - 16jan2000 {dlb}
+    numsc = stepdown_value(numsc, 2, 2, 6, -1);         // see stuff.cc - 16jan2000 {dlb}
 
-  while (numsc > 2) {
-    if ( one_chance_in(4) )
-      break;
-    numsc -= 2;
-    big_things++;
-  }
-
-  if (numsc > 8)
-    numsc = 8;
-  if (big_things > 8)
-    big_things = 8;
-  if ( numsc > 1 || big_things > 1 )
-    plural++;
-
-  while (big_things > 0)
-  {
-    create_monster(MONS_ABOMINATION_LARGE, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
-    big_things--;
-  }
-
-  while (numsc > 0)
-  {
-    create_monster(MONS_ABOMINATION_SMALL, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
-    numsc--;
-  }
-
-  sprintf(info, "Some Thing%s answered your call!", plural ? "s" : "");
-  mpr(info);
-
-  if ( you.religion == GOD_VEHUMET
-      && you.duration[DUR_PRAYER]
-      && you.piety >= 50
-      && random2(200) <= you.piety )
-    //jmf: message here or make player think?
-    strcpy(info, "Vehumet shields your intellect!");
-  else
+    while (numsc > 2)
     {
-      you.intel--;
-      you.redraw_intelligence = 1;
-      strcpy(info, "Your brain shrivels slightly.");
+        if (one_chance_in(4))
+            break;
+        numsc -= 2;
+        big_things++;
     }
 
-  mpr(info);
+    if (numsc > 8)
+        numsc = 8;
+    if (big_things > 8)
+        big_things = 8;
+    if (numsc > 1 || big_things > 1)
+        plural++;
 
-}                  // end of summon_things()
+    while (big_things > 0)
+    {
+        create_monster(MONS_ABOMINATION_LARGE, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
+        big_things--;
+    }
+
+    while (numsc > 0)
+    {
+        create_monster(MONS_ABOMINATION_SMALL, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
+        numsc--;
+    }
+
+    sprintf(info, "Some Thing%s answered your call!", plural ? "s" : "");
+    mpr(info);
+
+    //jmf: message here or make player think?
+    if (you.religion == GOD_VEHUMET && you.duration[DUR_PRAYER]
+        && (!player_under_penance()
+            && you.piety >= 50 && random2(200) <= you.piety))
+    {
+        strcpy(info, "Vehumet shields your intellect!");
+    }
+    else
+    {
+        you.intel--;
+        you.redraw_intelligence = 1;
+        strcpy(info, "Your brain shrivels slightly.");
+    }
+
+    mpr(info);
+
+}                               // end of summon_things()
 
 
 
@@ -1464,9 +1501,9 @@ void summon_things(int pow)
 void summon_butter(void)
 {
 
-  for (int scount = 0; scount < 8; scount++)
-    create_monster(MONS_BUTTERFLY, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
+    for (int scount = 0; scount < 8; scount++)
+        create_monster(MONS_BUTTERFLY, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
 
 // produce caterpillars under rare circumstances?
 
-}                  // end summon_butter()
+}                               // end summon_butter()

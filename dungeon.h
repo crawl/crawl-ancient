@@ -11,6 +11,8 @@
 #ifndef DUNGEON_H
 #define DUNGEON_H
 
+#define SPELLBOOK_SIZE  9
+
 int builder(unsigned int lev_numb, char level_type);
 
 
@@ -33,4 +35,5 @@ int items(
              int many_many,
              int force_spec
 );
+
 #endif

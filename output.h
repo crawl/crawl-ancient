@@ -12,4 +12,5 @@
 #define OUTPUT_H
 
 void print_stats();
+
 #endif

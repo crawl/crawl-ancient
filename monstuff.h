@@ -21,4 +21,5 @@ void swap_places(int swap);
 void print_wounds(int wounded);
 int wounded_damaged(int wound_class);
 void monster(void);
+
 #endif

@@ -15,11 +15,11 @@
 #include "itemname.h"
 
 #ifdef DOS
-  #include <conio.h>
+#include <conio.h>
 #endif
 
 #ifdef USE_CURSES
-  #include <curses.h>
+#include <curses.h>
 #endif
 
 #include <string.h>
@@ -28,7 +28,7 @@
 #include "externs.h"
 
 #ifdef MACROS
-  #include "macro.h"
+#include "macro.h"
 #endif
 
 #include "mstruct.h"
@@ -156,7 +156,7 @@ char item_name(unsigned char item_plus2, char item_clas, char item_typ, unsigned
         case 5:
             strcat(glag, "your ");
             break;
-        // case 6: nothing
+            // case 6: nothing
         case 7:
             strcat(glag, "its ");
             break;
@@ -524,7 +524,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             strcat(glog, "");
             break;
 
-        // where is case 11? 19jan2000 {dlb}
+            // where is case 11? 19jan2000 {dlb}
 
         case 12:
         case 13:
@@ -549,8 +549,8 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case 2:
                 strcat(glog, " of ice");
                 break;
-            //  case 3: strcat(glog, " of venom"); break;
-            //  case 4: strcat(glog, " of venom"); break; /* temporary, produced by spell */
+                //  case 3: strcat(glog, " of venom"); break;
+                //  case 4: strcat(glog, " of venom"); break; /* temporary, produced by spell */
             }
         }
         break;
@@ -1204,7 +1204,8 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
         case FOOD_PEAR:
             strcat(glog, "pear");
             break;
-        case FOOD_APPLE:                    // make this less common
+        case FOOD_APPLE:        // make this less common
+
             strcat(glog, "apple");
             break;
         case FOOD_CHOKO:
@@ -1648,6 +1649,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             }
             if (item_da > 13)
                 switch (item_da / 13)   // secondary characteristic of amulet
+
                 {
                 case 0:
                     strcat(glog, "dented ");
@@ -1823,10 +1825,12 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                 case 22:
                     strcat(glog, "decaying ");
                     break;
-                case 50:                    // found in Pandemonium
+                case 50:        // found in Pandemonium
+
                     strcat(glog, "demonic ");
                     break;
-                case 51:                    // found in the Abyss
+                case 51:        // found in the Abyss
+
                     strcat(glog, "abyssal ");
                     break;
                 }               /* If more are added here, must also add below. */
@@ -1927,13 +1931,15 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                 case 22:
                     strcat(glog, "decaying ");
                     break;
-                case 50:                    // found in Pandemonium
+                case 50:        // found in Pandemonium
+
                     strcat(glog, "demonic ");
                     break;
-                case 51:                    // found in the Abyss
+                case 51:        // found in the Abyss
+
                     strcat(glog, "abyssal ");
                     break;
-                }        /* If more are added here, must also add above. */
+                }               /* If more are added here, must also add above. */
 
                 if (it_quant > 1)
                     strcat(glog, "runes of Zot");
@@ -2314,7 +2320,8 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case STAFF_POISON:
                 strcat(glog, " of poison");
                 break;
-            case STAFF_ENERGY:              // crappy name. oh well
+            case STAFF_ENERGY:  // crappy name. oh well
+
                 strcat(glog, " of energy");
                 break;
             case STAFF_DEATH:
@@ -2416,7 +2423,8 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
         break;
 
 
-    case OBJ_GEMSTONES:                     // obviously not implemented yet
+    case OBJ_GEMSTONES: // obviously not implemented yet
+
         break;
 
 
@@ -2476,8 +2484,8 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
 
 
     if (it_quant > 1 && item_clas != OBJ_MISSILES && item_clas != OBJ_SCROLLS
-                && item_clas != OBJ_POTIONS && item_clas != OBJ_MISCELLANY
-                && (item_clas != OBJ_FOOD || item_typ != FOOD_CHUNK))
+        && item_clas != OBJ_POTIONS && item_clas != OBJ_MISCELLANY
+        && (item_clas != OBJ_FOOD || item_typ != FOOD_CHUNK))
     {
         strcat(glog, "s");
     }
@@ -2508,7 +2516,7 @@ void save_id(char identy[4][50])
 
 
 
-void clear_ids( void )
+void clear_ids(void)
 {
     char i = 0;
     char j = 0;
@@ -2581,6 +2589,7 @@ char get_id(char cla, char ty)
 int property(int pr1, int pr2, int pr3)
 {
     return prop[pr1][pr2][pr3]; // pr1 = OBJ class; pr2 = SUBCLASS; pr3 = properties {dlb}
+
 }
 
 
@@ -2767,11 +2776,13 @@ void init_properties()
     {
         mss[OBJ_WANDS][i] = 100;
         mss[OBJ_FOOD][i] = 100;
-        mss[OBJ_UNKNOWN_I][i] = 200;                     // what are these? {dlb}
+        mss[OBJ_UNKNOWN_I][i] = 200;    // what are these? {dlb}
+
         mss[OBJ_SCROLLS][i] = 50;
         mss[OBJ_JEWELLERY][i] = 20;
         mss[OBJ_POTIONS][i] = 60;
-        mss[OBJ_UNKNOWN_II][i] = 5;                      // don't know what these are, yet:
+        mss[OBJ_UNKNOWN_II][i] = 5;     // don't know what these are, yet:
+
         mss[OBJ_BOOKS][i] = 100;
         mss[OBJ_STAVES][i] = 130;
         mss[OBJ_ORBS][i] = 300;
@@ -2803,10 +2814,10 @@ void init_properties()
     mss[OBJ_FOOD][FOOD_SAUSAGE] = 40;
     mss[OBJ_FOOD][FOOD_CHUNK] = 100;
     /*mss [OBJ_FOOD] [21] = 40;
-      mss [OBJ_FOOD] [22] = 50;
-      mss [OBJ_FOOD] [23] = 60;
-      mss [OBJ_FOOD] [24] = 60;
-      mss [OBJ_FOOD] [25] = 100; */
+       mss [OBJ_FOOD] [22] = 50;
+       mss [OBJ_FOOD] [23] = 60;
+       mss [OBJ_FOOD] [24] = 60;
+       mss [OBJ_FOOD] [25] = 100; */
 
     mss[OBJ_MISCELLANY][MISC_BOTTLED_EFREET] = 250;
 
@@ -2825,12 +2836,14 @@ void init_properties()
     // club
     prop[OBJ_WEAPONS][WPN_CLUB][PWPN_DAMAGE] = 5;
     prop[OBJ_WEAPONS][WPN_CLUB][PWPN_HIT] = 4;  // helps to get past evasion
+
     prop[OBJ_WEAPONS][WPN_CLUB][PWPN_SPEED] = 12;
     mss[OBJ_WEAPONS][WPN_CLUB] = 50;
 
     // mace:
     prop[OBJ_WEAPONS][WPN_MACE][PWPN_DAMAGE] = 8;
     prop[OBJ_WEAPONS][WPN_MACE][PWPN_HIT] = 3;  // helps to get past evasion
+
     prop[OBJ_WEAPONS][WPN_MACE][PWPN_SPEED] = 14;
     mss[OBJ_WEAPONS][WPN_MACE] = 140;
 
@@ -2842,7 +2855,8 @@ void init_properties()
 
     // flail
     prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_DAMAGE] = 9;
-    prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_HIT] = 2;  // helps to get past evasion
+    prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_HIT] = 2;         // helps to get past evasion
+
     prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_SPEED] = 15;
     mss[OBJ_WEAPONS][WPN_FLAIL] = 150;
 
@@ -2860,13 +2874,15 @@ void init_properties()
 
     // dagger
     prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_DAMAGE] = 3;
-    prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_HIT] = 6;  // helps to get past evasion
+    prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_HIT] = 6;        // helps to get past evasion
+
     prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_SPEED] = 11;
     mss[OBJ_WEAPONS][WPN_DAGGER] = 20;
 
     // knife
     prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_DAMAGE] = 2;
-    prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_HIT] = 0;  // helps to get past evasion
+    prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_HIT] = 0;         // helps to get past evasion
+
     prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_SPEED] = 11;
     mss[OBJ_WEAPONS][WPN_KNIFE] = 10;
 
@@ -2960,6 +2976,7 @@ void init_properties()
     // bow
     prop[OBJ_WEAPONS][WPN_BOW][PWPN_DAMAGE] = 2;
     prop[OBJ_WEAPONS][WPN_BOW][PWPN_HIT] = -3;  // helps to get past evasion
+
     prop[OBJ_WEAPONS][WPN_BOW][PWPN_SPEED] = 11;
     mss[OBJ_WEAPONS][WPN_BOW] = 100;
 
@@ -3059,6 +3076,7 @@ void init_properties()
     // whip
     prop[OBJ_WEAPONS][WPN_WHIP][PWPN_DAMAGE] = 3;
     prop[OBJ_WEAPONS][WPN_WHIP][PWPN_HIT] = 1;  // helps to get past evasion
+
     prop[OBJ_WEAPONS][WPN_WHIP][PWPN_SPEED] = 14;
     mss[OBJ_WEAPONS][WPN_WHIP] = 30;
 
@@ -3101,6 +3119,7 @@ void init_properties()
     // dart
     prop[OBJ_MISSILES][MI_DART][PWPN_DAMAGE] = 3;
     prop[OBJ_MISSILES][MI_DART][PWPN_HIT] = 5;  //whatever - for hand crossbow
+
     mss[OBJ_MISSILES][MI_DART] = 5;
 
     // large rock
@@ -3192,7 +3211,8 @@ unsigned char check_item_knowledge(void)
 
         }
 
-        for (j = 0; j < 50; j++)  // no more 50 types of any object -- cdl
+        for (j = 0; j < 50; j++)        // no more 50 types of any object -- cdl
+
         {
 
             if (lines > NUMBER_OF_LINES - 2 && inv_count > 0)
@@ -3246,6 +3266,7 @@ unsigned char check_item_knowledge(void)
 
             }
         }                       // end of j loop
+
     }
 
     if (anything > 0)
@@ -3253,7 +3274,8 @@ unsigned char check_item_knowledge(void)
         ki = getch();
         //ki = getch();
         //ki = anything;
-        if (ki >= 'A' && ki < '{')     // was 65 and 123, respectively 22jan2000 {dlb}
+        if (ki >= 'A' && ki < '{')      // was 65 and 123, respectively 22jan2000 {dlb}
+
         {
 #ifdef DOS_TERM
             puttext(35, 1, 80, 25, buffer);
@@ -3268,7 +3290,7 @@ unsigned char check_item_knowledge(void)
         return anything;
     }
 
-putty:
+  putty:
 #ifdef DOS_TERM
     puttext(35, 1, 80, 25, buffer);
 #endif
@@ -3287,7 +3309,7 @@ char weapon_skill(char wclass, char wtype)
         return SK_STAVES;
 
     if (wclass != OBJ_WEAPONS)
-        return SK_FIGHTING;    // no skill
+        return SK_FIGHTING;     // no skill
 
     switch (wtype)
     {
@@ -3416,7 +3438,7 @@ char damage_type(char wclass, char wtype)
     return DVORP_CRUSHING;
 }                               // end damage_type
 
-int hands_required_for_weapon( char wclass, char wtype )
+int hands_required_for_weapon(char wclass, char wtype)
 {
     int ret = HANDS_ONE_HANDED;
 
@@ -3425,40 +3447,40 @@ int hands_required_for_weapon( char wclass, char wtype )
     case OBJ_WEAPONS:
         switch (wtype)
         {
-            case WPN_HALBERD:
-            case WPN_SCYTHE:
-            case WPN_GLAIVE:
-            case WPN_QUARTERSTAFF:
-            case WPN_BATTLEAXE:
-            case WPN_EXECUTIONERS_AXE:
-            case WPN_GREAT_SWORD:
-            case WPN_TRIPLE_SWORD:
-            case WPN_GREAT_MACE:
-            case WPN_GREAT_FLAIL:
-            case WPN_GIANT_CLUB:
-            case WPN_GIANT_SPIKED_CLUB:
-                ret = HANDS_TWO_HANDED;
-                break;
+        case WPN_HALBERD:
+        case WPN_SCYTHE:
+        case WPN_GLAIVE:
+        case WPN_QUARTERSTAFF:
+        case WPN_BATTLEAXE:
+        case WPN_EXECUTIONERS_AXE:
+        case WPN_GREAT_SWORD:
+        case WPN_TRIPLE_SWORD:
+        case WPN_GREAT_MACE:
+        case WPN_GREAT_FLAIL:
+        case WPN_GIANT_CLUB:
+        case WPN_GIANT_SPIKED_CLUB:
+            ret = HANDS_TWO_HANDED;
+            break;
 
-            case WPN_SPEAR:
-            case WPN_TRIDENT:
-            case WPN_DEMON_TRIDENT:
-            case WPN_AXE:
-            case WPN_BROAD_AXE:
-            case WPN_KATANA:
-            case WPN_DOUBLE_SWORD:
+        case WPN_SPEAR:
+        case WPN_TRIDENT:
+        case WPN_DEMON_TRIDENT:
+        case WPN_AXE:
+        case WPN_BROAD_AXE:
+        case WPN_KATANA:
+        case WPN_DOUBLE_SWORD:
 // These are all really just spiked versions of one-handed weapons,
-// and so should probably just be one-handed as well.
+            // and so should probably just be one-handed as well.
             // case WPN_ANCUS:
             // case WPN_SPIKED_FLAIL:
             // case WPN_MORNINGSTAR:
             // case WPN_EVENINGSTAR:
-                ret = HANDS_ONE_OR_TWO_HANDED;
-                break;
+            ret = HANDS_ONE_OR_TWO_HANDED;
+            break;
 
-            default:
-                ret = HANDS_ONE_HANDED;
-                break;
+        default:
+            ret = HANDS_ONE_HANDED;
+            break;
         }
         break;
 
@@ -3665,7 +3687,7 @@ void make_name(unsigned char var1, unsigned char var2, unsigned char var3, char 
 
 
 
-two_letter:
+  two_letter:
     if (nexty == 1)
         goto hello;
 
@@ -3750,9 +3772,9 @@ two_letter:
     case 25:
         strcat(name, "ll");
         break;
-    //case 26: strcat(name, "sh"); break;
-    //case 12: strcat(name, "sh"); break;
-    //case 13: strcat(name, "sh"); break;
+        //case 26: strcat(name, "sh"); break;
+        //case 12: strcat(name, "sh"); break;
+        //case 13: strcat(name, "sh"); break;
     default:
         i--;
         goto hello;

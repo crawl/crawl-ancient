@@ -125,7 +125,7 @@ int mons_level_dis(int mcls)
 
     return mlev + 26;
 
-}     // end mons_level_dis()
+}                               // end mons_level_dis()
 
 
 
@@ -216,7 +216,7 @@ int mons_rare_dis(int mcls)
         return 0;
     }                           // end switch
 
-}     // end mons_rare_dis()
+}                               // end mons_rare_dis()
 
 
 
@@ -287,7 +287,7 @@ int mons_level_gehenna(int mcls)
 
     return mlev + 26;
 
-}     // end mons_level_gehenna()
+}                               // end mons_level_gehenna()
 
 
 
@@ -378,7 +378,7 @@ int mons_rare_gehenna(int mcls)
         return 0;
     }                           // end switch
 
-}     // end mons_rare_gehenna()
+}                               // end mons_rare_gehenna()
 
 
 
@@ -442,7 +442,7 @@ int mons_level_cocytus(int mcls)
 
     return mlev + 26;
 
-}     // end mons_level_cocytus()
+}                               // end mons_level_cocytus()
 
 
 
@@ -518,7 +518,7 @@ int mons_rare_cocytus(int mcls)
     default:
         return 0;
     }
-}     // end mons_rare_cocytus()
+}                               // end mons_rare_cocytus()
 
 
 
@@ -591,7 +591,7 @@ int mons_level_tartarus(int mcls)
 
     return mlev + 26;
 
-}     // end mons_level_tartarus()
+}                               // end mons_level_tartarus()
 
 
 
@@ -654,7 +654,8 @@ int mons_rare_tartarus(int mcls)
     case MONS_SOUL_EATER:
         return 35;
 
-    case MONS_ICE_DEVIL:     // not really appropriate for a fiery hell
+    case MONS_ICE_DEVIL:        // not really appropriate for a fiery hell
+
         return 34;
 
     case MONS_MUMMY:
@@ -690,7 +691,7 @@ int mons_rare_tartarus(int mcls)
     default:
         return 0;
     }
-}     // end mons_rare_tartarus()
+}                               // end mons_rare_tartarus()
 
 
 
@@ -701,66 +702,124 @@ int mons_level_abyss(int mcls)
 
     switch (mcls)
     {
-    case MONS_RED_DEVIL:              //60;
-    case MONS_FUNGUS:                 //8;
-    case MONS_IMP:                    //10;
-    case MONS_NECROPHAGE:             //10;
-    case MONS_PHANTOM:                //8;
-    case MONS_UGLY_THING:             //21;
-    case MONS_ABOMINATION_SMALL:      //91;
-    case MONS_ZOMBIE_SMALL:           //10;
-    case MONS_GIANT_SPORE:            //12;
-    case MONS_ICE_BEAST:              //9;
-    case MONS_JELLY:                  //9;
-    case MONS_LICH:                   //34;
-    case MONS_MUMMY:                  //10;
-    case MONS_GUARDIAN_NAGA:          //13;
-    case MONS_RAKSHASA:               //17;
-    case MONS_UNSEEN_HORROR:          //12;
-    case MONS_VAMPIRE:                //19;
-    case MONS_WRAITH:                 //15;
-    case MONS_ABOMINATION_LARGE:      //1500;
-    case MONS_ZOMBIE_LARGE:             //20;
-    case MONS_GIANT_EYEBALL:          //8;
-    case MONS_WIGHT:                  //10;
-    case MONS_SHADOW:                 //11;
-    case MONS_HUNGRY_GHOST:           //11;
-    case MONS_EYE_OF_DRAINING:        //14;
-    case MONS_EFREET:                 //18;
-    case MONS_BRAIN_WORM:             //16;
-    case MONS_GIANT_ORANGE_BRAIN:     //26;
-    case MONS_FLYING_SKULL:           //65;
-    case MONS_HELL_HOUND:             //61;
-    case MONS_FREEZING_WRAITH:        //25;
-    case MONS_GREAT_ORB_OF_EYES:      //25;
-    case MONS_HELLION:                //60;
-    case MONS_ROTTING_DEVIL:          //60;
-    case MONS_TORMENTOR:              //62;
-    case MONS_REAPER:                 //63;
-    case MONS_SOUL_EATER:             //65;
-    case MONS_HAIRY_DEVIL:            //60;
-    case MONS_ICE_DEVIL:              //6500; // not really appropriate for a fiery hell
-    case MONS_BLUE_DEVIL:             //6200;
+    case MONS_RED_DEVIL:        //60;
+
+    case MONS_FUNGUS:           //8;
+
+    case MONS_IMP:              //10;
+
+    case MONS_NECROPHAGE:       //10;
+
+    case MONS_PHANTOM:          //8;
+
+    case MONS_UGLY_THING:       //21;
+
+    case MONS_ABOMINATION_SMALL:        //91;
+
+    case MONS_ZOMBIE_SMALL:     //10;
+
+    case MONS_GIANT_SPORE:      //12;
+
+    case MONS_ICE_BEAST:        //9;
+
+    case MONS_JELLY:            //9;
+
+    case MONS_LICH:             //34;
+
+    case MONS_MUMMY:            //10;
+
+    case MONS_GUARDIAN_NAGA:    //13;
+
+    case MONS_RAKSHASA: //17;
+
+    case MONS_UNSEEN_HORROR:    //12;
+
+    case MONS_VAMPIRE:          //19;
+
+    case MONS_WRAITH:           //15;
+
+    case MONS_ABOMINATION_LARGE:        //1500;
+
+    case MONS_ZOMBIE_LARGE:     //20;
+
+    case MONS_GIANT_EYEBALL:    //8;
+
+    case MONS_WIGHT:            //10;
+
+    case MONS_SHADOW:           //11;
+
+    case MONS_HUNGRY_GHOST:     //11;
+
+    case MONS_EYE_OF_DRAINING:  //14;
+
+    case MONS_EFREET:           //18;
+
+    case MONS_BRAIN_WORM:       //16;
+
+    case MONS_GIANT_ORANGE_BRAIN:       //26;
+
+    case MONS_FLYING_SKULL:     //65;
+
+    case MONS_HELL_HOUND:       //61;
+
+    case MONS_FREEZING_WRAITH:  //25;
+
+    case MONS_GREAT_ORB_OF_EYES:        //25;
+
+    case MONS_HELLION:          //60;
+
+    case MONS_ROTTING_DEVIL:    //60;
+
+    case MONS_TORMENTOR:        //62;
+
+    case MONS_REAPER:           //63;
+
+    case MONS_SOUL_EATER:       //65;
+
+    case MONS_HAIRY_DEVIL:      //60;
+
+    case MONS_ICE_DEVIL:        //6500; // not really appropriate for a fiery hell
+
+    case MONS_BLUE_DEVIL:       //6200;
+
     case MONS_IRON_DEVIL:
-    case MONS_VERY_UGLY_THING:        //25;
+    case MONS_VERY_UGLY_THING:  //25;
+
     case MONS_SMALL_SKELETON:
-    case MONS_LARGE_SKELETON:         //20;
-    case MONS_HELL_KNIGHT:            //31;
-    case MONS_WIZARD:                 //17;
-    case MONS_NECROMANCER:            //20;
-    case MONS_CLAY_GOLEM:             //20;
-    case MONS_WOOD_GOLEM:             //15;
-    case MONS_STONE_GOLEM:            //22;
-    case MONS_IRON_GOLEM:             //25;
-    case MONS_CRYSTAL_GOLEM:          //30;
-    case MONS_TOENAIL_GOLEM:          //35;
-    case MONS_EARTH_ELEMENTAL:        //22;
-    case MONS_FIRE_ELEMENTAL:         //22;
-    case MONS_AIR_ELEMENTAL:          //22;
-    case MONS_SPECTRAL_WARRIOR:       //30;
-    case MONS_FLAYED_GHOST:           //29;
-    case MONS_INSUBSTANTIAL_WISP:     //32;
-    case MONS_VAPOUR:                 //29;
+    case MONS_LARGE_SKELETON:   //20;
+
+    case MONS_HELL_KNIGHT:      //31;
+
+    case MONS_WIZARD:           //17;
+
+    case MONS_NECROMANCER:      //20;
+
+    case MONS_CLAY_GOLEM:       //20;
+
+    case MONS_WOOD_GOLEM:       //15;
+
+    case MONS_STONE_GOLEM:      //22;
+
+    case MONS_IRON_GOLEM:       //25;
+
+    case MONS_CRYSTAL_GOLEM:    //30;
+
+    case MONS_TOENAIL_GOLEM:    //35;
+
+    case MONS_EARTH_ELEMENTAL:  //22;
+
+    case MONS_FIRE_ELEMENTAL:   //22;
+
+    case MONS_AIR_ELEMENTAL:    //22;
+
+    case MONS_SPECTRAL_WARRIOR: //30;
+
+    case MONS_FLAYED_GHOST:     //29;
+
+    case MONS_INSUBSTANTIAL_WISP:       //32;
+
+    case MONS_VAPOUR:           //29;
+
     case MONS_SPINY_WORM:
     case MONS_DANCING_WEAPON:
     case MONS_WHITE_IMP:
@@ -801,7 +860,7 @@ int mons_level_abyss(int mcls)
 
     return 0;
 
-}     // end mons_level_abyss()
+}                               // end mons_level_abyss()
 
 
 
@@ -879,7 +938,8 @@ int mons_rare_abyss(int mcls)
     case MONS_HELLION:
     case MONS_ROTTING_DEVIL:
     case MONS_HAIRY_DEVIL:
-    case MONS_ICE_DEVIL:     // not really appropriate for a fiery hell
+    case MONS_ICE_DEVIL:        // not really appropriate for a fiery hell
+
     case MONS_BLUE_DEVIL:
     case MONS_EXECUTIONER:
     case MONS_GREEN_DEATH:
@@ -954,7 +1014,7 @@ int mons_rare_abyss(int mcls)
 
     }
     return 0;
-}     // end mons_rare_abyss()
+}                               // end mons_rare_abyss()
 
 
 
@@ -964,7 +1024,8 @@ int mons_level(int mcls)
 
     switch (you.where_are_you)
     {
-    case BRANCH_DIS:     // about the same as Gehenna
+    case BRANCH_DIS:            // about the same as Gehenna
+
         return mons_level_dis(mcls);
 
     case BRANCH_GEHENNA:
@@ -1028,12 +1089,12 @@ int mons_level(int mcls)
             return 32;
         case 378:
             return 31;
-        /*case 379:
-            return 29;
-        case 380:
-            return 32;
-        case 381:
-            return 27;*/
+            /*case 379:
+               return 29;
+               case 380:
+               return 32;
+               case 381:
+               return 27; */
         case 386:
             return 28;
         case 387:
@@ -1291,9 +1352,9 @@ int mons_level(int mcls)
     case MONS_SKELETAL_DRAGON:
         return 30;
 
-    //case MONS_ICE_FIEND:
-    //case MONS_SHADOW_FIEND:
-    //case MONS_DEATH_YAK: return 32;
+        //case MONS_ICE_FIEND:
+        //case MONS_SHADOW_FIEND:
+        //case MONS_DEATH_YAK: return 32;
 
     case MONS_LAVA_WORM:
     case MONS_LAVA_FISH:
@@ -1313,7 +1374,7 @@ int mons_level(int mcls)
 
     }
     return 50;
-}     // end mons_level()
+}                               // end mons_level()
 
 
 
@@ -1325,7 +1386,7 @@ int mons_rarity(int mcls)
     switch (you.where_are_you)
     {
     case BRANCH_DIS:
-        return mons_rare_dis(mcls);         // about the same as Gehenna
+        return mons_rare_dis(mcls);     // about the same as Gehenna
 
     case BRANCH_GEHENNA:
         return mons_rare_gehenna(mcls);
@@ -1389,11 +1450,11 @@ int mons_rarity(int mcls)
         case 378:
             return 15;
 /*        case 379:
-            return 10;
-        case 380:
-            return 13;
-        case 381:
-            return 15;*/
+   return 10;
+   case 380:
+   return 13;
+   case 381:
+   return 15; */
         case 386:
             return 88;
         case 387:
@@ -1676,8 +1737,8 @@ int mons_rarity(int mcls)
     case MONS_RAKSHASA_FAKE:
         return 0;
 
-    //case 114 is human
-    //case MONS_DEATH_YAK: return 32;
+        //case 114 is human
+        //case MONS_DEATH_YAK: return 32;
 
     case MONS_LAVA_WORM:
     case MONS_LAVA_FISH:
@@ -1697,7 +1758,7 @@ int mons_rarity(int mcls)
 
     return 0;
 
-}     // end int mons_rarity()
+}                               // end int mons_rarity()
 
 
 
@@ -1745,7 +1806,7 @@ int mons_level_orc_mines(int mcls)
 
     return mlev + you.branch_stairs[0] + 1;
 
-}    // end mons_level_orc_mines()
+}                               // end mons_level_orc_mines()
 
 
 
@@ -1808,7 +1869,7 @@ int mons_rare_orc_mines(int mcls)
 
     return mlev;
 
-}     // end mons_rare_orc_mines()
+}                               // end mons_rare_orc_mines()
 
 
 
@@ -1834,7 +1895,7 @@ int mons_level_hive(int mcls)
         return 99;
     }
     return 50;
-}     // end mons_level_hive()
+}                               // end mons_level_hive()
 
 
 
@@ -1862,7 +1923,7 @@ int mons_rare_hive(int mcls)
         return 0;
     }
 
-}     // end mons_rare_hive()
+}                               // end mons_rare_hive()
 
 
 
@@ -1951,7 +2012,7 @@ int mons_level_lair(int mcls)
 
     }
     return 50;
-}     // end mons_level_lair()
+}                               // end mons_level_lair()
 
 
 
@@ -2110,7 +2171,7 @@ int mons_rare_lair(int mcls)
 
     }
     return 0;
-}     // end mons_rare_lair()
+}                               // end mons_rare_lair()
 
 
 
@@ -2150,7 +2211,7 @@ int mons_level_slime_pits(int mcls)
 
     return mlev + you.branch_stairs[3] + 1;
 
-}     // end mons_level_slime_pits()
+}                               // end mons_level_slime_pits()
 
 
 
@@ -2200,7 +2261,7 @@ int mons_rare_slime_pits(int mcls)
 
     return mlev;
 
-}     // end mons_rare_slime_pits()
+}                               // end mons_rare_slime_pits()
 
 
 
@@ -2271,7 +2332,7 @@ int mons_level_crypt(int mcls)
     }
     return mlev + you.branch_stairs[5] + 1;
 
-}     // end mons_level_crypt()
+}                               // end mons_level_crypt()
 
 
 
@@ -2383,7 +2444,7 @@ int mons_rare_crypt(int mcls)
     }
     return mlev;
 
-}     // end mons_rare_crypt()
+}                               // end mons_rare_crypt()
 
 
 
@@ -2430,7 +2491,7 @@ int mons_level_snake(int mcls)
 
     return mlev + you.branch_stairs[9] + 1;
 
-}     // end mons_level_snake()
+}                               // end mons_level_snake()
 
 
 
@@ -2480,7 +2541,7 @@ int mons_rare_snake(int mcls)
 
     return mlev;
 
-}     // end mons_rare_snake()
+}                               // end mons_rare_snake()
 
 
 
@@ -2543,7 +2604,7 @@ int mons_level_elf(int mcls)
 
     return mlev + you.branch_stairs[10] + 1;
 
-}     // end mons_level_elf()
+}                               // end mons_level_elf()
 
 
 
@@ -2626,7 +2687,7 @@ int mons_rare_elf(int mcls)
 
     return mlev;
 
-}     // end mons_rare_elf()
+}                               // end mons_rare_elf()
 
 
 
@@ -2671,7 +2732,7 @@ int mons_level_tomb(int mcls)
 
     return mlev + you.branch_stairs[5] + 1;
 
-}     // end mons_level_tomb()
+}                               // end mons_level_tomb()
 
 
 
@@ -2730,7 +2791,7 @@ int mons_rare_tomb(int mcls)
 
     return mlev;
 
-}     // end mons_rare_tomb()
+}                               // end mons_rare_tomb()
 
 
 
@@ -2793,7 +2854,7 @@ int mons_level_swamp(int mcls)
 
     return mlev + you.branch_stairs[12] + 1;
 
-}     // end mons_level_swamp()
+}                               // end mons_level_swamp()
 
 
 
@@ -2908,7 +2969,7 @@ int mons_rare_swamp(int mcls)
 
     return mlev;
 
-}     // end mons_rare_swamp()
+}                               // end mons_rare_swamp()
 
 
 
@@ -2998,4 +3059,4 @@ int branch_depth(int branch)
 
     return 0;
 
-}     // end branch_depth()
+}                               // end branch_depth()

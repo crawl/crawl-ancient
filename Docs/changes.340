@@ -24,6 +24,36 @@ Brent Ross        (bwross@csclub.uwaterloo.ca)
 Josh Fishman      (fishman@cs.nyu.edu)
 Don Brodale       (lar@bway.net)
 
+06.03.2000 [Brent Ross]
+
+-- removed strength loss from berserk penalty (acr.cc)
+-- added Trog code to berserk (fight.cc, acr.cc)
+-- changed Berserkers and Paladins back to their original weapons/skills
+    (newgame.cc) (actually, changed Paladins to sabres... Linley's suggestion)
+-- removed learning from stave combat (fight.cc)
+-- made vorpal weapons less common, other egos more common? (dungeon.cc)
+-- changes to makefile.sol
+-- upped armour penalty to spells, reduced armour skill reduction (spells0.cc)
+-- armour changes (player.cc, spells0.cc)
+    - elven armour is better for spells, dwarven for AC from skill for everyone
+-- paralysis leaves you easier to hit (player.cc)
+-- reduced Xom's prayer reponse rate (religion.cc)
+
+-- penance and gift timeouts for gods (files.cc, extern.h, religion.cc, newgame.cc, ability.cc)
+    - divine_retribution() (religion.cc, decks.cc, spells.cc)
+    - added god_speaks() so that the other gods can use colourful text
+
+-- indented code
+-- improved the demonspawn AC mutations (by boosting the number of
+    levels for the lower ones)
+-- extended spellbooks to max 8 spells... restored levitation to air,
+   removed "Summon Elemental" from Ice (their "elemental" is really the
+   Ice Beast, they get no benefit summoning Water Elementals).
+
+-- added Confusing Touch as a first level spell for enchanters, and
+   Sure Blade as a second level spell... removed wand and gave them
+   some enchanted darts.
+
 
 23.02.2000 [Don Brodale]
 

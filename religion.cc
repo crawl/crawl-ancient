@@ -6,6 +6,8 @@
  *  Change History (most recent first):
  *
  *
+ *   <6>   06-Mar-2000   bwr    added penance, gift_timeout,
+ *                              divine_retribution(), god_speaks()
  *   <5>   11/15/99      cdl    Fixed Daniel's yellow Xom patch  :)
  *                              Xom will sometimes answer prayers
  *   <4>   10/11/99      BCR    Added Daniel's yellow Xom patch
@@ -23,6 +25,8 @@
 #include "externs.h"
 
 #include "bang.h"
+#include "debug.h"
+#include "decks.h"
 #include "describe.h"
 #include "dungeon.h"
 #include "effects.h"
@@ -36,6 +40,7 @@
 #include "shopping.h"
 #include "spells.h"
 #include "spells1.h"
+#include "spells2.h"
 #include "spells3.h"
 #include "stuff.h"
 
@@ -62,10 +67,56 @@ char *god_name(int which_god);
 char *god_name_long(int which_god);
 void gain_piety(char pgn);
 void naughty(char type_naughty, int naughtiness);
+void divine_retribution( int god );
 void excommunication(void);
 void god_pitch(unsigned char which_god);
 void altar_prayer(void);
 void lose_piety(char pgn);
+
+void dec_penance( int god, int val )
+{
+    if (you.penance[ god ] > 0)
+    {
+        if (you.penance[ god ] <= val)
+        {
+            strcpy(info, god_name( god ));
+            strcat(info, " seems mollified.");
+            mpr(info);
+
+            you.penance[ god ] = 0;
+        }
+        else
+        {
+            you.penance[ god ] -= val;
+        }
+    }
+}
+
+void dec_penance( int val )
+{
+    dec_penance( you.religion, val );
+}
+
+void inc_penance( int god, int val )
+{
+    if ((int) you.penance[ god ] + val > 200)
+        you.penance[ god ] = 200;
+    else
+        you.penance[ god ] += val;
+}
+
+void inc_penance( int val )
+{
+    inc_penance( you.religion, val );
+}
+
+static void inc_gift_timeout(int val)
+{
+    if ((int) you.gift_timeout + val > 200)
+        you.gift_timeout = 200;
+    else
+        you.gift_timeout += val;
+}
 
 void pray(void)
 {
@@ -101,27 +152,27 @@ void pray(void)
 
     if (you.religion == GOD_XOM)
     {
-        if ( random2(10) )
+        if (one_chance_in(100))
         {
-          mpr("Xom ignores you.");
+            // Every now and then, Xom listens
+            // This is for flavor, not effect, so praying should not be
+            // encouraged.
+
+            // Xom is nicer to experienced players  (0 is bad, 1 is nice)
+            char nice = 27 <= random2(27 + you.experience_level);
+
+            // and he's not very nice even then
+            int sever = (nice) ? random2(random2(you.experience_level))
+            : you.experience_level;
+
+            // bad results are enforced, good are not
+            char force = !nice;
+
+            Xom_acts(nice, 1 + sever, force);
         }
         else
         {
-          // Every now and then, Xom listens
-          // This is for flavor, not effect, so praying should not be
-          // encouraged.
-
-          // Xom is nicer to experienced players  (0 is bad, 1 is nice)
-          char nice  = 27 <= random2( 27 + you.experience_level ) ;
-
-          // and he's not very nice even then
-          int  sever = ( nice ) ? random2( random2( you.experience_level ) )
-                                : you.experience_level;
-
-          // bad results are enforced, good are not
-          char force = ! nice;
-
-          Xom_acts( nice, 1 + sever, force );
+            mpr("Xom ignores you.");
         }
         return;
     }
@@ -136,36 +187,43 @@ void pray(void)
 
     strcpy(info, god_name(you.religion));
 
-    if (you.piety <= 5)
+    if ( ! player_under_penance() )
     {
-        strcat(info, " is displeased.");
-    }
-    else if (you.piety <= 20)
-    {
-        strcat(info, " is noncommittal.");
-    }
-    else if (you.piety <= 40)
-    {
-        strcat(info, " is pleased with you.");
-    }
-    else if (you.piety <= 70)
-    {
-        strcat(info, " is most pleased with you.");
-    }
-    else if (you.piety <= 100)
-    {
-        strcat(info, " is greatly pleased with you.");
-        you.duration[DUR_PRAYER] *= 2;
-    }
-    else if (you.piety <= 130)
-    {
-        strcat(info, " is extremely pleased with you.");
-        you.duration[DUR_PRAYER] *= 2;
+        if (you.piety <= 5)
+        {
+            strcat(info, " is displeased.");
+        }
+        else if (you.piety <= 20)
+        {
+            strcat(info, " is noncommittal.");
+        }
+        else if (you.piety <= 40)
+        {
+            strcat(info, " is pleased with you.");
+        }
+        else if (you.piety <= 70)
+        {
+            strcat(info, " is most pleased with you.");
+        }
+        else if (you.piety <= 100)
+        {
+            strcat(info, " is greatly pleased with you.");
+            you.duration[DUR_PRAYER] *= 2;
+        }
+        else if (you.piety <= 130)
+        {
+            strcat(info, " is extremely pleased with you.");
+            you.duration[DUR_PRAYER] *= 2;
+        }
+        else
+        {
+            strcat(info, " is exalted by your worship!");
+            you.duration[DUR_PRAYER] *= 3;
+        }
     }
     else
     {
-        strcat(info, " is exalted by your worship!");
-        you.duration[DUR_PRAYER] *= 3;
+        strcat(info, " demands penance!");
     }
 
     mpr(info);
@@ -176,17 +234,20 @@ void pray(void)
    mpr(info); */
 
 
-    if (was_praying == 0)
+    // Consider a gift if we don't have a timeout and weren't
+    // already praying when we prayed.
+    if (you.penance[you.religion] == 0 && you.gift_timeout == 0 && was_praying == 0)
     {
 /*
    Remember to check for water/lava
  */
 
         if (you.religion == GOD_NEMELEX_XOBEH && random2(200) <= you.piety
-                    && ( you.attribute[ATTR_CARD_TABLE] == 0 || one_chance_in(3) )
-                    && you.attribute[ATTR_CARD_COUNTDOWN] == 0
-                    && grd[you.x_pos][you.y_pos] != DNGN_LAVA
-                    && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER)     // what of lava/water_x? {dlb}
+            && (you.attribute[ATTR_CARD_TABLE] == 0 || one_chance_in(3))
+            && you.attribute[ATTR_CARD_COUNTDOWN] == 0
+            && grd[you.x_pos][you.y_pos] != DNGN_LAVA
+            && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER)    // what of lava/water_x? {dlb}
+
         {
             int Nemelex = 0;
             int gift_type = MISC_DECK_OF_TRICKS;
@@ -198,11 +259,11 @@ void pray(void)
             }
             else
             {
-                if (random2(200) <= you.piety && one_chance_in(4) )
+                if (random2(200) <= you.piety && one_chance_in(4))
                     gift_type = MISC_DECK_OF_SUMMONINGS;
-                if (random2(200) <= you.piety && coinflip() )
+                if (random2(200) <= you.piety && coinflip())
                     gift_type = MISC_DECK_OF_WONDERS;
-                if (random2(200) <= you.piety && one_chance_in(4) )
+                if (random2(200) <= you.piety && one_chance_in(4))
                     gift_type = MISC_DECK_OF_POWER;
                 Nemelex = items(1, OBJ_MISCELLANY, gift_type, 1, 1, 250);
             }
@@ -220,65 +281,67 @@ void pray(void)
             igrd[you.x_pos][you.y_pos] = Nemelex;
 
             you.attribute[ATTR_CARD_COUNTDOWN] = 10;
-            lose_piety(5 + random2(5) + random2(5));
+            inc_gift_timeout(5 + random2(5) + random2(5));
         }
 
-        if ( ( you.religion == GOD_OKAWARU || you.religion == GOD_TROG )
-                    && you.piety > 130
-                    && random2(you.piety) > 120
-                    && grd[you.x_pos][you.y_pos] != DNGN_LAVA
-                    && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER
-                    && one_chance_in(4) )
+        if ((you.religion == GOD_OKAWARU || you.religion == GOD_TROG)
+            && you.piety > 130
+            && random2(you.piety) > 120
+            && grd[you.x_pos][you.y_pos] != DNGN_LAVA
+            && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER
+            && one_chance_in(4))
 
         {
             strcpy(info, god_name(you.religion));
             strcat(info, " grants you a gift!");
             mpr(info);
             more();
-            if ( you.religion == GOD_TROG
-                  || (you.religion == GOD_OKAWARU && coinflip() ) )
+            if (you.religion == GOD_TROG
+                || (you.religion == GOD_OKAWARU && coinflip()))
                 acquirement(OBJ_WEAPONS);
             else
                 acquirement(OBJ_ARMOUR);
-            lose_piety(30 + random2(10) + random2(10));
+            inc_gift_timeout(30 + random2(10) + random2(10));
         }
 
-        if ( you.religion == GOD_YREDELEMNUL
-             && random2(you.piety) > 80
-             && one_chance_in(10) )
+        if (you.religion == GOD_YREDELEMNUL
+            && random2(you.piety) > 80
+            && one_chance_in(10))
         {
             strcpy(info, god_name(you.religion));
             strcat(info, " grants you an undead servant!");
             mpr(info);
             more();
 
-            int thing_called = MONS_PROGRAM_BUG;                // misassignment trapping 15jan2000 {dlb}
+            int thing_called = MONS_PROGRAM_BUG;        // misassignment trapping 15jan2000 {dlb}
 
-            thing_called = table_lookup( 100,                // see stuff.cc {dlb}
-                                         MONS_WRAITH, 67,            // 33% chance
-                                         MONS_WIGHT, 53,             // 12% chance
-                                         MONS_SPECTRAL_WARRIOR, 41,  // 16% chance
-                                         MONS_ROTTING_HULK, 32,      //  9% chance
-                                         MONS_SKELETAL_WARRIOR, 24,  //  8% chance
-                                         MONS_VAMPIRE, 17,           //  7% chance
-                                         MONS_GHOUL, 11,             //  6% chance
-                                         MONS_MUMMY, 5,              //  6% chance
-                                         MONS_FLAYED_GHOST, 0 );     //  5% chance
+            thing_called = table_lookup(100,    // see stuff.cc {dlb}
+                                         MONS_WRAITH, 67,       // 33% chance
+                                         MONS_WIGHT, 53,        // 12% chance
+                                         MONS_SPECTRAL_WARRIOR, 41,     // 16% chance
+                                         MONS_ROTTING_HULK, 32,         //  9% chance
+                                         MONS_SKELETAL_WARRIOR, 24,     //  8% chance
+                                         MONS_VAMPIRE, 17,      //  7% chance
+                                         MONS_GHOUL, 11,        //  6% chance
+                                         MONS_MUMMY, 5,         //  6% chance
+                                         MONS_FLAYED_GHOST, 0);         //  5% chance
 
             create_monster(thing_called, 0, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
 
-            lose_piety(4 + random2(4) + random2(4));
+            inc_gift_timeout(4 + random2(4) + random2(4));
         }
 
 
         if ((you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_SIF_MUNA
-                            || you.religion == GOD_VEHUMET)
-                    && you.piety > 160 && random2(you.piety) > 100)
+             || you.religion == GOD_VEHUMET)
+            && you.piety > 160 && random2(you.piety) > 100)
         {
             int gift = BOOK_MINOR_MAGIC_I;
 
-            switch (you.religion) {
-            case GOD_KIKUBAAQUDGHA:                        // gives death books
+            switch (you.religion)
+            {
+            case GOD_KIKUBAAQUDGHA:     // gives death books
+
                 if (!you.had_item[BOOK_NECROMANCY])
                     gift = BOOK_NECROMANCY;
 
@@ -295,18 +358,19 @@ void pray(void)
 
             case GOD_SIF_MUNA:
                 gift = 250;     // Sif Muna - gives any
+
                 break;
 
-            // Vehumet - gives conj/summ. Gives bks first for whichever
-            // skill is higher
+                // Vehumet - gives conj/summ. Gives bks first for whichever
+                // skill is higher
             case GOD_VEHUMET:
                 if (!you.had_item[BOOK_CONJURATIONS_I])
                     gift = BOOK_CONJURATIONS_I;
                 else if (!you.had_item[BOOK_ANNIHILATIONS])
-                    gift = BOOK_ANNIHILATIONS;      // conj bks
+                    gift = BOOK_ANNIHILATIONS;  // conj bks
 
                 if (you.skills[SK_CONJURATIONS] < you.skills[SK_SUMMONINGS]
-                                            || gift == BOOK_MINOR_MAGIC_I)
+                    || gift == BOOK_MINOR_MAGIC_I)
                 {
                     if (!you.had_item[BOOK_SUMMONINGS])
                         gift = BOOK_SUMMONINGS;
@@ -314,12 +378,13 @@ void pray(void)
                         gift = BOOK_INVOCATIONS;
                     else if (!you.had_item[BOOK_DEMONOLOGY])
                         gift = BOOK_DEMONOLOGY;         // summoning bks
+
                 }
                 break;
             }
 
             if (gift != BOOK_MINOR_MAGIC_I && (grd[you.x_pos][you.y_pos] != DNGN_LAVA
-                                        && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER))
+                           && grd[you.x_pos][you.y_pos] != DNGN_DEEP_WATER))
             {
                 strcpy(info, god_name(you.religion));
                 strcat(info, " grants you a gift!");
@@ -346,14 +411,18 @@ void pray(void)
                     igrd[you.x_pos][you.y_pos] = thing_created;
                 }
 
-                lose_piety(40 + random2(10) + random2(10));
+                inc_gift_timeout(40 + random2(10) + random2(10));
 
                 // Vehumet gives books less readily
                 if (you.religion == GOD_VEHUMET)
-                    lose_piety(10 + random2(10));
-            }
-        }
-    }
+                    inc_gift_timeout(10 + random2(10));
+
+            }                   // end of giving book
+
+        }                       // end of book gods
+
+    }                           // end of gift giving
+
 }
 
 
@@ -367,11 +436,13 @@ char *god_name(int which_god)
     case GOD_NO_GOD:
         return "You aren't religious!";
     case GOD_ZIN:
-        return "Zin";               // old priest
+        return "Zin";           // old priest
+
     case GOD_SHINING_ONE:
         return "The Shining One";
     case GOD_KIKUBAAQUDGHA:
-        return "Kikubaaqudgha";     // death
+        return "Kikubaaqudgha"; // death
+
     case GOD_YREDELEMNUL:
         return "Yredelemnul";
     case GOD_XOM:
@@ -383,18 +454,22 @@ char *god_name(int which_god)
     case GOD_MAKHLEB:
         return "Makhleb";
     case GOD_SIF_MUNA:
-        return "Sif Muna";          // magic
+        return "Sif Muna";      // magic
+
     case GOD_TROG:
         return "Trog";
     case GOD_NEMELEX_XOBEH:
-        return "Nemelex Xobeh";     // trickster
+        return "Nemelex Xobeh"; // trickster
+
     case GOD_ELYVILON:
-        return "Elyvilon";          // the healer
+        return "Elyvilon";      // the healer
+
     }
 
-    return "Illegal god";     // abyss.cc also had: Jurubetut (Fire),
-                              // Vuhemeti (Ice), Okawaru (War/Chaos),
-                              // and Lugafu the Hairy ... {dlb}
+    return "Illegal god";       // abyss.cc also had: Jurubetut (Fire),
+    // Vuhemeti (Ice), Okawaru (War/Chaos),
+    // and Lugafu the Hairy ... {dlb}
+
 }
 
 
@@ -436,6 +511,76 @@ char *god_name_long(int which_god)
     return "Illegal, God of Software Bugs";
 }
 
+#ifdef XOM_ACTS_YELLOW
+
+void god_speaks( int god, const char * mesg )
+{
+    switch (god)
+    {
+    case GOD_ZIN:
+        set_colour( WHITE );
+        break;
+
+    case GOD_SHINING_ONE:
+        set_colour( YELLOW );
+        break;
+
+    case GOD_KIKUBAAQUDGHA:
+        set_colour( DARKGREY );
+        break;
+
+    case GOD_YREDELEMNUL:
+        set_colour( coinflip() ? DARKGREY : RED );
+        break;
+
+    case GOD_XOM:
+        set_colour( random2(15) + 1 );
+        break;
+
+    case GOD_VEHUMET:
+        set_colour( coinflip() ? LIGHTMAGENTA : LIGHTRED ); // LIGHTBLUE?
+        break;
+
+    case GOD_OKAWARU:
+        set_colour( CYAN );
+        break;
+
+    case GOD_MAKHLEB:
+        set_colour( coinflip() ? RED : LIGHTRED );  // YELLOW
+        break;
+
+    case GOD_SIF_MUNA:
+        set_colour( BLUE );
+        break;
+
+    case GOD_TROG:
+        set_colour( RED );
+        break;
+
+    case GOD_NEMELEX_XOBEH:
+        set_colour( LIGHTMAGENTA );
+        break;
+
+    case GOD_ELYVILON:
+        set_colour( LIGHTBLUE );  // LIGHTGREY?
+        break;
+
+    case GOD_NO_GOD:
+    default:
+        set_colour( YELLOW );
+    }
+
+    mpr( mesg );
+}
+
+#else
+
+inline void god_speaks( const char * mesg )
+{
+    mpr( mesg );
+}
+
+#endif
 
 void Xom_acts(char niceness, int sever, char force_sever)
 {
@@ -455,12 +600,9 @@ void Xom_acts(char niceness, int sever, char force_sever)
     if (sever == 0)
         return;
 
-#ifdef XOM_ACTS_YELLOW
-    set_colour( YELLOW );
-#endif
 
-okay_try_again:
-    if (niceness == 0 || one_chance_in(3) )
+  okay_try_again:
+    if (niceness == 0 || one_chance_in(3))
     {
         /* bad things */
 
@@ -471,16 +613,16 @@ okay_try_again:
             switch (random2(4))
             {
             case 0:
-                mpr("Xom notices you.");
+                god_speaks( GOD_XOM, "Xom notices you.");
                 break;
             case 1:
-                mpr("Xom's attention turns to you for a moment.");
+                god_speaks( GOD_XOM, "Xom's attention turns to you for a moment.");
                 break;
             case 2:
-                mpr("Xom's power touches on you for a moment.");
+                god_speaks( GOD_XOM, "Xom's power touches on you for a moment.");
                 break;
             case 3:
-                mpr("You hear Xom's maniacal laughter.");
+                god_speaks( GOD_XOM, "You hear Xom's maniacal laughter.");
                 break;
             }
             miscast_effect(10 + random2(15), random2(10) + 5, random2(100), 0);
@@ -492,16 +634,16 @@ okay_try_again:
             switch (random2(4))
             {
             case 0:
-                mpr("\"Suffer!\"");
+                god_speaks( GOD_XOM, "\"Suffer!\"");
                 break;
             case 1:
-                mpr("Xom's malign attention turns to you for a moment.");
+                god_speaks( GOD_XOM, "Xom's malign attention turns to you for a moment.");
                 break;
             case 2:
-                mpr("Xom's power touches on you for a moment.");
+                god_speaks( GOD_XOM, "Xom's power touches on you for a moment.");
                 break;
             case 3:
-                mpr("You hear Xom's maniacal laughter.");
+                god_speaks( GOD_XOM, "You hear Xom's maniacal laughter.");
                 break;
             }
             lose_stat(100, 1 + random2(3));
@@ -513,16 +655,16 @@ okay_try_again:
             switch (random2(4))
             {
             case 0:
-                mpr("Xom notices you.");
+                god_speaks( GOD_XOM, "Xom notices you.");
                 break;
             case 1:
-                mpr("Xom's attention turns to you for a moment.");
+                god_speaks( GOD_XOM, "Xom's attention turns to you for a moment.");
                 break;
             case 2:
-                mpr("Xom's power touches on you for a moment.");
+                god_speaks( GOD_XOM, "Xom's power touches on you for a moment.");
                 break;
             case 3:
-                mpr("You hear Xom's maniacal laughter.");
+                god_speaks( GOD_XOM, "You hear Xom's maniacal laughter.");
                 break;
             }
             miscast_effect(10 + random2(15), random2(15) + 5, random2(250), 0);
@@ -534,19 +676,19 @@ okay_try_again:
             switch (random2(4))
             {
             case 0:
-                mpr("\"You need some minor adjustments, mortal!\"");
+                god_speaks( GOD_XOM, "\"You need some minor adjustments, mortal!\"");
                 break;
             case 1:
-                mpr("\"Let me alter your pitiful body.\"");
+                god_speaks( GOD_XOM, "\"Let me alter your pitiful body.\"");
                 break;
             case 2:
-                mpr("Xom's power touches on you for a moment.");
+                god_speaks( GOD_XOM, "Xom's power touches on you for a moment.");
                 break;
             case 3:
-                mpr("You hear Xom's maniacal laughter.");
+                god_speaks( GOD_XOM, "You hear Xom's maniacal laughter.");
                 break;
             }
-            mpr("Your body is suffused with distortional energy.");
+            god_speaks( GOD_XOM, "Your body is suffused with distortional energy.");
             you.hp = random2(you.hp) + 1;
             if (you.hp < you.hp_max / 2)
                 you.hp = you.hp_max / 2;
@@ -564,19 +706,19 @@ okay_try_again:
             switch (random2(4))
             {
             case 0:
-                mpr("\"You have displeased me, mortal.\"");
+                god_speaks( GOD_XOM, "\"You have displeased me, mortal.\"");
                 break;
             case 1:
-                mpr("\"You have grown too confident for your meagre worth.\"");
+                god_speaks( GOD_XOM, "\"You have grown too confident for your meagre worth.\"");
                 break;
             case 2:
-                mpr("Xom's power touches on you for a moment.");
+                god_speaks( GOD_XOM, "Xom's power touches on you for a moment.");
                 break;
             case 3:
-                mpr("You hear Xom's maniacal laughter.");
+                god_speaks( GOD_XOM, "You hear Xom's maniacal laughter.");
                 break;
             }
-            if ( one_chance_in(4) )
+            if (one_chance_in(4))
             {
                 drain_exp();
                 if (random2(sever) > 3)
@@ -598,37 +740,37 @@ okay_try_again:
             switch (random2(3))
             {
             case 0:
-                mpr("\"Time to have some fun!\"");
+                god_speaks( GOD_XOM, "\"Time to have some fun!\"");
                 break;
             case 1:
-                mpr("\"Fight to survive, mortal.\"");
+                god_speaks( GOD_XOM, "\"Fight to survive, mortal.\"");
                 break;
             case 2:
-                mpr("You hear Xom's maniacal laughter.");
+                god_speaks( GOD_XOM, "You hear Xom's maniacal laughter.");
                 break;
             }
-            if ( !one_chance_in(4) )
+            if (!one_chance_in(4))
             {
                 create_monster(MONS_NEQOXEC + random2(5), 22, BEH_CHASING_I,
-                                        you.x_pos, you.y_pos, MHITNOT, 250);
-                if ( one_chance_in(3) )
+                               you.x_pos, you.y_pos, MHITNOT, 250);
+                if (one_chance_in(3))
                     create_monster(MONS_NEQOXEC + random2(5), 22, BEH_CHASING_I,
-                                        you.x_pos, you.y_pos, MHITNOT, 250);
+                                   you.x_pos, you.y_pos, MHITNOT, 250);
 
-                if ( one_chance_in(4) )
+                if (one_chance_in(4))
                     create_monster(MONS_NEQOXEC + random2(5), 22, BEH_CHASING_I,
-                                        you.x_pos, you.y_pos, MHITNOT, 250);
+                                   you.x_pos, you.y_pos, MHITNOT, 250);
 
-                if ( one_chance_in(3) )
+                if (one_chance_in(3))
                     create_monster(MONS_HELLION + random2(10), 22, BEH_CHASING_I,
-                                        you.x_pos, you.y_pos, MHITNOT, 250);
+                                   you.x_pos, you.y_pos, MHITNOT, 250);
 
-                if ( one_chance_in(4) )
+                if (one_chance_in(4))
                     create_monster(MONS_HELLION + random2(10), 22, BEH_CHASING_I,
-                                        you.x_pos, you.y_pos, MHITNOT, 250);
+                                   you.x_pos, you.y_pos, MHITNOT, 250);
             }
             else
-                dancing_weapon(100, 1);          // nasty, but fun
+                dancing_weapon(100, 1);         // nasty, but fun
 
             return;
         }
@@ -639,23 +781,23 @@ okay_try_again:
             switch (random2(3))
             {
             case 0:
-                mpr("\"You have grown too comfortable in your little world, mortal!\"");
+                god_speaks( GOD_XOM, "\"You have grown too comfortable in your little world, mortal!\"");
                 break;
             case 1:
-                mpr("Xom casts you into the Abyss!");
+                god_speaks( GOD_XOM, "Xom casts you into the Abyss!");
                 break;
             case 2:
-                mpr("The world seems to spin as Xom's maniacal laughter rings in your ears.");
+                god_speaks( GOD_XOM, "The world seems to spin as Xom's maniacal laughter rings in your ears.");
                 break;
             }
             banished(96);
             return;
         }
 
-        if ( !one_chance_in(4) )
+        if (!one_chance_in(4))
             goto okay_try_again;
 
-        mpr("You hear Xom's maniacal laughter.");
+        god_speaks( GOD_XOM, "You hear Xom's maniacal laughter.");
         return;
     }
 /* ouch(x, 19, y); for killed by Xom message */
@@ -666,16 +808,16 @@ okay_try_again:
         switch (random2(4))
         {
         case 0:
-            mpr("\"Go forth and destroy!\"");
+            god_speaks( GOD_XOM, "\"Go forth and destroy!\"");
             break;
         case 1:
-            mpr("\"Go forth and destroy, mortal!\"");
+            god_speaks( GOD_XOM, "\"Go forth and destroy, mortal!\"");
             break;
         case 2:
-            mpr("Xom grants you a minor favour.");
+            god_speaks( GOD_XOM, "Xom grants you a minor favour.");
             break;
         case 3:
-            mpr("Xom smiles on you.");
+            god_speaks( GOD_XOM, "Xom smiles on you.");
             break;
         }
 
@@ -697,7 +839,7 @@ okay_try_again:
             potion_effect(POT_INVISIBILITY, 150);
             break;
         case 5:
-            if ( one_chance_in(6) )
+            if (one_chance_in(6))
             {
                 potion_effect(POT_EXPERIENCE, 150);
             }
@@ -720,13 +862,13 @@ okay_try_again:
         switch (random2(3))
         {
         case 0:
-            mpr("\"Serve the mortal, my children!\"");
+            god_speaks( GOD_XOM, "\"Serve the mortal, my children!\"");
             break;
         case 1:
-            mpr("Xom grants you some temporary aid.");
+            god_speaks( GOD_XOM, "Xom grants you some temporary aid.");
             break;
         case 2:
-            mpr("Xom opens a gate.");
+            god_speaks( GOD_XOM, "Xom opens a gate.");
             break;
         }
         create_monster(MONS_NEQOXEC + random2(5), 22, BEH_ENSLAVED, you.x_pos, you.y_pos, you.pet_target, 250);
@@ -745,18 +887,19 @@ okay_try_again:
         switch (random2(3))
         {
         case 0:
-            mpr("\"Take this token of my esteem.\"");
+            god_speaks( GOD_XOM, "\"Take this token of my esteem.\"");
             break;
         case 1:
-            mpr("Xom grants you a gift!");
+            god_speaks( GOD_XOM, "Xom grants you a gift!");
             break;
         case 2:
-            mpr("Xom's generous nature manifests itself.");
+            god_speaks( GOD_XOM, "Xom's generous nature manifests itself.");
             break;
         }
         if (grd[you.x_pos][you.y_pos] == DNGN_LAVA || grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
         {
             mpr("You hear a splash.");  // How unfortunate. I'll bet Xom feels sorry for you.
+
             return;
         }
         int thing_created = items(1, 250, 250, 1, you.experience_level * 3, 250);
@@ -777,13 +920,13 @@ okay_try_again:
         switch (random2(3))
         {
         case 0:
-            mpr("\"Serve the mortal, my child!\"");
+            god_speaks( GOD_XOM, "\"Serve the mortal, my child!\"");
             break;
         case 1:
-            mpr("Xom grants you a demonic servitor.");
+            god_speaks( GOD_XOM, "Xom grants you a demonic servitor.");
             break;
         case 2:
-            mpr("Xom opens a gate.");
+            god_speaks( GOD_XOM, "Xom opens a gate.");
             break;
         }
         if (random2(you.experience_level) <= 5)
@@ -798,16 +941,16 @@ okay_try_again:
         switch (random2(4))
         {
         case 0:
-            mpr("\"Take this instrument of destruction!\"");
+            god_speaks( GOD_XOM, "\"Take this instrument of destruction!\"");
             break;
         case 1:
-            mpr("\"You have earned yourself a gift.\"");
+            god_speaks( GOD_XOM, "\"You have earned yourself a gift.\"");
             break;
         case 2:
-            mpr("Xom grants you an implement of death.");
+            god_speaks( GOD_XOM, "Xom grants you an implement of death.");
             break;
         case 3:
-            mpr("Xom smiles on you.");
+            god_speaks( GOD_XOM, "Xom smiles on you.");
             break;
         }
         acquirement(OBJ_WEAPONS);
@@ -819,16 +962,16 @@ okay_try_again:
         switch (random2(4))
         {
         case 0:
-            mpr("\"You need some minor adjustments, mortal!\"");
+            god_speaks( GOD_XOM, "\"You need some minor adjustments, mortal!\"");
             break;
         case 1:
-            mpr("\"Let me alter your pitiful body.\"");
+            god_speaks( GOD_XOM, "\"Let me alter your pitiful body.\"");
             break;
         case 2:
-            mpr("Xom's power touches on you for a moment.");
+            god_speaks( GOD_XOM, "Xom's power touches on you for a moment.");
             break;
         case 3:
-            mpr("You hear Xom's maniacal chuckling.");
+            god_speaks( GOD_XOM, "You hear Xom's maniacal chuckling.");
             break;
         }
         mpr("Your body is suffused with distortional energy.");
@@ -843,7 +986,7 @@ okay_try_again:
     if (random2(sever) <= 2)
     {
         you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 1;
-        mpr("Xom hurls a blast of lightning!");
+        god_speaks( GOD_XOM, "Xom hurls a blast of lightning!");
         beam[0].beam_source = MNG;
         beam[0].type = 43;
         beam[0].damage = 130;
@@ -858,10 +1001,10 @@ okay_try_again:
         return;
     }
 
-    if ( !one_chance_in(4) )
+    if (!one_chance_in(4))
         goto okay_try_again;
 
-    mpr("You hear Xom's maniacal laughter.");
+    god_speaks( GOD_XOM, "You hear Xom's maniacal laughter.");
 
 }
 
@@ -888,7 +1031,8 @@ void done_good(char thing_done, int pgain)
 
     switch (thing_done)
     {
-    case GOOD_KILLED_LIVING:                // killed a living monster in god's name
+    case GOOD_KILLED_LIVING:    // killed a living monster in god's name
+
         switch (you.religion)
         {
         case GOD_ELYVILON:
@@ -910,7 +1054,8 @@ void done_good(char thing_done, int pgain)
         }
         break;
 
-    case GOOD_KILLED_UNDEAD:                // killed an undead in god's name
+    case GOOD_KILLED_UNDEAD:    // killed an undead in god's name
+
         switch (you.religion)
         {
         case GOD_ZIN:
@@ -926,7 +1071,8 @@ void done_good(char thing_done, int pgain)
         }
         break;
 
-    case GOOD_KILLED_DEMON:                 // killed a demon in god's name
+    case GOOD_KILLED_DEMON:     // killed a demon in god's name
+
         switch (you.religion)
         {
         case GOD_ZIN:
@@ -946,8 +1092,8 @@ void done_good(char thing_done, int pgain)
     case GOOD_KILLED_ANGEL_II:
         switch (you.religion)
         {
-            case GOD_ZIN:
-            case GOD_SHINING_ONE:
+        case GOD_ZIN:
+        case GOD_SHINING_ONE:
         case GOD_ELYVILON:
             strcpy(info, god_name(you.religion));
             strcat(info, " did not appreciate that!");
@@ -1039,10 +1185,29 @@ void done_good(char thing_done, int pgain)
 
 void gain_piety(char pgn)
 {
-
-    if (you.piety > 100 && one_chance_in(3) )
+    // check to see if we owe anything first
+    if (you.penance[you.religion] > 0)
+    {
+        dec_penance( pgn );
         return;
-    if (you.piety > 150 && one_chance_in(3) )
+    }
+    else if (you.gift_timeout > 0)
+    {
+        if (you.gift_timeout > pgn)
+            you.gift_timeout -= pgn;
+        else
+            you.gift_timeout = 0;
+
+        // Slow down piety gain to account for the fact that gifts
+        // no longer have a piety cost for getting them
+        if (!one_chance_in(8))
+            return;
+    }
+
+    // slow down of high piety
+    if (you.piety > 100 && one_chance_in(3))
+        return;
+    if (you.piety > 150 && one_chance_in(3))
         return;
     if (you.piety > 199)
         return;
@@ -1224,6 +1389,7 @@ void naughty(char type_naughty, int naughtiness)
    10= poison (TSO now frowns upon poison)
  */
 
+    int penance = 0;
     int piety_loss = 0;
 
     switch (type_naughty)
@@ -1234,9 +1400,14 @@ void naughty(char type_naughty, int naughtiness)
         switch (you.religion)
         {
         case GOD_ZIN:
+            piety_loss = naughtiness;
+            penance = piety_loss * 2;
+            break;
+
         case GOD_SHINING_ONE:
         case GOD_ELYVILON:
             piety_loss = naughtiness;
+            penance = piety_loss;
             break;
         }
         break;
@@ -1246,12 +1417,12 @@ void naughty(char type_naughty, int naughtiness)
         {
         case GOD_ELYVILON:
             piety_loss = naughtiness;
+            penance = piety_loss * 2;
             break;
         }
         break;
 
     case NAUGHTY_ATTACK_FRIEND:
-    case NAUGHTY_FRIEND_DIES:
         switch (you.religion)
         {
         case GOD_ZIN:
@@ -1259,17 +1430,39 @@ void naughty(char type_naughty, int naughtiness)
         case GOD_ELYVILON:
         case GOD_OKAWARU:
             piety_loss = naughtiness;
+            penance = piety_loss * 3;
             break;
         }
         break;
 
-    case NAUGHTY_BUTCHER:                   // in the name of ...
+    case NAUGHTY_FRIEND_DIES:
+        switch (you.religion)
+        {
+        case GOD_ELYVILON:
+            // Healer god gets a bit more upset since you should have
+            // used your healing powers to save them.
+            piety_loss = naughtiness;
+            penance = piety_loss;
+            break;
+
+        case GOD_ZIN:
+        case GOD_SHINING_ONE:
+        case GOD_OKAWARU:
+            piety_loss = naughtiness;
+            break;
+        }
+        break;
+
+    case NAUGHTY_BUTCHER:       // in the name of ...
+
         switch (you.religion)
         {
         case GOD_ZIN:
         case GOD_SHINING_ONE:
         case GOD_ELYVILON:
             piety_loss = naughtiness;
+            if (one_chance_in(3))
+                penance = piety_loss;
             break;
         }
         break;
@@ -1279,6 +1472,9 @@ void naughty(char type_naughty, int naughtiness)
         {
         case GOD_SHINING_ONE:
             piety_loss = naughtiness;
+            // Can happen accidentally so we're nice here.
+            if (one_chance_in(5))
+                penance = piety_loss;
             break;
         }
         break;
@@ -1288,18 +1484,22 @@ void naughty(char type_naughty, int naughtiness)
         {
         case GOD_TROG:
             piety_loss = naughtiness;
+            // This penance isn't so bad since its much easier to
+            // gain piety with Trog than the other gods in th\s function.
+            penance = piety_loss * 10;
             break;
         }
         break;
 
     case NAUGHTY_POISON:
-      switch (you.religion)
+        switch (you.religion)
         {
         case GOD_SHINING_ONE:
-          piety_loss = naughtiness;
-          break;
+            piety_loss = naughtiness;
+            penance = piety_loss * 2;
+            break;
         }
-      break;
+        break;
     }
 
     if (piety_loss == 0)
@@ -1317,8 +1517,19 @@ void naughty(char type_naughty, int naughtiness)
     lose_piety(piety_loss);
 
     if (you.piety <= 0)
+    {
         excommunication();
+    }
+    else if (penance > 0)
+    {
+        // Don't both with penance unless we're not kicking them out
+        strcpy(info, "The voice of ");
+        strcat(info, god_name(you.religion));
+        strcat(info, " booms out: You will pay for that transgression!");
+        god_speaks( you.religion, info );
 
+        inc_penance(penance);
+    }
 }
 
 
@@ -1331,187 +1542,553 @@ void lose_piety(char pgn)
     else
         you.piety -= pgn;
 
-    if (you.piety < 120 && old_piety >= 120)
+    // Don't bother printing out these messages if you're under
+    // penance, you wouldn't notice since all these abilities
+    // are withheld.
+    if ( ! player_under_penance() )
     {
-        switch (you.religion)
+        if (you.piety < 120 && old_piety >= 120)
         {
-        case GOD_ZIN:
-            mpr("You can no longer summon a guardian angel.");
-            break;
-        case GOD_SHINING_ONE:
-            mpr("You can no longer summon a divine warrior.");
-            break;
-        case GOD_KIKUBAAQUDGHA:
-            mpr("You can no longer summon an emissary of Death.");      /* ie a reaper */
-            break;
-        case GOD_YREDELEMNUL:
-            mpr("You can no longer control the undead.");
-            break;
-        case GOD_MAKHLEB:
-            mpr("You can no longer summon a greater servant of Makhleb.");
-            break;
-        case GOD_ELYVILON:
-            mpr("You no longer have incredible healing powers.");
-            break;
+            switch (you.religion)
+            {
+            case GOD_ZIN:
+                mpr("You can no longer summon a guardian angel.");
+                break;
+            case GOD_SHINING_ONE:
+                mpr("You can no longer summon a divine warrior.");
+                break;
+            case GOD_KIKUBAAQUDGHA:
+                mpr("You can no longer summon an emissary of Death.");  /* ie a reaper */
+                break;
+            case GOD_YREDELEMNUL:
+                mpr("You can no longer control the undead.");
+                break;
+            case GOD_MAKHLEB:
+                mpr("You can no longer summon a greater servant of Makhleb.");
+                break;
+            case GOD_ELYVILON:
+                mpr("You no longer have incredible healing powers.");
+                break;
+            }
+        }
+
+        if (you.piety < 100 && old_piety >= 100)
+        {
+            switch (you.religion)
+            {
+            case GOD_ZIN:
+                mpr("You can no longer speak a Holy Word.");
+                break;
+            case GOD_SHINING_ONE:
+                mpr("You can no longer hurl bolts of divine anger.");
+                break;
+            case GOD_YREDELEMNUL:
+                mpr("You can no longer drain life.");
+                break;
+            case GOD_VEHUMET:
+                mpr("You have lost your channelling abilities.");
+                break;
+            case GOD_MAKHLEB:
+                mpr("You can no longer call on Makhleb's greater destructive powers.");
+                break;
+            case GOD_SIF_MUNA:
+                mpr("You no longer have special protection from the side-effects of magic.");
+                break;
+            case GOD_TROG:
+                mpr("You can no longer haste yourself.");
+                break;
+            case GOD_ELYVILON:
+                mpr("You have lost the power of Restoration.");
+                break;
+            }
+        }
+
+
+        if (you.piety < 75 && old_piety >= 75)
+        {
+            switch (you.religion)
+            {
+            case GOD_ZIN:
+                mpr("You can no longer call a plague.");
+                break;
+            case GOD_SHINING_ONE:
+                mpr("You can no longer dispel the undead.");
+                break;
+            case GOD_KIKUBAAQUDGHA:
+                mpr("You can no longer permanently enslave the undead.");
+                break;
+            case GOD_YREDELEMNUL:
+                mpr("You can no longer animate legions of the dead.");
+                break;
+            case GOD_VEHUMET:
+                mpr("You feel vulnerable.");
+                break;
+            case GOD_MAKHLEB:
+                mpr("You can no longer summon any servants of Makhleb.");
+                break;
+            case GOD_ELYVILON:
+                mpr("You lose your powerful healing abilities.");
+                break;
+            }
+        }
+
+
+        if (you.piety < 50 && old_piety >= 50)
+        {
+            switch (you.religion)
+            {
+            case GOD_ZIN:
+                mpr("You can no longer call upon Zin for minor healing.");
+                break;
+            case GOD_SHINING_ONE:
+                mpr("You can no longer smite your foes.");
+                break;
+            case GOD_KIKUBAAQUDGHA:
+                mpr("You no longer have any special protection from miscast necromancy.");
+                break;
+            case GOD_YREDELEMNUL:
+                mpr("You can no longer recall your undead slaves.");
+                break;
+            case GOD_VEHUMET:
+                mpr("You feel fallible.");
+                break;
+            case GOD_MAKHLEB:
+                mpr("You can no longer call on Makhleb's destructive powers.");
+                break;
+            case GOD_SIF_MUNA:
+                mpr("You can no longer forget spells at will.");
+                break;
+            case GOD_TROG:
+                mpr("You can no longer give your body strength.");
+                break;
+            case GOD_ELYVILON:
+                mpr("You have lost the power of Purification.");
+                break;
+            }
+        }
+
+
+        if (you.piety < 30 && old_piety >= 30)
+        {
+            switch (you.religion)
+            {
+            case GOD_ZIN:
+            case GOD_SHINING_ONE:
+                mpr("You can no longer repel the undead.");
+                break;
+            case GOD_KIKUBAAQUDGHA:
+                mpr("You can no longer recall your undead servants at will.");
+                break;
+            case GOD_YREDELEMNUL:
+                mpr("You can no longer animate corpses.");
+                break;
+            case GOD_VEHUMET:
+            case GOD_MAKHLEB:
+                mpr("You can no longer gain power from your kills.");
+                break;
+            case GOD_TROG:
+                mpr("You can no longer go berserk at will.");
+                break;
+            case GOD_ELYVILON:
+                mpr("You have lost your minor healing powers.");
+                break;
+            }
         }
     }
-
-    if (you.piety < 100 && old_piety >= 100)
-    {
-        switch (you.religion)
-        {
-        case GOD_ZIN:
-            mpr("You can no longer speak a Holy Word.");
-            break;
-        case GOD_SHINING_ONE:
-            mpr("You can no longer hurl bolts of divine anger.");
-            break;
-        case GOD_YREDELEMNUL:
-            mpr("You can no longer drain life.");
-            break;
-        case GOD_VEHUMET:
-            mpr("You have lost your channelling abilities.");
-            break;
-        case GOD_MAKHLEB:
-            mpr("You can no longer call on Makhleb's greater destructive powers.");
-            break;
-        case GOD_SIF_MUNA:
-            mpr("You no longer have special protection from the side-effects of magic.");
-            break;
-        case GOD_TROG:
-            mpr("You can no longer haste yourself.");
-            break;
-        case GOD_ELYVILON:
-            mpr("You have lost the power of Restoration.");
-            break;
-        }
-    }
-
-
-    if (you.piety < 75 && old_piety >= 75)
-    {
-        switch (you.religion)
-        {
-        case GOD_ZIN:
-            mpr("You can no longer call a plague.");
-            break;
-        case GOD_SHINING_ONE:
-            mpr("You can no longer dispel the undead.");
-            break;
-        case GOD_KIKUBAAQUDGHA:
-            mpr("You can no longer permanently enslave the undead.");
-            break;
-        case GOD_YREDELEMNUL:
-            mpr("You can no longer animate legions of the dead.");
-            break;
-        case GOD_VEHUMET:
-            mpr("You feel vulnerable.");
-            break;
-        case GOD_MAKHLEB:
-            mpr("You can no longer summon any servants of Makhleb.");
-            break;
-        case GOD_ELYVILON:
-            mpr("You lose your powerful healing abilities.");
-            break;
-        }
-    }
-
-
-    if (you.piety < 50 && old_piety >= 50)
-    {
-        switch (you.religion)
-        {
-        case GOD_ZIN:
-            mpr("You can no longer call upon Zin for minor healing.");
-            break;
-        case GOD_SHINING_ONE:
-            mpr("You can no longer smite your foes.");
-            break;
-        case GOD_KIKUBAAQUDGHA:
-            mpr("You no longer have any special protection from miscast necromancy.");
-            break;
-        case GOD_YREDELEMNUL:
-            mpr("You can no longer recall your undead slaves.");
-            break;
-        case GOD_VEHUMET:
-            mpr("You feel fallible.");
-            break;
-        case GOD_MAKHLEB:
-            mpr("You can no longer call on Makhleb's destructive powers.");
-            break;
-        case GOD_SIF_MUNA:
-            mpr("You can no longer forget spells at will.");
-            break;
-        case GOD_TROG:
-            mpr("You can no longer give your body strength.");
-            break;
-        case GOD_ELYVILON:
-            mpr("You have lost the power of Purification.");
-            break;
-        }
-    }
-
-
-    if (you.piety < 30 && old_piety >= 30)
-    {
-        switch (you.religion)
-        {
-        case GOD_ZIN:
-        case GOD_SHINING_ONE:
-            mpr("You can no longer repel the undead.");
-            break;
-        case GOD_KIKUBAAQUDGHA:
-            mpr("You can no longer recall your undead servants at will.");
-            break;
-        case GOD_YREDELEMNUL:
-            mpr("You can no longer animate corpses.");
-            break;
-        case GOD_VEHUMET:
-        case GOD_MAKHLEB:
-            mpr("You can no longer gain power from your kills.");
-            break;
-        case GOD_TROG:
-            mpr("You can no longer go berserk at will.");
-            break;
-        case GOD_ELYVILON:
-            mpr("You have lost your minor healing powers.");
-            break;
-        }
-    }
-
-
 }
 
+void divine_retribution( int god )
+{
+    ASSERT( god != GOD_NO_GOD );
 
+    // Sif Muna punishes only when you cast spells, we let
+    // Elyvilon through since that will allow Elyvilon to
+    // forgive the player.
 
+    if (god == GOD_SIF_MUNA)
+    {
+        return;
+    }
+
+    // Good gods don't use divine retribution on their followers, they
+    // will consider it for those who have gone astray however.
+
+    if (god == you.religion
+        && (god == GOD_SHINING_ONE || god == GOD_ZIN || god == GOD_ELYVILON))
+    {
+        return;
+    }
+
+    // Just the thought of retribution (getting this far) mollifies the
+    // god a few points... the punishment might reduce penance further.
+
+    dec_penance( god, random2(3) + 1 );
+
+    switch (god)
+    {
+    case GOD_XOM:
+        {
+            // One in ten chance that Xom might do something good...
+            // but that isn't forced, bad things are though
+            int nice = one_chance_in( 10 ) ? 1 : 0;
+            Xom_acts( nice, you.experience_level, !nice );
+        }
+        break;
+
+    case GOD_SHINING_ONE:
+        // Doesn't care unless you've gone over to evil
+        if (you.religion == GOD_KIKUBAAQUDGHA
+                                    || you.religion == GOD_YREDELEMNUL)
+        {
+            if (coinflip())
+            {
+                bool summoned = false;
+                int num = random2( you.experience_level / 5 ) + random2(3) + 1;
+
+                for (int i = 0; i < num; i++)
+                {
+                    if (create_monster( MONS_DAEVA, 0, BEH_CHASING_I,
+                                            you.x_pos, you.y_pos, MHITNOT, 250 ))
+                    {
+                        summoned = true;
+                    }
+                }
+
+                if (summoned)
+                {
+                    god_speaks( GOD_SHINING_ONE, "The Shining One summons the divine host to punish you for your evil ways." );
+                }
+            }
+            else
+            {
+                int dam = random2(10) + 10;
+                for (int i = 0; i < 5; i++)
+                {
+                    dam += random2(you.experience_level);
+                }
+
+                if (you.piety > random2(400) && ! player_under_penance())
+                {
+                    strcpy( info, "The Shinging One tries to smite you, but " );
+                    strcat( info, god_name( you.religion ) );
+                    strcat( info, " intercedes." );
+                    mpr( info );
+                }
+                else
+                {
+                    god_speaks( GOD_SHINING_ONE, "The Shining One smites you." );
+                    ouch( dam, 0, KILLED_BY_TSO_SMITING );
+                    dec_penance( GOD_SHINING_ONE, 1 );
+                }
+            }
+        }
+        break;
+
+    case GOD_ZIN:
+        // Doesn't care unless you've gone over to evil
+        if (you.religion == GOD_KIKUBAAQUDGHA
+                                    || you.religion == GOD_YREDELEMNUL)
+        {
+            if (random2(you.experience_level) > 7)
+            {
+                bool summoned = false;
+                int num = you.experience_level / 10 + random2(3) + 1;
+
+                for (int i = 0; i < num; i++) {
+                    if (create_monster( MONS_ANGEL, 0, BEH_CHASING_I,
+                                    you.x_pos, you.y_pos, MHITNOT, 250 ))
+                    {
+                        summoned = true;
+                    }
+                }
+
+                if (summoned)
+                {
+                    god_speaks( GOD_ZIN, "Zin summons the divine host to punish you for your evil ways." );
+                }
+            }
+            else
+            {
+                // loop gives number, power = 0 gives unfriendly
+                for (int i = 0; i < you.experience_level / 5 + 2; i++)
+                {
+                    summon_swarm(0);
+                }
+                god_speaks( GOD_ZIN, "Zin summons a swarm upon you." );
+            }
+        }
+        break;
+
+    case GOD_MAKHLEB:
+        if (random2(you.experience_level) > 7)
+        {
+            if (create_monster( MONS_EXECUTIONER + random2(5), 0,
+                        BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250 ))
+            {
+                god_speaks( GOD_MAKHLEB, "Makhleb summons a demon against you." );
+            }
+        }
+        else
+        {
+            bool summoned = false;
+            for (int i = 0; i < (you.experience_level / 7) + 1; i++)
+            {
+                if (create_monster( MONS_NEQOXEC + random2(5), 0,
+                        BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250 ))
+                {
+                    summoned = true;
+                }
+            }
+
+            if (summoned)
+            {
+                god_speaks( GOD_MAKHLEB, "Makhleb summons demons against you." );
+            }
+        }
+        break;
+
+    case GOD_KIKUBAAQUDGHA:
+        if (random2( you.experience_level ) > 7)
+        {
+            bool summoned = false;
+            int num_mon = you.experience_level / 7 + random2(3) + 1;
+
+            for (int i = 0; i < num_mon; i++)
+            {
+                if (create_monster( MONS_REAPER, 0, BEH_CHASING_I,
+                                you.x_pos, you.y_pos, MHITNOT, 250 ))
+                {
+                    summoned = true;
+                }
+            }
+
+            if (summoned)
+            {
+                god_speaks( GOD_KIKUBAAQUDGHA, "Kikubaaqudgha summons Death upon you!" );
+            }
+
+        } else {
+            god_speaks( GOD_KIKUBAAQUDGHA, "You hear Kikubaaqudgha cackling." );
+            miscast_effect( SPTYP_NECROMANCY, 5 + you.experience_level,
+                            random2(30) + random2(30) + random2(30), 100);
+        }
+        break;
+
+    case GOD_YREDELEMNUL:
+        if (random2( you.experience_level ) > 4)
+        {
+            bool summoned = false;
+            int num_mon = random2( you.experience_level / 5 + 1 ) + 1;
+
+            for (int i = 0; i < num_mon; i++)
+            {
+                int mon = table_lookup(100,    // see stuff.cc {dlb}
+                                 MONS_WRAITH, 67,              // 33% chance
+                                 MONS_WIGHT, 53,               // 12% chance
+                                 MONS_SPECTRAL_WARRIOR, 41,    // 16% chance
+                                 MONS_ROTTING_HULK, 32,        //  9% chance
+                                 MONS_SKELETAL_WARRIOR, 24,    //  8% chance
+                                 MONS_VAMPIRE, 17,             //  7% chance
+                                 MONS_GHOUL, 11,               //  6% chance
+                                 MONS_MUMMY, 5,                //  6% chance
+                                 MONS_FLAYED_GHOST, 0);        //  5% chance
+
+                if (create_monster(mon, 0, BEH_CHASING_I,
+                                        you.x_pos, you.y_pos, MHITNOT, 250))
+                {
+                    summoned = true;
+                }
+            }
+
+            if (summoned)
+            {
+                god_speaks( GOD_YREDELEMNUL, "Yredelmnul summons the undead to punish you." );
+            }
+
+        } else {
+            god_speaks( GOD_YREDELEMNUL, "You hear Yredelmnul's laughter." );
+            miscast_effect(SPTYP_NECROMANCY, 5 + you.experience_level, random2(30) + random2(30) + random2(30), 100);
+        }
+        break;
+
+    case GOD_TROG:
+        {
+            // Would be better if berzerking monsters were available,
+            // we just send some big bruisers for now.
+
+            bool summoned = false;
+            int points = random2( you.experience_level * 2 ) + 3;
+
+            int mon = MONS_PROGRAM_BUG;
+
+            while (points > 0)
+            {
+                if (points > 20)
+                {
+                    // quick reduction for large values
+                    mon = MONS_DEEP_TROLL;
+                    points -= 15;
+                    break;
+                }
+                else
+                {
+                    switch (random2(10))
+                    {
+                    case 0:
+                        mon = MONS_IRON_TROLL;
+                        points -= 10;
+                        break;
+
+                    case 1:
+                        mon = MONS_ROCK_TROLL;
+                        points -= 10;
+                        break;
+
+                    case 2:
+                        mon = MONS_TROLL;
+                        points -= 6;
+                        break;
+
+                    case 3:
+                    case 4:
+                        mon = MONS_MINOTAUR;
+                        points -= 3;
+                        break;
+
+                    case 5:
+                    case 6:
+                        mon = MONS_TWO_HEADED_OGRE;
+                        points -= 4;
+                        break;
+
+                    case 7:
+                    case 8:
+                    case 9:
+                    default:
+                        mon = MONS_OGRE;
+                        points -= 3;
+                    }
+                }
+
+                if (create_monster( mon, 0, BEH_CHASING_I,
+                                    you.x_pos, you.y_pos, MHITNOT, 250 ))
+                {
+                    summoned = true;
+                }
+            }
+
+            if (summoned)
+            {
+                god_speaks( GOD_TROG, "Trog sends monsters to punish you." );
+            }
+        }
+        break;
+
+    case GOD_OKAWARU:
+        {
+            bool summoned = false;
+            for (int i = 0; i < (you.experience_level / 7) + 1; i++)
+            {
+
+                int mon = table_lookup(100,
+                                         MONS_ORC_WARRIOR, 85,
+                                         MONS_ORC_KNIGHT, 70,
+                                         MONS_NAGA_WARRIOR, 60,
+                                         MONS_CENTAUR_WARRIOR, 50,
+                                         MONS_STONE_GIANT, 40,
+                                         MONS_FIRE_GIANT, 30,
+                                         MONS_FROST_GIANT, 20,
+                                         MONS_CYCLOPS, 10,
+                                         MONS_HILL_GIANT, 0);
+
+                if (create_monster( mon, 0, BEH_CHASING_I,
+                                        you.x_pos, you.y_pos, MHITNOT, 250 ))
+                {
+                    summoned = true;
+                }
+            }
+
+            if (summoned)
+            {
+                god_speaks( GOD_OKAWARU, "Okawaru sends warriors to test you." );
+            }
+        }
+        break;
+
+    case GOD_VEHUMET:
+        god_speaks( GOD_VEHUMET, "Vehumet punishes you." );
+        miscast_effect( coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING,
+                        8 + you.experience_level,
+                        random2(40) + random2(30) + random2(30), 100 );
+        break;
+
+    case GOD_NEMELEX_XOBEH:
+        god_speaks( GOD_NEMELEX_XOBEH, "Nemelex forces you to draw from the Deck of Punishment." );
+        deck_of_cards( DECK_OF_PUNISHMENT );
+        break;
+
+    case GOD_SIF_MUNA: // should never get here, Sif Muna is handled elsewhere.
+    case GOD_ELYVILON: // Elyvilon doesn't seek revenge
+    default:
+        break;
+    }
+}
 
 void excommunication(void)
 {
     mpr("You have lost your religion!");
     more();
-    if (you.religion == GOD_XOM)
-        Xom_acts(0, you.experience_level * 2, 1);
-    if (you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_YREDELEMNUL)
+
+    switch (you.religion)
     {
+    case GOD_XOM:
+        Xom_acts(0, you.experience_level * 2, 1);
+        inc_penance(50);
+        break;
+
+    case GOD_KIKUBAAQUDGHA:
+    case GOD_YREDELEMNUL:
         strcpy(info, god_name(you.religion));
         strcat(info, " does not appreciate desertion!");
         mpr(info);
         miscast_effect(SPTYP_NECROMANCY, 5 + you.experience_level, random2(30) + random2(30) + random2(30), 100);
-    }
-    if (you.religion == GOD_VEHUMET || you.religion == GOD_MAKHLEB)
-    {
+        inc_penance(30);
+        break;
+
+    case GOD_VEHUMET:
+    case GOD_MAKHLEB:
         strcpy(info, god_name(you.religion));
         strcat(info, " does not appreciate desertion!");
         mpr(info);
-        miscast_effect(SPTYP_CONJURATION + (random2(2) * 7), 8 + you.experience_level, random2(40) + random2(30) + random2(30), 100);
-    }
-    if (you.religion == GOD_TROG)
-    {
+        miscast_effect( (coinflip() ? SPTYP_CONJURATION : SPTYP_SUMMONING), 8 + you.experience_level, random2(40) + random2(30) + random2(30), 100);
+        inc_penance(25);
+        break;
+
+    case GOD_TROG:
+#if 0
+        /* Trog uses fire wild magic - is this right? */
         strcpy(info, god_name(you.religion));
         strcat(info, " does not appreciate desertion!");
         mpr(info);
         miscast_effect(SPTYP_FIRE, 8 + you.experience_level, random2(40) + random2(30) + random2(30), 100);
-    }                           /* Trog uses fire wild magic - is this right? */
+#endif
+        // Penence has to come before retribution to prevent "mollify"
+        inc_penance(50);
+        // This might be a better thing for Trog to do.
+        divine_retribution( GOD_TROG );
+        break;
+
+    case GOD_NEMELEX_XOBEH:
+    case GOD_SIF_MUNA:
+        // these like to haunt players for a bit more than the standard
+        inc_penance(50);
+        break;
+
+    default:
+        inc_penance(15);
+        break;
+    }
+
     you.religion = GOD_NO_GOD;
     you.piety = 0;
 }
@@ -1542,7 +2119,7 @@ void altar_prayer(void)
 
     do
     {
-        if ( one_chance_in(1000) )
+        if (one_chance_in(1000))
             break;
         j = mitm.link[i];
         switch (you.religion)
@@ -1591,8 +2168,8 @@ void altar_prayer(void)
             mpr(info);
 
             if (random2(item_value(mitm.base_type[i], mitm.sub_type[i],
-                            mitm.special[i], mitm.pluses[i], mitm.pluses2[i],
-                            mitm.quantity[i], 3, subst_id)) >= random2(50))
+                           mitm.special[i], mitm.pluses[i], mitm.pluses2[i],
+                             mitm.quantity[i], 3, subst_id)) >= random2(50))
             {
                 gain_piety(1);
             }
@@ -1664,6 +2241,17 @@ void god_pitch(unsigned char which_god)
     you.religion = which_god;
     you.piety = 15;
 
+    // XXX: Currently penance is just zeroed, this could be much
+    // more interesting
+    you.penance[you.religion] = 0;
+
+    if (you.religion == GOD_KIKUBAAQUDGHA || you.religion == GOD_YREDELEMNUL)
+    {
+        if (you.penance[ GOD_SHINING_ONE ] > 0) {
+            inc_penance( GOD_SHINING_ONE, 30 );
+            mpr( "The Shining One booms: You will pay for your evil ways mortal." );
+        }
+    }
 }
 
 

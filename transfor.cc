@@ -110,100 +110,100 @@ char transform(int pow, char which_trans)
 
     switch (which_trans)
     {
-            case TRAN_SPIDER:           /* also AC + 2, ev + 3, fast_run */
-                mpr("You turn into a venomous arachnid creature.");
-                remove_equipment(rem_stuff);
-                you.dex += 5;
-                you.max_dex += 5;
-                you.attribute[ATTR_TRANSFORMATION] = TRAN_SPIDER;
-                you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
-                if (you.duration[DUR_TRANSFORMATION] > 100)
-                    you.duration[DUR_TRANSFORMATION] = 100;
-                your_sign = 's';
-                your_colour = DARKGREY;
-                return 1;
+    case TRAN_SPIDER:           /* also AC + 2, ev + 3, fast_run */
+        mpr("You turn into a venomous arachnid creature.");
+        remove_equipment(rem_stuff);
+        you.dex += 5;
+        you.max_dex += 5;
+        you.attribute[ATTR_TRANSFORMATION] = TRAN_SPIDER;
+        you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+        if (you.duration[DUR_TRANSFORMATION] > 100)
+            you.duration[DUR_TRANSFORMATION] = 100;
+        your_sign = 's';
+        your_colour = DARKGREY;
+        return 1;
 
-            case TRAN_BLADE_HANDS:
-                rem_stuff[EQ_CLOAK] = 0;
-                rem_stuff[EQ_HELMET] = 0;
-                rem_stuff[EQ_BOOTS] = 0;
-                rem_stuff[EQ_BODY_ARMOUR] = 0;
-                remove_equipment(rem_stuff);
-                mpr("Your hands turn into razor-sharp scythe blades.");
-                you.attribute[ATTR_TRANSFORMATION] = TRAN_BLADE_HANDS;
-                you.duration[DUR_TRANSFORMATION] = 10 + random2(pow);
-                if (you.duration[DUR_TRANSFORMATION] > 100)
-                    you.duration[DUR_TRANSFORMATION] = 100;
-                return 1;
+    case TRAN_BLADE_HANDS:
+        rem_stuff[EQ_CLOAK] = 0;
+        rem_stuff[EQ_HELMET] = 0;
+        rem_stuff[EQ_BOOTS] = 0;
+        rem_stuff[EQ_BODY_ARMOUR] = 0;
+        remove_equipment(rem_stuff);
+        mpr("Your hands turn into razor-sharp scythe blades.");
+        you.attribute[ATTR_TRANSFORMATION] = TRAN_BLADE_HANDS;
+        you.duration[DUR_TRANSFORMATION] = 10 + random2(pow);
+        if (you.duration[DUR_TRANSFORMATION] > 100)
+            you.duration[DUR_TRANSFORMATION] = 100;
+        return 1;
 
-            case TRAN_STATUE:           /* also AC + 20, ev - 5 */
-                if ( you.species != SP_GNOME )
-                  {
-                      mpr("You turn into a living statue of rough stone.");
-                  }
-                else
-                  {
-                      mpr("Look, a garden gnome. How cute is that?");
-                  }
-                rem_stuff[EQ_WEAPON] = 0;       /* can still hold a weapon */
-                remove_equipment(rem_stuff);
-                you.dex -= 2;
-                you.max_dex -= 2;
-                you.strength += 2;
-                you.max_strength += 2;
-                you.attribute[ATTR_TRANSFORMATION] = TRAN_STATUE;
-                you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
-                if (you.duration[DUR_TRANSFORMATION] > 100)
-                    you.duration[DUR_TRANSFORMATION] = 100;
-                your_sign = '8';
-                your_colour = LIGHTGREY;
-                extra_hp(15);
-                return 1;
+    case TRAN_STATUE:           /* also AC + 20, ev - 5 */
+        if (you.species != SP_GNOME)
+        {
+            mpr("You turn into a living statue of rough stone.");
+        }
+        else
+        {
+            mpr("Look, a garden gnome. How cute is that?");
+        }
+        rem_stuff[EQ_WEAPON] = 0;       /* can still hold a weapon */
+        remove_equipment(rem_stuff);
+        you.dex -= 2;
+        you.max_dex -= 2;
+        you.strength += 2;
+        you.max_strength += 2;
+        you.attribute[ATTR_TRANSFORMATION] = TRAN_STATUE;
+        you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+        if (you.duration[DUR_TRANSFORMATION] > 100)
+            you.duration[DUR_TRANSFORMATION] = 100;
+        your_sign = '8';
+        your_colour = LIGHTGREY;
+        extra_hp(15);
+        return 1;
 
-            case TRAN_ICE_BEAST:        /* also AC + 2, res_cold * 3, -1 * res_fire */
-                mpr("You turn into a creature of crystalline ice.");
-                remove_equipment(rem_stuff);
-                you.attribute[ATTR_TRANSFORMATION] = TRAN_ICE_BEAST;
-                you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
-                if (you.duration[DUR_TRANSFORMATION] > 100)
-                    you.duration[DUR_TRANSFORMATION] = 100;
-                your_sign = 'I';
-                your_colour = WHITE;
-                extra_hp(12);
-                return 1;
+    case TRAN_ICE_BEAST:        /* also AC + 2, res_cold * 3, -1 * res_fire */
+        mpr("You turn into a creature of crystalline ice.");
+        remove_equipment(rem_stuff);
+        you.attribute[ATTR_TRANSFORMATION] = TRAN_ICE_BEAST;
+        you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+        if (you.duration[DUR_TRANSFORMATION] > 100)
+            you.duration[DUR_TRANSFORMATION] = 100;
+        your_sign = 'I';
+        your_colour = WHITE;
+        extra_hp(12);
+        return 1;
 
-            case TRAN_DRAGON:           /* also AC + 7, ev - 3, -1 * res_cold, 2 * res_fire */
-                mpr("You turn into a fearsome dragon!");
-                remove_equipment(rem_stuff);
-                you.attribute[ATTR_TRANSFORMATION] = TRAN_DRAGON;
-                you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
-                if (you.duration[DUR_TRANSFORMATION] > 100)
-                    you.duration[DUR_TRANSFORMATION] = 100;
-                you.strength += 10;
-                you.max_strength += 10;
-                your_sign = 'D';
-                your_colour = GREEN;
-                extra_hp(16);
-                return 1;
+    case TRAN_DRAGON:           /* also AC + 7, ev - 3, -1 * res_cold, 2 * res_fire */
+        mpr("You turn into a fearsome dragon!");
+        remove_equipment(rem_stuff);
+        you.attribute[ATTR_TRANSFORMATION] = TRAN_DRAGON;
+        you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+        if (you.duration[DUR_TRANSFORMATION] > 100)
+            you.duration[DUR_TRANSFORMATION] = 100;
+        you.strength += 10;
+        you.max_strength += 10;
+        your_sign = 'D';
+        your_colour = GREEN;
+        extra_hp(16);
+        return 1;
 
-            case TRAN_LICH:             /* also AC + 3, 1 * res_cold, prot_life, res_poison, is_undead, res_magic, drain attack (if empty-handed) */
-                if (you.deaths_door != 0)
-                {
-                    mpr("The transformation conflicts with an enchantment already in effect.");
-                    return 0;
-                }
-                mpr("Your body is suffused with negative energy!");
-                /* no remove_equip */
-                you.attribute[ATTR_TRANSFORMATION] = TRAN_LICH;
-                you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
-                if (you.duration[DUR_TRANSFORMATION] > 100)
-                    you.duration[DUR_TRANSFORMATION] = 100;
-                you.strength += 3;
-                you.max_strength += 3;
-                your_sign = 'L';
-                your_colour = LIGHTGREY;
-                you.is_undead = US_HUNGRY_DEAD;
-                return 1;
+    case TRAN_LICH:             /* also AC + 3, 1 * res_cold, prot_life, res_poison, is_undead, res_magic, drain attack (if empty-handed) */
+        if (you.deaths_door != 0)
+        {
+            mpr("The transformation conflicts with an enchantment already in effect.");
+            return 0;
+        }
+        mpr("Your body is suffused with negative energy!");
+        /* no remove_equip */
+        you.attribute[ATTR_TRANSFORMATION] = TRAN_LICH;
+        you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+        if (you.duration[DUR_TRANSFORMATION] > 100)
+            you.duration[DUR_TRANSFORMATION] = 100;
+        you.strength += 3;
+        you.max_strength += 3;
+        your_sign = 'L';
+        your_colour = LIGHTGREY;
+        you.is_undead = US_HUNGRY_DEAD;
+        return 1;
     }
 
     return 0;
@@ -234,41 +234,41 @@ void untransform()
 
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
-            case TRAN_SPIDER:
-                mpr("Your transformation has ended.");
-                you.dex -= 5;
-                you.max_dex -= 5;
-                break;
+    case TRAN_SPIDER:
+        mpr("Your transformation has ended.");
+        you.dex -= 5;
+        you.max_dex -= 5;
+        break;
 
-            case TRAN_BLADE_HANDS:
-                mpr("Your hands shrink back to their normal proportions.");
-                wield_change = 1;
-                break;
+    case TRAN_BLADE_HANDS:
+        mpr("Your hands shrink back to their normal proportions.");
+        wield_change = 1;
+        break;
 
-            case TRAN_STATUE:
-                mpr("You revert to your normal fleshy form.");
-                you.dex += 2;
-                you.max_dex += 2;
-                you.strength -= 2;
-                you.max_strength -= 2;
-                break;
+    case TRAN_STATUE:
+        mpr("You revert to your normal fleshy form.");
+        you.dex += 2;
+        you.max_dex += 2;
+        you.strength -= 2;
+        you.max_strength -= 2;
+        break;
 
-            case TRAN_ICE_BEAST:
-                mpr("You warm up again.");
-                break;
+    case TRAN_ICE_BEAST:
+        mpr("You warm up again.");
+        break;
 
-            case TRAN_DRAGON:
-                you.strength -= 10;
-                you.max_strength -= 10;
-                mpr("Your transformation has ended.");
-                break;
+    case TRAN_DRAGON:
+        you.strength -= 10;
+        you.max_strength -= 10;
+        mpr("Your transformation has ended.");
+        break;
 
-            case TRAN_LICH:
-                you.strength -= 3;
-                you.max_strength -= 3;
-                mpr("You feel yourself come back to life.");
-                you.is_undead = US_ALIVE;
-                break;
+    case TRAN_LICH:
+        you.strength -= 3;
+        you.max_strength -= 3;
+        mpr("You feel yourself come back to life.");
+        you.is_undead = US_ALIVE;
+        break;
     }
 
     you.attribute[ATTR_TRANSFORMATION] = TRAN_NONE;
@@ -308,6 +308,7 @@ char can_equip(char use_which)
     case TRAN_NONE:
         return 1;
     case TRAN_SPIDER:           // spider - can't wear anything
+
         return 0;
     case TRAN_BLADE_HANDS:
         if (use_which == EQ_WEAPON || use_which == EQ_GLOVES || use_which == EQ_SHIELD)
