@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *   <8>     19 Jun 99   GDL    added IBMCPP support
  *   <7>     14/12/99    LRH    random2 -> random5
  *   <6>     11/06/99    cdl    random4 -> random2
  *
@@ -624,7 +625,7 @@ char *rand_armour_names[] =
 */
 
 
-#ifdef MAC
+#if defined(MAC) || defined(__IBMCPP__)
 #define PACKED
 #else
 #define PACKED __attribute__ ((packed))
@@ -633,8 +634,10 @@ char *rand_armour_names[] =
 
 //int unranddatasize;
 
-
-
+#ifdef __IBMCPP__
+#pragma pack(push)
+#pragma pack(1)
+#endif
 
 struct unrandart_entry
 {
@@ -651,13 +654,14 @@ struct unrandart_entry
     char *spec_descrip3 /*[32] */ PACKED;    // special description added to 'v' command output (max 31 chars)
 };
 
-
+#ifdef __IBMCPP__
+#pragma pack(pop)
+#endif
 
 static struct unrandart_entry unranddata[] =
 {
 #include "unrand.h"
 };
-
 
 #define sura seekunrandart(aclass, atype, aplus, aplus2)
 

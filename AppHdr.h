@@ -16,6 +16,7 @@
  *
  *  Change History (most recent first):
  *
+ *       <7>    9 May 2000  GDL     Added Windows 32 bit console support
  *       <6>    24mar2000   jmf     Added a whole slew of new options, which
  *                                  ought to be mandatory :-)
  *       <5>     10/12/99   BCR     Added USE_NEW_RANDOM #define
@@ -128,6 +129,14 @@
 
 #include <string>
 
+#elif defined(WIN32CONSOLE) && defined(__IBMCPP__)
+#include "libw32c.h"
+#define PLAIN_TERM
+#define SHORT_FILE_NAMES
+#define EOL "\n\r"
+#define CHARACTER_SET           A_ALTCHARSET
+#define getstr(X,Y)             getConsoleString(X,Y)
+
 #else
 #error unsupported compiler
 #endif
@@ -169,7 +178,7 @@
 // #define SEPARATE_SELECTION_SCREENS_FOR_SUBSPECIES
 
 // Uncomment this line to allow the player to select his draconian's colour.
-#define ALLOW_DRACONIAN_TYPE_SELECTION
+// #define ALLOW_DRACONIAN_TYPE_SELECTION
 
 // if this works out okay, eventually we can change this to USE_OLD_RANDOM
 #define USE_NEW_RANDOM
@@ -216,6 +225,10 @@
 
 // A few new mini-vaults, featuring altars
 #define USE_NEW_MINIVAULTS
+
+// Use the old LOS code.  Warning: the old code does not support
+// variable radius lightsources, or wraithform/passwall.
+// #define USE_OLD_LOS
 
 // Use special colours for all god-related messages
 #define USE_GOD_COLOURS

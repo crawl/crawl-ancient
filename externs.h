@@ -228,6 +228,8 @@ struct player
     unsigned char had_item[50];
 
     unsigned char betrayal;
+    unsigned char normal_vision;        // how far the species gets to see
+    unsigned char current_vision;       // current sight radius (cells)
 };
 
 extern struct player you;

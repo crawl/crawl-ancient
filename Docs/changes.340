@@ -25,6 +25,28 @@ Josh Fishman      (fishman@cs.nyu.edu)
 Don Brodale       (lar@bway.net)
 
 
+19.jun.2000 (Gordon Lipford)
+     Changes:
+
+     * replaced old losight() function with new one.  It doesn't quite
+       match the old one,  but it's close enough.
+     * externalized setLOSRadius() and added normal_vision and current_vision
+       fields to the player structure.  We have variable light sources, voila!
+
+     - Note that using a radius of 0 screws up map memory and looks really dumb.
+       I am not going to try to fix this.
+     - In a similar vein,  bumping into something should draw it on the map
+       if you didn't know it was there already (ie you fumble blindly into a
+       wall).  I'm not going to do this either.  :)
+
+     * changed all level 1 'handle' references to level 2 'FILE *' for better
+       portability.  Whenever a function needs a File Descriptor,  I have
+       substituted fileno(handle) for just 'handle'.
+     * added Windows 32 bit Console support.  Screen redraws,  loading, saving,
+       and highscore updates are now VERY fast on Windows machines,  even playing
+       from a shared network drive.  The NT DOS VDM,  at least,  was !@$#* crap.
+
+
 17.mar.2000 [Josh Fishman]
 
      Bug Fixes:

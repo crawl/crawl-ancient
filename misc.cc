@@ -14,7 +14,9 @@
 #include "misc.h"
 
 #include <string.h>
+#ifndef __IBMCPP__
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *   <9>      19 Jun 00  GDL    Complete rewrite of LOS code
  *   <8>      11/23/99   LRH    Added colour-coded play-screen map & clean_map
  *                                                              init options
  *   <7>      9/29/99    BCR    Removed first argument from draw_border
@@ -692,7 +693,12 @@ void viewwindow2( char draw_it, bool do_updates )
         gotoxy(2, 1);
         bufcount = 0;
 
-        // if (you.running == 0) // this line is purely optional
+    // following lines are purely optional.
+        // if used,  players will 'jump' move.  Resting will be a LOT faster too.
+    if (you.running == 0) {
+        gotoxy(2,1);
+        bufcount = 0;
+
         for (count_x = 0; count_x < 1120; count_x += 2)
         {                       // 1056
 
@@ -706,6 +712,8 @@ void viewwindow2( char draw_it, bool do_updates )
             if ( count_x % 66 == 64 && count_x > 0 )
               gotoxy(2, wherey() + 1);
         }
+    // remember to comment out the line below if you comment out jump move.
+    }
 #endif
     }
 
@@ -1164,7 +1172,12 @@ void noisy( char loudness, char nois_x, char nois_y )
 }          // end noisy()
 
 
+#ifdef USE_OLD_LOS
 
+extern void setLOSRadius(int newLR)
+{
+    ;       // do nothing - does not support variable radius.
+}
 
 /*
  The losight function is so complex and tangled that I daren't even look at it.
@@ -1906,7 +1919,338 @@ void losight( unsigned int sh[19][19], unsigned char gr[GXM][GYM], int x_p, int 
 
 }          // end losight()
 
+#else // USE_OLD_LOS
 
+/* ========================================================================
+ *                           brand new LOS code
+ * ========================================================================
+ * The new LOS works via a new (I think) shadow casting algorithm,
+ * plus an esthetic tweak for more pleasing corner illumination.  More
+ * detail can be had by contacting its author,  Gordon Lipford.          */
+
+#define MAX_LIGHT_RADIUS        20
+#define CIRC_MAX                        32000
+#define BIG_SHADOW                      32000
+
+// the following two constants represent the 'middle' of the sh array.
+// since the current shown area is 19x19,  centering the view at (9,9)
+// means it will be exactly centered.
+// This is done to accomodate possible future changes in viewable screen
+// area - simply change sh_xo and sh_yo to the new view center.
+
+const int sh_xo = 9;            // X and Y origins for the sh array
+const int sh_yo = 9;
+
+// the Cell class,  used in the shadow-casting LOS algorithm
+class Cell
+{
+   public:
+    int up_count;
+    int up_max;
+    int low_count;
+    int low_max;
+    bool lit;
+    bool lit_delay;
+    bool visible;                       // for blockers only
+    void init();
+    bool reachedLower();
+    bool reachedUpper();
+    Cell() { init(); };
+};
+
+void Cell::init()
+{
+        up_count = 0;
+        up_max = 0;
+        low_count = 0;
+        low_max = 0;
+        lit = true;
+   visible = true;
+        lit_delay = false;
+}
+bool Cell::reachedLower()
+{
+        // integer math: a 'step' has a value of 10
+        // see if we're within a half step of the max.  VERY important
+        // to use 'half step' or else things look really stupid.
+   if (low_max != 0 && low_count + 5 >= low_max && low_count - 5 < low_max)
+      return true;
+   return false;
+}
+bool Cell::reachedUpper()
+{
+        // see if we're within a half step of the max.  VERY important
+        // to use 'half step' or else things look really stupid.
+        if (up_max != 0 && up_count + 5 >= up_max && up_count - 5 < up_max)
+      return true;
+   return false;
+}
+
+// the cell array
+static Cell cells[MAX_LIGHT_RADIUS+1];
+
+// the 'circle' array.  For any given row,  we won't check higher than
+// this given cell.
+static int circle[MAX_LIGHT_RADIUS+1];
+
+// current light radius
+static int LR = 0;
+
+// View constant
+const int view = 2;                     // 1=widest LOS .. 5=narrowest
+
+// initialize LOS code for a given light radius
+extern void setLOSRadius(int newLR)
+{
+        int i,j;
+
+        // sanity check - also allows multiple calls w/out performance loss
+        if (LR == newLR)
+                return;
+
+        LR = newLR;
+        // cells should already be initted.  calculate the circle array.
+
+        // note that rows 0 and 1 will always go to infinity.
+        circle[0] = circle[1] = CIRC_MAX;
+        // for the rest,  simply calculate max height based on light rad.
+        for (i=2; i<=LR; i++)
+        {
+                // check top
+                if (2*i*i <= LR * LR)
+                {
+                        circle[i] = CIRC_MAX;
+                        continue;
+                }
+                for(j=i-1; j>=0; j--) {
+         // check that Distance (I^2 + J^2) is no more than (R+0.5)^2
+                        // this rounding allows for *much* better looking circles.
+                        if (i*i + j*j <= LR * LR + LR)
+                        {
+                                circle[i] = j;
+                                break;
+                        }
+                }
+        }
+}
+
+static int calcUpper(int bX, int bY)
+{
+        // got a blocker at row bX,  cell bY.  do all values
+        // and scale by a factor of 10 for the integer math.
+        int upper;
+
+        upper = (10 * (10*bX - view)) / (10*bY + view);
+        if (upper < 10)                 // upper bound for blocker on diagonal
+                upper = 10;
+
+   return upper;
+}
+
+static int calcLower(int bX, int bY)
+{
+        // got a blocker at row bX,  cell bY.  do all values
+        // and scale by a factor of 10 for the integer math.
+
+   if (bY == 0)
+      return BIG_SHADOW;
+        return (10 * (10*bX + view)) / (10*bY - view);
+}
+
+// for easy x,y octant translation
+static int xxcomp[8] = { 1, 0, 0, -1, -1, 0, 0, 1 };
+static int xycomp[8] = { 0, 1, -1, 0, 0, -1, 1, 0 };
+static int yxcomp[8] = { 0, 1, 1, 0, 0, -1, -1, 0 };
+static int yycomp[8] = { 1, 0, 0, 1, -1, 0, 0, -1 };
+
+static void los_octant(int o, unsigned int sh[19][19], unsigned char gr[80][70],
+        int x_p, int y_p)
+{
+        int row, cell, top, south;
+        int tx, ty;                             // translated x, y deltas for this octant
+        unsigned char gv;               // grid value
+        bool row_dark, all_dark;
+        bool blocker, vis_corner;
+        int up_inc, low_inc;
+   int upper, lower;
+
+        // leave [0,0] alone,  because the old LOS code seems to.
+
+        // init cell[0].  this is the only one that needs clearing.
+        cells[0].init();
+   all_dark = false;
+   vis_corner = false;
+
+        // loop through each row
+        for(row = 1; row <= LR; row++)
+        {
+                row_dark = true;
+                // loop through each cell,  up to the max allowed by circle[]
+                top = circle[row];
+                if (top > row) top = row;
+                for(cell = 0; cell <= top; cell++)
+                {
+                        // translate X,Y co'ord + bounds check
+                        tx = row * xxcomp[o] + cell * xycomp[o];
+                        ty = row * yxcomp[o] + cell * yycomp[o];
+
+                        if (x_p + tx < 0 || x_p + tx > 79 ||
+                            y_p + ty < 0 || y_p + ty > 69)
+                                continue;
+
+         // check for all_dark - we've finished the octant but
+         // have yet to fill in '0' for the rest of the sight grid
+         if (all_dark == true)
+         {
+                        sh[sh_xo + tx][sh_yo + ty] = 0;
+            continue;
+         }
+
+                        // get grid value.. see if it blocks LOS
+                        gv = gr[x_p + tx][y_p + ty];
+         blocker = (gv < MINSEE);
+
+         // init some other variables
+                        up_inc = 10;
+         low_inc = 10;
+                        south = cell - 1;
+
+                        // STEP 1 - inherit values from immediate West, if possible
+                        if (cell < row)
+                        {
+                                // check for delayed lighting
+                                if (cells[cell].lit_delay)
+                                {
+               if (!blocker)              // blockers don't light up with lit_delay.
+               {
+                                        if (cells[south].lit)
+                                        {
+                                                if (cells[south].low_max != 0)
+                                                {
+                                                        cells[cell].lit = false;
+                                                        // steal lower values
+                                                        cells[cell].low_max = cells[south].low_max;
+                                                        cells[cell].low_count = cells[south].low_count;
+                                                        cells[south].low_count = cells[south].low_max = 0;
+                                                        low_inc = 0;            // avoid double-inc.
+                                                }
+                                                else
+                                                        cells[cell].lit = true;
+                  }
+                                        }
+                                        cells[cell].lit_delay = false;
+                                }
+                        }
+                else
+                        {
+                                // initialize new cell.
+                                cells[cell].init();
+                        }
+
+                        // STEP 2 - check for blocker
+                        // a dark blocker in shadow's edge will be visible
+                        if (blocker)
+                        {
+                                if (cells[cell].lit || (cell != 0 && cells[south].lit) || vis_corner)
+                      {
+               vis_corner = cells[cell].lit;       // hack: make 'corners' visible
+                                        cells[cell].lit = false;
+               cells[cell].visible = true;
+
+                                        int upper = calcUpper(row, cell);
+                                        int lower = calcLower(row, cell);
+                                        if (upper < cells[cell].up_max || cells[cell].up_max == 0)
+                                        {
+                                                // new upper shadow
+                                                cells[cell].up_max = upper;
+                                                cells[cell].up_count = 0;
+                                                up_inc = 0;
+                                        }
+
+                                        if (lower > cells[cell].low_max || cells[cell].low_max == 0)
+                                        {
+                                                // new lower shadow
+                                                cells[cell].low_max = lower;
+                                                cells[cell].low_count = -10;
+                                                low_inc = 0;
+                                                if (lower <= 30)                // somewhat arbitrary
+                                                        cells[cell].lit_delay = true;
+                                                // set dark_delay if lower > 20?? how to decide?
+                                        }
+                                }
+            else
+            {
+                                        cells[cell].visible = false;
+            }
+                        }
+         else
+         {
+                                cells[cell].visible = false;            // special flags for blockers
+                   }
+
+                        // STEP 3 - add increments to upper, lower counts
+                        cells[cell].up_count += up_inc;
+                        cells[cell].low_count += low_inc;
+
+                        // STEP 4 - check south for dark
+                        if (south >=0)
+         if ( cells[south].reachedUpper() == true)
+                        {
+                                if (cells[cell].reachedUpper() == false)
+                                {
+                                        cells[cell].up_max = cells[south].up_max;
+                                        cells[cell].up_count = cells[south].up_count;
+                                        cells[cell].up_count -= cells[south].up_max;
+                                }
+                                cells[cell].lit = false;
+                                cells[cell].visible = false;
+                        }
+
+                        // STEP 5 - nuke lower if south lower
+                        if (south >= 0)
+                        {
+                                if (cells[south].reachedLower())
+                                {
+                                        cells[cell].low_max = cells[south].low_max;
+                                        cells[cell].low_count = cells[south].low_count;
+                                        cells[cell].low_count -= cells[south].low_max;
+                                        cells[south].low_count = cells[south].low_max = 0;
+                                }
+                                if (cells[south].low_max != 0 || (cells[south].lit == false
+                                        && cells[south].low_max == 0))
+                                {
+                                        cells[cell].low_count = cells[cell].low_max + 10;
+                                }
+                        }
+
+                        // STEP 6 - light up if we've reached lower bound
+                        if (cells[cell].reachedLower() == true)
+                                cells[cell].lit = true;
+
+                        // now place appropriate value in sh
+                        if (cells[cell].lit == true || (blocker == true && cells[cell].visible == true))
+                                sh[sh_xo + tx][sh_yo + ty] = gv;
+                        else
+                                sh[sh_xo + tx][sh_yo + ty] = 0;
+
+                        if (cells[cell].lit == true)
+                        row_dark = false;
+                } // end for - cells
+      vis_corner = false;           // don't carry over to next row. :)
+      if (row_dark == true)
+         all_dark = true;
+        } // end for - rows
+}
+
+extern void losight(unsigned int sh[19][19],
+             unsigned char gr[80][70], int x_p, int y_p)
+{
+        int o;
+        for (o=0; o<8; o++)
+                los_octant(o, sh, gr, x_p, y_p);
+}
+
+#endif // USE_OLD_LOS
 
 
 void draw_border( char your_name[kNameLen], char class_name[40], char tspecies )

@@ -19,7 +19,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef __IBMCPP__
 #include <unistd.h>
+#endif
 #include <stdarg.h>
 #include <ctype.h>
 

@@ -1,5 +1,7 @@
 Enhancements:
 
+* make screen update correctly when player vision is <2.
+
 * Make dangerous things be shown on top of a stack.  This includes traps,
   walls of fire, etc.
 

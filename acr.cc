@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *     <17>    19jun2000        GDL             added Windows console support
  *     <16>    06mar2000        bwr             changes to berserk
  *     <15>    09jan2000        BCR             new Wiz command: blink
  *     <14>     10/13/99        BCR             Added auto door opening,
@@ -241,6 +242,10 @@ int main( int argc, char *argv[] )
     init_mac();
 #endif
 
+#ifdef WIN32CONSOLE
+    init_libw32c();
+#endif
+
 #ifdef MACROS
     // Load macros
     macro_init();
@@ -379,7 +384,8 @@ static void input( void )
                 }
             }
             else
-              gutch:keyin = getch();
+gutch:
+                keyin = getch();
 
             mesclr();
 
@@ -2444,6 +2450,9 @@ static void initialise( void )
     draw_border(you.your_name, title, you.species);
 
     new_level();
+
+    // set vision radius to player's current vision
+    setLOSRadius(you.current_vision);
 
     viewwindow(1, false);       // This just puts the view up for the first turn.
 

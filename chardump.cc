@@ -6,6 +6,7 @@
  *  Change History (most recent first):
  *
  *
+ *      <4>     19 June 2000    GDL             Changed handles to FILE *
  *      <3>     6/13/99         BWR             Improved spell listing
  *      <2>     5/30/99         JDJ             dump_spells dumps failure rates (from Brent).
  *      <1>     4/20/99         JDJ             Reformatted, uses string objects, split out 7
@@ -19,7 +20,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#ifndef __IBMCPP__
 #include <unistd.h>
+#endif
 #include <ctype.h>
 
 #ifdef USE_EMX
@@ -921,13 +924,13 @@ bool dump_char( char show_prices, char fname[30] )        // $$$ a try block?
     if (strcmp(fname, "morgue.txt") != 0)
         strncat(file_name, ".txt", kPathLen);
 
-    int handle = open(file_name, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0660);
+    FILE *handle = fopen(file_name, "wb");
 
     strcpy(info, "File name: ");
     strcat(info, file_name);
     mpr(info);
 
-    if (handle != -1)
+    if (handle != NULL)
     {
         size_t begin = 0;
         size_t end = text.find(EOL);
@@ -940,13 +943,13 @@ bool dump_char( char show_prices, char fname[30] )        // $$$ a try block?
 
             if (len > 80)
                 len = 80;
-            write(handle, text.c_str() + begin, len);
+            fwrite(text.c_str()+begin, len, 1, handle);
 
             begin = end;
             end = text.find(EOL, end);
         }
 
-        close(handle);
+        fclose(handle);
         succeeded = true;
 
     }

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *     <16>      19-Jun-2000    GDL   changed handle to FILE *
  *     <15>      06-Mar-2000    bwr   changes to berserer, paladin, enchanter
  *     <14>      10-Jan-2000    DLB   class_allowed() lists excluded
  *                                       species for all but hunters
@@ -115,7 +116,7 @@ bool new_game( void )
 {
     int i, j;                      // loop variables {dlb}
 
-    int handle;
+    FILE *handle;
     char char_fil[kFileNameSize];
     unsigned char keyn;
     unsigned char weap_skill = 0;
@@ -156,8 +157,8 @@ bool new_game( void )
     strcpy(char_fil, name_buff);
     strcat(char_fil, ".sav");
 
-    handle = open(zip_buff, S_IWRITE, S_IREAD);
-    if (handle != -1)
+    handle = fopen(zip_buff, "rb+");
+    if (handle != NULL)
     {
         cprintf(EOL "Loading game..." EOL);
 
@@ -168,7 +169,7 @@ bool new_game( void )
 
         system(cmd_buff);
 
-        close(handle);
+        fclose(handle);
 
         // Remove save game package
         unlink(zip_buff);
@@ -194,19 +195,19 @@ bool new_game( void )
 
     int passout = 0;
 
-    handle = open(char_fil, S_IWRITE, S_IREAD);
+    handle = fopen(char_fil, "rb+");
 
-    if (handle != -1)
+    if (handle != NULL)
     {
         cprintf(EOL "Welcome back, ");
         cprintf(you.your_name);
         cprintf("!");
-        close(handle);
+        fclose(handle);
 
         return false;
     }
 
-    close(handle);
+    fclose(handle);
 
     clrscr();    // this replaces the following commented chunk b/c
                  // things also look better under linux, so why not
@@ -640,6 +641,13 @@ cant_be_that:
     you.is_undead = ( (you.species == SP_MUMMY) ? US_UNDEAD :
                       (you.species == SP_GHOUL) ? US_HUNGRY_DEAD
                                                 : US_ALIVE );
+
+    // before we get into the inventory init,  set light radius based
+    // on species vision.
+
+    // currently,  all species see out to 8 squares.
+    you.normal_vision = 8;
+    you.current_vision = 8;
 
     you.attribute[ATTR_WALK_SLOWLY] = (you.species == SP_NAGA);
 
@@ -2251,15 +2259,8 @@ getkey2:
             st_prn[1] = '\0';
             strcat(del_file, st_prn);
             strcat(del_file, "\0");
-            handle = open(del_file, S_IWRITE, S_IREAD);
 
-            if (handle != -1)
-            {
-                close(handle);
-                unlink(del_file);
-            }
-            else
-                close(handle);
+            unlink(del_file);
         }
     }
 #endif
@@ -3689,7 +3690,7 @@ void enterPlayerName( void )
             echo();
             getstr(name_entered);
             noecho();
-#elif defined(MAC)
+#elif defined(MAC) || defined(WIN32CONSOLE)
             getstr(name_entered, sizeof(name_entered));
 #else
             gets(name_entered);

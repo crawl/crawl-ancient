@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *   <7>   19 June 2000  GDL    Change handle to FILE *
  *   <6>   11/14/99      cdl    Don't let player ghosts follow you up/down
  *   <5>    7/13/99      BWR    Monsters now regenerate hps off level &
  ghosts teleport
@@ -465,15 +466,9 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth, c
     strupr(cha_fil);
 #endif
 
-    FILE *handle;
-    int handle2 = open(cha_fil, O_RDONLY, O_CREAT | O_TRUNC | O_BINARY, 0660);
+    FILE *handle = fopen(cha_fil, "rb");
 
-    if (handle2 != -1)
-    {
-        close(handle2);
-        handle = fopen(cha_fil, "rb");
-    }
-    else
+    if (handle == NULL)
     {                           /* generate new level */
         strcpy(ghost.name, "");
 
@@ -502,88 +497,76 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth, c
             else
                 strcat(cha_fil, corr_level);
 
-            int gfile2 = open(cha_fil, S_IWRITE, S_IREAD);
+            FILE *gfile = fopen(cha_fil, "rb");
 
-            if (gfile2 != -1)
+            if (gfile == NULL)
             {
-                close(gfile2);
-//        gfile = open(cha_fil, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0660);
-                //        gfile = open(cha_fil, O_RDONLY, O_CREAT | O_TRUNC | O_BINARY, 0660);
-                FILE *gfile = fopen(cha_fil, "rb");
+                strcpy(info, "Error opening ghost file: ");
+                strcat(info, cha_fil);
+                mpr(info);
+                more();
+            }
+            else
+            {
+                char buf1[40];
 
-                if (gfile == NULL)
+                read2(gfile, buf1, 40);
+                fclose(gfile);
+                for (int iiii = 0; iiii < 20; ++iiii)
+                    ghost.name[iiii] = buf1[iiii];
+                ghost.values[0] = buf1[20];
+                ghost.values[1] = buf1[21];
+                ghost.values[2] = buf1[22];
+                ghost.values[3] = buf1[23];
+                ghost.values[4] = buf1[24];
+                ghost.values[5] = buf1[25];
+                ghost.values[6] = buf1[26];
+                ghost.values[7] = buf1[27];
+                ghost.values[8] = buf1[28];
+                /* note - as ghosts, automatically get res poison + prot_life */
+                ghost.values[9] = buf1[29];
+                ghost.values[10] = buf1[30];
+                ghost.values[11] = buf1[31];
+                ghost.values[12] = buf1[32];
+                ghost.values[13] = buf1[33];
+                ghost.values[14] = buf1[34];
+                ghost.values[15] = buf1[35];
+                ghost.values[16] = buf1[36];
+                ghost.values[17] = buf1[37];
+                ghost.values[18] = buf1[38];
+                ghost.values[19] = buf1[39];
+                unlink(cha_fil);
+
+                for (int imn = 0; imn < MNST - 10; imn++)
                 {
-                    strcpy(info, "Error opening ghost file: ");
-                    strcat(info, cha_fil);
-                    mpr(info);
-                    more();
-                }
-                else
-                {
-                    char buf1[40];
-
-                    read2(gfile, buf1, 40);
-                    fclose(gfile);
-                    for (int iiii = 0; iiii < 20; ++iiii)
-                        ghost.name[iiii] = buf1[iiii];
-                    ghost.values[0] = buf1[20];
-                    ghost.values[1] = buf1[21];
-                    ghost.values[2] = buf1[22];
-                    ghost.values[3] = buf1[23];
-                    ghost.values[4] = buf1[24];
-                    ghost.values[5] = buf1[25];
-                    ghost.values[6] = buf1[26];
-                    ghost.values[7] = buf1[27];
-                    ghost.values[8] = buf1[28];
-                    /* note - as ghosts, automatically get res poison + prot_life */
-                    ghost.values[9] = buf1[29];
-                    ghost.values[10] = buf1[30];
-                    ghost.values[11] = buf1[31];
-                    ghost.values[12] = buf1[32];
-                    ghost.values[13] = buf1[33];
-
-                    ghost.values[14] = buf1[34];
-                    ghost.values[15] = buf1[35];
-                    ghost.values[16] = buf1[36];
-                    ghost.values[17] = buf1[37];
-                    ghost.values[18] = buf1[38];
-                    ghost.values[19] = buf1[39];
-                    unlink(cha_fil);
-
-                    for (int imn = 0; imn < MNST - 10; imn++)
+                    if (menv[imn].type != -1)
+                      continue;
+                    menv[imn].type = MONS_PLAYER_GHOST;
+                    menv[imn].hit_dice = ghost.values[12];
+                    menv[imn].hit_points = ghost.values[0];
+                    menv[imn].max_hit_points = ghost.values[0];
+                    menv[imn].armor_class = ghost.values[2];
+                    menv[imn].evasion = ghost.values[1];
+                    menv[imn].speed = 10;
+                    menv[imn].speed_increment = 70;
+                    if (ghost.values[14] != 250 || ghost.values[15] != 250 || ghost.values[16] != 250 || ghost.values[17] != 250 || ghost.values[18] != 250 || ghost.values[19] != 250)
+                       menv[imn].number = 119;
+                    else
+                       menv[imn].number = 250;
+                    do
                     {
-                        if (menv[imn].type != -1)
-                          continue;
-
-                        menv[imn].type = MONS_PLAYER_GHOST;
-                        menv[imn].hit_dice = ghost.values[12];
-                        menv[imn].hit_points = ghost.values[0];
-                        menv[imn].max_hit_points = ghost.values[0];
-                        menv[imn].armor_class = ghost.values[2];
-                        menv[imn].evasion = ghost.values[1];
-                        menv[imn].speed = 10;
-                        menv[imn].speed_increment = 70;
-
-                        if (ghost.values[14] != 250 || ghost.values[15] != 250 || ghost.values[16] != 250 || ghost.values[17] != 250 || ghost.values[18] != 250 || ghost.values[19] != 250)
-                          menv[imn].number = 119;
-                        else
-                          menv[imn].number = 250;
-
-                        do
-                        {
-                            menv[imn].x = random2(GXM - 20) + 10;
-                            menv[imn].y = random2(GYM - 20) + 10;
-                        }
-                        while ((grd[menv[imn].x][menv[imn].y] != DNGN_FLOOR) || (mgrd[menv[imn].x][menv[imn].y] != MNG));
-
-                        mgrd[menv[imn].x][menv[imn].y] = imn;
-                        break;
+                        menv[imn].x = random2(GXM - 20) + 10;
+                        menv[imn].y = random2(GYM - 20) + 10;
                     }
+                    while ((grd[menv[imn].x][menv[imn].y] != DNGN_FLOOR) || (mgrd[menv[imn].x][menv[imn].y] != MNG));
+
+                    mgrd[menv[imn].x][menv[imn].y] = imn;
+                    break;
                 }
             }
         }
 
-    // closes all the gates if you're on the way out
+        // closes all the gates if you're on the way out
         for (i = 0; i < GXM; i++)
           for (j = 0; j < GYM; j++)
           {
@@ -1411,10 +1394,10 @@ void save_game( bool leave_game )
 {
     char char_f[kFileNameSize];
     int i, j;
+    char cmd_buff[1024];
 
 #ifdef SAVE_PACKAGE_CMD
     char name_buff[kFileNameSize];
-    char cmd_buff[1024];
 
     sprintf(name_buff, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
     sprintf(cmd_buff, SAVE_PACKAGE_CMD, name_buff, name_buff);
@@ -1714,7 +1697,8 @@ void save_game( bool leave_game )
 
     clrscr();
 
-    cprintf("See you soon, %s!", you.your_name); //jmf: added you.your_name
+    sprintf(cmd_buff, "See you soon, %s!", you.your_name);
+    cprintf(cmd_buff); //jmf: added you.your_name
 
     end(0);
 

@@ -18,7 +18,7 @@
 
 // ****remember***** must make an hardcopy of this sometime
 
-#ifdef macintosh
+#if defined(macintosh) || defined(__IBMCPP__)
 #define PACKED
 #else
 #define PACKED __attribute__ ((packed))

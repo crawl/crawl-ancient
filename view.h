@@ -84,5 +84,10 @@ void viewwindow2(char draw_it, bool do_updates);
  * *********************************************************************** */
 void viewwindow3(char draw_it, bool do_updates);        // non-IBM graphics
 
+// last updated 19jun2000 (gdl)
+/* ***********************************************************************
+ * called from:
+ * *********************************************************************** */
+void setLOSRadius(int newLR);
 
 #endif

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <3>     5 May 2000      GDL             Add field stripping for 'name'
  *      <2>     6/12/99         BWR             Added get_system_environment
  *      <1>     6/9/99          DML             Created
  */
@@ -16,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "externs.h"
 
@@ -30,6 +32,41 @@ extern char colour_map;         /* defined in view.cc */
 extern char clean_map;          /* also defined in view.cc */
 
 
+static void strip(char *buf)
+{
+   int len = strlen(buf);
+   int s;
+
+   int t=0;
+   bool emptyspace = true;
+   for(s=0; s<len; s++)
+   {
+      // strip leading spaces as well as CRLF
+      if (buf[s] == ' ' && emptyspace)
+         continue;
+      // strip non-alnum.  this is redundant with the code in newgame(),
+      // which I hate,  but sscanf is known to produce garbage on some
+      // systems (i.e. mine :(  if the input field is blank.  This ends
+      // up swallowing the initial "hello!" text,  which is annoying.
+      if (!isalnum(buf[s]))
+         continue;
+      if (buf[s] == 0x0A || buf[s] == 0x0D)
+         buf[s] = '\0';
+      emptyspace = false;
+      buf[t] = buf[s];
+      t++;
+   }
+   // tie off
+   buf[t] = '\0';
+
+   // now strip trailing spaces - easy.
+   for( len=strlen(buf)-1;  len>= 0;  len--)
+   {
+      if (buf[len] != ' ')
+         break;
+   }
+   buf[len+1] = '\0';
+}
 
 
 void read_init_file( void )
@@ -115,6 +152,8 @@ void read_init_file( void )
           }
         else if ( sscanf(s, "name=%s", field) )
           {
+            // clean up field first
+            strip(field);
             strncpy(you.your_name, field, kNameLen);
           }
         else if ( sscanf(s, "verbose_dump=%s", field) )

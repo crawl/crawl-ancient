@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <7>      19 June 2000   GDL             Changed handle to FILE *
  *      <6>      11/23/99       LRH             Fixed file purging for DOS?
  *      <5>      9/29/99        BCR             Fixed highscore so that it
  *                                              doesn't take so long.  Also
@@ -928,15 +929,10 @@ void end_game(char end_status)
 
             strcat(del_file, st_prn);
             strcat(del_file, "\0");
-            int handle = open(del_file, S_IWRITE, S_IREAD);
 
-            if (handle != -1)
-            {
-                close(handle);
-                unlink(del_file);
-            }
-            else
-                close(handle);
+            // unlink file.  Since we can't do anything about
+            // a failure,  ignore it.
+            unlink(del_file);
         }
     }
 
@@ -1318,17 +1314,17 @@ void highscore(char death_string[256], long points)
     }
 
 #ifdef SAVE_DIR_PATH
-    int handle = open(SAVE_DIR_PATH "scores", S_IWRITE, S_IREAD);
+    FILE *handle = fopen(SAVE_DIR_PATH "scores", "rb");
 
 #else
-    int handle = open("scores", S_IWRITE, S_IREAD);
+    FILE *handle = fopen("scores", "rb");
 
 #endif
 
-    if (handle != -1)
+    if (handle != NULL)
     {
 #ifdef SOLARIS
-        lockf(handle, F_LOCK, 0);
+        lockf(fileno(handle), F_LOCK, 0);
 #endif
         i = 0;
         int endOfFile = 0;
@@ -1336,7 +1332,7 @@ void highscore(char death_string[256], long points)
         while ((i < SCORE_FILE_ENTRIES) && !endOfFile)
         {
             // BCR - reading in 80 chars at a time now instead of 1.  80x faster.
-            read(handle, ready, 80);
+            fread(ready, 80, 1, handle);
 
             for (j = 0; j < 80; j++)
             {
@@ -1414,21 +1410,19 @@ void highscore(char death_string[256], long points)
     }
 
 #ifdef SOLARIS
-    lockf(handle, F_ULOCK, 0);
+    // here too... sigh.  GDL
+    lockf(fileno(handle), F_ULOCK, 0);
 #endif
 
-    close(handle);
+    fclose(handle);
 
-    //handle = open("scores", O_CREAT || O_TRUNC | O_BINARY, S_IWRITE | S_IREAD);
-    //handle = open("scores", O_WRONLY | O_BINARY, S_IWRITE, S_IREAD);
-    //handle = open("scores", O_BINARY, 0660);
 #ifdef SAVE_DIR_PATH
-    handle = open(SAVE_DIR_PATH "scores", O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0660);         //S_IREAD | S_IWRITE);
+    handle = fopen(SAVE_DIR_PATH "scores", "wb");
 #else
-    handle = open("scores", O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0660);       //S_IREAD | S_IWRITE);
+    handle = fopen("scores", "wb");
 #endif
 
-    if (handle == -1)
+    if (handle == NULL)
     {
         perror("oh NO!!!");
         if (getch() == 0)
@@ -1437,7 +1431,7 @@ void highscore(char death_string[256], long points)
     else
     {
 #ifdef SOLARIS
-        lockf(handle, F_LOCK, 0);
+        lockf(fileno(handle), F_LOCK, 0);
 #endif
 
 /*
@@ -1455,19 +1449,19 @@ void highscore(char death_string[256], long points)
 
             if (points > scores[i] && has_printed == 0)
             {
-                write(handle, death_string, 80);
+                fwrite(death_string, 80, 1, handle);
                 i--;
                 has_printed = 1;
             }
             else
-                write(handle, high_scores[i], 80);
+                fwrite(high_scores[i], 80, 1, handle);
         }
 
 #ifdef SOLARIS
-        lockf(handle, F_ULOCK, 0);
+        lockf(fileno(handle), F_ULOCK, 0);
 #endif
 
-        close(handle);
+        fclose(handle);
 
 #ifdef SHARED_FILES_CHMOD_VAL
 

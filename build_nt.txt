@@ -1,0 +1,11 @@
+Notes for building crawl with VACPP
+-----------------------------------
+* when including source,  make sure source type is
+  defined to be 'cpp'  - VACPP doesn't know how to
+  handle .cc extensions.
+* include libw32c.cc as a source object;
+  ignore the other lib*.cc files
+* define the macro WIN32CONSOLE
+* MUST build with signedchars = yes
+
+Other than this,  it's pretty straightforward.
