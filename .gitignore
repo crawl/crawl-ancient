@@ -1,0 +1,20 @@
+crawl
+*.o
+
+scores
+morgue.txt
+
+# editor junk
+*~
+DEADJOE
+*.bak
+*.gdt
+*.gpr
+*.mcp
+rh.bat
+
+# ftp.dungeoncrawl.com addition
+packaged.txt
+
+*.sav
+*.00a
