@@ -3054,7 +3054,7 @@
 {
     MONS_QUOKKA, 'r', LIGHTGREY, "quokka",
     M_WARM_BLOOD,
-    0, 10, MONS_QUOKKA, MH_NATURAL, -1,
+    200, 10, MONS_QUOKKA, MH_NATURAL, -1,
     { 5, 0, 0, 0 },
     { 1, 3, 5, 0 },
     2, 13, 10, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_NORMAL, 1

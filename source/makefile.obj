@@ -14,6 +14,7 @@ effects.o \
 fight.o \
 files.o \
 food.o \
+hiscores.o \
 initfile.o \
 invent.o \
 it_use2.o \

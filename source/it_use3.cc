@@ -908,6 +908,7 @@ void tome_of_power(char sc_read_2)
         // your explosion, (not someone else's explosion)
         beam.thrower = KILL_YOU;
         beam.ex_size = 2;
+        beam.isTracer = false;
 
         explosion(beam);
         return;

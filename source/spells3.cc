@@ -720,13 +720,18 @@ bool entomb(void)
     char srx = 0, sry = 0;
     char number_built = 0;
 
-    FixedVector < unsigned char, 7 > safe_to_overwrite(DNGN_FLOOR,
-                                                       DNGN_SHALLOW_WATER,
-                                                       DNGN_OPEN_DOOR,
-                                                       DNGN_TRAP_MECHANICAL,
-                                                       DNGN_TRAP_MAGICAL,
-                                                       DNGN_TRAP_III,
-                                                       DNGN_UNDISCOVERED_TRAP);
+    FixedVector < unsigned char, 7 > safe_to_overwrite;
+
+    // hack - passing chars through '...' promotes them to ints, which
+    // barfs under gcc in fixvec.h.  So don't.
+    safe_to_overwrite[0] = DNGN_FLOOR;
+    safe_to_overwrite[1] = DNGN_SHALLOW_WATER;
+    safe_to_overwrite[2] = DNGN_OPEN_DOOR;
+    safe_to_overwrite[3] = DNGN_TRAP_MECHANICAL;
+    safe_to_overwrite[4] = DNGN_TRAP_MAGICAL;
+    safe_to_overwrite[5] = DNGN_TRAP_III;
+    safe_to_overwrite[6] = DNGN_UNDISCOVERED_TRAP;
+
 
     for (srx = you.x_pos - 1; srx < you.x_pos + 2; srx++)
     {
@@ -949,9 +954,13 @@ bool recall(char type_recalled)
 
         if (empty_surrounds(you.x_pos, you.y_pos, DNGN_FLOOR, false, empty))
         {
-            mgrd[monster->x][monster->y] = monster_index(monster);
+            // clear old cell pointer -- why isn't there a function for moving a monster?
+            mgrd[monster->x][monster->y] = NON_MONSTER;
+            // set monster x,y to new value
             monster->x = empty[0];
             monster->y = empty[1];
+            // set new monster grid pointer to this monster.
+            mgrd[monster->x][monster->y] = monster_index(monster);
 
             // only informed if monsters recalled are visible {dlb}:
             if (simple_monster_message(monster, " is recalled."))

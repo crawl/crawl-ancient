@@ -96,11 +96,15 @@ static void print_ench(string & description, unsigned char item_plus)
 // word and such. The character $ is interpreted as a CR.
 //
 //---------------------------------------------------------------
-static void print_description(const string & d)
+static void print_description(const string &d)
 {
     int nextLine = -1;
     int currentPos = 0;
+#ifdef DOS
+    const int lineWidth = 52;
+#else
     const int lineWidth = 70;
+#endif
     bool nlSearch = true;       // efficiency
 
     textcolor(LIGHTGREY);

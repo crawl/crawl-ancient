@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <mem.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -185,7 +184,7 @@ static void restore_ghost_version(FILE *ghostFile, char majorVersion,
 static void restore_tagged_file(FILE *restoreFile, int fileType);
 static void load_ghost();
 
-static void make_filename(char *buf, char *prefix, int level, int where,
+void make_filename(char *buf, char *prefix, int level, int where,
     bool isLabyrinth, bool isGhost)
 {
     char suffix[4], lvl[5], uid[10];

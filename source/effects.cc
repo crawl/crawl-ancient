@@ -258,7 +258,7 @@ void mons_direct_effect(struct bolt &pbolt, int i)
         pbolt.flavour = BEAM_LAVA;
 
         damage_taken = 5 + random2(10) + random2(5);
-        mons_adjust_flavoured(monster, pbolt, damage_taken);
+        damage_taken = mons_adjust_flavoured(monster, pbolt, damage_taken);
 
         if (monster->behavior == BEH_SLEEP)
             monster->behavior = BEH_CHASING_I;

@@ -54,5 +54,11 @@ void restore_game(void);
  * *********************************************************************** */
 void save_ghost(void);
 
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: files hiscores
+ * *********************************************************************** */
+void make_filename(char *buf, char *prefix, int level, int where,
+    bool isLabyrinth, bool isGhost);
 
 #endif

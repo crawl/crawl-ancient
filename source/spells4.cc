@@ -1514,8 +1514,9 @@ static int ignite_poison_monsters(char x, char y, int pow, int garbage)
 
 void cast_ignite_poison(int pow)
 {
-    int damage = 0, strength = 0;
+    int damage = 0, strength = 0, pcount = 0, acount = 0, totalstrength = 0;
     char item;
+    bool wasWielding = false;
 
     // another power cap (level 5-7 spell)
     if (pow > 200)
@@ -1539,18 +1540,21 @@ void cast_ignite_poison(int pow)
         }
     }
 
+    totalstrength = 0;
+
     for (item = 0; item < ENDOFPACK; item++)
     {
         if (!you.inv_quantity[item])
             continue;
 
+        strength = 0;
+
         if (you.inv_class[item] == OBJ_MISSILES)
         {
             if (you.inv_dam[item] == 3)
             {                   // burn poison ammo
-                strength += you.inv_quantity[item];
-                you.inv_quantity[item] = 0;
-                mpr("Some ammo you are carrying burns!");
+                strength = you.inv_quantity[item];
+                acount += you.inv_quantity[item];
             }
         }
 
@@ -1560,37 +1564,52 @@ void cast_ignite_poison(int pow)
             {
             case POT_STRONG_POISON:
                 strength += 20 * you.inv_quantity[item];
-                // fall-through
+                break;
             case POT_DEGENERATION:
-                strength += 10 * you.inv_quantity[item];
-                // fall-through
             case POT_POISON:
                 strength += 10 * you.inv_quantity[item];
+                break;
+            default:
+                break;
+            } // end switch
 
-                sprintf(info, "%s potion%s you are %s explode%s!",
-                        you.inv_quantity[item] > 1 ? "Some" : "A",
-                        you.inv_quantity[item] > 1 ? "s" : "",
-                        you.equip[EQ_WEAPON] ==
-                        item ? "wielding" : "carrying",
-                        you.inv_quantity[item] > 1 ? "" : "s");
-                mpr(info);
+            if (strength)
+                pcount += you.inv_quantity[item];
+        }
 
-                you.inv_quantity[item] = 0;
-
-                if (item == you.equip[EQ_WEAPON])
-                {
-                    you.equip[EQ_WEAPON] = -1;
-                    mpr("You are now empty handed.");
-                }
+        if (strength)
+        {
+            you.inv_quantity[item] = 0;
+            if (item == you.equip[EQ_WEAPON])
+            {
+                you.equip[EQ_WEAPON] = -1;
+                wasWielding = true;
             }
         }
+
+        totalstrength += strength;
     }
 
-    if (strength)
+    if (acount > 0)
+        mpr("Some ammo you are carrying burns!");
+
+    if (pcount > 0)
+    {
+        sprintf(info, "%s potion%s you are carrying explode%s!",
+            pcount > 1 ? "Some" : "A",
+            pcount > 1 ? "s" : "",
+            pcount > 1 ? "" : "s");
+        mpr(info);
+    }
+
+    if (wasWielding == true)
+        mpr("You are now empty handed.");
+
+    if (totalstrength)
     {
         place_cloud(CLOUD_FIRE, you.x_pos, you.y_pos,
-                    random2(strength / 4 + 1) + random2(strength / 4 + 1) +
-                    random2(strength / 4 + 1) + random2(strength / 4 + 1) + 1);
+                    random2(totalstrength / 4 + 1) + random2(totalstrength / 4 + 1) +
+                    random2(totalstrength / 4 + 1) + random2(totalstrength / 4 + 1) + 1);
     }
 
     // player is poisonous
@@ -2210,22 +2229,19 @@ void cast_glamour(int pow)
 }                               // end cast_glamour()
 #endif
 
-int backlight_monsters(char x, char y, int pow, int garbage)
+bool backlight_monsters(char x, char y, int pow, int garbage)
 {
     int mon = mgrd[x][y];
 
     if (mon == NON_MONSTER)
-        return 0;
-
-    //if ( !check_mons_magres(&menv[mon], pow+10) )
-    //  return 0;
+        return false;
 
     switch (menv[mon].type)
     {
     //case MONS_INSUBSTANTIAL_WISP: //jmf: I'm not sure if these glow or not
     //case MONS_VAPOUR:
     case MONS_UNSEEN_HORROR:    // consider making this visible? probably not.
-        return 0;
+        return false;
 
     case MONS_FIRE_VORTEX:
     case MONS_ANGEL:
@@ -2247,7 +2263,7 @@ int backlight_monsters(char x, char y, int pow, int garbage)
     case MONS_SPECTRAL_THING:
     case MONS_ORB_OF_FIRE:
     case MONS_EYE_OF_DEVASTATION:
-        return 0;               // already glowing or invisible
+        return false;               // already glowing or invisible
     default:
         break;
     }
@@ -2260,16 +2276,12 @@ int backlight_monsters(char x, char y, int pow, int garbage)
     {
         menv[mon].enchantment[2] = ENCH_BACKLIGHT_IV;
         menv[mon].enchantment1 = 1;
-        //menv[mon].evasion -= 5; // FIXME: tune this?
-
-        //if (menv[mon].evasion < 0)
-        //  menv[mon].evasion = 0;
         mpr(info);
 
-        return 1;
+        return true;
     }
 
-    return 0;
+    return false;
 }                               // end backlight_monsters()
 
 void cast_evaporate(int pow)
@@ -2564,6 +2576,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
     blast.colour = 0;
     blast.target_x = beam.tx;
     blast.target_y = beam.ty;
+    blast.isTracer = false;
 
     i = mgrd[beam.tx][beam.ty];
 
@@ -3039,9 +3052,15 @@ void cast_apportation(int pow)
 
     // mass of one unit
     const int unit_mass = mass_item( item );
+    // assume we can pull everything
+    int max_units = mitm.quantity[ item ];
 
-    // most units our power level will allow (max of 40 aum)
-    int max_units = ((pow >= 40) ? 400 : (pow * 10)) / unit_mass;
+    // item has mass: might not move all of them
+    if (unit_mass > 0)
+    {
+        // most units our power level will allow (max of 40 aum)
+        max_units = ((pow >= 40) ? 400 : (pow * 10)) / unit_mass;
+    }
 
     if (max_units <= 0)
     {

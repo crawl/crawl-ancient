@@ -78,7 +78,7 @@ void init_libw32c(void)
 
    // initialize static text color (cuts down on calls to
    // SetConsoleTextAttribute()
-   textcolor(0);
+   textcolor(DARKGREY);
 
    //DEBUG
    //foo = fopen("debug.txt", "w");

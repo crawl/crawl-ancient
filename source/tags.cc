@@ -52,7 +52,7 @@
 
  */
 
-#include <mem.h>            // for memcpy
+#include <string.h>            // for memcpy
 
 #ifdef LINUX
 #include <sys/types.h>

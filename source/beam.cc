@@ -593,7 +593,7 @@ int mons_adjust_flavoured(struct monsters *monster, struct bolt &pbolt,
     }
     else if (stricmp(pbolt.beam_name, "hellfire") == 0)
     {
-        if (mons_res_fire(monster->type) == 2)
+        if (mons_res_fire(monster->type) >= 2)
         {
             if (!pbolt.isTracer)
                 simple_monster_message(monster, " appears unharmed.");
@@ -2145,7 +2145,6 @@ static int  affect_player(struct bolt &beam)
             }
 
             mpr("Pain shoots through your body!");
-            strcpy(beam.beam_name, "spell");
 
             if (YOU_KILL(beam.thrower))
                 ouch(1 + random2(beam.hit), 0, KILLED_BY_TARGETTING);
@@ -2159,7 +2158,6 @@ static int  affect_player(struct bolt &beam)
 
         case WHITE:
             mpr("You are blasted!");
-            strcpy(beam.beam_name, "spell");
             if (YOU_KILL(beam.thrower))
                 ouch(random2(beam.hit), 0, KILLED_BY_TARGETTING);
             else
@@ -2598,7 +2596,6 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         hurt_monster(mon, random2(beam.hit) + random2(beam.hit) +
                      random2(beam.hit));
 
-        strcpy(beam.beam_name, "spell");
         goto deathCheck;
     }
 
@@ -2620,17 +2617,16 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
 
         if (strstr(beam.beam_name, "agony") != NULL)
         {
+            // AGONY
             mon->hit_points = mon->hit_points / 2;
 
             if (mon->hit_points < 1)
                 mon->hit_points = 1;
-
-            strcpy(beam.beam_name, "agony");
         }
         else
         {
+            // PAIN
             hurt_monster(mon, 1 + random2(beam.hit));
-            strcpy(beam.beam_name, "pain");
         }
 
         goto deathCheck;
@@ -2643,7 +2639,6 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
 
         hurt_monster(mon, 1 + random2(beam.hit));
 
-        strcpy(beam.beam_name, "spell");
         goto deathCheck;
     }
 
@@ -2675,9 +2670,11 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
 
     if (beam.flavour == BEAM_BACKLIGHT)
     {
-        if (backlight_monsters(mon->x, mon->y,
-                                beam.hit, 0))
+        if (backlight_monsters(mon->x, mon->y, beam.hit, 0))
+        {
+            beam.obviousEffect = true;
             return MON_AFFECTED;
+        }
         return MON_UNAFFECTED;
     }
 
@@ -2958,7 +2955,21 @@ void explosion(struct bolt &beam)
             if (explode_map[ax+9][rad+9])
                 explosion_cell(beam, ax, rad);
         }
+
+        // new-- delay after every 'ring' {gdl}
+#ifdef USE_CURSES
+        // If we don't refresh curses we won't
+        // guarantee that the explosion is visible
+        refresh();
+#endif
+        // only delay on real explosion
+        if (!beam.isTracer)
+            delay(25);
     }
+
+#ifdef WIN32CONSOLE
+    if (!beam.isTracer) setBuffering(true);
+#endif
 
     // duplicate old behavior - pause after entire explosion
     // has been drawn.
@@ -2969,6 +2980,17 @@ static void explosion_cell(struct bolt &beam, int x, int y)
 {
     int realx = beam.target_x + x;
     int realy = beam.target_y + y;
+
+    // always affect the spot first before drawing
+    // gives player a chance to see what is being affected.
+    affect(beam, realx, realy);
+
+    // early out for tracer
+    if (beam.isTracer)
+        return;
+
+    // now affect items
+    affect_items(beam, realx, realy);
 
     int drawx = realx - you.x_pos + 18;
     int drawy = realy - you.y_pos + 9;
@@ -2981,18 +3003,8 @@ static void explosion_cell(struct bolt &beam, int x, int y)
             textcolor(beam.colour);
             gotoxy(drawx, drawy);
             putch('#');
-    #ifdef USE_CURSES
-            // If we don't refresh curses we won't
-            // guarantee that the beam is visible
-            refresh();
-    #endif
-            delay(10);
         }
     }
-
-    affect(beam, realx, realy);
-
-    affect_items(beam, realx, realy);
 }
 
 static void explosion_map(struct bolt &beam, int x, int y,

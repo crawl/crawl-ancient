@@ -169,13 +169,6 @@
     #define NUMBER_OF_LINES   25
 #endif
 
-// Uncomment this line to separate the elf and dwarf races from then
-// species list.
-// #define SEPARATE_SELECTION_SCREENS_FOR_SUBSPECIES
-
-// Uncomment this line to allow the player to select his draconian's colour.
-// #define ALLOW_DRACONIAN_TYPE_SELECTION
-
 // if this works out okay, eventually we can change this to USE_OLD_RANDOM
 #define USE_NEW_RANDOM
 

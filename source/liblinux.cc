@@ -165,16 +165,16 @@ void termio_init()
     tcgetattr(0, &def_term);
     memcpy(&game_term, &def_term, sizeof(struct termios));
 
-    def_term.c_cc[VINTR] = (char) 3;    // ctrl-Y
-
-    game_term.c_cc[VINTR] = (char) 3;   // ctrl-Y
+    def_term.c_cc[VINTR] = (char) 3;        // ctrl-C
+    game_term.c_cc[VINTR] = (char) 3;       // ctrl-C
 
     // Lets recover some control sequences
-    game_term.c_cc[VDSUSP] = (char) -1;         // ctrl-Y
-
-    game_term.c_cc[VSTART] = (char) -1;         // ctrl-Q
-
-    game_term.c_cc[VSTOP] = (char) -1;  // ctrl-S
+    game_term.c_cc[VSTART] = (char) -1;     // ctrl-Q
+    game_term.c_cc[VSTOP] = (char) -1;      // ctrl-S
+    game_term.c_cc[VSUSP] = (char) -1;      // ctrl-Y
+#ifdef VDSUSP
+    game_term.c_cc[VDSUSP] = (char) -1;     // ctrl-Y
+#endif
 
     tcsetattr(0, TCSAFLUSH, &game_term);
 }
@@ -421,8 +421,13 @@ void lincurses_startup( void )
 #endif
 
 #ifdef USE_UNIX_SIGNALS
-    sigignore(SIGQUIT);
-    sigignore(SIGINT);
+#ifdef SIGQUIT
+    signal(SIGQUIT, SIG_IGN);
+#endif
+
+#ifdef SIGINT
+    signal(SIGINT, SIG_IGN);
+#endif
 #endif
 
     //savetty();
@@ -458,8 +463,13 @@ void lincurses_shutdown()
 #endif
 
 #ifdef USE_UNIX_SIGNALS
-    sigrelse(SIGQUIT);
-    sigrelse(SIGINT);
+#ifdef SIGQUIT
+    signal(SIGQUIT, SIG_DFL);
+#endif
+
+#ifdef SIGINT
+    signal(SIGINT, SIG_DFL);
+#endif
 #endif
 
     // resetty();

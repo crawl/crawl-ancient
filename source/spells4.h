@@ -13,7 +13,7 @@
 #define SPELLS4_H
 
 
-int backlight_monsters(char x, char y, int pow, int garbage);
+bool backlight_monsters(char x, char y, int pow, int garbage);
 int torment_monsters(char x, char y, int pow, int message);
 bool monster_has_enchantment( int mon, int ench );
 int enchant_monster( int mon, int ench );

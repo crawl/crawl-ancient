@@ -59,7 +59,7 @@ struct SBeam mons_spells(char spell_cast, int power);
 void setup_dragon(struct monsters *monster, struct bolt &pbolt);
 
 
-// last updated 12may2000 {dlb}
+// last updated 13feb2001 {gdl}
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */

@@ -2828,6 +2828,7 @@ int items(unsigned char allow_uniques,  // not just true-false,
     case OBJ_MISSILES:
         mitm.pluses[bp] = 0;
         mitm.sub_type[bp] = random2(4);
+        quant = 0;
 
         if (force_type != OBJ_RANDOM)
             mitm.sub_type[bp] = force_type;
@@ -2874,31 +2875,33 @@ int items(unsigned char allow_uniques,  // not just true-false,
             }
         }
 
-        if ((mitm.sub_type[bp] == MI_ARROW
-                || mitm.sub_type[bp] == MI_BOLT
-                || mitm.sub_type[bp] == MI_DART)
-            && one_chance_in(7))
+        if (mitm.sub_type[bp] == MI_ARROW
+            || mitm.sub_type[bp] == MI_BOLT
+            || mitm.sub_type[bp] == MI_DART)
         {
-            mitm.special[bp] = mitm.special[bp] % 30 + 1;
+            if (many_many == 351)
+                temp_rand = random2(150);
+            else
+                temp_rand = random2(2000 - 55 * many_many);
+
+            mitm.special[bp] += (temp_rand < 60) ? SPMSL_FLAME :
+                                 (temp_rand < 120) ? SPMSL_ICE  :
+                                 (temp_rand < 150) ? SPMSL_POISONED_II :
+                                 0;
+
+            // orcish ammo gets poisoned a lot more often -- in the original
+            // code it was poisoned every time!?
+            if (mitm.special[bp] == DAMMO_ORCISH * 30 && one_chance_in(3))
+                mitm.special[bp] += SPMSL_POISONED_II;
+
+            // reduce quantity if special
+            if (mitm.special[bp] % 30 != SPMSL_NORMAL)
+                quant = 1 + random2(9) + random2(12) + random2(12);
         }
 
-        if ((mitm.sub_type[bp] == MI_ARROW
-                || mitm.sub_type[bp] == MI_BOLT
-                || mitm.sub_type[bp] == MI_DART)
-            && one_chance_in(7))
-        {
-            mitm.special[bp] = mitm.special[bp] % 30 + 2;
-        }
-
-        if ((mitm.special[bp] == 90 || one_chance_in(5) && one_chance_in(3))
-            && (mitm.sub_type[bp] == MI_ARROW
-                || mitm.sub_type[bp] == MI_BOLT
-                || mitm.sub_type[bp] == MI_DART))
-        {
-            mitm.special[bp] = mitm.special[bp] % 30 + 3;
-        }
-
-        quant = 1 + random2(9) + random2(12) + random2(15) + random2(12);
+        // quant will have already been set if the ammo is 'special'
+        if (quant == 0)
+            quant = 1 + random2(9) + random2(12) + random2(15) + random2(12);
 
         if (mitm.sub_type[bp] == MI_LARGE_ROCK)
             quant = 1 + random2avg(5, 2);
@@ -8887,8 +8890,8 @@ static void place_branch_entrances(int dlevel, char level_type)
         // level 26: replaces all down stairs with staircases to Zot:
         if (dlevel == 26)
         {
-            for (sx = 1; bi < GXM; sx++)
-                for (sy = 1; bj < GYM; sy++)
+            for (sx = 1; sx < GXM; sx++)
+                for (sy = 1; sy < GYM; sy++)
                     if (grd[sx][sy] >= DNGN_STONE_STAIRS_DOWN_I
                             && grd[sx][sy] <= DNGN_ROCK_STAIRS_DOWN)
                     {

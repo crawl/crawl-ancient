@@ -20,8 +20,14 @@
 
 #include "externs.h"
 #include "items.h"
+#include "view.h"
 
 game_options    Options;
+extern void (*viewwindow) (char, bool);
+extern unsigned char (*mapch) (unsigned char);
+extern unsigned char (*mapch2) (unsigned char);
+extern unsigned char mapchar3(unsigned char ldfk);
+extern unsigned char mapchar4(unsigned char ldfk);
 
 static string & tolower_string( string &str );
 
@@ -179,6 +185,9 @@ void read_init_file(void)
     Options.death_knight  = DK_NO_SELECTION;
     Options.priest        = GOD_NO_GOD;
     Options.hp_warning    = 10;
+    Options.race          = 0;
+    Options.cls           = 0;
+    Options.sc_entries    = 0;
 
     // map each colour to itself as default
     for (int i = 0; i < 16; i++)
@@ -493,3 +502,155 @@ void get_system_environment(void)
     SysEnv.home = getenv("HOME");
 #endif
 }                               // end get_system_environment()
+
+
+// parse args, filling in Options and game environment as we go.
+// returns true if no unknown or malformed arguments were found.
+
+static const char *cmd_ops[] = { "scores", "name", "race", "class",
+    "pizza", "plain", "dir", "rc" };
+const int num_cmd_ops = 8;
+bool arg_seen[num_cmd_ops];
+
+bool parse_args(int argc, char **argv, bool rc_only)
+{
+    if (argc < 2)           // no args!
+        return true;
+
+    char *arg, *next_arg;
+    int current = 1;
+    bool nextUsed = false;
+
+    // initialize
+    for(int i=0; i<num_cmd_ops; i++)
+        arg_seen[i] = false;
+
+    while(current < argc)
+    {
+        // get argument
+        arg = argv[current];
+
+        // next argument (if there is one)
+        if (current+1 < argc)
+            next_arg = argv[current+1];
+        else
+            next_arg = NULL;
+        nextUsed = false;
+
+        // arg MUST begin with '-' or '/'
+        char c = arg[0];
+        if (!(c == '-' || c == '/'))
+            return false;
+
+        // look for match
+        arg = &arg[1];
+
+        int o;
+        for(o = 0; o < num_cmd_ops; o++)
+        {
+            if (stricmp(cmd_ops[o], arg) == NULL)
+                break;
+        }
+        if (o == num_cmd_ops)
+            return false;
+
+        // disallow options specified more than once.
+        if (arg_seen[o] == true)
+            return false;
+
+        // set arg to 'seen'
+        arg_seen[o] = true;
+
+        // partially parse next argument
+        bool next_is_param = false;
+        if (next_arg != NULL)
+        {
+            if (!(next_arg[0] == '-' || next_arg[0] == '/'))
+                next_is_param = true;
+        }
+
+        //.take action according to the cmd chosen
+        switch(o)
+        {
+            case 0:             // scores
+                int ecount;
+                if (next_is_param)      // optional number
+                {
+                    ecount = atoi(next_arg);
+                    if (ecount < 1)
+                        ecount = 1;
+                    if (ecount > SCORE_FILE_ENTRIES)
+                        ecount = SCORE_FILE_ENTRIES;
+                    nextUsed = true;
+                }
+                else
+                {
+                    ecount = 20;            // default
+                }
+                if (!rc_only)
+                    Options.sc_entries = ecount;
+                break;
+            case 1:             // name
+                if (!next_is_param)
+                    return false;
+                if (!rc_only)
+                    strncpy(you.your_name, next_arg, kNameLen);
+                nextUsed = true;
+                break;
+            case 2:             // race
+            case 3:             // class
+                if (!next_is_param)
+                    return false;
+                if (strlen(next_arg) != 1)
+                    return false;
+                if (!rc_only)
+                {
+                    if (o == 2)
+                        Options.race = next_arg[0];
+                    if (o == 3)
+                        Options.cls = next_arg[0];
+                }
+                nextUsed = true;
+                break;
+            case 4:             // pizza
+                if (!next_is_param)
+                    return false;
+                if (!rc_only)
+                    SysEnv.crawl_pizza = next_arg;
+                nextUsed = true;
+                break;
+            case 5:             // plain
+                if (next_is_param)
+                    return false;
+                if (!rc_only)
+                {
+                    viewwindow = &viewwindow3;
+                    mapch = &mapchar3;
+                    mapch2 = &mapchar4;
+                }
+                break;
+            case 6:             // dir
+                // ALWAYS PARSE
+                if (!next_is_param)
+                    return false;
+                SysEnv.crawl_dir = next_arg;
+                nextUsed = true;
+                break;
+            case 7:
+                // ALWAYS PARSE
+                if (!next_is_param)
+                    return false;
+                SysEnv.crawl_rc = next_arg;
+                nextUsed = true;
+                break;
+        } // end switch -- which option?
+
+        // update position
+        current++;
+        if (nextUsed)
+            current++;
+    }
+
+    return true;
+
+}

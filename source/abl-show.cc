@@ -976,6 +976,7 @@ void activate_ability(void)
             beam.colour = LIGHTCYAN;
             beam.thrower = KILL_YOU;
             beam.ex_size = 1 + you.skills[SK_INVOCATIONS] / 8;
+            beam.isTracer = false;
 
             // ... and fire!
             explosion(beam);

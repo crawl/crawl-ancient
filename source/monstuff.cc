@@ -1616,11 +1616,12 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                     if (spell_cast == MS_NO_SPELL)
                         continue;
 
+                    // setup the spell
+                    setup_mons_cast(monster, beem, spell_cast);
+
                     // do we need a tracer?
                     if (ms_always_fire(spell_cast))
                         break;
-
-                    setup_mons_cast(monster, beem, spell_cast);
 
                     // fire tracer
                     fire_tracer(monster, beem);

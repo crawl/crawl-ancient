@@ -494,10 +494,6 @@ void wield_effects(int item_wield_2, bool showMsgs)
                 break;
 
             case SPWPN_DISTORTION:
-                // Removing the skill reduction to try and get these
-                // weapons back into balance. -- bwr
-
-                // effect = 9 - random2avg(you.skills[SK_TRANSLOCATIONS] * 2, 2);
                 miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100);
                 break;
 
@@ -2491,6 +2487,7 @@ void drink(void)
         {
             you.equip[EQ_WEAPON] = -1;
             mpr("You are now empty handed.");
+            wield_change = 1;
         }
     }
 
@@ -2599,6 +2596,8 @@ void read_scroll(void)
     char affected = 0;
     int i;
     struct bolt beam;
+    // added: scrolls are never tracers.
+    beam.isTracer = false;
 
     if (you.berserker)
     {
@@ -3016,6 +3015,7 @@ void read_scroll(void)
                             beam.colour = RED;
                             beam.thrower = KILL_YOU;
                             beam.ex_size = 2;
+                            beam.isTracer = false;
 
                             explosion(beam);
                             break;

@@ -942,6 +942,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
     {
         specdam = 0;
         if (you.magic_points >= STAFF_COST)
+        {
             switch (you.inv_type[ weapon ])
             {
             case STAFF_AIR:
@@ -1056,6 +1057,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
             default:
                 mpr("You're wielding some staff I've never heard of! (fight.cc)");
+            case STAFF_SMITING:
             case STAFF_POWER:
             case STAFF_SUMMONING_I:
             case STAFF_SUMMONING_II:
@@ -1072,7 +1074,8 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             case STAFF_ENERGY:
             case STAFF_WIZARDRY:
                 break;
-            }
+            } // end switch
+        }
 
         if (specdam > 0)
         {
@@ -1315,11 +1318,14 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             //jmf: blink frogs *like* distortion
             // I think could be amended to let blink frogs "grow" like
             // jellies do {dlb}
-            if (defender->type == MONS_BLINK_FROG && one_chance_in(5))
+            if (defender->type == MONS_BLINK_FROG)
             {
-                simple_monster_message( defender,
-                                        " basks in the translocular energy." );
-                heal_monster(defender, 1 + random2avg(7, 2), true); // heh heh
+                if (one_chance_in(5))
+                {
+                    simple_monster_message( defender,
+                        " basks in the translocular energy." );
+                    heal_monster(defender, 1 + random2avg(7, 2), true); // heh heh
+                }
                 break;
             }
 
@@ -2418,9 +2424,9 @@ void monster_attack(int monster_attacking)
                 {
                     strcpy(info, ptr_monam(attacker, 0));
                     if (extraDamage < 10)
-                        strcat(info, "chills you.");
+                        strcat(info, " chills you.");
                     else
-                        strcat(info, "freezes you!");
+                        strcat(info, " freezes you!");
                     if (extraDamage > 19)
                         strcat(info, "!");
                     mpr(info);

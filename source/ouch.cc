@@ -33,6 +33,11 @@
 
 #ifdef DOS
 #include <conio.h>
+#include <file.h>
+#endif
+
+#if !defined(DOS) && !defined(WIN32CONSOLE)
+#include <files.h>
 #endif
 
 #ifdef LINUX
@@ -58,6 +63,7 @@
 
 #include "chardump.h"
 #include "files.h"
+#include "hiscores.h"
 #include "invent.h"
 #include "itemname.h"
 #include "mon-util.h"
@@ -82,12 +88,7 @@
 
 extern bool wield_change;       // defined in output.cc
 
-char death_string[256];
-long points = 0;
-
-int set_status(int stat);
-void end_game(char end_status);
-void highscore(char death_string[256], long points);
+void end_game(struct scorefile_entry &se);
 void item_corrode(char itco);
 static char *pad(char *str);
 
@@ -492,1060 +493,9 @@ void scrolls_burn(char burn_strength, char target_class)
             mpr("Some of your food is covered with spores!");
     }
     /* burn_no could be 0 */
-}                               // end scrolls_burn()
-
-// death_source should be set to zero for non-monsters {dlb}
-void ouch(int dam, int death_source, char death_type)
-{
-    // playing with fire, I know {dlb}
-    struct monsters *monster = &menv[death_source];
-
-    char point_print[10];
-    int d = 0;
-    int e = 0;
-
-    if (you.deaths_door && death_type != KILLED_BY_LAVA
-                                    && death_type != KILLED_BY_WATER)
-    {
-        return;
-    }
-
-    if (dam > 300)
-        return;                 // assumed bug for high damage amounts
-
-    if (dam > -9000)            // that is, a "death" caused by hp loss {dlb}
-    {
-        switch (you.religion)
-        {
-        case GOD_XOM:
-            if (random2(you.hp_max) > you.hp && dam > random2(you.hp)
-                                                    && one_chance_in(5))
-            {
-                simple_god_message( " protects you from harm!" );
-                return;
-            }
-            break;
-
-        case GOD_ZIN:
-        case GOD_SHINING_ONE:
-        case GOD_ELYVILON:
-        case GOD_OKAWARU:
-        case GOD_KIKUBAAQUDGHA:
-            if (dam >= you.hp && you.duration[DUR_PRAYER]
-                                                && random2(you.piety) >= 30)
-            {
-                simple_god_message( " protects you from harm!" );
-                return;
-            }
-            break;
-        }
-    }
-
-    // XXX: Assuming that this is imporatnt (negative damage won't be done
-    // by dec_hp, so I take it that the (you.hp > 0) check might be
-    // important for some reason. -- bwr
-    if (dam > -9000)
-    {
-        dec_hp(dam, true);
-
-        // Even if we have low HP messages off, we'll still give a
-        // big hit warning (in this case, a hit for half our HPs) -- bwr
-        if (dam > 0 && you.hp_max <= dam * 2)
-            mpr( "Ouch!  That really hurt!", MSGCH_DANGER );
-
-        if (you.hp > 0 && Options.hp_warning
-            && you.hp <= (you.hp_max * Options.hp_warning) / 100)
-        {
-            mpr( "* * * LOW HITPOINT WARNING * * *", MSGCH_DANGER );
-        }
-
-        if (you.hp > 0)
-            return;
-    }
-
-#ifdef WIZARD
-    if (death_type != KILLED_BY_QUITTING && death_type != KILLED_BY_WINNING
-                                            && death_type != KILLED_BY_LEAVING)
-    {
-#ifdef USE_OPTIONAL_WIZARD_DEATH
-        if (!yesno("Die?", false))
-        {
-            set_hp(you.hp_max, false);
-            return;
-        }
-#else
-        mpr("Since you're a debugger, I'll let you live.");
-        mpr("Be more careful next time, okay?");
-
-        set_hp(you.hp_max, false);
-        return;
-#endif
-    }
-#endif
-
-    //okay, so you're dead:
-    points += you.gold;
-    points += (you.experience * 7) / 10;
-
-    //if (death_type == KILLED_BY_WINNING) points += points / 2;
-    //if (death_type == KILLED_BY_LEAVING) points += points / 10;
-    // these now handled by giving player the value of their inventory
-    char temp_id[4][50];
-
-    for (d = 0; d < 4; d++)
-        for (e = 0; e < 50; e++)
-            temp_id[d][e] = 1;
-
-    if (death_type == KILLED_BY_LEAVING || death_type == KILLED_BY_WINNING)
-    {
-        for (d = 0; d < ENDOFPACK; d++)
-        {
-            points +=
-                item_value( you.inv_class[d], you.inv_type[d], you.inv_dam[d],
-                                you.inv_plus[d], you.inv_plus2[d],
-                                you.inv_quantity[d], 3, temp_id );
-        }
-    }
-
-    if (points > 99999999)
-        points = 99999999;
-
-    itoa(points, point_print, 10);
-    strcpy(death_string, point_print);
-
-    if (points < 10000000)
-        strcat(death_string, " ");
-    if (points < 1000000)
-        strcat(death_string, " ");
-    if (points < 100000)
-        strcat(death_string, " ");
-    if (points < 10000)
-        strcat(death_string, " ");
-    if (points < 1000)
-        strcat(death_string, " ");
-    if (points < 100)
-        strcat(death_string, " ");
-    if (points < 10)
-        strcat(death_string, " ");
-
-    strncat(death_string, you.your_name, DEATH_NAME_LENGTH);
-
-    // BCR - I added some spaces here so the scores look nicer.
-    int extra = DEATH_NAME_LENGTH - strlen(you.your_name);
-
-    if (extra > 0)
-    {
-        strncat( death_string, "              ",
-                        DEATH_NAME_LENGTH - strlen(you.your_name) );
-    }
-
-    strcat(death_string, " - ");
-
-    strcat(death_string, species_abbrev(you.species));
-    strcat(death_string, class_abbrev(you.char_class));
-
-    itoa(you.experience_level, point_print, 10);
-    strcat(death_string, point_print);
-
-#ifdef WIZARD
-    strcat(death_string, " Wiz");
-#endif
-
-    strcat(death_string, ",");
-
-    switch (death_type)
-    {
-    case KILLED_BY_MONSTER:
-
-/* BCR
- * Note: There was a bug where deep elves weren't getting the 'a' before
- *       their names.  It turns out that the code originally assumed that
- *       Monsters with type between 250 and 310 would be uniques.  However,
- *       Some new monsters were added between 260 and 280 that are not unique.
- *       For now, I've updated the check to be accurate, but there may be other
- *       issues with this.
- */
-        strcat(death_string, " killed by ");
-        if (monster->type < MONS_PROGRAM_BUG
-            || (monster->type < MONS_TERENCE && monster->type >= MONS_NAGA_MAGE)
-            || monster->type > MONS_BORIS && monster->type != MONS_PLAYER_GHOST)
-        {
-            strcat(death_string, "a");
-        }
-
-        strcat(death_string, monam(monster->number, monster->type, 0, 99));
-        break;
-
-    case KILLED_BY_POISON:
-        //if (dam == -9999) strcat(death_string, "an overload of ");
-        strcat(death_string, " killed by a lethal dose of poison");
-        break;
-
-    case KILLED_BY_CLOUD:
-        strcat(death_string, " killed by a cloud");
-        break;
-
-    // beam - beam[0].name is a local variable, so can't access it
-    // without horrible hacks
-    case KILLED_BY_BEAM:
-        strcat(death_string, " killed from afar by ");
-
-        if (monster->type < MONS_PROGRAM_BUG
-            || (monster->type < MONS_TERENCE && monster->type >= MONS_NAGA_MAGE)
-            || monster->type > MONS_BORIS && monster->type != MONS_PLAYER_GHOST)
-        {
-            strcat(death_string, "a");
-        }
-
-        strcat(death_string, monam(monster->number, monster->type, 0, 99));
-        break;
-
-/*
-    case KILLED_BY_DEATHS_DOOR:
-        // death's door running out - NOTE: This is no longer fatal
-        strcat(death_string, " ran out of time");
-        break;
-*/
-
-    case KILLED_BY_LAVA:
-        strcat(death_string, " took a swim in molten lava");
-        break;
-
-    case KILLED_BY_WATER:
-        if (you.species == SP_MUMMY)
-            strcat(death_string, " soaked and fell apart");
-        else
-            strcat(death_string, " drowned");
-        break;
-
-    // these three are probably only possible if you wear a you.ring
-    // of >= +3 ability, get drained to 3, then take it off, or have a very
-    // low abil and wear a -ve you.ring. or, as of 2.7x, mutations can
-    // cause this
-    // Don't forget decks of cards (they have some nasty code for this) -- bwr
-    case KILLED_BY_STUPIDITY:
-        strcat(death_string, " died of stupidity");
-        break;
-
-    case KILLED_BY_WEAKNESS:
-        strcat(death_string, " too weak to continue adventuring");
-        break;
-
-    case KILLED_BY_CLUMSINESS:
-        strcat(death_string, " slipped on a banana peel");
-        break;
-
-    case KILLED_BY_TRAP:
-        strcat(death_string, " killed by a trap");
-        break;
-
-    case KILLED_BY_LEAVING:
-        strcat(death_string, " got out of the dungeon alive.");
-        break;
-
-    case KILLED_BY_WINNING:
-        strcat(death_string, " escaped with the Orb.");
-        break;
-
-    case KILLED_BY_QUITTING:
-        strcat(death_string, " quit");
-        break;
-
-    case KILLED_BY_DRAINING:
-        strcat(death_string, " was drained of all life");
-        break;
-
-    case KILLED_BY_STARVATION:
-        strcat(death_string, " starved to death");
-        break;
-
-    case KILLED_BY_FREEZING:
-        strcat(death_string, " froze to death");
-        break;
-
-    case KILLED_BY_BURNING:
-        strcat(death_string, " burnt to a crisp");
-        break;
-
-    case KILLED_BY_WILD_MAGIC:
-        strcat(death_string, " killed by wild magic");
-        break;
-
-    case KILLED_BY_XOM:
-        strcat(death_string, " killed by Xom");
-        break;
-
-    case KILLED_BY_STATUE:
-        strcat(death_string, " killed by a statue");
-        break;
-
-    case KILLED_BY_ROTTING:
-        strcat(death_string, " rotted away");
-        break;
-
-    case KILLED_BY_TARGETTING:
-        strcat(death_string, " killed by bad targetting");
-        break;
-
-    case KILLED_BY_SPORE:
-        strcat(death_string, " killed by an exploding spore");
-        break;
-
-    case KILLED_BY_TSO_SMITING:
-        strcat(death_string, " smote by The Shining One");
-        break;
-
-    case KILLED_BY_PETRIFICATION:
-        strcat(death_string, " turned to stone");
-        break;
-
-    case KILLED_BY_SHUGGOTH:
-        strcat(death_string, " eviscerated by a hatching shuggoth");
-        break;
-
-    default:
-        strcat(death_string, " killed by a nasty bug in ouch::ouch()");
-        break;
-    }                           // end switch
-
-    if (death_type != KILLED_BY_LEAVING && death_type != KILLED_BY_WINNING)
-    {
-        if (you.level_type == LEVEL_ABYSS)
-        {
-            strcat(death_string, " in the Abyss.");
-            goto ending;
-        }
-        else if (you.level_type == LEVEL_PANDEMONIUM)
-        {
-            strcat(death_string, " in Pandemonium.");
-            goto ending;
-        }
-        else if (you.level_type == LEVEL_LABYRINTH)
-        {
-            strcat(death_string, " in a labyrinth.");
-            goto ending;
-        }
-
-        itoa((you.your_level + 1), st_prn, 10);
-
-        switch (you.where_are_you)
-        {
-        case BRANCH_ORCISH_MINES:
-        case BRANCH_HIVE:
-        case BRANCH_LAIR:
-        case BRANCH_SLIME_PITS:
-        case BRANCH_VAULTS:
-        case BRANCH_CRYPT:
-        case BRANCH_HALL_OF_BLADES:
-        case BRANCH_HALL_OF_ZOT:
-        case BRANCH_ECUMENICAL_TEMPLE:
-        case BRANCH_SNAKE_PIT:
-        case BRANCH_ELVEN_HALLS:
-        case BRANCH_TOMB:
-        case BRANCH_SWAMP:
-            itoa( you.your_level - you.branch_stairs[you.where_are_you - 10],
-                                                                 st_prn, 10 );
-            break;
-
-        case BRANCH_DIS:
-        case BRANCH_GEHENNA:
-        case BRANCH_VESTIBULE_OF_HELL:
-        case BRANCH_COCYTUS:
-        case BRANCH_TARTARUS:
-        case BRANCH_INFERNO:
-        case BRANCH_THE_PIT:
-            itoa( you.your_level + 1 - 26, st_prn, 10 );
-            break;
-        }
-
-        if (you.where_are_you != BRANCH_VESTIBULE_OF_HELL)
-        {
-            strcat(death_string, " on L");
-            strcat(death_string, st_prn);
-        }
-
-        switch (you.where_are_you)
-        {
-        case BRANCH_DIS:
-            strcat(death_string, " of Dis");
-            break;
-        case BRANCH_GEHENNA:
-            strcat(death_string, " of Gehenna");
-            break;
-        case BRANCH_VESTIBULE_OF_HELL:
-            strcat(death_string, " in the Vestibule");
-            break;
-        case BRANCH_COCYTUS:
-            strcat(death_string, " of Cocytus");
-            break;
-        case BRANCH_TARTARUS:
-            strcat(death_string, " of Tartarus");
-            break;
-        case BRANCH_ORCISH_MINES:
-            strcat(death_string, " of the Mines");
-            break;
-        case BRANCH_HIVE:
-            strcat(death_string, " of the Hive");
-            break;
-        case BRANCH_LAIR:
-            strcat(death_string, " of the Lair");
-            break;
-        case BRANCH_SLIME_PITS:
-            strcat(death_string, " of the Slime Pits");
-            break;
-        case BRANCH_VAULTS:
-            strcat(death_string, " of the Vaults");
-            break;
-        case BRANCH_CRYPT:
-            strcat(death_string, " of the Crypt");
-            break;
-        case BRANCH_HALL_OF_BLADES:
-            strcat(death_string, " of the Hall");
-            break;
-        case BRANCH_HALL_OF_ZOT:
-            strcat(death_string, " of Zot's Hall");
-            break;
-        case BRANCH_ECUMENICAL_TEMPLE:
-            strcat(death_string, " of the Temple");
-            break;
-        case BRANCH_SNAKE_PIT:
-            strcat(death_string, " of the Snake Pit");
-            break;
-        case BRANCH_ELVEN_HALLS:
-            strcat(death_string, " of the Elf Hall");
-            break;
-        case BRANCH_TOMB:
-            strcat(death_string, " of the Tomb");
-            break;
-        case BRANCH_SWAMP:
-            strcat(death_string, " of the Swamp");
-            break;
-        }
-
-        strcat(death_string, ".");
-        save_ghost();
-
-      ending:
-        end_game(1);
-    }
-
-    end_game(0);                // must have won! (or at least escaped)
-}                               // end ouch()
-
-// XXX: The end_game() problem needs to be addressed... the newer version
-// is used by code that defines SAVE_DIR_PATH/PACKAGE_SUFFIX, becuase the
-// old code version won't compile it (and because the new code works for
-// Un*x boxes and is much cleaner (see crazy stuff going on in the old code)).
-// The reason the old code is here is that apparently the new code wasn't
-// properly cleaning up all the game files... I believe this might only happen
-// under DOS... I'm not sure why and haven't tested it, though. -- bwr
-#ifdef DOS
-void end_game(char end_status)
-{
-    int i;
-    char del_file[kFileNameSize];
-    char glorpstr[kFileNameSize];
-    char status2 = end_status;
-    int sysg = 0;
-
-    set_status(end_status);
-
-#ifdef SAVE_DIR_PATH
-    sprintf(glorpstr, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
-#else
-
-#ifdef DOS
-
-    strupr(glorpstr);
-
-    strcpy(glorpstr, "");
-    for (i = 0; i < kFileNameLen; i++)
-    {
-        glorpstr[i] = you.your_name[i];
-        if (you.your_name[i] == 0)
-            break;
-    }
-    glorpstr[kFileNameLen] = 0;
-#endif
-
-    strncpy(glorpstr, you.your_name, kFileNameLen);
-
-    // This is broken. Length is not valid yet! We have to check if we got a
-    // trailing NULL; if not, write one:
-    if (strlen(you.your_name) > kFileNameLen - 1)
-        glorpstr[kFileNameLen] = '\0';
-#endif
-
-    /* For some reason, the new file-purging method isn't working - I'll use
-       my old one instead (LRH): */
-    strncpy(glorpstr, you.your_name, kFileNameLen);
-
-    // This is broken. Length is not valid yet! We have to check if we got a
-    // trailing NULL; if not, write one:
-    if (strlen(you.your_name) > kFileNameLen - 1)
-        glorpstr[kFileNameLen] = '\0';
-
-    strncpy(glorpstr, you.your_name, kFileNameLen);
-
-    // This is broken. Length is not valid yet! We have to check if we got a
-    // trailing NULL; if not, write one:
-    if (strlen(you.your_name) > kFileNameLen - 1)
-        glorpstr[kFileNameLen] = '\0';
-
-    int fi = 0;
-    int fi2 = 0;
-    char st_prn[6];
-
-    int count = 0;
-
-    for (fi2 = 0; fi2 < 30; fi2++)
-    {
-        for (fi = 0; fi < 50; fi++)
-        {
-            if (!tmp_file_pairs[fi][fi2])
-                continue;
-
-            strcpy(del_file, "");
-#ifdef SAVE_DIR_PATH
-            strcpy(del_file, SAVE_DIR_PATH);
-#endif
-            strcat(del_file, glorpstr);
-#ifdef SAVE_DIR_PATH
-            strcat(del_file, getuid());
-#endif
-            strcat(del_file, ".");
-
-            if (fi < 10)
-                strcat(del_file, "0");
-
-            itoa(fi, st_prn, 10);
-            strcat(del_file, st_prn);
-
-            st_prn[0] = fi2 + 97;
-            st_prn[1] = '\0';
-
-            strcat(del_file, st_prn);
-            strcat(del_file, "\0");
-
-            // unlink file. Since we can't do anything about
-            // a failure, ignore it.
-            unlink(del_file);
-            ++count;
-        }
-    }
-    ASSERT(count > 0);
-
-#ifdef PACKAGE_SUFFIX
-    // this is to catch the game package if it still exists.
-    del_file[point] = '\0';
-
-    strcat(del_file, PACKAGE_SUFFIX);
-    unlink(del_file);
-#endif
-
-    strcpy(del_file, glorpstr);
-
-    strcat(del_file, ".lab");
-#ifdef DOS
-    strupr(del_file);
-#endif
-    sysg = unlink(del_file);
-
-    strcpy(del_file, glorpstr);
-
-    strcat(del_file, ".sav");
-#ifdef DOS
-    strupr(del_file);
-#endif
-    sysg = unlink(del_file);
-
-    status2 = set_status(100);
-
-    if (status2 == 1)
-    {
-        mpr("You die...");      // insert player name here? {dlb}
-    }
-
-    viewwindow(1, false);
-    more();
-
-    for (i = 0; i < ENDOFPACK; i++)
-        you.inv_ident[i] = 3;
-
-    for (i = 0; i < ENDOFPACK; i++)
-    {
-        if (you.inv_class[i] != 0)
-            set_id(you.inv_class[i], you.inv_type[i], 1);
-    }
-
-    invent(-1, (status2 == 0));
-
-#ifdef USE_CURSES
-    clear();
-#endif
-
-    if (!dump_char((status2 == 0), "morgue.txt"))
-    {
-        mpr("Char dump unsuccessful! Sorry about that.");
-        more();
-    }
-
-#ifdef DEBUG
-    //jmf: switched logic and moved "success" message to debug-only
-    else
-    {
-        mpr("Char dump successful! (morgue.txt).");
-        more();
-    }
-#endif // DEBUG
-
-    int p = 0;
-
-    for (p = 0; p < ENDOFPACK; p++)
-    {
-        for (i = 0; i < MAX_ITEMS; i++)
-        {
-            if (!mitm.quantity[i])
-            {
-                mitm.id[i] = 0;
-                mitm.base_type[i] = you.inv_class[p];
-                mitm.sub_type[i] = you.inv_type[p];
-                mitm.pluses[i] = you.inv_plus[p];
-                mitm.pluses2[i] = you.inv_plus2[p];
-                mitm.special[i] = you.inv_dam[p];
-                mitm.colour[i] = you.inv_colour[p];
-                mitm.x[i] = you.x_pos;
-                mitm.y[i] = you.y_pos;
-                mitm.quantity[i] = you.inv_quantity[p];
-                break;
-            }
-        }                       // end "for p,i"
-    }
-
-    for (i = 0; i < MAX_ITEMS; i++)
-        mitm.id[i] = 0;
-
-    clrscr();
-#ifdef DOS_TERM
-    window(1, 1, 80, 25);
-#endif
-    clrscr();
-    cprintf("Goodbye, ");
-    cprintf(you.your_name);
-    cprintf(".");
-    cprintf(EOL EOL);
-    cprintf(death_string);
-    cprintf(EOL EOL " Best Crawlers - " EOL);
-
-    highscore(death_string, points);
-
-    // just to pause, actual value returned does not matter {dlb}
-    get_ch();
-
-    end(0);
 }
 
-#else
-
-// This version is back in, because I don't even want to try to fix the
-// above so that it will compile under Solaris (or deal with the fact that
-// it needs (?) to check the name buffer multiple times in a row for a
-// closing null char). -- bwr
-
-void end_game(char end_status)
-{
-    int i;
-    char del_file[kFileNameSize];
-    char glorpstr[kFileNameSize];
-    char status2 = end_status;
-    int sysg = 0;
-
-    set_status(end_status);
-
-#ifdef SAVE_DIR_PATH
-    sprintf(glorpstr, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
-
-#else
-
-#ifdef DOS
-
-    strupr(glorpstr);
-
-    strcpy(glorpstr, "");
-    for (i = 0; i < kFileNameLen; i++)
-    {
-        glorpstr[i] = you.your_name[i];
-        if (you.your_name[i] == 0)
-            break;
-    }
-    glorpstr[kFileNameLen] = 0;
-
-#endif
-
-    strncpy(glorpstr, you.your_name, kFileNameLen);
-
-    /* This is broken. Length is not valid yet! We have to check if we got a
-       trailing NULL; if not, write one: */
-    if (strlen(you.your_name) > kFileNameLen - 1)       /* is name 6 chars or more? */
-        glorpstr[kFileNameLen] = '\0';  /* if so, char 7 should be NULL */
-#endif
-
-    strncpy(del_file, glorpstr, kFileNameLen);
-
-    // Calculate the positions of the characters
-    const int point = strlen(del_file);
-    const int tens = point + 1;
-    const int ones = tens + 1;
-    const int dun = ones + 1;
-
-    // the constant characters
-    del_file[point] = '.';
-    del_file[dun + 1] = '\0';
-
-    // the variable ones
-    for (int level = 0; level < MAX_LEVELS; level++)
-    {
-        for (int dungeon = 0; dungeon < MAX_BRANCHES; dungeon++)
-        {
-            if (tmp_file_pairs[level][dungeon])
-            {
-                del_file[dun] = 'a' + dungeon;
-                del_file[tens] = '0' + (level / 10);
-                del_file[ones] = '0' + (level % 10);
-                unlink(del_file);
-            }
-        }
-    }
-
-#ifdef PACKAGE_SUFFIX
-    // this is to catch the game package if it still exists.
-    del_file[point] = '\0';
-
-    strcat(del_file, PACKAGE_SUFFIX);
-    unlink(del_file);
-#endif
-
-    strcpy(del_file, glorpstr);
-    strcat(del_file, ".lab");
-
-#ifdef DOS
-    strupr(del_file);
-#endif
-
-    sysg = unlink(del_file);
-
-    strcpy(del_file, glorpstr);
-    strcat(del_file, ".sav");
-
-#ifdef DOS
-    strupr(del_file);
-#endif
-
-    sysg = unlink(del_file);
-
-    status2 = set_status(100);
-    if (status2 == 1)
-    {
-        mpr("You die...");      // insert player name here? {dlb}
-    }
-
-    viewwindow(1, false);
-    more();
-
-    for (i = 0; i < ENDOFPACK; i++)
-        you.inv_ident[i] = 3;
-
-    for (i = 0; i < ENDOFPACK; i++)
-    {
-        if (you.inv_class[i] != 0)
-            set_id(you.inv_class[i], you.inv_type[i], 1);
-    }
-
-    invent(-1, (status2 == 0));
-
-#ifdef USE_CURSES
-    clear();
-#endif
-
-    if (!dump_char((status2 == 0), "morgue.txt"))
-        mpr("Char dump unsuccessful! Sorry about that.");
-#ifdef DEBUG
-    //jmf: switched logic and moved "success" message to debug-only
-    else
-        mpr("Char dump successful! (morgue.txt).");
-#endif // DEBUG
-
-    more();
-
-    for (int p = 0; p < ENDOFPACK; p++)
-    {
-        for (i = 0; i < MAX_ITEMS; i++)
-        {
-            if (!mitm.quantity[i])
-            {
-                mitm.id[i] = 0;
-                mitm.base_type[i] = you.inv_class[p];
-                mitm.sub_type[i] = you.inv_type[p];
-                mitm.pluses[i] = you.inv_plus[p];
-                mitm.pluses2[i] = you.inv_plus2[p];
-                mitm.special[i] = you.inv_dam[p];
-                mitm.colour[i] = you.inv_colour[p];
-                mitm.x[i] = you.x_pos;
-                mitm.y[i] = you.y_pos;
-                mitm.quantity[i] = you.inv_quantity[p];
-                break;
-            }
-        }                       // end "for p,i"
-    }
-
-    for (i = 0; i < MAX_ITEMS; i++)
-    {
-        mitm.id[i] = 0;
-    }
-
-    clrscr();
-#ifdef DOS_TERM
-    window(1, 1, 80, 25);
-#endif
-    clrscr();
-    cprintf("Goodbye, ");
-    cprintf(you.your_name);
-    cprintf(".");
-    cprintf(EOL EOL);
-    cprintf(death_string);
-    cprintf(EOL EOL " Best Crawlers - " EOL);
-
-    highscore(death_string, points);
-
-    // just to pause, actual value returned does not matter {dlb}
-    get_ch();
-    end(0);
-}
-#endif
-
-// BCR - used to pad a string out to 80 characters
-static char *pad(char *str)
-{
-    static char *padding = "                                                                                 ";
-    int length = strlen(str);
-
-    strncpy(str + length, padding, 80 - (length - 1));
-    str[80] = 0;
-    return str;
-}                               // end pad()
-
-// BCR - I did a lot of cleanup in here, removing gotos, etc.
-
-// XXX - This still is a really bad format, it should be changed to
-// something more reasonable (like nethack) with one entry per line
-// and fields delimited with colons (or at least not truncated like
-// they are here... that should be the job of the displaying function,
-// the file should contain all the info in tract).  It would also
-// be nice if the user id was included for MULTIUSER systems, this
-// can be dug out using getuid() and getpwuid().  In any case, if
-// the file handle is changed to a C++ stream then you'll have to
-// adjust the lock_file_handle() and unlock_file_handle() functions
-// ... don't worry it's quite easy, all you have to do is dig the
-// file descriptor out of the stream class (file_desc() I believe)
-// and use that instead.  The lock functions will have to be changed
-// to use the file descriptor, but they're already digging it out
-// of the FILE * anyways (that's what fileno() does). -- bwr
-
-void highscore(char death_string[256], long points)
-{
-    char high_scores[SCORE_FILE_ENTRIES][81];
-    long scores[SCORE_FILE_ENTRIES];
-    int i = 0;
-    int j = 0;
-    char ready[81];
-    char *readRV;
-
-    pad(death_string);
-
-    for (i = 0; i < SCORE_FILE_ENTRIES; i++)
-    {
-        strcpy(high_scores[i], "0       empty");
-        scores[i] = -1;
-    }
-
-#ifdef SAVE_DIR_PATH
-    FILE *handle = fopen(SAVE_DIR_PATH "scores", "r");
-
-#else
-    FILE *handle = fopen("scores", "r");
-#endif
-
-#ifdef USE_FILE_LOCKING
-    if (handle && !lock_file_handle( handle, F_RDLCK ))
-    {
-        perror( "Could not lock scorefile... " );
-        fclose( handle );
-        handle = NULL;
-    }
-#endif
-
-    if (handle != NULL)
-    {
-
-        for(i=0;  i < SCORE_FILE_ENTRIES; i++)
-        {
-            // this way we maintain compatibility with old-style scores files,
-            // but can also read new ones with actual EOL at the end of lines.
-            // mind you,  the new score file entries MUST be less than 81
-            // characters in length or this will chop them up something rotten. :(
-            ///  GDL
-            readRV = fgets(ready, 81, handle);
-
-            if (readRV == NULL)
-                break;
-
-            // copy text over to highscore entry
-            char *targ = high_scores[i];
-            for (j = 0; j < 80; j++)
-            {
-                if (isprint(ready[j]))
-                    *targ++ = ready[j];
-            }
-            *targ = 0;
-
-            // get score from this new entry
-            scores[i] = 0;
-
-            int multip = 1;
-
-            for (j = 6; j >= 0; j--)
-            {
-                if (high_scores[i][j] == 32)
-                    continue;
-                scores[i] += (high_scores[i][j] - 48) * multip;
-                multip *= 10;
-            }
-
-        }                       // end for i
-
-        // finished file read - close it.
-
-#ifdef USE_FILE_LOCKING
-        unlock_file_handle( handle );
-#endif
-        fclose(handle);
-    }
-    else
-    {
-        perror( "Could not read scorefile... " );
-    }
-
-    // print scores to screen and assign ranks
-
-    char has_printed = 0;
-    int numEntries = NUMBER_OF_LINES - 7;
-
-    for (i = 0; i < numEntries; i++)
-    {
-        if ((points >= scores[i]) && (has_printed==0))
-        {
-            textcolor(YELLOW);
-            itoa(i + 1, ready, 10);
-            cprintf(ready);
-
-            if (strlen(ready) == 1)
-                cprintf("- ");
-            else
-                cprintf("-");
-
-            j = 0;
-            while ((j < 75) && (death_string[j] != EOF))
-                putch(death_string[j++]);
-
-            cprintf(EOL);
-
-            has_printed = 1;
-            i--;
-            textcolor(LIGHTGREY);
-        }
-        else
-        {
-            itoa(i + 1 + has_printed, ready, 10);
-            cprintf(ready);
-
-            if (strlen(ready) == 1)
-                cprintf("- ");
-            else
-                cprintf("-");
-
-            // temp truncate of highscore entry
-            char tmp = high_scores[i][74];
-            high_scores[i][74] = '\0';
-            cprintf(high_scores[i]);
-
-            // restore
-            high_scores[i][74] = tmp;
-            cprintf(EOL);
-        }
-    }
-
-#ifdef SAVE_DIR_PATH
-    handle = fopen(SAVE_DIR_PATH "scores", "w");
-#else
-    handle = fopen("scores", "w");
-#endif
-
-#ifdef USE_FILE_LOCKING
-    if (handle && !lock_file_handle( handle, F_WRLCK ))
-    {
-        perror( "Could not lock score file... " );
-        fclose( handle );
-        handle = NULL;
-    }
-#endif
-
-    if (handle != NULL)
-    {
-        has_printed = 0;
-        for (i = 0; i < SCORE_FILE_ENTRIES; i++)
-        {
-            if (points >= scores[i] && has_printed == 0)
-            {
-                // truncate after 79th character.
-                death_string[79] = '\0';
-                fputs(death_string, handle);
-                fputs("\n", handle);
-                has_printed = 1;
-            }
-
-            // don't print dummy entries
-            if (has_printed && scores[i] < 0)
-                break;
-
-            if (i + (int)has_printed < SCORE_FILE_ENTRIES)
-            {
-                // truncate after 79th character
-                high_scores[i][79] = '\0';
-                fputs(high_scores[i], handle);
-                fputs("\n", handle);
-            }
-        }
-
-#ifdef USE_FILE_LOCKING
-        unlock_file_handle( handle );
-#endif
-
-        fclose(handle);
-
-#ifdef SHARED_FILES_CHMOD_VAL
-  #ifdef SAVE_DIR_PATH
-        chmod(SAVE_DIR_PATH "scores", SHARED_FILES_CHMOD_VAL);
-  #else
-        chmod("scores", SHARED_FILES_CHMOD_VAL);
-  #endif
-#endif
-    }
-    else
-    {
-        perror( "Could not save scorefile... " );
-    }
-}                               // end void highscores
-
+                            // end scrolls_burn()
 void lose_level(void)
 {
     char temp_quant[5];
@@ -1653,12 +603,341 @@ void drain_exp(void)
     }
 }                               // end drain_exp()
 
-int set_status(int stat)
+// death_source should be set to zero for non-monsters {dlb}
+void ouch(int dam, int death_source, char death_type)
 {
-    static int stat2;
+    char point_print[10];
+    int d = 0;
+    int e = 0;
 
-    if (stat != 100)
-        stat2 = stat;
+    if (you.deaths_door && death_type != KILLED_BY_LAVA
+                                    && death_type != KILLED_BY_WATER)
+    {
+        return;
+    }
 
-    return stat2;
+    if (dam > 300)
+        return;                 // assumed bug for high damage amounts
+
+    if (dam > -9000)            // that is, a "death" caused by hp loss {dlb}
+    {
+        switch (you.religion)
+        {
+        case GOD_XOM:
+            if (random2(you.hp_max) > you.hp && dam > random2(you.hp)
+                                                    && one_chance_in(5))
+            {
+                simple_god_message( " protects you from harm!" );
+                return;
+            }
+            break;
+
+        case GOD_ZIN:
+        case GOD_SHINING_ONE:
+        case GOD_ELYVILON:
+        case GOD_OKAWARU:
+        case GOD_KIKUBAAQUDGHA:
+            if (dam >= you.hp && you.duration[DUR_PRAYER]
+                                                && random2(you.piety) >= 30)
+            {
+                simple_god_message( " protects you from harm!" );
+                return;
+            }
+            break;
+        }
+    }
+
+    // XXX: Assuming that this is imporatnt (negative damage won't be done
+    // by dec_hp, so I take it that the (you.hp > 0) check might be
+    // important for some reason. -- bwr
+    if (dam > -9000)
+    {
+        dec_hp(dam, true);
+
+        // Even if we have low HP messages off, we'll still give a
+        // big hit warning (in this case, a hit for half our HPs) -- bwr
+        if (dam > 0 && you.hp_max <= dam * 2)
+            mpr( "Ouch!  That really hurt!", MSGCH_DANGER );
+
+        if (you.hp > 0 && Options.hp_warning
+            && you.hp <= (you.hp_max * Options.hp_warning) / 100)
+        {
+            mpr( "* * * LOW HITPOINT WARNING * * *", MSGCH_DANGER );
+        }
+
+        if (you.hp > 0)
+            return;
+    }
+
+#ifdef WIZARD
+    if (death_type != KILLED_BY_QUITTING && death_type != KILLED_BY_WINNING
+                                            && death_type != KILLED_BY_LEAVING)
+    {
+#ifdef USE_OPTIONAL_WIZARD_DEATH
+        if (!yesno("Die?", false))
+        {
+            set_hp(you.hp_max, false);
+            return;
+        }
+#else
+        mpr("Since you're a debugger, I'll let you live.");
+        mpr("Be more careful next time, okay?");
+
+        set_hp(you.hp_max, false);
+        return;
+#endif
+    }
+#endif
+
+    //okay, so you're dead:
+
+    // do points first.
+    long points = you.gold;
+    points += (you.experience * 7) / 10;
+
+    //if (death_type == KILLED_BY_WINNING) points += points / 2;
+    //if (death_type == KILLED_BY_LEAVING) points += points / 10;
+    // these now handled by giving player the value of their inventory
+    char temp_id[4][50];
+
+    for (d = 0; d < 4; d++)
+        for (e = 0; e < 50; e++)
+            temp_id[d][e] = 1;
+
+    if (death_type == KILLED_BY_LEAVING || death_type == KILLED_BY_WINNING)
+    {
+        for (d = 0; d < ENDOFPACK; d++)
+        {
+            points +=
+                item_value( you.inv_class[d], you.inv_type[d], you.inv_dam[d],
+                                you.inv_plus[d], you.inv_plus2[d],
+                                you.inv_quantity[d], 3, temp_id );
+        }
+    }
+
+    if (points > 99999999)
+        points = 99999999;
+
+    // for death by monster
+    struct monsters *monster = NULL;
+    if (death_source != 0)
+        monster =  &menv[death_source];
+
+
+    // CONSTRUCT SCOREFILE ENTRY
+    struct scorefile_entry se;
+    se.version = 4;
+    se.release = 0;
+    strncpy(se.name, you.your_name, kNameLen);
+    se.name[kNameLen - 1] = '\0';
+#ifdef MULTIUSER
+    se.uid = getuid();
+#else
+    se.uid = 0;
+#endif
+
+    se.points = points;
+    se.race = you.species;
+    se.cls = you.char_class;
+    strcpy(se.race_class_name, "");
+    se.lvl = you.experience_level;
+    se.best_skill = best_skill(SK_FIGHTING, NUM_SKILLS-1, 99);
+    se.best_skill_lvl = you.skills[ se.best_skill ];
+    se.death_type = death_type;
+    if (death_source != 0)
+    {
+        se.death_source = monster->type;
+        se.mon_num = monster->number;
+        if (monster->type < MONS_PROGRAM_BUG
+            || (monster->type < MONS_TERENCE && monster->type >= MONS_NAGA_MAGE)
+            || monster->type > MONS_BORIS && monster->type != MONS_PLAYER_GHOST)
+        {
+            strcpy(info, "a");
+        }
+        else
+            info[0] = '\0';
+
+        strcat(info, monam(monster->number, monster->type, 0, 99));
+        strncpy(se.death_source_name, info, 40);
+        se.death_source_name[39] = '\0';
+    }
+    else
+    {
+        se.death_source = death_source;
+        se.mon_num = 0;
+        se.death_source_name[0] = '\0';
+    }
+
+    se.final_hp = you.hp;
+    // main dungeon: level is simply level
+    se.dlvl = you.your_level;
+    switch (you.where_are_you)
+    {
+        case BRANCH_ORCISH_MINES:
+        case BRANCH_HIVE:
+        case BRANCH_LAIR:
+        case BRANCH_SLIME_PITS:
+        case BRANCH_VAULTS:
+        case BRANCH_CRYPT:
+        case BRANCH_HALL_OF_BLADES:
+        case BRANCH_HALL_OF_ZOT:
+        case BRANCH_ECUMENICAL_TEMPLE:
+        case BRANCH_SNAKE_PIT:
+        case BRANCH_ELVEN_HALLS:
+        case BRANCH_TOMB:
+        case BRANCH_SWAMP:
+            se.dlvl = you.your_level - you.branch_stairs[you.where_are_you - 10];
+            break;
+
+        case BRANCH_DIS:
+        case BRANCH_GEHENNA:
+        case BRANCH_VESTIBULE_OF_HELL:
+        case BRANCH_COCYTUS:
+        case BRANCH_TARTARUS:
+        case BRANCH_INFERNO:
+        case BRANCH_THE_PIT:
+            se.dlvl = you.your_level + 1 - 26;
+            break;
+    }
+    se.branch = you.where_are_you;      // no adjustments necessary.
+    se.level_type = you.level_type;     // pandemonium, labyrinth, dungeon..
+
+#ifdef WIZARD
+    se.wiz_mode = 1;
+#else
+    se.wiz_mode = 0;
+#endif
+
+    // add this highscore to the highscore file.
+    hiscores_new_entry(se);
+
+    if (death_type != KILLED_BY_LEAVING && death_type != KILLED_BY_WINNING)
+        save_ghost();
+
+    end_game(se);
+}
+
+
+void end_game(struct scorefile_entry &se)
+{
+    int i;
+    char del_file[300];         // massive overkill!
+    bool dead = true;
+    if (se.death_type == KILLED_BY_LEAVING ||
+        se.death_type == KILLED_BY_WINNING)
+        dead = false;
+
+    // clean all levels that we think we have ever visited
+    for (int level = 0; level < MAX_LEVELS; level++)
+    {
+        for (int dungeon = 0; dungeon < MAX_BRANCHES; dungeon++)
+        {
+            if (tmp_file_pairs[level][dungeon])
+            {
+                make_filename(info, you.your_name, level, dungeon,
+                    false, false);
+                unlink(info);
+            }
+        }
+    }
+
+    // temp level, if any
+    make_filename(info, you.your_name, 0, 0, true, false);
+    unlink(info);
+
+    // create base file name
+#ifdef SAVE_DIR_PATH
+    sprintf(info, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
+#else
+    strncpy(info, you.your_name, kFileNameLen);
+    info[kFileNameLen] = '\0';
+#endif
+
+    // this is to catch the game package if it still exists.
+#ifdef PACKAGE_SUFFIX
+    strcpy(del_file, info);
+    strcat(del_file, "." PACKAGE_SUFFIX);
+    unlink(del_file);
+#endif
+
+    // last, but not least, delete player .sav file
+    strcpy(del_file, info);
+    strcat(del_file, ".sav");
+    unlink(del_file);
+
+    // death message
+    if (dead)
+        mpr("You die...");      // insert player name here? {dlb}
+
+    viewwindow(1, false);
+    more();
+
+    for (i = 0; i < ENDOFPACK; i++)
+        you.inv_ident[i] = 3;
+
+    for (i = 0; i < ENDOFPACK; i++)
+    {
+        if (you.inv_class[i] != 0)
+            set_id(you.inv_class[i], you.inv_type[i], 1);
+    }
+
+    invent(-1, !dead);
+
+#ifdef USE_CURSES
+    clear();
+#endif
+
+    if (!dump_char(!dead, "morgue.txt"))
+        mpr("Char dump unsuccessful! Sorry about that.");
+#ifdef DEBUG
+    //jmf: switched logic and moved "success" message to debug-only
+    else
+        mpr("Char dump successful! (morgue.txt).");
+#endif // DEBUG
+
+    more();
+
+    for (int p = 0; p < ENDOFPACK; p++)
+    {
+        for (i = 0; i < MAX_ITEMS; i++)
+        {
+            if (!mitm.quantity[i])
+            {
+                mitm.id[i] = 0;
+                mitm.base_type[i] = you.inv_class[p];
+                mitm.sub_type[i] = you.inv_type[p];
+                mitm.pluses[i] = you.inv_plus[p];
+                mitm.pluses2[i] = you.inv_plus2[p];
+                mitm.special[i] = you.inv_dam[p];
+                mitm.colour[i] = you.inv_colour[p];
+                mitm.x[i] = you.x_pos;
+                mitm.y[i] = you.y_pos;
+                mitm.quantity[i] = you.inv_quantity[p];
+                break;
+            }
+        }                       // end "for p,i"
+    }
+
+    for (i = 0; i < MAX_ITEMS; i++)
+    {
+        mitm.id[i] = 0;
+    }
+
+    clrscr();
+#ifdef DOS_TERM
+    window(1, 1, 80, 25);
+#endif
+    clrscr();
+    cprintf("Goodbye, ");
+    cprintf(you.your_name);
+    cprintf(".");
+    cprintf(EOL EOL);
+    hiscores_print_single(se);
+    cprintf(EOL EOL " Best Crawlers - " EOL);
+
+    hiscores_print_list();
+
+    // just to pause, actual value returned does not matter {dlb}
+    get_ch();
+    end(0);
 }

@@ -1,36 +1,33 @@
 /*
- *  File:       initfile.h
- *  Summary:    Simple reading of init file.
- *  Written by: David Loewenstern
+ *  File:       hiscores.h
+ *  Summary:    Scorefile manipulation functions
+ *  Written by: Gordon Lipford
  *
  *  Change History (most recent first):
  *
- *               <1>     6/9/99        DML             Created
+ *     <1>     16feb2001     GDL     Created
  */
 
 
-#ifndef INITFILE_H
-#define INITFILE_H
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
-void read_init_file(void);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
-void get_system_environment(void);
-
+#ifndef HISCORES_H
+#define HISCORES_H
 
 // last updated 16feb2001 {gdl}
 /* ***********************************************************************
- * called from: acr
+ * called from: ouch
  * *********************************************************************** */
-bool parse_args(int argc, char **argv, bool rc_only);
+void hiscores_new_entry(struct scorefile_entry &se);
 
+// last updated 16feb2001 {gdl}
+/* ***********************************************************************
+ * called from: acr ouch
+ * *********************************************************************** */
+void hiscores_print_list(void);
 
-#endif
+// last updated 16feb2001 {gdl}
+/* ***********************************************************************
+ * called from: ouch hiscores
+ * *********************************************************************** */
+void hiscores_print_single(struct scorefile_entry &se);
+
+#endif  // HISCORES_H

@@ -824,6 +824,7 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
             beam.colour = LIGHTCYAN;
             beam.thrower = KILL_YOU;    // your explosion
             beam.ex_size = 2;
+            beam.isTracer = false;
 
             explosion(beam);
 

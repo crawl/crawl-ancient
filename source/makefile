@@ -11,7 +11,7 @@ MAKEFILE = makefile.sol
 #OTHER=-j3
 
 all:
-	make $(OTHER) -f $(MAKEFILE) EXTRA_FLAGS=-O3
+	make $(OTHER) -f $(MAKEFILE) EXTRA_FLAGS='-O2 -fno-strength-reduce'
 noopt:
 	make $(OTHER) -f $(MAKEFILE)
 install:

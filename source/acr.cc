@@ -86,6 +86,7 @@
 #include "fight.h"
 #include "files.h"
 #include "food.h"
+#include "hiscores.h"
 #include "initfile.h"
 #include "invent.h"
 #include "it_use3.h"
@@ -194,8 +195,30 @@ int main(int argc, char *argv[])
     // Load in the system environment variables
     get_system_environment();
 
+    // parse command line args -- look only for initfile & crawl_dir entries
+    if (!parse_args(argc, argv, true))
+    {
+        // print help
+        puts("Command line options:");
+        puts("  -scores [N]         highscore list");
+        puts("  -name <string>      character name");
+        puts("  -race <letter>      preselect race");
+        puts("  -class <letter>     preselect class");
+        puts("  -pizza <string>     crawl pizza");
+        puts("  -plain              don't use IBM extended characters");
+        puts("  -dir <path>         crawl directory");
+        puts("  -rc <file>          init file name");
+        puts("");
+        puts("Command line options override init file options, which override");
+        puts("environment options (CRAWL_NAME, CRAWL_PIZZA, CRAWL_DIR, CRAWL_RC).");
+        exit(1);
+    }
+
     // Read the init file
     read_init_file();
+
+    // now parse the args again, looking for everything else.
+    parse_args(argc, argv, false);
 
 #ifdef USE_ASCII_CHARACTERS
     // Default to the non-ibm set when it makes sense.
@@ -208,40 +231,6 @@ int main(int argc, char *argv[])
     mapch = &mapchar;
     mapch2 = &mapchar2;
 #endif
-
-    if (argc > 1)
-    {
-        //jmf: FIXME: add "-ibm" option for colour and IBM char set
-        if (stricmp(argv[1], "-c") == 0
-            || stricmp(argv[1], "-nc") == 0 || stricmp(argv[1], "-nb") == 0)
-        {
-            viewwindow = &viewwindow3;
-            mapch = &mapchar3;
-            mapch2 = &mapchar4;
-
-            if (stricmp(argv[1], "-nc") == 0)
-            {
-                use_colour = 0;
-                /* this is global to this function, so can either be
-                   passed eg to lincurses_startup or defined as an
-                   extern in another module */
-            }
-        }
-        else
-        {
-            printf(EOL "Crawl accepts the following arguments only:" EOL);
-            printf(" -c   Use non-ibm character set" EOL);
-            printf(" -nc  Use non-ibm character set, but no colour" EOL);
-#ifdef LINUX
-            printf(" -nb  Use colour and non-ibm charater set, but no "
-                   "black/dark grey characters" EOL);
-#endif
-            printf(EOL
-                   "Any others will cause this message to be printed again."
-                   EOL);
-            exit(1);
-        }
-    }
 
 #ifdef LINUX
     lincurses_startup();
@@ -259,6 +248,15 @@ int main(int argc, char *argv[])
     // Load macros
     macro_init();
 #endif
+
+    // NOW check for highscore list (after platform-dependent init
+    // has finished!)
+    if (Options.sc_entries > 0)
+    {
+        cprintf(" Best Crawlers -\n");
+        hiscores_print_list();
+        exit(1);
+    }
 
     init_overmap();             // in overmap.cc (duh?)
     clear_ids();                // in itemname.cc
@@ -300,34 +298,40 @@ int main(int argc, char *argv[])
         // name is metioned, else the message might be confusing.
         switch (you.religion)
         {
-        case GOD_XOM:
-            simple_god_message( " says: A new plaything! Welcome..." );
-            break;
-        case GOD_MAKHLEB:
-            god_speaks( you.religion, "Blood and souls for Makhleb!" );
-            break;
         case GOD_ZIN:
-            simple_god_message( " says: Spread the light, my child..." );
-            break;
-        case GOD_YREDELEMNUL:
-            simple_god_message( " says: Welcome..." );
-            break;
-        case GOD_TROG:
-            simple_god_message( " says: Kill them all!" );
+            simple_god_message( " says: Spread the light, my child." );
             break;
         case GOD_SHINING_ONE:
             simple_god_message( " says: Smite the infidels!" );
             break;
-        case GOD_ELYVILON:
-            simple_god_message( " says: Go forth and aid the weak..." );
+        case GOD_KIKUBAAQUDGHA:
+        case GOD_YREDELEMNUL:
+        case GOD_NEMELEX_XOBEH:
+            simple_god_message( " says: Welcome..." );
             break;
-
+        case GOD_XOM:
+            if (game_start)
+                simple_god_message( " says: A new plaything!" );
+            break;
+        case GOD_VEHUMET:
+            god_speaks( you.religion, "Let it end in hellfire!");
+            break;
+        case GOD_OKAWARU:
+            simple_god_message(" says: Welcome,  disciple.");
+            break;
+        case GOD_MAKHLEB:
+            god_speaks( you.religion, "Blood and souls for Makhleb!" );
+            break;
+        case GOD_SIF_MUNA:
+            simple_god_message( " whispers: I know many secrets...");
+            break;
+        case GOD_TROG:
+            simple_god_message( " says: Kill them all!" );
+            break;
+        case GOD_ELYVILON:
+            simple_god_message( " says: Go forth and aid the weak!" );
+            break;
         default:
-            // the remaining five gods have to (quite rightfully) be found
-            // by the player, so they don't need a message here
-            // -- unless of course this is changed to everytime the
-            // game is loaded (ie.  regardless of the return value of
-            // initialise())... then they'll all need messages -- bwr
             break;
         }
         // warn player about their weapon, if unsuitable

@@ -692,34 +692,39 @@ int add_item(int item_got, int quant_got)
 void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
 {
     int m = 0, i = 0;
+    const int base_type = you.inv_class[item_drop_2];
+    const int sub_type  = you.inv_type[item_drop_2];
 
-    if (igrd[x_plos][y_plos] != NON_ITEM)
+    // loop through items at current location
+    i = igrd[x_plos][y_plos];
+
+    while(i != NON_ITEM)
     {
-        const int base_type = you.inv_class[item_drop_2];
-        const int sub_type  = you.inv_type[item_drop_2];
-        const int item = igrd[x_plos][y_plos];
 
         if ((base_type == OBJ_MISSILES
                 || base_type == OBJ_FOOD
                 || base_type == OBJ_SCROLLS
                 || base_type == OBJ_POTIONS
                 || base_type == OBJ_UNKNOWN_II)
-            && base_type == mitm.base_type[ item ]
-            && sub_type == mitm.sub_type[ item ]
-            && you.inv_plus[item_drop_2] == mitm.pluses[ item ]
-            && you.inv_plus2[item_drop_2] == mitm.pluses2[ item ]
-            && you.inv_dam[item_drop_2] == mitm.special[ item ]
-            && mitm.quantity[ item ] > 0)
+            && base_type == mitm.base_type[ i ]
+            && sub_type == mitm.sub_type[ i ]
+            && you.inv_plus[item_drop_2] == mitm.pluses[ i ]
+            && you.inv_plus2[item_drop_2] == mitm.pluses2[ i ]
+            && you.inv_dam[item_drop_2] == mitm.special[ i ]
+            && mitm.quantity[ i ] > 0)
         {
-            if (you.inv_ident[item_drop_2] == mitm.id[ item ])
+            if (you.inv_ident[item_drop_2] == mitm.id[ i ])
             {
-                mitm.quantity[ item ] += quant_drop;
+                mitm.quantity[ i ] += quant_drop;
                 you.turn_is_over = 1;
                 return;
             }
         }
+        // try to follow link
+        i = mitm.link[i];
     }
 
+    // item not found in current stack, add to top.
     for (i = 0; i < MAX_ITEMS; i++)
     {
         if (i >= (MAX_ITEMS - 20))
@@ -798,19 +803,23 @@ static void drop_gold(int amount)
         strcat(info, (amount > 1) ? "s." : ".");
         mpr(info);
 
-        if (igrd[you.x_pos][you.y_pos] != NON_ITEM)
+        // loop through items at grid location, look for gold
+        int i = igrd[you.x_pos][you.y_pos];
+
+        while(i != NON_ITEM)
         {
-            if (mitm.base_type[igrd[you.x_pos][you.y_pos]] == OBJ_GOLD)
+            if (mitm.base_type[i] == OBJ_GOLD)
             {
-                mitm.quantity[igrd[you.x_pos][you.y_pos]] += amount;
+                mitm.quantity[i] += amount;
                 you.gold -= amount;
                 you.redraw_gold = 1;
                 return;
             }
+            // follow link
+            i = mitm.link[i];
         }
 
-        int i;
-
+        // place on top.
         for (i = 0; i < MAX_ITEMS; i++)
         {
             if (mitm.quantity[i] == 0)
@@ -1566,3 +1575,4 @@ int inv_count(void)
 
     return count;
 }
+

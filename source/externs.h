@@ -387,6 +387,9 @@ struct game_options {
     int         priest;         // choice of god for priests (Zin/Yred)
     bool        random_pick;    // randomly generate character
     int         hp_warning;     // percentage hp for danger warning
+    char        race;           // preselected race
+    char        cls;            // preselected class
+    int         sc_entries;     // # of score entries
 };
 
 extern game_options  Options;
@@ -395,5 +398,29 @@ struct tagHeader {
     short tagID;
     long offset;
 };
+
+struct scorefile_entry {
+    char version;
+    char release;
+    long points;
+    char name[kNameLen];
+    long uid;                // for multiuser systems
+    char race;
+    char cls;
+    char race_class_name[5]; // overrides race & cls if non-null
+    char lvl;                // player level.
+    char best_skill;         // best skill #
+    char best_skill_lvl;     // best skill level
+    int death_type;
+    int death_source;       // 0 or monster TYPE
+    int mon_num;            // sigh...
+    char death_source_name[40];    // overrides death_source
+    char dlvl;               // dungeon level (relative)
+    char level_type;         // what kind of level died on..
+    char branch;             // dungeon branch
+    int final_hp;
+    char wiz_mode;
+};
+
 
 #endif // EXTERNS_H

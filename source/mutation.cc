@@ -825,11 +825,11 @@ char mutation_rarity[] = {
     0,
     0,
     0,
-    0,
-    0,
-// 60
     2,                          //jmf: claws
     1,                          //jmf: hooves
+// 60
+    0,
+    0,
     0,
     0,
     0,
@@ -1156,11 +1156,19 @@ bool mutate(int which_mutation, bool failMsg)
         return false;
 
     // nagas have see invis and res poison and can spit poison
-    if (you.species == SP_NAGA
-        && (mutat == MUT_ACUTE_VISION
-            || mutat == MUT_POISON_RESISTANCE || mutat == MUT_SPIT_POISON))
+    if (you.species == SP_NAGA)
     {
-        return false;
+        if (mutat == MUT_ACUTE_VISION || mutat == MUT_POISON_RESISTANCE)
+            return false;
+
+        // gdl: spit poison 'upgrades' to breathe poison.  Why not..
+        if (mutat == MUT_SPIT_POISON)
+        {
+            if (coinflip())
+                mutat = MUT_BREATHE_POISON;
+            else
+                return false;
+        }
     }
 
     if (you.species == SP_GNOME && mutat == MUT_MAPPING)

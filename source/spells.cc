@@ -77,6 +77,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
         return false;
     }
 
+    // setup beam
+    beam.isTracer = false;
+
     spec_effect = spec_effect / 100;
 
 #ifdef WIZARD

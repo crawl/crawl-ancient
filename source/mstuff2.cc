@@ -298,6 +298,10 @@ void mons_trap(struct monsters *monster)
 
 void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 {
+    // always do setup.  It might be done already, but it doesn't
+    // hurt to do it again (cheap).
+    setup_mons_cast(monster, pbolt, spell_cast);
+
     // single calculation permissible {dlb}
     bool monsterNearby = mons_near(monster);
 
@@ -455,8 +459,12 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
 {
     // always set these -- used by things other than beam()
     pbolt.ench_power = 5 * monster->hit_dice;
+    if (spell_cast == MS_TELEPORT)
+        pbolt.ench_power = 2000;
+
     pbolt.beam_source = monster_index(monster);
 
+    // set bolt type
     if (spell_cast == MS_HELLFIRE_BURST
         || spell_cast == MS_BRAIN_FEED
         || spell_cast == MS_SMITE || spell_cast == MS_MUTATION)
@@ -523,10 +531,6 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
         pbolt.target_x = monster->x;
         pbolt.target_y = monster->y;
     }
-
-    if (spell_cast == MS_TELEPORT)
-        pbolt.ench_power = 2000;
-
 }                               // end setup_mons_cast()
 
 
@@ -572,20 +576,32 @@ void monster_teleport(struct monsters *monster, bool instan)
 
     simple_monster_message(monster, " disappears!");
 
+    // pick the monster up
     mgrd[monster->x][monster->y] = NON_MONSTER;
 
     char ogrid = monster_habitat(monster->type);
 
-    // the while portion seems fishy to me for some reason {dlb}
-    do
+    int newx, newy;
+    while(true)
     {
-        monster->x = 10 + random2(GXM - 20);
-        monster->y = 10 + random2(GYM - 20);
+        newx = 10 + random2(GXM - 20);
+        newy = 10 + random2(GYM - 20);
+
+        // don't land on top of another monster
+        if (mgrd[newx][newy] != NON_MONSTER)
+            continue;
+
+        // monsters going to the same habitat
+        if (ogrid == grd[newx][newy])
+            break;
+
+        // DEEP_WATER monsters can be teleported to SHALLOW_WATER
+        if (ogrid == DNGN_DEEP_WATER && grd[newx][newy] == DNGN_SHALLOW_WATER)
+            break;
     }
-    while ((grd[monster->x][monster->y] != ogrid
-            && (ogrid != DNGN_DEEP_WATER
-                || grd[monster->x][monster->y] != DNGN_SHALLOW_WATER))
-            || mgrd[monster->x][monster->y] != NON_MONSTER);
+
+    monster->x = newx;
+    monster->y = newy;
 
     mgrd[monster->x][monster->y] = monster_index(monster);
 
@@ -914,6 +930,7 @@ void spore_goes_pop(struct monsters *monster)
     if (monster == NULL)
         return;
 
+    beam.isTracer = false;
     beam.beam_source = monster_index(monster);
     beam.type = SYM_BURST;
     beam.target_x = monster->x;
