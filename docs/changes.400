@@ -1,9 +1,64 @@
+9 August 2001, Michal Valvoda
+ * Gordon's destroy_item() fix included
+ * Complete clean-up of dungeon.cc::give_item() + few changes
+      for example
+      - Until now was a lot of items colored twice (by give_item()
+        and by item_colour()) and sometimes differently
+      - every item goes to right MSLOT-no more MISCELLANY in MSLOT_POTION
+      - magical items (wands, scrolls, potions) distribution
+ * repel undead is working again (in turn_undead() was missing call for
+   behavior_event())
+ * added messages for rotting chunks/corpses in player's inventory
+ * message when Corona wears out + few other new messages
+ * fixed some (I hope that all) problems with "polymorph other".
+   As side effect of some solutions
+      - MONS_HUMAN and MONS_ELF are now valid and fully functional
+        polymorph targets
+      - useless MONS_ANOTHER_LAVA_THING was changed to
+        MONS_SALAMANDER (in case of problem switch it off in dungeon.cc,
+        yes, there because water and lava monsters are generated differently)
+ * Renamed MSLOT_UNASIGNED_I to MSLOT_MISCELLANY, added NUM_MISCELLANY
+ * rewrote misc. object generation to use NUM_MISCELLANY.
+   Not important for now but I have many new misc. objects I want to include
+   after release and it will help later. Also new code is much more readable
+   and easier to modificate.
+ * inteligent monsters now pick up gold
+ * added some new unrand artifacts
+   (ring of Shadows is getting a bit tired :)
+ * added underground rivers and lakes,
+   improved water generation
+ * 3 new compile options
+   #define USE_NEW_UNRANDS - switches new unrands on
+   #define USE_RIVERS - switches new underground rivers and lakes on
+   #define MISSILE_TRAILS_OFF - turns misile trails off.
+                              - not optimal, but works well on
+                                many computers
+                              - defaultly unset
+ * other minor fixes and updates
+ * changes.400 updated
+
+ Notes:
+ ! generation of water and lava monsters isn't very nice, an it would be
+   fine to change it one day
+ ! spells in WIZARD mode probably should be cast with some power
+
+
+
+
+
+
+
+BUGLIST:
+
+
 LEGEND
 ** outstanding bug;  reproduced or definitely needs fixing
 xx outstanding bug report; unreproducable,  currently unfixable,
    or not a candidate for 4.0.0 release
 == fixed and released in some form (alpha, beta, etc - see version.h)
 -- fixed bug,  not yet released
+
+
 
 
 ** Various XXX and FIXME comments throughout code from Brent.
@@ -234,9 +289,9 @@ the '\0's.
 
 == 37. Redundant space in message "You are  diseased."
 
-xx 38. Why is "demon whip of flaming" white ? I've found such one.
-
+== 38. Why is "demon whip of flaming" white ? I've found such one.
 >> demon weapons are always given random colours.
+>> MV: Should not be fixed now.
 
 == 39. "Summon Daeva" spell summons Angel.
    Why ? "Daeva" exists and it's possible
@@ -2706,10 +2761,13 @@ when trying on mysterious rings.
 I think Ijyb should probably get an XP modifier of 5 (and even
 then is still worth 40 xp)
 
-** 403.
+== 403.
 I think some kind of notice should be given, when body wich is carried
 becomes rottens. And ghouls should definetly be able to see when
 chunks of meat become rotten. As should everyone else, I think.
+
+>>mv: added appropriate messages
+
 
 == 404. My Draconian monk (not so difficult as you might think) got mangled
 by a goblin with seemingly limitless ammount of scrolls of summoning.
@@ -2891,7 +2949,8 @@ problem...dunno)
   eyeball can stare at player even if he isn't noticed (or if he is
   invisible, but it's probably feature)
 
-** 430. Michal's patch (new unrands?)
+== 430. Michal's patch (new unrands?)
+  >> mv: now included - not only unrands but mainly clean-ups and minor upgrades
 
 == 431. In view.cc:viewwindow2() was buffy changed from unsigned char to
   unsigned short (I'm talking about
@@ -2988,7 +3047,9 @@ I think I will change this condition so that a
  >> but not spells.
 
 
-** 442.  Repel undead doesn't seem to actually repel the undead.
+== 442.  Repel undead doesn't seem to actually repel the undead.
+
+ >> mv: fixed
 
 == 443.  The enslaved stay enslaved even when you attack them.
 
@@ -3055,10 +3116,15 @@ DOS, 486sx
 
   I'd like to see a message when Coronas wear out.
 
+  >> mv: added
+
 4.1.17  Loading the game; Okawaru says: Welcome,  disciple.
 
 A monster called "a human" was displayed as a darker (non-visible)
  floor tile.
+
+  >> mv: fixed
+
 
 ** 454 .Goblins and orcs still get infinite potions of healing??
 
@@ -3181,12 +3247,14 @@ xx 463. Beam tracers: tweak to take into account what might happen if they _miss
 ** 464. Level draining can cause -1/-1 -magic when used against ogre (or maybe
 troll) character.
 
-** 465. Automatic weapon change when dissectiong gives a litle funny messages when
+== 465. Automatic weapon change when dissectiong gives a litle funny messages when
 berserk:
 Switching to your swap slot weapon.
 You are too berserk!
 Maybe you should try using a sharper implement.
 Switching back to a - the uncursed great mace "Res".
+
+ >> mv: fixed
 
 xx 466. My deep elf summoner cast summon demon from a staff of summoning (A
 great item for a starting summoner.), and received an orange demon,
@@ -3200,10 +3268,11 @@ appear as corpses. It had description "A monster whose description has yet
 to be written.".
 
 
-** 468. Invalid polymorph targets (this has been reported several times).
+== 468. Invalid polymorph targets (this has been reported several times).
    There are several generic monster types which are _not_ valid poly.
    targets:  'human' and 'elf' being two of the more common results when
    polymorphing stuff.  And yet,  'human' should probably be given some
    generic statistics and then allowed as a target (it makes sense, after
    all).
 
+>> mv: fixed now

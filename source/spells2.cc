@@ -624,6 +624,8 @@ void turn_undead(int pow)
 
             simple_monster_message(monster, " is repelled!");
 
+            behavior_event( monster, ME_SCARE ); //mv: must be here to work
+
             // reduce power based on monster turned
             pow -= monster->hit_dice * 3;
             if (pow <= 0)

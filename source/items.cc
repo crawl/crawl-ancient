@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ * <9> 7/08/01   MV   Added messages for chunks/corpses rotting
  * <8> 8/07/99   BWR  Added Rune stacking
  * <7> 6/13/99   BWR  Added auto staff detection
  * <6> 6/12/99   BWR  Fixed time system.
@@ -1105,6 +1106,7 @@ void handle_time(int time_delta)
     bool summon_instead;        // for branching within a single switch {dlb}
     int which_beastie = MONS_PROGRAM_BUG;       // error trapping {dlb}
     unsigned char i;            // loop variable {dlb}
+    bool new_rotting_item = false;//mv: used for messages about rotting food
 
     // BEGIN - Nasty things happen to people who spend too long in Hell:
     if (you.where_are_you > BRANCH_MAIN_DUNGEON
@@ -1418,6 +1420,8 @@ void handle_time(int time_delta)
 
     // Update all of the corpses and food chunks in the player's
     // inventory {should be moved elsewhere - dlb}
+
+
     for (i = 0; i < ENDOFPACK; i++)
     {
         if (you.inv_quantity[i] < 1)
@@ -1445,7 +1449,7 @@ void handle_time(int time_delta)
                     you.equip[EQ_WEAPON] = -1;
                     wield_change = true;
                 }
-
+                mpr("Your equipment suddenly weighs less.");//mv
                 you.inv_quantity[i] = 0;
                 burden_change();
                 continue;
@@ -1475,7 +1479,45 @@ void handle_time(int time_delta)
         }
 
         you.inv_dam[i] -= (time_delta / 20);
+        if (you.inv_dam[i] < 100 && (you.inv_dam[i] + (time_delta / 20)>=100))
+           new_rotting_item = true; //mv: becomes true when some new item becomes
+                                    //rotting
+
     }
+      //mv: messages when chunks/corpses become rotten
+
+      if (new_rotting_item)
+           switch (you.species)
+            {
+            case SP_MUMMY: // no smell
+            case SP_TROLL: // stupid, living in mess - doesn't care about it
+                      break;
+            case SP_GHOUL: //likes it
+                    temp_rand = random2(8);
+                    mpr((temp_rand  < 5) ? "You smell something rotten." :
+                        (temp_rand == 5) ? "Smell of rotting flesh makes you more hungry." :
+                        (temp_rand == 6) ? "You smell decay. Yum-yum."
+                                        :  "Wow ! There is something tasty in your inventory.");
+                      break;
+            case SP_KOBOLD: //mv: IMO these race aren't so "touchy"
+            case SP_OGRE:
+            case SP_MINOTAUR:
+            case SP_HILL_ORC:
+                    temp_rand = random2(8);
+                    mpr((temp_rand  < 5) ? "You smell something rotten." :
+                        (temp_rand == 5) ? "You smell rotting flesh." :
+                        (temp_rand == 6) ? "You smell decay."
+                                        :  "There is something rotten in your inventory.");
+                      break;
+
+            default:
+                    temp_rand = random2(8);
+                    mpr((temp_rand  < 5) ? "You smell something rotten." :
+                        (temp_rand == 5) ? "Smell of rotting flesh makes you sick." :
+                        (temp_rand == 6) ? "You smell decay. Yuk..."
+                                        :  "Ugh ! There is something really disgusting in your inventory.");
+                      break;
+            };
 
     // exercise armor *xor* stealth skill: {dlb}
     if (!player_light_armour())

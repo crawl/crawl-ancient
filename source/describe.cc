@@ -4379,11 +4379,11 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     switch (class_described)
     {
-        // (missing) case 147 is elf dummy monster
-        // give it an entry anyway? {dlb}
         // (missing) case 423 - MONS_ANOTHER_LAVA_THING ??? 15jan2000 {dlb}
         //                      no entry in m_list.h 17jan200 {dlb}
         //          monster has no stats!
+        // mv: changed ANOTHER_LAVA_THING to SALAMANDER, added stats and
+        //     description
         // (missing) case 250 - MONS_PROGRAM_BUG ??? 16jan2000 {dlb}
 
     case MONS_KILLER_BEE_LARVA:
@@ -4399,8 +4399,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
             "It's surrounded by aura of brilliant golden light. ";
         break;
 
-    case MONS_HUMAN:
-        description = "";
+    case MONS_HUMAN: //mv: !!! Human is valid polymorph target.
+        description = "A common man.";
         break;
 
     case MONS_GIANT_ANT:
@@ -4472,8 +4472,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_ETTIN:
-        description = "A large, two headed humanoid.   Most often seen "
-            "wielding two weapons,  so that the heads will have one less "
+        description = "A large, two headed humanoid. Most often seen "
+            "wielding two weapons, so that the heads will have one less "
             "thing to bicker about.";
         break;
 
@@ -5440,7 +5440,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
         // I think most of the deep elven descriptions are pretty much OK now. GDL
-
+    case MONS_ELF: //mv: elf dummy monster. It have to be included here
+                   //because an elf is valid polymorph target
     case MONS_DEEP_ELF_SOLDIER:
     case MONS_DEEP_ELF_FIGHTER:
     case MONS_DEEP_ELF_KNIGHT:
@@ -5965,6 +5966,11 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_BLACK_BEAR:
         description += "A small black bear.";
+        break;
+
+    case MONS_SALAMANDER:   // mv: was ANOTHER_LAVA_THING
+        description += "A strange half-human half-snake creature "
+            "covered in thick red scales and thorns.";
         break;
 
     default:

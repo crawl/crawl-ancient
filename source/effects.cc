@@ -690,8 +690,18 @@ void acquirement(unsigned char force_class)
                 }
                 break;
 
-            case OBJ_MISCELLANY:
-                type_wanted = random2(6);
+            case OBJ_MISCELLANY: //mv: slightly changed
+                do
+                type_wanted = random2(NUM_MISCELLANY);
+                while
+                (
+                (type_wanted == MISC_HORN_OF_GERYON) //never
+                || (type_wanted == MISC_RUNE_OF_ZOT) //never
+                // others are possible but less often
+                || (type_wanted == MISC_DECK_OF_POWER && !one_chance_in(10))
+                || (type_wanted == MISC_DECK_OF_SUMMONINGS && !one_chance_in(3))
+                || (type_wanted == MISC_DECK_OF_TRICKS && !one_chance_in(3))
+                || (type_wanted == MISC_DECK_OF_WONDERS && !one_chance_in(3)));
                 break;
 
 // BCR - You can now acquire food!

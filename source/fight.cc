@@ -4187,7 +4187,9 @@ static bool valid_morph( struct monsters *monster, int new_mclass )
           || new_mclass == MONS_SKELETON_LARGE
           || new_mclass == MONS_SIMULACRUM_SMALL
           || new_mclass == MONS_SIMULACRUM_LARGE
-          || new_mclass == MONS_DANCING_WEAPON )
+          || new_mclass == MONS_DANCING_WEAPON
+          || new_mclass == MONS_PLAYER_GHOST         //mv: added
+          || new_mclass == MONS_PANDEMONIUM_DEMON )  //mv: added
     {
         return false;
     }

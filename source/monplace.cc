@@ -420,7 +420,7 @@ static int place_monster_aux(int mon_type, char behavior, int target,
     // link monster into monster grid
     mgrd[fx][fy] = id;
 
-    if (mons_itemuse(mon_type) > 0
+    if (mons_itemuse(mon_type) >= 3 //mv: was 0 but this is correct (9 Aug 01)
         || (mon_type == MONS_DANCING_WEAPON && extra != 1))
         give_item(id, power);
 

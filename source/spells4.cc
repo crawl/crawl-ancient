@@ -282,7 +282,27 @@ bool mons_del_ench(struct monsters *mon, int ench, int ench2)
         behavior_event(mon, ME_EVAL);
     }
 
+    if (ench == ENCH_BACKLIGHT_I)
+    {
+        simple_monster_message(mon, " stops glowing.");
+    }
+
+    if (ench == ENCH_STICKY_FLAME_I || ench == ENCH_YOUR_STICKY_FLAME_I)
+    {
+        simple_monster_message(mon, " stops burning.");
+    }
+
+    if (ench == ENCH_POISON_I || ench == ENCH_YOUR_POISON_I)
+    {
+        simple_monster_message(mon, " looks more healthy.");
+    }
+
+    if (ench == ENCH_YOUR_ROT_I)
+    {
+        simple_monster_message(mon, " is no longer rotting.");
+    }
     return true;
+
 }
 
 bool mons_add_ench(struct monsters *mon, int ench)
@@ -307,6 +327,8 @@ bool mons_add_ench(struct monsters *mon, int ench)
         return false;
 
     mon->enchantment[newspot] = ench;
+//    if ench == ENCH_FEAR //mv: withou this fear & repel undead spell doesn't work
+
 
     // check for slow/haste
     if (ench == ENCH_HASTE)

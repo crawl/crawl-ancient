@@ -427,8 +427,8 @@ void cast_spec_spell_name(void)
 
         if (strstr(strlwr(spname), strlwr(specs)) != NULL)
         {
-            your_spells(i, 0, false);
-            return;
+        your_spells(i, 0, false);
+        return;
         }
     }
 

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <8>      7 Aug  2001   MV      Inteligent monsters now pick up gold
  *      <7>     26 Mar  2001   GDL     Fixed monster reaching
  *      <6>     13 Mar  2001   GDL     Rewrite of monster AI
  *      <5>     31 July 2000   GDL     More Manticore fixes.
@@ -1148,6 +1149,8 @@ static void handle_nearby_ability(struct monsters *monster)
         case MONS_LAVA_SNAKE:
 //      "another lava thing" has no stats! (GDL)
 //        case MONS_ANOTHER_LAVA_THING:
+//      mv: ANOTHER_LAVA_THING was changed to SALAMANDER which is functional
+        case MONS_SALAMANDER:
         case MONS_BIG_FISH:
         case MONS_GIANT_GOLDFISH:
         case MONS_ELECTRICAL_EEL:
@@ -2665,6 +2668,20 @@ static bool handle_pickup(struct monsters *monster)
         destroy_item(igrd[monster->x][monster->y]);
         break;
 
+    case OBJ_GOLD: //mv - monsters now picks up gold (19 May 2001)
+       if ( monster->inv[MSLOT_GOLD] != NON_ITEM )
+           mitm.quantity[monster->inv[MSLOT_GOLD]] += mitm.quantity[igrd[monster->x][monster->y]];
+           else
+           monster->inv[MSLOT_GOLD] = igrd[monster->x][monster->y];
+       igrd[monster->x][monster->y] = mitm.link[igrd[monster->x][monster->y]];
+       mitm.link[monster->inv[MSLOT_GOLD]] = NON_ITEM;
+       if ( monsterNearby )
+            {
+            strcpy(info, monam(monster->number, monster->type, monster->enchantment[2], 0));
+            strcat(info, " picks up some gold.");
+            mpr(info);
+            }
+       break;
     default:
         return false;
     }
@@ -3368,6 +3385,8 @@ unsigned char monster_habitat(int which_class)
     case MONS_LAVA_SNAKE:
 // "another lava thing" has no stats! (GDL)
 //    case MONS_ANOTHER_LAVA_THING:
+//  mv: ANOTHER_LAVA_THING was changed to SALAMANDER
+    case MONS_SALAMANDER:
         return DNGN_LAVA;
 
     default:

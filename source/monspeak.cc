@@ -84,10 +84,11 @@ bool mons_speaks(struct monsters *monster)
         else if (monster->attitude == ATT_FRIENDLY)
         {
             temp_rand = random2(10);
-            strcat(info, (temp_rand <  4) ? " gives you a thumbs up." :
-                         (temp_rand == 4) ? " looks at you." :
-                         (temp_rand == 5) ? " waves at you." :
-                         (temp_rand == 6) ? " smiles happily."
+            strcat(info, (temp_rand <  3) ? " gives you a thumbs up." :
+                         (temp_rand == 3) ? " looks at you." :
+                         (temp_rand == 4) ? " waves at you." :
+                         (temp_rand == 5) ? " smiles happily.":
+                         (temp_rand == 6) ? " winks at you."
                              : " says something you can't hear.");
         }
         else
@@ -177,7 +178,7 @@ bool mons_speaks(struct monsters *monster)
         }
         else
         {
-            switch (random2(15))  // speaks for unfriendly confused monsters
+            switch (random2(23))  // speaks for unfriendly confused monsters
             {
             case 0:
                 strcat(info, " yells, \"Get them off of me!\"");
@@ -219,6 +220,30 @@ bool mons_speaks(struct monsters *monster)
                 break;
             case 14:
                 strcat(info, " says, \"I'm little bit confused.\"");
+                break;
+            case 15:
+                strcat(info, " asks, \"Where am I ?\"");
+                break;
+            case 16:
+                strcat(info, " shakes.");
+                break;
+            case 17:
+                strcat(info, " asks, \"Who are you ?\"");
+                break;
+            case 18:
+                strcat(info, " asks, \"What the hell are we doing here ? Mmm, I see...\"");
+                break;
+            case 19:
+                strcat(info, " cries, \"My head ! MY HEAD !!!\"");
+                break;
+            case 20:
+                strcat(info, " says, \"Why is everything spinning ?\"");
+                break;
+            case 21:
+                strcat(info, " screams, \"NO ! I can't bear up that noise !\"");
+                break;
+            case 22:
+                strcat(info, " is trying to cover his eyes.");
                 break;
             }
         }
@@ -268,7 +293,7 @@ bool mons_speaks(struct monsters *monster)
         }
         else
         {
-            switch (random2(14))    // speaks for unfriendly fleeing monsters
+            switch (random2(20))    // speaks for unfriendly fleeing monsters
             {
             case 0:
                 sprintf(info, "%s %s, \"Help!\"", m_name, coinflip()? "yells" : "wails");
@@ -322,7 +347,19 @@ bool mons_speaks(struct monsters *monster)
                 sprintf(info, "%s %s, \"Please, I have a lot of children...\"",
                         m_name, coinflip() ? "begs" : "pleads");
                 break;
-            }
+            case 14:
+                strcat(info, " tries to recover lost courage.");
+                break;
+            case 15:
+            case 16:
+            case 17:
+                strcat(info, " gives up.");
+                break;
+            case 19:
+                sprintf(info, "%s looks really %s.", m_name,
+                        coinflip() ? "scared stiff" : "rattled");
+                break;
+                }
         }
     }
     else if (mons_friendly(monster))
@@ -410,7 +447,7 @@ bool mons_speaks(struct monsters *monster)
         switch (monster->type)
         {
         case MONS_TERENCE:  // fighter who likes to kill
-            switch (random2(9))
+            switch (random2(15))
             {
             case 0:
                 strcat(info, " screams, \"I'm going to kill you! \"");
@@ -422,7 +459,8 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " says, \"Rest in peace.\"");
                 break;
             case 3:
-                strcat(info, " screams, \"Die!\"");
+                sprintf(info, "%s shouts, \"%s !!!\"",
+                  m_name, coinflip() ? "ATTACK" : "DIE");
                 break;
             case 4:
                 strcat(info, " says, \"How do you enjoy it?\"");
@@ -439,6 +477,26 @@ bool mons_speaks(struct monsters *monster)
             case 8:
                 strcat(info, " says, \"Did you write a testament? You should...\"");
                 break;
+            case 9:
+                strcat(info, " says, \"Time to say good-bye...\"");
+                break;
+            case 10:
+                sprintf(info, "%s says, \"Don't try to defend, it's %s.\"",
+                        m_name, coinflip() ? "pointless" : "senseless");
+                break;
+            case 11:
+                strcat(info, " bares his teeth.");
+                break;
+            case 12:
+                sprintf(info, "%s says, \"I'll show you few %s.\"",
+                        m_name, coinflip() ? "tricks" : "ploys.");
+                break;
+            case 13:
+                strcat(info, " screams, \"I want your blood.\"");
+                break;
+            case 14:
+                strcat(info, " looks scornfully at you.");
+                break;
             }
             break;          // end Terence
 
@@ -447,7 +505,7 @@ bool mons_speaks(struct monsters *monster)
         case MONS_FRANCES:
         case MONS_DUANE:
         case MONS_ADOLF:
-            switch (random2(15))
+            switch (random2(17))
             {
             case 0:
                 strcat(info, " screams, \"I'm going to kill you! Now!\"");
@@ -496,6 +554,12 @@ bool mons_speaks(struct monsters *monster)
                 break;
             case 14:
                 strcat(info, " says, \"A dead adventurer is good adventurer.\"");
+                break;
+            case 15:
+                strcat(info, " says, \"Comming here was your last mistake.\"");
+                break;
+            case 16:
+                strcat(info, " shouts, \"Intruder !\"");
                 break;
             }
             break;          // end Edmund & Co
@@ -555,15 +619,14 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " prays.");
                 msg_type = MSGCH_MONSTER_SPELL;
                 break;
-            /*
             // removed -- shouldn't really assume that orcs and elves
             // worship the same god -- bwr
+/*
             case 1:
                 strcat(info, " says, \"My Lord BOG, aid me.\"");
                 break;
-            */
+*/
             case 2:
-            case 4:
                 strcat(info, " mumbles some strange prayers.");
                 msg_type = MSGCH_MONSTER_SPELL;
                 break;
@@ -571,22 +634,25 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info,
                        " shouts, \"You are a heretic and must be destroyed.\"");
                 break;
-            /*
+
             // the orc god probably doesn't care about "sin" -- bwr
+            // mv: I must disagree - orc god cares about sins but these "sins"
+            // are different - coming to sacred place, killing orcs, killing and
+            // eating sacred animals (jackals, wargs etc.)
+
             case 4:
                 strcat(info, " shouts, \"Confess!\"");
                 break;
             case 5:
                 strcat(info, " says, \"All sinners must die.\"");
                 break;
-            */
+
             case 6:
                 strcat(info, " looks excited.");
                 break;
             case 7:
                 strcat(info, " says, \"You will make a fine sacrifice.\"");
                 break;
-            case 5:
             case 8:
                 strcat(info, " starts to sing a prayer.");
                 break;
@@ -598,7 +664,7 @@ bool mons_speaks(struct monsters *monster)
 
         case MONS_ORC_SORCEROR:   // hateful wizards, using strange powers
         case MONS_WIZARD:
-            switch (random2(18))
+            switch (random2(19))
             {
             case 0:
             case 1:
@@ -658,6 +724,12 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " tries to paralyze you with his gaze.");
                 msg_type = MSGCH_MONSTER_SPELL;
                 break;
+            case 18:
+                strcat(info, " casts a spell.");
+                msg_type = MSGCH_MONSTER_SPELL;
+                mpr("You resist.");
+                return true;
+                break;
             }
             break;          // end wizards
 
@@ -702,7 +774,7 @@ bool mons_speaks(struct monsters *monster)
             break;          // end Jessica
 
         case MONS_SIGMUND:  // mad old wizard
-            switch (random2(17))
+            switch (random2(19))
             {
             case 0:
             case 1:
@@ -753,6 +825,12 @@ bool mons_speaks(struct monsters *monster)
                 break;
             case 16:
                 strcat(info, " screams, \"Only death can liberate you!\"");
+                break;
+            case 17:
+                strcat(info, " whispers, \"You'll know eternity soon...\"");
+                break;
+            case 18:
+                strcat(info, " screams, \"Don't try to resist!\"");
                 break;
             }
             break;          // end Sigmund
@@ -885,7 +963,10 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " wails.");
                 break;
             case 12:
-                strcat(info, " stares at you. You feel cold.");
+                strcat(info, " stares at you.");
+                mpr(info, MSGCH_MONSTER_SPELL);
+                mpr("You feel cold.", MSGCH_WARN);
+                return true;
                 break;
             case 13:
                 strcat(info, " screams, \"You will join me soon!\"");
@@ -1287,7 +1368,7 @@ bool mons_speaks(struct monsters *monster)
                 break;
             case 6:
                 strcat(info,
-                       " asks \" Did you write a testament? You should.\".");
+                       " asks \" Did you write a testament? You should.\"");
                 break;
             case 7:
                 strcat(info, " says, \"You are ");
@@ -1427,6 +1508,7 @@ bool mons_speaks(struct monsters *monster)
                 break;
             case 5:
                 strcat(info, "'s hands started to glow with soft light.");
+                msg_type = MSGCH_MONSTER_SPELL;
                 break;
             case 6:
                 strcat(info, " says, \"This won't hurt a bit.\"");
@@ -1578,6 +1660,16 @@ bool mons_speaks(struct monsters *monster)
             case 20:
                 strcat(info, " says, \"It's all maya.\"");
                 break;
+            case 21:
+                strcat(info, " says, \"Drop out!\"");
+                break;
+            case 22:
+                strcat(info,
+                       " sings, \"Peace now, freedom now! Peace now, freedom now !\"");
+                break;
+            case 23:
+                strcat(info, " says, \"This is so called Combat Meditation.\"");
+                break;
             }
             break;          // end Norris
 
@@ -1672,7 +1764,7 @@ bool mons_speaks(struct monsters *monster)
             break;          // end Margery
 
         case MONS_IJYB:     // twisted goblin
-            switch (random2(11))
+            switch (random2(14))
             {
             case 0:
                 strcat(info, " screams, \"Die!\"");
@@ -1706,11 +1798,20 @@ bool mons_speaks(struct monsters *monster)
             case 10:
                 strcat(info, " screams, \"Me very upset!\"");
                 break;
+            case 11:
+                strcat(info, " screams, \"You nasty! Big nasty!\"");
+                break;
+            case 12:
+                strcat(info, " screams, \"No! No,no,no,no!\"");
+                break;
+            case 13:
+                strcat(info, " screams, \"I no like you!\"");
+                break;
             }
             break;          // end IJYB
 
         case MONS_BLORK_THE_ORC:    // unfriendly orc
-            switch (random2(20))
+            switch (random2(21))
             {
             case 0:
                 strcat(info, " screams, \"I don't like you!\"");
@@ -1770,6 +1871,9 @@ bool mons_speaks(struct monsters *monster)
             case 19:
                 strcat(info,
                        " screams, \"I'll cover dungeon with your blood!\"");
+                break;
+            case 20:
+                strcat(info, " screams, \"I'll drink your blood! Soon!\"");
                 break;
             }
             break;          // end Blork
@@ -1861,7 +1965,7 @@ bool mons_speaks(struct monsters *monster)
             break;          // end Urug
 
         case MONS_SNORG:    // troll
-            switch (random2(14))
+            switch (random2(16))
             {
             case 0:
                 strcat(info, " grins.");
@@ -1895,6 +1999,12 @@ bool mons_speaks(struct monsters *monster)
                 break;
             case 13:
                 strcat(info, " says, \"You food?\"");
+                break;
+            case 14:
+                strcat(info, " says, \"Yum, yum.\"");
+                break;
+            case 15:
+                strcat(info, " burps.");
                 break;
             }
             break;          // end Snorg
@@ -1946,7 +2056,7 @@ bool mons_speaks(struct monsters *monster)
             break;          // end Xtahua
 
         case MONS_BORIS:    // ancient lich
-            switch (random2(18))
+            switch (random2(24))
             {
             case 0:
                 strcat(info, " says, \"I didn't invite you.\"");
@@ -2014,13 +2124,13 @@ bool mons_speaks(struct monsters *monster)
                 return true;
                 break;
             case 15:
-                strcat(info, " casts spell.");
+                strcat(info, " casts a spell.");
                 mpr(info, MSGCH_MONSTER_SPELL);
                 mpr("Suddenly you are surrounded with pale green light.", MSGCH_WARN);
                 return true;
                 break;
             case 16:
-                strcat(info, " casts spell.");
+                strcat(info, " casts a spell.");
                 mpr(info, MSGCH_MONSTER_SPELL);
                 mpr("You have terrible head-ache.", MSGCH_WARN);
                 return true;
@@ -2028,6 +2138,25 @@ bool mons_speaks(struct monsters *monster)
             case 17:
                 strcat(info,
                        " says, \"I know your future. Your future is death.\"");
+                break;
+            case 18:
+                strcat(info, " says, \"Who wants to live forever ? Me.\"");
+                break;
+            case 19:
+                strcat(info, " laughs.");
+                break;
+            case 20:
+                strcat(info, " says, \"Join the legion of my servants.\"");
+                break;
+            case 21:
+                strcat(info, " says, \"There's only one solution for you. To die.\"");
+                break;
+            case 22:
+                strcat(info, " says, \"You can never win.\"");
+                break;
+            case 23:
+                strcat(info, " speeds up.");
+                mpr(info, MSGCH_MONSTER_SPELL);
                 break;
             }
             break;          // end BORIS

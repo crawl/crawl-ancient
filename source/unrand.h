@@ -4,7 +4,7 @@
  *  Written by: Linley Henzell
  *
  *  Change History (most recent first):
- *
+ *               <3>     7 Aug 2001      MV             Added many new items
  *               <2>     5/09/99        JDJ             Cekugob no longer has fire and cold
  *                                                                      resistances.
  *               <1>     -/--/--        LRH             Created
@@ -116,7 +116,7 @@
 
    Done! Now recompile and wait years for it to turn up.
 
-   Note: changing NO_UNRANDARTS does NOT make savefiles incompatible.
+   Note: changing NO_UNRANDARTS probably makes savefiles incompatible.
 
  */
 
@@ -317,7 +317,7 @@
             0, 0
     }
     ,
-        "It allows its wearer to excel in the arts of thievery.",
+        "It allows its wearer to excell in the arts of thievery.",
         "",
         ""
 }
@@ -421,18 +421,36 @@
         "A splendid flowing robe of fur and silk.",
         ""
 }
+#ifdef USE_NEW_UNRANDS
 ,
-
 /* 15 */
 {
-    "", "",
-        OBJ_ARMOUR, ARM_ROBE, 50, 0, BROWN,
+    "dagger of Chilly Death", "saphire dagger",
+        OBJ_WEAPONS, WPN_DAGGER, 52, 55, LIGHTBLUE,
+    {
+        SPWPN_FREEZING, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A dagger made of one huge piece of saphire.",
+        ""
+}
+,
+/* 16 */
+{
+    "amulet of Four Winds", "jade amulet",
+        OBJ_JEWELLERY, AMU_CLARITY, 50, 0, LIGHTGREEN,
     {
         0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 1,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
             0, 0
     }
     ,
@@ -440,6 +458,665 @@
         "",
         ""
 }
+,
+
+/* 17 */
+{
+    "dagger \"Morg\"", "rusty dagger",
+        OBJ_WEAPONS, WPN_DAGGER, 49, 54, LIGHTRED,
+    {
+        SPWPN_PAIN, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "Many years ago it was property of powerful mage called "
+        "Boris. He got lost in the Dungeon while seeking some kind of orb. ",
+        "An ugly rusty dagger. ",
+        ""
+}
+,
+
+/* 18 */
+{
+    "scythe \"Finisher\"", "blackened scythe",
+        OBJ_WEAPONS, WPN_SCYTHE, 153, 55, DARKGRAY,
+    {
+        0, 0, 0, 3, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A long and sharp scythe, specially modified for combat purposes.",
+        ""
+}
+,
+
+/* 19 */
+{
+    "sling \"Punk\"", "blue sling",
+        OBJ_WEAPONS, WPN_SLING, 53, 54, LIGHTBLUE,
+    {
+        SPWPN_FROST, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A sling made of weird blue leather.",
+        ""
+}
+,
+/* 20 */
+{
+    "Krishna's bow", "golden bow",
+        OBJ_WEAPONS, WPN_BOW, 58, 58, YELLOW,
+    {
+        0, 0, 0, 0, 0, 3,
+        0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "It once belonged to one foreign god. It works best with some kind "
+        "of special arrows which are not generally available.",
+        "A wonderful golden bow. ",
+        ""
+}
+,
+/* 21 */
+{
+    "cloak of Flash", "vibrating cloak",
+        OBJ_ARMOUR, ARM_CLOAK, 52, 0, RED,
+    {
+        0, 0, 4, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A vibrating cloak.",
+        ""
+}
+,
+/* 22 */
+{
+    "giant club \"Skullcrusher\"", "brutal giant club",
+        OBJ_WEAPONS, WPN_GIANT_CLUB, 50, 55, BROWN,
+    {
+        0, 0, 0, 5, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "",
+        ""
+}
+,
+/* 23 */
+{
+    "boots of Assassin", "soft boots",
+        OBJ_ARMOUR, ARM_BOOTS, 52, 0, BROWN,
+    {
+        0, 0, 0, 0, 0, 3,
+        0, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0
+    }
+    ,
+        "These boots were specially designed by Assasin's Guild.",
+        "A soft boots.",
+        ""
+}
+,
+/* 24 */
+{
+    "glaive of the Guard", "polished glaive",
+        OBJ_WEAPONS, WPN_GLAIVE, 55, 58, LIGHTCYAN,
+    {
+        SPWPN_PROTECTION, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 1,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+     }
+    ,
+        "This weapon once belonged to Gar Dogh the guard of king's treasures. "
+        "According to legend he was lost somewhere in the Dungeon.",
+        "",
+        ""
+}
+,
+/* 25 */
+{
+    "sword of Jihad", "crystal sword",
+        OBJ_WEAPONS, WPN_LONG_SWORD, 54, 54, WHITE,
+    {
+        SPWPN_HOLY_WRATH, 0, 3, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "This sword was Shining One's gift to one of his paladins." ,
+        "A long sword made of one huge piece of crystal.",
+        ""
+}
+,
+/* 26 */
+{
+    "Lear's chain mail", "golden chain mail",
+        OBJ_ARMOUR, ARM_CHAIN_MAIL, 149, 0, YELLOW,
+    {
+        0, 0, 0, 0, 0, -3,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A chain mail made of pure gold.",
+        ""
+}
+,
+/* 27 */
+{
+    "skin of Zhor", "smelly skin",
+        OBJ_ARMOUR, ARM_ANIMAL_SKIN, 53, 0, BROWN,
+    {
+        0, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A skin of some strange animal.",
+        ""
+}
+,
+/* 28 */
+{
+    "crossbow \"Fiery Devil\"", "flaming crossbow",
+        OBJ_WEAPONS, WPN_CROSSBOW, 54, 50, LIGHTRED,
+    {
+        SPWPN_FLAMING, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A flaming crossbow.",
+        ""
+}
+,
+/* 29 */
+{
+    "salamander's hide armour", "red leather armour",
+        OBJ_ARMOUR, ARM_LEATHER_ARMOUR, 52, 0, RED,
+    {
+        0, 0, 0, 0, 0, 0,
+        2, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A leather armour made of salamander's skin.",
+        ""
+}
+,
+/* 30 */
+{
+    "gauntlets of War", "thick gauntlets",
+        OBJ_ARMOUR, ARM_GLOVES, 53, 0, BROWN,
+    {
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 3, 3,
+            0, 0
+    }
+    ,
+        "",
+        "",
+        ""
+}
+,
+/* 31 */
+{
+    "sword of Doom Knight", "adamantine great sword",
+        OBJ_WEAPONS, WPN_GREAT_SWORD, 54, 54, BLUE,
+    {
+        SPWPN_PAIN, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 1,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "An adamantine great sword.",
+        ""
+}
+,
+/* 32 */
+{
+    "shield of resistance", "bronze shield",
+        OBJ_ARMOUR, ARM_SHIELD, 53, 0, LIGHTRED,
+    {
+        0, 0, 0, 0, 0, 0,
+        1, 1, 0, 0, 0, 40,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A bronze shield.",
+        ""
+}
+,
+/* 33 */
+{
+    "robe of folly", "foolish robe",
+        OBJ_ARMOUR, ARM_ROBE, 149, 0, LIGHTGRAY,
+    {
+        0, 0, 0, 0, -5, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A dull gray robe.",
+        ""
+}
+,
+/* 34 */
+{
+    "necklace of Bloodlust", "blood-stained necklace",
+        OBJ_JEWELLERY, AMU_RAGE, 150, 0, RED,
+    {
+        0, 0, 0, 2, -2, 0,
+        0, 0, 0, 0, 0, 20,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        1, 0, 0, 0, 3,
+            0, 0
+    }
+    ,
+        "",
+        "",
+        ""
+}
+,
+/* 35 */
+{
+    "\"Eos\"", "encrusted morningstar",
+        OBJ_WEAPONS, WPN_MORNINGSTAR, 55, 55, LIGHTCYAN,
+    {
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "",
+        ""
+}
+,
+/* 36 */
+{
+    "ring of Shaolin", "jade ring",
+        OBJ_JEWELLERY, RING_EVASION, 58, 0, LIGHTGREEN,
+    {
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "",
+        ""
+}
+,
+/* 37 */
+{
+    "ring of robustness", "steel ring",
+        OBJ_JEWELLERY, RING_PROTECTION, 58, 0, LIGHTGRAY,
+    {
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "",
+        ""
+}
+,
+/* 38 */
+{
+    "Edison's patent armour", "weird-looking armour",
+        OBJ_ARMOUR, ARM_PLATE_MAIL, 150, 0, LIGHTGREEN,
+    {
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 1,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A weird-looking armour.",
+        ""
+}
+,
+/* 39 */
+{
+    "spear of Voo-Doo", "ebony spear",
+        OBJ_WEAPONS, WPN_SPEAR, 52, 54, DARKGRAY,
+    {
+        SPWPN_VAMPIRICISM, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 3, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "It's really dark and malign artifact and no wise man would even touch it.",
+        "",
+        ""
+}
+,
+/* 40 */
+{
+    "trident of Octopus's king", "mangy trident",
+        OBJ_WEAPONS, WPN_TRIDENT, 54, 54, CYAN,
+    {
+        SPWPN_VENOM, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "This trident was stolen many years ago from Octopus's garden "
+        "by one really unimportant and already dead man. But beware of "
+        "Octopus's king's wrath!",
+        "",
+        ""
+}
+,
+/* 41 */
+{
+    "mask of dragon", "blue mask",
+        OBJ_ARMOUR, ARM_HELMET, 50, 4, BLUE,
+    {
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 2, 2,
+            0, 0
+    }
+    ,
+        "",
+        "A blue mask.",
+        ""
+}
+,
+/* 42 */
+{
+    "mithril axe \"Arga\"", "mithril axe",
+        OBJ_WEAPONS, WPN_AXE, 53, 53, WHITE,
+    {
+        SPWPN_SPEED, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A beautiful mithril axe, probably lost by some dwarven hero.",
+        ""
+}
+,
+/* 43 */
+{
+    "elemental staff", "black staff",
+        OBJ_WEAPONS, WPN_QUARTERSTAFF, 53, 51, DARKGRAY,
+    {
+        SPWPN_PROTECTION, 0, 0, 0, 0, 0,
+        1, 1, 0, 0, 0, 60,
+        0, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "This powerful staff used to belong to leader of"
+        " the Guild of Five Elements.",
+        "A black glyphic staff.",
+        ""
+}
+,
+/* 44 */
+{
+    "hand crossbow \"Sniper\"", "black crossbow",
+        OBJ_WEAPONS, WPN_HAND_CROSSBOW, 58, 50, DARKGRAY,
+    {
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A hand crossbow made of some black material.",
+        ""
+}
+,
+/* 45 */
+{
+    "bow \"Erchidel\"", "metal bow",
+        OBJ_WEAPONS, WPN_BOW, 55, 53, CYAN,
+    {
+        0, 0, 0, 3, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A metal bow.",
+        ""
+}
+,
+/* 46 */
+{
+    "robe of Night", "black robe",
+        OBJ_ARMOUR, ARM_ROBE, 53, 0, DARKGRAY,
+    {
+        SPARM_DARKNESS, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 20,
+        1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "According to legend this robe was gift of Ratri the Goddess of the Night "
+        "to one her follower.",
+        "A long black robe made of strange flossy material.",
+        ""
+}
+,
+/* 47 */
+{
+    "plutonium sword", "glowing long sword",
+        OBJ_WEAPONS, WPN_LONG_SWORD, 155, 57, LIGHTGREEN,
+    {
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 6, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A long sword made of weird glowing metal.",
+        ""
+}
+,
+/* 48 */
+{
+    "mace \"Undeadhunter\"", "steel mace",
+        OBJ_WEAPONS, WPN_MACE, 54, 56, LIGHTGRAY,
+    {
+        SPWPN_DISRUPTION, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "",
+        ""
+}
+,
+/* 49 */
+{
+    "armour of Dragon's King", "shiny dragon armour",
+        OBJ_ARMOUR, ARM_GOLD_DRAGON_ARMOUR, 55, 0, YELLOW,
+    {
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 25,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "",
+        ""
+}
+,
+/* 50 */
+{
+    "hat of Alchemist", "dirty hat",
+        OBJ_ARMOUR, ARM_HELMET, 52, 4, MAGENTA,
+    {
+        0, 0, 0, 0, 0, 0,
+        1, 1, 1, 0, 0, 20,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A dirty hat.",
+        ""
+}
+,
+/* 51 */
+{
+    "Fencer's gloves", "silk gloves",
+        OBJ_ARMOUR, ARM_GLOVES, 50, 0, WHITE,
+    {
+        0, 0, 3, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 5, 0,
+            0, 0
+    }
+    ,
+        "",
+        "A gloves made of white silk.",
+        ""
+}
+,
+/* 52 */
+{
+    "ring of Mage", "saphire ring",
+        OBJ_JEWELLERY, RING_WIZARDRY, 50, 0, LIGHTBLUE,
+    {
+        0, 0, 0, 0, 3, 0,
+        0, 0, 0, 0, 0, 50,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+            0, 0
+     }
+    ,
+        "",
+        "",
+        ""
+}
+#endif USE_NEW_UNRANDS
 ,
 
 /* This is a dummy */

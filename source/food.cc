@@ -198,11 +198,19 @@ bool butchery(void)
         {
             const int a_slot = letter_to_index('a');
             const int b_slot = letter_to_index('b');
+            int swap_slot = a_slot;
+
+            //mv: check for berserk first
+            if (you.berserker)
+              {
+              mpr ("You are too berserk to search for butchering knife !");
+              return false;
+              }
 
             // Find out which slot is our auto-swap slot
-            int swap_slot = a_slot;
             if (you.equip[EQ_WEAPON] == a_slot)
                 swap_slot = b_slot;
+
 
             // check if the swap slot is appropriate first
             if (you.equip[EQ_WEAPON] != swap_slot)

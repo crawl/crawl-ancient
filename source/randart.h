@@ -14,7 +14,11 @@
 
 
 // used in files.cc, newgame.cc, randart.cc {dlb}
+#ifdef USE_NEW_UNRANDS
+#define NO_UNRANDARTS 52
+#else USE_NEW_UNRANDS
 #define NO_UNRANDARTS 14
+#endif USE_NEW_UNRANDS
 
 
 /* ***********************************************************************

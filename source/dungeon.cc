@@ -6,6 +6,9 @@
  *  Change History (most recent first):
  *
  *
+ *   <9>     07-Aug-2001 MV     clean up of give_item; distribution of
+ *                              wands, potions and scrolls; free_item_slot();
+ *                              underground rivers and lakes
  *   <8>     02-Apr-2001 gdl    cleanup; nuked all globals
  *   <7>     06-Mar-2000 bwr    reduced vorpal weapon freq,
  *                              spellbooks now hold up to eight spells.
@@ -83,6 +86,10 @@ static void place_pool(unsigned char pool_type, unsigned char pool_x1,
                        unsigned char pool_y1, unsigned char pool_x2,
                        unsigned char pool_y2);
 static void many_pools(unsigned char pool_type);
+#ifdef USE_RIVERS
+static void river(unsigned char river_type); //mv
+static void lake(unsigned char lake_type); //mv
+#endif USE_RIVERS
 static void spotty_level(bool seeded, int iterations, bool boxy);
 static void bigger_room(void);
 static void plan_main(int level_number, char force_plan);
@@ -117,6 +124,7 @@ static void chequerboard(spec_room &sr, unsigned char
     target,  unsigned char floor1, unsigned char floor2);
 static void roguey_level(int level_number, spec_room &sr);
 static void morgue(spec_room &sr);
+static int free_item_slot ( void ); //mv new (7 Aug 2001)
 
 // SPECIAL ROOM BUILDERS
 static void special_room(int level_number, spec_room &sr);
@@ -625,7 +633,7 @@ int items(unsigned char allow_uniques,  // not just true-false,
                 else if ((mitm.pluses[p] < 50 || mitm.pluses2[p] < 50)
                          && !one_chance_in(3))
                 {
-                    mitm.pluses[p] += 100;     /* cursed! nasty */
+                    mitm.pluses[p] += 100;     // cursed
                 }
                 break;
             }
@@ -1527,7 +1535,7 @@ int items(unsigned char allow_uniques,  // not just true-false,
                 mitm.pluses[p] = 150 - random2(6);
             }
             else if (mitm.pluses[p] < 50 && !one_chance_in(3))
-                mitm.pluses[p] += 100; /* cursed! nasty */
+                mitm.pluses[p] += 100; // cursed! nasty
             break;
         }
 
@@ -1543,10 +1551,9 @@ int items(unsigned char allow_uniques,  // not just true-false,
             {
             case ARM_SHIELD:    // shield - must do special things for this!
             case ARM_BUCKLER:
+            case ARM_LARGE_SHIELD:
                 if (one_chance_in(4))
                     mitm.special[p] = DARM_ELVEN * 30;
-                // ****** deliberate fall-through here? ******
-            case ARM_LARGE_SHIELD:
                 if (one_chance_in(3))
                     mitm.special[p] = DARM_DWARVEN * 30;
                 break;
@@ -1778,9 +1785,9 @@ int items(unsigned char allow_uniques,  // not just true-false,
             mitm.special[p] = 0;
         }
 
-        /* skin armours + Crystal PM don't get special enchantments
-           or species, but can be randarts
-         */
+        // skin armours + Crystal PM don't get special enchantments
+        //   or species, but can be randarts
+
         break;
 
     case OBJ_WANDS:
@@ -2130,7 +2137,7 @@ int items(unsigned char allow_uniques,  // not just true-false,
             if (mitm.sub_type[p] == AMU_INACCURACY)
                 mitm.sub_type[p] = AMU_RAGE + random2(8);
 
-            /* Can't allow base ring types with +s */
+            // Can't allow base ring types with +s
             mitm.special[p] = 200;
             mitm.pluses[p] = random2(70);
             mitm.pluses2[p] = random2(150);
@@ -2252,27 +2259,24 @@ int items(unsigned char allow_uniques,  // not just true-false,
         break;
 
     // I think these must always be forced, too ... {dlb}
-    case OBJ_MISCELLANY:
+
+    case OBJ_MISCELLANY: //mv: rewrote with use of NUM_MISCELLANY (9 Aug 01)
         if (force_type == OBJ_RANDOM)
         {
-            mitm.sub_type[p] = random2(6);
-
-            if (one_chance_in(6))
-                mitm.sub_type[p] = MISC_BOX_OF_BEASTS + random2(10);
-
-            if (mitm.sub_type[p] == MISC_RUNE_OF_ZOT)
-                mitm.sub_type[p] = MISC_CRYSTAL_BALL_OF_FIXATION;
-
-            if (mitm.sub_type[p] == MISC_DECK_OF_POWER)
-            {
-                if (one_chance_in(4))
-                    mitm.sub_type[p] = MISC_DECK_OF_POWER;
-                else
-                    mitm.sub_type[p] = MISC_DECK_OF_TRICKS;
-            }
-
-            if (one_chance_in(20))
-                mitm.sub_type[p] = MISC_DECK_OF_SUMMONINGS;
+            do
+            mitm.sub_type[p] = random2(NUM_MISCELLANY);
+            while //mv: never generated
+               ((mitm.sub_type[p] == MISC_RUNE_OF_ZOT)
+                || (mitm.sub_type[p] == MISC_HORN_OF_GERYON)
+                // mv: others are possible but less often
+                // btw. chances of generating decks are almost the same as
+                // before, other chances are now distributed more steadily
+                || (mitm.sub_type[p] == MISC_DECK_OF_POWER && !one_chance_in(12))
+                || (mitm.sub_type[p] == MISC_DECK_OF_SUMMONINGS && !one_chance_in(3))
+                || (mitm.sub_type[p] == MISC_DECK_OF_TRICKS && !one_chance_in(3))
+                || (mitm.sub_type[p] == MISC_DECK_OF_WONDERS && !one_chance_in(3))
+                || (mitm.sub_type[p] == MISC_PORTABLE_ALTAR_OF_NEMELEX && !one_chance_in(3))
+                );
         }
         else
         {
@@ -2289,6 +2293,7 @@ int items(unsigned char allow_uniques,  // not just true-false,
         if (mitm.sub_type[p] == MISC_DECK_OF_TRICKS)
             mitm.pluses[p] = 6 + random2avg(15, 2);
 
+
         if (mitm.sub_type[p] == MISC_RUNE_OF_ZOT)
         {
             mitm.pluses[p] =
@@ -2298,7 +2303,7 @@ int items(unsigned char allow_uniques,  // not just true-false,
         }
 
         quant = 1;
-        break;
+        break; // mv: end of rewrote;
 
     // that is, everything turns to gold if not enumerated above, so ... {dlb}
     default:
@@ -2330,14 +2335,15 @@ int items(unsigned char allow_uniques,  // not just true-false,
     return p;
 }                               // end items()
 
-void give_item(int mid, int level_number)
+
+void give_item(int mid, int level_number) //mv: cleanup+minor changes
+
 {
     int temp_rand = 0;          // probability determination {dlb}
 
     int bp = 0;
     int thing_created = 0;
     char hand_used = 0;         // for Ettins etc.
-
     unsigned char xitc = 0;
     unsigned char xitt = 0;
 
@@ -2348,17 +2354,61 @@ void give_item(int mid, int level_number)
     int force_spec = 250;
     int give_level = level_number;
 
-    // find an usued item slot {dlb}:
-    for (bp = 0; bp < MAX_ITEMS - 100; bp++)
-    {
-        if (mitm.quantity[bp] == 0 || mitm.base_type[bp] == OBJ_UNASSIGNED)
-            break;
-    }
 
-    if (bp >= MAX_ITEMS - 101)
-        return;                 // already too many.
+//mv: THIS CODE DISTRIBUTES WANDS/SCROLLS/POTIONS
+//(now only to uniques but it's easy to modify that)
+//7 Aug 01
+
+   //mv - give scroll
+
+   if ( (menv[mid].type >= MONS_TERENCE) && (menv[mid].type <= MONS_BORIS)
+         && one_chance_in(3) )
+         {
+         if ( (bp = free_item_slot())== -1 ) return;
+            //mv: if bp is -1 it means there is no free item slot
+
+         thing_created = items( 0, OBJ_SCROLLS, OBJ_RANDOM, 0,give_level,0);
+         mitm.x[thing_created] = 1;
+         mitm.y[thing_created] = 1;
+         mitm.id[thing_created] = 0;
+         menv[mid].inv[MSLOT_SCROLL] = thing_created;
+         }
+
+   //mv - give wand
+   if ( (menv[mid].type >= MONS_TERENCE) && (menv[mid].type <= MONS_BORIS)
+         && one_chance_in(5) )
+         {
+         if ( (bp = free_item_slot())== -1 ) return;
+            //mv: if bp is -1 it means there is no free item slot
+         thing_created = items( 0, OBJ_WANDS, OBJ_RANDOM, 0,give_level,0);
+         mitm.x[thing_created] = 1;
+         mitm.y[thing_created] = 1;
+         mitm.id[thing_created] = 0;
+         menv[mid].inv[MSLOT_WAND] = thing_created;
+         }
+
+   //mv - give potion
+   if ( (menv[mid].type >= MONS_TERENCE) && (menv[mid].type < MONS_BORIS)
+         && one_chance_in(3) )
+         {
+        if ( (bp = free_item_slot()) == -1 ) return;
+            //mv: if bp is -1 it means there is no free item slot
+         thing_created = items( 0, OBJ_POTIONS, OBJ_RANDOM, 0,give_level,0);
+         mitm.x[thing_created] = 1;
+         mitm.y[thing_created] = 1;
+         mitm.id[thing_created] = 0;
+         menv[mid].inv[MSLOT_POTION] = thing_created;
+         }
+
+
+//end of DISTRIBUTE WANDS/POTIONS/SCROLLS CODE
+
+
+   if ( (bp = free_item_slot()) == -1 ) return;
+            //mv: if bp is -1 it means there is no free item slot
 
     mitm.quantity[bp] = 0;      // hmmm ... why, I wonder? {dlb}
+                                // mv: I also don't understand this
     mitm.pluses[bp] = 50;
     mitm.pluses2[bp] = 50;
     mitm.special[bp] = 0;
@@ -2378,6 +2428,7 @@ void give_item(int mid, int level_number)
     // moved setting of quantity here to keep it in mind {dlb}
     iquan = 1;
     // I wonder if this is even used, given calls to item() {dlb}
+
 
     switch (menv[mid].type)
     {
@@ -2408,7 +2459,7 @@ void give_item(int mid, int level_number)
             iquan = 1 + random2(5);
         }
         else
-            goto give_armour;
+            goto give_ammo;
         break;
 
     case MONS_HOBGOBLIN:
@@ -2421,7 +2472,7 @@ void give_item(int mid, int level_number)
             mitm.sub_type[bp] = WPN_CLUB;
         }
         else
-            goto give_armour;
+            goto give_ammo;
         break;
 
     case MONS_GOBLIN:
@@ -2442,7 +2493,7 @@ void give_item(int mid, int level_number)
             mitm.sub_type[bp] = (coinflip() ? WPN_DAGGER : WPN_CLUB);
         }
         else
-            goto give_armour;
+            goto give_ammo;
         break;
 
     case MONS_WIGHT:
@@ -2516,7 +2567,7 @@ void give_item(int mid, int level_number)
                                                    : WPN_SPIKED_FLAIL);// 1.25%
         }
         else
-            goto give_armour;
+            goto give_ammo;
         break;
 
     case MONS_DEEP_ELF_FIGHTER:
@@ -2716,12 +2767,12 @@ void give_item(int mid, int level_number)
         if (one_chance_in(3))
         {
             mitm.sub_type[bp] = (one_chance_in(3) ? WPN_GREAT_MACE : WPN_MACE);
-            mitm.special[bp] = 74;      /* glowing, disruption */
+            mitm.special[bp] = 74;      // glowing, disruption
         }
         else
         {
             mitm.sub_type[bp] = WPN_LONG_SWORD;
-            mitm.special[bp] = 60;      /* glowing */
+            mitm.special[bp] = 60;      // glowing
         }
 
         mitm.pluses[bp] = 51 + random2(3);
@@ -2736,7 +2787,7 @@ void give_item(int mid, int level_number)
         mitm.sub_type[bp] = (one_chance_in(4) ? WPN_GREAT_SWORD
                                               : WPN_LONG_SWORD);
 
-        mitm.special[bp] = 63;  /* glowing, holy wrath */
+        mitm.special[bp] = 63;  // glowing, holy wrath
         mitm.pluses[bp] = 51 + random2(3);
         mitm.pluses2[bp] = 51 + random2(3);
         break;
@@ -2861,9 +2912,31 @@ void give_item(int mid, int level_number)
         mitm.colour[bp] = RED;  // forced by force_item above {dlb}
         break;
 
-    case MONS_GERYON:
+    case MONS_GERYON: //mv: probably should be moved out of this switch,
+                      //but it's not worth of it, unless we have more
+                      //monsters with misc. items
         mitm.base_type[bp] = OBJ_MISCELLANY;
         mitm.sub_type[bp] = MISC_HORN_OF_GERYON;
+        break;
+
+    case MONS_SALAMANDER: //mv: new 8 Aug 2001
+                          //Yes, they've got really nice items, but
+                          //it's almost impossible to get them
+        force_item = 1;
+        force_spec = 100;
+        mitm.base_type[bp] = OBJ_WEAPONS;
+        temp_rand = random2(6);
+        mitm.sub_type[bp] = ((temp_rand == 5) ? WPN_GREAT_SWORD :
+                             (temp_rand == 4) ? WPN_TRIDENT :
+                             (temp_rand == 3) ? WPN_SPEAR :
+                             (temp_rand == 2) ? WPN_GLAIVE :
+                             (temp_rand == 1) ? WPN_BOW
+                                             : WPN_HALBERD);
+        mitm.special[bp] = SPWPN_FLAMING;
+        if (mitm.sub_type[bp] == WPN_BOW) mitm.special[bp] = SPWPN_FLAME;
+        mitm.pluses[bp] = 50 + random2(5);
+        mitm.pluses2[bp] = 50 + random2(5);
+        mitm.colour[bp] = RED;  // forced by force_item above {dlb}
         break;
     }                           // end "switch(menv[mid].type)"
 
@@ -2872,7 +2945,7 @@ void give_item(int mid, int level_number)
     if (mitm.base_type[bp] == 101)
     {
         mitm.base_type[bp] = OBJ_UNASSIGNED;
-        goto give_armour;
+        goto give_ammo;
     }
 
     if (force_item)
@@ -2888,20 +2961,22 @@ void give_item(int mid, int level_number)
     mitm.y[thing_created] = 0;
     mitm.id[thing_created] = 0;
 
-    if (mitm.base_type[thing_created] == OBJ_WEAPONS)
+    if ( mitm.base_type[thing_created] == OBJ_WEAPONS )
+      //mv: now every item gets in appropriate slot
+      //no more miscellany in potion slot etc. (19 May 2001)
+      menv[mid].inv[hand_used] = thing_created;
         // hand_used = 0 unless Ettin's 2nd hand etc.
-        menv[mid].inv[hand_used] = thing_created;
-    else if (mitm.base_type[thing_created] == OBJ_MISSILES)
-        menv[mid].inv[MSLOT_MISSILE] = thing_created;
-    else if (mitm.base_type[thing_created] == OBJ_SCROLLS)
-        menv[mid].inv[MSLOT_SCROLL] = thing_created;
-    // but not potions? huh? {dlb}
-    // only Geryon gets something other than weapon explicitly {dlb}
-    else if (mitm.base_type[thing_created] == OBJ_GOLD
-             || mitm.base_type[thing_created] == OBJ_MISCELLANY)
-    {
-        menv[mid].inv[MSLOT_POTION] = thing_created;
-    }
+    else if ( mitm.base_type[thing_created] == OBJ_MISSILES )
+      menv[mid].inv[MSLOT_MISSILE] = thing_created;
+    else if ( mitm.base_type[thing_created] == OBJ_SCROLLS )
+      menv[mid].inv[MSLOT_SCROLL] = thing_created;
+    else if ( mitm.base_type[thing_created] == OBJ_GOLD )
+      menv[mid].inv[MSLOT_GOLD] = thing_created;
+    else if ( mitm.base_type[thing_created] == OBJ_POTIONS )
+      menv[mid].inv[MSLOT_POTION] = thing_created;
+    else if ( mitm.base_type[thing_created] == OBJ_MISCELLANY )
+      menv[mid].inv[MSLOT_MISCELLANY] = thing_created;
+
 
     // SPWPN_PROTECTION and NWPN_S_o_Z ??? {dlb}
     if (mitm.base_type[thing_created] == OBJ_WEAPONS
@@ -2910,16 +2985,10 @@ void give_item(int mid, int level_number)
         menv[mid].armor_class += 5;
     }
 
-    if (!force_item)
-        item_colour(thing_created);
+    if (!force_item) item_colour(thing_created);
 
-  give_armour:
-
-    // actually, should be give_ammo now
-
-    // this bit gives ammunition to go with missile hand weapons.
-    // only gives darts for hand xbows
-
+  give_ammo:
+    // mv: gives ammunition
     // note that force_spec is not reset for this section
 
     if (menv[mid].inv[MSLOT_WEAPON] != NON_ITEM
@@ -2935,8 +3004,8 @@ void give_item(int mid, int level_number)
             // monsters will always have poisoned needles -- otherwise
             // they are just going to behave badly --GDL
             if (xitt == MI_NEEDLE)
-                mitm.special[thing_created] = 30 * (mitm.special[thing_created] / 30)
-                    + SPMSL_POISONED;
+                mitm.special[thing_created] =
+                  30 * (mitm.special[thing_created] / 30) + SPMSL_POISONED;
 
             mitm.x[thing_created] = 0;
             mitm.y[thing_created] = 0;
@@ -2954,18 +3023,16 @@ void give_item(int mid, int level_number)
         }
     }                           // end if needs ammo
 
+give_armour:    //mv: does exactly what you expect
 
-    // now, the section that gives armour out {dlb}:
-    for (bp = 0; bp < MAX_ITEMS - 100; bp++)
-    {
-        if (mitm.quantity[bp] == 0 || mitm.base_type[bp] == OBJ_UNASSIGNED)
-            break;
-    }
-
-    if (bp >= MAX_ITEMS - 100)
-        return;                 // already too many.
+    if ( (bp = free_item_slot())== -1 ) return;
+            //mv: if bp is -1 it means there is no free item slot
 
     force_spec = 250;
+
+    int force_colour = 0; //mv: important !!! Items with force_colour = 0
+                         //are colored defaultly after following
+                         //switch. Others will get force_colour.
 
     switch (menv[mid].type)
     {
@@ -3029,11 +3096,6 @@ void give_item(int mid, int level_number)
                 mitm.sub_type[bp] = ARM_CHAIN_MAIL;
                 break;
             }
-
-            if (mitm.sub_type[bp] == ARM_LEATHER_ARMOUR)
-                mitm.colour[bp] = BROWN;
-            else
-                mitm.colour[bp] = LIGHTCYAN;
         }
         else
             return;
@@ -3046,10 +3108,6 @@ void give_item(int mid, int level_number)
     case MONS_WAYNE:
         mitm.base_type[bp] = OBJ_ARMOUR;
         mitm.sub_type[bp] = 1 + random2(4);
-        if (mitm.sub_type[bp] == ARM_LEATHER_ARMOUR)
-            mitm.colour[bp] = BROWN;
-        else
-            mitm.colour[bp] = LIGHTCYAN;
         break;
 
     case MONS_ADOLF:
@@ -3061,7 +3119,6 @@ void give_item(int mid, int level_number)
     case MONS_VAULT_GUARD:
         mitm.base_type[bp] = OBJ_ARMOUR;
         mitm.sub_type[bp] = ARM_CHAIN_MAIL + random2(4);
-        mitm.colour[bp] = LIGHTCYAN;
         break;
 
     case MONS_ANGEL:
@@ -3070,7 +3127,7 @@ void give_item(int mid, int level_number)
         force_spec = 100;
         mitm.base_type[bp] = OBJ_ARMOUR;
         mitm.sub_type[bp] = ARM_ROBE;
-        mitm.colour[bp] = WHITE;
+        force_colour = WHITE; //mv: always white
         break;
 
     case MONS_NAGA:
@@ -3089,7 +3146,6 @@ void give_item(int mid, int level_number)
         force_spec = 100;
         mitm.base_type[bp] = OBJ_ARMOUR;
         mitm.sub_type[bp] = ARM_ROBE;
-        mitm.colour[bp] = random_colour();
         break;
 
     case MONS_AGNES:
@@ -3101,49 +3157,38 @@ void give_item(int mid, int level_number)
     case MONS_VAMPIRE_MAGE:
         mitm.base_type[bp] = OBJ_ARMOUR;
         mitm.sub_type[bp] = ARM_ROBE;
-        mitm.colour[bp] = DARKGREY;
+        force_colour = DARKGREY; //mv: always darkgrey
         break;
 
     default:
         return;
     }                           // end of switch(menv [mid].type)
 
-    // because it may have been set earlier by giving ammo or weapons {dlb}
-    iquan = 1;
+    iquan = 1; //because it may have been set earlier
+               //by giving ammo or weapons {dlb}
 
     xitc = mitm.base_type[bp];
     xitt = mitm.sub_type[bp];
 
     thing_created = items(0, xitc, xitt, 1, 1 + (level_number / 2), force_spec);
-
     mitm.x[thing_created] = 0;
     mitm.y[thing_created] = 0;
     menv[mid].inv[MSLOT_ARMOUR] = thing_created;
 
-    // Wights' robes are white:
-    // this completely overrides colouring above -- d'oh! {dlb}
-    if (menv[mid].type != MONS_WIGHT)
-        item_colour(thing_created);
-    else
-        mitm.colour[thing_created] = WHITE;
+    if (force_colour) mitm.colour[bp] = force_colour;
+       //mv: all items with force_colour = 0 are colored via items().
 
     menv[mid].armor_class += property( mitm.base_type[thing_created],
                                         mitm.sub_type[thing_created], PARM_AC );
-
     int armour_plus = 0;
-
     armour_plus = mitm.pluses[thing_created]
                         - ((mitm.pluses[thing_created] > 130) ? 150 : 50);
-
     ASSERT(abs(armour_plus) < 20);
-
-    if (abs(armour_plus) < 20)
-        menv[mid].armor_class += armour_plus;
+    if (abs(armour_plus) < 20) menv[mid].armor_class += armour_plus;
 
     menv[mid].evasion += property( mitm.base_type[thing_created],
                                     mitm.sub_type[thing_created],
                                     PARM_EVASION ) / 2;
-
     if (menv[mid].evasion < 1)
         menv[mid].evasion = 1;   // This *shouldn't* happen.
 }                               // end give_item()
@@ -3289,7 +3334,8 @@ static void prepare_water(void)
                             {
                                 grd[i][j] = DNGN_SHALLOW_WATER;
                             }
-                            else if (which_grid != DNGN_DEEP_WATER
+                            else if (which_grid >= DNGN_FLOOR
+                            //mv: was !=DNGN_FLOOR but this looks better
                                      && !one_chance_in(6))
                             {
                                 grd[i][j] = DNGN_SHALLOW_WATER;
@@ -3749,14 +3795,31 @@ static int builder_basic(int level_number)
 
 static void builder_extras(int level_number, int level_type)
 {
-    if (level_number > 6 && you.where_are_you == BRANCH_MAIN_DUNGEON
+#ifdef USE_RIVERS
+    if (level_number > 6 && one_chance_in(10))
+       {
+        if (one_chance_in(3)) river (DNGN_LAVA);
+        else river (DNGN_DEEP_WATER);
+          river (DNGN_LAVA);
+        }
+
+   if (level_number > 6 && one_chance_in (12))
+       {
+        if (one_chance_in(4)) lake (DNGN_LAVA);
+        else lake (DNGN_DEEP_WATER);
+        }
+   //mv: it's better to be here so other dungeon features
+   // are not overriden by water
+#endif USE_RIVERS
+
+   if (level_number > 6 && you.where_are_you == BRANCH_MAIN_DUNGEON
                         && level_type == LEVEL_DUNGEON && one_chance_in(3))
     {
         build_minivaults(level_number, 200);
         return;
     }
 
-    if (level_number > 5 && one_chance_in(10))
+    if (level_number > 5 && one_chance_in(12))
         many_pools((coinflip()? DNGN_DEEP_WATER : DNGN_LAVA));
 
     if (level_number >= 11 && level_number <= 23
@@ -4256,8 +4319,13 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
     if (lava_spaces > 49)
     {
         for (i = 0; i < 4; i++)
+            {
             swimming_things[i] = MONS_LAVA_WORM + random2(3);
-
+            //mv: this is really ugly, but easiest
+            //IMO generation of water/lava beasts should be changed,
+            //because we want data driven code and not things like it
+            if (one_chance_in(30)) swimming_things[i] = MONS_SALAMANDER;
+            }
         aq_creatures = random2avg(9, 2) + (random2(lava_spaces) / 10);
 
         if (aq_creatures > 25)
@@ -7822,3 +7890,93 @@ void define_zombie(int mid, int ztype, int cs, int power)
 
     menv[mid].number = mons_sec2;
 }                               // end define_zombie()
+
+static int free_item_slot ( void ) //mv new (7 Aug 2001)
+                                   // finds unused item slot
+{
+ int bp;
+  for (bp = 0; bp < MAX_ITEMS - 100; bp++)
+     if ( mitm.quantity[bp] == 0 || mitm.base_type[bp] == OBJ_UNASSIGNED )
+        break;
+     if ( bp >= MAX_ITEMS - 100 ) return -1;
+ return bp;
+}
+
+#ifdef USE_RIVERS
+static void river(unsigned char river_type) //mv
+{
+
+int i,j;
+int y, width;
+
+if (one_chance_in (10)) river(river_type); //mv: some chance for more rivers on the same level
+if ((you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+        && river_type == DNGN_LAVA) river_type = DNGN_SHALLOW_WATER;
+
+
+width = 4 + random2(3);
+y = 10 - width + random2avg (GYM-10,3);
+
+for (i = 5; i < (GXM - 5); i++)
+    {
+    if (one_chance_in(3)) y++;
+    if (one_chance_in(3)) y--;
+    if (coinflip()) width++;
+    if (coinflip()) width--;
+    //mv: yes, I know it isn't very nice but it's easy to modify
+    //and it does best results
+
+    if (width < 5) width = 5;
+
+    for (j = y; j < y+width ; j++)
+        if (!((j>GYM-5) || (j<5)))
+          if ((grd[i][j] == DNGN_FLOOR && !one_chance_in(200))
+               || (!one_chance_in(20)))
+                     grd[i][j] = river_type;
+    }
+}                               // end river()
+
+static void lake(unsigned char lake_type) //mv
+{
+
+int i,j;
+int x1,y1,x2,y2, left, right;
+
+if (one_chance_in (10)) lake(lake_type); //mv: some chance for more lakes on the same level
+if ((you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+        && lake_type == DNGN_LAVA) lake_type = DNGN_SHALLOW_WATER;
+
+x1 = 10 + random2 (GXM-10);
+y1 = 10 + random2 (GYM-10);
+x2 = x1 + 5 + random2(10);
+y2 = y1 + 10 + random2(30);
+mpr("lake");
+
+
+for (j = y1; j < y2; j++)
+    {
+    if (coinflip()) x1 += random2(3);
+    if (coinflip()) x1 -= random2(3);
+    if (coinflip()) x2 += random2(3);
+    if (coinflip()) x2 -= random2(3);
+//    if (coinflip()) x1 = x1 -2 + random2(5);
+//    if (coinflip()) x2 = x2 -2 + random2(5);
+//mv: this does much more worse effects
+    if ((j-y1) < ((y2-y1) / 2))
+               {
+               x2 += random2(3);
+               x1 -= random2(3);
+               }
+               else
+               {
+               x2 -= random2(3);
+               x1 += random2(3);
+               }
+
+    for (i = x1; i < x2 ; i++)
+        if (!((j>GYM-5) || (j<5)) && !((i>GXM-5) || (i<5)))
+         if (!one_chance_in(200))
+                     grd[i][j] = lake_type;
+    }
+}                               // end lake()
+#endif USE_RIVERS

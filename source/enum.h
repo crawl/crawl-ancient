@@ -5,13 +5,16 @@
  *
  *  Change History (most recent first):
  *
+ *      <11>   7 Aug 01  MV     Changed MSLOT_UNASSIGNED_I to MSLOT_MISCELLANY
+ *                              added NUM_MISCELLANY, changed MONS_ANOTHER_
+ *                              LAVA_THING to MONS_SALAMANDER
  *      <10>   7/29/00   JDJ    Changed NUM_SPELL_TYPES to 14 (from 32767!).
  *             24jun2000 jmf    Changed comment spacing so stuff fit in 80
  *                              columns; deleted some leading numbers in
  *                              comments (reasoning as above).
  *                              Also removed many "must be last" comments,
  *                              esp. where less-than-accurate.
- *      <9>    10jan2000 dlb    extensive - see changes.340
+ *      <9>    10jan2000 dlb    extensive - see changes.340             S
  *      <8>    04nov1999 cdl    added killed_by
  *      <7>    29sep1999 BCR    Added comments showing where uniques are
  *      <6>    25sep1999 CDL    Added commands
@@ -1088,7 +1091,8 @@ enum MISCELLANY                        // mitm.sub_type[]
     MISC_RUNE_OF_ZOT,
     MISC_DECK_OF_TRICKS,               //   15
     MISC_DECK_OF_POWER,
-    MISC_PORTABLE_ALTAR_OF_NEMELEX
+    MISC_PORTABLE_ALTAR_OF_NEMELEX,
+    NUM_MISCELLANY // mv: used for random generation
 };
 
 enum MISSILES                          // (unsigned char)
@@ -1427,12 +1431,15 @@ enum MONSTERS                          // (int) menv[].type
     MONS_QUICKSILVER_DRAGON,
     MONS_IRON_DRAGON,
     MONS_SKELETAL_WARRIOR, // last possible outcome of polymorph spell {dlb}
+                           // mv: It's not true now. Monsters can be
+                           // polymorphed even to NUM_MONSTERS
+
     MONS_PLAYER_GHOST,                 //  400
     MONS_PANDEMONIUM_DEMON,            //  401
     MONS_LAVA_WORM = 420,              //  420
     MONS_LAVA_FISH,
     MONS_LAVA_SNAKE,
-    MONS_ANOTHER_LAVA_THING,           //  423
+    MONS_SALAMANDER,                   //  423 mv: was another lava thing
     MONS_BIG_FISH = 430,               //  430
     MONS_GIANT_GOLDFISH,
     MONS_ELECTRICAL_EEL,
@@ -1523,11 +1530,11 @@ enum MONSTER_INVENTORY_SLOTS           // (int) menv[].inv[]
     MSLOT_WEAPON,
     MSLOT_MISSILE, // although it is a second weapon for MONS_TWO_HEADED_OGRE - how to reconcile cleanly? {dlb}
     MSLOT_ARMOUR,
-    MSLOT_UNASSIGNED_I,
-    MSLOT_POTION, // although dungeon::give_item() uses it for gold and miscellany, too {dlb}
-    MSLOT_WAND, //    5
+    MSLOT_MISCELLANY, //mv: used for misc. obj. (7 Aug 2001)
+    MSLOT_POTION, // mv: now used only for potions (7 Aug 2001)
+    MSLOT_WAND, //
     MSLOT_SCROLL,
-    MSLOT_GOLD, // not in current use (unassigned), but this is what it should be {dlb}
+    MSLOT_GOLD, //mv: used for money :) (7 Aug 2001)
     NUM_MONSTER_SLOTS = 8 // value must remain 8 for savefile compatibility {dlb}
 };
 

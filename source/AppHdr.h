@@ -16,6 +16,8 @@
  *
  *  Change History (most recent first):
  *
+ *       <9>    9 Aug 2001   MV     Added USE_RIVERS,USE_NEW_UNRANDS
+ *                                  and MISSILE_TRAILS_OFF #define
  *       <8>   10 May 2001  GDL     Added FreeBSD support
  *                                  courtesy Andrew E. Filonov
  *       <7>    9 May 2000  GDL     Added Windows 32 bit console support
@@ -281,6 +283,16 @@
 
 // LRH's skill-pool drainer for high skill pools
 // #define USE_SKILL_POOL_DRAIN
+
+//mv: (new 9 Aug 01) switches on new rivers & lakes code
+#define USE_RIVERS
+
+//mv: (new 9 Aug 01) switches on new unrands
+#define USE_NEW_UNRANDS
+
+//mv: (new 9 Aug 01) turns off missile trails,
+//might be slow on some computers
+//#define MISSILE_TRAILS_OFF
 
 // ====================== -----------------------------------------------------
 //jmf: end of new defines

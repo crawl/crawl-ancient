@@ -10,6 +10,7 @@
  *   <1>    -/--/--      LRH    Created
  */
 
+
 #include "AppHdr.h"
 #include "misc.h"
 
@@ -84,7 +85,7 @@ void destroy_item(int dest)
             }
         }
     }
-
+/*  mv: old
     unsigned int udest = dest;
 
     for (c = 0; c < MAX_ITEMS; c++)
@@ -96,8 +97,21 @@ void destroy_item(int dest)
             mitm.link[dest] = NON_ITEM;
             return;
         }
-    }
+    } */
 
+//Gordon's fix:
+    unsigned int udest = dest;
+
+    for (c = 0; c < MAX_ITEMS; c++)
+    {
+        if (mitm.quantity[c] > 0 && mitm.link[c] == udest)
+        {
+            mitm.link[c] = mitm.link[dest];
+            mitm.quantity[dest] = 0;
+            mitm.link[dest] = NON_ITEM;
+            return;
+        }
+    }
     // Okay, so that didn't work. Now we go for the slower way:
     for (c = 2; c < (GXM - 1); c++)
     {

@@ -2371,8 +2371,6 @@ static int mons_standard_level(int mcls)
     case MONS_TITAN:
         return 30;
 
-//    "another lava thing" has no stats! (GDL)
-//    case MONS_ANOTHER_LAVA_THING:
     case MONS_BIG_FISH:
     case MONS_ELECTRICAL_EEL:
     case MONS_GIANT_GOLDFISH:
@@ -2404,6 +2402,7 @@ static int mons_standard_rare(int mcls)
     case MONS_LAVA_WORM:
     case MONS_SWAMP_WORM:
     case MONS_WATER_ELEMENTAL:
+    case MONS_SALAMANDER:
         return 500;
 
     case MONS_GIANT_BAT:

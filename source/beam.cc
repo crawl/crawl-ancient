@@ -384,6 +384,11 @@ void beam(struct bolt &pbolt, int inv_number)
                 refresh();
 #endif
                 delay(15);
+#ifdef MISSILE_TRAILS_OFF
+                if (!pbolt.isBeam || pbolt.beam_name[0] == '0')
+                         viewwindow(1,false); //mv:added. It's not optimal but
+                                              //is usually enough
+#endif
             }
 
         }
