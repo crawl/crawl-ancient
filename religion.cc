@@ -59,15 +59,26 @@ if (you[0].religion != 0 && grd [you[0].x_pos] [you[0].y_pos] == 179 + you[0].re
 } else
 if (grd [you[0].x_pos] [you[0].y_pos] >= 180 && grd [you[0].x_pos] [you[0].y_pos] <= 200)
 {
+ if (you[0].species == 31)
+ {
+  mpr("Sorry, a being of your status cannot worship here.");
+  return; /* demigod */
+ }
  god_pitch(grd [you[0].x_pos] [you[0].y_pos] - 179);
  return;
 }
 
 
-if (you[0].religion == 0 | you[0].religion == 5)
+if (you[0].religion == 0)
 {
-strcpy(info, "You spend a moment contemplating the meaning of life.");
-mpr(info);
+ if (you[0].is_undead != 0) mpr("You spend a moment contemplating the meaning of death.");
+  else mpr("You spend a moment contemplating the meaning of life.");
+ return;
+}
+
+if (you[0].religion == 5)
+{
+mpr("Xom ignores you.");
 return;
 }
 strcpy(info, "You offer a prayer to ");
@@ -77,7 +88,7 @@ mpr(info);
 
 you[0].duration [3] = 9 + random2(you[0].piety) / 20 + random2(you[0].piety) / 20;
 
-//if (you[0].clas == 2 | you[0].clas == 6) you[0].duration [3] = 4 + random2(you[0].piety) / 20 + random2(you[0].piety) / 20 + random2(you[0].piety) / 20;
+//if (you[0].clas == 2 || you[0].clas == 6) you[0].duration [3] = 4 + random2(you[0].piety) / 20 + random2(you[0].piety) / 20 + random2(you[0].piety) / 20;
 
 strcpy(info, god_name(you[0].religion));
 
@@ -166,25 +177,43 @@ you[0].turnover = 1;
 if (was_praying == 0)
 {
 
- if ((you[0].religion == 7 | you[0].religion == 10) && you[0].piety > 130 && random2(you[0].piety) > 120 && random2(4) == 0 && grd [you[0].x_pos] [you[0].y_pos] != 61 && grd [you[0].x_pos] [you[0].y_pos] != 62)
+ if ((you[0].religion == 7 || you[0].religion == 10) && you[0].piety > 130 && random2(you[0].piety) > 120 && random2(4) == 0 && grd [you[0].x_pos] [you[0].y_pos] != 61 && grd [you[0].x_pos] [you[0].y_pos] != 62)
  {
    strcpy(info, god_name(you[0].religion));
    strcat(info, " grants you a gift!");
    mpr(info);
-   acquirement(0);
+   if (you[0].religion == 10 || (you[0].religion == 7 && random2(2) == 0)) acquirement(0);
+     else acquirement(2);
    lose_piety(30 + random2(10) + random2(10));
  }
 
 
- if ((you[0].religion == 3 | you[0].religion == 9) && you[0].piety > 130 && random2(you[0].piety) > 100)
+ if ((you[0].religion == 3 || you[0].religion == 9 || you[0].religion == 6) && you[0].piety > 160 && random2(you[0].piety) > 100)
  {
   int gift = 0;
-  if (you[0].had_item [24] == 0) gift = 24;
+  if (you[0].had_item [24] == 0) gift = 24; // Kiku - gives death books
   if (you[0].had_item [34] == 0) gift = 34;
   if (you[0].had_item [15] == 0) gift = 15;
   if (you[0].had_item [23] == 0) gift = 23;
 
-  if (you[0].religion == 9) gift = 250;
+  if (you[0].religion == 9) gift = 250; // Sif Muna - gives any
+
+  if (you[0].religion == 6) // Vehumet - gives conj/summ. Gives bks first for whichever skill is higher
+  {
+   if (you[0].skills [26] < you[0].skills [28])
+   {
+    if (you[0].had_item [33] == 0) gift = 33; // conj bks
+    if (you[0].had_item [3] == 0) gift = 3;
+   }
+   if (you[0].had_item [27] == 0) gift = 27; // summoning bks
+   if (you[0].had_item [7] == 0) gift = 7;
+   if (you[0].had_item [25] == 0) gift = 25;
+   if (you[0].skills [26] >= you[0].skills [28])
+   {
+    if (you[0].had_item [33] == 0) gift = 33; // conj bks again
+    if (you[0].had_item [3] == 0) gift = 3;
+   }
+  }
 
   if (gift != 0 && (grd [you[0].x_pos] [you[0].y_pos] != 61 && grd [you[0].x_pos] [you[0].y_pos] != 62))
   { /* shouldn't give you something if it's just going to fall in a pool */
@@ -203,7 +232,7 @@ if (was_praying == 0)
     mitm.ilink [thing_created] = what_was_there;
     igrd [you[0].x_pos] [you[0].y_pos] = thing_created;
    }
-   lose_piety(30 + random2(10) + random2(10));
+   lose_piety(50 + random2(10) + random2(10));
   }
  }
 }
@@ -286,7 +315,7 @@ if (force_sever == 0) sever = random2(sever);
 
 if (sever == 0) return;
 
-okay_try_again : if (niceness == 0 | random2(3) == 0) /* bad things */
+okay_try_again : if (niceness == 0 || random2(3) == 0) /* bad things */
 {
  if (random2(sever) <= 2) /* this should always be first - it will often be called deliberately, with a low sever value */
  {
@@ -422,7 +451,7 @@ okay_try_again : if (niceness == 0 | random2(3) == 0) /* bad things */
   {
    case 0: mpr("\"Serve the mortal, my children!\""); break;
    case 1: mpr("Xom grants you some temporary aid."); break;
-   case 2: mpr("Xom open a gate."); break;
+   case 2: mpr("Xom opens a gate."); break;
   }
    create_monster(225 + random2(5), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
    create_monster(225 + random2(5), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
@@ -439,7 +468,7 @@ okay_try_again : if (niceness == 0 | random2(3) == 0) /* bad things */
    case 1: mpr("Xom grants you a gift!"); break;
    case 2: mpr("Xom's generous nature manifests itself."); break;
   }
-  if (grd [you[0].x_pos] [you[0].y_pos] == 61 | grd [you[0].x_pos] [you[0].y_pos] == 62)
+  if (grd [you[0].x_pos] [you[0].y_pos] == 61 || grd [you[0].x_pos] [you[0].y_pos] == 62)
   {
    mpr("You hear a splash."); /* How unfortunate. I'll bet Xom feels sorry for you. */
    return;
@@ -458,7 +487,7 @@ okay_try_again : if (niceness == 0 | random2(3) == 0) /* bad things */
   {
    case 0: mpr("\"Serve the mortal, my child!\""); break;
    case 1: mpr("Xom grants you a demonic servitor."); break;
-   case 2: mpr("Xom open a gate."); break;
+   case 2: mpr("Xom opens a gate."); break;
   }
   if (random2(you[0].xl) <= 5) create_monster(220 + random2(5), 0, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
    else create_monster(225 + random2(5), 0, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
@@ -533,7 +562,7 @@ case 10: return "Trog";
 case 11: return "Nemelex Xobeh";
 case 12: return "Elyvilon";
 Thing_done:
-1 - killed a monster in god's name
+1 - killed a living monster in god's name
 2 - killed an undead in god's name
 3 - killed a demon in god's name
 4 - killed an angel (any time)
@@ -542,6 +571,7 @@ Thing_done:
 7 - offered inanimate stuff at an altar
 8 - offered stuff, including at least one corpse at an altar
 9 - undead slaves killed a living thing
+10 - any servants kill anything
 */
 void done_good(char thing_done, int pgain)
 {
@@ -557,6 +587,7 @@ switch(thing_done)
   naughty(3, 10);
   break;
   case 3:
+  case 6:
   case 7:
   case 8:
   case 10:
@@ -573,6 +604,7 @@ switch(thing_done)
  {
   case 1:
   case 2:
+  case 6:
   case 8:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " accepts your kill.");
@@ -587,6 +619,7 @@ switch(thing_done)
  {
   case 1:
   case 2:
+  case 6:
   case 8:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " accepts your kill.");
@@ -622,6 +655,7 @@ switch(thing_done)
  switch(you[0].religion)
  {
   case 3:
+  case 7:
   case 8:
   case 10:
   strcpy(info, god_name(you[0].religion));
@@ -647,12 +681,25 @@ switch(thing_done)
  gain_piety(1);
  break;
 
- case 9: /* slaves killed a living monster */
+ case 9: /* undead slaves killed a living monster */
  switch(you[0].religion)
  {
   case 3:
+  case 6:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " accepts your slave's kill.");
+  mpr(info);
+  if (random2(pgain + 18) > 5) gain_piety(1);
+  break;
+ }
+ break;
+
+ case 10: /* servants killed any monster */
+ switch(you[0].religion)
+ {
+  case 6:
+  strcpy(info, god_name(you[0].religion));
+  strcat(info, " accepts your servant's kill.");
   mpr(info);
   if (random2(pgain + 18) > 5) gain_piety(1);
   break;
@@ -688,6 +735,9 @@ if (you[0].piety >= 30 && old_piety < 30)
   case 3:
   mpr("You can now recall your undead servants at will.");
   break;
+  case 6:
+  mpr("You can gain power by killing in Vehumet's name, or by your servants' kills.");
+  break;
   case 7:
   mpr("You can now give your body great, if temporary, strength.");
   break;
@@ -715,6 +765,9 @@ if (you[0].piety >= 50 && old_piety < 50)
   break;
   case 3:
   mpr("You now have some protection from the side-effects of necromantic magic.");
+  break;
+  case 6:
+  mpr("Your destructive magics cast in Vehumet's name will rarely fail.");
   break;
   case 7:
   mpr("You can now call upon Okawaru for minor healing.");
@@ -747,6 +800,9 @@ if (you[0].piety >= 75 && old_piety < 75)
   case 3:
   mpr("You can now permanently enslave the undead.");
   break;
+  case 6:
+  mpr("During prayer you are protected from summoned creatures.");
+  break;
   case 8:
   mpr("You can now summon a lesser servant of Makhleb.");
   break;
@@ -765,6 +821,9 @@ if (you[0].piety >= 100 && old_piety < 100)
   break;
   case 2:
   mpr("You can now hurl bolts of divine anger.");
+  break;
+  case 6:
+  mpr("You can channel ambient magical energy for your own uses.");
   break;
   case 8:
   mpr("You can now call on the greater of Makhleb's destructive powers.");
@@ -909,7 +968,8 @@ void lose_piety(char pgn)
 {
 
 int old_piety = you[0].piety;
-you[0].piety -= pgn;
+if (you[0].piety - pgn < 0) you[0].piety = 0; else
+     you[0].piety -= pgn;
 
 if (you[0].piety < 120 && old_piety >= 120)
 {
@@ -943,14 +1003,17 @@ if (you[0].piety < 100 && old_piety >= 100)
   case 2:
   mpr("You can no longer hurl bolts of divine anger.");
   break;
-  case 10:
-  mpr("You can no longer haste yourself.");
+  case 6:
+  mpr("You have lost your channelling abilities.");
   break;
   case 8:
   mpr("You can no longer call on Makhleb's greater destructive powers.");
   break;
   case 9:
   mpr("You no longer have special protection from the side-effects of magic.");
+  break;
+  case 10:
+  mpr("You can no longer haste yourself.");
   break;
   case 12:
   mpr("You can no longer purify your body.");
@@ -971,6 +1034,9 @@ if (you[0].piety < 75 && old_piety >= 75)
   break;
   case 3:
   mpr("You can no longer permanently enslave the undead.");
+  break;
+  case 6:
+  mpr("You feel vulnerable.");
   break;
   case 8:
   mpr("You can no longer summon any servants of Makhleb.");
@@ -993,16 +1059,19 @@ if (you[0].piety < 50 && old_piety >= 50)
   mpr("You can no longer smite your foes.");
   break;
   case 3:
-  mpr("You no longer have any special protection from the side-effects of necromancy.");
+  mpr("You no longer have any special protection from miscast necromancy.");
+  break;
+  case 6:
+  mpr("You feel fallible.");
   break;
   case 8:
   mpr("You can no longer call on Makhleb's destructive powers.");
   break;
-  case 10:
-  mpr("You can no longer give your body strength.");
-  break;
   case 9:
   mpr("You can no longer forget spells at will.");
+  break;
+  case 10:
+  mpr("You can no longer give your body strength.");
   break;
   case 12:
   mpr("You can no longer neutralise the effects of poison.");
@@ -1022,6 +1091,7 @@ if (you[0].piety < 30 && old_piety >= 30)
   case 3:
   mpr("You can no longer recall your undead servants at will.");
   break;
+  case 6:
   case 8:
   mpr("You can no longer gain power from your kills.");
   break;
@@ -1067,7 +1137,7 @@ for (i = 0; i < 4; i ++)
  }
 }
 
- if (igrd [you[0].x_pos] [you[0].y_pos] == 501 | you[0].religion == 2 | you[0].religion == 5)
+ if (igrd [you[0].x_pos] [you[0].y_pos] == 501 || you[0].religion == 2 || you[0].religion == 5)
  {
   mpr("You kneel at the altar and pray.");
   return;
@@ -1090,7 +1160,7 @@ switch(you[0].religion)
  strcpy(info, str_pass);
  strcat(info, sacrifice [you[0].religion - 1]);
  mpr(info);
- if (mitm.iclass [i] == 14 | random2(item_value(mitm.iclass [i], mitm.itype [i], mitm.idam [i], mitm.iplus [i], mitm.iplus2 [i], mitm.iquant [i], 3, subst_id)) >= 50)
+ if (mitm.iclass [i] == 14 || random2(item_value(mitm.iclass [i], mitm.itype [i], mitm.idam [i], mitm.iplus [i], mitm.iplus2 [i], mitm.iquant [i], 3, subst_id)) >= 50)
      gain_piety(1);
  destroy_item(i);
  break;
@@ -1144,7 +1214,7 @@ mpr(info);
 
 more();
 
-if (you[0].is_undead != 0 && (which_god == 1 | which_god == 2 | which_god == 12))
+if (you[0].is_undead != 0 && (which_god == 1 || which_god == 2 || which_god == 12))
 {
  strcpy(info, god_name(which_god));
  strcat(info, " does not accept worship from those such as you!");

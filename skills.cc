@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "macro.h"
 #include "player.h"
 #include "skills.h"
 #include "skills2.h"
@@ -56,7 +57,6 @@ if (cutting == 1) goto cut_through;
 
 if (you[0].skills [exsk] >= 10) skill_change *= (you[0].skills [exsk] - 9) / 3;
 //if (you[0].skills [exsk] >= 20) skill_change *= you[0].skills [exsk] - 19;
-if (you[0].xl >= 12) skill_change *= (you[0].xl - 11) / 3;
 //if (you[0].xl >= 25) skill_change *= you[0].xl - 24;
 
  if (you[0].xl > 4) skill_change += you[0].xl - 4;
@@ -64,6 +64,8 @@ if (you[0].xl >= 12) skill_change *= (you[0].xl - 11) / 3;
  if (you[0].xl > 9) skill_change += you[0].xl - 9;
  if (you[0].xl > 10) skill_change += you[0].xl - 10;
  if (you[0].xl > 11) skill_change += you[0].xl - 11;
+
+ if (you[0].xl >= 12) skill_change *= (you[0].xl - 11) / 2;
 /* if (you[0].xl > 10) skill_change ++;
  if (you[0].xl > 13) skill_change += 2;
  if (you[0].xl > 15) skill_change += 5;
@@ -82,19 +84,19 @@ if (you[0].xl >= 12) skill_change *= (you[0].xl - 11) / 3;
 
 if (exsk < 8) // being good at some weapons makes others easier to learn:
 {
- if ((exsk == 1 | exsk == 2 | exsk == 3) && (you[0].skills [1] > you[0].skills [exsk] | you[0].skills [2] > you[0].skills [exsk] | you[0].skills [2] > you[0].skills [exsk]))
+ if ((exsk == 1 || exsk == 2 || exsk == 3) && (you[0].skills [1] > you[0].skills [exsk] || you[0].skills [2] > you[0].skills [exsk] || you[0].skills [2] > you[0].skills [exsk]))
  {
   deg += random2(3);
  }
- if ((exsk == 4 | exsk == 6) && (you[0].skills [4] > you[0].skills [exsk] | you[0].skills [6] > you[0].skills [exsk]))
+ if ((exsk == 4 || exsk == 6) && (you[0].skills [4] > you[0].skills [exsk] || you[0].skills [6] > you[0].skills [exsk]))
  {
   deg += random2(3);
  }
- if ((exsk == 6 | exsk == 7) && (you[0].skills [6] > you[0].skills [exsk] | you[0].skills [7] > you[0].skills [exsk]))
+ if ((exsk == 6 || exsk == 7) && (you[0].skills [6] > you[0].skills [exsk] || you[0].skills [7] > you[0].skills [exsk]))
  {
   deg += random2(3);
  }
- if ((exsk == 4 | exsk == 5) && (you[0].skills [4] > you[0].skills [exsk] | you[0].skills [5] > you[0].skills [exsk]))
+ if ((exsk == 4 || exsk == 5) && (you[0].skills [4] > you[0].skills [exsk] || you[0].skills [5] > you[0].skills [exsk]))
  {
   deg += random2(3);
  }
@@ -105,14 +107,14 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
   skill_change /= 2;
 
 // being good at elemental magic makes other elements harder to learn:
-  if (exsk >= 33 && exsk <= 36 && (you[0].skills [33] > you[0].skills [exsk] | you[0].skills [34] > you[0].skills [exsk] | you[0].skills [35] > you[0].skills [exsk] | you[0].skills [36] > you[0].skills [exsk]))
+  if (exsk >= 33 && exsk <= 36 && (you[0].skills [33] > you[0].skills [exsk] || you[0].skills [34] > you[0].skills [exsk] || you[0].skills [35] > you[0].skills [exsk] || you[0].skills [36] > you[0].skills [exsk]))
    if (random2(3) == 0) return;
 
-  if (exsk == 33 | exsk == 34 && (you[0].skills [33] > you[0].skills [exsk] | you[0].skills [34] > you[0].skills [exsk]))
+  if (exsk == 33 || exsk == 34 && (you[0].skills [33] > you[0].skills [exsk] || you[0].skills [34] > you[0].skills [exsk]))
   {
    if (random2(3) != 0) return; // of course, this is cumulative with the one above.
   }
-  if (exsk == 35 | exsk == 36 && (you[0].skills [35] > you[0].skills [exsk] | you[0].skills [36] > you[0].skills [exsk]))
+  if (exsk == 35 || exsk == 36 && (you[0].skills [35] > you[0].skills [exsk] || you[0].skills [36] > you[0].skills [exsk]))
   {
    if (random2(3) != 0) return;
   }
@@ -150,7 +152,7 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
         if (exsk == 14) player_evasion(you) += ev_mod();*/
         if (exsk == 14) you[0].evasion_ch = 1;
 
-        if (exsk == 17 | exsk == 13)
+        if (exsk == 17 || exsk == 13)
         {
 /*         you[0].shield_class = get_shield_class();*/
          you[0].AC_ch = 1;
@@ -158,7 +160,7 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
         if (exsk == 25)
         {
          you[0].spell_levels += 2;
-//         if (you[0].clas == 2 | you[0].clas == 6) you[0].spell_levels -= 2;
+//         if (you[0].clas == 2 || you[0].clas == 6) you[0].spell_levels -= 2;
 //         you[0].ep_max ++;
 //         you[0].ep ++;
          you[0].ep_ch = 1;

@@ -17,7 +17,7 @@
 #include "spells2.h"
 #include "spells3.h"
 #include "stuff.h"
-#include "transform.h"
+#include "transfor.h"
 #include "it_use2.h"
 #include "view.h"
 
@@ -48,21 +48,21 @@ if (you[0].berserker != 0)
  return;
 }
 
-query : strcpy(info, "Cast which spell?");
+query : strcpy(info, "Cast which spell? (? or * to list)");
 mpr(info);
 
 int keyin = get_ch();
 
-if (keyin == '?' | keyin == '*')
+if (keyin == '?' || keyin == '*')
 {
         char unthing = spell_list(); //you[0].spells); //invent(0, you[0].inv_quant, you[0].inv_dam, you[0].inv_class, you[0].inv_type, you[0].inv_plus, you[0].inv_ident, you[0].equip [0], you[0].equip [6], you[0].equip [5], you[0].equip [2], you[0].equip [1], you[0].equip [3], you[0].equip [4], you[0].ring);
-#ifdef LINUX
+#ifdef PLAIN_TERM
 redraw_screen();
 #endif
 
         if (unthing == 2) return;
 
-        if ((unthing >= 65 && unthing <= 90) | (unthing >= 97 && unthing <= 122))
+        if ((unthing >= 65 && unthing <= 90) || (unthing >= 97 && unthing <= 122))
         {
                 keyin = unthing;
         } else
@@ -74,7 +74,7 @@ redraw_screen();
 
 spc = (int) keyin;
 
-if (spc < 97 | spc > 121)
+if (spc < 97 || spc > 121)
 {
         unknown : strcpy(info, "You don't know that spell.");
         mpr(info);
@@ -95,7 +95,7 @@ if (spell_value(you[0].spells [spc2]) > you[0].ep)
         return;
 }
 
-if (you[0].hunger <= spell_hunger(spell_value(you[0].spells [spc2]), you[0].spells [spc2]) | you[0].hung_state <= 1)
+if (you[0].hunger <= spell_hunger(spell_value(you[0].spells [spc2]), you[0].spells [spc2]) || you[0].hung_state <= 1)
 {
  strcpy(info, "You don't have the energy to cast that spell.");
  mpr(info);
@@ -145,11 +145,12 @@ you[0].turnover = 1;
 
 char your_spells(int spc2, int powc, char allow_fail)
 {
-unsigned char dem_hor = 0;
-unsigned char dem_hor2 = 0;
+int dem_hor = 0;
+int dem_hor2 = 0;
 
 struct dist spd [1];
 struct bolt beam [1];
+//struct bolt beam2 [1];
 
 alert();
 
@@ -188,7 +189,7 @@ if (you[0].species == 12 && spell_type(spc2, 17) == 1)
   return -1;
 }
 
-if (spc2 == 62 | spc2 == 82 | spc2 == 119 | spc2 == 120 | spc2 == 121 | spc2 == 118)
+if (spc2 == 62 || spc2 == 82 || spc2 == 119 || spc2 == 120 || spc2 == 121 || spc2 == 118)
 {
  naughty(2, 10 + spell_value(spc2)); // not necromancy, but bad for other reasons
 }
@@ -197,7 +198,7 @@ if (spell_type(spc2, 16) == 1) naughty(1, 10 + spell_value(spc2));
 
 if (you[0].religion == 9 && you[0].piety < 200) /* Sif Muna */
 {
- if (random2(10) <= spell_value(spc2)) gain_piety(1);
+ if (random2(12) <= spell_value(spc2)) gain_piety(1);
 }
 
 switch(spc2)
@@ -434,7 +435,7 @@ switch(spc2)
    return 1;
 
    case 62: // Summon Things
-   if (player_sust_abil() != 0 | you[0].intel == 3)
+   if (player_sust_abil() != 0 || you[0].intel == 3)
    {
         strcpy(info, "Your call goes unanswered.");
         mpr(info);
@@ -448,7 +449,7 @@ switch(spc2)
    return 1; // enslavement
 
    case 64: // magic mapping
-   if (you[0].level_type == 1 | you[0].level_type == 2)
+   if (you[0].level_type == 1 || you[0].level_type == 2)
    {
     strcpy(info, "You feel momentarily disoriented.");
     mpr(info);
@@ -543,6 +544,7 @@ switch(spc2)
 
    case 82: // imp
    if (random2(3) == 0) summon_ice_beast_etc(powc, 220);
+    else if (random2(7) == 0) summon_ice_beast_etc(powc, 237);
            else summon_ice_beast_etc(powc, 8);
    return 1;
 
@@ -640,9 +642,7 @@ switch(spc2)
    case 119: // summon demon
    strcpy(info, "You open a gate to Pandemonium!");
    mpr(info);
-    if (random2(5) == 0) summon_ice_beast_etc(powc, 80 + random2(10));
-    else if (random2(20) == 0) summon_ice_beast_etc(powc, 3);
-    else summon_ice_beast_etc(powc, 225 + random2(5));
+   summon_ice_beast_etc(powc, summon_any_demon(1));
    return 1;
 
    case 120: // demonic horde
@@ -651,20 +651,22 @@ switch(spc2)
    dem_hor2 = 3 + random2(5);
    for (dem_hor = 0; dem_hor < 4 + dem_hor2; dem_hor ++)
    {
-    if (random2(6) == 0) summon_ice_beast_etc(powc, 8);
-    else summon_ice_beast_etc(powc, 220 + random2(5));
+    summon_ice_beast_etc(powc, summon_any_demon(0));
+/*    if (random2(6) == 0) summon_ice_beast_etc(powc, summon_any_demon(0));
+    else summon_ice_beast_etc(powc, 220 + random2(5));*/
    }
    return 1;
 
    case 121: // greater demon
    strcpy(info, "You open a gate to Pandemonium!");
    mpr(info);
-   dem_hor2 = 230 + random2(5);
-   if (random2(10) == 0) dem_hor2 = 31;
-   if (random2(10) == 0) dem_hor2 = 126;
-   if (random2(10) == 0) dem_hor2 = 127;
-   if (random2(10) == 0) dem_hor2 = 245;
-   create_monster(dem_hor2, 24, 100, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   dem_hor = 100;
+   if (random2(powc) <= 5)
+   {
+                mpr("You don't feel so good about this...");
+        dem_hor = 1;
+   }
+   create_monster(summon_any_demon(2), 24, dem_hor, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
    return 1;
 
    case 122: // rot corpses
@@ -835,7 +837,7 @@ switch(spc2)
     mpr(info);
     return 1;
    }
-   zapping(45, powc, beam);
+   zapping(46, powc, beam);
    return 1; // Disintegrate
 
    case 152: // blade hands
@@ -854,6 +856,7 @@ switch(spc2)
    transform(powc, 5);
    return 1;
 
+
    case 156: // Lich
    transform(powc, 6);
    return 1;
@@ -861,7 +864,71 @@ switch(spc2)
    case 157: // death chan
    cast_death_channel(powc);
    return 1;
-
+/*
+   case 158: // Cross
+   cross_direct : if (spell_direction(spd, beam) == -1) return 1;
+    if (beam[0].move_x == 0 && beam[0].move_y == 0)
+    {
+     mpr("Try aiming it away from yourself, okay?");
+     goto cross_direct;
+    }
+   dem_hor = beam[0].move_x;
+   dem_hor2 = beam[0].move_y;
+   zapping(47, powc, beam);
+   if (beam[0].move_x == 0)
+   {
+    beam[0].move_y *= -1;
+    zapping(47, powc, beam);
+    beam[0].move_x = beam[0].move_y;
+    beam[0].move_y = 0;
+    zapping(47, powc, beam);
+    beam[0].move_x *= -1;
+    zapping(47, powc, beam);
+    return 1;
+   }
+   if (beam[0].move_y == 0)
+   {
+    beam[0].move_x *= -1;
+    zapping(47, powc, beam);
+    beam[0].move_y = beam[0].move_x;
+    beam[0].move_x = 0;
+    zapping(47, powc, beam);
+    beam[0].move_y *= -1;
+    zapping(47, powc, beam);
+    return 1;
+   }
+   dem_hor *= -1;
+   beam[0].move_x = dem_hor;
+   beam[0].move_y = dem_hor2;
+   beam[0].source_x = you[0].x_pos;
+   beam[0].source_y = you[0].y_pos;
+   beam[0].bx = you[0].x_pos;
+   beam[0].by = you[0].y_pos;
+   beam[0].target_x = 0;
+   beam[0].target_y = 0;
+   zapping(47, powc, beam);
+   dem_hor2 *= -1;
+   beam[0].move_y = dem_hor2;
+   beam[0].move_x = dem_hor;
+   beam[0].source_x = you[0].x_pos;
+   beam[0].source_y = you[0].y_pos;
+   beam[0].bx = you[0].x_pos;
+   beam[0].by = you[0].y_pos;
+   beam[0].target_x = 0;
+   beam[0].target_y = 0;
+   zapping(47, powc, beam);
+   dem_hor *= -1;
+   beam[0].move_x = dem_hor;
+   beam[0].move_y = dem_hor2;
+   beam[0].source_x = you[0].x_pos;
+   beam[0].source_y = you[0].y_pos;
+   beam[0].bx = you[0].x_pos;
+   beam[0].by = you[0].y_pos;
+   beam[0].target_x = 0;
+   beam[0].target_y = 0;
+   zapping(47, powc, beam);
+   return 1;
+*/
 default:
 strcpy(info, "Invalid spell!");
 mpr(info);
@@ -1038,19 +1105,32 @@ if (spell_type(spell_ex, 14) == 1)
 
 } // end if spellsy != 0
 
-if (you[0].skills [25] > 0)
+/*if (you[0].skills [25] > 0)
 {
  if (spellsy != 0)
  {
-  if (spc == 1) exercise(25, (random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex) * 2)) / 10 / spellsy); // + 1);
- } else if (spc == 1) exercise(25, (random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex) * 2)) / 10 / 1); // + 1);
+  if (spc == 1) exercise(25, (random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / spellsy); // + 1);
+ } else if (spc == 1) exercise(25, (random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / 1); // + 1);
 } else
  if (spellsy != 0)
  {
-  if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex) * 2)) / 10 / spellsy); // + 1);
- } else if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex) * 2)) / 10 / 1); // + 1);
+  if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / spellsy); // + 1);
+ } else if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / 1); // + 1);
+*/
 
-
+//if (you[0].skills [25] > 0)
+//{
+ if (spellsy != 0)
+ {
+  if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)) / spellsy)); // + 1);
+ } else if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)))); // + 1);
+//}
+/* else
+ if (spellsy != 0)
+ {
+  if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)) / spellsy); // + 1);
+ } else if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex))); // + 1);
+*/
 //random2(spell_value(spell_ex) * 10 + spell_value(spell_ex) * 2) / 10);
 
 //power += (player_skills [25] * 5) / 10;

@@ -9,6 +9,8 @@
 
 #include <string.h>
 
+#include "macro.h"
+
 void more(void);
 
 char scrloc = 1; /* Line of next (previous?) message */
@@ -25,7 +27,7 @@ char info2 [80];
 you[0].running = 0;
 
 
-#ifdef DOS
+#ifdef DOS_TERM
 window(1, 1, 80, 25);
 #endif
 
@@ -35,7 +37,7 @@ textcolor(7);
 //if (scrloc == 8)
 if (scrloc == 7)
 {
-#ifdef LINUX
+#ifdef PLAIN_TERM
 gotoxy(2,25);
 _setcursortype(_NORMALCURSOR);
 textcolor(7);
@@ -52,11 +54,11 @@ for (del_line_no = 0; del_line_no < 7; del_line_no ++)
 {
  cprintf("                                                                               ");
 // if (del_line_no != 7) cprintf("\n\r");
- if (del_line_no != 6) cprintf("\n\r");
+ if (del_line_no != 6) cprintf(EOL);
 }
 #endif
 
-#ifdef DOS
+#ifdef DOS_TERM
  window(1, 18, 78, 25);
  more();
  window(1, 1, 80, 25);
@@ -67,6 +69,7 @@ for (del_line_no = 0; del_line_no < 7; del_line_no ++)
 //gotoxy(1, scrloc + 17);
 gotoxy(1, scrloc + 18);
 strncpy(info2, inf, 78);
+info2 [78] = 0;
 cprintf(info2);
 
 /* Put the message into store_message, and move the '---' line forward */
@@ -84,19 +87,19 @@ scrloc ++;
 void mesclr(void)
 {
  _setcursortype(_NOCURSOR);
-#ifdef DOS
+#ifdef DOS_TERM
  window(1,18,78,25);
  clrscr();
  window(1, 1, 80, 25);
 #endif
 
-#ifdef LINUX
+#ifdef PLAIN_TERM
 char del_line_no = 0;
 gotoxy(1, 18);
 for (del_line_no = 0; del_line_no < 8; del_line_no ++)
 {
  cprintf("                                                                               ");
- if (del_line_no != 7) cprintf("\n\r");
+ if (del_line_no != 7) cprintf(EOL);
 }
 #endif
  scrloc = 0;
@@ -109,10 +112,10 @@ void more(void)
 {
 char keypress = 0;
 
-#ifdef LINUX
+#ifdef PLAIN_TERM
  gotoxy(2,25);
 #endif
-#ifdef DOS
+#ifdef DOS_TERM
  window(1, 18, 80, 25);
  gotoxy(2, 8);
 #endif
@@ -124,14 +127,39 @@ char keypress = 0;
         keypress = getch();
  } while (keypress != 32 && keypress != 13);
 
+/* Juho Snellman rewrote this part of the function: */
  keypress = 0;
-#ifdef DOS
+ #ifdef DOS_TERM
+  window(1, 18, 80, 25);
+  clrscr();
+ #endif
+ /* clrscr() should be inside the DOS-define, and the message
+  * buffer cleared in a different way for Linux to fix annoying
+  * redraw bug whenever the more-prompt showed up. -- jsnell */
+ #ifdef PLAIN_TERM
+ char del_line_no = 0;
+ gotoxy(1, 18);
+ for (del_line_no = 0; del_line_no < 8; del_line_no ++)
+ {
+   cprintf("                                                                              ");
+  if (del_line_no != 7) cprintf(EOL);
+ }
+ #endif
+ scrloc = 0;
+}
+
+
+
+
+/*
+ keypress = 0;
+#ifdef DOS_TERM
  window(1, 18, 80, 25);
 #endif
  clrscr();
  scrloc = 0;
 
-}
+}*/
 
 
 
@@ -145,7 +173,7 @@ void replay_messages(void)
    int i = 0;
    int j= 0;
    int line = 0;
-#ifdef DOS
+#ifdef DOS_TERM
    char buffer[4800];
    window(1, 1, 80, 25);
    gettext(1, 1, 80, 25, buffer);
@@ -172,7 +200,7 @@ if (i == 24) i = 0;
 do
 {
  cprintf(store_message [i]);
- cprintf("\n\r");
+ cprintf(EOL);
  if (i == line) break;
  i ++;
  if (i == 24) i = 0;
@@ -188,7 +216,7 @@ do
    if (getch() == 0) getch();
 
 
-#ifdef DOS
+#ifdef DOS_TERM
    puttext(1, 1, 80, 25, buffer);
 #endif
 

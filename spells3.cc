@@ -15,6 +15,7 @@
 #include "mstruct.h"
 #include "player.h"
 #include "priest.h"
+#include "randart.h"
 #include "spells0.h"
 #include "spells1.h"
 #include "stuff.h"
@@ -45,16 +46,16 @@ mpr(info);
 
 keyin = get_ch();
 
-if (keyin == '?' | keyin == '*')
+if (keyin == '?' || keyin == '*')
 {
         char unthing = spell_list(); //invent(0, you[0].inv_quant, you[0].inv_dam, you[0].inv_class, you[0].inv_type, you[0].inv_plus, you[0].inv_ident, you[0].equip [0], you[0].equip [6], you[0].equip [5], you[0].equip [2], you[0].equip [1], you[0].equip [3], you[0].equip [4], you[0].ring);
-#ifdef LINUX
+#ifdef PLAIN_TERM
 redraw_screen();
 #endif
 
         if (unthing == 2) return;
 
-        if ((unthing >= 65 && unthing <= 90) | (unthing >= 97 && unthing <= 122))
+        if ((unthing >= 65 && unthing <= 90) || (unthing >= 97 && unthing <= 122))
         {
                 keyin = unthing;
         } else
@@ -66,7 +67,7 @@ redraw_screen();
 
 spc = (int) keyin;
 
-if (spc < 65 | (spc > 90 && spc < 97) | spc > 122)
+if (spc < 65 || (spc > 90 && spc < 97) || spc > 122)
 {
         unknown : strcpy(info, "You don't know that spell.");
         mpr(info);
@@ -112,7 +113,8 @@ void remove_curse(void)
 
 if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0)
         {
-        if (you[0].inv_plus [you[0].equip [0]] > 130) you[0].inv_plus [you[0].equip [0]] -= 100;
+         if (you[0].inv_plus [you[0].equip [0]] > 130) you[0].inv_plus [you[0].equip [0]] -= 100;
+         wield_change = 1;
         }
 
         if (you[0].equip [7] != -1)
@@ -153,7 +155,7 @@ for (i = 0; i < 52; i ++)
 
    if (you[0].inv_quant [i] == 0) continue;
 
-   if (you[0].inv_class [i] == 0 | you[0].inv_class [i] == 2 | you[0].inv_class [i] == 7)
+   if (you[0].inv_class [i] == 0 || you[0].inv_class [i] == 2 || you[0].inv_class [i] == 7)
    {
       if (you[0].inv_ident [i] == 0)
       {
@@ -184,7 +186,7 @@ mpr(info);
 
 direction(100, beam);
 
-if (beam[0].nothing == -1 | mgrd [beam[0].target_x] [beam[0].target_y] == MNG)
+if (beam[0].nothing == -1 || mgrd [beam[0].target_x] [beam[0].target_y] == MNG)
 {
         strcpy(info, "The spell fizzles.");
         mpr(info);
@@ -211,7 +213,7 @@ if (menv [i].m_hp <= 0) monster_die(i, 1, 0);
 void cast_bone_shards(int power)
 {
 
-if (you[0].equip [0] == -1 | you[0].inv_class [you[0].equip [0]] != 14)//  | you[0].inv_type [you[0].equip [0]] != 1)
+if (you[0].equip [0] == -1 || you[0].inv_class [you[0].equip [0]] != 14)//  || you[0].inv_type [you[0].equip [0]] != 1)
 {
  strcpy(info, "The spell fails.");
  mpr(info);
@@ -259,9 +261,9 @@ void sublimation(int pow)
 
 unsigned char was_wielded = 0;
 
-if (you[0].equip [0] == -1 | you[0].inv_class [you[0].equip [0]] != 4 | you[0].inv_type [you[0].equip [0]] != 21)
+if (you[0].equip [0] == -1 || you[0].inv_class [you[0].equip [0]] != 4 || you[0].inv_type [you[0].equip [0]] != 21)
 {
- if (player_prot_life() != 0 | you[0].deaths_door != 0)
+ if (player_prot_life() != 0 || you[0].deaths_door != 0)
  {
   strcpy(info, "A conflicting enchantment prevents the spell from coming into effect.");
   mpr(info);
@@ -339,12 +341,12 @@ if (empty_surrounds(you[0].x_pos, you[0].y_pos, 67, 0, empty) == 0)
  return;
 }
 
-if (you[0].equip [0] == -1 | you[0].inv_class [you[0].equip [0]] != 0 | (you[0].inv_type [you[0].equip [0]] >= 13 && you[0].inv_type [you[0].equip [0]] <= 16) | you[0].inv_dam [you[0].equip [0]] >= 180)
+if (you[0].equip [0] == -1 || you[0].inv_class [you[0].equip [0]] != 0 || (you[0].inv_type [you[0].equip [0]] >= 13 && you[0].inv_type [you[0].equip [0]] <= 16) || you[0].inv_dam [you[0].equip [0]] >= 180)
 {
  goto failed_spell;
 }
 
-if (you[0].inv_plus [you[0].equip [0]] >= 100 | force_hostile == 1) behavi = 1; /* a cursed weapon becomes hostile */
+if (you[0].inv_plus [you[0].equip [0]] >= 100 || force_hostile == 1) behavi = 1; /* a cursed weapon becomes hostile */
 
 summs = create_monster(144, numsc, behavi, empty [0], empty [1], you[0].pet_target, 1);
 
@@ -395,6 +397,13 @@ menv [summs].m_sec = mitm.icol [i];
 void you_teleport(void)
 {
 
+if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
+ if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 22) > 0)
+ {
+  mpr("You feel a weird sense of stasis.");
+  return;
+ }
+
 if (you[0].duration [13] != 0)
 {
  strcpy(info, "You feel strangely stable.");
@@ -418,8 +427,8 @@ int plox [2];
 
 if (you[0].attribute [3] != 0 && you[0].level_type != 2 && you[0].conf == 0 && allow_control == 1)
 {
- strcpy(info, "You may choose your destination (press '.' or delete to select).");
- mpr(info);
+ mpr("You may choose your destination (press '.' or delete to select).");
+ mpr("Expect minor deviation; teleporting into an open area is recommended.");
  more();
  plox [0] = 1;
  show_map(plox);
@@ -443,17 +452,16 @@ strcat(info, st_prn);
 mpr(info);
 #endif
 
- if (plox [0] < 6 | plox [1] < 6 | plox [0] > 75 | plox [1] > 65)
+ if (plox [0] < 6 || plox [1] < 6 || plox [0] > 75 || plox [1] > 65)
  {
-  strcpy(info, "Oops!");
-  mpr(info);
+  mpr("Nearby solid objects disrupt your rematerialisation!");
   goto random_teleport;
  }
 
  you[0].x_pos = plox [0];
  you[0].y_pos = plox [1];
 
- if (grd [you[0].x_pos] [you[0].y_pos] != 67 | mgrd [you[0].x_pos] [you[0].y_pos] != MNG | env[0].cgrid [you[0].x_pos] [you[0].y_pos] != CNG)
+ if (grd [you[0].x_pos] [you[0].y_pos] != 67 || mgrd [you[0].x_pos] [you[0].y_pos] != MNG || env[0].cgrid [you[0].x_pos] [you[0].y_pos] != CNG)
  {
   strcpy(info, "Oops!");
   mpr(info);
@@ -470,7 +478,7 @@ mpr(info);
         {
                 you[0].x_pos = random2(70) + 10;
                 you[0].y_pos = random2(60) + 10;
-        } while (grd [you[0].x_pos] [you[0].y_pos] != 67 | mgrd [you[0].x_pos] [you[0].y_pos] != MNG | env[0].cgrid [you[0].x_pos] [you[0].y_pos] != CNG);
+        } while (grd [you[0].x_pos] [you[0].y_pos] != 67 || mgrd [you[0].x_pos] [you[0].y_pos] != MNG || env[0].cgrid [you[0].x_pos] [you[0].y_pos] != CNG);
 }
 
 if (you[0].level_type == 2)
@@ -502,7 +510,7 @@ for (srx = you[0].x_pos - 1; srx < you[0].x_pos + 2; srx ++)
 
   if (srx == you[0].x_pos && sry == you[0].y_pos) continue;
 
-  if (grd [srx] [sry] != 67 && grd [srx] [sry] != 70 && (grd [srx] [sry] < 75 | grd [srx] [sry] > 78)) continue;
+  if (grd [srx] [sry] != 67 && grd [srx] [sry] != 70 && (grd [srx] [sry] < 75 || grd [srx] [sry] > 78)) continue;
   if (mgrd [srx] [sry] != MNG) continue;
 
    int objl = igrd [srx] [sry];
@@ -555,7 +563,7 @@ mpr(info);
 void cast_poison_ammo(void)
 {
 
-if (you[0].equip [0] == -1 | you[0].inv_class [you[0].equip [0]] != 1 | you[0].inv_dam [you[0].equip [0]] != 0 | you[0].inv_type [you[0].equip [0]] == 0 | you[0].inv_type [you[0].equip [0]] == 5)
+if (you[0].equip [0] == -1 || you[0].inv_class [you[0].equip [0]] != 1 || you[0].inv_dam [you[0].equip [0]] != 0 || you[0].inv_type [you[0].equip [0]] == 0 || you[0].inv_type [you[0].equip [0]] == 5)
 {
  mpr("Nothing appears to happen.");
  return;
@@ -594,7 +602,7 @@ strcat(info, st_prn);
 mpr(info);
 #endif
 
- if (plox [0] < 1 | plox [1] < 1 | plox [0] > 78 | plox [1] > 68)
+ if (plox [0] < 1 || plox [1] < 1 || plox [0] > 78 || plox [1] > 68)
  {
   mpr("You hear a muffled thud.");
   return;
@@ -634,7 +642,13 @@ for (i = j; i != l; i += k)
  if (menv [i].m_class == -1) continue;
  if (menv [i].m_beh != 7) continue;
  if (menv [i].m_class >= MLAVA0) continue;
- if (type_recalled == 1 && mons_holiness(menv [i].m_class) != 1) continue;
+
+ if (type_recalled == 1)
+ {
+  if (!((menv [i].m_class == 23 || menv [i].m_class == 49) && menv [i].m_sec == BROWN || menv [i].m_sec == RED || menv [i].m_sec == LIGHTRED)) /* abominations created by twisted res, although it gets others too */
+   if (!(menv [i].m_class == 83)) /* reapers */
+    if (mons_holiness(menv [i].m_class) != 1) continue;
+ }
 
  if (empty_surrounds(you[0].x_pos, you[0].y_pos, 67, 0, empty) == 0)
  {
@@ -646,7 +660,7 @@ for (i = j; i != l; i += k)
         menv [i].m_y = empty [1];
         mgrd [menv [i].m_x] [menv [i].m_y] = i;
         recalled ++;
-        if (menv [i].m_ench [2] != 6 | player_see_invis() != 0)
+        if (menv [i].m_ench [2] != 6 || player_see_invis() != 0)
         {
          strcpy(info, "You recall your ");
          strcat(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 4));

@@ -20,6 +20,10 @@ Sub-Crawl 1.0
 #include <file.h>
 #endif
 
+#ifdef USE_EMX
+#include <sys/types.h>
+#endif
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -48,6 +52,8 @@ Sub-Crawl 1.0
 #include "items.h"
 #include "levels.h"
 //#include "maps.h"
+#include "macro.h"
+
 #include "message.h"
 #include "misc.h"
 #include "monplace.h"
@@ -60,6 +66,7 @@ Sub-Crawl 1.0
 #include "output.h"
 #include "player.h"
 #include "priest.h"
+#include "randart.h"
 #include "religion.h"
 //#include "shopping.h"
 #include "skills.h"
@@ -70,7 +77,7 @@ Sub-Crawl 1.0
 #include "spells2.h"
 #include "spells3.h"
 #include "stuff.h"
-#include "transform.h"
+#include "transfor.h"
 #include "view.h"
 
 /*
@@ -125,6 +132,8 @@ int stealth; /* externed in view.h */
 
 char use_colour = 1;
 
+char visible [10];
+
 /*
 
 Functions needed:
@@ -151,78 +160,97 @@ unsigned char mapchar(unsigned char ldfk);
 unsigned char mapchar2(unsigned char ldfk);
 unsigned char mapchar3(unsigned char ldfk);
 unsigned char mapchar4(unsigned char ldfk);
+/*
+Function pointers are used to make switching between Linux and DOS char sets
+possible as a runtime option (command-line -c)
+*/
 
-extern unsigned char your_sign; /* these two are defined in view.cc */
+extern unsigned char your_sign; /* these two are defined in view.cc. What does the player look like? (changed for shapechanging */
 extern unsigned char your_colour;
 
 extern char wield_change; /* defined in output.cc */
 
+/*
+It all starts here. Some initialisations are run first, then straight to
+new_game and then input.
+*/
 int main(int argc, char *argv[])
 {
-/* Note that Linux will need work */
 #ifdef LINUX
-lincurses_startup();
+        lincurses_startup();
 #endif
 
-viewwindow = &viewwindow2;
-mapch = &mapchar;
-mapch2 = &mapchar2;
+#ifdef MACROS
+        macro_init();
+#endif
 
-if (argc > 1)
-{
- if (stricmp(argv [1], "-c") == 0 | stricmp(argv [1], "-nc") == 0)
- {
-  viewwindow = &viewwindow3;
-  mapch = &mapchar3;
-  mapch2 = &mapchar4;
-  if (stricmp(argv [1], "-nc") == 0)
-  {
-   use_colour = 0; /* this is global to this function, so can either be
-                      passed eg to lincurses_startup or defined as an
-                      extern in another module */
-  }
- }
-  else
-  {
-   cprintf("\n\rCrawl accepts the following arguments only:\n\r");
-   cprintf(" -c   Use non-ibm character set\n\r");
-   cprintf(" -nc  Use non-ibm character set, but no colour\n\r");
-   cprintf("\n\rAny others will cause this message to be printed again.\n\r");
-   end(0);
-  }
-}
+
+        viewwindow = &viewwindow2;
+        mapch = &mapchar;
+        mapch2 = &mapchar2;
+
+        if (argc > 1)
+        {
+                if (stricmp(argv [1], "-c") == 0 || stricmp(argv [1], "-nc") == 0)
+                {
+                        viewwindow = &viewwindow3;
+                        mapch = &mapchar3;
+                        mapch2 = &mapchar4;
+                        if (stricmp(argv [1], "-nc") == 0)
+                        {
+                                use_colour = 0; /* this is global to this function, so can either be
+                              passed eg to lincurses_startup or defined as an
+                              extern in another module */
+                        }
+                }
+                else
+                {
+                        cprintf(EOL"Crawl accepts the following arguments only:"EOL);
+                        cprintf(" -c   Use non-ibm character set"EOL);
+                        cprintf(" -nc  Use non-ibm character set, but no colour"EOL);
+                        cprintf(EOL"Any others will cause this message to be printed again."EOL);
+                        end(0);
+                }
+        }
 
 //new_game();
 
-initial();
-initialise();
+        initial();
+        initialise();
 
-while (TRUE)
-{
-        input();
+        while (TRUE)
+        {
+                input();
 //      cprintf("x");
-}
+        }
 /* Should never reach this stage, right? */
 #ifdef LINUX
-       lincurses_shutdown();
+    lincurses_shutdown();
 #endif
-return 0;
+
+#ifdef USE_EMX
+        deinit_emx();
+#endif
+
+
+        return 0;
 }
 
 
 
 /*
-This function handles the player's input. It's called from main()
+This function handles the player's input. It's called from main(), from inside
+an endless loop.
 */
 void input(void)
 {
 
-int plox [2];
-char move_x = 0;
-char move_y = 0;
-//unsigned char keyin = 0;
-char keyin = 0;
-char str_pass [50];
+        int plox [2];
+        char move_x = 0;
+        char move_y = 0;
+//      unsigned char keyin = 0;
+        char keyin = 0;
+        char str_pass [50];
 
         you[0].time_taken = player_speed();
 
@@ -230,92 +258,92 @@ char str_pass [50];
         window(1,1,80,25);
         textcolor(7);
 
-        print_stats();
+    print_stats();
 
 
 
- if (you[0].paralysis == 0)
+        if (you[0].paralysis == 0)
         {
 
-        if (you[0].delay_t > 1) you[0].delay_t--;
-        if (you[0].delay_t == 1)
-        {
-                switch(you[0].delay_doing)
+                if (you[0].delay_t > 1) you[0].delay_t--;
+                if (you[0].delay_t == 1)
                 {
-                 case 0: mpr("You finish eating."); break;
-                 case 1: mpr("You finish putting on your armour."); break;
-                 case 2: mpr("You finish taking off your armour."); break;
-                 case 3: mpr("You finish memorising."); break;
-                 case 4: if (you[0].species == 16) mpr("You finish ripping the corpse into pieces.");
-                        else mpr("You finish chopping the corpse into pieces.");
-                        break;
+                        switch(you[0].delay_doing)
+                        {
+                                case 0: mpr("You finish eating."); break;
+                                case 1: mpr("You finish putting on your armour."); break;
+                                case 2: mpr("You finish taking off your armour."); break;
+                        case 3: mpr("You finish memorising."); break;
+                                case 4: if (you[0].species == 16) mpr("You finish ripping the corpse into pieces.");
+                                else mpr("You finish chopping the corpse into pieces.");
+                                break;
+                        }
+                        you[0].delay_t = 0;
                 }
-        you[0].delay_t = 0;
-        }
 //        } else keyin = '.';
 
-        gotoxy(18,9);
+                gotoxy(18,9);
 
-   if (you[0].delay_t == 0)
-        {
-        _setcursortype(_NORMALCURSOR);
-
-        if (you[0].running > 0)
-        {
-                keyin = 125;
-                move_x = you[0].run_x;
-                move_y = you[0].run_y;
-
-      if (kbhit())
-      {
-         you[0].running = 0;
-         goto gutch;
-      }
-
-                if (you[0].run_x == 0 && you[0].run_y == 0)
+                if (you[0].delay_t == 0)
                 {
-                        you[0].running--;
-                        keyin = '.';
-                }
-        } else
-               gutch: keyin = getch();
+                        _setcursortype(_NORMALCURSOR);
 
- mesclr();
+                        if (you[0].running > 0)
+                        {
+                                keyin = 125;
+                                move_x = you[0].run_x;
+                                move_y = you[0].run_y;
 
-        if (keyin == 0) // alternate ("alt") also works - see ..\KEYTEST.CPP
-        {
-        keyin = getch();
-        switch(keyin)
-        {
-                case 'O': move_x = -1; move_y = 1; break;
-                case 'P': move_y = 1; move_x = 0; break;
-                case 'I': move_x = 1; move_y = -1; break;
-                case 'H': move_y = -1; move_x = 0; break;
-                case 'G': move_y = -1; move_x = -1; break;
-                case 'K': move_x = -1; move_y = 0; break;
-                case 'Q': move_y = 1; move_x = 1; break;
-                case 'M': move_x = 1; move_y = 0; break;
+                        if (kbhit())
+                        {
+                                you[0].running = 0;
+                                goto gutch;
+                        }
 
-                case 119: open_door(-1, -1); move_x = 0; move_y = 0; break;
-                case -115: open_door(0, -1); move_x = 0; move_y = 0; break;
-                case -124: open_door(1, -1); move_x = 0; move_y = 0; break;
-                case 116: open_door(1, 0); move_x = 0; move_y = 0; break;
-                case 118: open_door(1, 1); move_x = 0; move_y = 0; break;
-                case -111: open_door(0, 1); move_x = 0; move_y = 0; break;
-                case 117: open_door(-1, 1); move_x = 0; move_y = 0; break;
-                case 115: open_door(-1, 0); move_x = 0; move_y = 0; break;
+                                if (you[0].run_x == 0 && you[0].run_y == 0)
+                                {
+                                        you[0].running--;
+                                        keyin = '.';
+                                }
+                        } else
+                        gutch: keyin = getch();
 
-                case 76:
-                case 'S': keyin = '.'; goto get_keyin_again;
+                        mesclr();
 
-        }
+                        if (keyin == 0) // alternate ("alt") also works - see ..\KEYTEST.CPP
+                        {
+                                keyin = getch();
+                                switch(keyin)
+                                {
+                                        case 'O': move_x = -1; move_y = 1; break;
+                                        case 'P': move_y = 1; move_x = 0; break;
+                                        case 'I': move_x = 1; move_y = -1; break;
+                                        case 'H': move_y = -1; move_x = 0; break;
+                                        case 'G': move_y = -1; move_x = -1; break;
+                                        case 'K': move_x = -1; move_y = 0; break;
+                                        case 'Q': move_y = 1; move_x = 1; break;
+                                        case 'M': move_x = 1; move_y = 0; break;
 
-        keyin = 125;
-        }
+                        case 119: open_door(-1, -1); move_x = 0; move_y = 0; break;
+                        case -115: open_door(0, -1); move_x = 0; move_y = 0; break;
+                        case -124: open_door(1, -1); move_x = 0; move_y = 0; break;
+                        case 116: open_door(1, 0); move_x = 0; move_y = 0; break;
+                        case 118: open_door(1, 1); move_x = 0; move_y = 0; break;
+                        case -111: open_door(0, 1); move_x = 0; move_y = 0; break;
+                        case 117: open_door(-1, 1); move_x = 0; move_y = 0; break;
+                        case 115: open_door(-1, 0); move_x = 0; move_y = 0; break;
+
+                        case 76:
+                                        case 'S': keyin = '.'; goto get_keyin_again;
+
+                                }
+
+                                keyin = 125;
+                        }
 //      }
 //      else keyin = '\\'; // end of if delay_t > 1
-        }
-        else keyin = '.';
+                }
+                else keyin = '.';
         } else keyin = '.'; // end of if you[0].paralysis == 0
 
         if (keyin != 125)
@@ -330,20 +358,17 @@ char str_pass [50];
 //getch();
 
 
-switch(keyin)
+        switch(keyin)
         {
-
-                case 25: open_door(-1, -1); move_x = 0; move_y = 0; break;
-                case 11: open_door(0, -1); move_x = 0; move_y = 0; break;
-                case 21: open_door(1, -1); move_x = 0; move_y = 0; break;
-                case 12: open_door(1, 0); move_x = 0; move_y = 0; break;
-                case 14: open_door(1, 1); move_x = 0; move_y = 0; break;
-                case 10: open_door(0, 1); move_x = 0; move_y = 0; break;
-                case 2: open_door(-1, 1); move_x = 0; move_y = 0; break;
-                case 8: open_door(-1, 0); move_x = 0; move_y = 0; break;
-
-
-                case 'b': move_x = -1; move_y = 1; break;
+        case 25: open_door(-1, -1); move_x = 0; move_y = 0; break;
+        case 11: open_door(0, -1); move_x = 0; move_y = 0; break;
+        case 21: open_door(1, -1); move_x = 0; move_y = 0; break;
+        case 12: open_door(1, 0); move_x = 0; move_y = 0; break;
+        case 14: open_door(1, 1); move_x = 0; move_y = 0; break;
+        case 10: open_door(0, 1); move_x = 0; move_y = 0; break;
+        case 2: open_door(-1, 1); move_x = 0; move_y = 0; break;
+        case 8: open_door(-1, 0); move_x = 0; move_y = 0; break;
+        case 'b': move_x = -1; move_y = 1; break;
                 case 'j': move_y = 1; move_x = 0; break;
                 case 'u': move_x = 1; move_y = -1; break;
                 case 'k': move_y = -1; move_x = 0; break;
@@ -393,128 +418,162 @@ switch(keyin)
                 case 'M': which_spell(); break;
                 case 'z': zap_wand(); break;
                 case 'e': eat_food(); break;
-                case 'a': species_ability(); break;
-                case 'A': display_mutations(); break;
+                case 'a': species_ability();
+#ifdef PLAIN_TERM
+                        redraw_screen();
+#endif
+                        break;
+                case 'A': display_mutations();
+#ifdef PLAIN_TERM
+                        redraw_screen();
+#endif
+                        break;
                 case 'V': original_name(); break;
                 case 'p': pray(); break;
-                case '^': if (you[0].religion == 0)
-                        { mpr("You aren't religious.");
-                         break; }
-                        describe_god(you[0].religion); break;
+                case '^':
+                        if (you[0].religion == 0)
+                        {
+                                mpr("You aren't religious.");
+                                break;
+                        }
+                        describe_god(you[0].religion);
+#ifdef PLAIN_TERM
+                        redraw_screen();
+#endif
+                        break;
                 case '.':
-  search_around();
-  move_x = 0;
-  move_y = 0;
-  you[0].turnover = 1; break;
+                        search_around();
+                        move_x = 0;
+                        move_y = 0;
+                        you[0].turnover = 1; break;
                 case 'q': drink(); break;
                 case 'r': read_scroll(); break;
                 case 'x': struct dist lmove [1];
-                look_around(lmove);
+                        look_around(lmove);
 //               move_x = 0; move_y = 0;
-                break;
-  case 's':
+                        break;
+                case 's':
 #ifdef DEBUG
-stethoscope(250); break;
+                        stethoscope(250); break;
 #endif
-  search_around();
-  you[0].turnover = 1; break;
-                case 'Z': cast_a_spell(); break;
+                        search_around();
+                        you[0].turnover = 1; break;
+                case 'Z':
+                /* randart wpns */
+                        if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
+                        if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 20) == 1)
+                        {
+                mpr("Something is interfering with your magic!");
+                                break;
+                        }
+                        cast_a_spell(); break;
 //              case 'M': which_spell(); break;      //memorise_spell(); break;
-  case '\'': wield_weapon(1); break;
-  case 'X':
-  if (you[0].level_type == 1 | you[0].level_type == 2)
-  {
-   strcpy(info, "You have no idea where you are!");
-   mpr(info);
-   break;
-  }
-plox [0] = 0;
-show_map(plox);
-#ifdef LINUX
-redraw_screen();
+                case '\'': wield_weapon(1); break;
+                case 'X':
+                        if (you[0].level_type == 1 || you[0].level_type == 2)
+                        {
+                                strcpy(info, "You have no idea where you are!");
+                                mpr(info);
+                                break;
+                        }
+                        plox [0] = 0;
+                        show_map(plox);
+#ifdef PLAIN_TERM
+                        redraw_screen();
 #endif
-break;
+                        break;
                 case '\\': check_item_knowledge(); //nothing = check_item_knowledge();
-#ifdef LINUX
-redraw_screen();
+#ifdef PLAIN_TERM
+                        redraw_screen();
 #endif
-break;
-  case 16: replay_messages();
-#ifdef LINUX
-redraw_screen();
+                        break;
+                case 16: replay_messages();
+#ifdef PLAIN_TERM
+                        redraw_screen();
 #endif
-break;
-  case '?': list_commands();
-#ifdef LINUX
-redraw_screen();
+                        break;
+                case '?': list_commands();
+#ifdef PLAIN_TERM
+                        redraw_screen();
 #endif
-break;
-  case 'C':
-  strcpy(info, "You are a level ");
-  itoa(you[0].xl, st_prn, 10);
-  strcat(info, st_prn);
-  strcat(info, " ");
-  strcat(info, species_name(you[0].species));
-  strcat(info, " ");
-  strcat(info, you[0].clasnam);
-  strcat(info, ".");
-  mpr(info);
+                        break;
+                case 'C':
+                        strcpy(info, "You are a level ");
+                        itoa(you[0].xl, st_prn, 10);
+                        strcat(info, st_prn);
+                        strcat(info, " ");
+                        strcat(info, species_name(you[0].species));
+                        strcat(info, " ");
+                        strcat(info, you[0].clasnam);
+                        strcat(info, ".");
+                        mpr(info);
 
-  if (you[0].xl == 27)
-  {
-                strcpy(info, "I'm sorry, level 27 is as high as you can go.");
+                        if (you[0].xl == 27)
+                        {
+                                strcpy(info, "I'm sorry, level 27 is as high as you can go.");
                 mpr(info);
-                strcpy(info, "With the way you've been playing, I'm surprised you got this far.");
-   mpr(info);
-   break;
-  }
-                strcpy(info, "Your next level is at ");
-  itoa(exp_needed(you[0].xl + 2, you[0].species) + 1, st_prn, 10);
-                strcat(info, st_prn);
-  strcat(info, " experience points.");
-  mpr(info);
-  break;
-  case '!':
-  strcpy(info, "You yell for attention!");
-  mpr(info);
-  you[0].turnover = 1;
-  noisy(10, you[0].x_pos, you[0].y_pos);
-  break;
-  case '@': display_char_status(); break;
+                                strcpy(info, "With the way you've been playing, I'm surprised you got this far.");
+                                mpr(info);
+                                break;
+                        }
+                        strcpy(info, "Your next level is at ");
+                        itoa(exp_needed(you[0].xl + 2, you[0].species) + 1, st_prn, 10);
+                        strcat(info, st_prn);
+                        strcat(info, " experience points.");
+                        mpr(info);
+                        break;
+                case '!':
+                        yell(); /* in effects.cc */
+                        break;
+                case '@': display_char_status(); break;
 
 
-  case 'm':
-  show_skills();
-#ifdef LINUX
-redraw_screen();
+                case 'm':
+                        show_skills();
+#ifdef PLAIN_TERM
+                        redraw_screen();
 #endif
-  break;
+                        break;
 
 //  case '^': disarm_trap(); break;
 
-  case '#':
-  char name_your [30];
-  strncpy(name_your, you[0].your_name, 6);
-  name_your [6] = 0;
-  if (dump_char(0, name_your) == 1)
-   strcpy(info, "Char dumped successfully.");
-    else strcpy(info, "Char dump unsuccessful! Sorry about that.");
-    mpr(info);
-  break;
+                case '#':
+                        char name_your [30];
+                        strncpy(name_your, you[0].your_name, 6);
+                        name_your [6] = 0;
+                        if (dump_char(0, name_your) == 1)
+                                strcpy(info, "Char dumped successfully.");
+                else
+                        strcpy(info, "Char dump unsuccessful! Sorry about that.");
+                    mpr(info);
+                        break;
+
+                case '`': macro_add_query(); break;
+                case '~': mpr("Saving macros."); macro_save(); break;
+
 /*
-   case '&': cast_spec_spell(); break;
+ case '&': cast_spec_spell(); break;
   case '%': create_spec_object2(); break;
   case '*': grd [you[0].x_pos] [you[0].y_pos] = 82; break;
+  case '(':
+        char specs [3];
+        strcpy(info, "Create which feature? ");
+        mpr(info);
+        specs [0] = getche();
+        specs [1] = getche();
+        specs [2] = getche();
+    grd [you[0].x_pos] [you[0].y_pos] = atoi(specs); break;
   case 'G': grd [you[0].x_pos] [you[0].y_pos] = 96; break;
-  case '\"': grd [you[0].x_pos] [you[0].y_pos] = 99; break;
+//  case '\"': grd [you[0].x_pos] [you[0].y_pos] = 99; break;
 //  case '\'': grd [you[0].x_pos] [you[0].y_pos] = 101; break;
   case '+': create_spec_monster(); break;
 
-case '`':
-   itoa(grd [you[0].x_pos] [you[0].y_pos], st_prn, 10);
-                        strcpy(info, st_prn);
-   mpr(info);
-break;
+//case '`':
+//   itoa(grd [you[0].x_pos] [you[0].y_pos], st_prn, 10);
+//   itoa(you[0].mpower, st_prn, 10);
+//                      strcpy(info, st_prn);
+//   mpr(info);
+//break;
 
 case '[':
    itoa(you[0].x_pos, st_prn, 10);
@@ -542,10 +601,10 @@ case ']': //grd [you[0].x_pos] [you[0].y_pos] = 96;
 gain_piety(10);
 break;
 
-  case ')': you[0].xp += 500; you[0].exp_available += 500; you[0].xp_ch = 1;
+  case ')': you[0].xp += 5000; you[0].exp_available += 500; you[0].xp_ch = 1;
   level_change();
   break;
-  case '~': level_travel(); break;
+  case '\"': level_travel(); break;
   case '-': you[0].hp = you[0].hp_max; you[0].hp_ch = 1; break;
   case '$': you[0].gp += 500; you[0].gp_ch = 1; break;
   case '_':
@@ -583,35 +642,35 @@ break;
   case '|': acquirement(250); break;
 */
 #ifdef DEBUG
-  case ')': you[0].xp += 500; you[0].exp_available += 500; you[0].xp_ch = 1;
-  level_change();
-  break;
-  case '$': you[0].xp += 500; you[0].hp += 50; you[0].hp_max += 50; you[0].xp_ch = 1; you[0].hp_ch = 1; you[0].gp += 50;
-  you[0].exp_available += 500;
-  level_change();
-break;
+                case ')': you[0].xp += 500; you[0].exp_available += 500; you[0].xp_ch = 1;
+                        level_change();
+                        break;
+                case '$': you[0].xp += 500; you[0].hp += 50; you[0].hp_max += 50; you[0].xp_ch = 1; you[0].hp_ch = 1; you[0].gp += 50;
+                        you[0].exp_available += 500;
+                        level_change();
+                        break;
 //  case '^': shop(); //in_a_shop(-1, you[0].inv_quant, you[0].inv_dam, you[0].inv_class, you[0].inv_type, you[0].inv_plus, you[0].inv_ident, you[0].equip [0], you[0].armour [0], you[0].armour [5], you[0].armour [2], you[0].armour [1], you[0].armour [3], you[0].armour [4], you[0].ring, it, igrid, you);
 //  break;
-  case '|': acquirement(250); break; //animate_dead(5, 7, you[0].pet_target, 1); break;
-  case '-': you[0].hp = you[0].hp_max; you[0].hp_ch = 1; break;
-  case '~': level_travel(); break;
-  case '%': create_spec_object2(); break;
-  case '+': create_spec_monster(); break;
-  case '*': grd [you[0].x_pos] [you[0].y_pos] = 82; break;
+                case '|': acquirement(250); break; //animate_dead(5, 7, you[0].pet_target, 1); break;
+                case '-': you[0].hp = you[0].hp_max; you[0].hp_ch = 1; break;
+                case '~': level_travel(); break;
+                case '%': create_spec_object2(); break;
+                case '+': create_spec_monster(); break;
+                case '*': grd [you[0].x_pos] [you[0].y_pos] = 82; break;
 //  case '#': grid [you[0].x_pos] [you[0].y_pos] = 100; break;
-  case '(': grd [you[0].x_pos] [you[0].y_pos] = 99; break;
-  case '_':
-  j = 0;
-  for (i = 0; i < 50; i ++)
-  {
-   j += you[0].skill_points [i];
-  }
-  strcpy(info, "You have a total of ");
-  itoa(j, st_prn, 10);
-  strcat(info, st_prn);
-  strcat(info, " skill points.");
-  mpr(info);
-  break;
+                case '(': grd [you[0].x_pos] [you[0].y_pos] = 99; break;
+                case '_':
+                        j = 0;
+                        for (i = 0; i < 50; i ++)
+                        {
+                                j += you[0].skill_points [i];
+                        }
+                        strcpy(info, "You have a total of ");
+                        itoa(j, st_prn, 10);
+                        strcat(info, st_prn);
+                        strcat(info, " skill points.");
+                        mpr(info);
+                        break;
 /*  case '=':
   new_level();
   strcpy(info, "");
@@ -627,82 +686,82 @@ break;
 
 #ifdef DEBUG
                 case '`':
-   itoa(OUTPUT_NO, st_prn, 10);
+                        itoa(OUTPUT_NO, st_prn, 10);
                         strcpy(info, st_prn);
-   mpr(info);
+                        mpr(info);
                         move_x = 0;
                         move_y = 0;
-break;
+                        break;
 
-                case '\'':
-                for (i = 0; i < ITEMS; i ++)
-                {
-                 if (it[0].ilink [i] == ING) continue;
-                 itoa(i, st_prn, 10);
-                 strcpy(info, st_prn);
-                 strcat(info, " is linked to ");
-                 itoa(it[0].ilink [i], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " c:");
-                 itoa(it[0].iclass [i], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " t:");
-                 itoa(it[0].itype [i], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " p:");
-                 itoa(it[0].iplus [i], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " p2:");
-                 itoa(it[0].iplus2 [i], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " d:");
-                 itoa(it[0].idam [i], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " q: ");
-                 itoa(it[0].iquant [i], st_prn, 10);
-                 strcat(info, st_prn);
-                 mpr(info);
-                }
-                strcpy(info, "igrid:");
+        case '\'':
+            for (i = 0; i < ITEMS; i ++)
+            {
+                    if (it[0].ilink [i] == ING) continue;
+                itoa(i, st_prn, 10);
+                strcpy(info, st_prn);
+                strcat(info, " is linked to ");
+                itoa(it[0].ilink [i], st_prn, 10);
+                strcat(info, st_prn);
+                strcat(info, " c:");
+                itoa(it[0].iclass [i], st_prn, 10);
+                strcat(info, st_prn);
+                strcat(info, " t:");
+                itoa(it[0].itype [i], st_prn, 10);
+                strcat(info, st_prn);
+                strcat(info, " p:");
+                itoa(it[0].iplus [i], st_prn, 10);
+                strcat(info, st_prn);
+                strcat(info, " p2:");
+                itoa(it[0].iplus2 [i], st_prn, 10);
+                strcat(info, st_prn);
+                strcat(info, " d:");
+                itoa(it[0].idam [i], st_prn, 10);
+                strcat(info, st_prn);
+                strcat(info, " q: ");
+                itoa(it[0].iquant [i], st_prn, 10);
+                strcat(info, st_prn);
                 mpr(info);
-                for (i = 0; i < GXM; i ++)
+                }
+            strcpy(info, "igrid:");
+            mpr(info);
+            for (i = 0; i < GXM; i ++)
+            {
+                for (j = 0; j < GYM; j ++)
                 {
-                 for (j = 0; j < GYM; j ++)
-                 {
-                  if (igrid [i] [j] != ING)
-                  {
-                   itoa(igrid [i] [j], st_prn, 10);
-                   strcpy(info, st_prn);
-                   strcat(info, " at ");
-                   itoa(i, st_prn, 10);
-                   strcat(info, st_prn);
-                   strcat(info, ", ");
-                   itoa(j, st_prn, 10);
-                   strcat(info, st_prn);
-                 strcat(info, " c:");
-                 itoa(it[0].iclass [igrid [i] [j]], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " t:");
-                 itoa(it[0].itype [igrid [i] [j]], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " p:");
-                 itoa(it[0].iplus [igrid [i] [j]], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " p2:");
-                 itoa(it[0].iplus2 [igrid [i] [j]], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " d:");
-                 itoa(it[0].idam [igrid [i] [j]], st_prn, 10);
-                 strcat(info, st_prn);
-                 strcat(info, " q: ");
-                 itoa(it[0].iquant [igrid [i] [j]], st_prn, 10);
-                 strcat(info, st_prn);
-                   mpr(info);
-                  }
-                 }
+                        if (igrid [i] [j] != ING)
+                        {
+                                itoa(igrid [i] [j], st_prn, 10);
+                                strcpy(info, st_prn);
+                                strcat(info, " at ");
+                                itoa(i, st_prn, 10);
+                                strcat(info, st_prn);
+                                strcat(info, ", ");
+                                itoa(j, st_prn, 10);
+                                strcat(info, st_prn);
+                                strcat(info, " c:");
+                                itoa(it[0].iclass [igrid [i] [j]], st_prn, 10);
+                                strcat(info, st_prn);
+                                strcat(info, " t:");
+                                itoa(it[0].itype [igrid [i] [j]], st_prn, 10);
+                                strcat(info, st_prn);
+                                strcat(info, " p:");
+                                itoa(it[0].iplus [igrid [i] [j]], st_prn, 10);
+                                strcat(info, st_prn);
+                                strcat(info, " p2:");
+                                itoa(it[0].iplus2 [igrid [i] [j]], st_prn, 10);
+                                strcat(info, st_prn);
+                                strcat(info, " d:");
+                                itoa(it[0].idam [igrid [i] [j]], st_prn, 10);
+                                strcat(info, st_prn);
+                                strcat(info, " q: ");
+                                itoa(it[0].iquant [igrid [i] [j]], st_prn, 10);
+                                strcat(info, st_prn);
+                                mpr(info);
+                        }
+                }
                 }
 
-break;
+                        break;
 
 #endif
 
@@ -717,591 +776,647 @@ break;
 
 
 
-if (move_x != 0 | move_y != 0) move(move_x, move_y);
+        if (move_x != 0 || move_y != 0) move(move_x, move_y);
 
 
-if (you[0].turnover == 0)
-{
-        viewwindow(1);
-        return;
-}
+        if (you[0].turnover == 0)
+        {
+                viewwindow(1);
+                return;
+        }
 
 //if (random2(10) < you[0].skills [18] + 2) search_around();
 
-stealth = check_stealth();
+        stealth = check_stealth();
 
-if (you[0].special_wield != 0)
-{
- special_wielded();
-}
-
-
-if ((player_teleport() > 0 && random2(800 / player_teleport()) == 0) | (you[0].level_type == 2 && random() % 300 == 0))
-{
-        you_teleport2(1); // this is instantaneous
-}
+        if (you[0].special_wield != 0)
+        {
+                special_wielded();
+        }
 
 
+        if (random2(10) == 0)
+        {
+                if ((player_teleport() > 0 && random2(100 / player_teleport()) == 0) || (you[0].level_type == 2 && random() % 30 == 0))
+                {
+                        you_teleport2(1); // this is instantaneous
+                }
+        }
 
-if (env[0].cgrid [you[0].x_pos] [you[0].y_pos] != CNG) in_a_cloud();
+
+        if (env[0].cgrid [you[0].x_pos] [you[0].y_pos] != CNG) in_a_cloud();
 
 
 
-if (you[0].duration [0] > 0) you[0].duration [0] --;
+        if (you[0].duration [0] > 0) you[0].duration [0] --;
 // paradox: it both lasts longer & does more damage if you're moving slower.
 // rationalisation: I guess it gets rubbed off/falls off/etc if you move around more.
-if (you[0].duration [0] != 0)
-{
- mpr("You are covered in liquid flames!");
- scrolls_burn(8, 6);
+        if (you[0].duration [0] != 0)
+        {
+                mpr("You are covered in liquid flames!");
+                scrolls_burn(8, 6);
 /* hit_player((random2(5) + random2(5) + 1) * you[0].time_taken / 10, 1, 0, 17, env);*/
 
 
- if (player_res_fire() > 100)
- {
-  ouch((((random2(5) + random2(5) + 1) / 2 + (player_res_fire() - 100) * (player_res_fire() - 100)) * you[0].time_taken) / 10, 0, 17);
- }
- if (player_res_fire() <= 100)
- {
-  ouch(((random2(5) + random2(5) + 1) * you[0].time_taken) / 10, 0, 17);
- }
- if (player_res_fire() < 100)
- {
-  ouch(((random2(5) + random2(5) + 1) * you[0].time_taken) / 10, 0, 17);
- }
+                if (player_res_fire() > 100)
+                {
+                        ouch((((random2(5) + random2(5) + 1) / 2 + (player_res_fire() - 100) * (player_res_fire() - 100)) * you[0].time_taken) / 10, 0, 17);
+                }
+                if (player_res_fire() <= 100)
+                {
+                        ouch(((random2(5) + random2(5) + 1) * you[0].time_taken) / 10, 0, 17);
+                }
+                if (player_res_fire() < 100)
+                {
+                        ouch(((random2(5) + random2(5) + 1) * you[0].time_taken) / 10, 0, 17);
+                }
 
-}
-if (you[0].duration [1] > 1)
-{
- you[0].duration [1] --;
- scrolls_burn(4, 8);
-}
-if (you[0].duration [1] == 1)
-{
- mpr("Your icy armour evaporates.");
+        }
+        if (you[0].duration [1] > 1)
+        {
+                you[0].duration [1] --;
+                scrolls_burn(4, 8);
+        }
+        if (you[0].duration [1] == 1)
+        {
+                mpr("Your icy armour evaporates.");
 /* you[0].AC -= 6; */
- you[0].AC_ch = 1;
- you[0].duration [1] = 0;
-}
+                you[0].AC_ch = 1;
+                you[0].duration [1] = 0;
+        }
 
-if (you[0].duration [2] > 0) you[0].duration [2] --;
-if (you[0].duration [2] == 1)
-{
- mpr("You feel less protected from missiles.");
- you[0].duration [2] = 0;
-}
+        if (you[0].duration [2] > 0) you[0].duration [2] --;
+        if (you[0].duration [2] == 1)
+        {
+                mpr("You feel less protected from missiles.");
+                you[0].duration [2] = 0;
+        }
 
-if (you[0].duration [4] > 0)
-{
-you[0].duration [4] --;
-if (you[0].duration [4] == 1)
-{
- mpr("Your skin stops crawling.");
- you[0].duration [4] = 0;
+        if (you[0].duration [4] > 0)
+        {
+                you[0].duration [4] --;
+                if (you[0].duration [4] == 1)
+                {
+                        mpr("Your skin stops crawling.");
+                        you[0].duration [4] = 0;
 /* you[0].rate_regen -= 100;*/
- you[0].hunger_inc -= 4;
-}
-}
+                        you[0].hunger_inc -= 4;
+                }
+        }
 
-if (you[0].duration [3] > 0) you[0].duration [3] --;
-if (you[0].duration [3] == 1)
-{
- mpr("Your prayer is over.");
- you[0].duration [3] = 0;
-}
+        if (you[0].duration [3] > 0) you[0].duration [3] --;
+        if (you[0].duration [3] == 1)
+        {
+                mpr("Your prayer is over.");
+                you[0].duration [3] = 0;
+        }
 
-if (you[0].duration [5] > 0) you[0].duration [5] --;
-if (you[0].duration [5] == 1)
-{
- item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
- strcpy(info, str_pass);
- strcat(info, " seems blunter.");
- mpr(info);
- you[0].duration [5] = 0;
- you[0].inv_dam [you[0].equip [0]] -= 10;
-}
+        if (you[0].duration [5] > 0) you[0].duration [5] --;
+        if (you[0].duration [5] == 1)
+        {
+                item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+                strcpy(info, str_pass);
+                strcat(info, " seems blunter.");
+                mpr(info);
+                you[0].duration [5] = 0;
+                you[0].inv_dam [you[0].equip [0]] -= 10;
+                wield_change = 1;
+        }
 
-if (you[0].duration [6] > 0) you[0].duration [6] --;
-if (you[0].duration [6] == 1)
-{
- item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
- strcpy(info, str_pass);
- strcat(info, " goes out.");
- mpr(info);
- you[0].duration [6] = 0;
- you[0].inv_dam [you[0].equip [0]] -= 1;
-}
+        if (you[0].duration [6] > 0) you[0].duration [6] --;
+        if (you[0].duration [6] == 1)
+        {
+                item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+                strcpy(info, str_pass);
+                strcat(info, " goes out.");
+                mpr(info);
+                you[0].duration [6] = 0;
+                you[0].inv_dam [you[0].equip [0]] -= 1;
+                wield_change = 1;
+        }
 
-if (you[0].duration [7] > 0) you[0].duration [7] --;
-if (you[0].duration [7] == 1)
-{
- item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
- strcpy(info, str_pass);
- strcat(info, " stops glowing.");
- mpr(info);
- you[0].duration [7] = 0;
- you[0].inv_dam [you[0].equip [0]] -= 2;
-}
+        if (you[0].duration [7] > 0) you[0].duration [7] --;
+        if (you[0].duration [7] == 1)
+        {
+                item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+                strcpy(info, str_pass);
+                strcat(info, " stops glowing.");
+                mpr(info);
+                you[0].duration [7] = 0;
+                you[0].inv_dam [you[0].equip [0]] -= 2;
+                wield_change = 1;
 
-
-if (you[0].duration [8] > 0) you[0].duration [8] --;
-if (you[0].duration [8] == 1)
-{
- item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
- strcpy(info, str_pass);
- strcat(info, " stops crackling.");
- mpr(info);
- you[0].duration [8] = 0;
- you[0].inv_dam [you[0].equip [0]] -= 8;
-}
-
-if (you[0].duration [15] > 0) you[0].duration [15] --;
-if (you[0].duration [15] == 1)
-{
- item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
- strcpy(info, str_pass);
- strcat(info, " stops dripping with poison.");
- mpr(info);
- you[0].duration [15] = 0;
- you[0].inv_dam [you[0].equip [0]] -= 6;
-}
-
-if (you[0].duration [17] > 0) you[0].duration [17] --;
-if (you[0].duration [17] == 1)
-{
- mpr("You have got your breath back.");
- you[0].duration [17] = 0;
-}
-
-if (you[0].duration [18] > 0)
-{
- you[0].duration [18] --;
- if (you[0].duration [18] == 10)
- {
-  mpr("Your transformation is almost over.");
-  you[0].duration [18] -= random2(3);
- }
-}
-if (you[0].duration [18] == 1)
-{
- untransform();
- you[0].duration [17] = 0;
-}
+        }
 
 
-if (you[0].duration [9] > 0) you[0].duration [9] --;
-if (you[0].duration [9] == 1)
-{
- mpr("You feel sluggish."); // swiftness runs out
- you[0].duration [9] = 0;
+        if (you[0].duration [8] > 0) you[0].duration [8] --;
+        if (you[0].duration [8] == 1)
+        {
+                item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+                strcpy(info, str_pass);
+                strcat(info, " stops crackling.");
+                mpr(info);
+                you[0].duration [8] = 0;
+                you[0].inv_dam [you[0].equip [0]] -= 8;
+                wield_change = 1;
+        }
+
+        if (you[0].duration [15] > 0) you[0].duration [15] --;
+        if (you[0].duration [15] == 1)
+        {
+                item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+                strcpy(info, str_pass);
+                strcat(info, " stops dripping with poison.");
+                mpr(info);
+                you[0].duration [15] = 0;
+                you[0].inv_dam [you[0].equip [0]] -= 6;
+                wield_change = 1;
+        }
+
+        if (you[0].duration [17] > 0) you[0].duration [17] --;
+        if (you[0].duration [17] == 1)
+        {
+                mpr("You have got your breath back.");
+                you[0].duration [17] = 0;
+        }
+
+        if (you[0].duration [18] > 0)
+        {
+                you[0].duration [18] --;
+                if (you[0].duration [18] == 10)
+                {
+                        mpr("Your transformation is almost over.");
+                        you[0].duration [18] -= random2(3);
+                }
+        }
+        if (you[0].duration [18] == 1)
+        {
+                untransform();
+                you[0].duration [17] = 0;
+        }
+
+
+        if (you[0].duration [9] > 0) you[0].duration [9] --;
+        if (you[0].duration [9] == 1)
+        {
+                mpr("You feel sluggish."); // swiftness runs out
+                you[0].duration [9] = 0;
 /* you[0].fast_you[0].run --;*/
-}
+        }
 
-if (you[0].duration [10] > 0) you[0].duration [10] --;
-if (you[0].duration [10] == 1)
-{
- mpr("You feel conductive."); // insulation (lightning resistance) wore off
- you[0].duration [10] = 0;
- you[0].attribute [0] --;
-}
+        if (you[0].duration [10] > 0) you[0].duration [10] --;
+        if (you[0].duration [10] == 1)
+        {
+                mpr("You feel conductive."); // insulation (lightning resistance) wore off
+                you[0].duration [10] = 0;
+                you[0].attribute [0] --;
+        }
 
-if (you[0].duration [11] > 1) you[0].duration [11] --;
-if (you[0].duration [11] == 1)
-{
- mpr("Your scaley stone armour disappears.");
+        if (you[0].duration [11] > 1) you[0].duration [11] --;
+        if (you[0].duration [11] == 1)
+        {
+                mpr("Your scaley stone armour disappears.");
 /* you[0].AC -= 7;
  you[0].evasion += 2;
  you[0].evasion_ch = 1;
  you[0].AC_ch = 1;*/
- you[0].duration [11] = 0;
- burden_change();
-}
+                you[0].duration [11] = 0;
+                burden_change();
+        }
 
-if (you[0].duration [13] > 1) you[0].duration [13] --;
-if (you[0].duration [13] == 1)
-{
- you_teleport2(1);
- you[0].duration [13] = 0;
-}
+        if (you[0].duration [13] > 1) you[0].duration [13] --;
+        if (you[0].duration [13] == 1)
+        {
+                you_teleport2(1);
+                you[0].duration [13] = 0;
+        }
 
-if (you[0].duration [14] > 1) you[0].duration [14] --;
-if (you[0].duration [14] == 1)
-{
- mpr("You feel uncertain."); // teleport control
- you[0].duration [14] = 0;
- you[0].attribute [3] --;
-}
+        if (you[0].duration [14] > 1) you[0].duration [14] --;
+        if (you[0].duration [14] == 1)
+        {
+                mpr("You feel uncertain."); // teleport control
+                you[0].duration [14] = 0;
+                you[0].attribute [3] --;
+        }
 
-if (you[0].duration [16] > 1) you[0].duration [16] --;
-if (you[0].duration [16] == 1)
-{
- mpr("Your poison resistance expires."); // poison resistance wore off
- you[0].duration [16] = 0;
-}
+        if (you[0].duration [16] > 1) you[0].duration [16] --;
+        if (you[0].duration [16] == 1)
+        {
+                mpr("Your poison resistance expires."); // poison resistance wore off
+                you[0].duration [16] = 0;
+        }
 
-if (you[0].duration [19] > 1) you[0].duration [19] --;
-if (you[0].duration [19] == 1)
-{
- mpr("Your unholy channel expires."); // Death channel wore off
- you[0].duration [19] = 0;
-}
-
-
+        if (you[0].duration [19] > 1) you[0].duration [19] --;
+        if (you[0].duration [19] == 1)
+        {
+                mpr("Your unholy channel expires."); // Death channel wore off
+                you[0].duration [19] = 0;
+        }
 
 
-if (you[0].duration [0] > 0) you[0].duration [0] --;
 
-if (you[0].duration [13] > 1) you[0].duration [13] --;
-if (you[0].duration [13] == 1)
-{
- you_teleport2(1);
- you[0].duration [13] = 0;
-}
 
-if (you[0].invis > 1)
-{
- you[0].invis --;
- if (you[0].hunger >= 40 && you[0].is_undead != 2) you[0].hunger -= 5;
-}
-if (you[0].invis == 1)
-{
-        strcpy(info, "You flicker back into view.");
-        mpr(info);
+        if (you[0].duration [0] > 0) you[0].duration [0] --;
+
+        if (you[0].duration [13] > 1) you[0].duration [13] --;
+        if (you[0].duration [13] == 1)
+        {
+                you_teleport2(1);
+                you[0].duration [13] = 0;
+        }
+
+        if (you[0].invis > 1)
+        {
+                you[0].invis --;
+                if (you[0].hunger >= 40 && you[0].is_undead != 2) you[0].hunger -= 5;
+        }
+        if (you[0].invis == 1)
+        {
+                strcpy(info, "You flicker back into view.");
+                mpr(info);
 //      your_sign = 64;
-        you[0].invis = 0;
-}
+                you[0].invis = 0;
+        }
 
 
 
-if (you[0].conf > 1) you[0].conf --;
-if (you[0].conf == 1)
-{
-        strcpy(info, "You feel steadier.");
-        mpr(info);
-        you[0].conf = 0;
-}
-
-
-if (you[0].paralysis > 1) you[0].paralysis--;
-if (you[0].paralysis == 1)
-{
-        strcpy(info, "You can move again.");
-        mpr(info);
-        you[0].paralysis = 0;
-}
-
-
-
-if (you[0].slow > 1) you[0].slow--;
-if (you[0].slow == 1)
-{
-        strcpy(info, "You feel yourself speed up.");
-        mpr(info);
-        you[0].slow = 0;
-}
-
-if (you[0].haste > 1)
-{
- you[0].haste--;
-}
-
-if (you[0].haste == 1)
-{
-        strcpy(info, "You feel yourself slow down.");
-        mpr(info);
-        you[0].haste = 0;
-}
-
-if (you[0].might > 1) you[0].might--;
-if (you[0].might == 1)
-{
-        strcpy(info, "You feel a little less mighty now.");
-        mpr(info);
-        you[0].might = 0;
-        you[0].strength -= 5;
-        you[0].max_strength -= 5;
-        you[0].strength_ch = 1;
-}
-
-if (you[0].berserker > 1) you[0].berserker--;
-if (you[0].berserker == 1)
-{
-        strcpy(info, "You are no longer berserk.");
-        mpr(info);
-        strcpy(info, "You feel exhausted.");
-        mpr(info);
-        you[0].berserker = 0;
- you[0].slow += 4 + random2(4) + random2(4);
- you[0].hunger -= 700;
- if (you[0].hunger <= 50) you[0].hunger = 50;
- calc_hp();
- you[0].hp_ch = 1;
-}
-
-if (you[0].lev > 1)
-{
- you[0].lev--;
- if (you[0].lev == 10)
- {
-  strcpy(info, "You are starting to lose your buoyancy!");
-  mpr(info);
-  you[0].lev -= random2(6); // so you never know how much time you have left!
-  if (you[0].duration [12] > 0) you[0].duration [12] = you[0].lev;
- }
-}
-
-if (you[0].lev == 1)
-{
-        strcpy(info, "You float gracefully downwards.");
-        mpr(info);
-        you[0].lev = 0;
-        burden_change();
-        you[0].duration [12] = 0;
- if (grd [you[0].x_pos] [you[0].y_pos] == 61 | grd [you[0].x_pos] [you[0].y_pos] == 62) fall_into_a_pool(1, grd [you[0].x_pos] [you[0].y_pos]);
-}
-
-
-if (you[0].rotting > 0)
-{
-        if (random2(20) <= (you[0].rotting - 1))
+        if (you[0].conf > 1) you[0].conf --;
+        if (you[0].conf == 1)
         {
-                ouch(1, 0, 1);
-                you[0].hp_max --;
-                you[0].base_hp --;
+                strcpy(info, "You feel steadier.");
+                mpr(info);
+                you[0].conf = 0;
+        }
+
+
+        if (you[0].paralysis > 1) you[0].paralysis--;
+        if (you[0].paralysis == 1)
+        {
+                strcpy(info, "You can move again.");
+                mpr(info);
+                you[0].paralysis = 0;
+        }
+
+
+
+        if (you[0].slow > 1) you[0].slow--;
+        if (you[0].slow == 1)
+        {
+                strcpy(info, "You feel yourself speed up.");
+                mpr(info);
+                you[0].slow = 0;
+        }
+
+        if (you[0].haste > 1)
+        {
+                you[0].haste--;
+        }
+
+        if (you[0].haste == 1)
+        {
+                strcpy(info, "You feel yourself slow down.");
+                mpr(info);
+                you[0].haste = 0;
+        }
+
+        if (you[0].might > 1) you[0].might--;
+        if (you[0].might == 1)
+        {
+                strcpy(info, "You feel a little less mighty now.");
+                mpr(info);
+                you[0].might = 0;
+                you[0].strength -= 5;
+                you[0].max_strength -= 5;
+                you[0].strength_ch = 1;
+        }
+
+        if (you[0].berserker > 1) you[0].berserker--;
+        if (you[0].berserker == 1)
+        {
+                strcpy(info, "You are no longer berserk.");
+                mpr(info);
+                strcpy(info, "You feel exhausted.");
+                mpr(info);
+                you[0].berserker = 0;
+                you[0].slow += 4 + random2(4) + random2(4);
+                you[0].hunger -= 700;
+                if (you[0].hunger <= 50) you[0].hunger = 50;
+                calc_hp();
                 you[0].hp_ch = 1;
-                strcpy(info, "You feel your flesh rotting away.");
-                mpr(info);
-                you[0].rotting--;
         }
 
-}
-
-if (you[0].disease > 0)
-{
- you[0].disease --;
- if (you[0].species == 11 && you[0].disease > 5) you[0].disease -= 2;
- if (you[0].disease == 0)
- {
-  strcpy(info, "You feel your health improve.");
-  mpr(info);
- }
-}
-
-if (you[0].poison > 0)
-{
-        if (random2(5) <= (you[0].poison - 1))
+        if (you[0].lev > 1)
         {
-  if (you[0].poison > 10 && random2(you[0].poison) >= 8)
+                you[0].lev--;
+                if (you[0].lev == 10)
                 {
-                        ouch(random2(10) + 5, 0, 1);
-                        you[0].hp_ch = 1;
-                        strcpy(info, "You feel extremely sick.");
+                        strcpy(info, "You are starting to lose your buoyancy!");
                         mpr(info);
-                } else
-                if (you[0].poison > 5 && random2(2) == 0)
-                {
-                        ouch(random2(2) + 2, 0, 1);
-                        you[0].hp_ch = 1;
-                        strcpy(info, "You feel very sick.");
-                        mpr(info);
+                        you[0].lev -= random2(6); // so you never know how much time you have left!
+                        if (you[0].duration [12] > 0) you[0].duration [12] = you[0].lev;
+                }
+        }
 
-                } else
-                      {
+        if (you[0].lev == 1)
+        {
+                strcpy(info, "You float gracefully downwards.");
+                mpr(info);
+                you[0].lev = 0;
+            burden_change();
+        you[0].duration [12] = 0;
+                if (grd [you[0].x_pos] [you[0].y_pos] == 61 || grd [you[0].x_pos] [you[0].y_pos] == 62) fall_into_a_pool(1, grd [you[0].x_pos] [you[0].y_pos]);
+        }
+
+
+        if (you[0].rotting > 0)
+        {
+                if (random2(20) <= (you[0].rotting - 1))
+                {
                         ouch(1, 0, 1);
+                        you[0].hp_max --;
+                you[0].base_hp --;
                         you[0].hp_ch = 1;
-                        strcpy(info, "You feel sick.");// //the poison running through your veins.");
+                        strcpy(info, "You feel your flesh rotting away.");
                         mpr(info);
-                      }
+                        you[0].rotting--;
+                }
 
-        if (random2(8) == 0 | (you[0].hp == 1 && random2(3) == 0))
+        }
+
+        if (you[0].disease > 0)
         {
-                strcpy(info, "You feel a little better.");
-                mpr(info);
-                you[0].poison--;
+                you[0].disease --;
+                if (you[0].species == 11 && you[0].disease > 5) you[0].disease -= 2;
+                if (you[0].disease == 0)
+                {
+                        strcpy(info, "You feel your health improve.");
+                        mpr(info);
+                }
         }
 
+        if (you[0].poison > 0)
+        {
+                if (random2(5) <= (you[0].poison - 1))
+                {
+                        if (you[0].poison > 10 && random2(you[0].poison) >= 8)
+                        {
+                                ouch(random2(10) + 5, 0, 1);
+                                you[0].hp_ch = 1;
+                                strcpy(info, "You feel extremely sick.");
+                                mpr(info);
+                        } else
+                        if (you[0].poison > 5 && random2(2) == 0)
+                        {
+                                ouch(random2(2) + 2, 0, 1);
+                                you[0].hp_ch = 1;
+                                strcpy(info, "You feel very sick.");
+                                mpr(info);
+
+                        } else
+                {
+                                ouch(1, 0, 1);
+                                you[0].hp_ch = 1;
+                                strcpy(info, "You feel sick.");// //the poison running through your veins.");
+                                mpr(info);
+                }
+
+                        if (random2(8) == 0 || (you[0].hp == 1 && random2(3) == 0))
+                        {
+                                strcpy(info, "You feel a little better.");
+                                mpr(info);
+                                you[0].poison--;
+                        }
+
+                }
+
         }
 
-}
+        if (you[0].deaths_door > 0)
+        {
+                if (you[0].hp > you[0].skills [29] + (you[0].religion == 3) * 13)
+                {
+                        strcpy(info, "Your life is in your own hands once again.");
+                        mpr(info);
+                        you[0].paralysis += 5 + random2(5);
+                        you[0].conf += 10 + random2(10);
+                        you[0].hp_max --;
+                        if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
+                        you[0].hp_ch = 1;
+                        you[0].deaths_door = 0;
+                }
+                else you[0].deaths_door --;
 
-if (you[0].deaths_door > 0)
-{
- if (you[0].hp > you[0].skills [29] + (you[0].religion == 3) * 13)
- {
-  strcpy(info, "Your life is in your own hands once again.");
-  mpr(info);
-  you[0].paralysis += 5 + random2(5);
-  you[0].conf += 10 + random2(10);
-  you[0].hp_max --;
-  if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
-  you[0].hp_ch = 1;
-  you[0].deaths_door = 0;
- }
-   else you[0].deaths_door --;
+                if (you[0].deaths_door == 10)
+                {
+                        strcpy(info, "Your time is quickly running out!");
+                        mpr(info);
+                        you[0].deaths_door -= random2(6); // so that you never know how many turns you have left. Evil, huh?
+                }
 
- if (you[0].deaths_door == 10)
- {
-  strcpy(info, "Your time is quickly running out!");
-  mpr(info);
-  you[0].deaths_door -= random2(6); // so that you never know how many turns you have left. Evil, huh?
- }
-
- if (you[0].deaths_door == 1)
- {
-  strcpy(info, "Your life is in your own hands again!");
-  mpr(info);
+                if (you[0].deaths_door == 1)
+                {
+                        strcpy(info, "Your life is in your own hands again!");
+                        mpr(info);
 //  relay_message();
-  more();
+                        more();
 /*  you[0].hp = 1;*/
-  you[0].hp_ch = 1;
- }
+                        you[0].hp_ch = 1;
+                }
 
-}
+        }
 
+        if (you[0].is_undead != 2)
+        {
+                if (you[0].hunger_inc > 0 && you[0].hunger >= 40)
+                {
+                        you[0].hunger -= you[0].hunger_inc;
+                        you[0].hunger -= you[0].burden_state;
+                }
+        } else you[0].hunger = 6000;
 
-if (you[0].hunger_inc > 0 && you[0].hunger >= 40 && you[0].is_undead != 2)
-{
- you[0].hunger -= you[0].hunger_inc;
- you[0].hunger -= you[0].burden_state;
-}
+        if (you[0].hp < you[0].hp_max && you[0].disease == 0 && you[0].deaths_door == 0) you[0].incr_regen += player_regen();
+        if (you[0].ep < you[0].ep_max) you[0].ep_incr_regen += 7 + you[0].ep_max / 2;
 
-if (you[0].hp < you[0].hp_max && you[0].disease == 0 && you[0].deaths_door == 0) you[0].incr_regen += player_regen();
-if (you[0].ep < you[0].ep_max) you[0].ep_incr_regen += 7 + you[0].ep_max / 2;
+        while(you[0].incr_regen >= 100)
+        {
+                if (you[0].hp == you[0].hp_max - 1 && you[0].running != 0 && you[0].run_x == 0 && you[0].run_y == 0) you[0].running = 0;
+                you[0].hp ++; if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
+                you[0].incr_regen -= 100;
+                you[0].hp_ch = 1;
+        }
 
-while(you[0].incr_regen >= 100)
-{
- if (you[0].hp == you[0].hp_max - 1 && you[0].running != 0 && you[0].run_x == 0 && you[0].run_y == 0) you[0].running = 0;
-        you[0].hp ++; if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
-        you[0].incr_regen -= 100;
-        you[0].hp_ch = 1;
-}
-
-while(you[0].ep_incr_regen >= 100)
-{
- if (you[0].ep == you[0].ep_max - 1 && you[0].running != 0 && you[0].run_x == 0 && you[0].run_y == 0) you[0].running = 0;
-        you[0].ep ++; if (you[0].ep > you[0].ep_max) you[0].ep = you[0].ep_max;
-        you[0].ep_incr_regen -= 100;
-        you[0].ep_ch = 1;
-}
+        while(you[0].ep_incr_regen >= 100)
+        {
+                if (you[0].ep == you[0].ep_max - 1 && you[0].running != 0 && you[0].run_x == 0 && you[0].run_y == 0) you[0].running = 0;
+                you[0].ep ++; if (you[0].ep > you[0].ep_max) you[0].ep = you[0].ep_max;
+                you[0].ep_incr_regen -= 100;
+                you[0].ep_ch = 1;
+        }
 
 
 
 //losight(show, grid, you[0].x_pos, you[0].y_pos);
-viewwindow(0);
+        viewwindow(0);
 
- monster();
+        monster();
 
-if (you[0].corpse_count <= you[0].time_taken)
-{
- manage_corpses();
- you[0].corpse_count = 200;
- if (random2(50) == 0) cull_items();
-} else you[0].corpse_count -= you[0].time_taken;
-
-
-
-
-env[0].cloud_no = manage_clouds(); //cloud_x, cloud_y, cloud_type, cloud_decay, cloud_no, grid, time_taken, you[0].haste, you[0].slow, cgrid);
-
-
-if (you[0].shock_shield > 0)
-{
- manage_shock_shield();
-}
-
-
-if (you[0].hunger <= 500)
-{
-if (you[0].paralysis == 0 && random2(40) == 0)
-{
- strcpy(info, "You lose consciousness!");
- mpr(info);
-        you[0].paralysis += random2(8) + 5;
- if (you[0].paralysis > 13) you[0].paralysis = 13;
-}
-if (you[0].hunger <= 100)
-{
- strcpy(info, "You have starved to death.");
- mpr(info);
- ouch(-9999, 0, 15);
-}
-}
-
-if (you[0].hung_state == 3 && you[0].hunger <= 2600 && you[0].hunger_inc > 0)
-{
-        strcpy(info, "You are feeling hungry.");
-        mpr(info);
-        you[0].hung_state = 2;
-        you[0].hung_ch = 1;
-}
-
-
-if (you[0].hung_state == 2 && you[0].hunger <= 1000 && you[0].hunger_inc > 0)
-{
-        strcpy(info, "You are starving!");
-        mpr(info);
-        you[0].hung_state = 1;
-        you[0].hung_ch = 1;
-}
-
-
-if (you[0].hung_state == 4 && you[0].hunger < 7000 && you[0].hunger_inc > 0)
-{
- you[0].hung_state = 3;
- you[0].hung_ch = 1;
-}
-
-if (you[0].hung_state == 5 && you[0].hunger < 11000 && you[0].hunger_inc > 0)
-{
- you[0].hung_state = 4;
- you[0].hung_ch = 1;
-}
+        if (you[0].corpse_count <= you[0].time_taken)
+        {
+                manage_corpses();
+                you[0].corpse_count = 200;
+                if (random2(50) == 0) cull_items();
+        } else you[0].corpse_count -= you[0].time_taken;
 
 
 
-_setcursortype(_NOCURSOR);
 
-viewwindow(1);
+        env[0].cloud_no = manage_clouds(); //cloud_x, cloud_y, cloud_type, cloud_decay, cloud_no, grid, time_taken, you[0].haste, you[0].slow, cgrid);
 
-_setcursortype(_NORMALCURSOR);
 
-if (you[0].paralysis > 0)
-{
-        more();
-}
+        if (you[0].shock_shield > 0)
+        {
+                manage_shock_shield();
+        }
+
+    /*
+    If visible [0] is 1, at least one statue is visible.
+    This was supposed to be more complex (with values of 2 etc), but I
+     couldn't get it to work.
+    */
+    if (visible [0] != 0)
+    {
+     char wc [30];
+     if (visible [1] != 0)
+     {
+      switch(visible [1])
+      {
+       case 0: break;
+//       case 1: mpr("You feel a pleasing absence."); break;
+       case 2:
+            if (random2(4) == 0)
+            {
+             strcpy(info, "The silver statue's eyes glow a ");
+             weird_colours(random2(200), wc);
+             strcat(info, wc);
+             strcat(info, " colour.");
+             mpr(info);
+                         create_monster(summon_any_demon(random2(2)), 25, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+            }
+       break;
+//       case 3: mpr("You feel a terrible presence observing you."); break;
+      }
+      visible [1] --;
+     }
+     if (visible [2] != 0)
+     {
+      if (random2(3) == 0)
+      {
+       mpr("A hostile presence attacks your mind!");
+       miscast_effect(19, random2(15), random2(150), 100);
+      }
+      visible [2] --;
+     }
+    visible [0] --;
+    }
+
+
+
+        if (you[0].hunger <= 500)
+        {
+                if (you[0].paralysis == 0 && random2(40) == 0)
+                {
+                        strcpy(info, "You lose consciousness!");
+                        mpr(info);
+                        you[0].paralysis += random2(8) + 5;
+                        if (you[0].paralysis > 13) you[0].paralysis = 13;
+                }
+                if (you[0].hunger <= 100)
+                {
+                        strcpy(info, "You have starved to death.");
+                        mpr(info);
+                        ouch(-9999, 0, 15);
+                }
+        }
+
+        if (you[0].hung_state == 3 && you[0].hunger <= 2600 && you[0].hunger_inc > 0)
+        {
+                strcpy(info, "You are feeling hungry.");
+                mpr(info);
+                you[0].hung_state = 2;
+                you[0].hung_ch = 1;
+        }
+
+
+        if (you[0].hung_state == 2 && you[0].hunger <= 1000 && you[0].hunger_inc > 0)
+        {
+                strcpy(info, "You are starving!");
+                mpr(info);
+                you[0].hung_state = 1;
+                you[0].hung_ch = 1;
+        }
+
+
+        if (you[0].hung_state == 4 && you[0].hunger < 7000 && you[0].hunger_inc > 0)
+        {
+                you[0].hung_state = 3;
+                you[0].hung_ch = 1;
+        }
+
+        if (you[0].hung_state == 5 && you[0].hunger < 11000 && you[0].hunger_inc > 0)
+        {
+                you[0].hung_state = 4;
+                you[0].hung_ch = 1;
+        }
+
+
+
+        _setcursortype(_NOCURSOR);
+
+        viewwindow(1);
+
+        _setcursortype(_NORMALCURSOR);
+
+        if (you[0].paralysis > 0)
+        {
+                more();
+        }
 
 
 
         if (you[0].level_type != 0) /* No monsters in labyrinths */
+    {
+            switch(you[0].level_type)
         {
-         switch(you[0].level_type)
-         {
-           case 1: break; /* labyrinth */
-           case 2: if (random2(5) == 0) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, 51);
-           break; /* Abyss  */
-           case 3: if (random2(50) == 0) pandemonium_mons(); //mons_place(250, 0, 50, 50, 0, MHITNOT, 250, 52);
-           break; /* Pandemonium */
-         }
+                case 1: break; /* labyrinth */
+            case 2: if (random2(5) == 0) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, 51);
+                        break; /* Abyss  */
+                case 3: if (random2(50) == 0) pandemonium_mons(); //mons_place(250, 0, 50, 50, 0, MHITNOT, 250, 52);
+                        break; /* Pandemonium */
+        }
         } else if (random2(240) == 0 && you[0].level_type != 1 && you[0].where_are_you != 18) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, you[0].your_level);
 
-return;
+        return;
 
 }
 
 
-
+/*
+Opens doors and handles some aspects of untrapping. If move_x != 100, it
+carries a specific direction for the door to be opened (eg if you type
+ctrl - dir).
+*/
 void open_door(char move_x, char move_y)
 {
 /*move_x = door_x;
 move_y = door_y;*/
 //int nothing = 0;
-struct dist door_move [1];
+        struct dist door_move [1];
 
-door_move[0].move_x = move_x;
-door_move[0].move_y = move_y;
+        door_move[0].move_x = move_x;
+        door_move[0].move_y = move_y;
 
-if (move_x != 100 && env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != MNG && (menv[env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y]].m_class < MLAVA0 | menv [env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y]].m_sec == 0))
-{
+        if (move_x != 100 && env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != MNG && (menv[env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y]].m_class < MLAVA0 || menv [env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y]].m_sec == 0))
+        {
 /* if (menv [env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y]].m_ench [2] == 6 && player_see_invis() == 0)
  {
   strcpy(info, "Something seems to be in the way.");
@@ -1312,32 +1427,32 @@ if (move_x != 100 && env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y
  strcpy(info, "You might want to wait for the creature standing in your way to move.");
  mpr(info);
  return;*/
- you_attack(mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]);
- you[0].turnover = 1;
- return;
-}
+                you_attack(mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]);
+                you[0].turnover = 1;
+                return;
+        }
 
-if (move_x != 100 && env[0].cgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != CNG)
-{
- strcpy(info, "You can't get to that trap right now.");
- mpr(info);
- return;
-}
+        if (move_x != 100 && env[0].cgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != CNG)
+        {
+                strcpy(info, "You can't get to that trap right now.");
+                mpr(info);
+                return;
+        }
 
-if (move_x != 100 && grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] >= 75 && grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] <= 77)
-{
- disarm_trap(door_move);
- return;
-}
+        if (move_x != 100 && grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] >= 75 && grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] <= 77)
+        {
+                disarm_trap(door_move);
+                return;
+        }
 
-if (move_x == 100)
-{
- door_move[0].move_x = 0;
- door_move[0].move_y = 0;
- strcpy(info, "Which direction?");
- mpr(info);
- direction(0, door_move);
-}/* else
+        if (move_x == 100)
+        {
+                door_move[0].move_x = 0;
+                door_move[0].move_y = 0;
+                strcpy(info, "Which direction?");
+                mpr(info);
+                direction(0, door_move);
+        }/* else
  {
   if (grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] == 70)
   {
@@ -1346,235 +1461,232 @@ if (move_x == 100)
   }
  }*/
 
-if (door_move[0].nothing == -1) return;
+        if (door_move[0].nothing == -1) return;
 
-if (door_move[0].move_x > 1 | door_move[0].move_y > 1 | door_move[0].move_x < -1 | door_move[0].move_y < -1)
-{
-        strcpy(info, "I'm afraid your arm isn't that long.");
-        mpr(info);
-        return;
-}
-
-if (grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] == 3)
-{
-        if (you[0].lev != 0)
+        if (door_move[0].move_x > 1 || door_move[0].move_y > 1 || door_move[0].move_x < -1 || door_move[0].move_y < -1)
         {
-                strcpy(info, "You reach down and open the door.");
+                strcpy(info, "I'm afraid your arm isn't that long.");
                 mpr(info);
-                grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] = 70;
-                you[0].turnover = 1;
-        } else
-              {
-                if (random2(25) == 0)
+                return;
+        }
+
+        if (grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] == 3)
+        {
+                if (you[0].lev != 0)
                 {
-                        strcpy(info, "As you open the door, it creaks loudly!");
-                        noisy(15, you[0].x_pos, you[0].y_pos);
-                } else strcpy(info, "You open the door.");
+                        strcpy(info, "You reach down and open the door.");
+                        mpr(info);
+                        grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] = 70;
+                        you[0].turnover = 1;
+                } else
+            {
+                        if (random2(25) == 0)
+                        {
+                                strcpy(info, "As you open the door, it creaks loudly!");
+                noisy(15, you[0].x_pos, you[0].y_pos);
+                        } else strcpy(info, "You open the door.");
 
-                mpr(info);
-                grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] = 70;
-                you[0].turnover = 1;
-              }
-} else
+                        mpr(info);
+                        grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] = 70;
+                        you[0].turnover = 1;
+                }
+        } else
         {
-         strcpy(info, "You swing at nothing.");
-         mpr(info);
-         you[0].turnover = 1;
-         if (you[0].is_undead != 2) you[0].hunger -= 3;
+                strcpy(info, "You swing at nothing.");
+                mpr(info);
+                you[0].turnover = 1;
+                if (you[0].is_undead != 2) you[0].hunger -= 3;
+        }
+
+} // end of void open_door()
+
+
+/*
+Similar to open_door. Can you spot the difference?
+*/
+void close_door(char door_x, char door_y)
+{
+        struct dist door_move [1];
+        door_move[0].move_x = door_x;
+        door_move[0].move_y = door_y;
+
+        if (door_move[0].move_x == 100)
+        {
+                door_move[0].move_x = 0;
+                door_move[0].move_y = 0;
+                strcpy(info, "Which direction?");
+                mpr(info);
+                direction(0, door_move);
+        }
+
+        if (door_move[0].move_x > 1 || door_move[0].move_y > 1)
+        {
+                strcpy(info, "I'm afraid your arm isn't that long.");
+                mpr(info);
+                return;
+        }
+
+        if (door_move[0].move_x == 0 && door_move[0].move_y == 0)
+        {
+                strcpy(info, "You can't close doors on yourself!");
+                mpr(info);
+                return;
+        }
+
+//if (env[0].eenv[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != MNG)
+        if (env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != MNG)
+        {
+        // Need to make sure that turnover = 1 if creature is invisible
+                strcpy(info, "There's a creature in the doorway!");
+                mpr(info);
+                door_move[0].move_x = 0; door_move[0].move_y = 0;
+                return;
+        }
+
+
+
+        if (grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] == 70)
+        {
+
+                if (env[0].igrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != 501)
+                {
+                        strcpy(info, "There's something blocking the doorway.");
+                        mpr(info);
+                        door_move[0].move_x = 0;
+                        door_move[0].move_y = 0;
+                        return;
+                }
+
+                if (you[0].lev != 0)
+                {
+                        strcpy(info, "You reach down and close the door.");
+                        mpr(info);
+                        grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] = 3;
+                        you[0].turnover = 1;
+                } else
+            {
+                        if (random2(25) == 0)
+                        {
+                                strcpy(info, "As you close the door, it creaks loudly!");
+                noisy(15, you[0].x_pos, you[0].y_pos);
+                        } else strcpy(info, "You close the door.");
+
+                        mpr(info);
+                        grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] = 3;
+                        you[0].turnover = 1;
+                }
+        } else
+        {
+                strcpy(info, "There isn't anything that you can close there!");
+                mpr(info);
         }
 
 } // end of void open_door()
 
 
 
-void close_door(char door_x, char door_y)
-{
-struct dist door_move [1];
-door_move[0].move_x = door_x;
-door_move[0].move_y = door_y;
-
-if (door_move[0].move_x == 100)
-{
- door_move[0].move_x = 0;
- door_move[0].move_y = 0;
- strcpy(info, "Which direction?");
- mpr(info);
- direction(0, door_move);
-}
-
-if (door_move[0].move_x > 1 | door_move[0].move_y > 1)
-{
-        strcpy(info, "I'm afraid your arm isn't that long.");
-        mpr(info);
-        return;
-}
-
-if (door_move[0].move_x == 0 && door_move[0].move_y == 0)
-{
-        strcpy(info, "You can't close doors on yourself!");
-        mpr(info);
-        return;
-}
-
-//if (env[0].eenv[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != MNG)
-if (env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != MNG)
-{
-        // Need to make sure that turnover = 1 if creature is invisible
-        strcpy(info, "There's a creature in the doorway!");
-        mpr(info);
-        door_move[0].move_x = 0; door_move[0].move_y = 0;
-        return;
-}
-
-
-
-if (grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] == 70)
-{
-
-                if (env[0].igrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != 501)
-                {
-                 strcpy(info, "There's something blocking the doorway.");
-                 mpr(info);
-                 door_move[0].move_x = 0;
-                door_move[0].move_y = 0;
-                 return;
-                }
-
-        if (you[0].lev != 0)
-        {
-         strcpy(info, "You reach down and close the door.");
-         mpr(info);
-         grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] = 3;
-         you[0].turnover = 1;
-        } else
-              {
-                if (random2(25) == 0)
-                {
-                        strcpy(info, "As you close the door, it creaks loudly!");
-                        noisy(15, you[0].x_pos, you[0].y_pos);
-                } else strcpy(info, "You close the door.");
-
-                mpr(info);
-                grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] = 3;
-                you[0].turnover = 1;
-              }
-} else
-        {
-        strcpy(info, "There isn't anything that you can close there!");
-        mpr(info);
-}
-
-} // end of void open_door()
-
-
-
-
-
-
 
 /*
-
-replace armour, item_wielded etc with generic equip [n]
-
+Initialises a whole lot of stuff.
 */
-
-
-/* initialisation - needs a special file (init.cc?) */
-
 void initialise(void)
 {
 
-int i = 0;
+        int i = 0;
 
-your_sign = '@';
-your_colour = LIGHTGREY;
+        your_sign = '@';
+        your_colour = LIGHTGREY;
 
 /*for (i = 0; i < 10; i ++)
 {
         func_pass [i] = 0;
 }*/
 
-for (i = 0; i < NO_EQUIP; i++)
-{
-        you[0].equip [NO_EQUIP] = -1;
-}
-/*for (i = 0; i < 20; i++)
+        for (i = 0; i < NO_EQUIP; i++)
+        {
+                you[0].equip [NO_EQUIP] = -1;
+        }
+        /*for (i = 0; i < 20; i++)
 {
         mons_alloc [i] = 250;
 }*/
 
 
 /* system initialisation stuff */
-textbackground(0);
-you[0].your_level = 0;
+        textbackground(0);
+        you[0].your_level = 0;
 
 #ifdef DOS
         directvideo = 1;
 #endif
 
-srandom(time(NULL));
-clrscr();
+#ifdef USE_EMX
+        init_emx();
+#endif
+
+        srandom(time(NULL));
+        clrscr();
 
 
 
 
 /* init item array */
-for (i = 1; i < ITEMS; i++)
-{
-        env[0].it[0].iclass [i] = 0;
-        env[0].it[0].itype [i] = 0;
-        env[0].it[0].ix [i] = 1;
-        env[0].it[0].iy [i] = 1;
-        env[0].it[0].iquant [i] = 0;
-        env[0].it[0].idam [i] = 0;
-        env[0].it[0].iplus [i] = 0;
-        env[0].it[0].iplus2 [i] = 0;
-        env[0].it[0].ilink [i] = ING;
-}
+        for (i = 1; i < ITEMS; i++)
+        {
+                env[0].it[0].iclass [i] = 0;
+                env[0].it[0].itype [i] = 0;
+                env[0].it[0].ix [i] = 1;
+                env[0].it[0].iy [i] = 1;
+                env[0].it[0].iquant [i] = 0;
+                env[0].it[0].idam [i] = 0;
+                env[0].it[0].iplus [i] = 0;
+                env[0].it[0].iplus2 [i] = 0;
+                env[0].it[0].ilink [i] = ING;
+        }
 
 
-strcpy(info, "");
+        strcpy(info, "");
 
-int j = 0;
+        int j = 0;
 
 
 //env[0].it [0] = &it[0];
 //env[0].elvl [0] = &lvl[0];
 
-for (i = 0; i < MNST; i++)
-{
+        for (i = 0; i < MNST; i++)
+        {
 //        env[0].mons [i] = &mons [i];
-        env[0].mons[i].m_class = -1;
-        env[0].mons[i].m_speed_inc = 10;
-        env[0].mons[i].m_targ_1_x = 155;
-        env[0].mons[i].m_ench_1 = 0;
-        env[0].mons[i].m_beh = 0; // sleeping
-        env[0].mons[i].m_hit = MNG; // nothing
-        for (j = 0; j < 3; j++)
-        {
-                env[0].mons[i].m_ench [j] = 0;
+                env[0].mons[i].m_class = -1;
+                env[0].mons[i].m_speed_inc = 10;
+                env[0].mons[i].m_targ_1_x = 155;
+                env[0].mons[i].m_ench_1 = 0;
+                env[0].mons[i].m_beh = 0; // sleeping
+                env[0].mons[i].m_hit = MNG; // nothing
+                for (j = 0; j < 3; j++)
+                {
+                        env[0].mons[i].m_ench [j] = 0;
+                }
+                for (j = 0; j < 8; j++)
+                {
+                        env[0].mons[i].m_inv [j] = ING;
+                }
+                env[0].mons[i].m_sec = 0;
         }
-        for (j = 0; j < 8; j++)
-        {
-                env[0].mons[i].m_inv [j] = ING;
-        }
-        env[0].mons[i].m_sec = 0;
-}
 
-for (i = 0; i < GXM; i ++)
-{
-        for (j = 0; j < GYM; j ++)
+        for (i = 0; i < GXM; i ++)
         {
-                env[0].igrid [i] [j] = ING;
-                env[0].mgrid [i] [j] = MNG;
-                env[0].map [i] [j] = 0;
+                for (j = 0; j < GYM; j ++)
+                {
+                        env[0].igrid [i] [j] = ING;
+                        env[0].mgrid [i] [j] = MNG;
+                        env[0].map [i] [j] = 0;
+                }
         }
-}
 
-for (i = 0; i < 52; i++)
-{
-        you[0].inv_quant [i] = 0;
-}
+        for (i = 0; i < 52; i++)
+        {
+                you[0].inv_quant [i] = 0;
+        }
 
 /*for (i = 0; i < 50; i++)
 {
@@ -1582,10 +1694,17 @@ for (i = 0; i < 52; i++)
 }*/
 
 
-for (i = 0; i < 25; i ++)
-{
-        you[0].spells [i] = 210;
-}
+        for (i = 0; i < 25; i ++)
+        {
+                you[0].spells [i] = 210;
+        }
+
+        for (i = 0; i < 10; i ++)
+        {
+                visible [i] = 0;
+        }
+
+        you[0].prev_targ = MHITNOT;
 
 /*for (i = 0; i < 19; i ++)
 {
@@ -1598,12 +1717,12 @@ for (i = 0; i < 25; i ++)
 
 
 /* sets up a new game*/
-int newc = new_game();
+        int newc = new_game();
 
-if (newc == 0) restore_game();
+        if (newc == 0) restore_game();
 
-calc_hp();
-calc_ep();
+        calc_hp();
+        calc_ep();
 
 //if (you[0].species == 12) you[0].is_undead = 2; else you[0].is_undead = 0;
 /*switch(you[0].species)
@@ -1616,62 +1735,62 @@ calc_ep();
 
 /*if (newc == 1) stair_taken = 82;*/
 
-you[0].inv_no = 0;
-for (i = 0; i < 52; i ++)
-{
- if (you[0].inv_quant [i] != 0) you[0].inv_no ++;
-}
-char just_made_new_lev;
+        you[0].inv_no = 0;
+        for (i = 0; i < 52; i ++)
+        {
+                if (you[0].inv_quant [i] != 0) you[0].inv_no ++;
+        }
+        char just_made_new_lev;
 
-if (newc == 0) just_made_new_lev = 1; else just_made_new_lev = 0;
+        if (newc == 0) just_made_new_lev = 1; else just_made_new_lev = 0;
 
-char moving_level = 0;
-if (newc == 1) moving_level = 1;
+        char moving_level = 0;
+        if (newc == 1) moving_level = 1;
 
 /*load(82, moving_level, level_saved, was_a_labyrinth, old_level, just_made_new_lev);*/
 //load(82, moving_level, 0, 0, 0, 0, just_made_new_lev);
-load(82, moving_level, 0, 0, 0, just_made_new_lev, you[0].where_are_you);
+        load(82, moving_level, 0, 0, 0, just_made_new_lev, you[0].where_are_you);
 
-moving_level = 0;
-just_made_new_lev = 0;
-newc = 0;
+        moving_level = 0;
+        just_made_new_lev = 0;
+        newc = 0;
 
 //new_level();
 
 
 
-mon_init(gmon_use, mcolour); //, mcolour);
+        mon_init(gmon_use, mcolour); //, mcolour);
 //new_level(); // - must come after mon_init
 
 //def_letters(letters);
 
 /*def_properties(property, mass);*/
 
-init_properties();
+        init_properties();
 
 
-if (newc == 1)
-{
-
-for (i = 0; i < GXM; i ++)
-{
-        for (j = 0; j < GYM; j ++)
+        if (newc == 1)
         {
-                if (grd [i] [j] == 68)
+
+                for (i = 0; i < GXM; i ++)
                 {
-                        you[0].x_pos = i;
-                        you[0].y_pos = j;
+                        for (j = 0; j < GYM; j ++)
+                        {
+                                if (grd [i] [j] == 68)
+                                {
+                                        you[0].x_pos = i;
+                                        you[0].y_pos = j;
+                                }
+                        }
+                        if (grd [i] [j] == 67) break;
                 }
-        }
-if (grd [i] [j] == 67) break;
-}
 
 
-burden_change();
-food_change();
-new_level(); // - must come after mon_init
+                burden_change();
+                food_change();
+                new_level(); // - must come after mon_init
 
-} // end if newc
+        } // end if newc
 
         you[0].hp_ch = 1;
         you[0].ep_ch = 1;
@@ -1684,50 +1803,53 @@ new_level(); // - must come after mon_init
         you[0].gp_ch = 1;
         you[0].hung_ch = 1;
         wield_change = 1;
-char title [40];
+        char title [40];
 
-strcpy(title, skill_title(best_skill(0, 50, 99), you[0].skills [best_skill(0, 50, 99)], you[0].clas, you[0].xl));
-draw_border(BROWN, you[0].your_name, title, you[0].species);
+        strcpy(title, skill_title(best_skill(0, 50, 99), you[0].skills [best_skill(0, 50, 99)], you[0].clas, you[0].xl));
+        draw_border(BROWN, you[0].your_name, title, you[0].species);
 
-new_level();
+        new_level();
 
-viewwindow(1); // This just puts the view up for the first turn.
+        viewwindow(1); // This just puts the view up for the first turn.
 
-item();
+        item();
 
 
 }
 
-
+/*
+Called when the player moves by walking/running. Also calls attack function
+and trap function etc when necessary.
+*/
 void move(char move_x, char move_y)
 {
-char attacking = 0;
-char stepping = 0;
+        char attacking = 0;
+        char stepping = 0;
 //char move_x, move_y;
-char info [200];
-int i;
-int trap_known, trapped;
-struct bolt beam [1];
+        char info [200];
+        int i;
+        int trap_known, trapped;
+        struct bolt beam [1];
 
         if (you[0].conf > 0)
         {
-  if (random2(3) != 0)
-  {
-                  move_x = random2(3) - 1;
-                  move_y = random2(3) - 1;
-  }
+                if (random2(3) != 0)
+                {
+                move_x = random2(3) - 1;
+                        move_y = random2(3) - 1;
+                }
 
-                if (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] <= 10)
+                if (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] < MINMOVE)
                 {
                         you[0].turnover = 1;
                         mpr("Ouch!");
                         return;
                 }
 
-  if ((grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 61 | grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 62) && you[0].lev == 0)
+                if ((grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 61 || grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 62) && you[0].lev == 0)
                 {
-        fall_into_a_pool(0, grd [you[0].x_pos + move_x] [you[0].y_pos + move_y]);
-        you[0].turnover = 1;
+                        fall_into_a_pool(0, grd [you[0].x_pos + move_x] [you[0].y_pos + move_y]);
+                        you[0].turnover = 1;
                         return;
                 }
         } // end of if you[0].conf
@@ -1738,89 +1860,89 @@ struct bolt beam [1];
                 move_x = 0;
                 move_y = 0;
                 you[0].turnover = 0;
-                return;
+            return;
         }
 
         if (mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y] != MNG)
         {
-    if (menv[mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]].m_class >= MLAVA0 && menv[mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]].m_sec == 1) goto break_out;
-    if (menv[mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]].m_beh == 7 && menv[mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]].m_ench [2] != 6 && you[0].conf == 0)
-    {
-      swap_places(mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]);
-      goto break_out;
-    }
-                         you_attack(mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]);
-                         you[0].turnover = 1;
-                         attacking = 1;
-        }
-
- break_out :
-if ((grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 61 | grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 62) && attacking == 0 && you[0].lev == 0)
-        {
-                mpr("Do you really want to step there?");
-                stepping = get_ch();
-  if (stepping == 'y' | stepping == 'Y')
-  {
-                fall_into_a_pool(0, grd [you[0].x_pos + move_x] [you[0].y_pos + move_y]);
-                you[0].turnover = 1;
-                return;
-  }
-  mpr("Okay, then.");
-                return;
-        }
-
-        if (attacking == 0 && (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] > 10))
-        {
-            if (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 78 && random() % (you[0].skills [18] + 1) > 3)
+            if (menv[mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]].m_class >= MLAVA0 && menv[mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]].m_sec == 1) goto break_out;
+            if (menv[mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]].m_beh == 7 && menv[mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]].m_ench [2] != 6 && you[0].conf == 0)
             {
-             strcpy(info, "Wait a moment, ");
-             strcat(info, you[0].your_name);
-             strcat(info, "! Do you really want to step there?");
-             mpr(info);
-             more();
-             you[0].turnover = 0;
+                swap_places(mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]);
+                goto break_out;
+            }
+                you_attack(mgrd [you[0].x_pos + move_x] [you[0].y_pos + move_y]);
+                you[0].turnover = 1;
+                attacking = 1;
+        }
+
+        break_out :
+        if ((grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 61 || grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 62) && attacking == 0 && you[0].lev == 0)
+        {
+        mpr("Do you really want to step there?");
+                stepping = get_ch();
+                if (stepping == 'y' || stepping == 'Y')
+                {
+                        fall_into_a_pool(0, grd [you[0].x_pos + move_x] [you[0].y_pos + move_y]);
+                        you[0].turnover = 1;
+                        return;
+                }
+                mpr("Okay, then.");
+                return;
+        }
+
+        if (attacking == 0 && (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] >= MINMOVE))
+        {
+        if (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 78 && random() % (you[0].skills [18] + 1) > 3)
+        {
+                strcpy(info, "Wait a moment, ");
+            strcat(info, you[0].your_name);
+            strcat(info, "! Do you really want to step there?");
+            mpr(info);
+            more();
+            you[0].turnover = 0;
                         for (i = 0; i < NTRAPS; i ++)
                         {
                                 if (env[0].trap_x [i] == you[0].x_pos + move_x && env[0].trap_y [i] == you[0].y_pos + move_y) break;
                         }
                         if (env[0].trap_type [i] < 4) grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] = 75;
-                        if (env[0].trap_type [i] == 4 | env[0].trap_type [i] == 5) grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] = 76;
-             return;
-            }
+            if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5) grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] = 76;
+            return;
+                }
 
                 you[0].x_pos += move_x;
                 you[0].y_pos += move_y;
                 move_x = 0;
                 move_y = 0;
-  if (player_fast_run() != 0)
-  {
-   you[0].time_taken *= 6;
-   you[0].time_taken /= 10;
-  }
-  if (you[0].attribute [4] != 0)
-  {
-   you[0].time_taken *= 14;
-   you[0].time_taken /= 10;
-  }
+                if (player_fast_run() != 0)
+                {
+                        you[0].time_taken *= 6;
+                        you[0].time_taken /= 10;
+                }
+                if (you[0].attribute [4] != 0)
+                {
+                        you[0].time_taken *= 14;
+                        you[0].time_taken /= 10;
+                }
                 you[0].turnover = 1;
-                item_check(0);
+        item_check(0);
 
                 if (grd [you[0].x_pos] [you[0].y_pos] > 74 && grd [you[0].x_pos] [you[0].y_pos] < 79)
                 {
 
-                if (grd [you[0].x_pos] [you[0].y_pos] == 78)
-                {
-                        //abort();
-                        for (i = 0; i < NTRAPS; i ++)
+                        if (grd [you[0].x_pos] [you[0].y_pos] == 78)
                         {
-                                if (env[0].trap_x [i] == you[0].x_pos && env[0].trap_y [i] == you[0].y_pos) break;
-                        }
-                        if (env[0].trap_type [i] < 4 | env[0].trap_type [i] == 6) grd [you[0].x_pos] [you[0].y_pos] = 75;
-   if (env[0].trap_type [i] == 4 | env[0].trap_type [i] == 5) grd [you[0].x_pos] [you[0].y_pos] = 76;
+                                //abort();
+                                for (i = 0; i < NTRAPS; i ++)
+                                {
+                                        if (env[0].trap_x [i] == you[0].x_pos && env[0].trap_y [i] == you[0].y_pos) break;
+                                }
+                                if (env[0].trap_type [i] < 4 || env[0].trap_type [i] == 6) grd [you[0].x_pos] [you[0].y_pos] = 75;
+                                if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5) grd [you[0].x_pos] [you[0].y_pos] = 76;
                         trap_known = 0;
 
                                 // else if (trap_type is magic etc
-                } else trap_known = 1;
+                        } else trap_known = 1;
 
 
                         for (i = 0; i < NTRAPS; i ++)
@@ -1832,56 +1954,60 @@ if ((grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 61 | grd [you[0].x_p
                         switch(env[0].trap_type [i])
                         {
 
-                        case 0:
-                        strcpy(beam[0].beam_name, " dart");
-                        beam[0].damage = 4;
-                        trapped = i;
-                        dart_trap(trap_known, i, beam);
-                        break;
+                                case 0:
+                                        strcpy(beam[0].beam_name, " dart");
+                                        beam[0].damage = 4;
+                                        trapped = i;
+                                        dart_trap(trap_known, i, beam);
+                                        break;
 
-                        case 1:
-                        strcpy(beam[0].beam_name, "n arrow");
-                        beam[0].damage = 7;
-                        trapped = i;
-                        dart_trap(trap_known, i, beam);
-                        break;
+                                case 1:
+                                        strcpy(beam[0].beam_name, "n arrow");
+                                        beam[0].damage = 7;
+                                        trapped = i;
+                                        dart_trap(trap_known, i, beam);
+                                        break;
 
-                        case 2:
-                        strcpy(beam[0].beam_name, " spear");
-                        beam[0].damage = 10;
-                        trapped = i;
-                        dart_trap(trap_known, i, beam);
-                        break;
+                                case 2:
+                                        strcpy(beam[0].beam_name, " spear");
+                                        beam[0].damage = 10;
+                                        trapped = i;
+                                        dart_trap(trap_known, i, beam);
+                                        break;
 
-                        case 3:
-                        strcpy(beam[0].beam_name, "n axe");
-                        beam[0].damage = 15;
-                        trapped = i;
-                        dart_trap(trap_known, i, beam);
-                        break;
+                                case 3:
+                                        strcpy(beam[0].beam_name, "n axe");
+                                        beam[0].damage = 15;
+                                        trapped = i;
+                                        dart_trap(trap_known, i, beam);
+                                        break;
 
-   case 4:
-   mpr("You step on a teleport trap!");
-   you_teleport2(1);
-   break;
+                                case 4:
+                                        mpr("You step on a teleport trap!");
+                                        if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
+                                if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 22) > 0)
+                                    {
+                                        mpr("You feel a weird sense of stasis.");
+                                        break;
+                                        }
+                                        you_teleport2(1);
+                                        break;
 
-   case 5:
-   mpr("You feel momentarily disoriented.");
-   forget_map(random2(50) + random2(50) + 2);
-   break;
+                                case 5:
+                                        mpr("You feel momentarily disoriented.");
+                                        forget_map(random2(50) + random2(50) + 2);
+                                        break;
 
-   default: handle_traps(env[0].trap_type [i], trap_known); break;
+                                default: handle_traps(env[0].trap_type [i], trap_known); break;
 
 
                         } // end of switch
-
-
                 } // end of if another grd == trap
 
-                }
+        }
 
 
-        if (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] < 10)
+        if (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] <= MINMOVE)
         {
                 move_x = 0;
                 move_y = 0;
@@ -1890,123 +2016,43 @@ if ((grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 61 | grd [you[0].x_p
         }
 
 
- if (you[0].running == 2) you[0].running = 1;
+        if (you[0].running == 2) you[0].running = 1;
 
- if (you[0].level_type == 2 && (you[0].x_pos <= 21 | you[0].x_pos >= 61 | you[0].y_pos <= 15 | you[0].y_pos >= 54))
-   {
-    env[0].cloud_no = area_shift();
-    you[0].pet_target = MHITNOT;
+        if (you[0].level_type == 2 && (you[0].x_pos <= 21 || you[0].x_pos >= 61 || you[0].y_pos <= 15 || you[0].y_pos >= 54))
+        {
+            env[0].cloud_no = area_shift();
+        you[0].pet_target = MHITNOT;
 #ifdef DEBUG
-    mpr("Shifting.");
-int igly = 0;
-int ig2 = 0;
-for (igly = 0; igly < ITEMS; igly ++)
-{
- if (it[0].iquant [igly] != 0) ig2 ++;
-}
-strcpy(info, "No of items present: ");
-itoa(ig2, st_prn, 10);
-strcat(info, st_prn);
-mpr(info);
-ig2 = 0;
-for (igly = 0; igly < MNST; igly ++)
-{
- if (mons [igly].m_class != -1) ig2 ++;
-}
-strcpy(info, "No of monsters present: ");
-itoa(ig2, st_prn, 10);
-strcat(info, st_prn);
-mpr(info);
-strcpy(info, "No of clouds present: ");
-itoa(cloud_no, st_prn, 10);
-strcat(info, st_prn);
-mpr(info);
+            mpr("Shifting.");
+                int igly = 0;
+                int ig2 = 0;
+                for (igly = 0; igly < ITEMS; igly ++)
+                {
+                        if (it[0].iquant [igly] != 0) ig2 ++;
+                }
+                strcpy(info, "No of items present: ");
+                itoa(ig2, st_prn, 10);
+                strcat(info, st_prn);
+                mpr(info);
+                ig2 = 0;
+                for (igly = 0; igly < MNST; igly ++)
+                {
+                        if (mons [igly].m_class != -1) ig2 ++;
+                }
+                strcpy(info, "No of monsters present: ");
+                itoa(ig2, st_prn, 10);
+                strcat(info, st_prn);
+                mpr(info);
+                strcpy(info, "No of clouds present: ");
+                itoa(cloud_no, st_prn, 10);
+                strcat(info, st_prn);
+                mpr(info);
 
 #endif
    }
 
 
 } // end of void move()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

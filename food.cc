@@ -5,8 +5,11 @@
 #endif
 #include <string.h>
 
+//#include <stdlib.h> only needed for itoa
+
 #include "externs.h"
 #include "spells2.h"
+#include "macro.h"
 #include "mutation.h"
 #include "player.h"
 #include "religion.h"
@@ -64,7 +67,7 @@ you[0].hung_ch = 1;
 
 if (food_eat_3 == 21)
 {
- if (you[0].inv_dam [food_eat_2] < 100 && mons_corpse_thingy(you[0].inv_plus [food_eat_2]) == 1 | mons_corpse_thingy(you[0].inv_plus [food_eat_2]) == 2 | (mons_corpse_thingy(you[0].inv_plus [food_eat_2]) == 3 && player_res_poison() != 0)) eat_meat(50);
+ if (you[0].inv_dam [food_eat_2] < 100 && (mons_corpse_thingy(you[0].inv_plus [food_eat_2]) == 1 || mons_corpse_thingy(you[0].inv_plus [food_eat_2]) == 2) || (mons_corpse_thingy(you[0].inv_plus [food_eat_2]) == 3 && player_res_poison() != 0)) eat_meat(50);
   else eat_meat(mons_corpse_thingy(you[0].inv_plus [food_eat_2]));
  you[0].hung_ch = 1;
  return;
@@ -168,9 +171,9 @@ if (items_here == 1)
                         you[0].hung_ch = 1;
 
 
-   if (you[0].species == 11 | you[0].mutation [10] == 3) // kobold
+   if (you[0].species == 11 || you[0].mutation [10] == 3) // kobold
    {
-    if ((mitm.itype [item_got] >= 1 && mitm.itype [item_got] <= 4) | (mitm.itype [item_got] >= 7 && mitm.itype [item_got] <= 17))
+    if ((mitm.itype [item_got] >= 1 && mitm.itype [item_got] <= 4) || (mitm.itype [item_got] >= 7 && mitm.itype [item_got] <= 17))
      {
       strcpy(info, "Sorry, you're a carnivore.");
       mpr(info);
@@ -191,7 +194,13 @@ if (items_here == 1)
      mpr(info);
      return 0;
     }
-   if (mitm.idam [item_got] < 100 && mons_corpse_thingy(mitm.iplus [item_got]) == 1 | mons_corpse_thingy(mitm.iplus [item_got]) == 2 | (mons_corpse_thingy(mitm.iplus [item_got]) == 3 && player_res_poison() != 0)) eat_meat(50);
+
+/*    itoa(mons_corpse_thingy(mitm.iplus [item_got]), st_prn, 10);
+    strcpy(info, st_prn);
+    mpr(info);*/
+
+//   if ((mitm.idam [item_got] < 100 && mons_corpse_thingy(mitm.iplus [item_got]) == 1) || mons_corpse_thingy(mitm.iplus [item_got]) == 2 || (mons_corpse_thingy(mitm.iplus [item_got]) == 3 && player_res_poison() != 0)) eat_meat(50);
+   if (mitm.idam [item_got] < 100 && (mons_corpse_thingy(mitm.iplus [item_got]) == 1 || mons_corpse_thingy(mitm.iplus [item_got]) == 2) || (mons_corpse_thingy(mitm.iplus [item_got]) == 3 && player_res_poison() != 0)) eat_meat(50);
     else eat_meat(mons_corpse_thingy(mitm.iplus [item_got]));
 //    eat_meat(mons_corpse_thingy(mitm.iplus [item_got]));
     goto out_of_eating3;
@@ -258,9 +267,9 @@ if (items_here > 1)
 
                         item_got = o;
 
-   if (you[0].species == 11 | you[0].mutation [10] == 3) // kobold
+   if (you[0].species == 11 || you[0].mutation [10] == 3) // kobold
    {
-    if ((mitm.itype [item_got] >= 1 && mitm.itype [item_got] <= 4) | (mitm.itype [item_got] >= 7 && mitm.itype [item_got] <= 17))
+    if ((mitm.itype [item_got] >= 1 && mitm.itype [item_got] <= 4) || (mitm.itype [item_got] >= 7 && mitm.itype [item_got] <= 17))
      {
       strcpy(info, "Sorry, you're a carnivore.");
       mpr(info);
@@ -281,7 +290,7 @@ if (items_here > 1)
      mpr(info);
                                         return 0;
     }
-   if (mitm.idam [item_got] < 100 && mons_corpse_thingy(mitm.iplus [item_got]) == 1 | mons_corpse_thingy(mitm.iplus [item_got]) == 2 | (mons_corpse_thingy(mitm.iplus [item_got]) == 3 && player_res_poison() != 0)) eat_meat(50);
+   if (mitm.idam [item_got] < 100 && (mons_corpse_thingy(mitm.iplus [item_got]) == 1 || mons_corpse_thingy(mitm.iplus [item_got]) == 2) || (mons_corpse_thingy(mitm.iplus [item_got]) == 3 && player_res_poison() != 0)) eat_meat(50);
     else eat_meat(mons_corpse_thingy(mitm.iplus [item_got]));
 //    eat_meat(mons_corpse_thingy(mitm.iplus [item_got]));
     goto out_of_eating2;
@@ -428,7 +437,7 @@ if (counter > 1000)
 
 if (items_here == 1)
 {
-   if (mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != 14 | mitm.itype [igrd [you[0].x_pos] [you[0].y_pos]] != 0) goto out_of_eating;// && mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != 14) return 0;
+   if (mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != 14 || mitm.itype [igrd [you[0].x_pos] [you[0].y_pos]] != 0) goto out_of_eating;// && mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != 14) return 0;
                         strcpy(info, "Butcher ");
                         it_name(igrd [you[0].x_pos] [you[0].y_pos], 3, str_pass);
                         strcat(info, str_pass);
@@ -449,10 +458,10 @@ if (items_here == 1)
    you[0].delay_t = 4;
    you[0].delay_doing = 4;
 
-   if (you[0].species == 16 | you[0].attribute [5] == 2 | you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
+   if (you[0].species == 16 || you[0].attribute [5] == 2 || you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
     else mpr("You start hacking away.");
 
-   if (you[0].duration [3] != 0 && (you[0].religion == 3 | you[0].religion == 8 | you[0].religion == 10))
+   if (you[0].duration [3] != 0 && (you[0].religion == 3 || you[0].religion == 8 || you[0].religion == 10))
    {
     offer_corpse(item_got);
     you[0].turnover = 1;
@@ -480,7 +489,7 @@ if (items_here > 1)
 
         for (k = 0; k < items_here; k++) // use k because of call to relay_message()
         {
-   if (mitm.iclass [o] != 14 | mitm.itype [o] != 0) goto out_of_eating; // && mitm.iclass [o] != 14) goto out_of_eating;
+   if (mitm.iclass [o] != 14 || mitm.itype [o] != 0) goto out_of_eating; // && mitm.iclass [o] != 14) goto out_of_eating;
                         strcpy(info, "Butcher ");
                         it_name(o, 3, str_pass);
                         strcat(info, str_pass);
@@ -505,8 +514,18 @@ if (items_here > 1)
    you[0].delay_t = 4;
    you[0].delay_doing = 4;
 
-   if (you[0].species == 16 | you[0].attribute [5] == 2 | you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
+   if (you[0].species == 16 || you[0].attribute [5] == 2 || you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
     else mpr("You start hacking away.");
+
+   if (you[0].duration [3] != 0 && (you[0].religion == 3 || you[0].religion == 8 || you[0].religion == 10))
+   {
+    offer_corpse(item_got);
+    you[0].turnover = 1;
+    destroy_item(item_got);
+    you[0].delay_t = 0;
+    you[0].delay_doing = 0;
+    return 1; /* no chunks */
+   }
 
    place_chunks(mitm.iplus [item_got], mitm.idam [item_got], you[0].x_pos, you[0].y_pos, mitm.icol [item_got]);
    you[0].turnover = 1;
@@ -548,13 +567,13 @@ return 0;
 void eat_meat(int fod_eat_2)
 {
 
- if (wearing_amulet(40) == 1 && (fod_eat_2 == 2 | fod_eat_2 == 3)) fod_eat_2 = 1;
+ if (wearing_amulet(40) == 1 && (fod_eat_2 == 2 || fod_eat_2 == 3)) fod_eat_2 = 1;
 
  switch(fod_eat_2)
  {
   case 1:
   appetising :
-  if (you[0].species == 10 | you[0].species == 11 | you[0].species == 15 | you[0].species == 16 | you[0].mutation [10] > 0)
+  if (you[0].species == 10 || you[0].species == 11 || you[0].species == 15 || you[0].species == 16 || you[0].mutation [10] > 0)
    mpr("This raw flesh tastes good.");
     else
      mpr("This raw flesh is not very appetising.");
@@ -566,8 +585,8 @@ void eat_meat(int fod_eat_2)
   case 2:
   if (random2(3) != 0) goto appetising;
   case 50:
-  if ((you[0].species == 11 | you[0].species == 16) && random2(15) != 0) goto appetising; // kobold, troll
-  if ((you[0].species == 10  | you[0].species == 15) && random2(5) != 0) goto appetising; // orc, ogre
+  if ((you[0].species == 11 || you[0].species == 16) && random2(15) != 0) goto appetising; // kobold, troll
+  if ((you[0].species == 10  || you[0].species == 15) && random2(5) != 0) goto appetising; // orc, ogre
   if (you[0].is_undead != 0) goto appetising;
   strcpy(info, "There is something wrong with this meat.");
   mpr(info);

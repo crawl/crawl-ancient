@@ -182,6 +182,7 @@ char temp_quant [15];
                 else putch(you[0].equip [0] + 39);
                 cprintf(" - ");
                 in_name(you[0].equip [0], 3, str_pass);
+                str_pass [35] = 0;
                 cprintf(str_pass);
             textcolor(LIGHTGREY);
           }

@@ -4,6 +4,7 @@
 
 #include "externs.h"
 #include "beam.h"
+#include "direct.h"
 #include "files.h"
 #include "fight.h"
 #include "player.h"
@@ -11,6 +12,7 @@
 #include "mstruct.h"
 #include "misc.h"
 #include "mutation.h"
+#include "player.h"
 #include "stuff.h"
 #include "dungeon.h"
 #include "itemname.h"
@@ -70,7 +72,7 @@ void torment(void)
 /*
 char go_berserk(void)
 {
-  if (you[0].berserker != 0 | you[0].slow != 0) return 0;
+  if (you[0].berserker != 0 || you[0].slow != 0) return 0;
   if (you[0].is_undead == 2) return 0;
   strcpy(info, "A red film seems to cover your vision as you go berserk!");
   mpr(info);
@@ -171,7 +173,7 @@ switch(beam[0].type)
  case 0: // hellfire
  strcpy(info, "You are engulfed in a burst of hellfire!");
  mpr(info);
- hurted = random2(10) + random2(5) + 5;
+ hurted = random2(10) + random2(10) + 5;
  beam[0].flavour = 20; // lava, but it's hellfire anyway
  strcpy(beam[0].beam_name, "hellfire"); // for ouch
  check_your_resists(hurted, beam[0].flavour);
@@ -183,7 +185,7 @@ switch(beam[0].type)
  case 1: // smiting
  strcpy(info, "Something smites you!");
  mpr(info);
- hurted = random2(5) + random2(5) + 3;
+ hurted = random2(6) + random2(6) + 7;
  strcpy(beam[0].beam_name, "smiting"); // for ouch
  ouch(hurted, 0, 3);
  you[0].hp_ch = 1;
@@ -200,7 +202,7 @@ switch(beam[0].type)
         you[0].intel_ch = 1;
       } else {
                 strcpy(info, "Something tries to feed on your intelligence!");
-                mpr(info);
+                        mpr(info);
              }
  break;
 
@@ -257,7 +259,7 @@ switch(beam[0].type)
   strcpy(beam[0].beam_name, "smiting");
   beam[0].flavour = 0;
   hurted = 0;
-  hurted += random2(5) + random2(5) + 3;
+  hurted += random2(6) + random2(6) + 7;
   menv [o].m_hp -= hurted;
   if (menv [o].m_hp <= 0)
   {
@@ -422,15 +424,11 @@ for (acqc = 0; acqc < 50; acqc ++)
 if (force_class == 250)
 {
 
- strcpy(info, "This is a scroll of acquirement!");
- mpr(info);
+ mpr("This is a scroll of acquirement!");
  query :
- strcpy(info, "a - weapon, b - armour, c - ring,");
- mpr(info);
- strcpy(info, "d - book, e - staff, f - miscellaneous");
- mpr(info);
- strcpy(info, "What kind of item would you like to acquire? ");
- mpr(info);
+ mpr("a - Weapon, b - Armour, c - Jewellery,");
+ mpr("d - Book, e - Staff, f - Miscellaneous");
+ mpr("What kind of item would you like to acquire? ");
  keyin = get_ch();
 
  switch(keyin)
@@ -511,7 +509,7 @@ for (acqc = 0; acqc < 52; acqc ++)
   already_has [5] = 1;
   already_has [8] = 1;
  }* /
- if (you[0].clas == 2 | you[0].clas == 6)
+ if (you[0].clas == 2 || you[0].clas == 6)
  {
   already_has [15] = 1; // necromancy
   already_has [23] = 1;
@@ -526,30 +524,19 @@ do
  {
 
   case 7:
-  type_wanted = random2(21);
+  type_wanted = 250;
   break;
 
   case 10:
 
-/*  if (you[0].clas == 5 && already_has [24] == 0) type_wanted = 24; // necronomicon
-  if (you[0].clas == 5 && already_has [15] == 0) type_wanted = 15; // death
-  if (you[0].clas == 12 && already_has [8] == 0) type_wanted = 8; // fire
-  if (you[0].clas == 13 && already_has [9] == 0) type_wanted = 9; // ice
-  if (you[0].clas == 10 && already_has [14] == 0) type_wanted = 14; // conj
-  if (you[0].clas == 14 && already_has [7] == 0) type_wanted = 7; // summ
-  if (you[0].clas == 11 && already_has [12] == 0) type_wanted = 12; // ench 1
-  if (you[0].clas == 11 && already_has [16] == 0) type_wanted = 16; // ench 1
-  if (you[0].clas == 11 && already_has [22] == 0) type_wanted = 22; // ench 2
-*/
-
-// remember, put rarer books higher
+// remember, put rarer books higher in the list
 
  type_wanted = 99;
 
-glof = 99;
+glof = best_skill(26, 50, glof);
 
 which_book :
- switch(best_skill(25, 50, glof))
+ switch(glof)
  {
   default:
   case 25: // spellcasting
@@ -608,6 +595,11 @@ which_book :
   if (you[0].had_item [23] == 0) type_wanted = 23;
   break;
 
+  case 30: // translocations
+  if (you[0].had_item [11] == 0) type_wanted = 11;
+  if (you[0].had_item [31] == 0) type_wanted = 31;
+  break;
+
   case 31: // transmutation
   if (you[0].had_item [17] == 0) type_wanted = 17;
   if (you[0].had_item [18] == 0) type_wanted = 18;
@@ -616,9 +608,9 @@ which_book :
 
  }
 
-if (type_wanted == 99 && glof == 99)
+if (type_wanted == 99 && glof == best_skill(26, 50, 99)) // && best_skill(25, 50, 99) != best_skill(26, 50, 99))
 {
- glof = best_skill(26, 50, 99);
+ glof = best_skill(26, 50, best_skill(26, 50, 99));
  goto which_book;
 }
 
@@ -663,7 +655,7 @@ if (type_wanted == 99)
   else type_wanted = 250; // always get random armour
 }
 
-if (grd [you[0].x_pos] [you[0].y_pos] == 61 | grd [you[0].x_pos] [you[0].y_pos] == 62)
+if (grd [you[0].x_pos] [you[0].y_pos] == 61 || grd [you[0].x_pos] [you[0].y_pos] == 62)
 {
  strcpy(info, "You hear a splash."); // how sad (and stupid)
  mpr(info);
@@ -708,10 +700,10 @@ if (you[0].inv_class [you[0].equip [0]] != 3)
 
 char charge_gain = 8;
 
-if (you[0].inv_type [you[0].equip [0]] == 7 | you[0].inv_type [you[0].equip [0]] == 8)
+if (you[0].inv_type [you[0].equip [0]] == 7 || you[0].inv_type [you[0].equip [0]] == 8)
  charge_gain = 5;
 
-if (you[0].inv_type [you[0].equip [0]] == 12 | you[0].inv_type [you[0].equip [0]] == 14 | you[0].inv_type [you[0].equip [0]] == 17)
+if (you[0].inv_type [you[0].equip [0]] == 12 || you[0].inv_type [you[0].equip [0]] == 14 || you[0].inv_type [you[0].equip [0]] == 17)
  charge_gain = 4;
 
 item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
@@ -725,5 +717,79 @@ if (you[0].inv_plus [you[0].equip [0]] > charge_gain * 3)
  you[0].inv_plus [you[0].equip [0]] = charge_gain * 3;
 
 return 1;
+
+}
+
+void yell(void)
+{
+
+char targ_prev = 0;
+int mons_targd = 0;
+struct dist beam [1];
+
+mpr("What do you say?");
+mpr(" ! - Yell");
+mpr(" a - Order allies to attack a monster");
+        if (you[0].prev_targ != MHITNOT && you[0].prev_targ < MNST)
+         if (mons_near(you[0].prev_targ) == 1 && (menv [you[0].prev_targ].m_ench [2] != 6 || player_see_invis() != 0))
+         {
+                mpr(" p - Order allies to attack your previous target");
+                targ_prev = 1;
+         }
+strcpy(info, " Anything else - Stay silent ");
+if (random2(10) == 0) strcat(info, "(and be thought of as a fool)");
+mpr(info);
+
+char keyn = get_ch();
+
+switch(keyn)
+{
+
+  case '!':
+  strcpy(info, "You yell for attention!");
+  mpr(info);
+  you[0].turnover = 1;
+  noisy(12, you[0].x_pos, you[0].y_pos);
+  return;
+
+  case 'a':
+  mpr("Gang up on whom?");
+  direction(100, beam);
+
+  if (beam[0].nothing == -1 || mgrd [beam[0].target_x] [beam[0].target_y] == MNG)
+  {
+        mpr("Yeah, whatever.");
+        return;
+  }
+  mons_targd = mgrd [beam[0].target_x] [beam[0].target_y];
+  break;
+
+
+  case 'p':
+  if (targ_prev == 1)
+  {
+   mons_targd = you[0].prev_targ;
+   break;
+  } /* fall through... */
+  default:
+  mpr("Okely-dokely.");
+  return;
+
+}
+
+int i = 0;
+
+for (i = 0; i < MNST; i ++)
+{
+ if (menv [i].m_class == -1) continue;
+ if (menv [i].m_beh != 7) continue;
+ if (mons_near(i) == 0) continue;
+ menv [i].m_hit = mons_targd;
+ menv [i].m_targ_1_x = menv [mons_targd].m_x;
+ menv [i].m_targ_1_y = menv [mons_targd].m_y;
+}
+
+noisy(10, you[0].x_pos, you[0].y_pos);
+mpr("Attack!");
 
 }

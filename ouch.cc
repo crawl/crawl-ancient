@@ -4,12 +4,6 @@
 #include <conio.h>
 #endif
 
-#include <sys/stat.h>
-//#include <fstream.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #ifdef DOS
 #include <file.h>
 #endif
@@ -19,6 +13,18 @@
 #include <unistd.h>
 #endif
 
+#ifdef USE_EMX
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
+#endif
+
+#include <sys/stat.h>
+//#include <fstream.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "externs.h"
 
@@ -27,12 +33,15 @@
 #include "invent.h"
 #include "shopping.h"
 #include "itemname.h"
+#include "macro.h"
 #include "mstruct.h"
 #include "ouch.h"
 #include "player.h"
+#include "randart.h"
 #include "religion.h"
 #include "skills2.h"
 #include "stuff.h"
+#include "files.h"
 
 void highscore(char death_string [80], long points);
 void item_corrode(char itco);
@@ -91,7 +100,7 @@ int check_your_resists(int hurted, int flavour)
  case 6: /* poison */
  if (player_res_poison() > 0)
  {
-  mpr("But you resist.");
+  mpr("You resist.");
   hurted = 0;
  } else you[0].poison += random() % 2 + 1;
         break;
@@ -118,7 +127,7 @@ int check_your_resists(int hurted, int flavour)
 
  } /* end switch */
 
-//      if (stricmp(beam_name, "hellfire") == 0 | beam[0].flavour == 20) // 20 is lava
+//      if (stricmp(beam_name, "hellfire") == 0 || beam[0].flavour == 20) // 20 is lava
         if (flavour == 20)
         {
                 if (player_res_fire() > 100)
@@ -199,7 +208,7 @@ void item_corrode(char itco)
         if (you[0].inv_class [itco] == 0) rusty = you[0].inv_plus2 [itco];
                 else rusty = you[0].inv_plus [itco];
 
-        if (you[0].inv_class [itco] == 0 | you[0].inv_class [itco] == 1)
+        if (you[0].inv_class [itco] == 0 || you[0].inv_class [itco] == 1)
         {
          if (you[0].inv_dam [itco] / 30 == 5 && random() % 5 != 0) return;
          /* dwarven stuff is resistant to acids */
@@ -207,6 +216,8 @@ void item_corrode(char itco)
 
         if (rusty < 45) return;
  if (you[0].inv_class [itco] == 0 && you[0].inv_dam [itco] > 180) return; // unique
+ if (you[0].inv_class [itco] == 0 && you[0].inv_dam [itco] % 30 >= 25) return; // unique
+ if (you[0].inv_class [itco] == 2 && you[0].inv_dam [itco] % 30 >= 25) return; // unique
  if (wearing_amulet(39) == 1 && random() % 10 != 0)
  {
 #ifdef DEBUG
@@ -323,11 +334,6 @@ char point_print [10];
 int d = 0;
 int e = 0;
 
-char corr_level [10];
-char hbjh [5];
-char cha_fil [40];
-int gfile;
-
 
  if (you[0].deaths_door > 0 && death_type != 4 && death_type != 5 && death_type != 6)
  {
@@ -403,7 +409,7 @@ points += (you[0].xp * 7) / 10;
         temp_id [d] [e] = 1;
     }
    }
-if (death_type == 11 | death_type == 12)
+if (death_type == 11 || death_type == 12)
 {
  for (d = 0; d < 52; d ++)
  {
@@ -453,7 +459,15 @@ if (points < 10) strcat(death_string, " ");
          case 20:
          case 21:
          case 22:
-         case 23: strcat(death_string, "Dr"); break;
+         case 23:
+         case 24:
+         case 25:
+         case 26:
+         case 27:
+         case 28:
+         case 29: strcat(death_string, "Dr"); break;
+         case 30: strcat(death_string, "Ce"); break;
+         case 31: strcat(death_string, "DG"); break;
         }
         death_string [strlen(death_string)] = you[0].clasnam [0];
 
@@ -467,7 +481,7 @@ strcat(death_string, point_print);
 
         case 0: // monster
                 strcat(death_string, ", killed by ");
-                if (menv [death_source].m_class < 250 | menv [death_source].m_class > 310 && menv [death_source].m_class != 400) strcat(death_string, "a");
+                if (menv [death_source].m_class < 250 || menv [death_source].m_class > 310 && menv [death_source].m_class != 400) strcat(death_string, "a");
                 strcat(death_string, monam(menv [death_source].m_sec, menv [death_source].m_class, 0, 99));
  break;
 
@@ -550,6 +564,10 @@ strcat(death_string, point_print);
   strcat(death_string, ", killed by Xom ");
  break;
 
+ case 20:
+  strcat(death_string, ", killed by a statue ");
+ break;
+
  } // end switch
 
 if (death_type != 11 && death_type != 12)
@@ -574,7 +592,7 @@ if (death_type != 11 && death_type != 12)
         itoa((you[0].your_level + 1), st_prn, 10);
 
  if (you[0].where_are_you >= 1 && you[0].where_are_you <= 9)
-    itoa(you[0].your_level + 1 - 35, st_prn, 10);
+    itoa(you[0].your_level + 1 - 26, st_prn, 10);
 
  if (you[0].where_are_you >= 10)
  {
@@ -611,98 +629,14 @@ switch (you[0].where_are_you)
  case 19: strcat(death_string, " of the Snake Pit"); break;
  case 20: strcat(death_string, " of the Elf Hall"); break;
  case 21: strcat(death_string, " of the Tomb"); break;
+ case 22: strcat(death_string, " of the Swamp"); break;
 }
 
 
 
         strcat(death_string, ".");
 
-/* Maybe place a ghost: */
-
-if (you[0].your_level > 1 && you[0].is_undead == 0)
-{
-strcpy(corr_level, "");
-
-if (you[0].your_level < 10) strcpy(corr_level, "0");
-itoa(you[0].your_level, hbjh, 10);
-strcat(corr_level, hbjh);
-corr_level [2] = you[0].where_are_you + 97;
-corr_level [3] = 0; /* null-terminate it */
-strcpy(cha_fil, "");
-strcat(cha_fil, "bones.");
-if (you[0].level_type != 0) strcat(cha_fil, "lab"); /* temporary level */
- else strcat(cha_fil, corr_level);
-
-gfile = open(cha_fil, S_IWRITE, S_IREAD);
-
-if (gfile == -1)
-{
-        close(gfile);
-
-        gfile = open(cha_fil, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0660);
-        if (gfile == -1)
-        {
-         strcpy(info, "Error creating ghost file: ");
-         strcat(info, cha_fil);
-         mpr(info);
-         more();
-        } else
-        {
-         write(gfile, you[0].your_name, 20);
-         if (you[0].hp_max > 150) hbjh [0] = 150; else hbjh [0] = you[0].hp_max + 30;
-         hbjh [1] = player_evasion() + 30;
-         hbjh [2] = player_AC() + 30;
-         hbjh [3] = player_see_invis() + 30;
-         hbjh [4] = player_res_fire() + 30;
-         write(gfile, hbjh, 5);
-         /* note - as ghosts, automatically get res poison + prot_life */
-         hbjh [0] = player_res_cold() + 30;
-         hbjh [1] = you[0].attribute [0] + 30;
-         d = 1;
-         e = 0;
-         if (you[0].species == 16) d = 4 + you[0].xl;
-         if (you[0].equip [0] != -1)
-         {
-          if (you[0].inv_class [you[0].equip [0]] == 0)
-          {
-           d = property(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], 0);
-           if (you[0].inv_dam [you[0].equip [0]] < 180) e = you[0].inv_dam [you[0].equip [0]] % 30;
-          }
-          if (you[0].inv_class [you[0].equip [0]] == 11)
-          {
-           d = 5;
-          }
-         }
-
-         if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 | you[0].inv_class [you[0].equip [0]] == 11)
-         {
-          d *= 20 + you[0].skills [weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]])] + 1;
-          d /= 20;
-         }
-
-         d *= 20 + you[0].skills [0] + 1;
-         d /= 20;
-
-         d += you[0].strength / 4;
-         if (d > 50) d = 50;
-
-         hbjh [2] = d + 30;
-         hbjh [3] = e + 30;
-         write(gfile, hbjh, 4);
-
-         hbjh [0] = you[0].species + 30;
-         hbjh [1] = best_skill(0, 50, 99) + 30;
-         hbjh [2] = you[0].skills [best_skill(0, 50, 99)] + 30;
-         hbjh [3] = you[0].xl + 30;
-         hbjh [4] = you[0].clas + 30;
-         write(gfile, hbjh, 5);
-        }
-        close(gfile);
-
-}
-}
-/* end ghost */
-
+  save_ghost();
 
         ending : end_game(1);
 }
@@ -878,16 +812,16 @@ for (i = 0; i < ITEMS; i++)
 
 
         clrscr();
-#ifdef DOS
+#ifdef DOS_TERM
         window(1,1,80,25);
 #endif
         clrscr();
         cprintf("Goodbye, ");
         cprintf(you[0].your_name);
         cprintf(".");
-        cprintf("\n\r\n\r");
+        cprintf(EOL EOL);
         cprintf(death_string);
-        cprintf("\n\r\n\r Best Crawlers - \n\r");
+        cprintf(EOL EOL" Best Crawlers - "EOL);
 
 
 highscore(death_string, points);
@@ -944,7 +878,7 @@ for (hc = 0; hc < 15; hc ++)
  for (hc2 = 0; hc2 < 80; hc2 ++)
  {
   read(handle, ready, 1);
-  if (ready [0] == 13 | ready [0] == 0 | ready [0] == '\r' | ready [0] == '\n')
+  if (ready [0] == 13 || ready [0] == 0 || ready [0] == '\r' || ready [0] == '\n')
   {
    for (hc3 = hc2; hc3 < 80; hc3 ++)
    {
@@ -953,7 +887,7 @@ for (hc = 0; hc < 15; hc ++)
    }
   }
   if (ready [0] == EOF) goto out_of_ready;
-  if (ready [0] == 0 | ready [0] == 7) ready [0] = 32;
+  if (ready [0] == 0 || ready [0] == 7) ready [0] = 32;
   high_scores [hc] [hc2] = ready [0];
  } // end for hc2
 out_of_inner : hc3 = 0;
@@ -988,7 +922,7 @@ if (points > scores [hc] && has_printed == 0)
  {
   if (death_string [hc2] == 32 && death_string [hc2 + 1] == 32 && hc2 > 15)
   {
-   cprintf("\n\r");
+   cprintf(EOL);
    break;
   }
   putch(death_string [hc2]);
@@ -1005,7 +939,7 @@ if (points > scores [hc] && has_printed == 0)
  {
   if (high_scores [hc] [hc2] == 32 && high_scores [hc] [hc2 + 1] == 32 && hc2 > 15)
   {
-   cprintf("\n\r");
+   cprintf(EOL);
    break;
   }
   putch(high_scores [hc] [hc2]);
@@ -1014,7 +948,7 @@ if (points > scores [hc] && has_printed == 0)
 
 close(handle);
 
-//handle = open("scores", O_CREAT | O_TRUNC | O_BINARY, S_IWRITE | S_IREAD);
+//handle = open("scores", O_CREAT || O_TRUNC | O_BINARY, S_IWRITE | S_IREAD);
 //handle = open("scores", O_WRONLY | O_BINARY, S_IWRITE, S_IREAD);
 //handle = open("scores", O_BINARY, 0660);
 handle = open("scores", O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0660); //S_IREAD | S_IWRITE);
@@ -1110,7 +1044,7 @@ if (you[0].ep < 0) you[0].ep = 0;
 void drain_exp(void)
 {
 
-if (you[0].duration [3] != 0 &&  (you[0].religion == 1 | you[0].religion == 2 | you[0].religion == 12) && random2(150) < you[0].piety)
+if (you[0].duration [3] != 0 &&  (you[0].religion == 1 || you[0].religion == 2 || you[0].religion == 12) && random2(150) < you[0].piety)
 {
          strcpy(info, god_name(you[0].religion));
          strcat(info, " protects your life force!");

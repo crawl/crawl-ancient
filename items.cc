@@ -15,9 +15,11 @@
 #include "itemname.h"
 #include "it_use2.h"
 #include "misc.h"
+#include "monplace.h"
 #include "mstruct.h"
 #include "mutation.h"
 #include "player.h"
+#include "randart.h"
 #include "religion.h"
 #include "skills.h"
 #include "stuff.h"
@@ -81,29 +83,32 @@ switch(env[0].grid [you[0].x_pos] [you[0].y_pos])
   case 114: mpr("There is a staircase to the Vaults here."); break;
   case 115: mpr("There is a staircase to the Crypt here."); break;
   case 116: mpr("There is a staircase to the Hall of Blades here."); break;
-  case 117: mpr("There is a staircase to the Hall of Zot here."); break;
+  case 117: mpr("There is a gate to the Realm of Zot here."); break;
   case 118: mpr("There is a staircase to the Ecumenical Temple here."); break;
   case 119: mpr("There is a staircase to the Snake Pit here."); break;
   case 120: mpr("There is a staircase to the Elven Halls here."); break;
   case 121: mpr("There is a staircase to the Tomb here."); break;
+  case 122: mpr("There is a staircase to the Swamp here."); break;
   case 130:
   case 131:
   case 134:
-  case 137:
   case 138:
   case 132: mpr("There is a staircase back to the Dungeon here."); break;
+  case 142: mpr("There is a staircase back to the Mines here."); break;
   case 133: mpr("There is a staircase back to the Lair here."); break;
   case 135: mpr("There is a staircase back to the Vaults here."); break;
   case 141:
   case 136: mpr("There is a staircase back to the Crypt here."); break;
   case 139: mpr("There is a staircase back to the Lair here."); break;
   case 140: mpr("There is a staircase back to the Mines here."); break;
+  case 137: mpr("There is a gate leading back out of this place here."); break;
 
   case 180: mpr("There is a glowing white marble altar of Zin here."); break;
   case 181: mpr("There is a glowing golden altar of the Shining One here."); break;
   case 182: mpr("There is an ancient bone altar of Kikubaaqudgha here."); break;
 //  case 183:
   case 184: mpr("There is a shimmering altar of Xom here."); break;
+  case 185: mpr("There is a shining altar of Vehumet here."); break;
 // case 185
   case 186: mpr("There is an iron altar of Okawaru here."); break;
   case 187: mpr("There is a burning altar of Makhleb here."); break;
@@ -164,7 +169,7 @@ if (counter_max == 1)
 }
 
 
-if ((counter_max > 0 && counter_max < 6) | (counter_max > 1 && keyin == 59))
+if ((counter_max > 0 && counter_max < 6) || (counter_max > 1 && keyin == 59))
 {
         mpr("Things that are here:");
         while (counter < counter_max)
@@ -290,7 +295,7 @@ if (items_here > 1)
                 {
                         return;
                 }
-                if (keyin == 'y' | keyin == 'a')
+                if (keyin == 'y' || keyin == 'a')
                         {
                         item_got = o;
                         int grunk = add_item(o, mitm.iquant [o]);
@@ -369,7 +374,7 @@ if (you[0].inv_no >= 52)
  return ING;
 }
 
-if (mitm.iclass [item_got] < 3 | mitm.iclass [item_got] == 4 | mitm.iclass [item_got] == 13)
+if (mitm.iclass [item_got] < 3 || mitm.iclass [item_got] == 4 || mitm.iclass [item_got] == 13)
 {
         unit_mass = mass(mitm.iclass [item_got], mitm.itype [item_got]);// * mitm.iquant [item_got];
 } else
@@ -437,9 +442,9 @@ if (mitm.iclass [item_got] == 15)
 for (m = 0; m < 52; m++)
 {
 
-        if ((mitm.iclass [item_got] == 1 | mitm.iclass [item_got] == 4 | mitm.iclass [item_got] == 6 | mitm.iclass [item_got] == 8 | mitm.iclass [item_got] == 9) && you[0].inv_class [m] == mitm.iclass [item_got] && you[0].inv_type [m] == mitm.itype [item_got] && you[0].inv_plus [m] == mitm.iplus [item_got] && you[0].inv_plus2 [m] == mitm.iplus2 [item_got] && you[0].inv_dam [m] == mitm.idam [item_got] && you[0].inv_quant [m] > 0)
+        if ((mitm.iclass [item_got] == 1 || (mitm.iclass [item_got] == 4 && mitm.itype [item_got] != 21) || mitm.iclass [item_got] == 6 || mitm.iclass [item_got] == 8 || mitm.iclass [item_got] == 9) && you[0].inv_class [m] == mitm.iclass [item_got] && you[0].inv_type [m] == mitm.itype [item_got] && (((mitm.iclass [item_got] == 4 && mitm.itype [item_got] != 21) || mitm.iclass [item_got] == 6 || mitm.iclass [item_got] == 8) || (you[0].inv_plus [m] == mitm.iplus [item_got] && you[0].inv_plus2 [m] == mitm.iplus2 [item_got] && you[0].inv_dam [m] == mitm.idam [item_got])) && you[0].inv_quant [m] > 0)
         {
-        if (mitm.iid [item_got] == you[0].inv_ident [m])
+        if (mitm.iid [item_got] == you[0].inv_ident [m] || mitm.iclass [item_got] == 4 || mitm.iclass [item_got] == 6 || mitm.iclass [item_got] == 8)
         {
                 you[0].inv_quant [m] += quant_got;//mitm.iquant [item_got];
 
@@ -546,7 +551,7 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
 int item_mass = 0;
 int unit_mass = 0;
 
-if (you[0].inv_class [item_drop_2] < 3 | you[0].inv_class [item_drop_2] == 4 | you[0].inv_class [item_drop_2] == 13)
+if (you[0].inv_class [item_drop_2] < 3 || you[0].inv_class [item_drop_2] == 4 || you[0].inv_class [item_drop_2] == 13)
 {
         unit_mass = mass(you[0].inv_class [item_drop_2], you[0].inv_type [item_drop_2]);
 } else
@@ -576,7 +581,7 @@ int m = 0, i = 0;
 
 if (igrd [x_plos] [y_plos] != 501)
 {
-        if ((you[0].inv_class [item_drop_2] == 1 | you[0].inv_class [item_drop_2] == 4 | you[0].inv_class [item_drop_2] == 6 | you[0].inv_class [item_drop_2] == 8 | you[0].inv_class [item_drop_2] == 9) && you[0].inv_class [item_drop_2] == mitm.iclass [igrd [x_plos] [y_plos]] && you[0].inv_type [item_drop_2] == mitm.itype [igrd [x_plos] [y_plos] ] && you[0].inv_plus [item_drop_2] == mitm.iplus [igrd [x_plos] [y_plos]] && you[0].inv_plus2 [item_drop_2] == mitm.iplus2 [igrd [x_plos] [y_plos]] && you[0].inv_dam [item_drop_2] == mitm.idam [igrd [x_plos] [y_plos]] && mitm.iquant [igrd [x_plos] [y_plos]] > 0)
+        if ((you[0].inv_class [item_drop_2] == 1 || you[0].inv_class [item_drop_2] == 4 || you[0].inv_class [item_drop_2] == 6 || you[0].inv_class [item_drop_2] == 8 || you[0].inv_class [item_drop_2] == 9) && you[0].inv_class [item_drop_2] == mitm.iclass [igrd [x_plos] [y_plos]] && you[0].inv_type [item_drop_2] == mitm.itype [igrd [x_plos] [y_plos] ] && you[0].inv_plus [item_drop_2] == mitm.iplus [igrd [x_plos] [y_plos]] && you[0].inv_plus2 [item_drop_2] == mitm.iplus2 [igrd [x_plos] [y_plos]] && you[0].inv_dam [item_drop_2] == mitm.idam [igrd [x_plos] [y_plos]] && mitm.iquant [igrd [x_plos] [y_plos]] > 0)
         {
         if (you[0].inv_ident [item_drop_2] == mitm.iid [igrd [x_plos] [y_plos] ])
         {
@@ -704,10 +709,10 @@ return;
 }
 
 
-if (keyin == '?' | keyin == '*')
+if (keyin == '?' || keyin == '*')
 {
         nthing = get_invent(-1);
-        if ((nthing >= 65 && nthing <= 90) | (nthing >= 97 && nthing <= 122))
+        if ((nthing >= 65 && nthing <= 90) || (nthing >= 97 && nthing <= 122))
         {
                 keyin = nthing;
         } else
@@ -735,7 +740,7 @@ if (item_drop_1 > 47 && item_drop_1 < 58)
                 }
 }
 
-if ((item_drop_1 < 65 | (item_drop_1 > 90 && item_drop_1 < 97) | item_drop_1 > 122)) // && item_drop_1 != '$')
+if ((item_drop_1 < 65 || (item_drop_1 > 90 && item_drop_1 < 97) || item_drop_1 > 122)) // && item_drop_1 != '$')
 {
         strcpy(info, "You don't have any such object.");
         mpr(info);
@@ -762,7 +767,7 @@ if ((item_drop_1 < 65 | (item_drop_1 > 90 && item_drop_1 < 97) | item_drop_1 > 1
                 }
         }
 
-        if (item_drop_2 == you[0].equip [7] | item_drop_2 == you[0].equip [8] | item_drop_2 == you[0].equip [9])
+        if (item_drop_2 == you[0].equip [7] || item_drop_2 == you[0].equip [8] || item_drop_2 == you[0].equip [9])
         {
                 strcpy(info, "You will have to take that off first.");
                 mpr(info);
@@ -787,6 +792,13 @@ if ((item_drop_1 < 65 | (item_drop_1 > 90 && item_drop_1 < 97) | item_drop_1 > 1
         strcat(info, ".");
         mpr(info);
 
+        if (item_drop_2 == you[0].equip [0])
+        {
+        unwield_item(item_drop_2);
+                you[0].equip [0] = -1;
+                mpr("You are empty handed.");
+        }
+
         item_place(item_drop_2, you[0].x_pos, you[0].y_pos, quant_drop);
 
         you[0].inv_quant [item_drop_2] -= quant_drop;
@@ -795,13 +807,6 @@ if ((item_drop_1 < 65 | (item_drop_1 > 90 && item_drop_1 < 97) | item_drop_1 > 1
 
         burden_change();
 
-        if (item_drop_2 == you[0].equip [0])
-        {
-  unwield_item(item_drop_2);
-                you[0].equip [0] = -1;
-                strcpy(info, "You are empty handed.");
-                mpr(info);
-        }
 } /* end of drop func. */
 
 
@@ -832,6 +837,34 @@ void manage_corpses(void) /* causes corpses to rot away */
 /* because it occurs periodically, this function is useful for things which
 happen every now and then. */
 
+/* Nasty things happen to people who spend too long in Hell: */
+
+if (you[0].where_are_you > 0 && you[0].where_are_you < 10 && you[0].where_are_you != 3 && random2(3) == 0)
+{
+ switch(random2(10))
+ {
+  case 0: mpr("You hear diabolical laughter!"); break;
+  case 1: mpr("\"Die, mortal!\""); break;
+  case 2: mpr("\"Trespassers are not welcome here!\""); break;
+  case 3: mpr("Twisted shapes form in the air around you."); break;
+  case 4: mpr("You feel a terrible foreboding..."); break;
+  case 5: mpr("You hear words spoken in a strange and terrible language..."); break;
+  case 6: mpr("You smell brimstone."); break;
+  case 7: mpr("Something frightening happens."); break;
+ }
+ create_monster(250, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+ if (random2(3) == 0) create_monster(250, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+ if (random2(3) == 0) create_monster(250, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+ if (random2(3) == 0) create_monster(250, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+ if (random2(3) == 0) create_monster(250, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+
+/* mons_place(2500, 1, you[0].x_pos, you[0].y_pos, 0, MHITNOT, 250, you[0].your_level);
+ if (random2(3) == 0) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, you[0].your_level);
+ if (random2(3) == 0) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, you[0].your_level);
+ if (random2(3) == 0) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, you[0].your_level);*/
+}
+
+
 if (you[0].disease == 0)
 {
 
@@ -857,7 +890,7 @@ if (you[0].disease == 0)
  }
 } else
    {
-    if (random2(50) == 0)
+    if (random2(30) == 0)
     {
      mpr("Your disease is taking its toll.");
      lose_stat(100, 1);
@@ -865,16 +898,18 @@ if (you[0].disease == 0)
    }
 
 
-if (you[0].invis > 0 | (you[0].haste > 0 && you[0].berserker == 0))
+if (you[0].invis > 0 || (you[0].haste > 0 && you[0].berserker == 0))
 {
- if (random2(8) != 0 && you[0].mpower < 100) you[0].mpower ++;
+ if (random2(2) == 0 && you[0].mpower < 100) you[0].mpower ++;
 }
+
+you[0].mpower += random2(scan_randarts(25) + 1); // mutagenic radiation
 
 if (you[0].mpower > 0 && random2(2) == 0)
 {
- if (random2(100) <= you[0].mpower)
+ if (you[0].mpower > 4 && random2(100) <= you[0].mpower)
  {
-  mpr("You've been spending too much time under the influence of powerful magic!");
+  mpr("You've accumulated too much magical radiation!");
   if (random2(2) == 0) mutate(100); else give_bad_mutation();
  }
  you[0].mpower --;
@@ -910,19 +945,20 @@ if (you[0].religion != 0)
   break;
 
   case 3: /* These gods require constant appeasement */
+  case 6: /* Vehumet */
   case 7:
   case 10:
-  if (random2(7) == 0) lose_piety(1);
+  if (random2(9) == 0) lose_piety(1);
   if (you[0].piety <= 0) excommunication();
   break;
 
   case 8:
-  if (random2(3) == 0) lose_piety(1);
+  if (random2(7) == 0) lose_piety(1);
   if (you[0].piety <= 0) excommunication();
   break;
 
   case 9: /* Sif Muna */
-  if (random2(12) == 0) lose_piety(1);
+  if (random2(10) == 0) lose_piety(1);
   if (you[0].piety <= 0) excommunication();
   break;
 
@@ -947,7 +983,7 @@ for (c = 0; c < ITEMS; c ++)
     destroy_item(c);
     continue;
    }
-   if (mitm.itype [c] == 1 | mons_skeleton(mitm.iplus [c]) == 0)
+   if (mitm.itype [c] == 1 || mons_skeleton(mitm.iplus [c]) == 0)
    {
     destroy_item(c);
     continue;
@@ -1018,14 +1054,16 @@ practise_stealth : if (you[0].burden_state != 0) return;
 
 if (you[0].equip [6] != -1)
 {
- if (you[0].inv_type [you[0].equip [6]] > 1 && (you[0].inv_type [you[0].equip [6]] < 22 | you[0].inv_type [you[0].equip [6]] > 25))
-    if (random() % mass(2, you[0].inv_type [you[0].equip [6]]) >= 100 | random() % 3 != 0) return;
+ if (you[0].inv_dam [you[0].equip [6]] / 30 != 4) /* elven armours don't hamper stealth */
+  if (you[0].inv_type [you[0].equip [6]] > 1 && (you[0].inv_type [you[0].equip [6]] < 22 || you[0].inv_type [you[0].equip [6]] > 25))
+     if (random() % mass(2, you[0].inv_type [you[0].equip [6]]) >= 100 || random() % 3 != 0) return;
 }
 
-if (you[0].lev != 0) return; // can't really practise stealth while floating, and an amulet of control flight shouldn't make much difference
+//if (you[0].lev != 0) return; // can't really practise stealth while floating, and an amulet of control flight shouldn't make much difference
 
 if (you[0].special_wield == 50) return; // shadow lantern
 
 if (random() % 6 == 0) exercise(15, 1);
+
 
 } // end manage_corpses

@@ -3,7 +3,6 @@
 #define _NORMALCURSOR 1
 #define _NOCURSOR 0
 #define O_BINARY O_RDWR
-//#include "colours.h"
 
 void lincurses_startup();
 

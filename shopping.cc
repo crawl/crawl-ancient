@@ -8,10 +8,10 @@
 
 #include "invent.h"
 #include "itemname.h"
+#include "macro.h"
 #include "player.h"
 
 #include <stdlib.h>
-#include <iostream.h>
 #include <string.h>
 
 /*#include "crawlfnc.h"
@@ -95,13 +95,13 @@ char in_a_shop(char shoppy, char id [4] [50])
    char i;
    char ft;
 
-#ifdef DOS
+#ifdef DOS_TERM
    char buffer[4800];
    gettext(1, 1, 80, 25, buffer);
 #endif
    strcpy(st_pass, "");
 
-#ifdef DOS
+#ifdef DOS_TERM
    window(1, 1, 80, 25);
 #endif
 
@@ -233,20 +233,20 @@ itty = igrd [0] [5 + shoppy];
 
       ft = shop_getch();
 
-      if (ft == 'x' | ft == 27) goto goodbye;
+      if (ft == 'x' || ft == 27) goto goodbye;
 
-      if (ft == '?' | ft == '*')
+      if (ft == '?' || ft == '*')
       {
        shop_uninit_id(shoppy, shop_id);
        invent(-1, 0);
        shop_init_id(shoppy, shop_id);
-#ifdef DOS
+#ifdef DOS_TERM
        window(1, 1, 80, 25);
 #endif
        goto print_stock;
       }
 
-      if (ft < 'a' | ft > 'z')
+      if (ft < 'a' || ft > 'z')
         {
          huh : shop_print("Huh?", 20);
          more3();
@@ -288,7 +288,7 @@ itty = igrd [0] [5 + shoppy];
       clear_line();
       shop_print("Goodbye!", 20);
       more3();
-#ifdef DOS
+#ifdef DOS_TERM
       puttext(1, 1, 80, 25, buffer);
       gotoxy(1,1);
       cprintf(" ");
@@ -306,7 +306,7 @@ void shop_init_id(int i, int shop_id [4] [50])
 {
 int j = 0;
     if (env[0].sh_type [i] != 2 && env[0].sh_type [i] != 3 && env[0].sh_type [i] != 4)
-       for (j = 0; j < 30; j ++)
+       for (j = 0; j < 50; j ++)
        {
         shop_id [0] [j] = get_id(3, j);
         set_id(3, j, 1);
@@ -326,7 +326,7 @@ void shop_uninit_id(int i, int shop_id [4] [50])
 int j = 0;
 
     if (env[0].sh_type [i] != 2 && env[0].sh_type [i] != 3 && env[0].sh_type [i] != 4)
-       for (j = 0; j < 30; j ++)
+       for (j = 0; j < 50; j ++)
        {
 //        shop_id [i] [j] = get_id(i, j);
         set_id(3, j, shop_id [0] [j]);
@@ -453,11 +453,11 @@ switch(item_clas)
         case 6: valued += 1200; break; //strcat(glog , "Sceptre of Torment"); break;
         case 7: valued += 1250; break; //strcat(glog , "Sword of Zonguldrok"); break;
         case 8: valued += 2000; break; //strcat(glog , "Sword of Okawaru"); break;
-        case 9: valued += 1200; break;  break; //strcat(glog , ""); break;
-        case 10: valued += 1500; break;  break; //strcat(glog , ""); break;
+        case 9: valued += 1200; break; //strcat(glog , ""); break;
+        case 10: valued += 1500; break; //strcat(glog , ""); break;
 
 
-        default: valued += 1000;
+        default: valued += 1000; break;
    }
   break;
   } // end if ident_lev
@@ -482,10 +482,10 @@ switch(item_clas)
         case 13: valued += 15; break; //strcat(glog , "sling"); break;
         case 14: valued += 31; break; //strcat(glog , "bow"); break;
         case 15: valued += 41; break; //strcat(glog , "crossbow"); break;
- case 16: valued += 51; break; //strcat(glog , "hand crossbow"); break;
- case 17: valued += 55; break; //strcat(glog , "glaive"); break;
+        case 16: valued += 51; break; //strcat(glog , "hand crossbow"); break;
+        case 17: valued += 55; break; //strcat(glog , "glaive"); break;
         case 18: valued += 25; break; //strcat(glog , "quarterstaff"); break;
- case 19: valued += 30; break; //strcat(glog , "scythe"); break;
+        case 19: valued += 30; break; //strcat(glog , "scythe"); break;
         case 20: valued += 17; break; //strcat(glog , "giant club"); break;
         case 21: valued += 19; break; //strcat(glog , "giant spiked club"); break;
         case 22: valued += 65; break; // eveningstar
@@ -493,8 +493,13 @@ switch(item_clas)
         case 24: valued += 300; break; // katana
         case 25: valued += 100; break; // exec axe
         case 26: valued += 200; break; // 2x sw
-        case 27: valued += 300; break; // 2x sw
+        case 27: valued += 300; break; // 3x sw
         case 28: valued += 30; break; // hammer
+        case 29: valued += 40; break; // ancus
+        case 30: valued += 25; break; // whip
+        case 31: valued += 40; break; // sabre
+        case 32: valued += 300; break; // demon blade
+        case 33: valued += 230; break; // demon whip
 
         }
 
@@ -520,11 +525,12 @@ if (ident_lev > 1)
   case 14: valued *= 50; break; // mace of disruption
   case 15: valued *= 30; break; // pain
   case 16: valued *= 30; break; // distortion
+  default: valued *= 120; break; /* randart */
  }
  if (item_da % 30 != 0) valued /= 10;
 }
 
-if (item_da / 30 == 4 | item_da / 30 == 5) // elf/dwarf
+if (item_da / 30 == 4 || item_da / 30 == 5) // elf/dwarf
 {
   valued *= 12;
   valued /= 10;
@@ -540,7 +546,7 @@ if (item_da / 30 == 6) // orc
         if (ident_lev > 2)
         {
 
-         if (it_plus >= 50 && (it_plus <= 130 | it_plus >= 150))
+         if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150))
          {
            valued += (it_plus % 50) * 2;
            valued *= 10 + (it_plus % 50) + 2 * (it_plus % 50);
@@ -655,7 +661,7 @@ if (item_da / 30 == 6) // orc
   /*
         if (ident_lev > 2)
         {
-                if (it_plus >= 50 && (it_plus <= 130 | it_plus >= 150)) valued += it_plus % 50 * 15;
+                if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150)) valued += it_plus % 50 * 15;
                 if (it_plus < 50) valued -= 20 + (50 - it_plus) * 15;
 
 //             valued += it_plus % 50;
@@ -693,7 +699,9 @@ if (item_da / 30 == 6) // orc
         case 27: valued += 1050; break; //  , "storm dragon scale mail"); break;
         case 28: valued += 1400; break; //  , "gold dragon hide"); break;
         case 29: valued += 1600; break; //  , "gold dragon scale mail"); break;
-        case 30: valued += 3; break; // animal skins
+                case 30: valued += 3; break; // animal skins
+        case 31: valued += 400; break; // strcat(glog , "swamp dragon hide"); break;
+        case 32: valued += 650; break; // strcat(glog , "swamp dragon scale mail"); break;
 
 
         }
@@ -703,6 +711,7 @@ if (item_da / 30 == 6) // orc
  {
   switch(item_da % 30)
   {
+   case 0: break;
    case 1: valued *= 40; break; //strcat(glog, " of running"); break;
    case 2: valued *= 30; break; //strcat(glog, " of fire resistance"); break;
    case 3: valued *= 30; break; //strcat(glog, " of cold resistance"); break;
@@ -721,11 +730,13 @@ if (item_da / 30 == 6) // orc
   case 16: valued *= 50; break; // of life prot
   case 17: valued *= 100; break; // of the Archmagi
   case 18: valued *= 30; break; // of preservation
+  default: /* assume a randart */
+       valued *= 70; break;
   }
  if (item_da % 30 != 0) valued /= 10;
  }
 
-if (item_da / 30 == 4 | item_da / 30 == 5) // elf/dwarf
+if (item_da / 30 == 4 || item_da / 30 == 5) // elf/dwarf
 {
   valued *= 12;
   valued /= 10;
@@ -753,7 +764,7 @@ if (item_da / 30 == 6) // orc
         if (ident_lev >= 2)
         {
          valued += 5;
-         if (it_plus >= 50 && (it_plus <= 130 | it_plus >= 150))
+         if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150))
          {
            valued += (it_plus % 50) * 30;
            valued *= 10 + (it_plus % 50) * 3 * (it_plus % 50);
@@ -946,9 +957,9 @@ if (item_da / 30 == 6) // orc
    if (id [2] [item_typ] > 0)
         {
 
-        if (ident_lev > 1 && item_typ == 1 | item_typ == 5 | item_typ == 11 | item_typ == 14 | item_typ == 15)
+        if (ident_lev > 1 && item_typ == 1 || item_typ == 5 || item_typ == 11 || item_typ == 14 || item_typ == 15)
         {
-                if (it_plus >= 50 && (it_plus <= 130 | it_plus >= 150)) valued += 10 * (it_plus % 50);
+                if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150)) valued += 10 * (it_plus % 50);
         }
 
         switch(item_typ)
@@ -991,6 +1002,8 @@ if (item_da / 30 == 6) // orc
 
  // got to do delusion!
  }
+
+ if (item_da == 200) valued += 50;
 
  valued *= 7;
 
@@ -1045,18 +1058,18 @@ if (ident_lev == 0)
  break;
 }
 
-valued = 150 + book_rarity(item_typ) * 21;
+valued = 150 + book_rarity(item_typ) * 50;
 
 /*
 valued = 210;
 
-if (item_typ < 7 | item_typ == 23 | item_typ == 25)
+if (item_typ < 7 || item_typ == 23 || item_typ == 25)
   {
    valued = 150;
    break;
   }
 
-if (item_typ == 14 | item_typ == 24) // gr conj/necronomicon
+if (item_typ == 14 || item_typ == 24) // gr conj/necronomicon
 {
  valued = 550;
  break;
@@ -1068,7 +1081,7 @@ if (item_typ == 15)
  break;
 }
 
-if (item_typ == 17 | item_typ == 35)
+if (item_typ == 17 || item_typ == 35)
 {
  valued = 470;
  break;
@@ -1085,7 +1098,7 @@ if (ident_lev == 0)
 } // end if
 
 valued = 250;
-if (item_typ == 10 | item_typ == 16 | item_typ == 17)
+if (item_typ == 10 || item_typ == 16 || item_typ == 17)
   {
    valued = 150;
   }
@@ -1263,7 +1276,7 @@ save_id(identy);
 in_a_shop(i, identy);
 you[0].gp_ch = 1;
 burden_change();
-#ifdef LINUX
+#ifdef PLAIN_TERM
 redraw_screen();
 #endif
 }

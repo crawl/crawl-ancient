@@ -23,27 +23,35 @@
 #include <stdlib.h>
 #include <string.h>
 #include "itemname.h"
+#include "macro.h"
 #include "mstruct.h"
 #include "player.h"
+#include "randart.h"
 #include "skills2.h"
 
-void print_description(char descr [500]);
+void print_description(char descr [1000]);
+void print_ench(char descpr [1000], unsigned char item_plus);
+void append_value(char descpr [1000], int valu, char plussed);
+void randart_descpr(char descpr [1000], int item_class, int item_type, int item_plus, int item_plus2, int item_dam);
 
-void print_ench(char descpr [500], unsigned char item_plus);
-
-void describe_monsters(int class_described)
+/*
+Contains sketchy descriptions of every monster in the game.
+*/
+void describe_monsters(int class_described, unsigned char which_mons)
 {
 
+   unsigned char useless = which_mons;
+   which_mons = useless;
 
-   char descpr [500];
-#ifdef DOS
+   char descpr [1000];
+#ifdef DOS_TERM
    char buffer[3400];
    gettext(25, 1, 80, 25, buffer);
 #endif
 
 //   strcpy(st_pass, "");
 
-#ifdef DOS
+#ifdef DOS_TERM
    window(25, 1, 80, 25);
 #endif
 
@@ -54,7 +62,6 @@ void describe_monsters(int class_described)
 switch(class_described)
 {
 
-default:
 case 0: // giant ant
 strcpy(descpr, "A black ant with poisonous pincers, about the size of a large dog.");
 break;
@@ -642,6 +649,14 @@ case 156: // ghoul
 strcpy(descpr, "An undead creature created by a similar curse to that used in the production of the necrophage. ");
 break;
 
+case 157: // hog
+strcpy(descpr, "A large, fat and very ugly pig. ");
+break;
+
+case 158: // mosquito
+strcpy(descpr, "A huge, bloated mosquito. It looks diseased.");
+break;
+
 case 160: // iron troll
 strcpy(descpr, "A great troll covered in armour plates of rusty iron. ");
 break;
@@ -686,8 +701,16 @@ case 170: // red wasp
 strcpy(descpr, "A huge wasp with a viciously barbed stinger.");
 break;
 
+case 171: // swamp dragon
+strcpy(descpr, "A slimy dragon, covered in swamp muck. Poisonous gasses dribble from its snout.");
+break;
+
+case 172: // swamp drake
+strcpy(descpr, "A small and slimy dragon, covered in swamp muck. It smells horrible.");
+break;
+
 case 240: // Shadow wraith
-strcpy(descpr, "A skeletal shadow hanging in mid-air, this creature is almost invisible even to your magically enhanced sight. "); // assumes: to read this message, has see invis
+strcpy(descpr, "A mist-wreathed skeletal shadow hanging in mid-air, this creature is almost invisible even to your enhanced sight. "); // assumes: to read this message, has see invis
 break;
 
 case 241: // Giant amoeba
@@ -843,7 +866,19 @@ strcpy(descpr, "A huge and very powerful demon, wreathed in fire and shadows. ")
 break;
 
 case 234: // cacodemon
-strcpy(descpr, "A demon of rage and legendary power. ");
+strcpy(descpr, "A hideously ugly demon of rage and legendary power. ");
+break;
+
+case 235: // demonic crawler
+strcpy(descpr, "A long and bloated body, supported by dozens of short legs and topped with an evil-looking head. ");
+break;
+
+case 236: // sun demon
+strcpy(descpr, "A demonic figure shining with the light of the sun. ");
+break;
+
+case 237: // shadow imp
+strcpy(descpr, "A small and shadowy figure. ");
 break;
 
 
@@ -957,7 +992,7 @@ strcpy(descpr, "A huge and strangely deformed eyeball, pulsating with light. ");
 break;
 
 case 365: // orb guardian
-strcpy(descpr, "A huge and glowing crystal statue. ");
+strcpy(descpr, "A huge and glowing purple creature, created by the Orb to defend itself. ");
 break;
 
 case 366: // Daeva
@@ -998,6 +1033,82 @@ break;
 
 case 375: // mummy priest
 strcpy(descpr, "The embalmed and undead corpse of an ancient servant of darkness.");
+break;
+
+case 376: // centaur warrior
+strcpy(descpr, "A hybrid with the torso of a human atop the body of a large horse. It looks aggressive.");
+break;
+
+case 377: // yaktaur
+strcpy(descpr, "Like a centaur, but half yak. It looks aggressive.");
+break;
+
+case 378: // Killer Klown
+strcpy(descpr, "A comical figure full of life and laughter. It looks very \
+happy to see you.$But is there a slightly malicious cast to its features? \
+Is that red facepaint something altogether less pleasant? Join in the fun, \
+and maybe you'll find out!");
+break;
+
+/* Hugh Cook monsters:*/
+
+case 379: // guardian robot
+strcpy(descpr, "A moving column of metal.");
+break;
+
+case 380: // dorgi
+strcpy(descpr, "\"The dorgi...was a huge grumping machine with a pronounced propensity for violence. It was huge, heavy, brown and bulbous. A hulking \
+thing stubbled with inscrutable protruberances. A monstrous thing which moved \
+upon its victims with a sound like heavy breathing.\"$(Hugh Cook, _The Wazir \
+and the Witch_)");
+break;
+
+case 381: // Sword
+strcpy(descpr, "An incandescent globe of light, capable of impressive \
+pyrotechnics.");
+break;
+
+case 382: // quokka
+strcpy(descpr, "A small marsupial mammal, altered by nanotechnological manipulators.");
+break;
+
+
+
+case 386: // moth of wrath
+strcpy(descpr, "A huge moth, as violent as it is hairy.");
+break;
+
+
+case 387: // death cob
+strcpy(descpr, "A dreadful undead cob of corn.");
+break;
+
+case 388: // curse toe
+strcpy(descpr, "A disembodied toe, hanging in the air and radiating an intense field of negative energy.");
+break;
+
+case 389: // mimic in gold form
+strcpy(descpr, "An apparently harmless pile of gold coins hides a nasty venomous shapechanging predator.");
+break;
+
+case 390: // mimic in weapon form
+strcpy(descpr, "An apparently abandoned weapon, actually a vicious little beast in disguise.");
+break;
+
+case 391: // mimic in armour form
+strcpy(descpr, "An apparently abandoned suit of finely-made armour, actually a vicious little beast in disguise.");
+break;
+
+case 392: // mimic in scroll form
+strcpy(descpr, "An ancient parchment covered in arcane runes. Did it just twitch?");
+break;
+
+case 393: // mimic in potion form
+strcpy(descpr, "A delicious looking magical drink. Go on, pick it up!");
+break;
+
+case 394: // hell-hog
+strcpy(descpr, "A large, fat and very ugly pig, suckled in the pits of Hell. ");
 break;
 
 
@@ -1052,6 +1163,16 @@ case MWATER4: // water elemental
 strcpy(descpr, "A spirit drawn from the elemental plane of water. It exists on this world as part of a body of water.");
 break;
 
+case MWATER5: // swamp worm
+strcpy(descpr, "A large worm, adept at swimming through the muck of this foul swamp.");
+break;
+
+
+default:
+strcpy(descpr, "A monster whose description is yet to be written.");
+break;
+
+
 // onocentaur - donkey
 
 /*case MLAVA0: //
@@ -1063,50 +1184,23 @@ case 110: //
 strcpy(descpr, "");
 break;
 */
-/*
-case MLAVA0: strcat(gmon_name, "lava worm"); break;
-case MLAVA1: strcat(gmon_name, "lava fish"); break;
-case MLAVA2: strcat(gmon_name, "lava snake"); break;
-case MLAVA3: strcat(gmon_name, "another lava thing"); break;
-case MWATER0: strcat(gmon_name, "big fish"); break;
-case MWATER1: strcat(gmon_name, "giant goldfish"); break;
-case MWATER2: strcat(gmon_name, "electrical eel"); break;
-case MWATER3: strcat(gmon_name, "jellyfish"); break;
-case MWATER4: strcat(gmon_name, ""); break;
-
-* /
-
-case 100: //
-strcpy(descpr, "");
-break;
-/ *
- case 1: // b
- case 3: // d
- case 8: // i ?
- case 10: // k
-// case 21: // v???
- case 24: // y
- case 26: // A
- case 29: // D
- case 31: // F?
- case 42: // Queen bee
- case 66: // butterflue
- case 75: // ice dragon
- case 82: // yellow devil
- case 87: // blue devil
- case 101: // steam dragon
- case 104: // hippogriff
- case 105: // griffon
- return 1; // wings (stops flying if paralysed)
-*/
 }
 
+/*
+strcat(descpr, " It looks to be worth about ");
+char exper_val [20];
+itoa(exper_value(menv [which_mons].m_class, menv [which_mons].m_HD, menv [which_mons].m_hp_max), exper_val, 10);
+strcat(descpr, exper_val);
+if (exper_value(menv [which_mons].m_class, menv [which_mons].m_HD, menv [which_mons].m_hp_max) == 1)
+ strcat(descpr, " experience point.");
+  else strcat(descpr, " experience points.");
+*/
 print_description(descpr);
 
 
 if (getch() == 0) getch();
 
-#ifdef DOS
+#ifdef DOS_TERM
 puttext(25, 1, 80, 25, buffer);
 window(1, 1, 80, 25);
 #endif
@@ -1119,14 +1213,16 @@ window(1, 1, 80, 25);
 
 
 
-
+/*
+Describes all items in the game.
+*/
 void describe_item(int item_class, int item_type, int item_plus, int item_plus2, int item_dam, unsigned char item_id) //, int property [4] [50] [3], int mass [20] [50])
 {
 
 
-   char descpr [500];
+   char descpr [1000];
 
-#ifdef DOS
+#ifdef DOS_TERM
    char buffer[3400];
    gettext(25, 1, 80, 25, buffer);
 
@@ -1138,6 +1234,7 @@ void describe_item(int item_class, int item_type, int item_plus, int item_plus2,
 
    strcpy(descpr, "");
 
+int spec_ench = 0;
 
 switch(item_class)
 {
@@ -1231,11 +1328,39 @@ break;
 case 28:
 strcpy(descpr, "The kind of thing you hit nails with, adapted for battle. ");
 break;
+case 29:
+strcpy(descpr, "A large and vicious toothed club. ");
+break;
+case 30:
+strcpy(descpr, "A whip. ");
+break;
+case 31:
+strcpy(descpr, "A sword with a medium length slashing blade. ");
+break;
+case 32:
+strcpy(descpr, "A terrible weapon, forged in the fires of Hell. ");
+break;
+case 33:
+strcpy(descpr, "A terrible weapon, woven in the depths of the inferno. ");
+break;
+case 34:
+strcpy(descpr, " ");
+break;
 
 }
-if (item_type < 13 | item_type > 16) // ie is not a missile device
+if (item_type < 13 || item_type > 16) // ie is not a missile device
 {
-if (property(0, item_type, 0) == 3)
+strcat(descpr, "$Damage rating: ");
+append_value(descpr, property(0, item_type, 0), 0);
+
+strcat(descpr, "$Accuracy rating: ");
+append_value(descpr, property(0, item_type, 1), 1);
+
+strcat(descpr, "$Speed multiplier (x10): ");
+append_value(descpr, property(0, item_type, 2), 1);
+strcat(descpr, "$");
+
+/*if (property(0, item_type, 0) == 3)
 strcat(descpr, "It does very little damage in combat, ");
 if (property(0, item_type, 0) == 4)
 strcat(descpr, "It does a rather small amount of damage in combat, ");
@@ -1292,7 +1417,7 @@ strcat(descpr, "is greatly accurate, ");
 if (property(0, item_type, 1) == 6)
 strcat(descpr, "is extremely accurate, ");
 
-if (property(0, item_type, 2) == 7) /* quick blade */
+if (property(0, item_type, 2) == 7) / * quick blade * /
 strcat(descpr, "and is lightning fast. ");
 if (property(0, item_type, 2) == 11)
 strcat(descpr, "and is extremely quick. ");
@@ -1312,7 +1437,7 @@ strcat(descpr, "and is extremely slow. ");
 if (property(0, item_type, 2) == 19)
 strcat(descpr, "and is very cumbersome. ");
 if (property(0, item_type, 2) == 22)
-strcat(descpr, "and is extremely cumbersome. ");
+strcat(descpr, "and is extremely cumbersome. ");*/
 }// else
 //{
 //}
@@ -1321,7 +1446,7 @@ if (item_plus >= 100 && item_id >= 1)
  strcat(descpr, "It has a curse placed upon it. ");
  item_plus -= 100;
 }
-if (item_id >= 3)
+if (item_id >= 3 && !(item_class == 0 && item_dam % 30 >= 25))
 {
 if (item_plus < 50)
 {
@@ -1355,7 +1480,7 @@ switch(item_dam)
   case 184: strcat(descpr, "It is rather unreliable. "); break;
   case 185: strcat(descpr, "It is the creation of a mad God, and carries a curse which transforms anyone possessing it into a prune. Fortunately, the curse works very slowly, and one can use it briefly with no consequences worse than slightly purple skin and a few wrinkles. "); break;
   case 186: strcat(descpr, "This truly accursed weapon is an instrument of Hell. "); break;
-  case 187: strcat(descpr, "This dreadful weapon is used by mortals at their peril. "); break;
+  case 187: strcat(descpr, "This dreadful weapon is used at the user's peril. "); break;
   case 188: strcat(descpr, "Flames cover its twisted blade. "); break;
   case 189: strcat(descpr, "This legendary item can unleash the fury of Hell. "); break;
   case 190: strcat(descpr, "It carries some of the powers of the arch-fiend Asmodeus. "); break;
@@ -1368,18 +1493,21 @@ switch(item_dam)
 break;
 }
 
-if (item_dam % 30 != 0 && item_id >= 2)
+spec_ench = item_dam % 30;
+if (item_dam % 30 >= 25) spec_ench = randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 0);
+
+if (spec_ench != 0 && item_id >= 2)
 {
-switch(item_dam % 30)
+switch(spec_ench)
 {
   case 1: strcat(descpr, "It emits flame when wielded, causing extra injury to most foes and up to double damage against particularly susceptible opponents. "); break;
   case 2: strcat(descpr, "It has been specially enchanted to freeze those struck by it, causing extra injury to most foes and up to double damage against particularly susceptible opponents. "); break;
   case 3: strcat(descpr, "It has been blessed by the Shining One to harm undead and cause great damage to the unholy creatures of Hell or Pandemonium. "); break;
-  case 4: strcat(descpr, "Occasionally upon striking a foe it will discharge some of its stored energy and cause terrible harm. "); break;
+  case 4: strcat(descpr, "Occasionally upon striking a foe it will discharge some electrical energy and cause terrible harm. "); break;
   case 5: strcat(descpr, "It is especially effective against all of orcish descent. "); break;
   case 6: strcat(descpr, "It poisons the flesh of those it strikes. "); break;
   case 7: strcat(descpr, "It protects the one who wields it against injury. "); break;
-  case 8: strcat(descpr, "A truly terrible weapon, it drains the life of those it strikes.  "); break;
+  case 8: strcat(descpr, "A truly terrible weapon, it drains the life of those it strikes. "); break;
   case 9: strcat(descpr, "It allows its wielder to attack twice when they would otherwise have struck only once. "); break;
   case 10: strcat(descpr, "It inflicts extra damage upon your enemies. "); break;
   case 11: strcat(descpr, "It turns projectiles fired from it into bolts of fire. "); break;
@@ -1389,6 +1517,12 @@ switch(item_dam % 30)
   case 15: strcat(descpr, "In the hands of one skilled in necromantic magic it inflicts extra damage on living creatures. "); break;
 }
 }
+/* randart properties: */
+if (item_id >= 2 && item_dam % 30 >= 25)
+{
+ randart_descpr(descpr, item_class, item_type, item_plus, item_plus2, item_dam);
+}
+
 switch(weapon_skill(item_class, item_type))
 {
   case 1: strcat(descpr, "It falls into the 'short blades' category. "); break;
@@ -1483,12 +1617,13 @@ if (item_plus2 == 0) strcpy(descpr, "A piece of metal headgear. ");
 if (item_plus2 == 1) strcpy(descpr, "A piece of metal headgear. ");
 if (item_plus2 == 2) strcpy(descpr, "A cloth or leather cap. ");
 if (item_plus2 == 3) strcpy(descpr, "A conical cloth hat. ");
-
 break;
 case 11:
 strcpy(descpr, "A pair of gloves. ");
 break;
 case 12:
+if (item_plus2 == 1) strcpy(descpr, "A special armour made for Nagas, to wear on their tails. "); else
+if (item_plus2 == 2) strcpy(descpr, "An armour made for centaurs, to wear on their horse bodies. "); else
 strcpy(descpr, "A pair of sturdy boots. ");
 break;
 case 13:
@@ -1510,7 +1645,7 @@ case 18:
 strcpy(descpr, "A magical armour, made from the scales of a fire-breathing dragon. It provides great protection from the effects of fire, but renders its wearer more susceptible to the effects of cold. ");
 break;
 case 19:
-strcpy(descpr, "A magical armour, made from the skin of a common troll. It magically regenerates its wearer's flesh, while speeding up his or her metabolism slightly. ");
+strcpy(descpr, "A magical armour, made from the skin of a common troll. It magically regenerates its wearer's flesh at a fairly slow rate (unless they're already a troll). ");
 break;
 case 20:
 strcpy(descpr, "The scaly skin of a dragon. I suppose you could wear it if you really wanted to. ");
@@ -1540,12 +1675,27 @@ case 28:
 strcpy(descpr, "The extremely tough and heavy skin of a golden dragon, covered in shimmering golden scales. I suppose you could wear it if you really wanted to. ");
 break;
 case 29:
-strcpy(descpr, "A magical armour made from the golden scales of a golden dragon. It is extrememly heavy and cumbersome, but confers resistance to fire, cold, and poison on its wearer. ");
+strcpy(descpr, "A magical armour made from the golden scales of a golden dragon. It is extremely heavy and cumbersome, but confers resistance to fire, cold, and poison on its wearer. ");
 break;
 case 30:
 strcpy(descpr, "The skins of several animals. ");
 break;
+case 31:
+strcpy(descpr, "The slimy and smelly skin of a swamp-dwelling dragon. I suppose you could wear it if you really wanted to. ");
+break;
+case 32:
+strcpy(descpr, "A magical armour made from the scales of a swamp dragon. It confers resistance to poison on its wearer. ");
+break;
 }
+if (item_type != 8 && item_type != 13 && item_type != 14)
+{
+ strcat(descpr, "$Armour rating: ");
+ append_value(descpr, property(2, item_type, 0), 0);
+ strcat(descpr, "$Evasion modifier: ");
+ append_value(descpr, property(2, item_type, 1), 0);
+ strcat(descpr, "$");
+}
+
 if (item_plus >= 100 && item_id >= 1)
 {
  strcat(descpr, "It has a curse placed upon it. ");
@@ -1564,6 +1714,10 @@ if (item_plus > 50)
  strcat(descpr, "to be more effective in reducing injury. ");
 }
 }
+
+if (item_id >= 2 && item_dam % 30 >= 25)
+       randart_descpr(descpr, item_class, item_type, item_plus, item_plus2, item_dam);
+
 if (item_id > 1)
 {
  switch(item_dam % 30)
@@ -1573,12 +1727,12 @@ if (item_id > 1)
   case 3: strcat(descpr, "It protects its wearer from cold. "); break;
   case 4: strcat(descpr, "It protects its wearer from poison. "); break;
   case 5: strcat(descpr, "It allows its wearer to see invisible things. "); break;
-  case 6: strcat(descpr, "It hides its wearer from the sight of others, but also increases their metabolic rate by a large amount. "); break;
+  case 6: strcat(descpr, "When activated it hides its wearer from the sight of others, but also increases their metabolic rate by a large amount. "); break;
   case 7: strcat(descpr, "It increases the physical power of its wearer. "); break;
   case 8: strcat(descpr, "It increases the dexterity of its wearer. "); break;
   case 9: strcat(descpr, "It makes you more cleverer. "); break;
  case 10: strcat(descpr, "It is highly cumbersome. "); break;
- case 11: strcat(descpr, "It allows its wearer to float above the ground. "); break;
+ case 11: strcat(descpr, "It can be activated to allow its wearer to float above the ground. "); break;
  case 12: strcat(descpr, "It increases its wearer's resistance to enchantments. "); break;
  case 13: strcat(descpr, "It protects its wearer from harm. "); break;
  case 14: strcat(descpr, "It enhances the stealth of its wearer. "); break;
@@ -1655,6 +1809,9 @@ strcat(descpr, " throws a bolt of negative energy which drains the life essences
 break;
 case 18:
 strcat(descpr, " can produce a variety of effects. ");
+break;
+case 19:
+strcat(descpr, " disrupts the physical structure of an object, especially a creature's body. ");
 break;
 }
 if (item_id == 3 && item_plus == 0)
@@ -1931,19 +2088,19 @@ case 5:
 strcat(descpr, "This ring increases or decreases the physical strength of its wearer, to a degree dependent on its power. ");
 break;
 case 6:
-strcat(descpr, "This ring increases the hand-to-hand combat skills of its wearer. ");
+strcat(descpr, "This ring increases the hand-to-hand and missile combat skills of its wearer. ");
 break;
 case 7:
 strcat(descpr, "This ring allows its wearer to see those things hidden from view by magic. ");
 break;
 case 8:
-strcat(descpr, "This powerful ring hides its wearer from the view of others, but increases the speed of his or her metabolism greatly. ");
+strcat(descpr, "This powerful ring can be activated to hide its wearer from the view of others, but increases the speed of his or her metabolism greatly while doing so. ");
 break;
 case 9:
 strcat(descpr, "This accursed ring causes its wearer to hunger considerably more quickly. ");
 break;
 case 10:
-strcat(descpr, "This ring occasionally exerts its power to randomly translocate its wearer to another place. ");
+strcat(descpr, "This ring occasionally exerts its power to randomly translocate its wearer to another place, and can be deliberately activated for the same effect. ");
 break;
 case 11:
 strcat(descpr, "This ring makes its wearer either more or less capable of avoiding attacks, depending on its degree of enchantment. ");
@@ -1967,7 +2124,7 @@ case 17:
 strcat(descpr, "This ring increases its wearer's reserves of magical power. ");
 break;
 case 18:
-strcat(descpr, "This ring causes its wearer to hover above the floor. It slightly speeds one's metabolism. ");
+strcat(descpr, "This ring causes its wearer to hover above the floor. ");
 break;
 case 19:
 strcat(descpr, "This blessed ring protects the life-force of its wearer from negative energy, making them immune to the draining effects of undead and necromantic magic. ");
@@ -2016,14 +2173,14 @@ strcat(descpr, "This amulet protects its wearer from mutations, although not inf
 break;
 
 }
-// check these:
-/*if (item_type != 0 && item_type != 8 && item_type != 9 && item_type != 13 && item_type < 35 && get_id(7, item_type) != 0)
-{
-strcat(descpr, "It slightly speeds the metabolism of one who wears it. ");
-}*/
 if (item_id > 0 && item_plus >= 100)
 {
 strcat(descpr, "It has a curse placed upon it. ");
+}
+/* randart properties: */
+if (item_id >= 2 && item_dam == 200)
+{
+ randart_descpr(descpr, item_class, item_type, item_plus, item_plus2, item_dam);
 }
 break;
 
@@ -2195,15 +2352,163 @@ print_description(descpr);
 
 if (getch() == 0) getch();
 
-#ifdef DOS
+#ifdef DOS_TERM
 puttext(25, 1, 80, 25, buffer);
 window(1, 1, 80, 25);
 #endif
 
 } // end void describe_item
 
+/*
+Appends the various powers of a random artefact to the descpr string.
+*/
+void randart_descpr(char descpr [1000], int item_class, int item_type, int item_plus, int item_plus2, int item_dam)
+{
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 1) > 0)
+ {
+  strcat(descpr, "$It affects your AC (");
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 1), 1);
+  strcat(descpr, ").");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 2) > 0)
+ {
+  strcat(descpr, "$It affects your evasion (");
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 2), 1);
+  strcat(descpr, ").");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 3) > 0)
+ {
+  strcat(descpr, "$It affects your strength (");
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 3), 1);
+  strcat(descpr, ").");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 4) > 0)
+ {
+  strcat(descpr, "$It affects your intelligence (");
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 4), 1);
+  strcat(descpr, ").");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 5) > 0)
+ {
+  strcat(descpr, "$It affects your dexterity (");
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 5), 1);
+  strcat(descpr, ").");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 26) > 0)
+ {
+  strcat(descpr, "$It makes you more accurate (");
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 26), 1);
+  strcat(descpr, ").");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 27) > 0)
+ {
+  strcat(descpr, "$It increases your damage-dealing abilities (");
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 27), 1);
+  strcat(descpr, ").");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 6) == -1)
+ {
+  strcat(descpr, "$It makes you susceptible to fire. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 6) == 1)
+ {
+  strcat(descpr, "$It protects you from fire. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 6) == 2)
+ {
+  strcat(descpr, "$It renders you almost immune to fire. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 7) == -1)
+ {
+  strcat(descpr, "$It makes you susceptible to cold. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 7) == 1)
+ {
+  strcat(descpr, "$It protects you from cold. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 7) == 2)
+ {
+  strcat(descpr, "$It renders you almost immune to cold. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 8) > 0)
+ {
+  strcat(descpr, "$It insulates you. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 9) > 0)
+ {
+  strcat(descpr, "$It protects you from poison. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 10) > 0)
+ {
+  strcat(descpr, "$It protects you from negative energy. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 11) > 0)
+ {
+  strcat(descpr, "$It protects you from magic. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 12) > 0)
+ {
+  strcat(descpr, "$It enhances your eyesight. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 13) > 0)
+ {
+  strcat(descpr, "$It lets you turn invisible. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 14) > 0)
+ {
+  strcat(descpr, "$It lets you levitate. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 15) > 0)
+ {
+  strcat(descpr, "$It lets you blink. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 16) > 0)
+ {
+  strcat(descpr, "$It lets you teleport. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 17) > 0)
+ {
+  strcat(descpr, "$It lets you go berserk. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 18) > 0)
+ {
+  strcat(descpr, "$It lets you sense your surroundings. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 19) > 0)
+ {
+  strcat(descpr, "$It makes noises. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 20) > 0)
+ {
+  strcat(descpr, "$It prevents spellcasting. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 21) > 0)
+ {
+  strcat(descpr, "$It causes teleportation. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 22) > 0)
+ {
+  strcat(descpr, "$It prevents some teleportation. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 23) > 0)
+ {
+  strcat(descpr, "$It makes you angry. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 24) > 0)
+ {
+  strcat(descpr, "$It speeds your metabolism. ");
+ }
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 25) > 0)
+ {
+  strcat(descpr, "$It emits mutagenic radiations. ");
+ }
+ strcat(descpr, "$");
+}
 
-void print_ench(char descpr [500], unsigned char item_plus)
+/*
+Used for weapons, armour and ammo.
+*/
+void print_ench(char descpr [1000], unsigned char item_plus)
 {
  if (item_plus < 52) strcat(descpr, "lightly enchanted ");
  else if (item_plus < 54) strcat(descpr, "moderately enchanted ");
@@ -2215,13 +2520,15 @@ void print_ench(char descpr [500], unsigned char item_plus)
 
 
 
-
+/*
+Describes every spell in the game.
+*/
 void describe_spell(int spelled)
 {
 
-   char descpr [500];
+   char descpr [1000];
 
-#ifdef DOS
+#ifdef DOS_TERM
    char buffer[3400];
    gettext(25, 1, 80, 25, buffer);
 
@@ -2342,7 +2649,7 @@ case 42:
 //strcat(descpr, " is extremely powerful, but carries a degree of risk. It renders a living caster almost invulnerable to harm for a brief period of time, but brings them to the very brink of death in doing so. When the duration expires, the caster will be returned to a state of near-death. The spell can be cancelled at any time by any healing effect, and the caster will recieve one warning shortly before the spell expires. Undead cannot use this spell. ");
 strcat(descpr, " is extremely powerful, but carries a degree of risk. It renders a living caster almost invulnerable to harm for a brief period of time, but can bring them dangerously close to death (how close depends on their necromantic abilities). The spell can be cancelled at any time by any healing effect, and the caster will recieve one warning shortly before the spell expires. Undead cannot use this spell. ");break;
 case 43:
-strcat(descpr, " allows the caster to selectively erase a spell from memory and regain the magical energy bound up in it. One will be able to memorise this spell even if their mind is otherwise full of magic. ");
+strcat(descpr, " allows the caster to selectively erase a spell from memory and regain the magical energy bound up in it. One will be able to memorise this spell even if their mind is otherwise full of magic (ie you have the maximum number of spells already; mere lack of spell levels is insufficient). ");
 break;
 case 44:
 strcat(descpr, " causes confusion in all who see the caster. ");
@@ -2594,7 +2901,7 @@ case 150:
 strcat(descpr, " disrupts the matter of a creature's body, causing injury.");
 break;
 case 151:
-strcat(descpr, " tears apart the matter making up a creature's body, causing severe damage.");
+strcat(descpr, " tears apart the matter making up an object (especially a creature's body), causing severe damage.");
 break;
 case 152:
 strcat(descpr, " temporarily transforms the caster's hands into long, scythe-shaped blades.");
@@ -2631,20 +2938,23 @@ print_description(descpr);
 
 if (getch() == 0) getch();
 
-#ifdef DOS
+#ifdef DOS_TERM
 puttext(25, 1, 80, 25, buffer);
 window(1, 1, 80, 25);
 #endif
 
 } // end void describe_item
 
-
+/*
+Describes all gods. Accessible through altars (by praying), or by the ^ key
+if player is a worshipper.
+*/
 void describe_god(int which_god)
 {
 
-   char descpr [500];
+   char descpr [1000];
 
-#ifdef DOS
+#ifdef DOS_TERM
    char buffer[3400];
    gettext(25, 1, 80, 25, buffer);
 
@@ -2680,6 +2990,8 @@ seek knowledge of the powers of death. Followers gain special powers \
 over the undead, and especially favoured servants can call on mighty demons \
 to slay their foes. Kikubaaqudgha requires the deaths of living creatures \
 and the offering of corpses, as often as possible.");
+if (you[0].piety >= 50 && you[0].religion == 3)
+ strcat(descpr, "$Kikubaaqudgha is protecting you from the side-effects of death magic.");
 break;
 case 5:
 strcpy(descpr, "Xom is a wild and unpredictable God of chaos, who seeks not \
@@ -2687,9 +2999,25 @@ worshippers but playthings to toy with. Many choose to follow Xom in the \
 hope of receiving fabulous rewards and mighty powers, but Xom is nothing if \
 not capricious.");
 break;
+case 6:
+strcpy(descpr, "Vehumet is a God of the destructive powers of magic. \
+Followers gain various useful powers to enhance their command of \
+the hermetic arts, and the most favoured stand to gain access to \
+some of the fearsome spells in Vehumet's library.");
+if (you[0].religion == 6)
+{
+ if (you[0].piety >= 30)
+  strcat(descpr, "$You can gain power from the those you kill in Vehumet's name, or those slain by your servants.");
+ if (you[0].piety >= 50)
+  strcat(descpr, "$Your conjurations and summonings cast in Vehumet's name rarely fail.");
+ if (you[0].piety >= 75)
+  strcat(descpr, "$During prayer you are protected from summoned creatures.");
+}
+break;
 case 7:
 strcpy(descpr, "Okawaru is a dangerous and powerful God of battle. Followers \
-can gain a number of powers useful in combat, but must constantly prove \
+can gain a number of powers useful in combat as well as various rewards, \
+but must constantly prove \
 themselves through battle and the sacrifice of corpses and valuable items.");
 break;
 case 8:
@@ -2697,11 +3025,15 @@ strcpy(descpr, "Makhleb the Destroyer is a fearsome God of chaos and violent \
 death. Followers, who must constantly appease Makhleb with blood, stand to \
 gain various powers of death and destruction. The Destroyer appreciates \
 sacrifices of corpses and valuable items.");
+if (you[0].piety >= 30 && you[0].religion == 8)
+ strcat(descpr, "$You can gain power from the deaths of those killed in Makhleb's name.");
 break;
 case 9:
 strcpy(descpr, "Sif Muna is a contemplative but powerful deity, served by \
 those who seek magical knowledge. Sif Muna appreciates sacrifices of valuable \
 items, and the casting of spells as often as possible.");
+if (you[0].piety >= 100 && you[0].religion == 9)
+ strcat(descpr, "$Sif Muna is protecting you from some of the side-effects of magic.");
 break;
 case 10:
 strcpy(descpr, "Trog is an ancient God of anger and violence. Followers are \
@@ -2723,7 +3055,7 @@ print_description(descpr);
 
 if (getch() == 0) getch();
 
-#ifdef DOS
+#ifdef DOS_TERM
 puttext(25, 1, 80, 25, buffer);
 window(1, 1, 80, 25);
 #endif
@@ -2733,8 +3065,12 @@ window(1, 1, 80, 25);
 
 
 
-
-void print_description(char descr [500])
+/*
+Takes a descpr string filled up with stuff from other functions, and
+displays it with minor formatting to avoid cut-offs in mid word and such.
+The character $ is interpreted as a CR.
+*/
+void print_description(char descr [1000])
 {
 
 unsigned int i = 0;
@@ -2764,18 +3100,27 @@ for (i = 0; i < strlen(descr); i ++)
 //strcpy(kl, "");
 //kl [0] = descr [i];
 //cprintf(kl);
-putch(descr [i]);
-#ifdef DOS
-if (j % 55 >= 43 && descr [i] == 32)
+if (descr [i] == '$')
+{
+#ifdef DOS_TERM
+  cprintf(EOL);
 #endif
-#ifdef LINUX
-if (j % 70 >= 58 && descr [i] == 32)
+#ifdef PLAIN_TERM
+  gotoxy(1, wherey() + 1);
+#endif
+ j = 0;
+} else putch(descr [i]);
+#ifdef DOS_TERM
+if (j % 55 >= 43 && descr [i] == 32 && descr [i + 1] != '$')
+#endif
+#ifdef PLAIN_TERM
+if (j % 70 >= 58 && descr [i] == 32 && descr [i + 1] != '$')
 #endif
 {
-#ifdef DOS
-  cprintf("\n\r");
+#ifdef DOS_TERM
+  cprintf(EOL);
 #endif
-#ifdef LINUX
+#ifdef PLAIN_TERM
   gotoxy(1, wherey() + 1);
 #endif
  j = 0;
@@ -2783,4 +3128,16 @@ if (j % 70 >= 58 && descr [i] == 32)
 j ++;
 }
 
+}
+
+/*
+Appends a value to the string. If plussed == 1, will add a + to positive
+values.
+*/
+void append_value(char descpr [1000], int valu, char plussed)
+{
+char value_str [5];
+if (valu >= 0 && plussed == 1) strcat(descpr, "+");
+itoa(valu, value_str, 10);
+strcat(descpr, value_str);
 }

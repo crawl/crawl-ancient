@@ -308,7 +308,7 @@ for (i = gx1; i < gx2 + 1; i ++)
    do
    {
      grd [i] [j] = 180 + random() % 12;
-   } while (grd [i] [j] == 183 | grd [i] [j] == 185 | grd [i] [j] == 190);
+   } while (grd [i] [j] == 183 || grd [i] [j] == 185 || grd [i] [j] == 190);
   }
  }
 }
@@ -330,7 +330,7 @@ unsigned char cloud_no2 = 0;
 for (i = 0; i < MNST; i ++)
 {
  if (menv [i].m_class == -1) continue;
- if (menv [i].m_x < you[0].x_pos - 10 | menv [i].m_x >= you[0].x_pos + 11 | menv [i].m_y < you[0].y_pos - 10 | menv [i].m_y >= you[0].y_pos + 11)
+ if (menv [i].m_x < you[0].x_pos - 10 || menv [i].m_x >= you[0].x_pos + 11 || menv [i].m_y < you[0].y_pos - 10 || menv [i].m_y >= you[0].y_pos + 11)
  {
    menv [i].m_class = -1;
    for (j = 0; j < 8; j ++)
@@ -420,7 +420,7 @@ for (i = you[0].x_pos - 10; i < you[0].x_pos + 11; i ++)
 for (i = 0; i < CLOUDS; i ++)
 {
  if (env[0].cloud_type [i] == 0) continue;
- if (env[0].cloud_x [i] < 35 | env[0].cloud_x [i] > 55 | env[0].cloud_y [i] < 25 | env[0].cloud_y [i] > 45)
+ if (env[0].cloud_x [i] < 35 || env[0].cloud_x [i] > 55 || env[0].cloud_y [i] < 25 || env[0].cloud_y [i] > 45)
  {
   env[0].cloud_type [i] = 0;
   env[0].cloud_decay [i] = 0;

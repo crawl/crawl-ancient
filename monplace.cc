@@ -50,8 +50,7 @@ int glokp = place_monster(
 plus_seventy,
 typed, type_place, px, py, behaviour, hitting,
 bands,
-lev_mons, passed
-);
+lev_mons, passed);
 
 
 if (glokp > 0) return passed [0];
@@ -160,7 +159,7 @@ if (random2(2) == 0)
 for (count_x = minx; count_x != maxx; count_x += xinc)
 {
 
-   if (count_x == 2 | count_x == -2)
+   if (count_x == 2 || count_x == -2)
    {
      return 0;
    }
@@ -190,3 +189,35 @@ empty [1] = emy + count_y;
 return 1;
 
 } /* end empty surrounds */
+
+
+int summon_any_demon(char demon_class)
+{
+
+ if (demon_class == 0) /* imps/minor demons (class 5) */
+ {
+    if (random2(6) == 0) return 8;
+    if (random2(10) == 0) return 237;
+    return 220 + random2(5);
+ }
+
+ if (demon_class == 1) /* common demons (classes 4 - 2) */
+ {
+    if (random2(5) == 0) return 80 + random2(10);
+     else if (random2(20) == 0) return 3;
+      else if (random2(30) == 0) return 236 + random2(2);
+       else return 225 + random2(5);
+ }
+
+ if (demon_class == 2) /* greater demons (class 1) */
+ {
+    if (random2(10) == 0) return 31;
+    if (random2(10) == 0) return 126;
+    if (random2(10) == 0) return 127;
+    if (random2(10) == 0) return 245;
+    return 230 + random2(5);
+ }
+
+return 0;
+
+}

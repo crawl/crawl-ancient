@@ -13,6 +13,7 @@
 #include "mstruct.h"
 #include "describe.h"
 #include "player.h"
+#include "macro.h"
 #include "monstuff.h"
 #include "stuff.h"
 
@@ -20,7 +21,9 @@
 int dir_cursor(char rng);
 int look_around(struct dist moves [1]);
 
-
+/*
+Handles entering of directions. Passes to look_around for cursor aiming.
+*/
 void direction(char rnge, struct dist moves [1])
 {
 
@@ -55,7 +58,7 @@ if (moves[0].nothing == -1)
 
 if (moves[0].nothing == 253)
 {
-        if (you[0].prev_targ == 500)
+        if (you[0].prev_targ == MHITNOT || you[0].prev_targ >= MNST)
         {
                 strcpy(info, "You haven't got a target.");
                 mpr(info);
@@ -63,7 +66,7 @@ if (moves[0].nothing == 253)
                 return;
         }
 
-        if (mons_near(you[0].prev_targ) != 1 | (menv [you[0].prev_targ].m_ench [2] == 6 && player_see_invis() == 0))
+        if (mons_near(you[0].prev_targ) != 1 || (menv [you[0].prev_targ].m_ench [2] == 6 && player_see_invis() == 0))
         {
                 strcpy(info, "You can't see that creature any more.");
                 mpr(info);
@@ -112,7 +115,7 @@ if (moves[0].move_y == 0)
         if (moves[0].move_x < 0) moves[0].move_x = -1;
 }
 
-if (moves[0].move_x == moves[0].move_y | moves[0].move_x * -1 == moves[0].move_y)
+if (moves[0].move_x == moves[0].move_y || moves[0].move_x * -1 == moves[0].move_y)
 {
         if (moves[0].move_y > 0) moves[0].move_y = 1;
         if (moves[0].move_y < 0) moves[0].move_y = -1;
@@ -132,7 +135,9 @@ if (moves[0].move_x == moves[0].move_y | moves[0].move_x * -1 == moves[0].move_y
 } // end of direction()
 
 
-
+/*
+Another cursor input thing.
+*/
 int dir_cursor(char rng)
 {
         char mve_x, mve_y;
@@ -194,7 +199,10 @@ if (rng == 100) return -9999;
 
 
 
-
+/*
+Accessible by the x key and when using cursor aiming. Lets you find out
+what symbols mean, and is the way to access monster descriptions.
+*/
 int look_around(struct dist moves [1])
 {
 
@@ -202,12 +210,23 @@ int look_around(struct dist moves [1])
  int yps = 9;
         char gotch;
         char mve_x, mve_y;
+        int trf = 0;
 
  strcpy(info, "Move the cursor around to observe a square.");
  mpr(info);
 
  strcpy(info, "Press '?' for a monster description.");
  mpr(info);
+
+ if (you[0].prev_targ != MHITNOT && you[0].prev_targ < MNST)
+  if (mons_near(you[0].prev_targ) == 1 && (menv [you[0].prev_targ].m_ench [2] != 6 || player_see_invis() != 0))
+  {
+        strcpy(info, "You are currently targetting ");
+        strcat(info, monam (menv [you[0].prev_targ].m_sec, menv [you[0].prev_targ].m_class, menv [you[0].prev_targ].m_ench [2], 1));
+        strcat(info, " (p to target).");
+        mpr(info);
+  } else mpr("You have no current target.");
+
 
         gotoxy(xps,yps);
         gotoxy(xps + 1,yps);
@@ -239,8 +258,8 @@ do
                 if (mgrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9] == MNG) continue;
                 if (menv[mgrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9]].m_ench [2] == 6 && player_see_invis() == 0) continue;
                 if (menv[mgrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9]].m_class >= MLAVA0 && menv[mgrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9]].m_sec == 1) continue;
-                describe_monsters(menv[mgrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9]].m_class);
-#ifdef LINUX
+                describe_monsters(menv[mgrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9]].m_class, mgrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9]);
+#ifdef PLAIN_TERM
 redraw_screen();
 #endif
                 break;
@@ -281,7 +300,7 @@ if (yps + mve_y >= 1 && yps + mve_y < 18) yps += mve_y;
 
 mesclr();
 
-if (env[0].show [xps - 8] [yps] == 0 && (xps != 17 | yps != 9))
+if (env[0].show [xps - 8] [yps] == 0 && (xps != 17 || yps != 9))
 {
  strcpy(info, "You can't see that place.");
  mpr(info);
@@ -359,12 +378,21 @@ mpr(info);
 
 if (igrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9] != 501)
 {
- if (mitm.ilink [igrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9]] != 501 | mitm.iquant [igrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 7]] > 1)
+ if (mitm.iclass [igrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9]] == 15)
  {
-  strcpy(info, "You see a pile of items here.");
- } else strcpy(info, "You see an item here.");
-
- mpr(info);
+  mpr("You see some money here.");
+ } else
+ {
+  strcpy(info, "You see ");
+  it_name(igrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9], 3, str_pass);
+  strcat(info, str_pass);
+  strcat(info, " here.");
+  mpr(info);
+ }
+ if (mitm.ilink [igrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9]] != 501)
+ {
+  mpr("There is something else lying underneath.");
+ }
 }
 
 switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
@@ -386,6 +414,12 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   case 7: mpr("An orcish idol.");
   break;
   case 8: mpr("A wall of solid wax.");
+  break;
+  case 21: mpr("A silver statue.");
+  break;
+  case 22: mpr("A granite statue.");
+  break;
+  case 23: mpr("An orange crystal statue.");
   break;
   case 61: mpr("Some lava.");
   break;
@@ -417,11 +451,30 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   break;
   case 71: mpr("A staircase to a branch level.");
   break;
-  case 75: mpr("A trap.");
-  break;
-  case 76: mpr("A magical trap.");
-  break;
-  case 77: mpr("A trap.");
+  case 75:
+  case 76:
+  case 77:
+  for (trf = 0; trf < NTRAPS; trf ++)
+  {
+   if (env[0].trap_x [trf] == you[0].x_pos + xps - 17 && env[0].trap_y [trf] == you[0].y_pos + yps - 9) break;
+   if (trf == NTRAPS - 1)
+   {
+        strcpy(info, "Error - couldn't find that trap.");
+        mpr(info);
+        break;
+   }
+  }
+  switch(env[0].trap_type [trf])
+  {
+   case 0: mpr("A dart trap."); break;
+   case 1: mpr("An arrow trap."); break;
+   case 2: mpr("A spear trap."); break;
+   case 3: mpr("An axe trap."); break;
+   case 4: mpr("A teleportation trap."); break;
+   case 5: mpr("An amnesia trap."); break;
+   case 6: mpr("A blade trap."); break;
+   default: mpr("An undefined trap. Huh?"); break;
+  }
   break;
   case 80: mpr("A shop.");
   break;
@@ -462,7 +515,7 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   break;
   case 116: mpr("A staircase to the Hall of Blades.");
   break;
-  case 117: mpr("A staircase to the Hall of Zot.");
+  case 117: mpr("A gate to the Realm of Zot.");
   break;
   case 118: mpr("A staircase to the Ecumenical Temple.");
   break;
@@ -472,12 +525,13 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   break;
   case 121: mpr("A staircase to the Tomb.");
   break;
+  case 122: mpr("A staircase to the Swamp.");
+  break;
 
   case 130:
   case 131:
   case 132:
   case 134:
-  case 137:
   case 138:
   mpr("A staircase back to the Dungeon.");
   break;
@@ -499,6 +553,12 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   case 141:
   mpr("A staircase back to the Crypt.");
   break;
+  case 137:
+  mpr("A gate leading back out of this place.");
+  break;
+  case 142:
+  mpr("A staircase back to the Lair.");
+  break;
 
   case 180:
   mpr("A glowing white marble altar of Zin.");
@@ -512,6 +572,9 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
 //  case 183:
   case 184:
   mpr("A shimmering altar of Xom.");
+  break;
+  case 185:
+  mpr("A shining altar of Vehumet.");
   break;
 // case 185
   case 186:

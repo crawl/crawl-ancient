@@ -11,7 +11,7 @@ now:
             b j n
 
 To compile source I recommend the following versions or later:
-g++ 2.7.2.3      (2.7.0 might get confused, haven't tried others)
+g++ 2.8.1
 ncurses 1.9.9e   (1.9.9g also tested sucessfully)
 libc5.4.33       (glibc2 also tested sucessfully)
 
@@ -20,7 +20,7 @@ Svante Gerhard <svante@algonet.se>       (Linux specific problems)
 Linley Henzell <zel@olis.net.au>         (General Q's, and perhaps a CC:)
 
 Thanks to Fredrik Estreen for letting me rave on his machine when testing
-the crawl port!
+the initial crawl port!
 
 
 [from the 2.10 linux.txt]
@@ -69,5 +69,47 @@ history:
      (Made my own mistakes stand out :) )
      Also, I noticed Ctrl-j now works for open-door-south. Linley, what did
      you do? ;)
+
+(no release for a while, since I couldn't get a binary because of main
+code problems after MAJOR code modifications. Now problems have been sorted
+out, a little bit with every version :). It's time for..)
+
+2.70 This one was VERY close to getting released, but a couple of bugs found
+     late and Linley's new release made me (and you) wait for..
+
+2.71 Hrm. This one actually got compiled, packaged, ALMOST shipped, when I
+     discovered game would crash when trying to eat when an object was
+     lying on the floor. Fixed in...
+
+2.72 First Linux release for quite a while. Major game improvements by
+     Linley. Linux tty-insane-state-after-game-exit fixed. The problem was
+     pinpointed by Martin Read (back in April, actually...) Thanks!
+     Even less playtesting than usual this time, so please report any found
+     bugs.
+
+
+2.8x Here somewhere Juho Snellman added macro support to, among other things,
+     fix numpad walking. Since I had RL (that's real-life, not rogue-like :) )
+     stuff to attend to, I didn't do any work on the 2.8x port.
+
+2.91 Minor fixes. OS autoselect for compile (idea from Martin Read)
+     and fixed macro.txt will appear in next version.
+
+
+
+
+
+ToDo's:
+
+Now that it's possible to run Crawl without high ascii, the Linux version
+needs a way to run without colour as well. This should make the game
+playable on MANY more systems (not just Linux PC's..)
+
+(Fix numpad walking!)
+Fixed by Juho Snellman
+
+Make crawl take advantage of larger displays than 80x25. Probably major
+work due to much hardcoded work. Since 2.72, however, everything works
+in the larger resolutions I've tried myself (mainly 100x40)
 
 -EOF-

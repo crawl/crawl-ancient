@@ -33,6 +33,7 @@ typedef int MYINT; // used for flags and the like
 // killing this beast only gives 10 experience (makes sense for plants/fungi)
 // must do this manually
 #define M_NO_EXP_GAIN (1<<14)
+#define M_SPEAKS (1<<15)
 
 // holiness
 #define H_HOLY -1
@@ -66,6 +67,7 @@ typedef int MYINT; // used for flags and the like
 #define S_SCREECH 7 //7=screech
 #define S_BUZZ 8 //8=buzz
 #define S_MOAN 9 //9=moan
+#define S_WHINE 10 //10=irritating whine (mosquito)
 // ai
 // So far this only affects a) chance to see stealthy player and b) chance to
 //  walk through damaging clouds (LH)

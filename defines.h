@@ -1,7 +1,7 @@
 
 #define NO_EQUIP 10
 
-#ifndef LINUX
+#ifndef _LINUXLIB_IMPLEMENTATION
 #define TRUE 1
 #define FALSE 0
 #endif
@@ -10,11 +10,20 @@
 #define MNG 201
 #define ITEMS 500
 #define ING 501
+/* max clouds on lvl */
 #define CLOUDS 30
+/* an empty cloud */
 #define CNG 31
+/* Unused: */
 #define GXM 80
 #define GYM 70
+/* max traps on level */
 #define NTRAPS 30
+/* Lowest grid value which can be passed by walking etc: */
+#define MINMOVE 31
+/* Lowest grid value which can be seen through */
+#define MINSEE 11
+
 
 #define menv env[0].mons
 #define mitm env[0].it[0]

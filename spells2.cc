@@ -11,6 +11,7 @@
 #include "beam.h"
 #include "direct.h"
 #include "monplace.h"
+#include "monstuff.h"
 #include "player.h"
 #include "stuff.h"
 #include "view.h"
@@ -35,8 +36,8 @@ int count_x;
     {
         if (grd [env[0].trap_x [count_x]] [env[0].trap_y [count_x]] == 78)
                                         {
-   if (env[0].trap_type [count_x] < 4 | env[0].trap_type [count_x] == 6) grd [env[0].trap_x [count_x]] [env[0].trap_y [count_x]] = 75;
-   if (env[0].trap_type [count_x] == 4 | env[0].trap_type [count_x] == 5) grd [env[0].trap_x [count_x]] [env[0].trap_y [count_x]] = 76;
+   if (env[0].trap_type [count_x] < 4 || env[0].trap_type [count_x] == 6) grd [env[0].trap_x [count_x]] [env[0].trap_y [count_x]] = 75;
+   if (env[0].trap_type [count_x] == 4 || env[0].trap_type [count_x] == 5) grd [env[0].trap_x [count_x]] [env[0].trap_y [count_x]] = 76;
        env[0].map [env[0].trap_x [count_x] - 1] [env[0].trap_y [count_x] - 1] = '^';
        traps_found++;
      }
@@ -62,7 +63,7 @@ for (i = you[0].x_pos - map_radius; i < you[0].x_pos + map_radius; i ++)
 {
  for (j = you[0].y_pos - map_radius; j < you[0].y_pos + map_radius; j ++)
  {
-  if (i < 5 | j < 5 | i > 75 | j > 65) continue;
+  if (i < 5 || j < 5 || i > 75 || j > 65) continue;
   if (igrd [i] [j] != 501) env[0].map [i - 1] [j - 1] = 15;
  }
 }
@@ -87,7 +88,7 @@ for (i = you[0].x_pos - map_radius; i < you[0].x_pos + map_radius; i ++)
 {
  for (j = you[0].y_pos - map_radius; j < you[0].y_pos + map_radius; j ++)
  {
-  if (i < 5 | j < 5 | i > 75 | j > 65) continue;
+  if (i < 5 || j < 5 || i > 75 || j > 65) continue;
   if (mgrd [i] [j] != MNG)
   {
    env[0].map [i - 1] [j - 1] = mons_char(menv [mgrd [i] [j]].m_class);
@@ -127,7 +128,7 @@ if (random2(2) == 0)
 for (adx = minx; adx != maxx; adx += xinc)
 {
 
-   if (adx == 7 | adx == -7)
+   if (adx == 7 || adx == -7)
    {
      return 0;
    }
@@ -137,7 +138,7 @@ for (adx = minx; adx != maxx; adx += xinc)
 
   if (see_grid(adx, ady) == 1)
   {
-   if (igrd [adx] [ady] == 501 | env[0].cgrid [adx] [ady] != CNG) continue;
+   if (igrd [adx] [ady] == 501 || env[0].cgrid [adx] [ady] != CNG) continue;
 
    int objl = igrd [adx] [ady];
    int hrg = 0;
@@ -207,7 +208,7 @@ if (random2(2) == 0)
 for (adx = minx; adx != maxx; adx += xinc)
 {
 
-   if (adx == 7 | adx == -7)
+   if (adx == 7 || adx == -7)
    {
      return 0;
    }
@@ -358,7 +359,7 @@ mpr(info);
 
 total_mass += random2(power) * 3 + random2(power) + random2(power) + random2(power) + random2(power) + random2(power) + random2(power) + random2(power) + random2(power) * 3+ random2(power) * 3 + random2(power) + random2(power) * 3;
 
-if (total_mass <= 400 + random2(500) + random2(500) | number_raised < 2 + random2(2))
+if (total_mass <= 400 + random2(500) + random2(500) || number_raised < 2 + random2(2))
 {
  strcpy(info, "The spell fails.");
  mpr(info);
@@ -387,7 +388,7 @@ char brand_weapon(char which_brand, int power)
 
 char duration_affected = 0;
 
-if (you[0].duration [5] != 0 | you[0].duration [6] != 0 | you[0].duration [7] != 0 | you[0].duration [8] != 0)
+if (you[0].duration [5] != 0 || you[0].duration [6] != 0 || you[0].duration [7] != 0 || you[0].duration [8] != 0)
         return 0;
 
 if (you[0].equip [0] == -1)
@@ -395,12 +396,12 @@ if (you[0].equip [0] == -1)
  return 0;
 }
 
-if (you[0].inv_class [you[0].equip [0]] != 0 | (you[0].inv_type [you[0].equip [0]] >= 13 && you[0].inv_type [you[0].equip [0]] <= 16) | you[0].inv_type [you[0].equip [0]] == 0)
+if (you[0].inv_class [you[0].equip [0]] != 0 || (you[0].inv_type [you[0].equip [0]] >= 13 && you[0].inv_type [you[0].equip [0]] <= 16) || you[0].inv_type [you[0].equip [0]] == 0)
 {
  return 0;
 }
 
-if (you[0].inv_dam [you[0].equip [0]] % 30 != 0 | you[0].inv_dam [you[0].equip [0]] > 180)
+if (you[0].inv_dam [you[0].equip [0]] % 30 != 0 || you[0].inv_dam [you[0].equip [0]] > 180 || you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
 {
  return 0;
 }
@@ -536,7 +537,7 @@ mpr("You attempt to repel the undead.");
 
 for (tu = 0; tu < MNST; tu ++)
 {
- if (menv [tu].m_class == -1 | mons_near(tu) == 0) continue;
+ if (menv [tu].m_class == -1 || mons_near(tu) == 0) continue;
 
  if (mons_holiness(menv [tu].m_class) > 0)
  {
@@ -592,7 +593,7 @@ mpr(info);
 
 for (tu = 0; tu < MNST; tu ++)
 {
- if (menv [tu].m_class == -1 | mons_near(tu) == 0) continue;
+ if (menv [tu].m_class == -1 || mons_near(tu) == 0) continue;
 
  if (mons_holiness(menv [tu].m_class) > 0)
  {
@@ -753,7 +754,7 @@ if (vmove[0].nothing == -1)
         return -1;
 }
 
-if (vmove[0].move_x > 1 | vmove[0].move_y > 1)
+if (vmove[0].move_x > 1 || vmove[0].move_y > 1)
 {
         strcpy(info, "This spell doesn't reach that far.");
         mpr(info);
@@ -795,6 +796,7 @@ strcpy(info, "You feel life coursing from ");
 strcat(info, monam(menv [mgr].m_sec,menv[mgr].m_class, menv [mgr].m_ench [2], 1));
 strcat(info, " into your body!");
 mpr(info);
+print_wounds(mgr);
 
 if (menv [mgr].m_hp <= 0)
 {
@@ -832,7 +834,7 @@ if (bmove[0].nothing == -1)
         return -1;
 }
 
-if (bmove[0].move_x > 1 | bmove[0].move_y > 1)
+if (bmove[0].move_x > 1 || bmove[0].move_y > 1)
 {
         strcpy(info, "This spell doesn't reach that far.");
         mpr(info);
@@ -914,7 +916,7 @@ if (mgrd [you[0].x_pos + smove[0].move_x] [you[0].y_pos + smove[0].move_y] != MN
         goto dirc;
 }
 
-if (smove[0].move_x > 1 | smove[0].move_y > 1)
+if (smove[0].move_x > 1 || smove[0].move_y > 1)
 {
         strcpy(info, "This spell doesn't reach that far.");
         mpr(info);
@@ -971,7 +973,7 @@ if (restricted_type != 0 && type_summoned != restricted_type)
  mpr(info);
  return 0;
 }
-if (random2(100) <= unfriendly | (type_summoned == 124 && random2(10) >= you[0].skills [5]) | (type_summoned == MWATER4 && random2(5) >= you[0].skills [34]) | (type_summoned == 125 && random2(5) >= you[0].skills [35]) | (type_summoned == 123 && random2(5) >= you[0].skills [36]))
+if (random2(100) <= unfriendly || (type_summoned == 124 && random2(10) >= you[0].skills [5]) || (type_summoned == MWATER4 && random2(5) >= you[0].skills [34]) || (type_summoned == 125 && random2(5) >= you[0].skills [35]) || (type_summoned == 123 && random2(5) >= you[0].skills [36]))
 {
  strcpy(info, "The elemental doesn't seem to appreciate being summoned.");
  mpr(info);
@@ -1034,27 +1036,32 @@ void summon_ice_beast_etc(int pow, int ibc)
 int numsc = 21 + random2(pow) / 4;
 
 if (numsc > 25) numsc = 25;
+int beha = 7;
 
 switch(ibc)
 {
  case 34:
- strcpy(info, "A chill wind blows around you.");
- mpr(info);
+ mpr("A chill wind blows around you.");
  break;
 
  case 8:
- strcpy(info, "A beastly little devil appears in a puff of flame.");
- mpr(info);
+ mpr("A beastly little devil appears in a puff of flame.");
+ break;
+
+ case 220:
+ mpr("A beastly little devil appears in a puff of frigid air.");
+ break;
+
+ case 237:
+ mpr("A shadowy apparition takes form in the air.");
  break;
 
  case 26:
- strcpy(info, "You open a gate to the realm of Zin!");
- mpr(info);
+ mpr("You open a gate to the realm of Zin!");
  break;
 
  case 366:
- strcpy(info, "You are momentarily dazzled by a brilliant golden light.");
- mpr(info);
+ mpr("You are momentarily dazzled by a brilliant golden light.");
  break;
 
 /* case 225:
@@ -1063,14 +1070,18 @@ switch(ibc)
  case 228:
  case 229:*/
  default:
- strcpy(info, "A demon appears!");
- mpr(info);
+ mpr("A demon appears!");
+ if (random2(pow) <= 3)
+ {
+  beha = 1;
+  mpr("It doesn't look very happy.");
+ }
  break;
 
 }
-  create_monster(ibc, numsc, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(ibc, numsc, beha, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
 
-} // end of summon_scopions
+} // end of summon_ice_beast_etc
 
 void summon_swarm(int pow)
 {

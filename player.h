@@ -36,3 +36,5 @@ int player_spec_holy(void);
 int player_spec_death(void);
 int player_spec_poison(void);
 int player_energy(void);
+int slaying_bonus(char which_affected); /* returns bonuses from rings of slaying etc */
+int scan_randarts(char which_property);

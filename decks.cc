@@ -4,15 +4,13 @@
 
 #include "externs.h"
 
-/*#include "player.h"
-#include "stuff.h"
-#include "monplace.h"
-#include "it_use2.h"
-#include "effects.h"
-#include "spells3.h"
-#include "player.h"*/
 #include "dot_h.h"
 #include "mutation.h"
+
+/*
+Not really worth a discrete file. Effects of drawing a card from either kind
+of magical deck - wonders or summonings.
+*/
 
 void deck_of_wonders(void)
 {
@@ -129,7 +127,7 @@ do
   you[0].max_dex = dvar [dvar1];
  }
  dvar [dvar1] = 101;
-} while (dvar [0] != 101 | dvar [1] != 101 | dvar [2] != 101);
+} while (dvar [0] != 101 || dvar [1] != 101 || dvar [2] != 101);
 you[0].strength_ch = 1;
 you[0].intel_ch = 1;
 you[0].dex_ch = 1;

@@ -7,10 +7,10 @@
 #include "externs.h"
 
 #include <stdlib.h>
-#include <iostream.h>
 #include <string.h>
 
 #include "itemname.h"
+#include "macro.h"
 
 //#include "crawlfnc.h"
 #include "shopping.h"
@@ -28,7 +28,7 @@ nothing = invent(invent_type, 0);
 //you[0].inv_plus2, invent_type, you[0].inv_quant, you[0].inv_dam, you[0].inv_class, you[0].inv_type, you[0].inv_plus, you[0].inv_ident, you[0].item_wielded, you[0].armour [0], you[0].armour [5], you[0].armour [2], you[0].armour [1], you[0].armour [3], you[0].armour [4], you[0].ring, 0);
 
 
-#ifdef LINUX
+#ifdef PLAIN_TERM
 redraw_screen();
 #endif
 
@@ -69,7 +69,7 @@ char invent(int item_class_inv, char show_price)
 
 
 
-#ifdef DOS
+#ifdef DOS_TERM
    char buffer[4600];
    gettext(1, 1, 80, 25, buffer);
    window(1, 1, 80, 25);
@@ -139,7 +139,7 @@ for (i = 0; i < 15; i++)
 //if (item_class_inv > 1) Inv_class2 [0] = 0;
 
 
-if ((item_class_inv == -1 && inv_count > 0) | (item_class_inv != -1 && Inv_class2 [item_class_inv] > 0) | (item_class_inv == 1 && (Inv_class2 [0] > 0 | Inv_class2 [1] > 0)) | (item_class_inv == 0 && (Inv_class2 [0] > 0 | Inv_class2 [11] > 0)) | (item_class_inv == 6 && (Inv_class2 [6] > 0 | Inv_class2 [10] > 0)))// | (item_class_inv == 3 && (Inv_class2 [3] > 0 | Inv_class2 [11] > 0)))
+if ((item_class_inv == -1 && inv_count > 0) || (item_class_inv != -1 && Inv_class2 [item_class_inv] > 0) || (item_class_inv == 1 && (Inv_class2 [0] > 0 || Inv_class2 [1] > 0)) || (item_class_inv == 0 && (Inv_class2 [0] > 0 || Inv_class2 [11] > 0)) || (item_class_inv == 6 && (Inv_class2 [6] > 0 || Inv_class2 [10] > 0)))// || (item_class_inv == 3 && (Inv_class2 [3] > 0 || Inv_class2 [11] > 0)))
 {
 
 //if (item_class_inv != 1) //this is so you can get the '?' invent from throw_it
@@ -170,14 +170,14 @@ for (i = 0; i < 15; i ++)
                 ki = getch();
                 if (ki == 27)
                 {
-#ifdef DOS
+#ifdef DOS_TERM
                         puttext(1, 1, 80, 25, buffer);
 #endif
                         return 27;
                 }
                 if (ki >= 65 && ki < 123)
                 {
-#ifdef DOS
+#ifdef DOS_TERM
                         puttext(1, 1, 80, 25, buffer);
 #endif
                         return ki;
@@ -189,7 +189,7 @@ for (i = 0; i < 15; i ++)
                 anything = 0;
 
         }
-        if (lines > 0) cprintf("\n\r ");
+        if (lines > 0) cprintf(EOL" ");
         textcolor(BLUE);
         switch(i)
         {
@@ -224,14 +224,14 @@ for (i = 0; i < 15; i ++)
                         ki = getch();
                         if (ki == 27)
                         {
-#ifdef DOS
+#ifdef DOS_TERM
                                 puttext(1, 1, 80, 25, buffer);
 #endif
                                 return 27;
                         }
                         if (ki >= 65 && ki < 123)
                         {
-#ifdef DOS
+#ifdef DOS_TERM
                                 puttext(1, 1, 80, 25, buffer);
 #endif
                                 return ki;
@@ -251,7 +251,7 @@ for (i = 0; i < 15; i ++)
                         //strncpy(info [info_lines], letters [j], 1);
                         //strcat(info [info_lines], " - ");
                         //printf(" ");
-                        if (lines > 0) cprintf("\n\r");
+                        if (lines > 0) cprintf(EOL);
                         lines++;
                                 cprintf(" ");
                                 if (j < 26) ft = (char) j + 97;
@@ -278,7 +278,7 @@ for (i = 0; i < 15; i ++)
          inv_count --;
 
                         if (j == you[0].equip [0]) cprintf(" (weapon)");
-                        if (j == you[0].equip [1] | j == you[0].equip [2] | j == you[0].equip [3] | j == you[0].equip [4] | j == you[0].equip [5] | j == you[0].equip [6]) cprintf(" (worn)");
+                        if (j == you[0].equip [1] || j == you[0].equip [2] || j == you[0].equip [3] || j == you[0].equip [4] || j == you[0].equip [5] || j == you[0].equip [6]) cprintf(" (worn)");
                         if (j == you[0].equip [7]) cprintf(" (left hand)");
                         if (j == you[0].equip [8]) cprintf(" (right hand)");
                         if (j == you[0].equip [9]) cprintf(" (around neck)");
@@ -337,13 +337,13 @@ if (show_price == 1)
            //ki = anything;
            if (ki >= 65 && ki < 123)
            {
-#ifdef DOS
+#ifdef DOS_TERM
                    puttext(1, 1, 80, 25, buffer);
 #endif
                    return ki;
            }
            if (ki == 0) ki = getch();
-#ifdef DOS
+#ifdef DOS_TERM
            puttext(1, 1, 80, 25, buffer);
 #endif
            return anything;
@@ -359,7 +359,7 @@ if (show_price == 1)
    getch();
    */
    putty :
-#ifdef DOS
+#ifdef DOS_TERM
    puttext(1, 1, 80, 25, buffer);
 #endif
 
@@ -386,7 +386,7 @@ void list_commands(void)
 
    int i;
    int j = 0;
-#ifdef DOS
+#ifdef DOS_TERM
    char buffer[4800];
    window(1, 1, 80, 25);
    gettext(1, 1, 80, 25, buffer);
@@ -415,7 +415,7 @@ void list_commands(void)
    }
 //   j ++;
    getch();
-#ifdef DOS
+#ifdef DOS_TERM
    puttext(1, 1, 80, 25, buffer);
 #endif
 
@@ -439,6 +439,7 @@ switch(i)
  case 50: strcpy(comm, "i - inventory"); break;
  case 55: strcpy(comm, "m - check skills"); break;
  case 60: strcpy(comm, "o/c - open/close a door"); break;
+ case 65: strcpy(comm, "p - pray"); break;
  case 70: strcpy(comm, "q - quaff a potion"); break;
  case 80: strcpy(comm, "r - read a scroll or a book"); break;
  case 90: strcpy(comm, "s/./del - wait"); break;
@@ -473,13 +474,15 @@ switch(i)
  case 320: strcpy(comm, "Shift & 5 on keypad - rest 100 turns"); break;
 // case 330: strcpy(comm, "Rogue movement keys also work"); break;
  case 340: strcpy(comm, "+ & - on map screen - fast scroll"); break;
- case 350: strcpy(comm, "! - shout (attracts allies)"); break;
+ case 350: strcpy(comm, "! - shout/command allies"); break;
  case 360: strcpy(comm, "Ctrl & dir - door; untrap; attack"); break;
  case 365: strcpy(comm, "^ - describe your religion"); break;
  case 367: strcpy(comm, "@ - character status"); break;
  case 370: strcpy(comm, "# - dump character to file <name>.txt"); break;
  case 380: strcpy(comm, "= - adjust inventory/spell letters"); break;
  case 390: strcpy(comm, "\' - wield item a, or switch to b"); break;
+ case 400: strcpy(comm, "` - add macro"); break;
+ case 410: strcpy(comm, "~ - save macros"); break;
 /* case 380: strcpy(comm, "d - drop"); break;
  case 390: strcpy(comm, "e - eat"); break;*/
 

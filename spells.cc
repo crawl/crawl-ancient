@@ -15,6 +15,7 @@
 #include "items.h"
 #include "it_use2.h"
 #include "it_use3.h"
+#include "macro.h"
 #include "monplace.h"
 #include "monstuff.h"
 #include "misc.h"
@@ -499,7 +500,7 @@ switch(spec_effect)
    mpr(info);
    break;
   }
-  if (player_sust_abil() != 0 | you[0].intel <= 3)
+  if (player_sust_abil() != 0 || you[0].intel <= 3)
   {
    strcpy(info, "You have a terrible headache.");
    mpr(info);
@@ -528,7 +529,7 @@ switch(spec_effect)
   if (forget_spell() == 1)
   {
    strcpy(info, "You have forgotten a spell!");
-  } else strcpy(info, "You get a splitting headache."); // is this possible?
+  } else strcpy(info, "You get a splitting headache.");
   mpr(info);
   break;
   case 1:
@@ -544,7 +545,7 @@ switch(spec_effect)
    mpr(info);
    break;
   }
-  if (player_sust_abil() != 0 | you[0].intel <= 3)
+  if (player_sust_abil() != 0 || you[0].intel <= 3)
   {
    strcpy(info, "You have a terrible headache.");
    mpr(info);
@@ -562,7 +563,6 @@ switch(spec_effect)
 
 }
 break; // end divinations
-// WAS HERE!!!
 
  case 16: // necromancy
  if (you[0].religion == 3 && you[0].piety >= 50 && random2(150) <= you[0].piety)
@@ -693,6 +693,97 @@ break; // end divinations
 
  }
  break; // end necromancy
+
+  case 15: /* transmigr */
+  switch(spec_effect)
+  {
+   case 0: // just a harmless message
+   switch(random2(10))
+   {
+    case 0: strcpy(info, "Your hands glow momentarily."); break;
+    case 1: strcpy(info, "The air around you crackles with energy!"); break;
+    case 2: strcpy(info, "Multicolored lights dance before your eyes!"); break;
+    case 3: strcpy(info, "You feel a strange surge of energy!"); break;
+    case 4: strcpy(info, "Waves of light ripple over your body."); break;
+    case 5: strcpy(info, "Strange energies run through your body."); break;
+    case 6: strcpy(info, "Your skin tingles."); break;
+    case 7: strcpy(info, "Your skin glows momentarily."); break;
+    case 8: strcpy(info, "Nothing appears to happen."); break;
+    case 9: strcpy(info, "You smell something strange."); break;
+   }
+   mpr(info);
+   break;
+
+   case 1: // slightly annoying
+   switch(random2(2))
+   {
+    case 0:
+    mpr("Your body is twisted painfully.");
+    ouch(random2(4) + random2(4), 0, 18);
+    break;
+    case 1:
+    random_uselessness(2 + random2(7), 0);
+    break;
+   }
+   break;
+
+   case 2: // much more annoying
+   switch(random2(4))
+   {
+    case 0:
+    mpr("Your body is twisted very painfully!");
+    ouch(random2(12) + random2(12), 0, 18);
+    break;
+    case 1:
+    mpr("Strange energies tear through your body!");
+    mutate(100);
+    break;
+    case 2:
+    potion_effect(10, 10); // paral
+    break;
+    case 3:
+    potion_effect(11, 10); // conf
+    break;
+   }
+   break;
+
+   case 3: // even nastier
+   switch(random2(3))
+   {
+    case 0:
+    mpr("Your body is distorted in a weird and horrible way!");
+    mutate(100);
+    mutate(100);
+    mutate(100);
+    mutate(100);
+    ouch(random2(12) + random2(12), 0, 18);
+    break;
+    case 1:
+    mpr("You feel very strange.");
+    delete_mutation(100);
+    delete_mutation(100);
+    delete_mutation(100);
+    delete_mutation(100);
+    delete_mutation(100);
+    delete_mutation(100);
+    delete_mutation(100);
+    ouch(random2(12) + random2(12), 0, 18);
+    break;
+    case 2:
+    mpr("Your body is distorted in a weirdly horrible way!");
+    if (give_bad_mutation() == 0)
+     if (give_bad_mutation() == 0)
+      if (give_bad_mutation() == 0)
+        give_bad_mutation();
+    ouch(random2(12) + random2(12), 0, 18);
+    break;
+   }
+ break;
+
+}
+break; // end enchantments
+
+
 
 case 13: // fire
 switch(spec_effect)
@@ -1252,11 +1343,11 @@ strcpy(info, "Memorise from which spellbook?");
 mpr(info);
 
 keyin = get_ch();
-if (keyin == '?' | keyin == '*')
+if (keyin == '?' || keyin == '*')
 {
         if (keyin == '?') nthing = get_invent(10);
         if (keyin == '*') nthing = get_invent(-1);
-        if ((nthing >= 65 && nthing <= 90) | (nthing >= 97 && nthing <= 122))
+        if ((nthing >= 65 && nthing <= 90) || (nthing >= 97 && nthing <= 122))
         {
                 keyin = nthing;
         } else
@@ -1270,7 +1361,7 @@ if (keyin == '?' | keyin == '*')
 
 sc_read_1 = (int) keyin;
 
-if (sc_read_1 < 65 | (sc_read_1 > 90 && sc_read_1 < 97) | sc_read_1 > 122)
+if (sc_read_1 < 65 || (sc_read_1 > 90 && sc_read_1 < 97) || sc_read_1 > 122)
 {
         strcpy(info, "You don't have any such object.");
         mpr(info);
@@ -1327,20 +1418,20 @@ if (you[0].inv_class [book_read] == 11) key2 = spellbook_contents(you[0].inv_plu
 if (you[0].inv_class [book_read] == 10)
 {
  you[0].had_item [you[0].inv_type [book_read]] = 1;
- if (you[0].inv_type [book_read] == 0 | you[0].inv_type [book_read] == 1 | you[0].inv_type [book_read] == 2)
+ if (you[0].inv_type [book_read] == 0 || you[0].inv_type [book_read] == 1 || you[0].inv_type [book_read] == 2)
  {
   you[0].had_item [0] = 1;
   you[0].had_item [1] = 1;
   you[0].had_item [2] = 1;
  }
- if (you[0].inv_type [book_read] == 3 | you[0].inv_type [book_read] == 4)
+ if (you[0].inv_type [book_read] == 3 || you[0].inv_type [book_read] == 4)
  {
   you[0].had_item [3] = 1;
   you[0].had_item [4] = 1;
  }
 }
 
-#ifdef LINUX
+#ifdef PLAIN_TERM
 redraw_screen();
 #endif
 /* Put special book effects in another function which can be called from
@@ -1367,10 +1458,10 @@ if (which_spellbook() == 0) return;
 
 sc_read_1 = (int) book_thing;
 
-if (sc_read_1 < 65 | (sc_read_1 > 90 && sc_read_1 < 97) | sc_read_1 > 122)
+if (sc_read_1 < 65 || (sc_read_1 > 90 && sc_read_1 < 97) || sc_read_1 > 122)
 {
         whatt : strcpy(info, "What?");
-#ifdef LINUX
+#ifdef PLAIN_TERM
         redraw_screen();
 #endif
         mpr(info);
@@ -1412,7 +1503,8 @@ if (you[0].species == 12 && spell_type(specspell, 17) == 1)
   return;
 }
 
-if (you[0].is_undead != 0 && specspell == 42)
+//if (you[0].is_undead != 0 && specspell == 42)
+if ((you[0].is_undead == 1 && undead_can_memorise(specspell) == 2) || (you[0].is_undead == 2 && undead_can_memorise(specspell) != 0))
 {
   strcpy(info, "You can't use this spell.");
   mpr(info);
@@ -1423,7 +1515,7 @@ for (i = 0; i < 25; i ++)
 {
         if (you[0].spells [i] == specspell)
    {
-      #ifdef LINUX
+      #ifdef PLAIN_TERM
       redraw_screen();
       #endif
       strcpy(info, "You already know that spell!");
@@ -1438,10 +1530,10 @@ levels_needed = spell_value(specspell);
 if (you[0].spell_levels < levels_needed)
 {
    too_high :
-   #ifdef LINUX
+   #ifdef PLAIN_TERM
    redraw_screen();
    #endif
-   strcpy(info, "That spell is of too high a level for you to memorise.");
+   strcpy(info, "You can't memorise that many levels of magic yet!");
    mpr(info);
    you[0].turnover = 1;
    return;
@@ -1449,7 +1541,7 @@ if (you[0].spell_levels < levels_needed)
 }
 
 
-if (you[0].xl < spell_value(specspell) | (is_good == 0 && you[0].xl < spell_value(specspell) * 2))
+if (you[0].xl < spell_value(specspell) || (is_good == 0 && you[0].xl < spell_value(specspell) * 2))
  goto too_high;
 /*
 types of spells:
@@ -1466,23 +1558,6 @@ types of spells:
 21 = you[0].poison
 */
 
-/*
-0: // fighter
-1: // wizard
-2: // priest
-3: // thief
-4: // Gladiator
-5: // Necromancer
-6: // paladin
-7: // assassin
-8: // Barbarian
-9: // Ranger
-10: // Conjurer
-11: // Enchanter
-12: // Fire Wizard
-13: // Ice Wizard
-14: // Summoner
-*/
 
 chance = 0;
 
@@ -1511,7 +1586,7 @@ chance = spell_fail(specspell);
   mpr(info);
  }
 
-#ifdef LINUX
+#ifdef PLAIN_TERM
 redraw_screen();
 #endif
 
@@ -1525,15 +1600,15 @@ keyin = getch();
 if (keyin == 0) getch();
 if (keyin != 'y' && keyin != 'Y')
 {
-#ifdef LINUX
+#ifdef PLAIN_TERM
 redraw_screen();
 #endif
  return;
 }
 mesclr();
-if (random2(30) + random2(40) + random2(40) < chance) //powm <= random2(chance) && spell_value(specspell) > 3)
+if (random2(40) + random2(40) + random2(40) + random2(40) + random2(40) < chance) //powm <= random2(chance) && spell_value(specspell) > 3)
 {
-#ifdef LINUX
+#ifdef PLAIN_TERM
 redraw_screen();
 #endif
  strcpy(info, "You fail to memorise the spell.");
@@ -1569,7 +1644,7 @@ you[0].delay_doing = 3;
 //scruggle = 0;
 
 you[0].turnover = 1;
-#ifdef LINUX
+#ifdef PLAIN_TERM
 redraw_screen();
 #endif
 

@@ -36,7 +36,7 @@ char *rumour[] = {
 "They say giant snails live in giant snailshells.",
 "Passing through Death's Door is usually a one-way trip.",
 "Mummies make great kindling.",
-"Paralysis can be instantly lethal."
+"Paralysis can be almost instantly lethal."
 // 30
 
 };

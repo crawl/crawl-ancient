@@ -7,6 +7,7 @@
 #include "spells2.h"
 #include "misc.h"
 #include "mutation.h"
+#include "randart.h"
 #include "spells.h"
 #include "stuff.h"
 #include "itemname.h"
@@ -15,6 +16,7 @@
 #include "view.h"
 
 char zappy(int func_pass [10], char str_pass [50], char z_type);
+void unuse_randart(unsigned char unw);
 
 extern char wield_change; /* defined in output.cc */
 
@@ -52,6 +54,8 @@ beams[0].type = func_pass [4];
 beams[0].flavour = func_pass [5];
 beams[0].thing_thrown = func_pass [6];
 beams[0].wand_id = func_pass [7];
+
+beams[0].ench_power = func_pass [8];
 
 func_pass [8] = power;
 
@@ -115,8 +119,9 @@ switch(z_type)
         func_pass [4] = 0;
         func_pass [0] = 0;
         func_pass [6] = 2; //1;
- func_pass [2] = 50;
+        func_pass [2] = 50;
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         func_pass [5] = 4; // magic
         return 2;
         //break;
@@ -129,6 +134,7 @@ switch(z_type)
         func_pass [6] = 2; //1;
         func_pass [5] = 4; // magic
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         return 2;
         //break;
 
@@ -136,7 +142,7 @@ switch(z_type)
         func_pass [0] = 13;//you[0].inv_col [throw_2];//icolour [you[0].inv_class [throw_2]] [you[0].inv_type [throw_2]];
         strcpy(str_pass, "magic dart");// you[0].inv_name [throw_2]);
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 102 + (func_pass [8] / 17);
+        func_pass [2] = 102 + (func_pass [8] / 22) + random2(2);
         func_pass [3] = 1500;
         func_pass [4] = 35;
         func_pass [6] = 4;//3;
@@ -164,6 +170,7 @@ switch(z_type)
         func_pass [5] = 4; //  magic
  func_pass [2] = 0; //func_pass [9];
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         return 2;
         //break;
 
@@ -205,6 +212,7 @@ switch(z_type)
         func_pass [6] = 2;//1;
         func_pass [5] = 4; // magic
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         return 2;
         //break;
 
@@ -216,6 +224,7 @@ switch(z_type)
         func_pass [6] = 2;//1;
         func_pass [5] = 4; // magic
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         return 2;
         //break;
 
@@ -249,6 +258,7 @@ switch(z_type)
         func_pass [6] = 2;//1;
         func_pass [5] = 4; // magic
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         return 2;
         //break;
 
@@ -272,6 +282,7 @@ switch(z_type)
         func_pass [6] = 2;//1;
         func_pass [5] = 4; // magic
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         return 2;
 
         case 16: // venom bolt
@@ -343,6 +354,7 @@ switch(z_type)
         func_pass [2] = 50;
         //beam();
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         func_pass [5] = 4; // magic
         return 2;
 
@@ -353,9 +365,10 @@ switch(z_type)
         func_pass [0] = 13; // pain
         func_pass [6] = 2; //1;
         func_pass [2] = 50;
-        func_pass [3] = 6 + (func_pass [8] / 20);  //104 + (func_pass [8] / 150);
+        func_pass [3] = 8 + (func_pass [8] / 20);  //104 + (func_pass [8] / 150);
         func_pass [5] = 4; // magic
-        func_pass [8] *= 25;
+        func_pass [8] *= 35;
+        func_pass [8] /= 10;
         return 2;
 
         case 23: // sticky flame
@@ -381,6 +394,7 @@ switch(z_type)
         func_pass [3] = 9 + (func_pass [8] / 3);
         func_pass [5] = 4; // magic
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         return 2;
 
         case 25: // flame of cleansing
@@ -416,6 +430,7 @@ switch(z_type)
         func_pass [2] = 50;
         func_pass [5] = 4; // magic
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         return 2;
 
         case 28: // degeneration
@@ -427,6 +442,7 @@ switch(z_type)
         func_pass [2] = 50;
         func_pass [5] = 4; // magic
         func_pass [8] *= 15;
+        func_pass [8] /= 10;
         return 2;
 
         case 29: // sting
@@ -493,7 +509,7 @@ switch(z_type)
         func_pass [0] = LIGHTCYAN;
         strcpy(str_pass, "zap");
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 3 + (func_pass [8] / 5);
+        func_pass [2] = 4 + (func_pass [8] / 8);
         func_pass [3] = 1500;
         func_pass [4] = 35;
         func_pass [6] = 2;
@@ -607,6 +623,7 @@ switch(z_type)
         func_pass [6] = 2;
         func_pass [2] = 50;
         func_pass [8] *= 7;
+        func_pass [8] /= 10;
         func_pass [5] = 4; // magic
         return 2;
 
@@ -619,7 +636,8 @@ switch(z_type)
         func_pass [2] = 50;
         func_pass [3] = 6 + (func_pass [8] / 50);  //104 + (func_pass [8] / 150);
         func_pass [5] = 4; // magic
-        func_pass [8] *= 20;
+        func_pass [8] *= 30;
+        func_pass [8] /= 10;
         return 2;
 
         case 45: // disruption
@@ -631,7 +649,8 @@ switch(z_type)
         func_pass [2] = 50;
         func_pass [3] = 5 + (func_pass [8] / 50);
         func_pass [5] = 4; // magic
-        func_pass [8] *= 25;
+        func_pass [8] *= 30;
+        func_pass [8] /= 10;
         return 2;
 
         case 46: // disintegrate
@@ -643,10 +662,33 @@ switch(z_type)
         func_pass [2] = 50;
         func_pass [3] = 15 + (func_pass [8] / 3);
         func_pass [5] = 4; // magic
-        func_pass [8] *= 20;
+        func_pass [8] *= 25;
+        func_pass [8] /= 10;
         return 2;
 
+        case 47: // Isk's Cross
+        func_pass [0] = 13;
+        strcpy(str_pass, "blast");
+        func_pass [1] = random2(5) + 12;
+        func_pass [2] = 105 + (func_pass [8] / 9);
+        func_pass [3] = 500; //10 + (func_pass [8] / 20);
+        func_pass [4] = 35;
+        func_pass [6] = 4;
+        func_pass [5] = 1; // an exploding bolt (also used for fireball)
+        func_pass [7] = 1;
+        return 1;
 
+        case 48: // breathe steam
+        func_pass [0] = LIGHTGREY;
+        strcpy(str_pass, "ball of steam");
+        func_pass [1] = random2(5) + 7;
+        func_pass [2] = 104 + (func_pass [8] / 5);
+        func_pass [3] = 10 + random2(func_pass [8] / 5 + 1);
+        func_pass [4] = '#';
+        func_pass [6] = 4;
+        func_pass [5] = 2; // fire
+        func_pass [7] = 1; // wand_id
+    return 1;
 
 /*
 beam_colour = func_pass [0];
@@ -1031,7 +1073,14 @@ if (you[0].inv_ident [unw] == 1) you[0].inv_ident [unw] = 2;
 item_name(you[0].inv_plus2 [unw], you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_quant [unw], you[0].inv_ident [unw], 4, str_pass);
 strcpy(info, str_pass);
 
-switch(you[0].inv_dam [unw] % 30)
+char i_dam = you[0].inv_dam [unw] % 30;
+
+if (you[0].inv_dam [unw] % 30 >= 25)
+{
+ i_dam = randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 0);
+}
+
+switch(i_dam)
 {
 
   case 1:
@@ -1084,14 +1133,23 @@ switch(you[0].inv_dam [unw] % 30)
 
 } /* end of switch */
 
-if (you[0].duration [5] != 0 | you[0].duration [6] != 0 | you[0].duration [7] != 0 | you[0].duration [8] != 0 | you[0].duration [15] != 0)
+if (you[0].inv_dam [unw] % 30 >= 25)
+{
+ unuse_randart(unw);
+}
+
+
+
+if (you[0].duration [5] != 0 || you[0].duration [6] != 0 || you[0].duration [7] != 0 || you[0].duration [8] != 0 || you[0].duration [15] != 0)
 {
   you[0].duration [5] = 0;
   you[0].duration [6] = 0;
   you[0].duration [7] = 0;
   you[0].duration [8] = 0;
   you[0].duration [15] = 0;
-  you[0].inv_dam [unw] = (you[0].inv_dam [unw] / 30) * 30;
+//  you[0].inv_dam [unw] = (you[0].inv_dam [unw] / 30) * 30;
+  you[0].inv_dam [unw] -= you[0].inv_dam [unw] % 30;
+  mpr("Your branding spell evaporates.");
 }
 
 
@@ -1182,7 +1240,7 @@ switch(you[0].inv_type [unw])
 
  case 19:
 /* you[0].rate_regen -= 50;*/
- you[0].hunger_inc -= 1;
+// you[0].hunger_inc -= 1;
  break;
 
  case 21:
@@ -1329,4 +1387,52 @@ switch(you[0].inv_dam [unw] % 30)
 
 } /* end of switch */
 
+if (you[0].inv_dam [unw] % 30 >= 25)
+{
+ unuse_randart(unw);
+}
+
 } /* end of unwear_armour */
+
+
+void unuse_randart(unsigned char unw)
+{
+
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 1) > 0)
+ {
+//  mpr("You feel vulnerable.");
+  you[0].AC_ch = 1;
+ }
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 2) > 0)
+ {
+//  mpr("You feel like a sitting duck.");
+  you[0].evasion_ch = 1;
+ }
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 3) > 0)
+ {
+//  mpr("You feel weak.");
+  you[0].strength_ch = 1;
+  you[0].strength -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 3);
+  you[0].max_strength -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 3);
+ }
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 4) > 0)
+ {
+//  mpr("You feel dopey.");
+  you[0].intel_ch = 1;
+  you[0].intel -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 4);
+  you[0].max_intel -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 4);
+ }
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 5) > 0)
+ {
+//  mpr("You feel clumsy.");
+  you[0].dex_ch = 1;
+  you[0].dex -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 5);
+  you[0].max_dex -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 5);
+ }
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 8) > 0)
+ {
+//  mpr("You feel vulnerable to electricity.");
+  you[0].attribute [0] --;
+ }
+
+}

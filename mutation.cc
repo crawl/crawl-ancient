@@ -12,9 +12,10 @@
 #endif
 
 #include "externs.h"
+#include "macro.h"
 #include "message.h"
 #include "player.h"
-
+#include "transfor.h"
 #include "stuff.h"
 
 int how_mutated(void);
@@ -109,7 +110,7 @@ char *mutation_descrip [] [3] =
 // 30
 {"You can breathe flames.", "You can breathe fire.", "You can breathe blasts of fire."},
 {"You can translocate small distances instantaneously.", "You can translocate small distances instantaneously.", "You can translocate small distances instantaneously."},
-{"", "", ""},
+{"You have a pair of small horns on your head.", "You have a pair of horns on your head.", "You have a pair of large horns on your head."},
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
@@ -159,7 +160,7 @@ char *gain_mutation [] [3] =
 // 30
 {"Your throat feels hot.", "Your throat feels hot.", "Your throat feels hot."},
 {"You feel a little jumpy.", "You feel more jumpy.", "You feel even more jumpy."},
-{"", "", ""},
+{"A pair of horns grows on your head!", "The horns on your head grow some more.", "The horns on your head grow some more."},
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
@@ -204,7 +205,7 @@ char *lose_mutation [] [3] =
 // 30
 {"A chill runs up and down your throat.", "A chill runs up and down your throat.", "A chill runs up and down your throat."},
 {"You feel a little less jumpy.", "You feel less jumpy.", "You feel less jumpy."},
-{"", "", ""},
+{"The horns on your head shrink away.", "The horns on your head shrink a bit.", "The horns on your head shrink a bit."},
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
@@ -250,7 +251,7 @@ char mutation_rarity [] =
 // 30
 4, // breathe fire
 3, // blink
-0,
+7, // horns
 0,
 0,
 };
@@ -262,7 +263,7 @@ void display_mutations(void)
    int i;
    int j = 0;
    char st_prn [5];
-#ifdef DOS
+#ifdef DOS_TERM
    char buffer[4800];
    window(1, 1, 80, 25);
    gettext(1, 1, 80, 25, buffer);
@@ -271,7 +272,7 @@ void display_mutations(void)
 
    clrscr();
    textcolor(WHITE);
-        cprintf("                  Mutations & Other Weirdness\n\r");
+        cprintf("                  Mutations & Other Weirdness"EOL);
    textcolor(LIGHTGREY);
 
    for (i = 0; i < 50; i ++)
@@ -279,23 +280,23 @@ void display_mutations(void)
     if (you[0].mutation [i] != 0)
     {
      j ++;
-     if (i == 1 | i == 2 | i == 3 | i == 18 | i == 19 | i == 20)
+     if (i == 1 || i == 2 || i == 3 || i == 18 || i == 19 || i == 20)
      {
       cprintf(mutation_descrip [i] [0]);
       itoa(you[0].mutation [i], st_prn, 10);
       cprintf(st_prn);
-      cprintf(").\n\r");
+      cprintf(")."EOL);
       continue;
      }
      cprintf(mutation_descrip [i] [you[0].mutation [i] - 1]);
-     cprintf("\n\r");
+     cprintf(EOL);
     }
    }
 
-   if (j == 0) cprintf("You aren't a mutant.\n\r");
+   if (j == 0) cprintf("You aren't a mutant."EOL);
 
    if (getch() == 0) getch();
-#ifdef DOS
+#ifdef DOS_TERM
    puttext(1, 1, 80, 25, buffer);
 #endif
 
@@ -313,7 +314,9 @@ char mutat = which_mutation;
 
 //char st_prn [10];
 
-if (you[0].is_undead != 0 | (wearing_amulet(44) != 0 && random2(10) != 0))
+int i = 0;
+
+if (you[0].is_undead != 0 || (wearing_amulet(44) != 0 && random2(10) != 0))
  return 0;
 
 if (which_mutation == 100 && random2(15) < how_mutated())
@@ -325,15 +328,15 @@ if (which_mutation == 100 && random2(15) < how_mutated())
 if (which_mutation == 100)
  do
  {
-  mutat = random2(32); /* if number change, change in lose_mut also */
+  mutat = random2(33); /* if number change, change in lose_mut also */
   if (random2(1000) == 0) return 0;
- } while ((you[0].mutation [mutat] >= 3 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) | random2(10) > mutation_rarity [mutat] | you[0].mutation [mutat] > 13);
+ } while ((you[0].mutation [mutat] >= 3 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) || random2(10) > mutation_rarity [mutat] || you[0].mutation [mutat] > 13);
 
 if (you[0].mutation [mutat] >= 3 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) return 0;
 if (you[0].mutation [mutat] > 13) return 0;
-if (mutat == 0 | (mutat >= 4 && mutat <= 7) && body_covered() > 2) return 0;
+if (mutat == 0 || (mutat >= 4 && mutat <= 7) && body_covered() > 2) return 0;
 
-if ((mutat == 25 | mutat == 9 | mutat == 28) && you[0].species == 13) return 0; // nagas have see invis and res poison and can spit poison
+if ((mutat == 25 || mutat == 9 || mutat == 28) && you[0].species == 13) return 0; // nagas have see invis and res poison and can spit poison
 if (you[0].species == 14 && mutat == 29) return 0; /* gnomes can't sense surroundings */
 if (mutat == 15 && you[0].mutation [17] > 0) return 0; /* if you have a slow metabolism, no regen */
 if (mutat == 17 && you[0].mutation [15] > 0) return 0; /* if you have a slow metabolism, no regen */
@@ -468,13 +471,24 @@ switch(mutat)
   delete_mutation(16);
   return 1;
  }
- if (you[0].mutation [mutat] == 0 | you[0].mutation [mutat] == 2) you[0].hunger_inc --;
+ if (you[0].mutation [mutat] == 0 || you[0].mutation [mutat] == 2) you[0].hunger_inc --;
  mpr(gain_mutation [mutat] [you[0].mutation [mutat]]);
  break;
 
  case 21: // control tele
  you[0].attribute [3] ++;
  mpr(gain_mutation [mutat] [you[0].mutation [mutat]]);
+ break;
+
+ case 32: // horns force your helmet off
+ mpr(gain_mutation [mutat] [you[0].mutation [mutat]]);
+ char removed [8];
+ for (i = 0; i < 8; i ++)
+ {
+  removed [i] = 0;
+ }
+ removed [2] = 1;
+ remove_equipment(removed);
  break;
 
  case 5:
@@ -519,7 +533,7 @@ if (which_mutation == 100)
  {
   mutat = random2(32);
   if (random2(1000) == 0) return 0;
- } while ((you[0].mutation [mutat] == 0 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) | random2(10) > mutation_rarity [mutat]);
+ } while ((you[0].mutation [mutat] == 0 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) || random2(10) > mutation_rarity [mutat]);
 
 
 if (you[0].mutation [mutat] == 0) return 0;
@@ -624,7 +638,7 @@ switch(mutat)
   mutate(16);
   break;
  }*/
- if (you[0].mutation [mutat] == 0 | you[0].mutation [mutat] == 2) you[0].hunger_inc ++;
+ if (you[0].mutation [mutat] == 0 || you[0].mutation [mutat] == 2) you[0].hunger_inc ++;
  mpr(lose_mutation [mutat] [you[0].mutation [mutat]]);
  break;
 
@@ -683,7 +697,7 @@ char *mutation_name(char which_mutat)
 {
  char st_prn [5];
 
- if (which_mutat == 1 | which_mutat == 2 | which_mutat == 3 | which_mutat == 18 | which_mutat == 19 | which_mutat == 20)
+ if (which_mutat == 1 || which_mutat == 2 || which_mutat == 3 || which_mutat == 18 || which_mutat == 19 || which_mutat == 20)
  {
    strcpy(mut_string, mutation_descrip [which_mutat] [0]);
    itoa(you[0].mutation [which_mutat], st_prn, 10);

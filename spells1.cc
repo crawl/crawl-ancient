@@ -17,6 +17,7 @@
 #include "mstruct.h"
 #include "player.h"
 #include "priest.h"
+#include "randart.h"
 #include "skills.h"
 #include "spells0.h"
 #include "spells2.h"
@@ -58,6 +59,13 @@ void blink(void)
 
 struct dist beam [1];
 
+if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
+ if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 22) > 0)
+ {
+  mpr("You feel a weird sense of stasis.");
+  return;
+ }
+
 if (you[0].conf != 0) random_blink();
 
 start_blink: strcpy(info, "Blink to where?");
@@ -79,7 +87,7 @@ if (see_grid(beam[0].target_x, beam[0].target_y) == 0)
         goto start_blink;
 }
 
-if (grd [beam[0].target_x] [beam[0].target_y] <= 10 | mgrd [beam[0].target_x] [beam[0].target_y] != MNG)
+if (grd [beam[0].target_x] [beam[0].target_y] <= 10 || mgrd [beam[0].target_x] [beam[0].target_y] != MNG)
 {
   strcpy(info, "Your body is wracked with pain!");
   mpr(info);
@@ -106,13 +114,21 @@ void random_blink(void)
 {
  int passed [2];
 
+if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
+ if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 22) > 0)
+ {
+  mpr("You feel a weird sense of stasis.");
+  return;
+ }
+
+
  if (you[0].attribute [3] != 0 && you[0].conf == 0)
  {
   blink();
   return;
  }
 
- if (random_near_space(passed) == 0 | (you[0].x_pos == passed [0] && you[0].y_pos == passed [1]))
+ if (random_near_space(passed) == 0 || (you[0].x_pos == passed [0] && you[0].y_pos == passed [1]))
         {
                 strcpy(info, "You feel rather strange for a moment.");
                 mpr(info);
@@ -140,6 +156,15 @@ void fireball(int power)
 
 strcpy(info, "Which direction? (* to target)");
 mpr(info);
+
+ if (you[0].prev_targ != MHITNOT && you[0].prev_targ < MNST)
+  if (mons_near(you[0].prev_targ) == 1 && (menv [you[0].prev_targ].m_ench [2] != 6 || player_see_invis() != 0))
+  {
+        strcpy(info, "You are currently targetting ");
+        strcat(info, monam (menv [you[0].prev_targ].m_sec, menv [you[0].prev_targ].m_class, menv [you[0].prev_targ].m_ench [2], 1));
+        strcat(info, " (p to target).");
+        mpr(info);
+  } else mpr("You have no current target.");
 
 
 struct dist fire_ball [1];
@@ -206,7 +231,7 @@ beam[0].colour = RED;
 
       for (sty = -2; sty < 3; sty++)
       {
-          if ((stx == -2 && sty == -2) | (stx == -2 && sty == 2) | (stx == 2 && sty == -2) | (stx == 2 && sty == 2))
+          if ((stx == -2 && sty == -2) || (stx == -2 && sty == 2) || (stx == 2 && sty == -2) || (stx == 2 && sty == 2))
                                                                                                                 continue;
 
                 beam[0].range = 1 + random2(5) + random2(powc) / 5 + random2(powc) / 5;
@@ -217,12 +242,12 @@ beam[0].colour = RED;
             beam[0].target_x = cl_x + stx;
             beam[0].target_y = cl_y + sty;
 
-            if (random2(4) == 0 && grd [beam[0].target_x] [beam[0].target_y] == 67 && mgrd [beam[0].target_x] [beam[0].target_y] == MNG) // > 10 && grd [beam[0].target_x] [beam[0].target_y] < 100 && (beam[0].target_x != you[0].x_pos | beam[0].target_y != you[0].y_pos))
+            if (random2(4) == 0 && grd [beam[0].target_x] [beam[0].target_y] == 67 && mgrd [beam[0].target_x] [beam[0].target_y] == MNG) // > 10 && grd [beam[0].target_x] [beam[0].target_y] < 100 && (beam[0].target_x != you[0].x_pos || beam[0].target_y != you[0].y_pos))
             {
                    summd = mons_place(21, 1, beam[0].target_x, beam[0].target_y, 4, MHITNOT, 250, you[0].your_level);
             }
 
-            if (grd [beam[0].target_x] [beam[0].target_y] > 10 && env[0].cgrid [beam[0].target_x] [beam[0].target_y] == CNG && (beam[0].target_x != you[0].x_pos | beam[0].target_y != you[0].y_pos))
+            if (grd [beam[0].target_x] [beam[0].target_y] > 10 && env[0].cgrid [beam[0].target_x] [beam[0].target_y] == CNG && (beam[0].target_x != you[0].x_pos || beam[0].target_y != you[0].y_pos))
             {
                place_cloud(1, beam[0].target_x, beam[0].target_y, beam[0].range);
             }
@@ -242,6 +267,15 @@ char spell_direction(struct dist spelld [1], struct bolt beam [1])
 
 strcpy(info, "Which direction? (* to target)");
 mpr(info);
+
+ if (you[0].prev_targ != MHITNOT && you[0].prev_targ < MNST)
+  if (mons_near(you[0].prev_targ) == 1 && (menv [you[0].prev_targ].m_ench [2] != 6 || player_see_invis() != 0))
+  {
+        strcpy(info, "You are currently targetting ");
+        strcat(info, monam (menv [you[0].prev_targ].m_sec, menv [you[0].prev_targ].m_class, menv [you[0].prev_targ].m_ench [2], 1));
+        strcat(info, " (p to target).");
+        mpr(info);
+  } else mpr("You have no current target.");
 
 direction(1, spelld);
 
@@ -278,11 +312,11 @@ void identify(char pow)
 
         unsigned char keyin = get_ch();
 
-        if (keyin == '*' | keyin == '?')
+        if (keyin == '*' || keyin == '?')
         {
                 if (keyin == '?') nthing = get_invent(-1);
                 if (keyin == '*') nthing = get_invent(-1);
-                if ((nthing >= 65 && nthing <= 90) | (nthing >= 97 && nthing <= 122))
+                if ((nthing >= 65 && nthing <= 90) || (nthing >= 97 && nthing <= 122))
                 {
                                 keyin = nthing;
                 } else
@@ -296,7 +330,7 @@ void identify(char pow)
 
         int sc_read_1 = (int) keyin;
 
-        if (sc_read_1 < 65 | (sc_read_1 > 90 && sc_read_1 < 97) | sc_read_1 > 122)
+        if (sc_read_1 < 65 || (sc_read_1 > 90 && sc_read_1 < 97) || sc_read_1 > 122)
         {
                 strcpy(info, "You don't have any such object.");
                 mpr(info);
@@ -373,7 +407,7 @@ if (see_grid(spelld[0].target_x, spelld[0].target_y) == 0)
 }
 
 
-if (ig <= 10 | mgrd [spelld[0].target_x] [spelld[0].target_y] != MNG | env[0].cgrid [spelld[0].target_x] [spelld[0].target_y] != CNG)
+if (ig <= 10 || mgrd [spelld[0].target_x] [spelld[0].target_y] != MNG || env[0].cgrid [spelld[0].target_x] [spelld[0].target_y] != CNG)
 {
    strcpy(info, "There's already something there!");
    mpr(info);
@@ -406,6 +440,15 @@ struct bolt beam [1];
 strcpy(info, "Which direction? (* to target)");
 mpr(info);
 
+ if (you[0].prev_targ != MHITNOT && you[0].prev_targ < MNST)
+  if (mons_near(you[0].prev_targ) == 1 && (menv [you[0].prev_targ].m_ench [2] != 6 || player_see_invis() != 0))
+  {
+        strcpy(info, "You are currently targetting ");
+        strcat(info, monam (menv [you[0].prev_targ].m_sec, menv [you[0].prev_targ].m_class, menv [you[0].prev_targ].m_ench [2], 1));
+        strcat(info, " (p to target).");
+        mpr(info);
+  } else mpr("You have no current target.");
+
 direction(1, spelld);
 
 if (spelld[0].nothing == -1)
@@ -429,7 +472,7 @@ beam[0].colour = GREEN;
 beam[0].range = 7;
 beam[0].damage = 0;
 beam[0].hit = 20;
-beam[0].type = 42;
+beam[0].type = '#';
 beam[0].flavour = 8; // exploding gas on target // 7; // gas?
 beam[0].thing_thrown = 4;//? ???? ?
 
@@ -575,7 +618,7 @@ if (bmove[0].nothing == -1)
         return 0;
 }
 
-if (bmove[0].move_x > 1 | bmove[0].move_y > 1)
+if (bmove[0].move_x > 1 || bmove[0].move_y > 1)
 {
         strcpy(info, "This spell doesn't reach that far.");
         mpr(info);
@@ -754,7 +797,7 @@ for (ab = 0; ab < MNST; ab ++)
  if (menv [ab].m_class == -1) continue;
  if (mons_near(ab) == 0) continue;
  if (menv [ab].m_beh == 7) continue;
- if (menv [ab].m_ench_1 == 0 | menv [ab].m_ench [1] < 20 | menv [ab].m_ench [1] > 25) continue;
+ if (menv [ab].m_ench_1 == 0 || menv [ab].m_ench [1] < 20 || menv [ab].m_ench [1] > 25) continue;
 
  menv [ab].m_ench [1] -= 1 + random2(pow) / 3;
  if (menv [ab].m_ench [1] <= 19)
@@ -851,7 +894,7 @@ int dur_change = 0;
 
 if (you[0].equip [6] != -1 && extending == 0)
 {
- if (you[0].inv_type [you[0].equip [6]] > 1 && you[0].inv_type [you[0].equip [6]] != 16 && you[0].inv_type [you[0].equip [6]] != 19 && (you[0].inv_type [you[0].equip [6]] < 22 | you[0].inv_type [you[0].equip [6]] > 25))
+ if (you[0].inv_type [you[0].equip [6]] > 1 && you[0].inv_type [you[0].equip [6]] != 16 && you[0].inv_type [you[0].equip [6]] != 19 && (you[0].inv_type [you[0].equip [6]] < 22 || you[0].inv_type [you[0].equip [6]] > 25))
  {
   strcpy(info, "You are wearing too much armour.");
   mpr(info);

@@ -138,6 +138,44 @@ if (random2(8) <= 0 + player_spec_death()) create_monster(63, 21, 7, you[0].x_po
 show_green = DARKGREY;
 break;
 
+case 51: /* randart makes noises */
+if (random2(20) == 0)
+{
+ in_name(you[0].equip [0], 4, str_pass);
+ strcpy(info, str_pass);
+ strcat(info, " lets out a weird humming sound.");
+ mpr(info);
+ noisy(25, you[0].x_pos, you[0].y_pos);
+}
+break;
+
+case 52: /* randart makes noises */
+if (random2(20) == 0)
+{
+ in_name(you[0].equip [0], 4, str_pass);
+ strcpy(info, str_pass);
+ strcat(info, " chimes like a gong.");
+ mpr(info);
+ noisy(25, you[0].x_pos, you[0].y_pos);
+}
+break;
+
+case 53: /* randart makes noises */
+if (random2(20) == 0)
+{
+ mpr("You hear a voice call your name.");
+ noisy(25, you[0].x_pos, you[0].y_pos);
+}
+break;
+
+case 54: /* randart makes noises */
+if (random2(20) == 0)
+{
+ mpr("You hear a shout.");
+ noisy(25, you[0].x_pos, you[0].y_pos);
+}
+break;
+
 } // end switch
 
 } // end void special_wielded
@@ -174,7 +212,7 @@ switch(you[0].inv_class [you[0].equip [0]])
  switch(you[0].inv_dam [you[0].equip [0]])
  {
   case 189: // staff of Dispater
-  if (you[0].deaths_door != 0 | you[0].hp <= 10 | you[0].ep <= 4) goto nothing_hap;
+  if (you[0].deaths_door != 0 || you[0].hp <= 10 || you[0].ep <= 4) goto nothing_hap;
   strcpy(info, "You feel the staff feeding on your energy!");
   mpr(info);
   you[0].hp -= random2(10) + random2(10) + 5;
@@ -209,7 +247,7 @@ switch(you[0].inv_class [you[0].equip [0]])
   break;
 
   case 193: // staff of Olgreb
-  if (you[0].ep <= 5 | you[0].skills [25] <= random2(11)) goto nothing_hap;
+  if (you[0].ep <= 5 || you[0].skills [25] <= random2(11)) goto nothing_hap;
   you[0].ep -= 4;
   if (you[0].ep <= 0) you[0].ep = 0;
   you[0].ep_ch = 1;
@@ -218,7 +256,7 @@ switch(you[0].inv_class [you[0].equip [0]])
   break;
 
   case 195: // staff of Wucad Mu
-  if (you[0].ep == you[0].ep_max | random2(4) == 0)
+  if (you[0].ep == you[0].ep_max || random2(4) == 0)
   {
    strcpy(info, "Nothing appears to happen.");
    mpr(info);
@@ -242,7 +280,7 @@ switch(you[0].inv_class [you[0].equip [0]])
  case 11:
  if (you[0].inv_type [you[0].equip [0]] == 27)
  {
-  if (you[0].ep == you[0].ep_max | random2(4) == 0)
+  if (you[0].ep == you[0].ep_max || random2(4) == 0)
   {
    strcpy(info, "Nothing appears to happen.");
    mpr(info);
@@ -428,7 +466,7 @@ void ball_of_seeing(void)
   if (you[0].conf > 40) you[0].conf = 40;
   return;
  }
- if (use < 15 | random2(2) == 0 | you[0].level_type == 1 | you[0].level_type == 2)
+ if (use < 15 || random2(2) == 0 || you[0].level_type == 1 || you[0].level_type == 2)
  {
   strcpy(info, "You see nothing.");
   mpr(info);
@@ -446,7 +484,7 @@ void disc_of_storms(void)
 
 you[0].turnover = 1;
 
-if ((random2(60) > 30 + you[0].skills [35] && random2(3) != 0) | you[0].attribute [1] != 0)
+if ((random2(60) > 30 + you[0].skills [35] && random2(3) != 0) || you[0].attribute [1] != 0)
 {
  strcpy(info, "Nothing appears to happen.");
  mpr(info);
@@ -506,7 +544,7 @@ do
 void staff_spell(char zap_device_2)
 {
 
-if (you[0].inv_plus [zap_device_2] == 64 | you[0].inv_type [zap_device_2] < 10 | you[0].inv_type [zap_device_2] >= 25)
+if (you[0].inv_plus [zap_device_2] == 64 || you[0].inv_type [zap_device_2] < 10 || you[0].inv_type [zap_device_2] >= 25)
 {
    strcpy(info, "That staff has no spells in it.");
    mpr(info);
@@ -520,7 +558,7 @@ int powc = magic_ability(player_mag_abil(), you[0].intel);
 
 int sc_read_1 = book_thing; // book_thing is got in read_book
 
-if (sc_read_1 < 65 | (sc_read_1 > 90 && sc_read_1 < 97) | sc_read_1 > 122)
+if (sc_read_1 < 65 || (sc_read_1 > 90 && sc_read_1 < 97) || sc_read_1 > 122)
 {
         strcpy(info, "What?");
         mpr(info);
@@ -546,7 +584,7 @@ if (learn_a_spell(zap_device_2, sc_read_2) != 1)
 
 specspell = which_spell_in_book(you[0].inv_type [you[0].equip [0]] + 40, sc_read_2 + 1);
 
-if (you[0].ep < spell_value(specspell) / 2 + 1 | you[0].xl < spell_value(specspell))
+if (you[0].ep < spell_value(specspell) / 2 + 1 || you[0].xl < spell_value(specspell))
 {
    strcpy(info, "Your brain hurts!");
    mpr(info);
@@ -867,7 +905,7 @@ void ball_of_energy(void)
  mpr(info);
  use = random2(you[0].intel * 6);
  if (you[0].conf != 0) use = 0;
- if (use < 2 | you[0].ep_max == 0)
+ if (use < 2 || you[0].ep_max == 0)
  {
   strcpy(info, "Your head hurts!");
   mpr(info);
@@ -875,7 +913,7 @@ void ball_of_energy(void)
   you[0].intel_ch = 1;
   return;
  }
- if (use < 4 | you[0].ep == you[0].ep_max)
+ if (use < 4 || you[0].ep == you[0].ep_max)
  {
   drain_away: strcpy(info, "You feel your power drain away!");
   mpr(info);
@@ -895,7 +933,7 @@ void ball_of_energy(void)
  proportional = you[0].ep * 100;
  proportional /= you[0].ep_max;
 
- if (random2(20) + random2(20) + random2(20) + random2(10) > proportional | random2(25) == 0)
+ if (random2(20) + random2(20) + random2(20) + random2(10) > proportional || random2(25) == 0)
     goto drain_away;
 
  strcpy(info, "You are suffused with power!");

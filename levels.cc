@@ -121,6 +121,7 @@ switch(random2(17))
     if (random2(10) == 0) env[0].mons_alloc [pc] = 80 + random2(10);
     if (random2(30) == 0) env[0].mons_alloc [pc] = 3;
     if (random2(30) == 0) env[0].mons_alloc [pc] = 8;
+    if (random2(30) == 0) env[0].mons_alloc [pc] = 235 + random2(3);
 
 }
 

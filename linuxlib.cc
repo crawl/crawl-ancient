@@ -69,11 +69,12 @@ void lincurses_startup()
         initscr();
         savetty();
         noecho();
-        keypad(stdscr, TRUE);
+        keypad(stdscr, FALSE);
         cbreak();
         meta(stdscr, TRUE);
         start_color();
         setupcolorpairs();
+        scrollok(stdscr, TRUE);
 }
 
 
@@ -270,8 +271,27 @@ void delay(long time)
         usleep(time * 1000);
 }
 
+/*
+Note: kbhit now in macro.cc
+*/
 
+/* This is Juho Snellman's modified kbhit, to work with macros */
 int kbhit()
+{
+    int i;
+
+        nodelay(stdscr, TRUE);
+        i = wgetch(stdscr);
+        nodelay(stdscr, FALSE);
+        if (i == -1)
+          i = 0;
+        else
+          ungetch(i);
+
+        return(i);
+}
+
+/*int kbhit()
 {
         int i;
 
@@ -281,7 +301,7 @@ int kbhit()
         if (i == -1)
               i = 0;
         return(i);
-}
+}*/
 
 
 #ifdef LINUX

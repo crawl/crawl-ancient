@@ -194,7 +194,6 @@ you[0].intel_ch = 1;
 you[0].dex_ch = 1;
 you[0].evasion_ch = 1;
 you[0].AC_ch = 1;
-calc_hp();
 
 your_sign = '@';
 your_colour = LIGHTGREY;
@@ -241,22 +240,28 @@ switch(you[0].attribute [5])
 
 you[0].attribute [5] = 0;
 you[0].duration [18] = 0;
-if (you[0].species == 13) /* If nagas wear boots while transformed, they fall off again afterwards */
+if (you[0].species == 13 && you[0].equip [4] != -1 && you[0].inv_plus2 [you[0].equip [4]] != 1) /* If nagas wear boots while transformed, they fall off again afterwards */
 {
  rem_stuff [4] = 1;
  remove_equipment(rem_stuff);
  if (was_transformed != 2 && was_transformed != 6) you[0].attribute [4] ++;
 }
 
+calc_hp();
+
 }
 
 char can_equip(char use_which)
 {
 
-if (you[0].attribute [5] == 0 | you[0].attribute [5] == 2) /* or it's a transformation which doesn't change overall shape */
+if (you[0].attribute [5] == 0 || you[0].attribute [5] == 2 || you[0].attribute [5] == 6) /* or it's a transformation which doesn't change overall shape */
+/* if more cases are added to this if must also change in item_use for naga barding */
 {
  if (you[0].species == 13 && use_which == 4) return 0;
+ if (you[0].species == 30 && use_which == 4) return 0;
 }
+
+if (use_which == 2 && you[0].mutation [32] != 0) return 0; /* horns prevent wearing a helmet */
 
 switch(you[0].attribute [5])
 {
@@ -264,7 +269,7 @@ switch(you[0].attribute [5])
  case 1: /* spider - can't wear anything */
  return 0;
  case 2: /* scythe hands */
- if (use_which == 0 | use_which == 3 | use_which == 5) return 0;
+ if (use_which == 0 || use_which == 3 || use_which == 5) return 0;
  return 1;
  case 3: /* statue */
  if (use_which == 0) return 1;

@@ -8,6 +8,8 @@
 
 #include "externs.h"
 
+#include "itemname.h"
+#include "macro.h"
 #include "player.h"
 #include "dungeon.h"
 
@@ -35,12 +37,12 @@ char st_pass [60];
    char ki;
    char already = 0;
 
-#ifdef DOS
+#ifdef DOS_TERM
    char buffer[4800];
    gettext(1, 1, 80, 25, buffer);
 #endif
 
-#ifdef DOS
+#ifdef DOS_TERM
    window(1, 1, 80, 25);
 #endif
 
@@ -58,14 +60,14 @@ lines++;
                 ki = getch();
                 if (ki == 27)
                 {
-#ifdef DOS
+#ifdef DOS_TERM
                         puttext(1, 1, 80, 25, buffer);
 #endif
                         return 27;
                 }
                 if (ki >= 65 && ki < 123)
                 {
-#ifdef DOS
+#ifdef DOS_TERM
                         puttext(1, 1, 80, 25, buffer);
 #endif
                         return ki;
@@ -77,7 +79,7 @@ lines++;
                 anything = 0;
 
         }
-        if (lines > 1) cprintf("\n\r ");
+        if (lines > 1) cprintf(EOL" ");
 
         for (j = 0; j < 25; j++)
         {
@@ -89,14 +91,14 @@ lines++;
                         ki = getch();
                         if (ki == 27)
                         {
-#ifdef DOS
+#ifdef DOS_TERM
                                 puttext(1, 1, 80, 25, buffer);
 #endif
                                 return 27;
                         }
                         if (ki >= 65 && ki < 123)
                         {
-#ifdef DOS
+#ifdef DOS_TERM
                                 puttext(1, 1, 80, 25, buffer);
 #endif
                                 return ki;
@@ -112,7 +114,7 @@ lines++;
                 {
 
                         anything ++;
-                        if (lines > 0) cprintf("\n\r");
+                        if (lines > 0) cprintf(EOL);
                         lines++;
                                 cprintf(" ");
                                 if (j < 26) ft = (char) j + 97;
@@ -285,19 +287,19 @@ if (spell_f > 0)
            ki = getch();
            if (ki >= 65 && ki < 123)
            {
-#ifdef DOS
+#ifdef DOS_TERM
                    puttext(1, 1, 80, 25, buffer);
 #endif
                    return ki;
            }
            if (ki == 0) ki = getch();
-#ifdef DOS
+#ifdef DOS_TERM
            puttext(1, 1, 80, 25, buffer);
 #endif
            return anything;
    }
 
-#ifdef DOS
+#ifdef DOS_TERM
    puttext(1, 1, 80, 25, buffer);
 #endif
        // was 35
@@ -324,13 +326,22 @@ int chance = 60;
 int chance2 = 0;
 
 
-chance -= spell_spec(spell, 0) * 7;
+chance -= spell_spec(spell, 0) * 6;
 
 chance -= you[0].intel * 2;
 
 //chance -= (you[0].intel - 10) * abs(you[0].intel - 10);
 
 //chance += spell_value(spell) * spell_value(spell) * 3; //spell_value(spell);
+
+if (you[0].equip [6] != -1)
+ chance += (abs(property(2, you[0].inv_type [you[0].equip [6]], 1)) * 3) - 2;
+
+if (you[0].equip [5] != -1)
+{
+  if (you[0].inv_type [you[0].equip [5]] == 8) chance += 5;
+  if (you[0].inv_type [you[0].equip [5]] == 14) chance += 15;
+}
 
 switch(spell_value(spell))
 {
@@ -378,6 +389,11 @@ if (chance < -140) chance2 = 4;
 if (chance < -160) chance2 = 2;
 if (chance < -180) chance2 = 0;
 
+if (you[0].religion == 6 && you[0].duration [3] != 0 && you[0].piety >= 50 && (spell_type(spell, 11) != 0 || spell_type(spell, 18) != 0))
+{
+ chance /= 2;
+}
+
 return chance2;
 
 }
@@ -396,8 +412,8 @@ int spellsy = 0;
 
 for (s = 11; s < 24; s ++)
 {
-// if (s == 13 | s == 14 | s == 17) continue;
- if (s == 17 | s == 21) continue;
+// if (s == 13 || s == 14 || s == 17) continue;
+ if (s == 17 || s == 21) continue;
  if (spell_type(spell, s) == 1) spellsy ++;
 }
 
@@ -648,7 +664,7 @@ switch(spell)
    case 48: stype = 19; break; //3; // detect curse
    case 49: stype = 18; break; //1; // summon small mammal
    case 50: stype = 18; break; //4; // Abjuration
-   case 51: stype = 18; break; //4; // summon scorpions
+   case 51: stype = 2118; break; //4; // summon scorpions
    case 52: stype = 1223; break; //3; // levitation
    case 53: stype = 1611; break; //6; // bolt of draining
    case 54: stype = 1122; break; //8; // splinters
@@ -772,15 +788,15 @@ types of spells:
 
 }
 
-//if (stype == typy | (stype / 10) % 10 == typy | (stype / 100) % 10 == typy) return 1;
+//if (stype == typy || (stype / 10) % 10 == typy || (stype / 100) % 10 == typy) return 1;
 
-//if (stype == typy | (stype / 10) % 10 == typy | (stype / 100) % 10 == typy | (stype / 1000) % 10 == typy | (stype / 10000) % 10 == typy) return 1;
+//if (stype == typy || (stype / 10) % 10 == typy || (stype / 100) % 10 == typy || (stype / 1000) % 10 == typy || (stype / 10000) % 10 == typy) return 1;
 
-if (stype % 100 == typy | (stype / 100) % 100 == typy | (stype / 10000) % 100 == typy) return 1;
+if (stype % 100 == typy || (stype / 100) % 100 == typy || (stype / 10000) % 100 == typy) return 1;
 
 //232111
 
-//if (stype % 100 == typy | stype / 100 == typy) return 1;
+//if (stype % 100 == typy || stype / 100 == typy) return 1;
 
 return 0;
 
@@ -996,7 +1012,7 @@ switch(spell)
 {
         case 0: return 6; // identify
         case 1: return 5; // teleportation
-        case 2: return 6; // cause fear
+        case 2: return 5; // cause fear
         case 3: return 1; // noise
         case 4: return 5; // remove curse
         case 5: return 1; // magic missile
@@ -1006,7 +1022,7 @@ switch(spell)
    case 15: return 5; // firebolt
    case 16: return 5; // bolt of freezing cold
    case 17: return 6; // bolt of lightning
-   case 20: return 6; // polymorph other
+   case 20: return 5; // polymorph other
    case 21: return 3; // slow
    case 22: return 8; // haste
    case 23: return 4; // paralyse
@@ -1022,25 +1038,25 @@ switch(spell)
    case 33: return 2; //          int
    case 34: return 2; //          dex
    case 35: return 5; // venom bolt
-   case 36: return 4; // toxic radiance - uses lots of food?
+   case 36: return 4; // toxic radiance
    case 37: return 5; // teleport other
    case 38: return 2; // lesser healing
    case 39: return 6; // greater healing
    case 40: return 3; // cure poison
-   case 41: return 5; // purification
+    case 41: return 5; // purification
    case 42: return 8; // death's door
    case 43: return 3; // selective amnesia
-   case 44: return 7; // mass confusion
-   case 45: return 4; // smiting
-   case 46: return 3; // repel undead
-   case 47: return 7; // holy word
+   case 44: return 6; // mass confusion
+  case 45: return 4; // smiting??
+    case 46: return 3; // repel undead
+    case 47: return 7; // holy word
    case 48: return 3; // detect curse
    case 49: return 1; // summon small mammal
-   case 50: return 4; // Abjuration
+   case 50: return 3; // Abjuration
    case 51: return 4; // summon scorpions
-   case 52: return 3; // levitation
+   case 52: return 2; // levitation
    case 53: return 6; // bolt of draining
-   case 54: return 8; // splinters
+   case 54: return 8; // crystal spear
    case 55: return 4; // innacuracy
    case 56: return 6; // poisonous cloud
    case 57: return 9; // fire storm
@@ -1051,7 +1067,7 @@ switch(spell)
    case 62: return 8; // Summon Thing
    case 63: return 4; // Enslavement
    case 64: return 4; // Magic Mapping
-   case 65: return 3; // heal other
+    case 65: return 3; // heal other
    case 66: return 4; // Animate dead
    case 67: return 1; // Pain
    case 68: return 5; // Extension
@@ -1067,37 +1083,37 @@ switch(spell)
    case 78: return 5; // refrigeration
    case 79: return 4; // Sticky flame
    case 80: return 5; // Ice beast
-   case 81: return 4; // Ozocubu's Armour
+   case 81: return 3; // Ozocubu's Armour
    case 82: return 2; // imp
    case 83: return 2; // deflect missiles
    case 84: return 3; // berserker
    case 85: return 4; // dispel undead
-   case 86: return 7; // Guardian
-   case 87: return 4; // ???
-   case 88: return 6; // Thunderbolt
-   case 89: return 8; // Flame of Cleansing
-   case 90: return 7; // Shining Light
-   case 91: return 8; // Summon Deva
-   case 92: return 4; // Abjuration
+    case 86: return 7; // Guardian
+    case 87: return 4; // ???
+    case 88: return 6; // Thunderbolt
+    case 89: return 8; // Flame of Cleansing
+    case 90: return 7; // Shining Light
+    case 91: return 8; // Summon Deva
+    case 92: return 4; // Abjuration
 
    case 110: return 5; // twisted res
    case 111: return 3; // regen
    case 112: return 3; // bone shards
-   case 113: return 7; // Banishment
-   case 114: return 6; // Degeneration
+   case 113: return 5; // Banishment
+   case 114: return 5; // Degeneration
    case 115: return 1; // sting
    case 116: return 2; // blood
    case 117: return 3; // dance
    case 118: return 9; // hellfire
-   case 119: return 4; // summon demon
-   case 120: return 7; // demonic horde
+   case 119: return 5; // summon demon
+   case 120: return 6; // demonic horde
    case 121: return 7; // summon greater demon
 
    case 122: return 2; // corpse rot
    case 123: return 2; // Tukima's v bl
-   case 124: return 3; // flaming weapon
-   case 125: return 3; // freezing weapon
-   case 126: return 4; // draining weapon
+   case 124: return 2; // flaming weapon
+   case 125: return 2; // freezing weapon
+   case 126: return 2; // draining weapon
 
    case 127: return 1; // throw pebble
    case 128: return 6; // bolt of iron
@@ -1106,7 +1122,7 @@ switch(spell)
    case 131: return 6; // stonemail
    case 132: return 1; // shock
    case 133: return 2; // swiftness
-   case 134: return 6; // fly
+   case 134: return 4; // fly
    case 135: return 4; // insulation
    case 136: return 7; // orb of elec
    case 137: return 2; // detect creat
@@ -1116,12 +1132,12 @@ switch(spell)
    case 141: return 2; // poison weapon
    case 142: return 4; // resist poison
    case 143: return 2; // create noise 2
-   case 144: return 7; // mutation
+   case 144: return 7; // alter self
    case 145: return 7; // debug ray
    case 146: return 3; // recall
    case 147: return 8; // portal
-   case 148: return 6; // agony
-   case 149: return 4; // Spider form
+   case 148: return 5; // agony
+   case 149: return 3; // Spider form
    case 150: return 1; // Disrupt
    case 151: return 6; // Disintegrate
    case 152: return 3; // Blade Hands
@@ -1343,14 +1359,14 @@ char already = 0;
 
    strcpy(st_pass, "");
 
-#ifdef DOS
+#ifdef DOS_TERM
   char buffer[4800];
   gettext(1, 1, 80, 25, buffer);
 #endif
 
   strcpy(st_pass, "");
 
-#ifdef DOS
+#ifdef DOS_TERM
   window(1, 1, 80, 25);
 #endif
 
@@ -1366,7 +1382,7 @@ char already = 0;
    itoa(numby, stringy, 2);
 
    textcolor(LIGHTGREY);
-cprintf(" Spells                             Type                      Level\n\r");
+cprintf(" Spells                             Type                      Level"EOL);
 
 
    for (j = 1; j < 7; j ++)
@@ -1487,7 +1503,7 @@ cprintf(" Spells                             Type                      Level\n\r
          cprintf(sval);
 
 
-         cprintf("\n\r");
+         cprintf(EOL);
 
    spelcount ++;
 
@@ -1518,7 +1534,7 @@ cprintf(" Spells                             Type                      Level\n\r
 char keyn = getch();
 if (keyn == 0) getch();
 
-#ifdef DOS
+#ifdef DOS_TERM
 puttext(1, 1, 80, 25, buffer);
 window(1, 18, 80, 25);
 #endif
@@ -1568,3 +1584,30 @@ switch(spell_value)
 return spell;
 
 } // end of spell_hunger
+
+
+char undead_can_memorise(unsigned char spell)
+{
+
+switch(spell)
+{
+   case 42: return 2; // death's door
+   case 62: return 1; // Summon Horrible things
+   case 74: return 2; // reviv
+   case 84: return 2; // berserker
+//   case 111: return 2; // regen
+   case 138: return 2; // cure poison (poison)
+   case 142: return 2; // resist poison
+   case 144: return 1; // alter self
+   case 149: return 1; // Spider form
+   case 152: return 1; // Blade Hands
+   case 153: return 1; // Statue form
+   case 154: return 1; // Ice beast form
+   case 155: return 1; // Dragon Form
+   case 156: return 2; // Lich Form
+
+default: return 0;
+
+}
+
+}

@@ -37,8 +37,8 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*efreet               */ { 50,   8,    100,    100,     12,    100,    100},
 /*brain worm           */ { 52,  23,    100,    100,     23,    100,    100},
 /*giant orange brain   */ { 53,  23,     43,      6,     24,     16,     14},
-/*R                    */ { 54, 100,     16,     11,     25,     16,     14},
-/*GooE                 */ { 55,   3,     15,    100,      4,      6,     15},
+/*R                    */ { 54,  25,     16,     11,     25,     16,     14},
+/*GooE                 */ { 55,   3,     45,    100,      4,      6,     15},
 /*orc sorceror         */ { 56,   8,     19,    100,     27,     20,     14},
 /*steam dragon         */ { 57,  26,     26,    100,     26,     26,    100},
 /*hell knight          */ { 58, 100,     29,      5,    100,    100,    100},
@@ -71,22 +71,22 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*Asmodeus             */ { 85,   8,     49,     27,     10,     19,     14},
 /*Ereshkigal           */ { 86,  19,      9,     27,     29,      3,     13},
 /*Antaeus              */ { 87,   9,     10,    100,    100,    100,    100},
-/*Nemelex Xobeh        */ { 90,  37,     30,     11,     43,     24,     14},
-/*Sif Muna             */ { 91,  10,      9,     37,     16,     14,     13},
+/*Nemelex Xobeh        */ { 90,  27,     30,     11,     43,     24,     14},
+/*Sif Muna             */ { 91,  10,      9,     27,     16,     14,     13},
 /*Okawaru              */ { 92,   8,     39,    100,     12,     33,    100},
-/*Kikubaaqudgha        */ { 93,  32,      4,    100,     19,     37,     37},
+/*Kikubaaqudgha        */ { 93,  32,      4,    100,     19,     27,     27},
 /*Titan                */ { 94,  10,    100,    100,    100,    100,     13},
-/*Golden dragon        */ { 95,   8,      9,    100,     10,     32,    100},
+/*Golden dragon        */ { 95,   8,      9,    100,    100,     32,    100},
 /*deep elf summoner    */ { 96,  16,     33,     34,     21,     27,     14},
 /*deep elf conjurer    */ { 97,   8,      9,    100,     10,     31,     14},
 /*deep elf conjurer 2  */ { 98,  31,     22,     11,     40,     19,     14},
 /*deep elf priest      */ { 99,  29,    100,     30,     13,     28,     13},
 /*deep elf high priest */ {100,  27,     20,     30,     13,     28,     13},
-/*deep elf demonologist*/ {101,  27,     34,     24,     37,     33,     14},
+/*deep elf demonologist*/ {101,  27,     34,     24,     27,     33,     14},
 /*deep elf annihilator */ {102,  10,     17,     16,     39,     32,     14},
 /*deep elf sorceror    */ {103,  19,      3,      5,     27,     28,     14},
 /*deep elf death mage  */ {104,  19,     19,     13,     28,     28,     14},
-/*kobold demonologist  */ {105,  33,     37,     33,     37,    100,    100},
+/*kobold demonologist  */ {105,  33,     27,     33,     27,    100,    100},
 /*naga                 */ {106,  41,     41,    100,    100,    100,    100},
 /*naga mage            */ {107,   7,     22,      5,      7,     15,     14},
 /*curse skull          */ {108,  42,     42,     48,    100,     42,    100},
@@ -96,7 +96,14 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*Daeva                */ {112,  30,    100,     30,    100,     30,    100},
 /*Shadow Dragon        */ {113,  19,     19,    100,    100,     19,    100},
 /*Sphinx               */ {114,   6,      3,     30,      4,    100,     13},
-/*Mummy                */ {115,  37,     30,     48,     30,     29,    100},
+/*Mummy                */ {115,  27,     30,     48,     30,     29,    100},
+/*Dorgi                */ {116,  44,     44,    100,     44,     44,     44},
+/*Sword                */ {117,   8,      8,     43,     12,     12,     12},
+/*Shadow imp           */ {118,  29,    100,     28,     28,    100,    100},
+/*Ghost - in struct    */ {119, 100,    100,    100,    100,    100,    100},
+/*Hell-hog             */ {120,  31,     31,    100,    100,    100,    100},
+/*Swamp Dragon         */ {121,  32,     32,    100,     32,     32,    100},
+/*Swamp Drake          */ {122,  46,     46,    100,     46,     46,    100},
 };
 
 
@@ -119,7 +126,7 @@ case 14: // teleportation
 case 15: // teleport away
 case 16: // blink
 case 17: // crystal spear
-case 18: // dig - this needs special coding in crawl99.cc, so don't use it
+case 18: // dig - must be in misc2 position
 case 19: // -ve energy
 case 20: // burst of hellfire
 case 21: // vampire's summoning
@@ -138,7 +145,6 @@ case 33: // summon lesser demon
 case 34: // summon LIGHTCYAN lesser demon
 case 35: // blast thing
 case 36: // Geryon's summoning
-case 37: // Summon any demon
 
 case 38: // sting
 case 39: // iron bolt
@@ -146,6 +152,9 @@ case 40: // stone arrow
 case 41: // poison spit (naga)
 case 42: // summon undead around player (curse skull)
 case 43: // mutation
+case 44: // fire zulzer
+case 45: // disintegrate
+case 46: // foul vapour
 
 case 48: // torment
 case 49: // fiend's hellfire
@@ -290,7 +299,7 @@ int u=0,f=smc->bitfields;
 int mons_skeleton(int mc)
 {
 //      if(mons_zombie_size(mc) == 0 || mons_weight(mc) == 0) return 0;
-        if(mons_zombie_size(mc) == 0 | mons_weight(mc) == 0) return 0;
+        if(mons_zombie_size(mc) == 0 || mons_weight(mc) == 0) return 0;
         if(mf(M_NO_SKELETON)) return 0;
         return 1;
 }
@@ -423,7 +432,21 @@ struct monsterentry *m = seekmonster(m2_class);
         case 343: m2_sec = 87; break; // Antaeus
         case 344: m2_sec = 86; break; // Ereshkigal
 
-        // did I get them all?   - - - No, but that's okay
+    case 390:
+    case 391: // mimics
+    if (random() % 4 == 0) m2_sec = LIGHTCYAN;
+     else m2_sec = BROWN;
+    if (random() % 10 == 0) m2_sec = CYAN;
+    if (random() % 20 == 0) m2_sec = random() % 15 + 1;
+    break;
+
+    case 392:
+    case 393: // mimics
+    m2_sec = 1 + random() % 15;
+    break;
+
+
+        // did I get them all?
         }
         // some calculations
         m2_hp = hit_points(m2_HD, m->hpdice[1], m->hpdice[2]);
@@ -464,16 +487,12 @@ unsigned int x;
         splist [4] = spell_list[x][5]; // misc2
         splist [5] = spell_list[x][6]; // emergency
 
-//int jlf = 0;
-//char jl2 [5];
+    if (sec == 119) /* ghost */
+    {
+     for (x = 0; x < 6; x ++)
+        splist [x] = ghost.ghs [x + 14];
+    }
 
-
-/*for (jlf = 0; jlf < 6; jlf ++)
-{
- itoa(splist [jlf], jl2, 10);
- cprintf(jl2);
- cprintf(", ");
-}*/
 
 }
 
@@ -509,13 +528,13 @@ char *monam(int mons_cla, int mons_e, char desc, char see_invis)
  strcpy(gmo_n, "");
 
 // moname(mons_cla, mons_e, see_invis, desc, gmo_n);
- if (mons_e == 25 | mons_e == 51)
+ if (mons_e == 25 || mons_e == 51)
  {
   moname(mons_cla, desc, player_see_invis(), see_invis, gmo_n);
   strcat(gmo_n, " zombie");
   return gmo_n;
  }
- if (mons_e == 107 | mons_e == 108)
+ if (mons_e == 107 || mons_e == 108)
  {
   moname(mons_cla, desc, player_see_invis(), see_invis, gmo_n);
   strcat(gmo_n, " skeleton");
@@ -570,7 +589,7 @@ if (mench == 6 && see_inv == 0)
         return;
 }
 
-if (mcl < 250 | mcl > 355 | (mcl >= 260 && mcl < 280)) // note is also a limit for uniques below.
+if (mcl < 250 || mcl > 355 || (mcl >= 260 && mcl < 280)) // note is also a limit for uniques below.
 switch(descrip)
 {
 case 0: strcpy(glog, "The "); break;
@@ -580,7 +599,7 @@ case 3: strcpy(glog, "a"); break;
 //case 4: do nothing - 4 is empty
 }
 
-if (descrip == 2 | descrip == 3 | descrip == 99 && (mcl < 250 | mcl > 355 | (mcl >= 260 && mcl < 280))) // 99 from ouch(...)
+if ((descrip == 2 || descrip == 3 || descrip == 99) && (mcl < 250 || mcl > 355 || (mcl >= 260 && mcl < 280))) // 99 from ouch(...)
         switch(toupper(gmon_name[0])) {
                 case 'A': case 'E': case 'I': case 'O': case 'U': // case 'Y':
                         strcat(glog, "n "); break;
@@ -588,7 +607,7 @@ if (descrip == 2 | descrip == 3 | descrip == 99 && (mcl < 250 | mcl > 355 | (mcl
         };
 
 
-if (descrip == 2 | descrip == 3 && (glog [1] != 110) && mench == 6 && see_inv == 0)
+if ((descrip == 2 || descrip == 3) && (glog [1] != 110) && mench == 6 && see_inv == 0)
 {
         strcat(glog, "n ");
 }
@@ -600,7 +619,7 @@ int exper_value(int mclass, int mHD, int maxhp)
 {
 long x_val = 0;
 
-if (mclass == 25 | mclass == 51 | mclass == 107 | mclass == 108)
+if (mclass == 25 || mclass == 51 || mclass == 107 || mclass == 108)
 {
 x_val = (16 + mHD * 4) * (mHD * mHD) / 10;
 goto done_xval;

@@ -78,7 +78,7 @@ int damage_taken;
                         break;
 
    case 4:
-   if (menv [i].m_class == 19 | menv [i].m_class == 56) return;
+   if (menv [i].m_class == 19 || menv [i].m_class == 56) return;
    monster_teleport(i, 1);
    return;
 
@@ -182,7 +182,7 @@ int sumcount2;
 int summonik = 0;
 beem[0].beam_source = i;
 
-if (spell_cast == 20 | spell_cast == 23 | spell_cast == 30 | spell_cast == 43) // etc...
+if (spell_cast == 20 || spell_cast == 23 || spell_cast == 30 || spell_cast == 43) // etc...
 {
         switch(spell_cast)
         {
@@ -191,7 +191,7 @@ if (spell_cast == 20 | spell_cast == 23 | spell_cast == 30 | spell_cast == 43) /
   case 30: beem[0].type = 1; break; // smiting
   case 43: beem[0].type = 3; break; // mutation
         } // end switch
-if (beem[0].trac_targ == MHITYOU | beem[0].trac_targ == MHITNOT)
+if (beem[0].trac_targ == MHITYOU || beem[0].trac_targ == MHITNOT)
 {
  if (mons_near(i) == 1) direct_effect(beem);
  return;
@@ -223,34 +223,34 @@ case 25: // summon fake R
                         create_monster(78, 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
                         return;
 
-case 27: // summon devil
-    summonik = random2(8) + 80;
-    if (random2(4) == 0 | (summonik == 84 && random2(3) != 0)) summonik = 3;
-                        create_monster(summonik, 23, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
+case 27: // summon demon
+/*    summonik = random2(8) + 80;
+    if (random2(4) == 0 || (summonik == 84 && random2(3) != 0)) summonik = 3;
+    if (random2(4) == 0) summonik = random2(15) + 220;
+    if (random2(20) == 0) summonik = random2(2) + 235;*/
+    create_monster(summon_any_demon(1), 22, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
     return;
 
 case 28: // animate dead
-    if (mons_near(i) == 0 | animate_dead(100, menv [i].m_beh, menv [i].m_hit, 0) <= 0)
+    if (mons_near(i) == 0 || animate_dead(100, menv [i].m_beh, menv [i].m_hit, 0) <= 0)
     {
-       spell_cast = 0;
-       goto out_of_spec;
+       spell_cast = 100;
+       return;
     }
     animate_dead(5 + random2(5), menv [i].m_beh, menv [i].m_hit, 1);
     return;
 
 case 33: // summon lesser demon
-    summonik = random2(5) + 220;
-        create_monster(summonik, 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
+        create_monster(summon_any_demon(0), 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
     return;
 
 case 34: // summon LIGHTCYAN lesser demon
         create_monster(222, 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
     return;
 
-case 37: // summon any demon
-    summonik = random2(15) + 220;
+/*case 37: // summon any demon
         create_monster(summonik, 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
-    return;
+    return;*/
 
 
 case 36: // Geryon
@@ -272,7 +272,7 @@ case 42: // summon undead around player
 
 case 48: // torment
 
-  if (mons_near(i) == 0 | menv [i].m_beh == 7) return;
+  if (mons_near(i) == 0 || menv [i].m_beh == 7) return;
   if (menv [i].m_ench [2] != 6)
   {
         strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
@@ -284,7 +284,7 @@ case 48: // torment
   return;
 } // end switch
 
-out_of_spec :
+//out_of_spec :
 viewwindow(1);
 
 
@@ -314,7 +314,7 @@ beem[0].thing_thrown = func_pass [6];
 
 beem[0].ench_power = 5 * menv [i].m_HD;
 
-if (spell_cast == 5 | spell_cast == 11 | spell_cast == 13 | spell_cast == 14) // you[0].haste/you[0].invis
+if (spell_cast == 5 || spell_cast == 11 || spell_cast == 13 || spell_cast == 14) // you[0].haste/you[0].invis
 {
         beem[0].move_x = 0;
         beem[0].move_y = 0;
@@ -358,7 +358,7 @@ if (instan == 0)
                                 menv [monstel].m_ench [p] = 0;
                                 if (menv [monstel].m_ench [0] == 0 && menv [monstel].m_ench [1] == 0 && menv [monstel].m_ench [2] == 0)
                                         menv [monstel].m_ench_1 = 0;
-                                        if (mons_near(monstel) == 1 && (player_see_invis() != 0 | menv [monstel].m_ench [2] != 6))
+                                        if (mons_near(monstel) == 1 && (player_see_invis() != 0 || menv [monstel].m_ench [2] != 6))
                                         {
                                            strcpy(info, monam (menv [monstel].m_sec, menv [monstel].m_class, menv [monstel].m_ench [2], 0));
                                            strcat(info, " seems more stable.");
@@ -382,7 +382,7 @@ if (instan == 0)
 }
 
 
-if (mons_near(monstel) == 1 && (player_see_invis() != 0 | menv [monstel].m_ench [2] != 6))
+if (mons_near(monstel) == 1 && (player_see_invis() != 0 || menv [monstel].m_ench [2] != 6))
 {
      strcpy(info, monam (menv [monstel].m_sec, menv [monstel].m_class, menv [monstel].m_ench [2], 0));
      strcat(info, " disappears!");
@@ -399,9 +399,23 @@ do
 {
         menv [monstel].m_x = random2(60) + 10;
         menv [monstel].m_y = random2(50) + 10;
-} while (grd [menv [monstel].m_x] [menv [monstel].m_y] != ogrid | mgrd [menv [monstel].m_x] [menv [monstel].m_y] != MNG);
+} while (grd [menv [monstel].m_x] [menv [monstel].m_y] != ogrid || mgrd [menv [monstel].m_x] [menv [monstel].m_y] != MNG);
 
 mgrd [menv [monstel].m_x] [menv [monstel].m_y] = monstel;
+
+/* Mimics change form/colour when tported */
+if (menv [monstel].m_class >= 389 && menv [monstel].m_class <= 393)
+{
+ menv [monstel].m_class = 389 + random2(5);
+ menv [monstel].m_sec = 1 + random2(15);
+ if (menv [monstel].m_class == 390 || menv [monstel].m_class == 391) /* weapon/armour mimic */
+ {
+  if (random2(4) == 0) menv [monstel].m_sec = LIGHTCYAN;
+   else menv [monstel].m_sec = BROWN;
+  if (random2(10) == 0) menv [monstel].m_sec = CYAN;
+  if (random2(20) == 0) menv [monstel].m_sec = random2(15) + 1;
+ }
+}
 
 } // end of void monster_teleport
 
@@ -418,7 +432,7 @@ beem[0].move_y = beem[0].trac_targ_y - menv [i].m_y;
 
 
 
-if (beem[0].move_x != 0 | beem[0].move_y != 0)
+if (beem[0].move_x != 0 || beem[0].move_y != 0)
 {
         beem[0].range = random2(10) + 5;
 
@@ -479,7 +493,7 @@ beem[0].move_x = 0; beem[0].move_y = 0;
 beem[0].move_x = beem[0].trac_targ_x - menv [i].m_x;
 beem[0].move_y = beem[0].trac_targ_y - menv [i].m_y;
 
-if (beem[0].move_x != 0 | beem[0].move_y != 0)
+if (beem[0].move_x != 0 || beem[0].move_y != 0)
 {
         beem[0].type = 41;
         beem[0].source_x = menv [i].m_x;
@@ -551,7 +565,7 @@ if (beem[0].move_x != 0 | beem[0].move_y != 0)
                  beem[0].damage += 1 + random2(5);
                  beem[0].flavour = 2;
                  strcpy(beem[0].beam_name, "bolt of ");
-                 if (mitm.idam [hand_used] % 30 == 3 | mitm.idam [hand_used] % 30 ==  4)
+                 if (mitm.idam [hand_used] % 30 == 3 || mitm.idam [hand_used] % 30 ==  4)
                         strcat(beem[0].beam_name, "poison ");
                  strcat(beem[0].beam_name, "flame");
                  beem[0].colour = RED;
@@ -564,7 +578,7 @@ if (beem[0].move_x != 0 | beem[0].move_y != 0)
                  beem[0].damage += 1 + random2(5);
                  beem[0].flavour = 3;
                  strcpy(beem[0].beam_name, "bolt of ");
-                 if (mitm.idam [hand_used] % 30 == 3 | mitm.idam [hand_used] % 30 ==  4)
+                 if (mitm.idam [hand_used] % 30 == 3 || mitm.idam [hand_used] % 30 ==  4)
                         strcat(beem[0].beam_name, "poison ");
                  strcat(beem[0].beam_name, "frost");
                  beem[0].colour = WHITE;
@@ -991,6 +1005,53 @@ return 0;
         func_pass [5] = 6; // poison
         func_pass [7] = 1; // wand_id
         return 0;
+
+        case 44: // zulzer
+        func_pass [0] = YELLOW;
+        strcpy(beam_name, "zulzer blast");
+        func_pass [1] = random2(4) + 15;
+        func_pass [2] = 120;
+        func_pass [3] = 7;
+        func_pass [4] = '#';
+        func_pass [6] = 4;
+        func_pass [5] = 1;
+        func_pass [7] = 1;
+        return 0;
+
+        case 45: // disintegrate
+        strcpy(beam_name, "0");
+        func_pass [1] = random2(8) + 8;
+        func_pass [4] = 0;
+        func_pass [0] = 15; // disint
+        func_pass [6] = 2;
+        func_pass [2] = 50;
+        func_pass [3] = 30 + (func_pass [8] / 10);
+        func_pass [5] = 4; // magic
+        return 1;
+
+case 46: // swamp drake
+strcpy(beam_name, "foul vapour");
+func_pass [1] = random2(10) + 8;
+func_pass [2] = 102 + func_pass [8] / 25;
+func_pass [0] = GREEN;
+func_pass [4] = 35;
+func_pass [6] = 2;
+func_pass [5] = 6; // poison
+func_pass [7] = 1;
+func_pass [3] = 7 + random2(func_pass [8]) / 80;
+return 0;
+
+
+
+/*
+beam_colour = func_pass [0];
+beam_range = func_pass [1];
+beam_damage = func_pass [2];
+beam_hit = func_pass [3];
+beam_type = func_pass [4];
+beam_flavour = func_pass [5];
+thing_thrown = func_pass [6];
+*/
 
 
 

@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "macro.h"
 #include "mstruct.h"
 #include "player.h"
 #include "stuff.h"
@@ -14,7 +15,6 @@
 
 /*#define menv env[0].mons
 #define mit env[0].it[0]*/
-#define MINSEE 11
 
 /* for player_see_invis */
 
@@ -39,7 +39,7 @@ unsigned char your_colour;
 
 unsigned char show_green;
 extern int stealth; /* defined in acr.cc */
-
+extern char visible [10]; /* also acr.cc */
 
 void viewwindow2(char draw_it)
 {
@@ -81,7 +81,7 @@ void viewwindow2(char draw_it)
                   buffy [bufcount + 1] = env[0].show_col [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9];
 
 
-if (count_x != you[0].x_pos | count_y != you[0].y_pos)
+if (count_x != you[0].x_pos || count_y != you[0].y_pos)
 {
 
 
@@ -92,7 +92,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
                 case 0: showed = 0; break;
                 case 1: buffy [bufcount + 1] = env[0].rock_colour;
                 showed = 177; break; // rock wall - remember earth elementals
-                case 2: buffy [bufcount + 1] = LIGHTGRAY;
+                case 2: buffy [bufcount + 1] = LIGHTGREY;
                 showed = 177; break; // stone wall
                 case 3: showed = 254; break;
   case 4: showed = 177;
@@ -101,16 +101,24 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   buffy [bufcount + 1] = env[0].rock_colour; break;
   case 6: showed = 177;
   buffy [bufcount + 1] = GREEN; break; // green crystal wall
-  case 7: showed = '1';
-  buffy [bufcount + 1] = DARKGRAY; // orcish idol
+  case 7: showed = '8';
+  buffy [bufcount + 1] = DARKGREY; // orcish idol
   break;
   case 8: showed = 177;
   buffy [bufcount + 1] = YELLOW; break; // wax wall
-  case 21: showed = '1';
+/* Anything added here must also be added to the PLAIN_TERMINAL viewwindow2 below */
+  case 21: showed = '8';
   buffy [bufcount + 1] = WHITE; // silver statue
+  if (visible [1] == 0) visible [1] = 3; else visible [1] = 2;
+  visible [0] = 2;
   break;
-  case 22: showed = 219; // filled square
-  buffy [bufcount + 1] = LIGHTGRAY; // granite monolith
+  case 22: showed = '8';
+  buffy [bufcount + 1] = LIGHTGREY; // granite statue
+  break;
+  case 23: showed = '8';
+  buffy [bufcount + 1] = LIGHTRED; // orange crystal statue
+  if (visible [2] == 0) visible [2] = 3; else visible [2] = 2;
+  visible [0] = 2;
   break;
   case 35: showed = '#'; break;
   case 61: showed = 247;
@@ -120,7 +128,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   buffy [bufcount + 1] = BLUE; // water
   break;
 
-                case 67: buffy [bufcount + 1] = env[0].floor_colour; //LIGHTGRAY;
+                case 67: buffy [bufcount + 1] = env[0].floor_colour; //LIGHTGREY;
                 showed = 249; break;
                 case 69: showed = 239; buffy [bufcount + 1] = RED; break; // staircase to hell
                 case 70: showed = 39; break; // open door
@@ -129,7 +137,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
                 showed = 94; break; // ^ dart trap
                 case 76: buffy [bufcount + 1] = MAGENTA;
                 showed = 94; break;
-                case 77: buffy [bufcount + 1] = LIGHTGRAY;
+                case 77: buffy [bufcount + 1] = LIGHTGREY;
                 showed = 94; break;
                 case 78: showed = 249; buffy [bufcount + 1] = env[0].floor_colour;
                 break; // undiscovered trap
@@ -137,7 +145,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 80: showed = 239; buffy [bufcount + 1] = YELLOW;
        break;
 // if I change anything above here, must also change magic mapping!
-  case 81: showed = 239; buffy [bufcount + 1] = LIGHTGRAY; break; // labyrinth
+  case 81: showed = 239; buffy [bufcount + 1] = LIGHTGREY; break; // labyrinth
   case 85: buffy [bufcount + 1] = BROWN; // ladder
   case 82:
   case 83:
@@ -152,10 +160,10 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 92: buffy [bufcount + 1] = CYAN; showed = 239; break; // Stairway to Dis
   case 93: buffy [bufcount + 1] = RED; showed = 239; break; // Gehenna
   case 94: buffy [bufcount + 1] = LIGHTCYAN; showed = 239; break; // Cocytus
-  case 95: buffy [bufcount + 1] = DARKGRAY; showed = 239; break; // Tartarus
-  case 96: buffy [bufcount + 1] = LIGHTMAGENTA; showed = 239; break; // To Abyss
-  case 97: buffy [bufcount + 1] = LIGHTMAGENTA; showed = 239; break; // From Abyss
-  case 98: buffy [bufcount + 1] = LIGHTGRAY; showed = 239; break; // Closed gate to hell
+  case 95: buffy [bufcount + 1] = DARKGREY; showed = 239; break; // Tartarus
+  case 96: buffy [bufcount + 1] = random2(16); showed = 239; break; // To Abyss
+  case 97: buffy [bufcount + 1] = random2(16); showed = 239; break; // From Abyss
+  case 98: buffy [bufcount + 1] = LIGHTGREY; showed = 239; break; // Closed gate to hell
   case 99: buffy [bufcount + 1] = LIGHTBLUE; showed = 239; break; // gate to pandemonium
   case 100: buffy [bufcount + 1] = LIGHTBLUE; showed = 239; break; // gate out of pandemonium
   case 101: buffy [bufcount + 1] = LIGHTGREEN; showed = 239; break; // gate to other part of pandemonium
@@ -177,7 +185,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 125:
   case 126: buffy [bufcount + 1] = YELLOW; showed = '>'; break;
 
-  case 117: buffy [bufcount + 1] = MAGENTA; showed = '>'; break;
+  case 117: buffy [bufcount + 1] = MAGENTA; showed = 239; break;
 
   case 130:
   case 131:
@@ -196,14 +204,17 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 145:
   case 146: buffy [bufcount + 1] = YELLOW; showed = '<'; break; // stair from the orcish mines to main dungeon
 
-  case 137: buffy [bufcount + 1] = MAGENTA; showed = '<'; break;
+  case 137: buffy [bufcount + 1] = MAGENTA; showed = 239; break;
 
   case 180: buffy [bufcount + 1] = WHITE; showed = 220; break; /* Altar to Zin */
   case 181: buffy [bufcount + 1] = YELLOW; showed = 220; break; /* Altar to TSO */
   case 182: buffy [bufcount + 1] = DARKGREY; showed = 220; break; /* Altar to Kiku */
   case 183: break;
   case 184: buffy [bufcount + 1] = random2(15) + 1; showed = 220; break; /* Altar to Xom */
-  case 185: break;
+  case 185: buffy [bufcount + 1] = LIGHTBLUE;
+  if (random2(3) == 0) buffy [bufcount + 1] = LIGHTMAGENTA;
+  if (random2(3) == 0) buffy [bufcount + 1] = LIGHTRED;
+  showed = 220; break; /* Altar to Vehumet */
   case 186: buffy [bufcount + 1] = CYAN; showed = 220; break; /* Altar to Okawaru */
   case 187: buffy [bufcount + 1] = RED;
   if (random2(3) == 0) buffy [bufcount + 1] = LIGHTRED;
@@ -277,7 +288,7 @@ bufcount = 0;
                 {
    for (count_x = 0; count_x < 33; count_x ++)
                         {
-       if (count_x + you[0].x_pos - 17 < 3 | count_y + you[0].y_pos - 9 < 3 | count_x + you[0].x_pos - 14 > 77 | count_y + you[0].y_pos - 9 > 67)
+       if (count_x + you[0].x_pos - 17 < 3 || count_y + you[0].y_pos - 9 < 3 || count_x + you[0].x_pos - 14 > 77 || count_y + you[0].y_pos - 9 > 67)
        {
             buffy [bufcount] = 0;
             bufcount ++;
@@ -291,7 +302,7 @@ bufcount = 0;
             continue;
        }
          buffy [bufcount] = env[0].map [count_x + you[0].x_pos - 17] [count_y + you[0].y_pos - 9];
-         buffy [bufcount + 1] = DARKGRAY;
+         buffy [bufcount + 1] = DARKGREY;
                                                                         bufcount += 2;
                         }
                 }
@@ -300,7 +311,7 @@ if (you[0].berserker != 0)
 {
  for (count_x = 1; count_x < 1400; count_x += 2)
  {
-  if (buffy [count_x] != DARKGRAY) buffy [count_x] = RED;
+  if (buffy [count_x] != DARKGREY) buffy [count_x] = RED;
  }
 }
 
@@ -308,33 +319,33 @@ if (show_green != 0)
 {
  for (count_x = 1; count_x < 1400; count_x += 2)
  {
-  if (buffy [count_x] != DARKGRAY) buffy [count_x] = show_green;
+  if (buffy [count_x] != DARKGREY) buffy [count_x] = show_green;
  }
  show_green = 0;
- if (you[0].special_wield == 50) show_green = DARKGRAY;
+ if (you[0].special_wield == 50) show_green = DARKGREY;
 }
 
 
 
-#ifdef DOS
+#ifdef DOS_TERM
 puttext(2,1,34,17, buffy);
 #endif
 
-#ifdef LINUX
+#ifdef PLAIN_TERM
 gotoxy(2,1);
 bufcount = 0;
 
-if (you[0].running == 0) // this line is purely optional
+// if (you[0].running == 0) // this line is purely optional
 {
  for (count_x = 0; count_x < 1120; count_x += 2) // 1056
  {
   textcolor(buffy [count_x + 1]);
   putch(buffy [count_x]);
   if (count_x % 66 == 64 && count_x > 0)
-#ifdef DOS
-    cprintf("\n\r ");
+#ifdef DOS_TERM
+    cprintf(EOL" ");
 #endif
-#ifdef LINUX
+#ifdef PLAIN_TERM
     gotoxy(2, wherey() + 1);
 #endif
 
@@ -370,7 +381,7 @@ if (menv [s].m_class != -1)
         if (menv [s].m_x > you[0].x_pos - 9 && menv [s].m_x < you[0].x_pos + 9 && menv [s].m_y > you[0].y_pos - 9 && menv [s].m_y < you[0].y_pos + 9 && env[0].show [menv [s].m_x - you[0].x_pos + 9] [menv [s].m_y - you[0].y_pos + 9] != 0)
         // Put the bit commented out on the previous line back to restore shadow checking for monsters
         {
-        if ((menv [s].m_beh == 0 | menv [s].m_beh == 2) && check_awaken(s) == 1)
+        if ((menv [s].m_beh == 0 || menv [s].m_beh == 2) && check_awaken(s) == 1)
  {
   menv [s].m_beh = 1; // put stealth/you[0].invis here.
   menv [s].m_targ_1_x = you[0].x_pos;
@@ -389,16 +400,17 @@ if (menv [s].m_class != -1)
    case 7: mpr("You hear a screech!"); break;
    case 8: mpr("You hear an angry buzzing noise."); break;
    case 9: mpr("You hear a chilling moan."); break;
+   case 10: mpr("You hear an irritating high-pitched whine."); break;
   }
    noisy(8, menv [s].m_x, menv [s].m_y);
  }
  }
 
-/*      if (mons [s].m_ench [2] == 6 && (you[0].see_invis == 0 | (mons [s].m_class >= MLAVA0 && mons [s].m_sec == 1)))*/
-        if (menv [s].m_ench [2] == 6 && (player_see_invis() == 0 | (menv [s].m_class >= MLAVA0 && menv [s].m_sec == 1)))
+/*      if (mons [s].m_ench [2] == 6 && (you[0].see_invis == 0 || (mons [s].m_class >= MLAVA0 && mons [s].m_sec == 1)))*/
+        if (menv [s].m_ench [2] == 6 && (player_see_invis() == 0 || (menv [s].m_class >= MLAVA0 && menv [s].m_sec == 1)))
         {
                 continue;
-        } else if (menv [s].m_beh != 7) you[0].running = 0;
+        } else if (menv [s].m_beh != 7 && (menv [s].m_class < 389 || menv [s].m_class > 393)) you[0].running = 0; /* Friendly monsters or mimics don't disturb */
         env[0].show [menv [s].m_x - you[0].x_pos + 9] [menv [s].m_y - you[0].y_pos + 9] = menv [s].m_class + 297;
         env[0].show_col [menv [s].m_x - you[0].x_pos + 9] [menv [s].m_y - you[0].y_pos + 9] = mcolour [menv [s].m_class];
 
@@ -509,12 +521,12 @@ if (env[0].cloud_type [s] != 0)
    switch(env[0].cloud_type [s] % 100)
    {
         case 1:
-              if (env[0].cloud_decay [s] <= 20 | random2(4) == 0)
+              if (env[0].cloud_decay [s] <= 20 || random2(4) == 0)
               {
                 env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = RED;
                 break;
               }
-              if (env[0].cloud_decay [s] <= 40 | random2(4) == 0)
+              if (env[0].cloud_decay [s] <= 40 || random2(4) == 0)
               {
                 env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTRED;
                 break;
@@ -522,12 +534,12 @@ if (env[0].cloud_type [s] != 0)
               env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = YELLOW; break;
         case 2: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = GREEN; break;
   case 3: //show_col [cloud_x [s] - you[0].x_pos + 9] [cloud_y [s] - you[0].y_pos + 9] = WHITE; break;
-              if (env[0].cloud_decay [s] <= 20 | random2(4) == 0)
+              if (env[0].cloud_decay [s] <= 20 || random2(4) == 0)
               {
                 env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = BLUE;
                 break;
               }
-              if (env[0].cloud_decay [s] <= 40 | random2(4) == 0)
+              if (env[0].cloud_decay [s] <= 40 || random2(4) == 0)
               {
                 env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTBLUE;
                 break;
@@ -537,12 +549,12 @@ if (env[0].cloud_type [s] != 0)
             if (random2(3) != 0) env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = GREEN;
             else env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTGREEN;
               break;
-        case 5: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTGRAY; break;
+        case 5: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTGREY; break;
   case 6: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTBLUE; break;
   case 7: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = MAGENTA; break;
-  case 8: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTGRAY; break;
-  case 9: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = DARKGRAY; break; // miasma
-  case 10: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = DARKGRAY; break; // black smoke
+  case 8: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = LIGHTGREY; break;
+  case 9: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = DARKGREY; break; // miasma
+  case 10: env[0].show_col [env[0].cloud_x [s] - you[0].x_pos + 9] [env[0].cloud_y [s] - you[0].y_pos + 9] = DARKGREY; break; // black smoke
    }
 
         }
@@ -1058,7 +1070,7 @@ see = see_section;
 
 
 
-if ((gr [x_p + xs] [y_p] < MINSEE && gr [x_p + xs] [y_p + ys] < MINSEE) | (gr [x_p + 2*xs] [y_p] < MINSEE && gr [x_p + 2*xs] [y_p + ys] < MINSEE) | (gr [x_p + 3*xs] [y_p] < MINSEE && gr [x_p + 3*xs] [y_p + ys] < MINSEE) | (gr [x_p + 4*xs] [y_p] < MINSEE && gr [x_p + 4*xs] [y_p + ys] < MINSEE))
+if ((gr [x_p + xs] [y_p] < MINSEE && gr [x_p + xs] [y_p + ys] < MINSEE) || (gr [x_p + 2*xs] [y_p] < MINSEE && gr [x_p + 2*xs] [y_p + ys] < MINSEE) || (gr [x_p + 3*xs] [y_p] < MINSEE && gr [x_p + 3*xs] [y_p + ys] < MINSEE) || (gr [x_p + 4*xs] [y_p] < MINSEE && gr [x_p + 4*xs] [y_p + ys] < MINSEE))
 {
         sh [startPoint_x + 3*xs] [startPoint_y] = 0;
         sh [startPoint_x + 4*xs] [startPoint_y] = 0;
@@ -1082,7 +1094,7 @@ if ((gr [x_p + xs] [y_p] < MINSEE && gr [x_p + xs] [y_p + ys] < MINSEE) | (gr [x
 
 
 
-if ((gr [x_p + xs] [y_p] < MINSEE && gr [x_p + xs] [y_p + ys] < MINSEE) | (gr [x_p + 2*xs] [y_p] < MINSEE && gr [x_p + 2*xs] [y_p + ys] < MINSEE) | (gr [x_p + 3*xs] [y_p] < MINSEE && gr [x_p + 3*xs] [y_p + ys] < MINSEE))
+if ((gr [x_p + xs] [y_p] < MINSEE && gr [x_p + xs] [y_p + ys] < MINSEE) || (gr [x_p + 2*xs] [y_p] < MINSEE && gr [x_p + 2*xs] [y_p + ys] < MINSEE) || (gr [x_p + 3*xs] [y_p] < MINSEE && gr [x_p + 3*xs] [y_p + ys] < MINSEE))
 {
         sh [startPoint_x + 2*xs] [startPoint_y] = 0;
 } else sh [startPoint_x + 2*xs] [startPoint_y] = gr [x_p + startPoint_x + 2*xs - 9] [y_p + startPoint_y - 9];
@@ -1325,7 +1337,7 @@ see = see_section;
         } else sh [startPoint_x + 3*xs] [startPoint_y + 4*ys] = 0;
 
 
-        if (gr [x_p + startPoint_x + 2*xs - 9] [y_p + startPoint_y + 3*ys - 9] >= MINSEE | gr [x_p + startPoint_x + xs - 9] [y_p + startPoint_y + 3*ys - 9] >= MINSEE) //see = 0;
+        if (gr [x_p + startPoint_x + 2*xs - 9] [y_p + startPoint_y + 3*ys - 9] >= MINSEE || gr [x_p + startPoint_x + xs - 9] [y_p + startPoint_y + 3*ys - 9] >= MINSEE) //see = 0;
         {
                 if (see == 1) sh [startPoint_x + 2*xs] [startPoint_y + 4*ys] = gr [x_p + startPoint_x + 2*xs - 9] [y_p + startPoint_y + 4*ys - 9]; else sh [startPoint_x + 2*xs] [startPoint_y + 4*ys] = 0;
         } else sh [startPoint_x + 2*xs] [startPoint_y + 4*ys] = 0;
@@ -1358,14 +1370,14 @@ see = see_section;
 
 
 
-if ((gr [x_p] [y_p + ys] < MINSEE && gr [x_p + xs] [y_p + ys] < MINSEE) | (gr [x_p] [y_p + 2*ys] < MINSEE && gr [x_p + xs] [y_p + 2*ys] < MINSEE) | (gr [x_p] [y_p + 3*ys] < MINSEE && gr [x_p + xs] [y_p + 3*ys] < MINSEE))
+if ((gr [x_p] [y_p + ys] < MINSEE && gr [x_p + xs] [y_p + ys] < MINSEE) || (gr [x_p] [y_p + 2*ys] < MINSEE && gr [x_p + xs] [y_p + 2*ys] < MINSEE) || (gr [x_p] [y_p + 3*ys] < MINSEE && gr [x_p + xs] [y_p + 3*ys] < MINSEE))
 {
         sh [startPoint_x] [startPoint_y + 2*ys] = 0;
 } else sh [startPoint_x] [startPoint_y + 2*ys] = gr [x_p + startPoint_x - 9] [y_p + startPoint_y + 2*ys - 9];
 
 
 
-if ((gr [x_p] [y_p + ys] < MINSEE && gr [x_p + xs] [y_p + ys] < MINSEE) | (gr [x_p] [y_p + 2*ys] < MINSEE && gr [x_p + xs] [y_p + 2*ys] < MINSEE) | (gr [x_p] [y_p + 3*ys] < MINSEE && gr [x_p + xs] [y_p + 3*ys] < MINSEE) | (gr [x_p] [y_p + 4*ys] < MINSEE && gr [x_p + xs] [y_p + 4*ys] < MINSEE))
+if ((gr [x_p] [y_p + ys] < MINSEE && gr [x_p + xs] [y_p + ys] < MINSEE) || (gr [x_p] [y_p + 2*ys] < MINSEE && gr [x_p + xs] [y_p + 2*ys] < MINSEE) || (gr [x_p] [y_p + 3*ys] < MINSEE && gr [x_p + xs] [y_p + 3*ys] < MINSEE) || (gr [x_p] [y_p + 4*ys] < MINSEE && gr [x_p + xs] [y_p + 4*ys] < MINSEE))
 {
         sh [startPoint_x] [startPoint_y + 3*ys] = 0;
         sh [startPoint_x] [startPoint_y + 4*ys] = 0;
@@ -1393,7 +1405,7 @@ void draw_border(int bord_col, char your_name [30], char clasnam [40], char tspe
 
 textcolor(bord_col);
 // this bit draws the borders:
-#ifdef DOS
+#ifdef DOS_TERM
 window(1,1,80,25);
 #endif
 
@@ -1425,8 +1437,8 @@ for (i = 0; i < 40; i ++)
 
 print_it2 [39] = 0;
 
-textcolor(LIGHTGRAY);
-#ifdef DOS
+textcolor(LIGHTGREY);
+#ifdef DOS_TERM
 window(1,1,80,25);
 #endif
 gotoxy(40,1);
@@ -1496,37 +1508,37 @@ for (j = 0; j < 70; j ++)
  }
 }
 
-#ifdef DOS
+#ifdef DOS_TERM
   gettext(1, 1, 80, 25, buffer);
    window(1, 1, 80, 25);
 #endif
 
    clrscr();
-   textcolor(DARKGRAY);
+   textcolor(DARKGREY);
 
 put_screen : bufcount2 = 0;
-#ifdef LINUX
+#ifdef PLAIN_TERM
 gotoxy(1, 1);
 #endif
 for (j = 0; j < 25; j ++)
 {
  for (i = 0; i < 80; i ++)
  {
-  if (screen_y + j - 12 >= 65 | screen_y + j - 12 <= 4)
+  if (screen_y + j - 12 >= 65 || screen_y + j - 12 <= 4)
   {
-   buffer2 [bufcount2 + 1] = DARKGRAY;
+   buffer2 [bufcount2 + 1] = DARKGREY;
    buffer2 [bufcount2] = 0;
    bufcount2 += 2;
-#ifdef LINUX
+#ifdef PLAIN_TERM
 goto print_it;
 #endif
 
-#ifdef DOS
+#ifdef DOS_TERM
    continue;
 #endif
   }
 //continue;
-  buffer2 [bufcount2 + 1] = DARKGRAY;
+  buffer2 [bufcount2 + 1] = DARKGREY;
   if (grd [i + 1] [j + screen_y - 11] == 75)
      {
       buffer2 [bufcount2 + 1] = LIGHTCYAN;
@@ -1554,8 +1566,13 @@ goto print_it;
   if (i == you[0].x_pos - 1 && j + screen_y - 11 == you[0].y_pos) buffer2 [bufcount2 + 1] = WHITE;
   buffer2 [bufcount2] = (env[0].map [i] [j + screen_y - 12]);
   bufcount2 += 2;
-#ifdef LINUX
+#ifdef PLAIN_TERM
 print_it: if (j == 24 && i == 79) continue;
+if (i == 79)
+{
+ cprintf(EOL);
+ continue;
+} /* needed for screens >80 width */
 textcolor(buffer2 [bufcount2 - 1]);
 putch(buffer2 [bufcount2 - 2]);
 #endif
@@ -1563,7 +1580,7 @@ putch(buffer2 [bufcount2 - 2]);
 //  putch(map [i] [j + you[0].y_pos - 12]);
  }
 }
-#ifdef DOS
+#ifdef DOS_TERM
    puttext(1, 1, 80, 25, buffer2);
 #endif
    gotoxy(curs_x, curs_y);
@@ -1602,12 +1619,12 @@ putch(buffer2 [bufcount2 - 2]);
   default: move_x = 0; move_y = 0; break;
         }
 
- if (curs_x + move_x < 1 | curs_x + move_x > 75)
+ if (curs_x + move_x < 1 || curs_x + move_x > 75)
     move_x = 0;
 
     curs_x += move_x;
 
-    if (getty == '-' | getty == '+')
+    if (getty == '-' || getty == '+')
     {
      if (getty == '-') screen_y -= 20;
      if (screen_y <= 11 + min_y) screen_y = 11 + min_y;
@@ -1637,7 +1654,7 @@ putch(buffer2 [bufcount2 - 2]);
     goto put_screen;
 
    putty :
-#ifdef DOS
+#ifdef DOS_TERM
    puttext(1, 1, 80, 25, buffer);
 #endif
 
@@ -1659,7 +1676,7 @@ for (i = you[0].x_pos - map_radius; i < you[0].x_pos + map_radius; i ++)
  for (j = you[0].y_pos - map_radius; j < you[0].y_pos + map_radius; j ++)
  {
   if (random2(100) > proportion) continue; // note that proportion can be over 100
-  if (i < 5 | j < 5 | i > 75 | j > 65) continue;
+  if (i < 5 || j < 5 || i > 75 || j > 65) continue;
   if (env[0].map [i] [j] == mapch2(grd [i + 1] [j + 1])) continue;
   empty_count = 8;
   if (grd [i] [j] <= 60 && grd [i] [j] != 3)
@@ -1696,7 +1713,12 @@ unsigned char showed = 0;
   case 8: showed = 176; break;
   case 11: showed = 247; break;
   case 12: showed = 247; break;
-  case 20: showed = '1'; break; // orcish idol
+  case 20: showed = '8'; break; // orcish idol
+  case 21: showed = '8'; break; // silver statue
+  case 22: showed = '8'; break; // granite statue
+  case 23: showed = '8'; break; //
+  case 24: showed = '8'; break; //
+  case 25: showed = '8'; break; //
                 case 61:
                 case 62: showed = 247; break;
                 case 67:        showed = 250; break;
@@ -1721,7 +1743,6 @@ unsigned char showed = 0;
   case 114:
   case 115:
   case 116:
-  case 117:
   case 118:
   case 119:
   case 120:
@@ -1743,7 +1764,6 @@ unsigned char showed = 0;
   case 134:
   case 135:
   case 136:
-  case 137:
   case 138:
   case 139:
   case 140:
@@ -1765,6 +1785,8 @@ unsigned char showed = 0;
   case 99:
   case 100:
   case 101:
+  case 117:
+  case 137:
        showed = 239; break;
 
   case 180:
@@ -1801,9 +1823,14 @@ unsigned char showed = 0;
   case 4:
   case 6:
   case 8: showed = 177; break;
-  case 11: showed = 247; break;
-  case 12: showed = 247; break;
-  case 20: showed = '1'; break; // orcish idol
+/*  case 11: showed = 247; break;
+  case 12: showed = 247; break;*/
+  case 20: showed = '8'; break; // orcish idol
+  case 21: showed = '8'; break; // silver statue
+  case 22: showed = '8'; break; // granite statue
+  case 23: showed = '8'; break; //
+  case 24: showed = '8'; break; //
+  case 25: showed = '8'; break; //
                 case 61:
                 case 62: showed = 247; break;
                 case 67:        showed = 249; break;
@@ -1828,7 +1855,6 @@ unsigned char showed = 0;
   case 114:
   case 115:
   case 116:
-  case 117:
   case 118:
   case 119:
   case 120:
@@ -1850,7 +1876,6 @@ unsigned char showed = 0;
   case 134:
   case 135:
   case 136:
-  case 137:
   case 138:
   case 139:
   case 140:
@@ -1872,6 +1897,8 @@ unsigned char showed = 0;
   case 99:
   case 100:
   case 101:
+  case 117:
+  case 137:
        showed = 239; break;
 
   case 180:
@@ -1960,7 +1987,7 @@ void viewwindow3(char draw_it)
                   buffy [bufcount + 1] = env[0].show_col [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9];
 
 
-if (count_x != you[0].x_pos | count_y != you[0].y_pos)
+if (count_x != you[0].x_pos || count_y != you[0].y_pos)
 {
 
 
@@ -1971,7 +1998,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
                 case 0: showed = 0; break;
                 case 1: buffy [bufcount + 1] = env[0].rock_colour;
                 showed = '#'; break; // rock wall - remember earth elementals
-                case 2: buffy [bufcount + 1] = LIGHTGRAY;
+                case 2: buffy [bufcount + 1] = LIGHTGREY;
                 showed = '#'; break; // stone wall
                 case 3: showed = '+'; break;
   case 4: showed = '#';
@@ -1980,16 +2007,23 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   buffy [bufcount + 1] = env[0].rock_colour; break;
   case 6: showed = '#';
   buffy [bufcount + 1] = GREEN; break; // green crystal wall
-  case 7: showed = '1';
-  buffy [bufcount + 1] = DARKGRAY; // orcish idol
+  case 7: showed = '8';
+  buffy [bufcount + 1] = DARKGREY; // orcish idol
   break;
   case 8: showed = '#';
   buffy [bufcount + 1] = YELLOW; break; // wax wall
-  case 21: showed = '1';
+  case 21: showed = '8';
   buffy [bufcount + 1] = WHITE; // silver statue
+  if (visible [1] == 0) visible [1] = 3; else visible [1] = 2;
+  visible [0] = 2;
   break;
-  case 22: showed = '#'; // filled square
-  buffy [bufcount + 1] = LIGHTGRAY; // granite monolith
+  case 22: showed = '8';
+  buffy [bufcount + 1] = LIGHTGREY; // granite statue
+  break;
+  case 23: showed = '8';
+  buffy [bufcount + 1] = LIGHTRED; // orange crystal statue
+  if (visible [2] == 0) visible [2] = 3; else visible [2] = 2;
+  visible [0] = 2;
   break;
   case 35: showed = '#'; break;
   case 61: showed = '{';
@@ -2000,7 +2034,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   buffy [bufcount + 1] = BLUE; // water
   break;
 
-                case 67: buffy [bufcount + 1] = env[0].floor_colour; //LIGHTGRAY;
+                case 67: buffy [bufcount + 1] = env[0].floor_colour; //LIGHTGREY;
                 showed = '.'; break;
                 case 69: showed = '\\'; buffy [bufcount + 1] = RED; break; // staircase to hell
                 case 70: showed = 39; break; // open door
@@ -2009,7 +2043,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
                 showed = 94; break; // ^ dart trap
                 case 76: buffy [bufcount + 1] = MAGENTA;
                 showed = 94; break;
-                case 77: buffy [bufcount + 1] = LIGHTGRAY;
+                case 77: buffy [bufcount + 1] = LIGHTGREY;
                 showed = 94; break;
                 case 78: showed = '.'; buffy [bufcount + 1] = env[0].floor_colour;
                 break; // undiscovered trap
@@ -2017,7 +2051,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 80: showed = '\\'; buffy [bufcount + 1] = YELLOW;
        break;
 // if I change anything above here, must also change magic mapping!
-  case 81: showed = '\\'; buffy [bufcount + 1] = LIGHTGRAY; break; // labyrinth
+  case 81: showed = '\\'; buffy [bufcount + 1] = LIGHTGREY; break; // labyrinth
   case 85: buffy [bufcount + 1] = BROWN; // ladder
   case 82:
   case 83:
@@ -2032,10 +2066,10 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 92: buffy [bufcount + 1] = CYAN; showed = '\\'; break; // Stairway to Dis
   case 93: buffy [bufcount + 1] = RED; showed = '\\'; break; // Gehenna
   case 94: buffy [bufcount + 1] = LIGHTCYAN; showed = '\\'; break; // Cocytus
-  case 95: buffy [bufcount + 1] = DARKGRAY; showed = '\\'; break; // Tartarus
-  case 96: buffy [bufcount + 1] = LIGHTMAGENTA; showed = '\\'; break; // To Abyss
-  case 97: buffy [bufcount + 1] = LIGHTMAGENTA; showed = '\\'; break; // From Abyss
-  case 98: buffy [bufcount + 1] = LIGHTGRAY; showed = '\\'; break; // Closed gate to hell
+  case 95: buffy [bufcount + 1] = DARKGREY; showed = '\\'; break; // Tartarus
+  case 96: buffy [bufcount + 1] = random2(16); showed = '\\'; break; // To Abyss
+  case 97: buffy [bufcount + 1] = random2(16); showed = '\\'; break; // From Abyss
+  case 98: buffy [bufcount + 1] = LIGHTGREY; showed = '\\'; break; // Closed gate to hell
   case 99: buffy [bufcount + 1] = LIGHTBLUE; showed = '\\'; break; // gate to pandemonium
   case 100: buffy [bufcount + 1] = LIGHTBLUE; showed = '\\'; break; // gate out of pandemonium
   case 101: buffy [bufcount + 1] = LIGHTGREEN; showed = '\\'; break; // gate to other part of pandemonium
@@ -2057,7 +2091,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 126:
   case 116: buffy [bufcount + 1] = YELLOW; showed = '>'; break; // stair to orc mine
 
-  case 117: buffy [bufcount + 1] = MAGENTA; showed = '>'; break;
+  case 117: buffy [bufcount + 1] = MAGENTA; showed = '\\'; break;
 
   case 130:
   case 131:
@@ -2076,7 +2110,7 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 145:
   case 146: buffy [bufcount + 1] = YELLOW; showed = '>'; break; // stair to orc mine
 
-  case 137: buffy [bufcount + 1] = MAGENTA; showed = '>'; break;
+  case 137: buffy [bufcount + 1] = MAGENTA; showed = '\\'; break;
 
 
 
@@ -2085,7 +2119,10 @@ switch (env[0].show [count_x - you[0].x_pos + 9] [count_y - you[0].y_pos + 9])
   case 182: buffy [bufcount + 1] = DARKGREY; showed = '_'; break; /* Altar to Kiku */
   case 183: break;
   case 184: buffy [bufcount + 1] = random2(15) + 1; showed = '_'; break; /* Altar to Xom */
-  case 185: break;
+  case 185: buffy [bufcount + 1] = LIGHTBLUE;
+  if (random2(3) == 0) buffy [bufcount + 1] = LIGHTMAGENTA;
+  if (random2(3) == 0) buffy [bufcount + 1] = LIGHTRED;
+  showed = '_'; break; /* Altar to Vehumet */
   case 186: buffy [bufcount + 1] = CYAN; showed = '_'; break; /* Altar to Okawaru */
   case 187: buffy [bufcount + 1] = RED;
   if (random2(3) == 0) buffy [bufcount + 1] = LIGHTRED;
@@ -2160,7 +2197,7 @@ bufcount = 0;
                 {
    for (count_x = 0; count_x < 33; count_x ++)
                         {
-       if (count_x + you[0].x_pos - 17 < 3 | count_y + you[0].y_pos - 9 < 3 | count_x + you[0].x_pos - 14 > 77 | count_y + you[0].y_pos - 9 > 67)
+       if (count_x + you[0].x_pos - 17 < 3 || count_y + you[0].y_pos - 9 < 3 || count_x + you[0].x_pos - 14 > 77 || count_y + you[0].y_pos - 9 > 67)
        {
             buffy [bufcount] = 0;
             bufcount ++;
@@ -2174,7 +2211,7 @@ bufcount = 0;
             continue;
        }
          buffy [bufcount] = env[0].map [count_x + you[0].x_pos - 17] [count_y + you[0].y_pos - 9];
-         buffy [bufcount + 1] = DARKGRAY;
+         buffy [bufcount + 1] = DARKGREY;
                                                                         bufcount += 2;
                         }
                 }
@@ -2183,7 +2220,7 @@ if (you[0].berserker != 0)
 {
  for (count_x = 1; count_x < 1400; count_x += 2)
  {
-  if (buffy [count_x] != DARKGRAY) buffy [count_x] = RED;
+  if (buffy [count_x] != DARKGREY) buffy [count_x] = RED;
  }
 }
 
@@ -2191,19 +2228,19 @@ if (show_green != 0)
 {
  for (count_x = 1; count_x < 1400; count_x += 2)
  {
-  if (buffy [count_x] != DARKGRAY) buffy [count_x] = show_green;
+  if (buffy [count_x] != DARKGREY) buffy [count_x] = show_green;
  }
  show_green = 0;
- if (you[0].special_wield == 50) show_green = DARKGRAY;
+ if (you[0].special_wield == 50) show_green = DARKGREY;
 }
 
 
 
-#ifdef DOS
+#ifdef DOS_TERM
 puttext(2,1,34,17, buffy);
 #endif
 
-#ifdef LINUX
+#ifdef PLAIN_TERM
 gotoxy(2,1);
 bufcount = 0;
 
@@ -2214,10 +2251,10 @@ if (you[0].running == 0) // this line is purely optional
   textcolor(buffy [count_x + 1]);
   putch(buffy [count_x]);
   if (count_x % 66 == 64 && count_x > 0)
-#ifdef DOS
-    cprintf("\n\r ");
+#ifdef DOS_TERM
+    cprintf(EOL" ");
 #endif
-#ifdef LINUX
+#ifdef PLAIN_TERM
     gotoxy(2, wherey() + 1);
 #endif
 
@@ -2247,7 +2284,12 @@ unsigned char showed = 0;
   case 8: showed = '*'; break;
   case 11: showed = '{'; break;
   case 12: showed = '{'; break;
-  case 20: showed = '1'; break; // orcish idol
+  case 20: showed = '8'; break; // orcish idol
+  case 21: showed = '8'; break; // silver statue
+  case 22: showed = '8'; break; // granite statue
+  case 23: showed = '8'; break; //
+  case 24: showed = '8'; break; //
+  case 25: showed = '8'; break; //
                 case 61:
                 case 62: showed = '{'; break;
                 case 67:        showed = ','; break;
@@ -2272,7 +2314,6 @@ unsigned char showed = 0;
   case 114:
   case 115:
   case 116:
-  case 117:
   case 118:
   case 119:
   case 120:
@@ -2294,7 +2335,6 @@ unsigned char showed = 0;
   case 134:
   case 135:
   case 136:
-  case 137:
   case 138:
   case 139:
   case 140:
@@ -2316,6 +2356,8 @@ unsigned char showed = 0;
   case 99:
   case 100:
   case 101:
+  case 117:
+  case 137:
        showed = '\\'; break;
 
   case 180:
@@ -2355,7 +2397,12 @@ unsigned char showed = 0;
   case 8: showed = '#'; break;
   case 11: showed = '{'; break;
   case 12: showed = '{'; break;
-  case 20: showed = '1'; break; // orcish idol
+  case 20: showed = '8'; break; // orcish idol
+  case 21: showed = '8'; break; // silver statue
+  case 22: showed = '8'; break; // granite statue
+  case 23: showed = '8'; break; //
+  case 24: showed = '8'; break; //
+  case 25: showed = '8'; break; //
                 case 61:
                 case 62: showed = '{'; break;
                 case 67:        showed = '.'; break;
@@ -2380,7 +2427,6 @@ unsigned char showed = 0;
   case 114:
   case 115:
   case 116:
-  case 117:
   case 118:
   case 119:
   case 120:
@@ -2402,7 +2448,6 @@ unsigned char showed = 0;
   case 134:
   case 135:
   case 136:
-  case 137:
   case 138:
   case 139:
   case 140:
@@ -2424,6 +2469,8 @@ unsigned char showed = 0;
   case 99:
   case 100:
   case 101:
+  case 117:
+  case 137:
        showed = '\\'; break;
 
   case 180:

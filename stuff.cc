@@ -11,6 +11,7 @@
 #include "externs.h"
 #include <stdlib.h>
 
+#include "macro.h"
 #include "misc.h"
 #include "output.h"
 #include "view.h"
@@ -68,7 +69,7 @@ lincurses_shutdown();
 }
 
 
-#ifdef LINUX
+#ifdef PLAIN_TERM
 // this function is used for systems without gettext/puttext to redraw the
 // playing screen after a call to for example inventory.
 void redraw_screen(void)

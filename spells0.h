@@ -9,3 +9,4 @@ int spell_spec(int spell, int power);
 char spell_fail(unsigned char spell);
 void print_slash(char already);
 char spell_list(void);
+char undead_can_memorise(unsigned char spell);

@@ -30,6 +30,7 @@
 #include "items.h"
 //#include "levels.h"
 //#include "maps.h"
+#include "macro.h"
 #include "message.h"
 #include "misc.h"
 #include "monplace.h"
@@ -42,6 +43,7 @@
 #include "output.h"
 #include "player.h"
 #include "priest.h"
+#include "randart.h"
 #include "religion.h"
 #include "shopping.h"
 #include "skills.h"
@@ -68,7 +70,6 @@ char hit = 0;
 char stabbed = 0;
 //int mmov_x = 0;
 char str_pass [80];
-
 int special_brand = 0;
 
 /*
@@ -85,26 +86,38 @@ if (menv [monster_attacked].m_beh == 7)
  naughty(5, 5);
 }
 
-your_to_hit = 13 + you[0].dex / 2;// + (0.5 * you[0].strength);// + (you[0].f_abil / 10); // / 100
+your_to_hit = 15 + you[0].dex / 2;// + (0.5 * you[0].strength);// + (you[0].f_abil / 10); // / 100
 
 if (wearing_amulet(43) == 1) your_to_hit -= 5;
 
+your_to_hit += random2(you[0].skills [0] + 1);
+
 if (you[0].equip [0] != -1)
 {
-     your_to_hit += random2(you[0].skills [0] + 1);
 
-if (weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) != 0)
+ if (weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) != 0)
   your_to_hit += random2(you[0].skills [weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]])] + 1);
-}
+} else /* Unarmed... */
+   {
+    if (you[0].species == 16) your_to_hit += 2;
+    your_to_hit += 2 + random2(you[0].skills [19] + 1);
+   }
+
 
 
 if (you[0].is_undead != 2) you[0].hunger -= 3;
 
-if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 == 9)
+if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && (you[0].inv_dam [you[0].equip [0]] % 30 == 9 || (you[0].inv_dam [you[0].equip [0]] % 30 >= 25 && randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 0) == 9)))
 {
  you[0].time_taken *= 5;
  you[0].time_taken /= 10;
 } /* weapon of speed */
+
+if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
+ if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 23) >= 1)
+ {
+  if (random2(1 + randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 23))) go_berserk();
+ }
 
 if (you[0].special_wield != 0)
 {
@@ -112,7 +125,7 @@ if (you[0].special_wield != 0)
  switch(you[0].special_wield)
  {
   case 2:
-  go_berserk();
+  if (random2(2) == 0) go_berserk();
   break;
 
   case 9:
@@ -147,6 +160,8 @@ if (you[0].equip [0] != -1)
  }
 }
 
+your_to_hit += slaying_bonus(0); /* in player.cc */
+
 if (you[0].hung_state == 1)
 {
  your_to_hit -= 3;
@@ -168,6 +183,8 @@ if (you[0].equip [6] != -1)
         heavy_armour += random2(abs(property(2, you[0].inv_type [you[0].equip [6]], 1)));
 }
 
+if (you[0].equip [0] == -1) heavy_armour *= 2 + random2(2);
+
 your_to_hit -= heavy_armour;
 
 your_to_hit = random2(your_to_hit);
@@ -177,6 +194,7 @@ int damage = 1;
 
 if (you[0].equip [0] == -1) /* empty hands */
 {
+ damage = 3;
  if (you[0].attribute [5] != 0)
  {
   switch(you[0].attribute [5])
@@ -189,10 +207,13 @@ if (you[0].equip [0] == -1) /* empty hands */
    case 6: damage = 5; special_brand = 8; your_to_hit += random2(10); break;
   }
  } else
+  {
    if (you[0].species == 16)
    {
-    damage = 4 + you[0].xl;
+    damage += 5;
    }
+  }
+  damage += you[0].skills [19];
 }
 
 
@@ -208,12 +229,12 @@ if (you[0].equip [0] != -1)
         }
 }
 
+int weapon_speed2 = 0;
+
 if (you[0].equip [0] != -1)
 {
-        if (you[0].inv_class [you[0].equip [0]] == 0 | you[0].inv_class [you[0].equip [0]] == 11)
+        if (you[0].inv_class [you[0].equip [0]] == 0 || you[0].inv_class [you[0].equip [0]] == 11)
         {
-                int weapon_speed2 = 0;
-
                 if (you[0].inv_class [you[0].equip [0]] == 11)
                         weapon_speed2 = 12; else weapon_speed2 = property(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], 2);
 
@@ -233,40 +254,53 @@ if (you[0].equip [0] != -1)
                 mpr(info);
 #endif
         }
+} else
+{
+ if (you[0].burden_state == 0 && random2(heavy_armour + 1) == 0)
+ {
+  weapon_speed2 = 10 - you[0].skills [19] / 3;
+  if (weapon_speed2 < 4) weapon_speed2 = 4;
+ }
 }
 
 
 
 
-if (menv [monster_attacked].m_speed_inc <= 40 | menv [monster_attacked].m_beh == 0)
+if (menv [monster_attacked].m_speed_inc <= 40 || menv [monster_attacked].m_beh == 0)
 {
   strcpy(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 0));
   strcat(info, " fails to defend itself.");
   mpr(info);
   stabbed = 1;
   exercise(16, 1 + random2(2) + random2(2) + random2(2) + random2(2));
-  naughty(8, 4);
+  if (mons_holiness(menv [monster_attacked].m_class) != 1 && mons_holiness(menv [monster_attacked].m_class) != 2) naughty(8, 4); /* Servants of TSO must fight fair */
 } else alert();
 
 
-if ((your_to_hit >= menv [monster_attacked].m_ev | random2(15) == 0) | ((menv [monster_attacked].m_speed_inc <= 60 | menv [monster_attacked].m_beh == 0) && random2 (10 + you[0].skills [16]) != 0))
+if ((your_to_hit >= menv [monster_attacked].m_ev || random2(15) == 0) || ((menv [monster_attacked].m_speed_inc <= 60 || menv [monster_attacked].m_beh == 0) && random2 (10 + you[0].skills [16]) != 0))
 {
         hit = 1;
+        int dammod = 13;
+        if (you[0].strength > 11) dammod += random2(you[0].strength - 11) / 3;
+        if (you[0].strength < 9) dammod -= random2(9 - you[0].strength) / 2;
+
+        damage *= dammod; //random2(you[0].strength);
+        damage /= 13;
+
         damage_done = (int) random2(damage);
 
 
-if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 | you[0].inv_class [you[0].equip [0]] == 11)
+if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 || you[0].inv_class [you[0].equip [0]] == 11)
 {
- damage_done *= 20 + (random2(you[0].skills [weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]])] + 1));
- damage_done /= 20;
+ damage_done *= 25 + (random2(you[0].skills [weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]])] + 1));
+ damage_done /= 25;
 }
 
-damage_done *= 20 + (random2(you[0].skills [0] + 1));
-damage_done /= 20;
+damage_done *= 30 + (random2(you[0].skills [0] + 1));
+damage_done /= 30;
 
-        damage_done += random2(you[0].strength) / 4;
         if (you[0].might > 1) damage_done += random2(10) + 1;
-        if (you[0].berserker > 1) damage_done += random2(10) + 1; /* remember these two are cumulative */
+//        if (you[0].berserker > 1) damage_done += random2(10) + 1; /* remember these two are cumulative (not any more) */
  if (you[0].hung_state == 1) damage_done -= random2(5);
         if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0)
         {
@@ -300,7 +334,9 @@ damage_done /= 20;
                 }
 
         }
-  else (damage_done -= random2(5));
+//  else (damage_done -= random2(5));
+
+                damage_done += slaying_bonus(1);
 
         if (stabbed == 1)
         {
@@ -308,7 +344,7 @@ damage_done /= 20;
          damage_done /= 12;
          if (you[0].equip [0] != -1)
          {
-            if (weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) == 1 | weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) == 2)
+            if (weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) == 1 || weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) == 2)
             {
                  damage_done *= 10 + you[0].skills [16] / weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]);
                  damage_done /= 10;
@@ -330,6 +366,7 @@ damage_done /= 20;
         {
          if (you[0].equip [0] != -1 && weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) != 0)
                 exercise(weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]), 1);
+                        else exercise(19, 1);
          if (random2(3) == 0) exercise(0, 1);
         }
 
@@ -386,7 +423,7 @@ damage_done /= 20;
          mpr(info);
         }
 
-if (hit == 1 && damage_done >= 1 | (hit == 1 && damage_done < 1 && menv [monster_attacked].m_ench [2] == 6))
+if (hit == 1 && damage_done >= 1 || (hit == 1 && damage_done < 1 && menv [monster_attacked].m_ench [2] == 6))
         {
         strcpy(info, "You hit ");
         strcat(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 1));
@@ -406,13 +443,13 @@ strcat(info, st_prn); /* note: doesn't take account of special weapons etc */
 
  if (you[0].special_wield == 6)
  {
-  torment();
-  naughty(2, 5);
+   torment();
+   naughty(2, 5);
  }
- if (you[0].special_wield == 7 | you[0].special_wield == 3) naughty(1, 3);
+ if (you[0].special_wield == 7 || you[0].special_wield == 3) naughty(1, 3);
  }
 
-if (menv [monster_attacked].m_class == 35 | menv [monster_attacked].m_class == 275 | menv [monster_attacked].m_class == 278 | menv [monster_attacked].m_class == 279) weapon_acid(5);
+if (menv [monster_attacked].m_class == 35 || menv [monster_attacked].m_class == 275 || menv [monster_attacked].m_class == 278 || menv [monster_attacked].m_class == 279) weapon_acid(5);
 
 int specdam = 0;
 /* remember, damage_done is still useful! */
@@ -428,8 +465,12 @@ if (hit == 1 && special_brand != 0 && you[0].equip [0] == -1)
 
 if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && hit == 1)
 {
+ if (you[0].inv_type [you[0].equip [0]] == 32 || you[0].inv_type [you[0].equip [0]] == 33)
+  naughty(2, 1);
+
  weap_dam = you[0].inv_dam [you[0].equip [0]] % 30;
  if (you[0].inv_dam [you[0].equip [0]] >= 180) weap_dam = 0;
+ if (you[0].inv_dam [you[0].equip [0]] % 30 >= 25) weap_dam = randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 0);
  switch(you[0].inv_dam [you[0].equip [0]])
  {
   case 188: /* sword of cerebov */
@@ -449,6 +490,7 @@ if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && hit ==
 
 if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && hit == 1)// && you[0].inv_dam [you[0].equip [0]] <= 180)
 {
+
  dam_thing : switch(weap_dam)
   {
    case 0: /* nothing */
@@ -462,7 +504,7 @@ if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && hit ==
     if (menv [monster_attacked].m_inv [2] != 501 && mitm.idam [menv [monster_attacked].m_inv [2]] % 30 == 2)
       specdam = (random2(damage_done) / 2 + 1) / 3;
    }
-   if (mons_res_fire(menv [monster_attacked].m_class) == -1 && (menv [monster_attacked].m_inv [2] == 501 | mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 2))
+   if (mons_res_fire(menv [monster_attacked].m_class) == -1 && (menv [monster_attacked].m_inv [2] == 501 || mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 2))
    {
     specdam = random2(damage_done) + 1;
    }
@@ -485,7 +527,7 @@ if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && hit ==
     if (menv [monster_attacked].m_inv [2] != 501 && mitm.idam [menv [monster_attacked].m_inv [2]] % 30 == 3)
       specdam = (random2(damage_done) / 2 + 1) / 3;
    }
-   if (mons_res_cold(menv [monster_attacked].m_class) == -1 && (menv [monster_attacked].m_inv [2] == 501 | mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 3))
+   if (mons_res_cold(menv [monster_attacked].m_class) == -1 && (menv [monster_attacked].m_inv [2] == 501 || mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 3))
    {
     specdam = random2(damage_done) + 1;
    }
@@ -523,14 +565,14 @@ if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && hit ==
    specdam = 0;
    if (mons_flies(menv [monster_attacked].m_class) == 2) break;
    if (mons_res_elec(menv [monster_attacked].m_class) != 0) break;
-   if (you[0].inv_plus2 [you[0].equip [0]] <= 50 | you[0].inv_plus2 [you[0].equip [0]] > 130 && you[0].inv_plus2 [you[0].equip [0]] <= 150) break;
+/*   if (you[0].inv_plus2 [you[0].equip [0]] <= 50 || you[0].inv_plus2 [you[0].equip [0]] > 130 && you[0].inv_plus2 [you[0].equip [0]] <= 150) break;*/
    if (random2(3) == 0)
    {
     strcpy(info, "There is a sudden explosion of sparks!");
     mpr(info);
-    specdam += 10 + random2(15);
-    you[0].inv_plus2 [you[0].equip [0]] --;
-    wield_change = 1;
+    specdam += random2(10) + random2(10) + random2(10);
+/*    you[0].inv_plus2 [you[0].equip [0]] --;
+    wield_change = 1;*/
    }
    break;
 
@@ -546,7 +588,7 @@ if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && hit ==
    break;
 
    case 8:
-   if (mons_holiness(menv [monster_attacked].m_class) > 0 | random2(3) == 0) break;
+   if (mons_holiness(menv [monster_attacked].m_class) > 0 || random2(3) == 0) break;
    strcpy(info, "You drain ");
    strcat(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 1));
    strcat(info, "!");
@@ -564,7 +606,7 @@ if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && hit ==
 
    case 10: /* slicing etc */
    specdam = random2(damage_done) / 2 + 1;
-   if (menv [monster_attacked].m_class == 56 && (damage_type(0, you[0].inv_type [you[0].equip [0]]) == 1 | damage_type(0, you[0].inv_type [you[0].equip [0]]) == 3))
+   if (menv [monster_attacked].m_class == 56 && (damage_type(0, you[0].inv_type [you[0].equip [0]]) == 1 || damage_type(0, you[0].inv_type [you[0].equip [0]]) == 3))
    {
      strcpy(info, "You slice the worm tail!");
      mpr(info);
@@ -576,7 +618,7 @@ if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && hit ==
    specdam = 0; /* note does no extra damage */
    if (mons_holiness(menv [monster_attacked].m_class) > 0) break; /* should really also prevent draining eg golems */
    if (damage_done < 1) break;
-   if (random2(5) == 0 | you[0].hp == you[0].hp_max) break;
+   if (random2(5) == 0 || you[0].hp == you[0].hp_max) break;
    if (you[0].equip [0] != -1 && you[0].inv_dam [you[0].equip [0]] == 194) you[0].hp += damage_done;
         else you[0].hp += random2(damage_done) + 1; /* thus is probably more valuable on larger weapons? */
    you[0].hp_ch = 1;
@@ -664,9 +706,9 @@ if (mons_holiness(menv [monster_attacked].m_class) < 0) naughty(4, menv [monster
 
 if (menv [monster_attacked].m_class == 106) // hydra
 {
- if (you[0].equip [0] != -1 && (damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) == 1 | damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) == 3))
+ if (you[0].equip [0] != -1 && (damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) == 1 || damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) == 3))
  {
-  if ((random2(2) != 0 | damage_done < 4) && (you[0].inv_class [you[0].equip [0]] != 0 | you[0].inv_dam [you[0].equip [0]] != 10)) goto mons_dies;
+  if ((random2(2) != 0 || damage_done < 4) && (you[0].inv_class [you[0].equip [0]] != 0 || you[0].inv_dam [you[0].equip [0]] != 10)) goto mons_dies;
   strcpy(info, "You ");
   switch(random2(4))
   {
@@ -714,12 +756,7 @@ if (menv [monster_attacked].m_hp <= 0)
 }
 
 
-if (hit != 0)
-{
- print_wounds(monster_attacked);
-}
-
-if (damage_done >= 1 && you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_type [you[0].equip [0]] > 12 && you[0].inv_type [you[0].equip [0]] < 17) //       18??
+/*if (damage_done >= 1 && you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_type [you[0].equip [0]] > 12 && you[0].inv_type [you[0].equip [0]] < 17) //       18??
 {
         if (random2 (5) == 0)
         {
@@ -732,7 +769,7 @@ if (damage_done >= 1 && you[0].equip [0] != -1 && you[0].inv_class [you[0].equip
                 you[0].equip [0] = -1;
                 wield_change = 1;
         }
-}
+}*/
 
 if (you[0].invis != 0 && menv [monster_attacked].m_beh == 0) menv [monster_attacked].m_beh = 1;
 
@@ -744,11 +781,187 @@ if (you[0].invis != 0 && random2(2) == 0)
 }
 
 
+int scount = -1;
+char attack_name [20];
+int sc_dam = 0;
 
+int unarmed_attack = 0;
+if (you[0].burden_state == 0 && random2(20) < you[0].skills [19] && random2(heavy_armour + 1) <= 1)
+{
+ unarmed_attack = random2(2) + 1;
+ if (you[0].species >= 19 && you[0].species <= 29 && random2(3) == 0) unarmed_attack = 3;
+ if (random2(2) == 0) unarmed_attack = 4;
+}
 
-if (menv [monster_attacked].m_beh == 3) menv [monster_attacked].m_beh = 1;
+do
+{
 
-//if (getch() == 0) getch();
+scount ++;
+
+switch(scount)
+{
+ case 0:
+      if (unarmed_attack != 1)
+       if (you[0].species != 30 || random2(2) == 0) continue;
+          if (you[0].attribute [5] == 1 || you[0].attribute [5] == 4 || you[0].attribute [5] == 5) continue;
+      strcpy(attack_name, "kick");
+      sc_dam = 5 + (you[0].species == 30) * 5;
+      break;
+ case 1:
+      if (unarmed_attack != 2)
+       if (you[0].mutation [32] == 0 || random2(3) != 0) continue;
+          if (you[0].attribute [5] == 1 || you[0].attribute [5] == 4 || you[0].attribute [5] == 5) continue;
+      strcpy(attack_name, "head-butt");
+      sc_dam = 5 + you[0].mutation [32] * 3;
+          if (you[0].equip [2] != -1 && you[0].inv_plus2 [you[0].equip [2]] <= 1)
+      {
+       sc_dam += 2;
+       if (you[0].inv_dam [you[0].equip [2]] / 30 == 2 || you[0].inv_dam [you[0].equip [2]] / 30 == 5)
+         sc_dam += 3;
+      } /* horned/spiked helmets/helms do extra damage */
+      break;
+ case 2: /* draconians */
+      if (unarmed_attack != 3)
+       if (you[0].species < 18 || you[0].species > 29 || random2(4) != 0) continue;
+          if (you[0].attribute [5] == 1 || you[0].attribute [5] == 4) continue;
+      strcpy(attack_name, "tail-slap");
+      sc_dam = 6;
+      if (you[0].species == 22 && you[0].xl >= 6) sc_dam = 12; /* grey dracs have spiny tails, or something */
+      break;
+ case 3:
+      if (unarmed_attack != 4) continue;
+          if (you[0].attribute [5] == 1 || you[0].attribute [5] == 4 || you[0].attribute [5] == 5) continue;
+      if (random2(2) == 0 || you[0].equip [5] != -1 || (you[0].equip [0] != -1 && (you[0].inv_class [you[0].equip [0]] == 0 && (you[0].inv_type [you[0].equip [0]] == 7 || you[0].inv_type [you[0].equip [0]] == 10 || you[0].inv_type [you[0].equip [0]] == 12 || you[0].inv_type [you[0].equip [0]] == 17 || you[0].inv_type [you[0].equip [0]] == 19 || you[0].inv_type [you[0].equip [0]] == 25 || you[0].inv_type [you[0].equip [0]] == 27)))) continue;
+      /* no punching with a shield or 2-handed wpn, except staves */
+      strcpy(attack_name, "punch");
+      sc_dam = 5 + you[0].skills [19] / 3; /* applied twice */
+      if (you[0].attribute [5] == 2)
+      {
+       strcpy(attack_name, "slash");
+       sc_dam += 10;
+      }
+      break;
+/* To add more, add to while part of loop below as well */
+ default: continue;
+
+}
+
+your_to_hit = 13 + you[0].dex / 2 + you[0].skills [19] / 2 + you[0].skills [0] / 5;
+if (wearing_amulet(43) == 1) your_to_hit -= 5;
+if (you[0].is_undead != 2) you[0].hunger -= 2;
+if (you[0].hung_state == 1)
+{
+ your_to_hit -= 3;
+}
+your_to_hit += slaying_bonus(0);
+your_to_hit = random2(your_to_hit);
+damage = sc_dam; //4 + you[0].xl / 3;
+alert();
+
+if ((your_to_hit >= menv [monster_attacked].m_ev || random2(15) == 0))
+{
+        hit = 1;
+        int dammod = 10;
+        if (you[0].strength > 11) dammod += random2(you[0].strength - 11) / 3;
+        if (you[0].strength < 9) dammod -= random2(9 - you[0].strength) / 2;
+
+        damage *= dammod;
+        damage /= 10;
+
+        damage_done = (int) random2(damage);
+
+        damage_done *= 40 + (random2(you[0].skills [0] + 1));
+        damage_done /= 40;
+        damage_done *= 25 + (random2(you[0].skills [19] + 1));
+        damage_done /= 25;
+
+        if (you[0].might > 1) damage_done += random2(10) + 1;
+        if (you[0].hung_state == 1) damage_done -= random2(5);
+
+                damage_done += slaying_bonus(1);
+
+        damage_done -= random2 (menv [monster_attacked].m_AC + 1);
+
+        if (damage_done < 0) damage_done = 0;
+        menv [monster_attacked].m_hp -= damage_done;
+
+        if (damage_done >= 1)
+        {
+         if (random2(5) == 0) exercise(0, 1);
+        }
+
+        if (menv [monster_attacked].m_hp <= 0)
+        {
+#ifdef DEBUG
+                itoa(damage_done, st_prn, 10);
+                strcpy(info, "Kick for ");
+                strcat(info, st_prn);
+                strcat(info, ".");
+                mpr(info);
+#endif
+                monster_die(monster_attacked, 1, 0);
+                if (menv [monster_attacked].m_class == 32)
+                {
+                        strcpy(info, "You ");
+                        strcat(info, attack_name);
+                        strcat(info, "the giant spore.");
+                        mpr(info);
+                }
+                return;
+        }
+
+        if (damage_done < 1 && menv [monster_attacked].m_ench [2] != 6)
+        {
+         strcpy(info, "You ");
+         strcat(info, attack_name);
+         strcat(info, " ");
+         strcat(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 1));
+         strcat(info, ", but do no damage.");
+         mpr(info);
+         hit = 1;
+        }
+
+} else
+        {
+             strcpy(info, "Your ");
+         strcat(info, attack_name);
+         strcat(info, " misses ");
+         strcat(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 1));
+         strcat(info, ".");
+         mpr(info);
+         damage_done = -99;
+        }
+
+if (damage_done >= 1 || (damage_done < 1 && menv [monster_attacked].m_ench [2] == 6 && damage_done != -99))
+        {
+        strcpy(info, "You ");
+        strcat(info, attack_name);
+        strcat(info, " ");
+        strcat(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 1));
+#ifdef DEBUG
+itoa(damage_done, st_prn, 10);
+strcat(info, " for ");
+strcat(info, st_prn);
+#endif
+ if (damage_done < 5) strcat(info, ".");
+ if (damage_done >= 5 && damage_done < 12) strcat(info, "!");
+ if (damage_done >= 12 && damage_done < 21) strcat(info, "!!");
+ if (damage_done >= 21) strcat(info, "!!!");
+ mpr(info);
+
+ if (mons_holiness(menv [monster_attacked].m_class) == -1)
+          done_good(4, 1);
+ hit = 1;
+ }
+
+ exercise(19, 1);
+
+} while (scount < 4);
+
+if (hit != 0)
+{
+ print_wounds(monster_attacked);
+}
 
 return;
 }
@@ -785,10 +998,10 @@ if (menv [monster_attacking].m_beh == 7) return;
 
 if (menv [monster_attacking].m_class >= MLAVA0 && menv [monster_attacking].m_sec == 1) return;
 
-if (wearing_amulet(38) == 1)
+if (wearing_amulet(38) == 1 || (you[0].religion == 6 && you[0].duration [3] != 0 && you[0].piety >= 75))
 {
  if (menv [monster_attacking].m_ench [1] >= 20 && menv [monster_attacking].m_ench [1] <= 25)
-  if (random2(5) <= 1)
+  if (random2(2) == 0)
   {
    strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
    strcat(info, " tries to attack you, but flinches away.");
@@ -813,7 +1026,7 @@ if (menv [monster_attacking].m_class == 106)
 
 char mdam = mondamage(menv [monster_attacking].m_class, runthru);
 
-if (menv [monster_attacking].m_class == 25 | menv [monster_attacking].m_class == 51 | menv [monster_attacking].m_class == 107 | menv [monster_attacking].m_class == 108 | menv [monster_attacking].m_class == 367)
+if (menv [monster_attacking].m_class == 25 || menv [monster_attacking].m_class == 51 || menv [monster_attacking].m_class == 107 || menv [monster_attacking].m_class == 108 || menv [monster_attacking].m_class == 367)
 {
         mdam = mondamage(menv [monster_attacking].m_sec, runthru);
         if (mdam > 1 && mdam < 6)
@@ -855,7 +1068,7 @@ if (menv [monster_attacking].m_inv [hand_used] != 501)
 
 item_name(mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]], mitm.iclass [menv [monster_attacking].m_inv [hand_used]], mitm.itype [menv [monster_attacking].m_inv [hand_used]], mitm.idam [menv [monster_attacking].m_inv [hand_used]], mitm.iplus [menv [monster_attacking].m_inv [hand_used]], mitm.iquant [menv [monster_attacking].m_inv [hand_used]], mitm.iid [menv [monster_attacking].m_inv [hand_used]], 0, str_pass);
 
-  if (mitm.iclass [menv [monster_attacking].m_inv [hand_used]] != 0 | strstr(str_pass, "questionable item") != NULL)
+  if (mitm.iclass [menv [monster_attacking].m_inv [hand_used]] != 0 || strstr(str_pass, "questionable item") != NULL)
   {
    destroy_item(menv [monster_attacking].m_inv [hand_used]);
    menv [monster_attacking].m_inv [hand_used] = 501;
@@ -880,7 +1093,7 @@ if (menv [monster_attacking].m_inv [hand_used] != 501)
 
 mons_to_hit = random2(mons_to_hit);
 
-        if (menv [monster_attacking].m_class == 10 | menv [monster_attacking].m_class == 22)
+        if (menv [monster_attacking].m_class == 10 || menv [monster_attacking].m_class == 22)
         {
                 /* maybe this will work better: */
   if (menv [monster_attacking].m_speed_inc >= 20)
@@ -905,15 +1118,15 @@ if (player_shield_class() > 0 && you[0].paralysis == 0 && you[0].conf == 0 && ra
  if (you[0].equip [5] != -1 && random2(4) == 0) exercise(17, 1);
  /* continue; */
 } else
-if ((you[0].equip [6] == -1 | you[0].inv_type [you[0].equip [6]] < 2 | (you[0].inv_type [you[0].equip [6]] >= 22 && you[0].inv_type [you[0].equip [6]] <= 25) | you[0].inv_dam [you[0].equip [6]] / 30 == 4) && random2(3) == 0)// && move_x != 0 | move_y != 0)
+if ((you[0].equip [6] == -1 || you[0].inv_type [you[0].equip [6]] < 2 || (you[0].inv_type [you[0].equip [6]] >= 22 && you[0].inv_type [you[0].equip [6]] <= 25) || you[0].inv_dam [you[0].equip [6]] / 30 == 4) && random2(3) == 0)// && move_x != 0 || move_y != 0)
  exercise(14, 1);
 
-if (blocked == 0 && mons_to_hit >= player_evasion() + random2(you[0].dex) / 3 - 2)// | random2(6) == 0) // menv [monster_attacked].m_ev)
+if (blocked == 0 && mons_to_hit >= player_evasion() + random2(you[0].dex) / 3 - 2)// || random2(6) == 0) // menv [monster_attacked].m_ev)
 {
 hit = 1;
 
 
-if (menv [monster_attacking].m_inv [hand_used] != 501 && mitm.iclass [menv [monster_attacking].m_inv [hand_used]] == 0 && mitm.itype [menv [monster_attacking].m_inv [hand_used]] < 13 | mitm.itype [menv [monster_attacking].m_inv [hand_used]] > 15)
+if (menv [monster_attacking].m_inv [hand_used] != 501 && mitm.iclass [menv [monster_attacking].m_inv [hand_used]] == 0 && (mitm.itype [menv [monster_attacking].m_inv [hand_used]] < 13 || mitm.itype [menv [monster_attacking].m_inv [hand_used]] > 15))
 {
 
   if (mitm.idam [menv [monster_attacking].m_inv [hand_used]] / 30 == 3 && mons_charclass(menv [monster_attacking].m_class) == 14)
@@ -988,13 +1201,14 @@ if ((int) damage_taken >= 1)
         strcat(info, " hits you");
 
 #ifdef DEBUG
-itoa(damage_taken, st_prn, 10);
-strcat(info, " for ");
+itoa(mmov_x, st_prn, 10);
+strcat(info, " it:");
 strcat(info, st_prn); // note: doesn't take account of special weapons etc
 #endif
 
 
-        if (menv [monster_attacking].m_class != 144 && menv [monster_attacking].m_inv [hand_used] != 501 && mitm.iclass [menv [monster_attacking].m_inv [hand_used]] == 0 && mitm.itype [menv [monster_attacking].m_inv [hand_used]] < 13 | mitm.itype [menv [monster_attacking].m_inv [hand_used]] > 16)
+//        if (menv [monster_attacking].m_class != 144 && menv [monster_attacking].m_inv [hand_used] != 501 && mitm.iclass [menv [monster_attacking].m_inv [hand_used]] == 0 && mitm.itype [menv [monster_attacking].m_inv [hand_used]] < 13 || mitm.itype [menv [monster_attacking].m_inv [hand_used]] > 16)
+        if (menv [monster_attacking].m_class != 144 && mmov_x != 501 && mitm.iclass [mmov_x] == 0 && (mitm.itype [mmov_x] < 13 || mitm.itype [mmov_x] > 16))
         {
         strcat(info, " with ");
 
@@ -1021,15 +1235,28 @@ if (hit == 1)
 
         char brek = 0;
 
+        int mclas = menv [monster_attacking].m_class;
 
+        if (mclas == 378) /* Killer Klown */
+        {
+         switch(random2(6))
+         {
+          case 0: mclas = 44; break; /* scorp */
+          case 1: mclas = 13; break; /* necrophage */
+          case 2: mclas = 48; break; /* wraith */
+          case 3: mclas = 124; break; /* fire elem */
+          case 4: mclas = 34; break; /* ice beast */
+          case 5: mclas = 15; break; /* phantom */
+         }
+        }
 
-        switch(menv [monster_attacking].m_class)
+        switch(mclas)
         {
         case 0: /* giant ant */
         case 62: /* wolf spider */
         case 139: /* redback */
         if (player_res_poison() != 0) break;
-        if ((damage_taken >= 4 && random2(4) == 0) | random2(20) == 0)
+        if ((damage_taken >= 4 && random2(4) == 0) || random2(20) == 0)
         {
  strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
         strcat(info, " stings you!");
@@ -1041,7 +1268,7 @@ if (hit == 1)
 
         case 10: /* killer bee */
         case 138: /* bumblebee */
-        if (player_res_poison() == 0 && ((damage_taken >= 3 && random2(3) == 0) | random2(20) == 0))
+        if (player_res_poison() == 0 && ((damage_taken >= 3 && random2(3) == 0) || random2(20) == 0))
         {
  strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
         strcat(info, " stings you!");
@@ -1056,7 +1283,7 @@ if (hit == 1)
  case 156: /* ghoul */
  case 277: // death ooze
         if (you[0].is_undead != 0) break;
-                if ((damage_taken >= 3 && random2(3) == 0) | random2(20) == 0)
+                if ((damage_taken >= 3 && random2(3) == 0) || random2(20) == 0)
                 {
                         strcpy(info, "You feel your flesh start to rot away!");
                         mpr(info);
@@ -1070,12 +1297,18 @@ if (hit == 1)
   }
                 break;
 
-
+ case 158: // mosquito
+ if (random2(3) != 0)
+ strcpy(info, "You feel ill.");
+ mpr(info);
+ if (you[0].disease > 100) you[0].disease = 210; else you[0].disease += 50 + random2(100);
+ break;
 
  case 21: /* fire vortex */
  menv [monster_attacking].m_hp = -10;
  case 124: /* fire elemental */
  case 233: /* balrug */
+ case 236: /* sun demon */
         strcpy(info, "You are engulfed in flame!");
         mpr(info);
    if (player_res_fire() > 100)
@@ -1096,8 +1329,13 @@ if (hit == 1)
 
         case 44: /* scorpion */
  case 100: /* giant mite */
-/* case 224: less demon */
-        if (player_res_poison() == 0 && ((damage_taken >= 3 && random2(4) == 0) | random2(15) == 0))
+ case 389:
+ case 390:
+ case 391:
+ case 392:
+ case 393: /* Mimics */
+      /* case 224: less demon */
+        if (player_res_poison() == 0 && ((damage_taken >= 3 && random2(4) == 0) || random2(15) == 0))
         {
  strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
         strcat(info, " poisons you!");
@@ -1123,7 +1361,7 @@ if (player_res_poison() == 0)
         case 128: // br snake
         case 154: // black snake
         case 166: // yellow snake
-        if (player_res_poison() == 0 && ((damage_taken >= 3 && random2(4) == 0) | random2(20) == 0))
+        if (player_res_poison() == 0 && ((damage_taken >= 3 && random2(4) == 0) || random2(20) == 0))
         {
  strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
         strcat(info, " poisons you!");
@@ -1143,7 +1381,7 @@ if (player_res_poison() == 0)
  case 153: // orange rat
  case 240: // shadow wraith
 //        if (runthru != 0) break; // shadow fiends have multiple attacks
-        if (((damage_taken >= 6 && random2(2) == 0) | random2(30) == 0) && player_prot_life() == 0)
+        if (((damage_taken >= 6 && random2(2) == 0) || random2(30) == 0) && player_prot_life() == 0)
         {
 /*        if (you[0].duration [3] != 0 && you[0].religion == 1 && random2(150) < you[0].piety)
         {
@@ -1167,7 +1405,7 @@ if (player_res_poison() == 0)
         strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
         strcat(info, " stings you.");
         mpr(info);
-        if (player_res_poison() == 0 && ((damage_taken >= 3 && random2(3) != 0) | random2(20) == 0))
+        if (player_res_poison() == 0 && ((damage_taken >= 3 && random2(3) != 0) || random2(20) == 0))
         {
         if (you[0].paralysis > 0)
         {
@@ -1224,7 +1462,7 @@ if (player_res_poison() == 0)
 
  case 47: // Vampire
  if (you[0].is_undead != 0) break;
-/*      if (damage_taken >= 7 && random2(3) == 0 | random2(20) == 0)
+/*      if (damage_taken >= 7 && random2(3) == 0 || random2(20) == 0)
       {
         strcpy(info, "You feel less resilient.");
         mpr(info);
@@ -1242,8 +1480,8 @@ if (player_res_poison() == 0)
  break;
 
  case 63: // shadow
- if (player_prot_life() != 0 | you[0].is_undead != 0) break;
-      if (((damage_taken >= 1 && random2(3)) == 0 | random2(20) == 0) && you[0].strength > 3 && player_sust_abil() == 0)
+ if (player_prot_life() != 0 || you[0].is_undead != 0) break;
+      if (((damage_taken >= 1 && random2(3)) == 0 || random2(20) == 0) && you[0].strength > 3 && player_sust_abil() == 0)
       {
         strcpy(info, "You feel weaker.");
         mpr(info);
@@ -1254,7 +1492,7 @@ if (player_res_poison() == 0)
 
  case 64: // hungry ghost
  if (you[0].is_undead == 2) break;
-      if (damage_taken >= 1 && random2(2) == 0 | random2(20) == 0)
+      if (damage_taken >= 1 && random2(2) == 0 || random2(20) == 0)
       {
         strcpy(info, "You feel hungry.");
         mpr(info);
@@ -1284,7 +1522,7 @@ if (player_res_poison() == 0)
         case 226:
 // if (random2(3) != 0) break;
  if (player_res_poison() != 0) break;
- if (menv [monster_attacking].m_class == 226 && (random2(4) != 0 | runthru != 1)) break;
+ if (menv [monster_attacking].m_class == 226 && (random2(4) != 0 || runthru != 1)) break;
  strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
         strcat(info, " stings you!");
         mpr(info);
@@ -1325,7 +1563,7 @@ char drained = 0;
 
 
 /* special weapons */
-if (hit == 1 && menv [monster_attacking].m_inv [hand_used] != 501 | (menv [monster_attacking].m_class == 400 && ghost.ghs [8] != 0))
+if (hit == 1 && menv [monster_attacking].m_inv [hand_used] != 501 || (menv [monster_attacking].m_class == 400 && ghost.ghs [8] != 0))
 {
 unsigned char itdam;
 if (menv [monster_attacking].m_class == 400)
@@ -1340,7 +1578,7 @@ specdam = 0;
 
  if (itdam == 188) goto flaming; // sword of Okawaru
 
-if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking].m_inv [hand_used]] < 180)
+if (menv [monster_attacking].m_class == 400 || mitm.idam [menv [monster_attacking].m_inv [hand_used]] < 180)
  switch(itdam % 30)
   {
    case 0: // nothing
@@ -1433,7 +1671,7 @@ if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking
    if (menv [monster_attacking].m_class == 400) break;
    specdam = 0;
 
-   if (mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] <= 50 | mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] > 130 && mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] <= 150) break;
+   if (mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] <= 50 || mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] > 130 && mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] <= 150) break;
    if (random2(3) == 0)
    {
     strcpy(info, "You are electrocuted!");
@@ -1497,11 +1735,11 @@ if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking
    case 13: // vampiric
    specdam = 0; // note does no extra damage
    if (you[0].is_undead != 0) break;
-   if (random2(5) == 0 | menv [monster_attacking].m_hp == menv [monster_attacking].m_hp_max) break;
+   if (random2(5) == 0 || menv [monster_attacking].m_hp == menv [monster_attacking].m_hp_max) break;
    menv [monster_attacking].m_hp += random2(damage_taken) + 1; // thus is probably more valuable on larger weapons?
    if (menv [monster_attacking].m_hp > menv [monster_attacking].m_hp_max) menv [monster_attacking].m_hp = menv [monster_attacking].m_hp_max;
 //   if (you[0].hunger <= 11000) you[0].hunger += random() % 30;
-   if (menv [monster_attacking].m_ench [2] != 6 | player_see_invis() != 0)
+   if (menv [monster_attacking].m_ench [2] != 6 || player_see_invis() != 0)
    {
     if (menv [monster_attacking].m_class == 144)
     {
@@ -1602,7 +1840,6 @@ return;
 
 char monsters_fight(int monster_attacking, int monster_attacked)
 {
-//float mons_to_hit;
 int damage_taken = 0;
 char hit = 0;
 int mmov_x = 0;
@@ -1634,10 +1871,6 @@ if (menv [monster_attacked].m_beh == 6)
                         return 0;
 }
 
-//int runthru = 0;
-
-//mons_to_hit = menv [monster_attacking].m_HD; // not finished yet.
-
 if (mons_near(monster_attacking) == 1 && mons_near(monster_attacked) == 1) sees = 1;
 
 char runthru;
@@ -1647,7 +1880,7 @@ for (runthru = 0; runthru < 4; runthru ++)
 
 char mdam = mondamage(menv [monster_attacking].m_class, runthru);
 
-if (menv [monster_attacking].m_class == 25 | menv [monster_attacking].m_class == 51 | menv [monster_attacking].m_class == 107 | menv [monster_attacking].m_class == 108 | menv [monster_attacking].m_class == 367)
+if (menv [monster_attacking].m_class == 25 || menv [monster_attacking].m_class == 51 || menv [monster_attacking].m_class == 107 || menv [monster_attacking].m_class == 108 || menv [monster_attacking].m_class == 367)
 {
         mdam = mondamage(menv [monster_attacking].m_sec, runthru);
         if (mdam > 1 && mdam < 4)
@@ -1673,7 +1906,6 @@ if (menv [monster_attacking].m_class == 25 | menv [monster_attacking].m_class ==
 
 
 if (mdam == 0) break;
-//gmon_att [menv [monster_attacking].m_class] [runthru] == 0) break;
 
 if (menv [monster_attacking].m_class == 30 && runthru == 1 && menv [monster_attacking].m_inv [1] != 501)
 {
@@ -1695,48 +1927,17 @@ if (menv [monster_attacking].m_inv [hand_used] != 501)
                 mons_to_hit += mitm.iplus [menv [monster_attacking].m_inv [hand_used]] - 50; //random2(mitm.iplus [menv [monster_attacking].m_inv [hand_used]] - 50 + 1); /// 10;
               }
 
-//      mons_to_hit += mitm.iplus [menv [monster_attacking].m_inv [0]];
         mons_to_hit += 3 * property(0, mitm.itype [menv [monster_attacking].m_inv [0]], 1);
 
    menv [monster_attacking].m_speed_inc -= ((property(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], 2) - 10) / 2); // / 10);
 
 }
 
-//if (you[0].inv_class [you[0].equip [0]] == 0) mons_to_hit += you[0].inv_plus [you[0].equip [0]];
-
-
-//mons_to_hit *= random2(200) / 100;
-
 mons_to_hit = random2(mons_to_hit);
 
-/*
-//if (mons_to_hit >= (player_evasion() - 6)) //&& mons_to_hit < player_evasion() && shield_armour != -1) // && random2(6) != 0)
-if (mons_to_hit < player_evasion())
-{
-strcpy(info, "You block the ");
-strcat(info, gmon_name [menv [monster_attacking].m_class]);
-if (menv [monster_attacking].m_inv [0] != 255)
+
+        if (menv [monster_attacking].m_class == 10 || menv [monster_attacking].m_class == 22)
         {
-        strcat(info, "'s ");
-        strcat(info, fake_name [mmov_x]);
-        }
-strcat(info, " on your shield!");
-mpr(info);
-return;
-}
-*/
-
-
-        // This bit is a bit clumsy:
-   //      not any more.
-        if (menv [monster_attacking].m_class == 10 | menv [monster_attacking].m_class == 22)
-        {
-/*              if (you[0].haste == 0) menv [monster_attacking].m_speed_inc -= (menv [monster_attacking].m_speed * time_taken);
-                        else menv [monster_attacking].m_speed_inc -= (menv [monster_attacking].m_speed * (time_taken / 2));
-
-                if (you[0].slow > 0) menv [monster_attacking].m_speed_inc -= (menv [monster_attacking].m_speed * time_taken);*/
-
-                // maybe this will work better:
                 menv [monster_attacking].m_speed_inc -= 10; //--
         }
 
@@ -1745,23 +1946,13 @@ return;
 
 
 
-if (mons_to_hit >= menv [monster_attacked].m_ev | ((menv [monster_attacked].m_speed_inc <= 60 | menv [monster_attacked].m_beh == 0) && random2 (20) != 0))// | random2(6) == 0) // menv [monster_attacked].m_ev)
-//if (random2(20) + mons_to_hit >= 20 - (10 - player_AC())) // hit roll
+if (mons_to_hit >= menv [monster_attacked].m_ev || ((menv [monster_attacked].m_speed_inc <= 60 || menv [monster_attacked].m_beh == 0) && random2 (20) != 0))
 {
 hit = 1;
 
-//te = menv [monster_attacking].m_inv [0];
 
-//k = mitm.iclass [te];
-//p = mitm.itype [te];
-//j = property [k] [p] [0];
-//o = menv [monster_attacking].m_class;
-//k = gmon_att [o] [runthru];
-
-
-if (menv [monster_attacking].m_inv [hand_used] != 501 && mitm.iclass [menv [monster_attacking].m_inv [hand_used]] == 0 && mitm.itype [menv [monster_attacking].m_inv [hand_used]] < 13 | mitm.itype [menv [monster_attacking].m_inv [hand_used]] > 15)
+if (menv [monster_attacking].m_inv [hand_used] != 501 && mitm.iclass [menv [monster_attacking].m_inv [hand_used]] == 0 && (mitm.itype [menv [monster_attacking].m_inv [hand_used]] < 13 || mitm.itype [menv [monster_attacking].m_inv [hand_used]] > 16))
 {
-//damage_taken = random2(mmov_x);
 
 damage_taken = random2(property(mitm.iclass [menv [monster_attacking].m_inv [0]], mitm.itype [menv [monster_attacking].m_inv [0]], 0));
 
@@ -1885,7 +2076,7 @@ if (hit == 1) //(int) damage_taken >= 1)
 
 //      itoa(
 
-        if (menv [monster_attacking].m_class != 144 && menv [monster_attacking].m_inv [hand_used] != 501 && mitm.iclass [menv [monster_attacking].m_inv [hand_used]] == 0 && mitm.itype [menv [monster_attacking].m_inv [hand_used]] < 13 | mitm.itype [menv [monster_attacking].m_inv [hand_used]] > 16)
+        if (menv [monster_attacking].m_class != 144 && menv [monster_attacking].m_inv [hand_used] != 501 && mitm.iclass [menv [monster_attacking].m_inv [hand_used]] == 0 && (mitm.itype [menv [monster_attacking].m_inv [hand_used]] < 13 || mitm.itype [menv [monster_attacking].m_inv [hand_used]] > 16))
         {
         strcat(info, " with ");
 
@@ -1910,7 +2101,7 @@ if (hit == 1) //(int) damage_taken >= 1)
         case 143: // spiny worm
         case MWATER3: // jellyfish
         case 226: // demon
-        if ((damage_taken >= 4 && random2(4) == 0) | random2(20) == 0 | menv [monster_attacking].m_class == 143)
+        if ((damage_taken >= 4 && random2(4) == 0) || random2(20) == 0 || menv [monster_attacking].m_class == 143)
         {
       strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
       strcat(info, " stings ");
@@ -1927,7 +2118,7 @@ if (hit == 1) //(int) damage_taken >= 1)
 
         case 10: // killer bee
         case 138:
-        if (((damage_taken >= 3 && random2(3) == 0) | random2(20) == 0))
+        if (((damage_taken >= 3 && random2(3) == 0) || random2(20) == 0))
         {
      strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
      strcat(info, " stings ");
@@ -1944,7 +2135,7 @@ if (hit == 1) //(int) damage_taken >= 1)
         case 156: /* ghoul */
         case 277: // death ooze
         if (mons_holiness(menv [monster_attacked].m_class) >= 1) break;
-        if ((damage_taken >= 3 && random2(3) == 0) | random2(20) == 0)
+        if ((damage_taken >= 3 && random2(3) == 0) || random2(20) == 0)
         {
                 //strcpy(info, "You feel your flesh start to rot away!");
                 //mpr(info);
@@ -1957,7 +2148,8 @@ if (hit == 1) //(int) damage_taken >= 1)
  case 21: // fire_vortex
  menv [monster_attacking].m_hp = -10;
  case 124: // fire elem
- case 233: // gr demon
+ case 233: // balrug
+ case 236: // sun demon
    specdam = 0;
    if (mons_res_fire(menv [monster_attacked].m_class) == 0)
    {
@@ -1965,7 +2157,7 @@ if (hit == 1) //(int) damage_taken >= 1)
     if (menv [monster_attacked].m_inv [2] != 501 && mitm.idam [menv [monster_attacked].m_inv [2]] % 30 == 2)
      specdam /= 3;
    }
-   if (mons_res_fire(menv [monster_attacked].m_class) == -1 | (menv [monster_attacked].m_inv [2] == 501 | mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 2))
+   if (mons_res_fire(menv [monster_attacked].m_class) == -1 || (menv [monster_attacked].m_inv [2] == 501 || mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 2))
    {
     specdam = random2(25) + 20;
    }
@@ -1983,7 +2175,7 @@ if (hit == 1) //(int) damage_taken >= 1)
  break;
 
         case 42: // killer bee
-//      if ((damage_taken >= 3 && random2(3) == 0) | random2(20) == 0)
+//      if ((damage_taken >= 3 && random2(3) == 0) || random2(20) == 0)
 //      {
         strcpy(info, "The queen bee stings ");
    strcat(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 1));
@@ -1995,14 +2187,17 @@ if (hit == 1) //(int) damage_taken >= 1)
         break;
 
 
-        case 18: // snake
-        case 128: // br snake
+    case 18: // snake
+    case 128: // br snake
         case 154: // black snake
         case 166: // yellow snake
-/*        case 224: // less demon */
-        if ((damage_taken >= 3 && random2(4) == 0) | random2(20) == 0)
+    case 389:
+    case 390:
+    case 391:
+    case 392:
+    case 393: /* Mimics */
+        if ((damage_taken >= 3 && random2(4) == 0) || random2(20) == 0)
         {
-//        strcpy(info, "The ");
    strcpy(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 0));
    strcat(info, " is poisoned.");
    if (sees == 1) mpr(info);
@@ -2013,14 +2208,14 @@ if (hit == 1) //(int) damage_taken >= 1)
         case 165: // shadow dragon
         case 367: /* spectral thing */
         if (random2(2) == 0) break;
-        case 60: // wight
+            case 60: // wight
         case 48: // wraith
         case 84: // soul eater
         case 127: // sh F
         case 130: // spectre
-        case 153: // orange rat
+            case 153: // orange rat
         if (mons_holiness(menv [monster_attacked].m_class) >= 1) break;
-        if ((damage_taken >= 6 && random2(2) == 0) | random2(30) == 0)
+        if ((damage_taken >= 6 && random2(2) == 0) || random2(30) == 0)
         {
       strcpy(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 0));
       strcat(info, " is drained.");
@@ -2029,7 +2224,7 @@ if (hit == 1) //(int) damage_taken >= 1)
       menv [monster_attacked].m_hp_max -= 2 + random2(3);
       menv [monster_attacked].m_hp -= 2 + random2(3);
       if (menv [monster_attacked].m_hp >= menv [monster_attacked].m_hp_max) menv [monster_attacked].m_hp = menv [monster_attacked].m_hp_max;
-      if (menv [monster_attacked].m_hp <= 0 | menv [monster_attacked].m_HD <= 0)
+      if (menv [monster_attacked].m_hp <= 0 || menv [monster_attacked].m_HD <= 0)
       {
             monster_die(monster_attacked, 2, monster_attacking);
             return 1;
@@ -2039,7 +2234,7 @@ if (hit == 1) //(int) damage_taken >= 1)
         break;
 
         case 22: // giant wasp
-/*      if ((damage_taken >= 3 && random2(3) == 0) | random2(20) == 0)
+/*      if ((damage_taken >= 3 && random2(3) == 0) || random2(20) == 0)
         {
         if (you[0].paralysis > 0)
         {
@@ -2073,7 +2268,7 @@ if (hit == 1) //(int) damage_taken >= 1)
     if (menv [monster_attacked].m_inv [2] != 501 && mitm.idam [menv [monster_attacked].m_inv [2]] % 30 == 3)
      specdam = (random2(10) + 5) / 3;
    }
-   if (mons_res_cold(menv [monster_attacked].m_class) == -1 && (menv [monster_attacked].m_inv [2] == 501 | mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 3))
+   if (mons_res_cold(menv [monster_attacked].m_class) == -1 && (menv [monster_attacked].m_inv [2] == 501 || mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 3))
    {
     specdam = random2(15) + 10;
    }
@@ -2084,6 +2279,7 @@ if (hit == 1) //(int) damage_taken >= 1)
         strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
         strcat(info, " freezes ");
         strcat(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 1));
+        strcat(info, ".");
         if (sees == 1) mpr(info);
       }
     }
@@ -2091,7 +2287,7 @@ if (hit == 1) //(int) damage_taken >= 1)
  break;
 
  case 47: // Vampire
-/* if (damage_taken >= 7 && random2(2) == 0 | random2(10) == 0)
+/* if (damage_taken >= 7 && random2(2) == 0 || random2(10) == 0)
  menv [monster_attacked].m_hp_max -= 3;
  if (menv [monster_attacked].m_hp >= menv [monster_attacked].m_hp_max) menv [monster_attacked].m_hp = menv [monster_attacked].m_hp_max;
  menv [monster_attacking].m_hp += random2(8);
@@ -2117,7 +2313,7 @@ if (hit == 1) //(int) damage_taken >= 1)
 
 }
 /* special weapons */
-if (hit == 1 && menv [monster_attacking].m_inv [hand_used] != 501 | (menv [monster_attacking].m_class == 400 && ghost.ghs [8] != 0))
+if (hit == 1 && menv [monster_attacking].m_inv [hand_used] != 501 || (menv [monster_attacking].m_class == 400 && ghost.ghs [8] != 0))
 {
 unsigned char itdam;
 if (menv [monster_attacking].m_class == 400)
@@ -2132,7 +2328,7 @@ specdam = 0;
 
  if (itdam == 188) goto flaming; // sword of Okawaru
 
-if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking].m_inv [hand_used]] < 180)
+if (menv [monster_attacking].m_class == 400 || mitm.idam [menv [monster_attacking].m_inv [hand_used]] < 180)
  switch(itdam % 30)
   {
 
@@ -2147,7 +2343,7 @@ if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking
     if (menv [monster_attacked].m_inv [2] != 501 && mitm.idam [menv [monster_attacked].m_inv [2]] % 30 == 2)
      specdam /= 3;
    }
-   if (mons_res_fire(menv [monster_attacked].m_class) == -1 && (menv [monster_attacked].m_inv [2] == 501 | mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 2))
+   if (mons_res_fire(menv [monster_attacked].m_class) == -1 && (menv [monster_attacked].m_inv [2] == 501 || mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 2))
    {
     specdam = random2(damage_taken) + 1;
    }
@@ -2182,7 +2378,7 @@ if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking
     if (menv [monster_attacked].m_inv [2] != 501 && mitm.idam [menv [monster_attacked].m_inv [2]] % 30 == 3)
      specdam = (random2(damage_taken) / 2 + 1) / 3;
    }
-   if (mons_res_cold(menv [monster_attacked].m_class) == -1 && (menv [monster_attacked].m_inv [2] == 501 | mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 3))
+   if (mons_res_cold(menv [monster_attacked].m_class) == -1 && (menv [monster_attacked].m_inv [2] == 501 || mitm.idam [menv [monster_attacked].m_inv [2]] % 30 != 3))
    {
     specdam = random2(damage_taken) + 1;
    }
@@ -2235,7 +2431,7 @@ if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking
    if (mons_res_elec(menv [monster_attacked].m_class) != 0) break;
    specdam = 0;
 
-   if (mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] <= 50 | mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] > 130 && mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] <= 150) break;
+   if (mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] <= 50 || mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] > 130 && mitm.iplus2 [menv [monster_attacking].m_inv [hand_used]] <= 150) break;
    if (random2(3) == 0)
    {
     strcpy(info, "There is a sudden explosion of sparks!");
@@ -2247,7 +2443,7 @@ if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking
 
    case 5: // orc slaying
    if (mons_charclass(menv [monster_attacked].m_class) == 14)
-//   if (menv [monster_attacked].m_class == 14 | menv [monster_attacked].m_class == 52 | menv [monster_attacked].m_class == 54 | menv [monster_attacked].m_class == 55 | menv [monster_attacked].m_class == 103)
+//   if (menv [monster_attacked].m_class == 14 || menv [monster_attacked].m_class == 52 || menv [monster_attacked].m_class == 54 || menv [monster_attacked].m_class == 55 || menv [monster_attacked].m_class == 103)
    {
      menv [monster_attacked].m_hp -= 1 + random2(damage_taken);
    }
@@ -2259,7 +2455,7 @@ if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking
 
 //   case 7: // protection
  case 8:
-        if (mons_holiness(menv [monster_attacked].m_class) > 0 && ((damage_taken >= 6 && random2(2) == 0) | random2(30) == 0))
+        if (mons_holiness(menv [monster_attacked].m_class) > 0 && ((damage_taken >= 6 && random2(2) == 0) || random2(30) == 0))
         {
       strcpy(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 0));
       strcat(info, " is drained.");
@@ -2268,7 +2464,7 @@ if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking
       menv [monster_attacked].m_hp_max -= 2 + random2(3);
       menv [monster_attacked].m_hp -= 2 + random2(3);
       if (menv [monster_attacked].m_hp >= menv [monster_attacked].m_hp_max) menv [monster_attacked].m_hp = menv [monster_attacked].m_hp_max;
-      if (menv [monster_attacked].m_hp <= 0 | menv [monster_attacked].m_HD <= 0)
+      if (menv [monster_attacked].m_hp <= 0 || menv [monster_attacked].m_HD <= 0)
       {
             monster_die(monster_attacked, 2, monster_attacking);
             return 1;
@@ -2288,11 +2484,11 @@ if (menv [monster_attacking].m_class == 400 | mitm.idam [menv [monster_attacking
    case 13: // vampiric
    specdam = 0; // note does no extra damage
    if (mons_holiness(menv [monster_attacked].m_class) > 0) break;
-   if (random2(5) == 0 | menv [monster_attacking].m_hp == menv [monster_attacking].m_hp_max) break;
+   if (random2(5) == 0 || menv [monster_attacking].m_hp == menv [monster_attacking].m_hp_max) break;
    menv [monster_attacking].m_hp += random2(damage_taken) + 1; // thus is probably more valuable on larger weapons?
    if (menv [monster_attacking].m_hp > menv [monster_attacking].m_hp_max) menv [monster_attacking].m_hp = menv [monster_attacking].m_hp_max;
 //   if (you[0].hunger <= 11000) you[0].hunger += random() % 30;
-   if (mons_near(monster_attacking) == 1 && (menv [monster_attacking].m_ench [2] != 6 | player_see_invis() != 0))
+   if (mons_near(monster_attacking) == 1 && (menv [monster_attacking].m_ench [2] != 6 || player_see_invis() != 0))
    {
     if (menv [monster_attacking].m_class == 144)
     {
@@ -2423,12 +2619,12 @@ if (menv [monster_killed].m_class == 32)
         }
 }
 
-if (menv [monster_killed].m_class == 21 | menv [monster_killed].m_class == 244)
+if (menv [monster_killed].m_class == 21 || menv [monster_killed].m_class == 244)
 {
 strcpy(info, monam (menv[monster_killed].m_sec,menv[monster_killed].m_class, menv [monster_killed].m_ench [2], 0));
 strcat(info, " dissipates!"); // <- spelling?
 if (mons_near(monster_killed) == 1) mpr(info);
-if (killer == 1 | killer == 3)
+if (killer == 1 || killer == 3)
 {
  gain_exp(exper_value(menv [monster_killed].m_class, menv [monster_killed].m_HD, menv [monster_killed].m_hp_max));
 }
@@ -2441,7 +2637,7 @@ if (menv [monster_killed].m_class == 144)
 strcpy(info, monam (menv[monster_killed].m_sec,menv[monster_killed].m_class, menv [monster_killed].m_ench [2], 0));
 strcat(info, " falls from the air.");
 if (mons_near(monster_killed) == 1) mpr(info);
-if (killer == 1 | killer == 3)
+if (killer == 1 || killer == 3)
 {
  gain_exp(exper_value(menv [monster_killed].m_class, menv [monster_killed].m_HD, menv [monster_killed].m_hp_max));
 }
@@ -2474,7 +2670,7 @@ if (you[0].duration [3] > 0)
           done_good(4, menv [monster_killed].m_HD);
 
 if (you[0].religion == 8 && you[0].duration [3] != 0 && random2(you[0].piety) >= 20)
-{
+{/* Makhleb */
  if (you[0].hp < you[0].hp_max)
  {
   mpr("You feel a little better.");
@@ -2482,20 +2678,23 @@ if (you[0].religion == 8 && you[0].duration [3] != 0 && random2(you[0].piety) >=
   if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
   you[0].hp_ch = 1;
  }
+}
+if ((you[0].religion == 8 || you[0].religion == 6) && you[0].duration [3] != 0 && random2(you[0].piety) >= 20)
+{ /* Makhleb or Vehumet */
  if (you[0].ep < you[0].ep_max)
  {
   mpr("You feel your power returning.");
-  you[0].ep += random2(menv [monster_killed].m_HD) + 1;
+  you[0].ep += random2(random2(menv [monster_killed].m_HD)) + 1;
   if (you[0].ep > you[0].ep_max) you[0].ep = you[0].ep_max;
   you[0].ep_ch = 1;
  }
 }
 
-if (you[0].duration [19] != 0 && mons_holiness(menv [monster_killed].m_class) == 0)
+if (you[0].duration [19] != 0 && mons_holiness(menv [monster_killed].m_class) == 0 && mons_weight(mons_charclass(menv [monster_killed].m_class)) != 0)
 {
  if (create_monster(367, 0, 7, menv [monster_killed].m_x, menv [monster_killed].m_y, you[0].pet_target, mons_charclass(menv [monster_killed].m_class)) != -1)
   mpr("A strange glowing mist starts to gather...");
-}
+} /* Death Channel - creates a spectral version of the monster */
 
 break;
 
@@ -2517,38 +2716,23 @@ if ((i >= 0 && i < 200) && menv [i].m_beh == 7)
  {
   if (mons_holiness(menv [monster_killed].m_class) == 0)
    done_good(9, menv [monster_killed].m_HD);
- }
-
+    else done_good(10, menv [monster_killed].m_HD);
+ } else
+    {
+         done_good(10, menv [monster_killed].m_HD);
+     if (you[0].religion == 6 && random2(you[0].piety) >= 20)
+         { /* Vehumet - only for non-undead servants (coding convenience, no real reason) */
+          if (you[0].ep < you[0].ep_max)
+          {
+           mpr("You feel your power returning.");
+           you[0].ep += random2(random2(menv [monster_killed].m_HD)) + 1;
+           if (you[0].ep > you[0].ep_max) you[0].ep = you[0].ep_max;
+           you[0].ep_ch = 1;
+          }
+         }
+    }
 }
 break;
-
-/*
-case 3: You kill by missile or beam
-strcpy(info, "The ");
-strcat(info, beam_name);
-if (wounded_damaged(menv[monster_killed].m_class) == 0) strcat(info, " kills ");
- else strcat(info, " destroys ");
-strcat(info, monam (menv[monster_killed].m_sec,menv[monster_killed].m_class, menv [monster_killed].m_ench [2], 1)); // gmon_name [menv [monster_killed].m_class]);
-strcat(info, "!");
-mpr(info);
-gain_exp(exper_value(menv [monster_killed].m_class, menv [monster_killed].m_HD, menv [monster_killed].m_hp_max));
-break;
-*/
-
-/*
-case 4: Monster kills by missile or beam
-strcpy(info, "The ");
-strcat(info, beam_name);
-strcat(info, " kills ");
-strcat(info, monam (menv[monster_killed].m_sec,menv[monster_killed].m_class, menv [monster_killed].m_ench [2], 1)); //gmon_name [menv [monster_killed].m_class]);
-strcat(info, "!");
-mpr(info);
-if (menv [i].m_beh == 7)
-{
- gain_exp(exper_value(menv [monster_killed].m_class, menv [monster_killed].m_HD, menv [monster_killed].m_hp_max) / 2 + 1);
-}
-break;
-*/
 
 case 5: /* Monster killed by trap/inanimate thing/itself/poison not from you */
 if (mons_near(monster_killed))
@@ -2573,7 +2757,7 @@ for (dmi = 7; dmi >= 0; dmi --) /* takes whatever it's carrying back home */
         {
          if (menv [monster_killed].m_inv [dmi] != 501)
          {
-           destroy_item(menv [monster_killed].m_inv [dmi]);
+              destroy_item(menv [monster_killed].m_inv [dmi]);
          }
          menv [monster_killed].m_inv [dmi] = 501;
         }
@@ -2584,7 +2768,7 @@ break;
 
 out_of_switch : if (menv [monster_killed].m_class == 38) /* mummy! */
 {
-  if (killer == 1 | killer == 3)
+  if (killer == 1 || killer == 3)
   {
     if (curse_an_item(1, 0) == 1)
     {
@@ -2594,9 +2778,9 @@ out_of_switch : if (menv [monster_killed].m_class == 38) /* mummy! */
   }
 }
 
-if (menv [monster_killed].m_class == 373 | menv [monster_killed].m_class == 374 | menv [monster_killed].m_class == 375) /* other mummies */
+if (menv [monster_killed].m_class == 373 || menv [monster_killed].m_class == 374 || menv [monster_killed].m_class == 375) /* other mummies */
 {
-  if (killer == 1 | killer == 3)
+  if (killer == 1 || killer == 3)
   {
       mpr("You feel extremely nervous for a moment...");
       miscast_effect(16, 3 + (menv [monster_killed].m_class == 374) * 8 + (menv [monster_killed].m_class == 375) * 5, random2(30) + random2(30) + random2(30), 100);
@@ -2609,7 +2793,7 @@ if (menv [monster_killed].m_class == 56)
  while(menv [dmi].m_class != 19)
         {
           dmi--;
-          if ((menv [dmi].m_class != 56 && menv [dmi].m_class != 19) | dmi < 0)
+          if ((menv [dmi].m_class != 56 && menv [dmi].m_class != 19) || dmi < 0)
           {
            strcpy(info, "Error: Worm head not found!");
            mpr(info);
@@ -2631,7 +2815,7 @@ if (menv [monster_killed].m_class == 56)
 }
 
 
-out_of_worm : if (menv [monster_killed].m_class == 19 | menv [monster_killed].m_class == 56)
+out_of_worm : if (menv [monster_killed].m_class == 19 || menv [monster_killed].m_class == 56)
 {
  dmi = monster_killed;
 
@@ -2645,7 +2829,19 @@ out_of_worm : if (menv [monster_killed].m_class == 19 | menv [monster_killed].m_
 }
 
 
-  if (killer != 6) place_monster_corpse(monster_killed);
+  if (killer != 6)
+  {
+   if (menv [monster_killed].m_ench [1] >= 20 && menv [monster_killed].m_ench [1] <= 25)
+   {
+    if (mons_near(monster_killed) && mons_weight(mons_charclass(menv [monster_killed].m_class)) != 0)
+    {
+     strcpy(info, monam (menv[monster_killed].m_sec,menv[monster_killed].m_class, menv [monster_killed].m_ench [2], 0));
+     strcat(info, "'s corpse disappears in a puff of smoke!");
+     mpr(info);
+     place_cloud(random2(3) + 105, menv [monster_killed].m_x, menv [monster_killed].m_y, 1 + random2(3));
+    }
+   } else place_monster_corpse(monster_killed);
+  }
 
   monster_drop_ething(monster_killed);
 
@@ -2708,7 +2904,7 @@ if (menv [jel].m_class != 35) return 0;
 
             for (jey = -1; jey < 2; jey ++)
             {
-               if (mgrd [menv [jel].m_x + jex] [menv [jel].m_y + jey] == MNG && mgrd [menv [jel].m_x + jex] [menv [jel].m_y + jey] > 10 && (menv [jel].m_x + jex != you[0].x_pos | menv [jel].m_y + jey != you[0].y_pos))
+               if (mgrd [menv [jel].m_x + jex] [menv [jel].m_y + jey] == MNG && mgrd [menv [jel].m_x + jex] [menv [jel].m_y + jey] > 10 && (menv [jel].m_x + jex != you[0].x_pos || menv [jel].m_y + jey != you[0].y_pos))
                /* 10-50 for now - must take clouds into account */
                goto jel2;
             } /* end of for jey */
@@ -2773,10 +2969,10 @@ if (menv [it].m_class == -1) continue;
 
 if (mons_near(it) == 1)
 {
-   if (menv [it].m_beh == 1 | menv [it].m_beh == 2 | menv [it].m_beh == 0)
+   if (menv [it].m_beh == 1 || menv [it].m_beh == 2 || menv [it].m_beh == 0)
    {
       menv [it].m_beh = 1;
-      if (you[0].invis == 0 | mons_see_invis(menv [it].m_class) == 1)
+      if (you[0].invis == 0 || mons_see_invis(menv [it].m_class) == 1)
       {
        menv [it].m_targ_1_x = you[0].x_pos;
        menv [it].m_targ_1_y = you[0].y_pos;
@@ -2802,7 +2998,7 @@ if (targetc == 250)
    do
    {
       targetc = random2(52); /* I think. Shouldn't poly into eg orc _wizard_ */
-   } while (targetc == 31 | targetc == 25 | targetc == 51); /* no fiends or zombies */
+   } while (targetc == 31 || targetc == 25 || targetc == 51); /* no fiends or zombies */
 }
 
 /* if (power != -1) // automatic success */
@@ -2863,7 +3059,7 @@ void monster_drop_ething(int monster_killed)
 int ygy;
 char splashes = 0;
 
-if (grd [menv [monster_killed].m_x] [menv [monster_killed].m_y] == 61 | grd [menv [monster_killed].m_x] [menv [monster_killed].m_y] == 62)
+if (grd [menv [monster_killed].m_x] [menv [monster_killed].m_y] == 61 || grd [menv [monster_killed].m_x] [menv [monster_killed].m_y] == 62)
 {
  for (ygy = 0; ygy < 8; ygy ++)
  {
@@ -2914,8 +3110,8 @@ void place_monster_corpse(unsigned char mcr)
 int corpse_class = mons_charclass(menv [mcr].m_class);
 
 
- if (mons_weight(corpse_class) == 0 | random2(2) == 0) return;
- if (grd [menv [mcr].m_x] [menv [mcr].m_y] == 61 | grd [menv [mcr].m_x] [menv [mcr].m_y] == 62) return;
+ if (mons_weight(corpse_class) == 0 || random2(2) == 0) return;
+ if (grd [menv [mcr].m_x] [menv [mcr].m_y] == 61 || grd [menv [mcr].m_x] [menv [mcr].m_y] == 62) return;
 
         int o;
 
