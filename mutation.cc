@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <4>      9/25/99        CDL             linuxlib -> liblinux
  *      <3>      9/21/99        LRH             Added many new scales
  *      <2>      5/20/99        BWR             Fixed it so demonspwan should
  *                                              always get a mutation, 3 level
@@ -23,7 +24,7 @@
 #endif
 
 #ifdef LINUX
-#include "linuxlib.h"
+#include "liblinux.h"
 #endif
 
 #include "externs.h"

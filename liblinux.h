@@ -1,5 +1,5 @@
-#ifndef LINUXLIB_H
-#define LINUXLIB_H
+#ifndef LIBLINUX_H
+#define LIBLINUX_H
 /* Some replacement routines missing in gcc */
 
 #define _NORMALCURSOR 1
@@ -9,6 +9,9 @@
 void lincurses_startup( bool use_no_black );
 
 int translate_keypad( int keyin );
+
+void init_key_to_command( );
+int       key_to_command( int );
 
 int itoa(int value, char *strptr, int radix);
 
@@ -46,7 +49,7 @@ void lincurses_shutdown();
 
 //void redraw_screen(void); - now in stuff.cc, as it's a PLAIN_TERM rather than a Linux function
 
-#ifndef _LINUXLIB_IMPLEMENTATION
+#ifndef _LIBLINUX_IMPLEMENTATION
 /* Some stuff from curses, to remove compiling warnings.. */
 extern "C"
 {

@@ -16,6 +16,8 @@
  *
  *  Change History (most recent first):
  *
+ *       <4>     9/25/99    CDL     linuxlib -> liblinux
+ *
  *       <3>     6/18/99    BCR     Moved the CHARACTER_SET #define here from
  *                          linuxlib.cc.  Also wrapped the #define
  *                          MACROS to prevent it from being used by
@@ -27,7 +29,6 @@
  *                          linuxlib.cc
  *       <1>     5/30/99    JDJ     Created (from config.h)
  */
-
 #ifndef APPHDR_H
 #define APPHDR_H
 
@@ -44,7 +45,7 @@
     // Most of the linux stuff applies, and so we want it
     #define LINUX
     #define PLAIN_TERM
-    #include "linuxlib.h"
+    #include "liblinux.h"
     // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
     #define CHARACTER_SET           0
 
@@ -83,7 +84,7 @@
     #define EOL "\n"
 
     #include <string>
-    #include "linuxlib.h"
+    #include "liblinux.h"
 
 // To compile with EMX for OS/2 define USE_EMX macro with compiler command line
 // (already defined in supplied makefile.emx)

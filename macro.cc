@@ -9,9 +9,9 @@
  *      <1>     -/--/--         JS              Created
  */
 
-#define _LINUXLIB_IMPLEMENTATION
+#define _LIBLINUX_IMPLEMENTATION
 #include "AppHdr.h"
-#undef _LINUXLIB_IMPLEMENTATION
+#undef _LIBLINUX_IMPLEMENTATION
 
 #define MACRO_C
 #include "macro.h"
@@ -42,11 +42,13 @@ int *i_strrev(int *str, int len);
 node_s *macro_list;
 node_s *macro_buf;
 
+
 int macro_init(void)
 {
     FILE *f;
     char *s;
     unsigned int ssize;
+
 
     macro_list = new_list();
     macro_buf = new_list();
@@ -65,9 +67,9 @@ int macro_init(void)
     if (f != NULL)
     {
         char *key;
-        signed int *rkey;
+        int *rkey;
         char *act;
-        signed int *ract;
+        int *ract;
         unsigned int a, len, rlen, tlen;
 
         /* Fixes a crash with empty macro-file. */
@@ -282,22 +284,18 @@ int macro_save(void)
 
 static int getch_mul(int size, int *buf)
 {
-    signed int a;
+    int a;
 
-    int i = 0, b;
+    int i = 0;
 
-    buf[i++] = b = a = getch();
-
-#ifndef DOS
-    b = -1;
-#endif
+    buf[i++] = a = getch();
 
     buf[i] = -1;
 
-    while ((kbhit() || b == 0) && i < size)
+    while ((kbhit() || a == 0) && i < size)
     {
         a = getch();
-        b = a;
+
         buf[i++] = a;
         buf[i] = -1;
     }
@@ -309,7 +307,7 @@ static int getch_mul(int size, int *buf)
 int getchm(void)
 {
     int buf[255];
-    signed int a;
+    int a;
 
     if ((a = macro_buf_get()) != -1)
         return a;

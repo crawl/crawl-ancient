@@ -1,10 +1,14 @@
 
 /*
- *  File:       linuxlib.cc
+ *  File:       liblinux.cc
  *  Summary:    Functions for linux, unix, and curses support
  *  Written by: ?
  *
  *  Change History (most recent first):
+ *
+ *      <5>     9/25/99         CDL     linuxlib -> liblinux
+ *                                      changes to fix "macro problem"
+                                        keypad -> command lookup
  *
  *      <4>     99/07/13        BWR     added translate_keypad(), to try and
  *                                      translate keypad escape sequences into
@@ -34,9 +38,11 @@
 #include <curses.h>
 #include <stdarg.h>
 #include <ctype.h>
-#define _LINUXLIB_IMPLEMENTATION
-#include "linuxlib.h"
+#define _LIBLINUX_IMPLEMENTATION
+#include "liblinux.h"
 #include "defines.h"
+
+#include "enum.h"
 
 
 #if defined(USE_POSIX_TERMIOS)
@@ -63,6 +69,10 @@
 // Globals holding current text/backg. colors
 short FG_COL = COLOR_WHITE;
 short BG_COL = COLOR_BLACK;
+
+// a lookup table to convert keypresses to command enums
+int key_to_command_table[ KEY_MAX ];
+
 
 
 // Translate DOS colors to curses. 128 just means use high intens./bold.
@@ -173,6 +183,169 @@ void termio_init()
 
 #endif
 
+void init_key_to_command()
+{
+  int i;
+
+  // initialize to "do nothing"
+  for ( i=0; i < KEY_MAX; i++ )
+  {
+    key_to_command_table[ i ] = CMD_NO_CMD;
+  }
+
+  // lower case
+  key_to_command_table[ 'a' ] = CMD_USE_ABILITY;
+  key_to_command_table[ 'b' ] = CMD_MOVE_DOWN_LEFT;
+  key_to_command_table[ 'c' ] = CMD_CLOSE_DOOR;
+  key_to_command_table[ 'd' ] = CMD_DROP;
+  key_to_command_table[ 'e' ] = CMD_EAT;
+  key_to_command_table[ 'f' ] = CMD_FIRE;
+  key_to_command_table[ 'g' ] = CMD_PICKUP;
+  key_to_command_table[ 'h' ] = CMD_MOVE_LEFT;
+  key_to_command_table[ 'i' ] = CMD_DISPLAY_INVENTORY;
+  key_to_command_table[ 'j' ] = CMD_MOVE_DOWN;
+  key_to_command_table[ 'k' ] = CMD_MOVE_UP;
+  key_to_command_table[ 'l' ] = CMD_MOVE_RIGHT;
+  key_to_command_table[ 'm' ] = CMD_DISPLAY_SKILLS;
+  key_to_command_table[ 'n' ] = CMD_MOVE_DOWN_RIGHT;
+  key_to_command_table[ 'o' ] = CMD_OPEN_DOOR;
+  key_to_command_table[ 'p' ] = CMD_PRAY;
+  key_to_command_table[ 'q' ] = CMD_QUAFF;
+  key_to_command_table[ 'r' ] = CMD_READ;
+  key_to_command_table[ 's' ] = CMD_SEARCH;
+  key_to_command_table[ 't' ] = CMD_THROW;
+  key_to_command_table[ 'u' ] = CMD_MOVE_UP_RIGHT;
+  key_to_command_table[ 'v' ] = CMD_GET_VERSION;
+  key_to_command_table[ 'w' ] = CMD_WIELD_WEAPON;
+  key_to_command_table[ 'x' ] = CMD_LOOK_AROUND;
+  key_to_command_table[ 'y' ] = CMD_MOVE_UP_LEFT;
+  key_to_command_table[ 'z' ] = CMD_ZAP_WAND;
+
+  // upper case
+  key_to_command_table[ 'A' ] = CMD_DISPLAY_MUTATIONS;
+  key_to_command_table[ 'B' ] = CMD_RUN_DOWN_LEFT;
+  key_to_command_table[ 'C' ] = CMD_EXPERIENCE_CHECK;
+  key_to_command_table[ 'D' ] = CMD_BUTCHER;
+  key_to_command_table[ 'E' ] = CMD_NO_CMD;
+  key_to_command_table[ 'F' ] = CMD_NO_CMD;
+  key_to_command_table[ 'G' ] = CMD_NO_CMD;
+  key_to_command_table[ 'H' ] = CMD_RUN_LEFT;
+  key_to_command_table[ 'I' ] = CMD_INVOKE;
+  key_to_command_table[ 'J' ] = CMD_RUN_DOWN;
+  key_to_command_table[ 'K' ] = CMD_RUN_UP;
+  key_to_command_table[ 'L' ] = CMD_RUN_RIGHT;
+  key_to_command_table[ 'M' ] = CMD_MEMORISE_SPELL;
+  key_to_command_table[ 'N' ] = CMD_RUN_DOWN_RIGHT;
+  key_to_command_table[ 'O' ] = CMD_DISPLAY_OVERMAP;
+  key_to_command_table[ 'P' ] = CMD_WEAR_JEWELLERY;
+  key_to_command_table[ 'Q' ] = CMD_QUIT;
+  key_to_command_table[ 'R' ] = CMD_REMOVE_JEWELLERY;
+  key_to_command_table[ 'S' ] = CMD_SAVE_GAME;
+  key_to_command_table[ 'T' ] = CMD_REMOVE_ARMOUR;
+  key_to_command_table[ 'U' ] = CMD_RUN_UP_RIGHT;
+  key_to_command_table[ 'V' ] = CMD_EXAMINE_OBJECT;
+  key_to_command_table[ 'W' ] = CMD_WEAR_ARMOUR;
+  key_to_command_table[ 'X' ] = CMD_DISPLAY_MAP;
+  key_to_command_table[ 'Y' ] = CMD_RUN_UP_LEFT;
+  key_to_command_table[ 'Z' ] = CMD_CAST_SPELL;
+
+  // control
+  key_to_command_table[   1 ] = CMD_TOGGLE_AUTOPICKUP;
+  key_to_command_table[   2 ] = CMD_OPEN_DOOR_DOWN_LEFT;
+  key_to_command_table[   3 ] = CMD_NO_CMD;
+  key_to_command_table[   4 ] = CMD_NO_CMD;
+  key_to_command_table[   5 ] = CMD_NO_CMD;
+  key_to_command_table[   6 ] = CMD_NO_CMD;
+  key_to_command_table[   7 ] = CMD_NO_CMD;
+  key_to_command_table[   8 ] = CMD_OPEN_DOOR_LEFT;
+  key_to_command_table[   9 ] = CMD_NO_CMD;
+  key_to_command_table[  10 ] = CMD_OPEN_DOOR_DOWN;
+  key_to_command_table[  11 ] = CMD_OPEN_DOOR_UP;
+  key_to_command_table[  12 ] = CMD_OPEN_DOOR_RIGHT;
+  key_to_command_table[  13 ] = CMD_NO_CMD;
+  key_to_command_table[  14 ] = CMD_OPEN_DOOR_DOWN_RIGHT;
+  key_to_command_table[  15 ] = CMD_NO_CMD;
+  key_to_command_table[  16 ] = CMD_REPLAY_MESSAGES;
+  key_to_command_table[  17 ] = CMD_NO_CMD;
+  key_to_command_table[  18 ] = CMD_REDRAW_SCREEN;
+  key_to_command_table[  19 ] = CMD_NO_CMD;
+  key_to_command_table[  20 ] = CMD_NO_CMD;
+  key_to_command_table[  21 ] = CMD_OPEN_DOOR_UP_LEFT;
+  key_to_command_table[  22 ] = CMD_NO_CMD;
+  key_to_command_table[  23 ] = CMD_NO_CMD;
+  key_to_command_table[  24 ] = CMD_SAVE_GAME_NOW;
+  key_to_command_table[  25 ] = CMD_OPEN_DOOR_UP_RIGHT;
+  key_to_command_table[  26 ] = CMD_SUSPEND_GAME;
+
+  // other printables
+  key_to_command_table[ '.' ] = CMD_MOVE_NOWHERE;
+  key_to_command_table[ '<' ] = CMD_GO_UPSTAIRS;
+  key_to_command_table[ '>' ] = CMD_GO_DOWNSTAIRS;
+  key_to_command_table[ '@' ] = CMD_EXPERIENCE_CHECK;
+  key_to_command_table[ ',' ] = CMD_PICKUP;
+  key_to_command_table[ ';' ] = CMD_INSPECT_FLOOR;
+  key_to_command_table[ '!' ] = CMD_SHOUT;
+  key_to_command_table[ '^' ] = CMD_DISPLAY_RELIGION;
+  key_to_command_table[ '#' ] = CMD_CHARACTER_DUMP;
+  key_to_command_table[ '=' ] = CMD_ADJUST_INVENTORY;
+  key_to_command_table[ '?' ] = CMD_DISPLAY_COMMANDS;
+  key_to_command_table[ '`' ] = CMD_MACRO_ADD;
+  key_to_command_table[ '~' ] = CMD_MACRO_SAVE;
+  key_to_command_table[ '(' ] = CMD_LIST_WEAPONS;
+  key_to_command_table[ ']' ] = CMD_LIST_ARMOUR;
+  key_to_command_table[ '"' ] = CMD_LIST_JEWELLERY;
+
+  key_to_command_table[ '\\' ] = CMD_DISPLAY_KNOWN_OBJECTS;
+  key_to_command_table[ '\'' ] = CMD_WEAPON_SWAP;
+
+  // digits
+  key_to_command_table[ '1' ] = CMD_MOVE_DOWN_LEFT;
+  key_to_command_table[ '2' ] = CMD_MOVE_DOWN;
+  key_to_command_table[ '3' ] = CMD_MOVE_DOWN_RIGHT;
+  key_to_command_table[ '4' ] = CMD_MOVE_LEFT;
+  key_to_command_table[ '5' ] = CMD_REST;
+  key_to_command_table[ '6' ] = CMD_MOVE_RIGHT;
+  key_to_command_table[ '7' ] = CMD_MOVE_UP_LEFT;
+  key_to_command_table[ '8' ] = CMD_MOVE_UP;
+  key_to_command_table[ '9' ] = CMD_MOVE_UP_RIGHT;
+
+  // keypad
+  key_to_command_table[ KEY_A1    ] = CMD_MOVE_UP_LEFT;
+  key_to_command_table[ KEY_A3    ] = CMD_MOVE_UP_RIGHT;
+  key_to_command_table[ KEY_C1    ] = CMD_MOVE_DOWN_LEFT;
+  key_to_command_table[ KEY_C3    ] = CMD_MOVE_DOWN_RIGHT;
+
+  key_to_command_table[ KEY_HOME  ] = CMD_MOVE_UP_LEFT;
+  key_to_command_table[ KEY_PPAGE ] = CMD_MOVE_UP_RIGHT;
+  key_to_command_table[ KEY_END   ] = CMD_MOVE_DOWN_LEFT;
+  key_to_command_table[ KEY_NPAGE ] = CMD_MOVE_DOWN_RIGHT;
+
+  key_to_command_table[ KEY_B2    ] = CMD_REST;
+
+  key_to_command_table[ KEY_UP    ] = CMD_MOVE_UP;
+  key_to_command_table[ KEY_DOWN  ] = CMD_MOVE_DOWN;
+  key_to_command_table[ KEY_LEFT  ] = CMD_MOVE_LEFT;
+  key_to_command_table[ KEY_RIGHT ] = CMD_MOVE_RIGHT;
+
+
+  // other odd things
+  // key_to_command_table[ 263 ] = CMD_OPEN_DOOR_LEFT;   // backspace
+
+  // these are invalid keys, but to help kludge running
+  // pass them through unmolested
+   key_to_command_table[ 125 ] = 125;
+   key_to_command_table[ '*' ] = '*';
+   key_to_command_table[ '/' ] = '/';
+
+}
+
+int key_to_command( int keyin )
+{
+  return key_to_command_table[ keyin ];
+}
+
+
+// cdl -- This routine is dead
 int translate_keypad( int keyin )
 {
     int  ret;
@@ -232,14 +405,23 @@ void lincurses_startup( bool use_no_black )
     sigignore(SIGQUIT);
     sigignore(SIGINT);
 #endif
+
+    //savetty();
+
     initscr();
-    savetty();
-    noecho();
-    keypad(stdscr, FALSE);
     cbreak();
+    noecho();
+
+    nonl();
+    intrflush(stdscr, FALSE);
+    keypad(stdscr, TRUE);
+    //cbreak();
+
     meta(stdscr, TRUE);
     start_color();
     setupcolorpairs( use_no_black );
+
+    init_key_to_command();
 
 #ifndef SOLARIS
     // This can cause some display problems under Solaris
@@ -261,7 +443,7 @@ void lincurses_shutdown()
     sigrelse(SIGINT);
 #endif
 
-    resetty();
+    // resetty();
     endwin();
 }
 
@@ -487,6 +669,8 @@ void delay(long time)
 int kbhit()
 {
     int i;
+
+    return 0;
 
     nodelay(stdscr, TRUE);
     i = wgetch(stdscr);

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *               <2>     9/25/99        CDL             linuxlib -> liblinux
  *               <1>     -/--/--        LRH             Created
  */
 
@@ -16,7 +17,7 @@
 #endif
 
 #ifdef LINUX
-#include "linuxlib.h"
+#include "liblinux.h"
 #endif
 
 #include "externs.h"

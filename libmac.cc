@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *      <4>     9/25/99         CDL             linuxlib -> liblinux
+ *
  *      <3>     5/30/99         JDJ             Quit only pops up save changes dialog if game_has_started is true.
  *      <2>     4/24/99         JDJ             HandleMenu calls save_game instead of returning a 'S'
  *                                                                      character ('S' now prompts). kTermHeight is now initialized
@@ -1921,7 +1923,7 @@ char *strlwr(char *str)
 //
 // itoa
 //
-// Converts an integer to a string (after linuxlib.cc).
+// Converts an integer to a string (after liblinux.cc).
 //
 //---------------------------------------------------------------
 void itoa(int value, char *buffer, int radix)

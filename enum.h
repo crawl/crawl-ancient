@@ -5,12 +5,13 @@
  *
  *  Change History (most recent first):
  *
+ *      <6>     9/25/99         CDL             Added commands
  *      <5>     9/9/99          BWR             Removed Great Swords skill
  *      <4>     8/6/99          BWR             added branch and level types
  *      <3>     6/2/99          DML             beams, clouds, ench, ms, kill,
                                                 other minor changes
  *      <2>     5/26/99         JDJ             Added a header guard.
- *      <1>     -/--/--         LRH             Created
+ *      <1>     -/--/--         CDL             Created
  */
 #ifndef ENUM_H
 #define ENUM_H
@@ -289,6 +290,95 @@ enum CLOUD_TYPES
      CLOUD_STICKY_FLAME = 10,
      CLOUD_POISON_MON = 104
 };
+
+
+enum COMMANDS
+{
+     CMD_NO_CMD = 1000,
+     CMD_MOVE_NOWHERE,
+     CMD_MOVE_LEFT,
+     CMD_MOVE_DOWN,
+     CMD_MOVE_UP,
+     CMD_MOVE_RIGHT,
+     CMD_MOVE_UP_LEFT,
+     CMD_MOVE_DOWN_LEFT,
+     CMD_MOVE_UP_RIGHT,
+     CMD_MOVE_DOWN_RIGHT,
+     CMD_RUN_LEFT,
+     CMD_RUN_DOWN,
+     CMD_RUN_UP,
+     CMD_RUN_RIGHT,
+     CMD_RUN_UP_LEFT,
+     CMD_RUN_DOWN_LEFT,
+     CMD_RUN_UP_RIGHT,
+     CMD_RUN_DOWN_RIGHT,
+     CMD_OPEN_DOOR_LEFT,
+     CMD_OPEN_DOOR_DOWN,
+     CMD_OPEN_DOOR_UP,
+     CMD_OPEN_DOOR_RIGHT,
+     CMD_OPEN_DOOR_UP_LEFT,
+     CMD_OPEN_DOOR_DOWN_LEFT,
+     CMD_OPEN_DOOR_UP_RIGHT,
+     CMD_OPEN_DOOR_DOWN_RIGHT,
+     CMD_OPEN_DOOR,
+     CMD_CLOSE_DOOR,
+     CMD_REST,
+     CMD_GO_UPSTAIRS,
+     CMD_GO_DOWNSTAIRS,
+     CMD_TOGGLE_AUTOPICKUP,
+     CMD_PICKUP,
+     CMD_DROP,
+     CMD_BUTCHER,
+     CMD_INSPECT_FLOOR,
+     CMD_EXAMINE_OBJECT,
+     CMD_INVOKE,
+     CMD_WIELD_WEAPON,
+     CMD_WEAPON_SWAP,
+     CMD_THROW,
+     CMD_FIRE,
+     CMD_WEAR_ARMOUR,
+     CMD_REMOVE_ARMOUR,
+     CMD_WEAR_JEWELLERY,
+     CMD_REMOVE_JEWELLERY,
+     CMD_LIST_WEAPONS,
+     CMD_LIST_ARMOUR,
+     CMD_LIST_JEWELLERY,
+     CMD_ZAP_WAND,
+     CMD_CAST_SPELL,
+     CMD_MEMORISE_SPELL,
+     CMD_USE_ABILITY,
+     CMD_PRAY,
+     CMD_EAT,
+     CMD_QUAFF,
+     CMD_READ,
+     CMD_LOOK_AROUND,
+     CMD_SEARCH,
+     CMD_SHOUT,
+     CMD_DISARM_TRAP,
+     CMD_CHARACTER_DUMP,
+     CMD_DISPLAY_COMMANDS,
+     CMD_DISPLAY_INVENTORY,
+     CMD_DISPLAY_KNOWN_OBJECTS,
+     CMD_DISPLAY_MUTATIONS,
+     CMD_DISPLAY_SKILLS,
+     CMD_DISPLAY_MAP,
+     CMD_DISPLAY_OVERMAP,
+     CMD_DISPLAY_RELIGION,
+     CMD_DISPLAY_CHARACTER_STATUS,
+     CMD_EXPERIENCE_CHECK,
+     CMD_GET_VERSION,
+     CMD_ADJUST_INVENTORY,
+     CMD_REPLAY_MESSAGES,
+     CMD_REDRAW_SCREEN,
+     CMD_MACRO_ADD,
+     CMD_MACRO_SAVE,
+     CMD_SAVE_GAME,
+     CMD_SAVE_GAME_NOW,
+     CMD_SUSPEND_GAME,
+     CMD_QUIT,
+     CMD_WIZARD
+};
+
 
 enum DELAY
 {

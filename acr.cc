@@ -6,6 +6,8 @@
  *  Change History (most recent first):
  *
  *
+ *     <10>     9/25/99         CDL             Changes to Linux input
+ *                                              switch on command enums
  *      <9>     6/12/99         BWR             New init code, restructured
  *                                              wiz commands, added equipment
  *                                              listing commands
@@ -405,7 +407,7 @@ void input()
 
             if (you.running > 0)
             {
-                keyin = 125;
+                keyin = 125;  // a closed curly brace
                 move_x = you.run_x;
                 move_y = you.run_y;
 
@@ -432,6 +434,7 @@ void input()
             // player has to do is find a termcap and numlock setting
             // that will get curses the numbers from the keypad.  This
             // will hopefully be easy.
+
             if (keyin == '*')
             {
                 opening = true;
@@ -443,8 +446,8 @@ void input()
                 keyin = getch();
             }
 
-            // Translate keypad codes into numeric chars
-            keyin = translate_keypad( keyin );
+            // Translate keypad codes into command enums
+            keyin = key_to_command( keyin );
 
 #else
             // Old DOS keypad support
@@ -560,165 +563,99 @@ get_keyin_again:
     int wiz_command, i, j;
 #endif
 
+
     switch (keyin)
     {
     case 25:
+    case CMD_OPEN_DOOR_UP_RIGHT:
         open_door(-1, -1);
         move_x = 0;
         move_y = 0;
         break;
     case 11:
+    case CMD_OPEN_DOOR_UP:
         open_door(0, -1);
         move_x = 0;
         move_y = 0;
         break;
     case 21:
+    case CMD_OPEN_DOOR_UP_LEFT:
         open_door(1, -1);
         move_x = 0;
         move_y = 0;
         break;
     case 12:
+    case CMD_OPEN_DOOR_RIGHT:
         open_door(1, 0);
         move_x = 0;
         move_y = 0;
         break;
     case 14:
+    case CMD_OPEN_DOOR_DOWN_RIGHT:
         open_door(1, 1);
         move_x = 0;
         move_y = 0;
         break;
     case 10:
+    case CMD_OPEN_DOOR_DOWN:
         open_door(0, 1);
         move_x = 0;
         move_y = 0;
         break;
     case 2:
+    case CMD_OPEN_DOOR_DOWN_LEFT:
         open_door(-1, 1);
         move_x = 0;
         move_y = 0;
         break;
     case 8:
+    case CMD_OPEN_DOOR_LEFT:
         open_door(-1, 0);
         move_x = 0;
         move_y = 0;
         break;
     case 'b':
+    case CMD_MOVE_DOWN_LEFT:
         move_x = -1;
         move_y = 1;
         break;
     case 'j':
+    case CMD_MOVE_DOWN:
         move_y = 1;
         move_x = 0;
         break;
     case 'u':
+    case CMD_MOVE_UP_RIGHT:
         move_x = 1;
         move_y = -1;
         break;
     case 'k':
+    case CMD_MOVE_UP:
         move_y = -1;
         move_x = 0;
         break;
     case 'y':
+    case CMD_MOVE_UP_LEFT:
         move_y = -1;
         move_x = -1;
         break;
     case 'h':
+    case CMD_MOVE_LEFT:
         move_x = -1;
         move_y = 0;
         break;
     case 'n':
+    case CMD_MOVE_DOWN_RIGHT:
         move_y = 1;
         move_x = 1;
         break;
     case 'l':
+    case CMD_MOVE_RIGHT:
         move_x = 1;
         move_y = 0;
         break;
 
-    case 'B':
-        you.run_x = -1;
-        you.run_y = 1;
-        you.running = 2;
-        break;
-    case 'J':
-        you.run_y = 1;
-        you.run_x = 0;
-        you.running = 2;
-        break;
-    case 'U':
-        you.run_x = 1;
-        you.run_y = -1;
-        you.running = 2;
-        break;
-    case 'K':
-        you.run_y = -1;
-        you.run_x = 0;
-        you.running = 2;
-        break;
-    case 'Y':
-        you.run_y = -1;
-        you.run_x = -1;
-        you.running = 2;
-        break;
-    case 'H':
-        you.run_x = -1;
-        you.run_y = 0;
-        you.running = 2;
-        break;
-    case 'N':
-        you.run_y = 1;
-        you.run_x = 1;
-        you.running = 2;
-        break;
-    case 'L':
-        you.run_x = 1;
-        you.run_y = 0;
-        you.running = 2;
-        break;
-
-#ifdef LINUX
-    // Nex Unix keypad support
-    case '1':
-        move_x = -1;
-        move_y = 1;
-        break;
-
-    case '2':
-        move_y = 1;
-        move_x = 0;
-        break;
-
-    case '9':
-        move_x = 1;
-        move_y = -1;
-        break;
-
-    case '8':
-        move_y = -1;
-        move_x = 0;
-        break;
-
-    case '7':
-        move_y = -1;
-        move_x = -1;
-        break;
-
-    case '4':
-        move_x = -1;
-        move_y = 0;
-        break;
-
-    case '3':
-        move_y = 1;
-        move_x = 1;
-        break;
-
-    case '6':
-        move_x = 1;
-        move_y = 0;
-        break;
-
-    case '5':
+    case CMD_REST:
         // Yes this is backwards, but everyone here is used to using
         // straight 5s for long rests... might need to a roguelike
         // rest key and get people switched over.
@@ -737,6 +674,58 @@ get_keyin_again:
             you.turn_is_over = 1;
         }
         break;
+
+    case 'B':
+    case CMD_RUN_DOWN_LEFT:
+        you.run_x = -1;
+        you.run_y = 1;
+        you.running = 2;
+        break;
+    case 'J':
+    case CMD_RUN_DOWN:
+        you.run_y = 1;
+        you.run_x = 0;
+        you.running = 2;
+        break;
+    case 'U':
+    case CMD_RUN_UP_RIGHT:
+        you.run_x = 1;
+        you.run_y = -1;
+        you.running = 2;
+        break;
+    case 'K':
+    case CMD_RUN_UP:
+        you.run_y = -1;
+        you.run_x = 0;
+        you.running = 2;
+        break;
+    case 'Y':
+    case CMD_RUN_UP_LEFT:
+        you.run_y = -1;
+        you.run_x = -1;
+        you.running = 2;
+        break;
+    case 'H':
+    case CMD_RUN_LEFT:
+        you.run_x = -1;
+        you.run_y = 0;
+        you.running = 2;
+        break;
+    case 'N':
+    case CMD_RUN_DOWN_RIGHT:
+        you.run_y = 1;
+        you.run_x = 1;
+        you.running = 2;
+        break;
+    case 'L':
+    case CMD_RUN_RIGHT:
+        you.run_x = 1;
+        you.run_y = 0;
+        you.running = 2;
+        break;
+
+#ifdef LINUX
+  // taken care of via key -> command mapping
 #else
     // Old DOS keypad support
     case '1':
@@ -787,6 +776,7 @@ get_keyin_again:
 #endif
 
     case '':
+    case CMD_TOGGLE_AUTOPICKUP:
       autopickup_on = !autopickup_on;
       if(autopickup_on)
         mpr("Autopickup is now on.");
@@ -795,49 +785,64 @@ get_keyin_again:
       break;
 
     case '<':
+    case CMD_GO_UPSTAIRS:
         up_stairs();
         break;
     case '>':
+    case CMD_GO_DOWNSTAIRS:
         down_stairs(0, you.your_level);
         break;
     case 'o':
+    case CMD_OPEN_DOOR:
         open_door(100, 100);
         break;
     case 'O':
+    case CMD_DISPLAY_OVERMAP:
         display_overmap();
         break;
     case 'c':
+    case CMD_CLOSE_DOOR:
         close_door(100, 100);
         break;
     case 'd':
+    case CMD_DROP:
         drop();
         break;
     case 'D':
+    case CMD_BUTCHER:
         butchery();
         break;
     case 'i':
+    case CMD_DISPLAY_INVENTORY:
         get_invent(-1);
         break;
     case 'I':
+    case CMD_INVOKE:
         invoke_wielded();
         break;
     case 'g':
     case ',':
+    case CMD_PICKUP:
         pickup();
         break;
     case ';':
+    case CMD_INSPECT_FLOOR:
         item_check(';');
         break;
     case 'w':
+    case CMD_WIELD_WEAPON:
         wield_weapon(0);
         break;
     case 't':
+    case CMD_THROW:
         throw_anything();
         break;
     case 'f':
+    case CMD_FIRE:
         shoot_thing();
         break;
     case 'T':
+    case CMD_REMOVE_ARMOUR:
         {
         int index;
         if (armour_prompt("Take off which item?", &index))
@@ -845,27 +850,35 @@ get_keyin_again:
                 }
         break;
     case 'R':
+    case CMD_REMOVE_JEWELLERY:
         remove_ring();
         break;
     case 'P':
+    case CMD_WEAR_JEWELLERY:
         puton_ring();
         break;
     case 'W':
+    case CMD_WEAR_ARMOUR:
         wear_armour();
         break;
     case '=':
+    case CMD_ADJUST_INVENTORY:
         adjust();
         return;
     case 'M':
+    case CMD_MEMORISE_SPELL:
         which_spell();
         break;
     case 'z':
+    case CMD_ZAP_WAND:
         zap_wand();
         break;
     case 'e':
+    case CMD_EAT:
         eat_food();
         break;
     case 'a':
+    case CMD_USE_ABILITY:
         species_ability();
 #ifdef PLAIN_TERM
         // If we do this we'll never see the "no abilities" message.
@@ -873,18 +886,22 @@ get_keyin_again:
 #endif
         break;
     case 'A':
+    case CMD_DISPLAY_MUTATIONS:
         display_mutations();
 #ifdef PLAIN_TERM
         redraw_screen();
 #endif
         break;
     case 'V':
+    case CMD_EXAMINE_OBJECT:
         original_name();
         break;
     case 'p':
+    case CMD_PRAY:
         pray();
         break;
     case '^':
+    case CMD_DISPLAY_RELIGION:
         if (you.religion == GOD_NO_GOD)
         {
             mpr("You aren't religious.");
@@ -896,18 +913,22 @@ get_keyin_again:
 #endif
         break;
     case '.':
+    case CMD_MOVE_NOWHERE:
         search_around();
         move_x = 0;
         move_y = 0;
         you.turn_is_over = 1;
         break;
     case 'q':
+    case CMD_QUAFF:
         drink();
         break;
     case 'r':
+    case CMD_READ:
         read_scroll();
         break;
     case 'x':
+    case CMD_LOOK_AROUND:
         mpr("Move the cursor around to observe a square.");
         mpr("Press '?' for a monster description.");
 
@@ -916,6 +937,7 @@ get_keyin_again:
         look_around(lmove);
         break;
     case 's':
+    case CMD_SEARCH:
 #ifdef WIZARD
         stethoscope(250);
         break;
@@ -924,6 +946,7 @@ get_keyin_again:
         you.turn_is_over = 1;
         break;
     case 'Z':
+    case CMD_CAST_SPELL:
         /* randart wpns */
         if (scan_randarts(RAP_PREVENT_SPELLCASTING))
         {
@@ -935,9 +958,11 @@ get_keyin_again:
 
 //              case 'M': which_spell(); break;      //memorise_spell(); break;
     case '\'':
+    case CMD_WEAPON_SWAP:
         wield_weapon(1);
         break;
     case 'X':
+    case CMD_DISPLAY_MAP:
         if (you.level_type == 1 || you.level_type == 2)
         {
             strcpy(info, "You have no idea where you are!");
@@ -951,12 +976,14 @@ get_keyin_again:
 #endif
         break;
     case '\\':
+    case CMD_DISPLAY_KNOWN_OBJECTS:
         check_item_knowledge(); //nothing = check_item_knowledge();
 #ifdef PLAIN_TERM
         redraw_screen();
 #endif
         break;
     case 16:
+    case CMD_REPLAY_MESSAGES:
         replay_messages();
 #ifdef PLAIN_TERM
         redraw_screen();
@@ -965,18 +992,21 @@ get_keyin_again:
 
 #ifdef PLAIN_TERM
     case 18:
+    case CMD_REDRAW_SCREEN:
         // CTRL-R redraws the screen
         redraw_screen();
         break;
 #endif
 
     case 24:
+    case CMD_SAVE_GAME_NOW:
         mpr("Saving game... please wait");
         save_game(1);
         break;
 
 #ifdef USE_UNIX_SIGNALS
     case 26:
+    case CMD_SUSPEND_GAME:
         // CTRL-Z suspend behaiour is implemented here.
         // because we want to have CTRL-Y available...
         // we have to stop both from sending the signals,
@@ -990,12 +1020,14 @@ get_keyin_again:
 #endif
 
     case '?':
+    case CMD_DISPLAY_COMMANDS:
         list_commands();
 #ifdef PLAIN_TERM
         redraw_screen();
 #endif
         break;
     case 'C':
+    case CMD_EXPERIENCE_CHECK:
         strcpy(info, "You are a level ");
         itoa(you.experience_level, st_prn, 10);
         strcat(info, st_prn);
@@ -1021,14 +1053,17 @@ get_keyin_again:
         mpr(info);
         break;
     case '!':
+    case CMD_SHOUT:
         yell();                 /* in effects.cc */
         break;
     case '@':
+    case CMD_DISPLAY_CHARACTER_STATUS:
         display_char_status();
         break;
 
 
     case 'm':
+    case CMD_DISPLAY_SKILLS:
         show_skills();
 #ifdef PLAIN_TERM
         redraw_screen();
@@ -1038,6 +1073,7 @@ get_keyin_again:
 //  case '^': disarm_trap(); break;
 
     case '#':
+    case CMD_CHARACTER_DUMP:
         char name_your[kNameLen];
 
         strncpy(name_your, you.your_name, kFileNameLen);
@@ -1051,9 +1087,11 @@ get_keyin_again:
 
 #ifdef MACROS
     case '`':
+    case CMD_MACRO_ADD:
         macro_add_query();
         break;
     case '~':
+    case CMD_MACRO_SAVE:
         mpr("Saving macros.");
         macro_save();
         break;
@@ -1155,47 +1193,29 @@ get_keyin_again:
  */
 
     case ')':
+    case CMD_LIST_WEAPONS:
         list_weapons();
         return;
 
     case ']':
+    case CMD_LIST_ARMOUR:
         list_armour();
         return;
 
     case '"':
+    case CMD_LIST_JEWELLERY:
         list_jewellery();
         return;
 
 #ifdef WIZARD
     case 23:
+    case CMD_WIZARD:
     case '&': // for DOS people like me who don't know what ASCII 23 is (LH)
         mpr( "Enter Wizard Command: " );
         wiz_command = getch();
 
         switch (wiz_command) {
         case '&':
-            //cdl
-            mpr("0");
-            mpr("1");
-            mpr("2");
-            mpr("3");
-            mpr("4");
-            mpr("5");
-            mpr("6");
-            mpr("7");
-            mpr("8");
-            mpr("9");
-            mpr("10");
-            mpr("11");
-            mpr("12");
-            mpr("13");
-            mpr("14");
-            mpr("15");
-            mpr("16");
-            mpr("17");
-            mpr("18");
-            mpr("19");
-            mpr("20");
             break;
         case 'x':
             you.experience += 500;
@@ -1397,6 +1417,7 @@ get_keyin_again:
 #endif
 
     case 'S':
+    case CMD_SAVE_GAME:
         mpr("Save game and exit?");
         save_key = getch();
         if (save_key != 'y')
@@ -1405,15 +1426,18 @@ get_keyin_again:
         break;
 
     case 'Q':
+    case CMD_QUIT:
         quit_game();
         break;
     case 'v':
+    case CMD_GET_VERSION:
         version();
         break;
     case '}':
-//        Can't use this char
+//        Can't use this char -- it's the special value 125
         break;
     default:
+    case CMD_NO_CMD:
         strcpy(info, "Unknown command.");
         mpr(info);
         break;
@@ -1453,6 +1477,7 @@ get_keyin_again:
         viewwindow(1, false);
         return;
     }
+
 
 //if (random2(10) < you.skills [SK_TRAPS_DOORS] + 2) search_around();
 

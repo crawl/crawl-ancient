@@ -1,24 +1,27 @@
-# Make file for Dungeon Crawl (linux port only for now)
+# Make file for Dungeon Crawl (linux port)
 
 C_COMP = g++
-C_ARGS = -Wall -O -DSOLARIS
-L_ARGS = -s
+C_ARGS = -Wall -O -DLINUX
+L_ARGS = -static
 MCHMOD = 2755
 GROUP = games
 INSTALLDIR = /opt/crawl/bin
-LIB = -lcurses
+LIB = -lncurses -lgdbm
 
 OBJECTS = ability.o acr.o bang.o beam.o chardump.o command.o debug.o \
 	    decks.o describe.o direct.o dungeon.o effects.o fight.o \
 	    files.o food.o invent.o it_use2.o it_use3.o item_use.o \
-	    itemname.o items.o levels.o linuxlib.o llist.o macro.o \
+	    itemname.o items.o levels.o liblinux.o llist.o macro.o \
 	    maps.o message.o misc.o monplace.o mons_lev.o monstuff.o \
 	    mstruct.o mstuff2.o mutation.o newgame.o ouch.o output.o \
 	    player.o abyss.o randart.o religion.o rumours.o shopping.o \
 	    skills.o skills2.o spell.o spells.o spells0.o spells1.o \
-	    spells2.o spells3.o stuff.o transfor.o view.o initfile.o
+	    spells2.o spells3.o stuff.o transfor.o view.o initfile.o \
+            overmap.o
 
 #INCLUDE = -I/opt/include/
+INCLUDE = -I/usr/include/ncurses
+
 
 all:            crawl
 

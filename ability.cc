@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *      <4>      9/25/99        CDL             linuxlib -> liblinux
+ *
  *      <3>      5/20/99        BWR             Now use scan_randarts to
  *                                              check for flags, rather than
  *                                              only checking the weapon.
@@ -23,7 +25,7 @@
 #endif
 
 #ifdef LINUX
-#include "linuxlib.h"
+#include "liblinux.h"
 #endif
 
 #ifdef USE_CURSES

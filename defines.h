@@ -12,6 +12,7 @@
  *
  *  Change History (most recent first):
  *
+ *       <3>     9/25/99        CDL             linuxlib -> liblinux
  *       <2>     6/17/99        BCR             indented and added header
  *       <1>     --/--/--       LRH             Created
  */
@@ -22,7 +23,7 @@
   #define NO_EQUIP 10
 
   // there's got to be a better way...
-  #ifdef _LINUXLIB_IMPLEMENTATION
+  #ifdef _LIBLINUX_IMPLEMENTATION
   #elif macintosh
   #else
 
