@@ -484,18 +484,20 @@ void cards(unsigned char which_card)
         create_monster(MONS_UNSEEN_HORROR, 21, 7, you.x_pos, you.y_pos, MHITYOU, 250);
         break;
     case 31:                    // Blink
-
         mpr("You have drawn Blink.");
         random_blink();
         break;
+
     case 32:
         mpr("You have drawn the Portal of Delayed Transposition.");
         you_teleport();
         break;
+
     case 33:
         mpr("You have drawn the Portal of Instantaneous Transposition.");
         you_teleport2(1);
         break;
+
     case 34:
         mpr("You have drawn Rage.");
         if (go_berserk() == 0) {

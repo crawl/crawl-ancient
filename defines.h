@@ -12,8 +12,8 @@
  *
  *  Change History (most recent first):
  *
- *               <2>     6/17/99        BCR             indented and added header
- *               <1>     --/--/--       LRH             Created
+ *       <2>     6/17/99        BCR             indented and added header
+ *       <1>     --/--/--       LRH             Created
  */
 
 #ifndef DEFINES_H

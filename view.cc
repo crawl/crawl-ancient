@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <5>      6/22/99        BWR             Fixed and improved the stealth
  *      <4>      5/20/99        BWR             show_map colours all portals,
  *                                              exits from subdungeons now
  *                                              look like up stairs.
@@ -45,7 +46,7 @@
 void moname(int mcl, char mench, char see_inv, char descrip, char glog[40]);
 
 void item(void);
-void monster_grid(void);
+void monster_grid( bool do_updates );
 void noisy(char loudness, char nois_x, char nois_y);
 void cloud_grid(void);
 int check_awaken(int mons_aw);
@@ -504,8 +505,12 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
 //
 // Draws the main window using the extended IBM character set.
 //
+// This function should not interfer with the game condition,
+// unless do_updates is set (ie.  stealth checks for visible
+// monsters).
+//
 //---------------------------------------------------------------
-void viewwindow2(char draw_it)
+void viewwindow2(char draw_it, bool do_updates)
 {
     const long BUFFER_SIZE = 1550;
     unsigned char buffy[BUFFER_SIZE];   //[800]; //392];
@@ -532,7 +537,7 @@ void viewwindow2(char draw_it)
 
     item();
     cloud_grid();
-    monster_grid();
+    monster_grid( do_updates );
     int bufcount = 0;
 
     if (draw_it == 1)
@@ -659,12 +664,18 @@ void viewwindow2(char draw_it)
 }
 
 
-void monster_grid()
+void monster_grid( bool do_updates )
 {
 
     int s;                      // a loop thing
 
     int mnc = 0;
+
+#ifdef DEBUG
+    if (do_updates) {
+        mpr( "Stealth checks..." );
+    }
+#endif
 
     for (s = 0; s < MNST; s++)
     {
@@ -677,15 +688,18 @@ void monster_grid()
             if (menv[s].x > you.x_pos - 9 && menv[s].x < you.x_pos + 9 && menv[s].y > you.y_pos - 9 && menv[s].y < you.y_pos + 9 && env.show[menv[s].x - you.x_pos + 9][menv[s].y - you.y_pos + 9] != 0)
                 // Put the bit commented out on the previous line back to restore shadow checking for monsters
             {
-                if ((menv[s].behavior == 0 || menv[s].behavior == 2) && check_awaken(s) == 1)
+                if (do_updates && (menv[s].behavior == BEH_SLEEP
+                                        || menv[s].behavior == BEH_WANDER)
+                               && check_awaken(s))
                 {
                     menv[s].behavior = 1;       // put stealth/you.invis here.
 
                     menv[s].target_x = you.x_pos;
                     menv[s].target_y = you.y_pos;
-                    if (you.turn_is_over == 1 && mons_shouts(menv[s].type) > 0)
+
+                    if (you.turn_is_over == 1 && mons_shouts(menv[s].type) > 0
+                                    && you.skills[SK_STABBING] >= random2(50))
                     {
-                        // two-headed ogre
                         switch (mons_shouts(menv[s].type))
                         {
                         case 1:
@@ -2065,11 +2079,8 @@ void draw_border(int bord_col, char your_name[kNameLen], char class_name[40], ch
 
     print_it2[39] = 0;
 
-#ifdef LINUX
-    textcolor(WHITE);
-#else
     textcolor(LIGHTGREY);
-#endif
+
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
 #endif
@@ -2931,7 +2942,7 @@ bool mons_near(unsigned char monst)
    This is the viewwindow function for computers without IBM graphic displays.
    It is activated by a command line argument, which sets a function pointer.
  */
-void viewwindow3(char draw_it)
+void viewwindow3(char draw_it, bool do_updates)
 {
 
     int bufcount = 0;
@@ -2945,6 +2956,7 @@ void viewwindow3(char draw_it)
 
     losight(env.show, env.grid, you.x_pos, you.y_pos);
 
+
     for (count_x = 0; count_x < 18; count_x++)
     {
         for (count_y = 0; count_y < 18; count_y++)
@@ -2955,7 +2967,7 @@ void viewwindow3(char draw_it)
 
     item();
     cloud_grid();
-    monster_grid();
+    monster_grid( do_updates );
     bufcount = 0;
 
 
@@ -2985,10 +2997,12 @@ void viewwindow3(char draw_it)
                         buffy[bufcount + 1] = env.rock_colour;
                         showed = '#';
                         break;  // rock wall - remember earth elementals
+
                     case 2:
                         buffy[bufcount + 1] = LIGHTGREY;
                         showed = '#';
                         break;  // stone wall
+
                     case 3:
                         showed = '+';
                         break;
@@ -2998,23 +3012,28 @@ void viewwindow3(char draw_it)
                         break;
                     case 5:
                         showed = '#';   // hidden secret door
+
                         buffy[bufcount + 1] = env.rock_colour;
                         break;
                     case 6:
                         showed = '#';
                         buffy[bufcount + 1] = GREEN;
                         break;  // green crystal wall
+
                     case 7:
                         showed = '8';
                         buffy[bufcount + 1] = DARKGREY;         // orcish idol
+
                         break;
                     case 8:
                         showed = '#';
                         buffy[bufcount + 1] = YELLOW;
                         break;  // wax wall
+
                     case 21:
                         showed = '8';
                         buffy[bufcount + 1] = WHITE;    // silver statue
+
                         if (visible[1] == 0)
                             visible[1] = 3;
                         else
@@ -3024,10 +3043,12 @@ void viewwindow3(char draw_it)
                     case 22:
                         showed = '8';
                         buffy[bufcount + 1] = LIGHTGREY;        // granite statue
+
                         break;
                     case 23:
                         showed = '8';
                         buffy[bufcount + 1] = LIGHTRED;         // orange crystal statue
+
                         if (visible[2] == 0)
                             visible[2] = 3;
                         else
@@ -3040,35 +3061,45 @@ void viewwindow3(char draw_it)
                     case 61:
                         showed = '{';
                         buffy[bufcount + 1] = RED;      // lava!
+
                         break;
                     case 62:
                         showed = '{';   // this wavy thing also used for water elemental
                         // note that some monsters which use IBM graphics aren't set for this function - too tricky for now.
+
                         buffy[bufcount + 1] = BLUE;     // water
+
                         break;
                     case 65:
                         showed = '{';
                         buffy[bufcount + 1] = CYAN;     // shallow water
+
                         break;
+
                     case 67:
                         buffy[bufcount + 1] = env.floor_colour;         //LIGHTGREY;
+
                         showed = '.';
                         break;
                     case 69:
                         showed = '\\';
                         buffy[bufcount + 1] = RED;
                         break;  // staircase to hell
+
                     case 70:
                         showed = 39;
                         break;  // open door
+
                     case 71:
                         showed = '>';
                         buffy[bufcount + 1] = BROWN;
                         break;  // branch staircase
+
                     case 75:
                         buffy[bufcount + 1] = 11;
                         showed = 94;
                         break;  // ^ dart trap
+
                     case 76:
                         buffy[bufcount + 1] = MAGENTA;
                         showed = 94;
@@ -3081,6 +3112,7 @@ void viewwindow3(char draw_it)
                         showed = '.';
                         buffy[bufcount + 1] = env.floor_colour;
                         break;  // undiscovered trap
+
                     case 80:
                         showed = '\\';
                         buffy[bufcount + 1] = YELLOW;
@@ -3090,8 +3122,10 @@ void viewwindow3(char draw_it)
                         showed = '\\';
                         buffy[bufcount + 1] = LIGHTGREY;
                         break;  // labyrinth
+
                     case 85:
                         buffy[bufcount + 1] = BROWN;    // ladder
+
                     case 82:
                     case 83:
                     case 84:
@@ -3099,51 +3133,63 @@ void viewwindow3(char draw_it)
                         break;
                     case 89:
                         buffy[bufcount + 1] = BROWN;    // ladder
+
                     case 86:
                     case 87:
                     case 88:
                         showed = '<';
                         break;
+
                     case 92:
                         buffy[bufcount + 1] = CYAN;
                         showed = '\\';
                         break;  // Stairway to Dis
+
                     case 93:
                         buffy[bufcount + 1] = RED;
                         showed = '\\';
                         break;  // Gehenna
+
                     case 94:
                         buffy[bufcount + 1] = LIGHTCYAN;
                         showed = '\\';
                         break;  // Cocytus
+
                     case 95:
                         buffy[bufcount + 1] = DARKGREY;
                         showed = '\\';
                         break;  // Tartarus
+
                     case 96:
                         buffy[bufcount + 1] = random2(16);
                         showed = '\\';
                         break;  // To Abyss
+
                     case 97:
                         buffy[bufcount + 1] = random2(16);
                         showed = '\\';
                         break;  // From Abyss
+
                     case 98:
                         buffy[bufcount + 1] = LIGHTGREY;
                         showed = '\\';
                         break;  // Closed gate to hell
+
                     case 99:
                         buffy[bufcount + 1] = LIGHTBLUE;
                         showed = '\\';
                         break;  // gate to pandemonium
+
                     case 100:
                         buffy[bufcount + 1] = LIGHTBLUE;
                         showed = '\\';
                         break;  // gate out of pandemonium
+
                     case 101:
                         buffy[bufcount + 1] = LIGHTGREEN;
                         showed = '\\';
                         break;  // gate to other part of pandemonium
+
                     case 110:
                     case 111:
                     case 112:
@@ -3163,10 +3209,12 @@ void viewwindow3(char draw_it)
                         buffy[bufcount + 1] = YELLOW;
                         showed = '>';
                         break;  // stair to orc mine
+
                     case 117:
                         buffy[bufcount + 1] = MAGENTA;
                         showed = '\\';
                         break;
+
                     case 130:
                     case 131:
                     case 132:
@@ -3186,10 +3234,14 @@ void viewwindow3(char draw_it)
                         buffy[bufcount + 1] = YELLOW;
                         showed = '<';
                         break;  // stairs out of sub-dungeons
+
                     case 137:
                         buffy[bufcount + 1] = MAGENTA;
                         showed = '\\';
                         break;
+
+
+
                     case 180:
                         buffy[bufcount + 1] = WHITE;
                         showed = '_';
@@ -3248,6 +3300,7 @@ void viewwindow3(char draw_it)
                         buffy[bufcount + 1] = LIGHTGREY;
                         showed = '_';
                         break;  /* Altar to Elyvilon */
+
                     case 200:
                         buffy[bufcount + 1] = BLUE;
                         showed = '}';
@@ -3264,65 +3317,85 @@ void viewwindow3(char draw_it)
                         buffy[bufcount + 1] = LIGHTGREY;
                         showed = '}';
                         break;  /* dry fountain */
+
                     case 210:
                         buffy[bufcount + 1] = LIGHTGREY;
                         showed = '}';
                         break;  /* permenantly dry fountain */
+
                     case 256:
                         showed = '0';
                         break;
+
                     case 257:
                         buffy[bufcount + 1] = CYAN;
                         showed = '~';
                         break;  /* Invis creature walking through water */
+
                     case 258:
                         showed = 41;
                         break;  // weapon )
+
                     case 259:
                         showed = 91;
                         break;  // armour [
+
                     case 260:
                         showed = 47;
                         break;  // food %
+
                     case 261:
                         showed = 37;
                         break;  // wands / &c
+
                     case 262:
                         showed = 43;
                         break;  // books +
+
                     case 263:
                         showed = 63;
                         break;  // scroll ?
+
                     case 264:
                         showed = 61;
                         break;  // ring = etc
+
                     case 265:
                         showed = 33;
                         break;  // potions !
+
                     case 266:
                         showed = 40;
                         break;  // stones
+
                     case 267:
                         showed = ':';
                         break;  // book +
+
                     case 268:
                         showed = 37;
                         break;  // corpses part 1
+
                     case 269:
                         showed = '|';
                         break;  // magical staves
+
                     case 270:
                         showed = '}';
                         break;  // gems
+
                     case 271:
                         showed = '%';
                         break;  // don't know ?
+
                     case 272:
                         showed = 36;
                         break;  // $ gold
+
                     case 273:
                         showed = '"';
                         break;  // amulet
+
                     default:
                         int mnr = env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9];
 

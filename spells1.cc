@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *      <3>      6/22/99        BWR             Removed teleport control from
+ *                                              random_blink().
  *      <2>      5/20/99        BWR             Increased greatest healing.
  *      <1>      -/--/--        LRH             Created
  */
@@ -136,11 +138,14 @@ void random_blink(void)
     }
 
 
-    if (you.attribute[ATTR_CONTROL_TELEPORT] != 0 && you.conf == 0)
-    {
-        blink();
-        return;
-    }
+// This is a bit too powerful.
+/*
+ *  if (you.attribute[ATTR_CONTROL_TELEPORT] != 0 && you.conf == 0)
+ *  {
+ *      blink();
+ *      return;
+ *  }
+ */
 
     if (random_near_space(passed) == 0 || (you.x_pos == passed[0] && you.y_pos == passed[1]))
     {
@@ -275,7 +280,7 @@ void cast_fire_storm(int powc)
 
     }                           /* end of stx */
 
-    viewwindow(1);
+    viewwindow(1, false);
 
 }                               /* end of cast_fire_storm */
 

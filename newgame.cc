@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <6>      6/22/99        BWR             Added new rangers/slingers
  *      <5>      6/17/99        BCR             Removed some Linux/Mac filename
  *                                              weirdness
  *      <4>      6/13/99        BWR             sys_env support
@@ -58,6 +59,7 @@
 #include "skills2.h"
 #include "stuff.h"
 #include "version.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif
@@ -157,6 +159,7 @@ name_q:
         echo();
         getstr(your_nam);
         noecho();
+
 #elif defined(MAC)
         getstr(your_nam, sizeof(your_nam));
 
@@ -166,6 +169,7 @@ name_q:
 
         strncpy( you.your_name, your_nam, kNameLen );
     }
+
 
 // *BCR* #ifdef LINUX
 /*
@@ -187,14 +191,14 @@ name_q:
         goto name_q;
     }
 
-
 // *BCR* #else
 /*
- * And why check for a filename called bones only when not on Linux?
+ * And why check for a filename called bones onlt when not on Linux?
  */
 
-// if SAVE_DIR_PATH exists, the userid will be tacked onto the end of the character
-// file, making bones a valid player name
+// if SAVE_DIR_PATH is defined, the userid will be taccked onto the end of
+// the character's files, making bones a valid player name.
+
 #ifndef SAVE_DIR_PATH
     /* this would cause big probs with ghosts */
     if (strcmp(you.your_name, "bones") == 0 || strlen(you.your_name) == 0)
@@ -203,27 +207,17 @@ name_q:
         goto name_q;
     }
 #endif
+
     unsigned int glorpo = 0;
 
     for (glorpo = 0; glorpo < strlen(you.your_name); glorpo++)
     {
-
 #ifdef MAC
         if (you.your_name[glorpo] == ':')    // colon is Mac path seperator
 
         {                       // $$$ shouldn't DOS and Unix path seperators be illegal?
 
             cprintf(EOL "No colons, please." EOL);
-            goto name_q;
-        }
-// *BCR* #else
-/*
- * Both of these are Mac stuff, so why the else?
- */
-        if (you.your_name[glorpo] == ' ')    // spaces are OK in Mac file names
-
-        {
-            cprintf(EOL "No spaces, please." EOL);
             goto name_q;
         }
 #endif
@@ -233,7 +227,7 @@ name_q:
             goto name_q;
         }
     }
-// *BCR* #endif
+// *BCR #endif
 /*
  * This was the #endif for the #ifdef LINUX above
  */
@@ -559,7 +553,7 @@ switch_start:
    case 6: cprintf("Paladin"); break;
    case 7: cprintf("assassin"); break;
    case 8: cprintf("Berserker"); break;
-   case 9: cprintf("Ranger"); break;
+   case 9: cprintf("ranger"); break;
    case 10: cprintf("conjurer"); break;
    case 11: cprintf("enchanter"); break;
    case 12: cprintf("Fire Elementalist"); break;
@@ -620,7 +614,7 @@ switch_start:
             cprintf("Berserker");
             break;
         case JOB_RANGER:
-            cprintf("Ranger");
+            cprintf("ranger");
             break;
         case JOB_CONJURER:
             cprintf("conjurer");
@@ -1328,6 +1322,7 @@ getkey:
             you.inv_dam[2] = 0;
             you.inv_colour[2] = LIGHTCYAN;
         }
+
         you.strength += 7;
         you.dex += 3;
         you.equip[EQ_WEAPON] = 0;
@@ -1340,8 +1335,8 @@ getkey:
             you.skills[SK_DODGING] = 3;
         else
             you.skills[SK_ARMOUR] = 3;
+/* you.evasion ++; */
         you.skills[SK_SHIELDS] = 2;
-
         break;
 
 
@@ -1665,7 +1660,7 @@ getkey:
 
     case JOB_RANGER:            // Ranger
 
-        strcpy(you.class_name, "Ranger");
+        strcpy(you.class_name, "ranger");
         you.hp = 13;
         you.hp_max = 13;
         you.magic_points = 0;
@@ -1692,7 +1687,8 @@ getkey:
         you.inv_dam[1] = 0;
         you.inv_colour[1] = BROWN;
 
-        you.inv_quantity[2] = 15 + random() % 5 + random() % 5 + random() % 5 + random() % 5 + random() % 5;
+        you.inv_quantity[2] = 15 + random() % 5 + random() % 5 + random() % 5
+                                                + random() % 5 + random() % 5;
         you.inv_class[2] = OBJ_MISSILES;
         you.inv_type[2] = MI_ARROW;
         you.inv_plus[2] = 50;
@@ -1718,13 +1714,52 @@ getkey:
 /* you.res_magic = 4; */
 
         you.skills[SK_FIGHTING] = 2;
-        you.skills[SK_DODGING] = 1;
-/* if (you.skills [SK_DODGING] == 2) you.evasion ++; */
-        you.skills[SK_STEALTH] = 1;
-        you.skills[SK_STABBING + random() % 2]++;
         you.skills[SK_THROWING] = 2;
-        you.skills[SK_BOWS] = 2;
         you.skills[SK_SPELLCASTING] = 1;
+
+        switch (you.species)
+        {
+            case SP_HALFLING:
+            case SP_GNOME:
+                you.inv_type[1] = WPN_SLING;
+                you.inv_type[2] = MI_STONE;
+                you.inv_colour[2] = BROWN;
+
+                you.skills[SK_DODGING] = 2;
+                you.skills[SK_STEALTH] = 2;
+                you.skills[SK_SLINGS] = 2;
+                break;
+
+            case SP_HILL_DWARF:
+            case SP_MOUNTAIN_DWARF:
+            case SP_HILL_ORC:
+                you.inv_type[1] = WPN_CROSSBOW;
+                you.inv_type[2] = MI_BOLT;
+
+                if (you.species == SP_HILL_ORC)
+                {
+                    you.inv_type[0] = WPN_SHORT_SWORD;
+                    you.skills[SK_SHORT_BLADES] = 1;
+                }
+                else
+                {
+                    you.inv_type[0] = WPN_HAND_AXE;
+                    you.skills[SK_AXES] = 1;
+                }
+
+                you.skills[SK_SHIELDS] = 1;
+                you.skills[SK_CROSSBOWS] = 2;
+                break;
+
+            default:
+                you.skills[SK_DODGING] = 1;
+                you.skills[SK_STEALTH] = 1;
+                you.skills[SK_STABBING + random() % 2]++; // stabbing or shield
+                you.skills[SK_BOWS] = 2;
+                break;
+        }
+
+
         break;
 
     case JOB_CONJURER:          // Conjurer
@@ -2871,7 +2906,6 @@ getkey:
     }
 
 
-
     if (you.char_class == JOB_WIZARD || you.char_class == JOB_CONJURER)
         you.spells[0] = SPELL_MAGIC_DART;
     if (you.char_class == JOB_NECROMANCER)
@@ -2884,7 +2918,6 @@ getkey:
         you.spells[0] = SPELL_FREEZE;
     if (you.char_class == JOB_SUMMONER)
         you.spells[0] = SPELL_SUMMON_SMALL_MAMMAL;
-
 
     if (you.spells[0] != 210)
         you.spell_no = 1;
@@ -3227,14 +3260,13 @@ char class_allowed(char speci, char char_class)
 
         switch (speci)
         {
-        case SP_HUMAN:
+        case SP_HUMAN:              // these use bows
         case SP_ELF:
         case SP_HIGH_ELF:
         case SP_GREY_ELF:
         case SP_SLUDGE_ELF:
-        case SP_HILL_ORC:
         case SP_NAGA:
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3245,14 +3277,19 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
-        case SP_CENTAUR:        /* Centaur */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_MINOTAUR:       // minotaur
+        case SP_UNK2_DRACONIAN:
+        case SP_CENTAUR:
+        case SP_DEMIGOD:
+        case SP_MINOTAUR:
+        case SP_DEMONSPAWN:
+        case SP_KENKU:
 
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_HILL_DWARF:         // these use crossbows
+        case SP_MOUNTAIN_DWARF:
+        case SP_HILL_ORC:
 
-        case SP_KENKU:          // Kenku
+        case SP_GNOME:              // these are slingers
+        case SP_HALFLING:
 
             return 1;
         }

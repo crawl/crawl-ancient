@@ -1215,7 +1215,7 @@ void missile(struct bolt beam[1], int throw_2)
                 if (beam[0].bx > you.x_pos - 9 && beam[0].bx < you.x_pos + 9 && beam[0].by > you.y_pos - 9 && beam[0].by < you.y_pos + 9)
                 {
 #ifdef DOS_TERM
-                    viewwindow(1);
+                    viewwindow(1, false);
 #endif
                     textcolor(beam[0].colour);
                     gotoxy(beam[0].bx - you.x_pos + 18, beam[0].by - you.y_pos + 9);
@@ -1923,7 +1923,7 @@ void mass_enchantment(int wh_enchant, int pow)
     int p;
     char brek = 0;
 
-    viewwindow(0);
+    viewwindow(0, false);
     for (i = 0; i < MNST; i++)
     {
         if (menv[i].type == -1)

@@ -26,6 +26,7 @@
 
 #include "externs.h"
 #include "enum.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif

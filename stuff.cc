@@ -131,7 +131,7 @@ void redraw_screen(void)
 
     new_level();
 
-    viewwindow(1);
+    viewwindow(1, false);
 
 
 }

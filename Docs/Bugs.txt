@@ -1,23 +1,25 @@
 Bugs:
 
-* Macro code does not work properly in Linux.  When enabled, the user must hit
-  two keys before any actions are executed, instead of having their actions executed
-  immediately after each keystroke.  Quick fix is to disable macros from the Linux
-  build, but eventually we want to get them working on Linux.
+* Macro code does not work properly in Linux.  When enabled, the user
+  must hit two keys before any actions are executed, instead of having
+  their actions executed immediately after each keystroke.  Quick fix is
+  to disable macros from the Linux build, but eventually we want to get
+  them working on Linux.
 
 * From the code it appears that dropping items takes zero time...
 
 * Currently possible to gain 0hp when gaining a level... should
-be safeguards added to make sure this is at least never negative,
-if not guaranteeing 1hp / level.
+  be safeguards added to make sure this is at least never negative,
+  if not guaranteeing 1hp / level.
 
 * If you have teleport control you'll see a prompt that says, "You may
-choose your destination (press '.' or delete to select)". I somehow got
-into the habit of immediately blowing by this prompt without ever reading
-it so I was always flailing around whenever I tried to teleport. I've
-changed show_map() so that it accepts '\r' as well as '.' which should be
-much more intuitive, but I don't see a check for the delete key in
-show_map() so I think the prompt is wrong.
+  choose your destination (press '.' or delete to select)". I somehow got
+  into the habit of immediately blowing by this prompt without ever reading
+  it so I was always flailing around whenever I tried to teleport. I've
+  changed show_map() so that it accepts '\r' as well as '.' which should be
+  much more intuitive, but I don't see a check for the delete key in
+  show_map() so I think the prompt is wrong.
+
 
 * Armour skill advances too slowly?
         >People here were never using heavy armour... banded, splint, scale,
@@ -301,10 +303,11 @@ that will light after waiting a turn.
    at the transform value when the player has no armour (calculated
    correctly once armour is on).
 
-* still seems to be a problem with displayed food status not showing
-
 * Using stairs/portals sometimes misplaces the player (either into
   solid rock, or onto bogus levels (level 28 of the dungeon, level
   -1 of a sub-dungeon).
 
 * The fact that ghost can't follow the player up stairs is a problem.
+  Suggested solution is to teleport the ghost away and heal it.
+
+* Giant spores should affect food on ground as well as in inventory

@@ -1,5 +1,9 @@
 Enhancements:
 
+* fix the summoning abuse problem properly.  Ideally, the player should
+  not get piety for killing things he summoned, but should get piety
+  for things that are summoned against him.
+
 * Add a wizard debugging function to output several thousand items for
 a particular depth (should make item frequency tuning easier).
 

@@ -533,22 +533,18 @@ char your_spells(int spc2, int powc, char allow_fail)
         break;
 
     case 44:                    // mass you.conf
-
         mass_enchantment(5, powc);
         break;
 
     case 45:                    // smite
-
         cast_smiting(powc);
         break;
 
     case 46:                    // repel undead
-
         turn_undead(50);
         break;
 
     case 47:                    // holy word
-
         holy_word(50);
 //   you.conf += random2(3) + 2;
         break;
@@ -570,7 +566,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         break;
 
     case 52:                    // levitation
-
         potion_effect(POT_LEVITATION, 40);
         break;
 
@@ -593,17 +588,14 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;               // bolt of inaccuracy
 
     case 56:                    // you.poison cloud
-
         cast_big_c(powc, 4);
         return 1;
 
     case 57:                    // fire storm
-
         cast_fire_storm(powc);
         return 1;
 
     case 58:                    // detect_traps
-
         if (detect_traps() > 0)
         {
             strcpy(info, "You detect some traps!");
@@ -614,24 +606,20 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 59:                    // random blink
-
         random_blink();
         return 1;
 
     case 60:                    // Mystic blast
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_ORB_OF_ENERGY, powc, beam);
         return 1;
 
     case 61:                    // Swarm
-
         summon_swarm(powc);
         return 1;
 
     case 62:                    // Summon Things
-
         if (player_sust_abil() != 0 || you.intel == 3)
         {
             strcpy(info, "Your call goes unanswered.");
@@ -648,7 +636,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;               // enslavement
 
     case 64:                    // magic mapping
-
         if (you.level_type == 1 || you.level_type == 2)
         {
             strcpy(info, "You feel momentarily disoriented.");
@@ -666,7 +653,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 65:                    // heal other
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         if (beam[0].move_x == 0 && beam[0].move_y == 0)
@@ -679,7 +665,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 66:                    // Animate Dead
-
         strcpy(info, "You call on the dead to walk for you.");
         mpr(info);
         animate_dead(powc + 1, 7, you.pet_target, 1);
@@ -704,71 +689,58 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 70:                    // animate skeleton
-
         strcpy(info, "You attempt to give life to the dead...");
         mpr(info);
         animate_a_corpse(you.x_pos, you.y_pos, 7, you.pet_target, 1);
         return 1;
 
     case 71:                    // vampiric draining
-
         vampiric_drain(powc);
         return 1;
 
     case 72:                    // Summon greater undead
-
         summon_undead(powc);
         return 1;
 
     case 73:                    // detect_items
-
         detect_items(50);
         return 1;
 
     case 74:                    // reviv
-
         cast_revivification(powc);
         return 1;
 
     case 75:                    // burn
-
         burn_freeze(powc, 2);
         return 1;
 
     case 76:                    // freeze
-
         burn_freeze(powc, 3);
         return 1;
 
     case 77:                    // summon elemental
-
         summon_elemental(powc, 0, 2);
         break;
 
     case 78:                    // refr
-
         cast_refrigeration(powc);
         return 1;
 
     case 79:                    // sticky flame
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_STICKY_FLAME, powc, beam);
         return 1;
 
     case 80:                    // ice beast
-
         summon_ice_beast_etc(powc, 34);
         return 1;
 
     case 81:                    // ice armour
-
         ice_armour(powc, 0);
         return 1;
 
     case 82:                    // imp
-
         if (random2(3) == 0)
             summon_ice_beast_etc(powc, 220);
         else if (random2(7) == 0)
@@ -778,36 +750,30 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 83:                    // repel missiles
-
         missile_prot(powc);
         return 1;
 
     case 84:                    // berserk
-
         cast_berserk();
         return 1;
 
     case 85:                    // dispel undead
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_DISPEL_UNDEAD, powc, beam);
         return 1;
 
     case 86:                    // guardian
-
         summon_ice_beast_etc(powc, 26);
         return 1;
 
     case 88:                    // Thunderbolt
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_LIGHTNING, powc, beam);
         return 1;
 
     case 89:                    // flame of cleansing
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_CLEANSING_FLAME, powc, beam);
@@ -815,7 +781,6 @@ char your_spells(int spc2, int powc, char allow_fail)
 
 
     case 91:                    // Summon Deva
-
         summon_ice_beast_etc(powc, 26);
         return 1;
 
@@ -827,22 +792,18 @@ char your_spells(int spc2, int powc, char allow_fail)
         // Remember that most holy spells above don't yet use powc!
 
     case 110:                   // twisted resurrection
-
         cast_twisted(powc, 7, you.pet_target);
         break;
 
     case 111:                   // regeneration
-
         cast_regen(powc);
         return 1;
 
     case 112:                   // bone shards
-
         cast_bone_shards(powc);
         return 1;
 
     case 113:                   // banishment
-
         if (spell_direction(spd, beam) == -1)
             return 1;
 /*   if (beam[0].move_x == 0 && beam[0].move_y == 0)
@@ -855,7 +816,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 114:                   // degeneration
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         if (beam[0].move_x == 0 && beam[0].move_y == 0)
@@ -868,38 +828,32 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 115:                   // sting
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_STING, powc, beam);
         return 1;
 
     case 116:                   // sublimation
-
         sublimation(powc);
         return 1;
 
     case 117:                   // dancing weapon
-
         dancing_weapon(powc, 0);
         return 1;
 
     case 118:                   // hellfire - should only be available from staff of Dispater & Sceptre of Asmodeus
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_HELLFIRE, powc, beam);
         return 1;
 
     case 119:                   // summon demon
-
         strcpy(info, "You open a gate to Pandemonium!");
         mpr(info);
         summon_ice_beast_etc(powc, summon_any_demon(1));
         return 1;
 
     case 120:                   // demonic horde
-
         strcpy(info, "You open a gate to Pandemonium!");
         mpr(info);
         dem_hor2 = 3 + random2(5);
@@ -912,7 +866,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 121:                   // greater demon
-
         strcpy(info, "You open a gate to Pandemonium!");
         mpr(info);
         dem_hor = 100;
@@ -925,12 +878,10 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 122:                   // rot corpses
-
         corpse_rot(0);
         return 1;
 
     case 123:                   // takumi's vorpal blade
-
         if (brand_weapon(10, powc) == 0)
         {
             strcpy(info, "The spell fizzles.");
@@ -939,7 +890,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 124:                   // Fire brand
-
         if (brand_weapon(1, powc) == 0)
         {
             strcpy(info, "The spell fizzles.");
@@ -948,7 +898,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 125:                   // Ice Aura
-
         if (brand_weapon(2, powc) == 0)
         {
             strcpy(info, "The spell fizzles.");
@@ -957,7 +906,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 126:                   // lethal infusion
-
         if (brand_weapon(7, powc) == 0)
         {
             strcpy(info, "The spell fizzles.");
@@ -966,86 +914,71 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case SPELL_CRUSH:           // crush
-
         burn_freeze(powc, 0);
         return 1;
 
     case 128:                   // bolt of iron
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_IRON_BOLT, powc, beam);
         return 1;
 
     case 129:                   // stone arrow
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_STONE_ARROW, powc, beam);
         return 1;
 
     case 130:                   // entomb
-
         entomb();
         return 1;
 
     case 131:                   // stone scales
-
         stone_scales(powc);
         return 1;
 
 
     case 132:                   // shock
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_ELECTRICITY, powc, beam);
         return 1;
 
     case 133:                   // swiftness
-
         cast_swiftness(powc);
         return 1;
 
     case 134:                   // Fly
-
         cast_fly(powc);
         return 1;
 
     case 135:                   // insulation
-
         cast_insulation(powc);
         return 1;
 
     case 136:                   // orb of electrocution
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_ORB_OF_ELECTRICITY, powc, beam);
         return 1;
 
     case 137:                   // detect creatures
-
         detect_creatures(powc);
         return 1;
 
     case 138:                   // poison magic version of cure poison
-
         cast_cure_poison(powc);
         break;
 
     case 139:                   // teleport control
-
         cast_teleport_control(powc);
         return 1;
 
     case 140:                   // poison ammunition
-
         cast_poison_ammo();
         return 1;
 
     case 141:                   // poison blade
-
         if (brand_weapon(6, powc) == 0)
         {
             strcpy(info, "Your current weapon is inappropriate for this spell.");
@@ -1054,17 +987,14 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 142:                   // resist poison
-
         cast_resist_poison(powc);
         return 1;
 
     case 143:                   // create noise 2
-
         create_noise2();
         return 1;
 
     case 144:                   // mutation
-
         if (you.hp < you.hp_max / 2)
         {
             mpr("Your body is in too bad a condition for this spell to function.");
@@ -1078,19 +1008,16 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 145:                   // debug
-
         if (spell_direction(spd, beam) == -1)
             return 1;
         zapping(ZAP_DEBUGGING_RAY, powc, beam);
         return 1;
 
     case 146:                   // recall
-
         recall(0);
         return 1;
 
     case 147:                   // portal
-
         portal();
         return 1;
 
@@ -1106,7 +1033,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;               // Agony
 
     case 149:                   // spider form
-
         transform(powc, 1);
         return 1;
 
@@ -1134,38 +1060,31 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;               // Disintegrate
 
     case 152:                   // blade hands
-
         transform(powc, 2);
         return 1;
 
     case 153:                   // statue
-
         transform(powc, 3);
         return 1;
 
     case 154:                   // ice beast
-
         transform(powc, 4);
         return 1;
 
     case 155:                   // dragon form
-
         transform(powc, 5);
         return 1;
 
 
     case 156:                   // Lich
-
         transform(powc, 6);
         return 1;
 
     case 157:                   // death chan
-
         cast_death_channel(powc);
         return 1;
 
     case 158:                   // Symbol of Torment
-
         if (you.is_undead != 0 || you.mutation[MUT_TORMENT_RESISTANCE] != 0)
         {
             mpr("This spell will not function for one who is immune to its effects.");
@@ -1175,7 +1094,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 159:                   // deflect missiles
-
         deflection(powc);
         return 1;
 

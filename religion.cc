@@ -872,8 +872,8 @@ void done_good(char thing_done, int pgain)
     case GOOD_KILLED_ANGEL_II:
         switch (you.religion)
         {
-        case GOD_ZIN:
-        case GOD_SHINING_ONE:
+            case GOD_ZIN:
+            case GOD_SHINING_ONE:
         case GOD_ELYVILON:
             strcpy(info, god_name(you.religion));
             strcat(info, " did not appreciate that!");

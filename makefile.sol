@@ -1,8 +1,8 @@
 # Make file for Dungeon Crawl (linux port only for now)
 
 C_COMP = g++
-C_ARGS = -Wall -g -DSOLARIS
-L_ARGS = -static
+C_ARGS = -Wall -O -DSOLARIS
+L_ARGS = -s
 MCHMOD = 2755
 INSTALLDIR = /opt/crawl/bin
 LIB = -lcurses
@@ -38,7 +38,6 @@ distclean:
 
 crawl:	${OBJECTS}
 		${C_COMP} ${L_ARGS} -o $@ ${OBJECTS} ${LIB}
-		strip $@
 		chmod ${MCHMOD} $@
 
 .cc.o:

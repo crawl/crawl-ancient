@@ -29,6 +29,7 @@
 #include "randart.h"
 #include "skills2.h"
 #include "stuff.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif

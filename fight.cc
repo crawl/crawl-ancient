@@ -5,12 +5,15 @@
  *
  *  Change History (most recent first):
  *
- *       <3>     5/21/99        BWR             Upped learning of armour skill
+ *      <4>      6/22/99        BWR             Changes to stabbing code, made
+ *                                              most gods not care about the
+ *                                              deathes of summoned monsters
+ *      <3>      5/21/99        BWR             Upped learning of armour skill
  *                                              in combat slightly.
- *       <2>     5/12/99        BWR             Fixed a bug where burdened
+ *      <2>      5/12/99        BWR             Fixed a bug where burdened
  *                                              barehanded attacks where free
  *
- *       <1>     -/--/--        LRH             Created
+ *      <1>      -/--/--        LRH             Created
  */
 
 #include "AppHdr.h"
@@ -60,6 +63,7 @@
 #include "spells3.h"
 #include "stuff.h"
 #include "view.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif
@@ -79,7 +83,7 @@ void you_attack(int monster_attacked)
     int your_to_hit;
     int damage_done = 0;
     char hit = 0;
-    char stabbed = 0;
+    char stab_bonus = 0;
 
 //int mmov_x = 0;
     char str_pass[80],damage_noise[20];
@@ -332,18 +336,48 @@ void you_attack(int monster_attacked)
     mpr(info);
 #endif
 
-    if (menv[monster_attacked].speed_increment <= 40 || menv[monster_attacked].behavior == BEH_SLEEP)
+
+    if (menv[monster_attacked].speed_increment <= 40
+
+                || ((menv[monster_attacked].behavior == BEH_FLEE
+        //              || menv[monster_attacked].behavior == BEH_WANDER
+                        || menv[monster_attacked].behavior == BEH_CONFUSED)
+                    && random2(100) <= you.skills[SK_STABBING] + you.dex)
+
+                || menv[monster_attacked].behavior == BEH_SLEEP)
     {
+        switch (menv[monster_attacked].behavior) {
+        case BEH_SLEEP:
+            // monster is a very easy target
+            // note: lower stab_bonuses are better, because they're used
+            //       as part of the divisors.
+            stab_bonus = 1;
+            break;
+
+        case BEH_FLEE:
+        case BEH_CONFUSED:
+            // monster has limited control of his actions
+            stab_bonus = 2;
+            break;
+
+        default:
+            // monster is in control of his actions
+            stab_bonus = 3;
+        }
+
         strcpy(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 0));
         strcat(info, " fails to defend itself.");
         mpr(info);
-        stabbed = 1;
+
         exercise(SK_STABBING, 1 + random2(2) + random2(2) + random2(2) + random2(2));
+
         if (mons_holiness(menv[monster_attacked].type) != MH_UNDEAD && mons_holiness(menv[monster_attacked].type) != MH_DEMONIC)
             naughty(NAUGHTY_STABBING, 4);       /* Servants of TSO must fight fair */
     }
     else
+    {
         alert();
+    }
 
 
     if ((your_to_hit >= menv[monster_attacked].evasion || random2(15) == 0) || ((menv[monster_attacked].speed_increment <= 60 || menv[monster_attacked].behavior == BEH_SLEEP) && random2(10 + you.skills[SK_STABBING]) != 0))
@@ -353,7 +387,7 @@ void you_attack(int monster_attacked)
 
         if (you.strength > 11)
             dammod += (random2(you.strength - 11) * 2);
-        if (you.strength < 9)
+        else if (you.strength < 9)
             dammod -= (random2(9 - you.strength) * 3);
 
         damage *= dammod;       //random2(you.strength);
@@ -411,22 +445,42 @@ void you_attack(int monster_attacked)
 
         damage_done += slaying_bonus(1);
 
-        if (stabbed == 1)
+        if (stab_bonus > 0)
         {
-            damage_done *= 12 + you.skills[SK_STABBING];
-            damage_done /= 12;
-            if (you.equip[EQ_WEAPON] != -1)
+            int skill_type = weapon_skill(you.inv_class[you.equip[EQ_WEAPON]],
+                                          you.inv_type[you.equip[EQ_WEAPON]]);
+
+            if (menv[monster_attacked].behavior == BEH_SLEEP)
             {
-                if (weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == 1 || weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == 2)
+                // Sleeping moster wakes up when stabbed but may be groggy
+                menv[monster_attacked].behavior = BEH_CHASING_I;
+
+                if (random2(100) <= you.skills[SK_STABBING] + you.dex)
                 {
-                    damage_done *= 10 + you.skills[SK_STABBING] / weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]);
-                    damage_done /= 10;
-                    if (you.inv_type[you.equip[EQ_WEAPON]] == WPN_DAGGER)
-                    {
-                        damage_done *= 12 + you.skills[SK_STABBING];
-                        damage_done /= 12;
-                    }
+                    if (menv[monster_attacked].speed_increment > you.dex)
+                        menv[monster_attacked].speed_increment -= you.dex;
+                    else
+                        menv[monster_attacked].speed_increment = 0;
                 }
+            }
+
+            switch (skill_type) {
+            case SK_SHORT_BLADES:
+                if (you.inv_type[you.equip[EQ_WEAPON]] == WPN_DAGGER)
+                {
+                    damage_done += (you.dex / 3);
+                }
+                // fall through
+
+            case SK_LONG_SWORDS:
+                damage_done *= 10 + you.skills[SK_STABBING] /
+                        (stab_bonus + (skill_type == SK_SHORT_BLADES ? 0 : 1));
+                damage_done /= 10;
+                // fall through
+
+            default:
+                damage_done *= 12 + you.skills[SK_STABBING] / stab_bonus;
+                damage_done /= 12;
             }
         }
 
@@ -818,7 +872,6 @@ dam_thing:
         naughty(NAUGHTY_ATTACK_HOLY, menv[monster_attacked].hit_dice);
 
     if (menv[monster_attacked].type == MONS_HYDRA)      // hydra
-
     {
         if (you.equip[EQ_WEAPON] != -1 && (damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == 1 || damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == 3))
         {
@@ -869,12 +922,6 @@ mons_dies:
     {
         /* thing_thrown = 1; */
         /* vampiric weapon: */
-        monster_die(monster_attacked, 1, 0);
-        return;
-    }
-    if (menv[monster_attacked].hit_points <= 0)
-    {
-        /* thing_thrown = 1; */
         monster_die(monster_attacked, 1, 0);
         return;
     }
@@ -3205,19 +3252,37 @@ void monster_die(int monster_killed, char killer, int i)
         gain_exp(exper_value(menv[monster_killed].type, menv[monster_killed].hit_dice, menv[monster_killed].max_hit_points));
         if (you.religion == GOD_XOM && random2(70) <= 10 + menv[monster_killed].hit_dice)
             Xom_acts(1, random2(menv[monster_killed].hit_dice) + 1, 0);
-        if (you.duration[DUR_PRAYER] > 0)
+
+        // Trying to prevent summoning abuse here, so we're trying to
+        // prevent summoned creatures from being being done_good kills,
+        // this will also mean that opponenet summoned monsters will
+        // also not count.
+        if ((menv[monster_killed].enchantment[1] < 20
+                            || menv[monster_killed].enchantment[1] > 25)
+
+                // these gods can't be used for summoning abuse,
+                // and for the most part have to be passed through
+                // because they might be doing something naughty.
+                    || you.religion == GOD_ELYVILON
+                    || you.religion == GOD_SHINING_ONE
+                    || you.religion == GOD_ZIN)
         {
-            if (mons_holiness(menv[monster_killed].type) == MH_NORMAL)
-                done_good(1, menv[monster_killed].hit_dice);
-            if (mons_holiness(menv[monster_killed].type) == MH_UNDEAD)
-                done_good(2, menv[monster_killed].hit_dice);
-            if (mons_holiness(menv[monster_killed].type) == MH_DEMONIC)
-                done_good(3, menv[monster_killed].hit_dice);
-            if (mons_holiness(menv[monster_killed].type) == -1)
-                done_good(5, menv[monster_killed].hit_dice);
+            if (you.duration[DUR_PRAYER] > 0)
+            {
+                if (mons_holiness(menv[monster_killed].type) == MH_NORMAL)
+                    done_good(1, menv[monster_killed].hit_dice);
+                if (mons_holiness(menv[monster_killed].type) == MH_UNDEAD)
+                    done_good(2, menv[monster_killed].hit_dice);
+                if (mons_holiness(menv[monster_killed].type) == MH_DEMONIC)
+                    done_good(3, menv[monster_killed].hit_dice);
+                if (mons_holiness(menv[monster_killed].type) == -1)
+                    done_good(5, menv[monster_killed].hit_dice);
+            }
+            else if (mons_holiness(menv[monster_killed].type) == -1)
+            {
+                done_good(4, menv[monster_killed].hit_dice);
+            }
         }
-        else if (mons_holiness(menv[monster_killed].type) == -1)
-            done_good(4, menv[monster_killed].hit_dice);
 
         if ((you.religion == GOD_MAKHLEB && you.duration[DUR_PRAYER] != 0 && random2(you.piety) >= 30) || you.mutation[MUT_DEATH_STRENGTH] != 0)
         {                       /* Makhleb */
@@ -3257,31 +3322,54 @@ void monster_die(int monster_killed, char killer, int i)
             strcat(info, " dies!");
             mpr(info);
         }
+
         if (menv[monster_killed].behavior == BEH_ENSLAVED)
-            naughty(6, (menv[monster_killed].hit_dice / 2) + 1);
+        {
+            naughty( NAUGHTY_FRIEND_DIES,
+                                (menv[monster_killed].hit_dice / 2) + 1 );
+        }
 
         if ((i >= 0 && i < 200) && menv[i].behavior == BEH_ENSLAVED)
         {
             gain_exp(exper_value(menv[monster_killed].type, menv[monster_killed].hit_dice, menv[monster_killed].max_hit_points) / 2 + 1);
-            if (mons_holiness(menv[i].type) == MH_UNDEAD)
+
+            // Trying to prevent summoning abuse here, so we're trying to
+            // prevent summoned creatures from being being done_good kills,
+            // this will also mean that opponenet summoned monsters will
+            // also not count.
+            if ((menv[monster_killed].enchantment[1] < 20
+                            || menv[monster_killed].enchantment[1] > 25)
+
+                // these gods can't be used for summoning abuse,
+                // and for the most part have to be passed through
+                // because they might be doing something naughty.
+                    || you.religion == GOD_ELYVILON
+                    || you.religion == GOD_SHINING_ONE
+                    || you.religion == GOD_ZIN)
             {
-                if (mons_holiness(menv[monster_killed].type) == MH_NORMAL)
-                    done_good(9, menv[monster_killed].hit_dice);
+                if (mons_holiness(menv[i].type) == MH_UNDEAD)
+                {
+                    if (mons_holiness(menv[monster_killed].type) == MH_NORMAL)
+                        done_good(9, menv[monster_killed].hit_dice);
+                    else
+                        done_good(10, menv[monster_killed].hit_dice);
+                }
                 else
+                {
                     done_good(10, menv[monster_killed].hit_dice);
-            }
-            else
-            {
-                done_good(10, menv[monster_killed].hit_dice);
-                if (you.religion == GOD_VEHUMET && random2(you.piety) >= 20)
-                {               /* Vehumet - only for non-undead servants (coding convenience, no real reason except that Vehumet prefers demons) */
-                    if (you.magic_points < you.max_magic_points)
+                    if (you.religion == GOD_VEHUMET && random2(you.piety) >= 20)
                     {
-                        mpr("You feel your power returning.");
-                        you.magic_points += random2(random2(menv[monster_killed].hit_dice)) + 1;
-                        if (you.magic_points > you.max_magic_points)
-                            you.magic_points = you.max_magic_points;
-                        you.redraw_magic_points = 1;
+                        /* Vehumet - only for non-undead servants (coding
+                        convenience, no real reason except that Vehumet
+                        prefers demons) */
+                        if (you.magic_points < you.max_magic_points)
+                        {
+                            mpr("You feel your power returning.");
+                            you.magic_points += random2(random2(menv[monster_killed].hit_dice)) + 1;
+                            if (you.magic_points > you.max_magic_points)
+                                you.magic_points = you.max_magic_points;
+                            you.redraw_magic_points = 1;
+                        }
                     }
                 }
             }
@@ -3309,6 +3397,7 @@ void monster_die(int monster_killed, char killer, int i)
             mpr(info);
             place_cloud(random2(3) + 105, menv[monster_killed].x, menv[monster_killed].y, 1 + random2(3));
         }
+
         for (dmi = 7; dmi >= 0; dmi--)
         {                       /* takes whatever it's carrying back home */
             if (menv[monster_killed].inv[dmi] != 501)
@@ -3318,7 +3407,6 @@ void monster_die(int monster_killed, char killer, int i)
             menv[monster_killed].inv[dmi] = 501;
         }
         break;
-
     }                           /* end of switch */
 
 
@@ -3335,6 +3423,7 @@ out_of_switch:
             }
         }
     }
+
     if (menv[monster_killed].type == MONS_GUARDIAN_MUMMY || menv[monster_killed].type == MONS_GREATER_MUMMY || menv[monster_killed].type == MONS_MUMMY_PRIEST)
     {                           /* other mummies */
         if (YOU_KILL(killer))
@@ -3343,6 +3432,7 @@ out_of_switch:
             miscast_effect(16, 3 + (menv[monster_killed].type == MONS_GREATER_MUMMY) * 8 + (menv[monster_killed].type == MONS_MUMMY_PRIEST) * 5, random2(30) + random2(30) + random2(30), 100);
         }
     }
+
     if (menv[monster_killed].type == MONS_WORM_TAIL)
     {
         dmi = monster_killed;
@@ -3372,6 +3462,7 @@ out_of_switch:
                 menv[dmi].hit_points = 1;
         }
     }
+
 out_of_worm:
     if (menv[monster_killed].type == MONS_TUNNELING_WORM || menv[monster_killed].type == MONS_WORM_TAIL)
     {
@@ -3385,6 +3476,7 @@ out_of_worm:
         }
 
     }
+
     if (killer != KILL_RESET)
     {
         if (menv[monster_killed].enchantment[1] >= 20 && menv[monster_killed].enchantment[1] <= 25)
@@ -3400,7 +3492,9 @@ out_of_worm:
         else
             place_monster_corpse(monster_killed);
     }
+
     monster_drop_ething(monster_killed);
+
 
     int j;
 
@@ -3428,7 +3522,7 @@ out_of_worm:
 
 
     /*brek = 1; */
-    viewwindow(1);
+    viewwindow(1, false);
 
     for (dmi = 0; dmi < MNST; dmi++)
     {
@@ -3556,10 +3650,6 @@ void alert(void)
 void monster_polymorph(unsigned char monsc, unsigned char targetc, int power)
 {
 
-    int k = power;
-
-    k = 0;                      /* to avoid that annoying warning */
-
     if (targetc == 250)
     {
       loopy:
@@ -3567,7 +3657,13 @@ void monster_polymorph(unsigned char monsc, unsigned char targetc, int power)
         {
             targetc = random2(400);
         }
-        while (mons_rarity(targetc) == 0 || targetc == 99 || targetc == 25 || targetc == 51 || targetc == 367 || targetc == 107 || targetc == 108);     /* no shapeshifters or zombies/skeletons/spectr */
+        while (mons_rarity(targetc) == 0
+                        || targetc == 99 || targetc == 25
+                        || targetc == 51 || targetc == 367
+                        || targetc == 107 || targetc == 108
+                        || mons_flag( targetc, M_NO_EXP_GAIN ));
+        // no shapeshifters or zombies/skeletons/spectr or
+        // plants/fungii/other no exp stuff
 
         if (grd[menv[monsc].x][menv[monsc].y] == 61 || grd[menv[monsc].x][menv[monsc].y] == 62)
             if (mons_flies(targetc) == 0)
@@ -3589,11 +3685,7 @@ void monster_polymorph(unsigned char monsc, unsigned char targetc, int power)
 
     menv[monsc].number = 250;
 
-    k = monsc;
-
-    int unenc = 0;
-
-    for (unenc = 0; unenc < 3; unenc++)
+    for (int unenc = 0; unenc < 3; unenc++)
     {
         if (menv[monsc].enchantment[unenc] >= 20 && menv[monsc].enchantment[unenc] <= 25)
             continue;           /* Summoned creatures are still going to disappear eventually */

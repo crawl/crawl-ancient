@@ -33,6 +33,7 @@
 //#include "crawlfnc.h"
 #include "shopping.h"
 #include "stuff.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif

@@ -52,6 +52,7 @@
 #include "spells3.h"
 #include "stuff.h"
 #include "view.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif
@@ -315,15 +316,15 @@ void species_ability()          /* Now handles all special abilities */
    naturally or from mutations can be put earlier, to avoid the menu letters
    always changing around */
 
-    if ((   (   you.equip[EQ_LEFT_RING] != -1
-             && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_INVISIBILITY)
-         || (   you.equip[EQ_RIGHT_RING] != -1
-             && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_INVISIBILITY)
-         || (   you.equip[EQ_CLOAK] != -1
-             && you.inv_dam[you.equip[EQ_CLOAK]] % 30 == SPARM_DARKNESS)
-         || (   you.equip[EQ_HELMET] != -1
-             && you.inv_dam[you.equip[EQ_HELMET]] % 30 == SPARM_DARKNESS)
-         || scan_randarts(RAP_INVISIBLE) > 0)
+    if (((you.equip[EQ_LEFT_RING] != -1
+                && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_INVISIBILITY)
+            || (you.equip[EQ_RIGHT_RING] != -1
+                && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_INVISIBILITY)
+            || (you.equip[EQ_CLOAK] != -1
+                && you.inv_dam[you.equip[EQ_CLOAK]] % 30 == SPARM_DARKNESS)
+            || (you.equip[EQ_HELMET] != -1
+                && you.inv_dam[you.equip[EQ_HELMET]] % 30 == SPARM_DARKNESS)
+            || scan_randarts(RAP_INVISIBLE) > 0)
         && you.invis == 0)
     {
         ability[abil_c] = ABIL_TURN_INVISIBLE;
@@ -339,12 +340,12 @@ void species_ability()          /* Now handles all special abilities */
     }
 
     if ((you.equip[EQ_LEFT_RING] != -1
-         && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_LEVITATION)
-         || (you.equip[EQ_RIGHT_RING] != -1
-         && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_LEVITATION)
-         || (you.equip[EQ_BOOTS] != -1
-         && you.inv_dam[you.equip[EQ_BOOTS]] % 30 == SPARM_LEVITATION)
-         || (scan_randarts(RAP_LEVITATE) > 0) && you.levitation == 0)
+            && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_LEVITATION)
+        || (you.equip[EQ_RIGHT_RING] != -1
+            && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_LEVITATION)
+        || (you.equip[EQ_BOOTS] != -1
+            && you.inv_dam[you.equip[EQ_BOOTS]] % 30 == SPARM_LEVITATION)
+        || (scan_randarts(RAP_LEVITATE) > 0) && you.levitation == 0)
     {
         ability[abil_c] = ABIL_LEVITATE;
         ability_fail[abil_c] = 50 - you.experience_level * 2;
@@ -365,8 +366,12 @@ void species_ability()          /* Now handles all special abilities */
         abil_c++;
     }
 
-    if ((you.equip[EQ_LEFT_RING] != -1 && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_TELEPORTATION) || (you.equip[EQ_RIGHT_RING] != -1 && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_TELEPORTATION) || you.mutation[MUT_TELEPORT_AT_WILL] != 0 ||
-scan_randarts(RAP_CAN_TELEPORT) > 0)
+    if ((you.equip[EQ_LEFT_RING] != -1
+            && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_TELEPORTATION)
+        || (you.equip[EQ_RIGHT_RING] != -1
+            && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_TELEPORTATION)
+        || you.mutation[MUT_TELEPORT_AT_WILL] != 0
+        || scan_randarts(RAP_CAN_TELEPORT) > 0)
     {
         ability[abil_c] = ABIL_TELEPORTATION;
         ability_fail[abil_c] = 50;

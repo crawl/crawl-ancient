@@ -31,9 +31,11 @@
 #include "itemname.h"
 #include "mstruct.h"
 #include "skills2.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif
+
 /*
    IMPORTANT: There is also an eating bit in item_use.cc, so alter that with
    carnivores and things if it's changed here.

@@ -418,7 +418,7 @@ void mons_cast(int i, struct bolt beem[1], int spell_cast)
     }
 
     //out_of_spec :
-    viewwindow(1);
+    viewwindow(1, false);
 
     beem[0].move_x = beem[0].trac_targ_x - menv[i].x;
     beem[0].move_y = beem[0].trac_targ_y - menv[i].y;
@@ -555,7 +555,7 @@ void monster_teleport(char monstel, char instan)
 
 void dragon(int i, struct bolt beem[1])
 {
-    viewwindow(1);
+    viewwindow(1, false);
     beem[0].move_x = 0;
     beem[0].move_y = 0;
 
@@ -776,7 +776,7 @@ void spore_goes_pop(int i)      /* should really do something about mons_hit, bu
 
     if (mons_near(i))
     {
-        viewwindow(1);
+        viewwindow(1, false);
         strcpy(info, "The giant spore explodes!");
         mpr(info);
     }

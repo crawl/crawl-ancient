@@ -967,7 +967,7 @@ void end_game(char end_status)
         mpr(info);
     }
 
-    viewwindow(1);
+    viewwindow(1, false);
     more();
 
 

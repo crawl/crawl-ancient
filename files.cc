@@ -811,8 +811,10 @@ out_of_foll:
         }
 
         elapsed_time = load_double(p, 14);
-        for (i = 0; i < (chunkSize - 20); i++)
+
+        for (i = 0; i < (chunkSize - 20); ++i)
             *p++;               // reserved
+
     }
 
     for (i = 0; i < 20; ++i)
@@ -1678,7 +1680,8 @@ void restore_game()
         // if zero we're opening a new game so we need the saved time
         if (you.elapsed_time < 0.01)
             you.elapsed_time = load_double(p, 14);
-        for (i = 0; i < chunkSize - 20; i++)
+
+        for (i = 0; i < (chunkSize - 20); i++)
             *p++;               // reserved
 
         if (minorVersion == 2)

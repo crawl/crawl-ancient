@@ -1,21 +1,78 @@
-Brian Robinson (bcr19374@pegasus.cc.ucf.edu
+Brent Ross (bwross@csclub.uwaterloo.ca)
+6/22/99
+
+-- Ranger weapon variations (halfling slingers, dwarven crossbowers)
+
+-- fix Rangers/Reavers problem.  Rangers are now "rangers" so there's
+   no problem with two capital letter Rs.
+
+-- stealth improvements
+    -- monsters don't yell (2 * skill) % of the time (view.cc:monster_grid())
+
+    -- Large races lose the stealth * 2, small races now get * 5/2
+                                        (player.cc:check_stealth())
+        -- Huge     x 1 : Troll, Ogre, Ogre Mage, Centaur
+        -- Awkward  x3/2: Minotaur, Draconians
+        -- Normal   x 2 : Everyone else
+        -- Small    x5/2: Halfling, Gnome, Kobold, Spriggan, Naga
+                            -- Naga's aren't small, but they're good
+
+    -- stabbed sleeping monsters now get set the BEH_CHASING_I.
+
+    -- can now have a (skill + dex) % chance of stabbing fleeing or confused
+       monsters.  (fight.cc)
+
+    -- backstab effectiveness depends on the monsters behaviour:
+        - sleeping monsters are easy targets so lots of damage potential
+        - fleeing and confused monsters so not as much damage potential
+        - other cases have even less damage potential
+
+    -- made backstabbing more effective for daggers
+        - daggers add dex/3 damage before the multipliers (fight.cc)
+
+
+-- modified fight.cc:monster_dies() so that *any* summoned creature
+   killed by you or your pet won't call done_good.
+        - Elivion/TSO/Zin have to be passed through, and aren't a
+          problem because they can't abuse summoning anyways.
+        - this could use a better fix (ie. keeping track of who summoned
+          which monsters would help a lot)
+
+-- fix monster polymorph to avoid NO_EXP monsters (Linley's suggestion)
+    -- added mons_flag( targetc, M_NO_EXP_GAIN ) to do-while loop.
+
+-- Remove teleport control + Blink spell combo (Jesse's suggestion)
+    -- removed CONTROL_TELEPORT check from random_blink()
+
+-- added racial bonus to worn armour in player_AC()
+
+-- added food_change() and redraw to down_stairs to patch hunger status
+   display bug
+
+
+Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
 6/17/99
 
-(Note: I've tried to annotate all my changes in the code  with my initials (BCR), so you
-       can grep for them to find my changes.)
-* did some small cleanup here and there
-* wrote a new makefile for Linux.  Made a number of changes to the make process which
-  should save up some headaches in the future.  Now there is an OS_TYPE variable in the makefile
-  that is automatically make into a #define in the make process, and that should make it easy to
-  keep the makefiles straight on the OS.  Also moved the OBJECTS variable containing the list of
-  the .o files to a file called make.obj which is included into the makefile.  This should save a
-  little space and keep all the makefiles consistent on what objects they need.
-* indented and added a header to defines.h
-* fixed some oddness in newgame.cc.  Various system dependent name checks were
-  all messed up in a bunch of nested #ifdef stuff.  Sorted it out.
-* made the #define MACROS actually do something.  Now if you have it defined,
-  the macros.h and macros.cc files will be used, otherwise they won't.  Right now,
-  Crawl will not work correctly on Linux with MACROS on.  See Bugs.txt for more details.
+(Note: I've tried to annotate all my changes in the code  with my initials
+       (BCR), so you can grep for them to find my changes.)
+
+* did some small cleanup here and there * wrote a new makefile for Linux.
+  Made a number of changes to the make process which should save up some
+  headaches in the future.  Now there is an OS_TYPE variable in the makefile
+  that is automatically make into a #define in the make process, and that
+  should make it easy to keep the makefiles straight on the OS.  Also moved
+  the OBJECTS variable containing the list of the .o files to a file called
+  make.obj which is included into the makefile.  This should save a little
+  space and keep all the makefiles consistent on what objects they need.
+
+* indented and added a header to defines.h * fixed some oddness in
+  newgame.cc.  Various system dependent name checks were all messed up in
+  a bunch of nested #ifdef stuff.  Sorted it out.
+
+* made the #define MACROS actually do something.  Now if you have it
+  defined, the macros.h and macros.cc files will be used, otherwise they
+  won't.  Right now, Crawl will not work correctly on Linux with MACROS on.
+  See Bugs.txt for more details.
 
 Brent Ross (bwross@csclub.uwaterloo.ca)
 6/14/99

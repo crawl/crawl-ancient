@@ -1006,7 +1006,7 @@ read_it:
 
     }
 
-    viewwindow(1);
+    viewwindow(1, false);
 
     switch (random2(23))
     {

@@ -32,6 +32,7 @@
 #include "player.h"
 #include "monstuff.h"
 #include "stuff.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif

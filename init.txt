@@ -1,1 +1,26 @@
-autopickup=$?!"%
+#
+# Crawl Init file
+#
+
+# Player name
+
+name=foo
+
+# Here's a list of autopickup types:
+#
+#    )          Weapons
+#    (          Missiles
+#    [          Armour
+#    /          Wands
+#    %          Food
+#    ?          Scrolls
+#    = or "     Jewellery
+#    !          Potions
+#    + or :     Books
+#    \ or |     Staves
+#    0          Orbs
+#    }          Misc items
+#    X          Corpses
+#    $          Gold
+
+autopickup=$?!:"/0

@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *      <4>      6/22/99        BWR             Racial adjustments to stealth
+ *                                              and Armour.
  *      <3>      5/20/99        BWR             Fixed problems with random stat
  *                                              increases, added kobold stat
  *                                              increase.  increased EV
@@ -647,6 +649,26 @@ int player_AC(void)
 {
     int AC = 0;
     int i;
+    int racial_type = 0;
+
+    switch (you.species) {
+    case SP_ELF:
+    case SP_HIGH_ELF:
+    case SP_GREY_ELF:
+    case SP_DEEP_ELF:
+    case SP_SLUDGE_ELF:
+        racial_type = DARM_ELVEN;
+        break;
+
+    case SP_HILL_DWARF:
+    case SP_MOUNTAIN_DWARF:
+        racial_type = DARM_DWARVEN;
+        break;
+
+    case SP_HILL_ORC:
+        racial_type = DARM_ORCISH;
+        break;
+    }
 
     for (i = EQ_CLOAK; i < EQ_LEFT_RING; i++)
     {
@@ -663,7 +685,18 @@ int player_AC(void)
         if (i == EQ_BOOTS && you.inv_plus2[you.equip[i]] != 0)
             AC += 3;            /* barding */
 
-        AC += property(2, you.inv_type[you.equip[i]], 0) * (15 + you.skills[SK_ARMOUR]) / 15;
+
+        int racial_bonus = 0;
+
+        if (racial_type != 0
+                    && (int) (you.inv_dam[you.equip[i]] / 30) == racial_type)
+        {
+            racial_bonus = 1;
+        }
+
+        AC += property(2, you.inv_type[you.equip[i]], 0) *
+                            (15 + you.skills[SK_ARMOUR] + racial_bonus) / 15;
+
         if ((you.species == SP_NAGA || you.species == SP_CENTAUR || you.mutation[MUT_DEFORMED] > 0) && i == EQ_BODY_ARMOUR)     /* Nagas/Centaurs/the deformed don't fit into body armour very well */
         {
             AC -= property(2, you.inv_type[you.equip[i]], 0) / 2;
@@ -1120,7 +1153,7 @@ void level_change(void)         // Look at this !!!!
    case 6: // paladin
    case 7: // Assassin
    case 8: // Barbarian
-   case 9: // Ranger
+   case 9: // ranger
    case 10: // Conjurer
    case 11: // Enchanter
    case 12: // Fire Wizard
@@ -1221,7 +1254,7 @@ void level_change(void)         // Look at this !!!!
             {0, 0, 0},
             {0, 0, 0}
         },
-        {                       // Ranger
+        {                       // ranger
             {0, 0, 80},
             {1, 7, 40},
             {8, 12, 100},
@@ -2127,7 +2160,45 @@ int check_stealth(void)
     if (stealth <= 0)
         stealth = 0;
 
-    stealth *= 2;
+    // Large races aren't as capable of being stealthy.  Smaller races
+    // have an easier time.  Normal is the old standard (x2).
+
+    switch (you.species)
+    {
+        case SP_TROLL:
+        case SP_OGRE:
+        case SP_OGRE_MAGE:
+        case SP_CENTAUR:
+            break;
+
+        case SP_MINOTAUR:
+        case SP_RED_DRACONIAN:
+        case SP_WHITE_DRACONIAN:
+        case SP_GREEN_DRACONIAN:
+        case SP_GOLDEN_DRACONIAN:
+        case SP_GREY_DRACONIAN:
+        case SP_BLACK_DRACONIAN:
+        case SP_PURPLE_DRACONIAN:
+        case SP_MOTTLED_DRACONIAN:
+        case SP_PALE_DRACONIAN:
+        case SP_UNK0_DRACONIAN:
+        case SP_UNK1_DRACONIAN:
+        case SP_UNK2_DRACONIAN:
+            stealth = (stealth * 3) / 2;
+            break;
+
+        case SP_GNOME:
+        case SP_HALFLING:
+        case SP_KOBOLD:
+        case SP_SPRIGGAN:
+        case SP_NAGA:                   // not small but very good at stealth
+            stealth = (stealth * 5) / 2;
+            break;
+
+        default:
+            stealth *= 2;
+            break;
+    }
 
     return stealth;
 }

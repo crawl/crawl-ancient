@@ -45,9 +45,11 @@
 #include "stuff.h"
 #include "view.h"
 #include "food.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif
+
 char scramble(void);
 int trap_item(char base_type, char sub_type, char beam_x, char beam_y);
 
@@ -1007,6 +1009,8 @@ void down_stairs(char remove_stairs, int old_level)
         }
     }
 
+    food_change();
+    you.redraw_hunger = 1;
 }                               // end of void down_stairs(void)
 
 

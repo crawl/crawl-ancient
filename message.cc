@@ -25,6 +25,7 @@
 #include "enum.h"
 
 #include <string.h>
+
 #ifdef MACROS
   #include "macro.h"
 #endif

@@ -20,8 +20,8 @@ void noisy(char loudness, char nois_x, char nois_y);
 
 int check_awaken(int mons_aw);
 
-void viewwindow2(char draw_it);
-void viewwindow3(char draw_it); /* non-IBM graphics */
+void viewwindow2(char draw_it, bool do_updates);
+void viewwindow3(char draw_it, bool do_updates); /* non-IBM graphics */
 void magic_mapping(int map_radius, int proportion);
 void show_map(int spec_place[2]);
 bool mons_near(unsigned char monst);

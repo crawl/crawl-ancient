@@ -869,7 +869,7 @@ static bool handle_special_ability(int i, bolt & beem)
 
             if (beem.move_x != 0 || beem.move_y != 0)
             {
-                viewwindow(1);
+                viewwindow(1, false);
                 beem.target_x = beem.trac_targ_x;
                 beem.target_y = beem.trac_targ_y;
                 beem.aim_down = 1;
@@ -916,7 +916,7 @@ static bool handle_special_ability(int i, bolt & beem)
                 beem.target_x = beem.trac_targ_x;
                 beem.target_y = beem.trac_targ_y;
                 beem.aim_down = 1;
-                viewwindow(1);
+                viewwindow(1, false);
                 beem.range = random2(10) + 5;
                 beem.source_x = monster.x;
                 beem.source_y = monster.y;
@@ -1413,7 +1413,7 @@ static bool handle_wand(int i, bolt & beem)
 
                 if (zap)
                 {
-                    viewwindow(1);
+                    viewwindow(1, false);
 
                     beem.move_x = beem.trac_targ_x - monster.x;
                     beem.move_y = beem.trac_targ_y - monster.y;

@@ -75,9 +75,11 @@
 #include "itemname.h"
 #include "items.h"
 #include "levels.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif
+
 #include "message.h"
 #include "misc.h"
 #include "monplace.h"
@@ -182,7 +184,7 @@ bool game_has_started = false;  // set to true once a new game has been started 
 
  */
 
-void (*viewwindow) (char);
+void (*viewwindow) (char, bool);
 
 /* these are all defined in view.cc: */
 extern unsigned char (*mapch) (unsigned char);
@@ -230,12 +232,8 @@ int main(int argc, char *argv[])
 #ifdef USE_ASCII_CHARACTERS
     // Default to the non-ibm set when it makes sense.
     viewwindow = &viewwindow3;
-/*
     mapch = &mapchar3;
     mapch2 = &mapchar4;
-*/
-    mapch = &mapchar;
-    mapch2 = &mapchar2;
 #else
     // Use the standard ibm default
     viewwindow = &viewwindow2;
@@ -930,6 +928,7 @@ get_keyin_again:
             strcpy(info, "Char dump unsuccessful! Sorry about that.");
         mpr(info);
         break;
+
 #ifdef MACROS
     case '`':
         macro_add_query();
@@ -939,6 +938,7 @@ get_keyin_again:
         macro_save();
         break;
 #endif
+
 
 
 /* Debug starts: * /
@@ -1267,7 +1267,7 @@ get_keyin_again:
 
     if (you.turn_is_over == 0)
     {
-        viewwindow(1);
+        viewwindow(1, false);
         return;
     }
 
@@ -1906,7 +1906,7 @@ get_keyin_again:
     }
 
 //losight(show, grid, you.x_pos, you.y_pos);
-    viewwindow(0);
+    viewwindow(0, true);
 
     monster();
 
@@ -2030,7 +2030,7 @@ get_keyin_again:
 
     _setcursortype(_NOCURSOR);
 
-    viewwindow(1);
+    viewwindow(1, false);
 
     _setcursortype(_NORMALCURSOR);
 
@@ -2491,7 +2491,7 @@ void initialise()
 
     new_level();
 
-    viewwindow(1);              // This just puts the view up for the first turn.
+    viewwindow(1, false); // This just puts the view up for the first turn.
 
     item();
 

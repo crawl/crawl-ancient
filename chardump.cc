@@ -48,8 +48,10 @@
 #include "spells0.h"
 #include "shopping.h"
 #include "version.h"
+
 #include "debug.h"
 #include "new.h"
+
 #ifdef MACROS
   #include "macro.h"
 #endif
