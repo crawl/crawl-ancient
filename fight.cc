@@ -155,16 +155,16 @@ char heavy_armour = 0;
 
 if (you[0].equip [5] != -1)
 {
-  if (you[0].inv_type [you[0].equip [5]] == 8 && you[0].skills [17] > random2(6)) heavy_armour ++;
-  if (you[0].inv_type [you[0].equip [5]] == 14 && you[0].skills [17] > random2(10)) heavy_armour ++;
-  if (you[0].inv_type [you[0].equip [5]] == 14 && you[0].skills [17] > random2(10)) heavy_armour ++;
-  if (you[0].inv_type [you[0].equip [5]] == 14 && you[0].skills [17] > random2(10)) heavy_armour ++;
+  if (you[0].inv_type [you[0].equip [5]] == 8 && you[0].skills [17] < random2(7)) heavy_armour ++;
+  if (you[0].inv_type [you[0].equip [5]] == 14 && you[0].skills [17] < random2(13)) heavy_armour ++;
+  if (you[0].inv_type [you[0].equip [5]] == 14 && you[0].skills [17] < random2(13)) heavy_armour ++;
+  if (you[0].inv_type [you[0].equip [5]] == 14 && you[0].skills [17] < random2(13)) heavy_armour += random2(4);
 }
 
 if (you[0].equip [6] != -1)
 {
-  if (property(2, you[0].inv_type [you[0].equip [5]], 1) > 0 && random2(you[0].skills [13]) > abs(property(2, you[0].inv_type [you[0].equip [5]], 1)))
-        heavy_armour += random2(abs(property(2, you[0].inv_type [you[0].equip [5]], 1)));
+  if (property(2, you[0].inv_type [you[0].equip [6]], 1) < 0 && random2(you[0].skills [13]) < abs(property(2, you[0].inv_type [you[0].equip [6]], 1)))
+        heavy_armour += random2(abs(property(2, you[0].inv_type [you[0].equip [6]], 1)));
 }
 
 your_to_hit -= heavy_armour;
@@ -1930,6 +1930,7 @@ if (hit == 1) //(int) damage_taken >= 1)
         case 81: /* rotting devil */
         case 156: /* ghoul */
         case 277: // death ooze
+        if (mons_holiness(menv [monster_attacked].m_class) >= 1) break;
         if ((damage_taken >= 3 && random2(3) == 0) | random2(20) == 0)
         {
                 //strcpy(info, "You feel your flesh start to rot away!");
@@ -2005,6 +2006,7 @@ if (hit == 1) //(int) damage_taken >= 1)
         case 127: // sh F
         case 130: // spectre
         case 153: // orange rat
+        if (mons_holiness(menv [monster_attacked].m_class) >= 1) break;
         if ((damage_taken >= 6 && random2(2) == 0) | random2(30) == 0)
         {
       strcpy(info, monam(menv[monster_attacked].m_sec,menv[monster_attacked].m_class, menv [monster_attacked].m_ench [2], 0));

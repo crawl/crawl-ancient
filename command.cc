@@ -151,7 +151,7 @@ ouch(-9999, 0, 13);
 
 void version(void)
 {
- strcpy(info, "This is Dungeon Crawl v2.80. (Last build 18/10/98)");
+ strcpy(info, "This is Dungeon Crawl v2.81. (Last build 20/10/98)");
  mpr(info);
 }
 

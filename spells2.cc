@@ -783,7 +783,7 @@ if (mons_holiness(menv [mgr].m_class) > 0)
         return -1;
 }
 
-inflicted = 1 + random2(8) + random2(pow) / 5;
+inflicted = 3 + random2(6) + random2(6) + random2(pow) / 4;
 if (inflicted >= menv [mgr].m_hp) inflicted = menv [mgr].m_hp;
 menv [mgr].m_hp -= inflicted;
 

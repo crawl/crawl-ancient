@@ -34,7 +34,7 @@ char *sacrifice [] =
 {" is consumed in a burst of flame."},
 {" is consumed in a roaring column of flame."},
 {" glows faintly for a moment, then is gone."},
-{" sinks into the altar and is absorbed."},
+{" is consumed in a roaring column of flame."},
 {" vanishes in a puff of smoke."},
 {" evaporates."}
 };
@@ -1081,7 +1081,7 @@ switch(you[0].religion)
  case 8:
  it_name(i, 0, str_pass);
  strcpy(info, str_pass);
- strcat(info, sacrifice [you[0].religion]);
+ strcat(info, sacrifice [you[0].religion - 1]);
  mpr(info);
  if (mitm.iclass [i] == 14 | random2(item_value(mitm.iclass [i], mitm.itype [i], mitm.idam [i], mitm.iplus [i], mitm.iplus2 [i], mitm.iquant [i], 3, subst_id)) >= 50)
      gain_piety(1);
@@ -1091,7 +1091,7 @@ switch(you[0].religion)
  case 9:
  it_name(i, 0, str_pass);
  strcpy(info, str_pass);
- strcat(info, sacrifice [you[0].religion]);
+ strcat(info, sacrifice [you[0].religion - 1]);
  mpr(info);
  if (item_value(mitm.iclass [i], mitm.itype [i], mitm.idam [i], mitm.iplus [i], mitm.iplus2 [i], mitm.iquant [i], 3, subst_id) >= 150)
      gain_piety(1 + random2(4));
@@ -1103,7 +1103,7 @@ switch(you[0].religion)
  if (mitm.iclass [i] != 14) break;
  it_name(i, 0, str_pass);
  strcpy(info, str_pass);
- strcat(info, sacrifice [you[0].religion]);
+ strcat(info, sacrifice [you[0].religion - 1]);
  mpr(info);
  gain_piety(1);
  destroy_item(i);
@@ -1113,7 +1113,7 @@ switch(you[0].religion)
  if (mitm.iclass [i] != 0 && mitm.iclass [i] != 1) break;
  it_name(i, 0, str_pass);
  strcpy(info, str_pass);
- strcat(info, sacrifice [you[0].religion]);
+ strcat(info, sacrifice [you[0].religion - 1]);
  mpr(info);
  gain_piety(1);
  destroy_item(i);
@@ -1171,7 +1171,7 @@ void offer_corpse(int corpse)
 {
  it_name(corpse, 0, str_pass);
  strcpy(info, str_pass);
- strcat(info, sacrifice [you[0].religion]);
+ strcat(info, sacrifice [you[0].religion - 1]);
  mpr(info);
  done_good(6, 10);
 }

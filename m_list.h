@@ -253,7 +253,7 @@ gmon_use
 {10,5,5,0}, 10, 8, 10, 7, 250, C_CLEAN, Z_BIG, S_SILENT, I_NORMAL, 1},
 
 {30, 'O', LIGHTRED, "two-headed ogre", M_NO_FLAGS,
-1500, 11, 30, H_NORMAL, -4, {20,15,0,0},
+1500, 11, 30, H_NORMAL, -4, {25,20,0,0},
 {5,3,5,0}, 1, 4, 8, 7, 250, C_CONTAMINATED, Z_BIG, S_SHOUT2, I_NORMAL, 1},
 
 {31, '1', RED, "Fiend", M_RES_POISON|M_RES_HELLFIRE|M_ED_COLD|M_FLIES|M_SEE_INVIS,
@@ -293,7 +293,7 @@ gmon_use
 {8,3,5,0}, 6, 14, 15, 7, 10, C_MUTATE, Z_SMALL, S_SHOUT, I_HIGH, 1},
 
 {40, 'O', 6, "ogre", M_NO_FLAGS,
-1300, 10, 40, H_NORMAL, -3, {15,0,0,0},
+1300, 10, 40, H_NORMAL, -3, {22,0,0,0},
 {4,3,5,0}, 1, 6, 10, 7, 250, C_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1},
 
 {41, 'P', 2, "plant", M_NO_EXP_GAIN,
@@ -305,15 +305,15 @@ gmon_use
 {7,3,5,0}, 10, 10, 10, 7, 250, C_POISON, Z_SMALL, S_SILENT, I_INSECT, 0},
 
 {43, 'R', 14, "rakshasa", M_RES_POISON|M_SPELLCASTER|M_SEE_INVIS,
-0, 13, 43, H_NORMAL, -10, {15,0,0,0},
-{7,3,5,0}, 6, 10, 10, 7, 54, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 1},
+0, 15, 43, H_NORMAL, -10, {20,0,0,0},
+{10,3,5,0}, 10, 14, 10, 7, 54, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 3},
 
 {44, 'S', GREEN, "snake", M_NO_FLAGS,
 200, 10, 44, H_NORMAL, -3, {5,0,0,0},
 {2,3,5,0}, 1, 15, 13, 7, 250, C_CONTAMINATED, Z_SMALL, S_SILENT, I_PLANT, 0},
 
 {45, 'T', 6, "troll", M_NO_FLAGS,
-1500, 10, 45, H_NORMAL, -3, {15,10,10,0},
+1500, 10, 45, H_NORMAL, -3, {20,15,15,0},
 {6,3,5,0}, 3, 10, 10, 7, 250, C_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1},
 
 {46, 'x', MAGENTA, "unseen horror", M_LEVITATE|M_SEE_INVIS,
@@ -343,7 +343,7 @@ gmon_use
 {6,3,5,0}, 8, 5, 5, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0},
 
 {52, 'o', 14, "orc warrior", M_NO_FLAGS,
-0, 10, 14, H_NORMAL, -3, {10,0,0,0},
+0, 10, 14, H_NORMAL, -3, {20,0,0,0},
 {4,4,6,0}, 0, 13, 10, 7, 250, C_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3},
 
 {53, 'K', MAGENTA, "kobold demonologist", M_SPELLCASTER,
@@ -351,11 +351,11 @@ gmon_use
 {3,3,5,0}, 2, 14, 10, 7, 250, C_POISON, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 3},
 
 {54, 'o', MAGENTA, "orc wizard", M_SPELLCASTER,
-0, 10, 14, H_NORMAL, -5, {5,0,0,0},
+0, 10, 14, H_NORMAL, -5, {10,0,0,0},
 {3,3,4,0}, 1, 12, 10, 7, 250, C_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3},
 
 {55, 'o', LIGHTCYAN, "orc knight", M_NO_FLAGS,
-0, 10, 14, H_NORMAL, -3, {14,0,0,0},
+0, 10, 14, H_NORMAL, -3, {25,0,0,0},
 {9,4,7,0}, 2, 13, 10, 7, 250, C_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3},
 
 {56, '#', LIGHTRED, "worm tail", M_NO_EXP_GAIN|M_RES_POISON,
@@ -642,7 +642,7 @@ gmon_use
 {14,3,5,0}, 9, 5, 10, 7, 250, C_POISON, Z_BIG, S_BELLOW, I_ANIMAL, 0},
 
 {135, 'T', LIGHTGREY, "rock troll", M_NO_FLAGS,
-2200, 11, 135, H_NORMAL, -4, {25,15,15,0},
+2200, 11, 135, H_NORMAL, -4, {30,20,20,0},
 {10,3,5,0}, 13, 6, 8, 7, 250, C_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1},
 
 {136, 'C', LIGHTGREY, "stone giant", M_NO_FLAGS,
@@ -670,7 +670,7 @@ gmon_use
 {12,2,3,0}, 0, 12, 10, 7, 73, C_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0},
 
 {142, 'O', MAGENTA, "ogre mage", M_SPELLCASTER|M_SEE_INVIS,
-0, 16, 40, H_NORMAL, -6, {11,0,0,0},
+0, 16, 40, H_NORMAL, -6, {20,0,0,0},
 {10,3,5,0}, 1, 7, 10, 7, 250, C_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3},
 
 {143, 'w', DARKGREY, "spiny worm", M_ED_POISON,
@@ -680,15 +680,15 @@ gmon_use
 // these are named more explicitly when they attack, also when you use 'x'
 //  to examine them.
 {144, '(', BLACK, "dancing weapon", M_RES_POISON|M_RES_HELLFIRE|M_RES_COLD|M_LEVITATE,
-0, 20, 144, H_NORMAL, 5000, {8,0,0,0},
+0, 20, 144, H_NORMAL, 5000, {15,0,0,0},
 {15,1,0,0}, 10, 20, 15, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0},
 
 {145, 'C', MAGENTA, "titan", M_RES_ELEC|M_SPELLCASTER,
-3500, 12, 145, H_NORMAL, -7, {45,0,0,0},
+3500, 12, 145, H_NORMAL, -7, {55,0,0,0},
 {20,3,5,0}, 10, 3, 10, 7, 94, C_CLEAN, Z_BIG, S_SHOUT, I_HIGH, 1},
 
 {146, 'D', YELLOW, "golden dragon", M_RES_ELEC|M_RES_POISON|M_RES_FIRE|M_RES_COLD|M_SPELLCASTER|M_FLIES,
-3000, 17, 146, H_NORMAL, 5000, {30,20,20,0},
+3000, 17, 146, H_NORMAL, 5000, {40,20,20,0},
 {18,4,4,0}, 15, 7, 10, 7, 95, C_POISON, Z_BIG, S_ROAR, I_HIGH, 1},
 
 // dummy monster
@@ -738,7 +738,7 @@ gmon_use
 
 
 {160, 'T', CYAN, "iron troll", M_RES_FIRE|M_RES_COLD,
-2400, 10, 160, H_NORMAL, -5, {35,20,20,0},
+2400, 10, 160, H_NORMAL, -5, {35,25,25,0},
 {16,3,5,0}, 20, 4, 7, 7, 250, C_POISON, Z_BIG, S_ROAR, I_NORMAL, 1},
 
 {161, 'N', GREEN, "naga", M_RES_POISON|M_SPELLCASTER|M_SEE_INVIS,
@@ -909,7 +909,7 @@ gmon_use
 {10,5,5,0}, 6, 10, 8, 7, 106, C_POISON, Z_SMALL, S_SHOUT, I_NORMAL, 3},
 
 {262, 'o', RED, "orc warlord", M_NO_FLAGS,
-600, 15, 14, H_NORMAL, -3, {22,0,0,0},
+600, 15, 14, H_NORMAL, -3, {32,0,0,0},
 {15,4,7,0}, 3, 10, 10, 7, 250, C_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3},
 
 {263, 'e', CYAN, "deep elf soldier", M_SPELLCASTER,

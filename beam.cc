@@ -124,6 +124,11 @@ if (beam[0].move_x > 1 | beam[0].move_y > 1 | beam[0].move_x < -1 | beam[0].move
 for (n = 1; n < beam[0].range; n++)
 {
 
+if (beam[0].beam_name [0] == '0' && beam[0].flavour != 4)
+{
+ return;
+}
+
 beam[0].move_x = beam_sign_x; beam[0].move_y = beam_sign_y;
 
 
@@ -394,8 +399,12 @@ if ((you[0].equip [6] == -1 | you[0].inv_type [you[0].equip [6]] < 2 | (you[0].i
 
  hurted -= random2(player_AC() + 1);
  hurted -= random2(player_shield_class()); // don't bother with + 1 here
-if (you[0].equip [5] != -1)
- if (beam[0].move_x != 0 | beam[0].move_y != 0) exercise(17, (random() % 3) / 2);
+
+strcat(info, "!");
+mpr(info);
+
+ if (you[0].equip [5] != -1)
+  if (beam[0].move_x != 0 | beam[0].move_y != 0) exercise(17, (random() % 3) / 2);
 
  if (you[0].equip [6] != -1)
   if (random() % 1000 <= mass(2, you[0].inv_type [you[0].equip [6]]) && random() % 4 == 0)
@@ -403,8 +412,6 @@ if (you[0].equip [5] != -1)
 
  if (hurted <= 0) hurted = 0;
 
-        strcat(info, "!");
-        mpr(info);
 
         check_your_resists(hurted, beam[0].flavour);
 
@@ -700,6 +707,9 @@ int func_pass [10];
 
  if (beam[0].colour == 12 && mons_holiness(menv [o].m_class) == 1)
  {
+  strcpy(info, monam (menv [o].m_sec, menv [o].m_class, menv [o].m_ench [2], 0));
+  strcat(info, " is enslaved.");
+  mpr(info);
   menv [o].m_beh = 7;
   return;
  }
@@ -826,6 +836,11 @@ int n;
 for (n = 1; n < beam[0].range; n++)
 {
 
+if (beam[0].beam_name [0] == '0' && beam[0].flavour != 4)
+{
+ return;
+}
+
 
         beam[0].hit = bmhit;
 
@@ -933,6 +948,8 @@ if (beam[0].colour == 200) /* tracer */
   return;
  }
 }
+ else /* Start of : if it's not a tracer */
+{
 
 if (you[0].equip [5] != -1)
    if (beam[0].move_x != 0 | beam[0].move_y != 0) exercise(17, random() % 2);
@@ -1025,6 +1042,11 @@ hurted = 0;
         if (beam[0].move_x == 0 && beam[0].move_y == 0) break;
         }
 
+
+} /* end of if not tracer */
+
+
+
 if (beam[0].flavour == 10)
 {
         explosion1(beam);
@@ -1050,16 +1072,19 @@ count_x = 0;
   /* this won't display a "you miss it" if you throw an beam[0].aim_down thing at a lava worm, only if you hit. */
   int o = mgrd [beam[0].bx] [beam[0].by];
 
-if (beam[0].colour == 200 && (menv [o].m_class < MLAVA0 | menv [o].m_sec == 0)) /* tracer */
+if (beam[0].colour == 200)  /* tracer */
 {
- if (beam[0].trac_hit_mons == 1 | menv [o].m_ench [2] != 6)
+ if (menv [o].m_class < MLAVA0 | menv [o].m_sec == 0)
  {
-  if (o == beam[0].trac_targ) beam[0].tracer_mons = 1;
-  if (menv [0].m_beh == 7) beam[0].tracer = 2; else beam[0].tracer = 3;
-  return;
+  if (beam[0].trac_hit_mons == 1 | menv [o].m_ench [2] != 6)
+  {
+   if (o == beam[0].trac_targ) beam[0].tracer_mons = 1;
+   if (menv [0].m_beh == 7) beam[0].tracer = 2; else beam[0].tracer = 3;
+   return;
+  }
  }
-}
-
+} else /* Start of : It's not a tracer */
+{
 
   if (beam[0].hit >= random2(menv[o].m_ev) && ((menv [o].m_class < MLAVA0 | menv [o].m_sec == 0) | (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y && beam[0].aim_down == 1)))
                 {
@@ -1170,8 +1195,9 @@ if (beam[0].colour == 200 && (menv [o].m_class < MLAVA0 | menv [o].m_sec == 0)) 
 
                 }
 
-} // end of if (grid ... >= 60)
+} /* end of if not a tracer*/
 
+} // end of if (mgrid ... != MNG)
 
 
 if (count_x == 1)
@@ -1196,6 +1222,8 @@ landed : if (beam[0].flavour == 10)
  beam[0].aim_down = 0;
         return;
 }
+
+if (beam [0].colour == 200) return;
 
                 if (strcmp(beam[0].beam_name, "orb of electricity") == 0)
                 {
@@ -1582,8 +1610,8 @@ viewwindow(0);
        break;
       }
       mpr(info);
-                                        break;
-     }
+      break;
+     } else mpr("Nothing appears to happen.");
                                 }
                         } // end of for p
                 } // end of if visible
@@ -2029,7 +2057,7 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
 */
 void tracer_f(int i, struct bolt beem [1])
 {
-
+                strcpy(beem[0].beam_name, "0tracer");
                 beem[0].trac_hit_mons = mons_see_invis(menv [i].m_class);
                 beem[0].tracer = 0;
                 beem[0].tracer_mons = 0;
@@ -2037,6 +2065,8 @@ void tracer_f(int i, struct bolt beem [1])
                 beem[0].colour = 200;
                 beem[0].beam_name [0] = 48;
                 beem[0].type = 0;
+                beem[0].flavour = 4;
+                beem[0].damage = 0;
                 beem[0].range = 10;
                 beem[0].move_x = beem[0].trac_targ_x - menv [i].m_x;
                 beem[0].move_y = beem[0].trac_targ_y - menv [i].m_y;

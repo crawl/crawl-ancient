@@ -433,8 +433,8 @@ int player_prot_life(void)
  if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 19) pl ++;
 /* armour: (checks body armour only) */
  if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 16) pl ++;
-/* DSMails */
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) pl ++;
+/* DSMails
+ if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) pl ++;*/
 /* Mummies are undead */
  if (you[0].species == 12) pl ++;
 /* transformations */

@@ -276,7 +276,7 @@ for (burnc = 0; burnc < 52; burnc++)
 
         for (burn2 = 0; burn2 < you[0].inv_quant [burnc]; burn2++)
         {
-                if (random2(20) < burn_strength)
+                if (random2(30) < burn_strength)
                 {
                         you[0].inv_quant [burnc] --;
                         burn_no++;
@@ -364,6 +364,8 @@ if (dam > -9000)
 }
 
 you[0].hp_ch = 1;
+
+if (dam > 300) return; /* assume it's a bug */
 
  if (dam > -9000)
         {

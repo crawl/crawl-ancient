@@ -96,7 +96,7 @@ for (i = 0; i < 52; i ++)
 
 textcolor(7);
 
-cprintf("\n\rHello, and welcome to Dungeon Crawl v2.80!");
+cprintf("\n\rHello, and welcome to Dungeon Crawl v2.81!");
 cprintf("\n\r(Copyright 1997 Linley Henzell)");
 cprintf("\n\rPlease read Crawl.txt for instructions and legal details.\n\r\n\r");
 name_q : cprintf("What is your name today? ");
@@ -551,6 +551,17 @@ if (you[0].species == 15 | you[0].species == 16 | (you[0].species >= 18 && you[0
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = BROWN;
 
+ if (you[0].species >= 18 && you[0].species <= 29)
+ {
+        you[0].inv_quant [2] = 1;
+        you[0].inv_class [2] = 2;
+        you[0].inv_type [2] = 8;
+        you[0].inv_plus [2] = 50;
+        you[0].inv_dam [2] = 0;
+        you[0].inv_col [2] = LIGHTCYAN;
+ }
+
+
 }
 else
 if (you[0].species == 11)
@@ -907,6 +918,13 @@ case 4: // Gladiator
          you[0].inv_plus [1] = 50;
          you[0].inv_dam [1] = 0;
          you[0].inv_col [1] = BROWN;
+
+         you[0].inv_quant [2] = 1;
+         you[0].inv_class [2] = 2;
+         you[0].inv_type [2] = 8;
+         you[0].inv_plus [2] = 50;
+         you[0].inv_dam [2] = 0;
+         you[0].inv_col [2] = LIGHTCYAN;
         }
         else
         {
@@ -917,13 +935,6 @@ case 4: // Gladiator
          you[0].inv_dam [1] = 0;
          you[0].inv_col [1] = LIGHTCYAN;
         }
-
-        you[0].inv_quant [2] = 1;
-        you[0].inv_class [2] = 2;
-        you[0].inv_type [2] = 13;
-        you[0].inv_plus [2] = 50;
-        you[0].inv_dam [2] = 0;
-        you[0].inv_col [2] = LIGHTCYAN;
 /*      you[0].AC = 4;
         you[0].evasion = 9;*/
         you[0].strength += 7;

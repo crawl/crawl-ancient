@@ -2041,6 +2041,7 @@ rm [54] = you[0].xl + 40;
 
         temp_int = you[0].exp_available + 100000;
         itoa(temp_int, thing_quant, 10);
+        thing_quant [6] = 0;
         for (p = 0; p < 6; p ++)
         {
                 rm [p] = thing_quant [p];
@@ -2227,6 +2228,12 @@ for (i = 0; i < 4; i ++)
    for (j = 0; j < 50; j ++)
    {
       rm [j] = you[0].mutation [j] + 30;
+   }
+   write(handle, rm, 50);
+
+   for (j = 0; j < 50; j ++)
+   {
+      rm [j] = you[0].had_item [j] + 30;
    }
    write(handle, rm, 50);
 
@@ -2455,6 +2462,7 @@ for (p = 0; p < 6; p ++)
 {
         thing_quant [p] = rm [p];
 }
+thing_quant [6] = 0;
 temp_long = atol(thing_quant);
 you[0].exp_available = temp_long - 100000;
 
@@ -2615,6 +2623,12 @@ for (j = 0; j < 50; j ++)
    for (j = 0; j < 50; j ++)
    {
       you[0].mutation [j] = rm [j] - 30;
+   }
+
+   read(handle, rm, 50);
+   for (j = 0; j < 50; j ++)
+   {
+      you[0].had_item [j] = rm [j] - 30;
    }
 
 /*
