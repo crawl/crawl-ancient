@@ -45,8 +45,6 @@
 // required for stuff::coinflip() and cf_setseed()
 unsigned long cfseed;
 
-extern bool wield_change;       // defined in output.cc
-
 // unfortunately required for near_stairs(ugh!):
 extern unsigned char (*mapch) (unsigned char);
 
@@ -169,13 +167,13 @@ void redraw_screen(void)
     you.redraw_strength = 1;
     you.redraw_intelligence = 1;
     you.redraw_dexterity = 1;
-    you.redraw_armor_class = 1;
+    you.redraw_armour_class = 1;
     you.redraw_evasion = 1;
     you.redraw_gold = 1;
     you.redraw_experience = 1;
     you.redraw_hunger = 1;
     you.redraw_burden = 1;
-    wield_change = true;
+    you.wield_change = true;
 
     print_stats();
 
@@ -390,6 +388,12 @@ void canned_msg(unsigned char which_message)
     case MSG_SPELL_FIZZLES:
         mpr("The spell fizzles.");
         break;
+    case MSG_HUH:
+        mpr("Huh?");
+        break;
+    case MSG_EMPTY_HANDED:
+        mpr("You are now empty-handed.");
+        break;
     }
 
     return;
@@ -437,6 +441,11 @@ int distance(char x, char y, char x2, char y2)
 
     return (X * X) + (Y * Y);
 }                               // end distance()
+
+bool adjacent( int x, int y, int x2, int y2 )
+{
+    return (abs(x - x2) <= 1 && abs(y - y2) <= 1);
+}
 
 bool silenced(char x, char y)
 {

@@ -101,7 +101,7 @@ bool message_current_target(void);
 /* ***********************************************************************
  * called from: xxx
  * *********************************************************************** */
-int monster_index(struct monsters *monster);
+unsigned int monster_index(struct monsters *monster);
 
 
 // last updated 08jun2000 {dlb}

@@ -142,7 +142,7 @@ bool is_demonic(unsigned char weapon_subtype)
     }
 }                               // end is_demonic()
 
-bool launches_things(unsigned char weapon_subtype)
+bool launches_things( unsigned char weapon_subtype )
 {
     switch (weapon_subtype)
     {
@@ -151,10 +151,10 @@ bool launches_things(unsigned char weapon_subtype)
     case WPN_CROSSBOW:
     case WPN_HAND_CROSSBOW:
     case WPN_BLOWGUN:
-        return true;
+        return (true);
 
     default:
-        return false;
+        return (false);
     }
 }                               // end launches_things()
 

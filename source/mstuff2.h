@@ -49,7 +49,7 @@ struct SBeam
 /* ***********************************************************************
  * called from: monstuff - mstuff2
  * *********************************************************************** */
-struct SBeam mons_spells(char spell_cast, int power);
+struct SBeam mons_spells(int spell_cast, int power);
 
 
 // last updated 12may2000 {dlb}

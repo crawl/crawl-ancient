@@ -10,31 +10,24 @@
  *      <1>      4/20/99        JDJ             Added get_item_description and is_artifact.
  */
 
-
 #ifndef DESCRIBE_H
 #define DESCRIBE_H
 
-
 #include <string>
-
+#include "externs.h"
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: chardump - spells4
  * *********************************************************************** */
-bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
-                          int item_plus2, int item_dam,
-                          unsigned char item_id, char verbose);
-
+bool is_dumpable_artifact( const item_def &item, char verbose );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: chardump - describe
  * *********************************************************************** */
-string get_item_description(int item_class, int item_type, int item_plus,
-                            int item_plus2, int item_dam,
-                            unsigned char item_id, char verbose);
-
+string get_item_description( const item_def &item, char verbose,
+                             bool dump = false );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -47,9 +40,7 @@ void describe_god(int which_god);
 /* ***********************************************************************
  * called from: item_use - shopping
  * *********************************************************************** */
-void describe_item(int item_class, int item_type, int item_plus,
-                   int item_plus2, int item_dam, unsigned char item_id);
-
+void describe_item( const item_def &item );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -63,6 +54,5 @@ void describe_monsters(int class_described, unsigned char which_mons);
  * called from: item_use
  * *********************************************************************** */
 void describe_spell(int spelled);
-
 
 #endif

@@ -15,7 +15,6 @@
 
 #include "externs.h"
 
-
 // last updated 08jan2001 {gdl}
 /* ***********************************************************************
  * called from: ability - decks - fight - it_use2 - spells1
@@ -35,14 +34,6 @@ char search_around(void);
  * called from: acr
  * *********************************************************************** */
 void manage_clouds(void);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: beam - fight - files - food - items - misc - monstuff -
- *              religion - spells2 - spells3 - spells4
- * *********************************************************************** */
-void destroy_item(int dest);
 
 
 // last updated 12may2000 {dlb}
@@ -101,10 +92,9 @@ void new_level(void);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
- * called from: food
+ * called from: delay
  * *********************************************************************** */
-void place_chunks(int mcls, unsigned char rot_status, unsigned char chx,
-                  unsigned char chy, unsigned char ch_col);
+void turn_corpse_into_chunks( item_def &item );
 
 
 // last updated 3jun2000 {dlb}

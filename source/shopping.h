@@ -12,15 +12,16 @@
 #ifndef SHOPPING_H
 #define SHOPPING_H
 
+#include "externs.h"
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: chardump - invent - ouch - religion - shopping
  * *********************************************************************** */
-unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
-                        unsigned char item_da, unsigned char it_plus,
-                        unsigned char it_plus2, unsigned int item_quant,
-                        char ident_lev, char id[4][50]);
+
+// ident == true overrides the item ident level and gives the price
+// as if the item was fully id'd
+unsigned int item_value( item_def item, char id[4][50], bool ident = false );
 
 
 // last updated 12may2000 {dlb}

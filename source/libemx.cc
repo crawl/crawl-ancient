@@ -78,7 +78,7 @@ void textcolor(int c)
 
 
 
-void cprintf(const char *s)
+static void cprintf_aux(const char *s)
 {
     char *ptr = buf;
 
@@ -109,23 +109,18 @@ void cprintf(const char *s)
 
 }
 
-
-
-
-/*
-void cprintf (const char *format, ...)
+void cprintf(const char *format, ...)
 {
-   char buffer[4096]; // one could hope it's enough
    va_list argp;
-   va_start(argp,format);
+   char buffer[4096]; // one could hope it's enough
+
+   va_start( argp, format );
+
    vsprintf(buffer, format, argp);
+   cprintf_aux(buffer);
+
    va_end(argp);
-   v_puts(buffer);
 }
-*/
-
-
-
 
 void puttext(int x, int y, int lx, int ly, unsigned const char *buf)
 {

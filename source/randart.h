@@ -12,46 +12,48 @@
 #ifndef RANDART_H
 #define RANDART_H
 
+#include "enum.h"
+#include "externs.h"
 
 // used in files.cc, newgame.cc, randart.cc {dlb}
 #ifdef USE_NEW_UNRANDS
 #define NO_UNRANDARTS 52
-#else USE_NEW_UNRANDS
+#else // USE_NEW_UNRANDS
 #define NO_UNRANDARTS 14
-#endif USE_NEW_UNRANDS
+#endif // USE_NEW_UNRANDS
+
+#define RA_PROPERTIES 30
+
+// Reserving the upper bits for later expansion/versioning.
+#define RANDART_SEED_MASK  0x00ffffff
 
 
-/* ***********************************************************************
- * called from: itemname
- * *********************************************************************** */
-char *randart_armour_name(unsigned char aclass, unsigned char atype,
-                          unsigned char adam, unsigned char aplus,
-                          unsigned char aplus2, unsigned char ident_lev);
+bool is_random_artefact( const item_def &item );
+bool is_unrandom_artefact( const item_def &item );
+bool is_fixed_artefact( const item_def &item );
 
-
-/* ***********************************************************************
- * called from: itemname
- * *********************************************************************** */
-char *randart_name(unsigned char aclass, unsigned char atype,
-                   unsigned char adam, unsigned char aplus,
-                   unsigned char aplus2, unsigned char ident_lev);
-
+int  get_unique_item_status( int base_type, int type );
+void set_unique_item_status( int base_type, int type, int status );
 
 /* ***********************************************************************
  * called from: itemname
  * *********************************************************************** */
-char *randart_ring_name(unsigned char aclass, unsigned char atype,
-                        unsigned char adam, unsigned char aplus,
-                        unsigned char aplus2, unsigned char ident_lev);
+char *randart_armour_name( const item_def &item );
 
+/* ***********************************************************************
+ * called from: itemname
+ * *********************************************************************** */
+char *randart_name( const item_def &item );
+
+/* ***********************************************************************
+ * called from: itemname
+ * *********************************************************************** */
+char *randart_ring_name( const item_def &item );
 
 /* ***********************************************************************
  * called from: describe
  * *********************************************************************** */
-const char *unrandart_descrip(char which_descrip, unsigned char aclass,
-                        unsigned char atype, unsigned char aplus,
-                        unsigned char aplus2);
-
+const char *unrandart_descrip( char which_descrip, const item_def &item );
 
 /* ***********************************************************************
  * called from: files
@@ -62,24 +64,24 @@ char does_unrandart_exist(int whun);
 /* ***********************************************************************
  * called from: dungeon
  * *********************************************************************** */
-int find_okay_unrandart(unsigned char aclass);
+int find_okay_unrandart(unsigned char aclass, unsigned char atype = OBJ_RANDOM);
 
 
 /* ***********************************************************************
  * called from: describe - fight - it_use2 - item_use - player
  * *********************************************************************** */
-int randart_wpn_properties(unsigned char aclass, unsigned char atype,
-                           unsigned char adam, unsigned char aplus,
-                           unsigned char aplus2, unsigned char acol,
-                           char prop);
+void randart_wpn_properties( const item_def &item,
+                             FixedVector< char, RA_PROPERTIES > &proprt );
 
-int inv_randart_wpn_properties( int index, unsigned char acol, char prop );
+int randart_wpn_property( const item_def &item, char prop );
 
 
 /* ***********************************************************************
  * called from: dungeon
  * *********************************************************************** */
-void make_item_unrandart(int x, int ura_item);
+void make_item_randart( item_def &item );
+// void make_item_unrandart(int x, int ura_item);
+void make_item_unrandart( item_def &item, int unrand_index );
 
 
 /* ***********************************************************************
@@ -91,8 +93,7 @@ void set_unrandart_exist(int whun, char is_exist);
 /* ***********************************************************************
  * called from: itemname
  * *********************************************************************** */
-void standard_name_armour(unsigned char item_typ, unsigned char item_plus2,
-                          char glorg[80]);
+void standard_name_armour( const item_def &item, char glorg[80] );
 
 
 /* ***********************************************************************

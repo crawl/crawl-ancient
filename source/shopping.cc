@@ -28,6 +28,7 @@
 #include "items.h"
 #include "itemname.h"
 #include "player.h"
+#include "randart.h"
 #include "spl-book.h"
 #include "stuff.h"
 
@@ -35,19 +36,19 @@
 #include "macro.h"
 #endif
 
-char in_a_shop(char shoppy, char id[4][50]);
-char more3(void);
-void purchase(int item_got);
-void shop_init_id(int i, FixedArray < int, 4, 50 > &shop_id);
-void shop_print(char *shoppy, char sh_line);
-void shop_set_id(int i, FixedArray < int, 4, 50 > &shop_id,
-                 unsigned char base_type, unsigned char sub_type);
-void shop_uninit_id(int i, FixedArray < int, 4, 50 > &shop_id);
+static char in_a_shop(char shoppy, char id[4][50]);
+static char more3(void);
+static void purchase( int shop, int item_got, int cost );
+static void shop_init_id(int i, FixedArray < int, 4, 50 > &shop_id);
+static void shop_print(char *shoppy, char sh_line);
+static void shop_set_ident_type(int i, FixedArray < int, 4, 50 > &shop_id,
+                                unsigned char base_type, unsigned char sub_type);
+static void shop_uninit_id(int i, FixedArray < int, 4, 50 > &shop_id);
 
-char in_a_shop(char shoppy, char id[4][50])
+char in_a_shop( char shoppy, char id[4][50] )
 {
     // easier to work with {dlb}
-    unsigned int greedy = env.shop_greed[shoppy];
+    unsigned int greedy = env.shop[shoppy].greed;
 
     FixedArray < int, 4, 50 > shop_id;
     FixedVector < int, 20 > shop_items;
@@ -71,8 +72,9 @@ char in_a_shop(char shoppy, char id[4][50])
     clrscr();
     int itty = 0;
 
-    sprintf(info, "Welcome to %s!", shop_name(env.shop_x[shoppy],
-        env.shop_y[shoppy]));
+    snprintf( info, INFO_SIZE, "Welcome to %s!",
+             shop_name(env.shop[shoppy].x, env.shop[shoppy].y) );
+
     shop_print(info, 20);
 
     more3();
@@ -93,21 +95,10 @@ char in_a_shop(char shoppy, char id[4][50])
 
     if (itty == NON_ITEM)
     {
-      empty_shop:
         shop_print("I'm sorry, my shop is empty now.", 20);
         more3();
         goto goodbye;
     }
-
-    if (inv_count() >= ENDOFPACK)
-    {
-        shop_print("You seem to be carrying too much.", 20);
-        more3();
-        goto goodbye;
-    }
-
-    if (itty == NON_ITEM)
-        goto empty_shop;
 
     for (i = 1; i < 20; i++)
     {
@@ -119,7 +110,7 @@ char in_a_shop(char shoppy, char id[4][50])
             continue;
         }
 
-        itty = mitm.link[itty];
+        itty = mitm[itty].link;
     }
 
     itty = igrd[0][5 + shoppy];
@@ -130,31 +121,25 @@ char in_a_shop(char shoppy, char id[4][50])
 
         textcolor((i % 2) ? WHITE : LIGHTGREY);
 
-        it_name(itty, 3, st_pass);
+        it_name(itty, DESC_NOCAP_A, st_pass);
         putch(i + 96);
         cprintf(" - ");
         cprintf(st_pass);
 
-        gp_value = greedy * item_value( mitm.base_type[itty],
-                                        mitm.sub_type[itty],
-                                        mitm.special[itty],
-                                        mitm.pluses[itty],
-                                        mitm.pluses2[itty],
-                                        mitm.quantity[itty],
-                                        mitm.id[itty], id );
+        gp_value = greedy * item_value( mitm[itty], id );
         gp_value /= 10;
         if (gp_value <= 1)
             gp_value = 1;
 
         gotoxy(60, i);
         // cdl - itoa(gp_value, st_pass, 10);
-        sprintf(st_pass, "%5d", gp_value);
+        snprintf(st_pass, sizeof(st_pass), "%5d", gp_value);
         cprintf(st_pass);
         cprintf(" gold");
-        if (mitm.link[itty] == NON_ITEM)
+        if (mitm[itty].link == NON_ITEM)
             break;
 
-        itty = mitm.link[itty];
+        itty = mitm[itty].link;
     }
 
     textcolor(LIGHTGREY);
@@ -162,8 +147,8 @@ char in_a_shop(char shoppy, char id[4][50])
     shop_print("Type letter to buy item, x/Esc to leave, ?/* for inventory, v to examine.", 23);
 
   purchase:
-    sprintf(info, "You have %d gold piece%s.", you.gold,
-        (you.gold == 1)?"":"s");
+    snprintf( info, INFO_SIZE, "You have %d gold piece%s.", you.gold,
+             (you.gold == 1) ? "" : "s" );
 
     shop_print(info, 19);
 
@@ -171,7 +156,7 @@ char in_a_shop(char shoppy, char id[4][50])
 
     ft = get_ch();
 
-    if (ft == 'x' || ft == 27)
+    if (ft == 'x' || ft == ESCAPE)
         goto goodbye;
 
     if (ft == 'v')
@@ -195,11 +180,7 @@ char in_a_shop(char shoppy, char id[4][50])
             goto purchase;
         }
 
-        describe_item(mitm.base_type[shop_items[ft]],
-                      mitm.sub_type[shop_items[ft]],
-                      mitm.pluses[shop_items[ft]],
-                      mitm.pluses2[shop_items[ft]],
-                      mitm.special[shop_items[ft]], mitm.id[shop_items[ft]]);
+        describe_item( mitm[shop_items[ft]] );
 
         goto print_stock;
     }
@@ -235,13 +216,7 @@ char in_a_shop(char shoppy, char id[4][50])
         goto purchase;
     }
 
-    gp_value = greedy * item_value( mitm.base_type[shop_items[ft]],
-                                        mitm.sub_type[shop_items[ft]],
-                                        mitm.special[shop_items[ft]],
-                                        mitm.pluses[shop_items[ft]],
-                                        mitm.pluses2[shop_items[ft]],
-                                        mitm.quantity[shop_items[ft]],
-                                        mitm.id[shop_items[ft]], id ) / 10;
+    gp_value = greedy * item_value( mitm[shop_items[ft]], id ) / 10;
 
     if (gp_value > you.gold)
     {
@@ -250,20 +225,10 @@ char in_a_shop(char shoppy, char id[4][50])
         goto purchase;
     }
 
-    purchase(shop_items[ft]);
-    shop_set_id( shoppy, shop_id, mitm.base_type[shop_items[ft]],
-                 mitm.sub_type[shop_items[ft]] );
+    shop_set_ident_type( shoppy, shop_id, mitm[shop_items[ft]].base_type,
+                         mitm[shop_items[ft]].sub_type );
 
-    you.gold -= gp_value;
-
-    mitm.quantity[shop_items[ft]] = 0;
-
-    // ARGH!!  This only works because items happen to be generated with
-    // consecutive IDs during dungeon generation.  Blech!
-    if (ft == 0)
-        igrd[0][5 + shoppy] = mitm.link[shop_items[ft]];
-    else
-        mitm.link[shop_items[ft - 1]] = mitm.link[shop_items[ft]];
+    purchase( shoppy, shop_items[ft], gp_value );
 
     goto print_stock;
 
@@ -278,7 +243,7 @@ char in_a_shop(char shoppy, char id[4][50])
     cprintf(" ");
 #endif
 
-    shop_uninit_id(shoppy, shop_id);
+    shop_uninit_id( shoppy, shop_id );
     return 0;
 }
 
@@ -286,23 +251,23 @@ void shop_init_id(int i, FixedArray < int, 4, 50 > &shop_id)
 {
     unsigned char j = 0;
 
-    if (env.shop_type[i] != SHOP_WEAPON_ANTIQUE
-        && env.shop_type[i] != SHOP_ARMOUR_ANTIQUE
-        && env.shop_type[i] != SHOP_GENERAL_ANTIQUE)
+    if (env.shop[i].type != SHOP_WEAPON_ANTIQUE
+        && env.shop[i].type != SHOP_ARMOUR_ANTIQUE
+        && env.shop[i].type != SHOP_GENERAL_ANTIQUE)
     {
         for (j = 0; j < 50; j++)
         {
-            shop_id[0][j] = get_id(OBJ_WANDS, j);
-            set_id(OBJ_WANDS, j, 1);
+            shop_id[ IDTYPE_WANDS ][j] = get_ident_type(OBJ_WANDS, j);
+            set_ident_type(OBJ_WANDS, j, ID_KNOWN_TYPE);
 
-            shop_id[1][j] = get_id(OBJ_SCROLLS, j);
-            set_id(OBJ_SCROLLS, j, 1);
+            shop_id[ IDTYPE_SCROLLS ][j] = get_ident_type(OBJ_SCROLLS, j);
+            set_ident_type(OBJ_SCROLLS, j, ID_KNOWN_TYPE);
 
-            shop_id[2][j] = get_id(OBJ_JEWELLERY, j);
-            set_id(OBJ_JEWELLERY, j, 1);
+            shop_id[ IDTYPE_JEWELLERY ][j] = get_ident_type(OBJ_JEWELLERY, j);
+            set_ident_type(OBJ_JEWELLERY, j, ID_KNOWN_TYPE);
 
-            shop_id[3][j] = get_id(OBJ_POTIONS, j);
-            set_id(OBJ_POTIONS, j, 1);
+            shop_id[ IDTYPE_POTIONS ][j] = get_ident_type(OBJ_POTIONS, ID_KNOWN_TYPE);
+            set_ident_type(OBJ_POTIONS, j, ID_KNOWN_TYPE);
         }
     }
 }
@@ -311,48 +276,48 @@ void shop_uninit_id(int i, FixedArray < int, 4, 50 > &shop_id)
 {
     unsigned char j = 0;
 
-    if (env.shop_type[i] != SHOP_WEAPON_ANTIQUE
-        && env.shop_type[i] != SHOP_ARMOUR_ANTIQUE
-        && env.shop_type[i] != SHOP_GENERAL_ANTIQUE)
+    if (env.shop[i].type != SHOP_WEAPON_ANTIQUE
+        && env.shop[i].type != SHOP_ARMOUR_ANTIQUE
+        && env.shop[i].type != SHOP_GENERAL_ANTIQUE)
     {
         for (j = 0; j < 50; j++)
         {
-            set_id(OBJ_WANDS, j, shop_id[0][j]);
-            set_id(OBJ_SCROLLS, j, shop_id[1][j]);
-            set_id(OBJ_JEWELLERY, j, shop_id[2][j]);
-            set_id(OBJ_POTIONS, j, shop_id[3][j]);
+            set_ident_type( OBJ_WANDS, j, shop_id[ IDTYPE_WANDS ][j] );
+            set_ident_type( OBJ_SCROLLS, j, shop_id[ IDTYPE_SCROLLS ][j] );
+            set_ident_type( OBJ_JEWELLERY, j, shop_id[ IDTYPE_JEWELLERY ][j] );
+            set_ident_type( OBJ_POTIONS, j, shop_id[ IDTYPE_POTIONS ][j] );
         }
     }
 }
 
-void shop_set_id(int i, FixedArray < int, 4, 50 > &shop_id,
-                 unsigned char base_type, unsigned char sub_type)
+void shop_set_ident_type( int i, FixedArray < int, 4, 50 > &shop_id,
+                          unsigned char base_type, unsigned char sub_type )
 {
-    if (env.shop_type[i] != SHOP_WEAPON_ANTIQUE
-        && env.shop_type[i] != SHOP_ARMOUR_ANTIQUE
-        && env.shop_type[i] != SHOP_GENERAL_ANTIQUE)
+    if (env.shop[i].type != SHOP_WEAPON_ANTIQUE
+        && env.shop[i].type != SHOP_ARMOUR_ANTIQUE
+        && env.shop[i].type != SHOP_GENERAL_ANTIQUE)
     {
         switch (base_type)
         {
         case OBJ_WANDS:
-            shop_id[0][sub_type] = 1;
+            shop_id[ IDTYPE_WANDS ][sub_type] = 1;
             break;
         case OBJ_SCROLLS:
-            shop_id[1][sub_type] = 1;
+            shop_id[ IDTYPE_SCROLLS ][sub_type] = 1;
             break;
         case OBJ_JEWELLERY:
-            shop_id[2][sub_type] = 1;
+            shop_id[ IDTYPE_JEWELLERY ][sub_type] = 1;
             break;
         case OBJ_POTIONS:
-            shop_id[3][sub_type] = 1;
+            shop_id[ IDTYPE_POTIONS ][sub_type] = 1;
             break;
         }
 
-        set_id(base_type, sub_type, 1);
+        set_ident_type( base_type, sub_type, ID_KNOWN_TYPE );
     }
 }
 
-void shop_print(char *shoppy, char sh_lines)
+void shop_print( char *shoppy, char sh_lines )
 {
     gotoxy(1, sh_lines);
 
@@ -375,78 +340,73 @@ char more3(void)
     return keyin;
 }
 
-void purchase(int item_got)
+static void purchase( int shop, int item_got, int cost )
 {
-    unsigned char i = 0;
+    you.gold -= cost;
 
-    for (i = 0; i < (ENDOFPACK + 1); i++)
+    int num = move_item_to_player( item_got, mitm[item_got].quantity, true );
+
+    // Shopkeepers will now place goods you can't carry outside the shop.
+    if (num < mitm[item_got].quantity)
     {
-        if (i == ENDOFPACK)
-        {
-            shop_print("The demon of the infinite void grins at you.", 20);
-            more3();
-            return;
-        }
+        snprintf( info, INFO_SIZE, "I'll put %s outside for you.",
+                 (mitm[item_got].quantity == 1) ? "it" :
+                 (num > 0)                      ? "the rest"
+                                                : "these" );
 
-        if (you.inv_quantity[i] < 1)
-            break;
+        shop_print( info, 20 );
+        more3();
+
+        move_item_to_grid( &item_got, env.shop[shop].x, env.shop[shop].y );
     }
-
-    you.inv_ident[i] = mitm.id[item_got];
-    you.inv_class[i] = mitm.base_type[item_got];
-    you.inv_type[i] = mitm.sub_type[item_got];
-    you.inv_plus[i] = mitm.pluses[item_got];
-    you.inv_plus2[i] = mitm.pluses2[item_got];
-    you.inv_dam[i] = mitm.special[item_got];
-    you.inv_colour[i] = mitm.colour[item_got];
-    you.inv_quantity[i] = mitm.quantity[item_got];
 }                               // end purchase()
 
-unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
-                        unsigned char item_da, unsigned char it_plus,
-                        unsigned char it_plus2, unsigned int item_quant,
-                        char ident_lev, char id[4][50])
+unsigned int item_value( item_def item, char id[4][50], bool ident )
 {
+    // Note that we pass item in by value, since we want a local
+    // copy to mangle as neccessary.
+    item.flags = (ident) ? (item.flags | ISFLAG_IDENT_MASK) : (item.flags);
+
     int valued = 0;
     int charge_value = 0;
 
-    switch (item_clas)
+    switch (item.base_type)
     {
     case OBJ_WEAPONS:
-        if (item_da >= NWPN_SINGING_SWORD)
+        if (is_fixed_artefact( item ))
         {
-            if (ident_lev > 0)
+            if (item_ident( item, ISFLAG_KNOW_PROPERTIES ))
             {
-                switch (item_da)
+                switch (item.special)
                 {
-                case NWPN_SWORD_OF_CEREBOV:
+                case SPWPN_SWORD_OF_CEREBOV:
                     valued += 2000;
                     break;
 
-                case NWPN_SCEPTRE_OF_ASMODEUS:
+                case SPWPN_SCEPTRE_OF_ASMODEUS:
                     valued += 1500;
                     break;
 
-                case NWPN_SWORD_OF_ZONGULDROK:
+                case SPWPN_SWORD_OF_ZONGULDROK:
                     valued += 1250;
                     break;
 
-                case NWPN_SCEPTRE_OF_TORMENT:
-                case NWPN_SINGING_SWORD:
-                case NWPN_STAFF_OF_DISPATER:
+                case SPWPN_SCEPTRE_OF_TORMENT:
+                case SPWPN_SINGING_SWORD:
+                case SPWPN_STAFF_OF_DISPATER:
                     valued += 1200;
                     break;
 
-                case NWPN_GLAIVE_OF_PRUNE:
-                case NWPN_WRATH_OF_TROG:
+                case SPWPN_GLAIVE_OF_PRUNE:
+                case SPWPN_WRATH_OF_TROG:
                     valued += 1000;
                     break;
 
-                case NWPN_SCYTHE_OF_CURSES:
+                case SPWPN_SCYTHE_OF_CURSES:
                     valued += 800;
                     break;
 
-                case NWPN_MACE_OF_VARIABILITY:
+                case SPWPN_MACE_OF_VARIABILITY:
                     valued += 700;
                     break;
 
@@ -455,11 +415,11 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
                     break;
                 }
                 break;
-            }                   // end if ident_lev
+            }
 
         }                       // end uniques
 
-        switch (item_typ)
+        switch (item.sub_type)
         {
         case WPN_CLUB:
         case WPN_KNIFE:
@@ -593,9 +553,9 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
         }
 
 
-        if (ident_lev > 1)
+        if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            switch (item_da % 30)
+            switch (item.special)
             {
             case SPWPN_NORMAL:
                 break;
@@ -649,61 +609,62 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
                 break;
             }
 
-            if (item_da % 30 != SPWPN_NORMAL)
+            if (item.special != SPWPN_NORMAL)
                 valued /= 10;
         }
 
         // elf/dwarf
-        if (item_da / 30 == DWPN_ELVEN || item_da / 30 == DWPN_DWARVEN)
+        if (cmp_equip_race( item, ISFLAG_ELVEN )
+                || cmp_equip_race( item, ISFLAG_DWARVEN ))
         {
             valued *= 12;
             valued /= 10;
         }
 
         // value was "6" but comment read "orc", so I went with comment {dlb}
-        if (item_da / 30 == DWPN_ORCISH)
+        if (cmp_equip_race( item, ISFLAG_ORCISH ))
         {
             valued *= 8;
             valued /= 10;
         }
 
-        if (ident_lev > 2)
+        if (item_ident( item, ISFLAG_KNOW_PLUSES ))
         {
-            if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150))
+            if (item.plus >= 0)
             {
-                valued += (it_plus % 50) * 2;
-                valued *= 10 + (it_plus % 50) + 2 * (it_plus % 50);
+                valued += item.plus * 2;
+                valued *= 10 + item.plus + 2 * item.plus;
                 valued /= 10;
             }
 
-            if (it_plus2 >= 50)
+            if (item.plus2 >= 0)
             {
-                valued += (it_plus2 % 50) * 2;
-                valued *= 10 + (it_plus2 % 50) + 2 * (it_plus2 % 50);
+                valued += item.plus2 * 2;
+                valued *= 10 + item.plus2 + 2 * item.plus2;
                 valued /= 10;
             }
 
-            if (it_plus % 50 > 30)
+            if (item.plus < 0)
             {
                 valued -= 5;
-                valued += ((it_plus % 50) - 50) * ((it_plus % 50) - 50)
-                                                    * ((it_plus % 50) - 50);
+                valued += (item.plus * item.plus * item.plus);
+
                 if (valued < 1)
                     valued = 1;
                 //break;
             }
 
-            if (it_plus2 % 50 > 30)
+            if (item.plus2 < 0)
             {
                 valued -= 5;
-                valued += ((it_plus2 % 50) - 50) * ((it_plus2 % 50) - 50)
-                                                    * ((it_plus2 % 50) - 50);
+                valued += (item.plus2 * item.plus2 * item.plus2);
+
                 if (valued < 1)
                     valued = 1;
             }
         }
 
-        if (ident_lev > 0 && it_plus >= 130)
+        if (item_cursed( item ))
         {
             valued *= 6;
             valued /= 10;
@@ -711,16 +672,17 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
         break;
 
     case OBJ_MISSILES:          // ammunition
-        if (ident_lev > 0)
+        if (item_ident( item, ISFLAG_KNOW_PLUSES ))
         {
             // assume not cursed (can they be anyway?)
-            if (it_plus < 50)
+            if (item.plus < 0)
                 valued -= 11150;
-            if (it_plus >= 50)
-                valued += (it_plus % 50) * 2;
+
+            if (item.plus >= 0)
+                valued += (item.plus * 2);
         }
 
-        switch (item_typ)
+        switch (item.sub_type)
         {
         case MI_DART:
         case MI_LARGE_ROCK:
@@ -741,16 +703,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
         break;
 
     case OBJ_ARMOUR:
-/*
-           if (ident_lev > 2)
-           {
-           if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150)) valued += it_plus % 50 * 15;
-           if (it_plus < 50) valued -= 20 + (50 - it_plus) * 15;
-
-           //             valued += it_plus % 50;
-           }
-*/
-        switch (item_typ)
+        switch (item.sub_type)
         {
         case ARM_GOLD_DRAGON_ARMOUR:
             valued += 1600;
@@ -864,9 +817,9 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
             break;
         }
 
-        if (ident_lev > 1)
+        if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            switch (item_da % 30)
+            switch (item.special)
             {
             case SPARM_NORMAL:
                 break;
@@ -915,43 +868,43 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
                 break;
             }
 
-            if (item_da % 30 != 0)
+            if (item.special != SPARM_NORMAL)
                 valued /= 10;
         }
 
-        if (item_da / 30 == DARM_ELVEN || item_da / 30 == DARM_DWARVEN)
+        if (cmp_equip_race( item, ISFLAG_ELVEN )
+                || cmp_equip_race( item, ISFLAG_DWARVEN ))
         {
             valued *= 12;
             valued /= 10;
         }
 
-        if (item_da / 30 == DARM_ORCISH)
+        if (cmp_equip_race( item, ISFLAG_ORCISH ))
         {
             valued *= 8;
             valued /= 10;
         }
 
-        if (ident_lev > 1)
+        if (item_ident( item, ISFLAG_KNOW_PLUSES ))
         {
             valued += 5;
-            if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150))
+            if (item.plus >= 0)
             {
-                valued += (it_plus % 50) * 30;
-                valued *= 10 + (it_plus % 50) * 3 * (it_plus % 50);
+                valued += item.plus * 30;
+                valued *= 10 + item.plus * 3 * item.plus;
                 valued /= 10;
             }
 
-            if (it_plus % 50 > 30)
+            if (item.plus < 0)
             {
-                valued +=
-                    ((it_plus % 50) - 50) * ((it_plus % 50) -
-                                             50) * ((it_plus % 50) - 50);
+                valued += item.plus * item.plus * item.plus;
+
                 if (valued < 1)
                     valued = 1;
             }
         }
 
-        if (ident_lev != 0 && it_plus >= 130)
+        if (item_cursed( item ))
         {
             valued *= 6;
             valued /= 10;
@@ -960,9 +913,9 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
 
     case OBJ_WANDS:
         charge_value = 0;
-        if (id[0][item_typ])
+        if (id[0][item.sub_type])
         {
-            switch (item_typ)
+            switch (item.sub_type)
             {
             case WAND_FIREBALL:
             case WAND_LIGHTNING:
@@ -1041,12 +994,14 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
                 break;
             }
 
-            if (ident_lev > 1)
-                valued += it_plus * charge_value;
+            if (item_ident( item, ISFLAG_KNOW_PLUSES ))
+            {
+                valued += item.plus * charge_value;
+            }
 
             valued *= 3;
 
-            if (it_plus == 0)
+            if (item.plus == 0)
                 valued = 3;     // change if wands are rechargeable!
         }
         else
@@ -1054,11 +1009,11 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
         break;
 
     case OBJ_POTIONS:
-        if (!id[3][item_typ])
+        if (!id[3][item.sub_type])
             valued += 9;
         else
         {
-            switch (item_typ)
+            switch (item.sub_type)
             {
             case POT_EXPERIENCE:
                 valued += 500;
@@ -1111,7 +1066,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
         break;
 
     case OBJ_FOOD:
-        switch (item_typ)
+        switch (item.sub_type)
         {
         case FOOD_ROYAL_JELLY:
             valued = 280;
@@ -1159,10 +1114,10 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
         break;
 
     case OBJ_SCROLLS:
-        if (!id[1][item_typ])
+        if (!id[1][item.sub_type])
             valued += 10;
         else
-            switch (item_typ)
+            switch (item.sub_type)
             {
             case SCR_ACQUIREMENT:
                 valued += 520;
@@ -1217,24 +1172,26 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
         break;
 
     case OBJ_JEWELLERY:
-        if (!id[2][item_typ])
+        if (!id[2][item.sub_type])
             valued += 50;
 
-        if (ident_lev > 0 && it_plus >= 130)
+        if (item_cursed( item ))
             valued -= 10;
 
-        if (id[2][item_typ] > 0)
+        if (id[2][item.sub_type] > 0)
         {
-            if (ident_lev > 1 && item_typ == RING_PROTECTION
-                || item_typ == RING_STRENGTH || item_typ == RING_EVASION
-                || item_typ == RING_DEXTERITY
-                || item_typ == RING_INTELLIGENCE)
+            if (item_ident( item, ISFLAG_KNOW_PLUSES )
+                && (item.sub_type == RING_PROTECTION
+                    || item.sub_type == RING_STRENGTH
+                    || item.sub_type == RING_EVASION
+                    || item.sub_type == RING_DEXTERITY
+                    || item.sub_type == RING_INTELLIGENCE))
             {
-                if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150))
-                    valued += 10 * (it_plus % 50);
+                if (item.plus >= 0)
+                    valued += 10 * item.plus;
             }
 
-            switch (item_typ)
+            switch (item.sub_type)
             {
             case RING_INVISIBILITY:
                 valued += 100;
@@ -1309,7 +1266,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
                 // got to do delusion!
             }
 
-            if (item_da == 200)
+            if (is_random_artefact( item ))
                 valued += 50;
 
             valued *= 7;
@@ -1317,10 +1274,34 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
         break;
 
     case OBJ_MISCELLANY:
-        switch (ident_lev)
+        if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-        case 0:
-            switch (item_typ)
+            switch (item.sub_type)
+            {
+            case MISC_HORN_OF_GERYON:
+            case MISC_RUNE_OF_ZOT:  // upped from 1200 to encourage collecting
+                valued += 5000;
+                break;
+            case MISC_DISC_OF_STORMS:
+                valued += 2000;
+                break;
+            case MISC_CRYSTAL_BALL_OF_SEEING:
+                valued += 500;
+                break;
+            case MISC_BOTTLED_EFREET:
+                valued += 400;
+                break;
+            case MISC_CRYSTAL_BALL_OF_FIXATION:
+            case MISC_EMPTY_EBONY_CASKET:
+                valued += 20;
+                break;
+            default:
+                valued += 500;
+            }
+        }
+        else
+        {
+            switch (item.sub_type)
             {
             case MISC_HORN_OF_GERYON:
             case MISC_RUNE_OF_ZOT:
@@ -1338,48 +1319,25 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
             default:
                 valued += 400;
             }
-            break;
-        default:
-            switch (item_typ)
-            {
-            case MISC_HORN_OF_GERYON:
-                valued += 5000;
-                break;
-            case MISC_DISC_OF_STORMS:
-                valued += 2000;
-                break;
-            case MISC_RUNE_OF_ZOT:
-                valued += 1200;
-                break;
-            case MISC_CRYSTAL_BALL_OF_SEEING:
-                valued += 500;
-                break;
-            case MISC_BOTTLED_EFREET:
-                valued += 400;
-                break;
-            case MISC_CRYSTAL_BALL_OF_FIXATION:
-            case MISC_EMPTY_EBONY_CASKET:
-                valued += 20;
-                break;
-            default:
-                valued += 500;
-            }
-            break;
         }
         break;
 
     //case 10: break;
 
     case OBJ_BOOKS:
-        valued = 150 + ((ident_lev == 0) ? 0 : book_rarity(item_typ) * 50);
+        valued = 150 + (item_ident( item, ISFLAG_KNOW_TYPE )
+                                    ? book_rarity(item.sub_type) * 50 : 0);
         break;
 
     case OBJ_STAVES:
-        if (ident_lev == 0)
+        if (item_not_ident( item, ISFLAG_KNOW_TYPE ))
             valued = 120;
-        else if (item_typ == STAFF_SMITING || item_typ == STAFF_WARDING
-                                             || item_typ == STAFF_DISCOVERY)
+        else if (item.sub_type == STAFF_SMITING
+                || item.sub_type == STAFF_WARDING
+                || item.sub_type == STAFF_DISCOVERY)
+        {
             valued = 150;
+        }
         else
             valued = 250;
         break;
@@ -1392,25 +1350,25 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
     if (valued < 1)
         valued = 1;
 
-    valued *= item_quant;
+    valued *= item.quantity;
 
-    return valued;
+    return (valued);
 }                               // end item_value()
 
 void shop(void)
 {
     unsigned char i = 0;
 
-    for (i = 0; i < 6; i++)
+    for (i = 0; i < MAX_SHOPS; i++)
     {
-        if (i == 5)
-        {
-            mpr("Help! Non-existent shop.");
-            return;
-        }
-
-        if (env.shop_x[i] == you.x_pos && env.shop_y[i] == you.y_pos)
+        if (env.shop[i].x == you.x_pos && env.shop[i].y == you.y_pos)
             break;
+    }
+
+    if (i == MAX_SHOPS)
+    {
+        mpr("Help! Non-existent shop.");
+        return;
     }
 
     char identy[4][50];
@@ -1435,18 +1393,26 @@ char *shop_name(int sx, int sy)
         return "";
 
     // find shop
-    for(shoppy = 0; shoppy < 5; shoppy ++)
+    for(shoppy = 0; shoppy < MAX_SHOPS; shoppy ++)
     {
         // find shop index plus a little bit of paranoia
-        if (env.shop_x[shoppy] == sx && env.shop_y[shoppy] == sy &&
-            env.shop_type[shoppy] != SHOP_UNASSIGNED)
+        if (env.shop[shoppy].x == sx && env.shop[shoppy].y == sy &&
+            env.shop[shoppy].type != SHOP_UNASSIGNED)
+        {
             break;
+        }
     }
 
-    int shop_type = env.shop_type[shoppy];
+    if (shoppy == MAX_SHOPS)
+    {
+        mpr("Help! Non-existent shop.");
+        return ("Buggy Shop");
+    }
 
-    make_name( env.keeper_name[shoppy][0], env.keeper_name[shoppy][1],
-               env.keeper_name[shoppy][2], 3, str_pass );
+    int shop_type = env.shop[shoppy].type;
+
+    make_name( env.shop[shoppy].keeper_name[0], env.shop[shoppy].keeper_name[1],
+               env.shop[shoppy].keeper_name[2], 3, str_pass );
 
     strcpy(sh_name, str_pass);
     strcat(sh_name, "'s ");

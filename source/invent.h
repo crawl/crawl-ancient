@@ -12,12 +12,19 @@
 #ifndef INVENT_H
 #define INVENT_H
 
+#define PROMPT_ABORT        -1
+#define PROMPT_GOT_SPECIAL  -2
+
+int prompt_invent_item( const char *prompt, int type_expect,
+                        bool must_exist = true,
+                        const char other_valid_char = '\0',
+                        int *const count = NULL );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: invent - ouch - shopping
  * *********************************************************************** */
-char invent(int item_class_inv, bool show_price);
+unsigned char invent(int item_class_inv, bool show_price);
 
 
 // last updated 24may2000 {dlb}

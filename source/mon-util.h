@@ -108,7 +108,7 @@ struct monsterentry
     //   Note that this may make draining attacks less attractive (LRH)
     char exp_mod PACKED;
 
-    short charclass PACKED;     //
+    unsigned short charclass PACKED;     //
 
     char holiness PACKED;       // -1=holy,0=normal,1=undead,2=very very evil
 
@@ -156,14 +156,14 @@ struct monsterentry
  * *********************************************************************** */
 void mon_init( FixedVector<unsigned short, 1000>& colour );
 
-
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: bang - beam - debug - direct - effects - fight - item_use -
  *              monstuff - mstuff2 - ouch - spells1 - spells2 - spells3 -
  *              spells4
  * *********************************************************************** */
-char *monam(int mons_cla, int mons_e, char desc, char see_invis);
+// mons_wpn only important for dancing weapons -- bwr
+char *monam(int mons_num, int mons, bool vis, char desc, int mons_wpn = NON_ITEM);
 
 // these front for monam
 char *ptr_monam( struct monsters *mon, char desc );
@@ -189,13 +189,14 @@ char mons_itemuse(int mc);
  * *********************************************************************** */
 char mons_see_invis(int mclass);
 
+bool mons_monster_visible( struct monsters *mon, struct monsters *targ );
+
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: view
  * *********************************************************************** */
 char mons_shouts(int mclass);
-
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -253,6 +254,9 @@ int mons_flag(int mc, int bf);
  *              spells3 - spells4
  * *********************************************************************** */
 int mons_holiness(int mclass);
+
+bool mons_is_demon( int mc );
+bool mons_is_humanoid( int mc );
 
 
 // last updated 12may2000 {dlb}
@@ -330,7 +334,7 @@ int mons_zombie_size(int mclass);
 /* ***********************************************************************
  * called from: bang - beam - monstuff - mstuff2 - spells4 - view
  * *********************************************************************** */
-unsigned char mons_category(int which_mons);
+// unsigned char mons_category(int which_mons);
 
 
 // last updated 07jan2001 (gdl)
@@ -365,7 +369,7 @@ void define_monster(int mid);
 /* ***********************************************************************
  * called from: debug - itemname - mon-util
  * *********************************************************************** */
-void moname(int mcl, char mench, char see_inv, char descrip, char glog[40]);
+void moname(int mcl, bool vis, char descrip, char glog[40]);
 
 
 // last updated 12may2000 {dlb}
@@ -374,6 +378,13 @@ void moname(int mcl, char mench, char see_inv, char descrip, char glog[40]);
  * *********************************************************************** */
 void mons_spell_list(unsigned char sec, int splist[6]);
 
+#if DEBUG_DIAGNOSTICS
+// last updated 25sep2001 {dlb}
+/* ***********************************************************************
+ * called from: describe
+ * *********************************************************************** */
+const char *mons_spell_name( int spell );
+#endif
 
 // last updated 4jan2001 (gdl)
 /* ***********************************************************************
@@ -394,6 +405,10 @@ bool ms_direct_nasty(int monspell);
  * *********************************************************************** */
 bool ms_requires_tracer(int mons_spell);
 
+bool ms_useful_fleeing_out_of_sight( struct monsters *mon, int monspell );
+bool ms_waste_of_time( struct monsters *mon, int monspell );
+bool ms_low_hitpoint_cast( struct monsters *mon, int monspell );
+
 // last updated 06mar2001 (gdl)
 /* ***********************************************************************
  * called from:
@@ -411,5 +426,14 @@ bool mons_aligned(int m1, int m2);
  * called from: monstuff acr
  * *********************************************************************** */
 bool mons_friendly(struct monsters *m);
+
+
+int mons_has_ench( struct monsters *mon, unsigned int ench,
+                   unsigned int ench2 = ENCH_NONE );
+
+int mons_del_ench( struct monsters *mon, unsigned int ench,
+                   unsigned int ench2 = ENCH_NONE );
+
+bool mons_add_ench( struct monsters *mon, unsigned int ench );
 
 #endif

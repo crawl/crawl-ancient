@@ -16,9 +16,12 @@
 
 #include "externs.h"
 
+#include "cloud.h"
 #include "monplace.h"
 #include "dungeon.h"
+#include "items.h"
 #include "lev-pand.h"
+#include "randart.h"
 #include "stuff.h"
 
 // public for abyss generation
@@ -132,18 +135,18 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
                     if (one_chance_in(500))
                     {
                         thing_created = items(1, OBJ_MISCELLANY,
-                                              MISC_RUNE_OF_ZOT, 1, 51, 250);
+                                              MISC_RUNE_OF_ZOT, true, 51, 51);
                     }
                     else
                     {
-                        thing_created = items(1, OBJ_RANDOM,
-                                              OBJ_RANDOM, 1, 51, 250);
+                        thing_created = items(1, OBJ_RANDOM, OBJ_RANDOM, true,
+                                              51, 250);
                     }
 
-                    // link to top
-                    mitm.link[thing_created] = igrd[i][j];
-                    igrd[i][j] = thing_created;
-                    items_placed++;
+                    move_item_to_grid( &thing_created, i, j );
+
+                    if (thing_created != NON_ITEM)
+                        items_placed++;
                 }
             }
         }
@@ -174,11 +177,9 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
 }
 
 
-char area_shift(void)
+void area_shift(void)
 /*******************/
 {
-    unsigned char cloud_no2 = 0;
-
     for (unsigned int i = 0; i < MAX_MONSTERS; i++)
     {
         if (menv[i].type == -1)
@@ -199,14 +200,12 @@ char area_shift(void)
             {
                 if (menv[i].inv[j] != NON_ITEM)
                 {
-                    mitm.quantity[menv[i].inv[j]] = 0;
-                    mitm.link[menv[i].inv[j]] = NON_ITEM;
+                    destroy_item( menv[i].inv[j] );
                     menv[i].inv[j] = NON_ITEM;
                 }
             }
         }
     }
-
 
     for (int i = 5; i < (GXM - 5); i++)
     {
@@ -223,48 +222,7 @@ char area_shift(void)
             grd[i][j] = DNGN_UNSEEN;
 
             // nuke items
-            if (igrd[i][j] != NON_ITEM)
-            {
-                int k = igrd[i][j];
-
-                igrd[i][j] = NON_ITEM;
-
-                if (k < 0 || k > NON_ITEM)
-                    k = NON_ITEM;
-
-                while (k != NON_ITEM)
-                {
-                    mitm.quantity[k] = 0;
-                    int l = mitm.link[k];
-
-                    mitm.link[k] = NON_ITEM;
-
-                    if (mitm.base_type[k] == OBJ_ORBS
-                        && mitm.sub_type[k] >= 4 && mitm.sub_type[k] <= 19)
-                    {
-                        // This means lost in the abyss, and can be found
-                        // again only there.
-                        you.unique_items[mitm.sub_type[k] + 3] = 2;
-                    }
-
-                    if (mitm.base_type[k] == OBJ_WEAPONS
-                        && mitm.special[k] >= NWPN_SINGING_SWORD)
-                    {
-                        if (mitm.special[k] - NWPN_SINGING_SWORD <= 6)
-                        {
-                            you.unique_items[mitm.special[k]
-                                             - NWPN_SINGING_SWORD] = 2;
-                        }
-                        else
-                        {
-                            you.unique_items[24 + mitm.special[k]
-                                             - NWPN_SINGING_SWORD - 7] = 2;
-                        }
-                    }
-
-                    k = l;
-                }
-            }
+            destroy_item_stack( i, j );
         }
     }
 
@@ -282,49 +240,37 @@ char area_shift(void)
             const int ipos = 45 + i - you.x_pos;
             const int jpos = 35 + j - you.y_pos;
 
+            // move terrain
             grd[ipos][jpos] = grd[i][j];
-            igrd[ipos][jpos] = igrd[i][j];
-            igrd[i][j] = NON_ITEM;
-            mgrd[ipos][jpos] = mgrd[i][j];
 
+            // move item
+            move_item_stack_to_grid( i, j, ipos, jpos );
+
+            // move monster
+            mgrd[ipos][jpos] = mgrd[i][j];
             if (mgrd[i][j] != NON_MONSTER)
             {
                 menv[mgrd[ipos][jpos]].x = ipos;
                 menv[mgrd[ipos][jpos]].y = jpos;
+                mgrd[i][j] = NON_MONSTER;
             }
-            mgrd[i][j] = NON_MONSTER;
 
-            env.cgrid[ipos][jpos] = env.cgrid[i][j];
-
+            // move cloud
             if (env.cgrid[i][j] != EMPTY_CLOUD)
-            {
-                env.cgrid[ipos][jpos] = env.cgrid[i][j];
-                env.cloud_x[env.cgrid[ipos][jpos]] = ipos;
-                env.cloud_y[env.cgrid[ipos][jpos]] = jpos;
-                env.cgrid[i][j] = EMPTY_CLOUD;
-            }
-            else
-            {
-                env.cgrid[ipos][jpos] = EMPTY_CLOUD;
-            }
+                move_cloud( env.cgrid[i][j], ipos, jpos );
         }
     }
 
 
     for (unsigned int i = 0; i < MAX_CLOUDS; i++)
     {
-        if (env.cloud_type[i] == CLOUD_NONE)
+        if (env.cloud[i].type == CLOUD_NONE)
             continue;
 
-        if (env.cloud_x[i] < 35 || env.cloud_x[i] > 55
-            || env.cloud_y[i] < 25 || env.cloud_y[i] > 45)
+        if (env.cloud[i].x < 35 || env.cloud[i].x > 55
+            || env.cloud[i].y < 25 || env.cloud[i].y > 45)
         {
-            env.cloud_type[i] = CLOUD_NONE;
-            env.cloud_decay[i] = 0;
-        }
-        else
-        {
-            cloud_no2++;
+            delete_cloud( i );
         }
     }
 
@@ -335,19 +281,15 @@ char area_shift(void)
 
     for (unsigned int mcount = 0; mcount < 15; mcount++)
     {
-        mons_place(RANDOM_MONSTER, BEH_HOSTILE, MHITNOT, false, 1,1,
-            LEVEL_ABYSS, 1);
+        mons_place( RANDOM_MONSTER, BEH_HOSTILE, MHITNOT, false, 1, 1,
+                    LEVEL_ABYSS, PROX_AWAY_FROM_PLAYER ); // PROX_ANYWHERE?
     }
-
-    return cloud_no2;
 }
 
 
-// must set cloud_no to zero when calling this function
 void abyss_teleport(void)
 /***********************/
 {
-
     int i, j, k;
 
     init_pandemonium();         /* changes colours */
@@ -357,6 +299,36 @@ void abyss_teleport(void)
 
     env.rock_colour = (mcolour[env.mons_alloc[8]] == BLACK)
                                 ? LIGHTGREY : mcolour[env.mons_alloc[8]];
+
+    // Orbs and fixed artefacts are marked as "lost in the abyss"
+    for (k = 0; k < MAX_ITEMS; k++)
+    {
+        if (is_valid_item( mitm[k] ))
+        {
+            if (mitm[k].base_type == OBJ_ORBS)
+            {
+                set_unique_item_status( OBJ_ORBS, mitm[k].sub_type,
+                                        UNIQ_LOST_IN_ABYSS );
+            }
+            else if (is_fixed_artefact( mitm[k] ))
+            {
+                set_unique_item_status( OBJ_WEAPONS, mitm[k].special,
+                                        UNIQ_LOST_IN_ABYSS );
+            }
+
+            destroy_item( k );
+        }
+    }
+
+    for (i = 0; i < MAX_MONSTERS; i++)
+    {
+        menv[i].type = -1;
+    }
+
+    for (i = 0; i < MAX_CLOUDS; i++)
+    {
+        delete_cloud( i );
+    }
 
     for (i = 10; i < (GXM - 9); i++)
     {
@@ -369,52 +341,12 @@ void abyss_teleport(void)
         }
     }
 
-    for (k = 0; k < MAX_ITEMS; k++)
-    {
-        if (mitm.quantity[k] > 0)
-        {
-            if (mitm.base_type[k] == OBJ_ORBS)
-                you.unique_items[mitm.sub_type[k] + 3] = 2;
-
-            if (mitm.base_type[k] == OBJ_WEAPONS
-                && mitm.special[k] >= NWPN_SINGING_SWORD)
-            {
-                if (mitm.special[k] - NWPN_SINGING_SWORD <= 6)
-                {
-                    you.unique_items[ mitm.special[k]
-                                             - NWPN_SINGING_SWORD ] = 2;
-                }
-                else
-                {
-                    you.unique_items[ 24 + mitm.special[k]
-                                             - NWPN_SINGING_SWORD - 7 ] = 2;
-                }
-            }
-        }
-
-        mitm.quantity[k] = 0;
-        mitm.link[k] = NON_ITEM;
-    }
-
-    for (i = 0; i < MAX_MONSTERS; i++)
-    {
-        menv[i].type = -1;
-    }
-
-    for (i = 0; i < MAX_CLOUDS; i++)
-    {
-        env.cloud_type[i] = CLOUD_NONE;
-        env.cloud_decay[i] = 0;
-        env.cloud_x[i] = 0;
-        env.cloud_y[i] = 0;
-    }
-
-    env.cloud_no = 0;           // I know this doesn't do anything, of course
+    ASSERT( env.cloud_no == 0 );
 
     you.x_pos = 45;
     you.y_pos = 35;
 
-    generate_area(10, 10, (GXM - 10), (GYM - 10));
+    generate_area( 10, 10, (GXM - 10), (GYM - 10) );
 
     grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
 

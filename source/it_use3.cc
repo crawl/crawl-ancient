@@ -23,6 +23,7 @@
 #include "direct.h"
 #include "effects.h"
 #include "fight.h"
+#include "items.h"
 #include "it_use2.h"
 #include "itemname.h"
 #include "misc.h"
@@ -31,18 +32,14 @@
 #include "player.h"
 #include "skills.h"
 #include "skills2.h"
-#include "spell.h"
-#include "spells.h"
 #include "spells1.h"
 #include "spells2.h"
 #include "spl-book.h"
+#include "spl-cast.h"
 #include "spl-util.h"
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
-
-extern int book_thing;          // defined in spells.cc
-extern bool wield_change;       // defined in output.cc
 
 static void ball_of_energy(void);
 static void ball_of_fixation(void);
@@ -55,9 +52,9 @@ static void staff_spell(int zap_device_2);
 void special_wielded(void)
 {
     int temp_rand = 0;          // for probability determination {dlb}
-    int old_plus = you.inv_plus[you.equip[EQ_WEAPON]];
-    int old_plus2 = you.inv_plus2[you.equip[EQ_WEAPON]];
-    char old_colour = you.inv_colour[you.equip[EQ_WEAPON]];
+    int old_plus = you.inv[you.equip[EQ_WEAPON]].plus;
+    int old_plus2 = you.inv[you.equip[EQ_WEAPON]].plus2;
+    char old_colour = you.inv[you.equip[EQ_WEAPON]].colour;
     bool makes_noise = (one_chance_in(20) && !silenced(you.x_pos, you.y_pos));
 
     switch (you.special_wield)
@@ -114,36 +111,35 @@ void special_wielded(void)
     case SPWLD_VARIABLE:
         makes_noise = false;
 
-        if (you.inv_plus[you.equip[EQ_WEAPON]] > 100)
-            you.inv_plus[you.equip[EQ_WEAPON]] -= 100;
+        do_uncurse_item( you.inv[you.equip[EQ_WEAPON]] );
 
         if (random2(5) < 2)     // 40% chance {dlb}
         {
             if (coinflip())
-                you.inv_plus[you.equip[EQ_WEAPON]]++;
+                you.inv[you.equip[EQ_WEAPON]].plus++;
             else
-                you.inv_plus[you.equip[EQ_WEAPON]]--;
+                you.inv[you.equip[EQ_WEAPON]].plus--;
         }
 
         if (random2(5) < 2)     // 40% chance {dlb}
         {
             if (coinflip())
-                you.inv_plus2[you.equip[EQ_WEAPON]]++;
+                you.inv[you.equip[EQ_WEAPON]].plus2++;
             else
-                you.inv_plus2[you.equip[EQ_WEAPON]]--;
+                you.inv[you.equip[EQ_WEAPON]].plus2--;
         }
 
-        if (you.inv_plus[you.equip[EQ_WEAPON]] < 46)
-            you.inv_plus[you.equip[EQ_WEAPON]] = 46;
-        else if (you.inv_plus[you.equip[EQ_WEAPON]] > 57)
-            you.inv_plus[you.equip[EQ_WEAPON]] = 57;
+        if (you.inv[you.equip[EQ_WEAPON]].plus < -4)
+            you.inv[you.equip[EQ_WEAPON]].plus = -4;
+        else if (you.inv[you.equip[EQ_WEAPON]].plus > 7)
+            you.inv[you.equip[EQ_WEAPON]].plus = 7;
 
-        if (you.inv_plus2[you.equip[EQ_WEAPON]] < 46)
-            you.inv_plus2[you.equip[EQ_WEAPON]] = 46;
-        else if (you.inv_plus2[you.equip[EQ_WEAPON]] > 57)
-            you.inv_plus2[you.equip[EQ_WEAPON]] = 57;
+        if (you.inv[you.equip[EQ_WEAPON]].plus2 < -4)
+            you.inv[you.equip[EQ_WEAPON]].plus2 = -4;
+        else if (you.inv[you.equip[EQ_WEAPON]].plus2 > 7)
+            you.inv[you.equip[EQ_WEAPON]].plus2 = 7;
 
-        you.inv_colour[you.equip[EQ_WEAPON]] = random_colour();
+        you.inv[you.equip[EQ_WEAPON]].colour = random_colour();
         break;
 
     //case SPWLD_PRUNE:
@@ -166,12 +162,12 @@ void special_wielded(void)
         makes_noise = false;
 
         // placed cap on effect to weaken it -- bwr
-        you.inv_plus[you.equip[EQ_WEAPON]] = 47 + (you.hp / 13);
+        you.inv[you.equip[EQ_WEAPON]].plus = -3 + (you.hp / 13);
 
-        if (you.inv_plus[you.equip[EQ_WEAPON]] > 70)
-            you.inv_plus[you.equip[EQ_WEAPON]] = 70;
+        if (you.inv[you.equip[EQ_WEAPON]].plus > 20)
+            you.inv[you.equip[EQ_WEAPON]].plus = 20;
 
-        you.inv_plus2[you.equip[EQ_WEAPON]] = you.inv_plus[you.equip[EQ_WEAPON]];
+        you.inv[you.equip[EQ_WEAPON]].plus2 = you.inv[you.equip[EQ_WEAPON]].plus;
         break;
 
     case SPWLD_OLGREB:
@@ -179,17 +175,18 @@ void special_wielded(void)
 
         // giving Olgreb's staff a little lift since staves of poison have
         // been made better.
-        you.inv_plus[you.equip[EQ_WEAPON]] = 49 + (you.skills[SK_POISON_MAGIC] / 3);
-        you.inv_plus2[you.equip[EQ_WEAPON]] = you.inv_plus[you.equip[EQ_WEAPON]];
+        you.inv[you.equip[EQ_WEAPON]].plus = -1 + (you.skills[SK_POISON_MAGIC] / 3);
+        you.inv[you.equip[EQ_WEAPON]].plus2 = you.inv[you.equip[EQ_WEAPON]].plus;
         break;
 
     case SPWLD_WUCAD_MU:
         makes_noise = false;
 
-        you.inv_plus[you.equip[EQ_WEAPON]] =
-                                ((you.intel > 25) ? 72 : 47 + you.intel);
-        you.inv_plus2[you.equip[EQ_WEAPON]] =
-                                ((you.intel > 25) ? 63 : 50 + (you.intel / 2));
+        you.inv[you.equip[EQ_WEAPON]].plus = ((you.intel > 25) ? 22
+                                                             : you.intel - 3);
+
+        you.inv[you.equip[EQ_WEAPON]].plus2 = ((you.intel > 25) ? 13
+                                                             : you.intel / 2);
         break;
 
     case SPWLD_SHADOW:
@@ -207,7 +204,7 @@ void special_wielded(void)
     case SPWLD_HUM:
         if (makes_noise)
         {
-            in_name(you.equip[EQ_WEAPON], 4, str_pass);
+            in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
             strcat(info, " lets out a weird humming sound.");
             mpr(info);
@@ -217,7 +214,7 @@ void special_wielded(void)
     case SPWLD_CHIME:
         if (makes_noise)
         {
-            in_name(you.equip[EQ_WEAPON], 4, str_pass);
+            in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
             strcat(info, " chimes like a gong.");
             mpr(info);
@@ -241,11 +238,11 @@ void special_wielded(void)
     if (makes_noise)
         noisy(25, you.x_pos, you.y_pos);
 
-    if (old_plus != you.inv_plus[you.equip[EQ_WEAPON]]
-            || old_plus2 != you.inv_plus2[you.equip[EQ_WEAPON]]
-            || you.inv_colour[you.equip[EQ_WEAPON]] != old_colour)
+    if (old_plus != you.inv[you.equip[EQ_WEAPON]].plus
+            || old_plus2 != you.inv[you.equip[EQ_WEAPON]].plus2
+            || you.inv[you.equip[EQ_WEAPON]].colour != old_colour)
     {
-        wield_change = true;
+        you.wield_change = true;
     }
 
     return;
@@ -294,13 +291,14 @@ static void reaching_weapon_attack(void)
             x_middle = MAX(beam.tx, you.x_pos) - (x_distance / 2);
             y_middle = MAX(beam.ty, you.y_pos) - (y_distance / 2);
 #undef MAX
+
             // if either the x or the y is the same, we should check for
             // a monster:
             if (((beam.tx == you.x_pos) || (beam.ty == you.y_pos))
                     && (mgrd[x_middle][y_middle] != NON_MONSTER))
             {
-                skill = weapon_skill( you.inv_class[you.equip[EQ_WEAPON]],
-                                      you.inv_type[you.equip[EQ_WEAPON]] );
+                skill = weapon_skill( you.inv[you.equip[EQ_WEAPON]].base_type,
+                                      you.inv[you.equip[EQ_WEAPON]].sub_type );
 
                 if ((5 + (3 * skill)) > random2(100))
                 {
@@ -347,19 +345,18 @@ void invoke_wielded(void)
         return;
     }
 
-    switch (you.inv_class[you.equip[EQ_WEAPON]])
+    switch (you.inv[you.equip[EQ_WEAPON]].base_type)
     {
     case OBJ_WEAPONS:
-        if (you.inv_dam[you.equip[EQ_WEAPON]] < NWPN_SINGING_SWORD
-                && you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_REACHING)
+        if (you.inv[you.equip[EQ_WEAPON]].special == SPWPN_REACHING)
         {
             reaching_weapon_attack();
         }
         else
         {
-            switch (you.inv_dam[you.equip[EQ_WEAPON]])
+            switch (you.inv[you.equip[EQ_WEAPON]].special)
             {
-            case NWPN_STAFF_OF_DISPATER:
+            case SPWPN_STAFF_OF_DISPATER:
                 if (you.deaths_door || !enough_hp(11, true)
                                                 || !enough_mp(5, true))
                 {
@@ -378,7 +375,7 @@ void invoke_wielded(void)
             // let me count the number of ways spell_casted is
             // used here ... one .. two .. three ... >CRUNCH<
             // three licks to get to the center of a ... {dlb}
-            case NWPN_SCEPTRE_OF_ASMODEUS:
+            case SPWPN_SCEPTRE_OF_ASMODEUS:
                 spell_casted = random2(21);
 
                 if (spell_casted == 0)
@@ -421,7 +418,7 @@ void invoke_wielded(void)
                 your_spells( spell_casted, power, false );
                 break;
 
-            case NWPN_STAFF_OF_OLGREB:
+            case SPWPN_STAFF_OF_OLGREB:
                 if (!enough_mp(4, true)
                             || you.skills[SK_SPELLCASTING] <= random2(11))
                 {
@@ -434,7 +431,7 @@ void invoke_wielded(void)
                 your_spells(SPELL_VENOM_BOLT, 0, false);
                 break;
 
-            case NWPN_STAFF_OF_WUCAD_MU:
+            case SPWPN_STAFF_OF_WUCAD_MU:
                 if (you.magic_points == you.max_magic_points
                         || one_chance_in(4))
                 {
@@ -461,7 +458,7 @@ void invoke_wielded(void)
         break;
 
     case OBJ_STAVES:
-        switch (you.inv_type[you.equip[EQ_WEAPON]])
+        switch (you.inv[you.equip[EQ_WEAPON]].sub_type)
         {
         case STAFF_CHANNELING:
             if (you.magic_points == you.max_magic_points || one_chance_in(4))
@@ -471,18 +468,21 @@ void invoke_wielded(void)
                 mpr("You channel some magical energy.");
                 inc_mp(1 + random2(3), false);
 
-                if (you.inv_ident[you.equip[EQ_WEAPON]] < 3)
+                if (item_not_ident( you.inv[you.equip[EQ_WEAPON]],
+                                    ISFLAG_KNOW_TYPE ))
                 {
-                    you.inv_ident[you.equip[EQ_WEAPON]] = 3;
+                    set_ident_flags( you.inv[you.equip[EQ_WEAPON]],
+                                     ISFLAG_KNOW_TYPE );
+
                     strcpy(info, "You are wielding ");
-                    in_name(you.equip[EQ_WEAPON], 3, str_pass);
+                    in_name(you.equip[EQ_WEAPON], DESC_NOCAP_A, str_pass);
                     strcat(info, str_pass);
                     strcat(info, ".");
 
                     mpr(info);
                     more();
 
-                    wield_change = true;
+                    you.wield_change = true;
                 }
             }
             break;
@@ -495,18 +495,21 @@ void invoke_wielded(void)
                 power = 20 + you.experience_level * 3;
                 your_spells(SPELL_SMITING, power, false);
 
-                if (you.inv_ident[you.equip[EQ_WEAPON]] < 3)
+                if (item_not_ident( you.inv[you.equip[EQ_WEAPON]],
+                                    ISFLAG_KNOW_TYPE ))
                 {
-                    you.inv_ident[you.equip[EQ_WEAPON]] = 3;
+                    set_ident_flags( you.inv[you.equip[EQ_WEAPON]],
+                                     ISFLAG_KNOW_TYPE );
+
                     strcpy(info, "You are wielding ");
-                    in_name(you.equip[EQ_WEAPON], 3, str_pass);
+                    in_name(you.equip[EQ_WEAPON], DESC_NOCAP_A, str_pass);
                     strcat(info, str_pass);
                     strcat(info, ".");
 
                     mpr(info);
                     more();
 
-                    wield_change = true;
+                    you.wield_change = true;
                 }
             }
             else
@@ -523,7 +526,7 @@ void invoke_wielded(void)
         break;
 
     case OBJ_MISCELLANY:
-        switch (you.inv_type[you.equip[EQ_WEAPON]])
+        switch (you.inv[you.equip[EQ_WEAPON]].sub_type)
         {
         case MISC_BOTTLED_EFREET:
             efreet_flask();
@@ -642,9 +645,7 @@ void invoke_wielded(void)
             {
                 mpr("You unfold the altar and place it on the floor.");
                 grd[you.x_pos][you.y_pos] = DNGN_ALTAR_NEMELEX_XOBEH;
-                unwield_item(you.equip[EQ_WEAPON]);
-                you.inv_quantity[you.equip[EQ_WEAPON]] = 0;
-                you.equip[EQ_WEAPON] = -1;
+                dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
             }
             break;
 
@@ -668,9 +669,7 @@ static void efreet_flask(void)
 
     mpr("You open the flask...");
 
-    unwield_item(you.equip[EQ_WEAPON]);
-    you.inv_quantity[you.equip[EQ_WEAPON]] = 0;
-    you.equip[EQ_WEAPON] = -1;
+    dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
 
     if (create_monster( MONS_EFREET, ENCH_ABJ_V, behavior, you.x_pos,
         you.y_pos, MHITYOU, 250 ) != -1)
@@ -732,7 +731,7 @@ static void disc_of_storms(void)
     int fail_rate = (28 - you.skills[SK_AIR_MAGIC]);
     unsigned char which_zap = 0;
 
-    if (you.attribute[ATTR_SPEC_AIR] || (random2(90) < fail_rate))
+    if (player_res_electricity() || (random2(90) < fail_rate))
         canned_msg(MSG_NOTHING_HAPPENS);
     else if (random2(90) < fail_rate)
         mpr("The disc glows for a moment, then fades.");
@@ -768,25 +767,22 @@ static void disc_of_storms(void)
 
 static void staff_spell(int zap_device_2)
 {
-    int sc_read_1, sc_read_2;
+    int sc_read_1, sc_read_2, powc;
+    unsigned char specspell;
 
-    if (you.inv_plus[zap_device_2] == 64
-        || you.inv_type[zap_device_2] < STAFF_SMITING
-        || you.inv_type[zap_device_2] >= STAFF_AIR)
+    if (you.inv[zap_device_2].sub_type < STAFF_SMITING
+        || you.inv[zap_device_2].sub_type >= STAFF_AIR)
     {
         //mpr("That staff has no spells in it.");
         canned_msg(MSG_NOTHING_HAPPENS);
         return;
     }
 
-    you.inv_ident[zap_device_2] = 3;
-    wield_change = true;
-    read_book(zap_device_2);
+    set_ident_flags( you.inv[zap_device_2], ISFLAG_KNOW_TYPE );
+    you.wield_change = true;
 
-    unsigned char specspell;
-    int powc = player_mag_abil(false)
-                + you.experience_level
-                + you.skills[SK_SPELLCASTING];
+    powc = player_mag_abil(false) + you.experience_level
+                                      + you.skills[SK_SPELLCASTING];
 
     powc *= you.intel;
     powc /= 10;
@@ -794,22 +790,24 @@ static void staff_spell(int zap_device_2)
     if (powc > 100)
         powc = 100;
 
-    sc_read_1 = book_thing;     // book_thing is got in read_book
+    sc_read_1 = read_book( you.inv[zap_device_2], RBOOK_USE_STAFF );
 
     if (sc_read_1 < 'A' || (sc_read_1 > 'Z' && sc_read_1 < 'a')
         || sc_read_1 > 'z')
+    {
         goto whattt;
+    }
 
     sc_read_2 = letter_to_index(sc_read_1);
 
     if (sc_read_2 > SPELLBOOK_SIZE)
         goto whattt;
 
-    if (!learn_a_spell(zap_device_2, sc_read_2))
+    if (!is_valid_spell_in_book( zap_device_2, sc_read_2 ))
         goto whattt;
 
-    specspell = which_spell_in_book( you.inv_type[you.equip[EQ_WEAPON]] + 40,
-                                                            1 + sc_read_2 );
+    specspell = which_spell_in_book( you.inv[zap_device_2].sub_type + 40,
+                                     sc_read_2 );
 
     if (specspell == SPELL_NO_SPELL)
         goto whattt;
@@ -848,7 +846,15 @@ void tome_of_power(char sc_read_2)
 {
     int temp_rand = 0;          // probability determination {dlb}
 
-    int powc = player_mag_abil(true);
+    int powc = player_mag_abil(false) + you.experience_level
+                                      + you.skills[SK_SPELLCASTING];
+
+    powc *= you.intel;
+    powc /= 10;
+
+    if (powc > 300)
+        powc = 300;
+
     int spell_casted = 0;
     struct bolt beam;
     char str_pass[40];
@@ -865,7 +871,7 @@ void tome_of_power(char sc_read_2)
     if (!yesno("Read it?"))
         return;
 
-    you.inv_ident[sc_read_2] = 3;
+    set_ident_flags( you.inv[sc_read_2], ISFLAG_IDENT_MASK );
 
     if (you.mutation[MUT_BLURRY_VISION] > 0
         && random2(4) < you.mutation[MUT_BLURRY_VISION])
@@ -884,16 +890,7 @@ void tome_of_power(char sc_read_2)
         if (one_chance_in(5))
         {
             mpr("The book disappears in a mighty explosion!");
-
-            you.inv_quantity[sc_read_2] = 0;
-
-            if (sc_read_2 == you.equip[EQ_WEAPON])
-            {
-                unwield_item(sc_read_2);
-                you.equip[EQ_WEAPON] = -1;
-            }
-
-            burden_change();
+            dec_inv_item_quantity( sc_read_2, 1 );
         }
 
         beam.type = SYM_BURST;
@@ -976,9 +973,12 @@ void skill_manual(char sc_read_2)
 {
     char skname[30];
 
-    you.inv_ident[sc_read_2] = 3;
+    set_ident_flags( you.inv[sc_read_2], ISFLAG_IDENT_MASK );
+
+    strcpy(skname, skill_name(you.inv[sc_read_2].plus));
+
     strcpy(info, "This is a manual of ");
-    strcat(info, skill_name(you.inv_plus[sc_read_2]));
+    strcat(info, skname);
     strcat(info, "!");
     mpr(info);
 
@@ -987,29 +987,17 @@ void skill_manual(char sc_read_2)
     if (!yesno("Read it?"))
         return;
 
-    you.inv_ident[sc_read_2] = 3;
-
-    strcpy(skname, skill_name(you.inv_plus[sc_read_2]));
     strcpy(info, "You read about ");
     strcat(info, strlwr(skname));
     strcat(info, ".");
     mpr(info);
 
-    exercise(you.inv_plus[sc_read_2], 500);
+    exercise(you.inv[sc_read_2].plus, 500);
 
     if (one_chance_in(10))
     {
         mpr("The book crumbles into dust.");
-
-        you.inv_quantity[sc_read_2] = 0;
-
-        if (sc_read_2 == you.equip[EQ_WEAPON])
-        {
-            unwield_item(sc_read_2);
-            you.equip[EQ_WEAPON] = -1;
-        }
-
-        burden_change();
+        dec_inv_item_quantity( sc_read_2, 1 );
     }
     else
     {
@@ -1029,7 +1017,7 @@ static void box_of_beasts(void)
         mpr("...but nothing happens.");
 
         if (one_chance_in(6))
-            you.inv_type[you.equip[EQ_WEAPON]] = MISC_EMPTY_EBONY_CASKET;
+            you.inv[you.equip[EQ_WEAPON]].sub_type = MISC_EMPTY_EBONY_CASKET;
     }
     else                        // 60% chance {dlb}
     {

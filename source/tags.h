@@ -50,6 +50,8 @@ float unmarshallFloat(struct tagHeader &th);
 bool unmarshallBoolean(struct tagHeader &th);
 void unmarshallString(struct tagHeader &th, char *data, int maxSize);
 
+void make_date_string( time_t in_date, char buff[20] );
+time_t parse_date_string( char[20] );
 
 // last updated 22jan2001 {gdl}
 /* ***********************************************************************
@@ -92,4 +94,4 @@ void tag_missing(int tag, char minorVersion);
  * *********************************************************************** */
 int tag_read(FILE *fp, char minorVersion);
 
-#endif TAGS_H
+#endif // TAGS_H

@@ -14,10 +14,11 @@
         {  WHICH TEMPLATE,
              bolt spell,
              enchantment,
-             self-enchantment,
+             self-enchantment,          // 50% tried after others fail
              misc(1) spell,
-             misc(2) spell,
-             emergency spell  }
+             misc(2) spell,             // MS_DIG must be here to work!
+             emergency spell            // only when fleeing
+        }
 
     see: mon-util::mons_spell_list() and
          monstuff::handle_spell() for usage details.
@@ -30,7 +31,7 @@
        MS_SLOW,
        MS_HASTE,
        MS_MMISSILE,
-       MS_NO_SPELL,
+       MS_BLINK,
        MS_BLINK  },
 
     {  MST_ORC_WIZARD_II,
@@ -39,15 +40,15 @@
        MS_INVIS,
        MS_MMISSILE,
        MS_NO_SPELL,
-       MS_NO_SPELL  },
+       MS_CONFUSE  },
 
     {  MST_ORC_WIZARD_III,
        MS_FROST,
-       MS_NO_SPELL,
+       MS_CANTRIP,
        MS_HASTE,
        MS_FLAME,
        MS_MMISSILE,
-       MS_NO_SPELL  },
+       MS_INVIS  },
 
     {  MST_GUARDIAN_NAGA,
        MS_TELEPORT_OTHER,
@@ -76,10 +77,10 @@
     {  MST_LICH_III,
        MS_NEGATIVE_BOLT,
        MS_ANIMATE_DEAD,
-       MS_SUMMON_DEMON_GREATER,
+       MS_SUMMON_UNDEAD,
        MS_FROST,
        MS_CRYSTAL_SPEAR,
-       MS_BLINK  },
+       MS_SUMMON_UNDEAD  },
 
     {  MST_LICH_IV,
        MS_ORB_ENERGY,
@@ -97,29 +98,29 @@
        MS_HELLFIRE_BURST,
        MS_HELLFIRE_BURST  },
 
-    {  MST_VAMPIRE,         // gave these guys a bit more than "rats and bats" -- bwr
+    {  MST_VAMPIRE,
        MS_VAMPIRE_SUMMON,
        MS_CONFUSE,
        MS_INVIS,
        MS_NO_SPELL,
        MS_VAMPIRE_SUMMON,
-       MS_INVIS  },
+       MS_VAMPIRE_SUMMON },
 
-    {  MST_VAMPIRE_KNIGHT,  // gave these guys a bit more than "rats and bats" -- bwr
+    {  MST_VAMPIRE_KNIGHT,
        MS_VAMPIRE_SUMMON,
        MS_PARALYSIS,
        MS_HASTE,
-       MS_HEAL,
+       MS_INVIS,
        MS_VAMPIRE_SUMMON,
-       MS_INVIS  },
+       MS_HEAL  },
 
     {  MST_VAMPIRE_MAGE,
        MS_NEGATIVE_BOLT,
-       MS_PAIN,
+       MS_SUMMON_UNDEAD,
        MS_INVIS,
        MS_ANIMATE_DEAD,
        MS_ANIMATE_DEAD,
-       MS_BLINK  },
+       MS_TELEPORT },
 
     {  MST_EFREET,
        MS_FIRE_BOLT,
@@ -166,7 +167,7 @@
        MS_NEGATIVE_BOLT,
        MS_SUMMON_DEMON,
        MS_BANISHMENT,
-       MS_HELLFIRE_BURST,
+       MS_HELLFIRE,
        MS_TELEPORT  },
 
     {  MST_STEAM_DRAGON,
@@ -183,7 +184,7 @@
        MS_HASTE,
        MS_NO_SPELL,
        MS_NO_SPELL,
-       MS_NO_SPELL  },
+       MS_HASTE  },
 
     {  MST_HELL_KNIGHT_II,
        MS_NO_SPELL,
@@ -247,12 +248,12 @@
        MS_INVIS,
        MS_TELEPORT_OTHER,
        MS_FIREBALL,
-       MS_INVIS  },
+       MS_TELEPORT_OTHER  },
 
     {  MST_ORC_PRIEST,
        MS_PAIN,
        MS_NO_SPELL,
-       MS_NO_SPELL,
+       MS_CANTRIP,
        MS_SMITE,
        MS_NO_SPELL,
        MS_HEAL  },
@@ -269,8 +270,8 @@
        MS_STICKY_FLAME,
        MS_STICKY_FLAME,
        MS_NO_SPELL,
-       MS_NO_SPELL,
-       MS_NO_SPELL,
+       MS_STICKY_FLAME,
+       MS_STICKY_FLAME,
        MS_NO_SPELL  },
 
     {  MST_ICE_FIEND,
@@ -293,9 +294,9 @@
        MS_PAIN,
        MS_NO_SPELL,
        MS_NO_SPELL,
+       MS_PAIN,
        MS_NO_SPELL,
-       MS_NO_SPELL,
-       MS_NO_SPELL  },
+       MS_TORMENT  },
 
     {  MST_STORM_DRAGON,
        MS_LIGHTNING_BOLT,
@@ -351,7 +352,7 @@
        MS_SUMMON_DEMON_LESSER,
        MS_MUTATION,
        MS_DIG,
-       MS_NO_SPELL  },
+       MS_SUMMON_DEMON  },
 
     {  MST_GREEN_DEATH,
        MS_POISON_BLAST,
@@ -379,8 +380,8 @@
 
     {  MST_GERYON,
        MS_SUMMON_BEAST,
-       MS_NO_SPELL,
        MS_SUMMON_BEAST,
+       MS_NO_SPELL,
        MS_SUMMON_BEAST,
        MS_NO_SPELL,
        MS_SUMMON_BEAST  },
@@ -391,7 +392,7 @@
        MS_SUMMON_DEMON,
        MS_LIGHTNING_BOLT,
        MS_HELLFIRE,
-       MS_SUMMON_DEMON  },
+       MS_SUMMON_DEMON_GREATER  },
 
     {  MST_ASMODEUS,
        MS_FIRE_BOLT,
@@ -428,10 +429,10 @@
     {  MST_LOM_LOBON,
        MS_LIGHTNING_BOLT,
        MS_COLD_BOLT,
+       MS_HEAL,
        MS_SUMMON_DEMON,
-       MS_BLINK,
        MS_TELEPORT,
-       MS_HEAL  },
+       MS_TELEPORT  },
 
     {  MST_CEREBOV,
        MS_FIRE_BOLT,
@@ -444,15 +445,15 @@
     {  MST_GLOORX_VLOQ,
        MS_POISON_BLAST,
        MS_SLOW,
-       MS_NO_SPELL,
+       MS_SUMMON_DEMON,
        MS_NEGATIVE_BOLT,
        MS_SUMMON_DEMON,
-       MS_SUMMON_DEMON  },
+       MS_NO_SPELL  },
 
     {  MST_TITAN,
        MS_LIGHTNING_BOLT,
        MS_NO_SPELL,
-       MS_NO_SPELL,
+       MS_HEAL,
        MS_NO_SPELL,
        MS_NO_SPELL,
        MS_HEAL  },
@@ -463,7 +464,7 @@
        MS_NO_SPELL,
        MS_NO_SPELL,
        MS_POISON_BLAST,
-     MS_NO_SPELL  },
+       MS_NO_SPELL  },
 
     {  MST_DEEP_ELF_SUMMONER,
        MS_BLINK,
@@ -476,7 +477,7 @@
     {  MST_DEEP_ELF_CONJURER_I,
        MS_FIRE_BOLT,
        MS_COLD_BOLT,
-       MS_NO_SPELL,
+       MS_CANTRIP,
        MS_LIGHTNING_BOLT,
        MS_STICKY_FLAME,
        MS_TELEPORT  },
@@ -491,7 +492,7 @@
 
     {  MST_DEEP_ELF_PRIEST,
        MS_PAIN,
-       MS_NO_SPELL,
+       MS_CANTRIP,
        MS_HEAL,
        MS_SMITE,
        MS_ANIMATE_DEAD,
@@ -540,10 +541,10 @@
     {  MST_KOBOLD_DEMONOLOGIST,
        MS_SUMMON_DEMON_LESSER,
        MS_SUMMON_DEMON,
+       MS_CANTRIP,
        MS_SUMMON_DEMON_LESSER,
        MS_SUMMON_DEMON,
-       MS_NO_SPELL,
-       MS_NO_SPELL  },
+       MS_CANTRIP  },           // this should be cute -- bwr
 
     {  MST_NAGA,
        MS_POISON_SPLASH,
@@ -622,8 +623,8 @@
        MS_SMITE,
        MS_NO_SPELL,
        MS_TORMENT,
-       MS_PAIN,
-       MS_NO_SPELL  },
+       MS_SUMMON_UNDEAD,
+       MS_SUMMON_UNDEAD },
 
     {  MST_ELECTRIC_GOLEM,
        MS_LIGHTNING_BOLT,
@@ -687,7 +688,7 @@
        MS_NO_SPELL,
        MS_HELLFIRE,
        MS_HELLFIRE,
-       MS_HELLFIRE  },
+       MS_NO_SPELL  },
 
     {  MST_BOGGART,
        MS_CONFUSE,
@@ -695,7 +696,7 @@
        MS_INVIS,
        MS_BLINK,
        MS_LEVEL_SUMMON,
-       MS_BLINK  },
+       MS_LEVEL_SUMMON  },
 
     {  MST_EYE_OF_DEVASTATION,
        MS_ENERGY_BOLT,
@@ -703,7 +704,7 @@
        MS_NO_SPELL,
        MS_ENERGY_BOLT,
        MS_ENERGY_BOLT,
-       MS_ENERGY_BOLT  },
+       MS_NO_SPELL  },
 
     {  MST_QUICKSILVER_DRAGON,
        MS_QUICKSILVER_BOLT,

@@ -29,8 +29,14 @@
 #include "libmac.h"
 #include "llist.h"
 
-#ifdef LINUX
-#include <curses.h>
+#ifdef USE_CURSES
+
+  #ifndef CURSES_INCLUDE_FILE
+    #include <curses.h>
+  #else
+    #include CURSES_INCLUDE_FILE
+  #endif
+
 #elif defined(MAC)|| defined(__IBMCPP__) || defined(__BCPLUSPLUS__)
 #else
 #include <conio.h>

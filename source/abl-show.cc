@@ -42,7 +42,7 @@
 #include "religion.h"
 #include "skills.h"
 #include "skills2.h"
-#include "spell.h"
+#include "spl-cast.h"
 #include "spells1.h"
 #include "spells2.h"
 #include "spells3.h"
@@ -57,15 +57,6 @@
 
 #ifdef LINUX
 #include "liblinux.h"
-#endif
-
-//jmf: brent sez:
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason ...
-#ifdef USE_CURSES
-#include <curses.h>
 #endif
 
 // this all needs to be split into data/util/show files
@@ -88,6 +79,228 @@ static char show_abilities(struct talent *p_abils);
 static bool generate_abilities(struct talent *p_abils);
 static bool insert_ability(int which_ability, struct talent **p_pabils);
 
+struct ability_def
+{
+    int                 ability;
+    const char *        name;
+    unsigned char       mp_cost;        // magic cost of ability
+    unsigned char       hp_cost;        // hit point cost of ability
+    unsigned int        food_cost;      // + rand2avg( food_cost, 2 )
+    unsigned char       piety_cost;     // + random2( (piety_cost + 1) / 2 + 1 )
+    unsigned char       flags;          // used for additonal cost notices
+};
+
+
+// The description screen was way out of date with the actual costs.
+// This table puts all the information in one place... -- bwr
+static const struct ability_def Ability_List[] =
+{
+    // NON_ABILITY should always come first
+    { ABIL_NON_ABILITY, "Not an ability", 0, 0, 0, 0, ABFLAG_NONE },
+    { ABIL_SPIT_POISON, "Spit Poison", 0, 0, 40, 0, ABFLAG_BREATH },
+    { ABIL_GLAMOUR, "Glamour", 5, 0, 40, 0, ABFLAG_DELAY },
+    { ABIL_MAPPING, "Sense Surroundings", 0, 0, 30, 0, ABFLAG_NONE },
+    { ABIL_TELEPORTATION, "Teleportation", 3, 0, 200, 0, ABFLAG_NONE },
+    { ABIL_BLINK, "Blink", 1, 0, 50, 0, ABFLAG_NONE },
+
+    { ABIL_BREATHE_FIRE, "Breathe Fire", 0, 0, 125, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_FROST, "Breathe Frost", 0, 0, 125, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_POISON, "Breathe Poison Gas", 0, 0, 125, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_LIGHTNING, "Breathe Lightning", 0, 0, 125, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_POWER, "Breathe Power", 0, 0, 125, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_STICKY_FLAME, "Breathe Sticky Flame", 0, 0, 125, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_STEAM, "Breathe Steam", 0, 0, 125, 0, ABFLAG_BREATH },
+
+    // Handled with breath weapons, but doesn't cause a breathing delay
+    { ABIL_SPIT_ACID, "Spit Acid", 0, 0, 125, 0, ABFLAG_NONE },
+
+    { ABIL_GO_BERSERK, "Go Berserk", 0, 0, 0, 0, ABFLAG_NONE },
+    { ABIL_FLY, "Fly", 3, 0, 100, 0, ABFLAG_NONE },
+    { ABIL_SUMMON_MINOR_DEMON, "Summon Minor Demon", 3, 3, 75, 0, ABFLAG_NONE },
+    { ABIL_SUMMON_DEMON, "Summon Demon", 5, 5, 150, 0, ABFLAG_NONE },
+    { ABIL_HELLFIRE, "Hellfire", 8, 8, 200, 0, ABFLAG_NONE },
+    { ABIL_TORMENT, "Torment", 9, 0, 250, 0, ABFLAG_PAIN },
+    { ABIL_RAISE_DEAD, "Raise Dead", 5, 5, 150, 0, ABFLAG_NONE },
+    { ABIL_CONTROL_DEMON, "Control Demon", 4, 4, 100, 0, ABFLAG_NONE },
+    { ABIL_TO_PANDEMONIUM, "Gate Yourself to Pandemonium", 7, 0, 200, 0, ABFLAG_NONE },
+    { ABIL_CHANNELING, "Channeling", 1, 0, 30, 0, ABFLAG_NONE },
+    { ABIL_THROW_FLAME, "Throw Flame", 1, 1, 50, 0, ABFLAG_NONE },
+    { ABIL_THROW_FROST, "Throw Frost", 1, 1, 50, 0, ABFLAG_NONE },
+    { ABIL_BOLT_OF_DRAINING, "Bolt of Draining", 4, 4, 100, 0, ABFLAG_NONE },
+
+    { ABIL_FLY_II, "Fly", 0, 0, 25, 0, ABFLAG_EXHAUSTION },
+    { ABIL_DELAYED_FIREBALL, "Release Delayed Fireball", 0, 0, 0, 0, ABFLAG_INSTANT },
+
+    { ABIL_TURN_INVISIBLE, "Turn Invisible", 2, 0, 250, 0, ABFLAG_NONE },
+    { ABIL_TURN_VISIBLE, "Turn Visible", 0, 0, 0, 0, ABFLAG_NONE },
+    { ABIL_LEVITATE, "Levitate", 1, 0, 100, 0, ABFLAG_NONE },
+    { ABIL_STOP_LEVITATING, "Stop Levitating", 0, 0, 0, 0, ABFLAG_NONE },
+    { ABIL_END_TRANSFORMATION, "End Transformation", 0, 0, 0, 0, ABFLAG_NONE },
+
+    // INVOCATIONS:
+    // Zin
+    { ABIL_ZIN_REPEL_UNDEAD, "Repel Undead", 1, 0, 100, 0, ABFLAG_NONE },
+    { ABIL_ZIN_HEALING, "Minor Healing", 2, 0, 50, 1, ABFLAG_NONE },
+    { ABIL_ZIN_PESTILENCE, "Pestilence", 3, 0, 100, 2, ABFLAG_NONE },
+    { ABIL_ZIN_HOLY_WORD, "Holy Word", 6, 0, 150, 3, ABFLAG_NONE },
+    { ABIL_ZIN_SUMMON_GUARDIAN, "Summon Guardian", 7, 0, 150, 4, ABFLAG_NONE },
+
+    // The Shining One
+    { ABIL_TSO_REPEL_UNDEAD, "Repel Undead", 1, 0, 100, 0, ABFLAG_NONE },
+    { ABIL_TSO_SMITING, "Smiting", 3, 0, 50, 2, ABFLAG_NONE },
+    { ABIL_TSO_ANNIHILATE_UNDEAD, "Annihilate Undead", 3, 0, 50, 2, ABFLAG_NONE },
+    { ABIL_TSO_THUNDERBOLT, "Thunderbolt", 5, 0, 100, 2, ABFLAG_NONE },
+    { ABIL_TSO_SUMMON_DAEVA, "Summon Daeva", 8, 0, 150, 4, ABFLAG_NONE },
+
+    // Kikubaaqudgha
+    { ABIL_KIKU_RECALL_UNDEAD_SLAVES, "Recall Undead Slaves", 1, 0, 0, 0, ABFLAG_NONE },
+    { ABIL_KIKU_ENSLAVE_UNDEAD, "Enslave Undead", 4, 0, 150, 2, ABFLAG_NONE },
+    { ABIL_KIKU_INVOKE_DEATH, "Invoke Death", 4, 0, 250, 3, ABFLAG_NONE },
+
+    // Yredelemnul
+    { ABIL_YRED_ANIMATE_CORPSE, "Animate Corpse", 3, 0, 50, 0, ABFLAG_NONE },
+    { ABIL_YRED_RECALL_UNDEAD, "Recall Undead", 4, 0, 100, 0, ABFLAG_NONE },
+    { ABIL_YRED_ANIMATE_DEAD, "Animate Dead", 7, 0, 150, 1, ABFLAG_NONE },
+    { ABIL_YRED_DRAIN_LIFE, "Drain Life", 6, 0, 150, 2, ABFLAG_NONE },
+    { ABIL_YRED_CONTROL_UNDEAD, "Control Undead", 5, 0, 175, 2, ABFLAG_NONE },
+
+    // Vehumet
+    { ABIL_VEHUMET_CHANNEL_ENERGY, "Channel Energy", 0, 0, 50, 0, ABFLAG_NONE },
+
+    // Okawaru
+    { ABIL_OKAWARU_MIGHT, "Might", 2, 0, 50, 1, ABFLAG_NONE },
+    { ABIL_OKAWARU_HEALING, "Healing", 2, 0, 75, 1, ABFLAG_NONE },
+    { ABIL_OKAWARU_HASTE, "Haste", 5, 0, 100, 3, ABFLAG_NONE },
+
+    // Makhleb
+    { ABIL_MAKHLEB_MINOR_DESTRUCTION, "Minor Destruction", 1, 0, 20, 0, ABFLAG_NONE },
+    { ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB, "Lesser Servant of Makhleb", 2, 0, 50, 1, ABFLAG_NONE },
+    { ABIL_MAKHLEB_MAJOR_DESTRUCTION, "Major Destruction", 4, 0, 100, 2, ABFLAG_NONE },
+    { ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB, "Greater Servant of Makhleb", 6, 0, 100, 3, ABFLAG_NONE },
+
+    // Sif Muna
+    { ABIL_SIF_MUNA_FORGET_SPELL, "Forget Spell", 5, 0, 0, 8, ABFLAG_NONE },
+
+    // Trog
+    { ABIL_TROG_BERSERK, "Berserk", 0, 0, 200, 0, ABFLAG_NONE },
+    { ABIL_TROG_MIGHT, "Might", 0, 0, 200, 1, ABFLAG_NONE },
+    { ABIL_TROG_HASTE_SELF, "Haste Self", 0, 0, 250, 3, ABFLAG_NONE },
+
+    // Elyvilon
+    { ABIL_ELYVILON_LESSER_HEALING, "Lesser Healing", 1, 0, 100, 0, ABFLAG_NONE },
+    { ABIL_ELYVILON_PURIFICATION, "Purification", 2, 0, 150, 1, ABFLAG_NONE },
+    { ABIL_ELYVILON_HEALING, "Healing", 2, 0, 250, 2, ABFLAG_NONE },
+    { ABIL_ELYVILON_RESTORATION, "Restoration", 3, 0, 400, 3, ABFLAG_NONE },
+    { ABIL_ELYVILON_GREATER_HEALING, "Greater Healing", 6, 0, 600, 4, ABFLAG_NONE },
+
+    // These six are unused "evil" god abilities:
+    { ABIL_CHARM_SNAKE, "Charm Snake", 6, 0, 200, 5, ABFLAG_NONE },
+    { ABIL_TRAN_SERPENT_OF_HELL, "Turn into Demonic Serpent", 16, 0, 600, 8, ABFLAG_NONE },
+    { ABIL_BREATHE_HELLFIRE, "Breathe Hellfire", 0, 8, 200, 0, ABFLAG_BREATH },
+
+
+    { ABIL_ROTTING, "Rotting", 4, 4, 0, 2, ABFLAG_NONE },
+    { ABIL_TORMENT_II, "Call Torment", 9, 0, 0, 3, ABFLAG_PAIN },
+    { ABIL_SHUGGOTH_SEED, "Sow Shuggoth Seed", 12, 8, 0, 6, ABFLAG_NONE },
+
+
+    { ABIL_RENOUNCE_RELIGION, "Renounce Religion", 0, 0, 0, 0, ABFLAG_NONE },
+};
+
+static const struct ability_def & get_ability_def( int abil )
+{
+    for (unsigned int i = 0; i < sizeof( Ability_List ); i++)
+    {
+        if (Ability_List[i].ability == abil)
+            return (Ability_List[i]);
+    }
+
+    return (Ability_List[0]);
+}
+
+static const string make_cost_description( const struct ability_def &abil )
+{
+    char    tmp_buff[80];  // avoiding string steams for portability
+    string  ret = "";
+
+    if (abil.mp_cost)
+    {
+        snprintf( tmp_buff, sizeof(tmp_buff), "%d Magic", abil.mp_cost );
+        ret += tmp_buff;
+    }
+
+    if (abil.hp_cost)
+    {
+        if (ret.length())
+            ret += ", ";
+
+        snprintf( tmp_buff, sizeof(tmp_buff), "%d hp", abil.hp_cost );
+        ret += tmp_buff;
+    }
+
+    if (abil.food_cost)
+    {
+        if (ret.length())
+            ret += ", ";
+
+        ret += "Food";   // randomized and amount hidden from player
+    }
+
+    if (abil.piety_cost)
+    {
+        if (ret.length())
+            ret += ", ";
+
+        ret += "Piety";  // randomized and amount hidden from player
+    }
+
+    if (abil.flags & ABFLAG_BREATH)
+    {
+        if (ret.length())
+            ret += ", ";
+
+        ret += "Breath";
+    }
+
+    if (abil.flags & ABFLAG_DELAY)
+    {
+        if (ret.length())
+            ret += ", ";
+
+        ret += "Delay";
+    }
+
+    if (abil.flags & ABFLAG_PAIN)
+    {
+        if (ret.length())
+            ret += ", ";
+
+        ret += "Pain";
+    }
+
+    if (abil.flags & ABFLAG_EXHAUSTION)
+    {
+        if (ret.length())
+            ret += ", ";
+
+        ret += "Exhaustion";
+    }
+
+    if (abil.flags & ABFLAG_INSTANT)
+    {
+        if (ret.length())
+            ret += ", ";
+
+        ret += "Instant"; // not really a cost, more of a bonus -bwr
+    }
+
+    // If we haven't output anything so far, then the effect has no cost
+    if (!ret.length())
+        ret += "None";
+
+    return (ret);
+}
+
 /*
    Activates a menu which gives player access to all of their non-spell
    special abilities - Eg naga's spit poison, or the Invocations you get
@@ -103,7 +316,6 @@ void activate_ability(void)
     FixedVector < talent, 80 > abil_now;
 
     unsigned char keyin = 0;
-    char unthing = 0;
     unsigned char spc, spc2;
 
     int power;
@@ -141,43 +353,51 @@ void activate_ability(void)
         return;
     }
 
+    bool  need_redraw = false;
+    bool  need_prompt = true;
+    bool  need_getch  = true;
+
     for (;;)
     {
-        mpr("Use which ability? (? or * to list)", MSGCH_PROMPT);
-
-        keyin = get_ch();
-
-        if (keyin == '?' || keyin == '*')
+        if (need_redraw)
         {
-            unthing = show_abilities(&abil_now[0]);
-
+            mesclr();
             redraw_screen();
-
-            if (unthing == 2)
-                return;
-
-            if ((unthing >= '@' && unthing <= '[')
-                || (unthing >= 'a' && unthing <= 'z'))
-            {
-                keyin = unthing;
-                break;
-            }
-            else
-            {
-                mesclr();
-            }
         }
-        else
+
+        if (need_prompt)
+            mpr( "Use which ability? (? or * to list)", MSGCH_PROMPT );
+
+        if (need_getch)
+            keyin = get_ch();
+
+        need_redraw = false;
+        need_prompt = true;
+        need_getch  = true;
+
+        if (isalpha( keyin ))
         {
             break;
         }
-    }
+        else if (keyin == '?' || keyin == '*')
+        {
+            keyin = show_abilities( &abil_now[0] );
 
+            need_getch  = false;
+            need_redraw = true;
+            need_prompt = true;
+        }
+        else if (keyin == ESCAPE || keyin == ' '
+                || keyin == '\r' || keyin == '\n')
+        {
+            canned_msg( MSG_OK );
+            return;
+        }
+    }
 
     spc = (int) keyin;
 
-    // shouldn't that 'y' be a 'z' ??? {dlb}
-    if ((spc < 'a' || spc > 'y') && (spc < 'A' || spc > 'Z'))
+    if (!isalpha( spc ))
     {
         mpr("You can't do that.");
         return;
@@ -201,6 +421,7 @@ void activate_ability(void)
         case ABIL_STOP_LEVITATING:
         case ABIL_TURN_VISIBLE:
         case ABIL_END_TRANSFORMATION:
+        case ABIL_DELAYED_FIREBALL:
             hungerCheck = false;
             break;
         default:
@@ -214,7 +435,10 @@ void activate_ability(void)
     }
 
     // no turning back now... {dlb}
-    you.turn_is_over = 1;
+    const struct ability_def abil = get_ability_def(abil_now[abil_used].which);
+
+    // currently only delayed fireball is instantaneous -- bwr
+    you.turn_is_over = ((abil.flags & ABFLAG_INSTANT) ? 0 : 1);
 
     if (random2avg(98, 3) <= abil_now[abil_used].fail)
     {
@@ -222,14 +446,27 @@ void activate_ability(void)
         return;
     }
 
-    switch (abil_now[abil_used].which)
-    {
-#ifdef USE_ELVISH_GLAMOUR_ABILITY
-    case ABIL_GLAMOUR:
-        if (!enough_mp(5, false))
-            return;
+    if (!enough_mp( abil.mp_cost, false ))
+        return;
 
-        else if (you.duration[DUR_GLAMOUR])
+    // We want the player to have at least 1hp left -- bwr
+    if (!enough_hp( abil.hp_cost + 1, false ))
+        return;
+
+    // Note: the costs will not be applied until after this switch
+    // statement... it's assumed that only failures have returned! -- bwr
+    switch (abil.ability)
+    {
+    case ABIL_DELAYED_FIREBALL:
+        // Note: power level of ball calculated at release -- bwr
+        fireball( spell_spec( SPELL_DELAYED_FIREBALL ) );
+
+        // only one allowed since this is instantaneous -- bwr
+        you.attribute[ ATTR_DELAYED_FIREBALL ] = 0;
+        break;
+
+    case ABIL_GLAMOUR:
+        if (you.duration[DUR_GLAMOUR])
         {
             canned_msg(MSG_CANNOT_DO_YET);
             return;
@@ -237,24 +474,22 @@ void activate_ability(void)
 
         mpr("You use your Elvish wiles.");
 
-        cast_glamour(10 + random2(you.experience_level / 2)
-                            + random2(you.experience_level / 2));
+        cast_glamour( 10 + random2(you.experience_level)
+                         + random2(you.experience_level) );
 
-        dec_mp(5);
-        make_hungry(40 + random2avg(79, 2), true);
         you.duration[DUR_GLAMOUR] = 20 + random2avg(13, 3);
-        you.turn_is_over = 1;
         break;
-#endif
 
     case ABIL_SPIT_POISON:      // Naga + spit poison mutation
         if (you.duration[DUR_BREATH_WEAPON])
         {
             canned_msg(MSG_CANNOT_DO_YET);
+            return;
         }
         else if (spell_direction(abild, beam) == -1)
         {
             canned_msg(MSG_OK);
+            return;
         }
         else
         {
@@ -264,9 +499,7 @@ void activate_ability(void)
                     you.experience_level + you.mutation[MUT_SPIT_POISON] * 5,
                     beam );
 
-            make_hungry(40 + random2avg(79, 2), false);
-            you.duration[DUR_BREATH_WEAPON] += 3 + random2(5);
-            you.turn_is_over = 1;
+            you.duration[DUR_BREATH_WEAPON] = 3 + random2(5);
         }
         break;
 
@@ -279,18 +512,9 @@ void activate_ability(void)
                       40 + random2(you.experience_level)
                             + random2(you.experience_level)
                             + random2(you.experience_level) );
-
-        make_hungry( 30 + random2avg(59, 2), true );
-        you.turn_is_over = 1;
         break;
 
     case ABIL_TELEPORTATION:    // ring of teleport, + teleport mut
-        if (!enough_mp(3, false))
-            return;
-
-        dec_mp(3);
-        make_hungry(200 + random2avg(399, 2), true);
-
         if (you.mutation[MUT_TELEPORT_AT_WILL] == 3)
             you_teleport2(true);
         else
@@ -327,7 +551,7 @@ void activate_ability(void)
             // don't check for hell serpents - they get hell fire,
             // never regular fire (GDL)
 
-            sprintf(info, "You breathe fire%c", (power < 15)?'.':'!');
+            snprintf( info, INFO_SIZE, "You breathe fire%c", (power < 15)?'.':'!');
             mpr(info);
 
             zapping( ZAP_BREATHE_FIRE, power, beam);
@@ -372,30 +596,21 @@ void activate_ability(void)
 
         if (abil_now[abil_used].which != ABIL_SPIT_ACID)
         {
-            you.duration[DUR_BREATH_WEAPON] +=
-                        random2(5) + 3 + random2(30 - you.experience_level);
+            you.duration[DUR_BREATH_WEAPON] = 3 + random2(5)
+                                                + random2(30 - you.experience_level);
         }
 
         if (abil_now[abil_used].which == ABIL_BREATHE_STEAM)
         {
             you.duration[DUR_BREATH_WEAPON] /= 2;
         }
-
-        make_hungry(200 + random2avg(99, 2) -
-                                (you.experience_level * random2(5)), false);
-        you.turn_is_over = 1;
         break;
 
     case ABIL_BLINK:
-        if (!enough_mp(1, false))
-            return;
-
-        dec_mp(1);
-        make_hungry(50 + random2avg(99, 2), true);
         random_blink(true);
         break;
 
-    case ABIL_GO_BERSERK_I:
+    case ABIL_GO_BERSERK:
         if (you.hunger_state < HS_SATIATED)
         {
             mpr("You're too hungry to berserk.");
@@ -407,13 +622,7 @@ void activate_ability(void)
 
     // fly (kenku) -- eventually becomes permanent (see acr.cc)
     case ABIL_FLY:
-        if (!enough_mp(3, false))
-            return;
-
         cast_fly( you.experience_level * 4 );
-
-        dec_mp(3);
-        make_hungry(100 + random2avg(199, 2), true);
 
         if (you.experience_level > 14)
         {
@@ -427,54 +636,33 @@ void activate_ability(void)
         if (you.exhausted)
         {
             mpr("You're too exhausted to fly.");
+            return;
         }
         else if (you.burden_state != BS_UNENCUMBERED)
         {
             mpr("You're carrying too much weight to fly.");
+            return;
         }
         else
         {
             cast_fly( you.experience_level * 2 );
-
-            make_hungry(25 + random2avg(49, 2), true);
             you.attribute[ATTR_EXPENSIVE_FLIGHT] = 1;
         }
         break;
 
     // DEMONIC POWERS:
     case ABIL_SUMMON_MINOR_DEMON:
-        if (!enough_mp(3, false) || !enough_hp(4, false))
-            return;
-
         summon_ice_beast_etc( you.experience_level * 4,
                                      summon_any_demon(DEMON_LESSER) );
-
-        dec_mp(3);
-        dec_hp(3, false);
-        make_hungry(50 + random2avg(199, 2), true);
         break;
 
     case ABIL_SUMMON_DEMON:
-        if (!enough_mp(5, false) || !enough_hp(6, false))
-            return;
-
         summon_ice_beast_etc( you.experience_level * 4,
                                      summon_any_demon(DEMON_COMMON) );
-
-        dec_mp(5);
-        dec_hp(5, false);
-        make_hungry(100 + random2avg(399, 2), true);
         break;
 
     case ABIL_HELLFIRE:
-        if (!enough_mp(8, false) || !enough_hp(9, false))
-            return;
-
         your_spells(SPELL_HELLFIRE, 20 + you.experience_level, false);
-
-        dec_mp(8);
-        dec_hp(8, false);
-        make_hungry(200 + random2avg(399, 2), true);
         break;
 
     case ABIL_TORMENT:
@@ -484,30 +672,14 @@ void activate_ability(void)
             return;
         }
 
-        if (!enough_mp(9, false))
-            return;
-
         torment(you.x_pos, you.y_pos);
-
-        dec_mp(9);
-        make_hungry(200 + random2avg(599, 2), true);
         break;
 
     case ABIL_RAISE_DEAD:
-        if (!enough_mp(5, false) || !enough_hp(6, false))
-            return;
-
         your_spells(SPELL_ANIMATE_DEAD, you.experience_level * 5, false);
-
-        dec_mp(5);
-        dec_hp(5, false);
-        make_hungry(100 + random2avg(399, 2), true);
         break;
 
     case ABIL_CONTROL_DEMON:
-        if (!enough_mp(4, false) || !enough_hp(5, false))
-            return;
-
         if (spell_direction(abild, beam) == -1)
         {
             canned_msg(MSG_OK);
@@ -515,10 +687,6 @@ void activate_ability(void)
         }
 
         zapping(ZAP_CONTROL_DEMON, you.experience_level * 5, beam);
-
-        dec_mp(4);
-        dec_hp(4, false);
-        make_hungry(100 + random2avg(99, 2), true);
         break;
 
     case ABIL_TO_PANDEMONIUM:
@@ -528,40 +696,21 @@ void activate_ability(void)
             return;
         }
 
-        if (!enough_mp(7, false))
-            return;
-
         banished(DNGN_ENTER_PANDEMONIUM);
-
-        dec_mp(7);
-        make_hungry(200 + random2avg(399, 2), true);
         break;
 
     case ABIL_CHANNELING:
-        if (!enough_hp(1, false))
-            return;
-
         mpr("You channel some magical energy.");
-
         inc_mp(1 + random2(5), false);
-        dec_hp(1, false);
-        make_hungry(20 + random2avg(59, 2), true);
         break;
 
     case ABIL_THROW_FLAME:
     case ABIL_THROW_FROST:
-        if (!enough_mp(1, false) || !enough_hp(2, false))
-            return;
-
         if (spell_direction(abild, beam) == -1)
         {
             canned_msg(MSG_OK);
             return;
         }
-
-        dec_mp(1);
-        dec_hp(1, false);
-        make_hungry(50 + random2avg(99, 2), true);
 
         zapping( (abil_now[abil_used].which == ABIL_THROW_FLAME
                         ? ZAP_FLAME : ZAP_FROST),
@@ -570,9 +719,6 @@ void activate_ability(void)
         break;
 
     case ABIL_BOLT_OF_DRAINING:
-        if (!enough_mp(4, false) || !enough_hp(5, false))
-            return;
-
         if (spell_direction(abild, beam) == -1)
         {
             canned_msg(MSG_OK);
@@ -580,13 +726,8 @@ void activate_ability(void)
         }
 
         zapping(ZAP_NEGATIVE_ENERGY, you.experience_level * 6, beam);
-
-        dec_mp(4);
-        dec_hp(4, false);
-        make_hungry(100 + random2avg(199, 2), true);
         break;
 
-        // MAX_ITEMS, etc.:
     case ABIL_TURN_INVISIBLE:
         if (you.hunger_state < HS_SATIATED)
         {
@@ -594,13 +735,7 @@ void activate_ability(void)
             return;
         }
 
-        if (!enough_mp(2, false))
-            return;
-
         potion_effect(POT_INVISIBILITY, you.experience_level + 10);
-
-        dec_mp(2);
-        make_hungry(250 + random2avg(499, 2), true);
         break;
 
     case ABIL_TURN_VISIBLE:
@@ -609,13 +744,7 @@ void activate_ability(void)
         break;
 
     case ABIL_LEVITATE:
-        if (!enough_mp(1, false))
-            return;
-
         potion_effect(POT_LEVITATION, you.experience_level + 10);
-
-        dec_mp(1);
-        make_hungry(100 + random2avg(199, 2), true);
         break;
 
     case ABIL_STOP_LEVITATING:
@@ -629,83 +758,50 @@ void activate_ability(void)
         break;
 
     // INVOCATIONS:
-    case ABIL_REPEL_UNDEAD_I:
-    case ABIL_REPEL_UNDEAD_II:
-        if (!enough_mp(1, false))
-            return;
-
+    case ABIL_ZIN_REPEL_UNDEAD:
+    case ABIL_TSO_REPEL_UNDEAD:
         turn_undead(you.piety);
 
-        dec_mp(1);
+        if (!you.duration[DUR_REPEL_UNDEAD])
+            mpr( "You feel a holy aura protecting you." );
+
+        you.duration[DUR_REPEL_UNDEAD] += 5
+                            + random2avg( you.skills[SK_INVOCATIONS] * 2, 2 );
+
+        if (you.duration[ DUR_REPEL_UNDEAD ] > 25)
+            you.duration[ DUR_REPEL_UNDEAD ] = 25;
+
         exercise(SK_INVOCATIONS, 1);
         break;
 
-    case ABIL_MINOR_HEALING:
-        if (!enough_mp(2, false))
-            return;
-
-        dec_mp(2);
-
-        if (!cast_lesser_healing())
+    case ABIL_ZIN_HEALING:
+        if (!cast_healing( 5 + (you.skills[SK_INVOCATIONS] / 5) ))
             break;
 
-        lose_piety(1);
-        make_hungry(50 + random2avg(99, 2), true);
         exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
-    case ABIL_PESTILENCE:
-        if (!enough_mp(3, false))
-            return;
-
-        summon_swarm(you.piety, true);
-
-        dec_mp(3);
-        lose_piety((coinflip()? 3 : 2));
-        make_hungry(100 + random2avg(199, 2), true);
-        exercise(SK_INVOCATIONS, 2 + random2(4));
+    case ABIL_ZIN_PESTILENCE:
+        summon_swarm( you.skills[SK_INVOCATIONS] * 8, true );
+        exercise( SK_INVOCATIONS, 2 + random2(4) );
         break;
 
-    case ABIL_HOLY_WORD:
-        if (!enough_mp(6, false))
-            return;
-
-        holy_word(you.piety);
-
-        dec_mp(6);
-        lose_piety(coinflip()? 4 : 3);
-        make_hungry(150 + random2avg(299, 2), true);
+    case ABIL_ZIN_HOLY_WORD:
+        holy_word( you.skills[SK_INVOCATIONS] * 8 );
         exercise(SK_INVOCATIONS, 3 + random2(5));
         break;
 
-    case ABIL_SUMMON_GUARDIAN:
-        if (!enough_mp(7, false))
-            return;
-
+    case ABIL_ZIN_SUMMON_GUARDIAN:
         summon_ice_beast_etc(you.skills[SK_INVOCATIONS] * 4, MONS_ANGEL);
-
-        dec_mp(7);
-        lose_piety(3 + random2(4));
-        make_hungry(150 + random2avg(299, 2), true);
         exercise(SK_INVOCATIONS, 8 + random2(10));
         break;
 
-    case ABIL_SMITING:
-        if (!enough_mp(3, false))
-            return;
-
-        cast_smiting(you.skills[SK_INVOCATIONS] * 6);
-
-        dec_mp(3);
-        lose_piety(1);
-        make_hungry(50 + random2avg(99, 2), true);
-        exercise(SK_INVOCATIONS, (coinflip()? 3 : 2));
+    case ABIL_TSO_SMITING:
+        cast_smiting( you.skills[SK_INVOCATIONS] * 6 );
+        exercise( SK_INVOCATIONS, (coinflip()? 3 : 2) );
         break;
 
-    case ABIL_ANNIHILATE_UNDEAD:
-        if (!enough_mp(3, false))
-            return;
-
+    case ABIL_TSO_ANNIHILATE_UNDEAD:
         if (spell_direction(spd, beam) == -1)
         {
             canned_msg(MSG_OK);
@@ -713,17 +809,10 @@ void activate_ability(void)
         }
 
         zapping(ZAP_DISPEL_UNDEAD, you.skills[SK_INVOCATIONS] * 6, beam);
-
-        dec_mp(3);
-        lose_piety((coinflip()? 2 : 1));
-        make_hungry(50 + random2avg(99, 2), true);
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
-    case ABIL_THUNDERBOLT:
-        if (!enough_mp(5, false))
-            return;
-
+    case ABIL_TSO_THUNDERBOLT:
         if (spell_direction(spd, beam) == -1)
         {
             canned_msg(MSG_OK);
@@ -731,181 +820,94 @@ void activate_ability(void)
         }
 
         zapping(ZAP_LIGHTNING, you.skills[SK_INVOCATIONS] * 6, beam);
-
-        dec_mp(5);
-        lose_piety((coinflip()? 2 : 1));
-        make_hungry(100 + random2avg(199, 2), true);
         exercise(SK_INVOCATIONS, 3 + random2(6));
         break;
 
-    case ABIL_SUMMON_DAEVA:
-        if (!enough_mp(8, false))
-            return;
-
+    case ABIL_TSO_SUMMON_DAEVA:
         summon_ice_beast_etc(you.skills[SK_INVOCATIONS] * 4, MONS_DAEVA);
-
-        dec_mp(8);
-        lose_piety(3 + random2(4));
-        make_hungry(150 + random2avg(299, 2), true);
         exercise(SK_INVOCATIONS, 8 + random2(10));
         break;
 
-    case ABIL_RECALL_UNDEAD_SLAVES:
-        if (!enough_mp(1, false))
-            return;
-
+    case ABIL_KIKU_RECALL_UNDEAD_SLAVES:
         recall(1);
-
-        dec_mp(1);
         exercise(SK_INVOCATIONS, 1);
         break;
 
-    case ABIL_ENSLAVE_UNDEAD:
-        if (!enough_mp(4, false))
-            return;
-
+    case ABIL_KIKU_ENSLAVE_UNDEAD:
         if (spell_direction(spd, beam) == -1)
         {
             canned_msg(MSG_OK);
             return;
         }
 
-        zapping(ZAP_ENSLAVE_UNDEAD, you.skills[SK_INVOCATIONS] * 8,
-                beam);
-
-        dec_mp(4);
-        lose_piety((coinflip()? 3 : 2));
-        make_hungry(150 + random2avg(299, 2), true);
+        zapping( ZAP_ENSLAVE_UNDEAD, you.skills[SK_INVOCATIONS] * 8, beam );
         exercise(SK_INVOCATIONS, 5 + random2(5));
         break;
 
-    case ABIL_INVOKE_DEATH:
-        if (!enough_mp(4, false))
-            return;
-
+    case ABIL_KIKU_INVOKE_DEATH:
         summon_ice_beast_etc(20 + you.skills[SK_INVOCATIONS] * 3,
                              MONS_REAPER);
-
-        dec_mp(4);
-        lose_piety(3 + random2(4));
-        make_hungry(350 + random2avg(699, 2), true);
         exercise(SK_INVOCATIONS, 10 + random2(14));
         break;
 
-    case ABIL_ANIMATE_CORPSE:
-        if (!enough_mp(3, false))
-            return;
-
+    case ABIL_YRED_ANIMATE_CORPSE:
         mpr("You call on the dead to walk for you...");
 
-        animate_a_corpse(you.x_pos, you.y_pos, BEH_FRIENDLY, you.pet_target,
-                         CORPSE_BODY);
+        animate_a_corpse( you.x_pos, you.y_pos, BEH_FRIENDLY,
+                          you.pet_target, CORPSE_BODY );
 
-        dec_mp(3);
-        make_hungry(50 + random2avg(99, 2), true);
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
-    case ABIL_RECALL_UNDEAD:
-        if (!enough_mp(4, false))
-            return;
-
+    case ABIL_YRED_RECALL_UNDEAD:
         recall(1);
-
-        dec_mp(4);
-        make_hungry(100 + random2avg(199, 2), true);
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
-    case ABIL_ANIMATE_DEAD:
-        if (!enough_mp(7, false))
-            return;
-
+    case ABIL_YRED_ANIMATE_DEAD:
         mpr("You call on the dead to walk for you...");
 
-        animate_dead(1 + you.skills[SK_INVOCATIONS], BEH_FRIENDLY,
-                     you.pet_target, 1);
+        animate_dead( 1 + you.skills[SK_INVOCATIONS], BEH_FRIENDLY,
+                      you.pet_target, 1 );
 
-        dec_mp(7);
-        lose_piety((coinflip()? 2 : 1));
-        make_hungry(150 + random2avg(299, 2), true);
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
-    case ABIL_DRAIN_LIFE:
-        if (!enough_mp(6, false))
-            return;
-
-        drain_life(you.skills[SK_INVOCATIONS]);
-
-        dec_mp(6);
-        lose_piety(1 + random2(3));
-        make_hungry(150 + random2avg(299, 2), true);
+    case ABIL_YRED_DRAIN_LIFE:
+        drain_life( you.skills[SK_INVOCATIONS] );
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
-    case ABIL_CONTROL_UNDEAD:
-        if (!enough_mp(5, false))
-            return;
-
-        mass_enchantment(ENCH_CHARM, you.skills[SK_INVOCATIONS] * 8, MHITYOU);
-
-        dec_mp(5);
-        lose_piety(2 + random2(3));
-        make_hungry(150 + random2avg(399, 2), true);
+    case ABIL_YRED_CONTROL_UNDEAD:
+        mass_enchantment( ENCH_CHARM, you.skills[SK_INVOCATIONS] * 8, MHITYOU );
         exercise(SK_INVOCATIONS, 3 + random2(4));
         break;
 
-    case ABIL_CHANNEL_ENERGY:
+    case ABIL_VEHUMET_CHANNEL_ENERGY:
         mpr("You channel some magical energy.");
 
         inc_mp(1 + random2(you.skills[SK_INVOCATIONS] / 4 + 2), false);
-        make_hungry(50 + random2avg(99, 2), true);
         exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
-    case ABIL_MIGHT_I:
-        if (!enough_mp(2, false))
-            return;
-
+    case ABIL_OKAWARU_MIGHT:
         potion_effect(POT_MIGHT, you.skills[SK_INVOCATIONS] * 8);
-
-        dec_mp(2);
-        lose_piety(1);
-        make_hungry(50 + random2avg(99, 2), true);
         exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
-    case ABIL_HEALING_I:
-        if (!enough_mp(2, false))
-            return;
-
-        dec_mp(2);
-
-        if (!cast_lesser_healing())
+    case ABIL_OKAWARU_HEALING:
+        if (!cast_healing( 5 + (you.skills[SK_INVOCATIONS] / 5) ))
             break;
 
-        lose_piety(1);
-        make_hungry(100 + random2avg(99, 2), true);
         exercise(SK_INVOCATIONS, 2 + random2(5));
         break;
 
-    case ABIL_HASTE:
-        if (!enough_mp(5, false))
-            return;
-
+    case ABIL_OKAWARU_HASTE:
         potion_effect(POT_SPEED, you.skills[SK_INVOCATIONS] * 8);
-
-        dec_mp(5);
-        lose_piety(2 + random2(3));
-        make_hungry(100 + random2avg(199, 2), true);
         exercise(SK_INVOCATIONS, 3 + random2(7));
         break;
 
-    case ABIL_MINOR_DESTRUCTION:
-        if (!enough_mp(1, false))
-            return;
-
+    case ABIL_MAKHLEB_MINOR_DESTRUCTION:
         if (spell_direction(spd, beam) == -1)
         {
             canned_msg(MSG_OK);
@@ -925,28 +927,17 @@ void activate_ability(void)
         case 4: zapping( ZAP_BREATHE_ACID, power / 2, beam ); break;
         }
 
-        dec_mp(1);
-        make_hungry(20 + random2avg(39, 2), true);
         exercise(SK_INVOCATIONS, (coinflip()? 2 : 1));
         break;
 
-    case ABIL_LESSER_SERVANT_OF_MAKHLEB:
-        if (!enough_mp(2, false))
-            return;
-
+    case ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB:
         summon_ice_beast_etc(20 + you.skills[SK_INVOCATIONS] * 3,
                              MONS_NEQOXEC + random2(5));
 
-        dec_mp(2);
-        lose_piety((coinflip()? 2 : 1));
-        make_hungry(50 + random2avg(99, 2), true);
         exercise(SK_INVOCATIONS, 2 + random2(3));
         break;
 
-    case ABIL_MAJOR_DESTRUCTION:
-        if (!enough_mp(4, false))
-            return;
-
+    case ABIL_MAKHLEB_MAJOR_DESTRUCTION:
         if (spell_direction(spd, beam) == -1)
         {
             canned_msg(MSG_OK);
@@ -993,26 +984,17 @@ void activate_ability(void)
             break;
         }
 
-        dec_mp(3);
-        lose_piety((coinflip()? 2 : 1));
-        make_hungry(100 + random2avg(99, 2), true);
         exercise(SK_INVOCATIONS, 3 + random2(5));
         break;
 
-    case ABIL_GREATER_SERVANT_OF_MAKHLEB:
-        if (!enough_mp(6, false))
-            return;
+    case ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB:
+        summon_ice_beast_etc( 20 + you.skills[SK_INVOCATIONS] * 3,
+                              MONS_EXECUTIONER + random2(5) );
 
-        summon_ice_beast_etc(20 + you.skills[SK_INVOCATIONS] * 3,
-                             MONS_EXECUTIONER + random2(5));
-
-        dec_mp(4);
-        lose_piety((coinflip()? 3 : 2));
-        make_hungry(100 + random2avg(99, 2), true);
         exercise(SK_INVOCATIONS, 6 + random2(6));
         break;
 
-    case ABIL_GO_BERSERK_II:
+    case ABIL_TROG_BERSERK:
         if (you.hunger_state < HS_SATIATED)
         {
             mpr("You're too hungry to berserk.");
@@ -1020,132 +1002,69 @@ void activate_ability(void)
         }
 
         go_berserk(true);
-
-        make_hungry(100 + random2avg(199, 2), true);
-        //exercise(SK_INVOCATIONS, 1 + random2(3));
         break;
 
-    case ABIL_MIGHT_II:
+    case ABIL_TROG_MIGHT:
         potion_effect(POT_MIGHT, you.skills[SK_INVOCATIONS] * 6);
-
-        lose_piety((coinflip()? 2 : 1));
-        make_hungry(200 + random2avg(399, 2), true);
-        //exercise(SK_INVOCATIONS, 2 + random2(5));
         break;
 
-    case ABIL_HASTE_SELF:
+    case ABIL_TROG_HASTE_SELF:
         potion_effect(POT_SPEED, you.skills[SK_INVOCATIONS] * 6);
-
-        lose_piety(2 + random2(3));
-        make_hungry(250 + random2avg(499, 2), true);
-        //exercise(SK_INVOCATIONS, 4 + random2(6));
         break;
 
-    case ABIL_FORGET_SPELL:
+    case ABIL_SIF_MUNA_FORGET_SPELL:
         cast_selective_amnesia(true);
-        //exercise(SK_INVOCATIONS, 1);
         break;
 
-    case ABIL_LESSER_HEALING:
-        if (!enough_mp(1, false))
-            return;
-
-        dec_mp(1);
-
-        if (!cast_lesser_healing())
+    case ABIL_ELYVILON_LESSER_HEALING:
+        if (!cast_healing( 5 + (you.skills[SK_INVOCATIONS] / 5) ))
             break;
 
-        make_hungry(100 + random2avg(199, 2), true);
         exercise(SK_INVOCATIONS, (coinflip()? 2 : 1));
         break;
 
-    case ABIL_PURIFICATION:
-        if (!enough_mp(1, false))
-            return;
-
+    case ABIL_ELYVILON_PURIFICATION:
         purification();
-
-        dec_mp(1);
-        lose_piety(1);
-        make_hungry(150 + random2avg(299, 2), true);
         exercise(SK_INVOCATIONS, 2 + random2(3));
         break;
 
-    case ABIL_HEALING_II:
-        if (!enough_mp(2, false))
-            return;
-
-        if (!cast_greater_healing())
+    case ABIL_ELYVILON_HEALING:
+        if (!cast_healing( 10 + (you.skills[SK_INVOCATIONS] / 3) ))
             break;
 
-        lose_piety(1 + random2(3));
-
-        dec_mp(2);
-        make_hungry(250 + random2avg(499, 2), true);
         exercise(SK_INVOCATIONS, 3 + random2(5));
         break;
 
-    case ABIL_RESTORATION:
-        if (!enough_mp(3, false))
-            return;
+    case ABIL_ELYVILON_RESTORATION:
+        restore_stat( STAT_ALL, false );
+        unrot_hp( 100 );
 
-        restore_stat(STAT_ALL, false);
-
-        if (you.base_hp < 5000)
-            you.base_hp = 5000;
-
-        calc_hp();
-        dec_mp(3);
-        lose_piety(2 + random2(3));
-        make_hungry(400 + random2avg(899, 2), true);
         exercise(SK_INVOCATIONS, 4 + random2(6));
         break;
 
-    case ABIL_GREATER_HEALING:
-        if (!enough_mp(6, false))
-            return;
-
-        if (!cast_greatest_healing())
+    case ABIL_ELYVILON_GREATER_HEALING:
+        if (!cast_healing( 20 + you.skills[SK_INVOCATIONS] * 2 ))
             break;
 
-        //cast_purification(you.piety);
-
-        dec_mp(6);
-        lose_piety(4 + random2(4));
-        make_hungry(600 + random2avg(1099, 2), true);
         exercise(SK_INVOCATIONS, 6 + random2(10));
         break;
 
     //jmf: intended as invocations from evil god(s):
     case ABIL_CHARM_SNAKE:
-        if (!enough_mp(6, false))
-            return;
-
         cast_snake_charm( you.experience_level * 2
                             + you.skills[SK_INVOCATIONS] * 3 );
 
-        dec_mp(6);
-        lose_piety(3 + random2(6));
-        make_hungry(200 + random2avg(300, 3), true);
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
     case ABIL_TRAN_SERPENT_OF_HELL:
-        if (!enough_mp(16, false))
-            return;
-
         transform(10 + (you.experience_level * 2) +
                   (you.skills[SK_INVOCATIONS] * 3), TRAN_SERPENT_OF_HELL);
 
-        dec_mp(16);
-        lose_piety(8 + random2(4));
         exercise(SK_INVOCATIONS, 6 + random2(9));
         break;
 
     case ABIL_BREATHE_HELLFIRE:
-        if (!enough_hp(9, false))
-            return;
-
         if (you.duration[DUR_BREATH_WEAPON])
         {
             canned_msg(MSG_CANNOT_DO_YET);
@@ -1157,42 +1076,27 @@ void activate_ability(void)
 
         zapping(ZAP_HELLFIRE, 20 + you.experience_level, beam);
 
-        dec_hp(8, false);
-        make_hungry( 200 + random2avg(99, 2) -
-                            (you.experience_level * random2(5)), false );
-
         you.duration[DUR_BREATH_WEAPON] +=
                         3 + random2(5) + random2(30 - you.experience_level);
         break;
 
     case ABIL_ROTTING:
-        if (!enough_mp(4, false) || !enough_hp(5, false))
-            return;
-
         cast_rotting(you.experience_level * 2 + you.skills[SK_INVOCATIONS] * 3);
-
-        dec_mp(4);
-        lose_piety(1 + random2(4));
-        //make_hungry(100 + random2avg(199,2), true);
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
     case ABIL_TORMENT_II:
-        if (!enough_mp(9, false))
+        if (you.is_undead)
+        {
+            mpr("The unliving cannot use this ability.");
             return;
+        }
 
         torment(you.x_pos, you.y_pos);
-
-        dec_mp(9);
-        lose_piety(2 + random2(4));
-        //make_hungry(100 + random2avg(199,2), true);
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
 
     case ABIL_SHUGGOTH_SEED:
-        if (!enough_mp(12, false) || !enough_hp(9, false))
-            return;
-
         if (you.duration[DUR_SHUGGOTH_SEED_RELOAD])
         {
             canned_msg(MSG_CANNOT_DO_YET);
@@ -1202,9 +1106,6 @@ void activate_ability(void)
         cast_shuggoth_seed( you.experience_level * 2
                                 + you.skills[SK_INVOCATIONS] * 3 );
 
-        dec_mp(12);
-        lose_piety(5 + random2(6));
-        //make_hungry(200 + random2avg(299,2), true);
         you.duration[DUR_SHUGGOTH_SEED_RELOAD] = 10 + random2avg(39, 2);
         exercise(SK_INVOCATIONS, 2 + random2(4));
         break;
@@ -1226,7 +1127,30 @@ void activate_ability(void)
         break;
     }
 
-    return;
+    // All failures should have returned by this point, so we'll
+    // apply the costs -- its not too neat, but it works for now. -- bwr
+    const int food_cost = abil.food_cost + random2avg(abil.food_cost, 2);
+    const int piety_cost = abil.piety_cost + random2((abil.piety_cost + 1) / 2 + 1);
+
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "Cost: mp=%d; hp=%d; food=%d; piety=%d",
+              abil.mp_cost, abil.hp_cost, food_cost, piety_cost );
+
+    mpr( info );
+#endif
+
+    if (abil.mp_cost)
+        dec_mp( abil.mp_cost );
+
+    if (abil.hp_cost)
+        dec_hp( abil.hp_cost, false );
+
+    if (food_cost)
+        make_hungry( food_cost, false );
+
+    if (piety_cost)
+        lose_piety( piety_cost );
+
 }  // end activate_ability()
 
 
@@ -1242,6 +1166,8 @@ static char show_abilities(struct talent *p_abils)
     char strng[5] = "";         // is this really necessary? {dlb}
     char ft, ki;
     bool can_invoke = false;
+
+    const int num_lines = get_number_of_lines();
 
     for (loopy = 0; loopy < 80; loopy++)
     {
@@ -1265,65 +1191,23 @@ static char show_abilities(struct talent *p_abils)
         ("  Ability                           Cost                    Success");
     lines++;
 
-    /* ******************************************************************
-       // BEGIN: does this block ever come into play? {dlb}
-
-       if ( lines > NUMBER_OF_LINES - 3 )
-       {
-       gotoxy(1, NUMBER_OF_LINES);
-       cprintf("-more-");
-
-       ki = getch();
-
-       if ( ki == 27 )
-       {
-       #ifdef DOS_TERM
-       puttext(1, 1, 80, 25, buffer);
-       #endif
-       return 27;
-       }
-
-       if (ki >= 'A' && ki <= 'z')
-       {
-       #ifdef DOS_TERM
-       puttext(1, 1, 80, 25, buffer);
-       #endif
-       return ki;
-       }
-
-       if ( ki == 0 )
-       ki = getch();
-
-       lines = 0;
-       clrscr();
-       gotoxy(1, 1);
-       anything = 0;
-
-       }
-
-       if ( lines > 1 )
-       cprintf(EOL " ");
-
-       // END: does this block ever come into play? {dlb}
-       ****************************************************************** */
-
     for (loopy = 0; loopy < 80; loopy++)
     {
         p_abils = (zeroindex + loopy);
 
-        if (lines > NUMBER_OF_LINES - 2)
+        if (lines > num_lines - 2)
         {
-            gotoxy(1, NUMBER_OF_LINES);
+            gotoxy(1, num_lines);
             cprintf("-more-");
 
             ki = getch();
 
-            if (ki == 27)
+            if (ki == ESCAPE)
             {
 #ifdef DOS_TERM
                 puttext(1, 1, 80, 25, buffer);
 #endif
-                return 27;
+                return (ESCAPE);
             }
 
             if (ki >= 'A' && ki <= 'z')
@@ -1331,7 +1215,7 @@ static char show_abilities(struct talent *p_abils)
 #ifdef DOS_TERM
                 puttext(1, 1, 80, 25, buffer);
 #endif
-                return ki;
+                return (ki);
             }
 
             if (ki == 0)
@@ -1370,277 +1254,19 @@ static char show_abilities(struct talent *p_abils)
             cprintf(strng);
             cprintf(" - ");
 
-            switch (p_abils->which)
-            {
-#ifdef USE_ELVISH_GLAMOUR_ABILITY
-            case ABIL_GLAMOUR:
-                cprintf("Glamour                         5 Magic, Food");
-                break;
-#endif
-            case ABIL_SPIT_POISON:
-                cprintf("Spit Poison                     Food");
-                break;
-            case ABIL_MAPPING:
-                cprintf("Sense Surroundings              Food");
-                break;
-            case ABIL_TELEPORTATION:
-                cprintf("Teleportation                   3 Magic, Food");
-                break;
-            case ABIL_BREATHE_FIRE:
-                cprintf("Breathe Fire                    Food, Delay");
-                break;
-            case ABIL_BLINK:
-                cprintf("Blink                           1 Magic, Food ");
-                break;
-            case ABIL_BREATHE_FROST:
-                cprintf("Breathe Frost                   Food, Delay");
-                break;
-            case ABIL_BREATHE_POISON:
-                cprintf("Breathe Poison Gas              Food, Delay");
-                break;
-            case ABIL_BREATHE_LIGHTNING:
-                cprintf("Breathe Lightning               Food, Delay");
-                break;
-            case ABIL_SPIT_ACID:
-                cprintf("Spit Acid                       Food");
-                break;
-            case ABIL_BREATHE_POWER:
-                cprintf("Breathe Power                   Food, Delay");
-                break;
-            case ABIL_GO_BERSERK_I:
-                cprintf("Go Berserk                      None");
-                break;
-            case ABIL_BREATHE_STICKY_FLAME:
-                cprintf("Breathe Sticky Flame            Food, Delay");
-                break;
-            case ABIL_BREATHE_STEAM:
-                cprintf("Breathe Steam                   Food, Delay");
-                break;
-            case ABIL_BREATHE_HELLFIRE:
-                cprintf("Breathe Hellfire                8 hp, Food, Delay");
-                break;
-            case ABIL_FLY:
-                cprintf("Fly                             3 Magic, Food");
-                break;
-            case ABIL_FLY_II:
-                cprintf("Fly                             Food, Exhaustion");
-                break;
+            const struct ability_def abil = get_ability_def( p_abils->which );
 
-            //Demonic powers:
-            case ABIL_SUMMON_MINOR_DEMON:
-                cprintf
-                    ("Summon Minor Demon              3 Magic, 3 hp, Food");
-                break;
-            case ABIL_SUMMON_DEMON:
-                cprintf
-                    ("Summon Demon                    5 Magic, 5 hp, Food");
-                break;
-            case ABIL_HELLFIRE:
-                cprintf
-                    ("Hellfire                        8 Magic, 8 hp, Food");
-                break;
-            case ABIL_TORMENT:
-                cprintf
-                    ("Torment                         9 Magic, Food, Pain");
-                break;
-            case ABIL_RAISE_DEAD:
-                cprintf
-                    ("Raise Dead                      5 Magic, 5 hp, Food");
-                break;
-            case ABIL_CONTROL_DEMON:
-                cprintf
-                    ("Control Demon                   4 Magic, 4 hp, Food");
-                break;
-            case ABIL_TO_PANDEMONIUM:
-                //jmf: was "Open Gate to Pandemonium"
-                cprintf("Gate Yourself to Pandemonium    7 Magic, Food");
-                break;
-            case ABIL_CHANNELING:
-                cprintf("Channeling                      1 hp, Food");
-                break;
-            case ABIL_THROW_FLAME:
-                cprintf
-                    ("Throw Flame                     1 Magic, 1 hp, Food");
-                break;
-            case ABIL_THROW_FROST:
-                cprintf
-                    ("Throw Frost                     1 Magic, 1 hp, Food");
-                break;
-            case ABIL_BOLT_OF_DRAINING:
-                cprintf
-                    ("Bolt of Draining                4 Magic, 4 hp, Food");
-                break;
+            cprintf( abil.name );
 
-            // Most of the following are from items:
-            case ABIL_TURN_INVISIBLE:
-                cprintf("Turn Invisible                  2 Magic, Food");
-                break;
-            case ABIL_TURN_VISIBLE:
-                cprintf("Turn Visible                    None");
-                break;
-            case ABIL_LEVITATE:
-                cprintf("Levitate                        1 Magic, Food");
-                break;
-            case ABIL_STOP_LEVITATING:
-                cprintf("Stop Levitating                 None");
-                break;
+            // Output costs:
+            gotoxy( 35, wherey() );
 
-            case ABIL_END_TRANSFORMATION:
-                cprintf("End Transformation              None");
-                break;
+            string cost_str = make_cost_description( abil );
 
-            // Invocations:
-            case ABIL_REPEL_UNDEAD_I:
-            case ABIL_REPEL_UNDEAD_II:
-                cprintf("Repel Undead                    1 Magic, Food");
-                break;
-            case ABIL_MINOR_HEALING:
-                cprintf
-                    ("Minor Healing                   2 Magic, Food, Piety");
-                break;
-            case ABIL_PESTILENCE:
-                cprintf
-                    ("Pestilence                      3 Magic, Food, Piety");
-                break;
-            case ABIL_HOLY_WORD:
-                cprintf
-                    ("Holy Word                       6 Magic, Food, Piety");
-                break;
-            case ABIL_SUMMON_GUARDIAN:
-                cprintf
-                    ("Summon Guardian                 7 Magic, Food, Piety");
-                break;
-            case ABIL_SMITING:
-                cprintf
-                    ("Smiting                         3 Magic, Food, Piety");
-                break;
-            case ABIL_ANNIHILATE_UNDEAD:
-                cprintf
-                    ("Annihilate Undead               3 Magic, Food, Piety");
-                break;
-            case ABIL_THUNDERBOLT:
-                cprintf
-                    ("Thunderbolt                     5 Magic, Food, Piety");
-                break;
-            case ABIL_SUMMON_DAEVA:
-                cprintf
-                    ("Summon Daeva                    8 Magic, Food, Piety");
-                break;
-            case ABIL_RECALL_UNDEAD_SLAVES:
-                cprintf("Recall Undead Slaves            1 Magic");
-                break;
-            case ABIL_ENSLAVE_UNDEAD:
-                cprintf
-                    ("Enslave Undead                  2 Magic, Food, Piety");
-                break;
-            case ABIL_INVOKE_DEATH:
-                cprintf
-                    ("Invoke Death                    3 Magic, Food, Piety");
-                break;
-            case ABIL_ANIMATE_CORPSE:
-                cprintf("Animate Corpse                  3 Magic, Food");
-                break;
-            case ABIL_RECALL_UNDEAD:
-                cprintf("Recall Undead                   4 Magic, Food");
-                break;
-            case ABIL_ANIMATE_DEAD:
-                cprintf
-                    ("Animate Dead                    7 Magic, Food, Piety");
-                break;
-            case ABIL_DRAIN_LIFE:
-                cprintf
-                    ("Drain Life                      6 Magic, Food, Piety");
-                break;
-            case ABIL_CONTROL_UNDEAD:
-                cprintf
-                    ("Control Undead                  5 Magic, Food, Piety");
-                break;
-            case ABIL_CHANNEL_ENERGY:
-                cprintf("Channel Energy                  Food");
-                break;
-            case ABIL_MIGHT_I:
-                cprintf
-                    ("Might                           2 Magic, Food, Piety");
-                break;
-            case ABIL_HEALING_I:
-                cprintf
-                    ("Healing                         2 Magic, Food, Piety");
-                break;
-            case ABIL_HASTE:
-                cprintf
-                    ("Haste                           5 Magic, Food, Piety");
-                break;
-            case ABIL_MINOR_DESTRUCTION:
-                cprintf("Minor Destruction               1 Magic, Food");
-                break;
-            case ABIL_LESSER_SERVANT_OF_MAKHLEB:
-                cprintf
-                    ("Lesser Servant of Makhleb       2 Magic, Food, Piety");
-                break;
-            case ABIL_MAJOR_DESTRUCTION:
-                cprintf
-                    ("Major Destruction               4 Magic, Food, Piety");
-                break;
-            case ABIL_GREATER_SERVANT_OF_MAKHLEB:
-                cprintf
-                    ("Greater Servant of Makhleb      6 Magic, Food, Piety");
-                break;
-            case ABIL_GO_BERSERK_II:
-                cprintf("Go Berserk                      Food");
-                break;
-            case ABIL_MIGHT_II:
-                cprintf("Might                           Food, Piety");
-                break;
-            case ABIL_HASTE_SELF:
-                cprintf("Haste Self                      Food, Piety");
-                break;
-            case ABIL_FORGET_SPELL:
-                cprintf("Forget Spell                    5 Magic, Piety");
-                break;
-            case ABIL_LESSER_HEALING:
-                cprintf("Lesser Healing                  1 Magic, Food");
-                break;
-            case ABIL_PURIFICATION:
-                cprintf
-                    ("Purification                    2 Magic, Food, Piety");
-                break;
-            case ABIL_HEALING_II:
-                cprintf
-                    ("Healing                         2 Magic, Food, Piety");
-                break;
-            case ABIL_RESTORATION:
-                cprintf
-                    ("Restoration                     3 Magic, Food, Piety");
-                break;
-            case ABIL_GREATER_HEALING:
-                cprintf
-                    ("Greater Healing                 6 Magic, Food, Piety");
-                break;
-            case ABIL_CHARM_SNAKE:
-                cprintf
-                    ("Charm Snake                     6 Magic, Food, Piety");
-            case ABIL_TRAN_SERPENT_OF_HELL:
-                cprintf
-                    ("Turn into Demonic Serpent      16 Magic, Food, Piety");
-                break;
-            case ABIL_ROTTING:
-                cprintf
-                    ("Rotting                         4 Magic, 4 hp, Piety");
-                break;
-            case ABIL_TORMENT_II:
-                cprintf
-                    ("Call Torment                    9 Magic, Piety, Pain");
-                break;
-            case ABIL_SHUGGOTH_SEED:
-                cprintf
-                    ("Sow Shuggoth Seed              12 Magic, 8 hp, Piety");
-                break;
-            case ABIL_RENOUNCE_RELIGION:
-                cprintf("Renounce Religion               None");
-                break;
-            }
+            if (cost_str.length() > 24)
+                cost_str = cost_str.substr( 0, 24 );
 
-            gotoxy(35, wherey());
+            cprintf( cost_str.c_str() );
 
             gotoxy(60, wherey());
 
@@ -1672,7 +1298,7 @@ static char show_abilities(struct talent *p_abils)
 #ifdef DOS_TERM
             puttext(1, 1, 80, 25, buffer);
 #endif
-            return ki;
+            return (ki);
         }
 
         if (ki == 0)
@@ -1682,7 +1308,7 @@ static char show_abilities(struct talent *p_abils)
         puttext(1, 1, 80, 25, buffer);
 #endif
 
-        return anything;
+        return (ki);
     }
 
 #ifdef DOS_TERM
@@ -1691,7 +1317,7 @@ static char show_abilities(struct talent *p_abils)
 
     ki = getch();
 
-    return ki;
+    return (ki);
 }                               // end show_abilities()
 
 
@@ -1702,17 +1328,19 @@ static bool generate_abilities(struct talent *p_abils)
     int ability = -1;                   // used with draconian checks {dlb}
     struct talent *zeroindex = p_abils; // we may need this later {dlb}
 
-    // checking for species-related abilities and mutagenic counterparts {dlb}:
-#ifdef USE_ELVISH_GLAMOUR_ABILITY
-    if (you.species == SP_GREY_ELF)
+    // checking for unreleased delayed fireball
+    if (you.attribute[ ATTR_DELAYED_FIREBALL ])
     {
-        if (you.experience_level > 4
-            && you.attribute[ATTR_TRANSFORMATION] == TRAN_NONE)
-        {
-            insert_ability(ABIL_GLAMOUR, &p_abils);
-        }
+        insert_ability( ABIL_DELAYED_FIREBALL, &p_abils );
     }
-#endif
+
+    // checking for species-related abilities and mutagenic counterparts {dlb}:
+    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_NONE
+        && ((you.species == SP_GREY_ELF && you.experience_level >= 5)
+            || (you.species == SP_HIGH_ELF && you.experience_level >= 15)))
+    {
+        insert_ability(ABIL_GLAMOUR, &p_abils);
+    }
 
     //jmf: alternately put check elsewhere
     if ((you.level_type == LEVEL_DUNGEON
@@ -1723,7 +1351,7 @@ static bool generate_abilities(struct talent *p_abils)
         || (you.level_type == LEVEL_PANDEMONIUM
                 && you.mutation[MUT_MAPPING] == 3))
     {
-            insert_ability(ABIL_MAPPING, &p_abils);
+        insert_ability(ABIL_MAPPING, &p_abils);
     }
 
 
@@ -1753,7 +1381,7 @@ static bool generate_abilities(struct talent *p_abils)
 
     if (player_genus(GENPC_DRACONIAN))
     {
-        if (you.experience_level > 6)
+        if (you.experience_level >= 7)
         {
             ability = (
                 (you.species == SP_GREEN_DRACONIAN)  ? ABIL_BREATHE_POISON :
@@ -1776,7 +1404,7 @@ static bool generate_abilities(struct talent *p_abils)
         // kenku can fly, but only from the ground
         // (until levitation 15, when it becomes permanent until revoked)
         //jmf: "upgrade" for draconians -- expensive flight
-        if (you.species == SP_KENKU && you.experience_level > 4)
+        if (you.species == SP_KENKU && you.experience_level >= 5)
             insert_ability(ABIL_FLY, &p_abils);
         else if (player_genus(GENPC_DRACONIAN) && you.mutation[MUT_BIG_WINGS])
             insert_ability(ABIL_FLY_II, &p_abils);
@@ -1828,7 +1456,7 @@ static bool generate_abilities(struct talent *p_abils)
         insert_ability(ABIL_BLINK, &p_abils);
 
     if (wearing_amulet(AMU_RAGE) || scan_randarts(RAP_BERSERK))
-        insert_ability(ABIL_GO_BERSERK_I, &p_abils);
+        insert_ability(ABIL_GO_BERSERK, &p_abils);
 
     if (you.invis)
     {
@@ -1836,14 +1464,8 @@ static bool generate_abilities(struct talent *p_abils)
     }
     else
     {
-        if ((you.equip[EQ_LEFT_RING] != -1
-                && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_INVISIBILITY)
-            || (you.equip[EQ_RIGHT_RING] != -1
-                && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_INVISIBILITY)
-            || (you.equip[EQ_CLOAK] != -1
-                && you.inv_dam[you.equip[EQ_CLOAK]] % 30 == SPARM_DARKNESS)
-            || (you.equip[EQ_HELMET] != -1
-                && you.inv_dam[you.equip[EQ_HELMET]] % 30 == SPARM_DARKNESS)
+        if (player_equip( EQ_RINGS, RING_INVISIBILITY )
+            || player_equip_special( EQ_ALL_ARMOUR, SPARM_DARKNESS )
             || scan_randarts(RAP_INVISIBLE))
         {
             insert_ability(ABIL_TURN_INVISIBLE, &p_abils);
@@ -1857,12 +1479,8 @@ static bool generate_abilities(struct talent *p_abils)
     }
     else
     {
-        if ((you.equip[EQ_LEFT_RING] != -1
-                && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_LEVITATION)
-            || (you.equip[EQ_RIGHT_RING] != -1
-                && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_LEVITATION)
-            || (you.equip[EQ_BOOTS] != -1
-                && you.inv_dam[you.equip[EQ_BOOTS]] % 30 == SPARM_LEVITATION)
+        if (player_equip( EQ_RINGS, RING_LEVITATION )
+            || player_equip_special( EQ_BOOTS, SPARM_LEVITATION )
             || scan_randarts(RAP_LEVITATE))
         {
             insert_ability(ABIL_LEVITATE, &p_abils);
@@ -1870,10 +1488,7 @@ static bool generate_abilities(struct talent *p_abils)
     }
 
 
-    if ((you.equip[EQ_LEFT_RING] != -1
-            && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_TELEPORTATION)
-        || (you.equip[EQ_RIGHT_RING] != -1
-            && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_TELEPORTATION)
+    if (player_equip( EQ_RINGS, RING_TELEPORTATION )
         || you.mutation[MUT_TELEPORT_AT_WILL]
         || scan_randarts(RAP_CAN_TELEPORT))
     {
@@ -1883,8 +1498,8 @@ static bool generate_abilities(struct talent *p_abils)
     // look at output routine for why this is done {dlb}
     // -- god abilities are capitalized and this would see to do that
     //    magic... however, XXX: it does mean that if a player has a huge
-    //    number of abilities, they may be overwriten, so this should
-    //    be looked into -- bwr
+    //    number of abilities, the last few may be overwriten, so this
+    //    should be looked into -- bwr
     p_abils = (zeroindex + 26);
 
     // gods take abilities away until penance completed -- bwr
@@ -1894,102 +1509,102 @@ static bool generate_abilities(struct talent *p_abils)
         {
         case GOD_ZIN:
             if (you.piety >= 30)
-                insert_ability(ABIL_REPEL_UNDEAD_I, &p_abils);
+                insert_ability(ABIL_ZIN_REPEL_UNDEAD, &p_abils);
             if (you.piety >= 50)
-                insert_ability(ABIL_MINOR_HEALING, &p_abils);
+                insert_ability(ABIL_ZIN_HEALING, &p_abils);
             if (you.piety >= 75)
-                insert_ability(ABIL_PESTILENCE, &p_abils);
+                insert_ability(ABIL_ZIN_PESTILENCE, &p_abils);
             if (you.piety >= 100)
-                insert_ability(ABIL_HOLY_WORD, &p_abils);
+                insert_ability(ABIL_ZIN_HOLY_WORD, &p_abils);
             if (you.piety >= 120)
-                insert_ability(ABIL_SUMMON_GUARDIAN, &p_abils);
+                insert_ability(ABIL_ZIN_SUMMON_GUARDIAN, &p_abils);
             break;
 
         case GOD_SHINING_ONE:
             if (you.piety >= 30)
-                insert_ability(ABIL_REPEL_UNDEAD_II, &p_abils);
+                insert_ability(ABIL_TSO_REPEL_UNDEAD, &p_abils);
             if (you.piety >= 50)
-                insert_ability(ABIL_SMITING, &p_abils);
+                insert_ability(ABIL_TSO_SMITING, &p_abils);
             if (you.piety >= 75)
-                insert_ability(ABIL_ANNIHILATE_UNDEAD, &p_abils);
+                insert_ability(ABIL_TSO_ANNIHILATE_UNDEAD, &p_abils);
             if (you.piety >= 100)
-                insert_ability(ABIL_THUNDERBOLT, &p_abils);
+                insert_ability(ABIL_TSO_THUNDERBOLT, &p_abils);
             if (you.piety >= 120)
-                insert_ability(ABIL_SUMMON_DAEVA, &p_abils);
+                insert_ability(ABIL_TSO_SUMMON_DAEVA, &p_abils);
             break;
 
         case GOD_YREDELEMNUL:
             if (you.piety >= 30)
-                insert_ability(ABIL_ANIMATE_CORPSE, &p_abils);
+                insert_ability(ABIL_YRED_ANIMATE_CORPSE, &p_abils);
             if (you.piety >= 50)
-                insert_ability(ABIL_RECALL_UNDEAD, &p_abils);
+                insert_ability(ABIL_YRED_RECALL_UNDEAD, &p_abils);
             if (you.piety >= 75)
-                insert_ability(ABIL_ANIMATE_DEAD, &p_abils);
+                insert_ability(ABIL_YRED_ANIMATE_DEAD, &p_abils);
             if (you.piety >= 100)
-                insert_ability(ABIL_DRAIN_LIFE, &p_abils);
+                insert_ability(ABIL_YRED_DRAIN_LIFE, &p_abils);
             if (you.piety >= 120)
-                insert_ability(ABIL_CONTROL_UNDEAD, &p_abils);
+                insert_ability(ABIL_YRED_CONTROL_UNDEAD, &p_abils);
             break;
 
         case GOD_ELYVILON:
             if (you.piety >= 30)
-                insert_ability(ABIL_LESSER_HEALING, &p_abils);
+                insert_ability(ABIL_ELYVILON_LESSER_HEALING, &p_abils);
             if (you.piety >= 50)
-                insert_ability(ABIL_PURIFICATION, &p_abils);
+                insert_ability(ABIL_ELYVILON_PURIFICATION, &p_abils);
             if (you.piety >= 75)
-                insert_ability(ABIL_HEALING_II, &p_abils);
+                insert_ability(ABIL_ELYVILON_HEALING, &p_abils);
             if (you.piety >= 100)
-                insert_ability(ABIL_RESTORATION, &p_abils);
+                insert_ability(ABIL_ELYVILON_RESTORATION, &p_abils);
             if (you.piety >= 120)
-                insert_ability(ABIL_GREATER_HEALING, &p_abils);
+                insert_ability(ABIL_ELYVILON_GREATER_HEALING, &p_abils);
             break;
 
         case GOD_MAKHLEB:
             if (you.piety >= 50)
-                insert_ability(ABIL_MINOR_DESTRUCTION, &p_abils);
+                insert_ability(ABIL_MAKHLEB_MINOR_DESTRUCTION, &p_abils);
             if (you.piety >= 75)
-                insert_ability(ABIL_LESSER_SERVANT_OF_MAKHLEB, &p_abils);
+                insert_ability(ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB, &p_abils);
             if (you.piety >= 100)
-                insert_ability(ABIL_MAJOR_DESTRUCTION, &p_abils);
+                insert_ability(ABIL_MAKHLEB_MAJOR_DESTRUCTION, &p_abils);
             if (you.piety >= 120)
-                insert_ability(ABIL_GREATER_SERVANT_OF_MAKHLEB, &p_abils);
+                insert_ability(ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB, &p_abils);
             break;
 
         case GOD_KIKUBAAQUDGHA:
             if (you.piety >= 30)
-                insert_ability(ABIL_RECALL_UNDEAD_SLAVES, &p_abils);
+                insert_ability(ABIL_KIKU_RECALL_UNDEAD_SLAVES, &p_abils);
             if (you.piety >= 75)
-                insert_ability(ABIL_ENSLAVE_UNDEAD, &p_abils);
+                insert_ability(ABIL_KIKU_ENSLAVE_UNDEAD, &p_abils);
             if (you.piety >= 120)
-                insert_ability(ABIL_INVOKE_DEATH, &p_abils);
+                insert_ability(ABIL_KIKU_INVOKE_DEATH, &p_abils);
             break;
 
         case GOD_OKAWARU:
             if (you.piety >= 30)
-                insert_ability(ABIL_MIGHT_I, &p_abils);
+                insert_ability(ABIL_OKAWARU_MIGHT, &p_abils);
             if (you.piety >= 50)
-                insert_ability(ABIL_HEALING_I, &p_abils);
+                insert_ability(ABIL_OKAWARU_HEALING, &p_abils);
             if (you.piety >= 120)
-                insert_ability(ABIL_HASTE, &p_abils);
+                insert_ability(ABIL_OKAWARU_HASTE, &p_abils);
             break;
 
         case GOD_TROG:
             if (you.piety >= 30)
-                insert_ability(ABIL_GO_BERSERK_II, &p_abils);
+                insert_ability(ABIL_TROG_BERSERK, &p_abils);
             if (you.piety >= 50)
-                insert_ability(ABIL_MIGHT_II, &p_abils);
+                insert_ability(ABIL_TROG_MIGHT, &p_abils);
             if (you.piety >= 100)
-                insert_ability(ABIL_HASTE_SELF, &p_abils);
+                insert_ability(ABIL_TROG_HASTE_SELF, &p_abils);
             break;
 
         case GOD_SIF_MUNA:
             if (you.piety >= 50)
-                insert_ability(ABIL_FORGET_SPELL, &p_abils);
+                insert_ability(ABIL_SIF_MUNA_FORGET_SPELL, &p_abils);
             break;
 
         case GOD_VEHUMET:
             if (you.piety >= 100)
-                insert_ability(ABIL_CHANNEL_ENERGY, &p_abils);
+                insert_ability(ABIL_VEHUMET_CHANNEL_ENERGY, &p_abils);
             break;
 
         default:
@@ -2025,12 +1640,15 @@ static bool insert_ability(int which_ability, struct talent **p_pabils)
 
     switch (which_ability)
     {
+    // begin spell abilities
+    case ABIL_DELAYED_FIREBALL:
+        failure = 0;
+        break;
+
     // begin species abilities - some are mutagenic, too {dlb}
-#ifdef USE_ELVISH_GLAMOUR_ABILITY
     case ABIL_GLAMOUR:
         failure = 50 - (you.experience_level * 2);
         break;
-#endif
 
     case ABIL_SPIT_POISON:
         failure = (you.species == SP_NAGA) ? 20 - you.experience_level
@@ -2146,7 +1764,7 @@ static bool insert_ability(int which_ability, struct talent **p_pabils)
         failure = (you.mutation[MUT_TELEPORT_AT_WILL] > 1) ? 20 : 50;
         break;
 
-    case ABIL_GO_BERSERK_I:
+    case ABIL_GO_BERSERK:
         failure = 50 - (you.experience_level * 2);
 
         if (player_genus(GENPC_DWARVEN) || you.species == SP_HILL_ORC
@@ -2162,118 +1780,118 @@ static bool insert_ability(int which_ability, struct talent **p_pabils)
         // end item abilities - some possibly mutagenic {dlb}
 
         // begin invocations {dlb}
-    case ABIL_PURIFICATION:
+    case ABIL_ELYVILON_PURIFICATION:
         invoc = true;
-        failure = 20 - (you.piety / 10) - (5 * you.skills[SK_INVOCATIONS]);
+        failure = 20 - (you.piety / 20) - (5 * you.skills[SK_INVOCATIONS]);
         break;
 
-    case ABIL_REPEL_UNDEAD_I:
-    case ABIL_REPEL_UNDEAD_II:
-    case ABIL_RECALL_UNDEAD_SLAVES:
-    case ABIL_MIGHT_I:
-    case ABIL_LESSER_HEALING:
+    case ABIL_ZIN_REPEL_UNDEAD:
+    case ABIL_TSO_REPEL_UNDEAD:
+    case ABIL_KIKU_RECALL_UNDEAD_SLAVES:
+    case ABIL_OKAWARU_MIGHT:
+    case ABIL_ELYVILON_LESSER_HEALING:
         invoc = true;
-        failure = 30 - (you.piety / 10) - (6 * you.skills[SK_INVOCATIONS]);
+        failure = 30 - (you.piety / 20) - (6 * you.skills[SK_INVOCATIONS]);
         break;
 
     // These three are Trog abilities... Invocations means nothing -- bwr
-    case ABIL_GO_BERSERK_II:    // piety >= 30
+    case ABIL_TROG_BERSERK:    // piety >= 30
         invoc = true;
         failure = 30 - you.piety;       // starts at 0%
         break;
 
-    case ABIL_MIGHT_II:         // piety >= 50
+    case ABIL_TROG_MIGHT:         // piety >= 50
         invoc = true;
         failure = 80 - you.piety;       // starts at 30%
         break;
 
-    case ABIL_HASTE_SELF:       // piety >= 100
+    case ABIL_TROG_HASTE_SELF:       // piety >= 100
         invoc = true;
         failure = 160 - you.piety;      // starts at 60%
         break;
 
-    case ABIL_ANIMATE_CORPSE:
+    case ABIL_YRED_ANIMATE_CORPSE:
         invoc = true;
-        failure = 40 - (you.piety / 10) - (3 * you.skills[SK_INVOCATIONS]);
+        failure = 40 - (you.piety / 20) - (3 * you.skills[SK_INVOCATIONS]);
         break;
 
-    case ABIL_MINOR_HEALING:
-    case ABIL_SMITING:
-    case ABIL_HEALING_I:
-    case ABIL_MINOR_DESTRUCTION:
-    case ABIL_FORGET_SPELL:
-    case ABIL_ENSLAVE_UNDEAD:
-    case ABIL_ANIMATE_DEAD:
-    case ABIL_LESSER_SERVANT_OF_MAKHLEB:
-    case ABIL_HEALING_II:
+    case ABIL_ZIN_HEALING:
+    case ABIL_TSO_SMITING:
+    case ABIL_OKAWARU_HEALING:
+    case ABIL_MAKHLEB_MINOR_DESTRUCTION:
+    case ABIL_SIF_MUNA_FORGET_SPELL:
+    case ABIL_KIKU_ENSLAVE_UNDEAD:
+    case ABIL_YRED_ANIMATE_DEAD:
+    case ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB:
+    case ABIL_ELYVILON_HEALING:
         invoc = true;
-        failure = 40 - (you.piety / 10) - (5 * you.skills[SK_INVOCATIONS]);
+        failure = 40 - (you.piety / 20) - (5 * you.skills[SK_INVOCATIONS]);
         break;
 
-    case ABIL_CHANNEL_ENERGY:
+    case ABIL_VEHUMET_CHANNEL_ENERGY:
         invoc = true;
         failure = 40 - you.intel - you.skills[SK_INVOCATIONS];
         break;
 
-    case ABIL_RECALL_UNDEAD:
+    case ABIL_YRED_RECALL_UNDEAD:
         invoc = true;
-        failure = 50 - (you.piety / 10) - (you.skills[SK_INVOCATIONS] * 4);
+        failure = 50 - (you.piety / 20) - (you.skills[SK_INVOCATIONS] * 4);
         break;
 
-    case ABIL_PESTILENCE:
-    case ABIL_ANNIHILATE_UNDEAD:
+    case ABIL_ZIN_PESTILENCE:
+    case ABIL_TSO_ANNIHILATE_UNDEAD:
         invoc = true;
-        failure = 60 - (you.piety / 10) - (5 * you.skills[SK_INVOCATIONS]);
+        failure = 60 - (you.piety / 20) - (5 * you.skills[SK_INVOCATIONS]);
         break;
 
-    case ABIL_MAJOR_DESTRUCTION:
-    case ABIL_DRAIN_LIFE:
+    case ABIL_MAKHLEB_MAJOR_DESTRUCTION:
+    case ABIL_YRED_DRAIN_LIFE:
         invoc = true;
-        failure = 60 - (you.piety / 15) - (you.skills[SK_INVOCATIONS] * 4);
+        failure = 60 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 4);
         break;
 
-    case ABIL_HOLY_WORD:
-    case ABIL_THUNDERBOLT:
-    case ABIL_RESTORATION:
-    case ABIL_CONTROL_UNDEAD:
-    case ABIL_HASTE:
-    case ABIL_GREATER_SERVANT_OF_MAKHLEB:
+    case ABIL_ZIN_HOLY_WORD:
+    case ABIL_TSO_THUNDERBOLT:
+    case ABIL_ELYVILON_RESTORATION:
+    case ABIL_YRED_CONTROL_UNDEAD:
+    case ABIL_OKAWARU_HASTE:
+    case ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB:
         invoc = true;
-        failure = 70 - (you.piety / 15) - (you.skills[SK_INVOCATIONS] * 4);
+        failure = 70 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 4);
         break;
 
-    case ABIL_SUMMON_GUARDIAN:
-    case ABIL_SUMMON_DAEVA:
-    case ABIL_INVOKE_DEATH:
-    case ABIL_GREATER_HEALING:
+    case ABIL_ZIN_SUMMON_GUARDIAN:
+    case ABIL_TSO_SUMMON_DAEVA:
+    case ABIL_KIKU_INVOKE_DEATH:
+    case ABIL_ELYVILON_GREATER_HEALING:
         invoc = true;
-        failure = 80 - (you.piety / 15) - (you.skills[SK_INVOCATIONS] * 4);
+        failure = 80 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 4);
         break;
 
         //jmf: following for to-be-created gods
     case ABIL_CHARM_SNAKE:
         invoc = true;
-        failure = 40 - (you.piety / 10) - (3 * you.skills[SK_INVOCATIONS]);
+        failure = 40 - (you.piety / 20) - (3 * you.skills[SK_INVOCATIONS]);
         break;
 
     case ABIL_TRAN_SERPENT_OF_HELL:
         invoc = true;
-        failure = 80 - (you.piety / 15) - (you.skills[SK_INVOCATIONS] * 4);
+        failure = 80 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 4);
         break;
 
     case ABIL_ROTTING:
         invoc = true;
-        failure = 60 - (you.piety / 10) - (5 * you.skills[SK_INVOCATIONS]);
+        failure = 60 - (you.piety / 20) - (5 * you.skills[SK_INVOCATIONS]);
         break;
 
     case ABIL_TORMENT_II:
         invoc = true;
-        failure = 70 - (you.piety / 15) - (you.skills[SK_INVOCATIONS] * 4);
+        failure = 70 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 4);
         break;
 
     case ABIL_SHUGGOTH_SEED:
         invoc = true;
-        failure = 85 - (you.piety / 15) - (you.skills[SK_INVOCATIONS] * 3);
+        failure = 85 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 3);
         break;
 
     case ABIL_RENOUNCE_RELIGION:

@@ -25,26 +25,27 @@
 #include "externs.h"
 
 #include "beam.h"
+#include "cloud.h"
 #include "direct.h"
 #include "effects.h"
 #include "fight.h"
 #include "itemname.h"
+#include "items.h"
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
 #include "mon-util.h"
 #include "ouch.h"
 #include "player.h"
-#include "spells.h"
+#include "randart.h"
 #include "spells4.h"
+#include "spl-cast.h"
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
 
-extern bool wield_change;       // defined in output.cc
-
-int raise_corpse(int corps, char corx, char cory, int corps_beh,
-                 int corps_hit, int actual);
+int raise_corpse( int corps, int corx, int cory, int corps_beh,
+                  int corps_hit, int actual );
 
 unsigned char detect_traps(void)
 {
@@ -52,15 +53,15 @@ unsigned char detect_traps(void)
 
     for (int count_x = 0; count_x < MAX_TRAPS; count_x++)
     {
-        const int etx = env.trap_x[ count_x ];
-        const int ety = env.trap_y[ count_x ];
+        const int etx = env.trap[ count_x ].x;
+        const int ety = env.trap[ count_x ].y;
 
         if (etx > you.x_pos - 15 && etx < you.x_pos + 15
             && ety > you.y_pos - 8 && ety < you.y_pos + 8)
         {
             if (grd[ etx ][ ety ] == DNGN_UNDISCOVERED_TRAP)
             {
-                grd[ etx ][ ety ] = trap_category( env.trap_type[count_x] );
+                grd[ etx ][ ety ] = trap_category( env.trap[count_x].type );
                 env.map[etx - 1][ety - 1] = '^';
                 traps_found++;
             }
@@ -163,16 +164,16 @@ int corpse_rot(int power)
 
                 while (objl != NON_ITEM)
                 {
-                    if (mitm.base_type[objl] == OBJ_CORPSES
-                        && mitm.sub_type[objl] == CORPSE_BODY)
+                    if (mitm[objl].base_type == OBJ_CORPSES
+                        && mitm[objl].sub_type == CORPSE_BODY)
                     {
-                        if (!mons_skeleton(mitm.pluses[objl]))
+                        if (!mons_skeleton(mitm[objl].plus))
                             destroy_item(objl);
                         else
                         {
-                            mitm.sub_type[objl] = CORPSE_SKELETON;
-                            mitm.special[objl] = 200;
-                            mitm.colour[objl] = LIGHTGREY;
+                            mitm[objl].sub_type = CORPSE_SKELETON;
+                            mitm[objl].special = 200;
+                            mitm[objl].colour = LIGHTGREY;
                         }
 
                         place_cloud(CLOUD_MIASMA, adx, ady,
@@ -180,7 +181,7 @@ int corpse_rot(int power)
 
                         goto out_of_raise;
                     }
-                    hrg = mitm.link[objl];
+                    hrg = mitm[objl].link;
                     objl = hrg;
                 }
 
@@ -200,19 +201,19 @@ int corpse_rot(int power)
     return 0;
 }                               // end corpse_rot()
 
-int animate_dead(int power, int corps_beh, int corps_hit, int actual)
+int animate_dead( int power, int corps_beh, int corps_hit, int actual )
 {
-    char adx = 0;
-    char ady = 0;
+    int adx = 0;
+    int ady = 0;
 
-    char minx = you.x_pos - 6;
-    char maxx = you.x_pos + 7;
-    char miny = you.y_pos - 6;
-    char maxy = you.y_pos + 6;
-    char xinc = 1;
-    char yinc = 1;
+    int minx = you.x_pos - 6;
+    int maxx = you.x_pos + 7;
+    int miny = you.y_pos - 6;
+    int maxy = you.y_pos + 6;
+    int xinc = 1;
+    int yinc = 1;
 
-    char number_raised = 0;
+    int number_raised = 0;
 
     if (coinflip())
     {
@@ -245,7 +246,7 @@ int animate_dead(int power, int corps_beh, int corps_hit, int actual)
                     //this searches all the items on the ground for a corpse
                     while (objl != NON_ITEM)
                     {
-                        if (mitm.base_type[objl] == OBJ_CORPSES)
+                        if (mitm[objl].base_type == OBJ_CORPSES)
                         {
                             number_raised += raise_corpse(objl, adx, ady,
                                                 corps_beh, corps_hit, actual);
@@ -253,7 +254,7 @@ int animate_dead(int power, int corps_beh, int corps_hit, int actual)
                             break;
                         }
 
-                        hrg = mitm.link[objl];
+                        hrg = mitm[objl].link;
                         objl = hrg;
                     }
 
@@ -281,19 +282,19 @@ int animate_dead(int power, int corps_beh, int corps_hit, int actual)
     return number_raised;
 }                               // end animate_dead()
 
-int animate_a_corpse(char axps, char ayps, int corps_beh, int corps_hit,
-                     char class_allowed)
+int animate_a_corpse( int axps,  int ayps, int corps_beh, int corps_hit,
+                      int class_allowed )
 {
     if (igrd[axps][ayps] == NON_ITEM)
         return 0;
-    else if (mitm.base_type[igrd[axps][ayps]] != OBJ_CORPSES)
+    else if (mitm[igrd[axps][ayps]].base_type != OBJ_CORPSES)
         return 0;
     else if (class_allowed == CORPSE_SKELETON
-             && mitm.sub_type[igrd[axps][ayps]] != CORPSE_SKELETON)
+             && mitm[igrd[axps][ayps]].sub_type != CORPSE_SKELETON)
         return 0;
     else
-        if (raise_corpse
-            (igrd[axps][ayps], axps, ayps, corps_beh, corps_hit, 1) > 0)
+        if (raise_corpse( igrd[axps][ayps], axps, ayps,
+                          corps_beh, corps_hit, 1 ) > 0)
     {
         mpr("The dead are walking!");
     }
@@ -301,33 +302,33 @@ int animate_a_corpse(char axps, char ayps, int corps_beh, int corps_hit,
     return 0;
 }                               // end animate_a_corpse()
 
-int raise_corpse(int corps, char corx, char cory, int corps_beh,
-                 int corps_hit, int actual)
+int raise_corpse( int corps, int corx, int cory,
+                  int corps_beh, int corps_hit, int actual )
 {
     int returnVal = 1;
 
-    if (!mons_zombie_size(mitm.pluses[corps]))
+    if (!mons_zombie_size(mitm[corps].plus))
         returnVal = 0;
     else if (actual != 0)
     {
         int type;
-        if (mitm.sub_type[corps] == CORPSE_BODY)
+        if (mitm[corps].sub_type == CORPSE_BODY)
         {
-            if (mons_zombie_size(mitm.pluses[corps]) == Z_SMALL)
+            if (mons_zombie_size(mitm[corps].plus) == Z_SMALL)
                 type = MONS_ZOMBIE_SMALL;
             else
                 type = MONS_ZOMBIE_LARGE;
         }
         else
         {
-            if (mons_zombie_size(mitm.pluses[corps]) == Z_SMALL)
+            if (mons_zombie_size(mitm[corps].plus) == Z_SMALL)
                 type = MONS_SKELETON_SMALL;
             else
                 type = MONS_SKELETON_LARGE;
         }
 
         create_monster( type, 0, corps_beh, corx, cory, corps_hit,
-                        mitm.pluses[corps] );
+                        mitm[corps].plus );
         destroy_item(corps);
     }
 
@@ -355,28 +356,28 @@ void cast_twisted(int power, int corps_beh, int corps_hit)
 
     while (objl != NON_ITEM)
     {
-        if (mitm.base_type[objl] == OBJ_CORPSES
-                && mitm.sub_type[objl] == CORPSE_BODY)
+        if (mitm[objl].base_type == OBJ_CORPSES
+                && mitm[objl].sub_type == CORPSE_BODY)
         {
-            total_mass += mons_weight(mitm.pluses[objl]);
+            total_mass += mons_weight(mitm[objl].plus);
 
-            if (mitm.special[objl] < 100)
+            if (mitm[objl].special < 100)
                 rotted++;
 
             old_item = objl;
-            hrg = mitm.link[objl];
+            hrg = mitm[objl].link;
             objl = hrg;
             destroy_item(old_item);
             number_raised++;
             continue;
         }
 
-        hrg = mitm.link[objl];
+        hrg = mitm[objl].link;
         objl = hrg;
     }
 
-#ifdef WIZARD
-    sprintf(info, "Total mass: %d", total_mass);
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "Mass: %d", total_mass);
     mpr(info);
 #endif
 
@@ -385,6 +386,11 @@ void cast_twisted(int power, int corps_beh, int corps_hit)
                     + random2(power) + random2(power) + random2(power)
                     + random2(power) + random2(power)
             + random2(power) * 3 + random2(power) * 3 + random2(power) * 3;
+
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "Total mass: %d", total_mass);
+    mpr(info);
+#endif
 
     if (total_mass < 401 + random2(500) + random2(500)
                                     || number_raised < (coinflip() ? 3 : 2))
@@ -407,8 +413,8 @@ void cast_twisted(int power, int corps_beh, int corps_hit)
     if (rotted >= number_raised)
         coloured = BROWN;
 
-    create_monster(type_resurr, 0, corps_beh, you.x_pos, you.y_pos,
-                   you.pet_target, coloured);
+    create_monster( type_resurr, 0, corps_beh, you.x_pos, you.y_pos,
+                    you.pet_target, coloured );
 }                               // end cast_twisted()
 
 bool brand_weapon(int which_brand, int power)
@@ -416,33 +422,33 @@ bool brand_weapon(int which_brand, int power)
     int temp_rand;              // probability determination {dlb}
     int duration_affected = 0;  //jmf: NB: now HOW LONG, not WHICH BRAND.
 
+    const int wpn = you.equip[EQ_WEAPON];
+
     if (you.duration[DUR_WEAPON_BRAND])
         return false;
 
-    if (you.equip[EQ_WEAPON] == -1)
+    if (wpn == -1)
         return false;
 
-    if (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS
-        || launches_things(you.inv_type[you.equip[EQ_WEAPON]])
-        || you.inv_type[you.equip[EQ_WEAPON]] == WPN_CLUB)
-        // can't brand clubs? {dlb}
+    if (you.inv[wpn].base_type != OBJ_WEAPONS
+        || launches_things(you.inv[wpn].sub_type))
     {
         return false;
     }
 
-    if (you.inv_dam[you.equip[EQ_WEAPON]] % 30 != SPWPN_NORMAL
-        || you.inv_dam[you.equip[EQ_WEAPON]] >= NWPN_SINGING_SWORD
-        || you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I)
+    if (you.inv[wpn].special != SPWPN_NORMAL
+        || is_fixed_artefact( you.inv[wpn] )
+        || is_random_artefact( you.inv[wpn] ))
         // do you mean to include "dummy crushing" here, too? {dlb}
     {
         return false;
     }
 
-    in_name(you.equip[EQ_WEAPON], 4, str_pass);
-    strcpy(info, str_pass);
+    in_name( wpn, DESC_CAP_YOUR, str_pass );
+    strcpy( info, str_pass );
 
-    const int wpn_type = damage_type( you.inv_class[you.equip[EQ_WEAPON]],
-                                      you.inv_type[you.equip[EQ_WEAPON]] );
+    const int wpn_type = damage_type( you.inv[wpn].base_type,
+                                      you.inv[wpn].sub_type );
 
     switch (which_brand)        // use SPECIAL_WEAPONS here?
     {
@@ -472,6 +478,7 @@ bool brand_weapon(int which_brand, int power)
     case SPWPN_VORPAL:
         if (wpn_type != DVORP_SLICING)
             return false;
+
         strcat(info, " glows silver and looks extremely sharp.");
         duration_affected = 10;
         break;
@@ -505,12 +512,12 @@ bool brand_weapon(int which_brand, int power)
         break;
     }
 
-    you.inv_dam[you.equip[EQ_WEAPON]] += which_brand;
+    you.inv[wpn].special += which_brand;
 
     // bad bad bad - enums may change place {dlb}
     //jmf: what are you talking about? did you read the code?
     mpr(info);
-    wield_change = true;
+    you.wield_change = true;
 
     //jmf: FIXME: these value seem okay, but have little testing
     int dur_change = duration_affected + random2avg((power * 2) - 1, 2);
@@ -717,7 +724,7 @@ void cast_toxic_radiance(void)
             {
                 // message player re:"miss" where appropriate {dlb}
                 strcpy(info, "The light passes through ");
-                strcat(info, ptr_monam( monster, 1 ));
+                strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
                 strcat(info, ".");
                 mpr(info);
             }
@@ -764,8 +771,8 @@ void cast_refrigeration(int pow)
         ouch(3 + random2(7) + random2(pow) / 30, 0, KILLED_BY_FREEZING);
     }
 
-    // reduced -- killing potions almost makes this spell unusable -- bwr
-    scrolls_burn(2, OBJ_POTIONS);
+    // removed -- killing potions almost makes this spell unusable -- bwr
+    // scrolls_burn( 2, OBJ_POTIONS );
 
     for (int toxy = 0; toxy < MAX_MONSTERS; toxy++)
     {
@@ -777,7 +784,7 @@ void cast_refrigeration(int pow)
         if (mons_near(monster))
         {
             strcpy(info, "You freeze ");
-            strcat(info, ptr_monam( monster, 1 ));
+            strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
             strcat(info, ".");
             mpr(info);
 
@@ -834,7 +841,7 @@ void drain_life(int pow)
         if (mons_near(monster))
         {
             strcpy(info, "You draw life from ");
-            strcat(info, ptr_monam( monster, 1 ));
+            strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
             strcat(info, ".");
             mpr(info);
 
@@ -842,7 +849,7 @@ void drain_life(int pow)
 
             hurt_monster(monster, hurted);
 
-            hp_gain += hurted / 2;
+            hp_gain += hurted;
 
             if (monster->hit_points < 1)
                 monster_die(monster, KILL_YOU, 0);
@@ -851,8 +858,11 @@ void drain_life(int pow)
         }
     }
 
+    hp_gain /= 2;
+
     if (hp_gain > (pow * 2))
         hp_gain = pow * 2;
+
     if (hp_gain)
     {
         mpr("You feel life flooding into your body.");
@@ -922,7 +932,7 @@ int vampiric_drain(int pow)
     hurt_monster(monster, inflicted);
 
     strcpy(info, "You feel life coursing from ");
-    strcat(info, ptr_monam( monster, 1 ));
+    strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
     strcat(info, " into your body!");
     mpr(info);
 
@@ -982,7 +992,7 @@ char burn_freeze(int pow, char flavour)
                                                : "______");
 
     strcat(info, " ");
-    strcat(info, ptr_monam( monster, 1 ));
+    strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
     strcat(info, ".");
     mpr(info);
 
@@ -1078,18 +1088,15 @@ int summon_elemental(int pow, unsigned char restricted_type,
     }
 
     if (env.cgrid[ targ_x ][ targ_y ] != EMPTY_CLOUD
-        && (env.cloud_type[env.cgrid[ targ_x ][ targ_y ]] == CLOUD_FIRE
-            || env.cloud_type[env.cgrid[ targ_x ][ targ_y ]] == CLOUD_FIRE_MON))
+        && (env.cloud[env.cgrid[ targ_x ][ targ_y ]].type == CLOUD_FIRE
+            || env.cloud[env.cgrid[ targ_x ][ targ_y ]].type == CLOUD_FIRE_MON))
     {
         type_summoned = MONS_FIRE_ELEMENTAL;
 
         if (restricted_type != 0 && type_summoned != restricted_type)
             goto summon_it;
 
-        env.cloud_type[env.cgrid[ targ_x ][ targ_y ]] = CLOUD_NONE;
-        env.cloud_decay[env.cgrid[ targ_x ][ targ_y ]] = 0;
-        env.cgrid[ targ_x ][ targ_y ] = EMPTY_CLOUD;
-        env.cloud_no--;
+        delete_cloud( env.cgrid[ targ_x ][ targ_y ] );
         goto summon_it;
     }
 

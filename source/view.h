@@ -19,6 +19,7 @@
 
 #define BORDER_COLOR BROWN
 
+int get_number_of_lines(void);
 
 // last updated 29may2000 {dlb}
 /* ***********************************************************************

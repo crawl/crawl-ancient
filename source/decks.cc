@@ -17,15 +17,16 @@
 #include "effects.h"
 #include "food.h"
 #include "it_use2.h"
+#include "items.h"
 #include "misc.h"
 #include "monplace.h"
 #include "mutation.h"
 #include "ouch.h"
 #include "player.h"
 #include "religion.h"
-#include "spells.h"
 #include "spells1.h"
 #include "spells3.h"
+#include "spl-cast.h"
 #include "stuff.h"
 
 // array sizes -- see notes below {dlb}
@@ -259,23 +260,15 @@ void deck_of_cards(unsigned char which_deck)
     // its just Nemelex's form of punishment
     if (which_deck != DECK_OF_PUNISHMENT)
     {
-        you.inv_plus[you.equip[EQ_WEAPON]]--;
+        you.inv[you.equip[EQ_WEAPON]].plus--;
 
-        if (you.inv_plus[you.equip[EQ_WEAPON]] == 0)
+        if (you.inv[you.equip[EQ_WEAPON]].plus == 0)
         {
             mpr("The deck of cards disappears in a puff of smoke.");
 
             unwield_item(you.equip[EQ_WEAPON]);
-            you.inv_quantity[you.equip[EQ_WEAPON]]--;
 
-            if (you.inv_quantity[you.equip[EQ_WEAPON]] == 0)
-            {
-                you.equip[EQ_WEAPON] = -1;
-
-                mpr("You are now empty-handed.");
-            }
-
-            burden_change();
+            dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
 
             // these bonuses happen only when the deck expires {dlb}:
             brownie_points = (coinflip()? 2 : 1);
@@ -303,6 +296,9 @@ static void cards(unsigned char which_card)
     int loopy = 0;              // general purpose loop variable {dlb}
     bool success = false;       // for summoning messages {dlb}
     bool failMsg = true;
+
+    if (which_card == CARD_BLANK && one_chance_in(10))
+        which_card = CARD_RULES_FOR_BRIDGE;
 
     switch (which_card)
     {
@@ -612,7 +608,7 @@ static void cards(unsigned char which_card)
 
     case CARD_HORROR_UNSEEN:
         if (!player_see_invis())
-            mpr("It is blank");
+            mpr("It is blank!");
         else
             mpr("On the card is a picture of a hideous abomination.");
 

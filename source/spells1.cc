@@ -23,6 +23,7 @@
 
 #include "abyss.h"
 #include "beam.h"
+#include "cloud.h"
 #include "direct.h"
 #include "fight.h"
 #include "invent.h"
@@ -36,13 +37,10 @@
 #include "skills2.h"
 #include "spells3.h"
 #include "spells4.h"
+#include "spl-util.h"
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
-
-extern bool wield_change;       // defined in output.cc
-
-char healing_spell(int healed);
 
 void blink(void)
 {
@@ -55,7 +53,7 @@ void blink(void)
         mpr("The power of the Abyss keeps you in your place!");
     else if (you.conf)
         random_blink(false);
-    else if (!allow_control_teleport())
+    else if (!allow_control_teleport(true))
     {
         mpr("A powerful magic interferes with your control of the blink.");
         random_blink(false);
@@ -98,7 +96,6 @@ void blink(void)
             if (you.level_type == LEVEL_ABYSS)
             {
                 abyss_teleport();
-                env.cloud_no = 0;
                 you.pet_target = MHITNOT;
             }
         }
@@ -142,7 +139,6 @@ void random_blink(bool allow_partial_control)
         if (you.level_type == LEVEL_ABYSS)
         {
             abyss_teleport();
-            env.cloud_no = 0;
             you.pet_target = MHITNOT;
         }
     }
@@ -179,11 +175,13 @@ void fireball(int power)
 
 void cast_fire_storm(int powc)
 {
-    char stx = 0, sty = 0;
-    char cl_x = 0, cl_y = 0;
-
     struct bolt beam;
     struct dist fire_storm;
+    // char stx = 0, sty = 0;
+    // char cl_x = 0, cl_y = 0;
+
+    if (powc > 300)
+        powc = 300;
 
     mpr("Where?");
 
@@ -198,50 +196,22 @@ void cast_fire_storm(int powc)
         return;
     }
 
-    cl_x = beam.target_x;
-    cl_y = beam.target_y;
-
-    mpr("A raging storm of fire appears!");
-
+    beam.ex_size = 2 + ((powc + 75) / 150);
+    beam.flavour = BEAM_FIRE;
+    beam.type = SYM_ZAP;
     beam.colour = RED;
+    beam.beam_source = MHITYOU;
+    beam.thrower = KILL_YOU_MISSILE;
+    beam.obviousEffect = false;
+    beam.isBeam = false;
+    beam.isTracer = false;
+    beam.ench_power = powc;     // used for radius
+    strcpy( beam.beam_name, "great blast of fire" );
+    beam.hit = 10 + (powc / 10);
+    beam.damage = 105 + (powc / 7);
 
-    for (stx = -2; stx < 3; stx++)
-    {
-        for (sty = -2; sty < 3; sty++)
-        {
-            if ((stx == -2 && sty == -2) || (stx == -2 && sty == 2)
-                    || (stx == 2 && sty == -2) || (stx == 2 && sty == 2))
-            {
-                continue;
-            }
-
-            beam.range = 1 + random2(5) +
-                                (random2(powc) / 5) + (random2(powc) / 5);
-
-            if (beam.range > 20)
-                beam.range = 20 + random2(4);
-
-            beam.type = 1;
-            beam.target_x = cl_x + stx;
-            beam.target_y = cl_y + sty;
-
-            if (grd[beam.target_x][beam.target_y] == DNGN_FLOOR
-                    && mgrd[beam.target_x][beam.target_y] == NON_MONSTER
-                    && one_chance_in(4))
-            {
-                mons_place( MONS_FIRE_VORTEX, BEH_WANDER, MHITNOT, true,
-                    beam.target_x, beam.target_y);
-            }
-
-            if (grd[beam.target_x][beam.target_y] > DNGN_LAST_SOLID_TILE
-                    && (beam.target_x != you.x_pos
-                                        || beam.target_y != you.y_pos))
-            {
-                place_cloud( CLOUD_FIRE, beam.target_x, beam.target_y,
-                                                            beam.range );
-            }
-        }                       // end "for stx, sty"
-    }
+    explosion( beam );
+    mpr("A raging storm of fire appears!");
 
     viewwindow(1, false);
 }                               // end cast_fire_storm()
@@ -275,7 +245,7 @@ char spell_direction(struct dist &spelld, struct bolt &pbolt, int restrict)
 void identify(int power)
 {
     int id_used = 1;
-    unsigned char nthing = 0;
+    int item_slot;
 
     // scrolls of identify *may* produce "extra" identifications {dlb}:
     if (power == -1 && one_chance_in(5))
@@ -283,75 +253,24 @@ void identify(int power)
 
     do
     {
-      query:
-        mpr("Identify which item?", MSGCH_PROMPT);
-
-        unsigned char keyin = get_ch();
-
-        if (keyin == '*' || keyin == '?')
+        item_slot = prompt_invent_item( "Identify which item?", -1 );
+        if (item_slot == PROMPT_ABORT)
         {
-            if (keyin == '?')
-                nthing = get_invent(-1);
-
-            if (keyin == '*')
-                nthing = get_invent(-1);
-
-            if ((nthing >= 'A' && nthing <= 'Z')
-                                        || (nthing >= 'a' && nthing <= 'z'))
-            {
-                keyin = nthing;
-            }
-            else
-            {
-                //mesclr();
-                goto query;
-            }
-        }
-
-        if (keyin == 27)
+            canned_msg( MSG_OK );
             return;
-
-        int sc_read_1 = (int) keyin;
-
-        if (sc_read_1 < 'A'
-                || (sc_read_1 > 'Z' && sc_read_1 < 'a')
-                || sc_read_1 > 'z')
-        {
-            mpr("You don't have any such object.");
-            continue;
         }
 
-        int sc_read_2 = letter_to_index(sc_read_1);
+        set_ident_type( you.inv[item_slot].base_type,
+                        you.inv[item_slot].sub_type, ID_KNOWN_TYPE );
 
-        if (you.inv_quantity[sc_read_2] == 0)
-        {
-            mpr("You don't have any such object.");
-            continue;
-        }
+        set_ident_flags( you.inv[item_slot], ISFLAG_IDENT_MASK );
 
-        set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-        you.inv_ident[sc_read_2] = 3;
+        // output identified item
+        in_name( item_slot, DESC_INVENTORY_EQUIP, str_pass );
+        mpr( str_pass );
 
-        strcpy(info, " ");
-
-        info[0] = index_to_letter(sc_read_2);
-        info[1] = '\0';
-
-        strcat(info, " - ");
-        in_name(sc_read_2, 3, str_pass);
-        strcat(info, str_pass);
-
-        strcat( info,
-               (sc_read_2 == you.equip[EQ_WEAPON])      ? " (weapon in hand)" :
-               (sc_read_2 == you.equip[EQ_BODY_ARMOUR]) ? " (being worn)" :
-               (sc_read_2 == you.equip[EQ_LEFT_RING])   ? " (on left hand)" :
-               (sc_read_2 == you.equip[EQ_RIGHT_RING])  ? " (on right hand)" :
-               (sc_read_2 == you.equip[EQ_AMULET])      ? " (around neck)"
-                                                        : "" );
-        mpr(info);
-
-        if (sc_read_2 == you.equip[EQ_WEAPON])
-            wield_change = true;
+        if (item_slot == you.equip[EQ_WEAPON])
+            you.wield_change = true;
 
         id_used--;
     }
@@ -362,21 +281,41 @@ void conjure_flame(int pow)
 {
     struct dist spelld;
 
-    mpr("You cast a flaming cloud spell! But where?", MSGCH_PROMPT);
+    bool done_first_message = false;
 
-  direc:
-    direction(spelld, DIR_TARGET);
-
-    if (!spelld.isValid)
+    for (;;)
     {
-        canned_msg(MSG_SPELL_FIZZLES);
-        return;
-    }
+        if (done_first_message)
+            mpr("Where would you like to place the cloud?", MSGCH_PROMPT);
+        else
+        {
+            mpr("You cast a flaming cloud spell! But where?", MSGCH_PROMPT);
+            done_first_message = true;
+        }
 
-    if (!see_grid(spelld.tx, spelld.ty))
-    {
-        mpr("You can't see that place!");
-        goto direc;
+        direction(spelld, DIR_TARGET);
+
+        if (!spelld.isValid)
+        {
+            canned_msg(MSG_SPELL_FIZZLES);
+            return;
+        }
+
+        if (!see_grid(spelld.tx, spelld.ty))
+        {
+            mpr("You can't see that place!");
+            continue;
+        }
+
+        if (grd[ spelld.tx ][ spelld.ty ] <= DNGN_LAST_SOLID_TILE
+            || mgrd[ spelld.tx ][ spelld.ty ] != NON_MONSTER
+            || env.cgrid[ spelld.tx ][ spelld.ty ] != EMPTY_CLOUD)
+        {
+            mpr( "There's already something there!" );
+            continue;
+        }
+
+        break;
     }
 
     int durat = 5 + (random2(pow) / 2) + (random2(pow) / 2);
@@ -384,7 +323,7 @@ void conjure_flame(int pow)
     if (durat > 23)
         durat = 23;
 
-    place_cloud(CLOUD_FIRE, spelld.tx, spelld.ty, durat);
+    place_cloud( CLOUD_FIRE, spelld.tx, spelld.ty, durat );
 }                               // end cast_conjure_flame()
 
 void stinking_cloud(void)
@@ -444,47 +383,10 @@ void cast_big_c(int pow, char cty)
 
 void big_cloud(char clouds, char cl_x, char cl_y, int pow, int size)
 {
-#ifdef USE_NEW_CLOUD_CODE
     apply_area_cloud(make_a_normal_cloud, cl_x, cl_y, pow, size, clouds);
-#else
-
-    char stx = 0;
-    char sty = 0;
-    int lasts = 0;
-
-    for (stx = -1; stx < 2; stx++)
-    {
-        for (sty = -1; sty < 2; sty++)
-        {
-            lasts = 2 + random2(5) + (pow / 2);
-
-            if (lasts > 12)
-                lasts = 12 + random2(4);
-
-            if (grd[cl_x + stx][cl_y + sty] > DNGN_LAST_SOLID_TILE)
-                place_cloud( clouds, cl_x + stx, cl_y + sty, lasts );
-
-        }                       // end of sty
-    }
-#endif
 }                               // end big_cloud()
 
-char cast_lesser_healing(void)
-{
-    return healing_spell(5 + random2avg(7, 2));
-}                               // end lesser healing()
-
-char cast_greater_healing(void)
-{
-    return healing_spell(15 + random2avg(29, 2));
-}                               // end cast_greater_healing()
-
-char cast_greatest_healing(void)
-{
-    return healing_spell(50 + random2avg(49, 2));
-}                               // end cast_greatest_healing()
-
-char healing_spell(int healed)
+static char healing_spell( int healed )
 {
     int mgr = 0;
     struct monsters *monster = 0;       // NULL {dlb}
@@ -495,7 +397,7 @@ char healing_spell(int healed)
 
     if (!bmove.isValid)
     {
-        mpr("Huh?!");
+        canned_msg( MSG_HUH );
         return 0;
     }
 
@@ -519,7 +421,7 @@ char healing_spell(int healed)
     if (heal_monster(monster, healed, false))
     {
         strcpy(info, "You heal ");
-        strcat(info, ptr_monam( monster, 1 ));
+        strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
         strcat(info, ".");
         mpr(info);
 
@@ -536,10 +438,36 @@ char healing_spell(int healed)
     return 1;
 }                               // end healing_spell()
 
+#if 0
+char cast_lesser_healing( int pow )
+{
+    return healing_spell(5 + random2avg(7, 2));
+}                               // end lesser healing()
+
+char cast_greater_healing( int pow )
+{
+    return healing_spell(15 + random2avg(29, 2));
+}                               // end cast_greater_healing()
+
+char cast_greatest_healing( int pow )
+{
+    return healing_spell(50 + random2avg(49, 2));
+}                               // end cast_greatest_healing()
+#endif
+
+char cast_healing( int pow )
+{
+    if (pow > 50)
+        pow = 50;
+
+    return (healing_spell( pow + random2avg(pow * 2, 2) ));
+}
+
 bool cast_revivification(int power)
 {
     int loopy = 0;              // general purpose loop variable {dlb}
     bool success = false;
+    int loss = 0;
 
     if (you.hp == you.hp_max)
         canned_msg(MSG_NOTHING_HAPPENS);
@@ -549,16 +477,15 @@ bool cast_revivification(int power)
     {
         mpr("Your body is healed in an amazingly painful way.");
 
-        you.base_hp -= 2;
-
+        loss = 2;
         for (loopy = 0; loopy < 9; loopy++)
         {
             if (random2(power) < 8)
-                you.base_hp--;
+                loss++;
         }
 
-        calc_hp();
-        set_hp(you.hp_max, false);
+        dec_max_hp( loss );
+        set_hp( you.hp_max, false );
         success = true;
     }
 
@@ -655,7 +582,7 @@ void abjuration(int pow)
         abjLevel = mons_del_ench(monster, ENCH_ABJ_I, ENCH_ABJ_VI);
         if (abjLevel != ENCH_NONE)
         {
-            abjLevel -= 1 + (random2(pow) / 3);
+            abjLevel -= 1 + (random2(pow) / 8);
 
             if (abjLevel < ENCH_ABJ_I)
                 monster_die(monster, KILL_RESET, 0);
@@ -711,8 +638,8 @@ void antimagic( void )
     if (you.duration[DUR_DEFLECT_MISSILES])
         you.duration[DUR_DEFLECT_MISSILES] = 1;
 
-    if (you.shock_shield)
-        you.shock_shield = 1;
+    if (you.fire_shield)
+        you.fire_shield = 1;
 
     if (you.duration[DUR_SWIFTNESS])
         you.duration[DUR_SWIFTNESS] = 1;
@@ -750,9 +677,6 @@ void antimagic( void )
 
     if (you.duration[DUR_CONDENSATION_SHIELD])
         you.duration[DUR_CONDENSATION_SHIELD] = 1;
-
-    //if (you.duration[DUR_DEATH_CHANNEL])
-    //    you.duration[DUR_DEATH_CHANNEL] = 1;
 
     contaminate_player( -1 * (1+random2(5)));
 }                               // end antimagic()
@@ -792,19 +716,21 @@ void extension(int pow)
     if (you.duration[DUR_DEFLECT_MISSILES])
         deflection(pow);
 
-    if (you.shock_shield)
+    if (you.fire_shield)
     {
-        you.shock_shield += random2(pow) + 4;
+        you.fire_shield += random2(pow / 20);
 
-        if (you.shock_shield > 25)
-            you.shock_shield = 25;
+        if (you.fire_shield > 50)
+            you.fire_shield = 50;
 
         mpr("Your ring of flames roars with new vigour!");
     }
 
     if ( !(you.duration[DUR_WEAPON_BRAND] < 1
                  || you.duration[DUR_WEAPON_BRAND] > 80) )
+    {
         you.duration[DUR_WEAPON_BRAND] += 5 + random2(8);
+    }
 
     if (you.duration[DUR_SWIFTNESS])
         cast_swiftness(pow);
@@ -847,30 +773,21 @@ void extension(int pow)
 
     if (you.duration[DUR_CONDENSATION_SHIELD])
         cast_condensation_shield(pow);
-
-    //if (you.duration[DUR_DEATH_CHANNEL])
-    //    cast_death_channel(pow);
 }                               // end extension()
 
 void ice_armour(int pow, bool extending)
 {
-    if (you.equip[EQ_BODY_ARMOUR] != -1 && !extending)
+    if (!player_light_armour())
     {
-        // XXX: This should be expressed with enums -- bwr
-        if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 1
-            && you.inv_type[you.equip[EQ_BODY_ARMOUR]] != 16
-            && you.inv_type[you.equip[EQ_BODY_ARMOUR]] != 19
-            && (you.inv_type[you.equip[EQ_BODY_ARMOUR]] < 22
-                || you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 25))
-        {
+        if (!extending)
             mpr("You are wearing too much armour.");
-            return;
-        }
+        return;
     }
 
     if (you.duration[DUR_STONEMAIL] || you.duration[DUR_STONESKIN])
     {
-        mpr("The spell conflicts with another spell still in effect.");
+        if (!extending)
+            mpr("The spell conflicts with another spell still in effect.");
         return;
     }
 
@@ -879,23 +796,17 @@ void ice_armour(int pow, bool extending)
     else
     {
         mpr("A film of ice covers your body!");
-        you.redraw_armor_class = 1;
+        you.redraw_armour_class = 1;
     }
 
     you.duration[DUR_ICY_ARMOUR] += 20 + random2(pow) + random2(pow);
 
     if (you.duration[DUR_ICY_ARMOUR] > 50)
         you.duration[DUR_ICY_ARMOUR] = 50;
-/*
- you.duration [DUR_ICY_ARMOUR] += 20 + random2(pow) / 2 + random2(pow) / 2;
- if (you.duration [DUR_ICY_ARMOUR] >= 100) you.duration [DUR_ICY_ARMOUR] = 100;
-*/
 }                               // end ice_armour()
 
 void stone_scales(int pow)
 {
-    //if (pow > 100)
-    //  pow = 100;
     int dur_change = 0;
 
     if (you.duration[DUR_ICY_ARMOUR] || you.duration[DUR_STONESKIN])
@@ -910,13 +821,13 @@ void stone_scales(int pow)
     {
         mpr("A set of stone scales covers your body!");
         you.redraw_evasion = 1;
-        you.redraw_armor_class = 1;
+        you.redraw_armour_class = 1;
     }
 
     dur_change = 20 + random2(pow) + random2(pow);
 
-    if (dur_change + you.duration[DUR_STONEMAIL] >= 50)
-        you.duration[DUR_STONEMAIL] = 50;
+    if (dur_change + you.duration[DUR_STONEMAIL] >= 100)
+        you.duration[DUR_STONEMAIL] = 100;
     else
         you.duration[DUR_STONEMAIL] += dur_change;
 
@@ -969,7 +880,7 @@ void cast_swiftness(int power)
 {
     int dur_incr = 0;
 
-    if (you.species == SP_MERFOLK && player_in_water())
+    if (you.species == SP_MERFOLK && player_is_swimming())
     {
         mpr("This spell will not benefit you while you're swimming!");
         return;
@@ -1015,7 +926,8 @@ void cast_fly(int power)
     else
         you.duration[DUR_CONTROLLED_FLIGHT] += dur_change;
 
-    // duration[DUR_CONTROLLED_FLIGHT] makes the game think player wears an amulet of controlled flight
+    // duration[DUR_CONTROLLED_FLIGHT] makes the game think player
+    // wears an amulet of controlled flight
 
     burden_change();
 }
@@ -1061,14 +973,14 @@ void cast_teleport_control(int power)
 
 void cast_ring_of_flames(int power)
 {
-    you.shock_shield += 4 + (random2(power) / 10);
+    you.fire_shield += 5 + (power / 10) + (random2(power) / 5);
 
-    if (you.shock_shield > 25)
-        you.shock_shield = 25;
+    if (you.fire_shield > 50)
+        you.fire_shield = 50;
 
     mpr("The air around you leaps into flame!");
 
-    manage_shock_shield();
+    manage_fire_shield();
 }                               // end cast_ring_of_flames()
 
 void cast_confusing_touch(int power)
@@ -1092,8 +1004,8 @@ bool cast_sure_blade(int power)
 
     if (you.equip[EQ_WEAPON] == -1)
         mpr("You aren't wielding a weapon!");
-    else if (weapon_skill( you.inv_class[you.equip[EQ_WEAPON]],
-                     you.inv_type[you.equip[EQ_WEAPON]]) != SK_SHORT_BLADES)
+    else if (weapon_skill( you.inv[you.equip[EQ_WEAPON]].base_type,
+                     you.inv[you.equip[EQ_WEAPON]].sub_type) != SK_SHORT_BLADES)
     {
         mpr("You cannot bond with this weapon.");
     }
@@ -1115,11 +1027,11 @@ bool cast_sure_blade(int power)
     return (success);
 }                               // end cast_sure_blade()
 
-void manage_shock_shield(void)
+void manage_fire_shield(void)
 {
-    you.shock_shield--;
+    you.fire_shield--;
 
-    if (!you.shock_shield)
+    if (!you.fire_shield)
         return;
 
     char stx = 0, sty = 0;
@@ -1137,8 +1049,8 @@ void manage_shock_shield(void)
                 && env.cgrid[you.x_pos + stx][you.y_pos + sty] == EMPTY_CLOUD)
             {
                 place_cloud( CLOUD_FIRE, you.x_pos + stx, you.y_pos + sty,
-                                                (one_chance_in(6) ? 3 : 1) );
+                             1 + random2(6) );
             }
         }
     }
-}                               // end manage_shock_shield()
+}                               // end manage_fire_shield()

@@ -50,7 +50,7 @@ const int kFontMenu = 258;
 const int kSizeMenu = 259;
 
 const int kTermWidth = 80;
-const int kTermHeight = NUMBER_OF_LINES;
+const int kTermHeight = MAC_NUMBER_OF_LINES;
 
 const int kLeftArrowKey = 0x7B;
 const int kUpArrowKey = 0x7E;

@@ -13,29 +13,35 @@
 #include "AppHdr.h"
 #include "spells3.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "externs.h"
 
 #include "abyss.h"
+#include "beam.h"
+#include "cloud.h"
 #include "direct.h"
+#include "debug.h"
+#include "delay.h"
 #include "fight.h"
-#include "it_use2.h"
 #include "itemname.h"
+#include "items.h"
+#include "it_use2.h"
 #include "misc.h"
 #include "monplace.h"
 #include "mon-pick.h"
 #include "monstuff.h"
 #include "mon-util.h"
 #include "player.h"
-#include "spells0.h"
+#include "randart.h"
 #include "spells1.h"
+#include "spl-cast.h"
 #include "spl-util.h"
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
 
-extern bool wield_change;       // defined in output.cc
 static bool monster_on_level(int monster);
 
 void cast_selective_amnesia(bool force)
@@ -62,7 +68,7 @@ void cast_selective_amnesia(bool force)
             if (keyin == '?' || keyin == '*')
             {
                 // this reassignment is "key" {dlb}
-                keyin = (unsigned char) spell_list();
+                keyin = (unsigned char) list_spells();
 
                 redraw_screen();
             }
@@ -114,14 +120,15 @@ bool remove_curse(bool suppress_msg)
     bool success = false;       // whether or not curse(s) removed {dlb}
 
     // special "wield slot" case - see if you can figure out why {dlb}:
+    // because only cursed weapons in hand only count as cursed -- bwr
     if (you.equip[EQ_WEAPON] != -1
-                && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
+                && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_WEAPONS)
     {
-        if (you.inv_plus[you.equip[EQ_WEAPON]] > 130)
+        if (item_cursed( you.inv[you.equip[EQ_WEAPON]] ))
         {
-            you.inv_plus[you.equip[EQ_WEAPON]] -= 100;
+            do_uncurse_item( you.inv[you.equip[EQ_WEAPON]] );
             success = true;
-            wield_change = true;
+            you.wield_change = true;
         }
     }
 
@@ -129,10 +136,9 @@ bool remove_curse(bool suppress_msg)
     // what of artefact rings and amulets? {dlb}:
     for (loopy = EQ_CLOAK; loopy < NUM_EQUIP; loopy++)
     {
-        if (you.equip[loopy] != -1
-                    && you.inv_plus[you.equip[loopy]] > 130)
+        if (you.equip[loopy] != -1 && item_cursed(you.inv[you.equip[loopy]]))
         {
-            you.inv_plus[you.equip[loopy]] -= 100;
+            do_uncurse_item( you.inv[you.equip[loopy]] );
             success = true;
         }
     }
@@ -156,15 +162,15 @@ bool detect_curse(bool suppress_msg)
 
     for (loopy = 0; loopy < ENDOFPACK; loopy++)
     {
-        if (you.inv_quantity[loopy]
-            && (you.inv_class[loopy] == OBJ_WEAPONS
-                || you.inv_class[loopy] == OBJ_ARMOUR
-                || you.inv_class[loopy] == OBJ_JEWELLERY)
-            && you.inv_ident[loopy] == 0)
+        if (you.inv[loopy].quantity
+            && (you.inv[loopy].base_type == OBJ_WEAPONS
+                || you.inv[loopy].base_type == OBJ_ARMOUR
+                || you.inv[loopy].base_type == OBJ_JEWELLERY))
         {
-            // well, this is not quite right, as it triggers a "detect"
-            you.inv_ident[loopy] = 1;
-            success = true;   // response for uncursed rings, too {dlb}
+            if (item_not_ident( you.inv[loopy], ISFLAG_KNOW_CURSE ))
+                success = true;
+
+            set_ident_flags( you.inv[loopy], ISFLAG_KNOW_CURSE );
         }
     }
 
@@ -204,7 +210,7 @@ bool cast_smiting(int power)
         monster = &menv[mgrd[beam.tx][beam.ty]];
 
         strcpy(info, "You smite ");
-        strcat(info, ptr_monam( monster, 1 ));
+        strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
         strcat(info, "!");
         mpr(info);
 
@@ -246,13 +252,13 @@ bool airstrike(int power)
         monster = &menv[mgrd[beam.tx][beam.ty]];
 
         strcpy(info, "The air twists around and strikes ");
-        strcat(info, ptr_monam( monster, 1 ));
+        strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
         strcat(info, "!");
         mpr(info);
 
         hurted = random2( random2(12) + (random2(power) / 6)
                                       + (random2(power) / 7) );
-        hurted -= random2(1 + monster->armor_class);
+        hurted -= random2(1 + monster->armour_class);
 
         if (hurted < 0)
             hurted = 0;
@@ -283,32 +289,22 @@ bool cast_bone_shards(int power)
         power = 150;
 
     if (you.equip[EQ_WEAPON] == -1
-                    || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_CORPSES)
+                    || you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_CORPSES)
     {
         canned_msg(MSG_SPELL_FIZZLES);
     }
-    else if (you.inv_type[you.equip[EQ_WEAPON]] != CORPSE_SKELETON)
+    else if (you.inv[you.equip[EQ_WEAPON]].sub_type != CORPSE_SKELETON)
         mpr("The corpse collapses into a mass of pulpy flesh.");
     else if (spell_direction(spelld, beam) != -1)
     {
         // max of 150 * 15 + 3000 = 5250
         power *= 15;
-        power += mons_weight(you.inv_plus[you.equip[EQ_WEAPON]]);
+        power += mons_weight( you.inv[you.equip[EQ_WEAPON]].plus );
 
         mpr("The skeleton explodes into sharp fragments of bone!");
 
-        unwield_item(you.equip[EQ_WEAPON]);
-        you.inv_quantity[you.equip[EQ_WEAPON]]--;
-
-        /* can this be false? */
-        if (you.inv_quantity[you.equip[EQ_WEAPON]] == 0)
-        {
-            you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty-handed.");
-        }
-
+        dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
         zapping(ZAP_BONE_SHARDS, power, beam);
-        burden_change();
 
         success = true;
     }
@@ -318,12 +314,11 @@ bool cast_bone_shards(int power)
 
 void sublimation(int power)
 {
-    unsigned char was_wielded = 0;
     unsigned char loopy = 0;    // general purpose loop variable {dlb}
 
     if (you.equip[EQ_WEAPON] == -1
-        || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_FOOD
-        || you.inv_type[you.equip[EQ_WEAPON]] != FOOD_CHUNK)
+        || you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_FOOD
+        || you.inv[you.equip[EQ_WEAPON]].sub_type != FOOD_CHUNK)
     {
         if (you.deaths_door)
         {
@@ -359,17 +354,7 @@ void sublimation(int power)
 
         inc_mp(7 + random2(7), false);
 
-        was_wielded = you.equip[EQ_WEAPON];
-        unwield_item(you.equip[EQ_WEAPON]);
-        you.equip[EQ_WEAPON] = -1;
-
-        you.inv_quantity[was_wielded]--;
-
-        if (you.inv_quantity[was_wielded] < 1)
-            you.inv_quantity[was_wielded] = 0;
-
-        burden_change();
-
+        dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
     }
 
     return;
@@ -378,57 +363,44 @@ void sublimation(int power)
 // Simulacrum
 //
 // This spell extends creating undead to Ice mages, as such it's high
-// level, doesn't produce permanent undead, requires wielding of the
-// material component, and the undead aren't overly powerful (they're
-// also vulnerable to fire).
+// level, requires wielding of the material component, and the undead
+// aren't overly powerful (they're also vulnerable to fire).
 //
 // As for what it offers necromancers considering all the downsides
 // above... it allows the turning of a single corpse into an army of
 // monsters (one per food chunk)... which is also a good reason for
-// why it's high level and non-permanent (slow down creation, keep
-// army size in check).
+// why it's high level.
 //
 // Hides and other "animal part" items are intentionally left out, it's
-// unrequired complexity, and fresh flesh makes more sense for a spell
+// unrequired complexity, and fresh flesh makes more "sense" for a spell
 // reforming the original monster out of ice anyways.
 void simulacrum(int power)
 {
-    int max_num = 1 + random2(power) / 20;
-    if (max_num > 8)
-        max_num = 8;
+    int max_num = 4 + random2(power) / 20;
+    if (max_num > 12)
+        max_num = 12;
 
     const int chunk = you.equip[EQ_WEAPON];
 
     if (chunk != -1
-        && you.inv_quantity[ chunk ] > 0
-        && (you.inv_class[ chunk ] == OBJ_CORPSES
-            || (you.inv_class[ chunk ] == OBJ_FOOD
-                && you.inv_type[ chunk ] == FOOD_CHUNK)))
+        && is_valid_item( you.inv[ chunk ] )
+        && (you.inv[ chunk ].base_type == OBJ_CORPSES
+            || (you.inv[ chunk ].base_type == OBJ_FOOD
+                && you.inv[ chunk ].sub_type == FOOD_CHUNK)))
     {
-        const int mons_type = you.inv_plus[ chunk ];
-
-        unwield_item( chunk );
+        const int mons_type = you.inv[ chunk ].plus;
 
         // Can't create more than the available chunks
-        if (you.inv_quantity[ chunk ] < max_num)
-            max_num = you.inv_quantity[ chunk ];
+        if (you.inv[ chunk ].quantity < max_num)
+            max_num = you.inv[ chunk ].quantity;
 
-        you.inv_quantity[ chunk ] -= max_num;
-
-        if (you.inv_quantity[ chunk ] <= 0)
-        {
-            you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty-handed.");
-        }
-
-        burden_change();
+        dec_inv_item_quantity( chunk, max_num );
 
         int summoned = 0;
 
         for (int i = 0; i < max_num; i++)
         {
-            // yes, the snowmen eventually melt away... -- bwr
-            if (create_monster( MONS_SIMULACRUM_SMALL, ENCH_ABJ_VI,
+            if (create_monster( MONS_SIMULACRUM_SMALL, 0,
                                 BEH_FRIENDLY, you.x_pos, you.y_pos,
                                 MHITNOT, mons_type ) != -1)
             {
@@ -451,8 +423,6 @@ void simulacrum(int power)
         mpr( "You need to wield a piece of raw flesh for this spell "
              "to be effective!" );
     }
-
-    return;
 }                               // end sublimation()
 
 void dancing_weapon(int pow, bool force_hostile)
@@ -462,65 +432,60 @@ void dancing_weapon(int pow, bool force_hostile)
     if (numsc > ENCH_ABJ_VI)
         numsc = ENCH_ABJ_VI;
 
+    int i;
     int summs = 0;
-    int i = 0;
     char behavi = BEH_FRIENDLY;
 
-    if (you.equip[EQ_WEAPON] == -1
-        || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS
-        || launches_things(you.inv_type[you.equip[EQ_WEAPON]])
-        || you.inv_dam[you.equip[EQ_WEAPON]] >= NWPN_SINGING_SWORD)
+    const int wpn = you.equip[EQ_WEAPON];
+
+    // See if weilded item is appropriate:
+    if (wpn == -1
+        || you.inv[wpn].base_type != OBJ_WEAPONS
+        || launches_things( you.inv[wpn].sub_type )
+        || is_fixed_artefact( you.inv[wpn] ))
     {
         goto failed_spell;
     }
 
-    // FIRST, find an item
-    for (i = 0; i < MAX_ITEMS; i++)
-    {
-        if (i > MAX_ITEMS - 20)
-            goto failed_spell;
+    // See if we can get an mitm for the dancing weapon:
+    i = get_item_slot();
+    if (i == NON_ITEM)
+        goto failed_spell;
 
-        if (mitm.quantity[i] == 0 || mitm.base_type[i] == OBJ_UNASSIGNED)
-        {
-            mitm.id[i] = you.inv_ident[you.equip[EQ_WEAPON]];
-            mitm.base_type[i] = you.inv_class[you.equip[EQ_WEAPON]];
-            mitm.sub_type[i] = you.inv_type[you.equip[EQ_WEAPON]];
-            mitm.pluses[i] = you.inv_plus[you.equip[EQ_WEAPON]];
-            mitm.pluses2[i] = you.inv_plus2[you.equip[EQ_WEAPON]];
-            mitm.special[i] = you.inv_dam[you.equip[EQ_WEAPON]];
-            mitm.colour[i] = you.inv_colour[you.equip[EQ_WEAPON]];
-            mitm.quantity[i] = 1;
-            mitm.link[i] = NON_ITEM;
-            break;
-        }
-    }                           // end for i loop
+    mitm[i] = you.inv[wpn];
+    mitm[i].quantity = 1;
+    mitm[i].x = 0;
+    mitm[i].y = 0;
+    mitm[i].link = NON_ITEM;
 
-    if (you.inv_plus[you.equip[EQ_WEAPON]] >= 100 || force_hostile)
-        behavi = BEH_HOSTILE; // cursed weapons become hostile
+    // cursed weapons become hostile
+    if (item_cursed( you.inv[wpn] ) || force_hostile)
+        behavi = BEH_HOSTILE;
 
-    summs = create_monster ( MONS_DANCING_WEAPON, numsc, behavi, you.x_pos,
-        you.y_pos, you.pet_target, 1);
+    summs = create_monster( MONS_DANCING_WEAPON, numsc, behavi,
+                            you.x_pos, you.y_pos, you.pet_target, 1 );
 
     if (summs < 0)
     {
-        // delete the item before failing!
-        mitm.base_type[i] = OBJ_UNASSIGNED;
-        mitm.quantity[i] = 0;
+        // must delete the item before failing!
+        mitm[i].base_type = OBJ_UNASSIGNED;
+        mitm[i].quantity = 0;
         goto failed_spell;
     }
 
-    in_name(you.equip[EQ_WEAPON], 4, str_pass);
-    strcpy(info, str_pass);
-    strcat(info, " dances into the air!");
-    mpr(info);
+    // We are successful:
+    in_name( wpn, DESC_CAP_YOUR, str_pass );
+    strcpy( info, str_pass );
+    strcat( info, " dances into the air!" );
+    mpr( info );
 
-    unwield_item(you.equip[EQ_WEAPON]);
+    unwield_item( wpn );
 
-    you.inv_quantity[you.equip[EQ_WEAPON]] = 0;
+    you.inv[ wpn ].quantity = 0;
     you.equip[EQ_WEAPON] = -1;
 
     menv[summs].inv[MSLOT_WEAPON] = i;
-    menv[summs].number = mitm.colour[i];
+    menv[summs].number = mitm[i].colour;
 
     return;
 
@@ -543,7 +508,7 @@ static bool monster_on_level(int monster)
 // This function returns true if the player can use controlled
 // teleport here.
 //
-bool allow_control_teleport(void)
+bool allow_control_teleport( bool silent )
 {
     bool ret = true;
 
@@ -555,8 +520,20 @@ bool allow_control_teleport(void)
         {
         case BRANCH_TOMB:
             // The tomb is a laid out maze, it'd be a shame if the player
-            // just teleports through any of it.
+            // just teleports through any of it... so we only allow
+            // teleport once they have the rune.
             ret = false;
+            for (int i = 0; i < ENDOFPACK; i++)
+            {
+                if (is_valid_item( you.inv[i] )
+                    && you.inv[i].base_type == OBJ_MISCELLANY
+                    && you.inv[i].sub_type == MISC_RUNE_OF_ZOT
+                    && you.inv[i].plus == BRANCH_TOMB)
+                {
+                    ret = true;
+                    break;
+                }
+            }
             break;
 
         case BRANCH_SLIME_PITS:
@@ -567,23 +544,35 @@ bool allow_control_teleport(void)
             break;
 
         case BRANCH_ELVEN_HALLS:
-            // Cannot raid the elven halls vaults with teleport
+            // Cannot raid the elven halls vaults until fountain drained
             if (you.branch_stairs[STAIRS_ELVEN_HALLS] +
-                branch_depth(STAIRS_ELVEN_HALLS) == you.your_level)
-                ret = false;
+                    branch_depth(STAIRS_ELVEN_HALLS) == you.your_level)
+            {
+                for (int x = 5; x < GXM - 5; x++)
+                {
+                    for (int y = 5; y < GYM - 5; y++)
+                    {
+                        if (grd[x][y] == DNGN_SPARKLING_FOUNTAIN)
+                            ret = false;
+                    }
+                }
+            }
             break;
 
         case BRANCH_HALL_OF_ZOT:
-            // Cannot teleport to the Orb
+            // Cannot control teleport until the Orb is picked up
             if (you.branch_stairs[STAIRS_HALL_OF_ZOT] +
-                branch_depth(STAIRS_HALL_OF_ZOT) == you.your_level)
+                    branch_depth(STAIRS_HALL_OF_ZOT) == you.your_level
+                && you.char_direction != DIR_ASCENDING)
+            {
                 ret = false;
+            }
             break;
         }
     }
 
     // Tell the player why if they have teleport control.
-    if (!ret && you.attribute[ATTR_CONTROL_TELEPORT])
+    if (!ret && you.attribute[ATTR_CONTROL_TELEPORT] && !silent)
         mpr("A powerful magic prevents control of your teleportation.");
 
     return ret;
@@ -629,8 +618,8 @@ void you_teleport2(bool allow_control)
 
     // after this point, we're guaranteed to teleport. Turn off auto-butcher.
     // corpses still get butchered,  but at least we don't get a silly message.
-    if (you.delay_t > 0 && you.delay_doing == DELAY_BUTCHER)
-        you.delay_t = 0;
+    if (current_delay_action() == DELAY_BUTCHER)
+        stop_delay();
 
     FixedVector < int, 2 > plox;
 
@@ -647,6 +636,11 @@ void you_teleport2(bool allow_control)
 
         redraw_screen();
 
+#if DEBUG_DIAGNOSTICS
+        snprintf( info, INFO_SIZE, "Target square (%d,%d)", plox[0], plox[1] );
+        mpr(info);
+#endif
+
         plox[0] += random2(3) - 1;
         plox[1] += random2(3) - 1;
 
@@ -656,22 +650,17 @@ void you_teleport2(bool allow_control)
             plox[1] += random2(3) - 1;
         }
 
-#ifdef WIZARD
-        strcpy(info, "Target square: ");
-        itoa(plox[0], st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, ", ");
-        itoa(plox[1], st_prn, 10);
-        strcat(info, st_prn);
-        mpr(info);
-#endif
-
         if (plox[0] < 6 || plox[1] < 6 || plox[0] > (GXM - 5)
                 || plox[1] > (GYM - 5))
         {
             mpr("Nearby solid objects disrupt your rematerialisation!");
             is_controlled = false;
         }
+
+#if DEBUG_DIAGNOSTICS
+        snprintf( info, INFO_SIZE, "Scattered target square (%d,%d)", plox[0], plox[1] );
+        mpr(info);
+#endif
 
         if (is_controlled)
         {
@@ -706,7 +695,6 @@ void you_teleport2(bool allow_control)
     if (you.level_type == LEVEL_ABYSS)
     {
         abyss_teleport();
-        env.cloud_no = 0;
         you.pet_target = MHITNOT;
     }
 }                               // end you_teleport()
@@ -765,13 +753,13 @@ bool entomb(void)
             while (objl != NON_ITEM)
             {
                 // hate to see the orb get  detroyed by accident {dlb}:
-                if (mitm.base_type[objl] == OBJ_ORBS)
+                if (mitm[objl].base_type == OBJ_ORBS)
                 {
                     proceed = false;
                     break;
                 }
 
-                hrg = mitm.link[objl];
+                hrg = mitm[objl].link;
                 objl = hrg;
             }
 
@@ -784,30 +772,24 @@ bool entomb(void)
 
             while (objl != NON_ITEM)
             {
-                hrg = mitm.link[objl];
+                hrg = mitm[objl].link;
                 destroy_item(objl);
                 objl = hrg;
             }
 
             // deal with clouds {dlb}:
             if (env.cgrid[srx][sry] != EMPTY_CLOUD)
-            {
-                env.cloud_type[env.cgrid[srx][sry]] = CLOUD_NONE;
-                env.cgrid[ env.cloud_x[ env.cgrid[srx][sry] ] ]
-                         [ env.cloud_y[ env.cgrid[srx][sry] ] ] = EMPTY_CLOUD;
-                env.cloud_decay[env.cgrid[srx][sry]] = 0;
-                env.cloud_no--;
-            }
+                delete_cloud( env.cgrid[srx][sry] );
 
             // mechanical traps are destroyed {dlb}:
             if ((which_trap = trap_at_xy(srx, sry)) != -1)
             {
-                if (trap_category(env.trap_type[which_trap])
+                if (trap_category(env.trap[which_trap].type)
                                                     == DNGN_TRAP_MECHANICAL)
                 {
-                    env.trap_type[which_trap] = TRAP_UNASSIGNED;
-                    env.trap_x[which_trap] = 1;
-                    env.trap_y[which_trap] = 1;
+                    env.trap[which_trap].type = TRAP_UNASSIGNED;
+                    env.trap[which_trap].x = 1;
+                    env.trap[which_trap].y = 1;
                 }
             }
 
@@ -828,25 +810,25 @@ bool entomb(void)
 void cast_poison_ammo(void)
 {
     if (you.equip[EQ_WEAPON] == -1
-        || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_MISSILES
-        || you.inv_dam[you.equip[EQ_WEAPON]] != 0
-        || you.inv_type[you.equip[EQ_WEAPON]] == MI_STONE
-        || you.inv_type[you.equip[EQ_WEAPON]] == MI_LARGE_ROCK)
+        || you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_MISSILES
+        || you.inv[you.equip[EQ_WEAPON]].special != 0
+        || you.inv[you.equip[EQ_WEAPON]].sub_type == MI_STONE
+        || you.inv[you.equip[EQ_WEAPON]].sub_type == MI_LARGE_ROCK)
     {
         canned_msg(MSG_NOTHING_HAPPENS);
         return;
     }
 
-    in_name(you.equip[EQ_WEAPON], 4, str_pass);
+    in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
     strcpy(info, str_pass);
     strcat( info,
-            (you.inv_quantity[you.equip[EQ_WEAPON]] == 1) ? " is" : " are" );
+            (you.inv[you.equip[EQ_WEAPON]].quantity == 1) ? " is" : " are" );
     strcat(info, " covered in a thin film of poison.");
     mpr(info);
 
-    you.inv_dam[you.equip[EQ_WEAPON]] = SPMSL_POISONED;
+    you.inv[you.equip[EQ_WEAPON]].special = SPMSL_POISONED;
 
-    wield_change = true;
+    you.wield_change = true;
 }                               // end cast_poison_ammo()
 
 bool create_noise(void)
@@ -863,13 +845,8 @@ bool create_noise(void)
 
     redraw_screen();
 
-#ifdef WIZARD
-    strcpy(info, "Target square: ");
-    itoa(plox[0], st_prn, 10);
-    strcat(info, st_prn);
-    strcat(info, ", ");
-    itoa(plox[1], st_prn, 10);
-    strcat(info, st_prn);
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "Target square (%d,%d)", plox[0], plox[1] );
     mpr(info);
 #endif
 

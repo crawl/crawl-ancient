@@ -36,13 +36,13 @@
    earlier savefiles.   The tags defined with the original tag system (and
    so not needing cases in tag_missing()) are as follows:
 
-    TAG_YOU = 1,                        // 'you' structure
-    TAG_YOU_ITEMS,                      // your items
-    TAG_YOU_DUNGEON,                    // dungeon specs (stairs, branches, features)
-    TAG_LEVEL,                          // various grids & clouds
-    TAG_LEVEL_ITEMS,                    // items/traps
-    TAG_LEVEL_MONSTERS,                 // monsters
-    TAG_GHOST,                          // ghost
+    TAG_YOU = 1,              // 'you' structure
+    TAG_YOU_ITEMS,            // your items
+    TAG_YOU_DUNGEON,          // dungeon specs (stairs, branches, features)
+    TAG_LEVEL,                // various grids & clouds
+    TAG_LEVEL_ITEMS,          // items/traps
+    TAG_LEVEL_MONSTERS,       // monsters
+    TAG_GHOST,                // ghost
 
 6. The marshalling and unmarshalling of data is done in network order and
    is meant to keep savefiles cross-platform.  They are non-ascii - always
@@ -51,8 +51,9 @@
    insufficient on 16 bit systems (and that Crawl otherwise lacks
    system-indepedent data types).
 
- */
+*/
 
+#include <stdio.h>
 #include <string.h>            // for memcpy
 
 #ifdef LINUX
@@ -80,9 +81,9 @@
 #include "files.h"
 #include "itemname.h"
 #include "monstuff.h"
+#include "mon-util.h"
 #include "randart.h"
 #include "stuff.h"
-#include "spells4.h"
 #include "tags.h"
 
 // THE BIG IMPORTANT TAG CONSTRUCTION/PARSE BUFFER
@@ -104,16 +105,16 @@ FixedArray < bool, MAX_LEVELS, MAX_BRANCHES > tmp_file_pairs;
 static void tag_construct_you(struct tagHeader &th);
 static void tag_construct_you_items(struct tagHeader &th);
 static void tag_construct_you_dungeon(struct tagHeader &th);
-static void tag_read_you(struct tagHeader &th);
-static void tag_read_you_items(struct tagHeader &th);
+static void tag_read_you(struct tagHeader &th, char minorVersion);
+static void tag_read_you_items(struct tagHeader &th, char minorVersion);
 static void tag_read_you_dungeon(struct tagHeader &th);
 
 static void tag_construct_level(struct tagHeader &th);
 static void tag_construct_level_items(struct tagHeader &th);
 static void tag_construct_level_monsters(struct tagHeader &th);
 static void tag_construct_level_attitude(struct tagHeader &th);
-static void tag_read_level(struct tagHeader &th);
-static void tag_read_level_items(struct tagHeader &th);
+static void tag_read_level(struct tagHeader &th, char minorVersion);
+static void tag_read_level_items(struct tagHeader &th, char minorVersion);
 static void tag_read_level_monsters(struct tagHeader &th, char minorVersion);
 static void tag_read_level_attitude(struct tagHeader &th);
 static void tag_missing_level_attitude();
@@ -273,6 +274,48 @@ bool unmarshallBoolean(struct tagHeader &th)
     return data;
 }
 
+// Saving the date as a string so we're not reliant on a particular epoch.
+void make_date_string( time_t in_date, char buff[20] )
+{
+    struct tm *date = localtime( &in_date );
+
+    snprintf( buff, 20,
+              "%4d%02d%02d%02d%02d%02d%s",
+              date->tm_year + 1900, date->tm_mon, date->tm_mday,
+              date->tm_hour, date->tm_min, date->tm_sec,
+              ((date->tm_isdst > 0) ? "D" : "S") );
+}
+
+static int get_val_from_string( const char *ptr, int len )
+{
+    int ret = 0;
+    int pow = 1;
+
+    for (const char *chr = ptr + len - 1; chr >= ptr; chr--)
+    {
+        ret += (*chr - '0') * pow;
+        pow *= 10;
+    }
+
+    return (ret);
+}
+
+time_t parse_date_string( char buff[20] )
+{
+    struct tm date;
+
+    date.tm_year = get_val_from_string( &buff[0],  4 ) - 1900;
+    date.tm_mon  = get_val_from_string( &buff[4],  2 );
+    date.tm_mday = get_val_from_string( &buff[6],  2 );
+    date.tm_hour = get_val_from_string( &buff[8],  2 );
+    date.tm_min  = get_val_from_string( &buff[10], 2 );
+    date.tm_sec  = get_val_from_string( &buff[12], 2 );
+
+    date.tm_isdst = (buff[14] == 'D');
+
+    return (mktime( &date ));
+}
+
 // PUBLIC TAG FUNCTIONS
 void tag_init(long largest_tag)
 {
@@ -388,19 +431,19 @@ int tag_read(FILE *fp, char minorVersion)
     switch(hdr.tagID)
     {
         case TAG_YOU:
-            tag_read_you(th);
+            tag_read_you(th, minorVersion);
             break;
         case TAG_YOU_ITEMS:
-            tag_read_you_items(th);
+            tag_read_you_items(th, minorVersion);
             break;
         case TAG_YOU_DUNGEON:
             tag_read_you_dungeon(th);
             break;
         case TAG_LEVEL:
-            tag_read_level(th);
+            tag_read_level(th, minorVersion);
             break;
         case TAG_LEVEL_ITEMS:
-            tag_read_level_items(th);
+            tag_read_level_items(th, minorVersion);
             break;
         case TAG_LEVEL_MONSTERS:
             tag_read_level_monsters(th, minorVersion);
@@ -482,6 +525,7 @@ void tag_set_expected(char tags[], int fileType)
 // --------------------------- player tags (foo.sav) -------------------- //
 static void tag_construct_you(struct tagHeader &th)
 {
+    char buff[20];      // used for date string
     int i,j;
 
     marshallString(th, you.your_name, 30);
@@ -492,7 +536,7 @@ static void tag_construct_you(struct tagHeader &th)
     marshallByte(th,you.conf);
     marshallByte(th,you.paralysis);
     marshallByte(th,you.slow);
-    marshallByte(th,you.shock_shield);
+    marshallByte(th,you.fire_shield);
     marshallByte(th,you.rotting);
     marshallByte(th,you.exhausted);
     marshallByte(th,you.deaths_door);
@@ -621,6 +665,13 @@ static void tag_construct_you(struct tagHeader &th)
 
     // elapsed time
     marshallFloat(th, (float)you.elapsed_time);
+
+    // wizard mode used
+    marshallByte(th, you.wizard);
+
+    // time of game start
+    make_date_string( you.birth_time, buff );
+    marshallString(th, buff, 20);
 }
 
 static void tag_construct_you_items(struct tagHeader &th)
@@ -631,14 +682,14 @@ static void tag_construct_you_items(struct tagHeader &th)
     marshallByte(th, ENDOFPACK);
     for (i = 0; i < ENDOFPACK; ++i)
     {
-        marshallByte(th,you.inv_class[i]);
-        marshallByte(th,you.inv_type[i]);
-        marshallByte(th,you.inv_plus[i]);
-        marshallByte(th,you.inv_dam[i]);
-        marshallByte(th,you.inv_colour[i]);
-        marshallByte(th,you.inv_ident[i]);
-        marshallShort(th,you.inv_quantity[i]);
-        marshallByte(th,you.inv_plus2[i]);
+        marshallByte(th,you.inv[i].base_type);
+        marshallByte(th,you.inv[i].sub_type);
+        marshallShort(th,you.inv[i].plus);
+        marshallLong(th,you.inv[i].special);
+        marshallByte(th,you.inv[i].colour);
+        marshallLong(th,you.inv[i].flags);
+        marshallShort(th,you.inv[i].quantity);
+        marshallShort(th,you.inv[i].plus2);
     }
 
     // item descrip for each type & subtype
@@ -675,11 +726,12 @@ static void tag_construct_you_items(struct tagHeader &th)
     for (j = 0; j < 50; ++j)
     {
         marshallByte(th,you.unique_items[j]);     /* unique items */
-        marshallByte(th,you.had_item[j]);
+        marshallByte(th,you.had_book[j]);
     }
 
     // how many unrandarts?
     marshallShort(th, NO_UNRANDARTS);
+
     for (j = 0; j < NO_UNRANDARTS; ++j)
         marshallBoolean(th, does_unrandart_exist(j));
 }
@@ -714,8 +766,9 @@ static void tag_construct_you_dungeon(struct tagHeader &th)
     }
 }
 
-static void tag_read_you(struct tagHeader &th)
+static void tag_read_you(struct tagHeader &th, char minorVersion)
 {
+    char buff[20];      // For birth date
     int i,j;
     char count_c;
     short count_s;
@@ -728,7 +781,7 @@ static void tag_read_you(struct tagHeader &th)
     you.conf = unmarshallByte(th);
     you.paralysis = unmarshallByte(th);
     you.slow = unmarshallByte(th);
-    you.shock_shield = unmarshallByte(th);
+    you.fire_shield = unmarshallByte(th);
     you.rotting = unmarshallByte(th);
     you.exhausted = unmarshallByte(th);
     you.deaths_door = unmarshallByte(th);
@@ -844,9 +897,260 @@ static void tag_read_you(struct tagHeader &th)
 
     // elapsed time
     you.elapsed_time = (double)unmarshallFloat(th);
+
+    if (minorVersion >= 1)
+    {
+        // wizard mode
+        you.wizard = (bool) unmarshallByte(th);
+
+        // time of character creation
+        unmarshallString( th, buff, 20 );
+        you.birth_time = parse_date_string( buff );
+    }
 }
 
-static void tag_read_you_items(struct tagHeader &th)
+static void tag_convert_to_4_3_item( item_def &item )
+{
+    const unsigned char plus      = item.plus;
+    const unsigned char plus2     = item.plus2;
+    const unsigned char ident     = item.flags;
+    const unsigned char special   = item.special;
+
+    if (item.quantity <= 0)
+        return;
+
+#if 0
+    fprintf( stderr, "\nin: plus %d; plus2 %d; ident %d; special %d\n",
+                      plus, plus2, ident, special );
+#endif
+
+    // First, convert ident into flags:
+    item.flags = (ident == 3) ? ISFLAG_IDENT_MASK :
+                 (ident >  0) ? ISFLAG_KNOW_CURSE
+                              : 0;
+
+    switch (item.base_type)
+    {
+    case OBJ_ARMOUR:
+        if ((ident == 1 && special % 30 >= 25) || ident == 2)
+            item.flags |= ISFLAG_KNOW_TYPE;
+
+        // Convert special values
+        item.special %= 30;
+        if (item.special < 25)
+        {
+            if (item.sub_type == ARM_HELMET)
+            {
+                item.plus2 = plus2 % 30;
+                set_helmet_desc( item, (special / 30) << 8 );
+            }
+            else
+            {
+                switch (special / 30)
+                {
+                case DARM_EMBROIDERED_SHINY:
+                    set_equip_desc( item, ISFLAG_EMBROIDERED_SHINY );
+                    break;
+                case DARM_RUNED:
+                    set_equip_desc( item, ISFLAG_RUNED );
+                    break;
+                case DARM_GLOWING:
+                    set_equip_desc( item, ISFLAG_GLOWING );
+                    break;
+                case DARM_ELVEN:
+                    set_equip_race( item, ISFLAG_ELVEN );
+                    break;
+                case DARM_DWARVEN:
+                    set_equip_race( item, ISFLAG_DWARVEN );
+                    break;
+                case DARM_ORCISH:
+                    set_equip_race( item, ISFLAG_ORCISH );
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+        else if (item.special == 25)
+        {
+            item.flags |= ISFLAG_UNRANDART;
+            item.special = 0;
+        }
+        else
+        {
+            item.flags |= ISFLAG_RANDART;
+
+            // calc old seed
+            item.special = item.base_type * special
+                            + item.sub_type * (plus % 100)
+                            + plus2 * 100;
+        }
+        break;
+
+    case OBJ_WEAPONS:
+        if ((ident == 1 && (special < 180 && special % 30 >= 25)) || ident == 2)
+            item.flags |= ISFLAG_KNOW_TYPE;
+
+        // Convert special values
+        if (special < 181)  // don't mangle fixed artefacts
+        {
+            item.special %= 30;
+            if (item.special < 25)
+            {
+                switch (special / 30)
+                {
+                case DWPN_RUNED:
+                    set_equip_desc( item, ISFLAG_RUNED );
+                    break;
+                case DWPN_GLOWING:
+                    set_equip_desc( item, ISFLAG_GLOWING );
+                    break;
+                case DWPN_ORCISH:
+                    set_equip_race( item, ISFLAG_ORCISH );
+                    break;
+                case DWPN_ELVEN:
+                    set_equip_race( item, ISFLAG_ELVEN );
+                    break;
+                case DWPN_DWARVEN:
+                    set_equip_race( item, ISFLAG_DWARVEN );
+                    break;
+                default:
+                    break;
+                }
+            }
+            else if (item.special == 25)
+            {
+                item.flags |= ISFLAG_UNRANDART;
+                item.special = 0;
+            }
+            else
+            {
+                item.flags |= ISFLAG_RANDART;
+
+                // calc old seed
+                item.special = item.base_type * special
+                                + item.sub_type * (plus % 100)
+                                + plus2 * 100;
+            }
+        }
+        break;
+
+    case OBJ_MISSILES:
+        // Needles were moved into the bonus eggplant spot. -- bwr
+        if (item.sub_type == 6)
+            item.sub_type = MI_NEEDLE;
+
+        if (ident == 2)
+            item.flags |= ISFLAG_KNOW_TYPE;
+
+        // Convert special values
+        item.special %= 30;
+        switch (special / 30)
+        {
+        case DAMMO_ORCISH:
+            set_equip_race( item, ISFLAG_ORCISH );
+            break;
+        case DAMMO_ELVEN:
+            set_equip_race( item, ISFLAG_ELVEN );
+            break;
+        case DAMMO_DWARVEN:
+            set_equip_race( item, ISFLAG_DWARVEN );
+            break;
+        default:
+            break;
+        }
+        break;
+
+    case OBJ_WANDS:
+        if (ident == 2)
+            item.flags |= ISFLAG_KNOW_PLUSES;
+        break;
+
+    case OBJ_JEWELLERY:
+        if (ident == 1 && (special == 200 || special == 201))
+            item.flags |= ISFLAG_KNOW_TYPE;
+        else if (ident == 2)
+            item.flags |= (ISFLAG_KNOW_TYPE | ISFLAG_KNOW_PLUSES);
+
+        if (special == 201)
+        {
+            item.flags |= ISFLAG_UNRANDART;
+            item.special = 0;
+        }
+        else if (special == 200)
+        {
+            item.flags |= ISFLAG_RANDART;
+
+            // calc old seed
+            item.special = item.base_type * special
+                            + item.sub_type * (plus % 100)
+                            + plus2 * 100;
+        }
+        break;
+
+    default:
+        if (ident > 0)
+            item.flags |= ISFLAG_KNOW_TYPE;
+        break;
+    }
+
+
+    // Second, convert plus and plus2
+    if (item.base_type == OBJ_WEAPONS
+        || item.base_type == OBJ_MISSILES
+        || item.base_type == OBJ_ARMOUR
+        || item.base_type == OBJ_JEWELLERY)
+    {
+        item.plus = plus;
+
+        // item is cursed:
+        if (plus > 100)
+        {
+            item.plus -= 100;
+            item.flags |= ISFLAG_CURSED;
+        }
+
+        // Weapons use both as pluses.
+        // Non-artefact jewellery uses both as pluses.
+        // Artefact jewellery has literal values for both pluses.
+        // Armour and Missiles only use plus for their plus value.
+        // Armour has literal usage of plus2 for sub-subtypes.
+        if (item.base_type != OBJ_JEWELLERY)
+        {
+            item.plus -= 50;
+
+            if (item.base_type == OBJ_WEAPONS)
+                item.plus2 -= 50;
+        }
+        else if (special != 200)
+        {
+            // regular jewellery & unrandarts -- unused pluses were 0s
+            if (item.plus)
+                item.plus -= 50;
+
+            if (item.plus2)
+                item.plus2 -= 50;
+        }
+        else if (special == 200)
+        {
+            // Randart jewellery used pluses only as seeds, right now
+            // they're always zero (since random artefact rings avoid
+            // base types with pluses).
+            item.plus = 0;
+            item.plus2 = 0;
+        }
+    }
+
+#if 0
+    fprintf( stderr, "out: plus %d; plus2 %d; flags 0x%08lx; special %ld\n",
+             item.plus, item.plus2, item.flags, item.special );
+
+    item_name( item, DESC_PLAIN, info );
+    fprintf( stderr, "%s\n", info );
+#endif
+}
+
+static void tag_read_you_items(struct tagHeader &th, char minorVersion)
 {
     int i,j;
     char count_c, count_c2;
@@ -856,14 +1160,35 @@ static void tag_read_you_items(struct tagHeader &th)
     count_c = unmarshallByte(th);
     for (i = 0; i < count_c; ++i)
     {
-        you.inv_class[i] = unmarshallByte(th);
-        you.inv_type[i] = unmarshallByte(th);
-        you.inv_plus[i] = unmarshallByte(th);
-        you.inv_dam[i] = unmarshallByte(th);
-        you.inv_colour[i] = unmarshallByte(th);
-        you.inv_ident[i] = unmarshallByte(th);
-        you.inv_quantity[i] = unmarshallShort(th);
-        you.inv_plus2[i] = unmarshallByte(th);
+        if (minorVersion < 1)
+        {
+            you.inv[i].base_type = (unsigned char) unmarshallByte(th);
+            you.inv[i].sub_type = (unsigned char) unmarshallByte(th);
+            you.inv[i].plus = (unsigned char) unmarshallByte(th);
+            you.inv[i].special = (unsigned char) unmarshallByte(th);
+            you.inv[i].colour = (unsigned char) unmarshallByte(th);
+            you.inv[i].flags = (unsigned char) unmarshallByte(th);
+            you.inv[i].quantity = unmarshallShort(th);
+            you.inv[i].plus2 = (unsigned char) unmarshallByte(th);
+
+            tag_convert_to_4_3_item( you.inv[i] );
+        }
+        else
+        {
+            you.inv[i].base_type = (unsigned char) unmarshallByte(th);
+            you.inv[i].sub_type = (unsigned char) unmarshallByte(th);
+            you.inv[i].plus = unmarshallShort(th);
+            you.inv[i].special = unmarshallLong(th);
+            you.inv[i].colour = (unsigned char) unmarshallByte(th);
+            you.inv[i].flags = (unsigned long) unmarshallLong(th);
+            you.inv[i].quantity = unmarshallShort(th);
+            you.inv[i].plus2 = unmarshallShort(th);
+        }
+
+        // these never need to be saved for items in the inventory -- bwr
+        you.inv[i].x = -1;
+        you.inv[i].y = -1;
+        you.inv[i].link = i;
     }
 
     // item descrip for each type & subtype
@@ -893,17 +1218,17 @@ static void tag_read_you_items(struct tagHeader &th)
 
             switch (i)
             {
-                case 0:
-                    set_id(OBJ_WANDS, j, ch);
+                case IDTYPE_WANDS:
+                    set_ident_type(OBJ_WANDS, j, ch);
                     break;
-                case 1:
-                    set_id(OBJ_SCROLLS, j, ch);
+                case IDTYPE_SCROLLS:
+                    set_ident_type(OBJ_SCROLLS, j, ch);
                     break;
-                case 2:
-                    set_id(OBJ_JEWELLERY, j, ch);
+                case IDTYPE_JEWELLERY:
+                    set_ident_type(OBJ_JEWELLERY, j, ch);
                     break;
-                case 3:
-                    set_id(OBJ_POTIONS, j, ch);
+                case IDTYPE_POTIONS:
+                    set_ident_type(OBJ_POTIONS, j, ch);
                     break;
             }
         }
@@ -914,7 +1239,7 @@ static void tag_read_you_items(struct tagHeader &th)
     for (j = 0; j < count_c; ++j)
     {
         you.unique_items[j] = unmarshallByte(th);
-        you.had_item[j] = unmarshallByte(th);
+        you.had_book[j] = unmarshallByte(th);
     }
 
     // how many unrandarts?
@@ -990,24 +1315,24 @@ static void tag_construct_level(struct tagHeader &th)
     marshallShort(th, MAX_CLOUDS);
     for (i = 0; i < MAX_CLOUDS; i++)
     {
-        marshallByte(th, env.cloud_x[i]);
-        marshallByte(th, env.cloud_y[i]);
-        marshallByte(th, env.cloud_type[i]);
-        marshallShort(th, env.cloud_decay[i]);
+        marshallByte(th, env.cloud[i].x);
+        marshallByte(th, env.cloud[i].y);
+        marshallByte(th, env.cloud[i].type);
+        marshallShort(th, env.cloud[i].decay);
     }
 
     // how many shops?
     marshallByte(th, 5);
     for (i = 0; i < 5; i++)
     {
-        marshallByte(th, env.keeper_name[i][0]);
-        marshallByte(th, env.keeper_name[i][1]);
-        marshallByte(th, env.keeper_name[i][2]);
-        marshallByte(th, env.shop_x[i]);
-        marshallByte(th, env.shop_y[i]);
-        marshallByte(th, env.shop_greed[i]);
-        marshallByte(th, env.shop_type[i]);
-        marshallByte(th, env.shop_level[i]);
+        marshallByte(th, env.shop[i].keeper_name[0]);
+        marshallByte(th, env.shop[i].keeper_name[1]);
+        marshallByte(th, env.shop[i].keeper_name[2]);
+        marshallByte(th, env.shop[i].x);
+        marshallByte(th, env.shop[i].y);
+        marshallByte(th, env.shop[i].greed);
+        marshallByte(th, env.shop[i].type);
+        marshallByte(th, env.shop[i].level);
     }
 }
 
@@ -1019,29 +1344,29 @@ static void tag_construct_level_items(struct tagHeader &th)
     marshallShort(th, MAX_TRAPS);
     for (i = 0; i < MAX_TRAPS; ++i)
     {
-        marshallByte(th, env.trap_type[i]);
-        marshallByte(th, env.trap_x[i]);
-        marshallByte(th, env.trap_y[i]);
+        marshallByte(th, env.trap[i].type);
+        marshallByte(th, env.trap[i].x);
+        marshallByte(th, env.trap[i].y);
     }
 
     // how many items?
     marshallShort(th, MAX_ITEMS);
     for (i = 0; i < MAX_ITEMS; ++i)
     {
-        marshallByte(th, mitm.base_type[i]);
-        marshallByte(th, mitm.sub_type[i]);
-        marshallByte(th, mitm.pluses[i]);
-        marshallByte(th, mitm.pluses2[i]);
-        marshallByte(th, mitm.special[i]);
-        marshallLong(th, mitm.quantity[i]);
+        marshallByte(th, mitm[i].base_type);
+        marshallByte(th, mitm[i].sub_type);
+        marshallShort(th, mitm[i].plus);
+        marshallShort(th, mitm[i].plus2);
+        marshallLong(th, mitm[i].special);
+        marshallShort(th, mitm[i].quantity);
 
-        marshallByte(th, mitm.colour[i]);
-        marshallByte(th, mitm.x[i]);
-        marshallByte(th, mitm.y[i]);
-        marshallByte(th, mitm.id[i]);
+        marshallByte(th, mitm[i].colour);
+        marshallShort(th, mitm[i].x);
+        marshallShort(th, mitm[i].y);
+        marshallLong(th, mitm[i].flags);
 
-        marshallShort(th, mitm.link[i]);                //  unused
-        marshallShort(th, igrd[mitm.x[i]][mitm.y[i]]);  //  unused
+        marshallShort(th, mitm[i].link);                //  unused
+        marshallShort(th, igrd[mitm[i].x][mitm[i].y]);  //  unused
     }
 }
 
@@ -1063,7 +1388,7 @@ static void tag_construct_level_monsters(struct tagHeader &th)
 
     for (i = 0; i < MAX_MONSTERS; i++)
     {
-        marshallByte(th, menv[i].armor_class);
+        marshallByte(th, menv[i].armour_class);
         marshallByte(th, menv[i].evasion);
         marshallByte(th, menv[i].hit_dice);
         marshallByte(th, menv[i].speed);
@@ -1103,7 +1428,7 @@ void tag_construct_level_attitude(struct tagHeader &th)
 }
 
 
-static void tag_read_level(struct tagHeader &th)
+static void tag_read_level( struct tagHeader &th, char minorVersion )
 {
     int i,j;
     int gx, gy;
@@ -1126,6 +1451,13 @@ static void tag_read_level(struct tagHeader &th)
 
             mgrd[i][j] = NON_MONSTER;
             env.cgrid[i][j] = unmarshallByte(th);
+
+            if (minorVersion < 3)
+            {
+                // increased number of clouds to 100 in 4.3
+                if (env.cgrid[i][j] > 30)
+                    env.cgrid[i][j] = 101;
+            }
         }
     }
 
@@ -1135,28 +1467,28 @@ static void tag_read_level(struct tagHeader &th)
     gx = unmarshallShort(th);
     for (i = 0; i < gx; i++)
     {
-        env.cloud_x[i] = unmarshallByte(th);
-        env.cloud_y[i] = unmarshallByte(th);
-        env.cloud_type[i] = unmarshallByte(th);
-        env.cloud_decay[i] = unmarshallShort(th);
+        env.cloud[i].x = unmarshallByte(th);
+        env.cloud[i].y = unmarshallByte(th);
+        env.cloud[i].type = unmarshallByte(th);
+        env.cloud[i].decay = unmarshallShort(th);
     }
 
     // how many shops?
     gx = unmarshallByte(th);
     for (i = 0; i < gx; i++)
     {
-        env.keeper_name[i][0] = unmarshallByte(th);
-        env.keeper_name[i][1] = unmarshallByte(th);
-        env.keeper_name[i][2] = unmarshallByte(th);
-        env.shop_x[i] = unmarshallByte(th);
-        env.shop_y[i] = unmarshallByte(th);
-        env.shop_greed[i] = unmarshallByte(th);
-        env.shop_type[i] = unmarshallByte(th);
-        env.shop_level[i] = unmarshallByte(th);
+        env.shop[i].keeper_name[0] = unmarshallByte(th);
+        env.shop[i].keeper_name[1] = unmarshallByte(th);
+        env.shop[i].keeper_name[2] = unmarshallByte(th);
+        env.shop[i].x = unmarshallByte(th);
+        env.shop[i].y = unmarshallByte(th);
+        env.shop[i].greed = unmarshallByte(th);
+        env.shop[i].type = unmarshallByte(th);
+        env.shop[i].level = unmarshallByte(th);
     }
 }
 
-static void tag_read_level_items(struct tagHeader &th)
+static void tag_read_level_items(struct tagHeader &th, char minorVersion)
 {
     int i;
     int count;
@@ -1165,36 +1497,53 @@ static void tag_read_level_items(struct tagHeader &th)
     count = unmarshallShort(th);
     for (i = 0; i < count; ++i)
     {
-        env.trap_type[i] = unmarshallByte(th);
-        env.trap_x[i] = unmarshallByte(th);
-        env.trap_y[i] = unmarshallByte(th);
+        env.trap[i].type = unmarshallByte(th);
+        env.trap[i].x = unmarshallByte(th);
+        env.trap[i].y = unmarshallByte(th);
     }
 
     // how many items?
     count = unmarshallShort(th);
     for (i = 0; i < count; ++i)
     {
-        mitm.base_type[i] = unmarshallByte(th);
-        mitm.sub_type[i] = unmarshallByte(th);
-        mitm.pluses[i] = unmarshallByte(th);
-        mitm.pluses2[i] = unmarshallByte(th);
-        mitm.special[i] = unmarshallByte(th);
-        mitm.quantity[i] = unmarshallLong(th);
-
-        mitm.colour[i] = unmarshallByte(th);
-        mitm.x[i] = unmarshallByte(th);
-        mitm.y[i] = unmarshallByte(th);
-        mitm.id[i] = unmarshallByte(th);
-
-        // pre 4.2 files had monster items stacked at (2,2) -- moved to (0,0)
-        if (mitm.x[i] == 2 && mitm.y[i] == 2)
+        if (minorVersion < 3)
         {
-            mitm.x[i] = 0;
-            mitm.y[i] = 0;
+            mitm[i].base_type = (unsigned char) unmarshallByte(th);
+            mitm[i].sub_type = (unsigned char) unmarshallByte(th);
+            mitm[i].plus = (unsigned char) unmarshallByte(th);
+            mitm[i].plus2 = (unsigned char) unmarshallByte(th);
+            mitm[i].special = (unsigned char) unmarshallByte(th);
+            mitm[i].quantity = unmarshallLong(th);
+            mitm[i].colour = (unsigned char) unmarshallByte(th);
+            mitm[i].x = (unsigned char) unmarshallByte(th);
+            mitm[i].y = (unsigned char) unmarshallByte(th);
+            mitm[i].flags = (unsigned char) unmarshallByte(th);
+
+            tag_convert_to_4_3_item( mitm[i] );
+        }
+        else
+        {
+            mitm[i].base_type = (unsigned char) unmarshallByte(th);
+            mitm[i].sub_type = (unsigned char) unmarshallByte(th);
+            mitm[i].plus = unmarshallShort(th);
+            mitm[i].plus2 = unmarshallShort(th);
+            mitm[i].special = unmarshallLong(th);
+            mitm[i].quantity = unmarshallShort(th);
+            mitm[i].colour = (unsigned char) unmarshallByte(th);
+            mitm[i].x = unmarshallShort(th);
+            mitm[i].y = unmarshallShort(th);
+            mitm[i].flags = (unsigned long) unmarshallLong(th);
         }
 
-        unmarshallShort(th);            // mitm.link[] -- unused
-        unmarshallShort(th);            // igrd[mitm.x[i]][mitm.y[i]] -- unused
+        // pre 4.2 files had monster items stacked at (2,2) -- moved to (0,0)
+        if (minorVersion < 2 && mitm[i].x == 2 && mitm[i].y == 2)
+        {
+            mitm[i].x = 0;
+            mitm[i].y = 0;
+        }
+
+        unmarshallShort(th);  // mitm[].link -- unused
+        unmarshallShort(th);  // igrd[mitm[i].x][mitm[i].y] -- unused
     }
 }
 
@@ -1217,7 +1566,7 @@ static void tag_read_level_monsters(struct tagHeader &th, char minorVersion)
 
     for (i = 0; i < count; i++)
     {
-        menv[i].armor_class = unmarshallByte(th);
+        menv[i].armour_class = unmarshallByte(th);
         menv[i].evasion = unmarshallByte(th);
         menv[i].hit_dice = unmarshallByte(th);
         menv[i].speed = unmarshallByte(th);

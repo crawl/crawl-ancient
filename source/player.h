@@ -14,12 +14,16 @@
 
 #include "externs.h"
 
+int player_equip( int slot, int sub_type );
+int player_equip_special( int slot, int sub_type );
+int player_damage_type( void );
+
 bool player_is_shapechanged(void);
 
 /* ***********************************************************************
  * called from: player - item_use
  * *********************************************************************** */
-bool is_light_armour( int inv_type, int inv_dam );
+bool is_light_armour( const item_def &item );
 
 /* ***********************************************************************
  * called from: beam - fight - misc - newgame
@@ -31,6 +35,7 @@ bool player_light_armour(void);
  * called from: acr.cc - fight.cc - misc.cc - player.cc
  * *********************************************************************** */
 bool player_in_water(void);
+bool player_is_swimming(void);
 
 /* ***********************************************************************
  * called from: ability - chardump - fight - religion - spell - spells -
@@ -157,6 +162,7 @@ int player_res_fire(void);
  * *********************************************************************** */
 int player_res_poison(void);
 
+int player_res_magic(void);
 
 /* ***********************************************************************
  * called from: beam - chardump - fight - misc - output
@@ -267,6 +273,7 @@ int slaying_bonus(char which_affected);
  *              spells3
  * *********************************************************************** */
 unsigned char player_see_invis(void);
+bool player_monster_visible( struct monsters *mon );
 
 
 /* ***********************************************************************
@@ -359,6 +366,15 @@ void inc_mp(int mp_gain, bool max_too);
  * *********************************************************************** */
 void inc_hp(int hp_gain, bool max_too);
 
+void rot_hp( int hp_loss );
+void unrot_hp( int hp_recovered );
+int player_rotted( void );
+
+void inc_max_hp( int hp_gain );
+void dec_max_hp( int hp_loss );
+
+void inc_max_mp( int mp_gain );
+void dec_max_mp( int mp_loss );
 
 /* ***********************************************************************
  * called from: acr - misc - religion - skills2 - spells1 - transfor
@@ -407,5 +423,12 @@ bool player_descriptor( unsigned char which_descriptor,
  * called from:
  * *********************************************************************** */
 void contaminate_player(int change, bool statusOnly = false);
+
+// last updated 15sep2001 {bwr}
+/* ***********************************************************************
+ * called from:
+ * *********************************************************************** */
+bool player_has_spell( int spell );
+
 
 #endif

@@ -25,31 +25,22 @@
 #include "externs.h"
 
 #include "debug.h"
+#include "delay.h"
 #include "invent.h"
+#include "itemname.h"
 #include "items.h"
 #include "it_use3.h"
 #include "player.h"
 #include "religion.h"
-#include "spells.h"
-#include "spells0.h"
+#include "spl-cast.h"
 #include "spl-util.h"
 #include "stuff.h"
 
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
-// jmf: these were globals in spells.cc
-int learned = 0;            // used in learn_a_spell() and which_spell() {dlb}
-int spell_container = 0;    // used in which_spell() and which_spellbook()
-int book_thing;             // definite externed variable - grep for it {dlb}
-
-static bool which_spellbook(void);
-unsigned char spellbook_contents(unsigned char type);
+static bool which_spellbook( int &book, int &spell );
+unsigned char spellbook_contents( item_def &book );
 
 int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
 
-#ifdef USE_BETTER_MINOR_MAGIC_BOOKS
     // 0 - Minor Magic I
     {0,
      SPELL_MAGIC_DART,
@@ -105,67 +96,6 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
-
-#else
-
-    // 0 - Minor Magic I
-    {0,
-     SPELL_MAGIC_DART,
-     SPELL_THROW_FLAME,
-     SPELL_SUMMON_SMALL_MAMMAL,
-     SPELL_BLINK,
-     SPELL_CONJURE_FLAME,
-     SPELL_BOLT_OF_FIRE,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     },
-    // 1 - Minor Magic II
-    {0,
-     SPELL_MAGIC_DART,
-     SPELL_THROW_FROST,
-     SPELL_SUMMON_SMALL_MAMMAL,
-     SPELL_BLINK,
-     SPELL_SLOW,
-     SPELL_BOLT_OF_COLD,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     },
-    // 2 - Minor Magic III
-    {0,
-     SPELL_MAGIC_DART,
-     SPELL_BLINK,
-     SPELL_CONJURE_FLAME,
-     SPELL_SLOW,
-     SPELL_BOLT_OF_FIRE,
-     SPELL_MEPHITIC_CLOUD,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     },
-    // 3 - Book of Conjurations I
-    {0,
-     SPELL_MAGIC_DART,
-     SPELL_THROW_FLAME,
-     SPELL_MEPHITIC_CLOUD,
-     SPELL_CONJURE_FLAME,
-     SPELL_BOLT_OF_COLD,
-     SPELL_LIGHTNING_BOLT,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     },
-    // 4 - Book of Conjurations II
-    {0,
-     SPELL_MAGIC_DART,
-     SPELL_THROW_FROST,
-     SPELL_MEPHITIC_CLOUD,
-     SPELL_CONJURE_FLAME,
-     SPELL_BOLT_OF_FIRE,
-     SPELL_BOLT_OF_IRON,        //jmf: too much fire!
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     },
-
-#endif
-
     // 5 - Book of Flames
     {0,
      SPELL_FLAME_TONGUE,
@@ -178,7 +108,6 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_NO_SPELL,
      },
     // 6 - Book of Frost
-    // moved Sleep to Ice to make Ice magi more different from enchanters
     {0,
      SPELL_FREEZE,
      SPELL_THROW_FROST,
@@ -206,10 +135,10 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_EVAPORATE,
      SPELL_FIRE_BRAND,
      SPELL_SUMMON_ELEMENTAL,
+     SPELL_DELAYED_FIREBALL,
      SPELL_IGNITE_POISON,
      SPELL_RING_OF_FLAMES,
      SPELL_FIRE_STORM,
-     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
     // 9 - Book of Ice
@@ -380,7 +309,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
-    // 24 - Necronomicon
+    // 24 - Necronomicon -- Kikubaaqudgha special
     {0,
      SPELL_SYMBOL_OF_TORMENT,
      SPELL_CONTROL_UNDEAD,
@@ -418,7 +347,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
 #endif
      SPELL_NO_SPELL,
      },
-    // 27 - Book of Demonology
+    // 27 - Book of Demonology  -- Vehumet special
     {0,
      SPELL_ABJURATION_I,        //jmf: added
      SPELL_CALL_IMP,            //jmf: added
@@ -435,8 +364,8 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_SWIFTNESS,
      SPELL_REPEL_MISSILES,
      SPELL_LEVITATION,
-     SPELL_DISCHARGE,
      SPELL_MEPHITIC_CLOUD,
+     SPELL_DISCHARGE,
      SPELL_SUMMON_ELEMENTAL,
      SPELL_NO_SPELL,
      },
@@ -508,7 +437,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
-    // 33 - Book of Annihilations
+    // 33 - Book of Annihilations -- Vehumet special
     {0,
      SPELL_ISKENDERUNS_MYSTIC_BLAST,
      SPELL_POISONOUS_CLOUD,
@@ -550,7 +479,8 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_TAME_BEASTS,         //jmf: added
      SPELL_MASS_CONFUSION,
      SPELL_MASS_SLEEP,          //jmf: added
-     SPELL_CONTROL_UNDEAD,
+     // SPELL_CONTROL_UNDEAD,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
@@ -725,7 +655,8 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
     {0,
      SPELL_RECALL,
      SPELL_SUMMON_ELEMENTAL,
-     SPELL_SHADOW_CREATURES,
+     SPELL_SWARM,
+     // SPELL_SHADOW_CREATURES,
      SPELL_SUMMON_DEMON,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -811,12 +742,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      },
 };
 
-void spellbook_template(int sbook_type,
-                        FixedVector < int, SPELLBOOK_SIZE > &sbtemplate_pass)
-                        // was foo[10] {dlb}
+void spellbook_template( int sbook_type,
+                         FixedVector < int, SPELLBOOK_SIZE > &sbtemplate_pass )
 {
-    ASSERT(sbook_type >= 0);
-    ASSERT(sbook_type < NUMBER_SPELLBOOKS);
+    ASSERT( sbook_type >= 0 );
+    ASSERT( sbook_type < NUMBER_SPELLBOOKS );
 
     // no point doing anything if tome of destruction or a manual
     if (sbook_type == BOOK_DESTRUCTION || sbook_type == BOOK_MANUAL)
@@ -833,15 +763,36 @@ int which_spell_in_book(int sbook_type, int spl)
     FixedVector < int, SPELLBOOK_SIZE > wsib_pass;      // was 10 {dlb}
 
     spellbook_template(sbook_type, wsib_pass);
-    return wsib_pass[spl];
+
+    return (wsib_pass[ spl + 1 ]);
 }                               // end which_spell_in_book()
 
-unsigned char spellbook_contents(unsigned char type)
+unsigned char spellbook_contents( item_def &book, int action )
 {
     unsigned int i;
     int already = 0;
     FixedVector < int, SPELLBOOK_SIZE > spell_types;    // was 10 {dlb}
     int spelcount = 0;
+    char str_pass[80];
+
+    const int spell_levels = player_spell_levels();
+
+    // special case for staves
+    const int type = (book.base_type == OBJ_STAVES) ? book.sub_type + 40
+                                                    : book.sub_type;
+
+    bool spell_skills = false;
+
+    for (int i = SK_SPELLCASTING; i <= SK_POISON_MAGIC; i++)
+    {
+        if (you.skills[i])
+        {
+            spell_skills = true;
+            break;
+        }
+    }
+
+    set_ident_flags( book, ISFLAG_KNOW_TYPE );
 
 #ifdef DOS_TERM
     char buffer[4800];
@@ -849,17 +800,21 @@ unsigned char spellbook_contents(unsigned char type)
     window(1, 1, 80, 25);
 #endif
 
+    spellbook_template( type, spell_types );
+    item_name( book, DESC_CAP_THE, str_pass );
+
     clrscr();
-
-    spellbook_template(type, spell_types);
-
     textcolor(LIGHTGREY);
-    cprintf(" Spells                             Type                      Level" EOL);
+    cprintf( str_pass );
+    cprintf( EOL EOL " Spells                             Type                      Level" EOL );
 
     for (int j = 1; j < SPELLBOOK_SIZE; j++)
     {
         if (spell_types[j] == SPELL_NO_SPELL)
             continue;
+
+        const int level_diff = spell_difficulty( spell_types[j] );
+        const int levels_req = spell_levels_required( spell_types[j] );
 
         cprintf(" ");
         bool knowsSpell = false;
@@ -869,7 +824,31 @@ unsigned char spellbook_contents(unsigned char type)
             knowsSpell = (you.spells[i] == spell_types[j]);
         }
 
-        textcolor(knowsSpell ? DARKGREY : LIGHTGREY);
+        int colour = DARKGREY;
+        if (action == RBOOK_USE_STAFF)
+        {
+            if (you.experience_level >= level_diff
+                && you.magic_points >= level_diff)
+            {
+                colour = LIGHTGREY;
+            }
+        }
+        else
+        {
+            if (knowsSpell)
+                colour = LIGHTGREY;
+            else if (you.experience_level >= level_diff
+                        && spell_levels >= levels_req
+                        && spell_skills)
+            {
+                colour = LIGHTBLUE;
+            }
+        }
+
+        textcolor( colour );
+
+        // Old:
+        // textcolor(knowsSpell ? DARKGREY : LIGHTGREY);
         //              was: ? LIGHTGREY : LIGHTBLUE
 
         char strng[2];
@@ -887,22 +866,44 @@ unsigned char spellbook_contents(unsigned char type)
 
         for (i = 0; i <= SPTYP_LAST_EXPONENT; i++)
         {
-            if (spell_typematch(spell_types[j], (1 << i)))
+            if (spell_typematch( spell_types[j], 1 << i ))
             {
-                print_slash(already);
-                cprintf(spelltype_name(1 << i));
+                if (already)
+                    cprintf( "/" );
+                cprintf( spelltype_name( 1 << i ) );
                 already = 1;
             }
         }
 
-        gotoxy(65, wherey());
+        gotoxy( 65, wherey() );
 
         char sval[3];
 
-        itoa((int) spell_difficulty(spell_types[j]), sval, 10);
-        cprintf(sval);
-        cprintf(EOL);
+        itoa( level_diff, sval, 10 );
+        cprintf( sval );
+        cprintf( EOL );
         spelcount++;
+    }
+
+    textcolor(LIGHTGREY);
+    cprintf(EOL);
+
+    switch (action)
+    {
+    case RBOOK_USE_STAFF:
+        cprintf( "Select a spell to cast." EOL );
+        break;
+
+    case RBOOK_MEMORIZE:
+        cprintf( "Select a spell to memorise." EOL );
+        break;
+
+    case RBOOK_READ_SPELL:
+        cprintf( "Select a spell to read its description." EOL );
+        break;
+
+    default:
+        break;
     }
 
     unsigned char keyn = getch();
@@ -915,7 +916,7 @@ unsigned char spellbook_contents(unsigned char type)
     window(1, 18, 80, 25);
 #endif
 
-    return keyn;        // try to figure out that for which this is used {dlb}
+    return (keyn);     // try to figure out that for which this is used {dlb}
 }
 
 //jmf: was in shopping.cc
@@ -1012,136 +1013,89 @@ char book_rarity(unsigned char which_book)
     }
 }                               // end book_rarity()
 
-bool learn_a_spell(unsigned int splbook, int bitty)
+bool is_valid_spell_in_book( unsigned int splbook, int spell )
 {
-    FixedVector < int, SPELLBOOK_SIZE > spells;
-    spellbook_template(you.inv_type[splbook], spells);
+    FixedVector< int, SPELLBOOK_SIZE >  spells;
 
-    if (spells[bitty] != SPELL_NO_SPELL)
-    {
-        learned = 1 + bitty;
+    spellbook_template( you.inv[ splbook ].sub_type, spells );
+
+    if (spells[ spell ] != SPELL_NO_SPELL)
         return true;
-    }
 
     return false;
-}                               // end learn_a_spell()
+}                               // end is_valid_spell_in_book()
 
-static bool which_spellbook(void)
+static bool which_spellbook( int &book, int &spell )
 {
-    unsigned char thing = 0;
-    unsigned char keyin;
-    int item, index;
+    const int avail_levels = player_spell_levels();
 
-    if (player_spell_levels() < 1)
+    // Knowing delayed fireball will allow Fireball to be learned for free -bwr
+    if (avail_levels < 1 && !player_has_spell(SPELL_DELAYED_FIREBALL))
     {
         mpr("You can't memorise any more spells yet.");
-        return false;
+        return (false);
     }
     else if (inv_count() < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
-        return false;
+        return (false);
     }
 
-  query:
-    strcpy(info, "You can memorise ");
-    itoa(player_spell_levels(), st_prn, 10);
-    strcat(info, st_prn);
-    strcat(info, " more level");
+    snprintf( info, INFO_SIZE, "You can memorise %d more level%s of spells.",
+             avail_levels, (avail_levels > 1) ? "s" : "" );
 
-    if (!(st_prn[0] == '1' && st_prn[1] == 0))
-        strcat(info, "s");
+    mpr( info );
 
-    strcat(info, " of spells");
-    strcat(info, ".");
-    mpr(info);
-
-    mpr("Memorise from which spellbook?", MSGCH_PROMPT);
-
-    keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
+    book = prompt_invent_item( "Memorise from which spellbook?", OBJ_BOOKS );
+    if (book == PROMPT_ABORT)
     {
-        if (keyin == '?')
-            thing = get_invent(OBJ_BOOKS);
-
-        if (keyin == '*')
-            thing = get_invent(-1);
-
-        if ((thing >= 'A' && thing <= 'Z') || (thing >= 'a' && thing <= 'z'))
-        {
-            keyin = thing;
-        }
-        else
-        {
-            mesclr();
-            goto query;
-        }
+        canned_msg( MSG_OK );
+        return (false);
     }
 
-    item = (int) keyin;
-
-    if (item < 'A' || (item > 'Z' && item < 'a') || item > 'z')
-    {
-        mpr("You don't have any such object.");
-        return false;
-    }
-
-    index = letter_to_index( item );
-
-    if (you.inv_quantity[ index ] == 0)
-    {
-        mpr("You haven't any such object.");
-        return false;
-    }
-
-    if (you.inv_class[ index ] != OBJ_BOOKS
-        || you.inv_type[ index ] == BOOK_MANUAL)
+    if (you.inv[book].base_type != OBJ_BOOKS
+        || you.inv[book].sub_type == BOOK_MANUAL)
     {
         mpr("That isn't a spellbook!");
-        return false;
+        return (false);
     }
 
-    if (you.inv_type[ index ] == BOOK_DESTRUCTION)
+    if (you.inv[book].sub_type == BOOK_DESTRUCTION)
     {
-        tome_of_power( index );
-        return false;
+        tome_of_power( book );
+        return (false);
     }
 
-    spell_container =  index ;
-    read_book( index );
+    spell = read_book( you.inv[book], RBOOK_MEMORIZE );
     clrscr();
 
-    return true;
+    return (true);
 }                               // end which_spellbook()
 
-void read_book(unsigned int book_read)
+unsigned char read_book( item_def &book, int action )
 {
     unsigned char key2 = 0;
 
     // remember that this function is called from staff spells as well:
-    key2 = spellbook_contents( (you.inv_class[book_read] == OBJ_STAVES)
-                                                ? 40 + you.inv_type[book_read]
-                                                : you.inv_type[book_read] );
+    key2 = spellbook_contents( book, action );
 
-    if (you.inv_class[book_read] == OBJ_BOOKS)
+    if (book.base_type == OBJ_BOOKS)
     {
-        you.had_item[you.inv_type[book_read]] = 1;
+        you.had_book[ book.sub_type ] = 1;
 
-        if (you.inv_type[book_read] == BOOK_MINOR_MAGIC_I
-            || you.inv_type[book_read] == BOOK_MINOR_MAGIC_II
-            || you.inv_type[book_read] == BOOK_MINOR_MAGIC_III)
+        if ( book.sub_type == BOOK_MINOR_MAGIC_I
+            || book.sub_type == BOOK_MINOR_MAGIC_II
+            || book.sub_type == BOOK_MINOR_MAGIC_III)
         {
-            you.had_item[BOOK_MINOR_MAGIC_I] = 1;
-            you.had_item[BOOK_MINOR_MAGIC_II] = 1;
-            you.had_item[BOOK_MINOR_MAGIC_III] = 1;
+            you.had_book[BOOK_MINOR_MAGIC_I] = 1;
+            you.had_book[BOOK_MINOR_MAGIC_II] = 1;
+            you.had_book[BOOK_MINOR_MAGIC_III] = 1;
         }
-
-        else if (you.inv_type[book_read] == BOOK_CONJURATIONS_I
-                 || you.inv_type[book_read] == BOOK_CONJURATIONS_II)
+        else if (book.sub_type == BOOK_CONJURATIONS_I
+             || book.sub_type == BOOK_CONJURATIONS_II)
         {
-            you.had_item[BOOK_CONJURATIONS_I] = 1;
-            you.had_item[BOOK_CONJURATIONS_II] = 1;
+            you.had_book[BOOK_CONJURATIONS_I] = 1;
+            you.had_book[BOOK_CONJURATIONS_II] = 1;
         }
     }
 
@@ -1151,16 +1105,74 @@ void read_book(unsigned int book_read)
        memorise as well */
 
     you.turn_is_over = 1;
-    you.inv_ident[book_read] = 1;
-    book_thing = key2;
+    set_ident_flags( book, ISFLAG_KNOW_TYPE );
+
+    return (key2);
 }                               // end read_book()
 
-void which_spell(void)
+// recoded to answer whether an UNDEAD_STATE is
+// barred from a particular spell passed to the
+// function - note that the function can be expanded
+// to prevent memorisation of certain spells by
+// the living by setting up an US_ALIVE case returning
+// a value of false for a set of spells ... might be
+// an idea worth further consideration - 12mar2000 {dlb}
+static bool undead_cannot_memorise(unsigned char spell, unsigned char being)
+{
+    switch (being)
+    {
+    case US_HUNGRY_DEAD:
+        switch (spell)
+        {
+        //case SPELL_REGENERATION:
+        case SPELL_BORGNJORS_REVIVIFICATION:
+        case SPELL_CURE_POISON_II:
+        case SPELL_DEATHS_DOOR:
+        case SPELL_NECROMUTATION:
+        case SPELL_RESIST_POISON:
+        case SPELL_SYMBOL_OF_TORMENT:
+        case SPELL_TAME_BEASTS:
+            return true;
+        }
+        break;
+
+    case US_UNDEAD:
+        switch (spell)
+        {
+        case SPELL_AIR_WALK:
+        case SPELL_ALTER_SELF:
+        case SPELL_BLADE_HANDS:
+        case SPELL_BORGNJORS_REVIVIFICATION:
+        case SPELL_CURE_POISON_II:
+        case SPELL_DEATHS_DOOR:
+        case SPELL_DRAGON_FORM:
+        case SPELL_GLAMOUR:
+        case SPELL_ICE_FORM:
+        case SPELL_INTOXICATE:
+        case SPELL_NECROMUTATION:
+        case SPELL_PASSWALL:
+        case SPELL_REGENERATION:
+        case SPELL_RESIST_POISON:
+        case SPELL_SPIDER_FORM:
+        case SPELL_STATUE_FORM:
+        case SPELL_SUMMON_HORRIBLE_THINGS:
+        case SPELL_SYMBOL_OF_TORMENT:
+        case SPELL_TAME_BEASTS:
+            return true;
+        }
+        break;
+    }
+
+    return false;
+}                               // end undead_cannot_memorise()
+
+void learn_spell(void)
 {
     int chance = 0;
     int levels_needed = 0;
-    int letter, index;
     unsigned char keyin;
+    int book, spell;
+    int index;
 
     int i;
     int j = 0;
@@ -1177,12 +1189,10 @@ void which_spell(void)
         return;
     }
 
-    if (!which_spellbook())
+    if (!which_spellbook( book, spell ))
         return;
 
-    letter = (int) book_thing;
-
-    if (letter < 'A' || (letter > 'Z' && letter < 'a') || letter > 'z')
+    if (spell < 'A' || (spell > 'Z' && spell < 'a') || spell > 'z')
     {
       whatt:
         redraw_screen();
@@ -1190,21 +1200,19 @@ void which_spell(void)
         return;
     }
 
-    index = letter_to_index( letter );
+    index = letter_to_index( spell );
 
     if (index > SPELLBOOK_SIZE)
         goto whatt;
 
-    if (!learn_a_spell(spell_container, index))
+    if (!is_valid_spell_in_book( book, index ))
         goto whatt;
 
-    unsigned int specspell = which_spell_in_book( you.inv_type[spell_container],
-                                                  learned );
+    unsigned int specspell = which_spell_in_book(you.inv[book].sub_type,index);
 
     if (specspell == SPELL_NO_SPELL)
         goto whatt;
 
-    // if changed, must also change for priest in level_change.
     // You can always memorise selective amnesia:
     if (you.spell_no == 21 && specspell != SPELL_SELECTIVE_AMNESIA)
     {
@@ -1235,14 +1243,12 @@ void which_spell(void)
         }
     }
 
-    levels_needed = spell_difficulty(specspell);
+    levels_needed = spell_levels_required( specspell );
 
     if (player_spell_levels() < levels_needed)
     {
         redraw_screen();
         mpr("You can't memorise that many levels of magic yet!");
-        //sprintf( info, "levels: %d  needed: %d  spec_spells: %d", player_spell_levels(), levels_needed, specspell);
-        //mpr(info);
         you.turn_is_over = 1;
         return;
     }
@@ -1255,9 +1261,9 @@ void which_spell(void)
         return;
     }
 
-    chance = spell_fail(specspell);
-
     redraw_screen();
+
+    chance = spell_fail(specspell);
 
     strcpy(info, "This spell is ");
 
@@ -1325,84 +1331,35 @@ void which_spell(void)
         mpr("You fail to memorise the spell.");
         you.turn_is_over = 1;
 
-        if (you.inv_type[spell_container] == BOOK_NECRONOMICON)
+        if (you.inv[ book ].sub_type == BOOK_NECRONOMICON)
         {
             mpr("The pages of the Necronomicon glow with a dark malevolence...");
             miscast_effect(SPTYP_NECROMANCY, 8, random2avg(88, 3), 100);
         }
-        else if (you.inv_type[spell_container] == BOOK_DEMONOLOGY)
+        else if (you.inv[ book ].sub_type == BOOK_DEMONOLOGY)
         {
             mpr("This book does not appreciate being disturbed by one of your ineptitude!");
             miscast_effect(SPTYP_SUMMONING, 7, random2avg(88, 3), 100);
         }
-        else if (you.inv_type[spell_container] == BOOK_ANNIHILATIONS)
+        else if (you.inv[ book ].sub_type == BOOK_ANNIHILATIONS)
         {
             mpr("This book does not appreciate being disturbed by one of your ineptitude!");
             miscast_effect(SPTYP_CONJURATION, 8, random2avg(88, 3), 100);
         }
 
-#ifdef WIZARD
-        if (!yesno("Memorize anyway?"))
-#endif
+#if WIZARD
+        if (you.wizard && !yesno("Memorize anyway?"))
             return;
+#else
+        return;
+#endif
     }
 
-    for (i = 0; i < 25; i++)
-    {
-        if (you.spells[i] == SPELL_NO_SPELL)
-            break;
-    }
-
-    you.spells[i] = specspell;
-
-    //you.spell_levels -= levels_needed;
-    you.spell_no++;
-
-    you.delay_t = spell_difficulty(you.spells[i]);
-    you.delay_doing = 3;
+    start_delay( DELAY_MEMORIZE, spell_difficulty( specspell ), specspell );
 
     you.turn_is_over = 1;
-
     redraw_screen();
 
     // is learning as bad as casting, then? {dlb}
     naughty(NAUGHTY_SPELLCASTING, 2 + random2(5));
 }                               // end which_spell()
-
-char *spelltype_name(unsigned int which_spelltype)
-{
-    static char bug_string[80];
-
-    switch (which_spelltype)
-    {
-    case SPTYP_CONJURATION:
-        return "Conjuration";
-    case SPTYP_ENCHANTMENT:
-        return "Enchantment";
-    case SPTYP_FIRE:
-        return "Fire";
-    case SPTYP_ICE:
-        return "Ice";
-    case SPTYP_TRANSMIGRATION:
-        return "Transmigration";
-    case SPTYP_NECROMANCY:
-        return "Necromancy";
-    case SPTYP_HOLY:
-        return "Holy";
-    case SPTYP_SUMMONING:
-        return "Summoning";
-    case SPTYP_DIVINATION:
-        return "Divination";
-    case SPTYP_TRANSLOCATION:
-        return "Translocation";
-    case SPTYP_POISON:
-        return "Poison";
-    case SPTYP_EARTH:
-        return "Earth";
-    case SPTYP_AIR:
-        return "Air";
-    default:
-        sprintf( bug_string, "invalid(%d)", which_spelltype );
-        return bug_string;
-    }
-}                               // end spelltype_name()

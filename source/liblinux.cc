@@ -66,7 +66,12 @@ static struct ltchars game_term;
 #include <signal.h>
 #endif
 
-#include <curses.h>
+// Its best if curses comes at the end (name conflicts with Solaris). -- bwr
+#ifndef CURSES_INCLUDE_FILE
+    #include <curses.h>
+#else
+    #include CURSES_INCLUDE_FILE
+#endif
 
 // Character set variable
 int character_set = CHARACTER_SET;
@@ -77,6 +82,20 @@ short BG_COL = BLACK;
 
 // a lookup table to convert keypresses to command enums
 int key_to_command_table[KEY_MAX];
+
+static unsigned int convert_to_curses_attr( int chattr )
+{
+    switch (chattr)
+    {
+    case CHATTR_STANDOUT:       return (A_STANDOUT);
+    case CHATTR_BOLD:           return (A_BOLD);
+    case CHATTR_BLINK:          return (A_BLINK);
+    case CHATTR_UNDERLINE:      return (A_UNDERLINE);
+    case CHATTR_REVERSE:        return (A_REVERSE);
+    case CHATTR_DIM:            return (A_DIM);
+    default:                    return (A_NORMAL);
+    }
+}
 
 static inline short macro_colour( short col )
 {
@@ -363,58 +382,7 @@ void init_key_to_command()
 
 int key_to_command(int keyin)
 {
-    return key_to_command_table[keyin];
-}
-
-
-// cdl -- This routine is dead
-int translate_keypad(int keyin)
-{
-    int ret;
-
-    switch (keyin)
-    {
-    case KEY_A1:
-        ret = '7';
-        break;
-
-    case KEY_A3:
-        ret = '9';
-        break;
-
-    case KEY_B2:
-        ret = '5';
-        break;
-
-    case KEY_C1:
-        ret = '1';
-        break;
-
-    case KEY_C3:
-        ret = '3';
-        break;
-
-    case KEY_UP:
-        ret = '8';
-        break;
-
-    case KEY_DOWN:
-        ret = '2';
-        break;
-
-    case KEY_RIGHT:
-        ret = '6';
-        break;
-
-    case KEY_LEFT:
-        ret = '4';
-        break;
-
-    default:
-        ret = keyin;
-    }
-
-    return (ret);
+    return (key_to_command_table[keyin]);
 }
 
 void lincurses_startup( void )
@@ -451,7 +419,6 @@ void lincurses_startup( void )
 
 #ifndef SOLARIS
     // These can cause some display problems under Solaris
-    keypad(stdscr, TRUE);
     scrollok(stdscr, TRUE);
 #endif
 }
@@ -574,11 +541,38 @@ int window(int x1, int y1, int x2, int y2)
     return (refresh());
 }
 
+// These next four are front functions so that we can reduce
+// the amount of curses special code that occurs outside this
+// this file.  This is good, since there are some issues with
+// name space collisions between curses macros and the standard
+// C++ string class.  -- bwr
+void update_screen(void)
+{
+    refresh();
+}
+
+void clear_to_end_of_line(void)
+{
+    textcolor( LIGHTGREY );
+    clrtoeol();
+}
+
+void clear_to_end_of_screen(void)
+{
+    textcolor( LIGHTGREY );
+    clrtobot();
+}
+
+int get_number_of_lines_from_curses(void)
+{
+    return (LINES);
+}
 
 int clrscr()
 {
     int retval;
 
+    textcolor( LIGHTGREY );
     retval = clear();
     refresh();
     return (retval);
@@ -599,11 +593,24 @@ void textcolor(int col)
     fg = translatecolor( macro_colour( FG_COL ) );
     bg = translatecolor( (BG_COL == BLACK) ? Options.background : BG_COL );
 
+    // calculate which curses flags we need...
     unsigned int flags = 0;
 
 #ifdef USE_COLOUR_OPTS
-    if (col & COLFLAG_FRIENDLY_MONSTER)
-        flags |= Options.friend_brand;
+    if ((col & COLFLAG_FRIENDLY_MONSTER)
+        && Options.friend_brand != CHATTR_NORMAL)
+    {
+        flags |= convert_to_curses_attr( Options.friend_brand );
+
+        // If we can't do a dark grey friend brand, then we'll
+        // switch the colour to light grey.
+        if (Options.no_dark_brand
+                && fg == (COLOR_BLACK | COLFLAG_CURSES_BRIGHTEN)
+                && bg == 0)
+        {
+            fg = COLOR_WHITE;
+        }
+    }
 #endif
 
     // curses typically uses A_BOLD to give bright foreground colour,
@@ -612,7 +619,7 @@ void textcolor(int col)
         flags |= A_BOLD;
 
     // curses typically uses A_BLINK to give bright background colour,
-    // but various termcaps may disagree
+    // but various termcaps may disagree (in whole or in part)
     if (bg & COLFLAG_CURSES_BRIGHTEN)
         flags |= A_BLINK;
 
@@ -638,8 +645,20 @@ void textbackground(int col)
     unsigned int flags = 0;
 
 #ifdef USE_COLOUR_OPTS
-    if (col & COLFLAG_FRIENDLY_MONSTER)
-        flags |= A_STANDOUT;
+    if ((col & COLFLAG_FRIENDLY_MONSTER)
+        && Options.friend_brand != CHATTR_NORMAL)
+    {
+        flags |= convert_to_curses_attr( Options.friend_brand );
+
+        // If we can't do a dark grey friend brand, then we'll
+        // switch the colour to light grey.
+        if (Options.no_dark_brand
+                && fg == (COLOR_BLACK | COLFLAG_CURSES_BRIGHTEN)
+                && bg == 0)
+        {
+            fg = COLOR_WHITE;
+        }
+    }
 #endif
 
     // curses typically uses A_BOLD to give bright foreground colour,
@@ -693,21 +712,11 @@ int stricmp(char *str1, char *str2)
 }
 
 
-void delay(long time)
+void delay( unsigned long time )
 {
-#ifndef USE_SELECT_FOR_DELAY
-    usleep(time * 1000);
-#else
-    struct timeval timer;
-
-    time *= 1000;
-
-    timer.tv_sec = (time / 10000000L);
-    timer.tv_usec = (time % 10000000L);
-
-    select(0, NULL, NULL, NULL, &timer);
-#endif
+    usleep( time * 1000 );
 }
+
 
 /*
    Note: kbhit now in macro.cc

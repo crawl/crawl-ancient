@@ -10,8 +10,10 @@
  */
 
 
-#ifndef SPLUTIL_H
-#define SPLUTIL_H
+#ifndef SPL_UTIL_H
+#define SPL_UTIL_H
+
+#include "enum.h"    // just for NUM_SPELL_TYPES {dlb}
 
 struct playerspell
 {
@@ -35,6 +37,8 @@ int spell_mana(int which_spell);
 // *              spells0 - spells3
 int spell_difficulty(int which_spell);
 
+int spell_levels_required(int which_spell);
+
 // * called from: chardump - spell - spl-book - spells0
 bool spell_typematch(int which_spell, unsigned int which_discipline);
 unsigned int spell_type( int which_spell ); //jmf: simplification of above
@@ -44,5 +48,31 @@ int count_bits( unsigned int bits );
 const char *spell_title(int which_spell);
 
 //int spell_restriction(int which_spell, int which_restriction);
+
+int apply_area_visible(int (*func) (int, int, int, int), int power);
+
+int apply_area_square(int (*func) (int, int, int, int),
+                              int cx, int cy, int power);
+
+int apply_area_around_square( int (*func) (int, int, int, int),
+                              int targ_x, int targ_y, int power );
+
+int apply_random_around_square( int (*func) (int, int, int, int),
+                                int targ_x, int targ_y, bool hole_in_middle,
+                                int power, int max_targs );
+
+int apply_one_neighbouring_square(int (*func) (int, int, int, int),
+                                          int power);
+
+int apply_area_within_radius(int (*func) (int, int, int, int),
+                              int x, int y, int pow, int radius, int ctype);
+
+void apply_area_cloud(int (*func) (int, int, int, int), int x, int y,
+                      int pow, int number, int ctype);
+
+char *spelltype_name(unsigned int which_spelltype);
+
+int spell_type2skill (unsigned int which_spelltype);
+
 
 #endif

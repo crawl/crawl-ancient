@@ -24,8 +24,6 @@
 #include "stuff.h"
 #include "wpn-misc.h"
 
-#define RA_PROPERTIES 30
-
 /*
    The initial generation of a randart is very simple - it occurs
    in dungeon.cc and consists of giving it a few random things - plus & plus2
@@ -626,23 +624,22 @@ char *rand_armour_names[] = {
 
 struct unrandart_entry
 {
-    char *name /*[32] */ PACKED;        // true name of unrandart (max 31 chars)
-    // un-id'd name of unrandart (max 31 chars)
-    char *unid_name /*[32] */ PACKED;
+    char *name;        // true name of unrandart (max 31 chars)
+    char *unid_name;   // un-id'd name of unrandart (max 31 chars)
 
-    unsigned char ura_cl PACKED;        // class of ura
-    unsigned char ura_ty PACKED;        // type of ura
-    unsigned char ura_pl PACKED;        // plus of ura
-    unsigned char ura_pl2 PACKED;       // plus2 of ura
-    unsigned char ura_col PACKED;       // colour of ura
-    short prpty[RA_PROPERTIES] PACKED;
+    int ura_cl;        // class of ura
+    int ura_ty;        // type of ura
+    int ura_pl;        // plus of ura
+    int ura_pl2;       // plus2 of ura
+    int ura_col;       // colour of ura
+    short prpty[RA_PROPERTIES];
 
     // special description added to 'v' command output (max 31 chars)
-    char *spec_descrip1 /*[32] */ PACKED;
+    char *spec_descrip1;
     // special description added to 'v' command output (max 31 chars)
-    char *spec_descrip2 /*[32] */ PACKED;
+    char *spec_descrip2;
     // special description added to 'v' command output (max 31 chars)
-    char *spec_descrip3 /*[32] */ PACKED;
+    char *spec_descrip3;
 };
 
 #ifdef __IBMCPP__
@@ -653,24 +650,19 @@ static struct unrandart_entry unranddata[] = {
 #include "unrand.h"
 };
 
-#define sura seekunrandart(aclass, atype, aplus, aplus2)
-
 char *art_n;
 static FixedVector < char, NO_UNRANDARTS > unrandart_exist;
 
-static int random5(unsigned int randmax);
-static struct unrandart_entry *seekunrandart(unsigned char aclass,
-                                             unsigned char atype,
-                                             unsigned char aplus,
-                                             unsigned char aplus2);
+static int random5( int randmax );
+static struct unrandart_entry *seekunrandart( const item_def &item );
 
-static int random5(unsigned int randmax)
+static int random5( int randmax )
 {
-    if (randmax == 0)
+    if (randmax <= 0)
         return 0;
 
     //return rand() % randmax;
-    return (int) rand() / (RAND_MAX / randmax + 1);
+    return ((int) rand() / (RAND_MAX / randmax + 1));
     // must use random (not rand) for the predictable-results-from-known
     //  -srandom-seeds thing to work.
 }
@@ -685,31 +677,115 @@ char does_unrandart_exist(int whun)
     return unrandart_exist[whun];
 }
 
-int randart_wpn_properties(unsigned char aclass, unsigned char atype,
-                           unsigned char adam, unsigned char aplus,
-                           unsigned char aplus2, unsigned char acol,
-                           char prop)
+// returns true is item is a pure randart or an unrandart
+bool is_random_artefact( const item_def &item )
 {
-    if ((aclass == OBJ_JEWELLERY && adam == 201)
-        || (aclass != OBJ_JEWELLERY && adam == 25))
+    return (item.flags & ISFLAG_ARTEFACT_MASK);
+}
+
+// returns true if item in an unrandart
+bool is_unrandom_artefact( const item_def &item )
+{
+    return (item.flags & ISFLAG_UNRANDART);
+}
+
+// returns true if item is one of the origional fixed artefacts
+bool is_fixed_artefact( const item_def &item )
+{
+    if (!is_random_artefact( item )
+        && item.base_type == OBJ_WEAPONS
+        && item.special >= SPWPN_SINGING_SWORD)
     {
-        struct unrandart_entry *search_unrandarts = sura;
-        return search_unrandarts->prpty[prop];
+        return (true);
     }
 
-    long globby = aclass * adam + acol + atype * (aplus % 100) + aplus2 * 100;
-    long randstore = rand();
-    FixedVector < char, RA_PROPERTIES > proprt;
-    int i = 0;
-    int power_level = ((aplus % 100) - 50) / 3 + (aplus2 - 50) / 3;
+    return (false);
+}
 
-    srand(globby);
+int get_unique_item_status( int base_type, int art )
+{
+    // Note: for weapons "art" is in item.special,
+    //       for orbs it's the sub_type.
+    if (base_type == OBJ_WEAPONS)
+    {
+        if (art >= SPWPN_SINGING_SWORD && art <= SPWPN_SWORD_OF_ZONGULDROK)
+            return (you.unique_items[ art - SPWPN_SINGING_SWORD ]);
+        else if (art >= SPWPN_SWORD_OF_POWER && art <= SPWPN_STAFF_OF_WUCAD_MU)
+            return (you.unique_items[ art - SPWPN_SWORD_OF_POWER + 24 ]);
+    }
+    else if (base_type == OBJ_ORBS)
+    {
+        if (art >= 4 && art <= 19)
+            return (you.unique_items[ art + 3 ]);
+
+    }
+
+    return (UNIQ_NOT_EXISTS);
+}
+
+void set_unique_item_status( int base_type, int art, int status )
+{
+    // Note: for weapons "art" is in item.special,
+    //       for orbs it's the sub_type.
+    if (base_type == OBJ_WEAPONS)
+    {
+        if (art >= SPWPN_SINGING_SWORD && art <= SPWPN_SWORD_OF_ZONGULDROK)
+            you.unique_items[ art - SPWPN_SINGING_SWORD ] = status;
+        else if (art >= SPWPN_SWORD_OF_POWER && art <= SPWPN_STAFF_OF_WUCAD_MU)
+            you.unique_items[ art - SPWPN_SWORD_OF_POWER + 24 ] = status;
+    }
+    else if (base_type == OBJ_ORBS)
+    {
+        if (art >= 4 && art <= 19)
+            you.unique_items[ art + 3 ] = status;
+
+    }
+}
+
+// XXX: This function attempts to take the new item struct format and
+// calculate the same seed as the original.  This is important
+// if we want to make the randarts compatible between versions.
+// Hopefully, we'll eventually have a system a little less painful. -- bwr
+//
+// The complexity of this function comes from the mess that the
+// old stuctures used to have.
+static long calc_seed( const item_def &item )
+{
+    return (item.special & RANDART_SEED_MASK);
+}
+
+void randart_wpn_properties( const item_def &item,
+                             FixedVector< char, RA_PROPERTIES > &proprt )
+{
+    ASSERT( is_random_artefact( item ) );
+
+    const int aclass = item.base_type;
+    const int atype  = item.sub_type;
+
+    int i = 0;
+    int power_level;
+
+    if (is_unrandom_artefact( item ))
+    {
+        struct unrandart_entry *unrand = seekunrandart( item );
+
+        for (i = 0; i < RA_PROPERTIES; i++)
+            proprt[i] = unrand->prpty[i];
+
+        return;
+    }
+
+    // long seed = aclass * adam + atype * (aplus % 100) + aplus2 * 100;
+    long seed = calc_seed( item );
+    long randstore = rand();
+    srand( seed );
 
     if (aclass == OBJ_ARMOUR)
-        power_level = ((aplus % 100) - 50) / 2 + 2;
-
-    if (aclass == OBJ_JEWELLERY)
+        power_level = item.plus / 2 + 2;
+    else if (aclass == OBJ_JEWELLERY)
         power_level = 1 + random5(3) + random5(2);
+    else // OBJ_WEAPON
+        power_level = item.plus / 3 + item.plus2 / 3;
 
     if (power_level < 0)
         power_level = 0;
@@ -747,6 +823,10 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype,
         {
             proprt[RAP_BRAND] = SPWPN_NORMAL;
         }
+
+        // is this happens, things might get broken -- bwr
+        if (proprt[RAP_BRAND] == SPWPN_SPEED && atype == WPN_QUICK_BLADE)
+            proprt[RAP_BRAND] = SPWPN_NORMAL;
 
         if (launches_things(atype))
         {
@@ -1089,32 +1169,30 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype,
    27 - +to-dam (no wpns)
  */
 
-  finished_curses:
+finished_curses:
     srand(randstore);
 
-    return proprt[prop];
 }
 
-int inv_randart_wpn_properties( int index, unsigned char acol, char prop)
+int randart_wpn_property( const item_def &item, char prop )
 {
-    return (randart_wpn_properties( you.inv_class[ index ],
-                                    you.inv_type[ index ],
-                                    you.inv_dam[ index ],
-                                    you.inv_plus[ index ],
-                                    you.inv_plus2[ index ],
-                                    acol, prop ));
+    FixedVector< char, RA_PROPERTIES > proprt;
+
+    randart_wpn_properties( item, proprt );
+
+    return (proprt[prop]);
 }
 
-char *randart_name(unsigned char aclass, unsigned char atype,
-                   unsigned char adam, unsigned char aplus,
-                   unsigned char aplus2, unsigned char ident_lev)
+char *randart_name( const item_def &item )
 {
-    if (adam == 25)
+    ASSERT( item.base_type == OBJ_WEAPONS );
+
+    if (is_unrandom_artefact( item ))
     {
-        struct unrandart_entry *search_unrandarts = sura;
+        struct unrandart_entry *unrand = seekunrandart( item );
 
-        return ((ident_lev == 0) ? search_unrandarts->unid_name
-                                 : search_unrandarts->name);
+        return (item_ident(item, ISFLAG_KNOW_TYPE) ? unrand->name
+                                                   : unrand->unid_name);
     }
 
     free(art_n);
@@ -1125,12 +1203,12 @@ char *randart_name(unsigned char aclass, unsigned char atype,
 
     strcpy(art_n, "");
 
-    long globby = aclass + adam * (aplus % 100) + atype * aplus2;
+    // long seed = aclass + adam * (aplus % 100) + atype * aplus2;
+    long seed = calc_seed( item );
     long randstore = rand();
+    srand( seed );
 
-    srand(globby);
-
-    if (ident_lev == 0)
+    if (item_not_ident( item, ISFLAG_KNOW_TYPE ))
     {
         switch (random5(21))
         {
@@ -1159,7 +1237,7 @@ char *randart_name(unsigned char aclass, unsigned char atype,
 
         char st_p3[80];
 
-        standard_name_weap(atype, st_p3);
+        standard_name_weap( item.sub_type, st_p3 );
         strcat(art_n, st_p3);
         srand(randstore);
         return art_n;
@@ -1171,7 +1249,7 @@ char *randart_name(unsigned char aclass, unsigned char atype,
     {
         char st_p[80];
 
-        standard_name_weap(atype, st_p);
+        standard_name_weap( item.sub_type, st_p );
         strcat(art_n, st_p);
         strcat(art_n, rand_wpn_names[random5(390)]);
     }
@@ -1180,7 +1258,7 @@ char *randart_name(unsigned char aclass, unsigned char atype,
         char st_p2[80];
 
         make_name(random5(250), random5(250), random5(250), 3, st_p);
-        standard_name_weap(atype, st_p2);
+        standard_name_weap( item.sub_type, st_p2 );
         strcat(art_n, st_p2);
 
         if (random5(3) == 0)
@@ -1201,18 +1279,16 @@ char *randart_name(unsigned char aclass, unsigned char atype,
     return art_n;
 }
 
-char *randart_armour_name(unsigned char aclass, unsigned char atype,
-                          unsigned char adam, unsigned char aplus,
-                          unsigned char aplus2, unsigned char ident_lev)
+char *randart_armour_name( const item_def &item )
 {
-    if (adam == 25)
-    {
-        struct unrandart_entry *search_unrandarts = sura;
+    ASSERT( item.base_type == OBJ_ARMOUR );
 
-        if (ident_lev == 0)
-            return search_unrandarts->unid_name;
-        else
-            return search_unrandarts->name;
+    if (is_unrandom_artefact( item ))
+    {
+        struct unrandart_entry *unrand = seekunrandart( item );
+
+        return (item_ident(item, ISFLAG_KNOW_TYPE) ? unrand->name
+                                                   : unrand->unid_name);
     }
 
     free(art_n);
@@ -1225,12 +1301,12 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype,
 
     strcpy(art_n, "");
 
-    long globby = aclass + adam * (aplus % 100) + atype * aplus2;
+    // long seed = aclass + adam * (aplus % 100) + atype * aplus2;
+    long seed = calc_seed( item );
     long randstore = rand();
+    srand( seed );
 
-    srand(globby);
-
-    if (ident_lev == 0)
+    if (item_not_ident( item, ISFLAG_KNOW_TYPE ))
     {
         switch (random5(21))
         {
@@ -1258,7 +1334,7 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype,
         }
         char st_p3[80];
 
-        standard_name_armour(atype, aplus2, st_p3);
+        standard_name_armour(item, st_p3);
         strcat(art_n, st_p3);
         srand(randstore);
         return art_n;
@@ -1270,7 +1346,7 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype,
     {
         char st_p[80];
 
-        standard_name_armour(atype, aplus2, st_p);
+        standard_name_armour(item, st_p);
         strcat(art_n, st_p);
         strcat(art_n, rand_armour_names[random5(71)]);
     }
@@ -1279,7 +1355,7 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype,
         char st_p2[80];
 
         make_name(random5(250), random5(250), random5(250), 3, st_p);
-        standard_name_armour(atype, aplus2, st_p2);
+        standard_name_armour(item, st_p2);
         strcat(art_n, st_p2);
         if (random5(3) == 0)
         {
@@ -1299,18 +1375,18 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype,
     return art_n;
 }
 
-char *randart_ring_name(unsigned char aclass, unsigned char atype,
-                        unsigned char adam, unsigned char aplus,
-                        unsigned char aplus2, unsigned char ident_lev)
+char *randart_ring_name( const item_def &item )
 {
+    ASSERT( item.base_type == OBJ_JEWELLERY );
+
     int temp_rand = 0;          // probability determination {dlb}
 
-    if (adam == 201)
+    if (is_unrandom_artefact( item ))
     {
-        struct unrandart_entry *search_unrandarts = sura;
+        struct unrandart_entry *unrand = seekunrandart( item );
 
-        return ((ident_lev == 0) ? search_unrandarts->unid_name
-                                 : search_unrandarts->name);
+        return (item_ident(item, ISFLAG_KNOW_TYPE) ? unrand->name
+                                                   : unrand->unid_name);
     }
 
     char st_p[80];
@@ -1323,12 +1399,12 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype,
 
     strcpy(art_n, "");
 
-    long globby = aclass + adam * (aplus % 100) + atype * aplus2;
+    // long seed = aclass + adam * (aplus % 100) + atype * aplus2;
+    long seed = calc_seed( item );
     long randstore = rand();
+    srand( seed );
 
-    srand(globby);
-
-    if (ident_lev == 0)
+    if (item_not_ident( item, ISFLAG_KNOW_TYPE ))
     {
         temp_rand = random5(21);
 
@@ -1355,7 +1431,7 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype,
                                          : "shiny");
 
         strcat(art_n, " ");
-        strcat(art_n, (atype < AMU_RAGE) ? "ring" : "amulet");
+        strcat(art_n, (item.sub_type < AMU_RAGE) ? "ring" : "amulet");
 
         srand(randstore);
 
@@ -1364,14 +1440,14 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype,
 
     if (random5(5) == 0)
     {
-        strcat(art_n, (atype < AMU_RAGE) ? "ring" : "amulet");
+        strcat(art_n, (item.sub_type < AMU_RAGE) ? "ring" : "amulet");
         strcat(art_n, rand_armour_names[random5(71)]);
     }
     else
     {
         make_name(random5(250), random5(250), random5(250), 3, st_p);
 
-        strcat(art_n, (atype < AMU_RAGE) ? "ring" : "amulet");
+        strcat(art_n, (item.sub_type < AMU_RAGE) ? "ring" : "amulet");
 
         if (random5(3) == 0)
         {
@@ -1391,26 +1467,24 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype,
     return art_n;
 }                               // end randart_ring_name()
 
-static struct unrandart_entry *seekunrandart(unsigned char aclass,
-                                             unsigned char atype,
-                                             unsigned char aplus,
-                                             unsigned char aplus2)
+static struct unrandart_entry *seekunrandart( const item_def &item )
 {
     int x = 0;
 
     while (x < NO_UNRANDARTS)
     {
-        if (unranddata[x].ura_cl == aclass && unranddata[x].ura_ty == atype
-            && unranddata[x].ura_pl % 100 == aplus % 100
-            && unranddata[x].ura_pl2 == aplus2)
+        if (unranddata[x].ura_cl == item.base_type
+            && unranddata[x].ura_ty == item.sub_type
+            && unranddata[x].ura_pl == item.plus
+            && unranddata[x].ura_pl2 == item.plus2)
         {
-            return &unranddata[x];
+            return (&unranddata[x]);
         }
 
         x++;
     }
 
-    return seekunrandart(250, 250, 250, 250);   /* Should *never* happen */
+    return (&unranddata[0]);  // Dummy object
 }                               // end seekunrandart()
 
 int find_unrandart_index(int item_number)
@@ -1419,10 +1493,10 @@ int find_unrandart_index(int item_number)
 
     for(x=0; x < NO_UNRANDARTS; x++)
     {
-        if (unranddata[x].ura_cl == mitm.base_type[item_number]
-            && unranddata[x].ura_ty == mitm.sub_type[item_number]
-            && unranddata[x].ura_pl % 100 == mitm.pluses[item_number] % 100
-            && unranddata[x].ura_pl2 == mitm.pluses2[item_number])
+        if (unranddata[x].ura_cl == mitm[item_number].base_type
+            && unranddata[x].ura_ty == mitm[item_number].sub_type
+            && unranddata[x].ura_pl == mitm[item_number].plus
+            && unranddata[x].ura_pl2 == mitm[item_number].plus2)
         {
             return x;
         }
@@ -1431,14 +1505,16 @@ int find_unrandart_index(int item_number)
     return -1;
 }
 
-int find_okay_unrandart(unsigned char aclass)
+int find_okay_unrandart(unsigned char aclass, unsigned char atype)
 {
     int x, count;
     int ret = -1;
 
     for (x = 0, count = 0; x < NO_UNRANDARTS; x++)
     {
-        if (unranddata[x].ura_cl == aclass && does_unrandart_exist(x) == 0)
+        if (unranddata[x].ura_cl == aclass
+            && does_unrandart_exist(x) == 0
+            && (atype == OBJ_RANDOM || unranddata[x].ura_ty == atype))
         {
             count++;
 
@@ -1450,31 +1526,53 @@ int find_okay_unrandart(unsigned char aclass)
     return ret;
 }                               // end find_okay_unrandart()
 
-void make_item_unrandart(int x, int ura_item)
+void make_item_randart( item_def &item )
 {
-    mitm.base_type[ura_item] = unranddata[x].ura_cl;
-    mitm.sub_type[ura_item] = unranddata[x].ura_ty;
-    mitm.pluses[ura_item] = unranddata[x].ura_pl;
-    mitm.pluses2[ura_item] = unranddata[x].ura_pl2;
-    mitm.colour[ura_item] = unranddata[x].ura_col;
-    mitm.special[ura_item] = 25;
+    if (item.base_type != OBJ_WEAPONS
+        && item.base_type != OBJ_ARMOUR
+        && item.base_type != OBJ_JEWELLERY)
+    {
+        return;
+    }
 
-    if (mitm.base_type[ura_item] == OBJ_JEWELLERY)
-        mitm.special[ura_item] = 201;
+    item.flags |= ISFLAG_RANDART;
+    item.special = (random() & RANDART_SEED_MASK);
+}
 
-    set_unrandart_exist(x, 1);
+// void make_item_unrandart( int x, int ura_item )
+void make_item_unrandart( item_def &item, int unrand_index )
+{
+    item.base_type = unranddata[unrand_index].ura_cl;
+    item.sub_type  = unranddata[unrand_index].ura_ty;
+    item.plus      = unranddata[unrand_index].ura_pl;
+    item.plus2     = unranddata[unrand_index].ura_pl2;
+    item.colour    = unranddata[unrand_index].ura_col;
+
+    item.flags |= ISFLAG_UNRANDART;
+    item.special = 0;  // unused
+
+#if 0
+    if (mitm[ura_item].base_type == OBJ_JEWELLERY)
+        mitm[ura_item].special = SPRING_UNRANDART;
+    else
+        mitm[ura_item].special = SPWPN_RANDART_I;
+#endif
+
+    if (unranddata[ unrand_index ].prpty[ RAP_CURSED ])
+        do_curse_item( item );
+
+    set_unrandart_exist( unrand_index, 1 );
 }                               // end make_item_unrandart()
 
-const char *unrandart_descrip(char which_descrip, unsigned char aclass,
-                              unsigned char atype, unsigned char aplus,
-                              unsigned char aplus2)
+const char *unrandart_descrip( char which_descrip, const item_def &item )
 {
 /* Eventually it would be great to have randomly generated descriptions for
    randarts. */
+    struct unrandart_entry *unrand = seekunrandart( item );
 
-    return ((which_descrip == 0) ? sura->spec_descrip1 :
-            (which_descrip == 1) ? sura->spec_descrip2 :
-            (which_descrip == 2) ? sura->spec_descrip3 : "Unknown.");
+    return ((which_descrip == 0) ? unrand->spec_descrip1 :
+            (which_descrip == 1) ? unrand->spec_descrip2 :
+            (which_descrip == 2) ? unrand->spec_descrip3 : "Unknown.");
 
 }                               // end unrandart_descrip()
 
@@ -1531,121 +1629,174 @@ void standard_name_weap(unsigned char item_typ, char glorg[80])
                                    : "unknown weapon");
 }                               // end standard_name_weap()
 
-void standard_name_armour(unsigned char item_typ, unsigned char item_plus2,
-                          char glorg[80])
+void standard_name_armour( const item_def &item, char glorg[80] )
 {
+    short helm_type;
+
     strcpy(glorg, "");
 
-    switch (item_typ)
+    switch (item.sub_type)
     {
     case ARM_ROBE:
         strcat(glorg, "robe");
         break;
+
     case ARM_LEATHER_ARMOUR:
         strcat(glorg, "leather armour");
         break;
+
     case ARM_RING_MAIL:
         strcat(glorg, "ring mail");
         break;
+
     case ARM_SCALE_MAIL:
         strcat(glorg, "scale mail");
         break;
+
     case ARM_CHAIN_MAIL:
         strcat(glorg, "chain mail");
         break;
+
     case ARM_SPLINT_MAIL:
         strcat(glorg, "splint mail");
         break;
+
     case ARM_BANDED_MAIL:
         strcat(glorg, "banded mail");
         break;
+
     case ARM_PLATE_MAIL:
         strcat(glorg, "plate mail");
         break;
+
     case ARM_SHIELD:
         strcat(glorg, "shield");
         break;
+
     case ARM_CLOAK:
         strcat(glorg, "cloak");
         break;
+
     case ARM_HELMET:
-        if (item_plus2 == 0)
-            strcat(glorg, "helmet");
-        if (item_plus2 == 1)
+        if (cmp_helmet_type( item, THELM_HELM )
+                    || cmp_helmet_type( item, THELM_HELMET ))
+        {
+            short dhelm = get_helmet_desc( item );
+
+            if (dhelm != THELM_DESC_PLAIN)
+            {
+                strcat( glorg,
+                        (dhelm == THELM_DESC_WINGED)   ? "winged " :
+                        (dhelm == THELM_DESC_HORNED)   ? "horned " :
+                        (dhelm == THELM_DESC_CRESTED)  ? "crested " :
+                        (dhelm == THELM_DESC_PLUMED)   ? "plumed " :
+                        (dhelm == THELM_DESC_SPIKED)   ? "spiked " :
+                        (dhelm == THELM_DESC_VISORED)  ? "visored " :
+                        (dhelm == THELM_DESC_JEWELLED) ? "jeweled "
+                                                       : "buggy " );
+            }
+        }
+
+        helm_type = get_helmet_type( item );
+        if (helm_type == THELM_HELM)
             strcat(glorg, "helm");
-        if (item_plus2 == 2)
+        else if (helm_type == THELM_CAP)
             strcat(glorg, "cap");
-        if (item_plus2 == 3)
+        else if (helm_type == THELM_WIZARD_HAT)
             strcat(glorg, "wizard's hat");
+        else
+            strcat(glorg, "helmet");
         break;
+
     case ARM_GLOVES:
         strcat(glorg, "gloves");
         break;
+
     case ARM_BOOTS:
-        if (item_plus2 == 0)
-            strcat(glorg, "boots");
-        if (item_plus2 == 1)
+        if (item.plus2 == TBOOT_NAGA_BARDING)
             strcat(glorg, "naga barding");
-        if (item_plus2 == 2)
+        else if (item.plus2 == TBOOT_CENTAUR_BARDING)
             strcat(glorg, "centaur barding");
+        else
+            strcat(glorg, "boots");
         break;
+
     case ARM_BUCKLER:
         strcat(glorg, "buckler");
         break;
+
     case ARM_LARGE_SHIELD:
         strcat(glorg, "large shield");
         break;
+
     case ARM_DRAGON_HIDE:
         strcat(glorg, "dragon hide");
         break;
+
     case ARM_TROLL_HIDE:
         strcat(glorg, "troll hide");
         break;
+
     case ARM_CRYSTAL_PLATE_MAIL:
         strcat(glorg, "crystal plate mail");
         break;
+
     case ARM_DRAGON_ARMOUR:
         strcat(glorg, "dragon armour");
         break;
+
     case ARM_TROLL_LEATHER_ARMOUR:
         strcat(glorg, "troll leather armour");
         break;
+
     case ARM_ICE_DRAGON_HIDE:
         strcat(glorg, "ice dragon hide");
         break;
+
     case ARM_ICE_DRAGON_ARMOUR:
         strcat(glorg, "ice dragon armour");
         break;
+
     case ARM_STEAM_DRAGON_HIDE:
         strcat(glorg, "steam dragon hide");
         break;
+
     case ARM_STEAM_DRAGON_ARMOUR:
         strcat(glorg, "steam dragon armour");
         break;
+
     case ARM_MOTTLED_DRAGON_HIDE:
         strcat(glorg, "mottled dragon hide");
         break;
+
     case ARM_MOTTLED_DRAGON_ARMOUR:
         strcat(glorg, "mottled dragon armour");
         break;
+
     case ARM_STORM_DRAGON_HIDE:
         strcat(glorg, "storm dragon hide");
         break;
+
     case ARM_STORM_DRAGON_ARMOUR:
         strcat(glorg, "storm dragon armour");
         break;
+
     case ARM_GOLD_DRAGON_HIDE:
         strcat(glorg, "gold dragon hide");
         break;
+
     case ARM_GOLD_DRAGON_ARMOUR:
         strcat(glorg, "gold dragon armour");
         break;
+
     case ARM_ANIMAL_SKIN:
         strcat(glorg, "animal skin");
         break;
+
     case ARM_SWAMP_DRAGON_HIDE:
         strcat(glorg, "swamp dragon hide");
         break;
+
     case ARM_SWAMP_DRAGON_ARMOUR:
         strcat(glorg, "swamp dragon armour");
         break;

@@ -33,6 +33,7 @@
 #include "externs.h"
 
 #include "debug.h"
+#include "insult.h"
 #include "monstuff.h"
 #include "mon-util.h"
 #include "overmap.h"
@@ -42,10 +43,6 @@
 
 #ifdef MACROS
 #include "macro.h"
-#endif
-
-#ifdef USE_CURSES
-#include <curses.h>
 #endif
 
 unsigned char your_sign;        // accessed as extern in transfor.cc and acr.cc
@@ -66,6 +63,38 @@ unsigned char mapchar3(unsigned char ldfk);
 unsigned char mapchar4(unsigned char ldfk);
 void cloud_grid(void);
 void monster_grid(bool do_updates);
+
+//---------------------------------------------------------------
+//
+// get_number_of_lines
+//
+// Made this a function instead of a #define.  This should help
+// considering the fact that the curses version is a macro
+// (curses tends to be implemented with a large number of
+// preprocessor macros, which can wreak havoc with things
+// like the C++ string class, so we want to isolate that
+// away to keep portability up).
+//
+// Other OSes might want to hook into reading system environment
+// variables or player set options to determine the screen size
+// (see the Options and SysEnv structures, as well as initfile.cc).
+//
+// This might be better to move to the lib*.cc files, but we
+// don't really have a standard API defined for them, or the
+// all important libdos.cc.  It would be a good idea to eventually
+// head that way. -- bwr
+//
+//---------------------------------------------------------------
+int get_number_of_lines(void)
+{
+#ifdef LINUX
+    return (get_number_of_lines_from_curses());
+#elif MAC
+    return (MAC_NUMBER_OF_LINES);
+#else
+    return (25);
+#endif
+}
 
 
 //---------------------------------------------------------------
@@ -554,10 +583,6 @@ void viewwindow2(char draw_it, bool do_updates)
 
     unsigned short ch, color;
 
-#ifdef WIZARD
-    //memset(buffy, 255, sizeof(buffy)); //jmf: this won't compile for me
-#endif
-
     losight(env.show, grd, you.x_pos, you.y_pos);
 
     int count_x, count_y;
@@ -589,17 +614,24 @@ void viewwindow2(char draw_it, bool do_updates)
                 color = env.show_col[ count_x - you.x_pos + 9 ]
                                     [ count_y - you.y_pos + 9 ];
 
-                if (count_x != you.x_pos || count_y != you.y_pos)
-                {
-                    unsigned int object = env.show[ count_x - you.x_pos + 9 ]
-                                                  [ count_y - you.y_pos + 9 ];
+                unsigned int object = env.show[ count_x - you.x_pos + 9 ]
+                                              [ count_y - you.y_pos + 9 ];
 
-                    get_ibm_symbol(object, &ch, &color);
-                }
-                else
+                get_ibm_symbol(object, &ch, &color);
+
+                if (count_x == you.x_pos && count_y == you.y_pos)
                 {
                     ch = your_sign;
-                    color = your_colour;
+
+                    if (player_is_swimming())
+                    {
+                        color = (grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
+                                    ? BLUE : CYAN;
+                    }
+                    else
+                    {
+                        color = your_colour;
+                    }
                 }
 
                 ASSERT(bufcount + 1 < BUFFER_SIZE);
@@ -863,29 +895,42 @@ char colour_code_map(unsigned char map_value)
 
 void monster_grid(bool do_updates)
 {
-    //int mnc = 0;
     struct monsters *monster = 0;       // NULL {dlb}
 
     for (int s = 0; s < MAX_MONSTERS; s++)
     {
         monster = &menv[s];
 
-        if (monster->type != -1)
+        if (monster->type != -1 && mons_near(monster))
         {
-            if (mons_near(monster))
+            if (do_updates &&
+                (monster->behavior == BEH_SLEEP
+                 || monster->behavior == BEH_WANDER) && check_awaken(s))
             {
-                if (do_updates &&
-                    (monster->behavior == BEH_SLEEP
-                     || monster->behavior == BEH_WANDER) && check_awaken(s))
-                {
-                    behavior_event(monster, ME_ALERT, MHITYOU);
+                behavior_event(monster, ME_ALERT, MHITYOU);
 
-                    if (you.turn_is_over == 1
-                        && mons_shouts(monster->type) > 0
-                        && random2(30) >= you.skills[SK_STEALTH])
+                if (you.turn_is_over == 1
+                    && mons_shouts(monster->type) > 0
+                    && random2(30) >= you.skills[SK_STEALTH])
+                {
+                    if (!mons_friendly(monster)
+                        && (!silenced(you.x_pos, you.y_pos)
+                            && !silenced(monster->x, monster->y)))
                     {
-                        if (!silenced(you.x_pos, you.y_pos) &&
-                            !silenced(monster->x, monster->y))
+                        if (mons_holiness(monster->type) == MH_DEMONIC)
+                        {
+                            if (monster->type == MONS_IMP
+                                || monster->type == MONS_WHITE_IMP
+                                || monster->type == MONS_SHADOW_IMP)
+                            {
+                                imp_taunt( monster );
+                            }
+                            else
+                            {
+                                demon_taunt( monster );
+                            }
+                        }
+                        else
                         {
                             int the_shout = mons_shouts(monster->type);
 
@@ -937,63 +982,74 @@ void monster_grid(bool do_updates)
                                 strcat(info, "an angry growl!");
                                 break;
                             }
+
                             mpr(info);
                         }
-
-                        noisy(8, monster->x, monster->y);
                     }
-                }
 
-                if (mons_has_ench(monster, ENCH_INVIS)
-                    && (!player_see_invis()
-                        || (monster_habitat(monster->type) != DNGN_FLOOR
-                            && monster->number == 1)))
-                {
-                    if (grd[monster->x][monster->y] == DNGN_SHALLOW_WATER
-                        && !mons_flies(monster->type))
-                    {
-                        show_backup[ monster->x - you.x_pos + 9 ]
-                                   [ monster->y - you.y_pos + 9]
-                           = env.show[ monster->x - you.x_pos + 9 ]
-                                     [ monster->y - you.y_pos + 9 ];
-                        env.show[monster->x - you.x_pos + 9]
-                                [monster->y - you.y_pos + 9] = 257;
-                    }
-                    continue;
+                    noisy(8, monster->x, monster->y);
                 }
-                else if (!mons_friendly(monster)
-                         && mons_category(monster->type) != MC_MIMIC)
+            }
+
+            if (!player_monster_visible( monster ))
+            {
+                // ripple effect?
+                if (grd[monster->x][monster->y] == DNGN_SHALLOW_WATER
+                    && !mons_flies(monster->type))
                 {
-                    // Friendly monsters or mimics don't disturb
+                    show_backup[ monster->x - you.x_pos + 9 ]
+                               [ monster->y - you.y_pos + 9]
+                       = env.show[ monster->x - you.x_pos + 9 ]
+                                 [ monster->y - you.y_pos + 9 ];
+                    env.show[monster->x - you.x_pos + 9]
+                            [monster->y - you.y_pos + 9] = 257;
+                }
+                continue;
+            }
+            else if (!mons_friendly(monster)
+                     && mons_charclass(monster->type) != MONS_GOLD_MIMIC
+                     && !mons_flag(monster->type, M_NO_EXP_GAIN)
+                     && you.running > 0)
+            {
+                // Friendly monsters, mimics, or harmless monsters
+                // don't disturb the player's running/resting.
+                //
+                // Doing it this way causes players in run mode 2
+                // to move one square, and in mode 1 to stop.  This
+                // means that the character will run one square if
+                // a monster is in sight... we automatically jump
+                // to zero if we're resting.  -- bwr
+                if (you.run_x == 0 && you.run_y == 0)
                     you.running = 0;
-                }
+                else
+                    you.running--;
+            }
 
-                // mimics are always left on map
-                if (mons_category(monster->type) != MC_MIMIC)
-                {
-                    show_backup[monster->x - you.x_pos + 9]
-                               [monster->y - you.y_pos + 9]
-                           = env.show[monster->x - you.x_pos + 9]
-                                     [monster->y - you.y_pos + 9];
-                }
+            // mimics are always left on map
+            if (mons_charclass(monster->type) != MONS_GOLD_MIMIC)
+            {
+                show_backup[monster->x - you.x_pos + 9]
+                           [monster->y - you.y_pos + 9]
+                       = env.show[monster->x - you.x_pos + 9]
+                                 [monster->y - you.y_pos + 9];
+            }
 
-                env.show[monster->x - you.x_pos + 9]
-                        [monster->y - you.y_pos + 9] = monster->type + 297;
+            env.show[monster->x - you.x_pos + 9]
+                    [monster->y - you.y_pos + 9] = monster->type + 297;
 
+            env.show_col[monster->x - you.x_pos + 9]
+                        [monster->y - you.y_pos + 9]
+                = ((mcolour[monster->type] == BLACK)
+                        ? monster->number : mcolour[monster->type]);
+#ifdef USE_COLOUR_OPTS
+            if (mons_friendly(monster))
+            {
                 env.show_col[monster->x - you.x_pos + 9]
                             [monster->y - you.y_pos + 9]
-                    = ((mcolour[monster->type] == BLACK)
-                            ? monster->number : mcolour[monster->type]);
-#ifdef USE_COLOUR_OPTS
-                if (mons_friendly(monster))
-                {
-                    env.show_col[monster->x - you.x_pos + 9]
-                                [monster->y - you.y_pos + 9]
-                        |= COLFLAG_FRIENDLY_MONSTER;
-                }
+                    |= COLFLAG_FRIENDLY_MONSTER;
+            }
 #endif
-            }                   // end "if mons_near(monster)"
-        }                       // end "if (monster->type != -1)"
+        }                       // end "if (monster->type != -1 && mons_ner)"
     }                           // end "for s"
 }                               // end monster_grid()
 
@@ -1002,10 +1058,20 @@ bool check_awaken(int mons_aw)
 {
     int mons_perc = 0;
     struct monsters *monster = &menv[mons_aw];
+    const int mon_holy = mons_holiness( monster->type );
 
     // berserkers aren't really concerned about stealth
     if (you.berserker)
         return true;
+
+    // Repel undead is a holy aura, to which evil creatures are sensitive.
+    // Note that even though demons aren't affected by repel undead, they
+    // do sense this type of divine aura. -- bwr
+    if (you.duration[DUR_REPEL_UNDEAD]
+        && (mon_holy == MH_UNDEAD || mon_holy == MH_DEMONIC))
+    {
+        return true;
+    }
 
     // I assume that creatures who can see invisible are very perceptive
     mons_perc = 10 + (mons_intel(monster->type) * 4) + monster->hit_dice
@@ -1059,10 +1125,10 @@ void item()
                         {
                             env.show_col[count_x - you.x_pos + 9]
                                         [count_y - you.y_pos + 9]
-                                    = mitm.colour[igrd[count_x][count_y]];
+                                    = mitm[igrd[count_x][count_y]].colour;
                         }
 
-                        switch (mitm.base_type[igrd[count_x][count_y]])
+                        switch (mitm[igrd[count_x][count_y]].base_type)
                         {
                         case OBJ_ORBS:
                             env.show[count_x - you.x_pos + 9]
@@ -1096,7 +1162,7 @@ void item()
                             break;
 
                         case OBJ_JEWELLERY:
-                            if (mitm.sub_type[igrd[count_x][count_y]] >= AMU_RAGE)
+                            if (mitm[igrd[count_x][count_y]].sub_type >= AMU_RAGE)
                             {
                                 env.show[count_x - you.x_pos + 9]
                                         [count_y - you.y_pos + 9] = 273;
@@ -1163,30 +1229,32 @@ void cloud_grid(void)
 
     for (int s = 0; s < MAX_CLOUDS; s++)
     {
-        if (mnc > env.cloud_no) // can anyone explain this??? {dlb}
+        // can anyone explain this??? {dlb}
+        // its an optimization to avoid looking past the last cloud -bwr
+        if (mnc > env.cloud_no)
             break;
 
-        if (env.cloud_type[s] != CLOUD_NONE)
+        if (env.cloud[s].type != CLOUD_NONE)
         {
             mnc++;
 
-            if (see_grid(env.cloud_x[s], env.cloud_y[s]))
+            if (see_grid(env.cloud[s].x, env.cloud[s].y))
             {
-                show_backup[env.cloud_x[s] - you.x_pos + 9]
-                           [env.cloud_y[s] - you.y_pos + 9]
-                       = env.show[env.cloud_x[s] - you.x_pos + 9]
-                                 [env.cloud_y[s] - you.y_pos + 9];
+                show_backup[env.cloud[s].x - you.x_pos + 9]
+                           [env.cloud[s].y - you.y_pos + 9]
+                       = env.show[env.cloud[s].x - you.x_pos + 9]
+                                 [env.cloud[s].y - you.y_pos + 9];
 
-                env.show[env.cloud_x[s] - you.x_pos + 9]
-                        [env.cloud_y[s] - you.y_pos + 9] = '#';
+                env.show[env.cloud[s].x - you.x_pos + 9]
+                        [env.cloud[s].y - you.y_pos + 9] = '#';
 
-                switch (env.cloud_type[s])
+                switch (env.cloud[s].type)
                 {
                 case CLOUD_FIRE:
                 case CLOUD_FIRE_MON:
-                    if (env.cloud_decay[s] <= 20)
+                    if (env.cloud[s].decay <= 20)
                         which_color = RED;
-                    else if (env.cloud_decay[s] <= 40)
+                    else if (env.cloud[s].decay <= 40)
                         which_color = LIGHTRED;
                     else if (one_chance_in(4))
                         which_color = RED;
@@ -1203,9 +1271,9 @@ void cloud_grid(void)
 
                 case CLOUD_COLD:
                 case CLOUD_COLD_MON:
-                    if (env.cloud_decay[s] <= 20)
+                    if (env.cloud[s].decay <= 20)
                         which_color = BLUE;
-                    else if (env.cloud_decay[s] <= 40)
+                    else if (env.cloud[s].decay <= 40)
                         which_color = LIGHTBLUE;
                     else if (one_chance_in(4))
                         which_color = BLUE;
@@ -1242,8 +1310,8 @@ void cloud_grid(void)
                     break;
                 }
 
-                env.show_col[env.cloud_x[s] - you.x_pos + 9]
-                            [env.cloud_y[s] - you.y_pos + 9] = which_color;
+                env.show_col[env.cloud[s].x - you.x_pos + 9]
+                            [env.cloud[s].y - you.y_pos + 9] = which_color;
             }
         }                       // end 'if != CLOUD_NONE'
     }                           // end 'for s' loop
@@ -1694,7 +1762,7 @@ void draw_border(const char your_name[kNameLen], const char class_name[40],
     textcolor(LIGHTGREY);
     cprintf(print_it2);
     gotoxy(40, 2);
-    cprintf(species_name(tspecies));
+    cprintf("%s %s", species_name(tspecies), (you.wizard ? "*WIZARD*" : "" ));
     gotoxy(40, 3);
     cprintf("HP:");
     gotoxy(40, 4);
@@ -1718,13 +1786,12 @@ void draw_border(const char your_name[kNameLen], const char class_name[40],
 
 }                               // end draw_border()
 
-void show_map(FixedVector < int, 2 > &spec_place)
+// show_map() now centers the known map along x or y.  This prevents
+// the player from getting "artificial" location clues by using the
+// map to see how close to the end they are.  They'll need to explore
+// to get that.  This function is still a mess, though. -- bwr
+void show_map( FixedVector<int, 2> &spec_place )
 {
-
-    int curs_x = you.x_pos;
-    int curs_y = 12;
-    int screen_y = you.y_pos;
-
     int i, j;
 
     int bufcount2 = 0;
@@ -1734,33 +1801,66 @@ void show_map(FixedVector < int, 2 > &spec_place)
     char getty = 0;
 
 #ifdef DOS_TERM
-
     char buffer[4800];
-
 #endif
 
-    char buffer2[GYM * GXM * 2];        // buffer2[GYM * GXM * 2] segfaults my box {dlb}
+    // buffer2[GYM * GXM * 2] segfaults my box {dlb}
+    char buffer2[GYM * GXM * 2];
 
-    char min_y = 0;
-    char max_y = 0;
-    char found = 0;
+    char min_x = 80, max_x = 0, min_y = 0, max_y = 0;
+    bool found_y = false;
     unsigned char square;
 
+    const int num_lines = get_number_of_lines();
+    const int half_screen = num_lines / 2 - 1;
 
     for (j = 0; j < GYM; j++)
     {
         for (i = 0; i < GXM; i++)
         {
-            if (env.map[i][j] && !found)
-            {
-                found = 1;
-                min_y = j;
-            }
-
             if (env.map[i][j])
+            {
+                if (!found_y)
+                {
+                    found_y = true;
+                    min_y = j;
+                }
+
                 max_y = j;
+
+                if (i < min_x)
+                    min_x = i;
+
+                if (i > max_x)
+                    max_x = i;
+            }
         }
     }
+
+    const int map_lines = max_y - min_y + 1;
+
+    const int start_x = min_x + (max_x - min_x + 1) / 2 - 40; // no x scrolling
+    int start_y;                                              // y does scroll
+
+    int screen_y = you.y_pos;
+
+    // if close to top of known map, put min_y on top
+    // else if close to bottom of known map, put max_y on bottom.
+    //
+    // The num_lines comparisons are done to keep things neat, by
+    // keeping things at the top of the screen.  By shifting an
+    // additional one in the num_lines > map_lines case, we can
+    // keep the top line clear... which makes things look a whole
+    // lot better for small maps.
+    if (num_lines > map_lines)
+        screen_y = min_y + half_screen - 1;
+    else if (num_lines == map_lines || screen_y - half_screen < min_y)
+        screen_y = min_y + half_screen;
+    else if (screen_y + half_screen > max_y)
+        screen_y = max_y - half_screen;
+
+    int curs_x = you.x_pos - start_x;
+    int curs_y = you.y_pos - screen_y + half_screen;
 
 #ifdef DOS_TERM
     gettext(1, 1, 80, 25, buffer);
@@ -1779,12 +1879,14 @@ void show_map(FixedVector < int, 2 > &spec_place)
     gotoxy(1, 1);
 #endif
 
-    for (j = 0; j < NUMBER_OF_LINES; j++)
+    start_y = screen_y - half_screen;
+
+    for (j = 0; j < num_lines; j++)
     {
         for (i = 0; i < 80; i++)
         {
-            if (screen_y + j - 12 >= 65 || screen_y + j - 12 <= 4
-                || i >= GXM - 1)
+            if (start_y + j >= 65 || start_y + j <= 3
+                || start_x + i < 0 || start_x + i >= GXM - 1)
             {
                 buffer2[bufcount2 + 1] = DARKGREY;
                 buffer2[bufcount2] = 0;
@@ -1800,15 +1902,13 @@ void show_map(FixedVector < int, 2 > &spec_place)
 
             }
 
-            square = grd[i + 1][j + screen_y - 11];
+            square = grd[start_x + i + 1][start_y + j + 1];
             buffer2[bufcount2 + 1] = colour_code_map(square);
 
-            if (i == you.x_pos - 1 && j + screen_y - 11 == you.y_pos)
-            {
+            if (start_x + i + 1 == you.x_pos && start_y + j + 1 == you.y_pos)
                 buffer2[bufcount2 + 1] = WHITE;
-            }
 
-            buffer2[bufcount2] = env.map[i][j + screen_y - 12];
+            buffer2[bufcount2] = env.map[start_x + i][start_y + j];
             bufcount2 += 2;
 
 #ifdef PLAIN_TERM
@@ -1820,13 +1920,11 @@ void show_map(FixedVector < int, 2 > &spec_place)
 
             // newline
             if (i == 0 && j > 0)
-                gotoxy(1,j+1);
+                gotoxy( 1, j + 1 );
 
-            textcolor(buffer2[bufcount2 - 1]);
-            putch(buffer2[bufcount2 - 2]);
-
+            textcolor( buffer2[bufcount2 - 1] );
+            putch( buffer2[bufcount2 - 2] );
 #endif
-
         }
     }
 
@@ -1840,14 +1938,13 @@ void show_map(FixedVector < int, 2 > &spec_place)
   gettything:
     getty = getch();
 
-#ifdef LINUX
-    getty = translate_keypad(getty);
-    //getty = key_to_command(getty);     // maybe replace with this? {dlb}
-#endif
-
     if (spec_place[0] == 0 && getty != 0 && getty != '+' && getty != '-'
         && getty != 'h' && getty != 'j' && getty != 'k' && getty != 'l'
         && getty != 'y' && getty != 'u' && getty != 'b' && getty != 'n'
+#ifdef LINUX
+        && getty != 'H' && getty != 'J' && getty != 'K' && getty != 'L'
+        && getty != 'Y' && getty != 'U' && getty != 'B' && getty != 'N'
+#endif
         && (getty < '0' || getty > '9'))
     {
         goto putty;
@@ -1856,6 +1953,10 @@ void show_map(FixedVector < int, 2 > &spec_place)
     if (spec_place[0] == 1 && getty != 0 && getty != '+' && getty != '-'
         && getty != 'h' && getty != 'j' && getty != 'k' && getty != 'l'
         && getty != 'y' && getty != 'u' && getty != 'b' && getty != 'n'
+#ifdef LINUX
+        && getty != 'H' && getty != 'J' && getty != 'K' && getty != 'L'
+        && getty != 'Y' && getty != 'U' && getty != 'B' && getty != 'N'
+#endif
         && getty != '.' && getty != 'S' && (getty < '0' || getty > '9'))
     {
         goto gettything;
@@ -1948,6 +2049,49 @@ void show_map(FixedVector < int, 2 > &spec_place)
         move_y = 1;
         move_x = 1;
         break;
+
+#else
+
+    case 'B':
+        move_x = -10;
+        move_y = 10;
+        break;
+
+    case 'J':
+        move_y = 10;
+        move_x = 0;
+        break;
+
+    case 'U':
+        move_x = 10;
+        move_y = -10;
+        break;
+
+    case 'K':
+        move_y = -10;
+        move_x = 0;
+        break;
+
+    case 'Y':
+        move_y = -10;
+        move_x = -10;
+        break;
+
+    case 'H':
+        move_x = -10;
+        move_y = 0;
+        break;
+
+    case 'N':
+        move_y = 10;
+        move_x = 10;
+        break;
+
+    case 'L':
+        move_x = 10;
+        move_y = 0;
+        break;
+
 #endif
 
     case '+':
@@ -1961,8 +2105,8 @@ void show_map(FixedVector < int, 2 > &spec_place)
     case '.':
     case '\r':
     case 'S':
-        spec_place[0] = curs_x;
-        spec_place[1] = screen_y + curs_y - 12;
+        spec_place[0] = start_x + curs_x;
+        spec_place[1] = start_y + curs_y;
         goto putty;
         break;
     default:
@@ -1971,49 +2115,57 @@ void show_map(FixedVector < int, 2 > &spec_place)
         break;
     }
 
-    if (curs_x + move_x < 1 || curs_x + move_x > (GXM - 5))
+    if (curs_x + move_x < 1 || curs_x + move_x > 80)
         move_x = 0;
 
     curs_x += move_x;
 
-    if (getty == '-' || getty == '+')
+    if (num_lines < map_lines)
     {
-        if (getty == '-')
-            screen_y -= 20;
-
-        if (screen_y <= 11 + min_y)
-            screen_y = 11 + min_y;
-
-        if (getty == '+')
-            screen_y += 20;
-
-        if (screen_y >= max_y - 11)
-            screen_y = max_y - 11;
-
-        goto put_screen;
-    }
-
-    if (curs_y + move_y < 1)
-    {
-        if (screen_y > 11 + min_y)
+        // Scrolling only happens when we don't have a large enough
+        // display to show the known map.
+        if (getty == '-' || getty == '+')
         {
-            screen_y--;
+            if (getty == '-')
+                screen_y -= 20;
+
+            if (screen_y <= min_y + half_screen)
+                screen_y = min_y + half_screen;
+
+            if (getty == '+')
+                screen_y += 20;
+
+            if (screen_y >= max_y - half_screen)
+                screen_y = max_y - half_screen;
+
             goto put_screen;
         }
-        else
+
+        if (curs_y + move_y < 1)
+        {
+            // screen_y += (curs_y + move_y) - 1;
+            screen_y += move_y;
+
+            if (screen_y < min_y + half_screen)
+                screen_y = min_y + half_screen;
+
             move_y = 0;
+        }
+
+        if (curs_y + move_y > num_lines - 1)
+        {
+            // screen_y += (curs_y + move_y) - num_lines + 1;
+            screen_y += move_y;
+
+            if (screen_y > max_y - half_screen)
+                screen_y = max_y - half_screen;
+
+            move_y = 0;
+        }
     }
 
-    if (curs_y + move_y > NUMBER_OF_LINES - 1)
-    {
-        if (screen_y < max_y - 11)
-        {
-            screen_y++;
-            goto put_screen;
-        }
-        else
-            move_y = 0;
-    }
+    if (curs_y + move_y < 1 || curs_y + move_y > num_lines)
+        move_y = 0;
 
     curs_y += move_y;
     goto put_screen;
@@ -2932,27 +3084,31 @@ void viewwindow3(char draw_it, bool do_updates)
         {
             bufcount += 16;
 
-            for (count_x = (you.x_pos - 8); (count_x < you.x_pos + 9);
-                 count_x++)
+            for (count_x = (you.x_pos - 8); (count_x < you.x_pos + 9); count_x++)
             {
-                //buffy[bufcount + 1] = env.show_col[count_x - you.x_pos + 9][count_y - you.y_pos + 9];
-
                 color = env.show_col[count_x - you.x_pos + 9]
                                     [count_y - you.y_pos + 9];
 
-                if (count_x != you.x_pos || count_y != you.y_pos)
+                if (count_x == you.x_pos && count_y == you.y_pos)
                 {
+                    ch = your_sign;
 
+                    if (player_is_swimming())
+                    {
+                        color = (grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
+                                    ? BLUE : CYAN;
+                    }
+                    else
+                    {
+                        color = your_colour;
+                    }
+                }
+                else
+                {
                     unsigned int object = env.show[count_x - you.x_pos + 9]
                                                   [count_y - you.y_pos + 9];
 
                     get_non_ibm_symbol(object, &ch, &color);
-
-                }
-                else
-                {
-                    ch = your_sign;
-                    buffy[bufcount + 1] = color;
                 }
 
                 buffy[bufcount] = ch;   //showed;
@@ -2973,14 +3129,18 @@ void viewwindow3(char draw_it, bool do_updates)
                 bufcount += 16;
                 for (count_x = 0; count_x < 17; count_x++)
                 {
-                    if (buffy[bufcount] != 0)
+                    if (buffy[bufcount] != 0
+                        && (count_x + you.x_pos - 9) >= 0
+                        && (count_y + you.y_pos - 9) >= 0)
                     {
                         env.map[count_x + you.x_pos - 9]
                                [count_y + you.y_pos - 9] = buffy[bufcount];
                     }
 
                     if (Options.clean_map == 1
-                        && show_backup[count_x + 1][count_y + 1] != 0)
+                        && show_backup[count_x + 1][count_y + 1] != 0
+                        && (count_x + you.x_pos - 9) >= 0
+                        && (count_y + you.y_pos - 9) >= 0)
                     {
                         get_non_ibm_symbol( show_backup[count_x + 1]
                                                        [count_y + 1],
@@ -2988,10 +3148,8 @@ void viewwindow3(char draw_it, bool do_updates)
                         env.map[count_x + you.x_pos - 9]
                                [count_y + you.y_pos - 9] = ch;
                     }
-
                     bufcount += 2;
                 }
-
                 bufcount += 16;
             }
         }
@@ -3070,7 +3228,7 @@ void viewwindow3(char draw_it, bool do_updates)
         gotoxy(2, 1);
         bufcount = 0;
 
-        if (!you.running)       // this line is purely optional
+        if (you.running == 0)       // this line is purely optional
         {
             for (count_x = 0; count_x < 1120; count_x += 2)     // 1056
             {

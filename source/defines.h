@@ -54,9 +54,10 @@
 #define NON_ITEM 501
 
 // max size of cloud array {dlb}:
-#define MAX_CLOUDS 30
+#define MAX_CLOUDS 100
+
 // empty cloud -- (CLOUDS + 1) {dlb}:
-#define EMPTY_CLOUD 31
+#define EMPTY_CLOUD 101
 
 // max x-bound for level generation {dlb}
 #define GXM 80
@@ -66,6 +67,9 @@
 // max traps per level
 #define MAX_TRAPS 30
 
+// max shops per level
+#define MAX_SHOPS 5
+
 // lowest grid value which can be passed by walking etc.
 #define MINMOVE 31
 
@@ -74,11 +78,11 @@
 
 
 // some shortcuts:
-#define menv env.mons
-#define mitm env.it[0]
-#define grd env.grid
-#define mgrd env.mgrid
-#define igrd env.igrid
+#define menv   env.mons
+#define mitm   env.item
+#define grd    env.grid
+#define mgrd   env.mgrid
+#define igrd   env.igrid
 
 
 // (MNG) -- for a reason! see usage {dlb}:
@@ -118,10 +122,23 @@
 
 // This is used to signal curses (which has seven base colours) to
 // try to get a brighter version using recommisioned attribute flags.
-#define COLFLAG_CURSES_BRIGHTEN              0x0080
+#define COLFLAG_CURSES_BRIGHTEN          0x0080
 
 #ifdef USE_COLOUR_OPTS
+
     #define COLFLAG_FRIENDLY_MONSTER         0x0100
+
+    enum CHAR_ATTRIBUTES
+    {
+        CHATTR_NORMAL,
+        CHATTR_STANDOUT,
+        CHATTR_BOLD,
+        CHATTR_BLINK,
+        CHATTR_UNDERLINE,
+        CHATTR_REVERSE,
+        CHATTR_DIM
+    };
+
 #endif
 
 // required for stuff::coinflip()
@@ -132,5 +149,7 @@
 #define MASK (IB1 + IB2 + IB5)
 // required for stuff::coinflip()
 
+#define MINIMUM( xxx, yyy )     (((xxx) < (yyy)) ? (xxx) : (yyy))
+#define MAXIMUM( xxx, yyy )     (((xxx) > (yyy)) ? (xxx) : (yyy))
 
 #endif

@@ -33,6 +33,7 @@
 
 enum ABILITIES
 {
+    ABIL_NON_ABILITY = -1,
     ABIL_SPIT_POISON = 1,              //    1
     ABIL_GLAMOUR,
     ABIL_MAPPING,
@@ -44,7 +45,7 @@ enum ABILITIES
     ABIL_BREATHE_LIGHTNING,
     ABIL_SPIT_ACID,                    //   10
     ABIL_BREATHE_POWER,
-    ABIL_GO_BERSERK_I,
+    ABIL_GO_BERSERK,
     ABIL_BREATHE_STICKY_FLAME,
     ABIL_BREATHE_STEAM,
     ABIL_FLY,                          //   15
@@ -61,52 +62,63 @@ enum ABILITIES
     ABIL_BOLT_OF_DRAINING,
     ABIL_BREATHE_HELLFIRE,
     ABIL_FLY_II,                       //   28
+    ABIL_DELAYED_FIREBALL,             //   29
     ABIL_TURN_INVISIBLE = 51,          //   51
     ABIL_TURN_VISIBLE,
     ABIL_LEVITATE,
     ABIL_STOP_LEVITATING,
     ABIL_END_TRANSFORMATION,           //   55
-    ABIL_REPEL_UNDEAD_I = 110,         //  110
-    ABIL_MINOR_HEALING,
-    ABIL_PESTILENCE,
-    ABIL_HOLY_WORD,
-    ABIL_SUMMON_GUARDIAN,              //  114
-    ABIL_REPEL_UNDEAD_II = 120,        //  120
-    ABIL_SMITING,
-    ABIL_ANNIHILATE_UNDEAD,
-    ABIL_THUNDERBOLT,
-    ABIL_SUMMON_DAEVA,                 //  124
-    ABIL_RECALL_UNDEAD_SLAVES = 130,   //  130
-    ABIL_ENSLAVE_UNDEAD = 132,         //  132
-    ABIL_INVOKE_DEATH,                 //  133
-    ABIL_ANIMATE_CORPSE = 140,         //  140
-    ABIL_RECALL_UNDEAD,
-    ABIL_ANIMATE_DEAD,
-    ABIL_DRAIN_LIFE,
-    ABIL_CONTROL_UNDEAD,               //  144
-    ABIL_CHANNEL_ENERGY = 160,         //  160
-    ABIL_MIGHT_I = 170,                //  170
-    ABIL_HEALING_I,
-    ABIL_HASTE,                        //  172
-    ABIL_MINOR_DESTRUCTION = 180,      //  180
-    ABIL_LESSER_SERVANT_OF_MAKHLEB,
-    ABIL_MAJOR_DESTRUCTION,
-    ABIL_GREATER_SERVANT_OF_MAKHLEB,   //  183
-    ABIL_FORGET_SPELL = 190,           //  190
-    ABIL_GO_BERSERK_II = 200,          //  200
-    ABIL_MIGHT_II,
-    ABIL_HASTE_SELF,                   //  202
-    ABIL_LESSER_HEALING = 220,         //  220
-    ABIL_PURIFICATION,
-    ABIL_HEALING_II,
-    ABIL_RESTORATION,
-    ABIL_GREATER_HEALING,              //  224
+    ABIL_ZIN_REPEL_UNDEAD = 110,       //  110
+    ABIL_ZIN_HEALING,
+    ABIL_ZIN_PESTILENCE,
+    ABIL_ZIN_HOLY_WORD,
+    ABIL_ZIN_SUMMON_GUARDIAN,          //  114
+    ABIL_TSO_REPEL_UNDEAD = 120,       //  120
+    ABIL_TSO_SMITING,
+    ABIL_TSO_ANNIHILATE_UNDEAD,
+    ABIL_TSO_THUNDERBOLT,
+    ABIL_TSO_SUMMON_DAEVA,             //  124
+    ABIL_KIKU_RECALL_UNDEAD_SLAVES = 130,   //  130
+    ABIL_KIKU_ENSLAVE_UNDEAD = 132,         //  132
+    ABIL_KIKU_INVOKE_DEATH,                 //  133
+    ABIL_YRED_ANIMATE_CORPSE = 140,         //  140
+    ABIL_YRED_RECALL_UNDEAD,
+    ABIL_YRED_ANIMATE_DEAD,
+    ABIL_YRED_DRAIN_LIFE,
+    ABIL_YRED_CONTROL_UNDEAD,               //  144
+    ABIL_VEHUMET_CHANNEL_ENERGY = 160,         //  160
+    ABIL_OKAWARU_MIGHT = 170,                //  170
+    ABIL_OKAWARU_HEALING,
+    ABIL_OKAWARU_HASTE,                        //  172
+    ABIL_MAKHLEB_MINOR_DESTRUCTION = 180,      //  180
+    ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB,
+    ABIL_MAKHLEB_MAJOR_DESTRUCTION,
+    ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB,   //  183
+    ABIL_SIF_MUNA_FORGET_SPELL = 190,           //  190
+    ABIL_TROG_BERSERK = 200,          //  200
+    ABIL_TROG_MIGHT,
+    ABIL_TROG_HASTE_SELF,                   //  202
+    ABIL_ELYVILON_LESSER_HEALING = 220,         //  220
+    ABIL_ELYVILON_PURIFICATION,
+    ABIL_ELYVILON_HEALING,
+    ABIL_ELYVILON_RESTORATION,
+    ABIL_ELYVILON_GREATER_HEALING,              //  224
     ABIL_CHARM_SNAKE,
     ABIL_TRAN_SERPENT_OF_HELL,
     ABIL_ROTTING,
     ABIL_TORMENT_II,
     ABIL_SHUGGOTH_SEED,
     ABIL_RENOUNCE_RELIGION = 250       //  250
+};
+
+enum ABILITY_FLAGS
+{
+    ABFLAG_NONE         = 0x00,
+    ABFLAG_BREATH       = 0x01,       // ability uses DUR_BREATH_WEAPON
+    ABFLAG_DELAY        = 0x02,       // ability has its own delay (ie glamour)
+    ABFLAG_PAIN         = 0x04,       // ability must hurt player (ie torment)
+    ABFLAG_EXHAUSTION   = 0x08,       // fails if you.exhausted
+    ABFLAG_INSTANT      = 0x10        // doesn't take time to use
 };
 
 enum AMMUNITION_DESCRIPTIONS
@@ -150,7 +162,8 @@ enum ARMOUR
     ARM_GOLD_DRAGON_ARMOUR,
     ARM_ANIMAL_SKIN,                   //   30
     ARM_SWAMP_DRAGON_HIDE,
-    ARM_SWAMP_DRAGON_ARMOUR
+    ARM_SWAMP_DRAGON_ARMOUR,
+    NUM_ARMOURS
 };
 
 enum ARMOUR_DESCRIPTIONS
@@ -170,12 +183,13 @@ enum ARMOUR_PROPERTIES
     PARM_EVASION
 };
 
+// Note:  currently the size of the attr array is hard coded at 30! ick! -- bwr
 enum ATTRIBUTES
 {
     ATTR_DIVINE_LIGHTNING_PROTECTION,  //    0
-    ATTR_SPEC_AIR,
-    ATTR_SPEC_EARTH,
-    ATTR_CONTROL_TELEPORT,
+    // ATTR_SPEC_AIR,                  // don't use this!
+    // ATTR_SPEC_EARTH,
+    ATTR_CONTROL_TELEPORT = 3,
     ATTR_WALK_SLOWLY,
     ATTR_TRANSFORMATION,               //    5
     ATTR_CARD_COUNTDOWN,
@@ -187,6 +201,7 @@ enum ATTRIBUTES
     ATTR_DEMONIC_SCALES,        //jmf: remember which kind of scales to improve
     ATTR_WALLS,
     ATTR_LAST_WALLS,
+    ATTR_DELAYED_FIREBALL,      // bwr: reserve fireballs
     NUM_ATTRIBUTES              // must always remain last member {dlb}
 };
 
@@ -262,6 +277,27 @@ enum BEAMS                        // beam[].flavour
     BEAM_RANDOM                   //   currently translates into FIRE..ACID
 };
 
+enum BEAM_COLOUR
+{
+    BCOL_SLOW,                  // BLACK
+    BCOL_HASTE,                 // BLUE
+    BCOL_HEALING,               // GREEN
+    BCOL_PARALYSIS,             // CYAN
+    BCOL_CONFUSION,             // RED
+    BCOL_INVISIBILITY,          // MAGENTA
+    BCOL_DIGGING,               // BROWN
+    BCOL_TELEPORT,              // LIGHTGREY
+    BCOL_POLYMORPH,             // DARKGREY
+    BCOL_CHARM,                 // LIGHTBLUE
+    BCOL_BANISH,                // LIGHTGREEN
+    BCOL_DEGENERATE,            // LIGHTCYAN
+    BCOL_ENSLAVE_UNDEAD,        // LIGHTRED
+    BCOL_PAIN,                  // LIGHTMAGENTA
+    BCOL_DISPEL_UNDEAD,         // YELLOW
+    BCOL_DISINTEGRATION,        // WHITE
+    BCOL_ENSLAVE_DEMON          // 16
+};
+
 enum BOOKS
 {
     BOOK_MINOR_MAGIC_I,                //    0
@@ -323,8 +359,8 @@ enum BRANCHES                          // you.where_are_you
     BRANCH_VESTIBULE_OF_HELL,
     BRANCH_COCYTUS,
     BRANCH_TARTARUS,                   //    5
-    BRANCH_INFERNO,
-    BRANCH_THE_PIT,                    //    7
+    BRANCH_INFERNO,                             // unimplemented
+    BRANCH_THE_PIT,                    //    7  // unimplemented
     BRANCH_ORCISH_MINES = 10,          //   10
     BRANCH_HIVE,
     BRANCH_LAIR,
@@ -374,7 +410,9 @@ enum CANNED_MESSAGES                   // canned_msg() - unsigned char
     MSG_CANNOT_DO_YET,
     MSG_OK,
     MSG_UNTHINKING_ACT,
-    MSG_SPELL_FIZZLES
+    MSG_SPELL_FIZZLES,
+    MSG_HUH,
+    MSG_EMPTY_HANDED
 };
 
 enum CLOUD_TYPES // cloud_type[], place_cloud(), big_cloud()
@@ -537,14 +575,18 @@ enum DECKS
 
 enum DELAY
 {
-    DELAY_EAT,                         //    0
-    DELAY_ARMOR_ON,
-    DELAY_ARMOR_OFF,
+    DELAY_NOT_DELAYED,
+    DELAY_EAT,
+    DELAY_ARMOUR_ON,
+    DELAY_ARMOUR_OFF,
     DELAY_MEMORIZE,
     DELAY_BUTCHER,
     DELAY_AUTOPICKUP,
     DELAY_WEAPON_SWAP,                 // for easy_butcher
-    DELAY_PASSWALL
+    DELAY_PASSWALL,
+    DELAY_DROP_ITEM,
+    DELAY_INTERUPTABLE,                // simple interuptable delay
+    DELAY_UNINTERUPTABLE               // simple uninteruptable delay
 };
 
 enum DEMON_BEAMS
@@ -560,6 +602,20 @@ enum DEMON_CLASSES                     // summon_any_demon()
     DEMON_LESSER,                      //    0: Class V
     DEMON_COMMON,                      //    1: Class II-IV
     DEMON_GREATER                      //    2: Class I
+};
+
+enum DESCRIPTION_LEVEL
+{
+    DESC_CAP_THE,                      // 0
+    DESC_NOCAP_THE,                    // 1
+    DESC_CAP_A,                        // 2
+    DESC_NOCAP_A,                      // 3
+    DESC_CAP_YOUR,                     // 4
+    DESC_NOCAP_YOUR,                   // 5
+    DESC_PLAIN,                        // 6
+    DESC_NOCAP_ITS,                    // 7
+    DESC_INVENTORY_EQUIP,                    // 8
+    DESC_INVENTORY               // 8
 };
 
 enum DIRECTION                         // (unsigned char) you.char_direction
@@ -699,6 +755,7 @@ enum DURATIONS                         // you.duration[]
     DUR_INFECTED_SHUGGOTH_SEED,
     DUR_CONDENSATION_SHIELD,           //   23
     DUR_STONESKIN,
+    DUR_REPEL_UNDEAD,                  //   25
     DUR_LAST_DUR, //jmf: for asserts
     NUM_DURATIONS = 30
     // set at 30 to prevent savefile incompatibilities 12mar2000{dlb}
@@ -762,7 +819,15 @@ enum ENCHANTMENT                       // menv[].enchantment[]
     ENCH_FRIEND_ABJ_VI,                //   no longer used
     ENCH_CREATED_FRIENDLY,             //   no longer used
     ENCH_SLEEP_WARY,
+    ENCH_SUBMERGED,                    //   73 (includes air elementals in air)
+    ENCH_SHORT_LIVED,                  //   74 for ball lightning
     NUM_ENCHANTMENTS
+};
+
+enum ENCHANT_STATS
+{
+    ENCHANT_TO_HIT,
+    ENCHANT_TO_DAM
 };
 
 enum EQUIPMENT
@@ -777,7 +842,14 @@ enum EQUIPMENT
     EQ_LEFT_RING,
     EQ_RIGHT_RING,
     EQ_AMULET,
-    NUM_EQUIP
+    NUM_EQUIP,
+
+    // these aren't actual equipment slots, they're categories for functions
+    EQ_STAFF            = 100,         // weapon with base_type OBJ_STAVES
+    EQ_RINGS,                          // check both rings
+    EQ_RINGS_PLUS,                     // check both rings and sum plus
+    EQ_RINGS_PLUS2,                    // check both rings and sum plus2
+    EQ_ALL_ARMOUR                      // check all armour types
 };
 
 enum FOODS                             // mitm[].sub_type[]
@@ -812,6 +884,13 @@ enum GENUS_PLAYER                      // see player::player_genus()
     GENPC_DRACONIAN,                   //    0
     GENPC_ELVEN,                       //    1
     GENPC_DWARVEN                      //    2
+};
+
+enum GENDER
+{
+    GENDER_NEUTER,
+    GENDER_MALE,
+    GENDER_FEMALE
 };
 
 enum GODS                              //  you.religion
@@ -862,6 +941,31 @@ enum HANDS_REQUIRED
     HANDS_ONE_OR_TWO_HANDED
 };
 
+enum HELMET_TYPES  // used in pluses2
+{
+    THELM_HELMET        = 0x0000,
+    THELM_HELM          = 0x0001,
+    THELM_CAP           = 0x0002,
+    THELM_WIZARD_HAT    = 0x0003,
+    THELM_NUM_TYPES     = 4,
+
+    THELM_SPECIAL       = 0x0004,  // type used only for artefacts (mask, hat)
+    THELM_TYPE_MASK     = 0x00ff,
+
+
+    THELM_DESC_PLAIN    = 0x0000,
+    THELM_DESC_WINGED   = 0x0100,
+    THELM_DESC_HORNED   = 0x0200,
+    THELM_DESC_CRESTED  = 0x0300,
+    THELM_DESC_PLUMED   = 0x0400,
+    THELM_DESC_SPIKED   = 0x0500,
+    THELM_DESC_VISORED  = 0x0600,
+    THELM_DESC_JEWELLED = 0x0700,
+
+    THELM_DESC_MASK     = 0xff00
+};
+
+#if 0
 enum HELMET_DESCRIPTIONS
 {
     DHELM_WINGED = 1,                  //    1
@@ -873,6 +977,26 @@ enum HELMET_DESCRIPTIONS
     DHELM_JEWELLED
 };
 
+enum HELMET_TYPES  // used in pluses2
+{
+    THELM_HELMET = 0,
+    THELM_HELM,
+    THELM_CAP,
+    THELM_WIZARD_HAT,
+    NUM_HELMET_TYPES,
+    THELM_SPECIAL               // type used only for artefacts (mask, hat)
+};
+#endif
+
+enum BOOT_TYPES  // used in pluses2
+{
+    TBOOT_BOOTS = 0,
+    TBOOT_NAGA_BARDING,
+    TBOOT_CENTAUR_BARDING,
+    NUM_BOOT_TYPES
+};
+
+
 enum HUNGER_STATES                     // you.hunger_state
 {
     HS_RAVENOUS,                       //    0: not used within code, really
@@ -883,6 +1007,44 @@ enum HUNGER_STATES                     // you.hunger_state
     HS_ENGORGED                        //    5
 };
 
+enum ITEM_STATUS_FLAGS      // per item flags: ie. ident status, cursed status
+{
+    ISFLAG_KNOW_CURSE        = 0x00000001,  // curse status
+    ISFLAG_KNOW_TYPE         = 0x00000002,  // artefact name, sub/special types
+    ISFLAG_KNOW_PLUSES       = 0x00000004,  // to hit/to dam/to AC/charges
+    ISFLAG_KNOW_PROPERTIES   = 0x00000008,  // know special artefact properties
+    ISFLAG_IDENT_MASK        = 0x0000000F,  // mask of all id related flags
+
+    // these three masks are of the minimal flags set upon using equipment:
+    ISFLAG_EQ_WEAPON_MASK    = 0x00000003,  // mask of flags for weapon equip
+    ISFLAG_EQ_ARMOUR_MASK    = 0x00000007,  // mask of flags for armour equip
+    ISFLAG_EQ_JEWELLERY_MASK = 0x00000007,  // mask of flags for known jewellery
+
+    ISFLAG_CURSED            = 0x00000100,  // cursed
+    ISFLAG_RESERVED_1        = 0x00000200,  // reserved (heavy cursed?)
+    ISFLAG_RESERVED_2        = 0x00000400,  // reserved (re-cursing? :) )
+    ISFLAG_RESERVED_3        = 0x00000800,  // reserved (perma-cursed?)
+    ISFLAG_CURSE_MASK        = 0x00000F00,  // mask of all curse related flags
+
+    ISFLAG_RANDART           = 0x00001000,  // special value is seed
+    ISFLAG_UNRANDART         = 0x00002000,  // is an unrandart
+    ISFLAG_ARTEFACT_MASK     = 0x00003000,  // randart or unrandart
+
+    ISFLAG_NO_DESC           = 0x00000000,  // used for clearing these flags
+    ISFLAG_GLOWING           = 0x00010000,  // weapons or armour
+    ISFLAG_RUNED             = 0x00020000,  // weapons or armour
+    ISFLAG_EMBROIDERED_SHINY = 0x00040000,  // armour: depends on sub-type
+    ISFLAG_COSMETIC_MASK     = 0x00070000,  // mask of cosmetic descriptions
+
+    ISFLAG_NO_RACE           = 0x00000000,  // used for clearing these flags
+    ISFLAG_ORCISH            = 0x01000000,  // low quality items
+    ISFLAG_DWARVEN           = 0x02000000,  // strong and robust items
+    ISFLAG_ELVEN             = 0x04000000,  // light and accurate items
+    ISFLAG_RACIAL_MASK       = 0x07000000,  // mask of racial equipment types
+
+    ISFLAG_DEBUG_MARK        = 0x80000000   // used for testing item structure
+};
+
 enum ITEM_DESCRIPTIONS
 {
     IDESC_WANDS,
@@ -890,6 +1052,21 @@ enum ITEM_DESCRIPTIONS
     IDESC_SCROLLS,                      // special field (like the others)
     IDESC_RINGS,
     IDESC_SCROLLS_II                    // pluses field
+};
+
+enum ITEM_TYPE_ID       // used for first index of id[4][50]
+{
+    IDTYPE_WANDS = 0,
+    IDTYPE_SCROLLS,
+    IDTYPE_JEWELLERY,
+    IDTYPE_POTIONS
+};
+
+enum ITEM_TYPE_ID_STATE  // used for values in id[4][50]
+{
+    ID_UNKNOWN_TYPE = 0,
+    ID_KNOWN_TYPE,
+    ID_TRIED_TYPE
 };
 
 enum JEWELLERY
@@ -927,7 +1104,8 @@ enum JEWELLERY
     AMU_CONSERVATION,
     AMU_CONTROLLED_FLIGHT,
     AMU_INACCURACY,
-    AMU_RESIST_MUTATION
+    AMU_RESIST_MUTATION,
+    NUM_JEWELLERY
 };
 
 enum JOB
@@ -1032,7 +1210,8 @@ enum MAP_SECTIONS                      // see maps.cc and dungeon.cc {dlb}
 };
 
 // if you mess with this list, you'll need to make changes in initfile.cc
-enum MESSAGE_CHANNEL {
+enum MESSAGE_CHANNEL
+{
     MSGCH_PLAIN,          // regular text
     MSGCH_PROMPT,         // various prompts
     MSGCH_GOD,            // god/religion (param is god)
@@ -1047,10 +1226,13 @@ enum MESSAGE_CHANNEL {
     MSGCH_MONSTER_SPELL,  // monsters casting spells
     MSGCH_MONSTER_ENCHANT,// monsters enchantments up and down
     MSGCH_MONSTER_DAMAGE, // monster damage reports (param is level)
+    MSGCH_ROTTEN_MEAT,    // messages about chunks/corpses becoming rotten
+    MSGCH_EQUIPMENT,      // equipment listing messages
     NUM_MESSAGE_CHANNELS  // always last
 };
 
-enum MESSAGE_COLOURS {
+enum MESSAGE_COLOURS
+{
     MSGCOL_BLACK        = 0,    // the order of these colours is important
     MSGCOL_BLUE,
     MSGCOL_GREEN,
@@ -1072,7 +1254,7 @@ enum MESSAGE_COLOURS {
     MSGCOL_PLAIN                // same as plain channel
 };
 
-enum MISCELLANY                        // mitm.sub_type[]
+enum MISCELLANY                        // mitm[].sub_type
 {
     MISC_BOTTLED_EFREET,               //    0
     MISC_CRYSTAL_BALL_OF_SEEING,
@@ -1101,10 +1283,10 @@ enum MISSILES                          // (unsigned char)
     MI_ARROW,
     MI_BOLT,
     MI_DART,
-    MI_EGGPLANT,
-    MI_LARGE_ROCK, //jmf: it'd be nice to move MI_LARGE_ROCK to DEBRIS_ROCK
     MI_NEEDLE,
-    NUM_MISSILES
+    MI_LARGE_ROCK, //jmf: it'd be nice to move MI_LARGE_ROCK to DEBRIS_ROCK
+    NUM_MISSILES,
+    MI_EGGPLANT
 };
 
 enum MONSTERS                          // (int) menv[].type
@@ -1415,7 +1597,7 @@ enum MONSTERS                          // (int) menv[].type
     MONS_ELECTRIC_GOLEM, // replacing the guardian robot -- bwr
     MONS_BALL_LIGHTNING, // replacing the dorgi -- bwr
     MONS_ORB_OF_FIRE,    // Swords renamed to fit -- bwr
-    MONS_QUOKKA,         // Quokka are a type of wallaby, returned -- bwr
+    MONS_QUOKKA,         // Quokka are a type of wallaby, returned -- bwr 382
     MONS_EYE_OF_DEVASTATION = 385,     //  385
     MONS_MOTH_OF_WRATH,
     MONS_DEATH_COB,
@@ -1485,18 +1667,22 @@ enum MONSTER_EVENTS
     ME_CORNERED                         // cannot flee
 };
 
+#if 0
+// Obsolete... use mons_charclass()
 enum MONSTER_CATEGORIES
 {
     MC_MIMIC, //    0
     NUM_MC,
     MC_UNSPECIFIED = 255 // keep at end !!! mind the upper limit of 255 {dlb}
 };
+#endif
 
 enum MONSTER_FLAGS
 {
     MF_CREATED_FRIENDLY = 0x01,
     MF_GOD_GIFT         = 0x02,
-    MF_BATTY            = 0x04
+    MF_BATTY            = 0x04,
+    MF_JUST_SUMMONED    = 0x08
 };
 
 enum MONSTER_DAMAGE
@@ -1536,6 +1722,14 @@ enum MONSTER_INVENTORY_SLOTS           // (int) menv[].inv[]
     MSLOT_SCROLL,
     MSLOT_GOLD, //mv: used for money :) (7 Aug 2001)
     NUM_MONSTER_SLOTS = 8 // value must remain 8 for savefile compatibility {dlb}
+};
+
+enum MONSTER_ITEM_USE
+{
+    MONUSE_NOTHING,
+    MONUSE_OPEN_DOORS,
+    MONUSE_STARTING_EQUIPMENT,
+    MONUSE_WEAPONS_ARMOUR
 };
 
 enum MONSTER_SPELLS   // mons_cast(), mspell_list[], mons_spells()
@@ -1584,8 +1778,8 @@ enum MONSTER_SPELLS   // mons_cast(), mspell_list[], mons_spells()
     MS_POISON_SPLASH,
     MS_SUMMON_UNDEAD,
     MS_MUTATION,                       //   43
-    //MS_ZULZER = 44, //   44 - deprecated, was only for Dorgi {dlb}
-    MS_DISINTEGRATE = 45,              //   45
+    MS_CANTRIP,
+    MS_DISINTEGRATE,                   //   45
     MS_MARSH_GAS,
     MS_QUICKSILVER_BOLT,
     MS_TORMENT,
@@ -1688,7 +1882,8 @@ enum MONSTER_SPELL_TEMPLATES
     MST_QUICKSILVER_DRAGON,
     MST_IRON_DRAGON,                    // 127
     MST_SKELETAL_WARRIOR,
-    NUM_MSTYPES
+    NUM_MSTYPES,
+    MST_NO_SPELLS = 250
 };
 
 enum MUTATIONS
@@ -1777,27 +1972,6 @@ enum MUTATIONS
     NUM_MUTATIONS
 };
 
-enum NAMED_WEAPONS // equivalent to you.inv_dam[] or mitm.special[]
-{
-    NWPN_SINGING_SWORD = 181,          //  181
-    NWPN_WRATH_OF_TROG,
-    NWPN_SCYTHE_OF_CURSES,
-    NWPN_MACE_OF_VARIABILITY,
-    NWPN_GLAIVE_OF_PRUNE,              //  185
-    NWPN_SCEPTRE_OF_TORMENT,
-    NWPN_SWORD_OF_ZONGULDROK,
-// these three are not generated randomly {dlb}
-    NWPN_SWORD_OF_CEREBOV,
-    NWPN_STAFF_OF_DISPATER,
-    NWPN_SCEPTRE_OF_ASMODEUS,          //  190
-// these three are not generated randomly {dlb}
-    NWPN_SWORD_OF_POWER,
-    NWPN_KNIFE_OF_ACCURACY,
-    NWPN_STAFF_OF_OLGREB,
-    NWPN_VAMPIRES_TOOTH,
-    NWPN_STAFF_OF_WUCAD_MU             //  195
-};
-
 enum NAUGHTY_THINGS
 {
     NAUGHTY_NECROMANCY = 1, //    1 - using necromancy (spell or device)
@@ -1816,7 +1990,7 @@ enum NAUGHTY_THINGS
     NUM_NAUGHTY_THINGS
 };
 
-enum OBJECT_CLASSES                    // (unsigned char) mitm.base_type[]
+enum OBJECT_CLASSES                    // (unsigned char) mitm[].base_type
 {
     OBJ_WEAPONS,                       //    0
     OBJ_MISSILES,
@@ -1880,6 +2054,23 @@ enum POTIONS
     NUM_POTIONS
 };
 
+enum PRONOUN_TYPE
+{
+    PRONOUN_CAP,                        // 0
+    PRONOUN_NOCAP,                      // 1
+    PRONOUN_CAP_POSSESSIVE,             // 2
+    PRONOUN_NOCAP_POSSESSIVE,           // 3
+    PRONOUN_REFLEXIVE                   // 4 (reflexive is always lowercase)
+};
+
+enum PROXIMITY   // proximity to player to create monster
+{
+    PROX_ANYWHERE,
+    PROX_CLOSE_TO_PLAYER,
+    PROX_AWAY_FROM_PLAYER,
+    PROX_NEAR_STAIRS
+};
+
 enum RANDART_PROP
 {
     RAP_BRAND,                         //    0
@@ -1909,7 +2100,54 @@ enum RANDART_PROP
     RAP_METABOLISM,
     RAP_MUTAGENIC,                     //   25
     RAP_ACCURACY,
-    RAP_DAMAGE
+    RAP_DAMAGE,
+    RAP_CURSED
+};
+
+enum READ_BOOK_ACTION
+{
+    RBOOK_USE_STAFF,
+    RBOOK_MEMORIZE,
+    RBOOK_READ_SPELL
+};
+
+enum RUN_DIR
+{
+    RDIR_UP = 0,
+    RDIR_UP_RIGHT,
+    RDIR_RIGHT,
+    RDIR_DOWN_RIGHT,
+    RDIR_DOWN,
+    RDIR_DOWN_LEFT,
+    RDIR_LEFT,
+    RDIR_UP_LEFT,
+    RDIR_REST
+};
+
+enum RUNE_TYPES
+{
+    // Note: that runes DIS-SWAMP have the same numberic value as the branch
+    RUNE_DIS                    = 1,
+    RUNE_GEHENNA,
+    RUNE_COCYTUS                = 4,
+    RUNE_TARTARUS,
+    RUNE_SLIME_PITS             = 13,
+    RUNE_VAULTS,
+    RUNE_SNAKE_PIT              = 19,
+    RUNE_ELVEN_HALLS,                   // unused
+    RUNE_TOMB,
+    RUNE_SWAMP,
+
+    // Runes 50 and 51 are for Pandemonium (general demon) and the Abyss
+    RUNE_DEMONIC                = 50,
+    RUNE_ABYSSAL,
+
+    // Runes 60-63 correspond to the Pandemonium demonlords,
+    // and are equal to the corresponding vault.
+    RUNE_MNOLEG                 = 60,
+    RUNE_LOM_LOBON,
+    RUNE_CEREBOV,
+    RUNE_GLOORX_VLOQ
 };
 
 enum SCROLLS
@@ -2032,7 +2270,7 @@ enum SPECIAL_MISSILES // to separate from weapons in general {dlb}
     SPMSL_FLAME,                       //    1
     SPMSL_ICE,                         //    2
     SPMSL_POISONED, //    3 - from poison_ammo() enchantment {dlb}
-    SPMSL_POISONED_II                  //    4
+    SPMSL_POISONED_II,                 //    4
 };
 
 enum SPECIAL_ROOMS
@@ -2044,7 +2282,13 @@ enum SPECIAL_ROOMS
     NUM_SPECIAL_ROOMS                  //    4 - must remain final member {dlb}
 };
 
-enum SPECIAL_WEAPONS // equivalent to (you.inv_dam[] or mitm.special[]) % 30
+enum SPECIAL_RINGS  // jewellery mitm[].special values
+{
+    SPRING_RANDART = 200,
+    SPRING_UNRANDART = 201
+};
+
+enum SPECIAL_WEAPONS // equivalent to (you.inv[].special or mitm[].special) % 30
 {
     SPWPN_NORMAL,                      //    0
     SPWPN_FLAMING,
@@ -2071,7 +2315,27 @@ enum SPECIAL_WEAPONS // equivalent to (you.inv_dam[] or mitm.special[]) % 30
     SPWPN_RANDART_IV,
     SPWPN_RANDART_V,
     NUM_SPECIAL_WEAPONS,
-    SPWPN_DUMMY_CRUSHING //jmf: for new "crush brand" spell (on maces etc.)
+    SPWPN_DUMMY_CRUSHING,        // ONLY TEMPORARY USAGE -- converts to VORPAL
+
+    // everything above this point is a special artefact wield:
+    SPWPN_SINGING_SWORD = 181,          //  181
+    SPWPN_WRATH_OF_TROG,
+    SPWPN_SCYTHE_OF_CURSES,
+    SPWPN_MACE_OF_VARIABILITY,
+    SPWPN_GLAIVE_OF_PRUNE,              //  185
+    SPWPN_SCEPTRE_OF_TORMENT,
+    SPWPN_SWORD_OF_ZONGULDROK,
+
+    // these three are not generated randomly {dlb}
+    SPWPN_SWORD_OF_CEREBOV,
+    SPWPN_STAFF_OF_DISPATER,
+    SPWPN_SCEPTRE_OF_ASMODEUS,          //  190
+
+    SPWPN_SWORD_OF_POWER,
+    SPWPN_KNIFE_OF_ACCURACY,
+    SPWPN_STAFF_OF_OLGREB,
+    SPWPN_VAMPIRES_TOOTH,
+    SPWPN_STAFF_OF_WUCAD_MU             //  195
 };
 
 enum SPECIAL_WIELD                     // you.special_wield
@@ -2151,6 +2415,7 @@ enum SPELLS
     SPELL_APPORTATION,
     SPELL_TWIST,
     SPELL_FAR_STRIKE,                  //   10
+    SPELL_DELAYED_FIREBALL,            //   10
     SPELL_CONJURE_FLAME = 13,          //   13
     SPELL_DIG,
     SPELL_BOLT_OF_FIRE,                //   15
@@ -2371,9 +2636,9 @@ enum STAVES
     STAFF_DEATH,
     STAFF_CONJURATION,
     STAFF_ENCHANTMENT,
-    STAFF_SUMMONING_I,
+    STAFF_SUMMONING,
     STAFF_SMITING,                     //   10
-    STAFF_SUMMONING_II,
+    STAFF_SPELL_SUMMONING,
     STAFF_DESTRUCTION_I,
     STAFF_DESTRUCTION_II,
     STAFF_DESTRUCTION_III,
@@ -2473,6 +2738,13 @@ enum UNDEAD_STATES                     // you.is_undead
     US_UNDEAD
 };
 
+enum UNIQUE_ITEM_STATUS
+{
+    UNIQ_NOT_EXISTS = 0,
+    UNIQ_EXISTS = 1,
+    UNIQ_LOST_IN_ABYSS = 2
+};
+
 enum VORPAL_DESCRIPTIONS
 {
     DVORP_CRUSHING,                    //    0
@@ -2481,7 +2753,7 @@ enum VORPAL_DESCRIPTIONS
     DVORP_CHOPPING
 };
 
-enum WANDS                             // mitm.subtype[]
+enum WANDS                             // mitm[].subtype
 {
     WAND_FLAME,                        //    0
     WAND_FROST,
@@ -2578,6 +2850,17 @@ enum WEAPON_PROPERTIES
     PWPN_HIT,
     PWPN_SPEED
 };
+
+#ifdef WIZARD
+
+enum WIZARD_OPTIONS
+{
+    WIZ_NEVER,                         // protect player from accidental wiz
+    WIZ_NO,                            // don't start character in wiz mode
+    WIZ_YES                            // start character in wiz mode
+};
+
+#endif
 
 enum ZAPS                              // zapping(), zappy()
 {

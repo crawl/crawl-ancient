@@ -24,7 +24,7 @@ bool brand_weapon(int which_brand, int power);
 /* ***********************************************************************
  * called from: ability - spell
  * *********************************************************************** */
-int animate_a_corpse(char axps, char ayps, int corps_beh, int corps_hit, char class_allowed);
+int animate_a_corpse(int axps, int ayps, int corps_beh, int corps_hit, int class_allowed);
 
 
 // last updated 24may2000 {dlb}

@@ -54,6 +54,7 @@
 
 #include "externs.h"
 
+#include "cloud.h"
 #include "debug.h"
 #include "dungeon.h"
 #include "itemname.h"
@@ -81,26 +82,27 @@ extern FixedArray < bool, MAX_LEVELS, MAX_BRANCHES > tmp_file_pairs;
  */
 unsigned char search_order_conj[] = {
 /* 0 */
-    54,                         // crystal spear
-    53,                         // -ve energy
-    148,                        // agony
-    151,                        // disintegrate
-    17,                         // lightning
-    79,                         // sticky flame
-    60,                         // isk's blast
-    15,                         // firebolt
-    16,                         // cold bolt
-    6,                          // fireball
+    SPELL_LEHUDIBS_CRYSTAL_SPEAR,
+    SPELL_BOLT_OF_DRAINING,
+    SPELL_AGONY,
+    SPELL_DISINTEGRATE,
+    SPELL_LIGHTNING_BOLT,
+    SPELL_STICKY_FLAME,
+    SPELL_ISKENDERUNS_MYSTIC_BLAST,
+    SPELL_BOLT_OF_FIRE,
+    SPELL_BOLT_OF_COLD,
+    SPELL_FIREBALL,
+    SPELL_DELAYED_FIREBALL,
 /* 10 */
-    35,                         // venom bolt
-    128,                        // iron
-    129,                        // stone arrow
-    26,                         // thr fl
-    27,                         // thr fr
-    67,                         // pain
-    115,                        // sting
-    5,                          // m dart
-    250,                        // terminate search
+    SPELL_VENOM_BOLT,
+    SPELL_BOLT_OF_IRON,
+    SPELL_STONE_ARROW,
+    SPELL_THROW_FLAME,
+    SPELL_THROW_FROST,
+    SPELL_PAIN,
+    SPELL_STING,
+    SPELL_MAGIC_DART,
+    SPELL_NO_SPELL,                        // end search
 };
 
 /*
@@ -108,21 +110,21 @@ unsigned char search_order_conj[] = {
  */
 unsigned char search_order_third[] = {
 /* 0 */
-    158,                        // symbol of torment
-    121,                        // summon gr dmn
-    72,                         // summon wraiths
-    62,                         // summon hor th
-    119,                        // summon demon
-    120,                        // demonic horde
-    22,                         // haste
-    28,                         // animate dead
-    25,                         // invis
-    82,                         // call imp
-    49,                         // summon small mammal
+    SPELL_SYMBOL_OF_TORMENT,
+    SPELL_SUMMON_GREATER_DEMON,
+    SPELL_SUMMON_WRAITHS,
+    SPELL_SUMMON_HORRIBLE_THINGS,
+    SPELL_SUMMON_DEMON,
+    SPELL_DEMONIC_HORDE,
+    SPELL_HASTE,
+    SPELL_ANIMATE_DEAD,
+    SPELL_INVISIBILITY,
+    SPELL_CALL_IMP,
+    SPELL_SUMMON_SMALL_MAMMAL,
 /* 10 */
-    28,                         // controlled blink
-    59,                         // blink
-    250,                        // end search
+    SPELL_CONTROLLED_BLINK,
+    SPELL_BLINK,
+    SPELL_NO_SPELL,                        // end search
 };
 
 /*
@@ -132,28 +134,27 @@ unsigned char search_order_third[] = {
  */
 unsigned char search_order_misc[] = {
 /* 0 */
-    148,                        // agony - evil spell
-    113,                        // banishment
-    23,                         // paralyse
-    24,                         // confuse
-    21,                         // slow
-    20,                         // polymorph other
-    37,                         // teleport other
-    14,                         // dig
-    250,                        // end search
+    SPELL_AGONY,
+    SPELL_BANISHMENT,
+    SPELL_PARALYZE,
+    SPELL_CONFUSE,
+    SPELL_SLOW,
+    SPELL_POLYMORPH_OTHER,
+    SPELL_TELEPORT_OTHER,
+    SPELL_DIG,
+    SPELL_NO_SPELL,                        // end search
 };
 
 /* Last slot (emergency) can only be teleport self or blink. */
 
 static void redraw_all(void)
 {
-
     you.redraw_hit_points = 1;
     you.redraw_magic_points = 1;
     you.redraw_strength = 1;
     you.redraw_intelligence = 1;
     you.redraw_dexterity = 1;
-    you.redraw_armor_class = 1;
+    you.redraw_armour_class = 1;
     you.redraw_evasion = 1;
     you.redraw_experience = 1;
     you.redraw_gold = 1;
@@ -163,29 +164,40 @@ static void redraw_all(void)
 struct ghost_struct ghost;
 
 bool find_spell(unsigned char which_sp);
+
 unsigned char translate_spell(unsigned char spel);
 unsigned char search_third_list(unsigned char ignore_spell);
 unsigned char search_second_list(unsigned char ignore_spell);
 unsigned char search_first_list(unsigned char ignore_spell);
+
 void add_spells(struct ghost_struct &gh);
 void generate_random_demon();
-static bool determine_version(FILE *restoreFile, char &majorVersion,
-    char &minorVersion);
-static void restore_version(FILE *restoreFile, char majorVersion,
-    char minorVersion);
-static bool determine_level_version(FILE *levelFile, char &majorVersion,
-    char &minorVersion);
-static void restore_level_version(FILE *levelFile, char majorVersion,
-    char minorVersion);
-static bool determine_ghost_version(FILE *ghostFile, char &majorVersion,
-    char &minorVersion);
-static void restore_ghost_version(FILE *ghostFile, char majorVersion,
-    char minorVersion);
-static void restore_tagged_file(FILE *restoreFile, int fileType, char minorVersion);
+
+static bool determine_version( FILE *restoreFile,
+                               char &majorVersion, char &minorVersion );
+
+static void restore_version( FILE *restoreFile,
+                             char majorVersion, char minorVersion );
+
+static bool determine_level_version( FILE *levelFile,
+                                     char &majorVersion, char &minorVersion );
+
+static void restore_level_version( FILE *levelFile,
+                                   char majorVersion, char minorVersion );
+
+static bool determine_ghost_version( FILE *ghostFile,
+                                     char &majorVersion, char &minorVersion );
+
+static void restore_ghost_version( FILE *ghostFile,
+                                   char majorVersion, char minorVersion );
+
+static void restore_tagged_file( FILE *restoreFile, int fileType,
+                                 char minorVersion );
+
 static void load_ghost();
 
-void make_filename(char *buf, char *prefix, int level, int where,
-    bool isLabyrinth, bool isGhost)
+void make_filename( char *buf, char *prefix, int level, int where,
+                    bool isLabyrinth, bool isGhost )
 {
     char suffix[4], lvl[5];
     char finalprefix[kFileNameLen];
@@ -213,7 +225,7 @@ void make_filename(char *buf, char *prefix, int level, int where,
     char uid[10];
     if (!isGhost)
     {
-        itoa(getuid(), uid, 10);
+        itoa( (int) getuid(), uid, 10 );
         strcat(buf, uid);
     }
 #endif
@@ -225,8 +237,8 @@ void make_filename(char *buf, char *prefix, int level, int where,
         strcat(buf, suffix);
 }
 
-static void write_tagged_file(FILE *dataFile, char majorVersion,
-    char minorVersion, int fileType)
+static void write_tagged_file( FILE *dataFile, char majorVersion,
+                               char minorVersion, int fileType )
 {
     struct tagHeader th;
 
@@ -284,19 +296,11 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     unsigned char foll_ench[8][NUM_MON_ENCHANTS];
     unsigned char foll_flags[8];
 
-    unsigned char fit_iclass[8][8];
-    unsigned char fit_itype[8][8];
-    unsigned char fit_iplus[8][8];
-    unsigned char fit_iplus2[8][8];
-    unsigned char fit_idam[8][8];
-    unsigned int fit_iquant[8][8];
-    unsigned char fit_icol[8][8];
-    char fit_iid[8][8];
+    item_def foll_item[8][8];
 
     int itmf = 0;
     int ic = 0;
     int imn = 0;
-
 
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
@@ -327,12 +331,10 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     {
         for (int clouty = 0; clouty < MAX_CLOUDS; ++clouty)
         {
-            env.cloud_type[clouty] = CLOUD_NONE;
-            env.cgrid[env.cloud_x[clouty]][env.cloud_y[clouty]] = EMPTY_CLOUD;
-            env.cloud_decay[clouty] = 0;
-            --env.cloud_no;
+            delete_cloud( clouty );
         }
-        env.cloud_no = 0;
+
+        ASSERT( env.cloud_no == 0 );
     }
 
     if (want_followers && !just_made_new_lev)
@@ -387,7 +389,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 // player,  will follow up/down stairs.
                 if (!(mons_friendly(fmenv) ||
                     (fmenv->behavior == BEH_SEEK && fmenv->foe == MHITYOU)))
+                {
                     continue;
+                }
 
                 foll_class[following] = fmenv->type;
                 //itoa(foll_class[following], st_prn, 10);
@@ -395,7 +399,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 foll_hp[following] = fmenv->hit_points;
                 foll_hp_max[following] = fmenv->max_hit_points;
                 foll_HD[following] = fmenv->hit_dice;
-                foll_AC[following] = fmenv->armor_class;
+                foll_AC[following] = fmenv->armour_class;
                 foll_ev[following] = fmenv->evasion;
                 foll_speed[following] = fmenv->speed;
                 foll_speed_inc[following] = fmenv->speed_increment;
@@ -412,19 +416,11 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                     const int item = fmenv->inv[minvc];
                     if (item == NON_ITEM)
                     {
-                        fit_iquant[following][minvc] = 0;
+                        foll_item[following][minvc].quantity = 0;
                         continue;
                     }
 
-                    fit_iclass[following][minvc] = mitm.base_type[ item ];
-                    fit_itype[following][minvc] = mitm.sub_type[ item ];
-                    fit_iplus[following][minvc] = mitm.pluses[ item ];
-                    fit_iplus2[following][minvc] = mitm.pluses2[ item ];
-                    fit_idam[following][minvc] = mitm.special[ item ];
-                    fit_iquant[following][minvc] = mitm.quantity[ item ];
-                    fit_icol[following][minvc] = mitm.colour[ item ];
-                    fit_iid[following][minvc] = mitm.id[ item ];
-
+                    foll_item[following][minvc] = mitm[item];
                     destroy_item( item );
                 }
 
@@ -433,6 +429,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 foll_sec[following] = fmenv->number;
                 foll_hit[following] = fmenv->foe;
                 foll_flags[following] = fmenv->flags;
+
                 for(j=0; j<NUM_MON_ENCHANTS; j++)
                 {
                     foll_ench[following][j] = fmenv->enchantment[j];
@@ -444,8 +441,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 fmenv->hit_points = 0;
                 fmenv->max_hit_points = 0;
                 fmenv->hit_dice = 0;
-                fmenv->armor_class = 0;
+                fmenv->armour_class = 0;
                 fmenv->evasion = 0;
+
                 mgrd[count_x][count_y] = NON_MONSTER;
             }                   // end "for count_x, count_y"
         }
@@ -635,7 +633,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                             menv[following].hit_points = foll_hp[fmenv];
                             menv[following].max_hit_points = foll_hp_max[fmenv];
                             menv[following].hit_dice = foll_HD[fmenv];
-                            menv[following].armor_class = foll_AC[fmenv];
+                            menv[following].armour_class = foll_AC[fmenv];
                             menv[following].evasion = foll_ev[fmenv];
                             menv[following].speed = foll_speed[fmenv];
                             menv[following].x = count_x;
@@ -645,37 +643,35 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                             menv[following].speed_increment
                                                     = foll_speed_inc[fmenv];
 
-                            for (minvc = 0; minvc < NUM_MONSTER_SLOTS;
-                                 minvc++)
+                            for (minvc = 0; minvc < NUM_MONSTER_SLOTS; minvc++)
                             {
 
-                                if (fit_iquant[fmenv][minvc] == 0)
+                                if (!is_valid_item(foll_item[fmenv][minvc]))
                                 {
                                     menv[following].inv[minvc] = NON_ITEM;
                                     continue;
                                 }
 
-                                itmf = 0;
+                                itmf = get_item_slot(0);
+                                if (itmf == NON_ITEM)
+                                {
+                                    menv[following].inv[minvc] = NON_ITEM;
+                                    continue;
+                                }
 
-                                while (mitm.quantity[itmf] > 0)
-                                    ++itmf;
+                                mitm[itmf] = foll_item[fmenv][minvc];
+                                mitm[itmf].x = 0;
+                                mitm[itmf].y = 0;
+                                mitm[itmf].link = NON_ITEM;
 
                                 menv[following].inv[minvc] = itmf;
-                                mitm.base_type[itmf] = fit_iclass[fmenv][minvc];
-                                mitm.sub_type[itmf] = fit_itype[fmenv][minvc];
-                                mitm.pluses[itmf] = fit_iplus[fmenv][minvc];
-                                mitm.pluses2[itmf] = fit_iplus2[fmenv][minvc];
-                                mitm.special[itmf] = fit_idam[fmenv][minvc];
-                                mitm.quantity[itmf] = fit_iquant[fmenv][minvc];
-                                mitm.colour[itmf] = fit_icol[fmenv][minvc];
-                                mitm.id[itmf] = fit_iid[fmenv][minvc];
-                                mitm.link[itmf] = NON_ITEM;
                             }
 
                             menv[following].behavior = foll_beh[fmenv];
                             menv[following].attitude = foll_att[fmenv];
                             menv[following].number = foll_sec[fmenv];
                             menv[following].foe = foll_hit[fmenv];
+
                             for(j=0; j<NUM_MON_ENCHANTS; j++)
                                 menv[following].enchantment[j]=foll_ench[fmenv][j];
 
@@ -702,10 +698,10 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 if (menv[i].inv[j] == NON_ITEM)
                     continue;
 
-                if (mitm.link[menv[i].inv[j]] != NON_ITEM)
+                if (mitm[menv[i].inv[j]].link != NON_ITEM)
                 {
                     /* items carried by monsters shouldn't be linked */
-                    mitm.link[menv[i].inv[j]] = NON_ITEM;
+                    mitm[menv[i].inv[j]].link = NON_ITEM;
                 }
             }
         }
@@ -719,9 +715,13 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                     if (grd[count_x][count_y] >= DNGN_STONE_STAIRS_UP_I
                         && grd[count_x][count_y] <= DNGN_ROCK_STAIRS_UP)
                     {
-                        grd[count_x][count_y] =
-                                    (one_chance_in(60) ? DNGN_EXIT_PANDEMONIUM
-                                                       : DNGN_FLOOR);
+                        if (one_chance_in( you.mutation[MUT_PANDEMONIUM] ? 15
+                                                                         : 50 ))
+                        {
+                            grd[count_x][count_y] = DNGN_EXIT_PANDEMONIUM;
+                        }
+                        else
+                            grd[count_x][count_y] = DNGN_FLOOR;
                     }
 
                     if (grd[count_x][count_y] >= DNGN_ENTER_LABYRINTH
@@ -761,7 +761,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     // sanity check - EOF
     if (!feof(levelFile))
     {
-        sprintf(info, "\nIncomplete read of \"%s\" - aborting.\n", cha_fil);
+        snprintf( info, INFO_SIZE, "\nIncomplete read of \"%s\" - aborting.\n", cha_fil);
         perror(info);
         end(-1);
     }
@@ -841,7 +841,6 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
     if (env.elapsed_time != 0.0)
         update_corpses(you.elapsed_time - env.elapsed_time);
-
 }                               // end load()
 
 void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
@@ -869,13 +868,14 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
     }
 
     // nail all items to the ground
-    unlink_items();
+    fix_item_coordinates();
 
     // 4.0 initial genesis of saved format
     // 4.1 added attitude tag
     // 4.2 replaced old 'enchantment1' and with 'flags' (bitfield)
+    // 4.3 changes to make the item structure more sane
 
-    write_tagged_file(saveFile, 4, 2, TAGTYPE_LEVEL);
+    write_tagged_file( saveFile, 4, 3, TAGTYPE_LEVEL );
 
     fclose(saveFile);
 
@@ -892,9 +892,15 @@ void save_game(bool leave_game)
 #ifdef SAVE_PACKAGE_CMD
     char name_buff[kFileNameSize];
 
-    sprintf(name_buff, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
-    sprintf(cmd_buff, SAVE_PACKAGE_CMD, name_buff, name_buff);
-    sprintf(charFile, "%s.sav", name_buff);
+    snprintf( name_buff, sizeof(name_buff),
+              SAVE_DIR_PATH "%s%d", you.your_name, (int) getuid() );
+
+    snprintf( cmd_buff, sizeof(cmd_buff),
+              SAVE_PACKAGE_CMD, name_buff, name_buff );
+
+    snprintf( charFile, sizeof(charFile),
+              "%s.sav", name_buff );
+
 #else
     strncpy(charFile, you.your_name, kFileNameLen);
     charFile[kFileNameLen] = 0;
@@ -916,7 +922,10 @@ void save_game(bool leave_game)
         end(-1);
     }
 
-    write_tagged_file(saveFile, 4, 0, TAGTYPE_PLAYER);
+    // 4.0 initial genesis of saved format
+    // 4.1 changes to make the item structure more sane
+
+    write_tagged_file( saveFile, 4, 1, TAGTYPE_PLAYER );
 
     fclose(saveFile);
 
@@ -937,14 +946,23 @@ void save_game(bool leave_game)
     window(1, 1, 80, 25);
 #endif
 
-#ifdef SAVE_PACKAGE_CMD
-    system(cmd_buff);
-#endif
-
     clrscr();
 
-    sprintf(cmd_buff, "See you soon, %s!", you.your_name);
-    cprintf(cmd_buff);          //jmf: added you.your_name
+#ifdef SAVE_PACKAGE_CMD
+    if (system( cmd_buff ) != 0)
+    {
+        cprintf( EOL "Warning: Zip command (SAVE_PACKAGE_CMD) returned non-zero value!" EOL );
+    }
+
+#ifdef SHARED_FILES_CHMOD_PRIVATE
+    strcat( name_buff, PACKAGE_SUFFIX );
+    // change mode (unices)
+    chmod( name_buff, SHARED_FILES_CHMOD_PRIVATE );
+#endif
+
+#endif
+
+    cprintf( "See you soon, %s!", you.your_name );
 
     end(0);
 }                               // end save_game()
@@ -967,7 +985,7 @@ void load_ghost(void)
     if (!determine_ghost_version(gfile, majorVersion, minorVersion))
     {
         fclose(gfile);
-        sprintf(info, "Ghost file \"%s\" seems to be invalid.",
+        snprintf( info, INFO_SIZE, "Ghost file \"%s\" seems to be invalid.",
             cha_fil);
         mpr(info, MSGCH_WARN);
         more();
@@ -980,7 +998,7 @@ void load_ghost(void)
     if (!feof(gfile))
     {
         fclose(gfile);
-        sprintf(info, "Incomplete read of \"%s\".", cha_fil);
+        snprintf( info, INFO_SIZE, "Incomplete read of \"%s\".", cha_fil);
         mpr(info, MSGCH_WARN);
         more();
         return;
@@ -1001,7 +1019,7 @@ void load_ghost(void)
         menv[imn].hit_dice = ghost.values[12];
         menv[imn].hit_points = ghost.values[0];
         menv[imn].max_hit_points = ghost.values[0];
-        menv[imn].armor_class = ghost.values[2];
+        menv[imn].armour_class = ghost.values[2];
         menv[imn].evasion = ghost.values[1];
         menv[imn].speed = 10;
         menv[imn].speed_increment = 70;
@@ -1040,7 +1058,8 @@ void restore_game(void)
     char char_f[kFileNameSize];
 
 #ifdef SAVE_DIR_PATH
-    sprintf(char_f, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
+    snprintf( char_f, sizeof(char_f),
+              SAVE_DIR_PATH "%s%d", you.your_name, (int) getuid() );
 #else
     strncpy(char_f, you.your_name, kFileNameLen);
     char_f[kFileNameLen] = 0;
@@ -1077,7 +1096,7 @@ void restore_game(void)
     // sanity check - EOF
     if (!feof(restoreFile))
     {
-        sprintf(info, "\nIncomplete read of \"%s\" - aborting.\n", char_f);
+        snprintf( info, INFO_SIZE, "\nIncomplete read of \"%s\" - aborting.\n", char_f);
         perror(info);
         end(-1);
     }
@@ -1085,8 +1104,8 @@ void restore_game(void)
     fclose(restoreFile);
 }
 
-static bool determine_version(FILE *restoreFile, char &majorVersion,
-    char &minorVersion)
+static bool determine_version( FILE *restoreFile,
+                               char &majorVersion, char &minorVersion )
 {
     // read first two bytes.
     char buf[2];
@@ -1112,14 +1131,14 @@ static bool determine_version(FILE *restoreFile, char &majorVersion,
     return false;   // if its not 1 or 4, no idea!
 }
 
-static void restore_version(FILE *restoreFile, char majorVersion,
-    char minorVersion)
+static void restore_version( FILE *restoreFile,
+                             char majorVersion, char minorVersion )
 {
     // assuming the following check can be removed once we can read all
     // savefile versions.
     if (majorVersion < 4)
     {
-        sprintf(info, "\nSorry, this release cannot read a v%d.%d savefile.\n",
+        snprintf( info, INFO_SIZE, "\nSorry, this release cannot read a v%d.%d savefile.\n",
             majorVersion, minorVersion);
         perror(info);
         end(-1);
@@ -1136,7 +1155,8 @@ static void restore_version(FILE *restoreFile, char majorVersion,
 }
 
 // generic v4 restore function
-static void restore_tagged_file(FILE *restoreFile, int fileType, char minorVersion)
+static void restore_tagged_file( FILE *restoreFile, int fileType,
+                                 char minorVersion )
 {
     int i;
 
@@ -1159,8 +1179,8 @@ static void restore_tagged_file(FILE *restoreFile, int fileType, char minorVersi
     }
 }
 
-static bool determine_level_version(FILE *levelFile, char &majorVersion,
-    char &minorVersion)
+static bool determine_level_version( FILE *levelFile,
+                                     char &majorVersion, char &minorVersion )
 {
     // read first two bytes.
     char buf[2];
@@ -1186,14 +1206,14 @@ static bool determine_level_version(FILE *levelFile, char &majorVersion,
     return false;   // if its not 1 or 4, no idea!
 }
 
-static void restore_level_version(FILE *levelFile, char majorVersion,
-    char minorVersion)
+static void restore_level_version( FILE *levelFile,
+                                   char majorVersion, char minorVersion )
 {
     // assuming the following check can be removed once we can read all
     // savefile versions.
     if (majorVersion < 4)
     {
-        sprintf(info, "\nSorry, this release cannot read a v%d.%d level file.\n",
+        snprintf( info, INFO_SIZE, "\nSorry, this release cannot read a v%d.%d level file.\n",
             majorVersion, minorVersion);
         perror(info);
         end(-1);
@@ -1209,8 +1229,8 @@ static void restore_level_version(FILE *levelFile, char majorVersion,
     }
 }
 
-static bool determine_ghost_version(FILE *ghostFile, char &majorVersion,
-    char &minorVersion)
+static bool determine_ghost_version( FILE *ghostFile,
+                                     char &majorVersion, char &minorVersion )
 {
     // read first two bytes.
     char buf[2];
@@ -1236,7 +1256,7 @@ static bool determine_ghost_version(FILE *ghostFile, char &majorVersion,
     return false;   // if its not 4, no idea!
 }
 
-static void restore_old_ghost(FILE *ghostFile)
+static void restore_old_ghost( FILE *ghostFile )
 {
     char buf[41];
     read2(ghostFile, buf, 41);  // 41 causes EOF. 40 will not.
@@ -1248,8 +1268,8 @@ static void restore_old_ghost(FILE *ghostFile)
         ghost.values[i] = buf[i+20];
 }
 
-static void restore_ghost_version(FILE *ghostFile, char majorVersion,
-    char minorVersion)
+static void restore_ghost_version( FILE *ghostFile,
+                                   char majorVersion, char minorVersion )
 {
     // currently, we can read all known ghost versions.
     switch(majorVersion)
@@ -1268,6 +1288,7 @@ static void restore_ghost_version(FILE *ghostFile, char majorVersion,
 void save_ghost(void)
 {
     char cha_fil[kFileNameSize];
+    const int wpn = you.equip[EQ_WEAPON];
 
     if (you.your_level < 2 || you.is_undead)
         return;
@@ -1298,47 +1319,39 @@ void save_ghost(void)
     int d = 4;
     int e = 0;
 
-    if (you.species == SP_TROLL)
-        d += you.experience_level;
-
-    d += you.skills[SK_UNARMED_COMBAT]; /* Unarmed combat */
-
-    if (you.equip[EQ_WEAPON] != -1)
+    if (wpn != -1)
     {
-        if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
+        if (you.inv[wpn].base_type == OBJ_WEAPONS
+            || you.inv[wpn].base_type == OBJ_STAVES)
         {
-            d = property(you.inv_class[you.equip[EQ_WEAPON]],
-                         you.inv_type[you.equip[EQ_WEAPON]], PWPN_DAMAGE);
+            d = property( you.inv[wpn], PWPN_DAMAGE );
 
-            if (you.inv_dam[you.equip[EQ_WEAPON]] < NWPN_SINGING_SWORD)
-                e = you.inv_dam[you.equip[EQ_WEAPON]] % 30;
+            d *= 25 + you.skills[weapon_skill( you.inv[wpn].base_type,
+                                               you.inv[wpn].sub_type )];
+            d /= 25;
 
-            if (you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I)
+            if (you.inv[wpn].base_type == OBJ_WEAPONS)
             {
-                e = inv_randart_wpn_properties(you.equip[EQ_WEAPON], 0, RAP_BRAND);
+                if (is_random_artefact( you.inv[wpn] ))
+                    e = randart_wpn_property( you.inv[wpn], RAP_BRAND );
+                else
+                    e = you.inv[wpn].special;
             }
         }
-
-        if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES)
-            d = 5;
     }
-
-    if (you.equip[EQ_WEAPON] != -1
-        && (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-            || you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES))
+    else
     {
-        d *= 26 + you.skills[weapon_skill(you.inv_class[you.equip[EQ_WEAPON]],
-                                          you.inv_type[you.equip[EQ_WEAPON]])];
-        d /= 25;
+        /* Unarmed combat */
+        if (you.species == SP_TROLL)
+            d += you.experience_level;
+
+        d += you.skills[SK_UNARMED_COMBAT];
     }
 
-    d *= 31 + you.skills[SK_FIGHTING];
+    d *= 30 + you.skills[SK_FIGHTING];
     d /= 30;
 
     d += you.strength / 4;
-
-    d /= 3;
-    d *= 2;                     // ghosts were doing too much damage
 
     if (d > 50)
         d = 50;
@@ -1363,7 +1376,7 @@ void save_ghost(void)
         return;
     }
 
-    write_tagged_file(gfile, 4, 0, TAGTYPE_GHOST);
+    write_tagged_file( gfile, 4, 0, TAGTYPE_GHOST );
 
     fclose(gfile);
 
@@ -1380,24 +1393,24 @@ void add_spells(struct ghost_struct &gs)
 {
     int i = 0;
 
-    gs.values[14] = 250;
-    gs.values[15] = 250;
-    gs.values[16] = 250;
-    gs.values[17] = 250;
-    gs.values[18] = 250;
-    gs.values[19] = 250;
+    gs.values[14] = SPELL_NO_SPELL;
+    gs.values[15] = SPELL_NO_SPELL;
+    gs.values[16] = SPELL_NO_SPELL;
+    gs.values[17] = SPELL_NO_SPELL;
+    gs.values[18] = SPELL_NO_SPELL;
+    gs.values[19] = SPELL_NO_SPELL;
 
-    gs.values[14] = search_first_list(250);
+    gs.values[14] = search_first_list(SPELL_NO_SPELL);
     gs.values[15] = search_first_list(gs.values[14]);
-    gs.values[16] = search_second_list(250);
-    gs.values[17] = search_third_list(250);
+    gs.values[16] = search_second_list(SPELL_NO_SPELL);
+    gs.values[17] = search_third_list(SPELL_NO_SPELL);
 
-    if (gs.values[17] == 250)
-        gs.values[17] = search_first_list(250);
+    if (gs.values[17] == SPELL_NO_SPELL)
+        gs.values[17] = search_first_list(SPELL_NO_SPELL);
 
     gs.values[18] = search_first_list(gs.values[17]);
 
-    if (gs.values[18] == 250)
+    if (gs.values[18] == SPELL_NO_SPELL)
         gs.values[18] = search_first_list(gs.values[17]);
 
     if (find_spell(SPELL_DIG))
@@ -1418,8 +1431,8 @@ unsigned char search_first_list(unsigned char ignore_spell)
 {
     for (int i = 0; i < 20; i++)
     {
-        if (search_order_conj[i] == 250)
-            return 250;
+        if (search_order_conj[i] == SPELL_NO_SPELL)
+            return SPELL_NO_SPELL;
 
         if (search_order_conj[i] == ignore_spell)
             continue;
@@ -1428,15 +1441,15 @@ unsigned char search_first_list(unsigned char ignore_spell)
             return search_order_conj[i];
     }
 
-    return 250;
+    return SPELL_NO_SPELL;
 }                               // end search_first_list()
 
 unsigned char search_second_list(unsigned char ignore_spell)
 {
     for (int i = 0; i < 20; i++)
     {
-        if (search_order_third[i] == 250)
-            return 250;
+        if (search_order_third[i] == SPELL_NO_SPELL)
+            return SPELL_NO_SPELL;
 
         if (search_order_third[i] == ignore_spell)
             continue;
@@ -1445,15 +1458,15 @@ unsigned char search_second_list(unsigned char ignore_spell)
             return search_order_third[i];
     }
 
-    return 250;
+    return SPELL_NO_SPELL;
 }                               // end search_second_list()
 
 unsigned char search_third_list(unsigned char ignore_spell)
 {
     for (int i = 0; i < 20; i++)
     {
-        if (search_order_misc[i] == 250)
-            return 250;
+        if (search_order_misc[i] == SPELL_NO_SPELL)
+            return SPELL_NO_SPELL;
 
         if (search_order_misc[i] == ignore_spell)
             continue;
@@ -1462,7 +1475,7 @@ unsigned char search_third_list(unsigned char ignore_spell)
             return search_order_misc[i];
     }
 
-    return 250;
+    return SPELL_NO_SPELL;
 }                               // end search_third_list()
 
 /*
@@ -1482,7 +1495,7 @@ bool find_spell(unsigned char which_sp)
 
 /*
    When passed the number for a player spell, returns the equivalent monster
-   spell. Returns 250 on failure (no equiv).
+   spell. Returns SPELL_NO_SPELL on failure (no equiv).
  */
 unsigned char translate_spell(unsigned char spel)
 {
@@ -1493,6 +1506,7 @@ unsigned char translate_spell(unsigned char spel)
     case SPELL_MAGIC_DART:
         return MS_MMISSILE;
     case SPELL_FIREBALL:
+    case SPELL_DELAYED_FIREBALL:
         return MS_FIREBALL;
     case SPELL_DIG:
         return MS_DIG;
@@ -1672,18 +1686,18 @@ void generate_random_demon(void)
     menv[rdem].hit_dice = ghost.values[12];
     menv[rdem].hit_points = ghost.values[0];
     menv[rdem].max_hit_points = ghost.values[0];
-    menv[rdem].armor_class = ghost.values[2];
+    menv[rdem].armour_class = ghost.values[2];
     menv[rdem].evasion = ghost.values[1];
     menv[rdem].speed = (one_chance_in(3) ? 10 : 8 + random2(10));
     menv[rdem].speed_increment = 70;
     menv[rdem].number = random_colour();        // demon's colour
 
-    ghost.values[14] = 250;
-    ghost.values[15] = 250;
-    ghost.values[16] = 250;
-    ghost.values[17] = 250;
-    ghost.values[18] = 250;
-    ghost.values[19] = 250;
+    ghost.values[14] = SPELL_NO_SPELL;
+    ghost.values[15] = SPELL_NO_SPELL;
+    ghost.values[16] = SPELL_NO_SPELL;
+    ghost.values[17] = SPELL_NO_SPELL;
+    ghost.values[18] = SPELL_NO_SPELL;
+    ghost.values[19] = SPELL_NO_SPELL;
 
     /* This bit uses the list of player spells to find appropriate spells
        for the demon, then converts those spells to the monster spell indices.
@@ -1691,7 +1705,8 @@ void generate_random_demon(void)
     if (ghost.values[9] == 1)
     {
         if (coinflip())
-            do
+        {
+            for (;;)
             {
                 if (one_chance_in(3))
                     break;
@@ -1699,13 +1714,14 @@ void generate_random_demon(void)
                 ghost.values[14] = search_order_conj[i];
                 i++;
 
-                if (search_order_conj[i] == 250)
+                if (search_order_conj[i] == SPELL_NO_SPELL)
                     break;
             }
-            while (1);
+        }
 
         if (coinflip())
-            do
+        {
+            for (;;)
             {
                 if (one_chance_in(3))
                     break;
@@ -1713,13 +1729,14 @@ void generate_random_demon(void)
                 ghost.values[15] = search_order_conj[i];
                 i++;
 
-                if (search_order_conj[i] == 250)
+                if (search_order_conj[i] == SPELL_NO_SPELL)
                     break;
             }
-            while (1);
+        }
 
         if (!one_chance_in(4))
-            do
+        {
+            for (;;)
             {
                 if (one_chance_in(3))
                     break;
@@ -1727,13 +1744,14 @@ void generate_random_demon(void)
                 ghost.values[16] = search_order_third[i];
                 i++;
 
-                if (search_order_third[i] == 250)
+                if (search_order_third[i] == SPELL_NO_SPELL)
                     break;
             }
-            while (1);
+        }
 
         if (coinflip())
-            do
+        {
+            for (;;)
             {
                 if (one_chance_in(3))
                     break;
@@ -1741,13 +1759,14 @@ void generate_random_demon(void)
                 ghost.values[17] = search_order_misc[i];
                 i++;
 
-                if (search_order_misc[i] == 250)
+                if (search_order_misc[i] == SPELL_NO_SPELL)
                     break;
             }
-            while (1);
+        }
 
         if (coinflip())
-            do
+        {
+            for(;;)
             {
                 if (one_chance_in(3))
                     break;
@@ -1755,10 +1774,10 @@ void generate_random_demon(void)
                 ghost.values[18] = search_order_misc[i];
                 i++;
 
-                if (search_order_misc[i] == 250)
+                if (search_order_misc[i] == SPELL_NO_SPELL)
                     break;
             }
-            while (1);
+        }
 
         if (coinflip())
             ghost.values[19] = SPELL_BLINK;
@@ -1771,6 +1790,8 @@ void generate_random_demon(void)
 
         /* give demon a chance for some monster-only spells: */
         if (one_chance_in(25))
+            ghost.values[14] = MS_HELLFIRE_BURST;
+        if (one_chance_in(25))
             ghost.values[14] = MS_METAL_SPLINTERS;
         if (one_chance_in(25))
             ghost.values[14] = MS_ENERGY_BOLT;  /* eye of devas */
@@ -1782,8 +1803,6 @@ void generate_random_demon(void)
             ghost.values[15] = MS_HELLFIRE;
         if (one_chance_in(25))
             ghost.values[16] = MS_SMITE;
-        if (one_chance_in(25))
-            ghost.values[16] = MS_HELLFIRE_BURST;
         if (one_chance_in(25))
             ghost.values[16] = MS_HELLFIRE_BURST;
         if (one_chance_in(15))
@@ -1800,7 +1819,7 @@ void generate_random_demon(void)
             ghost.values[17] = MS_SUMMON_DEMON;
 
         /* at least they can summon demons */
-        if (ghost.values[17] == 250)
+        if (ghost.values[17] == SPELL_NO_SPELL)
             ghost.values[17] = MS_SUMMON_DEMON;
     }
 }                               // end generate_random_demon()

@@ -28,21 +28,15 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "AppHdr.h"
 #include "externs.h"
+
 #include "hiscores.h"
 #include "mon-util.h"
 #include "player.h"
-
-//jmf: brent sez:
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason ...
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
+#include "tags.h"
+#include "view.h"
 
 // enough memory allocated to snarf in the scorefile entries
 static struct scorefile_entry hs_list[SCORE_FILE_ENTRIES];
@@ -85,7 +79,7 @@ void hiscores_new_entry(struct scorefile_entry &ne)
     scores = hs_open("r");
 
     // read highscore file, inserting new entry at appropriate point,
-    for(i=0;  i < SCORE_FILE_ENTRIES; i++)
+    for (i = 0; i < SCORE_FILE_ENTRIES; i++)
     {
         if (hs_read(scores, hs_list[i]) == false)
             break;
@@ -129,7 +123,7 @@ void hiscores_new_entry(struct scorefile_entry &ne)
     }
 
     // write scorefile entries.
-    for(i=0; i<total_entries; i++)
+    for (i = 0; i < total_entries; i++)
     {
         hs_write(scores, hs_list[i]);
     }
@@ -153,7 +147,7 @@ void hiscores_print_list(void)
     }
 
     // read highscore file
-    for(i=0;  i < SCORE_FILE_ENTRIES; i++)
+    for (i = 0; i < SCORE_FILE_ENTRIES; i++)
     {
         if (hs_read(scores, hs_list[i]) == false)
             break;
@@ -164,20 +158,20 @@ void hiscores_print_list(void)
     hs_close(scores, "r");
 
     // print N entries
-    int display_count = NUMBER_OF_LINES - 7;
+    int display_count = get_number_of_lines() - 7;
     // if highscore print,  print as many as user wanted
     if (Options.sc_entries > 0)
         display_count = Options.sc_entries;
 
     textcolor(LIGHTGREY);
-    for(i=0; i<display_count && i<total_entries; i++)
+    for (i = 0; i < display_count && i < total_entries; i++)
     {
         // check for recently added entry
         if (i == newest_entry)
             textcolor(YELLOW);
 
         // print position (not tracked in score file)
-        sprintf(info, "%2d.", i+1);
+        snprintf( info, INFO_SIZE, "%2d.", i+1);
         cprintf(info);
 
         // format the entry
@@ -201,12 +195,17 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
 
     // race_class_name overrides race & class
     if (strlen(se.race_class_name) == 0)
-        sprintf(scratch, "%s%s", species_abbrev(se.race), class_abbrev(se.cls));
+    {
+        snprintf( scratch, sizeof(scratch),
+                  "%s%s", species_abbrev(se.race), class_abbrev(se.cls) );
+    }
     else
+    {
         strcpy(scratch, se.race_class_name);
+    }
 
-    sprintf(buf, "%8d %-10s - %s%d%s,", se.points, se.name,
-        scratch, se.lvl, (se.wiz_mode==1)?" Wiz":"");
+    sprintf( buf, "%8ld %-10s - %s%d%s,", se.points, se.name,
+             scratch, se.lvl, (se.wiz_mode==1) ? " Wiz" : "" );
 
     // get monster type & number, if applicable
     int mon_type = se.death_source;
@@ -225,28 +224,17 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
  *       issues with this.
  */
         // GDL: here's an example of using final_hp.  Verbiage could be better.
-        strcat(buf, (se.final_hp > -6)?" slain by ":
-                    (se.final_hp > -14)?" mangled by ":
-                    (se.final_hp > -22)?" blasted by ":
-                    " annihilated by ");
+        strcat(buf, (se.final_hp > -6)  ? " slain by "   :
+                    (se.final_hp > -14) ? " mangled by " :
+                    (se.final_hp > -22) ? " blasted by "
+                                        : " annihilated by ");
 
         // if death_source_name is non-null,  override lookup (names might have
         // changed!)
         if (strlen(se.death_source_name) > 0)
-        {
             strcat(buf, se.death_source_name);
-        }
         else
-        {
-            if (mon_type < MONS_PROGRAM_BUG
-                || (mon_type < MONS_TERENCE && mon_type >= MONS_NAGA_MAGE)
-                || mon_type > MONS_BORIS && mon_type != MONS_PLAYER_GHOST)
-            {
-                strcat(buf, "a");
-            }
-
-            strcat(buf, monam(mon_number, mon_type, 0, 99));
-        }
+            strcat(buf, monam( mon_number, mon_type, true, DESC_PLAIN ));
 
         break;
 
@@ -266,20 +254,10 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
 
         // if death_source_name is non-null,  override this
         if (strlen(se.death_source_name) > 0)
-        {
             strcat(buf, se.death_source_name);
-        }
         else
-        {
-            if (mon_type < MONS_PROGRAM_BUG
-                || (mon_type < MONS_TERENCE && mon_type >= MONS_NAGA_MAGE)
-                || mon_type > MONS_BORIS && mon_type != MONS_PLAYER_GHOST)
-            {
-                strcat(buf, "a");
-            }
+            strcat(buf, monam( mon_number, mon_type, true, DESC_PLAIN ));
 
-            strcat(buf, monam(mon_number, mon_type, 0, 99));
-        }
         break;
 
 /*
@@ -298,6 +276,7 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
             strcat(buf, " soaked and fell apart");
         else
             strcat(buf, " drowned");
+
         break;
 
     // these three are probably only possible if you wear a ring
@@ -638,12 +617,14 @@ void hs_copy(struct scorefile_entry &dest, struct scorefile_entry &src)
     dest.branch = src.branch;
     dest.final_hp = src.final_hp;
     dest.wiz_mode = src.wiz_mode;
+    dest.birth_time = src.birth_time;
+    dest.death_time = src.death_time;
 }
 
 bool hs_read(FILE *scores, struct scorefile_entry &dest)
 {
     char inbuf[200];
-    int c;
+    int c = EOF;
 
     // get a character..
     if (scores != NULL)
@@ -665,7 +646,7 @@ bool hs_read(FILE *scores, struct scorefile_entry &dest)
     // put 'c' in first spot
     inbuf[0] = c;
 
-    if (fgets(&inbuf[1], (c==':')?198:81, scores) == NULL)
+    if (fgets(&inbuf[1], (c==':') ? 198 : 81, scores) == NULL)
     {
         dest.points = 0;
         return false;
@@ -696,14 +677,39 @@ static int hs_nextint(char *&inbuf)
 {
     char num[20];
     hs_nextstring(inbuf, num);
-    return atoi(num);
+    return (atoi(num));
 }
 
 static long hs_nextlong(char *&inbuf)
 {
     char num[20];
     hs_nextstring(inbuf, num);
-    return atol(num);
+    return (atol(num));
+}
+
+static int val_char( char digit )
+{
+    return (digit - '0');
+}
+
+static time_t hs_nextdate(char *&inbuf)
+{
+    char       buff[20];
+    struct tm  date;
+
+    hs_nextstring( inbuf, buff );
+
+    date.tm_year = val_char( buff[0] ) * 1000 + val_char( buff[1] ) * 100
+                    + val_char( buff[2] ) * 10 + val_char( buff[3] ) - 1900;
+
+    date.tm_mon   = val_char( buff[4] ) * 10 + val_char( buff[5] );
+    date.tm_mday  = val_char( buff[6] ) * 10 + val_char( buff[7] );
+    date.tm_hour  = val_char( buff[8] ) * 10 + val_char( buff[9] );
+    date.tm_min   = val_char( buff[10] ) * 10 + val_char( buff[11] );
+    date.tm_sec   = val_char( buff[12] ) * 10 + val_char( buff[13] );
+    date.tm_isdst = (buff[14] == 'D');
+
+    return (mktime( &date ));
 }
 
 static void hs_parse_numeric(char *inbuf, struct scorefile_entry &se)
@@ -719,36 +725,53 @@ static void hs_parse_numeric(char *inbuf, struct scorefile_entry &se)
         return;
 
     se.points = hs_nextlong(inbuf);
+
     hs_nextstring(inbuf, se.name);
+
     se.uid = hs_nextlong(inbuf);
     se.race = hs_nextint(inbuf);
     se.cls = hs_nextint(inbuf);
+
     hs_nextstring(inbuf, se.race_class_name);
+
     se.lvl = hs_nextint(inbuf);
     se.best_skill = hs_nextint(inbuf);
     se.best_skill_lvl = hs_nextint(inbuf);
     se.death_type = hs_nextint(inbuf);
     se.death_source = hs_nextint(inbuf);
     se.mon_num = hs_nextint(inbuf);
+
     hs_nextstring(inbuf, se.death_source_name);
+
     se.dlvl = hs_nextint(inbuf);
     se.level_type = hs_nextint(inbuf);
     se.branch = hs_nextint(inbuf);
     se.final_hp = hs_nextint(inbuf);
     se.wiz_mode = hs_nextint(inbuf);
+
+    se.birth_time = hs_nextdate(inbuf);
+    se.death_time = hs_nextdate(inbuf);
 }
 
-static void hs_write(FILE *scores, struct scorefile_entry &se)
+static void hs_write( FILE *scores, struct scorefile_entry &se )
 {
+    char buff[20];
+
     fprintf(scores, ":%d:%d:%ld:%s:%ld:%d:%d:%s:%d:%d:%d",
-        se.version, se.release, se.points, se.name,
-        se.uid, se.race, se.cls, se.race_class_name, se.lvl,
-        se.best_skill, se.best_skill_lvl);
-    fprintf(scores, ":%d:%d:%d:%s:%d:%d:%d:%d:%d:\n",
-        se.death_type, se.death_source, se.mon_num,
-        se.death_source_name, se.dlvl, se.level_type,
-        se.branch, se.final_hp, se.wiz_mode);
-    return;
+            se.version, se.release, se.points, se.name,
+            se.uid, se.race, se.cls, se.race_class_name, se.lvl,
+            se.best_skill, se.best_skill_lvl);
+
+    fprintf(scores, ":%d:%d:%d:%s:%d:%d:%d:%d:%d",
+            se.death_type, se.death_source, se.mon_num,
+            se.death_source_name, se.dlvl, se.level_type,
+            se.branch, se.final_hp, se.wiz_mode );
+
+    make_date_string( se.birth_time, buff );
+    fprintf(scores, ":%s", buff );
+
+    make_date_string( se.death_time, buff );
+    fprintf(scores, ":%s:\n", buff );
 }
 
 // -------------------------------------------------------------------------
@@ -759,6 +782,10 @@ static void hs_parse_string(char *inbuf, struct scorefile_entry &se)
 {
     /* old entries are of the following format (Brent introduced some
        spacing at one point,  we have to take this into account):
+
+   // Actually, I believe it might have been Brian who added the spaces,
+   // I was quite happy with the condensed version, given the 80 column
+   // restriction. -- bwr
 
 6263    BoBo       - DSD10 Wiz, killed by an acid blob on L1 of the Slime Pits.
 5877    Aldus-DGM10, killed by a lethal dose of poison on L10.

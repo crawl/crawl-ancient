@@ -12,11 +12,12 @@
 #ifndef ITEMNAME_H
 #define ITEMNAME_H
 
+#include "externs.h"
 
 /* ***********************************************************************
  * called from: describe - effects - item_use - shopping
  * *********************************************************************** */
-char get_id(char cla, char ty);
+char get_ident_type(char cla, char ty);
 
 
 /* ***********************************************************************
@@ -24,24 +25,21 @@ char get_id(char cla, char ty);
  *              it_use2 - item_use - items - monstuff - mstuff2 - ouch -
  *              shopping - spells1 - spells2 - spells3
  * *********************************************************************** */
-char item_name(unsigned char item_plus2, char item_clas, char item_typ,
-               unsigned char item_da, unsigned char it_plus,
-               unsigned int it_quant, char ident_lev, char descrip,
-               char glag[60]);
+char item_name( const item_def &item, char descrip, char glag[80] );
 
 
 /* ***********************************************************************
  * called from: beam - describe - fight - item_use - items - monstuff -
  *              player
  * *********************************************************************** */
-int mass(int pr1, int pr2);
+int mass_item( const item_def &item );
 
 
 /* ***********************************************************************
  * called from: debug - describe - dungeon - fight - files - item_use -
  *              monstuff - mstuff2 - players - spells0
  * *********************************************************************** */
-int property(int pr1, int pr2, int pr3);
+int property( const item_def &item, int prop_type );
 
 
 /* ***********************************************************************
@@ -57,26 +55,66 @@ void clear_ids(void);
 
 
 /* ***********************************************************************
+ * called from: direct - fight - food - items - monstuff - religion -
+ *              shopping
+ * *********************************************************************** */
+void it_name(int itn, char des, char str_pass[80]);
+
+/* ***********************************************************************
  * called from: acr - chardump - command - effects - fight - invent -
  *              it_use2 - it_use3 - item_use - items - ouch - output -
  *              spell - spells1 - spells2 - spells3 - spells4 - transfor
  * *********************************************************************** */
 void in_name(int inn, char des, char str_pass[80]);
-void in_quant_name(int inn, int quant, char des, char str_pass[80]);
+
+/* ***********************************************************************
+ * called from: itemname.cc items.cc item_use.cc mstuff2.cc
+ * *********************************************************************** */
+void quant_name(const item_def &item, int quant, char des, char str_pass[80]);
+
+/* ***********************************************************************
+ * bit operations called from a large number of files
+ * *********************************************************************** */
+bool item_cursed( const item_def &item );
+bool item_uncursed( const item_def &item );
+
+bool item_known_cursed( const item_def &item );
+bool item_known_uncursed( const item_def &item );
+bool fully_indentified( const item_def &item );
+
+bool item_ident( const item_def &item, unsigned long flags );
+bool item_not_ident( const item_def &item, unsigned long flags );
+
+void do_curse_item(  item_def &item );
+void do_uncurse_item(  item_def &item );
+
+void set_ident_flags( item_def &item, unsigned long flags );
+void unset_ident_flags( item_def &item, unsigned long flags );
+
+void set_equip_race( item_def &item, unsigned long flags );
+void set_equip_desc( item_def &item, unsigned long flags );
+
+unsigned long get_equip_race( const item_def &item );
+unsigned long get_equip_desc( const item_def &item );
+
+bool cmp_equip_race( const item_def &item, unsigned long val );
+bool cmp_equip_desc( const item_def &item, unsigned long val );
+
+void set_helmet_type( item_def &item, short flags );
+void set_helmet_desc( item_def &item, short flags );
+void set_helmet_random_desc( item_def &item );
+
+short get_helmet_type( const item_def &item );
+short get_helmet_desc( const item_def &item );
+
+bool cmp_helmet_type( const item_def &item, short val );
+bool cmp_helmet_desc( const item_def &item, short val );
 
 
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
 void init_properties(void);
-
-
-/* ***********************************************************************
- * called from: direct - fight - food - items - monstuff - religion -
- *              shopping
- * *********************************************************************** */
-void it_name(int itn, char des, char str_pass[80]);
-
 
 /* ***********************************************************************
  * called from: files - randart - shopping
@@ -93,13 +131,13 @@ void save_id(char identy[4][50]);
 /* ***********************************************************************
  * called from: files - item_use - newgame - ouch - shopping - spells1
  * *********************************************************************** */
-void set_id(char cla, char ty, char setting);
+void set_ident_type( char cla, char ty, char setting );
 
 
 /* ***********************************************************************
  * called from: dungeon - item_use
  * *********************************************************************** */
-bool hide2armour(unsigned char *which_subtype);
+bool hide2armour( unsigned char *which_subtype );
 
 
 #endif

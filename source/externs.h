@@ -14,16 +14,25 @@
 #ifndef EXTERNS_H
 #define EXTERNS_H
 
+#include <queue>
+
+#include <time.h>
+
 #include "defines.h"
 #include "enum.h"
 #include "FixAry.h"
 #include "message.h"
 
-extern char info[200];               // defined in acr.cc {dlb}
+#define INFO_SIZE       200
+
+extern char info[INFO_SIZE];         // defined in acr.cc {dlb}
 extern char st_prn[20];              // defined in acr.cc {dlb}
 extern char str_pass[80];            // defined in acr.cc {dlb}
+
 extern unsigned char show_green;     // defined in view.cc {dlb}
-extern FixedVector<unsigned short, 1000> mcolour;  // defined in mon-util.cc -- w/o this screen redraws *really* slow {dlb}
+
+// defined in mon-util.cc -- w/o this screen redraws *really* slow {dlb}
+extern FixedVector<unsigned short, 1000> mcolour;
 
 #ifdef SHORT_FILE_NAMES
     const int kNameLen = 30;
@@ -43,12 +52,22 @@ extern FixedVector<unsigned short, 1000> mcolour;  // defined in mon-util.cc -- 
     #endif
 #endif
 
+
 // Length of Path + File Name
 const int kPathLen = 256;
 
 // This value is used to mark that the current berserk is free from
 // penalty (Xom's granted or from a deck of cards).
 #define NO_BERSERK_PENALTY    -1
+
+struct coord_def
+{
+    int         x;
+    int         y;
+
+    // coord_def( int x_in = 0, int y_in = 0 ) : x(x_in), y(y_in) {};
+};
+
 
 // output from direction() function:
 struct dist
@@ -64,6 +83,7 @@ struct dist
     // internal use - ignore
     int  prev_target;   // previous target
 };
+
 
 struct bolt
 {
@@ -99,6 +119,41 @@ struct bolt
     int  foeRatio;              // 100* foe ratio (see mons_should_fire())
 };
 
+
+struct run_check_dir
+{
+    unsigned char       grid;
+    char                dx;
+    char                dy;
+};
+
+
+struct delay_queue_item
+{
+    int  type;
+    int  duration;
+    int  parm1;
+    int  parm2;
+};
+
+
+struct item_def
+{
+    unsigned char  base_type;  // basic class (ie OBJ_WEAPON)
+    unsigned char  sub_type;   // type within that class (ie WPN_DAGGER)
+    short          plus;       // +to hit, charges, corpse mon id
+    short          plus2;      // +to dam, sub-sub type for boots and helms
+    long           special;    // special stuff
+    unsigned char  colour;     // item colour
+    unsigned long  flags;      // item statuc flags
+    short          quantity;   // number of items
+
+    short  x;          // x-location;         for inventory items = -1
+    short  y;          // y-location;         for inventory items = -1
+    short  link;       // link to next item;  for inventory items = slot
+};
+
+
 struct player
 {
   char turn_is_over; // flag signaling that player has performed a timed action
@@ -107,13 +162,15 @@ struct player
   char your_name[kNameLen];
 
   unsigned char species;
+
   char run_x;
   char run_y;
+  FixedVector< run_check_dir, 3 > run_check; // array of grids to check
   char running;
 
   char special_wield;
   char deaths_door;
-  char shock_shield;
+  char fire_shield;
 
   double elapsed_time;        // total amount of elapsed time in the game
 
@@ -131,13 +188,13 @@ struct player
 
   int hp;
   int hp_max;
-  int base_hp;                // this is what is affected by necrophages etc
-  int base_hp2;
+  int base_hp;                // temporary max HP loss (rotting)
+  int base_hp2;               // base HPs from levels (and permanent loss)
 
   int magic_points;
   int max_magic_points;
-  int base_magic_points;
-  int base_magic_points2;
+  int base_magic_points;      // temporary max MP loss? (currently unused)
+  int base_magic_points2;     // base MPs from levels and potions of magic
 
   char strength;
   char intel;
@@ -149,6 +206,8 @@ struct player
   char redraw_hunger;
   char hunger_state;
 
+  bool wield_change;          // redraw weapon
+
   char redraw_burden;
   char redraw_hit_points;
   char redraw_magic_points;
@@ -156,7 +215,7 @@ struct player
   char redraw_intelligence;
   char redraw_dexterity;
   char redraw_experience;
-  char redraw_armor_class;   // great -- more mixed american/proper spelling
+  char redraw_armour_class;
 
   char redraw_gold;
   char redraw_evasion;
@@ -169,24 +228,12 @@ struct player
   unsigned int gold;
   int char_class;
   char class_name[30];
-  char speed;
+  // char speed;              // now unused
   int time_taken;
 
   char shield_blocks;         // number of shield blocks since last action
-  // this field is transient, its not saved
-  // out but is set to zero at the start of the
-  // input loop.
 
-  FixedVector<unsigned char, ENDOFPACK> inv_class;
-  FixedVector<unsigned char, ENDOFPACK> inv_type;
-  FixedVector<unsigned char, ENDOFPACK> inv_plus;
-  FixedVector<unsigned char, ENDOFPACK> inv_plus2;
-  FixedVector<unsigned char, ENDOFPACK> inv_dam;
-  FixedVector<unsigned char, ENDOFPACK> inv_ident;
-  FixedVector<unsigned char, ENDOFPACK> inv_colour;
-  FixedVector<int, ENDOFPACK> inv_quantity;
-//  num_inv_items is deprecated -- use inv_count() instead!
-//  char num_inv_items;                    // number of items carried
+  FixedVector< item_def, ENDOFPACK > inv;
 
   int burden;
   char burden_state;
@@ -198,7 +245,9 @@ struct player
 
   int your_level; // offset by one (-1 == 0, 0 == 1, etc.) for display
 
-  FixedVector<int, NUM_DURATIONS> duration; // durational things. Why didn't I do this for haste etc right from the start? Oh well.
+  // durational things. Why didn't I do this for haste etc
+  // right from the start? Oh well.
+  FixedVector<int, NUM_DURATIONS> duration;
 
   int invis;
   int conf;
@@ -220,8 +269,7 @@ struct player
 
   char is_undead;                     // see UNDEAD_STATES in enum.h
 
-  char delay_doing;
-  char delay_t;
+  queue< delay_queue_item >  delay_queue;  // pending actions
 
   FixedVector<unsigned char, 50>  skills;
   FixedVector<unsigned char, 50>  practise_skill;
@@ -249,7 +297,7 @@ struct player
   char confusing_touch;
   char sure_blade;
 
-  FixedVector<unsigned char, 50> had_item;
+  FixedVector<unsigned char, 50> had_book;
 
   unsigned char betrayal;
   unsigned char normal_vision;        // how far the species gets to see
@@ -257,20 +305,23 @@ struct player
 
   unsigned char hell_exit;            // which level plyr goes to on hell exit.
 
-  int passwall_x;       // coord for passwall, shouldn't need saving, since
-  int passwall_y;       // the player should never get an action.
+  // This field is here even in non-WIZARD compiles, since the
+  // player might have been playing previously under wiz mode.
+  bool          wizard;               // true if player has entered wiz mode.
+  time_t        birth_time;           // start time of game
+
+  int           old_hunger;  // used for hunger delta-meter (see output.cc)
 };
 
 extern struct player you;
-
 
 struct monsters
 {
     int type;
     int hit_points;
     int max_hit_points;
-    unsigned int hit_dice;
-    int armor_class;       // great -- more mixed american/proper spelling
+    int hit_dice;
+    int armour_class;       // great -- more mixed american/proper spelling
     int evasion;
     unsigned int speed;
     unsigned int speed_increment;
@@ -289,59 +340,62 @@ struct monsters
                                        // once they go out of sight
 };
 
-
-struct item_struct // argh! why a struct of arrays and not an array of structs? {dlb}
+struct cloud_struct
 {
-  FixedVector<unsigned char, MAX_ITEMS> base_type; /* basic class (eg weapon) */
-  FixedVector<unsigned char, MAX_ITEMS> sub_type;  /* type within that class (eg dagger) */
-  FixedVector<unsigned char, MAX_ITEMS> pluses;       /* hit+, charges */
-  FixedVector<unsigned char, MAX_ITEMS> pluses2;       /* dam+ etc */
-  FixedVector<unsigned char, MAX_ITEMS> special;       /* special stuff */
-  FixedVector<unsigned int, MAX_ITEMS> quantity;       /* multiple items */
-  FixedVector<unsigned char, MAX_ITEMS> x;             /* x-location */
-  FixedVector<unsigned char, MAX_ITEMS> y;             /* y-location */
-  FixedVector<unsigned char, MAX_ITEMS> colour;        /* colour */
-  FixedVector<unsigned char, MAX_ITEMS> id;            /* identification */
-  FixedVector<unsigned int, MAX_ITEMS> link;           /* next item in stack */
+    unsigned char       x;
+    unsigned char       y;
+    unsigned char       type;
+    int                 decay;
 };
 
-
-struct environ
+struct shop_struct
 {
-    item_struct it[1];
-    FixedVector<monsters, MAX_MONSTERS> mons;
-    FixedArray<unsigned char, GXM, GYM> grid;
-    FixedArray<unsigned char, GXM, GYM> mgrid;
-    FixedArray<int, GXM, GYM> igrid;
-    FixedArray<unsigned char, GXM, GYM> map;
-    FixedArray<unsigned char, GXM, GYM> cgrid;
-    FixedArray<unsigned int, 19, 19> show;
-    FixedArray<unsigned short, 19, 19> show_col;
+    unsigned char       x;
+    unsigned char       y;
+    unsigned char       greed;
+    unsigned char       type;
+    unsigned char       level;
+
+    FixedVector<unsigned char, 3> keeper_name;
+};
+
+struct trap_struct
+{
+    unsigned char       x;
+    unsigned char       y;
+    unsigned char       type;
+};
+
+struct crawl_environment
+{
     unsigned char rock_colour;
     unsigned char floor_colour;
 
-    FixedVector<unsigned char, MAX_CLOUDS> cloud_x;
-    FixedVector<unsigned char, MAX_CLOUDS> cloud_y;
-    FixedVector<unsigned char, MAX_CLOUDS> cloud_type;
-    FixedVector<int, MAX_CLOUDS> cloud_decay;
+    FixedVector< item_def, MAX_ITEMS >    item;
+    FixedVector< monsters, MAX_MONSTERS >    mons;
+
+    FixedArray< unsigned char, GXM, GYM >    grid;
+    FixedArray< unsigned char, GXM, GYM >    mgrid;
+    FixedArray< int, GXM, GYM >              igrid;
+    FixedArray< unsigned char, GXM, GYM >    map;
+    FixedArray< unsigned char, GXM, GYM >    cgrid;
+
+    FixedArray< unsigned int, 19, 19>        show;
+    FixedArray< unsigned short, 19, 19>      show_col;
+
+
+    FixedVector< cloud_struct, MAX_CLOUDS >  cloud;
     unsigned char cloud_no;
 
-    FixedArray<unsigned char, 5, 3> keeper_name;
-    FixedVector<unsigned char, 5> shop_x;
-    FixedVector<unsigned char, 5> shop_y;
-    FixedVector<unsigned char, 5> shop_greed;
-    FixedVector<unsigned char, 5> shop_type;
-    FixedVector<unsigned char, 5> shop_level;
+    FixedVector< shop_struct, MAX_SHOPS >    shop;
+    FixedVector< trap_struct, MAX_TRAPS >    trap;
 
-    FixedVector<unsigned char, MAX_TRAPS> trap_type;
-    FixedVector<unsigned char, MAX_TRAPS> trap_x;
-    FixedVector<unsigned char, MAX_TRAPS> trap_y;
-    FixedVector<int, 20> mons_alloc;
-    int trap_known;
-    double elapsed_time;             // used during level load
+    FixedVector< int, 20 >   mons_alloc;
+    int                      trap_known;
+    double                   elapsed_time; // used during level load
 };
 
-extern struct environ env;
+extern struct crawl_environment env;
 
 
 struct ghost_struct
@@ -368,8 +422,8 @@ struct system_environment
 
 extern system_environment SysEnv;
 
-
-struct game_options {
+struct game_options
+{
     long        autopickups;    // items to autopickup
     bool        verbose_dump;   // make character dumps contain more detail
     bool        colour_map;     // add colour to the map
@@ -389,40 +443,49 @@ struct game_options {
     int         priest;         // choice of god for priests (Zin/Yred)
     bool        random_pick;    // randomly generate character
     int         hp_warning;     // percentage hp for danger warning
+    int         hp_attention;   // percentage hp for danger attention
     char        race;           // preselected race
     char        cls;            // preselected class
     int         sc_entries;     // # of score entries
-    unsigned int friend_brand;   // Attribute for branding friendly monsters
+    unsigned int friend_brand;  // Attribute for branding friendly monsters
+    bool        no_dark_brand;  // Attribute for branding friendly monsters
+#ifdef WIZARD
+    int         wiz_mode;       // yes, no, never in wiz mode to start
+#endif
 };
 
 extern game_options  Options;
 
-struct tagHeader {
+struct tagHeader
+{
     short tagID;
     long offset;
 };
 
-struct scorefile_entry {
-    char version;
-    char release;
-    long points;
-    char name[kNameLen];
-    long uid;                // for multiuser systems
-    char race;
-    char cls;
-    char race_class_name[5]; // overrides race & cls if non-null
-    char lvl;                // player level.
-    char best_skill;         // best skill #
-    char best_skill_lvl;     // best skill level
-    int death_type;
-    int death_source;       // 0 or monster TYPE
-    int mon_num;            // sigh...
-    char death_source_name[40];    // overrides death_source
-    char dlvl;               // dungeon level (relative)
-    char level_type;         // what kind of level died on..
-    char branch;             // dungeon branch
-    int final_hp;
-    char wiz_mode;
+struct scorefile_entry
+{
+    char        version;
+    char        release;
+    long        points;
+    char        name[kNameLen];
+    long        uid;                // for multiuser systems
+    char        race;
+    char        cls;
+    char        race_class_name[5]; // overrides race & cls if non-null
+    char        lvl;                // player level.
+    char        best_skill;         // best skill #
+    char        best_skill_lvl;     // best skill level
+    int         death_type;
+    int         death_source;       // 0 or monster TYPE
+    int         mon_num;            // sigh...
+    char        death_source_name[40];    // overrides death_source
+    char        dlvl;               // dungeon level (relative)
+    char        level_type;         // what kind of level died on..
+    char        branch;             // dungeon branch
+    int         final_hp;
+    char        wiz_mode;           // character used wiz mode
+    time_t      birth_time;         // start time of character
+    time_t      death_time;           // end time of character
 };
 
 #endif // EXTERNS_H

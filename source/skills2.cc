@@ -29,18 +29,9 @@
 #include "fight.h"
 #include "player.h"
 #include "randart.h"
+#include "stuff.h"
 #include "wpn-misc.h"
-
-//jmf: brent sez:
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason ...
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
-//#define WIZARD
+#include "view.h"
 
 /* jmf: some references for words I used below:
  Peltast http://www.geocities.com/Athens/Aegean/9659/shields_main.htm
@@ -1749,6 +1740,8 @@ void show_skills(void)
     char strng[5] = "";
     char lcount;
 
+    const int num_lines = get_number_of_lines();
+
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
     char buffer[4600];
@@ -1770,7 +1763,7 @@ void show_skills(void)
     char scrln = 3, scrcol = 1;
 
     // Don't want the help line to appear too far down a big window.
-    int bottom_line = ((NUMBER_OF_LINES > 30) ? 30 : NUMBER_OF_LINES);
+    int bottom_line = ((num_lines > 30) ? 30 : num_lines);
 
     for (x = 0; x < 50; x++)
     {
@@ -1804,8 +1797,8 @@ void show_skills(void)
 
             char bufff[15];
 
-            sprintf(bufff, "%-14s", skills[x][0]);
-            cprintf(bufff);
+            snprintf( bufff, sizeof(bufff), "%-14s", skills[x][0] );
+            cprintf( bufff );
 
             cprintf(" Skill ");
             itoa(you.skills[x], strng, 10);
@@ -1827,7 +1820,7 @@ void show_skills(void)
 
             textcolor(LIGHTGREY);
 
-#ifdef WIZARD
+#if DEBUG_DIAGNOSTICS
             cprintf(" / ");
             itoa(you.skill_points[x], strng, 10);
             cprintf(strng);
@@ -1891,7 +1884,7 @@ void show_skills(void)
 
 char *skill_name(unsigned char which_skill)
 {
-    return skills[which_skill][0];
+    return (skills[which_skill][0]);
 }                               // end skill_name()
 
 
@@ -1967,23 +1960,23 @@ int calc_hp(void)
     }
 
     // some transformations give you extra hp
-    if (you.duration[DUR_TRANSFORMATION])
+    switch (you.attribute[ATTR_TRANSFORMATION])
     {
-        switch (you.attribute[ATTR_TRANSFORMATION])
-        {
-        case TRAN_STATUE:
-            hitp *= 15;
-            hitp /= 10;
-            break;
-        case TRAN_ICE_BEAST:
-            hitp *= 12;
-            hitp /= 10;
-            break;
-        case TRAN_DRAGON:
-            hitp *= 16;
-            hitp /= 10;
-            break;
-        }
+    case TRAN_STATUE:
+        mpr( "statue" );
+        hitp *= 15;
+        hitp /= 10;
+        break;
+    case TRAN_ICE_BEAST:
+        mpr( "ice beast" );
+        hitp *= 12;
+        hitp /= 10;
+        break;
+    case TRAN_DRAGON:
+        mpr( "dragon" );
+        hitp *= 16;
+        hitp /= 10;
+        break;
     }
 
     // frail and robust mutations
@@ -1992,7 +1985,7 @@ int calc_hp(void)
 
     you.hp_max = hitp;
 
-    deflate_hp(you.hp_max, false);
+    deflate_hp( you.hp_max, false );
 
     return hitp;
 }                               // end calc_hp()
@@ -2009,6 +2002,8 @@ int calc_mp(void)
 
     enp += ((invoc_extra > spell_extra) ? invoc_extra : spell_extra);
 
+
+#if 0
     /* if (enp > 21) enp = ((enp - 27) / 2) + 27;
        if (enp > 36) enp = ((enp - 36) / 2) + 36;
        if (enp > 49) enp = ((enp - 49) / 2) + 49; */
@@ -2030,8 +2025,9 @@ int calc_mp(void)
             }
         }
     }
+#endif
 
-    you.max_magic_points = enp;
+    you.max_magic_points = stepdown_value( enp, 9, 18, 36, 49 );
 
     if (you.magic_points > you.max_magic_points)
         you.magic_points = you.max_magic_points;
@@ -2111,10 +2107,10 @@ void wield_warning(bool newWeapon)
     else
         strcpy(wepstr, "your ");
 
-    int wepType  = you.inv_type[you.equip[EQ_WEAPON]];
+    int wepType  = you.inv[you.equip[EQ_WEAPON]].sub_type;
 
     // early out - don't warn for non-weapons
-    if (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS)
+    if (you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_WEAPONS)
         return;
 
     // put the standard wep name in.
@@ -2132,19 +2128,19 @@ void wield_warning(bool newWeapon)
             if (you.strength < you.dex)
             {
                 if (you.strength < 11)
-                    sprintf(info, "You have %strouble swinging %s.",
+                    snprintf( info, INFO_SIZE, "You have %strouble swinging %s.",
                         (you.strength < 7)?"":"a little ", wepstr);
                 else
-                    sprintf(info, "You'd be more effective with "
+                    snprintf( info, INFO_SIZE, "You'd be more effective with "
                         "%s if you were stronger.", wepstr);
             }
             else
             {
                 if (you.dex < 11)
-                    sprintf(info, "Wielding %s is %s awkward.", wepstr,
+                    snprintf( info, INFO_SIZE, "Wielding %s is %s awkward.", wepstr,
                         (you.dex < 7)?"fairly":"a little");
                 else
-                    sprintf(info, "You'd be more effective with "
+                    snprintf( info, INFO_SIZE, "You'd be more effective with "
                         "%s if you were nimbler.", wepstr);
             }
             mpr( info, MSGCH_WARN );

@@ -14,6 +14,7 @@
 
 #include "FixVec.h"
 
+void item_colour( int p );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -26,9 +27,8 @@ void builder(int level_number, char level_type);
 /* ***********************************************************************
  * called from: abyss - debug - dungeon - effects - religion - spells4
  * *********************************************************************** */
-int items(unsigned char allow_uniques, unsigned char force_class,
-          unsigned char force_type, int force_place, int item_power,
-          int force_spec);
+int items( int allow_uniques, int force_class, int force_type,
+           bool dont_place, int item_power, int force_spec );
 
 // last updated 13mar2001 {gdl}
 /* ***********************************************************************
@@ -42,18 +42,5 @@ void give_item(int mid, int level_number);
  * called from: dungeon monplace
  * *********************************************************************** */
 void define_zombie(int mid, int ztype, int cs, int power);
-
-// last updated 13mar2001 {gdl}
-/* ***********************************************************************
- * called from: dungeon files
- * *********************************************************************** */
-void link_items(void);
-
-
-// last updated 13mar2001 {gdl}
-/* ***********************************************************************
- * called from: files
- * *********************************************************************** */
-void unlink_items(void);
 
 #endif

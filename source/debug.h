@@ -39,7 +39,8 @@
 #define COMPILE_CHECK(p)
 #endif
 
-#ifdef DEBUG
+#if DEBUG
+
 void AssertFailed(const char *expr, const char *file, int line);
 
 #define ASSERT(p)       do {if (!(p)) AssertFailed(#p, __FILE__, __LINE__);} while (false)
@@ -49,14 +50,17 @@ void DEBUGSTR(const char *format,...);
 void TRACE(const char *format,...);
 
 #else
+
 #define ASSERT(p)       ((void) 0)
 #define VERIFY(p)       do {if (p) ;} while (false)
 
 inline void __DUMMY_TRACE__(...)
 {
 }
+
 #define DEBUGSTR                                                1 ? ((void) 0) : __DUMMY_TRACE__
 #define TRACE                                                   1 ? ((void) 0) : __DUMMY_TRACE__
+
 #endif
 
 
@@ -93,20 +97,25 @@ void create_spec_monster_name(void);
  * called from: ( this does not seem to be used at all ... {dlb} )
  * *********************************************************************** */
 void create_spec_object(void);
+void tweak_object(void);
 
-
-// last updated 12may2000 {dlb}
+// last updated 12say2001 {dlb}
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void create_spec_object2(void);
-
+void debug_add_skills(void);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
 void debug_add_skills(void);
+
+// last updated 17sep2001 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+bool debug_add_mutation(void);
 
 
 // last updated 12may2000 {dlb}
@@ -120,7 +129,7 @@ void error_message_to_player(void);
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void level_travel(void);
+void level_travel( int delta );
 
 
 // last updated 12may2000 {dlb}
@@ -129,5 +138,7 @@ void level_travel(void);
  * *********************************************************************** */
 void stethoscope(int mwh);
 
+void debug_item_scan( void );
+void debug_get_religion( void );
 
 #endif

@@ -66,13 +66,18 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt);
 /* ***********************************************************************
  * called from: fight - monstuff - spells2
  * *********************************************************************** */
-void poison_monster(struct monsters *monster, bool fromPlayer);
+void poison_monster(struct monsters *monster, bool fromPlayer, int levels = 1);
 
 
 /* ***********************************************************************
  * called from: fight - monstuff - spells - spells1 - spells2
  * *********************************************************************** */
+#if 0
+void delete_cloud( int cloud );
+void new_cloud( int cloud, int type, int x, int y, int decay );
+
 void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char ctarget_y, unsigned char cl_range);
+#endif
 
 
 /* ***********************************************************************
@@ -86,5 +91,7 @@ void fire_tracer(struct monsters *monster, struct bolt &pbolt);
  * *********************************************************************** */
 void mimic_alert(struct monsters *mimic);
 
+
+void zapping(char ztype, int power, struct bolt &pbolt);
 
 #endif

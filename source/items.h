@@ -13,6 +13,7 @@
 #ifndef ITEMS_H
 #define ITEMS_H
 
+#include "externs.h"
 
 // used in acr.cc {dlb}:
 extern int autopickup_on;
@@ -20,11 +21,50 @@ extern int autopickup_on;
 // used in initfile.cc {dlb}:
 extern long autopickups;
 
-// last updated: Oct 15 2000 -- bwr
+bool is_valid_item( const item_def &item );
+
+bool dec_inv_item_quantity( int obj, int amount );
+bool dec_mitm_item_quantity( int obj, int amount );
+
+void inc_inv_item_quantity( int obj, int amount );
+void inc_mitm_item_quantity( int obj, int amount );
+
+void move_item_to_grid( int *const obj, int x, int y );
+void move_item_stack_to_grid( int x, int y, int targ_x, int targ_y );
+int  move_item_to_player( int obj, int quant_got, bool quiet = false );
+bool items_stack( const item_def &item1, const item_def &item2 );
+
+void init_item( int item );
+
+// last updated 13mar2001 {gdl}
 /* ***********************************************************************
- * called from: spells4.cc items.cc
+ * called from: dungeon files
  * *********************************************************************** */
-int mass_item( int item );
+void link_items(void);
+
+// last updated 13mar2001 {gdl}
+/* ***********************************************************************
+ * called from: files
+ * *********************************************************************** */
+void fix_item_coordinates(void);
+
+// last updated: 19apr2001 {gdl}
+/* ***********************************************************************
+ * called from: dungeon
+ * *********************************************************************** */
+int cull_items(void);
+
+// last updated: 16oct2001 -- bwr
+int get_item_slot( int reserve = 50 );
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: beam - fight - files - food - items - misc - monstuff -
+ *              religion - spells2 - spells3 - spells4
+ * *********************************************************************** */
+void unlink_item(int dest);
+void destroy_item(int dest);
+void destroy_item_stack( int x, int y );
 
 // last updated: 08jun2000 {dlb}
 /* ***********************************************************************
@@ -44,7 +84,8 @@ void pickup(void);
 /* ***********************************************************************
  * called from: beam - items - transfor
  * *********************************************************************** */
-void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop);
+bool copy_item_to_grid( const item_def &item, int x_plos, int y_plos,
+                        int quant_drop = 0 ); // item.quantity by default
 
 // last updated Oct 15, 2000 -- bwr
 /* ***********************************************************************
@@ -70,18 +111,12 @@ void update_corpses(double elapsedTime);
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void handle_time(int time_delta);
+void handle_time( long time_delta );
 
 // last updated: 08jun2000 {dlb}
 /* ***********************************************************************
  * called from: command food item_use shopping spl-book transfor
  * *********************************************************************** */
 int inv_count(void);
-
-// last updated: 19apr2001 {gdl}
-/* ***********************************************************************
- * called from: dungeon
- * *********************************************************************** */
-int cull_items(void);
 
 #endif

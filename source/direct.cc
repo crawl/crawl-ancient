@@ -104,10 +104,7 @@ void direction( struct dist &moves, int restrict )
     gotoxy( 18, 9 );
 
     int keyin = getch();
-#ifdef LINUX
-    keyin = translate_keypad(keyin);
-    //keyy = key_to_command(keyy);     // maybe replace with this? {dlb}
-#endif
+
     if (keyin == 0)             // DOS idiocy (emulated by win32 console)
     {
         keyin = getch();        // grrr.
@@ -139,23 +136,28 @@ void direction( struct dist &moves, int restrict )
                     targChosen = true;
                     dir = -1;
                     break;
+
                 case '*':
                     targChosen = true;
                     dir = 0;
                     break;
+
                 case '+':
                 case '=':
                     targChosen = true;
                     dir = 1;
                     break;
+
                 case 't':
                 case 'p':
                     targChosen = true;
                     dir = 2;
                     break;
-                case 27:
+
+                case ESCAPE:
                     moves.isCancel = true;
                     return;
+
                 default:
                     break;
             }
@@ -198,8 +200,8 @@ void direction( struct dist &moves, int restrict )
 
         // we have a valid previous target (maybe)
         struct monsters *montarget = &menv[you.prev_targ];
-        if (!mons_near(montarget)
-            || (mons_has_ench(montarget,ENCH_INVIS) && !player_see_invis()))
+
+        if (!mons_near(montarget) || !player_monster_visible( montarget ))
         {
             mpr("You can't see that creature any more.");
             return;
@@ -311,15 +313,8 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
         gotoxy(cx+1, cy);
 
         if (keyin == 0)
-        {
             keyin = getch();
-#ifdef LINUX
-            keyin = translate_keypad(keyin);
 
-            // maybe replace with this? {dlb}
-            //gotch = key_to_command(gotch);
-#endif
-        }
         // DOS idiocy
         if (keyin == 0)
         {
@@ -355,6 +350,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                         }
                         targChosen = true;
                         break;
+
                     case '+':
                     case '=':
                         if (mons_find(cx, cy, monsfind_pos, 1) == 1)
@@ -364,24 +360,25 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                         }
                         targChosen = true;
                         break;
+
                     case 't':
                     case 'p':
                         moves.prev_target = -1;
                         break;
+
                     case '?':
                         targChosen = true;
                         mx = you.x_pos + cx - 17;
                         my = you.y_pos + cy - 9;
                         mid = mgrd[mx][my];
+
                         if (mid == NON_MONSTER)
                             break;
 
-                        if (mons_has_ench(&menv[ mid ], ENCH_INVIS) && !player_see_invis())
+#if (!DEBUG)
+                        if (!player_monster_visible( &(menv[mid]) ))
                             break;
-
-                        if (monster_habitat( menv[ mid ].type ) != DNGN_FLOOR
-                            && menv[ mid ].number == 1)
-                            break;
+#endif
 
                         describe_monsters( menv[ mid ].type, mid );
                         redraw_screen();
@@ -389,12 +386,20 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                         // describe the cell again.
                         describe_cell(you.x_pos + cx - 17, you.y_pos + cy - 9);
                         break;
+
                     case 13:
                     case '>':
                     case ' ':
                     case '.':
                         dirChosen = true;
                         dir = 4;
+                        break;
+
+                    case ESCAPE:
+                        moves.isCancel = true;
+                        mesclr();
+                        return;
+
                     default:
                         break;
                 }
@@ -416,10 +421,12 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                     mpr("Sorry, you can't target what you can't see.");
                 return;
             }
+
             moves.isValid = true;
             moves.isTarget = true;
             moves.tx = you.x_pos + cx - 17;
             moves.ty = you.y_pos + cy - 9;
+
             if (moves.tx == you.x_pos && moves.ty == you.y_pos)
                 moves.isMe = true;
             else
@@ -428,14 +435,11 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                 mx = you.x_pos + cx - 17;
                 my = you.y_pos + cy - 9;
                 mid = mgrd[mx][my];
+
                 if (mid == NON_MONSTER)
                     break;
 
-                if (mons_has_ench(&menv[ mid ], ENCH_INVIS) && !player_see_invis())
-                    break;
-
-                if (monster_habitat( menv[ mid ].type ) != DNGN_FLOOR
-                    && menv[ mid ].number == 1)
+                if (!player_monster_visible( &(menv[mid]) ))
                     break;
 
                 you.prev_targ = mid;
@@ -471,6 +475,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
         }
         describe_cell(you.x_pos + cx - 17, you.y_pos + cy - 9);
     } // end WHILE
+
     mesclr();
 }                               // end look_around()
 
@@ -617,14 +622,14 @@ char mons_find(unsigned char xps, unsigned char yps,
         // We don't want to be looking outside the bounds of the arrays:
         if (temp_xps > 25 || temp_xps < 8 || temp_yps > 17 || temp_yps < 1)
             continue;
+
         if (targ_x < 0 || targ_x >= GXM || targ_y < 0 || targ_y >= GYM)
             continue;
 
         const int targ_mon = mgrd[ targ_x ][ targ_y ];
+
         if (targ_mon != NON_MONSTER && env.show[temp_xps - 8][temp_yps] != 0
-            && (!mons_has_ench(&menv[ targ_mon ], ENCH_INVIS) || player_see_invis())
-            && (monster_habitat(menv[ targ_mon ].type) == DNGN_FLOOR
-                || menv[ targ_mon ].number != 1))
+            && player_monster_visible( &(menv[ targ_mon ]) ))
         {
             //mpr("Found something!");
             //more();
@@ -648,47 +653,57 @@ static void describe_cell(int mx, int my)
 
         if (grd[mx][my] == DNGN_SHALLOW_WATER)
         {
-            if (mons_has_ench(&menv[i], ENCH_INVIS)
-                && mons_flies(menv[i].type) == 0 && !player_see_invis())
+            if (!player_monster_visible(&menv[i]) && !mons_flies(menv[i].type))
             {
                 mpr("There is a strange disturbance in the water here.");
             }
         }
 
-        if (mons_has_ench(&menv[i],ENCH_INVIS) && !player_see_invis())
+#if DEBUG
+        if (!player_monster_visible( &menv[i] ))
+            mpr( "There is a non-visible monster here." );
+#else
+        if (!player_monster_visible( &menv[i] ))
             goto look_clouds;
+#endif
 
         int mon_wep = menv[i].inv[MSLOT_WEAPON];
 
         if (menv[i].type == MONS_DANCING_WEAPON)
         {
-            it_name(mon_wep, 2, str_pass);
+            // strcpy(info, ptr_monam( &(menv[i]), DESC_CAP_A ));
+            it_name(mon_wep, DESC_CAP_A, str_pass);
             strcpy(info, str_pass);
             strcat(info, ".");
             mpr(info);
         }
         else
         {
-            strcpy(info, ptr_monam( &(menv[i]), 2 ));
+            strcpy(info, ptr_monam( &(menv[i]), DESC_CAP_A ));
             strcat(info, ".");
             mpr(info);
 
             if (mon_wep != NON_ITEM)
             {
-                sprintf(info, "%s is wielding ", mons_pronoun(menv[i].type,0));
-                it_name(mon_wep, 3, str_pass);
+                snprintf( info, INFO_SIZE, "%s is wielding ", mons_pronoun( menv[i].type,
+                                                               PRONOUN_CAP ));
+                it_name(mon_wep, DESC_NOCAP_A, str_pass);
                 strcat(info, str_pass);
 
                 // 2-headed ogres can wield 2 weapons
-                if (menv[i].type == MONS_TWO_HEADED_OGRE
+                if ((menv[i].type == MONS_TWO_HEADED_OGRE
+                          || menv[i].type == MONS_ETTIN)
                     && menv[i].inv[MSLOT_MISSILE] != NON_ITEM)
                 {
                     strcat(info, ",");
                     mpr(info);
                     strcpy(info, " and ");
-                    it_name(menv[i].inv[MSLOT_MISSILE], 3, str_pass);
+
+                    it_name( menv[i].inv[MSLOT_MISSILE], DESC_NOCAP_A, str_pass );
+
                     strcat(info, str_pass);
                 }
+
                 strcat(info, ".");
                 mpr(info);
             }
@@ -696,11 +711,11 @@ static void describe_cell(int mx, int my)
 
         if (menv[i].type == MONS_HYDRA)
         {
-            strcpy(info, "It has ");
-            itoa(menv[i].number, st_prn, 10);
-            strcat(info, st_prn);
-            strcat(info, " heads.");
-            mpr(info);
+            strcpy( info, "It has " );
+            itoa( menv[i].number, st_prn, 10 );
+            strcat( info, st_prn );
+            strcat( info, " heads." );
+            mpr( info );
         }
 
         print_wounds(&menv[i]);
@@ -709,7 +724,7 @@ static void describe_cell(int mx, int my)
         {
             if (menv[i].behavior == BEH_SLEEP)
             {
-                strcpy(info, mons_pronoun(menv[i].type, 0));
+                strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
                 strcat(info, " doesn't appear to have noticed you.");
                 mpr(info);
             }
@@ -721,7 +736,7 @@ static void describe_cell(int mx, int my)
                 // part of their special behavior.
                 if (!testbits(menv[i].flags, MF_BATTY))
                 {
-                    strcpy(info, mons_pronoun(menv[i].type, 0));
+                    strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
                     strcat(info, " doesn't appear to be interested in you.");
                     mpr(info);
                 }
@@ -730,14 +745,14 @@ static void describe_cell(int mx, int my)
 
         if (menv[i].attitude == ATT_FRIENDLY)
         {
-            strcpy(info, mons_pronoun(menv[i].type, 0));
+            strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
             strcat(info, " is friendly.");
             mpr(info);
         }
 
         for (int p = 0; p < NUM_MON_ENCHANTS; p++)
         {
-            strcpy(info, mons_pronoun(menv[i].type, 0));
+            strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
             switch (menv[i].enchantment[p])
             {
             case ENCH_YOUR_ROT_I:
@@ -785,19 +800,20 @@ static void describe_cell(int mx, int my)
                 mpr(info);
         }
 
-#ifdef WIZARD
+#if DEBUG_DIAGNOSTICS
         stethoscope(i);
 #endif
     }
 
+#if (!DEBUG)
+  // removing warning
   look_clouds:
-    if (env.cgrid[mx][my]
-                                                    != EMPTY_CLOUD)
+#endif
+    if (env.cgrid[mx][my] != EMPTY_CLOUD)
     {
-        const char cloud_inspected = env.cgrid[mx]
-                                              [my];
+        const char cloud_inspected = env.cgrid[mx][my];
 
-        const char cloud_type = env.cloud_type[ cloud_inspected ];
+        const char cloud_type = env.cloud[ cloud_inspected ].type;
 
         strcpy(info, "There is a cloud of ");
         strcat(info,
@@ -830,20 +846,20 @@ static void describe_cell(int mx, int my)
 
     if (targ_item != NON_ITEM)
     {
-        if (mitm.base_type[ targ_item ] == OBJ_GOLD)
+        if (mitm[ targ_item ].base_type == OBJ_GOLD)
         {
             mpr("You see some money here.");
         }
         else
         {
             strcpy(info, "You see ");
-            it_name( targ_item, 3, str_pass);
+            it_name( targ_item, DESC_NOCAP_A, str_pass);
             strcat(info, str_pass);
             strcat(info, " here.");
             mpr(info);
         }
 
-        if (mitm.link[ targ_item ] != NON_ITEM)
+        if (mitm[ targ_item ].link != NON_ITEM)
             mpr("There is something else lying underneath.");
     }
 
@@ -926,8 +942,8 @@ static void describe_cell(int mx, int my)
     case DNGN_TRAP_III:
         for (trf = 0; trf < MAX_TRAPS; trf++)
         {
-            if (env.trap_x[trf] == mx
-                && env.trap_y[trf] == my)
+            if (env.trap[trf].x == mx
+                && env.trap[trf].y == my)
             {
                 break;
             }
@@ -940,7 +956,7 @@ static void describe_cell(int mx, int my)
             }
         }
 
-        switch (env.trap_type[trf])
+        switch (env.trap[trf].type)
         {
         case TRAP_DART:
             mpr("A dart trap.");

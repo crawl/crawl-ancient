@@ -9,9 +9,10 @@
  */
 
 
-#ifndef SPLBOOK_H
-#define SPLBOOK_H
+#ifndef SPL_BOOK_H
+#define SPL_BOOK_H
 
+#include "externs.h"
 #include "FixVec.h"
 
 
@@ -32,14 +33,14 @@ char book_rarity(unsigned char which_book);
 /* ***********************************************************************
  * called from: it_use3 - item_use - spl-book
  * *********************************************************************** */
-bool learn_a_spell(unsigned int splbook, int bitty);
+bool is_valid_spell_in_book( unsigned int splbook, int spell );
 
 
 // updated 24may2000 {dlb}
 /* ***********************************************************************
  * called from: it_use3 - item_use - spl-book
  * *********************************************************************** */
-void read_book(unsigned int book_read);
+unsigned char read_book( item_def &item, int action );
 
 
 // updated 24may2000 {dlb}
@@ -60,7 +61,7 @@ void spellbook_template(int sbook_type, FixedVector<int, SPELLBOOK_SIZE>& sbtemp
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void which_spell(void);
+void learn_spell(void);
 
 
 // updated 24may2000 {dlb}

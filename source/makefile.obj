@@ -4,8 +4,10 @@ abyss.o \
 acr.o \
 beam.o \
 chardump.o \
+cloud.o \
 command.o \
 debug.o \
+delay.o \
 decks.o \
 describe.o \
 direct.o \
@@ -16,6 +18,7 @@ files.o \
 food.o \
 hiscores.o \
 initfile.o \
+insult.o \
 invent.o \
 it_use2.o \
 it_use3.o \
@@ -23,6 +26,7 @@ item_use.o \
 itemname.o \
 items.o \
 lev-pand.o \
+libutil.o \
 llist.o \
 macro.o \
 maps.o \
@@ -45,14 +49,12 @@ religion.o \
 shopping.o \
 skills.o \
 skills2.o \
-spell.o \
-spells.o \
-spells0.o \
 spells1.o \
 spells2.o \
 spells3.o \
 spells4.o \
 spl-book.o \
+spl-cast.o \
 spl-util.o \
 stuff.o \
 tags.o \

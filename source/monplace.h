@@ -34,9 +34,9 @@
  *              2 = don't place the monster near the player
  *              3 = place the monster near stairs (regardless of player pos)
  * *********************************************************************** */
-int mons_place(int mon_type, char behavior, int target, bool summoned,
-    int px, int py, int level_type = LEVEL_DUNGEON, int proximity = 0,
-    unsigned char extra = 250);
+int mons_place( int mon_type, char behavior, int target, bool summoned,
+                int px, int py, int level_type = LEVEL_DUNGEON,
+                int proximity = PROX_ANYWHERE, int extra = 250 );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -44,21 +44,23 @@ int mons_place(int mon_type, char behavior, int target, bool summoned,
  *              items - monstuff - mstuff2 - religion - spell - spells -
  *              spells2 - spells3 - spells4
  * *********************************************************************** */
-int create_monster(int cls, int dur, int beha, int cr_x, int cr_y, int hitting, int zsec);
+int create_monster( int cls, int dur, int beha, int cr_x, int cr_y,
+                    int hitting, int zsec );
 
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: misc - monplace - spells3
  * *********************************************************************** */
-bool empty_surrounds(int emx, int emy, unsigned char spc_wanted, bool allow_centre, FixedVector<char, 2>& empty);
+bool empty_surrounds( int emx, int emy, unsigned char spc_wanted,
+                      bool allow_centre, FixedVector<char, 2>& empty );
 
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: ability - acr - items - maps - mstuff2 - spell - spells
  * *********************************************************************** */
-int summon_any_demon(char demon_class);
+int summon_any_demon( char demon_class );
 
 
 // last update 13mar2001 {gdl}
@@ -70,8 +72,8 @@ int summon_any_demon(char demon_class);
  * mons_place().  If you need to put a monster somewhere,  use mons_place().
  * Summoned creatures can be created with create_monster().
  * *********************************************************************** */
-bool place_monster(int &id, int mon_type, int power, char behavior,
-    int target, bool summoned, int px, int py, bool allow_bands,
-    int proximity = 0, unsigned char extra = 250);
+bool place_monster( int &id, int mon_type, int power, char behavior,
+                    int target, bool summoned, int px, int py, bool allow_bands,
+                    int proximity = PROX_ANYWHERE, int extra = 250 );
 
 #endif  // MONPLACE_H

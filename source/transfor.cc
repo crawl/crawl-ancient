@@ -5,7 +5,7 @@
  *
  *  Change History (most recent first):
  *
- * <2>  5/26/99  JDJ  transform() and untransform() set wield_change so
+ * <2>  5/26/99  JDJ  transform() and untransform() set you.wield_change so
  *                    the weapon line updates.
  * <1> -/--/--   LRH  Created
  */
@@ -27,7 +27,6 @@
 
 extern unsigned char your_sign; // defined in view.cc
 extern unsigned char your_colour;       // defined in view.cc
-extern bool wield_change;       // defined in output.cc
 void drop_everything(void);
 void extra_hp(int amount_extra);
 
@@ -38,6 +37,7 @@ bool remove_equipment(FixedVector < char, 8 > &remove_stuff)
         unwield_item(you.equip[EQ_WEAPON]);
         you.equip[EQ_WEAPON] = -1;
         mpr("You are empty-handed.");
+        you.wield_change = true;
     }
 
     for (int i = EQ_CLOAK; i < EQ_LEFT_RING; i++)
@@ -45,7 +45,7 @@ bool remove_equipment(FixedVector < char, 8 > &remove_stuff)
         if (remove_stuff[i] == 0 || you.equip[i] == -1)
             continue;
 
-        in_name(you.equip[i], 4, str_pass);
+        in_name(you.equip[i], DESC_CAP_YOUR, str_pass);
         strcpy(info, str_pass);
         strcat(info, " falls away.");
         mpr(info);
@@ -56,9 +56,30 @@ bool remove_equipment(FixedVector < char, 8 > &remove_stuff)
     return true;
 }                               // end remove_equipment()
 
+// Returns true if any piece of equipment that has to be removed is cursed.
+// Useful for keeping low level transformations from being too useful.
+static bool check_for_cursed_equipment( FixedVector < char, 8 > &remove_stuff )
+{
+    for (int i = EQ_WEAPON; i < EQ_LEFT_RING; i++)
+    {
+        if (remove_stuff[i] == 0 || you.equip[i] == -1)
+            continue;
+
+        if (item_cursed( you.inv[ you.equip[i] ] ))
+        {
+            mpr( "Your cursed equipment won't allow you to complete the "
+                 "transformation." );
+
+            return (true);
+        }
+    }
+
+    return (false);
+}                               // end check_for_cursed_equipment()
+
 bool transform(int pow, char which_trans)
 {
-    if (you.species == SP_MERFOLK && player_in_water())
+    if (you.species == SP_MERFOLK && player_is_swimming())
     {
         // This might by overkill, but it's okay because obviously
         // whatever magical ability that let's them walk on land is
@@ -67,7 +88,7 @@ bool transform(int pow, char which_trans)
         // the forced transform when entering water)... things like
         // allowing merfolk to transform into dragons and fly out of
         // the water can be done later -- bwr
-        mpr("You cannot transform while in water.");
+        mpr( "You cannot transform out of your normal form while in water." );
         return (false);
     }
 
@@ -77,7 +98,7 @@ bool transform(int pow, char which_trans)
     if (you.is_undead)
     {
         mpr("Your unliving flesh cannot be transformed in this way.");
-        return false;
+        return (false);
     }
 
     //jmf: silently discard this enchantment
@@ -90,101 +111,109 @@ bool transform(int pow, char which_trans)
         rem_stuff[i] = 1;
 
     you.redraw_evasion = 1;
-    you.redraw_armor_class = 1;
-    wield_change = true;
-
-#if 0
-    // Now handled in player_movement_speed()
-    if (you.species == SP_NAGA
-        && (which_trans != TRAN_BLADE_HANDS && which_trans != TRAN_LICH))
-    {
-        you.attribute[ATTR_WALK_SLOWLY]--;
-    }
-#endif
+    you.redraw_armour_class = 1;
+    you.wield_change = true;
 
     /* Remember, it can still fail in the switch below... */
     switch (which_trans)
     {
     case TRAN_SPIDER:           /* also AC + 2, ev + 3, fast_run */
+        if (check_for_cursed_equipment( rem_stuff ))
+            return (false);
+
         mpr("You turn into a venomous arachnid creature.");
-        remove_equipment(rem_stuff);
-        modify_stat(STAT_DEXTERITY, 5, true);
+        remove_equipment( rem_stuff );
+
         you.attribute[ATTR_TRANSFORMATION] = TRAN_SPIDER;
         you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
 
         if (you.duration[DUR_TRANSFORMATION] > 100)
             you.duration[DUR_TRANSFORMATION] = 100;
 
+        modify_stat( STAT_DEXTERITY, 5, true );
+
         your_sign = 's';
         your_colour = BROWN;
-        return true;
+        return (true);
 
     case TRAN_BLADE_HANDS:
         rem_stuff[EQ_CLOAK] = 0;
         rem_stuff[EQ_HELMET] = 0;
         rem_stuff[EQ_BOOTS] = 0;
         rem_stuff[EQ_BODY_ARMOUR] = 0;
-        remove_equipment(rem_stuff);
+
+        if (check_for_cursed_equipment( rem_stuff ))
+            return (false);
+
         mpr("Your hands turn into razor-sharp scythe blades.");
+        remove_equipment( rem_stuff );
+
         you.attribute[ATTR_TRANSFORMATION] = TRAN_BLADE_HANDS;
         you.duration[DUR_TRANSFORMATION] = 10 + random2(pow);
 
-        if (you.duration[DUR_TRANSFORMATION] > 100)
-            you.duration[DUR_TRANSFORMATION] = 100;
-
-        return true;
+        if (you.duration[ DUR_TRANSFORMATION ] > 100)
+            you.duration[ DUR_TRANSFORMATION ] = 100;
+        return (true);
 
     case TRAN_STATUE:           /* also AC + 20, ev - 5 */
         if (you.species == SP_GNOME && coinflip())
-            mpr("Look, a garden gnome. How cute is that?");
+            mpr( "Look, a garden gnome. How cute!" );
         else if (player_genus(GENPC_DWARVEN) && one_chance_in(10))
-            mpr("You inwardly fear your resemblance to a lawn ornament.");
+            mpr( "You inwardly fear your resemblance to a lawn ornament." );
         else
-            mpr("You turn into a living statue of rough stone.");
+            mpr( "You turn into a living statue of rough stone." );
 
-        rem_stuff[EQ_WEAPON] = 0;       /* can still hold a weapon */
-        remove_equipment(rem_stuff);
-        modify_stat(STAT_DEXTERITY, -2, true);
-        modify_stat(STAT_STRENGTH, 2, true);
+        rem_stuff[ EQ_WEAPON ] = 0;       /* can still hold a weapon */
+        remove_equipment( rem_stuff );
+
         you.attribute[ATTR_TRANSFORMATION] = TRAN_STATUE;
         you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
 
-        if (you.duration[DUR_TRANSFORMATION] > 100)
-            you.duration[DUR_TRANSFORMATION] = 100;
+        if (you.duration[ DUR_TRANSFORMATION ] > 100)
+            you.duration[ DUR_TRANSFORMATION ] = 100;
+
+        modify_stat( STAT_DEXTERITY, -2, true );
+        modify_stat( STAT_STRENGTH, 2, true );
+        extra_hp(15);   // must occur after attribute set
 
         your_sign = '8';
         your_colour = LIGHTGREY;
-        extra_hp(15);
-        return true;
+        return (true);
 
     case TRAN_ICE_BEAST:        /* also AC + 2, res_cold * 3, -1 * res_fire */
-        mpr("You turn into a creature of crystalline ice.");
-        remove_equipment(rem_stuff);
+        mpr( "You turn into a creature of crystalline ice." );
+
+        remove_equipment( rem_stuff );
+
         you.attribute[ATTR_TRANSFORMATION] = TRAN_ICE_BEAST;
         you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
 
-        if (you.duration[DUR_TRANSFORMATION] > 100)
-            you.duration[DUR_TRANSFORMATION] = 100;
+        if (you.duration[ DUR_TRANSFORMATION ] > 100)
+            you.duration[ DUR_TRANSFORMATION ] = 100;
+
+        extra_hp(12);   // must occur after attribute set
 
         your_sign = 'I';
         your_colour = WHITE;
-        extra_hp(12);
-        return true;
+        return (true);
 
     case TRAN_DRAGON:   /* also AC + 7, ev - 3, -1 * res_cold, 2 * res_fire */
-        mpr("You turn into a fearsome dragon!");
+        mpr( "You turn into a fearsome dragon!" );
+
         remove_equipment(rem_stuff);
+
         you.attribute[ATTR_TRANSFORMATION] = TRAN_DRAGON;
         you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
 
-        if (you.duration[DUR_TRANSFORMATION] > 100)
-            you.duration[DUR_TRANSFORMATION] = 100;
+        if (you.duration[ DUR_TRANSFORMATION ] > 100)
+            you.duration[ DUR_TRANSFORMATION ] = 100;
 
-        modify_stat(STAT_STRENGTH, 10, true);
+        modify_stat( STAT_STRENGTH, 10, true );
+        extra_hp(16);   // must occur after attribute set
+
         your_sign = 'D';
         your_colour = GREEN;
-        extra_hp(16);
-        return true;
+        return (true);
 
     case TRAN_LICH:
         // also AC + 3, 1 * res_cold, prot_life, res_poison, is_undead,
@@ -194,7 +223,7 @@ bool transform(int pow, char which_trans)
             mpr( "The transformation conflicts with an enchantment "
                  "already in effect." );
 
-            return false;
+            return (false);
         }
 
         mpr("Your body is suffused with negative energy!");
@@ -203,47 +232,53 @@ bool transform(int pow, char which_trans)
         you.attribute[ATTR_TRANSFORMATION] = TRAN_LICH;
         you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
 
-        if (you.duration[DUR_TRANSFORMATION] > 100)
-            you.duration[DUR_TRANSFORMATION] = 100;
+        if (you.duration[ DUR_TRANSFORMATION ] > 100)
+            you.duration[ DUR_TRANSFORMATION ] = 100;
 
-        modify_stat(STAT_STRENGTH, 3, true);
+        modify_stat( STAT_STRENGTH, 3, true );
         your_sign = 'L';
         your_colour = LIGHTGREY;
         you.is_undead = US_HUNGRY_DEAD;
-        return true;
+        return (true);
 
     case TRAN_AIR:
-        mpr("You feel diffuse...");
+        mpr( "You feel diffuse..." );
+
         remove_equipment(rem_stuff);
+
         drop_everything();
+
         you.attribute[ATTR_TRANSFORMATION] = TRAN_AIR;
         you.duration[DUR_TRANSFORMATION] = 35 + random2(pow) + random2(pow);
 
-        if (you.duration[DUR_TRANSFORMATION] > 150)
-            you.duration[DUR_TRANSFORMATION] = 150;
+        if (you.duration[ DUR_TRANSFORMATION ] > 150)
+            you.duration[ DUR_TRANSFORMATION ] = 150;
 
-        modify_stat(STAT_DEXTERITY, 8, true);
+        modify_stat( STAT_DEXTERITY, 8, true );
         your_sign = '#';
         your_colour = DARKGREY;
-        return true;
+        return (true);
 
     case TRAN_SERPENT_OF_HELL:
-        mpr("You transform into a huge demonic serpent!");
+        mpr( "You transform into a huge demonic serpent!" );
+
         remove_equipment(rem_stuff);
+
         you.attribute[ATTR_TRANSFORMATION] = TRAN_SERPENT_OF_HELL;
         you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
 
-        if (you.duration[DUR_TRANSFORMATION] > 120)
-            you.duration[DUR_TRANSFORMATION] = 120;
+        if (you.duration[ DUR_TRANSFORMATION ] > 120)
+            you.duration[ DUR_TRANSFORMATION ] = 120;
 
-        modify_stat(STAT_STRENGTH, 13, true);
+        modify_stat( STAT_STRENGTH, 13, true );
+        extra_hp(17);   // must occur after attribute set
+
         your_sign = 'S';
         your_colour = RED;
-        extra_hp(17);
-        return true;
+        return (true);
     }
 
-    return false;
+    return (false);
 }                               // end transform()
 
 void untransform(void)
@@ -254,8 +289,8 @@ void untransform(void)
         rem_stuff[i] = 0;
 
     you.redraw_evasion = 1;
-    you.redraw_armor_class = 1;
-    wield_change = true;
+    you.redraw_armour_class = 1;
+    you.wield_change = true;
 
     your_sign = '@';
     your_colour = LIGHTGREY;
@@ -264,53 +299,55 @@ void untransform(void)
     {
     case TRAN_SPIDER:
         mpr("Your transformation has ended.", MSGCH_DURATION);
-        modify_stat(STAT_DEXTERITY, -5, true);
+        modify_stat( STAT_DEXTERITY, -5, true );
         break;
 
     case TRAN_BLADE_HANDS:
-        mpr("Your hands revert to their normal proportions.", MSGCH_DURATION);
-        wield_change = true;
+        mpr( "Your hands revert to their normal proportions.", MSGCH_DURATION );
+        you.wield_change = true;
         break;
 
     case TRAN_STATUE:
-        mpr("You revert to your normal fleshy form.", MSGCH_DURATION);
-        modify_stat(STAT_DEXTERITY, 2, true);
-        modify_stat(STAT_STRENGTH, -2, true);
+        mpr( "You revert to your normal fleshy form.", MSGCH_DURATION );
+        modify_stat( STAT_DEXTERITY, 2, true );
+        modify_stat( STAT_STRENGTH, -2, true );
         break;
 
     case TRAN_ICE_BEAST:
-        mpr("You warm up again.", MSGCH_DURATION);
+        mpr( "You warm up again.", MSGCH_DURATION );
         break;
 
     case TRAN_DRAGON:
-        mpr("Your transformation has ended.", MSGCH_DURATION);
+        mpr( "Your transformation has ended.", MSGCH_DURATION );
         modify_stat(STAT_STRENGTH, -10, true);
         break;
 
     case TRAN_LICH:
-        mpr("You feel yourself come back to life.", MSGCH_DURATION);
+        mpr( "You feel yourself come back to life.", MSGCH_DURATION );
         modify_stat(STAT_STRENGTH, -3, true);
         you.is_undead = US_ALIVE;
         break;
 
     case TRAN_AIR:
-        mpr("Your body solidifies.", MSGCH_DURATION);
+        mpr( "Your body solidifies.", MSGCH_DURATION );
         modify_stat(STAT_DEXTERITY, -8, true);
         break;
 
     case TRAN_SERPENT_OF_HELL:
-        mpr("Your transformation has ended.", MSGCH_DURATION);
+        mpr( "Your transformation has ended.", MSGCH_DURATION );
         modify_stat(STAT_STRENGTH, -13, true);
         break;
     }
 
-    you.attribute[ATTR_TRANSFORMATION] = TRAN_NONE;
-    you.duration[DUR_TRANSFORMATION] = 0;
+    you.attribute[ ATTR_TRANSFORMATION ] = TRAN_NONE;
+    you.duration[ DUR_TRANSFORMATION ] = 0;
 
     // If nagas wear boots while transformed, they fall off again afterwards:
-    if (you.species == SP_NAGA
-            && you.equip[EQ_BOOTS] != -1
-            && you.inv_plus2[you.equip[EQ_BOOTS]] != 1)
+    // I don't believe this is currently possible, and if it is we
+    // probably need something better to cover all possibilities.  -bwr
+    if ((you.species == SP_NAGA || you.species == SP_CENTAUR)
+            && you.equip[ EQ_BOOTS ] != -1
+            && you.inv[ you.equip[EQ_BOOTS] ].plus2 != TBOOT_NAGA_BARDING)
     {
         rem_stuff[EQ_BOOTS] = 1;
         remove_equipment(rem_stuff);
@@ -336,7 +373,7 @@ bool can_equip(char use_which)
             case SP_NAGA:
             case SP_CENTAUR:
             case SP_KENKU:
-                return false;
+                return (false);
             default:
                 break;
             }
@@ -347,7 +384,7 @@ bool can_equip(char use_which)
             {
             case SP_MINOTAUR:
             case SP_KENKU:
-                return false;
+                return (false);
             default:
                 break;
             }
@@ -355,23 +392,29 @@ bool can_equip(char use_which)
     }
 
     if (use_which == EQ_HELMET && you.mutation[MUT_HORNS])
-        return false;
+        return (false);
+
+    if (use_which == EQ_BOOTS && you.mutation[MUT_HOOVES])
+        return (false);
+
+    if (use_which == EQ_GLOVES && you.mutation[MUT_CLAWS] >= 3)
+        return (false);
 
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
     case TRAN_NONE:
     case TRAN_LICH:
-        return true;
+        return (true);
         break;
 
     case TRAN_BLADE_HANDS:
         if (use_which == EQ_WEAPON || use_which == EQ_GLOVES
                                                 || use_which == EQ_SHIELD)
         {
-            return false;
+            return (false);
         }
         else
-            return true;
+            return (true);
         break;
 
     case TRAN_STATUE:
@@ -379,11 +422,11 @@ bool can_equip(char use_which)
         break;
 
     default:
-        return false;
+        return (false);
         break;
     }
 
-    return true;
+    return (true);
 }                               // end can_equip()
 
 void extra_hp(int amount_extra) // must also set in calc_hp
@@ -405,12 +448,12 @@ void drop_everything(void)
 
     mpr( "You find yourself unable to carry your possessions!" );
 
-    for(i=0; i<ENDOFPACK; i++)
+    for (i = 0; i < ENDOFPACK; i++)
     {
-        if (you.inv_quantity[i] > 0)
+        if (is_valid_item( you.inv[i] ))
         {
-            item_place(i, you.x_pos, you.y_pos, you.inv_quantity[i]);
-            you.inv_quantity[i] = 0;
+            copy_item_to_grid( you.inv[i], you.x_pos, you.y_pos );
+            you.inv[i].quantity = 0;
         }
     }
 

@@ -27,10 +27,7 @@
 // for #definitions of MAX_BRANCHES & MAX_LEVELS
 #include "religion.h"
 #include "stuff.h"
-
-#ifdef USE_CURSES
-#include "curses.h"
-#endif
+#include "view.h"
 
 enum
 {
@@ -415,7 +412,7 @@ void seen_other_thing( unsigned char which_thing )
  */
 void print_one_map_line( const char *line , int color)
 {
-    if ( map_lines == (NUMBER_OF_LINES - 2) )
+    if (map_lines == (get_number_of_lines() - 2))
     {
         textcolor (LIGHTGREY);
         cprintf(EOL);

@@ -122,6 +122,7 @@ bool yesno(const char * str, bool safe = true);
  * called from: fight - monstuff - spells4 - view
  * *********************************************************************** */
 int distance(char x1, char y1, char x2, char y2);
+bool adjacent( int x, int y, int x2, int y2 );
 
 
 // last updated 21may2000 {dlb}

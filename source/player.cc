@@ -37,8 +37,10 @@
 #include "religion.h"
 #include "skills2.h"
 #include "spl-util.h"
+#include "spells4.h"
 #include "stuff.h"
 #include "view.h"
+#include "wpn-misc.h"
 
 #ifdef MACROS
 #include "macro.h"
@@ -109,6 +111,11 @@ bool player_in_water(void)
                 || grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER));
 }
 
+bool player_is_swimming(void)
+{
+    return (player_in_water() && you.species == SP_MERFOLK);
+}
+
 bool player_under_penance(void)
 {
     if (you.religion != GOD_NO_GOD)
@@ -137,9 +144,9 @@ bool player_genus(unsigned char which_genus, unsigned char species)
     case SP_UNK1_DRACONIAN:
     case SP_UNK2_DRACONIAN:
         if (which_genus == GENPC_DRACONIAN)
-            return true;
+            return (true);
         else
-            return false;
+            return (false);
         break;
 
     case SP_ELF:
@@ -148,49 +155,199 @@ bool player_genus(unsigned char which_genus, unsigned char species)
     case SP_DEEP_ELF:
     case SP_SLUDGE_ELF:
         if (which_genus == GENPC_ELVEN)
-            return true;
+            return (true);
         else
-            return false;
+            return (false);
         break;
 
     case SP_HILL_DWARF:
     case SP_MOUNTAIN_DWARF:
         if (which_genus == GENPC_DWARVEN)
-            return true;
+            return (true);
         else
-            return false;
+            return (false);
         break;
 
     default:
-        return false;
+        return (false);
         break;
     }
 }                               // end player_genus()
+
+// Looks in equipment "slot" to see if there is an equiped "sub_type".
+// Returns number of matches (in the case of rings, both are checked)
+int player_equip( int slot, int sub_type )
+{
+    int ret = 0;
+
+    switch (slot)
+    {
+    case EQ_WEAPON:
+        // Hands can have more than just weapons.
+        if (you.equip[EQ_WEAPON] != -1
+            && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_WEAPONS
+            && you.inv[you.equip[EQ_WEAPON]].sub_type == sub_type)
+        {
+            ret++;
+        }
+        break;
+
+    case EQ_STAFF:
+        // Like above, but must be magical stave.
+        if (you.equip[EQ_WEAPON] != -1
+            && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_STAVES
+            && you.inv[you.equip[EQ_WEAPON]].sub_type == sub_type)
+        {
+            ret++;
+        }
+        break;
+
+    case EQ_RINGS:
+        if (you.equip[EQ_LEFT_RING] != -1
+            && you.inv[you.equip[EQ_LEFT_RING]].sub_type == sub_type)
+        {
+            ret++;
+        }
+
+        if (you.equip[EQ_RIGHT_RING] != -1
+            && you.inv[you.equip[EQ_RIGHT_RING]].sub_type == sub_type)
+        {
+            ret++;
+        }
+        break;
+
+    case EQ_RINGS_PLUS:
+        if (you.equip[EQ_LEFT_RING] != -1
+            && you.inv[you.equip[EQ_LEFT_RING]].sub_type == sub_type)
+        {
+            ret += you.inv[you.equip[EQ_LEFT_RING]].plus;
+        }
+
+        if (you.equip[EQ_RIGHT_RING] != -1
+            && you.inv[you.equip[EQ_RIGHT_RING]].sub_type == sub_type)
+        {
+            ret += you.inv[you.equip[EQ_RIGHT_RING]].plus;
+        }
+        break;
+
+    case EQ_RINGS_PLUS2:
+        if (you.equip[EQ_LEFT_RING] != -1
+            && you.inv[you.equip[EQ_LEFT_RING]].sub_type == sub_type)
+        {
+            ret += you.inv[you.equip[EQ_LEFT_RING]].plus2;
+        }
+
+        if (you.equip[EQ_RIGHT_RING] != -1
+            && you.inv[you.equip[EQ_RIGHT_RING]].sub_type == sub_type)
+        {
+            ret += you.inv[you.equip[EQ_RIGHT_RING]].plus2;
+        }
+        break;
+
+    case EQ_ALL_ARMOUR:
+        // doesn't make much sense here... be specific. -- bwr
+        break;
+
+    default:
+        if (you.equip[slot] != -1
+            && you.inv[you.equip[slot]].sub_type == sub_type)
+        {
+            ret++;
+        }
+        break;
+    }
+
+    return (ret);
+}
+
+
+// Looks in equipment "slot" to see if equiped item has "special" ego-type
+// Returns number of matches (jewellery returns zero -- no ego type).
+int player_equip_special( int slot, int special )
+{
+    int ret = 0;
+
+    switch (slot)
+    {
+    case EQ_WEAPON:
+        // Hands can have more than just weapons.
+        if (you.equip[EQ_WEAPON] != -1
+            && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_WEAPONS
+            && you.inv[you.equip[EQ_WEAPON]].special == special)
+        {
+            ret++;
+        }
+        break;
+
+    case EQ_LEFT_RING:
+    case EQ_RIGHT_RING:
+    case EQ_AMULET:
+    case EQ_STAFF:
+    case EQ_RINGS:
+    case EQ_RINGS_PLUS:
+    case EQ_RINGS_PLUS2:
+        // no ego types for these slots
+        break;
+
+    case EQ_ALL_ARMOUR:
+        // Check all armour slots:
+        for (int i = EQ_CLOAK; i <= EQ_BODY_ARMOUR; i++)
+        {
+            if (you.equip[i] != -1
+                && you.inv[you.equip[i]].special == special)
+            {
+                ret++;
+            }
+        }
+        break;
+
+    default:
+        // Check a specific armour slot for an ego type:
+        if (you.equip[slot] != -1
+            && you.inv[you.equip[slot]].special == special)
+        {
+            ret++;
+        }
+        break;
+    }
+
+    return (ret);
+}
+
+int player_damage_type( void )
+{
+    const int wpn = you.equip[ EQ_WEAPON ];
+
+    if (wpn != -1)
+    {
+        return (damage_type( you.inv[wpn].base_type, you.inv[wpn].sub_type ));
+    }
+    else if (you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS
+            || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON
+            || you.mutation[MUT_CLAWS]
+            || you.species == SP_TROLL
+            || you.species == SP_GHOUL)
+    {
+        return (DVORP_SLICING);
+    }
+
+    return (DVORP_CRUSHING);
+}
 
 int player_teleport(void)
 {
     int tp = 0;
 
     /* rings */
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_TELEPORTATION)
-    {
-        tp += 8;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_TELEPORTATION)
-    {
-        tp += 8;
-    }
+    tp += 8 * player_equip( EQ_RINGS, RING_TELEPORTATION );
 
     /* mutations */
     tp += you.mutation[MUT_TELEPORT] * 3;
 
     /* randart weapons only */
     if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-        && you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25)
+        && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_WEAPONS
+        && is_random_artefact( you.inv[you.equip[EQ_WEAPON]] ))
     {
         tp += scan_randarts(RAP_CAUSE_TELEPORTATION);
     }
@@ -206,32 +363,17 @@ int player_regen(void)
         rr = 20 + ((rr - 20) / 2);
 
     /* rings */
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_REGENERATION)
-    {
-        rr += 40;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_REGENERATION)
-    {
-        rr += 40;
-    }
+    rr += 40 * player_equip( EQ_RINGS, RING_REGENERATION );
 
     /* spell */
     if (you.duration[DUR_REGENERATION])
         rr += 100;
 
-    /* troll or troll leather */
+    /* troll or troll leather -- trolls can't get both */
     if (you.species == SP_TROLL)
         rr += 40;
-
-    /* trolls gain no benefit from troll leather */
-    else if (you.equip[EQ_BODY_ARMOUR] != -1
-         && you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_TROLL_LEATHER_ARMOUR)
-    {
+    else if (player_equip( EQ_BODY_ARMOUR, ARM_TROLL_LEATHER_ARMOUR ))
         rr += 30;
-    }
 
     /* fast heal mutation */
     rr += you.mutation[MUT_REGENERATION] * 20;
@@ -284,6 +426,17 @@ int player_hunger_rate(void)
     if (you.duration[DUR_REGENERATION] > 0)
         hunger += 4;
 
+    // moved here from acr.cc... maintaining the >= 40 behaviour
+    if (you.hunger >= 40)
+    {
+        if (you.invis > 0)
+            hunger += 5;
+
+        // berserk has its own food penalty -- excluding berserk haste
+        if (you.haste > 0 && !you.berserker)
+            hunger += 5;
+    }
+
     hunger += you.mutation[MUT_FAST_METABOLISM];
 
     if (you.mutation[MUT_SLOW_METABOLISM] > 2)
@@ -291,72 +444,64 @@ int player_hunger_rate(void)
     else if (you.mutation[MUT_SLOW_METABOLISM] > 0)
         hunger--;
 
-    for (int i = EQ_LEFT_RING; i <= EQ_RIGHT_RING; i++)
-    {
-        if (you.equip[i] != -1)
-        {
-            switch (you.inv_type[you.equip[i]])
-            {
-            case RING_REGENERATION:
-                hunger += 2;
-                break;
+    // rings
+    hunger += 2 * player_equip( EQ_RINGS, RING_REGENERATION );
+    hunger += 4 * player_equip( EQ_RINGS, RING_HUNGER );
+    hunger -= 2 * player_equip( EQ_RINGS, RING_SUSTENANCE );
 
-            case RING_HUNGER:
-                hunger += 4;
-                break;
+    // weapon ego types
+    hunger += 6 * player_equip_special( EQ_WEAPON, SPWPN_VAMPIRICISM );
+    hunger += 9 * player_equip_special( EQ_WEAPON, SPWPN_VAMPIRES_TOOTH );
 
-            case RING_SUSTENANCE:
-                hunger -= 2;
-                break;
-            }
-        }
-    }
+    // troll leather armour
+    hunger += player_equip( EQ_BODY_ARMOUR, ARM_TROLL_LEATHER_ARMOUR );
 
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
-    {
-        if (you.inv_dam[you.equip[EQ_WEAPON]] < NWPN_SINGING_SWORD)
-        {
-            if (you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_VAMPIRICISM)
-                hunger += 6;
-        }
-        else if (you.inv_dam[you.equip[EQ_WEAPON]] == NWPN_VAMPIRES_TOOTH)
-        {
-            hunger += 9;
-        }
-    }
-
-    if (you.equip[EQ_BODY_ARMOUR] != -1
-         && you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_TROLL_LEATHER_ARMOUR)
-    {
-        hunger += 1;
-    }
-
+    // randarts
     hunger += scan_randarts(RAP_METABOLISM);
 
-    return hunger;
+    // burden
+    hunger += you.burden_state;
+
+    if (hunger < 1)
+        hunger = 1;
+
+    return (hunger);
 }
 
 int player_spell_levels(void)
 {
     int sl = (you.experience_level - 1) + (you.skills[SK_SPELLCASTING] * 2);
 
+    bool fireball = false;
+    bool delayed_fireball = false;
+
     if (sl > 99)
         sl = 99;
 
     for (int i = 0; i < 25; i++)
     {
+        if (you.spells[i] == SPELL_FIREBALL)
+            fireball = true;
+        else if (you.spells[i] == SPELL_DELAYED_FIREBALL)
+            delayed_fireball = true;
+
         if (you.spells[i] != SPELL_NO_SPELL)
             sl -= spell_difficulty(you.spells[i]);
     }
 
+    // Fireball is free for characters with delayed fireball
+    if (fireball && delayed_fireball)
+        sl += spell_difficulty( SPELL_FIREBALL );
+
+    // Note: This can happen because of level drain.  Maybe we should
+    // force random spells out when that happens. -- bwr
     if (sl < 0)
         sl = 0;
 
     return (sl);
 }
 
-static int player_res_magic(void)
+int player_res_magic(void)
 {
     int rm = 0;
 
@@ -386,47 +531,24 @@ static int player_res_magic(void)
         break;
     }
 
-    /* armour: (checks cloak & body armour only) */
-    if (you.equip[EQ_CLOAK] != -1
-        && you.inv_dam[you.equip[EQ_CLOAK]] % 30 == SPARM_MAGIC_RESISTANCE)
-    {
-        rm += 30;
-    }
-    if (you.equip[EQ_BODY_ARMOUR] != -1
-        && you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30
-                                                 == SPARM_MAGIC_RESISTANCE)
-    {
-        rm += 30;
-    }
+    /* armour  */
+    rm += 30 * player_equip_special( EQ_ALL_ARMOUR, SPARM_MAGIC_RESISTANCE );
 
     /* rings of magic resistance */
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_PROTECTION_FROM_MAGIC)
-    {
-        rm += 40;
-    }
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_PROTECTION_FROM_MAGIC)
-    {
-        rm += 40;
-    }
+    rm += 40 * player_equip( EQ_RINGS, RING_PROTECTION_FROM_MAGIC );
 
     /* randarts */
     rm += scan_randarts(RAP_MAGIC);
+
     /* Enchantment skill */
-    rm += you.skills[SK_ENCHANTMENTS] * 2;
+    rm += you.skills[SK_ENCHANTMENTS];
+
     /* Mutations */
     rm += you.mutation[MUT_MAGIC_RESISTANCE] * 30;
 
     /* transformations */
-    switch (you.attribute[ATTR_TRANSFORMATION])
-    {
-    case TRAN_LICH:
+    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH)
         rm += 50;
-        break;
-    default:
-        break;
-    }
 
     return rm;
 }
@@ -436,63 +558,23 @@ int player_res_fire(void)
     int rf = 100;
 
     /* rings of fire resistance/fire */
-    if (you.equip[ EQ_LEFT_RING ] != -1
-        && (you.inv_type[you.equip[EQ_LEFT_RING]] == RING_PROTECTION_FROM_FIRE
-            || you.inv_type[you.equip[EQ_LEFT_RING]] == RING_FIRE))
-    {
-        rf++;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && (you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_PROTECTION_FROM_FIRE
-            || you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_FIRE))
-    {
-        rf++;
-    }
+    rf += player_equip( EQ_RINGS, RING_PROTECTION_FROM_FIRE );
+    rf += player_equip( EQ_RINGS, RING_FIRE );
 
     /* rings of ice */
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_ICE)
-    {
-        rf--;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_ICE)
-    {
-        rf--;
-    }
+    rf -= player_equip( EQ_RINGS, RING_ICE );
 
     /* Staves */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_FIRE)
-    {
-        rf++;
-    }
+    rf += player_equip( EQ_STAFF, STAFF_FIRE );
 
     // body armour:
-    if (you.equip[EQ_BODY_ARMOUR] != -1)
-    {
-        if (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_FIRE_RESISTANCE
-            || you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_RESISTANCE)
-        {
-            rf++;
-        }
+    rf += 2 * player_equip( EQ_BODY_ARMOUR, ARM_DRAGON_ARMOUR );
+    rf += player_equip( EQ_BODY_ARMOUR, ARM_GOLD_DRAGON_ARMOUR );
+    rf -= player_equip( EQ_BODY_ARMOUR, ARM_ICE_DRAGON_ARMOUR );
 
-        switch (you.inv_type[you.equip[EQ_BODY_ARMOUR]])
-        {
-        case ARM_DRAGON_ARMOUR:
-            rf += 2;
-            break;
-        case ARM_GOLD_DRAGON_ARMOUR:
-            rf++;
-            break;
-        case ARM_ICE_DRAGON_ARMOUR:
-            rf--;
-            break;
-        }
-    }
+    // ego armours
+    rf += player_equip_special( EQ_ALL_ARMOUR, SPARM_FIRE_RESISTANCE );
+    rf += player_equip_special( EQ_ALL_ARMOUR, SPARM_RESISTANCE );
 
     // randart weapons:
     rf += scan_randarts(RAP_FIRE);
@@ -505,6 +587,9 @@ int player_res_fire(void)
 
     // mutations:
     rf += you.mutation[MUT_HEAT_RESISTANCE];
+
+    if (you.fire_shield)
+        rf += 2;
 
     // transformations:
     switch (you.attribute[ATTR_TRANSFORMATION])
@@ -530,65 +615,24 @@ int player_res_cold(void)
 {
     int rc = 100;
 
-    /* rings of cold resistance/ice */
-    if (you.equip[EQ_LEFT_RING] != -1
-        && (you.inv_type[you.equip[EQ_LEFT_RING]] == RING_PROTECTION_FROM_COLD
-            || you.inv_type[you.equip[EQ_LEFT_RING]] == RING_ICE))
-    {
-        rc++;
-    }
+    /* rings of fire resistance/fire */
+    rc += player_equip( EQ_RINGS, RING_PROTECTION_FROM_COLD );
+    rc += player_equip( EQ_RINGS, RING_ICE );
 
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && (you.inv_type[you.equip[EQ_RIGHT_RING]] ==
-            RING_PROTECTION_FROM_COLD
-            || you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_ICE))
-    {
-        rc++;
-    }
-
-    /* rings of fire */
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_FIRE)
-    {
-        rc--;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_FIRE)
-    {
-        rc--;
-    }
+    /* rings of ice */
+    rc -= player_equip( EQ_RINGS, RING_FIRE );
 
     /* Staves */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_COLD)
-    {
-        rc++;
-    }
+    rc += player_equip( EQ_STAFF, STAFF_COLD );
 
     // body armour:
-    if (you.equip[EQ_BODY_ARMOUR] != -1)
-    {
-        if (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_COLD_RESISTANCE
-            || you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_RESISTANCE)
-        {
-            rc++;
-        }
+    rc += 2 * player_equip( EQ_BODY_ARMOUR, ARM_ICE_DRAGON_ARMOUR );
+    rc += player_equip( EQ_BODY_ARMOUR, ARM_GOLD_DRAGON_ARMOUR );
+    rc -= player_equip( EQ_BODY_ARMOUR, ARM_DRAGON_ARMOUR );
 
-        switch (you.inv_type[you.equip[EQ_BODY_ARMOUR]])
-        {
-        case ARM_ICE_DRAGON_ARMOUR:
-            rc += 2;
-            break;
-        case ARM_GOLD_DRAGON_ARMOUR:
-            rc++;
-            break;
-        case ARM_DRAGON_ARMOUR:
-            rc--;
-            break;
-        }
-    }
+    // ego armours
+    rc += player_equip_special( EQ_ALL_ARMOUR, SPARM_COLD_RESISTANCE );
+    rc += player_equip_special( EQ_ALL_ARMOUR, SPARM_RESISTANCE );
 
     // randart weapons:
     rc += scan_randarts(RAP_COLD);
@@ -601,6 +645,9 @@ int player_res_cold(void)
 
     // mutations:
     rc += you.mutation[MUT_COLD_RESISTANCE];
+
+    if (you.fire_shield)
+        rc -= 2;
 
     // transformations:
     switch (you.attribute[ATTR_TRANSFORMATION])
@@ -632,19 +679,11 @@ int player_res_electricity(void)
     if (you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION])
         re++;
 
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_AIR)
-    {
-        re++;
-    }
+    // staff
+    re += player_equip( EQ_STAFF, STAFF_AIR );
 
     // body armour:
-    if (you.equip[EQ_BODY_ARMOUR] != -1
-        && you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_STORM_DRAGON_ARMOUR)
-    {
-        re++;
-    }
+    re += player_equip( EQ_BODY_ARMOUR, ARM_STORM_DRAGON_ARMOUR );
 
     // randart weapons:
     re += scan_randarts(RAP_ELECTRICITY);
@@ -658,14 +697,8 @@ int player_res_electricity(void)
         re++;
 
     // transformations:
-    switch (you.attribute[ATTR_TRANSFORMATION])
-    {
-    case TRAN_AIR:
-        re += 2;  // meaningless, only one level actually counts -- bwr
-        break;
-    default:
-        break;
-    }
+    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR)
+        re += 2;  // mutliple levels currently meaningless
 
     return re;
 }                               // end player_res_electricity()
@@ -676,58 +709,20 @@ int player_res_poison(void)
     int rp = 0;
 
     /* rings of poison resistance */
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_POISON_RESISTANCE)
-    {
-        rp++;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_POISON_RESISTANCE)
-    {
-        rp++;
-    }
+    rp += player_equip( EQ_RINGS, RING_POISON_RESISTANCE );
 
     /* Staves */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_POISON)
-    {
-        rp++;
-    }
+    rp += player_equip( EQ_STAFF, STAFF_POISON );
 
     /* the staff of Olgreb: */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-        && you.inv_dam[you.equip[EQ_WEAPON]] == NWPN_STAFF_OF_OLGREB)
-    {
-        rp++;
-    }
+    rp += player_equip_special( EQ_WEAPON, SPWPN_STAFF_OF_OLGREB );
 
-    // cloaks:
-    if (you.equip[EQ_CLOAK] != -1
-        && you.inv_dam[you.equip[EQ_CLOAK]] % 30 == SPARM_POISON_RESISTANCE)
-    {
-        rp++;
-    }
+    // ego armour:
+    rp += player_equip_special( EQ_ALL_ARMOUR, SPARM_POISON_RESISTANCE );
 
     // body armour:
-    if (you.equip[EQ_BODY_ARMOUR] != -1)
-    {
-        if (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30
-                                                == SPARM_POISON_RESISTANCE)
-        {
-            rp++;
-        }
-
-        if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_GOLD_DRAGON_ARMOUR)
-            rp++;
-        else if (you.inv_type[you.equip[EQ_BODY_ARMOUR]]
-                                                == ARM_SWAMP_DRAGON_ARMOUR)
-        {
-            rp++;
-        }
-    }
+    rp += player_equip( EQ_BODY_ARMOUR, ARM_GOLD_DRAGON_ARMOUR );
+    rp += player_equip( EQ_BODY_ARMOUR, ARM_SWAMP_DRAGON_ARMOUR );
 
     // spells:
     if (you.duration[DUR_RESIST_POISON] > 0)
@@ -766,39 +761,24 @@ unsigned char player_spec_death(void)
     int sd = 0;
 
     /* Staves */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_DEATH)
-    {
-        sd++;
-    }
+    sd += player_equip( EQ_STAFF, STAFF_DEATH );
 
     // body armour:
-    if (you.equip[EQ_BODY_ARMOUR] != -1
-        && you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI)
-    {
+    if (player_equip_special( EQ_BODY_ARMOUR, SPARM_ARCHMAGI ))
         sd++;
-    }
 
     // species:
     if (you.species == SP_MUMMY)
     {
         if (you.experience_level > 12)
-        {
             sd++;
-
-            if (you.experience_level > 25)
-                sd++;
-        }
+        if (you.experience_level > 25)
+            sd++;
     }
 
-// transformations:
-    switch (you.attribute[ATTR_TRANSFORMATION])
-    {
-    case TRAN_LICH:
+    // transformations:
+    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH)
         sd++;
-        break;
-    }
 
     return sd;
 }
@@ -815,25 +795,13 @@ unsigned char player_spec_fire(void)
     int sf = 0;
 
     // staves:
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_FIRE)
-    {
-        sf++;
-    }
+    sf += player_equip( EQ_STAFF, STAFF_FIRE );
 
     // rings of fire:
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_FIRE)
-    {
-        sf++;
-    }
+    sf += player_equip( EQ_RINGS, RING_FIRE );
 
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_FIRE)
-    {
+    if (you.fire_shield)
         sf++;
-    }
 
     return sf;
 }
@@ -843,25 +811,10 @@ unsigned char player_spec_cold(void)
     int sc = 0;
 
     // staves:
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_COLD)
-    {
-        sc++;
-    }
+    sc += player_equip( EQ_STAFF, STAFF_COLD );
 
     // rings of ice:
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_ICE)
-    {
-        sc++;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_ICE)
-    {
-        sc++;
-    }
+    sc += player_equip( EQ_RINGS, RING_ICE );
 
     return sc;
 }
@@ -871,12 +824,7 @@ unsigned char player_spec_earth(void)
     int se = 0;
 
     /* Staves */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_EARTH)
-    {
-        se++;
-    }
+    se += player_equip( EQ_STAFF, STAFF_EARTH );
 
     if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR)
         se--;
@@ -889,12 +837,7 @@ unsigned char player_spec_air(void)
     int sa = 0;
 
     /* Staves */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_AIR)
-    {
-        sa++;
-    }
+    sa += player_equip( EQ_STAFF, STAFF_AIR );
 
     //jmf: this was too good
     //if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR)
@@ -907,19 +850,11 @@ unsigned char player_spec_conj(void)
     int sc = 0;
 
     /* Staves */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_CONJURATION)
-    {
-        sc++;
-    }
+    sc += player_equip( EQ_STAFF, STAFF_CONJURATION );
 
-    /* armour of the Archmagi (checks body armour only) */
-    if (you.equip[EQ_BODY_ARMOUR] != -1
-        && you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI)
-    {
+    // armour of the Archmagi
+    if (player_equip_special( EQ_BODY_ARMOUR, SPARM_ARCHMAGI ))
         sc++;
-    }
 
     return sc;
 }
@@ -929,19 +864,11 @@ unsigned char player_spec_ench(void)
     int se = 0;
 
     /* Staves */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_ENCHANTMENT)
-    {
-        se++;
-    }
+    se += player_equip( EQ_STAFF, STAFF_ENCHANTMENT );
 
-    /* armour of the Archmagi (checks body armour only) */
-    if (you.equip[EQ_BODY_ARMOUR] != -1
-        && you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI)
-    {
+    // armour of the Archmagi
+    if (player_equip_special( EQ_BODY_ARMOUR, SPARM_ARCHMAGI ))
         se++;
-    }
 
     return se;
 }
@@ -951,19 +878,11 @@ unsigned char player_spec_summ(void)
     int ss = 0;
 
     /* Staves */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_SUMMONING_I)
-    {
-        ss++;
-    }
+    ss += player_equip( EQ_STAFF, STAFF_SUMMONING );
 
-    /* armour of the Archmagi (checks body armour only) */
-    if (you.equip[EQ_BODY_ARMOUR] != -1
-        && you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI)
-    {
+    // armour of the Archmagi
+    if (player_equip_special( EQ_BODY_ARMOUR, SPARM_ARCHMAGI ))
         ss++;
-    }
 
     return ss;
 }
@@ -972,21 +891,12 @@ unsigned char player_spec_poison(void)
 {
     int sp = 0;
 
-    // Staves
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_POISON)
-    {
-        sp++;
-    }
+    /* Staves */
+    sp += player_equip( EQ_STAFF, STAFF_POISON );
 
-    // the staff of Olgreb
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-        && you.inv_dam[you.equip[EQ_WEAPON]] == NWPN_STAFF_OF_OLGREB)
-    {
+    // armour of the Archmagi
+    if (player_equip_special( EQ_WEAPON, SPWPN_STAFF_OF_OLGREB ))
         sp++;
-    }
 
     return sp;
 }
@@ -996,12 +906,7 @@ unsigned char player_energy(void)
     unsigned char pe = 0;
 
     // Staves
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_ENERGY)
-    {
-        pe++;
-    }
+    pe += player_equip( EQ_STAFF, STAFF_ENERGY );
 
     return pe;
 }
@@ -1010,24 +915,11 @@ int player_prot_life(void)
 {
     int pl = 0;
 
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_LIFE_PROTECTION)
-    {
-        pl++;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_LIFE_PROTECTION)
-    {
-        pl++;
-    }
+    // rings
+    pl += player_equip( EQ_RINGS, RING_LIFE_PROTECTION );
 
     // armour: (checks body armour only)
-    if (you.equip[EQ_BODY_ARMOUR] != -1
-        && you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_POSITIVE_ENERGY)
-    {
-        pl++;
-    }
+    pl += player_equip_special( EQ_ALL_ARMOUR, SPARM_POSITIVE_ENERGY );
 
     if (you.is_undead)
         pl += 3;
@@ -1053,44 +945,6 @@ int player_prot_life(void)
     return pl;
 }
 
-#if 0
-unsigned char player_fast_run(void)
-{
-    int fr = 0;
-
-    /* armour: (checks boots only) */
-    if (you.equip[EQ_BOOTS] != -1
-        && you.inv_dam[you.equip[EQ_BOOTS]] % 30 == SPARM_RUNNING)
-    {
-        fr++;
-    }
-
-    if (you.duration[DUR_SWIFTNESS])
-        fr++;
-
-    /* Mutations */
-    if (you.mutation[MUT_FAST] > 0)
-        fr++;
-
-    /* transformations */
-    if (!player_is_shapechanged())
-    {
-        // Centaurs and spriggans are only fast in their regular
-        // shape (ie untransformed, blade hands, lich form)
-        if (you.species == SP_CENTAUR || you.species == SP_SPRIGGAN)
-            fr++;
-    }
-    else if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER)
-        fr++;
-
-    // swimming merfolk are fast
-    if (you.species == SP_MERFOLK && player_in_water())
-        fr++;
-
-    return fr;
-}
-#endif
-
 // New player movement speed system... allows for a bit more that
 // "player runs fast" and "player walks slow" in that the speed is
 // actually calculated (allowing for centaurs to get a bonus from
@@ -1103,7 +957,7 @@ int player_movement_speed(void)
 {
     int mv = 10;
 
-    if (you.species == SP_MERFOLK && player_in_water())
+    if (you.species == SP_MERFOLK && player_is_swimming())
     {
         // This is swimming... so it doesn't make sense to really
         // apply the other things (the mutation is "cover ground",
@@ -1126,22 +980,32 @@ int player_movement_speed(void)
         else if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER)
             mv = 8;
 
-        /* armour: (checks boots only) */
-        if (you.equip[EQ_BOOTS] != -1
-            && you.inv_dam[you.equip[EQ_BOOTS]] % 30 == SPARM_RUNNING)
-        {
+        /* armour */
+        if (player_equip_special( EQ_BOOTS, SPARM_RUNNING ))
             mv -= 2;
-        }
 
-        // Now when it says "you feel a little slower" you really are:
-        if (you.duration[DUR_SWIFTNESS] > 6)
-            mv -= 2;
-        else if (you.duration[DUR_SWIFTNESS] > 0)
-            mv--;
+        if (player_equip_special( EQ_BODY_ARMOUR, SPARM_PONDEROUSNESS ))
+            mv += 2;
+
+        // Swiftness is an Air spell, it doesn't work so well in water -- bwr
+        if (!player_in_water())
+        {
+            // Now when it says "you feel a little slower" you really are:
+            if (you.duration[DUR_SWIFTNESS] > 6)
+                mv -= 2;
+            else if (you.duration[DUR_SWIFTNESS] > 0)
+                mv--;
+        }
 
         /* Mutations: -2, -3, -4 */
         if (you.mutation[MUT_FAST] > 0)
             mv -= (you.mutation[MUT_FAST] + 1);
+
+        // Burden
+        if (you.burden_state == BS_ENCUMBERED)
+            mv += 1;
+        else if (you.burden_state == BS_OVERLOADED)
+            mv += 3;
     }
 
     // We'll use the old value of six as a minimum, with haste this could
@@ -1151,8 +1015,7 @@ int player_movement_speed(void)
     if (mv < 6)
         mv = 6;
 
-    // Only one movement slowing thing so far... and we'll apply it in
-    // the traditional fashion (ie a mutiplier not an addition).
+    // Nagas move slowly:
     if (you.species == SP_NAGA && !player_is_shapechanged())
     {
         mv *= 14;
@@ -1193,109 +1056,104 @@ int player_AC(void)
 {
     int AC = 0;
     int i;                      // loop variable
-    const int racial_type = ((player_genus(GENPC_DWARVEN)) ? DARM_DWARVEN :
-                             (player_genus(GENPC_ELVEN))   ? DARM_ELVEN :
-                             (you.species == SP_HILL_ORC)  ? DARM_ORCISH
-                                                           : DARM_PLAIN);
 
-    for (i = EQ_CLOAK; i < EQ_LEFT_RING; i++)
+    // get the armour race value that corresponds to the character's race:
+    const unsigned long racial_type
+                            = ((player_genus(GENPC_DWARVEN)) ? ISFLAG_DWARVEN :
+                               (player_genus(GENPC_ELVEN))   ? ISFLAG_ELVEN :
+                               (you.species == SP_HILL_ORC)  ? ISFLAG_ORCISH
+                                                             : 0);
+
+    for (i = EQ_CLOAK; i <= EQ_BODY_ARMOUR; i++)
     {
-        if (you.equip[i] == -1 || i == EQ_SHIELD)
+        const int item = you.equip[i];
+
+        if (item == -1 || i == EQ_SHIELD)
             continue;
 
-        if (you.inv_plus[you.equip[i]] > 130)
-            AC += you.inv_plus[you.equip[i]] - 150;
-        else
-            AC += you.inv_plus[you.equip[i]] - 50;
+        AC += you.inv[ item ].plus;
 
-        // do we mean to exclude caps here? {dlb}
-        // I guess yes -- they're not real armour so there's no base AC -- bwr
-        if (i == EQ_HELMET && you.inv_plus2[you.equip[i]] >= 2)
+        // Note that helms and boots have a sub-sub classing system
+        // which uses "plus2"... since not all members have the same
+        // AC value, we use special cases. -- bwr
+        if (i == EQ_HELMET
+            && (cmp_helmet_type( you.inv[ item ], THELM_CAP )
+                || cmp_helmet_type( you.inv[ item ], THELM_WIZARD_HAT )
+                || cmp_helmet_type( you.inv[ item ], THELM_SPECIAL )))
+        {
             continue;
+        }
 
-        if (i == EQ_BOOTS && you.inv_plus2[you.equip[i]] != 0)
-            AC += 3;            /* barding */
+        if (i == EQ_BOOTS
+            && (you.inv[ item ].plus2 == TBOOT_NAGA_BARDING
+                || you.inv[ item ].plus2 == TBOOT_CENTAUR_BARDING))
+        {
+            AC += 3;
+            continue;
+        }
 
-        int racial_bonus = 0;
-        const int armour_race = (int) (you.inv_dam[you.equip[i]]);
+        int racial_bonus = 0;  // additional levels of armour skill
+        const unsigned long armour_race = get_equip_race( you.inv[ item ] );
+        const int ac_value = property( you.inv[ item ], PARM_AC );
 
         // Dwarven armour is universally good -- bwr
-        if (armour_race == DARM_DWARVEN)
+        if (armour_race == ISFLAG_DWARVEN)
             racial_bonus += 2;
 
-        if (racial_type != DARM_PLAIN && armour_race == racial_type)
+        if (racial_type && armour_race == racial_type)
         {
             // Elven armour is too flexible, but still gives one
             // level to elves.  Orcish and Dwarven armour are worth +2
             // to the correct species, plus the plus that anyone
             // gets with dwarven armour. -- bwr
 
-            if (racial_type == DARM_ELVEN)
+            if (racial_type == ISFLAG_ELVEN)
                 racial_bonus++;
             else
                 racial_bonus += 2;
         }
 
-        AC += property(OBJ_ARMOUR, you.inv_type[you.equip[i]], PARM_AC)
-                            * (15 + you.skills[SK_ARMOUR] + racial_bonus) / 15;
+        AC += ac_value * (15 + you.skills[SK_ARMOUR] + racial_bonus) / 15;
 
         /* Nagas/Centaurs/the deformed don't fit into body armour very well */
         if ((you.species == SP_NAGA || you.species == SP_CENTAUR
              || you.mutation[MUT_DEFORMED] > 0) && i == EQ_BODY_ARMOUR)
         {
-            AC -= property(OBJ_ARMOUR, you.inv_type[you.equip[i]], PARM_AC) / 2;
+            AC -= ac_value / 2;
         }
     }
 
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_PROTECTION)
-    {
-        if (you.inv_plus[you.equip[EQ_RIGHT_RING]] > 130)
-            AC -= 100;
+    AC += player_equip( EQ_RINGS_PLUS, RING_PROTECTION );
 
-        AC += you.inv_plus[you.equip[EQ_RIGHT_RING]];
-        AC -= 50;
-    }
-
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_PROTECTION)
-    {
-        if (you.inv_plus[you.equip[EQ_LEFT_RING]] > 130)
-            AC -= 100;
-
-        AC += you.inv_plus[you.equip[EQ_LEFT_RING]];
-        AC -= 50;
-    }
-
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-        && you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_PROTECTION)
-    {
+    if (player_equip_special( EQ_WEAPON, SPWPN_PROTECTION ))
         AC += 5;
-    }
 
-    if (you.equip[EQ_SHIELD] != -1
-        && you.inv_dam[you.equip[EQ_SHIELD]] % 30 == SPARM_PROTECTION)
-    {
+    if (player_equip_special( EQ_SHIELD, SPARM_PROTECTION ))
         AC += 3;
-    }
 
     AC += scan_randarts(RAP_AC);
 
-#ifdef USE_HARDER_AC_RULES
+    if (you.duration[DUR_ICY_ARMOUR])
+        AC += 4 + you.skills[SK_ICE_MAGIC] / 3;
+
+    if (you.duration[DUR_STONEMAIL])
+        AC += 5 + you.skills[SK_EARTH_MAGIC] / 2;
+
+    if (you.duration[DUR_STONESKIN] > 0)
+        AC += 1 + you.skills[SK_EARTH_MAGIC] / 5;
+
     if (you.attribute[ATTR_TRANSFORMATION] == TRAN_NONE
         || you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
     {
-#endif
         //jmf: only give:
         if (player_genus(GENPC_DRACONIAN))
         {
             if (you.experience_level < 8)
                 AC += 2;
             else if (you.species == SP_GREY_DRACONIAN)
-                AC += 1 + (you.experience_level - 4) / 2;
+                AC += 1 + (you.experience_level - 4) / 2;       // max 12
             else
-                AC += 1 + (you.experience_level / 4);
+                AC += 1 + (you.experience_level / 4);           // max 7
         }
         else
         {
@@ -1315,26 +1173,6 @@ int player_AC(void)
                 break;
             }
         }
-
-#ifdef USE_HARDER_AC_RULES
-    }
-#endif
-
-    if (you.duration[DUR_ICY_ARMOUR])
-        AC += 4 + you.skills[SK_ICE_MAGIC] / 3;
-
-    if (you.duration[DUR_STONEMAIL])
-        AC += 5 + you.skills[SK_EARTH_MAGIC] / 2;
-
-#ifdef USE_HARDER_AC_RULES
-    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_NONE
-        || you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
-    {
-#endif
-        // Stoneskin doesn't work when transformed (unlike Icy Armour
-        // and Stonemail) so it goes in here with the scales.
-        if (you.duration[DUR_STONESKIN] > 0)
-            AC += 1 + you.skills[SK_EARTH_MAGIC] / 5;
 
         // Scales -- some evil uses of the fact that boolean "true" == 1...
         // I'll spell things out with some comments -- bwr
@@ -1396,12 +1234,9 @@ int player_AC(void)
         // metallic gives +3, +7, +10
         AC += you.mutation[MUT_METALLIC_SCALES] * 3
                             + (you.mutation[MUT_METALLIC_SCALES] > 1);
-
-#ifdef USE_HARDER_AC_RULES
     }
     else
     {
-#endif
         // transformations:
         switch (you.attribute[ATTR_TRANSFORMATION])
         {
@@ -1430,20 +1265,17 @@ int player_AC(void)
         default:
             break;
         }
-
-#ifdef USE_HARDER_AC_RULES
     }
-#endif
 
     return AC;
 }
 
-bool is_light_armour( int inv_type, int inv_dam )
+bool is_light_armour( const item_def &item )
 {
-    if (inv_dam / 30 == DARM_ELVEN)
+    if (cmp_equip_race( item, ISFLAG_ELVEN ))
         return (true);
 
-    switch (inv_type)
+    switch (item.sub_type)
     {
     case ARM_ROBE:
     case ARM_ANIMAL_SKIN:
@@ -1452,8 +1284,8 @@ bool is_light_armour( int inv_type, int inv_dam )
     case ARM_STEAM_DRAGON_ARMOUR:
     case ARM_MOTTLED_DRAGON_HIDE:
     case ARM_MOTTLED_DRAGON_ARMOUR:
-        //case ARM_TROLL_HIDE: //jmf: these are knobbly and stiff
-        //case ARM_TROLL_LEATHER_ARMOUR:
+    //case ARM_TROLL_HIDE: //jmf: these are knobbly and stiff
+    //case ARM_TROLL_LEATHER_ARMOUR:
         return true;
 
     default:
@@ -1466,8 +1298,7 @@ bool player_light_armour(void)
     if (you.equip[EQ_BODY_ARMOUR] == -1)
         return true;
 
-    return (is_light_armour( you.inv_type[you.equip[EQ_BODY_ARMOUR]],
-                             you.inv_dam[you.equip[EQ_BODY_ARMOUR]] ));
+    return (is_light_armour( you.inv[you.equip[EQ_BODY_ARMOUR]] ));
 }                               // end player_light_armour()
 
 //
@@ -1499,14 +1330,19 @@ int player_evasion(void)
         armour_ev_penalty = 0;
     else
     {
-        armour_ev_penalty = property( OBJ_ARMOUR,
-                                    you.inv_type[you.equip[EQ_BODY_ARMOUR]],
-                                    PARM_EVASION);
+        armour_ev_penalty = property( you.inv[you.equip[EQ_BODY_ARMOUR]],
+                                      PARM_EVASION );
     }
 
-    // We return 1 here to give the player some chance of not being hit
+    // We return 2 here to give the player some chance of not being hit,
+    // repulsion fields still work while paralysed
     if (you.paralysis)
-        return (1 + you.mutation[MUT_REPULSION_FIELD]);  //jmf: added mutation
+    {
+        if (you.mutation[MUT_REPULSION_FIELD])
+            return (1 + you.mutation[MUT_REPULSION_FIELD] * 2);
+        else
+            return (2);
+    }
 
     if (you.species == SP_CENTAUR)
         ev -= 3;
@@ -1516,7 +1352,7 @@ int player_evasion(void)
         int ev_change = 0;
 
         ev_change = armour_ev_penalty;
-        ev_change += you.skills[SK_ARMOUR] / 2; // lowered from / 3 {bwross}
+        ev_change += you.skills[SK_ARMOUR] / 3;
 
         if (ev_change > armour_ev_penalty / 3)
             ev_change = armour_ev_penalty / 3;
@@ -1524,28 +1360,14 @@ int player_evasion(void)
         ev += ev_change;        /* remember that it's negative */
     }
 
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_EVASION)
-    {
-        if (you.inv_plus[you.equip[EQ_RIGHT_RING]] > 130)
-            ev -= 100;
+    ev += player_equip( EQ_RINGS_PLUS, RING_EVASION );
 
-        ev += you.inv_plus[you.equip[EQ_RIGHT_RING]];
-        ev -= 50;
-    }
-
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_EVASION)
-    {
-        if (you.inv_plus[you.equip[EQ_LEFT_RING]] > 130)
-            ev -= 100;
-
-        ev += you.inv_plus[you.equip[EQ_LEFT_RING]];
-        ev -= 50;
-    }
+    if (player_equip_special( EQ_BODY_ARMOUR, SPARM_PONDEROUSNESS ))
+        ev -= 2;
 
     if (you.duration[DUR_STONEMAIL])
         ev -= 2;
+
     if (you.duration[DUR_FORESCRY])
         ev += 8;                //jmf: is this a reasonable value?
 
@@ -1558,7 +1380,7 @@ int player_evasion(void)
         emod += (armour_ev_penalty * 14) / 10;
     }
 
-    emod += you.skills[SK_DODGING] / 2; // too generous?
+    emod += you.skills[SK_DODGING] / 2;
 
     if (emod > 0)
         ev += emod;
@@ -1568,8 +1390,6 @@ int player_evasion(void)
 
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
-    // case TRAN_SPIDER:  // used to be +3, now it's -3? +3 makes more sense
-                          // but spider form is already good enough -- bwr
     case TRAN_DRAGON:
         ev -= 3;
         break;
@@ -1593,32 +1413,13 @@ int player_mag_abil(bool is_weighted)
 {
     int ma = 0;
 
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_WIZARDRY)
-    {
-        ma += 3;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_WIZARDRY)
-    {
-        ma += 3;
-    }
+    ma += 3 * player_equip( EQ_RINGS, RING_WIZARDRY );
 
     /* Staves */
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_type[you.equip[EQ_WEAPON]] == STAFF_WIZARDRY)
-    {
-        ma += 4;
-    }
+    ma += 4 * player_equip( EQ_STAFF, STAFF_WIZARDRY );
 
     /* armour of the Archmagi (checks body armour only) */
-    if (you.equip[EQ_BODY_ARMOUR] != -1
-        && you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI)
-    {
-        ma += 2;
-    }
+    ma += 2 * player_equip_special( EQ_BODY_ARMOUR, SPARM_ARCHMAGI );
 
     return ((is_weighted) ? ((ma * you.intel) / 10) : ma);
 }                               // end player_mag_abil()
@@ -1626,36 +1427,35 @@ int player_mag_abil(bool is_weighted)
 int player_shield_class(void)   //jmf: changes for new spell
 {
     int base_shield = 0;
+    const int shield = you.equip[EQ_SHIELD];
 
-    if (you.equip[EQ_SHIELD] == -1)
+    if (shield == -1)
     {
-        if (!you.shock_shield && you.duration[DUR_CONDENSATION_SHIELD])
-            base_shield += 2 + (you.skills[SK_ICE_MAGIC] / 6);
+        if (!you.fire_shield && you.duration[DUR_CONDENSATION_SHIELD])
+            base_shield += 2 + (you.skills[SK_ICE_MAGIC] / 6);  // max 6
         else
             return 0;
     }
     else
     {
-        switch (you.inv_type[you.equip[EQ_SHIELD]])
+        switch (you.inv[ shield ].sub_type)
         {
         case ARM_BUCKLER:
-            base_shield += 3;
-            break;
-        case ARM_LARGE_SHIELD:
-            base_shield += 7;
+            base_shield += 3;   // +3/20 per skill level    max 6
             break;
         case ARM_SHIELD:
-            base_shield += 5;
+            base_shield += 5;   // +5/20 per skill level    max 11
+            break;
+        case ARM_LARGE_SHIELD:
+            base_shield += 7;   // +7/20 per skill level    max 16
             break;
         }
 
+        // bonus applied only to base, see above for effect:
         base_shield *= 10 + (you.skills[SK_SHIELDS] / 2);
         base_shield /= 10;
 
-        if (you.inv_plus[you.equip[EQ_SHIELD]] > 130)
-            base_shield += you.inv_plus[you.equip[EQ_SHIELD]] - 150;
-        else
-            base_shield += you.inv_plus[you.equip[EQ_SHIELD]] - 50;
+        base_shield += you.inv[ shield ].plus;
     }
 
     return base_shield;
@@ -1665,24 +1465,10 @@ unsigned char player_see_invis(void)
 {
     unsigned char si = 0;
 
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_SEE_INVISIBLE)
-    {
-        si++;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_SEE_INVISIBLE)
-    {
-        si++;
-    }
+    si += player_equip( EQ_RINGS, RING_SEE_INVISIBLE );
 
     /* armour: (checks head armour only) */
-    if (you.equip[EQ_HELMET] != -1
-        && you.inv_dam[you.equip[EQ_HELMET]] % 30 == SPARM_SEE_INVISIBLE)
-    {
-        si++;
-    }
+    si += player_equip_special( EQ_HELMET, SPARM_SEE_INVISIBLE );
 
     /* Nagas & Spriggans have good eyesight */
     if (you.species == SP_NAGA || you.species == SP_SPRIGGAN)
@@ -1704,21 +1490,25 @@ unsigned char player_see_invis(void)
     return si;
 }
 
+// This does NOT do line of sight!  It checks the monster's visibility
+// with repect to the players perception, but doesn't do walls or range...
+// to find if the square the monster is in is visible see mons_near().
+bool player_monster_visible( struct monsters *mon )
+{
+    if (mons_has_ench( mon, ENCH_SUBMERGED )
+        || (mons_has_ench( mon, ENCH_INVIS ) && !player_see_invis()))
+    {
+        return (false);
+    }
+
+    return (true);
+}
+
 unsigned char player_sust_abil(void)
 {
     unsigned char sa = 0;
 
-    if (you.equip[EQ_LEFT_RING] != -1
-        && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_SUSTAIN_ABILITIES)
-    {
-        sa++;
-    }
-
-    if (you.equip[EQ_RIGHT_RING] != -1
-        && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_SUSTAIN_ABILITIES)
-    {
-        sa++;
-    }
+    sa += player_equip( EQ_RINGS, RING_SUSTAIN_ABILITIES );
 
     if (you.species == SP_MUMMY) // to balance lack of means to restore stats
         sa++;
@@ -1745,20 +1535,19 @@ int burden_change(void)
 
     for (unsigned char bu = 0; bu < ENDOFPACK; bu++)
     {
-        if (you.inv_quantity[bu] < 1)
+        if (you.inv[bu].quantity < 1)
             continue;
 
-        if (you.inv_class[bu] == OBJ_CORPSES)
+        if (you.inv[bu].base_type == OBJ_CORPSES)
         {
-            if (you.inv_type[bu] == CORPSE_BODY)
-                you.burden += mons_weight(you.inv_plus[bu]);
-            else if (you.inv_type[bu] == CORPSE_SKELETON)
-                you.burden += mons_weight(you.inv_plus[bu]) / 2;
+            if (you.inv[bu].sub_type == CORPSE_BODY)
+                you.burden += mons_weight(you.inv[bu].plus);
+            else if (you.inv[bu].sub_type == CORPSE_SKELETON)
+                you.burden += mons_weight(you.inv[bu].plus) / 2;
         }
         else
         {
-            you.burden += mass(you.inv_class[bu], you.inv_type[bu])
-                                                    * you.inv_quantity[bu];
+            you.burden += mass_item( you.inv[bu] ) * you.inv[bu].quantity;
         }
     }
 
@@ -1796,24 +1585,7 @@ int burden_change(void)
 
 bool you_resist_magic(int power)
 {
-    int ench_power = power;
-
-    // nested if's rather than stacked 'em uglier than before but slightly
-    // more efficient 16jan2000 {dlb}
-    if (ench_power > 40)
-    {
-        ench_power = ((ench_power - 40) / 2) + 40;
-        if (ench_power > 70)
-        {
-            ench_power = ((ench_power - 70) / 2) + 70;
-            if (ench_power > 90)
-            {
-                ench_power = ((ench_power - 90) / 2) + 90;
-                if (ench_power > 120)
-                    ench_power = 120;
-            }
-        }
-    }     // NB: same steppings as in beam::check_mons_magres() {dlb}
+    int ench_power = stepdown_value( power, 30, 40, 100, 120 );
 
     int mrchance = 100 + player_res_magic();
 
@@ -1821,19 +1593,10 @@ bool you_resist_magic(int power)
 
     int mrch2 = random2(100) + random2(101);
 
-#ifdef WIZARD
-    strcpy(info, "Pow:");
-    itoa(ench_power, st_prn, 10);
-    strcat(info, st_prn);
-    strcat(info, ", mrs: ");
-    itoa(player_res_magic(), st_prn, 10);
-    strcat(info, st_prn);
-    strcat(info, ", mrchance:");
-    itoa(mrchance, st_prn, 10);
-    strcat(info, st_prn);
-    strcat(info, ", mrch2:");
-    itoa(mrch2, st_prn, 10);
-    strcat(info, st_prn);
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "Power: %d, player's MR: %d, target: %d, roll: %d",
+             ench_power, player_res_magic(), mrchance, mrch2 );
+
     mpr(info);
 #endif
 
@@ -1859,18 +1622,17 @@ void forget_map(unsigned char chance_forgotten)
     }
 }                               // end forget_map()
 
-void gain_exp(unsigned int exp_gained)
+void gain_exp( unsigned int exp_gained )
 {
 
-    if (you.equip[EQ_BODY_ARMOUR] != -1
-        && you.inv_dam[you.equip[EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI
+    if (player_equip_special( EQ_BODY_ARMOUR, SPARM_ARCHMAGI )
         && !one_chance_in(20))
     {
         return;
     }
 
-#ifdef DEBUG
-    sprintf( info, "gain_exp: %d", exp_gained );
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "gain_exp: %d", exp_gained );
     mpr( info );
 #endif
 
@@ -1887,12 +1649,8 @@ void gain_exp(unsigned int exp_gained)
     level_change();
 }                               // end gain_exp()
 
-// Look at this !!!!    // ok,ok. I am. {dlb}
 void level_change(void)
 {
-    // why does this need to be ten characters long, exactly? {dlb}
-    char temp_quant[10];
-
     // necessary for the time being, as level_change() is called
     // directly sometimes {dlb}
     you.redraw_experience = 1;
@@ -1902,117 +1660,11 @@ void level_change(void)
     {
         you.experience_level++;
 
-        strcpy(info, "You are now a level ");
-        itoa(you.experience_level, temp_quant, 10);
-        strcat(info, temp_quant);
-        strcat(info, " ");
-        strcat(info, you.class_name);
-        strcat(info, "!");
+        snprintf( info, INFO_SIZE, "You are now a level %d %s!",
+                 you.experience_level, you.class_name );
+
         mpr(info, MSGCH_INTRINSIC_GAIN);
         more();
-
-/* ******************************************************************
-
-// this appears to have been functionality for handing out "priestly"
-// spells to paladins and priests -- no idea when it was first commented
-// out, but the code is a little behind the times, the idea behind it
-// seems not to be part of Crawl anymore, and it should probably be
-// struck out of the codebase entirely. 19may2000 {dlb}
-
-    scrloc = 0;
-
-    int priest_pass[10];
-
-    switch( you.char_class )
-    {
-      case 2: // priest
-        if ( you.experience_level > you.max_level && !(you.experience_level % 3) )
-        {
-            if ( you.spell_no > 20 )
-              break;
-
-            prtry2 = you.experience_level / 3;
-
-            if ( you.experience_level > 12 )
-              prtry2 = (you.experience_level - 12) / 2 + 4;
-
-            priest_spells(priest_pass, 1);
-
-            if ( prtry2 > 7 || priest_pass[prtry2] == -1 )
-              goto get_out;
-
-            prtry = priest_pass[prtry2];
-
-            for (prtry3 = 0; prtry3 < 25; prtry3++)
-              if ( you.spells[prtry3] == SPELL_NO_SPELL )
-              {
-                  you.spells[prtry3] = prtry;
-                  you.spell_no++;
-                  you.spell_levels -= spell_difficulty(prtry);
-                  break;
-              }
-
-            mpr("You have been granted a spell!");
-        }
-        break;
-
-      case 6: // paladin
-        if ( you.experience_level > you.max_level && !(you.experience_level % 4) )
-        {
-            if ( you.spell_no > 20 )
-              break;
-
-            prtry2 = you.experience_level / 4;
-
-            if ( you.experience_level > 16 )
-              prtry2 = (you.experience_level - 16) / 2 + 4;
-
-            switch( prtry2 )
-            {
-              case 1:
-                prtry = 46;    // repel undead
-                break;
-              case 2:
-                prtry = 38;    // lesser healing
-                break;
-              case 3:
-                prtry = 65;    // heal other
-                break;
-              case 4:
-                prtry = 45;    // smiting
-                break;
-              case 5:
-                prtry = 39;    // greater healing
-                break;
-              case 6:
-                prtry = 41;    // purification
-                break;
-              case 7:
-                prtry = 47;    // holy word
-                break;
-              default:
-                goto get_out;
-            }
-
-            for (prtry3 = 0; prtry3 < 25; prtry3++)
-              if ( you.spells [prtry3] == SPELL_NO_SPELL )
-              {
-                  you.spells[prtry3] = prtry;
-                  you.spell_no++;
-                  you.spell_levels -= spell_difficulty(prtry);
-                  break;
-              }
-
-            mpr("You have been granted a spell!");
-        }
-        break;
-
-      default:
-get_out:
-        break;
-    }
-
-****************************************************************** */
 
         int brek = 0;
 
@@ -2023,11 +1675,8 @@ get_out:
         else
             brek = 4 + random2(4);      // up from 3 + rand(4) -- bwr
 
-        you.hp += brek;
-        you.base_hp2 += brek;
-
-        you.magic_points++;
-        you.base_magic_points2++;
+        inc_hp( brek, true );
+        inc_mp( 1, true );
 
         char hp_adjust = 0;
         char mp_adjust = 0;
@@ -2058,6 +1707,12 @@ get_out:
                 break;
 
             case SP_HIGH_ELF:
+                if (you.experience_level == 15)
+                {
+                    //jmf: got Glamour ability
+                    mpr("You feel charming!", MSGCH_INTRINSIC_GAIN);
+                }
+
                 if (you.experience_level % 3)
                     hp_adjust--;
 
@@ -2072,14 +1727,13 @@ get_out:
                 break;
 
             case SP_GREY_ELF:
-#ifdef USE_ELVISH_GLAMOUR_ABILITY
                 if (you.experience_level == 5)
                 {
                     //jmf: got Glamour ability
                     mpr("You feel charming!", MSGCH_INTRINSIC_GAIN);
                     mp_adjust++;
                 }
-#endif
+
                 if (you.experience_level < 14)
                     hp_adjust--;
 
@@ -2208,7 +1862,7 @@ get_out:
                 if (!(you.experience_level % 3))
                 {
                     mpr("Your skin feels tougher.", MSGCH_INTRINSIC_GAIN);
-                    you.redraw_armor_class = 1;
+                    you.redraw_armour_class = 1;
                 }
                 break;
 
@@ -2336,7 +1990,7 @@ get_out:
                 if (you.experience_level > 7 && !(you.experience_level % 4))
                 {
                     mpr("Your scales feel tougher.", MSGCH_INTRINSIC_GAIN);
-                    you.redraw_armor_class = 1;
+                    you.redraw_armour_class = 1;
                     modify_stat(STAT_RANDOM, 1, false);
                 }
                 break;
@@ -2359,7 +2013,7 @@ get_out:
                 if (you.experience_level > 7 && !(you.experience_level % 2))
                 {
                     mpr("Your scales feel tougher.", MSGCH_INTRINSIC_GAIN);
-                    you.redraw_armor_class = 1;
+                    you.redraw_armour_class = 1;
                 }
 
                 if ((you.experience_level > 7 && !(you.experience_level % 3))
@@ -2530,14 +2184,11 @@ get_out:
         }
 
         // add hp and mp adjustments - GDL
-        you.hp_max += hp_adjust;
-        you.base_hp2 += hp_adjust;
-        you.base_magic_points2 += mp_adjust;
+        inc_max_hp( hp_adjust );
+        inc_max_mp( mp_adjust );
 
         deflate_hp(you.hp_max, false);
 
-        if (you.magic_points > you.max_magic_points)
-            you.magic_points = you.max_magic_points;
         if (you.magic_points < 0)
             you.magic_points = 0;
 
@@ -2600,34 +2251,33 @@ int check_stealth(void)
 
     if (you.equip[EQ_BODY_ARMOUR] != -1 && !player_light_armour())
     {
-        stealth -= mass( OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]] )
-                                                                        / 10;
+        stealth -= (mass_item( you.inv[you.equip[EQ_BODY_ARMOUR]] ) / 10);
     }
 
     if (you.equip[EQ_CLOAK] != -1
-        && you.inv_dam[you.equip[EQ_CLOAK]] / 30 == DARM_ELVEN)
+        && cmp_equip_race( you.inv[you.equip[EQ_CLOAK]], ISFLAG_ELVEN ))
     {
         stealth += 20;
     }
 
     if (you.equip[EQ_BOOTS] != -1)
     {
-        if (you.inv_dam[you.equip[EQ_BOOTS]] % 30 == SPARM_STEALTH)
+        if (you.inv[you.equip[EQ_BOOTS]].special == SPARM_STEALTH)
             stealth += 50;
 
-        if (you.inv_dam[you.equip[EQ_BOOTS]] / 30 == DARM_ELVEN)
+        if (cmp_equip_race( you.inv[you.equip[EQ_BOOTS]], ISFLAG_ELVEN ))
             stealth += 20;
     }
 
     if (you.levitation)
         stealth += 10;
-    else if (grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER)
+    else if (player_in_water())
     {
         // Merfolk can sneak up on monsters underwater -- bwr
         if (you.species == SP_MERFOLK)
             stealth += 50;
         else
-            stealth /= 2;
+            stealth /= 2;       // splashy-splashy
     }
 
     // Radiating silence is the negative compliment of shouting all the
@@ -2721,6 +2371,12 @@ void display_char_status(void)
         mpr("You are a cloud of diffuse gas.");
         break;
     }
+
+    if (you.duration[DUR_BREATH_WEAPON])
+        mpr("You are short of breath.");
+
+    if (you.duration[DUR_REPEL_UNDEAD])
+        mpr("You have a holy aura protecting you from undead.");
 
     if (you.duration[DUR_LIQUID_FLAMES])
         mpr("You are covered in liquid flames.");
@@ -2995,22 +2651,30 @@ bool wearing_amulet(char amulet)
 
     if (amulet == AMU_RESIST_CORROSION || amulet == AMU_CONSERVATION)
     {
-        if (you.equip[EQ_CLOAK] != -1
-            && you.inv_dam[you.equip[EQ_CLOAK]] % 30 == SPARM_PRESERVATION)
-        {
-            // this is hackish {dlb}
+        // this is hackish {dlb}
+        if (player_equip_special( EQ_CLOAK, SPARM_PRESERVATION ))
             return true;
-        }
     }
 
     if (you.equip[EQ_AMULET] == -1)
         return false;
 
-    if (you.inv_type[you.equip[EQ_AMULET]] == amulet)
+    if (you.inv[you.equip[EQ_AMULET]].sub_type == amulet)
         return true;
 
     return false;
 }                               // end wearing_amulet()
+
+bool player_has_spell( int spell )
+{
+    for (int i = 0; i < 25; i++)
+    {
+        if (you.spells[i] == spell)
+            return (true);
+    }
+
+    return (false);
+}
 
 int species_exp_mod(char species)
 {
@@ -3114,37 +2778,20 @@ unsigned long exp_needed(int lev)
 // returns bonuses from rings of slaying, etc.
 int slaying_bonus(char which_affected)
 {
-    int to_hit = 0;
-    int to_dam = 0;
-    int i = 0;
-
-    for (i = EQ_LEFT_RING; i < EQ_AMULET; i++)
-    {
-        if (you.equip[i] == -1 || you.inv_type[you.equip[i]] != RING_SLAYING)
-            continue;
-
-        int ghoggl = you.inv_plus[you.equip[i]] - 50;
-
-        if (you.inv_plus[you.equip[i]] > 130)
-            ghoggl -= 100;
-
-        to_hit += ghoggl;
-        to_dam += you.inv_plus2[you.equip[i]] - 50;
-    }
+    int ret = 0;
 
     if (which_affected == PWPN_HIT)
     {
-        to_hit += scan_randarts(RAP_ACCURACY);
-        return to_hit;
+        ret += player_equip( EQ_RINGS_PLUS, RING_SLAYING );
+        ret += scan_randarts(RAP_ACCURACY);
     }
-
-    if (which_affected == PWPN_DAMAGE)
+    else if (which_affected == PWPN_DAMAGE)
     {
-        to_dam += scan_randarts(RAP_DAMAGE);
-        return to_dam;
+        ret += player_equip( EQ_RINGS_PLUS2, RING_SLAYING );
+        ret += scan_randarts(RAP_DAMAGE);
     }
 
-    return 0;
+    return (ret);
 }                               // end slaying_bonus()
 
 /* Checks each equip slot for a randart, and adds up all of those with
@@ -3154,30 +2801,24 @@ int scan_randarts(char which_property)
     int i = 0;
     int retval = 0;
 
-    for (i = EQ_WEAPON; i < EQ_LEFT_RING; i++)
+    for (i = EQ_WEAPON; i < NUM_EQUIP; i++)
     {
-        if (you.equip[i] == -1)
-            continue;
-        if (i == EQ_WEAPON && you.inv_class[you.equip[i]] != OBJ_WEAPONS)
-            continue;
-        if (you.inv_dam[you.equip[i]] % 30 < 25)
-            continue;           /* change for rings/amulets */
+        const int eq = you.equip[i];
 
-        retval += inv_randart_wpn_properties(you.equip[i], 0, which_property);
+        if (eq == -1)
+            continue;
+
+        // only weapons give their effects when in our hands
+        if (i == EQ_WEAPON && you.inv[ eq ].base_type != OBJ_WEAPONS)
+            continue;
+
+        if (!is_random_artefact( you.inv[ eq ] ))
+            continue;
+
+        retval += randart_wpn_property( you.inv[ eq ], which_property );
     }
 
-    for (i = EQ_LEFT_RING; i < NUM_EQUIP; i++)  /* rings + amulets */
-    {
-        if (you.equip[i] == -1)
-            continue;
-        if (you.inv_dam[you.equip[i]] != 200
-            && you.inv_dam[you.equip[i]] != 201)
-            continue;
-
-        retval += inv_randart_wpn_properties(you.equip[i], 0, which_property);
-    }
-
-    return retval;
+    return (retval);
 }                               // end scan_randarts()
 
 void modify_stat(unsigned char which_stat, char amount, bool suppress_msg)
@@ -3203,7 +2844,7 @@ void modify_stat(unsigned char which_stat, char amount, bool suppress_msg)
         ptr_stat_max = &you.max_strength;
         ptr_redraw = &you.redraw_strength;
         if (!suppress_msg)
-            strcat(info, (amount > 0)?"stronger":"weaker");
+            strcat(info, (amount > 0) ? "stronger." : "weaker.");
         break;
 
     case STAT_DEXTERITY:
@@ -3211,7 +2852,7 @@ void modify_stat(unsigned char which_stat, char amount, bool suppress_msg)
         ptr_stat_max = &you.max_dex;
         ptr_redraw = &you.redraw_dexterity;
         if (!suppress_msg)
-            strcat(info, (amount > 0)?"agile":"clumsy");
+            strcat(info, (amount > 0) ? "agile." : "clumsy.");
         break;
 
     case STAT_INTELLIGENCE:
@@ -3219,15 +2860,12 @@ void modify_stat(unsigned char which_stat, char amount, bool suppress_msg)
         ptr_stat_max = &you.max_intel;
         ptr_redraw = &you.redraw_intelligence;
         if (!suppress_msg)
-            strcat(info, (amount > 0)?"clever":"stupid");
+            strcat(info, (amount > 0) ? "clever." : "stupid.");
         break;
     }
 
     if (!suppress_msg)
-    {
-        strcat(info, ".");
-        mpr(info, (amount > 0)?MSGCH_INTRINSIC_GAIN:MSGCH_WARN);
-    }
+        mpr( info, (amount > 0) ? MSGCH_INTRINSIC_GAIN : MSGCH_WARN );
 
     *ptr_stat += amount;
     *ptr_stat_max += amount;
@@ -3271,7 +2909,7 @@ void dec_mp(int mp_loss)
 
 bool enough_hp(int minimum, bool suppress_msg)
 {
-    if (you.hp < minimum)
+    if (you.hp < minimum + 1)
     {
         if (!suppress_msg)
             mpr("You haven't enough vitality at the moment.");
@@ -3295,6 +2933,8 @@ bool enough_mp(int minimum, bool suppress_msg)
     return true;
 }                               // end enough_mp()
 
+// Note that "max_too" refers to the base potential, the actual
+// resulting max value is subject to penalties, bonuses, and scalings.
 void inc_mp(int mp_gain, bool max_too)
 {
     if (mp_gain < 1)
@@ -3303,8 +2943,9 @@ void inc_mp(int mp_gain, bool max_too)
     you.magic_points += mp_gain;
 
     if (max_too)
-        you.max_magic_points += mp_gain;
-    else if (you.magic_points > you.max_magic_points)
+        inc_max_mp( mp_gain );
+
+    if (you.magic_points > you.max_magic_points)
         you.magic_points = you.max_magic_points;
 
     you.redraw_magic_points = 1;
@@ -3312,6 +2953,8 @@ void inc_mp(int mp_gain, bool max_too)
     return;
 }                               // end inc_mp()
 
+// Note that "max_too" refers to the base potential, the actual
+// resulting max value is subject to penalties, bonuses, and scalings.
 void inc_hp(int hp_gain, bool max_too)
 {
     if (hp_gain < 1)
@@ -3320,14 +2963,70 @@ void inc_hp(int hp_gain, bool max_too)
     you.hp += hp_gain;
 
     if (max_too)
-        you.hp_max += hp_gain;
-    else if (you.hp > you.hp_max)
+        inc_max_hp( hp_gain );
+
+    if (you.hp > you.hp_max)
         you.hp = you.hp_max;
 
     you.redraw_hit_points = 1;
-
-    return;
 }                               // end inc_hp()
+
+void rot_hp( int hp_loss )
+{
+    you.base_hp -= hp_loss;
+    calc_hp();
+
+    you.redraw_hit_points = 1;
+}
+
+void unrot_hp( int hp_recovered )
+{
+    if (hp_recovered >= 5000 - you.base_hp)
+        you.base_hp = 5000;
+    else
+        you.base_hp += hp_recovered;
+
+    calc_hp();
+
+    you.redraw_hit_points = 1;
+}
+
+int player_rotted( void )
+{
+    return (5000 - you.base_hp);
+}
+
+void inc_max_hp( int hp_gain )
+{
+    you.base_hp2 += hp_gain;
+    calc_hp();
+
+    you.redraw_hit_points = 1;
+}
+
+void dec_max_hp( int hp_loss )
+{
+    you.base_hp2 -= hp_loss;
+    calc_hp();
+
+    you.redraw_hit_points = 1;
+}
+
+void inc_max_mp( int mp_gain )
+{
+    you.base_magic_points2 += mp_gain;
+    calc_mp();
+
+    you.redraw_magic_points = 1;
+}
+
+void dec_max_mp( int mp_loss )
+{
+    you.base_magic_points2 -= mp_loss;
+    calc_mp();
+
+    you.redraw_magic_points = 1;
+}
 
 // use of floor: false = hp max, true = hp min {dlb}
 void deflate_hp(int new_level, bool floor)
@@ -3343,13 +3042,21 @@ void deflate_hp(int new_level, bool floor)
     return;
 }                               // end deflate_hp()
 
+// Note that "max_too" refers to the base potential, the actual
+// resulting max value is subject to penalties, bonuses, and scalings.
 void set_hp(int new_amount, bool max_too)
 {
     if (you.hp != new_amount)
         you.hp = new_amount;
 
     if (max_too && you.hp_max != new_amount)
-        you.hp_max = new_amount;
+    {
+        you.base_hp2 = 5000 + new_amount;
+        calc_hp();
+    }
+
+    if (you.hp > you.hp_max)
+        you.hp = you.hp_max;
 
     // must remain outside conditional, given code usage {dlb}
     you.redraw_hit_points = 1;
@@ -3357,14 +3064,22 @@ void set_hp(int new_amount, bool max_too)
     return;
 }                               // end set_hp()
 
+// Note that "max_too" refers to the base potential, the actual
+// resulting max value is subject to penalties, bonuses, and scalings.
 void set_mp(int new_amount, bool max_too)
 {
-
     if (you.magic_points != new_amount)
         you.magic_points = new_amount;
 
     if (max_too && you.max_magic_points != new_amount)
-        you.max_magic_points = new_amount;
+    {
+        // note that this gets scaled down for values > 18
+        you.base_magic_points2 = 5000 + new_amount;
+        calc_mp();
+    }
+
+    if (you.magic_points > you.max_magic_points)
+        you.magic_points = you.max_magic_points;
 
     // must remain outside conditional, given code usage {dlb}
     you.redraw_magic_points = 1;
@@ -3595,6 +3310,17 @@ void contaminate_player(int change, bool statusOnly)
     int old_level;
     int new_level;
 
+
+#if DEBUG_DIAGNOSTICS
+    if (change > 0 || (change < 0 && you.magic_contamination))
+    {
+        snprintf( info, INFO_SIZE, "change: %d  radiation: %d",
+                 change, change + you.magic_contamination );
+
+        mpr( info );
+    }
+#endif
+
     old_level = (you.magic_contamination > 60)?(you.magic_contamination / 20 + 2) :
                 (you.magic_contamination > 40)?4 :
                 (you.magic_contamination > 25)?3 :
@@ -3631,7 +3357,7 @@ void contaminate_player(int change, bool statusOnly)
             }
             else
             {
-                sprintf(info, "You are %s with residual magics%c",
+                snprintf( info, INFO_SIZE, "You are %s with residual magics%c",
                     (new_level == 3) ? "practically glowing" :
                     (new_level == 2) ? "heavily infused"
                                      : "contaminated",
@@ -3646,7 +3372,7 @@ void contaminate_player(int change, bool statusOnly)
     if (new_level == old_level)
         return;
 
-    sprintf(info, "You feel %s contaminated with magical energies.",
+    snprintf( info, INFO_SIZE, "You feel %s contaminated with magical energies.",
         (change < 0)?"less":"more");
     mpr(info, change>0?MSGCH_WARN:MSGCH_RECOVERY);
 }

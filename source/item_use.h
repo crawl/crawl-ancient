@@ -84,7 +84,13 @@ void throw_anything(void);
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void wear_armour(void);
+void wear_armour( void );
+
+// last updated 10Sept2001 {bwr}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+bool do_wear_armour( int item, bool quiet );
 
 
 // last updated 12may2000 {dlb}
@@ -107,5 +113,10 @@ void zap_wand(void);
  * *********************************************************************** */
 void wield_effects(int item_wield_2, bool showMsgs);
 
+// last updated 10sept2001 {bwr}
+/* ***********************************************************************
+ * called from: delay.cc item_use.cc it_use2.cc
+ * *********************************************************************** */
+void use_randart( unsigned char item_wield_2 );
 
 #endif

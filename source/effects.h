@@ -15,13 +15,6 @@
 #include "externs.h"
 
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: ability - decks - fight - it_use3 - item_use - mstuff2 -
- *              spell
- * *********************************************************************** */
-void torment(char tx, char ty);
-
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -57,7 +50,7 @@ void random_uselessness(unsigned char ru, unsigned char sc_read_2);
 /* ***********************************************************************
  * called from: acr - decks - item_use - religion
  * *********************************************************************** */
-void acquirement(unsigned char force_class);
+bool acquirement(unsigned char force_class);
 
 
 // last updated 12may2000 {dlb}
@@ -86,6 +79,14 @@ void mons_direct_effect(struct bolt &pbolt, int i);
  * called from: acr
  * *********************************************************************** */
 void yell(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - decks - fight - it_use3 - item_use - mstuff2 -
+ *              spell
+ * *********************************************************************** */
+void torment( int tx, int ty );
 
 
 #endif

@@ -100,21 +100,6 @@ static void exercise2(char exsk, char deg)
  * explore instead of sitting around practising their skills.
  */
 
-#ifdef USE_SKILL_POOL_DRAIN
-    if (you.exp_available >= 1000)
-        skill_change += 20;
-    if (you.exp_available >= 2500)
-        skill_change += 50;
-    if (you.exp_available >= 5000)
-        skill_change += 75;
-    if (you.exp_available >= 8000)
-        skill_change += 110;
-    if (you.exp_available >= 12000)
-        skill_change += 150;
-    if (you.exp_available >= 15000)
-        skill_change += 200;
-#endif // USE_SKILL_POOL_DRAIN
-
     // being good at some weapons makes others easier to learn:
     if (exsk < SK_SLINGS)
     {
@@ -289,20 +274,15 @@ static void exercise2(char exsk, char deg)
     you.redraw_experience = 1;
 
 /*
-   New (LH): debugging bit: when you exercise a skill, displays the skill
-   exercised and how much you spent on it. Too irritating to be a regular WIZARD
-   feature.
+    New (LH): debugging bit: when you exercise a skill, displays the skill
+    exercised and how much you spent on it. Too irritating to be a regular
+    WIZARD feature.
 
-   strcpy(info, "Exercised ");
-   strcat(info, skill_name(exsk));
-   strcat(info, " * ");
-   itoa(skill_inc, st_prn, 10);
-   strcat(info, st_prn);
-   strcat(info, " for ");
-   itoa(skill_change, st_prn, 10);
-   strcat(info, st_prn);
-   strcat(info, " xp.");
-   mpr(info);
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "Exercised %s * %d for %d xp.",
+             skill_name(exsk), skill_inc, skill_change );
+    mpr(info);
+#endif
 */
 
     if (you.skill_points[exsk] >
@@ -328,7 +308,7 @@ static void exercise2(char exsk, char deg)
         if (exsk == SK_ARMOUR || exsk == SK_SHIELDS || exsk == SK_ICE_MAGIC
                                 || exsk == SK_EARTH_MAGIC)  // checked {dlb}
         {
-            you.redraw_armor_class = 1;
+            you.redraw_armour_class = 1;
         }
 
         const unsigned char best =

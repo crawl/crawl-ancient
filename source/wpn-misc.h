@@ -14,6 +14,7 @@
 #ifndef WPNMISC_H
 #define WPNMISC_H
 
+#include "externs.h"
 
 
 /* ***********************************************************************
@@ -53,7 +54,7 @@ unsigned char launched_by(unsigned char weapon_subtype);
  * called from: describe - dungeon - fight - item_use - mstuff2 - randart -
  *              spells2 - spells3
  * *********************************************************************** */
-bool launches_things(unsigned char weapon_subtype);
+bool launches_things( unsigned char weapon_subtype );
 
 
 // last updated: 10jun2000 {dlb}

@@ -48,4 +48,10 @@ void lessen_hunger(int statiated_amount, bool suppress_msg);
 void set_hunger(int new_hunger_level, bool suppress_msg);
 
 
+// last updated 10sept2000 {bwr}
+/* ***********************************************************************
+ * called from: delay.cc
+ * *********************************************************************** */
+void weapon_switch( int targ );
+
 #endif

@@ -30,15 +30,16 @@
 
 #include "externs.h"
 
+#include "defines.h"
 #include "player.h"
 #include "skills2.h"
 #include "stuff.h"
 #include "transfor.h"
+#include "view.h"
 
 #ifdef MACROS
 #include "macro.h"
 #endif
-
 
 int how_mutated(void);
 char body_covered(void);
@@ -84,10 +85,10 @@ char *mutation_descrip[][3] = {
     {"You digest meat inefficiently.", "You digest meat inefficiently.",
      "You are primarily a herbivore."},
 
-    {"Your flesh is heat-resistant.", "Your flesh is very heat-resistant.",
+    {"Your flesh is heat resistant.", "Your flesh is very heat resistant.",
      "Your flesh is almost immune to the effects of heat."},
 
-    {"Your flesh is cold-resistant.", "Your flesh is very cold-resistant.",
+    {"Your flesh is cold resistant.", "Your flesh is very cold resistant.",
      "Your flesh is almost immune to the effects of cold."},
 
     {"You are immune to electric shocks.", "You are immune to electric shocks.",
@@ -862,14 +863,13 @@ char mutation_rarity[] = {
     0                           //
 };
 
-
 void display_mutations(void)
 {
     int i;
     int j = 0;
-    char st_prn[5];
-    const char *mut_title =
-        "Innate abilities, Weirdness & Mutations";
+    // char st_prn[5];
+    const char *mut_title = "Innate abilities, Weirdness & Mutations";
+    const int num_lines = get_number_of_lines();
 
 #ifdef DOS_TERM
     char buffer[4800];
@@ -880,12 +880,12 @@ void display_mutations(void)
 
     clrscr();
     textcolor(WHITE);
+
     // center title
-    i = 40-strlen(mut_title)/2;
+    i = 40 - strlen(mut_title) / 2;
     if (i<1) i=1;
     gotoxy(i, 1);
     cprintf(mut_title);
-
     gotoxy(1,3);
     textcolor(LIGHTBLUE);  //textcolor for inborn abilities and weirdness
 
@@ -1024,16 +1024,26 @@ void display_mutations(void)
             j++;
             textcolor(LIGHTGREY);
 
-            // check for too many lines. GDL
-            if (j > 18)
+            if (j > num_lines - 4)
             {
-                gotoxy(1, 24);
+                gotoxy( 1, num_lines - 1 );
                 cprintf("-more-");
+
                 if (getch() == 0)
                     getch();
+
                 clrscr();
+
+                // center title
+                int x = 40 - strlen(mut_title) / 2;
+                if (x < 1)
+                    x = 1;
+
+                gotoxy(x, 1);
                 textcolor(WHITE);
                 cprintf(mut_title);
+                textcolor(LIGHTGREY);
+                gotoxy(1,3);
                 j = 1;
             }
 
@@ -1045,17 +1055,7 @@ void display_mutations(void)
             if (you.demon_pow[i] != 0 && you.demon_pow[i] < you.mutation[i])
                 textcolor(LIGHTRED);
 
-            if (i == MUT_STRONG || i == MUT_CLEVER || i == MUT_AGILE
-                || i == MUT_WEAK || i == MUT_DOPEY || i == MUT_CLUMSY)
-            {
-                cprintf(mutation_descrip[i][0]);
-                itoa(you.mutation[i], st_prn, 10);
-                cprintf(st_prn);
-                cprintf(")." EOL);
-                continue;
-            }
-
-            cprintf(mutation_descrip[i][you.mutation[i] - 1]);
+            cprintf( mutation_name( i ) );
             cprintf(EOL);
         }
     }
@@ -1089,7 +1089,7 @@ bool mutate(int which_mutation, bool failMsg)
 
     //char st_prn [10];
 
-    if (you.is_undead && !force_mutation)
+    if (you.is_undead) // && !force_mutation)
         return false;
 
     if (wearing_amulet(AMU_RESIST_MUTATION)
@@ -1147,7 +1147,7 @@ bool mutate(int which_mutation, bool failMsg)
     if ((mutat == MUT_TOUGH_SKIN
          || (mutat >= MUT_GREEN_SCALES && mutat <= MUT_BONEY_PLATES)
          || (mutat >= MUT_RED_SCALES && mutat <= MUT_PATTERNED_SCALES))
-        && body_covered() > 2 && !force_mutation)
+        && body_covered() >= 3 && !force_mutation)
     {
         return false;
     }
@@ -1205,32 +1205,29 @@ bool mutate(int which_mutation, bool failMsg)
         return false;
     }
 
-    if (mutat == MUT_HOOVES
-        && (you.species == SP_NAGA || you.species == SP_CENTAUR
-            || you.species == SP_KENKU || player_genus(GENPC_DRACONIAN)))
+    // Preventing hooves for right now -- mutations that prevent
+    // the use of equipment were labeled "bad" in the past... this
+    // also has the problem that I doubt it prevents the player from
+    // putting boots on after they are forced off. -- bwr
+    if (mutat == MUT_HOOVES)
+//        && (you.species == SP_NAGA || you.species == SP_CENTAUR
+//            || you.species == SP_KENKU || player_genus(GENPC_DRACONIAN)))
     {
         return false;
     }
 
-    if (mutat == MUT_BIG_WINGS && !player_genus(GENPC_DRACONIAN))
+    // Preventing big wings since I doubt they work -- bwr
+    if (mutat == MUT_BIG_WINGS) // && !player_genus(GENPC_DRACONIAN))
         return false;
 
     //jmf: added some checks for new mutations
     mpr("You mutate.", MSGCH_MUTATION);
 
-/*
-    itoa(mutat, st_prn, 10);
-    mpr(st_prn);
-    itoa(you.mutation [mutat], st_prn, 10);
-    mpr(st_prn);
-*/
-
-
     // find where these things are actually changed
     // -- do not globally force redraw {dlb}
     you.redraw_hit_points = 1;
     you.redraw_magic_points = 1;
-    you.redraw_armor_class = 1;
+    you.redraw_armour_class = 1;
     you.redraw_evasion = 1;
     you.redraw_experience = 1;
     you.redraw_gold = 1;
@@ -1384,8 +1381,10 @@ bool mutate(int which_mutation, bool failMsg)
         break;
 
     case MUT_CLAWS:
-        mpr(gain_mutation[mutat][you.mutation[mutat]], MSGCH_MUTATION);
-        if (you.equip[EQ_GLOVES] != -1)
+        mpr( gain_mutation[ mutat ][ you.mutation[mutat] ], MSGCH_MUTATION );
+
+        // gloves aren't prevented until level three
+        if (you.mutation[ mutat ] >= 3 && you.equip[ EQ_GLOVES ] != -1)
         {
             FixedVector < char, 8 > removed;
 
@@ -1394,8 +1393,8 @@ bool mutate(int which_mutation, bool failMsg)
                 removed[i] = 0;
             }
 
-            removed[EQ_GLOVES] = 1;
-            remove_equipment(removed);
+            removed[ EQ_GLOVES ] = 1;
+            remove_equipment( removed );
         }
         break;
 
@@ -1404,7 +1403,7 @@ bool mutate(int which_mutation, bool failMsg)
             mpr(gain_mutation[mutat][you.mutation[mutat]], MSGCH_MUTATION);
 
             if (you.equip[EQ_HELMET] != -1
-                && you.inv_plus2[you.equip[EQ_HELMET]] > 1)
+                && you.inv[you.equip[EQ_HELMET]].plus2 > 1)
             {
                 break;          // horns don't push caps/wizard hats off
             }
@@ -1550,14 +1549,6 @@ bool delete_mutation(char which_mutation)
 
     if (you.demon_pow[mutat] >= you.mutation[mutat])
         return false;
-
-/*
-    mpr("Deleting:");
-    itoa(mutat, st_prn, 10);
-    mpr(st_prn);
-    itoa(you.mutation [mutat], st_prn, 10);
-    mpr(st_prn);
-*/
 
     mpr("You mutate.", MSGCH_MUTATION);
 
@@ -1729,7 +1720,7 @@ bool delete_mutation(char which_mutation)
     /// -- do not globally force redraw {dlb}
     you.redraw_hit_points = 1;
     you.redraw_magic_points = 1;
-    you.redraw_armor_class = 1;
+    you.redraw_armour_class = 1;
     you.redraw_evasion = 1;
     you.redraw_experience = 1;
     you.redraw_gold = 1;
@@ -1777,23 +1768,32 @@ char body_covered(void)
     return covered;
 }
 
-char *mutation_name(char which_mutat)
+char *mutation_name( char which_mutat, int level )
 {
     char st_prn[5];
+
+    // level == -1 means default action of current level
+    if (level == -1)
+        level = you.mutation[ which_mutat ];
 
     if (which_mutat == MUT_STRONG || which_mutat == MUT_CLEVER
         || which_mutat == MUT_AGILE || which_mutat == MUT_WEAK
         || which_mutat == MUT_DOPEY || which_mutat == MUT_CLUMSY)
     {
-        strcpy(mut_string, mutation_descrip[which_mutat][0]);
-        itoa(you.mutation[which_mutat], st_prn, 10);
-        strcat(mut_string, st_prn);
-        strcat(mut_string, ").");
-        return mut_string;
+        strcpy( mut_string, mutation_descrip[ which_mutat ][0] );
+        itoa( level, st_prn, 10 );
+        strcat( mut_string, st_prn );
+        strcat( mut_string, ")." );
+
+        return (mut_string);
     }
 
-    return mutation_descrip[which_mutat][you.mutation[which_mutat] - 1];
-
+    // Some mutations only have one "level", and it's better
+    // to show the first level description than a blank description.
+    if (mutation_descrip[ which_mutat ][ level - 1 ][0] == '\0')
+        return (mutation_descrip[ which_mutat ][ 0 ]);
+    else
+        return (mutation_descrip[ which_mutat ][ level - 1 ]);
 }                               // end mutation_name()
 
 /* Use an attribute counter for how many demonic mutations a dspawn has */
@@ -1802,6 +1802,8 @@ void demonspawn(void)
     int whichm = -1;
     char howm = 1;
     int counter = 0;
+
+    const int scale_levels = body_covered();
 
     you.attribute[ATTR_NUM_DEMONIC_POWERS]++;
 
@@ -1877,31 +1879,35 @@ void demonspawn(void)
                 howm = 1;
             }
 
-            if (one_chance_in(10))
+            if (one_chance_in(10) && scale_levels < 3)
             {
                 whichm = MUT_TOUGH_SKIN;
                 howm = (coinflip() ? 2 : 3);
+                howm = MINIMUM( 3 - scale_levels, howm );
             }
 
-            if (one_chance_in(24))
+            if (one_chance_in(24) && scale_levels < 3)
             {
                 whichm = MUT_GREEN_SCALES;
                 howm = (coinflip() ? 2 : 3);
+                howm = MINIMUM( 3 - scale_levels, howm );
             }
 
-            if (one_chance_in(24))
+            if (one_chance_in(24) && scale_levels < 3)
             {
                 whichm = MUT_BLACK_SCALES;
                 howm = (coinflip() ? 2 : 3);
+                howm = MINIMUM( 3 - scale_levels, howm );
             }
 
-            if (one_chance_in(24))
+            if (one_chance_in(24) && scale_levels < 3)
             {
                 whichm = MUT_GREY_SCALES;
                 howm = (coinflip() ? 2 : 3);
+                howm = MINIMUM( 3 - scale_levels, howm );
             }
 
-            if (one_chance_in(12))
+            if (one_chance_in(12) && scale_levels < 3)
             {
                 whichm = MUT_RED_SCALES + random2(16);
 
@@ -1923,12 +1929,15 @@ void demonspawn(void)
                     howm = (coinflip() ? 2 : 1);
                     break;
                 }
+
+                howm = MINIMUM( 3 - scale_levels, howm );
             }
 
-            if (one_chance_in(30))
+            if (one_chance_in(30) && scale_levels < 3)
             {
                 whichm = MUT_BONEY_PLATES;
                 howm = (coinflip() ? 1 : 2);
+                howm = MINIMUM( 3 - scale_levels, howm );
             }
 
             if (one_chance_in(25))
@@ -2074,7 +2083,7 @@ void demonspawn(void)
             howm = 1;
         }
 
-        if (you.mutation[whichm] != 0)
+        if (whichm == -1 || you.mutation[whichm] != 0)
             whichm = -1;
 
         counter++;
@@ -2144,14 +2153,13 @@ bool give_good_mutation(bool failMsg)
                       (temp_rand ==  3) ? MUT_BREATHE_FLAMES :
                       (temp_rand ==  2) ? MUT_BLINK :
                       (temp_rand ==  1) ? MUT_CLARITY
-                                       : MUT_ROBUST);
+                                        : MUT_ROBUST);
 
     return (mutate(which_good_one, failMsg));
 }                               // end give_good_mutation()
 
 bool give_bad_mutation(bool forceMutation, bool failMsg)
 {
-
     int temp_rand = 0;          // probability determination {dlb}
     int which_bad_one = 0;
 
@@ -2177,7 +2185,7 @@ bool give_bad_mutation(bool forceMutation, bool failMsg)
 }                               // end give_bad_mutation()
 
 //jmf: might be useful somewhere (eg Xom or transmigration effect)
-static bool give_cosmetic_mutation()
+bool give_cosmetic_mutation()
 {
     int mutation = -1;
     int how_much = 0;
@@ -2206,11 +2214,10 @@ static bool give_cosmetic_mutation()
             how_much = 1 + random2(3);
         }
 
-        if (you.species != SP_TROLL && you.species != SP_GHOUL
-            && one_chance_in(4))
+        if (one_chance_in(4))
         {
-            how_much = 1 + random2(3);
             mutation = MUT_CLAWS;
+            how_much = 1 + random2(3);
         }
 
         if (you.species != SP_CENTAUR && you.species != SP_NAGA
@@ -2221,11 +2228,14 @@ static bool give_cosmetic_mutation()
             how_much = 1;
         }
 
+#if 0
+        // don't think this works -- bwr
         if (player_genus(GENPC_DRACONIAN) && one_chance_in(5))
         {
             mutation = MUT_BIG_WINGS;
             how_much = 1;
         }
+#endif
 
         if (one_chance_in(5))
         {

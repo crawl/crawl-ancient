@@ -111,5 +111,6 @@ void handle_god_time(void);
  * *********************************************************************** */
 char god_colour(char god);
 
+void god_pitch(unsigned char which_god);
 
 #endif

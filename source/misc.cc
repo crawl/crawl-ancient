@@ -27,10 +27,12 @@
 
 #include "externs.h"
 
+#include "cloud.h"
 #include "fight.h"
 #include "files.h"
 #include "food.h"
 #include "it_use2.h"
+#include "items.h"
 #include "lev-pand.h"
 #include "monplace.h"
 #include "mon-util.h"
@@ -40,8 +42,8 @@
 #include "shopping.h"
 #include "skills.h"
 #include "skills2.h"
-#include "spells.h"
 #include "spells3.h"
+#include "spl-cast.h"
 #include "stuff.h"
 #include "transfor.h"
 #include "view.h"
@@ -54,178 +56,71 @@ bool scramble(void);
 bool trap_item(char base_type, char sub_type, char beam_x, char beam_y);
 static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt);
 
-void destroy_item(int dest)
+// void place_chunks(int mcls, unsigned char rot_status, unsigned char chx,
+//                   unsigned char chy, unsigned char ch_col)
+void turn_corpse_into_chunks( item_def &item )
 {
+    const int mons_class = item.plus;
+    const int max_chunks = mons_weight( mons_class ) / 150;
 
-    int c = 0;
-    int cy = 0;
+    ASSERT( item.base_type == OBJ_CORPSES );
 
-    if (dest == NON_ITEM)
-        return;
-
-    for (c = 0; c < MAX_MONSTERS; c++)
-    {
-        struct monsters *monster = &menv[c];
-
-        if (monster->type == -1)
-            continue;
-
-        for (cy = 0; cy < NUM_MONSTER_SLOTS; cy++)
-        {
-            if (monster->inv[cy] == dest)
-            {
-                monster->inv[cy] = NON_ITEM;
-                mitm.quantity[dest] = 0;
-                mitm.link[dest] = NON_ITEM;
-
-                if (monster->type == MONS_DANCING_WEAPON)
-                    monster_die(monster, KILL_RESET, 0);
-
-                return;
-            }
-        }
-    }
-/*  mv: old
-    unsigned int udest = dest;
-
-    for (c = 0; c < MAX_ITEMS; c++)
-    {
-        if (mitm.link[c] == udest)
-        {
-            mitm.link[c] = mitm.link[dest];
-            mitm.quantity[dest] = 0;
-            mitm.link[dest] = NON_ITEM;
-            return;
-        }
-    } */
-
-//Gordon's fix:
-    unsigned int udest = dest;
-
-    for (c = 0; c < MAX_ITEMS; c++)
-    {
-        if (mitm.quantity[c] > 0 && mitm.link[c] == udest)
-        {
-            mitm.link[c] = mitm.link[dest];
-            mitm.quantity[dest] = 0;
-            mitm.link[dest] = NON_ITEM;
-            return;
-        }
-    }
-    // Okay, so that didn't work. Now we go for the slower way:
-    for (c = 2; c < (GXM - 1); c++)
-    {
-        for (cy = 2; cy < (GYM - 1); cy++)
-        {
-            if (igrd[c][cy] == dest)
-            {
-                igrd[c][cy] = mitm.link[dest];
-                mitm.quantity[dest] = 0;
-                mitm.link[dest] = NON_ITEM;
-                return;
-            }
-        }
-    }
-}                               // end destroy_item()
-
-
-void place_chunks(int mcls, unsigned char rot_status, unsigned char chx,
-                  unsigned char chy, unsigned char ch_col)
-{
-    const int max_chunks = mons_weight( mcls ) / 150;
-
-    int o;
-    for (o = 0; o < MAX_ITEMS; o++)
-    {
-        if (o >= 200 + random2(150))
-            return;
-
-        if (mitm.quantity[o] == 0)
-        {
-            mitm.id[o] = 0;
-            mitm.base_type[o] = OBJ_FOOD;
-            mitm.pluses[o] = mcls;
-            mitm.pluses2[o] = 0;
-            mitm.sub_type[o] = 21;
-            mitm.special[o] = rot_status;
-            if (ch_col == BLACK)
-                ch_col = LIGHTRED;
-            mitm.colour[o] = ch_col;
-            mitm.quantity[o] = 1 + random2( max_chunks );
-            mitm.link[o] = NON_ITEM;
-            break;
-        }
-    }                           // end of o loop
-
-    // link to top
-    mitm.link[o] = igrd[chx][chy];
-    igrd[chx][chy] = o;
-
-    // One day I'll add code for various monster organs.
+    item.base_type = OBJ_FOOD;
+    item.sub_type = FOOD_CHUNK;
+    item.quantity = 1 + random2( max_chunks );
 
     // seems to me that this should come about only
     // after the corpse has been butchered ... {dlb}
-    if (monster_descriptor(mcls, MDSC_LEAVES_HIDE) && !one_chance_in(3))
+    if (monster_descriptor( mons_class, MDSC_LEAVES_HIDE ) && !one_chance_in(3))
     {
-        for (o = 0; o < MAX_ITEMS; o++)
+        int o = get_item_slot( 100 + random2(200) );
+        if (o == NON_ITEM)
+            return;
+
+        mitm[o].quantity = 1;
+
+        // these values are common to all: {dlb}
+        mitm[o].base_type = OBJ_ARMOUR;
+        mitm[o].plus = 0;
+        mitm[o].plus2 = 0;
+        mitm[o].special = 0;
+        mitm[o].flags = 0;
+        mitm[o].colour = mons_colour( mons_class );
+
+        // these values cannot be set by a reasonable formula: {dlb}
+        switch (mons_class)
         {
-            // should be a way to place this outside loop for efficiency
-            // reasons {dlb}
-            if (o >= 200 + random2(150))
-                return;
-
-            if (mitm.quantity[o] == 0)
-            {
-                mitm.quantity[o] = 1;
-                mitm.link[o] = NON_ITEM;
-
-                // these values are common to all: {dlb}
-                mitm.id[o] = 0;
-                mitm.base_type[o] = OBJ_ARMOUR;
-                mitm.pluses[o] = 50;
-                mitm.pluses2[o] = 0;
-                mitm.special[o] = 0;
-                mitm.colour[o] = mons_colour(mcls);
-
-                // these values cannot be set by a reasonable formula: {dlb}
-                switch (mcls)
-                {
-                case MONS_DRAGON:
-                    mitm.sub_type[o] = ARM_DRAGON_HIDE;
-                    break;
-                case MONS_TROLL:
-                    mitm.sub_type[o] = ARM_TROLL_HIDE;
-                    break;
-                case MONS_ICE_DRAGON:
-                    mitm.sub_type[o] = ARM_ICE_DRAGON_HIDE;
-                    break;
-                case MONS_STEAM_DRAGON:
-                    mitm.sub_type[o] = ARM_STEAM_DRAGON_HIDE;
-                    break;
-                case MONS_MOTTLED_DRAGON:
-                    mitm.sub_type[o] = ARM_MOTTLED_DRAGON_HIDE;
-                    break;
-                case MONS_STORM_DRAGON:
-                    mitm.sub_type[o] = ARM_STORM_DRAGON_HIDE;
-                    break;
-                case MONS_GOLDEN_DRAGON:
-                    mitm.sub_type[o] = ARM_GOLD_DRAGON_HIDE;
-                    break;
-                case MONS_SWAMP_DRAGON:
-                    mitm.sub_type[o] = ARM_SWAMP_DRAGON_HIDE;
-                    break;
-                default:
-                    // future implementation {dlb}
-                    mitm.sub_type[o] = ARM_ANIMAL_SKIN;
-                    break;
-                }
-                break;          // out of the for-loop {dlb}
-            }
+        case MONS_DRAGON:
+            mitm[o].sub_type = ARM_DRAGON_HIDE;
+            break;
+        case MONS_TROLL:
+            mitm[o].sub_type = ARM_TROLL_HIDE;
+            break;
+        case MONS_ICE_DRAGON:
+            mitm[o].sub_type = ARM_ICE_DRAGON_HIDE;
+            break;
+        case MONS_STEAM_DRAGON:
+            mitm[o].sub_type = ARM_STEAM_DRAGON_HIDE;
+            break;
+        case MONS_MOTTLED_DRAGON:
+            mitm[o].sub_type = ARM_MOTTLED_DRAGON_HIDE;
+            break;
+        case MONS_STORM_DRAGON:
+            mitm[o].sub_type = ARM_STORM_DRAGON_HIDE;
+            break;
+        case MONS_GOLDEN_DRAGON:
+            mitm[o].sub_type = ARM_GOLD_DRAGON_HIDE;
+            break;
+        case MONS_SWAMP_DRAGON:
+            mitm[o].sub_type = ARM_SWAMP_DRAGON_HIDE;
+            break;
+        default:
+            // future implementation {dlb}
+            mitm[o].sub_type = ARM_ANIMAL_SKIN;
+            break;
         }
 
-        // link to top
-        mitm.link[o] = igrd[chx][chy];
-        igrd[chx][chy] = o;
+        move_item_to_grid( &o, item.x, item.y );
     }
 }                               // end place_chunks()
 
@@ -253,7 +148,8 @@ char search_around(void)
             {
                 i = trap_at_xy(srx, sry);
 
-                grd[srx][sry] = trap_category(env.trap_type[i]);
+                if (i != -1)
+                    grd[srx][sry] = trap_category(env.trap[i].type);
 
                 mpr("You found a trap!");
             }
@@ -268,30 +164,39 @@ void in_a_cloud(void)
 {
     int cl = env.cgrid[you.x_pos][you.y_pos];
     int hurted = 0;
+    int resist;
 
-    switch (env.cloud_type[cl])
+    switch (env.cloud[cl].type)
     {
     case CLOUD_FIRE:
     case CLOUD_FIRE_MON:
+        if (you.fire_shield)
+            return;
+
         mpr("You are engulfed in roaring flames!");
-        if (player_res_fire() <= 100)
+
+        resist = player_res_fire() - 100;
+
+        if (resist <= 0)
         {
             hurted += ((random2avg(23, 3) + 10) * you.time_taken) / 10;
-            if (player_res_fire() < 100)
+
+            if (resist < 0)
                 hurted += ((random2avg(14, 2) + 3) * you.time_taken) / 10;
 
             hurted -= random2(player_AC());
+
             if (hurted < 1)
                 hurted = 0;
             else
-                ouch(hurted, cl, KILLED_BY_CLOUD);
+                ouch( hurted, cl, KILLED_BY_CLOUD );
         }
         else
         {
             canned_msg(MSG_YOU_RESIST);
             hurted += ((random2avg(23, 3) + 10) * you.time_taken) / 10;
-            hurted /= (1 + (player_res_fire() - 100) * (player_res_fire() - 100));
-            ouch(hurted, cl, KILLED_BY_CLOUD);
+            hurted /= (1 + resist * resist);
+            ouch( hurted, cl, KILLED_BY_CLOUD );
         }
         scrolls_burn(7, OBJ_SCROLLS);
         break;
@@ -319,10 +224,14 @@ void in_a_cloud(void)
     case CLOUD_COLD:
     case CLOUD_COLD_MON:
         mpr("You are engulfed in freezing vapours!");
-        if (player_res_cold() <= 100)
+
+        resist = player_res_cold() - 100;
+
+        if (resist <= 0)
         {
             hurted += ((random2avg(23, 3) + 10) * you.time_taken) / 10;
-            if (player_res_cold() < 100)
+
+            if (resist < 0)
                 hurted += ((random2avg(14, 2) + 3) * you.time_taken) / 10;
 
             hurted -= random2(player_AC());
@@ -335,7 +244,7 @@ void in_a_cloud(void)
         {
             canned_msg(MSG_YOU_RESIST);
             hurted += ((random2avg(23, 3) + 10) * you.time_taken) / 10;
-            hurted /= (1 + (player_res_cold() - 100) * (player_res_cold() - 100));
+            hurted /= (1 + resist * resist);
             ouch(hurted, cl, KILLED_BY_CLOUD);
         }
         scrolls_burn(7, OBJ_POTIONS);
@@ -372,9 +281,7 @@ void in_a_cloud(void)
             return;
         }
 
-        if (you.equip[EQ_BODY_ARMOUR] != -1
-            && you.inv_type[you.equip[EQ_BODY_ARMOUR]] ==
-            ARM_STEAM_DRAGON_ARMOUR)
+        if (!player_equip( EQ_BODY_ARMOUR, ARM_STEAM_DRAGON_ARMOUR ))
         {
             mpr("It doesn't seem to affect you.");
             return;
@@ -408,10 +315,8 @@ void in_a_cloud(void)
         potion_effect(POT_SLOWING, 5);
 
         if (you.hp_max > 4 && coinflip())
-        {
-            you.base_hp--;
-            calc_hp();
-        }
+            rot_hp(1);
+
         break;
     }
 
@@ -498,14 +403,17 @@ void up_stairs(void)
 
     int i = 0;
 
-    if (you.your_level == -1)
+    if (you.your_level < 0)
     {
         mpr("You have escaped!");
 
         for (i = 0; i < ENDOFPACK; i++)
         {
-            if (you.inv_quantity[i] > 0 && you.inv_class[i] == OBJ_ORBS)
+            if (is_valid_item( you.inv[i] )
+                && you.inv[i].base_type == OBJ_ORBS)
+            {
                 ouch(-9999, 0, KILLED_BY_WINNING);
+            }
         }
 
         ouch(-9999, 0, KILLED_BY_LEAVING);
@@ -519,6 +427,7 @@ void up_stairs(void)
     {
         mpr("Thank you for visiting Hell. Please come again soon.");
         you.where_are_you = BRANCH_MAIN_DUNGEON;
+        you.your_level = you.hell_exit;
         stair_find = DNGN_STONE_STAIRS_UP_I;
     }
 
@@ -563,16 +472,10 @@ void up_stairs(void)
     }
 
     unsigned char stair_taken = stair_find;
-    bool moving_level = true;
     bool want_followers = true;
 
-    if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
-        you.your_level = you.hell_exit;
-
-    load( stair_taken, moving_level, was_a_labyrinth, old_level,
-        want_followers, false, old_level_where );
-
-    moving_level = false;
+    load( stair_taken, true, was_a_labyrinth, old_level,
+          want_followers, false, old_level_where );
 
     new_level();
 
@@ -649,11 +552,11 @@ void down_stairs(bool remove_stairs, int old_level)
 
         for (i = 0; i < ENDOFPACK; i++)
         {
-            if (you.inv_quantity[i] > 0
-                && you.inv_class[i] == OBJ_MISCELLANY
-                && you.inv_type[i] == MISC_RUNE_OF_ZOT)
+            if (is_valid_item( you.inv[i] )
+                && you.inv[i].base_type == OBJ_MISCELLANY
+                && you.inv[i].sub_type == MISC_RUNE_OF_ZOT)
             {
-                num_runes += you.inv_quantity[i];
+                num_runes += you.inv[i].quantity;
             }
         }
 
@@ -665,7 +568,7 @@ void down_stairs(bool remove_stairs, int old_level)
                 mpr("You need a Rune to enter this place.");
                 break;
             default:
-                sprintf(info, "You need at least %d Runes to enter this place.",
+                snprintf( info, INFO_SIZE, "You need at least %d Runes to enter this place.",
                         NUMBER_OF_RUNES_NEEDED);
                 mpr(info);
             }
@@ -812,7 +715,8 @@ void down_stairs(bool remove_stairs, int old_level)
         int sysg;
 
 #ifdef SAVE_DIR_PATH
-        sprintf(glorpstr, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
+        snprintf( glorpstr, sizeof(glorpstr),
+                  SAVE_DIR_PATH "%s%d", you.your_name, (int) getuid() );
 #else
         strncpy(glorpstr, you.your_name, kFileNameLen);
 
@@ -832,7 +736,7 @@ void down_stairs(bool remove_stairs, int old_level)
 #endif
         sysg = unlink(del_file);
 
-#ifdef WIZARD
+#if DEBUG_DIAGNOSTICS
         strcpy(info, "Deleting: ");
         strcat(info, del_file);
         mpr(info);
@@ -843,7 +747,6 @@ void down_stairs(bool remove_stairs, int old_level)
     if (stair_find == DNGN_EXIT_ABYSS || stair_find == DNGN_EXIT_PANDEMONIUM)
     {
         leave_abyss_pan = true;
-        //you.your_level--;
         mpr("You pass through the gate, and find yourself at the top of a staircase.");
         more();
     }
@@ -854,7 +757,6 @@ void down_stairs(bool remove_stairs, int old_level)
     int stair_taken = stair_find;
 
     //unsigned char save_old = 1;
-    bool moving_level = true;
     bool want_followers = true;
 
     if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
@@ -866,10 +768,8 @@ void down_stairs(bool remove_stairs, int old_level)
     if (remove_stairs)
         grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
 
-    load( stair_taken, moving_level, was_a_labyrinth, old_level,
+    load( stair_taken, true, was_a_labyrinth, old_level,
           want_followers, false, old_where );
-
-    moving_level = false;
 
     unsigned char pc = 0;
     unsigned char pt = random2avg(28, 3);
@@ -893,12 +793,12 @@ void down_stairs(bool remove_stairs, int old_level)
 
         init_pandemonium();     /* colours only */
 
-        if (you.where_are_you > BRANCH_MAIN_DUNGEON
-            && you.where_are_you < BRANCH_ORCISH_MINES)
+        if (you.where_are_you >= BRANCH_MAIN_DUNGEON
+            && you.where_are_you <= BRANCH_ORCISH_MINES)
         {
             // ie if you're in Hell
             you.where_are_you = BRANCH_MAIN_DUNGEON;
-            you.your_level = 25;
+            you.your_level = you.hell_exit - 1;
         }
         break;
 
@@ -947,31 +847,33 @@ void down_stairs(bool remove_stairs, int old_level)
 
 void new_level(void)
 {
-    char temp_quant[10];
+    int curr_subdungeon_level = you.your_level + 1;
 
     textcolor(LIGHTGREY);
-
-    itoa(you.your_level + 1, temp_quant, 10);
 
     // maybe last part better expresssed as <= PIT {dlb}
     if (you.where_are_you >= BRANCH_DIS
         && you.where_are_you < BRANCH_ORCISH_MINES)
     {
-        itoa(you.your_level - 26, temp_quant, 10);
+        curr_subdungeon_level = you.your_level - 26;
     }
 
     /* Remember, must add this to the death_string in ouch */
     if (you.where_are_you >= BRANCH_ORCISH_MINES
         && you.where_are_you <= BRANCH_SWAMP)
     {
-        itoa(you.your_level - you.branch_stairs[you.where_are_you - 10],
-             temp_quant, 10);
+        curr_subdungeon_level = you.your_level
+                                    - you.branch_stairs[you.where_are_you - 10];
     }
 
     gotoxy(46, 12);
 
+#if DEBUG_DIAGNOSTICS
+    cprintf( "(%d) ", you.your_level + 1 );
+#endif
+
     env.floor_colour = LIGHTGREY;
-    env.rock_colour = BROWN;
+    env.rock_colour  = BROWN;
 
     if (you.level_type == LEVEL_PANDEMONIUM)
     {
@@ -1000,7 +902,7 @@ void new_level(void)
     else
     {
         if (you.where_are_you != BRANCH_VESTIBULE_OF_HELL)
-            cprintf(temp_quant);
+            cprintf( "%d", curr_subdungeon_level );
 
         switch (you.where_are_you)
         {
@@ -1159,7 +1061,8 @@ static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
     strcat(info, pbolt.beam_name);
     strcat(info, " shoots out and ");
 
-    if (random2(50 + 5 * you.shield_blocks) < player_shield_class())
+    if (random2(50 + 10 * you.shield_blocks * you.shield_blocks)
+                                                < player_shield_class())
     {
         you.shield_blocks++;
         strcat(info, "hits your shield.");
@@ -1168,17 +1071,18 @@ static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
     }
 
     // note that this uses full ( not random2limit(foo,40) ) player_evasion.
-    // XXX: These functions see completely inappropriate... -- bwr
     trap_hit = (20 + (you.your_level * 2)) * random2(200) / 100;
+
     your_dodge = player_evasion() + random2(you.dex) / 3
                             - 2 + (you.duration[DUR_REPEL_MISSILES] * 10);
+
     if (trap_hit >= your_dodge && you.duration[DUR_DEFLECT_MISSILES] == 0)
     {
         strcat(info, "hits you!");
         mpr(info);
 
-        if ((strstr(pbolt.beam_name, "needle") != NULL)
-                && random2(100) < 50 - (3*player_AC()/2)
+        if ((strstr( pbolt.beam_name, "needle" ) != NULL)
+                && random2(100) < 50 - (3 * player_AC()) / 2
                 && !player_res_poison())
         {
             mpr("You are poisoned.");
@@ -1215,7 +1119,7 @@ static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
 
 void itrap(struct bolt &pbolt, int trapped)
 {
-    switch (env.trap_type[trapped])
+    switch (env.trap[trapped].type)
     {
     case TRAP_DART:
         pbolt.colour = OBJ_MISSILES;
@@ -1345,8 +1249,8 @@ void disarm_trap( struct dist &disa )
 
     for (i = 0; i < MAX_TRAPS; i++)
     {
-        if (env.trap_x[i] == you.x_pos + disa.dx
-            && env.trap_y[i] == you.y_pos + disa.dy)
+        if (env.trap[i].x == you.x_pos + disa.dx
+            && env.trap[i].y == you.y_pos + disa.dy)
         {
             break;
         }
@@ -1358,7 +1262,7 @@ void disarm_trap( struct dist &disa )
         }
     }
 
-    if (trap_category(env.trap_type[i]) == DNGN_TRAP_MAGICAL)
+    if (trap_category(env.trap[i].type) == DNGN_TRAP_MAGICAL)
     {
         mpr("You can't disarm that trap.");
         return;
@@ -1375,7 +1279,7 @@ void disarm_trap( struct dist &disa )
             exercise(SK_TRAPS_DOORS, 1 + random2(you.your_level / 5));
         else
         {
-            handle_traps(env.trap_type[i], i, false);
+            handle_traps(env.trap[i].type, i, false);
 
             if (coinflip())
                 exercise(SK_TRAPS_DOORS, 1);
@@ -1391,8 +1295,8 @@ void disarm_trap( struct dist &disa )
     beam.target_x = you.x_pos + disa.dx;
     beam.target_y = you.y_pos + disa.dy;
 
-    if (env.trap_type[i] != TRAP_BLADE
-        && trap_category(env.trap_type[i]) == DNGN_TRAP_MECHANICAL)
+    if (env.trap[i].type != TRAP_BLADE
+        && trap_category(env.trap[i].type) == DNGN_TRAP_MECHANICAL)
     {
         for (j = 0; j < 20; j++)
         {
@@ -1405,7 +1309,7 @@ void disarm_trap( struct dist &disa )
     }
 
     grd[you.x_pos + disa.dx][you.y_pos + disa.dy] = DNGN_FLOOR;
-    env.trap_type[i] = TRAP_UNASSIGNED;
+    env.trap[i].type = TRAP_UNASSIGNED;
     you.turn_is_over = 1;
 
     // reduced from 5 + random2(5)
@@ -1419,22 +1323,22 @@ void manage_clouds(void)
 
     for (unsigned char cc = 0; cc < MAX_CLOUDS; cc++)
     {
-        if (env.cloud_type[cc] == CLOUD_NONE)   // no cloud -> next iteration
+        if (env.cloud[cc].type == CLOUD_NONE)   // no cloud -> next iteration
             continue;
 
         dissipate = you.time_taken;
 
         // water -> flaming clouds:
         // lava -> freezing clouds:
-        if ((env.cloud_type[cc] == CLOUD_FIRE
-                || env.cloud_type[cc] == CLOUD_FIRE_MON)
-            && grd[env.cloud_x[cc]][env.cloud_y[cc]] == DNGN_DEEP_WATER)
+        if ((env.cloud[cc].type == CLOUD_FIRE
+                || env.cloud[cc].type == CLOUD_FIRE_MON)
+            && grd[env.cloud[cc].x][env.cloud[cc].y] == DNGN_DEEP_WATER)
         {
             dissipate *= 4;
         }
-        else if ((env.cloud_type[cc] == CLOUD_COLD
-                    || env.cloud_type[cc] == CLOUD_COLD_MON)
-                && grd[env.cloud_x[cc]][env.cloud_y[cc]] == DNGN_LAVA)
+        else if ((env.cloud[cc].type == CLOUD_COLD
+                    || env.cloud[cc].type == CLOUD_COLD_MON)
+                && grd[env.cloud[cc].x][env.cloud[cc].y] == DNGN_LAVA)
         {
             dissipate *= 4;
         }
@@ -1444,16 +1348,11 @@ void manage_clouds(void)
             dissipate *= 2;
 
         // apply calculated rate to the actual cloud:
-        env.cloud_decay[cc] -= dissipate;
+        env.cloud[cc].decay -= dissipate;
 
         // check for total dissipatation and handle accordingly:
-        if (env.cloud_decay[cc] < 1)
-        {
-            env.cloud_type[cc] = CLOUD_NONE;
-            env.cloud_decay[cc] = 0;
-            env.cgrid[env.cloud_x[cc]][env.cloud_y[cc]] = EMPTY_CLOUD;
-            env.cloud_no--;
-        }
+        if (env.cloud[cc].decay < 1)
+            delete_cloud( cc );
     }
 
     return;
@@ -1516,12 +1415,12 @@ void weird_writing(char stringy[40])
 }                               // end weird_writing()
 
 // must be a better name than 'place' for the first parameter {dlb}
-void fall_into_a_pool(bool place, unsigned char grype)
+void fall_into_a_pool(bool place, unsigned char terrain)
 {
     bool escape = false;
     FixedVector< char, 2 > empty;
 
-    if (you.species == SP_MERFOLK && grype == DNGN_DEEP_WATER)
+    if (you.species == SP_MERFOLK && terrain == DNGN_DEEP_WATER)
     {
         // These can happen when we enter deep water directly -- bwr
         merfolk_start_swimming();
@@ -1530,9 +1429,9 @@ void fall_into_a_pool(bool place, unsigned char grype)
 
     strcpy(info, "You fall into the ");
 
-    strcat(info, (grype == DNGN_LAVA)       ? "lava" :
-                 (grype == DNGN_DEEP_WATER) ? "water"
-                                            : "programming rift");
+    strcat(info, (terrain == DNGN_LAVA)       ? "lava" :
+                 (terrain == DNGN_DEEP_WATER) ? "water"
+                                              : "programming rift");
 
     strcat(info, "!");
     mpr(info);
@@ -1540,7 +1439,7 @@ void fall_into_a_pool(bool place, unsigned char grype)
     more();
     mesclr();
 
-    if (grype == DNGN_LAVA)
+    if (terrain == DNGN_LAVA)
     {
         strcpy(info, "The lava burns you");
 
@@ -1555,7 +1454,7 @@ void fall_into_a_pool(bool place, unsigned char grype)
             // should boost # of bangs per damage in the future {dlb}
             strcat(info, "!");
             mpr(info);
-            ouch( (10 + random2avg(58, 3)) / (player_res_fire() - 100), 0,
+            ouch( (10 + random2avg(100, 2)) / (player_res_fire() - 100), 0,
                   KILLED_BY_LAVA );
         }
     }
@@ -1589,7 +1488,7 @@ void fall_into_a_pool(bool place, unsigned char grype)
     {
         mpr("You manage to scramble free!");
 
-        if (grype == DNGN_LAVA)
+        if (terrain == DNGN_LAVA)
             scrolls_burn(10, OBJ_SCROLLS);
 
         return;
@@ -1597,9 +1496,9 @@ void fall_into_a_pool(bool place, unsigned char grype)
 
     mpr("You drown...");
 
-    if (grype == DNGN_LAVA)
+    if (terrain == DNGN_LAVA)
         ouch(-9999, 0, KILLED_BY_LAVA);
-    else if (grype == DNGN_DEEP_WATER)
+    else if (terrain == DNGN_DEEP_WATER)
         ouch(-9999, 0, KILLED_BY_WATER);
 
     // Okay, so you don't trigger a trap when you scramble onto it.
@@ -1710,69 +1609,39 @@ bool go_berserk(bool intentional)
 
 bool trap_item(char base_type, char sub_type, char beam_x, char beam_y)
 {
+    item_def  item;
+
+    item.base_type = base_type;
+    item.sub_type = sub_type;
+    item.plus = 0;
+    item.plus2 = 0;
+    item.flags = 0;
+    item.quantity = 1;
+
+    item.special = (base_type == OBJ_MISSILES && sub_type == MI_NEEDLE)
+                                                        ? SPMSL_POISONED : 0;
+
+    item.colour = (base_type == OBJ_MISSILES && sub_type == MI_NEEDLE)
+                                                        ? WHITE : LIGHTCYAN;
+
     if (igrd[beam_x][beam_y] != NON_ITEM)
     {
-        // first || clause ==> that is, stackable items present {dlb}
-        if ((base_type == OBJ_MISSILES
-                || base_type == OBJ_FOOD
-                || base_type == OBJ_SCROLLS
-                || base_type == OBJ_POTIONS
-                || base_type == OBJ_UNKNOWN_II)
-            && base_type == mitm.base_type[igrd[beam_x][beam_y]]
-            && sub_type == mitm.sub_type[igrd[beam_x][beam_y]]
-            && mitm.pluses[igrd[beam_x][beam_y]] == 50
-            && (mitm.special[igrd[beam_x][beam_y]] == 0
-                || (mitm.special[igrd[beam_x][beam_y]] == SPMSL_POISONED
-                    && base_type == OBJ_MISSILES && sub_type == MI_NEEDLE)))
+        if (items_stack( item, mitm[ igrd[beam_x][beam_y] ] ))
         {
-            mitm.quantity[igrd[beam_x][beam_y]]++;
-            return false;
+            inc_mitm_item_quantity( igrd[beam_x][beam_y], 1 );
+            return (false);
+        }
+
+        // don't want to go overboard here. Will only generate up to three
+        // separate trap items, or less if there are other items present.
+        if (mitm[ igrd[beam_x][beam_y] ].link != NON_ITEM)
+        {
+            if (mitm[ mitm[ igrd[beam_x][beam_y] ].link ].link != NON_ITEM)
+                return (false);
         }
     }                           // end of if igrd != NON_ITEM
 
-    if (igrd[beam_x][beam_y] != NON_ITEM)
-    {
-        if (mitm.link[igrd[beam_x][beam_y]] != NON_ITEM)
-        {
-            if (mitm.link[mitm.link[igrd[beam_x][beam_y]]] != NON_ITEM)
-                return false;
-        }
-    }
-
-    // don't want to go overboard here. Will only generate up to three
-    // separate trap items, or less if there are other items present.
-    int o;
-
-    for (o = 0; o < MAX_ITEMS; o++)
-    {
-        if (o == 1)
-            continue;
-
-        if (o >= 200)
-            return false;
-
-        if (mitm.quantity[o] == 0)
-        {
-            mitm.id[o] = 0;
-            mitm.base_type[o] = base_type;
-            mitm.sub_type[o] = sub_type;
-            mitm.pluses[o] = 50;
-            mitm.pluses2[o] = 50;
-            mitm.special[o] = (base_type == OBJ_MISSILES && sub_type == MI_NEEDLE)
-                ?SPMSL_POISONED:0;
-            mitm.colour[o] = (base_type == OBJ_MISSILES && sub_type == MI_NEEDLE)
-                ?WHITE:LIGHTCYAN;
-            mitm.quantity[o] = 1;
-            mitm.link[o] = NON_ITEM;
-            break;
-        }
-    }                           // end of o loop
-
-    // link to top
-    mitm.link[o] = igrd[beam_x][beam_y];
-    igrd[beam_x][beam_y] = o;
-
-    return true;
+    return (copy_item_to_grid( item, beam_x, beam_y, 1 ));
 }                               // end trap_item()
 
 // returns appropriate trap symbol for a given trap type {dlb}
@@ -1783,7 +1652,7 @@ unsigned char trap_category(unsigned char trap_type)
     case TRAP_TELEPORT:
     case TRAP_AMNESIA:
     case TRAP_ZOT:
-        return DNGN_TRAP_MAGICAL;
+        return (DNGN_TRAP_MAGICAL);
 
     case TRAP_DART:
     case TRAP_ARROW:
@@ -1793,7 +1662,7 @@ unsigned char trap_category(unsigned char trap_type)
     case TRAP_BOLT:
     case TRAP_NEEDLE:
     default:                    // what *would* be the default? {dlb}
-        return DNGN_TRAP_MECHANICAL;
+        return (DNGN_TRAP_MECHANICAL);
     }
 }                               // end trap_category()
 
@@ -1803,13 +1672,13 @@ int trap_at_xy(int which_x, int which_y)
 
     for (int which_trap = 0; which_trap < MAX_TRAPS; which_trap++)
     {
-        if (env.trap_x[which_trap] == which_x
-            && env.trap_y[which_trap] == which_y)
+        if (env.trap[which_trap].x == which_x
+            && env.trap[which_trap].y == which_y)
         {
-            return which_trap;
+            return (which_trap);
         }
     }
 
     // no idea how well this will be handled elsewhere: {dlb}
-    return -1;
+    return (-1);
 }                               // end trap_at_xy()

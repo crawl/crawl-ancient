@@ -19,18 +19,9 @@
 #include <ctype.h>
 
 #include "externs.h"
+#include "defines.h"
 #include "items.h"
 #include "view.h"
-
-#ifdef USE_CURSES
-#include <curses.h>
-
-// Hack here to get rid of curses "erase" macro, so we don't do
-// bad things to the C++ string class member function "erase"
-#ifdef erase
-    #undef erase
-#endif
-#endif
 
 game_options    Options;
 extern void (*viewwindow) (char, bool);
@@ -38,6 +29,7 @@ extern unsigned char (*mapch) (unsigned char);
 extern unsigned char (*mapch2) (unsigned char);
 extern unsigned char mapchar3(unsigned char ldfk);
 extern unsigned char mapchar4(unsigned char ldfk);
+
 #ifdef LINUX
 extern int character_set;       // unices only
 #endif
@@ -106,7 +98,7 @@ static short str_to_channel( const string &str )
     {
         "plain", "prompt", "god", "duration", "danger", "warning", "food",
         "recovery", "talk", "intrinsic_gain", "mutation", "monster_spell",
-        "monster_enchant", "monster_damage"
+        "monster_enchant", "monster_damage", "rotten_meat", "equipment",
     };
 
     for (ret = 0; ret < NUM_MESSAGE_CHANNELS; ret++)
@@ -196,10 +188,19 @@ void read_init_file(void)
     Options.death_knight  = DK_NO_SELECTION;
     Options.priest        = GOD_NO_GOD;
     Options.hp_warning    = 10;
+    Options.hp_attention  = 25;
     Options.race          = 0;
     Options.cls           = 0;
     Options.sc_entries    = 0;
-    Options.friend_brand  = 0;
+
+#ifdef USE_COLOUR_OPTS
+    Options.friend_brand  = CHATTR_NORMAL;
+    Options.no_dark_brand = 0;
+#endif
+
+#ifdef WIZARD
+    Options.wiz_mode      = WIZ_NO;
+#endif
 
     // map each colour to itself as default
     for (int i = 0; i < 16; i++)
@@ -211,7 +212,8 @@ void read_init_file(void)
 
     FILE *f;
     char s[255];
-    int i, j, line = 0;
+    unsigned int i, line = 0;
+    int j;
     char name_buff[kPathLen];
 
     you.your_name[0] = '\0';
@@ -373,7 +375,7 @@ void read_init_file(void)
             // automatic door opening with movement
             Options.easy_open = read_bool( field, Options.easy_open );
         }
-        else if (key == "easy_armour" || key == "easy_armor")
+        else if (key == "easy_armour" || key == "easy_armour")
         {
             // automatic removal of armour when dropping
             Options.easy_armour = read_bool( field, Options.easy_armour );
@@ -425,20 +427,28 @@ void read_init_file(void)
         {
             // Use curses attributes to mark friend
             // Some may look bad on some terminals.
+            // As a suggestion, try "rxvt -rv -fn 10x20" under Un*xes
             if (field == "standout")               // probably reverses
-                Options.friend_brand = A_STANDOUT;
+                Options.friend_brand = CHATTR_STANDOUT;
             else if (field == "bold")              // probably brightens fg
-                Options.friend_brand = A_BOLD;
+                Options.friend_brand = CHATTR_BOLD;
             else if (field == "blink")             // probably brightens bg
-                Options.friend_brand = A_BLINK;
+                Options.friend_brand = CHATTR_BLINK;
             else if (field == "underline")
-                Options.friend_brand = A_UNDERLINE;
+                Options.friend_brand = CHATTR_UNDERLINE;
             else if (field == "reverse")
-                Options.friend_brand = A_REVERSE;
+                Options.friend_brand = CHATTR_REVERSE;
             else if (field == "dim")
-                Options.friend_brand = A_DIM;
+                Options.friend_brand = CHATTR_DIM;
             else
                 fprintf( stderr, "Bad colour -- %s\n", field.c_str() );
+        }
+        else if (key == "no_dark_brand")
+        {
+            // This is useful for terms where dark grey does
+            // not have standout modes (since it's black on black).
+            // This option will use light-grey instead in these cases.
+            Options.no_dark_brand = read_bool( field, Options.no_dark_brand );
         }
 #endif
         else if (key == "show_uncursed")
@@ -500,6 +510,16 @@ void read_init_file(void)
                          field.c_str() );
             }
         }
+        else if (key == "hp_attention")
+        {
+            Options.hp_attention = atoi( field.c_str() );
+            if (Options.hp_attention < 0 || Options.hp_attention > 100)
+            {
+                Options.hp_attention = 0;
+                fprintf( stderr, "Bad HP attention percentage -- %s\n",
+                         field.c_str() );
+            }
+        }
         else if (key == "crawl_dir")
         {
             // We shouldn't bother to allocate this a second time
@@ -512,19 +532,33 @@ void read_init_file(void)
         }
         else if (key == "race")
         {
+            // set to first character of field
             if (field.length() != 1)
                 fprintf(stderr, "Unknown race choice: %s\n", field.c_str());
             else
-            // set to first character of field
                 Options.race = field[0];
         }
         else if (key == "class")
         {
+            // set to first character of field
             if (field.length() != 1)
                 fprintf(stderr, "Unknown class choice: %s\n", field.c_str());
             else
-            // set to first character of field
                 Options.cls = field[0];
+        }
+        else if (key == "wiz_mode")
+        {
+            // wiz_mode is recognized as a legal key in all compiles -- bwr
+#ifdef WIZARD
+            if (field == "never")
+                Options.wiz_mode = WIZ_NEVER;
+            else if (field == "no")
+                Options.wiz_mode = WIZ_NO;
+            else if (field == "yes")
+                Options.wiz_mode = WIZ_YES;
+            else
+                fprintf(stderr, "Unknown wiz_mode option: %s\n", field.c_str());
+#endif
         }
     }
 
@@ -557,7 +591,9 @@ void get_system_environment(void)
 // returns true if no unknown or malformed arguments were found.
 
 static char *cmd_ops[] = { "scores", "name", "race", "class",
-    "pizza", "plain", "dir", "rc" };
+                           "pizza", "plain", "dir", "rc",
+                           "wiz" };
+
 const int num_cmd_ops = 8;
 bool arg_seen[num_cmd_ops];
 
@@ -591,8 +627,11 @@ bool parse_args(int argc, char **argv, bool rc_only)
         if (!(c == '-' || c == '/'))
             return false;
 
-        // look for match
-        arg = &arg[1];
+        // look for match (now we also except --scores)
+        if (arg[1] == '-')
+            arg = &arg[2];
+        else
+            arg = &arg[1];
 
         int o;
         for(o = 0; o < num_cmd_ops; o++)
@@ -703,6 +742,5 @@ bool parse_args(int argc, char **argv, bool rc_only)
             current++;
     }
 
-    return true;
-
+    return (true);
 }

@@ -32,7 +32,7 @@ static int cx=0, cy=0;
 //static FILE *foo = NULL;  //DEBUG
 
 // and now, for the screen buffer
-static CHAR_INFO screen[80 * NUMBER_OF_LINES];
+static CHAR_INFO screen[80 * WIN_NUMBER_OF_LINES];
 static COORD screensize;
 #define SCREENINDEX(x,y) (x)+80*(y)
 static bool buffering = false;
@@ -254,7 +254,7 @@ void init_libw32c(void)
 
    // set up screen size
    screensize.X = 80;
-   screensize.Y = NUMBER_OF_LINES;
+   screensize.Y = get_number_of_lines();
 
    // initialise text color
    textcolor(DARKGREY);
@@ -320,11 +320,13 @@ void clrscr(void)
    COORD source;
    SMALL_RECT target;
 
+   const int num_lines = get_number_of_lines();
+
    PCHAR_INFO pci = screen;
 
    for(x=0; x<80; x++)
    {
-      for(y=0; y<NUMBER_OF_LINES; y++)
+      for(y=0; y<num_lines; y++)
       {
          pci->Char.AsciiChar = ' ';
          pci->Attributes = 0;
@@ -337,7 +339,7 @@ void clrscr(void)
    target.Left = 0;
    target.Top = 0;
    target.Right = 79;
-   target.Bottom = NUMBER_OF_LINES - 1;
+   target.Bottom = num_lines - 1;
 
    WriteConsoleOutput(outbuf, screen, screensize, source, &target);
 
@@ -347,6 +349,8 @@ void clrscr(void)
 
 void gotoxy(int x, int y)
 {
+   const int num_lines = get_number_of_lines();
+
    // always flush on goto
    bFlush();
 
@@ -357,8 +361,8 @@ void gotoxy(int x, int y)
       x=80;
    if (y<1)
       y=1;
-   if (y>NUMBER_OF_LINES)
-      y=NUMBER_OF_LINES;
+   if (y>num_lines)
+      y=num_lines;
 
    // change current cursor
    cx = x-1;
@@ -383,7 +387,7 @@ void textcolor(int c)
    current_color = c;
 }
 
-void cprintf(const char *s)
+static void cprintf(const char *s)
 {
    // early out -- not initted yet
    if (outbuf == NULL)
@@ -413,6 +417,19 @@ void cprintf(const char *s)
 
    // flush string
    bFlush();
+}
+
+void cprintf(const char *format, ...)
+{
+   va_list argp;
+   char buffer[4096]; // one could hope it's enough
+
+   va_start( argp, format );
+
+   vsprintf(buffer, format, argp);
+   cprintf_aux(buffer);
+
+   va_end(argp);
 }
 
 void window(int x, int y, int lx, int ly)

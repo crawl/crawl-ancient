@@ -1,6 +1,8 @@
 #ifndef LIBW32C_H
 #define LIBW32C_H
 
+#define WIN_NUMBER_OF_LINES     25
+
 /*
  * Exclude parts of WINDOWS.H that are not needed
  */
@@ -63,7 +65,8 @@ void _setcursortype(int curstype);
 void clrscr(void);
 void gotoxy(int x, int y);
 void textcolor(int c);
-void cprintf(const char *s);
+void cprintf( const char *format, ... );
+// void cprintf(const char *s);
 void setStringInput(bool value);
 bool setBuffering(bool value);
 DWORD getConsoleString(char *buf, DWORD maxlen);

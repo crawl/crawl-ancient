@@ -12,12 +12,12 @@
  *                              balance tweaks
  *   <5>     5/28/99     JDJ    Changed wear_armour to allow Spriggans to
  *                              wear bucklers.
- *   <4>     5/26/99     JDJ    body armor can be removed and worn if an
+ *   <4>     5/26/99     JDJ    body armour can be removed and worn if an
  *                              uncursed cloak is being worn.
  *                              Removed lots of unnessary mpr string copying.
  *                              Added missing ponderous message.
  *   <3>     5/20/99     BWR    Fixed staff of air bug, output of trial
- *                              identified items, a few wield_changes so
+ *                              identified items, a few you.wield_changes so
  *                              that the weapon gets updated.
  *   <2>     5/08/99     JDJ    Added armour_prompt.
  *   <1>     -/--/--     LRH    Created
@@ -28,11 +28,13 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "externs.h"
 
 #include "beam.h"
 #include "debug.h"
+#include "delay.h"
 #include "describe.h"
 #include "direct.h"
 #include "effects.h"
@@ -54,31 +56,26 @@
 #include "religion.h"
 #include "skills.h"
 #include "skills2.h"
-#include "spells.h"
 #include "spells1.h"
 #include "spells2.h"
 #include "spells3.h"
 #include "spl-book.h"
+#include "spl-cast.h"
 #include "stuff.h"
 #include "transfor.h"
 #include "view.h"
 #include "wpn-misc.h"
-#ifdef DEBUG
-#include <stdio.h>
-#endif
-
-extern int book_thing;          // defined in spells.cc
-extern bool wield_change;       // defined in output.cc
 
 bool drink_fountain(void);
 static void throw_it(struct bolt &pbolt, int throw_2);
 void use_randart(unsigned char item_wield_2);
+static bool enchant_weapon( int which_stat, bool quiet = false );
+static bool enchant_armour( void );
 
 void wield_weapon(bool auto_wield)
 {
-    unsigned char nthing = 0;
     char str_pass[80];
-    unsigned char keyin;
+    int item_slot = 0;
 
     if (inv_count() < 1)
     {
@@ -102,8 +99,8 @@ void wield_weapon(bool auto_wield)
     }
 
     if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-        && you.inv_plus[you.equip[EQ_WEAPON]] > 80)
+        && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_WEAPONS
+        && item_cursed( you.inv[you.equip[EQ_WEAPON]] ))
     {
         mpr("You can't unwield your weapon to draw a new one!");
         return;
@@ -118,82 +115,44 @@ void wield_weapon(bool auto_wield)
     if (auto_wield)
     {
         if (you.equip[EQ_WEAPON] == 0)  // ie. weapon is currently 'a'
-            keyin = 'b';
+            item_slot = 1;
         else
-            keyin = 'a';
+            item_slot = 0;
     }
-    else
+
+    // Prompt if not using the auto swap command,
+    // or if the swap slot is empty.
+    if (!auto_wield || !is_valid_item( you.inv[item_slot] ))
     {
+        item_slot = prompt_invent_item( "Wield which item (- for none)?",
+                                        OBJ_WEAPONS, true, '-' );
 
-      query:
-        mpr("Wield which item (- for none)?", MSGCH_PROMPT);
-
-        keyin = get_ch();
-
-        if (keyin == '?')
+        if (item_slot == PROMPT_ABORT)
         {
-            //inventory(0);
-            nthing = get_invent(OBJ_WEAPONS);
-
-            if ((nthing >= 'A' && nthing <= 'Z')
-                || (nthing >= 'a' && nthing <= 'z'))
+            canned_msg( MSG_OK );
+            return;
+        }
+        else if (item_slot == PROMPT_GOT_SPECIAL)  // '-' or bare hands
+        {
+            if (you.equip[EQ_WEAPON] != -1)
             {
-                keyin = nthing;
+                unwield_item(you.equip[EQ_WEAPON]);
+                you.turn_is_over = 1;
+
+                you.equip[EQ_WEAPON] = -1;
+                canned_msg( MSG_EMPTY_HANDED );
+                you.time_taken *= 3;
+                you.time_taken /= 10;
             }
             else
             {
-                mesclr();
-                goto query;
-                //mpr("Wield which item?");
-                //keyin = get_ch();
+                mpr( "You are already empty-handed." );
             }
+            return;
         }
-
-        if (keyin == '*')
-        {
-            //inventory(-1);
-            nthing = get_invent(-1);
-
-            if ((nthing >= 'A' && nthing <= 'Z')
-                || (nthing >= 'a' && nthing <= 'z'))
-            {
-                keyin = nthing;
-            }
-            else
-            {
-                mpr("Wield which item?");
-                keyin = get_ch();
-            }
-        }
-
     }
 
-    int item_wield_1 = (int) keyin;
-
-    if (keyin == '-')
-    {
-        if (you.equip[EQ_WEAPON] != -1)
-        {
-            unwield_item(you.equip[EQ_WEAPON]);
-            you.turn_is_over = 1;
-        }
-        you.equip[EQ_WEAPON] = -1;
-        mpr("You are empty-handed.");
-        you.time_taken *= 3;
-        you.time_taken /= 10;
-        return;
-    }
-
-    if (item_wield_1 < 'A' || (item_wield_1 > 'Z' && item_wield_1 < 'a')
-        || item_wield_1 > 'z')
-    {
-        mpr("You don't have any such object.");
-        return;
-    }
-
-    int item_wield_2 = letter_to_index(item_wield_1);
-
-    if (item_wield_2 == you.equip[EQ_WEAPON])
+    if (item_slot == you.equip[EQ_WEAPON])
     {
         mpr("You are already wielding that!");
         return;
@@ -201,22 +160,16 @@ void wield_weapon(bool auto_wield)
 
     for (int i = EQ_CLOAK; i <= EQ_AMULET; i++)
     {
-        if (item_wield_2 == you.equip[i])
+        if (item_slot == you.equip[i])
         {
             mpr("You are wearing that object!");
             return;
         }
     }
 
-    if (you.inv_quantity[item_wield_2] == 0)
+    if (you.inv[item_slot].base_type != OBJ_WEAPONS)
     {
-        mpr("You don't have any such object.");
-        return;
-    }
-
-    if (you.inv_class[item_wield_2] != OBJ_WEAPONS)
-    {
-        if (you.inv_class[item_wield_2] == OBJ_STAVES
+        if (you.inv[item_slot].base_type == OBJ_STAVES
             && you.equip[EQ_SHIELD] != -1)
         {
             mpr("You can't wield that with a shield.");
@@ -226,13 +179,12 @@ void wield_weapon(bool auto_wield)
         if (you.equip[EQ_WEAPON] != -1)
             unwield_item(you.equip[EQ_WEAPON]);
 
-        you.equip[EQ_WEAPON] = item_wield_2;
+        you.equip[EQ_WEAPON] = item_slot;
     }
     else
     {
         if ((you.species < SP_OGRE || you.species > SP_OGRE_MAGE)
-            && mass(you.inv_class[item_wield_2],
-                    you.inv_type[item_wield_2]) >= 500)
+            && mass_item( you.inv[item_slot] ) >= 500)
         {
             mpr("That's too large and heavy for you to wield.");
             return;
@@ -240,36 +192,41 @@ void wield_weapon(bool auto_wield)
 
         if ((you.species == SP_HALFLING || you.species == SP_GNOME
              || you.species == SP_KOBOLD || you.species == SP_SPRIGGAN)
-            && (you.inv_type[item_wield_2] == WPN_GREAT_SWORD
-                || you.inv_type[item_wield_2] == WPN_TRIPLE_SWORD
-                || you.inv_type[item_wield_2] == WPN_GREAT_MACE
-                || you.inv_type[item_wield_2] == WPN_GREAT_FLAIL
-                || you.inv_type[item_wield_2] == WPN_BATTLEAXE
-                || you.inv_type[item_wield_2] == WPN_EXECUTIONERS_AXE
-                || you.inv_type[item_wield_2] == WPN_HALBERD
-                || you.inv_type[item_wield_2] == WPN_GLAIVE
-                || you.inv_type[item_wield_2] == WPN_GIANT_CLUB
-                || you.inv_type[item_wield_2] == WPN_GIANT_SPIKED_CLUB
-                || you.inv_type[item_wield_2] == WPN_SCYTHE))
+
+            && (you.inv[item_slot].sub_type == WPN_GREAT_SWORD
+                || you.inv[item_slot].sub_type == WPN_TRIPLE_SWORD
+                || you.inv[item_slot].sub_type == WPN_GREAT_MACE
+                || you.inv[item_slot].sub_type == WPN_GREAT_FLAIL
+                || you.inv[item_slot].sub_type == WPN_BATTLEAXE
+                || you.inv[item_slot].sub_type == WPN_EXECUTIONERS_AXE
+                || you.inv[item_slot].sub_type == WPN_HALBERD
+                || you.inv[item_slot].sub_type == WPN_GLAIVE
+                || you.inv[item_slot].sub_type == WPN_GIANT_CLUB
+                || you.inv[item_slot].sub_type == WPN_GIANT_SPIKED_CLUB
+                || you.inv[item_slot].sub_type == WPN_SCYTHE))
         {
             mpr("That's too large for you to wield.");
             return;
 
         }
 
-        if (hands_reqd_for_weapon
-            (you.inv_class[item_wield_2],
-             you.inv_type[item_wield_2]) == HANDS_TWO_HANDED
+        if (hands_reqd_for_weapon( you.inv[item_slot].base_type,
+                              you.inv[item_slot].sub_type ) == HANDS_TWO_HANDED
             && you.equip[EQ_SHIELD] != -1)
         {
             mpr("You can't wield that with a shield.");
             return;
         }
 
+        int weap_brand = you.inv[item_slot].special;
+
+        if (is_random_artefact( you.inv[item_slot] ))
+            weap_brand = randart_wpn_property( you.inv[item_slot], RAP_BRAND );
+
         if ((you.is_undead || you.species == SP_DEMONSPAWN)
-            && (you.inv_dam[item_wield_2] < NWPN_SINGING_SWORD
-                && (you.inv_dam[item_wield_2] % 30 == SPWPN_HOLY_WRATH
-                    || you.inv_dam[item_wield_2] % 30 == SPWPN_DISRUPTION)))
+            && (!is_fixed_artefact( you.inv[item_slot] )
+                && (weap_brand == SPWPN_HOLY_WRATH
+                    || weap_brand == SPWPN_DISRUPTION)))
         {
             mpr("This weapon will not allow you to wield it.");
             you.turn_is_over = 1;
@@ -279,23 +236,14 @@ void wield_weapon(bool auto_wield)
         if (you.equip[EQ_WEAPON] != -1)
             unwield_item(you.equip[EQ_WEAPON]);
 
-        you.equip[EQ_WEAPON] = item_wield_2;
+        you.equip[EQ_WEAPON] = item_slot;
     }
 
     // any oddness on wielding taken care of here
-    wield_effects(item_wield_2, true);
+    wield_effects(item_slot, true);
 
-    strcpy(info, " ");
-
-    info[0] = index_to_letter(item_wield_2);
-    info[1] = '\0';
-
-    strcat(info, " - ");
-
-    in_name(item_wield_2, 3, str_pass);
-    strcat(info, str_pass);
-    strcat(info, " (weapon in hand)");
-    mpr(info);
+    in_name( item_slot, DESC_INVENTORY_EQUIP, str_pass );
+    mpr( str_pass );
 
     // warn player about low str/dex or throwing skill
     wield_warning();
@@ -304,7 +252,7 @@ void wield_weapon(bool auto_wield)
     you.time_taken *= 5;
     you.time_taken /= 10;
 
-    wield_change = true;
+    you.wield_change = true;
     you.turn_is_over = 1;
 }
 
@@ -317,32 +265,35 @@ void wield_effects(int item_wield_2, bool showMsgs)
     unsigned char i_dam = 0;
 
     // and here we finally get to the special effects of wielding {dlb}
-    if (you.inv_class[item_wield_2] == OBJ_MISCELLANY)
+    if (you.inv[item_wield_2].base_type == OBJ_MISCELLANY)
     {
-        if (you.inv_type[item_wield_2] == MISC_LANTERN_OF_SHADOWS)
+        if (you.inv[item_wield_2].sub_type == MISC_LANTERN_OF_SHADOWS)
         {
             if (showMsgs)
                 mpr("The area is filled with flickering shadows.");
+
             you.special_wield = SPWLD_SHADOW;
         }
     }
 
-    if (you.inv_class[item_wield_2] == OBJ_STAVES)
+    if (you.inv[item_wield_2].base_type == OBJ_STAVES)
     {
-        if (you.inv_type[item_wield_2] == STAFF_POWER)
+        if (you.inv[item_wield_2].sub_type == STAFF_POWER)
         {
-            you.max_magic_points += 13;
-            you.base_magic_points2 += 13;
-            calc_mp();
-
-            if (you.inv_ident[you.equip[EQ_WEAPON]] < 3)
-                you.inv_ident[you.equip[EQ_WEAPON]] = 3;
+            inc_max_mp(13);
+            set_ident_flags( you.inv[item_wield_2], ISFLAG_EQ_WEAPON_MASK );
+        }
+        else
+        {
+            // Most staves only give curse status when wielded and
+            // right now that's always "uncursed". -- bwr
+            set_ident_flags( you.inv[item_wield_2], ISFLAG_KNOW_CURSE );
         }
     }
 
-    if (you.inv_class[item_wield_2] == OBJ_WEAPONS)
+    if (you.inv[item_wield_2].base_type == OBJ_WEAPONS)
     {
-        if (is_demonic(you.inv_type[item_wield_2])
+        if (is_demonic(you.inv[item_wield_2].sub_type)
             && (you.religion == GOD_ZIN || you.religion == GOD_SHINING_ONE
                 || you.religion == GOD_ELYVILON))
         {
@@ -350,26 +301,25 @@ void wield_effects(int item_wield_2, bool showMsgs)
                 mpr("You really shouldn't be using a nasty item like this.");
         }
 
-        if (you.inv_plus[item_wield_2] > 80)
-            mpr("It sticks to your hand!");
-
-        // hmmm ... this seems a little fishy {dlb}:
-        if (you.inv_ident[item_wield_2] == 0)
-            you.inv_ident[item_wield_2] = 2;
-
-        if (you.inv_dam[item_wield_2] != SPWPN_NORMAL)
+        if (item_cursed( you.inv[item_wield_2] ))
         {
-            if (you.inv_ident[item_wield_2] == 1)
-                you.inv_ident[item_wield_2] = 2;
+            mpr("It sticks to your hand!");
+        }
 
-            i_dam = you.inv_dam[item_wield_2];
+        set_ident_flags( you.inv[item_wield_2], ISFLAG_EQ_WEAPON_MASK );
 
-            if (you.inv_dam[item_wield_2] < NWPN_SINGING_SWORD)
-                i_dam = (you.inv_dam[item_wield_2] % 30);
+        if (is_random_artefact( you.inv[item_wield_2] ))
+        {
+            i_dam = randart_wpn_property(you.inv[item_wield_2], RAP_BRAND);
+            use_randart(item_wield_2);
+        }
+        else
+        {
+            i_dam = you.inv[item_wield_2].special;
+        }
 
-            if (you.inv_dam[item_wield_2] % 30 >= SPWPN_RANDART_I)
-                i_dam = inv_randart_wpn_properties(item_wield_2, 0, RAP_BRAND);
-
+        if (i_dam != SPWPN_NORMAL)
+        {
             // message first
             if (showMsgs)
             {
@@ -436,35 +386,35 @@ void wield_effects(int item_wield_2, bool showMsgs)
                     mpr("A searing pain shoots up your arm!");
                     break;
 
-                case NWPN_SINGING_SWORD:
+                case SPWPN_SINGING_SWORD:
                     mpr("The Singing Sword hums in delight!");
                     break;
 
-                case NWPN_WRATH_OF_TROG:
+                case SPWPN_WRATH_OF_TROG:
                     mpr("You feel bloodthirsty!");
                     break;
 
-                case NWPN_SCYTHE_OF_CURSES:
+                case SPWPN_SCYTHE_OF_CURSES:
                     mpr("A shiver runs down your spine.");
                     break;
 
-                case NWPN_GLAIVE_OF_PRUNE:
+                case SPWPN_GLAIVE_OF_PRUNE:
                     mpr("You feel pruney.");
                     break;
 
-                case NWPN_SCEPTRE_OF_TORMENT:
+                case SPWPN_SCEPTRE_OF_TORMENT:
                     mpr("A terribly searing pain shoots up your arm!");
                     break;
 
-                case NWPN_SWORD_OF_ZONGULDROK:
+                case SPWPN_SWORD_OF_ZONGULDROK:
                     mpr("You sense an extremely unholy aura.");
                     break;
 
-                case NWPN_SWORD_OF_POWER:
+                case SPWPN_SWORD_OF_POWER:
                     mpr("You sense an aura of extreme power.");
                     break;
 
-                case NWPN_STAFF_OF_OLGREB:
+                case SPWPN_STAFF_OF_OLGREB:
                     // mummies cannot smell
                     if (you.species != SP_MUMMY)
                         mpr("You smell chlorine.");
@@ -472,7 +422,7 @@ void wield_effects(int item_wield_2, bool showMsgs)
                         mpr("The staff glows slightly green.");
                     break;
 
-                case NWPN_VAMPIRES_TOOTH:
+                case SPWPN_VAMPIRES_TOOTH:
                     // mummies cannot smell, and do not hunger {dlb}
                     if (you.species != SP_MUMMY)
                         mpr("You feel a strange hunger, and smell blood on the air...");
@@ -489,58 +439,55 @@ void wield_effects(int item_wield_2, bool showMsgs)
             switch (i_dam)
             {
             case SPWPN_PROTECTION:
-                you.redraw_armor_class = 1;
+                you.redraw_armour_class = 1;
                 break;
 
             case SPWPN_DISTORTION:
                 miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100);
                 break;
 
-            case NWPN_SINGING_SWORD:
+            case SPWPN_SINGING_SWORD:
                 you.special_wield = SPWLD_SING;
                 break;
 
-            case NWPN_WRATH_OF_TROG:
+            case SPWPN_WRATH_OF_TROG:
                 you.special_wield = SPWLD_TROG;
                 break;
 
-            case NWPN_SCYTHE_OF_CURSES:
+            case SPWPN_SCYTHE_OF_CURSES:
                 you.special_wield = SPWLD_CURSE;
                 break;
 
-            case NWPN_MACE_OF_VARIABILITY:
+            case SPWPN_MACE_OF_VARIABILITY:
                 you.special_wield = SPWLD_VARIABLE;
                 break;
 
-            case NWPN_GLAIVE_OF_PRUNE:
+            case SPWPN_GLAIVE_OF_PRUNE:
                 you.special_wield = SPWLD_NONE;
                 break;
 
-            case NWPN_SCEPTRE_OF_TORMENT:
+            case SPWPN_SCEPTRE_OF_TORMENT:
                 you.special_wield = SPWLD_TORMENT;
                 break;
 
-            case NWPN_SWORD_OF_ZONGULDROK:
+            case SPWPN_SWORD_OF_ZONGULDROK:
                 you.special_wield = SPWLD_ZONGULDROK;
                 break;
 
-            case NWPN_SWORD_OF_POWER:
+            case SPWPN_SWORD_OF_POWER:
                 you.special_wield = SPWLD_POWER;
                 break;
 
-            case NWPN_STAFF_OF_OLGREB:
+            case SPWPN_STAFF_OF_OLGREB:
                 // josh declares mummies cannot smell {dlb}
                 you.special_wield = SPWLD_OLGREB;
                 break;
 
-            case NWPN_STAFF_OF_WUCAD_MU:
+            case SPWPN_STAFF_OF_WUCAD_MU:
                 miscast_effect(SPTYP_DIVINATION, 9, 90, 100);
                 you.special_wield = SPWLD_WUCAD_MU;
                 break;
             }
-
-            if (you.inv_dam[item_wield_2] % 30 >= 25)
-                use_randart(item_wield_2);
         }
     }
 }                               // end wield_weapon()
@@ -549,7 +496,7 @@ void wield_effects(int item_wield_2, bool showMsgs)
 //
 // armour_prompt
 //
-// Prompt the user for some armor. Returns true if the user picked
+// Prompt the user for some armour. Returns true if the user picked
 // something legit.
 //
 //---------------------------------------------------------------
@@ -557,7 +504,8 @@ bool armour_prompt(const string & mesg, int *index)
 {
     ASSERT(index != NULL);
 
-    bool succeeded = false;
+    bool  succeeded = false;
+    int   slot;
 
     if (inv_count() < 1)
         canned_msg(MSG_NOTHING_CARRIED);
@@ -565,45 +513,28 @@ bool armour_prompt(const string & mesg, int *index)
         canned_msg(MSG_TOO_BERSERK);
     else
     {
-      query:
-        mpr(mesg.c_str());
+        slot = prompt_invent_item( mesg.c_str(), OBJ_ARMOUR );
 
-        unsigned char key = get_ch();
-
-        if (key == '?' || key == '*')
+        if (slot != PROMPT_ABORT)
         {
-            unsigned char letter = '\0';
-
-            if (key == '?')
-                letter = get_invent(OBJ_ARMOUR);
-            else
-                letter = get_invent(-1);
-
-            if ((letter >= 'A' && letter <= 'Z')
-                || (letter >= 'a' && letter <= 'z'))
-            {
-                key = letter;
-            }
-            else
-            {
-                mesclr();
-                goto query;
-            }
-        }
-
-        if (key < 'A' || (key > 'Z' && key < 'a') || key > 'z')
-        {
-            mpr("You don't have any such object.");
-        }
-        else
-        {
-            *index = letter_to_index(key);
+            *index = slot;
             succeeded = true;
         }
     }
 
-    return succeeded;
+    return (succeeded);
 }                               // end armour_prompt()
+
+bool cloak_is_being_removed( void )
+{
+    if (current_delay_action() != DELAY_ARMOUR_OFF)
+        return (false);
+
+    if (you.delay_queue.front().parm1 != you.equip[ EQ_CLOAK ])
+        return (false);
+
+    return (true);
+}
 
 //---------------------------------------------------------------
 //
@@ -612,78 +543,99 @@ bool armour_prompt(const string & mesg, int *index)
 //---------------------------------------------------------------
 void wear_armour(void)
 {
-    char wh_equip = 0;
-
     int armour_wear_2;
 
     if (!armour_prompt("Wear which item?", &armour_wear_2))
         return;
 
-    if (you.inv_quantity[armour_wear_2] == 0)
+    do_wear_armour( armour_wear_2, false );
+}
+
+bool do_wear_armour( int item, bool quiet )
+{
+    char wh_equip = 0;
+
+    if (!is_valid_item( you.inv[item] ))
     {
-        mpr("You don't have any such object.");
-        return;
+        if (!quiet)
+           mpr("You don't have any such object.");
+
+        return (false);
     }
 
-    if (you.inv_class[armour_wear_2] != OBJ_ARMOUR)
+    if (you.inv[item].base_type != OBJ_ARMOUR)
     {
-        mpr("You can't wear that.");
-        return;
+        if (!quiet)
+           mpr("You can't wear that.");
+
+        return (false);
     }
 
-    if (armour_wear_2 == you.equip[EQ_WEAPON])
+    if (item == you.equip[EQ_WEAPON])
     {
-        mpr("You are wielding that object!");
-        return;
+        if (!quiet)
+           mpr("You are wielding that object!");
+
+        return (false);
     }
 
     for (int loopy = EQ_CLOAK; loopy <= EQ_BODY_ARMOUR; loopy++)
     {
-        if (armour_wear_2 == you.equip[loopy])
+        if (item == you.equip[loopy])
         {
-            mpr("You are already wearing that!");
-            return;
+            if (!quiet)
+               mpr("You are already wearing that!");
+
+            return (false);
         }
     }
 
     // if you're wielding something,
     if (you.equip[EQ_WEAPON] != -1
         // attempting to wear a shield,
-        && (you.inv_type[armour_wear_2] == ARM_SHIELD
-            || you.inv_type[armour_wear_2] == ARM_BUCKLER
-            || you.inv_type[armour_wear_2] == ARM_LARGE_SHIELD)
+        && (you.inv[item].sub_type == ARM_SHIELD
+            || you.inv[item].sub_type == ARM_BUCKLER
+            || you.inv[item].sub_type == ARM_LARGE_SHIELD)
         // weapon is two-handed
-        && hands_reqd_for_weapon(you.inv_class[you.equip[EQ_WEAPON]],
-                      you.inv_type[you.equip[EQ_WEAPON]]) == HANDS_TWO_HANDED)
+        && hands_reqd_for_weapon(you.inv[you.equip[EQ_WEAPON]].base_type,
+                      you.inv[you.equip[EQ_WEAPON]].sub_type) == HANDS_TWO_HANDED)
     {
-        mpr("You'd need three hands to do that!");
-        return;
+        if (!quiet)
+           mpr("You'd need three hands to do that!");
+
+        return (false);
     }
 
-    if (you.inv_type[armour_wear_2] == ARM_BOOTS)
+    if (you.inv[item].sub_type == ARM_BOOTS)
     {
-        if (you.species != SP_NAGA && you.inv_plus2[armour_wear_2] == 1)
+        if (you.species != SP_NAGA && you.inv[item].plus2 == TBOOT_NAGA_BARDING)
         {
-            mpr("You can't wear that!");
-            return;
+            if (!quiet)
+               mpr("You can't wear that!");
+
+            return (false);
         }
 
-        if (you.species != SP_CENTAUR && you.inv_plus2[armour_wear_2] == 2)
+        if (you.species != SP_CENTAUR && you.inv[item].plus2 == TBOOT_CENTAUR_BARDING)
         {
-            mpr("You can't wear that!");
-            return;
+            if (!quiet)
+               mpr("You can't wear that!");
+
+            return (false);
         }
 
-        if (player_in_water() && you.species == SP_MERFOLK)
+        if (player_is_swimming() && you.species == SP_MERFOLK)
         {
-            mpr("You don't currently have feet!");
-            return;
+            if (!quiet)
+               mpr("You don't currently have feet!");
+
+            return (false);
         }
     }
 
     wh_equip = EQ_BODY_ARMOUR;
 
-    switch (you.inv_type[armour_wear_2])
+    switch (you.inv[item].sub_type)
     {
     case ARM_BUCKLER:
     case ARM_LARGE_SHIELD:
@@ -704,313 +656,181 @@ void wear_armour(void)
         break;
     }
 
-    if (you.species == SP_NAGA && you.inv_type[armour_wear_2] == ARM_BOOTS
-        && you.inv_plus2[armour_wear_2] == 1
+    if (you.species == SP_NAGA && you.inv[item].sub_type == ARM_BOOTS
+        && you.inv[item].plus2 == TBOOT_NAGA_BARDING
         && !player_is_shapechanged())
     {
         // it fits
     }
     else if (you.species == SP_CENTAUR
-             && you.inv_type[armour_wear_2] == ARM_BOOTS
-             && you.inv_plus2[armour_wear_2] == 2
+             && you.inv[item].sub_type == ARM_BOOTS
+             && you.inv[item].plus2 == TBOOT_CENTAUR_BARDING
              && !player_is_shapechanged())
     {
         // it fits
     }
-    else if (you.inv_type[armour_wear_2] == ARM_HELMET
-             && you.inv_plus2[armour_wear_2] > 1)
+    else if (you.inv[item].sub_type == ARM_HELMET
+             && (cmp_helmet_type( you.inv[item], THELM_CAP )
+                 || cmp_helmet_type( you.inv[item], THELM_WIZARD_HAT )))
     {
         // caps & wiz hats always fit, unless your head's too big (ogres &c)
     }
     else if (!can_equip(wh_equip))
     {
-        mpr("You can't wear that in your present form.");
-        return;
+        if (!quiet)
+           mpr("You can't wear that in your present form.");
+
+        return (false);
     }
 
-    // Merfolk
-    if (you.species == SP_MERFOLK && player_in_water()
+    // Cannot swim in heavy armour
+    if (player_is_swimming()
         && wh_equip == EQ_BODY_ARMOUR
-        && !is_light_armour( you.inv_type[armour_wear_2],
-                             you.inv_dam[armour_wear_2] ))
+        && !is_light_armour( you.inv[item] ))
     {
-        mpr("You can't swim in that!");
-        return;
+        if (!quiet)
+           mpr("You can't swim in that!");
+
+        return (false);
     }
 
     // Giant races
     if ((you.species >= SP_OGRE && you.species <= SP_OGRE_MAGE)
         || player_genus(GENPC_DRACONIAN))
     {
-        if ((you.inv_type[armour_wear_2] >= ARM_LEATHER_ARMOUR
-                && you.inv_type[armour_wear_2] <= ARM_PLATE_MAIL)
-            || (you.inv_type[armour_wear_2] >= ARM_HELMET
-                && you.inv_type[armour_wear_2] <= ARM_BUCKLER)
-            || you.inv_type[armour_wear_2] == ARM_CRYSTAL_PLATE_MAIL)
+        if ((you.inv[item].sub_type >= ARM_LEATHER_ARMOUR
+                && you.inv[item].sub_type <= ARM_PLATE_MAIL)
+            || (you.inv[item].sub_type >= ARM_GLOVES
+                && you.inv[item].sub_type <= ARM_BUCKLER)
+            || you.inv[item].sub_type == ARM_CRYSTAL_PLATE_MAIL
+            || (you.inv[item].sub_type == ARM_HELMET
+                && (cmp_helmet_type( you.inv[item], THELM_HELM )
+                    || cmp_helmet_type( you.inv[item], THELM_HELMET ))))
         {
-            mpr("This armour doesn't fit on your body.");
-            return;
+            if (!quiet)
+               mpr("This armour doesn't fit on your body.");
+
+            return (false);
         }
     }
 
     // Tiny races
     if (you.species == SP_SPRIGGAN)
     {
-        if ((you.inv_type[armour_wear_2] >= ARM_LEATHER_ARMOUR
-                && you.inv_type[armour_wear_2] <= ARM_PLATE_MAIL)
-            || (you.inv_type[armour_wear_2] >= ARM_HELMET
-                && you.inv_type[armour_wear_2] <= ARM_BOOTS)
-            || you.inv_type[armour_wear_2] == ARM_SHIELD
-            || you.inv_type[armour_wear_2] == ARM_LARGE_SHIELD
-            || you.inv_type[armour_wear_2] == ARM_CRYSTAL_PLATE_MAIL)
+        if ((you.inv[item].sub_type >= ARM_LEATHER_ARMOUR
+                && you.inv[item].sub_type <= ARM_PLATE_MAIL)
+            || you.inv[item].sub_type == ARM_GLOVES
+            || you.inv[item].sub_type == ARM_BOOTS
+            || you.inv[item].sub_type == ARM_SHIELD
+            || you.inv[item].sub_type == ARM_LARGE_SHIELD
+            || you.inv[item].sub_type == ARM_CRYSTAL_PLATE_MAIL
+            || (you.inv[item].sub_type == ARM_HELMET
+                && (cmp_helmet_type( you.inv[item], THELM_HELM )
+                    || cmp_helmet_type( you.inv[item], THELM_HELMET ))))
         {
-            mpr("This armour doesn't fit on your body.");
-            return;
+            if (!quiet)
+               mpr("This armour doesn't fit on your body.");
+
+            return (false);
         }
     }
 
     bool removedCloak = false;
+    int  cloak = -1;
 
-    if ((you.inv_type[armour_wear_2] < ARM_SHIELD
-            || you.inv_type[armour_wear_2] > ARM_LARGE_SHIELD)
-        && you.equip[EQ_CLOAK] != -1)
+    if ((you.inv[item].sub_type < ARM_SHIELD
+            || you.inv[item].sub_type > ARM_LARGE_SHIELD)
+        && (you.equip[EQ_CLOAK] != -1 && !cloak_is_being_removed()))
     {
-        if (you.inv_plus[you.equip[EQ_CLOAK]] <= 130)
+        if (item_uncursed( you.inv[you.equip[EQ_CLOAK]] ))
         {
+            cloak = you.equip[ EQ_CLOAK ];
+            if (!takeoff_armour(you.equip[EQ_CLOAK]))
+                return (false);
+
             removedCloak = true;
         }
         else
         {
-            mpr("Your cloak prevents you from wearing the armour.");
-            return;
+            if (!quiet)
+               mpr("Your cloak prevents you from wearing the armour.");
+
+            return (false);
         }
     }
 
-    you.delay_t = 0;            // may be set in takeoff_armour
-
-    if (you.inv_type[armour_wear_2] == ARM_CLOAK && you.equip[EQ_CLOAK] != -1)
+    if (you.inv[item].sub_type == ARM_CLOAK && you.equip[EQ_CLOAK] != -1)
     {
         if (!takeoff_armour(you.equip[EQ_CLOAK]))
-            return;
+            return (false);
     }
 
-    if (you.inv_type[armour_wear_2] == ARM_HELMET && you.equip[EQ_HELMET] != -1)
+    if (you.inv[item].sub_type == ARM_HELMET && you.equip[EQ_HELMET] != -1)
     {
         if (!takeoff_armour(you.equip[EQ_HELMET]))
-            return;
+            return (false);
     }
 
-    if (you.inv_type[armour_wear_2] == ARM_GLOVES && you.equip[EQ_GLOVES] != -1)
+    if (you.inv[item].sub_type == ARM_GLOVES && you.equip[EQ_GLOVES] != -1)
     {
         if (!takeoff_armour(you.equip[EQ_GLOVES]))
-            return;
+            return (false);
     }
 
-    if (you.inv_type[armour_wear_2] == ARM_BOOTS && you.equip[EQ_BOOTS] != -1)
+    if (you.inv[item].sub_type == ARM_BOOTS && you.equip[EQ_BOOTS] != -1)
     {
         if (!takeoff_armour(you.equip[EQ_BOOTS]))
-            return;
+            return (false);
     }
 
-    if ((you.inv_type[armour_wear_2] == ARM_SHIELD
-            || you.inv_type[armour_wear_2] == ARM_LARGE_SHIELD
-            || you.inv_type[armour_wear_2] == ARM_BUCKLER)
+    if ((you.inv[item].sub_type == ARM_SHIELD
+            || you.inv[item].sub_type == ARM_LARGE_SHIELD
+            || you.inv[item].sub_type == ARM_BUCKLER)
         && you.equip[EQ_SHIELD] != -1)
     {
         if (!takeoff_armour(you.equip[EQ_SHIELD]))
-            return;
+            return (false);
     }
 
-    bool removedBodyArmour = false;
-
-    if ((you.inv_type[armour_wear_2] < ARM_SHIELD
-            || you.inv_type[armour_wear_2] > ARM_LARGE_SHIELD)
+    if ((you.inv[item].sub_type < ARM_SHIELD
+            || you.inv[item].sub_type > ARM_LARGE_SHIELD)
         && you.equip[EQ_BODY_ARMOUR] != -1)
     {
         if (!takeoff_armour(you.equip[EQ_BODY_ARMOUR]))
-            return;
-
-        removedBodyArmour = true;
+            return (false);
     }
 
-    if (you.inv_type[armour_wear_2] < ARM_SHIELD
-        || you.inv_type[armour_wear_2] > ARM_LARGE_SHIELD)
-    {
-        you.equip[EQ_BODY_ARMOUR] = armour_wear_2;
-
-        if (you.duration[DUR_ICY_ARMOUR] != 0)
-        {
-            mpr("Your icy armour melts away.");
-            you.redraw_armor_class = 1;
-            you.duration[DUR_ICY_ARMOUR] = 0;
-        }
-    }
-    else
-    {
-        switch (you.inv_type[armour_wear_2])
-        {
-        case ARM_BUCKLER:
-        case ARM_LARGE_SHIELD:
-        case ARM_SHIELD:
-            if (you.duration[DUR_CONDENSATION_SHIELD])
-            {
-                mpr("Your icy shield evaporates.");
-                you.duration[DUR_CONDENSATION_SHIELD] = 0;
-            }
-            you.equip[EQ_SHIELD] = armour_wear_2;
-            break;
-        case ARM_CLOAK:
-            you.equip[EQ_CLOAK] = armour_wear_2;
-            break;
-        case ARM_HELMET:
-            you.equip[EQ_HELMET] = armour_wear_2;
-            break;
-        case ARM_GLOVES:
-            you.equip[EQ_GLOVES] = armour_wear_2;
-            break;
-        case ARM_BOOTS:
-            you.equip[EQ_BOOTS] = armour_wear_2;
-            break;
-        }
-    }
-
-    you.redraw_armor_class = 1;
-    you.redraw_evasion = 1;
     you.turn_is_over = 1;
 
-    if (you.inv_type[armour_wear_2] != ARM_SHIELD)
-    {
-        you.delay_t += property( you.inv_class[armour_wear_2],
-                                 you.inv_type[armour_wear_2], PARM_AC );
-    }
+    int delay = property( you.inv[item], PARM_AC );
 
-    you.delay_doing = 1;
+    if (delay < 1)
+        delay = 1;
 
-    if (you.inv_ident[armour_wear_2] < 3)
-        you.inv_ident[armour_wear_2] = 3;
+    if (delay)
+        start_delay( DELAY_ARMOUR_ON, delay, item );
 
     if (removedCloak)
-    {
-        strcpy(info, "Your cloak hinders you, but you put on ");
+        start_delay( DELAY_ARMOUR_ON, 1, cloak );
 
-        // if we are exhanging body armor then we've already
-        // accounted for taking the cloak on and off
-        if (!removedBodyArmour)
-        {
-            you.delay_t += 2 * property(you.inv_class[you.equip[EQ_CLOAK]],
-                                 you.inv_type[you.equip[EQ_CLOAK]], PARM_AC);
-        }
-    }
-    else
-        strcpy(info, "You put on ");
-
-    in_name(armour_wear_2, 5, str_pass);
-    strcat(info, str_pass);
-    strcat(info, ".");
-    mpr(info);
-
-    if (you.inv_dam[armour_wear_2] != SPARM_NORMAL)
-    {
-        switch (you.inv_dam[armour_wear_2] % 30)
-        {
-        case SPARM_RUNNING:
-            strcpy(info, "You feel quick");
-            strcat(info, (you.species == SP_NAGA
-                    || you.species == SP_CENTAUR) ? "." : " on your feet.");
-            mpr(info);
-            break;
-
-        case SPARM_FIRE_RESISTANCE:
-            mpr("You feel resistant to fire.");
-            break;
-
-        case SPARM_COLD_RESISTANCE:
-            mpr("You feel resistant to cold.");
-            break;
-
-        case SPARM_POISON_RESISTANCE:
-            mpr("You feel healthy.");
-            break;
-
-        case SPARM_SEE_INVISIBLE:
-            mpr("You feel perceptive.");
-            break;
-
-        case SPARM_DARKNESS:
-            if (!you.invis)
-                mpr("You become transparent for a moment.");
-            break;
-
-        case SPARM_STRENGTH:
-            modify_stat(STAT_STRENGTH, 3, false);
-            break;
-
-        case SPARM_DEXTERITY:
-            modify_stat(STAT_DEXTERITY, 3, false);
-            break;
-
-        case SPARM_INTELLIGENCE:
-            modify_stat(STAT_INTELLIGENCE, 3, false);
-            break;
-
-        case SPARM_PONDEROUSNESS:
-            mpr("You feel rather ponderous.");
-            you.speed += 2;
-            you.redraw_evasion = 1;
-            break;
-
-        case SPARM_LEVITATION:
-            mpr("You feel rather swift.");
-            break;
-
-        case SPARM_MAGIC_RESISTANCE:
-            mpr("You feel resistant to magic.");
-            break;
-
-        case SPARM_PROTECTION:
-            mpr("You feel protected.");
-            break;
-
-        case SPARM_STEALTH:
-            mpr("You feel stealthy.");
-            break;
-
-        case SPARM_RESISTANCE:
-            mpr("You feel resistant to extremes of temperature.");
-            break;
-
-        case SPARM_POSITIVE_ENERGY:
-            mpr("Your life-force is being protected.");
-            break;
-
-        case SPARM_ARCHMAGI:
-            if (!you.skills[SK_SPELLCASTING])
-                mpr("You feel strangely numb.");
-            else
-                mpr("You feel extremely powerful.");
-            break;
-        }
-    }
-
-    if (you.inv_dam[armour_wear_2] % 30 >= SPARM_RANDART_I)
-        use_randart(armour_wear_2);
-}                               // end wear_armour()
+    return (true);
+}                               // do_end wear_armour()
 
 bool takeoff_armour(int item)
 {
-    if (you.inv_class[item] != OBJ_ARMOUR)
+    if (you.inv[item].base_type != OBJ_ARMOUR)
     {
         mpr("You aren't wearing that!");
         return false;
     }
 
-    if (you.inv_plus[item] > 130)
+    if (item_cursed( you.inv[item] ))
     {
         for (int loopy = EQ_CLOAK; loopy <= EQ_BODY_ARMOUR; loopy++)
         {
             if (item == you.equip[loopy])
             {
-                in_name(item, 4, info);
+                in_name(item, DESC_CAP_YOUR, info);
                 strcat(info, " is stuck to your body!");
                 mpr(info);
                 return false;
@@ -1019,20 +839,19 @@ bool takeoff_armour(int item)
     }
 
     bool removedCloak = false;
+    int cloak = -1;
 
-    if (you.inv_type[item] < ARM_SHIELD
-        || you.inv_type[item] > ARM_LARGE_SHIELD)
+    if (you.inv[item].sub_type < ARM_SHIELD
+        || you.inv[item].sub_type > ARM_LARGE_SHIELD)
     {
-        if (item != you.equip[EQ_BODY_ARMOUR])
+        if (you.equip[EQ_CLOAK] != -1 && !cloak_is_being_removed())
         {
-            mpr("You aren't wearing that!");
-            return false;
-        }
-
-        if (you.equip[EQ_CLOAK] != -1)
-        {
-            if (you.inv_plus[you.equip[EQ_CLOAK]] <= 130)
+            if (item_uncursed( you.inv[you.equip[EQ_CLOAK]] ))
             {
+                cloak = you.equip[ EQ_CLOAK ];
+                if (!takeoff_armour(you.equip[EQ_CLOAK]))
+                    return (false);
+
                 removedCloak = true;
             }
             else
@@ -1042,18 +861,22 @@ bool takeoff_armour(int item)
             }
         }
 
-        you.equip[EQ_BODY_ARMOUR] = -1;
+        if (item != you.equip[EQ_BODY_ARMOUR])
+        {
+            mpr("You aren't wearing that!");
+            return false;
+        }
+
+        // you.equip[EQ_BODY_ARMOUR] = -1;
     }
     else
     {
-        switch (you.inv_type[item])
+        switch (you.inv[item].sub_type)
         {
         case ARM_BUCKLER:
         case ARM_LARGE_SHIELD:
         case ARM_SHIELD:
-            if (item == you.equip[EQ_SHIELD])
-                you.equip[EQ_SHIELD] = -1;
-            else
+            if (item != you.equip[EQ_SHIELD])
             {
                 mpr("You aren't wearing that!");
                 return false;
@@ -1061,9 +884,7 @@ bool takeoff_armour(int item)
             break;
 
         case ARM_CLOAK:
-            if (item == you.equip[EQ_CLOAK])
-                you.equip[EQ_CLOAK] = -1;
-            else
+            if (item != you.equip[EQ_CLOAK])
             {
                 mpr("You aren't wearing that!");
                 return false;
@@ -1071,9 +892,7 @@ bool takeoff_armour(int item)
             break;
 
         case ARM_HELMET:
-            if (item == you.equip[EQ_HELMET])
-                you.equip[EQ_HELMET] = -1;
-            else
+            if (item != you.equip[EQ_HELMET])
             {
                 mpr("You aren't wearing that!");
                 return false;
@@ -1082,9 +901,7 @@ bool takeoff_armour(int item)
 
 
         case ARM_GLOVES:
-            if (item == you.equip[EQ_GLOVES])
-                you.equip[EQ_GLOVES] = -1;
-            else
+            if (item != you.equip[EQ_GLOVES])
             {
                 mpr("You aren't wearing that!");
                 return false;
@@ -1092,9 +909,7 @@ bool takeoff_armour(int item)
             break;
 
         case ARM_BOOTS:
-            if (item == you.equip[EQ_BOOTS])
-                you.equip[EQ_BOOTS] = -1;
-            else
+            if (item != you.equip[EQ_BOOTS])
             {
                 mpr("You aren't wearing that!");
                 return false;
@@ -1104,35 +919,24 @@ bool takeoff_armour(int item)
     }
 
     you.turn_is_over = 1;
-    you.delay_t = property(you.inv_class[item], you.inv_type[item], PARM_AC);
-    you.delay_doing = 2;
+
+    int delay = property( you.inv[item], PARM_AC );
+
+    if (delay < 1)
+        delay = 1;
+
+    start_delay( DELAY_ARMOUR_OFF, delay, item );
 
     if (removedCloak)
-    {
-        you.delay_t += 2 * property(you.inv_class[you.equip[EQ_CLOAK]],
-                                 you.inv_type[you.equip[EQ_CLOAK]], PARM_AC);
-
-        strcpy(info, "Your cloak hinders you, but you take off ");
-    }
-    else
-    {
-        strcpy(info, "You take off ");
-    }
-
-    in_name(item, 5, str_pass);
-    strcat(info, str_pass);
-    strcat(info, ".");
-    mpr(info);
-
-    unwear_armour(item);
+        start_delay( DELAY_ARMOUR_ON, 1, cloak );
 
     return true;
 }                               // end takeoff_armour()
 
 void throw_anything(void)
 {
-    unsigned char nthing = 0;
     struct bolt beam;
+    int throw_slot;
 
     if (you.berserker)
     {
@@ -1145,50 +949,15 @@ void throw_anything(void)
         return;
     }
 
-  query:
-    mpr("Throw which item?", MSGCH_PROMPT);
-
-    unsigned char keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
+    throw_slot = prompt_invent_item( "Throw which item?", OBJ_MISSILES );
+    if (throw_slot == PROMPT_ABORT)
     {
-        if (keyin == '?')
-        {
-            nthing = get_invent(OBJ_MISSILES);
-        }
-
-        if (keyin == '*')
-            nthing = get_invent(-1);
-
-        if ((nthing >= 'A' && nthing <= 'Z')
-            || (nthing >= 'a' && nthing <= 'z'))
-        {
-            keyin = nthing;
-        }
-        else
-        {
-            mesclr();
-            goto query;
-        }
-    }
-
-    int throw_1 = (int) keyin;
-
-    if (throw_1 < 'A' || (throw_1 > 'Z' && throw_1 < 'a') || throw_1 > 'z')
-    {
-        mpr("You don't have any such object.");
+        canned_msg( MSG_OK );
         return;
     }
 
-    int throw_2 = letter_to_index(throw_1);
-
-    if (you.inv_quantity[throw_2] == 0)
-    {
-        mpr("You don't have any such object.");
-        return;
-    }
-    else if (throw_2 == you.equip[EQ_WEAPON]
-             && you.inv_plus[you.equip[EQ_WEAPON]] > 80)
+    if (throw_slot == you.equip[EQ_WEAPON]
+             && (item_cursed( you.inv[you.equip[EQ_WEAPON]] )))
     {
         mpr("That thing is stuck to your hand!");
         return;
@@ -1197,7 +966,7 @@ void throw_anything(void)
     {
         for (int loopy = EQ_CLOAK; loopy <= EQ_AMULET; loopy++)
         {
-            if (throw_2 == you.equip[loopy])
+            if (throw_slot == you.equip[loopy])
             {
                 mpr("You are wearing that object!");
                 return;
@@ -1205,7 +974,7 @@ void throw_anything(void)
         }
     }
 
-    throw_it(beam, throw_2);
+    throw_it(beam, throw_slot);
 }                               // end throw_anything()
 
 void shoot_thing(void)
@@ -1222,10 +991,10 @@ void shoot_thing(void)
     const int weapon = you.equip[ EQ_WEAPON ];
     int type_wanted = MI_DART;
 
-    if (weapon != -1 && you.inv_class[ weapon ] == OBJ_WEAPONS
-        && launches_things( you.inv_type[ weapon ] ))
+    if (weapon != -1 && you.inv[ weapon ].base_type == OBJ_WEAPONS
+        && launches_things( you.inv[ weapon ].sub_type ))
     {
-        type_wanted = launched_by( you.inv_type[ weapon ] );
+        type_wanted = launched_by( you.inv[ weapon ].sub_type );
     }
 
     for (i = 0; i < (ENDOFPACK + 1); i++)
@@ -1236,8 +1005,8 @@ void shoot_thing(void)
             return;
         }
 
-        if (you.inv_quantity[i] && you.inv_class[i] == OBJ_MISSILES
-            && you.inv_type[i] == type_wanted)
+        if (you.inv[i].quantity && you.inv[i].base_type == OBJ_MISSILES
+            && you.inv[i].sub_type == type_wanted)
         {
             break;
         }
@@ -1275,6 +1044,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     {
         if (thr.isCancel)
             canned_msg(MSG_OK);
+
         return;
     }
 
@@ -1293,7 +1063,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     pbolt.flavour = BEAM_MISSILE;
     // pbolt.range is set below
 
-    switch (you.inv_class[throw_2])
+    switch (you.inv[throw_2].base_type)
     {
     case OBJ_WEAPONS:    pbolt.type = SYM_WEAPON;  break;
     case OBJ_MISSILES:   pbolt.type = SYM_MISSILE; break;
@@ -1313,18 +1083,16 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
     pbolt.source_x = you.x_pos;
     pbolt.source_y = you.y_pos;
-    pbolt.colour = you.inv_colour[throw_2];
+    pbolt.colour = you.inv[throw_2].colour;
 
-    item_name(you.inv_plus2[throw_2], you.inv_class[throw_2],
-              you.inv_type[throw_2], you.inv_dam[throw_2],
-              you.inv_plus[throw_2], 1, you.inv_ident[throw_2], 6, str_pass);
+    quant_name( you.inv[throw_2], 1, DESC_PLAIN, str_pass );
     strcpy(pbolt.beam_name, str_pass);
 
     pbolt.thrower = KILL_YOU_MISSILE;
 
     // get the ammo/weapon type.  Convenience.
-    wepClass = you.inv_class[throw_2];
-    wepType = you.inv_type[throw_2];
+    wepClass = you.inv[throw_2].base_type;
+    wepType = you.inv[throw_2].sub_type;
 
     // get the launcher class,type.  Convenience.
     if (you.equip[EQ_WEAPON] < 0)
@@ -1336,22 +1104,22 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     }
     else
     {
-        lnchClass = you.inv_class[you.equip[EQ_WEAPON]];
-        lnchType = you.inv_type[you.equip[EQ_WEAPON]];
+        lnchClass = you.inv[you.equip[EQ_WEAPON]].base_type;
+        lnchType = you.inv[you.equip[EQ_WEAPON]].sub_type;
     }
 
     // baseHit and damage for generic objects
-    baseHit = you.strength - mass(wepClass, wepType) / 10;
+    baseHit = you.strength - mass_item( you.inv[throw_2] ) / 10;
     if (baseHit > 0)
         baseHit = 0;
 
-    baseDam = mass(wepClass, wepType) / 100;
+    baseDam = mass_item( you.inv[throw_2] ) / 100;
 
     // special: might be throwing generic weapon;
     // use base wep. damage, w/ penalty
     if (wepClass == OBJ_WEAPONS)
     {
-        baseDam = property(wepClass, wepType, PWPN_DAMAGE) - 4;
+        baseDam = property( you.inv[throw_2], PWPN_DAMAGE ) - 4;
         if (baseDam < 0)
             baseDam = 0;
     }
@@ -1362,24 +1130,13 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     // extract launcher bonuses due to magic
     if (launched)
     {
-        lnchHitBonus = you.inv_plus[you.equip[EQ_WEAPON]] - 50;
-        lnchDamBonus = you.inv_plus2[you.equip[EQ_WEAPON]] - 50;
-
-        // extract 'real' bonus / penalty
-        if (lnchHitBonus > 30)
-            lnchHitBonus -= 100;
-        if (lnchDamBonus > 30)
-            lnchDamBonus -= 100;
+        lnchHitBonus = you.inv[you.equip[EQ_WEAPON]].plus;
+        lnchDamBonus = you.inv[you.equip[EQ_WEAPON]].plus2;
     }
 
     // extract weapon/ammo bonuses due to magic
-    ammoHitBonus = you.inv_plus[throw_2] - 50;
-    if (ammoHitBonus > 30)
-        ammoHitBonus -= 100;
-
-    ammoDamBonus = you.inv_plus2[throw_2] - 50;
-    if (ammoDamBonus > 30)
-        ammoDamBonus -= 100;
+    ammoHitBonus = you.inv[throw_2].plus;
+    ammoDamBonus = you.inv[throw_2].plus2;
 
     // CALCULATIONS FOR LAUNCHED WEAPONS
     if (launched)
@@ -1387,21 +1144,22 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         // this is deliberately confusing: the 'hit' value for
         // ammo is the _damage_ when used with a launcher.  Geez.
         baseHit = 0;
-        baseDam = property(wepClass, wepType, PWPN_HIT);
+        baseDam = property( you.inv[throw_2], PWPN_HIT );
 
         // fix ammo damage bonus, since missiles only use inv_plus
         ammoDamBonus = ammoHitBonus;
 
         // check for matches;  dwarven,elven,orcish
-        if (you.inv_dam[you.equip[EQ_WEAPON]] / 30 > DWPN_GLOWING)
+        if (!cmp_equip_race( you.inv[you.equip[EQ_WEAPON]], 0 ))
         {
-            if (you.inv_dam[you.equip[EQ_WEAPON]] / 30 ==
-                you.inv_dam[throw_2] / 30)
+            if (get_equip_race( you.inv[you.equip[EQ_WEAPON]] )
+                        == get_equip_race( you.inv[throw_2] ))
             {
                 baseHit += 1;
                 baseDam += 1;
+
                 // elves with elven bows
-                if (you.inv_dam[you.equip[EQ_WEAPON]] / 30 == DWPN_ELVEN
+                if (cmp_equip_race(you.inv[you.equip[EQ_WEAPON]], ISFLAG_ELVEN)
                     && player_genus(GENPC_ELVEN))
                 {
                     baseHit += 1;
@@ -1409,7 +1167,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             }
         }
 
-        if (you.inv_type[you.equip[EQ_WEAPON]] == WPN_CROSSBOW)
+        if (you.inv[you.equip[EQ_WEAPON]].sub_type == WPN_CROSSBOW)
         {
             // extra time taken, as a percentage.  range from 30 -> 12
             int extraTime = 30 - ((you.skills[SK_CROSSBOWS] * 2) / 3);
@@ -1539,31 +1297,34 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         exHitBonus += (3 * you.skills[SK_THROWING]) / 4;
 
         // special cases for flame, frost, poison, etc.
-        const int art_brand = inv_randart_wpn_properties( you.equip[EQ_WEAPON],
-                                                          0, RAP_BRAND );
+        int bow_brand  = you.inv[ you.equip[EQ_WEAPON] ].special;
 
-        const int bow_brand  = you.inv_dam[ you.equip[ EQ_WEAPON ] ] % 30;
-        const int ammo_brand = you.inv_dam[ throw_2 ] % 30;
-
-        const bool poisoned = (you.inv_dam[throw_2] % 30 == SPMSL_POISONED
-                            || you.inv_dam[throw_2] % 30 == SPMSL_POISONED_II);
-
-        // check for venom brand (usually only available for blowguns)
-        if (bow_brand == SPWPN_VENOM && !(ammo_brand == SPMSL_FLAME
-            || ammo_brand == SPMSL_ICE || poisoned))
+        if (is_random_artefact( you.inv[ you.equip[EQ_WEAPON] ] ))
         {
-            // poison brand the ammo
-            you.inv_dam[throw_2] = you.inv_dam[throw_2] / 30 + SPMSL_POISONED;
-
-            item_name(you.inv_plus2[throw_2], you.inv_class[throw_2],
-              you.inv_type[throw_2], you.inv_dam[throw_2],
-              you.inv_plus[throw_2], 1, you.inv_ident[throw_2], 6, str_pass);
-            strcpy(pbolt.beam_name, str_pass);
+            bow_brand = randart_wpn_property( you.inv[ you.equip[EQ_WEAPON] ],
+                                                RAP_BRAND );
         }
 
-        if ((bow_brand == SPWPN_FLAME
-                || ammo_brand == SPMSL_FLAME
-                || (bow_brand >= 25 && art_brand == SPWPN_FLAME))
+        const int ammo_brand = you.inv[throw_2].special;
+
+        const bool poisoned = (ammo_brand == SPMSL_POISONED
+                                || ammo_brand == SPMSL_POISONED_II);
+
+        // check for venom brand (usually only available for blowguns)
+        if (bow_brand == SPWPN_VENOM
+            && !(ammo_brand == SPMSL_FLAME
+                || ammo_brand == SPMSL_ICE
+                || poisoned))
+        {
+            // poison brand the ammo
+            you.inv[throw_2].special = SPMSL_POISONED;
+
+            quant_name( you.inv[throw_2], 1, DESC_PLAIN, str_pass );
+            strcpy( pbolt.beam_name, str_pass );
+        }
+
+        // Note that bow_brand is known since the bow is equiped.
+        if ((bow_brand == SPWPN_FLAME || ammo_brand == SPMSL_FLAME)
             && ammo_brand != SPMSL_ICE && bow_brand != SPWPN_FROST)
         {
             baseDam += 1 + random2(5);
@@ -1577,12 +1338,13 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             pbolt.colour = RED;
             pbolt.type = SYM_BOLT;
             pbolt.thrower = KILL_YOU_MISSILE;
-            you.inv_ident[throw_2] = 2;
+
+            // ammo known if we can't attribute it to the bow
+            if (bow_brand != SPWPN_FLAME && !poisoned)
+                set_ident_flags( you.inv[throw_2], ISFLAG_KNOW_TYPE );
         }
 
-        if ((bow_brand == SPWPN_FROST
-                || ammo_brand == SPMSL_ICE
-                || (bow_brand >= 25 && art_brand == SPWPN_FROST))
+        if ((bow_brand == SPWPN_FROST || ammo_brand == SPMSL_ICE)
             && ammo_brand != SPMSL_FLAME && bow_brand != SPWPN_FLAME)
         {
             baseDam += 1 + random2(5);
@@ -1596,7 +1358,17 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             pbolt.colour = WHITE;
             pbolt.type = SYM_BOLT;
             pbolt.thrower = KILL_YOU_MISSILE;
-            you.inv_ident[throw_2] = 2;
+
+            // ammo known if we can't attribute it to the bow
+            if (bow_brand != SPWPN_FROST && !poisoned)
+                set_ident_flags( you.inv[throw_2], ISFLAG_KNOW_TYPE );
+        }
+
+        // ammo known if it cancels the effect of the bow
+        if ((bow_brand == SPWPN_FLAME && ammo_brand == SPMSL_ICE)
+            || (bow_brand == SPWPN_FROST && ammo_brand == SPMSL_FLAME))
+        {
+            set_ident_flags( you.inv[throw_2], ISFLAG_KNOW_TYPE );
         }
 
         /* the chief advantage here is the extra damage this does
@@ -1607,18 +1379,19 @@ static void throw_it(struct bolt &pbolt, int throw_2)
          * and vice versa */
 
         // ID check
-        if (you.inv_ident[you.equip[EQ_WEAPON]] < 3
+        if (item_not_ident( you.inv[you.equip[EQ_WEAPON]], ISFLAG_KNOW_PLUSES )
             && random2(100) < shoot_skill)
         {
-            you.inv_ident[you.equip[EQ_WEAPON]] = 3;
+            set_ident_flags(you.inv[you.equip[EQ_WEAPON]], ISFLAG_KNOW_PLUSES);
+
             strcpy(info, "You are wielding ");
-            in_name(you.equip[EQ_WEAPON], 3, str_pass);
+            in_name(you.equip[EQ_WEAPON], DESC_NOCAP_A, str_pass);
             strcat(info, str_pass);
             strcat(info, ".");
             mpr(info);
 
             more();
-            wield_change = true;
+            you.wield_change = true;
         }
     }
 
@@ -1636,7 +1409,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             || (wepClass == OBJ_MISSILES && wepType == MI_STONE))
         {
             // elves with elven weapons
-            if (you.inv_dam[throw_2] / 30 == DWPN_ELVEN
+            if (cmp_equip_race( you.inv[throw_2], ISFLAG_ELVEN )
                 && player_genus(GENPC_ELVEN))
             {
                 baseHit += 1;
@@ -1665,7 +1438,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
             exHitBonus = you.skills[SK_THROWING] * 2;
 
-            baseDam = property(wepClass, wepType, PWPN_DAMAGE);
+            baseDam = property( you.inv[throw_2], PWPN_DAMAGE );
             exDamBonus =
                 (10 * (you.skills[SK_THROWING] / 2 + you.strength - 10)) / 12;
 
@@ -1679,7 +1452,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         {
             // give an appropriate 'tohit' & damage
             baseHit = 2;
-            baseDam = property(wepClass, wepType, PWPN_DAMAGE);
+            baseDam = property( you.inv[throw_2], PWPN_DAMAGE );
 
             exHitBonus = you.skills[SK_DARTS] * 2;
             exHitBonus += (you.skills[SK_THROWING] * 2) / 3;
@@ -1697,20 +1470,32 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     // range, dexterity bonus, possible skill increase for silly throwing
     if (thrown || launched)
     {
-        pbolt.range = 9;
-        pbolt.rangeMax = 9;
-        exHitBonus += you.dex / 2;
+        if (wepType == MI_LARGE_ROCK)
+        {
+            pbolt.range = 1 + random2( you.strength / 5 );
+            if (pbolt.range > 9)
+                pbolt.range = 9;
 
-        // slaying bonuses
-        if (!(launched && wepType == MI_NEEDLE))
-            exDamBonus += slaying_bonus(PWPN_DAMAGE);
-        exHitBonus += slaying_bonus(PWPN_HIT);
+            pbolt.rangeMax = pbolt.range;
+        }
+        else
+        {
+            pbolt.range = 9;
+            pbolt.rangeMax = 9;
 
+            exHitBonus += you.dex / 2;
+
+            // slaying bonuses
+            if (!(launched && wepType == MI_NEEDLE))
+                exDamBonus += slaying_bonus(PWPN_DAMAGE);
+
+            exHitBonus += slaying_bonus(PWPN_HIT);
+        }
     }
     else
     {
         // range based on mass & strength, between 1 and 9
-        pbolt.range = you.strength - mass(wepClass, wepType) / 10 + 3;
+        pbolt.range = you.strength - mass_item( you.inv[throw_2] ) / 10 + 3;
         if (pbolt.range < 1)
             pbolt.range = 1;
 
@@ -1748,11 +1533,12 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     if (pbolt.damage < 0)
         pbolt.damage = 0;
 
-#ifdef DEBUG
-    sprintf(info, "H:%d+%d;a%dl%d.  D:%d+%d;a%dl%d -> %d,%d",
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "H:%d+%d;a%dl%d.  D:%d+%d;a%dl%d -> %d,%d",
         baseHit, exHitBonus, ammoHitBonus, lnchHitBonus,
         baseDam, exDamBonus, ammoDamBonus, lnchDamBonus,
         pbolt.hit, pbolt.damage);
+
     mpr(info);
 #endif
 
@@ -1762,23 +1548,11 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     else
         strcpy(info, "You throw ");
 
-    item_name(you.inv_plus2[throw_2], you.inv_class[throw_2],
-              you.inv_type[throw_2], you.inv_dam[throw_2],
-              you.inv_plus[throw_2], 1, you.inv_ident[throw_2], 3, str_pass);
+    quant_name( you.inv[throw_2], 1, DESC_NOCAP_A, str_pass );
 
     strcat(info, str_pass);
     strcat(info, ".");
     mpr(info);
-
-    // threw what we were wielding?
-    if (you.equip[EQ_WEAPON] == throw_2)
-    {
-        wield_change = true;
-
-        // was it the last of a stacked something?
-        if (you.inv_quantity[throw_2] == 1)
-            unwield_item(throw_2);
-    }
 
     // ensure we're firing a 'missile'-type beam
     pbolt.isBeam = false;
@@ -1786,27 +1560,19 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
     beam(pbolt, throw_2);
 
-    you.inv_quantity[throw_2]--;
+    dec_inv_item_quantity( throw_2, 1 );
 
-    if (you.inv_quantity[throw_2] == 0 && you.equip[EQ_WEAPON] == throw_2)
-    {
-        you.equip[EQ_WEAPON] = -1;
-        mpr("You are now empty-handed.");
-    }
-
-    burden_change();
-
-    // blowguns are fairly silent
-    if (!(launched && you.inv_class[you.equip[EQ_WEAPON]] == WPN_BLOWGUN && !one_chance_in(10)))
-    alert();
+    // throwing and blowguns are silent
+    if (!launched || you.inv[you.equip[EQ_WEAPON]].base_type == WPN_BLOWGUN)
+        alert();
 
     you.turn_is_over = 1;
 }                               // end throw_it()
 
 void puton_ring(void)
 {
-    unsigned char nthing = 0;
     bool is_amulet = false;
+    int item_slot;
 
     if (inv_count() < 1)
     {
@@ -1820,82 +1586,49 @@ void puton_ring(void)
         return;
     }
 
-  query:
-    mpr("Put on which item?", MSGCH_PROMPT);
+    item_slot = prompt_invent_item( "Put on which piece of jewellery?",
+                                    OBJ_JEWELLERY );
 
-    unsigned char keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
+    if (item_slot == PROMPT_ABORT)
     {
-        if (keyin == '?')
-            nthing = get_invent(OBJ_JEWELLERY);
-
-        if (keyin == '*')
-            nthing = get_invent(-1);
-
-        if ((nthing >= 'A' && nthing <= 'Z')
-            || (nthing >= 'a' && nthing <= 'z'))
-        {
-            keyin = nthing;
-        }
-        else
-        {
-            mesclr();
-            goto query;
-
-        }
-    }
-    int ring_wear_1 = (int) keyin;
-
-    if (ring_wear_1 < 'A' || (ring_wear_1 > 'Z' && ring_wear_1 < 'a')
-        || ring_wear_1 > 'z')
-    {
-        mpr("You don't have any such object.");
+        canned_msg( MSG_OK );
         return;
     }
 
-    int ring_wear_2 = letter_to_index(ring_wear_1);
-
-    if (ring_wear_2 == you.equip[EQ_LEFT_RING]
-        || ring_wear_2 == you.equip[EQ_RIGHT_RING]
-        || ring_wear_2 == you.equip[EQ_AMULET])
+    if (item_slot == you.equip[EQ_LEFT_RING]
+        || item_slot == you.equip[EQ_RIGHT_RING]
+        || item_slot == you.equip[EQ_AMULET])
     {
         mpr("You've already put that on!");
         return;
     }
 
-    if (you.inv_quantity[ring_wear_2] == 0)
-    {
-        mpr("You don't have any such object.");
-        return;
-    }
-
-    if (ring_wear_2 == you.equip[EQ_WEAPON])
+    if (item_slot == you.equip[EQ_WEAPON])
     {
         mpr("You are wielding that object.");
         return;
     }
 
-    if (you.inv_class[ring_wear_2] != OBJ_JEWELLERY)
+    if (you.inv[item_slot].base_type != OBJ_JEWELLERY)
     {
         //jmf: let's not take our inferiority complex out on players, eh? :-p
         //mpr("You're sadly mistaken if you consider that jewellery.")
-        mpr("You can only put on jewelry.");
+        mpr("You can only put on jewellery.");
         return;
     }
 
-    is_amulet = (you.inv_type[ring_wear_2] >= AMU_RAGE);
+    is_amulet = (you.inv[item_slot].sub_type >= AMU_RAGE);
 
     if (!is_amulet)     // ie it's a ring
     {
         if (you.equip[EQ_GLOVES] != -1
-            && you.inv_plus[you.equip[EQ_GLOVES]] > 80)
+            && item_cursed( you.inv[you.equip[EQ_GLOVES]] ))
         {
             mpr("You can't take your gloves off to put on a ring!");
             return;
         }
 
-        if (you.inv_class[ring_wear_2] == OBJ_JEWELLERY
+        if (you.inv[item_slot].base_type == OBJ_JEWELLERY
             && you.equip[EQ_LEFT_RING] != -1
             && you.equip[EQ_RIGHT_RING] != -1)
         {
@@ -1931,23 +1664,26 @@ void puton_ring(void)
     {
         mpr("Put on which hand (l or r)?", MSGCH_PROMPT);
 
-        keyin = get_ch();
+        int keyin = get_ch();
 
-        if (keyin != 'r' && keyin != 'l')
+        if (keyin == 'l')
+            hand_used = 0;
+        else if (keyin == 'r')
+            hand_used = 1;
+        else if (keyin == ESCAPE)
+            return;
+        else
         {
             mpr("You don't have such a hand!");
             return;
         }
-
-        if (keyin == 'l')
-            hand_used = 0;
-        if (keyin == 'r')
-            hand_used = 1;
     }
 
-    you.equip[hand_used + 7] = ring_wear_2;
+    you.equip[ EQ_LEFT_RING + hand_used ] = item_slot;
 
-    switch (you.inv_type[ring_wear_2])
+    int ident = ID_TRIED_TYPE;
+
+    switch (you.inv[item_slot].sub_type)
     {
     case RING_FIRE:
     case RING_HUNGER:
@@ -1963,134 +1699,117 @@ void puton_ring(void)
     case RING_SEE_INVISIBLE:
     case RING_TELEPORTATION:
     case RING_WIZARDRY:
-        break;
-
     case RING_REGENERATION:
-        // this is a bit dodgy
-        if (you.hp < you.hp_max)
-            set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
         break;
 
     case RING_PROTECTION:
-        you.redraw_armor_class = 1;
+        you.redraw_armour_class = 1;
 
-        if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
+        if (you.inv[item_slot].plus != 0)
         {
-            set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
-            you.inv_ident[ring_wear_2] = 3;
+            ident = ID_KNOWN_TYPE;
         }
         break;
 
     case RING_INVISIBILITY:
-        //if (you.invis > 0) you.invis = 0;
         if (!you.invis)
+        {
             mpr("You become transparent for a moment.");
-
-        set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
-        you.inv_ident[ring_wear_2] = 3;
-        //you.invis--;
+            ident = ID_KNOWN_TYPE;
+        }
         break;
 
     case RING_EVASION:
         you.redraw_evasion = 1;
-        if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
+        if (you.inv[item_slot].plus != 0)
         {
-            you.inv_ident[ring_wear_2] = 3;
-            set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
+            ident = ID_KNOWN_TYPE;
         }
         break;
 
     case RING_STRENGTH:
-        modify_stat(STAT_STRENGTH, (you.inv_plus[ring_wear_2] % 100) - 50, true);
+        modify_stat(STAT_STRENGTH, you.inv[item_slot].plus, true);
 
-        if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
+        if (you.inv[item_slot].plus != 0)
         {
-            set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
-            you.inv_ident[ring_wear_2] = 3;
+            ident = ID_KNOWN_TYPE;
         }
         break;
 
     case RING_DEXTERITY:
-        modify_stat(STAT_DEXTERITY, (you.inv_plus[ring_wear_2] % 100) - 50, true);
+        modify_stat(STAT_DEXTERITY, you.inv[item_slot].plus, true);
 
-        if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
+        if (you.inv[item_slot].plus != 0)
         {
-            you.inv_ident[ring_wear_2] = 3;
-            set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
+            ident = ID_KNOWN_TYPE;
         }
         break;
 
     case RING_INTELLIGENCE:
-        modify_stat(STAT_INTELLIGENCE, (you.inv_plus[ring_wear_2] % 100) - 50, true);
+        modify_stat(STAT_INTELLIGENCE, you.inv[item_slot].plus, true);
 
-        if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
+        if (you.inv[item_slot].plus != 0)
         {
-            you.inv_ident[ring_wear_2] = 3;
-            set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
+            ident = ID_KNOWN_TYPE;
         }
         break;
 
     case RING_MAGICAL_POWER:
-        you.max_magic_points += 9;
-        you.base_magic_points2 += 9;
-        calc_mp();
-        set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
+        inc_max_mp(9);
+        ident = ID_KNOWN_TYPE;
         break;
 
     case RING_LEVITATION:
         mpr("You feel buoyant.");
-        set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
+
+        ident = ID_KNOWN_TYPE;
         break;
 
     case RING_TELEPORT_CONTROL:
+        // XXX: is this safe or should we make it a function -- bwr
         you.attribute[ATTR_CONTROL_TELEPORT]++;
         break;
 
     case AMU_RAGE:
         mpr("You feel a brief urge to hack something to bits.");
-        set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
+
+        ident = ID_KNOWN_TYPE;
         break;
     }
 
     you.turn_is_over = 1;
 
-    if (you.inv_dam[ring_wear_2] == 200 || you.inv_dam[ring_wear_2] == 201)
-        use_randart(ring_wear_2);
-
-    if (you.inv_plus[ring_wear_2] > 80) // cursed
+    if (is_random_artefact( you.inv[item_slot] ))
+        use_randart(item_slot);
+    else
     {
-        strcpy(info, "Oops, that ");
-        strcat(info, is_amulet?"amulet":"ring");
-        strcat(info, " feels deathly cold.");
-        mpr(info);
-
-        if (you.inv_ident[ring_wear_2] == 0)
-            you.inv_ident[ring_wear_2] = 1;
+        // Artefacts have completely different appearance than base types
+        // so we don't allow them to make the base types known
+        set_ident_type( you.inv[item_slot].base_type,
+                        you.inv[item_slot].sub_type, ident );
     }
 
-    strcpy(info, " ");
+    if (ident == ID_KNOWN_TYPE)
+        set_ident_flags( you.inv[item_slot], ISFLAG_EQ_JEWELLERY_MASK );
 
-    info[0] = index_to_letter(ring_wear_2);
-    info[1] = '\0';
+    if (item_cursed( you.inv[item_slot] ))
+    {
+        snprintf( info, INFO_SIZE,
+                  "Oops, that %s feels deathly cold.", (is_amulet) ? "amulet"
+                                                                   : "ring" );
+        mpr(info);
+    }
 
-    strcat(info, " - ");
+    // cursed or not, we know that since we've put the ring on
+    set_ident_flags( you.inv[item_slot], ISFLAG_KNOW_CURSE );
 
-    in_name(ring_wear_2, 3, str_pass);
-
-    strcat(info, str_pass);
-
-    strcat(info, (hand_used == 0) ? " (on left hand)" :
-                 (hand_used == 1) ? " (on right hand)" :
-                 (hand_used == 2) ? " (around neck)" : "");
-
-    mpr(info);
+    in_name( item_slot, DESC_INVENTORY_EQUIP, str_pass );
+    mpr( str_pass );
 }                               // end puton_ring()
 
 void remove_ring(void)
 {
-    unsigned char nthing = 0;
     int hand_used = 10;
-    unsigned char keyin;
     int ring_wear_2;
 
     if (you.equip[EQ_LEFT_RING] == -1 && you.equip[EQ_RIGHT_RING] == -1
@@ -2106,7 +1825,8 @@ void remove_ring(void)
         return;
     }
 
-    if (you.equip[EQ_GLOVES] != -1 && you.inv_plus[you.equip[EQ_GLOVES]] > 80
+    if (you.equip[EQ_GLOVES] != -1
+        && item_cursed( you.inv[you.equip[EQ_GLOVES]] )
         && you.equip[EQ_AMULET] == -1)
     {
         mpr("You can't take your gloves off to remove any rings!");
@@ -2133,42 +1853,18 @@ void remove_ring(void)
 
     if (hand_used == 10)
     {
-      query:
-        mpr("Remove which piece of jewelry?", MSGCH_PROMPT);
+        int equipn = prompt_invent_item( "Remove which piece of jewellery?",
+                                         OBJ_JEWELLERY );
 
-        keyin = get_ch();
-
-        if (keyin == '?' || keyin == '*')
+        if (equipn == PROMPT_ABORT)
         {
-            if (keyin == '?')
-                nthing = get_invent(OBJ_JEWELLERY);
-
-            if (keyin == '*')
-                nthing = get_invent(-1);
-
-            if ((nthing >= 'A' && nthing <= 'Z')
-                || (nthing >= 'a' && nthing <= 'z'))
-            {
-                keyin = nthing;
-            }
-            else
-            {
-                mesclr();
-                goto query;
-            }
-        }
-
-        int equipn = letter_to_index(keyin);
-
-        if (you.inv_quantity[equipn] == 0)
-        {
-            mpr("You don't have such an object.");
+            canned_msg( MSG_OK );
             return;
         }
 
-        if (you.inv_class[equipn] != OBJ_JEWELLERY)
+        if (you.inv[equipn].base_type != OBJ_JEWELLERY)
         {
-            mpr("That isn't a piece of jewelry.");
+            mpr("That isn't a piece of jewellery.");
             return;
         }
 
@@ -2185,7 +1881,8 @@ void remove_ring(void)
         }
     }
 
-    if (you.equip[EQ_GLOVES] != -1 && you.inv_plus[you.equip[EQ_GLOVES]] > 80
+    if (you.equip[EQ_GLOVES] != -1
+        && item_cursed( you.inv[you.equip[EQ_GLOVES]] )
         && (hand_used == 0 || hand_used == 1))
     {
         mpr("You can't take your gloves off to remove any rings!");
@@ -2198,16 +1895,16 @@ void remove_ring(void)
         return;
     }
 
-    if (you.inv_plus[you.equip[hand_used + 7]] > 80)    // cursed
+    if (item_cursed( you.inv[you.equip[hand_used + 7]] ))
     {
         mpr("It's stuck to you!");
-        if (you.inv_ident[you.equip[hand_used + 7]] == 0)
-            you.inv_ident[you.equip[hand_used + 7]] = 1;
+
+        set_ident_flags( you.inv[you.equip[hand_used + 7]], ISFLAG_KNOW_CURSE );
         return;
     }
 
-    strcpy(info, "You remove your ");
-    in_name(you.equip[hand_used + 7], 8, str_pass);
+    strcpy(info, "You remove ");
+    in_name(you.equip[hand_used + 7], DESC_NOCAP_YOUR, str_pass);
 
     strcat(info, str_pass);
     strcat(info, ".");
@@ -2216,7 +1913,7 @@ void remove_ring(void)
     // I'll still use ring_wear_2 here.
     ring_wear_2 = you.equip[hand_used + 7];
 
-    switch (you.inv_type[ring_wear_2])
+    switch (you.inv[ring_wear_2].sub_type)
     {
     case RING_FIRE:
     case RING_HUNGER:
@@ -2236,7 +1933,7 @@ void remove_ring(void)
         break;
 
     case RING_PROTECTION:
-        you.redraw_armor_class = 1;
+        you.redraw_armour_class = 1;
         break;
 
     case RING_EVASION:
@@ -2244,15 +1941,15 @@ void remove_ring(void)
         break;
 
     case RING_STRENGTH:
-        modify_stat(STAT_STRENGTH, 50 - (you.inv_plus[ring_wear_2] % 100), true);
+        modify_stat(STAT_STRENGTH, -you.inv[ring_wear_2].plus, true);
         break;
 
     case RING_DEXTERITY:
-        modify_stat(STAT_DEXTERITY, 50 - (you.inv_plus[ring_wear_2] % 100), true);
+        modify_stat(STAT_DEXTERITY, -you.inv[ring_wear_2].plus, true);
         break;
 
     case RING_INTELLIGENCE:
-        modify_stat(STAT_INTELLIGENCE, 50 -(you.inv_plus[ring_wear_2] % 100), true);
+        modify_stat(STAT_INTELLIGENCE, -you.inv[ring_wear_2].plus, true);
         break;
 
     case RING_INVISIBILITY:
@@ -2268,11 +1965,7 @@ void remove_ring(void)
         break;
 
     case RING_MAGICAL_POWER:
-        you.max_magic_points -= 9;
-        you.base_magic_points2 -= 9;
-        if (you.magic_points > you.max_magic_points)
-            you.magic_points = you.max_magic_points;
-        calc_mp();
+        dec_max_mp(9);
         break;
 
     case RING_TELEPORT_CONTROL:
@@ -2280,7 +1973,7 @@ void remove_ring(void)
         break;
     }
 
-    if (you.inv_dam[ring_wear_2] == 200 || you.inv_dam[ring_wear_2] == 201)
+    if (is_random_artefact( you.inv[ring_wear_2] ))
         unuse_randart(ring_wear_2);
 
     you.equip[hand_used + 7] = -1;
@@ -2290,12 +1983,10 @@ void remove_ring(void)
 
 void zap_wand(void)
 {
-    int zap_device_1;
-    int zap_device_2;
-    unsigned char nthing = 0;
-
     struct bolt beam;
     struct dist zap_wand;
+
+    int item_slot;
 
     beam.obviousEffect = false;
 
@@ -2311,51 +2002,15 @@ void zap_wand(void)
         return;
     }
 
-  query:
-    mpr("Zap which item?", MSGCH_PROMPT);
-
-    unsigned char keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
+    item_slot = prompt_invent_item( "Zap which item?", OBJ_WANDS );
+    if (item_slot == PROMPT_ABORT)
     {
-        if (keyin == '?')
-            nthing = get_invent(OBJ_WANDS);
-
-        if (keyin == '*')
-            nthing = get_invent(-1);
-
-        if ((nthing >= 'A' && nthing <= 'Z')
-            || (nthing >= 'a' && nthing <= 'z'))
-        {
-            keyin = nthing;
-        }
-        else
-        {
-            //mesclr();
-            goto query;
-
-        }
-    }
-
-    zap_device_1 = (int) keyin;
-
-    if (zap_device_1 < 'A' || (zap_device_1 > 'Z' && zap_device_1 < 'a')
-        || zap_device_1 > 'z')
-    {
-      Dont_have:
-        mpr("You don't have any such object.");
+        canned_msg( MSG_OK );
         return;
     }
 
-    zap_device_2 = letter_to_index(zap_device_1);
-
-    if (you.inv_quantity[zap_device_2] == 0)
-    {
-        goto Dont_have;
-    }
-
-    if (you.inv_class[zap_device_2] != OBJ_WANDS
-        || you.inv_plus[zap_device_2] < 1)
+    if (you.inv[item_slot].base_type != OBJ_WANDS
+        || you.inv[item_slot].plus < 1)
     {
         canned_msg(MSG_NOTHING_HAPPENS);
         you.turn_is_over = 1;
@@ -2363,11 +2018,8 @@ void zap_wand(void)
     }
 
     mpr("Which direction? (*/+ to target)", MSGCH_PROMPT);
-
     message_current_target();
-
     direction(zap_wand);
-
     if (!zap_wand.isValid)
     {
         if (zap_wand.isCancel)
@@ -2384,7 +2036,7 @@ void zap_wand(void)
     // blargh! blech! this is just begging to be a problem ...
     // not to mention work-around after work-around as wands are
     // added, removed, or altered {dlb}:
-    char type_zapped = you.inv_type[zap_device_2];
+    char type_zapped = you.inv[item_slot].sub_type;
 
     if (type_zapped == WAND_ENSLAVEMENT)
         type_zapped = ZAP_ENSLAVEMENT;
@@ -2411,50 +2063,46 @@ void zap_wand(void)
 
     zapping(type_zapped, 40, beam);
 
-    if (beam.obviousEffect == 1 || you.inv_type[zap_device_2] == WAND_FIREBALL)
+    if (beam.obviousEffect == 1 || you.inv[item_slot].sub_type == WAND_FIREBALL)
     {
-        if (!get_id(you.inv_class[zap_device_2], you.inv_type[zap_device_2]))
+        if (get_ident_type( you.inv[item_slot].base_type,
+                            you.inv[item_slot].sub_type ) != ID_KNOWN_TYPE)
         {
-            set_id(you.inv_class[zap_device_2], you.inv_type[zap_device_2], 1);
+            set_ident_type( you.inv[item_slot].base_type,
+                            you.inv[item_slot].sub_type, ID_KNOWN_TYPE );
 
-            char buff[80];
-            buff[0] = zap_device_1;
-            buff[1] = '\0';
-            strcat(buff, " - ");
-            in_name(zap_device_2, 3, str_pass);
-            strcat(buff, str_pass);
-            mpr(buff);
+            in_name(item_slot, DESC_INVENTORY_EQUIP, str_pass);
+            mpr( str_pass );
 
             // update if wielding
-            if (you.equip[EQ_WEAPON] == zap_device_2)
-                wield_change = 1;
-
+            if (you.equip[EQ_WEAPON] == item_slot)
+                you.wield_change = true;
         }
     }
+    else
+    {
+        set_ident_type( you.inv[item_slot].base_type,
+                        you.inv[item_slot].sub_type, ID_TRIED_TYPE );
+    }
 
-    you.inv_plus[zap_device_2]--;
+    you.inv[item_slot].plus--;
 
-    if (get_id(you.inv_class[zap_device_2], you.inv_type[zap_device_2]) == 1
-        && (you.inv_ident[zap_device_2] > 1
+    if (get_ident_type( you.inv[item_slot].base_type,
+                        you.inv[item_slot].sub_type ) == ID_KNOWN_TYPE
+        && (item_ident( you.inv[item_slot], ISFLAG_KNOW_PLUSES )
             || you.skills[SK_ENCHANTMENTS] > 5 + random2(15)))
     {
-        if (you.inv_ident[zap_device_2] <= 1)
+        if (item_not_ident( you.inv[item_slot], ISFLAG_KNOW_PLUSES ))
         {
             mpr("Your skill with enchantments lets you calculate the power of this device...");
         }
 
-        strcpy(info, "This wand has ");
-        itoa(you.inv_plus[zap_device_2], st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, " charge");
+        snprintf( info, INFO_SIZE, "This wand has %d charge%s left.",
+                 you.inv[item_slot].plus,
+                 (you.inv[item_slot].plus == 1) ? "" : "s" );
 
-        if (you.inv_plus[zap_device_2] > 1)
-            strcat(info, "s");
-
-        strcat(info, " left.");
         mpr(info);
-
-        you.inv_ident[zap_device_2] = 3;
+        set_ident_flags( you.inv[item_slot], ISFLAG_KNOW_PLUSES );
     }
 
     you.turn_is_over = 1;
@@ -2463,9 +2111,7 @@ void zap_wand(void)
 
 void drink(void)
 {
-    int drink_1, drink_2;
-    unsigned char nthing = 0;
-    unsigned char keyin;
+    int item_slot;
 
     if (you.is_undead == US_UNDEAD)
     {
@@ -2492,70 +2138,36 @@ void drink(void)
         return;
     }
 
-  query:
-    mpr("Drink which item?", MSGCH_PROMPT);
-
-    keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
+    item_slot = prompt_invent_item( "Drink which item?", OBJ_POTIONS );
+    if (item_slot == PROMPT_ABORT)
     {
-        if (keyin == '?')
-            nthing = get_invent(OBJ_POTIONS);
-
-        if (keyin == '*')
-            nthing = get_invent(-1);
-
-        if ((nthing >= 'A' && nthing <= 'Z')
-            || (nthing >= 'a' && nthing <= 'z'))
-        {
-            keyin = nthing;
-        }
-        else
-        {
-            mesclr();
-            goto query;
-        }
-    }
-
-    drink_1 = (int) keyin;
-
-    if (drink_1 < 'A' || (drink_1 > 'Z' && drink_1 < 'a') || drink_1 > 'z')
-    {
-        mpr("You don't have any such object.");
+        canned_msg( MSG_OK );
         return;
     }
 
-    drink_2 = letter_to_index(drink_1);
-
-    if (you.inv_quantity[drink_2] == 0)
-    {
-        mpr("You don't have any such object.");
-        return;
-    }
-
-    if (you.inv_class[drink_2] != OBJ_POTIONS)
+    if (you.inv[item_slot].base_type != OBJ_POTIONS)
     {
         mpr("You can't drink that!");
         return;
     }
 
-    you.inv_quantity[drink_2]--;
-    if (you.inv_quantity[drink_2] == 0)
+    if (potion_effect( you.inv[item_slot].sub_type, 40 ))
     {
-        if (you.equip[EQ_WEAPON] == drink_2)
-        {
-            you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty-handed.");
-            wield_change = 1;
-        }
+        set_ident_flags( you.inv[item_slot], ISFLAG_IDENT_MASK );
+
+        set_ident_type( you.inv[item_slot].base_type,
+                        you.inv[item_slot].sub_type, ID_KNOWN_TYPE );
+    }
+    else
+    {
+        set_ident_type( you.inv[item_slot].base_type,
+                        you.inv[item_slot].sub_type, ID_TRIED_TYPE );
     }
 
-    burden_change();
+    dec_inv_item_quantity( item_slot, 1 );
     you.turn_is_over = 1;
-    potion_effect(you.inv_type[drink_2], 40);
+
     lessen_hunger(40, true);
-    you.inv_ident[drink_2] = 1;
-    set_id(you.inv_class[drink_2], you.inv_type[drink_2], 1);
 }                               // end drink()
 
 bool drink_fountain(void)
@@ -2647,17 +2259,367 @@ bool drink_fountain(void)
     return true;
 }                               // end drink_fountain()
 
+static bool affix_weapon_enchantment( void )
+{
+    const int wpn = you.equip[ EQ_WEAPON ];
+    bool success = true;
+
+    struct bolt beam;
+
+    if (wpn == -1 || !you.duration[ DUR_WEAPON_BRAND ])
+        return (false);
+
+    switch (you.inv[you.equip[EQ_WEAPON]].special)
+    {
+    case SPWPN_VORPAL:
+        if (damage_type( you.inv[ wpn ].base_type,
+                         you.inv[ wpn ].sub_type ) != DVORP_CRUSHING)
+        {
+            strcat(info, "'s sharpness seems more permanent.");
+        }
+        else
+        {
+            strcat(info, "'s heaviness feels very stable.");
+        }
+        mpr(info);
+        break;
+
+    case SPWPN_FLAMING:
+        strcat(info," is engulfed in an explosion of flames!");
+        mpr(info);
+
+        beam.type = SYM_BURST;
+        beam.damage = 110;
+        beam.flavour = 2;
+        beam.target_x = you.x_pos;
+        beam.target_y = you.y_pos;
+        strcpy(beam.beam_name, "fiery explosion");
+        beam.colour = RED;
+        beam.thrower = KILL_YOU;
+        beam.ex_size = 2;
+        beam.isTracer = false;
+
+        explosion(beam);
+        break;
+
+    case SPWPN_FREEZING:
+        strcat(info," glows brilliantly blue for a moment.");
+        mpr(info);
+        cast_refrigeration(60);
+        break;
+
+    case SPWPN_DRAINING:
+        strcat(info," thirsts for the lives of mortals!");
+        mpr(info);
+        drain_exp();
+        break;
+
+    case SPWPN_VENOM:
+        strcat(info, " seems more permanently poisoned.");
+        mpr(info);
+        cast_toxic_radiance();
+        break;
+
+    case SPWPN_DISTORTION:
+        strcat(info, " twongs alarmingly.");
+        mpr(info);
+
+        // from unwield_item
+        miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100);
+        break;
+
+    default:
+        success = false;
+        break;
+    }
+
+    if (success)
+        you.duration[DUR_WEAPON_BRAND] = 0;
+
+    return (success);
+}
+
+static bool enchant_weapon( int which_stat, bool quiet )
+{
+    const int wpn = you.equip[ EQ_WEAPON ];
+    bool affected = true;
+    int enchant_level;
+
+    if (wpn == -1
+        || (you.inv[ wpn ].base_type != OBJ_WEAPONS
+            && you.inv[ wpn ].base_type != OBJ_MISSILES))
+    {
+        if (!quiet)
+            canned_msg(MSG_NOTHING_HAPPENS);
+
+        return (false);
+    }
+
+    you.wield_change = true;
+
+    // missiles only have one stat
+    if (you.inv[ wpn ].base_type == OBJ_MISSILES)
+        which_stat = ENCHANT_TO_HIT;
+
+    if (which_stat == ENCHANT_TO_HIT)
+        enchant_level = you.inv[ wpn ].plus;
+    else
+        enchant_level = you.inv[ wpn ].plus2;
+
+    // artefacts can't be enchanted, but scrolls still remove curses
+    if (you.inv[ wpn ].base_type == OBJ_WEAPONS
+        && (is_fixed_artefact( you.inv[wpn] )
+            || is_random_artefact( you.inv[wpn] )))
+    {
+        affected = false;
+    }
+
+    if (enchant_level >= 4 && random2(9) < enchant_level)
+    {
+        affected = false;
+    }
+
+    // if it isn't affected by the enchantment, it will still
+    // be uncursed:
+    if (!affected)
+    {
+        if (item_cursed( you.inv[you.equip[EQ_WEAPON]] ))
+        {
+            if (!quiet)
+            {
+                in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
+                strcpy(info, str_pass);
+                strcat(info, " glows silver for a moment.");
+                mpr(info);
+            }
+
+            do_uncurse_item( you.inv[you.equip[EQ_WEAPON]] );
+
+            return (true);
+        }
+        else
+        {
+            if (!quiet)
+                canned_msg(MSG_NOTHING_HAPPENS);
+
+            return (false);
+        }
+    }
+
+    // vVvVv    This is *here* (as opposed to lower down) for a reason!
+    in_name( wpn, DESC_CAP_YOUR, str_pass );
+    strcpy( info, str_pass );
+
+    do_uncurse_item( you.inv[ wpn ] );
+
+    if (you.inv[ wpn ].base_type == OBJ_WEAPONS)
+    {
+        if (which_stat == ENCHANT_TO_DAM)
+        {
+            you.inv[ wpn ].plus2++;
+
+            if (!quiet)
+            {
+                strcat(info, " glows red for a moment.");
+                mpr(info);
+            }
+        }
+        else if (which_stat == ENCHANT_TO_HIT)
+        {
+            you.inv[ wpn ].plus++;
+
+            if (!quiet)
+            {
+                strcat(info, " glows green for a moment.");
+                mpr(info);
+            }
+        }
+    }
+    else if (you.inv[ wpn ].base_type == OBJ_MISSILES)
+    {
+        strcat( info, (you.inv[ wpn ].quantity > 1) ? " glow"
+                                                    : " glows" );
+
+        strcat(info, " red for a moment.");
+
+        you.inv[ wpn ].plus++;
+    }
+
+    return (true);
+}
+
+static bool enchant_armour( void )
+{
+    // NOTE: It is assumed that armour which changes in this way does
+    // not change into a form of armour with a different evasion modifier.
+    int nthing = you.equip[EQ_BODY_ARMOUR];
+
+    if (nthing != -1
+        && (you.inv[nthing].sub_type == ARM_DRAGON_HIDE
+            || you.inv[nthing].sub_type == ARM_ICE_DRAGON_HIDE
+            || you.inv[nthing].sub_type == ARM_STEAM_DRAGON_HIDE
+            || you.inv[nthing].sub_type == ARM_MOTTLED_DRAGON_HIDE
+            || you.inv[nthing].sub_type == ARM_STORM_DRAGON_HIDE
+            || you.inv[nthing].sub_type == ARM_GOLD_DRAGON_HIDE
+            || you.inv[nthing].sub_type == ARM_SWAMP_DRAGON_HIDE
+            || you.inv[nthing].sub_type == ARM_TROLL_HIDE))
+    {
+        in_name( you.equip[EQ_BODY_ARMOUR], DESC_CAP_YOUR, str_pass );
+        strcpy(info, str_pass);
+        strcat(info, " glows purple and changes!");
+        mpr(info);
+
+        you.redraw_armour_class = 1;
+
+        hide2armour( &(you.inv[nthing].sub_type) );
+        return (true);
+    }
+
+    // pick random piece of armour
+    int count = 0;
+    int affected_slot = EQ_WEAPON;
+
+    for (int i = EQ_CLOAK; i <= EQ_BODY_ARMOUR; i++)
+    {
+        if (you.equip[i] != -1)
+        {
+            count++;
+            if (one_chance_in( count ))
+                affected_slot = i;
+        }
+    }
+
+    // no armour == no enchantment
+    if (affected_slot == EQ_WEAPON)
+    {
+        canned_msg(MSG_NOTHING_HAPPENS);
+        return (false);
+    }
+
+    bool affected = true;
+    item_def &item = you.inv[you.equip[ affected_slot ]];
+
+    if (is_random_artefact( item )
+        || ((item.sub_type >= ARM_CLOAK && item.sub_type <= ARM_BOOTS)
+            && item.plus >= 2)
+        || ((item.sub_type == ARM_SHIELD
+                || item.sub_type == ARM_BUCKLER
+                || item.sub_type == ARM_LARGE_SHIELD)
+            && item.plus >= 2)
+        || (item.plus >= 3 && random2(8) < item.plus))
+    {
+        affected = false;
+    }
+
+    // even if not affected, it may be uncursed.
+    if (!affected)
+    {
+        if (item_cursed( item ))
+        {
+            in_name(you.equip[affected], DESC_CAP_YOUR, str_pass);
+            strcpy(info, str_pass);
+            strcat(info, " glows silver for a moment.");
+            mpr(info);
+
+            do_uncurse_item( you.inv[you.equip[affected]] );
+            return (true);
+        }
+        else
+        {
+            canned_msg( MSG_NOTHING_HAPPENS );
+            return (false);
+        }
+    }
+
+    // vVvVv    This is *here* for a reason!
+    item_name(item, DESC_CAP_YOUR, str_pass);
+    strcpy(info, str_pass);
+    strcat(info, " glows green for a moment.");
+    mpr(info);
+
+    item.plus++;
+
+    do_uncurse_item( item );
+    you.redraw_armour_class = 1;
+    return (true);
+}
+
+static void handle_read_book( int item_slot )
+{
+    int spell, spell_index, nthing;
+
+    if (you.inv[item_slot].sub_type == BOOK_DESTRUCTION)
+    {
+        if (silenced(you.x_pos, you.y_pos))
+        {
+            mpr("This book does not work if you cannot read it aloud!");
+            return;
+        }
+
+        tome_of_power(item_slot);
+        return;
+    }
+    else if (you.inv[item_slot].sub_type == BOOK_MANUAL)
+    {
+        skill_manual(item_slot);
+        return;
+    }
+    else
+    {
+        // Little experimental restriction here... eventually,
+        // individual books/spells might have skill requirements
+        // before they can even be read.  Right now it gives a
+        // clue as to how to get Spellcasting.  -- bwr
+        if (you.skills[SK_SPELLCASTING] == 0)
+        {
+            mpr( "This text is beyond your capability to read." );
+            mpr( "You should start by reading simpler magical texts." );
+            return;
+        }
+
+        spell = read_book( you.inv[item_slot], RBOOK_READ_SPELL );
+    }
+
+    if (spell < 'a' || spell > 'h')     //jmf: was 'g', but 8=h
+    {
+        mesclr();
+        return;
+    }
+
+    spell_index = letter_to_index( spell );
+#if 0
+    // the same as the check below
+    if (!is_valid_spell_in_book( item_slot, spell_index ))
+    {
+        mesclr();
+        return;
+    }
+#endif
+
+    nthing = which_spell_in_book(you.inv[item_slot].sub_type, spell_index);
+    if (nthing == SPELL_NO_SPELL)
+    {
+        mesclr();
+        return;
+    }
+
+    describe_spell( nthing );
+    redraw_screen();
+
+    mesclr();
+    return;
+}
+
 void read_scroll(void)
 {
-    int sc_read_1, sc_read_2;
-    int id_used = 0;
-    unsigned char nthing = 0;
-    char affected = 0;
+    int affected = 0;
     int i;
+    int count;
+    int nthing;
     struct bolt beam;
+
     // added: scroll effects are never tracers.
     beam.isTracer = false;
-    bool ok_to_curse[NUM_EQUIP];
 
     if (you.berserker)
     {
@@ -2671,106 +2633,24 @@ void read_scroll(void)
         return;
     }
 
-  query:
-    mpr("Read which item?", MSGCH_PROMPT);
-
-    unsigned char keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
+    int item_slot = prompt_invent_item( "Read which item?", OBJ_SCROLLS );
+    if (item_slot == PROMPT_ABORT)
     {
-        if (keyin == '?')
-            nthing = get_invent(OBJ_SCROLLS);
-
-        if (keyin == '*')
-            nthing = get_invent(-1);
-
-        if ((nthing >= 'A' && nthing <= 'Z')
-            || (nthing >= 'a' && nthing <= 'z'))
-        {
-            keyin = nthing;
-        }
-        else
-        {
-            mesclr();
-            goto query;
-
-        }
-    }
-
-    sc_read_1 = (int) keyin;
-
-    if (sc_read_1 < 'A' || (sc_read_1 > 'Z' && sc_read_1 < 'a')
-        || sc_read_1 > 'z')
-    {
-        mpr("You don't have any such object.");
+        canned_msg( MSG_OK );
         return;
     }
 
-    sc_read_2 = letter_to_index(sc_read_1);
-
-    if (you.inv_quantity[sc_read_2] == 0)
-    {
-        mpr("You don't have any such object.");
-        return;
-    }
-
-    if (!(you.inv_class[sc_read_2] == OBJ_BOOKS
-         || you.inv_class[sc_read_2] == OBJ_SCROLLS))
+    if (!(you.inv[item_slot].base_type == OBJ_BOOKS
+         || you.inv[item_slot].base_type == OBJ_SCROLLS))
     {
         mpr("You can't read that!");
         return;
     }
 
     // here we try to read a book {dlb}:
-    if (you.inv_class[sc_read_2] == OBJ_BOOKS)
+    if (you.inv[item_slot].base_type == OBJ_BOOKS)
     {
-        if (you.inv_type[sc_read_2] == BOOK_DESTRUCTION)
-        {
-            if (silenced(you.x_pos, you.y_pos))
-            {
-                mpr("This book does not work if you cannot read it aloud!");
-                return;
-            }
-
-            tome_of_power(sc_read_2);
-            return;
-        }
-        else if (you.inv_type[sc_read_2] == BOOK_MANUAL)
-        {
-            skill_manual(sc_read_2);
-            return;
-        }
-        else
-            read_book(sc_read_2);
-
-        // where does book_thing come from? well, it's an externed variable
-        // set by read_book -- confusing, I know {dlb}:
-        if (book_thing < 'a' || book_thing > 'h')     //jmf: was 'g', but 8=h
-        {
-            mesclr();
-            return;
-        }
-
-        if (!learn_a_spell(sc_read_2, letter_to_index(book_thing)))
-        {
-            mesclr();
-            return;
-        }
-
-        nthing = which_spell_in_book(you.inv_type[sc_read_2],
-                                        1 + letter_to_index(book_thing));
-
-        if (nthing == SPELL_NO_SPELL)
-        {
-            mesclr();
-            return;
-        }
-
-        describe_spell(which_spell_in_book(you.inv_type[sc_read_2],
-                                        1 + letter_to_index(book_thing)));
-        redraw_screen();
-
-        mesclr();
+        handle_read_book( item_slot );
         return;
     }
 
@@ -2794,30 +2674,19 @@ void read_scroll(void)
     }
 
     // decrement and handle inventory if any scroll other than paper {dlb}:
-    if (you.inv_type[sc_read_2] != SCR_PAPER)
+    const int scroll_type = you.inv[item_slot].sub_type;
+    if (scroll_type != SCR_PAPER)
     {
-        you.inv_quantity[sc_read_2]--;
-
-        if (you.equip[EQ_WEAPON] == sc_read_2)
-        {
-            wield_change = true;
-            if (you.inv_quantity[sc_read_2] == 0)
-            {
-                you.equip[EQ_WEAPON] = -1;
-                mpr("You are now empty-handed.");
-            }
-        }
-
         mpr("As you read the scroll, it crumbles to dust.");
-        burden_change();
+        // Actual removal of scroll done afterwards. -- bwr
     }
 
     // scrolls of paper are also exempted from this handling {dlb}:
-    if (you.inv_type[sc_read_2] != SCR_PAPER)
+    if (scroll_type != SCR_PAPER)
     {
         if (you.conf)
         {
-            random_uselessness(random2(9), sc_read_2);
+            random_uselessness(random2(9), item_slot);
             return;
         }
 
@@ -2829,7 +2698,7 @@ void read_scroll(void)
 
     // it is the exception, not the rule, that
     // the scroll will not be identified {dlb}:
-    switch (you.inv_type[sc_read_2])
+    switch (scroll_type)
     {
     case SCR_PAPER:
         // remember paper scrolls handled as special case above, too:
@@ -2837,7 +2706,7 @@ void read_scroll(void)
         break;
 
     case SCR_RANDOM_USELESSNESS:
-        random_uselessness(random2(9), sc_read_2);
+        random_uselessness(random2(9), item_slot);
         id_the_scroll = false;
         break;
 
@@ -2902,11 +2771,13 @@ void read_scroll(void)
         break;
 
     case SCR_TORMENT:
-        torment(you.x_pos, you.y_pos);
+        torment( you.x_pos, you.y_pos );
 
         // is only naughty if you know you're doing it
-        if (get_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2]) == 1)
+        if (get_ident_type( OBJ_SCROLLS, SCR_TORMENT ) == ID_KNOWN_TYPE)
+        {
             naughty(NAUGHTY_UNHOLY, 10);
+        }
         break;
 
     case SCR_IMMOLATION:
@@ -2928,532 +2799,200 @@ void read_scroll(void)
         break;
 
     case SCR_IDENTIFY:
-        you.inv_ident[sc_read_2] = 2;   // I think this works {dlb}
+        set_ident_flags( you.inv[item_slot], ISFLAG_IDENT_MASK );
 
         // important {dlb}
-        set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
+        set_ident_type( OBJ_SCROLLS, SCR_IDENTIFY, ID_KNOWN_TYPE );
 
         identify(-1);
-        wield_change = true;
-        return;
+        you.wield_change = true;
+        break;
 
     case SCR_CURSE_WEAPON:
-        if (you.equip[EQ_WEAPON] == -1
-            || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS
-            || you.inv_plus[you.equip[EQ_WEAPON]] > 130)
+        nthing = you.equip[EQ_WEAPON];
+
+        if (nthing == -1
+            || you.inv[nthing].base_type != OBJ_WEAPONS
+            || item_cursed( you.inv[nthing] ))
         {
             canned_msg(MSG_NOTHING_HAPPENS);
             id_the_scroll = false;
         }
         else
         {
-            in_name(you.equip[EQ_WEAPON], 4, str_pass);
+            in_name( nthing, DESC_CAP_YOUR, str_pass );
             strcpy(info, str_pass);
             strcat(info, " glows black for a moment.");
             mpr(info);
 
-            you.inv_plus[you.equip[EQ_WEAPON]] += 100;
-
-            wield_change = true;
+            do_curse_item( you.inv[nthing] );
+            you.wield_change = true;
         }
         break;
 
     // everything [in the switch] below this line is a nightmare {dlb}:
     case SCR_ENCHANT_WEAPON_I:
+        id_the_scroll = enchant_weapon( ENCHANT_TO_HIT );
+        break;
+
     case SCR_ENCHANT_WEAPON_II:
+        id_the_scroll = enchant_weapon( ENCHANT_TO_DAM );
+        break;
+
     case SCR_ENCHANT_WEAPON_III:
-      weapon_enchant:
-        if (you.equip[EQ_WEAPON] == -1)
+        if (you.equip[ EQ_WEAPON ] != -1)
+        {
+            if (!affix_weapon_enchantment())
+            {
+                in_name( you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass );
+                strcpy( info, str_pass );
+                strcat( info, " glows bright yellow for a while." );
+                mpr( info );
+
+                enchant_weapon( ENCHANT_TO_HIT, true );
+
+                if (coinflip())
+                    enchant_weapon( ENCHANT_TO_HIT, true );
+
+                enchant_weapon( ENCHANT_TO_DAM, true );
+
+                if (coinflip())
+                    enchant_weapon( ENCHANT_TO_DAM, true );
+
+                do_uncurse_item( you.inv[you.equip[EQ_WEAPON]] );
+            }
+        }
+        else
         {
             canned_msg(MSG_NOTHING_HAPPENS);
-            return;
+            id_the_scroll = false;
         }
-
-        if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-            || you.inv_class[you.equip[EQ_WEAPON]] == OBJ_MISSILES)
-        {
-            if (you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_II
-                && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
-            {
-                id_used = you.inv_plus2[you.equip[EQ_WEAPON]];
-            }
-            else
-                id_used = you.inv_plus[you.equip[EQ_WEAPON]];
-
-            affected = 1;
-
-            // artefacts can't be enchanted, but scrolls still remove curses
-            if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-                && (you.inv_dam[you.equip[EQ_WEAPON]] >= NWPN_SINGING_SWORD
-                  || you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I))
-            {
-                affected = 0;
-            }
-
-            wield_change = true;
-
-            if (id_used >= 154 || (id_used < 100 && id_used >= 54))
-            {
-                if (random2(9) < id_used % 50)
-                    affected = 0;
-            }
-
-            // if it isn't affected by the enchantment, it will still
-            // be uncursed:
-            if (you.inv_plus[you.equip[EQ_WEAPON]] >= 154
-                || (you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25
-                    && you.inv_plus[you.equip[EQ_WEAPON]] >= 100))
-            {
-                if (affected == 0)
-                {
-                    in_name(you.equip[EQ_WEAPON], 4, str_pass);
-                    strcpy(info, str_pass);
-                    strcat(info, " glows silver for a moment.");
-                    mpr(info);
-
-                    you.inv_plus[you.equip[EQ_WEAPON]] -= 100;
-                    set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-                    return;
-                }
-            }
-
-            if (affected == 0)
-            {
-                canned_msg(MSG_NOTHING_HAPPENS);
-                return;
-            }
-
-            // vVvVv    This is *here* (as opposed to lower down) for a reason!
-            in_name(you.equip[EQ_WEAPON], 4, str_pass);
-            strcpy(info, str_pass);
-
-            if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
-            {
-                if (you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_II)
-                {
-                    strcat(info, " glows red for a moment.");
-                    mpr(info);
-                }
-                else if (you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_I)
-                {
-                    strcat(info, " glows green for a moment.");
-                    mpr(info);
-                }
-                else
-                {
-                    id_used--;  /* no plusses for using this */
-
-                    if (you.duration[DUR_WEAPON_BRAND])
-                    {
-                        you.duration[DUR_WEAPON_BRAND] = 0;
-
-                        switch (you.inv_dam[you.equip[EQ_WEAPON]] % 30)
-                        {
-                        case SPWPN_VORPAL:
-                            if (damage_type(you.inv_class[you.equip[EQ_WEAPON]],
-                                 you.inv_type[you.equip[EQ_WEAPON]])
-                                                         != DVORP_CRUSHING)
-                            {
-                                strcat(info, "'s sharpness seems more permanent.");
-                            }
-                            else
-                            {
-                                strcat(info, "'s heaviness feels very stable.");
-                            }
-                            mpr(info);
-                            break;
-
-                        case SPWPN_FLAMING:
-                            strcat(info," is engulfed in an explosion of flames!");
-                            mpr(info);
-
-                            beam.type = SYM_BURST;
-                            beam.damage = 110;
-                            beam.flavour = 2;
-                            beam.target_x = you.x_pos;
-                            beam.target_y = you.y_pos;
-                            strcpy(beam.beam_name, "fiery explosion");
-                            beam.colour = RED;
-                            beam.thrower = KILL_YOU;
-                            beam.ex_size = 2;
-                            beam.isTracer = false;
-
-                            explosion(beam);
-                            break;
-
-                        case SPWPN_FREEZING:
-                            strcat(info," glows brilliantly blue for a moment.");
-                            mpr(info);
-                            cast_refrigeration(60);
-                            break;
-
-                        case SPWPN_DRAINING:
-                            strcat(info," thirsts for the lives of mortals!");
-                            mpr(info);
-                            drain_exp();
-                            break;
-
-                        case SPWPN_VENOM:
-                            strcat(info, " seems more permanently poisoned.");
-                            mpr(info);
-                            cast_toxic_radiance();
-                            break;
-
-                        case SPWPN_DISTORTION:
-                            strcat(info, " twongs alarmingly.");
-                            mpr(info);
-
-                            // from unwield_item
-                            miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100);
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        strcat(info, " glows bright yellow for a while.");
-                        mpr(info);
-
-                        you.inv_plus[you.equip[EQ_WEAPON]] +=
-                                                (coinflip() ? 2 : 1);
-                        you.inv_plus2[you.equip[EQ_WEAPON]] +=
-                                                (coinflip() ? 2 : 1);
-
-                        if (you.inv_plus[you.equip[EQ_WEAPON]] > 130)
-                            you.inv_plus[you.equip[EQ_WEAPON]] -= 100;
-
-                        set_id(you.inv_class[sc_read_2],
-                               you.inv_type[sc_read_2], 1);
-                        return;
-                    }
-                }
-            }   // end "if you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS"
-
-            set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-
-            id_used++;
-
-            if (you.inv_plus[you.equip[EQ_WEAPON]] > 130)
-                you.inv_plus[you.equip[EQ_WEAPON]] -= 100;
-
-            if (id_used > 130)
-                id_used -= 100;
-
-            if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
-            {
-                if (you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_II)
-                    you.inv_plus2[you.equip[EQ_WEAPON]] = id_used;
-                else if (you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_I)
-                    you.inv_plus[you.equip[EQ_WEAPON]] = id_used;
-            }
-
-            // new: handle missiles.  GDL.
-            if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_MISSILES)
-            {
-                strcat(info, (you.inv_quantity[EQ_WEAPON] > 1) ? " glow"
-                                                               : " glows");
-
-                strcat(info, " red for a ");
-                if (you.inv_type[sc_read_2] == SCR_ENCHANT_WEAPON_III
-                    && coinflip())
-                {
-                    strcat(info, "while.");
-                    id_used++;
-                }
-                else
-                {
-                    strcat(info, "moment.");
-                }
-                you.inv_plus[you.equip[EQ_WEAPON]] = id_used;
-            }
-            return;
-        }
-
-        canned_msg(MSG_NOTHING_HAPPENS);
-        return;                 // end of case 7: enc weapon
+        break;
 
     case SCR_VORPALISE_WEAPON:
-        if (you.equip[EQ_WEAPON] == -1
-            || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS
-            || (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-                && (you.inv_dam[you.equip[EQ_WEAPON]] >= NWPN_SINGING_SWORD
-                    || you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I
-                    || launches_things(you.inv_type[you.equip[EQ_WEAPON]]))))
+        nthing = you.equip[EQ_WEAPON];
+        if (nthing == -1
+            || you.inv[ nthing ].base_type != OBJ_WEAPONS
+            || (you.inv[ nthing ].base_type == OBJ_WEAPONS
+                && (is_fixed_artefact( you.inv[ nthing ] )
+                    || is_random_artefact( you.inv[ nthing ] )
+                    || launches_things( you.inv[ nthing ].sub_type ))))
         {
             canned_msg(MSG_NOTHING_HAPPENS);
-            return;
+            break;
         }
 
-        in_name(you.equip[EQ_WEAPON], 4, str_pass);
+        in_name(nthing, DESC_CAP_YOUR, str_pass);
 
         strcpy(info, str_pass);
         strcat(info, " emits a brilliant flash of light!");
         mpr(info);
         alert();
-        set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-        wield_change = true;
 
-        if (you.inv_dam[you.equip[EQ_WEAPON]] >= NWPN_SINGING_SWORD
-            || you.inv_dam[you.equip[EQ_WEAPON]] % 30 != SPWPN_NORMAL)
+        if (you.inv[you.equip[EQ_WEAPON]].special != SPWPN_NORMAL)
         {
             mpr("You feel strangely frustrated.");
-            return;
+            break;
         }
 
-        you.inv_dam[you.equip[EQ_WEAPON]] += 10;
-        return;
+        you.wield_change = true;
+        you.inv[nthing].special = SPWPN_VORPAL;
+        break;
 
     case SCR_RECHARGING:
-        if (you.equip[EQ_WEAPON] != -1
-            && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-            && you.inv_dam[you.equip[EQ_WEAPON]] == SPWPN_ELECTROCUTION)
+        nthing = you.equip[EQ_WEAPON];
+
+        if (nthing != -1
+            && you.inv[ nthing ].base_type == OBJ_WEAPONS
+            && you.inv[ nthing ].special == SPWPN_ELECTROCUTION)
         {
-            goto weapon_enchant;
+            id_the_scroll = !enchant_weapon( ENCHANT_TO_DAM );
+            break;
         }
 
         if (!recharge_wand())
+        {
             canned_msg(MSG_NOTHING_HAPPENS);
-        else
-        {
-            set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-            wield_change = true;
+            id_the_scroll = false;
         }
-        return;
+        break;
 
-    case SCR_ENCHANT_ARMOUR:    // ench you.equip
-        for (i = EQ_CLOAK; i < EQ_RIGHT_RING; i++)
-        {
-            if (i == EQ_LEFT_RING)
-            {
-                canned_msg(MSG_NOTHING_HAPPENS);
-                return;
-            }
-
-            if (you.equip[i] != -1)
-                break;
-        }
-
-        do
-        {
-            affected = 1 + random2(6);
-        }
-        while (you.equip[affected] == -1);
-
-        // NOTE: It is assumed that armour which changes in this way does
-        // not change into a form of armour with a different evasion modifier.
-        if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_DRAGON_HIDE
-            || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_ICE_DRAGON_HIDE
-            || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_STEAM_DRAGON_HIDE
-            || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_MOTTLED_DRAGON_HIDE
-            || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_STORM_DRAGON_HIDE
-            || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_GOLD_DRAGON_HIDE
-            || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_SWAMP_DRAGON_HIDE
-            || you.inv_type[you.equip[EQ_BODY_ARMOUR]] == ARM_TROLL_HIDE)
-        {
-            affected = EQ_BODY_ARMOUR;
-            in_name(you.equip[affected], 4, str_pass);
-            strcpy(info, str_pass);
-            strcat(info, " glows purple and changes!");
-            mpr(info);
-
-            you.redraw_armor_class = 1;
-
-            hide2armour(&(you.inv_type[you.equip[EQ_BODY_ARMOUR]]));
-            set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-            return;
-        }
-
-        if (you.inv_dam[you.equip[affected]] % 30 >= 25)
-        {
-            in_name(you.equip[affected], 4, str_pass);
-            set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-            strcpy(info, str_pass);
-            strcat(info, " glows faintly for a moment.");
-            mpr(info);
-
-            if (you.inv_plus[you.equip[affected]] > 100)
-                you.inv_plus[you.equip[affected]] -= 100;
-            return;
-        }
-
-        if (you.inv_plus[you.equip[affected]] >= 153)
-        {
-            if (random2(8) >= (you.inv_plus[you.equip[affected]] - 150))
-            {
-                in_name(you.equip[affected], 4, str_pass);
-                you.inv_plus[you.equip[affected]] -= 100;
-                set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-
-                strcpy(info, str_pass);
-                strcat(info, " glows silver for a moment.");
-                mpr(info);
-                return;
-            }
-        }
-
-        if ((you.inv_plus[you.equip[affected]] - 50 >= 3
-                && you.inv_plus[you.equip[affected]] < 130)
-            || you.inv_plus[you.equip[affected]] >= 153)
-        {
-            if (random2(8) < (you.inv_plus[you.equip[affected]] - 50))
-            {
-                canned_msg(MSG_NOTHING_HAPPENS);
-                return;
-            }
-        }
-
-        if (you.inv_type[you.equip[affected]] >= ARM_CLOAK
-            && you.inv_type[you.equip[affected]] <= ARM_BOOTS)
-        {
-            if ((you.inv_plus[you.equip[affected]] - 50 >= 2
-                    && you.inv_plus[you.equip[affected]] < 130)
-                || you.inv_plus[you.equip[affected]] >= 152)
-            {
-                canned_msg(MSG_NOTHING_HAPPENS);
-                return;
-            }
-        }
-
-        // vVvVv    This is *here* for a reason!
-        in_name(you.equip[affected], 4, str_pass);
-        you.inv_plus[you.equip[affected]]++;
-
-        if (you.inv_plus[you.equip[affected]] > 130)
-            you.inv_plus[you.equip[affected]] -= 100;
-
-        set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-
-        strcpy(info, str_pass);
-        strcat(info, " glows green for a moment.");
-        mpr(info);
-        you.redraw_armor_class = 1;
-        return;                 // end of ench you.equip
-
+    case SCR_ENCHANT_ARMOUR:
+        id_the_scroll = enchant_armour();
+        break;
 
     case SCR_CURSE_ARMOUR:
         // make sure there's something to curse first
-        affected = 0;
-        for (i = EQ_CLOAK; i < EQ_LEFT_RING; i++)
+        count = 0;
+        affected = EQ_WEAPON;
+        for (i = EQ_CLOAK; i <= EQ_BODY_ARMOUR; i++)
         {
-            ok_to_curse[i] = (you.equip[i] != -1
-                && you.inv_plus[you.equip[i]] < 130);
-
-            if (ok_to_curse[i])
-                affected = 1;
+            if (you.equip[i] != -1 && item_uncursed( you.inv[you.equip[i]] ))
+            {
+                count++;
+                if (one_chance_in( count ))
+                    affected = i;
+            }
         }
 
-        if (affected == 0)
+        if (affected == EQ_WEAPON)
         {
             canned_msg(MSG_NOTHING_HAPPENS);
-            return;
+            id_the_scroll = false;
+            break;
         }
-
-        // now select a victim..
-        do
-        {
-            affected = 1 + random2(6);
-        }
-        while (!ok_to_curse[affected]);
 
         // make the name _before_ we curse it
-        in_name(you.equip[affected], 4, str_pass);
-        you.inv_plus[you.equip[affected]] += 100;
-        set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
+        in_name( you.equip[affected], DESC_CAP_YOUR, str_pass );
+        do_curse_item( you.inv[you.equip[affected]] );
 
         strcpy(info, str_pass);
         strcat(info, " glows black for a moment.");
         mpr(info);
-        return;
+        break;
     }                           // end switch
 
-    // finally, identify the scroll {dlb}:
-    if (id_the_scroll)
-        set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
-
-    if (you.inv_quantity[sc_read_2] == 0)
+    // finally, destroy and identify the scroll
+    if (scroll_type != SCR_PAPER)
     {
-        if (you.equip[EQ_WEAPON] == sc_read_2)
-        {
-            you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty-handed.");
-            wield_change = 1;
-        }
+        dec_inv_item_quantity( item_slot, 1 );
     }
 
-    return;
+    set_ident_type( OBJ_SCROLLS, scroll_type,
+                    (id_the_scroll) ? ID_KNOWN_TYPE : ID_TRIED_TYPE );
 }                               // end read_scroll()
 
 void original_name(void)
 {
-    char drink_1, drink_2;
-    char inn = 0;
-    unsigned char nthing = 0;
-
-  query:
-    mpr("Examine which item?", MSGCH_PROMPT);
-
-    unsigned char keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
+    int item_slot = prompt_invent_item( "Examine which item?", -1 );
+    if (item_slot == PROMPT_ABORT)
     {
-        if (keyin == '?')
-            nthing = get_invent(-1);
-
-        if (keyin == '*')
-            nthing = get_invent(-1);
-
-        if ((nthing >= 'A' && nthing <= 'Z')
-            || (nthing >= 'a' && nthing <= 'z'))
-        {
-            keyin = nthing;
-        }
-        else
-        {
-            mesclr();
-            goto query;
-        }
-    }
-
-    drink_1 = (int) keyin;
-
-    if (drink_1 < 'A' || (drink_1 > 'Z' && drink_1 < 'a') || drink_1 > 'z')
-    {
-        mpr("You don't have any such object.");
+        canned_msg( MSG_OK );
         return;
     }
 
-    drink_2 = letter_to_index(drink_1);
-
-    if (you.inv_quantity[drink_2] == 0)
-    {
-        mpr("You don't have any such object.");
-        return;
-    }
-
-    inn = drink_2;
-    describe_item(you.inv_class[inn], you.inv_type[inn], you.inv_plus[inn],
-                  you.inv_plus2[inn], you.inv_dam[inn], you.inv_ident[inn]);
+    describe_item( you.inv[item_slot] );
     redraw_screen();
 }                               // end original_name()
 
 void use_randart(unsigned char item_wield_2)
 {
-    if (inv_randart_wpn_properties(item_wield_2, 0, RAP_AC) != 0)
-        you.redraw_armor_class = 1;
+    ASSERT( is_random_artefact( you.inv[ item_wield_2 ] ) );
 
-    if (inv_randart_wpn_properties(item_wield_2, 0, RAP_EVASION) != 0)
+    FixedVector< char, RA_PROPERTIES >  proprt;
+    randart_wpn_properties( you.inv[item_wield_2], proprt );
+
+    if (proprt[RAP_AC])
+        you.redraw_armour_class = 1;
+
+    if (proprt[RAP_EVASION])
         you.redraw_evasion = 1;
 
     // modify ability scores
-    modify_stat(STAT_STRENGTH, inv_randart_wpn_properties( item_wield_2,
-        0, RAP_STRENGTH ), true);
-    modify_stat(STAT_INTELLIGENCE, inv_randart_wpn_properties( item_wield_2,
-        0, RAP_INTELLIGENCE ), true);
-    modify_stat(STAT_DEXTERITY, inv_randart_wpn_properties( item_wield_2,
-        0, RAP_DEXTERITY ), true);
+    modify_stat( STAT_STRENGTH,     proprt[RAP_STRENGTH],     true );
+    modify_stat( STAT_INTELLIGENCE, proprt[RAP_INTELLIGENCE], true );
+    modify_stat( STAT_DEXTERITY,    proprt[RAP_DEXTERITY],    true );
 
-    if (inv_randart_wpn_properties(item_wield_2, 0, RAP_NOISES) != 0)
-    {
-        you.special_wield = 50 + inv_randart_wpn_properties( item_wield_2,
-                                                             0, RAP_NOISES );
-    }
+    if (proprt[RAP_NOISES])
+        you.special_wield = 50 + proprt[RAP_NOISES];
 }

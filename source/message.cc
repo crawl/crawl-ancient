@@ -22,24 +22,17 @@
 
 #include "externs.h"
 #include "stuff.h"
+#include "view.h"
 
 #ifdef MACROS
 #include "macro.h"
 #endif
 
-//jmf: brent sez:
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason ...
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
+// circular buffer for keeping past messages
+message_item Store_Message[ NUM_STORED_MESSAGES ];    // buffer of old messages
+int Next_Message = 0;                                 // end of messages
 
-char scrloc = 0;                // line of next (previous?) message
-message_item store_message[30];    // buffer of old messages
-char store_count = 0;           // current position in store_message
-
+char Message_Line = 0;                // line of next (previous?) message
 
 static char god_message_altar_colour( char god )
 {
@@ -94,6 +87,8 @@ static char god_message_altar_colour( char god )
         return(YELLOW);
     }
 }
+
+#ifdef USE_COLOUR_MESSAGES
 
 // returns a colour or MSGCOL_MUTED
 static char channel_to_colour( int channel, int param )
@@ -168,6 +163,8 @@ static char channel_to_colour( int channel, int param )
             break;
 
         case MSGCH_PLAIN:
+        case MSGCH_ROTTEN_MEAT:
+        case MSGCH_EQUIPMENT:
         default:
             ret = LIGHTGREY;
             break;
@@ -201,6 +198,15 @@ static char channel_to_colour( int channel, int param )
     return (ret);
 }
 
+#else // don't use colour messages
+
+static char channel_to_colour( int channel, int param )
+{
+    return (LIGHTGREY);
+}
+
+#endif
+
 void mpr(const char *inf, int channel, int param)
 {
     char info2[80];
@@ -217,44 +223,44 @@ void mpr(const char *inf, int channel, int param)
 
     textcolor(LIGHTGREY);
 
-    if (scrloc == NUMBER_OF_LINES - 18) // ( scrloc == 8 )
+    if (Message_Line == get_number_of_lines() - 18) // ( Message_Line == 8 )
         more();
 
-    gotoxy(1, scrloc + 18);     // (1, scrloc + 17)
+    gotoxy(1, Message_Line + 18);     // (1, Message_Line + 17)
     strncpy(info2, inf, 78);
     info2[78] = 0;
 
     textcolor( colour );
     cprintf(info2);
-
-    /* Put the message into store_message, and move the '---' line forward */
-    store_message[store_count].text = inf;
-    store_message[store_count].channel = channel;
-    store_message[store_count].param = param;
-    store_count++;
-
+    //
     // reset colour
     textcolor(LIGHTGREY);
 
-    if (store_count > 23)
-        store_count -= 24;
+    Message_Line++;
 
-    store_message[store_count].text = "------------------------------------------------------------------------------";
-    store_message[store_count].channel = MSGCH_PLAIN;
-    store_message[store_count].param = 0;
+    // equipment lists just waste space in the message recall
+    if (channel != MSGCH_EQUIPMENT)
+    {
+        /* Put the message into Store_Message, and move the '---' line forward */
+        Store_Message[ Next_Message ].text = inf;
+        Store_Message[ Next_Message ].channel = channel;
+        Store_Message[ Next_Message ].param = param;
+        Next_Message++;
 
-    scrloc++;
+        if (Next_Message >= NUM_STORED_MESSAGES)
+            Next_Message = 0;
+    }
 }                               // end mpr()
 
 bool any_messages(void)
 {
-    return (scrloc > 0);
+    return (Message_Line > 0);
 }
 
 void mesclr(void)
 {
     // if no messages, return.
-    if (scrloc == 0)
+    if (Message_Line == 0)
         return;
 
     // turn cursor off -- avoid 'cursor dance'
@@ -271,11 +277,11 @@ void mesclr(void)
 
     gotoxy(1, startLine);
 
-#ifdef USE_CURSES
-    clrtobot();
+#ifdef LINUX
+    clear_to_end_of_screen();
 #else
 
-    int numLines = NUMBER_OF_LINES - startLine + 1;
+    int numLines = get_number_of_lines() - startLine + 1;
     for (int i = 0; i < numLines; i++)
     {
         cprintf( "                                                                               " );
@@ -291,7 +297,7 @@ void mesclr(void)
     // turn cursor back on
     _setcursortype(_NORMALCURSOR);
 
-    scrloc = 0;
+    Message_Line = 0;
 }                               // end mseclr()
 
 void more(void)
@@ -299,7 +305,7 @@ void more(void)
     char keypress = 0;
 
 #ifdef PLAIN_TERM
-    gotoxy(2, NUMBER_OF_LINES);
+    gotoxy(2, get_number_of_lines());
 #endif
 
 #ifdef DOS_TERM
@@ -329,9 +335,25 @@ void more(void)
 
 void replay_messages(void)
 {
-    int i = 0;
-    int j = 0;
-    int line = 0;
+    int            win_start_line = 0;
+    unsigned char  keyin;
+
+    bool           full_buffer = true;
+    int            num_msgs = NUM_STORED_MESSAGES;
+    int            first_message = Next_Message;
+
+    const int      num_lines = get_number_of_lines();
+
+    if (Store_Message[ NUM_STORED_MESSAGES - 1 ].text.length() == 0)
+    {
+        full_buffer = false;
+        first_message = 0;
+        num_msgs = Next_Message;
+    }
+
+    int last_message = Next_Message - 1;
+    if (last_message < 0)
+        last_message += NUM_STORED_MESSAGES;
 
 #ifdef DOS_TERM
     char buffer[4800];
@@ -340,64 +362,144 @@ void replay_messages(void)
     gettext(1, 1, 80, 25, buffer);
 #endif
 
-    // turn cursor off
-    _setcursortype(_NOCURSOR);
-
-    clrscr();
-
-    gotoxy(1, 1);
-
-    line = 0;
-
-    for (j = 0; j < 24; j++)
+    // track back a screen's worth of messages from the end
+    win_start_line = Next_Message - (num_lines - 2);
+    if (win_start_line < 0)
     {
-        if (strncmp(store_message[j].text.c_str(), "----------", 10) == 0)
+        if (full_buffer)
+            win_start_line += NUM_STORED_MESSAGES;
+        else
+            win_start_line = 0;
+    }
+
+    for(;;)
+    {
+        // turn cursor off
+        _setcursortype(_NOCURSOR);
+
+        clrscr();
+
+        gotoxy(1, 1);
+
+        for (int i = 0; i < num_lines - 2; i++)
         {
-            line = j;
-            break;
+            // calculate line in circular buffer
+            int line = win_start_line + i;
+            if (line >= NUM_STORED_MESSAGES)
+                line -= NUM_STORED_MESSAGES;
+
+            // avoid wrap-around
+            if (line == first_message && i != 0)
+                break;
+
+            int colour = channel_to_colour( Store_Message[ line ].channel,
+                                            Store_Message[ line ].param );
+            if (colour == MSGCOL_MUTED)
+                continue;
+
+            textcolor( colour );
+
+#if DEBUG_DIAGNOSTICS
+            cprintf( "%d: %s", line, Store_Message[ line ].text.c_str() );
+#else
+            cprintf( Store_Message[ line ].text.c_str() );
+#endif
+
+            cprintf(EOL);
+            textcolor(LIGHTGREY);
+        }
+
+        // print a footer -- note: relative co-ordinates start at 1
+        int rel_start;
+        if (!full_buffer)
+        {
+            if (Next_Message == 0)      // no messages!
+                rel_start = 0;
+            else
+                rel_start = win_start_line + 1;
+        }
+        else if (win_start_line >= first_message)
+            rel_start = win_start_line - first_message + 1;
+        else
+            rel_start = (win_start_line + NUM_STORED_MESSAGES) - first_message + 1;
+
+        int rel_end = rel_start + (num_lines - 2) - 1;
+        if (rel_end > num_msgs)
+            rel_end = num_msgs;
+
+        cprintf( "-------------------------------------------------------------------------------" );
+        cprintf(EOL);
+        cprintf( "<< Lines %d-%d of %d >>", rel_start, rel_end, num_msgs );
+
+        // turn cursor back on
+        _setcursortype(_NORMALCURSOR);
+
+        keyin = get_ch();
+
+        if ((full_buffer && NUM_STORED_MESSAGES > num_lines - 2)
+            || (!full_buffer && Next_Message > num_lines - 2))
+        {
+            int new_line;
+            int end_mark;
+
+            if (keyin == 'k' || keyin == '8' || keyin == '-')
+            {
+                new_line = win_start_line - (num_lines - 2);
+
+                // end_mark is equivalent to Next_Message, but
+                // is always less than win_start_line.
+                end_mark = first_message;
+                if (end_mark > win_start_line)
+                    end_mark -= NUM_STORED_MESSAGES;
+
+                ASSERT( end_mark <= win_start_line );
+
+                if (new_line <= end_mark)
+                    new_line = end_mark;   // hit top
+
+                // handle wrap-around
+                if (new_line < 0)
+                {
+                    if (full_buffer)
+                        new_line += NUM_STORED_MESSAGES;
+                    else
+                        new_line = 0;
+                }
+            }
+            else if (keyin == 'j' || keyin == '2' || keyin == '+')
+            {
+                new_line = win_start_line + (num_lines - 2);
+
+                // as above, but since we're adding we want
+                // this mark to always be greater.
+                end_mark = last_message;
+                if (end_mark < win_start_line)
+                    end_mark += NUM_STORED_MESSAGES;
+
+                ASSERT( end_mark >= win_start_line );
+
+                // hit bottom
+                if (new_line >= end_mark - (num_lines - 2))
+                    new_line = end_mark - (num_lines - 2) + 1;
+
+                if (new_line >= NUM_STORED_MESSAGES)
+                    new_line -= NUM_STORED_MESSAGES;
+            }
+            else
+                break;
+
+            win_start_line = new_line;
+        }
+        else
+        {
+            if (keyin != 'k' && keyin != '8' && keyin != '-'
+                && keyin != 'j' && keyin != '2' && keyin != '+')
+            {
+                break;
+            }
         }
     }
 
-    i = line + 1;
-
-    if (i == 24)
-        i = 0;
-
-    do
-    {
-        int colour = channel_to_colour( store_message[i].channel,
-                                        store_message[i].param );
-        if (colour == MSGCOL_MUTED)
-            continue;
-
-        textcolor( colour );
-        cprintf(store_message[i].text.c_str());
-        cprintf(EOL);
-        textcolor(LIGHTGREY);
-
-        if (i == line)
-            break;
-
-        i++;
-
-        if (i == 24)
-            i = 0;
-    }
-    while (1);
-
-/*
-   for (i = 0; i < 24; i ++)
-     {
-       cprintf(store_message [i]);
-       cprintf("\n\r");
-     }
-*/
-
-    // turn cursor back on
-    _setcursortype(_NORMALCURSOR);
-
-    if (getch() == 0)
-        getch();
 
 #ifdef DOS_TERM
     puttext(1, 1, 80, 25, buffer);

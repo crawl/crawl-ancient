@@ -5,7 +5,7 @@
  *
  *  Change History (most recent first):
  *
- *      <2>      5/20/99        BWR             Efficience changes for curses.
+ *      <2>      5/20/99        BWR             Efficiency changes for curses.
  *      <1>      -/--/--        LRH             Created
  */
 
@@ -24,17 +24,6 @@
 #include "ouch.h"
 #include "player.h"
 
-//jmf: brent sez:
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason curses is included after the *.h files in beam.cc.
-//  There's a reason ...
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
-bool wield_change;              // extern'd all over the place
-
 void print_stats(void)
 {
     textcolor(LIGHTGREY);
@@ -43,12 +32,18 @@ void print_stats(void)
 
     if (you.redraw_hit_points)
     {
-        int max_max_hp = 5000 + you.hp_max - you.base_hp;
+        int max_max_hp = you.hp_max + player_rotted();
 
-        if (you.hp <= you.hp_max / 10)
+        if (Options.hp_warning
+            && (you.hp <= (you.hp_max * Options.hp_warning) / 100))
+        {
             textcolor(RED);
-        else if (you.hp <= you.hp_max / 4)
+        }
+        else if (Options.hp_attention
+            && (you.hp <= (you.hp_max * Options.hp_attention) / 100))
+        {
             textcolor(YELLOW);
+        }
 
         itoa(you.hp, st_prn, 10);
         gotoxy(44, 3);
@@ -68,8 +63,8 @@ void print_stats(void)
             cprintf(")");
         }
 
-#ifdef USE_CURSES
-        clrtoeol();
+#ifdef LINUX
+        clear_to_end_of_line();
 #else
         cprintf("        ");
 #endif
@@ -86,8 +81,8 @@ void print_stats(void)
         cprintf("/");
         cprintf(st_prn);
 
-#ifdef USE_CURSES
-        clrtoeol();
+#ifdef LINUX
+        clear_to_end_of_line();
 #else
         cprintf("        ");
 #endif
@@ -210,7 +205,7 @@ void print_stats(void)
         textcolor(LIGHTGREY);
     }
 
-    if (you.redraw_armor_class)
+    if (you.redraw_armour_class)
     {
         itoa(player_AC(), st_prn, 10);
         gotoxy(44, 5);
@@ -234,7 +229,7 @@ void print_stats(void)
         if (you.duration[DUR_CONDENSATION_SHIELD])      //jmf: added 24mar2000
             textcolor(LIGHTGREY);
 
-        you.redraw_armor_class = 0;
+        you.redraw_armour_class = 0;
     }
 
     if (you.redraw_evasion)
@@ -293,8 +288,8 @@ void print_stats(void)
             break;
 
         case HS_SATIATED:
-#ifdef USE_CURSES
-            clrtoeol();
+#ifdef LINUX
+            clear_to_end_of_line();
 #else
             cprintf("        ");
 #endif
@@ -312,6 +307,11 @@ void print_stats(void)
             textcolor(LIGHTGREY);
             break;
         }
+
+#if DEBUG_DIAGNOSTICS
+        // debug mode hunger-o-meter
+        cprintf( " (%d:%d) ", you.hunger - you.old_hunger, you.hunger );
+#endif
 
         you.redraw_hunger = 0;
     }
@@ -335,22 +335,27 @@ void print_stats(void)
             break;
 
         case BS_UNENCUMBERED:
-#ifdef USE_CURSES
-            clrtoeol();
+#ifdef LINUX
+            clear_to_end_of_line();
 #else
             cprintf("          ");
 #endif
             break;
         }
 
+#if DEBUG_DIAGNOSTICS
+        // debug mode burden-o-meter
+        cprintf( " (%d/%d) ", you.burden, carrying_capacity() );
+#endif
+
         you.redraw_burden = 0;
     }
 
-    if (wield_change)
+    if (you.wield_change)
     {
         gotoxy(40, 13);
-#ifdef USE_CURSES
-        clrtoeol();
+#ifdef LINUX
+        clear_to_end_of_line();
 #else
         cprintf("                                       ");
 #endif
@@ -358,14 +363,11 @@ void print_stats(void)
         if (you.equip[EQ_WEAPON] != -1)
         {
             gotoxy(40, 13);
-            textcolor(you.inv_colour[you.equip[EQ_WEAPON]]);
+            textcolor(you.inv[you.equip[EQ_WEAPON]].colour);
 
-            putch( you.equip[EQ_WEAPON] +
-                        ((you.equip[EQ_WEAPON] < 26) ? 'a' : ('A' - 26)) );
+            in_name( you.equip[EQ_WEAPON], DESC_INVENTORY, str_pass );
+            str_pass[35] = '\0';
 
-            cprintf(" - ");
-            in_name( you.equip[EQ_WEAPON], 3, str_pass );
-            str_pass[35] = 0;
             cprintf(str_pass);
             textcolor(LIGHTGREY);
         }
@@ -385,9 +387,20 @@ void print_stats(void)
                 cprintf("Nothing wielded");
             }
         }
-        wield_change = false;
+        you.wield_change = false;
     }
-#ifdef USE_CURSES
-    refresh();
+
+#if DEBUG_DIAGNOSTICS
+
+    // debug mode GPS
+    gotoxy(40, 16);
+    cprintf( "Position(%2d,%2d)", you.x_pos, you.y_pos );
+
+#endif
+
+
+#ifdef LINUX
+    // get curses to redraw screen
+    update_screen();
 #endif
 }                               // end print_stats()

@@ -49,7 +49,36 @@
 // =========================================================================
 //  System Defines
 // =========================================================================
-#ifdef SOLARIS
+// Define plain_term for linux and similar, and dos_term for DOS and EMX.
+#ifdef LINUX
+
+    #define PLAIN_TERM
+    //#define CHARACTER_SET           A_ALTCHARSET
+    #define CHARACTER_SET           0
+    #define USE_ASCII_CHARACTERS
+    #define MULTIUSER
+
+    // Set curses include file if you don't want the default curses.h
+    #define USE_CURSES
+    // #define CURSES_INCLUDE_FILE     <ncurses.h>
+    #define EOL "\n"
+
+    // This is used for Posix termios.
+    #define USE_POSIX_TERMIOS
+
+    // This is used for BSD tchars type ioctl, use this if you can't
+    // use the Posix support above.
+    // #define USE_TCHARS_IOCTL
+    //
+    // This uses Unix signal control to block some things, may be
+    // useful in conjunction with USE_TCHARS_IOCTL.
+    //
+    #define USE_UNIX_SIGNALS
+
+    #include <string>
+    #include "liblinux.h"
+
+#elif defined(SOLARIS)
     // Most of the linux stuff applies, and so we want it
     #define LINUX
     #define PLAIN_TERM
@@ -59,7 +88,44 @@
     // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
     #define CHARACTER_SET           0
 
+    // Set curses include file if you don't want the default curses.h
     #define USE_CURSES
+    // #define CURSES_INCLUDE_FILE     <ncurses.h>
+    #define EOL "\n"
+
+    // This is used for Posix termios.
+    #define USE_POSIX_TERMIOS
+
+    // This is used for BSD tchars type ioctl, use this if you can't
+    // use the Posix support above.
+    // #define USE_TCHARS_IOCTL
+
+    // This uses Unix signal control to block SIGQUIT and SIGINT,
+    // which can be annoying (especially since control-Y sends
+    // SIGQUIT).
+    #define USE_UNIX_SIGNALS
+
+    // This is for older versions of Solaris... comment if you have it.
+    // #define NEED_USLEEP
+
+    // Default to non-ibm character set
+    #define USE_ASCII_CHARACTERS
+
+#elif defined (HPUX)
+    // Most of the linux stuff applies, and so we want it
+    #define LINUX
+    #define PLAIN_TERM
+    #define MULTIUSER
+    #include "liblinux.h"
+
+    // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
+    #define CHARACTER_SET           0
+
+    // Set curses include file if you don't want the default curses.h
+    // Under HP-UX its typically easier to use ncurses than try and
+    // get the colour curses library to work. -- bwr
+    #define USE_CURSES
+    #define CURSES_INCLUDE_FILE         <ncurses.h>
     #define EOL "\n"
 
     // This is used for Posix termios.
@@ -75,14 +141,10 @@
     #define USE_UNIX_SIGNALS
 
     // This is for systems with no usleep... comment if you have it.
-    #define USE_SELECT_FOR_DELAY
+    // #define NEED_USLEEP
 
     // Default to non-ibm character set
     #define USE_ASCII_CHARACTERS
-
-    // This will allow using the standout attribute in curses to
-    // mark friendly monsters.
-    #define USE_COLOUR_OPTS
 
 // Define plain_term for linux and similar, and dos_term for DOS and EMX.
 #elif defined ( BSD )
@@ -95,7 +157,9 @@
     // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
     #define CHARACTER_SET           0
 
+    // Set curses include file if you don't want the default curses.h
     #define USE_CURSES
+    // #define CURSES_INCLUDE_FILE     <ncurses.h>
     #define EOL "\n"
 
     // This is used for Posix termios.
@@ -110,29 +174,9 @@
     //
     // #define USE_UNIX_SIGNALS
 
-    // This is for systems with no usleep... comment if you have it.
-    // #define USE_SELECT_FOR_DELAY
-
     // Default to non-ibm character set
     #define USE_ASCII_CHARACTERS
 
-// Define plain_term for linux and similar, and dos_term for DOS and EMX.
-#elif defined(LINUX)
-
-    #define PLAIN_TERM
-    #define CHARACTER_SET           A_ALTCHARSET
-    //#define CHARACTER_SET           0
-    //#define USE_ASCII_CHARACTERS
-
-    #define USE_CURSES
-    #define EOL "\n"
-
-    // This will allow using the standout attribute in curses to
-    // mark friendly monsters.
-    #define USE_COLOUR_OPTS
-
-    #include <string>
-    #include "liblinux.h"
 
 // To compile with EMX for OS/2 define USE_EMX macro with compiler command line
 // (already defined in supplied makefile.emx)
@@ -185,6 +229,23 @@
 // =========================================================================
 //  Debugging Defines
 // =========================================================================
+#ifdef FULLDEBUG
+    // Bounds checking and asserts
+    #define DEBUG       1
+
+    // Outputs many "hidden" details, defaults to wizard on.
+    #define DEBUG_DIAGNOSTICS   1
+
+    // Scan for bad items before every input (may be slow)
+    //
+    // This function might slow things down quite a bit
+    // on slow machines because it's going to go through
+    // every item on the level and do string comparisons
+    // against the name.  Still, it is nice to know the
+    // turn in which "bad" items appear.
+    #define DEBUG_ITEM_SCAN     1
+#endif
+
 #ifdef _DEBUG       // this is how MSVC signals a debug build
     #define DEBUG       1
 #else
@@ -201,17 +262,21 @@
     #endif
 #endif
 
+// =========================================================================
+//  Curses features:
+// =========================================================================
+#ifdef USE_CURSES
+    // This will allow using the standout attribute in curses to
+    // mark friendly monsters... results depend on the type of
+    // term used... under X Windows try "rxvt".
+    #define USE_COLOUR_OPTS
+#endif
 
 // =========================================================================
 //  Game Play Defines
 // =========================================================================
-#ifdef USE_CURSES
-    #define NUMBER_OF_LINES   LINES
-#elif MAC
-    #define NUMBER_OF_LINES   30
-#else
-    #define NUMBER_OF_LINES   25
-#endif
+// number of back messages saved during play (currently none saved into files)
+#define NUM_STORED_MESSAGES   1000
 
 // if this works out okay, eventually we can change this to USE_OLD_RANDOM
 #define USE_NEW_RANDOM
@@ -227,62 +292,40 @@
 // domain.  You shouldn't set this really high unless you want to
 // make players spend far too much time in Pandemonium/The Abyss.
 //
-// Traditional setting of this is one rune, three is pretty standard now.
+// Traditional setting of this is one rune, but three is pretty standard now.
 #define NUMBER_OF_RUNES_NEEDED    3
 
 // Number of top scores to keep.
 #define SCORE_FILE_ENTRIES      100
 
+// Option to allow scoring of wizard characters.  Note that even if
+// you define this option, wizard characters are still tagged as such
+// in the score file.
+// #define SCORE_WIZARD_CHARACTERS
+
 // ================================================= --------------------------
 //jmf: New defines for a bunch of optional features.
 // ================================================= --------------------------
 
-// Give Grey elves a "glamour" ability (random confuse, charm, sleep humanoids)
-#define USE_ELVISH_GLAMOUR_ABILITY
-
-// Give Wizards better starting spellbooks
-#define USE_BETTER_MINOR_MAGIC_BOOKS
-
-// New cloud code
-#define USE_NEW_CLOUD_CODE
-
 // New silence code -- seems to actually work! Use it!
 #define USE_SILENCE_CODE
 
-// Transformation && (Species + Mutation) AC Bonuses NOT Cumulative
-#define USE_HARDER_AC_RULES
-
-// Branch-tailored altar selection
-#define USE_NEW_ALTAR_CODE
-
-// A few new mini-vaults, featuring altars
-#define USE_NEW_MINIVAULTS
-
-// Use special colours for all god-related messages
-#define USE_GOD_COLOURS
+// Use special colours for various channels of messages
+#define USE_COLOUR_MESSAGES
 
 // Wizard death option (needed to test new death messages)
 #define USE_OPTIONAL_WIZARD_DEATH
 
-// Lighter scrolls, rings, potions and spellbooks
-#define USE_LIGHTER_MAGIC_ITEMS
-
-// Better torment code
-#define USE_NEW_TORMENT_CODE
-
 // Semi-Controlled Blink
 #define USE_SEMI_CONTROLLED_BLINK
 
-// Use new system for weighting str and dex based on weapon type -- bwr
+// Use new system for weighting str and dex based on weapon type, -- bwr
 #define USE_NEW_COMBAT_STATS
 
 // Use this is you want the occasional spellcaster or ranger type wanderer
 // to show up... comment it if you find these types silly or too powerful,
 // or just want fighter type wanderers.
 // #define USE_SPELLCASTER_AND_RANGER_WANDERER_TEMPLATES
-
-// LRH's skill-pool drainer for high skill pools
-// #define USE_SKILL_POOL_DRAIN
 
 //mv: (new 9 Aug 01) switches on new rivers & lakes code
 #define USE_RIVERS
@@ -308,7 +351,7 @@
     // Setting it to nothing or not setting it will cause all game files to
     // be dumped in the current directory.
     //
-    #define SAVE_DIR_PATH       "/opt/local/newcrawl/lib/"
+    #define SAVE_DIR_PATH       "/opt/crawl/lib/"
 
     // will make this little thing go away.  Define SAVE_PACKAGE_CMD
     // to a command to compress and bundle the save game files into a
@@ -320,8 +363,8 @@
     //
     // Comment these lines out if you want to leave the save files uncompressed.
     //
-    #define SAVE_PACKAGE_CMD    "/opt/bin/zip -m -q -j -1 %s.zip %s.*"
-    #define LOAD_UNPACKAGE_CMD  "/opt/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
+    #define SAVE_PACKAGE_CMD    "/usr/bin/zip -m -q -j -1 %s.zip %s.*"
+    #define LOAD_UNPACKAGE_CMD  "/usr/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
     #define PACKAGE_SUFFIX      ".zip"
 
     // This provides some rudimentary protection against people using
@@ -329,7 +372,7 @@
     #define DO_ANTICHEAT_CHECKS
 
     // This defines the chmod permissions for score and bones files.
-    #define SHARED_FILES_CHMOD_PRIVATE  0600
+    #define SHARED_FILES_CHMOD_PRIVATE  0664
     #define SHARED_FILES_CHMOD_PUBLIC   0664
 
     // If we're on a multiuser system, file locking of shared files is
@@ -356,6 +399,13 @@
 #if HAS_NAMESPACES
     using namespace std;
 #endif
+
+// Uncomment these if you can't find these functions on your system
+// #define NEED_USLEEP
+// #define NEED_SNPRINTF
+
+// Must include libutil.h here if one of the above is defined.
+#include "libutil.h"
 
 template < class T >
 inline void UNUSED(const volatile T &)

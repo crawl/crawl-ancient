@@ -15,15 +15,8 @@
 #include "externs.h"
 
 const char *your_hand(int plural);
-bool backlight_monsters(char x, char y, int pow, int garbage);
-int torment_monsters(char x, char y, int pow, int message);
-int mons_has_ench( struct monsters *mon, int ench, int ench2 = ENCH_NONE );
-bool mons_add_ench( struct monsters *mon, int ench );
-bool mons_del_ench(struct monsters *mon, int ench, int ench2 = ENCH_NONE );
-
-int make_a_normal_cloud(char x, char y, int pow, int ctype);
-void apply_area_cloud( int (*func)(char,char,int,int), char x, char y, int pow, int number, int ctype);
-void apply_area_within_radius(int (*func)(char,char,int,int), char x, char y, int pow, int radius, int ctype);
+bool backlight_monsters(int x, int y, int pow, int garbage);
+int make_a_normal_cloud(int x, int y, int pow, int ctype);
 
 void cast_bend(int pow);
 void cast_condensation_shield(int pow);
@@ -36,11 +29,7 @@ void cast_twist(int powc);
 void cast_far_strike(int powc);
 void cast_swap(int powc);
 void cast_apportation(int powc);
-
-#ifdef USE_ELVISH_GLAMOUR_ABILITY
 void cast_glamour(int pow);
-#endif
-
 void cast_ignite_poison(int pow);
 void cast_intoxicate(int pow);
 void cast_mass_sleep(int pow);
@@ -62,7 +51,7 @@ void cast_snake_charm(int pow);
 void cast_stoneskin(int pow);
 
 void cast_shuggoth_seed(int powc);
-void make_shuggoth(char x, char y, int hp);
+void make_shuggoth(int x, int y, int hp);
 
 void cast_semi_controlled_blink(int pow);
 

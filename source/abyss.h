@@ -24,7 +24,7 @@ void generate_abyss(void);
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-char area_shift(void);
+void area_shift(void);
 
 
 // last updated 12may2000 {dlb}

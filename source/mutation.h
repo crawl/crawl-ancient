@@ -39,22 +39,27 @@ bool delete_mutation(char which_mutation);
 /* ***********************************************************************
  * called from: chardump
  * *********************************************************************** */
-char *mutation_name(char which_mutat);
+// default of level == -1, means to use the player's current level
+char *mutation_name( char which_mutat, int level = -1 );
 
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: religion
  * *********************************************************************** */
-bool give_good_mutation(bool failMsg = true);
+bool give_good_mutation( bool failMsg = true );
 
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: items - religion
+ * *********************************************************************** */
+bool give_cosmetic_mutation( void );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: items - spells
  * *********************************************************************** */
-bool give_bad_mutation(bool forceMutation = false, bool failMsg = true);
-
+bool give_bad_mutation( bool forceMutation = false, bool failMsg = true );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************

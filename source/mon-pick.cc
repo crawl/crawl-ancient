@@ -257,6 +257,8 @@ bool mons_abyss(int mcls)
     case MONS_YNOXINUL:
     case MONS_ZOMBIE_LARGE:
     case MONS_ZOMBIE_SMALL:
+    case MONS_SIMULACRUM_LARGE:
+    case MONS_SIMULACRUM_SMALL:
         return true;
     default:
         return false;
@@ -295,6 +297,8 @@ int mons_rare_abyss(int mcls)
         return 35;
 
     case MONS_SKELETAL_DRAGON:
+    case MONS_SIMULACRUM_LARGE:
+    case MONS_SIMULACRUM_SMALL:
         return 20;
 
     case MONS_EFREET:
@@ -437,6 +441,8 @@ bool mons_pan(int mcls)
     case MONS_WRAITH:
     case MONS_ZOMBIE_LARGE:
     case MONS_ZOMBIE_SMALL:
+    case MONS_SIMULACRUM_LARGE:
+    case MONS_SIMULACRUM_SMALL:
     // "things"
     case MONS_ABOMINATION_LARGE:
     case MONS_ABOMINATION_SMALL:
@@ -817,6 +823,8 @@ static int mons_cocytus_level(int mcls)
     case MONS_SKELETON_SMALL:
     case MONS_ZOMBIE_LARGE:
     case MONS_ZOMBIE_SMALL:
+    case MONS_SIMULACRUM_LARGE:
+    case MONS_SIMULACRUM_SMALL:
         mlev++;
         break;
 
@@ -868,6 +876,10 @@ static int mons_cocytus_rare(int mcls)
 {
     switch (mcls)
     {
+    case MONS_SIMULACRUM_LARGE:
+    case MONS_SIMULACRUM_SMALL:
+        return 90;
+
     case MONS_FREEZING_WRAITH:
         return 87;
 
@@ -978,6 +990,8 @@ static int mons_tartarus_level(int mcls)
     case MONS_SKELETAL_DRAGON:
     case MONS_SPECTRAL_WARRIOR:
     case MONS_TORMENTOR:
+    case MONS_SIMULACRUM_LARGE:
+    case MONS_SIMULACRUM_SMALL:
         mlev += 4;
         break;
 
@@ -1020,6 +1034,8 @@ static int mons_tartarus_rare(int mcls)
         return 92;
 
     case MONS_REAPER:
+    case MONS_SIMULACRUM_LARGE:
+    case MONS_SIMULACRUM_SMALL:
         return 73;
 
     case MONS_NECROPHAGE:
@@ -1129,6 +1145,7 @@ static int mons_mineorc_level(int mcls)
     case MONS_STONE_GIANT:
     case MONS_TROLL:
     case MONS_TWO_HEADED_OGRE:
+    case MONS_ETTIN:
         mlev += 3;
         break;
 
@@ -1173,13 +1190,14 @@ static int mons_mineorc_rare(int mcls)
     case MONS_TWO_HEADED_OGRE:
         return 5;
 
+    case MONS_ETTIN:
     case MONS_IRON_TROLL:
+    case MONS_ORC_WARLORD:
     case MONS_ROCK_TROLL:
     case MONS_STONE_GIANT:
         return 3;
 
     case MONS_GNOLL:
-    case MONS_ORC_WARLORD:
         return 2;
 
     case MONS_OGRE_MAGE:
@@ -1368,9 +1386,10 @@ static int mons_lair_rare(int mcls)
         return 55;
 
     case MONS_FUNGUS:
-    case MONS_YAK:
     case MONS_HIPPOGRIFF:
+    case MONS_HYDRA:
     case MONS_GIANT_CENTIPEDE:
+    case MONS_YAK:
         return 50;
 
     case MONS_BLACK_SNAKE:
@@ -1398,7 +1417,6 @@ static int mons_lair_rare(int mcls)
 
     case MONS_WYVERN:
     case MONS_BOULDER_BEETLE:
-    case MONS_HYDRA:
     case MONS_WOLF:
         return 20;
 
@@ -1539,6 +1557,8 @@ static int mons_crypt_level(int mcls)
     case MONS_HUNGRY_GHOST:
     case MONS_NECROPHAGE:
     case MONS_SKELETAL_WARRIOR:
+    case MONS_SIMULACRUM_SMALL:
+    case MONS_SIMULACRUM_LARGE:
         mlev += 2;
         break;
 
@@ -1590,6 +1610,8 @@ static int mons_crypt_rare(int mcls)
         return 300;
 
     case MONS_SKELETAL_WARRIOR:
+    case MONS_SIMULACRUM_SMALL:
+    case MONS_SIMULACRUM_LARGE:
         return 75;
 
     case MONS_NECROPHAGE:
@@ -1848,6 +1870,8 @@ static int mons_tomb_level(int mcls)
 
     case MONS_GUARDIAN_MUMMY:
     case MONS_FLYING_SKULL:
+    case MONS_SIMULACRUM_SMALL:
+    case MONS_SIMULACRUM_LARGE:
         mlev += 2;
         break;
 
@@ -1886,6 +1910,8 @@ static int mons_tomb_rare(int mcls)
         return 21;
 
     case MONS_ZOMBIE_SMALL:
+    case MONS_SIMULACRUM_SMALL:
+    case MONS_SIMULACRUM_LARGE:
         return 20;
 
     case MONS_LICH:
@@ -1925,6 +1951,7 @@ static int mons_swamp_level(int mcls)
     case MONS_GIANT_LIZARD:
     case MONS_GIANT_MOSQUITO:
     case MONS_GIANT_SNAIL:
+    case MONS_HYDRA:
         mlev += 2;
         break;
 
@@ -1943,7 +1970,6 @@ static int mons_swamp_level(int mcls)
     case MONS_BLINK_FROG:
     case MONS_SLIME_CREATURE:
     case MONS_VERY_UGLY_THING:
-    case MONS_HYDRA:
     case MONS_VAPOUR:
     case MONS_TENTACLED_MONSTROSITY:
         mlev += 4;
@@ -1982,11 +2008,13 @@ static int mons_swamp_rare(int mcls)
     case MONS_SWAMP_DRAKE:
         return 80;
 
+    case MONS_HYDRA:
+        return 70;
+
     case MONS_RAT:
         return 61;
 
     case MONS_SLIME_CREATURE:
-    case MONS_HYDRA:
         return 54;
 
     case MONS_SNAKE:
@@ -2096,7 +2124,6 @@ static int mons_hallzot_level(int mcls)
         mlev += 2;
         break;
     case MONS_ORB_OF_FIRE:
-    case MONS_BALL_LIGHTNING:
     case MONS_ELECTRIC_GOLEM:
         mlev += 1;
         break;
@@ -2137,7 +2164,6 @@ static int mons_hallzot_rare(int mcls)
         return 20;
     case MONS_KILLER_KLOWN:
     case MONS_ORB_OF_FIRE:
-    case MONS_BALL_LIGHTNING:
         return 15;
     default:
         return 0;
@@ -2214,7 +2240,6 @@ static int mons_standard_level(int mcls)
     case MONS_YELLOW_WASP:
         return 11;
 
-    case MONS_ETTIN:
     case MONS_EYE_OF_DRAINING:
     case MONS_MANTICORE:
     case MONS_PLANT:
@@ -2242,8 +2267,10 @@ static int mons_standard_level(int mcls)
     case MONS_BRAIN_WORM:
     case MONS_CYCLOPS:
     case MONS_EFREET:
+    case MONS_ETTIN:
     case MONS_EYE_OF_DEVASTATION:
     case MONS_GOLD_MIMIC:
+    case MONS_HYDRA:
     case MONS_MOTTLED_DRAGON:
     case MONS_ORC_PRIEST:
     case MONS_POTION_MIMIC:
@@ -2271,6 +2298,8 @@ static int mons_standard_level(int mcls)
     case MONS_SHAPESHIFTER:
     case MONS_UGLY_THING:
     case MONS_WIZARD:
+    case MONS_SIMULACRUM_SMALL:
+    case MONS_SIMULACRUM_LARGE:
         return 17;
 
     case MONS_DRAGON:
@@ -2297,7 +2326,6 @@ static int mons_standard_level(int mcls)
     case MONS_GIANT_ORANGE_BRAIN:
     case MONS_GIANT_SNAIL:
     case MONS_GREAT_ORB_OF_EYES:
-    case MONS_HYDRA:
     case MONS_ICE_DRAGON:
     case MONS_SKELETON_LARGE:
     case MONS_NAGA_MAGE:
@@ -2462,11 +2490,14 @@ static int mons_standard_rare(int mcls)
     case MONS_GIANT_BLOWFLY:
     case MONS_GIANT_COCKROACH:
     case MONS_HIPPOGRIFF:
+    case MONS_HYDRA:
     case MONS_ICE_BEAST:
     case MONS_KILLER_BEE:
     case MONS_ORC_WIZARD:
     case MONS_QUOKKA:
     case MONS_SCORPION:
+    case MONS_SIMULACRUM_SMALL:
+    case MONS_SIMULACRUM_LARGE:
     case MONS_TORMENTOR:
     case MONS_UNSEEN_HORROR:
     case MONS_WORM:
@@ -2520,6 +2551,7 @@ static int mons_standard_rare(int mcls)
     case MONS_ARMOUR_MIMIC:
     case MONS_BROWN_SNAKE:
     case MONS_DRAGON:
+    case MONS_ETTIN:
     case MONS_FIRE_VORTEX:
     case MONS_GIANT_LIZARD:
     case MONS_GIANT_MITE:
@@ -2561,7 +2593,6 @@ static int mons_standard_rare(int mcls)
     case MONS_BUTTERFLY:
     case MONS_FUNGUS:
     case MONS_GIANT_SNAIL:
-    case MONS_HYDRA:
     case MONS_ICE_DRAGON:
     case MONS_INSUBSTANTIAL_WISP:
     case MONS_RAKSHASA:

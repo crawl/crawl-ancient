@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAC_NUMBER_OF_LINES     30
 
 // constants
 const int _NORMALCURSOR = 1;

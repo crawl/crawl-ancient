@@ -39,6 +39,7 @@
 #include "skills2.h"
 #include "stuff.h"
 #include "wpn-misc.h"
+#include "spl-util.h"
 
 #ifdef MACROS
 #include "macro.h"
@@ -68,25 +69,6 @@ static void append_value(string & description, int valu, bool plussed)
     description += value_str;
 }                               // end append_value()
 
-
-//---------------------------------------------------------------
-//
-// print_ench
-//
-// Used for weapons, armour and ammo.
-//
-//---------------------------------------------------------------
-static void print_ench(string & description, unsigned char item_plus)
-{
-    description += ((item_plus < 52) ? "lightly" :
-                    (item_plus < 54) ? "moderately" :
-                    (item_plus < 56) ? "heavily" :
-                    (item_plus < 58) ? "very heavily" : "extremely heavily");
-
-    description += " enchanted ";
-}                               // end print_ench()
-
-
 //---------------------------------------------------------------
 //
 // print_description
@@ -98,13 +80,15 @@ static void print_ench(string & description, unsigned char item_plus)
 //---------------------------------------------------------------
 static void print_description(const string &d)
 {
-    int nextLine = -1;
-    int currentPos = 0;
+    unsigned int  nextLine = string::npos;
+    unsigned int  currentPos = 0;
+
 #ifdef DOS
-    const int lineWidth = 52;
+    const unsigned int lineWidth = 52;
 #else
-    const int lineWidth = 70;
+    const unsigned int lineWidth = 70;
 #endif
+
     bool nlSearch = true;       // efficiency
 
     textcolor(LIGHTGREY);
@@ -172,249 +156,158 @@ static void print_description(const string &d)
 // string.
 //
 //---------------------------------------------------------------
-static void randart_descpr(string &description, int item_class,
-                           int item_type, int item_plus, int item_plus2,
-                           int item_dam)
+static void randart_descpr( string &description, const item_def &item )
 {
     unsigned int old_length = description.length();
 
-    if (randart_wpn_properties( item_class, item_type, item_dam,
-                                item_plus, item_plus2, 0, RAP_AC ) != 0)
+    FixedVector< char, RA_PROPERTIES > proprt;
+    randart_wpn_properties( item, proprt );
+
+    if (proprt[ RAP_AC ])
     {
         description += "$It affects your AC (";
-
-        append_value(description,
-                     randart_wpn_properties(item_class, item_type, item_dam,
-                                            item_plus, item_plus2, 0, RAP_AC),
-                     true);
-
+        append_value(description, proprt[ RAP_AC ], true);
         description += ").";
     }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_EVASION ) != 0)
+    if (proprt[ RAP_EVASION ])
     {
         description += "$It affects your evasion (";
-
-        append_value(description,
-                     randart_wpn_properties(item_class, item_type, item_dam,
-                                            item_plus, item_plus2, 0,
-                                            RAP_EVASION),
-                     true);
-
+        append_value(description, proprt[ RAP_EVASION ], true);
         description += ").";
     }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_STRENGTH ) != 0)
+    if (proprt[ RAP_STRENGTH ])
     {
         description += "$It affects your strength (";
-
-        append_value(description,
-                     randart_wpn_properties(item_class, item_type, item_dam,
-                                            item_plus, item_plus2, 0,
-                                            RAP_STRENGTH),
-                     true);
-
+        append_value(description, proprt[ RAP_STRENGTH ], true);
         description += ").";
     }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_INTELLIGENCE ) != 0)
+    if (proprt[ RAP_INTELLIGENCE ])
     {
         description += "$It affects your intelligence (";
-
-        append_value(description,
-                     randart_wpn_properties(item_class, item_type, item_dam,
-                                            item_plus, item_plus2, 0,
-                                            RAP_INTELLIGENCE),
-                     true);
-
+        append_value(description, proprt[ RAP_INTELLIGENCE ], true);
         description += ").";
     }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_DEXTERITY ) != 0)
+    if (proprt[ RAP_DEXTERITY ])
     {
         description += "$It affects your dexterity (";
-
-        append_value(description,
-                     randart_wpn_properties(item_class, item_type, item_dam,
-                                            item_plus, item_plus2, 0,
-                                            RAP_DEXTERITY),
-                     true);
-
+        append_value(description, proprt[ RAP_DEXTERITY ], true);
         description += ").";
     }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_ACCURACY ) != 0)
+    if (proprt[ RAP_ACCURACY ])
     {
         description += "$It affects your accuracy (";
-
-        append_value(description,
-                     randart_wpn_properties(item_class, item_type, item_dam,
-                                            item_plus, item_plus2, 0,
-                                            RAP_ACCURACY),
-                     true);
-
+        append_value(description, proprt[ RAP_ACCURACY ], true);
         description += ").";
     }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_DAMAGE ) != 0)
+    if (proprt[ RAP_DAMAGE ])
     {
         description += "$It affects your damage-dealing abilities (";
-
-        append_value(description,
-                     randart_wpn_properties(item_class, item_type, item_dam,
-                                            item_plus, item_plus2, 0,
-                                            RAP_DAMAGE),
-                     true);
-
+        append_value(description, proprt[ RAP_DAMAGE ], true);
         description += ").";
     }
 
-    const int fire_res = randart_wpn_properties( item_class, item_type,
-                                item_dam, item_plus, item_plus2, 0, RAP_FIRE );
-
-    if (fire_res <= -1)
+    if (proprt[ RAP_FIRE ] < -2)
+        description += "$It makes you highly vulnerable to fire. ";
+    else if (proprt[ RAP_FIRE ] == -2)
+        description += "$It makes you greatly susceptible to fire. ";
+    else if (proprt[ RAP_FIRE ] < -1)
         description += "$It makes you susceptible to fire. ";
-    else if (fire_res == 1)
+    else if (proprt[ RAP_FIRE ] == 1)
         description += "$It protects you from fire. ";
-    else if (fire_res >= 2)
+    else if (proprt[ RAP_FIRE ] == 2)
+        description += "$It greatly protects you from fire. ";
+    else if (proprt[ RAP_FIRE ] > 2)
         description += "$It renders you almost immune to fire. ";
 
-    const int cold_res = randart_wpn_properties( item_class, item_type,
-                                item_dam, item_plus, item_plus2, 0, RAP_COLD );
-
-    if (cold_res <= -1)
+    if (proprt[ RAP_COLD ] < -2)
+        description += "$It makes you highly susceptible to cold. ";
+    else if (proprt[ RAP_COLD ] == -2)
+        description += "$It makes you greatly susceptible to cold. ";
+    else if (proprt[ RAP_COLD ] < -1)
         description += "$It makes you susceptible to cold. ";
-    else if (cold_res == 1)
+    else if (proprt[ RAP_COLD ] == 1)
         description += "$It protects you from cold. ";
-    else if (cold_res >= 2)
+    else if (proprt[ RAP_COLD ] == 2)
+        description += "$It greatly protects you from cold. ";
+    else if (proprt[ RAP_COLD ] > 2)
         description += "$It renders you almost immune to cold. ";
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_ELECTRICITY ) != 0)
-    {
+    if (proprt[ RAP_ELECTRICITY ])
         description += "$It insulates you from electricity. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_POISON ) != 0)
-    {
+    if (proprt[ RAP_POISON ])
         description += "$It protects you from poison. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_NEGATIVE_ENERGY ) != 0)
-    {
+    if (proprt[ RAP_NEGATIVE_ENERGY ] == 1)
         description += "$It partially protects you from negative energy. ";
-    }
+    else if (proprt[ RAP_NEGATIVE_ENERGY ] == 2)
+        description += "$It protects you from negative energy. ";
+    else if (proprt[ RAP_NEGATIVE_ENERGY ] > 2)
+        description += "$It renders you almost immune negative energy. ";
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_MAGIC ) != 0)
-    {
+    if (proprt[ RAP_MAGIC ])
         description += "$It protects you from magic. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_EYESIGHT ) != 0)
-    {
+    if (proprt[ RAP_EYESIGHT ])
         description += "$It enhances your eyesight. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_INVISIBLE ) != 0)
-    {
+    if (proprt[ RAP_INVISIBLE ])
         description += "$It lets you turn invisible. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_LEVITATE ) != 0)
-    {
+    if (proprt[ RAP_LEVITATE ])
         description += "$It lets you levitate. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_BLINK ) != 0)
-    {
+    if (proprt[ RAP_BLINK ])
         description += "$It lets you blink. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_CAN_TELEPORT ) != 0)
-    {
+    if (proprt[ RAP_CAN_TELEPORT ])
         description += "$It lets you teleport. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_BERSERK ) != 0)
-    {
+    if (proprt[ RAP_BERSERK ])
         description += "$It lets you go berserk. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_MAPPING ) != 0)
-    {
+    if (proprt[ RAP_MAPPING ])
         description += "$It lets you sense your surroundings. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_NOISES ) != 0)
-    {
+    if (proprt[ RAP_NOISES ])
         description += "$It makes noises. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_PREVENT_SPELLCASTING ) != 0)
-    {
+    if (proprt[ RAP_PREVENT_SPELLCASTING ])
         description += "$It prevents spellcasting. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_CAUSE_TELEPORTATION ) != 0)
-    {
+    if (proprt[ RAP_CAUSE_TELEPORTATION ])
         description += "$It causes teleportation. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_PREVENT_TELEPORTATION ) != 0)
-    {
+    if (proprt[ RAP_PREVENT_TELEPORTATION ])
         description += "$It prevents most forms of teleportation. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_ANGRY ) != 0)
-    {
+    if (proprt[ RAP_ANGRY ])
         description += "$It makes you angry. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_METABOLISM ) != 0)
-    {
+    if (proprt[ RAP_METABOLISM ] >= 3)
+        description += "$It greatly speeds your metabolism. ";
+    else if (proprt[ RAP_METABOLISM ])
         description += "$It speeds your metabolism. ";
-    }
 
-    if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
-                                item_plus2, 0, RAP_MUTAGENIC ) != 0)
-    {
+    if (proprt[ RAP_MUTAGENIC ] > 3)
+        description += "$It partically glows with mutagenic radiation.";
+    else if (proprt[ RAP_MUTAGENIC ])
         description += "$It emits mutagenic radiations.";
-    }
 
     if (old_length != description.length())
         description += "$";
 
-    if ((item_dam == 25
-            && (item_class == OBJ_WEAPONS || item_class == OBJ_ARMOUR))
-        || (item_dam == 201 && item_class == OBJ_JEWELLERY))
+    if (is_unrandom_artefact( item ))
     {
-        if (strlen(unrandart_descrip( 0, item_class, item_type,
-                                       item_plus, item_plus2 )) > 0)
+        if (strlen(unrandart_descrip(0, item)) > 0)
         {
-            description += unrandart_descrip(0, item_class, item_type,
-                                             item_plus, item_plus2);
+            description += unrandart_descrip(0, item);
             description += "$";
         }
     }
@@ -765,9 +658,7 @@ static string describe_demon(void)
 // describe_weapon
 //
 //---------------------------------------------------------------
-static string describe_weapon(int item_class, int item_type, int item_plus,
-                              int item_plus2, int item_dam,
-                              unsigned char item_id, char verbose)
+static string describe_weapon( const item_def &item, char verbose)
 {
     string description;
 
@@ -775,18 +666,105 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
 
     description = "";
 
-    if (item_dam % 30 == SPWPN_RANDART_I
-        && strlen(unrandart_descrip(1, item_class, item_type, item_plus,
-                                    item_plus2)) != 0)
+    if (is_fixed_artefact( item ))
     {
-        description = unrandart_descrip(1, item_class, item_type, item_plus,
-                                        item_plus2);
+        if (item_ident( item, ISFLAG_KNOW_PROPERTIES ))
+        {
+            description += "$";
+
+            switch (item.special)
+            {
+            case SPWPN_SINGING_SWORD:
+                description += "This blessed weapon loves nothing more "
+                    "than to sing to its owner, "
+                    "whether they want it to or not. ";
+                break;
+            case SPWPN_WRATH_OF_TROG:
+                description += "This was the favourite weapon of "
+                    "the old god Trog, before he lost it one day. "
+                    "It induces a bloodthirsty berserker rage in "
+                    "anyone who uses it to strike another. ";
+                break;
+            case SPWPN_SCYTHE_OF_CURSES:
+                description += "This weapon carries a "
+                    "terrible and highly irritating curse. ";
+                break;
+            case SPWPN_MACE_OF_VARIABILITY:
+                description += "It is rather unreliable. ";
+                break;
+            case SPWPN_GLAIVE_OF_PRUNE:
+                description += "It is the creation of a mad god, and "
+                    "carries a curse which transforms anyone "
+                    "possessing it into a prune. Fortunately, "
+                    "the curse works very slowly, and one can "
+                    "use it briefly with no consequences "
+                    "worse than slightly purple skin and a few wrinkles. ";
+                break;
+            case SPWPN_SCEPTRE_OF_TORMENT:
+                description += "This truly accursed weapon is "
+                    "an instrument of Hell. ";
+                break;
+            case SPWPN_SWORD_OF_ZONGULDROK:
+                description += "This dreadful weapon is used "
+                    "at the user's peril. ";
+                break;
+            case SPWPN_SWORD_OF_CEREBOV:
+                description += "Flames cover its twisted blade. ";
+                break;
+            case SPWPN_STAFF_OF_DISPATER:
+                description += "This legendary item can unleash "
+                    "the fury of Hell. ";
+                break;
+            case SPWPN_SCEPTRE_OF_ASMODEUS:
+                description += "It carries some of the powers of "
+                    "the arch-fiend Asmodeus. ";
+                break;
+            case SPWPN_SWORD_OF_POWER:
+                description += "It rewards the powerful with power "
+                    "and the meek with weakness. ";
+                break;
+            case SPWPN_KNIFE_OF_ACCURACY:
+                description += "It is almost unerringly accurate. ";
+                break;
+            case SPWPN_STAFF_OF_OLGREB:
+                description += "It was the magical weapon wielded by the "
+                    "mighty wizard Olgreb before he met his "
+                    "fate somewhere within these dungeons. It "
+                    "grants its wielder resistance to the "
+                    "effects of poison and increases their "
+                    "ability to use venomous magic, and "
+                    "carries magical powers which can "
+                    "be invoked by one skilled in the use of magic. ";
+                break;
+            case SPWPN_VAMPIRES_TOOTH:
+                description += "It is lethally vampiric. ";
+                break;
+            case SPWPN_STAFF_OF_WUCAD_MU:
+                description += "Its power varies in proportion to "
+                    "its wielder's intelligence. "
+                    "Using it can be a bit risky. ";
+                break;
+            }
+
+            description += "$";
+        }
+        else if (item_ident( item, ISFLAG_KNOW_TYPE ))
+        {
+            // We know it's an artefact type weapon, but not what it does.
+            description += "$This weapon may have some hidden properties.$";
+        }
+    }
+    else if (is_unrandom_artefact( item )
+        && strlen(unrandart_descrip(1, item)) != 0)
+    {
+        description += unrandart_descrip(1, item);
+        description += "$";
     }
     else
     {
         if (verbose == 1)
         {
-            switch (item_type)
+            switch (item.sub_type)
             {
             case WPN_CLUB:
                 description += "A heavy piece of wood. ";
@@ -996,176 +974,39 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
             default:
                 DEBUGSTR("Unknown weapon");
             }
+
+            description += "$";
         }
     }
 
-    if (verbose == 1 && !launches_things(item_type))
+    if (verbose == 1 && !launches_things( item.sub_type ))
     {
-#ifdef USE_NEW_COMBAT_STATS
-        const int str_weight = weapon_str_weight( item_class, item_type );
-
-        if (str_weight >= 8)
-            description += " This weapon is best used by the strong. ";
-        else if (str_weight > 5)
-            description += " This weapon is better for the strong. ";
-        else if (str_weight <= 2)
-            description += " This weapon is best used by the dexterous. ";
-        else if (str_weight < 5)
-            description += " This weapon is better for the dexterous. ";
-#endif
-
-        switch (hands_reqd_for_weapon(item_class, item_type))
-        {
-        case HANDS_ONE_HANDED:
-            description += " It is a one handed weapon. ";
-            break;
-        case HANDS_ONE_OR_TWO_HANDED:
-            description += " It can be used with one hand, or more "
-                    "effectively with two (i.e. when not using a shield). ";
-            break;
-        case HANDS_TWO_HANDED:
-            description += " It is a two handed weapon. ";
-            break;
-        }
-
-        description += "$$Damage rating: ";
-        append_value(description,
-                     property(OBJ_WEAPONS, item_type, PWPN_DAMAGE), false);
+        description += "$Damage rating: ";
+        append_value(description, property( item, PWPN_DAMAGE ), false);
 
         description += "$Accuracy rating: ";
-        append_value(description, property(OBJ_WEAPONS, item_type, PWPN_HIT),
-                     true);
+        append_value(description, property( item, PWPN_HIT ), true);
 
-        description += "$Attack delay: ";
-        append_value(description,
-                     property(OBJ_WEAPONS, item_type, PWPN_SPEED) * 10, false);
+        description += "$Base attack delay: ";
+        append_value(description, property( item, PWPN_SPEED ) * 10, false);
         description += "%%";
     }
-    description += "$$";
+    description += "$";
 
-    if (item_dam % 30 < SPWPN_RANDART_I)
+    if (!is_fixed_artefact( item ))
     {
-        switch (item_dam / 30)
-        {
-        case DWPN_DWARVEN:
-            description += "It is well-crafted and very durable.$";
-            break;
-        }
+        int spec_ench = item.special;
 
-        if (launches_things(item_type))
-        {
-            switch (item_dam / 30)
-            {
-            case DWPN_DWARVEN:
-                description += "It is most deadly when used with "
-                    "dwarven ammunition.$";
-                break;
-            case DWPN_ELVEN:
-                description += "It is most deadly when used with "
-                    "elven ammunition.$";
-                break;
-            case DWPN_ORCISH:
-                description += "It is most deadly when used with "
-                    "orcish ammunition.$";
-                break;
-            }
-        }
-    }
-
-    if (item_dam >= NWPN_SINGING_SWORD)
-    {
-        if (item_id > 1)
-        {
-            switch (item_dam)
-            {
-            case NWPN_SINGING_SWORD:
-                description += "This blessed weapon loves nothing more "
-                    "than to sing to its owner, "
-                    "whether they want it to or not. ";
-                break;
-            case NWPN_WRATH_OF_TROG:
-                description += "This was the favourite weapon of "
-                    "the old god Trog, before he lost it one day. "
-                    "It induces a bloodthirsty berserker rage in "
-                    "anyone who uses it to strike another. ";
-                break;
-            case NWPN_SCYTHE_OF_CURSES:
-                description += "This weapon carries a "
-                    "terrible and highly irritating curse. ";
-                break;
-            case NWPN_MACE_OF_VARIABILITY:
-                description += "It is rather unreliable. ";
-                break;
-            case NWPN_GLAIVE_OF_PRUNE:
-                description += "It is the creation of a mad god, and "
-                    "carries a curse which transforms anyone "
-                    "possessing it into a prune. Fortunately, "
-                    "the curse works very slowly, and one can "
-                    "use it briefly with no consequences "
-                    "worse than slightly purple skin and a few wrinkles. ";
-                break;
-            case NWPN_SCEPTRE_OF_TORMENT:
-                description += "This truly accursed weapon is "
-                    "an instrument of Hell. ";
-                break;
-            case NWPN_SWORD_OF_ZONGULDROK:
-                description += "This dreadful weapon is used "
-                    "at the user's peril. ";
-                break;
-            case NWPN_SWORD_OF_CEREBOV:
-                description += "Flames cover its twisted blade. ";
-                break;
-            case NWPN_STAFF_OF_DISPATER:
-                description += "This legendary item can unleash "
-                    "the fury of Hell. ";
-                break;
-            case NWPN_SCEPTRE_OF_ASMODEUS:
-                description += "It carries some of the powers of "
-                    "the arch-fiend Asmodeus. ";
-                break;
-            case NWPN_SWORD_OF_POWER:
-                description += "It rewards the powerful with power "
-                    "and the meek with weakness. ";
-                break;
-            case NWPN_KNIFE_OF_ACCURACY:
-                description += "It is almost unerringly accurate. ";
-                break;
-            case NWPN_STAFF_OF_OLGREB:
-                description += "It was the magical weapon wielded by the "
-                    "mighty wizard Olgreb before he met his "
-                    "fate somewhere within these dungeons. It "
-                    "grants its wielder resistance to the "
-                    "effects of poison and increases their "
-                    "ability to use venomous magic, and "
-                    "carries magical powers which can "
-                    "be invoked by one skilled in the use of magic. ";
-                break;
-            case NWPN_VAMPIRES_TOOTH:
-                description += "It is lethally vampiric. ";
-                break;
-            case NWPN_STAFF_OF_WUCAD_MU:
-                description += "Its power varies in proportion to "
-                    "its wielder's intelligence. "
-                    "Using it can be a bit risky. ";
-                break;
-            }
-        }
-    }
-    else
-    {
-        int spec_ench = item_dam % 30;
-
-        if (spec_ench >= SPWPN_RANDART_I)
-        {
-            spec_ench = randart_wpn_properties(item_class, item_type, item_dam,
-                                       item_plus, item_plus2, 0, RAP_BRAND);
-        }
+        if (is_random_artefact( item ))
+            spec_ench = randart_wpn_property(item, RAP_BRAND);
         else if (verbose == 0)
             spec_ench = SPWPN_NORMAL;
 
         // special weapon descrip
-        if (spec_ench != SPWPN_NORMAL && item_id > 1)
+        if (spec_ench != SPWPN_NORMAL && item_ident( item, ISFLAG_KNOW_TYPE ))
         {
+            description += "$";
+
             switch (spec_ench)
             {
             case SPWPN_FLAMING:
@@ -1243,101 +1084,143 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
                 description += "It can be invoked to extend its reach. ";
                 break;
             }
+        }
+
+        if (is_random_artefact( item ))
+        {
+            if (item_ident( item, ISFLAG_KNOW_PROPERTIES ))
+            {
+                unsigned int old_length = description.length();
+                randart_descpr( description, item );
+
+                if (description.length() == old_length)
+                    description += "$";
+            }
+            else if (item_ident( item, ISFLAG_KNOW_TYPE ))
+            {
+                description += "$This weapon may have some hidden properties.$";
+            }
+        }
+        else if (spec_ench != SPWPN_NORMAL && item_ident( item, ISFLAG_KNOW_TYPE ))
+        {
             description += "$";
         }
+    }
 
-        // randart properties or more mundane +/- enchantments
-        if (item_id > 1)
+    if (item_known_cursed( item ))
+    {
+        description += "$It has a curse placed upon it.";
+    }
+
+    if (verbose == 1 && !launches_things( item.sub_type ))
+    {
+#ifdef USE_NEW_COMBAT_STATS
+        const int str_weight = weapon_str_weight( item.base_type, item.sub_type );
+
+        if (str_weight >= 8)
+            description += "$This weapon is best used by the strong.";
+        else if (str_weight > 5)
+            description += "$This weapon is better for the strong.";
+        else if (str_weight <= 2)
+            description += "$This weapon is best used by the dexterous.";
+        else if (str_weight < 5)
+            description += "$This weapon is better for the dexterous.";
+#endif
+
+        switch (hands_reqd_for_weapon(item.base_type, item.sub_type))
         {
-            if (item_dam % 30 >= SPWPN_RANDART_I)
-            {
-                randart_descpr(description, item_class, item_type, item_plus,
-                    item_plus2, item_dam);
-            }
+        case HANDS_ONE_HANDED:
+            description += "$It is a one handed weapon.";
+            break;
+        case HANDS_ONE_OR_TWO_HANDED:
+            description += "$It can be used with one hand, or more "
+                    "effectively with two (i.e. when not using a shield).";
+            break;
+        case HANDS_TWO_HANDED:
+            description += "$It is a two handed weapon.";
+            break;
+        }
+    }
 
-            if (item_plus >= 100 && item_id > 0)
-            {
-                description += "$It has a curse placed upon it.$";
-                item_plus -= 100;
-            }
-
-            if (verbose == 1 && item_id > 2)
-            {
-                if (item_plus < 50)
-                {
-                    description += "It has been damaged to be less accurate.$";
-                }
-                else if (item_plus > 50)
-                {
-                    description += "It has been ";
-                    print_ench(description, item_plus);
-                    description += "to be more accurate.$";
-                }
-
-                if (item_plus2 < 50)
-                {
-                    description += "It has been damaged to cause less damage.$";
-                }
-                else if (item_plus2 > 50)
-                {
-                    description += "It has been ";
-                    print_ench(description, item_plus2);
-                    description += "to inflict greater damage.$";
-                }
-            }
+    if (!is_random_artefact( item ))
+    {
+        switch (get_equip_race( item ))
+        {
+        case ISFLAG_DWARVEN:
+            description += "$It is well-crafted and very durable.";
+            break;
         }
 
-        if (verbose == 1)
+        if (launches_things( item.sub_type ))
         {
-            description += "It falls into the"; // moved repeated string here, deleted below 15jan2000 {dlb}
-
-            switch (item_type)
+            switch (get_equip_race( item ))
             {
-            case WPN_SLING:
-                description += " 'slings' category. ";
+            case ISFLAG_DWARVEN:
+                description += "$It is most deadly when used with "
+                    "dwarven ammunition.";
                 break;
-            case WPN_BOW:
-                description += " 'bows' category. ";
+            case ISFLAG_ELVEN:
+                description += "$It is most deadly when used with "
+                    "elven ammunition.";
                 break;
-            case WPN_HAND_CROSSBOW:
-            case WPN_CROSSBOW:
-                description += " 'crossbows' category. ";
+            case ISFLAG_ORCISH:
+                description += "$It is most deadly when used with "
+                    "orcish ammunition.";
                 break;
-            case WPN_BLOWGUN:
-                description += " 'darts' category. ";
-                break;
-            default:
-                // Melee weapons
-                switch (weapon_skill(item_class, item_type))
-                {
-                case SK_SHORT_BLADES:
-                    description += " 'short blades' category. ";
-                    break;
-                case SK_LONG_SWORDS:
-                    description += " 'long swords' category. ";
-                    break;
-                case SK_AXES:
-                    description += " 'axes' category. ";
-                    break;
-                case SK_MACES_FLAILS:
-                    description += " 'maces and flails' category. ";
-                    break;
-                case SK_POLEARMS:
-                    description += " 'pole-arms' category. ";
-                    break;
-                case SK_STAVES:
-                    description += " 'staves' category. ";
-                    break;
-                default:
-                    description += " 'bug' category. ";
-                    DEBUGSTR("Unknown weapon type");
-                    break;
-                }
             }
         }
     }
 
-    return description;
+    if (verbose == 1)
+    {
+        description += "$It falls into the";
+
+        switch (item.sub_type)
+        {
+        case WPN_SLING:
+            description += " 'slings' category. ";
+            break;
+        case WPN_BOW:
+            description += " 'bows' category. ";
+            break;
+        case WPN_HAND_CROSSBOW:
+        case WPN_CROSSBOW:
+            description += " 'crossbows' category. ";
+            break;
+        case WPN_BLOWGUN:
+            description += " 'darts' category. ";
+            break;
+        default:
+            // Melee weapons
+            switch (weapon_skill(item.base_type, item.sub_type))
+            {
+            case SK_SHORT_BLADES:
+                description += " 'short blades' category. ";
+                break;
+            case SK_LONG_SWORDS:
+                description += " 'long swords' category. ";
+                break;
+            case SK_AXES:
+                description += " 'axes' category. ";
+                break;
+            case SK_MACES_FLAILS:
+                description += " 'maces and flails' category. ";
+                break;
+            case SK_POLEARMS:
+                description += " 'pole-arms' category. ";
+                break;
+            case SK_STAVES:
+                description += " 'staves' category. ";
+                break;
+            default:
+                description += " 'bug' category. ";
+                DEBUGSTR("Unknown weapon type");
+                break;
+            }
+        }
+    }
+
+    return (description);
 }
 
 
@@ -1346,14 +1229,13 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
 // describe_ammo
 //
 //---------------------------------------------------------------
-static string describe_ammo(int item_type, int item_plus, int item_dam,
-                            unsigned char item_id)
+static string describe_ammo( const item_def &item )
 {
     string description;
 
     description.reserve(64);
 
-    switch (item_type)
+    switch (item.sub_type)
     {
     case MI_STONE:
         description += "A stone. ";
@@ -1370,53 +1252,41 @@ static string describe_ammo(int item_type, int item_plus, int item_dam,
     case MI_DART:
         description += "A small throwing weapon. ";
         break;
+    case MI_LARGE_ROCK:
+        description += "A rock, used by giants as a missile. ";
+        break;
     case MI_EGGPLANT:
         description += "A purple vegetable. "
             "The presence of this object in the game "
             "indicates a bug (or some kind of cheating on your part). ";
         break;
-    case MI_LARGE_ROCK:
-        description += "A rock, used by giants as a missile. ";
-        break;
     default:
-        DEBUGSTR("Unknown ammo");
+        DEBUGSTR("Unknown ammo type");
+        break;
     }
 
-    if (item_dam % 30 != 0 && item_id > 1)
+    if (item.special != 0 && item_ident( item, ISFLAG_KNOW_TYPE ))
     {
-        switch (item_dam % 30)
+        switch (item.special)
         {
         case 1:
-            description += "When fired from an appropriate launcher, "
+            description += "$When fired from an appropriate launcher, "
                 "it turns into a bolt of flame. ";
             break;
         case 2:
-            description += "When fired from an appropriate launcher, "
+            description += "$When fired from an appropriate launcher, "
                 "it turns into a bolt of ice. ";
             break;
         case 3:
         case 4:
-            description += "It is coated with poison. ";
+            description += "$It is coated with poison. ";
             break;
         }
     }
 
-    if (item_id == 3)
-    {
-        if (item_plus > 50)
-        {
-            description += "It has been ";
-            print_ench(description, item_plus);
-            description += "to be more accurate and cause more damage. ";
-        }
-        else if (item_plus < 50)
-        {
-            description += "It has been damaged to be less accurate "
-                "and cause less damage. ";
-        }
-    }
+    description += "$";
 
-    return description;
+    return (description);
 }
 
 
@@ -1425,27 +1295,24 @@ static string describe_ammo(int item_type, int item_plus, int item_dam,
 // describe_armour
 //
 //---------------------------------------------------------------
-static string describe_armour(int item_class, int item_type, int item_plus,
-                              int item_plus2, int item_dam,
-                              unsigned char item_id, char verbose)
+static string describe_armour( const item_def &item, char verbose )
 {
     string description;
 
     description.reserve(200);
 
-    if (item_dam % 30 == 25
-        && strlen(unrandart_descrip(1, item_class, item_type,
-                                    item_plus, item_plus2)) != 0)
+    if (is_unrandom_artefact( item )
+        && strlen(unrandart_descrip(1, item)) != 0)
     {
-        description += unrandart_descrip(1, item_class, item_type,
-                                         item_plus, item_plus2);
-
+        description += "$";
+        description += unrandart_descrip(1, item);
+        description += "$$";
     }
     else
     {
         if (verbose == 1)
         {
-            switch (item_type)
+            switch (item.sub_type)
             {
             case ARM_ROBE:
                 description += "A cloth robe. ";
@@ -1481,24 +1348,31 @@ static string describe_armour(int item_class, int item_type, int item_plus,
             case ARM_CLOAK:
                 description += "A cloth cloak. ";
                 break;
+
             case ARM_HELMET:
-                if (item_plus2 == 0)
+                switch (get_helmet_type( item ))
+                {
+                case THELM_HELMET:
+                case THELM_HELM:
                     description += "A piece of metal headgear. ";
-                else if (item_plus2 == 1)
-                    description += "A piece of metal headgear. ";
-                else if (item_plus2 == 2)
+                    break;
+                case THELM_CAP:
                     description += "A cloth or leather cap. ";
-                else if (item_plus2 == 3)
+                    break;
+                case THELM_WIZARD_HAT:
                     description += "A conical cloth hat. ";
+                    break;
+                }
                 break;
+
             case ARM_GLOVES:
                 description += "A pair of gloves. ";
                 break;
             case ARM_BOOTS:
-                if (item_plus2 == 1)
+                if (item.plus2 == TBOOT_NAGA_BARDING)
                     description += "A special armour made for Nagas, "
                         "to wear over their tails. ";
-                else if (item_plus2 == 2)
+                else if (item.plus2 == TBOOT_CENTAUR_BARDING)
                     description += "An armour made for centaurs, "
                         "to wear over their equine half. ";
                 else
@@ -1627,80 +1501,50 @@ static string describe_armour(int item_class, int item_type, int item_plus,
                     "poison on its wearer. ";
                 break;
             default:
-                DEBUGSTR("Unknown armor");
+                DEBUGSTR("Unknown armour");
             }
+
+            description += "$";
         }
     }
 
-    if (verbose == 1 && item_type != ARM_SHIELD && item_type != ARM_BUCKLER
-        && item_type != ARM_LARGE_SHIELD)
+    if (verbose == 1
+            && item.sub_type != ARM_SHIELD
+            && item.sub_type != ARM_BUCKLER
+            && item.sub_type != ARM_LARGE_SHIELD)
     {
         description += "$Armour rating: ";
 
-        if (item_type == ARM_HELMET && item_plus2 >= 2) // caps, wizard hats
+        if (item.sub_type == ARM_HELMET
+            && (get_helmet_type( item ) == THELM_CAP
+                || get_helmet_type( item ) == THELM_WIZARD_HAT))
+        {
+            // caps and wizard hats don't have a base AC
             append_value(description, 0, false);
-        else if (item_type == ARM_BOOTS && item_plus2 != 0)
+        }
+        else if (item.sub_type == ARM_BOOTS && item.plus2 != TBOOT_BOOTS)
+        {
             // Barding has AC value 4.
             append_value(description, 4, false);
+        }
         else
-            append_value(description,
-                         property(OBJ_ARMOUR, item_type, PARM_AC), false);
+        {
+            append_value(description, property( item, PARM_AC ), false);
+        }
 
         description += "$Evasion modifier: ";
-        append_value(description,
-                     property(OBJ_ARMOUR, item_type, PARM_EVASION), true);
+        append_value(description, property( item, PARM_EVASION ), true);
         description += "$";
     }
 
-    if (verbose == 1 && item_plus >= 100 && item_id >= 1)
+    if (!is_random_artefact( item )
+            && item.special != SPARM_NORMAL
+            && item_ident( item, ISFLAG_KNOW_TYPE )
+            && verbose == 1)
     {
-        description += "It has a curse placed upon it. ";
-        item_plus -= 100;
-    }
+        description += "$";
 
-    if (verbose == 1 && item_id >= 3)
-    {
-        if (item_plus < 50)
-            description +=
-                "It has been damaged to offer less protection against injury. ";
-
-        if (item_plus > 50)
-        {
-            description += "It has been ";
-            print_ench(description, item_plus);
-            description += "to be more effective in reducing injury. ";
-        }
-    }
-
-    if (item_id >= 2 && item_dam % 30 >= 25)
-    {
-        randart_descpr(description, item_class, item_type, item_plus,
-                       item_plus2, item_dam);
-    }
-
-    if (item_dam % 30 < 25)
-    {
-        switch (item_dam / 30)  // not the complete list - orcs? {dlb}
-        {
-        case DARM_ELVEN:
-            //jmf: not light
-            description += "It is well-crafted and unobstructive";
-
-            if (item_type == ARM_CLOAK || item_type == ARM_BOOTS)
-                description += ", and helps its wearer avoid being noticed";
-
-            description += ". ";
-            break;
-
-        case DARM_DWARVEN:
-            description += "It is well-crafted and very durable. ";
-            break;
-        }
-    }
-
-    if (item_id > 1 && (verbose == 1 || item_dam % 30 >= 25))
-    {
-        switch (item_dam % 30)
+        switch (item.special)
         {
         case SPARM_RUNNING:
             description += "It allows its wearer to run at a great speed. ";
@@ -1769,6 +1613,44 @@ static string describe_armour(int item_class, int item_type, int item_plus,
                 "from damage and destruction. ";
             break;
         }
+
+        description += "$";
+    }
+
+    if (is_random_artefact( item ))
+    {
+        if (item_ident( item, ISFLAG_KNOW_PROPERTIES ))
+            randart_descpr( description, item );
+        else if (item_ident( item, ISFLAG_KNOW_TYPE ))
+            description += "$This armour may have some hidden properties.$";
+    }
+    else
+    {
+        switch (get_equip_race( item ))
+        {
+        case ISFLAG_ELVEN:
+            //jmf: not light
+            description += "$It is well-crafted and unobstructive";
+
+            if (item.sub_type == ARM_CLOAK || item.sub_type == ARM_BOOTS)
+                description += ", and helps its wearer avoid being noticed";
+
+            description += ".";
+            break;
+
+        case ISFLAG_DWARVEN:
+            description += "$It is well-crafted and very durable.";
+            break;
+
+        case ISFLAG_ORCISH:
+        default:
+            break;
+        }
+    }
+
+    if (item_known_cursed( item ))
+    {
+        description += "$It has a curse placed upon it.";
     }
 
     return description;
@@ -1779,21 +1661,20 @@ static string describe_armour(int item_class, int item_type, int item_plus,
 // describe_stick
 //
 //---------------------------------------------------------------
-static string describe_stick(int item_type, int item_plus,
-                             unsigned char item_id)
+static string describe_stick( const item_def &item )
 {
     string description;
 
     description.reserve(64);
 
-    if (!get_id(OBJ_WANDS, item_type))
+    if (get_ident_type(OBJ_WANDS, item.sub_type) == ID_UNKNOWN_TYPE)
     {
         description += "A stick. Maybe it's magical. ";
     }
     else
     {
         description += "A magical device which ";
-        switch (item_type)
+        switch (item.sub_type)
         {
         case WAND_FLAME:
             description += "throws little bits of flame. ";
@@ -1887,7 +1768,7 @@ static string describe_stick(int item_type, int item_plus,
             DEBUGSTR("Unknown stick");
         }
 
-        if (item_id == 3 && item_plus == 0)
+        if (item_ident( item, ISFLAG_KNOW_PLUSES ) && item.plus == 0)
             description += "Unfortunately, it has no charges left. ";
     }
 
@@ -1900,19 +1781,19 @@ static string describe_stick(int item_type, int item_plus,
 // describe_food
 //
 //---------------------------------------------------------------
-static string describe_food(int item_type, int item_dam)
+static string describe_food( const item_def &item )
 {
     string description;
 
     description.reserve(100);
 
-    switch (item_type)
+    switch (item.sub_type)
     {
     // rations
     case FOOD_MEAT_RATION:
     case FOOD_BREAD_RATION:
         description += "A filling ration of ";
-        switch (item_type)
+        switch (item.sub_type)
         {
         case FOOD_MEAT_RATION:
             description += "dried and preserved meats";
@@ -1937,7 +1818,7 @@ static string describe_food(int item_type, int item_dam)
     case FOOD_LYCHEE:
     case FOOD_SULTANA:
         description += "A";
-        switch (item_type)
+        switch (item.sub_type)
         {
         case FOOD_PEAR:
             description += " delicious juicy";
@@ -1976,7 +1857,7 @@ static string describe_food(int item_type, int item_dam)
 
         description += " fruit";
 
-        switch (item_type)
+        switch (item.sub_type)
         {
         case FOOD_BANANA:
             description += ", probably grown and imported by "
@@ -1998,7 +1879,7 @@ static string describe_food(int item_type, int item_dam)
     case FOOD_CHOKO:
     case FOOD_SNOZZCUMBER:
         description += "A";
-        switch (item_type)
+        switch (item.sub_type)
         {
         case FOOD_CHOKO:
             description += "n almost tasteless green";
@@ -2008,7 +1889,7 @@ static string describe_food(int item_type, int item_dam)
             break;
         }
         description += " vegetable";
-        switch (item_type)
+        switch (item.sub_type)
         {
         case FOOD_CHOKO:
             description += ", which grows on a vine";
@@ -2026,13 +1907,13 @@ static string describe_food(int item_type, int item_dam)
     case FOOD_SAUSAGE:
     case FOOD_CHUNK:
         description += "A";
-        switch (item_type)
+        switch (item.sub_type)
         {
         case FOOD_SAUSAGE:
             description += "n elongated";
             break;
         }
-        switch (item_type)
+        switch (item.sub_type)
         {
         case FOOD_HONEYCOMB:
         case FOOD_ROYAL_JELLY:
@@ -2050,7 +1931,7 @@ static string describe_food(int item_type, int item_dam)
             description += " piece";
         }
         description += " of ";
-        switch (item_type)
+        switch (item.sub_type)
         {
         case FOOD_SAUSAGE:
             description += "low-grade gristle, entrails and "
@@ -2077,7 +1958,7 @@ static string describe_food(int item_type, int item_dam)
             break;
         }
         description += ". ";
-        switch (item_type)
+        switch (item.sub_type)
         {
         case FOOD_SAUSAGE:
             description += "Yum! ";
@@ -2089,7 +1970,7 @@ static string describe_food(int item_type, int item_dam)
             if (you.species != SP_GHOUL)
                 description += "It looks rather unpleasant. ";
 
-            if (item_dam < 100)
+            if (item.special < 100)
             {
                 if (you.species == SP_GHOUL)
                     description += "It looks nice and ripe. ";
@@ -2106,7 +1987,9 @@ static string describe_food(int item_type, int item_dam)
         DEBUGSTR("Unknown food");
     }
 
-    return description;
+    description += "$";
+
+    return (description);
 }
 
 //---------------------------------------------------------------
@@ -2114,21 +1997,21 @@ static string describe_food(int item_type, int item_dam)
 // describe_potion
 //
 //---------------------------------------------------------------
-static string describe_potion(int item_type)
+static string describe_potion( const item_def &item )
 {
     string description;
 
     description.reserve(64);
 
-    if (!get_id(OBJ_POTIONS, item_type))
+    if (get_ident_type(OBJ_POTIONS, item.sub_type) == ID_UNKNOWN_TYPE)
     {
-        description += "A small bottle of liquid. ";
+        description += "A small bottle of liquid.";
     }
     else
     {
         description += "A";
 
-        switch (item_type)
+        switch (item.sub_type)
         {
         case POT_HEALING:
             description += " blessed";
@@ -2170,7 +2053,7 @@ static string describe_potion(int item_type)
 
         description += " ";
 
-        switch (item_type)
+        switch (item.sub_type)
         {
         case POT_MIGHT:
         case POT_GAIN_STRENGTH:
@@ -2214,7 +2097,7 @@ static string describe_potion(int item_type)
             break;
         }
 
-        switch (item_type)
+        switch (item.sub_type)
         {
         case POT_HEALING:
         case POT_HEAL_WOUNDS:
@@ -2242,7 +2125,7 @@ static string describe_potion(int item_type)
             break;
         }
 
-        switch (item_type)
+        switch (item.sub_type)
         {
         case POT_HEALING:
             description += "heals some wounds, clears the mind, "
@@ -2315,16 +2198,16 @@ static string describe_potion(int item_type)
 
         description += ". ";
 
-        switch (item_type)
+        switch (item.sub_type)
         {
         case POT_HEALING:
         case POT_HEAL_WOUNDS:
             description += "If one uses it when they are "
                 "at or near full health, it can also ";
 
-            if (item_type == POT_HEALING)
-                description += "slightly";
-            description += " repair permanent injuries. ";
+            if (item.sub_type == POT_HEALING)
+                description += "slightly ";
+            description += "repair permanent injuries. ";
             break;
         }
 
@@ -2332,7 +2215,9 @@ static string describe_potion(int item_type)
         //    DEBUGSTR("Unknown potion");          // I had no idea where to put this back 16jan2000 {dlb}
     }
 
-    return description;
+    description += "$";
+
+    return (description);
 }
 
 
@@ -2341,19 +2226,19 @@ static string describe_potion(int item_type)
 // describe_scroll
 //
 //---------------------------------------------------------------
-static string describe_scroll(int item_type)
+static string describe_scroll( const item_def &item )
 {
     string description;
 
     description.reserve(64);
 
-    if (!get_id(OBJ_SCROLLS, item_type))
+    if (get_ident_type(OBJ_SCROLLS, item.sub_type) == ID_UNKNOWN_TYPE)
     {
-        description += "A scroll of paper covered in magical writing. ";
+        description += "A scroll of paper covered in magical writing.";
     }
     else
     {
-        switch (item_type)
+        switch (item.sub_type)
         {
         case SCR_IDENTIFY:
             description += "This useful magic scroll allows you to "
@@ -2410,8 +2295,10 @@ static string describe_scroll(int item_type)
             break;
 
         case SCR_RANDOM_USELESSNESS:
-            description += "This scroll is noted for its wide variety of"
-                " completely useless effects.";
+            description += "It is easy to be blinded to the essential "
+                "uselessness of this scroll by the sense of achievement "
+                "you get from getting it to work at all.";
+                // -- The Hitchhiker's Guide to the Galaxy (paraphrase)
             break;
 
         case SCR_CURSE_WEAPON:
@@ -2491,7 +2378,9 @@ static string describe_scroll(int item_type)
         }
     }
 
-    return description;
+    description += "$";
+
+    return (description);
 }
 
 
@@ -2500,30 +2389,27 @@ static string describe_scroll(int item_type)
 // describe_jewellery
 //
 //---------------------------------------------------------------
-static string describe_jewellery(int item_class, int item_type, int item_plus,
-                                 int item_plus2, int item_dam,
-                                 unsigned char item_id, char verbose)
+static string describe_jewellery( const item_def &item, char verbose)
 {
     string description;
 
     description.reserve(200);
 
-    if (item_dam == 201
-        && strlen(unrandart_descrip(1, item_class, item_type,
-                                    item_plus, item_plus2)) != 0)
+    if (is_unrandom_artefact( item ) && strlen(unrandart_descrip(1, item)) != 0)
     {
-        description += unrandart_descrip(1, item_class, item_type,
-                                         item_plus, item_plus2);
+        description += "$";
+        description += unrandart_descrip(1, item);
+        description += "$$";
     }
-    else if (!get_id(OBJ_JEWELLERY, item_type))
+    else if (get_ident_type(OBJ_JEWELLERY, item.sub_type) != ID_KNOWN_TYPE)
     {
-        description += "A piece of jewelry. ";
+        description += "A piece of jewellery.";
     }
     else
     {
-        if (verbose == 1 || (item_dam == 200 || item_dam == 201))
+        if (verbose == 1 || is_random_artefact( item ))
         {
-            switch (item_type)
+            switch (item.sub_type)
             {
             case RING_REGENERATION:
                 description += "This wonderful ring greatly increases the "
@@ -2681,7 +2567,8 @@ static string describe_jewellery(int item_class, int item_type, int item_plus,
                 description +=
                     "This amulet enables its wearer to attempt to enter "
                     "a state of berserk rage, and increases their chance "
-                    "of successfully doing so. ";
+                    "of successfully doing so.  It also partially protects "
+                    "the user from passing out when coming out of that rage. ";
                 break;
 
             case AMU_RESIST_SLOW:
@@ -2747,22 +2634,33 @@ static string describe_jewellery(int item_class, int item_type, int item_plus,
                 break;
 
             default:
-                DEBUGSTR("Unknown jewelry");
+                DEBUGSTR("Unknown jewellery");
             }
+
+            description += "$";
         }
     }
 
-    if (item_id > 0 && item_plus >= 100)
-        description += "It has a curse placed upon it. ";
-
     // randart properties
-    if (item_id > 1 && (item_dam == 200 || item_dam == 201))
+    if (is_random_artefact( item ))
     {
-        randart_descpr(description, item_class, item_type, item_plus,
-                       item_plus2, item_dam);
+        if (item_ident( item, ISFLAG_KNOW_PROPERTIES ))
+            randart_descpr( description, item );
+        else if (item_ident( item, ISFLAG_KNOW_TYPE ))
+        {
+            if (item.sub_type >= AMU_RAGE)
+                description += "$This amulet may have hidden properties.$";
+            else
+                description += "$This ring may have hidden properties.$";
+        }
     }
 
-    return description;
+    if (item_known_cursed( item ))
+    {
+        description += "$It has a curse placed upon it.";
+    }
+
+    return (description);
 }                               // end describe_jewellery()
 
 //---------------------------------------------------------------
@@ -2770,21 +2668,17 @@ static string describe_jewellery(int item_class, int item_type, int item_plus,
 // describe_staff
 //
 //---------------------------------------------------------------
-static string describe_staff(int item_type, unsigned char item_id)
+static string describe_staff( const item_def &item )
 {
     string description;
 
-    description.reserve(100);
+    description.reserve(200);
 
-    if (!item_id)
-    {
-        description += "A stick imbued with magical properties. ";
-    }
-    else
+    if (item_ident( item, ISFLAG_KNOW_TYPE ))
     {
         description += "This staff ";   //NB: the leading space is here {dlb}
 
-        switch (item_type)
+        switch (item.sub_type)
         {
         case STAFF_WIZARDRY:
             description +=
@@ -2841,17 +2735,19 @@ static string describe_staff(int item_type, unsigned char item_id)
                 "increases the power of enchantments cast by its wielder. ";
             break;
 
-        case STAFF_SUMMONING_I:
+        case STAFF_SUMMONING:
             description +=
                 "increases the power of summonings cast by its wielder. ";
             break;
 
         case STAFF_SMITING:
             description +=
-                "allows its wielder to smite foes from afar. ";
+                "allows its wielder to smite foes from afar. The wielder "
+                "must be at least level four to safely use this ability, "
+                "which costs 4 magic points. ";
             break;
 
-        case STAFF_SUMMONING_II:
+        case STAFF_SPELL_SUMMONING:
             description += "of spells contains spells of summoning. ";
             break;
 
@@ -2890,7 +2786,7 @@ static string describe_staff(int item_type, unsigned char item_id)
             break;
         }
 
-        if (item_type >= 10 && item_type < 25)
+        if (item.sub_type >= 10 && item.sub_type < 25)
         {
             description +=
                 "Casting a spell from it consumes no food, and will not fail. ";
@@ -2901,8 +2797,12 @@ static string describe_staff(int item_type, unsigned char item_id)
 
         description += "$$It falls into the 'staves' category. ";
     }
+    else
+    {
+        description += "A stick imbued with magical properties.$";
+    }
 
-    return description;
+    return (description);
 }
 
 
@@ -2911,69 +2811,15 @@ static string describe_staff(int item_type, unsigned char item_id)
 // describe_misc_item
 //
 //---------------------------------------------------------------
-static string describe_misc_item(int item_type, unsigned char item_id)
+static string describe_misc_item( const item_def &item )
 {
     string description;
 
     description.reserve(100);
 
-    switch (item_id)
+    if (item_ident( item, ISFLAG_KNOW_TYPE ))
     {
-    case 0:
-        switch (item_type)
-        {
-        case MISC_BOTTLED_EFREET:
-            description += "A heavy bronze flask, warm to the touch. ";
-            break;
-        case MISC_CRYSTAL_BALL_OF_ENERGY:
-        case MISC_CRYSTAL_BALL_OF_FIXATION:
-        case MISC_CRYSTAL_BALL_OF_SEEING:
-            description += "A sphere of clear crystal. ";
-            break;
-        case MISC_AIR_ELEMENTAL_FAN:
-            description += "A fan. ";
-            break;
-        case MISC_LAMP_OF_FIRE:
-            description += "A lamp. ";
-            break;
-        case MISC_STONE_OF_EARTH_ELEMENTALS:
-            description += "A lump of rock. ";
-            break;
-        case MISC_LANTERN_OF_SHADOWS:
-            description += "A strange lantern made out of ancient bones. ";
-            break;
-        case MISC_HORN_OF_GERYON:
-            description += "A great silver horn, radiating unholy energies. ";
-            break;
-        case MISC_BOX_OF_BEASTS:
-        case MISC_EMPTY_EBONY_CASKET:
-            description += "A small black box. I wonder what's inside? ";
-            break;
-        case MISC_DECK_OF_WONDERS:
-        case MISC_DECK_OF_TRICKS:
-        case MISC_DECK_OF_POWER:
-        case MISC_DECK_OF_SUMMONINGS:
-            description += "A deck of cards. ";
-            break;
-        case MISC_RUNE_OF_ZOT:
-            description += "A talisman of some sort. ";
-            break;
-        case MISC_DISC_OF_STORMS:
-            description += "A grey disc. ";
-            break;
-        case MISC_PORTABLE_ALTAR_OF_NEMELEX:
-            description +=
-                "An altar to Nemelex Xobeh, built for easy assembly and "
-                "disassembly. Invoke it to place on a clear patch of floor, "
-                "then pick it up again when you've finished. ";
-            break;
-        default:
-            DEBUGSTR("Unknown misc item");
-        }
-        break;
-
-    default:
-        switch (item_type)
+        switch (item.sub_type)
         {
         case MISC_BOTTLED_EFREET:
             description +=
@@ -3075,15 +2921,71 @@ static string describe_misc_item(int item_type, unsigned char item_id)
         case MISC_PORTABLE_ALTAR_OF_NEMELEX:
             description +=
                 "An altar to Nemelex Xobeh, built for easy assembly and "
-                "disassembly. Invoke it to place on a clear patch of floor, "
+                "disassembly. Invoke it to place it on a clear patch of floor, "
                 "then pick it up again when you've finished. ";
             break;
         default:
             DEBUGSTR("Unknown misc item (2)");
         }
+
+    }
+    else
+    {
+        switch (item.sub_type)
+        {
+        case MISC_BOTTLED_EFREET:
+            description += "A heavy bronze flask, warm to the touch. ";
+            break;
+        case MISC_CRYSTAL_BALL_OF_ENERGY:
+        case MISC_CRYSTAL_BALL_OF_FIXATION:
+        case MISC_CRYSTAL_BALL_OF_SEEING:
+            description += "A sphere of clear crystal. ";
+            break;
+        case MISC_AIR_ELEMENTAL_FAN:
+            description += "A fan. ";
+            break;
+        case MISC_LAMP_OF_FIRE:
+            description += "A lamp. ";
+            break;
+        case MISC_STONE_OF_EARTH_ELEMENTALS:
+            description += "A lump of rock. ";
+            break;
+        case MISC_LANTERN_OF_SHADOWS:
+            description += "A strange lantern made out of ancient bones. ";
+            break;
+        case MISC_HORN_OF_GERYON:
+            description += "A great silver horn, radiating unholy energies. ";
+            break;
+        case MISC_BOX_OF_BEASTS:
+        case MISC_EMPTY_EBONY_CASKET:
+            description += "A small black box. I wonder what's inside? ";
+            break;
+        case MISC_DECK_OF_WONDERS:
+        case MISC_DECK_OF_TRICKS:
+        case MISC_DECK_OF_POWER:
+        case MISC_DECK_OF_SUMMONINGS:
+            description += "A deck of cards. ";
+            break;
+        case MISC_RUNE_OF_ZOT:
+            description += "A talisman of some sort. ";
+            break;
+        case MISC_DISC_OF_STORMS:
+            description += "A grey disc. ";
+            break;
+        case MISC_PORTABLE_ALTAR_OF_NEMELEX:
+            description +=
+                "An altar to Nemelex Xobeh, built for easy assembly and "
+                "disassembly. Invoke it to place on a clear patch of floor, "
+                "then pick it up again when you've finished. ";
+            break;
+        default:
+            DEBUGSTR("Unknown misc item");
+        }
     }
 
-    return description;
+    description += "$";
+
+    return (description);
 }
 
 #if MAC
@@ -3094,41 +2996,29 @@ static string describe_misc_item(int item_type, unsigned char item_id)
 //      Public Functions
 // ========================================================================
 
-bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
-                          int item_plus2, int item_dam, unsigned char item_id,
-                          char verbose)
+bool is_dumpable_artifact( const item_def &item, char verbose)
 {
-    UNUSED(item_plus);
-    UNUSED(item_plus2);
+    const int spec_ench = item.special;
 
-    bool is = false;
+    bool ret = false;
 
-    int spec_ench = item_dam % 30;
-
-    switch (item_class)
+    if (is_random_artefact( item ) || is_fixed_artefact( item ))
     {
-    case OBJ_WEAPONS:
-        // first check is for randarts, second for fixed arts.
-        if (spec_ench >= SPWPN_RANDART_I || item_dam >= NWPN_SINGING_SWORD)
-            is = (item_id > 1);
-        break;
-
-    case OBJ_ARMOUR:
-        if (spec_ench >= SPARM_RANDART_I)
-            is = (item_id > 1); // randarts.
-        else if (verbose == 1 && item_id > 1)
-            is = (spec_ench >= SPARM_RUNNING && spec_ench <= SPARM_PRESERVATION);
-        break;
-
-    case OBJ_JEWELLERY:
-        if (item_dam == 200 || item_dam == 201) // randarts and unrandarts
-            is = (item_id > 1);
-        else if (verbose == 1 && get_id(OBJ_JEWELLERY, item_type))
-            is = true;
-        break;
+        ret = item_ident( item, ISFLAG_KNOW_PROPERTIES );
+    }
+    else if (item.base_type == OBJ_ARMOUR
+        && (verbose == 1 && item_ident( item, ISFLAG_KNOW_TYPE )))
+    {
+        ret = (spec_ench >= SPARM_RUNNING && spec_ench <= SPARM_PRESERVATION);
+    }
+    else if (item.base_type == OBJ_JEWELLERY
+        && (verbose == 1
+            && get_ident_type(OBJ_JEWELLERY, item.sub_type) == ID_KNOWN_TYPE))
+    {
+        ret = true;
     }
 
-    return is;
+    return (ret);
 }                               // end is_dumpable_artifact()
 
 
@@ -3140,45 +3030,69 @@ bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
 // be interpreted as carriage returns.
 //
 //---------------------------------------------------------------
-string get_item_description(int item_class, int item_type, int item_plus,
-                            int item_plus2, int item_dam,
-                            unsigned char item_id, char verbose)
+string get_item_description( const item_def &item, char verbose, bool dump )
 {
     string description;
+    description.reserve(500);
 
-    description.reserve(200);
+    if (!dump)
+    {
+        char str_pass[80];
 
-    switch (item_class)
+        item_name( item, DESC_INVENTORY_EQUIP, str_pass );
+        description += string(str_pass);
+    }
+
+    description += "$$";
+
+#if DEBUG_DIAGNOSTICS
+    if (!dump)
+    {
+        snprintf( info, INFO_SIZE,
+                  "base: %d; sub: %d; plus: %d; plus2: %d; special: %ld$"
+                  "quant: %d; colour: %d; flags: 0x%08lx$"
+                  "x: %d; y: %d; link: %d$ident_type: %d$$",
+                  item.base_type, item.sub_type, item.plus, item.plus2,
+                  item.special, item.quantity, item.colour, item.flags,
+                  item.x, item.y, item.link,
+                  get_ident_type( item.base_type, item.sub_type ) );
+
+        description += info;
+    }
+#endif
+
+    switch (item.base_type)
     {
     case OBJ_WEAPONS:
-        description += describe_weapon(item_class, item_type, item_plus,
-                                       item_plus2, item_dam, item_id, verbose);
+        description += describe_weapon( item, verbose );
         break;
     case OBJ_MISSILES:
-        description += describe_ammo(item_type, item_plus, item_dam, item_id);
+        description += describe_ammo( item );
         break;
     case OBJ_ARMOUR:
-        description += describe_armour(item_class, item_type, item_plus,
-                                       item_plus2, item_dam, item_id, verbose);
+        description += describe_armour( item, verbose );
         break;
     case OBJ_WANDS:
-        description += describe_stick(item_type, item_plus, item_id);
+        description += describe_stick( item );
         break;
     case OBJ_FOOD:
-        description += describe_food(item_type, item_dam);
+        description += describe_food( item );
         break;
     case OBJ_SCROLLS:
-        description += describe_scroll(item_type);
+        description += describe_scroll( item );
         break;
     case OBJ_JEWELLERY:
-        description += describe_jewellery(item_class, item_type, item_plus,
-                                       item_plus2, item_dam, item_id, verbose);
+        description += describe_jewellery( item, verbose );
         break;
     case OBJ_POTIONS:
-        description += describe_potion(item_type);
+        description += describe_potion( item );
         break;
+    case OBJ_STAVES:
+        description += describe_staff( item );
+        break;
+
     case OBJ_BOOKS:
-        switch (item_type)
+        switch (item.sub_type)
         {
         case BOOK_DESTRUCTION:
             description += "An extremely powerful but unpredictable book "
@@ -3197,21 +3111,22 @@ string get_item_description(int item_class, int item_type, int item_plus,
             break;
         }
         break;
-    case OBJ_STAVES:
-        description += describe_staff(item_type, item_id);
-        break;
+
     case OBJ_ORBS:
         description += "Once you have escaped to the surface with "
             "this invaluable artefact, your quest is complete. ";
         break;
+
     case OBJ_MISCELLANY:
-        description += describe_misc_item(item_type, item_id);
+        description += describe_misc_item( item );
         break;
+
     case OBJ_CORPSES:
         description +=
-            ((item_type == CORPSE_BODY) ? "A corpse. "
+            ((item.sub_type == CORPSE_BODY) ? "A corpse. "
                                         : "A decaying skeleton. ");
         break;
+
     default:
         DEBUGSTR("Bad item class");
         description += "This item should not exist. Mayday! Mayday! ";
@@ -3219,23 +3134,29 @@ string get_item_description(int item_class, int item_type, int item_plus,
 
     if (verbose == 1)
     {
-        description += "It weighs around ";
+        description += "$It weighs around ";
 
-        char item_mass[7];
+        const int mass = mass_item( item );
 
-        if (item_class == OBJ_CORPSES)
+        char item_mass[16];
+        itoa( mass / 10, item_mass, 10 );
+
+        for (int i = 0; i < 14; i++)
         {
-            itoa(mons_weight(item_plus) /
-                 ((item_type == CORPSE_BODY) ? 10 : 20), item_mass, 10);
+            if (item_mass[i] == '\0')
+            {
+                item_mass[i] = '.';
+                item_mass[i+1] = (mass % 10) + '0';
+                item_mass[i+2] = '\0';
+                break;
+            }
         }
-        else
-            itoa(mass(item_class, item_type) / 10, item_mass, 10);
 
         description += item_mass;
         description += " aum. ";        // arbitrary unit of mass
     }
 
-    return description;
+    return (description);
 }                               // end get_item_description()
 
 
@@ -3246,10 +3167,8 @@ string get_item_description(int item_class, int item_type, int item_plus,
 // Describes all items in the game.
 //
 //---------------------------------------------------------------
-void describe_item(int item_class, int item_type, int item_plus,
-                   int item_plus2, int item_dam, unsigned char item_id)
+void describe_item( const item_def &item )
 {
-
 #ifdef DOS_TERM
     char buffer[3400];
 
@@ -3260,9 +3179,7 @@ void describe_item(int item_class, int item_type, int item_plus,
 
     clrscr();
 
-    string description =
-            get_item_description(item_class, item_type, item_plus, item_plus2,
-                                 item_dam, item_id, 1);
+    string description = get_item_description( item, 1 );
 
     print_description(description);
 
@@ -3287,7 +3204,7 @@ void describe_spell(int spelled)
 {
     string description;
 
-    description.reserve(100);
+    description.reserve(500);
 
 #ifdef DOS_TERM
     char buffer[3400];
@@ -3297,8 +3214,8 @@ void describe_spell(int spelled)
 #endif
 
     clrscr();
-
-    description += "This spell ";       // NB: the leading space is here {dlb}
+    description += spell_title( spelled );
+    description += "$$This spell ";   // NB: the leading space is here {dlb}
 
     switch (spelled)
     {
@@ -3329,7 +3246,16 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_FIREBALL:
-        description += "hurls an exploding bolt of fire. ";
+        description += "hurls an exploding bolt of fire.  This spell "
+            "does not cost additional spell levels if the learner already "
+            "knows Delayed Fireball. ";
+        break;
+
+    case SPELL_DELAYED_FIREBALL:
+        description = "$$Successfully casting this spell gives the caster "
+            "the ability to instantaneously release a fireball at a later "
+            "time.  Knowing this spell allows the learner to memorise "
+            "Fireball for no additional spell levels. ";
         break;
 
     case SPELL_BOLT_OF_MAGMA:
@@ -3424,8 +3350,11 @@ void describe_spell(int spelled)
 
     case SPELL_RING_OF_FLAMES:
         description += "surrounds the caster with a mobile ring of searing "
-            "flame. It is not recommended for those vulnerable "
-            "to the effects of fire. ";
+            "flame, and keeps other fire clouds away from the caster.  "
+            "This spell attunes the caster to the forces of fire, "
+            "increasing their fire magic and giving protection from fire.  "
+            "However, it also makes them much more susceptable to the forces "
+            "of ice. "; // well, if survive fire wall it's a risk -- bwr
         break;
 
     case SPELL_RESTORE_STRENGTH:
@@ -3949,8 +3878,9 @@ void describe_spell(int spelled)
 
     case SPELL_SPIDER_FORM:
         description += "temporarily transforms the caster into a venomous, "
-            "spider-like creature. Spellcasting is slightly more difficult "
-            "in this form. ";
+            "spider-like creature.  Spellcasting is slightly more difficult "
+            "in this form.  This spell is not powerful enough to allow "
+            "the caster to slip out of cursed equipment. ";
         break;
 
     case SPELL_DISRUPT:
@@ -3965,8 +3895,9 @@ void describe_spell(int spelled)
 
     case SPELL_BLADE_HANDS:
         description += "causes long, scythe-shaped blades to grow "
-            "from the caster's hands. "
-            "It makes spellcasting somewhat difficult. ";
+            "from the caster's hands.  It makes spellcasting somewhat "
+            "difficult.  This spell is not powerful enough to force "
+            "a cursed weapon from the caster's hands.";
         break;
 
     case SPELL_STATUE_FORM:
@@ -4179,8 +4110,10 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_DISCHARGE:
-        description += "releases an electric charge against those "
-                       "next to the caster. ";
+        description += "releases electric charges against those "
+                       "next to the caster.  These may arc to "
+                       "adjacent monsters (or even the caster) before "
+                       "they eventually ground out. ";
         break;
 
     case SPELL_BEND:
@@ -4203,13 +4136,11 @@ void describe_spell(int spelled)
             "is frequently used as an icebreaker at wizard parties. ";
         break;
 
-#ifdef USE_ELVISH_GLAMOUR_ABILITY
     case SPELL_GLAMOUR: // intended only as Grey Elf ability
         description += "is an Elvish magic, which draws upon the viewing "
             "creature's credulity and the caster's comeliness "
             "to charm, confuse or render comatose. ";
         break;
-#endif
 
     case SPELL_EVAPORATE:
         description += "causes a potion held by the caster to evaporate, "
@@ -4335,12 +4266,12 @@ void describe_spell(int spelled)
         DEBUGSTR("Bad spell");
         description += "apparently does not exist. "
             "Casting it may therefore be unwise. "
-#ifdef WIZARD
+#if DEBUG
             "Instead, go fix it. ";
 #else
             "Please contact Dungeon Tech Support "
             "at /dev/null for details. ";
-#endif // WIZARD
+#endif // DEBUG
     }
 
     print_description(description);
@@ -4376,6 +4307,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
 #endif
 
     clrscr();
+    description = string( ptr_monam( &(menv[ which_mons ]), DESC_CAP_A ) );
+    description += "$$";
 
     switch (class_described)
     {
@@ -4387,42 +4320,42 @@ void describe_monsters(int class_described, unsigned char which_mons)
         // (missing) case 250 - MONS_PROGRAM_BUG ??? 16jan2000 {dlb}
 
     case MONS_KILLER_BEE_LARVA:
-        description = "A small, powerless larva of killer bee.";
+        description += "A small, powerless larva of killer bee.";
         break;
 
     case MONS_QUASIT:
-        description = "A small twisted demon with long sharply pointed tail.";
+        description += "A small twisted demon with long sharply pointed tail.";
         break;
 
     case MONS_ANGEL:
-        description = "A winged holy being of unnatural beauty. "
+        description += "A winged holy being of unnatural beauty. "
             "It's surrounded by aura of brilliant golden light. ";
         break;
 
     case MONS_HUMAN: //mv: !!! Human is valid polymorph target.
-        description = "A common man.";
+        description += "A common man.";
         break;
 
     case MONS_GIANT_ANT:
-        description = "A black ant with poisonous pincers,"
+        description += "A black ant with poisonous pincers,"
             " about the size of a large dog.";
         break;
 
     case MONS_SOLDIER_ANT:
-        description = "A giant ant with large mandibles and a vicious sting.";
+        description += "A giant ant with large mandibles and a vicious sting.";
         break;
 
     case MONS_QUEEN_ANT:
-        description = "A bloated insect, covered in thick chitinous armour."
+        description += "A bloated insect, covered in thick chitinous armour."
             "Now you know where all those ants keep coming from!";
         break;
 
     case MONS_ANT_LARVA:
-        description = "A baby ant. Isn't it cute?";
+        description += "A baby ant. Isn't it cute?";
         break;
 
     case MONS_GIANT_BAT:
-        description = "A huge black bat.";
+        description += "A huge black bat.";
         break;
 
     case MONS_CENTAUR:
@@ -4441,13 +4374,13 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_RED_DEVIL:
-        description = "The Red Devil is slightly shorter than a human, "
+        description += "The Red Devil is slightly shorter than a human, "
             "but muscular and covered in spikes and horns. Two "
             "short wings sprout from its shoulders.";
         break;
 
     case MONS_ROTTING_DEVIL:
-        description = "A hideous decaying form.";
+        description += "A hideous decaying form.";
         if (you.species == SP_GHOUL)
             description += "$It smells great!";
         else if (you.species != SP_MUMMY)
@@ -4455,82 +4388,82 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_HAIRY_DEVIL:
-        description = "A small humanoid demon covered in brown hair. "
+        description += "A small humanoid demon covered in brown hair. "
             "Watch out - it may have fleas!";
         break;
 
     case MONS_ICE_DEVIL:
-        description = "A man-sized demon covered in glittering ice.";
+        description += "A man-sized demon covered in glittering ice.";
         break;
 
     case MONS_BLUE_DEVIL:
-        description = "A strange and nasty blue thing. It looks cold.";
+        description += "A strange and nasty blue thing. It looks cold.";
         break;
 
     case MONS_IRON_DEVIL:
-        description = "A hideous humanoid figure with metal skin.";
+        description += "A hideous humanoid figure with metal skin.";
         break;
 
     case MONS_ETTIN:
-        description = "A large, two headed humanoid. Most often seen "
+        description += "A large, two headed humanoid. Most often seen "
             "wielding two weapons, so that the heads will have one less "
             "thing to bicker about.";
         break;
 
     case MONS_FUNGUS:
-        description = "A lumpy grey fungus, "
+        description += "A lumpy grey fungus, "
             "growing well in the dank underground dungeon.";
         break;
 
     case MONS_GOBLIN:
-        description = "A race of short, ugly and unfriendly humanoids.";
+        description += "A race of short, ugly and unfriendly humanoids.";
         break;
 
     case MONS_HOUND:
-        description = "A fearsome hunting dog.";
+        description += "A fearsome hunting dog.";
         break;
 
     case MONS_HELL_HOUND:
-        description = "A huge black dog, with glowing red eyes and "
+        description += "A huge black dog, with glowing red eyes and "
             "smoke pouring from its fanged mouth.";
         break;
 
     case MONS_WAR_DOG:
-        description = "A vicious dog, trained to kill."
+        description += "A vicious dog, trained to kill."
             "Its neck is protected by massive spiked collar.";
         break;
 
     case MONS_IMP:
-        description = "A small, ugly minor demon.";
+        description += "A small, ugly minor demon.";
         break;
 
     case MONS_JACKAL:
-        description = "A small, dog-like scavenger. Packs of these creatures "
+        description += "A small, dog-like scavenger. Packs of these creatures "
             "roam the underworld, searching for carrion to devour.";
         break;
 
     case MONS_KILLER_BEE:
-        description = "A giant bee, bearing a deadly barb which can sting "
+        description += "A giant bee, bearing a deadly barb which can sting "
             "repeatedly.";
         break;
 
     case MONS_QUEEN_BEE:
-        description = "Even larger and more dangerous-looking than its "
+        description += "Even larger and more dangerous-looking than its "
             "offspring, this creature wants you out of its hive. Now!";
         break;
 
     case MONS_BUMBLEBEE:
-        description = "A very large and fat hairy bee.";
+        description += "A very large and fat hairy bee.";
         break;
 
     case MONS_MANTICORE:
-        description = "A hideous cross-breed, bearing the features of a "
+        description += "A hideous cross-breed, bearing the features of a "
             "human and a lion, with great bat-like wings. Its tail "
             "bristles with spikes, which can be loosed at potential prey.";
         break;
 
     case MONS_NECROPHAGE:
-        description = "A vile undead creation of the most unholy necromancy,"
+        description += "A vile undead creation of the most unholy necromancy,"
             " these creatures are made from the decaying corpses "
             "of humanoid creatures.  They exist to spread disease "
             "and decay, and gain power from the decaying corpses "
@@ -4538,76 +4471,76 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_GHOUL:
-        description = "An undead humanoid creature created from the decaying "
+        description += "An undead humanoid creature created from the decaying "
             "corpse by some unholy means of necromancy. It "
             "exists to spread disease and decay, and gains power"
             "from the decaying corpses same way as necrophage does.";
         break;
 
     case MONS_ORC:
-        description = "An ugly subterranean race, orcs combine the"
+        description += "An ugly subterranean race, orcs combine the"
             " worst features of humans, pigs, and several"
             " other unpleasant creatures.";
         break;
 
     case MONS_ORC_KNIGHT:
-        description = "A heavily armoured orc, covered in scars from many "
+        description += "A heavily armoured orc, covered in scars from many "
             "past battles.";
         break;
 
     case MONS_ORC_PRIEST:
-        description = "A servant of the ancient and cruel gods of the orcs,"
+        description += "A servant of the ancient and cruel gods of the orcs,"
             " dressed in long robe. he's mumbling some strange prayers. "
             "Hope that they will remain unheard.";
         break;
 
     case MONS_ORC_HIGH_PRIEST:
-        description = "An exalted servant of the orc god.";
+        description += "An exalted servant of the orc god.";
         break;
 
     case MONS_ORC_SORCEROR:
-        description = "An orc who draws magical power from Hell.";
+        description += "An orc who draws magical power from Hell.";
         break;
 
     case MONS_ORC_WARLORD:
-        description = "A very large and strong looking orc.";
+        description += "A very large and strong looking orc.";
         break;
 
     case MONS_ORC_WARRIOR:
-        description = "An armoured orc, obviously experienced in the ways of "
+        description += "An armoured orc, obviously experienced in the ways of "
             "hacking other creatures apart.";
         break;
 
     case MONS_ORC_WIZARD:
-        description = "While orcs are generally quite stupid, occasionally"
+        description += "While orcs are generally quite stupid, occasionally"
             " one develops an aptitude for magic.";
         break;
 
     case MONS_PHANTOM:
-        description = "A transparent man-like undead spirit.";
+        description += "A transparent man-like undead spirit.";
         break;
 
     case MONS_RAT:
-        description = "Rats which have grown large and aggressive in "
+        description += "Rats which have grown large and aggressive in "
             "the pestilential dungeon environment.";
         break;
 
     case MONS_GREY_RAT:
-        description = "A very large grey rat.";
+        description += "A very large grey rat.";
         break;
 
     case MONS_GREEN_RAT:
-        description = "A very large rat, with hair and skin of a "
+        description += "A very large rat, with hair and skin of a "
             "most peculiar green colour.";
         break;
 
     case MONS_ORANGE_RAT:
-        description = "A huge rat, with weird knobbly orange skin."
+        description += "A huge rat, with weird knobbly orange skin."
             "It glows with unholy energies. ";
         break;
 
     case MONS_SCORPION:
-        description = "A giant black scorpion, its body covered in thick"
+        description += "A giant black scorpion, its body covered in thick"
             " armour plating, and its tail tipped by a nasty "
             "venomous sting.";
         break;
@@ -4617,66 +4550,66 @@ void describe_monsters(int class_described, unsigned char which_mons)
 // not until it can be re-implemented safely {dlb}
     case MONS_TUNNELING_WORM:
     case MONS_WORM_TAIL:
-        description = "A gargantuan worm, its huge maw capable of crushing rock into dust with little trouble.";
+        description += "A gargantuan worm, its huge maw capable of crushing rock into dust with little trouble.";
         break;
 ****************************************************************** */
 
     case MONS_BRAIN_WORM:
-        description = "A slimy mauve worm with a greatly distended head.";
+        description += "A slimy mauve worm with a greatly distended head.";
         break;
 
     case MONS_LAVA_WORM:
-        description = "A vicious red worm which swims through molten rock.";
+        description += "A vicious red worm which swims through molten rock.";
         break;
 
     case MONS_SPINY_WORM:
-        description = "A great black worm, its many-segmented body covered "
+        description += "A great black worm, its many-segmented body covered "
             "in spiky plates of chitinous armour. Acidic venom drips "
             "from its toothy maw.";
         break;
 
     case MONS_SWAMP_WORM:
-        description = "A large slimy worm, adept at swimming through the "
+        description += "A large slimy worm, adept at swimming through the "
             "muck of this foul swamp.";
         break;
 
     case MONS_WORM:
-        description = "A giant worm, with unusually large teeth.";
+        description += "A giant worm, with unusually large teeth.";
         break;
 
     case MONS_UGLY_THING:
-        description = "An ugly thing. Yuck.";
+        description += "An ugly thing. Yuck.";
         break;
 
     case MONS_VERY_UGLY_THING:
-        description = "A very ugly thing. Double yuck.";
+        description += "A very ugly thing. Double yuck.";
         break;
 
     case MONS_FIRE_VORTEX:
-        description = "A swirling cloud of flame.";
+        description += "A swirling cloud of flame.";
         break;
 
     case MONS_SPATIAL_VORTEX:
-        description = "A crazily shifting twist in the fabric of reality.";
+        description += "A crazily shifting twist in the fabric of reality.";
         break;
 
     case MONS_ABOMINATION_SMALL:
-        description =
+        description +=
             "A hideous form, created or summoned by some arcane process.";
         break;
 
     case MONS_ABOMINATION_LARGE:
-        description = "A huge and hideous form, created or summoned "
+        description += "A huge and hideous form, created or summoned "
             "by some arcane process.";
         break;
 
     case MONS_YELLOW_WASP:
-        description = "A giant wasp covered with thick plates of yellow "
+        description += "A giant wasp covered with thick plates of yellow "
             "chitinous armour.";
         break;
 
     case MONS_RED_WASP:
-        description = "A huge red wasp with a viciously barbed stinger.";
+        description += "A huge red wasp with a viciously barbed stinger.";
         break;
 
     case MONS_ZOMBIE_SMALL:
@@ -4695,129 +4628,129 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_CYCLOPS:
-        description = "A giant with one eye in the centre of its forehead."
+        description += "A giant with one eye in the centre of its forehead."
             " Despite their lack of binocular vision, cyclopes "
             "throw boulders with fearsomely accuracy.";
         break;
 
     case MONS_DRAGON:
-        description = "A great reptilian beast, covered in thick green "
+        description += "A great reptilian beast, covered in thick green "
             "scales and with two huge bat-like wings. Little trails "
             "of smoke spill from its toothy maw.";
         break;
 
     case MONS_GOLDEN_DRAGON:
-        description = "A great dragon covered in shining golden scales. ";
+        description += "A great dragon covered in shining golden scales. ";
         break;
 
     case MONS_ICE_DRAGON:
-        description =
+        description +=
             "Like a normal dragon, only white and covered in frost.";
         break;
 
     case MONS_IRON_DRAGON:
-        description = "A very heavy and apparently flightless dragon.";
+        description += "A very heavy and apparently flightless dragon.";
         break;
 
     case MONS_MOTTLED_DRAGON:
-        description = "A small dragon with strangely mottled scales.";
+        description += "A small dragon with strangely mottled scales.";
         break;
 
     case MONS_QUICKSILVER_DRAGON:
-        description = "A long and sinuous dragon, seemingly more neck and "
+        description += "A long and sinuous dragon, seemingly more neck and "
             "tail than anything else. Its skin shines like molten mercury, "
             "and magical energies arc from its pointed snout.";
         break;
 
     case MONS_SHADOW_DRAGON:
-        description = "A great shadowy shape, radiating evil and death.";
+        description += "A great shadowy shape, radiating evil and death.";
         break;
 
     case MONS_SKELETAL_DRAGON:
-        description = "A huge undead abomination, pieced together from "
+        description += "A huge undead abomination, pieced together from "
             "the broken bones of many dragons.";
         break;
 
     case MONS_STEAM_DRAGON:
-        description = "A relatively small grey dragon, with steam pouring "
+        description += "A relatively small grey dragon, with steam pouring "
             "from its mouth.";
         break;
 
     case MONS_STORM_DRAGON:
-        description = "A huge and very powerful dragon. "
+        description += "A huge and very powerful dragon. "
             "Sparks crackle along its enormous scaly wings.";
         break;
 
     case MONS_SWAMP_DRAGON:
-        description = "A slimy dragon, covered in swamp muck. "
+        description += "A slimy dragon, covered in swamp muck. "
             "Poisonous gasses dribble from its snout.";
         break;
 
     case MONS_SERPENT_OF_HELL:
-        description = "A huge red glowing dragon, burning with hellfire. ";
+        description += "A huge red glowing dragon, burning with hellfire. ";
         break;
 
     case MONS_SWAMP_DRAKE:
-        description = "A small and slimy dragon, covered in swamp muck. ";
+        description += "A small and slimy dragon, covered in swamp muck. ";
         if (you.species != SP_MUMMY)
             description += "It smells horrible.";
         break;
 
     case MONS_FIREDRAKE:
-        description = "A small dragon, puffing clouds of smoke.";
+        description += "A small dragon, puffing clouds of smoke.";
         break;
 
     case MONS_TWO_HEADED_OGRE:
-        description = "A huge ogre with two heads on top of a "
+        description += "A huge ogre with two heads on top of a "
             "bloated ogre body. It is capable of holding a weapon "
             "in each giant hand.";
         break;
 
     case MONS_FIEND:
-        description = "One of the most fearsome denizens of any Hell. "
+        description += "One of the most fearsome denizens of any Hell. "
             "A huge and powerful demon wreathed in hellfire,"
             " with great scaly wings.";
         break;
 
     case MONS_ICE_FIEND:
-        description = "One of the most terrible denizens of the "
+        description += "One of the most terrible denizens of the "
             "many Hells, the Ice Fiend is a huge icy figure, "
             "covered in frost and wreathed in freezing air.";
         break;
 
     case MONS_SHADOW_FIEND:
-        description = "One of the most terrible denizens of the many Hells, "
+        description += "One of the most terrible denizens of the many Hells, "
             "this horrible being appears as a great mass of "
             "writhing shadows which occasionally reveal a huge, "
             "horned skeleton.";
         break;
 
     case MONS_GIANT_SPORE:
-        description = "A volatile floating ball of spores, "
+        description += "A volatile floating ball of spores, "
             "covered in knobbly rhizome growths.";
         break;
 
     case MONS_HOBGOBLIN:
-        description = "A larger and stronger relatives of goblins.";
+        description += "A larger and stronger relatives of goblins.";
         break;
 
     case MONS_ICE_BEAST:
-        description =
+        description +=
             "A terrible creature, formed of snow and crystalline ice. "
             "Its feet leave puddles of icy water on the floor.";
         break;
 
     case MONS_KOBOLD:
-        description = "Reputedly the creation of an ancient demon-god, "
+        description += "Reputedly the creation of an ancient demon-god, "
             "kobolds are small goblin-like creatures with canine heads.";
         break;
 
     case MONS_BIG_KOBOLD:
-        description = "An unusually large kobold.";
+        description += "An unusually large kobold.";
         break;
 
     case MONS_KOBOLD_DEMONOLOGIST:
-        description = "A kobold who has learned to summon and direct demons.";
+        description += "A kobold who has learned to summon and direct demons.";
         break;
 
     case MONS_LICH:
@@ -4829,7 +4762,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_ANCIENT_LICH:
-        description = "A lich who has grown mighty over countless years. ";
+        description += "A lich who has grown mighty over countless years. ";
         break;
 
     case MONS_MUMMY:
@@ -4860,9 +4793,10 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_GUARDIAN_NAGA:
     case MONS_GREATER_NAGA:
         if (you.species == SP_NAGA)
-                   description = "An attractive";
-                 else
-                   description = "A strange";
+            description = "An attractive";
+        else
+            description = "A strange";
+
         description += " hybrid; human from the chest up,"
             " with a scaly, muscular torso trailing off like "
             " that of a snake.  ";
@@ -4886,80 +4820,80 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_OGRE:
-        description = "A larger, uglier and fatter relative "
+        description += "A larger, uglier and fatter relative "
             "of orcs and goblins.";
         break;
 
     case MONS_OGRE_MAGE:
-        description = "A rare breed of ogre, skilled in the use of magic.";
+        description += "A rare breed of ogre, skilled in the use of magic.";
         break;
 
     case MONS_PLANT:
-        description = "Few plants can grow in the unpleasant dungeon "
+        description += "Few plants can grow in the unpleasant dungeon "
             "environment, but some have managed to adapt and even thrive "
             "underground in the absence of the sun.";
         break;
 
     case MONS_OKLOB_PLANT:
-        description = "A vicious plant, dripping with vitriol.";
+        description += "A vicious plant, dripping with vitriol.";
         break;
 
     case MONS_RAKSHASA:
     case MONS_RAKSHASA_FAKE:
-        description = "A type of demon who comes to the material world in "
+        description += "A type of demon who comes to the material world in "
             "search of power and knowledge. Rakshasas are experts"
             " in the art of illusion, among other things.";
         break;
 
     case MONS_SNAKE:
-        description = "The common dungeon snake. ";
+        description += "The common dungeon snake. ";
         break;
 
     case MONS_BLACK_SNAKE:
-        description = "A large black snake. ";
+        description += "A large black snake. ";
         break;
 
     case MONS_BROWN_SNAKE:
-        description = "A large brown snake.";
+        description += "A large brown snake.";
         break;
 
     case MONS_GREY_SNAKE:
-        description = "A very large grey python.";
+        description += "A very large grey python.";
         break;
 
     case MONS_LAVA_SNAKE:
-        description = "A burning red snake which rears up from pools "
+        description += "A burning red snake which rears up from pools "
             "of lava and tries to bite you.";
         break;
 
     case MONS_SMALL_SNAKE:
-        description = "The lesser dungeon snake.";
+        description += "The lesser dungeon snake.";
         break;
 
     case MONS_YELLOW_SNAKE:
-        description = "A large yellow tubular reptile.";
+        description += "A large yellow tubular reptile.";
         break;
 
     case MONS_GIANT_LIZARD:
-        description = "A huge lizard, with great crunching jaws.";
+        description += "A huge lizard, with great crunching jaws.";
         break;
 
     case MONS_LINDWORM: // maybe it's just me, but what *is* a lindworm?
-        description = "A very large and very fat lizard. ";
+        description += "A very large and very fat lizard. ";
         break;
 
     case MONS_TROLL:
-        description =
+        description +=
             "A huge, nasty-looking creature. Its thick and knobbly hide "
             "seems to heal almost instantly from most wounds.";
         break;
 
     case MONS_DEEP_TROLL:
-        description = "A stooped troll.";
+        description += "A stooped troll.";
         break;
 
     case MONS_IRON_TROLL:
-        description =
+        description +=
             "A great troll, plated with thick scales of rusty iron.";
         // you can't see its hide, but think its thick and kobbly, too :P {dlb}
         //jmf: I thought its skin *was* the rusty iron. If so, ought to change
@@ -4967,79 +4901,79 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_ROCK_TROLL:
-        description =
+        description +=
             "An enormous and very nasty-looking humanoid creature. Its"
             " rocky hide seems to heal almost instantaneously from most wounds.";
         break;
 
     case MONS_UNSEEN_HORROR:
-        description =
+        description +=
             "These creatures are usually unseen by the eyes of most,"
             " and those few who have seen them would rather not have.";
         break;
 
     case MONS_VAMPIRE:
-        description = "A powerful undead.";
+        description += "A powerful undead.";
         if (you.is_undead == 0)
             description += " It wants to drink your blood! ";
         break;
 
     case MONS_VAMPIRE_KNIGHT:
-        description =
+        description +=
             "A powerful warrior, with skills undiminished by undeath.";
         if (you.is_undead == 0)
             description += " It wants to drink your blood! ";
         break;
 
     case MONS_VAMPIRE_MAGE:
-        description = "Undeath has not lessened this powerful mage.";
+        description += "Undeath has not lessened this powerful mage.";
         if (you.is_undead == 0)
             description += " It wants to drink your blood! ";
         break;
 
     case MONS_WRAITH:
-        description = "This undead spirit appears as a cloud of black mist "
+        description += "This undead spirit appears as a cloud of black mist "
             "surrounding an insubstantial skeletal form. Its eyes "
             "burn bright with unholy malevolence.";
         break;
 
     case MONS_FREEZING_WRAITH:
-        description = "A cloud of freezing air surrounding an incorporeal "
+        description += "A cloud of freezing air surrounding an incorporeal "
             "skeletal form.";
         break;
 
     case MONS_SHADOW_WRAITH:
-        description = "A mist-wreathed skeletal shadow hanging in mid-air, "
+        description += "A mist-wreathed skeletal shadow hanging in mid-air, "
             "this creature is almost invisible even to your enhanced sight. ";
         // assumes: to read this message, has see invis
         break;
 
     case MONS_YAK:
-        description = "The common dungeon yak, covered in shaggy yak hair "
+        description += "The common dungeon yak, covered in shaggy yak hair "
             "and bearing a nasty pair of yak horns.";
         break;
 
     case MONS_DEATH_YAK:
-        description = "A larger and beefier relative of the common dungeon "
+        description += "A larger and beefier relative of the common dungeon "
             "yak. Its little red eyes gleam with hunger for living flesh.";
         break;
 
     case MONS_WYVERN:
-        description = "A dragon-like creature with long sharply pointed tail."
+        description += "A dragon-like creature with long sharply pointed tail."
             "Although smaller and less formidable than true dragons, "
             "wyverns are nonetheless a foe to be reckoned with.";
         break;
 
     case MONS_GIANT_EYEBALL:
-        description = "A giant eyeball, with a captivating stare.";
+        description += "A giant eyeball, with a captivating stare.";
         break;
 
     case MONS_GREAT_ORB_OF_EYES:
-        description = "A levitating ball, covered in malignant eyes.";
+        description += "A levitating ball, covered in malignant eyes.";
         break;
 
     case MONS_EYE_OF_DEVASTATION:
-        description = "A huge eyeball, encased in a levitating globe of "
+        description += "A huge eyeball, encased in a levitating globe of "
             "incandescent energy. ";
         break;
 
@@ -5050,122 +4984,122 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_EYE_OF_DRAINING:
-        description =
+        description +=
             "These hovering horrors are especially loathed by wizards.";
         break;
 
     case MONS_WIGHT:
-        description = "An ancient warrior, kept in a state of undeath "
+        description += "An ancient warrior, kept in a state of undeath "
             "by its will to live.";
         break;
 
     case MONS_WOLF_SPIDER:
-        description = "A large hairy spider with vicious mandibles, "
+        description += "A large hairy spider with vicious mandibles, "
             "roaming the dungeon in search of food.";
         break;
 
     case MONS_REDBACK:
-        description = "A vicious black spider with a splash of red on its "
+        description += "A vicious black spider with a splash of red on its "
             "swollen abdomen. Its mandibles drip with lethal poison.";
         break;
 
     case MONS_SHADOW:
-        description =
+        description +=
             "An wisp of unliving shadow, drifting on the edge of vision.";
         break;
 
     case MONS_HUNGRY_GHOST:
-        description = "The undead form of someone who died of starvation,"
+        description += "The undead form of someone who died of starvation,"
             " this creature wants the same thing to happen to you!";
         break;
 
     case MONS_BUTTERFLY:
-        description = "A large multicoloured butterfly with beautifully "
+        description += "A large multicoloured butterfly with beautifully "
             "patterned wings.";
         break;
 
     case MONS_WANDERING_MUSHROOM:
-        description = "A large, fat mushroom.";
+        description += "A large, fat mushroom.";
         break;
 
     case MONS_EFREET:
-        description =
+        description +=
             "A huge and muscular figure engulfed in a cloud of searing flame.";
         break;
 
     case MONS_GIANT_ORANGE_BRAIN:
-        description = "A huge wrinkled brain, floating just off the floor."
+        description += "A huge wrinkled brain, floating just off the floor."
             " Every now and then it seems to pulsate.";
         break;
 
     case MONS_GIANT_BEETLE:
-        description = "A huge black beetle with great crunching mandibles "
+        description += "A huge black beetle with great crunching mandibles "
             "and very hard chitinous armour.";
         break;
 
     case MONS_BORING_BEETLE:
-        description =
+        description +=
             "A large brown beetle with huge, rock-crushing mandibles.";
         break;
 
     case MONS_BOULDER_BEETLE:
-        description =
+        description +=
             "A huge grey beetle with an almost impenetrable rocky carapace.";
         break;
 
     case MONS_FLYING_SKULL:
-        description =
+        description +=
             "Unholy magic keeps a disembodied undead skull hovering "
             "above the floor. It has a nasty set of teeth.";
         break;
 
     case MONS_MINOTAUR:
-        description = "A large muscular human with the head of a bull. "
+        description += "A large muscular human with the head of a bull. "
             "It makes its home in secluded labyrinths.";
         break;
 
     case MONS_SLIME_CREATURE:
-        description =
+        description +=
             "An icky glob of slime, which slithers along the ground.";
         break;
 
     case MONS_HELLION:
-        description = "A frightful demon, covered in roaring hellfire.";
+        description += "A frightful demon, covered in roaring hellfire.";
         break;
 
     case MONS_TORMENTOR:
-        description = "This malign devil is covered in all manner "
+        description += "This malign devil is covered in all manner "
             "of claws, spines and cruel hooks.";
         break;
 
     case MONS_REAPER:
-        description = "A skeletal form wielding a giant scythe. ";
+        description += "A skeletal form wielding a giant scythe. ";
         if (you.is_undead == 0)
             description += "It has come for your soul!";
         break;
 
     case MONS_SOUL_EATER:
-        description =
+        description +=
             "This greater demon looks like a shadow gliding through "
             "the air towards you. It radiates an intense aura of negative power.";
         break;
 
     case MONS_BEAST:
-        description = "A weird and hideous cross between beast and human.";
+        description += "A weird and hideous cross between beast and human.";
         break;
 
     case MONS_GLOWING_SHAPESHIFTER:
-        description = "A shapeshifter who has lost control over its "
+        description += "A shapeshifter who has lost control over its "
             "transformations, and is constantly changing form.";
         break;
 
     case MONS_SHAPESHIFTER:
-        description = "A weird creature with the power to change its form. "
+        description += "A weird creature with the power to change its form. "
             "It is very rarely observed alive in its natural state.";
         break;
 
     case MONS_GIANT_MITE:
-        description = "A large arachnid with vicious poisoned mouth-parts.";
+        description += "A large arachnid with vicious poisoned mouth-parts.";
         break;
 
     case MONS_GRIFFON:
@@ -5179,264 +5113,264 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_HYDRA:
-        description =
+        description +=
             "A great reptilian beast, distantly related to the dragon."
             " It has many heads, and the potential to grow many more!";
         break;
 
     case MONS_SKELETON_SMALL:   //MONS_SMALL_SKELETON:
     case MONS_SKELETON_LARGE:   //MONS_LARGE_SKELETON:
-        description =
+        description +=
             "A skeleton compelled to unlife by the exercise of necromancy.";
         break;
 
     case MONS_SKELETAL_WARRIOR:
-        description = "The vicious and heavily armed skeleton of a humanoid "
+        description += "The vicious and heavily armed skeleton of a humanoid "
             "creature, animated by unholy power.";
         break;
 
     case MONS_HELL_KNIGHT:
-        description = "A heavily armoured warrior, in league with the powers"
+        description += "A heavily armoured warrior, in league with the powers"
             " of Hell.";
         break;
 
     case MONS_WIZARD:
-        description = "An rather eccentric person, dabbling in all sorts of"
+        description += "An rather eccentric person, dabbling in all sorts of"
             " arcanities.";
         break;
 
     case MONS_NECROMANCER:
-        description =
+        description +=
             "A wizard specializing in the practices of necromantic magic.";
         break;
 
     case MONS_GNOLL:
-        description =
+        description +=
             "A taller and better equipt relative of goblins and orcs.";
         break;
 
     case MONS_CLAY_GOLEM:
-        description = "A huge animated clay statue.";
+        description += "A huge animated clay statue.";
         break;
 
     case MONS_WOOD_GOLEM:
-        description = "An animated wooden statue.";
+        description += "An animated wooden statue.";
         break;
 
     case MONS_STONE_GOLEM:
-        description = "A huge animated stone statue.";
+        description += "A huge animated stone statue.";
         break;
 
     case MONS_IRON_GOLEM:
-        description = "A huge animated metal statue.";
+        description += "A huge animated metal statue.";
         break;
 
     case MONS_CRYSTAL_GOLEM:
-        description = "A huge animated crystal statue.";
+        description += "A huge animated crystal statue.";
         break;
 
     case MONS_TOENAIL_GOLEM:
-        description = "A huge animated statue made entirely from toenail "
+        description += "A huge animated statue made entirely from toenail "
             "clippings. Some people just have too much time on their hands.";
         break;
 
     case MONS_ELECTRIC_GOLEM:
-        description = "An animated figure made completely of electricity. ";
+        description += "An animated figure made completely of electricity. ";
         break;
 
     case MONS_EARTH_ELEMENTAL:
-        description = "A spirit drawn from the elemental plane of earth, "
+        description += "A spirit drawn from the elemental plane of earth, "
             "which exists in this world by inhabiting a lump of earth and rocks.";
         break;
 
     case MONS_FIRE_ELEMENTAL:
-        description = "A spirit drawn from the elemental plane of fire, "
+        description += "A spirit drawn from the elemental plane of fire, "
             "which exists in this world as a brilliant column of raging flames.";
         break;
 
     case MONS_AIR_ELEMENTAL:
-        description = "A spirit drawn from the elemental plane of air. "
-            "It exists in this world as a swirling vortex of air,"
-            " which is often undetectable without magical aid.";
+        description += "A spirit drawn from the elemental plane of air. "
+            "It exists in this world as a swirling vortex of air, "
+            "often disapating and reforming.";
         break;
 
     case MONS_WATER_ELEMENTAL:
-        description = "A spirit drawn from the elemental plane of water. "
+        description += "A spirit drawn from the elemental plane of water. "
             "It exists on this world as part of a body of water.";
         break;
 
     case MONS_SPECTRAL_WARRIOR: // spectre
-        description = "A hideous translucent green undead spirit.";
+        description += "A hideous translucent green undead spirit.";
         break;
 
     case MONS_CURSE_TOE:
-        description = "A disembodied toe, hanging in the air and"
+        description += "A disembodied toe, hanging in the air and"
             " radiating an intense field of negative energy.";
         break;
 
     case MONS_PULSATING_LUMP:
-        description = "A revolting glob of writhing flesh.";
+        description += "A revolting glob of writhing flesh.";
         break;
 
     case MONS_OOZE:
-        description = "A disgusting glob of grey sludge.";
+        description += "A disgusting glob of grey sludge.";
         break;
 
     case MONS_BROWN_OOZE:
-        description = "A viscous liquid, flowing along the floor "
+        description += "A viscous liquid, flowing along the floor "
             "in search of organic matter to corrode. ";
         break;
 
     case MONS_DEATH_OOZE:
-        description = "A putrid mass of decaying flesh. ";
+        description += "A putrid mass of decaying flesh. ";
         break;
 
     case MONS_GIANT_AMOEBA:
-        description = "A pulsating lump of protoplasm. ";
+        description += "A pulsating lump of protoplasm. ";
         break;
 
     case MONS_JELLY:
-        description = "A pulsating mass of acidic protoplasm. It can and "
+        description += "A pulsating mass of acidic protoplasm. It can and "
             "will eat almost anything, and grows a little each time...";
         break;
 
     case MONS_AZURE_JELLY:
-        description = "A frosty blob of bright blue cytoplasm. ";
+        description += "A frosty blob of bright blue cytoplasm. ";
         break;
 
     case MONS_ACID_BLOB:
-        description =
+        description +=
             "A lump of sickly green flesh, dripping with lethal acid.";
         break;
 
     case MONS_JELLYFISH:
-        description = "A pulsating glob of transparent flesh, waiting just "
+        description += "A pulsating glob of transparent flesh, waiting just "
             "below the surface to sting you with its many tentacles.";
         break;
 
     case MONS_ROYAL_JELLY:
-        description = "A particularly rich and golden gelatinous thing. ";
+        description += "A particularly rich and golden gelatinous thing. ";
         break;
 
     case MONS_FIRE_GIANT:
-        description = "A huge ruddy humanoid with bright hair. ";
+        description += "A huge ruddy humanoid with bright hair. ";
         break;
 
     case MONS_FROST_GIANT:
-        description = "A huge blue humanoid with hoarfrost hair.";
+        description += "A huge blue humanoid with hoarfrost hair.";
         break;
 
     case MONS_HILL_GIANT:
-        description =
+        description +=
             "Although one of the smaller giant varieties, this hill giant is still big enough to be dangerous.";
         break;
 
     case MONS_STONE_GIANT:
-        description =
+        description +=
             "A gigantic humanoid with grey skin almost as hard as rock. "
             "It carries several boulders - are you up for a game of 'catch'?";
         break;
 
     case MONS_TITAN:
-        description = "This lightning-limned humanoid is unusually large "
+        description += "This lightning-limned humanoid is unusually large "
             "and powerful, even among giants.";
         break;
 
     case MONS_FLAYED_GHOST:
-        description = "A hideous undead creature, with torn skin hanging "
+        description += "A hideous undead creature, with torn skin hanging "
             "from an emaciated body.";
         break;
 
     case MONS_INSUBSTANTIAL_WISP:
-        description = "A thin wisp of floating gas.";
+        description += "A thin wisp of floating gas.";
         break;
 
     case MONS_VAPOUR:
-        description = "A normally invisible cloud of weird-looking vapour.";
+        description += "A normally invisible cloud of weird-looking vapour.";
         break;
 
     case MONS_DANCING_WEAPON:
-        description = "A weapon dancing in the air. ";
+        description += "A weapon dancing in the air. ";
         break;
 
     case MONS_ELEPHANT_SLUG:
-        description = "A huge grey slug with folds of wrinkled skin. ";
+        description += "A huge grey slug with folds of wrinkled skin. ";
         break;
 
     case MONS_GIANT_SLUG:
-        description = "A huge and disgusting gastropod. ";
+        description += "A huge and disgusting gastropod. ";
         break;
 
     case MONS_GIANT_SNAIL:
-        description =
+        description +=
             "A huge and disgusting gastropod with light green shell. ";
         break;
 
     case MONS_SHEEP:
-        description = "A stupid woolly animal, with murder in its eyes. ";
+        description += "A stupid woolly animal, with murder in its eyes. ";
         break;
 
     case MONS_HOG:
-        description = "A large, fat and very ugly pig. ";
+        description += "A large, fat and very ugly pig. ";
         break;
 
     case MONS_HELL_HOG:
-        description = "A large, fat and very ugly pig, suckled "
+        description += "A large, fat and very ugly pig, suckled "
             "in the pits of Hell. ";
         break;
 
     case MONS_GIANT_MOSQUITO:
-        description = "A huge, bloated mosquito. It looks diseased.";
+        description += "A huge, bloated mosquito. It looks diseased.";
         break;
 
     case MONS_GIANT_CENTIPEDE:
-        description = "It has a lot of legs.";
+        description += "It has a lot of legs.";
         break;
 
     case MONS_GIANT_BLOWFLY:
-        description = "A huge and irritating fly.";
+        description += "A huge and irritating fly.";
         break;
 
     case MONS_GIANT_FROG:
-        description =
+        description +=
             "It probably didn't get this big by eating little insects.";
         break;
 
     case MONS_GIANT_BROWN_FROG:
-        description = "A very large and vicious-looking carnivorous frog. "
+        description += "A very large and vicious-looking carnivorous frog. "
             "Its knobbly brown skin blends in with the rough rock of your surroundings.";
         break;
 
     case MONS_SPINY_FROG:
-        description =
+        description +=
             "Although slightly smaller than its cousin, the giant brown"
             " frog, the spiny frog makes up for lack of size by being"
             " covered in wickedly barbed spines and spurs.";
         break;
 
     case MONS_BLINK_FROG:
-        description =
+        description +=
             "A weird-looking frog, constantly blinking in and out of reality.";
         break;
 
     case MONS_GIANT_COCKROACH:
-        description = "A large brown cockroach.";
+        description += "A large brown cockroach.";
         break;
 
     case MONS_PIT_FIEND:
-        description = "A huge winged fiend with incredibly tough skin.";
+        description += "A huge winged fiend with incredibly tough skin.";
         break;
 
     case MONS_GARGOYLE:
-        description = "A hideous stone statue come to life.";
+        description += "A hideous stone statue come to life.";
         break;
 
     case MONS_METAL_GARGOYLE:
-        description = "A hideous metal statue come to life.";
+        description += "A hideous metal statue come to life.";
         break;
 
     case MONS_MOLTEN_GARGOYLE:
-        description = "A hideous melting stone statue come to life.";
+        description += "A hideous melting stone statue come to life.";
         break;
 
         // I think most of the deep elven descriptions are pretty much OK now. GDL
@@ -5454,7 +5388,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_DEEP_ELF_ANNIHILATOR:
     case MONS_DEEP_ELF_SORCEROR:
     case MONS_DEEP_ELF_DEATH_MAGE:
-        description =
+        description +=
             "One of the race of elves which inhabits this dreary cave. ";
         switch (class_described)
         {
@@ -5517,198 +5451,198 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_WHITE_IMP:
-        description = "A small and mischeivous minor demon. ";
+        description += "A small and mischeivous minor demon. ";
         break;
 
     case MONS_LEMURE:
-        description = "A vaguely humanoid blob of putrid white flesh. ";
+        description += "A vaguely humanoid blob of putrid white flesh. ";
         break;
 
     case MONS_UFETUBUS:
-        description = "A chattering and shrieking minor demon. ";
+        description += "A chattering and shrieking minor demon. ";
         break;
 
     case MONS_MANES:
-        description = "An ugly, twisted little minor demon. ";
+        description += "An ugly, twisted little minor demon. ";
         break;
 
     case MONS_MIDGE:
-        description = "A small flying demon. ";
+        description += "A small flying demon. ";
         break;
 
     case MONS_NEQOXEC:
-        description = "A weirdly shaped demon. ";
+        description += "A weirdly shaped demon. ";
         break;
 
     case MONS_ORANGE_DEMON:
-        description = "A bright orange demon with a venomous stinger. ";
+        description += "A bright orange demon with a venomous stinger. ";
         break;
 
     case MONS_HELLWING:
-        description =
+        description +=
             "A hideous skeletal demon, with wings of ancient withered skin. ";
         break;
 
     case MONS_SMOKE_DEMON:
-        description = "A writhing cloud of smoke hanging in the air. ";
+        description += "A writhing cloud of smoke hanging in the air. ";
         break;
 
     case MONS_YNOXINUL:
-        description = "A demon with shiny metallic scales. ";
+        description += "A demon with shiny metallic scales. ";
         break;
 
     case MONS_EXECUTIONER:
-        description = "A horribly powerful demon. ";
+        description += "A horribly powerful demon. ";
         break;
 
     case MONS_GREEN_DEATH:
-        description =
+        description +=
             "A bloated form covered in oozing sores and exhaling clouds of lethal poison. ";
         break;
 
     case MONS_BLUE_DEATH:
-        description = "A blue greater demon. ";
+        description += "A blue greater demon. ";
         break;
 
     case MONS_BALRUG:
-        description =
+        description +=
             "A huge and very powerful demon, wreathed in fire and shadows. ";
         break;
 
     case MONS_CACODEMON:
-        description = "A hideously ugly demon of rage and legendary power. ";
+        description += "A hideously ugly demon of rage and legendary power. ";
         break;
 
     case MONS_DEMONIC_CRAWLER:
-        description = "A long and bloated body, supported by "
+        description += "A long and bloated body, supported by "
             "dozens of short legs and topped with an evil-looking head. ";
         break;
 
     case MONS_SUN_DEMON:
-        description =
+        description +=
             "A demonic figure shining with the light and fury of a fallen star.";
         break;
 
     case MONS_SHADOW_IMP:
-        description = "A small and shadowy minor demon.";
+        description += "A small and shadowy minor demon.";
         break;
 
     case MONS_SHADOW_DEMON:
-        description = "A mysterious demonic figure,"
+        description += "A mysterious demonic figure,"
             " constantly blurring into multiple shadows of itself.";
         break;
 
     case MONS_LOROCYPROCA:
-        description = "A tall and gaunt figure, "
+        description += "A tall and gaunt figure, "
             "draped in long robes which flow as if alive.";
         break;
 
     case MONS_GERYON:
-        description =
+        description +=
             "A huge and slithery arch-demon, guarding the gates of Hell. ";
         break;
 
     case MONS_DISPATER:
-        description = "The lord of the Iron City of Dis. ";
+        description += "The lord of the Iron City of Dis. ";
         break;
 
     case MONS_ASMODEUS:
-        description =
+        description +=
             "One of the arch-demons who dwell in the depths of Hell. ";
         break;
 
     case MONS_ANTAEUS:
-        description = "A great titan who lives in the depths of Cocytus. ";
+        description += "A great titan who lives in the depths of Cocytus. ";
         break;
 
     case MONS_ERESHKIGAL:
-        description =
+        description +=
             "A fearsome arch-fiend who rules the deathly netherworld of Tartarus. ";
         break;
 
     case MONS_VAULT_GUARD:
-        description = "A heavily armed and armoured guardian of the Vaults. ";
+        description += "A heavily armed and armoured guardian of the Vaults. ";
         break;
 
     case MONS_CURSE_SKULL:
-        description =
+        description +=
             "A charred skull floating in the air and rotating slowly. "
             "Mystic symbols carved into its blackened surface indicate "
             "its resistance to almost any form of attack. ";
         break;
 
     case MONS_ORB_GUARDIAN:
-        description =
+        description +=
             "A huge and glowing purple creature, created by the Orb to "
             "defend itself. ";
         break;
 
     case MONS_DAEVA:
-        description =
+        description +=
             "A divine agent of the Shining One. It manifests as a winged "
             "figure obscured by an aura of brilliant golden light. ";
         break;
 
     case MONS_SPECTRAL_THING:
-        description = "A hideous glowing apparition.";
+        description += "A hideous glowing apparition.";
         break;
 
     case MONS_TENTACLED_MONSTROSITY:
-        description =
+        description +=
             "A writhing mass of tentacles, all covered in putrid mucous.";
         break;
 
     case MONS_SPHINX:
-        description =
+        description +=
             "A large creature with a human head, the body of a lion, and "
             "the wings of a huge bird.";
         break;
 
     case MONS_ROTTING_HULK:
-        description = "A shambling undead, related to the ghoul.";
+        description += "A shambling undead, related to the ghoul.";
         break;
 
     case MONS_KILLER_KLOWN:
-        description = "A comical figure full of life and laughter.  It"
+        description += "A comical figure full of life and laughter.  It"
             " looks very happy to see you.$But is there a slightly malicious cast to"
             " its features?  Is that red facepaint or something altogether less"
             " pleasant? Join in the fun, and maybe you'll find out!";
         break;
 
     case MONS_MOTH_OF_WRATH:
-        description = "A huge moth, as violent as it is hairy.";
+        description += "A huge moth, as violent as it is hairy.";
         break;
 
     case MONS_DEATH_COB:
-        description = "A dreadful undead cob of corn.";
+        description += "A dreadful undead cob of corn.";
         break;
 
     case MONS_BOGGART:
-        description =
+        description +=
             "A twisted little sprite-goblin. Beware of its magical tricks!";
         break;
 
     case MONS_LAVA_FISH:
-        description = "A fish which lives in lava.";
+        description += "A fish which lives in lava.";
         break;
 
     case MONS_BIG_FISH:
-        description = "A fish of unusual size.";
+        description += "A fish of unusual size.";
         break;
 
     case MONS_GIANT_GOLDFISH:
-        description =
+        description +=
             "This is what happens when you give your pet goldfish too much food!";
         break;
 
     case MONS_ELECTRICAL_EEL:
-        description =
+        description +=
             "A small and slimy eel, crackling with electrical discharge.";
         break;
 
 // randomly generated descriptions
     case MONS_PLAYER_GHOST:
-        description = "The ghost of ";
+        description += "The ghost of ";
         description += ghost.name;
         description += ", a";
         if (ghost.values[12] < 4)
@@ -5734,55 +5668,55 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_PANDEMONIUM_DEMON:
-        description = describe_demon();
+        description += describe_demon();
         break;
 
 // mimics
     case MONS_GOLD_MIMIC:
-        description =
+        description +=
             "An apparently harmless pile of gold coins hides a nasty "
             "venomous shapechanging predator.";
         break;
 
     case MONS_WEAPON_MIMIC:
-        description =
+        description +=
             "An apparently abandoned weapon, actually a vicious little "
             "beast in disguise.";
         break;
 
     case MONS_ARMOUR_MIMIC:
-        description =
+        description +=
             "An apparently abandoned suit of finely-made armour, actually "
             "a vicious little beast in disguise.";
         break;
 
     case MONS_SCROLL_MIMIC:
-        description =
+        description +=
             "An ancient parchment covered in arcane runes. Did it just twitch?";
         break;
 
     case MONS_POTION_MIMIC:
-        description = "A delicious looking magical drink. Go on, pick it up!";
+        description += "A delicious looking magical drink. Go on, pick it up!";
         break;
 
     case MONS_BALL_LIGHTNING:
-        description = "An oddity of nature, ball lightning bounces around "
-                      "randomly behaving almost, but not quite, entirely "
-                      "unlike regular lightning. ";
+        description += "An oddity of nature, ball lightning bounces around "
+                      "behaving almost, but not quite, entirely unlike "
+                      "regular lightning. ";
         break;
 
     case MONS_ORB_OF_FIRE:
-        description = "An globe of raw primordial fire, capable of "
+        description += "An globe of raw primordial fire, capable of "
                       "impressive pyrotechnics.";
         break;
 
     // the quokka is no more ... {dlb}
     // the quokka is back -- bwr
     case MONS_QUOKKA:
-        description = "A small marsupial mammal. ";
+        description += "A small marsupial mammal.  Don't call it a rat.";
         break;
 
-// uniques
+    // uniques
     case MONS_MNOLEG:           // was: Nemelex Xobeh - and wrong! {dlb}
         description += "A weirdly glowing figure, "
             "dancing through the twisted air of Pandemonium. ";
@@ -5794,7 +5728,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
             "the huge glowing eye in the centre of its forehead. ";
         break;
 
-    case MONS_CEREBOV:          // was:Okawaru - and wrong! {dlb}
+    case MONS_CEREBOV:          // was: Okawaru - and wrong! {dlb}
         description += "A violent and wrathful demon, "
             "Cerebov appears as a giant human "
             "covered in shining golden armour "
@@ -5802,7 +5736,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_GLOORX_VLOQ:      // was: Kikubaaqudgha - and wrong! {dlb}
-        description = "A shadowy figure clothed in profound darkness. ";
+        description += "A shadowy figure clothed in profound darkness. ";
         break;
 
     case MONS_TERENCE:
@@ -5904,31 +5838,31 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_IJYB:
-        description =
+        description +=
             "A small and twisted goblin, wearing some ugly blue rags.";
         break;
 
     case MONS_BLORK_THE_ORC:
-        description = "A particularly fat and ugly orc.";
+        description += "A particularly fat and ugly orc.";
         break;
 
     case MONS_EROLCHA:
-        description = "An especially cunning ogre magess.";
+        description += "An especially cunning ogre magess.";
         break;
 
     case MONS_URUG:
-        description = "A rude";
+        description += "A rude";
         if (you.species != SP_MUMMY)
             description += ", smelly";
         description += " orc.";
         break;
 
     case MONS_SNORG:
-        description = "A hairy troll.";
+        description += "A hairy troll.";
         break;
 
     case MONS_XTAHUA:
-        description = "An ancient and mighty dragon.";
+        description += "An ancient and mighty dragon.";
         break;
 
     case MONS_BORIS:
@@ -5975,35 +5909,61 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     default:
         DEBUGSTR("Missing monster description");
-        description = "A monster whose description has yet to be written. ";
+        description += "A monster whose description has yet to be written. ";
         break;
 
         // onocentaur - donkey
     }
 
-#ifdef WIZARD
-    int hspell_pass[6] = { MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL,
-                           MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL };
+#if DEBUG_DIAGNOSTICS
 
-    int msecc = ((class_described == MONS_HELLION)       ? MST_BURNING_DEVIL:
-                 (class_described == MONS_PANDEMONIUM_DEMON) ? MST_GHOST
+    if (mons_flag( menv[ which_mons ].type, M_SPELLCASTER ))
+    {
+        int hspell_pass[6] = { MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL,
+                               MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL };
+
+        int msecc = ((class_described == MONS_HELLION)    ? MST_BURNING_DEVIL :
+                     (class_described == MONS_PANDEMONIUM_DEMON) ? MST_GHOST
                                                  : menv[ which_mons ].number);
 
-    mons_spell_list(msecc, hspell_pass);
+        mons_spell_list(msecc, hspell_pass);
 
-    description += "$Monster Spells: ";
+        description += "$Monster Spells:$";
 
-    // XXX: Eventually, we should probably access an array of the
-    // full names... but this will do for now. -- bwr
-    for (int i = 0; i < 6; i++)
-    {
-        char arr[16];
-        sprintf( arr, "%d", hspell_pass[ i ] );
-        description += arr;
+        for (int i = 0; i < 6; i++)
+        {
+            if (hspell_pass[i] != MS_NO_SPELL)
+            {
+                snprintf( info, INFO_SIZE, "    %d: %s$", i,
+                         mons_spell_name( hspell_pass[i] ) );
 
-        if (i != 5)
-            description += ", ";
+                description += info;
+            }
+        }
     }
+
+    bool has_item = false;
+    for (int i = 0; i < NUM_MONSTER_SLOTS; i++)
+    {
+        if (menv[ which_mons ].inv[i] != NON_ITEM)
+        {
+            if (!has_item)
+            {
+                description += "$Monster Inventory:$";
+                has_item = true;
+            }
+
+            char buff[80];
+
+            item_def item = mitm[ menv[which_mons].inv[i] ];
+            set_ident_flags( item, ISFLAG_IDENT_MASK );
+
+            item_name( item, DESC_NOCAP_A, buff );
+            snprintf( info, INFO_SIZE, "    %d: %s$", i, buff );
+            description += info;
+        }
+    }
+
 #endif
 
     print_description(description);
@@ -6033,7 +5993,7 @@ void describe_god( int which_god )
 {
 
     char *description  = ""; //mv: temporary string used for printing description
-    int god_color; //mv:color used for some messages
+    int colour; //mv: colour used for some messages
 
 
 
@@ -6050,17 +6010,17 @@ void describe_god( int which_god )
         goto end_god_info;
     }
 
-    god_color = god_colour (which_god);
+    colour = god_colour(which_god);
 
     //mv: print god's name and title - if you can think up better titles
     //I have nothing against
-    textcolor(god_color);
-
+    textcolor(colour);
     cprintf (god_name(which_god,true)); //print long god's name
     cprintf (EOL EOL);
 
     //mv: print god's description
     textcolor (LIGHTGRAY);
+
     switch (which_god)
     {
     case GOD_ZIN:
@@ -6070,6 +6030,7 @@ void describe_god( int which_god )
                       "abstain from the use of necromancy and other forms of unholy magic." EOL
                       "Zin appreciates long-standing faith as well as sacrifices of valued objects." EOL;
         break;
+
     case GOD_SHINING_ONE:
         description = "The Shining One is a powerful crusading deity, allied with Zin in the fight" EOL
                       "against evil. Followers may be granted with the ability to summarily dispense" EOL
@@ -6077,6 +6038,7 @@ void describe_god( int which_god )
                       "fight honourably. The Shining One appreciates long-standing persistence in " EOL
                       "the endless crusade, as well as the dedicated destruction of unholy creatures.";
         break;
+
     case GOD_KIKUBAAQUDGHA:
         description = "Kikubaaqudgha is a terrible Demon-God, served by those who seek knowledge of" EOL
                       "the powers of death. Followers gain special powers over the undead, and " EOL
@@ -6114,6 +6076,7 @@ void describe_god( int which_god )
                       "constantly prove themselves through battle and the sacrifice of corpses" EOL
                       "and valuable items.";
         break;
+
     case GOD_MAKHLEB:
         description = "Makhleb the Destroyer is a fearsome God of chaos and violent death. Followers," EOL
                       "who must constantly appease Makhleb with blood, stand to gain various powers " EOL
@@ -6146,24 +6109,28 @@ void describe_god( int which_god )
                       "their healing powers by long worship and devotion. Although Elyvilon prefers" EOL
                       "a creed of pacifism, those who crusade against evil are not excluded. Elyvilon" EOL
                       "appreciates the offering of weapons. ";
-      break;
+        break;
+
     default:
-      description = "God of Program Bugs is a weird and dangerous God and his presence should" EOL
-                    "be reported to dev-team.";
+        description = "God of Program Bugs is a weird and dangerous God and his presence should" EOL
+                      "be reported to dev-team.";
     }
+
     cprintf(description);
     //end of printing description
 
-    if ( you.religion != which_god ) goto god_favour;
-          //no status shown when praying at altar of some other god
+    // title only shown for our own god
+    if (you.religion == which_god)
+    {
+        //mv: print title based on piety
+        cprintf( EOL EOL "Title - " );
+        textcolor(colour);
 
-    //mv: print title based on piety
-    cprintf(EOL EOL "Status - ");
-    textcolor (god_color);
-
-     if (you.piety > 160) // mv: if your piety is high enough you get title
-                          // based on your god
-          { cprintf((which_god == GOD_SHINING_ONE) ? "Champion of Law" :
+        // mv: if your piety is high enough you get title
+        // based on your god
+        if (you.piety > 160)
+        {
+            cprintf((which_god == GOD_SHINING_ONE) ? "Champion of Law" :
                     (which_god == GOD_ZIN) ? "Divine Warrior" :
                     (which_god == GOD_ELYVILON) ? "Champion of Light" :
                     (which_god == GOD_OKAWARU) ? "Master of Thousand Battles" :
@@ -6174,31 +6141,31 @@ void describe_god( int which_god )
                     (which_god == GOD_TROG) ? "Great Slayer" :
                     (which_god == GOD_NEMELEX_XOBEH) ? "Great Trickster" :
                     (which_god == GOD_SIF_MUNA) ? "Master of Arcane" :
-                    (which_god == GOD_XOM) ? "Teddy Bear" : // this really shouldn't
-                                                            // happen but ... You know.
-                    "Bogy the Lord of the Bugs"); // Xom and no god is handled before
-          }
-          //mv: most titles are still universal - if any one wants to
-          //he might write specific titles for all gods or rewrite current
-          //ones (I know they are not perfect)
-          //btw. titles are divided according to piety levels on which you get
-          //new abilities.In the main it means - new ability = new title
-          else
-              switch (which_god)
-              {
-              case GOD_ZIN:
-              case GOD_SHINING_ONE:
-              case GOD_KIKUBAAQUDGHA:
-              case GOD_YREDELEMNUL:
-              case GOD_VEHUMET:
-              case GOD_OKAWARU:
-              case GOD_MAKHLEB:
-              case GOD_SIF_MUNA:
-              //mv: what about
-              //sinner, believer, apprentice, disciple, adept, scholar, oracle
-              case GOD_TROG:
-              case GOD_NEMELEX_XOBEH:
-              case GOD_ELYVILON:
+                    (which_god == GOD_XOM) ? "Teddy Bear" :
+                        "Bogy the Lord of the Bugs"); // Xom and no god is handled before
+        }
+        else
+        {
+            //mv: most titles are still universal - if any one wants to
+            //he might write specific titles for all gods or rewrite current
+            //ones (I know they are not perfect)
+            //btw. titles are divided according to piety levels on which you get
+            //new abilities.In the main it means - new ability = new title
+            switch (which_god)
+            {
+            case GOD_ZIN:
+            case GOD_SHINING_ONE:
+            case GOD_KIKUBAAQUDGHA:
+            case GOD_YREDELEMNUL:
+            case GOD_VEHUMET:
+            case GOD_OKAWARU:
+            case GOD_MAKHLEB:
+            case GOD_SIF_MUNA:
+            //mv: what about
+            //sinner, believer, apprentice, disciple, adept, scholar, oracle
+            case GOD_TROG:
+            case GOD_NEMELEX_XOBEH:
+            case GOD_ELYVILON:
                 cprintf ( (you.piety >= 120) ? "High Priest" :
                           (you.piety >= 100) ? "Elder" :
                           (you.piety >=  75) ? "Priest" :
@@ -6207,191 +6174,216 @@ void describe_god( int which_god )
                           (you.piety >    5) ? "Believer"
                                              : "Sinner" );
                 break;
-              case GOD_XOM:
-                cprintf ( (you.experience_level >= 20) ? "Xom's favourite toy"
-                                                       : "Toy" );
-                break;
-              default : cprintf ("Bug");
-              }
-     //end of print status
 
-god_favour:     //mv: now let's print favor as Brent suggested
-                //I know these messages aren't perfect so if you can
-                //think up something better, do it
+            case GOD_XOM:
+                cprintf( (you.experience_level >= 20) ? "Xom's favourite toy"
+                                                      : "Toy" );
+            break;
+
+            default:
+                cprintf ("Bug");
+            }
+        }
+    }
+    // end of print title
+
+    // mv: now let's print favor as Brent suggested
+    // I know these messages aren't perfect so if you can
+    // think up something better, do it
+
     textcolor(LIGHTGRAY);
     cprintf(EOL EOL "Favour - ");
-        textcolor(god_color);
-    if ( you.religion != which_god )
-     //mv: player is praying at altar without appropriate religion
-     //it means player isn't checking his own religion and so we only
-     //display favour and will go out
-       {
-       textcolor (god_color);
-       sprintf ( info, (you.penance[which_god] >= 50) ? "%s's wrath is upon you!" :
+    textcolor(colour);
+
+    //mv: player is praying at altar without appropriate religion
+    //it means player isn't checking his own religion and so we only
+    //display favour and will go out
+    if (you.religion != which_god)
+    {
+        textcolor (colour);
+        snprintf( info, INFO_SIZE,
+                 (you.penance[which_god] >= 50) ? "%s's wrath is upon you!" :
                  (you.penance[which_god] >= 20) ? "%s is annoyed with you." :
                  (you.penance[which_god] >= 5 ) ? "%s well remembers your sins." :
                  (you.penance[which_god] > 0  ) ? "%s is ready to forgive your sins." :
-                                                  "%s doesn't care about you.",
-                                                  god_name(which_god));
+                                                  "%s is ambivalent towards you.",
+                 god_name(which_god) );
+
         cprintf(info);
-
-       goto end_god_info;
-       }
-
-    if (player_under_penance()) //mv: penance check
-    {
-        cprintf ( (you.penance[which_god] >= 50) ? "Godly wrath is upon you !" :
-                 (you.penance[which_god] >= 20) ? "You've transgressed heavily! Be penitent!" :
-                 (you.penance[which_god] >= 5 ) ? "You are under penance." :
-                                                  "You should show more discipline.");
-
     }
     else
     {
-        if (which_god == GOD_XOM)
-            cprintf("You are ignored.");
+        if (player_under_penance()) //mv: penance check
+        {
+            cprintf( (you.penance[which_god] >= 50) ? "Godly wrath is upon you!" :
+                     (you.penance[which_god] >= 20) ? "You've transgressed heavily! Be penitent!" :
+                     (you.penance[which_god] >= 5 ) ? "You are under penance."
+                                                    : "You should show more discipline." );
+
+        }
         else
         {
+            if (which_god == GOD_XOM)
+                cprintf("You are ignored.");
+            else
+            {
+                snprintf( info, INFO_SIZE,
 
-            sprintf(info, (you.piety > 130) ? "A prized avatar of %s.":
-                     (you.piety > 100) ? "A shining star in the eyes of %s." :
-                     (you.piety >  70) ? "A rising star in the eyes of %s." :
-                     (you.piety >  40) ? "%s is most pleased with you." :
-                     (you.piety >  20) ? "%s has noted your presence." :
-                     (you.piety >   5) ? "%s is ambivalent."
-                                       : "You are beneath notice.",
-                                       god_name(which_god));
+                         (you.piety > 130) ? "A prized avatar of %s.":
+                         (you.piety > 100) ? "A shining star in the eyes of %s." :
+                         (you.piety >  70) ? "A rising star in the eyes of %s." :
+                         (you.piety >  40) ? "%s is most pleased with you." :
+                         (you.piety >  20) ? "%s has noted your presence." :
+                         (you.piety >   5) ? "%s is noncommital."
+                                           : "You are beneath notice.",
+
+                         god_name(which_god)
+                       );
+
+                cprintf(info);
+            }
+        }
+        //end of favour
+
+        //mv: following code shows abilities given from god (if any)
+
+
+        textcolor(LIGHTGRAY);
+        cprintf(EOL EOL "Granted powers :                                                         (Cost)" EOL);
+        textcolor(colour);
+
+
+        // mv: these gods protects you during your prayer (not mentioning XOM)
+        // chance for doing so is (random2(you.piety) >= 30)
+        // Note that it's not depending on penance.
+        // Btw. I'm not sure how to explain such divine protection
+        // because god isn't really protecting player - he only sometimes
+        // saves his life (probably it shouldn't be displayed at all).
+        // What about this ?
+        if (((which_god == GOD_ZIN) || (which_god == GOD_SHINING_ONE)
+             || (which_god == GOD_ELYVILON) || (which_god == GOD_OKAWARU)
+             || (which_god == GOD_KIKUBAAQUDGHA)) && (you.piety >= 30))
+        {
+            snprintf( info, INFO_SIZE,
+                      "%s %s watches over you during your prayer." EOL,
+                      god_name(which_god),
+                      (you.piety>=150) ? "carefully":   // > 4/5
+                      (you.piety>=90 ) ? "often" :      // > 2/3
+                                         "sometimes"    //less than 2:3
+                    );
 
             cprintf(info);
         }
+
+        // mv: No abilities (except divine protection)
+        // under penance (fix me if I'm wrong)
+        if (player_under_penance())
+        {
+            cprintf( "None." );
+        }
+        else
+        {
+            switch (which_god) //mv: finaly let's print abilities
+            {
+            case GOD_ZIN:
+                if ( you.piety >= 30 )  cprintf ("You can repel the undead.                                       (1 Magic, Food)" EOL);
+                else cprintf ("None.");
+
+                if ( you.piety >= 50 )  cprintf ("You can lay on hands for minor healing.                  (2 Magic, Food, Piety)" EOL);
+                if ( you.piety >= 75 )  cprintf ("You can call down a plague.                              (3 Magic, Food, Piety)" EOL);
+                if ( you.piety >= 100 ) cprintf ("You can utter a Holy Word.                               (6 Magic, Food, Piety)" EOL);
+                if ( you.piety >= 120 ) cprintf ("You are able to summon a guardian angel.                 (7 Magic, Food, Piety)" EOL);
+                break;
+
+            case GOD_SHINING_ONE:
+                if ( you.piety >= 30 )  cprintf ("You can repel the undead.                                       (1 Magic, Food)" EOL);
+                else cprintf ("None.");
+
+                if ( you.piety >= 50 )  cprintf ("You can smite your foes.                                 (3 Magic, Food, Piety)" EOL);
+                if ( you.piety >= 75 )  cprintf ("You can dispel the undead.                               (3 Magic, Food, Piety)" EOL);
+                if ( you.piety >= 100 ) cprintf ("You can hurl bolts of divine anger.                      (5 Magic, Food, Piety)" EOL);
+                if ( you.piety >= 120 ) cprintf ("You are able to summon a divine warrior.                 (8 Magic, Food, Piety)" EOL);
+                break;
+
+            case GOD_KIKUBAAQUDGHA:
+                 if ( you.piety >= 30 )  cprintf ("You can recall your undead slaves.                                    (1 Magic)" EOL);
+                 else cprintf ("None.");
+
+                 if ( you.piety >= 50 )  cprintf ("You are protected from some of the side-effects of death magic." EOL);
+                 if ( you.piety >= 75 )  cprintf ("You can permanently enslave the undead.                  (2 Magic, Food, Piety)" EOL);
+                 if ( you.piety >= 120 ) cprintf ("You are able to summon an emissary of Death.             (3 Magic, Food, Piety)" EOL);
+                 break;
+
+            case GOD_YREDELEMNUL:
+                 if ( you.piety >= 30 )  cprintf ("You can animate corpses.                                        (3 Magic, Food)" EOL);
+                 else cprintf ("None.");
+                 if ( you.piety >= 50 )  cprintf ("You can recall your undead slaves.                              (4 Magic, Food)" EOL);
+                 if ( you.piety >= 75 )  cprintf ("You can animate legions of the dead.                     (7 Magic, Food, Piety)" EOL);
+                 if ( you.piety >= 100 ) cprintf ("You can drain ambient lifeforce.                         (6 Magic, Food, Piety)" EOL);
+                 if ( you.piety >= 120 ) cprintf ("You can control the undead.                              (5 Magic, Food, Piety)" EOL);
+                 break;
+
+            case GOD_VEHUMET:
+                 if ( you.piety >= 30 )  cprintf ("You can gain power from the those you kill "EOL
+                                                  "   in Vehumet's name, or those slain by your servants." EOL);
+                 else cprintf ("None.");
+
+                 if ( you.piety >= 50 )  cprintf ("Vehumet assists with destructive magics during prayer." EOL);
+                 if ( you.piety >= 75 )  cprintf ("During prayer you have some protection from summoned creatures." EOL);
+                 if ( you.piety >= 100 ) cprintf ("You are able to tap ambient magical fields.                              (Food)" EOL);
+                 break;
+
+            case GOD_OKAWARU:
+                 if ( you.piety >= 30 )  cprintf ("You can gain great, albeit temporary, body strength.     (2 Magic, Food, Piety)" EOL);
+                    else cprintf ("None.");
+                 if ( you.piety >= 50 )  cprintf ("You can call upon Okawaru for minor healing.             (2 Magic, Food, Piety)" EOL);
+                 if ( you.piety >= 120 ) cprintf ("You can haste yourself.                                  (5 Magic, Food, Piety)" EOL);
+                 break;
+
+            case GOD_MAKHLEB:
+                 if ( you.piety >= 30 )  cprintf ("You can gain power from the deaths " EOL
+                                                  "   of those you kill in Makhleb's name." EOL);
+                 else cprintf ("None.");
+
+                 if ( you.piety >= 50 )  cprintf ("You can throw some minor destruction on your foes.              (1 Magic, Food)" EOL);
+                 if ( you.piety >= 75 )  cprintf ("You can summon a lesser demon to your aid.               (2 Magic, Food, Piety)" EOL);
+                 if ( you.piety >= 100 ) cprintf ("You can invoke great divine destruction.               (4 Magic, Food, Piety)" EOL);
+                 if ( you.piety >= 120 ) cprintf ("You can summon a greater servant of Makhleb.             (6 Magic, Food, Piety)" EOL);
+                 break;
+
+            case GOD_SIF_MUNA:
+                 if ( you.piety >= 50 )  cprintf ("You can freely open your mind to new spells.                   (2 Magic, Piety)" EOL);
+                 else cprintf ("None.");
+
+                 if ( you.piety >= 100 ) cprintf ("You are protected from some side-effects of spellcasting." EOL);
+                 break;
+
+            case GOD_TROG:
+                 if ( you.piety >= 30 )  cprintf ("You are able to go berserk at will.                                      (Food)" EOL);
+                 else cprintf ("None.");
+
+                 if ( you.piety >= 50 )  cprintf ("You can give your body great, but temporary, strength.            (Food, Piety)" EOL);
+                 if ( you.piety >= 100 ) cprintf ("You are able to haste yourself.                                   (Food, Piety)" EOL);
+                 break;
+
+            case GOD_ELYVILON:
+                 if ( you.piety >= 30 )  cprintf ("You can call upon Elyvilon for minor healing.                   (1 Magic, Food)" EOL);
+                 else cprintf ("None.");
+
+                 if ( you.piety >= 50 )  cprintf ("You are able to purify yourself.                         (2 Magic, Food, Piety)" EOL);
+                 if ( you.piety >= 75 )  cprintf ("You can invoke moderate healing.                         (2 Magic, Food, Piety)" EOL);
+                 if ( you.piety >= 100 ) cprintf ("You can restore your abilities.                          (3 Magic, Food, Piety)" EOL);
+                 if ( you.piety >= 120 ) cprintf ("You can call upon Elyvilon for incredible healing.       (6 Magic, Food, Piety)" EOL);
+                 break;
+
+            default:   //mv: default is Xom, Nemelex and all bugs.
+                 cprintf ("None.");
+            } //end of printing abilities
+        }
     }
-    //end of favour
-
-    //mv: following code shows abilities given from god (if any)
 
 
-    textcolor(LIGHTGRAY);
-    cprintf(EOL EOL "Granted powers :                                                         (Cost)" EOL);
-    textcolor(god_color);
-
-
-    if ( ((which_god == GOD_ZIN) || (which_god == GOD_SHINING_ONE)
-         || (which_god == GOD_ELYVILON) || (which_god == GOD_OKAWARU)
-         || (which_god == GOD_KIKUBAAQUDGHA)) && (you.piety >= 30))
-       //mv: these gods protects you during your prayer (not mentioning XOM)
-       //chance for doing so is (random2(you.piety) >= 30)
-       //Note that it's not depending on penance.
-       //Btw. I'm not sure how to explain such divine protection
-       //because god isn't really protecting player - he only sometimes
-       //saves his life (probably it shouldn't be displayed at all).
-       //What about this ?
-       {
-        sprintf ( info, "%s %s watches over you during your prayer." EOL,
-                   god_name(which_god),
-                   (you.piety>=150) ? "carefully":  // > 4/5
-                   (you.piety>=90 ) ? "often" : // > 2/3
-                   "sometimes"    //less than 2:3
-                );
-        cprintf(info);
-       if (player_under_penance()) goto end_god_info; //no other abilities
-       }
-
-    if (player_under_penance()) //mv: No abilities (except divine protection)
-                                // under penance (fix me if I'm wrong)
-       { cprintf ("None.");
-         goto end_god_info;
-       }
-
-    switch (which_god) //mv: finaly let's print abilities
-      {
-      case GOD_ZIN:
-         if ( you.piety >= 30 )  cprintf ("You can repel the undead.                                       (1 Magic, Food)" EOL);
-            else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("You can call upon Zin for minor healing.                 (2 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 75 )  cprintf ("You can call down a plague.                              (3 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 100 ) cprintf ("You can utter a Holy Word.                               (6 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 120 ) cprintf ("You are able to summon a guardian angel.                 (7 Magic, Food, Piety)" EOL);
-         break;
-
-      case GOD_SHINING_ONE:
-         if ( you.piety >= 30 )  cprintf ("You can repel the undead.                                       (1 Magic, Food)" EOL);
-            else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("You can smite your foes.                                 (3 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 75 )  cprintf ("You can dispel the undead.                               (3 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 100 ) cprintf ("You can hurl bolts of divine anger.                      (5 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 120 ) cprintf ("You are able to summon a divine warrior.                 (8 Magic, Food, Piety)" EOL);
-         break;
-
-      case GOD_KIKUBAAQUDGHA:
-         if ( you.piety >= 30 )  cprintf ("You can recall your undead slaves.                                    (1 Magic)" EOL);
-            else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("You are protected from some of the side-effects of death magic." EOL);
-         if ( you.piety >= 75 )  cprintf ("You can permanently enslave the undead.                  (2 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 120 ) cprintf ("You are able to summon an emissary of Death.             (3 Magic, Food, Piety)" EOL);
-         break;
-
-      case GOD_YREDELEMNUL:
-         if ( you.piety >= 30 )  cprintf ("You can animate corpses.                                        (3 Magic, Food)" EOL);
-            else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("You can recall your undead slaves.                              (4 Magic, Food)" EOL);
-         if ( you.piety >= 75 )  cprintf ("You can animate legions of the dead.                     (7 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 100 ) cprintf ("You can drain ambient lifeforce.                         (6 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 120 ) cprintf ("You can control the undead.                              (5 Magic, Food, Piety)" EOL);
-         break;
-      case GOD_VEHUMET:
-         if ( you.piety >= 30 )  cprintf ("You can gain power from the those you kill "EOL
-                                          "   in Vehumet's name, or those slain by your servants." EOL);
-            else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("Praying to your God augments your destructive magics." EOL);
-         if ( you.piety >= 75 )  cprintf ("During prayer you have some protection from summoned creatures." EOL);
-         if ( you.piety >= 100 ) cprintf ("You are able to tap ambient magical fields.                              (Food)" EOL);
-         break;
-
-      case GOD_OKAWARU:
-         if ( you.piety >= 30 )  cprintf ("You can gain great, albeit temporary, body strength.     (2 Magic, Food, Piety)" EOL);
-            else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("You can call upon Okawaru for minor healing.             (2 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 120 ) cprintf ("You can haste yourself.                                  (5 Magic, Food, Piety)" EOL);
-         break;
-
-      case GOD_MAKHLEB:
-         if ( you.piety >= 30 )  cprintf ("You can gain power from the deaths " EOL
-                                          "   of those you kill in Makhleb's name." EOL);
-            else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("You can throw some minor destruction on your foes.              (1 Magic, Food)" EOL);
-         if ( you.piety >= 75 )  cprintf ("You can summon a lesser demon to your aid.               (2 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 100 ) cprintf ("You can invoke a great divine destruction.               (4 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 120 ) cprintf ("You can summon a greater servant of Makhleb.             (6 Magic, Food, Piety)" EOL);
-         break;
-
-      case GOD_SIF_MUNA:
-         if ( you.piety >= 50 )  cprintf ("You can freely open your mind to new spells.                   (2 Magic, Piety)" EOL);
-            else cprintf ("None.");
-         if ( you.piety >= 100 ) cprintf ("You are protected from some side-effects of spellcasting." EOL);
-         break;
-
-      case GOD_TROG:
-         if ( you.piety >= 30 )  cprintf ("You are able to go berserk at will.                                      (Food)" EOL);
-            else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("You can give your body great, but temporary, strength.            (Food, Piety)" EOL);
-         if ( you.piety >= 100 ) cprintf ("You are able to haste yourself.                                   (Food, Piety)" EOL);
-         break;
-
-      case GOD_ELYVILON:
-         if ( you.piety >= 30 )  cprintf ("You can do some minor healing.                                  (1 Magic, Food)" EOL);
-            else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("You are able purify yourself.                            (2 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 75 )  cprintf ("You can pray for moderate healing.                       (2 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 100 ) cprintf ("You can restore your abilities.                          (3 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 120 ) cprintf ("You can call upon Elyvilon for incredible healing.       (6 Magic, Food, Piety)" EOL);
-         break;
-
-      default:   //mv: default is Xom, Nemelex and all bugs.
-         cprintf ("None.");
-      } //end of printing abilities
-
-
-    end_god_info: //end of everything (life, world, universe etc.)
+end_god_info: //end of everything (life, world, universe etc.)
 
     getch(); // wait until keypressed
 
@@ -6401,5 +6393,4 @@ god_favour:     //mv: now let's print favor as Brent suggested
     puttext(1, 1, 80, 25, buffer);
     window(1, 1, 80, 25);
 #endif
-
 }          //mv: That's all folks.

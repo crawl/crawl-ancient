@@ -96,6 +96,7 @@
    Range: 0 to about 4.
    +/- to-hit/to-dam: Obvious. Affects both melee and missile. Should be left
    at 0 for weapons, which get +s normally.
+   cursed: 0 or 1.  Sets the item's initial curse status.
 
    Some currently unused properties follow, then:
 
@@ -131,15 +132,15 @@
 /* brand, +/- to AC, +/- to ev, +/- to str, +/- to int, +/- to dex */
         0, 0, 0, 0, 0, 0,
 /* res fire, res cold, res elec, res poison, life protection, res magic */
-            0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
 /* see invis, turn invis, levitate, blink, teleport at will, go berserk */
-            0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
 /* sense surroundings, make noise, no spells, teleport, no teleprt */
-            0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
 /* force berserk, speed metabolism, mutate, +/- to hit, +/- to dam (not weapons) */
-            0, 0, 0, 0, 0,
-/* some as yet unused properties */
-            0, 0
+        0, 0, 0, 0, 0,
+/* cursed, unused */
+        0, 0
     }
     ,
 /* Special description appended to the 'V' description */
@@ -156,21 +157,21 @@
 {                               /* true name: */
     "long sword \"Bloodbane\"", /* un-id'd name */ "blackened long sword",
 /* class, type, plus (to-hit), plus2 (depends on class), colour */
-        OBJ_WEAPONS, WPN_LONG_SWORD, 57, 58, DARKGREY,
+        OBJ_WEAPONS, WPN_LONG_SWORD, +7, +8, DARKGREY,
 /* Properties, all approx thirty of them: */
     {
 /* brand, +/- to AC, +/- to ev, +/- to str, +/- to int, +/- to dex */
         SPWPN_VORPAL, 0, 0, 0, 0, 0,
 /* res fire, res cold, res elec, res poison, life protection, res magic */
-            0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
 /* see invis, turn invis, levitate, blink, teleport at will, go berserk */
-            0, 0, 0, 0, 0, 1,
+        0, 0, 0, 0, 0, 1,
 /* sense surroundings, make noise, no spells, teleport, no teleprt */
-            0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
 /* force berserk, speed metabolism, mutate, +/- to hit, +/- to dam (not weapons) */
-            1, 0, 0, 0, 0,
+        1, 0, 0, 0, 0,
 /* some as yet unused properties */
-            0, 0
+        0, 0
     }
     ,
 /* 3 strings for describing the item in the 'V' display. */
@@ -190,15 +191,15 @@
 /* brand, +/- to AC, +/- to ev, +/- to str, +/- to int, +/- to dex */
         0, 0, 4, 0, 0, 0,
 /* res fire, res cold, res elec, res poison, life protection, res magic */
-            0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 1, 0,
 /* see invis, turn invis, levitate, blink, teleport at will, go berserk */
-            1, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0,
 /* sense surroundings, make noise, no spells, teleport, no teleprt */
-            0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
 /* force berserk, speed metabolism, mutate, +/- to hit, +/- to dam (not weapons) */
-            0, 0, 0, -3, 0,
+        0, 0, 0, -3, 0,
 /* some as yet unused properties */
-            0, 0
+        0, 0
     }
     ,
 /* 3 strings for describing the item in the 'V' display. */
@@ -211,14 +212,14 @@
 /* 4 */
 {
     "long sword of Flaming Death", "smoking long sword",
-        OBJ_WEAPONS, WPN_LONG_SWORD, 56, 52, RED,
+        OBJ_WEAPONS, WPN_LONG_SWORD, +6, +2, RED,
     {
         SPWPN_FLAMING, 0, 0, 0, 0, 0,
-            2, -1, 0, 2, 0, 2,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0
+        2, -1, 0, 2, 0, 2,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0
     }
     ,
         "",
@@ -230,14 +231,14 @@
 /* 5 */
 {
     "shield of Ignorance", "dull large shield",
-        OBJ_ARMOUR, ARM_LARGE_SHIELD, 155, 0, BROWN,
+        OBJ_ARMOUR, ARM_LARGE_SHIELD, +5, 0, BROWN,
     {
         0, 2, 2, 0, -6, 0,
-            0, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0
+        0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        1, 0
     }
     ,
         "",
@@ -250,14 +251,14 @@
 /* 6 */
 {
     "Holy Armour of Zin", "glowing golden plate mail",
-        OBJ_ARMOUR, ARM_PLATE_MAIL, 56, 0, YELLOW,
+        OBJ_ARMOUR, ARM_PLATE_MAIL, +6, 0, YELLOW,
     {
         0, 0, 0, 3, 0, 0,
-            0, 0, 0, 0, 1, 50,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0
+        0, 0, 0, 0, 1, 50,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0
     }
     ,
         "",
@@ -269,14 +270,14 @@
 /* 7 */
 {
     "robe of Augmentation", "silk robe",
-        OBJ_ARMOUR, ARM_ROBE, 50, 0, LIGHTRED,
+        OBJ_ARMOUR, ARM_ROBE, +0, 0, LIGHTRED,
     {
         0, 0, 0, 2, 2, 2,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0
     }
     ,
         "",
@@ -288,14 +289,14 @@
 /* 8 */
 {
     "mace of Brilliance", "brightly glowing mace",
-        OBJ_WEAPONS, WPN_MACE, 55, 55, WHITE,
+        OBJ_WEAPONS, WPN_MACE, +5, +5, WHITE,
     {
         SPWPN_HOLY_WRATH, 3, 0, 0, 0, 0,
-            0, 0, 0, 0, 1, 0,
-            1, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0
+        0, 0, 0, 0, 1, 0,
+        1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0
     }
     ,
         "",
@@ -307,14 +308,14 @@
 /* 9 */
 {
     "cloak of the Thief", "tattered cloak",
-        OBJ_ARMOUR, ARM_CLOAK, 51, 0, DARKGREY,
+        OBJ_ARMOUR, ARM_CLOAK, +1, 0, DARKGREY,
     {
         0, 0, 2, 0, 0, 2,
-            0, 0, 0, 0, 0, 0,
-            1, 1, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, -3,
-            0, 0
+        0, 0, 0, 0, 0, 0,
+        1, 1, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, -3,
+        0, 0
     }
     ,
         "It allows its wearer to excell in the arts of thievery.",
@@ -329,14 +330,14 @@
 /* 10 */
 {
     "buckler \"Bullseye\"", "round buckler",
-        OBJ_ARMOUR, ARM_BUCKLER, 60, 0, RED,
+        OBJ_ARMOUR, ARM_BUCKLER, +10, 0, RED,
     {
         0, 0, -3, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0
     }
     ,
         "",
@@ -348,14 +349,14 @@
 /* 11 */
 {
     "crown of Dyrovepreva", "jewelled bronze crown",
-        OBJ_ARMOUR, ARM_HELMET, 53, 0, BROWN,
+        OBJ_ARMOUR, ARM_HELMET, +3, THELM_SPECIAL, BROWN,
     {
         0, 0, 0, 0, 2, 0,
-            0, 0, 1, 0, 0, 0,
-            1, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 1, 0, 0, 0,
-            0, 0
+        0, 0, 1, 0, 0, 0,
+        1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0,
+        0, 0
     }
     ,
         "",
@@ -368,14 +369,14 @@
 /* 12 */
 {
     "demon blade \"Leech\"", "runed demon blade",
-        OBJ_WEAPONS, WPN_DEMON_BLADE, 163, 54, MAGENTA,
+        OBJ_WEAPONS, WPN_DEMON_BLADE, +13, +4, MAGENTA,
     {
         SPWPN_VAMPIRICISM, -1, -1, -1, -1, -1,
-            0, 0, 0, 0, 1, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0
+        0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        1, 0
     }
     ,
         "",
@@ -387,14 +388,14 @@
 /* 13 */
 {
     "amulet of Cekugob", "crystal amulet",
-        OBJ_JEWELLERY, AMU_WARDING, 50, 0, LIGHTGREY,
+        OBJ_JEWELLERY, AMU_WARDING, +0, 0, LIGHTGREY,
     {
         0, 1, 1, 0, 0, 0,
-            0, 0, 1, 1, 1, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 1,
-            0, 2, 0, 0, 0,
-            0, 0
+        0, 0, 1, 1, 1, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1,
+        0, 2, 0, 0, 0,
+        0, 0
     }
     ,
         "",
@@ -407,33 +408,34 @@
 /* 14 */
 {
     "robe of misfortune", "fabulously ornate robe",
-        OBJ_ARMOUR, ARM_ROBE, 145, 0, MAGENTA,
+        OBJ_ARMOUR, ARM_ROBE, -5, 0, MAGENTA,
     {
         0, 0, -4, -2, -2, -2,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 1, 1, 0,
-            0, 0, 5, 0, 0,
-            0, 0
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 1, 1, 0,
+        0, 0, 5, 0, 0,
+        1, 0
     }
     ,
         "",
         "A splendid flowing robe of fur and silk.",
         ""
 }
+
 #ifdef USE_NEW_UNRANDS
 ,
 /* 15 */
 {
     "dagger of Chilly Death", "saphire dagger",
-        OBJ_WEAPONS, WPN_DAGGER, 52, 55, LIGHTBLUE,
+        OBJ_WEAPONS, WPN_DAGGER, +2, +5, LIGHTBLUE,
     {
         SPWPN_FREEZING, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -444,14 +446,14 @@
 /* 16 */
 {
     "amulet of Four Winds", "jade amulet",
-        OBJ_JEWELLERY, AMU_CLARITY, 50, 0, LIGHTGREEN,
+        OBJ_JEWELLERY, AMU_CLARITY, +0, 0, LIGHTGREEN,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 1, 1,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -463,14 +465,14 @@
 /* 17 */
 {
     "dagger \"Morg\"", "rusty dagger",
-        OBJ_WEAPONS, WPN_DAGGER, 49, 54, LIGHTRED,
+        OBJ_WEAPONS, WPN_DAGGER, -1, +4, LIGHTRED,
     {
         SPWPN_PAIN, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "Many years ago it was property of powerful mage called "
@@ -483,14 +485,14 @@
 /* 18 */
 {
     "scythe \"Finisher\"", "blackened scythe",
-        OBJ_WEAPONS, WPN_SCYTHE, 153, 55, DARKGRAY,
+        OBJ_WEAPONS, WPN_SCYTHE, +3, +5, DARKGRAY,
     {
         0, 0, 0, 3, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        1, 0
     }
     ,
         "",
@@ -502,14 +504,14 @@
 /* 19 */
 {
     "sling \"Punk\"", "blue sling",
-        OBJ_WEAPONS, WPN_SLING, 53, 54, LIGHTBLUE,
+        OBJ_WEAPONS, WPN_SLING, +3, +4, LIGHTBLUE,
     {
         SPWPN_FROST, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -520,14 +522,14 @@
 /* 20 */
 {
     "Krishna's bow", "golden bow",
-        OBJ_WEAPONS, WPN_BOW, 58, 58, YELLOW,
+        OBJ_WEAPONS, WPN_BOW, +8, +8, YELLOW,
     {
         0, 0, 0, 0, 0, 3,
         0, 0, 0, 0, 0, 0,
         1, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "It once belonged to one foreign god. It works best with some kind "
@@ -539,14 +541,14 @@
 /* 21 */
 {
     "cloak of Flash", "vibrating cloak",
-        OBJ_ARMOUR, ARM_CLOAK, 52, 0, RED,
+        OBJ_ARMOUR, ARM_CLOAK, +2, 0, RED,
     {
         0, 0, 4, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 1, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -557,14 +559,14 @@
 /* 22 */
 {
     "giant club \"Skullcrusher\"", "brutal giant club",
-        OBJ_WEAPONS, WPN_GIANT_CLUB, 50, 55, BROWN,
+        OBJ_WEAPONS, WPN_GIANT_CLUB, +0, +5, BROWN,
     {
         0, 0, 0, 5, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -575,7 +577,7 @@
 /* 23 */
 {
     "boots of Assassin", "soft boots",
-        OBJ_ARMOUR, ARM_BOOTS, 52, 0, BROWN,
+        OBJ_ARMOUR, ARM_BOOTS, +2, 0, BROWN,
     {
         0, 0, 0, 0, 0, 3,
         0, 0, 0, 0, 0, 0,
@@ -593,14 +595,14 @@
 /* 24 */
 {
     "glaive of the Guard", "polished glaive",
-        OBJ_WEAPONS, WPN_GLAIVE, 55, 58, LIGHTCYAN,
+        OBJ_WEAPONS, WPN_GLAIVE, +5, +8, LIGHTCYAN,
     {
         SPWPN_PROTECTION, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 1,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
      }
     ,
         "This weapon once belonged to Gar Dogh the guard of king's treasures. "
@@ -612,14 +614,14 @@
 /* 25 */
 {
     "sword of Jihad", "crystal sword",
-        OBJ_WEAPONS, WPN_LONG_SWORD, 54, 54, WHITE,
+        OBJ_WEAPONS, WPN_LONG_SWORD, +4, +4, WHITE,
     {
         SPWPN_HOLY_WRATH, 0, 3, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         1, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "This sword was Shining One's gift to one of his paladins." ,
@@ -630,14 +632,14 @@
 /* 26 */
 {
     "Lear's chain mail", "golden chain mail",
-        OBJ_ARMOUR, ARM_CHAIN_MAIL, 149, 0, YELLOW,
+        OBJ_ARMOUR, ARM_CHAIN_MAIL, -1, 0, YELLOW,
     {
         0, 0, 0, 0, 0, -3,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 1, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        1, 0
     }
     ,
         "",
@@ -648,14 +650,14 @@
 /* 27 */
 {
     "skin of Zhor", "smelly skin",
-        OBJ_ARMOUR, ARM_ANIMAL_SKIN, 53, 0, BROWN,
+        OBJ_ARMOUR, ARM_ANIMAL_SKIN, +3, 0, BROWN,
     {
         0, 0, 0, 0, 0, 0,
         0, 1, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -666,14 +668,14 @@
 /* 28 */
 {
     "crossbow \"Fiery Devil\"", "flaming crossbow",
-        OBJ_WEAPONS, WPN_CROSSBOW, 54, 50, LIGHTRED,
+        OBJ_WEAPONS, WPN_CROSSBOW, +4, +0, LIGHTRED,
     {
         SPWPN_FLAMING, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -684,14 +686,14 @@
 /* 29 */
 {
     "salamander's hide armour", "red leather armour",
-        OBJ_ARMOUR, ARM_LEATHER_ARMOUR, 52, 0, RED,
+        OBJ_ARMOUR, ARM_LEATHER_ARMOUR, +2, 0, RED,
     {
         0, 0, 0, 0, 0, 0,
         2, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -702,14 +704,14 @@
 /* 30 */
 {
     "gauntlets of War", "thick gauntlets",
-        OBJ_ARMOUR, ARM_GLOVES, 53, 0, BROWN,
+        OBJ_ARMOUR, ARM_GLOVES, +3, 0, BROWN,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 3, 3,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -720,14 +722,14 @@
 /* 31 */
 {
     "sword of Doom Knight", "adamantine great sword",
-        OBJ_WEAPONS, WPN_GREAT_SWORD, 54, 54, BLUE,
+        OBJ_WEAPONS, WPN_GREAT_SWORD, +4, +4, BLUE,
     {
         SPWPN_PAIN, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 1,
         0, 0, 0, 0, 0, 0,
         0, 0, 1, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -738,14 +740,14 @@
 /* 32 */
 {
     "shield of resistance", "bronze shield",
-        OBJ_ARMOUR, ARM_SHIELD, 53, 0, LIGHTRED,
+        OBJ_ARMOUR, ARM_SHIELD, +3, 0, LIGHTRED,
     {
         0, 0, 0, 0, 0, 0,
         1, 1, 0, 0, 0, 40,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -756,14 +758,14 @@
 /* 33 */
 {
     "robe of folly", "foolish robe",
-        OBJ_ARMOUR, ARM_ROBE, 149, 0, LIGHTGRAY,
+        OBJ_ARMOUR, ARM_ROBE, -1, 0, LIGHTGRAY,
     {
         0, 0, 0, 0, -5, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 1, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        1, 0
     }
     ,
         "",
@@ -774,14 +776,14 @@
 /* 34 */
 {
     "necklace of Bloodlust", "blood-stained necklace",
-        OBJ_JEWELLERY, AMU_RAGE, 150, 0, RED,
+        OBJ_JEWELLERY, AMU_RAGE, +0, 0, RED,
     {
         0, 0, 0, 2, -2, 0,
         0, 0, 0, 0, 0, 20,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         1, 0, 0, 0, 3,
-            0, 0
+        1, 0
     }
     ,
         "",
@@ -792,14 +794,14 @@
 /* 35 */
 {
     "\"Eos\"", "encrusted morningstar",
-        OBJ_WEAPONS, WPN_MORNINGSTAR, 55, 55, LIGHTCYAN,
+        OBJ_WEAPONS, WPN_MORNINGSTAR, +5, +5, LIGHTCYAN,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 1,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -810,50 +812,50 @@
 /* 36 */
 {
     "ring of Shaolin", "jade ring",
-        OBJ_JEWELLERY, RING_EVASION, 58, 0, LIGHTGREEN,
+        OBJ_JEWELLERY, RING_EVASION, +8, 0, LIGHTGREEN,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
-        "",
-        "",
+        "It affects your evasion (+8).",
+        "This ring provides the wearer with great agility and dodging.",
         ""
 }
 ,
 /* 37 */
 {
     "ring of robustness", "steel ring",
-        OBJ_JEWELLERY, RING_PROTECTION, 58, 0, LIGHTGRAY,
+        OBJ_JEWELLERY, RING_PROTECTION, +8, 0, LIGHTGRAY,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
-        "",
-        "",
+        "It affects your AC (+8).",
+        "This ring provides the wearer with great protection from damage.",
         ""
 }
 ,
 /* 38 */
 {
     "Edison's patent armour", "weird-looking armour",
-        OBJ_ARMOUR, ARM_PLATE_MAIL, 150, 0, LIGHTGREEN,
+        OBJ_ARMOUR, ARM_PLATE_MAIL, +0, 0, LIGHTGREEN,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 1, 0, 1,
         0, 0, 0, 0, 0,
-            0, 0
+        1, 0
     }
     ,
         "",
@@ -864,14 +866,14 @@
 /* 39 */
 {
     "spear of Voo-Doo", "ebony spear",
-        OBJ_WEAPONS, WPN_SPEAR, 52, 54, DARKGRAY,
+        OBJ_WEAPONS, WPN_SPEAR, +2, +4, DARKGRAY,
     {
         SPWPN_VAMPIRICISM, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 1, 0,
         0, 0, 0, 0, 0, 0,
         0, 3, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "It's really dark and malign artifact and no wise man would even touch it.",
@@ -882,14 +884,14 @@
 /* 40 */
 {
     "trident of Octopus's king", "mangy trident",
-        OBJ_WEAPONS, WPN_TRIDENT, 54, 54, CYAN,
+        OBJ_WEAPONS, WPN_TRIDENT, +4, +4, CYAN,
     {
         SPWPN_VENOM, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "This trident was stolen many years ago from Octopus's garden "
@@ -902,14 +904,14 @@
 /* 41 */
 {
     "mask of dragon", "blue mask",
-        OBJ_ARMOUR, ARM_HELMET, 50, 4, BLUE,
+        OBJ_ARMOUR, ARM_HELMET, +0, THELM_SPECIAL, BLUE,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 2, 2,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -920,14 +922,14 @@
 /* 42 */
 {
     "mithril axe \"Arga\"", "mithril axe",
-        OBJ_WEAPONS, WPN_AXE, 53, 53, WHITE,
+        OBJ_WEAPONS, WPN_AXE, +3, +3, WHITE,
     {
         SPWPN_SPEED, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -938,14 +940,14 @@
 /* 43 */
 {
     "elemental staff", "black staff",
-        OBJ_WEAPONS, WPN_QUARTERSTAFF, 53, 51, DARKGRAY,
+        OBJ_WEAPONS, WPN_QUARTERSTAFF, +3, +1, DARKGRAY,
     {
         SPWPN_PROTECTION, 0, 0, 0, 0, 0,
         1, 1, 0, 0, 0, 60,
         0, 0, 0, 0, 0, 0,
         0, 1, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "This powerful staff used to belong to leader of"
@@ -957,14 +959,14 @@
 /* 44 */
 {
     "hand crossbow \"Sniper\"", "black crossbow",
-        OBJ_WEAPONS, WPN_HAND_CROSSBOW, 58, 50, DARKGRAY,
+        OBJ_WEAPONS, WPN_HAND_CROSSBOW, +8, +0, DARKGRAY,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         1, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -975,14 +977,14 @@
 /* 45 */
 {
     "bow \"Erchidel\"", "metal bow",
-        OBJ_WEAPONS, WPN_BOW, 55, 53, CYAN,
+        OBJ_WEAPONS, WPN_BOW, +5, +3, CYAN,
     {
         0, 0, 0, 3, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -993,14 +995,14 @@
 /* 46 */
 {
     "robe of Night", "black robe",
-        OBJ_ARMOUR, ARM_ROBE, 53, 0, DARKGRAY,
+        OBJ_ARMOUR, ARM_ROBE, +3, 0, DARKGRAY,
     {
         SPARM_DARKNESS, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 20,
         1, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "According to legend this robe was gift of Ratri the Goddess of the Night "
@@ -1012,14 +1014,14 @@
 /* 47 */
 {
     "plutonium sword", "glowing long sword",
-        OBJ_WEAPONS, WPN_LONG_SWORD, 155, 57, LIGHTGREEN,
+        OBJ_WEAPONS, WPN_LONG_SWORD, +5, +7, LIGHTGREEN,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 6, 0, 0,
-            0, 0
+        1, 0
     }
     ,
         "",
@@ -1030,14 +1032,14 @@
 /* 48 */
 {
     "mace \"Undeadhunter\"", "steel mace",
-        OBJ_WEAPONS, WPN_MACE, 54, 56, LIGHTGRAY,
+        OBJ_WEAPONS, WPN_MACE, +4, +6, LIGHTGRAY,
     {
         SPWPN_DISRUPTION, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -1048,14 +1050,14 @@
 /* 49 */
 {
     "armour of Dragon's King", "shiny dragon armour",
-        OBJ_ARMOUR, ARM_GOLD_DRAGON_ARMOUR, 55, 0, YELLOW,
+        OBJ_ARMOUR, ARM_GOLD_DRAGON_ARMOUR, +5, 0, YELLOW,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 25,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -1066,14 +1068,14 @@
 /* 50 */
 {
     "hat of Alchemist", "dirty hat",
-        OBJ_ARMOUR, ARM_HELMET, 52, 4, MAGENTA,
+        OBJ_ARMOUR, ARM_HELMET, +2, THELM_SPECIAL, MAGENTA,
     {
         0, 0, 0, 0, 0, 0,
         1, 1, 1, 0, 0, 20,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -1084,14 +1086,14 @@
 /* 51 */
 {
     "Fencer's gloves", "silk gloves",
-        OBJ_ARMOUR, ARM_GLOVES, 50, 0, WHITE,
+        OBJ_ARMOUR, ARM_GLOVES, +0, 0, WHITE,
     {
         0, 0, 3, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 5, 0,
-            0, 0
+        0, 0
     }
     ,
         "",
@@ -1102,21 +1104,21 @@
 /* 52 */
 {
     "ring of Mage", "saphire ring",
-        OBJ_JEWELLERY, RING_WIZARDRY, 50, 0, LIGHTBLUE,
+        OBJ_JEWELLERY, RING_WIZARDRY, +0, 0, LIGHTBLUE,
     {
         0, 0, 0, 0, 3, 0,
         0, 0, 0, 0, 0, 50,
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
-            0, 0
+        0, 0
      }
     ,
         "",
         "",
         ""
 }
-#endif USE_NEW_UNRANDS
+#endif // USE_NEW_UNRANDS
 ,
 
 /* This is a dummy */

@@ -45,14 +45,15 @@
 #include "debug.h"
 #include "describe.h"
 #include "itemname.h"
+#include "items.h"
 #include "mutation.h"
 #include "new.h"
 #include "player.h"
 #include "religion.h"
 #include "shopping.h"
 #include "skills2.h"
-#include "spells0.h"
 #include "spl-book.h"
+#include "spl-cast.h"
 #include "spl-util.h"
 #include "stuff.h"
 #include "version.h"
@@ -111,8 +112,9 @@ static string munge_description(const string & inStr)
 
             outStr += fillstring(kIndent, ' ');
             lineLen = kIndent;
-            ++i;
 
+            while (inStr[++i] == '$')
+                ;
         }
         else if (isspace(ch))
         {
@@ -155,7 +157,7 @@ static string munge_description(const string & inStr)
 
     outStr += EOL;
 
-    return outStr;
+    return (outStr);
 }                               // end munge_description()
 
  //---------------------------------------------------------------
@@ -227,7 +229,7 @@ static void dump_stats(string & text)
     itoa(you.hp, st_prn, 10);
     text += st_prn;
 
-    int max_max_hp = you.hp_max - you.base_hp + 5000;
+    int max_max_hp = you.hp_max + player_rotted();
 
     if (you.hp < you.hp_max || max_max_hp != you.hp_max)
     {
@@ -431,10 +433,10 @@ static void dump_inventory(string & text, char show_prices)
 
     for (i = 0; i < ENDOFPACK; i++)
     {
-        if (you.inv_quantity[i] != 0)
+        if (is_valid_item( you.inv[i] ))
         {
             // adds up number of each class in invent.
-            inv_class2[you.inv_class[i]]++;
+            inv_class2[you.inv[i].base_type]++;
             inv_count++;
         }
     }
@@ -476,93 +478,30 @@ static void dump_inventory(string & text, char show_prices)
 
                 for (j = 0; j < ENDOFPACK; j++)
                 {
-                    if (you.inv_class[j] == i && you.inv_quantity[j] > 0)
+                    if (is_valid_item(you.inv[j]) && you.inv[j].base_type == i)
                     {
                         text += " ";
 
-                        char ft;
-
-                        ft = index_to_letter(j);
-
-                        text += ft;
-                        text += " - ";
-
-                        /*
-                           Remove DML 6/2/99: not used!
-                           char yps = wherey();
-                         */
-
-                        in_name(j, 3, st_pass);
+                        in_name( j, DESC_INVENTORY_EQUIP, st_pass );
                         text += st_pass;
 
                         inv_count--;
 
-                        if (j == you.equip[EQ_BODY_ARMOUR]
-                                 || j == you.equip[EQ_CLOAK]
-                                 || j == you.equip[EQ_HELMET]
-                                 || j == you.equip[EQ_GLOVES]
-                                 || j == you.equip[EQ_BOOTS]
-                                 || j == you.equip[EQ_SHIELD])
-                        {
-                            text += " (worn)";
-                        }
-                        else if (j == you.equip[EQ_WEAPON])
-                            text += " (weapon)";
-                        else if (j == you.equip[EQ_LEFT_RING])
-                            text += " (left hand)";
-                        else if (j == you.equip[EQ_RIGHT_RING])
-                            text += " (right hand)";
-                        else if (j == you.equip[EQ_AMULET])
-                            text += " (neck)";
-
                         if (show_prices == 1)
                         {
                             text += " (";
-                            itoa( item_value(
-                                      you.inv_class[j], you.inv_type[j],
-                                      you.inv_dam[j], you.inv_plus[j],
-                                      you.inv_plus2[j], you.inv_quantity[j], 3,
-                                      temp_id ),
-                                  strng, 10 );
+
+                            itoa(item_value(you.inv[j], temp_id, true), strng, 10);
                             text += strng;
                             text += "gold)";
                         }
 
-                        //text += EOL;
-
-                        if (is_dumpable_artifact(
-                                 you.inv_class[j], you.inv_type[j],
-                                 you.inv_plus[j], you.inv_plus2[j],
-                                 you.inv_dam[j], you.inv_ident[j],
-                                 Options.verbose_dump ))
+                        if (is_dumpable_artifact( you.inv[j],
+                                                  Options.verbose_dump ))
                         {
-                            text2 = get_item_description(you.inv_class[j],
-                                                     you.inv_type[j],
-                                                     you.inv_plus[j],
-                                                     you.inv_plus2[j],
-                                                     you.inv_dam[j],
-                                                     you.inv_ident[j],
-                                                     Options.verbose_dump);
-
-                            if (text2.length() > 0
-                                    && text2[text2.length() - 1] == '$')
-                            {
-                                text2[text2.length() - 1] = '\0';
-                            }
-
-                            // For some reason, this must be done twice
-                            //  or it doesn't work properly for unrandarts
-                            if (text2.length() > 0
-                                    && text2[text2.length() - 1] == '$')
-                            {
-                                text2[text2.length() - 1] = '\0';
-                            }
-
-                            //if (text2 [0] == '$')
-                            //  text2 [0] = 32;
-
-                            if (text2[0] != '$' && text2.length() > 0)
-                                text += EOL;
+                            text2 = get_item_description( you.inv[j],
+                                                          Options.verbose_dump,
+                                                          true );
 
                             text += munge_description(text2);
                         }
@@ -907,7 +846,7 @@ bool dump_char(char show_prices, char fname[30])        // $$$ a try block?
 
     FILE *handle = fopen(file_name, "wb");
 
-#ifdef DEBUG
+#if DEBUG_DIAGNOSTICS
     strcpy(info, "File name: ");
     strcat(info, file_name);
     mpr(info);

@@ -24,6 +24,7 @@
 bool cast_sure_blade(int power);
 
 
+#if 0
 // last updated 24may2000 {dlb}
 /* ***********************************************************************
  * called from: ability - spell
@@ -43,6 +44,13 @@ char cast_greatest_healing(void);
  * called from: ability - spell
  * *********************************************************************** */
 char cast_lesser_healing(void);
+#endif
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - spell
+ * *********************************************************************** */
+char cast_healing(int power);
 
 
 // last updated 06mar2001 {gdl}
@@ -122,7 +130,7 @@ void identify(int power);
 /* ***********************************************************************
  * called from: acr - spells1
  * *********************************************************************** */
-void manage_shock_shield(void);
+void manage_fire_shield(void);
 
 
 // last updated 24may2000 {dlb}

@@ -28,14 +28,15 @@
 #include "effects.h"
 #include "fight.h"
 #include "itemname.h"
+#include "items.h"
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
 #include "mon-util.h"
 #include "player.h"
-#include "spells.h"
 #include "spells2.h"
 #include "spells4.h"
+#include "spl-cast.h"
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
@@ -56,6 +57,8 @@ void mons_trap(struct monsters *monster)
 
     // new function call {dlb}
     int which_trap = trap_at_xy(monster->x, monster->y);
+    if (which_trap == -1)
+        return;
 
     bool trapKnown = (grd[monster->x][monster->y] != DNGN_UNDISCOVERED_TRAP);
     bool revealTrap = false;    // more sophisticated trap uncovering {dlb}
@@ -69,7 +72,7 @@ void mons_trap(struct monsters *monster)
     // and may actually exit this function early: {dlb}
     if (mons_flies(monster->type))
     {
-        if (trap_category(env.trap_type[which_trap]) == DNGN_TRAP_MECHANICAL)
+        if (trap_category(env.trap[which_trap].type) == DNGN_TRAP_MECHANICAL)
         {
             if (trapKnown)
                 simple_monster_message(monster, " flies safely over a trap.");
@@ -84,7 +87,7 @@ void mons_trap(struct monsters *monster)
     // choice prevents traps from easily killing large monsters fairly
     // deep within the dungeon.
     //
-    switch (env.trap_type[which_trap])
+    switch (env.trap[which_trap].type)
     {
     case TRAP_DART:
         projectileFired = true;
@@ -171,10 +174,10 @@ void mons_trap(struct monsters *monster)
             {
                 strcpy(info, "A huge blade swings out");
 
-                if (!mons_has_ench(monster,ENCH_INVIS) || player_see_invis())
+                if (player_monster_visible( monster ))
                 {
                     strcat(info, " and slices into ");
-                    strcat(info, ptr_monam( monster, 1 ));
+                    strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
                 }
 
                 strcat(info, "!");
@@ -182,7 +185,7 @@ void mons_trap(struct monsters *monster)
             }
 
             damage_taken = 10 + random2avg(29, 2);
-            damage_taken -= random2(1 + monster->armor_class);
+            damage_taken -= random2(1 + monster->armour_class);
         }
 
         revealTrap = true;
@@ -257,10 +260,10 @@ void mons_trap(struct monsters *monster)
                                                     >= monster->evasion)
         {
             damage_taken = random2(beem.damage);
-            damage_taken -= random2(1 + monster->armor_class);
+            damage_taken -= random2(1 + monster->armour_class);
             if (beem.colour == OBJ_MISSILES
                 && beem.type == MI_NEEDLE
-                && random2(100) < 50 - (3*monster->armor_class/2))
+                && random2(100) < 50 - (3*monster->armour_class/2))
             {
                 apply_poison = true;
             }
@@ -276,7 +279,7 @@ void mons_trap(struct monsters *monster)
             strcpy(info, "A");
             strcat(info, beem.beam_name);
             strcat(info, (damage_taken > 0) ? " hits " : " misses ");
-            strcat(info, ptr_monam( monster, 1 ));
+            strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
             strcat(info, "!");
             mpr(info);
         }
@@ -297,7 +300,7 @@ void mons_trap(struct monsters *monster)
     // reveal undiscovered traps, where appropriate: {dlb}
     if (monsterNearby && !trapKnown && revealTrap)
     {
-        grd[monster->x][monster->y] = trap_category(env.trap_type[which_trap]);
+        grd[monster->x][monster->y] = trap_category(env.trap[which_trap].type);
     }
 
     // apply damage and handle death, where appropriate: {dlb}
@@ -327,10 +330,12 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
     int sumcount = 0;
     int sumcount2;
     int summonik = 0;
+    int duration = 0;
 
-#ifdef WIZARD
-    sprintf( info, "Mon #%d casts spell #%d", monster_index(monster),
-        spell_cast );
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "Mon #%d casts %s (#%d)", monster_index(monster),
+             mons_spell_name( spell_cast ), spell_cast );
+
     mpr( info );
 #endif
 
@@ -352,13 +357,37 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
     switch (spell_cast)
     {
     case MS_VAMPIRE_SUMMON:
-        sumcount2 = 1 + random2(4);
+        sumcount2 = 3 + random2(4) + monster->hit_dice / 5;
 
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
         {
-            create_monster((one_chance_in(3) ? MONS_RAT : MONS_GIANT_BAT),
-                ENCH_ABJ_V, SAME_ATTITUDE(monster), monster->x, monster->y,
-                monster->foe, 250);
+            int mons = MONS_GIANT_BAT;;
+
+            if (!one_chance_in(3))
+            {
+                switch (random2(4))
+                {
+                case 0:
+                    mons = MONS_ORANGE_RAT;
+                    break;
+
+                case 1:
+                    mons = MONS_GREEN_RAT;
+                    break;
+
+                case 2:
+                    mons = MONS_GREY_RAT;
+                    break;
+
+                case 3:
+                default:
+                    mons = MONS_RAT;
+                    break;
+                }
+            }
+
+            create_monster( mons, ENCH_ABJ_V, SAME_ATTITUDE(monster),
+                            monster->x, monster->y, monster->foe, 250 );
         }
         return;
 
@@ -366,30 +395,31 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
         if (!mons_friendly(monster) && monsterNearby
             && monster_abjuration(1, true) > 0 && coinflip())
         {
-            monster_abjuration(monster->hit_dice * 10, false);
+            monster_abjuration( monster->hit_dice * 10, false );
             return;
         }
 
-        sumcount2 = 1 + random2(4);
+        sumcount2 = 1 + random2(4) + random2( monster->hit_dice ) / 7;
 
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
         {
-            create_monster(RANDOM_MONSTER, ENCH_ABJ_V, SAME_ATTITUDE(monster),
-                monster->x, monster->y, monster->foe, 250);
+            create_monster( RANDOM_MONSTER, ENCH_ABJ_V, SAME_ATTITUDE(monster),
+                            monster->x, monster->y, monster->foe, 250 );
         }
         return;
 
     case MS_FAKE_RAKSHASA_SUMMON:
-        sumcount2 = (coinflip()? 2 : 1);
+        sumcount2 = (coinflip() ? 2 : 3);
 
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
         {
-            create_monster(MONS_RAKSHASA_FAKE, ENCH_ABJ_II, SAME_ATTITUDE(monster),
-                monster->x, monster->y, monster->foe, 250);
+            create_monster( MONS_RAKSHASA_FAKE, ENCH_ABJ_III,
+                            SAME_ATTITUDE(monster), monster->x, monster->y,
+                            monster->foe, 250 );
         }
         return;
 
-    case MS_SUMMON_DEMON:
+    case MS_SUMMON_DEMON: // class 2-4 demons
         if (!mons_friendly(monster) && monsterNearby
             && monster_abjuration(1, true) > 0 && coinflip())
         {
@@ -397,39 +427,68 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
             return;
         }
 
-        create_monster(summon_any_demon(DEMON_COMMON), ENCH_ABJ_III,
-            SAME_ATTITUDE(monster), monster->x, monster->y, monster->foe, 250);
+        sumcount2 = 1 + random2(2) + monster->hit_dice / 10;
+        duration  = ENCH_ABJ_II + monster->hit_dice / 10;
+        if (duration > ENCH_ABJ_VI)
+            duration = ENCH_ABJ_VI;
+
+        for (sumcount = 0; sumcount < sumcount2; sumcount++)
+        {
+            create_monster( summon_any_demon(DEMON_COMMON), duration,
+                            SAME_ATTITUDE(monster), monster->x, monster->y,
+                            monster->foe, 250 );
+        }
         return;
 
     case MS_ANIMATE_DEAD:
         // see special handling in monstuff::handle_spell {dlb}
-        animate_dead(5 + random2(5), SAME_ATTITUDE(monster), monster->foe, 1);
+        animate_dead( 5 + random2(5), SAME_ATTITUDE(monster), monster->foe, 1 );
         return;
 
-    case MS_SUMMON_DEMON_LESSER:
-        create_monster(summon_any_demon(DEMON_LESSER), ENCH_ABJ_II,
-            SAME_ATTITUDE(monster), monster->x, monster->y, monster->foe, 250);
+    case MS_SUMMON_DEMON_LESSER: // class 5 demons
+        sumcount2 = 1 + random2(3) + monster->hit_dice / 5;
+        duration  = ENCH_ABJ_II + monster->hit_dice / 5;
+        if (duration > ENCH_ABJ_VI)
+            duration = ENCH_ABJ_VI;
+
+        for (sumcount = 0; sumcount < sumcount2; sumcount++)
+        {
+            create_monster( summon_any_demon(DEMON_LESSER), duration,
+                            SAME_ATTITUDE(monster), monster->x, monster->y,
+                            monster->foe, 250 );
+        }
         return;
 
     case MS_SUMMON_UFETUBUS:
-        create_monster(MONS_UFETUBUS, ENCH_ABJ_II, SAME_ATTITUDE(monster),
-            monster->x, monster->y, monster->foe, 250);
+        sumcount2 = 2 + random2(3) + monster->hit_dice / 5;
+        duration  = ENCH_ABJ_II + monster->hit_dice / 5;
+        if (duration > ENCH_ABJ_VI)
+            duration = ENCH_ABJ_VI;
+
+        for (sumcount = 0; sumcount < sumcount2; sumcount++)
+        {
+            create_monster( MONS_UFETUBUS, duration, SAME_ATTITUDE(monster),
+                            monster->x, monster->y, monster->foe, 250 );
+        }
         return;
 
     case MS_SUMMON_BEAST:       // Geryon
-        create_monster(MONS_BEAST, ENCH_ABJ_IV, SAME_ATTITUDE(monster),
-            monster->x, monster->y, monster->foe, 250);
+        create_monster( MONS_BEAST, ENCH_ABJ_IV, SAME_ATTITUDE(monster),
+                        monster->x, monster->y, monster->foe, 250 );
         return;
 
     case MS_SUMMON_UNDEAD:      // summon undead around player
         if (!mons_friendly(monster) && monsterNearby
             && monster_abjuration(1, true) > 0 && coinflip())
         {
-            monster_abjuration(monster->hit_dice * 10, false);
+            monster_abjuration( monster->hit_dice * 10, false );
             return;
         }
 
-        sumcount2 = 2 + random2(3);
+        sumcount2 = 1 + random2(2) + random2( monster->hit_dice ) / 4;
+        duration  = ENCH_ABJ_II + monster->hit_dice / 5;
+        if (duration > ENCH_ABJ_VI)
+            duration = ENCH_ABJ_VI;
 
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
         {
@@ -439,8 +498,8 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
             }
             while (mons_holiness(summonik) != MH_UNDEAD);
 
-            create_monster(summonik, ENCH_ABJ_II, SAME_ATTITUDE(monster),
-                you.x_pos, you.y_pos, monster->foe, 250);
+            create_monster(summonik, duration, SAME_ATTITUDE(monster),
+                           you.x_pos, you.y_pos, monster->foe, 250);
         }
         return;
 
@@ -461,13 +520,59 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
             return;
         }
 
-        create_monster(summon_any_demon(DEMON_GREATER), ENCH_ABJ_II,
-            SAME_ATTITUDE(monster), monster->x, monster->y, monster->foe, 250);
+        sumcount2 = 1 + random2( monster->hit_dice ) / 10;
+        duration  = ENCH_ABJ_II + monster->hit_dice / 10;
+        if (duration > ENCH_ABJ_VI)
+            duration = ENCH_ABJ_VI;
+
+        for (sumcount = 0; sumcount < sumcount2; sumcount++)
+        {
+            create_monster( summon_any_demon(DEMON_GREATER), duration,
+                            SAME_ATTITUDE(monster), monster->x, monster->y,
+                            monster->foe, 250 );
+        }
+        return;
+
+    case MS_CANTRIP:
+        // Monster spell of uselessness, just prints a message.
+        // This spell exists so that some monsters with really strong
+        // spells (ie orc priest) can be toned down a bit. -- bwr
+        //
+        // XXX: Needs expansion, and perhaps different priest/mage flavours.
+        switch (random2(7))
+        {
+        case 0:
+            simple_monster_message( monster, " glows brightly for a moment.",
+                                    MSGCH_MONSTER_ENCHANT );
+            break;
+        case 1:
+            mpr( "You feel troubled." );
+            break;
+        case 2:
+            mpr( "You feel a wave of unholy energy pass over you." );
+            break;
+        case 3:
+            simple_monster_message( monster, " looks stronger.",
+                                    MSGCH_MONSTER_ENCHANT );
+            break;
+        case 4:
+            simple_monster_message( monster, " becomes somewhat translucent.",
+                                    MSGCH_MONSTER_ENCHANT );
+            break;
+        case 5:
+            simple_monster_message( monster, "'s eyes start to glow.",
+                                    MSGCH_MONSTER_ENCHANT );
+            break;
+        case 6:
+        default:
+            if (one_chance_in(20))
+                mpr( "You resist (whatever that was supposed to do)." );
+            else
+                mpr( "You resist." );
+            break;
+        }
         return;
     }
-
-    if (spell_cast == MS_HELLFIRE_BURST)        // XXX GDL - why??
-        return;
 
     beam(pbolt);
 }                               // end mons_cast()
@@ -481,9 +586,12 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 {
     // always set these -- used by things other than beam()
-    pbolt.ench_power = 5 * monster->hit_dice;
+    pbolt.ench_power = 12 * monster->hit_dice;
+
     if (spell_cast == MS_TELEPORT)
         pbolt.ench_power = 2000;
+    else if (spell_cast == MS_PAIN) // this is cast by low HD monsters
+        pbolt.ench_power *= 2;
 
     pbolt.beam_source = monster_index(monster);
 
@@ -525,6 +633,7 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
     case MS_SUMMON_UNDEAD:      // summon undead around player
     case MS_TORMENT:
     case MS_SUMMON_DEMON_GREATER:
+    case MS_CANTRIP:
         return;
         break;
     default:
@@ -546,6 +655,9 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
     pbolt.thrower = theBeam.thrown;
     strcpy(pbolt.beam_name, theBeam.name.c_str());
     pbolt.isBeam = theBeam.isBeam;
+    pbolt.source_x = monster->x;
+    pbolt.source_y = monster->y;
+    pbolt.isTracer = false;
 
     if (spell_cast == MS_HASTE
         || spell_cast == MS_INVIS
@@ -605,7 +717,7 @@ void monster_teleport(struct monsters *monster, bool instan)
     mgrd[monster->x][monster->y] = monster_index(monster);
 
     /* Mimics change form/colour when t'ported */
-    if (mons_category(monster->type) == MC_MIMIC)
+    if (mons_charclass(monster->type) == MONS_GOLD_MIMIC)
     {
         monster->type = MONS_GOLD_MIMIC + random2(5);
         monster->number = random_colour();
@@ -625,7 +737,7 @@ void monster_teleport(struct monsters *monster, bool instan)
 
 void setup_dragon(struct monsters *monster, struct bolt &pbolt)
 {
-    strcpy(pbolt.beam_name, ptr_monam( monster, 4 ));
+    strcpy(pbolt.beam_name, ptr_monam( monster, DESC_PLAIN ));
 
     switch (monster->type)
     {
@@ -696,8 +808,10 @@ void throw_type(int lnchClass, int lnchType, int wepClass, int wepType,
 
     if (wepClass == OBJ_MISSILES)
     {
-        if (wepType == MI_DART || wepType == MI_STONE)
+        if (wepType == MI_DART || wepType == MI_STONE || wepType == MI_LARGE_ROCK)
+        {
             thrown = true;
+        }
     }
 
     // launched overrides thrown
@@ -707,6 +821,9 @@ void throw_type(int lnchClass, int lnchType, int wepClass, int wepType,
 
 bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
 {
+    // this was assumed during cleanup down below:
+    ASSERT( hand_used == monster->inv[MSLOT_MISSILE] );
+
     int baseHit = 0, baseDam = 0;       // from thrown or ammo
     int ammoHitBonus = 0, ammoDamBonus = 0;     // from thrown or ammo
     int lnchHitBonus = 0, lnchDamBonus = 0;     // special add from launcher
@@ -719,18 +836,19 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     bool thrown = false;        // item is sensible thrown item
 
     // some initial convenience & initializations
-    int wepClass = mitm.base_type[hand_used];
-    int wepType = mitm.sub_type[hand_used];
+    int wepClass = mitm[hand_used].base_type;
+    int wepType  = mitm[hand_used].sub_type;
 
     int weapon = monster->inv[MSLOT_WEAPON];
-    int lnchClass = weapon != NON_ITEM ? mitm.base_type[weapon] : -1;
-    int lnchType = weapon != NON_ITEM ? mitm.sub_type[weapon] : 0;
+
+    int lnchClass = (weapon != NON_ITEM) ? mitm[weapon].base_type : -1;
+    int lnchType  = (weapon != NON_ITEM) ? mitm[weapon].sub_type  :  0;
 
     pbolt.range = 9;
     pbolt.beam_source = monster_index(monster);
 
     pbolt.type = SYM_MISSILE;
-    pbolt.colour = mitm.colour[hand_used];
+    pbolt.colour = mitm[hand_used].colour;
     pbolt.flavour = BEAM_MISSILE;
     pbolt.thrower = KILL_MON_MISSILE;
 
@@ -740,44 +858,40 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     // extract launcher bonuses due to magic
     if (launched)
     {
-        lnchHitBonus = mitm.pluses[monster->inv[MSLOT_WEAPON]] - 50;
-        lnchDamBonus = mitm.pluses2[monster->inv[MSLOT_WEAPON]] - 50;
-
-        // extract 'real' bonus / penalty
-        if (lnchHitBonus > 30)
-            lnchHitBonus -= 100;
-        if (lnchDamBonus > 30)
-            lnchDamBonus -= 100;
+        lnchHitBonus = mitm[ weapon ].plus;
+        lnchDamBonus = mitm[ weapon ].plus2;
     }
 
     // extract weapon/ammo bonuses due to magic
-    ammoHitBonus = mitm.pluses[hand_used] - 50;
-    if (ammoHitBonus > 30)
-        ammoHitBonus -= 100;
-
-    ammoDamBonus = mitm.pluses2[hand_used] - 50;
-    if (ammoDamBonus > 30)
-        ammoDamBonus -= 100;
+    ammoHitBonus = mitm[hand_used].plus;
+    ammoDamBonus = mitm[hand_used].plus2;
 
     if (thrown)
     {
         // Darts are easy.
         if (wepClass == OBJ_MISSILES && wepType == MI_DART)
+        {
             baseHit = 5;
+            hitMult = 40;
+            damMult = 30;
+        }
         else
+        {
             baseHit = 0;
+            hitMult = 30;
+            damMult = 30;
+        }
 
-        baseDam = property(wepClass, wepType, PWPN_DAMAGE);
+        baseDam = property( mitm[hand_used], PWPN_DAMAGE );
 
         if (wepClass == OBJ_MISSILES)   // throw missile
             // ammo damage needs adjusting here - OBJ_MISSILES
             // don't get separate tohit/damage bonuses!
             ammoDamBonus = ammoHitBonus;
 
-        // give about 1 points per hit die extra tohit
-        exHitBonus = 2 * monster->hit_dice + 1;
-        // give about 10% per hit die damage multiplier
-        exDamBonus = (monster->hit_dice * baseDam) / 10;
+        // give monster "skill" bonuses based on HD
+        exHitBonus = (hitMult * monster->hit_dice) / 10 + 1;
+        exDamBonus = (damMult * monster->hit_dice) / 10 + 1;
     }
 
     if (launched)
@@ -786,82 +900,83 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
         {
         case WPN_BLOWGUN:
             baseHit = 2;
+            hitMult = 60;
             damMult = 0;
-            hitMult = 20;
             lnchDamBonus = 0;
             break;
         case WPN_BOW:
             baseHit = 0;
-            damMult = 12;
-            hitMult = 24;
+            hitMult = 60;
+            damMult = 40;
             // monsters get half the launcher damage bonus,
             // which is about as fair as I can figure it.
-            lnchDamBonus /= 2;
+            lnchDamBonus = (lnchDamBonus + 1) / 2;
             break;
         case WPN_CROSSBOW:
             baseHit = 4;
-            damMult = 8;
-            hitMult = 20;
+            hitMult = 70;
+            damMult = 35;
             break;
         case WPN_HAND_CROSSBOW:
             baseHit = 2;
-            damMult = 7;
-            hitMult = 18;
+            hitMult = 50;
+            damMult = 30;
             break;
         case WPN_SLING:
             baseHit = 1;
-            damMult = 5;
-            hitMult = 20;
+            hitMult = 40;
+            damMult = 30;
             // monsters get half the launcher damage bonus,
             // which is about as fair as I can figure it.
             lnchDamBonus /= 2;
             break;
         }
 
-        baseDam = property(wepClass, wepType, PWPN_HIT);
+        baseDam = property( mitm[hand_used], PWPN_HIT );
+
         // missiles don't have pluses2;  use hit bonus
         ammoDamBonus = ammoHitBonus;
 
-        exHitBonus = (hitMult * monster->hit_dice) / 10;
-        exDamBonus = (damMult * monster->hit_dice) / 10;
+        exHitBonus = (hitMult * monster->hit_dice) / 10 + 1;
+        exDamBonus = (damMult * monster->hit_dice) / 10 + 1;
 
         // elven bow w/ elven arrow, also orcish
-        if (mitm.special[monster->inv[MSLOT_WEAPON]] / 30 ==
-            mitm.special[monster->inv[MSLOT_MISSILE]] / 30)
+        if (get_equip_race( mitm[monster->inv[MSLOT_WEAPON]] )
+                == get_equip_race( mitm[monster->inv[MSLOT_MISSILE]] ))
         {
             baseHit++;
             baseDam++;
-            if (mitm.special[monster->inv[MSLOT_WEAPON]] / 30 == DWPN_ELVEN)
+
+            if (cmp_equip_race(mitm[monster->inv[MSLOT_WEAPON]], ISFLAG_ELVEN))
                 pbolt.hit++;
         }
 
-        // monsters no longer gain unfair advantages with weapons of fire/ice and
-        // incorrect ammo.  They now have same restriction as players.
+        // monsters no longer gain unfair advantages with weapons of fire/ice
+        // and incorrect ammo.  They now have same restriction as players.
 
         // POISON brand: note that this is overridden by special ammo
-        if (mitm.special[monster->inv[MSLOT_WEAPON]] % 30 == SPWPN_VENOM
-                && !(mitm.special[hand_used] % 30 != SPMSL_ICE
-            || mitm.special[hand_used] % 30 == SPMSL_FLAME))
+        if (mitm[monster->inv[MSLOT_WEAPON]].special == SPWPN_VENOM
+                && !(mitm[hand_used].special != SPMSL_ICE
+            || mitm[hand_used].special == SPMSL_FLAME))
         {
             // poison it
-            mitm.special[hand_used] = mitm.special[hand_used] / 30 + SPMSL_POISONED;
+            mitm[hand_used].special = SPMSL_POISONED;
         }
 
 
         // WEAPON or AMMO of FIRE
-        if ((mitm.special[monster->inv[MSLOT_WEAPON]] % 30 == SPWPN_FLAME
-                && mitm.special[hand_used] % 30 != SPMSL_ICE)
-            || (mitm.special[hand_used] % 30 == SPMSL_FLAME
-                && mitm.special[monster->inv[MSLOT_WEAPON]] % 30
-                                                            != SPWPN_FROST))
+        if ((mitm[monster->inv[MSLOT_WEAPON]].special == SPWPN_FLAME
+                && mitm[hand_used].special != SPMSL_ICE)
+            || (mitm[hand_used].special == SPMSL_FLAME
+                && mitm[monster->inv[MSLOT_WEAPON]].special != SPWPN_FROST))
         {
             baseHit += 2;
             exDamBonus += 6;
             pbolt.flavour = BEAM_FIRE;
             strcpy(pbolt.beam_name, "bolt of ");
 
-            if (mitm.special[hand_used] % 30 == SPMSL_POISONED
-                || mitm.special[hand_used] % 30 == SPMSL_POISONED_II)
+            if (mitm[hand_used].special == SPMSL_POISONED
+                || mitm[hand_used].special == SPMSL_POISONED_II)
             {
                 strcat(pbolt.beam_name, "poison ");
             }
@@ -872,19 +987,18 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
         }
 
         // WEAPON or AMMO of FROST
-        if ((mitm.special[monster->inv[MSLOT_WEAPON]] % 30 == SPWPN_FROST
-                && mitm.special[hand_used] % 30 != SPMSL_FLAME)
-            || (mitm.special[hand_used] % 30 == SPMSL_ICE
-                && mitm.special[monster->inv[MSLOT_WEAPON]] % 30
-                                                            != SPWPN_FLAME))
+        if ((mitm[monster->inv[MSLOT_WEAPON]].special == SPWPN_FROST
+                && mitm[hand_used].special != SPMSL_FLAME)
+            || (mitm[hand_used].special == SPMSL_ICE
+                && mitm[monster->inv[MSLOT_WEAPON]].special != SPWPN_FLAME))
         {
             baseHit += 2;
             exDamBonus += 6;
             pbolt.flavour = BEAM_COLD;
             strcpy(pbolt.beam_name, "bolt of ");
 
-            if (mitm.special[hand_used] % 30 == SPMSL_POISONED
-                || mitm.special[hand_used] % 30 == SPMSL_POISONED_II)
+            if (mitm[hand_used].special == SPMSL_POISONED
+                || mitm[hand_used].special == SPMSL_POISONED_II)
             {
                 strcat(pbolt.beam_name, "poison ");
             }
@@ -901,7 +1015,7 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
 
     // now,  if a monster is, for some reason,  throwing something really
     // stupid,  it will have baseHit of 0 and damage of 0.  Ah well.
-    strcpy(info, ptr_monam( monster, 0) );
+    strcpy(info, ptr_monam( monster, DESC_CAP_THE) );
 
     strcat(info, (launched) ? " shoots " : " throws ");
 
@@ -913,15 +1027,12 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     else
     {
         // build shoot message
-        item_name( mitm.pluses2[hand_used], mitm.base_type[hand_used],
-               mitm.sub_type[hand_used], mitm.special[hand_used],
-               mitm.pluses[hand_used], 1, mitm.id[hand_used], 3, str_pass );
+        quant_name( mitm[hand_used], 1, DESC_NOCAP_A, str_pass );
         strcat(info, str_pass);
 
         // build beam name
-        item_name(mitm.pluses2[hand_used], mitm.base_type[hand_used],
-              mitm.sub_type[hand_used], mitm.special[hand_used],
-              mitm.pluses[hand_used], 1, mitm.id[hand_used], 6, str_pass);
+        quant_name( mitm[hand_used], 1, DESC_PLAIN, str_pass );
+
         strcpy(pbolt.beam_name, str_pass);
     }
 
@@ -930,7 +1041,7 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
 
     // add everything up.
     pbolt.hit = baseHit + random2avg(exHitBonus, 2) + ammoHitBonus;
-    pbolt.damage = baseDam + random2(exDamBonus) + ammoDamBonus;
+    pbolt.damage = baseDam + random2avg(exDamBonus, 2) + ammoDamBonus;
 
     if (launched)
     {
@@ -940,15 +1051,15 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
 
     // decrease inventory
     beam(pbolt, hand_used);
-    mitm.quantity[hand_used]--;
-    if (mitm.quantity[hand_used] == 0)
+
+    if (dec_mitm_item_quantity( hand_used, 1 ))
         monster->inv[MSLOT_MISSILE] = NON_ITEM;
 
     // adjust speed for centaurs - quickest guns in the west?  :)
     if (monster->type == MONS_CENTAUR && monster->speed_increment > 10)
         monster->speed_increment -= 10;
 
-    return true;
+    return (true);
 }                               // end mons_throw()
 
 // should really do something about mons_hit, but can't be bothered
@@ -966,7 +1077,6 @@ void spore_goes_pop(struct monsters *monster)
     beam.target_x = monster->x;
     beam.target_y = monster->y;
     beam.thrower = KILL_MON;    // someone else's explosion
-    beam.ex_size = 2;
 
     if (type == MONS_GIANT_SPORE)
     {
@@ -974,6 +1084,7 @@ void spore_goes_pop(struct monsters *monster)
         strcpy(beam.beam_name, "explosion of spores");
         beam.colour = LIGHTGREY;
         beam.damage = 115;
+        beam.ex_size = 2;
         strcpy( info, "The giant spore explodes!" );
     }
     else
@@ -982,6 +1093,7 @@ void spore_goes_pop(struct monsters *monster)
         strcpy(beam.beam_name, "blast of lightning");
         beam.colour = LIGHTCYAN;
         beam.damage = 120;
+        beam.ex_size = coinflip() ? 3 : 2;
         strcpy( info, "The ball lightning explodes!" );
     }
 
@@ -994,13 +1106,12 @@ void spore_goes_pop(struct monsters *monster)
     explosion(beam);
 }                               // end spore_goes_pop()
 
-struct SBeam mons_spells(char spell_cast, int power)
+struct SBeam mons_spells( int spell_cast, int power )
 {
     ASSERT(power > 0);
 
     struct SBeam beam;
 
-#if DEBUG
     beam.name = "****";         // initialize to some bogus values so we can catch problems
     beam.colour = 1000;
     beam.range = -1;
@@ -1009,7 +1120,6 @@ struct SBeam mons_spells(char spell_cast, int power)
     beam.type = -1;
     beam.flavour = -1;
     beam.thrown = -1;
-#endif
 
     switch (spell_cast)
     {
@@ -1066,7 +1176,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = CYAN;
+        beam.colour = BCOL_PARALYSIS;
         beam.thrown = KILL_MON_MISSILE;
         beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
@@ -1077,7 +1187,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BLACK;
+        beam.colour = BCOL_SLOW;
         beam.thrown = KILL_MON_MISSILE;
         beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
@@ -1088,7 +1198,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = BLUE;
+        beam.colour = BCOL_HASTE;
         beam.thrown = KILL_MON_MISSILE;
         beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
@@ -1099,7 +1209,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = RED;
+        beam.colour = BCOL_CONFUSION;
         beam.thrown = KILL_MON_MISSILE;
         beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
@@ -1162,7 +1272,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = MAGENTA;
+        beam.colour = BCOL_INVISIBILITY;
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
@@ -1186,9 +1296,10 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = GREEN;
+        beam.colour = BCOL_HEALING;
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_MAGIC;
+        beam.hit = 5 + (power / 5);
         beam.isBeam = true;
         break;
 
@@ -1197,7 +1308,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = LIGHTGREY;        // 6 is used by digging
+        beam.colour = BCOL_TELEPORT;        // 6 is used by digging
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
@@ -1208,7 +1319,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = LIGHTGREY;        // 6 is used by digging
+        beam.colour = BCOL_TELEPORT;        // 6 is used by digging
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
@@ -1236,7 +1347,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 3;
         beam.rangeMax = 7 + random2(power) / 10;
         beam.type = 0;
-        beam.colour = BROWN;
+        beam.colour = BCOL_DIGGING;
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
@@ -1293,7 +1404,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 7;
         beam.rangeMax = 14;
         beam.type = 0;
-        beam.colour = LIGHTMAGENTA;     // pain
+        beam.colour = BCOL_PAIN;     // pain
         beam.thrown = KILL_MON;
         beam.damage = 50;
         beam.hit = 7 + (power / 20);
@@ -1412,7 +1523,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 7;
         beam.rangeMax = 14;
         beam.type = 0;
-        beam.colour = WHITE;
+        beam.colour = BCOL_DISINTEGRATION;
         beam.thrown = KILL_MON;
         beam.damage = 50;
         beam.hit = 30 + (power / 10);
@@ -1451,7 +1562,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.colour = RED;
         beam.range = 4;
         beam.rangeMax = 13;
-        beam.damage = 25;
+        beam.damage = 125;
         beam.hit = 20;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
@@ -1477,7 +1588,7 @@ struct SBeam mons_spells(char spell_cast, int power)
         beam.range = 5;
         beam.rangeMax = 9;
         beam.type = 0;
-        beam.colour = LIGHTGREEN;
+        beam.colour = BCOL_BANISH;
         beam.thrown = KILL_MON_MISSILE;
         beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
