@@ -26,7 +26,6 @@
 #include "beam.h"
 #include "debug.h"
 #include "effects.h"
-#include "fight.h"
 #include "itemname.h"
 #include "items.h"
 #include "misc.h"
@@ -336,7 +335,7 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
     snprintf( info, INFO_SIZE, "Mon #%d casts %s (#%d)", monster_index(monster),
              mons_spell_name( spell_cast ), spell_cast );
 
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     if (spell_cast == MS_HELLFIRE_BURST
@@ -579,7 +578,7 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
         return;
     }
 
-    beam(pbolt);
+    fire_beam(pbolt);
 }                               // end mons_cast()
 
 
@@ -590,7 +589,7 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 
 void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 {
-    // always set these -- used by things other than beam()
+    // always set these -- used by things other than fire_beam()
     pbolt.ench_power = 12 * monster->hit_dice;
 
     if (spell_cast == MS_TELEPORT)
@@ -677,8 +676,6 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
 
 void monster_teleport(struct monsters *monster, bool instan)
 {
-    int temp_rand = 0;          // probability determination {dlb}
-
     if (!instan)
     {
         if (mons_del_ench(monster, ENCH_TP_I, ENCH_TP_IV))
@@ -726,18 +723,7 @@ void monster_teleport(struct monsters *monster, bool instan)
     if (mons_charclass(monster->type) == MONS_GOLD_MIMIC)
     {
         monster->type = MONS_GOLD_MIMIC + random2(5);
-        monster->number = random_colour();
-
-        if (monster->type == MONS_WEAPON_MIMIC
-            || monster->type == MONS_ARMOUR_MIMIC)
-        {
-            temp_rand = random2(100);
-
-            monster->number = ((temp_rand > 34) ? BROWN :       // 65% chance
-                               (temp_rand > 14) ? LIGHTCYAN :   // 20% chance
-                               (temp_rand >  4) ? CYAN          // 10% chance
-                                                : random_colour());//5%
-        }
+        monster->number = get_mimic_colour( monster );
     }
 }                               // end monster_teleport()
 
@@ -1028,6 +1014,7 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     else
     {
         // build shoot message
+        char str_pass[ ITEMNAME_SIZE ];
         quant_name( mitm[hand_used], 1, DESC_NOCAP_A, str_pass );
         strcat(info, str_pass);
 
@@ -1051,7 +1038,7 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
     }
 
     // decrease inventory
-    beam(pbolt, hand_used);
+    fire_beam(pbolt, hand_used);
 
     if (dec_mitm_item_quantity( hand_used, 1 ))
         monster->inv[MSLOT_MISSILE] = NON_ITEM;

@@ -79,39 +79,7 @@ bool potion_effect( char pot_eff, int pow )
         break;
 
     case POT_SPEED:
-        {
-            bool amu_eff = wearing_amulet( AMU_RESIST_SLOW );
-
-            if (amu_eff)
-                mpr( "Your amulet glows brightly." );
-
-            if (you.haste == 0 || you.slow)
-                mpr( "You feel yourself speed up." );
-            else if (you.haste > 80 + 20 * amu_eff)
-                mpr( "You already have as much speed as you can handle." );
-            else
-            {
-                mpr( "You feel as though your hasted speed will last longer." );
-                contaminate_player(1);
-            }
-
-            if (you.slow)
-            {
-                you.slow = 0;
-
-                if (you.haste == 0)
-                    you.haste = 20 * amu_eff;
-            }
-            else
-            {
-                you.haste += 40 + random2(pow);
-            }
-
-            if (you.haste > 80 + 20 * amu_eff)
-                you.haste = 80 + 20 * amu_eff;
-
-            naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
-        }
+        haste_player( 40 + random2(pow) );
         break;
 
     case POT_MIGHT:
@@ -136,7 +104,7 @@ bool potion_effect( char pot_eff, int pow )
             if (you.might > 80)
                 you.might = 80;
 
-            naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
+            naughty( NAUGHTY_STIMULANTS, 4 + random2(4) );
         }
         break;
 
@@ -191,22 +159,7 @@ bool potion_effect( char pot_eff, int pow )
         break;
 
     case POT_SLOWING:
-        if (wearing_amulet(AMU_RESIST_SLOW))
-            mpr("You feel momentarily lethargic.");
-        else if (you.slow >= 100)
-            mpr("You already are as slow as you could be.");
-        else
-        {
-            if (!you.slow)
-                mpr("You feel yourself slow down.");
-            else
-                mpr("You feel as though you will be slow longer.");
-
-            you.slow += 10 + random2(pow);
-
-            if (you.slow > 100)
-                you.slow = 100;
-        }
+        slow_player( 10 + random2(pow) );
         break;
 
     case POT_PARALYSIS:
@@ -376,6 +329,7 @@ void unwield_item(char unw)
 
         if (brand != SPWPN_NORMAL)
         {
+            char str_pass[ ITEMNAME_SIZE ];
             in_name(unw, DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
 

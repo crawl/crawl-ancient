@@ -74,8 +74,8 @@ static bool enchant_armour( void );
 
 void wield_weapon(bool auto_wield)
 {
-    char str_pass[80];
     int item_slot = 0;
+    char str_pass[ ITEMNAME_SIZE ];
 
     if (inv_count() < 1)
     {
@@ -125,7 +125,7 @@ void wield_weapon(bool auto_wield)
     if (!auto_wield || !is_valid_item( you.inv[item_slot] ))
     {
         item_slot = prompt_invent_item( "Wield which item (- for none)?",
-                                        OBJ_WEAPONS, true, true, '-' );
+                                        OBJ_WEAPONS, true, true, true, '-' );
 
         if (item_slot == PROMPT_ABORT)
         {
@@ -299,11 +299,6 @@ void wield_effects(int item_wield_2, bool showMsgs)
                 mpr("You really shouldn't be using a nasty item like this.");
         }
 
-        if (item_cursed( you.inv[item_wield_2] ))
-        {
-            mpr("It sticks to your hand!");
-        }
-
         set_ident_flags( you.inv[item_wield_2], ISFLAG_EQ_WEAPON_MASK );
 
         if (is_random_artefact( you.inv[item_wield_2] ))
@@ -454,6 +449,8 @@ void wield_effects(int item_wield_2, bool showMsgs)
 
             case SPWPN_SCYTHE_OF_CURSES:
                 you.special_wield = SPWLD_CURSE;
+                if (one_chance_in(5))
+                    do_curse_item( you.inv[item_wield_2] );
                 break;
 
             case SPWPN_MACE_OF_VARIABILITY:
@@ -486,6 +483,11 @@ void wield_effects(int item_wield_2, bool showMsgs)
                 you.special_wield = SPWLD_WUCAD_MU;
                 break;
             }
+        }
+
+        if (item_cursed( you.inv[item_wield_2] ))
+        {
+            mpr("It sticks to your hand!");
         }
     }
 }                               // end wield_weapon()
@@ -975,10 +977,116 @@ void throw_anything(void)
     throw_it(beam, throw_slot);
 }                               // end throw_anything()
 
+// Return index of first valid balanced throwing weapon or ENDOFPACK
+static int try_finding_throwing_weapon( int sub_type )
+{
+    int i;
+
+    for (i = Options.fire_items_start; i < ENDOFPACK; i++)
+    {
+        // skip invalid objects, wielded object
+        if (!is_valid_item( you.inv[i] ) || you.equip[EQ_WEAPON] == i)
+            continue;
+
+        // consider melee weapons that can also be thrown
+        if (you.inv[i].base_type == OBJ_WEAPONS
+            && you.inv[i].sub_type == sub_type)
+        {
+            break;
+        }
+    }
+
+    return (i);
+}
+
+// Return index of first missile of sub_type or ENDOFPACK
+static int try_finding_missile( int sub_type )
+{
+    int i;
+
+    for (i = Options.fire_items_start; i < ENDOFPACK; i++)
+    {
+        // skip invalid objects
+        if (!is_valid_item( you.inv[i] ))
+            continue;
+
+        // consider melee weapons that can also be thrown
+        if (you.inv[i].base_type == OBJ_MISSILES
+            && you.inv[i].sub_type == sub_type)
+        {
+            break;
+        }
+    }
+
+    return (i);
+}
+
+// Note: This is a simple implementation, not an efficient one. -- bwr
+//
+// Returns item index or ENDOFPACK if no item found for auto-firing
+int get_fire_item_index( void )
+{
+    int item = ENDOFPACK;
+    const int weapon = you.equip[ EQ_WEAPON ];
+
+    for (int i = 0; i < NUM_FIRE_TYPES; i++)
+    {
+        // look for next type on list... if found item is set != ENDOFPACK
+        switch (Options.fire_order[i])
+        {
+        case FIRE_LAUNCHER:
+            // check if we have ammo for a wielded launcher:
+            if (weapon != -1
+                && you.inv[ weapon ].base_type == OBJ_WEAPONS
+                && launches_things( you.inv[ weapon ].sub_type ))
+            {
+                int type_wanted = launched_by( you.inv[ weapon ].sub_type );
+                item = try_finding_missile( type_wanted );
+            }
+            break;
+
+        case FIRE_DART:
+            item = try_finding_missile( MI_DART );
+            break;
+
+        case FIRE_STONE:
+            item = try_finding_missile( MI_STONE );
+            break;
+
+        case FIRE_DAGGER:
+            item = try_finding_throwing_weapon( WPN_DAGGER );
+            break;
+
+        case FIRE_SPEAR:
+            item = try_finding_throwing_weapon( WPN_SPEAR );
+            break;
+
+        case FIRE_HAND_AXE:
+            item = try_finding_throwing_weapon( WPN_HAND_AXE );
+            break;
+
+        case FIRE_CLUB:
+            item = try_finding_throwing_weapon( WPN_CLUB );
+            break;
+
+        case FIRE_NONE:
+        default:
+            break;
+        }
+
+        // if successful break
+        if (item != ENDOFPACK)
+            break;
+    }
+
+    // either item was found or is still ENDOFPACK for no item
+    return (item);
+}
+
 void shoot_thing(void)
 {
-    int i = 0;
-    struct bolt beam;
+    struct bolt beam;  // passed in by reference, but never used here
+    char str_pass[ ITEMNAME_SIZE ];
 
     if (you.berserker)
     {
@@ -986,32 +1094,19 @@ void shoot_thing(void)
         return;
     }
 
-    const int weapon = you.equip[ EQ_WEAPON ];
-    int type_wanted = MI_DART;
+    const int item = get_fire_item_index();
 
-    if (weapon != -1 && you.inv[ weapon ].base_type == OBJ_WEAPONS
-        && launches_things( you.inv[ weapon ].sub_type ))
+    if (item == ENDOFPACK)
     {
-        type_wanted = launched_by( you.inv[ weapon ].sub_type );
+        mpr("No suitable missiles.");
+        return;
     }
 
-    for (i = 0; i < (ENDOFPACK + 1); i++)
-    {
-        if (i == ENDOFPACK)
-        {
-            mpr("No suitable missiles.");
-            return;
-        }
+    in_name( item, DESC_INVENTORY_EQUIP, str_pass );
+    snprintf( info, INFO_SIZE, "Firing: %s", str_pass );
+    mpr( info );
 
-        if (you.inv[i].quantity && you.inv[i].base_type == OBJ_MISSILES
-            && you.inv[i].sub_type == type_wanted)
-        {
-            break;
-        }
-    }
-
-    // recall that i is the slot that breaks the above loop {dlb}
-    throw_it(beam, i);
+    throw_it( beam, item );
 }                               // end shoot_thing()
 
 // throw_it - currently handles player throwing only.  Monster
@@ -1032,7 +1127,9 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     bool launched = false;      // item is launched
     bool thrown = false;        // item is sensible thrown item
 
-    mpr("Which direction? (*/+/- to target)", MSGCH_PROMPT);
+    char str_pass[ ITEMNAME_SIZE ];
+
+    mpr( STD_DIRECTION_PROMPT, MSGCH_PROMPT );
 
     message_current_target();
 
@@ -1406,7 +1503,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             }
 
             // give an appropriate 'tohit' -
-            // axes are -5
+            // hand axes and clubs are -5
             // daggers are +1
             // spears are -1
             // rocks are 0
@@ -1526,8 +1623,17 @@ static void throw_it(struct bolt &pbolt, int throw_2)
               baseDam, exDamBonus, ammoDamBonus, lnchDamBonus,
               pbolt.hit, pbolt.damage.num, pbolt.damage.size );
 
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
+
+    // Must unwield before fire_beam() makes a copy in order to remove things
+    // like temporary branding. -- bwr
+    if (throw_2 == you.equip[EQ_WEAPON] && you.inv[throw_2].quantity == 1)
+    {
+        unwield_item( throw_2 );
+        you.equip[EQ_WEAPON] = -1;
+        canned_msg( MSG_EMPTY_HANDED );
+    }
 
     // create message
     if (launched)
@@ -1545,13 +1651,16 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     pbolt.isBeam = false;
     pbolt.isTracer = false;
 
-    beam(pbolt, throw_2);
+    fire_beam(pbolt, throw_2);
 
     dec_inv_item_quantity( throw_2, 1 );
 
     // throwing and blowguns are silent
-    if (!launched || you.inv[you.equip[EQ_WEAPON]].base_type == WPN_BLOWGUN)
-        alert();
+    if (launched && lnchType != WPN_BLOWGUN)
+        noisy( 6, you.x_pos, you.y_pos );
+
+    // but any monster nearby can see that something has been thrown:
+    alert_nearby_monsters();
 
     you.turn_is_over = 1;
 }                               // end throw_it()
@@ -1560,6 +1669,7 @@ void puton_ring(void)
 {
     bool is_amulet = false;
     int item_slot;
+    char str_pass[ ITEMNAME_SIZE ];
 
     if (inv_count() < 1)
     {
@@ -1691,11 +1801,8 @@ void puton_ring(void)
 
     case RING_PROTECTION:
         you.redraw_armour_class = 1;
-
         if (you.inv[item_slot].plus != 0)
-        {
             ident = ID_KNOWN_TYPE;
-        }
         break;
 
     case RING_INVISIBILITY:
@@ -1709,47 +1816,34 @@ void puton_ring(void)
     case RING_EVASION:
         you.redraw_evasion = 1;
         if (you.inv[item_slot].plus != 0)
-        {
             ident = ID_KNOWN_TYPE;
-        }
         break;
 
     case RING_STRENGTH:
         modify_stat(STAT_STRENGTH, you.inv[item_slot].plus, true);
-
         if (you.inv[item_slot].plus != 0)
-        {
             ident = ID_KNOWN_TYPE;
-        }
         break;
 
     case RING_DEXTERITY:
         modify_stat(STAT_DEXTERITY, you.inv[item_slot].plus, true);
-
         if (you.inv[item_slot].plus != 0)
-        {
             ident = ID_KNOWN_TYPE;
-        }
         break;
 
     case RING_INTELLIGENCE:
         modify_stat(STAT_INTELLIGENCE, you.inv[item_slot].plus, true);
-
         if (you.inv[item_slot].plus != 0)
-        {
             ident = ID_KNOWN_TYPE;
-        }
         break;
 
     case RING_MAGICAL_POWER:
-        // inc_max_mp(9);
         calc_mp();
         ident = ID_KNOWN_TYPE;
         break;
 
     case RING_LEVITATION:
         mpr("You feel buoyant.");
-
         ident = ID_KNOWN_TYPE;
         break;
 
@@ -1760,19 +1854,18 @@ void puton_ring(void)
 
     case AMU_RAGE:
         mpr("You feel a brief urge to hack something to bits.");
-
         ident = ID_KNOWN_TYPE;
         break;
     }
 
     you.turn_is_over = 1;
 
+    // Artefacts have completely different appearance than base types
+    // so we don't allow them to make the base types known
     if (is_random_artefact( you.inv[item_slot] ))
         use_randart(item_slot);
     else
     {
-        // Artefacts have completely different appearance than base types
-        // so we don't allow them to make the base types known
         set_ident_type( you.inv[item_slot].base_type,
                         you.inv[item_slot].sub_type, ident );
     }
@@ -1799,6 +1892,7 @@ void remove_ring(void)
 {
     int hand_used = 10;
     int ring_wear_2;
+    char str_pass[ ITEMNAME_SIZE ];
 
     if (you.equip[EQ_LEFT_RING] == -1 && you.equip[EQ_RIGHT_RING] == -1
         && you.equip[EQ_AMULET] == -1)
@@ -1977,6 +2071,7 @@ void zap_wand(void)
     struct bolt beam;
     struct dist zap_wand;
     int item_slot;
+    char str_pass[ ITEMNAME_SIZE ];
 
     // Unless the character knows the type of the wand, the targeting
     // system will default to cycling through all monsters. -- bwr
@@ -2025,7 +2120,7 @@ void zap_wand(void)
         }
     }
 
-    mpr("Which direction? (*/+ to target)", MSGCH_PROMPT);
+    mpr( STD_DIRECTION_PROMPT, MSGCH_PROMPT );
     message_current_target();
 
     direction( zap_wand, DIR_NONE, targ_mode );
@@ -2116,9 +2211,9 @@ void zap_wand(void)
     }
 
     exercise( SK_EVOCATIONS, 1 );
+    alert_nearby_monsters();
 
     you.turn_is_over = 1;
-    alert();
 }                               // end zap_wand()
 
 void drink(void)
@@ -2356,6 +2451,7 @@ static bool enchant_weapon( int which_stat, bool quiet )
     const int wpn = you.equip[ EQ_WEAPON ];
     bool affected = true;
     int enchant_level;
+    char str_pass[ ITEMNAME_SIZE ];
 
     if (wpn == -1
         || (you.inv[ wpn ].base_type != OBJ_WEAPONS
@@ -2464,6 +2560,7 @@ static bool enchant_armour( void )
 {
     // NOTE: It is assumed that armour which changes in this way does
     // not change into a form of armour with a different evasion modifier.
+    char str_pass[ ITEMNAME_SIZE ];
     int nthing = you.equip[EQ_BODY_ARMOUR];
 
     if (nthing != -1
@@ -2611,6 +2708,7 @@ void read_scroll(void)
     int count;
     int nthing;
     struct bolt beam;
+    char str_pass[ ITEMNAME_SIZE ];
 
     // added: scroll effects are never tracers.
     beam.isTracer = false;
@@ -2733,12 +2831,12 @@ void read_scroll(void)
 
     case SCR_NOISE:
         mpr("You hear a loud clanging noise!");
-        noisy(25, you.x_pos, you.y_pos);
+        noisy( 25, you.x_pos, you.y_pos );
         break;
 
     case SCR_SUMMONING:
-        if (create_monster(MONS_ABOMINATION_SMALL, ENCH_ABJ_VI, BEH_FRIENDLY,
-                           you.x_pos, you.y_pos, MHITNOT, 250) != -1)
+        if (create_monster( MONS_ABOMINATION_SMALL, ENCH_ABJ_VI, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
         {
             mpr("A horrible Thing appears!");
         }
@@ -2881,7 +2979,8 @@ void read_scroll(void)
         strcpy(info, str_pass);
         strcat(info, " emits a brilliant flash of light!");
         mpr(info);
-        alert();
+
+        alert_nearby_monsters();
 
         if (get_weapon_brand( you.inv[nthing] ) != SPWPN_NORMAL)
         {

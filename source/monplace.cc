@@ -57,21 +57,20 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
 
     // (2) take care of random monsters
     if (mon_type == RANDOM_MONSTER
-        && you.where_are_you == BRANCH_HALL_OF_BLADES
-        && you.level_type == LEVEL_DUNGEON)
+        && player_in_branch( BRANCH_HALL_OF_BLADES ))
     {
         mon_type = MONS_DANCING_WEAPON;
     }
 
     if (mon_type == RANDOM_MONSTER)
     {
-        if (you.where_are_you == BRANCH_MAIN_DUNGEON
+        if (player_in_branch( BRANCH_MAIN_DUNGEON )
             && lev_mons != 51 && one_chance_in(4))
         {
             lev_mons = random2(power);
         }
 
-        if (you.where_are_you == BRANCH_MAIN_DUNGEON && lev_mons < 28)
+        if (player_in_branch( BRANCH_MAIN_DUNGEON ) && lev_mons < 28)
         {
             // potentially nasty surprise, but very rare
             if (one_chance_in(5000))
@@ -413,6 +412,12 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
     menv[id].type = mon_type;
     menv[id].number = 250;
 
+    menv[id].x = fx;
+    menv[id].y = fy;
+
+    // link monster into monster grid
+    mgrd[fx][fy] = id;
+
     // generate a brand shiny new monster, or zombie
     if (mon_type == MONS_ZOMBIE_SMALL
         || mon_type == MONS_ZOMBIE_LARGE
@@ -429,8 +434,10 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
         define_monster(id);
     }
 
-    // NOTE: Boris is actually a unique,  but we let him come back... :)
-    if (mon_type >= MONS_TERENCE && mon_type <= MONS_MARGERY)
+    // The return of Boris is now handled in monster_die()...
+    // not setting this for Boris here allows for multiple Borises
+    // in the dungeon at the same time.  -- bwr
+    if (mon_type >= MONS_TERENCE && mon_type <= MONS_BORIS)
         you.unique_creatures[mon_type - 280] = 1;
 
     if (extra != 250)
@@ -478,14 +485,14 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
 
     menv[id].flags |= MF_JUST_SUMMONED;
 
-    menv[id].x = fx;
-    menv[id].y = fy;
+    if (mon_type == MONS_DANCING_WEAPON && extra != 1) // ie not from spell
+    {
+        give_item( id, power );
 
-    // link monster into monster grid
-    mgrd[fx][fy] = id;
-
-    if (mons_itemuse(mon_type) >= MONUSE_STARTING_EQUIPMENT
-        || (mon_type == MONS_DANCING_WEAPON && extra != 1))
+        if (menv[id].inv[MSLOT_WEAPON] != NON_ITEM)
+            menv[id].number = mitm[ menv[id].inv[MSLOT_WEAPON] ].colour;
+    }
+    else if (mons_itemuse(mon_type) >= MONUSE_STARTING_EQUIPMENT)
     {
         give_item( id, power );
 

@@ -50,6 +50,11 @@ unsigned long cfseed;
 // unfortunately required for near_stairs(ugh!):
 extern unsigned char (*mapch) (unsigned char);
 
+void set_redraw_status( unsigned long flags )
+{
+    you.redraw_status_flags |= flags;
+}
+
 void tag_followers( void )
 {
     int count_x, count_y;
@@ -103,7 +108,7 @@ void tag_followers( void )
 #if DEBUG_DIAGNOSTICS
             snprintf( info, INFO_SIZE, "%s is marked for following.",
                       ptr_monam( fmenv, DESC_CAP_THE ) );
-            mpr( info, MSGCH_DIAGNOSTIC );
+            mpr( info, MSGCH_DIAGNOSTICS );
 #endif
         }
     }
@@ -252,8 +257,7 @@ void redraw_screen(void)
     char title[40];
 
     const unsigned char best = best_skill( SK_FIGHTING, (NUM_SKILLS - 1), 99 );
-    strncpy( title, skill_title( best, you.skills[ best ] ), 40 );
-    title[39] = '\0';
+    strncpy( title, skill_title( best, you.skills[ best ] ), sizeof(title) );
 
     draw_border( you.your_name, title, you.species );
 
@@ -266,9 +270,9 @@ void redraw_screen(void)
     you.redraw_evasion = 1;
     you.redraw_gold = 1;
     you.redraw_experience = 1;
-    you.redraw_hunger = 1;
-    you.redraw_burden = 1;
     you.wield_change = true;
+
+    set_redraw_status( REDRAW_LINE_1_MASK | REDRAW_LINE_2_MASK | REDRAW_LINE_3_MASK );
 
     print_stats();
 
@@ -524,13 +528,11 @@ bool yesno( const char *str, bool safe, bool clear_after )
     }
 }                               // end yesno()
 
-
+// More accurate than distance() given the actual movement geonmetry -- bwr
 int grid_distance( int x, int y, int x2, int y2 )
 {
-    int dx, dy;
-
-    dx = abs( x - x2 );
-    dy = abs( y - y2 );
+    const int dx = abs( x - x2 );
+    const int dy = abs( y - y2 );
 
     // returns distance in terms of moves:
     return ((dx > dy) ? dx : dy);
@@ -538,12 +540,10 @@ int grid_distance( int x, int y, int x2, int y2 )
 
 int distance( int x, int y, int x2, int y2 )
 {
-    int dx, dy;
-
     //jmf: now accurate, but remember to only compare vs. pre-squared distances.
     //     thus, next to == (distance(m1.x,m1.y, m2.x,m2.y) <= 2)
-    dx = x - x2;
-    dy = y - y2;
+    const int dx = x - x2;
+    const int dy = y - y2;
 
     return ((dx * dx) + (dy * dy));
 }                               // end distance()
@@ -629,11 +629,11 @@ int near_stairs(int px, int py, int max_dist, unsigned char &stair_gfx)
 
             // very simple check
             if (grd[x][y] >= DNGN_STONE_STAIRS_DOWN_I
-                && grd[x][y] <= DNGN_RETURN_LAIR_IV
+                && grd[x][y] <= DNGN_RETURN_FROM_SWAMP
                 && grd[x][y] != DNGN_ENTER_SHOP)        // silly
             {
                 stair_gfx = mapch(grd[x][y]);
-                return (x == you.x_pos && y == you.y_pos)?2:1;
+                return ((x == you.x_pos && y == you.y_pos) ? 2 : 1);
             }
         }
     }

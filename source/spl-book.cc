@@ -600,17 +600,16 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
-    // 47 - Book of Assassination //jmf: 24jun2000
+
+    // 47 - Book of Stalking //jmf: 24jun2000
     {0,
      SPELL_STING,
-     // SPELL_PROJECTED_NOISE, // this doesn't get enough play
      SPELL_SURE_BLADE,
-     // SPELL_SILENCE,      // not stealthy + reducing occurences --bwr
+     SPELL_PROJECTED_NOISE,
      SPELL_MEPHITIC_CLOUD,
      SPELL_POISON_WEAPON,
      SPELL_PARALYZE,
      SPELL_INVISIBILITY,
-     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
 
@@ -780,7 +779,6 @@ unsigned char spellbook_contents( item_def &book, int action )
 {
     FixedVector<int, SPELLBOOK_SIZE> spell_types;    // was 10 {dlb}
     int spelcount = 0;
-    char str_pass[80];
     int i, j;
 
     const int spell_levels = player_spell_levels();
@@ -810,11 +808,13 @@ unsigned char spellbook_contents( item_def &book, int action )
 
     spellbook_template( type, spell_types );
 
-    item_name( book, DESC_CAP_THE, str_pass );
-
     clrscr();
     textcolor(LIGHTGREY);
+
+    char str_pass[ ITEMNAME_SIZE ];
+    item_name( book, DESC_CAP_THE, str_pass );
     cprintf( str_pass );
+
     cprintf( EOL EOL " Spells                             Type                      Level" EOL );
 
     for (j = 1; j < SPELLBOOK_SIZE; j++)
@@ -911,7 +911,8 @@ unsigned char spellbook_contents( item_def &book, int action )
         break;
 
     case RBOOK_MEMORIZE:
-        cprintf( "Select a spell to memorise." EOL );
+        cprintf( "Select a spell to memorise (%d level%s available)." EOL,
+                 spell_levels, (spell_levels == 1) ? "" : "s" );
         break;
 
     case RBOOK_READ_SPELL:
@@ -1426,7 +1427,7 @@ int staff_spell( int staff )
     const int type = you.inv[staff].sub_type + 40;
 
     // Spell staves are mostly for the benefit of non-spellcasters, so we're
-    // not going to involve int or Spellcasting skills for power. -- bwr
+    // not going to involve INT or Spellcasting skills for power. -- bwr
     const int powc = 5 + you.skills[SK_EVOCATIONS]
                        + roll_dice( 2, you.skills[SK_EVOCATIONS] );
 
@@ -1446,11 +1447,32 @@ int staff_spell( int staff )
 
     spellbook_template( type, spell_list );
 
-    // Assuming no gaps in spell list, select 'a' if its the only choice:
-    if (spell_list[1] != SPELL_NO_SPELL && spell_list[2] == SPELL_NO_SPELL)
-        spell = 'a';
+    unsigned char num_spells;
+    for (num_spells = 0; num_spells < SPELLBOOK_SIZE - 1; num_spells++)
+    {
+        if (spell_list[ num_spells + 1 ] == SPELL_NO_SPELL)
+            break;
+    }
+
+    if (num_spells == 0)
+    {
+        canned_msg(MSG_NOTHING_HAPPENS);  // shouldn't happen
+        return (0);
+    }
+    else if (num_spells == 1)
+        spell = 'a';  // automatically selected if its the only option
     else
-        spell = read_book( you.inv[staff], RBOOK_USE_STAFF );
+    {
+        snprintf( info, INFO_SIZE,
+                  "Evoke which spell from the rod ([a-%c] spell [?*] list)? ",
+                  'a' + num_spells - 1 );
+
+        mpr( info, MSGCH_PROMPT );
+        spell = get_ch();
+
+        if (spell == '?' || spell == '*')
+            spell = read_book( you.inv[staff], RBOOK_USE_STAFF );
+    }
 
     if (spell < 'A' || (spell > 'Z' && spell < 'a') || spell > 'z')
     {

@@ -19,7 +19,7 @@ int itoa(int value, char *strptr, int radix);
 int kbhit(void);
 int key_to_command(int);
 int putch(unsigned char chr);
-int stricmp(char *str1, char *str2);
+int stricmp(const char *str1, const char *str2);
 int translate_keypad(int keyin);
 int wherex(void);
 int wherey(void);
@@ -28,6 +28,7 @@ void update_screen(void);
 void clear_to_end_of_line(void);
 void clear_to_end_of_screen(void);
 int get_number_of_lines_from_curses(void);
+void get_input_line_from_curses( char *const buff, int len );
 
 void _setcursortype(int curstype);
 void delay(unsigned long time);

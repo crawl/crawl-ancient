@@ -281,32 +281,38 @@ void init_key_to_command()
     key_to_command_table['Z'] = CMD_CAST_SPELL;
 
     // control
-    key_to_command_table[1] = CMD_TOGGLE_AUTOPICKUP;
-    key_to_command_table[2] = CMD_OPEN_DOOR_DOWN_LEFT;
-    key_to_command_table[3] = CMD_NO_CMD;
-    key_to_command_table[4] = CMD_NO_CMD;
-    key_to_command_table[5] = CMD_NO_CMD;
-    key_to_command_table[6] = CMD_NO_CMD;
-    key_to_command_table[7] = CMD_NO_CMD;
-    key_to_command_table[8] = CMD_OPEN_DOOR_LEFT;
-    key_to_command_table[9] = CMD_NO_CMD;
-    key_to_command_table[10] = CMD_OPEN_DOOR_DOWN;
-    key_to_command_table[11] = CMD_OPEN_DOOR_UP;
-    key_to_command_table[12] = CMD_OPEN_DOOR_RIGHT;
-    key_to_command_table[13] = CMD_NO_CMD;
-    key_to_command_table[14] = CMD_OPEN_DOOR_DOWN_RIGHT;
-    key_to_command_table[15] = CMD_NO_CMD;
-    key_to_command_table[16] = CMD_REPLAY_MESSAGES;
-    key_to_command_table[17] = CMD_NO_CMD;
-    key_to_command_table[18] = CMD_REDRAW_SCREEN;
-    key_to_command_table[19] = CMD_NO_CMD;
-    key_to_command_table[20] = CMD_NO_CMD;
-    key_to_command_table[21] = CMD_OPEN_DOOR_UP_LEFT;
-    key_to_command_table[22] = CMD_NO_CMD;
-    key_to_command_table[23] = CMD_NO_CMD;
-    key_to_command_table[24] = CMD_SAVE_GAME_NOW;
-    key_to_command_table[25] = CMD_OPEN_DOOR_UP_RIGHT;
-    key_to_command_table[26] = CMD_SUSPEND_GAME;
+    key_to_command_table[ CONTROL('A') ] = CMD_TOGGLE_AUTOPICKUP;
+    key_to_command_table[ CONTROL('B') ] = CMD_OPEN_DOOR_DOWN_LEFT;
+    key_to_command_table[ CONTROL('C') ] = CMD_NO_CMD;
+
+#ifdef ALLOW_DESTROY_ITEM_COMMAND
+    key_to_command_table[ CONTROL('D') ] = CMD_DESTROY_ITEM;
+#else
+    key_to_command_table[ CONTROL('D') ] = CMD_NO_CMD;
+#endif
+
+    key_to_command_table[ CONTROL('E') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('F') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('G') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('H') ] = CMD_OPEN_DOOR_LEFT;
+    key_to_command_table[ CONTROL('I') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('J') ] = CMD_OPEN_DOOR_DOWN;
+    key_to_command_table[ CONTROL('K') ] = CMD_OPEN_DOOR_UP;
+    key_to_command_table[ CONTROL('L') ] = CMD_OPEN_DOOR_RIGHT;
+    key_to_command_table[ CONTROL('M') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('N') ] = CMD_OPEN_DOOR_DOWN_RIGHT;
+    key_to_command_table[ CONTROL('O') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('P') ] = CMD_REPLAY_MESSAGES;
+    key_to_command_table[ CONTROL('Q') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('R') ] = CMD_REDRAW_SCREEN;
+    key_to_command_table[ CONTROL('S') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('T') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('U') ] = CMD_OPEN_DOOR_UP_LEFT;
+    key_to_command_table[ CONTROL('V') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('W') ] = CMD_NO_CMD;
+    key_to_command_table[ CONTROL('X') ] = CMD_SAVE_GAME_NOW;
+    key_to_command_table[ CONTROL('Y') ] = CMD_OPEN_DOOR_UP_RIGHT;
+    key_to_command_table[ CONTROL('Z') ] = CMD_SUSPEND_GAME;
 
     // other printables
     key_to_command_table['.'] = CMD_MOVE_NOWHERE;
@@ -570,6 +576,13 @@ int get_number_of_lines_from_curses(void)
     return (LINES);
 }
 
+void get_input_line_from_curses( char *const buff, int len )
+{
+    echo();
+    wgetnstr( stdscr, buff, len );
+    noecho();
+}
+
 int clrscr()
 {
     int retval;
@@ -709,7 +722,7 @@ int wherey()
 }
 
 
-int stricmp(char *str1, char *str2)
+int stricmp( const char *str1, const char *str2 )
 {
     return (strcmp(str1, str2));
 }

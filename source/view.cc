@@ -127,8 +127,8 @@ void get_ibm_symbol(unsigned int object, unsigned short *ch,
 
     // stone in the realm of Zot is coloured the same as rock
     case DNGN_STONE_WALL:
-        *color = ((you.where_are_you == BRANCH_HALL_OF_ZOT) ? env.rock_colour
-                                                            : LIGHTGREY);
+        *color = (player_in_branch( BRANCH_HALL_OF_ZOT ) ? env.rock_colour
+                                                         : LIGHTGREY);
         *ch = 177;
         break;
 
@@ -360,18 +360,18 @@ void get_ibm_symbol(unsigned int object, unsigned short *ch,
         seen_staircase(object);
         break;
 
-    case DNGN_RETURN_DUNGEON_I:
-    case DNGN_RETURN_DUNGEON_II:
-    case DNGN_RETURN_DUNGEON_III:
-    case DNGN_RETURN_LAIR_II:
-    case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS_II:
-    case DNGN_RETURN_VAULTS_III:
-    case DNGN_RETURN_DUNGEON_V:
-    case DNGN_RETURN_LAIR_III:
-    case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT:
-    case DNGN_RETURN_LAIR_IV:
+    case DNGN_RETURN_FROM_ORCISH_MINES:
+    case DNGN_RETURN_FROM_HIVE:
+    case DNGN_RETURN_FROM_LAIR:
+    case DNGN_RETURN_FROM_SLIME_PITS:
+    case DNGN_RETURN_FROM_VAULTS:
+    case DNGN_RETURN_FROM_CRYPT:
+    case DNGN_RETURN_FROM_HALL_OF_BLADES:
+    case DNGN_RETURN_FROM_TEMPLE:
+    case DNGN_RETURN_FROM_SNAKE_PIT:
+    case DNGN_RETURN_FROM_ELVEN_HALLS:
+    case DNGN_RETURN_FROM_TOMB:
+    case DNGN_RETURN_FROM_SWAMP:
     case 143:
     case 144:
     case 145:
@@ -380,7 +380,7 @@ void get_ibm_symbol(unsigned int object, unsigned short *ch,
         *ch = '<';
         break;
 
-    case DNGN_EXIT_ZOT:
+    case DNGN_RETURN_FROM_ZOT:
         *color = MAGENTA;
         *ch = 239;
         break;
@@ -826,16 +826,17 @@ char colour_code_map( int x, int y )
         return (LIGHTBLUE);
 
     case DNGN_EXIT_PANDEMONIUM:
+        // Exit pandemonium gates won't show up on the map as light blue
+        // unless the character has the "gate to pandemonium" demonspawn
+        // mutation.  This is so that the player can't quickly use a
+        // crystal ball to find their way out.  -- bwr
+        return (you.mutation[MUT_PANDEMONIUM] ? LIGHTBLUE : LIGHTGREEN);
+
     case DNGN_TRANSIT_PANDEMONIUM:
-        // These are Pandemonium gates, I'm using light
-        // green for all types of gates as to maintain
-        // the fact that the player should have to
-        // visit them to verify what they are...
-        // not just use a crystal ball. -- bwross
         return (LIGHTGREEN);
 
     case DNGN_ENTER_ZOT:
-    case DNGN_EXIT_ZOT:
+    case DNGN_RETURN_FROM_ZOT:
         return (MAGENTA);
 
     case DNGN_STONE_STAIRS_DOWN_I:
@@ -868,18 +869,18 @@ char colour_code_map( int x, int y )
     case 126:
         return (LIGHTRED);
 
-    case DNGN_RETURN_DUNGEON_I:
-    case DNGN_RETURN_DUNGEON_II:
-    case DNGN_RETURN_DUNGEON_III:
-    case DNGN_RETURN_LAIR_II:
-    case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS_II:
-    case DNGN_RETURN_VAULTS_III:
-    case DNGN_RETURN_DUNGEON_V:
-    case DNGN_RETURN_LAIR_III:
-    case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT:
-    case DNGN_RETURN_LAIR_IV:
+    case DNGN_RETURN_FROM_ORCISH_MINES:
+    case DNGN_RETURN_FROM_HIVE:
+    case DNGN_RETURN_FROM_LAIR:
+    case DNGN_RETURN_FROM_SLIME_PITS:
+    case DNGN_RETURN_FROM_VAULTS:
+    case DNGN_RETURN_FROM_CRYPT:
+    case DNGN_RETURN_FROM_HALL_OF_BLADES:
+    case DNGN_RETURN_FROM_TEMPLE:
+    case DNGN_RETURN_FROM_SNAKE_PIT:
+    case DNGN_RETURN_FROM_ELVEN_HALLS:
+    case DNGN_RETURN_FROM_TOMB:
+    case DNGN_RETURN_FROM_SWAMP:
     case 143:
     case 144:
     case 145:
@@ -904,11 +905,12 @@ void monster_grid(bool do_updates)
 
         if (monster->type != -1 && mons_near(monster))
         {
-            if (do_updates &&
-                (monster->behaviour == BEH_SLEEP
-                 || monster->behaviour == BEH_WANDER) && check_awaken(s))
+            if (do_updates
+                && (monster->behaviour == BEH_SLEEP
+                     || monster->behaviour == BEH_WANDER)
+                && check_awaken(s))
             {
-                behaviour_event(monster, ME_ALERT, MHITYOU);
+                behaviour_event( monster, ME_ALERT, MHITYOU );
 
                 if (you.turn_is_over == 1
                     && mons_shouts(monster->type) > 0
@@ -1071,7 +1073,7 @@ bool check_awaken(int mons_aw)
 
     // berserkers aren't really concerned about stealth
     if (you.berserker)
-        return true;
+        return (true);
 
     // Repel undead is a holy aura, to which evil creatures are sensitive.
     // Note that even though demons aren't affected by repel undead, they
@@ -1079,7 +1081,7 @@ bool check_awaken(int mons_aw)
     if (you.duration[DUR_REPEL_UNDEAD]
         && (mon_holy == MH_UNDEAD || mon_holy == MH_DEMONIC))
     {
-        return true;
+        return (true);
     }
 
     // I assume that creatures who can see invisible are very perceptive
@@ -1096,24 +1098,31 @@ bool check_awaken(int mons_aw)
     if (you.invis && !mons_see_invis(monster))
         mons_perc -= 75;
 
-    if (monster->behaviour == BEH_SLEEP
-        && mons_has_ench( monster, ENCH_SLEEP_WARY ))
+    if (monster->behaviour == BEH_SLEEP)
     {
-        // monster is "hibernating"... reduce chance of waking
-        mons_perc -= 25;
+        if (mon_holy == MH_NATURAL)
+        {
+            // monster is "hibernating"... reduce chance of waking
+            if (mons_has_ench( monster, ENCH_SLEEP_WARY ))
+                mons_perc -= 10;
+        }
+        else // unnatural creature
+        {
+            // Unnatural monsters don't actually "sleep", they just
+            // haven't noticed an intruder yet... we'll assume that
+            // they're diligently on guard.
+            mons_perc += 10;
+        }
     }
 
     // glowing with magical contamination isn't very stealthy
-    if (you.magic_contamination > 20)
+    if (you.magic_contamination > 10)
         mons_perc += you.magic_contamination - 10;
 
     if (mons_perc < 0)
         mons_perc = 0;
 
-    if (random2(stealth) <= mons_perc)
-        return true;
-
-    return false;
+    return (random2(stealth) <= mons_perc);
 }                               // end check_awaken()
 
 
@@ -1334,15 +1343,15 @@ void cloud_grid(void)
 }                               // end cloud_grid()
 
 
-void noisy(char loudness, char nois_x, char nois_y)
+void noisy( int loudness, int nois_x, int nois_y )
 {
     int p;
     struct monsters *monster = 0;       // NULL {dlb}
 
-    if (silenced(nois_x, nois_y))
+    if (silenced( nois_x, nois_y ))
         return;
 
-    int dist = int (loudness) * int (loudness);
+    int dist = loudness * loudness;
 
     for (p = 0; p < MAX_MONSTERS; p++)
     {
@@ -1354,17 +1363,12 @@ void noisy(char loudness, char nois_x, char nois_y)
         if (distance(monster->x, monster->y, nois_x, nois_y) <= dist
             && !silenced(monster->x, monster->y))
         {
-            // if the noise came from the player,  any nearby monster
+            // If the noise came from the character, any nearby monster
             // will be jumping on top of them.
-
-            // otherwise, it just wakes monsters up and makes them
-            // wander about.  They'll probably pick up the player shortly
-            // through check_awaken() anyway.
-
             if (nois_x == you.x_pos && nois_y == you.y_pos)
-                behaviour_event(monster, ME_ALERT, MHITYOU);
+                behaviour_event( monster, ME_ALERT, MHITYOU );
             else
-                behaviour_event(monster, ME_DISTURB);
+                behaviour_event( monster, ME_DISTURB, MHITNOT, nois_x, nois_y );
         }
     }
 }                               // end noisy()
@@ -2329,18 +2333,18 @@ unsigned char mapchar(unsigned char ldfk)
     case DNGN_STONE_STAIRS_UP_II:
     case DNGN_STONE_STAIRS_UP_III:
     case DNGN_ROCK_STAIRS_UP:
-    case DNGN_RETURN_DUNGEON_I:
-    case DNGN_RETURN_DUNGEON_II:
-    case DNGN_RETURN_DUNGEON_III:
-    case DNGN_RETURN_LAIR_II:
-    case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS_II:
-    case DNGN_RETURN_VAULTS_III:
-    case DNGN_RETURN_DUNGEON_V:
-    case DNGN_RETURN_LAIR_III:
-    case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT:
-    case DNGN_RETURN_LAIR_IV:
+    case DNGN_RETURN_FROM_ORCISH_MINES:
+    case DNGN_RETURN_FROM_HIVE:
+    case DNGN_RETURN_FROM_LAIR:
+    case DNGN_RETURN_FROM_SLIME_PITS:
+    case DNGN_RETURN_FROM_VAULTS:
+    case DNGN_RETURN_FROM_CRYPT:
+    case DNGN_RETURN_FROM_HALL_OF_BLADES:
+    case DNGN_RETURN_FROM_TEMPLE:
+    case DNGN_RETURN_FROM_SNAKE_PIT:
+    case DNGN_RETURN_FROM_ELVEN_HALLS:
+    case DNGN_RETURN_FROM_TOMB:
+    case DNGN_RETURN_FROM_SWAMP:
     case 143:
     case 144:
     case 145:
@@ -2362,7 +2366,7 @@ unsigned char mapchar(unsigned char ldfk)
     case DNGN_EXIT_PANDEMONIUM:
     case DNGN_TRANSIT_PANDEMONIUM:
     case DNGN_ENTER_ZOT:
-    case DNGN_EXIT_ZOT:
+    case DNGN_RETURN_FROM_ZOT:
         showed = 239;
         break;
 
@@ -2496,18 +2500,18 @@ unsigned char mapchar2(unsigned char ldfk)
     case DNGN_STONE_STAIRS_UP_II:
     case DNGN_STONE_STAIRS_UP_III:
     case DNGN_ROCK_STAIRS_UP:
-    case DNGN_RETURN_DUNGEON_I:
-    case DNGN_RETURN_DUNGEON_II:
-    case DNGN_RETURN_DUNGEON_III:
-    case DNGN_RETURN_LAIR_II:
-    case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS_II:
-    case DNGN_RETURN_VAULTS_III:
-    case DNGN_RETURN_DUNGEON_V:
-    case DNGN_RETURN_LAIR_III:
-    case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT:
-    case DNGN_RETURN_LAIR_IV:
+    case DNGN_RETURN_FROM_ORCISH_MINES:
+    case DNGN_RETURN_FROM_HIVE:
+    case DNGN_RETURN_FROM_LAIR:
+    case DNGN_RETURN_FROM_SLIME_PITS:
+    case DNGN_RETURN_FROM_VAULTS:
+    case DNGN_RETURN_FROM_CRYPT:
+    case DNGN_RETURN_FROM_HALL_OF_BLADES:
+    case DNGN_RETURN_FROM_TEMPLE:
+    case DNGN_RETURN_FROM_SNAKE_PIT:
+    case DNGN_RETURN_FROM_ELVEN_HALLS:
+    case DNGN_RETURN_FROM_TOMB:
+    case DNGN_RETURN_FROM_SWAMP:
     case 143:
     case 144:
     case 145:
@@ -2529,7 +2533,7 @@ unsigned char mapchar2(unsigned char ldfk)
     case DNGN_EXIT_PANDEMONIUM:
     case DNGN_TRANSIT_PANDEMONIUM:
     case DNGN_ENTER_ZOT:
-    case DNGN_EXIT_ZOT:
+    case DNGN_RETURN_FROM_ZOT:
         showed = 239;
         break;
 
@@ -2632,7 +2636,7 @@ void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
         break;
 
     case DNGN_STONE_WALL:
-        if (you.where_are_you == BRANCH_HALL_OF_ZOT)
+        if (player_in_branch( BRANCH_HALL_OF_ZOT ))
             *color = env.rock_colour;
         else
             *color = LIGHTGREY;
@@ -2863,18 +2867,18 @@ void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
         seen_staircase(object);
         break;
 
-    case DNGN_RETURN_DUNGEON_I:
-    case DNGN_RETURN_DUNGEON_II:
-    case DNGN_RETURN_DUNGEON_III:
-    case DNGN_RETURN_LAIR_II:
-    case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS_II:
-    case DNGN_RETURN_VAULTS_III:
-    case DNGN_RETURN_DUNGEON_V:
-    case DNGN_RETURN_LAIR_III:
-    case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT:
-    case DNGN_RETURN_LAIR_IV:
+    case DNGN_RETURN_FROM_ORCISH_MINES:
+    case DNGN_RETURN_FROM_HIVE:
+    case DNGN_RETURN_FROM_LAIR:
+    case DNGN_RETURN_FROM_SLIME_PITS:
+    case DNGN_RETURN_FROM_VAULTS:
+    case DNGN_RETURN_FROM_CRYPT:
+    case DNGN_RETURN_FROM_HALL_OF_BLADES:
+    case DNGN_RETURN_FROM_TEMPLE:
+    case DNGN_RETURN_FROM_SNAKE_PIT:
+    case DNGN_RETURN_FROM_ELVEN_HALLS:
+    case DNGN_RETURN_FROM_TOMB:
+    case DNGN_RETURN_FROM_SWAMP:
     case 143:
     case 144:
     case 145:
@@ -2883,7 +2887,7 @@ void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
         *ch = '<';
         break;
 
-    case DNGN_EXIT_ZOT:
+    case DNGN_RETURN_FROM_ZOT:
         *color = MAGENTA;
         *ch = '\\';
         break;
@@ -3358,18 +3362,18 @@ unsigned char mapchar3(unsigned char ldfk)
     case DNGN_STONE_STAIRS_UP_II:
     case DNGN_STONE_STAIRS_UP_III:
     case DNGN_ROCK_STAIRS_UP:
-    case DNGN_RETURN_DUNGEON_I:
-    case DNGN_RETURN_DUNGEON_II:
-    case DNGN_RETURN_DUNGEON_III:
-    case DNGN_RETURN_LAIR_II:
-    case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS_II:
-    case DNGN_RETURN_VAULTS_III:
-    case DNGN_RETURN_DUNGEON_V:
-    case DNGN_RETURN_LAIR_III:
-    case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT:
-    case DNGN_RETURN_LAIR_IV:
+    case DNGN_RETURN_FROM_ORCISH_MINES:
+    case DNGN_RETURN_FROM_HIVE:
+    case DNGN_RETURN_FROM_LAIR:
+    case DNGN_RETURN_FROM_SLIME_PITS:
+    case DNGN_RETURN_FROM_VAULTS:
+    case DNGN_RETURN_FROM_CRYPT:
+    case DNGN_RETURN_FROM_HALL_OF_BLADES:
+    case DNGN_RETURN_FROM_TEMPLE:
+    case DNGN_RETURN_FROM_SNAKE_PIT:
+    case DNGN_RETURN_FROM_ELVEN_HALLS:
+    case DNGN_RETURN_FROM_TOMB:
+    case DNGN_RETURN_FROM_SWAMP:
     case 143:
     case 144:
     case 145:
@@ -3391,7 +3395,7 @@ unsigned char mapchar3(unsigned char ldfk)
     case DNGN_EXIT_PANDEMONIUM:
     case DNGN_TRANSIT_PANDEMONIUM:
     case DNGN_ENTER_ZOT:
-    case DNGN_EXIT_ZOT:
+    case DNGN_RETURN_FROM_ZOT:
         showed = '\\';
         break;
 
@@ -3524,18 +3528,18 @@ unsigned char mapchar4(unsigned char ldfk)
     case DNGN_STONE_STAIRS_UP_II:
     case DNGN_STONE_STAIRS_UP_III:
     case DNGN_ROCK_STAIRS_UP:
-    case DNGN_RETURN_DUNGEON_I:
-    case DNGN_RETURN_DUNGEON_II:
-    case DNGN_RETURN_DUNGEON_III:
-    case DNGN_RETURN_LAIR_II:
-    case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_VAULTS_II:
-    case DNGN_RETURN_VAULTS_III:
-    case DNGN_RETURN_DUNGEON_V:
-    case DNGN_RETURN_LAIR_III:
-    case DNGN_RETURN_MINES:
-    case DNGN_RETURN_CRYPT:
-    case DNGN_RETURN_LAIR_IV:
+    case DNGN_RETURN_FROM_ORCISH_MINES:
+    case DNGN_RETURN_FROM_HIVE:
+    case DNGN_RETURN_FROM_LAIR:
+    case DNGN_RETURN_FROM_SLIME_PITS:
+    case DNGN_RETURN_FROM_VAULTS:
+    case DNGN_RETURN_FROM_CRYPT:
+    case DNGN_RETURN_FROM_HALL_OF_BLADES:
+    case DNGN_RETURN_FROM_TEMPLE:
+    case DNGN_RETURN_FROM_SNAKE_PIT:
+    case DNGN_RETURN_FROM_ELVEN_HALLS:
+    case DNGN_RETURN_FROM_TOMB:
+    case DNGN_RETURN_FROM_SWAMP:
     case 143:
     case 144:
     case 145:
@@ -3557,7 +3561,7 @@ unsigned char mapchar4(unsigned char ldfk)
     case DNGN_EXIT_PANDEMONIUM:
     case DNGN_TRANSIT_PANDEMONIUM:
     case DNGN_ENTER_ZOT:
-    case DNGN_EXIT_ZOT:
+    case DNGN_RETURN_FROM_ZOT:
         showed = '\\';
         break;
 

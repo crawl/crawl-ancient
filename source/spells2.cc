@@ -28,7 +28,6 @@
 #include "cloud.h"
 #include "direct.h"
 #include "effects.h"
-#include "fight.h"
 #include "itemname.h"
 #include "items.h"
 #include "misc.h"
@@ -135,7 +134,8 @@ unsigned char detect_creatures( int pow )
                 if (mons_intel( mon->type ) == I_HIGH
                     && mons_flag( mon->type, M_SPELLCASTER ))
                 {
-                    behaviour_event( mon, ME_DISTURB );
+                    behaviour_event( mon, ME_DISTURB, MHITYOU,
+                                     you.x_pos, you.y_pos );
                 }
             }
         }
@@ -356,6 +356,7 @@ int raise_corpse( int corps, int corx, int cory,
 
         create_monster( type, 0, corps_beh, corx, cory, corps_hit,
                         mitm[corps].plus );
+
         destroy_item(corps);
     }
 
@@ -365,10 +366,9 @@ int raise_corpse( int corps, int corx, int cory,
 void cast_twisted(int power, int corps_beh, int corps_hit)
 {
     int total_mass = 0;
-    int old_item;
-    int number_raised = 0;
+    int num_corpses = 0;
     int type_resurr = MONS_ABOMINATION_SMALL;
-    char coloured = corps_hit;
+    char colour;
 
     unsigned char rotted = 0;
 
@@ -379,48 +379,46 @@ void cast_twisted(int power, int corps_beh, int corps_hit)
     }
 
     int objl = igrd[you.x_pos][you.y_pos];
-    int hrg = 0;
+    int next;
 
     while (objl != NON_ITEM)
     {
+        next = mitm[objl].link;
+
         if (mitm[objl].base_type == OBJ_CORPSES
                 && mitm[objl].sub_type == CORPSE_BODY)
         {
-            total_mass += mons_weight(mitm[objl].plus);
+            total_mass += mons_weight( mitm[objl].plus );
 
+            num_corpses++;
             if (mitm[objl].special < 100)
                 rotted++;
 
-            old_item = objl;
-            hrg = mitm[objl].link;
-            objl = hrg;
-            destroy_item(old_item);
-            number_raised++;
-            continue;
+            destroy_item( objl );
         }
 
-        hrg = mitm[objl].link;
-        objl = hrg;
+        objl = next;
     }
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "Mass for abomination: %d", total_mass);
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     // This is what the old statement pretty much boils down to,
     // the average will be approximately 10 * power (or about 1000
     // at the practical maximum).  That's the same as the mass
-    // of a hippogriff, a spiny frog, or a steam dragon.  -- bwr
+    // of a hippogriff, a spiny frog, or a steam dragon.  Thus,
+    // material components are far more important to this spell. -- bwr
     total_mass += roll_dice( 20, power );
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "Mass including power bonus: %d", total_mass);
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     if (total_mass < 400 + roll_dice( 2, 500 )
-        || number_raised < (coinflip() ? 3 : 2))
+        || num_corpses < (coinflip() ? 3 : 2))
     {
         mpr("The spell fails.");
         mpr("The corpses collapse into a pulpy mess.");
@@ -430,18 +428,38 @@ void cast_twisted(int power, int corps_beh, int corps_hit)
     if (total_mass > 500 + roll_dice( 3, 1000 ))
         type_resurr = MONS_ABOMINATION_LARGE;
 
-    mpr("The heap of corpses melds into an agglomeration of writhing flesh!");
+    if (rotted == num_corpses)
+        colour = BROWN;
+    else if (rotted >= random2( num_corpses ))
+        colour = RED;
+    else
+        colour = LIGHTRED;
 
-    coloured = LIGHTRED;
+    int mon = create_monster( type_resurr, 0, corps_beh, you.x_pos, you.y_pos,
+                              corps_hit, colour );
 
-    if (rotted >= random2(number_raised))
-        coloured = RED;
+    if (mon == -1)
+        mpr("The corpses collapse into a pulpy mess.");
+    else
+    {
+        mpr("The heap of corpses melds into an agglomeration of writhing flesh!");
+        if (type_resurr == MONS_ABOMINATION_LARGE)
+        {
+            menv[mon].hit_dice = 8 + total_mass / ((colour == LIGHTRED) ? 500 :
+                                                   (colour == RED)      ? 1000
+                                                                        : 2500);
 
-    if (rotted >= number_raised)
-        coloured = BROWN;
+            if (menv[mon].hit_dice > 30)
+                menv[mon].hit_dice = 30;
 
-    create_monster( type_resurr, 0, corps_beh, you.x_pos, you.y_pos,
-                    you.pet_target, coloured );
+            // XXX: No convenient way to get the hit dice size right now.
+            menv[mon].hit_points = hit_points( menv[mon].hit_dice, 2, 5 );
+            menv[mon].max_hit_points = menv[mon].hit_points;
+
+            if (colour == LIGHTRED)
+                menv[mon].armour_class += total_mass / 1000;
+        }
+    }
 }                               // end cast_twisted()
 
 bool brand_weapon(int which_brand, int power)
@@ -470,6 +488,7 @@ bool brand_weapon(int which_brand, int power)
         return false;
     }
 
+    char str_pass[ ITEMNAME_SIZE ];
     in_name( wpn, DESC_CAP_YOUR, str_pass );
     strcpy( info, str_pass );
 
@@ -646,15 +665,16 @@ void turn_undead(int pow)
         // in addition {dlb}
         if (mons_holiness(monster->type) == MH_UNDEAD)
         {
-            const int mon_resist = mons_resist_turn_undead( monster );
-
-            if (random2(pow) + you.experience_level < mon_resist)
+            if (check_mons_resist_magic( monster, pow ))
+            {
+                simple_monster_message( monster, " resists." );
                 continue;
+            }
 
             if (!mons_add_ench(monster, ENCH_FEAR))
                 continue;
 
-            simple_monster_message(monster, " is repelled!");
+            simple_monster_message( monster, " is repelled!" );
 
             //mv: must be here to work
             behaviour_event( monster, ME_SCARE, MHITYOU );
@@ -820,7 +840,7 @@ void cast_refrigeration(int pow)
                     print_wounds(monster);
 
                     //jmf: "slow snakes" finally available
-                    if (mons_flag(monster->type, M_COLD_BLOOD))
+                    if (mons_flag( monster->type, M_COLD_BLOOD ) && coinflip())
                         mons_add_ench(monster, ENCH_SLOW);
                 }
             }
@@ -853,6 +873,9 @@ void drain_life(int pow)
         if (monster->type == -1)
             continue;
 
+        if (mons_holiness( monster->type ) != MH_NATURAL)
+            continue;
+
         if (mons_res_negative_energy( monster ))
             continue;
 
@@ -878,13 +901,13 @@ void drain_life(int pow)
 
     hp_gain /= 2;
 
-    if (hp_gain > (pow * 2))
+    if (hp_gain > pow * 2)
         hp_gain = pow * 2;
 
     if (hp_gain)
     {
-        mpr("You feel life flooding into your body.");
-        inc_hp(hp_gain, false);
+        mpr( "You feel life flooding into your body." );
+        inc_hp( hp_gain, false );
     }
 }                               // end drain_life()
 
@@ -1166,16 +1189,16 @@ int summon_elemental(int pow, unsigned char restricted_type,
 
         || random2(100) < unfriendly)
     {
-        summ_success = create_monster(type_summoned, numsc, BEH_HOSTILE,
-                                       targ_x, targ_y, MHITYOU, 250);
+        summ_success = create_monster( type_summoned, numsc, BEH_HOSTILE,
+                                       targ_x, targ_y, MHITYOU, 250 );
 
         if (summ_success >= 0)
             mpr( "The elemental doesn't seem to appreciate being summoned." );
     }
     else
     {
-        summ_success = create_monster(type_summoned, numsc, BEH_FRIENDLY,
-                                       targ_x, targ_y, MHITNOT, 250);
+        summ_success = create_monster( type_summoned, numsc, BEH_FRIENDLY,
+                                       targ_x, targ_y, you.pet_target, 250 );
     }
 
     return (summ_success >= 0);
@@ -1240,7 +1263,7 @@ void summon_small_mammals(int pow)
         }
 
         create_monster( thing_called, ENCH_ABJ_III, BEH_FRIENDLY,
-                        you.x_pos, you.y_pos, MHITNOT, 250 );
+                        you.x_pos, you.y_pos, you.pet_target, 250 );
     }
 }                               // end summon_small_mammals()
 
@@ -1263,7 +1286,8 @@ void summon_scorpions(int pow)
         else
         {
             if (create_monster( MONS_SCORPION, ENCH_ABJ_III, BEH_FRIENDLY,
-                                you.x_pos, you.y_pos, MHITNOT, 250 ) != -1)
+                                you.x_pos, you.y_pos,
+                                you.pet_target, 250 ) != -1)
             {
                 mpr("A scorpion appears.");
             }
@@ -1316,7 +1340,7 @@ void summon_ice_beast_etc(int pow, int ibc)
 
     }
 
-    create_monster( ibc, numsc, beha, you.x_pos, you.y_pos, MHITNOT, 250 );
+    create_monster( ibc, numsc, beha, you.x_pos, you.y_pos, MHITYOU, 250 );
 }                               // end summon_ice_beast_etc()
 
 void summon_swarm(int pow, bool god_gift)
@@ -1383,8 +1407,8 @@ void summon_swarm(int pow, bool god_gift)
         else
             behaviour = BEH_HOSTILE;
 
-        create_monster( thing_called, ENCH_ABJ_III, behaviour, you.x_pos,
-                        you.y_pos, MHITNOT, 250 );
+        create_monster( thing_called, ENCH_ABJ_III, behaviour,
+                        you.x_pos, you.y_pos, MHITYOU, 250 );
     }
 
     mpr("You call forth a swarm of pestilential beasts!");
@@ -1418,8 +1442,8 @@ void summon_undead(int pow)
         }
         else
         {
-            if (create_monster(thing_called, ENCH_ABJ_III, BEH_FRIENDLY,
-                                you.x_pos, you.y_pos, MHITNOT, 250) != -1)
+            if (create_monster( thing_called, ENCH_ABJ_III, BEH_FRIENDLY,
+                                you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
             {
                 mpr("An insubstantial figure forms in the air.");
             }
@@ -1432,8 +1456,7 @@ void summon_undead(int pow)
              && (!player_under_penance()
                  && you.piety >= 100 && random2(200) <= you.piety)))
     {
-        mpr("You feel rather ill.");
-        you.disease = 200;
+        disease_player( 200 );
     }
 }                               // end summon_undead()
 
@@ -1471,15 +1494,15 @@ void summon_things(int pow)
 
         while (big_things > 0)
         {
-            create_monster(MONS_ABOMINATION_LARGE, ENCH_ABJ_III, BEH_FRIENDLY,
-                           you.x_pos, you.y_pos, MHITNOT, 250);
+            create_monster( MONS_ABOMINATION_LARGE, ENCH_ABJ_III, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, you.pet_target, 250 );
             big_things--;
         }
 
         while (numsc > 0)
         {
-            create_monster(MONS_ABOMINATION_SMALL, ENCH_ABJ_III, BEH_FRIENDLY,
-                           you.x_pos, you.y_pos, MHITNOT, 250);
+            create_monster( MONS_ABOMINATION_SMALL, ENCH_ABJ_III, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, you.pet_target, 250 );
             numsc--;
         }
 

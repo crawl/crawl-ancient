@@ -20,6 +20,8 @@
 
 #include "externs.h"
 #include "defines.h"
+#include "player.h"
+#include "stuff.h"
 #include "items.h"
 #include "view.h"
 
@@ -38,6 +40,23 @@ static std::string & tolower_string( std::string &str );
 
 const static char *obj_syms = ")([/%.?=!.+\\0}X$";
 const static int   obj_syms_len = 16;
+
+static std::string & trim_string( std::string &str )
+{
+    // OK,  this is really annoying.  Borland C++ seems to define
+    // basic_string::erase to take iterators,  and basic_string::remove
+    // to take size_t or integer.  This is ass-backwards compared to
+    // nearly all other C++ compilers.  Crap.             (GDL)
+#ifdef __BCPLUSPLUS__
+    str.remove( 0, str.find_first_not_of( " \t\n\r" ) );
+    str.remove( str.find_last_not_of( " \t\n\r" ) + 1 );
+#else
+    str.erase( 0, str.find_first_not_of( " \t\n\r" ) );
+    str.erase( str.find_last_not_of( " \t\n\r" ) + 1 );
+#endif
+
+    return (str);
+}
 
 // returns -1 if unmatched else returns 0-15
 static short str_to_colour( const std::string &str )
@@ -125,25 +144,88 @@ static int str_to_weapon( const std::string &str )
         return (WPN_HAND_AXE);
     else if (str == "random")
         return (WPN_RANDOM);
-    else
-        return (WPN_UNKNOWN);
+
+    return (WPN_UNKNOWN);
 }
 
-static std::string & trim_string( std::string &str )
+static unsigned int str_to_fire_types( const std::string &str )
 {
-    // OK,  this is really annoying.  Borland C++ seems to define
-    // basic_string::erase to take iterators,  and basic_string::remove
-    // to take size_t or integer.  This is ass-backwards compared to
-    // nearly all other C++ compilers.  Crap.             (GDL)
-#ifdef __BCPLUSPLUS__
-    str.remove( 0, str.find_first_not_of( " \t\n\r" ) );
-    str.remove( str.find_last_not_of( " \t\n\r" ) + 1 );
-#else
-    str.erase( 0, str.find_first_not_of( " \t\n\r" ) );
-    str.erase( str.find_last_not_of( " \t\n\r" ) + 1 );
-#endif
+    if (str == "launcher")
+        return (FIRE_LAUNCHER);
+    else if (str == "dart")
+        return (FIRE_DART);
+    else if (str == "stone")
+        return (FIRE_STONE);
+    else if (str == "dagger")
+        return (FIRE_DAGGER);
+    else if (str == "spear")
+        return (FIRE_SPEAR);
+    else if (str == "hand axe" || str == "handaxe")
+        return (FIRE_HAND_AXE);
+    else if (str == "club")
+        return (FIRE_CLUB);
 
-    return (str);
+    return (FIRE_NONE);
+}
+
+static void str_to_fire_order( const std::string &str,
+                               FixedVector< int, NUM_FIRE_TYPES > &list )
+{
+    int i;
+    size_t pos = 0;
+    std::string item = "";
+
+    for (i = 0; i < NUM_FIRE_TYPES; i++)
+    {
+        // get next item from comma delimited list
+        const size_t end = str.find( ',', pos );
+        item = str.substr( pos, end - pos );
+        trim_string( item );
+
+        list[i] = str_to_fire_types( item );
+
+        if (end == std::string::npos)
+            break;
+        else
+            pos = end + 1;
+    }
+}
+
+static char str_to_race( const std::string &str )
+{
+    if (str.length() == 1)      // old system of using menu letter
+        return (str[0]);
+    else // if (str.length() == 2)
+    {
+        int index = get_species_index( str.c_str() );
+
+        // skip over the extra draconians here
+        if (index > SP_RED_DRACONIAN)
+            index -= (SP_CENTAUR - SP_RED_DRACONIAN - 1);
+
+        // SP_HUMAN is at 1, therefore we must subtract one.
+        return ((index != -1) ? index_to_letter( index - 1 ) : '\0');
+    }
+
+    return ('\0');
+}
+
+static char str_to_class( const std::string &str )
+{
+    if (str.length() == 1)      // old system of using menu letter
+        return (str[0]);
+    else // if (str.length() == 2)
+    {
+        int index = get_class_index( str.c_str() );
+
+        // ignore the fake "Quitter" hack
+        if (index == JOB_QUITTER)
+            index = -1;
+
+        return ((index != -1) ? index_to_letter( index ) : '\0');
+    }
+
+    return ('\0');
 }
 
 static std::string & tolower_string( std::string &str )
@@ -172,6 +254,8 @@ static bool read_bool( const std::string &field, bool def_value )
 
 void read_init_file(void)
 {
+    unsigned int i;
+
     // Option initialization
     Options.autopickups            = 0x0000;
     Options.verbose_dump           = false;
@@ -191,9 +275,20 @@ void read_init_file(void)
     Options.priest                 = GOD_NO_GOD;
     Options.hp_warning             = 10;
     Options.hp_attention           = 25;
-    Options.race                   = 0;
-    Options.cls                    = 0;
+    Options.race                   = '\0';
+    Options.cls                    = '\0';
     Options.sc_entries             = 0;
+    Options.auto_list              = false;
+
+    // Note: These fire options currently match the old behaviour. -- bwr
+    Options.fire_items_start       = 0;           // start at slot 'a'
+
+    Options.fire_order[0] = FIRE_LAUNCHER;      // fire first from bow...
+    Options.fire_order[1] = FIRE_DART;          // then only consider darts
+
+    // clear the reast of the list
+    for (i = 2; i < NUM_FIRE_TYPES; i++)
+        Options.fire_order[i] = FIRE_NONE;
 
 #ifdef USE_COLOUR_OPTS
     Options.friend_brand  = CHATTR_NORMAL;
@@ -214,7 +309,7 @@ void read_init_file(void)
 
     FILE *f;
     char s[255];
-    unsigned int i, line = 0;
+    unsigned int line = 0;
     int j;
     char name_buff[kPathLen];
 
@@ -227,7 +322,9 @@ void read_init_file(void)
     else if (SysEnv.crawl_dir)
     {
         strncpy(name_buff, SysEnv.crawl_dir, kPathLen);
+        name_buff[ kPathLen - 1 ] = '\0';
         strncat(name_buff, "init.txt", kPathLen);
+        name_buff[ kPathLen - 1 ] = '\0';
 
         f = fopen(name_buff, "r");
     }
@@ -237,9 +334,11 @@ void read_init_file(void)
         // init.txt isn't such a good choice if we're looking in
         // the user's home directory, we'll use Un*x standard
         strncpy(name_buff, SysEnv.home, kPathLen);
+        name_buff[ kPathLen - 1 ] = '\0';
 
         // likely not to have a closing slash so we'll insert one...
         strncat(name_buff, "/.crawlrc", kPathLen);
+        name_buff[ kPathLen - 1 ] = '\0';
 
         f = fopen(name_buff, "r");
     }
@@ -296,8 +395,10 @@ void read_init_file(void)
 
         // some fields want capitals
         trim_string( field );
-        if (!(key == "name" || key == "crawl_dir" || key == "race" || key == "class"))
+        if (key != "name" && key != "crawl_dir" && key != "race" && key != "class")
+        {
             tolower_string( field );
+        }
 
         // everything not a valid line is treated as a comment
         if (key == "autopickup")
@@ -346,6 +447,7 @@ void read_init_file(void)
         {
             // field is already cleaned up from trim_string()
             strncpy(you.your_name, field.c_str(), kNameLen);
+            you.your_name[ kNameLen - 1 ] = '\0';
         }
         else if (key == "verbose_dump")
         {
@@ -503,6 +605,20 @@ void read_init_file(void)
             else if (field == "random")
                 Options.priest = GOD_RANDOM;
         }
+        else if (key == "fire_items_start")
+        {
+            if (isalpha( field[0] ))
+                Options.fire_items_start = letter_to_index( field[0] );
+            else
+            {
+                fprintf( stderr, "Bad fire item start index -- %s\n",
+                         field.c_str() );
+            }
+        }
+        else if (key == "fire_order")
+        {
+            str_to_fire_order( field, Options.fire_order );
+        }
         else if (key == "random_pick")
         {
             // randomly generate character
@@ -536,23 +652,28 @@ void read_init_file(void)
                 SysEnv.crawl_dir = (char *) calloc(kPathLen, sizeof(char));
 
             if (SysEnv.crawl_dir)
-                strncpy(SysEnv.crawl_dir, field.c_str(), kNameLen);
+            {
+                strncpy(SysEnv.crawl_dir, field.c_str(), kNameLen - 1);
+                SysEnv.crawl_dir[ kNameLen - 1 ] = '\0';
+            }
         }
         else if (key == "race")
         {
-            // set to first character of field
-            if (field.length() != 1)
-                fprintf(stderr, "Unknown race choice: %s\n", field.c_str());
-            else
-                Options.race = field[0];
+            Options.race = str_to_race( field );
+
+            if (Options.race == '\0')
+                fprintf( stderr, "Unknown race choice: %s\n", field.c_str() );
         }
         else if (key == "class")
         {
-            // set to first character of field
-            if (field.length() != 1)
-                fprintf(stderr, "Unknown class choice: %s\n", field.c_str());
-            else
-                Options.cls = field[0];
+            Options.cls = str_to_class( field );
+
+            if (Options.cls == '\0')
+                fprintf( stderr, "Unknown class choice: %s\n", field.c_str() );
+        }
+        else if (key == "auto_list")
+        {
+            Options.auto_list = read_bool( field, Options.auto_list );
         }
         else if (key == "wiz_mode")
         {
@@ -598,9 +719,9 @@ void get_system_environment(void)
 // parse args, filling in Options and game environment as we go.
 // returns true if no unknown or malformed arguments were found.
 
-static char *cmd_ops[] = { "scores", "name", "race", "class",
-                           "pizza", "plain", "dir", "rc",
-                           "wiz" };
+static const char *cmd_ops[] = { "scores", "name", "race", "class",
+                                 "pizza", "plain", "dir", "rc",
+                                 "wiz" };
 
 const int num_cmd_ops = 8;
 bool arg_seen[num_cmd_ops];
@@ -628,11 +749,12 @@ bool parse_args(int argc, char **argv, bool rc_only)
             next_arg = argv[current+1];
         else
             next_arg = NULL;
+
         nextUsed = false;
 
         // arg MUST begin with '-' or '/'
         char c = arg[0];
-        if (!(c == '-' || c == '/'))
+        if (c != '-' && c != '/')
             return false;
 
         // look for match (now we also except --scores)
@@ -647,6 +769,7 @@ bool parse_args(int argc, char **argv, bool rc_only)
             if (stricmp(cmd_ops[o], arg) == 0)
                 break;
         }
+
         if (o == num_cmd_ops)
             return false;
 
@@ -661,87 +784,110 @@ bool parse_args(int argc, char **argv, bool rc_only)
         bool next_is_param = false;
         if (next_arg != NULL)
         {
-            if (!(next_arg[0] == '-' || next_arg[0] == '/'))
+            if (next_arg[0] != '-' && next_arg[0] != '/')
                 next_is_param = true;
         }
 
         //.take action according to the cmd chosen
         switch(o)
         {
-            case 0:             // scores
-                int ecount;
-                if (next_is_param)      // optional number
-                {
-                    ecount = atoi(next_arg);
-                    if (ecount < 1)
-                        ecount = 1;
-                    if (ecount > SCORE_FILE_ENTRIES)
-                        ecount = SCORE_FILE_ENTRIES;
-                    nextUsed = true;
-                }
-                else
-                {
-                    ecount = 20;            // default
-                }
-                if (!rc_only)
-                    Options.sc_entries = ecount;
-                break;
-            case 1:             // name
-                if (!next_is_param)
-                    return false;
-                if (!rc_only)
-                    strncpy(you.your_name, next_arg, kNameLen);
+        case 0:             // scores
+            int ecount;
+            if (next_is_param)      // optional number
+            {
+                ecount = atoi(next_arg);
+                if (ecount < 1)
+                    ecount = 1;
+
+                if (ecount > SCORE_FILE_ENTRIES)
+                    ecount = SCORE_FILE_ENTRIES;
+
                 nextUsed = true;
-                break;
-            case 2:             // race
-            case 3:             // class
-                if (!next_is_param)
-                    return false;
-                if (strlen(next_arg) != 1)
-                    return false;
-                if (!rc_only)
-                {
-                    if (o == 2)
-                        Options.race = next_arg[0];
-                    if (o == 3)
-                        Options.cls = next_arg[0];
-                }
-                nextUsed = true;
-                break;
-            case 4:             // pizza
-                if (!next_is_param)
-                    return false;
-                if (!rc_only)
-                    SysEnv.crawl_pizza = next_arg;
-                nextUsed = true;
-                break;
-            case 5:             // plain
-                if (next_is_param)
-                    return false;
-                if (!rc_only)
-                {
-                    viewwindow = &viewwindow3;
-                    mapch = &mapchar3;
-                    mapch2 = &mapchar4;
+            }
+            else
+            {
+                ecount = 20;            // default
+            }
+
+            if (!rc_only)
+                Options.sc_entries = ecount;
+            break;
+
+        case 1:             // name
+            if (!next_is_param)
+                return false;
+
+            if (!rc_only)
+            {
+                strncpy(you.your_name, next_arg, kNameLen);
+                you.your_name[ kNameLen - 1 ] = '\0';
+            }
+
+            nextUsed = true;
+            break;
+
+        case 2:             // race
+        case 3:             // class
+            if (!next_is_param)
+                return false;
+
+            // if (strlen(next_arg) != 1)
+            //    return false;
+
+            if (!rc_only)
+            {
+                if (o == 2)
+                    Options.race = str_to_race( std::string( next_arg ) );
+
+                if (o == 3)
+                    Options.cls = str_to_class( std::string( next_arg ) );
+            }
+            nextUsed = true;
+            break;
+
+        case 4:             // pizza
+            if (!next_is_param)
+                return false;
+
+            if (!rc_only)
+                SysEnv.crawl_pizza = next_arg;
+
+            nextUsed = true;
+            break;
+
+        case 5:             // plain
+            if (next_is_param)
+                return false;
+
+            if (!rc_only)
+            {
+                viewwindow = &viewwindow3;
+                mapch = &mapchar3;
+                mapch2 = &mapchar4;
 #ifdef LINUX
-                    character_set = 0;
+                character_set = 0;
 #endif
-                }
-                break;
-            case 6:             // dir
-                // ALWAYS PARSE
-                if (!next_is_param)
-                    return false;
-                SysEnv.crawl_dir = next_arg;
-                nextUsed = true;
-                break;
-            case 7:
-                // ALWAYS PARSE
-                if (!next_is_param)
-                    return false;
-                SysEnv.crawl_rc = next_arg;
-                nextUsed = true;
-                break;
+            }
+            break;
+
+        case 6:             // dir
+            // ALWAYS PARSE
+            if (!next_is_param)
+                return false;
+
+            SysEnv.crawl_dir = next_arg;
+            nextUsed = true;
+            break;
+
+        case 7:
+            // ALWAYS PARSE
+            if (!next_is_param)
+                return false;
+
+            SysEnv.crawl_rc = next_arg;
+            nextUsed = true;
+            break;
+
         } // end switch -- which option?
 
         // update position

@@ -158,7 +158,8 @@ static void redraw_all(void)
     you.redraw_evasion = 1;
     you.redraw_experience = 1;
     you.redraw_gold = 1;
-    you.redraw_hunger = 1;
+
+    you.redraw_status_flags = REDRAW_LINE_1_MASK | REDRAW_LINE_2_MASK | REDRAW_LINE_3_MASK;
 }
 
 struct ghost_struct ghost;
@@ -196,7 +197,7 @@ static void restore_tagged_file( FILE *restoreFile, int fileType,
 
 static void load_ghost();
 
-void make_filename( char *buf, char *prefix, int level, int where,
+void make_filename( char *buf, const char *prefix, int level, int where,
                     bool isLabyrinth, bool isGhost )
 {
     char suffix[4], lvl[5];
@@ -283,7 +284,6 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
 
     unsigned char foll_targ_1_x[8];
     unsigned char foll_targ_1_y[8];
-    int foll_inv[8][8];
     unsigned char foll_beh[8];
     unsigned char foll_att[8];
     int foll_sec[8];
@@ -330,9 +330,7 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
     if (load_mode != LOAD_RESTART_GAME)
     {
         for (int clouty = 0; clouty < MAX_CLOUDS; ++clouty)
-        {
             delete_cloud( clouty );
-        }
 
         ASSERT( env.cloud_no == 0 );
     }
@@ -340,6 +338,7 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
     // This block is to grab followers and save the old level to disk.
     if (load_mode == LOAD_ENTER_LEVEL)
     {
+        // grab followers
         for (count_x = you.x_pos - 1; count_x < you.x_pos + 2; count_x++)
         {
             for (count_y = you.y_pos - 1; count_y < you.y_pos + 2; count_y++)
@@ -370,12 +369,10 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
 #if DEBUG_DIAGNOSTICS
                 snprintf( info, INFO_SIZE, "%s is following.",
                           ptr_monam( fmenv, DESC_CAP_THE ) );
-                mpr( info, MSGCH_DIAGNOSTIC );
+                mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
                 foll_class[following] = fmenv->type;
-                //itoa(foll_class[following], st_prn, 10);
-
                 foll_hp[following] = fmenv->hit_points;
                 foll_hp_max[following] = fmenv->max_hit_points;
                 foll_HD[following] = fmenv->hit_dice;
@@ -385,11 +382,6 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
                 foll_speed_inc[following] = fmenv->speed_increment;
                 foll_targ_1_x[following] = fmenv->target_x;
                 foll_targ_1_y[following] = fmenv->target_y;
-
-                for (minvc = 0; minvc < NUM_MONSTER_SLOTS; ++minvc)
-                {
-                    foll_inv[following][minvc] = NON_ITEM;
-                }
 
                 for (minvc = 0; minvc < NUM_MONSTER_SLOTS; ++minvc)
                 {
@@ -426,8 +418,8 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
                 fmenv->evasion = 0;
 
                 mgrd[count_x][count_y] = NON_MONSTER;
-            }                   // end "for count_x, count_y"
-        }
+            }
+        }                        // end of grabbing followers
 
         if (!was_a_labyrinth)
             save_level( old_level, false, where_were_you2 );
@@ -435,17 +427,16 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
         was_a_labyrinth = false;
     }
 
-    strcpy(ghost.name, "");
-
+    // clear out ghost/demon lord information:
+    strcpy( ghost.name, "" );
     for (ic = 0; ic < 20; ++ic)
-    {
         ghost.values[ic] = 0;
-    }
 
 #ifdef DOS
     strupr(cha_fil);
 #endif
 
+    // Try to open level savefile.
     FILE *levelFile = fopen(cha_fil, "rb");
 
     // GENERATE new level when the file can't be opened:
@@ -454,11 +445,9 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
         strcpy(ghost.name, "");
 
         for (imn = 0; imn < 20; ++imn)
-        {
             ghost.values[imn] = 0;
-        }
 
-        builder(you.your_level, you.level_type);
+        builder( you.your_level, you.level_type );
         just_created_level = true;
 
         if (you.level_type == LEVEL_PANDEMONIUM)
@@ -466,327 +455,46 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
 
         if (you.your_level > 1 && one_chance_in(3))
             load_ghost();
+    }
+    else
+    {
+        // BEGIN -- must load the old level : pre-load tasks
 
-        // closes all the gates if you're on the way out
-        for (i = 0; i < GXM; i++)
+        // LOAD various tags
+        char majorVersion;
+        char minorVersion;
+
+        if (!determine_level_version( levelFile, majorVersion, minorVersion ))
         {
-            for (j = 0; j < GYM; j++)
-            {
-                env.map[i][j] = 0;
-
-                if (you.char_direction == DIR_ASCENDING
-                    && you.level_type != LEVEL_PANDEMONIUM)
-                {
-                    if (grd[i][j] == DNGN_ENTER_HELL
-                        || grd[i][j] == DNGN_ENTER_ABYSS
-                        || grd[i][j] == DNGN_ENTER_PANDEMONIUM)
-                    {
-                        grd[i][j] = DNGN_STONE_ARCH;
-                    }
-                }
-                env.cgrid[i][j] = EMPTY_CLOUD;
-            }
+            perror("\nLevel file appears to be invalid.\n");
+            end(-1);
         }
 
-        // This next block is for cases where we want to look
-        // for a stairs to place the player.
-        if (load_mode != LOAD_RESTART_GAME)
+        restore_level_version( levelFile, majorVersion, minorVersion );
+
+        // sanity check - EOF
+        if (!feof( levelFile ))
         {
-            if (stair_taken == DNGN_ENTER_HELL
-                || stair_taken == DNGN_ENTER_LABYRINTH)
-            {
-                stair_taken = DNGN_STONE_STAIRS_UP_I;
-            }
-            else if (stair_taken <= DNGN_ROCK_STAIRS_DOWN)
-                stair_taken += 4;
-            else if (stair_taken >= DNGN_RETURN_DUNGEON_I && stair_taken < 150)
-                stair_taken -= 20;
-            else if (stair_taken >= DNGN_ENTER_ORCISH_MINES
-                     && stair_taken < DNGN_RETURN_DUNGEON_I)
-            {
-                stair_taken += 20;
-            }
-            else if (stair_taken > 90)
-                stair_taken = 86;
-            else if (stair_taken == DNGN_FLOOR)
-                stair_taken = DNGN_FLOOR;
-            else
-                stair_taken -= 4;
-
-            for (count_x = 0; count_x < GXM; count_x++)
-            {
-                for (count_y = 0; count_y < GYM; count_y++)
-                {
-                    if (grd[count_x][count_y] == stair_taken)
-                        goto found_stair;
-                }
-            }
-
-            if (stair_taken <= DNGN_ROCK_STAIRS_DOWN)
-                stair_taken = DNGN_STONE_STAIRS_DOWN_I;
-            else
-                stair_taken = DNGN_STONE_STAIRS_UP_I;
-
-
-            for (count_x = 0; count_x < GXM; count_x++)
-            {
-                for (count_y = 0; count_y < GYM; count_y++)
-                {
-                    if (grd[count_x][count_y] == stair_taken)
-                        goto found_stair;
-                }
-            }
-
-            for (count_x = 0; count_x < GXM; count_x++)
-            {
-                for (count_y = 0; count_y < GYM; count_y++)
-                {
-                    if (grd[count_x][count_y] == DNGN_FLOOR)
-                        goto found_stair;
-                }
-            }
+            snprintf( info, INFO_SIZE, "\nIncomplete read of \"%s\" - aborting.\n", cha_fil);
+            perror(info);
+            end(-1);
         }
 
-      found_stair:
-        if (load_mode != LOAD_RESTART_GAME)
-        {
-            you.x_pos = count_x;
-            you.y_pos = count_y;
-        }
+        fclose( levelFile );
 
-        // This should fix the "monster occuring under the player" bug?
-        if (mgrd[you.x_pos][you.y_pos] != NON_MONSTER)
-            monster_teleport(&menv[mgrd[you.x_pos][you.y_pos]], true);
-
-        if (you.level_type == LEVEL_LABYRINTH
-            || you.level_type == LEVEL_ABYSS)
-        {
-            grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
-        }
-
-        following = 0;
-        fmenv = -1;
-
-        // actually "move" the followers if applicable
-        if ((you.level_type == LEVEL_DUNGEON
-                || you.level_type == LEVEL_PANDEMONIUM)
-            && load_mode == LOAD_ENTER_LEVEL)
-        {
-            for (ic = 0; ic < 2; ic++)
-            {
-                for (count_x = you.x_pos - 6; count_x < you.x_pos + 7;
-                     count_x++)
-                {
-                    for (count_y = you.y_pos - 6; count_y < you.y_pos + 7;
-                         count_y++)
-                    {
-                        if (ic == 0
-                            && ((count_x < you.x_pos - 1)
-                                || (count_x > you.x_pos + 1)
-                                || (count_y < you.y_pos - 1)
-                                || (count_y > you.y_pos + 1)))
-                        {
-                            continue;
-                        }
-
-                        if (count_x == you.x_pos && count_y == you.y_pos)
-                            continue;
-
-                        if (mgrd[count_x][count_y] != NON_MONSTER
-                            || grd[count_x][count_y] < DNGN_FLOOR)
-                        {
-                            continue;
-                        }
-
-                        while (menv[following].type != -1)
-                        {
-                            following++;
-
-                            if (following >= MAX_MONSTERS)
-                                goto out_of_foll;
-                        }
-
-                        while (fmenv < 7)
-                        {
-                            fmenv++;
-
-                            if (foll_class[fmenv] == -1)
-                                continue;
-
-                            menv[following].type = foll_class[fmenv];
-                            menv[following].hit_points = foll_hp[fmenv];
-                            menv[following].max_hit_points = foll_hp_max[fmenv];
-                            menv[following].hit_dice = foll_HD[fmenv];
-                            menv[following].armour_class = foll_AC[fmenv];
-                            menv[following].evasion = foll_ev[fmenv];
-                            menv[following].speed = foll_speed[fmenv];
-                            menv[following].x = count_x;
-                            menv[following].y = count_y;
-                            menv[following].target_x = 0;
-                            menv[following].target_y = 0;
-                            menv[following].speed_increment
-                                                    = foll_speed_inc[fmenv];
-
-                            for (minvc = 0; minvc < NUM_MONSTER_SLOTS; minvc++)
-                            {
-
-                                if (!is_valid_item(foll_item[fmenv][minvc]))
-                                {
-                                    menv[following].inv[minvc] = NON_ITEM;
-                                    continue;
-                                }
-
-                                itmf = get_item_slot(0);
-                                if (itmf == NON_ITEM)
-                                {
-                                    menv[following].inv[minvc] = NON_ITEM;
-                                    continue;
-                                }
-
-                                mitm[itmf] = foll_item[fmenv][minvc];
-                                mitm[itmf].x = 0;
-                                mitm[itmf].y = 0;
-                                mitm[itmf].link = NON_ITEM;
-
-                                menv[following].inv[minvc] = itmf;
-                            }
-
-                            menv[following].behaviour = foll_beh[fmenv];
-                            menv[following].attitude = foll_att[fmenv];
-                            menv[following].number = foll_sec[fmenv];
-                            menv[following].foe = foll_hit[fmenv];
-
-                            for (j = 0; j < NUM_MON_ENCHANTS; j++)
-                                menv[following].enchantment[j]=foll_ench[fmenv][j];
-                            menv[following].flags = foll_flags[fmenv];
-                            menv[following].flags |= MF_JUST_SUMMONED;
-
-                            mgrd[count_x][count_y] = following;
-                            break;
-                        }
-                    }
-                }
-            }
-        }                       // end if level_type == LEVEL_DUNGEON
-
-      out_of_foll:
+        // POST-LOAD tasks :
+        link_items();
         redraw_all();
-        // moving_level = false;
-
-        for (i = 0; i < MAX_MONSTERS; i++)
-        {
-            if (menv[i].type == -1)
-                continue;
-
-            for (j = 0; j < NUM_MONSTER_SLOTS; j++)
-            {
-                if (menv[i].inv[j] == NON_ITEM)
-                    continue;
-
-                if (mitm[menv[i].inv[j]].link != NON_ITEM)
-                {
-                    /* items carried by monsters shouldn't be linked */
-                    mitm[menv[i].inv[j]].link = NON_ITEM;
-                }
-            }
-        }
-
-        if (you.level_type == LEVEL_PANDEMONIUM)
-        {
-            for (count_x = 0; count_x < GXM; count_x++)
-            {
-                for (count_y = 0; count_y < GYM; count_y++)
-                {
-                    if (grd[count_x][count_y] >= DNGN_STONE_STAIRS_UP_I
-                        && grd[count_x][count_y] <= DNGN_ROCK_STAIRS_UP)
-                    {
-                        if (one_chance_in( you.mutation[MUT_PANDEMONIUM] ? 15
-                                                                         : 50 ))
-                        {
-                            grd[count_x][count_y] = DNGN_EXIT_PANDEMONIUM;
-                        }
-                        else
-                            grd[count_x][count_y] = DNGN_FLOOR;
-                    }
-
-                    if (grd[count_x][count_y] >= DNGN_ENTER_LABYRINTH
-                        && grd[count_x][count_y] <= DNGN_ROCK_STAIRS_DOWN)
-                    {
-                        grd[count_x][count_y] = DNGN_TRANSIT_PANDEMONIUM;
-                    }
-                }
-            }
-        }
-
-        if (load_mode == LOAD_ENTER_LEVEL)
-        {
-            // update corpses and fountains
-            if (env.elapsed_time != 0.0)
-                update_level( you.elapsed_time - env.elapsed_time );
-
-            // Centaurs have difficulty with stairs
-            val = ((you.species != SP_CENTAUR) ? player_movement_speed() : 15);
-
-            // new levels have less wary monsters:
-            if (just_created_level)
-                val /= 2;
-
-            val -= (stepdown_value( check_stealth(), 50, 50, 150, 150 ) / 10);
-
-#if DEBUG_DIAGNOSTICS
-                snprintf( info, INFO_SIZE, "arrival time: %d", val );
-                mpr( info, MSGCH_DIAGNOSTIC );
-#endif
-
-            if (val > 0)
-            {
-                you.time_taken = val;
-                handle_monsters();
-            }
-        }
-
-        save_level( you.your_level, (you.level_type != LEVEL_DUNGEON),
-                    you.where_are_you );
-        return;
     }
 
-    // BEGIN -- must load the old level : pre-load tasks
-
-    // moving_level = false;
-
-    // LOAD various tags
-    char majorVersion;
-    char minorVersion;
-
-    if (!determine_level_version(levelFile, majorVersion, minorVersion))
-    {
-        perror("\nLevel file appears to be invalid.\n");
-        end(-1);
-    }
-
-    restore_level_version(levelFile, majorVersion, minorVersion);
-
-    // sanity check - EOF
-    if (!feof(levelFile))
-    {
-        snprintf( info, INFO_SIZE, "\nIncomplete read of \"%s\" - aborting.\n", cha_fil);
-        perror(info);
-        end(-1);
-    }
-
-    fclose(levelFile);
-
-    // POST-LOAD tasks :
-
-    link_items();
-
-    redraw_all();
-
-    // closes certain gates if you're on the way out
+    // closes all the gates if you're on the way out
     for (i = 0; i < GXM; i++)
     {
         for (j = 0; j < GYM; j++)
         {
+            if (just_created_level)
+                env.map[i][j] = 0;
+
             if (you.char_direction == DIR_ASCENDING
                 && you.level_type != LEVEL_PANDEMONIUM)
             {
@@ -797,66 +505,371 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
                     grd[i][j] = DNGN_STONE_ARCH;
                 }
             }
+
+            if (load_mode != LOAD_RESTART_GAME)
+                env.cgrid[i][j] = EMPTY_CLOUD;
         }
     }
 
-    if (stair_taken == DNGN_FLOOR)
+    // This next block is for cases where we want to look for a stairs
+    // to place the player.
+    if (load_mode != LOAD_RESTART_GAME && you.level_type != LEVEL_ABYSS)
     {
+        bool find_first = true;
+
+        // Order is important here:
+        if (you.level_type == LEVEL_DUNGEON
+            && where_were_you2 == BRANCH_VESTIBULE_OF_HELL
+            && stair_taken == DNGN_STONE_STAIRS_UP_I)
+        {
+            // leaving hell - look for entry potal first
+            stair_taken = DNGN_ENTER_HELL;
+            find_first = false;
+        }
+        else if (stair_taken == DNGN_EXIT_PANDEMONIUM)
+        {
+            stair_taken = DNGN_ENTER_PANDEMONIUM;
+            find_first = false;
+        }
+        else if (stair_taken == DNGN_EXIT_ABYSS)
+        {
+            stair_taken = DNGN_ENTER_ABYSS;
+            find_first = false;
+        }
+        else if (stair_taken == DNGN_ENTER_HELL
+            || stair_taken == DNGN_ENTER_LABYRINTH)
+        {
+            // the vestibule and labyrith always start from this stair
+            stair_taken = DNGN_STONE_STAIRS_UP_I;
+        }
+        else if (stair_taken >= DNGN_STONE_STAIRS_DOWN_I
+            && stair_taken <= DNGN_ROCK_STAIRS_DOWN)
+        {
+            // look for coresponding up stair
+            stair_taken += (DNGN_STONE_STAIRS_UP_I - DNGN_STONE_STAIRS_DOWN_I);
+        }
+        else if (stair_taken >= DNGN_STONE_STAIRS_UP_I
+            && stair_taken <= DNGN_ROCK_STAIRS_UP)
+        {
+            // look for coresponding down stair
+            stair_taken += (DNGN_STONE_STAIRS_DOWN_I - DNGN_STONE_STAIRS_UP_I);
+        }
+        else if (stair_taken >= DNGN_RETURN_FROM_ORCISH_MINES
+            && stair_taken < 150) // 20 slots reserved
+        {
+            // find entry point to subdungeon when leaving
+            stair_taken += (DNGN_ENTER_ORCISH_MINES - DNGN_RETURN_FROM_ORCISH_MINES);
+        }
+        else if (stair_taken >= DNGN_ENTER_ORCISH_MINES
+             && stair_taken < DNGN_RETURN_FROM_ORCISH_MINES)
+        {
+            // find exit staircase from subdungeon when entering
+            stair_taken += (DNGN_RETURN_FROM_ORCISH_MINES - DNGN_ENTER_ORCISH_MINES);
+        }
+        else if (stair_taken >= DNGN_ENTER_DIS
+            && stair_taken <= DNGN_TRANSIT_PANDEMONIUM)
+        {
+            // when entering a hell or pandemonium
+            stair_taken = DNGN_STONE_STAIRS_UP_I;
+        }
+        else // Note: stair_taken can equal things like DNGN_FLOOR
+        {
+            // just find a nice empty square
+            stair_taken = DNGN_FLOOR;
+            find_first = false;
+        }
+
+        int found = 0;
+        int x_pos = 0, y_pos = 0;
+
+        // Start by looking for the expected entry point:
         for (count_x = 0; count_x < GXM; count_x++)
         {
             for (count_y = 0; count_y < GYM; count_y++)
             {
                 if (grd[count_x][count_y] == stair_taken)
-                    goto found_stair;
+                {
+                    found++;
+                    if (one_chance_in( found ))
+                    {
+                        x_pos = count_x;
+                        y_pos = count_y;
+                    }
+
+                    if (find_first)
+                        goto found_stair;  // double break
+                }
+            }
+        }
+
+found_stair:
+        if (!found)
+        {
+            // See if we can find a stairway in the "right" direction:
+            for (count_x = 0; count_x < GXM; count_x++)
+            {
+                for (count_y = 0; count_y < GYM; count_y++)
+                {
+                    if (stair_taken <= DNGN_ROCK_STAIRS_DOWN)
+                    {
+                        // looking for any down stairs
+                        if (grd[count_x][count_y] >= DNGN_STONE_STAIRS_DOWN_I
+                            && grd[count_x][count_y] <= DNGN_ROCK_STAIRS_DOWN)
+                        {
+                            found++;
+                            if (one_chance_in( found ))
+                            {
+                                x_pos = count_x;
+                                y_pos = count_y;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // looking for any up stairs
+                        if (grd[count_x][count_y] >= DNGN_STONE_STAIRS_UP_I
+                            && grd[count_x][count_y] <= DNGN_ROCK_STAIRS_UP)
+                        {
+                            found++;
+                            if (one_chance_in( found ))
+                            {
+                                x_pos = count_x;
+                                y_pos = count_y;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!found)
+            {
+                // Still not found? Look for any clear terrain:
+                for (count_x = 0; count_x < GXM; count_x++)
+                {
+                    for (count_y = 0; count_y < GYM; count_y++)
+                    {
+                        if (grd[count_x][count_y] >= DNGN_FLOOR)
+                        {
+                            found++;
+                            if (one_chance_in( found ))
+                            {
+                                x_pos = count_x;
+                                y_pos = count_y;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // If still not found, the level is very buggy.
+        ASSERT( found );
+
+        you.x_pos = x_pos;
+        you.y_pos = y_pos;
+    }
+    else if (load_mode != LOAD_RESTART_GAME && you.level_type == LEVEL_ABYSS)
+    {
+        you.x_pos = 45;
+        you.y_pos = 35;
+    }
+
+    // This should fix the "monster occuring under the player" bug?
+    if (mgrd[you.x_pos][you.y_pos] != NON_MONSTER)
+        monster_teleport(&menv[mgrd[you.x_pos][you.y_pos]], true);
+
+    if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
+        grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
+
+    following = 0;
+    fmenv = -1;
+
+    // actually "move" the followers if applicable
+    if ((you.level_type == LEVEL_DUNGEON
+            || you.level_type == LEVEL_PANDEMONIUM)
+        && load_mode == LOAD_ENTER_LEVEL)
+    {
+        for (ic = 0; ic < 2; ic++)
+        {
+            for (count_x = you.x_pos - 6; count_x < you.x_pos + 7;
+                 count_x++)
+            {
+                for (count_y = you.y_pos - 6; count_y < you.y_pos + 7;
+                     count_y++)
+                {
+                    if (ic == 0
+                        && ((count_x < you.x_pos - 1)
+                            || (count_x > you.x_pos + 1)
+                            || (count_y < you.y_pos - 1)
+                            || (count_y > you.y_pos + 1)))
+                    {
+                        continue;
+                    }
+
+                    if (count_x == you.x_pos && count_y == you.y_pos)
+                        continue;
+
+                    if (mgrd[count_x][count_y] != NON_MONSTER
+                        || grd[count_x][count_y] < DNGN_FLOOR)
+                    {
+                        continue;
+                    }
+
+                    while (menv[following].type != -1)
+                    {
+                        following++;
+
+                        if (following >= MAX_MONSTERS)
+                            goto out_of_foll;
+                    }
+
+                    while (fmenv < 7)
+                    {
+                        fmenv++;
+
+                        if (foll_class[fmenv] == -1)
+                            continue;
+
+                        menv[following].type = foll_class[fmenv];
+                        menv[following].hit_points = foll_hp[fmenv];
+                        menv[following].max_hit_points = foll_hp_max[fmenv];
+                        menv[following].hit_dice = foll_HD[fmenv];
+                        menv[following].armour_class = foll_AC[fmenv];
+                        menv[following].evasion = foll_ev[fmenv];
+                        menv[following].speed = foll_speed[fmenv];
+                        menv[following].x = count_x;
+                        menv[following].y = count_y;
+                        menv[following].target_x = 0;
+                        menv[following].target_y = 0;
+                        menv[following].speed_increment = foll_speed_inc[fmenv];
+
+                        for (minvc = 0; minvc < NUM_MONSTER_SLOTS; minvc++)
+                        {
+
+                            if (!is_valid_item(foll_item[fmenv][minvc]))
+                            {
+                                menv[following].inv[minvc] = NON_ITEM;
+                                continue;
+                            }
+
+                            itmf = get_item_slot(0);
+                            if (itmf == NON_ITEM)
+                            {
+                                menv[following].inv[minvc] = NON_ITEM;
+                                continue;
+                            }
+
+                            mitm[itmf] = foll_item[fmenv][minvc];
+                            mitm[itmf].x = 0;
+                            mitm[itmf].y = 0;
+                            mitm[itmf].link = NON_ITEM;
+
+                            menv[following].inv[minvc] = itmf;
+                        }
+
+                        menv[following].behaviour = foll_beh[fmenv];
+                        menv[following].attitude = foll_att[fmenv];
+                        menv[following].number = foll_sec[fmenv];
+                        menv[following].foe = foll_hit[fmenv];
+
+                        for (j = 0; j < NUM_MON_ENCHANTS; j++)
+                            menv[following].enchantment[j]=foll_ench[fmenv][j];
+
+                        menv[following].flags = foll_flags[fmenv];
+                        menv[following].flags |= MF_JUST_SUMMONED;
+
+                        mgrd[count_x][count_y] = following;
+                        break;
+                    }
+                }
+            }
+        }
+    }                       // end of moving followers
+
+  out_of_foll:
+    redraw_all();
+
+    // Sanity forcing of monster inventory items (required?)
+    for (i = 0; i < MAX_MONSTERS; i++)
+    {
+        if (menv[i].type == -1)
+            continue;
+
+        for (j = 0; j < NUM_MONSTER_SLOTS; j++)
+        {
+            if (menv[i].inv[j] == NON_ITEM)
+                continue;
+
+            /* items carried by monsters shouldn't be linked */
+            if (mitm[menv[i].inv[j]].link != NON_ITEM)
+                mitm[menv[i].inv[j]].link = NON_ITEM;
+        }
+    }
+
+    // Translate stairs for pandemonium levels:
+    if (you.level_type == LEVEL_PANDEMONIUM)
+    {
+        for (count_x = 0; count_x < GXM; count_x++)
+        {
+            for (count_y = 0; count_y < GYM; count_y++)
+            {
+                if (grd[count_x][count_y] >= DNGN_STONE_STAIRS_UP_I
+                    && grd[count_x][count_y] <= DNGN_ROCK_STAIRS_UP)
+                {
+                    if (one_chance_in( you.mutation[MUT_PANDEMONIUM] ? 5 : 50 ))
+                        grd[count_x][count_y] = DNGN_EXIT_PANDEMONIUM;
+                    else
+                        grd[count_x][count_y] = DNGN_FLOOR;
+                }
+
+                if (grd[count_x][count_y] >= DNGN_ENTER_LABYRINTH
+                    && grd[count_x][count_y] <= DNGN_ROCK_STAIRS_DOWN)
+                {
+                    grd[count_x][count_y] = DNGN_TRANSIT_PANDEMONIUM;
+                }
             }
         }
     }
 
-    if (stair_taken >= DNGN_RETURN_DUNGEON_I && stair_taken < 150)
-        stair_taken -= 20;
-    else if (stair_taken >= DNGN_ENTER_ORCISH_MINES
-             && stair_taken <= DNGN_ENTER_SWAMP)
+    // Things to update for player entering level
+    if (load_mode == LOAD_ENTER_LEVEL)
     {
-        stair_taken += 20;
-    }
-    else if (stair_taken < DNGN_STONE_STAIRS_UP_I)
-        stair_taken += 4;
-    else
-        stair_taken -= 4;
+        // update corpses and fountains
+        if (env.elapsed_time != 0.0)
+            update_level( you.elapsed_time - env.elapsed_time );
 
-    for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
+        // Centaurs have difficulty with stairs
+        val = ((you.species != SP_CENTAUR) ? player_movement_speed() : 15);
+
+        // new levels have less wary monsters:
+        if (just_created_level)
+            val /= 2;
+
+        val -= (stepdown_value( check_stealth(), 50, 50, 150, 150 ) / 10);
+
+#if DEBUG_DIAGNOSTICS
+        snprintf( info, INFO_SIZE, "arrival time: %d", val );
+        mpr( info, MSGCH_DIAGNOSTICS );
+#endif
+
+        if (val > 0)
         {
-            if (grd[count_x][count_y] == stair_taken)
-                goto found_stair;
+            you.time_taken = val;
+            handle_monsters();
         }
     }
 
-    if (stair_taken < DNGN_STONE_STAIRS_UP_I)
-        stair_taken = DNGN_STONE_STAIRS_DOWN_I;
-    else
-        stair_taken = DNGN_STONE_STAIRS_UP_I;
-
-    for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            if (grd[count_x][count_y] == stair_taken)
-                goto found_stair;
-        }
-    }
-
-    if (env.elapsed_time != 0.0)
-        update_level( you.elapsed_time - env.elapsed_time );
+    // Save the created/updated level out to disk:
+    save_level( you.your_level, (you.level_type != LEVEL_DUNGEON),
+                you.where_are_you );
 }                               // end load()
 
 void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
 {
     char cha_fil[kFileNameSize];
 
-    make_filename(cha_fil, you.your_name, level_saved, where_were_you,
-        was_a_labyrinth, false);
+    make_filename( cha_fil, you.your_name, level_saved, where_were_you,
+                   was_a_labyrinth, false );
 
     you.prev_targ = MHITNOT;
 
@@ -895,9 +908,9 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
 void save_game(bool leave_game)
 {
     char charFile[kFileNameSize];
-    char cmd_buff[1024];
 
 #ifdef SAVE_PACKAGE_CMD
+    char cmd_buff[1024];
     char name_buff[kFileNameSize];
 
     snprintf( name_buff, sizeof(name_buff),
@@ -979,8 +992,8 @@ void load_ghost(void)
 {
     char cha_fil[kFileNameSize];
 
-    make_filename(cha_fil, "bones", you.your_level, you.where_are_you,
-        you.level_type != LEVEL_DUNGEON, true);
+    make_filename( cha_fil, "bones", you.your_level, you.where_are_you,
+                   (you.level_type != LEVEL_DUNGEON), true );
 
     FILE *gfile = fopen(cha_fil, "rb");
 
@@ -1301,8 +1314,8 @@ void save_ghost(void)
     if (you.your_level < 2 || you.is_undead)
         return;
 
-    make_filename(cha_fil, "bones", you.your_level, you.where_are_you,
-        you.level_type != LEVEL_DUNGEON, true);
+    make_filename( cha_fil, "bones", you.your_level, you.where_are_you,
+                   (you.level_type != LEVEL_DUNGEON), true );
 
     FILE *gfile = fopen(cha_fil, "rb");
 
@@ -1613,8 +1626,10 @@ void generate_random_demon(void)
             break;
     }
 
-    make_name(random2(250), random2(250), random2(250), 3, st_prn);
-    strcpy(ghost.name, st_prn);
+    char st_p[ITEMNAME_SIZE];
+
+    make_name(random2(250), random2(250), random2(250), 3, st_p);
+    strcpy(ghost.name, st_p);
 
     // hp - could be defined below (as could ev, AC etc). Oh well, too late:
     ghost.values[0] = 50 + (one_chance_in(3) ? random2avg(295, 6)

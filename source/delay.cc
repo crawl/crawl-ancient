@@ -15,7 +15,6 @@
 
 #include "delay.h"
 #include "enum.h"
-#include "fight.h"
 #include "food.h"
 #include "items.h"
 #include "itemname.h"
@@ -139,9 +138,9 @@ int current_delay_action( void )
 void handle_delay( void )
 /***********************/
 {
-    char  str_pass[80];
     int   i;
     int   ego;
+    char  str_pass[ ITEMNAME_SIZE ];
 
     if (you_are_delayed())
     {
@@ -181,7 +180,7 @@ void handle_delay( void )
             snprintf( info, INFO_SIZE, "Delay type: %d   duration: %d",
                       delay.type, delay.duration );
 
-            mpr( info, MSGCH_DIAGNOSTIC );
+            mpr( info, MSGCH_DIAGNOSTICS );
 #endif
             delay.duration--;
         }
@@ -500,6 +499,15 @@ void handle_delay( void )
                 if (!is_valid_item( you.inv[ delay.parm1 ] ))
                     break;
 
+                // Must handle unwield_item before we attempt to copy
+                // so that temporary brands and such are cleared. -- bwr
+                if (delay.parm1 == you.equip[EQ_WEAPON])
+                {
+                    unwield_item( delay.parm1 );
+                    you.equip[EQ_WEAPON] = -1;
+                    canned_msg( MSG_EMPTY_HANDED );
+                }
+
                 if (!copy_item_to_grid( you.inv[ delay.parm1 ],
                                         you.x_pos, you.y_pos, delay.parm2 ))
                 {
@@ -512,13 +520,6 @@ void handle_delay( void )
 
                     snprintf( info, INFO_SIZE, "You drop %s.", str_pass );
                     mpr(info);
-
-                    if (delay.parm1 == you.equip[EQ_WEAPON])
-                    {
-                        unwield_item( delay.parm1 );
-                        you.equip[EQ_WEAPON] = -1;
-                        canned_msg( MSG_EMPTY_HANDED );
-                    }
 
                     dec_inv_item_quantity( delay.parm1, delay.parm2 );
                 }

@@ -387,24 +387,13 @@ void TRACE(const char *format, ...)
 #ifdef WIZARD
 static int debug_prompt_for_monster( void )
 {
-    char  specs[50];
-    char  obj_name[80];
+    char  specs[80];
+    char  obj_name[ ITEMNAME_SIZE ];
     char *ptr;
 
     mpr( "(Hint: 'generated' names, eg 'orc zombie', won't work)", MSGCH_PROMPT );
     mpr( "Which monster by name? ", MSGCH_PROMPT );
-
-    specs[0] = '\0';
-
-#if defined(LINUX)
-    echo();
-    getstr(specs);
-    noecho();
-#elif defined(MAC)
-    getstr(specs, sizeof(specs));
-#else
-    gets(specs);
-#endif
+    get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
         return (-1);
@@ -442,19 +431,10 @@ static int debug_prompt_for_monster( void )
 #ifdef WIZARD
 static int debug_prompt_for_skill( const char *prompt )
 {
-    char specs[50];
+    char specs[80];
 
     mpr( prompt, MSGCH_PROMPT );
-
-#if defined(LINUX)
-    echo();
-    getstr(specs);
-    noecho();
-#elif defined(MAC) || defined(WIN32CONSOLE)
-    getstr(specs, sizeof(specs));
-#else
-    gets(specs);
-#endif
+    get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
         return (-1);
@@ -467,8 +447,8 @@ static int debug_prompt_for_skill( const char *prompt )
         if (i == SK_UNUSED_1 || (i > SK_UNARMED_COMBAT && i < SK_SPELLCASTING))
             continue;
 
-        char sk_name[50];
-        strcpy( sk_name, skill_name(i) );
+        char sk_name[80];
+        strncpy( sk_name, skill_name(i), sizeof( sk_name ) );
 
         char *ptr = strstr( strlwr(sk_name), strlwr(specs) );
         if (ptr != NULL)
@@ -496,20 +476,11 @@ static int debug_prompt_for_skill( const char *prompt )
 #ifdef WIZARD
 void debug_change_species( void )
 {
-    char specs[50];
+    char specs[80];
     int i;
 
     mpr( "What species would you like to be now? " , MSGCH_PROMPT );
-
-#if defined(LINUX)
-    echo();
-    getstr(specs);
-    noecho();
-#elif defined(MAC) || defined(WIN32CONSOLE)
-    getstr(specs, sizeof(specs));
-#else
-    gets(specs);
-#endif
+    get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
         return;
@@ -518,8 +489,8 @@ void debug_change_species( void )
 
     for (int i = SP_HUMAN; i < NUM_SPECIES; i++)
     {
-        char sp_name[50];
-        strcpy( sp_name, species_name(i) );
+        char sp_name[80];
+        strncpy( sp_name, species_name(i), sizeof( sp_name ) );
 
         char *ptr = strstr( strlwr(sp_name), strlwr(specs) );
         if (ptr != NULL)
@@ -562,19 +533,10 @@ void debug_change_species( void )
 #ifdef WIZARD
 static int debug_prompt_for_int( const char *prompt, bool nonneg )
 {
-    char specs[50];
+    char specs[80];
 
     mpr( prompt, MSGCH_PROMPT );
-
-#if defined(LINUX)
-    echo();
-    getstr(specs);
-    noecho();
-#elif defined(MAC) || defined(WIN32CONSOLE)
-    getstr(specs, sizeof(specs));
-#else
-    gets(specs);
-#endif
+    get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
         return (nonneg ? -1 : 0);
@@ -621,24 +583,15 @@ void cast_spec_spell(void)
 void cast_spec_spell_name(void)
 {
     int i = 0;
-    char specs[50];
-    char spname[60];
+    char specs[80];
+    char spname[80];
 
     mpr( "Cast which spell by name? ", MSGCH_PROMPT );
-
-#if defined(LINUX)
-    echo();
-    getstr(specs);
-    noecho();
-#elif defined(MAC)
-    getstr(specs, sizeof(specs));
-#else
-    gets(specs);
-#endif
+    get_input_line( specs, sizeof( specs ) );
 
     for (i = 0; i < NUM_SPELLS; i++)
     {
-        strcpy(spname, spell_title(i));
+        strncpy( spname, spell_title(i), sizeof( spname ) );
 
         if (strstr( strlwr(spname), strlwr(specs) ) != NULL)
         {
@@ -755,8 +708,8 @@ void create_spec_object(void)
         0,              // "gemstones"  -- no items of type
     };
 
-    char           specs[50];
-    char           obj_name[80];
+    char           specs[80];
+    char           obj_name[ ITEMNAME_SIZE ];
     char           keyin;
 
     char *         ptr;
@@ -872,18 +825,7 @@ void create_spec_object(void)
     else
     {
         mpr( "What type of item? ", MSGCH_PROMPT );
-
-        specs[0] = '\0';
-
-#if defined(LINUX)
-        echo();
-        getstr(specs);
-        noecho();
-#elif defined(MAC)
-        getstr(specs, sizeof(specs));
-#else
-        gets(specs);
-#endif
+        get_input_line( specs, sizeof( specs ) );
 
         if (specs[0] == '\0')
         {
@@ -972,18 +914,7 @@ void create_spec_object(void)
         case OBJ_WEAPONS:
         case OBJ_ARMOUR:
             mpr( "What ego type? ", MSGCH_PROMPT );
-
-            specs[0] = '\0';
-
-#if defined(LINUX)
-            echo();
-            getstr(specs);
-            noecho();
-#elif defined(MAC)
-            getstr(specs, sizeof(specs));
-#else
-            gets(specs);
-#endif
+            get_input_line( specs, sizeof( specs ) );
 
             if (specs[0] != '\0')
             {
@@ -1123,16 +1054,7 @@ void tweak_object(void)
         mpr( info );
 
         mpr( "New value? ", MSGCH_PROMPT );
-
-#if defined(LINUX)
-        echo();
-        getstr(specs);
-        noecho();
-#elif defined(MAC)
-        getstr(specs, sizeof(specs));
-#else
-        gets(specs);
-#endif
+        get_input_line( specs, sizeof( specs ) );
 
         if (specs[0] == '\0')
             return;
@@ -1176,7 +1098,7 @@ static const char *enchant_names[] =
     "Corona-1", "Corona-2", "Corona-3", "Corona-4",
     "Charm", "YSticky-1", "YSticky-2", "YSticky-3", "YSticky-4",
     "*BUG-35*", "*BUG-36*", "*BUG-37*",
-    "Glow Shapeshifter", "Shapeshifter",
+    "GlowShapeshifter", "Shapeshifter",
     "Tele-1", "Tele-2", "Tele-3", "Tele-4",
     "*BUG-44*", "*BUG-45*", "*BUG-46*", "*BUG-47*", "*BUG-48*", "*BUG-49*",
     "*BUG-50*", "*BUG-51*", "*BUG-52*", "*BUG-53*", "*BUG-54*", "*BUG-55*",
@@ -1184,7 +1106,7 @@ static const char *enchant_names[] =
     "Pois-1", "Pois-2", "Pois-3", "Pois-4",
     "Sticky-1", "Sticky-2", "Sticky-3", "Sticky-4",
     "OldAbj-1", "OldAbj-2", "OldAbj-3", "OldAbj-4", "OldAbj-5", "OldAbj-6",
-    "OldCreatedFriendly", "Sleep wary", "Submerged", "Short Lived",
+    "OldCreatedFriendly", "SleepWary", "Submerged", "Short Lived",
     "*BUG-too big*"
 };
 
@@ -1222,55 +1144,78 @@ void stethoscope(int mwh)
                      env.cloud[ env.cgrid[steth_x][steth_y] ].type,
                      env.cloud[ env.cgrid[steth_x][steth_y] ].decay );
 
-            mpr( info, MSGCH_DIAGNOSTIC );
+            mpr( info, MSGCH_DIAGNOSTICS );
         }
 
         if (mgrd[steth_x][steth_y] == NON_MONSTER)
         {
             snprintf( info, INFO_SIZE, "item grid = %d", igrd[steth_x][steth_y] );
-            mpr( info, MSGCH_DIAGNOSTIC );
+            mpr( info, MSGCH_DIAGNOSTICS );
             return;
         }
 
         i = mgrd[steth_x][steth_y];
     }
 
-    strcpy(info, monam( menv[i].number, menv[i].type, true, DESC_CAP_THE ));
-    mpr( info, MSGCH_DIAGNOSTIC );
+    // print type of monster
+    snprintf( info, INFO_SIZE, "%s (id #%d; type=%d loc=(%d,%d) align=%s)",
+              monam( menv[i].number, menv[i].type, true, DESC_CAP_THE ),
+              i, menv[i].type,
+              menv[i].x, menv[i].y,
+              ((menv[i].attitude == ATT_FRIENDLY) ? "friendly" :
+               (menv[i].attitude == ATT_HOSTILE)  ? "hostile" :
+               (menv[i].attitude == ATT_NEUTRAL)  ? "neutral"
+                                                  : "unknown alignment") );
 
-    snprintf( info, INFO_SIZE,"ID#%d type %d HD=%d HP=%d/%d AC=%d EV=%d MR=%d beh/foe=%d/%d",
-             i, menv[i].type, menv[i].hit_dice,
+    mpr( info, MSGCH_DIAGNOSTICS );
+
+    // print stats and other info
+    snprintf( info, INFO_SIZE,"HD=%d HP=%d/%d AC=%d EV=%d MR=%d SP=%d energy=%d num=%d flags=%02x",
+             menv[i].hit_dice,
              menv[i].hit_points, menv[i].max_hit_points,
              menv[i].armour_class, menv[i].evasion,
              mons_resist_magic( &menv[i] ),
-             menv[i].behaviour, menv[i].foe );
-
-    mpr( info, MSGCH_DIAGNOSTIC );
-
-    snprintf( info, INFO_SIZE, "speed: %d, inc: %d; number: %d; flags: %02x; target: (%d,%d)",
              menv[i].speed, menv[i].speed_increment,
-             menv[i].number, menv[i].flags,
+             menv[i].number, menv[i].flags );
+
+    mpr( info, MSGCH_DIAGNOSTICS );
+
+    // print behaviour information
+    snprintf( info, INFO_SIZE, "beh=%s(%d) foe=%s(%d) mem=%d target=(%d,%d)",
+
+             ((menv[i].behaviour == BEH_SLEEP)    ? "sleep" :
+              (menv[i].behaviour == BEH_WANDER)   ? "wander" :
+              (menv[i].behaviour == BEH_SEEK)     ? "seek" :
+              (menv[i].behaviour == BEH_FLEE)     ? "flee" :
+              (menv[i].behaviour == BEH_CORNERED) ? "cornered"
+                                                  : "unknown"),
+             menv[i].behaviour,
+
+             ((menv[i].foe == MHITYOU)            ? "you" :
+              (menv[i].foe == MHITNOT)            ? "none" :
+              (menv[menv[i].foe].type == -1)      ? "unassigned monster"
+                 : monam( menv[menv[i].foe].number, menv[menv[i].foe].type,
+                          true, DESC_PLAIN )),
+             menv[i].foe,
+             menv[i].foe_memory,
+
              menv[i].target_x, menv[i].target_y );
 
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 
-    snprintf( info, INFO_SIZE, "resist: fire=%d; cold=%d; elec=%d; pois=%d; neg=%d",
+    // print resistances
+    snprintf( info, INFO_SIZE, "resist: fire=%d cold=%d elec=%d pois=%d neg=%d",
               mons_res_fire( &menv[i] ),
               mons_res_cold( &menv[i] ),
               mons_res_elec( &menv[i] ),
               mons_res_poison( &menv[i] ),
               mons_res_negative_energy( &menv[i] ) );
-    mpr( info, MSGCH_DIAGNOSTIC );
 
-#if 0
-    snprintf( info, INFO_SIZE, "enchts: [ %d %d %d %d %d %d ]",
-                menv[i].enchantment[0], menv[i].enchantment[1],
-                menv[i].enchantment[2], menv[i].enchantment[3],
-                menv[i].enchantment[4], menv[i].enchantment[5] );
-#endif
+    mpr( info, MSGCH_DIAGNOSTICS );
 
+
+    // print enchantments
     strncpy( info, "ench: ", INFO_SIZE );
-
     for (j = 0; j < 6; j++)
     {
         if (menv[i].enchantment[j] >= NUM_ENCHANTMENTS)
@@ -1282,18 +1227,18 @@ void stethoscope(int mwh)
             strncat( info, " ", INFO_SIZE );
         else if (j < 5)
         {
-            mpr( info, MSGCH_DIAGNOSTIC );
+            mpr( info, MSGCH_DIAGNOSTICS );
             strncpy( info, "ench: ", INFO_SIZE );
         }
     }
 
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 
     if (menv[i].type == MONS_PLAYER_GHOST)
     {
         snprintf( info, INFO_SIZE, "Ghost damage: %d; brand: %d",
                   ghost.values[7], ghost.values[8] );
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
     }
 }                               // end stethoscope()
 #endif
@@ -1629,21 +1574,12 @@ void debug_set_all_skills(void)
 bool debug_add_mutation(void)
 {
     bool success = false;
-    char specs[50];
+    char specs[80];
 
     // Yeah, the gaining message isn't too good for this... but
     // there isn't an array of simple mutation names. -- bwr
     mpr( "Which mutation (by message when getting mutation)? ", MSGCH_PROMPT );
-
-#if defined(LINUX)
-    echo();
-    getstr(specs);
-    noecho();
-#elif defined(MAC) || defined(WIN32CONSOLE)
-    getstr(specs, sizeof(specs));
-#else
-    gets(specs);
-#endif
+    get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
         return (false);
@@ -1652,8 +1588,8 @@ bool debug_add_mutation(void)
 
     for (int i = 0; i < NUM_MUTATIONS; i++)
     {
-        char mut_name[50];
-        strcpy( mut_name, mutation_name( i, 1 ) );
+        char mut_name[80];
+        strncpy( mut_name, mutation_name( i, 1 ), sizeof( mut_name ) );
 
         char *ptr = strstr( strlwr(mut_name), strlwr(specs) );
         if (ptr != NULL)
@@ -1697,7 +1633,7 @@ bool debug_add_mutation(void)
     }
 
     return (success);
-}                               // end debug_add_skills()
+}                               // end debug_add_mutation()
 #endif
 
 
@@ -1709,19 +1645,10 @@ bool debug_add_mutation(void)
 #ifdef WIZARD
 void debug_get_religion(void)
 {
-    char specs[50];
+    char specs[80];
 
     mpr( "Which god (by name)? ", MSGCH_PROMPT );
-
-#if defined(LINUX)
-    echo();
-    getstr(specs);
-    noecho();
-#elif defined(MAC) || defined(WIN32CONSOLE)
-    getstr(specs, sizeof(specs));
-#else
-    gets(specs);
-#endif
+    get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
         return;
@@ -1730,8 +1657,8 @@ void debug_get_religion(void)
 
     for (int i = 1; i < NUM_GODS; i++)
     {
-        char name[50];
-        strcpy( name, god_name(i) );
+        char name[80];
+        strncpy( name, god_name(i), sizeof( name ) );
 
         char *ptr = strstr( strlwr(name), strlwr(specs) );
         if (ptr != NULL)

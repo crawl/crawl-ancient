@@ -141,7 +141,7 @@ int give_first_conjuration_book()
         // choose randomly based on the species weighting, again
         // ignoring air/earth which are secondary in these books.  -- bwr
         if (random2( species_skills( SK_ICE_MAGIC, you.species ) )
-                > random2( species_skills( SK_FIRE_MAGIC, you.species ) ))
+                < random2( species_skills( SK_FIRE_MAGIC, you.species ) ))
         {
             book = BOOK_CONJURATIONS_II;
         }
@@ -295,9 +295,12 @@ bool new_game(void)
     {
         if (check_saved_game())
         {
+            textcolor( BROWN );
             cprintf(EOL "Welcome back, ");
+            textcolor( YELLOW );
             cprintf(you.your_name);
             cprintf("!");
+            textcolor( LIGHTGREY );
 
             return (false);
         }
@@ -328,9 +331,11 @@ bool new_game(void)
         // hack for proper grammar (argh) -- GDL
         strcpy(info, species_name(you.species));
         bool startVowel = (strchr("aeiouAEIOU", info[0]) != NULL);
+
         snprintf( info, INFO_SIZE, "You are a%s %s %s."EOL, (startVowel)?"n":"",
-            species_name(you.species), you.class_name);
-        cprintf(info);
+                  species_name(you.species), you.class_name);
+
+        cprintf( info );
 
         enterPlayerName(false);
 
@@ -340,9 +345,12 @@ bool new_game(void)
             char c = getch();
             if (!(c == 'Y' || c == 'y'))
             {
+                textcolor( BROWN );
                 cprintf(EOL EOL "Welcome back, ");
+                textcolor( YELLOW );
                 cprintf(you.your_name);
                 cprintf("!");
+                textcolor( LIGHTGREY );
 
                 return (false);
             }
@@ -1308,7 +1316,7 @@ static char startwep[5] = { WPN_SHORT_SWORD, WPN_MACE,
 
 void choose_weapon( void )
 {
-    char wepName[50];
+    char wepName[ ITEMNAME_SIZE ];
     unsigned char keyin = 0;
     int num_choices = 4;
     int temp_rand;              // probability determination {dlb}
@@ -1337,7 +1345,9 @@ void choose_weapon( void )
     {
         clrscr();
 
+        textcolor( CYAN );
         cprintf(EOL " You have a choice of weapons:" EOL);
+        textcolor( LIGHTGREY );
 
         for(int i=0; i<num_choices; i++)
         {
@@ -1345,7 +1355,8 @@ void choose_weapon( void )
             standard_name_weap(startwep[i], wepName);
 
             snprintf( info, INFO_SIZE, "%c - %s%s" EOL, 'a' + i, wepName,
-                (x <= -4) ? " (not ideal)":"");
+                      (x <= -4) ? " (not ideal)" : "" );
+
             cprintf(info);
         }
 
@@ -1353,7 +1364,9 @@ void choose_weapon( void )
 
         do
         {
+            textcolor( CYAN );
             cprintf(EOL "Which weapon? ");
+            textcolor( LIGHTGREY );
 
             keyin = get_ch();
         }
@@ -1586,19 +1599,20 @@ void species_stat_init(unsigned char which_species)
 
     case SP_TROLL:              sb = 13; ib =  3; db =  0;      break;  // 16
     case SP_OGRE:               sb = 12; ib =  3; db =  1;      break;  // 16
-    case SP_OGRE_MAGE:          sb =  8; ib =  6; db =  2;      break;  // 16
+    case SP_OGRE_MAGE:          sb =  9; ib =  7; db =  3;      break;  // 19
+
     case SP_MINOTAUR:           sb = 10; ib =  3; db =  5;      break;  // 16
     case SP_HILL_ORC:           sb =  9; ib =  3; db =  4;      break;  // 16
-    case SP_CENTAUR:            sb =  8; ib =  4; db =  3;      break;  // 15
+    case SP_CENTAUR:            sb =  8; ib =  5; db =  2;      break;  // 15
+    case SP_NAGA:               sb =  8; ib =  6; db =  4;      break;  // 18
 
-    case SP_NAGA:               sb =  7; ib =  6; db =  5;      break;  // 18
     case SP_GNOME:              sb =  6; ib =  6; db =  7;      break;  // 19
     case SP_MERFOLK:            sb =  6; ib =  5; db =  7;      break;  // 18
-    case SP_KENKU:              sb =  5; ib =  6; db =  7;      break;  // 18
+    case SP_KENKU:              sb =  6; ib =  6; db =  7;      break;  // 19
 
-    case SP_KOBOLD:             sb =  5; ib =  4; db =  8;      break;  // 17
+    case SP_KOBOLD:             sb =  4; ib =  4; db =  8;      break;  // 16
     case SP_HALFLING:           sb =  4; ib =  6; db =  9;      break;  // 19
-    case SP_SPRIGGAN:           sb =  3; ib =  8; db =  9;      break;  // 18
+    case SP_SPRIGGAN:           sb =  2; ib =  7; db =  9;      break;  // 18
 
     case SP_MUMMY:              sb =  7; ib =  3; db =  3;      break;  // 13
     case SP_GHOUL:              sb =  7; ib =  1; db =  2;      break;  // 10
@@ -1614,7 +1628,7 @@ void species_stat_init(unsigned char which_species)
     case SP_PALE_DRACONIAN:
     case SP_UNK0_DRACONIAN:
     case SP_UNK1_DRACONIAN:
-    case SP_UNK2_DRACONIAN:     sb =  7; ib =  7; db =  4;      break;  // 18
+    case SP_UNK2_DRACONIAN:     sb =  9; ib =  6; db =  2;      break;  // 17
     }
 
     modify_all_stats( sb, ib, db );
@@ -1681,28 +1695,28 @@ void give_basic_knowledge(int which_job)
     {
     case JOB_PRIEST:
     case JOB_PALADIN:
-        set_ident_type( OBJ_POTIONS, POT_HEALING, 1 );
+        set_ident_type( OBJ_POTIONS, POT_HEALING, ID_KNOWN_TYPE );
         break;
 
     case JOB_HEALER:
-        set_ident_type( OBJ_POTIONS, POT_HEALING, 1 );
-        set_ident_type( OBJ_POTIONS, POT_HEAL_WOUNDS, 1 );
+        set_ident_type( OBJ_POTIONS, POT_HEALING, ID_KNOWN_TYPE );
+        set_ident_type( OBJ_POTIONS, POT_HEAL_WOUNDS, ID_KNOWN_TYPE );
         break;
 
     case JOB_ASSASSIN:
     case JOB_STALKER:
     case JOB_VENOM_MAGE:
-        set_ident_type( OBJ_POTIONS, POT_POISON, 1 );
+        set_ident_type( OBJ_POTIONS, POT_POISON, ID_KNOWN_TYPE );
         break;
 
     case JOB_WARPER:
-        set_ident_type( OBJ_SCROLLS, SCR_BLINKING, 1 );
+        set_ident_type( OBJ_SCROLLS, SCR_BLINKING, ID_KNOWN_TYPE );
         break;
 
     case JOB_TRANSMUTER:
-        set_ident_type( OBJ_POTIONS, POT_WATER, 1 );
-        set_ident_type( OBJ_POTIONS, POT_CONFUSION, 1 );
-        set_ident_type( OBJ_POTIONS, POT_POISON, 1 );
+        set_ident_type( OBJ_POTIONS, POT_WATER, ID_KNOWN_TYPE );
+        set_ident_type( OBJ_POTIONS, POT_CONFUSION, ID_KNOWN_TYPE );
+        set_ident_type( OBJ_POTIONS, POT_POISON, ID_KNOWN_TYPE );
         break;
 
     default:
@@ -1815,10 +1829,13 @@ void openingScreen(void)
     }
 ********************************************** */
 
+    textcolor( YELLOW );
     cprintf("Hello, welcome to Dungeon Crawl " VERSION "!");
+    textcolor( BROWN );
     cprintf(EOL "(c) Copyright 1997-2001 Linley Henzell");
     cprintf(EOL "Please consult crawl.txt for instructions and legal details."
             EOL);
+    textcolor( LIGHTGREY );
 
     return;
 }                               // end openingScreen()
@@ -1844,21 +1861,16 @@ void enterPlayerName(bool blankOK)
         // prompt for a new name if current one unsatisfactory {dlb}:
         if (!acceptable_name)
         {
+            textcolor( CYAN );
             if (blankOK && first_time)
                 cprintf(EOL "Press <Enter> to answer this after race and class are chosen."EOL);
-            cprintf(EOL "What is your name today? ");
 
             first_time = false;
 
-#if defined(LINUX)
-            echo();
-            getstr(name_entered);
-            noecho();
-#elif defined(MAC) || defined(WIN32CONSOLE)
-            getstr(name_entered, sizeof(name_entered));
-#else
-            gets(name_entered);
-#endif
+            cprintf(EOL "What is your name today? ");
+            textcolor( LIGHTGREY );
+            get_input_line( name_entered, sizeof( name_entered ) );
+
             strncpy(you.your_name, name_entered, kNameLen);
         }
 
@@ -1867,6 +1879,7 @@ void enterPlayerName(bool blankOK)
         {
             if (blankOK)
                 return;
+
             cprintf(EOL "That's a silly name!" EOL);
             acceptable_name = false;
         }
@@ -1925,7 +1938,8 @@ bool verifyPlayerName(void)
     }
 #endif
 
-     for (unsigned int i = 0; i < strlen(you.your_name); i++)
+    const size_t len = strlen( you.your_name );
+    for (unsigned int i = 0; i < len; i++)
     {
 #if MAC
         // the only bad character on Macs is the path seperator
@@ -1935,15 +1949,30 @@ bool verifyPlayerName(void)
             return (false);
         }
 #else
-        // for other systems we'll be super-weak and rule out
-        // everything but alpha-numeric characters and '_'.
-        if (!isalnum(you.your_name[i]) && you.your_name[i] != '_')
+        // Note that this includes systems which may be using the
+        // packaging system.  The packaging system is very simple
+        // and doesn't take the time to escape every characters that
+        // might be a problem for some random shell or OS... so we
+        // play it very conservative here.  -- bwr
+        if (!isalnum( you.your_name[i] ) && you.your_name[i] != '_')
         {
-            cprintf(EOL "No non-alphanumerics, please." EOL);
+            cprintf( EOL "Alpha-numerics and underscores only, please." EOL );
             return (false);
         }
 #endif
-    }     return (true);
+    }
+
+#ifdef SAVE_DIR_PATH
+    // Until we have a better way to handle the fact that this could lead
+    // to some confusion with where the name ends and the uid begins. -- bwr
+    if (isdigit( you.your_name[ len - 1 ] ))
+    {
+        cprintf( EOL "Sorry, your name cannot end with a digit." EOL );
+        return (false);
+    }
+#endif
+
+    return (true);
 }                               // end verifyPlayerName()
 
 #if 0
@@ -2510,8 +2539,12 @@ spec_query:
     {
         clrscr();
 
+        textcolor( WHITE );
         cprintf("You must be new here!" EOL EOL);
+
+        textcolor( CYAN );
         cprintf("You can be:" EOL EOL);
+        textcolor( LIGHTGREY );
 
         cprintf("a - Human                     b - Elf" EOL);
         cprintf("c - High Elf                  d - Grey Elf" EOL);
@@ -2526,9 +2559,15 @@ spec_query:
         cprintf("u - Spriggan                  v - Minotaur" EOL);
         cprintf("w - Demonspawn                x - Ghoul" EOL);
         cprintf("y - Kenku                     z - Merfolk" EOL);
+
+        textcolor( BROWN );
         cprintf(EOL "? - Random Species            * - Random Character" EOL);
         cprintf(    "X - Quit" EOL);
+
+        textcolor( CYAN );
         cprintf(EOL "Which one? ");
+        textcolor( LIGHTGREY );
+
         printed = true;
     }
 
@@ -2671,8 +2710,10 @@ job_query:
     {
         clrscr();
 
+        textcolor( BROWN );
         cprintf(EOL EOL);
         cprintf("Welcome, ");
+        textcolor( YELLOW );
         if (strlen(you.your_name) > 0)
         {
             cprintf(you.your_name);
@@ -2681,7 +2722,9 @@ job_query:
         cprintf(species_name(you.species));
         cprintf("." EOL EOL);
 
+        textcolor( CYAN );
         cprintf("You can be any of the following :" EOL);
+        textcolor( LIGHTGREY );
 
         j = 0;               // used within for loop to determine newline {dlb}
 
@@ -2705,8 +2748,13 @@ job_query:
         if (wherex() >= 40)
             cprintf(EOL);
 
+        textcolor( BROWN );
         cprintf(EOL "? - Random; x - Back to species selection; X - Quit" EOL);
+
+        textcolor( CYAN );
         cprintf(EOL "What kind of character are you? ");
+        textcolor( LIGHTGREY );
+
         printed = true;
     }
 
@@ -2800,7 +2848,7 @@ job_query:
         ASSERT( job != -1 );   // at least one class should have been allowed
         you.char_class = job;
     }
-    else if (keyn == 'x')
+    else if (keyn == 'x' || keyn == ESCAPE)
     {
         return false;
     }
@@ -3116,7 +3164,11 @@ void give_items_skills()
         else
         {
             clrscr();
+
+            textcolor( CYAN );
             cprintf(EOL " Which god do you wish to serve?" EOL);
+
+            textcolor( LIGHTGREY );
             cprintf("a - Zin (for traditional priests)" EOL);
             cprintf("b - Yredelemnul (for priests of death)" EOL);
 
@@ -3292,7 +3344,7 @@ void give_items_skills()
 
         you.inv[0].quantity = 1;
         you.inv[0].base_type = OBJ_WEAPONS;
-        you.inv[0].sub_type = WPN_SABRE;
+        you.inv[0].sub_type = WPN_FALCHION;
         you.inv[0].plus = 0;
         you.inv[0].plus2 = 0;
         you.inv[0].special = 0;
@@ -3326,9 +3378,8 @@ void give_items_skills()
         you.skills[SK_DODGING] = 1;
         you.skills[(coinflip()? SK_ARMOUR : SK_DODGING)]++;
         you.skills[SK_SHIELDS] = 2;
-        you.skills[SK_SHORT_BLADES] = 2;
-        you.skills[SK_LONG_SWORDS] = 2;
-        you.skills[SK_INVOCATIONS] = 1;
+        you.skills[SK_LONG_SWORDS] = 3;
+        you.skills[SK_INVOCATIONS] = 2;
         break;
 
     case JOB_ASSASSIN:
@@ -3530,7 +3581,7 @@ void give_items_skills()
         }
         else
         {
-            // Merfolk are spear hunters
+            // Merfolk are spear hunters -- clobber bow, give three spears
             for (unsigned char i = 1; i <= 3; i++)
             {
                 you.inv[i].quantity = 1;
@@ -4064,7 +4115,11 @@ void give_items_skills()
         else
         {
             clrscr();
+
+            textcolor( CYAN );
             cprintf(EOL " From where do you draw your power?" EOL);
+
+            textcolor( LIGHTGREY );
             cprintf("a - Necromantic magic" EOL);
             cprintf("b - the god Yredelemnul" EOL);
 
@@ -4154,7 +4209,11 @@ void give_items_skills()
         else
         {
             clrscr();
+
+            textcolor( CYAN );
             cprintf(EOL " Which god of chaos do you wish to serve?" EOL);
+
+            textcolor( LIGHTGREY );
             cprintf("a - Xom of Chaos" EOL);
             cprintf("b - Makhleb the Destroyer" EOL);
 

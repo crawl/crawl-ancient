@@ -122,7 +122,9 @@ static const struct ability_def Ability_List[] =
     { ABIL_THROW_FROST, "Throw Frost", 1, 1, 50, 0, ABFLAG_NONE },
     { ABIL_BOLT_OF_DRAINING, "Bolt of Draining", 4, 4, 100, 0, ABFLAG_NONE },
 
-    { ABIL_FLY_II, "Fly", 0, 0, 25, 0, ABFLAG_EXHAUSTION },
+    // FLY_II used to have ABFLAG_EXHAUSTION, but that's somewhat meaningless
+    // as exhaustion's only (and designed) effect is preventing Berserk. -- bwr
+    { ABIL_FLY_II, "Fly", 0, 0, 25, 0, ABFLAG_NONE },
     { ABIL_DELAYED_FIREBALL, "Release Delayed Fireball", 0, 0, 0, 0, ABFLAG_INSTANT },
     { ABIL_MUMMY_RESTORATION, "Restoration", 1, 0, 0, 0, ABFLAG_PERMANENT_MP },
 
@@ -163,16 +165,16 @@ static const struct ability_def Ability_List[] =
     { ABIL_TSO_SUMMON_DAEVA, "Summon Daeva", 8, 0, 150, 4, ABFLAG_NONE },
 
     // Kikubaaqudgha
-    { ABIL_KIKU_RECALL_UNDEAD_SLAVES, "Recall Undead Slaves", 1, 0, 0, 0, ABFLAG_NONE },
-    { ABIL_KIKU_ENSLAVE_UNDEAD, "Enslave Undead", 4, 0, 150, 2, ABFLAG_NONE },
+    { ABIL_KIKU_RECALL_UNDEAD_SLAVES, "Recall Undead Slaves", 2, 0, 50, 0, ABFLAG_NONE },
+    { ABIL_KIKU_ENSLAVE_UNDEAD, "Enslave Undead", 4, 0, 150, 3, ABFLAG_NONE },
     { ABIL_KIKU_INVOKE_DEATH, "Invoke Death", 4, 0, 250, 3, ABFLAG_NONE },
 
     // Yredelemnul
-    { ABIL_YRED_ANIMATE_CORPSE, "Animate Corpse", 3, 0, 50, 0, ABFLAG_NONE },
-    { ABIL_YRED_RECALL_UNDEAD, "Recall Undead", 4, 0, 100, 0, ABFLAG_NONE },
-    { ABIL_YRED_ANIMATE_DEAD, "Animate Dead", 7, 0, 150, 1, ABFLAG_NONE },
-    { ABIL_YRED_DRAIN_LIFE, "Drain Life", 6, 0, 150, 2, ABFLAG_NONE },
-    { ABIL_YRED_CONTROL_UNDEAD, "Control Undead", 5, 0, 175, 2, ABFLAG_NONE },
+    { ABIL_YRED_ANIMATE_CORPSE, "Animate Corpse", 1, 0, 50, 0, ABFLAG_NONE },
+    { ABIL_YRED_RECALL_UNDEAD, "Recall Undead Slaves", 2, 0, 50, 0, ABFLAG_NONE },
+    { ABIL_YRED_ANIMATE_DEAD, "Animate Dead", 3, 0, 100, 1, ABFLAG_NONE },
+    { ABIL_YRED_DRAIN_LIFE, "Drain Life", 6, 0, 200, 2, ABFLAG_NONE },
+    { ABIL_YRED_CONTROL_UNDEAD, "Control Undead", 5, 0, 150, 2, ABFLAG_NONE },
 
     // Vehumet
     { ABIL_VEHUMET_CHANNEL_ENERGY, "Channel Energy", 0, 0, 50, 0, ABFLAG_NONE },
@@ -684,7 +686,7 @@ void activate_ability(void)
         else
         {
             cast_fly( you.experience_level * 2 );
-            you.attribute[ATTR_EXPENSIVE_FLIGHT] = 1;
+            // you.attribute[ATTR_EXPENSIVE_FLIGHT] = 1;  // unused
         }
         break;
 
@@ -806,11 +808,11 @@ void activate_ability(void)
         if (!you.duration[DUR_REPEL_UNDEAD])
             mpr( "You feel a holy aura protecting you." );
 
-        you.duration[DUR_REPEL_UNDEAD] += 5
-                            + random2avg( you.skills[SK_INVOCATIONS] * 2, 2 );
+        you.duration[DUR_REPEL_UNDEAD] += 8
+                                + roll_dice(2, 2 * you.skills[SK_INVOCATIONS]);
 
-        if (you.duration[ DUR_REPEL_UNDEAD ] > 25)
-            you.duration[ DUR_REPEL_UNDEAD ] = 25;
+        if (you.duration[ DUR_REPEL_UNDEAD ] > 50)
+            you.duration[ DUR_REPEL_UNDEAD ] = 50;
 
         exercise(SK_INVOCATIONS, 1);
         break;
@@ -1176,7 +1178,7 @@ void activate_ability(void)
     snprintf( info, INFO_SIZE, "Cost: mp=%d; hp=%d; food=%d; piety=%d",
               abil.mp_cost, abil.hp_cost, food_cost, piety_cost );
 
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     if (abil.mp_cost)
@@ -1211,8 +1213,7 @@ static char show_abilities(struct talent *p_abils)
     int loopy = 0;
     char lines = 0;
     unsigned char anything = 0;
-    char strng[5] = "";         // is this really necessary? {dlb}
-    char ft, ki;
+    char ki;
     bool can_invoke = false;
 
     const int num_lines = get_number_of_lines();
@@ -1294,17 +1295,8 @@ static char show_abilities(struct talent *p_abils)
 
             lines++;
 
-            cprintf(" ");
-
-            ft = index_to_letter(loopy);
-
-            strng[0] = ft;
-            cprintf(strng);
-            cprintf(" - ");
-
             const struct ability_def abil = get_ability_def( p_abils->which );
-
-            cprintf( abil.name );
+            cprintf( " %c - %s", index_to_letter(loopy), abil.name );
 
             // Output costs:
             gotoxy( 35, wherey() );
@@ -1544,14 +1536,14 @@ static bool generate_abilities(struct talent *p_abils)
             insert_ability( ABIL_EVOKE_LEVITATE, &p_abils );
     }
 
-    if (player_equip( EQ_RINGS, RING_TELEPORTATION )
-        || you.mutation[MUT_TELEPORT_AT_WILL])
-    {
+    if (you.mutation[MUT_TELEPORT_AT_WILL])
         insert_ability( ABIL_TELEPORTATION, &p_abils );
-    }
 
-    if (scan_randarts( RAP_CAN_TELEPORT ))
+    if (player_equip( EQ_RINGS, RING_TELEPORTATION )
+        || scan_randarts( RAP_CAN_TELEPORT ))
+    {
         insert_ability( ABIL_EVOKE_TELEPORTATION, &p_abils );
+    }
 
     // look at output routine for why this is done {dlb}
     // -- god abilities are capitalized and this would see to do that

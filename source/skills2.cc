@@ -45,7 +45,7 @@
 // the character's race will be listed on the next line.  Its only really
 // intended for cases where things might be really awkward without it. -- bwr
 
-char *skills[50][6] = {
+const char *skills[50][6] = {
     {"Fighting", "Skirmisher", "Grunt", "Veteran", "Warrior", "Slayer"},      // 0
     {"Short Blades", "Stabber", "Cutter", "Knifefighter", "Eviscerator", "Blademaster"},
     {"Long Blades", "Slasher", "Slicer", "Fencer", "Swordfighter", "Swordmaster"},
@@ -110,7 +110,7 @@ char *skills[50][6] = {
     {NULL}                      // 49- empty  {end of array}
 };
 
-char *martial_arts_titles[6] =
+const char *martial_arts_titles[6] =
     {"Unarmed Combat", "Martial Artist", "Black Belt", "Sensei", "Master", "Grand Master"};
 
 
@@ -120,7 +120,7 @@ char *martial_arts_titles[6] =
    3.10: but it never is, and CLASSES is probably broken now. Anyway,
    the Spellcasting skill (25) is actually about 130% of what is shown here.
  */
-int spec_skills[ NUM_SPECIES ][40] = {
+const int spec_skills[ NUM_SPECIES ][40] = {
     {                           // SP_HUMAN (1)
      100,                       // SK_FIGHTING
      100,                       // SK_SHORT_BLADES
@@ -1787,7 +1787,6 @@ JOB_PALADIN:
 
 void show_skills(void)
 {
-    char st_pass[60];
     int i;
     int x;
     char lcount;
@@ -1800,7 +1799,7 @@ void show_skills(void)
 
     gettext(1, 1, 80, 25, buffer);
 #endif
-    strcpy(st_pass, "");
+
     clrscr();
 
   reprint_stuff:
@@ -1946,7 +1945,7 @@ void show_skills(void)
 }
 
 
-char *skill_name(unsigned char which_skill)
+const char *skill_name(unsigned char which_skill)
 {
     return (skills[which_skill][0]);
 }                               // end skill_name()
@@ -1955,7 +1954,7 @@ char *skill_name(unsigned char which_skill)
 const char *skill_title( unsigned char best_skill, unsigned char skill_lev )
 {
     unsigned char skill_rank;
-    char *tempstr = NULL;
+    const char *tempstr = NULL;
 
     static char title_buff[80];
 
@@ -2190,8 +2189,8 @@ int species_skills(char skill, char species)
 void wield_warning(bool newWeapon)
 {
     // hold weapon name
-    char wepstr[100];
-    char wepstr2[50];
+    char wepstr[ITEMNAME_SIZE];
+    char wepstr2[ITEMNAME_SIZE];
 
     // early out - no weapon
     if (you.equip[EQ_WEAPON] == -1)

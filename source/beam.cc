@@ -35,7 +35,6 @@
 #include "cloud.h"
 #include "effects.h"
 #include "enum.h"
-#include "fight.h"
 #include "it_use2.h"
 #include "itemname.h"
 #include "items.h"
@@ -98,7 +97,7 @@ void zapping(char ztype, int power, struct bolt &pbolt)
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "zapping:  power=%d", power );
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     // GDL: note that rangeMax is set to 0, which means that max range is
@@ -125,10 +124,10 @@ void zapping(char ztype, int power, struct bolt &pbolt)
         // needs to check silenced at other location, too {dlb}
     {
         mpr("You hear a mighty clap of thunder!");
-        noisy(25, you.x_pos, you.y_pos);
+        noisy( 25, you.x_pos, you.y_pos );
     }
 
-    beam(pbolt);
+    fire_beam(pbolt);
 
     return;
 }                               // end zapping()
@@ -603,8 +602,8 @@ static void zappy( char z_type, int power, struct bolt &pbolt )
     case ZAP_ORB_OF_ENERGY:     // Mystic Bolt          // cap 100
         strcpy(pbolt.beam_name, "orb of energy");
         pbolt.colour = LIGHTMAGENTA;
-        pbolt.range = 7 + random2(5);
-        pbolt.damage = calc_dice( 3, 15 + power / 3 );
+        pbolt.range = 8 + random2(5);
+        pbolt.damage = calc_dice( 2, 15 + (power * 2) / 5 );
         pbolt.hit = 10 + power / 7;                     // 50: 17   100: 24
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -1107,7 +1106,7 @@ static void zappy( char z_type, int power, struct bolt &pbolt )
  */
 
 
-void beam(struct bolt &pbolt, int inv_number)
+void fire_beam(struct bolt &pbolt, int inv_number)
 {
     int dx, dy;             // total delta between source & target
     int lx, ly;             // last affected x,y
@@ -1130,7 +1129,7 @@ void beam(struct bolt &pbolt, int inv_number)
              pbolt.type, pbolt.colour, pbolt.flavour,
              pbolt.hit, pbolt.damage.num, pbolt.damage.size );
 
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     // init
@@ -1425,7 +1424,7 @@ void beam(struct bolt &pbolt, int inv_number)
     if (!pbolt.isTracer)
         setBuffering(oldValue);
 #endif
-}                               // end beam();
+}                               // end fire_beam();
 
 
 // returns damage taken by a monster from a "flavoured" (fire, ice, etc.)
@@ -1538,7 +1537,7 @@ int mons_adjust_flavoured( struct monsters *monster, struct bolt &pbolt,
         {
             // early out for tracer/no side effects
             if (!doFlavouredEffects)
-                return hurted;
+                return (hurted);
 
             simple_monster_message(monster, " is drained.");
 
@@ -1660,67 +1659,6 @@ int mons_adjust_flavoured( struct monsters *monster, struct bolt &pbolt,
     return (hurted);
 }                               // end mons_adjust_flavoured()
 
-// Returns true if the monster made its save against hostile
-// enchantments/some other magics.
-bool check_mons_magres(struct monsters * monster, int pow)
-{
-    int mrs = mons_resist_magic(monster);
-
-    if (mrs == 5000)
-        return (true);
-
-    // Evil, evil hack to make weak one hd monsters easier for first
-    // level characters who have resistable 1st level spells. Six is
-    // a very special value because mrs = hd * 2 * 3 for most monsters,
-    // and the weak, low level monsters have been adjusted so that the
-    // "3" is typically a 1.  There are some notable one hd monsters
-    // that shouldn't fall under this, so we do < 6, instead of <= 6...
-    // or checking monster->hit_dice.  The goal here is to make the
-    // first level easier for these classes and give them a better
-    // shot at getting to level two or three and spells that can help
-    // them out (or building a level or two of their base skill so they
-    // aren't resisted as often). -- bwr
-    if (mrs < 6 && coinflip())
-        return (false);
-
-    pow = stepdown_value( pow, 30, 40, 100, 120 );
-
-    const int mrchance = (100 + mrs) - pow;
-    const int mrch2 = random2(100) + random2(101);
-
-#if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE,
-              "Power: %d, monster's MR: %d, target: %d, roll: %d",
-              pow, mrs, mrchance, mrch2 );
-
-    mpr( info, MSGCH_DIAGNOSTIC );
-#endif
-
-    return ((mrch2 < mrchance) ? true : false);
-}                               // end check_mons_magres()
-
-bool check_mons_resist_dispel_undead( struct monsters *monster, int pow )
-{
-    int res = mons_resist_turn_undead( monster );
-
-    if (res >= 5000)
-        return (true);
-
-    pow = stepdown_value( pow, 30, 40, 100, 120 );
-
-    const int mrchance = (100 + res) - pow;
-    const int mrch2 = random2(100) + random2(101);
-
-#if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE,
-              "Power: %d, monster's res: %d, target: %d, roll: %d",
-              pow, res, mrchance, mrch2 );
-
-    mpr( info, MSGCH_DIAGNOSTIC );
-#endif
-
-    return ((mrch2 < mrchance) ? true : false);
-}
 
 // Enchants all monsters in player's sight.
 bool mass_enchantment( int wh_enchant, int pow, int origin )
@@ -1742,70 +1680,73 @@ bool mass_enchantment( int wh_enchant, int pow, int origin )
             continue;
 
         // assuming that the only mass charm is control undead:
-        if (wh_enchant == ENCH_CHARM && !mons_friendly(monster))
+        if (wh_enchant == ENCH_CHARM)
         {
+            if (mons_friendly(monster))
+                continue;
+
             if (mons_holiness(monster->type) != MH_UNDEAD)
                 continue;
 
-            if (monster->hit_dice * 4 >= random2(pow))
+            if (check_mons_resist_magic( monster, pow ))
             {
                 simple_monster_message(monster, " resists.");
                 continue;
             }
         }
-
-        if (wh_enchant != ENCH_CHARM
-            || mons_holiness(monster->type) != MH_UNDEAD)
+        else if (mons_holiness(monster->type) == MH_NATURAL)
         {
-            if (check_mons_magres(monster, pow))
+            if (check_mons_resist_magic( monster, pow ))
             {
                 simple_monster_message(monster, " resists.");
                 continue;
             }
         }
-
-        if (mons_near(monster))
+        else  // trying to enchant an unnatural creature doesn't work
         {
-            if (mons_has_ench(monster, wh_enchant))
-                break;
+            simple_monster_message(monster, " is unaffected.");
+            continue;
+        }
 
-            if (mons_add_ench(monster, wh_enchant))
+        if (mons_has_ench(monster, wh_enchant))
+            continue;
+
+        if (mons_add_ench(monster, wh_enchant))
+        {
+            if (player_monster_visible( monster ))
             {
-                if (player_monster_visible( monster ))
+                // turn message on
+                msgGenerated = true;
+                switch (wh_enchant)
                 {
-                    // turn message on
-                    msgGenerated = true;
-                    switch (wh_enchant)
-                    {
-                    case ENCH_FEAR:
-                        simple_monster_message(monster,
-                                               " looks frightened!");
-                        break;
-                    case ENCH_CONFUSION:
-                        simple_monster_message(monster,
-                                               " looks rather confused.");
-                        break;
-                    case ENCH_CHARM:
-                        simple_monster_message(monster,
-                                               " submits to your will.");
-                        break;
-                    default:
-                        // oops, I guess not!
-                        msgGenerated = false;
-                    }
+                case ENCH_FEAR:
+                    simple_monster_message(monster,
+                                           " looks frightened!");
+                    break;
+                case ENCH_CONFUSION:
+                    simple_monster_message(monster,
+                                           " looks rather confused.");
+                    break;
+                case ENCH_CHARM:
+                    simple_monster_message(monster,
+                                           " submits to your will.");
+                    break;
+                default:
+                    // oops, I guess not!
+                    msgGenerated = false;
                 }
-
-                // extra check for fear (monster needs to reevaluate behaviour)
-                if (wh_enchant == ENCH_FEAR)
-                    behaviour_event( monster, ME_SCARE, origin );
             }
-        }                       // end "if mons_near(monster)"
+
+            // extra check for fear (monster needs to reevaluate behaviour)
+            if (wh_enchant == ENCH_FEAR)
+                behaviour_event( monster, ME_SCARE, origin );
+        }
     }                           // end "for i"
 
     if (!msgGenerated)
         canned_msg(MSG_NOTHING_HAPPENS);
 
-    return msgGenerated;
+    return (msgGenerated);
 }                               // end mass_enchantmenet()
 
 /*
@@ -1818,7 +1759,7 @@ bool mass_enchantment( int wh_enchant, int pow, int origin )
 int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
 {
     bool is_near = mons_near(monster);  // single caluclation permissible {dlb}
-    char buff[80];
+    char buff[ ITEMNAME_SIZE ];
 
     switch (pbolt.flavour)      /* put in magic resistance */
     {
@@ -1829,7 +1770,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
             if (simple_monster_message(monster, " is no longer moving quickly."))
                 pbolt.obviousEffect = true;
 
-            return MON_AFFECTED;
+            return (MON_AFFECTED);
         }
 
         // not hasted,  slow it
@@ -1840,7 +1781,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
             if (simple_monster_message(monster, " seems to slow down."))
                 pbolt.obviousEffect = true;
         }
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
 
     case BEAM_HASTE:                  // 1 = haste
         if (mons_del_ench(monster, ENCH_SLOW))
@@ -1848,7 +1789,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
             if (simple_monster_message(monster, " is no longer moving slowly."))
                 pbolt.obviousEffect = true;
 
-            return MON_AFFECTED;
+            return (MON_AFFECTED);
         }
 
         // not slowed, haste it
@@ -1859,7 +1800,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
             if (simple_monster_message(monster, " seems to speed up."))
                 pbolt.obviousEffect = true;
         }
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
 
     case BEAM_HEALING:         /* 2 = healing */
         if (heal_monster( monster, 5 + roll_dice( pbolt.damage ), false ))
@@ -1876,7 +1817,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
                     pbolt.obviousEffect = true;
             }
         }
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
 
     case BEAM_PARALYSIS:                  /* 3 = paralysis */
         monster->speed_increment = 0;
@@ -1916,7 +1857,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
                 }
             }
         }
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
 
     case BEAM_CONFUSION:                   /* 4 = confusion */
         if (mons_add_ench(monster, ENCH_CONFUSION))
@@ -1926,7 +1867,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
             if (simple_monster_message(monster, " appears confused."))
                 pbolt.obviousEffect = true;
         }
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
 
     case BEAM_INVISIBILITY:               /* 5 = invisibility */
         // Store the monster name before it becomes an "it" -- bwr
@@ -1946,7 +1887,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
 
             pbolt.obviousEffect = true;
         }
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
 
     case BEAM_CHARM:             /* 9 = charm */
         if (mons_add_ench(monster, ENCH_CHARM))
@@ -1956,13 +1897,13 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
             if (simple_monster_message(monster, " is charmed."))
                 pbolt.obviousEffect = true;
         }
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
 
     default:
         break;
     }                           /* end of switch (beam_colour) */
 
-    return MON_AFFECTED;
+    return (MON_AFFECTED);
 }                               // end mons_ench_f2()
 
 // actually poisons a monster (w/ message)
@@ -2132,7 +2073,7 @@ void fire_tracer(struct monsters *monster, struct bolt &pbolt)
         pbolt.foeRatio = 25;
 
     // fire!
-    beam(pbolt);
+    fire_beam(pbolt);
 
     // unset tracer flag (convenience)
     pbolt.isTracer = false;
@@ -2146,19 +2087,19 @@ void fire_tracer(struct monsters *monster, struct bolt &pbolt)
  */
 void mimic_alert(struct monsters *mimic)
 {
-    if (mons_has_ench(mimic, ENCH_TP_I, ENCH_TP_IV))
+    if (mons_has_ench( mimic, ENCH_TP_I, ENCH_TP_IV ))
         return;
 
-    monster_teleport(mimic, false);
+    monster_teleport( mimic, !one_chance_in(3) );
 }                               // end mimic_alert()
 
 static bool isBouncy(struct bolt &beam)
 {
     // at present, only non-enchantment eletrcical beams bounce.
     if (beam.beam_name[0] != '0' && beam.flavour == BEAM_ELECTRICITY)
-        return true;
+        return (true);
 
-    return false;
+    return (false);
 }
 
 static void beam_explodes(struct bolt &beam, int x, int y)
@@ -2270,21 +2211,21 @@ static bool beam_term_on_target(struct bolt &beam)
     // DON'T affect() the cell if this function returns true!
 
     if (beam.flavour == BEAM_EXPLOSION || beam.flavour == BEAM_HOLY)
-        return true;
+        return (true);
 
     // POISON BLAST
     if (strcmp(beam.beam_name, "blast of poison") == 0)
-        return true;
+        return (true);
 
     // FOUL VAPOR (SWAMP DRAKE)
     if (strcmp(beam.beam_name, "foul vapour") == 0)
-        return true;
+        return (true);
 
     // STINKING CLOUD
     if (strcmp(beam.beam_name, "ball of vapour") == 0)
-        return true;
+        return (true);
 
-    return false;
+    return (false);
 }
 
 static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
@@ -2395,7 +2336,7 @@ static int bounce(int &step1, int &step2, int w1, int w2, int &n1, int &n2,
             break;
     }
 
-    return bounceCount;
+    return (bounceCount);
 }
 
 static bool fuzzyLine(int nx, int ny, int &tx, int &ty, int lx, int ly,
@@ -2459,7 +2400,7 @@ static bool fuzzyLine(int nx, int ny, int &tx, int &ty, int lx, int ly,
         ty = fy;
     }
 
-    return fuzzyOK;
+    return (fuzzyOK);
 }
 
 // affects a single cell.
@@ -2484,7 +2425,7 @@ static int affect(struct bolt &beam, int x, int y)
     if (grd[x][y] < MINMOVE)
     {
         if (beam.isTracer)          // tracers always stop on walls.
-            return BEAM_STOP;
+            return (BEAM_STOP);
 
         if (affectsWalls(beam))
         {
@@ -2493,7 +2434,7 @@ static int affect(struct bolt &beam, int x, int y)
         // if it's still a wall,  quit - we can't do anything else to
         // a wall.  Otherwise effects (like clouds, etc) are still possible.
         if (grd[x][y] < MINMOVE)
-            return rangeUsed;
+            return (rangeUsed);
     }
 
     // grd[x][y] will NOT be a wall for the remainder of this function.
@@ -2506,7 +2447,7 @@ static int affect(struct bolt &beam, int x, int y)
     if (x == you.x_pos && y == you.y_pos)
     {
         if (beam_term_on_target(beam) && !beam.isExplosion)
-            return BEAM_STOP;
+            return (BEAM_STOP);
 
         rangeUsed += affect_player(beam);
     }
@@ -2517,13 +2458,13 @@ static int affect(struct bolt &beam, int x, int y)
     if (mid != NON_MONSTER && !mons_has_ench( &menv[mid], ENCH_SUBMERGED ))
     {
         if (beam_term_on_target(beam) && !beam.isExplosion)
-            return BEAM_STOP;
+            return (BEAM_STOP);
 
         struct monsters* monster = &menv[mid];
         rangeUsed += affect_monster(beam, monster);
     }
 
-    return rangeUsed;
+    return (rangeUsed);
 }
 
 static bool affectsWalls(struct bolt &beam)
@@ -2636,7 +2577,7 @@ static int affect_place_clouds(struct bolt &beam, int x, int y)
     if (beam.isExplosion)
     {
         affect_place_explosion_clouds( beam, x, y );
-        return 0;       // return value irrelevant for explosions
+        return (0);       // return value irrelevant for explosions
     }
 
     // check for CLOUD HITS
@@ -2648,7 +2589,7 @@ static int affect_place_clouds(struct bolt &beam, int x, int y)
 
         // now exit (all enchantments)
         if (beam.beam_name[0] == '0')
-            return 0;
+            return (0);
 
         int clouty = env.cgrid[x][y];
 
@@ -2668,7 +2609,7 @@ static int affect_place_clouds(struct bolt &beam, int x, int y)
             }
 
             delete_cloud( clouty );
-            return 5;
+            return (5);
         }
     }
 
@@ -2716,7 +2657,7 @@ static int affect_place_clouds(struct bolt &beam, int x, int y)
         place_cloud( cloud_type, x, y, random2(4) + 2 );
     }
 
-    return 0;
+    return (0);
 }
 
 // following two functions used with explosions:
@@ -2875,7 +2816,7 @@ static int affect_player(struct bolt &beam)
 
     // digging -- don't care.
     if (beam.flavour == BEAM_DIGGING)
-        return 0;
+        return (0);
 
     // check for tracer
     if (beam.isTracer)
@@ -2935,7 +2876,7 @@ static int affect_player(struct bolt &beam)
                     strcat(info, beam.beam_name);
                     strcat(info, " misses you.");
                     mpr(info);
-                    return 0;           // no extra used by miss!
+                    return (0);           // no extra used by miss!
                 }
             }
             else
@@ -2962,7 +2903,7 @@ static int affect_player(struct bolt &beam)
                     strcat(info, beam.beam_name);
                     strcat(info, ".");
                     mpr(info);
-                    return BEAM_STOP;
+                    return (BEAM_STOP);
                 }
 
                 if (player_light_armour() && !beam.aimedAtFeet
@@ -2982,7 +2923,7 @@ static int affect_player(struct bolt &beam)
                     strcpy(info, "The ");
                     strcat(info, beam.beam_name);
                     strcat(info, " misses you.");
-                    return 0;
+                    return (0);
                 }
             }
         }
@@ -3118,7 +3059,7 @@ static int affect_player(struct bolt &beam)
 
         // regardless of affect, we need to know if this is a stopper
         // or not - it seems all of the above are.
-        return range_used_on_hit(beam);
+        return (range_used_on_hit(beam));
 
         // END enchantment beam
     }
@@ -3136,7 +3077,12 @@ static int affect_player(struct bolt &beam)
     // Roll the damage
     hurted += roll_dice( beam.damage );
 
+#if DEBUG_DIAGNOSTICS
+    int roll = hurted;
+#endif
+
     hurted -= random2( 1 + player_AC() );
+
 
     // shrapnel
     if (beam.flavour == BEAM_FRAG && !player_light_armour())
@@ -3144,6 +3090,13 @@ static int affect_player(struct bolt &beam)
         hurted -= random2( 1 + player_AC() );
         hurted -= random2( 1 + player_AC() );
     }
+
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "Player damage: rolled=%d; after AC=%d",
+              roll, hurted );
+
+    mpr( info, MSGCH_DIAGNOSTICS );
+#endif
 
     // shield exercise for non-beams taken care of already..
     // no shield exercise for explosions (awww..)
@@ -3208,7 +3161,7 @@ static int affect_player(struct bolt &beam)
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "Damage: %d", hurted );
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     if (YOU_KILL( beam.thrower ))
@@ -3269,7 +3222,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
                 beam.fr_power += mons_power(tid);
             }
 
-            return range_used_on_hit(beam);
+            return (range_used_on_hit(beam));
         }
 
         // BEGIN non-tracer enchantment
@@ -3310,7 +3263,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
             default:
                 break;
         }
-        return rangeUsed;
+        return (rangeUsed);
 
         // END non-tracer enchantment
     }
@@ -3318,7 +3271,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
 
     // BEGIN non-enchantment (could still be tracer)
     if (mons_has_ench( mon, ENCH_SUBMERGED ) && !beam.aimedAtFeet)
-        return 0;                   // missed me!
+        return (0);                   // missed me!
 
     // we need to know how much the monster _would_ be hurt by this,  before
     // we decide if it actually hits.
@@ -3359,7 +3312,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
               "Monster: %s; Damage: pre-AC: %d; post-AC: %d; post-resist: %d",
                   ptr_monam( mon, DESC_PLAIN ), hurt, old_hurt, hurt_final );
 
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
     }
 #endif
 
@@ -3387,7 +3340,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
             }
         }
         // either way, we could hit this monster, so return range used
-        return range_used_on_hit(beam);
+        return (range_used_on_hit(beam));
     }
     // END non-enchantment (could still be tracer)
 
@@ -3431,7 +3384,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
             strcat(info, ".");
             mpr(info);
         }
-        return 0;
+        return (0);
     }
 
     // the beam hit.
@@ -3513,17 +3466,17 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
             mimic_alert(mon);
     }
 
-    return range_used_on_hit(beam);
+    return (range_used_on_hit(beam));
 }
 
 static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
 {
     if (beam.flavour == BEAM_TELEPORT) // teleportation
     {
-        if (check_mons_magres(mon, beam.ench_power)
+        if (check_mons_resist_magic( mon, beam.ench_power )
             && !beam.aimedAtFeet)
         {
-            return MON_RESIST;
+            return (MON_RESIST);
         }
 
         if (simple_monster_message(mon, " looks slightly unstable."))
@@ -3531,27 +3484,27 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
 
         monster_teleport(mon, false);
 
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
     }
 
     if (beam.flavour == BEAM_POLYMORPH)
     {
         if (mons_holiness( mon->type ) != MH_NATURAL)
-            return MON_UNAFFECTED;
+            return (MON_UNAFFECTED);
 
-        if (check_mons_magres(mon, beam.ench_power))
-            return MON_RESIST;
+        if (check_mons_resist_magic( mon, beam.ench_power ))
+            return (MON_RESIST);
 
         if (monster_polymorph(mon, RANDOM_MONSTER, 100))
             beam.obviousEffect = true;
 
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
     }
 
     if (beam.flavour == BEAM_BANISH)
     {
-        if (check_mons_magres(mon, beam.ench_power))
-            return MON_RESIST;
+        if (check_mons_resist_magic( mon, beam.ench_power ))
+            return (MON_RESIST);
 
         if (you.level_type == LEVEL_ABYSS)
         {
@@ -3561,7 +3514,7 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
             monster_die(mon, KILL_RESET, beam.beam_source);
 
         beam.obviousEffect = true;
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
     }
 
     if (beam.flavour == BEAM_DEGENERATE)
@@ -3569,25 +3522,22 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         if (mons_holiness(mon->type) != MH_NATURAL
             || mon->type == MONS_PULSATING_LUMP)
         {
-            return MON_UNAFFECTED;
+            return (MON_UNAFFECTED);
         }
 
-        if (check_mons_magres(mon, beam.ench_power))
-            return MON_RESIST;
+        if (check_mons_resist_magic( mon, beam.ench_power ))
+            return (MON_RESIST);
 
         if (monster_polymorph(mon, MONS_PULSATING_LUMP, 100))
             beam.obviousEffect = true;
 
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
     }
 
     if (beam.flavour == BEAM_DISPEL_UNDEAD)
     {
         if (mons_holiness(mon->type) != MH_UNDEAD)
-            return MON_UNAFFECTED;
-
-        if (check_mons_resist_dispel_undead(mon, beam.ench_power))
-            return MON_RESIST;
+            return (MON_UNAFFECTED);
 
         if (simple_monster_message(mon, " convulses!"))
             beam.obviousEffect = true;
@@ -3597,48 +3547,70 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         goto deathCheck;
     }
 
-    if ((beam.flavour == BEAM_ENSLAVE_UNDEAD
-            && mons_holiness(mon->type) == MH_UNDEAD)
-        || (beam.flavour == BEAM_ENSLAVE_DEMON
-            && mons_holiness(mon->type) == MH_DEMONIC))
+    if (beam.flavour == BEAM_ENSLAVE_UNDEAD
+        && mons_holiness(mon->type) == MH_UNDEAD)
     {
 #if DEBUG_DIAGNOSTICS
         snprintf( info, INFO_SIZE, "HD: %d; pow: %d",
                   mon->hit_dice, beam.ench_power );
 
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
-        if (mon->hit_dice * 4 >= random2(beam.ench_power))
-            return MON_RESIST;
+        if (check_mons_resist_magic( mon, beam.ench_power ))
+            return (MON_RESIST);
 
         simple_monster_message(mon, " is enslaved.");
         beam.obviousEffect = true;
 
         // wow, permanent enslaving
         mon->attitude = ATT_FRIENDLY;
-        return MON_AFFECTED;
+        return (MON_AFFECTED);
+    }
+
+    if (beam.flavour == BEAM_ENSLAVE_DEMON
+        && mons_holiness(mon->type) == MH_DEMONIC)
+    {
+#if DEBUG_DIAGNOSTICS
+        snprintf( info, INFO_SIZE, "HD: %d; pow: %d",
+                  mon->hit_dice, beam.ench_power );
+
+        mpr( info, MSGCH_DIAGNOSTICS );
+#endif
+
+        if (mon->hit_dice * 4 >= random2(beam.ench_power))
+            return (MON_RESIST);
+
+        simple_monster_message(mon, " is enslaved.");
+        beam.obviousEffect = true;
+
+        // wow, permanent enslaving
+        mon->attitude = ATT_FRIENDLY;
+        return (MON_AFFECTED);
     }
 
     //
     // Everything past this point must pass this magic resistance test.
     //
-    if (check_mons_magres(mon, beam.ench_power)
-        && beam.flavour != BEAM_HASTE && beam.flavour != BEAM_HEALING
+    // Using check_mons_resist_magic here since things like disintegrate
+    // are beyond this point. -- bwr
+    if (check_mons_resist_magic( mon, beam.ench_power )
+        && beam.flavour != BEAM_HASTE
+        && beam.flavour != BEAM_HEALING
         && beam.flavour != BEAM_INVISIBILITY)
     {
-        return MON_RESIST;
+        return (MON_RESIST);
     }
 
     if (beam.flavour == BEAM_PAIN)      /* pain/agony */
     {
         if (mons_res_negative_energy( mon ))
-            return MON_UNAFFECTED;
+            return (MON_UNAFFECTED);
 
         if (simple_monster_message(mon, " convulses in agony!"))
             beam.obviousEffect = true;
 
-        if (strstr(beam.beam_name, "agony") != NULL)
+        if (strstr( beam.beam_name, "agony" ) != NULL)
         {
             // AGONY
             mon->hit_points = mon->hit_points / 2;
@@ -3668,19 +3640,19 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
 
     if (beam.flavour == BEAM_SLEEP)
     {
-        //jmf: FIXME: ought to do a better "affected by sleep" check
-        if (mons_holiness(mon->type) == MH_NATURAL)
-        {
-            if (simple_monster_message(mon, " looks drowsy..."))
-                beam.obviousEffect = true;
+        if (mons_has_ench( mon, ENCH_SLEEP_WARY ))  // slept recently
+            return (MON_RESIST);
 
-            mon->behaviour = BEH_SLEEP;
-            mons_add_ench( mon, ENCH_SLEEP_WARY );
+        if (mons_holiness(mon->type) != MH_NATURAL) // no unnatural
+            return (MON_UNAFFECTED);
 
-            return MON_AFFECTED;
-        }
-        else
-            return MON_UNAFFECTED;
+        if (simple_monster_message(mon, " looks drowsy..."))
+            beam.obviousEffect = true;
+
+        mon->behaviour = BEH_SLEEP;
+        mons_add_ench( mon, ENCH_SLEEP_WARY );
+
+        return (MON_AFFECTED);
     }
 
     if (beam.flavour == BEAM_BACKLIGHT)
@@ -3688,13 +3660,13 @@ static int affect_monster_enchantment(struct bolt &beam, struct monsters *mon)
         if (backlight_monsters(mon->x, mon->y, beam.hit, 0))
         {
             beam.obviousEffect = true;
-            return MON_AFFECTED;
+            return (MON_AFFECTED);
         }
-        return MON_UNAFFECTED;
+        return (MON_UNAFFECTED);
     }
 
     // everything else?
-    return mons_ench_f2(mon, beam);
+    return (mons_ench_f2(mon, beam));
 
 deathCheck:
 
@@ -3712,7 +3684,7 @@ deathCheck:
             mimic_alert(mon);
     }
 
-    return MON_AFFECTED;
+    return (MON_AFFECTED);
 }
 
 
@@ -3788,8 +3760,8 @@ static void explosion1(struct bolt &pbolt)
     // convenience
     int x = pbolt.target_x;
     int y = pbolt.target_y;
-    char *seeMsg = NULL;
-    char *hearMsg = NULL;
+    const char *seeMsg = NULL;
+    const char *hearMsg = NULL;
 
     // assume that the player can see/hear the explosion, or
     // gets burned by it anyway.  :)
@@ -3858,7 +3830,7 @@ static void explosion1(struct bolt &pbolt)
         strcpy(pbolt.beam_name, "ice storm");
         pbolt.type = SYM_ZAP;
         pbolt.colour = WHITE;
-        ex_size = 2 + pbolt.ench_power / 100;
+        ex_size = 2 + (random2( pbolt.ench_power ) > 75);
     }
 
     if (stricmp(pbolt.beam_name, "ball of vapour") == 0)
@@ -3923,7 +3895,7 @@ void explosion( struct bolt &beam, bool hole_in_the_middle )
               beam.type, beam.colour, beam.flavour,
               beam.hit, beam.damage.num, beam.damage.size );
 
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     // for now, we don't support explosions greater than 9 radius
@@ -3931,7 +3903,7 @@ void explosion( struct bolt &beam, bool hole_in_the_middle )
         r = MAX_EXPLOSION_RADIUS;
 
     // make a noise
-    noisy(10 + 5*r, beam.target_x, beam.target_y);
+    noisy( 10 + 5*r, beam.target_x, beam.target_y );
 
     // set map to false
     for (int i=0; i<19; i++)
@@ -4127,7 +4099,7 @@ bool nasty_beam(struct monsters *mon, struct bolt &beam)
 {
     // take care of non-enchantments
     if (beam.beam_name[0] != '0')
-        return true;
+        return (true);
 
     // now for some non-hurtful enchantments
 
@@ -4149,12 +4121,12 @@ bool nasty_beam(struct monsters *mon, struct bolt &beam)
 
     // haste
     if (beam.flavour == BEAM_HASTE)
-        return false;
+        return (false);
 
     // healing
     if (beam.flavour == BEAM_HEALING || beam.flavour == BEAM_INVISIBILITY)
-        return false;
+        return (false);
 
     // everything else is considered nasty by everyone
-    return true;
+    return (true);
 }

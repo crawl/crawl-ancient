@@ -33,6 +33,8 @@ void extra_hp(int amount_extra);
 
 bool remove_equipment(FixedVector < char, 8 > &remove_stuff)
 {
+    char str_pass[ ITEMNAME_SIZE ];
+
     // if we're removing body armour, the cloak will come off as well -- bwr
     if (remove_stuff[EQ_BODY_ARMOUR] == 1 && you.equip[EQ_BODY_ARMOUR] != -1)
         remove_stuff[EQ_CLOAK] = 1;

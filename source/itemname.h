@@ -25,7 +25,7 @@ char get_ident_type(char cla, char ty);
  *              it_use2 - item_use - items - monstuff - mstuff2 - ouch -
  *              shopping - spells1 - spells2 - spells3
  * *********************************************************************** */
-char item_name( const item_def &item, char descrip, char glag[80] );
+char item_name( const item_def &item, char descrip, char buff[ITEMNAME_SIZE] );
 
 
 /* ***********************************************************************
@@ -58,19 +58,20 @@ void clear_ids(void);
  * called from: direct - fight - food - items - monstuff - religion -
  *              shopping
  * *********************************************************************** */
-void it_name(int itn, char des, char str_pass[80]);
+void it_name(int itn, char des, char buff[ITEMNAME_SIZE]);
 
 /* ***********************************************************************
  * called from: acr - chardump - command - effects - fight - invent -
  *              it_use2 - it_use3 - item_use - items - ouch - output -
  *              spell - spells1 - spells2 - spells3 - spells4 - transfor
  * *********************************************************************** */
-void in_name(int inn, char des, char str_pass[80]);
+void in_name(int inn, char des, char buff[ITEMNAME_SIZE]);
 
 /* ***********************************************************************
  * called from: itemname.cc items.cc item_use.cc mstuff2.cc
  * *********************************************************************** */
-void quant_name(const item_def &item, int quant, char des, char str_pass[80]);
+void quant_name( const item_def &item, int quant, char des,
+                 char buff[ITEMNAME_SIZE] );
 
 /* ***********************************************************************
  * bit operations called from a large number of files
@@ -127,7 +128,8 @@ void init_properties(void);
 /* ***********************************************************************
  * called from: files - randart - shopping
  * *********************************************************************** */
-void make_name(unsigned char var1, unsigned char var2, unsigned char var3, char ncase, char str_pass[50]);
+void make_name( unsigned char var1, unsigned char var2, unsigned char var3,
+                char ncase, char buff[ITEMNAME_SIZE] );
 
 
 /* ***********************************************************************
@@ -139,7 +141,7 @@ void save_id(char identy[4][50]);
 /* ***********************************************************************
  * called from: files - item_use - newgame - ouch - shopping - spells1
  * *********************************************************************** */
-void set_ident_type( char cla, char ty, char setting );
+void set_ident_type( char cla, char ty, char setting, bool force = false );
 
 
 /* ***********************************************************************

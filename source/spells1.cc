@@ -26,7 +26,6 @@
 #include "beam.h"
 #include "cloud.h"
 #include "direct.h"
-#include "fight.h"
 #include "invent.h"
 #include "it_use2.h"
 #include "itemname.h"
@@ -168,7 +167,7 @@ void fireball(int power)
 {
     struct dist fire_ball;
 
-    mpr("Which direction? (*/+ to target)", MSGCH_PROMPT);
+    mpr( STD_DIRECTION_PROMPT, MSGCH_PROMPT );
 
     message_current_target();
 
@@ -209,7 +208,7 @@ void cast_fire_storm(int powc)
         return;
     }
 
-    beam.ex_size = 2 + powc / 100;
+    beam.ex_size = 2 + (random2(powc) > 75);
     beam.flavour = BEAM_LAVA;
     beam.type = SYM_ZAP;
     beam.colour = RED;
@@ -233,6 +232,7 @@ void identify(int power)
 {
     int id_used = 1;
     int item_slot;
+    char str_pass[ ITEMNAME_SIZE ];
 
     // scrolls of identify *may* produce "extra" identifications {dlb}:
     if (power == -1 && one_chance_in(5))
@@ -240,7 +240,8 @@ void identify(int power)
 
     do
     {
-        item_slot = prompt_invent_item( "Identify which item?", -1, true, false );
+        item_slot = prompt_invent_item( "Identify which item?", -1, true,
+                                        false, false );
         if (item_slot == PROMPT_ABORT)
         {
             canned_msg( MSG_OK );
@@ -318,7 +319,7 @@ void stinking_cloud( int pow )
     struct dist spelld;
     struct bolt beem;
 
-    mpr("Which direction? (*/+ to target)", MSGCH_PROMPT);
+    mpr( STD_DIRECTION_PROMPT, MSGCH_PROMPT );
 
     message_current_target();
 
@@ -349,7 +350,7 @@ void stinking_cloud( int pow )
     beem.isBeam = false;
     beem.isTracer = false;
 
-    beam(beem);
+    fire_beam(beem);
 }                               // end stinking_cloud()
 
 void cast_big_c(int pow, char cty)
@@ -497,12 +498,8 @@ void purification(void)
     you.rotting = 0;
     you.conf = 0;
     you.slow = 0;
-    you.paralysis = 0;          // ?
-    you.disease = 0;            // this doesn't seem very useful, does it?
-
-    // disease is quite useful (food cost of waiting around for disease
-    // to go away so you can heal normally, plus protecting stats from
-    // decay), paralysis isn't (how do you cast this?) -- bwr
+    you.disease = 0;
+    you.paralysis = 0;          // can't currently happen -- bwr
 }                               // end purification()
 
 int allowed_deaths_door_hp(void)
@@ -863,7 +860,7 @@ void cast_regen(int pow)
     //if (pow > 150) pow = 150;
     mpr("Your skin crawls.");
 
-    you.duration[DUR_REGENERATION] += 5 + random2avg(3 * (pow - 1) + 1, 3);
+    you.duration[DUR_REGENERATION] += 5 + roll_dice( 2, pow / 3 + 1 );
 
     if (you.duration[DUR_REGENERATION] > 100)
         you.duration[DUR_REGENERATION] = 100;
@@ -988,11 +985,10 @@ void cast_ring_of_flames(int power)
 
 void cast_confusing_touch(int power)
 {
+    snprintf( info, INFO_SIZE, "Your %s begin to glow %s.",
+              your_hand(true), (you.confusing_touch ? "brighter" : "red") );
 
-    if (!you.confusing_touch)
-        mpr("Your hands begin to glow red.");
-    else if (you.confusing_touch < 50)
-        mpr("Your hands begin to glow brighter.");
+    mpr( info );
 
     you.confusing_touch += 5 + (random2(power) / 5);
 

@@ -40,7 +40,7 @@ bool delete_mutation(char which_mutation);
  * called from: chardump
  * *********************************************************************** */
 // default of level == -1, means to use the player's current level
-char *mutation_name( char which_mutat, int level = -1 );
+const char *mutation_name( char which_mutat, int level = -1 );
 
 
 // last updated 12may2000 {dlb}

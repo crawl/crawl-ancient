@@ -66,7 +66,7 @@ bool cast_smiting(int power);
 /* ***********************************************************************
  * called from: spell
  * *********************************************************************** */
-bool create_noise(void);
+bool project_noise(void);
 
 
 // updated 24may2000 {dlb}

@@ -40,7 +40,7 @@ static char in_a_shop(char shoppy, char id[4][50]);
 static char more3(void);
 static void purchase( int shop, int item_got, int cost );
 static void shop_init_id(int i, FixedArray < int, 4, 50 > &shop_id);
-static void shop_print(char *shoppy, char sh_line);
+static void shop_print(const char *shoppy, char sh_line);
 static void shop_set_ident_type(int i, FixedArray < int, 4, 50 > &shop_id,
                                 unsigned char base_type, unsigned char sub_type);
 static void shop_uninit_id(int i, FixedArray < int, 4, 50 > &shop_id);
@@ -53,7 +53,7 @@ char in_a_shop( char shoppy, char id[4][50] )
     FixedArray < int, 4, 50 > shop_id;
     FixedVector < int, 20 > shop_items;
 
-    char st_pass[60];
+    char st_pass[ ITEMNAME_SIZE ] = "";
     unsigned int gp_value = 0;
     char i;
     unsigned char ft;
@@ -62,8 +62,6 @@ char in_a_shop( char shoppy, char id[4][50] )
     char buffer[4800];
     gettext(1, 1, 80, 25, buffer);
 #endif
-
-    strcpy(st_pass, "");
 
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
@@ -150,9 +148,12 @@ char in_a_shop( char shoppy, char id[4][50] )
     snprintf( info, INFO_SIZE, "You have %d gold piece%s.", you.gold,
              (you.gold == 1) ? "" : "s" );
 
+    textcolor(YELLOW);
     shop_print(info, 19);
 
+    textcolor(CYAN);
     shop_print("What would you like to purchase?", 20);
+    textcolor(LIGHTGREY);
 
     ft = get_ch();
 
@@ -161,7 +162,9 @@ char in_a_shop( char shoppy, char id[4][50] )
 
     if (ft == 'v')
     {
+        textcolor(CYAN);
         shop_print("Examine which item?", 20);
+        textcolor(LIGHTGREY);
         ft = get_ch();
 
         // wonder whether this should be recoded to permit uppercase, too? {dlb}
@@ -282,10 +285,10 @@ void shop_uninit_id(int i, FixedArray < int, 4, 50 > &shop_id)
     {
         for (j = 0; j < 50; j++)
         {
-            set_ident_type( OBJ_WANDS, j, shop_id[ IDTYPE_WANDS ][j] );
-            set_ident_type( OBJ_SCROLLS, j, shop_id[ IDTYPE_SCROLLS ][j] );
-            set_ident_type( OBJ_JEWELLERY, j, shop_id[ IDTYPE_JEWELLERY ][j] );
-            set_ident_type( OBJ_POTIONS, j, shop_id[ IDTYPE_POTIONS ][j] );
+            set_ident_type( OBJ_WANDS, j, shop_id[ IDTYPE_WANDS ][j], true );
+            set_ident_type( OBJ_SCROLLS, j, shop_id[ IDTYPE_SCROLLS ][j], true );
+            set_ident_type( OBJ_JEWELLERY, j, shop_id[ IDTYPE_JEWELLERY ][j], true );
+            set_ident_type( OBJ_POTIONS, j, shop_id[ IDTYPE_POTIONS ][j], true );
         }
     }
 }
@@ -300,24 +303,22 @@ void shop_set_ident_type( int i, FixedArray < int, 4, 50 > &shop_id,
         switch (base_type)
         {
         case OBJ_WANDS:
-            shop_id[ IDTYPE_WANDS ][sub_type] = 1;
+            shop_id[ IDTYPE_WANDS ][sub_type] = ID_KNOWN_TYPE;
             break;
         case OBJ_SCROLLS:
-            shop_id[ IDTYPE_SCROLLS ][sub_type] = 1;
+            shop_id[ IDTYPE_SCROLLS ][sub_type] = ID_KNOWN_TYPE;
             break;
         case OBJ_JEWELLERY:
-            shop_id[ IDTYPE_JEWELLERY ][sub_type] = 1;
+            shop_id[ IDTYPE_JEWELLERY ][sub_type] = ID_KNOWN_TYPE;
             break;
         case OBJ_POTIONS:
-            shop_id[ IDTYPE_POTIONS ][sub_type] = 1;
+            shop_id[ IDTYPE_POTIONS ][sub_type] = ID_KNOWN_TYPE;
             break;
         }
-
-        set_ident_type( base_type, sub_type, ID_KNOWN_TYPE );
     }
 }
 
-void shop_print( char *shoppy, char sh_lines )
+void shop_print( const char *shoppy, char sh_lines )
 {
     gotoxy(1, sh_lines);
 
@@ -361,10 +362,113 @@ static void purchase( int shop, int item_got, int cost )
     }
 }                               // end purchase()
 
+// This probably still needs some work.  Rings used to be the only
+// artefacts which had a change in price, and that value corresponds
+// to returning 50 from this function.  Good artefacts will probably
+// be returning just over 30 right now.  Note that this isn't used
+// as a multiple, its used in the old ring way: 7 * ret is added to
+// the price of the artefact. -- bwr
+int randart_value( const item_def &item )
+{
+    ASSERT( is_random_artefact( item ) );
+
+    int ret = 10;
+    FixedVector< char, RA_PROPERTIES >  prop;
+
+    randart_wpn_properties( item, prop );
+
+    // Brands are already accounted for via existing ego checks
+
+    // This should probably be more complex... but this isn't so bad:
+    ret += 3 * prop[ RAP_AC ] + 3 * prop[ RAP_EVASION ]
+            + 3 * prop[ RAP_ACCURACY ] + 3 * prop[ RAP_DAMAGE ]
+            + 6 * prop[ RAP_STRENGTH ] + 6 * prop[ RAP_INTELLIGENCE ]
+            + 6 * prop[ RAP_DEXTERITY ];
+
+    // These resistances have meaningful levels
+    if (prop[ RAP_FIRE ] > 0)
+        ret += 5 + 5 * (prop[ RAP_FIRE ] * prop[ RAP_FIRE ]);
+    else if (prop[ RAP_FIRE ] < 0)
+        ret -= 10;
+
+    if (prop[ RAP_COLD ] > 0)
+        ret += 5 + 5 * (prop[ RAP_COLD ] * prop[ RAP_COLD ]);
+    else if (prop[ RAP_COLD ] < 0)
+        ret -= 10;
+
+    // These normally come alone or in resist/susceptible pairs...
+    // we're making items a bit more expensive if they have both positive.
+    if (prop[ RAP_FIRE ] > 0 && prop[ RAP_COLD ] > 0)
+        ret += 20;
+
+    if (prop[ RAP_NEGATIVE_ENERGY ] > 0)
+        ret += 5 + 5 * (prop[RAP_NEGATIVE_ENERGY] * prop[RAP_NEGATIVE_ENERGY]);
+
+    // only one meaningful level:
+    if (prop[ RAP_POISON ])
+        ret += 15;
+
+    // only one meaningful level (hard to get):
+    if (prop[ RAP_ELECTRICITY ])
+        ret += 30;
+
+    // magic resistance is from 20-120
+    if (prop[ RAP_MAGIC ])
+        ret += 5 + prop[ RAP_MAGIC ] / 10;
+
+    if (prop[ RAP_EYESIGHT ])
+        ret += 10;
+
+    // abilities:
+    if (prop[ RAP_LEVITATE ])
+        ret += 3;
+
+    if (prop[ RAP_BLINK ])
+        ret += 3;
+
+    if (prop[ RAP_CAN_TELEPORT ])
+        ret += 5;
+
+    if (prop[ RAP_BERSERK ])
+        ret += 5;
+
+    if (prop[ RAP_MAPPING ])
+        ret += 15;
+
+    if (prop[ RAP_INVISIBLE ])
+        ret += 20;
+
+    if (prop[ RAP_ANGRY ])
+        ret -= 3;
+
+    if (prop[ RAP_CAUSE_TELEPORTATION ])
+        ret -= 3;
+
+    if (prop[ RAP_NOISES ])
+        ret -= 5;
+
+    if (prop[ RAP_PREVENT_TELEPORTATION ])
+        ret -= 8;
+
+    if (prop[ RAP_PREVENT_SPELLCASTING ])
+        ret -= 10;
+
+    // ranges from 2-5
+    if (prop[ RAP_MUTAGENIC ])
+        ret -= (5 + 3 * prop[ RAP_MUTAGENIC ]);
+
+    // ranges from 1-3
+    if (prop[ RAP_METABOLISM ])
+        ret -= (2 * prop[ RAP_METABOLISM ]);
+
+    return ((ret > 0) ? ret : 0);
+}
+
 unsigned int item_value( item_def item, char id[4][50], bool ident )
 {
     // Note that we pass item in by value, since we want a local
-    // copy to mangle as neccessary.
+    // copy to mangle as neccessary... maybe that should be fixed,
+    // but this function isn't called too often.
     item.flags = (ident) ? (item.flags | ISFLAG_IDENT_MASK) : (item.flags);
 
     int valued = 0;
@@ -442,7 +546,6 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             valued += 20;
             break;
 
-        case WPN_QUARTERSTAFF:
         case WPN_WHIP:
         case WPN_BLOWGUN:
             valued += 25;
@@ -453,6 +556,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             break;
 
         case WPN_HAMMER:
+        case WPN_FALCHION:
         case WPN_MACE:
         case WPN_SCYTHE:
             valued += 30;
@@ -462,6 +566,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             valued += 31;
             break;
 
+        case WPN_QUARTERSTAFF:
         case WPN_SHORT_SWORD:
         case WPN_SPEAR:
             valued += 32;
@@ -472,7 +577,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             break;
 
         case WPN_ANCUS:
-        case WPN_AXE:
+        case WPN_WAR_AXE:
         case WPN_MORNINGSTAR:
         case WPN_SABRE:
             valued += 40;
@@ -603,9 +708,6 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             }
 
             valued /= 10;
-
-            if (is_random_artefact( item ))
-                valued = (valued * 70) / 10;
         }
 
         // elf/dwarf
@@ -628,14 +730,14 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             if (item.plus >= 0)
             {
                 valued += item.plus * 2;
-                valued *= 10 + item.plus + 2 * item.plus;
+                valued *= 10 + 3 * item.plus;
                 valued /= 10;
             }
 
             if (item.plus2 >= 0)
             {
                 valued += item.plus2 * 2;
-                valued *= 10 + item.plus2 + 2 * item.plus2;
+                valued *= 10 + 3 * item.plus2;
                 valued /= 10;
             }
 
@@ -657,6 +759,19 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
                 if (valued < 1)
                     valued = 1;
             }
+        }
+
+        if (is_random_artefact( item ))
+        {
+            if (item_ident( item, ISFLAG_KNOW_TYPE ))
+                valued += (7 * randart_value( item ));
+            else
+                valued += 50;
+        }
+        else if (item_ident( item, ISFLAG_KNOW_TYPE )
+                && !cmp_equip_desc( item, 0 ))
+        {
+            valued += 20;
         }
 
         if (item_cursed( item ))
@@ -819,6 +934,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             {
             case SPARM_NORMAL:
             default:
+                valued *= 10;
                 break;
 
             case SPARM_ARCHMAGI:
@@ -861,11 +977,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
                 break;
             }
 
-            if (is_random_artefact( item ))
-                valued *= 70;
-
-            if (sparm != SPARM_NORMAL)
-                valued /= 10;
+            valued /= 10;
         }
 
         if (cmp_equip_race( item, ISFLAG_ELVEN )
@@ -887,7 +999,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             if (item.plus >= 0)
             {
                 valued += item.plus * 30;
-                valued *= 10 + item.plus * 3 * item.plus;
+                valued *= 10 + 4 * item.plus;
                 valued /= 10;
             }
 
@@ -898,6 +1010,19 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
                 if (valued < 1)
                     valued = 1;
             }
+        }
+
+        if (is_random_artefact( item ))
+        {
+            if (item_ident( item, ISFLAG_KNOW_TYPE ))
+                valued += (7 * randart_value( item ));
+            else
+                valued += 50;
+        }
+        else if (item_ident( item, ISFLAG_KNOW_TYPE )
+                && !cmp_equip_desc( item, 0 ))
+        {
+            valued += 20;
         }
 
         if (item_cursed( item ))
@@ -1065,46 +1190,52 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
         switch (item.sub_type)
         {
         case FOOD_ROYAL_JELLY:
-            valued = 280;
+            valued = 120;
             break;
-        case FOOD_HONEYCOMB:
-            valued = 112;
-            break;
+
         case FOOD_MEAT_RATION:
         case FOOD_BREAD_RATION:
-            valued = 80;
-            break;
-        case FOOD_BEEF_JERKY:
-            valued = 56;
-            break;
-        case FOOD_CHEESE:
-            valued = 48;
-            break;
-        case FOOD_CHOKO:
-        case FOOD_PIZZA:
             valued = 40;
             break;
+
+        case FOOD_HONEYCOMB:
+            valued = 25;
+            break;
+
+        case FOOD_BEEF_JERKY:
+        case FOOD_PIZZA:
+            valued = 18;
+            break;
+
+        case FOOD_CHEESE:
+        case FOOD_SAUSAGE:
+            valued = 15;
+            break;
+
         case FOOD_LEMON:
         case FOOD_ORANGE:
-        case FOOD_SAUSAGE:
-            valued = 32;
+        case FOOD_BANANA:
+            valued = 12;
             break;
+
         case FOOD_APPLE:
         case FOOD_APRICOT:
         case FOOD_PEAR:
-        case FOOD_BANANA:
-            valued = 24;
+            valued = 8;
             break;
+
+        case FOOD_CHOKO:
         case FOOD_LYCHEE:
-            valued = 16;
-            break;
-        case FOOD_SNOZZCUMBER:
-        case FOOD_STRAWBERRY:
         case FOOD_RAMBUTAN:
+        case FOOD_SNOZZCUMBER:
+        case FOOD_CHUNK:
+            valued = 4;
+            break;
+
+        case FOOD_STRAWBERRY:
         case FOOD_GRAPE:
         case FOOD_SULTANA:
-        case FOOD_CHUNK:
-            valued = 8;
+            valued = 1;
             break;
         }
         break;
@@ -1181,9 +1312,13 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
                     || item.sub_type == RING_STRENGTH
                     || item.sub_type == RING_EVASION
                     || item.sub_type == RING_DEXTERITY
-                    || item.sub_type == RING_INTELLIGENCE))
+                    || item.sub_type == RING_INTELLIGENCE
+                    || item.sub_type == RING_SLAYING))
             {
-                if (item.plus >= 0)
+                if (item.plus > 0)
+                    valued += 10 * item.plus;
+
+                if (item.sub_type == RING_SLAYING && item.plus2 > 0)
                     valued += 10 * item.plus;
             }
 
@@ -1239,6 +1374,9 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             case RING_HUNGER:
                 valued -= 50;
                 break;
+            case AMU_THE_GOURMAND:
+                valued += 35;
+                break;
             case AMU_CLARITY:
             case AMU_RESIST_CORROSION:
             case AMU_RESIST_MUTATION:
@@ -1253,17 +1391,26 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
             case AMU_RAGE:
                 valued += 20;
                 break;
-            case AMU_THE_GOURMAND:
-                valued += 15;
-                break;
             case AMU_INACCURACY:
                 valued -= 50;
                 break;
                 // got to do delusion!
             }
 
-            if (is_random_artefact( item ))
-                valued += 50;
+            if (is_random_artefact(item))
+            {
+                if (item_ident(item, ISFLAG_KNOW_TYPE))
+                {
+                    if (valued < 0)
+                        valued = randart_value( item ) - 5;
+                    else
+                        valued += randart_value( item );
+                }
+                else
+                {
+                    valued += 50;
+                }
+            }
 
             valued *= 7;
         }
@@ -1379,15 +1526,14 @@ void shop(void)
     redraw_screen();
 }                               // end shop()
 
-char *shop_name(int sx, int sy)
+const char *shop_name(int sx, int sy)
 {
-    static char sh_name[40];
-    char str_pass[40];
+    static char sh_name[80];
     int shoppy;
 
     // paranoia
     if (grd[sx][sy] != DNGN_ENTER_SHOP)
-        return "";
+        return ("");
 
     // find shop
     for(shoppy = 0; shoppy < MAX_SHOPS; shoppy ++)
@@ -1408,10 +1554,12 @@ char *shop_name(int sx, int sy)
 
     int shop_type = env.shop[shoppy].type;
 
-    make_name( env.shop[shoppy].keeper_name[0], env.shop[shoppy].keeper_name[1],
-               env.shop[shoppy].keeper_name[2], 3, str_pass );
+    char st_p[ITEMNAME_SIZE];
 
-    strcpy(sh_name, str_pass);
+    make_name( env.shop[shoppy].keeper_name[0], env.shop[shoppy].keeper_name[1],
+               env.shop[shoppy].keeper_name[2], 3, st_p );
+
+    strcpy(sh_name, st_p);
     strcat(sh_name, "'s ");
 
     if (shop_type == SHOP_WEAPON_ANTIQUE || shop_type == SHOP_ARMOUR_ANTIQUE)
@@ -1443,5 +1591,5 @@ char *shop_name(int sx, int sy)
                                      : " Shop" );
     }
 
-    return sh_name;
+    return (sh_name);
 }

@@ -167,7 +167,7 @@ static std::string munge_description(const std::string & inStr)
  //---------------------------------------------------------------
 static void dump_stats( std::string & text )
 {
-    char st_prn[15];
+    char st_prn[20];
 
     text += you.your_name;
     text += " the ";
@@ -347,9 +347,9 @@ static void dump_location( std::string & text )
         }
         else
         {
-            char st_prn[15];
-
             text += "on level ";
+
+            char st_prn[20];
             itoa(you.your_level + 1, st_prn, 10);
             text += st_prn;
         }
@@ -403,7 +403,7 @@ static void dump_religion( std::string & text )
  // dump_inventory
  //
  //---------------------------------------------------------------
-static void dump_inventory( std::string & text, char show_prices )
+static void dump_inventory( std::string & text, bool show_prices )
 {
     int i, j;
     char temp_id[4][50];
@@ -418,13 +418,10 @@ static void dump_inventory( std::string & text, char show_prices )
         }
     }
 
-    char st_pass[60];
-
-    strcpy(st_pass, "");
-
+    char st_pass[ ITEMNAME_SIZE ] = "";
     int inv_class2[OBJ_GOLD];
     int inv_count = 0;
-    char strng[80];
+    char tmp_quant[20];
 
     for (i = 0; i < OBJ_GOLD; i++)
     {
@@ -487,12 +484,14 @@ static void dump_inventory( std::string & text, char show_prices )
 
                         inv_count--;
 
-                        if (show_prices == 1)
+                        if (show_prices)
                         {
                             text += " (";
 
-                            itoa(item_value(you.inv[j], temp_id, true), strng, 10);
-                            text += strng;
+                            itoa( item_value( you.inv[j], temp_id, true ),
+                                  tmp_quant, 10 );
+
+                            text += tmp_quant;
                             text += "gold)";
                         }
 
@@ -523,6 +522,8 @@ static void dump_inventory( std::string & text, char show_prices )
 //---------------------------------------------------------------
 static void dump_skills( std::string & text )
 {
+    char tmp_quant[20];
+
     text += EOL;
     text += EOL;
     text += "   Skills:";
@@ -536,11 +537,9 @@ static void dump_skills( std::string & text )
                       (you.practise_skill[i]) ? " + "
                                               : " - " );
 
-            char strng[80];
-
             text += "Level ";
-            itoa(you.skills[i], strng, 10);
-            text += strng;
+            itoa( you.skills[i], tmp_quant, 10 );
+            text += tmp_quant;
             text += " ";
             text += skill_name(i);
             text += EOL;
@@ -575,7 +574,7 @@ static std::string spell_type_name(int spell_class, bool slash)
 //---------------------------------------------------------------
 static void dump_spells( std::string & text )
 {
-    char strng[80];
+    char tmp_quant[20];
 
 // This array helps output the spell types in the traditional order.
 // this can be tossed as soon as I reorder the enum to the traditional order {dlb}
@@ -605,8 +604,8 @@ static void dump_spells( std::string & text )
     else
     {
         text += "You have ";
-        itoa(spell_levels, strng, 10);
-        text += strng;
+        itoa(spell_levels, tmp_quant, 10);
+        text += tmp_quant;
         text += " spell levels left.";
     }
 
@@ -630,14 +629,13 @@ static void dump_spells( std::string & text )
             if (you.spells[j] != SPELL_NO_SPELL)
             {
                 std::string spell_line = " ";
+
+                char strng[2];
                 char ft;
-
                 ft = index_to_letter(j);
-
-                char st_pass[60];
-
                 strng[0] = ft;
                 strng[1] = '\0';
+
                 spell_line += strng;
                 spell_line += " - ";
                 spell_line += spell_title(you.spells[j]);
@@ -682,8 +680,8 @@ static void dump_spells( std::string & text )
                 for (int i = spell_line.length(); i < 70; i++)
                     spell_line += ' ';
 
-                itoa((int) spell_difficulty(you.spells[j]), st_pass, 10);
-                spell_line += st_pass;
+                itoa((int) spell_difficulty(you.spells[j]), tmp_quant, 10);
+                spell_line += tmp_quant;
                 spell_line += EOL;
 
                 text += spell_line;
@@ -745,7 +743,7 @@ static void dump_mutations( std::string & text )
 // character was successfully saved.
 //
 //---------------------------------------------------------------
-bool dump_char(char show_prices, char fname[30])        // $$$ a try block?
+bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
 {
     bool succeeded = false;
 
@@ -821,13 +819,13 @@ bool dump_char(char show_prices, char fname[30])        // $$$ a try block?
 
     dump_inventory(text, show_prices);
 
-    char strng[80];
+    char tmp_quant[20];
 
     text += EOL;
     text += EOL;
     text += " You have ";
-    itoa(you.exp_available, strng, 10);
-    text += strng;
+    itoa( you.exp_available, tmp_quant, 10 );
+    text += tmp_quant;
     text += " experience left.";
 
     dump_skills(text);
@@ -849,7 +847,7 @@ bool dump_char(char show_prices, char fname[30])        // $$$ a try block?
 #if DEBUG_DIAGNOSTICS
     strcpy( info, "File name: " );
     strcat( info, file_name );
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     if (handle != NULL)
@@ -878,5 +876,5 @@ bool dump_char(char show_prices, char fname[30])        // $$$ a try block?
     else
         mpr("Error opening file.");
 
-    return succeeded;
+    return (succeeded);
 }                               // end dump_char()

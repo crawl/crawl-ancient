@@ -26,7 +26,6 @@
 #include "direct.h"
 #include "dungeon.h"
 #include "effects.h"
-#include "fight.h"
 #include "it_use2.h"
 #include "itemname.h"
 #include "items.h"
@@ -70,9 +69,9 @@ void do_monster_rot(int mon);
 
 //jmf: FIXME: put somewhere else (misc.cc?)
 // A feeble attempt at Nethack-like completeness for cute messages.
-const char *your_hand(int plural)
+const char *your_hand( bool plural )
 {
-    static char buffer[80];
+    static char hand_buff[80];
 
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
@@ -82,33 +81,33 @@ const char *your_hand(int plural)
     case TRAN_STATUE:
         if (you.species == SP_TROLL || you.species == SP_GHOUL)
         {
-            strcpy(buffer, "claw");
+            strcpy(hand_buff, "claw");
             break;
         }
         // or fall-through
     case TRAN_ICE_BEAST:
     case TRAN_LICH:
-        strcpy(buffer, "hand");
+        strcpy(hand_buff, "hand");
         break;
     case TRAN_SPIDER:
-        strcpy(buffer, "front leg");
+        strcpy(hand_buff, "front leg");
         break;
     case TRAN_SERPENT_OF_HELL:
     case TRAN_DRAGON:
-        strcpy(buffer, "foreclaw");
+        strcpy(hand_buff, "foreclaw");
         break;
     case TRAN_BLADE_HANDS:
-        strcpy(buffer, "scythe-like blade");
+        strcpy(hand_buff, "scythe-like blade");
         break;
     case TRAN_AIR:
-        strcpy(buffer, "misty tendril");
+        strcpy(hand_buff, "misty tendril");
         break;
     }
 
     if (plural)
-        strcat(buffer, "s");
+        strcat(hand_buff, "s");
 
-    return buffer;
+    return (hand_buff);
 }
 
 // I need to make some debris for metal, crystal and stone.
@@ -368,7 +367,7 @@ static int shatter_walls(int x, int y, int pow, int garbage)
     if (stuff && random2(100) < chance)
     {
         if (!silenced( x, y ))
-            noisy( x, y, 30 );
+            noisy( 30, x, y );
 
         grd[x][y] = DNGN_FLOOR;
         place_debris(x, y, stuff);
@@ -384,7 +383,7 @@ void cast_shatter(int pow)
     const bool sil = silenced( you.x_pos, you.y_pos );
 
     if (!sil)
-        noisy( you.x_pos, you.y_pos, 30 );
+        noisy( 30, you.x_pos, you.y_pos );
 
     snprintf(info, INFO_SIZE, "The dungeon %s!", (sil ? "shakes" : "rumbles"));
     mpr(info);
@@ -446,7 +445,7 @@ void cast_forescry(int pow)
 
 void cast_see_invisible(int pow)
 {
-    if (player_see_invis() || !you.duration[DUR_SEE_INVISIBLE])
+    if (player_see_invis())
         mpr("Nothing seems to happen.");
     else
         mpr("Your vision seems to sharpen.");
@@ -599,14 +598,14 @@ void cast_detect_secret_doors(int pow)
 void cast_summon_butterflies(int pow)
 {
     // explicitly limiting the number
-    int num = 1 + random2(3) + random2( pow ) / 10;
-    if (num > 12)
-        num = 12;
+    int num = 4 + random2(3) + random2( pow ) / 10;
+    if (num > 16)
+        num = 16;
 
     for (int scount = 1; scount < num; scount++)
     {
         create_monster( MONS_BUTTERFLY, ENCH_ABJ_III, BEH_FRIENDLY,
-                        you.x_pos, you.y_pos, MHITNOT, 250 );
+                        you.x_pos, you.y_pos, MHITYOU, 250 );
     }
 }
 
@@ -643,29 +642,27 @@ void cast_summon_large_mammal(int pow)
         }
     }
 
-    create_monster( mon, ENCH_ABJ_III, BEH_FRIENDLY, you.x_pos,
-                    you.y_pos, MHITNOT, 250 );
+    create_monster( mon, ENCH_ABJ_III, BEH_FRIENDLY, you.x_pos, you.y_pos,
+                    you.pet_target, 250 );
 }
 
 void cast_sticks_to_snakes(int pow)
 {
-    int mon, i, how_many = 0, max, behaviour;
+    int mon, i, behaviour;
 
-    // Toned this down... players should have to earn the second snake.
-    // This is nicer is that it allows for a more gradual progression
-    // (ie. 7th level gives a greater chance of a second snake over 6th...
-    // the previous one did the division before calling random2() so
-    // the change was only every fifth level) -- bwr
-    max = 1 + random2( 1 + you.skills[SK_TRANSMIGRATION] ) / 5;
+    int how_many = 0;
 
-    if (max > 6)
-        max = 6;
+    int max = 1 + random2( 1 + you.skills[SK_TRANSMIGRATION] ) / 4;
+
+    int dur = ENCH_ABJ_III + random2(pow) / 20;
+    if (dur > ENCH_ABJ_V)
+        dur = ENCH_ABJ_V;
 
     const int weapon = you.equip[EQ_WEAPON];
-    // how_many = you.inv[you.equip[EQ_WEAPON]].quantity;
+
     if (weapon == -1)
     {
-        snprintf( info, INFO_SIZE, "Your %s feel slithery!", your_hand(1));
+        snprintf( info, INFO_SIZE, "Your %s feel slithery!", your_hand(true));
         mpr(info);
         return;
     }
@@ -682,13 +679,13 @@ void cast_sticks_to_snakes(int pow)
         for (i = 0; i <= max; i++)
         {
             //jmf: perhaps also check for poison ammo?
-            if (pow > 40 && one_chance_in(3))
+            if (pow > 50 || (pow > 25 && one_chance_in(3)))
                 mon = MONS_SNAKE;
             else
                 mon = MONS_SMALL_SNAKE;
 
-            if (create_monster( mon, ENCH_ABJ_III, behaviour, you.x_pos,
-                                you.y_pos, MHITNOT, 250 ) != -1)
+            if (create_monster( mon, dur, behaviour, you.x_pos, you.y_pos,
+                                MHITYOU, 250 ) != -1)
             {
                 how_many++;
             }
@@ -732,8 +729,7 @@ void cast_sticks_to_snakes(int pow)
         if (pow > 20 && one_chance_in(3))
             mon = MONS_BROWN_SNAKE;
 
-        create_monster( mon, ENCH_ABJ_III, behaviour, you.x_pos, you.y_pos,
-                        MHITNOT, 250 );
+        create_monster(mon, dur, behaviour, you.x_pos, you.y_pos, MHITYOU, 250);
     }
 
 #ifdef USE_DEBRIS_CODE
@@ -758,7 +754,7 @@ void cast_sticks_to_snakes(int pow)
     }
     else
     {
-        snprintf( info, INFO_SIZE, "Your %s feel slithery!", your_hand(1));
+        snprintf( info, INFO_SIZE, "Your %s feel slithery!", your_hand(true));
     }
 
     mpr(info);
@@ -776,9 +772,9 @@ void cast_summon_dragon(int pow)
     // a very high level spell so it might be okay).  -- bwr
     happy = (random2(pow) > 5);
 
-    if (create_monster(MONS_DRAGON, ENCH_ABJ_III,
+    if (create_monster( MONS_DRAGON, ENCH_ABJ_III,
                         (happy ? BEH_FRIENDLY : BEH_HOSTILE),
-                        you.x_pos, you.y_pos, MHITNOT, 250) != -1)
+                        you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
     {
         strcpy(info, "A dragon appears.");
 
@@ -846,20 +842,21 @@ static int sleep_monsters(int x, int y, int pow, int garbage)
     int mnstr = mgrd[x][y];
 
     if (mnstr == NON_MONSTER)                                   return 0;
-    if (mons_holiness(menv[mnstr].type) != MH_NATURAL)          return 0;
-    if (check_mons_magres(&menv[mnstr], pow))                   return 0;
-    if (mons_friendly(&menv[mnstr]))                            return 0;
+    if (mons_holiness( menv[mnstr].type ) != MH_NATURAL)        return 0;
+    if (check_mons_resist_magic( &menv[mnstr], pow ))           return 0;
+
+    // Why shouldn't we be able to sleep friendly monsters? -- bwr
+    // if (mons_friendly( &menv[mnstr] ))                          return 0;
 
     //jmf: now that sleep == hibernation:
-    if (mons_res_cold(&menv[mnstr]) > 0 && coinflip())           return 0;
-
-    if (mons_has_ench(&menv[mnstr], ENCH_SLEEP_WARY))           return 0;
-
-    if (mons_flag(menv[mnstr].type, M_COLD_BLOOD))
-        mons_add_ench(&menv[mnstr], ENCH_SLOW);
+    if (mons_res_cold( &menv[mnstr] ) > 0 && coinflip())        return 0;
+    if (mons_has_ench( &menv[mnstr], ENCH_SLEEP_WARY ))         return 0;
 
     menv[mnstr].behaviour = BEH_SLEEP;
-    mons_add_ench(&menv[mnstr], ENCH_SLEEP_WARY);
+    mons_add_ench( &menv[mnstr], ENCH_SLEEP_WARY );
+
+    if (mons_flag( menv[mnstr].type, M_COLD_BLOOD ) && coinflip())
+        mons_add_ench( &menv[mnstr], ENCH_SLOW );
 
     return 1;
 }                               // end sleep_monsters()
@@ -872,9 +869,11 @@ void cast_mass_sleep(int pow)
 static int tame_beast_monsters(int x, int y, int pow, int garbage)
 {
     int which_mons = mgrd[x][y];
-    struct monsters *monster = &menv[which_mons];
 
     if (which_mons == NON_MONSTER)                             return 0;
+
+    struct monsters *monster = &menv[which_mons];
+
     if (mons_holiness(monster->type) != MH_NATURAL)            return 0;
     if (mons_intel_type(monster->type) != I_ANIMAL)            return 0;
     if (mons_friendly(monster))                                return 0;
@@ -889,7 +888,7 @@ static int tame_beast_monsters(int x, int y, int pow, int garbage)
     if (you.species == SP_HILL_ORC && monster->type == MONS_WARG)
         pow += (pow / 2);
 
-    if (check_mons_magres(monster, pow))
+    if (check_mons_resist_magic(monster, pow))
         return 0;
 
     // I'd like to make the monsters affected permanently, but that's
@@ -1032,8 +1031,10 @@ static int ignite_poison_monsters(int x, int y, int pow, int garbage)
         damage = mons_adjust_flavoured( mon, beam, damage );
 
 #if DEBUG_DIAGNOSTICS
-        snprintf( info, INFO_SIZE, "Damage: %d", damage );
-        mpr( info, MSGCH_DIAGNOSTIC );
+        snprintf( info, INFO_SIZE, "Dice: %dd%d; Damage: %d",
+                  dam_dice.num, dam_dice.size, damage );
+
+        mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
         if (!player_hurt_monster( mon_index, damage ))
@@ -1054,6 +1055,7 @@ void cast_ignite_poison(int pow)
     int damage = 0, strength = 0, pcount = 0, acount = 0, totalstrength = 0;
     char item;
     bool wasWielding = false;
+    char str_pass[ ITEMNAME_SIZE ];
 
     // temp weapon of venom => temp fire brand
     const int wpn = you.equip[EQ_WEAPON];
@@ -1291,7 +1293,7 @@ void cast_discharge( int pow )
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "Arcs: %d Damage: %d", num_targs, dam );
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     if (dam == 0)
@@ -1421,7 +1423,7 @@ int disperse_monsters(int x, int y, int pow, int message)
         simple_monster_message(defender, " resists.");
         return 1;
     }
-    else if (check_mons_magres(defender, pow))
+    else if (check_mons_resist_magic(defender, pow))
     {
         if (coinflip())
         {
@@ -1461,7 +1463,7 @@ static int spell_swap_func(int x, int y, int pow, int message)
     struct monsters *defender = &menv[monster_attacked];
 
     if (defender->type == MONS_BLINK_FROG
-        || check_mons_magres( defender, pow ))
+        || check_mons_resist_magic( defender, pow ))
     {
         simple_monster_message( defender, " resists." );
     }
@@ -1735,7 +1737,7 @@ static int glamour_monsters(int x, int y, int pow, int garbage)
     if (show_char == 'o' || show_char == 'e' || menv[mon].type == MONS_BOGGART)
         pow = (pow / 2) + 1;
 
-    if (check_mons_magres(&menv[mon], pow))
+    if (check_mons_resist_magic(&menv[mon], pow))
         return (0);
 
     switch (random2(6))
@@ -1796,14 +1798,14 @@ bool backlight_monsters(int x, int y, int pow, int garbage)
     int mon = mgrd[x][y];
 
     if (mon == NON_MONSTER)
-        return false;
+        return (false);
 
     switch (menv[mon].type)
     {
     //case MONS_INSUBSTANTIAL_WISP: //jmf: I'm not sure if these glow or not
     //case MONS_VAPOUR:
     case MONS_UNSEEN_HORROR:    // consider making this visible? probably not.
-        return false;
+        return (false);
 
     case MONS_FIRE_VORTEX:
     case MONS_ANGEL:
@@ -1825,20 +1827,29 @@ bool backlight_monsters(int x, int y, int pow, int garbage)
     case MONS_SPECTRAL_THING:
     case MONS_ORB_OF_FIRE:
     case MONS_EYE_OF_DEVASTATION:
-        return false;               // already glowing or invisible
+        return (false);               // already glowing or invisible
     default:
         break;
     }
 
-    strcpy(info, ptr_monam( &(menv[mon]), DESC_CAP_THE ));
-    strcat(info, " is outlined in light.");
-    mpr(info);
+    int lvl = mons_has_ench( &menv[mon], ENCH_BACKLIGHT_I, ENCH_BACKLIGHT_IV );
+
+    if (lvl == ENCH_NONE)
+        simple_monster_message( &menv[mon], " is outlined in light." );
+    else if (lvl == ENCH_BACKLIGHT_IV)
+        simple_monster_message( &menv[mon], " glows brighter for a moment." );
+    else
+    {
+        // remove old level
+        mons_del_ench( &menv[mon], ENCH_BACKLIGHT_I, ENCH_BACKLIGHT_III, true );
+        simple_monster_message( &menv[mon], " glows brighter." );
+    }
 
     // this enchantment wipes out invisibility (neat)
     mons_del_ench( &menv[mon], ENCH_INVIS );
     mons_add_ench( &menv[mon], ENCH_BACKLIGHT_IV );
 
-    return true;
+    return (true);
 }                               // end backlight_monsters()
 
 void cast_evaporate(int pow)
@@ -1858,7 +1869,7 @@ void cast_evaporate(int pow)
     if (potion == -1)
     {
         snprintf( info, INFO_SIZE, "Wisps of steam play over your %s!",
-                  your_hand(1) );
+                  your_hand(true) );
 
         mpr(info);
         return;
@@ -1870,7 +1881,7 @@ void cast_evaporate(int pow)
         return;
     }
 
-    mpr("Which direction? (*/+ to target)", MSGCH_PROMPT);
+    mpr( STD_DIRECTION_PROMPT, MSGCH_PROMPT );
 
     message_current_target();
 
@@ -1976,7 +1987,7 @@ void cast_evaporate(int pow)
     if (coinflip())
         exercise( SK_THROWING, 1 );
 
-    beam(beem);
+    fire_beam(beem);
 
 #if 0
 
@@ -2059,6 +2070,8 @@ void cast_evaporate(int pow)
 // using up the corpse might also lead to game balance problems. -- bwr
 void cast_fulsome_distillation( int powc )
 {
+    char str_pass[ ITEMNAME_SIZE ];
+
     if (powc > 50)
         powc = 50;
 
@@ -2210,7 +2223,7 @@ void cast_fulsome_distillation( int powc )
 void make_shuggoth(int x, int y, int hp)
 {
     int mon = create_monster( MONS_SHUGGOTH, 100 + random2avg(58, 3),
-        BEH_HOSTILE, x, y, MHITNOT, 250 );
+                              BEH_HOSTILE, x, y, MHITNOT, 250 );
 
     if (mon != -1)
     {
@@ -2232,7 +2245,7 @@ static int rot_living(int x, int y, int pow, int message)
     if (mons_holiness(menv[mon].type) != MH_NATURAL)
         return 0;
 
-    if (check_mons_magres(&menv[mon], pow))
+    if (check_mons_resist_magic(&menv[mon], pow))
         return 0;
 
     ench = ((random2(pow) + random2(pow) + random2(pow) + random2(pow)) / 4);
@@ -2262,7 +2275,7 @@ static int rot_undead(int x, int y, int pow, int garbage)
     if (mons_holiness(menv[mon].type) != MH_UNDEAD)
         return 0;
 
-    if (check_mons_magres(&menv[mon], pow))
+    if (check_mons_resist_magic(&menv[mon], pow))
         return 0;
 
     // this does not make sense -- player mummies are
@@ -2346,16 +2359,11 @@ static int snake_charm_monsters(int x, int y, int pow, int message)
 {
     int mon = mgrd[x][y];
 
-    if (mon == NON_MONSTER)
-        return 0;
-    if (mons_friendly(&menv[mon]))
-        return 0;
-    if (one_chance_in(4))
-        return 0;
-    if (mons_charclass(menv[mon].type) != 'S')
-        return 0;
-    if (check_mons_magres(&menv[mon], pow))
-        return 0;
+    if (mon == NON_MONSTER)                             return 0;
+    if (mons_friendly(&menv[mon]))                      return 0;
+    if (one_chance_in(4))                               return 0;
+    if (mons_char(menv[mon].type) != 'S')               return 0;
+    if (check_mons_resist_magic(&menv[mon], pow))       return 0;
 
     menv[mon].attitude = ATT_FRIENDLY;
     snprintf( info, INFO_SIZE, "%s sways back and forth.", ptr_monam( &(menv[mon]), DESC_CAP_THE ));
@@ -2410,7 +2418,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
 
     if (mon != NON_MONSTER)
     {
-        // This needs its own buffer... we also need to do it first
+        // This needs its own hand_buff... we also need to do it first
         // in case the target dies. -- bwr
         char explode_msg[80];
 
@@ -2527,7 +2535,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
         // fall-through
     case DNGN_STONE_WALL:
         what = "wall";
-        if (you.where_are_you == BRANCH_HALL_OF_ZOT)
+        if (player_in_branch( BRANCH_HALL_OF_ZOT ))
             blast.colour = env.rock_colour;
         // fall-through
     case DNGN_ORCISH_IDOL:
@@ -2717,7 +2725,7 @@ void cast_twist(int pow)
         pow = 25;
 
     // Get target,  using DIR_TARGET for targetting only,
-    // since we don't use beam() for this spell.
+    // since we don't use fire_beam() for this spell.
     if (spell_direction(targ, tmp, DIR_TARGET) == -1)
         return;
 
@@ -2731,7 +2739,7 @@ void cast_twist(int pow)
     }
 
     // Monster can magically save vs attack.
-    if (check_mons_magres( &menv[ mons ], pow * 2 ))
+    if (check_mons_resist_magic( &menv[ mons ], pow * 2 ))
     {
         simple_monster_message( &menv[ mons ], " resists." );
         return;
@@ -2769,7 +2777,7 @@ void cast_far_strike(int pow)
     struct bolt tmp;    // used, but ignored
 
     // Get target,  using DIR_TARGET for targetting only,
-    // since we don't use beam() for this spell.
+    // since we don't use fire_beam() for this spell.
     if (spell_direction(targ, tmp, DIR_TARGET) == -1)
         return;
 
@@ -2865,7 +2873,7 @@ void cast_far_strike(int pow)
 
     // Monster can magically save vs attack (this could be replaced or
     // augmented with an EV check).
-    if (check_mons_magres( monster, pow * 2 ))
+    if (check_mons_resist_magic( monster, pow * 2 ))
     {
         simple_monster_message( monster, " resists." );
         return;
@@ -2931,7 +2939,18 @@ void cast_apportation(int pow)
     const int item = igrd[ beam.tx ][ beam.ty ];
     if (item == NON_ITEM)
     {
-        mpr( "There are no items there." );
+        const int  mon = mgrd[ beam.tx ][ beam.ty ];
+        if (mon == NON_MONSTER)
+            mpr( "There are no items there." );
+        else if (mons_charclass( menv[ mon ].type ) == MONS_GOLD_MIMIC)
+        {
+            snprintf( info, INFO_SIZE, "%s twitches.",
+                      ptr_monam( &(menv[ mon ]), DESC_CAP_THE ) );
+            mpr( info );
+        }
+        else
+            mpr( "This spell does not work on creatures." );
+
         return;
     }
 
@@ -2943,8 +2962,10 @@ void cast_apportation(int pow)
     // item has mass: might not move all of them
     if (unit_mass > 0)
     {
-        // most units our power level will allow (max of 40 aum)
-        max_units = ((pow >= 40) ? 400 : (pow * 10)) / unit_mass;
+        const int max_mass = pow * 30 + random2( pow * 20 );
+
+        // most units our power level will allow
+        max_units = max_mass / unit_mass;
     }
 
     if (max_units <= 0)

@@ -34,7 +34,6 @@
 #include "debug.h"
 #include "delay.h"
 #include "effects.h"
-#include "fight.h"
 #include "invent.h"
 #include "it_use2.h"
 #include "item_use.h"
@@ -549,7 +548,6 @@ void item_check(char keyin)
 {
     char item_show[50][50];
     char temp_quant[10];
-    char str_pass[50];
 
     int counter = 0;
     int counter_max = 0;
@@ -577,7 +575,7 @@ void item_check(char keyin)
             switch (grid)
             {
             case DNGN_ENTER_HELL:
-                mpr("There is a gateway to hell here.");
+                mpr("There is a gateway to Hell here.");
                 break;
             case DNGN_ENTER_GEHENNA:
                 mpr("There is a gateway to Gehenna here.");
@@ -618,7 +616,7 @@ void item_check(char keyin)
                 mpr("There is a gate leading to another region of Pandemonium here.");
                 break;
             case DNGN_ENTER_ORCISH_MINES:
-                mpr("There is a staircase to the orcish mines here.");
+                mpr("There is a staircase to the Orcish Mines here.");
                 break;
             case DNGN_ENTER_HIVE:
                 mpr("There is a staircase to the Hive here.");
@@ -656,29 +654,29 @@ void item_check(char keyin)
             case DNGN_ENTER_SWAMP:
                 mpr("There is a staircase to the Swamp here.");
                 break;
-            case DNGN_RETURN_DUNGEON_I:
-            case DNGN_RETURN_DUNGEON_II:
-            case DNGN_RETURN_DUNGEON_III:
-            case DNGN_RETURN_DUNGEON_IV:
-            case DNGN_RETURN_DUNGEON_V:
+            case DNGN_RETURN_FROM_ORCISH_MINES:
+            case DNGN_RETURN_FROM_HIVE:
+            case DNGN_RETURN_FROM_LAIR:
+            case DNGN_RETURN_FROM_VAULTS:
+            case DNGN_RETURN_FROM_TEMPLE:
                 mpr("There is a staircase back to the Dungeon here.");
                 break;
-            case DNGN_RETURN_LAIR_II:
-            case DNGN_RETURN_LAIR_III:
-            case DNGN_RETURN_LAIR_IV:
+            case DNGN_RETURN_FROM_SLIME_PITS:
+            case DNGN_RETURN_FROM_SNAKE_PIT:
+            case DNGN_RETURN_FROM_SWAMP:
                 mpr("There is a staircase back to the Lair here.");
                 break;
-            case DNGN_RETURN_VAULTS_II:
-            case DNGN_RETURN_VAULTS_III:
+            case DNGN_RETURN_FROM_CRYPT:
+            case DNGN_RETURN_FROM_HALL_OF_BLADES:
                 mpr("There is a staircase back to the Vaults here.");
                 break;
-            case DNGN_RETURN_CRYPT:
+            case DNGN_RETURN_FROM_TOMB:
                 mpr("There is a staircase back to the Crypt here.");
                 break;
-            case DNGN_RETURN_MINES:
+            case DNGN_RETURN_FROM_ELVEN_HALLS:
                 mpr("There is a staircase back to the Mines here.");
                 break;
-            case DNGN_EXIT_ZOT:
+            case DNGN_RETURN_FROM_ZOT:
                 mpr("There is a gate leading back out of this place here.");
                 break;
             case DNGN_ALTAR_ZIN:
@@ -766,6 +764,7 @@ void item_check(char keyin)
         }
         else
         {
+            char str_pass[ ITEMNAME_SIZE ];
             it_name(objl, DESC_NOCAP_A, str_pass);
             strcpy(item_show[counter], str_pass);
         }
@@ -812,9 +811,16 @@ void pickup(void)
     int o = 0;
     int m = 0;
     int num = 0;
-    char str_pass[50];
     unsigned char keyin = 0;
     int next;
+    char str_pass[ ITEMNAME_SIZE ];
+
+    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR
+        && you.duration[DUR_TRANSFORMATION] > 0)
+    {
+        mpr("You can't pick up anything in this form!");
+        return;
+    }
 
     if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
     {
@@ -825,7 +831,7 @@ void pickup(void)
     // Fortunately, the player is prevented from testing their
     // portable altar in the Ecumenical Temple. -- bwr
     if (grd[you.x_pos][you.y_pos] == DNGN_ALTAR_NEMELEX_XOBEH
-        && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE)
+        && !player_in_branch( BRANCH_ECUMENICAL_TEMPLE ))
     {
         if (inv_count() >= ENDOFPACK)
         {
@@ -894,6 +900,7 @@ void pickup(void)
 
                 if (mitm[o].base_type == OBJ_GOLD)
                 {
+                    char st_prn[20];
                     itoa(mitm[o].quantity, st_prn, 10);
                     strcat(info, st_prn);
                     strcat(info, " gold piece");
@@ -1316,10 +1323,11 @@ static void drop_gold(unsigned int amount)
 void drop(void)
 {
     int i;
-    char str_pass[80];
 
     int item_dropped;
     int quant_drop = -1;
+
+    char str_pass[ ITEMNAME_SIZE ];
 
     if (inv_count() < 1 && you.gold == 0)
     {
@@ -1328,8 +1336,8 @@ void drop(void)
     }
 
     // XXX: Need to handle quantities:
-    item_dropped = prompt_invent_item( "Drop which item?", -1, true, true, '$',
-                                       &quant_drop );
+    item_dropped = prompt_invent_item( "Drop which item?", -1, true, true,
+                                       true, '$', &quant_drop );
 
     if (item_dropped == PROMPT_ABORT || quant_drop == 0)
     {
@@ -1390,6 +1398,15 @@ void drop(void)
         }
     }
 
+    // Unwield needs to be done before copy in order to clear things
+    // like temporary brands. -- bwr
+    if (item_dropped == you.equip[EQ_WEAPON])
+    {
+        unwield_item(item_dropped);
+        you.equip[EQ_WEAPON] = -1;
+        canned_msg( MSG_EMPTY_HANDED );
+    }
+
     if (!copy_item_to_grid( you.inv[item_dropped],
                             you.x_pos, you.y_pos, quant_drop ))
     {
@@ -1400,13 +1417,6 @@ void drop(void)
     quant_name( you.inv[item_dropped], quant_drop, DESC_NOCAP_A, str_pass );
     snprintf( info, INFO_SIZE, "You drop %s.", str_pass );
     mpr(info);
-
-    if (item_dropped == you.equip[EQ_WEAPON])
-    {
-        unwield_item(item_dropped);
-        you.equip[EQ_WEAPON] = -1;
-        canned_msg( MSG_EMPTY_HANDED );
-    }
 
     dec_inv_item_quantity( item_dropped, quant_drop );
     you.turn_is_over = 1;
@@ -1765,7 +1775,7 @@ void update_level( double elapsedTime )
     int mons_total = 0;
 
     snprintf( info, INFO_SIZE, "turns: %d", turns );
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     update_corpses( elapsedTime );
@@ -1822,15 +1832,17 @@ void update_level( double elapsedTime )
                   m, range, long_time, mon->x, mon->y,
                   mon->foe, mon->target_x, mon->target_y, mon->flags );
 
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
         if (range <= 0)
             continue;
 
+
         if (long_time
             && (mon->behaviour == BEH_FLEE
                 || mon->behaviour == BEH_CORNERED
+                || testbits( mon->flags, MF_BATTY )
                 || coinflip()))
         {
             if (mon->behaviour != BEH_WANDER)
@@ -1887,13 +1899,13 @@ void update_level( double elapsedTime )
 
 #if DEBUG_DIAGNOSTICS
         snprintf( info, INFO_SIZE, "moved to (%d,%d)", mon->x, mon->y );
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
 #endif
     }
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "total monsters on level = %d", mons_total );
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     for (i = 0; i < MAX_CLOUDS; i++)
@@ -1922,9 +1934,7 @@ void handle_time( long time_delta )
     bool new_rotting_item = false; //mv: becomes true when some new item becomes rotting
 
     // BEGIN - Nasty things happen to people who spend too long in Hell:
-    if (you.where_are_you >= BRANCH_DIS
-        && you.where_are_you <= BRANCH_TARTARUS
-        && you.where_are_you != BRANCH_VESTIBULE_OF_HELL && coinflip())
+    if (player_in_hell() && coinflip())
     {
         temp_rand = random2(17);
 
@@ -2009,13 +2019,13 @@ void handle_time( long time_delta )
 
             if (summon_instead)
             {
-                create_monster(which_beastie, 0, BEH_HOSTILE, you.x_pos,
-                               you.y_pos, MHITYOU, 250);
+                create_monster( which_beastie, 0, BEH_HOSTILE, you.x_pos,
+                                you.y_pos, MHITYOU, 250 );
             }
             else
             {
-                miscast_effect(which_miscast, 4 + random2(6),
-                               random2avg(97, 3), 100);
+                miscast_effect( which_miscast, 4 + random2(6),
+                                random2avg(97, 3), 100 );
             }
         }
 
@@ -2027,15 +2037,15 @@ void handle_time( long time_delta )
         // try to summon at least one and up to five random monsters {dlb}
         if (one_chance_in(3))
         {
-            create_monster(RANDOM_MONSTER, 0, BEH_HOSTILE, you.x_pos,
-                           you.y_pos, MHITYOU, 250);
+            create_monster( RANDOM_MONSTER, 0, BEH_HOSTILE,
+                            you.x_pos, you.y_pos, MHITYOU, 250 );
 
             for (i = 0; i < 4; i++)
             {
                 if (one_chance_in(3))
                 {
-                    create_monster(RANDOM_MONSTER, 0, BEH_HOSTILE,
-                                   you.x_pos, you.y_pos, MHITYOU, 250);
+                    create_monster( RANDOM_MONSTER, 0, BEH_HOSTILE,
+                                    you.x_pos, you.y_pos, MHITYOU, 250 );
                 }
             }
         }
@@ -2210,6 +2220,7 @@ void handle_time( long time_delta )
         {
             set_ident_flags( you.inv[you.equip[EQ_WEAPON]], ISFLAG_IDENT_MASK );
 
+            char str_pass[ ITEMNAME_SIZE ];
             in_name(you.equip[EQ_WEAPON], DESC_NOCAP_A, str_pass);
             snprintf( info, INFO_SIZE, "You are wielding %s.", str_pass );
             mpr(info);
@@ -2387,6 +2398,12 @@ static void autopickup(void)
     if (autopickup_on == 0 || Options.autopickups == 0L)
         return;
 
+    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR
+        && you.duration[DUR_TRANSFORMATION] > 0)
+    {
+        return;
+    }
+
     if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
         return;
 
@@ -2425,7 +2442,7 @@ static void autopickup(void)
         you.turn_is_over = 1;
         start_delay( DELAY_AUTOPICKUP, 1 );
     }
-}
+    }
 
 int inv_count(void)
 {
@@ -2439,3 +2456,70 @@ int inv_count(void)
 
     return count;
 }
+
+#ifdef ALLOW_DESTROY_ITEM_COMMAND
+// Started with code from AX-crawl, although its modified to fix some
+// serious problems.  -- bwr
+//
+// Issues to watch for here:
+// - no destroying things from the ground since that includes corpses
+//   which might be animated by monsters (butchering takes a few turns).
+//   This code provides a quicker way to get rid of a corpse, but
+//   the player has to be able to lift it first... something that was
+//   a valid preventative method before (although this allow the player
+//   to get rid of the mass on the next action).
+//
+// - artefacts can be destroyed
+//
+// - equipment cannot be destroyed... not only is this the more accurate
+//   than testing for curse status (to prevent easy removal of cursed items),
+//   but the original code would leave all the equiped items properties
+//   (including weight) which would cause a bit of a mess to state.
+//
+// - no item does anything for just carrying it... if that changes then
+//   this code will have to deal with that.
+//
+// - Do we want the player to be able to remove items from the game?
+//   This would make things considerably easier to keep weapons (esp
+//   those of distortion) from falling into the hands of monsters.
+//   Right now the player has to carry them to a safe area, or otherwise
+//   ingeniously dispose of them... do we care about this gameplay aspect?
+//
+// - Prompt for number to destroy?
+//
+void cmd_destroy_item( void )
+{
+    int i;
+    char str_pass[ ITEMNAME_SIZE ];
+
+    // ask the item to destroy
+    int item = prompt_invent_item( "Destroy which item? ", -1, true, false );
+    if (item == PROMPT_ABORT)
+        return;
+
+    // Used to check for cursed... but that's not the real problem -- bwr
+    for (i = 0; i < NUM_EQUIP; i++)
+    {
+        if (you.equip[i] == item)
+        {
+            // mesclr();
+            mpr( "You can't destroy equiped items!" );
+            return;
+        }
+    }
+
+    // ask confirmation
+    // quant_name(you.inv[item], you.inv[item].quantity, DESC_NOCAP_A, str_pass );
+    item_name( you.inv[item], DESC_NOCAP_THE, str_pass );
+    snprintf( info, INFO_SIZE, "Destroy %s? ", str_pass );
+
+    if (yesno( info, true ))
+    {
+       //destroy it!!
+        snprintf( info, INFO_SIZE, "You destroy %s.", str_pass );
+        mpr( info );
+        dec_inv_item_quantity( item, you.inv[item].quantity );
+        burden_change();
+    }
+}
+#endif

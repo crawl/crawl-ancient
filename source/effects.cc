@@ -19,7 +19,6 @@
 #include "beam.h"
 #include "direct.h"
 #include "dungeon.h"
-#include "fight.h"
 #include "itemname.h"
 #include "items.h"
 #include "misc.h"
@@ -30,15 +29,15 @@
 #include "newgame.h"
 #include "ouch.h"
 #include "player.h"
+#include "randart.h"
 #include "skills2.h"
 #include "spells3.h"
+#include "spells4.h"
 #include "spl-book.h"
 #include "spl-util.h"
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
-
-void summon_butter(void);
 
 // torment_monsters is called with power 0 because torment is
 // UNRESISTABLE except for being undead or having torment
@@ -218,7 +217,6 @@ void direct_effect(struct bolt &pbolt)
         pbolt.flavour = BEAM_EXPLOSION;
         pbolt.type = SYM_ZAP;
         pbolt.colour = RED;
-        pbolt.beam_source = MHITNOT;
         pbolt.thrower = KILL_MON_MISSILE;
         pbolt.isBeam = false;
         pbolt.isTracer = false;
@@ -288,9 +286,9 @@ void mons_direct_effect(struct bolt &pbolt, int i)
         break;
 
     case DMNBM_MUTATION:
-        if (mons_holiness(monster->type) != MH_NATURAL)
+        if (mons_holiness( monster->type ) != MH_NATURAL)
             simple_monster_message(monster, " is unaffected.");
-        else if (check_mons_magres(monster, pbolt.ench_power))
+        else if (check_mons_resist_magic( monster, pbolt.ench_power ))
             simple_monster_message(monster, " resists.");
         else
             monster_polymorph(monster, RANDOM_MONSTER, 100);
@@ -332,6 +330,7 @@ void random_uselessness(unsigned char ru, unsigned char sc_read_2)
     case 2:
         if (you.equip[EQ_WEAPON] != -1)
         {
+            char str_pass[ ITEMNAME_SIZE ];
             in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
             strcat(info, " glows ");
@@ -401,7 +400,7 @@ void random_uselessness(unsigned char ru, unsigned char sc_read_2)
 
     case 7:
         mpr("You hear the tinkle of a tiny bell.");
-        summon_butter();
+        cast_summon_butterflies( 100 );
         break;
 
     case 8:
@@ -567,7 +566,7 @@ bool acquirement(unsigned char force_class)
             count = 0;
 
             // skipping clubs, knives, blowguns
-            for (int i = WPN_MACE; i <= WPN_GREAT_FLAIL; i++)
+            for (int i = WPN_MACE; i < NUM_WEAPONS; i++)
             {
                 // skipping launchers
                 if (i == WPN_SLING)
@@ -576,6 +575,10 @@ bool acquirement(unsigned char force_class)
                 // skipping giant clubs
                 if (i == WPN_GIANT_CLUB)
                     i = WPN_EVENINGSTAR;
+
+                // skipping knife and blowgun
+                if (i == WPN_KNIFE)
+                    i = WPN_FALCHION;
 
                 // "rare" weapons are only considered some of the time...
                 // still, the chance is higher than actual random creation
@@ -714,7 +717,7 @@ bool acquirement(unsigned char force_class)
                           "acquirement: iteration = %d, best_spell = %d",
                           iteration, best_spell );
 
-                mpr( info, MSGCH_DIAGNOSTIC );
+                mpr( info, MSGCH_DIAGNOSTICS );
 #endif //jmf: debugging
 
                 switch (best_spell)
@@ -969,7 +972,12 @@ bool acquirement(unsigned char force_class)
                         type_wanted = STAFF_SUMMONING;
                     break;
 
-                default:
+                case SK_EVOCATIONS:
+                    if (!one_chance_in(4))
+                        type_wanted = STAFF_SMITING + random2(10);
+                    break;
+
+                default: // invocations and leftover spell schools
                     switch (random2(5))
                     {
                     case 0:
@@ -995,13 +1003,12 @@ bool acquirement(unsigned char force_class)
                 }
 
                 // Increased chance of getting spell staff for new or
-                // non-spellcasters.  Power and channeling are useful
-                // to characters with abilities. -- bwr
-                if (one_chance_in(5)
-                    || (spell_skills <= 1     // keeping down potential abuse
-                        && type_wanted != STAFF_POWER
-                        && type_wanted != STAFF_CHANNELING
-                        && coinflip()))
+                // non-spellcasters.  -- bwr
+                if (one_chance_in(20)
+                    || (spell_skills <= 1               // short on spells
+                        && (type_wanted < STAFF_SMITING // already making one
+                            || type_wanted >= STAFF_AIR)
+                        && !one_chance_in(4)))
                 {
                     type_wanted = (coinflip() ? STAFF_STRIKING
                                               : STAFF_SMITING + random2(10));
@@ -1050,6 +1057,39 @@ bool acquirement(unsigned char force_class)
         if (mitm[thing_created].base_type == OBJ_BOOKS)
         {
             you.had_book[ mitm[thing_created].sub_type ] = 1;
+        }
+        else if (mitm[thing_created].base_type == OBJ_JEWELLERY)
+        {
+            switch (mitm[thing_created].sub_type)
+            {
+            case RING_SLAYING:
+                // make sure plus to damage is >= 1
+                mitm[thing_created].plus2 = abs( mitm[thing_created].plus2 );
+                if (mitm[thing_created].plus2 == 0)
+                    mitm[thing_created].plus2 = 1;
+                // fall through...
+
+            case RING_PROTECTION:
+            case RING_STRENGTH:
+            case RING_INTELLIGENCE:
+            case RING_DEXTERITY:
+            case RING_EVASION:
+                // make sure plus is >= 1
+                mitm[thing_created].plus = abs( mitm[thing_created].plus );
+                if (mitm[thing_created].plus == 0)
+                    mitm[thing_created].plus = 1;
+                break;
+
+            case RING_HUNGER:
+            case AMU_INACCURACY:
+                // these are the only truly bad pieces of jewellery
+                if (!one_chance_in(9))
+                    make_item_randart( mitm[thing_created] );
+                break;
+
+            default:
+                break;
+            }
         }
         else if (mitm[thing_created].base_type == OBJ_ARMOUR)
         {
@@ -1142,8 +1182,8 @@ bool recharge_wand(void)
         break;
     }
 
+    char str_pass[ ITEMNAME_SIZE ];
     in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
-
     strcpy(info, str_pass);
     strcat(info, " glows for a moment.");
     mpr(info);
@@ -1161,7 +1201,7 @@ bool recharge_wand(void)
 void yell(void)
 {
     bool targ_prev = false;
-    int mons_targd = 0;
+    int mons_targd = MHITNOT;
     struct dist targ;
 
     if (silenced(you.x_pos, you.y_pos))
@@ -1187,7 +1227,7 @@ void yell(void)
 
     strcpy(info, " Anything else - Stay silent");
 
-    if (one_chance_in(10))
+    if (one_chance_in(20))
         strcat(info, " (and be thought a fool)");
 
     mpr(info);
@@ -1199,7 +1239,7 @@ void yell(void)
     case '!':
         mpr("You yell for attention!");
         you.turn_is_over = 1;
-        noisy(12, you.x_pos, you.y_pos);
+        noisy( 12, you.x_pos, you.y_pos );
         return;
 
     case 'a':
@@ -1235,17 +1275,6 @@ void yell(void)
 
     you.pet_target = mons_targd;
 
-    noisy(10, you.x_pos, you.y_pos);
+    noisy( 10, you.x_pos, you.y_pos );
     mpr("Attack!");
 }                               // end yell()
-
-// produce caterpillars under rare circumstances?
-// why did jmf change it to BEH_ENSLAVED ??? {dlb}
-void summon_butter(void)
-{
-    for (int scount = 0; scount < 8; scount++)
-    {
-        create_monster( MONS_BUTTERFLY, ENCH_ABJ_III, BEH_FRIENDLY,
-            you.x_pos, you.y_pos, MHITNOT, 250 );
-    }
-}                               // end summon_butter()

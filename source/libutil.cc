@@ -9,6 +9,22 @@
  */
 
 #include "AppHdr.h"
+#include <stdio.h>
+
+void get_input_line( char *const buff, int len )
+{
+    buff[0] = '\0';         // just in case
+
+#if defined(LINUX)
+    get_input_line_from_curses( buff, len ); // inplemented in liblinux.cc
+#elif defined(MAC)
+    getstr( buff, len );        // implemented in libmac.cc
+#else
+    fgets( buff, len, stdin );  // much safer than gets()
+#endif
+
+    buff[ len - 1 ] = '\0';  // just in case
+}
 
 // The old school way of doing short delays via low level I/O sync.
 // Good for systems like old versions of Solaris that don't have usleep.
@@ -38,7 +54,6 @@ void usleep(unsigned long time)
 #ifdef NEED_SNPRINTF
 
 #include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 
 int snprintf( char *str, size_t size, const char *format, ... )

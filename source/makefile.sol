@@ -14,7 +14,11 @@ COPY = cp
 GROUP = games
 MOVE = mv
 OS_TYPE = SOLARIS
-CFLAGS = -Wall -g -D$(OS_TYPE) $(EXTRA_FLAGS)
+
+CFLAGS = -Wall -Wwrite-strings -Wstrict-prototypes \
+            -Wmissing-prototypes -Wmissing-declarations \
+            -g -D$(OS_TYPE) $(EXTRA_FLAGS)
+
 LDFLAGS = -static
 MCHMOD = 2755
 INSTALLDIR = /opt/local/newcrawl/bin

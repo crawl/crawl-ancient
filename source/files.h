@@ -61,7 +61,7 @@ void save_ghost(void);
 /* ***********************************************************************
  * called from: files hiscores
  * *********************************************************************** */
-void make_filename(char *buf, char *prefix, int level, int where,
-    bool isLabyrinth, bool isGhost);
+void make_filename( char *buf, const char *prefix, int level, int where,
+                    bool isLabyrinth, bool isGhost );
 
 #endif

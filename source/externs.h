@@ -23,11 +23,10 @@
 #include "FixAry.h"
 #include "message.h"
 
-#define INFO_SIZE       200
+#define INFO_SIZE       200          // size of message buffers
+#define ITEMNAME_SIZE   200          // size of item names/shop names/etc
 
 extern char info[INFO_SIZE];         // defined in acr.cc {dlb}
-extern char st_prn[20];              // defined in acr.cc {dlb}
-extern char str_pass[80];            // defined in acr.cc {dlb}
 
 extern unsigned char show_green;     // defined in view.cc {dlb}
 
@@ -211,12 +210,11 @@ struct player
   char max_intel;
   char max_dex;
 
-  char redraw_hunger;
   char hunger_state;
 
   bool wield_change;          // redraw weapon
 
-  char redraw_burden;
+  unsigned long redraw_status_flags;
   char redraw_hit_points;
   char redraw_magic_points;
   char redraw_strength;
@@ -460,6 +458,12 @@ struct game_options
     int         sc_entries;     // # of score entries
     unsigned int friend_brand;  // Attribute for branding friendly monsters
     bool        no_dark_brand;  // Attribute for branding friendly monsters
+
+    int         fire_items_start; // index of first item for fire command
+    FixedVector<int, NUM_FIRE_TYPES>  fire_order; // order for 'f' command
+
+    bool        auto_list;      // automatically jump to appropriate item lists
+
 #ifdef WIZARD
     int         wiz_mode;       // yes, no, never in wiz mode to start
 #endif

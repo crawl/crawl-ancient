@@ -27,6 +27,7 @@
 
 #include "itemname.h"
 #include "items.h"
+#include "player.h"
 #include "shopping.h"
 #include "stuff.h"
 #include "view.h"
@@ -35,8 +36,8 @@
 #include "macro.h"
 #endif
 
-void command_string(char comm[50], int i);
-void wizard_string(char comm[50], int i);
+const char *command_string( int i );
+const char *wizard_string( int i );
 
 unsigned char get_invent(int invent_type)
 {
@@ -49,12 +50,12 @@ unsigned char get_invent(int invent_type)
 
 unsigned char invent(int item_class_inv, bool show_price)
 {
-    char st_pass[60];
+    char st_pass[ ITEMNAME_SIZE ] = "";
 
     int i, j;
     char lines = 0;
     unsigned char anything = 0;
-    char strng[10] = "";
+    char tmp_quant[20] = "";
     char yps = 0;
     char temp_id[4][50];
 
@@ -79,7 +80,6 @@ unsigned char invent(int item_class_inv, bool show_price)
         }
     }
 
-    strcpy(st_pass, "");
     clrscr();
 
     for (i = 0; i < NUM_OBJECT_CLASSES; i++)
@@ -132,7 +132,11 @@ unsigned char invent(int item_class_inv, bool show_price)
             && (inv_class2[OBJ_STAVES] > 0 || inv_class2[OBJ_MISCELLANY] > 0))
         || (item_class_inv == OBJ_SCROLLS && inv_class2[OBJ_BOOKS] > 0))
     {
-        cprintf("  Inventory");
+        const int cap = carrying_capacity();
+
+        cprintf( "  Inventory: %d.%d aum (%d%% of %d.%d aum maximum)",
+                 you.burden / 10, you.burden % 10,
+                 (you.burden * 100) / cap, cap / 10, cap % 10 );
         lines++;
 
         for (i = 0; i < 15; i++)
@@ -252,9 +256,10 @@ unsigned char invent(int item_class_inv, bool show_price)
                         {
                             cprintf(" (");
 
-                            itoa( item_value( you.inv[j], temp_id, true ), strng, 10 );
+                            itoa( item_value( you.inv[j], temp_id, true ),
+                                  tmp_quant, 10 );
 
-                            cprintf(strng);
+                            cprintf( tmp_quant );
                             cprintf("gold)");
                         }
 
@@ -345,7 +350,8 @@ static unsigned char get_invent_quant( unsigned char keyin, int &quant )
 //
 // Note: This function never checks if the item is appropriate.
 int prompt_invent_item( const char *prompt, int type_expect,
-                        bool must_exist, bool allow_easy_quit,
+                        bool must_exist, bool allow_auto_list,
+                        bool allow_easy_quit,
                         const char other_valid_char,
                         int *const count )
 {
@@ -355,6 +361,20 @@ int prompt_invent_item( const char *prompt, int type_expect,
     bool           need_redraw = false;
     bool           need_prompt = true;
     bool           need_getch  = true;
+
+    if (Options.auto_list && allow_auto_list)
+    {
+        // pretend the player has hit '?' and setup state.
+        keyin = invent( type_expect, false );
+
+        need_getch = false;
+
+        // Don't redraw if we're just going to display another listing
+        need_redraw = (keyin != '?' && keyin != '*');
+
+        // A prompt is nice for when we're moving to "count" mode.
+        need_prompt = (count != NULL && isdigit( keyin ));
+    }
 
     for (;;)
     {
@@ -434,7 +454,7 @@ int prompt_invent_item( const char *prompt, int type_expect,
 
 void list_commands(bool wizard)
 {
-    char st_pass[50];
+    const char *line;
     int j = 0;
 
 #ifdef DOS_TERM
@@ -444,7 +464,6 @@ void list_commands(bool wizard)
     gettext(1, 1, 80, 25, buffer);
 #endif
 
-    st_pass[0] = '\0';
     clrscr();
 
     // BCR - Set to screen length - 1 to display the "more" string
@@ -453,11 +472,11 @@ void list_commands(bool wizard)
     for (int i = 0; i < 500; i++)
     {
         if (wizard)
-            wizard_string(st_pass, i);
+            line = wizard_string( i );
         else
-            command_string(st_pass, i);
+            line = command_string( i );
 
-        if (strlen(st_pass) != 0)
+        if (strlen( line ) != 0)
         {
             // BCR - If we've reached the end of the screen, clear
             if (j == moreLength)
@@ -469,8 +488,8 @@ void list_commands(bool wizard)
                 j = 0;
             }
 
-            gotoxy(((j % 2) ? 40 : 2), ((j / 2) + 1));
-            cprintf(st_pass);
+            gotoxy( ((j % 2) ? 40 : 2), ((j / 2) + 1) );
+            cprintf( line );
 
             j++;
         }
@@ -485,13 +504,10 @@ void list_commands(bool wizard)
     return;
 }                               // end list_commands()
 
-void wizard_string(char comm[50], int i)
+const char *wizard_string( int i )
 {
-
 #ifdef WIZARD
-
-    strcpy( comm,
-           (i ==  10) ? "a    : acquirement"                  :
+    return((i ==  10) ? "a    : acquirement"                  :
            (i ==  13) ? "A    : set all skills to level"      :
            (i ==  15) ? "b    : controlled blink"             :
            (i ==  20) ? "B    : banish yourself to the Abyss" :
@@ -528,14 +544,14 @@ void wizard_string(char comm[50], int i)
            (i == 330) ? "|    : acquire all unrand artefacts" :
            (i == 340) ? "+    : turn item into random artefact" :
            (i == 350) ? "=    : sum skill points"
-                      : "" );
+                      : "");
 
 #else
-    strcpy(comm, "");
+    return ("");
 #endif
 }                               // end wizard_string()
 
-void command_string(char comm[50], int i)
+const char *command_string( int i )
 {
     /*
      * BCR - Command printing, case statement
@@ -547,8 +563,7 @@ void command_string(char comm[50], int i)
      *
      */
 
-    strcpy( comm,
-           (i ==  10) ? "a    : use special ability"              :
+    return((i ==  10) ? "a    : use special ability"              :
            (i ==  20) ? "d(#) : drop (exact quantity of) items"   :
            (i ==  30) ? "e    : eat food"                         :
            (i ==  40) ? "f    : fire first available missile"     :
@@ -604,10 +619,15 @@ void command_string(char comm[50], int i)
 #endif
            (i == 440) ? "Ctrl-A : toggle autopickup"              :
            (i == 450) ? "Ctrl-X : Save game without query"        :
+
+#ifdef ALLOW_DESTROY_ITEM_COMMAND
+           (i == 455) ? "Ctrl-D : Destroy inventory item"         :
+#endif
+
            (i == 460) ? "Shift & DIR : long walk"                 :
            (i == 465) ? "/ DIR : long walk"                       :
            (i == 470) ? "Ctrl  & DIR : door; untrap; attack"      :
            (i == 475) ? "* DIR : door; untrap; attack"            :
            (i == 478) ? "Shift & 5 on keypad : rest 100 turns"
-                      : "" );
+                      : "");
 }                               // end command_string()

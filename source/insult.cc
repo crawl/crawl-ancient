@@ -65,7 +65,7 @@ void imp_taunt( struct monsters *mons )
 
 void demon_taunt( struct monsters *mons )
 {
-    static char * sound_list[] =
+    static const char * sound_list[] =
     {
         "says",         // actually S_SILENT
         "shouts",
@@ -157,7 +157,7 @@ const char * generic_insult(void)
 
 static const char * important_body_part(void)
 {
-    static char * part_list[] = {
+    static const char * part_list[] = {
         "head",
         "brain",
         "heart",
@@ -176,7 +176,7 @@ static const char * important_body_part(void)
 
 static const char * important_spiritual_part(void)
 {
-    static char * part_list[] = {
+    static const char * part_list[] = {
         "soul",
         "spirit",
         "inner light",
@@ -195,7 +195,7 @@ static const char * important_spiritual_part(void)
 
 static const char * meal(void)
 {
-    static char * meal_list[] = {
+    static const char * meal_list[] = {
         "meal",
         "breakfast",
         "lunch",
@@ -218,7 +218,7 @@ static const char * meal(void)
 
 static const char * run_away(void)
 {
-    static char * run_away_list[] = {
+    static const char * run_away_list[] = {
         "give up",
         "quit",
         "run away",
@@ -253,7 +253,7 @@ static const char * run_away(void)
 
 static const char * give_up(void)
 {
-    static char * give_up_list[] = {
+    static const char * give_up_list[] = {
         "give up",
         "give in",
         "quit",
@@ -290,7 +290,7 @@ static const char * give_up(void)
 
 static const char * whilst_thou_can(void)
 {
-    static char * threat_list[] = {
+    static const char * threat_list[] = {
         "whilst thou can",
         "whilst thou may",
         "whilst thou are able",
@@ -307,7 +307,7 @@ static const char * whilst_thou_can(void)
 
 static const char * insults1(void)
 {
-    static char * insults1_list[] = {
+    static const char * insults1_list[] = {
         "artless",
         "baffled",
         "bawdy",
@@ -385,7 +385,7 @@ static const char * insults1(void)
 
 static const char * insults2(void)
 {
-    static char * insults2_list[] = {
+    static const char * insults2_list[] = {
         "base-court",
         "bat-fowling",
         "beef-witted",
@@ -454,7 +454,7 @@ static const char * insults2(void)
 
 static const char * insults3(void)
 {
-    static char * insults3_list[] = {
+    static const char * insults3_list[] = {
         "apple-john",
         "baggage",
         "bandersnitch",

@@ -321,7 +321,7 @@ static void cards(unsigned char which_card)
     case CARD_BUTTERFLY:
         mpr("You have drawn the Butterfly.");
 
-        summ_dur = ENCH_ABJ_II + random2(3) + you.skills[SK_EVOCATIONS] / 2;
+        summ_dur = ENCH_ABJ_I + random2(3) + you.skills[SK_EVOCATIONS] / 2;
         if (summ_dur > ENCH_ABJ_VI)
             summ_dur = ENCH_ABJ_VI;
 
@@ -536,7 +536,7 @@ static void cards(unsigned char which_card)
             summ_dur = ENCH_ABJ_VI;
 
         if (create_monster( MONS_WHITE_IMP + random2(5), summ_dur, BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -550,7 +550,7 @@ static void cards(unsigned char which_card)
             summ_dur = ENCH_ABJ_VI;
 
         if (create_monster( MONS_NEQOXEC + random2(5), summ_dur, BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -563,9 +563,8 @@ static void cards(unsigned char which_card)
         if (summ_dur > ENCH_ABJ_VI)
             summ_dur = ENCH_ABJ_VI;
 
-        if (create_monster( MONS_NEQOXEC + random2(5),
-                            ENCH_ABJ_I + random2(3), BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        if (create_monster( MONS_NEQOXEC + random2(5), summ_dur, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -578,9 +577,13 @@ static void cards(unsigned char which_card)
 
         for (loopy = 0; loopy < 7; loopy++)
         {
-            if (create_monster( MONS_WHITE_IMP + random2(5),
-                                ENCH_ABJ_II + random2(4), BEH_HOSTILE,
-                                you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+            summ_dur = ENCH_ABJ_I + random2(3) + you.skills[SK_EVOCATIONS] / 4;
+            if (summ_dur > ENCH_ABJ_VI)
+                summ_dur = ENCH_ABJ_VI;
+
+            if (create_monster( MONS_WHITE_IMP + random2(5), summ_dur,
+                                BEH_HOSTILE, you.x_pos, you.y_pos,
+                                MHITYOU, 250 ) != -1)
             {
                  success = true;
             }
@@ -598,7 +601,7 @@ static void cards(unsigned char which_card)
             summ_dur = ENCH_ABJ_VI;
 
         if (create_monster( MONS_DEATH_YAK, summ_dur, BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -612,7 +615,7 @@ static void cards(unsigned char which_card)
             summ_dur = ENCH_ABJ_VI;
 
         if (create_monster( MONS_FIEND, summ_dur, BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -627,7 +630,7 @@ static void cards(unsigned char which_card)
 
         if (create_monster( (coinflip() ? MONS_DRAGON : MONS_ICE_DRAGON),
                             summ_dur, BEH_FRIENDLY, you.x_pos, you.y_pos,
-                            MHITYOU, 250 ) != -1)
+                            you.pet_target, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -642,7 +645,7 @@ static void cards(unsigned char which_card)
 
         if (create_monster( MONS_CLAY_GOLEM + random2(6), summ_dur,
                             BEH_FRIENDLY, you.x_pos, you.y_pos,
-                            MHITYOU, 250 ) != -1)
+                            you.pet_target, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -656,7 +659,7 @@ static void cards(unsigned char which_card)
             summ_dur = ENCH_ABJ_VI;
 
         if (create_monster( MONS_VERY_UGLY_THING, summ_dur, BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -684,7 +687,7 @@ static void cards(unsigned char which_card)
             summ_dur = ENCH_ABJ_VI;
 
         if (create_monster( MONS_UNSEEN_HORROR, summ_dur, BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
         {
             if (player_see_invis())
             {
@@ -695,7 +698,8 @@ static void cards(unsigned char which_card)
 
     case CARD_BLINK:
         mpr("You have drawn Blink.");
-        random_blink(true);
+        blink();
+        // random_blink(true);
         break;
 
     case CARD_TELEPORT:

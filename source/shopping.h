@@ -14,6 +14,8 @@
 
 #include "externs.h"
 
+int randart_value( const item_def &item );
+
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: chardump - invent - ouch - religion - shopping
@@ -36,6 +38,6 @@ void shop(void);
 /* ***********************************************************************
  * called from: items direct
  * *********************************************************************** */
-char *shop_name(int sx, int sy);
+const char *shop_name(int sx, int sy);
 
 #endif

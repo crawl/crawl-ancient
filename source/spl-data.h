@@ -243,7 +243,9 @@
 {
     SPELL_HASTE, "Haste",
      SPTYP_ENCHANTMENT,
-     8
+     6  // lowered to 6 from 8, since its easily available from various items
+        // and Swiftness is level 2 (and gives a similar effect).  Its also
+        // not that much better than Invisibility.  -- bwr
 },
 
 {
@@ -875,7 +877,7 @@
 {
     SPELL_PROJECTED_NOISE, "Projected Noise",
      SPTYP_ENCHANTMENT,
-     1          // reduced from 2 - I've never found it that good --bwr
+     2
 },
 
 {

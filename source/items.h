@@ -120,4 +120,6 @@ void handle_time( long time_delta );
  * *********************************************************************** */
 int inv_count(void);
 
+void cmd_destroy_item( void );
+
 #endif

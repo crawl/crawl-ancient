@@ -44,11 +44,11 @@
 
 // x and y offsets in the following order:
 // SW, S, SE, W, E, NW, N, NE
-static char xcomp[9] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
-static char ycomp[9] = { 1, 1, 1, 0, 0, 0, -1, -1, -1 };
-static char dirchars[19] = { "b1j2n3h4.5l6y7k8u9" };
-static char DOSidiocy[10] = { "OPQKSMGHI" };
-static char *aim_prompt = "Aim (move cursor or -/+/=, change mode with CTRL-F, select with . or >)";
+static const char xcomp[9] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+static const char ycomp[9] = { 1, 1, 1, 0, 0, 0, -1, -1, -1 };
+static const char dirchars[19] = { "b1j2n3h4.5l6y7k8u9" };
+static const char DOSidiocy[10] = { "OPQKSMGHI" };
+static const char *aim_prompt = "Aim (move cursor or -/+/=, change mode with CTRL-F, select with . or >)";
 
 static void describe_cell(int mx, int my);
 char mons_find( unsigned char xps, unsigned char yps,
@@ -674,7 +674,9 @@ char mons_find( unsigned char xps, unsigned char yps,
 
 static void describe_cell(int mx, int my)
 {
-    int trf;            // used for trap type??
+    int   trf;            // used for trap type??
+    char  str_pass[ ITEMNAME_SIZE ];
+    bool  mimic_item = false;
 
     if (mgrd[mx][my] != NON_MONSTER)
     {
@@ -690,13 +692,14 @@ static void describe_cell(int mx, int my)
 
 #if DEBUG_DIAGNOSTICS
         if (!player_monster_visible( &menv[i] ))
-            mpr( "There is a non-visible monster here.", MSGCH_DIAGNOSTIC );
+            mpr( "There is a non-visible monster here.", MSGCH_DIAGNOSTICS );
 #else
         if (!player_monster_visible( &menv[i] ))
             goto look_clouds;
 #endif
 
-        int mon_wep = menv[i].inv[MSLOT_WEAPON];
+        const int mon_wep = menv[i].inv[MSLOT_WEAPON];
+        const int mon_arm = menv[i].inv[MSLOT_ARMOUR];
 
         if (menv[i].type == MONS_DANCING_WEAPON)
         {
@@ -737,20 +740,33 @@ static void describe_cell(int mx, int my)
                     mpr(info);
                 }
             }
+
+            if (mon_arm != NON_ITEM)
+            {
+                it_name( mon_arm, DESC_PLAIN, str_pass );
+                snprintf( info, INFO_SIZE, "%s is wearing %s.",
+                          mons_pronoun( menv[i].type, PRONOUN_CAP ),
+                          str_pass );
+
+                mpr( info );
+            }
         }
+
 
         if (menv[i].type == MONS_HYDRA)
         {
-            strcpy( info, "It has " );
-            itoa( menv[i].number, st_prn, 10 );
-            strcat( info, st_prn );
-            strcat( info, " heads." );
+            snprintf( info, INFO_SIZE, "It has %d heads.", menv[i].number );
             mpr( info );
         }
 
         print_wounds(&menv[i]);
 
-        if (!mons_flag(menv[i].type, M_NO_EXP_GAIN))
+
+        if (mons_charclass( menv[i].type ) == MONS_GOLD_MIMIC)
+        {
+            mimic_item = true;
+        }
+        else if (!mons_flag(menv[i].type, M_NO_EXP_GAIN))
         {
             if (menv[i].behaviour == BEH_SLEEP)
             {
@@ -876,21 +892,27 @@ static void describe_cell(int mx, int my)
 
     if (targ_item != NON_ITEM)
     {
-        if (mitm[ targ_item ].base_type == OBJ_GOLD)
-        {
-            mpr("You see some money here.");
-        }
+        // If a mimic is on this square, we pretend its the first item -- bwr
+        if (mimic_item)
+            mpr("There is something else lying underneath.");
         else
         {
-            strcpy(info, "You see ");
-            it_name( targ_item, DESC_NOCAP_A, str_pass);
-            strcat(info, str_pass);
-            strcat(info, " here.");
-            mpr(info);
-        }
+            if (mitm[ targ_item ].base_type == OBJ_GOLD)
+            {
+                mpr( "A pile of gold coins." );
+            }
+            else
+            {
+                strcpy(info, "You see ");
+                it_name( targ_item, DESC_NOCAP_A, str_pass);
+                strcat(info, str_pass);
+                strcat(info, " here.");
+                mpr(info);
+            }
 
-        if (mitm[ targ_item ].link != NON_ITEM)
-            mpr("There is something else lying underneath.");
+            if (mitm[ targ_item ].link != NON_ITEM)
+                mpr("There is something else lying underneath.");
+        }
     }
 
     switch (grd[mx][my])
@@ -1102,29 +1124,29 @@ static void describe_cell(int mx, int my)
     case DNGN_ENTER_SWAMP:
         mpr("A staircase to the Swamp.");
         break;
-    case DNGN_RETURN_DUNGEON_I:
-    case DNGN_RETURN_DUNGEON_II:
-    case DNGN_RETURN_DUNGEON_III:
-    case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_RETURN_DUNGEON_V:
+    case DNGN_RETURN_FROM_ORCISH_MINES:
+    case DNGN_RETURN_FROM_HIVE:
+    case DNGN_RETURN_FROM_LAIR:
+    case DNGN_RETURN_FROM_VAULTS:
+    case DNGN_RETURN_FROM_TEMPLE:
         mpr("A staircase back to the Dungeon.");
         break;
-    case DNGN_RETURN_LAIR_II:
-    case DNGN_RETURN_LAIR_III:
-    case DNGN_RETURN_LAIR_IV:
+    case DNGN_RETURN_FROM_SLIME_PITS:
+    case DNGN_RETURN_FROM_SNAKE_PIT:
+    case DNGN_RETURN_FROM_SWAMP:
         mpr("A staircase back to the Lair.");
         break;
-    case DNGN_RETURN_VAULTS_II:
-    case DNGN_RETURN_VAULTS_III:
+    case DNGN_RETURN_FROM_CRYPT:
+    case DNGN_RETURN_FROM_HALL_OF_BLADES:
         mpr("A staircase back to the Vaults.");
         break;
-    case DNGN_RETURN_MINES:
+    case DNGN_RETURN_FROM_ELVEN_HALLS:
         mpr("A staircase back to the Mines.");
         break;
-    case DNGN_RETURN_CRYPT:
+    case DNGN_RETURN_FROM_TOMB:
         mpr("A staircase back to the Crypt.");
         break;
-    case DNGN_EXIT_ZOT:
+    case DNGN_RETURN_FROM_ZOT:
         mpr("A gate leading back out of this place.");
         break;
     case DNGN_ALTAR_ZIN:

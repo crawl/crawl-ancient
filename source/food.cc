@@ -48,10 +48,10 @@
 static bool  can_ingest(int what_isit, int kindof_thing, bool suppress_msg);
 static bool  eat_from_floor(void);
 static int   determine_chunk_effect(int which_chunk_type, bool rotten_chunk);
-static void  eat_chunk(int chunk_effect);
+static void  eat_chunk( int chunk_effect );
 static void  eat_from_inventory(int which_inventory_slot);
 static void  eating(unsigned char item_class, int item_type);
-static void  ghoul_eat_flesh(bool rotting_chunk);
+static void  ghoul_eat_flesh( int chunk_effect );
 static void  describe_food_change(int hunger_increment);
 static bool  food_change(bool suppress_message);
 
@@ -70,7 +70,7 @@ void make_hungry(int hunger_amount, bool suppress_msg)
     if (you.is_undead != US_UNDEAD)
     {
 #if DEBUG_DIAGNOSTICS
-        you.redraw_hunger = 1;
+        set_redraw_status( REDRAW_HUNGER );
 #endif
         you.hunger -= hunger_amount;
 
@@ -159,6 +159,7 @@ void weapon_switch( int targ )
 
 bool butchery(void)
 {
+    char str_pass[ ITEMNAME_SIZE ];
     int items_here = 0;
     int o = igrd[you.x_pos][you.y_pos];
     int k = 0;
@@ -371,7 +372,6 @@ bool butchery(void)
         int item_got = igrd[you.x_pos][you.y_pos];
 
         last_item = NON_ITEM;
-        //you.redraw_hunger = 1;
 
         if (barehand_butcher)
             mpr("You start tearing the corpse apart.");
@@ -596,7 +596,7 @@ static bool food_change(bool suppress_message)
     {
         state_changed = true;
         you.hunger_state = newstate;
-        you.redraw_hunger = 1;
+        set_redraw_status( REDRAW_HUNGER );
 
         if (suppress_message == false)
         {
@@ -664,6 +664,8 @@ static void eat_from_inventory(int which_inventory_slot)
 
 static bool eat_from_floor(void)
 {
+    char str_pass[ ITEMNAME_SIZE ];
+
     if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
         return (false);
 
@@ -719,7 +721,7 @@ static bool eat_from_floor(void)
 
 // never called directly - chunk_effect values must pass
 // through food::determine_chunk_effect() first {dlb}:
-static void eat_chunk(int chunk_effect)
+static void eat_chunk( int chunk_effect )
 {
 
     bool likes_chunks = (you.species == SP_KOBOLD || you.species == SP_OGRE
@@ -728,7 +730,7 @@ static void eat_chunk(int chunk_effect)
 
     if (you.species == SP_GHOUL)
     {
-        ghoul_eat_flesh(chunk_effect == CE_ROTTEN);
+        ghoul_eat_flesh( chunk_effect );
         start_delay( DELAY_EAT, 2 );
         lessen_hunger( 1000, true );
     }
@@ -750,11 +752,7 @@ static void eat_chunk(int chunk_effect)
             mpr("You feel your flesh start to rot away!");
 
             you.rotting += 10 + random2(10);
-
-            if (you.disease > 100)
-                you.disease = 210;
-            else
-                you.disease += 50 + random2(100);
+            disease_player( 50 + random2(100) );
             break;
 
         case CE_POISONOUS:
@@ -765,12 +763,7 @@ static void eat_chunk(int chunk_effect)
         case CE_ROTTEN:
         case CE_CONTAMINATED:
             mpr("There is something wrong with this meat.");
-            mpr("You feel ill.");
-
-            if (you.disease > 100)
-                you.disease = 210;
-            else
-                you.disease += 50 + random2(100);
+            disease_player( 50 + random2(100) );
             break;
 
         // note that this is the only case that takes time and forces redraw
@@ -790,12 +783,11 @@ static void eat_chunk(int chunk_effect)
     return;
 }                               // end eat_chunk()
 
-static void ghoul_eat_flesh(bool rotting_chunk)
+static void ghoul_eat_flesh( int chunk_effect )
 {
-
     bool healed = false;
 
-    if (!rotting_chunk)
+    if (chunk_effect != CE_ROTTEN && chunk_effect != CE_CONTAMINATED)
     {
         mpr("This raw flesh tastes good.");
 
@@ -810,7 +802,10 @@ static void ghoul_eat_flesh(bool rotting_chunk)
     }
     else
     {
-        mpr("This rotting flesh tastes delicious!");
+        if (chunk_effect == CE_ROTTEN)
+            mpr( "This rotting flesh tastes delicious!" );
+        else // CE_CONTAMINATED
+            mpr( "This flesh tastes delicious!" );
 
         healed = true;
 
@@ -1218,12 +1213,11 @@ static int determine_chunk_effect(int which_chunk_type, bool rotten_chunk)
 
     case CE_POISONOUS:
         if (you.species == SP_GHOUL
-                || you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH)
+                || you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH
+                || poison_resistance_level > 0)
         {
             this_chunk_effect = CE_CLEAN;
         }
-        else if (poison_resistance_level > 0)
-            this_chunk_effect = CE_CLEAN;
         break;
 
     case CE_CONTAMINATED:
@@ -1234,18 +1228,22 @@ static int determine_chunk_effect(int which_chunk_type, bool rotten_chunk)
             switch (you.species)
             {
             case SP_GHOUL:
-                this_chunk_effect = CE_ROTTEN;
+                // Doing this here causes a odd message later. -- bwr
+                // this_chunk_effect = CE_ROTTEN;
                 break;
+
             case SP_KOBOLD:
             case SP_TROLL:
                 if (!one_chance_in(45))
                     this_chunk_effect = CE_CLEAN;
                 break;
+
             case SP_HILL_ORC:
             case SP_OGRE:
                 if (!one_chance_in(15))
                     this_chunk_effect = CE_CLEAN;
                 break;
+
             default:
                 if (!one_chance_in(3))
                     this_chunk_effect = CE_CLEAN;

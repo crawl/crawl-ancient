@@ -19,7 +19,7 @@
 struct playerspell
 {
   int id;
-  char *title;
+  const char *title;
   unsigned int disciplines; //jmf: a bitfield
   unsigned int level;
 };
@@ -74,7 +74,7 @@ char spell_direction( struct dist &spelld, struct bolt &pbolt,
 void apply_area_cloud(int (*func) (int, int, int, int), int x, int y,
                       int pow, int number, int ctype);
 
-char *spelltype_name(unsigned int which_spelltype);
+const char *spelltype_name(unsigned int which_spelltype);
 
 int spell_type2skill (unsigned int which_spelltype);
 

@@ -17,6 +17,7 @@
 #include "AppHdr.h"
 #include "mutation.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,9 +48,7 @@ int how_mutated(void);
 char body_covered(void);
 bool perma_mutate(int which_mut, char how_much);
 
-char mut_string[80];
-
-char *mutation_descrip[][3] = {
+const char *mutation_descrip[][3] = {
     {"You have tough skin (AC +1).", "You have very tough skin (AC +2).",
      "You have extremely tough skin (AC +3)."},
 
@@ -323,7 +322,7 @@ char *mutation_descrip[][3] = {
    to the "resist mutation" mutation thing.
  */
 
-char *gain_mutation[][3] = {
+const char *gain_mutation[][3] = {
     {"Your skin toughens.", "Your skin toughens.", "Your skin toughens."},
 
     {"", "", ""},  // replaced with player::modify_stat() handling {dlb}
@@ -545,7 +544,7 @@ char *gain_mutation[][3] = {
      "Patterned scales cover you completely."},
 };
 
-char *lose_mutation[][3] = {
+const char *lose_mutation[][3] = {
 
     {"Your skin feels delicate.", "Your skin feels delicate.",
      "Your skin feels delicate."},
@@ -763,7 +762,7 @@ char *lose_mutation[][3] = {
 /*
    Chance out of 10 that mutation will be given/removed randomly. 0 means never.
  */
-char mutation_rarity[] = {
+const char mutation_rarity[] = {
     10,                         // tough skin
     8,                          // str
     8,                          // int
@@ -869,7 +868,6 @@ void display_mutations(void)
 {
     int i;
     int j = 0;
-    // char st_prn[5];
     const char *mut_title = "Innate abilities, Weirdness & Mutations";
     const int num_lines = get_number_of_lines();
 
@@ -1095,22 +1093,29 @@ bool mutate(int which_mutation, bool failMsg)
         which_mutation -= 1000;
     }
 
-    //char st_prn [10];
-
     // Undead bodies don't mutate, they fall apart. -- bwr
-    if (you.is_undead && (force_mutation || !one_chance_in(5)))
+    if (you.is_undead)
     {
-        mpr( "Your body decomposes!" );
-
-        if (coinflip())
-            lose_stat( STAT_RANDOM, 1 );
-        else
+        if (force_mutation
+            || (wearing_amulet(AMU_RESIST_MUTATION) && coinflip()))
         {
-            ouch( 3, 0, KILLED_BY_ROTTING );
-            rot_hp( roll_dice( 1, 3 ) );
+            mpr( "Your body decomposes!" );
+
+            if (coinflip())
+                lose_stat( STAT_RANDOM, 1 );
+            else
+            {
+                ouch( 3, 0, KILLED_BY_ROTTING );
+                rot_hp( roll_dice( 1, 3 ) );
+            }
+
+            return (true);
         }
 
-        return (true);
+        if (failMsg)
+            mpr("You feel odd for a moment.");
+
+        return (false);
     }
 
     if (wearing_amulet(AMU_RESIST_MUTATION)
@@ -1118,7 +1123,8 @@ bool mutate(int which_mutation, bool failMsg)
     {
         if (failMsg)
             mpr("You feel odd for a moment.");
-        return false;
+
+        return (false);
     }
 
     if (you.mutation[MUT_MUTATION_RESISTANCE]
@@ -1127,15 +1133,16 @@ bool mutate(int which_mutation, bool failMsg)
     {
         if (failMsg)
             mpr("You feel odd for a moment.");
-        return false;
+
+        return (false);
     }
 
     if (which_mutation == 100 && random2(15) < how_mutated())
     {
         if (!force_mutation && !one_chance_in(3))
-            return false;
+            return (false);
         else
-            return delete_mutation(100);
+            return (delete_mutation(100));
     }
 
     if (which_mutation == 100)
@@ -1153,7 +1160,7 @@ bool mutate(int which_mutation, bool failMsg)
                                                && mutat != MUT_DOPEY
                                                && mutat != MUT_CLUMSY))
                || you.mutation[mutat] > 13
-               || random2(10) >= mutation_rarity[mutat]);
+               || random2(10) >= mutation_rarity[mutat] + you.demon_pow[mutat]);
     }
 
     if (you.mutation[mutat] >= 3
@@ -1194,8 +1201,9 @@ bool mutate(int which_mutation, bool failMsg)
         }
     }
 
+    // gnomes can already sense surroundings
     if (you.species == SP_GNOME && mutat == MUT_MAPPING)
-        return false;           /* gnomes can't sense surroundings */
+        return false;
 
     // spriggans already run at max speed (centaurs can get a bit faster)
     if (you.species == SP_SPRIGGAN && mutat == MUT_FAST)
@@ -1243,8 +1251,7 @@ bool mutate(int which_mutation, bool failMsg)
         return false;
     }
 
-    // Preventing big wings since I doubt they work -- bwr
-    if (mutat == MUT_BIG_WINGS) // && !player_genus(GENPC_DRACONIAN))
+    if (mutat == MUT_BIG_WINGS && !player_genus(GENPC_DRACONIAN))
         return false;
 
     //jmf: added some checks for new mutations
@@ -1536,11 +1543,27 @@ int how_mutated(void)
 
     for (int i = 0; i < 100; i++)
     {
-        if (you.demon_pow[i] < you.mutation[i])
-            j += you.mutation[i];
+        if (you.mutation[i] && you.demon_pow[i] < you.mutation[i])
+        {
+            // these allow for 14 levels:
+            if (i == MUT_STRONG || i == MUT_CLEVER || i == MUT_AGILE
+                || i == MUT_WEAK || i == MUT_DOPEY || i == MUT_CLUMSY)
+            {
+                j += (you.mutation[i] / 5 + 1);
+            }
+            else
+            {
+                j += you.mutation[i];
+            }
+        }
     }
 
-    return j;
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "levels: %d", j );
+    mpr( info, MSGCH_DIAGNOSTICS );
+#endif
+
+    return (j);
 }                               // end how_mutated()
 
 bool delete_mutation(char which_mutation)
@@ -1795,9 +1818,9 @@ char body_covered(void)
     return covered;
 }
 
-char *mutation_name( char which_mutat, int level )
+const char *mutation_name( char which_mutat, int level )
 {
-    char st_prn[5];
+    static char mut_string[INFO_SIZE];
 
     // level == -1 means default action of current level
     if (level == -1)
@@ -1807,10 +1830,8 @@ char *mutation_name( char which_mutat, int level )
         || which_mutat == MUT_AGILE || which_mutat == MUT_WEAK
         || which_mutat == MUT_DOPEY || which_mutat == MUT_CLUMSY)
     {
-        strcpy( mut_string, mutation_descrip[ which_mutat ][0] );
-        itoa( level, st_prn, 10 );
-        strcat( mut_string, st_prn );
-        strcat( mut_string, ")." );
+        snprintf( mut_string, sizeof( mut_string ), "%s%d).",
+                  mutation_descrip[ which_mutat ][0], level );
 
         return (mut_string);
     }
@@ -2130,23 +2151,20 @@ void demonspawn(void)
 
 bool perma_mutate(int which_mut, char how_much)
 {
-    char ret = 0;
+    char levels = 0;
 
     if (mutate(which_mut + 1000))
-        ret++;
+        levels++;
 
     if (how_much >= 2 && mutate(which_mut + 1000))
-        ret++;
+        levels++;
 
     if (how_much >= 3 && mutate(which_mut + 1000))
-        ret++;
+        levels++;
 
-    you.demon_pow[which_mut] = ret;
+    you.demon_pow[which_mut] = levels;
 
-    if (ret > 0)
-        return true;
-    else
-        return false;
+    return (levels > 0);
 }                               // end perma_mutate()
 
 bool give_good_mutation(bool failMsg)
@@ -2255,14 +2273,11 @@ bool give_cosmetic_mutation()
             how_much = 1;
         }
 
-#if 0
-        // don't think this works -- bwr
         if (player_genus(GENPC_DRACONIAN) && one_chance_in(5))
         {
             mutation = MUT_BIG_WINGS;
             how_much = 1;
         }
-#endif
 
         if (one_chance_in(5))
         {

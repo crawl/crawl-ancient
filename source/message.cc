@@ -162,7 +162,7 @@ static char channel_to_colour( int channel, int param )
             ret = CYAN;
             break;
 
-        case MSGCH_DIAGNOSTIC:
+        case MSGCH_DIAGNOSTICS:
             ret = DARKGREY;     // makes is easier to ignore at times -- bwr
             break;
 

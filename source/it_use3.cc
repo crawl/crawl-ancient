@@ -32,6 +32,7 @@
 #include "monstuff.h"
 #include "player.h"
 #include "randart.h"
+#include "religion.h"
 #include "skills.h"
 #include "skills2.h"
 #include "spells1.h"
@@ -52,10 +53,13 @@ static bool efreet_flask(void);
 
 void special_wielded(void)
 {
+    const int wpn = you.equip[EQ_WEAPON];
+    const int old_plus = you.inv[wpn].plus;
+    const int old_plus2 = you.inv[wpn].plus2;
+    const char old_colour = you.inv[wpn].colour;
+
+    char str_pass[ ITEMNAME_SIZE ];
     int temp_rand = 0;          // for probability determination {dlb}
-    int old_plus = you.inv[you.equip[EQ_WEAPON]].plus;
-    int old_plus2 = you.inv[you.equip[EQ_WEAPON]].plus2;
-    char old_colour = you.inv[you.equip[EQ_WEAPON]].colour;
     bool makes_noise = (one_chance_in(20) && !silenced(you.x_pos, you.y_pos));
 
     switch (you.special_wield)
@@ -112,82 +116,74 @@ void special_wielded(void)
     case SPWLD_VARIABLE:
         makes_noise = false;
 
-        do_uncurse_item( you.inv[you.equip[EQ_WEAPON]] );
+        do_uncurse_item( you.inv[wpn] );
 
         if (random2(5) < 2)     // 40% chance {dlb}
-        {
-            if (coinflip())
-                you.inv[you.equip[EQ_WEAPON]].plus++;
-            else
-                you.inv[you.equip[EQ_WEAPON]].plus--;
-        }
+            you.inv[wpn].plus  += (coinflip() ? +1 : -1);
 
         if (random2(5) < 2)     // 40% chance {dlb}
-        {
-            if (coinflip())
-                you.inv[you.equip[EQ_WEAPON]].plus2++;
-            else
-                you.inv[you.equip[EQ_WEAPON]].plus2--;
-        }
+            you.inv[wpn].plus2 += (coinflip() ? +1 : -1);
 
-        if (you.inv[you.equip[EQ_WEAPON]].plus < -4)
-            you.inv[you.equip[EQ_WEAPON]].plus = -4;
-        else if (you.inv[you.equip[EQ_WEAPON]].plus > 7)
-            you.inv[you.equip[EQ_WEAPON]].plus = 7;
+        if (you.inv[wpn].plus < -4)
+            you.inv[wpn].plus = -4;
+        else if (you.inv[wpn].plus > 9)
+            you.inv[wpn].plus = 9;
 
-        if (you.inv[you.equip[EQ_WEAPON]].plus2 < -4)
-            you.inv[you.equip[EQ_WEAPON]].plus2 = -4;
-        else if (you.inv[you.equip[EQ_WEAPON]].plus2 > 7)
-            you.inv[you.equip[EQ_WEAPON]].plus2 = 7;
+        if (you.inv[wpn].plus2 < -4)
+            you.inv[wpn].plus2 = -4;
+        else if (you.inv[wpn].plus2 > 9)
+            you.inv[wpn].plus2 = 9;
 
-        you.inv[you.equip[EQ_WEAPON]].colour = random_colour();
+        you.inv[wpn].colour = random_colour();
         break;
-
-    //case SPWLD_PRUNE:
 
     case SPWLD_TORMENT:
         makes_noise = false;
 
         if (one_chance_in(200))
-            torment(you.x_pos, you.y_pos);
+        {
+            torment( you.x_pos, you.y_pos );
+            naughty( NAUGHTY_UNHOLY, 1 );
+        }
         break;
 
     case SPWLD_ZONGULDROK:
         makes_noise = false;
 
         if (one_chance_in(5))
-            animate_dead(1 + random2(3), BEH_HOSTILE, MHITYOU, 1);
+        {
+            animate_dead( 1 + random2(3), BEH_HOSTILE, MHITYOU, 1 );
+            naughty( NAUGHTY_NECROMANCY, 1 );
+        }
         break;
 
     case SPWLD_POWER:
         makes_noise = false;
 
-        you.inv[you.equip[EQ_WEAPON]].plus = -3 + (you.hp / 11);
+        you.inv[wpn].plus = -3 + (you.hp / 11);
 
-        // placed cap on effect to weaken it -- bwr
-        if (you.inv[you.equip[EQ_WEAPON]].plus > 20)
-            you.inv[you.equip[EQ_WEAPON]].plus = 20;
+        // Placed cap on effect to weaken it (max at 243 HPs, so its not
+        // too much of a cap). -- bwr
+        if (you.inv[wpn].plus > 20)
+            you.inv[wpn].plus = 20;
 
-        you.inv[you.equip[EQ_WEAPON]].plus2 = you.inv[you.equip[EQ_WEAPON]].plus;
+        you.inv[wpn].plus2 = you.inv[wpn].plus;
         break;
 
     case SPWLD_OLGREB:
         makes_noise = false;
 
-        // giving Olgreb's staff a little lift since staves of poison have
-        // been made better.
-        you.inv[you.equip[EQ_WEAPON]].plus = you.skills[SK_POISON_MAGIC] / 3;
-        you.inv[you.equip[EQ_WEAPON]].plus2 = you.inv[you.equip[EQ_WEAPON]].plus;
+        // Giving Olgreb's staff a little lift since staves of poison have
+        // been made better. -- bwr
+        you.inv[wpn].plus = you.skills[SK_POISON_MAGIC] / 3;
+        you.inv[wpn].plus2 = you.inv[wpn].plus;
         break;
 
     case SPWLD_WUCAD_MU:
         makes_noise = false;
 
-        you.inv[you.equip[EQ_WEAPON]].plus = ((you.intel > 25) ? 22
-                                                             : you.intel - 3);
-
-        you.inv[you.equip[EQ_WEAPON]].plus2 = ((you.intel > 25) ? 13
-                                                             : you.intel / 2);
+        you.inv[wpn].plus  = ((you.intel > 25) ? 22 : you.intel - 3);
+        you.inv[wpn].plus2 = ((you.intel > 25) ? 13 : you.intel / 2);
         break;
 
     case SPWLD_SHADOW:
@@ -195,17 +191,18 @@ void special_wielded(void)
 
         if (random2(8) <= player_spec_death())
         {
+            naughty( NAUGHTY_NECROMANCY, 1 );
             create_monster( MONS_SHADOW, ENCH_ABJ_II, BEH_FRIENDLY,
-                                    you.x_pos, you.y_pos, MHITNOT, 250 );
+                            you.x_pos, you.y_pos, you.pet_target, 250 );
         }
-        //naughty(NAUGHTY_ATTACK_FRIEND,1);
+
         show_green = DARKGREY;
         break;
 
     case SPWLD_HUM:
         if (makes_noise)
         {
-            in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
+            in_name(wpn, DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
             strcat(info, " lets out a weird humming sound.");
             mpr(info);
@@ -215,7 +212,7 @@ void special_wielded(void)
     case SPWLD_CHIME:
         if (makes_noise)
         {
-            in_name(you.equip[EQ_WEAPON], DESC_CAP_YOUR, str_pass);
+            in_name(wpn, DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
             strcat(info, " chimes like a gong.");
             mpr(info);
@@ -232,16 +229,17 @@ void special_wielded(void)
             mpr("You hear a shout.");
         break;
 
+    //case SPWLD_PRUNE:
     default:
         return;
     }
 
     if (makes_noise)
-        noisy(25, you.x_pos, you.y_pos);
+        noisy( 25, you.x_pos, you.y_pos );
 
-    if (old_plus != you.inv[you.equip[EQ_WEAPON]].plus
-            || old_plus2 != you.inv[you.equip[EQ_WEAPON]].plus2
-            || you.inv[you.equip[EQ_WEAPON]].colour != old_colour)
+    if (old_plus != you.inv[wpn].plus
+        || old_plus2 != you.inv[wpn].plus2
+        || old_colour != you.inv[wpn].colour)
     {
         you.wield_change = true;
     }
@@ -332,10 +330,13 @@ void evoke_wielded(void)
     char opened_gates = 0;
     unsigned char spell_casted = random2(21);
     int count_x, count_y;
-    int temp_rand = 0;          // for probability determination {dlb}
+    int temp_rand = 0;      // for probability determination {dlb}
     int power = 0;
 
     int pract = 0;
+    bool did_work = false;  // used for default "nothing happens" message
+
+    char str_pass[ ITEMNAME_SIZE ];
 
     int wield = you.equip[EQ_WEAPON];
 
@@ -361,6 +362,7 @@ void evoke_wielded(void)
             make_hungry( 50, false );
             reaching_weapon_attack();
             pract = (one_chance_in(5) ? 1 : 0);
+            did_work = true;
         }
         else if (is_fixed_artefact( you.inv[wield] ))
         {
@@ -370,7 +372,7 @@ void evoke_wielded(void)
                 if (you.deaths_door || !enough_hp(11, true)
                     || !enough_mp(5, true))
                 {
-                    goto nothing_hap;
+                    break;
                 }
 
                 mpr("You feel the staff feeding on your energy!");
@@ -382,6 +384,7 @@ void evoke_wielded(void)
                 power = you.skills[SK_EVOCATIONS] * 8;
                 your_spells( SPELL_HELLFIRE, power, false );
                 pract = (coinflip() ? 2 : 1);
+                did_work = true;
                 break;
 
             // let me count the number of ways spell_casted is
@@ -391,7 +394,7 @@ void evoke_wielded(void)
                 spell_casted = random2(21);
 
                 if (spell_casted == 0)
-                    goto nothing_hap;
+                    break;
 
                 make_hungry( 200, false );
                 pract = 1;
@@ -402,19 +405,20 @@ void evoke_wielded(void)
                     spell_casted = (one_chance_in(4) ? MONS_FIEND
                                                  : MONS_HELLION + random2(10));
 
-                    bool good_summon = (create_monster(spell_casted, ENCH_ABJ_VI, BEH_HOSTILE,
-                                    you.x_pos, you.y_pos, MHITNOT, 250) != -1);
+                    bool good_summon = (create_monster( spell_casted,
+                                            ENCH_ABJ_VI, BEH_HOSTILE,
+                                            you.x_pos, you.y_pos,
+                                            MHITYOU, 250) != -1);
 
                     if (good_summon)
                     {
                         if (spell_casted == MONS_FIEND)
-                        {
                             mpr("\"Your arrogance condemns you, mortal!\"");
-                        }
                         else
                             mpr("The Sceptre summons one of its servants.");
                     }
 
+                    did_work = true;
                     break;
                 }
 
@@ -431,30 +435,34 @@ void evoke_wielded(void)
 
                 power = you.skills[SK_EVOCATIONS] * 8;
                 your_spells( spell_casted, power, false );
+                did_work = true;
                 break;
 
             case SPWPN_STAFF_OF_OLGREB:
                 if (!enough_mp( 4, true )
-                    || you.skills[SK_EVOCATIONS] < random2(11))
+                    || you.skills[SK_EVOCATIONS] < random2(6))
                 {
-                    goto nothing_hap;
+                    break;
                 }
 
                 dec_mp(4);
                 make_hungry( 50, false );
                 pract = 1;
+                did_work = true;
 
-                power = you.skills[SK_EVOCATIONS] * 8;
+                power = 10 + you.skills[SK_EVOCATIONS] * 8;
 
                 your_spells( SPELL_OLGREBS_TOXIC_RADIANCE, power, false );
-                your_spells( SPELL_VENOM_BOLT, power, false );
+
+                if (you.skills[SK_EVOCATIONS] >= random2(10))
+                    your_spells( SPELL_VENOM_BOLT, power, false );
                 break;
 
             case SPWPN_STAFF_OF_WUCAD_MU:
                 if (you.magic_points == you.max_magic_points
                     || you.skills[SK_EVOCATIONS] < random2(25))
                 {
-                    goto nothing_hap;
+                    break;
                 }
 
                 mpr("Magical energy flows into your mind!");
@@ -462,6 +470,7 @@ void evoke_wielded(void)
                 inc_mp( 3 + random2(5) + you.skills[SK_EVOCATIONS] / 3, false );
                 make_hungry( 50, false );
                 pract = 1;
+                did_work = true;
 
                 if (one_chance_in(3))
                 {
@@ -471,8 +480,6 @@ void evoke_wielded(void)
                 break;
 
             default:
-              nothing_hap:
-                canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             }
         }
@@ -482,20 +489,18 @@ void evoke_wielded(void)
         if (item_is_rod( you.inv[wield] ))
         {
             pract = staff_spell( wield );
+            did_work = true;  // staff_spell() will handle messages
         }
         else if (you.inv[wield].sub_type == STAFF_CHANNELING)
         {
-            if (you.magic_points == you.max_magic_points
-                || you.skills[SK_EVOCATIONS] < random2(30))
-            {
-                canned_msg(MSG_NOTHING_HAPPENS);
-            }
-            else
+            if (you.magic_points < you.max_magic_points
+                && you.skills[SK_EVOCATIONS] >= random2(30))
             {
                 mpr("You channel some magical energy.");
                 inc_mp( 1 + random2(3), false );
                 make_hungry( 50, false );
                 pract = (one_chance_in(5) ? 1 : 0);
+                did_work = true;
 
                 if (item_not_ident( you.inv[you.equip[EQ_WEAPON]],
                                     ISFLAG_KNOW_TYPE ))
@@ -518,6 +523,7 @@ void evoke_wielded(void)
         break;
 
 #if 0
+        // old code -- now handled automagically as a rod/spell staff -- bwr
         case STAFF_SMITING:
             if (!enough_mp(4, true) || you.skills[SK_EVOCATIONS] < random2(10))
             {
@@ -535,22 +541,10 @@ void evoke_wielded(void)
                 ident = true;
             }
             break;
-
-        case STAFF_STRIKING:
-            if (enough_mp(1, true))
-            {
-                dec_mp(1);
-                make_hungry( 50, false );
-                pract = (coinflip() ? 1 : 0);
-
-                power = 5 + roll_dice( 1, you.skills[SK_EVOCATIONS] );
-                your_spells( SPELL_MAGIC_DART, power, false );
-                ident = true;
-            }
-            break;
 #endif
 
     case OBJ_MISCELLANY:
+        did_work = true; // easier to do it this way for misc items
         switch (you.inv[wield].sub_type)
         {
         case MISC_BOTTLED_EFREET:
@@ -595,7 +589,7 @@ void evoke_wielded(void)
 
         case MISC_HORN_OF_GERYON:
             // Note: This assumes that the Vestibule has not been changed.
-            if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
+            if (player_in_branch( BRANCH_VESTIBULE_OF_HELL ))
             {
                 mpr("You produce a weird and mournful sound.");
 
@@ -637,8 +631,8 @@ void evoke_wielded(void)
             {
                 mpr("You produce a hideous howling noise!");
                 pract = (one_chance_in(3) ? 1 : 0);
-                create_monster( MONS_BEAST, ENCH_ABJ_IV, BEH_HOSTILE, you.x_pos,
-                                               you.y_pos, MHITYOU, 250 );
+                create_monster( MONS_BEAST, ENCH_ABJ_IV, BEH_HOSTILE,
+                                you.x_pos, you.y_pos, MHITYOU, 250 );
             }
             break;
 
@@ -683,7 +677,7 @@ void evoke_wielded(void)
             break;
 
         case MISC_PORTABLE_ALTAR_OF_NEMELEX:
-            if (you.where_are_you == BRANCH_ECUMENICAL_TEMPLE)
+            if (player_in_branch( BRANCH_ECUMENICAL_TEMPLE ))
             {
                 mpr( "Don't you think this level already has more than "
                      "enough altars?" );
@@ -699,17 +693,18 @@ void evoke_wielded(void)
             break;
 
         default:
-            canned_msg(MSG_NOTHING_HAPPENS);
+            did_work = false;
             break;
         }
         break;
 
     default:
-        canned_msg(MSG_NOTHING_HAPPENS);
         break;
     }
 
-    if (pract > 0)
+    if (!did_work)
+        canned_msg(MSG_NOTHING_HAPPENS);
+    else if (pract > 0)
         exercise( SK_EVOCATIONS, pract );
 
     you.turn_is_over = 1;
@@ -724,8 +719,8 @@ static bool efreet_flask(void)
 
     dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
 
-    if (create_monster( MONS_EFREET, ENCH_ABJ_V, behaviour, you.x_pos,
-                        you.y_pos, MHITYOU, 250 ) != -1)
+    if (create_monster( MONS_EFREET, ENCH_ABJ_V, behaviour,
+                        you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
     {
         mpr( "...and a huge efreet comes out." );
 
@@ -831,14 +826,14 @@ void tome_of_power(char sc_read_2)
 
     int spell_casted = 0;
     struct bolt beam;
-    char str_pass[40];
 
     strcpy(info, "The book opens to a page covered in ");
 
-    weird_writing(str_pass);
-    strcat(info, str_pass);
-    strcat(info, ".");
-    mpr(info);
+    char wc[30];
+    weird_writing( wc );
+    strcat( info, wc );
+    strcat( info, "." );
+    mpr( info );
 
     you.turn_is_over = 1;
 
@@ -912,7 +907,7 @@ void tome_of_power(char sc_read_2)
 
     case 10:
         if (create_monster( MONS_ABOMINATION_SMALL, ENCH_ABJ_VI, BEH_HOSTILE,
-                            you.x_pos, you.y_pos, MHITNOT, 250 ) != -1)
+                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("A horrible Thing appears!");
             mpr("It doesn't look too friendly.");
@@ -1012,7 +1007,7 @@ static bool box_of_beasts(void)
                                                                 : BEH_FRIENDLY);
 
         if (create_monster( beasty, ENCH_ABJ_II + random2(4), beh,
-                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
+                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("...and something leaps out!");
         }

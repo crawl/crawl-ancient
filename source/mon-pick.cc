@@ -1705,6 +1705,7 @@ static int mons_pitsnake_level(int mcls)
 
     switch (mcls)
     {
+    case MONS_SMALL_SNAKE:
     case MONS_SNAKE:
         mlev++;
         break;
@@ -1713,18 +1714,20 @@ static int mons_pitsnake_level(int mcls)
     case MONS_BLACK_SNAKE:
     case MONS_YELLOW_SNAKE:
     case MONS_GREY_SNAKE:
+    case MONS_NAGA:
         mlev += 2;
         break;
 
-    case MONS_NAGA:
+    case MONS_NAGA_WARRIOR:
+    case MONS_NAGA_MAGE:
         mlev += 3;
         break;
 
-    case MONS_NAGA_WARRIOR:
+    case MONS_GUARDIAN_NAGA:
         mlev += 4;
         break;
 
-    case MONS_NAGA_MAGE:
+    case MONS_GREATER_NAGA:
         mlev += 5;
         break;
 
@@ -1743,20 +1746,23 @@ static int mons_pitsnake_rare(int mcls)
     case MONS_BROWN_SNAKE:
         return 99;
 
-    case MONS_NAGA:
-        return 53;
-
     case MONS_BLACK_SNAKE:
         return 72;
 
+    case MONS_NAGA:
+        return 53;
+
     case MONS_NAGA_WARRIOR:
+    case MONS_NAGA_MAGE:
         return 34;
 
     case MONS_YELLOW_SNAKE:
     case MONS_GREY_SNAKE:
         return 32;
 
-    case MONS_NAGA_MAGE:
+    case MONS_GREATER_NAGA:
+    case MONS_GUARDIAN_NAGA:
+    case MONS_SMALL_SNAKE:
         return 15;
 
     default:

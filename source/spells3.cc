@@ -24,7 +24,6 @@
 #include "direct.h"
 #include "debug.h"
 #include "delay.h"
-#include "fight.h"
 #include "itemname.h"
 #include "items.h"
 #include "it_use2.h"
@@ -57,12 +56,12 @@ void cast_selective_amnesia(bool force)
         // query - conditional ordering is important {dlb}:
         for (;;)
         {
-            mpr( "Forget which spell? ([a-y] spell [?|*] list [spc|tab|ret] "
-                 "exit) ", MSGCH_PROMPT );
+            mpr( "Forget which spell ([a-y] spell [?*] list [ESC] exit)? ",
+                 MSGCH_PROMPT );
 
             keyin = (unsigned char) get_ch();
 
-            if (keyin == '\t' || keyin == '\r' || keyin == ' ')
+            if (keyin == ESCAPE)
                 return;         // early return {dlb}
 
             if (keyin == '?' || keyin == '*')
@@ -396,7 +395,7 @@ void simulacrum(int power)
         {
             if (create_monster( MONS_SIMULACRUM_SMALL, ENCH_ABJ_VI,
                                 BEH_FRIENDLY, you.x_pos, you.y_pos,
-                                MHITNOT, mons_type ) != -1)
+                                you.pet_target, mons_type ) != -1)
             {
                 summoned++;
             }
@@ -422,6 +421,7 @@ void simulacrum(int power)
 void dancing_weapon(int pow, bool force_hostile)
 {
     int numsc = ENCH_ABJ_II + (random2(pow) / 5);
+    char str_pass[ ITEMNAME_SIZE ];
 
     if (numsc > ENCH_ABJ_VI)
         numsc = ENCH_ABJ_VI;
@@ -646,7 +646,7 @@ void you_teleport2(bool allow_control)
 
 #if DEBUG_DIAGNOSTICS
         snprintf( info, INFO_SIZE, "Target square (%d,%d)", plox[0], plox[1] );
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
         plox[0] += random2(3) - 1;
@@ -667,7 +667,7 @@ void you_teleport2(bool allow_control)
 
 #if DEBUG_DIAGNOSTICS
         snprintf( info, INFO_SIZE, "Scattered target square (%d,%d)", plox[0], plox[1] );
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
         if (is_controlled)
@@ -817,6 +817,7 @@ bool entomb(void)
 void cast_poison_ammo(void)
 {
     const int ammo = you.equip[EQ_WEAPON];
+    char str_pass[ ITEMNAME_SIZE ];
 
     if (ammo == -1
         || you.inv[ammo].base_type != OBJ_MISSILES
@@ -844,7 +845,7 @@ void cast_poison_ammo(void)
     }
 }                               // end cast_poison_ammo()
 
-bool create_noise(void)
+bool project_noise(void)
 {
     bool success = false;
     FixedVector < int, 2 > plox;
@@ -860,30 +861,35 @@ bool create_noise(void)
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "Target square (%d,%d)", plox[0], plox[1] );
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
-    if (!silenced(plox[0], plox[1]))
+    if (!silenced( plox[0], plox[1] ))
     {
-        if (plox[0] < 1 || plox[1] < 1 || plox[0] > (GXM - 2)
-                || plox[1] > (GYM - 2))
+        // player can use this spell to "sound out" the dungeon -- bwr
+        if (plox[0] > 1 && plox[0] < (GXM - 2)
+            && plox[1] > 1 && plox[1] < (GYM - 2)
+            && grd[ plox[0] ][ plox[1] ] > DNGN_LAST_SOLID_TILE)
         {
-            if (!silenced(you.x_pos, you.y_pos))
-                mpr("You hear a muffled thud.");
-        }
-        else
-        {
-            noisy(30, plox[0], plox[1]);
-
-            if (!silenced(you.x_pos, you.y_pos))
-                mpr("You hear a distant voice call your name.");
-
+            noisy( 30, plox[0], plox[1] );
             success = true;
+        }
+
+        if (!silenced( you.x_pos, you.y_pos ))
+        {
+            if (!success)
+                mpr("You hear a dull thud.");
+            else
+            {
+                snprintf( info, INFO_SIZE, "You hear a %svoice call your name.",
+                          (see_grid( plox[0], plox[1] ) ? "distant " : "") );
+                mpr( info );
+            }
         }
     }
 
     return (success);
-}                               // end create_noise()
+}                               // end project_noise()
 
 /*
    Type recalled:
@@ -974,8 +980,7 @@ void portal(void)
     int target_level = 0;
     int old_level = you.your_level;
 
-    if (you.where_are_you != BRANCH_MAIN_DUNGEON
-                                    || you.level_type != LEVEL_DUNGEON)
+    if (!player_in_branch( BRANCH_MAIN_DUNGEON ))
     {
         mpr("This spell doesn't work here.");
     }
@@ -1042,7 +1047,7 @@ void portal(void)
         }
 
         // actual handling begins here {dlb}:
-        if (you.where_are_you == BRANCH_MAIN_DUNGEON)
+        if (player_in_branch( BRANCH_MAIN_DUNGEON ))
         {
             if (target_level < 0)
                 target_level = 0;
@@ -1057,7 +1062,7 @@ void portal(void)
         you.your_level = target_level - 1;
         grd[you.x_pos][you.y_pos] = DNGN_STONE_STAIRS_DOWN_I;
 
-        down_stairs(true, old_level);
+        down_stairs( true, old_level );
         untag_followers();
     }
 

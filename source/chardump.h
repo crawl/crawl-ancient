@@ -18,7 +18,7 @@
 /* ***********************************************************************
  * called from: acr - ouch
  * *********************************************************************** */
-bool dump_char(char show_prices, char fname[30]);
+bool dump_char( const char fname[30], bool show_prices );
 
 
 #endif

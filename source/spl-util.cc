@@ -604,7 +604,7 @@ char spell_direction( struct dist &spelld, struct bolt &pbolt,
     if (restrict == DIR_TARGET)
         mpr( "Choose a target (+/- for next/prev monster)", MSGCH_PROMPT );
     else
-        mpr( "Which direction? (*/+ to target)", MSGCH_PROMPT );
+        mpr( STD_DIRECTION_PROMPT, MSGCH_PROMPT );
 
     message_current_target();
 
@@ -625,7 +625,7 @@ char spell_direction( struct dist &spelld, struct bolt &pbolt,
     return 1;
 }                               // end spell_direction()
 
-char *spelltype_name(unsigned int which_spelltype)
+const char *spelltype_name(unsigned int which_spelltype)
 {
     static char bug_string[80];
 

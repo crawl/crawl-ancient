@@ -376,7 +376,7 @@ void up_stairs(void)
     // probably still need this check here (teleportation) -- bwr
     if ((stair_find < DNGN_STONE_STAIRS_UP_I
             || stair_find > DNGN_ROCK_STAIRS_UP)
-        && (stair_find < DNGN_RETURN_DUNGEON_I || stair_find > 150))
+        && (stair_find < DNGN_RETURN_FROM_ORCISH_MINES || stair_find >= 150))
     {
         mpr("You can't go up here.");
         return;
@@ -449,7 +449,7 @@ void up_stairs(void)
     you.prev_targ = MHITNOT;
     you.pet_target = MHITNOT;
 
-    if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
+    if (player_in_branch( BRANCH_VESTIBULE_OF_HELL ))
     {
         mpr("Thank you for visiting Hell. Please come again soon.");
         you.where_are_you = BRANCH_MAIN_DUNGEON;
@@ -457,9 +457,7 @@ void up_stairs(void)
         stair_find = DNGN_STONE_STAIRS_UP_I;
     }
 
-    if (you.where_are_you > BRANCH_MAIN_DUNGEON
-        && you.where_are_you < BRANCH_ORCISH_MINES
-        && you.where_are_you != BRANCH_VESTIBULE_OF_HELL)
+    if (player_in_hell())
     {
         you.where_are_you = BRANCH_VESTIBULE_OF_HELL;
         you.your_level = 27;
@@ -467,31 +465,31 @@ void up_stairs(void)
 
     switch (stair_find)
     {
-    case DNGN_RETURN_DUNGEON_I:
-    case DNGN_RETURN_DUNGEON_II:
-    case DNGN_RETURN_DUNGEON_III:
-    case DNGN_RETURN_DUNGEON_IV:
-    case DNGN_EXIT_ZOT:
-    case DNGN_RETURN_DUNGEON_V:
+    case DNGN_RETURN_FROM_ORCISH_MINES:
+    case DNGN_RETURN_FROM_HIVE:
+    case DNGN_RETURN_FROM_LAIR:
+    case DNGN_RETURN_FROM_VAULTS:
+    case DNGN_RETURN_FROM_TEMPLE:
+    case DNGN_RETURN_FROM_ZOT:
         mpr("Welcome back to the Dungeon!");
         you.where_are_you = BRANCH_MAIN_DUNGEON;
         break;
-    case DNGN_RETURN_LAIR_II:
-    case DNGN_RETURN_LAIR_III:
-    case DNGN_RETURN_LAIR_IV:
+    case DNGN_RETURN_FROM_SLIME_PITS:
+    case DNGN_RETURN_FROM_SNAKE_PIT:
+    case DNGN_RETURN_FROM_SWAMP:
         mpr("Welcome back to the Lair of Beasts!");
         you.where_are_you = BRANCH_LAIR;
         break;
-    case DNGN_RETURN_VAULTS_II:
-    case DNGN_RETURN_VAULTS_III:
+    case DNGN_RETURN_FROM_CRYPT:
+    case DNGN_RETURN_FROM_HALL_OF_BLADES:
         mpr("Welcome back to the Vaults!");
         you.where_are_you = BRANCH_VAULTS;
         break;
-    case DNGN_RETURN_CRYPT:
+    case DNGN_RETURN_FROM_TOMB:
         mpr("Welcome back to the Crypt!");
         you.where_are_you = BRANCH_CRYPT;
         break;
-    case DNGN_RETURN_MINES:
+    case DNGN_RETURN_FROM_ELVEN_HALLS:
         mpr("Welcome back to the Orcish Mines!");
         you.where_are_you = BRANCH_ORCISH_MINES;
         break;
@@ -518,9 +516,12 @@ void up_stairs(void)
     you.turn_is_over = 1;
 
     save_game(false);
+
+    if (you.skills[SK_TRANSLOCATIONS] > 0 && !allow_control_teleport( true ))
+        mpr( "You sense a powerful magical force warping space.", MSGCH_WARN );
 }                               // end up_stairs()
 
-void down_stairs(bool remove_stairs, int old_level)
+void down_stairs( bool remove_stairs, int old_level )
 {
     int i;
     char old_level_type = you.level_type;
@@ -548,7 +549,7 @@ void down_stairs(bool remove_stairs, int old_level)
                 || stair_find > DNGN_TRANSIT_PANDEMONIUM)
             && stair_find != DNGN_STONE_ARCH)
         && !(stair_find >= DNGN_ENTER_ORCISH_MINES
-            && stair_find < DNGN_RETURN_DUNGEON_I))
+            && stair_find < DNGN_RETURN_FROM_ORCISH_MINES))
     {
         mpr( "You can't go down here!" );
         return;
@@ -556,7 +557,7 @@ void down_stairs(bool remove_stairs, int old_level)
 
     if (stair_find >= DNGN_ENTER_LABYRINTH
         && stair_find <= DNGN_ROCK_STAIRS_DOWN
-        && you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
+        && player_in_branch( BRANCH_VESTIBULE_OF_HELL ))
     {
         mpr("A mysterious force prevents you from descending the staircase.");
         return;
@@ -595,9 +596,12 @@ void down_stairs(bool remove_stairs, int old_level)
             case 1:
                 mpr("You need a Rune to enter this place.");
                 break;
+
             default:
-                snprintf( info, INFO_SIZE, "You need at least %d Runes to enter this place.",
-                        NUMBER_OF_RUNES_NEEDED);
+                snprintf( info, INFO_SIZE,
+                          "You need at least %d Runes to enter this place.",
+                          NUMBER_OF_RUNES_NEEDED );
+
                 mpr(info);
             }
             return;
@@ -634,8 +638,10 @@ void down_stairs(bool remove_stairs, int old_level)
         you.your_level = 26;    // = 59;
     }
 
-    if ((stair_find >= DNGN_ENTER_DIS && stair_find <= DNGN_ENTER_TARTARUS)
-        || (stair_find >= DNGN_ENTER_ORCISH_MINES && stair_find <= 150))
+    if ((stair_find >= DNGN_ENTER_DIS
+            && stair_find <= DNGN_ENTER_TARTARUS)
+        || (stair_find >= DNGN_ENTER_ORCISH_MINES
+            && stair_find < DNGN_RETURN_FROM_ORCISH_MINES))
     {
         // no idea why such a huge switch and not 100-grd[][]
         // planning ahead for re-organizaing grd[][] values - 13jan2000 {dlb}
@@ -718,19 +724,16 @@ void down_stairs(bool remove_stairs, int old_level)
 
         mpr(info);
     }
-
-    if (stair_find == DNGN_ENTER_LABYRINTH)
+    else if (stair_find == DNGN_ENTER_LABYRINTH)
     {
         you.level_type = LEVEL_LABYRINTH;
         grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
     }
-
-    if (stair_find == DNGN_ENTER_ABYSS)
+    else if (stair_find == DNGN_ENTER_ABYSS)
     {
         you.level_type = LEVEL_ABYSS;
     }
-
-    if (stair_find == DNGN_ENTER_PANDEMONIUM)
+    else if (stair_find == DNGN_ENTER_PANDEMONIUM)
     {
         you.level_type = LEVEL_PANDEMONIUM;
     }
@@ -767,7 +770,7 @@ void down_stairs(bool remove_stairs, int old_level)
 #if DEBUG_DIAGNOSTICS
         strcpy( info, "Deleting: " );
         strcat( info, del_file );
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
         more();
 #endif
     }
@@ -858,10 +861,8 @@ void down_stairs(bool remove_stairs, int old_level)
 
         init_pandemonium();     /* colours only */
 
-        if (you.where_are_you >= BRANCH_DIS
-            && you.where_are_you < BRANCH_ORCISH_MINES)
+        if (player_in_hell())
         {
-            // ie if you're in Hell
             you.where_are_you = BRANCH_MAIN_DUNGEON;
             you.your_level = you.hell_exit - 1;
         }
@@ -876,18 +877,17 @@ void down_stairs(bool remove_stairs, int old_level)
         }
         else
         {
+            // Linley-suggested addition 17jan2000 {dlb}
             if (old_level_type != LEVEL_ABYSS)
-                you.your_level--;       // Linley-suggested addition 17jan2000 {dlb}
+                you.your_level--;
 
             init_pandemonium();
 
             for (pc = 0; pc < pt; pc++)
                 pandemonium_mons();
 
-            if (you.where_are_you >= BRANCH_DIS
-                && you.where_are_you < BRANCH_ORCISH_MINES)
+            if (player_in_hell())
             {
-                // ie if you're in Hell
                 you.where_are_you = BRANCH_MAIN_DUNGEON;
                 you.hell_exit = 26;
                 you.your_level = 26;
@@ -899,11 +899,12 @@ void down_stairs(bool remove_stairs, int old_level)
         break;
     }
 
-    // new_level();
-
     you.turn_is_over = 1;
 
     save_game(false);
+
+    if (you.skills[SK_TRANSLOCATIONS] > 0 && !allow_control_teleport( true ))
+        mpr( "You sense a powerful magical force warping space.", MSGCH_WARN );
 }                               // end down_stairs()
 
 void new_level(void)
@@ -913,11 +914,8 @@ void new_level(void)
     textcolor(LIGHTGREY);
 
     // maybe last part better expresssed as <= PIT {dlb}
-    if (you.where_are_you >= BRANCH_DIS
-        && you.where_are_you < BRANCH_ORCISH_MINES)
-    {
+    if (player_in_hell() || player_in_branch( BRANCH_VESTIBULE_OF_HELL ))
         curr_subdungeon_level = you.your_level - 26;
-    }
 
     /* Remember, must add this to the death_string in ouch */
     if (you.where_are_you >= BRANCH_ORCISH_MINES
@@ -962,7 +960,8 @@ void new_level(void)
     }
     else
     {
-        if (you.where_are_you != BRANCH_VESTIBULE_OF_HELL)
+        // level_type == LEVEL_DUNGEON
+        if (!player_in_branch( BRANCH_VESTIBULE_OF_HELL ))
             cprintf( "%d", curr_subdungeon_level );
 
         switch (you.where_are_you)
@@ -1663,10 +1662,10 @@ bool go_berserk(bool intentional)
     deflate_hp(you.hp_max, false);
 
     if (!you.might)
-        modify_stat(STAT_STRENGTH, 5, true);
+        modify_stat( STAT_STRENGTH, 5, true );
 
     you.might += you.berserker;
-    you.haste += you.berserker;
+    haste_player( you.berserker );
 
     if (you.berserk_penalty != NO_BERSERK_PENALTY)
         you.berserk_penalty = 0;

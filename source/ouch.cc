@@ -87,7 +87,7 @@ int check_your_resists(int hurted, int flavour)
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "checking resistance: flavour=%d", flavour );
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     if (flavour == BEAM_FIRE || flavour == BEAM_LAVA
@@ -244,7 +244,7 @@ void weapon_acid( char acid_strength )
 
     if (hand_thing == -1)
     {
-        snprintf( info, INFO_SIZE, "Your %s burn!", your_hand(1) );
+        snprintf( info, INFO_SIZE, "Your %s burn!", your_hand(true) );
         mpr( info );
 
         ouch( roll_dice( 1, acid_strength ), 0, KILLED_BY_ACID );
@@ -267,7 +267,7 @@ void item_corrode( char itco )
     if (wearing_amulet(AMU_RESIST_CORROSION) && !one_chance_in(10))
     {
 #if DEBUG_DIAGNOSTICS
-        mpr( "Amulet protects.", MSGCH_DIAGNOSTIC );
+        mpr( "Amulet protects.", MSGCH_DIAGNOSTICS );
 #endif
         return;
     }
@@ -327,7 +327,7 @@ void item_corrode( char itco )
         //                              (as it *was* this way)
 
         // the embedded equation may look funny, but it actually works well
-        // to generate a pretty probability ramp {10%, 19%, 35%, 67%, 99%}
+        // to generate a pretty probability ramp {6%, 18%, 34%, 58%, 98%}
         // for values [0,4] which closely matches the original, ugly switch
         // {dlb}
         if (chance_corr >= 0 && chance_corr <= 4)
@@ -345,6 +345,7 @@ void item_corrode( char itco )
     // handle message output and item damage {dlb}:
     if (!suppress_msg)
     {
+        char str_pass[ ITEMNAME_SIZE ];
         in_name(itco, DESC_CAP_YOUR, str_pass);
         strcpy(info, str_pass);
         strcat(info, (it_resists) ? " resists." : " is eaten away!");
@@ -379,7 +380,7 @@ void scrolls_burn(char burn_strength, char target_class)
     if (wearing_amulet(AMU_CONSERVATION) && !one_chance_in(10))
     {
 #if DEBUG_DIAGNOSTICS
-        mpr( "Amulet conserves.", MSGCH_DIAGNOSTIC );
+        mpr( "Amulet conserves.", MSGCH_DIAGNOSTICS );
 #endif
         return;
     }
@@ -430,35 +431,22 @@ void scrolls_burn(char burn_strength, char target_class)
                             // end scrolls_burn()
 void lose_level(void)
 {
-    char temp_quant[5];
-
     // because you.experience is unsigned long, if it's going to be -ve
     // must die straightaway.
     if (you.experience_level == 1)
         ouch(-9999, 0, KILLED_BY_DRAINING);
 
-    you.experience = exp_needed(you.experience_level + 1) - 1;
+    you.experience = exp_needed( you.experience_level + 1 ) - 1;
     you.experience_level--;
 
-    strcpy(info, "You are now a level ");
-    itoa(you.experience_level, temp_quant, 10);
-    strcat(info, temp_quant);
-    strcat(info, " ");
-    strcat(info, you.class_name);
-    strcat(info, "!");
-    mpr(info, MSGCH_WARN);
+    snprintf( info, INFO_SIZE, "You are now a level %d %s!",
+             you.experience_level, you.class_name );
+    mpr( info, MSGCH_WARN );
 
-    int hp_loss = 0;
-
-    if (you.experience_level > 20)
-        hp_loss = (coinflip() ? 3 : 2);
-    else if (you.experience_level > 11)
-        hp_loss = random2(3) + 2;
-    else
-        hp_loss = random2(3) + 4;
-
-    ouch( hp_loss, 0, KILLED_BY_DRAINING );
-    dec_max_hp( hp_loss );
+    // Constant value to avoid grape jelly trick... see level_change() for
+    // where these HPs and MPs are given back.  -- bwr
+    ouch( 4, 0, KILLED_BY_DRAINING );
+    dec_max_hp(4);
 
     dec_mp(1);
     dec_max_mp(1);
@@ -518,17 +506,11 @@ void drain_exp(void)
             you.exp_available = 0;
 
 #if DEBUG_DIAGNOSTICS
-        strcpy(info, "You lose ");
-
-        char temp_quant[20];
-
-        itoa(exp_drained, temp_quant, 10);
-
-        strcat(info, temp_quant);
-        strcat(info, " experience points.");
-
-        mpr( info, MSGCH_DIAGNOSTIC );
+        snprintf( info, INFO_SIZE, "You lose %ld experience points.",
+                  exp_drained );
+        mpr( info, MSGCH_DIAGNOSTICS );
 #endif
+
         you.redraw_experience = 1;
 
         if (you.experience < exp_needed(you.experience_level + 1))
@@ -573,7 +555,7 @@ void ouch(int dam, int death_source, char death_type)
         case GOD_SHINING_ONE:
         case GOD_ELYVILON:
         case GOD_OKAWARU:
-        case GOD_KIKUBAAQUDGHA:
+        case GOD_YREDELEMNUL:
             if (dam >= you.hp && you.duration[DUR_PRAYER]
                                                 && random2(you.piety) >= 30)
             {
@@ -612,7 +594,7 @@ void ouch(int dam, int death_source, char death_type)
 
 #if DEBUG_DIAGNOSTICS
             snprintf( info, INFO_SIZE, "Damage: %d; Hit points: %d", dam, you.hp );
-            mpr( info, MSGCH_DIAGNOSTIC );
+            mpr( info, MSGCH_DIAGNOSTICS );
 #endif // DEBUG_DIAGNOSTICS
 
             if (!yesno("Die?", false))
@@ -793,13 +775,16 @@ void ouch(int dam, int death_source, char death_type)
 #else
 
     // only add non-wizards to the score file.
+    // never generate bones files of wizard characters -- bwr
     if (!you.wizard)
+    {
         hiscores_new_entry(se);
 
-#endif
+        if (death_type != KILLED_BY_LEAVING && death_type != KILLED_BY_WINNING)
+            save_ghost();
+    }
 
-    if (death_type != KILLED_BY_LEAVING && death_type != KILLED_BY_WINNING)
-        save_ghost();
+#endif
 
     end_game(se);
 }
@@ -876,7 +861,7 @@ void end_game(struct scorefile_entry &se)
     invent(-1, !dead);
     clrscr();
 
-    if (!dump_char(!dead, "morgue.txt"))
+    if (!dump_char( "morgue.txt", !dead ))
         mpr("Char dump unsuccessful! Sorry about that.");
 #if DEBUG_DIAGNOSTICS
     //jmf: switched logic and moved "success" message to debug-only
@@ -885,36 +870,6 @@ void end_game(struct scorefile_entry &se)
 #endif // DEBUG
 
     more();
-
-#if 0
-    // Since seems to be completely unrequired, since we're
-    // about to terminate the program. -- bwr
-    for (int p = 0; p < ENDOFPACK; p++)
-    {
-        for (i = 0; i < MAX_ITEMS; i++)
-        {
-            if (!mitm[i].quantity)
-            {
-                mitm[i].flags = 0;
-                mitm[i].base_type = you.inv[p].base_type;
-                mitm[i].sub_type = you.inv[p].sub_type;
-                mitm[i].plus = you.inv[p].plus;
-                mitm[i].plus2 = you.inv[p].plus2;
-                mitm[i].special = you.inv[p].special;
-                mitm[i].colour = you.inv[p].colour;
-                mitm[i].x = you.x_pos;
-                mitm[i].y = you.y_pos;
-                mitm[i].quantity = you.inv[p].quantity;
-                break;
-            }
-        }                       // end "for p,i"
-    }
-
-    for (i = 0; i < MAX_ITEMS; i++)
-    {
-        mitm[i].flags = 0;
-    }
-#endif
 
     clrscr();
 #ifdef DOS_TERM

@@ -21,7 +21,7 @@ dice_def calc_dice( int num_dice, int max_damage );
 /* ***********************************************************************
  * called from: bang - it_use2 - monstuff - mstuff2
  * *********************************************************************** */
-void beam( struct bolt &pbolt, int inv_number = -1 );
+void fire_beam( struct bolt &pbolt, int inv_number = -1 );
 
 // last updated 19apr2001 {gdl}
 /* ***********************************************************************
@@ -44,12 +44,6 @@ void explosion( struct bolt &pbolt, bool hole_in_the_middle = false );
  * *********************************************************************** */
 int mons_adjust_flavoured( struct monsters *monster, struct bolt &pbolt,
                            int hurted, bool doFlavouredEffects = true );
-
-
-/* ***********************************************************************
- * called from: effects
- * *********************************************************************** */
-bool check_mons_magres( struct monsters *monster, int pow );
 
 
 /* ***********************************************************************

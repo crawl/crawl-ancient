@@ -45,13 +45,6 @@ unsigned char read_book( item_def &item, int action );
 
 // updated 24may2000 {dlb}
 /* ***********************************************************************
- * called from: chardump - spl-book - spells0
- * *********************************************************************** */
-char *spelltype_name(unsigned int which_spelltype);
-
-
-// updated 24may2000 {dlb}
-/* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
 void learn_spell(void);

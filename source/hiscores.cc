@@ -45,8 +45,8 @@ static struct scorefile_entry hs_list[SCORE_FILE_ENTRIES];
 // highscore printing (always -1 when run from command line).
 static int newest_entry = -1;
 
-static FILE *hs_open(char *mode);
-static void hs_close(FILE *handle, char *mode);
+static FILE *hs_open(const char *mode);
+static void hs_close(FILE *handle, const char *mode);
 static bool hs_read(FILE *scores, struct scorefile_entry &dest);
 static void hs_parse_numeric(char *inbuf, struct scorefile_entry &dest);
 static void hs_parse_string(char *inbuf, struct scorefile_entry &dest);
@@ -196,8 +196,8 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
     // race_class_name overrides race & class
     if (strlen(se.race_class_name) == 0)
     {
-        snprintf( scratch, sizeof(scratch),
-                  "%s%s", species_abbrev(se.race), class_abbrev(se.cls) );
+        snprintf( scratch, sizeof(scratch), "%s%s",
+                  get_species_abbrev( se.race ), get_class_abbrev( se.cls ) );
     }
     else
     {
@@ -555,7 +555,7 @@ static bool unlock_file_handle( FILE *handle )
 
 
 
-FILE *hs_open(char *mode)
+FILE *hs_open( const char *mode )
 {
 #ifdef SAVE_DIR_PATH
     FILE *handle = fopen(SAVE_DIR_PATH "scores", mode);
@@ -578,7 +578,7 @@ FILE *hs_open(char *mode)
     return handle;
 }
 
-void hs_close(FILE *handle, char *mode)
+void hs_close(FILE *handle, const char *mode)
 {
     if (handle == NULL)
         return;

@@ -42,6 +42,7 @@ char damage_type(unsigned char wclass, unsigned char wtype)
         case WPN_LONG_SWORD:
         case WPN_QUICK_BLADE:
         case WPN_SABRE:
+        case WPN_FALCHION:
         case WPN_SCIMITAR:
         case WPN_SCYTHE:
         case WPN_SHORT_SWORD:
@@ -59,7 +60,7 @@ char damage_type(unsigned char wclass, unsigned char wtype)
             type_damage = DVORP_PIERCING;
             break;
 
-        case WPN_AXE:
+        case WPN_WAR_AXE:
         case WPN_BATTLEAXE:
         case WPN_BROAD_AXE:
         case WPN_EXECUTIONERS_AXE:
@@ -111,7 +112,7 @@ int hands_reqd_for_weapon(unsigned char wclass, unsigned char wtype)
         case WPN_SPEAR:
         case WPN_TRIDENT:
         case WPN_DEMON_TRIDENT:
-        case WPN_AXE:
+        case WPN_WAR_AXE:
         case WPN_BROAD_AXE:
         case WPN_KATANA:
         case WPN_DOUBLE_SWORD:
@@ -183,7 +184,7 @@ char weapon_skill(unsigned char wclass, unsigned char wtype)
     char skill2use = SK_FIGHTING;
 
     if (wclass == OBJ_STAVES
-        && (wtype < STAFF_SMITING || wtype > STAFF_AIR))
+        && (wtype < STAFF_SMITING || wtype >= STAFF_AIR))
     {
         skill2use = SK_STAVES;
     }
@@ -222,6 +223,7 @@ char weapon_skill(unsigned char wclass, unsigned char wtype)
             skill2use = SK_SHORT_BLADES;
             break;
 
+        case WPN_FALCHION:
         case WPN_LONG_SWORD:
         case WPN_SCIMITAR:
         case WPN_KATANA:
@@ -233,7 +235,7 @@ char weapon_skill(unsigned char wclass, unsigned char wtype)
             break;
 
         case WPN_HAND_AXE:
-        case WPN_AXE:
+        case WPN_WAR_AXE:
         case WPN_BROAD_AXE:
         case WPN_BATTLEAXE:
         case WPN_EXECUTIONERS_AXE:

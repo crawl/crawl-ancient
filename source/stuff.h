@@ -16,6 +16,8 @@
 
 #include "externs.h"
 
+void set_redraw_status( unsigned long flags );
+
 void tag_followers( void );
 void untag_followers( void );
 

@@ -20,11 +20,41 @@
 #include "externs.h"
 // for definition of type monsters {dlb}
 
+void get_mimic_item( const struct monsters *mimic, item_def & item );
+int  get_mimic_colour( struct monsters *mimic );
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+   * called from: fight - item_use - items - spell
+   * *********************************************************************** */
+void alert_nearby_monsters(void);
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+   * called from: beam - effects - monstuff
+   * *********************************************************************** */
+bool monster_polymorph(struct monsters *monster, int targetc, int power);
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+   * called from: bang - beam - effects - fight - misc - monstuff - mstuff2 -
+   *              spells1 - spells2 - spells3 - spells4
+   * *********************************************************************** */
+void monster_die(struct monsters *monster, char killer, int i);
+
+// last updated: 17dec2000 {gdl}
+/* ***********************************************************************
+   * called from: monstuff - fight
+   * *********************************************************************** */
+void monster_cleanup(struct monsters *monster);
+
+
 /* ***********************************************************************
  * called from: monstuff beam effects fight view
  * *********************************************************************** */
-void behaviour_event(struct monsters *mon, int event_type, int param = 0);
-
+void behaviour_event( struct monsters *mon, int event_type,
+                      int src = MHITNOT, int src_x = 0, int src_y = 0 );
 
 /* ***********************************************************************
  * called from: fight - it_use3 - spells

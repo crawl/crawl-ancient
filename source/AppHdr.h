@@ -341,6 +341,10 @@
 //might be slow on some computers
 //#define MISSILE_TRAILS_OFF
 
+// bwr: allow player to destroy items in inventory (but not equiped items)
+// See comment at items.cc::cmd_destroy_item() for details/issues.
+#define ALLOW_DESTROY_ITEM_COMMAND
+
 // ====================== -----------------------------------------------------
 //jmf: end of new defines
 // ====================== -----------------------------------------------------

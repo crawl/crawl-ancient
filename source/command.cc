@@ -22,6 +22,7 @@
 
 #include "invent.h"
 #include "itemname.h"
+#include "item_use.h"
 #include "items.h"
 #include "ouch.h"
 #include "spl-cast.h"
@@ -32,7 +33,6 @@
 
 void adjust_item(void);
 void adjust_spells(void);
-void get_letter_id(char buff[5], int item_id);
 
 void quit_game(void)
 {
@@ -64,6 +64,7 @@ void adjust(void)
 void adjust_item(void)
 {
     int from_slot, to_slot;
+    char str_pass[ ITEMNAME_SIZE ];
 
     if (inv_count() < 1)
     {
@@ -81,7 +82,7 @@ void adjust_item(void)
     in_name( from_slot, DESC_INVENTORY_EQUIP, str_pass );
     mpr( str_pass );
 
-    to_slot = prompt_invent_item( "Adjust to which letter?", -1, false );
+    to_slot = prompt_invent_item( "Adjust to which letter?", -1, false, false );
     if (to_slot ==  PROMPT_ABORT)
     {
         canned_msg( MSG_OK );
@@ -261,14 +262,6 @@ void adjust_spells(void)
 
 }                               // end adjust_spells()
 
-void get_letter_id(char buff[5], int item_id)
-{
-    buff[0] = index_to_letter(item_id);
-    buff[1] = '\0';
-
-    strcat(buff, " - ");
-}                               // end get_letter_id()
-
 void list_armour(void)
 {
     for (int i = EQ_CLOAK; i <= EQ_BODY_ARMOUR; i++)
@@ -294,6 +287,7 @@ void list_armour(void)
 
         if (armour_id != -1)
         {
+            char str_pass[ ITEMNAME_SIZE ];
             in_name(armour_id, DESC_INVENTORY, str_pass);
             strcat(info, str_pass);
         }
@@ -321,6 +315,7 @@ void list_jewellery(void)
 
         if (jewellery_id != -1)
         {
+            char str_pass[ ITEMNAME_SIZE ];
             in_name(jewellery_id, DESC_INVENTORY, str_pass);
             strcat(info, str_pass);
         }
@@ -345,6 +340,7 @@ void list_weapons(void)
 
     if (weapon_id != -1)
     {
+        char str_pass[ ITEMNAME_SIZE ];
         in_name( weapon_id, DESC_INVENTORY_EQUIP, str_pass );
         strcat(info, str_pass);
     }
@@ -370,6 +366,7 @@ void list_weapons(void)
 
         if (is_valid_item( you.inv[i] ))
         {
+            char str_pass[ ITEMNAME_SIZE ];
             in_name(i, DESC_INVENTORY_EQUIP, str_pass);
             strcat(info, str_pass);
         }
@@ -379,39 +376,18 @@ void list_weapons(void)
         mpr(info);              // Output slot
     }
 
-    // Now we print out the current default throwing weapon
-    int type_wanted;
-    int throw_id = -1;
-
+    // Now we print out the current default fire weapon
     strcpy(info, "Firing    : ");
 
-    if (weapon_id != -1 && launches_things( you.inv[weapon_id].sub_type ))
-    {
-        type_wanted = launched_by( you.inv[weapon_id].sub_type );
-    }
-    else
-        type_wanted = MI_DART;
+    const int item = get_fire_item_index();
 
-    for (int i = 0; i < ENDOFPACK; i++)
-    {
-        if (you.inv[i].quantity
-                && (you.inv[i].base_type == OBJ_MISSILES
-                        && you.inv[i].sub_type == type_wanted))
-        {
-            throw_id = i;
-            break;
-        }
-    }
-
-    // We'll print this one even if it is the current weapon
-    if (throw_id != -1)
-    {
-        in_name(throw_id, DESC_INVENTORY_EQUIP, str_pass);
-        strcat(info, str_pass);
-    }
-    else
-    {
+    if (item == ENDOFPACK)
         strcat(info, "    nothing");
+    else
+    {
+        char str_pass[ ITEMNAME_SIZE ];
+        in_name( item, DESC_INVENTORY_EQUIP, str_pass );
+        strcat( info, str_pass );
     }
 
     mpr( info, MSGCH_EQUIPMENT );

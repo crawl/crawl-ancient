@@ -38,17 +38,17 @@ void set_unique_item_status( int base_type, int type, int status );
 /* ***********************************************************************
  * called from: itemname
  * *********************************************************************** */
-char *randart_armour_name( const item_def &item );
+const char *randart_armour_name( const item_def &item );
 
 /* ***********************************************************************
  * called from: itemname
  * *********************************************************************** */
-char *randart_name( const item_def &item );
+const char *randart_name( const item_def &item );
 
 /* ***********************************************************************
  * called from: itemname
  * *********************************************************************** */
-char *randart_ring_name( const item_def &item );
+const char *randart_ring_name( const item_def &item );
 
 /* ***********************************************************************
  * called from: describe
@@ -94,13 +94,13 @@ void set_unrandart_exist(int whun, char is_exist);
 /* ***********************************************************************
  * called from: itemname
  * *********************************************************************** */
-void standard_name_armour( const item_def &item, char glorg[80] );
+void standard_name_armour( const item_def &item, char glorg[ITEMNAME_SIZE] );
 
 
 /* ***********************************************************************
  * called from: itemname
  * *********************************************************************** */
-void standard_name_weap(unsigned char item_typ, char glog[80]);
+void standard_name_weap(unsigned char item_typ, char glog[ITEMNAME_SIZE]);
 
 
 /* ***********************************************************************

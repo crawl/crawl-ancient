@@ -1,4 +1,4 @@
- /*
+/*
  *  File:       acr.cc
  *  Summary:    Main entry point, event loop, and some initialization functions
  *  Written by: Linley Henzell
@@ -83,6 +83,7 @@
 #include "delay.h"
 #include "describe.h"
 #include "direct.h"
+#include "dungeon.h"
 #include "effects.h"
 #include "fight.h"
 #include "files.h"
@@ -132,8 +133,6 @@ struct player you;
 struct system_environment SysEnv;
 
 char info[ INFO_SIZE ];         // messaging queue extern'd everywhere {dlb}
-char st_prn[20];
-char str_pass[80];
 
 int stealth;                    // externed in view.h     // no it is not {dlb}
 char use_colour = 1;
@@ -365,9 +364,9 @@ int main(int argc, char *argv[])
 }                               // end main()
 
 #ifdef WIZARD
-static void handle_wizard_command(void)
+static void handle_wizard_command( void )
 {
-    int   wiz_command, i, j;
+    int   wiz_command, i, j, art;
     char  specs[256];
 
     // WIZ_NEVER gives protection for those who have wiz compiles,
@@ -389,7 +388,6 @@ static void handle_wizard_command(void)
         you.wizard = true;
         redraw_screen();
     }
-
 
     mpr( "Enter Wizard Command: ", MSGCH_PROMPT );
     wiz_command = getch();
@@ -429,6 +427,21 @@ static void handle_wizard_command(void)
         acquirement( OBJ_RANDOM );
         break;
 
+    case 'v':
+        // this command isn't very exciting... feel free to replace
+        i = prompt_invent_item( "Value of which item?", -1 );
+        if (i == PROMPT_ABORT || !is_random_artefact( you.inv[i] ))
+        {
+            canned_msg( MSG_OK );
+            break;
+        }
+        else
+        {
+            snprintf( info, INFO_SIZE, "randart val: %d", randart_value( you.inv[i] ) );
+            mpr( info );
+        }
+        break;
+
     case '+':
         i = prompt_invent_item( "Make an artefact out of which item?", -1 );
         if (i == PROMPT_ABORT)
@@ -464,7 +477,7 @@ static void handle_wizard_command(void)
 
     case '|':
         // create all unrand arts
-        for (int art = 1; art < NO_UNRANDARTS; art++)
+        for (art = 1; art < NO_UNRANDARTS; art++)
         {
             int islot = get_item_slot();
             if (islot == NON_ITEM)
@@ -476,6 +489,23 @@ static void handle_wizard_command(void)
             set_ident_flags( mitm[ islot ], ISFLAG_IDENT_MASK );
 
             move_item_to_grid( &islot, you.x_pos, you.y_pos );
+        }
+
+        // create all fixed artefacts
+        for (art = SPWPN_SINGING_SWORD; art <= SPWPN_STAFF_OF_WUCAD_MU; art++)
+        {
+            int islot = get_item_slot();
+            if (islot == NON_ITEM)
+                break;
+
+            if (make_item_fixed_artefact( mitm[ islot ], false, art ))
+            {
+                mitm[ islot ].quantity = 1;
+                item_colour( mitm[ islot ] );
+                set_ident_flags( mitm[ islot ], ISFLAG_IDENT_MASK );
+
+                move_item_to_grid( &islot, you.x_pos, you.y_pos );
+            }
         }
         break;
 
@@ -626,15 +656,7 @@ static void handle_wizard_command(void)
 
     case '(':
         mpr( "Create which feature (by number)? ", MSGCH_PROMPT );
-#if defined(LINUX)
-        echo();
-        getstr(specs);
-        noecho();
-#elif defined(MAC) || defined(WIN32CONSOLE)
-        getstr(specs, sizeof(specs));
-#else
-        gets(specs);
-#endif
+        get_input_line( specs, sizeof( specs ) );
 
         if (specs[0] != '\0')
             grd[you.x_pos][you.y_pos] = atoi(specs);
@@ -824,7 +846,6 @@ static void input(void)
     char move_y = 0;
 
     int keyin = 0;
-    char str_pass[50];
 
 #ifdef LINUX
     // Stuff for the Unix keypad kludge
@@ -843,6 +864,7 @@ static void input(void)
 
     textcolor(LIGHTGREY);
 
+    set_redraw_status( REDRAW_LINE_2_MASK | REDRAW_LINE_3_MASK );
     print_stats();
 
     if (you.paralysis)
@@ -1086,8 +1108,8 @@ static void input(void)
         }
         else if ((grd[you.x_pos][you.y_pos] < DNGN_STONE_STAIRS_UP_I
                     || grd[you.x_pos][you.y_pos] > DNGN_ROCK_STAIRS_UP)
-                && (grd[you.x_pos][you.y_pos] < DNGN_RETURN_DUNGEON_I
-                    || grd[you.x_pos][you.y_pos] > 150))
+                && (grd[you.x_pos][you.y_pos] < DNGN_RETURN_FROM_ORCISH_MINES
+                    || grd[you.x_pos][you.y_pos] >= 150))
         {
             mpr( "You can't go up here!" );
             break;
@@ -1107,7 +1129,7 @@ static void input(void)
                     || grd[you.x_pos][you.y_pos] > DNGN_TRANSIT_PANDEMONIUM)
                 && grd[you.x_pos][you.y_pos] != DNGN_STONE_ARCH)
             && !(grd[you.x_pos][you.y_pos] >= DNGN_ENTER_ORCISH_MINES
-                && grd[you.x_pos][you.y_pos] < DNGN_RETURN_DUNGEON_I))
+                && grd[you.x_pos][you.y_pos] < DNGN_RETURN_FROM_ORCISH_MINES))
         {
             mpr( "You can't go down here!" );
             break;
@@ -1148,6 +1170,9 @@ static void input(void)
 
     case 'I':
     case CMD_OBSOLETE_INVOKE:
+        // We'll leave this message in for a while.  Eventually, this
+        // might be some special for of inventory command, or perhaps
+        // actual god invocations will be split to here from abilities. -- bwr
         mpr( "This command is now 'E'voke wielded item.", MSGCH_WARN );
         break;
 
@@ -1312,6 +1337,13 @@ static void input(void)
         redraw_screen();
         break;
 
+#ifdef ALLOW_DESTROY_ITEM_COMMAND
+    case CONTROL('D'):
+    case CMD_DESTROY_ITEM:
+        cmd_destroy_item();
+        break;
+#endif
+
     case CONTROL('P'):
     case CMD_REPLAY_MESSAGES:
         replay_messages();
@@ -1395,7 +1427,7 @@ static void input(void)
 
         strncpy(name_your, you.your_name, kNameLen);
         name_your[kNameLen] = '\0';
-        if (dump_char(0, name_your) == 1)
+        if (dump_char( name_your, false ))
             strcpy(info, "Char dumped successfully.");
         else
             strcat(info, "Char dump unsuccessful! Sorry about that.");
@@ -1658,9 +1690,11 @@ static void input(void)
 
         you.duration[DUR_WEAPON_BRAND] = 0;
 
+        char str_pass[ITEMNAME_SIZE];
+
         set_item_ego_type( you.inv[wpn], OBJ_WEAPONS, SPWPN_NORMAL );
         in_name(wpn, DESC_CAP_YOUR, str_pass);
-        strcpy(info, str_pass);
+        strncpy(info, str_pass, INFO_SIZE);
 
         switch (temp_effect)
         {
@@ -1782,15 +1816,17 @@ static void input(void)
     {
         mpr("You feel firmly rooted in the present.", MSGCH_DURATION);
         you.duration[DUR_FORESCRY] = 0;
+        you.redraw_evasion = 1;
     }
 
     if (you.duration[DUR_SEE_INVISIBLE] > 1)    //jmf: added
         you.duration[DUR_SEE_INVISIBLE]--;
     else if (you.duration[DUR_SEE_INVISIBLE] == 1)
     {
+        you.duration[DUR_SEE_INVISIBLE] = 0;
+
         if (!player_see_invis())
             mpr("Your eyesight blurs momentarily.", MSGCH_DURATION);
-        you.duration[DUR_SEE_INVISIBLE] = 0;
     }
 
     if (you.duration[DUR_SILENCE] > 0)  //jmf: cute message handled elsewhere
@@ -1948,44 +1984,8 @@ static void input(void)
         you.exhausted = 0;
     }
 
-    if (you.slow > 1)
-    {
-        // BCR - Amulet of resist slow affects slow counter
-        if (wearing_amulet(AMU_RESIST_SLOW))
-        {
-            you.slow -= 5;
-            if (you.slow < 1)
-                you.slow = 1;
-        }
-        else
-            you.slow--;
-    }
-    else if (you.slow == 1)
-    {
-        mpr("You feel yourself speed up.", MSGCH_DURATION);
-        you.slow = 0;
-    }
-
-    if (you.haste > 1)
-    {
-        // BCR - Amulet of resist slow affects haste counter
-        if (!wearing_amulet(AMU_RESIST_SLOW))
-            you.haste--;
-        else if (coinflip())
-            you.haste--;
-
-        if (you.haste == 6)
-        {
-            mpr("Your extra speed is starting to run out.", MSGCH_DURATION);
-            if (coinflip())
-                you.haste--;
-        }
-    }
-    else if (you.haste == 1)
-    {
-        mpr("You feel yourself slow down.", MSGCH_DURATION);
-        you.haste = 0;
-    }
+    dec_slow_player();
+    dec_haste_player();
 
     if (you.might > 1)
         you.might--;
@@ -2000,11 +2000,11 @@ static void input(void)
         you.berserker--;
     else if (you.berserker == 1)
     {
-        mpr("You are no longer berserk.", MSGCH_DURATION);
+        mpr( "You are no longer berserk.", MSGCH_DURATION );
         you.berserker = 0;
 
         //jmf: guilty for berserking /after/ berserk
-        naughty(NAUGHTY_STIMULANTS, 6 + random2(6));
+        naughty( NAUGHTY_STIMULANTS, 6 + random2(6) );
 
         //
         // Sometimes berserk leaves us physically drained
@@ -2020,7 +2020,7 @@ static void input(void)
         //       this should make it a bit more interesting for
         //       Crusaders again.
         //     - similarly for the amulet
-        int chance = 10 + you.mutation[MUT_BERSERK] * 10
+        int chance = 10 + you.mutation[MUT_BERSERK] * 25
                         + (wearing_amulet( AMU_RAGE ) ? 10 : 0)
                         + (player_has_spell( SPELL_BERSERKER_RAGE ) ? 5 : 0);
 
@@ -2043,7 +2043,7 @@ static void input(void)
 
         int dur = 12 + roll_dice( 2, 12 );
         you.exhausted += dur;
-        you.slow += dur;
+        slow_player( dur );
 
         make_hungry(700, true);
 
@@ -2057,7 +2057,8 @@ static void input(void)
         you.confusing_touch--;
     else if (you.confusing_touch == 1)
     {
-        mpr("Your hands stop glowing.", MSGCH_DURATION);
+        snprintf( info, INFO_SIZE, "Your %s stop glowing.", your_hand(true) );
+        mpr( info, MSGCH_DURATION );
         you.confusing_touch = 0;
     }
 
@@ -2143,20 +2144,7 @@ static void input(void)
         }
     }
 
-
-    if (you.disease > 0)
-    {
-        you.disease--;
-
-        if (you.disease > 5
-            && (you.species == SP_KOBOLD || you.duration[ DUR_REGENERATION ]))
-        {
-            you.disease -= 2;
-        }
-
-        if (!you.disease)
-            mpr("You feel your health improve.", MSGCH_RECOVERY);
-    }
+    dec_disease_player();
 
     if (you.poison > 0)
     {
@@ -2222,35 +2210,49 @@ static void input(void)
         you.hunger = 6000;      // this is a kludge {dlb}
     }
 
+    // XXX: using an int tmp to fix the fact that hit_points_regeneration
+    // is only an unsigned char and is thus likely to overflow. -- bwr
+    int tmp = static_cast< int >( you.hit_points_regeneration );
+
     if (you.hp < you.hp_max && !you.disease && !you.deaths_door)
-        you.hit_points_regeneration += player_regen();
+        tmp += player_regen();
 
-    if (you.magic_points < you.max_magic_points)
-        you.magic_points_regeneration += 7 + you.max_magic_points / 2;
-
-    while (you.hit_points_regeneration >= 100)
+    while (tmp >= 100)
     {
-        if (you.hp >= you.hp_max - 1 && you.running
-                                        && you.run_x == 0 && you.run_y == 0)
+        if (you.hp >= you.hp_max - 1
+            && you.running && you.run_x == 0 && you.run_y == 0)
         {
             you.running = 0;
         }
 
         inc_hp(1, false);
-        you.hit_points_regeneration -= 100;
+        tmp -= 100;
     }
 
-    while (you.magic_points_regeneration >= 100)
+    ASSERT( tmp >= 0 && tmp < 100 );
+    you.hit_points_regeneration = static_cast< unsigned char >( tmp );
+
+    // XXX: Doing the same as the above, although overflow isn't an
+    // issue with magic point regeneration, yet. -- bwr
+    tmp = static_cast< int >( you.magic_points_regeneration );
+
+    if (you.magic_points < you.max_magic_points)
+        tmp += 7 + you.max_magic_points / 2;
+
+    while (tmp >= 100)
     {
-        if (you.magic_points >= you.max_magic_points - 1 && you.running
-                                        && you.run_x == 0 && you.run_y == 0)
+        if (you.magic_points >= you.max_magic_points - 1
+            && you.running && you.run_x == 0 && you.run_y == 0)
         {
             you.running = 0;
         }
 
         inc_mp(1, false);
-        you.magic_points_regeneration -= 100;
+        tmp -= 100;
     }
+
+    ASSERT( tmp >= 0 && tmp < 100 );
+    you.magic_points_regeneration = static_cast< unsigned char >( tmp );
 
     viewwindow(1, true);
 
@@ -2294,19 +2296,19 @@ static void input(void)
                 break;
             //case 1: mpr("You feel a pleasing absence."); break;
             case 2:
-                if (one_chance_in(4) && (!you.invis || one_chance_in(20)))
+                if (one_chance_in(4) && (!you.invis || one_chance_in(3)))
                 {
-                    strcpy(info, "The silver statue's eyes glow a ");
-                    weird_colours(random2(256), wc);
-                    strcat(info, wc);
-                    strcat(info, " colour.");
-                    mpr(info, MSGCH_WARN);
+                    strcpy( info, "The silver statue's eyes glow a " );
+                    weird_colours( random2(256), wc );
+                    strcat( info, wc );
+                    strcat( info, " colour." );
+                    mpr( info, MSGCH_WARN );
                     create_monster(
                         summon_any_demon((coinflip() ? DEMON_COMMON
                                                      : DEMON_LESSER)),
                                              ENCH_ABJ_V, BEH_HOSTILE,
                                              you.x_pos, you.y_pos,
-                                             MHITYOU, 250);
+                                             MHITYOU, 250 );
                 }
                 break;
             //case 3: mpr("You feel a terrible presence observing you."); break;
@@ -2317,7 +2319,7 @@ static void input(void)
 
         if (visible[2])
         {
-            if (one_chance_in(3) && (!you.invis || one_chance_in(10)))
+            if (one_chance_in(3) && (!you.invis || coinflip()))
             {
                 mpr("A hostile presence attacks your mind!", MSGCH_WARN);
                 miscast_effect(SPTYP_DIVINATION, random2(15), random2(150), 100);
@@ -2372,7 +2374,7 @@ static void input(void)
 
     // place normal dungeon monsters,  but not in player LOS
     if (you.level_type == LEVEL_DUNGEON
-        && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE
+        && !player_in_branch( BRANCH_ECUMENICAL_TEMPLE )
         && one_chance_in((you.char_direction == DIR_DESCENDING) ? 240 : 10))
     {
         int prox = (one_chance_in(10) ? PROX_NEAR_STAIRS
@@ -2465,7 +2467,7 @@ static void open_door(char move_x, char move_y)
         if (one_chance_in(skill) && !silenced(you.x_pos, you.y_pos))
         {
             mpr( "As you open the door, it creaks loudly!" );
-            noisy( 15, you.x_pos, you.y_pos );
+            noisy( 10, you.x_pos, you.y_pos );
         }
         else
         {
@@ -2539,7 +2541,7 @@ static void close_door(char door_x, char door_y)
         if (one_chance_in(skill) && !silenced(you.x_pos, you.y_pos))
         {
             mpr("As you close the door, it creaks loudly!");
-            noisy(15, you.x_pos, you.y_pos);
+            noisy( 10, you.x_pos, you.y_pos );
         }
         else
         {
@@ -2941,7 +2943,7 @@ static void move_player(char move_x, char move_y)
                 if (one_chance_in(3) && !silenced(you.x_pos, you.y_pos))
                 {
                     mpr("Splash!");
-                    noisy(10, you.x_pos, you.y_pos);
+                    noisy( 10, you.x_pos, you.y_pos );
                 }
 
                 you.time_taken *= 13 + random2(8);
@@ -3025,7 +3027,7 @@ static void move_player(char move_x, char move_y)
         you.pet_target = MHITNOT;
 
 #if DEBUG_DIAGNOSTICS
-        mpr( "Shifting.", MSGCH_DIAGNOSTIC );
+        mpr( "Shifting.", MSGCH_DIAGNOSTICS );
         int igly = 0;
         int ig2 = 0;
 
@@ -3036,7 +3038,7 @@ static void move_player(char move_x, char move_y)
         }
 
         snprintf( info, INFO_SIZE, "Number of items present: %d", ig2 );
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
 
         ig2 = 0;
         for (igly = 0; igly < MAX_MONSTERS; igly++)
@@ -3046,10 +3048,10 @@ static void move_player(char move_x, char move_y)
         }
 
         snprintf( info, INFO_SIZE, "Number of monsters present: %d", ig2 );
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
 
         snprintf( info, INFO_SIZE, "Number of clouds present: %d", env.cloud_no );
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
 #endif
     }
 

@@ -14,6 +14,9 @@
 
 #include "externs.h"
 
+bool player_in_branch( int branch );
+bool player_in_hell( void );
+
 int player_equip( int slot, int sub_type );
 int player_equip_ego_type( int slot, int sub_type );
 int player_damage_type( void );
@@ -400,9 +403,15 @@ void set_mp(int new_amount, bool max_too);
 /* ***********************************************************************
  * called from: newgame
  * *********************************************************************** */
-char *job_title(int which_job);
+const char *job_title(int which_job);
 
+int get_species_index( const char *abbrev );
+const char *get_species_abbrev( int which_species );
 
+int get_class_index( const char *abbrev );
+const char *get_class_abbrev( int which_job );
+
+#if 0
 /* ***********************************************************************
  * called from: ouch
  * *********************************************************************** */
@@ -413,6 +422,7 @@ char *species_abbrev(unsigned char which_species);
  * called from: ouch
  * *********************************************************************** */
 char *class_abbrev(unsigned char which_class);
+#endif
 
 
 /* ***********************************************************************
@@ -432,6 +442,15 @@ void reduce_poison_player( int amount );
 
 void confuse_player( int amount, bool resistable = true );
 void reduce_confuse_player( int amount );
+
+void slow_player( int amount );
+void dec_slow_player();
+
+void haste_player( int amount );
+void dec_haste_player();
+
+void disease_player( int amount );
+void dec_disease_player();
 
 // last updated 15sep2001 {bwr}
 /* ***********************************************************************

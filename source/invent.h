@@ -12,11 +12,15 @@
 #ifndef INVENT_H
 #define INVENT_H
 
+#include <stddef.h>
+
 #define PROMPT_ABORT        -1
 #define PROMPT_GOT_SPECIAL  -2
 
 int prompt_invent_item( const char *prompt, int type_expect,
-                        bool must_exist = true, bool allow_easy_quit = true,
+                        bool must_exist = true,
+                        bool allow_auto_list = true,
+                        bool allow_easy_quit = true,
                         const char other_valid_char = '\0',
                         int *const count = NULL );
 

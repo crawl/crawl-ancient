@@ -543,6 +543,7 @@ enum COMMANDS
     CMD_SUSPEND_GAME,                  // 1000 +  80
     CMD_QUIT,
     CMD_WIZARD,
+    CMD_DESTROY_ITEM,
     CMD_OBSOLETE_INVOKE
 };
 
@@ -656,16 +657,19 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_WAX_WALL,                     //    8
     DNGN_PERMAROCK_WALL,               //    9 - for undiggable walls
     DNGN_LAST_SOLID_TILE = 10,         //   10 - just here temporarily {dlb}
+
     DNGN_LAVA_X = 11,                  //   11
     DNGN_WATER_X,                      //   12
     DNGN_SILVER_STATUE = 21,           //   21
     DNGN_GRANITE_STATUE,
     DNGN_ORANGE_CRYSTAL_STATUE,        //   23
     DNGN_STATUE_39 = 39,               //   39
+
     DNGN_LAVA = 61,                    //   61
     DNGN_DEEP_WATER,                   //   62
     DNGN_SHALLOW_WATER = 65,           //   65
     DNGN_WATER_STUCK,
+
     DNGN_FLOOR,                        //   67
     DNGN_ENTER_HELL = 69,              //   69
     DNGN_OPEN_DOOR,                    //   70
@@ -674,16 +678,20 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_TRAP_MAGICAL,
     DNGN_TRAP_III,
     DNGN_UNDISCOVERED_TRAP,            //   78
+
     DNGN_ENTER_SHOP = 80,              //   80
     DNGN_ENTER_LABYRINTH,
+
     DNGN_STONE_STAIRS_DOWN_I,
     DNGN_STONE_STAIRS_DOWN_II,
     DNGN_STONE_STAIRS_DOWN_III,
     DNGN_ROCK_STAIRS_DOWN,   //   85 - was this supposed to be a ladder? {dlb}
+
     DNGN_STONE_STAIRS_UP_I,
     DNGN_STONE_STAIRS_UP_II,
     DNGN_STONE_STAIRS_UP_III,
     DNGN_ROCK_STAIRS_UP,    //   89 - was this supposed to be a ladder? {dlb}
+
     DNGN_ENTER_DIS = 92,               //   92
     DNGN_ENTER_GEHENNA,
     DNGN_ENTER_COCYTUS,
@@ -694,8 +702,10 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_ENTER_PANDEMONIUM,
     DNGN_EXIT_PANDEMONIUM,             //  100
     DNGN_TRANSIT_PANDEMONIUM,          //  101
+
     DNGN_BUILDER_SPECIAL_WALL = 105,   //  105; builder() only
     DNGN_BUILDER_SPECIAL_FLOOR,        //  106; builder() only
+
     DNGN_ENTER_ORCISH_MINES = 110,     //  110
     DNGN_ENTER_HIVE,
     DNGN_ENTER_LAIR,
@@ -709,19 +719,21 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_ENTER_ELVEN_HALLS,            //  120
     DNGN_ENTER_TOMB,
     DNGN_ENTER_SWAMP,                  //  122
-    DNGN_RETURN_DUNGEON_I = 130,       //  130
-    DNGN_RETURN_DUNGEON_II,
-    DNGN_RETURN_DUNGEON_III,
-    DNGN_RETURN_LAIR_II,
-    DNGN_RETURN_DUNGEON_IV,
-    DNGN_RETURN_VAULTS_II,                //  135
-    DNGN_RETURN_VAULTS_III,
-    DNGN_EXIT_ZOT,
-    DNGN_RETURN_DUNGEON_V,
-    DNGN_RETURN_LAIR_III,
-    DNGN_RETURN_MINES,                 //  140
-    DNGN_RETURN_CRYPT,
-    DNGN_RETURN_LAIR_IV,               //  142
+
+    DNGN_RETURN_FROM_ORCISH_MINES = 130, //  130
+    DNGN_RETURN_FROM_HIVE,
+    DNGN_RETURN_FROM_LAIR,
+    DNGN_RETURN_FROM_SLIME_PITS,
+    DNGN_RETURN_FROM_VAULTS,
+    DNGN_RETURN_FROM_CRYPT,            //  135
+    DNGN_RETURN_FROM_HALL_OF_BLADES,
+    DNGN_RETURN_FROM_ZOT,
+    DNGN_RETURN_FROM_TEMPLE,
+    DNGN_RETURN_FROM_SNAKE_PIT,
+    DNGN_RETURN_FROM_ELVEN_HALLS,      //  140
+    DNGN_RETURN_FROM_TOMB,
+    DNGN_RETURN_FROM_SWAMP,               //  142
+
     DNGN_ALTAR_ZIN = 180,              //  180
     DNGN_ALTAR_SHINING_ONE,
     DNGN_ALTAR_KIKUBAAQUDGHA,
@@ -734,6 +746,7 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_ALTAR_TROG,
     DNGN_ALTAR_NEMELEX_XOBEH,          //  190
     DNGN_ALTAR_ELYVILON,               //  191
+
     DNGN_BLUE_FOUNTAIN = 200,          //  200
     DNGN_DRY_FOUNTAIN_I,
     DNGN_SPARKLING_FOUNTAIN,           // aka 'Magic Fountain' {dlb}
@@ -870,6 +883,19 @@ enum EQUIPMENT
     EQ_RINGS_PLUS,                     // check both rings and sum plus
     EQ_RINGS_PLUS2,                    // check both rings and sum plus2
     EQ_ALL_ARMOUR                      // check all armour types
+};
+
+enum FIRE_TYPES
+{
+    FIRE_NONE,
+    FIRE_LAUNCHER,
+    FIRE_DART,
+    FIRE_STONE,
+    FIRE_DAGGER,
+    FIRE_SPEAR,
+    FIRE_HAND_AXE,
+    FIRE_CLUB,
+    NUM_FIRE_TYPES
 };
 
 enum FOODS                             // mitm[].sub_type[]
@@ -1257,7 +1283,7 @@ enum MESSAGE_CHANNEL
     MSGCH_MONSTER_DAMAGE, // monster damage reports (param is level)
     MSGCH_ROTTEN_MEAT,    // messages about chunks/corpses becoming rotten
     MSGCH_EQUIPMENT,      // equipment listing messages
-    MSGCH_DIAGNOSTIC,     // various diagnostic messages
+    MSGCH_DIAGNOSTICS,     // various diagnostic messages
     NUM_MESSAGE_CHANNELS  // always last
 };
 
@@ -2342,7 +2368,8 @@ enum SPECIAL_ROOMS
     SROOM_LAIR_KOBOLD,
     SROOM_TREASURY,
     SROOM_BEEHIVE,
-    NUM_SPECIAL_ROOMS                  //    4 - must remain final member {dlb}
+    SROOM_MORGUE,
+    NUM_SPECIAL_ROOMS                  //    5 - must remain final member {dlb}
 };
 
 enum SPECIAL_RINGS  // jewellery mitm[].special values
@@ -2690,6 +2717,32 @@ enum STATS
   STAT_RANDOM = 255 // leave at 255, added for increase_stats() handling {dlb}
 };
 
+enum STATUS_REDRAW_FLAGS
+{
+    REDRAW_HUNGER         = 0x00000001,
+    REDRAW_BURDEN         = 0x00000002,
+    REDRAW_LINE_1_MASK    = 0x00000003,
+
+    REDRAW_PRAYER         = 0x00000100,
+    REDRAW_REPEL_UNDEAD   = 0x00000200,
+    REDRAW_BREATH         = 0x00000400,
+    REDRAW_REPEL_MISSILES = 0x00000800,
+    REDRAW_REGENERATION   = 0x00001000,
+    REDRAW_INSULATION     = 0x00002000,
+    REDRAW_FLY            = 0x00004000,
+    REDRAW_INVISIBILITY   = 0x00008000,
+    REDRAW_LINE_2_MASK    = 0x0000ff00,
+
+    REDRAW_CONFUSION      = 0x00010000,
+    REDRAW_POISONED       = 0x00020000,
+    REDRAW_LIQUID_FLAMES  = 0x00040000,
+    REDRAW_DISEASED       = 0x00080000,
+    REDRAW_CONTAMINATED   = 0x00100000,
+    REDRAW_SWIFTNESS      = 0x00200000,
+    REDRAW_SPEED          = 0x00400000,
+    REDRAW_LINE_3_MASK    = 0x007f0000
+};
+
 enum STAVES
 {
     STAFF_WIZARDRY,                    //    0
@@ -2889,14 +2942,15 @@ enum WEAPONS
     WPN_DEMON_TRIDENT,
     WPN_BROAD_AXE,                     //   35
 // base items (continued)
-    WPN_AXE,
+    WPN_WAR_AXE,
     WPN_TRIDENT,
     WPN_SPIKED_FLAIL,
     WPN_GREAT_MACE,
     WPN_GREAT_FLAIL,                   //   40
     WPN_KNIFE,
     WPN_BLOWGUN,
-    NUM_WEAPONS,                       //   43 - must remain last regular member {dlb}
+    WPN_FALCHION,
+    NUM_WEAPONS,                       //   44 - must remain last regular member {dlb}
 // special cases
     WPN_UNARMED = 500,                 //  500
     WPN_UNKNOWN = 1000,                // 1000

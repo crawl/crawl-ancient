@@ -39,10 +39,6 @@ static FixedVector < int, NUM_MONSTERS > mon_entry;
 // really important extern -- screen redraws suck w/o it {dlb}
 FixedVector < unsigned short, 1000 > mcolour;
 
-/* used in monam - could possibly be static to that function */
-char *gmo_n;
-
-
 static struct monsterentry mondata[] = {
 #include "mon-data.h"
 };
@@ -340,7 +336,6 @@ int mons_damage(int mc, int rt)
         return (smc->damage[rt]);
 }                               // end mons_damage()
 
-
 int mons_resist_magic( struct monsters *mon )
 {
     int u = (seekmonster(&mon->type))->resist_magic;
@@ -363,32 +358,45 @@ int mons_resist_magic( struct monsters *mon )
     return (u);
 }                               // end mon_resist_magic()
 
-// Better than mons_resist_magic since undead tend to have that fairly
-// high so that they're not effected by enchantments.  We make the
-// lower level undead weaker here (it's not uncommon to have an 11 HD
-// zombie, whereas Vampires are only 7 HD). -- bwr
-int mons_resist_turn_undead( struct monsters *mon )
+
+// Returns true if the monster made its save against hostile
+// enchantments/some other magics.
+bool check_mons_resist_magic( struct monsters *monster, int pow )
 {
-    // Shouldn't really rely on this, but we play it safe:
-    if (mons_holiness( mon->type ) != MH_UNDEAD)
-        return (5000);
+    int mrs = mons_resist_magic(monster);
 
-    switch (mon->type)
-    {
-    case MONS_SKELETON_SMALL:
-    case MONS_SKELETON_LARGE:
-    case MONS_ZOMBIE_SMALL:
-    case MONS_ZOMBIE_LARGE:
-    case MONS_SIMULACRUM_SMALL:
-    case MONS_SIMULACRUM_LARGE:
-        return (mon->hit_dice);
+    if (mrs == 5000)
+        return (true);
 
-    default:
-        break;
-    }
+    // Evil, evil hack to make weak one hd monsters easier for first
+    // level characters who have resistable 1st level spells. Six is
+    // a very special value because mrs = hd * 2 * 3 for most monsters,
+    // and the weak, low level monsters have been adjusted so that the
+    // "3" is typically a 1.  There are some notable one hd monsters
+    // that shouldn't fall under this, so we do < 6, instead of <= 6...
+    // or checking monster->hit_dice.  The goal here is to make the
+    // first level easier for these classes and give them a better
+    // shot at getting to level two or three and spells that can help
+    // them out (or building a level or two of their base skill so they
+    // aren't resisted as often). -- bwr
+    if (mrs < 6 && coinflip())
+        return (false);
 
-    return (mon->hit_dice * 5);
-}
+    pow = stepdown_value( pow, 30, 40, 100, 120 );
+
+    const int mrchance = (100 + mrs) - pow;
+    const int mrch2 = random2(100) + random2(101);
+
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE,
+              "Power: %d, monster's MR: %d, target: %d, roll: %d",
+              pow, mrs, mrchance, mrch2 );
+
+    mpr( info, MSGCH_DIAGNOSTICS );
+#endif
+
+    return ((mrch2 < mrchance) ? true : false);
+}                               // end check_mons_resist_magic()
 
 
 int mons_res_elec( struct monsters *mon )
@@ -658,37 +666,6 @@ int mons_type_hit_dice( int type )
 }
 
 
-#if 0
-// This function isn't really useful... to find out if something's a
-// mimic use mons_charclass() and look for MONS_GOLD_MIMIC, that's a
-// more generic way that also handles humans, elves, nagas, orcs, etc.-- bwr
-
-// for a given menv[foo].type, mons_category() will
-// return a general category/class to which the monster
-// in question belongs - capped at 254 members to allow
-// for MC_UNSPCIFIED (255) and NUM_MC [which for now is
-// part of the enum] ... this is a shameless hack and
-// prevents eloquent handling of subcategories, etc. -
-// should Crawl ever make the transition to OO coding,
-// this can all be taken care of through classes {dlb}
-unsigned char mons_category(int which_mons)
-{
-    switch (which_mons)
-    {
-    case MONS_GOLD_MIMIC:
-    case MONS_WEAPON_MIMIC:
-    case MONS_ARMOUR_MIMIC:
-    case MONS_SCROLL_MIMIC:
-    case MONS_POTION_MIMIC:
-        return (MC_MIMIC);
-
-    default:
-        return (MC_UNSPECIFIED);
-    }
-}                               // end mons_category()
-#endif
-
-
 int exper_value( struct monsters *monster )
 {
     long x_val = 0;
@@ -701,8 +678,10 @@ int exper_value( struct monsters *monster )
     // these are some values we care about:
     const int  speed       = mons_speed(mclass);
     const int  modifier    = mons_exp_mod(mclass);
-    const bool spellcaster = mons_flag( mclass, M_SPELLCASTER );
     const int  item_usage  = mons_itemuse(mclass);
+
+    // XXX: shapeshifters can qualify here, even though they can't cast:
+    const bool spellcaster = mons_flag( mclass, M_SPELLCASTER );
 
     // early out for no XP monsters
     if (mons_flag(mclass, M_NO_EXP_GAIN))
@@ -905,112 +884,108 @@ void define_monster(int k)
 
     // some monsters are randomized:
     // did I get them all?    // I don't think so {dlb}
-    switch (m2_class)
+    if (mons_charclass( m2_class ) == MONS_GOLD_MIMIC)
+        m2_sec = get_mimic_colour( &menv[k] );
+    else
     {
-    case MONS_ABOMINATION_SMALL:
-        m2_HD = 4 + random2(4);
-        m2_AC = 3 + random2(7);
-        m2_ev = 7 + random2(6);
-        m2_speed = 7 + random2avg(9, 2);
+        switch (m2_class)
+        {
+        case MONS_ABOMINATION_SMALL:
+            m2_HD = 4 + random2(4);
+            m2_AC = 3 + random2(7);
+            m2_ev = 7 + random2(6);
+            m2_speed = 7 + random2avg(9, 2);
 
-        if (m2_sec == 250)
+            if (m2_sec == 250)
+                m2_sec = random_colour();
+            break;
+
+        case MONS_ZOMBIE_SMALL:
+            m2_HD = (coinflip() ? 1 : 2);
+            break;
+
+        case MONS_ZOMBIE_LARGE:
+            m2_HD = 3 + random2(5);
+            break;
+
+        case MONS_ABOMINATION_LARGE:
+            m2_HD = 8 + random2(4);
+            m2_AC = 5 + random2avg(9, 2);
+            m2_ev = 3 + random2(5);
+            m2_speed = 6 + random2avg(7, 2);
+
+            if (m2_sec == 250)
+                m2_sec = random_colour();
+            break;
+
+        case MONS_BEAST:
+            m2_HD = 4 + random2(4);
+            m2_AC = 2 + random2(5);
+            m2_ev = 7 + random2(5);
+            m2_speed = 8 + random2(5);
+            break;
+
+        case MONS_HYDRA:
+            m2_sec = 4 + random2(5);
+            break;
+
+        case MONS_DEEP_ELF_FIGHTER:
+        case MONS_DEEP_ELF_KNIGHT:
+        case MONS_DEEP_ELF_SOLDIER:
+        case MONS_ORC_WIZARD:
+            m2_sec = MST_ORC_WIZARD_I + random2(3);
+            break;
+
+        case MONS_LICH:
+        case MONS_ANCIENT_LICH:
+            m2_sec = MST_LICH_I + random2(4);
+            break;
+
+        case MONS_HELL_KNIGHT:
+            m2_sec = (coinflip() ? MST_HELL_KNIGHT_I : MST_HELL_KNIGHT_II);
+            break;
+
+        case MONS_NECROMANCER:
+            m2_sec = (coinflip() ? MST_NECROMANCER_I : MST_NECROMANCER_II);
+            break;
+
+        case MONS_WIZARD:
+        case MONS_OGRE_MAGE:
+        case MONS_EROLCHA:
+        case MONS_DEEP_ELF_MAGE:
+            m2_sec = MST_WIZARD_I + random2(5);
+            break;
+
+        case MONS_DEEP_ELF_CONJURER:
+            m2_sec = (coinflip()? MST_DEEP_ELF_CONJURER_I : MST_DEEP_ELF_CONJURER_II);
+            break;
+
+        case MONS_BUTTERFLY:
+        case MONS_SPATIAL_VORTEX:
             m2_sec = random_colour();
-        break;
+            break;
 
-    case MONS_ZOMBIE_SMALL:
-        m2_HD = (coinflip() ? 1 : 2);
-        break;
+        case MONS_GILA_MONSTER:
+            temp_rand = random2(7);
 
-    case MONS_ZOMBIE_LARGE:
-        m2_HD = 3 + random2(5);
-        break;
+            m2_sec = (temp_rand >= 5 ? LIGHTRED :                   // 2/7
+                      temp_rand >= 3 ? LIGHTMAGENTA :               // 2/7
+                      temp_rand == 2 ? RED :                        // 1/7
+                      temp_rand == 1 ? MAGENTA                      // 1/7
+                                     : YELLOW);                     // 1/7
+            break;
 
-    case MONS_ABOMINATION_LARGE:
-        m2_HD = 8 + random2(4);
-        m2_AC = 5 + random2avg(9, 2);
-        m2_ev = 3 + random2(5);
-        m2_speed = 6 + random2avg(7, 2);
+        case MONS_HUMAN:
+        case MONS_ELF:
+            // these are supposed to only be created by polymorph
+            m2_HD += random2(10);
+            m2_AC += random2(5);
+            m2_ev += random2(5);
+            break;
 
-        if (m2_sec == 250)
-            m2_sec = random_colour();
-        break;
-
-    case MONS_BEAST:
-        m2_HD = 4 + random2(4);
-        m2_AC = 2 + random2(5);
-        m2_ev = 7 + random2(5);
-        m2_speed = 8 + random2(5);
-        break;
-
-    case MONS_HYDRA:
-        m2_sec = 4 + random2(5);
-        break;
-
-    case MONS_DEEP_ELF_FIGHTER:
-    case MONS_DEEP_ELF_KNIGHT:
-    case MONS_DEEP_ELF_SOLDIER:
-    case MONS_ORC_WIZARD:
-        m2_sec = MST_ORC_WIZARD_I + random2(3);
-        break;
-
-    case MONS_LICH:
-    case MONS_ANCIENT_LICH:
-        m2_sec = MST_LICH_I + random2(4);
-        break;
-
-    case MONS_HELL_KNIGHT:
-        m2_sec = (coinflip() ? MST_HELL_KNIGHT_I : MST_HELL_KNIGHT_II);
-        break;
-
-    case MONS_NECROMANCER:
-        m2_sec = (coinflip() ? MST_NECROMANCER_I : MST_NECROMANCER_II);
-        break;
-
-    case MONS_WIZARD:
-    case MONS_OGRE_MAGE:
-    case MONS_EROLCHA:
-    case MONS_DEEP_ELF_MAGE:
-        m2_sec = MST_WIZARD_I + random2(5);
-        break;
-
-    case MONS_DEEP_ELF_CONJURER:
-        m2_sec = (coinflip()? MST_DEEP_ELF_CONJURER_I : MST_DEEP_ELF_CONJURER_II);
-        break;
-
-    case MONS_BUTTERFLY:
-    case MONS_POTION_MIMIC:
-    case MONS_SCROLL_MIMIC:
-    case MONS_SPATIAL_VORTEX:
-        m2_sec = random_colour();
-        break;
-
-    case MONS_GILA_MONSTER:
-        temp_rand = random2(7);
-
-        m2_sec = (temp_rand >= 5 ? LIGHTRED :                   // 2/7
-                  temp_rand >= 3 ? LIGHTMAGENTA :               // 2/7
-                  temp_rand == 2 ? RED :                        // 1/7
-                  temp_rand == 1 ? MAGENTA                      // 1/7
-                                 : YELLOW);                     // 1/7
-        break;
-
-    case MONS_HUMAN:
-    case MONS_ELF:
-        // these are supposed to only be created by polymorph
-        m2_HD += random2(10);
-        m2_AC += random2(5);
-        m2_ev += random2(5);
-        break;
-
-    case MONS_WEAPON_MIMIC:
-    case MONS_ARMOUR_MIMIC:
-        temp_rand = random2(100);
-
-        m2_sec = ((temp_rand > 34) ? BROWN :    // 65% chance {dlb}
-                  (temp_rand > 14) ? LIGHTCYAN :// 20% chance {dlb}
-                  (temp_rand > 4)  ? CYAN       // 10% chance {dlb}
-                                   : random_colour());  //  5% chance {dlb}
-        break;
+        default:
+            break;
+        }
     }
 
     // some calculations
@@ -1039,21 +1014,32 @@ void define_monster(int k)
 
 
 /* ------------------------- monam/moname ------------------------- */
-char *ptr_monam( struct monsters *mon, char desc )
+const char *ptr_monam( struct monsters *mon, char desc )
 {
+    // We give an item type description for mimics now, note that
+    // since gold mimics only have one description (to match the
+    // examine code in direct.cc), we won't bother going through
+    // this for them. -- bwr
+    if (mons_charclass( mon->type ) == MONS_GOLD_MIMIC
+        && mon->type != MONS_GOLD_MIMIC)
+    {
+        static char mimic_name_buff[ ITEMNAME_SIZE ];
+
+        item_def  item;
+        get_mimic_item( mon, item );
+        item_name( item, desc, mimic_name_buff );
+
+        return (mimic_name_buff);
+    }
+
     return (monam( mon->number, mon->type, player_monster_visible( mon ),
                    desc, mon->inv[MSLOT_WEAPON] ));
 }
 
-char *monam( int mons_num, int mons, bool vis, char desc, int mons_wpn )
+const char *monam( int mons_num, int mons, bool vis, char desc, int mons_wpn )
 {
-    char gmo_n2[80];
-
-    free(gmo_n);
-    gmo_n = (char *) malloc(sizeof(char) * 80);
-
-    if (gmo_n == NULL)
-        return ("Malloc Failed Error");
+    static char gmo_n[ ITEMNAME_SIZE ];
+    char gmo_n2[ ITEMNAME_SIZE ] = "";
 
     gmo_n[0] = '\0';
 
@@ -1139,13 +1125,12 @@ char *monam( int mons_num, int mons, bool vis, char desc, int mons_wpn )
     return (gmo_n);
 }                               // end monam()
 
-
-void moname(int mons_num, bool vis, char descrip, char glog[80])
+void moname(int mons_num, bool vis, char descrip, char glog[ ITEMNAME_SIZE ])
 {
-    char gmon_name[80] = "";
+    glog[0] = '\0';
 
+    char gmon_name[ ITEMNAME_SIZE ] = "";
     strcpy( gmon_name, seekmonster( &mons_num )->name );
-    strcpy( glog, "" );
 
     if (!vis)
     {

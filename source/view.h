@@ -62,7 +62,7 @@ void magic_mapping(int map_radius, int proportion);
  * called from: acr - effects - it_use2 - it_use3 - item_use - spell -
  *              spells - spells3 - spells4
  * *********************************************************************** */
-void noisy(char loudness, char nois_x, char nois_y);
+void noisy( int loudness, int nois_x, int nois_y );
 
 
 // last updated 12may2000 {dlb}

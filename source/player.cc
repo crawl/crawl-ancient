@@ -105,6 +105,18 @@ int species_exp_mod(char species);
 void ability_increase(void);
 
 //void priest_spells(int priest_pass[10], char religious);    // see actual function for reasoning here {dlb}
+bool player_in_branch( int branch )
+{
+    return (you.level_type == LEVEL_DUNGEON && you.where_are_you == branch);
+}
+
+bool player_in_hell( void )
+{
+    return (you.level_type == LEVEL_DUNGEON
+            && (you.where_are_you >= BRANCH_DIS
+                && you.where_are_you <= BRANCH_THE_PIT)
+            && you.where_are_you != BRANCH_VESTIBULE_OF_HELL);
+}
 
 bool player_in_water(void)
 {
@@ -1036,7 +1048,7 @@ int player_movement_speed(void)
             mv += 2;
 
         // Swiftness is an Air spell, it doesn't work in water...
-        // levitating player's will move faster. -- bwr
+        // but levitating players will move faster. -- bwr
         if (you.duration[DUR_SWIFTNESS] > 0 && !player_in_water())
             mv -= (player_is_levitating() ? 4 : 2);
 
@@ -1134,7 +1146,6 @@ int player_AC(void)
                 || you.inv[ item ].plus2 == TBOOT_CENTAUR_BARDING))
         {
             AC += 3;
-            continue;
         }
 
         int racial_bonus = 0;  // additional levels of armour skill
@@ -1631,7 +1642,7 @@ int burden_change(void)
     }
 
     you.burden_state = BS_UNENCUMBERED;
-    you.redraw_burden = 1;
+    set_redraw_status( REDRAW_BURDEN );
 
     // changed the burdened levels to match the change to max_carried
     if (you.burden < (max_carried * 5) / 6)
@@ -1676,7 +1687,7 @@ bool you_resist_magic(int power)
     snprintf( info, INFO_SIZE, "Power: %d, player's MR: %d, target: %d, roll: %d",
              ench_power, player_res_magic(), mrchance, mrch2 );
 
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     if (mrch2 < mrchance)
@@ -1714,7 +1725,7 @@ void gain_exp( unsigned int exp_gained )
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "gain_exp: %d", exp_gained );
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
     if (you.experience + exp_gained > 8999999)
@@ -1732,6 +1743,9 @@ void gain_exp( unsigned int exp_gained )
 
 void level_change(void)
 {
+    int hp_adjust = 0;
+    int mp_adjust = 0;
+
     // necessary for the time being, as level_change() is called
     // directly sometimes {dlb}
     you.redraw_experience = 1;
@@ -1741,29 +1755,38 @@ void level_change(void)
     {
         you.experience_level++;
 
-        snprintf( info, INFO_SIZE, "You are now a level %d %s!",
-                  you.experience_level, you.class_name );
-
-        mpr(info, MSGCH_INTRINSIC_GAIN);
-        more();
-
-        int brek = 0;
-
-        if (you.experience_level > 21)
-            brek = (coinflip() ? 3 : 2);
-        else if (you.experience_level > 12)
-            brek = 3 + random2(3);      // up from 2 + rand(3) -- bwr
-        else
-            brek = 4 + random2(4);      // up from 3 + rand(4) -- bwr
-
-        inc_hp( brek, true );
-        inc_mp( 1, true );
-
-        char hp_adjust = 0;
-        char mp_adjust = 0;
-
-        if (you.experience_level > you.max_level)
+        if (you.experience_level <= you.max_level)
         {
+            snprintf( info, INFO_SIZE, "Welcome back to level %d!",
+                      you.experience_level );
+
+            mpr(info, MSGCH_INTRINSIC_GAIN);
+            more();
+
+            // Gain back the hp and mp we lose in lose_level().  -- bwr
+            inc_hp( 4, true );
+            inc_mp( 1, true );
+        }
+        else  // character has gained a new level
+        {
+            snprintf( info, INFO_SIZE, "You are now a level %d %s!",
+                      you.experience_level, you.class_name );
+
+            mpr(info, MSGCH_INTRINSIC_GAIN);
+            more();
+
+            int brek = 0;
+
+            if (you.experience_level > 21)
+                brek = (coinflip() ? 3 : 2);
+            else if (you.experience_level > 12)
+                brek = 3 + random2(3);      // up from 2 + rand(3) -- bwr
+            else
+                brek = 4 + random2(4);      // up from 3 + rand(4) -- bwr
+
+            inc_hp( brek, true );
+            inc_mp( 1, true );
+
             if (!(you.experience_level % 3))
                 ability_increase();
 
@@ -2275,7 +2298,7 @@ void level_change(void)
         inc_max_hp( hp_adjust );
         inc_max_mp( mp_adjust );
 
-        deflate_hp(you.hp_max, false);
+        deflate_hp( you.hp_max, false );
 
         if (you.magic_points < 0)
             you.magic_points = 0;
@@ -2427,143 +2450,144 @@ void ability_increase(void)
 void display_char_status(void)
 {
     if (you.is_undead)
-        mpr("You are undead.");
+        mpr( "You are undead." );
+    else if (you.deaths_door)
+        mpr( "You are standing in death's doorway." );
     else
-        mpr("You are alive.");
+        mpr( "You are alive." );
 
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
     case TRAN_SPIDER:
-        mpr("You are in spider-form.");
+        mpr( "You are in spider-form." );
         break;
     case TRAN_BLADE_HANDS:
-        mpr("You have blades for hands.");
+        mpr( "You have blades for hands." );
         break;
     case TRAN_STATUE:
-        mpr("You are a statue.");
+        mpr( "You are a statue." );
         break;
     case TRAN_ICE_BEAST:
-        mpr("You are an ice creature.");
+        mpr( "You are an ice creature." );
         break;
     case TRAN_DRAGON:
-        mpr("You are in dragon-form.");
+        mpr( "You are in dragon-form." );
         break;
     case TRAN_LICH:
-        mpr("You are in lich-form.");
+        mpr( "You are in lich-form." );
         break;
     case TRAN_SERPENT_OF_HELL:
-        mpr("You are a huge demonic serpent.");
+        mpr( "You are a huge demonic serpent." );
         break;
     case TRAN_AIR:
-        mpr("You are a cloud of diffuse gas.");
+        mpr( "You are a cloud of diffuse gas." );
         break;
     }
 
     if (you.duration[DUR_BREATH_WEAPON])
-        mpr("You are short of breath.");
+        mpr( "You are short of breath." );
 
     if (you.duration[DUR_REPEL_UNDEAD])
-        mpr("You have a holy aura protecting you from undead.");
+        mpr( "You have a holy aura protecting you from undead." );
 
     if (you.duration[DUR_LIQUID_FLAMES])
-        mpr("You are covered in liquid flames.");
+        mpr( "You are covered in liquid flames." );
 
     if (you.duration[DUR_ICY_ARMOUR])
-        mpr("You are protected by an icy shield.");
+        mpr( "You are protected by an icy shield." );
 
     if (you.duration[DUR_REPEL_MISSILES])
-        mpr("You are protected from missiles.");
+        mpr( "You are protected from missiles." );
 
     if (you.duration[DUR_DEFLECT_MISSILES])
-        mpr("You deflect missiles.");
+        mpr( "You deflect missiles." );
 
     if (you.duration[DUR_PRAYER])
-        mpr("You are praying.");
+        mpr( "You are praying." );
 
     if (you.duration[DUR_REGENERATION])
-        mpr("You are regenerating.");
+        mpr( "You are regenerating." );
 
     if (you.duration[DUR_SWIFTNESS])
-        mpr("You can move swiftly.");
+        mpr( "You can move swiftly." );
 
     if (you.duration[DUR_INSULATION])
-        mpr("You are insulated.");
+        mpr( "You are insulated." );
 
     if (you.duration[DUR_STONEMAIL])
-        mpr("You are covered in scales of stone.");
+        mpr( "You are covered in scales of stone." );
 
     if (you.duration[DUR_CONTROLLED_FLIGHT])
-        mpr("You can control your flight.");
+        mpr( "You can control your flight." );
 
     if (you.duration[DUR_TELEPORT])
-        mpr("You are about to teleport.");
+        mpr( "You are about to teleport." );
 
     if (you.duration[DUR_CONTROL_TELEPORT])
-        mpr("You can control teleportation.");
+        mpr( "You can control teleportation." );
 
     if (you.duration[DUR_DEATH_CHANNEL])
-        mpr("You are channeling the dead.");
+        mpr( "You are channeling the dead." );
 
     if (you.duration[DUR_FORESCRY])     //jmf: added 19mar2000
-        mpr("You are forewarned.");
+        mpr( "You are forewarned." );
 
     if (you.duration[DUR_SILENCE])      //jmf: added 27mar2000
-        mpr("You radiate silence.");
+        mpr( "You radiate silence." );
 
     if (you.duration[DUR_INFECTED_SHUGGOTH_SEED])       //jmf: added 19mar2000
-        mpr("You are infected with a shuggoth parasite.");
+        mpr( "You are infected with a shuggoth parasite." );
 
     if (you.duration[DUR_STONESKIN])
-        mpr("Your skin is tough as stone.");
+        mpr( "Your skin is tough as stone." );
+
+    if (you.duration[DUR_SEE_INVISIBLE])
+        mpr( "You can see invisible." );
 
     if (you.invis)
-        mpr("You are invisible.");
+        mpr( "You are invisible." );
 
     if (you.conf)
-        mpr("You are confused.");
+        mpr( "You are confused." );
 
     if (you.paralysis)
-        mpr("You are paralysed.");
+        mpr( "You are paralysed." );
 
     if (you.exhausted)
-        mpr("You are exhausted.");
+        mpr( "You are exhausted." );
 
-    if (you.slow)
-        mpr("You are moving very slowly.");
-
-    if (you.haste)
-        mpr("You are moving very quickly.");
+    if (you.slow && you.haste)
+        mpr( "You are under both slowing and hasting effects." );
+    else if (you.slow)
+        mpr( "You are moving very slowly." );
+    else if (you.haste)
+        mpr( "You are moving very quickly." );
 
     if (you.might)
-        mpr("You are mighty.");
+        mpr( "You are mighty." );
 
     if (you.berserker)
-        mpr("You are possessed by a berserker rage.");
+        mpr( "You are possessed by a berserker rage." );
 
     if (player_is_levitating())
-        mpr("You are hovering above the floor.");
+        mpr( "You are hovering above the floor." );
 
     if (you.poison)
     {
-        strcpy(info, "You are ");
-        strcat(info, (you.poison > 10) ? "extremely" :
-                     (you.poison > 5)  ? "very" :
-                     (you.poison > 3)  ? "quite"
-                                       : "mildly");
-        strcat(info, " poisoned.");
+        snprintf( info, INFO_SIZE, "You are %s poisoned.",
+                  (you.poison > 10) ? "extremely" :
+                  (you.poison > 5)  ? "very" :
+                  (you.poison > 3)  ? "quite"
+                                    : "mildly" );
         mpr(info);
     }
 
-    if (you.deaths_door)
-        mpr("You are standing in death's doorway.");
-
     if (you.disease)
     {
-        strcpy(info, "You are ");
-        strcat(info, (you.disease > 120) ? "badly " :
-                     (you.disease >  40) ? ""
-                                         : "mildly ");
-        strcat(info, "diseased.");
+        snprintf( info, INFO_SIZE, "You are %sdiseased.",
+                  (you.disease > 120) ? "badly " :
+                  (you.disease >  40) ? ""
+                                      : "mildly " );
         mpr(info);
     }
 
@@ -2571,13 +2595,12 @@ void display_char_status(void)
     {
         // I apologize in advance for the horrendous ugliness about to
         // transpire.  Avert your eyes!
-        strcpy(info, "Your flesh is rotting");
-        strcat(info, (you.rotting > 15) ? " before your eyes!":
-                     (you.rotting > 8)  ? " away quickly.":
-                     (you.rotting > 4)  ? " badly."
-                                        :
-                     ((you.species == SP_GHOUL && you.rotting > 0)
-                        ?" faster than usual.":"."));
+        snprintf( info, INFO_SIZE, "Your flesh is rotting%s",
+                  (you.rotting > 15) ? " before your eyes!":
+                  (you.rotting > 8)  ? " away quickly.":
+                  (you.rotting > 4)  ? " badly."
+             : ((you.species == SP_GHOUL && you.rotting > 0)
+                        ? " faster than usual." : ".") );
         mpr(info);
     }
 
@@ -2585,21 +2608,19 @@ void display_char_status(void)
 
     if (you.confusing_touch)
     {
-        strcpy(info, "Your hands are glowing ");
-        strcat(info, (you.confusing_touch > 40) ? "an extremely bright" :
-                     (you.confusing_touch > 20) ? "bright"
-                                                : "a soft");
-        strcat(info, " red.");
+        snprintf( info, INFO_SIZE, "Your hands are glowing %s red.",
+                  (you.confusing_touch > 40) ? "an extremely bright" :
+                  (you.confusing_touch > 20) ? "bright"
+                                             : "a soft" );
         mpr(info);
     }
 
     if (you.sure_blade)
     {
-        strcpy(info, "You have a ");
-        strcat(info, (you.sure_blade > 15) ? "strong " :
-                     (you.sure_blade >  5) ? ""
-                                           : "weak ");
-        strcat(info, "bond with your blade.");
+        snprintf( info, INFO_SIZE, "You have a %sbond with your blade.",
+                  (you.sure_blade > 15) ? "strong " :
+                  (you.sure_blade >  5) ? ""
+                                        : "weak " );
         mpr(info);
     }
 }                               // end display_char_status()
@@ -3347,7 +3368,7 @@ void set_mp(int new_amount, bool max_too)
     return;
 }                               // end set_mp()
 
-char *job_title(int which_job)
+const char *job_title(int which_job)
 {
     switch (which_job)
     {
@@ -3412,6 +3433,32 @@ char *job_title(int which_job)
     }
 }                               // end job_title()
 
+static const char * Species_Abbrev_List[ NUM_SPECIES ] =
+    { "XX", "Hu", "El", "HE", "GE", "DE", "SE", "HD", "MD", "Ha",
+      "HO", "Ko", "Mu", "Na", "Gn", "Og", "Tr", "OM", "Dr", "Dr",
+      "Dr", "Dr", "Dr", "Dr", "Dr", "Dr", "Dr", "Dr", "Dr", "Dr",
+      "Ce", "DG", "Sp", "Mi", "DS", "Gh", "Ke", "Mf" };
+
+int get_species_index( const char *abbrev )
+{
+    int i;
+    for (i = SP_HUMAN; i < NUM_SPECIES; i++)
+    {
+        if (strncmp( abbrev, Species_Abbrev_List[i], 2 ) == 0)
+            break;
+    }
+
+    return ((i < NUM_SPECIES) ? i : -1);
+}
+
+const char *get_species_abbrev( int which_species )
+{
+    ASSERT( which_species > 0 && which_species < NUM_SPECIES );
+
+    return (Species_Abbrev_List[ which_species ]);
+}
+
+#if 0
 // Try to keep all species and class abbreviations different, as
 // it will make things a bit easier (ie. avoid HuTr (Human-Troll?)) -- bwr
 char *species_abbrev(unsigned char which_species)
@@ -3450,7 +3497,34 @@ char *species_abbrev(unsigned char which_species)
     default:                    return "XX";
     }
 }                               // end species_abbrev()
+#endif
 
+static const char * Class_Abbrev_List[ NUM_JOBS ] =
+    { "Fi", "Wz", "Pr", "Th", "Gl", "Ne", "Pa", "As", "Be", "Hu",
+      "Cj", "En", "FE", "IE", "Su", "AE", "EE", "Cr", "DK", "VM",
+      "CK", "Tm", "He", "XX", "Re", "St", "Mo", "Wr", "Wn" };
+
+int get_class_index( const char *abbrev )
+{
+    int i;
+
+    for (i = 0; i < NUM_JOBS; i++)
+    {
+        if (strncmp( abbrev, Class_Abbrev_List[i], 2 ) == 0)
+            break;
+    }
+
+    return ((i < NUM_JOBS) ? i : -1);
+}
+
+const char *get_class_abbrev( int which_job )
+{
+    ASSERT( which_job < NUM_JOBS && which_job != JOB_QUITTER );
+
+    return (Class_Abbrev_List[ which_job ]);
+}
+
+#if 0
 char *class_abbrev( unsigned char which_class )
 {
     switch (which_class)
@@ -3486,6 +3560,7 @@ char *class_abbrev( unsigned char which_class )
     default:                      return "XX";
     }
 }                               // end class_abbrev()
+#endif
 
 bool player_descriptor(unsigned char which_descriptor, unsigned char species)
 {
@@ -3577,7 +3652,7 @@ void contaminate_player(int change, bool statusOnly)
         snprintf( info, INFO_SIZE, "change: %d  radiation: %d",
                  change, change + you.magic_contamination );
 
-        mpr( info, MSGCH_DIAGNOSTIC );
+        mpr( info, MSGCH_DIAGNOSTICS );
     }
 #endif
 
@@ -3715,5 +3790,127 @@ void reduce_confuse_player( int amount )
     {
         you.conf = 0;
         mpr( "You feel less confused." );
+    }
+}
+
+void slow_player( int amount )
+{
+    if (amount <= 0)
+        return;
+
+    if (wearing_amulet( AMU_RESIST_SLOW ))
+        mpr("You feel momentarily lethargic.");
+    else if (you.slow >= 100)
+        mpr( "You already are as slow as you could be." );
+    else
+    {
+        if (you.slow == 0)
+            mpr( "You feel yourself slow down." );
+        else
+            mpr( "You feel as though you will be slow longer." );
+
+        you.slow += amount;
+
+        if (you.slow > 100)
+            you.slow = 100;
+    }
+}
+
+void dec_slow_player( void )
+{
+    if (you.slow > 1)
+    {
+        // BCR - Amulet of resist slow affects slow counter
+        if (wearing_amulet(AMU_RESIST_SLOW))
+        {
+            you.slow -= 5;
+            if (you.slow < 1)
+                you.slow = 1;
+        }
+        else
+            you.slow--;
+    }
+    else if (you.slow == 1)
+    {
+        mpr("You feel yourself speed up.", MSGCH_DURATION);
+        you.slow = 0;
+    }
+}
+
+void haste_player( int amount )
+{
+    bool amu_eff = wearing_amulet( AMU_RESIST_SLOW );
+
+    if (amount <= 0)
+        return;
+
+    if (amu_eff)
+        mpr( "Your amulet glows brightly." );
+
+    if (you.haste == 0)
+        mpr( "You feel yourself speed up." );
+    else if (you.haste > 80 + 20 * amu_eff)
+        mpr( "You already have as much speed as you can handle." );
+    else
+    {
+        mpr( "You feel as though your hasted speed will last longer." );
+        contaminate_player(1);
+    }
+
+    you.haste += amount;
+
+    if (you.haste > 80 + 20 * amu_eff)
+        you.haste = 80 + 20 * amu_eff;
+
+    naughty( NAUGHTY_STIMULANTS, 4 + random2(4) );
+}
+
+void dec_haste_player( void )
+{
+    if (you.haste > 1)
+    {
+        // BCR - Amulet of resist slow affects haste counter
+        if (!wearing_amulet(AMU_RESIST_SLOW) || coinflip())
+            you.haste--;
+
+        if (you.haste == 6)
+        {
+            mpr( "Your extra speed is starting to run out.", MSGCH_DURATION );
+            if (coinflip())
+                you.haste--;
+        }
+    }
+    else if (you.haste == 1)
+    {
+        mpr( "You feel yourself slow down.", MSGCH_DURATION );
+        you.haste = 0;
+    }
+}
+
+void disease_player( int amount )
+{
+    if (you.is_undead || amount <= 0)
+        return;
+
+    mpr( "You feel ill." );
+
+    const int tmp = you.disease + amount;
+    you.disease = (tmp > 210) ? 210 : tmp;
+}
+
+void dec_disease_player( void )
+{
+    if (you.disease > 0)
+    {
+        you.disease--;
+
+        if (you.disease > 5
+            && (you.species == SP_KOBOLD || you.duration[ DUR_REGENERATION ]))
+        {
+            you.disease -= 2;
+        }
+
+        if (!you.disease)
+            mpr("You feel your health improve.", MSGCH_RECOVERY);
     }
 }

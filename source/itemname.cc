@@ -16,6 +16,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -39,7 +40,7 @@ int  prop[4][50][3];
 FixedArray < int, 20, 50 > mss;
 
 bool is_a_vowel(unsigned char let);
-static char item_name_2( const item_def &item, char glog[80] );
+static char item_name_2( const item_def &item, char buff[ ITEMNAME_SIZE ] );
 
 char reduce(unsigned char reducee);
 char retbit(char sed);
@@ -128,6 +129,69 @@ bool cmp_equip_desc( const item_def &item, unsigned long val )
 void set_equip_race( item_def &item, unsigned long flags )
 {
     ASSERT( (flags & ~ISFLAG_RACIAL_MASK) == 0 );
+
+    // first check for base-sub pairs that can't ever have racial types
+    switch (item.base_type)
+    {
+    case OBJ_WEAPONS:
+        if (item.sub_type == WPN_GIANT_CLUB
+            || item.sub_type == WPN_GIANT_SPIKED_CLUB
+            || item.sub_type == WPN_KATANA
+            || item.sub_type == WPN_SLING
+            || item.sub_type == WPN_KNIFE
+            || item.sub_type == WPN_QUARTERSTAFF
+            || item.sub_type == WPN_DEMON_BLADE
+            || item.sub_type == WPN_DEMON_WHIP
+            || item.sub_type == WPN_DEMON_TRIDENT)
+        {
+            return;
+        }
+        break;
+
+    case OBJ_ARMOUR:
+        if (item.sub_type >= ARM_DRAGON_HIDE)
+        {
+            return;
+        }
+        break;
+
+    case OBJ_MISSILES:
+        if (item.sub_type == MI_STONE || item.sub_type == MI_LARGE_ROCK)
+        {
+            return;
+        }
+        break;
+
+    default:
+        return;
+    }
+
+    // check that item is appropriate for racial type
+    switch (flags)
+    {
+    case ISFLAG_ELVEN:
+        if (item.base_type == OBJ_ARMOUR
+            && (item.sub_type == ARM_SPLINT_MAIL
+                || item.sub_type == ARM_BANDED_MAIL
+                || item.sub_type == ARM_PLATE_MAIL))
+        {
+            return;
+        }
+        break;
+
+    case ISFLAG_DWARVEN:
+        if (item.base_type == OBJ_ARMOUR
+            && (item.sub_type == ARM_ROBE
+                || item.sub_type == ARM_LEATHER_ARMOUR))
+        {
+            return;
+        }
+        break;
+
+    case ISFLAG_ORCISH:
+    default:
+        break;
+    }
 
     item.flags &= ~ISFLAG_RACIAL_MASK; // delete previous
     item.flags |= flags;
@@ -253,8 +317,11 @@ int get_ammo_brand( const item_def &item )
 int get_armour_ego_type( const item_def &item )
 {
     // artefact armours have no ego type, must look up powers separately
-    if (item.base_type != OBJ_ARMOUR || is_random_artefact( item ))
+    if (item.base_type != OBJ_ARMOUR
+        || (is_random_artefact( item ) && !is_unrandom_artefact( item )))
+    {
         return (SPARM_NORMAL);
+    }
 
     return (item.special);
 }
@@ -274,57 +341,47 @@ bool item_is_staff( const item_def &item )
 
 // it_name() and in_name() are now somewhat obsolete now that itemname
 // takes item_def, so consider them depricated.
-void it_name(int itn, char des, char str_pass[80])
+void it_name(int itn, char des, char buff[ ITEMNAME_SIZE ])
 {
-    item_name( mitm[itn], des, str_pass );
+    item_name( mitm[itn], des, buff );
 }                               // end it_name()
 
 
-void in_name(int inn, char des, char str_pass[80])
+void in_name(int inn, char des, char buff[ ITEMNAME_SIZE ])
 {
-    item_name( you.inv[inn], des, str_pass );
+    item_name( you.inv[inn], des, buff );
 }                               // end in_name()
 
 // quant_name is usful since it prints out a different number of items
 // than the item actually contains.
-void quant_name(const item_def &item, int quant, char des, char str_pass[80])
+void quant_name(const item_def &item, int quant, char des, char buff[ ITEMNAME_SIZE ])
 {
     // item_name now requires a "real" item, so we'll mangle a tmp
     item_def tmp = item;
     tmp.quantity = quant;
 
-    item_name( tmp, des, str_pass );
+    item_name( tmp, des, buff );
 }                               // end quant_name()
 
-char item_name( const item_def &item, char descrip, char glag[80] )
+char item_name( const item_def &item, char descrip, char buff[ ITEMNAME_SIZE ] )
 {
     const int item_clas = item.base_type;
     const int item_typ = item.sub_type;
     const int it_quant = item.quantity;
 
-    char itm_name[60] = "";
-    char tmp_quant[5];
+    char tmp_quant[20];
+    char itm_name[  ITEMNAME_SIZE  ] = "";
 
     item_name_2( item, itm_name );
 
-    strcpy(glag, "");
+    buff[0] = '\0';
 
     if (descrip == DESC_INVENTORY_EQUIP || descrip == DESC_INVENTORY)
     {
-        if (item.x == -1 && item.y == -1)
-        {
-            // actually in inventory
-            char letter = index_to_letter( item.link );
-            glag[0] = letter;
-            glag[1] = '\0';
-
-            strcat( glag, " - " );
-        }
+        if (item.x == -1 && item.y == -1) // actually in inventory
+            snprintf( buff,  ITEMNAME_SIZE, "%c - ", index_to_letter( item.link ) );
         else
-        {
-            // not in inventory
             descrip = DESC_CAP_A;
-        }
     }
 
     if (item_clas == OBJ_ORBS
@@ -340,7 +397,7 @@ char item_name( const item_def &item, char descrip, char glag[80] )
         case DESC_CAP_A:
         case DESC_CAP_YOUR:
         case DESC_CAP_THE:
-            strcat(glag, "The ");
+            strncat(buff, "The ", ITEMNAME_SIZE );
             break;
         case DESC_NOCAP_A:
         case DESC_NOCAP_YOUR:
@@ -348,7 +405,7 @@ char item_name( const item_def &item, char descrip, char glag[80] )
         case DESC_NOCAP_ITS:
         case DESC_INVENTORY_EQUIP:
         case DESC_INVENTORY:
-            strcat(glag, "the ");
+            strncat(buff, "the ", ITEMNAME_SIZE );
             break;
         default:
         case DESC_PLAIN:
@@ -360,10 +417,10 @@ char item_name( const item_def &item, char descrip, char glag[80] )
         switch (descrip)
         {
         case DESC_CAP_THE:
-            strcat(glag, "The ");
+            strncat(buff, "The ", ITEMNAME_SIZE );
             break;
         case DESC_NOCAP_THE:
-            strcat(glag, "the ");
+            strncat(buff, "the ", ITEMNAME_SIZE );
             break;
         case DESC_CAP_A:
         case DESC_NOCAP_A:
@@ -371,13 +428,13 @@ char item_name( const item_def &item, char descrip, char glag[80] )
         case DESC_INVENTORY:
             break;
         case DESC_CAP_YOUR:
-            strcat(glag, "Your ");
+            strncat(buff, "Your ", ITEMNAME_SIZE );
             break;
         case DESC_NOCAP_YOUR:
-            strcat(glag, "your ");
+            strncat(buff, "your ", ITEMNAME_SIZE );
             break;
         case DESC_NOCAP_ITS:
-            strcat(glag, "its ");
+            strncat(buff, "its ", ITEMNAME_SIZE );
             break;
         case DESC_PLAIN:
         default:
@@ -385,53 +442,53 @@ char item_name( const item_def &item, char descrip, char glag[80] )
         }
 
         itoa(it_quant, tmp_quant, 10);
-        strcat(glag, tmp_quant);
-        strcat(glag, " ");
+        strncat(buff, tmp_quant, ITEMNAME_SIZE );
+        strncat(buff, " ", ITEMNAME_SIZE );
     }
     else
     {
         switch (descrip)
         {
         case DESC_CAP_THE:
-            strcat(glag, "The ");
+            strncat(buff, "The ", ITEMNAME_SIZE );
             break;
         case DESC_NOCAP_THE:
-            strcat(glag, "the ");
+            strncat(buff, "the ", ITEMNAME_SIZE );
             break;
         case DESC_CAP_A:
-            strcat(glag, "A");
+            strncat(buff, "A", ITEMNAME_SIZE );
 
             if (itm_name[0] == 'a' || itm_name[0] == 'e' || itm_name[0] == 'i'
                 || itm_name[0] == 'o' || itm_name[0] == 'u')
             {
-                strcat(glag, "n");
+                strncat(buff, "n", ITEMNAME_SIZE );
             }
 
-            strcat(glag, " ");
+            strncat(buff, " ", ITEMNAME_SIZE );
             break;              // A/An
 
         case DESC_NOCAP_A:
         case DESC_INVENTORY_EQUIP:
         case DESC_INVENTORY:
-            strcat(glag, "a");
+            strncat(buff, "a", ITEMNAME_SIZE );
 
             if (itm_name[0] == 'a' || itm_name[0] == 'e' || itm_name[0] == 'i'
                 || itm_name[0] == 'o' || itm_name[0] == 'u')
             {
-                strcat(glag, "n");
+                strncat(buff, "n", ITEMNAME_SIZE );
             }
 
-            strcat(glag, " ");
+            strncat(buff, " ", ITEMNAME_SIZE );
             break;              // a/an
 
         case DESC_CAP_YOUR:
-            strcat(glag, "Your ");
+            strncat(buff, "Your ", ITEMNAME_SIZE );
             break;
         case DESC_NOCAP_YOUR:
-            strcat(glag, "your ");
+            strncat(buff, "your ", ITEMNAME_SIZE );
             break;
         case DESC_NOCAP_ITS:
-            strcat(glag, "its ");
+            strncat(buff, "its ", ITEMNAME_SIZE );
             break;
         case DESC_PLAIN:
         default:
@@ -439,7 +496,7 @@ char item_name( const item_def &item, char descrip, char glag[80] )
         }
     }                           // end of else
 
-    strcat(glag, itm_name);
+    strncat(buff, itm_name, ITEMNAME_SIZE );
 
     if (descrip == DESC_INVENTORY_EQUIP && item.x == -1 && item.y == -1)
     {
@@ -450,11 +507,11 @@ char item_name( const item_def &item, char descrip, char glag[80] )
             if (you.inv[ you.equip[EQ_WEAPON] ].base_type == OBJ_WEAPONS
                 || item_is_staff( you.inv[ you.equip[EQ_WEAPON] ] ))
             {
-                strcat( glag, " (weapon)" );
+                strncat( buff, " (weapon)", ITEMNAME_SIZE );
             }
             else
             {
-                strcat( glag, " (in hand)" );
+                strncat( buff, " (in hand)", ITEMNAME_SIZE );
             }
         }
         else if (item.link == you.equip[EQ_CLOAK]
@@ -464,19 +521,19 @@ char item_name( const item_def &item, char descrip, char glag[80] )
                 || item.link == you.equip[EQ_SHIELD]
                 || item.link == you.equip[EQ_BODY_ARMOUR])
         {
-            strcat( glag, " (worn)" );
+            strncat( buff, " (worn)", ITEMNAME_SIZE );
         }
         else if (item.link == you.equip[EQ_LEFT_RING])
         {
-            strcat( glag, " (left hand)" );
+            strncat( buff, " (left hand)", ITEMNAME_SIZE );
         }
         else if (item.link == you.equip[EQ_RIGHT_RING])
         {
-            strcat( glag, " (right hand)" );
+            strncat( buff, " (right hand)", ITEMNAME_SIZE );
         }
         else if (item.link == you.equip[EQ_AMULET])
         {
-            strcat( glag, " (around neck)" );
+            strncat( buff, " (around neck)", ITEMNAME_SIZE );
         }
     }
 
@@ -484,7 +541,7 @@ char item_name( const item_def &item, char descrip, char glag[80] )
 }                               // end item_name()
 
 
-static char item_name_2( const item_def &item, char glog[80] )
+static char item_name_2( const item_def &item, char buff[ITEMNAME_SIZE] )
 {
     const int item_clas = item.base_type;
     const int item_typ = item.sub_type;
@@ -492,12 +549,12 @@ static char item_name_2( const item_def &item, char glog[80] )
     const int item_plus2 = item.plus2;
     const int it_quant = item.quantity;
 
-    char tmp_quant[5];
-    char str_pass2[80];
+    char tmp_quant[20];
+    char tmp_buff[ITEMNAME_SIZE];
     int  brand;
     unsigned char sparm;
 
-    strcpy(glog, "");
+    buff[0] = '\0';
 
     switch (item_clas)
     {
@@ -511,11 +568,11 @@ static char item_name_2( const item_def &item, char glog[80] )
             // this behaviour, *please* make it so that there is an option
             // that maintains this behaviour. -- bwr
             if (item_cursed( item ))
-                strcat(glog, "cursed ");
+                strncat(buff, "cursed ", ITEMNAME_SIZE );
             else if (Options.show_uncursed
                     && item_not_ident( item, ISFLAG_KNOW_PLUSES ))
             {
-                strcat(glog, "uncursed ");
+                strncat(buff, "uncursed ", ITEMNAME_SIZE );
             }
         }
 
@@ -523,31 +580,30 @@ static char item_name_2( const item_def &item, char glog[80] )
         {
             if (it_plus == 0 && item_plus2 == 0)
             {
-                strcat(glog, "+0 ");
+                strncat(buff, "+0 ", ITEMNAME_SIZE );
             }
             else
             {
                 if (it_plus >= 0)
-                    strcat( glog, "+" );
+                    strncat( buff, "+" , ITEMNAME_SIZE );
 
                 itoa( it_plus, tmp_quant, 10 );
-
-                strcat( glog, tmp_quant );
-                strcat( glog, "," );
+                strncat( buff, tmp_quant , ITEMNAME_SIZE );
+                strncat( buff, "," , ITEMNAME_SIZE );
 
                 if (item_plus2 >= 0)
-                    strcat(glog, "+");
+                    strncat(buff, "+", ITEMNAME_SIZE );
 
                 itoa( item_plus2, tmp_quant, 10 );
 
-                strcat( glog, tmp_quant );
-                strcat( glog, " " );
+                strncat( buff, tmp_quant , ITEMNAME_SIZE );
+                strncat( buff, " " , ITEMNAME_SIZE );
             }
         }
 
         if (is_random_artefact( item ))
         {
-            strcat( glog, randart_name(item) );
+            strncat( buff, randart_name(item), ITEMNAME_SIZE );
             break;
         }
 
@@ -555,7 +611,7 @@ static char item_name_2( const item_def &item, char glog[80] )
         {
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
             {
-                strcat(glog,
+                strncat(buff,
                        (item.special == SPWPN_SINGING_SWORD) ? "Singing Sword" :
                        (item.special == SPWPN_WRATH_OF_TROG) ? "Wrath of Trog" :
                        (item.special == SPWPN_SCYTHE_OF_CURSES) ? "Scythe of Curses" :
@@ -571,11 +627,12 @@ static char item_name_2( const item_def &item, char glog[80] )
                        (item.special == SPWPN_STAFF_OF_OLGREB) ? "Staff of Olgreb" :
                        (item.special == SPWPN_VAMPIRES_TOOTH) ? "Vampire's Tooth" :
                        (item.special == SPWPN_STAFF_OF_WUCAD_MU) ? "Staff of Wucad Mu"
-                                                   : "Brodale's Buggy Bola");
+                                                   : "Brodale's Buggy Bola",
+                                                   ITEMNAME_SIZE );
             }
             else
             {
-                strcat(glog,
+                strncat(buff,
                        (item.special == SPWPN_SINGING_SWORD) ? "golden long sword" :
                        (item.special == SPWPN_WRATH_OF_TROG) ? "bloodstained battleaxe" :
                        (item.special == SPWPN_SCYTHE_OF_CURSES) ? "warped scythe" :
@@ -591,7 +648,8 @@ static char item_name_2( const item_def &item, char glog[80] )
                        (item.special == SPWPN_STAFF_OF_OLGREB) ? "green glowing staff" :
                        (item.special == SPWPN_VAMPIRES_TOOTH) ? "ivory dagger" :
                        (item.special == SPWPN_STAFF_OF_WUCAD_MU) ? "quarterstaff"
-                                                           : "bola");
+                                                           : "buggy bola",
+                                                           ITEMNAME_SIZE );
             }
             break;
         }
@@ -604,10 +662,10 @@ static char item_name_2( const item_def &item, char glog[80] )
             switch (get_equip_desc( item ))
             {
             case ISFLAG_RUNED:
-                strcat(glog, "runed ");
+                strncat(buff, "runed ", ITEMNAME_SIZE );
                 break;
             case ISFLAG_GLOWING:
-                strcat(glog, "glowing ");
+                strncat(buff, "glowing ", ITEMNAME_SIZE );
                 break;
             }
         }
@@ -616,13 +674,13 @@ static char item_name_2( const item_def &item, char glog[80] )
         switch (get_equip_race( item ))
         {
         case ISFLAG_ORCISH:
-            strcat(glog, "orcish ");
+            strncat(buff, "orcish ", ITEMNAME_SIZE );
             break;
         case ISFLAG_ELVEN:
-            strcat(glog, "elven ");
+            strncat(buff, "elven ", ITEMNAME_SIZE );
             break;
         case ISFLAG_DWARVEN:
-            strcat(glog, "dwarven ");
+            strncat(buff, "dwarven ", ITEMNAME_SIZE );
             break;
         }
 
@@ -631,11 +689,11 @@ static char item_name_2( const item_def &item, char glog[80] )
         if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
             if (brand == SPWPN_VAMPIRICISM)
-                strcat(glog, "vampiric ");
+                strncat(buff, "vampiric ", ITEMNAME_SIZE );
         }                       // end if
 
-        standard_name_weap(item_typ, str_pass2);
-        strcat(glog, str_pass2);
+        standard_name_weap( item_typ, tmp_buff );
+        strncat( buff, tmp_buff, ITEMNAME_SIZE );
 
         if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
@@ -644,70 +702,70 @@ static char item_name_2( const item_def &item, char glog[80] )
             case SPWPN_NORMAL:
                 break;
             case SPWPN_FLAMING:
-                strcat(glog, " of flaming");
+                strncat(buff, " of flaming", ITEMNAME_SIZE );
                 break;
             case SPWPN_FREEZING:
-                strcat(glog, " of freezing");
+                strncat(buff, " of freezing", ITEMNAME_SIZE );
                 break;
             case SPWPN_HOLY_WRATH:
-                strcat(glog, " of holy wrath");
+                strncat(buff, " of holy wrath", ITEMNAME_SIZE );
                 break;
             case SPWPN_ELECTROCUTION:
-                strcat(glog, " of electrocution");
+                strncat(buff, " of electrocution", ITEMNAME_SIZE );
                 break;
             case SPWPN_ORC_SLAYING:
-                strcat(glog, " of orc slaying");
+                strncat(buff, " of orc slaying", ITEMNAME_SIZE );
                 break;
             case SPWPN_VENOM:
-                strcat(glog, " of venom");
+                strncat(buff, " of venom", ITEMNAME_SIZE );
                 break;
             case SPWPN_PROTECTION:
-                strcat(glog, " of protection");
+                strncat(buff, " of protection", ITEMNAME_SIZE );
                 break;
             case SPWPN_DRAINING:
-                strcat(glog, " of draining");
+                strncat(buff, " of draining", ITEMNAME_SIZE );
                 break;
             case SPWPN_SPEED:
-                strcat(glog, " of speed");
+                strncat(buff, " of speed", ITEMNAME_SIZE );
                 break;
             case SPWPN_VORPAL:
                 switch (damage_type(item_clas, item_typ))
                 {
                 case DVORP_CRUSHING:
-                    strcat(glog, " of crushing");
+                    strncat(buff, " of crushing", ITEMNAME_SIZE );
                     break;
                 case DVORP_SLICING:
-                    strcat(glog, " of slicing");
+                    strncat(buff, " of slicing", ITEMNAME_SIZE );
                     break;
                 case DVORP_PIERCING:
-                    strcat(glog, " of piercing");
+                    strncat(buff, " of piercing", ITEMNAME_SIZE );
                     break;
                 case DVORP_CHOPPING:
-                    strcat(glog, " of chopping");
+                    strncat(buff, " of chopping", ITEMNAME_SIZE );
                     break;
                 }
                 break;
 
             case SPWPN_FLAME:
-                strcat(glog, " of flame");
+                strncat(buff, " of flame", ITEMNAME_SIZE );
                 break;          // bows/xbows
 
             case SPWPN_FROST:
-                strcat(glog, " of frost");
+                strncat(buff, " of frost", ITEMNAME_SIZE );
                 break;          // bows/xbows
                 /* 13 - vamp */
             case SPWPN_DISRUPTION:
-                strcat(glog, " of disruption");
+                strncat(buff, " of disruption", ITEMNAME_SIZE );
                 break;
             case SPWPN_PAIN:
-                strcat(glog, " of pain");
+                strncat(buff, " of pain", ITEMNAME_SIZE );
                 break;
             case SPWPN_DISTORTION:
-                strcat(glog, " of distortion");
+                strncat(buff, " of distortion", ITEMNAME_SIZE );
                 break;
 
             case SPWPN_REACHING:
-                strcat(glog, " of reaching");
+                strncat(buff, " of reaching", ITEMNAME_SIZE );
                 break;
 
                 /* 25 - 29 are randarts */
@@ -719,49 +777,50 @@ static char item_name_2( const item_def &item, char glog[80] )
         brand = get_ammo_brand( item );
         if (brand == SPMSL_POISONED || brand == SPMSL_POISONED_II )
         {
-            strcat(glog, "poisoned ");
+            strncat(buff, "poisoned ", ITEMNAME_SIZE );
         }
 
         if (item_ident( item, ISFLAG_KNOW_PLUSES ))
         {
             if (it_plus >= 0)
-                strcat(glog, "+");
+                strncat(buff, "+", ITEMNAME_SIZE );
 
             itoa( it_plus, tmp_quant, 10 );
 
-            strcat(glog, tmp_quant);
-            strcat(glog, " ");
+            strncat(buff, tmp_quant, ITEMNAME_SIZE );
+            strncat(buff, " ", ITEMNAME_SIZE );
         }
 
         if (get_equip_race( item ))
         {
             int dwpn = get_equip_race( item );
 
-            strcat(glog, (dwpn == ISFLAG_ORCISH) ? "orcish " :
+            strncat(buff, (dwpn == ISFLAG_ORCISH) ? "orcish " :
                    (dwpn == ISFLAG_ELVEN) ? "elven " :
-                   (dwpn == ISFLAG_DWARVEN) ? "dwarven " : "buggy ");
+                   (dwpn == ISFLAG_DWARVEN) ? "dwarven " : "buggy ", ITEMNAME_SIZE);
         }
 
-        strcat(glog, (item_typ == MI_STONE) ? "stone" :
+        strncat(buff, (item_typ == MI_STONE) ? "stone" :
                (item_typ == MI_ARROW) ? "arrow" :
                (item_typ == MI_BOLT) ? "bolt" :
                (item_typ == MI_DART) ? "dart" :
                (item_typ == MI_NEEDLE) ? "needle" :
                (item_typ == MI_EGGPLANT) ? "eggplant" :
-               (item_typ == MI_LARGE_ROCK) ? "large rock" : "");
+               (item_typ == MI_LARGE_ROCK) ? "large rock" : "", ITEMNAME_SIZE);
                // this should probably be "" {dlb}
 
         if (it_quant > 1)
-            strcat(glog, "s");
+            strncat(buff, "s", ITEMNAME_SIZE );
 
         if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            strcat( glog, (brand == SPMSL_FLAME)       ? " of flame" :
+            strncat( buff,(brand == SPMSL_FLAME)       ? " of flame" :
                           (brand == SPMSL_ICE)         ? " of ice" :
                           (brand == SPMSL_NORMAL)      ? "" :
                           (brand == SPMSL_POISONED)    ? "" :
                           (brand == SPMSL_POISONED_II) ? ""
-                                                       : " of bugginess" );
+                                                       : " of bugginess",
+                     ITEMNAME_SIZE );
         }
         break;
 
@@ -769,90 +828,91 @@ static char item_name_2( const item_def &item, char glog[80] )
         if (item_ident( item, ISFLAG_KNOW_CURSE ))
         {
             if (item_cursed( item ))
-                strcat(glog, "cursed ");
+                strncat(buff, "cursed ", ITEMNAME_SIZE );
             else if (Options.show_uncursed
                     && item_not_ident( item, ISFLAG_KNOW_PLUSES ))
             {
-                strcat(glog, "uncursed ");
+                strncat(buff, "uncursed ", ITEMNAME_SIZE );
             }
         }
 
         if (item_ident( item, ISFLAG_KNOW_PLUSES ))
         {
             if (it_plus >= 0)
-                strcat(glog, "+");
+                strncat(buff, "+", ITEMNAME_SIZE );
 
             itoa( it_plus, tmp_quant, 10 );
 
-            strcat(glog, tmp_quant);
-            strcat(glog, " ");
+            strncat(buff, tmp_quant, ITEMNAME_SIZE );
+            strncat(buff, " ", ITEMNAME_SIZE );
         }
 
         if (item_typ == ARM_GLOVES
             || (item_typ == ARM_BOOTS && item_plus2 == TBOOT_BOOTS))
         {
-            strcat(glog, "pair of ");
+            strncat(buff, "pair of ", ITEMNAME_SIZE );
         }
 
         if (is_random_artefact( item ))
         {
-            strcat(glog, randart_armour_name(item));
+            strncat(buff, randart_armour_name(item), ITEMNAME_SIZE);
             break;
         }
 
-        if (item_typ != ARM_HELMET)
+        // Now that we can have "glowing elven" armour, it's
+        // probably a good idea to cut out the descriptive
+        // term once it's become obsolete. -- bwr
+        if (item_not_ident( item, ISFLAG_KNOW_PLUSES ))
         {
-            // Now that we can have "glowing elven" armour, it's
-            // probably a good idea to cut out the descriptive
-            // term once it's become obsolete. -- bwr
-            if (item_not_ident( item, ISFLAG_KNOW_PLUSES ))
+            switch (get_equip_desc( item ))
             {
-                switch (get_equip_desc( item ))
+            case ISFLAG_EMBROIDERED_SHINY:
+                if (item_typ == ARM_ROBE || item_typ == ARM_CLOAK
+                    || item_typ == ARM_GLOVES || item_typ == ARM_BOOTS)
                 {
-                case ISFLAG_EMBROIDERED_SHINY:
-                    if (item_typ == ARM_ROBE || item_typ == ARM_CLOAK
-                        || item_typ == ARM_GLOVES || item_typ == ARM_BOOTS)
-                    {
-                        strcat(glog, "embroidered ");
-                    }
-                    else if (item_typ != ARM_LEATHER_ARMOUR)
-                        strcat(glog, "shiny ");
-                    break;
-
-                case ISFLAG_RUNED:
-                    strcat(glog, "runed ");
-                    break;
-                case ISFLAG_GLOWING:
-                    strcat(glog, "glowing ");
-                    break;
+                    strncat(buff, "embroidered ", ITEMNAME_SIZE );
                 }
-            }
+                else if (item_typ != ARM_LEATHER_ARMOUR
+                        && item_typ != ARM_ANIMAL_SKIN)
+                {
+                    strncat(buff, "shiny ", ITEMNAME_SIZE );
+                }
+                break;
 
-            // always give racial description (has game effects)
-            switch (get_equip_race( item ))
-            {
-            case ISFLAG_ELVEN:
-                strcat(glog, "elven ");
+            case ISFLAG_RUNED:
+                strncat(buff, "runed ", ITEMNAME_SIZE );
                 break;
-            case ISFLAG_DWARVEN:
-                strcat(glog, "dwarven ");
+
+            case ISFLAG_GLOWING:
+                strncat(buff, "glowing ", ITEMNAME_SIZE );
                 break;
-            case ISFLAG_ORCISH:
-                strcat(glog, "orcish ");
-                break;
-            }               // end switch
+            }
         }
 
-        standard_name_armour( item, str_pass2 );  // in randart.cc
-        strcat(glog, str_pass2);
+        // always give racial description (has game effects)
+        switch (get_equip_race( item ))
+        {
+        case ISFLAG_ELVEN:
+            strncat(buff, "elven ", ITEMNAME_SIZE );
+            break;
+        case ISFLAG_DWARVEN:
+            strncat(buff, "dwarven ", ITEMNAME_SIZE );
+            break;
+        case ISFLAG_ORCISH:
+            strncat(buff, "orcish ", ITEMNAME_SIZE );
+            break;
+        }               // end switch
+
+        standard_name_armour( item, tmp_buff );  // in randart.cc
+        strncat( buff, tmp_buff, ITEMNAME_SIZE );
 
         sparm = get_armour_ego_type( item );
 
         if (item_ident( item, ISFLAG_KNOW_TYPE ) && sparm != SPARM_NORMAL)
         {
-            strcat(glog, " of ");
+            strncat(buff, " of ", ITEMNAME_SIZE );
 
-            strcat(glog, (sparm == SPARM_RUNNING) ? "running" :
+            strncat(buff, (sparm == SPARM_RUNNING) ? "running" :
                    (sparm == SPARM_FIRE_RESISTANCE) ? "fire resistance" :
                    (sparm == SPARM_COLD_RESISTANCE) ? "cold resistance" :
                    (sparm == SPARM_POISON_RESISTANCE) ? "poison resistance" :
@@ -870,7 +930,8 @@ static char item_name_2( const item_def &item, char glog[80] )
                    (sparm == SPARM_POSITIVE_ENERGY) ? "positive energy" :
                    (sparm == SPARM_ARCHMAGI) ? "the Archmagi" :
                    (sparm == SPARM_PRESERVATION) ? "preservation"
-                                                   : "bugginess");
+                                                   : "bugginess",
+                   ITEMNAME_SIZE);
         }
         break;
 
@@ -879,8 +940,8 @@ static char item_name_2( const item_def &item, char glog[80] )
         if (id[ IDTYPE_WANDS ][item_typ] == ID_KNOWN_TYPE
             || item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            strcat(glog, "wand of ");
-            strcat(glog, (item_typ == WAND_FLAME) ? "flame" :
+            strncat(buff, "wand of ", ITEMNAME_SIZE );
+            strncat(buff, (item_typ == WAND_FLAME) ? "flame" :
                    (item_typ == WAND_FROST) ? "frost" :
                    (item_typ == WAND_SLOWING) ? "slowing" :
                    (item_typ == WAND_HASTING) ? "hasting" :
@@ -900,14 +961,15 @@ static char item_name_2( const item_def &item, char glog[80] )
                    (item_typ == WAND_DRAINING) ? "draining" :
                    (item_typ == WAND_RANDOM_EFFECTS) ? "random effects" :
                    (item_typ == WAND_DISINTEGRATION) ? "disintegration"
-                                                   : "bugginess");
+                                                   : "bugginess",
+                   ITEMNAME_SIZE );
         }
         else
         {
             char primary = (item.special % 12);
             char secondary = (item.special / 12);
 
-            strcat(glog, (secondary == 0) ? "" :        // hope this works {dlb}
+            strncat(buff,(secondary == 0) ? "" :        // hope this works {dlb}
                    (secondary == 1) ? "jeweled" :
                    (secondary == 2) ? "curved" :
                    (secondary == 3) ? "long" :
@@ -922,12 +984,12 @@ static char item_name_2( const item_def &item, char glog[80] )
                    (secondary == 12) ? "worn" :
                    (secondary == 13) ? "encrusted" :
                    (secondary == 14) ? "runed" :
-                   (secondary == 15) ? "sharpened" : "buggily");
+                   (secondary == 15) ? "sharpened" : "buggily", ITEMNAME_SIZE);
 
             if (secondary != 0)
-                strcat(glog, " ");
+                strncat(buff, " ", ITEMNAME_SIZE );
 
-            strcat(glog, (primary == 0) ? "iron" :
+            strncat(buff, (primary == 0) ? "iron" :
                    (primary == 1) ? "brass" :
                    (primary == 2) ? "bone" :
                    (primary == 3) ? "wooden" :
@@ -938,22 +1000,22 @@ static char item_name_2( const item_def &item, char glog[80] )
                    (primary == 8) ? "ivory" :
                    (primary == 9) ? "glass" :
                    (primary == 10) ? "lead" :
-                   (primary == 11) ? "plastic" : "buggy");
+                   (primary == 11) ? "plastic" : "buggy", ITEMNAME_SIZE);
 
-            strcat(glog, " wand");
+            strncat(buff, " wand", ITEMNAME_SIZE );
 
             if (id[ IDTYPE_WANDS ][item_typ] == ID_TRIED_TYPE)
             {
-                strcat( glog, " {tried}" );
+                strncat( buff, " {tried}" , ITEMNAME_SIZE );
             }
         }
 
         if (item_ident( item, ISFLAG_KNOW_PLUSES ))
         {
-            strcat(glog, " (");
+            strncat(buff, " (", ITEMNAME_SIZE );
             itoa( it_plus, tmp_quant, 10 );
-            strcat(glog, tmp_quant);
-            strcat(glog, ")");
+            strncat(buff, tmp_quant, ITEMNAME_SIZE );
+            strncat(buff, ")", ITEMNAME_SIZE);
         }
         break;
 
@@ -965,10 +1027,10 @@ static char item_name_2( const item_def &item, char glog[80] )
         if (id[ IDTYPE_POTIONS ][item_typ] == ID_KNOWN_TYPE
             || item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            strcat(glog, "potion");
-            strcat(glog, (it_quant == 1) ? " " : "s ");
-            strcat(glog, "of ");
-            strcat(glog, (item_typ == POT_HEALING) ? "healing" :
+            strncat(buff, "potion", ITEMNAME_SIZE );
+            strncat(buff, (it_quant == 1) ? " " : "s ", ITEMNAME_SIZE);
+            strncat(buff, "of ", ITEMNAME_SIZE );
+            strncat(buff, (item_typ == POT_HEALING) ? "healing" :
                    (item_typ == POT_HEAL_WOUNDS) ? "heal wounds" :
                    (item_typ == POT_SPEED) ? "speed" :
                    (item_typ == POT_MIGHT) ? "might" :
@@ -991,14 +1053,15 @@ static char item_name_2( const item_def &item, char glog[80] )
                    (item_typ == POT_STRONG_POISON) ? "strong poison" :
                    (item_typ == POT_BERSERK_RAGE) ? "berserk rage" :
                    (item_typ == POT_CURE_MUTATION) ? "cure mutation" :
-                   (item_typ == POT_MUTATION) ? "mutation" : "bugginess");
+                   (item_typ == POT_MUTATION) ? "mutation" : "bugginess",
+                   ITEMNAME_SIZE);
         }
         else
         {
             char primary = item.special / 14;
             char secondary = item.special % 14;
 
-            strcat(glog,
+            strncat(buff,
                    (primary ==  0) ? "" :
                    (primary ==  1) ? "bubbling " :
                    (primary ==  2) ? "lumpy " :
@@ -1013,9 +1076,9 @@ static char item_name_2( const item_def &item, char glog[80] )
                    (primary == 11) ? "viscous " :
                    (primary == 12) ? "oily " :
                    (primary == 13) ? "slimy " :
-                   (primary == 14) ? "emulsified " : "buggy ");
+                   (primary == 14) ? "emulsified " : "buggy ", ITEMNAME_SIZE);
 
-            strcat(glog,
+            strncat(buff,
                    (secondary ==  0) ? "clear" :
                    (secondary ==  1) ? "blue" :
                    (secondary ==  2) ? "black" :
@@ -1029,16 +1092,16 @@ static char item_name_2( const item_def &item, char glog[80] )
                    (secondary == 10) ? "green" :
                    (secondary == 11) ? "brown" :
                    (secondary == 12) ? "pink" :
-                   (secondary == 13) ? "white" : "buggy");
+                   (secondary == 13) ? "white" : "buggy", ITEMNAME_SIZE);
 
-            strcat(glog, " potion");
+            strncat(buff, " potion", ITEMNAME_SIZE );
 
             if (it_quant > 1)
-                strcat(glog, "s");
+                strncat(buff, "s", ITEMNAME_SIZE );
 
             if (id[ IDTYPE_POTIONS ][item_typ] == ID_TRIED_TYPE)
             {
-                strcat( glog, " {tried}" );
+                strncat( buff, " {tried}" , ITEMNAME_SIZE );
             }
         }
         break;
@@ -1049,103 +1112,101 @@ static char item_name_2( const item_def &item, char glog[80] )
         switch (item_typ)
         {
         case FOOD_MEAT_RATION:
-            strcat(glog, "meat ration");
+            strncat(buff, "meat ration", ITEMNAME_SIZE );
             break;
         case FOOD_BREAD_RATION:
-            strcat(glog, "bread ration");
+            strncat(buff, "bread ration", ITEMNAME_SIZE );
             break;
         case FOOD_PEAR:
-            strcat(glog, "pear");
+            strncat(buff, "pear", ITEMNAME_SIZE );
             break;
         case FOOD_APPLE:        // make this less common
-            strcat(glog, "apple");
+            strncat(buff, "apple", ITEMNAME_SIZE );
             break;
         case FOOD_CHOKO:
-            strcat(glog, "choko");
+            strncat(buff, "choko", ITEMNAME_SIZE );
             break;
         case FOOD_HONEYCOMB:
-            strcat(glog, "honeycomb");
+            strncat(buff, "honeycomb", ITEMNAME_SIZE );
             break;
         case FOOD_ROYAL_JELLY:
-            strcat(glog, "royal jell");
+            strncat(buff, "royal jell", ITEMNAME_SIZE );
             break;
         case FOOD_SNOZZCUMBER:
-            strcat(glog, "snozzcumber");
+            strncat(buff, "snozzcumber", ITEMNAME_SIZE );
             break;
         case FOOD_PIZZA:
-            strcat(glog, "slice of pizza");
+            strncat(buff, "slice of pizza", ITEMNAME_SIZE );
             break;
         case FOOD_APRICOT:
-            strcat(glog, "apricot");
+            strncat(buff, "apricot", ITEMNAME_SIZE );
             break;
         case FOOD_ORANGE:
-            strcat(glog, "orange");
+            strncat(buff, "orange", ITEMNAME_SIZE );
             break;
         case FOOD_BANANA:
-            strcat(glog, "banana");
+            strncat(buff, "banana", ITEMNAME_SIZE );
             break;
         case FOOD_STRAWBERRY:
-            strcat(glog, "strawberr");
+            strncat(buff, "strawberr", ITEMNAME_SIZE );
             break;
         case FOOD_RAMBUTAN:
-            strcat(glog, "rambutan");
+            strncat(buff, "rambutan", ITEMNAME_SIZE );
             break;
         case FOOD_LEMON:
-            strcat(glog, "lemon");
+            strncat(buff, "lemon", ITEMNAME_SIZE );
             break;
         case FOOD_GRAPE:
-            strcat(glog, "grape");
+            strncat(buff, "grape", ITEMNAME_SIZE );
             break;
         case FOOD_SULTANA:
-            strcat(glog, "sultana");
+            strncat(buff, "sultana", ITEMNAME_SIZE );
             break;
         case FOOD_LYCHEE:
-            strcat(glog, "lychee");
+            strncat(buff, "lychee", ITEMNAME_SIZE );
             break;
         case FOOD_BEEF_JERKY:
-            strcat(glog, "beef jerk");
+            strncat(buff, "beef jerk", ITEMNAME_SIZE );
             break;
         case FOOD_CHEESE:
-            strcat(glog, "cheese");
+            strncat(buff, "cheese", ITEMNAME_SIZE );
             break;
         case FOOD_SAUSAGE:
-            strcat(glog, "sausage");
+            strncat(buff, "sausage", ITEMNAME_SIZE );
             break;
         case FOOD_CHUNK:
-            char gmo_n2[40];
-
-            moname( it_plus, true, DESC_PLAIN, gmo_n2 );
+            moname( it_plus, true, DESC_PLAIN, tmp_buff );
 
             if (item.special < 100)
-                strcat(glog, "rotting ");
+                strncat(buff, "rotting ", ITEMNAME_SIZE );
 
-            strcat(glog, "chunk");
+            strncat(buff, "chunk", ITEMNAME_SIZE );
 
             if (it_quant > 1)
-                strcat(glog, "s");
+                strncat(buff, "s", ITEMNAME_SIZE );
 
-            strcat(glog, " of ");
-            strcat(glog, gmo_n2);
-            strcat(glog, " flesh");
+            strncat(buff, " of ", ITEMNAME_SIZE );
+            strncat(buff, tmp_buff, ITEMNAME_SIZE );
+            strncat(buff, " flesh", ITEMNAME_SIZE );
             break;
 
         }
 
         if (item_typ == FOOD_ROYAL_JELLY || item_typ == FOOD_STRAWBERRY
             || item_typ == FOOD_BEEF_JERKY)
-            strcat(glog, (it_quant > 1) ? "ie" : "y");
+            strncat(buff, (it_quant > 1) ? "ie" : "y", ITEMNAME_SIZE );
         break;
 
     // compacted 15 Apr 2000 {dlb}:
     case OBJ_SCROLLS:
-        strcat(glog, "scroll");
-        strcat(glog, (it_quant == 1) ? " " : "s ");
+        strncat(buff, "scroll", ITEMNAME_SIZE );
+        strncat(buff, (it_quant == 1) ? " " : "s ", ITEMNAME_SIZE);
 
         if (id[ IDTYPE_SCROLLS ][item_typ] == ID_KNOWN_TYPE
             || item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            strcat(glog, "of ");
-            strcat(glog, (item_typ == SCR_IDENTIFY) ? "identify" :
+            strncat(buff, "of ", ITEMNAME_SIZE );
+            strncat(buff, (item_typ == SCR_IDENTIFY) ? "identify" :
                    (item_typ == SCR_TELEPORTATION) ? "teleportation" :
                    (item_typ == SCR_FEAR) ? "fear" :
                    (item_typ == SCR_NOISE) ? "noise" :
@@ -1169,19 +1230,20 @@ static char item_name_2( const item_def &item, char glog[80] )
                    (item_typ == SCR_RECHARGING) ? "recharging" :
                    //(item_typ == 23)                   ? "portal travel" :
                    (item_typ == SCR_ENCHANT_WEAPON_III) ? "enchant weapon III"
-                                                       : "bugginess");
+                                                       : "bugginess",
+                    ITEMNAME_SIZE);
         }
         else
         {
-            strcat(glog, "labeled ");
-            char str_pass[50];
+            strncat(buff, "labeled ", ITEMNAME_SIZE );
+            char buff3[ ITEMNAME_SIZE ];
 
-            make_name( item.special, it_plus, item_clas, 2, str_pass );
-            strcat(glog, str_pass);
+            make_name( item.special, it_plus, item_clas, 2, buff3 );
+            strncat( buff, buff3 , ITEMNAME_SIZE );
 
             if (id[ IDTYPE_SCROLLS ][item_typ] == ID_TRIED_TYPE)
             {
-                strcat( glog, " {tried}" );
+                strncat( buff, " {tried}" , ITEMNAME_SIZE );
             }
         }
         break;
@@ -1194,17 +1256,17 @@ static char item_name_2( const item_def &item, char glog[80] )
         if (item_ident( item, ISFLAG_KNOW_CURSE ))
         {
             if (item_cursed( item ))
-                strcat(glog, "cursed ");
+                strncat(buff, "cursed ", ITEMNAME_SIZE );
             else if (Options.show_uncursed
                     && item_not_ident( item, ISFLAG_KNOW_PLUSES ))
             {
-                strcat(glog, "uncursed ");
+                strncat(buff, "uncursed ", ITEMNAME_SIZE );
             }
         }
 
-        if (item_ident( item, ISFLAG_KNOW_TYPE ) && is_random_artefact( item ))
+        if (is_random_artefact( item ))
         {
-            strcat(glog, randart_ring_name(item));
+            strncat(buff, randart_ring_name(item), ITEMNAME_SIZE);
             break;
         }
 
@@ -1221,128 +1283,128 @@ static char item_name_2( const item_def &item, char glog[80] )
                 char gokh = it_plus;
 
                 if (gokh >= 0)
-                    strcat( glog, "+" );
+                    strncat( buff, "+" , ITEMNAME_SIZE );
 
                 itoa( gokh, tmp_quant, 10 );
-                strcat( glog, tmp_quant );
+                strncat( buff, tmp_quant , ITEMNAME_SIZE );
 
                 if (item_typ == RING_SLAYING)
                 {
-                    strcat( glog, "," );
+                    strncat( buff, "," , ITEMNAME_SIZE );
 
                     if (item_plus2 >= 0)
-                        strcat(glog, "+");
+                        strncat(buff, "+", ITEMNAME_SIZE );
 
                     itoa( item_plus2, tmp_quant, 10 );
-                    strcat( glog, tmp_quant );
+                    strncat( buff, tmp_quant , ITEMNAME_SIZE );
                 }
 
-                strcat(glog, " ");
+                strncat(buff, " ", ITEMNAME_SIZE );
             }
 
             switch (item_typ)
             {
             case RING_REGENERATION:
-                strcat(glog, "ring of regeneration");
+                strncat(buff, "ring of regeneration", ITEMNAME_SIZE );
                 break;
             case RING_PROTECTION:
-                strcat(glog, "ring of protection");
+                strncat(buff, "ring of protection", ITEMNAME_SIZE );
                 break;
             case RING_PROTECTION_FROM_FIRE:
-                strcat(glog, "ring of protection from fire");
+                strncat(buff, "ring of protection from fire", ITEMNAME_SIZE );
                 break;
             case RING_POISON_RESISTANCE:
-                strcat(glog, "ring of poison resistance");
+                strncat(buff, "ring of poison resistance", ITEMNAME_SIZE );
                 break;
             case RING_PROTECTION_FROM_COLD:
-                strcat(glog, "ring of protection from cold");
+                strncat(buff, "ring of protection from cold", ITEMNAME_SIZE );
                 break;
             case RING_STRENGTH:
-                strcat(glog, "ring of strength");
+                strncat(buff, "ring of strength", ITEMNAME_SIZE );
                 break;
             case RING_SLAYING:
-                strcat(glog, "ring of slaying");
+                strncat(buff, "ring of slaying", ITEMNAME_SIZE );
                 break;
             case RING_SEE_INVISIBLE:
-                strcat(glog, "ring of see invisible");
+                strncat(buff, "ring of see invisible", ITEMNAME_SIZE );
                 break;
             case RING_INVISIBILITY:
-                strcat(glog, "ring of invisibility");
+                strncat(buff, "ring of invisibility", ITEMNAME_SIZE );
                 break;
             case RING_HUNGER:
-                strcat(glog, "ring of hunger");
+                strncat(buff, "ring of hunger", ITEMNAME_SIZE );
                 break;
             case RING_TELEPORTATION:
-                strcat(glog, "ring of teleportation");
+                strncat(buff, "ring of teleportation", ITEMNAME_SIZE );
                 break;
             case RING_EVASION:
-                strcat(glog, "ring of evasion");
+                strncat(buff, "ring of evasion", ITEMNAME_SIZE );
                 break;
             case RING_SUSTAIN_ABILITIES:
-                strcat(glog, "ring of sustain abilities");
+                strncat(buff, "ring of sustain abilities", ITEMNAME_SIZE );
                 break;
             case RING_SUSTENANCE:
-                strcat(glog, "ring of sustenance");
+                strncat(buff, "ring of sustenance", ITEMNAME_SIZE );
                 break;
             case RING_DEXTERITY:
-                strcat(glog, "ring of dexterity");
+                strncat(buff, "ring of dexterity", ITEMNAME_SIZE );
                 break;
             case RING_INTELLIGENCE:
-                strcat(glog, "ring of intelligence");
+                strncat(buff, "ring of intelligence", ITEMNAME_SIZE );
                 break;
             case RING_WIZARDRY:
-                strcat(glog, "ring of wizardry");
+                strncat(buff, "ring of wizardry", ITEMNAME_SIZE );
                 break;
             case RING_MAGICAL_POWER:
-                strcat(glog, "ring of magical power");
+                strncat(buff, "ring of magical power", ITEMNAME_SIZE );
                 break;
             case RING_LEVITATION:
-                strcat(glog, "ring of levitation");
+                strncat(buff, "ring of levitation", ITEMNAME_SIZE );
                 break;
             case RING_LIFE_PROTECTION:
-                strcat(glog, "ring of life protection");
+                strncat(buff, "ring of life protection", ITEMNAME_SIZE );
                 break;
             case RING_PROTECTION_FROM_MAGIC:
-                strcat(glog, "ring of protection from magic");
+                strncat(buff, "ring of protection from magic", ITEMNAME_SIZE );
                 break;
             case RING_FIRE:
-                strcat(glog, "ring of fire");
+                strncat(buff, "ring of fire", ITEMNAME_SIZE );
                 break;
             case RING_ICE:
-                strcat(glog, "ring of ice");
+                strncat(buff, "ring of ice", ITEMNAME_SIZE );
                 break;
             case RING_TELEPORT_CONTROL:
-                strcat(glog, "ring of teleport control");
+                strncat(buff, "ring of teleport control", ITEMNAME_SIZE );
                 break;
             case AMU_RAGE:
-                strcat(glog, "amulet of rage");
+                strncat(buff, "amulet of rage", ITEMNAME_SIZE );
                 break;
             case AMU_RESIST_SLOW:
-                strcat(glog, "amulet of resist slowing");
+                strncat(buff, "amulet of resist slowing", ITEMNAME_SIZE );
                 break;
             case AMU_CLARITY:
-                strcat(glog, "amulet of clarity");
+                strncat(buff, "amulet of clarity", ITEMNAME_SIZE );
                 break;
             case AMU_WARDING:
-                strcat(glog, "amulet of warding");
+                strncat(buff, "amulet of warding", ITEMNAME_SIZE );
                 break;
             case AMU_RESIST_CORROSION:
-                strcat(glog, "amulet of resist corrosion");
+                strncat(buff, "amulet of resist corrosion", ITEMNAME_SIZE );
                 break;
             case AMU_THE_GOURMAND:
-                strcat(glog, "amulet of the gourmand");
+                strncat(buff, "amulet of the gourmand", ITEMNAME_SIZE );
                 break;
             case AMU_CONSERVATION:
-                strcat(glog, "amulet of conservation");
+                strncat(buff, "amulet of conservation", ITEMNAME_SIZE );
                 break;
             case AMU_CONTROLLED_FLIGHT:
-                strcat(glog, "amulet of controlled flight");
+                strncat(buff, "amulet of controlled flight", ITEMNAME_SIZE );
                 break;
             case AMU_INACCURACY:
-                strcat(glog, "amulet of inaccuracy");
+                strncat(buff, "amulet of inaccuracy", ITEMNAME_SIZE );
                 break;
             case AMU_RESIST_MUTATION:
-                strcat(glog, "amulet of resist mutation");
+                strncat(buff, "amulet of resist mutation", ITEMNAME_SIZE );
                 break;
             }
             /* ? of imputed learning - 100% exp from tames/summoned kills */
@@ -1353,93 +1415,93 @@ static char item_name_2( const item_def &item, char glog[80] )
         {
             if (is_random_artefact( item ))
             {
-                strcat(glog, randart_ring_name(item));
+                strncat(buff, randart_ring_name(item), ITEMNAME_SIZE);
                 break;
             }
 
             switch (item.special / 13)       // secondary characteristic of ring
             {
             case 1:
-                strcat(glog, "encrusted ");
+                strncat(buff, "encrusted ", ITEMNAME_SIZE );
                 break;
             case 2:
-                strcat(glog, "glowing ");
+                strncat(buff, "glowing ", ITEMNAME_SIZE );
                 break;
             case 3:
-                strcat(glog, "tubular ");
+                strncat(buff, "tubular ", ITEMNAME_SIZE );
                 break;
             case 4:
-                strcat(glog, "runed ");
+                strncat(buff, "runed ", ITEMNAME_SIZE );
                 break;
             case 5:
-                strcat(glog, "blackened ");
+                strncat(buff, "blackened ", ITEMNAME_SIZE );
                 break;
             case 6:
-                strcat(glog, "scratched ");
+                strncat(buff, "scratched ", ITEMNAME_SIZE );
                 break;
             case 7:
-                strcat(glog, "small ");
+                strncat(buff, "small ", ITEMNAME_SIZE );
                 break;
             case 8:
-                strcat(glog, "large ");
+                strncat(buff, "large ", ITEMNAME_SIZE );
                 break;
             case 9:
-                strcat(glog, "twisted ");
+                strncat(buff, "twisted ", ITEMNAME_SIZE );
                 break;
             case 10:
-                strcat(glog, "shiny ");
+                strncat(buff, "shiny ", ITEMNAME_SIZE );
                 break;
             case 11:
-                strcat(glog, "notched ");
+                strncat(buff, "notched ", ITEMNAME_SIZE );
                 break;
             case 12:
-                strcat(glog, "knobbly ");
+                strncat(buff, "knobbly ", ITEMNAME_SIZE );
                 break;
             }
 
             switch (item.special % 13)
             {
             case 0:
-                strcat(glog, "wooden ring");
+                strncat(buff, "wooden ring", ITEMNAME_SIZE );
                 break;
             case 1:
-                strcat(glog, "silver ring");
+                strncat(buff, "silver ring", ITEMNAME_SIZE );
                 break;
             case 2:
-                strcat(glog, "golden ring");
+                strncat(buff, "golden ring", ITEMNAME_SIZE );
                 break;
             case 3:
-                strcat(glog, "iron ring");
+                strncat(buff, "iron ring", ITEMNAME_SIZE );
                 break;
             case 4:
-                strcat(glog, "steel ring");
+                strncat(buff, "steel ring", ITEMNAME_SIZE );
                 break;
             case 5:
-                strcat(glog, "bronze ring");
+                strncat(buff, "bronze ring", ITEMNAME_SIZE );
                 break;
             case 6:
-                strcat(glog, "brass ring");
+                strncat(buff, "brass ring", ITEMNAME_SIZE );
                 break;
             case 7:
-                strcat(glog, "copper ring");
+                strncat(buff, "copper ring", ITEMNAME_SIZE );
                 break;
             case 8:
-                strcat(glog, "granite ring");
+                strncat(buff, "granite ring", ITEMNAME_SIZE );
                 break;
             case 9:
-                strcat(glog, "ivory ring");
+                strncat(buff, "ivory ring", ITEMNAME_SIZE );
                 break;
             case 10:
-                strcat(glog, "bone ring");
+                strncat(buff, "bone ring", ITEMNAME_SIZE );
                 break;
             case 11:
-                strcat(glog, "marble ring");
+                strncat(buff, "marble ring", ITEMNAME_SIZE );
                 break;
             case 12:
-                strcat(glog, "jade ring");
+                strncat(buff, "jade ring", ITEMNAME_SIZE );
                 break;
             case 13:
-                strcat(glog, "glass ring");
+                strncat(buff, "glass ring", ITEMNAME_SIZE );
                 break;
             }
         }                       // end of rings
@@ -1447,7 +1509,7 @@ static char item_name_2( const item_def &item, char glog[80] )
         {
             if (is_random_artefact( item ))
             {
-                strcat(glog, randart_ring_name(item));
+                strncat(buff, randart_ring_name(item), ITEMNAME_SIZE);
                 break;
             }
 
@@ -1456,43 +1518,43 @@ static char item_name_2( const item_def &item, char glog[80] )
                 switch (item.special / 13)   // secondary characteristic of amulet
                 {
                 case 0:
-                    strcat(glog, "dented ");
+                    strncat(buff, "dented ", ITEMNAME_SIZE );
                     break;
                 case 1:
-                    strcat(glog, "square ");
+                    strncat(buff, "square ", ITEMNAME_SIZE );
                     break;
                 case 2:
-                    strcat(glog, "thick ");
+                    strncat(buff, "thick ", ITEMNAME_SIZE );
                     break;
                 case 3:
-                    strcat(glog, "thin ");
+                    strncat(buff, "thin ", ITEMNAME_SIZE );
                     break;
                 case 4:
-                    strcat(glog, "runed ");
+                    strncat(buff, "runed ", ITEMNAME_SIZE );
                     break;
                 case 5:
-                    strcat(glog, "blackened ");
+                    strncat(buff, "blackened ", ITEMNAME_SIZE );
                     break;
                 case 6:
-                    strcat(glog, "glowing ");
+                    strncat(buff, "glowing ", ITEMNAME_SIZE );
                     break;
                 case 7:
-                    strcat(glog, "small ");
+                    strncat(buff, "small ", ITEMNAME_SIZE );
                     break;
                 case 8:
-                    strcat(glog, "large ");
+                    strncat(buff, "large ", ITEMNAME_SIZE );
                     break;
                 case 9:
-                    strcat(glog, "twisted ");
+                    strncat(buff, "twisted ", ITEMNAME_SIZE );
                     break;
                 case 10:
-                    strcat(glog, "tiny ");
+                    strncat(buff, "tiny ", ITEMNAME_SIZE );
                     break;
                 case 11:
-                    strcat(glog, "triangular ");
+                    strncat(buff, "triangular ", ITEMNAME_SIZE );
                     break;
                 case 12:
-                    strcat(glog, "lumpy ");
+                    strncat(buff, "lumpy ", ITEMNAME_SIZE );
                     break;
                 }
             }
@@ -1500,46 +1562,46 @@ static char item_name_2( const item_def &item, char glog[80] )
             switch (item.special % 13)
             {
             case 0:
-                strcat(glog, "zirconium amulet");
+                strncat(buff, "zirconium amulet", ITEMNAME_SIZE );
                 break;
             case 1:
-                strcat(glog, "sapphire amulet");
+                strncat(buff, "sapphire amulet", ITEMNAME_SIZE );
                 break;
             case 2:
-                strcat(glog, "golden amulet");
+                strncat(buff, "golden amulet", ITEMNAME_SIZE );
                 break;
             case 3:
-                strcat(glog, "emerald amulet");
+                strncat(buff, "emerald amulet", ITEMNAME_SIZE );
                 break;
             case 4:
-                strcat(glog, "garnet amulet");
+                strncat(buff, "garnet amulet", ITEMNAME_SIZE );
                 break;
             case 5:
-                strcat(glog, "bronze amulet");
+                strncat(buff, "bronze amulet", ITEMNAME_SIZE );
                 break;
             case 6:
-                strcat(glog, "brass amulet");
+                strncat(buff, "brass amulet", ITEMNAME_SIZE );
                 break;
             case 7:
-                strcat(glog, "copper amulet");
+                strncat(buff, "copper amulet", ITEMNAME_SIZE );
                 break;
             case 8:
-                strcat(glog, "ruby amulet");
+                strncat(buff, "ruby amulet", ITEMNAME_SIZE );
                 break;
             case 9:
-                strcat(glog, "ivory amulet");
+                strncat(buff, "ivory amulet", ITEMNAME_SIZE );
                 break;
             case 10:
-                strcat(glog, "bone amulet");
+                strncat(buff, "bone amulet", ITEMNAME_SIZE );
                 break;
             case 11:
-                strcat(glog, "platinum amulet");
+                strncat(buff, "platinum amulet", ITEMNAME_SIZE );
                 break;
             case 12:
-                strcat(glog, "jade amulet");
+                strncat(buff, "jade amulet", ITEMNAME_SIZE );
                 break;
             case 13:
-                strcat(glog, "plastic amulet");
+                strncat(buff, "plastic amulet", ITEMNAME_SIZE );
                 break;
             }
         }                       // end of amulets
@@ -1550,7 +1612,7 @@ static char item_name_2( const item_def &item, char glog[80] )
         switch (item_typ)
         {
         case MISC_RUNE_OF_ZOT:
-            strcat( glog, (it_plus == RUNE_DIS)          ? "iron" :
+            strncat( buff, (it_plus == RUNE_DIS)          ? "iron" :
                           (it_plus == RUNE_GEHENNA)      ? "obsidian" :
                           (it_plus == RUNE_COCYTUS)      ? "icy" :
                           (it_plus == RUNE_TARTARUS)     ? "bone" :
@@ -1570,119 +1632,123 @@ static char item_name_2( const item_def &item, char glog[80] )
                           (it_plus == RUNE_LOM_LOBON)    ? "magical" :
                           (it_plus == RUNE_CEREBOV)      ? "fiery" :
                           (it_plus == RUNE_GLOORX_VLOQ)  ? "dark"
-                                                         : "buggy" );
+                                                         : "buggy",
+                     ITEMNAME_SIZE);
 
-            strcat(glog, " ");
-            strcat(glog, "rune");
+            strncat(buff, " ", ITEMNAME_SIZE );
+            strncat(buff, "rune", ITEMNAME_SIZE );
 
             if (it_quant > 1)
-                strcat(glog, "s");
+                strncat(buff, "s", ITEMNAME_SIZE );
 
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, " of Zot");
+                strncat(buff, " of Zot", ITEMNAME_SIZE );
             break;
 
         case MISC_DECK_OF_POWER:
         case MISC_DECK_OF_SUMMONINGS:
         case MISC_DECK_OF_TRICKS:
         case MISC_DECK_OF_WONDERS:
-            strcat(glog, "deck of ");
-            strcat(glog, item_not_ident( item, ISFLAG_KNOW_TYPE )  ? "cards"  :
+            strncat(buff, "deck of ", ITEMNAME_SIZE );
+            strncat(buff, item_not_ident( item, ISFLAG_KNOW_TYPE )  ? "cards"  :
                    (item_typ == MISC_DECK_OF_WONDERS)      ? "wonders" :
                    (item_typ == MISC_DECK_OF_SUMMONINGS)   ? "summonings" :
                    (item_typ == MISC_DECK_OF_TRICKS)       ? "tricks" :
                    (item_typ == MISC_DECK_OF_POWER)        ? "power"
-                                                           : "bugginess");
+                                                           : "bugginess",
+                   ITEMNAME_SIZE);
             break;
 
         case MISC_CRYSTAL_BALL_OF_ENERGY:
         case MISC_CRYSTAL_BALL_OF_FIXATION:
         case MISC_CRYSTAL_BALL_OF_SEEING:
-            strcat(glog, "crystal ball");
+            strncat(buff, "crystal ball", ITEMNAME_SIZE );
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
             {
-                strcat(glog, " of ");
-                strcat(glog,
+                strncat(buff, " of ", ITEMNAME_SIZE );
+                strncat(buff,
                        (item_typ == MISC_CRYSTAL_BALL_OF_SEEING) ? "seeing" :
                        (item_typ == MISC_CRYSTAL_BALL_OF_ENERGY) ? "energy" :
                        (item_typ == MISC_CRYSTAL_BALL_OF_FIXATION) ? "fixation"
-                                                               : "bugginess");
+                                                               : "bugginess",
+                       ITEMNAME_SIZE);
             }
             break;
 
         case MISC_BOX_OF_BEASTS:
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, "box of beasts");
+                strncat(buff, "box of beasts", ITEMNAME_SIZE );
             else
-                strcat(glog, "small ebony casket");
+                strncat(buff, "small ebony casket", ITEMNAME_SIZE );
             break;
 
         case MISC_EMPTY_EBONY_CASKET:
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, "empty ebony casket");
+                strncat(buff, "empty ebony casket", ITEMNAME_SIZE );
             else
-                strcat(glog, "small ebony casket");
+                strncat(buff, "small ebony casket", ITEMNAME_SIZE );
             break;
 
         case MISC_AIR_ELEMENTAL_FAN:
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, "air elemental ");
-            strcat(glog, "fan");
+                strncat(buff, "air elemental ", ITEMNAME_SIZE );
+            strncat(buff, "fan", ITEMNAME_SIZE );
             break;
 
         case MISC_LAMP_OF_FIRE:
-            strcat(glog, "lamp");
+            strncat(buff, "lamp", ITEMNAME_SIZE );
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, " of fire");
+                strncat(buff, " of fire", ITEMNAME_SIZE );
             break;
 
         case MISC_LANTERN_OF_SHADOWS:
             if (item_not_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, "bone ");
-            strcat(glog, "lantern");
+                strncat(buff, "bone ", ITEMNAME_SIZE );
+            strncat(buff, "lantern", ITEMNAME_SIZE );
 
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, " of shadows");
+                strncat(buff, " of shadows", ITEMNAME_SIZE );
             break;
 
         case MISC_HORN_OF_GERYON:
             if (item_not_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, "silver ");
-            strcat(glog, "horn");
+                strncat(buff, "silver ", ITEMNAME_SIZE );
+            strncat(buff, "horn", ITEMNAME_SIZE );
 
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, " of Geryon");
+                strncat(buff, " of Geryon", ITEMNAME_SIZE );
             break;
 
         case MISC_DISC_OF_STORMS:
             if (item_not_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, "grey ");
-            strcat(glog, "disc");
+                strncat(buff, "grey ", ITEMNAME_SIZE );
+            strncat(buff, "disc", ITEMNAME_SIZE );
 
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, " of storms");
+                strncat(buff, " of storms", ITEMNAME_SIZE );
             break;
 
         case MISC_STONE_OF_EARTH_ELEMENTALS:
             if (item_not_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, "nondescript ");
-            strcat(glog, "stone");
+                strncat(buff, "nondescript ", ITEMNAME_SIZE );
+            strncat(buff, "stone", ITEMNAME_SIZE );
 
             if (item_ident( item, ISFLAG_KNOW_TYPE ))
-                strcat(glog, " of earth elementals");
+                strncat(buff, " of earth elementals", ITEMNAME_SIZE );
             break;
 
         case MISC_BOTTLED_EFREET:
-            strcat(glog, (item_not_ident( item, ISFLAG_KNOW_TYPE ))
-                                ? "sealed bronze flask" : "bottled efreet");
+            strncat(buff, (item_not_ident( item, ISFLAG_KNOW_TYPE ))
+                                ? "sealed bronze flask" : "bottled efreet",
+                                ITEMNAME_SIZE );
             break;
 
         case MISC_PORTABLE_ALTAR_OF_NEMELEX:
-            strcat(glog, "portable altar of Nemelex");
+            strncat(buff, "portable altar of Nemelex", ITEMNAME_SIZE );
             break;
 
         default:
-            strcat(glog, "buggy miscellaneous item");
+            strncat(buff, "buggy miscellaneous item", ITEMNAME_SIZE );
             break;
         }
         break;
@@ -1694,7 +1760,7 @@ static char item_name_2( const item_def &item, char glog[80] )
             char primary = (item.special / 10);
             char secondary = (item.special % 10);
 
-            strcat(glog, (primary == 0) ? "" :
+            strncat(buff, (primary == 0) ? "" :
                    (primary == 1) ? "chunky " :
                    (primary == 2) ? "thick " :
                    (primary == 3) ? "thin " :
@@ -1706,36 +1772,37 @@ static char item_name_2( const item_def &item, char glog[80] )
 
                    // these last three were single spaces {dlb}
                    (primary == 9) ? "" :
-                   (primary == 10) ? "" : (primary == 11) ? "" : "buggily ");
+                   (primary == 10) ? "" : (primary == 11) ? "" : "buggily ",
+                   ITEMNAME_SIZE);
 
-            strcat(glog, (secondary == 0) ? "paperback " :
+            strncat(buff, (secondary == 0) ? "paperback " :
                    (secondary == 1) ? "hardcover " :
                    (secondary == 2) ? "leatherbound " :
                    (secondary == 3) ? "metal-bound " :
                    (secondary == 4) ? "papyrus " :
                    // these two were single spaces, too {dlb}
                    (secondary == 5) ? "" :
-                   (secondary == 6) ? "" : "buggy ");
+                   (secondary == 6) ? "" : "buggy ", ITEMNAME_SIZE);
 
-            strcat(glog, "book");
+            strncat(buff, "book", ITEMNAME_SIZE );
         }
         else if (item_typ == BOOK_MANUAL)
         {
-            strcat(glog, "manual of ");
-            strcat(glog, skill_name(it_plus));
+            strncat(buff, "manual of ", ITEMNAME_SIZE );
+            strncat(buff, skill_name(it_plus), ITEMNAME_SIZE );
         }
         else if (item_typ == BOOK_NECRONOMICON)
-            strcat(glog, "Necronomicon");
+            strncat(buff, "Necronomicon", ITEMNAME_SIZE );
         else if (item_typ == BOOK_DESTRUCTION)
-            strcat(glog, "tome of Destruction");
+            strncat(buff, "tome of Destruction", ITEMNAME_SIZE );
         else if (item_typ == BOOK_YOUNG_POISONERS)
-            strcat(glog, "Young Poisoner's Handbook");
+            strncat(buff, "Young Poisoner's Handbook", ITEMNAME_SIZE );
         else if (item_typ == BOOK_BEASTS)
-            strcat(glog, "Monster Manual");
+            strncat(buff, "Monster Manual", ITEMNAME_SIZE );
         else
         {
-            strcat(glog, "book of ");
-            strcat(glog, (item_typ == BOOK_MINOR_MAGIC_I
+            strncat(buff, "book of ", ITEMNAME_SIZE );
+            strncat(buff, (item_typ == BOOK_MINOR_MAGIC_I
                           || item_typ == BOOK_MINOR_MAGIC_II
                           || item_typ == BOOK_MINOR_MAGIC_III) ? "Minor Magic" :
                           (item_typ == BOOK_CONJURATIONS_I
@@ -1778,7 +1845,8 @@ static char item_name_2( const item_def &item, char glog[80] )
                           (item_typ == BOOK_CANTRIPS) ? "Cantrips" :
                           (item_typ == BOOK_PARTY_TRICKS) ? "Party Tricks" :
                           (item_typ == BOOK_STALKING) ? "Stalking"
-                                                           : "Bugginess");
+                                                           : "Bugginess",
+                        ITEMNAME_SIZE );
         }
         break;
 
@@ -1786,7 +1854,7 @@ static char item_name_2( const item_def &item, char glog[80] )
     case OBJ_STAVES:
         if (item_not_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            strcat(glog, (item.special == 0) ? "curved" :
+            strncat(buff, (item.special == 0) ? "curved" :
                    (item.special == 1) ? "glowing" :
                    (item.special == 2) ? "thick" :
                    (item.special == 3) ? "thin" :
@@ -1815,17 +1883,17 @@ static char item_name_2( const item_def &item, char glog[80] )
                    (item.special == 26) ? "" :
                    (item.special == 27) ? "" :
                    (item.special == 28) ? "" :
-                   (item.special == 29) ? "" : "buggy");
-            strcat(glog, " ");
+                   (item.special == 29) ? "" : "buggy", ITEMNAME_SIZE);
+            strncat(buff, " ", ITEMNAME_SIZE );
         }
 
-        strcat( glog, (item_is_rod( item ) ? "rod" : "staff") );
+        strncat( buff, (item_is_rod( item ) ? "rod" : "staff"), ITEMNAME_SIZE );
 
         if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            strcat(glog, " of ");
+            strncat(buff, " of ", ITEMNAME_SIZE );
 
-            strcat(glog, (item_typ == STAFF_WIZARDRY) ? "wizardry" :
+            strncat(buff, (item_typ == STAFF_WIZARDRY) ? "wizardry" :
                    (item_typ == STAFF_POWER) ? "power" :
                    (item_typ == STAFF_FIRE) ? "fire" :
                    (item_typ == STAFF_COLD) ? "cold" :
@@ -1848,15 +1916,15 @@ static char item_name_2( const item_def &item, char glog[80] )
                     || item_typ == STAFF_DESTRUCTION_III
                     || item_typ == STAFF_DESTRUCTION_IV) ? "destruction" :
                    (item_typ == STAFF_CHANNELING) ? "channeling"
-                   : "bugginess");
+                   : "bugginess", ITEMNAME_SIZE );
         }
         break;
 
 
     // rearranged 15 Apr 2000 {dlb}:
     case OBJ_ORBS:
-        strcpy(glog, "Orb of ");
-        strcat(glog, (item_typ == ORB_ZOT) ? "Zot" :
+        strncpy(buff, "Orb of ", ITEMNAME_SIZE );
+        strncat(buff, (item_typ == ORB_ZOT) ? "Zot" :
 /* ******************************************************************
                      (item_typ ==  1)      ? "Zug" :
                      (item_typ ==  2)      ? "Xob" :
@@ -1882,11 +1950,11 @@ static char item_name_2( const item_def &item, char glog[80] )
                      (item_typ == 22)      ? "Okawaru" :
                      (item_typ == 23)      ? "Kikubaaqudgha" :
 ****************************************************************** */
-               "Bugginess");    // change back to "Zot" if source of problems cannot be found {dlb}
+               "Bugginess", ITEMNAME_SIZE );    // change back to "Zot" if source of problems cannot be found {dlb}
         break;
 
     case OBJ_GOLD:
-        strcat(glog, "gold piece");
+        strncat(buff, "gold piece", ITEMNAME_SIZE );
         break;
 
     // still not implemented, yet:
@@ -1896,46 +1964,45 @@ static char item_name_2( const item_def &item, char glog[80] )
     // rearranged 15 Apr 2000 {dlb}:
     case OBJ_CORPSES:
         if (item_typ == CORPSE_BODY && item.special < 100)
-            strcat(glog, "rotting ");
+            strncat(buff, "rotting ", ITEMNAME_SIZE );
 
-        char gmo_n[40];
+        moname( it_plus, true, DESC_PLAIN, tmp_buff );
 
-        moname(it_plus, true, DESC_PLAIN, gmo_n);
-
-        strcat(glog, gmo_n);
-        strcat(glog, " ");
-        strcat(glog, (item_typ == CORPSE_BODY) ? "corpse" :
-               (item_typ == CORPSE_SKELETON) ? "skeleton" : "corpse bug");
+        strncat(buff, tmp_buff, ITEMNAME_SIZE );
+        strncat(buff, " ", ITEMNAME_SIZE );
+        strncat(buff, (item_typ == CORPSE_BODY) ? "corpse" :
+               (item_typ == CORPSE_SKELETON) ? "skeleton" : "corpse bug",
+               ITEMNAME_SIZE );
         break;
 
     default:
-        strcat(glog, "!");
+        strncat(buff, "!", ITEMNAME_SIZE );
     }                           // end of switch?
 
     // debugging output -- oops, I probably block it above ... dang! {dlb}
-    if (strlen(glog) < 3)
+    if (strlen(buff) < 3)
     {
-        char ugug[4];
+        char ugug[20];
 
-        strcat(glog, "questionable item (cl:");
+        strncat(buff, "questionable item (cl:", ITEMNAME_SIZE );
         itoa(item_clas, ugug, 10);
-        strcat(glog, ugug);
-        strcat(glog, ",ty:");
+        strncat(buff, ugug, ITEMNAME_SIZE );
+        strncat(buff, ",ty:", ITEMNAME_SIZE );
         itoa(item_typ, ugug, 10);
-        strcat(glog, ugug);
-        strcat(glog, ",pl:");
+        strncat(buff, ugug, ITEMNAME_SIZE );
+        strncat(buff, ",pl:", ITEMNAME_SIZE );
         itoa(it_plus, ugug, 10);
-        strcat(glog, ugug);
-        strcat(glog, ",pl2:");
+        strncat(buff, ugug, ITEMNAME_SIZE );
+        strncat(buff, ",pl2:", ITEMNAME_SIZE );
         itoa(item_plus2, ugug, 10);
-        strcat(glog, ugug);
-        strcat(glog, ",sp:");
+        strncat(buff, ugug, ITEMNAME_SIZE );
+        strncat(buff, ",sp:", ITEMNAME_SIZE );
         itoa(item.special, ugug, 10);
-        strcat(glog, ugug);
-        strcat(glog, ",qu:");
+        strncat(buff, ugug, ITEMNAME_SIZE );
+        strncat(buff, ",qu:", ITEMNAME_SIZE );
         itoa(it_quant, ugug, 10);
-        strcat(glog, ugug);
-        strcat(glog, ")");
+        strncat(buff, ugug, ITEMNAME_SIZE );
+        strncat(buff, ")", ITEMNAME_SIZE );
     }
 
     // hackish {dlb}
@@ -1946,7 +2013,7 @@ static char item_name_2( const item_def &item, char glog[80] )
         && item_clas != OBJ_MISCELLANY
         && (item_clas != OBJ_FOOD || item_typ != FOOD_CHUNK))
     {
-        strcat(glog, "s");
+        strncat(buff, "s", ITEMNAME_SIZE );
     }
 
     return 1;
@@ -1981,11 +2048,15 @@ void clear_ids(void)
 }                               // end clear_ids()
 
 
-void set_ident_type( char cla, char ty, char setting )
+void set_ident_type( char cla, char ty, char setting, bool force )
 {
-    // don't allow tried to overwrite known
-    if (setting == ID_TRIED_TYPE && get_ident_type( cla, ty ) == ID_KNOWN_TYPE)
+    // Don't allow overwriting of known type with tried unless forced.
+    if (!force
+        && setting == ID_TRIED_TYPE
+        && get_ident_type( cla, ty ) == ID_KNOWN_TYPE)
+    {
         return;
+    }
 
     switch (cla)
     {
@@ -2336,6 +2407,11 @@ void init_properties(void)
     prop[OBJ_WEAPONS][WPN_GREAT_SWORD][PWPN_SPEED] = 17;
     mss[OBJ_WEAPONS][WPN_GREAT_SWORD] = 250;
 
+    prop[OBJ_WEAPONS][WPN_FALCHION][PWPN_DAMAGE] = 8;
+    prop[OBJ_WEAPONS][WPN_FALCHION][PWPN_HIT] = 2;
+    prop[OBJ_WEAPONS][WPN_FALCHION][PWPN_SPEED] = 13;
+    mss[OBJ_WEAPONS][WPN_FALCHION] = 130;
+
     prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_DAMAGE] = 11;
     prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_HIT] = 1;
     prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_SPEED] = 14;
@@ -2346,10 +2422,10 @@ void init_properties(void)
     prop[OBJ_WEAPONS][WPN_HAND_AXE][PWPN_SPEED] = 13;
     mss[OBJ_WEAPONS][WPN_HAND_AXE] = 110;
 
-    prop[OBJ_WEAPONS][WPN_AXE][PWPN_DAMAGE] = 11;
-    prop[OBJ_WEAPONS][WPN_AXE][PWPN_HIT] = 0;
-    prop[OBJ_WEAPONS][WPN_AXE][PWPN_SPEED] = 16;
-    mss[OBJ_WEAPONS][WPN_AXE] = 150;
+    prop[OBJ_WEAPONS][WPN_WAR_AXE][PWPN_DAMAGE] = 11;
+    prop[OBJ_WEAPONS][WPN_WAR_AXE][PWPN_HIT] = 0;
+    prop[OBJ_WEAPONS][WPN_WAR_AXE][PWPN_SPEED] = 16;
+    mss[OBJ_WEAPONS][WPN_WAR_AXE] = 150;
 
     prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_DAMAGE] = 14;
     prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_HIT] = 1;
@@ -2530,7 +2606,7 @@ void init_properties(void)
 
 unsigned char check_item_knowledge(void)
 {
-    char st_pass[60];
+    char st_pass[ITEMNAME_SIZE] = "";
     int i, j;
     char lines = 0;
     unsigned char anything = 0;
@@ -2547,8 +2623,6 @@ unsigned char check_item_knowledge(void)
 
     gettext(35, 1, 80, 25, buffer);
 #endif
-
-    strcpy(st_pass, "");
 
 #ifdef DOS_TERM
     window(35, 1, 80, 25);
@@ -2729,10 +2803,9 @@ bool hide2armour( unsigned char *which_subtype )
 
 
 void make_name(unsigned char var1, unsigned char var2, unsigned char var3,
-               char ncase, char str_pass[50])
+               char ncase, char buff[ITEMNAME_SIZE])
 {
-    char name[30] = "";
-    char glag[30] = "";
+    char name[ ITEMNAME_SIZE ] = "";
     FixedVector < unsigned char, 15 > numb;
     char len;
     char i = 0;
@@ -2902,12 +2975,12 @@ void make_name(unsigned char var1, unsigned char var2, unsigned char var3,
         break;
     }
 
-    strcpy(glag, name);
+    if (strlen( name ) == 0)
+        strncpy( buff, "Plog", 80 );
+    else
+        strncpy( buff, name, 80 );
 
-    if (strlen(glag) == 0)
-        strcpy(glag, "Plog");
-
-    strcpy(str_pass, glag);
+    buff[79] = '\0';
     return;
 
   two_letter:

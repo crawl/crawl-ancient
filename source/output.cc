@@ -24,6 +24,32 @@
 #include "ouch.h"
 #include "player.h"
 
+static int bad_ench_colour( int lvl, int orange, int red )
+{
+    if (lvl > red)
+        return (RED);
+    else if (lvl > orange)
+        return (LIGHTRED);
+
+    return (YELLOW);
+}
+
+static void dur_colour( int colour, bool running_out )
+{
+    if (running_out)
+        textcolor( colour );
+    else
+    {
+        switch (colour)
+        {
+        case GREEN:     textcolor( LIGHTGREEN );        break;
+        case BLUE:      textcolor( LIGHTBLUE );         break;
+        case MAGENTA:   textcolor( LIGHTMAGENTA );      break;
+        case LIGHTGREY: textcolor( WHITE );             break;
+        }
+    }
+}
+
 void print_stats(void)
 {
     textcolor(LIGHTGREY);
@@ -43,23 +69,14 @@ void print_stats(void)
             textcolor(YELLOW);
         }
 
-        itoa(you.hp, st_prn, 10);
         gotoxy(44, 3);
-        cprintf(st_prn);
+        cprintf( "%d", you.hp );
 
         textcolor(LIGHTGREY);
-        itoa(you.hp_max, st_prn, 10);
-
-        cprintf("/");
-        cprintf(st_prn);
+        cprintf( "/%d", you.hp_max );
 
         if (max_max_hp != you.hp_max)
-        {
-            cprintf(" (");
-            itoa(max_max_hp, st_prn, 10);
-            cprintf(st_prn);
-            cprintf(")");
-        }
+            cprintf( " (%d)", max_max_hp );
 
 #ifdef LINUX
         clear_to_end_of_line();
@@ -72,12 +89,9 @@ void print_stats(void)
 
     if (you.redraw_magic_points)
     {
-        itoa(you.magic_points, st_prn, 10);
         gotoxy(47, 4);
-        cprintf(st_prn);
-        itoa(you.max_magic_points, st_prn, 10);
-        cprintf("/");
-        cprintf(st_prn);
+
+        cprintf( "%d/%d", you.magic_points, you.max_magic_points );
 
 #ifdef LINUX
         clear_to_end_of_line();
@@ -98,26 +112,20 @@ void print_stats(void)
         if (you.max_strength > 72)
             you.max_strength = 72;
 
-        itoa(you.strength, st_prn, 10);
         gotoxy(45, 7);
 
-        if (you.strength < you.max_strength)
+        if (you.might)
+            textcolor(LIGHTBLUE);  // no end of effect warning
+        else if (you.strength < you.max_strength)
             textcolor(YELLOW);
 
-        cprintf(st_prn);
+        cprintf( "%d", you.strength );
+        textcolor(LIGHTGREY);
 
         if (you.strength != you.max_strength)
-        {
-            textcolor(LIGHTGREY);
-            itoa(you.max_strength, st_prn, 10);
-            cprintf(" (");
-            cprintf(st_prn);
-            cprintf(")   ");
-        }
+            cprintf( " (%d)", you.max_strength );
         else
-        {
-            cprintf("       ");
-        }
+            cprintf( "       " );
 
         you.redraw_strength = 0;
 
@@ -137,26 +145,18 @@ void print_stats(void)
         if (you.max_intel > 72)
             you.max_intel = 72;
 
-        itoa(you.intel, st_prn, 10);
         gotoxy(45, 8);
 
         if (you.intel < you.max_intel)
             textcolor(YELLOW);
 
-        cprintf(st_prn);
+        cprintf( "%d", you.intel );
+        textcolor(LIGHTGREY);
 
         if (you.intel != you.max_intel)
-        {
-            textcolor(LIGHTGREY);
-            itoa(you.max_intel, st_prn, 10);
-            cprintf(" (");
-            cprintf(st_prn);
-            cprintf(")   ");
-        }
+            cprintf( " (%d)", you.max_intel );
         else
-        {
-            cprintf("       ");
-        }
+            cprintf( "       " );
 
         you.redraw_intelligence = 0;
 
@@ -174,79 +174,58 @@ void print_stats(void)
         if (you.max_dex > 72)
             you.max_dex = 72;
 
-        itoa(you.dex, st_prn, 10);
         gotoxy(45, 9);
 
         if (you.dex < you.max_dex)
             textcolor(YELLOW);
 
-        cprintf(st_prn);
+        cprintf( "%d", you.dex );
+        textcolor(LIGHTGREY);
 
         if (you.dex != you.max_dex)
-        {
-            textcolor(LIGHTGREY);
-            itoa(you.max_dex, st_prn, 10);
-            cprintf(" (");
-            cprintf(st_prn);
-            cprintf(")   ");
-        }
+            cprintf( " (%d)", you.max_dex );
         else
-        {
-            cprintf("       ");
-        }
+            cprintf( "       " );
 
         you.redraw_dexterity = 0;
 
         if (you.dex < 1)
             ouch(-9999, 0, KILLED_BY_CLUMSINESS);
-
-        textcolor(LIGHTGREY);
     }
 
     if (you.redraw_armour_class)
     {
-        itoa(player_AC(), st_prn, 10);
         gotoxy(44, 5);
-        cprintf(st_prn);
+        cprintf( "%d  ", player_AC() );
 
-        if (strlen(st_prn) <= 1)
-            cprintf(" ");
-        if (strlen(st_prn) <= 2)
-            cprintf(" ");
-        if (strlen(st_prn) <= 3)
-            cprintf(" ");
+        gotoxy(50, 5);
 
         if (you.duration[DUR_CONDENSATION_SHIELD])      //jmf: added 24mar2000
-            textcolor(LIGHTBLUE);
+            textcolor(LIGHTBLUE);  // no end of effect warning
 
-        cprintf("(");
-        itoa(player_shield_class(), st_prn, 10);
-        cprintf(st_prn);
-        cprintf(")   ");
+        cprintf( "(%d) ", player_shield_class() );
 
-        if (you.duration[DUR_CONDENSATION_SHIELD])      //jmf: added 24mar2000
-            textcolor(LIGHTGREY);
-
+        textcolor(LIGHTGREY);
         you.redraw_armour_class = 0;
     }
 
     if (you.redraw_evasion)
     {
-        itoa(player_evasion(), st_prn, 10);
         gotoxy(44, 6);
-        cprintf(st_prn);
-        cprintf("  ");
+
+        if (you.duration[DUR_FORESCRY])
+            textcolor(LIGHTBLUE);  // no end of effect warning
+
+        cprintf( "%d  ", player_evasion() );
+        textcolor(LIGHTGREY);
 
         you.redraw_evasion = 0;
     }
 
     if (you.redraw_gold)
     {
-        itoa(you.gold, st_prn, 10);
         gotoxy(46, 10);
-        cprintf(st_prn);
-        cprintf("    ");
-
+        cprintf( "%d     ", you.gold );
         you.redraw_gold = 0;
     }
 
@@ -271,88 +250,6 @@ void print_stats(void)
         you.redraw_experience = 0;
     }
 
-    if (you.redraw_hunger)
-    {
-        gotoxy(40, 14);
-
-        switch (you.hunger_state)
-        {
-        case HS_ENGORGED:
-            textcolor(BLUE);
-            cprintf("Engorged");
-            textcolor(LIGHTGREY);
-            break;
-
-        case HS_FULL:
-            textcolor(GREEN);
-            cprintf("Full    ");
-            textcolor(LIGHTGREY);
-            break;
-
-        case HS_SATIATED:
-#ifdef LINUX
-            clear_to_end_of_line();
-#else
-            cprintf("        ");
-#endif
-            break;
-
-        case HS_HUNGRY:
-            textcolor(YELLOW);
-            cprintf("Hungry  ");
-            textcolor(LIGHTGREY);
-            break;
-
-        case HS_STARVING:
-            textcolor(RED);
-            cprintf("Starving");
-            textcolor(LIGHTGREY);
-            break;
-        }
-
-#if DEBUG_DIAGNOSTICS
-        // debug mode hunger-o-meter
-        cprintf( " (%d:%d) ", you.hunger - you.old_hunger, you.hunger );
-#endif
-
-        you.redraw_hunger = 0;
-    }
-
-    if (you.redraw_burden)
-    {
-        gotoxy(40, 15);
-
-        switch (you.burden_state)
-        {
-        case BS_OVERLOADED:
-            textcolor(YELLOW);
-            cprintf("Overloaded");
-            textcolor(LIGHTGREY);
-            break;
-
-        case BS_ENCUMBERED:
-            textcolor(LIGHTRED);
-            cprintf("Encumbered");
-            textcolor(LIGHTGREY);
-            break;
-
-        case BS_UNENCUMBERED:
-#ifdef LINUX
-            clear_to_end_of_line();
-#else
-            cprintf("          ");
-#endif
-            break;
-        }
-
-#if DEBUG_DIAGNOSTICS
-        // debug mode burden-o-meter
-        cprintf( " (%d/%d) ", you.burden, carrying_capacity() );
-#endif
-
-        you.redraw_burden = 0;
-    }
-
     if (you.wield_change)
     {
         gotoxy(40, 13);
@@ -367,6 +264,7 @@ void print_stats(void)
             gotoxy(40, 13);
             textcolor(you.inv[you.equip[EQ_WEAPON]].colour);
 
+            char str_pass[ ITEMNAME_SIZE ];
             in_name( you.equip[EQ_WEAPON], DESC_INVENTORY, str_pass );
             str_pass[35] = '\0';
 
@@ -392,13 +290,237 @@ void print_stats(void)
         you.wield_change = false;
     }
 
-#if DEBUG_DIAGNOSTICS
-    // debug mode GPS
-    gotoxy(40, 16);
-    cprintf( "Position (%2d,%2d)", you.x_pos, you.y_pos );
+    // The colour scheme for these flags is currently:
+    //
+    // - yellow, "orange", red      for bad conditions
+    // - light grey, white          for god based conditions
+    // - green, light green         for good conditions
+    // - blue, light blue           for good enchantments
+    // - magenta, light magenta     for "better" enchantments (deflect, fly)
 
+    if (you.redraw_status_flags & REDRAW_LINE_1_MASK)
+    {
+        gotoxy(40, 14);
+
+#ifdef LINUX
+        clear_to_end_of_line();
+#else
+        cprintf( "                                       " );
+        gotoxy(40, 14);
 #endif
 
+        switch (you.burden_state)
+        {
+        case BS_OVERLOADED:
+            textcolor( RED );
+            cprintf( "Overloaded " );
+            break;
+
+        case BS_ENCUMBERED:
+            textcolor( LIGHTRED );
+            cprintf( "Encumbered " );
+            break;
+
+        case BS_UNENCUMBERED:
+            break;
+        }
+
+        switch (you.hunger_state)
+        {
+        case HS_ENGORGED:
+            textcolor( LIGHTGREEN );
+            cprintf( "Engorged" );
+            break;
+
+        case HS_FULL:
+            textcolor( GREEN );
+            cprintf( "Full" );
+            break;
+
+        case HS_SATIATED:
+            break;
+
+        case HS_HUNGRY:
+            textcolor( YELLOW );
+            cprintf( "Hungry" );
+            break;
+
+        case HS_STARVING:
+            textcolor( RED );
+            cprintf( "Starving" );
+            break;
+        }
+
+        textcolor( LIGHTGREY );
+
+#if DEBUG_DIAGNOSTICS
+        // debug mode hunger-o-meter
+        cprintf( " (%d:%d) ", you.hunger - you.old_hunger, you.hunger );
+#endif
+    }
+
+    if (you.redraw_status_flags & REDRAW_LINE_2_MASK)
+    {
+        gotoxy(40, 15);
+
+#ifdef LINUX
+        clear_to_end_of_line();
+#else
+        cprintf( "                                       " );
+        gotoxy(40, 15);
+#endif
+
+        // Max length of this line = 8 * 5 - 1 = 39
+
+        if (you.duration[DUR_PRAYER])
+        {
+            textcolor( WHITE );  // no end of effect warning
+            cprintf( "Pray " );
+        }
+
+        if (you.duration[DUR_REPEL_UNDEAD])
+        {
+            dur_colour( LIGHTGREY, (you.duration[DUR_REPEL_UNDEAD] <= 4) );
+            cprintf( "Holy " );
+        }
+
+        if (you.duration[DUR_DEFLECT_MISSILES])
+        {
+
+            dur_colour( MAGENTA, (you.duration[DUR_DEFLECT_MISSILES] <= 6) );
+            cprintf( "DMsl " );
+        }
+        else if (you.duration[DUR_REPEL_MISSILES])
+        {
+            dur_colour( BLUE, (you.duration[DUR_REPEL_MISSILES] <= 6) );
+            cprintf( "RMsl " );
+        }
+
+        if (you.duration[DUR_REGENERATION])
+        {
+            dur_colour( BLUE, (you.duration[DUR_REGENERATION] <= 6) );
+            cprintf( "Regen " );
+        }
+
+        if (you.duration[DUR_INSULATION])
+        {
+            dur_colour( BLUE, (you.duration[DUR_INSULATION] <= 6) );
+            cprintf( "Ins " );
+        }
+
+        if (player_is_levitating())
+        {
+            bool perm = (you.species == SP_KENKU && you.experience_level >= 15)
+                        || (player_equip_ego_type( EQ_BOOTS, SPARM_LEVITATION ))
+                        || (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON);
+
+            if (wearing_amulet( AMU_CONTROLLED_FLIGHT ))
+            {
+                dur_colour( MAGENTA, (you.levitation <= 10 && !perm) );
+                cprintf( "Fly " );
+            }
+            else
+            {
+                dur_colour( BLUE, (you.levitation <= 10 && !perm) );
+                cprintf( "Lev " );
+            }
+        }
+
+        if (you.invis)
+        {
+            dur_colour( BLUE, (you.invis <= 6) );
+            cprintf( "Invis " );
+        }
+
+        // Perhaps this should be reversed to show when it can be used?
+        // In that case, it should be probably be GREEN, and we'd have
+        // to check to see if the player does have a breath weapon. -- bwr
+        if (you.duration[DUR_BREATH_WEAPON])
+        {
+            textcolor( YELLOW );  // no warning
+            cprintf( "BWpn" );
+        }
+
+        textcolor( LIGHTGREY );
+    }
+
+    if (you.redraw_status_flags & REDRAW_LINE_3_MASK)
+    {
+        gotoxy(40, 16);
+
+#ifdef LINUX
+        clear_to_end_of_line();
+#else
+        cprintf( "                                       " );
+        gotoxy(40, 16);
+#endif
+        // Max length of this line = 7 * 5 + 3 - 1 = 37
+
+        // Note the usage of bad_ench_colour() correspond to levels that
+        // can be found in player.cc, ie those that the player can tell by
+        // using the '@' command.  Things like confusion and sticky flame
+        // hide their amounts and are thus always the same colour (so
+        // we're not really exposing any new information). --bwr
+        if (you.conf)
+        {
+            textcolor( RED );   // no different levels
+            cprintf( "Conf " );
+        }
+
+        if (you.duration[DUR_LIQUID_FLAMES])
+        {
+            textcolor( RED );   // no different levels
+            cprintf( "OnFire " );
+        }
+
+        if (you.poison)
+        {
+            // We skip marking "quite" poisoned and instead mark the
+            // levels where the rules for dealing poison damage change
+            // significantly.  See acr.cc for that code. -- bwr
+            textcolor( bad_ench_colour( you.poison, 5, 10 ) );
+            cprintf( "Pois " );
+        }
+
+        if (you.disease)
+        {
+            textcolor( bad_ench_colour( you.disease, 40, 120 ) );
+            cprintf( "Sick " );
+        }
+
+        if (you.magic_contamination > 5)
+        {
+            textcolor( bad_ench_colour( you.magic_contamination, 15, 25 ) );
+            cprintf( "Glow " );
+        }
+
+        if (you.duration[DUR_SWIFTNESS])
+        {
+            dur_colour( BLUE, (you.duration[DUR_SWIFTNESS] <= 6) );
+            cprintf( "Swift " );
+        }
+
+        if (you.slow && !you.haste)
+        {
+            textcolor( RED );  // no end of effect warning
+            cprintf( "Slow" );
+        }
+        else if (you.haste && !you.slow)
+        {
+            dur_colour( BLUE, (you.haste <= 6) );
+            cprintf( "Fast" );
+        }
+
+        textcolor( LIGHTGREY );
+    }
+
+    you.redraw_status_flags = 0;
+
+#if DEBUG_DIAGNOSTICS
+    // debug mode GPS
+    gotoxy(40, 17);
+    cprintf( "Position (%2d,%2d)", you.x_pos, you.y_pos );
+#endif
 
 #ifdef LINUX
     // get curses to redraw screen

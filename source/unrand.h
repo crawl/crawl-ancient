@@ -624,7 +624,7 @@
         0, 0
     }
     ,
-        "This sword was Shining One's gift to one of his paladins." ,
+        "This sword was The Shining One's gift to one of his paladins." ,
         "A long sword made of one huge piece of crystal.",
         ""
 }
@@ -822,8 +822,8 @@
         0, 0
     }
     ,
-        "It affects your evasion (+8).",
-        "This ring provides the wearer with great agility and dodging.",
+        "",
+        "",
         ""
 }
 ,
@@ -840,8 +840,8 @@
         0, 0
     }
     ,
-        "It affects your AC (+8).",
-        "This ring provides the wearer with great protection from damage.",
+        "",
+        "",
         ""
 }
 ,
@@ -922,7 +922,7 @@
 /* 42 */
 {
     "mithril axe \"Arga\"", "mithril axe",
-        OBJ_WEAPONS, WPN_AXE, +3, +3, WHITE,
+        OBJ_WEAPONS, WPN_WAR_AXE, +3, +3, WHITE,
     {
         SPWPN_SPEED, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0,
@@ -997,9 +997,9 @@
     "robe of Night", "black robe",
         OBJ_ARMOUR, ARM_ROBE, +3, 0, DARKGRAY,
     {
-        SPARM_DARKNESS, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 20,
-        1, 0, 0, 0, 0, 0,
+        1, 1, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0
@@ -1049,7 +1049,7 @@
 ,
 /* 49 */
 {
-    "armour of Dragon's King", "shiny dragon armour",
+    "armour of the Dragon King", "shiny dragon armour",
         OBJ_ARMOUR, ARM_GOLD_DRAGON_ARMOUR, +5, 0, YELLOW,
     {
         0, 0, 0, 0, 0, 0,
@@ -1120,7 +1120,6 @@
 }
 #endif // USE_NEW_UNRANDS
 ,
-
 /* This is a dummy */
 /* 1 */
 {

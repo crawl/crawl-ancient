@@ -63,9 +63,9 @@ static void append_value( std::string & description, int valu, bool plussed )
     if (valu >= 0 && plussed == 1)
         description += "+";
 
-    char value_str[8];
+    char value_str[80];
 
-    itoa(valu, value_str, 10);
+    itoa( valu, value_str, 10 );
 
     description += value_str;
 }                               // end append_value()
@@ -713,7 +713,7 @@ static std::string describe_weapon( const item_def &item, char verbose)
                     "at the user's peril. ";
                 break;
             case SPWPN_SWORD_OF_CEREBOV:
-                description += "Flames cover its twisted blade. ";
+                description += "Eerie flames cover its twisted blade. ";
                 break;
             case SPWPN_STAFF_OF_DISPATER:
                 description += "This legendary item can unleash "
@@ -753,7 +753,7 @@ static std::string describe_weapon( const item_def &item, char verbose)
         }
         else if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            // We know its an artefact type weapon, but not what it does.
+            // We know it's an artefact type weapon, but not what it does.
             description += "$This weapon may have some hidden properties.$";
         }
     }
@@ -816,9 +816,9 @@ static std::string describe_weapon( const item_def &item, char verbose)
                 break;
 
             case WPN_HAND_AXE:
-                description += "An axe designed for either hand combat "
-                               "or throwing.  It might also make a good "
-                               "tool.";
+                description += "An small axe designed for either hand combat "
+                               "or throwing. ";
+                               // "It might also make a good tool.";
                 break;
 
             case WPN_BATTLEAXE:
@@ -934,8 +934,7 @@ static std::string describe_weapon( const item_def &item, char verbose)
                 break;
 
             case WPN_SABRE:
-                description +=
-                    "A sword with a medium length slashing blade. ";
+                description += "A sword with a medium length slashing blade. ";
                 break;
 
             case WPN_DEMON_BLADE:
@@ -957,7 +956,7 @@ static std::string describe_weapon( const item_def &item, char verbose)
                 description += "An axe with a large blade. ";
                 break;
 
-            case WPN_AXE:
+            case WPN_WAR_AXE:
                 description += "An axe intended for hand to hand combat. ";
                 break;
 
@@ -972,6 +971,10 @@ static std::string describe_weapon( const item_def &item, char verbose)
 
             case WPN_GREAT_FLAIL:
                 description += "A large and heavy flail. ";
+                break;
+
+            case WPN_FALCHION:
+                description += "A sword with a broad slashing blade. ";
                 break;
 
             default:
@@ -1668,10 +1671,8 @@ static std::string describe_stick( const item_def &item )
 
     description.reserve(64);
 
-    if (get_ident_type(OBJ_WANDS, item.sub_type) == ID_UNKNOWN_TYPE)
-    {
-        description += "A stick. Maybe its magical. ";
-    }
+    if (get_ident_type( OBJ_WANDS, item.sub_type ) != ID_KNOWN_TYPE)
+        description += "A stick. Maybe it's magical. ";
     else
     {
         description += "A magical device which ";
@@ -2006,7 +2007,7 @@ static std::string describe_potion( const item_def &item )
 
     description.reserve(64);
 
-    if (get_ident_type(OBJ_POTIONS, item.sub_type) == ID_UNKNOWN_TYPE)
+    if (get_ident_type( OBJ_POTIONS, item.sub_type ) != ID_UNKNOWN_TYPE)
     {
         description += "A small bottle of liquid.";
     }
@@ -2235,7 +2236,7 @@ static std::string describe_scroll( const item_def &item )
 
     description.reserve(64);
 
-    if (get_ident_type(OBJ_SCROLLS, item.sub_type) == ID_UNKNOWN_TYPE)
+    if (get_ident_type( OBJ_SCROLLS, item.sub_type ) != ID_UNKNOWN_TYPE)
     {
         description += "A scroll of paper covered in magical writing.";
     }
@@ -2406,245 +2407,309 @@ static std::string describe_jewellery( const item_def &item, char verbose)
         description += unrandart_descrip(1, item);
         description += "$$";
     }
-    else if (get_ident_type(OBJ_JEWELLERY, item.sub_type) != ID_KNOWN_TYPE)
+    else if ((!is_random_artefact( item )
+            && get_ident_type( OBJ_JEWELLERY, item.sub_type ) != ID_KNOWN_TYPE)
+        || (is_random_artefact( item )
+            && item_not_ident( item, ISFLAG_KNOW_TYPE )))
     {
         description += "A piece of jewellery.";
     }
-    else
+    else if (verbose == 1 || is_random_artefact( item ))
     {
-        if (verbose == 1 || is_random_artefact( item ))
+        switch (item.sub_type)
+        {
+        case RING_REGENERATION:
+            description += "This wonderful ring greatly increases the "
+                "recuperative powers of its wearer, but also "
+                "considerably speeds his or her metabolism. ";
+            break;
+
+        case RING_PROTECTION:
+            description +=
+                "This ring either protects its wearer from harm or makes "
+                "them more vulnerable to injury, to a degree dependent "
+                "on its power. ";
+            break;
+
+        case RING_PROTECTION_FROM_FIRE:
+            description +=
+                "This ring provides protection from heat and fire. ";
+            break;
+
+        case RING_POISON_RESISTANCE:
+            description +=
+                "This ring provides protection from the effects of poisons and venom. ";
+            break;
+
+        case RING_PROTECTION_FROM_COLD:
+            description += "This ring provides protection from cold. ";
+            break;
+
+        case RING_STRENGTH:
+            description +=
+                "This ring increases or decreases the physical strength "
+                "of its wearer, to a degree dependent on its power. ";
+            break;
+
+        case RING_SLAYING:
+            description +=
+                "This ring increases the hand-to-hand and missile combat "
+                "skills of its wearer.";
+            break;
+
+        case RING_SEE_INVISIBLE:
+            description +=
+                "This ring allows its wearer to see those things hidden "
+                "from view by magic. ";
+            break;
+
+        case RING_INVISIBILITY:
+            description +=
+                "This powerful ring can be activated to hide its wearer "
+                "from the view of others, but increases the speed of his "
+                "or her metabolism greatly while doing so. ";
+            break;
+
+        case RING_HUNGER:
+            description +=
+                "This accursed ring causes its wearer to hunger "
+                "considerably more quickly. ";
+            break;
+
+        case RING_TELEPORTATION:
+            description +=
+                "This ring occasionally exerts its power to randomly "
+                "translocate its wearer to another place, and can be "
+                "deliberately activated for the same effect. ";
+            break;
+
+        case RING_EVASION:
+            description +=
+                "This ring makes its wearer either more or less capable "
+                "of avoiding attacks, depending on its degree "
+                "of enchantment. ";
+            break;
+
+        case RING_SUSTAIN_ABILITIES:
+            description +=
+                "This ring protects its wearer from the loss of their "
+                "strength, dexterity and intelligence. ";
+            break;
+
+        case RING_SUSTENANCE:
+            description +=
+                "This ring provides energy to its wearer, so that they "
+                "need eat less often. ";
+            break;
+
+        case RING_DEXTERITY:
+            description +=
+                "This ring increases or decreases the dexterity of its "
+                "wearer, depending on the degree to which it has been "
+                "enchanted. ";
+            break;
+
+        case RING_INTELLIGENCE:
+            description +=
+                "This ring increases or decreases the mental ability of "
+                "its wearer, depending on the degree to which it has "
+                "been enchanted. ";
+            break;
+
+        case RING_WIZARDRY:
+            description +=
+                "This ring increases the ability of its wearer to use "
+                "magical spells. ";
+            break;
+
+        case RING_MAGICAL_POWER:
+            description +=
+                "This ring increases its wearer's reserves of magical "
+                "power. ";
+            break;
+
+        case RING_LEVITATION:
+            description +=
+                "This ring allows its wearer to hover above the floor. ";
+            break;
+
+        case RING_LIFE_PROTECTION:
+            description +=
+                "This blessed ring protects the life-force of its wearer "
+                "from negative energy, making them partially immune to "
+                "the draining effects of undead and necromantic magic. ";
+            break;
+
+        case RING_PROTECTION_FROM_MAGIC:
+            description +=
+                "This ring increases its wearer's resistance to "
+                "hostile enchantments. ";
+            break;
+
+        case RING_FIRE:
+            description +=
+                "This ring brings its wearer more in contact with "
+                "the powers of fire. He or she gains resistance to "
+                "heat and can use fire magic more effectively, but "
+                "becomes more vulnerable to the effects of cold. ";
+            break;
+
+        case RING_ICE:
+            description +=
+                "This ring brings its wearer more in contact with "
+                "the powers of cold and ice. He or she gains resistance "
+                "to cold and can use ice magic more effectively, but "
+                "becomes more vulnerable to the effects of fire. ";
+            break;
+
+        case RING_TELEPORT_CONTROL:
+            description += "This ring allows its wearer to control the "
+                "destination of any teleportation, although without "
+                "perfect accuracy.  Trying to teleport into a solid "
+                "object will result in a random teleportation, at "
+                "least in the case of a normal teleportation.  Also "
+                "be wary that controlled teleports will contaminate "
+                "the subject with residual magical energy.";
+            break;
+
+        case AMU_RAGE:
+            description +=
+                "This amulet enables its wearer to attempt to enter "
+                "a state of berserk rage, and increases their chance "
+                "of successfully doing so.  It also partially protects "
+                "the user from passing out when coming out of that rage. ";
+            break;
+
+        case AMU_RESIST_SLOW:
+            description +=
+                "This amulet protects its wearer from some magically "
+                "induced forms of slowness, and increases the duration "
+                "of enchantments which speed his or her actions. ";
+            break;
+
+        case AMU_CLARITY:
+            description +=
+                "This amulet protects its wearer from some forms of "
+                "mental confusion. ";
+            break;
+
+        case AMU_WARDING:
+            description +=
+                "This amulet repels some of the attacks of creatures "
+                "which have been magically summoned. ";
+            break;
+
+        case AMU_RESIST_CORROSION:
+            description +=
+                "This amulet protects the armour and weaponry of its "
+                "wearer from corrosion caused by acids, although not "
+                "infallibly so. ";
+            break;
+
+        case AMU_THE_GOURMAND:
+            description +=
+                "This amulet allows its wearer to consume meat in "
+                "various states of decay without suffering unduly as "
+                "a result. Poisonous or cursed flesh is still not "
+                "recommended. ";
+            break;
+
+        case AMU_CONSERVATION:
+            description +=
+                "This amulet protects some of the possessions of "
+                "its wearer from outright destruction, but not "
+                "infallibly so. ";
+            break;
+
+        case AMU_CONTROLLED_FLIGHT:
+            description +=
+                "Should the wearer of this amulet be levitated "
+                "by magical means, he or she will be able to exercise "
+                "some control over the resulting motion. This allows "
+                "the descent of staircases and the retrieval of items "
+                "lying on the ground, for example, but does not "
+                "deprive the wearer of the benefits of levitation. ";
+            break;
+
+        case AMU_INACCURACY:
+            description +=
+                "This amulet makes its wearer less accurate in hand combat. ";
+            break;
+
+        case AMU_RESIST_MUTATION:
+            description +=
+                "This amulet protects its wearer from mutations, "
+                "although not infallibly so. ";
+            break;
+
+        default:
+            DEBUGSTR("Unknown jewellery");
+        }
+
+        description += "$";
+    }
+
+    if ((verbose == 1 || is_random_artefact( item ))
+        && item_ident( item, ISFLAG_KNOW_PLUSES ))
+    {
+        // Explicit description of ring power (useful for randarts)
+        // Note that for randarts we'll print out the pluses even
+        // in the case that its zero, just to avoid confusion. -- bwr
+        if (item.plus != 0
+            || (item.sub_type == RING_SLAYING && item.plus2 != 0)
+            || is_random_artefact( item ))
         {
             switch (item.sub_type)
             {
-            case RING_REGENERATION:
-                description += "This wonderful ring greatly increases the "
-                    "recuperative powers of its wearer, but also "
-                    "considerably speeds his or her metabolism. ";
-                break;
-
             case RING_PROTECTION:
-                description +=
-                    "This ring either protects its wearer from harm or makes "
-                    "them more vulnerable to injury, to a degree dependent "
-                    "on its power. ";
-                break;
-
-            case RING_PROTECTION_FROM_FIRE:
-                description +=
-                    "This ring provides protection from heat and fire. ";
-                break;
-
-            case RING_POISON_RESISTANCE:
-                description +=
-                    "This ring provides protection from the effects of poisons and venom. ";
-                break;
-
-            case RING_PROTECTION_FROM_COLD:
-                description += "This ring provides protection from cold. ";
-                break;
-
-            case RING_STRENGTH:
-                description +=
-                    "This ring increases or decreases the physical strength "
-                    "of its wearer, to a degree dependent on its power. ";
-                break;
-
-            case RING_SLAYING:
-                description +=
-                    "This ring increases the hand-to-hand and missile combat "
-                    "skills of its wearer.";
-                break;
-
-            case RING_SEE_INVISIBLE:
-                description +=
-                    "This ring allows its wearer to see those things hidden "
-                    "from view by magic. ";
-                break;
-
-            case RING_INVISIBILITY:
-                description +=
-                    "This powerful ring can be activated to hide its wearer "
-                    "from the view of others, but increases the speed of his "
-                    "or her metabolism greatly while doing so. ";
-                break;
-
-            case RING_HUNGER:
-                description +=
-                    "This accursed ring causes its wearer to hunger "
-                    "considerably more quickly. ";
-                break;
-
-            case RING_TELEPORTATION:
-                description +=
-                    "This ring occasionally exerts its power to randomly "
-                    "translocate its wearer to another place, and can be "
-                    "deliberately activated for the same effect. ";
+                description += "$It affects your AC (";
+                append_value( description, item.plus, true );
+                description += ").";
                 break;
 
             case RING_EVASION:
-                description +=
-                    "This ring makes its wearer either more or less capable "
-                    "of avoiding attacks, depending on its degree "
-                    "of enchantment. ";
+                description += "$It affects your evasion (";
+                append_value( description, item.plus, true );
+                description += ").";
                 break;
 
-            case RING_SUSTAIN_ABILITIES:
-                description +=
-                    "This ring protects its wearer from the loss of their "
-                    "strength, dexterity and intelligence. ";
-                break;
-
-            case RING_SUSTENANCE:
-                description +=
-                    "This ring provides energy to its wearer, so that they "
-                    "need eat less often. ";
-                break;
-
-            case RING_DEXTERITY:
-                description +=
-                    "This ring increases or decreases the dexterity of its "
-                    "wearer, depending on the degree to which it has been "
-                    "enchanted. ";
+            case RING_STRENGTH:
+                description += "$It affects your strength (";
+                append_value( description, item.plus, true );
+                description += ").";
                 break;
 
             case RING_INTELLIGENCE:
-                description +=
-                    "This ring increases or decreases the mental ability of "
-                    "its wearer, depending on the degree to which it has "
-                    "been enchanted. ";
+                description += "$It affects your intelligence (";
+                append_value( description, item.plus, true );
+                description += ").";
                 break;
 
-            case RING_WIZARDRY:
-                description +=
-                    "This ring increases the ability of its wearer to use "
-                    "magical spells. ";
+            case RING_DEXTERITY:
+                description += "$It affects your dexterity (";
+                append_value( description, item.plus, true );
+                description += ").";
                 break;
 
-            case RING_MAGICAL_POWER:
-                description +=
-                    "This ring increases its wearer's reserves of magical "
-                    "power. ";
-                break;
+            case RING_SLAYING:
+                if (item.plus != 0 || is_random_artefact( item ))
+                {
+                    description += "$It affects your accuracy (";
+                    append_value( description, item.plus, true );
+                    description += ").";
+                }
 
-            case RING_LEVITATION:
-                description +=
-                    "This ring allows its wearer to hover above the floor. ";
-                break;
-
-            case RING_LIFE_PROTECTION:
-                description +=
-                    "This blessed ring protects the life-force of its wearer "
-                    "from negative energy, making them partially immune to "
-                    "the draining effects of undead and necromantic magic. ";
-                break;
-
-            case RING_PROTECTION_FROM_MAGIC:
-                description +=
-                    "This ring increases its wearer's resistance to "
-                    "hostile enchantments. ";
-                break;
-
-            case RING_FIRE:
-                description +=
-                    "This ring brings its wearer more in contact with "
-                    "the powers of fire. He or she gains resistance to "
-                    "heat and can use fire magic more effectively, but "
-                    "becomes more vulnerable to the effects of cold. ";
-                break;
-
-            case RING_ICE:
-                description +=
-                    "This ring brings its wearer more in contact with "
-                    "the powers of cold and ice. He or she gains resistance "
-                    "to cold and can use ice magic more effectively, but "
-                    "becomes more vulnerable to the effects of fire. ";
-                break;
-
-            case RING_TELEPORT_CONTROL:
-                description += "This ring allows its wearer to control the "
-                    "destination of any teleportation, although without "
-                    "perfect accuracy.  Trying to teleport into a solid "
-                    "object will result in a random teleportation, at "
-                    "least in the case of a normal teleportation.  Also "
-                    "be wary that controlled teleports will contaminate "
-                    "the subject with residual magical energy.";
-                break;
-
-            case AMU_RAGE:
-                description +=
-                    "This amulet enables its wearer to attempt to enter "
-                    "a state of berserk rage, and increases their chance "
-                    "of successfully doing so.  It also partially protects "
-                    "the user from passing out when coming out of that rage. ";
-                break;
-
-            case AMU_RESIST_SLOW:
-                description +=
-                    "This amulet protects its wearer from some magically "
-                    "induced forms of slowness, and increases the duration "
-                    "of enchantments which speed his or her actions. ";
-                break;
-
-            case AMU_CLARITY:
-                description +=
-                    "This amulet protects its wearer from some forms of "
-                    "mental confusion. ";
-                break;
-
-            case AMU_WARDING:
-                description +=
-                    "This amulet repels some of the attacks of creatures "
-                    "which have been magically summoned. ";
-                break;
-
-            case AMU_RESIST_CORROSION:
-                description +=
-                    "This amulet protects the armour and weaponry of its "
-                    "wearer from corrosion caused by acids, although not "
-                    "infallibly so. ";
-                break;
-
-            case AMU_THE_GOURMAND:
-                description +=
-                    "This amulet allows its wearer to consume meat in "
-                    "various states of decay without suffering unduly as "
-                    "a result. Poisonous or cursed flesh is still not "
-                    "recommended. ";
-                break;
-
-            case AMU_CONSERVATION:
-                description +=
-                    "This amulet protects some of the possessions of "
-                    "its wearer from outright destruction, but not "
-                    "infallibly so. ";
-                break;
-
-            case AMU_CONTROLLED_FLIGHT:
-                description +=
-                    "Should the wearer of this amulet be levitated "
-                    "by magical means, he or she will be able to exercise "
-                    "some control over the resulting motion. This allows "
-                    "the descent of staircases and the retrieval of items "
-                    "lying on the ground, for example, but does not "
-                    "deprive the wearer of the benefits of levitation. ";
-                break;
-
-            case AMU_INACCURACY:
-                description +=
-                    "This amulet makes its wearer less accurate in hand combat. ";
-                break;
-
-            case AMU_RESIST_MUTATION:
-                description +=
-                    "This amulet protects its wearer from mutations, "
-                    "although not infallibly so. ";
+                if (item.plus2 != 0 || is_random_artefact( item ))
+                {
+                    description += "$It affects your damage-dealing abilities (";
+                    append_value( description, item.plus2, true );
+                    description += ").";
+                }
                 break;
 
             default:
-                DEBUGSTR("Unknown jewellery");
+                break;
             }
-
-            description += "$";
         }
     }
 
@@ -2761,17 +2826,17 @@ static std::string describe_staff( const item_def &item )
             break;
 
         case STAFF_SPELL_SUMMONING:
-            description += "of spells contains spells of summoning. ";
+            description += "contains spells of summoning. ";
             break;
 
         case STAFF_WARDING:
             description +=
-                "of spells contains spells designed to repel one's enemies. ";
+                "contains spells designed to repel one's enemies. ";
             break;
 
         case STAFF_DISCOVERY:
             description +=
-                "of spells contains spells which reveal various aspects of "
+                "contains spells which reveal various aspects of "
                 "an explorer's surroundings to them. ";
             break;
 
@@ -2795,7 +2860,7 @@ static std::string describe_staff( const item_def &item )
 
         default:
             description +=
-                "of spells contains spells of mayhem and destruction. ";
+                "contains spells of mayhem and destruction. ";
             break;
         }
 
@@ -3051,8 +3116,7 @@ std::string get_item_description( const item_def &item, char verbose, bool dump 
 
     if (!dump)
     {
-        char str_pass[80];
-
+        char str_pass[ ITEMNAME_SIZE ];
         item_name( item, DESC_INVENTORY_EQUIP, str_pass );
         description += std::string(str_pass);
     }
@@ -3370,7 +3434,7 @@ void describe_spell(int spelled)
             "This spell attunes the caster to the forces of fire, "
             "increasing their fire magic and giving protection from fire.  "
             "However, it also makes them much more susceptable to the forces "
-            "of ice. "; // well, if survive fire wall its a risk -- bwr
+            "of ice. "; // well, if it survives the fire wall it's a risk -- bwr
         break;
 
     case SPELL_RESTORE_STRENGTH:
@@ -4910,8 +4974,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_GIANT_GECKO:
         description += "A lizard with pads on its toes allowing it to cling "
-            "to walls and ceilings.  Its much larger than a normal gecko... "
-            "perhaps it has something to do with the water in this dungeon?";
+            "to walls and ceilings.  It's much larger than a normal gecko... "
+            "perhaps this has something to do with the dungeon's water quality?";
         break;
 
     case MONS_GIANT_IGUANA:
@@ -4925,7 +4989,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_KOMODO_DRAGON:
-        description += "An enormous monitor lizard, its more than capable "
+        description += "An enormous monitor lizard.  It's more than capable "
             "of preying on large animals.  Bits of fetid and rotting flesh "
             "from its last few meals are stuck in its teeth.";
         break;
@@ -4948,7 +5012,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_IRON_TROLL:
         description +=
             "A great troll, plated with thick scales of rusty iron.";
-        // you can't see its hide, but think its thick and kobbly, too :P {dlb}
+        // you can't see its hide, but think it's thick and kobbly, too :P {dlb}
         //jmf: I thought its skin *was* the rusty iron. If so, ought to change
         //     shatter_monsters in spells4.cc.
         break;
@@ -5727,7 +5791,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         description += describe_demon();
         break;
 
-// mimics
+// mimics -- I'm not considering these descriptions a bug. -- bwr
     case MONS_GOLD_MIMIC:
         description +=
             "An apparently harmless pile of gold coins hides a nasty "
@@ -5965,9 +6029,10 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_PROGRAM_BUG:
     default:
-        description += "If this monster is a \"program bug\", its recomended "
-            "that you save your game and reload.  Please report any instances "
-            "of program bug monsters or missing descriptions.";
+        description += "If this monster is a \"program bug\", then it's "
+            "recomended that you save your game and reload.  Please report "
+            "monsters who masquerade as program bugs or run around the "
+            "dungeon without a proper description to the authorities.";
         break;
         // onocentaur - donkey
     }
@@ -6010,7 +6075,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
                 has_item = true;
             }
 
-            char buff[80];
+            char buff[ ITEMNAME_SIZE ];
 
             item_def item = mitm[ menv[which_mons].inv[i] ];
             set_ident_flags( item, ISFLAG_IDENT_MASK );
@@ -6061,7 +6126,7 @@ void print_god_abil_desc( int abil )
 void describe_god( int which_god )
 {
 
-    char *description  = ""; //mv: temporary string used for printing description
+    const char *description; //mv: temporary string used for printing description
     int colour; //mv: colour used for some messages
 
 
@@ -6324,14 +6389,14 @@ void describe_god( int which_god )
 
         // mv: these gods protects you during your prayer (not mentioning XOM)
         // chance for doing so is (random2(you.piety) >= 30)
-        // Note that its not depending on penance.
+        // Note that it's not depending on penance.
         // Btw. I'm not sure how to explain such divine protection
         // because god isn't really protecting player - he only sometimes
         // saves his life (probably it shouldn't be displayed at all).
         // What about this ?
         if (((which_god == GOD_ZIN) || (which_god == GOD_SHINING_ONE)
              || (which_god == GOD_ELYVILON) || (which_god == GOD_OKAWARU)
-             || (which_god == GOD_KIKUBAAQUDGHA)) && (you.piety >= 30))
+             || (which_god == GOD_YREDELEMNUL)) && (you.piety >= 30))
         {
             snprintf( info, INFO_SIZE,
                       "%s %s watches over you during your prayer." EOL,

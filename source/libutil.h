@@ -11,8 +11,10 @@
 #ifndef LIBUTIL_H
 #define LIBUTIL_H
 
+void get_input_line( char *const buff, int len );
+
 #ifdef NEED_USLEEP
-void usleep(unsigned long time);
+void usleep( unsigned long time );
 #endif
 
 #ifdef NEED_SNPRINTF

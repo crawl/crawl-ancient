@@ -79,7 +79,7 @@ bool mons_speaks(struct monsters *monster)
                      (temp_rand == 3) ? " opens its mouth, as if shouting." :
                      (temp_rand == 4) ? " looks around." :
                      (temp_rand == 5) ? " appears indecisive." :
-                     (temp_rand == 6) ? " ponders situation."
+                     (temp_rand == 6) ? " ponders the situation."
                                       : " seems to says something.");
         }
         // disregard charmed critters.. they're not too expressive
@@ -153,7 +153,7 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " laughs crazily.");
                 break;
             case 10:
-                strcat(info, " ponders situation.");
+                strcat(info, " ponders the situation.");
                 break;
             case 11:
                 strcat(info, " grins madly.");
@@ -215,7 +215,7 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " laughs crazily.");
                 break;
             case 10:
-                strcat(info, " ponders situation.");
+                strcat(info, " ponders the situation.");
                 break;
             case 11:
                 strcat(info, " grins madly.");
@@ -1583,7 +1583,7 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " says, \"I only need a few of your organs!\"");
                     break;
             case 3:
-                strcat(info, " ponders situation.");
+                strcat(info, " ponders the situation.");
                 break;
             case 4:
                 strcat(info, " looks for scalpel.");
@@ -2197,7 +2197,7 @@ bool mons_speaks(struct monsters *monster)
                 return (true);
 
             case 8:
-                strcat(info, " say \"Magic. You know nothing about it.\"");
+                strcat(info, " says \"Magic. You know nothing about it.\"");
                 break;
 
             case 9:

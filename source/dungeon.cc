@@ -39,6 +39,7 @@
 #include "mon-util.h"
 #include "mon-pick.h"
 #include "monplace.h"
+#include "player.h"
 #include "randart.h"
 #include "spl-book.h"
 #include "stuff.h"
@@ -211,7 +212,7 @@ void builder(int level_number, char level_type)
     if (skip_build == 0)
     {
         // do 'normal' building.  Well, except for the swamp.
-        if (you.where_are_you != BRANCH_SWAMP)
+        if (!player_in_branch( BRANCH_SWAMP ))
             skip_build = builder_normal(level_number, level_type, sr);
 
         if (skip_build == 0)
@@ -232,48 +233,41 @@ void builder(int level_number, char level_type)
     // already exist.
 
     // time to make the swamp {dlb}:
-    if (you.where_are_you == BRANCH_SWAMP)
+    if (player_in_branch( BRANCH_SWAMP ))
         prepare_swamp();
 
     // figure out how many 'normal' monsters we should place
     int mon_wanted = 0;
     if (level_type == LEVEL_ABYSS
-        || you.where_are_you == BRANCH_ECUMENICAL_TEMPLE)
+        || player_in_branch( BRANCH_ECUMENICAL_TEMPLE ))
     {
         mon_wanted = 0;
     }
     else
     {
-        mon_wanted = random2avg(29, 3);
+        mon_wanted = roll_dice( 3, 10 );
 
-        if (you.where_are_you == BRANCH_DIS
-            || you.where_are_you == BRANCH_GEHENNA
-            || you.where_are_you == BRANCH_COCYTUS
-            || you.where_are_you == BRANCH_TARTARUS
-            || you.where_are_you == BRANCH_HALL_OF_BLADES)
-        {
-            mon_wanted += random2avg(24, 3);
-        }
-
-        if (you.where_are_you == BRANCH_HALL_OF_BLADES)
-            mon_wanted += random2avg(24, 3);
+        if (player_in_hell())
+            mon_wanted += roll_dice( 3, 8 );
+        else if (player_in_branch( BRANCH_HALL_OF_BLADES ))
+            mon_wanted += roll_dice( 6, 8 );
 
         // unlikely - now only possible in HoB {dlb} 10mar2000
         if (mon_wanted > 60)
             mon_wanted = 60;
     }
 
-    place_branch_entrances(level_number, level_type);
+    place_branch_entrances( level_number, level_type );
 
     check_doors();
 
-    if (you.where_are_you != BRANCH_DIS && you.where_are_you != BRANCH_VAULTS)
+    if (!player_in_branch( BRANCH_DIS ) && !player_in_branch( BRANCH_VAULTS ))
         hide_doors();
 
-    if (you.where_are_you != BRANCH_ECUMENICAL_TEMPLE)
+    if (!player_in_branch( BRANCH_ECUMENICAL_TEMPLE ))
         place_traps(level_number);
 
-    int items_wanted = 5 + random2avg(32, 3);
+    int items_wanted = 3 + roll_dice( 3, 11 );
 
     if (level_number > 5 && one_chance_in(500 - 5 * level_number))
         items_wanted = 10 + random2avg( 90, 2 );  // rich level!
@@ -289,15 +283,13 @@ void builder(int level_number, char level_type)
     builder_monsters(level_number, level_type, mon_wanted);
 
     // place shops,  if appropriate
-    if (level_type == LEVEL_DUNGEON
-        && (you.where_are_you == BRANCH_MAIN_DUNGEON
-             || you.where_are_you == BRANCH_ORCISH_MINES
-             || you.where_are_you == BRANCH_ELVEN_HALLS
-             || you.where_are_you == BRANCH_LAIR
-             || you.where_are_you == BRANCH_VAULTS
-             || you.where_are_you == BRANCH_SNAKE_PIT
-             || you.where_are_you == BRANCH_SLIME_PITS
-             || you.where_are_you == BRANCH_SWAMP))
+    if (player_in_branch( BRANCH_MAIN_DUNGEON )
+         || player_in_branch( BRANCH_ORCISH_MINES )
+         || player_in_branch( BRANCH_ELVEN_HALLS )
+         || player_in_branch( BRANCH_LAIR )
+         || player_in_branch( BRANCH_VAULTS )
+         || player_in_branch( BRANCH_SNAKE_PIT )
+         || player_in_branch( BRANCH_SWAMP ))
     {
         place_shops(level_number);
     }
@@ -305,14 +297,14 @@ void builder(int level_number, char level_type)
     // If level part of Dis -> all walls metal;
     // If part of vaults -> walls depend on level;
     // If part of crypt -> all walls stone:
-    if (you.where_are_you == BRANCH_DIS
-        || you.where_are_you == BRANCH_VAULTS
-        || you.where_are_you == BRANCH_CRYPT)
+    if (player_in_branch( BRANCH_DIS )
+        || player_in_branch( BRANCH_VAULTS )
+        || player_in_branch( BRANCH_CRYPT ))
     {
         // always the case with Dis {dlb}
         unsigned char vault_wall = DNGN_METAL_WALL;
 
-        if (you.where_are_you == BRANCH_VAULTS)
+        if (player_in_branch( BRANCH_VAULTS ))
         {
             vault_wall = DNGN_ROCK_WALL;
 
@@ -328,7 +320,7 @@ void builder(int level_number, char level_type)
                 vault_wall = DNGN_GREEN_CRYSTAL_WALL;
             }
         }
-        else if (you.where_are_you == BRANCH_CRYPT)
+        else if (player_in_branch( BRANCH_CRYPT ))
         {
             vault_wall = DNGN_STONE_WALL;
         }
@@ -354,7 +346,7 @@ void builder(int level_number, char level_type)
                     if (grd[x][y] >= DNGN_STONE_STAIRS_UP_I
                         && grd[x][y] <= DNGN_ROCK_STAIRS_UP)
                     {
-                        grd[x][y] = DNGN_RETURN_DUNGEON_I + i;
+                        grd[x][y] = DNGN_RETURN_FROM_ORCISH_MINES + i;
                     }
                 }
             }
@@ -362,7 +354,7 @@ void builder(int level_number, char level_type)
     }
 
     // bottom level of branch - replaces down stairs with up ladders:
-    for (i= 0; i< 30; i++)
+    for (i = 0; i < 30; i++)
     {
         if (level_number == you.branch_stairs[i] + branch_depth(i)
             && level_type == LEVEL_DUNGEON
@@ -382,7 +374,7 @@ void builder(int level_number, char level_type)
         }
     }
 
-    if (you.where_are_you == BRANCH_CRYPT)
+    if (player_in_branch( BRANCH_CRYPT ))
     {
         if (one_chance_in(3))
             mons_place( MONS_CURSE_SKULL, BEH_SLEEP, MHITNOT, false, 0, 0 );
@@ -391,14 +383,11 @@ void builder(int level_number, char level_type)
             mons_place( MONS_CURSE_SKULL, BEH_SLEEP, MHITNOT, false, 0, 0 );
     }
 
-    if (you.where_are_you >= BRANCH_ORCISH_MINES
-        && level_type == LEVEL_DUNGEON && one_chance_in(5))
-    {
+    if (player_in_branch( BRANCH_ORCISH_MINES ) && one_chance_in(5))
         place_altar();
-    }
 
     // hall of blades (1 level deal) - no down staircases, thanks!
-    if (you.where_are_you == BRANCH_HALL_OF_BLADES)
+    if (player_in_branch( BRANCH_HALL_OF_BLADES ))
     {
         for (x = 1; x < GXM; x++)
         {
@@ -415,7 +404,7 @@ void builder(int level_number, char level_type)
 
     link_items();
 
-    if (you.where_are_you != BRANCH_COCYTUS)
+    if (!player_in_branch(BRANCH_COCYTUS) && !player_in_branch(BRANCH_SWAMP))
         prepare_water( level_number );
 }                               // end builder()
 
@@ -617,7 +606,7 @@ int items( int allow_uniques,       // not just true-false,
             }
 
             if (item_power > 6
-                && random2(3000) <= 30 + (item_power * 3) && one_chance_in(20))
+                && random2(3000) <= 30 + (item_power * 3) && one_chance_in(12))
             {
                 if (make_item_fixed_artefact( mitm[p], (item_power == 51) ))
                     break;
@@ -687,6 +676,15 @@ int items( int allow_uniques,       // not just true-false,
                     set_equip_race( mitm[p], ISFLAG_ELVEN );
                 break;
 
+            case WPN_FALCHION:
+                if (one_chance_in(5))
+                    set_equip_race( mitm[p], ISFLAG_DWARVEN );
+                if (one_chance_in(3))
+                    set_equip_race( mitm[p], ISFLAG_ORCISH );
+                if (one_chance_in(3))
+                    set_equip_race( mitm[p], ISFLAG_ELVEN );
+                break;
+
             case WPN_LONG_SWORD:
                 if (one_chance_in(4))
                     set_equip_race( mitm[p], ISFLAG_ORCISH );
@@ -704,7 +702,7 @@ int items( int allow_uniques,       // not just true-false,
                     set_equip_race( mitm[p], ISFLAG_ORCISH );
                 break;
 
-            case WPN_AXE:
+            case WPN_WAR_AXE:
             case WPN_HAND_AXE:
             case WPN_BROAD_AXE:
             case WPN_BATTLEAXE:
@@ -951,6 +949,7 @@ int items( int allow_uniques,       // not just true-false,
                             set_weapon_special(p, SPWPN_VENOM);
                         break;
 
+                    case WPN_FALCHION:
                     case WPN_LONG_SWORD:
                         if (one_chance_in(12))
                             set_weapon_special(p, SPWPN_VENOM);
@@ -1000,7 +999,7 @@ int items( int allow_uniques,       // not just true-false,
                         break;
 
 
-                    case WPN_AXE:
+                    case WPN_WAR_AXE:
                     case WPN_BROAD_AXE:
                     case WPN_BATTLEAXE:
                     case WPN_EXECUTIONERS_AXE:
@@ -1126,6 +1125,7 @@ int items( int allow_uniques,       // not just true-false,
                                                               : SPWPN_FROST));
                         }
                         break;
+
                     case WPN_BLOWGUN:
                         if (one_chance_in(7))
                             set_weapon_special(p, SPWPN_VENOM);
@@ -1171,8 +1171,8 @@ int items( int allow_uniques,       // not just true-false,
 
                         if (one_chance_in(5))
                         {
-                            set_weapon_special(p, (coinflip() ? SPWPN_FLAME
-                                                              : SPWPN_FROST));
+                            set_weapon_special(p, (coinflip() ? SPWPN_FLAMING
+                                                              : SPWPN_FREEZING));
                         }
 
                         if (one_chance_in(5))
@@ -1516,7 +1516,6 @@ int items( int allow_uniques,       // not just true-false,
                     set_equip_race( mitm[p], ISFLAG_ELVEN );
                 break;
 
-            // no helmet, for various reasons
             case ARM_GLOVES:
                 if (one_chance_in(4))
                     set_equip_race( mitm[p], ISFLAG_ELVEN );
@@ -1543,18 +1542,42 @@ int items( int allow_uniques,       // not just true-false,
                     set_equip_race( mitm[p], ISFLAG_DWARVEN );
                 break;
 
+            case ARM_HELMET:
+                if (cmp_helmet_type( mitm[p], THELM_CAP )
+                    || cmp_helmet_type( mitm[p], THELM_WIZARD_HAT ))
+                {
+                    if (one_chance_in(6))
+                        set_equip_race( mitm[p], ISFLAG_ELVEN );
+                }
+                else
+                {
+                    // helms and helmets
+                    if (one_chance_in(8))
+                        set_equip_race( mitm[p], ISFLAG_ORCISH );
+                    if (one_chance_in(6))
+                        set_equip_race( mitm[p], ISFLAG_DWARVEN );
+                }
+                break;
+
             case ARM_ROBE:
                 if (one_chance_in(4))
                     set_equip_race( mitm[p], ISFLAG_ELVEN );
                 break;
 
-            default:            // other body armours:
+            case ARM_RING_MAIL:
+            case ARM_SCALE_MAIL:
+            case ARM_CHAIN_MAIL:
+            case ARM_SPLINT_MAIL:
+            case ARM_BANDED_MAIL:
+            case ARM_PLATE_MAIL:
                 if (mitm[p].sub_type <= ARM_CHAIN_MAIL && one_chance_in(6))
                     set_equip_race( mitm[p], ISFLAG_ELVEN );
                 if (mitm[p].sub_type >= ARM_RING_MAIL && one_chance_in(5))
                     set_equip_race( mitm[p], ISFLAG_DWARVEN );
                 if (one_chance_in(5))
                     set_equip_race( mitm[p], ISFLAG_ORCISH );
+
+            default:    // skins, hides, crystal plate are always plain
                 break;
             }
         }
@@ -2134,6 +2157,7 @@ int items( int allow_uniques,       // not just true-false,
 
         // everything begins as uncursed, unenchanted jewellery {dlb}:
         mitm[p].plus = 0;
+        mitm[p].plus2 = 0;
 
         // set pluses for rings that require them {dlb}:
         switch (mitm[p].sub_type)
@@ -2147,7 +2171,7 @@ int items( int allow_uniques,       // not just true-false,
             if (one_chance_in(5))       // 20% of such rings are cursed {dlb}
             {
                 do_curse_item( mitm[p] );
-                mitm[p].plus = (coinflip() ? -2 : -1);
+                mitm[p].plus = (coinflip() ? -2 : -3);
 
                 if (one_chance_in(3))
                     mitm[p].plus -= random2(4);
@@ -2166,66 +2190,35 @@ int items( int allow_uniques,       // not just true-false,
         // rings of slaying also require that pluses2 be set {dlb}:
         if (mitm[p].sub_type == RING_SLAYING)
         {
-            mitm[p].plus2 += 1 + (one_chance_in(3) ? random2(3)
-                                                   : random2avg(6, 2));
-
-            // should this happen to cursed rings? {dlb}
-            if (random2(25) < 9)        // 36% of such rings {dlb}
+            if (item_cursed( mitm[p] ) && !one_chance_in(20))
+                mitm[p].plus2 = -1 - random2avg(6, 2);
+            else
             {
-                mitm[p].plus = 0;
-                mitm[p].plus2 += 2;
+                mitm[p].plus2 += 1 + (one_chance_in(3) ? random2(3)
+                                                       : random2avg(6, 2));
+
+                if (random2(25) < 9)        // 36% of such rings {dlb}
+                {
+                    // make "ring of damage"
+                    do_uncurse_item( mitm[p] );
+                    mitm[p].plus = 0;
+                    mitm[p].plus2 += 2;
+                }
             }
         }
 
-        // confusing generation of seeming randarts
-        // -- how does this fit in? {dlb}
-        // -- well the if statements below are geared towards
-        //    avoiding certain base types with pluses by rerolling
-        //    the type in the next block (see enum.h).
-        //    Base types with pluses are avoided because of the
-        //    very dangerous values they can have for randarts.-- bwr
+        // All jewellery base types should now work. -- bwr
         if (allow_uniques == 1 && item_power > 2
             && random2(2000) <= 100 + (item_power * 3) && coinflip())
         {
-            if (mitm[p].sub_type == RING_PROTECTION)
-                mitm[p].sub_type = RING_PROTECTION_FROM_FIRE + random2(3);
-
-            if (mitm[p].sub_type == RING_STRENGTH
-                || mitm[p].sub_type == RING_SLAYING)
-            {
-                mitm[p].sub_type = RING_SEE_INVISIBLE + random2(4);
-            }
-
-            if (mitm[p].sub_type == RING_EVASION)
-                mitm[p].sub_type = RING_SUSTAIN_ABILITIES;
-
-            if (mitm[p].sub_type == RING_DEXTERITY
-                || mitm[p].sub_type == RING_INTELLIGENCE)
-            {
-                mitm[p].sub_type = RING_WIZARDRY + random2(8);
-            }
-
-            // hmmm ... maybe this should work off of pluses? {dlb}
-            if (mitm[p].sub_type == AMU_INACCURACY)
-                mitm[p].sub_type = AMU_RAGE + random2(8);
-
-            // Can't allow base ring types with +s...
-            //
-            // Well we probably can now that the seed is stored
-            // in item.special.  --bwr
             make_item_randart( mitm[p] );
-            mitm[p].plus = 0;
-            mitm[p].plus2 = 0;
-
-            // mitm[p].special = 200;
-            // mitm[p].plus = random2(70);
-            // mitm[p].plus2 = random2(150);
             break;
         }
 
         // rings of hunger and teleportation are always cursed {dlb}:
         if (mitm[p].sub_type == RING_HUNGER
-            || mitm[p].sub_type == RING_TELEPORTATION)
+            || mitm[p].sub_type == RING_TELEPORTATION
+            || one_chance_in(50))
         {
             do_curse_item( mitm[p] );
         }
@@ -2431,7 +2424,11 @@ int items( int allow_uniques,       // not just true-false,
 
     item_colour( mitm[p] );
 
-    return (p);
+    // Okay, this check should be redundant since the purpose of
+    // this function is to create valid items.  Still, we're adding
+    // this safety for fear that a report of Trog giving a non-existant
+    // item might symbolize something more serious. -- bwr
+    return (is_valid_item( mitm[p] ) ? p : NON_ITEM);
 }                               // end items()
 
 
@@ -2506,7 +2503,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     mitm[bp].base_type = 101;
 
     if (menv[mid].type == MONS_DANCING_WEAPON
-        && you.where_are_you == BRANCH_HALL_OF_BLADES)
+        && player_in_branch( BRANCH_HALL_OF_BLADES ))
     {
         give_level = 351;
     }
@@ -2520,7 +2517,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     {
     case MONS_KOBOLD:
         // a few of the smarter kobolds have blowguns.
-        if (one_chance_in(15))
+        if (one_chance_in(15) && level_number > 1)
         {
             mitm[bp].base_type = OBJ_WEAPONS;
             mitm[bp].sub_type = WPN_BLOWGUN;
@@ -2564,7 +2561,8 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     case MONS_GOBLIN:
         if (one_chance_in(3))
             force_spec = 3;
-        if (one_chance_in(12))
+
+        if (one_chance_in(12) && level_number > 1)
         {
             mitm[bp].base_type = OBJ_WEAPONS;
             mitm[bp].base_type = WPN_BLOWGUN;
@@ -2585,7 +2583,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     case MONS_WIGHT:
     case MONS_NORRIS:
         mitm[bp].base_type = OBJ_WEAPONS;
-        mitm[bp].sub_type = (one_chance_in(6) ? WPN_AXE + random2(4)
+        mitm[bp].sub_type = (one_chance_in(6) ? WPN_WAR_AXE + random2(4)
                                               : WPN_MACE + random2(12));
 
         if (coinflip())
@@ -2624,7 +2622,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         break;
 
     case MONS_ORC:
-        if (one_chance_in(15))
+        if (one_chance_in(15) && level_number > 1)
         {
             mitm[bp].base_type = OBJ_WEAPONS;
             mitm[bp].base_type = WPN_BLOWGUN;
@@ -2650,9 +2648,9 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
                                  (temp_rand >  48) ? WPN_MACE :        // 8.33%
                                  (temp_rand >  38) ? WPN_WHIP :        // 4.17%
                                  (temp_rand >  28) ? WPN_TRIDENT :     // 4.17%
-                                 (temp_rand >  18) ? WPN_SCIMITAR :    // 4.17%
+                                 (temp_rand >  18) ? WPN_FALCHION :    // 4.17%
                                  (temp_rand >   8) ? WPN_MORNINGSTAR : // 4.17%
-                                 (temp_rand >   2) ? WPN_AXE           // 2.50%
+                                 (temp_rand >   2) ? WPN_WAR_AXE           // 2.50%
                                                    : WPN_SPIKED_FLAIL);// 1.25%
         }
         else
@@ -2725,7 +2723,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
                              (temp_rand >  39) ? WPN_MORNINGSTAR :  // 8.33%
                              (temp_rand >  29) ? WPN_GREAT_MACE :   // 8.33%
                              (temp_rand >  19) ? WPN_TRIDENT :      // 8.33%
-                             (temp_rand >  10) ? WPN_AXE :          // 7.50%
+                             (temp_rand >  10) ? WPN_WAR_AXE :          // 7.50%
                              (temp_rand >   1) ? WPN_FLAIL :        // 7.50%
                              (temp_rand >   0) ? WPN_BROAD_AXE      // 0.83%
                                                : WPN_SPIKED_FLAIL); // 0.83%
@@ -2746,7 +2744,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         mitm[bp].sub_type = ((temp_rand > 19) ? WPN_GREAT_SWORD :// 16.67%
                              (temp_rand > 15) ? WPN_LONG_SWORD : // 16.67%
                              (temp_rand > 11) ? WPN_BATTLEAXE :  // 16.67%
-                             (temp_rand >  7) ? WPN_AXE :        // 16.67%
+                             (temp_rand >  7) ? WPN_WAR_AXE :        // 16.67%
                              (temp_rand >  5) ? WPN_GREAT_MACE : //  8.33%
                              (temp_rand >  3) ? WPN_GREAT_FLAIL ://  8.33%
                              (temp_rand >  1) ? WPN_GLAIVE :     //  8.33%
@@ -2902,7 +2900,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         if (one_chance_in(7))
             mitm[bp].sub_type = WPN_BATTLEAXE;
         if (one_chance_in(7))
-            mitm[bp].sub_type = WPN_AXE;
+            mitm[bp].sub_type = WPN_WAR_AXE;
         if (one_chance_in(7))
             mitm[bp].sub_type = WPN_BROAD_AXE;
         if (one_chance_in(7))
@@ -3078,7 +3076,6 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
       menv[mid].inv[MSLOT_MISCELLANY] = thing_created;
 
 
-    // SPWPN_PROTECTION and SPWPN_S_o_Z ??? {dlb}
     if (get_weapon_brand( mitm[thing_created] ) == SPWPN_PROTECTION )
         menv[mid].armour_class += 5;
 
@@ -3455,12 +3452,18 @@ static bool find_in_area(int sx, int sy, int ex, int ey, unsigned char feature)
     int x,y;
 
     if (feature != 0)
-        for(x=sx; x<=ex; x++)
-            for(y=sy; y<=ey; y++)
+    {
+        for(x = sx; x <= ex; x++)
+        {
+            for(y = sy; y <= ey; y++)
+            {
                 if (grd[x][y] == feature)
-                    return true;
+                    return (true);
+            }
+        }
+    }
 
-    return false;
+    return (false);
 }
 
 // stamp a box.  can avoid a possible type,  and walls and floors can
@@ -3727,13 +3730,13 @@ static int builder_normal(int level_number, char level_type, spec_room &sr)
     bool skipped = false;
     bool done_city = false;
 
-    if (you.where_are_you == BRANCH_DIS)
+    if (player_in_branch( BRANCH_DIS ))
     {
         city_level(level_number);
         return 1;
     }
 
-    if (you.where_are_you == BRANCH_MAIN_DUNGEON && level_type == LEVEL_DUNGEON
+    if (player_in_branch( BRANCH_MAIN_DUNGEON )
         && level_number > 10 && level_number < 23 && one_chance_in(9))
     {
         // Can't have vaults on you.where_are_you != BRANCH_MAIN_DUNGEON levels
@@ -3741,7 +3744,7 @@ static int builder_normal(int level_number, char level_type, spec_room &sr)
         return 1;
     }
 
-    if (you.where_are_you == BRANCH_VAULTS)
+    if (player_in_branch( BRANCH_VAULTS ))
     {
         if (one_chance_in(3))
             city_level(level_number);
@@ -3785,8 +3788,8 @@ static int builder_normal(int level_number, char level_type, spec_room &sr)
         roguey_level(level_number, sr);
 
         if (level_number > 6
-            && you.where_are_you == BRANCH_MAIN_DUNGEON
-            && level_type == LEVEL_DUNGEON && one_chance_in(4))
+            && player_in_branch( BRANCH_MAIN_DUNGEON )
+            && one_chance_in(4))
         {
             build_minivaults(level_number, 200);
             return 1;
@@ -3925,7 +3928,7 @@ static void builder_extras( int level_number, int level_type )
         river_type = DNGN_LAVA;
     }
 
-    if (you.where_are_you == BRANCH_GEHENNA)
+    if (player_in_branch( BRANCH_GEHENNA ))
     {
         river_type = DNGN_LAVA;
 
@@ -3934,7 +3937,7 @@ static void builder_extras( int level_number, int level_type )
         else
             build_lake( river_type );
     }
-    else if (you.where_are_you == BRANCH_COCYTUS)
+    else if (player_in_branch( BRANCH_COCYTUS ))
     {
         river_type = DNGN_DEEP_WATER;
 
@@ -3955,8 +3958,9 @@ static void builder_extras( int level_number, int level_type )
 
 #endif // USE_RIVERS
 
-    if (level_number > 6 && you.where_are_you == BRANCH_MAIN_DUNGEON
-                        && level_type == LEVEL_DUNGEON && one_chance_in(3))
+    if (level_number > 6
+        && player_in_branch( BRANCH_MAIN_DUNGEON )
+        && one_chance_in(3))
     {
         build_minivaults(level_number, 200);
         return;
@@ -4004,7 +4008,7 @@ static void place_traps(int level_number)
             env.trap[i].type = TRAP_BLADE;
 
         if ((random2(1 + level_number) > 14 && one_chance_in(3))
-            || (you.where_are_you == BRANCH_HALL_OF_ZOT && coinflip()))
+            || (player_in_branch( BRANCH_HALL_OF_ZOT ) && coinflip()))
         {
             env.trap[i].type = TRAP_ZOT;
         }
@@ -4042,7 +4046,7 @@ static void place_branch_entrances(int dlevel, char level_type)
     if (!level_type == LEVEL_DUNGEON)
         return;
 
-    if (you.where_are_you == BRANCH_MAIN_DUNGEON)
+    if (player_in_branch( BRANCH_MAIN_DUNGEON ))
     {
         // stair to HELL
         if (dlevel >= 20 && dlevel <= 27)
@@ -4410,14 +4414,13 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
     int which_unique;
 
     if (level_number > 0
-        && !(you.where_are_you == BRANCH_DIS
-             || you.where_are_you == BRANCH_GEHENNA
-             || you.where_are_you == BRANCH_COCYTUS
-             || you.where_are_you == BRANCH_TARTARUS
-             || you.where_are_you == BRANCH_ORCISH_MINES
-             || you.where_are_you == BRANCH_HIVE
-             || you.where_are_you == BRANCH_LAIR
-             || you.where_are_you == BRANCH_ECUMENICAL_TEMPLE))
+        && you.level_type == LEVEL_DUNGEON  // avoid generating on temp levels
+        && !player_in_hell()
+        && !player_in_branch( BRANCH_ORCISH_MINES )
+        && !player_in_branch( BRANCH_HIVE )
+        && !player_in_branch( BRANCH_LAIR )
+        && !player_in_branch( BRANCH_SLIME_PITS )
+        && !player_in_branch( BRANCH_ECUMENICAL_TEMPLE ))
     {
         while(one_chance_in(3))
         {
@@ -4517,14 +4520,14 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
             swimming_things[i] = MONS_BIG_FISH + random2(4);
 
             // swamp worms and h2o elementals generated below: {dlb}
-            if (you.where_are_you == BRANCH_SWAMP && !one_chance_in(3))
+            if (player_in_branch( BRANCH_SWAMP ) && !one_chance_in(3))
                 swimming_things[i] = MONS_SWAMP_WORM;
         }
 
         if (level_number >= 25 && one_chance_in(5))
             swimming_things[0] = MONS_WATER_ELEMENTAL;
 
-        if (you.where_are_you == BRANCH_COCYTUS)
+        if (player_in_branch( BRANCH_COCYTUS ))
             swimming_things[3] = MONS_WATER_ELEMENTAL;
 
         aq_creatures = random2avg(9, 2) + (random2(water_spaces) / 10);
@@ -4554,21 +4557,21 @@ static void builder_items(int level_number, char level_type, int items_wanted)
     int items_levels = level_number;
     int item_no;
 
-    if (you.where_are_you == BRANCH_VAULTS)
+    if (player_in_branch( BRANCH_VAULTS ))
     {
         items_levels *= 15;
         items_levels /= 10;
     }
-    else if (you.where_are_you == BRANCH_ORCISH_MINES)
+    else if (player_in_branch( BRANCH_ORCISH_MINES ))
     {
         specif_type = OBJ_GOLD; /* lots of gold in the orcish mines */
     }
 
-    if ((you.where_are_you >= BRANCH_DIS
-            && you.where_are_you <= BRANCH_TARTARUS)
-        || you.where_are_you == BRANCH_SLIME_PITS
-        || you.where_are_you == BRANCH_HALL_OF_BLADES
-        || you.where_are_you == BRANCH_ECUMENICAL_TEMPLE)
+    if (player_in_branch( BRANCH_VESTIBULE_OF_HELL )
+        || player_in_hell()
+        || player_in_branch( BRANCH_SLIME_PITS )
+        || player_in_branch( BRANCH_HALL_OF_BLADES )
+        || player_in_branch( BRANCH_ECUMENICAL_TEMPLE ))
     {
         /* No items in hell, the slime pits, the Hall */
         return;
@@ -4582,8 +4585,7 @@ static void builder_items(int level_number, char level_type, int items_wanted)
         // in the first five levels, but not a guarantee of one.  The
         // intent of this is to reduce the advantage that "cutting"
         // starting weapons have.  -- bwr
-        if (you.where_are_you == BRANCH_MAIN_DUNGEON
-            && level_type == LEVEL_DUNGEON
+        if (player_in_branch( BRANCH_MAIN_DUNGEON )
             && level_number < 5 && coinflip())
         {
             item_no = items( 0, OBJ_WEAPONS, WPN_KNIFE, false, 0, 250 );
@@ -4725,12 +4727,12 @@ static void special_room(int level_number, spec_room &sr)
     // creation..
     int room_x1 = 8 + random2(55);
     int room_y1 = 8 + random2(45);
-    int room_x2 = room_x1 + 6 + random2(4);
-    int room_y2 = room_y1 + 6 + random2(4);
+    int room_x2 = room_x1 + 4 + random2avg(6,2);
+    int room_y2 = room_y1 + 4 + random2avg(6,2);
 
     // do special walls & floor
-    make_box(room_x1, room_y1, room_x2, room_y2, DNGN_BUILDER_SPECIAL_FLOOR,
-        DNGN_BUILDER_SPECIAL_WALL);
+    make_box( room_x1, room_y1, room_x2, room_y2,
+              DNGN_BUILDER_SPECIAL_FLOOR, DNGN_BUILDER_SPECIAL_WALL );
 
     // set up passed in spec_room structure
     sr.created = true;
@@ -4741,9 +4743,7 @@ static void special_room(int level_number, spec_room &sr)
     sr.y2 = room_y2 - 1;
 
     if (level_number < 7)
-    {
         spec_room_type = SROOM_LAIR_KOBOLD;
-    }
     else
     {
         spec_room_type = random2(NUM_SPECIAL_ROOMS);
@@ -4751,11 +4751,15 @@ static void special_room(int level_number, spec_room &sr)
         if (level_number < 23 && one_chance_in(4))
             spec_room_type = SROOM_BEEHIVE;
 
-        if (level_number < 17 && one_chance_in(4))
+        if ((level_number > 13 && spec_room_type == SROOM_LAIR_KOBOLD)
+            || (level_number < 16 && spec_room_type == SROOM_MORGUE)
+            || (level_number < 17 && one_chance_in(4)))
+        {
             spec_room_type = SROOM_LAIR_ORC;
+        }
 
-        if (level_number > 17 && spec_room_type == SROOM_LAIR_KOBOLD)
-            spec_room_type = SROOM_LAIR_ORC;
+        if (level_number > 19 && coinflip())
+            spec_room_type = SROOM_MORGUE;
     }
 
 
@@ -4859,9 +4863,9 @@ static void special_room(int level_number, spec_room &sr)
 
         break;
 
+    case SROOM_TREASURY:
         // should only appear in deep levels, with a guardian
         // Maybe have several types of treasure room?
-    case SROOM_TREASURY:
         // place treasure {dlb}:
         for (x = sr.x1; x <= sr.x2; x++)
         {
@@ -4899,6 +4903,10 @@ static void special_room(int level_number, spec_room &sr)
 
     case SROOM_BEEHIVE:
         beehive(sr);
+        break;
+
+    case SROOM_MORGUE:
+        morgue(sr);
         break;
     }
 }                               // end special_room()
@@ -5299,7 +5307,7 @@ static void build_vaults(int level_number, int force_vault)
         }
     }
 
-    if (you.where_are_you == BRANCH_DIS)
+    if (player_in_branch( BRANCH_DIS ))
     {
         for (sty = 0; sty < 5; sty++)
             stair_exist[sty] = 1;
@@ -5588,8 +5596,8 @@ static void place_pool(unsigned char pool_type, unsigned char pool_x1,
     unsigned char left_edge, right_edge;
 
     // don't place LAVA pools in crypt.. use shallow water instead.
-    if ((you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
-        && pool_type == DNGN_LAVA)
+    if (pool_type == DNGN_LAVA
+        && (player_in_branch(BRANCH_CRYPT) || player_in_branch(BRANCH_TOMB)))
     {
         pool_type = DNGN_SHALLOW_WATER;
     }
@@ -5641,9 +5649,9 @@ static void many_pools(unsigned char pool_type)
     int no_pools = 20 + random2avg(9, 2);
     int timeout = 0;
 
-    if (you.where_are_you == BRANCH_COCYTUS)
+    if (player_in_branch( BRANCH_COCYTUS ))
         pool_type = DNGN_DEEP_WATER;
-    else if (you.where_are_you == BRANCH_GEHENNA)
+    else if (player_in_branch( BRANCH_GEHENNA ))
         pool_type = DNGN_LAVA;
 
     do
@@ -5727,7 +5735,7 @@ void item_colour( item_def &item )
             break;
         }
 
-        if (is_demonic(item.sub_type))
+        if (is_demonic( item.sub_type ))
             item.colour = random_colour();
         else if (launches_things( item.sub_type ))
             item.colour = BROWN;
@@ -5810,41 +5818,41 @@ void item_colour( item_def &item )
             break;
         case ARM_DRAGON_HIDE:
         case ARM_DRAGON_ARMOUR:
-            item.colour = mons_colour(MONS_DRAGON);
+            item.colour = mons_colour( MONS_DRAGON );
             break;
         case ARM_TROLL_HIDE:
         case ARM_TROLL_LEATHER_ARMOUR:
-            item.colour = mons_colour(MONS_TROLL);
+            item.colour = mons_colour( MONS_TROLL );
             break;
         case ARM_CRYSTAL_PLATE_MAIL:
             item.colour = LIGHTGREY;
             break;
         case ARM_ICE_DRAGON_HIDE:
         case ARM_ICE_DRAGON_ARMOUR:
-            item.colour = mons_colour(MONS_ICE_DRAGON);
+            item.colour = mons_colour( MONS_ICE_DRAGON );
             break;
         case ARM_STEAM_DRAGON_HIDE:
         case ARM_STEAM_DRAGON_ARMOUR:
-            item.colour = mons_colour(MONS_STEAM_DRAGON);
+            item.colour = mons_colour( MONS_STEAM_DRAGON );
             break;
         case ARM_MOTTLED_DRAGON_HIDE:
         case ARM_MOTTLED_DRAGON_ARMOUR:
-            item.colour = mons_colour(MONS_MOTTLED_DRAGON);
+            item.colour = mons_colour( MONS_MOTTLED_DRAGON );
             break;
         case ARM_STORM_DRAGON_HIDE:
         case ARM_STORM_DRAGON_ARMOUR:
-            item.colour = mons_colour(MONS_STORM_DRAGON);
+            item.colour = mons_colour( MONS_STORM_DRAGON );
             break;
         case ARM_GOLD_DRAGON_HIDE:
         case ARM_GOLD_DRAGON_ARMOUR:
-            item.colour = mons_colour(MONS_GOLDEN_DRAGON);
+            item.colour = mons_colour( MONS_GOLDEN_DRAGON );
             break;
         case ARM_ANIMAL_SKIN:
             item.colour = BROWN;
             break;
         case ARM_SWAMP_DRAGON_HIDE:
         case ARM_SWAMP_DRAGON_ARMOUR:
-            item.colour = mons_colour(MONS_SWAMP_DRAGON);
+            item.colour = mons_colour( MONS_SWAMP_DRAGON );
             break;
         default:
             item.colour = LIGHTCYAN;
@@ -6250,20 +6258,21 @@ static char rare_weapon(unsigned char w_type)
     case WPN_DAGGER:
         return 10;
     case WPN_HAND_AXE:
+    case WPN_FALCHION:
     case WPN_MACE:
     case WPN_QUARTERSTAFF:
         return 9;
     case WPN_BOW:
     case WPN_FLAIL:
     case WPN_HAMMER:
-    case WPN_LONG_SWORD:
     case WPN_SABRE:
     case WPN_SHORT_SWORD:
     case WPN_SLING:
     case WPN_SPEAR:
         return 8;
-    case WPN_AXE:
+    case WPN_LONG_SWORD:
     case WPN_MORNINGSTAR:
+    case WPN_WAR_AXE:
         return 7;
     case WPN_BATTLEAXE:
     case WPN_CROSSBOW:
@@ -6311,7 +6320,14 @@ static int pick_an_altar(void)
     int altar_type = 0;
     int temp_rand;              // probability determination {dlb}
 
-    if (!one_chance_in(5))
+    if (player_in_branch( BRANCH_SLIME_PITS )
+        || player_in_branch( BRANCH_ECUMENICAL_TEMPLE )
+        || you.level_type == LEVEL_LABYRINTH)
+    {
+        // no extra altars in temple, none at all in slime pits or labyrinth
+        altar_type = DNGN_FLOOR;
+    }
+    else if (you.level_type == LEVEL_DUNGEON && !one_chance_in(5))
     {
         switch (you.where_are_you)
         {
@@ -6328,11 +6344,6 @@ static int pick_an_altar(void)
                           (temp_rand == 2) ? DNGN_ALTAR_OKAWARU :
                           (temp_rand == 3) ? DNGN_ALTAR_TROG
                                            : DNGN_ALTAR_XOM);
-            break;
-
-        case BRANCH_SLIME_PITS:             //jmf: no altars in Slime Pits
-        case BRANCH_ECUMENICAL_TEMPLE:      //or extra ones in the temple
-            altar_type = DNGN_FLOOR;
             break;
 
         case BRANCH_VAULTS: // "lawful" gods
@@ -6373,6 +6384,7 @@ static int pick_an_altar(void)
     }
     else
     {
+        // Note: this case includes the pandemonium or the abyss.
         temp_rand = random2(9);
 
         altar_type = ((temp_rand == 0) ? DNGN_ALTAR_ZIN :
@@ -6455,12 +6467,16 @@ static void place_shops(int level_number)
 
     temp_rand = random2(125);
 
+#if DEBUG_SHOPS
+    no_shops = MAX_SHOPS;
+#else
     no_shops = ((temp_rand > 28) ? 0 :                        // 76.8%
                 (temp_rand > 4)  ? 1                          // 19.2%
                                  : 1 + random2( MAX_SHOPS )); //  4.0%
 
     if (no_shops == 0 || level_number < 3)
         return;
+#endif
 
     for (int i = 0; i < no_shops; i++)
     {
@@ -6507,17 +6523,23 @@ static void place_spec_shop( int level_number,
 
     env.shop[i].level = level_number * 2;
 
-    env.shop[i].type =
-        ((force_s_type != SHOP_RANDOM) ? force_s_type : random2(NUM_SHOPS));
+    env.shop[i].type = (force_s_type != SHOP_RANDOM) ? force_s_type
+                                                     : random2(NUM_SHOPS);
 
-    if (env.shop[i].type != SHOP_WEAPON_ANTIQUE
+    if (env.shop[i].type == SHOP_FOOD)
+    {
+        env.shop[i].greed = 10 + random2(5);
+    }
+    else if (env.shop[i].type != SHOP_WEAPON_ANTIQUE
         && env.shop[i].type != SHOP_ARMOUR_ANTIQUE
         && env.shop[i].type != SHOP_GENERAL_ANTIQUE)
     {
         env.shop[i].greed = 10 + random2(5) + random2(level_number / 2);
     }
     else
+    {
         env.shop[i].greed = 15 + random2avg(19, 2) + random2(level_number);
+    }
 
     int plojy = 5 + random2avg(12, 3);
 
@@ -6530,7 +6552,9 @@ static void place_spec_shop( int level_number,
             item_level = level_number + random2((level_number + 1) * 2);
         }
         else
+        {
             item_level = level_number + random2((level_number + 1) * 3);
+        }
 
         if (one_chance_in(4))
             item_level = 351;
@@ -6542,12 +6566,21 @@ static void place_spec_shop( int level_number,
             orb = items( 1, item_in_shop(env.shop[i].type), OBJ_RANDOM, true,
                          item_level, 250 );
 
-            if (orb == NON_ITEM || mitm[orb].base_type != OBJ_GOLD)
+            if (orb != NON_ITEM
+                && mitm[orb].base_type != OBJ_GOLD
+                && (env.shop[i].type != SHOP_GENERAL_ANTIQUE
+                    || (mitm[orb].base_type != OBJ_MISSILES
+                        && mitm[orb].base_type != OBJ_FOOD)))
+            {
                 break;
+            }
 
             // reset object and try again
-            mitm[orb].base_type = OBJ_UNASSIGNED;
-            mitm[orb].quantity = 0;
+            if (orb != NON_ITEM)
+            {
+                mitm[orb].base_type = OBJ_UNASSIGNED;
+                mitm[orb].quantity = 0;
+            }
         }
 
         if (orb == NON_ITEM)
@@ -6577,39 +6610,39 @@ static unsigned char item_in_shop(unsigned char shop_type)
     {
     case SHOP_WEAPON:
         if (one_chance_in(5))
-            return OBJ_MISSILES;
+            return (OBJ_MISSILES);
         // *** deliberate fall through here  {dlb} ***
     case SHOP_WEAPON_ANTIQUE:
-        return OBJ_WEAPONS;
+        return (OBJ_WEAPONS);
 
     case SHOP_ARMOUR:
     case SHOP_ARMOUR_ANTIQUE:
-        return OBJ_ARMOUR;
+        return (OBJ_ARMOUR);
 
     case SHOP_GENERAL:
     case SHOP_GENERAL_ANTIQUE:
-        return OBJ_RANDOM;
+        return (OBJ_RANDOM);
 
     case SHOP_JEWELLERY:
-        return OBJ_JEWELLERY;
+        return (OBJ_JEWELLERY);
 
     case SHOP_WAND:
-        return OBJ_WANDS;
+        return (OBJ_WANDS);
 
     case SHOP_BOOK:
-        return OBJ_BOOKS;
+        return (OBJ_BOOKS);
 
     case SHOP_FOOD:
-        return OBJ_FOOD;
+        return (OBJ_FOOD);
 
     case SHOP_DISTILLERY:
-        return OBJ_POTIONS;
+        return (OBJ_POTIONS);
 
     case SHOP_SCROLL:
-        return OBJ_SCROLLS;
+        return (OBJ_SCROLLS);
     }
 
-    return OBJ_RANDOM;
+    return (OBJ_RANDOM);
 }                               // end item_in_shop()
 
 static void spotty_level(bool seeded, int iterations, bool boxy)
@@ -6623,7 +6656,7 @@ static void spotty_level(bool seeded, int iterations, bool boxy)
         {
             if (i == DNGN_ROCK_STAIRS_DOWN
                 || (i == DNGN_STONE_STAIRS_UP_I
-                    && you.where_are_you != BRANCH_SLIME_PITS))
+                    && !player_in_branch( BRANCH_SLIME_PITS )))
             {
                 continue;
             }
@@ -6640,7 +6673,7 @@ static void spotty_level(bool seeded, int iterations, bool boxy)
 
             // creating elevators
             if (i == DNGN_STONE_STAIRS_DOWN_I
-                && you.where_are_you != BRANCH_SLIME_PITS)
+                && !player_in_branch( BRANCH_SLIME_PITS ))
             {
                 grd[j + 1][k] = DNGN_STONE_STAIRS_UP_I;
             }
@@ -7132,7 +7165,7 @@ static char plan_6(int level_number)
     // Note, that although "level_number > 20" will work for most
     // trips to pandemonium (through regular portals), it won't work
     // for demonspawn who gate themselves there. -- bwr
-    if (((you.where_are_you == BRANCH_MAIN_DUNGEON && level_number > 20)
+    if (((player_in_branch( BRANCH_MAIN_DUNGEON ) && level_number > 20)
             || you.level_type == LEVEL_PANDEMONIUM)
         && (coinflip() || you.mutation[ MUT_PANDEMONIUM ]))
     {
@@ -7148,7 +7181,7 @@ static bool octa_room(spec_room &sr, int oblique_max, unsigned char type_floor)
     int x,y;
 
     // hack - avoid lava in the crypt {gdl}
-    if ((you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+    if ((player_in_branch( BRANCH_CRYPT ) || player_in_branch( BRANCH_TOMB ))
          && type_floor == DNGN_LAVA)
     {
         type_floor = DNGN_SHALLOW_WATER;
@@ -7509,9 +7542,11 @@ static int box_room_doors( int bx1, int bx2, int by1, int by2, int new_doors)
 static void box_room(int bx1, int bx2, int by1, int by2, int wall_type)
 {
     // hack -- avoid lava in the crypt. {gdl}
-    if ((you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+    if ((player_in_branch( BRANCH_CRYPT ) || player_in_branch( BRANCH_TOMB ))
          && wall_type == DNGN_LAVA)
+    {
         wall_type = DNGN_SHALLOW_WATER;
+    }
 
     int temp_rand, new_doors, doors_placed;
 
@@ -7658,11 +7693,8 @@ static void diamond_rooms(int level_number)
     int i, oblique_max;
 
     // I guess no diamond rooms in either of these places {dlb}:
-    if (you.where_are_you == BRANCH_DIS
-        || you.where_are_you == BRANCH_TARTARUS)
-    {
+    if (player_in_branch( BRANCH_DIS ) || player_in_branch( BRANCH_TARTARUS ))
         return;
-    }
 
     if (level_number > 5 + random2(5) && coinflip())
         type_floor = DNGN_SHALLOW_WATER;
@@ -7679,9 +7711,9 @@ static void diamond_rooms(int level_number)
     if (level_number > 12 && one_chance_in(20))
         type_floor = DNGN_METAL_WALL;
 
-    if (you.where_are_you == BRANCH_GEHENNA)
+    if (player_in_branch( BRANCH_GEHENNA ))
         type_floor = DNGN_LAVA;
-    else if (you.where_are_you == BRANCH_COCYTUS)
+    else if (player_in_branch( BRANCH_COCYTUS ))
         type_floor = DNGN_DEEP_WATER;
 
     for (i = 0; i < numb_diam; i++)
@@ -7772,10 +7804,11 @@ static void big_room(int level_number)
         type_2 = DNGN_ROCK_WALL + random2(4);
 
     // no lava in the Crypt or Tomb, thanks!
-    if (you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+    if (player_in_branch( BRANCH_CRYPT ) || player_in_branch( BRANCH_TOMB ))
     {
         if (type_floor == DNGN_LAVA)
             type_floor = DNGN_SHALLOW_WATER;
+
         if (type_2 == DNGN_LAVA)
             type_2 = DNGN_SHALLOW_WATER;
     }
@@ -7968,7 +8001,7 @@ static void roguey_level(int level_number, spec_room &sr)
         sr.x2 = rox2[spec_room_done];
         sr.y1 = roy1[spec_room_done];
         sr.y2 = roy2[spec_room_done];
-        morgue(sr);
+        special_room( level_number, sr );
 
         // make the room 'special' so it doesn't get overwritten
         // by something else (or put monsters in walls, etc..).
@@ -8011,9 +8044,9 @@ static void morgue(spec_room &sr)
     int temp_rand = 0;          // probability determination {dlb}
     int x,y;
 
-    for (x = sr.x1; x < sr.x2; x++)
+    for (x = sr.x1; x <= sr.x2; x++)
     {
-        for (y = sr.y1; y < sr.y2; y++)
+        for (y = sr.y1; y <= sr.y2; y++)
         {
             if (grd[x][y] == DNGN_FLOOR || grd[x][y] == DNGN_BUILDER_SPECIAL_FLOOR)
             {
@@ -8116,13 +8149,14 @@ void define_zombie( int mid, int ztype, int cs, int power )
             // we have to watch for summoned zombies on other levels, too,
             // such as the Temple, HoB, and Slime Pits.
             if (you.level_type != LEVEL_DUNGEON
-                || (you.where_are_you >= BRANCH_DIS
-                    && you.where_are_you <= BRANCH_TARTARUS)
-                || you.where_are_you == BRANCH_ECUMENICAL_TEMPLE
-                || you.where_are_you == BRANCH_CRYPT
-                || you.where_are_you == BRANCH_TOMB
-                || you.where_are_you == BRANCH_HALL_OF_BLADES
-                || you.where_are_you == BRANCH_SLIME_PITS)
+                || player_in_hell()
+                || player_in_branch( BRANCH_VESTIBULE_OF_HELL )
+                || player_in_branch( BRANCH_ECUMENICAL_TEMPLE )
+                || player_in_branch( BRANCH_CRYPT )
+                || player_in_branch( BRANCH_TOMB )
+                || player_in_branch( BRANCH_HALL_OF_BLADES )
+                || player_in_branch( BRANCH_SNAKE_PIT )
+                || player_in_branch( BRANCH_SLIME_PITS ))
             {
                 ignore_rarity = true;
             }
@@ -8257,7 +8291,7 @@ static void build_river( unsigned char river_type ) //mv
     int i,j;
     int y, width;
 
-    if (you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+    if (player_in_branch( BRANCH_CRYPT ) || player_in_branch( BRANCH_TOMB ))
         return;
 
     // if (one_chance_in(10))
@@ -8307,7 +8341,7 @@ static void build_lake(unsigned char lake_type) //mv
     int i, j;
     int x1, y1, x2, y2;
 
-    if (you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
+    if (player_in_branch( BRANCH_CRYPT ) || player_in_branch( BRANCH_TOMB ))
         return;
 
     // if (one_chance_in (10))

@@ -388,7 +388,7 @@ static void exercise2( char exsk )
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "Exercised %s * %d for %d xp.",
              skill_name(exsk), skill_inc, skill_change );
-    mpr( info, MSGCH_DIAGNOSTIC );
+    mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 */
 

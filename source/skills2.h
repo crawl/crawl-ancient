@@ -18,7 +18,7 @@
 /* ***********************************************************************
  * called from: chardump - it_use3 - itemname - skills
  * *********************************************************************** */
-char *skill_name(unsigned char which_skill);
+const char *skill_name(unsigned char which_skill);
 
 
 // last_updated 24may2000 {dlb}
