@@ -15,6 +15,9 @@
 #include "AppHdr.h"
 #include "skills2.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #ifdef DOS
 #include <conio.h>
 #endif
@@ -23,62 +26,59 @@
 #include <curses.h>
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "externs.h"
+#include "player.h"
 
-int species_skills(char skill, char species);
-unsigned int skill_exp_needed(int lev);         /* both in skills.cc */
 
 //#define WIZARD
 
+
 char *skills[50][5] =
 {
-    {"Fighting", "Grunt", "Fighter", "Warrior", "Slayer"},      //  0- fighting
-     {"Short Blades", "Stabber", "Cutter", "Slicer", "Knifefighter"},   //  1- short blades
-     {"Long Blades", "Slasher", "Cutter", "Slicer", "Eviscerator"},     //  2- long swords
-     {NULL},                    //  3- was: great swords {dlb}
-     {"Axes", "Chopper", "Cleaver", "Hacker", "Axe Maniac"},    //  4- axes
-     {"Maces & Flails", "Basher", "Cruncher", "Smasher", "Crusher"},    //  5- maces & flails
-     {"Polearms", "Chopper", "Cleaver", "Hacker", "Halberdier"},        //  6- polearms
-     {"Staves", "Basher", "Cruncher", "Smasher", "Stickfighter"},       //  7- staves
-     {"Slings", "Slinger", "Flinger", "Whirler", "Crazy Person"},       //  8- slings (who would bother?)
-     {"Bows", "Hunter", "Archer", "Sharpshooter", "Merry Person"},      //  9- bows  (as in 'Robin Hood and his...')
-     {"Crossbows", "Hunter", "Archer", "Sharpshooter", "Ballista"},     // 10- xbows
-     {"Darts", "Thrower", "Hurler", "Hurler, First Class", "Darts Champion"},   // 11- darts
-     {"Throwing", "Thrower", "Chucker", "Chucker, First Class", "Catapult"},    // 12- throwing
-     {"Armour", "Grunt", "Heavy Grunt", "Tortoise", "Invulnerable"},    // 13- armour
-     {"Dodging", "Ducker", "Dodger", "Avoider", "Evader"},      // 14- dodging
-     {"Stealth", "Sneak", "Covert", "Shadow", "Undetectable"},  // 15- stealth
-     {"Stabbing", "Backstabber", "Cutthroat", "Blackguard", "Politician"},      // 16- stabbing
- {"Shields", "Shield-Bearer", "Blocker", "Blocker, First Class", "Hoplite"},    // 17- shields
-     {"Traps & Doors", "Disarmer", "Trapper", "Architect", "Engineer"},         // 18- traps
-     {"Unarmed Combat", "Brawler", "Boxer", "Martial Artist", "Master"},        // 19- unarmed combat
-     {NULL},                    // 20- empty
-     {NULL},                    // 21- empty
-     {NULL},                    // 22- empty
-     {NULL},                    // 23- empty
-     {NULL},                    // 24- empty
-     {"Spellcasting", "Magician", "Wizard", "Eclecticist", "Archmage"},         // 25- spellcasting
-     {"Conjurations", "Evoker", "Conjurer", "Destroyer", "Annihilator"},        // 26- conjuration
-     {"Enchantments", "Charm-Maker", "Enchanter", "Infuser", "Spellbinder"},    // 27- enchantment
-     {"Summonings", "Caller", "Invoker", "Summoner", "Demonologist"},   // 28- summoning
-  {"Necromancy", "Grave Robber", "Necromancer", "Reanimator", "Death Mage"},    // 29- necromany
-     {"Translocations", "Jumper", "Shifter", "Blinker", "Translocater"},        // 30- translocations
-     {"Transmigration", "Changer", "Transformer", "Transmogrifier", "Transmuter"},      // 31- transmigrations
-     {"Divinations", "Seer", "Overseer", "Diviner", "Oracle"},  // 32- divinations
-     {"Fire Magic", "Firebug", "Arsonist", "Pyromancer", "Infernalist"},        // 33- fire
-     {"Ice Magic", "Freezer", "Refrigerator", "Cryomancer", "Englaciator"},     // 34- ice
-     {"Air Magic", "Air Mage", "Cloud mage", "Sky Mage", "Storm Mage"},         // 35- air
-     {"Earth Magic", "Digger", "Geomancer", "Petrifier", "Earth Mage"},         // 36- air
-     {"Poison Magic", "Stinger", "Tainter", "Poisoner", "Venom Mage"},  // 37- earth
-     {"Invocations", "Believer", "Servant", "Worldly Agent", "Invoker"},        // 38- invocations
+  {"Fighting", "Grunt", "Fighter", "Warrior", "Slayer"}, // 0
+  {"Short Blades", "Stabber", "Cutter", "Slicer", "Knifefighter"},
+  {"Long Blades", "Slasher", "Fencer", "Swordsman", "Eviscerator"},
+  {NULL}, //  3- was: great swords {dlb}
+  {"Axes", "Chopper", "Cleaver", "Hacker", "Axe Maniac"},
+  {"Maces & Flails", "Basher", "Cruncher", "Smasher", "Crusher"}, // 5
+  {"Polearms", "Chopper", "Cleaver", "Hacker", "Halberdier"},
+  {"Staves", "Basher", "Cruncher", "Smasher", "Stickfighter"},
+  {"Slings", "Slinger", "Vandal", "Whirler", "Crazy Person"},
+  {"Bows", "Hunter", "Archer", "Sharpshooter", "Merry Person"},
+  {"Crossbows", "Hunter", "Archer", "Sharpshooter", "Ballista"}, // 10
+  {"Darts", "Thrower", "Hurler", "Hurler, First Class", "Darts Champion"},
+  {"Throwing", "Marksman", "Sharpshooter", "Hawkeye", "Sniper"},
+  {"Armour", "Grunt", "Heavy Grunt", "Tortoise", "Invulnerable"},
+  {"Dodging", "Ducker", "Dodger", "Avoider", "Untouchable"},
+  {"Stealth", "Sneak", "Covert", "Shadow", "Undetectable"}, // 15
+  {"Stabbing", "Backstabber", "Cutthroat", "Blackguard", "Politician"},
+  {"Shields", "Shield-Bearer", "Blocker", "Blocker, First Class", "Hoplite"},
+  {"Traps & Doors", "Disarmer", "Trapper", "Architect", "Engineer"},
+  {"Unarmed Combat", "Brawler", "Boxer", "Martial Artist", "Master"}, // 19
+  {NULL},                    // 20- empty
+  {NULL},                    // 21- empty
+  {NULL},                    // 22- empty
+  {NULL},                    // 23- empty
+  {NULL},                    // 24- empty
+  {"Spellcasting", "Magician", "Wizard", "Eclecticist", "Archmage"}, // 25
+  {"Conjurations", "Evoker", "Conjurer", "Destroyer", "Annihilator"},
+  {"Enchantments", "Charm-Maker", "Enchanter", "Infuser", "Spellbinder"},
+  {"Summonings", "Caller", "Summoner", "Demonologist", "Hellbinder"},
+  {"Necromancy", "Grave Robber", "Necromancer", "Reanimator", "Death Mage"},
+  {"Translocations", "Jumper", "Shifter", "Blinker", "Translocater"}, // 30
+  {"Transmigration", "Changer", "Transformer", "Transmogrifier", "Transmuter"},
+  {"Divinations", "Seer", "Soothsayer", "Diviner", "Oracle"},
+  {"Fire Magic", "Firebug", "Arsonist", "Pyromancer", "Infernalist"},
+  {"Ice Magic", "Freezer", "Refrigerator", "Cryomancer", "Englaciator"},
+  {"Air Magic", "Air Mage", "Cloud Mage", "Sky Mage", "Storm Mage"}, // 35
+  {"Earth Magic", "Digger", "Geomancer", "Petrifier", "Earth Mage"},
+  {"Poison Magic", "Stinger", "Tainter", "Poisoner", "Venom Mage"},
+  {"Invocations", "Believer", "Servant", "Worldly Agent", "Avatar"}, // 38
 
-/*NOTE: If more skills are added, must change ranges in level_change() in crawl99.cc */
+/*NOTE: If more skills are added, must change ranges in level_change() in player.cc */
 /*{"",             "", "", "", ""}, */
 
-    {NULL},                     // 39- empty
+     {NULL},                    // 39- empty
      {NULL},                    // 40- empty
      {NULL},                    // 41- empty
      {NULL},                    // 42- empty
@@ -93,9 +93,9 @@ char *skills[50][5] =
 
 
 
-// human
+
 /* Note that this (humans have 100 for all skills) is assumed in the
-   level_change function in crawl99.cc, if CLASSES is def'd
+   level_change function in player.cc, if CLASSES is def'd
 
    3.10: but it never is, and CLASSES is probably broken now. Anyway,
    the Spellcasting skill (25) is actually about 130% of what is shown here.
@@ -105,1719 +105,1597 @@ char *skills[50][5] =
 int spec_skills[36][39] =
 {
 
-// 1 human
-    {
-        100,                    // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         100,                   // slings
-         100,                   // bows
-         100,                   // xbows
-         100,                   // darts
-         100,                   // throwing
-         100,                   // armour
-         100,                   // dodge
-         100,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         100,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // fire
-         100,                   // ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_HUMAN (1)
+        100,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        100,               // SK_SLINGS
+        100,               // SK_BOWS
+        100,               // SK_CROSSBOWS
+        100,               // SK_DARTS
+        100,               // SK_THROWING
+        100,               // SK_ARMOUR
+        100,               // SK_DODGING
+        100,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        100,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 2: elf
-    {
-        120,                    // fighting
-         80,                    // short blades
-         80,                    // long blades
-         110,                   // great swords
-         120,                   // axes
-         130,                   // maces and flails
-         130,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         60,                    // bows
-         100,                   // xbows
-         90,                    // darts
-         80,                    // throwing
-         120,                   // armour
-         80,                    // dodge
-         80,                    // stealth
-         100,                   // stab
-         120,                   // shields
-         100,                   // traps
-         110,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        80,                     // spellcasting
-         105,                   // conj
-         70,                    // ench
-         100,                   // summ
-         120,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // Fire
-         100,                   // Ice
-         70,                    // Air
-         130,                   // Earth
-         110,                   // poison
-         100,                   // Invocations
+    {// SP_ELF (2)
+        120,               // SK_FIGHTING
+         80,               // SK_SHORT_BLADES
+         80,               // SK_LONG_SWORDS
+        110,               // SK_UNUSED_1
+        120,               // SK_AXES
+        130,               // SK_MACES_FLAILS
+        130,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+         60,               // SK_BOWS
+        100,               // SK_CROSSBOWS
+         90,               // SK_DARTS
+         80,               // SK_THROWING
+        120,               // SK_ARMOUR
+         80,               // SK_DODGING
+         80,               // SK_STEALTH
+        100,               // SK_STABBING
+        120,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        110,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+         80,               // SK_SPELLCASTING
+        105,               // SK_CONJURATIONS
+         70,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        120,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+         70,               // SK_AIR_MAGIC
+        130,               // SK_EARTH_MAGIC
+        110,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// 3: high elf
-
-    {
-        100,                    // fighting
-         70,                    // short blades
-         70,                    // long blades
-         115,                   // great swords
-         130,                   // axes
-         150,                   // maces and flails
-         150,                   // polearms
-         100,                   // staves
-         140,                   // slings
-         60,                    // bows
-         100,                   // xbows
-         90,                    // darts
-         80,                    // throwing
-         110,                   // armour
-         90,                    // dodge
-         90,                    // stealth
-         110,                   // stab
-         110,                   // shields
-         100,                   // traps
-         130,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        70,                     // spellcasting
-         90,                    // conj
-         70,                    // ench
-         110,                   // summ
-         130,                   // necro
-         90,                    // transloc
-         90,                    // transmut
-         110,                   // divin
-         100,                   // Fire
-         100,                   // Ice
-         70,                    // Air
-         130,                   // Earth
-         130,                   // poison
-         100,                   // Invocations
+    {// SP_HIGH_ELF (3)
+        100,               // SK_FIGHTING
+         70,               // SK_SHORT_BLADES
+         70,               // SK_LONG_SWORDS
+        115,               // SK_UNUSED_1
+        130,               // SK_AXES
+        150,               // SK_MACES_FLAILS
+        150,               // SK_POLEARMS
+        100,               // SK_STAVES
+        140,               // SK_SLINGS
+         60,               // SK_BOWS
+        100,               // SK_CROSSBOWS
+         90,               // SK_DARTS
+         80,               // SK_THROWING
+        110,               // SK_ARMOUR
+         90,               // SK_DODGING
+         90,               // SK_STEALTH
+        110,               // SK_STABBING
+        110,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        130,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+         70,               // SK_SPELLCASTING
+         90,               // SK_CONJURATIONS
+         70,               // SK_ENCHANTMENTS
+        110,               // SK_SUMMONINGS
+        130,               // SK_NECROMANCY
+         90,               // SK_TRANSLOCATIONS
+         90,               // SK_TRANSMIGRATION
+        110,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+         70,               // SK_AIR_MAGIC
+        130,               // SK_EARTH_MAGIC
+        130,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// 4: grey elf
-
-    {
-        140,                    // fighting
-         90,                    // short blades
-         95,                    // long blades
-         120,                   // great swords
-         140,                   // axes
-         160,                   // maces and flails
-         160,                   // polearms
-         100,                   // staves
-         130,                   // slings
-         70,                    // bows
-         100,                   // xbows
-         90,                    // darts
-         80,                    // throwing
-         140,                   // armour
-         75,                    // dodge
-         70,                    // stealth
-         100,                   // stab
-         140,                   // shields
-         100,                   // traps
-         130,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        60,                     // spellcasting
-         90,                    // conj
-         50,                    // ench
-         90,                    // summ
-         130,                   // necro
-         80,                    // transloc
-         80,                    // transmut
-         80,                    // divin
-         90,                    // Fire
-         90,                    // Ice
-         60,                    // Air
-         150,                   // Earth
-         110,                   // poison
-         100,                   // Invocations
+    {// SP_GREY_ELF (4)
+        140,               // SK_FIGHTING
+         90,               // SK_SHORT_BLADES
+         95,               // SK_LONG_SWORDS
+        120,               // SK_UNUSED_1
+        140,               // SK_AXES
+        160,               // SK_MACES_FLAILS
+        160,               // SK_POLEARMS
+        100,               // SK_STAVES
+        130,               // SK_SLINGS
+         70,               // SK_BOWS
+        100,               // SK_CROSSBOWS
+         90,               // SK_DARTS
+         80,               // SK_THROWING
+        140,               // SK_ARMOUR
+         75,               // SK_DODGING
+         70,               // SK_STEALTH
+        100,               // SK_STABBING
+        140,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        130,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+         60,               // SK_SPELLCASTING
+         90,               // SK_CONJURATIONS
+         50,               // SK_ENCHANTMENTS
+         90,               // SK_SUMMONINGS
+        130,               // SK_NECROMANCY
+         80,               // SK_TRANSLOCATIONS
+         80,               // SK_TRANSMIGRATION
+         80,               // SK_DIVINATIONS
+         90,               // SK_FIRE_MAGIC
+         90,               // SK_ICE_MAGIC
+         60,               // SK_AIR_MAGIC
+        150,               // SK_EARTH_MAGIC
+        110,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// 5: deep elf
-
-    {
-        150,                    // fighting
-         100,                   // short blades
-         105,                   // long blades
-         120,                   // great swords
-         150,                   // axes
-         165,                   // maces and flails
-         165,                   // polearms
-         100,                   // staves
-         135,                   // slings
-         74,                    // bows
-         75,                    // xbows
-         75,                    // darts
-         80,                    // throwing
-         140,                   // armour
-         70,                    // dodge
-         65,                    // stealth
-         80,                    // stab
-         140,                   // shields
-         100,                   // traps
-         130,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        55,                     // spellcasting
-         80,                    // conj
-         50,                    // ench
-         80,                    // summ
-         70,                    // necro
-         75,                    // transloc
-         75,                    // transmut
-         75,                    // divin
-         90,                    // Fire
-         90,                    // Ice
-         80,                    // Air
-         100,                   // Earth
-         80,                    // poison
-         100,                   // Invocations
+    {// SP_DEEP_ELF (5)
+        150,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        105,               // SK_LONG_SWORDS
+        120,               // SK_UNUSED_1
+        150,               // SK_AXES
+        165,               // SK_MACES_FLAILS
+        165,               // SK_POLEARMS
+        100,               // SK_STAVES
+        135,               // SK_SLINGS
+         74,               // SK_BOWS
+         75,               // SK_CROSSBOWS
+         75,               // SK_DARTS
+         80,               // SK_THROWING
+        140,               // SK_ARMOUR
+         70,               // SK_DODGING
+         65,               // SK_STEALTH
+         80,               // SK_STABBING
+        140,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        130,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+         55,               // SK_SPELLCASTING
+         80,               // SK_CONJURATIONS
+         50,               // SK_ENCHANTMENTS
+         80,               // SK_SUMMONINGS
+         70,               // SK_NECROMANCY
+         75,               // SK_TRANSLOCATIONS
+         75,               // SK_TRANSMIGRATION
+         75,               // SK_DIVINATIONS
+         90,               // SK_FIRE_MAGIC
+         90,               // SK_ICE_MAGIC
+         80,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+         80,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// 6: sludge elf
-
-    {
-        100,                    // fighting
-         80,                    // short blades
-         85,                    // long blades
-         110,                   // great swords
-         130,                   // axes
-         140,                   // maces and flails
-         140,                   // polearms
-         100,                   // staves
-         100,                   // slings
-         70,                    // bows
-         100,                   // xbows
-         80,                    // darts
-         70,                    // throwing
-         140,                   // armour
-         70,                    // dodge
-         75,                    // stealth
-         100,                   // stab
-         130,                   // shields
-         100,                   // traps
-         100,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        70,                     // spellcasting
-         90,                    // conj
-         80,                    // ench
-         90,                    // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         90,                    // Fire
-         90,                    // Ice
-         80,                    // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_SLUDGE_ELF (6)
+        100,               // SK_FIGHTING
+         80,               // SK_SHORT_BLADES
+         85,               // SK_LONG_SWORDS
+        110,               // SK_UNUSED_1
+        130,               // SK_AXES
+        140,               // SK_MACES_FLAILS
+        140,               // SK_POLEARMS
+        100,               // SK_STAVES
+        100,               // SK_SLINGS
+         70,               // SK_BOWS
+        100,               // SK_CROSSBOWS
+         80,               // SK_DARTS
+         70,               // SK_THROWING
+        140,               // SK_ARMOUR
+         70,               // SK_DODGING
+         75,               // SK_STEALTH
+        100,               // SK_STABBING
+        130,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+         70,               // SK_SPELLCASTING
+         90,               // SK_CONJURATIONS
+         80,               // SK_ENCHANTMENTS
+         90,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+         90,               // SK_FIRE_MAGIC
+         90,               // SK_ICE_MAGIC
+         80,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-
-
-// 7: hill dwarf
-
-    {
-        70,                     // fighting
-         80,                    // short blades
-         80,                    // long blades
-         90,                    // great swords
-         60,                    // axes
-         70,                    // maces and flails
-         110,                   // polearms
-         130,                   // staves
-         130,                   // slings
-         150,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         70,                    // armour
-         120,                   // dodge
-         150,                   // stealth
-         140,                   // stab
-         70,                    // shields
-         100,                   // traps
-         100,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        160,                    // spellcasting
-         120,                   // conj
-         150,                   // ench
-         150,                   // summ
-         160,                   // necro
-         150,                   // transloc
-         120,                   // transmut
-         130,                   // divin
-         80,                    // Fire
-         120,                   // Ice
-         150,                   // Air
-         70,                    // Earth
-         130,                   // poison
-         100,                   // Invocations
+    {// SP_HILL_DWARF (7)
+         70,               // SK_FIGHTING
+         80,               // SK_SHORT_BLADES
+         80,               // SK_LONG_SWORDS
+         90,               // SK_UNUSED_1
+         60,               // SK_AXES
+         70,               // SK_MACES_FLAILS
+        110,               // SK_POLEARMS
+        130,               // SK_STAVES
+        130,               // SK_SLINGS
+        150,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+         70,               // SK_ARMOUR
+        120,               // SK_DODGING
+        150,               // SK_STEALTH
+        140,               // SK_STABBING
+         70,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        160,               // SK_SPELLCASTING
+        120,               // SK_CONJURATIONS
+        150,               // SK_ENCHANTMENTS
+        150,               // SK_SUMMONINGS
+        160,               // SK_NECROMANCY
+        150,               // SK_TRANSLOCATIONS
+        120,               // SK_TRANSMIGRATION
+        130,               // SK_DIVINATIONS
+         80,               // SK_FIRE_MAGIC
+        120,               // SK_ICE_MAGIC
+        150,               // SK_AIR_MAGIC
+         70,               // SK_EARTH_MAGIC
+        130,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// 8: mountain dwarf
-
-    {
-        70,                     // fighting
-         90,                    // short blades
-         90,                    // long blades
-         100,                   // great swords
-         70,                    // axes
-         70,                    // maces and flails
-         110,                   // polearms
-         120,                   // staves
-         125,                   // slings
-         140,                   // bows
-         100,                   // xbows
-         120,                   // darts
-         115,                   // throwing
-         60,                    // armour
-         110,                   // dodge
-         140,                   // stealth
-         130,                   // stab
-         70,                    // shields
-         100,                   // traps
-         100,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        140,                    // spellcasting
-         115,                   // conj
-         135,                   // ench
-         150,                   // summ
-         160,                   // necro
-         150,                   // transloc
-         120,                   // transmut
-         130,                   // divin
-         70,                    // Fire
-         130,                   // Ice
-         150,                   // Air
-         70,                    // Earth
-         130,                   // poison
-         100,                   // Invocations
+    {// SP_MOUNTAIN_DWARF (8)
+         70,               // SK_FIGHTING
+         90,               // SK_SHORT_BLADES
+         90,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+         70,               // SK_AXES
+         70,               // SK_MACES_FLAILS
+        110,               // SK_POLEARMS
+        120,               // SK_STAVES
+        125,               // SK_SLINGS
+        140,               // SK_BOWS
+        100,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        115,               // SK_THROWING
+         60,               // SK_ARMOUR
+        110,               // SK_DODGING
+        140,               // SK_STEALTH
+        130,               // SK_STABBING
+         70,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        140,               // SK_SPELLCASTING
+        115,               // SK_CONJURATIONS
+        135,               // SK_ENCHANTMENTS
+        150,               // SK_SUMMONINGS
+        160,               // SK_NECROMANCY
+        150,               // SK_TRANSLOCATIONS
+        120,               // SK_TRANSMIGRATION
+        130,               // SK_DIVINATIONS
+         70,               // SK_FIRE_MAGIC
+        130,               // SK_ICE_MAGIC
+        150,               // SK_AIR_MAGIC
+         70,               // SK_EARTH_MAGIC
+        130,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// 9: halfling
-
-    {
-        120,                    // fighting
-         60,                    // short blades
-         100,                   // long blades
-         130,                   // great swords
-         120,                   // axes
-         150,                   // maces and flails
-         160,                   // polearms
-         130,                   // staves
-         50,                    // slings
-         70,                    // bows
-         90,                    // xbows
-         50,                    // darts
-         60,                    // throwing
-         150,                   // armour
-         70,                    // dodge
-         60,                    // stealth
-         70,                    // stab
-         130,                   // shields
-         100,                   // traps
-         140,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        130,                    // spellcasting
-         130,                   // conj
-         100,                   // ench
-         120,                   // summ
-         150,                   // necro
-         100,                   // transloc
-         150,                   // transmut
-         140,                   // divin
-         100,                   // Fire
-         100,                   // Ice
-         90,                    // Air
-         100,                   // Earth
-         120,                   // poison
-         100,                   // Invocations
+    {// SP_HALFLING (9)
+        120,               // SK_FIGHTING
+         60,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        130,               // SK_UNUSED_1
+        120,               // SK_AXES
+        150,               // SK_MACES_FLAILS
+        160,               // SK_POLEARMS
+        130,               // SK_STAVES
+         50,               // SK_SLINGS
+         70,               // SK_BOWS
+         90,               // SK_CROSSBOWS
+         50,               // SK_DARTS
+         60,               // SK_THROWING
+        150,               // SK_ARMOUR
+         70,               // SK_DODGING
+         60,               // SK_STEALTH
+         70,               // SK_STABBING
+        130,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        140,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        130,               // SK_SPELLCASTING
+        130,               // SK_CONJURATIONS
+        100,               // SK_ENCHANTMENTS
+        120,               // SK_SUMMONINGS
+        150,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        150,               // SK_TRANSMIGRATION
+        140,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+         90,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        120,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-
-// 10: orc
-
-    {
-        70,                     // fighting
-         100,                   // short blades
-         80,                    // long blades
-         70,                    // great swords
-         70,                    // axes
-         80,                    // maces and flails
-         80,                    // polearms
-         110,                   // staves
-         130,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         130,                   // darts
-         130,                   // throwing
-         90,                    // armour
-         140,                   // dodge
-         150,                   // stealth
-         100,                   // stab
-         80,                    // shields
-         100,                   // traps
-         90,                    // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        150,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         120,                   // summ
-         100,                   // necro
-         150,                   // transloc
-         160,                   // transmut
-         160,                   // divin
-         100,                   // Fire
-         100,                   // Ice
-         150,                   // Air
-         100,                   // Earth
-         110,                   // poison
-         100,                   // Invocations
+    {// SP_HILL_ORC (10)
+         70,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+         80,               // SK_LONG_SWORDS
+         70,               // SK_UNUSED_1
+         70,               // SK_AXES
+         80,               // SK_MACES_FLAILS
+         80,               // SK_POLEARMS
+        110,               // SK_STAVES
+        130,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        130,               // SK_DARTS
+        130,               // SK_THROWING
+         90,               // SK_ARMOUR
+        140,               // SK_DODGING
+        150,               // SK_STEALTH
+        100,               // SK_STABBING
+         80,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+         90,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        150,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        120,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        150,               // SK_TRANSLOCATIONS
+        160,               // SK_TRANSMIGRATION
+        160,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        150,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        110,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-
-// 11: kobold
-
-    {
-        80,                     // fighting
-         60,                    // short blades
-         100,                   // long blades
-         120,                   // great swords
-         110,                   // axes
-         140,                   // maces and flails
-         150,                   // polearms
-         110,                   // staves
-         70,                    // slings
-         80,                    // bows
-         90,                    // xbows
-         50,                    // darts
-         60,                    // throwing
-         140,                   // armour
-         70,                    // dodge
-         60,                    // stealth
-         70,                    // stab
-         130,                   // shields
-         100,                   // traps
-         100,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        110,                    // spellcasting
-         110,                   // conj
-         110,                   // ench
-         105,                   // summ
-         105,                   // necro
-         100,                   // transloc
-         110,                   // transmut
-         130,                   // divin
-         100,                   // Fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_KOBOLD (11)
+         80,               // SK_FIGHTING
+         60,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        120,               // SK_UNUSED_1
+        110,               // SK_AXES
+        140,               // SK_MACES_FLAILS
+        150,               // SK_POLEARMS
+        110,               // SK_STAVES
+         70,               // SK_SLINGS
+         80,               // SK_BOWS
+         90,               // SK_CROSSBOWS
+         50,               // SK_DARTS
+         60,               // SK_THROWING
+        140,               // SK_ARMOUR
+         70,               // SK_DODGING
+         60,               // SK_STEALTH
+         70,               // SK_STABBING
+        130,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        110,               // SK_SPELLCASTING
+        110,               // SK_CONJURATIONS
+        110,               // SK_ENCHANTMENTS
+        105,               // SK_SUMMONINGS
+        105,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        110,               // SK_TRANSMIGRATION
+        130,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// 12: mummy
-
-    {
-        100,                    // fighting
-         140,                   // short blades
-         140,                   // long blades
-         140,                   // great swords
-         140,                   // axes
-         140,                   // maces and flails
-         140,                   // polearms
-         140,                   // staves
-         140,                   // slings
-         140,                   // bows
-         140,                   // xbows
-         140,                   // darts
-         140,                   // throwing
-         140,                   // armour
-         140,                   // dodge
-         140,                   // stealth
-         140,                   // stab
-         140,                   // shields
-         140,                   // traps
-         140,                   // unarmed combat
-         140,
-        140,
-        140,
-        140,
-        140,
-        100,                    // spellcasting
-         140,                   // conj
-         140,                   // ench
-         140,                   // summ
-         100,                   // necro
-         140,                   // transloc
-         140,                   // transmut
-         140,                   // divin
-         140,                   // fire
-         140,                   // ice
-         140,                   // Air
-         140,                   // Earth
-         140,                   // poison
-         140,                   // Invocations
+    {// SP_MUMMY (12)
+        100,               // SK_FIGHTING
+        140,               // SK_SHORT_BLADES
+        140,               // SK_LONG_SWORDS
+        140,               // SK_UNUSED_1
+        140,               // SK_AXES
+        140,               // SK_MACES_FLAILS
+        140,               // SK_POLEARMS
+        140,               // SK_STAVES
+        140,               // SK_SLINGS
+        140,               // SK_BOWS
+        140,               // SK_CROSSBOWS
+        140,               // SK_DARTS
+        140,               // SK_THROWING
+        140,               // SK_ARMOUR
+        140,               // SK_DODGING
+        140,               // SK_STEALTH
+        140,               // SK_STABBING
+        140,               // SK_SHIELDS
+        140,               // SK_TRAPS_DOORS
+        140,               // SK_UNARMED_COMBAT
+        140,               // undefined
+        140,               // undefined
+        140,               // undefined
+        140,               // undefined
+        140,               // undefined
+        100,               // SK_SPELLCASTING
+        140,               // SK_CONJURATIONS
+        140,               // SK_ENCHANTMENTS
+        140,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        140,               // SK_TRANSLOCATIONS
+        140,               // SK_TRANSMIGRATION
+        140,               // SK_DIVINATIONS
+        140,               // SK_FIRE_MAGIC
+        140,               // SK_ICE_MAGIC
+        140,               // SK_AIR_MAGIC
+        140,               // SK_EARTH_MAGIC
+        140,               // SK_POISON_MAGIC
+        140,               // SK_INVOCATIONS
     },
 
-
-// 13: naga
-
-    {
-        100,                    // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         120,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         150,                   // armour
-         150,                   // dodge
-         40,                    // stealth
-         100,                   // stab
-         140,                   // shields
-         100,                   // traps
-         100,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         100,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // Fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         60,                    // poison
-         100,                   // Invocations
+    {// SP_NAGA (13)
+        100,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        120,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        150,               // SK_ARMOUR
+        150,               // SK_DODGING
+         40,               // SK_STEALTH
+        100,               // SK_STABBING
+        140,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        100,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+         60,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// 14: Gnome
-
-    {
-        100,                    // fighting
-         75,                    // short blades
-         100,                   // long blades
-         130,                   // great swords
-         100,                   // axes
-         130,                   // maces and flails
-         140,                   // polearms
-         130,                   // staves
-         80,                    // slings
-         100,                   // bows
-         90,                    // xbows
-         60,                    // darts
-         100,                   // throwing
-         150,                   // armour
-         70,                    // dodge
-         70,                    // stealth
-         80,                    // stab
-         120,                   // shields
-         100,                   // traps
-         110,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        120,                    // spellcasting
-         100,                   // conj
-         100,                   // ench
-         110,                   // summ
-         130,                   // necro
-         130,                   // transloc
-         120,                   // transmut
-         120,                   // divin
-         100,                   // Fire
-         100,                   // Ice
-         170,                   // Air
-         60,                    // Earth
-         130,                   // poison
-         120,                   // Invocations
+    {// SP_GNOME (14)
+        100,               // SK_FIGHTING
+         75,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        130,               // SK_UNUSED_1
+        100,               // SK_AXES
+        130,               // SK_MACES_FLAILS
+        140,               // SK_POLEARMS
+        130,               // SK_STAVES
+         80,               // SK_SLINGS
+        100,               // SK_BOWS
+         90,               // SK_CROSSBOWS
+         60,               // SK_DARTS
+        100,               // SK_THROWING
+        150,               // SK_ARMOUR
+         70,               // SK_DODGING
+         70,               // SK_STEALTH
+         80,               // SK_STABBING
+        120,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        110,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        120,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        100,               // SK_ENCHANTMENTS
+        110,               // SK_SUMMONINGS
+        130,               // SK_NECROMANCY
+        130,               // SK_TRANSLOCATIONS
+        120,               // SK_TRANSMIGRATION
+        120,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        170,               // SK_AIR_MAGIC
+         60,               // SK_EARTH_MAGIC
+        130,               // SK_POISON_MAGIC
+        120,               // SK_INVOCATIONS
     },
 
-
-// 15: ogre
-
-    {
-        100,                    // fighting
-         140,                   // short blades
-         120,                   // long blades
-         110,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         110,                   // polearms
-         120,                   // staves
-         150,                   // slings
-         150,                   // bows
-         180,                   // xbows
-         150,                   // darts
-         100,                   // throwing
-         140,                   // armour
-         150,                   // dodge
-         200,                   // stealth
-         150,                   // stab
-         110,                   // shields
-         200,                   // traps
-         130,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        220,                    // spellcasting
-         180,                   // conj
-         220,                   // ench
-         200,                   // summ
-         150,                   // necro
-         200,                   // transloc
-         200,                   // transmut
-         200,                   // divin
-         150,                   // Fire
-         150,                   // Ice
-         200,                   // Air
-         120,                   // Earth
-         150,                   // poison
-         130,                   // Invocations
+    {// SP_OGRE (15)
+        100,               // SK_FIGHTING
+        140,               // SK_SHORT_BLADES
+        120,               // SK_LONG_SWORDS
+        110,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        110,               // SK_POLEARMS
+        120,               // SK_STAVES
+        150,               // SK_SLINGS
+        150,               // SK_BOWS
+        180,               // SK_CROSSBOWS
+        150,               // SK_DARTS
+        100,               // SK_THROWING
+        140,               // SK_ARMOUR
+        150,               // SK_DODGING
+        200,               // SK_STEALTH
+        150,               // SK_STABBING
+        110,               // SK_SHIELDS
+        200,               // SK_TRAPS_DOORS
+        130,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        220,               // SK_SPELLCASTING
+        180,               // SK_CONJURATIONS
+        220,               // SK_ENCHANTMENTS
+        200,               // SK_SUMMONINGS
+        150,               // SK_NECROMANCY
+        200,               // SK_TRANSLOCATIONS
+        200,               // SK_TRANSMIGRATION
+        200,               // SK_DIVINATIONS
+        150,               // SK_FIRE_MAGIC
+        150,               // SK_ICE_MAGIC
+        200,               // SK_AIR_MAGIC
+        120,               // SK_EARTH_MAGIC
+        150,               // SK_POISON_MAGIC
+        130,               // SK_INVOCATIONS
     },
 
-
-// 16: troll
-
-    {
-        150,                    // fighting
-         150,                   // short blades
-         150,                   // long blades
-         150,                   // great swords
-         150,                   // axes
-         150,                   // maces and flails
-         150,                   // polearms
-         150,                   // staves
-         150,                   // slings
-         150,                   // bows
-         180,                   // xbows
-         150,                   // darts
-         150,                   // throwing
-         150,                   // armour
-         130,                   // dodge
-         250,                   // stealth
-         130,                   // stab
-         140,                   // shields
-         200,                   // traps
-         120,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        200,                    // spellcasting
-         150,                   // conj
-         200,                   // ench
-         150,                   // summ
-         140,                   // necro
-         150,                   // transloc
-         150,                   // transmut
-         180,                   // divin
-         150,                   // Fire
-         150,                   // Ice
-         200,                   // Air
-         110,                   // Earth
-         130,                   // poison
-         150,                   // Invocations
+    {// SP_TROLL (16)
+        150,               // SK_FIGHTING
+        150,               // SK_SHORT_BLADES
+        150,               // SK_LONG_SWORDS
+        150,               // SK_UNUSED_1
+        150,               // SK_AXES
+        150,               // SK_MACES_FLAILS
+        150,               // SK_POLEARMS
+        150,               // SK_STAVES
+        150,               // SK_SLINGS
+        150,               // SK_BOWS
+        180,               // SK_CROSSBOWS
+        150,               // SK_DARTS
+        150,               // SK_THROWING
+        150,               // SK_ARMOUR
+        130,               // SK_DODGING
+        250,               // SK_STEALTH
+        130,               // SK_STABBING
+        140,               // SK_SHIELDS
+        200,               // SK_TRAPS_DOORS
+        120,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        200,               // SK_SPELLCASTING
+        150,               // SK_CONJURATIONS
+        200,               // SK_ENCHANTMENTS
+        150,               // SK_SUMMONINGS
+        140,               // SK_NECROMANCY
+        150,               // SK_TRANSLOCATIONS
+        150,               // SK_TRANSMIGRATION
+        180,               // SK_DIVINATIONS
+        150,               // SK_FIRE_MAGIC
+        150,               // SK_ICE_MAGIC
+        200,               // SK_AIR_MAGIC
+        110,               // SK_EARTH_MAGIC
+        130,               // SK_POISON_MAGIC
+        150,               // SK_INVOCATIONS
     },
 
-
-
-// 17: ogre mage
-
-    {
-        100,                    // fighting
-         110,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         150,                   // slings
-         150,                   // bows
-         150,                   // xbows
-         150,                   // darts
-         150,                   // throwing
-         170,                   // armour
-         130,                   // dodge
-         100,                   // stealth
-         130,                   // stab
-         150,                   // shields
-         150,                   // traps
-         100,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        70,                     // spellcasting
-         100,                   // conj
-         80,                    // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // Fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_OGRE_MAGE (17)
+        100,               // SK_FIGHTING
+        110,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        150,               // SK_SLINGS
+        150,               // SK_BOWS
+        150,               // SK_CROSSBOWS
+        150,               // SK_DARTS
+        150,               // SK_THROWING
+        170,               // SK_ARMOUR
+        130,               // SK_DODGING
+        100,               // SK_STEALTH
+        130,               // SK_STABBING
+        150,               // SK_SHIELDS
+        150,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+         70,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+         80,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// 18: Red Draconian
-
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         70,                    // fire
-         150,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_RED_DRACONIAN (18)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+         70,               // SK_FIRE_MAGIC
+        150,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 19: White drac
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         150,                   // fire
-         70,                    // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_WHITE_DRACONIAN (19)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        150,               // SK_FIRE_MAGIC
+         70,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// Green drac
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         70,                    // poison
-         100,                   // Invocations
+    {// SP_GREEN_DRACONIAN (20)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+         70,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 21: yellow
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_YELLOW_DRACONIAN (21)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 22: grey
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_GREY_DRACONIAN (22)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 23 black drac
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // fire
-         100,                   // Ice
-         70,                    // Air
-         150,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_BLACK_DRACONIAN (23)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+         70,               // SK_AIR_MAGIC
+        150,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-
-// 24 purple drac
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        70,                     // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_PURPLE_DRACONIAN (24)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+         70,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 25 mottled drac
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         80,                    // fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_MOTTLED_DRACONIAN (25)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+         80,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 26 pale drac
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         90,                    // fire
-         100,                   // Ice
-         90,                    // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_PALE_DRACONIAN (26)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+         90,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+         90,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 27 drac
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_UNK0_DRACONAIN (27)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 28 drac
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_UNK1_DRACONIAN (28)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 29 drac
-    {
-        90,                     // fighting
-         100,                   // short blades
-         100,                   // long blades
-         100,                   // great swords
-         100,                   // axes
-         100,                   // maces and flails
-         100,                   // polearms
-         100,                   // staves
-         120,                   // slings
-         120,                   // bows
-         120,                   // xbows
-         120,                   // darts
-         120,                   // throwing
-         200,                   // armour
-         120,                   // dodge
-         120,                   // stealth
-         100,                   // stab
-         100,                   // shields
-         100,                   // traps
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         120,                   // ench
-         100,                   // summ
-         100,                   // necro
-         100,                   // transloc
-         100,                   // transmut
-         100,                   // divin
-         100,                   // fire
-         100,                   // Ice
-         100,                   // Air
-         100,                   // Earth
-         100,                   // poison
-         100,                   // Invocations
+    {// SP_UNK2_DRACONIAN (29)
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 30 - Centaur
-    {
-        100,                    // fighting
-         120,                   // short blades
-         110,                   // long blades
-         110,                   // great swords
-         110,                   // axes
-         110,                   // maces and flails
-         110,                   // polearms
-         110,                   // staves
-         75,                    // slings
-         60,                    // bows
-         85,                    // xbows
-         80,                    // darts
-         60,                    // throwing
-         180,                   // armour
-         170,                   // dodge
-         200,                   // stealth
-         170,                   // stab
-         180,                   // shields
-         150,                   // traps
-         100,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        140,                    // spellcasting
-         120,                   // conj
-         110,                   // ench
-         120,                   // summ
-         120,                   // necro
-         120,                   // transloc
-         120,                   // transmut
-         130,                   // divin
-         120,                   // fire
-         120,                   // ice
-         120,                   // Air
-         120,                   // Earth
-         130,                   // poison
-         100,                   // Invocations
+    {// SP_CENTAUR (30)
+        100,               // SK_FIGHTING
+        120,               // SK_SHORT_BLADES
+        110,               // SK_LONG_SWORDS
+        110,               // SK_UNUSED_1
+        110,               // SK_AXES
+        110,               // SK_MACES_FLAILS
+        110,               // SK_POLEARMS
+        110,               // SK_STAVES
+         75,               // SK_SLINGS
+         60,               // SK_BOWS
+         85,               // SK_CROSSBOWS
+         80,               // SK_DARTS
+         60,               // SK_THROWING
+        180,               // SK_ARMOUR
+        170,               // SK_DODGING
+        200,               // SK_STEALTH
+        170,               // SK_STABBING
+        180,               // SK_SHIELDS
+        150,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        140,               // SK_SPELLCASTING
+        120,               // SK_CONJURATIONS
+        110,               // SK_ENCHANTMENTS
+        120,               // SK_SUMMONINGS
+        120,               // SK_NECROMANCY
+        120,               // SK_TRANSLOCATIONS
+        120,               // SK_TRANSMIGRATION
+        130,               // SK_DIVINATIONS
+        120,               // SK_FIRE_MAGIC
+        120,               // SK_ICE_MAGIC
+        120,               // SK_AIR_MAGIC
+        120,               // SK_EARTH_MAGIC
+        130,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 31 - demigod
-    {
-        110,                    // fighting
-         110,                   // short blades
-         110,                   // long blades
-         110,                   // great swords
-         110,                   // axes
-         110,                   // maces and flails
-         110,                   // polearms
-         110,                   // staves
-         110,                   // slings
-         110,                   // bows
-         110,                   // xbows
-         110,                   // darts
-         110,                   // throwing
-         110,                   // armour
-         110,                   // dodge
-         110,                   // stealth
-         110,                   // stab
-         110,                   // shields
-         110,                   // traps
-         110,                   // unarmed combat
-         110,
-        110,
-        110,
-        110,
-        110,
-        110,                    // spellcasting
-         110,                   // conj
-         110,                   // ench
-         110,                   // summ
-         110,                   // necro
-         110,                   // transloc
-         110,                   // transmut
-         110,                   // divin
-         110,                   // fire
-         110,                   // ice
-         110,                   // Air
-         110,                   // Earth
-         110,                   // poison
-         100,                   // Invocations - Irrelevant
+    {// SP_DEMIGOD (31)
+        110,               // SK_FIGHTING
+        110,               // SK_SHORT_BLADES
+        110,               // SK_LONG_SWORDS
+        110,               // SK_UNUSED_1
+        110,               // SK_AXES
+        110,               // SK_MACES_FLAILS
+        110,               // SK_POLEARMS
+        110,               // SK_STAVES
+        110,               // SK_SLINGS
+        110,               // SK_BOWS
+        110,               // SK_CROSSBOWS
+        110,               // SK_DARTS
+        110,               // SK_THROWING
+        110,               // SK_ARMOUR
+        110,               // SK_DODGING
+        110,               // SK_STEALTH
+        110,               // SK_STABBING
+        110,               // SK_SHIELDS
+        110,               // SK_TRAPS_DOORS
+        110,               // SK_UNARMED_COMBAT
+        110,               // undefined
+        110,               // undefined
+        110,               // undefined
+        110,               // undefined
+        110,               // undefined
+        110,               // SK_SPELLCASTING
+        110,               // SK_CONJURATIONS
+        110,               // SK_ENCHANTMENTS
+        110,               // SK_SUMMONINGS
+        110,               // SK_NECROMANCY
+        110,               // SK_TRANSLOCATIONS
+        110,               // SK_TRANSMIGRATION
+        110,               // SK_DIVINATIONS
+        110,               // SK_FIRE_MAGIC
+        110,               // SK_ICE_MAGIC
+        110,               // SK_AIR_MAGIC
+        110,               // SK_EARTH_MAGIC
+        110,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
     },
 
-// 32 Spriggan
-    {
-        150,                    // fighting
-         90,                    // short blades
-         140,                   // long blades
-         160,                   // great swords
-         150,                   // axes
-         160,                   // maces and flails
-         180,                   // polearms
-         150,                   // staves
-         70,                    // slings
-         70,                    // bows
-         100,                   // xbows
-         70,                    // darts
-         90,                    // throwing
-         170,                   // armour
-         50,                    // dodge
-         50,                    // stealth
-         50,                    // stab
-         180,                   // shields
-         60,                    // traps
-         130,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        60,                     // spellcasting
-         160,                   // conj
-         50,                    // ench
-         150,                   // summ
-         120,                   // necro
-         50,                    // transloc
-         60,                    // transmut
-         70,                    // divin
-         140,                   // fire
-         140,                   // ice
-         120,                   // Air
-         120,                   // Earth
-         100,                   // poison
-         130,                   // Invocations
+    {// SP_SPRIGGAN (32)
+        150,               // SK_FIGHTING
+         90,               // SK_SHORT_BLADES
+        140,               // SK_LONG_SWORDS
+        160,               // SK_UNUSED_1
+        150,               // SK_AXES
+        160,               // SK_MACES_FLAILS
+        180,               // SK_POLEARMS
+        150,               // SK_STAVES
+         70,               // SK_SLINGS
+         70,               // SK_BOWS
+        100,               // SK_CROSSBOWS
+         70,               // SK_DARTS
+         90,               // SK_THROWING
+        170,               // SK_ARMOUR
+         50,               // SK_DODGING
+         50,               // SK_STEALTH
+         50,               // SK_STABBING
+        180,               // SK_SHIELDS
+         60,               // SK_TRAPS_DOORS
+        130,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+         60,               // SK_SPELLCASTING
+        160,               // SK_CONJURATIONS
+         50,               // SK_ENCHANTMENTS
+        150,               // SK_SUMMONINGS
+        120,               // SK_NECROMANCY
+         50,               // SK_TRANSLOCATIONS
+         60,               // SK_TRANSMIGRATION
+         70,               // SK_DIVINATIONS
+        140,               // SK_FIRE_MAGIC
+        140,               // SK_ICE_MAGIC
+        120,               // SK_AIR_MAGIC
+        120,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        130,               // SK_INVOCATIONS
     },
 
-// 33 minotaur
-    {
-        70,                     // fighting
-         70,                    // short blades
-         70,                    // long blades
-         70,                    // great swords
-         70,                    // axes
-         70,                    // maces and flails
-         70,                    // polearms
-         70,                    // staves
-         90,                    // slings
-         90,                    // bows
-         90,                    // xbows
-         90,                    // darts
-         90,                    // throwing
-         80,                    // armour
-         80,                    // dodge
-         130,                   // stealth
-         100,                   // stab
-         80,                    // shields
-         120,                   // traps
-         80,                    // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        180,                    // spellcasting
-         170,                   // conj
-         170,                   // ench
-         170,                   // summ
-         170,                   // necro
-         170,                   // transloc
-         170,                   // transmut
-         170,                   // divin
-         170,                   // fire
-         170,                   // ice
-         170,                   // Air
-         170,                   // Earth
-         170,                   // poison
-         130,                   // Invocations
+    {// SP_MINOTAUR (33)
+         70,               // SK_FIGHTING
+         70,               // SK_SHORT_BLADES
+         70,               // SK_LONG_SWORDS
+         70,               // SK_UNUSED_1
+         70,               // SK_AXES
+         70,               // SK_MACES_FLAILS
+         70,               // SK_POLEARMS
+         70,               // SK_STAVES
+         90,               // SK_SLINGS
+         90,               // SK_BOWS
+         90,               // SK_CROSSBOWS
+         90,               // SK_DARTS
+         90,               // SK_THROWING
+         80,               // SK_ARMOUR
+         80,               // SK_DODGING
+        130,               // SK_STEALTH
+        100,               // SK_STABBING
+         80,               // SK_SHIELDS
+        120,               // SK_TRAPS_DOORS
+         80,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        180,               // SK_SPELLCASTING
+        170,               // SK_CONJURATIONS
+        170,               // SK_ENCHANTMENTS
+        170,               // SK_SUMMONINGS
+        170,               // SK_NECROMANCY
+        170,               // SK_TRANSLOCATIONS
+        170,               // SK_TRANSMIGRATION
+        170,               // SK_DIVINATIONS
+        170,               // SK_FIRE_MAGIC
+        170,               // SK_ICE_MAGIC
+        170,               // SK_AIR_MAGIC
+        170,               // SK_EARTH_MAGIC
+        170,               // SK_POISON_MAGIC
+        130,               // SK_INVOCATIONS
     },
 
-
-// 34 demonspawn
-    {
-        100,                    // fighting
-         110,                   // short blades
-         110,                   // long blades
-         110,                   // great swords
-         110,                   // axes
-         110,                   // maces and flails
-         110,                   // polearms
-         110,                   // staves
-         110,                   // slings
-         110,                   // bows
-         110,                   // xbows
-         110,                   // darts
-         110,                   // throwing
-         110,                   // armour
-         110,                   // dodge
-         110,                   // stealth
-         110,                   // stab
-         110,                   // shields
-         110,                   // traps
-         110,                   // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         100,                   // conj
-         110,                   // ench
-         100,                   // summ
-         90,                    // necro
-         110,                   // transloc
-         110,                   // transmut
-         110,                   // divin
-         110,                   // fire
-         110,                   // ice
-         110,                   // Air
-         110,                   // Earth
-         100,                   // poison
-         80,                    // Invocations
+    {// SP_DEMONSPAN (34)
+        100,               // SK_FIGHTING
+        110,               // SK_SHORT_BLADES
+        110,               // SK_LONG_SWORDS
+        110,               // SK_UNUSED_1
+        110,               // SK_AXES
+        110,               // SK_MACES_FLAILS
+        110,               // SK_POLEARMS
+        110,               // SK_STAVES
+        110,               // SK_SLINGS
+        110,               // SK_BOWS
+        110,               // SK_CROSSBOWS
+        110,               // SK_DARTS
+        110,               // SK_THROWING
+        110,               // SK_ARMOUR
+        110,               // SK_DODGING
+        110,               // SK_STEALTH
+        110,               // SK_STABBING
+        110,               // SK_SHIELDS
+        110,               // SK_TRAPS_DOORS
+        110,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        110,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+         90,               // SK_NECROMANCY
+        110,               // SK_TRANSLOCATIONS
+        110,               // SK_TRANSMIGRATION
+        110,               // SK_DIVINATIONS
+        110,               // SK_FIRE_MAGIC
+        110,               // SK_ICE_MAGIC
+        110,               // SK_AIR_MAGIC
+        110,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+         80,               // SK_INVOCATIONS
     },
 
-// 35 ghoul
-    {
-        80,                     // fighting
-         110,                   // short blades
-         110,                   // long blades
-         110,                   // great swords
-         110,                   // axes
-         110,                   // maces and flails
-         110,                   // polearms
-         110,                   // staves
-         130,                   // slings
-         130,                   // bows
-         130,                   // xbows
-         130,                   // darts
-         130,                   // throwing
-         110,                   // armour
-         110,                   // dodge
-         80,                    // stealth
-         100,                   // stab
-         110,                   // shields
-         120,                   // traps
-         80,                    // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        120,                    // spellcasting
-         130,                   // conj
-         130,                   // ench
-         120,                   // summ
-         100,                   // necro
-         120,                   // transloc
-         120,                   // transmut
-         120,                   // divin
-         150,                   // fire
-         90,                    // ice
-         150,                   // Air
-         90,                    // Earth
-         100,                   // poison
-         120,                   // Invocations
+    {// SP_GHOUL (35)
+         80,               // SK_FIGHTING
+        110,               // SK_SHORT_BLADES
+        110,               // SK_LONG_SWORDS
+        110,               // SK_UNUSED_1
+        110,               // SK_AXES
+        110,               // SK_MACES_FLAILS
+        110,               // SK_POLEARMS
+        110,               // SK_STAVES
+        130,               // SK_SLINGS
+        130,               // SK_BOWS
+        130,               // SK_CROSSBOWS
+        130,               // SK_DARTS
+        130,               // SK_THROWING
+        110,               // SK_ARMOUR
+        110,               // SK_DODGING
+         80,               // SK_STEALTH
+        100,               // SK_STABBING
+        110,               // SK_SHIELDS
+        120,               // SK_TRAPS_DOORS
+         80,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        120,               // SK_SPELLCASTING
+        130,               // SK_CONJURATIONS
+        130,               // SK_ENCHANTMENTS
+        120,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        120,               // SK_TRANSLOCATIONS
+        120,               // SK_TRANSMIGRATION
+        120,               // SK_DIVINATIONS
+        150,               // SK_FIRE_MAGIC
+         90,               // SK_ICE_MAGIC
+        150,               // SK_AIR_MAGIC
+         90,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        120,               // SK_INVOCATIONS
     },
 
-// 36: Kenku
-
-    {
-        100,                    // fighting
-         75,                    // short blades
-         75,                    // long blades
-         75,                    // great swords
-         75,                    // axes
-         75,                    // maces and flails
-         75,                    // polearms
-         75,                    // staves
-         100,                   // slings
-         80,                    // bows
-         80,                    // xbows
-         90,                    // darts
-         90,                    // throwing
-         90,                    // armour
-         90,                    // dodge
-         100,                   // stealth
-         80,                    // stab
-         100,                   // shields
-         100,                   // traps
-         80,                    // unarmed combat
-         100,
-        100,
-        100,
-        100,
-        100,
-        100,                    // spellcasting
-         60,                    // conj
-         160,                   // ench
-         70,                    // summ
-         80,                    // necro
-         150,                   // transloc
-         150,                   // transmut
-         180,                   // divin
-         90,                    // Fire
-         120,                   // Ice
-         90,                    // Air
-         120,                   // Earth
-         100,                   // poison
-         160,                   // Invocations
+    {// SP_KENKU (36)
+        100,               // SK_FIGHTING
+         75,               // SK_SHORT_BLADES
+         75,               // SK_LONG_SWORDS
+         75,               // SK_UNUSED_1
+         75,               // SK_AXES
+         75,               // SK_MACES_FLAILS
+         75,               // SK_POLEARMS
+         75,               // SK_STAVES
+        100,               // SK_SLINGS
+         80,               // SK_BOWS
+         80,               // SK_CROSSBOWS
+         90,               // SK_DARTS
+         90,               // SK_THROWING
+         90,               // SK_ARMOUR
+         90,               // SK_DODGING
+        100,               // SK_STEALTH
+         80,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+         80,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+         60,               // SK_CONJURATIONS
+        160,               // SK_ENCHANTMENTS
+         70,               // SK_SUMMONINGS
+         80,               // SK_NECROMANCY
+        150,               // SK_TRANSLOCATIONS
+        150,               // SK_TRANSMIGRATION
+        180,               // SK_DIVINATIONS
+         90,               // SK_FIRE_MAGIC
+        120,               // SK_ICE_MAGIC
+         90,               // SK_AIR_MAGIC
+        120,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        160,               // SK_INVOCATIONS
     },
 
 
 
-/*
-   base drac
-   {
-   90, // fighting
-   100, // short blades
-   100, // long blades
-   100, // great swords
-   100, // axes
-   100, // maces and flails
-   100, // polearms
-   100, // staves
-   120, // slings
-   120, // bows
-   120, // xbows
-   120, // darts
-   120, // throwing
-   200, // armour
-   120, // dodge
-   120, // stealth
-   100, // stab
-   100, // shields
-   100, // traps
-   100,
-   100,
-   100,
-   100,
-   100,
-   100,
-   100, // spellcasting
-   100, // conj
-   120, // ench
-   100, // summ
-   100, // necro
-   100, // transloc
-   100, // transmut
-   100, // divin
-   100, // fire
-   100, // Ice
-   100, // Air
-   100, // Earth
-   100, // poison
-   100, // Invocations
-   },
- */
-/*
-   case 1: return "Human";
-   case 2: return "Elf";
-   case 3: return "High Elf";
-   case 4: return "Grey Elf";
-   case 5: return "Deep Elf";
-   case 6: return "Sludge Elf";
-   case 7: return "Hill Dwarf";
-   case 8: return "Mountain Dwarf";
-   case 9: return "Halfling";
-   case 10: return "Hill Orc";
-   case 11: return "Kobold";
-   case 12: return "Mummy";
-   case 13: return "Naga";
-   case 14: return "Gnome";
-   case 15: return "Ogre";
-   case 16: return "Troll";
-   case 17: return "Ogre-Mage";
-   case 18: return "Red Draconian";
-   case 19: return "White Draconian";
-   case 20: return "Green Draconian";
-   case 21: return "Yellow Draconian";
-   case 22: return "Grey Draconian";
-   case 23: return "Black Draconian";
-   case 24: return "Purple Draconian";
- */
 
-/*
-   case 2: // elf
+/* ******************************************************
 
-   {
-   100, // fighting
-   100, // short blades
-   100, // long blades
-   100, // great swords
-   100, // axes
-   100, // maces and flails
-   100, // polearms
-   100, // staves
-   100, // slings
-   100, // bows
-   100, // xbows
-   100, // darts
-   100, // throwing
-   100, // armour
-   100, // dodge
-   100, // stealth
-   100, // stab
-   100, // shields
-   100, // traps
-   100,
-   100,
-   100,
-   100,
-   100,
-   100,
-   100, // spellcasting
-   100, // conj
-   100, // ench
-   100, // summ
-   100, // necro
-   100, // transloc
-   100, // transmut
-   100, // divin
-   100,
-   100,
-   },
+// base draconian
+    {
+         90,               // SK_FIGHTING
+        100,               // SK_SHORT_BLADES
+        100,               // SK_LONG_SWORDS
+        100,               // SK_UNUSED_1
+        100,               // SK_AXES
+        100,               // SK_MACES_FLAILS
+        100,               // SK_POLEARMS
+        100,               // SK_STAVES
+        120,               // SK_SLINGS
+        120,               // SK_BOWS
+        120,               // SK_CROSSBOWS
+        120,               // SK_DARTS
+        120,               // SK_THROWING
+        200,               // SK_ARMOUR
+        120,               // SK_DODGING
+        120,               // SK_STEALTH
+        100,               // SK_STABBING
+        100,               // SK_SHIELDS
+        100,               // SK_TRAPS_DOORS
+        100,               // SK_UNARMED_COMBAT
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // undefined
+        100,               // SK_SPELLCASTING
+        100,               // SK_CONJURATIONS
+        120,               // SK_ENCHANTMENTS
+        100,               // SK_SUMMONINGS
+        100,               // SK_NECROMANCY
+        100,               // SK_TRANSLOCATIONS
+        100,               // SK_TRANSMIGRATION
+        100,               // SK_DIVINATIONS
+        100,               // SK_FIRE_MAGIC
+        100,               // SK_ICE_MAGIC
+        100,               // SK_AIR_MAGIC
+        100,               // SK_EARTH_MAGIC
+        100,               // SK_POISON_MAGIC
+        100,               // SK_INVOCATIONS
+    },
 
- */
+****************************************************** */
 
 };
 
 
 
-char *skill_name(char which_skill);
 
-void show_skills(void)
+/* *************************************************************
+
+// these were unimplemented "level titles" for two classes {dlb}
+
+JOB_PRIEST
+   "Preacher";
+   "Priest";
+   "Evangelist";
+   "Pontifex";
+
+JOB_PALADIN:
+   "Holy Warrior";
+   "Holy Crusader";
+   "Paladin";
+   "Scourge of Evil";
+
+************************************************************* */
+
+
+
+
+void show_skills( void )
 {
+
     char st_pass[60];
     int i;
     int x;
@@ -1835,7 +1713,7 @@ void show_skills(void)
     strcpy(st_pass, "");
     clrscr();
 
-  reprint_stuff:
+reprint_stuff:
     gotoxy(1, 1);
     lcount = 'a';
     textcolor(LIGHTGREY);
@@ -1932,18 +1810,14 @@ void show_skills(void)
 
                 if (get_thing == lcount)
                 {
-                    if (you.practise_skill[i] == 0)
-                        you.practise_skill[i] = 1;
-                    else
-                        you.practise_skill[i] = 0;
-
+                    you.practise_skill[i] = ( (you.practise_skill[i] == 0) ? 1 : 0 );
                     break;
                 }
 
-                if (lcount == 'z')
-                    lcount = 'A';
+                if ( lcount == 'z' )
+                  lcount = 'A';
                 else
-                    lcount++;
+                  lcount++;
             }
 
             goto reprint_stuff;
@@ -1956,388 +1830,237 @@ void show_skills(void)
     return;
 }
 
-char *skill_name(char which_skill)
+
+
+
+char *skill_name( unsigned char which_skill )
 {
+
     return skills[which_skill][0];
-}
+
+}          // end skill_name()
 
 
-char *skill_title(char best_skill, char skill_lev, char char_class, char char_lev)
+
+
+char *skill_title( unsigned char best_skill, unsigned char skill_lev )
 {
 
-//char title [40];
-
-//strcpy(title, "undefined");
-
-    char skill_lev2 = char_class;
-
-    skill_lev2 = 0;
-    char char_lev2 = 0;
+    unsigned char skill_rank = 0;
     char *tempstr = NULL;
 
-//if (skill_lev <= 21)
-    skill_lev2 = 3;
-    if (skill_lev <= 20)
-        skill_lev2 = 2;
-    if (skill_lev <= 12)
-        skill_lev2 = 1;         // 12
+// translate skill level into skill ranking {dlb}:
+    skill_rank = ( (skill_lev <  8) ? 0 :
+                   (skill_lev < 13) ? 1 :
+                   (skill_lev < 21) ? 2
+                                    : 3 );
 
-    if (skill_lev <= 7)
-        skill_lev2 = 0;         // 6 or 7
+// increment rank by one to "skip" skill name in array {dlb}:
+    skill_rank++;
 
-    char_lev2 = 3;
-//if (char_lev <= 21) char_lev2 = 3;
-    if (char_lev <= 20)
-        char_lev2 = 2;
-    if (char_lev <= 12)
-        char_lev2 = 1;
-    if (char_lev <= 7)
-        char_lev2 = 0;
+    if ( best_skill < NUM_SKILLS )
+      tempstr = skills[best_skill][skill_rank];
 
-/*if (char_class == 2) // Priest
-   {
-   switch(char_lev2)
-   {
-   case 0: return "Preacher";
-   case 1: return "Priest";
-   case 2: return "Evangelist";
-   case 3: return "Pontifex";
-   }
-   } else
-   if (char_class == 6) // Paladin
-   {
-   switch(char_lev2)
-   {
-   case 0: return "Holy Warrior";
-   case 1: return "Holy Crusader";
-   case 2: return "Paladin";
-   case 3: return "Scourge of Evil";
-   }
-   } else { */
-    if (best_skill < 50)
-        tempstr = skills[best_skill][skill_lev2 + 1];
-//      if(tempstr!=NULL) strcpy(title,tempstr);
-    //       }
+    return ( (tempstr == NULL) ? "Invalid Title" : tempstr );
 
-//return title;
-    if (tempstr == NULL)
-        return "Invalid Title";
-    return tempstr;
-
-}
+}          // end skill_title()
 
 
-char best_skill(char min_skill, char max_skill, char excl_skill)
+
+
+unsigned char best_skill( unsigned char min_skill, unsigned char max_skill, unsigned char excl_skill )
 {
 
-    char skillb = 0;
-    char skmk = 0;
+    unsigned char skillb = SK_FIGHTING;
+    unsigned char skmk = 0;
 
-    int i = 0;
+    int i = 0;    // must remain signed because of loop construction {dlb}
 
-    for (i = max_skill; i >= min_skill; i--)
+    for (i = max_skill; i >= min_skill; i--)    // careful!!!
+      if ( you.skills[i] >= skmk && i != excl_skill )
+      {
+          skillb = i;
+          skmk = you.skills[i];
+      }
+
+
+// fighting skill has priority over all other skills of equal or lesser
+// training, provided its inclusion among all the skills compared {dlb}:
+    if ( you.skills[SK_FIGHTING] >= skmk && min_skill == SK_FIGHTING )
     {
-        if (you.skills[i] >= skmk && i != excl_skill)
-        {
-            skillb = i;
-            skmk = you.skills[i];
-        }
-    }
-
-    if (you.skills[SK_FIGHTING] >= skmk && min_skill <= 0)
-    {
-        skillb = 0;
+        skillb = SK_FIGHTING;
         skmk = you.skills[SK_FIGHTING];
     }
 
-/*if (you.skills [SK_SPELLCASTING] >= skmk && min_skill <= 25 && max_skill >= 25)
-   {
-   skillb = 25;
-   skmk = you.skills [SK_SPELLCASTING];
-   } */
+/*
+    if (you.skills [SK_SPELLCASTING] >= skmk && min_skill <= 25 && max_skill >= 25)
+    {
+       skillb = 25;
+       skmk = you.skills [SK_SPELLCASTING];
+    }
+*/
 
     return skillb;
 
-}
+}          // end best_skill()
 
 
-int calc_hp(void)
+
+
+int calc_hp( void )
 {
 
     int hitp = you.hp_max;
 
-    hitp = you.base_hp - 5000 + you.base_hp2 - 5000;
-    hitp += you.experience_level * you.skills[SK_FIGHTING] / 5;
+    hitp = (you.base_hp - 5000) + (you.base_hp2 - 5000);
+    hitp += you.experience_level * (you.skills[SK_FIGHTING] / 5);
 
-/* being berserk makes you resistant to damage. I don't know why */
-    if (you.berserker != 0)
+// being berserk makes you resistant to damage. I don't know why.
+    if ( you.berserker )
     {
         hitp *= 15;
         hitp /= 10;
     }
 
-/* some transformations give you extra hp */
-    if (you.duration[DUR_TRANSFORMATION] != 0)
+// some transformations give you extra hp
+    if ( you.duration[DUR_TRANSFORMATION] )
     {
-        switch (you.attribute[ATTR_TRANSFORMATION])
+        switch ( you.attribute[ATTR_TRANSFORMATION] )
         {
-        case TRAN_STATUE:
+          case TRAN_STATUE:
             hitp *= 15;
             hitp /= 10;
             break;
-        case TRAN_ICE_BEAST:
+          case TRAN_ICE_BEAST:
             hitp *= 12;
             hitp /= 10;
             break;
-        case TRAN_DRAGON:
+          case TRAN_DRAGON:
             hitp *= 16;
             hitp /= 10;
             break;
         }
     }
 
-/* frail and robust mutations */
+// frail and robust mutations
     hitp *= (10 + you.mutation[MUT_ROBUST] - you.mutation[MUT_FRAIL]);
     hitp /= 10;
 
     you.hp_max = hitp;
-    if (you.hp > you.hp_max)
-        you.hp = you.hp_max;
+
+    deflate_hp(you.hp_max, false);
 
     return hitp;
 
-}
+}          // end calc_hp()
 
-int calc_ep(void)
+
+
+
+int calc_mp( void )
 {
 
     int enp = you.max_magic_points;
 
-    enp = you.base_magic_points - 5000 + you.base_magic_points2 - 5000;
+    enp = (you.base_magic_points - 5000) + (you.base_magic_points2 - 5000);
 
     int spell_extra = you.experience_level * you.skills[SK_SPELLCASTING] / 6;
     int invoc_extra = you.experience_level * you.skills[SK_INVOCATIONS] / 4;;
 
-    if (invoc_extra > spell_extra)
-        enp += invoc_extra;
-    else
-        enp += spell_extra;
+    enp += ( (invoc_extra > spell_extra) ? invoc_extra : spell_extra );
 
 /* if (enp > 21) enp = ((enp - 27) / 2) + 27;
    if (enp > 36) enp = ((enp - 36) / 2) + 36;
    if (enp > 49) enp = ((enp - 49) / 2) + 49; */
 
-    if (enp > 18)               // nested if's rather than stacked 'em
-
-    {                           // uglier than before but slightly
-
+    if (enp > 18)                       // nested if's rather than stacked 'em
+    {                                   // uglier than before but slightly
         enp = ((enp - 18) / 2) + 18;    // more efficient 16jan2000 {dlb}
 
         if (enp > 27)
         {
             enp = ((enp - 27) / 2) + 27;
+
             if (enp > 36)
             {
                 enp = ((enp - 36) / 2) + 36;
+
                 if (enp > 49)
-                    enp = 49;
+                  enp = 49;
             }
         }
     }
 
     you.max_magic_points = enp;
-    if (you.magic_points > you.max_magic_points)
-        you.magic_points = you.max_magic_points;
+
+    if ( you.magic_points > you.max_magic_points )
+      you.magic_points = you.max_magic_points;
+
+    you.redraw_magic_points = 1;
 
     return enp;
 
-}
+}          // end calc_mp()
 
-#ifdef CLASSES
+
+
+
 unsigned int skill_exp_needed(int lev)
 {
     lev--;
     switch (lev)
     {
-    case 0:
-        return 0;
-    case 1:
-        return 10;
-    case 2:
-        return 60;
-    case 3:
-        return 130;
-    case 4:
-        return 200;
-    case 5:
-        return 400;
-    case 6:
-        return 500;
-    case 7:
-        return 610;
-    case 8:
-        return 720;
-    case 9:
-        return 840;
-    case 10:
-        return 960;
-    case 11:
-        return 1100;
-    case 12:
-        return 1250;
-    case 13:
-        return 1500;
-    default:
-        return 1900 + 400 * (lev - 14);         //return 1200 * (lev - 11) + ((lev - 11) * (lev - 11));// * (lev - 11));
-
-    }
-
-    return 0;
-
-}
-#else
-unsigned int skill_exp_needed(int lev)
-{
-    lev--;
-    switch (lev)
-    {
-/*      case 0: return 0;
-   case 1: return 20;
-   case 2: return 30;
-   case 3: return 50;
-   case 4: return 75;
-   case 5: return 105;
-   case 6: return 145;
-   case 7: return 200;
-   case 8: return 275;
-   case 9: return 355;
-   case 10: return 440;
-   case 11: return 560;
-   case 12: return 680;
-   case 13: return 850;
-   default: return 1100 + 300 * (lev - 14); //return 1200 * (lev - 11) + ((lev - 11) * (lev - 11));// * (lev - 11));
- */
-    case 0:
-        return 0;
-    case 1:
-        return 200;
-    case 2:
-        return 300;
-    case 3:
-        return 500;
-    case 4:
-        return 750;
-    case 5:
-        return 1050;
-    case 6:
-        return 1350;
-    case 7:
-        return 1700;
-    case 8:
-        return 2100;
-    case 9:
-        return 2550;
-    case 10:
-        return 3150;
-    case 11:
-        return 3750;
-    case 12:
-        return 4400;
-    case 13:
-        return 5250;
-    default:
+      case 0:
+        return 0;      // old:   0
+      case 1:
+        return 200;    // old:  20
+      case 2:
+        return 300;    // old:  30
+      case 3:
+        return 500;    // old:  50
+      case 4:
+        return 750;    // old:  75
+      case 5:
+        return 1050;   // old: 105
+      case 6:
+        return 1350;   // old: 145
+      case 7:
+        return 1700;   // old: 200
+      case 8:
+        return 2100;   // old: 275
+      case 9:
+        return 2550;   // old: 355
+      case 10:
+        return 3150;   // old: 440
+      case 11:
+        return 3750;   // old: 560
+      case 12:
+        return 4400;   // old: 680
+      case 13:
+        return 5250;   // old: 850
+      default:
         return 6200 + 1800 * (lev - 14);
-
+       // old: 1100 + 300 * (lev - 14)
+       // older: 1200 * (lev - 11) + ((lev - 11) * (lev - 11));// * (lev - 11))
     }
 
     return 0;
 
 }
-#endif
 
 
-int species_skills(char skill, char species)
+
+
+int species_skills( char skill, char species )
 {
 
-    if (skill == SK_SPELLCASTING)
-        return (spec_skills[species - 1][skill] * 130) / 100;
 /* Spellcasting requires more practice */
-    if (skill == SK_INVOCATIONS)
-        return (spec_skills[species - 1][skill] * 70) / 100;
+    if ( skill == SK_SPELLCASTING )
+      return (spec_skills[species - 1][skill] * 130) / 100;
 /* Invocations requires less */
+    else if ( skill == SK_INVOCATIONS )
+      return (spec_skills[species - 1][skill] * 70) / 100;
+    else
+      return spec_skills[species - 1][skill];
 
-    return spec_skills[species - 1][skill];
-
-}
-
-#ifdef CLASSES
-/*
-   This function divides the available skill points equally among eligible skills,
-   and returns any which are left over (eg if all available skills are at lvl 27).
-   Note: I'm not applying practise_skill to all skills, because that would give
-   players too much control over the development of their characters without
-   having to work for it.
- */
-int add_skill(int min_skill, int max_skill, int sk_tot)
-{
-
-    if (max_skill >= 50)
-        max_skill = 49;
-
-    char numb_sk = 0;
-    int skc = 0;
-
-    for (skc = min_skill; skc <= max_skill; skc++)
-    {
-        if (you.practise_skill[skc] == 0)
-        {
-            if ((skc >= SK_SHORT_BLADES && skc <= SK_DARTS)
-                || (skc >= SK_ARMOUR && skc <= SK_STEALTH)
-                || (skc >= SK_CONJURATIONS && skc <= SK_EARTH_MAGIC))
-/* cdl -- should SK_EARTH_MAGIC be SK_POISON_MAGIC? */
-                continue;
-        }
-        if (you.skills[skc] > 0 && you.skills[skc] < 27)
-            numb_sk++;
-    }
-
-    if (numb_sk <= 0)
-        return sk_tot;
-
-    for (skc = min_skill; skc <= max_skill; skc++)
-    {
-        if (you.practise_skill[skc] == 0)
-        {
-            if ((skc >= SK_SHORT_BLADES && skc <= SK_DARTS)
-                || (skc >= SK_ARMOUR && skc <= SK_STEALTH)
-                || (skc >= SK_CONJURATIONS && skc <= SK_EARTH_MAGIC))
-/* cdl -- should SK_EARTH_MAGIC be SK_POISON_MAGIC? */
-                continue;
-        }
-        if (you.skills[skc] > 0 && you.skills[skc] < 27)
-        {
-            you.skill_points[skc] += sk_tot / numb_sk;
-            sk_tot -= sk_tot / numb_sk;
-        }
-    }
-
-    return sk_tot;
-
-}
-
-/*void class_sk(int clsk [8] [3], int chcls)
-   {
-   int ci = 0;
-   int cy = 0;
-
-   for (ci = 0; ci < 8; ci ++)
-   {
-   for (cy = 0; cy < 3; cy ++)
-   {
-   clsk = class_skill [chcls] [ci] [cy];
-   }
-   }
-
-   } */
-
-#endif
+}          // end species_skills()

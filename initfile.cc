@@ -30,7 +30,9 @@ extern char colour_map;         /* defined in view.cc */
 extern char clean_map;          /* also defined in view.cc */
 
 
-void read_init_file()
+
+
+void read_init_file( void )
 {
 
     verbose_dump = 0;
@@ -42,11 +44,11 @@ void read_init_file()
 
     you.your_name[0] = '\0';
 
-    if (sys_env.crawl_rc)
+    if ( sys_env.crawl_rc )
     {
         f = fopen(sys_env.crawl_rc, "r");
     }
-    else if (sys_env.crawl_dir)
+    else if ( sys_env.crawl_dir )
     {
         char name_buff[kPathLen];
 
@@ -60,92 +62,93 @@ void read_init_file()
         f = fopen("init.txt", "r");
     }
 
-    if (f == NULL)
-        return;
+    if ( f == NULL )
+      return;
 
     while (!feof(f))
     {
         fgets(s, 255, f);
 
         // This is to make some efficient comments
-        if (s[0] == '#' || s[0] == '\0')
-            continue;
+        if ( s[0] == '#' || s[0] == '\0' )
+          continue;
 
         line++;
 
         // everything not a valid line is treated as a comment
-        if (sscanf(s, "autopickup=%s", field))
-        {
+        if ( sscanf(s, "autopickup=%s", field) )
+          {
             for (i = 0; i < 100 && field[i] != '\0'; i++)
-            {
+              {
                 // Make the amulet symbol equiv to ring -- bwross
-                switch (field[i])
+                switch ( field[i] )
                 {
-                case '"':
+                  case '"':
                     // also represents jewellery
                     field[i] = '=';
                     break;
 
-                case '|':
+                  case '|':
                     // also represents staves
                     field[i] = '\\';
                     break;
 
-                case ':':
-                    // Also represents books
+                  case ':':
+                    // also represents books
                     field[i] = '+';
                     break;
 
-                case 'x':
+                  case 'x':
                     // also corpses
                     field[i] = 'X';
                     break;
                 }
 
                 for (j = 0; j < obj_syms_len && field[i] != obj_syms[j]; j++)
-                    ;
+                  ;
 
-                if (j < obj_syms_len)
-                    autopickups |= (1L << j);
+                if ( j < obj_syms_len )
+                  autopickups |= (1L << j);
                 else
-                    fprintf(stderr, "Unparseable line #%d in init file", line);
-            }
-        }
-        else if (sscanf(s, "name=%s", field))
-        {
+                  fprintf(stderr, "Unparseable line #%d in init file", line);
+              }
+          }
+        else if ( sscanf(s, "name=%s", field) )
+          {
             strncpy(you.your_name, field, kNameLen);
-        }
-        else if (sscanf(s, "verbose_dump=%s", field))
-        {
+          }
+        else if ( sscanf(s, "verbose_dump=%s", field) )
+          {
             verbose_dump = (atoi(field) == 1);  // gives verbose info in char dumps
-
-        }
-        else if (sscanf(s, "colour_map=%s", field))
-        {
+          }
+        else if ( sscanf(s, "colour_map=%s", field) )
+          {
             colour_map = (atoi(field) == 1);    // colour-codes play-screen map
-
-        }
-        else if (sscanf(s, "clean_map=%s", field))
-        {
+          }
+        else if ( sscanf(s, "clean_map=%s", field) )
+          {
             clean_map = (atoi(field) == 1);     // removes monsters/clouds from map
-
-        }
-        else if (sscanf(s, "crawl_dir=%s", field))
-        {
+          }
+        else if ( sscanf(s, "crawl_dir=%s", field) )
+          {
             // We shouldn't bother to allocate this a second time
             // if the user puts two crawl_dir lines in the init file.
-            if (!sys_env.crawl_dir)
-                sys_env.crawl_dir = (char *) calloc(kPathLen, sizeof(char));
+            if ( !sys_env.crawl_dir )
+              sys_env.crawl_dir = (char *) calloc(kPathLen, sizeof(char));
 
-            if (sys_env.crawl_dir)
-                strncpy(sys_env.crawl_dir, field, kNameLen);
-        }
+            if ( sys_env.crawl_dir )
+              strncpy(sys_env.crawl_dir, field, kNameLen);
+          }
     }
+
     fclose(f);
-}
+
+}          // end read_init_file()
 
 
-void get_system_environment()
+
+
+void get_system_environment( void )
 {
     // The player's name
     sys_env.crawl_name = getenv("CRAWL_NAME");
@@ -160,4 +163,4 @@ void get_system_environment()
     // The full path to the init file -- this over-rides CRAWL_DIR
     sys_env.crawl_rc = getenv("CRAWL_RC");
 
-}
+}          // end get_system_environment()

@@ -5,10 +5,15 @@
  *
  *  Change History (most recent first):
  *
- *               <1>     4/24/99        JDJ             mons_spells returns an SBeam instead of using func_pass.
+ *               <1>     4/24/99        JDJ             mons_spells returns an
+ *                                                      SBeam instead of using
+ *                                                      func_pass.
  */
+
+
 #ifndef MSTUFF2_H
 #define MSTUFF2_H
+
 
 #include <string>
 #include "externs.h"
@@ -27,22 +32,65 @@ struct SBeam
     bool isBeam;
 };
 
+
 /*
-   beam_colour = func_pass [0];
-   beam_range = func_pass [1];
-   beam_damage = func_pass [2];
-   beam_hit = func_pass [3];
-   beam_type = func_pass [4];
-   beam_flavour = func_pass [5];
-   thing_thrown = func_pass [6];
+   beam_colour = _pass[0];
+   beam_range = _pass[1];
+   beam_damage = _pass[2];
+   beam_hit = _pass[3];
+   beam_type = _pass[4];
+   beam_flavour = _pass[5];
+   thing_thrown = _pass[6];
  */
 
-void spore_goes_pop(int i);
-void mons_throw(int i, struct bolt beem[1], int hand_used);
-void dragon(int i, struct bolt beem[1]);
-void monster_teleport(char monstel, char instan);
-void mons_cast(int i, struct bolt beem[1], int spell_cast);
-void mons_trap(int i);
-SBeam mons_spells(char spell_cast, int power);
 
-#endif // MSTUFF2_H
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: monstuff - mstuff2
+ * *********************************************************************** */
+struct SBeam mons_spells(char spell_cast, int power);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+void dragon(struct monsters *monster, struct bolt *pbolt);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+void mons_cast(struct monsters *monster, struct bolt *pbolt, int spell_cast);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+void mons_throw(struct monsters *monster, struct bolt *pbolt, int hand_used);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+void mons_trap(struct monsters *monster);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: beam - fight - files - monstuff - mstuff2 - spells4
+ * *********************************************************************** */
+void monster_teleport(struct monsters *monster, bool instan);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+void spore_goes_pop(struct monsters *monster);
+
+
+#endif

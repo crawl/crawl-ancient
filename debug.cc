@@ -15,28 +15,27 @@
 #include "AppHdr.h"
 #include "debug.h"
 
-#ifdef DOS
-#include <conio.h>
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 
+#ifdef DOS
+#include <conio.h>
+#endif
+
 #include "externs.h"
 
 #include "direct.h"
-#include "itemname.h"
-#include "player.h"
-#include "shopping.h"
 #include "dungeon.h"
-#include "stuff.h"
+#include "itemname.h"
 #include "monplace.h"
-#include "mstruct.h"
+#include "mon-util.h"
+#include "player.h"
 #include "skills.h"
 #include "spell.h"
-#include "spells0.h"
+#include "spl-util.h"
+#include "stuff.h"
 
 #ifndef WIZARD
 #define WIZARD
@@ -52,7 +51,6 @@
 //
 #if WIN
 static HANDLE sConsole = NULL;
-
 #endif
 
 
@@ -389,18 +387,17 @@ void TRACE(const char *format,...)
 //
 //---------------------------------------------------------------
 #ifdef WIZARD
-void cast_spec_spell()
+void cast_spec_spell( void )
 {
     char specs[3];
 
-    strcpy(info, "Cast which spell by number? ");
-    mpr(info);
+    mpr("Cast which spell by number? ");
 
     specs[0] = getche();
     specs[1] = getche();
     specs[2] = getche();
 
-    your_spells(atoi(specs), magic_ability(player_mag_abil(), you.intel), 0);
+    your_spells(atoi(specs), player_mag_abil(true), false);
 }
 #endif
 
@@ -411,13 +408,14 @@ void cast_spec_spell()
 //
 //---------------------------------------------------------------
 #ifdef WIZARD
-void cast_spec_spell_name()
+void cast_spec_spell_name( void )
 {
+
+    int i = 0;
     char specs[50];
     char spname[60];
 
-    strcpy(info, "Cast which spell by name? ");
-    mpr(info);
+    mpr("Cast which spell by name? ");
 
 #if defined(LINUX)
     echo();
@@ -429,22 +427,20 @@ void cast_spec_spell_name()
     gets(specs);
 #endif
 
-    int i = 0;
-
-    for (i = 0; i < 250; i++)
+    for (i = 0; i < NUM_SPELLS; i++)
     {
-        spell_name(i, spname);
-        if (strstr(strlwr(spname), strlwr(specs)) != NULL)
+        strcpy(spname, spell_title(i));
+
+        if ( strstr(strlwr(spname), strlwr(specs)) != NULL )
         {
-            your_spells(i, magic_ability(player_mag_abil(), you.intel), 0);
+            your_spells(i, player_mag_abil(true), false);
             return;
         }
 
     }
 
-    mpr("I couldn't find that spell.");
-    if (one_chance_in(20))
-        mpr("Maybe you should go back to WIZARD school.");
+    mpr( (one_chance_in(20)) ? "Maybe you should go back to WIZARD school."
+                             : "I couldn't find that spell." );
 
 }
 #endif
@@ -456,29 +452,30 @@ void cast_spec_spell_name()
 //
 //---------------------------------------------------------------
 #ifdef WIZARD
-void create_spec_monster()
+void create_spec_monster( void )
 {
     char specs[3];
 
-    strcpy(info, "Create which monster by number? ");
-    mpr(info);
+    mpr("Create which monster by number? ");
 
     specs[0] = getche();
     specs[1] = getche();
     specs[2] = getche();
 
     create_monster(atoi(specs), 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
-}
+
+}          // end create_spec_monster()
 
 
 
 //---------------------------------------------------------------
 //
-// cast_spec_spell_name
+// create_spec_monster_name
 //
 //---------------------------------------------------------------
-void create_spec_monster_name()
+void create_spec_monster_name( void )
 {
+
     char specs[50];
     char spname[60];
 
@@ -497,9 +494,10 @@ void create_spec_monster_name()
 
     int i = 0;
 
-    for (i = 0; i < 500; i++)
+    for (i = 0; i < NUM_MONSTERS; i++)
     {
         moname(i, 0, 1, 100, spname);
+
         if (strstr(strlwr(spname), strlwr(specs)) != NULL)
         {
             create_monster(i, 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
@@ -509,10 +507,12 @@ void create_spec_monster_name()
     }
 
     mpr("I couldn't find that monster.");
-    if (one_chance_in(20))
-        mpr("Maybe it's hiding.");
 
-}
+    if ( one_chance_in(20) )
+      mpr("Maybe it's hiding.");
+
+}          // end create_spec_monster_name()
+
 
 
 
@@ -521,12 +521,11 @@ void create_spec_monster_name()
 // level_travel
 //
 //---------------------------------------------------------------
-void level_travel()
+void level_travel( void )
 {
     char specs[3];
 
-    strcpy(info, "Travel to which level? ");
-    mpr(info);
+    mpr("Travel to which level? ");
 
     specs[0] = getche();
     specs[1] = getche();
@@ -537,7 +536,9 @@ void level_travel()
     mpr("Your level has been reset.");
     mpr("Enter a staircase for more obvious effects.");
 
-}
+}          // end level_travel()
+
+
 
 
 //---------------------------------------------------------------
@@ -545,19 +546,18 @@ void level_travel()
 // create_spec_object
 //
 //---------------------------------------------------------------
-void create_spec_object()
+void create_spec_object( void )
 {
-    int class_wanted = 0;
-    int type_wanted = 0;
+    unsigned char class_wanted = 0;
+    unsigned char type_wanted = 0;
 
-    strcpy(info, "Create which item (class then type)? ");
-    mpr(info);
+    mpr("Create which item (class then type)? ");
 
-    class_wanted = (getche() - 48) * 10;
-    class_wanted += getche() - 48;
+    class_wanted = ( (unsigned char) getche() - 48 ) * 10;
+    class_wanted += (unsigned char) getche() - 48;
 
-    type_wanted = (getche() - 48) * 10;
-    type_wanted += getche() - 48;
+    type_wanted = ( (unsigned char) getche() - 48) * 10;
+    type_wanted += (unsigned char) getche() - 48;
 
     itoa(property(class_wanted, type_wanted, 2), st_prn, 10);
     strcpy(info, st_prn);
@@ -565,11 +565,7 @@ void create_spec_object()
 
     int thing_created = items(1, class_wanted, type_wanted, 1, you.your_level, 250);
 
-    if (you.species != SP_NAGA)
-        strcpy(info, "Something appears at your feet!");
-    else
-        strcpy(info, "Something appears before you!");
-    mpr(info);
+    canned_msg(MSG_SOMETHING_APPEARS);
 
     int what_was_there = igrd[you.x_pos][you.y_pos];
 
@@ -579,46 +575,38 @@ void create_spec_object()
 }
 
 
+
+
 //---------------------------------------------------------------
 //
 // create_spec_object2
 //
 //---------------------------------------------------------------
-void create_spec_object2()
+void create_spec_object2( void )
 {
-    int class_wanted = 0;
-    int type_wanted = 0;
+    unsigned char class_wanted = 0;
+    unsigned char type_wanted = 0;
     int dam_wanted = 0;
 
-    strcpy(info, "Create which item (class, type, then dam)? ");
-    mpr(info);
+    mpr("Create which item (class, type, then dam)? ");
 
-    class_wanted = (getche() - 48) * 10;
-    class_wanted += getche() - 48;
+    class_wanted = ( (unsigned char) getche() - 48 ) * 10;
+    class_wanted += (unsigned char) getche() - 48;
 
-    type_wanted = (getche() - 48) * 10;
-    type_wanted += getche() - 48;
+    type_wanted = ( (unsigned char) getche() - 48 ) * 10;
+    type_wanted += (unsigned char) getche() - 48;
 
     dam_wanted = (getche() - 48) * 10;
     dam_wanted += getche() - 48;
 
-//itoa(property [class_wanted] [type_wanted] [2], st_prn, 10);
-    //strcpy(info, st_prn);
-    //mpr(info);
-
-//int thing_created = items(you.unique_items, 1, you.item_description,
-    //       grd, class_wanted, type_wanted, 1, 100, 250);
+    //itoa(property[class_wanted][type_wanted][2], st_prn, 10);
+    //mpr(st_prn);
 
     int thing_created = items(1, class_wanted, type_wanted, 1, you.your_level, 250);
 
-
     mitm.special[thing_created] = dam_wanted;
 
-    if (you.species != SP_NAGA)
-        strcpy(info, "Something appears at your feet!");
-    else
-        strcpy(info, "Something appears before you!");
-    mpr(info);
+    canned_msg(MSG_SOMETHING_APPEARS);
 
     int what_was_there = igrd[you.x_pos][you.y_pos];
 
@@ -634,17 +622,16 @@ void create_spec_object2()
 // stethoscope
 //
 //---------------------------------------------------------------
-void stethoscope(int mwh)
+void stethoscope( int mwh )
 {
 // STETH can't examine spaces in cardinal directions more than 1 space from you
 
     struct dist stth[1];
     int i;
 
-    if (mwh == 250)
+    if ( mwh == RANDOM_MONSTER )
     {
-        strcpy(info, "Which monster?");
-        mpr(info);
+        mpr("Which monster?");
 
         direction(1, stth);
 
@@ -662,18 +649,12 @@ void stethoscope(int mwh)
             mpr(info);
         }
 
-        if (mgrd[you.x_pos + stth[0].move_x][you.y_pos + stth[0].move_y] == MNG)
+        if ( mgrd[you.x_pos + stth[0].move_x][you.y_pos + stth[0].move_y] == MNG )
         {
-            //      strcpy(info, "There isn't anything there.!");
-
             itoa((int) igrd[you.x_pos + stth[0].move_x][you.y_pos + stth[0].move_y], st_prn, 10);
             strcpy(info, st_prn);
-//strcat(info, "/");
-            //itoa(menv [i].hit_points, st_prn, 10);
-            //strcpy(info, st_prn);
             mpr(info);
 
-            //mpr(info);
             stth[0].move_x = 0;
             stth[0].move_y = 0;
             return;
@@ -683,10 +664,9 @@ void stethoscope(int mwh)
 
     }
     else
-        i = mwh;
+      i = mwh;
 
-    strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));       //gmon_name [mons_class [i]]);
-
+    strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));
     strcat(info, ": ");
 
     {
@@ -721,7 +701,6 @@ void stethoscope(int mwh)
         strcat(info, st_prn);
         mpr(info);
 
-
         strcpy(info, "sec:");
         itoa(menv[i].number, st_prn, 10);
         strcat(info, st_prn);
@@ -752,11 +731,15 @@ void stethoscope(int mwh)
         mpr(info);
 
     }
+
     stth[0].move_x = 0;
     stth[0].move_y = 0;
 
     return;
-}
+
+}          // end stethoscope()
+
+
 
 
 //---------------------------------------------------------------
@@ -764,7 +747,7 @@ void stethoscope(int mwh)
 // debug_add_skills
 //
 //---------------------------------------------------------------
-void debug_add_skills()
+void debug_add_skills( void )
 {
     char specs[2];
 
@@ -775,10 +758,15 @@ void debug_add_skills()
 
     exercise(atoi(specs), 100);
 
-}
+}          // end debug_add_skills()
 
-void error_message_to_player()
+
+
+
+void error_message_to_player( void )
 {
+
     mpr("Oh dear. There appears to be a bug in the program.");
     mpr("I suggest you leave this level then save as soon as possible.");
-}
+
+}          // end error_message_to_player()

@@ -7,13 +7,24 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+
+
 #ifndef ABYSS_H
 #define ABYSS_H
 
-void priest_spells(int func_pass[10], char religious);
 
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
 char area_shift(void);
 
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: spells1 - spells3 - spells4
+ * *********************************************************************** */
 void abyss_teleport(void);
+
 
 #endif

@@ -5,16 +5,14 @@
 #include "message.h"
 #include "enum.h"
 
-extern char info[200];
-extern char st_prn[20];
-
-extern char str_pass[80];
-
-extern char gmon_use[1000];
-extern char mcolour[1000];
-extern unsigned char show_green;
+extern char info[200];               // defined in acr.cc {dlb}
+extern char st_prn[20];              // defined in acr.cc {dlb}
+extern char str_pass[80];            // defined in acr.cc {dlb}
+extern unsigned char show_green;     // defined in view.cc {dlb}
+extern unsigned char mcolour[1000];           // defined in mon-util.cc -- w/o this screen redraws *really* slow {dlb}
 
 #ifdef SHORT_FILE_NAMES
+
 const int kNameLen = 30;
 const int kFileNameLen = 6;
 const int kFileNameSize = 5 + kFileNameLen;
@@ -32,6 +30,7 @@ const int kFileNameLen = 28;
 const int kFileNameSize = 5 + kFileNameLen;
 
 #endif
+
 #endif
 
 // Length of Path + File Name
@@ -78,7 +77,7 @@ struct bolt
 
 struct player
 {
-    char turn_is_over;          // flag signaling that player has performed a timed action
+    char turn_is_over; // flag signaling that player has performed a timed action
 
     unsigned char prev_targ;
 
@@ -105,15 +104,13 @@ struct player
     int y_pos;
 
     int hunger;
-    // char hunger_inc;         // this is now handled by player_hunger_rate
     char equip[NUM_EQUIP];
-    /* list in player.cc */
 
     int hp;
     int hp_max;
     int base_hp;                // this is what is affected by necrophages etc
-
     int base_hp2;
+
     int magic_points;
     int max_magic_points;
     int base_magic_points;
@@ -126,10 +123,8 @@ struct player
     char max_intel;
     char max_dex;
 
-    /* xxx_ch variables : determine whether new value is printed next turn.
-       Set to 1 if value is changed. */
     char redraw_hunger;
-    char hunger_state;          // normal
+    char hunger_state;
 
     char redraw_burden;
     char redraw_hit_points;
@@ -159,30 +154,27 @@ struct player
     // out but is set to zero at the start of the
     // input loop.
 
-    unsigned char inv_class[52];
-    unsigned char inv_type[52];
-    unsigned char inv_plus[52];
-    unsigned char inv_plus2[52];
-    unsigned char inv_dam[52];
-    unsigned char inv_ident[52];
-    char inv_colour[52];
-    int inv_quantity[52];
-    char num_inv_items;         // number of items carried
+    unsigned char inv_class[ENDOFPACK];
+    unsigned char inv_type[ENDOFPACK];
+    unsigned char inv_plus[ENDOFPACK];
+    unsigned char inv_plus2[ENDOFPACK];
+    unsigned char inv_dam[ENDOFPACK];
+    unsigned char inv_ident[ENDOFPACK];
+    char inv_colour[ENDOFPACK];
+    int inv_quantity[ENDOFPACK];
+    char num_inv_items;                    // number of items carried
 
     int burden;
     char burden_state;
     unsigned char spells[25];
     char spell_no;
-    //char spell_levels;              // handled in player.cc now
-    unsigned char char_direction;       // 0 = going down
-    // 1 = going up!
+    unsigned char char_direction;          //
 
     unsigned char pet_target;
 
-    int your_level;
+    int your_level;                        // offset by one (-1 == 0, 0 == 1, etc.) for display purposes
 
-    int duration[30];           // lots of durational things. Why didn't I do this for haste etc right from the start? Oh well.
-    /* There's a list of these in player.cc */
+    int duration[NUM_DURATIONS];           // durational things. Why didn't I do this for haste etc right from the start? Oh well.
 
     int invis;
     int conf;
@@ -196,13 +188,13 @@ struct player
     int rotting;
     int berserker;
 
-    int exhausted;              // fatigue counter for berserk
+    int exhausted;                      // fatigue counter for berserk
 
-    int berserk_penalty;        // pelnalty for moving while berserk
+    int berserk_penalty;                // pelnalty for moving while berserk
 
     unsigned char attribute[30];        // see ATTRIBUTES in enum.h
 
-    char is_undead;             // see UNDEAD_STATES in enum.h
+    char is_undead;                     // see UNDEAD_STATES in enum.h
 
     char delay_doing;
     char delay_t;
@@ -257,14 +249,14 @@ struct monsters
     unsigned char target_y;
     int inv[8];
     unsigned char behavior;
-    unsigned char number;
+    unsigned char number;               // #heads (hydra), etc.
     unsigned char monster_foe;
     unsigned char enchantment[3];
-    unsigned char enchantment1;
+    unsigned char enchantment1;         //
 };
 
 
-struct item_struct
+struct item_struct                      // argh! why a struct of arrays and not an array of structs? {dlb}
 {
     unsigned char base_type[ITEMS];     /* basic class (eg weapon) */
     unsigned char sub_type[ITEMS];      /* type within that class (eg dagger) */
@@ -272,11 +264,11 @@ struct item_struct
     unsigned char pluses2[ITEMS];       /* dam+ etc */
     unsigned char special[ITEMS];       /* special stuff */
     unsigned int quantity[ITEMS];       /* multiple items */
-    unsigned char x[ITEMS];     /*  x-location */
-    unsigned char y[ITEMS];     /* y-location */
+    unsigned char x[ITEMS];             /* x-location */
+    unsigned char y[ITEMS];             /* y-location */
     unsigned char colour[ITEMS];        /* colour */
-    unsigned char id[ITEMS];    /* identification */
-    unsigned int link[ITEMS];   /* next item in stack */
+    unsigned char id[ITEMS];            /* identification */
+    unsigned int link[ITEMS];           /* next item in stack */
 };
 
 
@@ -314,7 +306,7 @@ struct environ
     int trap_known;
 };
 
-extern struct environ env;      // make this global to main module
+extern struct environ env;
 
 
 struct ghost_struct
@@ -322,6 +314,7 @@ struct ghost_struct
     char name[20];
     unsigned char values[20];
 };
+
 
 extern struct ghost_struct ghost;
 
@@ -337,6 +330,8 @@ struct system_environment
     char *crawl_dir;
 };
 
+
 extern system_environment sys_env;
+
 
 #endif // EXTERNS_H

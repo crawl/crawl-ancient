@@ -12,485 +12,249 @@
 #include "AppHdr.h"
 #include "food.h"
 
+#include <string.h>
+// required for abs() {dlb}:
+#include <stdlib.h>
+
 #ifdef DOS
 #include <conio.h>
 #endif
 
-#include <string.h>
-
-//#include <stdlib.h> only needed for itoa
-
 #include "externs.h"
 
-#include "spells2.h"
+#include "debug.h"
+#include "invent.h"
+#include "itemname.h"
+#include "misc.h"
+#include "mon-util.h"
 #include "mutation.h"
 #include "player.h"
 #include "religion.h"
-#include "stuff.h"
-#include "misc.h"
-#include "itemname.h"
-#include "mstruct.h"
 #include "skills2.h"
-#include "debug.h"
+#include "spells2.h"
+#include "stuff.h"
+#include "wpn-misc.h"
 
 #ifdef MACROS
 #include "macro.h"
 #endif
 
+
+extern bool wield_change;    // defined in output.cc
+
+
+static bool can_ingest(int what_isit, int kindof_thing, bool suppress_msg);
+static bool eat_from_floor(void);
+static int determine_chunk_effect(int which_chunk_type, bool rotten_chunk);
+static void eat_chunk(int chunk_effect);
+static void eat_from_inventory(int which_inventory_slot);
+static void eating(unsigned char item_class, int item_type);
+static void ghoul_eat_flesh(bool rotting_chunk);
+static void how_hungered(int hunger_increment);
+static void how_satiated(int hunger_decrement);
+
+
 /*
-   IMPORTANT: There is also an eating bit in item_use.cc, so alter that with
-   carnivores and things if it's changed here.
- */
+ **************************************************
+ *                                                *
+ *             BEGIN PUBLIC FUNCTIONS             *
+ *                                                *
+ **************************************************
+*/
 
 
-void eat_meat(int fod_eat_2);
-char eat_from_floor(void);
-char butchery(void);
-int eating(int func_pass[10], unsigned char item_class, int food_eat_3);
-void ghoul_eat_flesh(char rotting);
-bool is_carnivore(void);
-
-
-void food_change()
+// the parameter passed is whether the change is toward
+// more hunger (-1), less (+1), or neither (0) {dlb}
+void food_change( char type_of_change )
 {
-    you.hunger_state = HS_RAVENOUS;
 
-    if (you.hunger <= 1000)
+    if ( you.is_undead == US_UNDEAD )
     {
-        if (you.hunger_state != HS_STARVING)
-            you.redraw_hunger = 1;
-
-        you.hunger_state = HS_STARVING;
-        return;
-    }
-
-    if (you.hunger <= 2600)
-    {
-        if (you.hunger_state != HS_HUNGRY)
-            you.redraw_hunger = 1;
-
-        you.hunger_state = HS_HUNGRY;
-        return;
-    }
-
-    if (you.hunger < 7000)
-    {
-        if (you.hunger_state != HS_SATIATED)
-            you.redraw_hunger = 1;
-
+        you.hunger = 6000;                // cannot call set_hunger() here, or an infinite loop begins {dlb}
         you.hunger_state = HS_SATIATED;
-        return;
     }
-
-    if (you.species == SP_GHOUL)
+    else if ( you.species == SP_GHOUL && (type_of_change == 1) )
     {
-        if (you.hunger_state != HS_SATIATED)
-            you.redraw_hunger = 1;
-
-        you.hunger = 10999;
+        you.hunger = 6999;               // cannot call set_hunger() here, or an infinite loop begins {dlb}
         you.hunger_state = HS_SATIATED;
-        return;
     }
+    else if ( you.hunger <= 1000 )
+      you.hunger_state = HS_STARVING;
+    else if ( you.hunger <= 2600 )
+      you.hunger_state = HS_HUNGRY;
+    else if ( you.hunger < 7000 )
+      you.hunger_state = HS_SATIATED;
+    else if ( you.hunger < 11000 )
+      you.hunger_state = HS_FULL;
+    else
+      you.hunger_state = HS_ENGORGED;
 
-    if (you.hunger < 11000)
-    {
-        if (you.hunger_state != HS_FULL)
-            you.redraw_hunger = 1;
-
-        you.hunger_state = HS_FULL;
-        return;
-    }
-
-    if (you.hunger_state != HS_ENGORGED)
-        you.redraw_hunger = 1;
-
-    you.hunger_state = HS_ENGORGED;
-}
-
-
-void eaten(int food_eat_2, int food_eat_3)      /* this contains results of eating things. */
-{
     you.redraw_hunger = 1;
 
-    if (food_eat_3 == FOOD_CHUNK)
-    {
-        if (you.inv_dam[food_eat_2] < 100
-            && (mons_corpse_thingy(you.inv_plus[food_eat_2]) == 1
-                || mons_corpse_thingy(you.inv_plus[food_eat_2]) == 2)
-            || (mons_corpse_thingy(you.inv_plus[food_eat_2]) == 3
-                && player_res_poison() != 0))
-            eat_meat(50);
-        else
-            eat_meat(mons_corpse_thingy(you.inv_plus[food_eat_2]));
-        you.redraw_hunger = 1;
-        return;
-    }
+    return;
 
-    int func_pass[10];
+}          // end food_change()
 
-    func_pass[0] = you.hunger;
-    func_pass[1] = you.delay_t;
-    func_pass[2] = you.delay_doing;
 
-    eating(func_pass, 4, food_eat_3);
 
-    you.hunger = func_pass[0];
-    you.delay_t = func_pass[1];
-    you.delay_doing = func_pass[2];
 
-    if (food_eat_3 == FOOD_ROYAL_JELLY)
-    {
-        restore_str();
-        restore_int();
-        restore_dex();
-    }
-}                               /* end of void eaten () */
-
-char eat_from_floor()
+// note the similarities to food_change() - I think they
+// can be merged on some level, but how escapes me at the
+// moment ... I'll come back to it in time. 2apr2000 {dlb}
+void hunger_warning( void )
 {
-    int gloggj;
-    int o = igrd[you.x_pos][you.y_pos];
-    int k = 0;                  /* initialised in the loop */
-    unsigned char keyin;
 
-    //gloggo = 0;
-    int items_here = 0;
-    int item_got = 0;
-
-    if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    switch ( you.hunger_state )
     {
-        //      strcpy(info, "You can't reach the floor from up here.");
-        //      mpr(info);
-        return 0;
+      case HS_HUNGRY:
+        if ( you.hunger <= 1000 )
+        {
+            you.hunger_state = HS_STARVING;
+            you.redraw_hunger = 1;
+
+            mpr("You are starving!");
+        }
+        break;
+      case HS_SATIATED:
+        if ( you.hunger <= 2600 )
+        {
+            you.hunger_state = HS_HUNGRY;
+            you.redraw_hunger = 1;
+
+            mpr("You are feeling hungry.");
+        }
+        break;
+      case HS_FULL:
+        if ( you.hunger < 7000 )
+        {
+            you.hunger_state = HS_SATIATED;
+            you.redraw_hunger = 1;
+        }
+        break;
+      case HS_ENGORGED:
+        if ( you.hunger < 11000 )
+        {
+            you.hunger_state = HS_FULL;
+            you.redraw_hunger = 1;
+        }
+        break;
+      default:
+        break;
     }
 
+    return;
 
-    int last_item = ING;
-
-    int objl = igrd[you.x_pos][you.y_pos];
-    int hrg = 0;
-    int counter = 0;
-
-    while (objl != ING)
-    {
-        counter++;
-
-        last_item = objl;
-
-        hrg = mitm.link[objl];
-        objl = hrg;
-        items_here++;
-
-        if (counter > 1000)
-        {
-            error_message_to_player();
-            return 0;
-        }
-
-    }
-
-    if (items_here == 1)
-    {
-        if (mitm.base_type[igrd[you.x_pos][you.y_pos]] != OBJ_FOOD)
-            goto out_of_eating; // && mitm.base_type [igrd [you.x_pos] [you.y_pos]] != OBJ_CORPSES) return 0;
-
-        strcpy(info, "Eat ");
-        if (mitm.quantity[igrd[you.x_pos][you.y_pos]] > 1)
-            strcat(info, "one of ");
-        it_name(igrd[you.x_pos][you.y_pos], 3, str_pass);
-        strcat(info, str_pass);
-        strcat(info, "\?");
-        mpr(info);
-        unsigned char keyin = getch();
-
-        if (keyin == 0)
-        {
-            getch();
-            keyin = 0;
-        }
-        if (keyin != 'y' && keyin != 'Y')
-            return 0;
-
-        int item_got = igrd[you.x_pos][you.y_pos];
-
-        last_item = ING;
-        you.redraw_hunger = 1;
-
-        if (is_carnivore())     // new function call 13jan2000 {dlb}
-
-        {
-            if ((mitm.sub_type[item_got] >= FOOD_BREAD_RATION && mitm.sub_type[item_got] <= FOOD_CHOKO) || (mitm.sub_type[item_got
-                                                                           ]
-                                                         >= FOOD_SNOZZCUMBER
-                                                            && mitm.sub_type
-                                                   [item_got] <= FOOD_LYCHEE
-                ))
-            {
-                strcpy(info, "Sorry, you're a carnivore.");
-                mpr(info);
-                return 0;
-            }
-        }
-
-        if (mitm.sub_type[item_got] == FOOD_CHUNK)
-        {
-            if (you.mutation[MUT_HERBIVOROUS] > 1)
-            {
-                mpr("You can't eat raw meat!");
-                return 0;
-            }
-            if (you.hunger_state > HS_HUNGRY && !wearing_amulet(AMU_THE_GOURMAND)
-                && you.species != SP_KOBOLD
-                && you.species != SP_OGRE
-                && you.species != SP_TROLL
-                && you.species != SP_GHOUL
-                && you.mutation[MUT_CARNIVOROUS] == 0)
-            {
-                strcpy(info, "You aren't quite hungry enough to eat that!");
-                mpr(info);
-                return 0;
-            }
-
-            /*    itoa(mons_corpse_thingy(mitm.pluses [item_got]), st_prn, 10);
-               strcpy(info, st_prn);
-               mpr(info); */
-
-            //   if ((mitm.special [item_got] < 100 && mons_corpse_thingy(mitm.pluses [item_got]) == 1) || mons_corpse_thingy(mitm.pluses [item_got]) == 2 || (mons_corpse_thingy(mitm.pluses [item_got]) == 3 && player_res_poison() != 0)) eat_meat(50);
-            if (mitm.special[item_got] < 100
-                && (mons_corpse_thingy(mitm.pluses[item_got]) == 1
-                    || mons_corpse_thingy(mitm.pluses[item_got]) == 2)
-                || (mons_corpse_thingy(mitm.pluses[item_got]) == 3
-                    && player_res_poison() != 0))
-                eat_meat(50);
-            else
-                eat_meat(mons_corpse_thingy(mitm.pluses[item_got]));
-            //    eat_meat(mons_corpse_thingy(mitm.pluses [item_got]));
-            goto out_of_eating3;
-        }
-        int func_pass[10];
-
-        func_pass[0] = you.hunger;
-        func_pass[1] = you.delay_t;
-        func_pass[2] = you.delay_doing;
-        gloggj = eating(func_pass, mitm.base_type[item_got], mitm.sub_type[item_got]);
-
-        you.hunger = func_pass[0];
-        if (you.hunger > 12000)
-            you.hunger = 12000;
-        you.delay_t = func_pass[1];
-        you.delay_doing = func_pass[2];
-
-        //   mpr(info);
-        if (mitm.sub_type[item_got] == FOOD_ROYAL_JELLY)
-        {
-            restore_str();
-            restore_int();
-            restore_dex();
-        }
-        //   more();
-      out_of_eating3:you.turn_is_over = 1;
-        you.redraw_hunger = 1;
-        food_change();
-        if (mitm.quantity[item_got] <= 1)
-            destroy_item(item_got);
-        else
-            mitm.quantity[item_got]--;
-        return 1;
-
-    }
-    // end of if items_here
-
-    last_item = ING;
-
-    if (items_here > 1)
-    {
-
-        o = igrd[you.x_pos][you.y_pos];
-
-        for (k = 0; k < items_here; k++)        // use k because of call to relay_message()
-
-        {
-            if (mitm.base_type[o] != OBJ_FOOD)
-                goto out_of_eating;     // && mitm.base_type [o] != OBJ_CORPSES) goto out_of_eating;
-
-            strcpy(info, "Eat ");
-            if (mitm.quantity[o] > 1)
-                strcat(info, "one of ");
-            it_name(o, 3, str_pass);
-            strcat(info, str_pass);
-            strcat(info, "\?");
-            mpr(info);
-            keyin = getch();
-            if (keyin == 0)
-            {
-                getch();
-                keyin = 0;
-            }
-
-            if (keyin == 'q')
-            {
-                return 0;
-            }
-            if (keyin == 'y')
-            {
-
-                item_got = o;
-
-                if (is_carnivore())     // new function call 13jan2000 {dlb}
-
-                {
-                    if ((mitm.sub_type[item_got] >= FOOD_BREAD_RATION && mitm.sub_type[item_got] <= FOOD_CHOKO) || (mitm.sub_type
-                                                                  [item_got]
-                                                         >= FOOD_SNOZZCUMBER
-                                                            && mitm.sub_type
-                                                                  [item_got]
-                                                              <= FOOD_LYCHEE
-                        ))
-                    {
-                        strcpy(info, "Sorry, you're a carnivore.");
-                        mpr(info);
-                        return 0;
-                    }
-                }
-
-                if (mitm.sub_type[item_got] == FOOD_CHUNK)
-                {
-                    if (you.mutation[MUT_HERBIVOROUS] > 1)
-                    {
-                        mpr("You can't eat raw meat!");
-                        return 0;
-                    }
-                    if (you.hunger_state > HS_HUNGRY && !wearing_amulet(AMU_THE_GOURMAND)
-                        && you.species != SP_KOBOLD
-                        && you.species != SP_OGRE
-                        && you.species != SP_TROLL
-                        && you.species != SP_GHOUL
-                        && you.mutation[MUT_CARNIVOROUS] == 0)
-                    {
-                        strcpy(info, "You aren't quite hungry enough to eat that!");
-                        mpr(info);
-                        return 0;
-                    }
-                    if (mitm.special[item_got] < 100
-                        && (mons_corpse_thingy(mitm.pluses[item_got]) == 1
-                          || mons_corpse_thingy(mitm.pluses[item_got]) == 2)
-                        || (mons_corpse_thingy(mitm.pluses[item_got]) == 3
-                            && player_res_poison() != 0))
-                    {
-                        eat_meat(50);
-                    }
-                    else
-                    {
-                        eat_meat(mons_corpse_thingy(mitm.pluses[item_got]));
-                    }
-                    //    eat_meat(mons_corpse_thingy(mitm.pluses [item_got]));
-                    goto out_of_eating2;
-                }
-                int func_pass[10];
-
-                func_pass[0] = you.hunger;
-                if (you.hunger > 12000)
-                    you.hunger = 12000;
-                func_pass[1] = you.delay_t;
-                func_pass[2] = you.delay_doing;
-                gloggj = eating(func_pass, mitm.base_type[item_got], mitm.sub_type[item_got]);
-
-                you.hunger = func_pass[0];
-                you.delay_t = func_pass[1];
-                you.delay_doing = func_pass[2];
-
-                //   mpr(info);
-                if (mitm.sub_type[item_got] == FOOD_ROYAL_JELLY)
-                {
-                    restore_str();
-                    restore_int();
-                    restore_dex();
-                }
-
-              out_of_eating2:food_change();
-                you.redraw_hunger = 1;
-                //   more();
-                you.turn_is_over = 1;
-                if (mitm.quantity[item_got] == 1)
-                    destroy_item(item_got);
-                else
-                    mitm.quantity[item_got]--;
-                return 1;
-                //   destroy_item(item_got);
+}          // end hunger_warning()
 
 
-                //                              if (grunk != 1) // ie if the item picked up is still there.
-                //                              {
-                //                                      last_item = item_got;
-                //                              }
-
-            }
 
 
-          out_of_eating:
-            if (mitm.quantity[o] > 0)
-                last_item = o;
-
-            hrg = mitm.link[o];
-            o = hrg;
-            if (o == ING)
-                return 0;
-
-            if (items_here == 0)
-                break;
-        }                       // end of while k loop
-
-        //      strcpy(info, "That's all.");
-    }
-    // end of if items_here
-    //itc = 0;
-
-    return 0;
-}                               // end of eat_from_floor() function
-
-char butchery(void)
+void make_hungry( int hunger_amount, bool suppress_msg )
 {
-    //gloggo = 0;
+
+    if ( you.is_undead != US_UNDEAD )
+    {
+        if ( !suppress_msg )
+          how_hungered(hunger_amount);
+
+        you.hunger -= hunger_amount;
+
+        if ( you.hunger < 0)
+          you.hunger = 0;
+
+        food_change(-1);
+    }
+
+    return;
+
+}          // end make_hungry()
+
+
+
+
+void lessen_hunger( int satiated_amount, bool suppress_msg )
+{
+
+    if ( you.is_undead != US_UNDEAD )
+    {
+        if ( !suppress_msg )
+          how_satiated(satiated_amount);
+
+        you.hunger += satiated_amount;
+
+        if ( you.hunger > 12000)
+          you.hunger = 12000;
+
+        food_change(1);
+    }
+
+    return;
+
+}          // end lessen_hunger()
+
+
+
+
+void set_hunger( int new_hunger_level, bool suppress_msg )
+{
+
+    int hunger_difference = (new_hunger_level - you.hunger);
+
+    if ( you.is_undead != US_UNDEAD )
+    {
+        if ( hunger_difference < 0 )
+          make_hungry(abs(hunger_difference), suppress_msg);
+        else if ( hunger_difference > 0 )
+          lessen_hunger(hunger_difference, suppress_msg);
+    }
+
+    return;
+
+}          // end set_hunger()
+
+
+
+
+bool butchery( void )
+{
+
     int items_here = 0;
     int o = igrd[you.x_pos][you.y_pos];
     int k = 0;
     int item_got;
     unsigned char keyin;
 
-    if (igrd[you.x_pos][you.y_pos] == ING)
+    bool barehand_butcher = ( you.species == SP_TROLL
+                               || you.species == SP_GHOUL
+                               || you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS
+                               || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON );
+
+    if ( igrd[you.x_pos][you.y_pos] == ING )
     {
-        strcpy(info, "There isn't anything here!");
-        mpr(info);
-        return 0;
+        mpr("There isn't anything here!");
+        return false;
     }
 
-    if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    if ( you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT) )
     {
-        strcpy(info, "You can't reach the floor from up here.");
-        mpr(info);
-        return 0;
+        mpr("You can't reach the floor from up here.");
+        return false;
     }
 
-    if (you.species != SP_TROLL
-        && you.species != SP_GHOUL
-        && you.attribute[ATTR_TRANSFORMATION] != TRAN_BLADE_HANDS
-        && you.attribute[ATTR_TRANSFORMATION] != TRAN_DRAGON)
-    {
-        if (you.equip[EQ_WEAPON] == -1)
+    if ( !barehand_butcher )
+      {
+        if ( you.equip[EQ_WEAPON] == -1 )
         {
             mpr("What, with your bare hands?");
-            return 0;
+            return false;
         }
-        else if (damage_type(you.inv_class[you.equip[EQ_WEAPON]],
-                             you.inv_type[you.equip[EQ_WEAPON]]) != 1
-                 && damage_type(you.inv_class[you.equip[EQ_WEAPON]],
-                                you.inv_type[you.equip[EQ_WEAPON]]) != 3)
+        else if ( damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) != DVORP_SLICING
+                 && damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) != DVORP_CHOPPING )
         {
             mpr("Maybe you should try using a sharper implement.");
-            return 0;
+            return false;
         }
-    }
-
+      }
 
     int last_item = ING;
 
@@ -511,7 +275,7 @@ char butchery(void)
         if (counter > 1000)
         {
             error_message_to_player();
-            return 0;
+            return false;
         }
 
     }
@@ -527,6 +291,7 @@ char butchery(void)
         strcat(info, str_pass);
         strcat(info, "\?");
         mpr(info);
+
         unsigned char keyin = getch();
 
         if (keyin == 0)
@@ -535,43 +300,40 @@ char butchery(void)
             keyin = 0;
         }
         if (keyin != 'y' && keyin != 'Y')
-            return 0;
+            return false;
 
         int item_got = igrd[you.x_pos][you.y_pos];
 
         last_item = ING;
-        you.redraw_hunger = 1;
+        //you.redraw_hunger = 1;
 
         you.delay_t = 4;
         you.delay_doing = 4;
 
-        if (you.species == SP_TROLL || you.species == SP_GHOUL
-            || you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS
-            || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
-            mpr("You start tearing the corpse apart.");
+        if ( barehand_butcher )
+          mpr("You start tearing the corpse apart.");
         else
-            mpr("You start hacking away.");
+          mpr("You start hacking away.");
 
-        if (you.duration[DUR_PRAYER] != 0
-            && (you.religion == GOD_OKAWARU
-                || you.religion == GOD_MAKHLEB
-                || you.religion == GOD_TROG))
+        if ( you.duration[DUR_PRAYER]
+            && ( you.religion == GOD_OKAWARU
+                  || you.religion == GOD_MAKHLEB
+                  || you.religion == GOD_TROG ) )
         {
             offer_corpse(item_got);
             you.turn_is_over = 1;
             destroy_item(item_got);
             you.delay_t = 0;
             you.delay_doing = 0;
-            return 1;           /* no chunks */
+            return true;           // no chunks
         }
 
         you.turn_is_over = 1;
-        place_chunks(mitm.pluses[item_got], mitm.special[item_got],
-                     you.x_pos, you.y_pos, mitm.colour[item_got]);
+        place_chunks(mitm.pluses[item_got], mitm.special[item_got], you.x_pos, you.y_pos, mitm.colour[item_got]);
         destroy_item(item_got);
-        return 1;
-    }
-    // end of if items_here
+        return true;
+
+    }                             // end "if items_here == 1"
 
     last_item = ING;
 
@@ -600,7 +362,7 @@ char butchery(void)
 
             if (keyin == 'q')
             {
-                return 0;
+                return false;
             }
 
             if (keyin == 'y')
@@ -611,35 +373,395 @@ char butchery(void)
                 you.delay_t = 4;
                 you.delay_doing = 4;
 
-                if (you.species == SP_TROLL || you.species == SP_GHOUL
-                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS
-                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
-                {
-                    mpr("You start tearing the corpse apart.");
-                }
+                if ( barehand_butcher )
+                  mpr("You start tearing the corpse apart.");
                 else
-                {
-                    mpr("You start hacking away.");
-                }
+                  mpr("You start hacking away.");
 
-                if (you.duration[DUR_PRAYER] != 0
-                    && (you.religion == GOD_OKAWARU
-                        || you.religion == GOD_MAKHLEB
-                        || you.religion == GOD_TROG))
+                if ( you.duration[DUR_PRAYER]
+                    && ( you.religion == GOD_OKAWARU
+                          || you.religion == GOD_MAKHLEB
+                          || you.religion == GOD_TROG ) )
                 {
                     offer_corpse(item_got);
                     you.turn_is_over = 1;
                     destroy_item(item_got);
                     you.delay_t = 0;
                     you.delay_doing = 0;
-                    return 1;   /* no chunks */
+                    return true;   // no chunks
                 }
 
                 place_chunks(mitm.pluses[item_got], mitm.special[item_got],
                              you.x_pos, you.y_pos, mitm.colour[item_got]);
                 you.turn_is_over = 1;
                 destroy_item(item_got);
-                return 1;
+
+                return true;
+
+            }
+
+
+out_of_eating:
+
+            if (mitm.quantity[o] > 0)
+              last_item = o;
+
+            hrg = mitm.link[o];
+            o = hrg;
+
+            if ( o == ING )
+              goto failed;
+
+            if ( items_here == 0 )
+              break;
+        }                       // end "for k" loop
+
+    }
+    //return false;
+
+failed:
+
+    mpr("There isn't anything to dissect here.");
+
+    return false;
+
+}          // end butchery()
+
+
+
+
+void eat_food( void )
+{
+
+    int food_eat_1;
+    int which_inventory_slot;
+
+    unsigned char nthing = 0;
+
+    if ( you.is_undead == US_UNDEAD )
+    {
+        mpr("You can't eat.");
+        return;
+    }
+
+    if ( you.hunger >= 11000 )
+    {
+        mpr("You're too full to eat anything.");
+        return;
+    }
+
+    if ( igrd[you.x_pos][you.y_pos] != ING )
+    {
+        if ( eat_from_floor() )
+          return;
+    }
+
+    if ( you.num_inv_items < 1 )
+    {
+        canned_msg(MSG_NOTHING_CARRIED);
+        return;
+    }
+
+query:
+    mpr("Eat which item?");
+
+    unsigned char keyin = get_ch();
+
+    if (keyin == '?' || keyin == '*')
+    {
+        if (keyin == '?')
+            nthing = get_invent(OBJ_FOOD);
+        if (keyin == '*')
+            nthing = get_invent(-1);
+        if ( ( nthing >= 'A' && nthing <= 'Z' ) || ( nthing >= 'a' && nthing <= 'z' ) )
+        {
+            keyin = nthing;
+        }
+        else
+        {
+            //mesclr();
+            goto query;
+
+        }
+    }
+
+    food_eat_1 = (int) keyin;
+
+    if ( food_eat_1 < 'A' || (food_eat_1 > 'Z' && food_eat_1 < 'a' ) || food_eat_1 > 'z' )
+    {
+        mpr("You don't have any such object.");
+        return;
+    }
+
+    which_inventory_slot = letter_to_index(food_eat_1);
+
+    if ( you.inv_quantity[which_inventory_slot] == 0 )
+    {
+        mpr("You don't have any such object.");
+        return;
+    }
+
+
+// this conditional can later be merged into food::can_ingest() when expanded
+// to handle more than just OBJ_FOOD 16mar200 {dlb}
+    if ( you.inv_class[which_inventory_slot] != OBJ_FOOD )
+    {
+        mpr("You can't eat that!");
+        return;
+    }
+
+    if ( !can_ingest(you.inv_class[which_inventory_slot], you.inv_type[which_inventory_slot], false) )     // new function call 13mar2000 {dlb}
+      return;
+
+    you.inv_quantity[which_inventory_slot]--;
+
+    if ( you.inv_quantity[which_inventory_slot] == 0 )
+    {
+        you.num_inv_items--;
+        if ( you.equip[EQ_WEAPON] == which_inventory_slot )
+        {
+            you.equip[EQ_WEAPON] = -1;
+            mpr("You are now empty handed.");
+            wield_change = true;
+        }
+    }
+
+    eat_from_inventory(which_inventory_slot);
+
+    burden_change();
+
+    you.turn_is_over = 1;
+
+}          // end eat_food()
+
+
+/*
+ **************************************************
+ *                                                *
+ *              END PUBLIC FUNCTIONS              *
+ *                                                *
+ **************************************************
+*/
+
+
+
+
+static void how_hungered( int hunger_increment )
+{
+
+    if ( hunger_increment > 0 )
+    {
+        strcpy(info, (hunger_increment <= 100) ? "You feel slightly " :
+                     (hunger_increment <= 350) ? "You feel somewhat " :
+                     (hunger_increment <= 800) ? "You feel a quite a bit "
+                                               : "You feel a lot " );
+
+        strcat(info, (you.hunger_state > HS_SATIATED) ? "less full."
+                                                      : "more hungry." );
+
+        mpr(info);
+    }
+
+    return;
+
+}          // end how_hungered()
+
+
+
+
+static void how_satiated( int hunger_decrement )
+{
+
+    if ( hunger_decrement > 0 )
+    {
+        strcpy(info, (hunger_decrement <= 100) ? "You feel slightly " :
+                     (hunger_decrement <= 350) ? "You feel somewhat " :
+                     (hunger_decrement <= 800) ? "You feel a quite a bit "
+                                               : "You feel a lot " );
+
+        strcat(info, (you.hunger_state > HS_SATIATED) ? "more full."
+                                                      : "less hungry." );
+
+        mpr(info);
+    }
+
+    return;
+
+}          // end how_satiated()
+
+
+
+
+static void eat_from_inventory( int which_inventory_slot )
+{
+
+    if ( you.inv_type[which_inventory_slot] == FOOD_CHUNK )
+    {
+        eat_chunk(determine_chunk_effect(mons_corpse_thingy(you.inv_plus[which_inventory_slot]), (you.inv_dam[which_inventory_slot] < 100)));
+        return;
+    }
+
+    eating(you.inv_class[which_inventory_slot], you.inv_type[which_inventory_slot]);
+
+}          // end eat_from_inventory()
+
+
+
+
+static bool eat_from_floor( void )
+{
+
+    int o = igrd[you.x_pos][you.y_pos];
+    int k = 0;                  /* initialised in the loop */
+    unsigned char keyin;
+
+    int items_here = 0;
+    int item_got = 0;
+
+    if ( you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT) )
+    {
+        //mpr("You can't reach the floor from up here.");
+        return false;
+    }
+
+
+    int last_item = ING;
+
+    int objl = igrd[you.x_pos][you.y_pos];
+    int hrg = 0;
+    int counter = 0;
+
+    while (objl != ING)
+    {
+        counter++;
+
+        last_item = objl;
+
+        hrg = mitm.link[objl];
+        objl = hrg;
+        items_here++;
+
+        if (counter > 1000)
+        {
+            error_message_to_player();
+            return false;
+        }
+
+    }
+
+    if (items_here == 1)
+    {
+        if (mitm.base_type[igrd[you.x_pos][you.y_pos]] != OBJ_FOOD)
+            goto out_of_eating; // && mitm.base_type [igrd [you.x_pos] [you.y_pos]] != OBJ_CORPSES) return false;
+
+        strcpy(info, "Eat ");
+
+        if ( mitm.quantity[igrd[you.x_pos][you.y_pos]] > 1 )
+          strcat(info, "one of ");
+
+        it_name(igrd[you.x_pos][you.y_pos], 3, str_pass);
+        strcat(info, str_pass);
+        strcat(info, "\?");
+        mpr(info);
+
+        unsigned char keyin = getch();
+
+        if (keyin == 0)
+        {
+            getch();
+            keyin = 0;
+        }
+        if (keyin != 'y' && keyin != 'Y')
+            return false;
+
+        int item_got = igrd[you.x_pos][you.y_pos];
+
+        last_item = ING;
+        //you.redraw_hunger = 1;
+
+        if ( !can_ingest(mitm.base_type[item_got], mitm.sub_type[item_got], false) )     // new function call 13mar2000 {dlb}
+          return false;
+        else if ( mitm.sub_type[item_got] == FOOD_CHUNK )
+        {
+            eat_chunk(determine_chunk_effect(mons_corpse_thingy(mitm.pluses[item_got]), (mitm.special[item_got] < 100)));
+            goto out_of_eating3;
+        }
+
+        eating(mitm.base_type[item_got], mitm.sub_type[item_got]);
+
+out_of_eating3:
+        you.turn_is_over = 1;
+
+        if ( mitm.quantity[item_got] <= 1 )
+          destroy_item(item_got);
+        else
+          mitm.quantity[item_got]--;
+
+        return true;
+
+    }
+    // end of if items_here
+
+    last_item = ING;
+
+    if (items_here > 1)
+    {
+
+        o = igrd[you.x_pos][you.y_pos];
+
+        for (k = 0; k < items_here; k++)        // use k because of call to relay_message()
+        {
+            if ( mitm.base_type[o] != OBJ_FOOD )
+              goto out_of_eating;     // && mitm.base_type [o] != OBJ_CORPSES) goto out_of_eating;
+
+            strcpy(info, "Eat ");
+
+            if ( mitm.quantity[o] > 1 )
+              strcat(info, "one of ");
+
+            it_name(o, 3, str_pass);
+            strcat(info, str_pass);
+            strcat(info, "\?");
+            mpr(info);
+
+            keyin = getch();
+            if (keyin == 0)
+            {
+                getch();
+                keyin = 0;
+            }
+
+            if (keyin == 'q')
+            {
+                return false;
+            }
+            if (keyin == 'y')
+            {
+
+                item_got = o;
+
+                if ( !can_ingest(mitm.base_type[item_got], mitm.sub_type[item_got], false) )     // new function call 13mar2000 {dlb}
+                  return false;
+                else if ( mitm.sub_type[item_got] == FOOD_CHUNK )
+                {
+                    eat_chunk(determine_chunk_effect(mons_corpse_thingy(mitm.pluses[item_got]), (mitm.special[item_got] < 100)));
+                    goto out_of_eating2;
+                }
+
+                eating(mitm.base_type[item_got], mitm.sub_type[item_got]);
+
+out_of_eating2:
+                you.turn_is_over = 1;
+
+                if ( mitm.quantity[item_got] == 1 )
+                  destroy_item(item_got);
+                else
+                  mitm.quantity[item_got]--;
+
+                return true;
+
+                //if (grunk != 1) // ie if the item picked up is still there.
+                //  last_item = item_got;
 
             }
 
@@ -650,515 +772,637 @@ char butchery(void)
 
             hrg = mitm.link[o];
             o = hrg;
-
             if (o == ING)
-                goto failed;
+                return false;
 
             if (items_here == 0)
                 break;
         }                       // end of while k loop
 
+        //      strcpy(info, "That's all.");
     }
-    //return 0;
 
-  failed:
-    strcpy(info, "There isn't anything to dissect here.");
-    mpr(info);
-    return 0;
+    // end of if items_here
+    //itc = 0;
 
-}                               // end of eat_from_floor() function
+    return false;
+}                               // end eat_from_floor()
 
 
-void eat_meat(int fod_eat_2)
+
+
+// never called directly - chunk_effect values must pass
+// through food::determine_chunk_effect() first {dlb}:
+static void eat_chunk( int chunk_effect )
 {
-    if (wearing_amulet(AMU_THE_GOURMAND) && (fod_eat_2 == 2 || fod_eat_2 == 3))
-        fod_eat_2 = 1;
 
-    switch (fod_eat_2)
+    bool likes_chunks = ( you.species == SP_KOBOLD || you.species == SP_OGRE || you.species == SP_TROLL || you.mutation[MUT_CARNIVOROUS] > 0 );
+
+    if ( you.species == SP_GHOUL )
     {
-    case 1:
-      appetising:
-        if (you.species == SP_GHOUL)
-        {
-            ghoul_eat_flesh(0);
-            break;
-        }
-        if (you.species == SP_KOBOLD
-            || you.species == SP_OGRE
-            || you.species == SP_TROLL
-            || you.mutation[MUT_CARNIVOROUS] > 0)
-            mpr("This raw flesh tastes good.");
-        else
-            mpr("This raw flesh is not very appetising.");
-        you.hunger += 1000;
+        ghoul_eat_flesh(chunk_effect == CE_ROTTEN);
+
         you.delay_t = 3;
         you.delay_doing = 0;
-        break;
 
-    case 2:
-        if (!one_chance_in(3))
-            goto appetising;
-    case 50:
-        if (you.species == SP_GHOUL)
+        food_change(1);
+    }
+    else
+    {
+        switch ( chunk_effect )
         {
-            ghoul_eat_flesh(fod_eat_2 == 50);
-            break;
+            case CE_MUTAGEN_RANDOM:
+              mpr("This meat tastes really weird.");
+              mutate(100);
+              break;
+
+            case CE_MUTAGEN_BAD:
+              mpr("This meat tastes *really* weird.");
+              give_bad_mutation();
+              break;
+
+            case CE_HCL:
+              mpr("You feel your flesh start to rot away!");
+
+              you.rotting += 10 + random2(10);
+
+              if ( you.disease > 100 )
+                you.disease = 210;
+              else
+                you.disease += 50 + random2(100);
+              break;
+
+            case CE_POISONOUS:
+              mpr("Yeeuch - this meat is poisonous!");
+
+              you.poison += 3 + random2(4);
+              break;
+
+            case CE_ROTTEN:
+            case CE_CONTAMINATED:
+              mpr("There is something wrong with this meat.");
+              mpr("You feel ill.");
+
+              if (you.disease > 100)
+                you.disease = 210;
+              else
+                you.disease += 50 + random2(100);
+              break;
+
+        // note that this is the only case that takes time and forces redraw {dlb}:
+            case CE_CLEAN:
+              strcpy(info, "This raw flesh ");
+              strcat(info, (likes_chunks) ? "tastes good." : "is not very appetising.");
+              mpr(info);
+
+              you.delay_t = 3;
+              you.delay_doing = 0;
+
+              lessen_hunger(1000, true);
+              break;
         }
-        if ((you.species == SP_KOBOLD || you.species == SP_TROLL) && !one_chance_in(15))
-            goto appetising;
-        if ((you.species == SP_HILL_ORC || you.species == SP_OGRE) && !one_chance_in(5))
-            goto appetising;
-        if (you.is_undead)
-            goto appetising;
-        strcpy(info, "There is something wrong with this meat.");
-        mpr(info);
-        strcpy(info, "You feel ill.");
-        mpr(info);
-        if (you.disease > 100)
-            you.disease = 210;
-        else
-            you.disease += 50 + random2(100);
-        break;
 
-    case 3:
-        if (player_res_poison() != 0)
-            goto appetising;
-        strcpy(info, "Yeeuch - this meat is poisonous!");
-        mpr(info);
-        you.poison += 3 + random2(4);
-        break;
-
-    case 4:
-        if (you.is_undead)
-            goto appetising;
-
-        strcpy(info, "You feel your flesh start to rot away!");
-        mpr(info);
-        you.rotting += random2(10) + 10;
-        if (you.disease > 100)
-            you.disease = 210;
-        else
-            you.disease += 50 + random2(100);
-        break;
-
-    case 5:
-        mpr("This meat tastes really weird.");
-        mutate(100);
-        break;
     }
 
-    food_change();
-}
+    return;
+
+}          // end eat_chunk()
 
 
-void ghoul_eat_flesh(char rotting)
+
+
+static void ghoul_eat_flesh( bool rotting_chunk )
 {
 
-    char healed = 0;
+    bool healed = false;
 
-    if (rotting == 0)
+    if ( !rotting_chunk )
     {
         mpr("This raw flesh tastes good.");
-        if (!one_chance_in(5))
-            healed = 1;
-        if (you.base_hp < 5000 && !one_chance_in(3))
+
+        if ( !one_chance_in(5) )
+          healed = true;
+
+        if ( you.base_hp < 5000 && !one_chance_in(3) )
         {
-            you.base_hp++;
             mpr("You feel more resilient.");
+            you.base_hp++;
         }
     }
     else
     {
         mpr("This rotting flesh tastes delicious!");
-        healed = 1;
-        if (you.base_hp < 5000 && !one_chance_in(4))
+
+        healed = true;
+
+        if ( you.base_hp < 5000 && !one_chance_in(4) )
         {
-            you.base_hp++;
             mpr("You feel more resilient.");
-            you.hunger += 500;
+            you.base_hp++;
         }
     }
 
-    if (you.strength < you.max_strength && one_chance_in(5))
+    if ( you.strength < you.max_strength && one_chance_in(5) )
     {
         mpr("You feel your strength returning.");
         you.strength++;
         you.redraw_strength = 1;
     }
 
-
-    if (healed == 1 && you.hp < you.hp_max)
-    {
-        you.hp += 1 + random2(5) + random2(you.experience_level + 1);
-        if (you.hp > you.hp_max)
-            you.hp = you.hp_max;
-    }
-
-    you.hunger += 1500;
-    you.delay_t = 3;
-    you.delay_doing = 0;
+    if ( healed && you.hp < you.hp_max )
+      inc_hp(1 + random2(5) + random2(1 + you.experience_level), false);
 
     calc_hp();
-    you.redraw_hit_points = 1;
 
-}
+    return;
+
+}          // end ghoul_eat_flesh()
 
 
-int eating(int func_pass[10], unsigned char item_class, int food_eat_3)
+
+
+static void eating( unsigned char item_class, int item_type )
 {
-    if (item_class == OBJ_FOOD)
+
+    int temp_rand;                        // probability determination {dlb}
+    int hunger_level_now = you.hunger;    // this should clarify things {dlb}
+    int how_herbivorous = you.mutation[MUT_HERBIVOROUS];
+    int how_carnivorous = you.mutation[MUT_CARNIVOROUS];
+    int carnivore_modifier = 0;
+    int herbivore_modifier = 0;
+
+    switch ( item_class )
     {
-        switch (food_eat_3)
-        {
-        case FOOD_MEAT_RATION:
-            mpr("That meat ration really hit the spot!");
-            func_pass[0] += 5000;
-            func_pass[0] += you.mutation[MUT_CARNIVOROUS] * 500;
-            func_pass[0] -= you.mutation[MUT_HERBIVOROUS] * 1500;       /* should never be 3 * 2000 */
-            func_pass[1] = 4;
-            func_pass[2] = 0;
-            return 0;
+        case OBJ_FOOD:
+          you.delay_t = ( (item_type == FOOD_MEAT_RATION || item_type == FOOD_BREAD_RATION) ? 4 : 1 );
+          you.delay_doing = 0;
 
-        case FOOD_BREAD_RATION:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("That bread ration really hit the spot!");
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 1000;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 500;
-            func_pass[0] += 4400;
-            func_pass[1] = 4;
-            func_pass[2] = 0;
-            return 0;
+      // apply base sustenance {dlb}:
+          switch ( item_type )
+          {
+              case FOOD_MEAT_RATION:
+              case FOOD_ROYAL_JELLY:
+                hunger_level_now += 5000;
+                break;
+              case FOOD_BREAD_RATION:
+                hunger_level_now += 4400;
+                break;
+              case FOOD_HONEYCOMB:
+                hunger_level_now += 2000;
+                break;
+              case FOOD_SNOZZCUMBER:    // maybe a nasty side-effect from RD's book?
+              case FOOD_PIZZA:
+              case FOOD_BEEF_JERKY:
+                hunger_level_now += 1500;
+                break;
+              case FOOD_CHEESE:
+              case FOOD_SAUSAGE:
+                hunger_level_now += 1200;
+                break;
+              case FOOD_ORANGE:
+              case FOOD_BANANA:
+              case FOOD_LEMON:
+                hunger_level_now += 1000;
+                break;
+              case FOOD_PEAR:
+              case FOOD_APPLE:
+              case FOOD_APRICOT:
+                hunger_level_now += 700;
+                break;
+              case FOOD_CHOKO:
+              case FOOD_RAMBUTAN:
+              case FOOD_LYCHEE:
+                hunger_level_now += 600;
+                break;
+              case FOOD_STRAWBERRY:
+                hunger_level_now += 200;
+                break;
+              case FOOD_GRAPE:
+                hunger_level_now += 100;
+                break;
+              case FOOD_SULTANA:
+                hunger_level_now += 70;    // will not save you from starvation
+                break;
+              default:
+                break;
+          }        // end base sustenance listing {dlb}
 
-        case FOOD_APPLE:        // apple
+      // next, sustenance modifier for carnivores/herbivores {dlb}:
+      // for some reason, sausages do not penalize herbivores {dlb}:
+          switch ( item_type )
+          {
+              case FOOD_MEAT_RATION:
+                carnivore_modifier =   500;
+                herbivore_modifier = -1500;
+                break;
+              case FOOD_BEEF_JERKY:
+                carnivore_modifier =  200;
+                herbivore_modifier = -200;
+                break;
+              case FOOD_BREAD_RATION:
+                carnivore_modifier = -1000;
+                herbivore_modifier =   500;
+                break;
+              case FOOD_BANANA:
+              case FOOD_ORANGE:
+              case FOOD_LEMON:
+                carnivore_modifier = -300;
+                herbivore_modifier =  300;
+                break;
+              case FOOD_PEAR:
+              case FOOD_APPLE:
+              case FOOD_APRICOT:
+              case FOOD_CHOKO:
+              case FOOD_SNOZZCUMBER:
+              case FOOD_RAMBUTAN:
+              case FOOD_LYCHEE:
+                carnivore_modifier = -200;
+                herbivore_modifier =  200;
+                break;
+              case FOOD_STRAWBERRY:
+                carnivore_modifier = -50;
+                herbivore_modifier =  50;
+                break;
+              case FOOD_GRAPE:
+              case FOOD_SULTANA:
+                carnivore_modifier = -20;
+                herbivore_modifier =  20;
+                break;
+              default:
+                carnivore_modifier = 0;
+                herbivore_modifier = 0;
+                break;
+          }        // end carnivore/herbivore modifier listing {dlb}
 
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("Mmmm... Yummy apple.");
-            func_pass[0] += 700;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 200;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 200;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            //redraw_hunger = 1;
-            return 0;
+      // next, let's take care of messaging {dlb}:
+          if ( how_carnivorous > 0 && carnivore_modifier < 0 )
+            mpr("Blech - you need meat!");
+          else if ( how_herbivorous > 0 && herbivore_modifier < 0 )
+            mpr("Blech - you need greens!");
 
-        case FOOD_PEAR: // pear
+          if ( how_herbivorous < 1 )
+          {
+              switch ( item_type )
+              {
+                  case FOOD_MEAT_RATION:
+                    mpr("That meat ration really hit the spot!");
+                    break;
+                  case FOOD_BEEF_JERKY:
+                    strcpy(info, "That beef jerky was ");
+                    strcat(info, (one_chance_in(4)) ? "jerk-a-riffic" : "delicious");
+                    strcat(info, "!");
+                    mpr(info);
+                    break;
+                  default:
+                    break;
+              }
+          }
 
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("Mmmm... Yummy pear.");
-            //incrl();
-            //hung += 300;
-            //delay_t = 1;
-            //delay_doing = 0;
-            func_pass[0] += 700;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 200;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 200;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            //redraw_hunger = 1;
-            return 0;
+          if ( how_carnivorous < 1 )
+          {
+              switch ( item_type )
+              {
+                  case FOOD_BREAD_RATION:
+                    mpr("That bread ration really hit the spot!");
+                    break;
+                  case FOOD_PEAR:
+                  case FOOD_APPLE:
+                  case FOOD_APRICOT:
+                    strcpy(info, "Mmmm... Yummy ");
+                    strcat(info, (item_type == FOOD_APPLE)   ? "apple." :
+                                 (item_type == FOOD_PEAR)    ? "pear." :
+                                 (item_type == FOOD_APRICOT) ? "apricot."
+                                                             : "fruit." );
+                    mpr(info);
+                    break;
+                  case FOOD_CHOKO:
+                    mpr("That choko was very bland.");
+                    break;
+                  case FOOD_SNOZZCUMBER:
+                    mpr("That snozzcumber tasted truly putrid!");
+                    break;
+                  case FOOD_ORANGE:
+                    strcpy(info, "That orange was delicious!");
+                    if (one_chance_in(8))
+                      strcat(info, " Even the peel tasted good!");
+                    mpr(info);
+                    break;
+                  case FOOD_BANANA:
+                    mpr("That banana was delicious!");
+                    if (one_chance_in(8))
+                      strcat(info, " Even the peel tasted good!");
+                    mpr(info);
+                    break;
+                  case FOOD_STRAWBERRY:
+                    mpr("That strawberry was delicious!");
+                    break;
+                  case FOOD_RAMBUTAN:
+                    mpr("That rambutan was delicious!");
+                    break;
+                  case FOOD_LEMON:
+                    mpr("That lemon was rather sour... But delicious nonetheless!");
+                    break;
+                  case FOOD_GRAPE:
+                    mpr("That grape was delicious!");
+                    break;
+                  case FOOD_SULTANA:
+                    mpr("That sultana was delicious! (but very small)");
+                    break;
+                  case FOOD_LYCHEE:
+                    mpr("That lychee was delicious!");
+                    break;
+                  default:
+                    break;
+              }
+          }
 
-        case FOOD_CHOKO:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("That choko was very bland.");
-            //incrl();
-            //hung += 300;
-            //delay_t = 1;
-            //delay_doing = 0;
-            func_pass[0] += 600;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 200;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 200;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            //redraw_hunger = 1;
-            return 0;
+          switch ( item_type )
+          {
+              case FOOD_HONEYCOMB:
+                mpr("That honeycomb was delicious.");
+                break;
+              case FOOD_ROYAL_JELLY:
+                mpr("That royal jelly was delicious!");
+                restore_stat(STAT_ALL, false);
+                break;
+              case FOOD_PIZZA:
+                strcpy(info, "Mmm... ");
 
-        case FOOD_HONEYCOMB:
-            mpr("That honeycomb was delicious.");
-            func_pass[0] += 2000;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_ROYAL_JELLY:
-            mpr("That royal jelly was delicious!");
-            func_pass[0] += 5000;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_SNOZZCUMBER:  // maybe a nasty side-effect from RD's book?
-
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("That snozzcumber tasted truly putrid!");
-            func_pass[0] += 1500;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 200;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 200;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_PIZZA:
-            strcpy(info, "Mmm... ");
-
-            if (sys_env.crawl_pizza && !one_chance_in(3))
-            {
-                mpr(sys_env.crawl_pizza);
-            }
-            else
-            {
-                switch (random2(9))
+                if ( sys_env.crawl_pizza && !one_chance_in(3) )
+                  strcat(info, sys_env.crawl_pizza);
+                else
                 {
-                case 0:
-                    strcat(info, "Ham and pineapple.");
-                    break;
-                case 1:
-                    strcat(info, "Extra thick crust.");
-                    break;
-                case 2:
-                    strcat(info, "Vegetable.");
-                    break;
-                case 3:
-                    strcat(info, "Pepperoni.");
-                    break;
-                case 4:
-                    strcpy(info, "Yeuchh - Anchovies!");
-                    break;
-                case 5:
-                    strcat(info, "Cheesy.");
-                    break;
-                case 6:
-                    strcat(info, "Supreme.");
-                    break;
-                case 7:
-                    strcat(info, "Super Supreme!");
-                    break;
-                case 8:
-                    strcat(info, "Chicken.");
-                    break;
+                    temp_rand = random2(9);
+
+                    strcat(info, (temp_rand == 0) ? "Ham and pineapple." :
+                                 (temp_rand == 1) ? "Extra thick crust." :
+                                 (temp_rand == 2) ? "Vegetable." :
+                                 (temp_rand == 3) ? "Pepperoni." :
+                                 (temp_rand == 4) ? "Yeuchh - Anchovies!" :
+                                 (temp_rand == 5) ? "Cheesy." :
+                                 (temp_rand == 6) ? "Supreme." :
+                                 (temp_rand == 7) ? "Super Supreme!"
+                                                  : "Chicken." );
                 }
                 mpr(info);
-            }
-            func_pass[0] += 1500;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_APRICOT:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("That apricot was delicious!");
-            func_pass[0] += 700;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 200;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 200;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_ORANGE:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-            {
-                mpr("That orange was delicious!");
-                if (one_chance_in(8))
-                    strcat(info, " Even the peel tasted good!");
-            }
-            func_pass[0] += 1000;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 300;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 300;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_BANANA:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-            {
-                mpr("That banana was delicious!");
-                if (one_chance_in(8))
-                    strcat(info, " Even the peel tasted good!");
-            }
-            func_pass[0] += 1000;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 300;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 300;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_STRAWBERRY:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("That strawberry was delicious!");
-            func_pass[0] += 200;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 50;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 50;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_RAMBUTAN:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("That rambutan was delicious!");
-            func_pass[0] += 600;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 200;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 200;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_LEMON:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("That lemon was rather sour... But delicious nonetheless!");
-            func_pass[0] += 1000;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 300;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 300;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_GRAPE:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("That grape was delicious!");
-            func_pass[0] += 100;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 20;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 20;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_SULTANA:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("That sultana was delicious! (but very small)");
-            func_pass[0] += 70; // won't rescue you from starvation
-
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 20;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 20;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_LYCHEE:
-            if (you.mutation[MUT_CARNIVOROUS] > 0)
-                mpr("Blech - you need meat!");
-            else
-                mpr("That lychee was delicious!");
-            func_pass[0] += 600;
-            func_pass[0] -= you.mutation[MUT_CARNIVOROUS] * 200;
-            func_pass[0] += you.mutation[MUT_HERBIVOROUS] * 200;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_BEEF_JERKY:
-            if (you.mutation[MUT_HERBIVOROUS] > 0)
-                mpr("Blech - you need vegetation!");
-            else
-            {
-                mpr("That beef jerky was delicious!");
-                if (one_chance_in(4))
-                    mpr("That beef jerky was jerk-a-riffic!");
-            }
-            func_pass[0] += 1500;
-            func_pass[0] -= you.mutation[MUT_HERBIVOROUS] * 200;
-            func_pass[0] += you.mutation[MUT_CARNIVOROUS] * 200;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
-
-        case FOOD_CHEESE:
-            strcpy(info, "Mmm... ");
-            switch (random2(9))
-            {
-            case 0:
-                strcat(info, "Cheddar.");
                 break;
-            case 1:
-                strcat(info, "Edam.");
+              case FOOD_CHEESE:
+                strcpy(info, "Mmm... ");
+                temp_rand = random2(9);
+                strcat(info, (temp_rand == 0) ? "Cheddar" :
+                             (temp_rand == 1) ? "Edam" :
+                             (temp_rand == 2) ? "Wensleydale" :
+                             (temp_rand == 3) ? "Camembert" :
+                             (temp_rand == 4) ? "Goat cheese" :
+                             (temp_rand == 5) ? "Fruit cheese" :
+                             (temp_rand == 6) ? "Mozzarella" :
+                             (temp_rand == 7) ? "Sheep cheese"
+                                              : "Yak cheese" );
+                strcat(info, ".");
+                mpr(info);
                 break;
-            case 2:
-                strcat(info, "Wensleydale.");
+              case FOOD_SAUSAGE:
+                mpr("That sausage was delicious!");
                 break;
-            case 3:
-                strcat(info, "Camembert.");
+              default:
                 break;
-            case 4:
-                strcat(info, "Goat's milk cheese.");
-                break;
-            case 5:
-                strcat(info, "Fruit cheese.");
-                break;
-            case 6:
-                strcat(info, "Mozzarella.");
-                break;
-            case 7:
-                strcat(info, "Sheep cheese.");
-                break;
-            case 8:
-                strcat(info, "Yak cheese.");
-                break;
-            }
-            mpr(info);
-            func_pass[0] += 1200;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
+          }
 
-        case FOOD_SAUSAGE:
-            mpr("That sausage was delicious!");
-            func_pass[0] += 1200;
-            func_pass[1] = 1;
-            func_pass[2] = 0;
-            return 0;
+      // finally, modify player's hunger level {dlb}:
+          if ( carnivore_modifier && how_carnivorous > 0)
+            hunger_level_now += (carnivore_modifier * how_carnivorous);
 
-        }                       // end of switch
+          if ( herbivore_modifier && how_herbivorous > 0)
+            hunger_level_now += (herbivore_modifier * how_herbivorous);
 
-        return 0;
+          if ( hunger_level_now != you.hunger )
+            set_hunger(hunger_level_now, true);
+          break;
+
+        default:
+          break;
     }
-    // end of if food
 
-    // must therefore be carrion:
+    return;
 
-    return 0;
-}                               // end of int eaten(...)
+}          // end eating()
 
 
-// added to provide simple evaluation of dietary preference 13jan2000 {dlb}
-bool is_carnivore(void)
+
+
+static bool can_ingest( int what_isit, int kindof_thing, bool suppress_msg )
 {
-    bool meat_eater = false;
 
-    if (you.species == SP_GHOUL
-        || you.species == SP_KOBOLD
-        || you.mutation[MUT_CARNIVOROUS] == 3)
+    bool survey_says = false;
+
+    bool ur_carnivorous = ( you.species == SP_GHOUL
+                             || you.species == SP_KOBOLD
+                             || you.mutation[MUT_CARNIVOROUS] == 3 );
+
+    bool ur_herbivorous = ( you.mutation[MUT_HERBIVOROUS] > 1 );
+
+// ur_chunkslover not defined in terms of ur_carnivorous because
+// a player could be one and not the other IMHO - 13mar2000 {dlb}
+    bool ur_chunkslover = ( you.hunger_state <= HS_HUNGRY
+                             || wearing_amulet(AMU_THE_GOURMAND)
+                             || you.species == SP_KOBOLD
+                             || you.species == SP_OGRE
+                             || you.species == SP_TROLL
+                             || you.species == SP_GHOUL
+                             || you.mutation[MUT_CARNIVOROUS] );
+
+    switch ( what_isit )
     {
-        meat_eater = true;
+       case OBJ_FOOD:
+        switch ( kindof_thing )
+        {
+
+          case FOOD_BREAD_RATION:
+          case FOOD_PEAR:
+          case FOOD_APPLE:
+          case FOOD_CHOKO:
+          case FOOD_SNOZZCUMBER:
+          case FOOD_PIZZA:
+          case FOOD_APRICOT:
+          case FOOD_ORANGE:
+          case FOOD_BANANA:
+          case FOOD_STRAWBERRY:
+          case FOOD_RAMBUTAN:
+          case FOOD_LEMON:
+          case FOOD_GRAPE:
+          case FOOD_SULTANA:
+          case FOOD_LYCHEE:
+            if ( ur_carnivorous )
+              {
+                  survey_says = false;
+                  if ( !suppress_msg )
+                    mpr("Sorry, you're a carnivore.");
+              }
+            else
+              survey_says = true;
+            break;
+
+          case FOOD_CHUNK:
+            if ( ur_herbivorous )
+              {
+                  survey_says = false;
+                  if ( !suppress_msg )
+                    mpr("You can't eat raw meat!");
+              }
+            else if ( !ur_chunkslover )
+              {
+                  survey_says = false;
+                  if ( !suppress_msg )
+                    mpr("You aren't quite hungry enough to eat that!");
+              }
+            else
+              survey_says = true;
+            break;
+
+          default:
+            return true;
+            break;
+
+        }
+        break;
+
+// other object types are set to return false for now until
+// someone wants to recode the eating code to permit consumption
+// of things other than just food -- corpses first, then more
+// exotic stuff later would be good to explore - 13mar2000 {dlb}
+      case OBJ_CORPSES:
+      default:
+        return false;
+        break;
+
     }
-    else
+
+    return survey_says;
+
+}          // end can_ingest()
+
+
+
+
+// see if you can follow along here -- except for the Amulet of the Gourmand
+// addition (long missing and requested), what follows is an expansion of how
+// chunks were handled in the codebase up to this date -- I have never really
+// understood why liches are hungry and not true undead beings ... {dlb}:
+static int determine_chunk_effect( int which_chunk_type, bool rotten_chunk )
+{
+
+    int poison_resistance_level = player_res_poison();
+    int this_chunk_effect = which_chunk_type;
+
+
+// determine the initial effect of eating a particular chunk {dlb}:
+    switch ( this_chunk_effect )
     {
-        meat_eater = false;
+        case CE_HCL:
+        case CE_MUTAGEN_RANDOM:
+          if ( you.species == SP_GHOUL || you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH )
+            this_chunk_effect = CE_CLEAN;
+          break;
+        case CE_POISONOUS:
+          if ( you.species == SP_GHOUL || you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH )
+            this_chunk_effect = CE_CLEAN;
+          else if ( poison_resistance_level > 0 )
+            this_chunk_effect = CE_CLEAN;
+          break;
+        case CE_CONTAMINATED:
+          if ( you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH )
+            this_chunk_effect = CE_CLEAN;
+          else
+          {
+              switch ( you.species )
+              {
+                  case SP_GHOUL:
+                    this_chunk_effect = CE_ROTTEN;
+                    break;
+                  case SP_KOBOLD:
+                  case SP_TROLL:
+                    if ( !one_chance_in(45) )
+                      this_chunk_effect = CE_CLEAN;
+                    break;
+                  case SP_HILL_ORC:
+                  case SP_OGRE:
+                    if ( !one_chance_in(15) )
+                      this_chunk_effect = CE_CLEAN;
+                    break;
+                  default:
+                    if ( !one_chance_in(3) )
+                      this_chunk_effect = CE_CLEAN;
+                    break;
+              }
+          }
+          break;
+        default:
+          break;
     }
 
-    return meat_eater;
 
-}
+// determine effects of rotting on base chunk effect {dlb}:
+    if ( rotten_chunk )
+    {
+        switch ( this_chunk_effect )
+        {
+            case CE_CLEAN:
+            case CE_CONTAMINATED:
+              this_chunk_effect = CE_ROTTEN;
+              break;
+            case CE_MUTAGEN_RANDOM:
+              this_chunk_effect = CE_MUTAGEN_BAD;
+              break;
+            default:
+              break;
+        }
+    }
+
+
+// one last chance for some species to safely eat rotten food {dlb}:
+
+    if ( this_chunk_effect == CE_ROTTEN )
+    {
+        if ( you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH )
+          this_chunk_effect = CE_CLEAN;
+        else
+        {
+            switch ( you.species )
+            {
+                case SP_KOBOLD:
+                case SP_TROLL:
+                  if ( !one_chance_in(15) )
+                    this_chunk_effect = CE_CLEAN;
+                  break;
+                case SP_HILL_ORC:
+                case SP_OGRE:
+                  if ( !one_chance_in(5) )
+                    this_chunk_effect = CE_CLEAN;
+                  break;
+                default:
+                  break;
+            }
+        }
+    }
+
+
+// the amulet of the gourmad will permit consumption of rotting meat as
+// though it were "clean" meat - ghouls can expect the reverse, as they
+// prize rotten meat ... yum! {dlb}:
+    if ( wearing_amulet(AMU_THE_GOURMAND) )
+    {
+        if ( you.species == SP_GHOUL )
+        {
+            if ( this_chunk_effect == CE_CLEAN )
+              this_chunk_effect = CE_ROTTEN;
+        }
+        else
+        {
+            if ( this_chunk_effect == CE_ROTTEN )
+              this_chunk_effect = CE_CLEAN;
+        }
+    }
+
+    return ( this_chunk_effect );
+
+}          // end determine_chunk_effect()

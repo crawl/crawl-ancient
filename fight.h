@@ -8,16 +8,62 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+
 #ifndef FIGHT_H
 #define FIGHT_H
 
-void monster_die(int monster_killed, char killer, int i);
+
+#include "externs.h"
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: bang - beam - effects - fight - misc - monstuff - mstuff2 -
+ *              spells1 - spells2 - spells3 - spells4
+ * *********************************************************************** */
+void monster_die(struct monsters *monster, char killer, int i);
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - it_use3
+ * *********************************************************************** */
 void you_attack(int monster_attacked, bool unarmed_attacks);
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
 void monster_attack(int monster_attacking);
-char monsters_fight(int monster_attacking, int monster_attacked);
-bool jelly_divide(int jel);
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+bool monsters_fight(int monster_attacking, int monster_attacked);
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+bool jelly_divide(struct monsters *parent);
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: fight - item_use - items - spell
+ * *********************************************************************** */
 void alert(void);
-void monster_polymorph(unsigned char monsc, unsigned char targetc, int power);
-void monster_drop_ething(int monster_killed);
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: beam - effects - monstuff
+ * *********************************************************************** */
+bool monster_polymorph(struct monsters *monster, int targetc, int power);
+
 
 #endif

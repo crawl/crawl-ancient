@@ -1,0 +1,3393 @@
+#ifndef MONDATA_H
+#define MONDATA_H
+
+/*
+   This whole file was very generously condensed from its initial ugly form
+   by Wladimir van der Laan ($pellbinder).
+ */
+
+
+/* ******************************************************************
+
+   (see "mon-util.h" for the gory details)
+
+ - ordering does not matter, because seekmonster() searches the entire
+   array ... probably not to most efficient thing to do, but so it goes
+
+ - Here are the rows:
+    - row 1: monster id, display character, display colour, name
+    - row 2: monster flags
+    - row 3: mass, experience modifier, charclass, holiness, resist magic
+    - row 4: damage for each of four attacks
+    - row 5: hit dice, described by four parameters
+    - row 6: AC, evasion, speed, speed_inc, sec(spell), corpse_thingy,
+             zombie size, shouts, intel, gmon_use
+
+ - Some further explanations:
+
+    - colour: if BLACK, monster uses value of mons_sec
+    - name: if an empty string, name generated automagically (see moname)
+    - mass: if zero, the monster never leaves a corpse
+    - charclass: base monster "type" for a classed monsters
+    - holiness: holy - irritates some gods when killed, immunity from
+                       holy wrath weapons
+                natural - baseline monster type
+                undead - immunity from draining, pain, torment; extra
+                         damage from hoyl wrath/disruption; affected by
+                         repel undead and holy word
+                demonic - similar to undead, but holy wrath does even
+                          more damage and disruption and repel undead
+                          effects are ignored -- *no* automatic hellfire
+                          resistance
+
+
+   exp_mod
+   - the experience given for killing this monster is calculated something
+   like this:
+   experience = hp_max * HD * HD * exp_mod / 10
+   I think.
+
+
+   resist_magic
+   - If -3, = 3 (5?) * hit dice
+
+   damage [4]
+   - up to 4 different attacks
+
+   hp_dice [4]
+   - hit dice, min hp per HD, extra random hp per HD, fixed HP (unique mons)
+
+   speed
+   - less = slower. 5 = half, 20 = double speed.
+
+   speed_inc
+   - this is unnecessary and should be removed. 7 for all monsters.
+
+   corpse_thingy
+   - err, bad name. Describes effects of eating corpses.
+
+   zombie_size
+   - 0 = no zombie possibly, 1 = small zombie (z), 2 = large zombie (Z)
+
+   shouts
+   - various things monsters can do upon seeing you
+   #define S_RANDOM -1
+   #define S_SILENT 0
+   #define S_SHOUT 1 //1=shout
+   #define S_BARK 2 //2=bark
+   #define S_SHOUT2 3 //3=shout twice - eg 2-headed ogres
+   #define S_ROAR 4 //4=roar
+   #define S_SCREAM 5 //5=scream
+   #define S_BELLOW 6 //6=bellow (?)
+   #define S_SCREECH 7 //7=screech
+   #define S_BUZZ 8 //8=buzz
+   #define S_MOAN 9 //9=moan
+
+   intel explanation:
+   - How smart it is. So far, differences here have little effects except
+   for monster's chance of seeing you if stealthy, and really stupid monsters
+   will walk through clouds
+
+   gmon_use explanation:
+   - 0 = uses nothing, 1 = opens doors, 3 = can use weapons/armour
+
+ */
+
+
+// monster 250: The Thing That Should Not Be(tm)
+// do not remove, or seekmonster will crash on unknown mc request
+// it is also a good prototype for new monsters
+{
+    MONS_PROGRAM_BUG, 'B', LIGHTRED, "program bug",
+    M_NO_FLAGS,
+    0, 10, 250, MH_NATURAL, -3,
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    0, 0, 0, 0, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+// real monsters begin here {dlb}:
+{
+    MONS_GIANT_ANT, 'a', DARKGREY, "giant ant",
+    M_ED_POISON,
+    700, 10, 0, MH_NATURAL, -3,
+    { 8, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    4, 10, 12, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_GIANT_BAT, 'b', DARKGREY, "giant bat",
+    M_FLIES | M_SEE_INVIS,
+    150, 4, 1, MH_NATURAL, -3,
+    { 1, 0, 0, 0 },
+    { 1, 2, 3, 0 },
+    1, 14, 30, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_CENTAUR, 'c', BROWN, "centaur",
+    M_NO_FLAGS,
+    1500, 10, 2, MH_NATURAL, -3,
+    { 10, 0, 0, 0 },
+    { 4, 3, 5, 0 },
+    3, 7, 15, 7, 250, CE_CLEAN, Z_BIG, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_RED_DEVIL, '4', RED, "red devil",
+    M_RES_POISON | M_RES_HELLFIRE | M_ED_COLD | M_FLIES,
+    0, 10, 3, MH_DEMONIC, -7,
+    { 18, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    10, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_ETTIN, 'e', BROWN, "ettin",
+    M_NO_FLAGS,
+    0, 10, 4, MH_NATURAL, -3,
+    { 18, 12, 0, 0 },
+    { 7, 3, 5, 0 },
+    3, 4, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_FUNGUS, 'f', LIGHTGREY, "fungus",
+    M_NO_EXP_GAIN | M_RES_POISON,
+    0, 10, 5, MH_NATURAL, 5000,
+    { 0, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    1, 0, 0, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_GOBLIN, 'g', LIGHTGREY, "goblin",
+    M_NO_FLAGS,
+    400, 10, 6, MH_NATURAL, -3,
+    { 4, 0, 0, 0 },
+    { 1, 2, 4, 0 },
+    1, 13, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_HOUND, 'h', BROWN, "hound",
+    M_SEE_INVIS,
+    300, 10, 7, MH_NATURAL, -3,
+    { 6, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    2, 13, 15, 7, 250, CE_CLEAN, Z_SMALL, S_BARK, I_ANIMAL, 0
+}
+,
+
+// note: these things regenerate
+{
+    MONS_IMP, '5', RED, "imp",
+    M_RES_POISON | M_RES_HELLFIRE | M_ED_COLD | M_FLIES | M_SEE_INVIS | M_SPEAKS,
+    0, 13, 8, MH_DEMONIC, -9,
+    { 4, 0, 0, 0 },
+    { 3, 3, 3, 0 },
+    3, 14, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
+}
+,
+
+{
+    MONS_JACKAL, 'j', YELLOW, "jackal",
+    M_NO_FLAGS,
+    200, 10, 9, MH_NATURAL, -3,
+    { 3, 0, 0, 0 },
+    { 1, 3, 5, 0 },
+    2, 12, 14, 7, 250, CE_CONTAMINATED, Z_SMALL, S_BARK, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_KILLER_BEE, 'k', YELLOW, "killer bee",
+    M_ED_POISON | M_FLIES,
+    150, 11, 10, MH_NATURAL, -3,
+    { 10, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    2, 18, 20, 7, 250, CE_POISONOUS, Z_SMALL, S_BUZZ, I_INSECT, 0
+}
+,
+
+{
+    MONS_KILLER_BEE_LARVA, 'w', LIGHTGREY, "killer bee larva",
+    M_ED_POISON | M_NO_SKELETON,
+    150, 5, 11, MH_NATURAL, -3,
+    { 3, 0, 0, 0 },
+    { 1, 3, 5, 0 },
+    1, 5, 5, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_MANTICORE, 'm', BROWN, "manticore",
+    M_NO_FLAGS,
+    1800, 10, 12, MH_NATURAL, -3,
+    { 14, 8, 8, 0 },
+    { 9, 3, 5, 0 },
+    5, 7, 7, 7, 250, CE_CONTAMINATED, Z_BIG, S_SILENT, I_NORMAL, 1
+}
+,
+
+// this thing doesn't have nr. 13 for nothing, has it? ($pellbinder)
+{
+    MONS_NECROPHAGE, 'n', DARKGREY, "necrophage",
+    M_RES_POISON | M_RES_COLD,
+    500, 10, 13, MH_UNDEAD, -5,
+    { 8, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    2, 10, 10, 7, 250, CE_HCL, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_ORC, 'o', LIGHTRED, "orc",
+    M_NO_FLAGS,
+    600, 10, 14, MH_NATURAL, -3,
+    { 5, 0, 0, 0 },
+    { 1, 4, 6, 0 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_PHANTOM, 'p', BLUE, "phantom",
+    M_RES_POISON | M_RES_COLD,
+    0, 10, 15, MH_UNDEAD, -4,
+    { 10, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    3, 13, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_QUASIT, 'q', LIGHTGREY, "quasit",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD,
+    0, 10, 16, MH_NATURAL, 50,
+    { 3, 2, 2, 0 },
+    { 3, 2, 6, 0 },
+    5, 17, 15, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_RAT, 'r', BROWN, "rat",
+    M_NO_FLAGS,
+    200, 10, 17, MH_NATURAL, -3,
+    { 3, 0, 0, 0 },
+    { 1, 1, 3, 0 },
+    1, 10, 10, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_SCORPION, 's', DARKGREY, "scorpion",
+    M_ED_POISON,
+    500, 10, 18, MH_NATURAL, -3,
+    { 10, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    5, 10, 10, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+/* ******************************************************************
+// the tunneling worm is no more ...
+// not until it can be reimplemented safely {dlb}
+{
+    MONS_TUNNELING_WORM, 't', LIGHTRED, "tunneling worm",
+    M_RES_POISON,
+    0, 10, 19, MH_NATURAL, 5000,
+    { 50, 0, 0, 0 },
+    { 10, 5, 5, 0 },
+    3, 3, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_REPTILE, 0
+}
+,
+****************************************************************** */
+
+{
+    MONS_UGLY_THING, 'u', BROWN, "ugly thing",
+    M_NO_FLAGS,
+    600, 10, 20, MH_NATURAL, -3,
+    { 12, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    3, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_FIRE_VORTEX, 'v', RED, "fire vortex",
+    M_RES_POISON | M_RES_FIRE | M_ED_COLD | M_LEVITATE,
+    0, 5, 21, MH_NATURAL, 5000,
+    { 30, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    0, 5, 15, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_WORM, 'w', LIGHTRED, "worm",
+    M_NO_SKELETON,
+    350, 4, 22, MH_NATURAL, -3,
+    { 12, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    1, 5, 6, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+// random
+{
+    MONS_ABOMINATION_SMALL, 'x', BLACK, "abomination",
+    M_NO_FLAGS,
+    0, 10, 23, MH_DEMONIC, -5,
+    { 23, 0, 0, 0 },
+    { 6, 2, 5, 0 },
+    0, 0, 0, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_YELLOW_WASP, 'y', YELLOW, "yellow wasp",
+    M_ED_POISON | M_FLIES,
+    220, 12, 24, MH_NATURAL, -3,
+    { 13, 0, 0, 0 },
+    { 4, 3, 5, 0 },
+    5, 14, 15, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+// small zombie
+{
+    MONS_ZOMBIE_SMALL, 'z', BROWN, "",
+    M_RES_POISON | M_RES_COLD,
+    0, 6, 25, MH_UNDEAD, 5000,
+    { 10, 0, 0, 0 },
+    { 1, 5, 5, 0 },
+    0, 4, 5, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_ANGEL, 'A', WHITE, "Angel",
+    M_RES_POISON | M_FLIES | M_RES_ELEC | M_SPELLCASTER,
+    0, 10, 26, MH_HOLY, -8,
+    { 20, 0, 0, 0 },
+    { 9, 3, 5, 0 },
+    10, 10, 10, 7, 111, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_GIANT_BEETLE, 'B', DARKGREY, "giant beetle",
+    M_ED_POISON,
+    1000, 10, 27, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 5, 7, 6, 0 },
+    10, 3, 5, 7, 250, CE_POISONOUS, Z_BIG, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_CYCLOPS, 'C', BROWN, "cyclops",
+    M_NO_FLAGS,
+    2500, 10, 28, MH_NATURAL, -3,
+    { 35, 0, 0, 0 },
+    { 9, 3, 5, 0 },
+    5, 3, 7, 7, 250, CE_CLEAN, Z_BIG, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_DRAGON, 'D', GREEN, "dragon",
+    M_RES_POISON | M_RES_FIRE | M_ED_COLD | M_FLIES,
+    2200, 12, 29, MH_NATURAL, -4,
+    { 20, 13, 13, 0 },
+    { 12, 5, 5, 0 },
+    10, 8, 10, 7, 250, CE_CLEAN, Z_BIG, S_SILENT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_TWO_HEADED_OGRE, 'O', LIGHTRED, "two-headed ogre",
+    M_NO_FLAGS,
+    1500, 11, 30, MH_NATURAL, -4,
+    { 17, 13, 0, 0 },
+    { 6, 3, 5, 0 },
+    1, 4, 8, 7, 250, CE_CONTAMINATED, Z_BIG, S_SHOUT2, I_NORMAL, 1
+}
+,
+
+{
+    MONS_FIEND, '1', RED, "Fiend",
+    M_RES_POISON | M_RES_HELLFIRE | M_ED_COLD | M_FLIES | M_SEE_INVIS,
+    0, 18, 31, MH_DEMONIC, -12,
+    { 25, 15, 15, 0 },
+    { 18, 3, 5, 0 },
+    15, 6, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_ROAR, I_HIGH, 1
+}
+,
+
+{
+    MONS_GIANT_SPORE, 'G', GREEN, "giant spore",
+    M_RES_POISON | M_LEVITATE,
+    0, 10, 32, MH_NATURAL, -3,
+    { 1, 0, 0, 0 },
+    { 1, 0, 0, 1 },
+    0, 10, 15, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_HOBGOBLIN, 'g', BROWN, "hobgoblin",
+    M_NO_FLAGS,
+    500, 10, 33, MH_NATURAL, -3,
+    { 5, 0, 0, 0 },
+    { 1, 4, 5, 0 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_ICE_BEAST, 'I', WHITE, "ice beast",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD,
+    0, 12, 34, MH_NATURAL, -3,
+    { 5, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    5, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_ANIMAL_LIKE, 0
+}
+,
+
+{
+    MONS_JELLY, 'J', LIGHTRED, "jelly",
+    M_RES_POISON,
+    0, 13, 35, MH_NATURAL, -3,
+    { 8, 0, 0, 0 },
+    { 3, 5, 5, 0 },
+    0, 2, 9, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_KOBOLD, 'K', BROWN, "kobold",
+    M_NO_FLAGS,
+    400, 10, 36, MH_NATURAL, -3,
+    { 4, 0, 0, 0 },
+    { 1, 2, 3, 0 },
+    2, 12, 10, 7, 250, CE_POISONOUS, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_LICH, 'L', WHITE, "lich",
+    M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_SEE_INVIS,
+    0, 16, 37, MH_UNDEAD, -11,
+    { 15, 0, 0, 0 },
+    { 20, 2, 4, 0 },
+    10, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
+}
+,
+
+{
+    MONS_MUMMY, 'M', WHITE, "mummy",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD,
+    0, 10, 38, MH_UNDEAD, -5,
+    { 20, 0, 0, 0 },
+    { 3, 5, 3, 0 },
+    3, 6, 6, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_GUARDIAN_NAGA, 'N', LIGHTGREEN, "guardian naga",
+    M_RES_POISON | M_SPELLCASTER | M_SEE_INVIS | M_ACTUAL_SPELLS,
+    350, 10, 39, MH_NATURAL, -6,
+    { 19, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    6, 14, 15, 7, 10, CE_MUTAGEN_RANDOM, Z_SMALL, S_SHOUT, I_HIGH, 1
+}
+,
+
+{
+    MONS_OGRE, 'O', BROWN, "ogre",
+    M_NO_FLAGS,
+    1300, 10, 40, MH_NATURAL, -3,
+    { 17, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    1, 6, 10, 7, 250, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_PLANT, 'P', GREEN, "plant",
+    M_NO_EXP_GAIN,
+    0, 10, 41, MH_NATURAL, 5000,
+    { 0, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    10, 0, 0, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_QUEEN_BEE, 'Q', YELLOW, "queen bee",
+    M_ED_POISON | M_FLIES,
+    200, 14, 42, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    10, 10, 10, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_RAKSHASA, 'R', YELLOW, "rakshasa",
+    M_RES_POISON | M_SPELLCASTER | M_SEE_INVIS,
+    0, 15, 43, MH_NATURAL, -10,
+    { 20, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    10, 14, 10, 7, 54, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 3
+}
+,
+
+{
+    MONS_SNAKE, 'S', GREEN, "snake",
+    M_COLD_BLOOD,
+    200, 10, 44, MH_NATURAL, -3,
+    { 5, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    1, 15, 13, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SILENT, I_REPTILE, 0
+}
+,
+
+{
+    MONS_TROLL, 'T', BROWN, "troll",
+    M_NO_FLAGS,
+    1500, 10, 45, MH_NATURAL, -3,
+    { 20, 15, 15, 0 },
+    { 7, 3, 5, 0 },
+    3, 10, 10, 7, 250, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_UNSEEN_HORROR, 'x', MAGENTA, "unseen horror",
+    M_LEVITATE | M_SEE_INVIS | M_INVIS,
+    0, 12, 46, MH_NATURAL, -3,
+    { 12, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    5, 10, 30, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_ANIMAL_LIKE, 0
+}
+,
+
+{
+    MONS_VAMPIRE, 'V', RED, "vampire",
+    M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_SEE_INVIS,
+    0, 11, 47, MH_UNDEAD, -6,
+    { 22, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    10, 10, 10, 7, 40, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_WRAITH, 'W', DARKGREY, "wraith",
+    M_RES_POISON | M_RES_COLD | M_LEVITATE | M_SEE_INVIS,
+    0, 11, 48, MH_UNDEAD, -7,
+    { 13, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    10, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+// Large abom: (the previous one was small)
+{
+    MONS_ABOMINATION_LARGE, 'X', BLACK, "abomination",
+    M_NO_FLAGS,
+    0, 10, 49, MH_DEMONIC, -7,
+    { 40, 0, 0, 0 },
+    { 11, 2, 5, 0 },
+    0, 0, 0, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_YAK, 'Y', BROWN, "yak",
+    M_NO_FLAGS,
+    1200, 10, 50, MH_NATURAL, -3,
+    { 18, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    4, 7, 10, 7, 250, CE_CLEAN, Z_BIG, S_BELLOW, I_ANIMAL, 0
+}
+,
+
+// big zombie
+{
+    MONS_ZOMBIE_LARGE, 'Z', BROWN, "",
+    M_RES_POISON | M_RES_COLD,
+    0, 6, 51, MH_UNDEAD, 5000,
+    { 23, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    8, 5, 5, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_ORC_WARRIOR, 'o', YELLOW, "orc warrior",
+    M_NO_FLAGS,
+    0, 10, 14, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 4, 4, 6, 0 },
+    0, 13, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_KOBOLD_DEMONOLOGIST, 'K', MAGENTA, "kobold demonologist",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    0, 10, 36, MH_NATURAL, -5,
+    { 4, 0, 0, 0 },
+    { 4, 3, 5, 0 },
+    2, 13, 10, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_ORC_WIZARD, 'o', MAGENTA, "orc wizard",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    0, 10, 14, MH_NATURAL, -5,
+    { 5, 0, 0, 0 },
+    { 3, 3, 4, 0 },
+    1, 12, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_ORC_KNIGHT, 'o', LIGHTCYAN, "orc knight",
+    M_NO_FLAGS,
+    0, 10, 14, MH_NATURAL, -3,
+    { 25, 0, 0, 0 },
+    { 9, 4, 7, 0 },
+    2, 13, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+/* ******************************************************************
+// the tunneling worm is no more ...
+// not until it can be reimplemented safely {dlb}
+{
+    MONS_WORM_TAIL, '~', LIGHTRED, "worm tail",
+    M_NO_EXP_GAIN | M_RES_POISON,
+    0, 10, 56, MH_NATURAL, 5000,
+    { 0, 0, 0, 0 },
+    { 10, 5, 5, 0 },
+    3, 3, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+****************************************************************** */
+
+{
+    MONS_WYVERN, 'D', LIGHTRED, "wyvern",
+    M_NO_FLAGS,
+    2000, 10, 57, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    5, 10, 15, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_BIG_KOBOLD, 'K', RED, "big kobold",
+    M_NO_FLAGS,
+    0, 10, 58, MH_NATURAL, -3,
+    { 7, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    3, 12, 10, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_GIANT_EYEBALL, 'G', WHITE, "giant eyeball",
+    M_NO_SKELETON | M_LEVITATE,
+    400, 10, 59, MH_NATURAL, -3,
+    { 0, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    0, 1, 3, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_WIGHT, 'W', LIGHTGREY, "wight",
+    M_RES_POISON | M_RES_COLD,
+    0, 10, 60, MH_UNDEAD, -4,
+    { 8, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    4, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_OKLOB_PLANT, 'P', GREEN, "oklob plant",
+    M_RES_POISON,
+    0, 10, 61, MH_NATURAL, -3,
+    { 0, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    10, 0, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_WOLF_SPIDER, 's', BROWN, "wolf spider",
+    M_ED_POISON,
+    800, 10, 62, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    3, 10, 15, 7, 250, CE_POISONOUS, Z_BIG, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_SHADOW, ' ', BLACK, "shadow",
+    M_RES_POISON | M_RES_COLD,
+    0, 10, 63, MH_UNDEAD, -5,
+    { 5, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    12, 10, 10, 7, BLACK, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_HUNGRY_GHOST, 'p', GREEN, "hungry ghost",
+    M_RES_POISON | M_RES_COLD,
+    0, 10, 64, MH_UNDEAD, -4,
+    { 5, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    0, 17, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_EYE_OF_DRAINING, 'G', LIGHTGREY, "eye of draining",
+    M_NO_SKELETON | M_LEVITATE,
+    400, 10, 65, MH_NATURAL, 5000,
+    { 0, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    3, 1, 5, 7, 250, CE_MUTAGEN_RANDOM, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_BUTTERFLY, 'b', BLACK, "butterfly",
+    M_FLIES | M_ED_POISON,
+    150, 10, 66, MH_NATURAL, -3,
+    { 0, 0, 0, 0 },
+    { 1, 3, 5, 0 },
+    0, 25, 25, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_WANDERING_MUSHROOM, 'f', BROWN, "wandering mushroom",
+    M_RES_POISON,
+    0, 10, 67, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    5, 0, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_EFREET, 'E', RED, "efreet",
+    M_RES_POISON | M_RES_FIRE | M_ED_COLD | M_SPELLCASTER | M_LEVITATE,
+    0, 12, 68, MH_NATURAL, -3,
+    { 12, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    10, 5, 10, 7, 50, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 3
+}
+,
+
+{
+    MONS_BRAIN_WORM, 'w', LIGHTMAGENTA, "brain worm",
+    M_ED_POISON | M_SPELLCASTER,
+    150, 10, 69, MH_NATURAL, -3,
+    { 0, 0, 0, 0 },
+    { 5, 3, 3, 0 },
+    1, 5, 10, 7, 52, CE_POISONOUS, Z_SMALL, S_SILENT, I_REPTILE, 0
+}
+,
+
+{
+    MONS_GIANT_ORANGE_BRAIN, 'G', LIGHTRED, "giant orange brain",
+    M_NO_SKELETON | M_SPELLCASTER | M_LEVITATE,
+    1000, 13, 70, MH_NATURAL, -8,
+    { 0, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    2, 4, 10, 7, 53, CE_MUTAGEN_RANDOM, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+{
+    MONS_BOULDER_BEETLE, 'B', LIGHTGREY, "boulder beetle",
+    M_ED_POISON,
+    2500, 10, 71, MH_NATURAL, -3,
+    { 35, 0, 0, 0 },
+    { 9, 3, 5, 0 },
+    20, 2, 3, 7, 250, CE_POISONOUS, Z_BIG, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_FLYING_SKULL, 'z', WHITE, "flying skull",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_LEVITATE,
+    0, 10, 72, MH_UNDEAD, -3,
+    { 7, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    10, 17, 15, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SCREAM, I_PLANT, 0
+}
+,
+
+{
+    MONS_HELL_HOUND, 'h', DARKGREY, "hell hound",
+    M_RES_POISON | M_RES_HELLFIRE | M_ED_COLD | M_SEE_INVIS,
+    0, 10, 73, MH_DEMONIC, -3,
+    { 13, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    6, 13, 15, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_BARK, I_NORMAL, 0
+}
+,
+
+{
+    MONS_MINOTAUR, 'm', LIGHTRED, "minotaur",
+    M_NO_FLAGS,
+    1500, 10, 74, MH_NATURAL, -3,
+    { 35, 0, 0, 0 },
+    { 13, 3, 5, 0 },
+    5, 7, 10, 7, 250, CE_CONTAMINATED, Z_BIG, S_BELLOW, I_NORMAL, 3
+}
+,
+
+{
+    MONS_ICE_DRAGON, 'D', WHITE, "ice dragon",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD | M_FLIES,
+    2200, 10, 75, MH_NATURAL, -3,
+    { 17, 17, 17, 0 },
+    { 12, 5, 5, 0 },
+    10, 8, 10, 7, 250, CE_CLEAN, Z_BIG, S_SILENT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_SLIME_CREATURE, 'J', GREEN, "slime creature",
+    M_RES_POISON,
+    0, 5, 76, MH_NATURAL, -3,
+    { 22, 0, 0, 0 },
+    { 11, 3, 5, 0 },
+    1, 4, 7, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_FREEZING_WRAITH, 'W', LIGHTBLUE, "freezing wraith",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD | M_LEVITATE | M_SEE_INVIS,
+    0, 10, 77, MH_UNDEAD, -4,
+    { 19, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    12, 10, 8, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+// fake R - conjured by the R's illusion spell.
+{
+    MONS_RAKSHASA_FAKE, 'R', YELLOW, "rakshasa",
+    M_RES_POISON,
+    0, 10, 78, MH_NATURAL, 5000,
+    { 0, 0, 0, 0 },
+    { 1, 0, 0, 1 },
+    0, 30, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_ROAR, I_PLANT, 0
+}
+,
+
+{
+    MONS_GREAT_ORB_OF_EYES, 'G', GREEN, "great orb of eyes",
+    M_NO_SKELETON | M_RES_POISON | M_SPELLCASTER | M_LEVITATE | M_SEE_INVIS,
+    900, 13, MONS_GREAT_ORB_OF_EYES, MH_NATURAL, 5000,
+    { 20, 0, 0, 0 },
+    { 12, 3, 5, 0 },
+    10, 3, 10, 7, 55, CE_MUTAGEN_RANDOM, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+{
+    MONS_HELLION, '3', BLACK, "hellion",
+    M_RES_POISON | M_RES_HELLFIRE | M_ED_COLD | M_SPELLCASTER | M_ON_FIRE,
+    0, 11, 80, MH_DEMONIC, -7,
+    { 10, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    5, 10, 13, 7, RED, CE_NOCORPSE, Z_NOZOMBIE, S_SCREAM, I_HIGH, 1
+}
+,
+
+{
+    MONS_ROTTING_DEVIL, '4', GREEN, "rotting devil",
+    M_RES_POISON | M_RES_COLD,
+    0, 10, 81, MH_DEMONIC, -7,
+    { 8, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    2, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+{
+    MONS_TORMENTOR, '3', YELLOW, "tormentor",
+    M_RES_POISON | M_RES_FIRE | M_SPELLCASTER | M_FLIES | M_SPEAKS,
+    0, 10, 82, MH_DEMONIC, -6,
+    { 8, 8, 0, 0 },
+    { 7, 3, 5, 0 },
+    12, 12, 13, 7, 72, CE_NOCORPSE, Z_NOZOMBIE, S_ROAR, I_HIGH, 1
+}
+,
+
+{
+    MONS_REAPER, '2', LIGHTGREY, "reaper",
+    M_RES_POISON | M_RES_COLD | M_SEE_INVIS,
+    0, 10, 83, MH_DEMONIC, 5000,
+    { 32, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    15, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+{
+    MONS_SOUL_EATER, '2', DARKGREY, "soul eater",
+    M_RES_POISON | M_RES_COLD | M_LEVITATE | M_SEE_INVIS,
+    0, 12, 84, MH_DEMONIC, -10,
+    { 25, 0, 0, 0 },
+    { 11, 3, 5, 0 },
+    18, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+{
+    MONS_HAIRY_DEVIL, '4', LIGHTRED, "hairy devil",
+    M_RES_POISON,
+    0, 10, 85, MH_DEMONIC, -4,
+    { 9, 9, 0, 0 },
+    { 6, 3, 5, 0 },
+    7, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
+}
+,
+
+{
+    MONS_ICE_DEVIL, '2', WHITE, "ice devil",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD | M_SEE_INVIS,
+    0, 11, 86, MH_DEMONIC, -6,
+    { 16, 0, 0, 0 },
+    { 11, 3, 5, 0 },
+    12, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+{
+    MONS_BLUE_DEVIL, '3', BLUE, "blue devil",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD | M_FLIES,
+    0, 10, 87, MH_DEMONIC, -5,
+    { 21, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    14, 10, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+// random
+{
+    MONS_BEAST, '4', BROWN, "beast",
+    M_NO_FLAGS,
+    0, 10, 88, MH_DEMONIC, -3,
+    { 12, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    0, 0, 0, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_RANDOM, I_NORMAL, 1
+}
+,
+
+{
+    MONS_IRON_DEVIL, '3', CYAN, "iron devil",
+    M_RES_ELEC | M_RES_POISON | M_RES_HELLFIRE | M_RES_COLD,
+    0, 10, 89, MH_DEMONIC, -6,
+    { 14, 14, 0, 0 },
+    { 8, 3, 5, 0 },
+    16, 8, 8, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SCREECH, I_HIGH, 1
+}
+,
+
+{
+    MONS_GLOWING_SHAPESHIFTER, '@', RED, "glowing shapeshifter",
+    M_NO_FLAGS,
+    600, 10, 99, MH_NATURAL, -6,
+    { 15, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    0, 10, 10, 7, 250, CE_MUTAGEN_RANDOM, Z_SMALL, S_SILENT, I_HIGH, 1
+}
+,
+
+{
+    MONS_SHAPESHIFTER, '@', LIGHTRED, "shapeshifter",
+    M_NO_FLAGS,
+    600, 10, 99, MH_NATURAL, -6,
+    { 5, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    0, 10, 10, 7, 250, CE_MUTAGEN_RANDOM, Z_SMALL, S_SILENT, I_HIGH, 1
+}
+,
+
+{
+    MONS_GIANT_MITE, 's', LIGHTRED, "giant mite",
+    M_ED_POISON,
+    350, 10, 100, MH_NATURAL, -3,
+    { 5, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    1, 7, 10, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_STEAM_DRAGON, 'd', LIGHTGREY, "steam dragon",
+    M_SPELLCASTER | M_FLIES,
+    1000, 10, 101, MH_NATURAL, -3,
+    { 12, 0, 0, 0 },
+    { 4, 5, 5, 0 },
+    5, 10, 10, 7, 57, CE_CLEAN, Z_SMALL, S_SILENT, I_ANIMAL, 1
+}
+,
+
+{
+    MONS_VERY_UGLY_THING, 'u', RED, "very ugly thing",
+    M_NO_FLAGS,
+    750, 10, 102, MH_NATURAL, -3,
+    { 17, 0, 0, 0 },
+    { 12, 3, 5, 0 },
+    4, 8, 8, 7, 250, CE_MUTAGEN_RANDOM, Z_BIG, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_ORC_SORCEROR, 'o', DARKGREY, "orc sorceror",
+    M_RES_FIRE | M_SPELLCASTER | M_SEE_INVIS | M_SPEAKS | M_ACTUAL_SPELLS,
+    600, 12, 14, MH_NATURAL, -3,
+    { 7, 0, 0, 0 },
+    { 8, 2, 3, 0 },
+    5, 12, 10, 7, 56, CE_POISONOUS, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_HIPPOGRIFF, 'H', BROWN, "hippogriff",
+    M_FLIES,
+    1000, 10, 104, MH_NATURAL, -3,
+    { 10, 8, 8, 0 },
+    { 7, 3, 5, 0 },
+    2, 7, 10, 7, 250, CE_CLEAN, Z_BIG, S_SCREECH, I_ANIMAL, 1
+}
+,
+
+{
+    MONS_GRIFFON, 'H', YELLOW, "griffon",
+    M_FLIES,
+    1800, 10, 105, MH_NATURAL, -3,
+    { 18, 10, 10, 0 },
+    { 12, 3, 5, 0 },
+    4, 6, 10, 7, 250, CE_CLEAN, Z_BIG, S_SCREECH, I_ANIMAL, 1
+}
+,
+
+{
+    MONS_HYDRA, 'D', LIGHTGREEN, "hydra",
+    M_RES_POISON,
+    1800, 11, 106, MH_NATURAL, -3,
+    { 18, 0, 0, 0 },
+    { 13, 3, 5, 0 },
+    0, 5, 10, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_ROAR, I_REPTILE, 1
+}
+,
+
+// small skeleton
+{
+    MONS_SKELETON_SMALL, 'z', LIGHTGREY, "",
+    M_RES_POISON | M_RES_COLD,
+    0, 10, 107, MH_UNDEAD, 5000,
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    0, 0, 0, 0, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+// large skeleton
+{
+    MONS_SKELETON_LARGE, 'Z', LIGHTGREY, "",
+    M_RES_POISON | M_RES_COLD,
+    0, 10, 108, MH_UNDEAD, 5000,
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    0, 0, 0, 0, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_HELL_KNIGHT, '@', RED, "hell knight",
+    M_RES_FIRE | M_SPELLCASTER | M_ACTUAL_SPELLS,
+    550, 10, 114, MH_NATURAL, -3,
+    { 13, 0, 0, 0 },
+    { 10, 3, 6, 0 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_NECROMANCER, '@', DARKGREY, "necromancer",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    550, 10, 114, MH_NATURAL, -4,
+    { 6, 0, 0, 0 },
+    { 10, 2, 4, 0 },
+    0, 13, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_WIZARD, '@', MAGENTA, "wizard",
+    M_SPELLCASTER | M_SPEAKS | M_ACTUAL_SPELLS,
+    550, 10, 114, MH_NATURAL, -4,
+    { 6, 0, 0, 0 },
+    { 10, 2, 4, 0 },
+    0, 13, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_ORC_PRIEST, 'o', LIGHTGREEN, "orc priest",
+    M_SPELLCASTER | M_PRIEST,
+    600, 10, 14, MH_NATURAL, -4,
+    { 6, 0, 0, 0 },
+    { 3, 3, 4, 0 },
+    1, 10, 10, 7, 67, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_ORC_HIGH_PRIEST, 'o', GREEN, "orc high priest",
+    M_RES_HELLFIRE | M_SPELLCASTER | M_SEE_INVIS | M_SPEAKS | M_PRIEST,
+      600, 10, 14, MH_NATURAL, -4,
+    { 7, 0, 0, 0 },
+    { 11, 3, 4, 0 },
+    1, 12, 10, 7, 68, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+// this is a dummy monster, used for corpses
+{
+    MONS_HUMAN, 0, LIGHTRED, "human",
+    M_NO_FLAGS,
+    550, 10, 114, MH_NATURAL, -3,
+    { 6, 0, 0, 0 },
+    { 1, 3, 5, 0 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_GNOLL, 'g', YELLOW, "gnoll",
+    M_NO_FLAGS,
+    750, 10, 115, MH_NATURAL, -3,
+    { 9, 0, 0, 0 },
+    { 2, 4, 5, 0 },
+    2, 9, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_CLAY_GOLEM, '8', BROWN, "clay golem",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_SEE_INVIS,
+    0, 10, 116, MH_NATURAL, 5000,
+    { 11, 11, 0, 0 },
+    { 8, 7, 3, 0 },
+    7, 5, 8, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_WOOD_GOLEM, '8', YELLOW, "wood golem",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD,
+    0, 10, 117, MH_NATURAL, 5000,
+    { 10, 0, 0, 0 },
+    { 6, 6, 3, 0 },
+    5, 6, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_STONE_GOLEM, '8', LIGHTGREY, "stone golem",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD,
+    0, 10, 118, MH_NATURAL, 5000,
+    { 28, 0, 0, 0 },
+    { 12, 7, 4, 0 },
+    12, 4, 7, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_IRON_GOLEM, '8', CYAN, "iron golem",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD,
+    0, 10, 119, MH_NATURAL, 5000,
+    { 35, 0, 0, 0 },
+    { 15, 7, 4, 0 },
+    15, 3, 7, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_CRYSTAL_GOLEM, '8', WHITE, "crystal golem",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD,
+    0, 10, 120, MH_NATURAL, 5000,
+    { 40, 0, 0, 0 },
+    { 13, 7, 4, 0 },
+    22, 3, 7, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_TOENAIL_GOLEM, '8', LIGHTGREY, "toenail golem",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD,
+    0, 10, 121, MH_NATURAL, 5000,
+    { 13, 0, 0, 0 },
+    { 9, 5, 3, 0 },
+    8, 5, 8, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_MOTTLED_DRAGON, 'd', LIGHTMAGENTA, "mottled dragon",
+    M_RES_POISON | M_RES_FIRE | M_SPELLCASTER | M_FLIES,
+    1100, 10, 122, MH_NATURAL, -3,
+    { 15, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    5, 10, 10, 7, 69, CE_POISONOUS, Z_SMALL, S_SILENT, I_ANIMAL, 1
+}
+,
+
+{
+    MONS_EARTH_ELEMENTAL, '#', BROWN, "earth elemental",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD,
+    0, 10, 123, MH_NATURAL, -3,
+    { 40, 0, 0, 0 },
+    { 6, 5, 5, 0 },
+    14, 4, 6, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_FIRE_ELEMENTAL, '#', YELLOW, "fire elemental",
+    M_RES_POISON | M_RES_HELLFIRE | M_ED_COLD,
+    0, 10, 124, MH_NATURAL, -3,
+    { 5, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    4, 12, 13, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_AIR_ELEMENTAL, 'v', LIGHTGREY, "air elemental",
+    M_RES_ELEC | M_RES_POISON | M_LEVITATE,
+    0, 10, 125, MH_NATURAL, -3,
+    { 15, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    2, 18, 25, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+// water elementals are later (with the other water monsters)
+
+{
+    MONS_ICE_FIEND, '1', WHITE, "Ice Fiend",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD | M_SPELLCASTER | M_FLIES | M_SEE_INVIS,
+    0, 10, 126, MH_DEMONIC, -12,
+    { 25, 25, 0, 0 },
+    { 18, 3, 5, 0 },
+    15, 6, 10, 7, 70, CE_CONTAMINATED, Z_NOZOMBIE, S_ROAR, I_HIGH, 1
+}
+,
+
+{
+    MONS_SHADOW_FIEND, '1', DARKGREY, "Shadow Fiend",
+    M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_LEVITATE | M_SEE_INVIS,
+    0, 10, 127, MH_DEMONIC, -13,
+    { 25, 15, 15, 0 },
+    { 18, 3, 5, 0 },
+    15, 6, 10, 7, 71, CE_CONTAMINATED, Z_NOZOMBIE, S_ROAR, I_HIGH, 1
+}
+,
+
+{
+    MONS_BROWN_SNAKE, 'S', BROWN, "brown snake",
+    M_RES_POISON | M_COLD_BLOOD,
+    300, 10, 128, MH_NATURAL, -3,
+    { 10, 0, 0, 0 },
+    { 4, 3, 5, 0 },
+    2, 15, 14, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_REPTILE, 0
+}
+,
+
+{
+    MONS_GIANT_LIZARD, 'l', BROWN, "giant lizard",
+    M_COLD_BLOOD,
+    600, 10, 129, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    4, 10, 10, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_REPTILE, 0
+}
+,
+
+{
+    MONS_SPECTRAL_WARRIOR, 'W', LIGHTGREEN, "spectral warrior",
+    M_RES_POISON | M_RES_COLD | M_LEVITATE | M_SEE_INVIS,
+    0, 13, 130, MH_UNDEAD, -6,
+    { 18, 0, 0, 0 },
+    { 9, 3, 5, 0 },
+    12, 10, 10, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+{
+    MONS_PULSATING_LUMP, 'J', RED, "pulsating lump",
+    M_RES_POISON,
+    0, 3, 131, MH_NATURAL, -3,
+    { 13, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    2, 6, 4, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_STORM_DRAGON, 'D', LIGHTBLUE, "storm dragon",
+    M_RES_ELEC | M_RES_COLD | M_SPELLCASTER | M_FLIES,
+    2800, 12, 132, MH_NATURAL, -6,
+    { 25, 15, 15, 0 },
+    { 14, 5, 5, 0 },
+    13, 10, 12, 7, 73, CE_CLEAN, Z_BIG, S_ROAR, I_NORMAL, 1
+}
+,
+
+{
+    MONS_YAKTAUR, 'c', LIGHTRED, "yaktaur",
+    M_NO_FLAGS,
+    2000, 10, 133, MH_NATURAL, -3,
+    { 15, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    4, 4, 10, 7, 250, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_DEATH_YAK, 'Y', DARKGREY, "death yak",
+    M_NO_FLAGS,
+    1500, 10, 134, MH_NATURAL, -5,
+    { 30, 0, 0, 0 },
+    { 14, 3, 5, 0 },
+    9, 5, 10, 7, 250, CE_POISONOUS, Z_BIG, S_BELLOW, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_ROCK_TROLL, 'T', LIGHTGREY, "rock troll",
+    M_NO_FLAGS,
+    2200, 11, 135, MH_NATURAL, -4,
+    { 30, 20, 20, 0 },
+    { 11, 3, 5, 0 },
+    13, 6, 8, 7, 250, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_STONE_GIANT, 'C', LIGHTGREY, "stone giant",
+    M_NO_FLAGS,
+    3000, 10, 136, MH_NATURAL, -4,
+    { 45, 0, 0, 0 },
+    { 16, 3, 5, 0 },
+    12, 2, 10, 7, 250, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_FLAYED_GHOST, 'p', RED, "flayed ghost",
+    M_RES_POISON,
+    0, 10, 137, MH_UNDEAD, -5,
+    { 30, 0, 0, 0 },
+    { 11, 3, 5, 0 },
+    0, 14, 10, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_BUMBLEBEE, 'k', RED, "bumblebee",
+    M_ED_POISON | M_FLIES,
+    300, 10, 138, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    4, 15, 10, 7, 250, CE_POISONOUS, Z_SMALL, S_BUZZ, I_PLANT, 0
+}
+,
+
+{
+    MONS_REDBACK, 's', RED, "redback",
+    M_ED_POISON,
+    1000, 14, 139, MH_NATURAL, -3,
+    { 18, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    2, 12, 15, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_INSUBSTANTIAL_WISP, 'p', LIGHTGREY, "insubstantial wisp",
+    M_RES_ELEC | M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_LEVITATE,
+    0, 17, 140, MH_NATURAL, 5000,
+    { 12, 0, 0, 0 },
+    { 6, 1, 2, 0 },
+    20, 20, 10, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_MOAN, I_PLANT, 0
+}
+,
+
+{
+    MONS_VAPOUR, '#', LIGHTGREY, "vapour",
+    M_RES_ELEC | M_RES_POISON | M_SPELLCASTER | M_LEVITATE | M_SEE_INVIS | M_INVIS,
+    0, 21, 141, MH_NATURAL, 5000,
+    { 0, 0, 0, 0 },
+    { 12, 2, 3, 0 },
+    0, 12, 10, 7, 73, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_OGRE_MAGE, 'O', MAGENTA, "ogre-mage",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SEE_INVIS,
+    0, 16, 40, MH_NATURAL, -6,
+    { 12, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    1, 7, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_SPINY_WORM, 'w', DARKGREY, "spiny worm",
+    M_ED_POISON,
+    1300, 13, 143, MH_NATURAL, -3,
+    { 32, 0, 0, 0 },
+    { 12, 3, 5, 0 },
+    10, 6, 9, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_PLANT, 0
+}
+,
+
+// these are named more explicitly when they attack, also when you use 'x'
+//  to examine them.
+{
+    MONS_DANCING_WEAPON, '(', BLACK, "dancing weapon",
+    M_RES_POISON | M_RES_HELLFIRE | M_RES_COLD | M_LEVITATE,
+    0, 20, 144, MH_NATURAL, 5000,
+    { 15, 0, 0, 0 },
+    { 15, 1, 0, 0 },
+    10, 20, 15, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_TITAN, 'C', MAGENTA, "titan",
+    M_RES_ELEC | M_SPELLCASTER,
+    3500, 12, 145, MH_NATURAL, -7,
+    { 55, 0, 0, 0 },
+    { 20, 3, 5, 0 },
+    10, 3, 10, 7, 94, CE_CLEAN, Z_BIG, S_SHOUT, I_HIGH, 1
+}
+,
+
+{
+    MONS_GOLDEN_DRAGON, 'D', YELLOW, "golden dragon",
+    M_RES_ELEC | M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_SPELLCASTER | M_FLIES,
+    3000, 17, 146, MH_NATURAL, -6,
+    { 40, 20, 20, 0 },
+    { 18, 4, 4, 0 },
+    15, 7, 10, 7, 95, CE_POISONOUS, Z_BIG, S_ROAR, I_HIGH, 1
+}
+,
+
+// 147 - dummy monster, used for corpses etc.
+{
+    MONS_ELF, 'e', DARKGREY, "elf",
+    M_NO_FLAGS,
+    450, 10, 147, MH_NATURAL, -3,
+    { 6, 0, 0, 0 },
+    { 3, 3, 3, 0 },
+    0, 12, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SILENT, I_PLANT, 3
+}
+,
+
+
+{
+    MONS_LINDWORM, 'l', GREEN, "lindworm",
+    M_NO_FLAGS,
+    1000, 11, 148, MH_NATURAL, -3,
+    { 30, 0, 0, 0 },
+    { 9, 3, 5, 0 },
+    8, 6, 10, 7, 250, CE_CLEAN, Z_BIG, S_ROAR, I_REPTILE, 0
+}
+,
+
+{
+    MONS_ELEPHANT_SLUG, 'm', LIGHTGREY, "elephant slug",
+    M_ED_POISON | M_NO_SKELETON,
+    1500, 10, 149, MH_NATURAL, -3,
+    { 40, 0, 0, 0 },
+    { 20, 5, 3, 0 },
+    2, 1, 4, 10, 250, CE_POISONOUS, Z_BIG, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_WAR_DOG, 'h', CYAN, "war dog",
+    M_SEE_INVIS,
+    350, 10, 150, MH_NATURAL, -3,
+    { 12, 0, 0, 0 },
+    { 4, 3, 5, 0 },
+    4, 15, 17, 7, 250, CE_CONTAMINATED, Z_SMALL, S_BARK, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_GREY_RAT, 'r', LIGHTGREY, "grey rat",
+    M_NO_FLAGS,
+    250, 10, 151, MH_NATURAL, -3,
+    { 5, 0, 0, 0 },
+    { 1, 3, 6, 0 },
+    2, 12, 12, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SILENT, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_GREEN_RAT, 'r', LIGHTGREEN, "green rat",
+    M_NO_FLAGS,
+    250, 10, 152, MH_NATURAL, -3,
+    { 10, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    5, 11, 10, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_ORANGE_RAT, 'r', LIGHTRED, "orange rat",
+    M_NO_FLAGS,
+    250, 10, 153, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    7, 10, 12, 7, 250, CE_POISONOUS, Z_SMALL, S_ROAR, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_BLACK_SNAKE, 'S', DARKGREY, "black snake",
+    M_RES_POISON | M_COLD_BLOOD,
+    500, 12, 154, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    4, 15, 18, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_REPTILE, 0
+}
+,
+
+{
+    MONS_SHEEP, 'Y', LIGHTGREY, "sheep",
+    M_NO_FLAGS,
+    1200, 10, 155, MH_NATURAL, -3,
+    { 13, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    2, 7, 10, 7, 250, CE_CLEAN, Z_SMALL, S_BELLOW, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_GHOUL, 'n', RED, "ghoul",
+    M_RES_POISON | M_RES_COLD,
+    500, 12, 156, MH_UNDEAD, -5,
+    { 9, 0, 0, 0 },
+    { 4, 3, 5, 0 },
+    4, 10, 10, 7, 250, CE_HCL, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_HOG, 'h', LIGHTRED, "hog",
+    M_NO_FLAGS,
+    700, 10, 157, MH_NATURAL, -3,
+    { 14, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    2, 9, 13, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_GIANT_MOSQUITO, 'y', DARKGREY, "giant mosquito",
+    M_ED_POISON | M_FLIES,
+    100, 10, 158, MH_NATURAL, -3,
+    { 10, 0, 0, 0 },
+    { 1, 3, 5, 0 },
+    0, 13, 12, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_WHINE, I_PLANT, 0
+}
+,
+
+{
+    MONS_GIANT_CENTIPEDE, 's', GREEN, "giant centipede",
+    M_ED_POISON,
+    350, 10, 159, MH_NATURAL, -3,
+    { 2, 0, 0, 0 },
+    { 2, 3, 3, 0 },
+    2, 14, 13, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+
+
+{
+    MONS_IRON_TROLL, 'T', CYAN, "iron troll",
+    M_RES_FIRE | M_RES_COLD,
+    2400, 10, 160, MH_NATURAL, -5,
+    { 35, 25, 25, 0 },
+    { 16, 3, 5, 0 },
+    20, 4, 7, 7, 250, CE_POISONOUS, Z_BIG, S_ROAR, I_NORMAL, 1
+}
+,
+
+{
+    MONS_NAGA, 'N', GREEN, "naga",
+    M_RES_POISON | M_SPELLCASTER | M_SEE_INVIS,
+    750, 10, 161, MH_NATURAL, -6,
+    { 6, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    6, 10, 8, 7, 106, CE_POISONOUS, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_FIRE_GIANT, 'C', RED, "fire giant",
+    M_RES_FIRE | M_SPELLCASTER,
+    2400, 11, 162, MH_NATURAL, -4,
+    { 30, 0, 0, 0 },
+    { 16, 3, 6, 0 },
+    8, 4, 10, 7, 50, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_FROST_GIANT, 'C', LIGHTBLUE, "frost giant",
+    M_RES_COLD | M_SPELLCASTER,
+    2600, 11, 163, MH_NATURAL, -4,
+    { 35, 0, 0, 0 },
+    { 16, 4, 5, 0 },
+    9, 3, 10, 7, 110, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_FIREDRAKE, 'd', RED, "firedrake",
+    M_RES_FIRE | M_FLIES,
+    900, 10, 164, MH_NATURAL, -3,
+    { 8, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    3, 12, 12, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SILENT, I_ANIMAL, 1
+}
+,
+
+{
+    MONS_SHADOW_DRAGON, 'D', DARKGREY, "shadow dragon",
+    M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_FLIES | M_SEE_INVIS,
+    2000, 12, 165, MH_NATURAL, -5,
+    { 20, 15, 15, 0 },
+    { 17, 5, 5, 0 },
+    15, 10, 10, 7, 113, CE_CLEAN, Z_BIG, S_ROAR, I_HIGH, 1
+}
+,
+
+{
+    MONS_YELLOW_SNAKE, 'S', YELLOW, "yellow snake",
+    M_RES_POISON | M_COLD_BLOOD,
+    400, 10, 166, MH_NATURAL, -3,
+    { 15, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    4, 14, 13, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_REPTILE, 0
+}
+,
+
+{
+    MONS_GREY_SNAKE, 'S', LIGHTGREY, "grey snake",
+    M_COLD_BLOOD,
+    600, 10, 167, MH_NATURAL, -3,
+    { 30, 0, 0, 0 },
+    { 11, 3, 5, 0 },
+    4, 16, 18, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_REPTILE, 0
+}
+,
+
+{
+    MONS_DEEP_TROLL, 'T', DARKGREY, "deep troll",
+    M_NO_FLAGS,
+    1500, 12, 168, MH_NATURAL, -3,
+    { 27, 20, 20, 0 },
+    { 10, 3, 5, 0 },
+    6, 10, 10, 7, 250, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_GIANT_BLOWFLY, 'y', LIGHTGREY, "giant blowfly",
+    M_ED_POISON | M_FLIES,
+    200, 10, 169, MH_NATURAL, -3,
+    { 13, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    2, 15, 19, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_BUZZ, I_PLANT, 0
+}
+,
+
+{
+    MONS_RED_WASP, 'y', RED, "red wasp",
+    M_ED_POISON | M_FLIES,
+    400, 14, 170, MH_NATURAL, -3,
+    { 23, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    7, 14, 15, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_BUZZ, I_PLANT, 0
+}
+,
+
+{
+    MONS_SWAMP_DRAGON, 'D', BROWN, "swamp dragon",
+    M_SPELLCASTER | M_FLIES | M_RES_POISON,
+    1900, 11, 171, MH_NATURAL, -3,
+    { 13, 9, 9, 0 },
+    { 9, 5, 5, 0 },
+    7, 7, 9, 7, 121, CE_CONTAMINATED, Z_BIG, S_ROAR, I_ANIMAL_LIKE, 1
+}
+,
+
+{
+    MONS_SWAMP_DRAKE, 'd', BROWN, "swamp drake",
+    M_SPELLCASTER | M_FLIES | M_RES_POISON,
+    900, 11, 172, MH_NATURAL, -3,
+    { 11, 0, 0, 0 },
+    { 4, 5, 5, 0 },
+    3, 11, 11, 7, 122, CE_CONTAMINATED, Z_SMALL, S_ROAR, I_ANIMAL, 1
+}
+,
+
+{
+    MONS_SOLDIER_ANT, 'a', LIGHTGREY, "soldier ant",
+    M_ED_POISON,
+    900, 10, 173, MH_NATURAL, -3,
+    { 14, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    8, 10, 10, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_HILL_GIANT, 'C', LIGHTRED, "hill giant",
+    M_NO_FLAGS,
+    1600, 10, 174, MH_NATURAL, -3,
+    { 30, 0, 0, 0 },
+    { 11, 3, 5, 0 },
+    3, 4, 10, 7, 250, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_QUEEN_ANT, 'Q', DARKGREY, "queen ant",
+    M_ED_POISON,
+    1200, 10, 175, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 13, 3, 5, 0 },
+    14, 3, 7, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_ANT_LARVA, 'w', LIGHTGREY, "ant larva",
+    M_ED_POISON | M_NO_SKELETON,
+    350, 5, 176, MH_NATURAL, -3,
+    { 5, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    2, 6, 6, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+
+
+{
+    MONS_GIANT_FROG, 'F', GREEN, "giant frog",
+    M_NO_FLAGS,
+    500, 10, 177, MH_NATURAL, -3,
+    { 9, 0, 0, 0 },
+    { 4, 3, 5, 0 },
+    0, 12, 15, 7, 250, CE_CLEAN, Z_SMALL, S_CROAK, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_GIANT_BROWN_FROG, 'F', BROWN, "giant brown frog",
+    M_NO_FLAGS,
+    890, 10, 178, MH_NATURAL, -3,
+    { 14, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    2, 11, 13, 7, 250, CE_CLEAN, Z_BIG, S_CROAK, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_SPINY_FROG, 'F', YELLOW, "spiny frog",
+    M_NO_FLAGS,
+    1000, 10, 179, MH_NATURAL, -3,
+    { 26, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    6, 9, 12, 7, 250, CE_CLEAN, Z_SMALL, S_CROAK, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_BLINK_FROG, 'F', LIGHTGREEN, "blink frog",
+    M_NO_FLAGS,
+    800, 12, 180, MH_NATURAL, -5,
+    { 20, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    3, 12, 14, 7, 250, CE_CLEAN, Z_SMALL, S_CROAK, I_ANIMAL, 0
+}
+,
+{
+    MONS_GIANT_COCKROACH, 'a', BROWN, "giant cockroach",
+    M_NO_FLAGS,
+    250, 10, 181, MH_NATURAL, -3,
+    { 2, 0, 0, 0 },
+    { 1, 3, 4, 0 },
+    3, 10, 12, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+{
+    MONS_SMALL_SNAKE, 'S', LIGHTGREEN, "small snake",
+    M_COLD_BLOOD,
+    100, 13, 182, MH_NATURAL, -3,
+    { 2, 0, 0, 0 },
+    { 1, 2, 3, 0 },
+    0, 11, 12, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_REPTILE, 0
+}
+,
+
+
+
+{
+    MONS_WHITE_IMP, '5', WHITE, "white imp",
+    M_RES_COLD | M_SPELLCASTER | M_FLIES,
+    0, 10, 220, MH_DEMONIC, -3,
+    { 4, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    4, 10, 10, 7, 74, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_LEMURE, '5', YELLOW, "lemure",
+    M_RES_POISON,
+    0, 10, 221, MH_DEMONIC, -3,
+    { 12, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    1, 12, 12, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_MOAN, I_NORMAL, 1
+}
+,
+
+{
+    MONS_UFETUBUS, '5', LIGHTCYAN, "ufetubus",
+    M_ED_FIRE | M_RES_COLD,
+    0, 10, 222, MH_DEMONIC, -3,
+    { 5, 5, 0, 0 },
+    { 1, 4, 6, 0 },
+    2, 15, 15, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_MANES, '5', LIGHTRED, "manes",
+    M_RES_ELEC | M_RES_FIRE | M_RES_COLD | M_RES_POISON,
+    0, 10, 223, MH_DEMONIC, -3,
+    { 5, 3, 3, 0 },
+    { 3, 3, 5, 0 },
+    2, 8, 8, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_MIDGE, '5', LIGHTGREEN, "midge",
+    M_RES_POISON | M_FLIES,
+    0, 10, 224, MH_DEMONIC, -3,
+    { 8, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    4, 10, 10, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_NEQOXEC, '3', MAGENTA, "neqoxec",
+    M_RES_POISON | M_SPELLCASTER | M_LEVITATE,
+    0, 12, 225, MH_DEMONIC, -6,
+    { 15, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    4, 12, 10, 7, 76, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_ORANGE_DEMON, '3', LIGHTRED, "orange demon",
+    M_NO_FLAGS,
+    0, 12, 226, MH_DEMONIC, -6,
+    { 10, 5, 0, 0 },
+    { 8, 4, 5, 0 },
+    3, 7, 7, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SCREECH, I_NORMAL, 0
+}
+,
+
+{
+    MONS_HELLWING, '3', LIGHTGREY, "hellwing",
+    M_RES_POISON | M_SPELLCASTER | M_FLIES,
+    0, 12, 227, MH_DEMONIC, -6,
+    { 17, 10, 0, 0 },
+    { 7, 4, 5, 0 },
+    8, 10, 10, 7, 77, CE_CONTAMINATED, Z_NOZOMBIE, S_MOAN, I_NORMAL, 1
+}
+,
+
+{
+    MONS_SMOKE_DEMON, '4', LIGHTGREY, "smoke demon",
+    M_RES_POISON | M_RES_FIRE | M_SPELLCASTER | M_FLIES,
+    0, 12, 228, MH_DEMONIC, -6,
+    { 8, 5, 5, 0 },
+    { 7, 3, 5, 0 },
+    5, 9, 9, 7, 78, CE_CONTAMINATED, Z_NOZOMBIE, S_ROAR, I_NORMAL, 3
+}
+,
+
+{
+    MONS_YNOXINUL, '3', CYAN, "ynoxinul",
+    M_RES_ELEC | M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_FLIES | M_SEE_INVIS,
+    0, 12, 229, MH_DEMONIC, -6,
+    { 12, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    3, 10, 10, 7, 75, CE_CONTAMINATED, Z_NOZOMBIE, S_BELLOW, I_NORMAL, 1
+}
+,
+
+{
+    MONS_EXECUTIONER, '1', DARKGREY, "Executioner",
+    M_RES_POISON,
+    0, 14, 230, MH_DEMONIC, -9,
+    { 30, 0, 0, 0 },
+    { 12, 3, 5, 0 },
+    7, 8, 15, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SCREAM, I_HIGH, 1
+}
+,
+
+{
+    MONS_GREEN_DEATH, '1', GREEN, "Green Death",
+    M_RES_POISON | M_SPELLCASTER,
+    0, 14, 231, MH_DEMONIC, -9,
+    { 32, 0, 0, 0 },
+    { 13, 3, 5, 0 },
+    5, 7, 12, 7, 80, CE_CONTAMINATED, Z_NOZOMBIE, S_ROAR, I_HIGH, 1
+}
+,
+
+{
+    MONS_BLUE_DEATH, '1', BLUE, "Blue Death",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD | M_FLIES | M_SEE_INVIS,
+    0, 14, 232, MH_DEMONIC, -9,
+    { 20, 20, 0, 0 },
+    { 12, 3, 5, 0 },
+    10, 10, 12, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
+}
+,
+
+{
+    MONS_BALRUG, '1', RED, "Balrug",
+    M_RES_POISON | M_RES_HELLFIRE | M_ED_COLD | M_SPELLCASTER | M_FLIES,
+    0, 14, 233, MH_DEMONIC, -9,
+    { 25, 0, 0, 0 },
+    { 14, 3, 5, 0 },
+    5, 12, 12, 7, 81, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_CACODEMON, '1', YELLOW, "Cacodemon",
+    M_RES_POISON | M_SPELLCASTER | M_LEVITATE | M_SEE_INVIS,
+    0, 14, 234, MH_DEMONIC, -9,
+    { 22, 0, 0, 0 },
+    { 13, 3, 5, 0 },
+    11, 10, 10, 7, 79, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
+}
+,
+
+
+{
+    MONS_DEMONIC_CRAWLER, '3', DARKGREY, "demonic crawler",
+    M_RES_ELEC | M_RES_POISON | M_RES_COLD | M_RES_FIRE | M_SEE_INVIS,
+    0, 12, 235, MH_DEMONIC, -6,
+    { 13, 13, 13, 13 },
+    { 9, 3, 5, 0 },
+    10, 6, 9, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SCREAM, I_NORMAL, 1
+}
+,
+
+{
+    MONS_SUN_DEMON, '2', YELLOW, "sun demon",
+    M_RES_ELEC | M_RES_POISON | M_ED_COLD | M_RES_HELLFIRE | M_SEE_INVIS | M_LEVITATE,
+    0, 14, 236, MH_DEMONIC, -6,
+    { 30, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    10, 12, 12, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_SHADOW_IMP, '5', DARKGREY, "shadow imp",
+    M_RES_COLD | M_SPELLCASTER | M_FLIES | M_RES_POISON,
+    0, 11, 237, MH_DEMONIC, -3,
+    { 6, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    3, 11, 10, 7, 118, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_SHADOW_DEMON, '3', DARKGREY, "shadow demon",
+    M_RES_POISON | M_RES_COLD | M_SEE_INVIS | M_INVIS,
+    0, 12, 238, MH_DEMONIC, -7,
+    { 21, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    7, 12, 11, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_CROAK, I_HIGH, 1
+}
+,
+
+{
+    MONS_LOROCYPROCA, '2', BLUE, "Lorocyproca",
+    M_RES_POISON | M_RES_COLD | M_RES_FIRE | M_RES_ELEC | M_SEE_INVIS | M_INVIS,
+    0, 12, 239, MH_DEMONIC, -7,
+    { 25, 25, 0, 0 },
+    { 12, 3, 5, 0 },
+    10, 12, 9, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_MOAN, I_HIGH, 1
+}
+,
+
+{
+    MONS_SHADOW_WRAITH, 'W', BLUE, "shadow wraith",
+    M_RES_POISON | M_LEVITATE | M_SEE_INVIS | M_INVIS,
+    0, 15, 240, MH_UNDEAD, -8,
+    { 20, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    7, 7, 10, 10, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_MOAN, I_HIGH, 1
+}
+,
+
+{
+    MONS_GIANT_AMOEBA, 'J', BLUE, "giant amoeba",
+    M_RES_POISON | M_NO_SKELETON,
+    1000, 10, 241, MH_NATURAL, -3,
+    { 25, 0, 0, 0 },
+    { 12, 3, 5, 0 },
+    0, 4, 8, 10, 250, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_GIANT_SLUG, 'm', GREEN, "giant slug",
+    M_ED_POISON | M_NO_SKELETON,
+    700, 10, 242, MH_NATURAL, -3,
+    { 23, 0, 0, 0 },
+    { 10, 5, 3, 0 },
+    0, 2, 6, 10, 250, CE_POISONOUS, Z_BIG, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_GIANT_SNAIL, 'm', LIGHTGREEN, "giant snail",
+    M_ED_POISON | M_NO_SKELETON,
+    900, 10, 243, MH_NATURAL, -3,
+    { 18, 0, 0, 0 },
+    { 14, 5, 3, 0 },
+    7, 2, 4, 10, 250, CE_POISONOUS, Z_BIG, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_SPATIAL_VORTEX, 'v', BLACK, "spatial vortex",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_RES_ELEC | M_LEVITATE,
+    0, 5, 244, MH_NATURAL, 5000,
+    { 50, 0, 0, 0 },
+    { 6, 6, 6, 0 },
+    0, 5, 15, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+// To add a new vortex, must look for references to 244 in CRAWL99, MONSPLS3, BUILDER2
+
+{
+    MONS_PIT_FIEND, '1', BROWN, "Pit Fiend",
+    M_RES_POISON | M_RES_HELLFIRE | M_RES_COLD | M_FLIES | M_SEE_INVIS | M_RES_ELEC,
+    0, 18, 245, MH_DEMONIC, -12,
+    { 28, 21, 21, 0 },
+    { 19, 4, 5, 0 },
+    17, 5, 8, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_ROAR, I_HIGH, 1
+}
+,
+
+{
+    MONS_BORING_BEETLE, 'B', BROWN, "boring beetle",
+    M_ED_POISON,
+    1300, 10, 246, MH_NATURAL, -3,
+    { 26, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    13, 4, 6, 7, 250, CE_POISONOUS, Z_BIG, S_SILENT, I_INSECT, 0
+}
+,
+
+{
+    MONS_GARGOYLE, 'g', DARKGREY, "gargoyle",
+    M_RES_POISON | M_FLIES,
+    0, 12, 247, MH_NATURAL, -6,
+    { 10, 6, 6, 0 },
+    { 4, 3, 5, 0 },
+    18, 6, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+// only appear in Dis castle
+{
+    MONS_METAL_GARGOYLE, 'g', CYAN, "metal gargoyle",
+    M_RES_POISON | M_FLIES,
+    0, 12, 248, MH_NATURAL, -6,
+    { 19, 10, 10, 0 },
+    { 8, 3, 5, 0 },
+    20, 4, 7, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+// only appear in Gehenna castle
+{
+    MONS_MOLTEN_GARGOYLE, 'g', RED, "molten gargoyle",
+    M_RES_POISON | M_FLIES | M_RES_FIRE,
+    0, 12, 249, MH_NATURAL, -6,
+    { 12, 8, 8, 0 },
+    { 5, 3, 5, 0 },
+    14, 7, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+
+// 250 can't exist
+
+
+{
+    MONS_MNOLEG, '&', LIGHTMAGENTA, "Mnoleg",
+    M_RES_ELEC | M_RES_POISON | M_RES_FIRE | M_SEE_INVIS | M_SPELLCASTER,
+    0, 25, 251, MH_DEMONIC, 5000,
+    { 23, 23, 0, 0 },
+    { 17, 0, 0, 199 },
+    10, 13, 13, 7, 90, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
+}
+,
+
+{
+    MONS_LOM_LOBON, '&', LIGHTGREY, "Lom Lobon",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_LEVITATE | M_SEE_INVIS | M_SPELLCASTER,
+    0, 25, 252, MH_DEMONIC, 5000,
+    { 40, 0, 0, 0 },
+    { 19, 0, 0, 223 },
+    10, 7, 8, 7, 91, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+{
+    MONS_CEREBOV, '&', RED, "Cerebov",
+    M_RES_ELEC | M_RES_POISON | M_RES_HELLFIRE | M_SPELLCASTER,
+    0, 25, 253, MH_DEMONIC, -6,
+    { 50, 0, 0, 0 },
+    { 21, 0, 0, 253 },
+    15, 8, 10, 7, 92, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_GLOORX_VLOQ, '&', DARKGREY, "Gloorx Vloq",
+    M_RES_POISON | M_RES_COLD | M_LEVITATE | M_SEE_INVIS | M_SPELLCASTER,
+    0, 25, 254, MH_DEMONIC, -14,
+    { 20, 0, 0, 0 },
+    { 16, 0, 0, 234 },
+    10, 10, 10, 7, 93, CE_CONTAMINATED, Z_NOZOMBIE, S_MOAN, I_HIGH, 1
+}
+,
+
+/* ******************************************************************
+{MONS_MOLLUSC_LORD, 'U', GREEN, "The Mollusc Lord", M_RES_POISON,
+   0, 25, 255, MH_DEMONIC, -3, {30,0,0,0},
+   {16,0,0,100}, 10, 10, 10, 7, 93, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_HIGH, 1},
+****************************************************************** */
+
+{
+    MONS_NAGA_MAGE, 'N', LIGHTRED, "naga mage",
+    M_RES_POISON | M_SPELLCASTER | M_ACTUAL_SPELLS | M_SEE_INVIS,
+    750, 13, 161, MH_NATURAL, -6,
+    { 5, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    6, 10, 8, 7, 107, CE_POISONOUS, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_NAGA_WARRIOR, 'N', BLUE, "naga warrior",
+    M_RES_POISON | M_SPELLCASTER | M_ACTUAL_SPELLS | M_SEE_INVIS,
+    750, 12, 161, MH_NATURAL, -6,
+    { 11, 0, 0, 0 },
+    { 10, 5, 5, 0 },
+    6, 10, 8, 7, 106, CE_POISONOUS, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_ORC_WARLORD, 'o', RED, "orc warlord",
+    M_NO_FLAGS,
+    600, 15, 14, MH_NATURAL, -3,
+    { 32, 0, 0, 0 },
+    { 15, 4, 7, 0 },
+    3, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_SOLDIER, 'e', CYAN, "deep elf soldier",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    450, 10, 147, MH_NATURAL, -6,
+    { 6, 0, 0, 0 },
+    { 3, 3, 3, 0 },
+    0, 12, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_FIGHTER, 'e', LIGHTBLUE, "deep elf fighter",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    450, 10, 147, MH_NATURAL, -6,
+    { 9, 0, 0, 0 },
+    { 6, 3, 3, 0 },
+    0, 13, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_KNIGHT, 'e', BLUE, "deep elf knight",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    450, 10, 147, MH_NATURAL, -6,
+    { 14, 0, 0, 0 },
+    { 11, 3, 3, 0 },
+    0, 15, 11, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_MAGE, 'e', LIGHTRED, "deep elf mage",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    450, 10, 147, MH_NATURAL, -6,
+    { 5, 0, 0, 0 },
+    { 4, 3, 3, 0 },
+    0, 13, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_SUMMONER, 'e', YELLOW, "deep elf summoner",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    450, 10, 147, MH_NATURAL, -6,
+    { 5, 0, 0, 0 },
+    { 6, 3, 3, 0 },
+    0, 13, 10, 7, 96, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_CONJURER, 'e', LIGHTGREEN, "deep elf conjurer",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    450, 10, 147, MH_NATURAL, -6,
+    { 5, 0, 0, 0 },
+    { 6, 3, 3, 0 },
+    0, 13, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_PRIEST, 'e', LIGHTGREY, "deep elf priest",
+    M_SPELLCASTER | M_PRIEST,
+    450, 10, 147, MH_NATURAL, -6,
+    { 9, 0, 0, 0 },
+    { 5, 3, 3, 0 },
+    0, 13, 10, 7, 99, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_HIGH_PRIEST, 'e', DARKGREY, "deep elf high priest",
+    M_SPELLCASTER | M_SPEAKS | M_PRIEST,
+    450, 10, 147, MH_NATURAL, -6,
+    { 14, 0, 0, 0 },
+    { 11, 3, 3, 0 },
+    3, 13, 10, 7, 100, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_DEMONOLOGIST, 'e', MAGENTA, "deep elf demonologist",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    450, 10, 147, MH_NATURAL, -6,
+    { 12, 0, 0, 0 },
+    { 12, 3, 3, 0 },
+    0, 13, 10, 7, 101, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_ANNIHILATOR, 'e', GREEN, "deep elf annihilator",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    450, 10, 147, MH_NATURAL, -6,
+    { 12, 0, 0, 0 },
+    { 15, 3, 3, 0 },
+    0, 13, 10, 7, 102, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_SORCEROR, 'e', RED, "deep elf sorceror",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    450, 10, 147, MH_NATURAL, -6,
+    { 12, 0, 0, 0 },
+    { 14, 3, 3, 0 },
+    0, 13, 10, 7, 103, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_DEEP_ELF_DEATH_MAGE, 'e', WHITE, "deep elf death mage",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    450, 10, 147, MH_NATURAL, -6,
+    { 12, 0, 0, 0 },
+    { 15, 3, 3, 0 },
+    0, 13, 10, 7, 104, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+
+
+
+{
+    MONS_BROWN_OOZE, 'J', BROWN, "brown ooze",
+    M_RES_POISON | M_NO_SKELETON,
+    0, 11, 275, MH_NATURAL, -7,
+    { 25, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    10, 1, 6, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_AZURE_JELLY, 'J', LIGHTBLUE, "azure jelly",
+    M_RES_POISON | M_RES_COLD | M_ED_FIRE | M_RES_ELEC | M_NO_SKELETON,
+    0, 11, 276, MH_NATURAL, -4,
+    { 12, 12, 12, 12 },
+    { 15, 3, 5, 0 },
+    5, 10, 10, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_DEATH_OOZE, 'J', DARKGREY, "death ooze",
+    M_RES_POISON | M_RES_COLD | M_NO_SKELETON,
+    0, 13, 277, MH_UNDEAD, -8,
+    { 32, 32, 0, 0 },
+    { 11, 3, 3, 0 },
+    2, 4, 5, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_ACID_BLOB, 'J', LIGHTGREEN, "acid blob",
+    M_RES_POISON | M_NO_SKELETON,
+    0, 12, 278, MH_NATURAL, -7,
+    { 42, 0, 0, 0 },
+    { 18, 3, 5, 0 },
+    1, 3, 7, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_ROYAL_JELLY, 'J', YELLOW, "royal jelly",
+    M_RES_POISON | M_NO_SKELETON,
+    0, 20, 279, MH_NATURAL, -7,
+    { 50, 0, 0, 0 },
+    { 21, 0, 0, 111 },
+    8, 4, 9, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_TERENCE, '@', LIGHTCYAN, "Terence",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 3, 0, 0, 0 },
+    { 1, 0, 0, 14 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_JESSICA, '@', LIGHTGREY, "Jessica",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 4, 0, 0, 0 },
+    { 1, 0, 0, 10 },
+    0, 10, 10, 7, 0, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_IJYB, 'g', BLUE, "Ijyb",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 6, MH_NATURAL, -3,
+    { 4, 0, 0, 0 },
+    { 3, 0, 0, 28 },
+    0, 12, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_SIGMUND, '@', YELLOW, "Sigmund",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 5, 0, 0, 0 },
+    { 3, 0, 0, 25 },
+    0, 11, 10, 7, 1, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_BLORK_THE_ORC, 'o', BROWN, "Blork the orc",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 14, MH_NATURAL, -3,
+    { 7, 0, 0, 0 },
+    { 3, 0, 0, 32 },
+    0, 9, 8, 7, 2, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_EDMUND, '@', RED, "Edmund",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 6, 0, 0, 0 },
+    { 4, 0, 0, 27 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_PSYCHE, '@', LIGHTMAGENTA, "Psyche",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 7, 0, 0, 0 },
+    { 5, 0, 0, 24 },
+    0, 12, 13, 7, 2, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_EROLCHA, 'O', LIGHTBLUE, "Erolcha",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 40, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 6, 0, 0, 45 },
+    3, 7, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_DONALD, '@', BLUE, "Donald",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 8, 0, 0, 0 },
+    { 5, 0, 0, 33 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_URUG, 'o', RED, "Urug",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 14, MH_NATURAL, -3,
+    { 12, 0, 0, 0 },
+    { 6, 0, 0, 38 },
+    0, 11, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_MICHAEL, '@', LIGHTGREY, "Michael",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 9, 0, 0, 0 },
+    { 6, 0, 0, 36 },
+    0, 10, 10, 7, 2, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_JOSEPH, '@', CYAN, "Joseph",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 9, 0, 0, 0 },
+    { 7, 0, 0, 42 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_SNORG, 'T', GREEN, "Snorg",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 45, MH_NATURAL, -3,
+    { 20, 15, 15, 0 },
+    { 8, 0, 0, 45 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_ERICA, '@', MAGENTA, "Erica",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 10, 0, 0, 0 },
+    { 9, 0, 0, 43 },
+    0, 11, 11, 7, 63, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_JOSEPHINE, '@', WHITE, "Josephine",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 11, 0, 0, 0 },
+    { 9, 0, 0, 47 },
+    0, 10, 10, 7, 60, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_HAROLD, '@', LIGHTGREEN, "Harold",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 12, 0, 0, 0 },
+    { 9, 0, 0, 51 },
+    0, 8, 10, 7, 59, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_NORBERT, '@', BROWN, "Norbert",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 14, 0, 0, 0 },
+    { 10, 0, 0, 53 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_JOZEF, '@', LIGHTMAGENTA, "Jozef",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 14, 0, 0, 0 },
+    { 11, 0, 0, 60 },
+    0, 9, 10, 7, 10, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_AGNES, '@', LIGHTBLUE, "Agnes",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 11, 0, 0, 0 },
+    { 11, 0, 0, 64 },
+    0, 10, 15, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_MAUD, '@', RED, "Maud",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 14, 0, 0, 0 },
+    { 13, 0, 0, 55 },
+    0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_LOUISE, '@', BLUE, "Louise",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 12, 0, 0, 0 },
+    { 13, 0, 0, 52 },
+    0, 10, 10, 7, 65, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_FRANCIS, '@', YELLOW, "Francis",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 12, 0, 0, 0 },
+    { 14, 0, 0, 67 },
+    0, 10, 10, 7, 68, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_FRANCES, '@', YELLOW, "Frances",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 11, 0, 0, 0 },
+    { 14, 0, 0, 70 },
+    0, 10, 10, 7, 68, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_RUPERT, '@', RED, "Rupert",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 13, 0, 0, 0 },
+    { 16, 0, 0, 80 },
+    0, 10, 10, 7, 65, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_WAYNE, '@', YELLOW, "Wayne",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 14, 0, 0, 0 },
+    { 17, 0, 0, 78 },
+    1, 10, 7, 7, 67, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_DUANE, '@', YELLOW, "Duane",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 14, 0, 0, 0 },
+    { 18, 0, 0, 83 },
+    0, 10, 10, 7, 0, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_XTAHUA, 'D', RED, "Xtahua",
+    M_NO_FLAGS | M_SPEAKS,
+    0, 20, 29, MH_NATURAL, -3,
+    { 29, 17, 17, 0 },
+    { 19, 0, 0, 133 },
+    15, 7, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_ROAR, I_NORMAL, 1
+}
+,
+
+{
+    MONS_NORRIS, '@', LIGHTRED, "Norris",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 16, 0, 0, 0 },
+    { 20, 0, 0, 95 },
+    1, 9, 9, 7, 59, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_ADOLF, '@', DARKGREY, "Adolf",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 17, 0, 0, 0 },
+    { 21, 0, 0, 105 },
+    0, 10, 10, 7, 23, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_MARGERY, '@', RED, "Margery",
+    M_SPELLCASTER | M_ACTUAL_SPELLS | M_SPEAKS,
+    0, 20, 114, MH_NATURAL, -3,
+    { 18, 0, 0, 0 },
+    { 22, 0, 0, 119 },
+    0, 10, 10, 7, 50, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_BORIS, 'L', RED, "Boris",
+    M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_ACTUAL_SPELLS | M_SEE_INVIS | M_SPEAKS,
+    0, 23, 37, MH_UNDEAD, 300,
+    { 15, 0, 0, 0 },
+    { 22, 0, 0, 99 },
+    12, 10, 10, 7, 23, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 1
+}
+,
+
+
+{
+    MONS_GERYON, '&', GREEN, "Geryon",
+    M_SPELLCASTER,
+    0, 25, 340, MH_DEMONIC, -5,
+    { 30, 0, 0, 0 },
+    { 15, 0, 0, 240 },
+    15, 6, 10, 7, 83, CE_CONTAMINATED, Z_NOZOMBIE, S_ROAR, I_NORMAL, 1
+}
+,
+
+{
+    MONS_DISPATER, '&', MAGENTA, "Dispater",
+    M_RES_ELEC | M_RES_POISON | M_RES_HELLFIRE | M_RES_COLD | M_SPELLCASTER | M_SEE_INVIS,
+    0, 25, 341, MH_DEMONIC, -10,
+    { 15, 0, 0, 0 },
+    { 16, 0, 0, 222 },
+    15, 3, 6, 7, 84, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_ASMODEUS, '&', LIGHTMAGENTA, "Asmodeus",
+    M_RES_ELEC | M_RES_POISON | M_RES_HELLFIRE | M_SPELLCASTER | M_FLIES | M_SEE_INVIS,
+    0, 25, 342, MH_DEMONIC, -12,
+    { 20, 0, 0, 0 },
+    { 17, 0, 0, 245 },
+    12, 7, 9, 7, 85, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_ANTAEUS, 'C', LIGHTCYAN, "Antaeus",
+    M_RES_ELEC | M_ED_FIRE | M_RES_COLD | M_SPELLCASTER,
+    0, 25, 343, MH_NATURAL, -9,
+    { 30, 0, 0, 0 },
+    { 22, 0, 0, 250 },
+    10, 4, 7, 7, 87, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_ERESHKIGAL, '&', WHITE, "Ereshkigal",
+    M_RES_ELEC | M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_SEE_INVIS,
+    0, 25, 344, MH_DEMONIC, -10,
+    { 20, 0, 0, 0 },
+    { 18, 0, 0, 238 },
+    15, 6, 9, 7, 86, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_ANCIENT_LICH, 'L', DARKGREY, "ancient lich",
+    M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_SEE_INVIS | M_RES_FIRE | M_RES_ELEC,
+    0, 20, 356, MH_UNDEAD, -14,
+    { 20, 0, 0, 0 },
+    { 27, 2, 4, 0 },
+    20, 10, 12, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
+}
+,
+/* number is set in define_monster */
+
+{
+    MONS_OOZE, 'J', LIGHTGREY, "ooze",
+    M_RES_POISON | M_NO_SKELETON,
+    0, 5, 357, MH_NATURAL, -6,
+    { 5, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    1, 3, 8, 7, 250, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+{
+    MONS_VAULT_GUARD, '@', CYAN, "vault guard",
+    M_NO_FLAGS,
+    0, 12, 114, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 13, 3, 5, 0 },
+    1, 13, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+/* These nasties are never randomly generated, only sometimes specially
+   placed in the Crypt. */
+{
+    MONS_CURSE_SKULL, 'z', DARKGREY, "curse skull",
+    M_RES_ELEC | M_RES_POISON | M_RES_HELLFIRE | M_RES_COLD | M_LEVITATE | M_SPELLCASTER | M_SEE_INVIS,
+    0, 50, 361, MH_UNDEAD, -6,
+    { 0, 0, 0, 0 },
+    { 13, 0, 0, 66 },
+    40, 3, 10, 7, 108, CE_NOCORPSE, Z_NOZOMBIE, S_MOAN, I_HIGH, 0
+}
+,
+
+{
+    MONS_VAMPIRE_KNIGHT, 'V', CYAN, "vampire knight",
+    M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_SEE_INVIS,
+    0, 13, 47, MH_UNDEAD, -6,
+    { 33, 0, 0, 0 },
+    { 11, 3, 7, 0 },
+    10, 10, 10, 7, 40, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_VAMPIRE_MAGE, 'V', MAGENTA, "vampire mage",
+    M_RES_POISON | M_RES_COLD | M_SPELLCASTER | M_SEE_INVIS | M_FLIES,
+    0, 15, 47, MH_UNDEAD, -6,
+    { 22, 0, 0, 0 },
+    { 8, 3, 4, 0 },
+    10, 10, 10, 7, 61, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 3
+}
+,
+
+{
+    MONS_SHINING_EYE, 'G', LIGHTMAGENTA, "shining eye",
+    M_NO_SKELETON | M_LEVITATE | M_SPELLCASTER,
+    0, 14, 364, MH_NATURAL, 5000,
+    { 0, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    3, 1, 7, 7, 109, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_ORB_GUARDIAN, 'X', MAGENTA, "Orb Guardian",
+    M_NO_SKELETON,
+    0, 20, 365, MH_NATURAL, -5,
+    { 40, 0, 0, 0 },
+    { 15, 3, 5, 0 },
+    13, 13, 14, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_DAEVA, 'A', YELLOW, "Daeva",
+    M_RES_POISON | M_LEVITATE | M_SPELLCASTER,
+    0, 12, 366, MH_HOLY, -8,
+    { 25, 0, 0, 0 },
+    { 12, 3, 5, 0 },
+    10, 13, 13, 7, 112, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+}
+,
+
+/* spectral thing - similar to zombies/skeletons */
+{
+    MONS_SPECTRAL_THING, 'W', GREEN, "",
+    M_RES_POISON | M_RES_COLD | M_LEVITATE,
+    0, 11, 367, MH_UNDEAD, 5000,
+    { 20, 0, 0, 0 },
+    { 8, 3, 5, 0 },
+    8, 5, 7, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_GREATER_NAGA, 'N', RED, "greater naga",
+    M_RES_POISON | M_SPELLCASTER | M_ACTUAL_SPELLS | M_SEE_INVIS,
+    750, 10, 161, MH_NATURAL, 5000,
+    { 18, 0, 0, 0 },
+    { 15, 3, 5, 0 },
+    6, 10, 8, 7, 107, CE_POISONOUS, Z_SMALL, S_SHOUT, I_HIGH, 3
+}
+,
+
+{
+    MONS_SKELETAL_DRAGON, 'D', LIGHTGREY, "skeletal dragon",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_RES_ELEC | M_SEE_INVIS,
+    0, 12, 369, MH_UNDEAD, -4,
+    { 30, 20, 20, 0 },
+    { 20, 8, 8, 0 },
+    20, 4, 8, 7, 250, CE_CLEAN, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_TENTACLED_MONSTROSITY, 'X', GREEN, "tentacled monstrosity",
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_RES_ELEC | M_SEE_INVIS,
+    0, 10, 370, MH_NATURAL, -5,
+    { 22, 17, 13, 19 },
+    { 25, 3, 5, 0 },
+    5, 5, 9, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_SPHINX, 'H', LIGHTGREY, "sphinx",
+    M_FLIES | M_SEE_INVIS | M_SPELLCASTER | M_ACTUAL_SPELLS,
+    0, 10, 371, MH_NATURAL, -3,
+    { 25, 12, 12, 0 },
+    { 16, 3, 5, 0 },
+    5, 5, 13, 7, 114, CE_CLEAN, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
+}
+,
+
+{
+    MONS_ROTTING_HULK, 'n', BROWN, "rotting hulk",
+    M_RES_POISON | M_RES_COLD,
+    0, 12, 372, MH_UNDEAD, -5,
+    { 25, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    5, 7, 8, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_GUARDIAN_MUMMY, 'M', YELLOW, "guardian mummy",
+    M_RES_POISON | M_RES_COLD,
+    0, 13, 373, MH_UNDEAD, -5,
+    { 30, 0, 0, 0 },
+    { 7, 5, 3, 0 },
+    6, 9, 9, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 3
+}
+,
+
+{
+    MONS_GREATER_MUMMY, 'M', DARKGREY, "greater mummy",
+    M_RES_POISON | M_RES_COLD | M_RES_ELEC | M_SPELLCASTER | M_ACTUAL_SPELLS,
+    0, 20, 374, MH_UNDEAD, 5000,
+    { 35, 0, 0, 0 },
+    { 15, 5, 3, 100 },
+    10, 6, 10, 7, 115, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 3
+}
+,
+
+{
+    MONS_MUMMY_PRIEST, 'M', RED, "mummy priest",
+    M_RES_POISON | M_RES_COLD | M_RES_ELEC | M_SPELLCASTER | M_PRIEST,
+    0, 16, 375, MH_UNDEAD, 5000,
+    { 30, 0, 0, 0 },
+    { 10, 5, 3, 0 },
+    8, 7, 9, 7, 115, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 3
+}
+,
+
+{
+    MONS_CENTAUR_WARRIOR, 'c', YELLOW, "centaur warrior",
+    M_NO_FLAGS,
+    1500, 12, 2, MH_NATURAL, -3,
+    { 16, 0, 0, 0 },
+    { 9, 3, 5, 0 },
+    4, 8, 15, 7, 250, CE_CLEAN, Z_BIG, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_YAKTAUR_CAPTAIN, 'c', RED, "yaktaur captain",
+    M_NO_FLAGS,
+    2000, 10, 133, MH_NATURAL, -3,
+    { 23, 0, 0, 0 },
+    { 14, 3, 5, 0 },
+    5, 5, 10, 7, 250, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_KILLER_KLOWN, '@', BLACK, "Killer Klown",
+    M_SEE_INVIS | M_SPEAKS,
+    0, 15, 378, MH_NATURAL, 5000,
+    { 30, 0, 0, 0 },
+    { 20, 5, 5, 0 },
+    10, 15, 15, 7, 1, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_HIGH, 1
+}
+,
+
+/* ******************************************************************
+// these next few monsters are taken from the
+// Chronicles of an Age of Darkness, by Hugh Cook
+
+// the quokka is no more ... {dlb}
+{
+    MONS_QUOKKA, 'r', LIGHTGREY, "quokka",
+    M_SPEAKS,
+    0, 10, 382, MH_NATURAL, -3,
+    { 6, 0, 0, 0 },
+    { 1, 3, 5, 0 },
+    2, 13, 10, 7, 250, CE_CLEAN, Z_SMALL, S_SHOUT, I_NORMAL, 1
+}
+,
+****************************************************************** */
+
+{
+    MONS_EYE_OF_DEVASTATION, 'G', YELLOW, "eye of devastation",
+    M_NO_SKELETON | M_LEVITATE | M_SPELLCASTER,
+    0, 11, 385, MH_NATURAL, 5000,
+    { 0, 0, 0, 0 },
+    { 10, 3, 5, 0 },
+    12, 1, 7, 7, 125, CE_POISONOUS, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_MOTH_OF_WRATH, 'y', BROWN, "moth of wrath",
+    M_ED_POISON | M_FLIES,
+    0, 10, 386, MH_NATURAL, -3,
+    { 25, 0, 0, 0 },
+    { 9, 3, 5, 0 },
+    0, 10, 12, 7, 250, CE_CLEAN, Z_SMALL, S_SHOUT, I_NORMAL, 0
+}
+,
+
+{
+    MONS_DEATH_COB, '%', YELLOW, "death cob",
+    M_RES_POISON | M_RES_COLD | M_SPEAKS,
+    0, 10, 387, MH_UNDEAD, -3,
+    { 20, 0, 0, 0 },
+    { 10, 4, 5, 0 },
+    10, 15, 25, 7, 250, CE_CLEAN, Z_SMALL, S_MOAN, I_NORMAL, 1
+}
+,
+
+{
+    MONS_CURSE_TOE, 'z', DARKGREY, "curse toe",
+    M_RES_ELEC | M_RES_POISON | M_RES_HELLFIRE | M_RES_COLD | M_LEVITATE | M_SPELLCASTER | M_SEE_INVIS,
+    0, 60, 388, MH_UNDEAD, 5000,
+    { 0, 0, 0, 0 },
+    { 14, 0, 0, 77 },
+    50, 1, 12, 7, 108, CE_NOCORPSE, Z_NOZOMBIE, S_MOAN, I_HIGH, 0
+}
+,
+
+{
+    MONS_GOLD_MIMIC, '$', YELLOW, "mimic",
+    M_NO_SKELETON | M_RES_POISON,
+    0, 13, 389, MH_NATURAL, -3,
+    { 12, 12, 12, 0 },
+    { 8, 3, 5, 0 },
+    5, 1, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 0
+}
+,
+
+{
+    MONS_WEAPON_MIMIC, ')', BLACK, "mimic",
+    M_NO_SKELETON | M_RES_POISON,
+    0, 13, 389, MH_NATURAL, -3,
+    { 17, 17, 17, 0 },
+    { 8, 3, 5, 0 },
+    5, 1, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 0
+}
+,
+
+{
+    MONS_ARMOUR_MIMIC, '[', BLACK, "mimic",
+    M_NO_SKELETON | M_RES_POISON,
+    0, 13, 389, MH_NATURAL, -3,
+    { 12, 12, 12, 0 },
+    { 8, 3, 5, 0 },
+    15, 1, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 0
+}
+,
+
+{
+    MONS_SCROLL_MIMIC, '?', LIGHTGREY, "mimic",
+    M_NO_SKELETON | M_RES_POISON,
+    0, 13, 389, MH_NATURAL, -3,
+    { 12, 12, 12, 0 },
+    { 8, 3, 5, 0 },
+    5, 1, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 0
+}
+,
+
+{
+    MONS_POTION_MIMIC, '!', BLACK, "mimic",
+    M_NO_SKELETON | M_RES_POISON,
+    0, 13, 389, MH_NATURAL, -3,
+    { 12, 12, 12, 0 },
+    { 8, 3, 5, 0 },
+    5, 1, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 0
+}
+,
+
+{
+    MONS_HELL_HOG, 'h', RED, "hell-hog",
+    M_SPELLCASTER,
+    0, 10, 394, MH_DEMONIC, -3,
+    { 20, 0, 0, 0 },
+    { 11, 3, 5, 0 },
+    2, 9, 14, 7, 120, CE_CLEAN, Z_NOZOMBIE, S_SILENT, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_SERPENT_OF_HELL, 'D', RED, "Serpent of Hell",
+    M_SPELLCASTER | M_RES_POISON | M_RES_HELLFIRE | M_FLIES,
+    0, 18, 395, MH_DEMONIC, -13,
+    { 35, 15, 15, 0 },
+    { 20, 4, 4, 0 },
+    12, 9, 14, 7, 123, CE_CLEAN, Z_NOZOMBIE, S_ROAR, I_HIGH, 1
+}
+,
+
+{
+    MONS_BOGGART, 'g', DARKGREY, "boggart",
+    M_SPELLCASTER | M_ACTUAL_SPELLS,
+    0, 14, 396, MH_NATURAL, -7,
+    { 5, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    0, 12, 12, 7, 124, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
+}
+,
+
+{
+    MONS_QUICKSILVER_DRAGON, 'D', LIGHTCYAN, "quicksilver dragon",
+    M_SPELLCASTER | M_FLIES,
+    0, 14, 397, MH_NATURAL, -7,
+    { 45, 0, 0, 0 },
+    { 16, 3, 5, 0 },
+    10, 15, 15, 7, 126, CE_CONTAMINATED, Z_SMALL, S_ROAR, I_HIGH, 1
+}
+,
+
+{
+    MONS_IRON_DRAGON, 'D', CYAN, "iron dragon",
+    M_SPELLCASTER | M_RES_POISON | M_RES_FIRE | M_RES_COLD,
+    0, 14, 398, MH_NATURAL, -7,
+    { 25, 25, 25, 0 },
+    { 18, 5, 3, 0 },
+    20, 6, 8, 7, 127, CE_CONTAMINATED, Z_SMALL, S_ROAR, I_HIGH, 1
+}
+,
+
+{
+    MONS_SKELETAL_WARRIOR, 'z', CYAN, "skeletal warrior",
+    M_SPELLCASTER | M_RES_POISON | M_RES_COLD | M_ACTUAL_SPELLS,
+    0, 10, 399, MH_UNDEAD, -7,
+    { 25, 0, 0, 0 },
+    { 10, 5, 3, 0 },
+    15, 10, 10, 7, 128, CE_CONTAMINATED, Z_SMALL, S_SILENT, I_NORMAL, 3
+}
+,
+
+
+/* player ghost - only one per level. stats are stored in ghost struct */
+{
+    MONS_PLAYER_GHOST, 'p', DARKGREY, "",
+    M_RES_POISON | M_SPEAKS | M_SPELLCASTER | M_ACTUAL_SPELLS,
+    0, 15, 400, MH_UNDEAD, -3,
+    { 5, 0, 0, 0 },
+    { 4, 2, 3, 0 },
+    1, 2, 10, 7, 119, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
+}
+,
+
+/* random demon in pan - only one per level. stats are stored in ghost struct */
+{
+    MONS_PANDEMONIUM_DEMON, '&', BLACK, "&",
+    M_SPELLCASTER,
+    0, 14, 401, MH_DEMONIC, -5,
+    { 5, 0, 0, 0 },
+    { 4, 2, 3, 0 },
+    1, 2, 10, 7, 119, CE_CONTAMINATED, Z_NOZOMBIE, S_RANDOM, I_HIGH, 1
+}
+,
+
+// begin lava monsters {dlb}
+{
+    MONS_LAVA_WORM, 'w', RED, "lava worm",
+    M_RES_FIRE | M_ED_COLD,
+    0, 10, 420, MH_NATURAL, -3,
+    { 15, 0, 0, 0 },
+    { 6, 3, 5, 0 },
+    1, 10, 10, 7, 250, CE_NOCORPSE, Z_SMALL, S_SILENT, I_ANIMAL_LIKE, 0
+}
+,
+
+{
+    MONS_LAVA_FISH, ';', RED, "lava fish",
+    M_RES_FIRE | M_ED_COLD,
+    0, 10, 421, MH_NATURAL, -3,
+    { 10, 0, 0, 0 },
+    { 4, 3, 5, 0 },
+    4, 15, 10, 7, 250, CE_NOCORPSE, Z_SMALL, S_SILENT, I_ANIMAL_LIKE, 0
+}
+,
+
+{
+    MONS_LAVA_SNAKE, 'S', RED, "lava snake",
+    M_RES_FIRE | M_ED_COLD,
+    0, 10, 422, MH_NATURAL, -3,
+    { 7, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    2, 17, 10, 7, 250, CE_NOCORPSE, Z_SMALL, S_SILENT, I_ANIMAL_LIKE, 0
+}
+,
+
+{
+    MONS_ANOTHER_LAVA_THING, 0, BLACK, "another lava thing",
+    M_NO_FLAGS,
+    0, 10, 423, MH_NATURAL, -3,
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 },
+    0, 0, 0, 0, 250, CE_NOCORPSE, Z_SMALL, S_SILENT, I_PLANT, 0
+}
+,
+// end lava monsters {dlb}
+
+// begin water monsters {dlb}
+{
+    MONS_BIG_FISH, ';', LIGHTGREEN, "big fish",
+    M_NO_FLAGS,
+    0, 10, 430, MH_NATURAL, -3,
+    { 8, 0, 0, 0 },
+    { 4, 3, 5, 0 },
+    1, 12, 10, 7, 250, CE_NOCORPSE, Z_SMALL, S_SILENT, I_ANIMAL_LIKE, 0
+}
+,
+
+{
+    MONS_GIANT_GOLDFISH, ';', LIGHTRED, "giant goldfish",
+    M_NO_FLAGS,
+    0, 10, 431, MH_NATURAL, -3,
+    { 15, 0, 0, 0 },
+    { 7, 3, 5, 0 },
+    5, 7, 10, 7, 250, CE_NOCORPSE, Z_SMALL, S_SILENT, I_ANIMAL_LIKE, 0
+}
+,
+
+{
+    MONS_ELECTRICAL_EEL, ';', LIGHTBLUE, "electrical eel",
+    M_RES_ELEC,
+    0, 10, 432, MH_NATURAL, -3,
+    { 0, 0, 0, 0 },
+    { 3, 3, 5, 0 },
+    1, 15, 10, 7, 250, CE_NOCORPSE, Z_SMALL, S_SILENT, I_ANIMAL_LIKE, 0
+}
+,
+
+{
+    MONS_JELLYFISH, 'J', CYAN, "jellyfish",
+    M_RES_POISON,
+    0, 10, 433, MH_NATURAL, -3,
+    { 1, 1, 0, 0 },
+    { 4, 3, 5, 0 },
+    0, 5, 10, 7, 250, CE_NOCORPSE, Z_SMALL, S_SILENT, I_PLANT, 0
+}
+,
+
+{
+    MONS_WATER_ELEMENTAL, '{', LIGHTBLUE, "water elemental",
+    M_RES_POISON | M_ED_FIRE,
+    0, 10, 434, MH_NATURAL, -3,
+    { 25, 0, 0, 0 },
+    { 6, 5, 3, 0 },
+    0, 7, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
+}
+,
+
+{
+    MONS_SWAMP_WORM, 'w', BROWN, "swamp worm",
+    M_NO_FLAGS,
+    0, 10, 435, MH_NATURAL, -3,
+    { 20, 0, 0, 0 },
+    { 5, 5, 5, 0 },
+    3, 12, 12, 0, 250, CE_NOCORPSE, Z_SMALL, S_SILENT, I_PLANT, 0
+},
+// end water monsters {dlb}
+
+/* ************************************************************************
+
+Josh added the following, but they just won't work in the game just yet ...
+besides, four bear types !?!?! isn't that a *bit* excessive given the
+limited diversity of existing monster types?
+
+I'm still far from happy about the inclusion of "Shuggoths" -- I just do
+not think it fits into Crawl ... {dlb}
+
+************************************************************************ */
+{
+    MONS_SHUGGOTH, 'x', LIGHTGREEN, "shuggoth",
+    M_NO_SKELETON | M_RES_ELEC | M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_SEE_INVIS,
+    1000, 10, MONS_SHUGGOTH, MH_DEMONIC, 300,
+    { 5, 5, 5, 0 },
+    { 10, 4, 4, 0 },
+    10, 10, 20, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, -1, I_NORMAL, 0
+}
+,
+
+{
+    MONS_WOLF, 'h', LIGHTGREY, "wolf",
+    M_SEE_INVIS, //jmf: until smell exists
+    450, 10, MONS_WOLF, MH_NATURAL, -3,
+    { 12, 4, 4, 0 },
+    { 5, 3, 5, 0 },
+    6, 15, 17, 7, 250, CE_CLEAN, Z_SMALL, S_BARK, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_WARG, 'h', DARKGREY, "warg",
+    M_SEE_INVIS | M_RES_POISON,
+    600, 12, MONS_WARG, MH_NATURAL, -6,
+    { 15, 6, 6, 0 },
+    { 5, 4, 5, 0 },
+    10, 12, 14, 7, 250, CE_CONTAMINATED, Z_SMALL, S_BARK, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_BEAR, 'U', BROWN, "bear",
+    M_NO_FLAGS,
+    2000, 10, MONS_BEAR, MH_NATURAL, -3,
+    { 10, 10, 10, 0 },
+    { 7, 3, 3, 0 },
+    8, 8, 10, 7, 250, CE_CLEAN, Z_BIG, S_GROWL, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_GRIZZLY_BEAR, 'U', LIGHTGREY, "grizzly bear",
+    M_NO_FLAGS,
+    2500, 10, MONS_GRIZZLY_BEAR, MH_NATURAL, -3,
+    { 12, 12, 12, 0 },
+    { 7, 4, 4, 0 },
+    10, 8, 10, 7, 250, CE_CLEAN, Z_BIG, S_GROWL, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_POLAR_BEAR, 'U', WHITE, "polar bear",
+    M_RES_COLD,
+    2500, 10, MONS_POLAR_BEAR, MH_NATURAL, -3,
+    { 20, 10, 10, 0 },    //jmf: polar bears have very strong jaws & necks
+    { 7, 5, 3, 0 },
+    15, 8, 10, 7, 250, CE_CLEAN, Z_BIG, S_GROWL, I_ANIMAL, 0
+}
+,
+
+{
+    MONS_BLACK_BEAR, 'U', DARKGREY, "black bear",
+    M_NO_FLAGS,
+    1800, 10, MONS_BLACK_BEAR, MH_NATURAL, -3,
+    { 8, 3, 3, 0 },
+    { 6, 5, 3, 0 },
+    10, 8, 10, 7, 250, CE_CLEAN, Z_SMALL, S_GROWL, I_ANIMAL, 0
+}
+,
+
+
+#endif

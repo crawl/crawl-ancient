@@ -22,11 +22,12 @@
 #include "AppHdr.h"
 #include "files.h"
 
-#ifdef DOS
-#include <conio.h>
-#endif
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #ifdef DOS
+#include <conio.h>
 #include <file.h>
 #endif
 
@@ -49,28 +50,21 @@
 #include <sys/stat.h>
 #endif
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-
 #include "externs.h"
 
-#include "monstuff.h"
 #include "debug.h"
 #include "dungeon.h"
 #include "itemname.h"
 #include "items.h"
-#include "message.h"
 #include "misc.h"
-#include "mstruct.h"
+#include "monstuff.h"
+#include "mon-util.h"
 #include "mstuff2.h"
-#include "output.h"
-#include "overmap.h"
 #include "player.h"
 #include "randart.h"
 #include "skills2.h"
 #include "stuff.h"
-#include "view.h"
+#include "wpn-misc.h"
 
 
 // These three are defined in overmap.cc
@@ -80,6 +74,9 @@ extern unsigned char feature[MAX_LEVELS][MAX_BRANCHES];
 
 
 bool tmp_file_pairs[MAX_LEVELS][MAX_BRANCHES];
+void save_level(int level_saved, bool was_a_labyrinth, char where_were_you);
+
+
 
 /*
    Order for looking for conjurations for the 1st & 2nd spell slots,
@@ -88,7 +85,7 @@ bool tmp_file_pairs[MAX_LEVELS][MAX_BRANCHES];
 unsigned char search_order_conj[] =
 {
 /* 0 */
-    54,                         // crystal spear
+     54,                         // crystal spear
      53,                        // -ve energy
      148,                       // agony
      151,                       // disintegrate
@@ -159,8 +156,9 @@ unsigned char search_order_misc[] =
 int write2(FILE * file, char *buffer, unsigned int count);
 int read2(FILE * file, char *buffer, unsigned int count);
 
-static void reset_ch()
+static void reset_ch( void )
 {
+
     you.redraw_hit_points = 1;
     you.redraw_magic_points = 1;
     you.redraw_strength = 1;
@@ -172,6 +170,7 @@ static void reset_ch()
     you.redraw_gold = 1;
     you.redraw_hunger = 1;
     you.hunger_state = HS_SATIATED;
+
 }
 
 
@@ -181,13 +180,16 @@ struct ghost_struct ghost;
 extern unsigned char your_sign; /* these two are defined in view.cc */
 extern unsigned char your_colour;
 
+
+bool find_spell(unsigned char which_sp);
 unsigned char translate_spell(unsigned char spel);
 unsigned char search_third_list(unsigned char ignore_spell);
 unsigned char search_second_list(unsigned char ignore_spell);
 unsigned char search_first_list(unsigned char ignore_spell);
-char find_spell(unsigned char which_sp);
 void add_spells(unsigned char buffer[40]);
 void generate_random_demon();
+
+
 
 
 static void save_int(char *&p, int val, int digits)
@@ -254,7 +256,7 @@ static double load_double(char *&p, int digits)
 }
 
 
-void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, char old_level, char want_followers, char just_made_new_lev, char where_were_you2)
+void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth, char old_level, bool want_followers, bool just_made_new_lev, char where_were_you2 )
 {
     int j = 0;
     int i, count_x, count_y;
@@ -262,7 +264,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
 
     char corr_level[4];
 
-    char already_saved = 0;
+    bool already_saved = false;
 
     int foll_class[8];
     int foll_hp[8];
@@ -302,13 +304,11 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
 
     char hbjh[5];
 
-    strcpy(corr_level, "");
-    if (you.your_level < 10)
-        strcpy(corr_level, "0");
+    strcpy(corr_level, (you.your_level < 10) ? "0" : "");
     itoa(you.your_level, hbjh, 10);
     strcat(corr_level, hbjh);
     corr_level[2] = you.where_are_you + 97;
-    corr_level[3] = 0;          /* null-terminate it */
+    corr_level[3] = '\0';
     // save the information for later deletion  -- DML 6/11/99
 
 #ifdef SAVE_DIR_PATH
@@ -320,7 +320,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
 
     strcat(cha_fil, ".");
     if (you.level_type != LEVEL_DUNGEON)
-        strcat(cha_fil, "lab"); /* temporary level */
+      strcat(cha_fil, "lab"); // temporary level
     else
     {
         strcat(cha_fil, corr_level);
@@ -337,11 +337,10 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
     you.prev_targ = MHITNOT;
 
     int following = -1;
-    int fmenv = 0;
-
+    int fmenv = 0;    // not used again until after found_stair label {dlb}
     int minvc = 0;
 
-    if (moving_level == 1)
+    if ( moving_level )
     {
         for (int clouty = 0; clouty < CLOUDS; ++clouty)
         {
@@ -353,109 +352,110 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
         env.cloud_no = 0;
     }
 
-    if (want_followers == 1 && just_made_new_lev == 0)
+    if ( want_followers && !just_made_new_lev )
     {
         for (count_x = you.x_pos - 1; count_x < you.x_pos + 2; count_x++)
-        {
-            for (count_y = you.y_pos - 1; count_y < you.y_pos + 2; count_y++)
-            {
-                if (count_x == you.x_pos && count_y == you.y_pos)
-                    continue;
-                following++;
-                foll_class[following] = -1;
+          for (count_y = you.y_pos - 1; count_y < you.y_pos + 2; count_y++)
+          {
+              if ( count_x == you.x_pos && count_y == you.y_pos )
+                continue;
 
-                if (mgrd[count_x][count_y] == MNG)
-                    continue;
+              following++;
+              foll_class[following] = -1;
 
-                fmenv = mgrd[count_x][count_y];
+              if (mgrd[count_x][count_y] == MNG)
+                  continue;
 
-                if (menv[fmenv].type == MONS_PLAYER_GHOST &&
-                    menv[fmenv].hit_points < menv[fmenv].max_hit_points / 2)
-                {
-                    mpr("The ghost fades into the shadows.");
-                    monster_teleport(fmenv, 1);
-                    continue;
-                }
+              struct monsters *fmenv = &menv[mgrd[count_x][count_y]];
 
-                if ((menv[fmenv].type == MONS_TUNNELING_WORM)
-                    || (menv[fmenv].type == MONS_WORM_TAIL)
-                    || (menv[fmenv].type == MONS_PANDEMONIUM_DEMON)
-                    || (menv[fmenv].type == MONS_PLANT)
-                    || (menv[fmenv].type == MONS_FUNGUS)
-                    || (menv[fmenv].type == MONS_OKLOB_PLANT)
-                    || (menv[fmenv].type == MONS_CURSE_SKULL)
-                    || (menv[fmenv].type == MONS_PLAYER_GHOST)  // cdl
-                     || ((menv[fmenv].type == MONS_CURSE_TOE)
-                         && (menv[fmenv].type == MONS_POTION_MIMIC))
-                    || (menv[fmenv].type == -1))
-                    continue;
+              if ( fmenv->type == MONS_PLAYER_GHOST
+                  && fmenv->hit_points < fmenv->max_hit_points / 2 )
+              {
+                  mpr("The ghost fades into the shadows.");
+                  monster_teleport(fmenv, true);
+                  continue;
+              }
 
-                if (menv[fmenv].type >= MONS_LAVA_WORM)
-                    continue;
+              if ( (fmenv->type == MONS_PANDEMONIUM_DEMON)
+                    || (fmenv->type == MONS_PLANT)
+                    || (fmenv->type == MONS_FUNGUS)
+                    || (fmenv->type == MONS_OKLOB_PLANT)
+                    || (fmenv->type == MONS_CURSE_SKULL)
+                    || (fmenv->type == MONS_PLAYER_GHOST)  // cdl
+                    || ((fmenv->type == MONS_CURSE_TOE) && (fmenv->type == MONS_POTION_MIMIC))  // this makes no sense
+                    || (fmenv->type == -1) )
+                continue;
 
-                if (menv[fmenv].speed_increment < 50)
-                    continue;
+              if ( monster_habitat(fmenv->type) != DNGN_FLOOR )
+                continue;
 
-                foll_class[following] = menv[fmenv].type;
-//        itoa(foll_class [following], st_prn, 10);
+              if (fmenv->speed_increment < 50)
+                continue;
 
-                foll_hp[following] = menv[fmenv].hit_points;
-                foll_hp_max[following] = menv[fmenv].max_hit_points;
-                foll_HD[following] = menv[fmenv].hit_dice;
-                foll_AC[following] = menv[fmenv].armor_class;
-                foll_ev[following] = menv[fmenv].evasion;
-                foll_speed[following] = menv[fmenv].speed;
-                foll_speed_inc[following] = menv[fmenv].speed_increment;
-                foll_targ_1_x[following] = menv[fmenv].target_x;
-                foll_targ_1_y[following] = menv[fmenv].target_y;
+              foll_class[following] = fmenv->type;
+              //itoa(foll_class[following], st_prn, 10);
 
-                for (minvc = 0; minvc < 8; ++minvc)
-                    foll_inv[following][minvc] = ING;
+              foll_hp[following] = fmenv->hit_points;
+              foll_hp_max[following] = fmenv->max_hit_points;
+              foll_HD[following] = fmenv->hit_dice;
+              foll_AC[following] = fmenv->armor_class;
+              foll_ev[following] = fmenv->evasion;
+              foll_speed[following] = fmenv->speed;
+              foll_speed_inc[following] = fmenv->speed_increment;
+              foll_targ_1_x[following] = fmenv->target_x;
+              foll_targ_1_y[following] = fmenv->target_y;
 
-                for (minvc = 0; minvc < 8; ++minvc)
-                {
-                    if (menv[fmenv].inv[minvc] == ING)
-                    {
-                        fit_iquant[following][minvc] = 0;
-                        continue;
-                    }
-                    fit_iclass[following][minvc] = mitm.base_type[menv[fmenv].inv[minvc]];
-                    fit_itype[following][minvc] = mitm.sub_type[menv[fmenv].inv[minvc]];
-                    fit_iplus[following][minvc] = mitm.pluses[menv[fmenv].inv[minvc]];
-                    fit_iplus2[following][minvc] = mitm.pluses2[menv[fmenv].inv[minvc]];
-                    fit_idam[following][minvc] = mitm.special[menv[fmenv].inv[minvc]];
-                    fit_iquant[following][minvc] = mitm.quantity[menv[fmenv].inv[minvc]];
-                    fit_icol[following][minvc] = mitm.colour[menv[fmenv].inv[minvc]];
-                    fit_iid[following][minvc] = mitm.id[menv[fmenv].inv[minvc]];
-                    destroy_item(menv[fmenv].inv[minvc]);
-                }
+              for (minvc = 0; minvc < NUM_MONSTER_SLOTS; ++minvc)
+                  foll_inv[following][minvc] = ING;
 
-                foll_beh[following] = menv[fmenv].behavior;
-                foll_sec[following] = menv[fmenv].number;
-                foll_hit[following] = menv[fmenv].monster_foe;
-                foll_ench_1[following] = menv[fmenv].enchantment1;
-                foll_ench[following][0] = menv[fmenv].enchantment[0];
-                foll_ench[following][1] = menv[fmenv].enchantment[1];
-                foll_ench[following][2] = menv[fmenv].enchantment[2];
+              for (minvc = 0; minvc < NUM_MONSTER_SLOTS; ++minvc)
+              {
+                  if ( fmenv->inv[minvc] == ING )
+                  {
+                      fit_iquant[following][minvc] = 0;
+                      continue;
+                  }
 
-                /* now for the icky part: */
-                for (j = 0; j < 3; ++j)
-                    menv[fmenv].enchantment[j] = 0;
-                menv[fmenv].enchantment1 = 0;
-                menv[fmenv].type = -1;
-                menv[fmenv].hit_points = 0;
-                menv[fmenv].max_hit_points = 0;
-                menv[fmenv].hit_dice = 0;
-                menv[fmenv].armor_class = 0;
-                menv[fmenv].evasion = 0;
-                mgrd[count_x][count_y] = MNG;
-            }
-        }
-        if (was_a_labyrinth == 0)
-            save_level(old_level, 0, where_were_you2);
-        already_saved = 1;
-        was_a_labyrinth = 0;
-    }                           /* end if level_type == 0 */
+                  fit_iclass[following][minvc] = mitm.base_type[fmenv->inv[minvc]];
+                  fit_itype[following][minvc] = mitm.sub_type[fmenv->inv[minvc]];
+                  fit_iplus[following][minvc] = mitm.pluses[fmenv->inv[minvc]];
+                  fit_iplus2[following][minvc] = mitm.pluses2[fmenv->inv[minvc]];
+                  fit_idam[following][minvc] = mitm.special[fmenv->inv[minvc]];
+                  fit_iquant[following][minvc] = mitm.quantity[fmenv->inv[minvc]];
+                  fit_icol[following][minvc] = mitm.colour[fmenv->inv[minvc]];
+                  fit_iid[following][minvc] = mitm.id[fmenv->inv[minvc]];
+                  destroy_item(fmenv->inv[minvc]);
+              }
+
+              foll_beh[following] = fmenv->behavior;
+              foll_sec[following] = fmenv->number;
+              foll_hit[following] = fmenv->monster_foe;
+              foll_ench_1[following] = fmenv->enchantment1;
+              foll_ench[following][0] = fmenv->enchantment[0];
+              foll_ench[following][1] = fmenv->enchantment[1];
+              foll_ench[following][2] = fmenv->enchantment[2];
+
+          // now for the icky part:
+              for (j = 0; j < 3; ++j)
+                fmenv->enchantment[j] = 0;
+
+              fmenv->enchantment1 = 0;
+              fmenv->type = -1;
+              fmenv->hit_points = 0;
+              fmenv->max_hit_points = 0;
+              fmenv->hit_dice = 0;
+              fmenv->armor_class = 0;
+              fmenv->evasion = 0;
+              mgrd[count_x][count_y] = MNG;
+
+          }        // end "for count_x, count_y"
+
+        if ( !was_a_labyrinth )
+          save_level(old_level, false, where_were_you2);
+
+        already_saved = true;
+        was_a_labyrinth = false;
+    }                           // end if level_type == LEVEL_DUNGEON
 
     strcpy(ghost.name, "");
     for (ic = 0; ic < 20; ++ic)
@@ -476,23 +476,22 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
     else
     {                           /* generate new level */
         strcpy(ghost.name, "");
+
         for (int imn = 0; imn < 20; ++imn)
-            ghost.values[imn] = 0;
+          ghost.values[imn] = 0;
 
         builder(you.your_level, you.level_type);
 
-        if (you.level_type == LEVEL_PANDEMONIUM)
-            generate_random_demon();
+        if ( you.level_type == LEVEL_PANDEMONIUM )
+          generate_random_demon();
 
-        if (you.your_level > 1 && one_chance_in(3))
+        if ( you.your_level > 1 && one_chance_in(3) )
         {
-            strcpy(corr_level, "");
-            if (you.your_level < 10)
-                strcpy(corr_level, "0");
+            strcpy(corr_level, (you.your_level < 10) ? "0" : "");
             itoa(you.your_level, hbjh, 10);
             strcat(corr_level, hbjh);
             corr_level[2] = you.where_are_you + 97;
-            corr_level[3] = 0;  /* null-terminate it */
+            corr_level[3] = '\0';
 #ifdef SAVE_DIR_PATH
             strcpy(cha_fil, SAVE_DIR_PATH "bones.");
 #else
@@ -550,11 +549,13 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
                     ghost.values[18] = buf1[38];
                     ghost.values[19] = buf1[39];
                     unlink(cha_fil);
+
                     for (int imn = 0; imn < MNST - 10; imn++)
                     {
                         if (menv[imn].type != -1)
-                            continue;
-                        menv[imn].type = 400;
+                          continue;
+
+                        menv[imn].type = MONS_PLAYER_GHOST;
                         menv[imn].hit_dice = ghost.values[12];
                         menv[imn].hit_points = ghost.values[0];
                         menv[imn].max_hit_points = ghost.values[0];
@@ -562,16 +563,19 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
                         menv[imn].evasion = ghost.values[1];
                         menv[imn].speed = 10;
                         menv[imn].speed_increment = 70;
+
                         if (ghost.values[14] != 250 || ghost.values[15] != 250 || ghost.values[16] != 250 || ghost.values[17] != 250 || ghost.values[18] != 250 || ghost.values[19] != 250)
-                            menv[imn].number = 119;
+                          menv[imn].number = 119;
                         else
-                            menv[imn].number = 250;
+                          menv[imn].number = 250;
+
                         do
                         {
-                            menv[imn].x = random2(60) + 10;
-                            menv[imn].y = random2(50) + 10;
+                            menv[imn].x = random2(GXM - 20) + 10;
+                            menv[imn].y = random2(GYM - 20) + 10;
                         }
-                        while ((grd[menv[imn].x][menv[imn].y] != 67) || (mgrd[menv[imn].x][menv[imn].y] != MNG));
+                        while ((grd[menv[imn].x][menv[imn].y] != DNGN_FLOOR) || (mgrd[menv[imn].x][menv[imn].y] != MNG));
+
                         mgrd[menv[imn].x][menv[imn].y] = imn;
                         break;
                     }
@@ -579,103 +583,91 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
             }
         }
 
+    // closes all the gates if you're on the way out
         for (i = 0; i < GXM; i++)
-        {
-            for (j = 0; j < GYM; j++)
-            {
-                env.map[i][j] = 0;
-                if ((you.char_direction == 1)
-                    && (you.level_type != LEVEL_PANDEMONIUM))
-                {
-                    /* closes all the gates if you're on the way out */
-                    if ((grd[i][j] == DNGN_ENTER_HELL)
-                        || (grd[i][j] == DNGN_ENTER_ABYSS)
-                        || (grd[i][j] == DNGN_ENTER_PANDEMONIUM))
-                        grd[i][j] = DNGN_STONE_ARCH;
-                }
-                env.cgrid[i][j] = CNG;
-            }
-        }
+          for (j = 0; j < GYM; j++)
+          {
+              env.map[i][j] = 0;
+
+              if ( you.char_direction == DIR_ASCENDING && you.level_type != LEVEL_PANDEMONIUM )
+              {
+                  if ( grd[i][j] == DNGN_ENTER_HELL
+                        || grd[i][j] == DNGN_ENTER_ABYSS
+                        || grd[i][j] == DNGN_ENTER_PANDEMONIUM )
+                    grd[i][j] = DNGN_STONE_ARCH;
+              }
+              env.cgrid[i][j] = CNG;
+          }
 
         for (i = 0; i < MNST; i++)
+          if ( menv[i].type == MONS_MOLLUSC_LORD )
+            menv[i].type = -1;
+
+        if ( !just_made_new_lev )
         {
-            if (menv[i].type == 255)
-                menv[i].type = -1;
+            if ( stair_taken == DNGN_ENTER_HELL || stair_taken == DNGN_ENTER_LABYRINTH )
+              stair_taken = DNGN_STONE_STAIRS_UP_I;
+            else if ( stair_taken <= DNGN_ROCK_STAIRS_DOWN )
+              stair_taken += 4;
+            else if ( stair_taken >= DNGN_RETURN_DUNGEON_I && stair_taken < 150 )
+              stair_taken -= 20;
+            else if ( stair_taken >= DNGN_ENTER_ORCISH_MINES && stair_taken < DNGN_RETURN_DUNGEON_I )
+              stair_taken += 20;
+            else if ( stair_taken > 90 )
+              stair_taken = 86;
+            else if ( stair_taken == DNGN_FLOOR )
+              stair_taken = DNGN_FLOOR;
+            else
+              stair_taken -= 4;
+
+            for (count_x = 0; count_x < GXM; count_x++)
+              for (count_y = 0; count_y < GYM; count_y++)
+                if ( grd[count_x][count_y] == stair_taken )
+                  goto found_stair;
+
+
+            if ( stair_taken <= DNGN_ROCK_STAIRS_DOWN )
+              stair_taken = DNGN_STONE_STAIRS_DOWN_I;
+            else
+              stair_taken = DNGN_STONE_STAIRS_UP_I;
+
+
+            for (count_x = 0; count_x < GXM; count_x++)
+              for (count_y = 0; count_y < GYM; count_y++)
+                if ( grd[count_x][count_y] == stair_taken )
+                  goto found_stair;
+
+
+            for (count_x = 0; count_x < GXM; count_x++)
+              for (count_y = 0; count_y < GYM; count_y++)
+                if ( grd[count_x][count_y] == DNGN_FLOOR )
+                  goto found_stair;
+
         }
 
-        if (just_made_new_lev == 0)
-        {
-            if (stair_taken == DNGN_ENTER_HELL
-                || stair_taken == DNGN_ENTER_LABYRINTH)
-                stair_taken = DNGN_STONE_STAIRS_UP_I;
-            else if (stair_taken <= DNGN_ROCK_STAIRS_DOWN)
-                stair_taken += 4;
-            else if (stair_taken >= 130 && stair_taken < 150)
-                stair_taken -= 20;
-            else if (stair_taken >= 110 && stair_taken < 130)
-                stair_taken += 20;
-            else if (stair_taken > 90)
-                stair_taken = 86;
-            else if (stair_taken == 67)
-                stair_taken = 67;
-            else
-                stair_taken -= 4;
 
-            for (count_x = 0; count_x < GXM; count_x++)
-            {
-                for (count_y = 0; count_y < GYM; count_y++)
-                {
-                    if (grd[count_x][count_y] == stair_taken)
-                        goto found_stair;
-                }
-            }
-
-            if (stair_taken <= DNGN_ROCK_STAIRS_DOWN)
-                stair_taken = DNGN_STONE_STAIRS_DOWN_I;
-            else
-                stair_taken = DNGN_STONE_STAIRS_UP_I;
-
-            for (count_x = 0; count_x < GXM; count_x++)
-            {
-                for (count_y = 0; count_y < GYM; count_y++)
-                {
-                    if (grd[count_x][count_y] == stair_taken)
-                        goto found_stair;
-                }
-            }
-
-            for (count_x = 0; count_x < GXM; count_x++)
-            {
-                for (count_y = 0; count_y < GYM; count_y++)
-                {
-                    if (grd[count_x][count_y] == DNGN_FLOOR)
-                        goto found_stair;
-                }
-            }
-        }
-
-      found_stair:
-        if (just_made_new_lev == 0)
+found_stair:
+        if ( !just_made_new_lev )
         {
             you.x_pos = count_x;
             you.y_pos = count_y;
         }
 
-        // This should fix the "monster occuring under the player" bug?
-        if (mgrd[you.x_pos][you.y_pos] != MNG)
-            monster_teleport(mgrd[you.x_pos][you.y_pos], 1);
+    // This should fix the "monster occuring under the player" bug?
+        if ( mgrd[you.x_pos][you.y_pos] != MNG )
+          monster_teleport(&menv[mgrd[you.x_pos][you.y_pos]], true);
 
 
-        if ((you.level_type == LEVEL_LABYRINTH)
-            || (you.level_type == LEVEL_ABYSS))
-            grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
+        if ( you.level_type == LEVEL_LABYRINTH
+              || you.level_type == LEVEL_ABYSS )
+          grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
 
         following = 0;
         fmenv = -1;
 
-        if (((you.level_type == LEVEL_DUNGEON)
-             || (you.level_type == LEVEL_PANDEMONIUM))
-            && (want_followers == 1) && (just_made_new_lev == 0))
+        if ( ( you.level_type == LEVEL_DUNGEON || you.level_type == LEVEL_PANDEMONIUM )
+            && want_followers
+            && !just_made_new_lev )
         {
             for (ic = 0; ic < 2; ic++)
             {
@@ -683,31 +675,34 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
                 {
                     for (count_y = you.y_pos - 6; count_y < you.y_pos + 7; count_y++)
                     {
-                        if ((ic == 0) &&
-                            (
-                                (count_x < you.x_pos - 1) ||
-                                (count_x > you.x_pos + 1) ||
-                                (count_y < you.y_pos - 1) ||
-                                (count_y > you.y_pos + 1)
-                            )
-                            )
-                            continue;
-                        if ((count_x == you.x_pos) && (count_y == you.y_pos))
-                            continue;
-                        if ((mgrd[count_x][count_y] != MNG) || (grd[count_x][count_y] < 67))
-                            continue;
+                        if ( ic == 0
+                            && ( (count_x < you.x_pos - 1)
+                                  || (count_x > you.x_pos + 1)
+                                  || (count_y < you.y_pos - 1)
+                                  || (count_y > you.y_pos + 1) ) )
+                          continue;
+
+                        if ( count_x == you.x_pos && count_y == you.y_pos )
+                          continue;
+
+                        if ( mgrd[count_x][count_y] != MNG || grd[count_x][count_y] < DNGN_FLOOR )
+                          continue;
+
                         while (menv[following].type != -1)
                         {
                             following++;
-                            if (following >= MNST)
-                                goto out_of_foll;
+
+                            if ( following >= MNST )
+                              goto out_of_foll;
                         }
 
-                        while (fmenv < 7)
+                        while ( fmenv < 7 )
                         {
                             fmenv++;
-                            if (foll_class[fmenv] == -1)
-                                continue;
+
+                            if ( foll_class[fmenv] == -1 )
+                              continue;
+
                             menv[following].type = foll_class[fmenv];
                             menv[following].hit_points = foll_hp[fmenv];
                             menv[following].max_hit_points = foll_hp_max[fmenv];
@@ -720,16 +715,21 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
                             menv[following].y = count_y;
                             menv[following].target_x = 0;
                             menv[following].target_y = 0;
-                            for (minvc = 0; minvc < 8; minvc++)
+
+                            for (minvc = 0; minvc < NUM_MONSTER_SLOTS; minvc++)
                             {
-                                if (fit_iquant[fmenv][minvc] == 0)
+
+                                if ( fit_iquant[fmenv][minvc] == 0 )
                                 {
                                     menv[following].inv[minvc] = ING;
                                     continue;
                                 }
+
                                 itmf = 0;
-                                while (mitm.quantity[itmf] > 0)
-                                    ++itmf;
+
+                                while ( mitm.quantity[itmf] > 0 )
+                                  ++itmf;
+
                                 menv[following].inv[minvc] = itmf;
                                 mitm.base_type[itmf] = fit_iclass[fmenv][minvc];
                                 mitm.sub_type[itmf] = fit_itype[fmenv][minvc];
@@ -741,6 +741,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
                                 mitm.id[itmf] = fit_iid[fmenv][minvc];
                                 mitm.link[itmf] = ING;
                             }
+
                             menv[following].behavior = foll_beh[fmenv];
                             menv[following].number = foll_sec[fmenv];
                             menv[following].monster_foe = foll_hit[fmenv];
@@ -754,75 +755,67 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
                     }
                 }
             }
-        }                       /* end if level_type == 0 */
+        }                       // end if level_type == LEVEL_DUNGEON
 
-      out_of_foll:
+out_of_foll:
         reset_ch();
-        moving_level = 0;
+        moving_level = false;
 
         for (i = 0; i < MNST; i++)
         {
-            if (menv[i].type == -1)
-                continue;
-            for (j = 0; j < 8; j++)
+            if ( menv[i].type == -1 )
+              continue;
+
+            for (j = 0; j < NUM_MONSTER_SLOTS; j++)
             {
-                if (menv[i].inv[j] == ING)
-                    continue;
+                if ( menv[i].inv[j] == ING )
+                  continue;
                 if (mitm.link[menv[i].inv[j]] != ING)
                 {
                     /* items carried by monsters shouldn't be linked */
                     mitm.link[menv[i].inv[j]] = ING;
                 }
             }
+
         }
 
         if (you.level_type == LEVEL_PANDEMONIUM)
         {
-            for (count_x = 0; count_x < GXM; count_x++)
-            {
-                for (count_y = 0; count_y < GYM; count_y++)
-                {
-                    if ((grd[count_x][count_y] >= DNGN_STONE_STAIRS_UP_I)
-                        && (grd[count_x][count_y] <= DNGN_ROCK_STAIRS_UP))
-                    {
-                        grd[count_x][count_y] = DNGN_FLOOR;
-                        if (one_chance_in(50))
-                            grd[count_x][count_y] = DNGN_EXIT_PANDEMONIUM;
-                    }
 
-                    if ((grd[count_x][count_y] >= DNGN_ENTER_LABYRINTH)
-                        && (grd[count_x][count_y] <= DNGN_ROCK_STAIRS_DOWN))
-                    {
-                        grd[count_x][count_y] = DNGN_TRANSIT_PANDEMONIUM;
-                    }
-                }
-            }
+            for (count_x = 0; count_x < GXM; count_x++)
+              for (count_y = 0; count_y < GYM; count_y++)
+              {
+                  if ( grd[count_x][count_y] >= DNGN_STONE_STAIRS_UP_I
+                      && grd[count_x][count_y] <= DNGN_ROCK_STAIRS_UP )
+                    grd[count_x][count_y] = ( one_chance_in(50) ? DNGN_EXIT_PANDEMONIUM : DNGN_FLOOR );
+
+                  if ( grd[count_x][count_y] >= DNGN_ENTER_LABYRINTH
+                      && grd[count_x][count_y] <= DNGN_ROCK_STAIRS_DOWN )
+                    grd[count_x][count_y] = DNGN_TRANSIT_PANDEMONIUM;
+              }
+
         }
 
         if (elapsed_time != 0.0)
         {
             double delta = you.elapsed_time - elapsed_time;
 
-            if (delta > 0.0)    // because of rounding errors when saving it's possible to have a negative number if the numbers are large and close together
-
-                update_corpses(delta);
+            if ( delta > 0.0 )    // because of rounding errors when saving it's possible to have a negative number if the numbers are large and close together
+              update_corpses(delta);
         }
 
-        save_level(you.your_level, (you.level_type != LEVEL_DUNGEON),
-                   you.where_are_you);
+        save_level(you.your_level, (you.level_type != LEVEL_DUNGEON), you.where_are_you);
         return;
     }
 
-    moving_level = 0;
+    moving_level = false;
 
     for (count_x = 0; count_x < ITEMS; count_x++)
-        mitm.link[count_x] = ING;
+      mitm.link[count_x] = ING;
 
     for (i = 0; i < GXM; i++)
-    {
-        for (j = 0; j < GYM; j++)
-            igrd[i][j] = ING;
-    }
+      for (j = 0; j < GYM; j++)
+        igrd[i][j] = ING;
 
     const int oldlen = 20 + 20 + 4 * 80 * 70 + 3 * NTRAPS + 25 * ITEMS + 1 + 9 * CLOUDS + 5 * 8 + 5 * 20 + (18 + 5 + 5 + 5 + 5 + 8 * 5) * MNST;
     const int datalen = 42 + oldlen;
@@ -869,33 +862,37 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
     }
 
     for (i = 0; i < 20; ++i)
-        ghost.name[i] = *p++;
+      ghost.name[i] = *p++;
+
     for (i = 0; i < 20; ++i)
-        ghost.values[i] = *p++;
-//  for (j=0; j<20; ++j) ghost.values[j]-=30;
+      ghost.values[i] = *p++;
+
+    //for (j=0; j<20; ++j)
+    //  ghost.values[j]-=30;
 
     for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            grd[count_x][count_y] = *p++;
-            env.map[count_x][count_y] = *p++;
-            if (env.map[count_x][count_y] == 201)
-                env.map[count_x][count_y] = 239;
-            mgrd[count_x][count_y] = MNG;
-            ++p;
-            if ((mgrd[count_x][count_y] != MNG) &&
-                (
-                    (menv[mgrd[count_x][count_y]].type == -1) ||
-                    (menv[mgrd[count_x][count_y]].x != count_x) ||
-                    (menv[mgrd[count_x][count_y]].y != count_y)
-                ))
-            {
-                mgrd[count_x][count_y] = MNG;   /* This is one of the worst things I've ever done */
-            }
-            env.cgrid[count_x][count_y] = *p++;
-        }
-    }
+      for (count_y = 0; count_y < GYM; count_y++)
+      {
+          grd[count_x][count_y] = *p++;
+          env.map[count_x][count_y] = *p++;
+
+          if ( env.map[count_x][count_y] == 201 )
+            env.map[count_x][count_y] = 239;
+
+          mgrd[count_x][count_y] = MNG;
+          ++p;
+
+          if ( mgrd[count_x][count_y] != MNG
+              && ( menv[mgrd[count_x][count_y]].type == -1
+                    || menv[mgrd[count_x][count_y]].x != count_x
+                    || menv[mgrd[count_x][count_y]].y != count_y ) )
+          {
+              mgrd[count_x][count_y] = MNG;   /* This is one of the worst things I've ever done */
+          }
+
+          env.cgrid[count_x][count_y] = *p++;
+      }
+
 
     for (i = 0; i < NTRAPS; i++)
     {
@@ -904,16 +901,12 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
         env.trap_y[i] = *p++;
     }
 
+
     for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            if ((igrd[count_x][count_y] < 0) || (igrd[count_x][count_y] > ING))
-            {
-                igrd[count_x][count_y] = ING;
-            }
-        }
-    }
+      for (count_y = 0; count_y < GYM; count_y++)
+        if ( igrd[count_x][count_y] < 0 || igrd[count_x][count_y] > ING )
+          igrd[count_x][count_y] = ING;
+
 
     for (i = 0; i < ITEMS; ++i)
     {
@@ -929,7 +922,8 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
         mitm.link[i] = load_int(p, 5) - 40000;
         igrd[mitm.x[i]][mitm.y[i]] = load_int(p, 5) - 40000;
         mitm.pluses2[i] = *p++;
-        if (mitm.base_type[i] == 100)
+
+        if ( mitm.base_type[i] == OBJ_UNASSIGNED )
         {
             mitm.quantity[i] = 0;
             mitm.link[i] = ING;
@@ -958,7 +952,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
         env.sh_type[i] = *p++;
         env.sh_level[i] = *p++;
 #ifdef DEBUG
-        if (mgrd[env.sh_x[i] - 1][env.sh_y[i] - 1] == 31)
+        if ( mgrd[env.sh_x[i] - 1][env.sh_y[i] - 1] == 31 )    // shouldn't that be grd[][]? {dlb}
         {
             cprintf("x");
             getch();
@@ -967,7 +961,7 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
     }
 
     for (i = 0; i < 20; i++)
-        env.mons_alloc[i] = load_int(p, 5) - 10000;
+      env.mons_alloc[i] = load_int(p, 5) - 10000;
 
     for (count_x = 0; count_x < MNST; ++count_x)
     {
@@ -984,22 +978,23 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
         menv[count_x].target_y = *p++;
         ++p;
         menv[count_x].enchantment1 = *p++;
+
         for (j = 0; j < 3; ++j)
-            menv[count_x].enchantment[j] = *p++;
+          menv[count_x].enchantment[j] = *p++;
+
         menv[count_x].type = load_int(p, 5) - 40080;
         menv[count_x].hit_points = load_int(p, 5) - 40000;
         menv[count_x].max_hit_points = load_int(p, 5) - 40000;
 
         menv[count_x].number = load_int(p, 5) - 40000;
-        for (j = 0; j < 8; ++j)
+
+        for (j = 0; j < NUM_MONSTER_SLOTS; ++j)
             menv[count_x].inv[j] = load_int(p, 5) - 40000;
 
 #if 0
         for (j = 0; j < MNST; ++j)
-        {
-            if (menv[j].type != -1)
-                mgrd[menv[j].x][menv[j].y] = j;
-        }
+          if ( menv[j].type != -1 )
+            mgrd[menv[j].x][menv[j].y] = j;
 #else
 
         if (menv[count_x].type != -1)
@@ -1012,26 +1007,14 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
                 {
                     int turns = (int) (you.elapsed_time - elapsed_time) / 10;
 
-                    if (turns > 0)
+                    if ( turns > 0 )
                     {
                         // player ghosts included here because they cannot
                         // leave the level to follow the player.
-                        if (monster_regenerates(menv[count_x].type)
-                            || menv[count_x].type == MONS_PLAYER_GHOST)
-                        {
-                            menv[count_x].hit_points += turns;
-                        }
+                        if ( monster_descriptor(menv[count_x].type, MDSC_REGENERATES) || menv[count_x].type == MONS_PLAYER_GHOST )
+                          heal_monster(&menv[count_x], turns, false);
                         else
-                        {
-                            menv[count_x].hit_points += (turns / 25);
-                        }
-
-                        if (menv[count_x].hit_points >
-                            menv[count_x].max_hit_points)
-                        {
-                            menv[count_x].hit_points =
-                                menv[count_x].max_hit_points;
-                        }
+                          heal_monster(&menv[count_x], (turns / 25), false);
                     }
                 }
             }
@@ -1044,151 +1027,137 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
     reset_ch();
 
     free(buf);
+
     if (p != buf + datalen)
     {
         perror("opa (6)...");
         end(-1);
     }
 
+
     for (i = 0; i < GXM; i++)
-    {
-        for (j = 0; j < GYM; j++)
-        {
-            if (igrd[i][j] < 0 | igrd[i][j] > ING)
-                igrd[i][j] = ING;
-        }
-    }
+      for (j = 0; j < GYM; j++)
+        if ( igrd[i][j] < 0 | igrd[i][j] > ING )
+          igrd[i][j] = ING;
+
+
     for (i = 0; i < MNST; i++)
-    {
-        for (j = 0; j < 8; j++)
-        {
-            if ((menv[i].inv[j] < 0) || (menv[i].inv[j] > ING))
-                menv[i].inv[j] = ING;
-            if (menv[i].inv[j] != ING)
-                mitm.link[menv[i].inv[j]] = ING;
-        }
-    }
+      for (j = 0; j < NUM_MONSTER_SLOTS; j++)
+      {
+          if ( menv[i].inv[j] < 0 || menv[i].inv[j] > ING )
+            menv[i].inv[j] = ING;
+          if ( menv[i].inv[j] != ING )
+            mitm.link[menv[i].inv[j]] = ING;
+      }
+
+
     for (i = 0; i < ITEMS; i++)
-    {
-        if (mitm.link[i] > ING)
-            mitm.link[i] = ING;
-    }
+      if ( mitm.link[i] > ING )
+        mitm.link[i] = ING;
+
+
     for (i = 0; i < MNST; i++)
-    {
-        if (menv[i].type == -1)
-            continue;
-        for (j = 0; j < 8; j++)
+      if ( menv[i].type != -1 )
+        for (j = 0; j < NUM_MONSTER_SLOTS; j++)
         {
-            if (menv[i].inv[j] == ING)
-                continue;
-            if (mitm.link[menv[i].inv[j]] != ING)
-            {
+            if ( menv[i].inv[j] != ING )
+              if ( mitm.link[menv[i].inv[j]] != ING )
                 mitm.link[menv[i].inv[j]] = ING;
-            }
         }
-    }
 
 
+// closes all the gates if you're on the way out
     for (int i = 0; i < GXM; i++)
-    {
-        for (int j = 0; j < GYM; j++)
-        {
-            if ((you.char_direction == 1)
-                && (you.level_type != LEVEL_PANDEMONIUM))
-            {
-                /* closes all the gates if you're on the way out */
-                if ((grd[i][j] == DNGN_ENTER_HELL)
-                    || (grd[i][j] == DNGN_ENTER_ABYSS)
-                    || (grd[i][j] == DNGN_ENTER_PANDEMONIUM))
-                {
-                    grd[i][j] = DNGN_STONE_ARCH;
-                }
-            }
-        }
-    }
+      for (int j = 0; j < GYM; j++)
+      {
+          if ( you.char_direction == DIR_ASCENDING && you.level_type != LEVEL_PANDEMONIUM )
+          {
+              if ( grd[i][j] == DNGN_ENTER_HELL
+                    || grd[i][j] == DNGN_ENTER_ABYSS
+                    || grd[i][j] == DNGN_ENTER_PANDEMONIUM )
+                grd[i][j] = DNGN_STONE_ARCH;
+          }
+      }
 
 
-
-    if (you.your_level == 35 && stair_taken >= DNGN_STONE_STAIRS_UP_I)
+    if ( you.your_level == 35 && stair_taken >= DNGN_STONE_STAIRS_UP_I )
     {
         do
         {
             you.x_pos = 10 + random2(GXM - 10);
             you.y_pos = 10 + random2(GYM - 10);
         }
-        while ((grd[you.x_pos][you.y_pos] != DNGN_FLOOR) || (mgrd[you.x_pos][you.y_pos] != MNG));
+        while ( grd[you.x_pos][you.y_pos] != DNGN_FLOOR || mgrd[you.x_pos][you.y_pos] != MNG );
+
         count_x = you.x_pos;
         count_y = you.y_pos;
+
         goto found_stair;
     }
     else
     {
-        if (stair_taken == DNGN_FLOOR)
+        if ( stair_taken == DNGN_FLOOR )
+        {
             for (count_x = 0; count_x < GXM; count_x++)
-            {
-                for (count_y = 0; count_y < GYM; count_y++)
-                {
-                    if (grd[count_x][count_y] == stair_taken)
-                        goto found_stair;
-                }
-            }
-        if (stair_taken >= DNGN_RETURN_DUNGEON_I && stair_taken < 150)
-            stair_taken -= 20;
-        else if (stair_taken >= DNGN_ENTER_ORCISH_MINES && stair_taken <= DNGN_ENTER_SWAMP)
-            stair_taken += 20;
-        else if (stair_taken < DNGN_STONE_STAIRS_UP_I)
-            stair_taken += 4;
-        else
-            stair_taken -= 4;
-        for (count_x = 0; count_x < GXM; count_x++)
-        {
-            for (count_y = 0; count_y < GYM; count_y++)
-            {
-                if (grd[count_x][count_y] == stair_taken)
-                    goto found_stair;
-            }
+              for (count_y = 0; count_y < GYM; count_y++)
+                if ( grd[count_x][count_y] == stair_taken )
+                  goto found_stair;
         }
+
+        if ( stair_taken >= DNGN_RETURN_DUNGEON_I && stair_taken < 150 )
+          stair_taken -= 20;
+        else if ( stair_taken >= DNGN_ENTER_ORCISH_MINES && stair_taken <= DNGN_ENTER_SWAMP )
+          stair_taken += 20;
+        else if ( stair_taken < DNGN_STONE_STAIRS_UP_I )
+          stair_taken += 4;
+        else
+          stair_taken -= 4;
+
+        for (count_x = 0; count_x < GXM; count_x++)
+          for (count_y = 0; count_y < GYM; count_y++)
+            if ( grd[count_x][count_y] == stair_taken )
+              goto found_stair;
+
         if (stair_taken < DNGN_STONE_STAIRS_UP_I)
-            stair_taken = DNGN_STONE_STAIRS_DOWN_I;
+          stair_taken = DNGN_STONE_STAIRS_DOWN_I;
         else
-            stair_taken = DNGN_STONE_STAIRS_UP_I;
+          stair_taken = DNGN_STONE_STAIRS_UP_I;
+
         for (count_x = 0; count_x < GXM; count_x++)
-        {
-            for (count_y = 0; count_y < GYM; count_y++)
-            {
-                if (grd[count_x][count_y] == stair_taken)
-                    goto found_stair;
-            }
-        }
+          for (count_y = 0; count_y < GYM; count_y++)
+             if ( grd[count_x][count_y] == stair_taken )
+               goto found_stair;
     }
 
+
     for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            if ((mgrd[count_x][count_y] != MNG)
-                && ((menv[mgrd[count_x][count_y]].type == -1)
-                    || (menv[mgrd[count_x][count_y]].x != count_x)
-                    || (menv[mgrd[count_x][count_y]].y != count_y)))
-            {
-                /* This is one of the worst things I've ever done */
-                mgrd[count_x][count_y] = MNG;
-            }
-        }
-    }
+      for (count_y = 0; count_y < GYM; count_y++)
+      {
+          if ( mgrd[count_x][count_y] != MNG
+              && ( menv[mgrd[count_x][count_y]].type == -1
+                    || menv[mgrd[count_x][count_y]].x != count_x
+                    || menv[mgrd[count_x][count_y]].y != count_y ) )
+          {
+              /* This is one of the worst things I've ever done */
+              mgrd[count_x][count_y] = MNG;
+          }
+      }
+
 
     if (elapsed_time != 0.0)
     {
         double delta = you.elapsed_time - elapsed_time;
 
-        if (delta > 0.0)        // because of rounding errors when saving it's possible to have a negative number if the numbers are large and close together
-
-            update_corpses(delta);
+        if ( delta > 0.0 )        // because of rounding errors when saving it's possible to have a negative number if the numbers are large and close together
+          update_corpses(delta);
     }
-}                               /* end of void load_level(); */
+
+}          // end load()
 
 
-void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
+
+
+void save_level( int level_saved, bool was_a_labyrinth, char where_were_you )
 {
     char cha_fil[kFileNameSize];
     char extens[5];
@@ -1197,12 +1166,12 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
     char hbjh[5];
 
     strcpy(extens, "");
-    if (level_saved < 10)
-        strcpy(extens, "0");
+    if ( level_saved < 10 )
+      strcpy(extens, "0");
     itoa(level_saved, hbjh, 10);
     strcat(extens, hbjh);
     extens[2] = where_were_you + 97;
-    extens[3] = 0;              /* null-terminate it */
+    extens[3] = '\0';
 
 #ifdef SAVE_DIR_PATH
     sprintf(cha_fil, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
@@ -1212,10 +1181,10 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
 #endif
 
     strcat(cha_fil, ".");
-    if (was_a_labyrinth == 1)
-        strcat(cha_fil, "lab"); /* temporary level */
+    if ( was_a_labyrinth )
+      strcat(cha_fil, "lab"); // temporary level
     else
-        strcat(cha_fil, extens);
+      strcat(cha_fil, extens);
 
     you.prev_targ = MHITNOT;
 
@@ -1226,69 +1195,65 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
     int fry;
     int frx;
 
-/* Setting up x & y, which aren't normally used: */
-
+// Setting up x and y, which aren't normally used:
     for (frx = 0; frx < MNST; frx++)
-    {
-        for (fry = 0; fry < 8; fry++)
-        {
-            if (menv[frx].inv[fry] != ING)
-            {
-                mitm.x[menv[frx].inv[fry]] = 2;
-                mitm.y[menv[frx].inv[fry]] = 2;
-                mitm.link[menv[frx].inv[fry]] = ING;
-            }
-        }
-    }
+      for (fry = 0; fry < NUM_MONSTER_SLOTS; fry++)
+      {
+          if (menv[frx].inv[fry] != ING)
+          {
+              mitm.x[menv[frx].inv[fry]] = 2;
+              mitm.y[menv[frx].inv[fry]] = 2;
+              mitm.link[menv[frx].inv[fry]] = ING;
+          }
+      }
 
-    for (count_x = 0; count_x < 80; count_x++)
-    {
-        for (count_y = 0; count_y < 70; count_y++)
-        {
 
-            int count_out = 0;
+    for (count_x = 0; count_x < GXM; count_x++)
+      for (count_y = 0; count_y < GYM; count_y++)
+      {
 
-            if (igrd[count_x][count_y] < 0 | igrd[count_x][count_y] > ING)
-                igrd[count_x][count_y] = ING;
-            if (igrd[count_x][count_y] > ING)
-                igrd[count_x][count_y] = ING;
-            if (igrd[count_x][count_y] == ING)
-                continue;
+          int count_out = 0;
 
-            frx = igrd[count_x][count_y];
+          if (igrd[count_x][count_y] < 0 | igrd[count_x][count_y] > ING)
+            igrd[count_x][count_y] = ING;
+          if (igrd[count_x][count_y] > ING)
+            igrd[count_x][count_y] = ING;
+          if (igrd[count_x][count_y] == ING)
+            continue;
 
-            while (frx != ING)
-            {
-                mitm.x[frx] = count_x;
-                mitm.y[frx] = count_y;
+          frx = igrd[count_x][count_y];
 
-                if (frx > ING | frx < 0)
-                {
-                    cprintf("Error! Item out of bounds: ");
-                    itoa(frx, st_prn, 10);
-                    cprintf(st_prn);
-                    if (getch() == 0)
-                        getch();
-                    cprintf(EOL);
-                    break;
-                }
+          while (frx != ING)
+          {
+              mitm.x[frx] = count_x;
+              mitm.y[frx] = count_y;
 
-                fry = mitm.link[frx];
-                frx = fry;
-                ++count_out;
-                if (count_out > 1000)
-                {
-                    count_out = 0;
-                    mitm.link[frx] = ING;
-                    mpr("Item link error.");
-                    break;
-                }
+              if (frx > ING | frx < 0)
+              {
+                  cprintf("Error! Item out of bounds: ");
+                  itoa(frx, st_prn, 10);
+                  cprintf(st_prn);
+                  if (getch() == 0)
+                      getch();
+                  cprintf(EOL);
+                  break;
+              }
 
-                if (frx == ING)
-                    break;
-            }
-        }
-    }
+              fry = mitm.link[frx];
+              frx = fry;
+              ++count_out;
+              if (count_out > 1000)
+              {
+                  count_out = 0;
+                  mitm.link[frx] = ING;
+                  mpr("Item link error.");
+                  break;
+              }
+
+              if (frx == ING)
+                  break;
+          }
+      }
 
     const int datalen = 42 + 20 + 20 + 4 * 80 * 70 + 3 * NTRAPS + 25 * ITEMS + 1 + 9 * CLOUDS + 5 * 8 + 5 * 20 + (18 + 5 + 5 + 5 + 5 + 8 * 5) * MNST;
     char *buf = (char *) malloc(datalen);
@@ -1313,16 +1278,14 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
     for (i = 0; i < 20; ++i)
         *p++ = ghost_bak[i];
 
-    for (count_x = 0; count_x < 80; count_x++)
-    {
-        for (count_y = 0; count_y < 70; count_y++)
-        {
-            *p++ = (grd[count_x][count_y]);
-            *p++ = env.map[count_x][count_y];
-            *p++ = mgrd[count_x][count_y];
-            *p++ = env.cgrid[count_x][count_y];
-        }
-    }
+    for (count_x = 0; count_x < GXM; count_x++)
+      for (count_y = 0; count_y < GYM; count_y++)
+      {
+          *p++ = (grd[count_x][count_y]);
+          *p++ = env.map[count_x][count_y];
+          *p++ = mgrd[count_x][count_y];
+          *p++ = env.cgrid[count_x][count_y];
+      }
 
     for (i = 0; i < NTRAPS; ++i)
     {
@@ -1371,7 +1334,7 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
         *p++ = env.sh_type[i];
         *p++ = env.sh_level[i];
 #ifdef DEBUG
-        if (mgrd[env.sh_x[i] - 1][env.sh_y[i] - 1] == 31)
+        if (mgrd[env.sh_x[i] - 1][env.sh_y[i] - 1] == 31)    // shouldn't that be grd[][]? {dlb}
         {
             cprintf("y");
             getch();
@@ -1380,7 +1343,7 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
     }
 
     for (i = 0; i < 20; ++i)
-        save_int(p, env.mons_alloc[i] + 10000, 5);
+      save_int(p, env.mons_alloc[i] + 10000, 5);
 
     for (i = 0; i < MNST; i++)
     {
@@ -1397,17 +1360,20 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
         *p++ = menv[i].y;
         *p++ = menv[i].target_x;
         *p++ = menv[i].target_y;
-//    *p++ = 5;
+        //*p++ = 5;
         *p++ = 0;
         *p++ = menv[i].enchantment1;
+
         for (j = 0; j < 3; j++)
             *p++ = menv[i].enchantment[j];
+
         save_int(p, menv[i].type + 40080, 5);
         save_int(p, menv[i].hit_points + 40000, 5);
         save_int(p, menv[i].max_hit_points + 40000, 5);
         save_int(p, menv[i].number + 40000, 5);
-        for (j = 0; j < 8; j++)
-            save_int(p, menv[i].inv[j] + 40000, 5);
+
+        for (j = 0; j < NUM_MONSTER_SLOTS; j++)
+          save_int(p, menv[i].inv[j] + 40000, 5);
     }
 
     if (p != buf + datalen)
@@ -1435,10 +1401,13 @@ void save_level(int level_saved, char was_a_labyrinth, char where_were_you)
 #ifdef SHARED_FILES_CHMOD_VAL
     chmod(cha_fil, SHARED_FILES_CHMOD_VAL);
 #endif
-}
+
+}          // end save_level()
 
 
-void save_game(char leave_game)
+
+
+void save_game( bool leave_game )
 {
     char char_f[kFileNameSize];
     int i, j;
@@ -1531,17 +1500,17 @@ void save_game(char leave_game)
     save_int(p, you.hp, 5);
     save_int(p, you.hp, 5);
 
-    if (you.haste > 215)
-        you.haste = 215;
+    if ( you.haste > 215 )
+      you.haste = 215;
     *p++ = you.haste;
-    if (you.might > 215)
-        you.might = 215;
+    if ( you.might > 215 )
+      you.might = 215;
     *p++ = you.might;
-    if (you.levitation > 215)
-        you.levitation = 215;
+    if ( you.levitation > 215 )
+      you.levitation = 215;
     *p++ = you.levitation;
-    if (you.poison > 215)
-        you.poison = 215;
+    if ( you.poison > 215 )
+      you.poison = 215;
     *p++ = you.poison;
     *p++ = 0;
 
@@ -1618,7 +1587,7 @@ void save_game(char leave_game)
     for (i = 0; i < 25; ++i)
         *p++ = you.spells[i];
 
-    for (i = 0; i < 52; ++i)
+    for (i = 0; i < ENDOFPACK; ++i)
     {
         *p++ = you.inv_class[i];
         *p++ = you.inv_type[i];
@@ -1661,7 +1630,7 @@ void save_game(char leave_game)
     for (j = 0; j < 50; ++j)
         *p++ = you.unique_creatures[j];         /* unique beasties */
 
-    for (j = 0; j < 30; ++j)
+    for (j = 0; j < NUM_DURATIONS; ++j)
         *p++ = you.duration[j];
 
     for (j = 0; j < 30; ++j)
@@ -1728,17 +1697,12 @@ void save_game(char leave_game)
     chmod(char_f, SHARED_FILES_CHMOD_VAL);
 #endif
 
-    if (!leave_game)
-        return;
+    if ( !leave_game )
+      return;
 
-/*if (you.level_type != 0) was_a_labyrinth = 1; */
-    if (you.level_type == LEVEL_DUNGEON)
-        save_level(you.your_level, 0, you.where_are_you);
-    else
-        save_level(you.your_level, 1, you.where_are_you);
-/* save_level(you.your_level); */
+    save_level(you.your_level, (you.level_type != LEVEL_DUNGEON), you.where_are_you);
 
-/* was_a_labyrinth = 0; */
+//was_a_labyrinth = false;
 
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
@@ -1750,14 +1714,16 @@ void save_game(char leave_game)
 
     clrscr();
 
-    cprintf("See you soon!");
+    cprintf("See you soon, %s!", you.your_name); //jmf: added you.your_name
 
     end(0);
 
-}                               /* end of save_game() */
+}          // end save_game()
 
 
-void restore_game()
+
+
+void restore_game( void )
 {
     char char_f[kFileNameSize];
     int i, j;
@@ -1840,34 +1806,26 @@ void restore_game()
             you.gift_timeout = 0;
 
             for (i = 0; i < 21; i++)
-            {
-                you.penance[i] = 0;
-            }
+              you.penance[i] = 0;
         }
 
         for (i = 0; i < (chunkSize - used_chunk); i++)
-        {
-            *p++;               // reserved
+          *p++;               // reserved
 
-        }
 
         if (minorVersion >= 2)
         {
             for (int level = 0; level < MAX_LEVELS; level++)
-            {
-                for (int dungeon = 0; dungeon < MAX_BRANCHES; dungeon++)
-                {
-                    tmp_file_pairs[level][dungeon] = *p++;
-                }
-            }
+              for (int dungeon = 0; dungeon < MAX_BRANCHES; dungeon++)
+                tmp_file_pairs[level][dungeon] = *p++;
         }
 
     }
     else
-        you.elapsed_time = 0;
+      you.elapsed_time = 0;
 
     for (j = 0; j < 30; ++j)
-        you.your_name[j] = *p++;
+      you.your_name[j] = *p++;
 
     you.religion = *p++;
     you.piety = *p++;
@@ -1881,11 +1839,11 @@ void restore_game()
     you.deaths_door = *p++;
     your_sign = *p++;
     your_colour = *p++;
-/*you.spec_poison=*p++-40; */ ++p;
+    ++p;       //you.spec_poison=*p++-40;
     you.pet_target = *p++;
-/*you.prot_life=*p++-40; */ ++p;
-/*  you.res_magic=load_int(p, 5); */ p += 5;
-    ++p;                        //you.spell_levels = *p++;
+    ++p;       //you.prot_life=*p++-40;
+    p += 5;    //you.res_magic=load_int(p, 5);
+    ++p;       //you.spell_levels = *p++;
 
     you.max_level = *p++;
     you.where_are_you = *p++;
@@ -1898,8 +1856,8 @@ void restore_game()
     you.level_type = *p++;
     you.synch_time = *p++;
     you.disease = *p++;
-/*you.spec_death=*p++; */ ++p;
-/*you.spec_holy=*p++; */ ++p;
+    ++p;    //you.spec_death=*p++;
+    ++p;    //you.spec_holy=*p++;
     you.species = *p++;
     you.hp = load_int(p, 5);
     you.hp_max = load_int(p, 5);
@@ -1910,10 +1868,10 @@ void restore_game()
     ++p;
     you.hunger = load_int(p, 6);
 
-/*you.item_wielded=*p++; */ ++p;
+    ++p;    //you.item_wielded=*p++;
 
     for (i = 0; i < NUM_EQUIP; ++i)
-        you.equip[i] = *p++;
+      you.equip[i] = *p++;
 
     you.magic_points = *p++;
     you.max_magic_points = *p++;
@@ -1921,62 +1879,61 @@ void restore_game()
     you.intel = *p++;
     you.dex = *p++;
 
-/*you.AC=*p++-80; */ ++p;
-/*you.evasion=*p++; */ ++p;
-/*you.damage=*p++; */ ++p;
-    if (minorVersion >= 4) {
+     ++p;    //you.AC=*p++-80;
+     ++p;    //you.evasion=*p++;
+     ++p;    //you.damage=*p++;
+
+    if (minorVersion >= 4)
+      {
         you.confusing_touch = *p++;
         you.sure_blade = *p++;
-    } else {
+      }
+    else
+      {
         you.confusing_touch = 0;
         you.sure_blade = 0;
         p += 2;
-    }
+      }
+
     you.hit_points_regeneration = *p++;
     p += 3;
     p += 5;
-
     you.experience = load_int(p, 7);
     you.gold = load_int(p, 5);
-
     you.char_class = *p++;
     you.experience_level = *p++;
     p += 14;
-
     you.exp_available = load_int(p, 6);
-
     you.max_strength = *p++;
     you.max_intel = *p++;
     you.max_dex = *p++;
-    ++p;                        // you.hunger_inc = *p++;
-
+    ++p;    //you.hunger_inc = *p++;
     you.magic_points_regeneration = *p++;
-
     p += 5;
-
     you.base_hp = load_int(p, 5);
     you.base_hp2 = load_int(p, 5);
     you.base_magic_points = load_int(p, 5);
     you.base_magic_points2 = load_int(p, 5);
-
     you.x_pos = (int) *p++;
     you.y_pos = (int) *p++;
 
     for (i = 0; i < 30; ++i)
-        you.class_name[i] = *p++;
+      you.class_name[i] = *p++;
 
     you.burden = load_int(p, 5);
-
     you.spell_no = 0;
+
     for (i = 0; i < 25; ++i)
-    {
+      {
         you.spells[i] = *p++;
+
         if (you.spells[i] != SPELL_NO_SPELL)
-            ++you.spell_no;
-    }
+          ++you.spell_no;
+      }
 
     you.num_inv_items = 0;
-    for (i = 0; i < 52; ++i)
+
+    for (i = 0; i < ENDOFPACK; ++i)
     {
         you.inv_class[i] = *p++;
         you.inv_type[i] = *p++;
@@ -1984,49 +1941,44 @@ void restore_game()
         you.inv_dam[i] = *p++;
         you.inv_colour[i] = *p++;
         you.inv_ident[i] = *p++;
-
         you.inv_quantity[i] = load_int(p, 5);
-
         you.inv_plus2[i] = *p++;
-        if (you.inv_quantity[i] > 0)
-            ++you.num_inv_items;
+
+        if ( you.inv_quantity[i] > 0 )
+          ++you.num_inv_items;
     }
 
     for (i = 0; i < 5; ++i)
-    {
-        for (j = 0; j < 50; ++j)
-            you.item_description[i][j] = *p++;
-    }
+      for (j = 0; j < 50; ++j)
+        you.item_description[i][j] = *p++;
 
     for (i = 0; i < 4; ++i)
-    {
-        for (j = 0; j < 50; ++j)
-        {
-            unsigned char ch = *p++;
+      for (j = 0; j < 50; ++j)
+      {
+          unsigned char ch = *p++;
 
-            switch (i)
-            {
+          switch (i)
+          {
             case 0:
-                set_id(OBJ_WANDS, j, ch);
-                break;
+              set_id(OBJ_WANDS, j, ch);
+              break;
             case 1:
-                set_id(OBJ_SCROLLS, j, ch);
-                break;
+              set_id(OBJ_SCROLLS, j, ch);
+              break;
             case 2:
-                set_id(OBJ_JEWELLERY, j, ch);
-                break;
+              set_id(OBJ_JEWELLERY, j, ch);
+              break;
             case 3:
-                set_id(OBJ_POTIONS, j, ch);
-                break;
-            }
-        }
-    }
+              set_id(OBJ_POTIONS, j, ch);
+              break;
+          }
+      }
 
     for (j = 0; j < 50; ++j)
-        you.skills[j] = *p++;   /* skills! */
+      you.skills[j] = *p++;   /* skills! */
 
     for (j = 0; j < 50; ++j)
-        you.practise_skill[j] = *p++;   /* skills! */
+      you.practise_skill[j] = *p++;   /* skills! */
 
     for (j = 0; j < 50; ++j)
     {
@@ -2040,43 +1992,41 @@ void restore_game()
     }
 
     for (j = 0; j < 50; ++j)
-        you.unique_items[j] = *p++;     /* unique items */
+      you.unique_items[j] = *p++;
 
     for (j = 0; j < 50; ++j)
-        you.unique_creatures[j] = *p++;         /* unique creatures */
+      you.unique_creatures[j] = *p++;
+
+    for (j = 0; j < NUM_DURATIONS; ++j)
+      you.duration[j] = *p++;
 
     for (j = 0; j < 30; ++j)
-        you.duration[j] = *p++;
+      you.attribute[j] = *p++;
 
     for (j = 0; j < 30; ++j)
-        you.attribute[j] = *p++;
-
-    for (j = 0; j < 30; ++j)
-        you.branch_stairs[j] = *p++;
+      you.branch_stairs[j] = *p++;
 
     for (j = 0; j < 100; ++j)
-        you.mutation[j] = *p++;
+      you.mutation[j] = *p++;
 
     for (j = 0; j < 50; ++j)
-        you.had_item[j] = *p++;
+      you.had_item[j] = *p++;
 
     for (j = 0; j < 100; ++j)
-        you.demon_pow[j] = *p++;
+      you.demon_pow[j] = *p++;
 
     for (j = 0; j < NO_UNRANDARTS; ++j)
-        set_unrandart_exist(j, *p++);
+      set_unrandart_exist(j, *p++);
 
     for (i = 0; i < MAX_BRANCHES; ++i)
-        stair_level[i] = *p++;
+      stair_level[i] = *p++;
 
     for (i = 0; i < MAX_LEVELS; ++i)
-    {
-        for (j = 0; j < MAX_BRANCHES; ++j)
-        {
-            altars_present[i][j] = *p++;
-            feature[i][j] = *p++;
-        }
-    }
+      for (j = 0; j < MAX_BRANCHES; ++j)
+      {
+          altars_present[i][j] = *p++;
+          feature[i][j] = *p++;
+      }
 
     if (p != buf + datalen && p != buf + oldlen && p != (buf + oldlen + 42))
     {
@@ -2084,27 +2034,29 @@ void restore_game()
         perror("opa (5)...");
         end(-1);
     }
+
     free(buf);
 
-}                               /* end of restore_game() */
+}          // end restore_game()
 
 
-void save_ghost()
+
+
+void save_ghost( void )
 {
-    if ((you.your_level <= 1) || (you.is_undead))
-        return;
+
+    if ( you.your_level < 2  || you.is_undead )
+      return;
 
     char corr_level[10];
     char hbjh[5];
     char cha_fil[kFileNameSize];
 
-    corr_level[0] = 0;
-    if (you.your_level < 10)
-        strcpy(corr_level, "0");
+    strcpy(corr_level, (you.your_level < 10) ? "0" : "");
     itoa(you.your_level, hbjh, 10);
     strcat(corr_level, hbjh);
-    corr_level[2] = you.where_are_you + 'a';
-    corr_level[3] = 0;          /* null-terminate it */
+    corr_level[2] = index_to_letter(you.where_are_you);
+    corr_level[3] = '\0';
 
 #ifdef SAVE_DIR_PATH
     strcpy(cha_fil, SAVE_DIR_PATH "bones.");
@@ -2112,10 +2064,10 @@ void save_ghost()
     strcpy(cha_fil, "bones.");
 #endif
 
-    if (you.level_type != LEVEL_DUNGEON)
-        strcat(cha_fil, "lab"); /* temporary level */
+    if ( you.level_type != LEVEL_DUNGEON )
+      strcat(cha_fil, "lab"); /* temporary level */
     else
-        strcat(cha_fil, corr_level);
+      strcat(cha_fil, corr_level);
 
 //  int gfile=open(cha_fil, S_IWRITE, S_IREAD);
     FILE *gfile = fopen(cha_fil, "rb");
@@ -2129,7 +2081,8 @@ void save_ghost()
     unsigned char buf1[40];
 
     for (int i = 0; i < 20; ++i)
-        buf1[i] = you.your_name[i];
+      buf1[i] = you.your_name[i];
+
     buf1[20] = (you.hp_max >= 150) ? (150) : (you.hp_max);
     buf1[21] = player_evasion();
     buf1[22] = player_AC();
@@ -2142,25 +2095,31 @@ void save_ghost()
     int d = 4;
     int e = 0;
 
-    if (you.species == SP_TROLL)
-        d += you.experience_level;
+    if ( you.species == SP_TROLL )
+      d += you.experience_level;
+
     d += you.skills[SK_UNARMED_COMBAT];         /* Unarmed combat */
-    if (you.equip[EQ_WEAPON] != -1)
+
+    if ( you.equip[EQ_WEAPON] != -1 )
     {
-        if (you.inv_class[you.equip[EQ_WEAPON]] == 0)
+        if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
         {
             d = property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_DAMAGE);
-            if (you.inv_dam[you.equip[EQ_WEAPON]] < 180)
-                e = you.inv_dam[you.equip[EQ_WEAPON]] % 30;
-            if (you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25)
-                e = randart_wpn_properties(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_plus2[you.equip[EQ_WEAPON]], 0, RAP_BRAND);
+
+            if ( you.inv_dam[you.equip[EQ_WEAPON]] < NWPN_SINGING_SWORD )
+              e = you.inv_dam[you.equip[EQ_WEAPON]] % 30;
+
+            if ( you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I )
+              e = randart_wpn_properties(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_plus2[you.equip[EQ_WEAPON]], 0, RAP_BRAND);
         }
-        if (you.inv_class[you.equip[EQ_WEAPON]] == 11)
+
+        if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES )
             d = 5;
     }
 
-    if (((you.equip[EQ_WEAPON] != -1) && (you.inv_class[you.equip[EQ_WEAPON]] == 0)) ||
-        (you.inv_class[you.equip[EQ_WEAPON]] == 11))
+    if ( you.equip[EQ_WEAPON] != -1
+        && ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
+              || you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES ) )
     {
         d *= 26 + you.skills[weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]])];
         d /= 25;
@@ -2174,14 +2133,14 @@ void save_ghost()
     d /= 3;
     d *= 2;                     // ghosts were doing too much damage
 
-    if (d > 50)
-        d = 50;
+    if ( d > 50 )
+      d = 50;
 
     buf1[27] = d;
     buf1[28] = e;
     buf1[29] = you.species;
-    buf1[30] = best_skill(0, 50, 99);
-    buf1[31] = you.skills[best_skill(0, 50, 99)];
+    buf1[30] = best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99);
+    buf1[31] = you.skills[best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99)];
     buf1[32] = you.experience_level;
     buf1[33] = you.char_class;
     add_spells(buf1);
@@ -2196,31 +2155,39 @@ void save_ghost()
         more();
         return;
     }
+
     write2(gfile, (char *) buf1, 40);
     fclose(gfile);
 
 #ifdef SHARED_FILES_CHMOD_VAL
     chmod(cha_fil, SHARED_FILES_CHMOD_VAL);
 #endif
-}
+
+}          // end save_ghost()
+
+
 
 
 //int write2(int file, const void *buffer, unsigned count)
 int write2(FILE * file, char *buffer, unsigned int count)
 {
 
-/*unsigned int i = 0;
+/*
+    unsigned int i = 0;
 
-   for (i = 0; i < count; i ++)
-   {
-   if (buffer [i] == EOF | buffer [i] == 26) buffer [i] = 0;
-   } */
+    for (i = 0; i < count; i ++)
+      if ( buffer [i] == EOF | buffer [i] == 26 )
+        buffer [i] = 0;
+*/
 
     return fwrite(buffer, 1, count, file);
 
-//return write(file, buffer, count);
+    //return write(file, buffer, count);
 
 }
+
+
+
 
 int read2(FILE * file, char *buffer, unsigned int count)
 {
@@ -2229,11 +2196,14 @@ int read2(FILE * file, char *buffer, unsigned int count)
 
 }
 
+
+
+
 /*
    Used when creating ghosts: goes through and finds spells for the ghost to
    cast. Death is a traumatic experience, so ghosts only remember a few spells.
  */
-void add_spells(unsigned char buffer[40])
+void add_spells( unsigned char buffer[40] )
 {
 
     int i = 0;
@@ -2249,104 +2219,124 @@ void add_spells(unsigned char buffer[40])
     buffer[35] = search_first_list(buffer[34]);
     buffer[36] = search_second_list(250);
     buffer[37] = search_third_list(250);
-    if (buffer[37] == 250)
-        buffer[37] = search_first_list(250);
+
+    if ( buffer[37] == 250 )
+      buffer[37] = search_first_list(250);
+
     buffer[38] = search_first_list(buffer[37]);
-    if (buffer[38] == 250)
-        buffer[38] = search_first_list(buffer[37]);
-    if (find_spell(14) == 1)
-        buffer[38] = 14;
+
+    if ( buffer[38] == 250 )
+      buffer[38] = search_first_list(buffer[37]);
+
+    if ( find_spell(SPELL_DIG) )
+      buffer[38] = SPELL_DIG;
 
 /* Looks for blink/tport for emergency slot */
-    if (find_spell(28) == 1 || find_spell(59) == 1)
-        buffer[39] = 28;
-    if (find_spell(1) == 1)
-        buffer[39] = 1;
+    if ( find_spell(SPELL_CONTROLLED_BLINK) || find_spell(SPELL_BLINK) )
+      buffer[39] = SPELL_CONTROLLED_BLINK;
+
+    if ( find_spell(SPELL_TELEPORT_SELF) )
+      buffer[39] = SPELL_TELEPORT_SELF;
 
     for (i = 34; i < 40; i++)
-    {
-        buffer[i] = translate_spell(buffer[i]);
-    }
+      buffer[i] = translate_spell(buffer[i]);
 
-}
+}          // end add_spells()
 
-unsigned char search_first_list(unsigned char ignore_spell)
+
+
+
+unsigned char search_first_list( unsigned char ignore_spell )
 {
 
-    int i;
-
-    for (i = 0; i < 20; i++)
+    for (int i = 0; i < 20; i++)
     {
-        if (search_order_conj[i] == 250)
-            return 250;
-        if (search_order_conj[i] == ignore_spell)
-            continue;
-        if (find_spell(search_order_conj[i]) == 1)
-            return search_order_conj[i];
-    }
-    return 250;
-}
+        if ( search_order_conj[i] == 250 )
+          return 250;
 
-unsigned char search_second_list(unsigned char ignore_spell)
+        if ( search_order_conj[i] == ignore_spell )
+          continue;
+
+        if ( find_spell(search_order_conj[i]) )
+          return search_order_conj[i];
+    }
+
+    return 250;
+
+}          // end search_first_list()
+
+
+
+
+unsigned char search_second_list( unsigned char ignore_spell )
 {
 
-    int i;
-
-    for (i = 0; i < 20; i++)
+    for (int i = 0; i < 20; i++)
     {
-        if (search_order_third[i] == 250)
-            return 250;
-        if (search_order_third[i] == ignore_spell)
-            continue;
-        if (find_spell(search_order_third[i]) == 1)
-            return search_order_third[i];
-    }
-    return 250;
-}
+        if ( search_order_third[i] == 250 )
+          return 250;
 
-unsigned char search_third_list(unsigned char ignore_spell)
+        if ( search_order_third[i] == ignore_spell )
+          continue;
+
+        if ( find_spell(search_order_third[i]) )
+          return search_order_third[i];
+    }
+
+    return 250;
+
+}          // end search_second_list()
+
+
+
+
+unsigned char search_third_list( unsigned char ignore_spell )
 {
 
-    int i;
-
-    for (i = 0; i < 20; i++)
+    for (int i = 0; i < 20; i++)
     {
-        if (search_order_misc[i] == 250)
-            return 250;
-        if (search_order_misc[i] == ignore_spell)
-            continue;
-        if (find_spell(search_order_misc[i]) == 1)
-            return search_order_misc[i];
+        if ( search_order_misc[i] == 250 )
+          return 250;
+
+        if ( search_order_misc[i] == ignore_spell )
+          continue;
+
+        if ( find_spell(search_order_misc[i]) )
+          return search_order_misc[i];
     }
+
     return 250;
-}
+
+}          // end search_third_list()
+
+
+
 
 /*
    Searches for a specific spell, according to search order in the global arrays
    defined start of file (top to bottom).
  */
-char find_spell(unsigned char which_sp)
+bool find_spell( unsigned char which_sp )
 {
 
-    int i = 0;
+    for (int i = 0; i < 21; i++)
+      if ( you.spells[i] == which_sp )
+        return true;
 
-    for (i = 0; i < 21; i++)
-    {
-        if (you.spells[i] == which_sp)
-            return 1;
-    }
+    return false;
 
-    return 0;
+}          // end find_spell()
 
-}
+
 
 
 /*
    When passed the number for a player spell, returns the equivalent monster
    spell. Returns 250 on failure (no equiv).
  */
-unsigned char translate_spell(unsigned char spel)
+unsigned char translate_spell( unsigned char spel )
 {
+
     switch (spel)
     {
     case SPELL_TELEPORT_SELF:
@@ -2440,7 +2430,7 @@ unsigned char translate_spell(unsigned char spel)
 
 
 
-void generate_random_demon(void)
+void generate_random_demon( void )
 {
 
     int rdem = 0;
@@ -2448,36 +2438,41 @@ void generate_random_demon(void)
 
     for (rdem = 0; rdem < MNST + 1; rdem++)
     {
-        if (rdem == MNST)
-            return;             /* obviously no random demon */
-        if (menv[rdem].type == MONS_PANDEMONIUM_DEMON)
-            break;              /* found one! */
+        if ( rdem == MNST )
+          return;
+
+        if ( menv[rdem].type == MONS_PANDEMONIUM_DEMON )
+          break;
     }
 
     make_name(random2(250), random2(250), random2(250), 3, st_prn);
     strcpy(ghost.name, st_prn);
 
-    ghost.values[0] = 50 + random2(50) + random2(50) + random2(50) + random2(50);
-    if (one_chance_in(3))
-        ghost.values[0] += random2(50) + random2(50);
-/* hp - could be defined below (as could ev, AC etc). Oh well, too late */
+// hp - could be defined below (as could ev, AC etc). Oh well, too late:
+    ghost.values[0] = 50 + ( one_chance_in(3) ? random2avg(295,6) : random2avg(197,4) );
 
-    ghost.values[1] = 5 + random2(10);  /* evasion */
-    ghost.values[2] = random2(0);       /* AC */
-    if (one_chance_in(3))
-        ghost.values[3] = 1;
-    else
-        ghost.values[3] = 0;    /* see inv */
+// evasion:
+    ghost.values[1] = 5 + random2(10);
+
+// AC:
+    ghost.values[2] = 0;    // was random2(0), which simply returns 0 {dlb}
+
+// see invisible:
+    ghost.values[3] = ( one_chance_in(3) ? 1 : 0 );
+
     if (!one_chance_in(3))
     {
         ghost.values[4] = 0;    /* res_fire */
+
         if (one_chance_in(4))
-            ghost.values[4] = 99;
+          ghost.values[4] = 99;
+
         if (one_chance_in(4))
-            ghost.values[4] = 102;
+          ghost.values[4] = 102;
     }
     else
         ghost.values[4] = 101;
+
     if (!one_chance_in(3))
     {
         ghost.values[5] = 0;    /* res_cold */
@@ -2486,44 +2481,49 @@ void generate_random_demon(void)
     }
     else
         ghost.values[5] = 101;
-/* demons, like ghosts, automatically get res poison + prot_life */
-    if (!one_chance_in(3))
-    {
-        ghost.values[6] = 0;    /* res_elec */
-    }
-    else
-        ghost.values[6] = 1;
 
-    ghost.values[7] = 10 + random2(20) + random2(20) + random2(20);     /* damage in combat */
-    ghost.values[8] = 0;        /* special attack type (uses weapon brand code) */
-    if (coinflip())
+// demons, like ghosts, automatically get poison res. and life prot.
+
+// resist electricity:
+    ghost.values[6] = ( one_chance_in(3) ? 1 : 0 );
+
+// HTH damage:
+    ghost.values[7] = 10 + random2avg(58,3);
+
+// special attack type (uses weapon brand code):
+    ghost.values[8] = 0;
+
+    if ( coinflip() )
     {
         ghost.values[8] = random2(17);
-        if (ghost.values[8] == 3 || ghost.values[8] == 5 || ghost.values[8] == 7 || ghost.values[8] == 11 || ghost.values[8] == 12 || ghost.values[8] == 14)
-            ghost.values[8] = 0;        /* some brands inappropriate (eg holy wrath) */
+
+        if ( ghost.values[8] == 3 || ghost.values[8] == 5 || ghost.values[8] == 7 || ghost.values[8] == 11 || ghost.values[8] == 12 || ghost.values[8] == 14 )
+          ghost.values[8] = 0;        /* some brands inappropriate (eg holy wrath) */
     }
-    ghost.values[9] = 0;        /* ghost species - used for: is demon a spellcaster? */
-    if (!one_chance_in(3))
-        ghost.values[9] = 1;
-    ghost.values[10] = random2(3);      /* ghost best skill - used for: does demon fly? */
-    if (one_chance_in(3))
-        ghost.values[10] = 0;
-    ghost.values[11] = 0;       /* vacant - ghost best skill level */
-    ghost.values[12] = 10 + random2(10);        /* Hit Dice */
-    ghost.values[13] = 0;       /* ghost class - used for: does demon cycle colours? */
-    if (one_chance_in(10))
-        ghost.values[13] = 1;
+
+// is demon a spellcaster?
+    ghost.values[9] = ( one_chance_in(3) ? 0 : 1 );
+
+// does demon fly?
+    ghost.values[10] = ( one_chance_in(3) ? 0 : random2(3) );
+
+// vacant <ghost best skill level>:
+    ghost.values[11] = 0;
+
+// hit dice:
+    ghost.values[12] = 10 + random2(10);
+
+// does demon cycle colours?
+    ghost.values[13] = ( one_chance_in(10) ? 1 : 0 );
 
     menv[rdem].hit_dice = ghost.values[12];
     menv[rdem].hit_points = ghost.values[0];
     menv[rdem].max_hit_points = ghost.values[0];
     menv[rdem].armor_class = ghost.values[2];
     menv[rdem].evasion = ghost.values[1];
-    menv[rdem].speed = 10;
-    if (!one_chance_in(3))
-        menv[rdem].speed = 8 + random2(10);
+    menv[rdem].speed = ( one_chance_in(3) ? 10 : 8 + random2(10) );
     menv[rdem].speed_increment = 70;
-    menv[rdem].number = 1 + random2(15);        /* demon's colour */
+    menv[rdem].number = random_colour();    // demon's colour
 
     ghost.values[14] = 250;
     ghost.values[15] = 250;
@@ -2597,15 +2597,14 @@ void generate_random_demon(void)
             }
             while (1);
 
-        if (coinflip())
-            ghost.values[19] = SPELL_BLINK;
-        if (coinflip())
-            ghost.values[19] = SPELL_TELEPORT_SELF;
+        if ( coinflip() )
+          ghost.values[19] = SPELL_BLINK;
+        if ( coinflip() )
+          ghost.values[19] = SPELL_TELEPORT_SELF;
 
+/* Converts the player spell indices to monster spell ones */
         for (i = 14; i < 20; i++)
-        {
-            ghost.values[i] = translate_spell(ghost.values[i]);
-        }                       /* Converts the player spell indices to monster spell ones */
+          ghost.values[i] = translate_spell(ghost.values[i]);
 
 /* give demon a chance for some monster-only spells: */
         if (one_chance_in(25))
@@ -2642,5 +2641,4 @@ void generate_random_demon(void)
 
     }
 
-
-}
+}          // end generate_random_demon()

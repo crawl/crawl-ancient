@@ -59,15 +59,75 @@ inline void __DUMMY_TRACE__(...)
 #define TRACE                                                   1 ? ((void) 0) : __DUMMY_TRACE__
 #endif
 
-void cast_spec_spell();
-void cast_spec_spell_name();
-void create_spec_monster();
-void create_spec_monster_name();
-void level_travel();
-void create_spec_object();
-void create_spec_object2();
-void stethoscope(int mwh);
-void debug_add_skills();
-void error_message_to_player();
 
-#endif // DEBUG_H
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void cast_spec_spell(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void cast_spec_spell_name(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void create_spec_monster(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void create_spec_monster_name(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: ( this does not seem to be used at all ... {dlb} )
+ * *********************************************************************** */
+void create_spec_object(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void create_spec_object2(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void debug_add_skills(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: direct - food - items
+ * *********************************************************************** */
+void error_message_to_player(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void level_travel(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - direct
+ * *********************************************************************** */
+void stethoscope(int mwh);
+
+
+#endif

@@ -9,10 +9,23 @@
  *     <1>     -/--/--     ---     Created
  */
 
+
 #ifndef VERSION_H
 #define VERSION_H
 
-#define VERSION "3.40pr"
-#define BUILD_DATE "23 Feb 2000"
+
+// last updated 19jun2000 {dlb}
+/* ***********************************************************************
+ * called from: chardump - command - newgame
+ * *********************************************************************** */
+#define VERSION "3.40pr32+"
+
+
+// last updated 19jun2000 {dlb}
+/* ***********************************************************************
+ * called from: command
+ * *********************************************************************** */
+#define BUILD_DATE "19 Jun 2000"
+
 
 #endif

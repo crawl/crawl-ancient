@@ -1,5 +1,5 @@
 OBJECTS = \
-ability.o \
+abl-show.o \
 abyss.o \
 acr.o \
 bang.o \
@@ -22,16 +22,16 @@ it_use3.o \
 item_use.o \
 itemname.o \
 items.o \
-levels.o \
+lev-pand.o \
 llist.o \
 macro.o \
 maps.o \
 message.o \
 misc.o \
 monplace.o \
-mons_lev.o \
+mon-pick.o \
 monstuff.o \
-mstruct.o \
+mon-util.o \
 mstuff2.o \
 mutation.o \
 newgame.o \
@@ -50,6 +50,10 @@ spells0.o \
 spells1.o \
 spells2.o \
 spells3.o \
+spells4.o \
+spl-book.o \
+spl-util.o \
 stuff.o \
 transfor.o \
-view.o
+view.o \
+wpn-misc.o

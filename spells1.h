@@ -7,49 +7,250 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+
+
 #ifndef SPELLS1_H
 #define SPELLS1_H
 
+
 #include "externs.h"
 
-char spell_direction(struct dist spelld[1], struct bolt beam[1]);
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+bool cast_sure_blade(int power);
 
 
-void blink(void);
-void random_blink(void);
-void fireball(int power);
-void cast_fire_storm(int powc);
-void identify(char pow);
-void conjure_flame(int pow);
-void stinking_cloud(void);
-void stinkcl(char cl_x, char cl_y, struct bolt beam[1]);
-
-void cast_big_c(int pow, char cty);
-void big_cloud(char clouds, char cl_x, char cl_y, int pow);     //, struct bolt beam [1]);
-
-char cast_lesser_healing(void);
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - spell
+ * *********************************************************************** */
 char cast_greater_healing(void);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability
+ * *********************************************************************** */
 char cast_greatest_healing(void);
-void cast_revivification(int mabil);
-void cast_cure_poison(int mabil);
-void purification(void);
-void cast_deaths_door(int pow);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - spell
+ * *********************************************************************** */
+char cast_lesser_healing(void);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - spell - spells3 - spells4
+ * *********************************************************************** */
+char spell_direction(struct dist spelld[1], struct bolt *pbolt);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
 void abjuration(int pow);
-void extension(int pow);
-void ice_armour(int pow, char extending);
-void stone_scales(int pow);
-void missile_prot(int pow);
-void deflection(int pow);
-void cast_regen(int pow);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: beam - it_use3 - spells - spells1
+ * *********************************************************************** */
+void big_cloud(char clouds, char cl_x, char cl_y, int pow, int size);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr (WIZARD only) - item_use - spell
+ * *********************************************************************** */
+void blink(void);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
 void cast_berserk(void);
 
-void cast_swiftness(int power);
-void cast_fly(int power);
-void cast_teleport_control(int power);
-void cast_ring_of_flames(int power);
-void cast_insulation(int power);
-void cast_resist_poison(int power);
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+void cast_big_c(int pow, char cty);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
 void cast_confusing_touch(int power);
-bool cast_sure_blade(int power);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+void cast_cure_poison(int mabil);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+void cast_deaths_door(int pow);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+void cast_fire_storm(int powc);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - spell - spells1
+ * *********************************************************************** */
+void cast_fly(int power);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells1
+ * *********************************************************************** */
+void cast_insulation(int power);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells1
+ * *********************************************************************** */
+void cast_regen(int pow);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells1
+ * *********************************************************************** */
+void cast_resist_poison(int power);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+bool cast_revivification(int power);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+void cast_ring_of_flames(int power);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells1
+ * *********************************************************************** */
+void cast_swiftness(int power);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells1
+ * *********************************************************************** */
+void cast_teleport_control(int power);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+void conjure_flame(int pow);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells1
+ * *********************************************************************** */
+void deflection(int pow);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+void extension(int pow);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+void fireball(int power);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells1
+ * *********************************************************************** */
+void ice_armour(int pow, bool extending);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr (WIZARD only) - item_use - spell
+ * *********************************************************************** */
+void identify(int power);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - spells1
+ * *********************************************************************** */
+void manage_shock_shield(void);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells1
+ * *********************************************************************** */
+void missile_prot(int pow);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - spell
+ * *********************************************************************** */
+void purification(void);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - decks - fight - spell - spells - spells1
+ * *********************************************************************** */
+void random_blink(bool);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+void stinking_cloud(void);
+
+
+/* ***********************************************************************
+ * called from: spell - spells1
+ * *********************************************************************** */
+void stone_scales(int pow);
+
 
 #endif

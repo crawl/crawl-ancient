@@ -138,20 +138,25 @@ short translatecolor(short col)
 
 
 
-void setupcolorpairs(bool use_no_black)
+void setupcolorpairs( bool use_no_black )
 {
+
     short i, j;
 
     for (i = 0; i < 8; i++)
-        for (j = 0; j < 8; j++)
-            if ((i > 0) || (j > 0))
-                init_pair(i * 8 + j, j, i);
+      for (j = 0; j < 8; j++)
+         if ( ( i > 0 ) || ( j > 0 ) )
+           init_pair(i * 8 + j, j, i);
 
-    if (use_no_black)
-        init_pair(63, COLOR_WHITE, COLOR_BLACK);
+    if ( use_no_black )
+      init_pair(63, COLOR_WHITE, COLOR_BLACK);
     else
-        init_pair(63, COLOR_BLACK, COLOR_BLACK);
-}
+      init_pair(63, COLOR_BLACK, COLOR_BLACK);
+
+}          // end setupcolorpairs()
+
+
+
 
 #if defined(USE_POSIX_TERMIOS)
 
@@ -496,7 +501,7 @@ char *strlwr(char *str)
     unsigned int i;
 
     for (i = 0; i < strlen(str); i++)
-        str[i] = tolower(str[i]);
+      str[i] = tolower(str[i]);
     return (str);
 }
 
@@ -699,42 +704,3 @@ int kbhit()
    i = 0;
    return(i);
    } */
-
-/*
-
-   Now in stuff.cc, as it's a PLAIN_TERM rather than a Linux function
-
-   #ifdef LINUX
-   // this function is used for systems without gettext/puttext to redraw the
-   // playing screen after a call to for example inventory.
-   void redraw_screen(void)
-   {
-
-   char title [40];
-
-   strcpy(title, skill_title(best_skill(you, 0, 50, 99), you[0].skills [best_skill(you, 0, 50, 99)], you[0].clas, you[0].xl));
-   draw_border(you[0].your_name, title, you[0].species);
-
-   you[0].hp_ch = 1;
-   you[0].ep_ch = 1;
-   you[0].strength_ch = 1;
-   you[0].intel_ch = 1;
-   you[0].dex_ch = 1;
-   you[0].AC_ch = 1;
-   you[0].evasion_ch = 1;
-   you[0].gp_ch = 1;
-   you[0].xp_ch = 1;
-   you[0].hung_ch = 1;
-   you[0].burden_ch = 1;
-
-   print_stats();
-
-   new_level();
-
-   viewwindow(1);
-
-
-   }
-
-   #endif
- */

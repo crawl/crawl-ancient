@@ -29,20 +29,19 @@
 
 #include "externs.h"
 
-#include "message.h"
 #include "player.h"
-#include "transfor.h"
 #include "skills2.h"
 #include "stuff.h"
+#include "transfor.h"
 
 #ifdef MACROS
 #include "macro.h"
 #endif
 
+
 int how_mutated(void);
-char delete_mutation(char which_mutation);
 char body_covered(void);
-char perma_mutate(int which_mut, char how_much);
+bool perma_mutate(int which_mut, char how_much);
 
 char mut_string[80];
 
@@ -111,23 +110,25 @@ char *mutation_descrip[][3] =
     {"You can drain life in unarmed combat.", "", ""},
     {"You can throw forth the flames of Gehenna.", "", ""},     /* Not conjurers/worshippers of Makhleb */
     {"You can throw forth the frost of Cocytus.", "", ""},
-{"You can invoke the powers of Tartarus to smite your living foes.", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-// 60 - leave some space for more demonic powers...
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-// 70
-    {"You are partially covered in red scales (AC + 1).", "You are mostly covered in red scales (AC + 2).", "You are covered in red scales (AC + 4)."},
-    {"You are partially covered in smooth nacreous scales (AC + 1).", "You are mostly covered in smooth nacreous scales (AC + 3).", "You are completely covered in smooth nacreous scales (AC + 5)."},
+    {"You can invoke the powers of Tartarus to smite your living foes.", "", ""},
+  {"You have sharp fingernails.", "Your fingernails are very sharp.", "You have claws for hands."},
+  {"You have hooves in place of feet.", "", ""},
+  // 60 - leave some space for more demonic powers...
+  {"You can exhale a cloud of poison.", "", ""},
+  {"Your tail ends in a poisonous barb.", "Your tail ends in a sharp poisonous barb.", "Your tail ends in a wicked poisonous barb."}, //jmf: nagas & dracos
+  {"Your wings are large and strong.", "", ""}, //jmf: dracos only
+    //jmf: these next two are for evil gods to mark their followers; good gods
+    //     will never accept a 'marked' worhsipper
+  {"There is a blue sigil on each of your hands.", "There are several blue sigils on your hands and arms.", "Your hands, arms and shoulders are covered in intricate, arcane blue writing."},
+  {"There is a green sigil on your chest.", "There are several green sigils on your chest and abdomen.", "Your chest, abdomen and neck are covered in intricate, arcane green writing."},
+  {"", "", ""},
+  {"", "", ""},
+  {"", "", ""},
+  {"", "", ""},
+  {"", "", ""},
+    // 70
+  {"You are partially covered in red scales (AC + 1).", "You are mostly covered in red scales (AC + 2).", "You are covered in red scales (AC + 4)."},
+  {"You are partially covered in smooth nacreous scales (AC + 1).", "You are mostly covered in smooth nacreous scales (AC + 3).", "You are completely covered in smooth nacreous scales (AC + 5)."},
     {"You are partially covered in ridged grey scales (AC + 2, dex - 1).", "You are mostly covered in ridged grey scales (AC + 4, dex - 1).", "You are completely covered in ridged grey scales (AC + 6, dex - 2)."},
     {"You are partially covered in metallic scales (AC + 3, dex - 2).", "You are mostly covered in metallic scales (AC + 7, dex - 3).", "You are completely covered in metallic scales (AC + 10, dex - 4)."},
     {"You are partially covered in black scales (AC + 1).", "You are mostly covered in black scales (AC + 3).", "You are completely covered in black scales (AC + 5)."},
@@ -154,9 +155,9 @@ char *mutation_descrip[][3] =
 char *gain_mutation[][3] =
 {
     {"Your skin toughens.", "Your skin toughens.", "Your skin toughens."},
-    {"You feel stronger.", "You feel stronger.", "You feel stronger."},
-    {"You feel smarter.", "You feel smarter.", "You feel smarter."},
-    {"You feel agile.", "You feel agile.", "You feel agile."},
+    {"", "", ""}, // replaced with player::increase_stats() handling - 12mar2000 {dlb}
+    {"", "", ""}, // replaced with player::increase_stats() handling - 12mar2000 {dlb}
+    {"", "", ""}, // replaced with player::increase_stats() handling - 12mar2000 {dlb}
     {"Green scales grow over part of your body.", "Green scales spread over more of your body.", "Green scales cover you completely."},
     {"Thick black scales grow over part of your body.", "Thick black scales spread over more of your body.", "Thick black scales cover you completely."},
     {"Supple grey scales grow over part of your body.", "Supple grey scales spread over more of your body.", "Supple grey scales cover you completely."},
@@ -164,7 +165,7 @@ char *gain_mutation[][3] =
     {"You begin to radiate repulsive energy.", "Your repulsive radiation grows stronger.", "Your repulsive radiation grows stronger."},
     {"You feel healthy.", "You feel healthy.", "You feel healthy."},
 // 10
-{"You hunger for flesh.", "You hunger for flesh.", "You hunger for flesh."},
+    {"You hunger for flesh.", "You hunger for flesh.", "You hunger for flesh."},
     {"You hunger for vegetation.", "You hunger for vegetation.", "You hunger for vegetation."},
     {"You feel a sudden chill.", "You feel a sudden chill.", "You feel a sudden chill."},
     {"You feel hot for a moment.", "You feel hot for a moment.", "You feel hot for a moment."},
@@ -180,7 +181,7 @@ char *gain_mutation[][3] =
     {"You feel weirdly uncertain.", "You feel even more weirdly uncertain.", "You feel even more weirdly uncertain."},
     {"You feel resistant to magic.", "You feel more resistant to magic.", "You feel almost impervious to the effects of magic."},
     {"You feel quick.", "You feel quick.", "You feel quick."},
-{"Your vision sharpens.", "Your vision sharpens.", "Your vision sharpens."},
+    {"Your vision sharpens.", "Your vision sharpens.", "Your vision sharpens."},
     {"Your body twists and deforms.", "Your body twists and deforms.", "Your body twists and deforms."},
     {"You feel jumpy.", "You feel more jumpy.", "You feel even more jumpy."},
     {"There is a nasty taste in your mouth for a moment.", "There is a nasty taste in your mouth for a moment.", "There is a nasty taste in your mouth for a moment."},
@@ -209,45 +210,44 @@ char *gain_mutation[][3] =
     {"You feel an affinity for the dead.", "", ""},
 // 50
     {"You feel an affinity for all demonkind.", "", ""},
-{"You feel something pulling you to a strange and terrible place.", "", ""},
+    {"You feel something pulling you to a strange and terrible place.", "", ""},
     {"You feel hungry for death.", "", ""},
     {"You feel a flux of magical energy.", "", ""},
     {"Your skin tingles in a strangely unpleasant way.", "", ""},
     {"You smell the fires of Gehenna.", "", ""},
     {"You feel the icy cold of Cocytus chill your soul.", "", ""},
     {"A shadow passes over the world around you.", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-// 60
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-// 70
-    {"Red scales grow over part of your body.", "Red scales spread over more of your body.", "Red scales cover you completely."},
-    {"Smooth nacreous scales grow over part of your body.", "Smooth nacreous scales spread over more of your body.", "Smooth nacreous scales cover you completely."},
-    {"Ridged grey scales grow over part of your body.", "Ridged grey scales spread over more of your body.", "Ridged grey scales cover you completely."},
-    {"Metallic scales grow over part of your body.", "Metallic scales spread over more of your body.", "Metallic scales cover you completely."},
-    {"Black scales grow over part of your body.", "Black scales spread over more of your body.", "Black scales cover you completely."},
-    {"White scales grow over part of your body.", "White scales spread over more of your body.", "White scales cover you completely."},
-    {"Yellow scales grow over part of your body.", "Yellow scales spread over more of your body.", "Yellow scales cover you completely."},
-    {"Brown scales grow over part of your body.", "Brown scales spread over more of your body.", "Brown scales cover you completely."},
-    {"Blue scales grow over part of your body.", "Blue scales spread over more of your body.", "Blue scales cover you completely."},
-    {"Purple scales grow over part of your body.", "Purple scales spread over more of your body.", "Purple scales cover you completely."},
-// 80
-    {"Speckled scales grow over part of your body.", "Speckled scales spread over more of your body.", "Speckled scales cover you completely."},
-    {"Orange scales grow over part of your body.", "Orange scales spread over more of your body.", "Orange scales cover you completely."},
-    {"Indigo scales grow over part of your body.", "Indigo scales spread over more of your body.", "Indigo scales cover you completely."},
-    {"Knobbly red scales grow over part of your body.", "Knobbly red scales spread over more of your body.", "Knobbly red scales cover you completely."},
-    {"Iridescent scales grow over part of your body.", "Iridescent scales spread over more of your body.", "Iridescent scales cover you completely."},
-    {"Patterned scales grow over part of your body.", "Patterned scales spread over more of your body.", "Patterned scales cover you completely."},
-
+  {"Your fingernails lengthen.", "Your fingernails feel sharper.", "Your hands twist into claws."},
+  {"Your feet shrivel into cloven hooves.", "", ""},
+  // 60
+  {"You taste something nasty.", "You taste something very nasty.", "You taste something extremely nasty."},
+  {"A poisonous barb forms on the end of your tail.", "The barb on your tail looks sharper.", "The barb on your tail looks very sharp."},
+  {"Your wings grow larger and stronger.", "", ""},
+  {"Your hands itch.", "Your hands and forearms itch.", "Your arms, hands and shoulders itch."},
+  {"Your chest itches.", "Your chest and abdomen itch.", "Your chest, abdomen and neck itch."},
+  {"", "", ""},
+  {"", "", ""},
+  {"", "", ""},
+  {"", "", ""},
+  {"", "", ""},
+    // 70
+  {"Red scales grow over part of your body.", "Red scales spread over more of your body.", "Red scales cover you completely."},
+  {"Smooth nacreous scales grow over part of your body.", "Smooth nacreous scales spread over more of your body.", "Smooth nacreous scales cover you completely."},
+  {"Ridged grey scales grow over part of your body.", "Ridged grey scales spread over more of your body.", "Ridged grey scales cover you completely."},
+  {"Metallic scales grow over part of your body.", "Metallic scales spread over more of your body.", "Metallic scales cover you completely."},
+  {"Black scales grow over part of your body.", "Black scales spread over more of your body.", "Black scales cover you completely."},
+  {"White scales grow over part of your body.", "White scales spread over more of your body.", "White scales cover you completely."},
+  {"Yellow scales grow over part of your body.", "Yellow scales spread over more of your body.", "Yellow scales cover you completely."},
+  {"Brown scales grow over part of your body.", "Brown scales spread over more of your body.", "Brown scales cover you completely."},
+  {"Blue scales grow over part of your body.", "Blue scales spread over more of your body.", "Blue scales cover you completely."},
+  {"Purple scales grow over part of your body.", "Purple scales spread over more of your body.", "Purple scales cover you completely."},
+    // 80
+  {"Speckled scales grow over part of your body.", "Speckled scales spread over more of your body.", "Speckled scales cover you completely."},
+  {"Orange scales grow over part of your body.", "Orange scales spread over more of your body.", "Orange scales cover you completely."},
+  {"Indigo scales grow over part of your body.", "Indigo scales spread over more of your body.", "Indigo scales cover you completely."},
+  {"Knobbly red scales grow over part of your body.", "Knobbly red scales spread over more of your body.", "Knobbly red scales cover you completely."},
+  {"Iridescent scales grow over part of your body.", "Iridescent scales spread over more of your body.", "Iridescent scales cover you completely."},
+  {"Patterned scales grow over part of your body.", "Patterned scales spread over more of your body.", "Patterned scales cover you completely."},
 };
 
 
@@ -272,10 +272,10 @@ char *lose_mutation[][3] =
     {"Your rate of healing slows.", "Your rate of healing slows.", "Your rate of healing slows."},
     {"Your metabolism slows.", "Your metabolism slows.", "Your metabolism slows."},
     {"You feel a little hungry.", "You feel a little hungry.", "You feel a little hungry."},
-    {"You feel stronger.", "You feel stronger.", "You feel stronger."},
-    {"You feel smarter.", "You feel smarter.", "You feel smarter."},
+    {"", "", ""},     // replaced with player::increase_stats() handling - 12mar2000 {dlb}
+    {"", "", ""},     // replaced with player::increase_stats() handling - 12mar2000 {dlb}
 // 20
-    {"You feel agile.", "You feel agile.", "You feel agile."},
+    {"", "", ""},     // replaced with player::increase_stats() handling - 12mar2000 {dlb}
     {"You feel random.", "You feel uncontrolled.", "You feel uncontrolled."},
     {"You feel stable.", "You feel stable.", "You feel stable."},
     {"You feel less resistant to magic.", "You feel less resistant to magic.", "You feel vulnerable to magic again."},
@@ -317,9 +317,9 @@ char *lose_mutation[][3] =
     {"", "", ""},
     {"", "", ""},
     {"", "", ""},
-    {"", "", ""},
-    {"", "", ""},
-// 60
+    {"Your fingernails shrink to normal size.", "Your fingernails look less sharp.", "Your hands feel fleshier."},
+    {"Your hooves expand and flesh out into feet!", "", ""},
+    // 60
     {"", "", ""},
     {"", "", ""},
     {"", "", ""},
@@ -348,13 +348,14 @@ char *lose_mutation[][3] =
     {"Your knobbly red scales disappear.", "Your knobbly red scales recede somewhat.", "Your knobbly red scales recede somewhat."},
     {"Your iridescent scales disappear.", "Your iridescent scales recede somewhat.", "Your iridescent scales recede somewhat."},
     {"Your patterned scales disappear.", "Your patterned scales recede somewhat.", "Your patterned scales recede somewhat."},
-
 };
 
 
 /*
    Chance out of 10 that mutation will be given/removed randomly. 0 means never.
  */
+
+
 char mutation_rarity[] =
 {
     10,                         // tough skin
@@ -374,12 +375,12 @@ char mutation_rarity[] =
      4,                         // res cold
      2,                         // res elec
      3,                         // regen
-     10,                        // fast meta
+    10,                         // fast meta
      7,                         // slow meta
-     10,                        // abil loss
-     10,                        // ""
+    10,                         // abil loss
+    10,                         // ""
 // 20
-     10,                        // ""
+    10,                         // ""
      2,                         // tele control
      3,                         // teleport
      5,                         // res magic
@@ -393,49 +394,49 @@ char mutation_rarity[] =
      4,                         // breathe fire
      3,                         // blink
      7,                         // horns
-     10,                        // strong/stiff muscles
-     10,                        // weak/loose muscles
+    10,                         // strong/stiff muscles
+    10,                         // weak/loose muscles
      6,                         // forgetfulness
      6,                         // clarity (as the amulet)
      7,                         // berserk/temper
-     10,                        // deterioration
-     10,                        // blurred vision
+    10,                         // deterioration
+    10,                         // blurred vision
 // 40
      4,                         // resist mutation
-     10,                        // frail
+    10,                         // frail
      5,                         // robust
 /* Some demonic powers start here: */
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
 // 50
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
 // 60
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
+    2, //jmf: claws
+    1, //jmf: hooves
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
 // 70
-    2,                          // red scales
+     2,                         // red scales
      1,                         // nac scales
      2,                         // r-grey scales
      1,                         // metal scales
@@ -459,7 +460,9 @@ char mutation_rarity[] =
 };
 
 
-void display_mutations(void)
+
+
+void display_mutations( void )
 {
 
     int i;
@@ -480,697 +483,680 @@ void display_mutations(void)
     textcolor(LIGHTGREY);
 
     for (i = 0; i < 100; i++)
-    {
-        if (you.mutation[i] != 0)
-        {
+      {
+        if ( you.mutation[i] != 0 )
+          {
             j++;
             textcolor(LIGHTGREY);
+
             if (you.demon_pow[i] != 0)
-                textcolor(RED); /* mutation is actually a demonic power */
+              textcolor(RED); /* mutation is actually a demonic power */
+
             if (you.demon_pow[i] != 0 && you.demon_pow[i] < you.mutation[i])
-                textcolor(LIGHTRED);    /* same as above, but power is enhanced by mutation */
+              textcolor(LIGHTRED);    /* same as above, but power is enhanced by mutation */
+
             if (i == MUT_STRONG || i == MUT_CLEVER || i == MUT_AGILE || i == MUT_WEAK || i == MUT_DOPEY || i == MUT_CLUMSY)
-            {
+              {
                 cprintf(mutation_descrip[i][0]);
                 itoa(you.mutation[i], st_prn, 10);
                 cprintf(st_prn);
                 cprintf(")." EOL);
                 continue;
-            }
+              }
+
             cprintf(mutation_descrip[i][you.mutation[i] - 1]);
             cprintf(EOL);
         }
-    }
+      }
 
-    if (j == 0)
-        cprintf("You aren't a mutant." EOL);
+    if ( j == 0 )
+      cprintf("You aren't a mutant." EOL);
 
-    if (getch() == 0)
-        getch();
+    if ( getch() == 0 )
+      getch();
 #ifdef DOS_TERM
     puttext(1, 1, 80, 25, buffer);
 #endif
 
-//   cprintf("xxxxxxxxxxxxx");
-    //   last_requested = 0;
+    //cprintf("xxxxxxxxxxxxx");
+    //last_requested = 0;
+
     return;
 
+}          // end display_mutations()
 
-}
 
 
-char mutate(int which_mutation)
+
+bool mutate( int which_mutation )
 {
-    char mutat = which_mutation;
-    bool force_mutation = false;        // is mutation forced?
 
-    if (which_mutation >= 1000) /* Must give this mutation - no failure */
-    {
+    char mutat = which_mutation;
+    bool force_mutation = false;       // is mutation forced?
+
+    if ( which_mutation >= 1000 )      // must give mutation without failure
+      {
         force_mutation = true;
         mutat -= 1000;
         which_mutation -= 1000;
-    }
+      }
 
     //char st_prn [10];
 
-    if (you.is_undead && !force_mutation)
-        return 0;
+    if ( you.is_undead && !force_mutation )
+      return false;
 
-    if (wearing_amulet(AMU_RESIST_MUTATION) && !force_mutation && !one_chance_in(10))
-    {
-        mpr("You feel rather odd for a moment.");
-        return 0;
-    }
-
-    if (you.mutation[MUT_MUTATION_RESISTANCE] != 0
+    if ( wearing_amulet(AMU_RESIST_MUTATION)
         && !force_mutation
-        && (you.mutation[MUT_MUTATION_RESISTANCE] == 3 || !one_chance_in(3)))
-    {
+        && !one_chance_in(10) )
+      {
         mpr("You feel rather odd for a moment.");
-        return 0;
-    }
+        return false;
+      }
 
-    if (which_mutation == 100 && random2(15) < how_mutated())
-    {
-        if (!force_mutation && !one_chance_in(3))
-            return 0;
-        return delete_mutation(100);
-    }
+    if ( you.mutation[MUT_MUTATION_RESISTANCE]
+        && !force_mutation
+        && ( you.mutation[MUT_MUTATION_RESISTANCE] == 3 || !one_chance_in(3) ) )
+      {
+        mpr("You feel rather odd for a moment.");
+        return false;
+      }
 
-    if (which_mutation == 100)
-        do
-        {
-            mutat = random2(NUM_MUTATIONS);
-            if (one_chance_in(1000))
-                return 0;
-        }
-        while ((you.mutation[mutat] >= 3
-        && (mutat != MUT_STRONG && mutat != MUT_CLEVER && mutat != MUT_AGILE)
-        && (mutat != MUT_WEAK && mutat != MUT_DOPEY && mutat != MUT_CLUMSY))
-               || you.mutation[mutat] > 13
-               || random2(10) >= mutation_rarity[mutat]);
+    if ( which_mutation == 100 && random2(15) < how_mutated() )
+      {
+        if ( !force_mutation && !one_chance_in(3) )
+          return false;
+        else
+          return delete_mutation(100);
+      }
 
-    if (you.mutation[mutat] >= 3
-        && (mutat != MUT_STRONG && mutat != MUT_CLEVER && mutat != MUT_AGILE)
-        && (mutat != MUT_WEAK && mutat != MUT_DOPEY && mutat != MUT_CLUMSY))
-        return 0;
+    if ( which_mutation == 100 )
+      do
+      {
+         mutat = random2(NUM_MUTATIONS);
 
-    if (you.mutation[mutat] > 13 && !force_mutation)
-        return 0;
+         if ( one_chance_in(1000) )
+           return false;
+      }
+      while ( ( you.mutation[mutat] >= 3
+               && ( mutat != MUT_STRONG && mutat != MUT_CLEVER && mutat != MUT_AGILE )
+               && ( mutat != MUT_WEAK && mutat != MUT_DOPEY && mutat != MUT_CLUMSY ) )
+             || you.mutation[mutat] > 13
+             || random2(10) >= mutation_rarity[mutat] );
+
+    if ( you.mutation[mutat] >= 3
+        && ( mutat != MUT_STRONG && mutat != MUT_CLEVER && mutat != MUT_AGILE )
+        && ( mutat != MUT_WEAK && mutat != MUT_DOPEY && mutat != MUT_CLUMSY ) )
+      return false;
+
+    if ( you.mutation[mutat] > 13 && !force_mutation )
+      return false;
 
     // These can be forced by demonspawn
-    if ((mutat == MUT_TOUGH_SKIN
-         || (mutat >= MUT_GREEN_SCALES && mutat <= MUT_BONEY_PLATES)
-         || (mutat >= MUT_RED_SCALES && mutat <= MUT_PATTERNED_SCALES))
+    if ( ( mutat == MUT_TOUGH_SKIN
+            || ( mutat >= MUT_GREEN_SCALES && mutat <= MUT_BONEY_PLATES )
+            || ( mutat >= MUT_RED_SCALES && mutat <= MUT_PATTERNED_SCALES ) )
         && body_covered() > 2
-        && !force_mutation)
-        return 0;
+        && !force_mutation )
+      return false;
 
-    if (mutat == MUT_HORNS && you.species == SP_MINOTAUR)
-        return 0;
+    if ( mutat == MUT_HORNS && you.species == SP_MINOTAUR )
+      return false;
 
-    if (you.species == SP_NAGA
-        && (mutat == MUT_ACUTE_VISION
-            || mutat == MUT_POISON_RESISTANCE
-            || mutat == MUT_SPIT_POISON))
-        return 0;               // nagas have see invis and res poison and can spit poison
+    if ( you.species == SP_NAGA
+        && ( mutat == MUT_ACUTE_VISION
+              || mutat == MUT_POISON_RESISTANCE
+              || mutat == MUT_SPIT_POISON ) )
+      return false;               // nagas have see invis and res poison and can spit poison
 
-    if (you.species == SP_GNOME
-        && mutat == MUT_MAPPING)
-        return 0;               /* gnomes can't sense surroundings */
+    if ( you.species == SP_GNOME
+        && mutat == MUT_MAPPING )
+      return false;               /* gnomes can't sense surroundings */
 
-    if ((you.species == SP_CENTAUR || you.species == SP_SPRIGGAN)
-        && mutat == MUT_FAST)
-        return 0;               /* centaurs/spriggans are already swift */
+    if ( ( you.species == SP_CENTAUR || you.species == SP_SPRIGGAN )
+        && mutat == MUT_FAST )
+      return false;               /* centaurs/spriggans are already swift */
 
     // This one can be forced by demonspawn
-    if (mutat == MUT_REGENERATION
+    if ( mutat == MUT_REGENERATION
         && you.mutation[MUT_SLOW_METABOLISM] > 0
-        && !force_mutation)
-        return 0;               /* if you have a slow metabolism, no regen */
+        && !force_mutation )
+      return false;               /* if you have a slow metabolism, no regen */
 
-    if (mutat == MUT_SLOW_METABOLISM
-        && you.mutation[MUT_REGENERATION] > 0)
-        return 0;               /* if you have a slow metabolism, no regen */
+    if ( mutat == MUT_SLOW_METABOLISM
+        && you.mutation[MUT_REGENERATION] > 0 )
+      return false;               /* if you have a slow metabolism, no regen */
 
     // This one can be forced by demonspawn
-    if (mutat == MUT_ACUTE_VISION
+    if ( mutat == MUT_ACUTE_VISION
         && you.mutation[MUT_BLURRY_VISION] > 0
-        && !force_mutation)
-        return 0;
+        && !force_mutation )
+      return false;
 
-    if (mutat == MUT_BLURRY_VISION
-        && you.mutation[MUT_ACUTE_VISION] > 0)
-        return 0;               /* blurred vision/see invis */
+    if ( mutat == MUT_BLURRY_VISION
+        && you.mutation[MUT_ACUTE_VISION] > 0 )
+      return false;               /* blurred vision/see invis */
+
+//jmf: added some checks for new mutations
+    if ( mutat == MUT_STINGER
+        && !( you.species == SP_NAGA || player_genus(GENPC_DRACONIAN) ) )
+      return false;
+
+    if ( mutat == MUT_HOOVES
+       && ( you.species == SP_NAGA || you.species == SP_CENTAUR
+             || you.species == SP_KENKU || player_genus(GENPC_DRACONIAN) ) )
+      return false;
+
+    if ( mutat == MUT_BIG_WINGS && !player_genus(GENPC_DRACONIAN) )
+      return false;
+//jmf: added some checks for new mutations
 
     mpr("You mutate.");
-/*itoa(mutat, st_prn, 10);
-   mpr(st_prn);
-   itoa(you.mutation [mutat], st_prn, 10);
-   mpr(st_prn); */
 
+/*
+    itoa(mutat, st_prn, 10);
+    mpr(st_prn);
+    itoa(you.mutation [mutat], st_prn, 10);
+    mpr(st_prn);
+*/
+
+
+// find where these things are actually changed -- do not globally force redraw {dlb}
     you.redraw_hit_points = 1;
     you.redraw_magic_points = 1;
-    you.redraw_strength = 1;
-    you.redraw_intelligence = 1;
-    you.redraw_dexterity = 1;
     you.redraw_armor_class = 1;
     you.redraw_evasion = 1;
     you.redraw_experience = 1;
     you.redraw_gold = 1;
-    you.redraw_hunger = 1;
+    //you.redraw_hunger = 1;
 
-    switch (mutat)
+    switch ( mutat )
     {
-    case MUT_STRONG:
-        if (you.mutation[MUT_WEAK] > 0)
+      case MUT_STRONG:
+        if ( you.mutation[MUT_WEAK] > 0 )
         {
             delete_mutation(MUT_WEAK);
-            return 1;
+            return true;
         }
-        you.strength++;
-        you.max_strength++;
-        you.redraw_strength = 1;
-        mpr(gain_mutation[mutat][0]);
+        increase_stats(STAT_STRENGTH, 1, false);         // replaces earlier, redundant code - 12mar2000 {dlb}
         break;
 
-    case MUT_CLEVER:
-        if (you.mutation[MUT_DOPEY] > 0)
+      case MUT_CLEVER:
+        if ( you.mutation[MUT_DOPEY] > 0 )
         {
             delete_mutation(MUT_DOPEY);
-            return 1;
+            return true;
         }
-        you.intel++;
-        you.max_intel++;
-        you.redraw_intelligence = 1;
-        mpr(gain_mutation[mutat][0]);
+        increase_stats(STAT_INTELLIGENCE, 1, false);     // replaces earlier, redundant code - 12mar2000 {dlb}
         break;
 
-    case MUT_AGILE:
-        if (you.mutation[MUT_CLUMSY] > 0)
+      case MUT_AGILE:
+        if ( you.mutation[MUT_CLUMSY] > 0 )
         {
             delete_mutation(MUT_CLUMSY);
-            return 1;
+            return true;
         }
-        you.dex++;
-        you.max_dex++;
-        you.redraw_dexterity = 1;
-        mpr(gain_mutation[mutat][0]);
+        increase_stats(STAT_DEXTERITY, 1, false);     // replaces earlier, redundant code - 12mar2000 {dlb}
         break;
 
-    case MUT_WEAK:
-        if (you.mutation[MUT_STRONG] > 0)
+      case MUT_WEAK:
+        if ( you.mutation[MUT_STRONG] > 0 )
         {
             delete_mutation(MUT_STRONG);
-            return 1;
+            return true;
         }
-        you.strength--;
-        you.max_strength--;
-        you.redraw_strength = 1;
+        decrease_stats(STAT_STRENGTH, 1, true);
         mpr(gain_mutation[mutat][0]);
         break;
 
-    case MUT_DOPEY:
-        if (you.mutation[MUT_CLEVER] > 0)
+      case MUT_DOPEY:
+        if ( you.mutation[MUT_CLEVER] > 0 )
         {
             delete_mutation(MUT_CLEVER);
-            return 1;
+            return true;
         }
-        you.intel--;
-        you.max_intel--;
-        you.redraw_intelligence = 1;
+        decrease_stats(STAT_INTELLIGENCE, 1, true);
         mpr(gain_mutation[mutat][0]);
         break;
 
-    case MUT_CLUMSY:
-        if (you.mutation[MUT_AGILE] > 0)
+      case MUT_CLUMSY:
+        if ( you.mutation[MUT_AGILE] > 0 )
         {
             delete_mutation(MUT_AGILE);
-            return 1;
+            return true;
         }
-        you.dex--;
-        you.max_dex--;
-        you.redraw_dexterity = 1;
+        decrease_stats(STAT_DEXTERITY, 1, true);
         mpr(gain_mutation[mutat][0]);
         break;
 
-    case MUT_REGENERATION:
-        if (you.mutation[MUT_SLOW_METABOLISM] > 0)
-        {
+      case MUT_REGENERATION:
+        if ( you.mutation[MUT_SLOW_METABOLISM] > 0 )
+          {
             // Should only get here from demonspawn, where our innate
             // ability will clear away the counter-mutation.
             while (delete_mutation(MUT_SLOW_METABOLISM));
-        }
+          }
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_ACUTE_VISION:
-        if (you.mutation[MUT_BLURRY_VISION] > 0)
-        {
+      case MUT_ACUTE_VISION:
+        if ( you.mutation[MUT_BLURRY_VISION] > 0 )
+          {
             // Should only get here from demonspawn, where our inate
             // ability will clear away the counter-mutation.
             while (delete_mutation(MUT_BLURRY_VISION));
-        }
+          }
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_CARNIVOROUS:
-        if (you.mutation[MUT_HERBIVOROUS] > 0)
-        {
+      case MUT_CARNIVOROUS:
+        if ( you.mutation[MUT_HERBIVOROUS] > 0 )
+          {
             delete_mutation(MUT_HERBIVOROUS);
-            return 1;
-        }
+            return true;
+          }
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_HERBIVOROUS:
-        if (you.mutation[MUT_CARNIVOROUS] > 0)
-        {
+      case MUT_HERBIVOROUS:
+        if ( you.mutation[MUT_CARNIVOROUS] > 0 )
+          {
             delete_mutation(MUT_CARNIVOROUS);
-            return 1;
-        }
+            return true;
+          }
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_SHOCK_RESISTANCE:
-        // you.attribute[ATTR_RESIST_LIGHTNING]++;
+      case MUT_SHOCK_RESISTANCE:
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_FAST_METABOLISM:
-        if (you.mutation[MUT_SLOW_METABOLISM] > 0)
-        {
+      case MUT_FAST_METABOLISM:
+        if ( you.mutation[MUT_SLOW_METABOLISM] > 0 )
+          {
             delete_mutation(MUT_SLOW_METABOLISM);
-            return 1;
-        }
-        // you.hunger_inc++;
+            return true;
+          }
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_SLOW_METABOLISM:
-        if (you.mutation[MUT_FAST_METABOLISM] > 0)
-        {
+      case MUT_SLOW_METABOLISM:
+        if ( you.mutation[MUT_FAST_METABOLISM] > 0 )
+          {
             delete_mutation(MUT_FAST_METABOLISM);
-            return 1;
-        }
-        // if (you.mutation[mutat] == 0 || you.mutation[mutat] == 2)
-        //    you.hunger_inc--;
+            return true;
+          }
+        //if (you.mutation[mutat] == 0 || you.mutation[mutat] == 2)
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_TELEPORT_CONTROL:
+      case MUT_TELEPORT_CONTROL:
         you.attribute[ATTR_CONTROL_TELEPORT]++;
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_HORNS:             // horns force your helmet off
 
+    case MUT_HOOVES: //jmf: like horns
+      mpr(gain_mutation[mutat][you.mutation[mutat]]);
+      if (you.equip[EQ_BOOTS] != -1)
+      {
+          char removed[8];
+
+          for (int i = EQ_WEAPON; i < EQ_RIGHT_RING; i++)
+            removed[i] = 0;
+
+          removed[EQ_BOOTS] = 1;
+          remove_equipment(removed);
+      }
+      break;
+
+    case MUT_CLAWS:
+      mpr(gain_mutation[mutat][you.mutation[mutat]]);
+      if (you.equip[EQ_GLOVES] != -1)
+      {
+          char removed[8];
+
+          for (int i = EQ_WEAPON; i < EQ_RIGHT_RING; i++)
+            removed[i] = 0;
+
+          removed[EQ_GLOVES] = 1;
+          remove_equipment(removed);
+      }
+      break;
+
+      case MUT_HORNS:             // horns force your helmet off
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
-        if (you.equip[EQ_HELMET] != -1
-            && you.inv_plus2[you.equip[EQ_HELMET]] > 1)
-            break;              // horns don't push caps/wizard hats off
+
+        if ( you.equip[EQ_HELMET] != -1
+            && you.inv_plus2[you.equip[EQ_HELMET]] > 1 )
+          break;              // horns don't push caps/wizard hats off
 
         char removed[8];
 
         for (int i = EQ_WEAPON; i < EQ_RIGHT_RING; i++)
-        {
             removed[i] = 0;
-        }
+
         removed[EQ_HELMET] = 1;
         remove_equipment(removed);
         break;
 
-    case MUT_STRONG_STIFF:
-        if (you.mutation[MUT_FLEXIBLE_WEAK] > 0)
+      case MUT_STRONG_STIFF:
+        if ( you.mutation[MUT_FLEXIBLE_WEAK] > 0 )
         {
             delete_mutation(MUT_FLEXIBLE_WEAK);
-            return 1;
+            return true;
         }
-        you.strength++;
-        you.max_strength++;
-        you.redraw_strength = 1;
-        you.dex--;
-        you.max_dex--;
-        you.redraw_dexterity = 1;
+        increase_stats(STAT_STRENGTH, 1, true);
+        decrease_stats(STAT_DEXTERITY, 1, true);
         mpr(gain_mutation[mutat][0]);
         break;
 
-    case MUT_FLEXIBLE_WEAK:
-        if (you.mutation[MUT_STRONG_STIFF] > 0)
+      case MUT_FLEXIBLE_WEAK:
+        if ( you.mutation[MUT_STRONG_STIFF] > 0 )
         {
             delete_mutation(MUT_STRONG_STIFF);
-            return 1;
+            return true;
         }
-        you.strength--;
-        you.max_strength--;
-        you.redraw_strength = 1;
-        you.dex++;
-        you.max_dex++;
-        you.redraw_dexterity = 1;
+        decrease_stats(STAT_STRENGTH, 1, true);
+        increase_stats(STAT_DEXTERITY, 1, true);
         mpr(gain_mutation[mutat][0]);
         break;
 
-    case MUT_FRAIL:
-        if (you.mutation[MUT_ROBUST] > 0)
-        {
+      case MUT_FRAIL:
+        if ( you.mutation[MUT_ROBUST] > 0 )
+          {
             delete_mutation(MUT_ROBUST);
-            return 1;
-        }
+            return true;
+          }
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         you.mutation[mutat]++;
         calc_hp();
-        return 1;
+        return true;
 
-    case MUT_ROBUST:            // robust
-
+      case MUT_ROBUST:
         if (you.mutation[MUT_FRAIL] > 0)
-        {
+          {
             delete_mutation(MUT_FRAIL);
-            return 1;
-        }
+            return true;
+          }
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         you.mutation[mutat]++;
         calc_hp();
-        return 1;
+        return true;
 
-    case MUT_BLACK_SCALES:
-    case MUT_BONEY_PLATES:
-        you.dex--;
-        you.max_dex--;
-        you.redraw_dexterity = 1;
-    default:
+      case MUT_BLACK_SCALES:
+      case MUT_BONEY_PLATES:
+        decrease_stats(STAT_DEXTERITY, 1, true);
+    // deliberate fall-through
+      default:
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_GREY2_SCALES:
-        if (you.mutation[mutat] != 1)
-        {
-            you.dex--;
-            you.max_dex--;
-            you.redraw_dexterity = 1;
-        }
+      case MUT_GREY2_SCALES:
+        if ( you.mutation[mutat] != 1 )
+          decrease_stats(STAT_DEXTERITY, 1, true);
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_METALLIC_SCALES:
-        if (you.mutation[mutat] == 0)
-        {
-            you.dex -= 2;
-            you.max_dex -= 2;
-            you.redraw_dexterity = 1;
-        }
+      case MUT_METALLIC_SCALES:
+        if ( you.mutation[mutat] == 0 )
+          decrease_stats(STAT_DEXTERITY, 2, true);
         else
-        {
-            you.dex--;
-            you.max_dex--;
-            you.redraw_dexterity = 1;
-        }
+          decrease_stats(STAT_DEXTERITY, 1, true);
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
-    case MUT_RED2_SCALES:
-    case MUT_YELLOW_SCALES:
-        if (you.mutation[mutat] != 0)
-        {
-            you.dex--;
-            you.max_dex--;
-            you.redraw_dexterity = 1;
-        }
+      case MUT_RED2_SCALES:
+      case MUT_YELLOW_SCALES:
+        if ( you.mutation[mutat] != 0 )
+          decrease_stats(STAT_DEXTERITY, 1, true);
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
-
     }
 
     you.mutation[mutat]++;
 
 /* remember, some mutations don't get this far (eg frail) */
 
-    return 1;
+    return true;
 
-}
-
-
+}                                  // end mutation()
 
 
-int how_mutated(void)
+
+
+int how_mutated( void )
 {
 
     int j = 0;
 
     for (int i = 0; i < 100; i++)
-    {
-        if (you.demon_pow[i] < you.mutation[i])
-            j += you.mutation[i];
-    }
+      if ( you.demon_pow[i] < you.mutation[i] )
+        j += you.mutation[i];
 
     return j;
 
-}
+}          // end how_mutated()
 
 
 
 
-char delete_mutation(char which_mutation)
+bool delete_mutation( char which_mutation )
 {
     char mutat = which_mutation;
 
-    if (you.mutation[MUT_MUTATION_RESISTANCE] > 1
-        && (you.mutation[MUT_MUTATION_RESISTANCE] == 3 || coinflip()))
-    {
+    if ( you.mutation[MUT_MUTATION_RESISTANCE] > 1
+        && ( you.mutation[MUT_MUTATION_RESISTANCE] == 3 || coinflip() ) )
+      {
         mpr("You feel rather odd for a moment.");
-        return 0;
-    }
+        return false;
+      }
 
-    if (which_mutation == 100)
-        do
-        {
-            mutat = random2(NUM_MUTATIONS);
-            if (one_chance_in(1000))
-                return 0;
-        }
-        while ((you.mutation[mutat] == MUT_TOUGH_SKIN && mutat != MUT_STRONG && mutat != MUT_CLEVER && mutat != MUT_AGILE && mutat != MUT_WEAK && mutat != MUT_DOPEY && mutat != MUT_CLUMSY) || random2(10) >= mutation_rarity[mutat] || you.demon_pow[mutat] >= you.mutation[mutat]);
+    if ( which_mutation == 100 )
+      do
+      {
+        mutat = random2(NUM_MUTATIONS);
+        if ( one_chance_in(1000) )
+          return false;
+      }
+      while ( ( you.mutation[mutat] == MUT_TOUGH_SKIN
+               && ( mutat != MUT_STRONG && mutat != MUT_CLEVER && mutat != MUT_AGILE )
+               && ( mutat != MUT_WEAK && mutat != MUT_DOPEY && mutat != MUT_CLUMSY ) )
+             || random2(10) >= mutation_rarity[mutat]
+             || you.demon_pow[mutat] >= you.mutation[mutat] );
 
-    if (you.mutation[mutat] == 0)
-        return 0;
+    if ( you.mutation[mutat] == 0 )
+      return false;
 
-    if (you.demon_pow[mutat] >= you.mutation[mutat])
-        return 0;
+    if ( you.demon_pow[mutat] >= you.mutation[mutat] )
+      return false;
 
-/*mpr("Deleting:");
-   itoa(mutat, st_prn, 10);
-   mpr(st_prn);
-   itoa(you.mutation [mutat], st_prn, 10);
-   mpr(st_prn); */
+/*
+    mpr("Deleting:");
+    itoa(mutat, st_prn, 10);
+    mpr(st_prn);
+    itoa(you.mutation [mutat], st_prn, 10);
+    mpr(st_prn);
+*/
 
     mpr("You mutate.");
 
     switch (mutat)
     {
-    case MUT_STRONG:
-/* if (you.mutation [MUT_WEAK] > 0)
-   {
-   mutate(MUT_WEAK);
-   break;
-   } */
-        you.strength--;
-        you.max_strength--;
-        you.redraw_strength = 1;
+      case MUT_STRONG:
+/*
+        if ( you.mutation [MUT_WEAK] > 0 )
+          {
+            mutate(MUT_WEAK);
+            break;
+          }
+*/
+        decrease_stats(STAT_STRENGTH, 1, true);
         mpr(lose_mutation[mutat][0]);
         break;
 
-    case MUT_CLEVER:
-/* if (you.mutation [MUT_DOPEY] > 0)
-   {
-   mutate(MUT_DOPEY);
-   break;
-   } */
-        you.intel--;
-        you.max_intel--;
-        you.redraw_intelligence = 1;
+      case MUT_CLEVER:
+/*
+        if ( you.mutation [MUT_DOPEY] > 0 )
+          {
+            mutate(MUT_DOPEY);
+            break;
+          }
+*/
+        decrease_stats(STAT_INTELLIGENCE, 1, true);
         mpr(lose_mutation[mutat][0]);
         break;
 
-    case MUT_AGILE:
-/* if (you.mutation [MUT_CLUMSY] > 0)
-   {
-   mutate(MUT_CLUMSY);
-   break;
-   } */
-        you.dex--;
-        you.max_dex--;
-        you.redraw_dexterity = 1;
+      case MUT_AGILE:
+/*
+        if ( you.mutation [MUT_CLUMSY] > 0 )
+          {
+            mutate(MUT_CLUMSY);
+            break;
+          }
+*/
+        decrease_stats(STAT_DEXTERITY, 1, true);
         mpr(lose_mutation[mutat][0]);
         break;
 
-    case MUT_WEAK:
-/* if (you.mutation [MUT_STRONG] > 0)
-   {
-   mutate(MUT_STRONG);
-   break;
-   } */
-        you.strength++;
-        you.max_strength++;
-        you.redraw_strength = 1;
-        mpr(lose_mutation[mutat][0]);
+      case MUT_WEAK:
+/*
+        if ( you.mutation [MUT_STRONG] > 0 )
+          {
+            mutate(MUT_STRONG);
+            break;
+          }
+*/
+        increase_stats(STAT_STRENGTH, 1, false);         // replaces earlier, redundant code - 12mar2000 {dlb}
         break;
 
-    case MUT_DOPEY:
-/* if (you.mutation [MUT_CLEVER] > 0)
-   {
-   mutate(MUT_CLEVER);
-   break;
-   } */
-        you.intel++;
-        you.max_intel++;
-        you.redraw_intelligence = 1;
-        mpr(lose_mutation[mutat][0]);
+      case MUT_DOPEY:
+/*
+        if ( you.mutation [MUT_CLEVER] > 0 )
+          {
+            mutate(MUT_CLEVER);
+            break;
+          }
+*/
+        increase_stats(STAT_INTELLIGENCE, 1, false);     // replaces earlier, redundant code - 12mar2000 {dlb}
         break;
 
-    case MUT_CLUMSY:
-/* if (you.mutation [MUT_AGILE] > 0)
-   {
-   mutate(MUT_AGILE);
-   break;
-   } */
-        you.dex++;
-        you.max_dex++;
-        you.redraw_dexterity = 1;
-        mpr(lose_mutation[mutat][0]);
+      case MUT_CLUMSY:
+/*
+        if ( you.mutation [MUT_AGILE] > 0 )
+          {
+            mutate(MUT_AGILE);
+            break;
+          }
+*/
+        increase_stats(STAT_DEXTERITY, 1, false);     // replaces earlier, redundant code - 12mar2000 {dlb}
         break;
 
-    case MUT_SHOCK_RESISTANCE:  // res elec
-        // you.attribute[ATTR_RESIST_LIGHTNING]--;
-
+      case MUT_SHOCK_RESISTANCE:
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
 
-    case MUT_FAST_METABOLISM:
-        /* if (you.mutation [MUT_SLOW_METABOLISM] > 0)
-           {
-           mutate(MUT_SLOW_METABOLISM);
-           break;
-           } */
-        // you.hunger_inc--;
+      case MUT_FAST_METABOLISM:
+/*
+        if ( you.mutation [MUT_SLOW_METABOLISM] > 0 )
+          {
+            mutate(MUT_SLOW_METABOLISM);
+            break;
+          }
+*/
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
 
-    case MUT_SLOW_METABOLISM:
-        /* if (you.mutation [MUT_FAST_METABOLISM] > 0)
-           {
-           mutate(MUT_FAST_METABOLISM);
-           break;
-           } */
-        // if (you.mutation[mutat] == 1 || you.mutation[mutat] == 3)
-        //     you.hunger_inc++;
+      case MUT_SLOW_METABOLISM:
+/*
+        if ( you.mutation [MUT_FAST_METABOLISM] > 0 )
+          {
+            mutate(MUT_FAST_METABOLISM);
+            break;
+          }
+*/
+        //if ( you.mutation[mutat] == 1 || you.mutation[mutat] == 3 )
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
 
-    case MUT_TELEPORT_CONTROL:
+      case MUT_TELEPORT_CONTROL:
         you.attribute[ATTR_CONTROL_TELEPORT]--;
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
 
-    case MUT_STRONG_STIFF:
-        you.strength--;
-        you.max_strength--;
-        you.redraw_strength = 1;
-        you.dex++;
-        you.max_dex++;
-        you.redraw_dexterity = 1;
+      case MUT_STRONG_STIFF:
+        decrease_stats(STAT_STRENGTH, 1, true);
+        increase_stats(STAT_DEXTERITY, 1, true);
         mpr(lose_mutation[mutat][0]);
         break;
 
-    case MUT_FLEXIBLE_WEAK:
-        you.strength++;
-        you.max_strength++;
-        you.redraw_strength = 1;
-        you.dex--;
-        you.max_dex--;
-        you.redraw_dexterity = 1;
+      case MUT_FLEXIBLE_WEAK:
+        increase_stats(STAT_STRENGTH, 1, true);
+        decrease_stats(STAT_DEXTERITY, 1, true);
         mpr(lose_mutation[mutat][0]);
         break;
 
-    case MUT_FRAIL:
+      case MUT_FRAIL:
         mpr(lose_mutation[mutat][0]);
-        if (you.mutation[mutat] > 0)
-            you.mutation[mutat]--;
+        if ( you.mutation[mutat] > 0 )
+          you.mutation[mutat]--;
         calc_hp();
-        you.redraw_hit_points = 1;
-        return 1;
+        return true;
 
-    case MUT_ROBUST:
+      case MUT_ROBUST:
         mpr(lose_mutation[mutat][0]);
-        if (you.mutation[mutat] > 0)
-            you.mutation[mutat]--;
+        if ( you.mutation[mutat] > 0 )
+          you.mutation[mutat]--;
         calc_hp();
-        you.redraw_hit_points = 1;
-        return 1;
+        return true;
 
-    case MUT_BLACK_SCALES:
-    case MUT_BONEY_PLATES:
-        you.dex++;
-        you.max_dex++;
-        you.redraw_dexterity = 1;
-    default:
+      case MUT_BLACK_SCALES:
+      case MUT_BONEY_PLATES:
+        increase_stats(STAT_DEXTERITY, 1, true);
+
+      default:
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
 
-    case MUT_GREY2_SCALES:
-        if (you.mutation[mutat] != 2)
-        {
-            you.dex++;
-            you.max_dex++;
-            you.redraw_dexterity = 1;
-        }
+      case MUT_GREY2_SCALES:
+        if ( you.mutation[mutat] != 2 )
+          increase_stats(STAT_DEXTERITY, 1, true);
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
 
-    case MUT_METALLIC_SCALES:
-        if (you.mutation[mutat] == 1)
-        {
-            you.dex += 2;
-            you.max_dex += 2;
-            you.redraw_dexterity = 1;
-        }
+      case MUT_METALLIC_SCALES:
+        if ( you.mutation[mutat] == 1 )
+          increase_stats(STAT_DEXTERITY, 2, true);
         else
-        {
-            you.dex++;
-            you.max_dex++;
-            you.redraw_dexterity = 1;
-        }
+          increase_stats(STAT_DEXTERITY, 1, true);
+
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
 
-    case MUT_RED2_SCALES:
-    case MUT_YELLOW_SCALES:
-        if (you.mutation[mutat] != 1)
-        {
-            you.dex++;
-            you.max_dex++;
-            you.redraw_dexterity = 1;
-        }
+      case MUT_RED2_SCALES:
+      case MUT_YELLOW_SCALES:
+        if ( you.mutation[mutat] != 1 )
+          increase_stats(STAT_DEXTERITY, 1, true);
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
-
     }
 
+
+// find where these things are actually altered -- do not globally force redraw {dlb}
     you.redraw_hit_points = 1;
     you.redraw_magic_points = 1;
-    you.redraw_strength = 1;
-    you.redraw_intelligence = 1;
-    you.redraw_dexterity = 1;
     you.redraw_armor_class = 1;
     you.redraw_evasion = 1;
     you.redraw_experience = 1;
     you.redraw_gold = 1;
-    you.redraw_hunger = 1;
+    //you.redraw_hunger = 1;
 
-    if (you.mutation[mutat] > 0)
-        you.mutation[mutat]--;
+    if ( you.mutation[mutat] > 0 )
+      you.mutation[mutat]--;
 
-    return 1;
+    return true;
 
-}
+}                                 // end delete_mutation()
 
 
 
@@ -1180,10 +1166,10 @@ char body_covered(void)
 /* checks how much of your body is covered by scales etc */
     char covered = 0;
 
-    if (you.species == SP_NAGA)
-        covered++;
-    if (you.species >= SP_RED_DRACONIAN && you.species <= SP_UNK2_DRACONIAN)
-        return 3;
+    if ( you.species == SP_NAGA )
+      covered++;
+    if ( player_genus(GENPC_DRACONIAN) )
+      return 3;
 
     covered += you.mutation[MUT_TOUGH_SKIN];
     covered += you.mutation[MUT_GREEN_SCALES];
@@ -1208,33 +1194,35 @@ char body_covered(void)
     covered += you.mutation[MUT_PATTERNED_SCALES];
 
     return covered;
+
 }
 
 
 
 
-char *mutation_name(char which_mutat)
+char *mutation_name( char which_mutat )
 {
     char st_prn[5];
 
-    if (which_mutat == MUT_STRONG || which_mutat == MUT_CLEVER || which_mutat == MUT_AGILE || which_mutat == MUT_WEAK || which_mutat == MUT_DOPEY || which_mutat == MUT_CLUMSY)
-    {
+    if ( which_mutat == MUT_STRONG || which_mutat == MUT_CLEVER || which_mutat == MUT_AGILE
+          || which_mutat == MUT_WEAK || which_mutat == MUT_DOPEY || which_mutat == MUT_CLUMSY )
+      {
         strcpy(mut_string, mutation_descrip[which_mutat][0]);
         itoa(you.mutation[which_mutat], st_prn, 10);
         strcat(mut_string, st_prn);
         strcat(mut_string, ").");
         return mut_string;
-    }
+      }
 
     return mutation_descrip[which_mutat][you.mutation[which_mutat] - 1];
 
-}
+}          // end mutation_name()
 
 
 
 
 /* Use an attribute counter for how many demonic mutations a dspawn has */
-void demonspawn()
+void demonspawn( void )
 {
 
     int whichm = -1;
@@ -1246,449 +1234,483 @@ void demonspawn()
     mpr("Your demonic ancestry asserts itself...");
 
     if (you.experience_level < 10)
-    {
+      {
         do
         {
-            if (!you.skills[SK_CONJURATIONS])   /* conjurers don't get throw fr/fl */
-            {
-                whichm = ((coinflip())? MUT_THROW_FLAMES : MUT_THROW_FROST);
+            if ( !you.skills[SK_CONJURATIONS] )
+              {   /* conjurers don't get throw fr/fl */
+                whichm = coinflip() ? MUT_THROW_FLAMES : MUT_THROW_FROST;
                 howm = 1;
-            }
+              }
 
-            if (!you.skills[SK_SUMMONINGS] && one_chance_in(3))         /* summoners don't get summon imp */
-            {
+            if ( !you.skills[SK_SUMMONINGS] && one_chance_in(3) )
+              {         /* summoners don't get summon imp */
                 whichm = MUT_SUMMON_MINOR_DEMONS;
                 howm = 1;
-            }
+              }
 
-            if (one_chance_in(4))
-            {
+            if ( one_chance_in(4) )
+              {
                 whichm = MUT_POISON_RESISTANCE;
                 howm = 1;
-            }
+              }
 
-            if (one_chance_in(4))
-            {
+            if ( one_chance_in(4) )
+              {
                 whichm = MUT_COLD_RESISTANCE;
                 howm = 1;
-            }
+              }
 
-            if (one_chance_in(4))
-            {
+            if ( one_chance_in(4) )
+              {
                 whichm = MUT_HEAT_RESISTANCE;
                 howm = 1;
-            }
+              }
 
-            if (one_chance_in(5))
-            {
+            if ( one_chance_in(5) )
+              {
                 whichm = MUT_ACUTE_VISION;
                 howm = 1;
-            }                   /* see invis */
+              }
 
-            if (one_chance_in(7))
-            {
+            if ( one_chance_in(7) )
+              {
                 whichm = MUT_SPIT_POISON;
                 howm = 1;
-            }
+              }
 
-            if (one_chance_in(10))
-            {
+            if ( one_chance_in(10) )
+              {
                 whichm = MUT_MAPPING;
                 howm = 2;
-            }                   /* sense surr */
+              }
 
-            if (one_chance_in(12))
-            {
+            if ( one_chance_in(12) )
+              {
                 whichm = MUT_TELEPORT_CONTROL;
                 howm = 1;
-            }
+              }
 
-            if (one_chance_in(5))
-            {
+            if ( one_chance_in(5) )
+              {
                 whichm = MUT_BREATHE_FLAMES;
                 howm = 2;
-            }
+              }
 
-            if (one_chance_in(12))
-            {
+            if ( one_chance_in(12) )
+              {
                 whichm = MUT_BLINK;
                 howm = 1;
-            }
+              }
 
-            if (one_chance_in(10))
-            {
+            if ( one_chance_in(10) )
+              {
                 whichm = MUT_TOUGH_SKIN;
-                howm = (coinflip() ? 3 : 2);
-            }
+                howm = ( coinflip() ? 3 : 2 );
+              }
 
-            if (one_chance_in(24))
-            {
+            if ( one_chance_in(24) )
+              {
                 whichm = MUT_GREEN_SCALES;
-                howm = (coinflip() ? 3 : 2);
-            }
+                howm = ( coinflip() ? 3 : 2 );
+              }
 
-            if (one_chance_in(24))
-            {
+            if ( one_chance_in(24) )
+              {
                 whichm = MUT_BLACK_SCALES;
-                howm = (coinflip() ? 2 : 1);
-            }
+                howm = ( coinflip() ? 2 : 1 );
+              }
 
-            if (one_chance_in(24))
-            {
+            if ( one_chance_in(24) )
+              {
                 whichm = MUT_GREY_SCALES;
-                howm = (coinflip() ? 3 : 2);
-            }
+                howm = ( coinflip() ? 3 : 2 );
+              }
 
-            if (one_chance_in(12))
-            {
+            if ( one_chance_in(12) )
+              {
                 whichm = MUT_RED_SCALES + random2(16);
 
                 switch (whichm)
                 {
-                case MUT_RED_SCALES:
-                case MUT_NACREOUS_SCALES:
-                case MUT_BLACK2_SCALES:
-                case MUT_WHITE_SCALES:
-                case MUT_BLUE_SCALES:
-                case MUT_SPECKLED_SCALES:
-                case MUT_ORANGE_SCALES:
-                case MUT_IRIDESCENT_SCALES:
-                case MUT_PATTERNED_SCALES:
-                    howm = (coinflip() ? 3 : 2);
+                  case MUT_RED_SCALES:
+                  case MUT_NACREOUS_SCALES:
+                  case MUT_BLACK2_SCALES:
+                  case MUT_WHITE_SCALES:
+                  case MUT_BLUE_SCALES:
+                  case MUT_SPECKLED_SCALES:
+                  case MUT_ORANGE_SCALES:
+                  case MUT_IRIDESCENT_SCALES:
+                  case MUT_PATTERNED_SCALES:
+                    howm = ( coinflip() ? 3 : 2 );
                     break;
 
-                default:
-                    howm = (coinflip() ? 2 : 1);
+                  default:
+                    howm = ( coinflip() ? 2 : 1 );
                     break;
                 }
             }
 
-            if (one_chance_in(30))
-            {
+            if ( one_chance_in(30) )
+              {
                 whichm = MUT_BONEY_PLATES;
-                howm = (coinflip() ? 2 : 1);
-            }
+                howm = ( coinflip() ? 2 : 1 );
+              }
 
-            if (one_chance_in(25))
-            {
+            if ( one_chance_in(25) )
+              {
                 whichm = MUT_REPULSION_FIELD;
-                howm = (coinflip() ? 3 : 2);
-            }
+                howm = ( coinflip() ? 3 : 2 );
+              }
 
-            if (one_chance_in(5))
-            {
+            if ( one_chance_in(5) )
+              {
                 whichm = MUT_HORNS;
-                howm = (coinflip() ? 2 : 1);
-                if (you.experience_level > 4)
-                    howm = (coinflip() ? 3 : 2);
-            }
+                howm = ( coinflip() ? 2 : 1 );
+                if ( you.experience_level > 4 )
+                  howm = (coinflip() ? 3 : 2);
+              }
 
-            if (you.mutation[whichm] != 0)
-                whichm = -1;
+            if ( you.mutation[whichm] != 0 )
+              whichm = -1;
 
             counter++;
         }
-        while (whichm == -1 && counter < 5000);
+        while ( whichm == -1 && counter < 5000 );
 
-        if (whichm == -1)       /* unlikely but remotely possible */
-        {
+        if ( whichm == -1 )       /* unlikely but remotely possible */
+          {
             /* I know this is a cop-out */
-            you.max_strength++;
-            you.max_dex++;
-            you.max_intel++;
-            you.strength++;
-            you.dex++;
-            you.intel++;
-            you.redraw_strength = 1;
-            you.redraw_intelligence = 1;
-            you.redraw_dexterity = 1;
+            increase_stats(STAT_STRENGTH, 1, true);
+            increase_stats(STAT_INTELLIGENCE, 1, true);
+            increase_stats(STAT_DEXTERITY, 1, true);
             mpr("You feel much better now.");
             return;
-        }
-        else
-        {
-            if (perma_mutate(whichm, howm))
-            {
-                return;
-            }
-        }
-    }
+          }
+        else if ( perma_mutate(whichm, howm) )
+          {
+            return;
+          }
+      }
 
     do
     {
-        if (you.skills[SK_CONJURATIONS] < 3)    // good conjurers don't get bolt of draining
-        {
+        if ( you.skills[SK_CONJURATIONS] < 3 )
+          { // good conjurers don't get bolt of draining
             whichm = MUT_SMITE;
             howm = 1;
-        }
+          }
 
-        if (you.skills[SK_CONJURATIONS] < 4 && one_chance_in(4))        // good conjurers don't get hellfire
-        {
+        if ( you.skills[SK_CONJURATIONS] < 4 && one_chance_in(4) )
+          { // good conjurers don't get hellfire
             whichm = MUT_HURL_HELLFIRE;
             howm = 1;
-        }
+          }
 
-        if (you.skills[SK_SUMMONINGS] < 3 && one_chance_in(3))  // good summoners don't get summon demon
-        {
+        if ( you.skills[SK_SUMMONINGS] < 3 && one_chance_in(3) )
+          {  // good summoners don't get summon demon
             whichm = MUT_SUMMON_DEMONS;
             howm = 1;
-        }
+          }
 
-        if (one_chance_in(8))
-        {
+        if ( one_chance_in(8) )
+          {
             whichm = MUT_MAGIC_RESISTANCE;
             howm = 3;
-        }
+          }
 
-        if (one_chance_in(12))
-        {
+        if ( one_chance_in(12) )
+          {
             whichm = MUT_FAST;
             howm = 1;
-        }
+          }
 
-        if (one_chance_in(7))
-        {
+        if ( one_chance_in(7) )
+          {
             whichm = MUT_TELEPORT_AT_WILL;
             howm = 2;
-        }
+          }
 
-        if (one_chance_in(10))
-        {
+        if ( one_chance_in(10) )
+          {
             whichm = MUT_REGENERATION;
-            howm = ((coinflip())? 3 : 2);
-        }
+            howm = ( coinflip() ? 3 : 2 );
+          }
 
-        if (one_chance_in(12))
-        {
+        if ( one_chance_in(12) )
+          {
             whichm = MUT_SHOCK_RESISTANCE;
             howm = 1;
-        }
+          }
 
-        if (!you.mutation[MUT_CALL_TORMENT] && one_chance_in(15))
-        {
+        if ( !you.mutation[MUT_CALL_TORMENT] && one_chance_in(15) )
+          {
             whichm = MUT_TORMENT_RESISTANCE;
             howm = 1;
-        }
+          }
 
-        if (one_chance_in(12))
-        {
+        if ( one_chance_in(12) )
+          {
             whichm = MUT_NEGATIVE_ENERGY_RESISTANCE;
             howm = 1 + random2(3);
-        }
+          }
 
-        if (!you.mutation[MUT_TORMENT_RESISTANCE] && one_chance_in(20))
-        {
+        if ( !you.mutation[MUT_TORMENT_RESISTANCE] && one_chance_in(20) )
+          {
             whichm = MUT_CALL_TORMENT;
             howm = 1;
-        }
+          }
 
-        if (you.skills[SK_SUMMONINGS] < 3 && you.skills[SK_NECROMANCY] < 3 && one_chance_in(12))
-        {
+        if ( you.skills[SK_SUMMONINGS] < 3 && you.skills[SK_NECROMANCY] < 3
+            && one_chance_in(12) )
+          {
             whichm = MUT_CONTROL_DEMONS;
             howm = 1;
-        }
+          }
 
-        if (you.skills[SK_TRANSLOCATIONS] < 3 && one_chance_in(15))
-        {
+        if ( you.skills[SK_TRANSLOCATIONS] < 3 && one_chance_in(15) )
+          {
             whichm = MUT_PANDEMONIUM;
             howm = 1;
-        }                       /* gate to pan */
+          }
 
-        if (you.religion != GOD_VEHUMET && one_chance_in(11))
-        {
+        if ( you.religion != GOD_VEHUMET && one_chance_in(11) )
+          {
             whichm = MUT_DEATH_STRENGTH;
             howm = 1;
-        }                       /* gain power - no worshippers of Vehumet */
+          }
 
-        if (you.religion != GOD_VEHUMET && one_chance_in(11))
-        {
+        if ( you.religion != GOD_VEHUMET && one_chance_in(11) )
+          {
             whichm = MUT_CHANNEL_HELL;
             howm = 1;
-        }                       /* channel - no worshippers of Vehumet */
+          }
 
-        if (you.skills[SK_SUMMONINGS] < 3 && you.skills[SK_NECROMANCY] < 3 && one_chance_in(10))
-        {
+        if ( you.skills[SK_SUMMONINGS] < 3 && you.skills[SK_NECROMANCY] < 3
+            && one_chance_in(10) )
+          {
             whichm = MUT_RAISE_DEAD;
             howm = 1;
-        }
+          }
 
-        if (you.skills[SK_UNARMED_COMBAT] > 9 && one_chance_in(14))
-        {
+        if ( you.skills[SK_UNARMED_COMBAT] > 9 && one_chance_in(14) )
+          {
             whichm = MUT_DRAIN_LIFE;
             howm = 1;
-        }
+          }
 
-        if (you.mutation[whichm] != 0)
-            whichm = -1;
+        if ( you.mutation[whichm] != 0 )
+          whichm = -1;
 
         counter++;
     }
-    while (whichm == -1 && counter < 5000);
+    while ( whichm == -1 && counter < 5000 );
 
-    if (whichm == -1 || !perma_mutate(whichm, howm))
-    {
+    if ( whichm == -1 || !perma_mutate(whichm, howm) )
+      {
         /* unlikely but remotely possible */
         /* I know this is a cop-out */
-        you.max_strength++;
-        you.max_dex++;
-        you.max_intel++;
-        you.strength++;
-        you.dex++;
-        you.intel++;
-        you.redraw_strength = 1;
-        you.redraw_intelligence = 1;
-        you.redraw_dexterity = 1;
+        increase_stats(STAT_STRENGTH, 1, true);
+        increase_stats(STAT_INTELLIGENCE, 1, true);
+        increase_stats(STAT_DEXTERITY, 1, true);
         mpr("You feel much better now.");
-    }
-}
+      }
+
+}          // end demonspawn()
 
 
 
 
-char perma_mutate(int which_mut, char how_much)
+bool perma_mutate(int which_mut, char how_much)
 {
+
     char ret = 0;
 
-    ret += mutate(which_mut + 1000);
-    if (how_much >= 2)
-        ret += mutate(which_mut + 1000);
-    if (how_much >= 3)
-        ret += mutate(which_mut + 1000);
+    if ( mutate(which_mut + 1000) )
+      ret++;
+
+    if ( how_much >= 2 && mutate(which_mut + 1000) )
+      ret++;
+
+    if ( how_much >= 3 && mutate(which_mut + 1000) )
+      ret++;
 
     you.demon_pow[which_mut] = how_much;
 
-    return (ret);
-}
+    if ( ret > 0)
+      return true;
+    else
+      return false;
+
+}          // end perma_mutate()
 
 
 
 
-char give_good_mutation(void)
+bool give_good_mutation( void )
 {
-    switch (random2(25))
-    {
-    case 0:
-        return mutate(MUT_TOUGH_SKIN);
-        break;
-    case 1:
-        return mutate(MUT_STRONG);
-        break;
-    case 2:
-        return mutate(MUT_CLEVER);
-        break;
-    case 3:
-        return mutate(MUT_AGILE);
-        break;
-    case 4:
-        return mutate(MUT_HEAT_RESISTANCE);
-        break;
-    case 5:
-        return mutate(MUT_COLD_RESISTANCE);
-        break;
-    case 6:
-        return mutate(MUT_SHOCK_RESISTANCE);
-        break;
-    case 7:
-        return mutate(MUT_REGENERATION);
-        break;
-    case 8:
-        return mutate(MUT_TELEPORT_CONTROL);
-        break;
-    case 9:
-        return mutate(MUT_MAGIC_RESISTANCE);
-        break;
-    case 10:
-        return mutate(MUT_FAST);
-        break;
-    case 11:
-        return mutate(MUT_ACUTE_VISION);
-        break;
-    case 12:
-        return mutate(MUT_GREEN_SCALES);
-        break;
-    case 13:
-        return mutate(MUT_BLACK_SCALES);
-        break;
-    case 14:
-        return mutate(MUT_GREY_SCALES);
-        break;
-    case 15:
-        return mutate(MUT_BONEY_PLATES);
-        break;
-    case 16:
-        return mutate(MUT_REPULSION_FIELD);
-        break;
-    case 17:
-        return mutate(MUT_POISON_RESISTANCE);
-        break;
-    case 18:
-        return mutate(MUT_TELEPORT_AT_WILL);
-        break;
-    case 19:
-        return mutate(MUT_SPIT_POISON);
-        break;
-    case 20:
-        return mutate(MUT_MAPPING);
-        break;
-    case 21:
-        return mutate(MUT_BREATHE_FLAMES);
-        break;
-    case 22:
-        return mutate(MUT_BLINK);
-        break;
-    case 23:
-        return mutate(MUT_CLARITY);
-        break;
-    case 24:
-        return mutate(MUT_ROBUST);
-        break;
-    }
-    return 0;
-}
+
+    int temp_rand = 0;         // probability determination {dlb}
+    int which_good_one = 0;
+
+    temp_rand = random2(25);
+
+    which_good_one = ( (temp_rand > 23) ? MUT_TOUGH_SKIN :
+                       (temp_rand > 22) ? MUT_STRONG :
+                       (temp_rand > 21) ? MUT_CLEVER :
+                       (temp_rand > 20) ? MUT_AGILE :
+                       (temp_rand > 19) ? MUT_HEAT_RESISTANCE :
+                       (temp_rand > 18) ? MUT_COLD_RESISTANCE :
+                       (temp_rand > 17) ? MUT_SHOCK_RESISTANCE :
+                       (temp_rand > 16) ? MUT_REGENERATION :
+                       (temp_rand > 15) ? MUT_TELEPORT_CONTROL :
+                       (temp_rand > 14) ? MUT_MAGIC_RESISTANCE :
+                       (temp_rand > 13) ? MUT_FAST :
+                       (temp_rand > 12) ? MUT_ACUTE_VISION :
+                       (temp_rand > 11) ? MUT_GREEN_SCALES :
+                       (temp_rand > 10) ? MUT_BLACK_SCALES :
+                       (temp_rand >  9) ? MUT_GREY_SCALES :
+                       (temp_rand >  8) ? MUT_BONEY_PLATES :
+                       (temp_rand >  7) ? MUT_REPULSION_FIELD :
+                       (temp_rand >  6) ? MUT_POISON_RESISTANCE :
+                       (temp_rand >  5) ? MUT_TELEPORT_AT_WILL :
+                       (temp_rand >  4) ? MUT_SPIT_POISON :
+                       (temp_rand >  3) ? MUT_MAPPING :
+                       (temp_rand >  2) ? MUT_BREATHE_FLAMES :
+                       (temp_rand >  1) ? MUT_BLINK :
+                       (temp_rand >  0) ? MUT_CLARITY
+                                        : MUT_ROBUST );
+
+    return ( mutate(which_good_one) );
+
+}          // end give_good_mutation()
 
 
 
 
-char give_bad_mutation(void)
+bool give_bad_mutation( void )
 {
-    switch (random2(12))
+
+    int temp_rand = 0;         // probability determination {dlb}
+    int which_bad_one = 0;
+
+    temp_rand = random2(12);
+
+    which_bad_one = ( (temp_rand > 10) ? MUT_CARNIVOROUS :
+                      (temp_rand >  9) ? MUT_HERBIVOROUS :
+                      (temp_rand >  8) ? MUT_FAST_METABOLISM :
+                      (temp_rand >  7) ? MUT_WEAK :
+                      (temp_rand >  6) ? MUT_DOPEY :
+                      (temp_rand >  5) ? MUT_CLUMSY :
+                      (temp_rand >  4) ? MUT_TELEPORT :
+                      (temp_rand >  3) ? MUT_DEFORMED :
+                      (temp_rand >  2) ? MUT_LOST :
+                      (temp_rand >  1) ? MUT_DETERIORATION :
+                      (temp_rand >  0) ? MUT_BLURRY_VISION
+                                       : MUT_FRAIL );
+
+    return ( mutate(which_bad_one) );
+
+}          // end give_bad_mutation()
+
+
+
+
+//jmf: might be useful somewhere (eg Xom or transmigration effect)
+bool give_cosmetic_mutation(void)
+{
+
+    int mutation = -1; int how_much = 0; int counter = 0;
+
+    do
     {
-    case 0:
-        return mutate(MUT_CARNIVOROUS);
-        break;
-    case 1:
-        return mutate(MUT_HERBIVOROUS);
-        break;
-    case 2:
-        return mutate(MUT_FAST_METABOLISM);
-        break;
-    case 3:
-        return mutate(MUT_WEAK);
-        break;
-    case 4:
-        return mutate(MUT_DOPEY);
-        break;
-    case 5:
-        return mutate(MUT_CLUMSY);
-        break;
-    case 6:
-        return mutate(MUT_TELEPORT);
-        break;
-    case 7:
-        return mutate(MUT_DEFORMED);
-        break;
-    case 8:
-        return mutate(MUT_LOST);
-        break;
-    case 9:
-        return mutate(MUT_DETERIORATION);
-        break;
-    case 10:
-        return mutate(MUT_BLURRY_VISION);
-        break;
-    case 11:
-        return mutate(MUT_FRAIL);
-        break;
+        mutation = MUT_DEFORMED;
+        how_much = 1 + random2(3);
+
+        if (one_chance_in(6))
+        {
+            mutation = MUT_ROBUST;
+            how_much = 1 + random2(3);
+        }
+
+        if (one_chance_in(6))
+        {
+            mutation = MUT_FRAIL;
+            how_much = 1 + random2(3);
+        }
+
+        if (one_chance_in(5))
+        {
+            mutation = MUT_TOUGH_SKIN;
+            how_much = 1 + random2(3);
+        }
+
+        if (you.species != SP_TROLL && you.species != SP_GHOUL && one_chance_in(4))
+        {
+            how_much = 1 + random2(3);
+            mutation = MUT_CLAWS;
+        }
+
+        if (you.species != SP_CENTAUR && you.species != SP_NAGA && you.species != SP_KENKU
+           && !player_genus(GENPC_DRACONIAN) && one_chance_in(5))
+        {
+            mutation = MUT_HOOVES;
+            how_much = 1;
+        }
+
+        if ( player_genus(GENPC_DRACONIAN) && one_chance_in(5) )
+        {
+            mutation = MUT_BIG_WINGS;
+            how_much = 1;
+        }
+
+        if (one_chance_in(5))
+        {
+            mutation = MUT_CARNIVOROUS;
+            how_much = 1 + random2(3);
+        }
+
+        if (one_chance_in(6))
+        {
+            mutation = MUT_HORNS;
+            how_much = 1 + random2(3);
+        }
+
+        if ( ( you.species == SP_NAGA || player_genus(GENPC_DRACONIAN) ) && one_chance_in(4))
+        {
+            mutation = MUT_STINGER;
+            how_much = 1 + random2(3);
+        }
+
+        if (you.species == SP_NAGA && one_chance_in(6))
+        {
+            mutation = MUT_BREATHE_POISON;
+            how_much = 1;
+        }
+
+        if ( !( you.species == SP_NAGA || player_genus(GENPC_DRACONIAN) ) && one_chance_in(7) )
+        {
+            mutation = MUT_SPIT_POISON;
+            how_much = 1;
+        }
+
+        if ( !( you.species == SP_NAGA || player_genus(GENPC_DRACONIAN) ) && one_chance_in(8) )
+        {
+            mutation = MUT_BREATHE_FLAMES;
+            how_much = 1 + random2(3);
+        }
+
+        if (you.mutation[mutation] > 0)
+          how_much -= you.mutation[mutation];
+
+        if (how_much < 0)
+          how_much = 0;
     }
-    return 0;
-}
+    while( how_much == 0 && counter++ < 5000 );
+
+    if (how_much != 0)
+      return mutate(mutation);
+    else
+     return false;
+
+}          // end give_cosmetic_mutation()

@@ -14,6 +14,14 @@
 #include "AppHdr.h"
 #include "stuff.h"
 
+#include <stdlib.h>
+#include <string.h>
+
+// may need this later for something else {dlb}:
+// required for table_lookup() {dlb}
+//#include <stdarg.h>
+// required for table_lookup() {dlb}
+
 #ifdef DOS
 #include <conio.h>
 #endif
@@ -22,65 +30,76 @@
 #include "liblinux.h"
 #endif
 
-#include <stdlib.h>
-#include <string.h>
-
-// required for table_lookup() {dlb}
-#include <stdarg.h>
-// required for table_lookup() {dlb}
-
 #include "externs.h"
 
-#include "message.h"
 #include "misc.h"
 #include "output.h"
-#include "view.h"
 #include "skills2.h"
+#include "view.h"
 
 #ifdef MACROS
 #include "macro.h"
 #endif
 
-unsigned long cfseed;           // required for stuff::coinflip() and cf_setseed()
 
-extern char wield_change;
+unsigned long cfseed;        // required for stuff::coinflip() and cf_setseed()
+extern bool wield_change;    // defined in output.cc
 
+
+
+
+unsigned char get_ch( void )
+{
+
+    unsigned char gotched = getch();
+
+    if ( gotched == 0 )
+      gotched = getch();
+
+    return gotched;
+
+}          // end get_ch()
+
+
+
+
+int random2( int max )
+{
 #ifdef USE_NEW_RANDOM
-int random2(int max)
-{
-    if (max <= 0 || max >= RAND_MAX)
-        return 0;
+
+    if ( max < 1 || max >= RAND_MAX )
+      return 0;
     else
-//    return (int) ((((float) max) * rand()) / RAND_MAX); - this is bad!
-        //      Uses FP, so is horribly slow on computers without coprocessors.
-        return (int) rand() / (RAND_MAX / max + 1);
-// Taken from comp.lang.c FAQ. May have problems as max approaches
-    //   RAND_MAX, but this is rather unlikely.
-    //   We've used rand() rather than random() for the portability, I think.
-}
+      //return (int) ((((float) max) * rand()) / RAND_MAX); - this is bad!
+        // Uses FP, so is horribly slow on computers without coprocessors.
+      return (int) rand() / (RAND_MAX / max + 1);
+        // Taken from comp.lang.c FAQ. May have problems as max approaches
+        // RAND_MAX, but this is rather unlikely.
+        // We've used rand() rather than random() for the portability, I think.
+
 #else
-int random2(int randmax)
-{
-    if (randmax <= 0)
-        return 0;
 
-    return random() % randmax;
-}
+    if ( max < 1 )
+      return 0;
+
+    return random() % max;
+
 #endif
+}
 
 
 
 
+// random2avg() returns same mean value as random2() but with a  lower variance
+// never use with rolls < 2 as that would be silly - use random2() instead {dlb}
 int random2avg(int max, int rolls)
 {
-    // this has the same mean as random2(), but a lower variance
-    // never use with rolls < 2! that would be silly - use random2() {dlb}
     int sum = 0;
 
     sum += random2(max);
 
     for (int i = 0; i < (rolls - 1); i++)
-        sum += random2(max + 1);
+      sum += random2(max + 1);
 
     return (sum / rolls);
 }
@@ -88,17 +107,17 @@ int random2avg(int max, int rolls)
 
 
 
-int random2limit(int max, int limit)
+// originally designed to randomize evasion -
+// values are slightly lowered near (max) and
+// approach an upper limit somewhere near (limit/2)
+int random2limit( int max, int limit )
 {
-    // designed to randomize evasion.
-    // low values of max are slightly lowered
-    // high values tend to max out near LIMIT/2
 
     int i;
     int sum = 0;
 
-    if (max <= 0)
-        return 0;
+    if ( max < 1 )
+      return 0;
 
     for (i = 0; i < max; i++)
     {
@@ -108,49 +127,25 @@ int random2limit(int max, int limit)
 
     return sum;
 
-}
+}          // end random2limit()
 
 
 
 
-unsigned char get_ch()
+// answers the question: "Is a grid within character's line of sight?"
+bool see_grid( unsigned char grx, unsigned char gry )
 {
-    unsigned char gotched = getch();
 
-    if (gotched == 0)
-        gotched = getch();
-    return gotched;
-}
-
-
-
-
-/* Is a grid within character's line of sight? */
-bool see_grid(unsigned char grx, unsigned char gry)
-{
-    if (grx > you.x_pos - 9 && grx < you.x_pos + 9 && gry > you.y_pos - 9 && gry < you.y_pos + 9)
+    if ( grx > you.x_pos - 9 && grx < you.x_pos + 9
+        && gry > you.y_pos - 9 && gry < you.y_pos + 9 )
     {
-        if (env.show[grx - you.x_pos + 9][gry - you.y_pos + 9] != 0)
-            return true;
+        if ( env.show[grx - you.x_pos + 9][gry - you.y_pos + 9] != 0 )
+          return true;
     }
 
     return false;
-}
 
-
-
-
-int magic_ability(int mag_abil, int intel)
-{
-
-    int retv = mag_abil * intel;
-
-    retv /= 10;
-
-
-    return retv;
-
-}
+}          // end see_grid()
 
 
 
@@ -170,26 +165,14 @@ void end(int end_arg)
 
 
 
-
-void output_value(char string[100], int value)
-{
-    strcpy(info, string);
-    itoa(value, st_prn, 10);
-    strcat(info, st_prn);
-    mpr(info);
-}
-
-
-
-
 #ifdef PLAIN_TERM
 // this function is used for systems without gettext/puttext to redraw the
 // playing screen after a call to for example inventory.
-void redraw_screen(void)
+void redraw_screen( void )
 {
     char title[40];
 
-    strcpy(title, skill_title(best_skill(0, 50, 99), you.skills[best_skill(0, 50, 99)], you.char_class, you.experience_level));
+    strcpy(title, skill_title(best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99), you.skills[best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99)]));
     draw_border(you.your_name, title, you.species);
 
     you.redraw_hit_points = 1;
@@ -203,7 +186,7 @@ void redraw_screen(void)
     you.redraw_experience = 1;
     you.redraw_hunger = 1;
     you.redraw_burden = 1;
-    wield_change = 1;
+    wield_change = true;
 
     print_stats();
 
@@ -212,7 +195,7 @@ void redraw_screen(void)
     viewwindow(1, false);
 
 
-}
+}          // end redraw_screen()
 #endif
 
 
@@ -223,67 +206,55 @@ void redraw_screen(void)
 // usage: summon_swarm() summon_undead() summon_scorpions() summon_things()
 // ex(1): stepdown_value (foo, 2, 2, 6, 8) replaces the following block:
 //
+
 /*
    if (foo > 2)
-   foo = (foo - 2) / 2 + 2;
+     foo = (foo - 2) / 2 + 2;
    if (foo > 4)
-   foo = (foo - 4) / 2 + 4;
+     foo = (foo - 4) / 2 + 4;
    if (foo > 6)
-   foo = (foo - 6) / 2 + 6;
+     foo = (foo - 6) / 2 + 6;
    if (foo > 8)
-   foo = 8;
+     foo = 8;
  */
+
 //
 // ex(2): bar = stepdown_value(bar, 2, 2, 6, -1) replaces the following block:
 //
+
 /*
    if (bar > 2)
-   bar = (bar - 2) / 2 + 2;
+     bar = (bar - 2) / 2 + 2;
    if (bar > 4)
-   bar = (bar - 4) / 2 + 4;
+     bar = (bar - 4) / 2 + 4;
    if (bar > 6)
-   bar = (bar - 6) / 2 + 6;
+     bar = (bar - 6) / 2 + 6;
  */
-//
+
 // I hope this permits easier/more experimentation with value stepdowns in the code
 // it really needs to be rewritten to accept arbitrary (unevenly spaced) steppings
-
 int stepdown_value(int base_value, int stepping, int first_step, int last_step, int ceiling_value)
 {
     int return_value = base_value;
 
-    if (return_value <= first_step)     // values up to the first "step" returned unchanged
-
-    {
-        return return_value;
-    }
+// values up to the first "step" returned unchanged:
+    if ( return_value <= first_step )
+      return return_value;
 
     for (int this_step = first_step; this_step <= last_step; this_step += stepping)
     {
-        if (return_value > this_step)
-        {
-            return_value = ((return_value - this_step) / 2) + this_step;
-        }
+        if ( return_value > this_step )
+          return_value = ((return_value - this_step) / 2) + this_step;
         else
-        {
-            break;              // exit loop iff value fully "stepped down"
-
-        }
+          break;              // exit loop iff value fully "stepped down"
     }
 
-    if (ceiling_value != -1 && return_value > ceiling_value)    // "no final ceiling" == -1
-
-    {
-        return ceiling_value;   // highest value to return is "ceiling"
-
-    }
+    if ( ceiling_value != -1 && return_value > ceiling_value )    // "no final ceiling" == -1
+      return ceiling_value;   // highest value to return is "ceiling"
     else
-    {
-        return return_value;    // otherwise, value returned "as is"
+      return return_value;    // otherwise, value returned "as is"
 
-    }
-
-}
+}          // end stepdown_value()
 
 
 
@@ -297,12 +268,12 @@ int stepdown_value(int base_value, int stepping, int first_step, int last_step, 
 //                                                      -- 14jan2000 {dlb}
 
 
-bool one_chance_in(int a_million)
+bool one_chance_in( int a_million )
 {
 
-    return (random2(a_million) == 0);   // that's it? :P {dlb}
+    return (random2(a_million) == 0);
 
-}
+}          // end one_chance_in() - that's it? :P {dlb}
 
 
 
@@ -312,6 +283,7 @@ bool one_chance_in(int a_million)
 // when it comes to Crawl's RNG ... turning to *Numerical
 // Recipies in C* (Chapter 7-4, page 298), I hit upon what
 // struck me as a fine solution.
+
 // You can read all the details about this function (pretty
 // much stolen shamelessly from NRinC) elsewhere, but having
 // tested it out myself I think it satisfies Crawl's incessant
@@ -335,8 +307,7 @@ bool one_chance_in(int a_million)
 // itself into something a bit more orderly :P 16jan2000 {dlb}
 
 // NB(1): cfseed is defined atop stuff.cc
-// NB(2): IB(foo) and MASK are defined in defines.h - probably
-//        not the best place for them, but someone else can move 'em.
+// NB(2): IB(foo) and MASK are defined somewhere in defines.h
 // NB(3): the function assumes that cf_setseed() has been called
 //        beforehand - the call is presently made in acr::initialise()
 //        right after srandom() and srand() are called (note also
@@ -345,6 +316,7 @@ bool one_chance_in(int a_million)
 
 bool coinflip(void)
 {
+
     extern unsigned long cfseed;        // defined atop stuff.cc
 
     unsigned long *ptr_cfseed = &cfseed;
@@ -359,118 +331,27 @@ bool coinflip(void)
         *ptr_cfseed <<= 1;
         return false;
     }
-}
+
+}          // end coinflip()
+
+
+
 
 // cf_setseed should only be called but once in all of Crawl!!! {dlb}
 
 void cf_setseed(void)
 {
+
     extern unsigned long cfseed;        // defined atop stuff.cc
 
     unsigned long *ptr_cfseed = &cfseed;
 
     do
     {
-
         *ptr_cfseed = rand();
-
     }
     while (*ptr_cfseed == 0);
 
-}
-
-
-
-
-// a function that accepts a value for value range and a
-// (possibly limited?) list of value-results pairings to
-// be compared against a random number within the range
-// supplied. intended to replace short outcome lists that
-// are not worthy of more sophisticated handling. lengthy
-// results tables or tables shared across several f(x)'s
-// should probably be arrayed and handled by a function
-// working with pointers to the array(s) themselves -- I
-// think this latter approach is easier to maintan, offers
-// lower overhead in manipulating the tables, etc. like I
-// said, this is for one-shot, short lists to improve
-// program readability and code maintainence/tweaking.
-
-// make certain that the values following the first come
-// in pairs (always) and that the last value pair has 0
-// as its second half .. look at the code below and you
-// will see why.
-
-// lists whose probabilites can be easily reduced to a
-// common denominator may be better handled as a switch -
-// the overhead will be lower, though I think it's cooler
-// to use table_lookup() instead :P
-
-// ex: thing_called = table_lookup( 25,
-//                                  MONS_WRAITH, 9,
-//                                  MONS_SPECTRAL_WARRIOR, 4,
-//                                  MONS_FREEZING_WRAITH, 0 );
-// suitably replaces the following code block (from spells2):
-
-/*
-   int temp_rand = random2(25);
-   // recreated odds 14jan2000 {dlb}
-   if (temp_rand > 8)                                 // 64% chance {dlb}
-   {
-   thing_called = MONS_WRAITH;
-   }
-   else if (temp_rand > 3)                            // 20% chance {dlb}
-   {
-   thing_called = MONS_SPECTRAL_WARRIOR;
-   }
-   else                                          // 16% chance {dlb}
-   {
-   thing_called = MONS_FREEZING_WRAITH;
-   }
- */
-
-// the original is quite efficient compared to table_lookup(),
-// which has to pass all the values to a function for processing
-// (this is why pointers to an array would be more efficient for
-// *long* lists) - but, hey, the original "original" called rand2()
-// for each choice of monster -- either way, rand2() is now called
-// only once and not eight times -- and it need not compare values
-// eight times, either (but it may), so I think: overall net gain.
-// I'll let you decide which is more concise - 16jan2000 {dlb}
-// NB(1): this function requires <stdargs.h> which is at the top
-//        of stuff.cc - I *think* it belongs there. {dlb}
-// NB(2): table_lookup() returns an int and all arguments passed
-//        must also be ints -- if there is ever need, it could
-//        be reworked to handle other/any data types, but ints
-//        seem to have the run of the place around here.
-// NB(3): I usually avoid using >= when > is as appropriate,
-//        but that would mean tagging the final value with a -1
-//        so that ( 0 > -1 ) would be true if the rolled value
-//        was a 0 or the event occurred only once in n times ...
-//        live with it, I guess. By avoiding -1, the function
-//        can later be turned to unsigned int should that be a
-//        good thing(tm) to do.
-// may be best for unbalanced lists of 4 to 9 members, inclusive???
-// (wow - the comments far surpass the actual function in size!)
-
-int table_lookup(int die_roll,...)
-{
-    va_list which_entry;
-    int outcome = random2(die_roll);
-    int result = 0;
-
-    va_start(which_entry, die_roll);
-
-    do
-    {
-        result = va_arg(which_entry, int);
-        if (outcome >= va_arg(which_entry, int))
-              break;
-    }
-    while (1);
-
-    va_end(which_entry);
-
-    return result;
 }
 
 
@@ -484,21 +365,197 @@ int table_lookup(int die_roll,...)
 
 void modify_stats(int STmod, int IQmod, int DXmod)
 {
-    if (STmod != 0)
+
+    if ( STmod )
     {
         you.strength += STmod;
         you.max_strength += STmod;
+        you.redraw_strength = 1;
     }
-    if (IQmod != 0)
+    if ( IQmod )
     {
         you.intel += IQmod;
         you.max_intel += IQmod;
+        you.redraw_intelligence = 1;
     }
-    if (DXmod != 0)
+    if ( DXmod )
     {
         you.dex += DXmod;
         you.max_dex += DXmod;
+        you.redraw_dexterity = 1;
     }
 
     return;
-}
+
+}          // end modify_stats()
+
+
+
+
+void canned_msg( unsigned char which_message )
+{
+
+    switch ( which_message )
+    {
+      case MSG_SOMETHING_APPEARS:
+        strcpy(info, "Something appears ");
+        strcat(info, (you.species == SP_NAGA || you.species == SP_CENTAUR) ? "before you" : "at your feet");
+        strcat(info, "!");
+        mpr(info);
+        break;
+      case MSG_NOTHING_HAPPENS:
+        mpr("Nothing appears to happen.");
+        break;
+      case MSG_YOU_RESIST:
+        mpr("You resist.");
+        break;
+      case MSG_TOO_BERSERK:
+        mpr("You are too berserk!");
+        break;
+      case MSG_NOTHING_CARRIED:
+        mpr("You aren't carrying anything.");
+        break;
+      case MSG_CANNOT_DO_YET:
+        mpr("You can't do that yet.");
+        break;
+      case MSG_OK:
+        mpr("Okay, then.");
+        break;
+      case MSG_UNTHINKING_ACT:
+        mpr("Why would you want to do that?");
+        break;
+      case MSG_SPELL_FIZZLES:
+        mpr("The spell fizzles.");
+        break;
+    }
+
+    return;
+
+}          // end canned_msg()
+
+
+
+
+// jmf: general helper (should be used all over in code)
+//      -- idea borrowed from Nethack
+bool yesno( const char * str )
+{
+
+    unsigned char tmp;
+
+    for (;;)
+    {
+        mpr(str);
+
+        tmp = (unsigned char) getch();
+
+        mesclr();
+
+        if ( tmp == 'N' )
+          return false;
+        else if ( tmp == 'Y' )
+          return true;
+        else
+          mpr("[Y]es or [N]o only, please.");
+    }
+
+}          // end yesno()
+
+
+
+
+int distance( char x, char y, char x2, char y2 )
+{
+
+    int X, Y;
+    //jmf: now accurate, but remember to only compare vs. pre-squared distances.
+    //     thus, next to == (distance(m1.x,m1.y, m2.x,m2.y) <= 2)
+    X = (int) x;
+    Y = (int) y;
+    X -= (int) x2;
+    Y -= (int) y2;
+
+    return (X * X) + (Y * Y);
+
+}          // end distance()
+
+
+
+
+bool silenced( char x, char y )
+{
+
+#ifdef USE_SILENCE_CODE
+
+    if ( you.duration[DUR_SILENCE] > 0
+        && distance(x, y, you.x_pos, you.y_pos) <= 36 )     // (6 * 6)
+      return true;
+    else
+    //else // FIXME: implement, and let monsters cast, too
+    //  for (int i = 0; i < MAX_SILENCES; i++)
+    //  {
+    //      if (distance(x, y, silencer[i].x, silencer[i].y) <= 36)
+    //         return true;
+    //  }
+      return false;
+
+#else
+
+    return false;
+
+#endif
+
+}          // end silenced()
+
+
+
+
+bool player_can_hear( char x, char y )
+{
+
+#ifdef USE_SILENCE_CODE
+
+    return ( !silenced(x,y) && !silenced(you.x_pos, you.y_pos) );
+
+#else
+
+    return true;
+
+#endif
+
+}          // end player_can_hear()
+
+
+
+
+unsigned char random_colour( void )
+{
+
+    return (1 + random2(15));
+
+}          // end random_colour()
+
+
+
+
+char index_to_letter ( int the_index )
+{
+
+    return ( the_index + ( (the_index < 26) ? 'a' : ('A' - 26) ) );
+
+}          // end index_to_letter()
+
+
+
+
+int letter_to_index( int the_letter )
+{
+
+    if ( the_letter >= 'a' && the_letter <= 'z' )        // returns range [0-25] {dlb}
+      the_letter -= 'a';
+    else if ( the_letter >= 'A' && the_letter <= 'Z' )   // returns range [26-51] {dlb}
+      the_letter -= ('A' - 26);
+
+    return the_letter;
+
+}          // end letter_to_index()

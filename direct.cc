@@ -5,41 +5,44 @@
  *
  *  Change History (most recent first):
  *
- *       <4>     11/23/99       LRH                             Looking at monsters now
- *                                                                                              displays more info
- *       <3>     5/12/99        BWR             changes to allow for space selection of target.
- *                                              CR, ESC, and 't' in targeting.
- *
- *       <2>     5/09/99        JDJ             look_around no longer prints a prompt.
- *       <1>     -/--/--        LRH             Created
+ * <4>  11/23/99       LRH   Looking at monsters now
+ *                           displays more info
+ * <3>  5/12/99        BWR   changes to allow for space selection of target.
+ *                           CR, ESC, and 't' in targeting.
+ * <2>  5/09/99        JDJ   look_around no longer prints a prompt.
+ * <1>  -/--/--        LRH   Created
  */
 
 #include "AppHdr.h"
 #include "direct.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 #ifdef DOS
 #include <conio.h>
 #endif
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "externs.h"
 
 #include "debug.h"
-#include "view.h"
-#include "itemname.h"
-#include "mstruct.h"
 #include "describe.h"
-#include "player.h"
+#include "itemname.h"
 #include "monstuff.h"
+#include "mon-util.h"
+#include "player.h"
 #include "stuff.h"
+#include "view.h"
 
 #ifdef MACROS
 #include "macro.h"
 #endif
 
+
+int dir_cursor(char rng);
 char mons_find(unsigned char xps, unsigned char yps, char mfp[2], char direction);
+
+
 
 
 //---------------------------------------------------------------
@@ -50,32 +53,33 @@ char mons_find(unsigned char xps, unsigned char yps, char mfp[2], char direction
 // aiming.
 //
 //---------------------------------------------------------------
-void direction(char rnge, struct dist moves[1])
+void direction( char rnge, struct dist moves[1] )
 {
+
     char ink = 0;
     char looked = 0;
 
     moves[0].nothing = dir_cursor(rnge);
-    char info[200];
 
     if (moves[0].nothing == -9999 || moves[0].nothing == -10000 || moves[0].nothing == -10001)
     {
         mpr("Aim (move cursor or select with '-' or '+'/'=', then 'p', '.', or '>')");
         moves[0].prev_targ = 0;
-        if (moves[0].nothing == -10000)
-            moves[0].prev_targ = 1;
-        if (moves[0].nothing == -10001)
-            moves[0].prev_targ = 2;
+
+        if ( moves[0].nothing == -10000 )
+          moves[0].prev_targ = 1;
+
+        if ( moves[0].nothing == -10001 )
+          moves[0].prev_targ = 2;
+
         moves[0].nothing = look_around(moves);
         looked = 1;
     }
 
-    if (moves[0].nothing > 50000)
-    {
-        moves[0].nothing -= 50000;
-    }
+    if ( moves[0].nothing > 50000 )
+      moves[0].nothing -= 50000;
 
-    if (moves[0].nothing > 10000)
+    if ( moves[0].nothing > 10000 )
     {
         moves[0].nothing -= 10000;
         ink = 1;
@@ -89,33 +93,33 @@ void direction(char rnge, struct dist moves[1])
 
     if (moves[0].nothing == 253)
     {
-        if (you.prev_targ == MHITNOT || you.prev_targ >= MNST)
+        if ( you.prev_targ == MHITNOT || you.prev_targ == MHITYOU )
         {
-            strcpy(info, "You haven't got a target.");
-            mpr(info);
+            mpr("You haven't got a target.");
             moves[0].nothing = -1;
-            return;
+        }
+        else
+        {
+            struct monsters *montarget = &menv[you.prev_targ];
+
+            if ( !mons_near(montarget) || ( montarget->enchantment[2] == ENCH_INVIS && !player_see_invis() ) )
+            {
+                mpr("You can't see that creature any more.");
+                moves[0].nothing = -1;
+            }
+            else
+            {
+                moves[0].move_x = montarget->x - you.x_pos;
+                moves[0].move_y = montarget->y - you.y_pos;
+                moves[0].target_x = moves[0].move_x + you.x_pos;
+                moves[0].target_y = moves[0].move_y + you.y_pos;
+            }
         }
 
-        if (!mons_near(you.prev_targ)
-            || (menv[you.prev_targ].enchantment[2] == ENCH_INVIS
-                && player_see_invis() == 0))
-        {
-            strcpy(info, "You can't see that creature any more.");
-            mpr(info);
-            moves[0].nothing = -1;
-            return;
-        }
-
-        moves[0].move_x = menv[you.prev_targ].x - you.x_pos;
-        moves[0].move_y = menv[you.prev_targ].y - you.y_pos;
-        moves[0].target_x = moves[0].move_x + you.x_pos;
-        moves[0].target_y = moves[0].move_y + you.y_pos;
         return;
     }
 
-
-    if (moves[0].nothing == 254)
+    if ( moves[0].nothing == 254 )
     {
         moves[0].nothing = -1;
         return;
@@ -165,15 +169,12 @@ void direction(char rnge, struct dist moves[1])
             moves[0].move_x = -1;
     }
 
-    if (env.mgrid[moves[0].target_x][moves[0].target_y] != MNG)
-    {
+    if ( mgrd[moves[0].target_x][moves[0].target_y] != MNG && rnge != 100 )
+      you.prev_targ = mgrd[moves[0].target_x][moves[0].target_y];
 
-        if (rnge != 100)
-        {
-            you.prev_targ = env.mgrid[moves[0].target_x][moves[0].target_y];
-        }
-    }
 }                               // end of direction()
+
+
 
 
 //---------------------------------------------------------------
@@ -197,6 +198,8 @@ int dir_cursor(char rng)
 
 #ifdef LINUX
     keyy = translate_keypad(keyy);
+    //keyy = key_to_command(keyy);     // maybe replace with this? {dlb}
+
 #endif
 
     if (keyy != 0 && keyy != '*' && keyy != '.')
@@ -345,6 +348,8 @@ int dir_cursor(char rng)
 }
 
 
+
+
 //---------------------------------------------------------------
 //
 // look_around
@@ -354,7 +359,7 @@ int dir_cursor(char rng)
 // descriptions.
 //
 //---------------------------------------------------------------
-int look_around(struct dist moves[1])
+int look_around( struct dist moves[1] )
 {
     int xps = 17;
     int yps = 9;
@@ -365,26 +370,12 @@ int look_around(struct dist moves[1])
     char monsfind_pos[2];
     int p = 0;
 
-    char printed_already = 1;
+    bool printed_already = true;
 
     monsfind_pos[0] = you.x_pos;
     monsfind_pos[1] = you.y_pos;
 
-    if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
-    {
-        if (mons_near(you.prev_targ)
-            && (menv[you.prev_targ].enchantment[2] != ENCH_INVIS
-                || player_see_invis() != 0))
-        {
-            strcpy(info, "You are currently targetting ");
-            strcat(info, monam(menv[you.prev_targ].number, menv[you.prev_targ].type,
-                               menv[you.prev_targ].enchantment[2], 1));
-            strcat(info, " (p to target).");
-            mpr(info);
-        }
-        else
-            mpr("You have no current target.");
-    }
+    message_current_target();
 
     gotoxy(xps, yps);
     gotoxy(xps + 1, yps);
@@ -399,6 +390,7 @@ int look_around(struct dist moves[1])
 
 #ifdef LINUX
             gotch = translate_keypad(gotch);
+            //gotch = key_to_command(gotch);     // maybe replace with this? {dlb}
 #endif
         }
         else
@@ -408,7 +400,7 @@ int look_around(struct dist moves[1])
             else
                 gotch = '-';
             moves[0].prev_targ = 0;
-            printed_already = 0;
+            printed_already = false;
         }
 
 
@@ -476,14 +468,14 @@ int look_around(struct dist moves[1])
             case '?':
                 mve_x = 0;
                 mve_y = 0;
-                if (mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9] == MNG)
-                    continue;
+                if ( mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9] == MNG )
+                  continue;
 
-                if (menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].enchantment[2] == ENCH_INVIS && player_see_invis() == 0)
-                    continue;
+                if ( menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].enchantment[2] == ENCH_INVIS && !player_see_invis() )
+                  continue;
 
-                if (menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].type >= MONS_LAVA_WORM && menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].number == 1)
-                    continue;
+                if ( monster_habitat(menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].type) != DNGN_FLOOR && menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].number == 1)
+                  continue;
 
                 describe_monsters(menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].type, mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]);
 
@@ -493,8 +485,6 @@ int look_around(struct dist moves[1])
                 break;
 
             case 'p':
-                goto finished_looking;
-
             case '>':
                 goto finished_looking;
 
@@ -532,7 +522,7 @@ int look_around(struct dist moves[1])
         mve_x = 0;
         mve_y = 0;
 
-      thingy:
+thingy:
         switch (gotch)
         {
         case 13:
@@ -587,17 +577,18 @@ int look_around(struct dist moves[1])
             return -1;
         }
 
-      gotchy:
+gotchy:
         gotoxy(xps, yps);
 
         if (xps + mve_x >= 9 && xps + mve_x < 26)
-            xps += mve_x;
+          xps += mve_x;
         if (yps + mve_y >= 1 && yps + mve_y < 18)
-            yps += mve_y;
+          yps += mve_y;
 
-        if (printed_already == 1)
-            mesclr();
-        printed_already = 1;
+        if ( printed_already )
+          mesclr();
+
+        printed_already = true;
 
         if (env.show[xps - 8][yps] == 0 && (xps != 17 || yps != 9))
         {
@@ -611,22 +602,20 @@ int look_around(struct dist moves[1])
 
             if (grd[you.x_pos + xps - 17][you.y_pos + yps - 9] == DNGN_SHALLOW_WATER)
             {
-                if (menv[i].enchantment[2] == ENCH_INVIS && mons_flies(menv[i].type) == 0 && player_see_invis() == 0)
+                if (menv[i].enchantment[2] == ENCH_INVIS && mons_flies(menv[i].type) == 0 && !player_see_invis() )
                 {
                     mpr("There is a strange disturbance in the water here.");
                 }
             }
 
-            if (menv[i].enchantment[2] == ENCH_INVIS && player_see_invis() == 0)
-                goto look_clouds;
+            if ( menv[i].enchantment[2] == ENCH_INVIS && !player_see_invis() )
+              goto look_clouds;
 
-            int mmov_x = menv[i].inv[0];
+            int mmov_x = menv[i].inv[MSLOT_WEAPON];    // and how the hell does a variable named mmov_x communicate this? :P {dlb}
 
             if (menv[i].type == MONS_DANCING_WEAPON)
             {
-                item_name(mitm.pluses2[mmov_x], mitm.base_type[mmov_x], mitm.sub_type[mmov_x],
-                          mitm.special[mmov_x], mitm.pluses[mmov_x], mitm.quantity[mmov_x],
-                          mitm.id[mmov_x], 2, str_pass);
+                it_name(mmov_x, 2, str_pass);
                 strcpy(info, str_pass);
                 strcat(info, ".");
                 mpr(info);
@@ -639,18 +628,14 @@ int look_around(struct dist moves[1])
                 if (mmov_x != ING)
                 {
                     strcpy(info, "It is wielding ");
-                    item_name(mitm.pluses2[mmov_x], mitm.base_type[mmov_x], mitm.sub_type[mmov_x],
-                              mitm.special[mmov_x], mitm.pluses[mmov_x], mitm.quantity[mmov_x],
-                              mitm.id[mmov_x], 3, str_pass);
+                    it_name(mmov_x, 3, str_pass);
                     strcat(info, str_pass);
-                    if (menv[i].type == MONS_TWO_HEADED_OGRE && menv[i].inv[1] != ING)
+                    if (menv[i].type == MONS_TWO_HEADED_OGRE && menv[i].inv[MSLOT_MISSILE] != ING)
                     {
                         strcat(info, ",");
                         mpr(info);
                         strcpy(info, " and ");
-                        item_name(mitm.pluses2[menv[i].inv[1]], mitm.base_type[menv[i].inv[1]], mitm.sub_type[menv[i].inv[1]],
-                                  mitm.special[menv[i].inv[1]], mitm.pluses[menv[i].inv[1]], mitm.quantity[menv[i].inv[1]],
-                                  mitm.id[menv[i].inv[1]], 3, str_pass);
+                        it_name(menv[i].inv[MSLOT_MISSILE], 3, str_pass);
                         strcat(info, str_pass);
                         // 2-headed ogres can wield 2 weapons
                     }
@@ -659,22 +644,22 @@ int look_around(struct dist moves[1])
                 }
             }
 
-            if (menv[i].type == 106)
-            {
+            if ( menv[i].type == MONS_HYDRA )
+              {
                 strcpy(info, "It has ");
                 itoa(menv[i].number, st_prn, 10);
                 strcat(info, st_prn);
                 strcat(info, " heads.");
                 mpr(info);
-            }
+              }
 
-            print_wounds(i);
+            print_wounds(&menv[i]);
 
-            if (menv[i].behavior == 7)
-                mpr("It is friendly.");
+            if ( menv[i].behavior == BEH_ENSLAVED )
+              mpr("It is friendly.");
 
-            if (menv[i].behavior == 0)
-                mpr("It doesn't appear to have noticed you.");
+            if ( menv[i].behavior == BEH_SLEEP )
+              mpr("It doesn't appear to have noticed you.");
 
             if (menv[i].enchantment1)
             {
@@ -682,29 +667,41 @@ int look_around(struct dist moves[1])
                 {
                     switch (menv[i].enchantment[p])
                     {
-                    case ENCH_SLOW:
+                      case ENCH_YOUR_ROT_I:
+                      case ENCH_YOUR_ROT_II:
+                      case ENCH_YOUR_ROT_III:
+                      case ENCH_YOUR_ROT_IV:
+                        mpr("It is rotting away."); //jmf: "covered in sores"?
+                        break;
+                      case ENCH_BACKLIGHT_I:
+                      case ENCH_BACKLIGHT_II:
+                      case ENCH_BACKLIGHT_III:
+                      case ENCH_BACKLIGHT_IV:
+                        mpr("It is softly glowing.");
+                        break;
+                      case ENCH_SLOW:
                         mpr("It is moving slowly.");
                         break;
-                    case ENCH_HASTE:
+                      case ENCH_HASTE:
                         mpr("It is moving very quickly.");
                         break;
-                    case ENCH_CONFUSION:
+                      case ENCH_CONFUSION:
                         mpr("It appears to be bewildered and confused.");
                         break;
-                    case ENCH_INVIS:
+                      case ENCH_INVIS:
                         mpr("It is slightly transparent.");
                         break;
-                    case ENCH_CHARM:
+                      case ENCH_CHARM:
                         mpr("It is in your thrall.");
                         break;
-                    case ENCH_YOUR_STICKY_FLAME_I:
-                    case ENCH_YOUR_STICKY_FLAME_II:
-                    case ENCH_YOUR_STICKY_FLAME_III:
-                    case ENCH_YOUR_STICKY_FLAME_IV:
-                    case ENCH_STICKY_FLAME_I:
-                    case ENCH_STICKY_FLAME_II:
-                    case ENCH_STICKY_FLAME_III:
-                    case ENCH_STICKY_FLAME_IV:
+                      case ENCH_YOUR_STICKY_FLAME_I:
+                      case ENCH_YOUR_STICKY_FLAME_II:
+                      case ENCH_YOUR_STICKY_FLAME_III:
+                      case ENCH_YOUR_STICKY_FLAME_IV:
+                      case ENCH_STICKY_FLAME_I:
+                      case ENCH_STICKY_FLAME_II:
+                      case ENCH_STICKY_FLAME_III:
+                      case ENCH_STICKY_FLAME_IV:
                         mpr("It is covered in liquid flames.");
                         break;
                     }
@@ -716,55 +713,36 @@ int look_around(struct dist moves[1])
 #endif
         }
 
-      look_clouds:
+look_clouds:
         if (env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9] != CNG)
         {
-            switch (env.cloud_type[env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9]] % 100)         // (!!!) {dlb}
+            char cloud_inspected = env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9];  // whew! {dlb}
 
-            {
-            case CLOUD_FIRE:
-                strcpy(info, "There is a cloud of flame here.");
-                break;
-
-            case CLOUD_STINK:
-                strcpy(info, "There is a cloud of noxious fumes here.");
-                break;
-
-            case CLOUD_COLD:
-                strcpy(info, "There is a cloud of freezing vapour here.");
-                break;
-
-            case CLOUD_POISON:
-                strcpy(info, "There is a cloud of poison gas here.");
-                break;
-
-            case CLOUD_GREY_SMOKE:
-                strcpy(info, "There is a cloud of grey smoke here.");
-                break;
-
-            case CLOUD_BLUE_SMOKE:
-                strcpy(info, "There is a cloud of blue smoke here.");
-                break;
-
-            case CLOUD_PURP_SMOKE:
-                strcpy(info, "There is a cloud of purple smoke here.");
-                break;
-
-            case CLOUD_STEAM:
-                strcpy(info, "There is a cloud of steam here.");
-                break;
-
-            case CLOUD_MIASMA:
-                strcpy(info, "There is an evil black miasma here.");
-                break;
-
-            case CLOUD_BLACK_SMOKE:
-                strcpy(info, "There is a cloud of black smoke here.");
-                break;
-            }
+            strcpy(info, "There is a cloud of ");
+            strcat(info, (cloud_inspected == CLOUD_FIRE
+                           || cloud_inspected == CLOUD_FIRE_MON)        ? "flame" :
+                         (cloud_inspected == CLOUD_STINK
+                           || cloud_inspected == CLOUD_STINK_MON)       ? "noxious fumes" :
+                         (cloud_inspected == CLOUD_COLD
+                           || cloud_inspected == CLOUD_COLD_MON)        ? "freezing vapour" :
+                         (cloud_inspected == CLOUD_POISON
+                           || cloud_inspected == CLOUD_POISON_MON)      ? "poison gases" :
+                         (cloud_inspected == CLOUD_GREY_SMOKE
+                           || cloud_inspected == CLOUD_GREY_SMOKE_MON)  ? "grey smoke" :
+                         (cloud_inspected == CLOUD_BLUE_SMOKE
+                           || cloud_inspected == CLOUD_BLUE_SMOKE_MON)  ? "blue smoke" :
+                         (cloud_inspected == CLOUD_PURP_SMOKE
+                           || cloud_inspected == CLOUD_PURP_SMOKE_MON)  ? "purple smoke" :
+                         (cloud_inspected == CLOUD_STEAM
+                           || cloud_inspected == CLOUD_STEAM_MON)       ? "steam" :
+                         (cloud_inspected == CLOUD_MIASMA
+                           || cloud_inspected == CLOUD_MIASMA_MON)      ? "foul pestilence" :
+                         (cloud_inspected == CLOUD_BLACK_SMOKE
+                           || cloud_inspected == CLOUD_BLACK_SMOKE_MON) ? "black smoke"
+                                                                        : "buggy goodness" );
+            strcat(info, " here.");
             mpr(info);
         }
-        // end of look_clouds:
 
         if (igrd[you.x_pos + xps - 17][you.y_pos + yps - 9] != ING)
         {
@@ -792,12 +770,10 @@ int look_around(struct dist moves[1])
             break;
         case DNGN_ROCK_WALL:
         case DNGN_SECRET_DOOR:
-            if (you.level_type == LEVEL_PANDEMONIUM)
-            {
-                mpr("A wall of the weird stuff which makes up Pandemonium.");
-            }
+            if ( you.level_type == LEVEL_PANDEMONIUM )
+              mpr("A wall of the weird stuff which makes up Pandemonium.");
             else
-                mpr("A rock wall.");
+              mpr("A rock wall.");
             break;
         case DNGN_CLOSED_DOOR:
             mpr("A closed door.");
@@ -808,67 +784,67 @@ int look_around(struct dist moves[1])
         case DNGN_GREEN_CRYSTAL_WALL:
             mpr("A wall of green crystal.");
             break;
-        case 7:
+        case DNGN_ORCISH_IDOL:
             mpr("An orcish idol.");
             break;
-        case 8:
+        case DNGN_WAX_WALL:
             mpr("A wall of solid wax.");
             break;
-        case 21:
+        case DNGN_SILVER_STATUE:
             mpr("A silver statue.");
             break;
-        case 22:
+        case DNGN_GRANITE_STATUE:
             mpr("A granite statue.");
             break;
-        case 23:
+        case DNGN_ORANGE_CRYSTAL_STATUE:
             mpr("An orange crystal statue.");
             break;
-        case 61:
+        case DNGN_LAVA:
             mpr("Some lava.");
             break;
-        case 62:
+        case DNGN_DEEP_WATER:
             mpr("Some deep water.");
             break;
-        case 65:
+        case DNGN_SHALLOW_WATER:
             mpr("Some shallow water.");
             break;
-        case 78:                // undiscovered trap
-
-        case 67:
+        case DNGN_UNDISCOVERED_TRAP:
+        case DNGN_FLOOR:
             mpr("Floor.");
             break;
-        case 70:
+        case DNGN_OPEN_DOOR:
             mpr("An open door.");
             break;
-        case 85:
+        case DNGN_ROCK_STAIRS_DOWN:
             mpr("A rock staircase leading down.");
             break;
-        case 82:
-        case 83:
-        case 84:
+        case DNGN_STONE_STAIRS_DOWN_I:
+        case DNGN_STONE_STAIRS_DOWN_II:
+        case DNGN_STONE_STAIRS_DOWN_III:
             mpr("A stone staircase leading down.");
             break;
-        case 89:
+        case DNGN_ROCK_STAIRS_UP:
             mpr("A rock staircase leading upwards.");
             break;
-        case 86:
-        case 87:
-        case 88:
+        case DNGN_STONE_STAIRS_UP_I:
+        case DNGN_STONE_STAIRS_UP_II:
+        case DNGN_STONE_STAIRS_UP_III:
             mpr("A stone staircase leading up.");
             break;
-        case 69:
+        case DNGN_ENTER_HELL:
             mpr("A gateway to hell.");
             break;
-        case 71:
+        case DNGN_BRANCH_STAIRS:
             mpr("A staircase to a branch level.");
             break;
-        case 75:
-        case 76:
-        case 77:
+        case DNGN_TRAP_MECHANICAL:
+        case DNGN_TRAP_MAGICAL:
+        case DNGN_TRAP_III:
             for (trf = 0; trf < NTRAPS; trf++)
             {
-                if (env.trap_x[trf] == you.x_pos + xps - 17 && env.trap_y[trf] == you.y_pos + yps - 9)
-                    break;
+                if ( env.trap_x[trf] == you.x_pos + xps - 17
+                    && env.trap_y[trf] == you.y_pos + yps - 9 )
+                  break;
                 if (trf == NTRAPS - 1)
                 {
                     mpr("Error - couldn't find that trap.");
@@ -876,181 +852,181 @@ int look_around(struct dist moves[1])
                     break;
                 }
             }
-            switch (env.trap_type[trf])
+            switch ( env.trap_type[trf] )
             {
-            case 0:
+              case TRAP_DART:
                 mpr("A dart trap.");
                 break;
-            case 1:
+              case TRAP_ARROW:
                 mpr("An arrow trap.");
                 break;
-            case 2:
+              case TRAP_SPEAR:
                 mpr("A spear trap.");
                 break;
-            case 3:
+              case TRAP_AXE:
                 mpr("An axe trap.");
                 break;
-            case 4:
+              case TRAP_TELEPORT:
                 mpr("A teleportation trap.");
                 break;
-            case 5:
+              case TRAP_AMNESIA:
                 mpr("An amnesia trap.");
                 break;
-            case 6:
+              case TRAP_BLADE:
                 mpr("A blade trap.");
                 break;
-            case 7:
+              case TRAP_BOLT:
                 mpr("A bolt trap.");
                 break;
-            case 8:
+              case TRAP_ZOT:
                 mpr("A Zot trap.");
                 break;
-            default:
+              default:
                 mpr("An undefined trap. Huh?");
                 error_message_to_player();
                 break;
             }
             break;
-        case 80:
+        case DNGN_ENTER_SHOP:
             mpr("A shop.");
             break;
-        case 81:
+        case DNGN_ENTER_LABYRINTH:
             mpr("A labyrinth entrance.");
             break;
-        case 92:
+        case DNGN_ENTER_DIS:
             mpr("A gateway to the Iron City of Dis.");
             break;
-        case 93:
+        case DNGN_ENTER_GEHENNA:
             mpr("A gateway to Gehenna.");
             break;
-        case 94:
+        case DNGN_ENTER_COCYTUS:
             mpr("A gateway to the freezing wastes of Cocytus.");
             break;
-        case 95:
+        case DNGN_ENTER_TARTARUS:
             mpr("A gateway to the decaying netherworld of Tartarus.");
             break;
-        case 96:
+        case DNGN_ENTER_ABYSS:
             mpr("A gateway to the infinite Abyss.");
             break;
-        case 97:
+        case DNGN_EXIT_ABYSS:
             mpr("A gateway leading out of the Abyss.");
             break;
-        case 98:
+        case DNGN_STONE_ARCH:
             mpr("An empty arch of ancient stone.");
             break;
-        case 99:
+        case DNGN_ENTER_PANDEMONIUM:
             mpr("A gate leading to the halls of Pandemonium.");
             break;
-        case 100:
+        case DNGN_EXIT_PANDEMONIUM:
             mpr("A gate leading out of Pandemonium.");
             break;
-        case 101:
+        case DNGN_TRANSIT_PANDEMONIUM:
             mpr("A gate leading to another region of Pandemonium.");
             break;
-        case 110:
+        case DNGN_ENTER_ORCISH_MINES:
             mpr("A staircase to the Orcish Mines.");
             break;
-        case 111:
+        case DNGN_ENTER_HIVE:
             mpr("A staircase to the Hive.");
             break;
-        case 112:
+        case DNGN_ENTER_LAIR_I:
             mpr("A staircase to the Lair.");
             break;
-        case 113:
+        case DNGN_ENTER_SLIME_PITS:
             mpr("A staircase to the Slime Pits.");
             break;
-        case 114:
+        case DNGN_ENTER_VAULTS:
             mpr("A staircase to the Vaults.");
             break;
-        case 115:
+        case DNGN_ENTER_CRYPT_I:
             mpr("A staircase to the Crypt.");
             break;
-        case 116:
+        case DNGN_ENTER_HALL_OF_BLADES:
             mpr("A staircase to the Hall of Blades.");
             break;
-        case 117:
+        case DNGN_ENTER_ZOT:
             mpr("A gate to the Realm of Zot.");
             break;
-        case 118:
+        case DNGN_ENTER_TEMPLE:
             mpr("A staircase to the Ecumenical Temple.");
             break;
-        case 119:
+        case DNGN_ENTER_SNAKE_PIT:
             mpr("A staircase to the Snake Pit.");
             break;
-        case 120:
+        case DNGN_ENTER_ELVEN_HALLS:
             mpr("A staircase to the Elven Halls.");
             break;
-        case 121:
+        case DNGN_ENTER_TOMB:
             mpr("A staircase to the Tomb.");
             break;
-        case 122:
+        case DNGN_ENTER_SWAMP:
             mpr("A staircase to the Swamp.");
             break;
-        case 130:
-        case 131:
-        case 132:
-        case 134:
-        case 138:
+        case DNGN_RETURN_DUNGEON_I:
+        case DNGN_RETURN_DUNGEON_II:
+        case DNGN_RETURN_DUNGEON_III:
+        case DNGN_RETURN_DUNGEON_IV:
+        case DNGN_RETURN_DUNGEON_V:
             mpr("A staircase back to the Dungeon.");
             break;
-        case 133:
+        case DNGN_RETURN_LAIR_II:
             mpr("A staircase back to the Lair.");
             break;
-        case 135:
+        case DNGN_RETURN_VAULTS:
             mpr("A staircase back to the Vaults.");
             break;
-        case 136:
+        case DNGN_RETURN_CRYPT_II:
             mpr("A staircase back to the Crpyt.");
             break;
-        case 139:
+        case DNGN_RETURN_LAIR_III:
             mpr("A staircase back to the Lair.");
             break;
-        case 140:
+        case DNGN_RETURN_MINES:
             mpr("A staircase back to the Mines.");
             break;
-        case 141:
+        case DNGN_RETURN_CRYPT_III:
             mpr("A staircase back to the Crypt.");
             break;
-        case 137:
+        case DNGN_EXIT_ZOT:
             mpr("A gate leading back out of this place.");
             break;
-        case 142:
+        case DNGN_RETURN_LAIR_IV:
             mpr("A staircase back to the Lair.");
             break;
-        case 180:
+        case DNGN_ALTAR_ZIN:
             mpr("A glowing white marble altar of Zin.");
             break;
-        case 181:
+        case DNGN_ALTAR_SHINING_ONE:
             mpr("A glowing golden altar of the Shining One.");
             break;
-        case 182:
+        case DNGN_ALTAR_KIKUBAAQUDGHA:
             mpr("An ancient bone altar of Kikubaaqudgha.");
             break;
-        case 183:
+        case DNGN_ALTAR_YREDELEMNUL:
             mpr("A basalt altar of Yredelemnul.");
             break;
-        case 184:
+        case DNGN_ALTAR_XOM:
             mpr("A shimmering altar of Xom.");
             break;
-        case 185:
+        case DNGN_ALTAR_VEHUMET:
             mpr("A shining altar of Vehumet.");
             break;
-        case 186:
+        case DNGN_ALTAR_OKAWARU:
             mpr("An iron altar of Okawaru.");
             break;
-        case 187:
+        case DNGN_ALTAR_MAKHLEB:
             mpr("A burning altar of Makhleb.");
             break;
-        case 188:
+        case DNGN_ALTAR_SIF_MUNA:
             mpr("A deep blue altar of Sif Muna.");
             break;
-        case 189:
+        case DNGN_ALTAR_TROG:
             mpr("A bloodstained altar of Trog.");
             break;
-        case 190:
+        case DNGN_ALTAR_NEMELEX_XOBEH:
             mpr("A sparkling altar of Nemelex Xobeh.");
             break;
-        case 191:
+        case DNGN_ALTAR_ELYVILON:
             mpr("A silver altar of Elyvilon.");
             break;
         case DNGN_BLUE_FOUNTAIN:
@@ -1069,7 +1045,7 @@ int look_around(struct dist moves[1])
             break;
         }
 
-      glogokh:                  // test relay_message();
+glogokh:
         itoa((int) grd[you.x_pos + xps - 17][you.y_pos + yps - 9], st_prn, 10);
         strcpy(info, st_prn);
 
@@ -1090,7 +1066,7 @@ int look_around(struct dist moves[1])
 
     return 0;                   //mve_x * 100 + mve_y + 707 + 10000;
 
-}                               // end of look_around
+}                               // end look_around()
 
 
 
@@ -1221,13 +1197,12 @@ char mons_find(unsigned char xps, unsigned char yps, char mfp[2], char direction
         }                       // end else
 
 
-      finished_spiralling:
+finished_spiralling:
         x_change *= direction;
         y_change *= direction;
 
         temp_xps += x_change;
         if (temp_yps + y_change <= 17)  // it can wrap, unfortunately
-
             temp_yps += y_change;
 
         // We don't want to be looking outside the bounds of the arrays:
@@ -1235,14 +1210,13 @@ char mons_find(unsigned char xps, unsigned char yps, char mfp[2], char direction
          && you.x_pos + temp_xps - 17 >= 0 && you.x_pos + temp_xps - 17 < GXM
          && you.y_pos + temp_yps - 9 >= 0 && you.y_pos + temp_yps - 9 < GYM)
         {
-            if (mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9] != MNG
+            if ( mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9] != MNG
                 && env.show[temp_xps - 8][temp_yps] != 0
-                && (menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].enchantment[2] != ENCH_INVIS || player_see_invis() != 0)
-                && (menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].type < MONS_LAVA_WORM || menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].number != 1))
-                // & not invis etc
+                && ( menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].enchantment[2] != ENCH_INVIS || player_see_invis() )
+                && ( monster_habitat(menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].type) == DNGN_FLOOR || menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].number != 1 ) )
             {
-//       mpr("Found something!");
-                //       more();
+                //mpr("Found something!");
+                //more();
                 mfp[0] = temp_xps;
                 mfp[1] = temp_yps;
                 return 1;

@@ -649,7 +649,7 @@ static int HandleMenu(int menuID, int item)
 
     case kFileMenu:
         if (item == 1)
-            save_game(0);
+            save_game(false);
 
         else if (item == 3)
         {
@@ -659,7 +659,7 @@ static int HandleMenu(int menuID, int item)
 
                 if (answer == kSaveChanges)
                 {
-                    save_game(1);
+                    save_game(true);
                 }
                 else if (answer == kDontSave)
                 {

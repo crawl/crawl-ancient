@@ -18,12 +18,12 @@
 #include "AppHdr.h"
 #include "items.h"
 
+#include <string.h>
+#include <stdlib.h>
+
 #ifdef DOS
 #include <conio.h>
 #endif
-
-#include <string.h>
-#include <stdlib.h>
 
 #include "externs.h"
 
@@ -31,37 +31,37 @@
 #include "effects.h"
 #include "fight.h"
 #include "invent.h"
-#include "itemname.h"
-#include "item_use.h"
 #include "it_use2.h"
+#include "item_use.h"
+#include "itemname.h"
 #include "misc.h"
 #include "monplace.h"
-#include "mstruct.h"
+#include "mon-util.h"
 #include "mutation.h"
 #include "player.h"
-#include "randart.h"
 #include "religion.h"
 #include "skills.h"
 #include "spells.h"
 #include "stuff.h"
 
-void autopickup(void);
 
-
-int add_item(int item_got, int it_quant);
-void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop);
-int conv_lett(int item_drop_3);
+extern bool wield_change;    // defined in output.cc
 
 
 int last_item = ING;
 
-extern unsigned char wield_change;      /* defined in output.cc */
+
+void autopickup(void);
+int add_item(int item_got, int it_quant);
+
+
+
 
 /*
    Takes keyin as an argument because it will only display a long list of items
    if ; is pressed.
  */
-void item_check(char keyin)
+void item_check( char keyin )
 {
     char item_show[50][50];
     char temp_quant[10];
@@ -70,38 +70,30 @@ void item_check(char keyin)
     int counter = 0;
     int counter_max = 0;
 
-    if (env.grid[you.x_pos][you.y_pos] >= DNGN_ENTER_HELL
-        && env.grid[you.x_pos][you.y_pos] <= DNGN_PERMADRY_FOUNTAIN)
+    if ( grd[you.x_pos][you.y_pos] >= DNGN_ENTER_HELL
+        && grd[you.x_pos][you.y_pos] <= DNGN_PERMADRY_FOUNTAIN )
     {
-        if (env.grid[you.x_pos][you.y_pos] >= DNGN_STONE_STAIRS_DOWN_I && env.grid[you.x_pos][you.y_pos] <= DNGN_ROCK_STAIRS_DOWN)
+        if ( grd[you.x_pos][you.y_pos] >= DNGN_STONE_STAIRS_DOWN_I
+            && grd[you.x_pos][you.y_pos] <= DNGN_ROCK_STAIRS_DOWN )
         {
-            if (env.grid[you.x_pos][you.y_pos] == DNGN_ROCK_STAIRS_DOWN)
-                mpr("There is a rock staircase leading down here.");
-            else
-                mpr("There is a stone staircase down here.");
+            strcpy(info, "There is a ");
+            strcat(info, (grd[you.x_pos][you.y_pos] == DNGN_ROCK_STAIRS_DOWN) ? "rock" : "stone");
+            strcat(info, " staircase leading down here.");
+            mpr(info);
         }
-        else if (env.grid[you.x_pos][you.y_pos] >= DNGN_STONE_STAIRS_UP_I && env.grid[you.x_pos][you.y_pos] <= DNGN_ROCK_STAIRS_UP)
+        else if ( grd[you.x_pos][you.y_pos] >= DNGN_STONE_STAIRS_UP_I
+                 && grd[you.x_pos][you.y_pos] <= DNGN_ROCK_STAIRS_UP )
         {
-            if (env.grid[you.x_pos][you.y_pos] == DNGN_ROCK_STAIRS_UP)
-                mpr("There is a rock staircase leading upwards here.");
-            else
-                mpr("There is a stone staircase up here.");
+            strcpy(info, "There is a ");
+            strcat(info, (grd[you.x_pos][you.y_pos] == DNGN_ROCK_STAIRS_UP) ? "rock" : "stone");
+            strcat(info, " staircase leading upwards here.");
+            mpr(info);
         }
         else
-            switch (env.grid[you.x_pos][you.y_pos])
+            switch ( grd[you.x_pos][you.y_pos] )
             {
             case DNGN_ENTER_HELL:
                 mpr("There is a gateway to hell here.");
-                break;
-            case DNGN_ENTER_SHOP:
-                mpr("There is an entrance to a shop here.");
-                break;
-            case DNGN_ENTER_LABYRINTH:
-                mpr("There is an entrance to a labyrinth here.");
-                mpr("Beware, for starvation awaits!");
-                break;
-            case DNGN_ENTER_DIS:
-                mpr("There is a gateway to the Iron City of Dis here.");
                 break;
             case DNGN_ENTER_GEHENNA:
                 mpr("There is a gateway to Gehenna here.");
@@ -112,14 +104,24 @@ void item_check(char keyin)
             case DNGN_ENTER_TARTARUS:
                 mpr("There is a gateway to Tartarus here.");
                 break;
+            case DNGN_ENTER_DIS:
+                mpr("There is a gateway to the Iron City of Dis here.");
+                break;
+            case DNGN_ENTER_SHOP:
+                mpr("There is an entrance to a shop here.");
+                break;
+            case DNGN_ENTER_LABYRINTH:
+                mpr("There is an entrance to a labyrinth here.");
+                mpr("Beware, for starvation awaits!");
+                break;
             case DNGN_ENTER_ABYSS:
                 mpr("There is a one-way gate to the infinite horrors of the Abyss here.");
                 break;
-            case DNGN_EXIT_ABYSS:
-                mpr("There is a gateway leading out of the Abyss here.");
-                break;
             case DNGN_STONE_ARCH:
                 mpr("There is an empty stone archway here.");
+                break;
+            case DNGN_EXIT_ABYSS:
+                mpr("There is a gateway leading out of the Abyss here.");
                 break;
             case DNGN_ENTER_PANDEMONIUM:
                 mpr("There is a gate leading to the halls of Pandemonium here.");
@@ -249,15 +251,16 @@ void item_check(char keyin)
             }
     }
 
-    if (env.igrid[you.x_pos][you.y_pos] == ING)
+    if (igrd[you.x_pos][you.y_pos] == ING)
     {
-        if (keyin == ';')
-            mpr("There are no items here.");
+        if ( keyin == ';' )
+          mpr("There are no items here.");
         return;
     }
 
     autopickup();
-    int objl = env.igrid[you.x_pos][you.y_pos];
+
+    int objl = igrd[you.x_pos][you.y_pos];
     int hrg = 0;
 
     while (objl != ING)
@@ -274,10 +277,9 @@ void item_check(char keyin)
         {
             itoa(mitm.quantity[objl], temp_quant, 10);
             strcpy(item_show[counter], temp_quant);
-            if (mitm.quantity[objl] > 1)
-                strcat(item_show[counter], " gold pieces");
-            else
-                strcat(item_show[counter], " gold piece");
+            strcat(item_show[counter], " gold piece");
+            if ( mitm.quantity[objl] > 1 )
+              strcat(item_show[counter], "s");
             goto linking;       //continue;
 
         }
@@ -285,7 +287,7 @@ void item_check(char keyin)
         it_name(objl, 3, str_pass);
         strcpy(item_show[counter], str_pass);
 
-      linking:
+linking:
         hrg = mitm.link[objl];
         objl = hrg;
     }
@@ -300,6 +302,7 @@ void item_check(char keyin)
         strcat(info, item_show[counter_max]);
         strcat(info, ".");
         mpr(info);
+
         counter++;
         counter_max = 0;        // to skip next part.
 
@@ -308,22 +311,23 @@ void item_check(char keyin)
     if ((counter_max > 0 && counter_max < 6) || (counter_max > 1 && keyin == ';'))
     {
         mpr("Things that are here:");
+
         while (counter < counter_max)
         {
             counter++;          // this is before the strcpy because item_show start at 1, not 0.
-
             mpr(item_show[counter]);
         }
     }
 
-    if (counter_max > 5 && keyin != ';')
-    {
-        mpr("There are several objects here.");
-    }
+    if ( counter_max > 5 && keyin != ';' )
+      mpr("There are several objects here.");
+
 }
 
 
-void pickup()
+
+
+void pickup( void )
 {
     int items_here = 0;
     int counter = 0;
@@ -334,7 +338,7 @@ void pickup()
     int m = 0;
     int nothing = 0;
     char str_pass[50];
-    char keyin = 0;
+    unsigned char keyin = 0;
 
     if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
     {
@@ -342,25 +346,24 @@ void pickup()
         return;
     }
 
-    if (grd[you.x_pos][you.y_pos] == DNGN_ALTAR_NEMELEX_XOBEH && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE)
+    if ( grd[you.x_pos][you.y_pos] == DNGN_ALTAR_NEMELEX_XOBEH
+        && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE )
     {
-        if (you.num_inv_items >= 52)
+        if ( you.num_inv_items >= ENDOFPACK )
         {
             mpr("There is a portable altar here, but you can't carry anything else.");
             return;
         }
 
-        mpr("There is a portable altar here. Pick it up?");
-        keyin = get_ch();
-        if (keyin == 'y' || keyin == 'Y')
+        if ( yesno("There is a portable altar here. Pick it up?") )
         {
-            for (m = 0; m < 52; m++)
+            for (m = 0; m < ENDOFPACK; m++)
             {
-                if (you.inv_quantity[m] == 0)
+                if ( you.inv_quantity[m] == 0 )
                 {
                     you.inv_ident[m] = 3;
-                    you.inv_class[m] = 13;
-                    you.inv_type[m] = 17;
+                    you.inv_class[m] = OBJ_MISCELLANY;
+                    you.inv_type[m] = MISC_PORTABLE_ALTAR_OF_NEMELEX;
                     you.inv_plus[m] = 0;
                     you.inv_plus2[m] = 0;
                     you.inv_dam[m] = 0;
@@ -368,11 +371,8 @@ void pickup()
                     you.inv_quantity[m] = 1;
                     you.num_inv_items++;
                     burden_change();
-                    if (m <= 25)
-                        info[0] = m + 97;
-                    else
-                        info[0] = m + 39;
-                    info[1] = 0;
+                    info[0] = index_to_letter(m);
+                    info[1] = '\0';
                     strcat(info, " - ");
                     in_name(m, 3, str_pass);
                     strcat(info, str_pass);
@@ -382,11 +382,11 @@ void pickup()
             }
 
             // This is here to catch things when the count gets out of sync.
-            if (m == 52)
+            if ( m == ENDOFPACK )
             {
-                ASSERT(you.num_inv_items == 52);
+                ASSERT(you.num_inv_items == ENDOFPACK);
                 mpr("You can't carry anything else.");
-                you.num_inv_items = 52;
+                you.num_inv_items = ENDOFPACK;
                 return;
             }
 
@@ -394,7 +394,7 @@ void pickup()
         }
     }
 
-    if (env.igrid[you.x_pos][you.y_pos] == ING)
+    if (igrd[you.x_pos][you.y_pos] == ING)
     {
         mpr("There are no items here.");
         return;
@@ -402,7 +402,7 @@ void pickup()
 
     last_item = ING;
 
-    int objl = env.igrid[you.x_pos][you.y_pos];
+    int objl = igrd[you.x_pos][you.y_pos];
     int hrg = 0;
 
     while (objl != ING)
@@ -427,17 +427,15 @@ void pickup()
 
     if (items_here == 1)
     {
-        item_got = env.igrid[you.x_pos][you.y_pos];
+        item_got = igrd[you.x_pos][you.y_pos];
         last_item = ING;
-        nothing = add_item(item_got, mitm.quantity[env.igrid[you.x_pos][you.y_pos]]);
+        nothing = add_item(item_got, mitm.quantity[igrd[you.x_pos][you.y_pos]]);
+
         if (nothing == ING)
-        {
-            mpr("You can't carry that many items.");
-        }
+          mpr("You can't carry that many items.");
         else if (nothing != 1)
-        {
-            mpr("You can't carry that much weight.");
-        }
+          mpr("You can't carry that much weight.");
+
         return;
 
     }                           // end of if items_here
@@ -448,7 +446,7 @@ void pickup()
     {
         mpr("There are several objects here.");
 
-        o = env.igrid[you.x_pos][you.y_pos];
+        o = igrd[you.x_pos][you.y_pos];
 
         for (k = 0; k < items_here; k++)
         {
@@ -461,49 +459,47 @@ void pickup()
                     itoa(mitm.quantity[o], st_prn, 10);
                     strcat(info, st_prn);
                     strcat(info, " gold piece");
-                    if (mitm.quantity[o] > 1)
-                        strcat(info, "s");
+
+                    if ( mitm.quantity[o] > 1 )
+                      strcat(info, "s");
                 }
                 else
                 {
                     it_name(o, 3, str_pass);
                     strcat(info, str_pass);
                 }
+
                 strcat(info, "\? (y,n,a,q)");
                 mpr(info);
             }
 
-            if (keyin != 'a')
-                keyin = get_ch();
+            if ( keyin != 'a' )
+              keyin = get_ch();
 
-            if (keyin == 'q')
-            {
-                return;
-            }
-            if (keyin == 'y' || keyin == 'a')
+            if ( keyin == 'q' )
+              return;
+
+            if ( keyin == 'y' || keyin == 'a' )
             {
                 item_got = o;
+
                 int grunk = add_item(o, mitm.quantity[o]);
 
-                if (grunk == 0)
+                if ( grunk == 0 )
                 {
                     mpr("You can't carry that much weight.");
                     keyin = 'x';        // resets from 'a'
-
                 }
-                if (grunk == ING)
+
+                if ( grunk == ING )
                 {
                     mpr("You can't carry that many items.");
                     keyin = 'x';        // resets from 'a'
-
                 }
 
 
-                if (grunk != 1) // ie if the item picked up is still there.
-
-                {
-                    last_item = item_got;
-                }
+                if ( grunk != 1 ) // ie if the item picked up is still there.
+                  last_item = item_got;
 
             }
 
@@ -526,29 +522,46 @@ void pickup()
         mpr("That's all.");
     }                           // end of if items_here
 
-}                               // end of pickup() function
+}                               // end pickup()
 
 
-int add_item(int item_got, int quant_got)
+
+
+int add_item( int item_got, int quant_got )
 {
-/*int quant_got = 0; */
+
     int item_mass = 0;
     int unit_mass = 0;
     int retval = 1;
     char brek = 0;
-
-//int last_item = ING;
+    //int last_item = ING;
     int m = 0;
     char str_pass[50];
 
-    if (you.num_inv_items >= 52)
-    {
-        return ING;
-    }
+    if ( you.num_inv_items >= ENDOFPACK )
+      return ING;
 
-    if (mitm.base_type[item_got] <= OBJ_ARMOUR
-        || mitm.base_type[item_got] == OBJ_FOOD
-        || mitm.base_type[item_got] == OBJ_MISCELLANY)
+// these chained conditionals replace the odd logic commented out below {dlb}
+    if ( mitm.base_type[item_got] == OBJ_GOLD )
+      unit_mass = 0;
+    else if ( mitm.base_type[item_got] == OBJ_CORPSES )
+    {
+        unit_mass = mons_weight(mitm.pluses[item_got]);
+
+        if ( mitm.sub_type[item_got] == CORPSE_SKELETON )
+          unit_mass /= 2;
+    }
+    else
+      unit_mass = mass(mitm.base_type[item_got], mitm.sub_type[item_got]);
+
+
+/* ************************************************************************
+
+// this seems all funny to me, esp. given the re-massing of items {dlb}
+
+    if ( mitm.base_type[item_got] <= OBJ_ARMOUR
+          || mitm.base_type[item_got] == OBJ_FOOD
+          || mitm.base_type[item_got] == OBJ_MISCELLANY )
     {
         unit_mass = mass(mitm.base_type[item_got], mitm.sub_type[item_got]);
     }
@@ -559,7 +572,7 @@ int add_item(int item_got, int quant_got)
         case OBJ_WANDS:
             unit_mass = 100;
             break;
-        case 5:
+        case OBJ_UNKNOWN_I:
             unit_mass = 200;
             break;
         case OBJ_SCROLLS:
@@ -571,7 +584,7 @@ int add_item(int item_got, int quant_got)
         case OBJ_POTIONS:
             unit_mass = 60;
             break;
-        case 9:
+        case OBJ_UNKNOWN_II:
             unit_mass = 5;
             break;
         case OBJ_BOOKS:
@@ -581,10 +594,9 @@ int add_item(int item_got, int quant_got)
             unit_mass = 130;
             break;
         case OBJ_CORPSES:
-            if (mitm.sub_type[item_got] == CORPSE_BODY)
-                unit_mass = mons_weight(mitm.pluses[item_got]);
-            if (mitm.sub_type[item_got] == CORPSE_SKELETON)
-                unit_mass = mons_weight(mitm.pluses[item_got]) / 2;
+            unit_mass = mons_weight(mitm.pluses[item_got]);
+            if ( mitm.sub_type[item_got] == CORPSE_SKELETON )
+              unit_mass /= 2;
             break;
         case OBJ_GOLD:
             unit_mass = 0;
@@ -592,6 +604,8 @@ int add_item(int item_got, int quant_got)
 
         }
     }
+
+************************************************************************ */
 
     item_mass = unit_mass * mitm.quantity[item_got];
 
@@ -603,8 +617,8 @@ int add_item(int item_got, int quant_got)
 
     if ((int) you.burden + item_mass > carrying_capacity())
     {
-        if (mitm.quantity[item_got] == 1)
-            return 0;
+        if ( mitm.quantity[item_got] == 1 )
+          return 0;
 
         for (m = mitm.quantity[item_got]; m > 0; m--)
         {
@@ -629,7 +643,7 @@ int add_item(int item_got, int quant_got)
 
     brek = 0;
 
-    if (mitm.base_type[item_got] == OBJ_GOLD)
+    if ( mitm.base_type[item_got] == OBJ_GOLD )
     {
         you.gold += quant_got;
         you.redraw_gold = 1;
@@ -638,12 +652,13 @@ int add_item(int item_got, int quant_got)
         strcat(info, st_prn);
         strcat(info, " gold pieces.");
         mpr(info);
+
         you.turn_is_over = 1;
         alert();
         goto change_igrid;
     }
 
-    for (m = 0; m < 52; m++)
+    for (m = 0; m < ENDOFPACK; m++)
     {
 
         if ((mitm.base_type[item_got] == OBJ_MISSILES
@@ -670,12 +685,8 @@ int add_item(int item_got, int quant_got)
                 you.inv_quantity[m] += quant_got;
                 burden_change();
 
-                if (m <= 25)
-                    info[0] = m + 97;
-                else
-                    info[0] = m + 39;
-
-                info[1] = 0;
+                info[0] = index_to_letter(m);
+                info[1] = '\0';
 
                 strcat(info, " - ");
 
@@ -691,80 +702,93 @@ int add_item(int item_got, int quant_got)
         }
     }                           // end of for m loop.
 
-    for (m = 0; m < 52; m++)
+    for (m = 0; m < ENDOFPACK; m++)
+      if ( !you.inv_quantity[m] )
+      {
+          you.inv_ident[m] = mitm.id[item_got];
+          you.inv_class[m] = mitm.base_type[item_got];
+          you.inv_type[m] = mitm.sub_type[item_got];
+          you.inv_plus[m] = mitm.pluses[item_got];
+          you.inv_plus2[m] = mitm.pluses2[item_got];
+          you.inv_dam[m] = mitm.special[item_got];
+          you.inv_colour[m] = mitm.colour[item_got];
+          you.inv_quantity[m] = quant_got;
+          burden_change();
+
+          //strcpy(info, " ");
+          //strncpy(info, letters [m], 1);
+
+          info[0] = index_to_letter(m);
+          info[1] = '\0';
+
+          strcat(info, " - ");
+          in_name(m, 3, str_pass);
+          strcat(info, str_pass);
+          mpr(info);
+
+          if ( mitm.base_type[item_got] == OBJ_ORBS && you.char_direction == DIR_DESCENDING )
+          {
+              mpr("Now all you have to do is get back out of the dungeon!");
+              you.char_direction = DIR_ASCENDING;
+          }
+
+          you.num_inv_items++;
+          break;
+      }
+
+// This is here to catch when the count gets out of sync.
+    if ( m == ENDOFPACK )
     {
-        if (you.inv_quantity[m] == 0)
-        {
-            you.inv_ident[m] = mitm.id[item_got];
-            you.inv_class[m] = mitm.base_type[item_got];
-            you.inv_type[m] = mitm.sub_type[item_got];
-            you.inv_plus[m] = mitm.pluses[item_got];
-            you.inv_plus2[m] = mitm.pluses2[item_got];
-            you.inv_dam[m] = mitm.special[item_got];
-            you.inv_colour[m] = mitm.colour[item_got];
-            you.inv_quantity[m] = quant_got;
-            burden_change();
-
-//                      strcpy(info, " ");
-            /*                      strncpy(info, letters [m], 1); */
-            if (m <= 25)
-                info[0] = m + 97;
-            else
-                info[0] = m + 39;
-
-            info[1] = 0;
-
-            strcat(info, " - ");
-            in_name(m, 3, str_pass);
-            strcat(info, str_pass);
-
-            mpr(info);
-
-            if (mitm.base_type[item_got] == OBJ_ORBS && you.char_direction == 0)
-            {
-                mpr("Now all you have to do is get back out of the dungeon!");
-                you.char_direction = 1;
-            }
-
-            you.num_inv_items++;
-            break;
-        }
-    }                           // end of for m loopy thing.
-
-    // This is here to catch when the count gets out of sync.
-    if (m == 52)
-    {
-        ASSERT(you.num_inv_items == 52);
-        you.num_inv_items = 52;
+        ASSERT(you.num_inv_items == ENDOFPACK);
+        you.num_inv_items = ENDOFPACK;
         return (ING);
     }
 
 
     you.turn_is_over = 1;
 
-  change_igrid:
+change_igrid:
     mitm.quantity[item_got] -= quant_got;       //= 0;
 
     if (mitm.quantity[item_got] == 0)
     {
-        if (last_item == ING)
-        {
-            env.igrid[you.x_pos][you.y_pos] = mitm.link[item_got];
-        }
+        if ( last_item == ING )     // is this (last_item) ever set or even used properly? {dlb}
+          igrd[you.x_pos][you.y_pos] = mitm.link[item_got];
         else
-        {
-            mitm.link[last_item] = mitm.link[item_got];
-        }
+          mitm.link[last_item] = mitm.link[item_got];
     }
 
     return retval;
-}                               // end of int add_item() function
+
+}          // end add_item()
 
 
-void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
+
+
+void item_place( int item_drop_2, int x_plos, int y_plos, int quant_drop )
 {
+
     int item_mass = 0;
     int unit_mass = 0;
+
+// these chained conditionals replace the odd logic commented out below {dlb}
+// note that OBJ_GOLD is not even mentioned, as its mass is zero and
+// is handled by drop_gold() below ... {dlb}
+    if ( you.inv_class[item_drop_2] == OBJ_CORPSES )
+    {
+        unit_mass = mons_weight(mitm.pluses[item_drop_2]);
+
+        if ( mitm.sub_type[item_drop_2] == CORPSE_SKELETON )
+          unit_mass /= 2;
+    }
+    else
+      unit_mass = mass(you.inv_class[item_drop_2], you.inv_type[item_drop_2]);
+
+
+
+/* ************************************************************************
+
+// this all seems funny to me, too -- see add_item() above {dlb}
 
     if (you.inv_class[item_drop_2] < OBJ_WANDS || you.inv_class[item_drop_2] == OBJ_FOOD || you.inv_class[item_drop_2] == OBJ_MISCELLANY)
     {
@@ -805,8 +829,6 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
             unit_mass = 250;
             break;
         case OBJ_CORPSES:
-/* if (mitm.sub_type [item_got] == CORPSE_BODY) unit_mass = mons_weight(mitm.pluses [item_got]);
-   if (mitm.sub_type [item_got] == CORPSE_SKELETON) unit_mass = mons_weight(mitm.pluses [item_got]) / 2; */
             if (mitm.sub_type[item_drop_2] == CORPSE_BODY)
                 unit_mass = mons_weight(mitm.pluses[item_drop_2]);
             if (mitm.sub_type[item_drop_2] == CORPSE_SKELETON)
@@ -814,6 +836,8 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
             break;
         }
     }
+
+************************************************************************ */
 
     item_mass = unit_mass * quant_drop;
 
@@ -844,13 +868,12 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
 
     for (i = 0; i < ITEMS; i++)
     {
-        if (i >= 480)
+        if ( i >= (ITEMS - 20) )
         {
-            strcpy(info, "The demon of the infinite void grins at you.");
-            mpr(info);
+            mpr("The demon of the infinite void grins at you.");
             return;
         }
-        if (mitm.quantity[i] == 0)
+        else if ( mitm.quantity[i] == 0 )
         {
             mitm.id[i] = you.inv_ident[item_drop_2];
             mitm.base_type[i] = you.inv_class[item_drop_2];
@@ -860,7 +883,6 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
             mitm.special[i] = you.inv_dam[item_drop_2];
             mitm.colour[i] = you.inv_colour[item_drop_2];
             mitm.quantity[i] = quant_drop;
-/*              it_no ++; */
             break;
         }
     }
@@ -871,7 +893,10 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
     mitm.link[i] = m;
 
     you.turn_is_over = 1;
-}                               // end of item_place
+
+}          // end item_place()
+
+
 
 
 //---------------------------------------------------------------
@@ -879,8 +904,9 @@ void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop)
 // drop_gold
 //
 //---------------------------------------------------------------
-static void drop_gold()
+static void drop_gold( void )
 {
+
     if (you.gold > 0)
     {
         int quant_drop = you.gold;      /* needs quantity selection. */
@@ -889,23 +915,19 @@ static void drop_gold()
 
         strcpy(info, "You drop ");
         itoa(you.gold, temp_quant, 10);
+
         strcat(info, temp_quant);
-
-        if (you.gold > 1)
-            strcat(info, " gold pieces.");
-        else
-            strcat(info, " gold piece.");
-
+        strcat(info, " gold piece");
+        strcat(info, (you.gold > 1) ? "s." : "." );
         mpr(info);
 
-        if (igrd[you.x_pos][you.y_pos] != ING)
+        if ( igrd[you.x_pos][you.y_pos] != ING )
         {
             if (mitm.base_type[igrd[you.x_pos][you.y_pos]] == OBJ_GOLD)
             {
                 mitm.quantity[igrd[you.x_pos][you.y_pos]] += quant_drop;
                 you.gold -= quant_drop;
-                you.
-                    redraw_gold = 1;
+                you.redraw_gold = 1;
                 return;
             }
         }
@@ -933,8 +955,11 @@ static void drop_gold()
 
     }
     else
-        mpr("You don't have any money.");
-}
+      mpr("You don't have any money.");
+
+}          // end drop_gold()
+
+
 
 
 //---------------------------------------------------------------
@@ -944,7 +969,7 @@ static void drop_gold()
 // Prompts the user for an item to drop
 //
 //---------------------------------------------------------------
-void drop()
+void drop( void )
 {
     unsigned char nthing;
     int i;
@@ -952,13 +977,13 @@ void drop()
     unsigned char item_drop_2;
     char str_pass[80];
 
-    if (you.num_inv_items == 0)
+    if ( you.num_inv_items < 1 )
     {
-        mpr("You aren't carrying anything.");
+        canned_msg(MSG_NOTHING_CARRIED);
         return;
     }
 
-  query2:
+query2:
     mpr("Drop which item? ");
 
     unsigned char keyin = get_ch();
@@ -967,14 +992,13 @@ void drop()
     if (keyin == '$')
     {
         drop_gold();
-
         return;
     }
 
     if (keyin == '?' || keyin == '*')
     {
         nthing = get_invent(-1);
-        if ((nthing >= 65 && nthing <= 90) || (nthing >= 97 && nthing <= 122))
+        if ( ( nthing >= 'A' && nthing <= 'Z' ) || ( nthing >= 'a' && nthing <= 'z' ) )
             keyin = nthing;
         else
             goto query2;
@@ -983,35 +1007,35 @@ void drop()
 
     quant_drop = 0;
 
-    if (item_drop_1 > 47 && item_drop_1 < 58)
+    if (item_drop_1 >= '0' && item_drop_1 <= '9')
     {
-        quant_drop = item_drop_1 - 48;
+        quant_drop = item_drop_1 - '0';
         putch(keyin);
         keyin = get_ch();
         item_drop_1 = (int) keyin;
-        if (item_drop_1 > 47 && item_drop_1 < 58)
+        if (item_drop_1 >= '0' && item_drop_1 <= '9')
         {
-            quant_drop = (quant_drop * 10 + (item_drop_1 - 48));
+            quant_drop = (10 * quant_drop + (item_drop_1 - '0'));
             putch(keyin);
             keyin = get_ch();
             item_drop_1 = (int) keyin;
         }
     }
 
-    if ((item_drop_1 < 65 || (item_drop_1 > 90 && item_drop_1 < 97) || item_drop_1 > 122))
+    if ( ( item_drop_1 < 'A' || ( item_drop_1 > 'Z' && item_drop_1 < 'a' ) || item_drop_1 > 'z' ) )
     {
         mpr("You don't have any such object.");
         return;
     }
 
-    item_drop_2 = conv_lett(item_drop_1);
-    if (quant_drop == 0)
-        quant_drop = you.inv_quantity[item_drop_2];
+    item_drop_2 = letter_to_index(item_drop_1);
+
+    if ( quant_drop == 0 )
+      quant_drop = you.inv_quantity[item_drop_2];
 
     if (you.inv_quantity[item_drop_2] == 0)
     {
-        strcpy(info, "You don't have any such object.");
-        mpr(info);
+        mpr("You don't have any such object.");
         return;
     }
 
@@ -1040,10 +1064,8 @@ void drop()
         quant_drop = you.inv_quantity[item_drop_2];
 
     strcpy(info, "You drop ");  // $$$ dropping items seems to take zero time (if this changes the time should be added to the un-wield/un-wear time)
-
-    item_name(you.inv_plus2[item_drop_2], you.inv_class[item_drop_2], you.inv_type[item_drop_2], you.inv_dam[item_drop_2], you.inv_plus[item_drop_2], quant_drop, you.inv_ident[item_drop_2], 3, str_pass);
+    in_name(item_drop_2, 3, str_pass);
     strcat(info, str_pass);
-
     strcat(info, ".");
     mpr(info);
 
@@ -1057,32 +1079,15 @@ void drop()
     item_place(item_drop_2, you.x_pos, you.y_pos, quant_drop);
 
     you.inv_quantity[item_drop_2] -= quant_drop;
-    if (you.inv_quantity[item_drop_2] <= 0)
-        you.num_inv_items--;
+
+    if ( you.inv_quantity[item_drop_2] < 1 )
+      you.num_inv_items--;
 
     burden_change();
-}                               // end of drop
+
+}          // end drop()
 
 
-//---------------------------------------------------------------
-//
-// conv_lett
-//
-//---------------------------------------------------------------
-int conv_lett(int item_drop_3)
-{
-    if (item_drop_3 > 96 && item_drop_3 < 123)
-    {
-        item_drop_3 -= 97;
-    }
-
-    if (item_drop_3 > 64 && item_drop_3 < 91)
-    {
-        item_drop_3 -= 39;
-    }
-
-    return item_drop_3;
-}
 
 
 //---------------------------------------------------------------
@@ -1104,23 +1109,20 @@ void update_corpses(double elapsedTime)
 
         for (int c = 0; c < ITEMS; c++)
         {
-            if (mitm.quantity[c] <= 0)
-                continue;
+            if ( mitm.quantity[c] < 1 )
+              continue;
 
-            if (mitm.base_type[c] != OBJ_CORPSES
-                && mitm.base_type[c] != OBJ_FOOD)
-            {
-                continue;
-            }
+            if ( mitm.base_type[c] != OBJ_CORPSES
+                && mitm.base_type[c] != OBJ_FOOD )
+              continue;
 
-            if (mitm.base_type[c] == OBJ_CORPSES
-                && mitm.sub_type[c] > CORPSE_SKELETON)
-            {
-                continue;
-            }
+            if ( mitm.base_type[c] == OBJ_CORPSES
+                && mitm.sub_type[c] > CORPSE_SKELETON )
+              continue;
 
-            if (mitm.base_type[c] == OBJ_FOOD && mitm.sub_type[c] != FOOD_CHUNK)
-                continue;
+            if ( mitm.base_type[c] == OBJ_FOOD
+                && mitm.sub_type[c] != FOOD_CHUNK )
+              continue;
 
             if (rot_time >= mitm.special[c])
             {
@@ -1131,8 +1133,7 @@ void update_corpses(double elapsedTime)
                 }
                 else
                 {
-                    if (mitm.sub_type[c] == CORPSE_SKELETON
-                        || mons_skeleton(mitm.pluses[c]) == 0)
+                    if ( mitm.sub_type[c] == CORPSE_SKELETON || !mons_skeleton(mitm.pluses[c]) )
                     {
                         destroy_item(c);
 
@@ -1156,6 +1157,8 @@ void update_corpses(double elapsedTime)
 }
 
 
+
+
 //---------------------------------------------------------------
 //
 // handle_time
@@ -1163,153 +1166,142 @@ void update_corpses(double elapsedTime)
 // Do various time related actions.
 //
 //---------------------------------------------------------------
-void handle_time(int time_delta)
+void handle_time( int time_delta )
 {
-    // Nasty things happen to people who spend too long in Hell
-    if (you.where_are_you > 0 && you.where_are_you < 10 && you.where_are_you != BRANCH_VESTIBULE_OF_HELL && coinflip())
-    {
-        switch (random2(17))
-        {
-        case 0:
-            mpr("You hear diabolical laughter!");
-            break;
-        case 1:
-            set_colour(RED);
-            mpr("\"Die, mortal!\"");
-            break;
-        case 2:
-            set_colour(RED);
-            mpr("\"Trespassers are not welcome here!\"");
-            break;
-        case 3:
-            set_colour(RED);
-            mpr("\"You do not belong in this place!\"");
-            break;
-        case 4:
-            mpr("You feel a terrible foreboding...");
-            break;
-        case 5:
-            mpr("You hear words spoken in a strange and terrible language...");
-            break;
-        case 6:
-            mpr("You smell brimstone.");
-            break;
-        case 7:
-            mpr("Something frightening happens.");
-            break;
-        case 8:
-            mpr("You sense an ancient evil watching you...");
-            break;
-        case 9:
-            mpr("You feel lost and a long, long way from home...");
-            break;
-        case 10:
-            mpr("You suddenly feel all small and vulnerable.");
-            break;
-        case 11:
-            mpr("A gut-wrenching scream fills the air!");
-            break;
-        case 12:
-            mpr("You shiver with fear.");
-            break;
-        case 13:
-            mpr("You sense a hostile presence.");
-            break;
-        case 14:
-            set_colour(RED);
-            mpr("\"Leave now, before it is too late!\"");
-            break;
-        case 15:
-            set_colour(RED);
-            mpr("\"You will not leave this place.\"");
-            break;
-        case 16:
-            set_colour(RED);
-            mpr("\"We have you now!\"");
-            break;
-        }
 
-        if (one_chance_in(3))
+    int temp_rand;                                 // probability determination {dlb}
+    unsigned char which_miscast = SPTYP_RANDOM;    // so as not to reduplicate f(x) calls {dlb}
+    bool summon_instead;                           // for branching within a single switch {dlb}
+    int which_beastie = MONS_PROGRAM_BUG;          // error trapping {dlb}
+    unsigned char i;                               // loop variable {dlb}
+
+// BEGIN - Nasty things happen to people who spend too long in Hell:
+
+    if ( you.where_are_you > BRANCH_MAIN_DUNGEON && you.where_are_you < BRANCH_ORCISH_MINES
+        && you.where_are_you != BRANCH_VESTIBULE_OF_HELL && coinflip() )
+    {
+        temp_rand = random2(17);
+
+        if ( temp_rand < 7)    // first seven (quoted) messages are coloured {dlb}
+          set_colour(RED);
+
+        mpr( (temp_rand ==  0) ? "\"You will not leave this place.\"" :
+             (temp_rand ==  1) ? "\"Die, mortal!\"" :
+             (temp_rand ==  2) ? "\"We do not forgive those who trespass against us!\"" :
+             (temp_rand ==  3) ? "\"Trespassers are not welcome here!\"" :
+             (temp_rand ==  4) ? "\"You do not belong in this place!\"" :
+             (temp_rand ==  5) ? "\"Leave now, before it is too late!\"" :
+             (temp_rand ==  6) ? "\"We have you now!\"" :
+             (temp_rand ==  7) ? "You feel a terrible foreboding..." :
+             (temp_rand ==  8) ? "You hear words spoken in a strange and terrible language..." :
+             (temp_rand ==  9) ? ( (you.species != SP_MUMMY) ? "You smell brimstone." : "Brimstone rains from above." ) :
+             (temp_rand == 10) ? "Something frightening happens." :
+             (temp_rand == 11) ? "You sense an ancient evil watching you..." :
+             (temp_rand == 12) ? "You feel lost and a long, long way from home..." :
+             (temp_rand == 13) ? "You suddenly feel all small and vulnerable." :
+             (temp_rand == 14) ? "A gut-wrenching scream fills the air!" :
+             (temp_rand == 15) ? "You shiver with fear." :
+             (temp_rand == 16) ? "You sense a hostile presence."
+                               : "You hear diabolical laughter!" );
+
+        temp_rand = random2(27);
+
+        if ( temp_rand > 17 )       // 9 in 27 odds {dlb}
         {
-            if (coinflip())
-                miscast_effect(SPTYP_NECROMANCY, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-            else if (coinflip())
-                miscast_effect(SPTYP_SUMMONING, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-            else if (coinflip())
-                miscast_effect(SPTYP_CONJURATION, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
-            else if (coinflip())
-                miscast_effect(SPTYP_ENCHANTMENT, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+            temp_rand = random2(8);
+
+            if ( temp_rand > 3 )         // 4 in 8 odds {dlb}
+              which_miscast = SPTYP_NECROMANCY;
+            else if ( temp_rand > 1 )    // 2 in 8 odds {dlb}
+              which_miscast = SPTYP_SUMMONING;
+            else if ( temp_rand > 0 )    // 1 in 8 odds {dlb}
+              which_miscast = SPTYP_CONJURATION;
+            else                         // 1 in 8 odds {dlb}
+              which_miscast = SPTYP_ENCHANTMENT;
+
+            miscast_effect(which_miscast, 4 + random2(6), random2avg(97,3), 100);
         }
-        else if (one_chance_in(3))
-            switch (you.where_are_you)
+        else if (temp_rand > 7 )    // 10 in 27 odds {dlb}
+        {
+            summon_instead = ( random2(5) > 2 );    // 60:40 miscast:summon split {dlb}
+
+            switch ( you.where_are_you )
             {
-            case BRANCH_DIS:
-                miscast_effect(SPTYP_EARTH, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+              case BRANCH_DIS:
+                if ( summon_instead )
+                  which_beastie = summon_any_demon(DEMON_GREATER);
+                else
+                  which_miscast = SPTYP_EARTH;
                 break;
-            case BRANCH_GEHENNA:
-                miscast_effect(SPTYP_FIRE, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+              case BRANCH_GEHENNA:
+                if ( summon_instead )
+                  which_beastie = MONS_FIEND;
+                else
+                  which_miscast = SPTYP_FIRE;
                 break;
-            case BRANCH_COCYTUS:
-                miscast_effect(SPTYP_ICE, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+              case BRANCH_COCYTUS:
+                if ( summon_instead )
+                  which_beastie = MONS_ICE_FIEND;
+                else
+                  which_miscast = SPTYP_ICE;
                 break;
-            case BRANCH_TARTARUS:
-                miscast_effect(SPTYP_NECROMANCY, 4 + random2(6), random2(33) + random2(33) + random2(33), 100);
+              case BRANCH_TARTARUS:
+                if ( summon_instead )
+                  which_beastie = MONS_SHADOW_FIEND;
+                else
+                  which_miscast = SPTYP_NECROMANCY;
                 break;
-            }
-        else if (one_chance_in(3))
-            switch (you.where_are_you)
-            {
-            case BRANCH_DIS:
-                create_monster(summon_any_demon(DEMON_GREATER), 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-                break;
-            case BRANCH_GEHENNA:
-                create_monster(MONS_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-                break;
-            case BRANCH_COCYTUS:
-                create_monster(MONS_ICE_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-                break;
-            case BRANCH_TARTARUS:
-                create_monster(MONS_SHADOW_FIEND, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+              default:    // this is to silence gcc compiler warnings {dlb}
+                if ( summon_instead )
+                  which_beastie = MONS_FIEND;
+                else
+                  which_miscast = SPTYP_NECROMANCY;
                 break;
             }
 
-// Note no "else". This can happen in addition to the above...
-
-        if (one_chance_in(3))
-        {
-            create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-            if (one_chance_in(3))
-                create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-
-            if (one_chance_in(3))
-                create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-
-            if (one_chance_in(3))
-                create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
-
-            if (one_chance_in(3))
-                create_monster(250, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+            if ( summon_instead )
+              create_monster(which_beastie, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+            else
+              miscast_effect(which_miscast, 4 + random2(6), random2avg(97,3), 100);
         }
-    }                           // End of special Hellish things
 
-    // Adjust the player's stats if s/he's diseased (or recovering).
-    if (you.disease == 0)
+// NB: no "else" - 8 in 27 odds that nothing happens through first chain {dlb}
+// also note that the following is distinct from and in addition to the above chain:
+
+        if ( one_chance_in(3) )    // try to summon at least one and up to five random monsters {dlb}
+        {
+            create_monster(RANDOM_MONSTER, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+
+            for (i = 0; i < 4; i++)
+              if ( one_chance_in(3) )
+                create_monster(RANDOM_MONSTER, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITYOU, 250);
+        }
+
+    }
+
+// END - special Hellish things...
+
+
+
+// Adjust the player's stats if s/he's diseased (or recovering).
+    if ( !you.disease )
     {
-        if (you.strength < you.max_strength && one_chance_in(100))
+
+        if ( you.strength < you.max_strength && one_chance_in(100) )
         {
             mpr("You feel your strength returning.");
             you.strength++;
             you.redraw_strength = 1;
         }
 
-        if (you.dex < you.max_dex && one_chance_in(100))
+        if ( you.dex < you.max_dex && one_chance_in(100) )
         {
             mpr("You feel your dexterity returning.");
             you.dex++;
             you.redraw_dexterity = 1;
         }
 
-        if (you.intel < you.max_intel && one_chance_in(100))
+        if ( you.intel < you.max_intel && one_chance_in(100) )
         {
             mpr("You feel your intelligence returning.");
             you.intel++;
@@ -1319,103 +1311,92 @@ void handle_time(int time_delta)
     }
     else
     {
-        if (one_chance_in(30))
+        if ( one_chance_in(30) )
         {
             mpr("Your disease is taking its toll.");
-            lose_stat(100, 1);
+            lose_stat(STAT_RANDOM, 1);
         }
     }
 
-    // Adjust the player's stats if s/he has the deterioration mutation
-    if (you.mutation[MUT_DETERIORATION] > 0 && random2(200) <= you.mutation[MUT_DETERIORATION] * 5 - 2)
-        lose_stat(100, 1);
+// Adjust the player's stats if s/he has the deterioration mutation
+    if ( you.mutation[MUT_DETERIORATION]
+        && random2(200) <= you.mutation[MUT_DETERIORATION] * 5 - 2 )
+      lose_stat(STAT_RANDOM, 1);
 
-    // Account for mutagenic radiation
-    if (you.invis > 0 || (you.haste > 0 && you.berserker == 0))
-        if (you.magic_contamination < 100 && one_chance_in(10))
-            you.magic_contamination++;
+// Account for mutagenic radiation
+    if ( you.invis || ( you.haste && !you.berserker ) )
+      if ( you.magic_contamination < 100 && one_chance_in(10) )
+        you.magic_contamination++;
 
-    you.magic_contamination += random2(scan_randarts(RAP_MUTAGENIC) + 1);
+    you.magic_contamination += random2(1 + scan_randarts(RAP_MUTAGENIC));
 
-    if (you.magic_contamination > 0 && coinflip())
+    if ( you.magic_contamination > 0 && coinflip() )
     {
-        if (you.magic_contamination > 4 && random2(150) <= you.magic_contamination)
+        if ( you.magic_contamination > 4 && random2(150) <= you.magic_contamination )
         {
             mpr("You've accumulated too much magical radiation!");
-            if (coinflip())
-                mutate(100);
-            else
-                give_bad_mutation();
+            coinflip() ? mutate(100) : give_bad_mutation();
         }
         you.magic_contamination--;
     }
 
-    // Random chance to identify staff in hand based off of Spellcasting
-    // and an appropriate other spell skill... is 1/20 too fast?
-    if (you.equip[EQ_WEAPON] != -1
+// Random chance to identify staff in hand based off of Spellcasting
+// and an appropriate other spell skill... is 1/20 too fast?
+    if ( you.equip[EQ_WEAPON] != -1
         && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
         && you.inv_ident[you.equip[EQ_WEAPON]] == 0
-        && one_chance_in(20))
+        && one_chance_in(20) )
     {
         int total_skill = you.skills[SK_SPELLCASTING];
 
-        switch (you.inv_type[you.equip[EQ_WEAPON]])
+        switch ( you.inv_type[you.equip[EQ_WEAPON]] )
         {
-        case STAFF_WIZARDRY:
-        case STAFF_ENERGY:
+          case STAFF_WIZARDRY:
+          case STAFF_ENERGY:
             total_skill += you.skills[SK_SPELLCASTING];
             break;
-
-        case STAFF_FIRE:
-            if (you.skills[SK_FIRE_MAGIC] > you.skills[SK_ICE_MAGIC])
-                total_skill += you.skills[SK_FIRE_MAGIC];
+          case STAFF_FIRE:
+            if ( you.skills[SK_FIRE_MAGIC] > you.skills[SK_ICE_MAGIC] )
+              total_skill += you.skills[SK_FIRE_MAGIC];
             else
-                total_skill += you.skills[SK_ICE_MAGIC];
+              total_skill += you.skills[SK_ICE_MAGIC];
             break;
-
-        case STAFF_COLD:
-            if (you.skills[SK_ICE_MAGIC] > you.skills[SK_FIRE_MAGIC])
-                total_skill += you.skills[SK_ICE_MAGIC];
+          case STAFF_COLD:
+            if ( you.skills[SK_ICE_MAGIC] > you.skills[SK_FIRE_MAGIC] )
+              total_skill += you.skills[SK_ICE_MAGIC];
             else
-                total_skill += you.skills[SK_FIRE_MAGIC];
+              total_skill += you.skills[SK_FIRE_MAGIC];
             break;
-
-        case STAFF_AIR:
-            if (you.skills[SK_AIR_MAGIC] > you.skills[SK_EARTH_MAGIC])
-                total_skill += you.skills[SK_AIR_MAGIC];
+          case STAFF_AIR:
+            if ( you.skills[SK_AIR_MAGIC] > you.skills[SK_EARTH_MAGIC] )
+              total_skill += you.skills[SK_AIR_MAGIC];
             else
-                total_skill += you.skills[SK_EARTH_MAGIC];
+              total_skill += you.skills[SK_EARTH_MAGIC];
             break;
-
-        case STAFF_EARTH:
-            if (you.skills[SK_EARTH_MAGIC] > you.skills[SK_AIR_MAGIC])
-                total_skill += you.skills[SK_EARTH_MAGIC];
+          case STAFF_EARTH:
+            if ( you.skills[SK_EARTH_MAGIC] > you.skills[SK_AIR_MAGIC] )
+              total_skill += you.skills[SK_EARTH_MAGIC];
             else
-                total_skill += you.skills[SK_AIR_MAGIC];
+              total_skill += you.skills[SK_AIR_MAGIC];
             break;
-
-        case STAFF_POISON:
+          case STAFF_POISON:
             total_skill += you.skills[SK_POISON_MAGIC];
             break;
-
-        case STAFF_DEATH:
+          case STAFF_DEATH:
             total_skill += you.skills[SK_NECROMANCY];
             break;
-
-        case STAFF_CONJURATION:
+          case STAFF_CONJURATION:
             total_skill += you.skills[SK_CONJURATIONS];
             break;
-
-        case STAFF_ENCHANTMENT:
+          case STAFF_ENCHANTMENT:
             total_skill += you.skills[SK_ENCHANTMENTS];
             break;
-
-        case STAFF_SUMMONING_I:
+          case STAFF_SUMMONING_I:
             total_skill += you.skills[SK_SUMMONINGS];
             break;
         }
 
-        if (random2(100) < total_skill)
+        if ( random2(100) < total_skill )
         {
             you.inv_ident[you.equip[EQ_WEAPON]] = 3;
             strcpy(info, "You are wielding ");
@@ -1427,221 +1408,131 @@ void handle_time(int time_delta)
             mpr(info);
             more();
 
-            wield_change = 1;
+            wield_change = true;
         }
     }
 
-    //
-    // Check to see if an upset god wants to do something to the player
-    //
-    if (one_chance_in(100))
-    {
-        int which_god = GOD_NO_GOD;
-        int count = 0;
+// Check to see if an upset god wants to do something to the player
+// jmf: moved huge thing to religion.cc
+    handle_god_time();
 
-        // Choose a god randomly from those we owe penance to.
-        for (int i = GOD_NO_GOD; i <= GOD_ELYVILON; i++)
-        {
-            if (you.penance[i])
-            {
-                count++;
-                if (one_chance_in(count))
-                {
-                    which_god = i;
-                }
-            }
-        }
+// If the player has the lost mutation forget portions of the map
+    if ( you.mutation[MUT_LOST] )
+      if ( random2(100) <= you.mutation[MUT_LOST] * 5 )
+        forget_map(5 + random2(you.mutation[MUT_LOST] * 10));
 
-        if (which_god != GOD_NO_GOD)
-        {
-            divine_retribution( which_god );
-        }
-    }
-
-    // Update the god's opinion of the player
-    if (you.religion != GOD_NO_GOD)
-    {
-        switch (you.religion)
-        {
-        case GOD_XOM:
-            if (one_chance_in(75))
-                Xom_acts(1, you.experience_level + random2(15), 1);
-            break;
-
-        case GOD_ZIN:           // These gods like long-standing worshippers
-
-        case GOD_ELYVILON:
-            if (you.piety < 150 && one_chance_in(20))
-                gain_piety(1);
-            break;
-
-        case GOD_SHINING_ONE:
-            if (you.piety < 150 && one_chance_in(15))
-                gain_piety(1);
-            break;
-
-        case GOD_YREDELEMNUL:
-        case GOD_KIKUBAAQUDGHA:
-        case GOD_VEHUMET:
-            if (one_chance_in(17))
-                lose_piety(1);
-            if (you.piety <= 0)
-                excommunication();
-            break;
-
-        case GOD_OKAWARU:       // These gods accept corpses, so they time-out faster:
-
-        case GOD_TROG:
-            if (one_chance_in(14))
-                lose_piety(1);
-            if (you.piety <= 0)
-                excommunication();
-            break;
-
-        case GOD_MAKHLEB:
-            if (one_chance_in(16))
-                lose_piety(1);
-            if (you.piety <= 0)
-                excommunication();
-            break;
-
-        case GOD_SIF_MUNA:
-            if (one_chance_in(20))
-                lose_piety(1);
-            if (you.piety <= 0)
-                excommunication();
-            break;
-
-        case GOD_NEMELEX_XOBEH: // relatively patient
-
-            if (one_chance_in(35))
-                lose_piety(1);
-            if (you.attribute[ATTR_CARD_COUNTDOWN] > 0 && coinflip())
-                you.attribute[ATTR_CARD_COUNTDOWN]--;
-            if (you.piety <= 0)
-                excommunication();
-            break;
-
-        default:
-            DEBUGSTR("Bad god");
-        }
-    }
-
-    // If the player has the lost mutation forget portions of the map
-    if (you.mutation[MUT_LOST] > 0)
-        if (random2(100) <= you.mutation[MUT_LOST] * 5)
-            forget_map(5 + random2(you.mutation[MUT_LOST] * 10));
-
-    // Update all of the corpses and food chunks on the floor
+// Update all of the corpses and food chunks on the floor
     update_corpses(time_delta);
 
-    // Update all of the corpses and food chunks in the player's inventory
-    for (int c = 0; c < 52; c++)
+// Update all of the corpses and food chunks in the player's inventory {should be moved elsewhere - dlb}
+    for (i = 0; i < ENDOFPACK; i++)
     {
-        if (you.inv_quantity[c] <= 0)
-            continue;
-        if (you.inv_class[c] != OBJ_CORPSES && you.inv_class[c] != OBJ_FOOD)
-            continue;
-        if (you.inv_class[c] == OBJ_CORPSES && you.inv_type[c] > CORPSE_SKELETON)
-            continue;
-        if (you.inv_class[c] == OBJ_FOOD && you.inv_type[c] != FOOD_CHUNK)
-            continue;
+        if ( you.inv_quantity[i] < 1 )
+          continue;
+        if (you.inv_class[i] != OBJ_CORPSES && you.inv_class[i] != OBJ_FOOD)
+          continue;
+        if (you.inv_class[i] == OBJ_CORPSES && you.inv_type[i] > CORPSE_SKELETON)
+          continue;
+        if (you.inv_class[i] == OBJ_FOOD && you.inv_type[i] != FOOD_CHUNK)
+          continue;
 
-        if ((time_delta / 20) >= you.inv_dam[c])
+        if ( (time_delta / 20) >= you.inv_dam[i] )
         {
-            if (you.inv_class[c] == OBJ_FOOD)
+            if (you.inv_class[i] == OBJ_FOOD)
             {
-                if (you.equip[EQ_WEAPON] == c)
+                if ( you.equip[EQ_WEAPON] == i )
                 {
                     unwield_item(you.equip[EQ_WEAPON]);
                     you.equip[EQ_WEAPON] = -1;
-                    wield_change = 1;
+                    wield_change = true;
                 }
 
-                you.inv_quantity[c] = 0;
+                you.inv_quantity[i] = 0;
                 burden_change();
                 you.num_inv_items--;
                 continue;
             }
 
-            if (you.inv_type[c] == CORPSE_SKELETON)
-                continue;       // carried skeletons are not destroyed
+            if ( you.inv_type[i] == CORPSE_SKELETON )
+              continue;       // carried skeletons are not destroyed
 
-            if (mons_skeleton(you.inv_plus[c]) == 0)
+            if ( !mons_skeleton(you.inv_plus[i]) )
             {
-                if (you.equip[EQ_WEAPON] == c)
+                if ( you.equip[EQ_WEAPON] == i )
                 {
                     unwield_item(you.equip[EQ_WEAPON]);
                     you.equip[EQ_WEAPON] = -1;
                 }
 
-                you.inv_quantity[c] = 0;
+                you.inv_quantity[i] = 0;
                 burden_change();
                 you.num_inv_items--;
                 continue;
             }
 
-            you.inv_type[c] = 1;
-            you.inv_dam[c] = 0;
-            you.inv_colour[c] = LIGHTGREY;
-            wield_change = 1;
+            you.inv_type[i] = 1;
+            you.inv_dam[i] = 0;
+            you.inv_colour[i] = LIGHTGREY;
+            wield_change = true;
             continue;
         }
 
-        you.inv_dam[c] -= (time_delta / 20);
+        you.inv_dam[i] -= (time_delta / 20);
     }
 
-    // Exercise armor and stealth skills
-    if (you.equip[EQ_BODY_ARMOUR] == -1)
-        goto practise_stealth;
-    if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] < 2)
-        goto practise_stealth;
-
-    // lowered the random roll from % 7 to % 6 -- bwross
-    if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && one_chance_in(6))
-        exercise(SK_ARMOUR, 1);
-
-    // also skills:
-  practise_stealth:
-    if (you.burden_state || you.berserker)
-        return;
-
-    if (you.equip[EQ_BODY_ARMOUR] != -1)
+// exercise armor *xor* stealth skill: {dlb}
+    if ( !player_light_armour() )
     {
-        if (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30 != 4)   /* elven armours don't hamper stealth */
-            if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 1 && (you.inv_type[you.equip[EQ_BODY_ARMOUR]] < 22 || you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 25))  /* neither do robes or steam/mottled DSM */
-                if (random2(mass(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]])) >= 100 || !one_chance_in(3))
-                    return;
+        if ( random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) )
+          return;
+
+        if ( one_chance_in(6) )    // lowered random roll from 7 to 6 -- bwross
+          exercise(SK_ARMOUR, 1);
+    }
+    else    // exercise stealth skill:
+    {
+        if ( you.burden_state != BS_UNENCUMBERED || you.berserker )
+          return;
+
+        if ( you.special_wield == SPWLD_SHADOW )
+          return;
+
+        //if ( you.levitation ) return;    // can't really practise stealth while floating - amulet of control flight shouldn't matter, either
+
+        if ( random2(mass(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]])) >= 100 )
+          return;
+
+        if ( one_chance_in(18) )
+          exercise(SK_STEALTH, 1);
     }
 
-    //if (you.levitation != 0) return; // can't really practise stealth while floating, and an amulet of control flight shouldn't make much difference
+    return;
 
-    if (you.special_wield == 50)
-        return;                 // shadow lantern stops stealth
+}          // end handle_time()
 
-    if (one_chance_in(6))
-        exercise(SK_STEALTH, 1);
-}                               // end handle_time
+
 
 
 long autopickups = 0L;          //set in init file, options, etc.
-
 int autopickup_on = 1;
 
-void autopickup()
+
+
+
+void autopickup( void )
 {
     //David Loewenstern 6/99
     int items_here = 0;
     int result, o, hrg;
     bool did_pickup = false;
 
-    if (autopickup_on == 0 || autopickups == 0L)
+    if ( autopickup_on == 0 || autopickups == 0L )
         return;
 
-    if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
-        return;                 //flying
+    if ( you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT) )
+      return;
 
-    o = env.igrid[you.x_pos][you.y_pos];
+    o = igrd[you.x_pos][you.y_pos];
     if (o == ING)               //no objs
 
         return;

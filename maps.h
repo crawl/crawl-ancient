@@ -8,9 +8,16 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+
 #ifndef MAPS_H
 #define MAPS_H
 
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: dungeon
+ * *********************************************************************** */
 char vault_main(char vgrid[81][81], int mons_array[7], int vault_force, int many_many);
+
 
 #endif

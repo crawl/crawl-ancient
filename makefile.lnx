@@ -15,7 +15,8 @@ OS_TYPE = LINUX
 CFLAGS = -Wall -D$(OS_TYPE) $(EXTRA_FLAGS)
 LDFLAGS = -static -L/usr/lib
 MCHMOD = 711
-INSTALLDIR = /usr/games
+# INSTALLDIR = /usr/games
+INSTALLDIR = /tmp/CRAWLTEST/testdev
 LIB = -lncurses
 
 # Include for Linux

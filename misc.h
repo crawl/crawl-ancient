@@ -7,27 +7,141 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+
+
 #ifndef MISC_H
 #define MISC_H
 
+
 #include "externs.h"
 
-void destroy_item(int dest);
-void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigned char chy, unsigned char ch_col);
-char search_around(void);
-void in_a_cloud(void);
-void up_stairs(void);
-void down_stairs(char remove_stairs, int old_level);
-void dart_trap(int trap_known, int trapped, struct bolt beam[1]);
-void itrap(struct bolt beam[1], int trapped);
-void cull_items(void);
-void handle_traps(char trt, int i, char trap_known);
-void disarm_trap(struct dist disa[1]);
-int manage_clouds(void);
-void weird_writing(char stringy[40]);
-void fall_into_a_pool(char place, unsigned char grype);
-void new_level(void);
-void weird_colours(unsigned char coll, char wc[30]);
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - decks - fight - it_use2 - spells1
+ * *********************************************************************** */
 bool go_berserk(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+char search_around(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void manage_clouds(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void cull_items(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: bang - fight - files - food - items - misc - monstuff -
+ *              religion - spells2 - spells3 - spells4
+ * *********************************************************************** */
+void destroy_item(int dest);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void disarm_trap(struct dist disa[1]);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - effects - spells3
+ * *********************************************************************** */
+void down_stairs(bool remove_stairs, int old_level);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void fall_into_a_pool(bool place, unsigned char grype);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - misc
+ * *********************************************************************** */
+void handle_traps(char trt, int i, bool trap_known);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void in_a_cloud(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: misc - mstuff2
+ * *********************************************************************** */
+void itrap(struct bolt *pbolt, int trapped);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - misc - player - stuff
+ * *********************************************************************** */
+void new_level(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: food
+ * *********************************************************************** */
+void place_chunks(int mcls, unsigned char rot_status, unsigned char chx,
+                  unsigned char chy, unsigned char ch_col);
+
+
+// last updated 3jun2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - misc - mstuff2 - spells3
+ * *********************************************************************** */
+int trap_at_xy(int which_x, int which_y);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void up_stairs(void);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - effects
+ * *********************************************************************** */
+void weird_colours(unsigned char coll, char wc[30]);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: it_use3
+ * *********************************************************************** */
+void weird_writing(char stringy[40]);
+
+
+// last updated 3jun2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - misc - mstuff2 - spells2 - spells3
+ * *********************************************************************** */
+unsigned char trap_category(unsigned char trap_type);
+
 
 #endif

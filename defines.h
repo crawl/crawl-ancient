@@ -17,10 +17,12 @@
  *       <1>     --/--/--       LRH             Created
  */
 
+
 #ifndef DEFINES_H
 #define DEFINES_H
 
-  // there's got to be a better way...
+
+// there's got to be a better way...
 #ifdef _LIBLINUX_IMPLEMENTATION
 #elif macintosh
 #else
@@ -35,55 +37,54 @@
 
 #endif
 
+
+// max size of inventory array {dlb}:
+#define ENDOFPACK 52
+
+
+// max size of monter array {dlb}:
 #define MNST 200
+// non-monster for mgrd[][] -- (MNST + 1) {dlb}:
 #define MNG 201
+
+// max size of item list {dlb}:
 #define ITEMS 500
+// non-item -- (ITEMS + 1) {dlb}
 #define ING 501
-  /* max clouds on lvl */
+
+// max size of cloud array {dlb}:
 #define CLOUDS 30
-  /* an empty cloud */
+// empty cloud -- (CLOUDS + 1) {dlb}:
 #define CNG 31
-  /* Unused: */
+
+// max x-bound for level generation {dlb}
 #define GXM 80
+// max y-bound for level generation {dlb}
 #define GYM 70
-  /* max traps on level */
+
+// max traps per level
 #define NTRAPS 30
-  /* Lowest grid value which can be passed by walking etc: */
+
+// lowest grid value which can be passed by walking etc.
 #define MINMOVE 31
-  /* Lowest grid value which can be seen through */
+
+// lowest grid value which can be seen through
 #define MINSEE 11
 
+// some shortcuts:
 #define menv env.mons
 #define mitm env.it[0]
 #define grd env.grid
 #define mgrd env.mgrid
 #define igrd env.igrid
 
+
+// (MNG) -- for a reason! see usage {dlb}:
 #define MHITNOT 201
+// (MNG + 1) -- for a reason! see usage {dlb}:
 #define MHITYOU 202
 
-#define MLAVA0 420
-#define MLAVA1 421
-#define MLAVA2 422
-#define MLAVA3 423
-#define MLAVA4 424
-#define MLAVA5 425
-#define MLAVA6 426
-#define MLAVA7 427
-#define MLAVA8 428
-#define MLAVA10 429
-#define MWATER0 430
-#define MWATER1 431
-#define MWATER2 432
-#define MWATER3 433
-#define MWATER4 434
-#define MWATER5 435
-#define MWATER6 436
-#define MWATER7 437
-#define MWATER8 438
-#define MWATER9 439
-#define MWATER10 440
-
+// colors, such pretty colors ...
 #ifndef DOS
 #define BLACK 0
 #define BLUE 1
@@ -107,12 +108,13 @@
 #define DARKGREY DARKGRAY
 #endif
 
-  // required for stuff::coinflip()
+// required for stuff::coinflip()
 #define IB1 1
 #define IB2 2
 #define IB5 16
 #define IB18 131072
 #define MASK (IB1 + IB2 + IB5)
-  // required for stuff::coinflip()
+// required for stuff::coinflip()
 
-#endif // DEFINES_H
+
+#endif

@@ -8,9 +8,16 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
-void print_stats();
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - player - stuff
+ * *********************************************************************** */
+void print_stats(void);
+
 
 #endif

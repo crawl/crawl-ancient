@@ -8,18 +8,30 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+
 #ifndef INVENT_H
 #define INVENT_H
 
 
-//void inventory(int item_class_inv, int inv_quantity [52], unsigned char inv_dam [52], unsigned char inv_class [52], unsigned char inv_type [52], unsigned char inv_plus [52]);
-
-//char invent(unsigned char inv_plus2 [52], int item_class_inv, int inv_quantity [52], unsigned char inv_dam [52], unsigned char inv_class [52], unsigned char inv_type [52], unsigned char inv_plus [52], unsigned char inv_ident [52], char item_wielded, char body_armour, char shield_armour, char cloak_armour, char head_armour, char hand_armour, char foot_armour, char ring [2], char show_price);
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: invent - ouch - shopping
+ * *********************************************************************** */
 char invent(int item_class_inv, bool show_price);
 
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - command - food - item_use - items - spl-book - spells1
+ * *********************************************************************** */
 unsigned char get_invent(int invent_type);
 
-// BCR - Default argument of 0 to keep code compatibility
-void list_commands(int wizard = 0);
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void list_commands(bool wizard);
+
 
 #endif

@@ -9,19 +9,58 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+
 #ifndef ITEMS_H
 #define ITEMS_H
 
+
+// used in acr.cc {dlb}:
+extern int autopickup_on;
+
+// used in initfile.cc {dlb}:
+extern long autopickups;
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
 void item_check(char keyin);
-int add_item(int item_got);
-void pickup();
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void pickup(void);
+
+
+// last updated 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: beam - items - transfor
+ * *********************************************************************** */
 void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop);
-void drop();
-int conv_lett(int item_drop_3);
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void drop(void);
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: files - items
+ * *********************************************************************** */
 void update_corpses(double elapsedTime);
+
+
+// last updated: 08jun2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
 void handle_time(int time_delta);
 
-extern long autopickups;
-extern int autopickup_on;
 
 #endif

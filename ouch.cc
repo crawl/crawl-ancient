@@ -23,11 +23,14 @@
 #include "AppHdr.h"
 #include "ouch.h"
 
-#ifdef DOS
-#include <conio.h>
-#endif
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+//#include <fstream.h>
 
 #ifdef DOS
+#include <conio.h>
 #include <file.h>
 #endif
 
@@ -54,51 +57,49 @@
 #include <sys/stat.h>
 #endif
 
-//#include <fstream.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-
 #include "externs.h"
-#include "enum.h"
 
 #include "chardump.h"
-#include "view.h"
+#include "files.h"
 #include "invent.h"
-#include "shopping.h"
 #include "itemname.h"
-#include "mstruct.h"
+#include "mon-util.h"
 #include "player.h"
-#include "randart.h"
 #include "religion.h"
+#include "shopping.h"
 #include "skills2.h"
 #include "stuff.h"
-#include "files.h"
 
 #ifdef MACROS
 #include "macro.h"
 #endif
 
-void highscore(char death_string[256], long points);
-void item_corrode(char itco);
-void end_game(char end_status);
-int set_status(int stat);
+
+extern bool wield_change;    // defined in output.cc
+
 
 char death_string[256];
 long points = 0;
 
-extern char wield_change;       /* defined in output.cc */
+
+int set_status(int stat);
+void end_game(char end_status);
+void highscore(char death_string[256], long points);
+void item_corrode(char itco);
+static char *pad(char *str);
+
+
 
 /* NOTE: DOES NOT check for hellfire!!! */
-int check_your_resists(int hurted, int flavour)
+int check_your_resists( int hurted, int flavour )
 {
-    switch (flavour)
+
+    switch ( flavour )
     {
-    case BEAM_FIRE:
+      case BEAM_FIRE:
         if (player_res_fire() > 100)
         {
-            mpr("You resist.");
+            canned_msg(MSG_YOU_RESIST);
             hurted /= 2 + ((player_res_fire() - 100) * (player_res_fire() - 100));
         }
         else if (player_res_fire() < 100)
@@ -109,10 +110,10 @@ int check_your_resists(int hurted, int flavour)
         }
         break;
 
-    case BEAM_COLD:
+      case BEAM_COLD:
         if (player_res_cold() > 100)
         {
-            mpr("You resist.");
+            canned_msg(MSG_YOU_RESIST);
             hurted /= 2 + ((player_res_cold() - 100) * (player_res_cold() - 100));
         }
         else if (player_res_cold() < 100)
@@ -123,26 +124,26 @@ int check_your_resists(int hurted, int flavour)
         }
         break;
 
-    case BEAM_ELECTRICITY:
+      case BEAM_ELECTRICITY:
         if (player_res_electricity() > 0)
         {
-            mpr("You resist.");
+            canned_msg(MSG_YOU_RESIST);
             hurted /= 3;
         }
         break;
 
 
-    case BEAM_POISON:
-        if (player_res_poison() > 0)
+      case BEAM_POISON:
+        if ( player_res_poison() )
         {
-            mpr("You resist.");
+            canned_msg(MSG_YOU_RESIST);
             hurted /= 3;
         }
         else
-            you.poison += random2(2) + 1;
+          you.poison += ( coinflip() ? 2 : 1 );
         break;
 
-    case BEAM_NEG:
+      case BEAM_NEG:
         if (player_prot_life() > 0)
         {
             hurted -= (player_prot_life() * hurted) / 3;
@@ -150,7 +151,7 @@ int check_your_resists(int hurted, int flavour)
         drain_exp();
         break;
 
-    case BEAM_ICE:
+      case BEAM_ICE:
         if (player_res_cold() > 100)
         {
             mpr("You partially resist.");
@@ -164,33 +165,29 @@ int check_your_resists(int hurted, int flavour)
         }
         break;
 
-
-    }                           /* end switch */
-
-    // 20 is lava
-    if (flavour == BEAM_LAVA)
-    {
+      case BEAM_LAVA:
         if (player_res_fire() > 100)
         {
             mpr("You partially resist.");
             hurted /= 1 + (player_res_fire() - 100);
         }
-        if (player_res_fire() < 100)
+        else if (player_res_fire() < 100)
         {
             mpr("It burns terribly!");
             hurted *= 15;
             hurted /= 10;
         }
-    }
+        break;
+    }                           /* end switch */
 
     return hurted;
 
-}
+}          // end check_your_resists()
 
 
 
 
-void splash_with_acid(char acid_strength)
+void splash_with_acid( char acid_strength )
 {
 
     /* affects equip only?
@@ -203,9 +200,9 @@ void splash_with_acid(char acid_strength)
 
     char splc = 0;
 
-    for (splc = 1; splc < 7; splc++)
+    for (splc = EQ_CLOAK; splc <= EQ_BODY_ARMOUR; splc++)
     {
-        if (you.equip[splc] == -1)
+        if ( you.equip[splc] == -1 )
         {
             ouch(random2(acid_strength) / 5, 0, KILLED_BY_BEAM);
 
@@ -213,453 +210,366 @@ void splash_with_acid(char acid_strength)
             /* should take extra damage if little armour worn */
         }
 
-        if (random2(20) > acid_strength)
-            continue;
-
-        item_corrode(you.equip[splc]);
-
+        if ( random2(20) <= acid_strength )
+          item_corrode(you.equip[splc]);
     }
 
-}
+}          // end splash_with_acid()
 
 
-void weapon_acid(char acid_strength)
+
+
+void weapon_acid( char acid_strength )
 {
+
     char hand_thing = you.equip[EQ_WEAPON];
 
-    if (you.equip[EQ_WEAPON] == -1)
+    if ( you.equip[EQ_WEAPON] == -1 )
     {
-        if (you.equip[EQ_GLOVES] != -1)
-            hand_thing = you.equip[EQ_GLOVES];
+        if ( you.equip[EQ_GLOVES] != -1 )
+          hand_thing = you.equip[EQ_GLOVES];
         else
-            return;             /* take extra damage */
+          return;             // take extra damage
     }
 
-    if (random2(20) > acid_strength)
-        return;
+    if ( random2(20) <= acid_strength )
+      item_corrode(hand_thing);
 
-    item_corrode(hand_thing);
-
-}
+}          // end weapon_acid()
 
 
 
-void item_corrode(char itco)
+
+void item_corrode( char itco )
 {
 
-    int chance_corr = 0;
-    unsigned char rusty = 0;
+    int chance_corr = 0;         // no idea what its full range is {dlb}
+    bool it_resists = false;     // code simplifier {dlb}
+    bool suppress_msg = false;   // code simplifier {dlb}
+    unsigned char how_rusty = ( (you.inv_class[itco] == OBJ_WEAPONS) ? you.inv_plus2[itco]
+                                                                     : you.inv_plus[itco] );
 
-    if (you.inv_class[itco] == 0)
-        rusty = you.inv_plus2[itco];
-    else
-        rusty = you.inv_plus[itco];
-
-    if (you.inv_class[itco] == OBJ_ARMOUR
-        && you.inv_type[itco] == ARM_CRYSTAL_PLATE_MAIL && random2(5) != 0)
+// early return for "oRC and cloak/preservation {dlb}:
+    if ( wearing_amulet(AMU_RESIST_CORROSION) && !one_chance_in(10) )
     {
-        item_name(you.inv_plus2[itco], you.inv_class[itco],
-                  you.inv_type[itco], you.inv_dam[itco],
-                  you.inv_plus[itco], you.inv_quantity[itco],
-                  you.inv_ident[itco], 4, str_pass);
-        strcpy(info, str_pass);
-        strcat(info, " resists.");
-        mpr(info);
-        return;
-    }
 
-    if (you.inv_class[itco] == OBJ_WEAPONS || you.inv_class[itco] == OBJ_ARMOUR
-        || you.inv_class[itco] == OBJ_MISSILES)
-    {
-        /* dwarven stuff is resistant to acids */
-        if (you.inv_dam[itco] / 30 == 5 && random2(5) != 0)
-        {
-            item_name(you.inv_plus2[itco], you.inv_class[itco],
-                      you.inv_type[itco], you.inv_dam[itco],
-                      you.inv_plus[itco], you.inv_quantity[itco],
-                      you.inv_ident[itco], 4, str_pass);
-            strcpy(info, str_pass);
-            strcat(info, " resists.");
-            mpr(info);
-            return;
-        }
-    }
-
-    if (rusty < 45)
-        return;
-    if (you.inv_class[itco] == OBJ_WEAPONS && you.inv_dam[itco] > 180)
-        return;                 // unique
-
-    if (you.inv_class[itco] == OBJ_WEAPONS && you.inv_dam[itco] % 30 >= 25)
-        return;                 // unique
-
-    if (you.inv_class[itco] == OBJ_ARMOUR && you.inv_dam[itco] % 30 >= 25)
-        return;                 // unique
-
-    if (wearing_amulet(AMU_RESIST_CORROSION) == 1 && random2(10) != 0)
-    {
 #ifdef WIZARD
-        strcpy(info, "Amulet protects.");
-        mpr(info);
+        mpr("Amulet protects.");
 #endif
-        return;                 /* amulet of resist corrosion/cloak of preservation */
-    }
-    chance_corr = rusty;
-    if (chance_corr > 130)
-        chance_corr -= 100;
 
-    if (chance_corr < 50)
-    {
-        chance_corr = 50 + ((chance_corr - 50) * -1);
-    }
-
-    chance_corr -= 50;
-
-    switch (chance_corr)
-    {
-    case 0:
-        if (random2(100) < 10)
-            return;
-        break;
-    case 1:
-        if (random2(100) < 25)
-            return;
-        break;
-    case 2:
-        if (random2(100) < 40)
-            return;
-        break;
-    case 3:
-        if (random2(100) < 70)
-            return;
-        break;
-    case 4:
-        if (random2(100) < 95)
-            return;
-        break;
-    default:
         return;
     }
 
-    item_name(you.inv_plus2[itco], you.inv_class[itco], you.inv_type[itco], you.inv_dam[itco], you.inv_plus[itco], you.inv_quantity[itco], you.inv_ident[itco], 4, str_pass);
 
-    strcpy(info, str_pass);
-
-    strcat(info, " is eaten away!");
-    mpr(info);
-
-    rusty--;
-    if (you.inv_class[itco] == 0)
-        you.inv_plus2[itco] = rusty;
-    else
-        you.inv_plus[itco] = rusty;
-
-    you.redraw_armor_class = 1;
-
-    if (you.equip[EQ_WEAPON] == itco)
-        wield_change = 1;
-
-}
+// early return for items already pretty d*** rusty {dlb}:
+    if ( how_rusty < 45 )
+      return;
 
 
+// determine possibility of resistance by object type {dlb}:
+    switch ( you.inv_class[itco] )
+    {
+        case OBJ_ARMOUR:
+            if ( you.inv_dam[itco] % 30 >= SPARM_RANDART_I )
+            {
+                it_resists = true;
+                suppress_msg = true;
+            }
+            else if ( ( you.inv_type[itco] == ARM_CRYSTAL_PLATE_MAIL
+                         || you.inv_dam[itco] / 30 == DARM_DWARVEN ) && !one_chance_in(5) )
+            {
+                it_resists = true;
+                suppress_msg = false;
+            }
+            break;
 
-void scrolls_burn(char burn_strength, char target_class)
+        case OBJ_WEAPONS:
+            if ( you.inv_dam[itco] >= NWPN_SINGING_SWORD || you.inv_dam[itco] % 30 >= SPWPN_RANDART_I )
+            {
+                it_resists = true;
+                suppress_msg = true;
+            }
+            else if ( you.inv_dam[itco] / 30 == DWPN_DWARVEN && !one_chance_in(5) )
+            {
+                it_resists = true;
+                suppress_msg = false;
+            }
+            break;
+
+        case OBJ_MISSILES:
+            if ( you.inv_dam[itco] / 30 == DAMMO_DWARVEN && !one_chance_in(5) )
+            {
+                it_resists = true;
+                suppress_msg = false;
+            }
+            break;
+    }
+
+
+// determine chance of corrosion {dlb}:
+    if ( !it_resists )
+    {
+        chance_corr = how_rusty;
+
+        // the following may seem odd -------------------------------
+        if ( chance_corr > 130 )
+          chance_corr -= 100;
+
+        if ( chance_corr < 50 )    // lowest possible value is 45(?) - see above {dlb}
+          chance_corr = 100 - chance_corr;
+
+        chance_corr -= 50;
+        // ---------------------------- but it needs to stay this way
+        //                              (as it *was* this way)
+
+        // the embedded equation may look funny, but it actually works well
+        // to generate a pretty probability ramp {10%, 19%, 35%, 67%, 99%}
+        // for values [0,4] which closely matches the original, ugly switch {dlb}
+        if ( chance_corr >= 0 && chance_corr <= 4 )
+          it_resists = ( random2(100) < 2 + (2 << (1 + chance_corr)) + (chance_corr << 3) );
+        else
+          it_resists = true;     // no idea how often this occurs {dlb}
+
+        // if the checks get this far, you should hear about it {dlb}
+        suppress_msg = false;
+    }
+
+// handle message output and item damage {dlb}:
+    if ( !suppress_msg )
+    {
+        in_name(itco, 4, str_pass);
+        strcpy(info, str_pass);
+        strcat(info, (it_resists) ? " resists." : " is eaten away!");
+        mpr(info);
+    }
+
+    if ( !it_resists)
+    {
+        how_rusty--;
+
+        if ( you.inv_class[itco] == OBJ_WEAPONS )
+          you.inv_plus2[itco] = how_rusty;
+        else
+          you.inv_plus[itco] = how_rusty;
+
+        you.redraw_armor_class = 1;    // for armour, rings, etc. {dlb}
+
+        if ( you.equip[EQ_WEAPON] == itco )
+          wield_change = true;
+    }
+
+    return;
+
+}          // end item_corrode()
+
+
+
+
+void scrolls_burn( char burn_strength, char target_class )
 {
 
     unsigned char burnc;
     unsigned char burn2;
     unsigned char burn_no = 0;
 
-    if (wearing_amulet(AMU_CONSERVATION) == 1 && random2(10) != 0)
+    if ( wearing_amulet(AMU_CONSERVATION) && !one_chance_in(10) )
     {
 #ifdef WIZARD
-        strcpy(info, "Amulet conserves.");
-        mpr(info);
+        mpr("Amulet conserves.");
 #endif
         return;
     }
 
-    for (burnc = 0; burnc < 52; burnc++)
+    for (burnc = 0; burnc < ENDOFPACK; burnc++)
     {
-        if (you.inv_quantity[burnc] == 0)
-            continue;
-        if (you.inv_class[burnc] != target_class)
-            continue;           /* 6 scrolls, 8 potions */
+        if ( !you.inv_quantity[burnc] )
+          continue;
+        if ( you.inv_class[burnc] != target_class )
+          continue;
 
         for (burn2 = 0; burn2 < you.inv_quantity[burnc]; burn2++)
-        {
-            if (random2(70) < burn_strength)
-            {
-                you.inv_quantity[burnc]--;
-                burn_no++;
-                if (you.inv_quantity[burnc] <= 0)
-                {
-                    you.num_inv_items--;
-                    if (burnc == you.equip[EQ_WEAPON])  // I can't assume any level of intelligence on the player's behalf.
+          if ( random2(70) < burn_strength )
+          {
+              you.inv_quantity[burnc]--;
+              burn_no++;
 
-                    {
-                        you.equip[EQ_WEAPON] = -1;
-                        strcpy(info, "You are now empty handed.");
-                        mpr(info);
-                    }
-                    break;
-                }
-            }
-        }
+              if ( you.inv_quantity[burnc] < 1 )
+              {
+                  you.num_inv_items--;
+
+                  if ( burnc == you.equip[EQ_WEAPON] )  // I can't assume any level of intelligence on the player's behalf
+                  {
+                      you.equip[EQ_WEAPON] = -1;
+                      mpr("You are now empty handed.");
+                  }
+                  break;
+              }
+          }
+
     }
 
-    if (burn_no == 1)
+    if ( burn_no == 1 )
     {
-        if (target_class == OBJ_SCROLLS)
-            strcpy(info, "A scroll you are carrying catches fire!");
-        if (target_class == OBJ_POTIONS)
-            strcpy(info, "A potion you are carrying freezes and shatters!");
-        if (target_class == OBJ_FOOD)
-            strcpy(info, "Some of your food is covered with spores!");
-        mpr(info);
+        if ( target_class == OBJ_SCROLLS )
+          mpr("A scroll you are carrying catches fire!");
+        else if ( target_class == OBJ_POTIONS )
+          mpr("A potion you are carrying freezes and shatters!");
+        else if ( target_class == OBJ_FOOD )
+          mpr("Some of your food is covered with spores!");
+    }
+    else if ( burn_no > 1 )
+    {
+        if ( target_class == OBJ_SCROLLS )
+          mpr("Some of the scrolls you are carrying catch fire!");
+        else if ( target_class == OBJ_POTIONS )
+          mpr("Some of the potions you are carrying freeze and shatter!");
+        else if ( target_class == OBJ_FOOD )
+          mpr("Some of your food is covered with spores!");
     }
 
-    if (burn_no > 1)
-    {
-        if (target_class == OBJ_SCROLLS)
-            strcpy(info, "Some of the scrolls you are carrying catch fire!");
-        if (target_class == OBJ_POTIONS)
-            strcpy(info, "Some of the potions you are carrying freeze and shatter!");
-        if (target_class == OBJ_FOOD)
-            strcpy(info, "Some of your food is covered with spores!");
-        mpr(info);
-    }
     /* burn_no could be 0 */
 
-}
+}          // end scrolls_burn()
 
 
 
-void ouch(int dam, char death_source, char death_type)
+// death_source should be set to zero for non-monsters {dlb}
+void ouch( int dam, int death_source, char death_type )
 {
+
+    struct monsters *monster = &menv[death_source];    // playing with fire, I know {dlb}
     char point_print[10];
     int d = 0;
     int e = 0;
 
 
-    if (you.deaths_door > 0 && death_type != 4 && death_type != 5 && death_type != 6)
-    {
-        return;
-    }
+    if ( you.deaths_door
+        && death_type != KILLED_BY_LAVA
+        && death_type != KILLED_BY_WATER )
+      return;
 
-    if (dam > -9000)
-    {
+    if ( dam > 300 )
+      return;                 // assumed bug for high damage amounts
 
+    if ( dam > -9000 )        // that is, a "death" caused by hp loss {dlb}
+      {
         switch (you.religion)
         {
-        case GOD_XOM:
-            if (random2(you.hp_max) > you.hp && dam > random2(you.hp) && random2(5) == 0)
-            {
+          case GOD_XOM:
+            if (random2(you.hp_max) > you.hp && dam > random2(you.hp) && one_chance_in(5) )
+              {
                 mpr("Xom protects you from harm!");
                 return;
-            }
+              }
             break;
 
-        case GOD_ZIN:
-        case GOD_SHINING_ONE:
-        case GOD_ELYVILON:
-        case GOD_OKAWARU:
-        case GOD_KIKUBAAQUDGHA:
-            if (dam >= you.hp && you.duration[DUR_PRAYER] > 0
-                                            && random2(you.piety) >= 30)
-            {
-                strcpy(info, god_name(you.religion));
-                strcat(info, " protects you from harm!");
-                mpr(info);
+          case GOD_ZIN:
+          case GOD_SHINING_ONE:
+          case GOD_ELYVILON:
+          case GOD_OKAWARU:
+          case GOD_KIKUBAAQUDGHA:
+            if ( dam >= you.hp
+                && you.duration[DUR_PRAYER]
+                && random2(you.piety) >= 30 )
+              {
+                simple_god_message(you.religion, false, " protects you from harm!");
                 return;
-            }
+              }
             break;
-
         }
+      }
 
-    }
+    if ( dam > -9000 )
+      {
+        dec_hp(dam, true);
 
-    you.redraw_hit_points = 1;
-
-    if (dam > 300)
-        return;                 /* assume it's a bug */
-
-    if (dam > -9000)
-    {
-        you.hp -= dam;
-        if (you.hp > 0)
-            return;
-    }
+        if ( you.hp > 0 )
+          return;
+      }
 
 #ifdef WIZARD
-    if (death_type != 13 && death_type != 12 && death_type != 11)       // quit or escaped
-
+    if ( death_type != KILLED_BY_QUITTING
+        && death_type != KILLED_BY_WINNING
+        && death_type != KILLED_BY_LEAVING )
     {
-        strcpy(info, "Since you're a debugger, I'll let you live.");
-        mpr(info);
-        strcpy(info, "Be more careful next time, okay?");
-        mpr(info);
-        // more2();
-        you.hp = you.hp_max;
-        you.redraw_hit_points = 1;
+#ifdef USE_OPTIONAL_WIZARD_DEATH
+        if ( !yesno("Die?") )
+        {
+            set_hp(you.hp_max, false);
+            return;
+        }
+#else
+        mpr("Since you're a debugger, I'll let you live.");
+        mpr("Be more careful next time, okay?");
+
+        set_hp(you.hp_max, false);
         return;
+#endif
     }
 #endif
 
-    // okay, so you're dead.
+//okay, so you're dead:
 
     points += you.gold;
     points += (you.experience * 7) / 10;
-    //if (death_type == 12) points += points / 2;
-    //if (death_type == 11) points += points / 10; // these now handled by giving player the value of their inventory
+
+    //if (death_type == KILLED_BY_WINNING) points += points / 2;
+    //if (death_type == KILLED_BY_LEAVING) points += points / 10; // these now handled by giving player the value of their inventory
+
     char temp_id[4][50];
 
     for (d = 0; d < 4; d++)
-    {
-        for (e = 0; e < 50; e++)
-        {
-            temp_id[d][e] = 1;
-        }
-    }
-    if (death_type == 11 || death_type == 12)
-    {
-        for (d = 0; d < 52; d++)
-        {
-            points += item_value(you.inv_class[d], you.inv_type[d], you.inv_dam[d], you.inv_plus[d], you.inv_plus2[d], you.inv_quantity[d], 3, temp_id);
-        }
-    }
+      for (e = 0; e < 50; e++)
+        temp_id[d][e] = 1;
 
-    if (points > 99999999)
-        points = 99999999;
+    if ( death_type == KILLED_BY_LEAVING || death_type == KILLED_BY_WINNING )
+      for (d = 0; d < ENDOFPACK; d++)
+        points += item_value(you.inv_class[d], you.inv_type[d], you.inv_dam[d], you.inv_plus[d], you.inv_plus2[d], you.inv_quantity[d], 3, temp_id);
+
+    if ( points > 99999999 )
+      points = 99999999;
 
     itoa(points, point_print, 10);
-
     strcpy(death_string, point_print);
+
     if (points < 10000000)
-        strcat(death_string, " ");
+      strcat(death_string, " ");
     if (points < 1000000)
-        strcat(death_string, " ");
+      strcat(death_string, " ");
     if (points < 100000)
-        strcat(death_string, " ");
+      strcat(death_string, " ");
     if (points < 10000)
-        strcat(death_string, " ");
+      strcat(death_string, " ");
     if (points < 1000)
-        strcat(death_string, " ");
+      strcat(death_string, " ");
     if (points < 100)
-        strcat(death_string, " ");
+      strcat(death_string, " ");
     if (points < 10)
-        strcat(death_string, " ");
+      strcat(death_string, " ");
 
     strncat(death_string, you.your_name, DEATH_NAME_LENGTH);
-    // BCR - I added some spaces here so the scores look nicer.
+// BCR - I added some spaces here so the scores look nicer.
     int extra = DEATH_NAME_LENGTH - strlen(you.your_name);
 
-    if (extra > 0)
-        strncat(death_string, "              ", DEATH_NAME_LENGTH - strlen(you.your_name));
-    strcat(death_string, " - ");
-    switch (you.species)
-    {
-    case 1:
-        strcat(death_string, "Hu");
-        break;
-    case 2:
-        strcat(death_string, "El");
-        break;
-    case 3:
-        strcat(death_string, "HE");
-        break;
-    case 4:
-        strcat(death_string, "GE");
-        break;
-    case 5:
-        strcat(death_string, "DE");
-        break;
-    case 6:
-        strcat(death_string, "SE");
-        break;
-    case 7:
-        strcat(death_string, "HD");
-        break;
-    case 8:
-        strcat(death_string, "MD");
-        break;
-    case 9:
-        strcat(death_string, "Ha");
-        break;
-    case 10:
-        strcat(death_string, "HO");
-        break;
-    case 11:
-        strcat(death_string, "Ko");
-        break;
-    case 12:
-        strcat(death_string, "Mu");
-        break;
-    case 13:
-        strcat(death_string, "Na");
-        break;
-    case 14:
-        strcat(death_string, "Gn");
-        break;
-    case 15:
-        strcat(death_string, "Og");
-        break;
-    case 16:
-        strcat(death_string, "Tr");
-        break;
-    case 17:
-        strcat(death_string, "OM");
-        break;
-    case 18:
-    case 19:
-    case 20:
-    case 21:
-    case 22:
-    case 23:
-    case 24:
-    case 25:
-    case 26:
-    case 27:
-    case 28:
-    case 29:
-        strcat(death_string, "Dr");
-        break;
-    case 30:
-        strcat(death_string, "Ce");
-        break;
-    case 31:
-        strcat(death_string, "DG");
-        break;
-    case 32:
-        strcat(death_string, "Sp");
-        break;
-    case 33:
-        strcat(death_string, "Mi");
-        break;
-    case 34:
-        strcat(death_string, "DS");
-        break;
-    case 35:
-        strcat(death_string, "Gh");
-        break;
-    case 36:
-        strcat(death_string, "Ke");
-        break;
-    }
-    death_string[strlen(death_string)] = you.class_name[0];
+    if ( extra > 0 )
+      strncat(death_string, "              ", DEATH_NAME_LENGTH - strlen(you.your_name));
 
+    strcat(death_string, " - ");
+    strcat(death_string, species_abbrev(you.species));
+
+    death_string[strlen(death_string)] = you.class_name[0];
     itoa(you.experience_level, point_print, 10);
     strcat(death_string, point_print);
+
 #ifdef WIZARD
-    strcat(death_string, " Wiz,");
-#else
-    strcat(death_string, ",");
+    strcat(death_string, " Wiz");
 #endif
 
-    switch (death_type)
-    {
+    strcat(death_string, ",");
 
-    case KILLED_BY_MONSTER:     // monster
+    switch ( death_type )
+    {
+      case KILLED_BY_MONSTER:
 
 /* BCR
  * Note: There was a bug where deep elves weren't getting the 'a' before
@@ -670,223 +580,249 @@ void ouch(int dam, char death_source, char death_type)
  *       issues with this.
  */
         strcat(death_string, " killed by ");
-        if ((menv[death_source].type < 250)
-            || ((menv[death_source].type < 280) && (menv[death_source].type >= 260))
-            || (menv[death_source].type > 310)
-            && (menv[death_source].type != 400))
-            strcat(death_string, "a");
-        strcat(death_string, monam(menv[death_source].number, menv[death_source].type, 0, 99));
+        if ( ( monster->type < MONS_PROGRAM_BUG )
+               || ( ( monster->type < MONS_TERENCE ) && ( monster->type >= MONS_NAGA_MAGE ) )
+               || ( monster->type > MONS_BORIS )
+            && ( monster->type != MONS_PLAYER_GHOST ) )
+          strcat(death_string, "a");
+
+        strcat(death_string, monam(monster->number, monster->type, 0, 99));
         break;
 
-    case KILLED_BY_POISON:      // you.poison
-        //              if (dam == -9999) strcat(death_string, "an overload of ");
-
+      case KILLED_BY_POISON:
+        //if (dam == -9999) strcat(death_string, "an overload of ");
         strcat(death_string, " killed by a lethal dose of poison");
         break;
 
-    case KILLED_BY_CLOUD:       // cloud
-
+      case KILLED_BY_CLOUD:
         strcat(death_string, " killed by a cloud");
         break;
 
-    case KILLED_BY_BEAM:        // beam - beam[0].name is a local variable, so can't access it without horrible hacks
-
+      case KILLED_BY_BEAM:        // beam - beam[0].name is a local variable, so can't access it without horrible hacks
         strcat(death_string, " killed from afar by ");
-        if (menv[death_source].type < 250 || menv[death_source].type > 310 && menv[death_source].type != 400)
-            strcat(death_string, "a");
-        strcat(death_string, monam(menv[death_source].number, menv[death_source].type, 0, 99));
+
+        if ( monster->type < MONS_PROGRAM_BUG
+              || monster->type > MONS_BORIS
+            && monster->type != MONS_PLAYER_GHOST )    // this looks very, very wrong to me {dlb}
+          strcat(death_string, "a");
+
+        strcat(death_string, monam(monster->number, monster->type, 0, 99));
         break;
 
-        /* case 4: // death's door running out - NOTE: This is no longer fatal
-           strcat(death_string, " ran out of time");
-           break; */
+/*
+      case KILLED_BY_DEATHS_DOOR: // death's door running out - NOTE: This is no longer fatal
+        strcat(death_string, " ran out of time");
+        break;
+*/
 
-    case KILLED_BY_LAVA:        // falling into lava
-
+      case KILLED_BY_LAVA:
         strcat(death_string, " took a swim in molten lava");
         break;
 
-    case KILLED_BY_WATER:       // falling into water
-
-        if (you.species == SP_MUMMY)
-            strcat(death_string, " soaked and fell apart");
+      case KILLED_BY_WATER:
+        if ( you.species == SP_MUMMY )
+          strcat(death_string, " soaked and fell apart");
         else
-            strcat(death_string, " drowned");
+          strcat(death_string, " drowned");
         break;
-        // these three are probably only possible if you wear a you.ring of >= +3 ability,
-        //  get drained to 3, then take it off, or have a very low abil and wear a -ve you.ring.
-        // or, as of 2.7x, mutations can cause this
-    case KILLED_BY_STUPIDITY:   // lack of intelligence
 
+// these three are probably only possible if you wear a you.ring of >= +3 ability,
+// get drained to 3, then take it off, or have a very low abil and wear a -ve you.ring.
+// or, as of 2.7x, mutations can cause this
+      case KILLED_BY_STUPIDITY:
         strcat(death_string, " died of stupidity");
         break;
-    case KILLED_BY_WEAKNESS:    // lack of str
 
-        strcat(death_string, " died of muscular atrophy");
-        break;
-    case KILLED_BY_CLUMSINESS:  // lack of dex
-
-        strcat(death_string, " died of clumsiness");    // crappy message
-
+      case KILLED_BY_WEAKNESS:
+        strcat(death_string, " too weak to continue adventuring");
         break;
 
-    case KILLED_BY_TRAP:
+      case KILLED_BY_CLUMSINESS:
+        strcat(death_string, " slipped on a banana peel");
+        break;
+
+      case KILLED_BY_TRAP:
         strcat(death_string, " killed by a trap");
         break;
 
-    case KILLED_BY_LEAVING:
+      case KILLED_BY_LEAVING:
         strcat(death_string, " got out of the dungeon alive.");
         break;
 
-    case KILLED_BY_WINNING:
+      case KILLED_BY_WINNING:
         strcat(death_string, " escaped with the Orb.");
         break;
 
-    case KILLED_BY_QUITTING:
+      case KILLED_BY_QUITTING:
         strcat(death_string, " quit");
         break;
 
-    case KILLED_BY_DRAINING:
+      case KILLED_BY_DRAINING:
         strcat(death_string, " was drained of all life");
         break;
 
-    case KILLED_BY_STARVATION:
+      case KILLED_BY_STARVATION:
         strcat(death_string, " starved to death");
         break;
 
-    case KILLED_BY_FREEZING:
+      case KILLED_BY_FREEZING:
         strcat(death_string, " froze to death");
         break;
 
-    case KILLED_BY_BURNING:
-        strcat(death_string, " burned to death");
+      case KILLED_BY_BURNING:
+        strcat(death_string, " burnt to a crisp");
         break;
 
-    case KILLED_BY_WILD_MAGIC:  /* from function miscast_effect */
+      case KILLED_BY_WILD_MAGIC:
         strcat(death_string, " killed by wild magic");
         break;
 
-    case KILLED_BY_XOM:
+      case KILLED_BY_XOM:
         strcat(death_string, " killed by Xom");
         break;
 
-    case KILLED_BY_STATUE:
+      case KILLED_BY_STATUE:
         strcat(death_string, " killed by a statue");
         break;
 
-    case KILLED_BY_ROTTING:
+      case KILLED_BY_ROTTING:
         strcat(death_string, " rotted away");
         break;
 
-    case KILLED_BY_TARGETTING:
+      case KILLED_BY_TARGETTING:
         strcat(death_string, " killed by bad targetting");
         break;
 
-    case KILLED_BY_SPORE:
+      case KILLED_BY_SPORE:
         strcat(death_string, " killed by an exploding spore");
         break;
 
-    case KILLED_BY_TSO_SMITING:
+      case KILLED_BY_TSO_SMITING:
         strcat(death_string, " smote by The Shining One");
+        break;
+
+      case KILLED_BY_PETRIFICATION:
+        strcat(death_string, " turned to stone");
+        break;
+
+      case KILLED_BY_SHUGGOTH:
+        strcat(death_string, " eviscerated by a hatching shuggoth");
+        break;
+
+      default:
+        strcat(death_string, " killed by a nasty bug in ouch::ouch()");
         break;
     }                           // end switch
 
-    if (death_type != 11 && death_type != 12)
-    {
-
-        if (you.level_type == 2)
-        {
+    if ( death_type != KILLED_BY_LEAVING && death_type != KILLED_BY_WINNING )
+      {
+        if ( you.level_type == LEVEL_ABYSS )
+          {
             strcat(death_string, " in the Abyss.");
             goto ending;
-        }
-        if (you.level_type == 3)
-        {
+          }
+        else if ( you.level_type == LEVEL_PANDEMONIUM )
+          {
             strcat(death_string, " in Pandemonium.");
             goto ending;
-        }
-        if (you.level_type == 1)
-        {
+          }
+        else if ( you.level_type == LEVEL_LABYRINTH )
+          {
             strcat(death_string, " in a labyrinth.");
             goto ending;
-        }
+          }
 
         itoa((you.your_level + 1), st_prn, 10);
 
-        if (you.where_are_you >= 1 && you.where_are_you <= 9)
-            itoa(you.your_level + 1 - 26, st_prn, 10);
-
-        if (you.where_are_you >= 10)
+        switch ( you.where_are_you )
         {
+          case BRANCH_ORCISH_MINES:
+          case BRANCH_HIVE:
+          case BRANCH_LAIR:
+          case BRANCH_SLIME_PITS:
+          case BRANCH_VAULTS:
+          case BRANCH_CRYPT:
+          case BRANCH_HALL_OF_BLADES:
+          case BRANCH_HALL_OF_ZOT:
+          case BRANCH_ECUMENICAL_TEMPLE:
+          case BRANCH_SNAKE_PIT:
+          case BRANCH_ELVEN_HALLS:
+          case BRANCH_TOMB:
+          case BRANCH_SWAMP:
             itoa(you.your_level - you.branch_stairs[you.where_are_you - 10], st_prn, 10);
+            break;
+
+          case BRANCH_DIS:
+          case BRANCH_GEHENNA:
+          case BRANCH_VESTIBULE_OF_HELL:
+          case BRANCH_COCYTUS:
+          case BRANCH_TARTARUS:
+          case BRANCH_INFERNO:
+          case BRANCH_THE_PIT:
+            itoa(you.your_level + 1 - 26, st_prn, 10);
+            break;
         }
-        /* switch(you.where_are_you)
-           {
-           case 10: itoa(you.your_level - you.branch_stairs [0], st_prn, 10); break;
-           case 11: itoa(you.your_level - you.branch_stairs [1], st_prn, 10); break;
-           case 12: itoa(you.your_level - you.branch_stairs [2], st_prn, 10); break;
-           case 13: itoa(you.your_level - you.branch_stairs [3], st_prn, 10); break;
-           case 14: itoa(you.your_level - you.branch_stairs [4], st_prn, 10); break;
-           } */
-        if (you.where_are_you != 3)
-        {
+
+        if ( you.where_are_you != BRANCH_VESTIBULE_OF_HELL )
+          {
             strcat(death_string, " on L");
             strcat(death_string, st_prn);
-        }
+          }
 
-        switch (you.where_are_you)
+        switch ( you.where_are_you )
         {
-        case 1:
+          case BRANCH_DIS:
             strcat(death_string, " of Dis");
             break;
-        case 2:
+          case BRANCH_GEHENNA:
             strcat(death_string, " of Gehenna");
             break;
-        case 3:
+          case BRANCH_VESTIBULE_OF_HELL:
             strcat(death_string, " in the Vestibule");
             break;
-        case 4:
+          case BRANCH_COCYTUS:
             strcat(death_string, " of Cocytus");
             break;
-        case 5:
+          case BRANCH_TARTARUS:
             strcat(death_string, " of Tartarus");
             break;
-        case 10:
+          case BRANCH_ORCISH_MINES:
             strcat(death_string, " of the Mines");
             break;
-        case 11:
+          case BRANCH_HIVE:
             strcat(death_string, " of the Hive");
             break;
-        case 12:
+          case BRANCH_LAIR:
             strcat(death_string, " of the Lair");
             break;
-        case 13:
+          case BRANCH_SLIME_PITS:
             strcat(death_string, " of the Slime Pits");
             break;
-        case 14:
+          case BRANCH_VAULTS:
             strcat(death_string, " of the Vaults");
             break;
-        case 15:
+          case BRANCH_CRYPT:
             strcat(death_string, " of the Crypt");
             break;
-        case 16:
+          case BRANCH_HALL_OF_BLADES:
             strcat(death_string, " of the Hall");
             break;
-        case 17:
+          case BRANCH_HALL_OF_ZOT:
             strcat(death_string, " of Zot's Hall");
             break;
-        case 18:
+          case BRANCH_ECUMENICAL_TEMPLE:
             strcat(death_string, " of the Temple");
             break;
-        case 19:
+          case BRANCH_SNAKE_PIT:
             strcat(death_string, " of the Snake Pit");
             break;
-        case 20:
+          case BRANCH_ELVEN_HALLS:
             strcat(death_string, " of the Elf Hall");
             break;
-        case 21:
+          case BRANCH_TOMB:
             strcat(death_string, " of the Tomb");
             break;
-        case 22:
+          case BRANCH_SWAMP:
             strcat(death_string, " of the Swamp");
             break;
         }
@@ -894,13 +830,13 @@ void ouch(int dam, char death_source, char death_type)
         strcat(death_string, ".");
         save_ghost();
 
-      ending:
+ending:
         end_game(1);
     }
 
     end_game(0);                // must have won! (or at least escaped)
 
-}
+}          // end ouch()
 
 
 
@@ -939,10 +875,10 @@ void end_game(char end_status)
 
     strncpy(glorpstr, you.your_name, kFileNameLen);
 
-    /* This is broken. Length is not valid yet! We have to check if we got a
-       trailing NULL; if not, write one: */
-    if (strlen(you.your_name) > kFileNameLen - 1)       /* is name 6 chars or more? */
-        glorpstr[kFileNameLen] = '\0';  /* if so, char 7 should be NULL */
+// This is broken. Length is not valid yet! We have to check if we got a
+// trailing NULL; if not, write one:
+    if (strlen(you.your_name) > kFileNameLen - 1)       // is name 6 chars or more?
+        glorpstr[kFileNameLen] = '\0';                  // if so, char 7 should be NULL
 #endif
 
 
@@ -952,16 +888,16 @@ void end_game(char end_status)
     strncpy(glorpstr, you.your_name, 6);
 
 // This is broken. Length is not valid yet! We have to check if we got a
-    // trailing NULL; if not, write one:
-    if (strlen(you.your_name) > 5)      /* is name 6 chars or more? */
-        glorpstr[6] = (char) NULL;      /* if so, char 7 should be NULL */
+// trailing NULL; if not, write one:
+    if (strlen(you.your_name) > 5)      // is name 6 chars or more?
+        glorpstr[6] = (char) NULL;      // if so, char 7 should be NULL
 
     strncpy(glorpstr, you.your_name, 6);
 
 // This is broken. Length is not valid yet! We have to check if we got a
-    // trailing NULL; if not, write one:
-    if (strlen(you.your_name) > 5)      /* is name 6 chars or more? */
-        glorpstr[6] = (char) NULL;      /* if so, char 7 should be NULL */
+// trailing NULL; if not, write one:
+    if (strlen(you.your_name) > 5)      // is name 6 chars or more?
+        glorpstr[6] = (char) NULL;      // if so, char 7 should be NULL
 
     int fi = 0;
     int fi2 = 0;
@@ -983,11 +919,13 @@ void end_game(char end_status)
 #endif
             strcat(del_file, ".");
             if (fi < 10)
-                strcat(del_file, "0");
+              strcat(del_file, "0");
             itoa(fi, st_prn, 10);
             strcat(del_file, st_prn);
+
             st_prn[0] = fi2 + 97;
-            st_prn[1] = 0;
+            st_prn[1] = '\0';
+
             strcat(del_file, st_prn);
             strcat(del_file, "\0");
             int handle = open(del_file, S_IWRITE, S_IREAD);
@@ -1078,73 +1016,62 @@ void end_game(char end_status)
     status2 = set_status(100);
 
 
-    if (status2 == 1)
+    if ( status2 == 1 )
     {
-        strcpy(info, "You die...");
-        mpr(info);
+        mpr("You die...");    // insert player name here? {dlb}
     }
 
     viewwindow(1, false);
     more();
 
 
-    for (i = 0; i < 52; i++)
-    {
-        you.inv_ident[i] = 3;
-    }
+    for (i = 0; i < ENDOFPACK; i++)
+      you.inv_ident[i] = 3;
 
-    for (i = 0; i < 52; i++)
-    {
-        if (you.inv_class[i] != 0)
-        {
-            set_id(you.inv_class[i], you.inv_type[i], 1);
-        }
-    }
+    for (i = 0; i < ENDOFPACK; i++)
+      if ( you.inv_class[i] != 0 )
+      {
+          set_id(you.inv_class[i], you.inv_type[i], 1);
+      }
 
-    if (status2 == 0)           /* invent(you.inv_plus2, -1, you.inv_quantity, you.inv_dam, you.inv_class, you.inv_type, you.inv_plus, you.inv_ident, you.equip [EQ_WEAPON], you.equip [EQ_BODY_ARMOUR], you.equip [EQ_SHIELD], you.equip [EQ_HELMET], you.equip [EQ_CLOAK], you.equip [EQ_GLOVES], you.equip [EQ_BOOTS], you.ring, 1); */
-        invent(-1, 1);
-    else                        /* invent(you.inv_plus2, -1, you.inv_quantity, you.inv_dam, you.inv_class, you.inv_type, you.inv_plus, you.inv_ident, you.equip [EQ_WEAPON], you.equip [EQ_BODY_ARMOUR], you.equip [EQ_SHIELD], you.equip [EQ_HELMET], you.equip [EQ_CLOAK], you.equip [EQ_GLOVES], you.equip [EQ_BOOTS], you.ring, 0); */
-        invent(-1, 0);
+    invent( -1, ( status2 == 0 ) );
 
 #ifdef USE_CURSES
     clear();
 #endif
-    if (dump_char((status2 == 0), "morgue.txt") == 1)
-        strcpy(info, "Char dumped successfully (morgue.txt).");
+
+    if ( dump_char((status2 == 0), "morgue.txt") )
+      mpr("Char dump successful! (morgue.txt).");
     else
-        strcpy(info, "Char dump unsuccessful! Sorry about that.");
-    mpr(info);
+      mpr("Char dump unsuccessful! Sorry about that.");
+
     more();
+
     int p = 0;
 
-    for (p = 0; p < 52; p++)
-    {
-        for (i = 0; i < ITEMS; i++)
-        {
-            if (mitm.quantity[i] == 0)
-            {
-                mitm.id[i] = 0;
-                mitm.base_type[i] = you.inv_class[p];
-                mitm.sub_type[i] = you.inv_type[p];
-                mitm.pluses[i] = you.inv_plus[p];
-                mitm.pluses2[i] = you.inv_plus2[p];
-                mitm.special[i] = you.inv_dam[p];
-                mitm.colour[i] = you.inv_colour[p];
-                mitm.x[i] = you.x_pos;
-                mitm.y[i] = you.y_pos;
-                mitm.quantity[i] = you.inv_quantity[p];
-                /*                it_no ++; */
-                break;
-            }
-        }                       // end of i loop
+    for (p = 0; p < ENDOFPACK; p++)
+      for (i = 0; i < ITEMS; i++)
+      {
+          if ( !mitm.quantity[i] )
+          {
+              mitm.id[i] = 0;
+              mitm.base_type[i] = you.inv_class[p];
+              mitm.sub_type[i] = you.inv_type[p];
+              mitm.pluses[i] = you.inv_plus[p];
+              mitm.pluses2[i] = you.inv_plus2[p];
+              mitm.special[i] = you.inv_dam[p];
+              mitm.colour[i] = you.inv_colour[p];
+              mitm.x[i] = you.x_pos;
+              mitm.y[i] = you.y_pos;
+              mitm.quantity[i] = you.inv_quantity[p];
+              break;
+          }
+      }        // end "for p,i"
 
-    }                           // end of p loop
 
 
     for (i = 0; i < ITEMS; i++)
-    {
-        mitm.id[i] = 0;
-    }
+      mitm.id[i] = 0;
 
 
     clrscr();
@@ -1161,7 +1088,7 @@ void end_game(char end_status)
 
 
     highscore(death_string, points);
-    get_ch();
+    get_ch();     // just to pause, actual value returned does not matter {dlb}
     end(0);
 }
 #else
@@ -1279,65 +1206,53 @@ void end_game(char end_status)
 
     if (status2 == 1)
     {
-        strcpy(info, "You die...");
-        mpr(info);
+        mpr("You die...");    // insert player name here? {dlb}
     }
 
     viewwindow(1, false);
     more();
 
 
-    for (i = 0; i < 52; i++)
-    {
-        you.inv_ident[i] = 3;
-    }
+    for (i = 0; i < ENDOFPACK; i++)
+      you.inv_ident[i] = 3;
 
-    for (i = 0; i < 52; i++)
-    {
-        if (you.inv_class[i] != 0)
-        {
-            set_id(you.inv_class[i], you.inv_type[i], 1);
-        }
-    }
+    for (i = 0; i < ENDOFPACK; i++)
+      if ( you.inv_class[i] != 0 )
+        set_id(you.inv_class[i], you.inv_type[i], 1);
 
-    if (status2 == 0)           /* invent(you.inv_plus2, -1, you.inv_quantity, you.inv_dam, you.inv_class, you.inv_type, you.inv_plus, you.inv_ident, you.equip [EQ_WEAPON], you.equip [EQ_BODY_ARMOUR], you.equip [EQ_SHIELD], you.equip [EQ_HELMET], you.equip [EQ_CLOAK], you.equip [EQ_GLOVES], you.equip [EQ_BOOTS], you.ring, 1); */
-        invent(-1, 1);
-    else                        /* invent(you.inv_plus2, -1, you.inv_quantity, you.inv_dam, you.inv_class, you.inv_type, you.inv_plus, you.inv_ident, you.equip [EQ_WEAPON], you.equip [EQ_BODY_ARMOUR], you.equip [EQ_SHIELD], you.equip [EQ_HELMET], you.equip [EQ_CLOAK], you.equip [EQ_GLOVES], you.equip [EQ_BOOTS], you.ring, 0); */
-        invent(-1, 0);
+    invent( -1, ( status2 == 0 ) );
 
 #ifdef USE_CURSES
     clear();
 #endif
-    if (dump_char((status2 == 0), "morgue.txt") == 1)
-        strcpy(info, "Char dumped successfully (morgue.txt).");
+
+    if ( dump_char((status2 == 0), "morgue.txt") )
+      mpr("Char dump successful! (morgue.txt).");
     else
-        strcpy(info, "Char dump unsuccessful! Sorry about that.");
-    mpr(info);
+      mpr("Char dump unsuccessful! Sorry about that.");
+
     more();
+
     int p = 0;
 
-    for (p = 0; p < 52; p++)
-    {
-        for (i = 0; i < ITEMS; i++)
-        {
-            if (mitm.quantity[i] == 0)
-            {
-                mitm.id[i] = 0;
-                mitm.base_type[i] = you.inv_class[p];
-                mitm.sub_type[i] = you.inv_type[p];
-                mitm.pluses[i] = you.inv_plus[p];
-                mitm.pluses2[i] = you.inv_plus2[p];
-                mitm.special[i] = you.inv_dam[p];
-                mitm.colour[i] = you.inv_colour[p];
-                mitm.x[i] = you.x_pos;
-                mitm.y[i] = you.y_pos;
-                mitm.quantity[i] = you.inv_quantity[p];
-                /*                it_no ++; */
-                break;
-            }
-        }                       // end of i loop
-
-    }                           // end of p loop
+    for (p = 0; p < ENDOFPACK; p++)
+      for (i = 0; i < ITEMS; i++)
+      {
+          if ( !mitm.quantity[i] )
+          {
+              mitm.id[i] = 0;
+              mitm.base_type[i] = you.inv_class[p];
+              mitm.sub_type[i] = you.inv_type[p];
+              mitm.pluses[i] = you.inv_plus[p];
+              mitm.pluses2[i] = you.inv_plus2[p];
+              mitm.special[i] = you.inv_dam[p];
+              mitm.colour[i] = you.inv_colour[p];
+              mitm.x[i] = you.x_pos;
+              mitm.y[i] = you.y_pos;
+              mitm.quantity[i] = you.inv_quantity[p];
+              break;
+          }
+      }        // end "for p,i"
 
 
     for (i = 0; i < ITEMS; i++)
@@ -1360,23 +1275,32 @@ void end_game(char end_status)
 
 
     highscore(death_string, points);
-    get_ch();
+    get_ch();     // just to pause, actual value returned does not matter {dlb}
     end(0);
 }
 
 #endif
 
-   // BCR - used to pad a string out to 80 characters
-char *pad(char *str)
+
+
+
+// BCR - used to pad a string out to 80 characters
+static char *pad( char *str )
 {
+
     static char *padding = "                                                                                 ";
     int length = strlen(str);
 
     strncpy(str + length, padding, 80 - (length - 1));
     str[80] = 0;
     return str;
-}
-   // BCR - I did a lot of cleanup in here, removing gotos, etc.
+
+}          // end pad()
+
+
+
+
+// BCR - I did a lot of cleanup in here, removing gotos, etc.
 void highscore(char death_string[256], long points)
 {
     char high_scores[SCORE_FILE_ENTRIES][80];
@@ -1413,6 +1337,7 @@ void highscore(char death_string[256], long points)
         {
             // BCR - reading in 80 chars at a time now instead of 1.  80x faster.
             read(handle, ready, 80);
+
             for (j = 0; j < 80; j++)
             {
                 if (isspace(ready[j]) || isalpha(ready[j]) || isdigit(ready[j]) || ispunct(ready[j]))
@@ -1514,15 +1439,13 @@ void highscore(char death_string[256], long points)
 #ifdef SOLARIS
         lockf(handle, F_LOCK, 0);
 #endif
-        /*
+
+/*
            for (i = 0; i < SCORE_FILE_ENTRIES; i++)
-           {
-           for (j = strlen(high_scores[i]); j < 80; j++)
-           {
-           high_scores[i][j] = ' ';
-           }
-           }
-         */
+             for (j = strlen(high_scores[i]); j < 80; j++)
+               high_scores[i][j] = ' ';
+*/
+
         has_printed = 0;
         for (i = 0; i < SCORE_FILE_ENTRIES; i++)
         {
@@ -1558,14 +1481,16 @@ void highscore(char death_string[256], long points)
     }
 }                               // end void highscores
 
-void lose_level(void)
+
+
+
+void lose_level( void )
 {
+
     char temp_quant[5];
 
-    if (you.experience_level == 1)
-    {
-        ouch(-9999, 0, KILLED_BY_DRAINING);
-    }
+    if ( you.experience_level == 1 )
+      ouch(-9999, 0, KILLED_BY_DRAINING);
     // because you.experience is unsigned long, if it's going to be -ve must die straightaway.
 
     you.experience = exp_needed(you.experience_level + 1, you.species) - 1;
@@ -1579,74 +1504,58 @@ void lose_level(void)
     strcat(info, "!");
     mpr(info);
 
-    //you.res_magic -= 3;
+    int brek = 0;
 
-    int brek = random2(3) + 4;
-
-    if (you.experience_level >= 12)
-        brek = random2(3) + 2;
-    if (you.experience_level >= 21)
-        brek = random2(2) + 2;
+    if ( you.experience_level > 20 )
+      brek = ( coinflip() ? 3 : 2 );
+    else if ( you.experience_level > 11)
+      brek = random2(3) + 2;
+    else
+      brek = random2(3) + 4;
 
     ouch(brek, 0, KILLED_BY_DRAINING);
     you.base_hp2 -= brek;
 
-    brek = random2(4) + 3;
-    if (you.experience_level > 12)
-        brek = random2(3) + 2;
-    if (you.experience_level > 21)
-        brek = random2(2) + 2;
-
-
-    you.magic_points -= 1;
+    dec_mp(1);
     you.base_magic_points2--;
 
-    // you.spell_levels--;
+    //you.spell_levels--;
 
     calc_hp();
-    calc_ep();
+    calc_mp();
 
-    // if (you.spell_levels < -40)
-    //    you.spell_levels = -40;
-
-    if (you.magic_points < 0)
-        you.magic_points = 0;
+    //if ( you.spell_levels < -40 )
+    //  you.spell_levels = -40;
 
     you.redraw_experience = 1;
-    you.redraw_hit_points = 1;
-    you.redraw_magic_points = 1;
 
-    brek = 0;
-
-}
+}          // end lose_level()
 
 
-void drain_exp(void)
+
+
+void drain_exp( void )
 {
     int protection = player_prot_life();
 
-    if (you.duration[DUR_PRAYER] != 0
-        && (you.religion == GOD_ZIN || you.religion == GOD_SHINING_ONE)
-        && random2(150) < you.piety)
+    if ( you.duration[DUR_PRAYER]
+        && ( you.religion == GOD_ZIN || you.religion == GOD_SHINING_ONE )
+        && random2(150) < you.piety )
     {
-        strcpy(info, god_name(you.religion));
-        strcat(info, " protects your life force!");
-        mpr(info);
+        simple_god_message(you.religion, false, " protects your life force!");
         return;
     }
 
-    if (protection >= 3 || you.is_undead)
+    if ( protection >= 3 || you.is_undead )
     {
         mpr("You fully resist.");
         return;
     }
 
-    if (you.experience == 0)
-    {
-        ouch(-9999, 0, KILLED_BY_DRAINING);
-    }
+    if ( you.experience == 0 )
+      ouch(-9999, 0, KILLED_BY_DRAINING);
 
-    if (you.experience_level == 1)
+    if ( you.experience_level == 1 )
     {
         you.experience = 0;
         return;
@@ -1659,25 +1568,25 @@ void drain_exp(void)
 
     if (protection > 0)
     {
-        exp_drained -= (protection * exp_drained) / 3;
         mpr("You partially resist.");
+        exp_drained -= (protection * exp_drained) / 3;
     }
 
     if (exp_drained > 0)
     {
         mpr("You feel drained.");
-
         you.experience -= exp_drained;
         you.exp_available -= exp_drained;
 
         if (you.exp_available < 0)
-            you.exp_available = 0;
+          you.exp_available = 0;
 
 #ifdef WIZARD
         strcpy(info, "You lose ");
-        char temp_quant[20];
 
+        char temp_quant[20];
         itoa(exp_drained, temp_quant, 10);
+
         strcat(info, temp_quant);
         strcat(info, " experience points.");
         mpr(info);
@@ -1685,22 +1594,23 @@ void drain_exp(void)
 
         you.redraw_experience = 1;
 
-        if (you.experience < exp_needed(you.experience_level + 1, you.species))
-        {
-            lose_level();
-        }
+        if ( you.experience < exp_needed(you.experience_level + 1, you.species) )
+          lose_level();
+
     }
-}
+
+}          // end drain_exp()
 
 
 
-int set_status(int stat)
+
+int set_status( int stat )
 {
 
     static int stat2;
 
     if (stat != 100)
-        stat2 = stat;
+      stat2 = stat;
 
     return stat2;
 

@@ -2,11 +2,15 @@
 #include <stdarg.h>
 #include <emx/syscalls.h>
 #include <sys/video.h>
+
 #include "libemx.h"
 
 
 static int cursor_start = 0, cursor_end = 0;
 static int gx = 0, gy = 0, gxx = 79, gyy = 24;
+static char buf[4096];
+
+
 
 
 void init_emx()
@@ -16,38 +20,46 @@ void init_emx()
 }
 
 
+
+
 void deinit_emx()
 {
     // nothing to do
 }
 
 
+
+
 void _setcursortype(int curstype)
 {
-    if (curstype == _NOCURSOR)
-        v_hidecursor();
+    if ( curstype == _NOCURSOR )
+      v_hidecursor();
     else
-        v_ctype(cursor_start, cursor_end);
+      v_ctype(cursor_start, cursor_end);
 }
+
+
 
 
 void clrscr()
 {
-    if ((gx == 0) && (gy == 0) && (gxx == 79) && (gyy == 24))
-    {
+    if ( (gx == 0) && (gy == 0) && (gxx == 79) && (gyy == 24) )
+      {
         v_clear();
         v_gotoxy(0, 0);
-    }
+      }
     else
-    {
+      {
         for (int i = gy; i <= gyy; ++i)
-        {
+          {
             v_gotoxy(gx, i);
             v_putn(' ', gxx - gx + 1);
-        }
+          }
         v_gotoxy(gx, gy);
-    }
+      }
 }
+
+
 
 
 void gotoxy(int x, int y)
@@ -56,13 +68,14 @@ void gotoxy(int x, int y)
 }
 
 
+
+
 void textcolor(int c)
 {
     v_attrib(c);
 }
 
 
-static char buf[4096];
 
 
 void cprintf(const char *s)
@@ -71,39 +84,47 @@ void cprintf(const char *s)
 
     while (*s)
     {
-        if (*s == '\n')
-        {
+        if ( *s == '\n' )
+          {
             *ptr = 0;
             v_puts(buf);
             int x, y;
 
             v_getxy(&x, &y);
-            if (y != 24)
-                v_gotoxy(gx, y + 1);
+            if ( y != 24 )
+              v_gotoxy(gx, y + 1);
             else
-                v_putc('\n');
+              v_putc('\n');
+
             ptr = buf;
-        }
-        else if (*s != '\r')
-            *ptr++ = *s;
+          }
+        else if ( *s != '\r' )
+          *ptr++ = *s;
+
         ++s;
     }
+
     *ptr = 0;
     v_puts(buf);
+
 }
 
 
+
+
 /*
-   void cprintf (const char *format, ...)
-   {
+void cprintf (const char *format, ...)
+{
    char buffer[4096]; // one could hope it's enough
    va_list argp;
    va_start(argp,format);
    vsprintf(buffer, format, argp);
    va_end(argp);
    v_puts(buffer);
-   }
- */
+}
+*/
+
+
 
 
 void puttext(int x, int y, int lx, int ly, unsigned const char *buf)
@@ -112,15 +133,19 @@ void puttext(int x, int y, int lx, int ly, unsigned const char *buf)
 }
 
 
+
+
 void puttext(int x, int y, int lx, int ly, const char *buf)
 {
     int count = (lx - x + 1);
 
     for (int i = y - 1; i < ly; ++i)
-    {
+      {
         v_putline(buf + 2 * count * i, x - 1, i, count);
-    }
+      }
 }
+
+
 
 
 void gettext(int x, int y, int lx, int ly, unsigned char *buf)
@@ -129,15 +154,19 @@ void gettext(int x, int y, int lx, int ly, unsigned char *buf)
 }
 
 
+
+
 void gettext(int x, int y, int lx, int ly, char *buf)
 {
     int count = (lx - x + 1);
 
     for (int i = y - 1; i < ly; ++i)
-    {
+      {
         v_getline(buf + 2 * count * i, x - 1, i, count);
-    }
+      }
 }
+
+
 
 
 void window(int x, int y, int lx, int ly)
@@ -149,13 +178,18 @@ void window(int x, int y, int lx, int ly)
 }
 
 
+
+
 int wherex()
 {
     int x, y;
 
     v_getxy(&x, &y);
+
     return x + 1 - gx;
 }
+
+
 
 
 int wherey()
@@ -163,8 +197,11 @@ int wherey()
     int x, y;
 
     v_getxy(&x, &y);
+
     return y + 1 - gy;
 }
+
+
 
 
 void putch(char c)
@@ -173,10 +210,14 @@ void putch(char c)
 }
 
 
+
+
 int kbhit()
 {
     return 0;
 }
+
+
 
 
 void delay(int ms)
@@ -185,11 +226,13 @@ void delay(int ms)
 }
 
 
+
+
 void textbackground(int c)
 {
-    if (c != 0)
-    {
+    if ( c != 0 )
+      {
         fprintf(stderr, "bad background=%d", c);
         exit(1);
-    }
+      }
 }

@@ -8,25 +8,68 @@
  *               <2>     -/--/--        WL              Extensive mods from Wladimir van der Laan.
  *               <1>     -/--/--        LRH             Created
  */
+
+
 #ifndef SKILLS2_H
 #define SKILLS2_H
 
-void show_skills(void);
 
-char *skill_title(char best_skill, char skill_lev, char char_class, char char_lev);
+// last_updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: chardump - it_use3 - itemname - skills
+ * *********************************************************************** */
+char *skill_name(unsigned char which_skill);
 
-char best_skill(char min_skill, char max_skill, char excl_skill);
 
+// last_updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - chardump - describe - player - skills - stuff
+ * *********************************************************************** */
+char *skill_title(unsigned char best_skill, unsigned char skill_lev);
+
+
+// last_updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - chardump - effects - files - player - skills -
+ *              skills2 - stuff
+ * *********************************************************************** */
+unsigned char best_skill(unsigned char min_skill, unsigned char max_skill, unsigned char excl_skill);
+
+
+// last_updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - it_use2 - item_use - newgame - ouch - player - skills
+ * *********************************************************************** */
+int calc_mp(void);
+
+
+// last_updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: ability - acr - food - it_use2 - misc - mutation -
+ *              newgame - ouch - player - skills - spells1 - transfor
+ * *********************************************************************** */
+int calc_hp(void);
+
+
+// last_updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: newgame - skills - skills2
+ * *********************************************************************** */
 int species_skills(char skill, char species);
 
-int calc_hp(void);
-int calc_ep(void);
 
+// last_updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: newgame - skills - skills2
+ * *********************************************************************** */
 unsigned int skill_exp_needed(int lev);
 
-char *skill_name(char which_skill);
 
-int add_skill(int min_skill, int max_skill, int sk_tot);
-void class_sk(int clsk[8][3], int chcls);
+// last_updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+void show_skills(void);
+
 
 #endif

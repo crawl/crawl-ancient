@@ -7,13 +7,28 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+
+
 #ifndef DIRECT_H
 #define DIRECT_H
 
+
 #include "externs.h"
 
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - debug - effects - it_use3 - item_use - spells1 -
+ *              spells2 - spells3 - spells4
+ * *********************************************************************** */
 void direction(char rnge, struct dist moves[1]);
-int dir_cursor(char rng);
+
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - direct
+ * *********************************************************************** */
 int look_around(struct dist moves[1]);
+
 
 #endif

@@ -12,334 +12,326 @@
 #include "effects.h"
 
 #include <string.h>
+#include <stdio.h>
 
 #include "externs.h"
 
 #include "beam.h"
 #include "direct.h"
-#include "files.h"
-#include "fight.h"
-#include "player.h"
-#include "ouch.h"
-#include "mstruct.h"
-#include "misc.h"
-#include "mutation.h"
-#include "player.h"
-#include "stuff.h"
-#include "shopping.h"
 #include "dungeon.h"
+#include "fight.h"
 #include "itemname.h"
+#include "misc.h"
+#include "monplace.h"
+#include "monstuff.h"
+#include "mon-util.h"
+#include "mutation.h"
+#include "ouch.h"
+#include "player.h"
 #include "skills2.h"
-#include "view.h"
-#include "spells0.h"
-#include "spells2.h"
 #include "spells3.h"
+#include "spells4.h"
+#include "spl-book.h"
+#include "stuff.h"
+#include "view.h"
 
 
-void torment()
+void summon_butter(void);
+
+
+
+
+void torment( char tx, char ty )
 {
-    int dmi = 0;
 
-    if (you.is_undead || you.mutation[MUT_TORMENT_RESISTANCE] != 0)
+#ifdef USE_NEW_TORMENT_CODE
+
+  apply_area_within_radius(torment_monsters, tx, ty, 0, 8, 0);
+
+#else
+
+    int dmi = 0;
+    struct monsters *monster = 0;    // NULL {dlb}
+
+    if ( you.is_undead || you.mutation[MUT_TORMENT_RESISTANCE] )
     {
-        strcpy(info, "You feel a surge of unholy energy.");
-        mpr(info);
+        mpr("You feel a surge of unholy energy.");
     }
     else
     {
-        strcpy(info, "Your body is wracked with pain!");
-        mpr(info);
-        //you.hp -= (you.hp / 2) - 1;
-        int tormdam = (you.hp / 2) - 1;
-
-        if (tormdam <= 0)
-            tormdam = 0;
-        ouch(tormdam, 0, KILLED_BY_MONSTER);
-        you.redraw_hit_points = 1;
+        mpr("Your body is wracked with pain!");
+        dec_hp((you.hp / 2) - 1, false);
     }
 
     for (dmi = 0; dmi < MNST; dmi++)
     {
-        if (menv[dmi].type == -1)
-            continue;
+        monster = &menv[dmi];
 
-        if (!mons_near(dmi))
-            continue;
+        if ( monster->type == -1 || !mons_near(monster) )
+          continue;
 
-        //              int mres = random2(100);
-        //              int mres2 = mon_resist_mag(mons_class [dmi], mons_HD [dmi]);
+        //int mres = random2(100);
+        //int mres2 = mon_resist_mag(mons_class[dmi], mons_HD[dmi]);
 
-        //              if (mres < mres2) continue;
+        //if (mres < mres2)
+        //  continue;
 
-        if (mons_holiness(menv[dmi].type) > 0)
-            continue;
+        if ( mons_holiness(monster->type) > MH_NATURAL )
+          continue;
 
-        // maybe an exemption for undead?
-        // maybe do something fun for magic circles?
+    // maybe an exemption for undead?
+    // maybe do something fun for magic circles?
 
-        menv[dmi].hit_points -= (menv[dmi].hit_points / 2) - 1;
+        hurt_monster(monster, (monster->hit_points / 2) - 1);
 
-        if (menv[dmi].enchantment[2] == ENCH_INVIS)
-            continue;           // can't see it
-
-        strcpy(info, monam(menv[dmi].number, menv[dmi].type, menv[dmi].enchantment[2], 0));
-        strcat(info, " convulses!");
-        mpr(info);
+        simple_monster_message(monster, " convulses!");
     }
 
-}
+#endif
+
+}          // end torment()
 
 
-/*
-   char go_berserk(void)
-   {
-   if (you.berserker != 0 || you.slow != 0) return 0;
-   if (you.is_undead == US_UNDEAD) return 0;
-   strcpy(info, "A red film seems to cover your vision as you go berserk!");
-   mpr(info);
-   strcpy(info, "You feel yourself moving faster!");
-   mpr(info);
-   strcpy(info, "You feel mighty!");
-   mpr(info);
-   you.berserker += 10 + random2(10) + random2(10);
-   if (you.might == 0)
-   {
-   you.redraw_strength = 1;
-   you.strength += 5;
-   you.max_strength += 5;
-   }
-   you.might += you.berserker;
-   you.haste += you.berserker;
-   return 1;
-   }
- */
-void banished(unsigned char gate_type)
+
+
+void banished( unsigned char gate_type )
 {
-    you_teleport2(false);       // this is to ensure that you're standing on a suitable space (67)
 
+    you_teleport2(false);
+    // this is to ensure that you're standing on a suitable space (67)
     grd[you.x_pos][you.y_pos] = gate_type;
-    down_stairs(1, you.your_level);     // heh heh
+    down_stairs(true, you.your_level);     // heh heh
 
-}
+}          // end banished()
 
 
-char forget_spell(void)
+
+
+bool forget_spell( void )
 {
-    char spc2;
 
-    if (you.spell_no <= 0)
-        return 0;
+    unsigned char spc2;
+    unsigned int safety = 0;    // to prevent infinite looping {dlb}
+
+    if ( you.spell_no < 1 )
+      return false;
 
     do
     {
-        spc2 = random2(20);
-        if (one_chance_in(1000))
-            return 0;           // safety check
+        spc2 = random2(25);
+
+    // begin safety check -- {dlb}
+        safety++;
+
+        if ( safety > 1000 )
+          return false;
+    // -- end safety check {dlb}
 
     }
-    while (you.spells[spc2] == SPELL_NO_SPELL);
+    while ( you.spells[spc2] == SPELL_NO_SPELL );
 
-
-    // This is now handled by a function in player.cc
-    //you.spell_levels += spell_value(you.spells[spc2]);
     you.spell_no--;
     you.spells[spc2] = SPELL_NO_SPELL;
-    return 1;
-}
+    return true;
+
+}          // end forget_spell()
 
 
-char lose_stat(char force_stat, char stat_loss)
+
+
+// use player::decrease_stats() instead iff:
+// (a) player_sust_abil() should not factor in; and
+// (b) there is no floor to the final stat values {dlb}
+bool lose_stat( unsigned char which_stat, unsigned char stat_loss )
 {
 
-    if (force_stat == 100)
-        force_stat = random2(3);
+    bool statLowered = false;    // must initialize to false {dlb}
+    char *ptr_stat = 0;          // NULL {dlb}
+    char *ptr_redraw = 0;        // NULL {dlb}
+    char newValue = 0;           // holds new value, for comparison to old {dlb}
 
-    if (player_sust_abil() != 0)
+// begin outputing message: {dlb}
+    strcpy(info, "You feel ");
+
+// set pointers to appropriate variables: {dlb}
+    if ( which_stat == STAT_RANDOM )
+      which_stat = random2(NUM_STATS);
+
+    switch ( which_stat )
     {
-        strcpy(info, "You feel slightly ill for a moment.");
-        mpr(info);
-        return 0;
-    }
-    switch (force_stat)
-    {
-    case STAT_STRENGTH:
-        strcpy(info, "You feel weakened.");
-        mpr(info);
-        you.strength -= stat_loss;
-        if (you.strength < 3)
-            you.strength = 3;
-        you.redraw_strength = 1;
-        burden_change();
+      case STAT_STRENGTH:
+        strcat(info, "weakened");
+        ptr_stat = &you.strength;
+        ptr_redraw = &you.redraw_strength;
         break;
 
-    case STAT_DEXTERITY:
-        strcpy(info, "You feel clumsy.");
-        mpr(info);
-        you.dex -= stat_loss;
-        if (you.dex < 3)
-            you.dex = 3;
-        you.redraw_dexterity = 1;
+      case STAT_DEXTERITY:
+        strcat(info, "clumsy");
+        ptr_stat = &you.dex;
+        ptr_redraw = &you.redraw_dexterity;
         break;
 
-    case STAT_INTELLIGENCE:
-        strcpy(info, "You feel dopey.");
-        mpr(info);
-        you.intel -= stat_loss;
-        if (you.intel < 3)
-            you.intel = 3;
-        you.redraw_intelligence = 1;
+      case STAT_INTELLIGENCE:
+        strcat(info, "dopey");
+        ptr_stat = &you.intel;
+        ptr_redraw = &you.redraw_intelligence;
         break;
-
     }
 
-    return 1;
+// scale modifier by player_sust_abil() - right-shift
+// permissible because stat_loss is unsigned: {dlb}
+    stat_loss >>= player_sust_abil();
 
-}
+// newValue is current value less modifier: {dlb}
+    newValue = *ptr_stat - stat_loss;
+
+// stats may be lowered to no less than three: {dlb}
+    if ( newValue < 3 )
+      newValue = 3;
+
+// conceivable that stat was already *at* three
+// or stat_loss zeroed by player_sust_abil(): {dlb}
+    if ( newValue != *ptr_stat )
+    {
+        *ptr_stat = newValue;
+        *ptr_redraw = 1;
+
+   // handle burden change, where appropriate: {dlb}
+        if ( ptr_stat == &you.strength )
+          burden_change();
+
+        statLowered = true;    // that is, stat changed {dlb}
+    }
+
+// a warning to player that s/he cut it close: {dlb}
+    if ( !statLowered )
+      strcat(info, " for a moment");
+
+// finish outputting message: {dlb}
+    strcat(info, ".");
+    mpr(info);
+
+    return statLowered;
+
+}          // end lose_stat()
 
 
 
 
 
-void direct_effect(struct bolt beam[1])
+void direct_effect( struct bolt *pbolt )
 {
-    int hurted = 0;
 
-    switch (beam[0].type)
+    int damage_taken = 0;
+
+    switch ( pbolt->type )
     {
-    case DMNBM_HELLFIRE:
-        strcpy(info, "You are engulfed in a burst of hellfire!");
-        mpr(info);
-        hurted = random2(10) + random2(10) + 5;
-        beam[0].flavour = BEAM_LAVA;    // but it's hellfire anyway
-
-        strcpy(beam[0].beam_name, "hellfire");  // for ouch
-
-        hurted = check_your_resists(hurted, beam[0].flavour);
+      case DMNBM_HELLFIRE:
+        mpr("You are engulfed in a burst of hellfire!");
+        pbolt->flavour = BEAM_LAVA;            // but it's hellfire anyway
+        strcpy(pbolt->beam_name, "hellfire");  // for ouch
         scrolls_burn(4, OBJ_SCROLLS);
-        ouch(hurted, beam[0].beam_source, KILLED_BY_BEAM);
-        you.redraw_hit_points = 1;
+        damage_taken = 5 + random2avg(19,2);
+        damage_taken = check_your_resists(damage_taken, pbolt->flavour);
         break;
 
-    case DMNBM_SMITING:
-        strcpy(info, "Something smites you!");
-        mpr(info);
-        hurted = random2(6) + random2(6) + 7;
-        strcpy(beam[0].beam_name, "smiting");   // for ouch
-
-        ouch(hurted, beam[0].beam_source, KILLED_BY_BEAM);
-        you.redraw_hit_points = 1;
+      case DMNBM_SMITING:
+        mpr("Something smites you!");
+        strcpy(pbolt->beam_name, "smiting");   // for ouch
+        damage_taken = 7 + random2avg(11,2);
         break;
 
-    case DMNBM_BRAIN_FEED:
-        if (you.intel > 3 && player_sust_abil() == 0 && one_chance_in(3))
-        {
-            strcpy(info, "Something feeds on your intelligence!");
-            mpr(info);
-            strcpy(info, "You feel stupid.");
-            mpr(info);
-            you.intel--;
-            you.redraw_intelligence = 1;
-        }
+      case DMNBM_BRAIN_FEED:
+        if ( one_chance_in(3) && lose_stat(STAT_INTELLIGENCE, 1) )    // lose_stat() must come last {dlb}
+          mpr("Something feeds on your intellect!");
         else
-        {
-            strcpy(info, "Something tries to feed on your intelligence!");
-            mpr(info);
-        }
+          mpr("Something tries to feed on your intellect!");
         break;
 
-    case DMNBM_MUTATION:
+      case DMNBM_MUTATION:
         mpr("Strange energies course through your body.");
-        if (mutate(100) == 0)
-            mpr("You feel very weird for a moment.");
+        if ( !mutate(100) )
+          mpr("You feel very weird for a moment.");
         break;
     }
+
+// apply damage and handle death, where appropriate {dlb}
+    if ( damage_taken > 0 )
+      ouch(damage_taken, pbolt->beam_source, KILLED_BY_BEAM);
 
     return;
-}
+
+}          // end direct_effect()
 
 
-void mons_direct_effect(struct bolt beam[1], int i)
+
+
+void mons_direct_effect( struct bolt *pbolt, int i )
 {
 
-    int o = menv[i].monster_foe;
-    int hurted = 0;
+    int o = menv[i].monster_foe;          // note the translation here - important {dlb}
+    struct monsters *monster = &menv[o];
+    int damage_taken = 0;
 
-    switch (beam[0].type)
+    switch ( pbolt->type )
     {
+      case DMNBM_HELLFIRE:
+        simple_monster_message(monster, " is engulfed in hellfire.");
+        strcpy(pbolt->beam_name, "hellfire");
+        pbolt->flavour = BEAM_LAVA;
 
+        damage_taken = 5 + random2(10) + random2(5);
+        check_mons_resists(monster, pbolt, damage_taken);
 
-    case DMNBM_HELLFIRE:
-        if (mons_near(menv[i].monster_foe))
-        {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-            strcat(info, " is engulfed in hellfire.");
-            mpr(info);
-        }
-        strcpy(beam[0].beam_name, "hellfire");
-        beam[0].flavour = BEAM_LAVA;
-        hurted = 0;
-        hurted += random2(10) + random2(5) + 5;
-        check_mons_resists(beam, o, hurted);
-        menv[o].hit_points -= hurted;
-        if (menv[o].behavior == 0)
-            menv[o].behavior = 1;
-        if (menv[o].hit_points <= 0)
-        {
-            monster_die(o, KILL_MON_MISSILE, i);
-        }
+        if ( monster->behavior == BEH_SLEEP )
+          monster->behavior = BEH_CHASING_I;
         break;
 
-    case DMNBM_SMITING:
-        if (mons_near(o))
-        {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-            strcat(info, " is smitten.");
-            mpr(info);
-        }
-        strcpy(beam[0].beam_name, "smiting");
-        beam[0].flavour = BEAM_MISSILE;
-        hurted = 0;
-        hurted += random2(6) + random2(6) + 7;
-        menv[o].hit_points -= hurted;
-        if (menv[o].hit_points <= 0)
-        {
-            monster_die(o, KILL_MON_MISSILE, i);
-        }
+      case DMNBM_SMITING:
+        simple_monster_message(monster, " is smitten.");
+        strcpy(pbolt->beam_name, "smiting");
+        pbolt->flavour = BEAM_MISSILE;
+
+        damage_taken += 7 + random2avg(11,2);
         break;
 
-
-    case DMNBM_BRAIN_FEED:      // brain feed - not implemented here (nor, probably, can be)
-
+      case DMNBM_BRAIN_FEED:      // not implemented here (nor, probably, can be)
         break;
 
-    case DMNBM_MUTATION:
-        if (check_mons_magres(o, beam[0].ench_power) == 0)
-        {
-            if (mons_near(o))
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " resists.");
-                mpr(info);
-            }
-            break;
-        }
-        monster_polymorph(o, 250, 100);
+      case DMNBM_MUTATION:
+        if ( !check_mons_magres(monster, pbolt->ench_power) )
+          simple_monster_message(monster, " resists.");
+        else
+          monster_polymorph(monster, RANDOM_MONSTER, 100);
         break;
+    }
 
-    }                           // end switch
+// apply damage and handle death, where appropriate {dlb}
+    if ( damage_taken > 0 )
+    {
+        hurt_monster(monster, damage_taken);
 
-}                               // end monster_direct_effect()
+        if ( monster->hit_points < 1 )
+          monster_die(monster, KILL_MON_MISSILE, i);
+    }
+
+
+    return;
+
+}          // end mons_direct_effect()
 
 
 
-void random_uselessness(unsigned char ru, unsigned char sc_read_2)
+
+void random_uselessness( unsigned char ru, unsigned char sc_read_2 )
 {
 
     char wc[30];
+    int temp_rand = 0;    // probability determination {dlb}
 
-    switch (ru)
+    switch ( ru )
     {
-    case 0:
+      case 0:
         strcpy(info, "The dust glows a ");
         weird_colours(random2(256), wc);
         strcat(info, wc);
@@ -347,15 +339,14 @@ void random_uselessness(unsigned char ru, unsigned char sc_read_2)
         mpr(info);
         break;
 
-    case 1:
-        strcpy(info, "The scroll reassembles itself in your hand!");
+      case 1:
+        mpr("The scroll reassembles itself in your hand!");
         you.inv_quantity[sc_read_2]++;
-        mpr(info);
         burden_change();
         break;
 
-    case 2:
-        if (you.equip[EQ_WEAPON] != -1)
+      case 2:
+        if ( you.equip[EQ_WEAPON] != -1 )
         {
             in_name(you.equip[EQ_WEAPON], 4, str_pass);
             strcpy(info, str_pass);
@@ -364,160 +355,104 @@ void random_uselessness(unsigned char ru, unsigned char sc_read_2)
             strcat(info, wc);
             strcat(info, " for a moment.");
             mpr(info);
-            return;
-            //strcat(info
         }
         else
         {
-            strcpy(info, "Nothing appears to happen.");
-            mpr(info);
-            return;
+            canned_msg(MSG_NOTHING_HAPPENS);
         }
-        //      break;
+        break;
 
-    case 3:
+      case 3:
         strcpy(info, "You hear the distant roaring of an enraged ");
-        switch (random2(8))
+
+        temp_rand = random2(8);
+
+        strcat(info, (temp_rand == 0) ? "frog" :
+                     (temp_rand == 1) ? "pill bug" :
+                     (temp_rand == 2) ? "millipede" :
+                     (temp_rand == 3) ? "eggplant" :
+                     (temp_rand == 4) ? "albino dragon" :
+                     (temp_rand == 5) ? "dragon" :
+                     (temp_rand == 6) ? "human"
+                                      : "slug" );
+        strcat(info, "!");
+        mpr(info);
+        break;
+
+      case 4:
+        if ( you.species != SP_MUMMY )    // josh declares mummies can't smell {dlb}
         {
-        case 0:
-            strcat(info, "frog!");
-            break;
-        case 1:
-            strcat(info, "pill bug!");
-            break;
-        case 2:
-            strcat(info, "millipede!");
-            break;
-        case 3:
-            strcat(info, "eggplant!");
-            break;
-        case 4:
-            strcat(info, "albino dragon!");
-            break;
-        case 5:
-            strcat(info, "dragon!");
-            break;
-        case 6:
-            strcat(info, "human!");
-            break;
-        case 7:
-            strcat(info, "slug!");
-            break;
+            strcpy(info, "You smell ");
+
+            temp_rand = random2(8);
+
+            strcat(info, (temp_rand == 0) ? "coffee." :
+                         (temp_rand == 1) ? "salt." :
+                         (temp_rand == 2) ? "burning hair!" :
+                         (temp_rand == 3) ? "baking bread." :
+                         (temp_rand == 4) ? "something weird." :
+                         (temp_rand == 5) ? "wet wool." :
+                         (temp_rand == 6) ? "sulphur."
+                                          : "fire and brimstone!" );
+            mpr(info);
         }
-        mpr(info);
-        return;
+        break;
 
-    case 4:
-        strcpy(info, "You smell ");
-        switch (random2(8))
-        {
-        case 0:
-            strcat(info, "coffee.");
-            break;
-        case 1:
-            strcat(info, "salt.");
-            break;
-        case 2:
-            strcat(info, "burning hair!");
-            break;
-        case 3:
-            strcat(info, "baking bread.");
-            break;
-        case 4:
-            strcat(info, "something weird.");
-            break;
-        case 5:
-            strcat(info, "wet wool.");
-            break;
-        case 6:
-            strcat(info, "sulphur.");
-            break;
-        case 7:
-            strcat(info, "fire and brimstone!");
-            break;
-        }
-        mpr(info);
-        return;
+      case 5:
+        mpr("You experience a momentary feeling of inescapable doom!");
+        break;
 
-
-
-    case 5:
-        strcpy(info, "You experience a momentary feeling of inescapable doom!");
-        mpr(info);
-        return;
-
-    case 6:
+      case 6:
         strcpy(info, "Your ");
-        switch (random2(3))
-        {
-        case 0:
-            strcat(info, "ears itch.");
-            break;
-        case 1:
-            strcat(info, "brain hurts!");
-            break;
-        case 2:
-            strcat(info, "nose twitches suddenly!");
-            break;
-        }
-        mpr(info);
-        return;
 
-    case 7:
-        strcpy(info, "You hear the tinkle of a tiny bell.");
+        temp_rand = random2(3);
+
+        strcat(info, (temp_rand == 0) ? "ears itch." :
+                     (temp_rand == 1) ? "brain hurts!"
+                                      : "nose twitches sudednly!" );
         mpr(info);
+        break;
+
+      case 7:
+        mpr("You hear the tinkle of a tiny bell.");
         summon_butter();
-        return;
+        break;
 
-    case 8:
+      case 8:
         strcpy(info, "You hear ");
-        switch (random2(9))
-        {
-        case 0:
-            strcat(info, "snatches of song.");
-            break;
-        case 1:
-            strcat(info, "a voice call someone else's name.");
-            break;
-        case 2:
-            strcat(info, "a very strange noise.");
-            break;
-        case 3:
-            strcat(info, "roaring flame.");
-            break;
-        case 4:
-            strcat(info, "a very strange noise indeed.");
-            break;
-        case 5:
-            strcat(info, "the chiming of a distant gong.");
-            break;
-        case 6:
-            strcat(info, "the bellowing of a yak.");
-            break;
-        case 7:
-            strcat(info, "a crunching sound.");
-            break;
-        case 8:
-            strcat(info, "the tinkle of an enormous bell.");
-            break;
-        }
+
+        temp_rand = random2(9);
+
+        strcat(info, (temp_rand == 0) ? "snatches of song" :
+                     (temp_rand == 1) ? "a voice call someone else's name" :
+                     (temp_rand == 2) ? "a very strange noise" :
+                     (temp_rand == 3) ? "roaring flame" :
+                     (temp_rand == 4) ? "a very strange noise indeed" :
+                     (temp_rand == 5) ? "the chiming of a distant gong" :
+                     (temp_rand == 6) ? "the bellowing of a yak" :
+                     (temp_rand == 7) ? "a crunching sound"
+                                      : "the tinkle of an enormous bell" );
+        strcat(info, ".");
         mpr(info);
-        return;
-
-
+        break;
     }
 
-    //abort();
+    return;
 
-}
+}          // end random_uselessness()
 
-void acquirement(unsigned char force_class)
+
+
+
+void acquirement( unsigned char force_class )
 {
-    int thing_created = 0;
 
-    // Remember lava!
-    unsigned char class_wanted = 250;
-    unsigned char type_wanted = 250;
+    int thing_created = 0;
+    int iteration = 0;
+
+// Remember lava!
+    unsigned char class_wanted = OBJ_RANDOM;
+    unsigned char type_wanted = OBJ_RANDOM;
 
     unsigned char unique = 1;
 
@@ -526,198 +461,198 @@ void acquirement(unsigned char force_class)
 
     char glof = 99;
     unsigned char keyin;
-    int func_pass[10];
 
     for (acqc = 0; acqc < 50; acqc++)
-    {
-        already_has[acqc] = 0;
-    }
+      already_has[acqc] = 0;
 
-    if (force_class == 250)
+    if ( force_class == OBJ_RANDOM )
     {
 
         mpr("This is a scroll of acquirement!");
-      query:
-        mpr("a - Weapon, b - Armour, c - Jewellery,");
-        mpr("d - Book, e - Staff, f - Miscellaneous, g - Food");
+query:
+        mpr("[a|A] Weapon   [b|B] Armour   [c|C] Jewellery   [d|D] Book");
+        mpr("[e|E] Staff    [f|F] Food     [g|G] Miscellaneous ");
+        //mpr("[r|R] - Just give me something good.");
         mpr("What kind of item would you like to acquire? ");
+
         keyin = get_ch();
 
-        switch (keyin)
-        {
-        case 'a':
-        case 'A':
-            class_wanted = OBJ_WEAPONS;
-            break;
-
-        case 'b':
-        case 'B':
-            class_wanted = OBJ_ARMOUR;
-            break;
-
-        case 'c':
-        case 'C':
-            class_wanted = OBJ_JEWELLERY;
-            break;
-
-        case 'd':
-        case 'D':
-            class_wanted = OBJ_BOOKS;
-            break;
-
-        case 'e':
-        case 'E':
-            class_wanted = OBJ_STAVES;
-            break;
-
-        case 'f':
-        case 'F':
-            class_wanted = OBJ_MISCELLANY;
-            break;
-
-        case 'g':
-        case 'G':
-            class_wanted = OBJ_FOOD;
-            break;
-        }
+        if ( keyin == 'a' || keyin == 'A' )
+          class_wanted = OBJ_WEAPONS;
+        else if ( keyin == 'b' || keyin == 'B' )
+          class_wanted = OBJ_ARMOUR;
+        else if ( keyin == 'c' || keyin == 'C' )
+          class_wanted = OBJ_JEWELLERY;
+        else if ( keyin == 'd' || keyin == 'D' )
+          class_wanted = OBJ_BOOKS;
+        else if ( keyin == 'e' || keyin == 'E' )
+          class_wanted = OBJ_STAVES;
+        else if ( keyin == 'f' || keyin == 'F' )
+          class_wanted = OBJ_FOOD;
+        else if ( keyin == 'g' || keyin == 'G' )
+          class_wanted = OBJ_MISCELLANY;
     }
     else
-        class_wanted = force_class;
+      class_wanted = force_class;
 
-    if (class_wanted > OBJ_ARMOUR)
+    if ( class_wanted > OBJ_ARMOUR )
     {
-        for (acqc = 0; acqc < 52; acqc++)
-        {
-            if (you.inv_quantity[acqc] > 0 && you.inv_class[acqc] == class_wanted)
-            {
-                already_has[you.inv_type[acqc]] = 1;
-            }
-        }
+        for (acqc = 0; acqc < ENDOFPACK; acqc++)
+          if ( you.inv_quantity[acqc] > 0 && you.inv_class[acqc] == class_wanted )
+            already_has[you.inv_type[acqc]] = 1;
+
         do
         {
             switch (class_wanted)
             {
             case OBJ_JEWELLERY:
                 // Try for a base type the player hasn't identified
-                for (int i = 0; i < 10; i++)
+                for (unsigned char i = 0; i < 10; i++)
                 {
                     type_wanted = random2(24);
-                    if (one_chance_in(3))
-                        type_wanted = 35 + random2(10);
+                    if ( one_chance_in(3) )
+                      type_wanted = AMU_RAGE + random2(10);
 
-                    if (!get_id(OBJ_JEWELLERY, type_wanted))
-                        break;
+                    if ( !get_id(OBJ_JEWELLERY, type_wanted) )
+                      break;
                 }
                 break;
 
             case OBJ_BOOKS:
                 // remember, put rarer books higher in the list
+                iteration = 1;
                 type_wanted = 99;
-                glof = best_skill(26, 50, glof);
-              which_book:
+                glof = best_skill(SK_SPELLCASTING, (NUM_SKILLS - 1), glof);
+which_book:
+#ifdef WIZARD
+                sprintf(info, "acquirement: iteration = %d, best_skill = %d", iteration, glof);
+                mpr(info);
+#endif //jmf: debugging
                 switch (glof)
                 {
                 default:
                 case SK_SPELLCASTING:
                     if (!you.had_item[BOOK_POWER])
-                        type_wanted = BOOK_POWER;
+                      type_wanted = BOOK_POWER;
+                    if (!you.had_item[BOOK_CONTROL])
+                      type_wanted = BOOK_CONTROL;
                     if (!you.had_item[BOOK_WIZARDRY])
-                        type_wanted = BOOK_WIZARDRY;
+                      type_wanted = BOOK_WIZARDRY;
                     break;
 
                 case SK_POISON_MAGIC:
                     if (!you.had_item[BOOK_TOXINS])
-                        type_wanted = BOOK_TOXINS;
+                      type_wanted = BOOK_TOXINS;
                     if (!you.had_item[BOOK_YOUNG_POISONERS])
-                        type_wanted = BOOK_YOUNG_POISONERS;
+                      type_wanted = BOOK_YOUNG_POISONERS;
                     break;
 
                 case SK_EARTH_MAGIC:
                     if (!you.had_item[BOOK_EARTH])
-                        type_wanted = BOOK_EARTH;
+                      type_wanted = BOOK_EARTH;
                     if (!you.had_item[BOOK_GEOMANCY])
-                        type_wanted = BOOK_GEOMANCY;
+                      type_wanted = BOOK_GEOMANCY;
                     break;
 
                 case SK_AIR_MAGIC:
+                    if (!you.had_item[BOOK_CLOUDS])
+                      type_wanted = BOOK_CLOUDS;
                     if (!you.had_item[BOOK_SKY])
-                        type_wanted = BOOK_SKY;
+                      type_wanted = BOOK_SKY;
                     if (!you.had_item[BOOK_AIR])
-                        type_wanted = BOOK_AIR;
+                      type_wanted = BOOK_AIR;
                     break;
 
                 case SK_ICE_MAGIC:
                     if (!you.had_item[BOOK_ICE])
-                        type_wanted = BOOK_ICE;
+                      type_wanted = BOOK_ICE;
                     if (!you.had_item[BOOK_FROST])
-                        type_wanted = BOOK_FROST;
+                      type_wanted = BOOK_FROST;
                     break;
 
                 case SK_FIRE_MAGIC:
                     if (!you.had_item[BOOK_FIRE])
-                        type_wanted = BOOK_FIRE;
+                      type_wanted = BOOK_FIRE;
                     if (!you.had_item[BOOK_FLAMES])
-                        type_wanted = BOOK_FLAMES;
+                      type_wanted = BOOK_FLAMES;
                     break;
 
                 case SK_SUMMONINGS:
                     if (!you.had_item[BOOK_DEMONOLOGY])
-                        type_wanted = BOOK_DEMONOLOGY;
+                      type_wanted = BOOK_DEMONOLOGY;
                     if (!you.had_item[BOOK_INVOCATIONS])
-                        type_wanted = BOOK_INVOCATIONS;
+                      type_wanted = BOOK_INVOCATIONS;
                     if (!you.had_item[BOOK_SUMMONINGS])
-                        type_wanted = BOOK_SUMMONINGS;
+                      type_wanted = BOOK_SUMMONINGS;
                     break;
 
                 case SK_ENCHANTMENTS:
-                    if (!you.had_item[BOOK_ENCHANTMENTS])
-                        type_wanted = BOOK_ENCHANTMENTS;
-                    if (!you.had_item[BOOK_WAR_CHANTS])
-                        type_wanted = BOOK_WAR_CHANTS;
+                    if (!you.had_item[BOOK_TUKIMA])
+                      type_wanted = BOOK_TUKIMA;
                     if (!you.had_item[BOOK_CONTROL])
-                        type_wanted = BOOK_CONTROL;
+                      type_wanted = BOOK_CONTROL;
+                    if (!you.had_item[BOOK_ENCHANTMENTS])
+                      type_wanted = BOOK_ENCHANTMENTS;
+                    if (!you.had_item[BOOK_WAR_CHANTS])
+                      type_wanted = BOOK_WAR_CHANTS;
                     if (!you.had_item[BOOK_HINDERANCE])
-                        type_wanted = BOOK_HINDERANCE;
+                      type_wanted = BOOK_HINDERANCE;
                     if (!you.had_item[BOOK_CHARMS])
-                        type_wanted = BOOK_CHARMS;
+                      type_wanted = BOOK_CHARMS;
                     break;
 
                 case SK_CONJURATIONS:
                     if (!you.had_item[BOOK_ANNIHILATIONS])
-                        type_wanted = BOOK_ANNIHILATIONS;
+                      type_wanted = BOOK_ANNIHILATIONS;
+                    if (!you.had_item[BOOK_TEMPESTS])
+                      type_wanted = BOOK_TEMPESTS;
+                    if (!you.had_item[BOOK_POWER])
+                      type_wanted = BOOK_POWER;
                     if (!you.had_item[BOOK_CONJURATIONS_I])
-                        type_wanted = BOOK_CONJURATIONS_I;
+                      type_wanted = coinflip() ? BOOK_CONJURATIONS_I : BOOK_CONJURATIONS_II;
                     break;
 
                 case SK_NECROMANCY:
                     if (!you.had_item[BOOK_NECRONOMICON])
-                        type_wanted = BOOK_NECRONOMICON;
+                      type_wanted = BOOK_NECRONOMICON;
                     if (!you.had_item[BOOK_UNLIFE])
-                        type_wanted = BOOK_UNLIFE;
+                      type_wanted = BOOK_UNLIFE;
                     if (!you.had_item[BOOK_DEATH])
-                        type_wanted = BOOK_DEATH;
+                      type_wanted = BOOK_DEATH;
                     if (!you.had_item[BOOK_NECROMANCY])
-                        type_wanted = BOOK_NECROMANCY;
+                      type_wanted = BOOK_NECROMANCY;
                     break;
 
                 case SK_TRANSLOCATIONS:
-                    if (!you.had_item[BOOK_SPATIAL_TRANSLOCATIONS])
-                        type_wanted = BOOK_SPATIAL_TRANSLOCATIONS;
                     if (!you.had_item[BOOK_WARP])
-                        type_wanted = BOOK_WARP;
+                      type_wanted = BOOK_WARP;
+                    if (!you.had_item[BOOK_SPATIAL_TRANSLOCATIONS])
+                      type_wanted = BOOK_SPATIAL_TRANSLOCATIONS;
                     break;
 
                 case SK_TRANSMIGRATION:
+                    if (!you.had_item[BOOK_MUTATIONS])
+                      type_wanted = BOOK_MUTATIONS;
                     if (!you.had_item[BOOK_TRANSFIGURATIONS])
-                        type_wanted = BOOK_TRANSFIGURATIONS;
+                      type_wanted = BOOK_TRANSFIGURATIONS;
                     if (!you.had_item[BOOK_CHANGES])
-                        type_wanted = BOOK_CHANGES;
+                      type_wanted = BOOK_CHANGES;
+                    break;
+
+                case SK_DIVINATIONS: //jmf: added 24mar2000
+                    if (!you.had_item[BOOK_DIVINATIONS])
+                      type_wanted = BOOK_DIVINATIONS;
+                    if (!you.had_item[BOOK_SURVEYANCES])
+                      type_wanted = BOOK_SURVEYANCES;
                     break;
                 }
-
-                if (type_wanted == 99 && glof == best_skill(26, 50, 99))
+/*
+                if (type_wanted == 99 && glof == best_skill(SK_SPELLCASTING, (NUM_SKILLS - 1), 99))
+*/
+                if (type_wanted == 99 && iteration == 1)
                 {
-                    glof = best_skill(26, 50, best_skill(26, 50, 99));
+                    glof = best_skill(SK_SPELLCASTING, (NUM_SKILLS - 1), best_skill(SK_SPELLCASTING, (NUM_SKILLS - 1), 99));
+                    iteration++;
                     goto which_book;
                 }
 
@@ -754,9 +689,9 @@ void acquirement(unsigned char force_class)
                 type_wanted = random2(6);
                 break;
 
-                // BCR - You can now acquire food!
+// BCR - You can now acquire food!
             case OBJ_FOOD:
-                unique = random2(7) + 4;
+                unique = 4 + random2(7);
                 if (you.species == SP_GHOUL)
                 {
                     if (one_chance_in(3))
@@ -782,10 +717,9 @@ void acquirement(unsigned char force_class)
 
     }
     else if (class_wanted == OBJ_WEAPONS)
-        type_wanted = 250;      // 1 + random2(18); // weapons - no clubs
-
+        type_wanted = OBJ_RANDOM;      // 1 + random2(18); // weapons - no clubs
     else
-        type_wanted = 250;      // always get random armour
+      type_wanted = OBJ_RANDOM;      // always get random armour
 
     if (grd[you.x_pos][you.y_pos] == DNGN_LAVA || grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
     {
@@ -797,7 +731,7 @@ void acquirement(unsigned char force_class)
         // BCR - unique is now used for food quantity.
         thing_created = items(unique, class_wanted, type_wanted, 1, 351, 250);
 
-        if (type_wanted == 250
+        if (type_wanted == OBJ_RANDOM
             && (class_wanted == OBJ_WEAPONS
                 || class_wanted == OBJ_ARMOUR
                 || class_wanted == OBJ_JEWELLERY)
@@ -807,11 +741,7 @@ void acquirement(unsigned char force_class)
                 mitm.pluses[thing_created] -= 100;
         }
 
-        if (you.species != SP_NAGA)
-            strcpy(info, "Something appears at your feet!");
-        else
-            strcpy(info, "Something appears before you!");
-        mpr(info);
+        canned_msg(MSG_SOMETHING_APPEARS);
 
         int what_was_there = igrd[you.x_pos][you.y_pos];
 
@@ -819,126 +749,155 @@ void acquirement(unsigned char force_class)
         igrd[you.x_pos][you.y_pos] = thing_created;
     }
     return;
-}
+
+}          // end acquirement()
 
 
 
-char recharge_wand(void)
+bool recharge_wand( void )
 {
 
-    if (you.equip[EQ_WEAPON] == -1)
+    if ( you.equip[EQ_WEAPON] == -1 || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WANDS )
+      return false;
+
+    unsigned char charge_gain = 0;
+
+    switch ( you.inv_type[you.equip[EQ_WEAPON]] )
     {
-        return 0;
+        case WAND_FIREBALL:
+        case WAND_LIGHTNING:
+        case WAND_DRAINING:
+        case WAND_HEALING:
+          charge_gain = 4;
+          break;
+        case WAND_FIRE:
+        case WAND_COLD:
+          charge_gain = 5;
+          break;
+        default:
+          charge_gain = 8;
+          break;
     }
 
-    if (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WANDS)
-    {
-        return 0;               // not a wand
+    in_name(you.equip[EQ_WEAPON], 4, str_pass);
 
-    }
-
-    char charge_gain = 8;
-
-    if (you.inv_type[you.equip[EQ_WEAPON]] == WAND_FIRE || you.inv_type[you.equip[EQ_WEAPON]] == WAND_COLD)
-        charge_gain = 5;
-
-    if (you.inv_type[you.equip[EQ_WEAPON]] == WAND_FIREBALL
-        || you.inv_type[you.equip[EQ_WEAPON]] == WAND_LIGHTNING
-        || you.inv_type[you.equip[EQ_WEAPON]] == WAND_DRAINING
-        || you.inv_type[you.equip[EQ_WEAPON]] == WAND_HEALING)
-        charge_gain = 4;
-
-    item_name(you.inv_plus2[you.equip[EQ_WEAPON]], you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON
-                                                                         ]],
-              you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_quantity[you.equip[EQ_WEAPON]]
-              ,you.inv_ident[you.equip[EQ_WEAPON]], 4, str_pass);
     strcpy(info, str_pass);
     strcat(info, " glows for a moment.");
     mpr(info);
 
-    you.inv_plus[you.equip[EQ_WEAPON]] += random2(charge_gain) + random2(charge_gain) + random2(charge_gain) + 1;
+    you.inv_plus[you.equip[EQ_WEAPON]] += 1 + random2avg( ((charge_gain - 1) * 3) + 1, 3 );
 
-    if (you.inv_plus[you.equip[EQ_WEAPON]] > charge_gain * 3)
-        you.inv_plus[you.equip[EQ_WEAPON]] = charge_gain * 3;
+    if ( you.inv_plus[you.equip[EQ_WEAPON]] > charge_gain * 3 )
+      you.inv_plus[you.equip[EQ_WEAPON]] = charge_gain * 3;
 
-    return 1;
+    return true;
 
-}
+}          // end recharge_wand()
 
 
-void yell(void)
+
+
+void yell( void )
 {
-    char targ_prev = 0;
+
+    bool targ_prev = false;
     int mons_targd = 0;
+    struct monsters *called = 0;    // NULL {dlb}
     struct dist beam[1];
+
+    if ( silenced(you.x_pos, you.y_pos) )
+    {
+          mpr("You are unable to make a sound!");
+          return;
+    }
 
     mpr("What do you say?");
     mpr(" ! - Yell");
     mpr(" a - Order allies to attack a monster");
-    if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
-        if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != ENCH_INVIS || player_see_invis() != 0))
+
+    if ( !( you.prev_targ == MHITNOT || you.prev_targ == MHITYOU ) )
+    {
+        struct monsters *target = &menv[you.prev_targ];
+
+        if ( mons_near(target) && ( target->enchantment[2] != ENCH_INVIS || player_see_invis() ) )
         {
             mpr(" p - Order allies to attack your previous target");
-            targ_prev = 1;
+            targ_prev = true;
         }
-    strcpy(info, " Anything else - Stay silent ");
-    if (one_chance_in(10))
-        strcat(info, "(and be thought of as a fool)");
+    }
+
+    strcpy(info, " Anything else - Stay silent");
+
+    if ( one_chance_in(10) )
+      strcat(info, " (and be thought a fool)");
+
     mpr(info);
 
-    char keyn = get_ch();
+    unsigned char keyn = get_ch();
 
-    switch (keyn)
+    switch ( keyn )
     {
-
-    case '!':
-        strcpy(info, "You yell for attention!");
-        mpr(info);
+      case '!':
+        mpr("You yell for attention!");
         you.turn_is_over = 1;
         noisy(12, you.x_pos, you.y_pos);
         return;
 
-    case 'a':
+      case 'a':
         mpr("Gang up on whom?");
         direction(100, beam);
 
-        if (beam[0].nothing == -1 || mgrd[beam[0].target_x][beam[0].target_y] == MNG)
+        if ( beam[0].nothing == -1
+              || mgrd[beam[0].target_x][beam[0].target_y] == MNG )
         {
             mpr("Yeah, whatever.");
             return;
         }
+
         mons_targd = mgrd[beam[0].target_x][beam[0].target_y];
         break;
 
-
-    case 'p':
-        if (targ_prev == 1)
+      case 'p':
+        if ( targ_prev )
         {
             mons_targd = you.prev_targ;
             break;
         }
         /* fall through... */
-    default:
+      default:
         mpr("Okely-dokely.");
         return;
     }
 
-    int i = 0;
-
-    for (i = 0; i < MNST; i++)
+    for (int i = 0; i < MNST; i++)
     {
-        if (menv[i].type == -1)
-            continue;
-        if (menv[i].behavior != BEH_ENSLAVED)
-            continue;
-        if (!mons_near(i))
-            continue;
-        menv[i].monster_foe = mons_targd;
-        menv[i].target_x = menv[mons_targd].x;
-        menv[i].target_y = menv[mons_targd].y;
+        called = &menv[i];
+
+        if ( called->type == -1 || !mons_near(called) )
+          continue;
+
+        if ( called->behavior != BEH_ENSLAVED )
+          continue;
+
+        called->monster_foe = mons_targd;
+        called->target_x = menv[mons_targd].x;
+        called->target_y = menv[mons_targd].y;
     }
 
     noisy(10, you.x_pos, you.y_pos);
     mpr("Attack!");
 
-}
+}          // end yell()
+
+
+
+
+// produce caterpillars under rare circumstances?
+// why did jmf change it to BEH_ENSLAVED ??? {dlb}
+void summon_butter( void )
+{
+
+    for (int scount = 0; scount < 8; scount++)
+      create_monster(MONS_BUTTERFLY, 22, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
+
+}          // end summon_butter()

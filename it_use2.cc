@@ -5,11 +5,12 @@
  *
  *  Change History (most recent first):
  *
- *      <3>     10/1/99         BCR             Changed messages for speed and
- *                                              made amulet resist slow up speed
- *      <2>     5/20/99         BWR             Fixed bug with RAP_METABOLISM
- *                                              and RAP_NOISES artefacts/
- *      <1>     -/--/--         LRH             Created
+ *  <4> 19mar2000   jmf   Added ZAP_BACKLIGHT and ZAP_SLEEP
+ *  <3>     10/1/99         BCR             Changed messages for speed and
+ *                                          made amulet resist slow up speed
+ *  <2>     5/20/99         BWR             Fixed bug with RAP_METABOLISM
+ *                                          and RAP_NOISES artefacts/
+ *  <1>     -/--/--         LRH             Created
  */
 
 #include "AppHdr.h"
@@ -20,1669 +21,1348 @@
 #include "externs.h"
 
 #include "beam.h"
-#include "player.h"
-#include "spells2.h"
+#include "effects.h"
+#include "food.h"
+#include "itemname.h"
 #include "misc.h"
 #include "mutation.h"
+#include "player.h"
 #include "randart.h"
-#include "spells.h"
-#include "stuff.h"
-#include "itemname.h"
+#include "religion.h"
 #include "skills2.h"
-#include "effects.h"
+#include "spells.h"
+#include "spells2.h"
+#include "stuff.h"
 #include "view.h"
 
-char zappy(int func_pass[10], char str_pass[50], char z_type);
-void unuse_randart(unsigned char unw);
-
-extern char wield_change;       /* defined in output.cc */
+extern bool wield_change;    // defined in output.cc
 
 
+static char zappy(char z_type, int power, struct bolt *pbolt);
 
-void zapping(char ztype, int power, struct bolt beams[1])
+
+
+
+void zapping( char ztype, int power, struct bolt *pbolt )
 {
 
-    int func_pass[10];
+    pbolt->range = 9 + random2(5);    // default for "0" beams (I think) - zappy() may overwrite {dlb}
+    pbolt->damage = power;            // may be modified in zappy() {dlb}
+    pbolt->hit = 0;                   // default for "0" beams (I think) - zappy() may overwrite {dlb}
+    pbolt->type = 0;                  // default for "0" beams - zappy() may overwrite {dlb}
+    pbolt->flavour = BEAM_MAGIC;      // default for "0" beams - zappy() may overwrite {dlb}
+    pbolt->ench_power = power;        // may be modified in zappy() {dlb}
+    pbolt->wand_id = 0;               // may be modified in zappy() {dlb}
 
-    beams[0].ench_power = power;
 
-    func_pass[2] = power;
-    func_pass[8] = power;
+// see any similarities to the parent function declaration ??? {dlb}
+    char luggy = zappy(ztype, power, pbolt);    // whether to call missile() (== 1) or beam() (== 2) {dlb}
 
-    beams[0].damage = power;
-
-    char luggy = zappy(func_pass, str_pass, ztype);
-
-    if (ztype == ZAP_LIGHTNING)
+    if ( ztype == ZAP_LIGHTNING && !silenced(you.x_pos, you.y_pos) ) // needs to check silenced at other location, too {dlb}
     {
-        strcpy(info, "You hear a mighty clap of thunder!");
-        mpr(info);
+        mpr("You hear a mighty clap of thunder!");
         noisy(25, you.x_pos, you.y_pos);
     }
-    strcpy(beams[0].beam_name, str_pass);
 
-    beams[0].colour = func_pass[0];
-    beams[0].range = func_pass[1];
-    beams[0].damage = func_pass[2];
-    if (func_pass[2] == 0)
-        beams[0].damage = power;
-    beams[0].hit = func_pass[3];
-    beams[0].type = func_pass[4];
-    beams[0].flavour = func_pass[5];
-    beams[0].thing_thrown = func_pass[6];
-    beams[0].wand_id = func_pass[7];
+    pbolt->thing_thrown = KILL_YOU_MISSILE;    // here's a question - zappy sets it, why reset all to this? {dlb}
 
-    beams[0].ench_power = func_pass[8];
-
-    func_pass[8] = power;
-
-    if (beams[0].beam_name[0] == 48)    // ?? the first char of the name
-
-        beams[0].damage = power;        // ?? is an ascii zero?
-
-    beams[0].thing_thrown = KILL_YOU_MISSILE;
-
-    switch (luggy)
+    switch ( luggy )
     {
-    case 1:
-        missile(beams, 0);
+      case 1:
+        missile(pbolt, 0);
         break;
-    case 2:
-        beam(beams);
+      case 2:
+        beam(pbolt);
         break;
     }
-}
+
+    return;
+
+}          // end zapping()
 
 
 
 
-char zappy(int func_pass[10], char str_pass[50], char z_type)
+// *do not* call this function directly (duh - it's static), need to
+// see zapping() for default values not set within this function {dlb}
+static char zappy( char z_type, int power, struct bolt *pbolt )
 {
 
-    func_pass[7] = 0;           // wand_id
+    int temp_rand = 0;     // probability determination {dlb}
 
-    func_pass[9] = func_pass[2];
 
-    switch (z_type)
+    switch ( z_type )
     {
     case ZAP_FLAME:
+        strcpy(pbolt->beam_name, "puff of flame");
+        pbolt->colour = RED;
+        pbolt->range = 9 + random2(5);
+        pbolt->damage = 104 + (power / 35);
+        pbolt->hit = 8 + (power / 20);   // = 60;
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_FIRE;
 
-        strcpy(str_pass, "puff of flame");
-        func_pass[0] = RED;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 104 + func_pass[8] / 35;         // should this be the same as magic missile? no
-
-        func_pass[3] = 8 + func_pass[8] / 20;   // = 60;
-
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_FIRE;
-        func_pass[6] = KILL_MON_MISSILE;        // = 3;
-
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_FROST:
-        //      beam_source_y = y_pos;
+        strcpy(pbolt->beam_name, "puff of frost");
+        pbolt->colour = WHITE;
+        pbolt->range = 9 + random2(5);
+        pbolt->damage = 104 + (power / 35);
+        pbolt->hit = 8 + (power / 20);   // = 60;
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_COLD;
 
-        strcpy(str_pass, "puff of frost");
-        func_pass[0] = WHITE;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 104 + func_pass[8] / 35;         // should this be the same as magic missile?
-
-        func_pass[3] = 8 + func_pass[8] / 20;   // = 60;
-
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_COLD;
-        func_pass[6] = KILL_MON_MISSILE;        //3;
-
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_SLOWING:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = BLACK;
 
-        strcpy(str_pass, "0");
-        func_pass[0] = BLACK;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 50;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        //1;
-
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_HASTING:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = BLUE;
 
-        strcpy(str_pass, "0");
-        func_pass[0] = BLUE;
-        func_pass[1] = random2(5) + 9;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        //1;
-
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_MAGIC_DARTS:
+        strcpy(pbolt->beam_name, "magic dart");
+        pbolt->colour = LIGHTMAGENTA;
+        pbolt->range = random2(5) + 9;
+        pbolt->damage = ( coinflip() ? 103 : 102 ) + (power / 45);
+        pbolt->hit = 1500;
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_MMISSILE;
 
-        strcpy(str_pass, "magic dart");         // you.inv_name [throw_2]);
-
-        func_pass[0] = LIGHTMAGENTA;    //you.inv_colour [throw_2];//icolour [you.inv_class [throw_2]] [you.inv_type [throw_2]];
-
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 102 + (func_pass[8] / 45) + random2(2);
-        func_pass[3] = 1500;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_MMISSILE;
-        func_pass[6] = KILL_MON_MISSILE;        //3;
-
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_HEALING:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = GREEN;
 
-        strcpy(str_pass, "0");
-        func_pass[0] = GREEN;
-        func_pass[1] = random2(5) + 9;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        //1;
-
+        pbolt->thing_thrown = KILL_MON;
         return 2;
 
     case ZAP_PARALYSIS:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = CYAN;
 
-        strcpy(str_pass, "0");
-        func_pass[0] = CYAN;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 0;       // = func_pass [9];
-
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        //1;
-
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_FIRE:
-        strcpy(str_pass, "bolt of fire");
-        func_pass[0] = RED;
-        func_pass[1] = random2(10) + 8;
-        func_pass[2] = 107 + func_pass[8] / 11;
-        func_pass[3] = 10 + random2(func_pass[8]) / 80;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_FIRE;
-        func_pass[6] = KILL_MON;        //1;
+        strcpy(pbolt->beam_name, "bolt of fire");
+        pbolt->colour = RED;
+        pbolt->range = 8 + random2(10);
+        pbolt->damage = 107 + (power / 11);
+        pbolt->hit = 10 + (random2(power) / 80);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_FIRE;
 
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 2;
 
-        //if (you.inv_type [zap_device_2] == 1)
-        //{
     case ZAP_COLD:
-        strcpy(str_pass, "bolt of cold");
-        func_pass[0] = WHITE;
-        func_pass[1] = random2(10) + 8;
-        func_pass[2] = 107 + func_pass[8] / 11;
-        func_pass[3] = 10 + random2(func_pass[8]) / 80;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_COLD;
-        func_pass[6] = KILL_MON;        // = 1;
+        strcpy(pbolt->beam_name, "bolt of cold");
+        pbolt->colour = WHITE;
+        pbolt->range = 8 + random2(10);
+        pbolt->damage = 107 + (power / 11);
+        pbolt->hit = 10 + (random2(power) / 80);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_COLD;
 
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 2;
 
     case ZAP_CONFUSION:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = RED;
 
-        strcpy(str_pass, "0");
-        func_pass[0] = RED;
-        func_pass[1] = random2(5) + 9;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        // = 1;
-
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_INVISIBILITY:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = MAGENTA;
 
-        strcpy(str_pass, "0");
-        func_pass[0] = MAGENTA;
-        func_pass[1] = random2(5) + 9;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        // = 1;
-
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_DIGGING:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = BROWN;
+        pbolt->range = 4 + random2(power) + random2(5);    // not ordinary "0" beam range {dlb}
 
-        strcpy(str_pass, "0");
-        func_pass[0] = BROWN;
-        func_pass[1] = random2(5) + 4 + random2(func_pass[8]);
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        // = 1;
-
+        pbolt->thing_thrown = KILL_MON;
         return 2;
 
     case ZAP_FIREBALL:
+        strcpy(pbolt->beam_name, "fireball");
+        pbolt->colour = RED;
+        pbolt->range = 9 + random2(5);
+        pbolt->damage = 5 + (power / 7);
+        pbolt->hit = 40;
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_EXPLOSION;  // fire
 
-        strcpy(str_pass, "fireball");
-        func_pass[0] = RED;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 5 + func_pass[8] / 7;
-        func_pass[3] = 40;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_EXPLOSION;  // fire
-
-        func_pass[6] = KILL_MON_MISSILE;        // = 3;
-
+        pbolt->thing_thrown = KILL_MON_MISSILE;
         return 1;
 
     case ZAP_TELEPORTATION:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = LIGHTGREY;
+        pbolt->range = 8 + random2(5);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = LIGHTGREY;
-        func_pass[1] = random2(5) + 8;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        // = 1;
-
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_LIGHTNING:
+        strcpy(pbolt->beam_name, "bolt of lightning");
+        pbolt->colour = LIGHTCYAN;
+        pbolt->range = 9 + random2(10);
+        pbolt->damage = 106 + (power / 12);
+        pbolt->hit = 10 + (random2(power) / 40);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_ELECTRICITY;
 
-        strcpy(str_pass, "bolt of lightning");
-        func_pass[0] = LIGHTCYAN;
-        func_pass[1] = random2(10) + 9;
-        func_pass[2] = 106 + func_pass[8] / 12;
-        func_pass[3] = 10 + random2(func_pass[8]) / 40;         // beam hit - look at it!
-
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_ELECTRICITY;
-        func_pass[6] = KILL_MON;        // = 1;
-
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 2;
 
     case ZAP_POLYMORPH_OTHER:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = DARKGREY;
+        pbolt->range = 8 + random2(5);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = DARKGREY;
-        func_pass[1] = random2(5) + 8;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        // = 1;
-
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_VENOM_BOLT:
+        strcpy(pbolt->beam_name, "bolt of poison");
+        pbolt->colour = LIGHTGREEN;
+        pbolt->range = 9 + random2(10);
+        pbolt->damage = 105 + (power / 13);
+        pbolt->hit = 10 + (random2(power) / 80);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_POISON;
 
-        strcpy(str_pass, "bolt of poison");
-        func_pass[0] = LIGHTGREEN;
-        func_pass[1] = random2(10) + 9;
-        func_pass[2] = 105 + func_pass[8] / 13;
-        func_pass[3] = 10 + random2(func_pass[8]) / 80;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_POISON;
-        func_pass[6] = KILL_MON;        // = 1;
-
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 2;
 
     case ZAP_NEGATIVE_ENERGY:
+        strcpy(pbolt->beam_name, "bolt of negative energy");
+        pbolt->colour = DARKGREY;
+        pbolt->range = 8 + random2(10);
+        pbolt->damage = 105 + (power / 13);
+        pbolt->hit = 10 + (random2(power) / 80);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_NEG;
 
-        strcpy(str_pass, "bolt of negative energy");
-        func_pass[0] = DARKGREY;
-        func_pass[1] = random2(10) + 8;
-        func_pass[2] = 105 + func_pass[8] / 13;
-        func_pass[3] = 10 + random2(func_pass[8]) / 80;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_NEG;
-        func_pass[6] = KILL_MON;        // = 1;
-
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 2;
 
-    case ZAP_CRYSTAL_SPEAR:     // was splinters
+    case ZAP_CRYSTAL_SPEAR:
+        strcpy(pbolt->beam_name, "crystal spear");
+        pbolt->colour = WHITE;
+        pbolt->range = 8 + random2(10);
+        pbolt->damage = 112 + (power / 11);
+        pbolt->hit = 6 + (random2(power) / 25);
+        pbolt->type = SYM_MISSILE;
+        pbolt->flavour = BEAM_MMISSILE;
 
-        strcpy(str_pass, "crystal spear");
-        func_pass[0] = WHITE;
-        func_pass[1] = random2(10) + 8;
-        func_pass[2] = 112 + func_pass[8] / 11;
-        func_pass[3] = 6 + random2(func_pass[8]) / 25;
-        func_pass[4] = SYM_MISSILE;
-        func_pass[5] = BEAM_MMISSILE;
-        func_pass[6] = KILL_MON;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_BEAM_OF_ENERGY:    // bolt of innacuracy
+        strcpy(pbolt->beam_name, "narrow beam of energy");
+        pbolt->colour = YELLOW;
+        pbolt->range = 8 + random2(10);
+        pbolt->damage = 110 + (power / 5);
+        pbolt->hit = 2;       //1 + random2(power) / 80;
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = 17;      // whatever
 
-        strcpy(str_pass, "narrow beam of energy");
-        func_pass[0] = YELLOW;
-        func_pass[1] = random2(10) + 8;
-        func_pass[2] = 110 + func_pass[8] / 5;  // / 10;
-
-        func_pass[3] = 2;       //1 + random2(func_pass [8]) / 80;
-
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = 17;      // whatever
-
-        func_pass[6] = KILL_MON;        //1;
-
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 2;
 
     case ZAP_ORB_OF_ENERGY:     // Mystic Bolt
+        strcpy(pbolt->beam_name, "orb of energy");
+        pbolt->colour = LIGHTMAGENTA;
+        pbolt->range = 8 + random2(5);
+        pbolt->damage = 105 + (power / 20);
+        pbolt->hit = 10 + (power / 20);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_MMISSILE;
 
-        strcpy(str_pass, "orb of energy");      // you.inv_name [throw_2]);
-
-        func_pass[0] = LIGHTMAGENTA;    //you.inv_colour [throw_2];//icolour [you.inv_class [throw_2]] [you.inv_type [throw_2]];
-
-        func_pass[1] = random2(5) + 8;
-        func_pass[2] = 105 + (func_pass[8] / 20);
-        func_pass[3] = 10 + (func_pass[8] / 20);
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_MMISSILE;
-        func_pass[6] = KILL_MON_MISSILE;        // = 3;
-
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_ENSLAVEMENT:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = LIGHTBLUE;
+        pbolt->range = 8 + random2(5);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = LIGHTBLUE;
-        func_pass[1] = random2(5) + 8;
-        func_pass[4] = 0;
-        func_pass[6] = KILL_MON;        // = 1;
-
-        func_pass[2] = 50;
-        //beam();
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
-        func_pass[5] = BEAM_MAGIC;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_PAIN:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = LIGHTMAGENTA;
+        pbolt->range = 8 + random2(8);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = LIGHTMAGENTA;
-        func_pass[1] = random2(8) + 8;
-        func_pass[2] = 50;
-        func_pass[3] = 8 + (func_pass[8] / 20);         // = 104 + (func_pass [8] / 150); // [3] before [8] -- was this right? {dlb}
+        pbolt->hit = 8 + (power / 20);         // is this right? other "0" beams do not define ->hit {dlb}
 
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        // = 1;
-
-        func_pass[8] *= 35;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 7;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_STICKY_FLAME:
+        strcpy(pbolt->beam_name, "sticky flame");
+        pbolt->colour = RED;
+        pbolt->range = 9 + random2(5);
+        pbolt->damage = 102 + (power / 30);
+        pbolt->hit = 11 + (power / 10);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_FIRE;
 
-        strcpy(str_pass, "sticky flame");
-        func_pass[0] = RED;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 102 + func_pass[8] / 30;
-        func_pass[3] = 11 + func_pass[8] / 10;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_FIRE;
-        func_pass[6] = KILL_MON_MISSILE;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_DISPEL_UNDEAD:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = YELLOW;
+        pbolt->range = 8 + random2(8);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = YELLOW;
-        func_pass[1] = random2(8) + 8;
-        func_pass[2] = 50;
-        func_pass[3] = 9 + (func_pass[8] / 5);  // [3] before [8] -- was this right?
+        pbolt->hit = 9 + (power / 5);          // is this right? other "0" beams do not define ->hit {dlb}
 
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        //1;
-
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_CLEANSING_FLAME:
+        strcpy(pbolt->beam_name, "golden flame");
+        pbolt->colour = YELLOW;
+        pbolt->range = 8 + random2(10);
+        pbolt->damage = 110 + (power / 5);
+        pbolt->hit = 55 + (random2(power) / 80);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_HOLY;
 
-        strcpy(str_pass, "golden flame");
-        func_pass[0] = YELLOW;
-        func_pass[1] = random2(10) + 8;
-        func_pass[2] = 110 + func_pass[8] / 5;
-        func_pass[3] = 55 + random2(func_pass[8]) / 80;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_HOLY;
-        func_pass[6] = KILL_MON;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 2;
 
     case ZAP_BONE_SHARDS:
+        strcpy(pbolt->beam_name, "spray of bone shards");
+        pbolt->colour = LIGHTGREY;
+        pbolt->range = 8 + random2(10);
+        pbolt->damage = 102 + (power / 150);        // note that f_p[2] has a high value for this spell
+        pbolt->hit = 55 + (random2(power) / 850);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_MAGIC;
 
-        strcpy(str_pass, "spray of bone shards");
-        func_pass[0] = LIGHTGREY;
-        func_pass[1] = random2(10) + 8;
-        func_pass[2] = 102 + func_pass[8] / 150;        // note that f_p[2] has a high value for this spell
-
-        func_pass[3] = 55 + random2(func_pass[8]) / 850;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 2;
 
     case ZAP_BANISHMENT:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = LIGHTGREEN;
+        pbolt->range = 8 + random2(5);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = LIGHTGREEN;
-        func_pass[1] = random2(5) + 8;
-        func_pass[2] = 50;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;
-        func_pass[8] *= 25;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 5;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_DEGENERATION:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = LIGHTCYAN;
+        pbolt->range = 8 + random2(5);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = LIGHTCYAN;
-        func_pass[1] = random2(5) + 8;
-        func_pass[2] = 50;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_STING:
+        strcpy(pbolt->beam_name, "sting");
+        pbolt->colour = GREEN;
+        pbolt->range = 9 + random2(5);
+        pbolt->damage = 4 + (power / 15);
+        pbolt->hit = 8 + (power / 20);   // = 60;
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_POISON;
 
-        strcpy(str_pass, "sting");
-        func_pass[0] = GREEN;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 4 + func_pass[8] / 15;
-        func_pass[3] = 8 + func_pass[8] / 20;   // = 60;
-
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_POISON;
-        func_pass[6] = KILL_MON_MISSILE;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_HELLFIRE:
+        strcpy(pbolt->beam_name, "hellfire");
+        pbolt->colour = RED;
+        pbolt->range = 8 + random2(10);
+        pbolt->damage = 20;
+        pbolt->hit = 20;
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_EXPLOSION;
 
-        strcpy(str_pass, "hellfire");
-        func_pass[0] = RED;
-        func_pass[1] = random2(10) + 8;
-        func_pass[2] = 20;
-        func_pass[3] = 20;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_EXPLOSION;
-        func_pass[6] = KILL_MON;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 2;
 
     case ZAP_IRON_BOLT:
+        strcpy(pbolt->beam_name, "iron bolt");
+        pbolt->colour = LIGHTCYAN;
+        pbolt->range = 5 + random2(5);
+        pbolt->damage = 108 + (power / 10);
+        pbolt->hit = 7 + (power / 25);
+        pbolt->type = SYM_MISSILE;
+        pbolt->flavour = BEAM_MMISSILE;
 
-        strcpy(str_pass, "iron bolt");
-        func_pass[0] = LIGHTCYAN;
-        func_pass[1] = random2(5) + 5;
-        func_pass[2] = 108 + (func_pass[8] / 10);
-        func_pass[3] = 7 + (func_pass[8] / 25);
-        func_pass[4] = SYM_MISSILE;
-        func_pass[5] = BEAM_MMISSILE;
-        func_pass[6] = KILL_MON;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_PEBBLE:
+        strcpy(pbolt->beam_name, "pebble");
+        pbolt->colour = BROWN;
+        pbolt->range = 9 + random2(5);
+        pbolt->damage = 5;
+        pbolt->hit = 8 + (power / 20);
+        pbolt->type = SYM_MISSILE;
+        pbolt->flavour = BEAM_MMISSILE;
 
-        strcpy(str_pass, "pebble");
-        func_pass[0] = BROWN;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 5;       // + (func_pass [8] / 10);
-
-        func_pass[3] = 8 + func_pass[8] / 20;
-        func_pass[4] = SYM_MISSILE;
-        func_pass[5] = BEAM_MMISSILE;
-        func_pass[6] = KILL_MON;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_STONE_ARROW:
+        strcpy(pbolt->beam_name, "stone arrow");
+        pbolt->colour = LIGHTGREY;
+        pbolt->range = 9 + random2(5);
+        pbolt->damage = 105 + (power / 12);
+        pbolt->hit = 7 + (power / 27);
+        pbolt->type = SYM_MISSILE;
+        pbolt->flavour = BEAM_MMISSILE;
 
-        strcpy(str_pass, "stone arrow");
-        func_pass[0] = LIGHTGREY;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 105 + (func_pass[8] / 12);
-        func_pass[3] = 7 + func_pass[8] / 27;
-        func_pass[4] = SYM_MISSILE;
-        func_pass[5] = BEAM_MMISSILE;
-        func_pass[6] = KILL_MON;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_ELECTRICITY:
+        strcpy(pbolt->beam_name, "zap");
+        pbolt->colour = LIGHTCYAN;
+        pbolt->range = 9 + random2(5);
+        pbolt->damage = 5 + (power / 8);    //jmf: changed for lower level SPELL_SHOCK [was: 10 + (power/6)]
+        pbolt->hit = 7 + (power / 27);      // = 1500;
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_ELECTRICITY;
 
-        strcpy(str_pass, "zap");
-        func_pass[0] = LIGHTCYAN;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 10 + (func_pass[8] / 6);
-        func_pass[3] = 7 + func_pass[8] / 27;   // = 1500;
-
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_ELECTRICITY;
-        func_pass[6] = KILL_MON;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 2;
 
     case ZAP_ORB_OF_ELECTRICITY:
+        strcpy(pbolt->beam_name, "orb of electricity");
+        pbolt->colour = LIGHTBLUE;
+        pbolt->range = 12 + random2(10);
+        pbolt->damage = 5 + (power / 5);
+        pbolt->hit = 40;
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_ELECTRICITY;
 
-        strcpy(str_pass, "orb of electricity");
-        func_pass[0] = LIGHTBLUE;
-        func_pass[1] = random2(10) + 12;
-        func_pass[2] = 5 + func_pass[8] / 5;
-        func_pass[3] = 40;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_ELECTRICITY;
-        func_pass[6] = KILL_MON;
+        pbolt->thing_thrown = KILL_MON;
         return 1;
 
     case ZAP_SPIT_POISON:
+        strcpy(pbolt->beam_name, "splash of poison");
+        pbolt->colour = GREEN;
+        pbolt->range = 4 + random2(1 + (power / 2));
+        pbolt->damage = 4 + (power / 2);
+        pbolt->hit = 5 + random2(1 + (power / 3));
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_POISON;
 
-        strcpy(str_pass, "splash of poison");
-        func_pass[0] = GREEN;
-        func_pass[1] = 4 + random2(func_pass[8] / 2 + 1);
-        func_pass[2] = 4 + func_pass[8] / 2;
-        func_pass[3] = 5 + random2(func_pass[8] / 3 + 1);
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_POISON;
-        func_pass[6] = KILL_MON_MISSILE;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_DEBUGGING_RAY:
-        strcpy(str_pass, "debugging ray");
-        func_pass[0] = random2(15) + 1;         // all colours but BLACK {dlb}
+        strcpy(pbolt->beam_name, "debugging ray");
+        pbolt->colour = random_colour();
+        pbolt->range = 8 + random2(10);
+        pbolt->damage = 150;
+        pbolt->hit = 60;
+        pbolt->type = SYM_DEBUG;
+        pbolt->flavour = BEAM_MMISSILE;
 
-        func_pass[1] = random2(10) + 8;
-        func_pass[2] = 150;
-        func_pass[3] = 60;
-        func_pass[4] = SYM_DEBUG;
-        func_pass[5] = BEAM_MMISSILE;
-        func_pass[6] = KILL_MON;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_BREATHE_FIRE:
+        strcpy(pbolt->beam_name, "fiery breath");
+        pbolt->colour = RED;
+        pbolt->range = 4 + random2(1 + (power / 2));
+        pbolt->damage = 104 + (power / 3);              // NB: experience_level + mut * 4
+        pbolt->hit = 8 + random2(1 + (power / 3));
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_FIRE;
 
-        strcpy(str_pass, "fiery breath");
-        func_pass[0] = RED;
-        func_pass[1] = 4 + random2(func_pass[8] / 2 + 1);
-        func_pass[2] = 104 + func_pass[8] / 3;  // note func_pass is experience_level + mut * 4
-
-        func_pass[3] = 8 + random2(func_pass[8] / 3 + 1);
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_FIRE;
-        func_pass[6] = KILL_MON_MISSILE;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 2;
 
     case ZAP_BREATHE_FROST:
+        strcpy(pbolt->beam_name, "freezing breath");
+        pbolt->colour = WHITE;
+        pbolt->range = 4 + random2(1 + (power / 2));
+        pbolt->damage = 104 + (power / 3);              // NB: experience_level + mut * 4
+        pbolt->hit = 8 + random2(1 + (power / 3));
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_COLD;
 
-        strcpy(str_pass, "freezing breath");
-        func_pass[0] = WHITE;
-        func_pass[1] = 4 + random2(func_pass[8] / 2 + 1);
-        func_pass[2] = 104 + func_pass[8] / 3;  // note func_pass is experience_level + mut * 4
-
-        func_pass[3] = 8 + random2(func_pass[8] / 3 + 1);
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_COLD;
-        func_pass[6] = KILL_MON_MISSILE;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 2;
 
     case ZAP_BREATHE_ACID:
+        strcpy(pbolt->beam_name, "acid");
+        pbolt->colour = YELLOW;
+        pbolt->range = 4 + random2(1 + (power / 2));
+        pbolt->damage = 103 + (power / 3);
+        pbolt->hit = 5 + random2(1 + (power / 3));
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_ACID;
 
-        strcpy(str_pass, "acid");
-        func_pass[0] = YELLOW;
-        func_pass[1] = 4 + random2(func_pass[8] / 2 + 1);
-        func_pass[2] = 103 + func_pass[8] / 3;
-        func_pass[3] = 5 + random2(func_pass[8] / 3 + 1);
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = 8;       // acid
-
-        func_pass[6] = KILL_MON_MISSILE;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_BREATHE_POISON:    // leaves clouds of gas
+        strcpy(pbolt->beam_name, "poison gas");
+        pbolt->colour = GREEN;
+        pbolt->range = 4 + random2(1 + (power / 2));
+        pbolt->damage = 102 + (power / 6);
+        pbolt->hit = 5 + random2(1 + (power / 3));
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_POISON;
 
-        strcpy(str_pass, "poison gas");
-        func_pass[0] = GREEN;
-        func_pass[1] = 4 + random2(func_pass[8] / 2 + 1);
-        func_pass[2] = 102 + func_pass[8] / 6;
-        func_pass[3] = 5 + random2(func_pass[8] / 3 + 1);
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = 6;       // poison
-
-        func_pass[6] = KILL_MON_MISSILE;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_BREATHE_POWER:
+        strcpy(pbolt->beam_name, "bolt of energy");
 
-        strcpy(str_pass, "bolt of energy");
-        func_pass[0] = BLUE;
-        if (random2(func_pass[8]) >= 8)
-            func_pass[0] = LIGHTBLUE;
-        if (random2(func_pass[8]) >= 12)
-            func_pass[0] = MAGENTA;
-        if (random2(func_pass[8]) >= 17)
-            func_pass[0] = LIGHTMAGENTA;
-        func_pass[1] = 7 + random2(func_pass[8] / 2 + 1);
-        func_pass[2] = 103 + func_pass[8] / 3;
-        func_pass[3] = 11 + random2(func_pass[8] / 3 + 1);      // [3] was before [8] - should it have been?
+        pbolt->colour = BLUE;
+        if (random2(power) >= 8)
+          pbolt->colour = LIGHTBLUE;
+        if (random2(power) >= 12)
+          pbolt->colour = MAGENTA;
+        if (random2(power) >= 17)
+          pbolt->colour = LIGHTMAGENTA;
 
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_MMISSILE;
-        func_pass[6] = KILL_MON_MISSILE;
-        func_pass[7] = 1;
+        pbolt->range = 7 + random2(1 + (power / 2));
+        pbolt->damage = 103 + (power / 3);
+        pbolt->hit = 11 + random2(1 + (power / 3));
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_MMISSILE;
+
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_ENSLAVE_UNDEAD:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = LIGHTRED;
+        pbolt->range = 8 + random2(5);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = LIGHTRED;
-        func_pass[1] = random2(5) + 8;
-        func_pass[2] = 50;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;
-        func_pass[8] *= 15;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
         return 2;
 
     case ZAP_AGONY:
+        strcpy(pbolt->beam_name, "0agony");
+        pbolt->colour = LIGHTMAGENTA;
+        pbolt->range = 8 + random2(8);
 
-        strcpy(str_pass, "0agony");
-        func_pass[0] = LIGHTMAGENTA;
-        func_pass[1] = random2(8) + 8;
-        func_pass[2] = 50;
-        func_pass[3] = 6 + (func_pass[8] / 50);         // = 104 + (func_pass [8] / 150);
+        pbolt->hit = 6 + (power / 50);         // is this right? other "0" beams do not define ->hit {dlb}
 
-        func_pass[4] = 0;       // [3] was before [8] - should it have been? {dlb}
-
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;        // 1
-
-        func_pass[8] *= 50;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 5;
         return 2;
 
     case ZAP_DISRUPTION:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = WHITE;
+        pbolt->range = 8 + random2(8);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = WHITE;
-        func_pass[1] = random2(8) + 8;
-        func_pass[2] = 50;
-        func_pass[3] = 5 + (func_pass[8] / 50);         // [3] was before [8] - should it have been? {dlb}
+        pbolt->hit = 5 + (power / 50);         // is this right? other "0" beams do not define ->hit {dlb}
 
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;
-        func_pass[8] *= 30;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
         return 2;
 
     case ZAP_DISINTEGRATION:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = WHITE;
+        pbolt->range = 8 + random2(8);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = WHITE;
-        func_pass[1] = random2(8) + 8;
-        func_pass[2] = 50;
-        func_pass[3] = 15 + (func_pass[8] / 3);
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;
-        func_pass[8] *= 25;
-        func_pass[8] /= 10;
+        pbolt->hit = 15 + (power / 3);         // is this right? other "0" beams do not define ->hit {dlb}
+
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 5;
+        pbolt->ench_power /= 2;
         return 2;
 
-        /*      case ZAP_ISKS_CROSS:
-           strcpy(str_pass, "blast");
-           func_pass [0] = LIGHTMAGENTA;
-           func_pass [1] = random2(5) + 12;
-           func_pass [2] = 105 + (func_pass [8] / 9);
-           func_pass [3] = 500; //10 + (func_pass [8] / 20);
-           func_pass [4] = SYM_ZAP;
-           func_pass [5] = 1; // an exploding bolt (also used for fireball)
-           func_pass [6] = KILL_MON_MISSILE;
-           func_pass [7] = 1;
-           return 1;
-         */
-
     case ZAP_BREATHE_STEAM:
+        strcpy(pbolt->beam_name, "ball of steam");
+        pbolt->colour = LIGHTGREY;
+        pbolt->range = 7 + random2(5);
+        pbolt->damage = 104 + (power / 5);
+        pbolt->hit = 10 + random2(1 + (power / 5));
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_FIRE;
 
-        strcpy(str_pass, "ball of steam");
-        func_pass[0] = LIGHTGREY;
-        func_pass[1] = random2(5) + 7;
-        func_pass[2] = 104 + (func_pass[8] / 5);
-        func_pass[3] = 10 + random2(func_pass[8] / 5 + 1);
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_FIRE;
-        func_pass[6] = KILL_MON_MISSILE;
-        func_pass[7] = 1;
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
         return 1;
 
     case ZAP_CONTROL_DEMON:
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = 16;              // this is not a color !!! {dlb}
+        pbolt->range = 8 + random2(5);
 
-        strcpy(str_pass, "0");
-        func_pass[0] = 16;      /* control demon */
-        func_pass[1] = random2(5) + 8;
-        func_pass[2] = 50;
-        func_pass[4] = 0;
-        func_pass[5] = BEAM_MAGIC;
-        func_pass[6] = KILL_MON;
-        func_pass[8] *= 17;
-        func_pass[8] /= 10;
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 17;
+        pbolt->ench_power /= 10;
         return 2;
 
     case ZAP_ORB_OF_FRAGMENTATION:
+        strcpy(pbolt->beam_name, "metal orb");
+        pbolt->colour = CYAN;
+        pbolt->range = 10 + random2(7);
+        pbolt->damage = 10 + (power / 7);
+        pbolt->hit = 20;
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_MMISSILE;
 
-        strcpy(str_pass, "metal orb");
-        func_pass[0] = CYAN;
-        func_pass[1] = random2(7) + 10;
-        func_pass[2] = 10 + func_pass[8] / 7;
-        func_pass[3] = 20;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_MMISSILE;
-        func_pass[6] = KILL_MON;
+        pbolt->thing_thrown = KILL_MON;
         return 1;
 
     case ZAP_ICE_BOLT:
-        strcpy(str_pass, "bolt of ice");
-        func_pass[0] = WHITE;
-        func_pass[1] = random2(5) + 9;
-        func_pass[2] = 105 + (func_pass[8] / 10);
-        func_pass[3] = 9 + func_pass[8] / 12;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_ICE;
-        func_pass[6] = KILL_MON;
+        strcpy(pbolt->beam_name, "bolt of ice");
+        pbolt->colour = WHITE;
+        pbolt->range = 9 + random2(5);
+        pbolt->damage = 105 + (power / 10);
+        pbolt->hit = 9 + (power / 12);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_ICE;
+
+        pbolt->thing_thrown = KILL_MON;
         return 1;
 
     case ZAP_ICE_STORM:
-        strcpy(str_pass, "great blast of cold");
-        func_pass[0] = BLUE;
-        func_pass[1] = random2(5) + 10;
-        func_pass[2] = 5 + (func_pass[8] / 10);
-        func_pass[3] = 9 + func_pass[8] / 12;
-        func_pass[4] = SYM_ZAP;
-        func_pass[5] = BEAM_ICE;        /* ice */// <- changed [5] from BEAM_COLD b/c of comment 13jan2000 {dlb}
+        strcpy(pbolt->beam_name, "great blast of cold");
+        pbolt->colour = BLUE;
+        pbolt->range = 10 + random2(5);
+        pbolt->damage = 5 + (power / 10);
+        pbolt->hit = 9 + (power / 12);
+        pbolt->type = SYM_ZAP;
+        pbolt->flavour = BEAM_ICE;        /* ice */// <- changed from BEAM_COLD b/c of comment 13jan2000 {dlb}
 
-        func_pass[6] = KILL_MON;
+        pbolt->thing_thrown = KILL_MON;
         return 1;
 
+    case ZAP_SLEEP: //jmf: added
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = BEAM_SLEEP;
+        pbolt->range = 8 + random2(5);
 
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
+        return 2;
 
-        /*
-           beam_colour = func_pass [0];
-           beam_range = func_pass [1];
-           beam_damage = func_pass [2];
-           if (func_pass [2] == 0) beam_damage = power;
-           beam_hit = func_pass [3];
-           beam_type = func_pass [4];
-           beam_flavour = func_pass [5];
-           thing_thrown = func_pass [6]; - irrelevant : this is set in zapping(...)
-           wand_id = func_pass [7];
-           ench_power = 8, I think  // or experience_level ? {dlb}
-         */
+    case ZAP_BACKLIGHT: //jmf: added
+        strcpy(pbolt->beam_name, "0");
+        pbolt->colour = BEAM_BACKLIGHT;
+        pbolt->range = 8 + random2(5);
+
+        pbolt->thing_thrown = KILL_MON;
+        pbolt->ench_power *= 3;
+        pbolt->ench_power /= 2;
+        return 2;
+
+    case ZAP_FLAME_TONGUE:    //jmf: ought to be a weak, short-range missile
+        strcpy(pbolt->beam_name, "flame");
+        pbolt->colour = RED;
+        pbolt->range = 3 + random2(3);
+        pbolt->damage = 104 + power;
+        pbolt->hit = power;
+        pbolt->type = SYM_BOLT;
+        pbolt->flavour = BEAM_FIRE;
+
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
+        return 2;
+
+    case ZAP_SANDBLAST:    //jmf: ought to be a weak, short-range missile
+        strcpy(pbolt->beam_name, coinflip()  ? "blast of sand" : "rocky blast" );
+        pbolt->colour = BROWN;
+        pbolt->range = 4 + random2(3);
+        pbolt->damage = 104 + power;
+        pbolt->hit = power;
+        pbolt->type = SYM_BOLT;
+        pbolt->flavour = BEAM_FRAG;
+
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
+        return 2;
+
+    case ZAP_SMALL_SANDBLAST:    //jmf: ought to be a weak, short-range missile
+        strcpy(pbolt->beam_name, "blast of ");
+
+        temp_rand = random2(4);
+
+        strcat(pbolt->beam_name, (temp_rand == 0) ? "dust" :
+                                 (temp_rand == 1) ? "dirt" :
+                                 (temp_rand == 2) ? "grit"
+                                                  : "sand" );
+
+        pbolt->colour = BROWN;
+        pbolt->range = ( coinflip() ? 3 : 2 );
+        pbolt->damage = 104 + power;
+        pbolt->hit = power;
+        pbolt->type = SYM_BOLT;
+        pbolt->flavour = BEAM_FRAG;
+
+        pbolt->thing_thrown = KILL_MON_MISSILE;
+        pbolt->wand_id = 1;
+        return 2;
 
     }                           // end of switch
 
     return 0;
 
-}
+}          // end zappy()
 
 
-void potion_effect(char pot_eff, int pow)
+
+
+void potion_effect( char pot_eff, int pow )
 {
 
     int new_value = 0;
 
-    if (pow >= 150)
-        pow = 150;
+    if ( pow > 150 )
+      pow = 150;
 
-    switch (pot_eff)
+    switch ( pot_eff )
     {
-    case POT_HEALING:
+      case POT_HEALING:
         mpr("You feel better.");
-        you.hp += random2(7) + 5;
-        if (you.hp >= you.hp_max)
+        inc_hp(5 + random2(7), false);
+
+        if ( you.hp >= you.hp_max )
         {
-            if (you.base_hp < 5000)
-                you.base_hp++;
+            if ( you.base_hp < 5000 )
+              you.base_hp++;
+
             calc_hp();
-            you.hp = you.hp_max;
+            set_hp(you.hp_max, false);
         }
-        you.redraw_hit_points = 1;
+
         you.poison = 0;
         you.rotting = 0;
         you.disease = 0;
         you.conf = 0;
-        /*      beam[0].wand_id = 1; */
         break;
 
-    case POT_HEAL_WOUNDS:
+      case POT_HEAL_WOUNDS:
         mpr("You feel much better.");
-        you.hp += random2(10) + random2(10) + random2(10) + 10;
-        if (you.hp >= you.hp_max)
+        inc_hp(10 + random2avg(28,3), false);
+
+        if ( you.hp >= you.hp_max )
         {
-            if (you.base_hp < 5000)
-                you.base_hp += 2 + random2(3) + random2(3);
-            if (you.base_hp > 5000)
-                you.base_hp = 5000;
+            if ( you.base_hp < 5000 )
+              you.base_hp += 2 + random2avg(5,2);
+
+            if ( you.base_hp > 5000 )
+              you.base_hp = 5000;
+
             calc_hp();
-            you.hp = you.hp_max;
+            set_hp(you.hp_max, false);
         }
-        if (you.hp > you.hp_max)
-            you.hp = you.hp_max;
-        you.redraw_hit_points = 1;
-        /*      wand_id = 1; */
         break;
 
-    case POT_SPEED:
+      case POT_SPEED:
         if (you.haste > 90)
-            strcpy(info, "You already have as much speed as you can handle.");
-        else if (wearing_amulet(AMU_RESIST_SLOW))
+          mpr("You already have as much speed as you can handle.");
+        else if ( wearing_amulet(AMU_RESIST_SLOW) )
         {
-            strcpy(info, "Your amulet glows brightly and you gain speed.");
-            if (you.slow > 0)
+            mpr("Your amulet glows brightly and you gain speed.");
+
+            if ( you.slow )
             {
                 you.slow = 0;
                 you.haste = 10;
             }
             else
-                you.haste += random2(pow) + 50;
+              you.haste += 50 + random2(pow);
         }
-        else if (!you.haste)
+        else if ( !you.haste )
         {
-            strcpy(info, "You feel yourself speed up.");
-            if (you.slow > 0)
-                you.slow = 0;
+            mpr("You feel yourself speed up.");
+
+            if ( you.slow )
+              you.slow = 0;
             else
-                you.haste += random2(pow) + 40;
+              you.haste += 40 + random2(pow);
         }
         else
         {
-            strcpy(info, "You feel as though your speed will last longer.");
-            you.haste += random2(pow) + 40;
+            mpr("You feel as though your speed will last longer.");
+            you.haste += 40 + random2(pow);
         }
 
-        if (wearing_amulet(AMU_RESIST_SLOW))    // reworked for clarity and NO MATH! 14jan2000 {dlb}
-
+        if ( wearing_amulet(AMU_RESIST_SLOW) )
         {
-            if (you.haste > 100)
-                you.haste = 100;
+            if ( you.haste > 100 )
+              you.haste = 100;
         }
         else
         {
-            if (you.haste > 90)
-                you.haste = 90;
+            if ( you.haste > 90 )
+              you.haste = 90;
         }
 
-        mpr(info);
+        naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
         break;
 
-    case POT_MIGHT:             // potion of might
+      case POT_MIGHT:
+        strcpy(info, "You feel ");
+        strcat(info, (you.might) ? "pretty" : "very");
+        strcat(info, " mighty");
+        strcat(info, (you.might) ? ", still" : " all of a sudden");
+        strcat(info, ".");
+        mpr(info);
 
-        if (you.might == 0)
-            strcpy(info, "You feel very mighty all of a sudden.");
+        you.might += 35 + random2(pow);    // conceivable max gain of +184 {dlb}
+
+        if ( !you.might )
+        {
+            increase_stats(STAT_STRENGTH, 5, true);
+
+            if ( you.might > 75 )
+              you.might = 75;
+        }
         else
         {
-            if (you.might < 150)
-                you.might += random2(pow) + 35;
-            strcpy(info, "You're still pretty mighty.");
-            mpr(info);
-            return;
+            if ( you.might > 150 )     // files.cc permits values up to 215, but ... {dlb}
+              you.might = 150;
         }
-        mpr(info);
-        you.might += random2(pow) + 35;
-        you.strength += 5;
-        you.max_strength += 5;
-        you.redraw_strength = 1;
-        if (you.might > 75)
-            you.might = 75;
+
+        naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
         break;
 
-    case POT_GAIN_STRENGTH:     // potion of increase you.strength
-
+      case POT_GAIN_STRENGTH:
         mutate(MUT_STRONG);
-        /*      strcpy(info, "You feel strong!");
-           mpr(info);
-           abil_change = random2 (2) + 1;
-           you.strength += abil_change;
-           if (you.strength > you.max_strength) you.max_strength = you.strength; //+= abil_change;
-           you.redraw_strength = 1; */
         break;
 
-    case POT_GAIN_DEXTERITY:    // potion of increase dexterity
-
+      case POT_GAIN_DEXTERITY:
         mutate(MUT_AGILE);
-        /*      strcpy(info, "You feel dextrous!");
-           mpr(info);
-           abil_change = random2 (2) + 1;
-           you.dex += abil_change;
-           if (you.dex > you.max_dex) you.max_dex = you.dex; // += abil_change;
-           you.redraw_dexterity = 1; */
         break;
 
-    case POT_GAIN_INTELLIGENCE: // potion of increase intelligence
-
+      case POT_GAIN_INTELLIGENCE:
         mutate(MUT_CLEVER);
-        /*      strcpy(info, "You feel intelligent!");
-           mpr(info);
-           abil_change = random2 (2) + 1;
-           you.intel += abil_change;
-           if (you.intel > you.max_intel) you.max_intel = you.intel; // += abil_change;
-           you.redraw_intelligence = 1; */
         break;
 
-    case POT_LEVITATION:        // levitation
+      case POT_LEVITATION:
+        strcpy(info, "You feel ");
+        strcat(info, (!you.levitation) ? "very" : "more");
+        strcat(info, "buoyant.");
+        mpr(info);
 
-        if (you.levitation == 0)
-        {
-            strcpy(info, "You feel very buoyant!");
-            mpr(info);
-            strcpy(info, "You gently float upwards from the floor.");
-            mpr(info);
-        }
-        else
-        {
-            strcpy(info, "You feel more buoyant.");
-            mpr(info);
-        }
-        if (you.levitation >= 0)
-            you.levitation += random2(pow) + 25;
-        if (you.levitation > 100)
-            you.levitation = 100;
+        if ( !you.levitation )
+          mpr("You gently float upwards from the floor.");
+
+        you.levitation += 25 + random2(pow);
+
+        if ( you.levitation > 100 )
+          you.levitation = 100;
+
         burden_change();
         break;
 
-    case POT_POISON:            // poison!!
-
-        if (player_res_poison() > 0)
+      case POT_POISON:
+      case POT_STRONG_POISON:
+        if ( player_res_poison() )
         {
-            strcpy(info, "You feel slightly nauseous.");
-            mpr(info);
-            break;
-        }
-        if (you.poison > 0)
-        {
-            strcpy(info, "You feel even sicker.");
-            mpr(info);
+            strcpy(info, "You feel ");
+            strcat(info, (pot_eff == POT_POISON) ? "slightly" : "extremely");
+            strcat(info, " nauseous.");
         }
         else
         {
-            strcpy(info, "That liquid tasted very nasty...");
-            mpr(info);
-        }
-        you.poison += random2(3) + random2(3) + 1;
-        /*      wand_id = 1; */
-        break;
-
-    case POT_SLOWING:           // slow
-
-        if (wearing_amulet(AMU_RESIST_SLOW))
-            strcpy(info, "You feel momentarily lethargic.");
-        else if (you.slow > 90)
-            strcpy(info, "You already have as much slowness as possible.");
-        else if (you.slow == 0)
-        {
-            strcpy(info, "You feel yourself slow down.");
-            if (you.slow > 0)
-                you.slow = 0;
+            if ( you.poison )
+              strcpy(info, "You feel even sicker.");
             else
-                you.slow += random2(pow) + 10;
+            {
+                strcpy(info, "That liquid tasted ");
+                strcat(info, (pot_eff == POT_POISON) ? "very" : "extremely");
+                strcat(info, " nasty...");
+            }
+
+            you.poison += 1 + ( (pot_eff == POT_POISON) ? random2avg(5,2) : 2 + random2avg(13,2) );
         }
+
+        mpr(info);
+        break;
+
+      case POT_SLOWING:
+        if ( wearing_amulet(AMU_RESIST_SLOW) )
+          mpr("You feel momentarily lethargic.");
+        else if ( you.slow > 90 )
+          mpr("You already are as slow as you could be.");
         else
         {
-            you.slow += random2(pow) + 10;
-            strcpy(info, "You feel as though you will be slow longer.");
-            if (you.slow > 90)
-                you.slow = 90;
+            if ( !you.slow )
+              mpr("You feel yourself slow down.");
+            else
+              mpr("You feel as though you will be slow longer.");
+
+            you.slow += 10 + random2(pow);
+
+            if ( you.slow > 90 )
+              you.slow = 90;
         }
-        mpr(info);
         break;
 
-    case POT_PARALYSIS: // paralysis
-
-        if (you.paralysis == 0)
-            strcpy(info, "You suddenly lose the ability to move!");
-        else
-            strcpy(info, "You still can't move!");
+      case POT_PARALYSIS:
+        strcpy(info, "You ");
+        strcat(info, (you.paralysis) ? "still haven't" : "suddenly lose");
+        strcat(info, " the ability to move!");
         mpr(info);
-        new_value = random2(6) + 2;
-        if (new_value > you.paralysis)
-            you.paralysis = new_value;
-        /*      wand_id = 1; */
-        if (you.paralysis > 13)
-            you.paralysis = 13;
+
+        new_value = 2 + random2(6 + you.paralysis);
+
+        if ( new_value > you.paralysis )
+          you.paralysis = new_value;
+
+        if ( you.paralysis > 13 )
+          you.paralysis = 13;
         break;
 
-    case POT_CONFUSION: // confusion
+      case POT_CONFUSION:
+        strcpy(info, "You feel ");
 
-        if (wearing_amulet(AMU_CLARITY))
+        if ( wearing_amulet(AMU_CLARITY) )
+          strcat(info, "momentarilty ");
+        else if ( you.conf )
+          strcat(info, "very ");
+
+        strcat(info, "confused.");
+        mpr(info);
+
+    // early return for the protected: {dlb}
+        if ( wearing_amulet(AMU_CLARITY) )
+          break;
+
+        new_value = 3 + random2(8 + you.conf);
+
+        if ( new_value > you.conf )
+          you.conf = new_value;
+
+        if ( you.conf > 20 )
+          you.conf = 20;
+        break;
+
+      case POT_INVISIBILITY:
+        mpr ( (!you.invis) ? "You fade into invisibility!" : "You feel safely hidden away." );
+
+        you.invis += 15 + random2(pow);    // should really scale this by you.invis {dlb}
+
+        if ( you.invis > 100 )
+          you.invis = 100;
+        break;
+
+// carnivore check here? {dlb}
+      case POT_PORRIDGE:          // oatmeal - always gluggy white/grey?
+        mpr("That potion was really gluggy!");
+        lessen_hunger(6000, true);
+        break;
+
+      case POT_DEGENERATION:
+        mpr("There was something very wrong with that liquid!");
+        lose_stat(STAT_RANDOM, 1 + random2avg(4,2));
+        break;
+
+// Don't generate randomly - should be rare and interesting
+      case POT_DECAY:
+        strcpy(info, "You feel ");
+        strcat(info, (you.is_undead) ? "terrible."
+                                     : "your flesh start to rot away!");
+        mpr(info);
+
+        if ( !you.is_undead )
+          you.rotting += 10 + random2(10);
+        break;
+
+      case POT_WATER:
+        mpr("This tastes like water.");
+        lessen_hunger(20, true);    // we should really separate thirst from hunger {dlb}
+        break;
+
+      case POT_EXPERIENCE:
+        if ( you.experience_level < 27 )
         {
-            strcpy(info, "You feel momentarily bewildered.");
-            mpr(info);
-            break;
+          mpr("You feel more experienced!");
+          you.experience = 1 + exp_needed(2 + you.experience_level, you.species);
+          level_change();
         }
-        if (you.conf == 0)
-            strcpy(info, "You feel confused.");
         else
-            strcpy(info, "You feel very confused.");
-        mpr(info);
-        new_value = random2(8) + 3;
-        if (new_value > you.conf)
-            you.conf = new_value;
-        /*      wand_id = 1; */
-        if (you.conf > 20)
-            you.conf = 20;
-        break;
-
-    case POT_INVISIBILITY:      // Invisibility (can I do it?)
-
-        if (you.invis == 0)
-            strcpy(info, "You fade into invisibility!");
-        else
-            strcpy(info, "You feel hidden.");
-        mpr(info);
-        if (you.invis >= 0)
-            you.invis += random2(pow) + 15;
-        /*      wand_id = 1; */
-        if (you.invis > 100)
-            you.invis = 100;
-        break;
-
-    case POT_PORRIDGE:          // oatmeal - always gluggy white/grey?
-
-        strcpy(info, "That potion was really gluggy!");
-        mpr(info);
-        you.hunger += 6000;
-        you.redraw_hunger = 1;
-        if (you.hunger > 12000)
-            you.hunger = 12000;
-        break;
-
-    case POT_DEGENERATION:      // degeneration
-
-        strcpy(info, "There was something very wrong with that liquid!");
-        mpr(info);
-        lose_stat(100, random2(3) + random2(2) + 1);
-        break;
-
-        // Don't generate randomly - should be rare and interesting
-    case POT_DECAY:             // decay
-
-        if (you.is_undead)
-        {
-            strcpy(info, "You feel terrible.");
-            mpr(info);
-            break;
-        }
-        strcpy(info, "You feel your flesh start to rot away!");
-        mpr(info);
-        you.rotting += random2(10) + 10;
-        break;
-
-    case POT_WATER:             // water
-
-        strcpy(info, "This tastes like water.");
-        mpr(info);
-        you.hunger += 20;
-        break;
-
-    case POT_EXPERIENCE:        // experience
-
-        strcpy(info, "You feel more experienced!");
-        mpr(info);
-        if (you.experience_level < 27)
-            you.experience = exp_needed(you.experience_level + 2, you.species) + 1;
-        level_change();
+          mpr("A flood of memories washes over you.");
         break;                  // I'll let this slip past robe of archmagi
 
-    case POT_MAGIC:             // magic
-
-        strcpy(info, "You feel magical!");
-        mpr(info);
-        you.magic_points += random2(10) + random2(10) + 5;
-        if (you.magic_points > you.max_magic_points)
-            you.magic_points = you.max_magic_points;
-        /* if (you.magic_points > you.max_magic_points)
-           {
-           you.max_magic_points += (you.magic_points - you.max_magic_points) / 4 + 1;
-           you.magic_points = you.max_magic_points;
-           } */
-        you.redraw_magic_points = 1;
+      case POT_MAGIC:
+        mpr("You feel magical!");
+        inc_mp(5 + random2avg(19,2), false);
         break;
 
-    case POT_RESTORE_ABILITIES: // restore abilities
-
-        strcpy(info, "You feel refreshed.");    // ...can't think of anything better right now
-
-        mpr(info);
-        restore_str();
-        restore_int();
-        restore_dex();
+      case POT_RESTORE_ABILITIES:    // messaging taken care of within function {dlb}
+        restore_stat(STAT_ALL, false);
         break;
 
-    case POT_STRONG_POISON:     // strong poison!!
-
-        if (player_res_poison() > 0)
-        {
-            strcpy(info, "You feel extremely nauseous.");
-            mpr(info);
-            break;
-        }
-        if (you.poison > 0)
-        {
-            strcpy(info, "You feel even sicker.");
-            mpr(info);
-        }
-        else
-        {
-            strcpy(info, "That liquid tasted extremely nasty...");
-            mpr(info);
-        }
-        you.poison += random2(7) + random2(7) + 3;
-        /*      wand_id = 1; */
+      case POT_BERSERK_RAGE:
+        if ( !go_berserk() )
+          mpr("You feel angry!");
         break;
 
-    case POT_BERSERK_RAGE:
-
-        if (!go_berserk())
-        {
-            strcpy(info, "You feel angry!");
-            mpr(info);
-        }
-        break;
-
-    case POT_CURE_MUTATION:
+      case POT_CURE_MUTATION:
         mpr("It has a very clean taste.");
-        delete_mutation(100);
-        delete_mutation(100);
-        delete_mutation(100);
-        delete_mutation(100);
-        delete_mutation(100);
-        delete_mutation(100);
-        delete_mutation(100);
+        for (unsigned char i = 0; i < 7; i++)
+          if ( random2(10) > i )     //jmf: added [this bit of - dlb] randomness
+            delete_mutation(100);
         break;
 
-    case POT_MUTATION:
+      case POT_MUTATION:
         mpr("You feel extremely strange.");
-        mutate(100);
-        mutate(100);
-        mutate(100);
+        for (unsigned char i = 0; i < 3; i++)
+          mutate(100);
+        naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
         break;
+    }
 
-    }                           // end of switch (pot_eff)
+    return;
 
-
-
-}                               // end of void potion_effect(pot_eff)
-
+}          // end potion_effect()
 
 
 
-void unwield_item(char unw)
+
+void unwield_item( char unw )
 {
 
-    you.special_wield = 0;
-    wield_change = 1;
+    you.special_wield = SPWLD_NONE;
+    wield_change = true;
 
-    if (you.inv_class[unw] == 0 && you.inv_dam[unw] > 180)
+    if ( you.inv_class[unw] == OBJ_WEAPONS )
     {
-        switch (you.inv_dam[unw] - 180)
+        if ( you.inv_dam[unw] >= NWPN_SINGING_SWORD )
         {
+            switch ( you.inv_dam[unw] )
+            {
+              case NWPN_SINGING_SWORD:
+                mpr("The Singing Sword sighs.");
+                break;
+              case NWPN_WRATH_OF_TROG:
+                mpr("You feel less violent.");
+                break;
+              case NWPN_SCYTHE_OF_CURSES:
+                you.inv_plus[unw] = 50;
+                you.inv_plus2[unw] = 50;
+                break;
+              case NWPN_STAFF_OF_WUCAD_MU:
+                you.inv_plus[unw] = 50;
+                you.inv_plus2[unw] = 50;
+                miscast_effect(SPTYP_DIVINATION, 9, 90, 100);
+                break;
+              default:
+                break;
+            }
 
-        case 1:
-            strcpy(info, "The Singing Sword sighs.");
-            mpr(info);
-            break;
+            you.special_wield = SPWLD_NONE;
 
-        case 2:
-            strcpy(info, "You feel less violent.");
-            mpr(info);
-            break;
-
-        case 3:
-            you.inv_plus[unw] = 50;
-            you.inv_plus2[unw] = 50;
-            break;
-
-        case 13:                /* staff of Olgreb */
-            /*                you.res_poison --;
-               you.spec_poison --;
-               you.mag_abil --; */
-            break;
-
-        case 14:                /* vampire's tooth */
-            // you.hunger_inc -= 9;
-            break;
-
-        case 15:                /* staff of Wucad Mu */
-            you.inv_plus[unw] = 50;
-            you.inv_plus2[unw] = 50;
-            miscast_effect(19, 9, 90, 100);
-            break;
-
-        }
-        you.special_wield = 0;
-        return;
-    }
-    if (you.inv_class[unw] == 0 && you.inv_dam[unw] != 0)
-    {
-
-        if (you.inv_ident[unw] == 1)
-            you.inv_ident[unw] = 2;
-
-        item_name(you.inv_plus2
-                  [unw], you.inv_class
-                  [unw], you.inv_type
-                  [unw], you.inv_dam
-                  [unw], you.inv_plus
-             [unw], you.inv_quantity[unw], you.inv_ident[unw], 4, str_pass);
-        strcpy(info, str_pass);
-
-        char i_dam = you.inv_dam[unw] % 30;
-
-        if (you.inv_dam[unw] % 30 >= 25)
-        {
-            i_dam = randart_wpn_properties(you.inv_class[unw],
-                                        you.inv_type[unw], you.inv_dam[unw],
-                       you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_BRAND);
+            return;
         }
 
-        switch (i_dam)
+        if ( you.inv_dam[unw] != SPWPN_NORMAL )
         {
-        case SPWPN_FLAMING:
-            strcat(info, " stops flaming.");
-            mpr(info);
-            break;
+            if ( you.inv_ident[unw] == 1 )
+              you.inv_ident[unw] = 2;
 
-        case SPWPN_FREEZING:
-            strcat(info, " stops glowing.");
-            mpr(info);
-            break;
+            in_name(unw, 4, str_pass);
+            strcpy(info, str_pass);
 
-        case SPWPN_HOLY_WRATH:
-            strcat(info, " stops glowing.");
-            mpr(info);
-            break;
+            char i_dam = (you.inv_dam[unw] % 30);
 
-        case SPWPN_ELECTROCUTION:
-            strcat(info, " stops crackling.");
-            mpr(info);
-            break;
+            if ( you.inv_dam[unw] % 30 >= SPWPN_RANDART_I )
+              i_dam = randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_BRAND);
 
-        case SPWPN_VENOM:
-            strcat(info, " stops dripping with poison.");
-            mpr(info);
-            break;
+            switch ( i_dam )
+            {
+              case SPWPN_FLAMING:
+                strcat(info, " stops flaming.");
+                mpr(info);
+                break;
 
-        case SPWPN_PROTECTION:
-            strcpy(info, "You feel less protected.");
-            mpr(info);
-            /*                player_AC() -= 5; */
-            you.redraw_armor_class = 1;
-            break;
+              case SPWPN_FREEZING:
+              case SPWPN_HOLY_WRATH:
+                strcat(info, " stops glowing.");
+                mpr(info);
+                break;
 
-            /* case 8: draining
-               case 9: speed, 10 slicing etc */
+              case SPWPN_ELECTROCUTION:
+                strcat(info, " stops crackling.");
+                mpr(info);
+                break;
 
-        case SPWPN_VAMPIRICISM:
-            mpr("You feel the strange hunger wane.");
-            // you.hunger_inc -= 6;
-            //      mpr(info);
-            break;
+              case SPWPN_VENOM:
+                strcat(info, " stops dripping with poison.");
+                mpr(info);
+                break;
 
-        case SPWPN_DISTORTION:
-            miscast_effect(20, 9, 90, 100);
-            break;
+              case SPWPN_PROTECTION:
+                mpr("You feel less protected.");
+                you.redraw_armor_class = 1;
+                break;
 
-            /* when more are added here, *must* duplicate unwielding effect in
-               vorpalise weapon scroll effect in read_scoll */
+              case SPWPN_VAMPIRICISM:
+                mpr("You feel the strange hunger wane.");
+                break;
 
+                /* case 8: draining
+                   case 9: speed, 10 slicing etc */
 
-        }                       /* end of switch */
+              case SPWPN_DISTORTION:
+                if ( you.skills[SK_TRANSLOCATIONS] < random2(9) )    //jmf: added save
+                  miscast_effect(SPTYP_TRANSLOCATION, 9, 90, 100);
+                else
+                  miscast_effect(SPTYP_TRANSLOCATION, 1, 10, 100);
+                break;
 
-        if (you.inv_dam[unw] % 30 >= 25)
-        {
-            unuse_randart(unw);
-        }
+    // when more are added here, *must* duplicate unwielding
+    // effect in vorpalise weapon scroll effect in read_scoll
 
-        if (you.duration
-            [DUR_VORPAL_BLADE] != 0 || you.duration
-            [DUR_FIRE_BRAND] != 0 || you.duration
-            [DUR_ICE_BRAND] != 0 || you.duration[DUR_LETHAL_INFUSION] != 0 || you.duration[DUR_POISON_WEAPON] != 0
-            )
-        {
-            you.duration[DUR_VORPAL_BLADE] = 0;
-            you.duration[DUR_FIRE_BRAND] = 0;
-            you.duration[DUR_ICE_BRAND] = 0;
-            you.duration[DUR_LETHAL_INFUSION] = 0;
-            you.duration[DUR_POISON_WEAPON] = 0;
-            //  you.inv_dam [unw] = (you.inv_dam [unw] / 30) * 30;
-            you.inv_dam[unw] -= you.inv_dam[unw] % 30;
-            mpr("Your branding spell evaporates.");
-        }
+            }        // end switch
+
+            if ( you.inv_dam[unw] % 30 >= SPWPN_RANDART_I )
+              unuse_randart(unw);
+
+            if ( you.duration[DUR_WEAPON_BRAND] )
+              {
+                you.duration[DUR_WEAPON_BRAND] = 0;
+                you.inv_dam[unw] -= you.inv_dam[unw] % 30;
+                mpr("Your branding evaporates.");
+              }
+
+        }    // end if
+
     }
 
-    if (you.inv_class[you.equip[EQ_WEAPON]] == 11)
-    {
-        switch (you.inv_type[you.equip[EQ_WEAPON]])
-        {
-        case STAFF_WIZARDRY:    /* wizardry */
-            /* you.mag_abil -= 4; */
-            break;
 
-        case STAFF_POWER:       /* magic */
+    if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES )
+    {
+        if ( you.inv_type[you.equip[EQ_WEAPON]] == STAFF_POWER )
+        {
             you.max_magic_points -= 13;
             you.base_magic_points2 -= 13;
-            if (you.magic_points > you.max_magic_points)
-                you.magic_points = you.max_magic_points;
-            you.redraw_magic_points = 1;
-            /* you.magic_battery --; */
-            calc_ep();
-            break;
 
-        case STAFF_FIRE:        /* fire */
-            /*        you.spec_fire --;
-               player_res_fire(you) --; */
-            break;
+            if ( you.magic_points > you.max_magic_points )
+              you.magic_points = you.max_magic_points;
 
-        case STAFF_COLD:        /* cold */
-            /* you.spec_cold --;
-               player_res_cold(you) --; */
-            break;
-
-        case STAFF_POISON:
-            /* you.spec_poison --;
-               you.res_poison --; */
-            break;
-
-        case STAFF_ENERGY:
-            /* you.energy --; */
-            break;
-
-        case STAFF_DEATH:
-            // you.spec_death --;
-            break;
-
-        case STAFF_CONJURATION:
-            // you.spec_conj --;
-            break;
-
-        case STAFF_ENCHANTMENT:
-            // you.spec_ench --;
-            break;
-
-        case STAFF_SUMMONING_I:
-            // you.spec_summ --;
-            break;
-
-        case STAFF_AIR:
-            // you.attribute[ATTR_RESIST_LIGHTNING]--;     /* res elec */
-            break;
-
-        case STAFF_EARTH:
-            break;
-
+            calc_mp();
         }
     }
-    /* end if inv_cla == 11 */
-}                               /* end of unwield_item */
+
+    return;
+
+}          // end unwield_item()
 
 
 
-void unwear_armour(char unw)
-{                               /* This does *not* call ev_mod! */
+
+// This does *not* call ev_mod!
+void unwear_armour( char unw )
+{
+
     you.redraw_armor_class = 1;
     you.redraw_evasion = 1;
 
-    switch (you.inv_type[unw])
+    switch ( you.inv_dam[unw] % 30 )
     {
-    case ARM_DRAGON_ARMOUR:
-        /* player_res_fire(you) --;
-           player_res_cold(you) ++; */
+      case SPARM_RUNNING:
+        mpr("You feel rather sluggish.");
         break;
 
-    case ARM_TROLL_LEATHER_ARMOUR:
-        /* you.rate_regen -= 50; */
-        // you.hunger_inc -= 1;
+      case SPARM_FIRE_RESISTANCE:
+          mpr("\"Was it this warm in here before?\"");
         break;
 
-    case ARM_ICE_DRAGON_ARMOUR:
-        /* player_res_fire(you) ++;
-           player_res_cold(you) --; */
+      case SPARM_COLD_RESISTANCE:
+          mpr("You catch a bit of a chill.");
         break;
 
-    case ARM_STORM_DRAGON_ARMOUR:       /* storm dragon */
-        // you.attribute[ATTR_RESIST_LIGHTNING]--;
+      case SPARM_POISON_RESISTANCE:
+        if ( !player_res_poison() )
+          mpr("You feel less healthy.");
         break;
 
-    case ARM_GOLD_DRAGON_ARMOUR:        /* gold dragon */
-        /*                 player_res_fire(you) --;
-           player_res_cold(you) --;
-           you.res_poison --; */
-        break;
-    }
-
-    switch (you.inv_dam[unw] % 30)
-    {
-    case SPARM_RUNNING:
-        strcpy(info, "You feel rather sluggish.");
-        mpr(info);
-        /*  you.fast_run --; */
+      case SPARM_SEE_INVISIBLE:
+        if ( !player_see_invis() )
+          mpr("You feel less perceptive.");
         break;
 
-    case SPARM_FIRE_RESISTANCE:
-        //  player_res_fire(you) --;
-        strcpy(info, "You feel less resistant to fire.");
-        mpr(info);
+      case SPARM_DARKNESS:    // I do not understand this {dlb}
+        if ( you.invis )
+          you.invis = 1;
         break;
 
-    case SPARM_COLD_RESISTANCE:
-        //  player_res_cold(you) --;
-        if (player_res_cold() == 0)
-        {
-            strcpy(info, "You feel less resistant to cold.");
-            mpr(info);
-        }
+      case SPARM_STRENGTH:
+        decrease_stats(STAT_STRENGTH, 3, false);
         break;
 
-    case SPARM_POISON_RESISTANCE:
-        //  you.res_poison --;
-        if (player_res_poison() == 0)
-        {
-            strcpy(info, "You feel less healthy.");
-            mpr(info);
-        }
+      case SPARM_DEXTERITY:
+        decrease_stats(STAT_DEXTERITY, 3, false);
         break;
 
-    case SPARM_SEE_INVISIBLE:
-        /*  you.see_invis ++; */
-        if (player_see_invis() == 0)
-        {
-            strcpy(info, "You feel less perceptive.");
-            mpr(info);
-        }
+      case SPARM_INTELLIGENCE:
+        decrease_stats(STAT_INTELLIGENCE, 3, false);
         break;
 
-    case SPARM_DARKNESS:        /* invisibility */
-        // you.invis ++;
-        if (you.invis != 0)
-            you.invis = 1;
-        // you.hunger_inc -= 7;
-        break;
-
-    case SPARM_STRENGTH:
-        strcpy(info, "You feel weak.");
-        mpr(info);
-        you.strength -= 3;
-        you.max_strength -= 3;
-        you.redraw_strength = 1;
-        break;
-
-    case SPARM_DEXTERITY:
-        strcpy(info, "You feel clumsy.");
-        mpr(info);
-        you.dex -= 3;
-        you.max_dex -= 3;
-        you.redraw_dexterity = 1;
-        break;
-
-    case SPARM_INTELLIGENCE:
-        strcpy(info, "You feel dopey.");        /* inspired messages, aren't they? */
-        mpr(info);
-        you.intel -= 3;
-        you.max_intel -= 3;
-        you.redraw_intelligence = 1;
-        break;
-
-    case SPARM_PONDEROUSNESS:
-        strcpy(info, "You feel rather less ponderous.");
+      case SPARM_PONDEROUSNESS:
+        mpr("That put a bit of spring back into your step.");
         you.speed -= 2;
-        you.redraw_evasion = 1;
         break;
 
-    case SPARM_LEVITATION:      /* levitation */
-        //        you.levitation ++;
-        if (you.levitation != 0)
-            you.levitation = 1;
+      case SPARM_LEVITATION:
+        //you.levitation++;
+        if ( you.levitation )
+          you.levitation = 1;
         break;
 
-    case SPARM_MAGIC_RESISTANCE:
-        strcpy(info, "You feel less resistant to magic.");
-        mpr(info);
-        /* you.res_magic -= 40; */
+      case SPARM_MAGIC_RESISTANCE:
+        mpr("You feel less resistant to magic.");
         break;
 
-    case SPARM_PROTECTION:
-        strcpy(info, "You feel less protected.");
-        mpr(info);
-        // player_AC(you) -= 3;
+      case SPARM_PROTECTION:
+        mpr("You feel less protected.");
         break;
 
-    case SPARM_STEALTH:
-        strcpy(info, "You feel less stealthy.");
-        mpr(info);
+      case SPARM_STEALTH:
+        mpr("You feel less stealthy.");
         break;
 
-    case SPARM_RESISTANCE:
-        strcpy(info, "You feel all hot and cold.");
-        mpr(info);
-        // player_res_cold(you) --;
-        // player_res_fire(you) --;
+      case SPARM_RESISTANCE:
+        mpr("You feel hot and cold all over.");
         break;
 
-    case SPARM_POSITIVE_ENERGY:
-        strcpy(info, "You feel vulnerable.");
-        mpr(info);
-        // player_prot_life(you) --;
+      case SPARM_POSITIVE_ENERGY:
+        mpr("You feel vulnerable.");
         break;
 
-    case SPARM_ARCHMAGI:
-        strcpy(info, "You feel strangely numb.");
-        mpr(info);
-        /* you.mag_abil -= 2;
-           you.spec_conj --;
-           you.spec_ench --;
-           you.spec_summ --;
-           you.spec_death --; */
+      case SPARM_ARCHMAGI:
+        mpr("You feel strangely numb.");
         break;
     }
 
-    if (you.inv_dam[unw] % 30 >= 25)
-        unuse_randart(unw);
-}                               /* end of unwear_armour */
+    if ( you.inv_dam[unw] % 30 >= SPARM_RANDART_I )
+      unuse_randart(unw);
+
+    return;
+
+}          // end unwear_armour()
 
 
-void unuse_randart(unsigned char unw)
+
+
+void unuse_randart( unsigned char unw )
 {
 
     if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_AC) != 0)
     {
-        //  mpr("You feel vulnerable.");
         you.redraw_armor_class = 1;
     }
 
     if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_EVASION) != 0)
     {
-        //  mpr("You feel like a sitting duck.");
         you.redraw_evasion = 1;
     }
 
     if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_STRENGTH) != 0)
     {
-        //  mpr("You feel weak.");
-        you.redraw_strength = 1;
         you.strength -= randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_STRENGTH);
         you.max_strength -= randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_STRENGTH);
+        you.redraw_strength = 1;
     }
 
     if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_INTELLIGENCE) != 0)
     {
-        //  mpr("You feel dopey.");
-        you.redraw_intelligence = 1;
         you.intel -= randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_INTELLIGENCE);
         you.max_intel -= randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_INTELLIGENCE);
+        you.redraw_intelligence = 1;
     }
 
     if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_DEXTERITY) != 0)
     {
-        //  mpr("You feel clumsy.");
-        you.redraw_dexterity = 1;
         you.dex -= randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_DEXTERITY);
         you.max_dex -= randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_DEXTERITY);
+        you.redraw_dexterity = 1;
     }
-
-    // Handled by player_res_electricity()
-    // if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_ELECTRICITY) != 0)
-    // {
-    //  mpr("You feel vulnerable to electricity.");
-    //     you.attribute[ATTR_RESIST_LIGHTNING]--;
-    // }
-
-// This should now be handled in player_hunger_rate()
-    //    if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_METABOLISM) != 0)
-    //    {
-    //        you.hunger_inc -= randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_METABOLISM);
-    //    }
-
 
     if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_NOISES) != 0)
     {
         you.special_wield = SPWLD_NONE;
     }
-}
+
+}          // end unuse_randart()

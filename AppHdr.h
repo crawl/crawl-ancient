@@ -3,19 +3,21 @@
  *  Summary:    Precompiled header used by Crawl.
  *  Written by: Jesse Jones
  *
- *  Abstract:   CodeWarrior and MSVC both support precompiled headers which can
- *              significantly speed up compiles. Unlike CodeWarrior MSVC imposes
- *              some annoying restrictions on precompiled headers: the precompiled
- *              header *must* be the first include in all cc files. Any includes or
- *              other statements that occur before the pch include are ignored. This
- *              is really stupid and can lead to bizarre errors, but it does mean
- *              that we shouldn't run into any problems on systems without precompiled
- *              headers.
+ * Abstract: CodeWarrior and MSVC both support precompiled headers which can
+ *      significantly speed up compiles. Unlike CodeWarrior MSVC imposes
+ *      some annoying restrictions on precompiled headers: the precompiled
+ *      header *must* be the first include in all cc files. Any includes or
+ *      other statements that occur before the pch include are ignored. This
+ *      is really stupid and can lead to bizarre errors, but it does mean
+ *      that we shouldn't run into any problems on systems without precompiled
+ *      headers.
  *
  *  Copyright © 1999 Jesse Jones.
  *
  *  Change History (most recent first):
  *
+ *       <6>    24mar2000   jmf     Added a whole slew of new options, which
+ *                                  ought to be mandatory :-)
  *       <5>     10/12/99   BCR     Added USE_NEW_RANDOM #define
  *       <4>     9/25/99    CDL     linuxlib -> liblinux
  *       <3>     6/18/99    BCR     Moved the CHARACTER_SET #define here from
@@ -29,6 +31,8 @@
  *                                  linuxlib.cc
  *       <1>     5/30/99    JDJ     Created (from config.h)
  */
+
+
 #ifndef APPHDR_H
 #define APPHDR_H
 
@@ -42,11 +46,12 @@
 // =========================================================================
 
 #ifdef SOLARIS
-    // Most of the linux stuff applies, and so we want it
+ // Most of the linux stuff applies, and so we want it
 #define LINUX
 #define PLAIN_TERM
 #include "liblinux.h"
-    // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
+
+ // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
 #define CHARACTER_SET           0
 
 #define USE_CURSES
@@ -77,8 +82,9 @@
 // Define plain_term for linux and similar, and dos_term for DOS and EMX.
 #elif defined(LINUX)
 #define PLAIN_TERM
-#define CHARACTER_SET           0
-#define USE_ASCII_CHARACTERS
+#define CHARACTER_SET           A_ALTCHARSET
+//#define CHARACTER_SET           0
+//#define USE_ASCII_CHARACTERS
 
 #define USE_CURSES
 #define EOL "\n"
@@ -99,7 +105,7 @@
 #elif _MSC_VER >= 1100
 #include <string>
 #include "WinHdr.h"
-#error MSVC isn''t supported yet
+#error MSVC is not supported yet
 #define CHARACTER_SET           A_ALTCHARSET
 
 // macintosh is predefined on all the common Mac compilers
@@ -130,10 +136,10 @@
 // =========================================================================
 //  Debugging Defines
 // =========================================================================
-#ifdef _DEBUG                   // this is how MSVC signals a debug build
-#define DEBUG                   1
+#ifdef _DEBUG       // this is how MSVC signals a debug build
+#define DEBUG       1
 #else
-//  #define DEBUG                   0           // leave this undefined for those lamers who use #ifdef
+//  #define DEBUG   0 // leave this undefined for those lamers who use #ifdef
 #endif
 
 #if DEBUG
@@ -163,20 +169,17 @@
 // #define SEPARATE_SELECTION_SCREENS_FOR_SUBSPECIES
 
 // Uncomment this line to allow the player to select his draconian's colour.
-// #define ALLOW_DRACONIAN_TYPE_SELECTION
+#define ALLOW_DRACONIAN_TYPE_SELECTION
 
 // if this works out okay, eventually we can change this to USE_OLD_RANDOM
 #define USE_NEW_RANDOM
-
-// Uncomment this to make Xom's messages appear in yellow
-#define XOM_ACTS_YELLOW
 
 // Uncomment this if you find the labyrinth to be buggy and what to
 // remove it from the game.
 // #define SHUT_LABYRINTH
 
 // Define MACRO if you want to use the macro patch in macro.cc.
-#define MACROS
+// #define MACROS
 
 // Set this to the number of runes that will be required to enter Zot's
 // domain.  You shouldn't set this really high unless you want to
@@ -187,6 +190,52 @@
 
 // Number of top scores to keep.
 #define SCORE_FILE_ENTRIES      100
+
+
+// ================================================= --------------------------
+//jmf: New defines for a bunch of optional features.
+// ================================================= --------------------------
+
+// Give Grey elves a "glamour" ability (random confuse, charm, sleep humanoids)
+#define USE_ELVISH_GLAMOUR_ABILITY
+
+// Give Wizards better starting spellbooks
+#define USE_BETTER_MINOR_MAGIC_BOOKS
+
+// New cloud code
+#define USE_NEW_CLOUD_CODE
+
+// New silence code -- seems to actually work! Use it!
+#define USE_SILENCE_CODE
+
+// Transformation && (Species + Mutation) AC Bonuses NOT Cumulative
+#define USE_HARDER_AC_RULES
+
+// Branch-tailored altar selection
+#define USE_NEW_ALTAR_CODE
+
+// A few new mini-vaults, featuring altars
+#define USE_NEW_MINIVAULTS
+
+// Use special colours for all god-related messages
+#define USE_GOD_COLOURS
+
+// Wizard death option (needed to test new death messages)
+#define USE_OPTIONAL_WIZARD_DEATH
+
+// Lighter scrolls, rings, potions and spellbooks
+#define USE_LIGHTER_MAGIC_ITEMS
+
+// Better torment code
+#define USE_NEW_TORMENT_CODE
+
+// Semi-Controlled Blink
+#define USE_SEMI_CONTROLLED_BLINK
+
+// ====================== -----------------------------------------------------
+//jmf: end of new defines
+// ====================== -----------------------------------------------------
+
 
 #ifdef SOLARIS
     // Define SAVE_DIR to the directory where saves, bones, and score file
@@ -210,11 +259,11 @@
     //
     // Comment these lines out if you want to leave the save files uncompressed.
     //
-#define SAVE_PACKAGE_CMD    "/opt/bin/zip -m -q -j -1 %s.zip %s.*"
+//#define SAVE_PACKAGE_CMD    "/opt/bin/zip -m -q -j -1 %s.zip %s.*"
 
-#define LOAD_UNPACKAGE_CMD  "/opt/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
+//#define LOAD_UNPACKAGE_CMD  "/opt/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
 
-#define PACKAGE_SUFFIX      ".zip"
+//#define PACKAGE_SUFFIX      ".zip"
 
     // This provides some rudimentary protection against people using
     // save file cheats on multi-user systems.
@@ -223,10 +272,11 @@
 #endif
 
 
-// ===================================================================================
+// ===========================================================================
 //  Misc
-// ===================================================================================
+// ===========================================================================
 #if HAS_NAMESPACES
+
 using namespace std;
 
 #endif
@@ -237,4 +287,4 @@ inline void UNUSED(const volatile T &)
 }                               // Note that this generates no code with CodeWarrior or MSVC (if inlining is on).
 
 
-#endif // APPHDR_H
+#endif

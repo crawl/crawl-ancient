@@ -7,6 +7,8 @@
  *
  *               <1>     -/--/--        JS              Created
  */
+
+
 #ifndef MACRO_H
 #define MACRO_H
 
@@ -15,7 +17,9 @@
 #define getch() getchm()
 #endif
 
+
 #include "llist.h"
+
 
 typedef struct
 {
@@ -26,15 +30,16 @@ typedef struct
 }
 macro_s;
 
-int macro_init(void);
-int macro_save(void);
+
+int *i_strcpy(int *, int *);
+int getchm(void);
+int i_strcmp(int *, int *);
+int i_strlen(int *);
+int kbhit2();
 int macro_add(int *, int *);
 int macro_add_query(void);
-int getchm(void);
-int i_strlen(int *);
-int i_strcmp(int *, int *);
-int *i_strcpy(int *, int *);
+int macro_init(void);
+int macro_save(void);
 
-int kbhit2();
 
 #endif

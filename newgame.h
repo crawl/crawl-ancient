@@ -8,9 +8,16 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+
 #ifndef NEWGAME_H
 #define NEWGAME_H
 
-char new_game(void);
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr
+ * *********************************************************************** */
+bool new_game(void);
+
 
 #endif

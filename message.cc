@@ -13,6 +13,8 @@
 #include "AppHdr.h"
 #include "message.h"
 
+#include <string.h>
+
 #ifdef DOS
 #include <conio.h>
 #endif
@@ -23,25 +25,23 @@
 
 #include "externs.h"
 
-#include <string.h>
-
 #ifdef MACROS
 #include "macro.h"
 #endif
 
-void more(void);
 
-char scrloc = 1;                /* Line of next (previous?) message */
+char scrloc = 1;                // line of next (previous?) message
+char store_message[30][200];    // buffer of old messages
+char store_count = 0;           // current position in store_message
+char message_colour;            // colour to print the next message
 
-char store_message[30][200];    /* buffer of old messages */
-char store_count = 0;           /* current position in store_message */
 
-char message_colour;            /* What colour to print the next message */
 
-void mpr(const char *inf)
+
+void mpr( const char *inf )
 {
-    char inf_screens = 0;
 
+    char inf_screens = 0;
     char info2[80];
 
     you.running = 0;
@@ -52,8 +52,7 @@ void mpr(const char *inf)
 
     textcolor(LIGHTGREY);
 
-//if (scrloc == 8)
-    if (scrloc == NUMBER_OF_LINES - 18)
+    if ( scrloc == NUMBER_OF_LINES - 18 )     // ( scrloc == 8 )
     {
 
 #ifdef PLAIN_TERM
@@ -61,10 +60,11 @@ void mpr(const char *inf)
         _setcursortype(_NORMALCURSOR);
         textcolor(LIGHTGREY);
 
-// cdl -- cprintf("\r--more--");
+        // cdl -- cprintf("\r--more--");
 #ifdef DOS
         cprintf(EOL);
 #endif
+
         cprintf("--more--");
 
         char keypress = 0;
@@ -73,11 +73,12 @@ void mpr(const char *inf)
         {
             keypress = getch();
         }
-        while (keypress != 32 && keypress != 13);
+        while ( keypress != 32 && keypress != 13 );
 
         int startLine = 18;
 
         gotoxy(1, startLine);
+
 #ifdef USE_CURSES
         clrtobot();
 #else
@@ -86,10 +87,9 @@ void mpr(const char *inf)
         for (int i = 0; i < numLines; i++)
         {
             cprintf("                                                                               ");
-            if (i < numLines - 1)
-            {
-                cprintf(EOL);
-            }
+
+            if ( i < numLines - 1 )
+              cprintf(EOL);
         }
 #endif
 #endif
@@ -99,11 +99,11 @@ void mpr(const char *inf)
         more();
         window(1, 1, 80, 25);
 #endif
+
         scrloc = 0;
     }
 
-//gotoxy(1, scrloc + 17);
-    gotoxy(1, scrloc + 18);
+    gotoxy(1, scrloc + 18);     // (1, scrloc + 17)
     strncpy(info2, inf, 78);
     info2[78] = 0;
     textcolor(message_colour);
@@ -111,22 +111,29 @@ void mpr(const char *inf)
     message_colour = LIGHTGREY;
     textcolor(LIGHTGREY);
 
-/* Put the message into store_message, and move the '---' line forward */
+    /* Put the message into store_message, and move the '---' line forward */
     strncpy(store_message[store_count], inf, 78);
     store_count++;
-    if (store_count > 23)
-        store_count -= 24;
+
+    if ( store_count > 23 )
+      store_count -= 24;
+
     strcpy(store_message[store_count], "------------------------------------------------------------------------------");
 
     inf_screens = 0;
 
     scrloc++;
 
-}                               // end of message function
+}          // end mpr()
 
-void mesclr()
+
+
+
+void mesclr( void )
 {
+
     _setcursortype(_NOCURSOR);
+
 #ifdef DOS_TERM
     window(1, 18, 78, 25);
     clrscr();
@@ -152,30 +159,36 @@ void mesclr()
         }
     }
 #endif
-
 #endif
 
     scrloc = 0;
     _setcursortype(_NORMALCURSOR);
     gotoxy(18, 9);
-}
+
+}          // end mseclr()
 
 
-void more()
+
+
+
+void more( void )
 {
     char keypress = 0;
 
 #ifdef PLAIN_TERM
     gotoxy(2, NUMBER_OF_LINES);
 #endif
+
 #ifdef DOS_TERM
     window(1, 18, 80, 25);
     gotoxy(2, 7);
 #endif
+
     _setcursortype(_NORMALCURSOR);
     textcolor(LIGHTGREY);
 
-// cdl -- cprintf("\r--more--");
+    //cdl -- cprintf("\r--more--");
+
 #ifdef DOS
     cprintf(EOL);
 #endif
@@ -185,17 +198,21 @@ void more()
     {
         keypress = getch();
     }
-    while (keypress != 32 && keypress != 13);
+    while ( keypress != 32 && keypress != 13 );
 
 /* Juho Snellman rewrote this part of the function: */
+
     keypress = 0;
+
 #ifdef DOS_TERM
     window(1, 18, 80, 25);
     clrscr();
 #endif
+
     /* clrscr() should be inside the DOS-define, and the message
      * buffer cleared in a different way for Linux to fix annoying
      * redraw bug whenever the more-prompt showed up. -- jsnell */
+
 #ifdef PLAIN_TERM
     int startLine = 18;
 
@@ -207,39 +224,25 @@ void more()
     int numLines = NUMBER_OF_LINES - startLine + 1;
 
     for (int i = 0; i < numLines; i++)
-    {
+      {
         cprintf("                                                                               ");
 
-        if (i < numLines - 1)
-        {
+        if ( i < numLines - 1 )
+          {
             cprintf(EOL);
-        }
-    }
+          }
+      }
 #endif
-
 #endif
 
     scrloc = 0;
-}
 
-
-
-/*
-   keypress = 0;
-   #ifdef DOS_TERM
-   window(1, 18, 80, 25);
-   #endif
-   clrscr();
-   scrloc = 0;
-
-   } */
+}          // end more()
 
 
 
 
-
-
-void replay_messages(void)
+void replay_messages( void )
 {
     _setcursortype(_NOCURSOR);
 
@@ -261,40 +264,44 @@ void replay_messages(void)
     line = 0;
 
     for (j = 0; j < 24; j++)
-    {
-        if (strncmp(store_message[j], "--------------", 10) == 0)
-        {
+      {
+        if ( strncmp(store_message[j], "--------------", 10) == 0 )
+          {
             line = j;
             break;
-        }
-    }
+          }
+      }
 
     i = line + 1;
-    if (i == 24)
-        i = 0;
+
+    if ( i == 24 )
+      i = 0;
 
     do
     {
         cprintf(store_message[i]);
         cprintf(EOL);
-        if (i == line)
-            break;
+
+        if ( i == line )
+          break;
+
         i++;
-        if (i == 24)
-            i = 0;
+
+        if ( i == 24 )
+          i = 0;
     }
-    while (1);
+    while ( 1 );
 
 /*
    for (i = 0; i < 24; i ++)
-   {
-   cprintf(store_message [i]);
-   cprintf("\n\r");
-   }
- */
-    if (getch() == 0)
-        getch();
+     {
+       cprintf(store_message [i]);
+       cprintf("\n\r");
+     }
+*/
 
+    if ( getch() == 0 )
+      getch();
 
 #ifdef DOS_TERM
     puttext(1, 1, 80, 25, buffer);
@@ -304,10 +311,14 @@ void replay_messages(void)
 
     return;
 
-}
+}          // end replay_messages()
 
 
-void set_colour(char set_message_colour)
+
+
+void set_colour( char set_message_colour )
 {
+
     message_colour = set_message_colour;
-}
+
+}          // end set_colour()

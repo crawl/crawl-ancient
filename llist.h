@@ -7,8 +7,11 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+
+
 #ifndef LLIST_H
 #define LLIST_H
+
 
 typedef struct node_s
 {
@@ -18,12 +21,16 @@ typedef struct node_s
 }
 node_s;
 
+
 node_s *new_node();
 node_s *new_list();
-int insert_node(node_s *, node_s *);
-int delete_node(node_s *);
+
+
 int delete_list(node_s *);
+int delete_node(node_s *);
+int insert_node(node_s *, node_s *);
 int move_node(node_s *, node_s *);
 int sort_list(node_s *);
 
-#endif /* LLIST_H */
+
+#endif

@@ -11,10 +11,13 @@
 #ifndef SPELLS_H
 #define SPELLS_H
 
-char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect);
-bool learn_a_spell(unsigned char splbook, char bitty);
-bool which_spellbook(void);
-void read_book(char book_read);
-void which_spell(void);
+
+// last updated 12may2000 {dlb}
+/* ***********************************************************************
+ * called from: acr - decks - fight - it_use2 - it_use3 - item_use - items -
+ *              misc - mstuff2 - religion - spell - spl-book - spells4
+ * *********************************************************************** */
+bool miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect);
+
 
 #endif

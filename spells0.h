@@ -8,19 +8,66 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+
 #ifndef SPELLS0_H
 #define SPELLS0_H
 
-int spell_hunger(int spell_value, unsigned char spell);
-int which_spell_in_book(int sbook_type, int spl);
-char spellbook_contents(unsigned char plus, unsigned char type);
-void spell_name(unsigned char spell, char spln[60]);
-char spell_value(unsigned char spell);
-bool spell_type(unsigned char spell, unsigned char typy);
-int spell_spec(int spell, int power);
+#include "enum.h"    // just for NUM_SPELL_TYPES {dlb}
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: chardump - spell - spl-book - spells0
+ * *********************************************************************** */
 char spell_fail(unsigned char spell);
-void print_slash(char already);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: command - spell - spells3
+ * *********************************************************************** */
 char spell_list(void);
-char undead_can_memorise(unsigned char spell);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spl-book
+ * *********************************************************************** */
+bool undead_cannot_memorise(unsigned char spell, unsigned char being);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spl-book - spells0
+ * *********************************************************************** */
+int spell_spec(int spell);
+
+
+// last updated 24may2000 {dlb}
+/* ***********************************************************************
+ * called from: spl-book - spells0
+ * *********************************************************************** */
+void print_slash(char already);
+
+
+// last updated 04jun2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells0
+ * *********************************************************************** */
+int spell_enhancement (int ar_typeflags[NUM_SPELL_TYPES]);
+
+
+// last updated 05jun2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells0
+ * *********************************************************************** */
+int set_spellflags (int which_spell, int ar_spelltypes[NUM_SPELL_TYPES]);
+
+
+// last updated 05jun2000 {dlb}
+/* ***********************************************************************
+ * called from: spell - spells0
+ * *********************************************************************** */
+int spell_type2skill (int which_spelltype);
+
 
 #endif

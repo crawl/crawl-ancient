@@ -15,50 +15,43 @@
 #include "AppHdr.h"
 #include "beam.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 #ifdef DOS
 #include <dos.h>
 #include <conio.h>
 #endif
 
-#include <stdlib.h>
-#include <string.h>
+#ifdef USE_CURSES
+#include <curses.h>
+#endif
+
 #include "externs.h"
 
 #include "bang.h"
-#include "direct.h"
 #include "effects.h"
 #include "fight.h"
 #include "it_use2.h"
 #include "itemname.h"
 #include "items.h"
-#include "levels.h"
-#include "message.h"
-#include "misc.h"
 #include "monstuff.h"
-#include "mstruct.h"
+#include "mon-util.h"
 #include "mstuff2.h"
 #include "ouch.h"
-#include "output.h"
 #include "player.h"
-#include "abyss.h"
-#include "shopping.h"
+#include "religion.h"
 #include "skills.h"
 #include "spells1.h"
-#include "spells2.h"
 #include "spells3.h"
+#include "spells4.h"
 #include "stuff.h"
 #include "view.h"
 
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
 
-int check_mons_resists(struct bolt beam[1], int o, int hurted);
-int check_mons_magres(int mn, int pow);
-int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1]);
-void naughty(char, int);
+void sticky_flame_monster(int mn, bool source, int power);
 
-// Up to line 1111
+
 
 
 /*
@@ -66,228 +59,241 @@ void naughty(char, int);
  *  multiple opponents. Eg firebolt, but not magic dart or thrown weapons.
  *  Should be merged with missile(), as there is a lot of redundant code here.
  */
-void beam(struct bolt beam[1])
+void beam( struct bolt *pbolt )
 {
+
     int beam_sign_x = 0;
     int beam_sign_y = 0;
-    float bmoy = 0;
     int bmax = 0;
+    float bmoy = 0;
     float bmay = 0;
     int n, o;
-
+    struct monsters *monster = 0;    // NULL {dlb}
     char clouty = 0;
-
-    char crumble = 0;
+    bool crumble = false;
     char bounce = 0;
-
     int hurted = 0;
 
-    beam[0].bx = beam[0].source_x;
-    beam[0].by = beam[0].source_y;
+    pbolt->bx = pbolt->source_x;
+    pbolt->by = pbolt->source_y;
 
-    if (beam[0].move_x > 0)
-        beam_sign_x = 1;
-    else if (beam[0].move_x < 0)
+    if ( pbolt->move_x > 0 )
+      beam_sign_x = 1;
+    else if ( pbolt->move_x < 0 )
     {
         beam_sign_x = -1;
-        beam[0].move_x *= -1;
+        pbolt->move_x *= -1;
     }
 
-    if (beam[0].move_y > 0)
-        beam_sign_y = 1;
-    else if (beam[0].move_y < 0)
+    if ( pbolt->move_y > 0 )
+      beam_sign_y = 1;
+    else if ( pbolt->move_y < 0 )
     {
         beam_sign_y = -1;
-        beam[0].move_y *= -1;
+        pbolt->move_y *= -1;
     }
 
-    if (beam[0].move_x > 1 || beam[0].move_y > 1 || beam[0].move_x < -1 || beam[0].move_y < -1)
+    if ( pbolt->move_x > 1 || pbolt->move_x < -1
+          || pbolt->move_y > 1 || pbolt->move_y < -1 )
     {
 
-        bmoy = beam[0].move_y;
+        bmoy = pbolt->move_y;
 
-        if (beam[0].move_x > beam[0].move_y)
+        if ( pbolt->move_x > pbolt->move_y )
         {
-            if (beam_sign_x == 1)
-                bmay = (float) (beam[0].move_y) / (beam[0].move_x + 1);
-            if (beam_sign_x == -1)
-                bmay = (float) (beam[0].move_y) / (beam[0].move_x + 1);
+            if ( beam_sign_x == 1 )
+              bmay = (float) (pbolt->move_y) / (pbolt->move_x + 1);
+            if ( beam_sign_x == -1 )
+              bmay = (float) (pbolt->move_y) / (pbolt->move_x + 1);
             bmax = 1;
         }
         else
         {
-            if (beam_sign_y == 1)
-                bmay = (float) (beam[0].move_x) / (beam[0].move_y + 1);
-            if (beam_sign_y == -1)
-                bmay = (float) (beam[0].move_x) / (beam[0].move_y + 1);
+            if ( beam_sign_y == 1 )
+              bmay = (float) (pbolt->move_x) / (pbolt->move_y + 1);
+            if ( beam_sign_y == -1 )
+              bmay = (float) (pbolt->move_x) / (pbolt->move_y + 1);
             bmax = 2;
         }
         bmoy = 1;
     }                           //else beam_inc = 0;
 
-    for (n = 1; n < beam[0].range; n++)
+    for (n = 1; n < pbolt->range; n++)
     {
-        if (beam[0].beam_name[0] == '0' && beam[0].flavour != BEAM_MAGIC)
-            return;
+        if ( pbolt->beam_name[0] == '0' && pbolt->flavour != BEAM_MAGIC )
+          return;
 
-        beam[0].move_x = beam_sign_x;
-        beam[0].move_y = beam_sign_y;
+        pbolt->move_x = beam_sign_x;
+        pbolt->move_y = beam_sign_y;
 
-
-        if (bmax == 1)
+        if ( bmax == 1 )
         {
-            beam[0].move_x = beam_sign_x;
+            pbolt->move_x = beam_sign_x;
             bmoy += bmay;
-            if (bmoy >= 1)
+            if ( bmoy >= 1 )
             {
-                beam[0].move_y = beam_sign_y;
-                bmoy -= 1;
+                pbolt->move_y = beam_sign_y;
+                bmoy--;
             }
             else
-                beam[0].move_y = 0;
+              pbolt->move_y = 0;
         }
 
 
-
-        if (bmax == 2)
+        if ( bmax == 2 )
         {
-            beam[0].move_y = beam_sign_y;
+            pbolt->move_y = beam_sign_y;
             bmoy += bmay;
-            if (bmoy >= 1)
+            if ( bmoy >= 1 )
             {
-                beam[0].move_x = beam_sign_x;
-                bmoy -= 1;
+                pbolt->move_x = beam_sign_x;
+                bmoy--;
             }
             else
-                beam[0].move_x = 0;
+              pbolt->move_x = 0;
         }
 
-        if (strcmp(beam[0].beam_name, "blast of poison") == 0)
+        if ( strcmp(pbolt->beam_name, "blast of poison") == 0 )
         {
-            if (beam[0].thing_thrown != KILL_MON)
-                place_cloud(CLOUD_POISON, beam[0].bx, beam[0].by, random2(4) + 2);
+            if ( pbolt->thing_thrown != KILL_MON )
+              place_cloud(CLOUD_POISON, pbolt->bx, pbolt->by, random2(4) + 2);
             else
-                place_cloud(CLOUD_POISON_MON, beam[0].bx, beam[0].by, random2(4) + 2);
+              place_cloud(CLOUD_POISON_MON, pbolt->bx, pbolt->by, random2(4) + 2);
+
+            if ( pbolt->bx == pbolt->target_x && pbolt->by == pbolt->target_y )
+            {
+                if (pbolt->thing_thrown != KILL_MON)
+                    big_cloud(CLOUD_POISON, pbolt->bx, pbolt->by, 0, 9);
+                else
+                    big_cloud(CLOUD_POISON_MON, pbolt->bx, pbolt->by, 0, 9);
+
+                pbolt->aim_down = 0;
+
+                return;
+            }
         }
 
-        if (strcmp(beam[0].beam_name, "blast of poison") == 0 && beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y)
+        if (pbolt->colour == BROWN && pbolt->beam_name[0] == '0')
         {
-            if (beam[0].thing_thrown != KILL_MON)
-                big_cloud(CLOUD_POISON, beam[0].bx, beam[0].by, 0);
-            else
-                big_cloud(CLOUD_POISON_MON, beam[0].bx, beam[0].by, 0);
-            beam[0].aim_down = 0;
-            return;
-        }
-
-        if (beam[0].colour == BROWN && beam[0].beam_name[0] == '0')
-        {
-            beam[0].bx += beam[0].move_x;
-            beam[0].by += beam[0].move_y;
+            pbolt->bx += pbolt->move_x;
+            pbolt->by += pbolt->move_y;
 
 //#ifndef WIZARD
-            if (grd[beam[0].bx][beam[0].by] == DNGN_STONE_WALL || grd[beam[0].bx][beam[0].by] == DNGN_METAL_WALL || beam[0].bx <= 5 || beam[0].by <= 5 || beam[0].bx >= GXM - 5 || beam[0].by >= GYM - 5)
+            if ( grd[pbolt->bx][pbolt->by] == DNGN_STONE_WALL
+                  || grd[pbolt->bx][pbolt->by] == DNGN_METAL_WALL
+                  || pbolt->bx <= 5 || pbolt->bx >= (GXM - 5)
+                  || pbolt->by <= 5 || pbolt->by >= (GYM - 5) )
             {
-                beam[0].aim_down = 0;
+                pbolt->aim_down = 0;
                 return;
             }
 //#else
-            if (beam[0].bx < 0 || beam[0].by < 0 || beam[0].bx > GXM - 1 || beam[0].by > GYM - 1)
+            if ( pbolt->bx < 0  || pbolt->bx > (GXM - 1)
+                  || pbolt->by < 0 || pbolt->by > (GYM - 1) )
             {
-                beam[0].aim_down = 0;
+                pbolt->aim_down = 0;
                 return;
             }
 //#endif
-            if (grd[beam[0].bx][beam[0].by] == DNGN_ROCK_WALL)
+            if ( grd[pbolt->bx][pbolt->by] == DNGN_ROCK_WALL )
             {
-                grd[beam[0].bx][beam[0].by] = DNGN_FLOOR;
-                if (crumble == 0)       // && see_grid(beam[0].bx, beam[0].by) )
+                grd[pbolt->bx][pbolt->by] = DNGN_FLOOR;
 
+                if ( !crumble )       // && see_grid(pbolt->bx, pbolt->by) )
                 {
                     mpr("You hear a grinding noise.");
-                    crumble = 1;
-                    beam[0].wand_id = 1;
+                    crumble = true;
+                    pbolt->wand_id = 1;
                 }
+
             }
         }
-        else if (grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] >= MINMOVE)
+        else if ( grd[pbolt->bx + pbolt->move_x][pbolt->by + pbolt->move_y] >= MINMOVE )
         {
-            beam[0].bx += beam[0].move_x;
-            beam[0].by += beam[0].move_y;
+            pbolt->bx += pbolt->move_x;
+            pbolt->by += pbolt->move_y;
         }
         else
         {
 
-/*              if (beam[0].flavour == BEAM_EXPLOSION)
+/*              if (pbolt->flavour == BEAM_EXPLOSION)
    {
-   explosion1(beam);
-   beam[0].aim_down = 0;
+   explosion1(pbolt);
+   pbolt->aim_down = 0;
    return;
    } */
-            if ((beam[0].colour == WHITE && beam[0].flavour != BEAM_COLD
-                 && beam[0].hit >= 15) || beam[0].flavour == BEAM_NUKE)
+            if ((pbolt->colour == WHITE && pbolt->flavour != BEAM_COLD
+                 && pbolt->hit >= 15) || pbolt->flavour == BEAM_NUKE)
                 /* disintegration (or powerful disruption), eye of devastation */
             {
-                if ((grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] == DNGN_ROCK_WALL || grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] == DNGN_WAX_WALL) && !(beam[0].bx <= 6 || beam[0].by <= 6 || beam[0].bx >= GXM - 6 || beam[0].by >= GYM - 6))
+                if ( ( grd[pbolt->bx + pbolt->move_x][pbolt->by + pbolt->move_y] == DNGN_ROCK_WALL || grd[pbolt->bx + pbolt->move_x][pbolt->by + pbolt->move_y] == DNGN_WAX_WALL )
+                     && !( pbolt->bx <= 6 || pbolt->by <= 6 || pbolt->bx >= (GXM - 6) || pbolt->by >= (GYM - 6) ) )
                 {
-                    grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] = DNGN_FLOOR;
+                    grd[pbolt->bx + pbolt->move_x][pbolt->by + pbolt->move_y] = DNGN_FLOOR;
                     mpr("You hear a grinding noise.");
-                    beam[0].wand_id = 1;
+                    pbolt->wand_id = 1;
                 }
-                if (grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] == DNGN_ORCISH_IDOL || (grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] >= DNGN_SILVER_STATUE && grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] <= DNGN_STATUE_39))
+                if (grd[pbolt->bx + pbolt->move_x][pbolt->by + pbolt->move_y] == DNGN_ORCISH_IDOL || (grd[pbolt->bx + pbolt->move_x][pbolt->by + pbolt->move_y] >= DNGN_SILVER_STATUE && grd[pbolt->bx + pbolt->move_x][pbolt->by + pbolt->move_y] <= DNGN_STATUE_39))
                 {
-                    grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] = DNGN_FLOOR;
-                    if (!see_grid(beam[0].bx + beam[0].move_x, beam[0].by + beam[0].move_y))
-                        mpr("You hear a hideous screaming!");
+                    grd[pbolt->bx + pbolt->move_x][pbolt->by + pbolt->move_y] = DNGN_FLOOR;
+
+                    if ( !see_grid(pbolt->bx + pbolt->move_x, pbolt->by + pbolt->move_y) )
+                      mpr("You hear a hideous screaming!");
                     else
-                        mpr("The statue screams as its substance crumbles away!");
-                    beam[0].wand_id = 1;
+                      mpr("The statue screams as its substance crumbles away!");
+
+                    pbolt->wand_id = 1;
                 }
                 return;
             }
 
-            if (beam[0].beam_name[0] == '0' || beam[0].flavour != BEAM_ELECTRICITY)
+            if (pbolt->beam_name[0] == '0' || pbolt->flavour != BEAM_ELECTRICITY)
                 // ie non-bouncing enchantments, non-electrical beams etc
             {
-                beam[0].aim_down = 0;
+                pbolt->aim_down = 0;
                 return;
             }
 
             n++;                // reduces beam's range by 1
 
             bounce += 2;
-            if (random2(bounce) >= 1 || bounce > 3)
+
+            if ( bounce > 3 || !one_chance_in(bounce) )
             {
-                beam[0].aim_down = 0;
+                pbolt->aim_down = 0;
                 return;
             }
+
             strcpy(info, "The ");
-            strcat(info, beam[0].beam_name);
+            strcat(info, pbolt->beam_name);
             strcat(info, " bounces.");
             mpr(info);
-            if (beam[0].move_x == 0 ^ beam[0].move_y == 0)      //   ^ XOR
 
+            if ( pbolt->move_x == 0 ^ pbolt->move_y == 0 )      //   ^ XOR
             {
                 beam_sign_x *= -1;
                 beam_sign_y *= -1;
             }
-            if (beam[0].move_x != 0 && beam[0].move_y != 0)
-            {
-                if (grd[beam[0].bx][beam[0].by + beam[0].move_y] >= MINMOVE && grd[beam[0].bx + beam[0].move_x][beam[0].by] >= MINMOVE)
-                {
-                    beam_sign_x *= -1;
-                    beam_sign_y *= -1;
-                }
-                if (grd[beam[0].bx + beam[0].move_x][beam[0].by] < MINMOVE && grd[beam[0].bx][beam[0].by + beam[0].move_y] >= MINMOVE)
-                {
-                    beam_sign_x *= -1;
-                }
-                if (grd[beam[0].bx][beam[0].by + beam[0].move_y] < MINMOVE && grd[beam[0].bx + beam[0].move_x][beam[0].by] >= MINMOVE)
-                {
-                    beam_sign_y *= -1;
-                }
-                if ((grd[beam[0].bx][beam[0].by + beam[0].move_y] < MINMOVE && grd[beam[0].bx + beam[0].move_x][beam[0].by] < MINMOVE))         // || (grd [beam[0].bx] [beam[0].by + beam[0].move_y] > 10 && grd [beam[0].bx + beam[0].move_x] [beam[0].by]))
 
+            if ( pbolt->move_x != 0 && pbolt->move_y != 0 )
+            {
+                if (grd[pbolt->bx][pbolt->by + pbolt->move_y] >= MINMOVE && grd[pbolt->bx + pbolt->move_x][pbolt->by] >= MINMOVE)
+                {
+                    beam_sign_x *= -1;
+                    beam_sign_y *= -1;
+                }
+
+                if (grd[pbolt->bx + pbolt->move_x][pbolt->by] < MINMOVE && grd[pbolt->bx][pbolt->by + pbolt->move_y] >= MINMOVE)
+                {
+                    beam_sign_x *= -1;
+                }
+
+                if (grd[pbolt->bx][pbolt->by + pbolt->move_y] < MINMOVE && grd[pbolt->bx + pbolt->move_x][pbolt->by] >= MINMOVE)
+                {
+                    beam_sign_y *= -1;
+                }
+
+                if ((grd[pbolt->bx][pbolt->by + pbolt->move_y] < MINMOVE && grd[pbolt->bx + pbolt->move_x][pbolt->by] < MINMOVE))         // || grd[pbolt->bx][pbolt->by + pbolt->move_y] > DNGN_LAST_SOLID_TILE )
                 {
                     beam_sign_x *= -1;
                     beam_sign_y *= -1;
@@ -296,14 +302,14 @@ void beam(struct bolt beam[1])
             }
         }
 
-/*      if (beam[0].bx > you.x_pos - 9 && beam[0].bx < you.x_pos + 9 && beam[0].by > you.y_pos - 9 && beam[0].by < you.y_pos + 9 && (show [beam[0].bx - you.x_pos + 9] [beam[0].by - you.y_pos + 9] != 0 || (beam[0].bx == you.x_pos && beam[0].by == you.y_pos)) && beam[0].type != 0) */
-        if (((beam[0].bx > you.x_pos - 9 && beam[0].bx < you.x_pos + 9 && beam[0].by > you.y_pos - 9 && beam[0].by < you.y_pos + 9) || (beam[0].bx == you.x_pos && beam[0].by == you.y_pos)) && beam[0].type != 0)
+/*      if (pbolt->bx > you.x_pos - 9 && pbolt->bx < you.x_pos + 9 && pbolt->by > you.y_pos - 9 && pbolt->by < you.y_pos + 9 && (show [pbolt->bx - you.x_pos + 9] [pbolt->by - you.y_pos + 9] != 0 || (pbolt->bx == you.x_pos && pbolt->by == you.y_pos)) && pbolt->type != 0) */
+        if (((pbolt->bx > you.x_pos - 9 && pbolt->bx < you.x_pos + 9 && pbolt->by > you.y_pos - 9 && pbolt->by < you.y_pos + 9) || (pbolt->bx == you.x_pos && pbolt->by == you.y_pos)) && pbolt->type != 0)
         {
-            if (beam[0].range != n)
+            if (pbolt->range != n)
             {
-                textcolor(beam[0].colour);
-                gotoxy(beam[0].bx - you.x_pos + 18, beam[0].by - you.y_pos + 9);
-                putch(beam[0].type);
+                textcolor(pbolt->colour);
+                gotoxy(pbolt->bx - you.x_pos + 18, pbolt->by - you.y_pos + 9);
+                putch(pbolt->type);
 #ifdef USE_CURSES
                 // If we don't refresh curses we won't
                 // guarantee that the beam is visible
@@ -313,27 +319,26 @@ void beam(struct bolt beam[1])
             }
         }
 
-        if (bounce > 0)
-            bounce--;
+        if ( bounce > 0 )
+          bounce--;
 
-        if (env.cgrid[beam[0].bx][beam[0].by] != CNG)   // hit a cloud
-
+        if ( env.cgrid[pbolt->bx][pbolt->by] != CNG )   // hit a cloud
         {
+            if ( pbolt->beam_name[0] == '0' && pbolt->colour == DARKGREY )    /* polymorph randomly changes clouds in its path */
+              env.cloud_type[env.cgrid[pbolt->bx][pbolt->by]] = 1 + random2(8);    // this needs to be fixed to take into account player/monster clouds {dlb}
 
-            if (beam[0].beam_name[0] == '0' && beam[0].colour == DARKGREY)
+            if ( pbolt->colour == 200 || pbolt->beam_name[0] == '0' )
+              goto out_of_cloud_bit;
+
+            clouty = env.cgrid[pbolt->bx][pbolt->by];
+
+            if ( ( ( env.cloud_type[clouty] == CLOUD_COLD || env.cloud_type[clouty] == CLOUD_COLD_MON )
+                   && pbolt->flavour == BEAM_FIRE )
+                || ( ( env.cloud_type[clouty] == CLOUD_FIRE || env.cloud_type[clouty] == CLOUD_FIRE_MON )
+                     && pbolt->flavour == BEAM_COLD ) )
             {
-                env.cloud_type[env.cgrid[beam[0].bx][beam[0].by]] = random2(8) + 1;
-            }                   /* polymorph randomly changes clouds in its path */
-
-            if (beam[0].colour == 200 || beam[0].beam_name[0] == '0')
-                goto out_of_cloud_bit;
-
-            clouty = env.cgrid[beam[0].bx][beam[0].by];
-
-            if ((env.cloud_type[clouty] == CLOUD_COLD && beam[0].flavour == BEAM_FIRE) || (env.cloud_type[clouty] == CLOUD_FIRE && beam[0].flavour == BEAM_COLD))
-            {
-                if (see_grid(beam[0].bx, beam[0].by))
-                    mpr("You hear a sizzling sound!");
+                if ( !silenced(pbolt->bx, pbolt->by) )
+                  mpr("You hear a sizzling sound!");
 
                 env.cloud_type[clouty] = CLOUD_NONE;
                 env.cgrid[env.cloud_x[clouty]][env.cloud_y[clouty]] = CNG;
@@ -346,110 +351,110 @@ void beam(struct bolt beam[1])
 
         }
 
-      out_of_cloud_bit:
-        if (beam[0].bx == you.x_pos && beam[0].by == you.y_pos && beam[0].colour != BROWN)
+out_of_cloud_bit:
+        if (pbolt->bx == you.x_pos && pbolt->by == you.y_pos && pbolt->colour != BROWN)
         {                       // ^^^ digging
             // have to do something about enchantments here.
 
-            if (beam[0].colour == 200)
+            if (pbolt->colour == 200)
             {
-                beam[0].tracer = 1;
+                pbolt->tracer = 1;
                 goto out_of_hit_you;
             }
 
-/*      if (beam[0].flavour == BEAM_EXPLOSION)
-   {
-   explosion1(beam);
-   beam[0].aim_down = 0;
-   return;
-   }
- */
+/* ******************************************************************
 
-            if (beam[0].beam_name[0] != '0')    // ie enchantments always hit
+            if ( pbolt->flavour == BEAM_EXPLOSION )
             {
-                if (player_light_armour()
-                    && beam[0].move_x != 0
-                    && beam[0].move_y != 0
-                    && coinflip())
-                    exercise(SK_DODGING, 1);
+                explosion1(pbolt);
+                pbolt->aim_down = 0;
+                return;
+            }
 
-                if (you.duration[DUR_REPEL_MISSILES] != 0
-                            || you.mutation[MUT_REPULSION_FIELD] == 3)
-                    beam[0].hit -= random2(beam[0].hit / 2);
+****************************************************************** */
 
-                if (you.duration[DUR_DEFLECT_MISSILES] != 0)
-                    beam[0].hit = random2(beam[0].hit / 2);
+            if (pbolt->beam_name[0] != '0')    // ie enchantments always hit
+            {
+                if ( player_light_armour()
+                    && pbolt->move_x != 0
+                    && pbolt->move_y != 0
+                    && coinflip() )
+                  exercise(SK_DODGING, 1);
 
-                if (beam[0].hit < random2limit(player_evasion(), 40) + random2(you.dex) / 3 - 2 && (beam[0].move_x != 0 || beam[0].move_y != 0))
-                {
+                if ( you.duration[DUR_REPEL_MISSILES]
+                      || you.mutation[MUT_REPULSION_FIELD] == 3 )
+                  pbolt->hit -= random2(pbolt->hit / 2);
+
+                if ( you.duration[DUR_DEFLECT_MISSILES] )
+                  pbolt->hit = random2(pbolt->hit / 2);
+
+                if ( pbolt->hit < random2limit(player_evasion(), 40) + random2(you.dex) / 3 - 2
+                    && ( pbolt->move_x != 0 || pbolt->move_y != 0 ) )
+                  {
                     strcpy(info, "The ");
-                    strcat(info, beam[0].beam_name);
+                    strcat(info, pbolt->beam_name);
                     strcat(info, " misses you.");
                     mpr(info);
                     continue;
-                }
+                  }
             }
 
-
-
-
-            if (beam[0].beam_name[0] == '0')
+            if ( pbolt->beam_name[0] == '0' )     // that is, no "named" beam has been passed - I smell a hack {dlb}
             {
-                beam[0].aim_down = 0;
-                if (beam[0].colour != BLUE && beam[0].colour != MAGENTA && beam[0].colour != GREEN && ((beam[0].colour != LIGHTGREY && beam[0].colour != LIGHTGREEN) || beam[0].move_x != 0 || beam[0].move_y != 0))
-// if ((beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3) && you_resist_magic(beam[0].ench_power) == 1)
-                    if (you_resist_magic(beam[0].ench_power) == 1)
+                pbolt->aim_down = 0;
+                if (pbolt->colour != BLUE && pbolt->colour != MAGENTA && pbolt->colour != GREEN && ((pbolt->colour != LIGHTGREY && pbolt->colour != LIGHTGREEN) || pbolt->move_x != 0 || pbolt->move_y != 0))
+// if ( (pbolt->thing_thrown == KILL_YOU || pbolt->thing_thrown == KILL_YOU_MISSILE) && you_resist_magic(pbolt->ench_power) )
+                    if ( you_resist_magic(pbolt->ench_power) )
                     {
-                        strcpy(info, "You resist.");
-                        mpr(info);
+                        canned_msg(MSG_YOU_RESIST);
                         return;
                     }
-                switch (beam[0].colour)         // these colors are misapplied - see mons_ench_f2() {dlb}
 
+                switch ( pbolt->colour )         // these colors are misapplied - see mons_ench_f2() {dlb}
                 {
                 case BLACK:
-                    potion_effect(POT_SLOWING, beam[0].ench_power);
-                    beam[0].wand_id = 1;
+                    potion_effect(POT_SLOWING, pbolt->ench_power);
+                    pbolt->wand_id = 1;
                     return;     // slow
 
                 case BLUE:
-                    potion_effect(POT_SPEED, beam[0].ench_power);
-                    beam[0].wand_id = 1;
+                    potion_effect(POT_SPEED, pbolt->ench_power);
+                    pbolt->wand_id = 1;
                     return;     // haste
 
                 case GREEN:
-                    potion_effect(POT_HEAL_WOUNDS, beam[0].ench_power);
-                    beam[0].wand_id = 1;
+                    potion_effect(POT_HEAL_WOUNDS, pbolt->ench_power);
+                    pbolt->wand_id = 1;
                     return;     // heal (heal wounds potion eff)
 
                 case CYAN:
-                    potion_effect(POT_PARALYSIS, beam[0].ench_power);
-                    beam[0].wand_id = 1;
+                    potion_effect(POT_PARALYSIS, pbolt->ench_power);
+                    pbolt->wand_id = 1;
                     return;     // paralysis
 
                 case RED:
-                    potion_effect(POT_CONFUSION, beam[0].ench_power);
-                    beam[0].wand_id = 1;
+                    potion_effect(POT_CONFUSION, pbolt->ench_power);
+                    pbolt->wand_id = 1;
                     return;     // confusion
 
                 case MAGENTA:
-                    potion_effect(POT_INVISIBILITY, beam[0].ench_power);
-                    beam[0].wand_id = 1;
+                    potion_effect(POT_INVISIBILITY, pbolt->ench_power);
+                    pbolt->wand_id = 1;
                     return;     // invisibility
-                    // 6 is used by digging
+
+                // 6 is used by digging
 
                 case LIGHTGREY:
                     you_teleport();
-                    beam[0].wand_id = 1;
+                    pbolt->wand_id = 1;
                     return;
                 case DARKGREY:
-                    strcpy(info, "This is polymorph other only!");
-                    mpr(info);
-                    beam[0].wand_id = 1;
+                    mpr("This is polymorph other only!");
+                    pbolt->wand_id = 1;
                     return;
                 case LIGHTBLUE:
-                    potion_effect(POT_CONFUSION, beam[0].ench_power);
-                    beam[0].wand_id = 1;
+                    potion_effect(POT_CONFUSION, pbolt->ench_power);
+                    pbolt->wand_id = 1;
                     return;     // enslavement - confusion?
 
                 case LIGHTGREEN:
@@ -460,136 +465,122 @@ void beam(struct bolt beam[1])
                     }
                     mpr("You are cast into the Abyss!");
                     more();
-                    banished(96);
-                    beam[0].wand_id = 1;
+                    banished(DNGN_ENTER_ABYSS);
+                    pbolt->wand_id = 1;
                     return;     // banishment to the abyss
 
                 case LIGHTMAGENTA:      // pain
-
-                    if (you.is_undead || you.mutation[MUT_TORMENT_RESISTANCE] != 0)
+                    if ( you.is_undead || you.mutation[MUT_TORMENT_RESISTANCE] )
                     {
-                        strcpy(info, "You are unaffected.");
-                        mpr(info);
+                        mpr("You are unaffected.");
                         return;
                     }
-                    strcpy(info, "Pain shoots through your body!");
-                    mpr(info);
-                    strcpy(beam[0].beam_name, "spell");
-                    if (YOU_KILL(beam[0].thing_thrown))
-                        ouch(random2(beam[0].hit), 0, KILLED_BY_TARGETTING);
+                    mpr("Pain shoots through your body!");
+                    strcpy(pbolt->beam_name, "spell");
+                    if ( YOU_KILL(pbolt->thing_thrown) )
+                      ouch(random2(pbolt->hit), 0, KILLED_BY_TARGETTING);
                     else
-                        ouch(random2(beam[0].hit), beam[0].beam_source, KILLED_BY_BEAM);
-                    beam[0].wand_id = 1;
+                      ouch(random2(pbolt->hit), pbolt->beam_source, KILLED_BY_BEAM);
+                    pbolt->wand_id = 1;
                     return;
                 case WHITE:
                     mpr("You are blasted!");
-                    strcpy(beam[0].beam_name, "spell");
-                    if (YOU_KILL(beam[0].thing_thrown))
-                        ouch(random2(beam[0].hit), 0, KILLED_BY_TARGETTING);
+                    strcpy(pbolt->beam_name, "spell");
+                    if ( YOU_KILL(pbolt->thing_thrown) )
+                      ouch(random2(pbolt->hit), 0, KILLED_BY_TARGETTING);
                     else
-                        ouch(random2(beam[0].hit), beam[0].beam_source, KILLED_BY_BEAM);
-                    beam[0].wand_id = 1;
+                      ouch(random2(pbolt->hit), pbolt->beam_source, KILLED_BY_BEAM);
+                    pbolt->wand_id = 1;
                     return;
-
-
-
-                }               // end of switch (beam[0].colour)
-
-            }                   // end of if beam[0].beam_name [0] == 48
-
+                }               // end of switch (pbolt->colour)
+            }                   // end of if pbolt->beam_name[0] == 48
 
 
             strcpy(info, "The ");
-            strcat(info, beam[0].beam_name);
+            strcat(info, pbolt->beam_name);
             strcat(info, " hits you");
-
-            hurted = 0;
-
-            if (beam[0].damage > 100)
-            {
-                hurted += random2(beam[0].damage - 100);
-                hurted += random2(beam[0].damage - 100);
-                hurted += random2(beam[0].damage - 100);
-            }
-            else
-                hurted += random2(beam[0].damage);
-
-            hurted -= random2(player_AC() + 1);
-            // don't bother with + 1 here
-            hurted -= random2(player_shield_class());
-            you.shield_blocks++;
-
-            // shrapnel
-            if (beam[0].flavour == BEAM_FRAG)
-            {
-                hurted -= random2(player_AC() + 1);
-                hurted -= random2(player_AC() + 1);
-            }
-
             strcat(info, "!");
             mpr(info);
 
+            hurted = 0;
+
+            if (pbolt->damage > 100)
+            {
+                hurted += random2(pbolt->damage - 100);
+                hurted += random2(pbolt->damage - 100);
+                hurted += random2(pbolt->damage - 100);
+            }
+            else
+              hurted += random2(pbolt->damage);
+
+            hurted -= random2(1 + player_AC());
+        // don't bother with + 1 here
+            hurted -= random2(player_shield_class());
+            you.shield_blocks++;
+
+          // shrapnel
+            if (pbolt->flavour == BEAM_FRAG)
+            {
+                hurted -= random2(1 + player_AC());
+                hurted -= random2(1 + player_AC());
+            }
+
             if (you.equip[EQ_SHIELD] != -1)
-                if (beam[0].move_x != 0 || beam[0].move_y != 0)
+                if (pbolt->move_x != 0 || pbolt->move_y != 0)
                     exercise(SK_SHIELDS, (random2(3)) / 2);
 
-            if (you.equip[EQ_BODY_ARMOUR] != -1)
-                if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && one_chance_in(4))
+            if ( you.equip[EQ_BODY_ARMOUR] != -1 )
+              if ( !player_light_armour() && one_chance_in(4)
+                  && random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) )
                     exercise(SK_ARMOUR, 1);
 
-            if (hurted <= 0)
-                hurted = 0;
+            if (hurted < 0)
+              hurted = 0;
 
+            hurted = check_your_resists(hurted, pbolt->flavour);
 
-            hurted = check_your_resists(hurted, beam[0].flavour);
+            if ( pbolt->flavour == BEAM_FIRE
+                  || stricmp(pbolt->beam_name, "hellfire") == 0 )
+              scrolls_burn(3, OBJ_SCROLLS);   // also above
+            else if ( pbolt->flavour == BEAM_COLD )
+              scrolls_burn(3, OBJ_POTIONS);
 
-/*      check_your_resists(); */
-/*      strcat(info, "!");
-   if (strcmp(info, "How terrible") != 0) mpr(info); */
-
-            if (beam[0].flavour == BEAM_FIRE || stricmp(beam[0].beam_name, "hellfire") == 0)
-                scrolls_burn(3, OBJ_SCROLLS);   // also above
-
-            if (beam[0].flavour == BEAM_COLD)
-                scrolls_burn(3, OBJ_POTIONS);
-
-            if (YOU_KILL(beam[0].thing_thrown))
-                ouch(hurted, 0, KILLED_BY_TARGETTING);
+            if ( YOU_KILL(pbolt->thing_thrown) )
+              ouch(hurted, 0, KILLED_BY_TARGETTING);
             else
-                ouch(hurted, beam[0].beam_source, KILLED_BY_BEAM);
-
-            you.redraw_hit_points = 1;
+              ouch(hurted, pbolt->beam_source, KILLED_BY_BEAM);
 
             n++;                // reduces beam's range
 
-            if (beam[0].flavour != BEAM_ELECTRICITY)
-                n += random2(4) + 2;    /* If it isn't lightning, reduce range by a lot */
+            if ( pbolt->flavour != BEAM_ELECTRICITY )
+              n += random2(4) + 2;    /* If it isn't lightning, reduce range by a lot */
 
-            if (beam[0].flavour == BEAM_EXPLOSION)
+            if ( pbolt->flavour == BEAM_EXPLOSION )
             {
-                explosion1(beam);
+                explosion1(pbolt);
                 return;
             }
 
-            if (beam[0].move_x == 0 && beam[0].move_y == 0)
-                break;
+            if ( pbolt->move_x == 0 && pbolt->move_y == 0 )
+              break;
 
             goto check_aimed;
         }
 
-      out_of_hit_you:
-        if (beam[0].target_x == beam[0].bx && beam[0].target_y == beam[0].by && beam[0].aim_down == 1 && ((grd[beam[0].bx][beam[0].by] == DNGN_LAVA && beam[0].flavour == BEAM_COLD) || ((grd[beam[0].bx][beam[0].by] == DNGN_DEEP_WATER || grd[beam[0].bx][beam[0].by] == DNGN_SHALLOW_WATER) && beam[0].flavour == BEAM_FIRE)))
-            place_cloud(CLOUD_STEAM, beam[0].bx, beam[0].by, 2 + random2(5));
+out_of_hit_you:
+        if ( pbolt->target_x == pbolt->bx && pbolt->target_y == pbolt->by && pbolt->aim_down == 1 && ((grd[pbolt->bx][pbolt->by] == DNGN_LAVA && pbolt->flavour == BEAM_COLD) || ((grd[pbolt->bx][pbolt->by] == DNGN_DEEP_WATER || grd[pbolt->bx][pbolt->by] == DNGN_SHALLOW_WATER) && pbolt->flavour == BEAM_FIRE)) )
+          place_cloud(CLOUD_STEAM, pbolt->bx, pbolt->by, 2 + random2(5));
 
-        if (mgrd[beam[0].bx][beam[0].by] != MNG && (beam[0].colour != BROWN || beam[0].beam_name[0] != '0'))
+        if ( mgrd[pbolt->bx][pbolt->by] != MNG && (pbolt->colour != BROWN || pbolt->beam_name[0] != '0') )
         {
-            o = mgrd[beam[0].bx][beam[0].by];
+            o = mgrd[pbolt->bx][pbolt->by];
+            monster = &menv[o];
 
-            if (beam[0].beam_name[0] == '0')
-                goto enchanting;
-            if (beam[0].beam_name[0] != '0')
+            if ( pbolt->beam_name[0] == '0' )
+              goto enchanting;
+            else
             {
-// tracer = 0 = run out of range
+                // tracer = 0 = run out of range
                 // tracer = 1 = hits you in range
                 // tracer_mons = 0 = hits no monsters
                 //       "     = 1 = hits monster before you (possibly also after)
@@ -597,434 +588,431 @@ void beam(struct bolt beam[1])
                 //       "     = 3 = hits tamed monster(s) but no others
                 //       "     = 4 = hits tamed monster(s) + possibly other things
 
-                if (menv[o].type >= MONS_LAVA_WORM && menv[o].number == 1 && (beam[0].bx != beam[0].target_x || beam[0].by != beam[0].target_y || beam[0].aim_down != 1))
-                    goto check_aimed;
+                if ( monster_habitat(monster->type) != DNGN_FLOOR && monster->number == 1 && (pbolt->bx != pbolt->target_x || pbolt->by != pbolt->target_y || pbolt->aim_down != 1) )
+                  goto check_aimed;
 
-                if (beam[0].beam_name[0] != '0')        // ie enchantments always hit
-
+                if ( pbolt->beam_name[0] != '0' )        // ie enchantments always hit    // isn't this already assumed above ??? {dlb}
                 {
-                    if (beam[0].hit < random2(menv[o].evasion))
+                    if (pbolt->hit < random2(monster->evasion))
                     {
                         strcpy(info, "The ");
-                        strcat(info, beam[0].beam_name);
+                        strcat(info, pbolt->beam_name);
                         strcat(info, " misses ");
-                        strcat(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 1));   //gmon_name [menv_class [o]]);
-
+                        strcat(info, monam(monster->number, monster->type, monster->enchantment[2], 1));   //gmon_name [menv_class [o]]);
                         strcat(info, ".");
                         mpr(info);
                         goto check_aimed;
                     }
                 }
 
-
-
                 strcpy(info, "The ");
-                strcat(info, beam[0].beam_name);
+                strcat(info, pbolt->beam_name);
                 strcat(info, " hits ");
-                strcat(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 1));   //gmon_name [mons_class [o]]);
-
+                strcat(info, monam(monster->number, monster->type, monster->enchantment[2], 1));   //gmon_name [mons_class [o]]);
                 strcat(info, ".");
                 mpr(info);
 
                 hurted = 0;
 
-                if (beam[0].damage > 100)
+                if ( pbolt->damage > 100 )
                 {
-                    hurted += random2(beam[0].damage - 100);
-                    hurted += random2(beam[0].damage - 100);
-                    hurted += random2(beam[0].damage - 100);
+                    hurted += random2(pbolt->damage - 100);
+                    hurted += random2(pbolt->damage - 100);
+                    hurted += random2(pbolt->damage - 100);
                 }
                 else
-                    hurted += random2(beam[0].damage);
+                  hurted += random2(pbolt->damage);
 
-                hurted -= random2(menv[o].armor_class + 1);
-                if (beam[0].flavour == BEAM_FRAG)       // shrapnel
+                hurted -= random2(1 + monster->armor_class);
 
+                if ( pbolt->flavour == BEAM_FRAG )
                 {
-                    hurted -= random2(menv[o].armor_class + 1);
-                    hurted -= random2(menv[o].armor_class + 1);
+                    hurted -= random2(1 + monster->armor_class);
+                    hurted -= random2(1 + monster->armor_class);
                 }
-                if (hurted <= 0)
-                    hurted = 0;
-                hurted = check_mons_resists(beam, o, hurted);
 
-                menv[o].hit_points -= hurted;
+                if ( hurted < 1 )
+                  hurted = 0;
 
+                hurted = check_mons_resists(monster, pbolt, hurted);
 
-//if ((beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3) && mons_holiness(menv [o].type) < 0 && hurted > 0) naughty(15, 4);
+                hurt_monster(monster, hurted);
 
-                if (menv[o].behavior == 0)
-                    menv[o].behavior = 1;
-                if (YOU_KILL(beam[0].thing_thrown) && menv[o].behavior == BEH_ENSLAVED && hurted > 0)
+                if ( monster->behavior == BEH_SLEEP )
+                  monster->behavior = BEH_CHASING_I;
+
+                if ( YOU_KILL(pbolt->thing_thrown) && monster->behavior == BEH_ENSLAVED && hurted > 0 )
                 {
-                    menv[o].behavior = BEH_CHASING_I;
-//   naughty(8, 5);
+                    monster->behavior = BEH_CHASING_I;
+                    //naughty(NAUGHTY_STABBING, 5);
                 }
-                if (menv[o].hit_points <= 0)
+
+                if ( monster->hit_points < 1 )
                 {
-                    switch (beam[0].thing_thrown)
+                    switch (pbolt->thing_thrown)
                     {
-                    case KILL_YOU:      /* your beam */
-                    case KILL_YOU_MISSILE:
-                        monster_die(o, KILL_YOU_MISSILE, 0);
-                        break;  /*  "    " */
-                    case KILL_MON:
-                        monster_die(o, KILL_MON_MISSILE, beam[0].beam_source);
-                        break;  /* dragon breath &c */
+                      case KILL_YOU:      // your beam
+                      case KILL_YOU_MISSILE:
+                        monster_die(monster, KILL_YOU_MISSILE, 0);
+                        break;
+                      case KILL_MON:      // dragon breath &c
+                        monster_die(monster, KILL_MON_MISSILE, pbolt->beam_source);
+                        break;
                     }
                 }
                 else
                 {
-                    if (YOU_KILL(beam[0].thing_thrown) && mons_near(o))
-                        print_wounds(o);
-                    if (menv[o].type >= 389 && menv[o].type <= 393)
-                        mimic_alert(o);
+                    if ( YOU_KILL(pbolt->thing_thrown) && mons_near(monster) )
+                      print_wounds(monster);
+
+                    if ( mons_category(monster->type) == MC_MIMIC )
+                      mimic_alert(monster);
                 }
 
-                if (beam[0].flavour == BEAM_EXPLOSION && strcmp(beam[0].beam_name, "hellfire") != 0)
+                if ( pbolt->flavour == BEAM_EXPLOSION && strcmp(pbolt->beam_name, "hellfire") != 0 )
                 {
-                    explosion1(beam);
-                    beam[0].aim_down = 0;
+                    explosion1(pbolt);
+                    pbolt->aim_down = 0;
                     return;
                 }
-                if (beam[0].flavour != BEAM_ELECTRICITY)
-                    n += random2(5) + 3;        /* If it isn't lightning, reduce range by a lot */
 
-            }
+                if ( pbolt->flavour != BEAM_ELECTRICITY )
+                  n += random2(5) + 3;        /* If it isn't lightning, reduce range by a lot */
+            }    // end "pbolt->beam_name[0] != '0'"
 
 
-
-          enchanting:if (menv[o].x == beam[0].bx && menv[o].y == beam[0].by && menv[o].type != -1 && beam[0].beam_name[0] == '0')
+enchanting:
+            if (monster->x == pbolt->bx && monster->y == pbolt->by && monster->type != -1 && pbolt->beam_name[0] == '0')
             {
-
-                if (beam[0].colour == 200)
+                if ( pbolt->colour == 200 )
                 {
-                    if (beam[0].trac_targ != MHITYOU)
+                    if ( pbolt->trac_targ != MHITYOU )
                     {
-
-
-                        if (menv[o].behavior == BEH_ENSLAVED
-                            && menv[beam[0].beam_source].behavior == BEH_ENSLAVED)
+                        if ( monster->behavior == BEH_ENSLAVED )
                         {
-                            beam[0].tracer_mons = 4;
-                            return;     //goto check_aimed;
+                            if ( menv[pbolt->beam_source].behavior == BEH_ENSLAVED )
+                            {
+                                pbolt->tracer_mons = 4;
+                                return;    //goto check_aimed;
+                            }
 
+                            if ( pbolt->tracer_mons == 0 )
+                            {
+                                pbolt->tracer_mons = 3;
+                                pbolt->trac_hit_tamed = 1;
+                                return;    //goto check_aimed;
+                            }
                         }
 
-                        if (menv[o].behavior == BEH_ENSLAVED
-                            && beam[0].tracer_mons == 0)
+                        if ( o == menv[pbolt->beam_source].monster_foe )
                         {
-                            beam[0].tracer_mons = 3;
-                            beam[0].trac_hit_tamed = 1;
-                            return;
-                            //goto check_aimed;
+                            pbolt->trac_hit_mons = 1;
+                            return;    //goto check_aimed;
                         }
 
-                        if (o == menv[beam[0].beam_source].monster_foe)
+                        if ( pbolt->tracer_mons == 0 )
                         {
-                            beam[0].trac_hit_mons = 1;
-                            return;
-                            //goto check_aimed;
+                            pbolt->tracer_mons = 1;    //3;
+                            return;    //goto check_aimed;
                         }
 
-                        if (beam[0].tracer_mons == 0)
-                        {
-                            beam[0].tracer_mons = 1;    //3;
+                        if ( pbolt->trac_hit_mons == 1 && pbolt->tracer_mons != 1 )
+                          pbolt->tracer_mons = 2;    // else
 
-                            return;
-                            //goto check_aimed;
-                        }
-                        if (beam[0].trac_hit_mons == 1 && beam[0].tracer_mons != 1)
-                            beam[0].tracer_mons = 2;    // else
-
-                        if (beam[0].trac_hit_mons == 0)
-                            beam[0].tracer_mons = 1;
+                        if ( pbolt->trac_hit_mons == 0 )
+                          pbolt->tracer_mons = 1;
                     }
                     else        // Aimed at you:
-
                     {
 
-                        if (beam[0].tracer == 1 && beam[0].tracer_mons != 1)
-                            beam[0].tracer_mons = 2;    // else
+                        if ( pbolt->tracer == 1 && pbolt->tracer_mons != 1 )
+                          pbolt->tracer_mons = 2;    // else
 
-                        if (beam[0].tracer == 0)
-                            beam[0].tracer_mons = 1;
+                        if ( pbolt->tracer == 0 )
+                          pbolt->tracer_mons = 1;
                     }
+
                     goto check_aimed;
+                }    // end "if pbolt->colour == 200"
 
-                }
+                if ( you.invis && !mons_see_invis(monster->type) && monster->behavior == BEH_SLEEP )
+                  monster->behavior = BEH_CHASING_I;
 
-
-                if (you.invis != 0 && mons_see_invis(menv[0].type) != 1 && menv[o].behavior == 0)
-                    menv[o].behavior = 1;
-
-                if (beam[0].colour == LIGHTGREY)        //: // teleportation
-
+                if ( pbolt->colour == LIGHTGREY )        // teleportation
                 {
-                    if (check_mons_magres(o, beam[0].ench_power) == 0 && (beam[0].move_x != 0 || beam[0].move_y))
-                        goto it_resists;
-                    if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-                    {
-                        strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                        strcat(info, " looks slightly unstable.");
-                        mpr(info);
-                        beam[0].wand_id = 1;
-                    }
-                    monster_teleport(o, 0);
-                    beam[0].aim_down = 0;
+                    if ( !check_mons_magres(monster, pbolt->ench_power) && ( pbolt->move_x || pbolt->move_y ) )
+                      goto it_resists;
+
+                    if ( simple_monster_message(monster, " looks slightly unstable.") )
+                      pbolt->wand_id = 1;
+
+                    monster_teleport(monster, false);
+                    pbolt->aim_down = 0;
                     return;
                 }
 
-                if (beam[0].colour == DARKGREY)
+                if ( pbolt->colour == DARKGREY )
                 {
-                    if (check_mons_magres(o, beam[0].ench_power) == 0)
-                        goto it_resists;
-                    monster_polymorph(o, 250, 100);
-                    beam[0].aim_down = 0;
-                    beam[0].wand_id = 1;
+                    if ( !check_mons_magres(monster, pbolt->ench_power) )
+                      goto it_resists;
+
+                    if ( monster_polymorph(monster, RANDOM_MONSTER, 100) )
+                      pbolt->wand_id = 1;
+
+                    pbolt->aim_down = 0;
                     return;
                 }
 
-                if (beam[0].colour == LIGHTGREEN)
+                if ( pbolt->colour == LIGHTGREEN )
                 {
-                    if (check_mons_magres(o, beam[0].ench_power) == 0)
-                        goto it_resists;
-                    if (you.level_type == LEVEL_ABYSS)
-                    {
-                        strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                        strcat(info, " wobbles for a moment.");
-                        mpr(info);
-                    }
+                    if ( !check_mons_magres(monster, pbolt->ench_power) )
+                      goto it_resists;
+                    if ( you.level_type == LEVEL_ABYSS )
+                      simple_monster_message(monster, " wobbles for a moment.");
                     else
-                        monster_die(o, KILL_RESET, beam[0].beam_source);
-                    beam[0].aim_down = 0;
-                    beam[0].wand_id = 1;
+                      monster_die(monster, KILL_RESET, pbolt->beam_source);
+                    pbolt->aim_down = 0;
+                    pbolt->wand_id = 1;    // need to tie this into messaging outcome {dlb}
                     return;
                 }
 
-                if (beam[0].colour == LIGHTCYAN)
+                if ( pbolt->colour == LIGHTCYAN )
                 {
-                    if (mons_holiness(menv[o].type) != MH_NORMAL
-                        || menv[o].type == MONS_PULSATING_LUMP)
+                    if ( mons_holiness(monster->type) != MH_NATURAL
+                        || monster->type == MONS_PULSATING_LUMP )
                         goto unaffected;
-                    if (check_mons_magres(o, beam[0].ench_power) == 0)
+
+                    if ( !check_mons_magres(monster, pbolt->ench_power) )
                         goto it_resists;
-                    monster_polymorph(o, 131, 100);
-                    beam[0].aim_down = 0;
-                    beam[0].wand_id = 1;
+
+                    if ( monster_polymorph(monster, MONS_PULSATING_LUMP, 100) )
+                      pbolt->wand_id = 1;
+
+                    pbolt->aim_down = 0;
                     return;
                 }
 
-                if (beam[0].colour == YELLOW)
+                if ( pbolt->colour == YELLOW )
                 {
-                    if (mons_holiness(menv[o].type) != 1)
+                    if ( mons_holiness(monster->type) != MH_UNDEAD )
                     {
-                      unaffected:strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                        strcat(info, " is unaffected.");
-                        mpr(info);
-                        beam[0].aim_down = 0;
+unaffected:
+                        simple_monster_message(monster, " is unaffected.");
+                        pbolt->aim_down = 0;
                         return;
                     }
-                    strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                    strcat(info, " convulses!");
-                    mpr(info);
-                    menv[o].hit_points -= random2(beam[0].hit);
-                    menv[o].hit_points -= random2(beam[0].hit);
-                    menv[o].hit_points -= random2(beam[0].hit);
-                    strcpy(beam[0].beam_name, "spell");
+
+                    simple_monster_message(monster, " convulses!");
+
+                    hurt_monster(monster, random2(pbolt->hit) + random2(pbolt->hit) + random2(pbolt->hit));
+
+                    strcpy(pbolt->beam_name, "spell");
+
                     char killer = 0;
 
-                    switch (beam[0].thing_thrown)
+                    switch (pbolt->thing_thrown)
                     {
-                    case KILL_YOU:
+                      case KILL_YOU:
+                      case KILL_YOU_MISSILE:
                         killer = KILL_YOU_MISSILE;
                         break;  // your beam
 
-                    case KILL_YOU_MISSILE:
-                        killer = KILL_YOU_MISSILE;
-                        break;  //  "    "
-
-                    case KILL_MON:
+                      case KILL_MON:
                         killer = KILL_MON_MISSILE;
                         break;  // dragon breath &c
-
                     }
-                    if (menv[o].hit_points <= 0)
-                        monster_die(o, killer, beam[0].beam_source);
+
+                    if ( monster->hit_points < 1 )
+                      monster_die(monster, killer, pbolt->beam_source);
                     else
                     {
-                        print_wounds(o);
-                        if (menv[o].type >= 389 && menv[o].type <= 393)
-                            mimic_alert(o);
+                        print_wounds(monster);
+
+                        if ( mons_category(monster->type) == MC_MIMIC )
+                          mimic_alert(monster);
                     }
-                    beam[0].aim_down = 0;
+
+                    pbolt->aim_down = 0;
                     return;
                 }
 
-                if (check_mons_magres(o, beam[0].ench_power) == 0 && beam[0].colour != BLUE && beam[0].colour != GREEN && beam[0].colour != MAGENTA)
+                if ( !check_mons_magres(monster, pbolt->ench_power) && pbolt->colour != BLUE && pbolt->colour != GREEN && pbolt->colour != MAGENTA )
                 {
-                  it_resists:strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                    strcat(info, " resists.");
-                    mpr(info);
-                    beam[0].aim_down = 0;
+it_resists:
+                    simple_monster_message(monster, " resists.");
+
+                    pbolt->aim_down = 0;
                     return;
                 }
 
-
-                if (beam[0].colour == LIGHTMAGENTA)     /* pain/agony */
+                if ( pbolt->colour == LIGHTMAGENTA )     /* pain/agony */
                 {
-                    if (mons_holiness(menv[o].type) > 0)
-                        goto it_resists;
-                    strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                    strcat(info, " convulses in agony!");
-                    mpr(info);
-                    if (strstr(beam[0].beam_name, "agony") != NULL)
+                    if ( mons_holiness(monster->type) == MH_UNDEAD || mons_holiness(monster->type) == MH_DEMONIC )
+                      goto it_resists;
+
+                    simple_monster_message(monster, " convulses in agony!");
+
+                    if (strstr(pbolt->beam_name, "agony") != NULL)
                     {
-                        menv[o].hit_points = menv[o].hit_points / 2;
-                        if (menv[o].hit_points <= 1)
-                            menv[o].hit_points = 1;
-                        strcpy(beam[0].beam_name, "agony");
+                        monster->hit_points = monster->hit_points / 2;
+
+                        if ( monster->hit_points < 1 )
+                          monster->hit_points = 1;
+
+                        strcpy(pbolt->beam_name, "agony");
                     }
                     else
                     {
-                        menv[o].hit_points -= random2(beam[0].hit);
-                        strcpy(beam[0].beam_name, "pain");
+                        hurt_monster(monster, random2(pbolt->hit));
+                        strcpy(pbolt->beam_name, "pain");
                     }
+
                     char killer = 0;
 
-                    switch (beam[0].thing_thrown)
+                    switch (pbolt->thing_thrown)
                     {
-                    case KILL_YOU:
+                      case KILL_YOU:
+                      case KILL_YOU_MISSILE:
                         killer = KILL_YOU_MISSILE;
                         break;  // your beam
 
-                    case KILL_YOU_MISSILE:
-                        killer = KILL_YOU_MISSILE;
-                        break;  //  "    "
-
-                    case KILL_MON:
+                      case KILL_MON:
                         killer = KILL_MON_MISSILE;
                         break;  // dragon breath &c
+                    }
 
-                    }
-                    if (menv[o].hit_points <= 0)
-                        monster_die(o, killer, beam[0].beam_source);
+                    if ( monster->hit_points < 1 )
+                      monster_die(monster, killer, pbolt->beam_source);
                     else
-                    {
-                        print_wounds(o);
-                        if (menv[o].type >= 389 && menv[o].type <= 393)
-                            mimic_alert(o);
-                    }
-                    beam[0].aim_down = 0;
+                      {
+                        print_wounds(monster);
+
+                        if ( mons_category(monster->type) == MC_MIMIC )
+                          mimic_alert(monster);
+                      }
+
+                    pbolt->aim_down = 0;
                     return;
                 }
 
-                if (beam[0].colour == WHITE)    /* disrupt/disintegrate */
+                if ( pbolt->colour == WHITE )    /* disrupt/disintegrate */
                 {
-                    strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                    strcat(info, " is blasted.");
-                    mpr(info);
-                    menv[o].hit_points -= random2(beam[0].hit + 1);
-                    strcpy(beam[0].beam_name, "spell");
+
+                    if ( simple_monster_message(monster, " is blasted.") )
+                      pbolt->wand_id = 1;
+
+                    hurt_monster(monster, random2(1 + pbolt->hit));
+
+                    strcpy(pbolt->beam_name, "spell");
+
                     char killer = 0;
 
-                    switch (beam[0].thing_thrown)
+                    switch (pbolt->thing_thrown)
                     {
-                    case KILL_YOU:
+                      case KILL_YOU:
+                      case KILL_YOU_MISSILE:
                         killer = KILL_YOU_MISSILE;
                         break;  // your beam
 
-                    case KILL_YOU_MISSILE:
-                        killer = KILL_YOU_MISSILE;
-                        break;  //  "    "
-
-                    case KILL_MON:
+                      case KILL_MON:
                         killer = KILL_MON_MISSILE;
                         break;  // dragon breath &c
-
                     }
-                    if (menv[o].hit_points <= 0)
-                        monster_die(o, killer, beam[0].beam_source);
+
+                    if ( monster->hit_points < 1 )
+                      monster_die(monster, killer, pbolt->beam_source);
                     else
                     {
-                        print_wounds(o);
-                        if (menv[o].type >= 389 && menv[o].type <= 393)
-                            mimic_alert(o);
+                        print_wounds(monster);
+
+                        if ( mons_category(monster->type) == MC_MIMIC )
+                          mimic_alert(monster);
                     }
-                    beam[0].aim_down = 0;
-                    beam[0].wand_id = 1;
+
+                    pbolt->aim_down = 0;
                     return;
                 }
 
-                int func_pass[10];
-
-                if ((beam[0].colour == LIGHTRED && mons_holiness(menv[o].type) == 1) || (beam[0].colour == 16 && mons_holiness(menv[o].type) == 2))
+                if ((pbolt->colour == LIGHTRED && mons_holiness(monster->type) == MH_UNDEAD) || (pbolt->colour == 16 && mons_holiness(monster->type) == MH_DEMONIC))
                 {
-                    strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                    strcat(info, " is enslaved.");
-                    mpr(info);
-                    menv[o].behavior = 7;
-                    beam[0].wand_id = 1;
+                    if ( simple_monster_message(monster, " is enslaved.") )
+                      pbolt->wand_id = 1;
+
+                    monster->behavior = BEH_ENSLAVED;
                     return;
                 }
-                if (beam[0].colour == LIGHTRED)
+
+                if ( pbolt->colour == LIGHTRED )
+                  goto unaffected;
+
+                //jmf: FIXME: ought to do a better "affected by sleep" check
+                if ( pbolt->colour == BEAM_SLEEP    // I do not think this is right -- should that not be "flavour" and not "colour" {dlb}
+                    && mons_holiness(monster->type) == MH_NATURAL )
                 {
-                    goto unaffected;
+                    if ( simple_monster_message(monster, " looks drowsy...") )
+                      pbolt->wand_id = 1;
+
+                    monster->behavior = BEH_SLEEP;
+                    return;
                 }
 
-                mons_ench_f2(o, mons_near(o), func_pass, beam);
+                if ( pbolt->colour == BEAM_BACKLIGHT )    // I do not think this is right -- should that not be "flavour" and not "colour" {dlb}
+                {
+                    if ( backlight_monsters(monster->x, monster->y, pbolt->hit, 0) )
+                      return;
+                    else
+                      goto unaffected;
+                }
 
-                beam[0].wand_id = func_pass[1];
-                beam[0].aim_down = 0;
+                mons_ench_f2(monster, pbolt);
+
+                pbolt->aim_down = 0;
                 return;
 
-            }                   // end of if ...
+            }                   // end "if ..."
 
-        }
+        }    // end "if ..." circa line 573
 
-      check_aimed:
-        if (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y && beam[0].aim_down == 1)
+check_aimed:
+        if ( pbolt->bx == pbolt->target_x && pbolt->by == pbolt->target_y
+            && pbolt->aim_down == 1 )
+          goto landed;
+
+        if ( pbolt->bx == pbolt->target_x && pbolt->by == pbolt->target_y
+            && ( pbolt->flavour == BEAM_EXPLOSION || pbolt->flavour == BEAM_HOLY ) )
         {
-            goto landed;
-        }
-
-        if (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y && (beam[0].flavour == BEAM_EXPLOSION || beam[0].flavour == BEAM_HOLY))
-        {
-            explosion1(beam);
-            beam[0].aim_down = 0;
+            explosion1(pbolt);
+            pbolt->aim_down = 0;
             return;
         }
 
-
-
     }                           // end of for n
 
-  landed:
+landed:
     // had if beam == tracer
-    if (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y && beam[0].aim_down == 1)
+    if ( pbolt->bx == pbolt->target_x && pbolt->by == pbolt->target_y
+        && pbolt->aim_down == 1 )
     {
-        beam[0].aim_down = 0;
+        pbolt->aim_down = 0;
         return;
     }
 
-    if (beam[0].flavour == BEAM_EXPLOSION)
+    if ( pbolt->flavour == BEAM_EXPLOSION )
     {
-        explosion1(beam);
-        beam[0].aim_down = 0;
+        explosion1(pbolt);
+        pbolt->aim_down = 0;
         return;
     }
 
 
-    if (beam[0].beam_name[0] == '0' && beam[0].colour != BROWN && beam[0].colour != 200)
-    {
-        strcpy(info, "Nothing appears to happen.");
-        mpr(info);
-    }
+    if ( pbolt->beam_name[0] == '0' && pbolt->colour != BROWN && pbolt->colour != 200 )
+      canned_msg(MSG_NOTHING_HAPPENS);
 
-    beam[0].aim_down = 0;
+    pbolt->aim_down = 0;
 /* ^ must have! */
 
-}                               // end of void beam(void);
+}          // end beam();
+
 
 
 
@@ -1045,190 +1033,174 @@ void beam(struct bolt beam[1])
 
    throw_2 is the item, either in your invent or in env for a monster.
  */
-void missile(struct bolt beam[1], int throw_2)
+void missile( struct bolt *pbolt, int throw_2 )
 {
+
     int beam_sign_x = 0;
     int beam_sign_y = 0;
     float bmoy = 0;
     int bmax = 0;
     float bmay = 0;
 
-    beam[0].bx = beam[0].source_x;
-    beam[0].by = beam[0].source_y;
-    int bmhit = beam[0].hit;
+    pbolt->bx = pbolt->source_x;
+    pbolt->by = pbolt->source_y;
 
-/*brek = 1;
-   brek = 0; */
+    int bmhit = pbolt->hit;
 
-/*beam[0].tracer = 0; */
+    //pbolt->tracer = 0;
 
     int hurted = 0;
 
-    if (beam[0].move_x > 1 || beam[0].move_y > 1 || beam[0].move_x < -1 || beam[0].move_y < -1)
+    if (pbolt->move_x > 1 || pbolt->move_y > 1 || pbolt->move_x < -1 || pbolt->move_y < -1)
     {
+        if (pbolt->move_x > 0)
+          beam_sign_x = 1;
 
-        if (beam[0].move_x > 0)
-            beam_sign_x = 1;
-        if (beam[0].move_x < 0)
+        if (pbolt->move_x < 0)
         {
             beam_sign_x = -1;
-            beam[0].move_x *= -1;
+            pbolt->move_x *= -1;
         }
 
-        if (beam[0].move_y > 0)
-            beam_sign_y = 1;
-        if (beam[0].move_y < 0)
+        if (pbolt->move_y > 0)
+          beam_sign_y = 1;
+
+        if (pbolt->move_y < 0)
         {
             beam_sign_y = -1;
-            beam[0].move_y *= -1;
+            pbolt->move_y *= -1;
         }
 
-        if (beam[0].move_x > beam[0].move_y)
+        if (pbolt->move_x > pbolt->move_y)
         {
             if (beam_sign_x == 1)
-                bmay = (float) (beam[0].move_y) / (beam[0].move_x + 1);
+              bmay = (float) (pbolt->move_y) / (pbolt->move_x + 1);
+
             if (beam_sign_x == -1)
-                bmay = (float) (beam[0].move_y) / (beam[0].move_x + 1);
+              bmay = (float) (pbolt->move_y) / (pbolt->move_x + 1);
+
             bmax = 1;
         }
         else
         {
             if (beam_sign_y == 1)
-                bmay = (float) (beam[0].move_x) / (beam[0].move_y + 1);
+              bmay = (float) (pbolt->move_x) / (pbolt->move_y + 1);
+
             if (beam_sign_y == -1)
-                bmay = (float) (beam[0].move_x) / (beam[0].move_y + 1);
+              bmay = (float) (pbolt->move_x) / (pbolt->move_y + 1);
+
             bmax = 2;
         }
+
         bmoy = 1;
-
-
-
     }
 
     int n;
 
-    for (n = 1; n < beam[0].range; n++)
+    for (n = 1; n < pbolt->range; n++)
     {
+        if ( pbolt->beam_name[0] == '0' && pbolt->flavour != BEAM_MAGIC )
+          return;
 
-        if (beam[0].beam_name[0] == '0' && beam[0].flavour != BEAM_MAGIC)
+        pbolt->hit = bmhit;
+
+        if ( bmax == 1 )
         {
-            return;
-        }
-
-
-        beam[0].hit = bmhit;
-
-
-        if (bmax == 1)
-        {
-            beam[0].move_x = beam_sign_x;
+            pbolt->move_x = beam_sign_x;
             bmoy += bmay;
-            if (bmoy >= 1)
+            if ( bmoy >= 1 )
             {
-                beam[0].move_y = beam_sign_y;
-                bmoy -= 1;
+                pbolt->move_y = beam_sign_y;
+                bmoy--;
             }
             else
-                beam[0].move_y = 0;
+                pbolt->move_y = 0;
         }
-
-
 
         if (bmax == 2)
         {
-            beam[0].move_y = beam_sign_y;
+            pbolt->move_y = beam_sign_y;
             bmoy += bmay;
             if (bmoy >= 1)
             {
-                beam[0].move_x = beam_sign_x;
-                bmoy -= 1;
+                pbolt->move_x = beam_sign_x;
+                bmoy--;
             }
             else
-                beam[0].move_x = 0;
+                pbolt->move_x = 0;
         }
 
-        if (grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] >= MINMOVE)
+        if (grd[pbolt->bx + pbolt->move_x][pbolt->by + pbolt->move_y] >= MINMOVE)
         {
-            beam[0].bx += beam[0].move_x;
-            beam[0].by += beam[0].move_y;
+            pbolt->bx += pbolt->move_x;
+            pbolt->by += pbolt->move_y;
 
-            if (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y)
+            if ( pbolt->bx == pbolt->target_x && pbolt->by == pbolt->target_y )
             {
-                if (beam[0].flavour == BEAM_EXPLOSION)
+                if ( pbolt->flavour == BEAM_EXPLOSION )
                 {
-                    if (beam[0].thing_thrown == KILL_YOU_MISSILE)
-                        beam[0].thing_thrown = KILL_YOU;
-                    if (beam[0].thing_thrown == KILL_MON_MISSILE)
-                        beam[0].thing_thrown = KILL_MON;
-                    explosion1(beam);
-                    beam[0].aim_down = 0;
+                    if ( pbolt->thing_thrown == KILL_YOU_MISSILE )
+                      pbolt->thing_thrown = KILL_YOU;
+                    if ( pbolt->thing_thrown == KILL_MON_MISSILE )
+                      pbolt->thing_thrown = KILL_MON;
+
+                    explosion1(pbolt);
+                    pbolt->aim_down = 0;
                     return;
                 }
 
-                if (strcmp(beam[0].beam_name, "orb of electricity") == 0 || strcmp(beam[0].beam_name, "metal orb") == 0 || strcmp(beam[0].beam_name, "great blast of cold") == 0)
+                if (strcmp(pbolt->beam_name, "orb of electricity") == 0 || strcmp(pbolt->beam_name, "metal orb") == 0 || strcmp(pbolt->beam_name, "great blast of cold") == 0)
                 {
-                    explosion1(beam);
-                    beam[0].aim_down = 0;
+                    explosion1(pbolt);
+                    pbolt->aim_down = 0;
                     return;
                 }
 
-                if (beam[0].flavour == BEAM_CLOUD)      // cloud
-
+                if ( pbolt->flavour == BEAM_ACID )
                 {
-                    beam[0].aim_down = 0;
+                    pbolt->aim_down = 0;
                     return;
                 }
 
             }
 
-            if (strcmp(beam[0].beam_name, "orb of energy") == 0)
-            {
-                place_cloud(CLOUD_PURP_SMOKE, beam[0].bx, beam[0].by, random2(5) + 1);
-            }
+// hmmm ... I wonder if these need CLOUD_foo_MON checks, too: {dlb}
+            if ( strcmp(pbolt->beam_name, "orb of energy") == 0 )
+              place_cloud(CLOUD_PURP_SMOKE, pbolt->bx, pbolt->by, random2(5) + 1);
 
-            if (strcmp(beam[0].beam_name, "great blast of cold") == 0)
-            {
-                place_cloud(CLOUD_COLD, beam[0].bx, beam[0].by, random2(5) + 3);
-            }
+            if ( strcmp(pbolt->beam_name, "great blast of cold") == 0 )
+              place_cloud(CLOUD_COLD, pbolt->bx, pbolt->by, random2(5) + 3);
 
-            if (strcmp(beam[0].beam_name, "ball of steam") == 0)
-            {
-                place_cloud(CLOUD_STEAM, beam[0].bx, beam[0].by, random2(5) + 1);
-            }
+            if ( strcmp(pbolt->beam_name, "ball of steam") == 0 )
+              place_cloud(CLOUD_STEAM, pbolt->bx, pbolt->by, random2(5) + 1);
 
-            if (strcmp(beam[0].beam_name, "sticky flame") == 0)
-            {
-                place_cloud(CLOUD_BLACK_SMOKE, beam[0].bx, beam[0].by, random2(4) + 1);
-            }
+            if ( strcmp(pbolt->beam_name, "sticky flame") == 0 )
+              place_cloud(CLOUD_BLACK_SMOKE, pbolt->bx, pbolt->by, random2(4) + 1);
 
-            if (strcmp(beam[0].beam_name, "poison gas") == 0)
+            if ( strcmp(pbolt->beam_name, "poison gas") == 0 )
             {
-                if (beam[0].thing_thrown != KILL_MON)
-                    place_cloud(CLOUD_POISON, beam[0].bx, beam[0].by, random2(4) + 2);
+                if ( pbolt->thing_thrown != KILL_MON )
+                  place_cloud(CLOUD_POISON, pbolt->bx, pbolt->by, random2(4) + 2);
                 else
-                    place_cloud(CLOUD_POISON_MON, beam[0].bx, beam[0].by, random2(4) + 2);
+                  place_cloud(CLOUD_POISON_MON, pbolt->bx, pbolt->by, random2(4) + 2);
             }
 
-            if (strcmp(beam[0].beam_name, "foul vapour") == 0 && beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y)
+            if ( strcmp(pbolt->beam_name, "foul vapour") == 0 && pbolt->bx == pbolt->target_x && pbolt->by == pbolt->target_y )
             {
-                if (beam[0].thing_thrown != KILL_MON)
-                    big_cloud(CLOUD_STINK, beam[0].bx, beam[0].by, 0);
-                else
-                    big_cloud(CLOUD_STINK_MON, beam[0].bx, beam[0].by, 0);
+                big_cloud(( (pbolt->thing_thrown != KILL_MON) ? CLOUD_STINK : CLOUD_STINK_MON ), pbolt->bx, pbolt->by, 0, 9);
                 return;
             }
 
 
-/*if (beam[0].bx > you.x_pos - 9 && beam[0].bx < you.x_pos + 9 && beam[0].by > you.y_pos - 9 && beam[0].by < you.y_pos + 9 && show [beam[0].bx - you.x_pos + 9] [beam[0].by - you.y_pos + 9] != 0) */
-            if (beam[0].colour != 200)  /* tracer doesn't update the screen */
-                if (beam[0].bx > you.x_pos - 9 && beam[0].bx < you.x_pos + 9 && beam[0].by > you.y_pos - 9 && beam[0].by < you.y_pos + 9)
+            if (pbolt->colour != 200)  /* tracer doesn't update the screen */
+                if (pbolt->bx > you.x_pos - 9 && pbolt->bx < you.x_pos + 9 && pbolt->by > you.y_pos - 9 && pbolt->by < you.y_pos + 9)
                 {
 #ifdef DOS_TERM
                     viewwindow(1, false);
 #endif
-                    textcolor(beam[0].colour);
-                    gotoxy(beam[0].bx - you.x_pos + 18, beam[0].by - you.y_pos + 9);
-                    putch(beam[0].type);
+                    textcolor(pbolt->colour);
+                    gotoxy(pbolt->bx - you.x_pos + 18, pbolt->by - you.y_pos + 9);
+                    putch(pbolt->type);
 #ifdef USE_CURSES
                     // If we don't refresh curses we won't
                     // guarantee that the beam is visible
@@ -1237,15 +1209,15 @@ void missile(struct bolt beam[1], int throw_2)
                     delay(15);
                 }
 
-            if (beam[0].bx == you.x_pos && beam[0].by == you.y_pos)
+            if (pbolt->bx == you.x_pos && pbolt->by == you.y_pos)
             {
                 /* I find it more logical that there can be virtually unavoidable missiles than missiles that can almost always be avoided. */
 
-                if (beam[0].colour == 200)      /* tracer */
+                if (pbolt->colour == 200)      /* tracer */
                 {
-                    if (beam[0].trac_hit_mons == 1 || you.invis == 0)
+                    if ( pbolt->trac_hit_mons == 1 || !you.invis )
                     {
-                        beam[0].tracer = 1;
+                        pbolt->tracer = 1;
                         return;
                     }
                 }
@@ -1253,115 +1225,122 @@ void missile(struct bolt beam[1], int throw_2)
                 {
                     /* Start of : if it's not a tracer */
                     if (you.equip[EQ_SHIELD] != -1)
-                        if (beam[0].move_x != 0 || beam[0].move_y != 0)
-                            exercise(SK_SHIELDS, random2(2));
+                      if (pbolt->move_x != 0 || pbolt->move_y != 0)
+                        if ( coinflip() )
+                          exercise(SK_SHIELDS, 1);
 
                     if (player_shield_class() > 0
-                        && random2(beam[0].hit * 5 + 5 * you.shield_blocks)
+                        && random2(pbolt->hit * 5 + 5 * you.shield_blocks)
                         <= random2(player_shield_class()) + (random2(you.dex) / 5) - 1)
                     {
                         you.shield_blocks++;
                         strcpy(info, "You block the ");
-                        strcat(info, beam[0].beam_name);
+                        strcat(info, pbolt->beam_name);
                         strcat(info, ".");
                         mpr(info);
-                        if (beam[0].flavour == BEAM_EXPLOSION)
+
+                        if (pbolt->flavour == BEAM_EXPLOSION)
                         {
-                            explosion1(beam);
-                            beam[0].aim_down = 0;
+                            explosion1(pbolt);
+                            pbolt->aim_down = 0;
                             return;
                         }
-                        if (strcmp(beam[0].beam_name, "orb of electricity") == 0 || strcmp(beam[0].beam_name, "metal orb") == 0 || strcmp(beam[0].beam_name, "great blast of cold") == 0)
+                        if (strcmp(pbolt->beam_name, "orb of electricity") == 0 || strcmp(pbolt->beam_name, "metal orb") == 0 || strcmp(pbolt->beam_name, "great blast of cold") == 0)
                         {
-                            explosion1(beam);
-                            beam[0].aim_down = 0;
+                            explosion1(pbolt);
+                            pbolt->aim_down = 0;
                             return;
                         }
                         break;
                     }           // end of block
 
-                    if (player_light_armour() && beam[0].move_x != 0
-                        && beam[0].move_y != 0 && coinflip())
-                    {
+                    if ( player_light_armour() && pbolt->move_x != 0
+                        && pbolt->move_y != 0 && coinflip() )
+                      {
                         exercise(SK_DODGING, 1);
-                    }
+                      }
 
-                    if (you.duration[DUR_REPEL_MISSILES] != 0 || you.mutation[MUT_REPULSION_FIELD] == 3)
-                    {
-                        beam[0].hit = random2(beam[0].hit);
-                    }
+                    if ( you.duration[DUR_REPEL_MISSILES] != 0
+                          || you.mutation[MUT_REPULSION_FIELD] == 3 )
+                      {
+                        pbolt->hit = random2(pbolt->hit);
+                      }
 
-                    if (beam[0].hit >= random2limit(player_evasion(), 40)
-                        + random2(you.dex) / 3 - 2
+                    if ( pbolt->hit >= random2limit(player_evasion(), 40) + random2(you.dex) / 3 - 2
                         && you.duration[DUR_DEFLECT_MISSILES] == 0)
-                    {
-
+                      {
                         strcpy(info, "The ");
-                        strcat(info, beam[0].beam_name);
+                        strcat(info, pbolt->beam_name);
                         strcat(info, " hits you");
-/*      if (beam[0].thing_thrown == 3 || beam[0].thing_thrown == 4)
-   {
-   if (beam[0].bx > you.x_pos - 7 && beam[0].bx < you.x_pos + 7 && beam[0].by > you.y_pos - 7 && beam[0].by < you.y_pos + 7)
-   {
-   viewwindow(1);
-   textcolor(beam[0].colour);
-   gotoxy(beam[0].bx - you.x_pos + 18, beam[0].by - you.y_pos + 9);
-   putch(35);
-   }
-   } */
+
+/* ******************************************************************
+
+                    if ( pbolt->thing_thrown == KILL_YOU_MISSILE || pbolt->thing_thrown == KILL_MON_MISSILE )
+                    {
+                        if (pbolt->bx > you.x_pos - 7 && pbolt->bx < you.x_pos + 7 && pbolt->by > you.y_pos - 7 && pbolt->by < you.y_pos + 7)
+                        {
+                            viewwindow(1);
+                            textcolor(pbolt->colour);
+                            gotoxy(pbolt->bx - you.x_pos + 18, pbolt->by - you.y_pos + 9);
+                            putch(35);
+                        }
+                    }
+
+****************************************************************** */
 
                         hurted = 0;
-                        if (beam[0].damage > 100)
+                        if ( pbolt->damage > 100 )
                         {
-                            hurted += random2(beam[0].damage - 100);
-                            hurted += random2(beam[0].damage - 100);
-                            hurted += random2(beam[0].damage - 100);
+                            hurted += random2(pbolt->damage - 100);
+                            hurted += random2(pbolt->damage - 100);
+                            hurted += random2(pbolt->damage - 100);
                         }
                         else
-                            hurted += random2(beam[0].damage);
+                          hurted += random2(pbolt->damage);
 
                         strcat(info, "!");
                         mpr(info);
 
-                        hurted = check_your_resists(hurted, beam[0].flavour);
+                        hurted = check_your_resists(hurted, pbolt->flavour);
 
-                        if (strstr(beam[0].beam_name, "poison") != NULL && beam[0].flavour != BEAM_POISON && player_res_poison() == 0 && random2(hurted) - random2(player_AC()) > 0)
+                        if ( strstr(pbolt->beam_name, "poison") != NULL
+                            && pbolt->flavour != BEAM_POISON
+                            && !player_res_poison()
+                            && random2(hurted) - random2(player_AC()) > 0 )
                         {
                             mpr("You are poisoned.");
                             you.poison += 1 + random2(3);
                         }
 
-                        if (beam[0].flavour == BEAM_LAVA
-                            || (beam[0].flavour == BEAM_FIRE
-                         && strcmp(beam[0].beam_name, "ball of steam") != 0)
-                            || stricmp(beam[0].beam_name, "hellfire") == 0)
+                        if ( pbolt->flavour == BEAM_LAVA
+                              || ( pbolt->flavour == BEAM_FIRE && strcmp(pbolt->beam_name, "ball of steam") != 0 )
+                              || stricmp(pbolt->beam_name, "hellfire") == 0 )
                         {
                             scrolls_burn(2, OBJ_SCROLLS);
                         }
 
-                        if (beam[0].flavour == BEAM_COLD)
-                            scrolls_burn(2, OBJ_POTIONS);
+                        if ( pbolt->flavour == BEAM_COLD )
+                          scrolls_burn(2, OBJ_POTIONS);
 
-                        hurted -= random2(player_AC() + 1);
-                        if (hurted <= 0)
-                            hurted = 0;
+                        hurted -= random2(1 + player_AC());
 
+                        if ( hurted < 0 )
+                          hurted = 0;
 
-                        if (you.equip[EQ_BODY_ARMOUR] != -1)
-                            if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && one_chance_in(4))
-                                exercise(SK_ARMOUR, 1);
+                        if ( you.equip[EQ_BODY_ARMOUR] != -1 )
+                          if ( !player_light_armour() && one_chance_in(4)
+                              && random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) )
+                            exercise(SK_ARMOUR, 1);
 
-                        if (YOU_KILL(beam[0].thing_thrown))
-                            ouch(hurted, 0, KILLED_BY_TARGETTING);
+                        if ( YOU_KILL(pbolt->thing_thrown) )
+                          ouch(hurted, 0, KILLED_BY_TARGETTING);
                         else
-                            ouch(hurted, beam[0].beam_source, KILLED_BY_BEAM);
+                          ouch(hurted, pbolt->beam_source, KILLED_BY_BEAM);
 
-                        you.redraw_hit_points = 1;
-
-                        if (strcmp(beam[0].beam_name, "sticky flame") == 0 && (you.species != SP_MOTTLED_DRACONIAN || you.experience_level < 6))
+                        if (strcmp(pbolt->beam_name, "sticky flame") == 0 && (you.species != SP_MOTTLED_DRACONIAN || you.experience_level < 6))
                         {
                             if (you.equip[EQ_BODY_ARMOUR] == -1 || you.inv_type[you.equip[EQ_BODY_ARMOUR]] != 25)
-                                you.duration[DUR_LIQUID_FLAMES] += 1 + random2(3) + random2(3) + random2(3);
+                                you.duration[DUR_LIQUID_FLAMES] += random2avg(7,3) + 1;
                         }
 
                         break;
@@ -1369,10 +1348,10 @@ void missile(struct bolt beam[1], int throw_2)
                     else
                     {
                         strcpy(info, "The ");
-                        strcat(info, beam[0].beam_name);
+                        strcat(info, pbolt->beam_name);
                         strcat(info, " misses you!");
                         mpr(info);
-                        if (beam[0].move_x == 0 && beam[0].move_y == 0)
+                        if (pbolt->move_x == 0 && pbolt->move_y == 0)
                             break;
                     }
 
@@ -1381,16 +1360,16 @@ void missile(struct bolt beam[1], int throw_2)
 
 
 
-                if (beam[0].flavour == BEAM_EXPLOSION)
+                if (pbolt->flavour == BEAM_EXPLOSION)
                 {
-                    explosion1(beam);
-                    beam[0].aim_down = 0;
+                    explosion1(pbolt);
+                    pbolt->aim_down = 0;
                     return;
                 }
-                if (strcmp(beam[0].beam_name, "orb of electricity") == 0 || strcmp(beam[0].beam_name, "metal orb") == 0 || strcmp(beam[0].beam_name, "great blast of cold") == 0)
+                if (strcmp(pbolt->beam_name, "orb of electricity") == 0 || strcmp(pbolt->beam_name, "metal orb") == 0 || strcmp(pbolt->beam_name, "great blast of cold") == 0)
                 {
-                    explosion1(beam);
-                    beam[0].aim_down = 0;
+                    explosion1(pbolt);
+                    pbolt->aim_down = 0;
                     return;
                 }
 
@@ -1398,26 +1377,28 @@ void missile(struct bolt beam[1], int throw_2)
             }
 
             char count_x = 0;
+            struct monsters *monster = 0;    // not really the best place for the declaration, but "oh, well" {dlb}
 
-            if (mgrd[beam[0].bx][beam[0].by] != MNG)
+            if ( mgrd[pbolt->bx][pbolt->by] != MNG )
             {
                 count_x = 0;
 
-                /* this won't display a "you miss it" if you throw an beam[0].aim_down thing at a lava worm, only if you hit. */
-                int o = mgrd[beam[0].bx][beam[0].by];
+                /* this won't display a "you miss it" if you throw an pbolt->aim_down thing at a lava worm, only if you hit. */
+                int o = mgrd[pbolt->bx][pbolt->by];
+                monster = &menv[o];
 
-                if (beam[0].colour == 200)      /* tracer */
+                if ( pbolt->colour == 200 )      /* tracer */
                 {
-                    if (menv[o].type < MONS_LAVA_WORM || menv[o].number == 0)
+                    if ( monster_habitat(monster->type) == DNGN_FLOOR || monster->number == 0 )
                     {
-                        if (beam[0].trac_hit_mons == 1 || menv[o].enchantment[2] != ENCH_INVIS)
+                        if ( pbolt->trac_hit_mons == 1 || monster->enchantment[2] != ENCH_INVIS )
                         {
-                            if (o == beam[0].trac_targ)
-                                beam[0].tracer_mons = 1;
-                            if (menv[o].behavior == 7)
-                                beam[0].tracer = 2;
+                            if ( o == pbolt->trac_targ )
+                              pbolt->tracer_mons = 1;
+                            if ( monster->behavior == BEH_ENSLAVED )
+                              pbolt->tracer = 2;
                             else
-                                beam[0].tracer = 3;
+                              pbolt->tracer = 3;
                             return;
                         }
                     }
@@ -1426,113 +1407,112 @@ void missile(struct bolt beam[1], int throw_2)
                     /* Start of : It's not a tracer */
                 {
 
-                    if (beam[0].hit >= random2(menv[o].evasion) && ((menv[o].type < MONS_LAVA_WORM || menv[o].number == 0) || (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y && beam[0].aim_down == 1)))
+                    if ( pbolt->hit >= random2(monster->evasion) && (( monster_habitat(monster->type) == DNGN_FLOOR || monster->number == 0) || (pbolt->bx == pbolt->target_x && pbolt->by == pbolt->target_y && pbolt->aim_down == 1)))
                     {
                         hurted = 0;
 
-                        if (beam[0].damage > 100)
+                        if (pbolt->damage > 100)
                         {
-                            hurted += random2(beam[0].damage - 100);
-                            hurted += random2(beam[0].damage - 100);
-                            hurted += random2(beam[0].damage - 100);
+                            hurted += random2(pbolt->damage - 100);
+                            hurted += random2(pbolt->damage - 100);
+                            hurted += random2(pbolt->damage - 100);
                         }
                         else
-                            hurted += random2(beam[0].damage);
+                            hurted += random2(pbolt->damage);
 
-                        if (mons_near(o))
+                        if ( mons_near(monster) && ( monster->enchantment[2] != ENCH_INVIS || player_see_invis() ) )
                         {
                             strcpy(info, "The ");
-                            strcat(info, beam[0].beam_name);
+                            strcat(info, pbolt->beam_name);
                             strcat(info, " hits ");
-                            strcat(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 1));       //gmon_name [mons_class [o]]);
-
+                            strcat(info, monam(monster->number, monster->type, monster->enchantment[2], 1));
                             strcat(info, ".");
                             mpr(info);
                         }
 
-                        hurted = check_mons_resists(beam, o, hurted);
+                        hurted = check_mons_resists(monster, pbolt, hurted);
 
-                        menv[o].hit_points -= hurted;
+                        hurt_monster(monster, hurted);
 
-                        if (YOU_KILL(beam[0].thing_thrown) && menv[o].behavior == BEH_ENSLAVED && hurted > 0)
+                        if (YOU_KILL(pbolt->thing_thrown) && monster->behavior == BEH_ENSLAVED && hurted > 0)
                         {
-//   naughty(8, 5);
-                            menv[o].behavior = 1;
+                            //naughty(NAUGHTY_STABBING, 5);
+                            monster->behavior = BEH_CHASING_I;
                         }
-//  if ((beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3) && mons_holiness(menv [o].type) < 0 && hurted > 0) naughty(15, 4);
-                        if (YOU_KILL(beam[0].thing_thrown) && mons_near(o))
-                            print_wounds(o);
-                        if (menv[o].type >= 389 && menv[o].type <= 393)
-                            mimic_alert(o);
 
-                        if (menv[o].behavior == 0)
-                            menv[o].behavior = 1;
+                        if ( YOU_KILL(pbolt->thing_thrown) && mons_near(monster) )
+                          print_wounds(monster);
+                        if ( mons_category(monster->type) == MC_MIMIC )
+                          mimic_alert(monster);
+
+                        if ( monster->behavior == BEH_SLEEP )
+                          monster->behavior = BEH_CHASING_I;
 
 
-/*              if (beam[0].thing_thrown == 3 || beam[0].thing_thrown == 4)
+/*              if (pbolt->thing_thrown == KILL_YOU_MISSILE || pbolt->thing_thrown == KILL_MON_MISSILE)
    {
-   if (beam[0].bx > you.x_pos - 7 && beam[0].bx < you.x_pos + 7 && beam[0].by > you.y_pos - 7 && beam[0].by < you.y_pos + 7)
+   if (pbolt->bx > you.x_pos - 7 && pbolt->bx < you.x_pos + 7 && pbolt->by > you.y_pos - 7 && pbolt->by < you.y_pos + 7)
    {
    viewwindow(1);
-   textcolor(beam[0].colour);
-   gotoxy(beam[0].bx - you.x_pos + 18, beam[0].by - you.y_pos + 9);
+   textcolor(pbolt->colour);
+   gotoxy(pbolt->bx - you.x_pos + 18, pbolt->by - you.y_pos + 9);
    putch(35);
    }
    } */
-                        if (menv[o].hit_points <= 0)
+                        if ( monster->hit_points < 1 )
                         {
-                            switch (beam[0].thing_thrown)
+                            switch (pbolt->thing_thrown)
                             {
-                            case KILL_YOU:      /* You threw */
-                            case KILL_YOU_MISSILE:
-                                monster_die(o, KILL_YOU_MISSILE, beam[0].beam_source);
+                              case KILL_YOU:      /* You threw */
+                              case KILL_YOU_MISSILE:
+                                monster_die(monster, KILL_YOU_MISSILE, pbolt->beam_source);
                                 break;  /* You cast a missile spell which doesn't leave an item. */
-                            case KILL_MON:      /* mons threw */
-                            case KILL_MON_MISSILE:
-                                monster_die(o, KILL_MON_MISSILE, beam[0].beam_source);
+                              case KILL_MON:      /* mons threw */
+                              case KILL_MON_MISSILE:
+                                monster_die(monster, KILL_MON_MISSILE, pbolt->beam_source);
                                 break;  /* mons cast a missile spell which doesn't leave an item. */
-
                             }
                         }
                         else
                         {
-                            if (strcmp(beam[0].beam_name, "sticky flame") == 0)
-                                sticky_flame_monster(o, 0, hurted);
+                            if ( strcmp(pbolt->beam_name, "sticky flame") == 0 )
+                              sticky_flame_monster(o, false, hurted);
 
                             /* looks for missiles which aren't poison but are poison*ed* */
-                            if (strstr(beam[0].beam_name, "poison") != NULL && beam[0].flavour != BEAM_POISON && random2(hurted) - random2(menv[o].armor_class) > 0)
-                                poison_monster(o, !YOU_KILL(beam[0].thing_thrown));
+                            if ( strstr(pbolt->beam_name, "poison") != NULL
+                                && pbolt->flavour != BEAM_POISON
+                                && random2(hurted) - random2(monster->armor_class) > 0)
+                              poison_monster(monster, YOU_KILL(pbolt->thing_thrown));
                         }
                         count_x = 1;
 
-                        if (beam[0].flavour == BEAM_EXPLOSION)
+                        if (pbolt->flavour == BEAM_EXPLOSION)
                         {
-                            explosion1(beam);
-                            beam[0].aim_down = 0;
+                            explosion1(pbolt);
+                            pbolt->aim_down = 0;
                             return;
                         }
 
-                        if (strcmp(beam[0].beam_name, "orb of electricity") == 0 || strcmp(beam[0].beam_name, "metal orb") == 0 || strcmp(beam[0].beam_name, "great blast of cold") == 0)
+                        if (strcmp(pbolt->beam_name, "orb of electricity") == 0 || strcmp(pbolt->beam_name, "metal orb") == 0 || strcmp(pbolt->beam_name, "great blast of cold") == 0)
                         {
-                            explosion1(beam);
-                            beam[0].aim_down = 0;
+                            explosion1(pbolt);
+                            pbolt->aim_down = 0;
                             return;
                         }
 
                         break;
                     }
-                    else if (YOU_KILL(beam[0].thing_thrown) && mons_near(o) && (menv[o].type < MONS_LAVA_WORM || menv[o].number == 0))  // No message if monster missile misses
-
+                    else if (YOU_KILL(pbolt->thing_thrown) && mons_near(monster) && ( monster_habitat(monster->type) == DNGN_FLOOR || monster->number == 0))  // No message if monster missile misses
                     {
                         strcpy(info, "The ");
-                        strcat(info, beam[0].beam_name);
+                        strcat(info, pbolt->beam_name);
                         strcat(info, " misses ");
-                        strcat(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 1));
+                        strcat(info, monam(monster->number, monster->type, monster->enchantment[2], 1));
                         strcat(info, ".");
                         mpr(info);
 
-                        if (you.invis != 0 && mons_see_invis(menv[o].type) != 0 && menv[o].behavior == BEH_SLEEP)
-                            menv[o].behavior = BEH_CHASING_I;
+                        if ( ( !you.invis || mons_see_invis(monster->type) ) && monster->behavior == BEH_SLEEP )
+                          monster->behavior = BEH_CHASING_I;
 
                     }
 
@@ -1549,84 +1529,77 @@ void missile(struct bolt beam[1], int throw_2)
 
         }                       // end of if.
 
-        if (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y && beam[0].aim_down == 1)
-        {
-            goto landed;
-        }
+        if (pbolt->bx == pbolt->target_x && pbolt->by == pbolt->target_y && pbolt->aim_down == 1)
+          goto landed;
 
     }                           // end of for n loop
 
-  landed:
-    if (beam[0].flavour == BEAM_EXPLOSION)
+landed:
+    if (pbolt->flavour == BEAM_EXPLOSION)
     {
-        explosion1(beam);
-        beam[0].aim_down = 0;
+        explosion1(pbolt);
+        pbolt->aim_down = 0;
         return;
     }
 
-    if (beam[0].colour == 200)
-        return;
+    if ( pbolt->colour == 200 )
+      return;
 
-    if (strcmp(beam[0].beam_name, "orb of electricity") == 0 || strcmp(beam[0].beam_name, "metal orb") == 0 || strcmp(beam[0].beam_name, "great blast of cold") == 0)
+    if (strcmp(pbolt->beam_name, "orb of electricity") == 0 || strcmp(pbolt->beam_name, "metal orb") == 0 || strcmp(pbolt->beam_name, "great blast of cold") == 0)
     {
-        explosion1(beam);
-        beam[0].aim_down = 0;
+        explosion1(pbolt);
+        pbolt->aim_down = 0;
         return;
     }
 
 
-    if (beam[0].thing_thrown == KILL_YOU)       // ie if you threw it.
+    if (pbolt->thing_thrown == KILL_YOU)       // ie if you threw it.
 
     {
-        if (grd[beam[0].bx][beam[0].by] != DNGN_LAVA && grd[beam[0].bx][beam[0].by] != DNGN_DEEP_WATER)
+        if (grd[pbolt->bx][pbolt->by] != DNGN_LAVA && grd[pbolt->bx][pbolt->by] != DNGN_DEEP_WATER)
         {
-            if (you.inv_class[throw_2] != 1
-                || random2((you.inv_type[throw_2] == MI_STONE) ? 3 : 2) != 0)
+            if ( you.inv_class[throw_2] != 1
+                  || !one_chance_in( (you.inv_type[throw_2] == MI_STONE) ? 3 : 2) )
             {
-                item_place(throw_2, beam[0].bx, beam[0].by, 1);
+                item_place(throw_2, pbolt->bx, pbolt->by, 1);
             }
         }
 
-        if (throw_2 == you.equip[EQ_WEAPON])
+        if ( throw_2 == you.equip[EQ_WEAPON] )
         {
             you.equip[EQ_WEAPON] = -1;
-            strcpy(info, "You are empty handed.");
-            mpr(info);
+            mpr("You are empty handed.");
         }
     }
 
 
-    if (beam[0].thing_thrown == KILL_MON && (grd[beam[0].bx][beam[0].by] != DNGN_LAVA && grd[beam[0].bx][beam[0].by] != DNGN_DEEP_WATER) && coinflip())         // monster threw it.
-
+    if (pbolt->thing_thrown == KILL_MON && (grd[pbolt->bx][pbolt->by] != DNGN_LAVA && grd[pbolt->bx][pbolt->by] != DNGN_DEEP_WATER) && coinflip())         // monster threw it.
     {
-
         if (mitm.quantity[throw_2] == 0)        // 0 instead of 1 because the mitm.quantity is reduced by 1 when it is thrown.
-
         {
         }
         else
         {
-
-            if (igrd[beam[0].bx][beam[0].by] != ING)
+            if (igrd[pbolt->bx][pbolt->by] != ING)
             {
                 if ((mitm.base_type[throw_2] == OBJ_MISSILES
                      || mitm.base_type[throw_2] == OBJ_FOOD
                      || mitm.base_type[throw_2] == OBJ_SCROLLS
                      || mitm.base_type[throw_2] == OBJ_POTIONS
                      || mitm.base_type[throw_2] == OBJ_UNKNOWN_II)
-                    && mitm.base_type[throw_2] == mitm.base_type[igrd[beam[0].bx][beam[0].by]]
-                    && mitm.sub_type[throw_2] == mitm.sub_type[igrd[beam[0].bx][beam[0].by]]
-                    && mitm.pluses[throw_2] == mitm.pluses[igrd[beam[0].bx][beam[0].by]]
-                    && mitm.pluses2[throw_2] == mitm.pluses2[igrd[beam[0].bx][beam[0].by]]
-                    && mitm.special[throw_2] == mitm.special[igrd[beam[0].bx][beam[0].by]])
+                    && mitm.base_type[throw_2] == mitm.base_type[igrd[pbolt->bx][pbolt->by]]
+                    && mitm.sub_type[throw_2] == mitm.sub_type[igrd[pbolt->bx][pbolt->by]]
+                    && mitm.pluses[throw_2] == mitm.pluses[igrd[pbolt->bx][pbolt->by]]
+                    && mitm.pluses2[throw_2] == mitm.pluses2[igrd[pbolt->bx][pbolt->by]]
+                    && mitm.special[throw_2] == mitm.special[igrd[pbolt->bx][pbolt->by]])
                 {
-                    mitm.quantity[igrd[beam[0].bx][beam[0].by]]++;
-                    beam[0].aim_down = 0;
+                    mitm.quantity[igrd[pbolt->bx][pbolt->by]]++;
+                    pbolt->aim_down = 0;
                     return;
                 }
             }                   // end of if igrd != ING
 
-            int o = 0;
+            int o = 0;    // bad bad bad (!!!) using same variable name in the same function -- ick!!! {dlb}
 
             for (o = 0; o < ITEMS; o++)
             {
@@ -1641,20 +1614,19 @@ void missile(struct bolt beam[1], int throw_2)
                     mitm.colour[o] = mitm.colour[throw_2];
                     mitm.quantity[o] = 1;
                     mitm.link[o] = ING;
-                    /*                              it_no ++; */
                     break;
                 }
             }                   // end of o loop
 
-            if (igrd[beam[0].bx][beam[0].by] == ING)
+            if (igrd[pbolt->bx][pbolt->by] == ING)
             {
-                igrd[beam[0].bx][beam[0].by] = o;
+                igrd[pbolt->bx][pbolt->by] = o;
             }
             else
             {
-                int hug = igrd[beam[0].bx][beam[0].by];
+                int hug = igrd[pbolt->bx][pbolt->by];
 
-                igrd[beam[0].bx][beam[0].by] = o;
+                igrd[pbolt->bx][pbolt->by] = o;
                 mitm.link[o] = hug;
             }
 
@@ -1662,47 +1634,36 @@ void missile(struct bolt beam[1], int throw_2)
 
     }                           // if (thing_throw == 2) ...
 
-    beam[0].aim_down = 0;
+    pbolt->aim_down = 0;
 /* ^ must have this before every return in this function! */
 
-}                               // end of missile()
+}          // end missile()
 
 
-/*
-   Returns the damage taken by a monster from a "flavoured" (fire, ice etc)
-   attack. Damage from clouds and branded weapons is handled elsewhere.
- */
-int check_mons_resists(struct bolt beam[1], int o, int hurted)
+
+
+// returns damage taken by a monster from a "flavoured" (fire, ice, etc.)
+// attack -- damage from clouds and branded weapons handled elsewhere.
+int check_mons_resists( struct monsters *monster, struct bolt *pbolt, int hurted )
 {
-    switch (beam[0].flavour)
+
+    switch ( pbolt->flavour )
     {
     case BEAM_FIRE:
-        if (mons_res_fire(menv[o].type) > 0)
+        if (mons_res_fire(monster->type) > 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " appears unharmed.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
-        else if (menv[o].inv[2] != ING && mitm.special[menv[o].inv[2]] % 30 == 2)
+        else if (monster->inv[MSLOT_ARMOUR] != ING && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 == SPARM_FIRE_RESISTANCE)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " resists.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " resists.");
             hurted /= 3;
         }
 
-        if (mons_res_fire(menv[o].type) == -1 && (menv[o].inv[2] == ING || mitm.special[menv[o].inv[2]] % 30 != 2))
+        if (mons_res_fire(monster->type) == -1 && (monster->inv[MSLOT_ARMOUR] == ING || mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 != SPARM_FIRE_RESISTANCE))
         {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-            strcat(info, " is burned terribly!");
-            mpr(info);
+            simple_monster_message(monster, " is burned terribly!");
             hurted *= 15;
             hurted /= 10;
         }
@@ -1710,46 +1671,29 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
 
 
     case BEAM_COLD:
-        if (mons_res_cold(menv[o].type) > 0)
+        if (mons_res_cold(monster->type) > 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " appears unharmed.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
-        else if (menv[o].inv[2] != ING && mitm.special[menv[o].inv[2]] % 30 == 3)
+        else if (monster->inv[MSLOT_ARMOUR] != ING && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 == SPARM_COLD_RESISTANCE)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " resists.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " resists.");
             hurted /= 3;
         }
 
-        if (mons_res_cold(menv[o].type) == -1 && (menv[o].inv[2] == ING || mitm.special[menv[o].inv[2]] % 30 != 3))
+        if (mons_res_cold(monster->type) == -1 && (monster->inv[MSLOT_ARMOUR] == ING || mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 != SPARM_COLD_RESISTANCE))
         {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-            strcat(info, " is frozen!");
-            mpr(info);
+            simple_monster_message(monster, " is frozen!");
             hurted *= 15;
             hurted /= 10;
         }
         break;
 
     case BEAM_ELECTRICITY:
-        if (mons_res_elec(menv[o].type) > 0)
+        if (mons_res_elec(monster->type) > 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " appears unharmed.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
         break;
@@ -1757,95 +1701,64 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
 
     case BEAM_POISON:
         if (!one_chance_in(3))
-        {
-            poison_monster(o, !YOU_KILL(beam[0].thing_thrown));
-        }
+          poison_monster(monster, YOU_KILL(pbolt->thing_thrown));
 
-        if (mons_res_poison(menv[o].type) > 0)
+        if ( mons_res_poison(monster->type) > 0 )
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " appears unharmed.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
         break;
 
     case BEAM_NEG:
-        if (mons_holiness(menv[o].type) > 0)
+        if ( mons_holiness(monster->type) == MH_UNDEAD || mons_holiness(monster->type) == MH_DEMONIC )
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " appears unharmed.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
         else
         {
-            if (mons_near(o))
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " is drained.");
-                mpr(info);
-            }
-            if (one_chance_in(5))
-                menv[o].hit_dice--;
-            menv[o].max_hit_points -= 2 + random2(3);
-            menv[o].hit_points -= 2 + random2(3);
-            if (menv[o].hit_points >= menv[o].max_hit_points)
-                menv[o].hit_points = menv[o].max_hit_points;
-            if (menv[o].hit_dice <= 0)
-                menv[o].hit_points = 0;
+            simple_monster_message(monster, " is drained.");
+
+            if ( one_chance_in(5) )
+              monster->hit_dice--;
+
+            monster->max_hit_points -= 2 + random2(3);
+            monster->hit_points -= 2 + random2(3);
+
+            if ( monster->hit_points >= monster->max_hit_points )
+              monster->hit_points = monster->max_hit_points;
+
+            if ( monster->hit_dice < 1 )
+              monster->hit_points = 0;
         }                       // end else
 
         break;
 
 
     case BEAM_HOLY:             // flame of cleansing
-
-        if (mons_holiness(menv[o].type) <= 0)
+        if ( mons_holiness(monster->type) == MH_NATURAL || mons_holiness(monster->type) == MH_HOLY )
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " appears unharmed.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
         break;
 
     case BEAM_ICE:              /* ice - about 50% of damage is cold, other 50% is impact and can't be resisted (except by AC, of course) */
-        if (mons_res_cold(menv[o].type) > 0)
+        if (mons_res_cold(monster->type) > 0)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " partially resists.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " partially resists.");
             hurted /= 2;
         }
-        else if (menv[o].inv[2] != ING && mitm.special[menv[o].inv[2]] % 30 == 3)
+        else if (monster->inv[MSLOT_ARMOUR] != ING && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 == SPARM_COLD_RESISTANCE)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " partially resists.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " partially resists.");
             hurted /= 2;
         }
 
-        if (mons_res_cold(menv[o].type) == -1 && (menv[o].inv[2] == ING || mitm.special[menv[o].inv[2]] % 30 != 3))
+        if (mons_res_cold(monster->type) == -1 && (monster->inv[MSLOT_ARMOUR] == ING || mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 != SPARM_COLD_RESISTANCE))
         {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-            strcat(info, " is frozen!");
-            mpr(info);
+            simple_monster_message(monster, " is frozen!");
             hurted *= 13;
             hurted /= 10;
         }
@@ -1854,34 +1767,21 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
     }                           /* end of switch */
 
 
-    if (stricmp(beam[0].beam_name, "hellfire") == 0
-        || beam[0].flavour == BEAM_LAVA)
+    if ( stricmp(pbolt->beam_name, "hellfire") == 0 || pbolt->flavour == BEAM_LAVA )
     {
-        if (mons_res_fire(menv[o].type) == 2)
+        if (mons_res_fire(monster->type) == 2)
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " appears unharmed.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " appears unharmed.");
             hurted = 0;
         }
-        if (mons_res_fire(menv[o].type) == 1 || (menv[o].inv[2] != ING && mitm.special[menv[o].inv[2]] % 30 == 2))
+        if (mons_res_fire(monster->type) == 1 || (monster->inv[MSLOT_ARMOUR] != ING && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 == SPARM_FIRE_RESISTANCE))
         {
-            if (mons_near(o) && menv[o].enchantment[2] != ENCH_INVIS)
-            {
-                strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                strcat(info, " partially resists.");
-                mpr(info);
-            }
+            simple_monster_message(monster, " partially resists.");
             hurted /= 2;
         }
-        if (mons_res_fire(menv[o].type) == -1 && (menv[o].inv[2] == ING || mitm.special[menv[o].inv[2]] % 30 != 2))
+        if (mons_res_fire(monster->type) == -1 && (monster->inv[MSLOT_ARMOUR] == ING || mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 != SPARM_FIRE_RESISTANCE))
         {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-            strcat(info, " is burned terribly!");
-            mpr(info);
+            simple_monster_message(monster, " is burned terribly!");
             hurted *= 12;       /* hellfire */
             hurted /= 10;
         }
@@ -1889,50 +1789,44 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
 
     return hurted;
 
-}
+}          // end check_mons_resists()
 
 
 
-/*
-   Returns 0 if the monster made its save against hostile enchantments/some
-   other magics.
- */
-int check_mons_magres(int mn, int pow)
+
+// these return values seem "backward" to me {dlb}:
+
+// Returns 0 if the monster made its save against hostile
+// enchantments/some other magics.
+bool check_mons_magres( struct monsters *monster, int pow )
 {
 
-    int mrs = mon_resist_mag(menv[mn].type, menv[mn].hit_dice);
+    int mrs = mon_resist_mag(monster->type, monster->hit_dice);
 
-    if (mrs == 5000)
-        return 0;
+    if ( mrs == 5000 )
+      return false;
 
-//if (random2(pow) + random2(pow) + random2(pow) >= mrs) return 1;
-    //if (random2(pow) + random2(pow) + random2(pow) + random2(pow) + random2(pow) >= mrs) return 1;
-    //if (random2(pow) + random2(pow) + random2(pow
-
-
-
-    if (pow > 40)               // nested if's rather than stacked 'em
-
-    {                           // uglier than before but slightly
-
+    if ( pow > 40 )                     // nested if's rather than stacked 'em
+    {                                   // uglier than before but slightly
         pow = ((pow - 40) / 2) + 40;    // more efficient 16jan2000 {dlb}
 
-        if (pow > 70)
+        if ( pow > 70 )
         {
             pow = ((pow - 70) / 2) + 70;
-            if (pow > 90)
+
+            if ( pow > 90 )
             {
                 pow = ((pow - 90) / 2) + 90;
-                if (pow > 120)
-                    pow = 120;
+
+                if ( pow > 120 )
+                  pow = 120;
             }
         }
     }
 
-    int mrchance = 100 + mrs;
+    int mrchance = (100 + mrs) - pow;
 
-    mrchance -= pow;
-    int mrch2 = random2(100) + random2(101);
+    int mrch2 = random2avg(200,2);
 
 #ifdef WIZARD
     strcpy(info, "Pow:");
@@ -1950,563 +1844,503 @@ int check_mons_magres(int mn, int pow)
     mpr(info);
 #endif
 
-    if (mrch2 < mrchance)
-        return 0;               /* ie saved successfully */
+    return ( (mrch2 < mrchance) ? false : true );
 
-    return 1;
+}          // end check_mons_magres()
 
-}                               /* end of check_mons_magres */
 
-/*
-   Enchants all monsters in player's sight.
- */
-void mass_enchantment(int wh_enchant, int pow)
+
+
+// Enchants all monsters in player's sight.
+void mass_enchantment( int wh_enchant, int pow )
 {
 
-    int i = 0;
-    int p;
-    char brek = 0;
+    int i = 0;           // loop variable {dlb}
+    int p;               // loop variable {dlb}
+    bool brek = false;
+    struct monsters *monster = 0;    // NULL {dlb}
 
     viewwindow(0, false);
+
     for (i = 0; i < MNST; i++)
     {
-        if (menv[i].type == -1)
-            continue;
-        if (!mons_near(i))
-            continue;
+        monster = &menv[i];
 
-        if (wh_enchant == ENCH_CHARM && (mons_holiness(menv[i].type) != MH_UNDEAD || menv[i].behavior == BEH_ENSLAVED))
-            continue;
-        /* assuming that the only mass charm is control undead */
+        if ( monster->type == -1 || !mons_near(monster) )
+          continue;
 
-        if (wh_enchant != ENCH_CHARM || mons_holiness(menv[i].type) != MH_UNDEAD)
-/*   if (check_mons_magres(i, pow) == 0 && beam[0].colour != 1 && beam[0].colour != 2 && beam[0].colour != 5) */
-            if (check_mons_magres(i, pow) == 0)         /* && beam[0].colour != 1 && beam[0].colour != 2 && beam[0].colour != 5) */
+// assuming that the only mass charm is control undead:
+        if ( wh_enchant == ENCH_CHARM
+            && ( mons_holiness(monster->type) != MH_UNDEAD || monster->behavior == BEH_ENSLAVED ) )
+          continue;
+
+        if ( wh_enchant != ENCH_CHARM || mons_holiness(monster->type) != MH_UNDEAD )
+            if ( !check_mons_magres(monster, pow) )
             {
-                strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));
-                strcat(info, " resists.");
-                mpr(info);
-/*      beam[0].aim_down = 0; */
+                simple_monster_message(monster, " resists.");
                 continue;
             }
 
-        if (menv[i].x > you.x_pos - 9
-            && menv[i].x < you.x_pos + 9
-            && menv[i].y > you.y_pos - 9
-            && menv[i].y < you.y_pos + 9
-            && see_grid(menv[i].x, menv[i].y))  /*show [menv [i].x - you.x_pos + 9] [menv [i].y - you.y_pos + 9] != 0) */
+        if ( mons_near(monster) )
         {
-            if (menv[i].enchantment1 == 1)
-                for (p = 0; p < 3; p++)
-                {
-                    if (menv[i].enchantment[p] == wh_enchant)
-                        brek = 1;
-                }               // end of for p
+            if ( monster->enchantment1 == 1 )
+              for (p = 0; p < 3; p++)
+              {
+                  if ( monster->enchantment[p] == wh_enchant )
+                    brek = true;
+              }
 
             for (p = 0; p < 3; p++)
             {
-                if (brek == 1)
+                if ( brek )
                 {
-                    brek = 0;
+                    brek = false;
                     break;
                 }
-                if (menv[i].enchantment[p] == ENCH_NONE)
+
+                if ( monster->enchantment[p] == ENCH_NONE )
                 {
-                    menv[i].enchantment[p] = wh_enchant;
-                    menv[i].enchantment1 = 1;
-                    if (menv[i].enchantment[2] != ENCH_INVIS || player_see_invis() != 0)
+                    monster->enchantment[p] = wh_enchant;
+                    monster->enchantment1 = 1;
+
+                    if ( monster->enchantment[2] != ENCH_INVIS || player_see_invis() )
                     {
-                        strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));
-                        switch (wh_enchant)
+                        switch ( wh_enchant )
                         {
-                        case 4:
-                            strcat(info, " looks frightened.");
+                          case ENCH_FEAR:
+                            simple_monster_message(monster, " looks frightened.");
                             break;
-                        case 5:
-                            strcat(info, " looks rather confused.");
+                          case ENCH_CONFUSION:
+                            simple_monster_message(monster, " looks rather confused.");
                             break;
-                        case 30:
-                            strcat(info, " submits to your will.");
-                            menv[i].behavior = 7;
+                          case ENCH_CHARM:
+                            simple_monster_message(monster, " submits to your will.");
+                            monster->behavior = BEH_ENSLAVED;
                             break;
                         }
-                        mpr(info);
-                        break;
+
+                        break;    // I'm totally confused on this one {dlb}
                     }
                     else
-                        mpr("Nothing appears to happen.");
+                      canned_msg(MSG_NOTHING_HAPPENS);    // I do not like this at all -- gives away # of invisble monsters in area of effect {dlb}
                 }
-            }                   // end of for p
+            }
 
-        }                       // end of if visible
+        }        // end "if mons_near(monster)"
 
-    }                           // end of for i
+    }        // end "for i"
 
-}                               // end of void cause_fear()
+}          // end mass_enchantmenet()
+
+
 
 
 /*
    Monster has probably failed save, now it gets enchanted somehow.
  */
-int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
+bool mons_ench_f2( struct monsters *monster, struct bolt *pbolt )
 {
 
-    char brek = 0;
-    char p;
+    bool is_near = mons_near(monster);    // single caluclation permissible {dlb}
+    bool brek = false;
+    char p;              // loop variable
 
-    switch (beam[0].colour)     /* put in magic resistance */
+    switch ( pbolt->colour )     /* put in magic resistance */
     {
-    case BLACK:         /* 0 = slow monster */
+      case BLACK:         /* 0 = slow monster */
         for (p = 0; p < 3; p++)
         {
-            if (menv[o].enchantment[p] == ENCH_SLOW)
+            if ( monster->enchantment[p] == ENCH_SLOW )
+              goto nothinghap;
+
+            if (monster->enchantment[p] == ENCH_HASTE)
             {
-                if (is_near)
-                    mpr("Nothing appears to happen.");
-                return 1;
-            }
-            if (menv[o].enchantment[p] == ENCH_HASTE)
-            {
-                menv[o].enchantment[p] = ENCH_NONE;
-                if (menv[o].speed >= 100)
-                {
-                    menv[o].speed = ((menv[o].speed - 100) / 2) + 100;
-                }
+                monster->enchantment[p] = ENCH_NONE;
+
+                if ( monster->speed >= 100 )
+                  monster->speed = 100 + ((monster->speed - 100) / 2);
                 else
-                    menv[o].speed /= 2;
-                if (menv[o].enchantment[0] == ENCH_NONE && menv[o].enchantment[1] == ENCH_NONE && menv[o].enchantment[2] == ENCH_NONE)
-                    menv[o].enchantment1 = 0;
-                brek = 1;
+                  monster->speed /= 2;
+
+                if ( monster->enchantment[0] == ENCH_NONE && monster->enchantment[1] == ENCH_NONE && monster->enchantment[2] == ENCH_NONE)
+                  monster->enchantment1 = 0;
+
+                brek = true;
                 break;
             }
         }                       /* end of for p */
 
-        if (brek == 0)
-            for (p = 0; p < 3; p++)
-            {
-                if (menv[o].enchantment[p] == ENCH_NONE)        /* || p == 2) replaces 3rd enchantment if all full. */
-                {
-                    menv[o].enchantment[p] = ENCH_SLOW;
-                    if (menv[o].speed >= 100)
-                    {
-                        menv[o].speed = ((menv[o].speed - 100) / 2) + 100;
-                    }
-                    else
-                        menv[o].speed /= 2;
-                    menv[o].enchantment1 = 1;
-                    break;
-                }
-            }
+        if ( !brek )
+          for (p = 0; p < 3; p++)
+          {
+              if (monster->enchantment[p] == ENCH_NONE)        /* || p == 2) replaces 3rd enchantment if all full. */
+              {
+                  monster->enchantment[p] = ENCH_SLOW;
+
+                  if ( monster->speed >= 100 )
+                    monster->speed = 100 + ((monster->speed - 100) / 2);
+                  else
+                    monster->speed /= 2;
+
+                  monster->enchantment1 = 1;
+                  break;
+              }
+          }
 
 
         // put in an exception for fungi, plants and other things you won't
         // notice slow down.
-        if (is_near)
-        {
-            strcpy(info, monam(menv[o].number, menv[o].type,
-                               menv[o].enchantment[2], 0));
-            strcat(info, " seems to slow down.");
-            mpr(info);
-            func_pass[1] = 1;
-        }
-        return 1;
+        if ( simple_monster_message(monster, " seems to slow down.") )
+          pbolt->wand_id = 1;
+
+        return true;
 
     case BLUE:                  // 1 = haste
-
         for (p = 0; p < 3; p++)
         {
-            if (menv[o].enchantment[p] == ENCH_HASTE)
-                goto nothinghap;
-            if (menv[o].enchantment[p] == ENCH_SLOW)
+            if ( monster->enchantment[p] == ENCH_HASTE )
+              goto nothinghap;
+
+            if (monster->enchantment[p] == ENCH_SLOW)
             {
-                menv[o].enchantment[p] = ENCH_NONE;
-                if (menv[o].speed >= 100)
-                {
-                    menv[o].speed = ((menv[o].speed - 100) * 2) + 100;
-                }
+                monster->enchantment[p] = ENCH_NONE;
+
+                if (monster->speed >= 100)
+                  monster->speed = 100 + ((monster->speed - 100) << 1);
                 else
-                    menv[o].speed *= 2;
-                if (menv[o].enchantment[0] == ENCH_NONE && menv[o].enchantment[1] == ENCH_NONE && menv[o].enchantment[2] == ENCH_NONE)
-                    menv[o].enchantment1 = 0;
-                brek = 1;
+                  monster->speed <<= 1;
+
+                if ( monster->enchantment[0] == ENCH_NONE
+                    && monster->enchantment[1] == ENCH_NONE
+                    && monster->enchantment[2] == ENCH_NONE )
+                  monster->enchantment1 = 0;
+
+                brek = true;
                 break;
             }
         }                       /* end of for p */
 
-        if (brek == 0)
-            for (p = 0; p < 3; p++)
-            {
-                if (menv[o].enchantment[p] == ENCH_NONE)
-                {
-                    menv[o].enchantment[p] = ENCH_HASTE;
-                    if (menv[o].speed >= 100)
-                    {
-                        menv[o].speed = ((menv[o].speed - 100) * 2) + 100;
-                    }
-                    else
-                        menv[o].speed *= 2;
-                    menv[o].enchantment1 = 1;
-                    break;
-                }
-            }
-        if (p == 2 && menv[o].enchantment[p] != ENCH_NONE)
-            goto nothinghap;
+        if ( !brek )
+          for (p = 0; p < 3; p++)
+          {
+              if (monster->enchantment[p] == ENCH_NONE)
+              {
+                  monster->enchantment[p] = ENCH_HASTE;
+
+                  if (monster->speed >= 100)
+                    monster->speed = 100 + ((monster->speed - 100) << 1);
+                  else
+                    monster->speed <<= 1;
+
+                  monster->enchantment1 = 1;
+                  break;
+              }
+          }
+
+        if ( p == 2 && monster->enchantment[p] != ENCH_NONE )
+          goto nothinghap;
 
         // put in an exception for fungi, plants and other things you won't
         // notice speed up.
-        if (is_near)
-        {
-            strcpy(info, monam(menv[o].number, menv[o].type,
-                               menv[o].enchantment[2], 0));
-            strcat(info, " seems to speed up.");
-            mpr(info);
-            func_pass[1] = 1;
-        }
-        return 1;
+        if ( simple_monster_message(monster, " seems to speed up.") )
+          pbolt->wand_id = 1;
+
+        return true;
 
 
     case GREEN:         /* 2 = healing */
-        if (menv[o].hit_points == menv[o].max_hit_points)
+        if ( heal_monster(monster, 5 + random2(15), false) )
         {
-            goto nothinghap;
-        }
-        menv[o].hit_points += random2(15) + 5;
-        if (menv[o].hit_points >= menv[o].max_hit_points)
-        {
-            menv[o].hit_points = menv[o].max_hit_points;
-            if (is_near)
+            if ( monster->hit_points == monster->max_hit_points )
             {
-                strcpy(info, monam(menv[o].number, menv[o].type,
-                                   menv[o].enchantment[2], 0));
-                strcat(info, "'s wounds heal themselves!");
-                mpr(info);
-                func_pass[1] = 1;
+                if ( simple_monster_message(monster, "'s wounds heal themselves!") )
+                  pbolt->wand_id = 1;
             }
-            return 1;
+            else
+            {
+                if ( simple_monster_message(monster, " is healed somewhat.") )
+                  pbolt->wand_id = 1;
+            }
         }
-
-        if (is_near)
+        else
         {
-            strcpy(info, monam(menv[o].number, menv[o].type,
-                               menv[o].enchantment[2], 0));
-            strcat(info, " is healed somewhat.");
-            mpr(info);
-            func_pass[1] = 1;
+            if ( !simple_monster_message(monster, " is unaffected.") )
+              canned_msg(MSG_NOTHING_HAPPENS);
         }
-        return 1;
+        return true;
 
     case CYAN:                  /* 3 = paralysis */
-        menv[o].speed_increment = 0;
+        monster->speed_increment = 0;
 
-        if (is_near == 1)
-        {
-            strcpy(info, monam(menv[o].number, menv[o].type,
-                               menv[o].enchantment[2], 0));
-            strcat(info, " suddenly stops moving!");
-            mpr(info);
-            func_pass[1] = 1;
-        }
+        if ( simple_monster_message(monster, " suddenly stops moving!") )
+          pbolt->wand_id = 1;
 
-        if (grd[menv[o].x][menv[o].y] == DNGN_LAVA_X
-            || grd[menv[o].x][menv[o].y] == DNGN_WATER_X)
+        if ( grd[monster->x][monster->y] == DNGN_LAVA_X
+              || grd[monster->x][monster->y] == DNGN_WATER_X )
         {
-            if (mons_flies(menv[o].type) == 1)
+            if ( mons_flies(monster->type) == 1 )
             {
                 // don't worry about invisibility - you should be able to
                 // see if something has fallen into the lava
-                if (is_near == 1)
+                if ( is_near )
                 {
-                    strcpy(info, monam(menv[o].number, menv[o].type,
-                                       menv[o].enchantment[2], 0));
-
-                    if (grd[menv[o].x][menv[o].y] == DNGN_WATER_X)
-                    {
-                        strcat(info, " falls into the water!");
-                    }
-                    else
-                        strcat(info, " falls into the lava!");
+                    strcpy(info, monam(monster->number, monster->type, monster->enchantment[2], 0));
+                    strcat(info, " falls into the ");
+                    strcat(info, (grd[monster->x][monster->y] == DNGN_WATER_X) ? "water" : "lava");
+                    strcat(info, "!");
                     mpr(info);
                 }
 
-                switch (beam[0].thing_thrown)
+                switch ( pbolt->thing_thrown )
                 {
-                case KILL_YOU:
-                case KILL_YOU_MISSILE:
-                    monster_die(o, KILL_YOU, beam[0].beam_source);
+                  case KILL_YOU:
+                  case KILL_YOU_MISSILE:
+                    monster_die(monster, KILL_YOU, pbolt->beam_source);
                     break;      /*  "    " */
-                case KILL_MON:
-                    monster_die(o, KILL_MON_MISSILE, beam[0].beam_source);
+                  case KILL_MON:
+                    monster_die(monster, KILL_MON_MISSILE, pbolt->beam_source);
                     break;      /* dragon breath &c */
                 }
             }
         }
-        return 1;
+        return true;
 
     case RED:                   /* 4 = confusion */
         for (p = 0; p < 3; p++)
-        {
-            if (menv[o].enchantment[p] == ENCH_CONFUSION)
-                return 1;
-        }                       /* end of for p */
+          if ( monster->enchantment[p] == ENCH_CONFUSION )
+            return true;
+
+    // replaces 3rd enchantment if all full:
         for (p = 0; p < 3; p++)
-        {
-            /* replaces 3rd enchantment if all full. */
-            if (menv[o].enchantment[p] == ENCH_NONE || p == 2)
-            {
-                menv[o].enchantment[p] = ENCH_CONFUSION;
-                menv[o].enchantment1 = 1;
-                break;
-            }
-        }
+          if ( monster->enchantment[p] == ENCH_NONE || p == 2 )
+          {
+              monster->enchantment[p] = ENCH_CONFUSION;
+              monster->enchantment1 = 1;
+              break;
+          }
 
         // put in an exception for fungi, plants and other things you won't
-        // notice you.slow down.
-        if (is_near == 1)
-        {
-            strcpy(info, monam(menv[o].number, menv[o].type,
-                               menv[o].enchantment[2], 0));
+        // notice becoming confused.
+        if ( simple_monster_message(monster, " appears confused.") )
+          pbolt->wand_id = 1;
 
-            strcat(info, " appears confused.");
-            mpr(info);
-            func_pass[1] = 1;
-        }
-        return 1;
-
+        return true;
 
     case MAGENTA:               /* 5 = invisibility */
-        if (menv[o].enchantment[2] == ENCH_INVIS || is_near != 1)
-            goto nothinghap;
+        if ( monster->enchantment[2] == ENCH_INVIS || !is_near )
+          goto nothinghap;
 
-        if (menv[o].enchantment[2] != ENCH_NONE)
+        if ( monster->enchantment[2] != ENCH_NONE )
         {
-            if (is_near)
+            if ( is_near )
             {
-                strcpy(info, monam(menv[o].number, menv[o].type,
-                                   menv[o].enchantment[2], 0));
+                strcpy(info, monam(monster->number, monster->type, monster->enchantment[2], 0));
                 strcat(info, " flickers for a moment.");
                 mpr(info);
-                func_pass[1] = 1;
+                pbolt->wand_id = 1;
             }
-            return 1;
+            return true;
         }
 
-        if (is_near == 1)
+        if ( is_near )
         {
-            strcpy(info, monam(menv[o].number, menv[o].type,
-                               menv[o].enchantment[2], 0));
+            strcpy(info, monam(monster->number, monster->type, monster->enchantment[2], 0));
             strcat(info, " flickers and vanishes!");
             mpr(info);
-            func_pass[1] = 1;
+            pbolt->wand_id = 1;
         }
-        menv[o].enchantment[2] = ENCH_INVIS;
-        menv[o].enchantment1 = 1;
-        return 1;
+
+        monster->enchantment[2] = ENCH_INVIS;
+        monster->enchantment1 = 1;
+        return true;
 
         /* 6 is used by digging
            7            teleport
            8            polymorph */
+
     case LIGHTBLUE:             /* 9 = charm */
         for (p = 0; p < 3; p++)
-        {
-            if (menv[o].enchantment[p] == ENCH_CHARM)
-                return 1;
-        }                       /* end of for p */
+          if ( monster->enchantment[p] == ENCH_CHARM )
+            return true;
+
         for (p = 0; p < 4; p++)
         {
-            if (p == 3)
-                return 1;
-            if (menv[o].enchantment[p] == ENCH_NONE)    /* replaces 3rd enchantment if all full. */
+            if ( p == 3 )
+              return true;
+
+            if ( monster->enchantment[p] == ENCH_NONE )    /* replaces 3rd enchantment if all full. */
             {
-                menv[o].enchantment[p] = ENCH_CHARM;
-                menv[o].enchantment1 = 1;
-                menv[o].behavior = 7;
+                monster->enchantment[p] = ENCH_CHARM;
+                monster->enchantment1 = 1;
+                monster->behavior = BEH_ENSLAVED;
                 break;
             }
         }
 
         // put in an exception for fungi, plants and other things you won't
-        // notice slow down.
-        if (is_near == 1)
-        {
-            strcpy(info, monam(menv[o].number, menv[o].type,
-                               menv[o].enchantment[2], 0));
-            strcat(info, " is charmed.");
-            mpr(info);
-            func_pass[1] = 1;
-        }
-        return 1;
+        // notice becoming charmed.
+        if ( simple_monster_message(monster, " is charmed.") )
+          pbolt->wand_id = 1;
+
+        return true;
 
     }                           /* end of switch (beam_colour) */
+
     goto somethinghap;
 
-  nothinghap:
-    if (is_near)
-    {
-        strcpy(info, "Nothing appears to happen.");
-        mpr(info);
-    }
+nothinghap:
+    if ( is_near )
+      canned_msg(MSG_NOTHING_HAPPENS);
 
-  somethinghap:
-    return 1;
-}
+somethinghap:
+    return true;
+
+}          // end mons_ench_f2()
 
 
-/*
- * Puts the poison value into a monster's enchantment variable.
- */
-void poison_monster(int mn, char source)
+
+
+// puts the poison value into a monster's enchantment variable.
+void poison_monster( struct monsters *monster, bool fromPlayer )
 {
+
     int p;
-    int brek = 0;
+    bool brek = false;
 
-    if (menv[mn].type == -1)
-        return;
+    if ( monster->type == -1 )
+      return;
 
-    if (mons_res_poison(menv[mn].type) > 0)
-        return;
-    if (menv[mn].inv[2] != ING && mitm.special[menv[mn].inv[2]] % 30 == 4)
-        return;
+    if ( mons_res_poison(monster->type) > 0 )
+      return;
+
+    if ( monster->inv[MSLOT_ARMOUR] != ING && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 == SPARM_POISON_RESISTANCE )
+      return;
 
     for (p = 0; p < 3; p++)
     {
-        if (menv[mn].enchantment[p] % 50 == 10)
+        if ( monster->enchantment[p] % 50 == 10 )
+          return;
+
+        if ( monster->enchantment[p] % 50 >= 7 && monster->enchantment[p] % 50 < 10 )
         {
-            return;
-        }
-        if (menv[mn].enchantment[p] % 50 >= 7 && menv[mn].enchantment[p] % 50 < 10)
-        {
-            menv[mn].enchantment[p]++;
-            brek = 1;
-            if (mons_near(mn) && (menv[mn].enchantment[2] != ENCH_INVIS || player_see_invis() != 0))
-            {
-                strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
-                strcat(info, " looks rather sicker.");
-                mpr(info);
-                //jmf: it's worse to kick something when it's sick
-                naughty(NAUGHTY_POISON, 10 + random2(you.experience_level));
-            }
+            (monster->enchantment[p])++;
+            brek = true;
+            simple_monster_message(monster, " looks rather more sickly.");
             break;
         }
-    }                           /* end of for p */
+    }
 
-    if (brek == 0)
-        for (p = 0; p < 3; p++)
+    if ( !brek )
+      for (p = 0; p < 3; p++)
+        if ( monster->enchantment[p] == ENCH_NONE )
         {
-            if (menv[mn].enchantment[p] == ENCH_NONE)
-            {
-                menv[mn].enchantment[p] = ENCH_YOUR_POISON_I;
-                menv[mn].enchantment1 = 1;
-                if (mons_near(mn) && (menv[mn].enchantment[2] != ENCH_INVIS || player_see_invis() != 0))
-                {
-                    strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
-                    strcat(info, " looks rather sick.");
-                    mpr(info);
-                    naughty(NAUGHTY_POISON, 5 + random2(you.experience_level / 2));
-                }
-                break;
-            }
+            monster->enchantment[p] = ENCH_YOUR_POISON_I;
+            monster->enchantment1 = 1;
+            simple_monster_message(monster, " looks rather ill.");
+            break;
         }
 
-    if (source == 1 && menv[mn].enchantment[p] <= ENCH_YOUR_POISON_IV && menv[mn].enchantment[p] >= ENCH_YOUR_POISON_I)
+    if ( !fromPlayer
+        && monster->enchantment[p] <= ENCH_YOUR_POISON_IV
+        && monster->enchantment[p] >= ENCH_YOUR_POISON_I )
     {
-        menv[mn].enchantment[p] += 50;
+        monster->enchantment[p] += 50;
     }
-}
+    else
+    {
+      naughty(NAUGHTY_POISON, 5 + random2(3));     //jmf: TSO now hates poison
+      done_good(GOOD_POISON, 5);                   //jmf: had test god who liked poison
+    }
+
+}          // end poison_monster()
 
 
-/*
- * Like poison_monster; makes the monster burn if hit by napalm.
- */
-void sticky_flame_monster(int mn, char source, int power)
+
+
+// similar to poison_monster() -- makes the monster burn if hit by napalm
+void sticky_flame_monster( int mn, bool source, int power )
 {
 
     int long_last = 0;
-    int brek = 0;
+    bool brek = false;
     int p;
 
-    if (menv[mn].type == -1)
-        return;
+    struct monsters *monster = &menv[mn];
 
-    if (mons_res_fire(menv[mn].type) > 0)
-        return;
-    if (menv[mn].inv[2] != ING && mitm.special[menv[mn].inv[2]] % 30 == 2)
-        return;
+    if ( monster->type == -1 )
+      return;
 
-    long_last = random2(power) / 2 + 1;
-    if (long_last >= 4)
-        long_last = 4;
+    if ( mons_res_fire(monster->type) > 0 )
+      return;
+
+    if ( monster->inv[MSLOT_ARMOUR] != ING && mitm.special[monster->inv[MSLOT_ARMOUR]] % 30 == SPARM_FIRE_RESISTANCE )
+      return;
+
+    long_last = 1 + (random2(power) / 2);
+
+    if ( long_last > 4 )
+      long_last = 4;
 
     for (p = 0; p < 3; p++)
     {
-        if (menv[mn].enchantment[p] == ENCH_YOUR_STICKY_FLAME_IV || menv[mn].enchantment[p] == ENCH_STICKY_FLAME_IV)
+        if ( monster->enchantment[p] == ENCH_YOUR_STICKY_FLAME_IV || monster->enchantment[p] == ENCH_STICKY_FLAME_IV )
         {
             // already covered in sticky flame - ouch!
             return;
         }
-        if ((menv[mn].enchantment[p] >= ENCH_YOUR_STICKY_FLAME_I && menv[mn].enchantment[p] < ENCH_YOUR_STICKY_FLAME_IV) || (menv[mn].enchantment[p] >= ENCH_STICKY_FLAME_I && menv[mn].enchantment[p] < ENCH_STICKY_FLAME_IV))
+        if ( ( monster->enchantment[p] >= ENCH_YOUR_STICKY_FLAME_I && monster->enchantment[p] < ENCH_YOUR_STICKY_FLAME_IV )
+                || ( monster->enchantment[p] >= ENCH_STICKY_FLAME_I && monster->enchantment[p] < ENCH_STICKY_FLAME_IV ) )
         {
-            menv[mn].enchantment[p] += long_last;
-            if (menv[mn].enchantment[p] > ENCH_YOUR_STICKY_FLAME_IV && menv[mn].enchantment[p] < ENCH_POISON_IV)
-                menv[mn].enchantment[p] = ENCH_YOUR_STICKY_FLAME_IV;
-            if (menv[mn].enchantment[p] > ENCH_STICKY_FLAME_IV)
-                menv[mn].enchantment[p] = ENCH_STICKY_FLAME_IV;
-            brek = 1;
-            if (mons_near(mn) && (menv[mn].enchantment[2] != ENCH_INVIS || player_see_invis() != 0))
-            {
-                strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
-                strcat(info, " is covered in liquid fire!");
-                mpr(info);
-            }
+            monster->enchantment[p] += long_last;
+            if (monster->enchantment[p] > ENCH_YOUR_STICKY_FLAME_IV && monster->enchantment[p] < ENCH_POISON_IV)
+              monster->enchantment[p] = ENCH_YOUR_STICKY_FLAME_IV;
+
+            if (monster->enchantment[p] > ENCH_STICKY_FLAME_IV)
+              monster->enchantment[p] = ENCH_STICKY_FLAME_IV;
+            brek = true;
+            simple_monster_message(monster, " is covered in liquid fire!");
             break;
         }
     }                           /* end of for p */
 
-    if (brek == 0)
-        for (p = 0; p < 3; p++)
+    if ( !brek )
+      for (p = 0; p < 3; p++)
+        if ( monster->enchantment[p] == ENCH_NONE )
         {
-            if (menv[mn].enchantment[p] == ENCH_NONE)
-            {
-                menv[mn].enchantment[p] = 30 + long_last;
-                menv[mn].enchantment1 = 1;
-                if (mons_near(mn) && (menv[mn].enchantment[2] != ENCH_INVIS || player_see_invis() != 0))
-                {
-                    strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
-                    strcat(info, " is covered in liquid fire!");
-                    mpr(info);
-                }
-                break;
-            }
+            monster->enchantment[p] = ENCH_CHARM + long_last;    // should set long_last in a way that this referenced ENCH_YOUR_STICKY_FLAME_I and not ENCH_CHARM {dlb}
+            monster->enchantment1 = 1;
+            simple_monster_message(monster, " is covered in liquid fire!");
+            break;
         }
 
-    if (source == 1 && menv[mn].enchantment[p] <= ENCH_POISON_IV && menv[mn].enchantment[p] >= ENCH_YOUR_STICKY_FLAME_I)
+    if ( source
+        && monster->enchantment[p] <= ENCH_POISON_IV
+        && monster->enchantment[p] >= ENCH_YOUR_STICKY_FLAME_I )
     {
-        menv[mn].enchantment[p] += 30;
+        monster->enchantment[p] += 30;
     }
 
-}
+}          // end sticky_flame_monster()
 
-/*
-   Places a cloud with the given stats. May delete old clouds to make way if
-   there are too many (30) on level. Will overwrite an old cloud under some
-   circumstances.
- */
-void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char ctarget_y, unsigned char cl_range)       // if env.cloud_type > 100, it is a monster's cloud
- {
-    unsigned char ci = 0;
 
-    char c_deleted = 100;
 
-    if (env.cloud_no >= 30)
-        c_deleted = random2(30);
 
-    if (env.cgrid[ctarget_x][ctarget_y] != CNG)
+//   Places a cloud with the given stats. May delete old clouds to make way
+//   if there are too many (CLOUDS == 30) on level. Will overwrite an old
+//   cloud under some circumstances.
+void place_cloud( unsigned char cl_type, unsigned char ctarget_x,unsigned char ctarget_y, unsigned char cl_range )
+{
+
+    char c_deleted = (env.cloud_no >= CLOUDS) ? random2(CLOUDS) : 100;
+    char target_cgrid = env.cgrid[ctarget_x][ctarget_y];    // more compact {dlb}
+
+    if ( target_cgrid != CNG )    // that is, another cloud already there {dlb}
     {
-        if ((env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] >= CLOUD_GREY_SMOKE        // smoke
-          && env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] <= CLOUD_STEAM)
-            || env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] == CLOUD_STINK   // stink
-             || env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] == 10   // smoke
-             || env.cloud_decay[env.cgrid[ctarget_x][ctarget_y]] <= 20)         //soon gone
-
+      if ( ( env.cloud_type[target_cgrid] >= CLOUD_GREY_SMOKE
+            && env.cloud_type[target_cgrid] <= CLOUD_STEAM )
+           || env.cloud_type[target_cgrid] == CLOUD_STINK
+           || env.cloud_type[target_cgrid] == CLOUD_BLACK_SMOKE
+           || env.cloud_decay[target_cgrid] <= 20 )    //soon gone
         {
             env.cloud_type[env.cgrid[ctarget_x][ctarget_y]] = CLOUD_NONE;
             env.cgrid[ctarget_x][ctarget_y] = CNG;
@@ -2514,11 +2348,10 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
             env.cloud_no--;
         }
         else
-            return;
+          return;
     }
 
-
-    for (ci = 0; ci < CLOUDS; ci++)
+    for (unsigned char ci = 0; ci < CLOUDS; ci++)
     {
         if (ci == c_deleted)
         {
@@ -2529,7 +2362,6 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
         }
 
         if (env.cloud_type[ci] == CLOUD_NONE)   // ie is empty
-
         {
             env.cloud_type[ci] = cl_type;
             env.cloud_x[ci] = ctarget_x;
@@ -2542,9 +2374,8 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
 
     }
 
-//      move_x = 0; move_y = 0;
+}          // end place_cloud();
 
-}                               // end of void place_cloud();
 
 
 
@@ -2562,27 +2393,31 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
    tracer_hit_mons now holds value of mons_see_invis of attacking monster.
    If it's 0, won't register invis monsters or you
  */
-void tracer_f(int i, struct bolt beem[1])
+void tracer_f( struct monsters *monster, struct bolt *pbolt )
 {
-    strcpy(beem[0].beam_name, "0tracer");
-    beem[0].trac_hit_mons = mons_see_invis(menv[i].type);
-    beem[0].tracer = 0;
-    beem[0].tracer_mons = 0;
-    beem[0].trac_targ = menv[i].monster_foe;
-    beem[0].colour = 200;
-    beem[0].beam_name[0] = '0';
-    beem[0].type = 0;
-    beem[0].flavour = BEAM_MAGIC;
-    beem[0].damage = 0;
-    beem[0].range = 10;
-    beem[0].move_x = beem[0].trac_targ_x - menv[i].x;
-    beem[0].move_y = beem[0].trac_targ_y - menv[i].y;
-    beem[0].source_x = menv[i].x;
-    beem[0].source_y = menv[i].y;
-    beem[0].aim_down = 0;
-    beem[0].beam_source = i;
-    missile(beem, 0);
-}
+
+    strcpy(pbolt->beam_name, "0tracer");
+    pbolt->trac_hit_mons = mons_see_invis(monster->type);
+    pbolt->tracer = 0;
+    pbolt->tracer_mons = 0;
+    pbolt->trac_targ = monster->monster_foe;
+    pbolt->colour = 200;
+    pbolt->beam_name[0] = '0';
+    pbolt->type = 0;
+    pbolt->flavour = BEAM_MAGIC;
+    pbolt->damage = 0;
+    pbolt->range = 10;
+    pbolt->move_x = pbolt->trac_targ_x - monster->x;
+    pbolt->move_y = pbolt->trac_targ_y - monster->y;
+    pbolt->source_x = monster->x;
+    pbolt->source_y = monster->y;
+    pbolt->aim_down = 0;
+    pbolt->beam_source = monster_index(monster);
+    missile(pbolt, 0);
+
+}          // end tracer_f()
+
+
 
 
 /*
@@ -2590,15 +2425,13 @@ void tracer_f(int i, struct bolt beem[1])
    and changes its appearance - the appearance change is in monster_teleport
    in mstuff2.
  */
-void mimic_alert(int mimic)
+void mimic_alert( struct monsters *mimic )
 {
-    int p = 0;
 
-    for (p = 0; p < 3; p++)
-    {
-        if (menv[mimic].enchantment[p] >= ENCH_TP_I && menv[mimic].enchantment[p] <= ENCH_TP_IV)
-            return;
-    }
+    for (unsigned char p = 0; p < 3; p++)
+      if ( mimic->enchantment[p] >= ENCH_TP_I && mimic->enchantment[p] <= ENCH_TP_IV )
+        return;
 
-    monster_teleport(mimic, 0);
-}
+    monster_teleport(mimic, false);
+
+}          // end mimic_alert()
