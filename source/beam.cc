@@ -752,53 +752,33 @@ bool mass_enchantment(int wh_enchant, int pow)
 
         if (mons_near(monster))
         {
-            if (monster->enchantment1 == 1)
+            if (mons_has_ench(monster, wh_enchant))
+                break;
+
+            if (mons_add_ench(monster, wh_enchant))
             {
-                for (p = 0; p < 3; p++)
+                if (!mons_has_ench(monster, ENCH_INVIS)
+                    || player_see_invis())
                 {
-                    if (monster->enchantment[p] == wh_enchant)
-                        brek = true;
-                }
-            }
-
-            for (p = 0; p < 3; p++)
-            {
-                if (brek)
-                {
-                    brek = false;
-                    break;
-                }
-
-                if (monster->enchantment[p] == ENCH_NONE)
-                {
-                    monster->enchantment[p] = wh_enchant;
-                    monster->enchantment1 = 1;
-
-                    if (monster->enchantment[2] != ENCH_INVIS
-                        || player_see_invis())
+                    // turn message on
+                    msgGenerated = true;
+                    switch (wh_enchant)
                     {
-                        // turn message on
-                        msgGenerated = true;
-                        switch (wh_enchant)
-                        {
-                        case ENCH_FEAR:
-                            simple_monster_message(monster,
-                                                   " looks frightened!");
-                            break;
-                        case ENCH_CONFUSION:
-                            simple_monster_message(monster,
-                                                   " looks rather confused.");
-                            break;
-                        case ENCH_CHARM:
-                            simple_monster_message(monster,
-                                                   " submits to your will.");
-                            break;
-                        default:
-                            // oops, I guess not!
-                            msgGenerated = false;
-                        }
-
-                        break;  // I'm totally confused on this one {dlb}
+                    case ENCH_FEAR:
+                        simple_monster_message(monster,
+                                               " looks frightened!");
+                        break;
+                    case ENCH_CONFUSION:
+                        simple_monster_message(monster,
+                                               " looks rather confused.");
+                        break;
+                    case ENCH_CHARM:
+                        simple_monster_message(monster,
+                                               " submits to your will.");
+                        break;
+                    default:
+                        // oops, I guess not!
+                        msgGenerated = false;
                     }
                 }
             }
@@ -827,114 +807,42 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
     switch (pbolt.colour)      /* put in magic resistance */
     {
     case BLACK:         /* 0 = slow monster */
-        for (p = 0; p < 3; p++)
+        // try to remove haste,  if monster is hasted
+        if (mons_del_ench(monster, ENCH_HASTE))
         {
-            if (monster->enchantment[p] == ENCH_SLOW)
-                return MON_AFFECTED;
-
-            if (monster->enchantment[p] == ENCH_HASTE)
-            {
-                monster->enchantment[p] = ENCH_NONE;
-
-                if (monster->speed >= 100)
-                    monster->speed = 100 + ((monster->speed - 100) / 2);
-                else
-                    monster->speed /= 2;
-
-                if (monster->enchantment[0] == ENCH_NONE
-                    && monster->enchantment[1] == ENCH_NONE
-                    && monster->enchantment[2] == ENCH_NONE)
-                {
-                    monster->enchantment1 = 0;
-                }
-
-                brek = true;
-                break;
-            }
-        }                       /* end of for p */
-
-        if (!brek)
-        {
-            for (p = 0; p < 3; p++)
-            {
-                if (monster->enchantment[p] == ENCH_NONE)
-                    /* || p == 2) replaces 3rd enchantment if all full. */
-                {
-                    monster->enchantment[p] = ENCH_SLOW;
-
-                    if (monster->speed >= 100)
-                        monster->speed = 100 + ((monster->speed - 100) / 2);
-                    else
-                        monster->speed /= 2;
-
-                    monster->enchantment1 = 1;
-                    break;
-                }
-            }
+            if (simple_monster_message(monster, " is no longer moving quickly."))
+                pbolt.obviousEffect = true;
+            return MON_AFFECTED;
         }
 
-        // put in an exception for fungi, plants and other things you won't
-        // notice slow down.
-        if (simple_monster_message(monster, " seems to slow down."))
-            pbolt.obviousEffect = true;
+        // not hasted,  slow it
+        if (mons_add_ench(monster, ENCH_SLOW))
+        {
+            // put in an exception for fungi, plants and other things you won't
+            // notice slow down.
+            if (simple_monster_message(monster, " seems to slow down."))
+                pbolt.obviousEffect = true;
+        }
+
         return MON_AFFECTED;
 
     case BLUE:                  // 1 = haste
-        for (p = 0; p < 3; p++)
+        if (mons_del_ench(monster, ENCH_SLOW))
         {
-            if (monster->enchantment[p] == ENCH_HASTE)
-                return MON_AFFECTED;
-
-            if (monster->enchantment[p] == ENCH_SLOW)
-            {
-                monster->enchantment[p] = ENCH_NONE;
-
-                if (monster->speed >= 100)
-                    monster->speed = 100 + ((monster->speed - 100) * 2);
-                else
-                    monster->speed *= 2;
-
-                if (monster->enchantment[0] == ENCH_NONE
-                    && monster->enchantment[1] == ENCH_NONE
-                    && monster->enchantment[2] == ENCH_NONE)
-                {
-                    monster->enchantment1 = 0;
-                }
-
-                brek = true;
-                break;
-            }
-        }                       /* end of for p */
-
-        if (!brek)
-        {
-            for (p = 0; p < 3; p++)
-            {
-                if (monster->enchantment[p] == ENCH_NONE)
-                {
-                    monster->enchantment[p] = ENCH_HASTE;
-
-                    if (monster->speed >= 100)
-                        monster->speed = 100 + ((monster->speed - 100) * 2);
-                    else
-                        monster->speed *= 2;
-
-                    monster->enchantment1 = 1;
-                    break;
-                }
-            }
+            if (simple_monster_message(monster, " is no longer moving slowly."))
+                pbolt.obviousEffect = true;
+            return MON_AFFECTED;
         }
 
-        if (p == 2 && monster->enchantment[p] != ENCH_NONE)
-            return MON_AFFECTED;
-
-        // put in an exception for fungi, plants and other things you won't
-        // notice speed up.
-        if (simple_monster_message(monster, " seems to speed up."))
-            pbolt.obviousEffect = true;
-
+        // not slowed, haste it
+        if (mons_add_ench(monster, ENCH_HASTE))
+        {
+            // put in an exception for fungi, plants and other things you won't
+            // notice speed up.
+            if (simple_monster_message(monster, " seems to speed up."))
+                pbolt.obviousEffect = true;
+        }
         return MON_AFFECTED;
-
 
     case GREEN:         /* 2 = healing */
         if (heal_monster(monster, 5 + random2(15), false))
@@ -994,86 +902,36 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
         return MON_AFFECTED;
 
     case RED:                   /* 4 = confusion */
-        for (p = 0; p < 3; p++)
+        if (mons_add_ench(monster, ENCH_CONFUSION))
         {
-            if (monster->enchantment[p] == ENCH_CONFUSION)
-                return MON_AFFECTED;
+            // put in an exception for fungi, plants and other things you won't
+            // notice becoming confused.
+            if (simple_monster_message(monster, " appears confused."))
+                pbolt.obviousEffect = true;
         }
-
-        // replaces 3rd enchantment if all full:
-        for (p = 0; p < 3; p++)
-        {
-            if (monster->enchantment[p] == ENCH_NONE || p == 2)
-            {
-                monster->enchantment[p] = ENCH_CONFUSION;
-                monster->enchantment1 = 1;
-                break;
-            }
-        }
-
-        // put in an exception for fungi, plants and other things you won't
-        // notice becoming confused.
-        if (simple_monster_message(monster, " appears confused."))
-            pbolt.obviousEffect = true;
 
         return MON_AFFECTED;
 
     case MAGENTA:               /* 5 = invisibility */
-        if (monster->enchantment[2] == ENCH_INVIS || !is_near)
-            return MON_AFFECTED;
-
-        if (monster->enchantment[2] != ENCH_NONE)
+        if (mons_add_ench(monster, ENCH_INVIS))
         {
-            if (is_near)
-            {
-                strcpy(info, ptr_monam(monster, 0));
-                strcat(info, " flickers for a moment.");
-                mpr(info);
-                pbolt.obviousEffect = true;
-            }
-            return MON_AFFECTED;
-        }
+            if (player_see_invis())
+                simple_monster_message(monster, "flickers for a moment.");
+            else
+                simple_monster_message(monster, "flickers and vanishes!");
 
-        if (is_near)
-        {
-            strcpy(info, ptr_monam(monster, 0));
-            strcat(info, " flickers and vanishes!");
-            mpr(info);
             pbolt.obviousEffect = true;
         }
-
-        monster->enchantment[2] = ENCH_INVIS;
-        monster->enchantment1 = 1;
         return MON_AFFECTED;
 
-        /* 6 is used by digging
-           7            teleport
-           8            polymorph */
-
     case LIGHTBLUE:             /* 9 = charm */
-        for (p = 0; p < 3; p++)
+        if (mons_add_ench(monster, ENCH_CHARM))
         {
-            if (monster->enchantment[p] == ENCH_CHARM)
-                return MON_AFFECTED;
+            // put in an exception for fungi, plants and other things you won't
+            // notice becoming charmed.
+            if (simple_monster_message(monster, " is charmed."))
+                pbolt.obviousEffect = true;
         }
-
-        for (p = 0; p < 4; p++)
-        {
-            if (p == 3)
-                return MON_AFFECTED;
-
-            if (monster->enchantment[p] == ENCH_NONE)
-            {
-                monster->enchantment[p] = ENCH_CHARM;
-                monster->enchantment1 = 1;
-                break;
-            }
-        }
-
-        // put in an exception for fungi, plants and other things you won't
-        // notice becoming charmed.
-        if (simple_monster_message(monster, " is charmed."))
-            pbolt.obviousEffect = true;
         return MON_AFFECTED;
     default:
         break;
@@ -1082,12 +940,13 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
     return MON_AFFECTED;
 }                               // end mons_ench_f2()
 
-// puts the poison value into a monster's enchantment variable.
+// actually poisons a monster (w/ message)
 void poison_monster(struct monsters *monster, bool fromPlayer)
 {
     int p;
     bool yourPoison;
-    int poison_strength = -1;
+    int currentPoison;
+    int currentStrength = 0;
 
     if (monster->type == -1)
         return;
@@ -1102,55 +961,45 @@ void poison_monster(struct monsters *monster, bool fromPlayer)
         return;
     }
 
-    for (p = 0; p < 3; p++)
+    // who gets the credit if monster dies of poison?
+    currentPoison = mons_has_ench(monster, ENCH_POISON_I, ENCH_POISON_IV);
+    if (currentPoison != ENCH_NONE)
     {
-        if (monster->enchantment[p] >= ENCH_POISON_I
-            && monster->enchantment[p] <= ENCH_POISON_IV)
-        {
-            yourPoison = false;
-            poison_strength = monster->enchantment[p] - ENCH_POISON_I;
-            break;
-        }
-        if (monster->enchantment[p] >= ENCH_YOUR_POISON_I
-            && monster->enchantment[p] <= ENCH_YOUR_POISON_IV)
-        {
-            yourPoison = true;
-            poison_strength = monster->enchantment[p] - ENCH_YOUR_POISON_I;
-            break;
-        }
+        currentStrength = (currentPoison - ENCH_POISON_I) + 1;
+        yourPoison = false;
     }
-
-    // is monster currently NOT poisoned?
-    if (poison_strength < 0)
-    {
-        for(p=0; p<3; p++)
-            if (monster->enchantment[p] == ENCH_NONE)
-                break;
-    }
-
-    // no slots left.  Oops!
-    if (p == 3)
-        return;
-
-    // increase poison strength,  cap at 3 (level is 0..3)
-    poison_strength ++;
-    if (poison_strength > 3)
-        poison_strength = 3;
     else
     {
-        simple_monster_message(monster, (poison_strength == 0)?
-            " looks rather ill." : " looks rather more sickly.");
+        currentPoison = mons_has_ench(monster, ENCH_YOUR_POISON_I, ENCH_YOUR_POISON_IV);
+        if (currentPoison != ENCH_NONE)
+        {
+            currentStrength = (currentPoison - ENCH_YOUR_POISON_I) + 1;
+            yourPoison = true;
+        }
     }
 
-    // now patch up monster enchantment
-    monster->enchantment1 = 1;
+    // delete old poison
+    mons_del_ench(monster, ENCH_POISON_I, ENCH_POISON_IV);
+    mons_del_ench(monster, ENCH_YOUR_POISON_I, ENCH_YOUR_POISON_IV);
 
-    // now, if player poisons the monster at ANY TIME, they should
-    // get credit for the kill if the monster dies from poison.  This
-    // really isn't that abusable -- GDL.
+    // increase poison strength,  cap at 3 (level is 0..3)
+    if (currentStrength > 3)
+        currentStrength = 3;
+    else
+    {
+        // now, if player poisons the monster at ANY TIME, they should
+        // get credit for the kill if the monster dies from poison.  This
+        // really isn't that abusable -- GDL.
+        if (fromPlayer || yourPoison)
+            currentStrength += ENCH_YOUR_POISON_I;
+        else
+            currentStrength += ENCH_POISON_I;
 
-    monster->enchantment[p] = poison_strength +
-        (fromPlayer || yourPoison)?ENCH_YOUR_POISON_I : ENCH_POISON_I;
+        // actually do poison
+        if (mons_add_ench(monster, currentStrength))
+            simple_monster_message(monster, (currentStrength == 0)?
+                " looks rather ill." : " looks rather more sickly.");
+    }
 
     // finally, take care of deity preferences
     if (fromPlayer)
@@ -1160,12 +1009,13 @@ void poison_monster(struct monsters *monster, bool fromPlayer)
     }
 }                               // end poison_monster()
 
-// similar to poison_monster() -- makes the monster burn if hit by napalm
-void sticky_flame_monster(int mn, bool source, int power)
+// actually napalms a monster (w/ message)
+void sticky_flame_monster(int mn, bool fromPlayer, int power)
 {
-    int long_last;
-    bool brek = false;
     int p;
+    bool yourFlame;
+    int currentFlame;
+    int currentStrength = 0;
 
     struct monsters *monster = &menv[mn];
 
@@ -1182,67 +1032,48 @@ void sticky_flame_monster(int mn, bool source, int power)
         return;
     }
 
-    long_last = 1 + (random2(power) / 2);
-
+    int long_last = 1 + (random2(power) / 2);
     if (long_last > 4)
         long_last = 4;
 
-    for (p = 0; p < 3; p++)
+    // who gets the credit if monster dies of napalm?
+    currentFlame = mons_has_ench(monster, ENCH_STICKY_FLAME_I, ENCH_STICKY_FLAME_IV);
+    if (currentFlame != ENCH_NONE)
     {
-        if (monster->enchantment[p] == ENCH_YOUR_STICKY_FLAME_IV
-            || monster->enchantment[p] == ENCH_STICKY_FLAME_IV)
-        {
-            // already covered in sticky flame - ouch!
-            return;
-        }
-        if ((monster->enchantment[p] >= ENCH_YOUR_STICKY_FLAME_I
-                && monster->enchantment[p] < ENCH_YOUR_STICKY_FLAME_IV)
-            || (monster->enchantment[p] >= ENCH_STICKY_FLAME_I
-                && monster->enchantment[p] < ENCH_STICKY_FLAME_IV))
-        {
-            monster->enchantment[p] += long_last;
-
-            if (monster->enchantment[p] > ENCH_YOUR_STICKY_FLAME_IV
-                && monster->enchantment[p] < ENCH_POISON_IV)
-            {
-                monster->enchantment[p] = ENCH_YOUR_STICKY_FLAME_IV;
-            }
-
-            if (monster->enchantment[p] > ENCH_STICKY_FLAME_IV)
-                monster->enchantment[p] = ENCH_STICKY_FLAME_IV;
-
-            brek = true;
-            simple_monster_message(monster, " is covered in liquid fire!");
-            break;
-        }
-    }                           /* end of for p */
-
-    if (!brek)
+        currentStrength = (currentFlame - ENCH_STICKY_FLAME_I) + long_last;
+        yourFlame = false;
+    }
+    else
     {
-        for (p = 0; p < 3; p++)
+        currentFlame = mons_has_ench(monster, ENCH_YOUR_STICKY_FLAME_I,
+            ENCH_YOUR_STICKY_FLAME_IV);
+        if (currentFlame != ENCH_NONE)
         {
-            if (monster->enchantment[p] == ENCH_NONE)
-            {
-                // should set long_last in a way that this referenced
-                // ENCH_YOUR_STICKY_FLAME_I and not ENCH_CHARM {dlb}
-                // ... try this -- bwr
-                monster->enchantment[p] = ENCH_YOUR_STICKY_FLAME_I
-                                            + long_last - 1;
-                monster->enchantment1 = 1;
-                simple_monster_message(monster,
-                                       " is covered in liquid fire!");
-                break;
-            }
+            currentStrength = (currentFlame - ENCH_YOUR_STICKY_FLAME_I) + long_last;
+            yourFlame = true;
         }
     }
 
-    if (source
-        && monster->enchantment[p] <= ENCH_POISON_IV
-        && monster->enchantment[p] >= ENCH_YOUR_STICKY_FLAME_I)
-    {
-        monster->enchantment[p] += 30;
-    }
-}                               // end sticky_flame_monster()
+    // delete old flame
+    mons_del_ench(monster, ENCH_STICKY_FLAME_I, ENCH_STICKY_FLAME_IV);
+    mons_del_ench(monster, ENCH_YOUR_STICKY_FLAME_I, ENCH_YOUR_STICKY_FLAME_IV);
+
+    // increase poison strength,  cap at 3 (level is 0..3)
+    if (currentStrength > 4)
+        currentStrength = 4;
+
+    // now, if player flames the monster at ANY TIME, they should
+    // get credit for the kill if the monster dies from napalm.  This
+    // really isn't that abusable -- GDL.
+    if (fromPlayer || yourFlame)
+        currentStrength += (ENCH_YOUR_STICKY_FLAME_I - 1);
+    else
+        currentStrength += (ENCH_STICKY_FLAME_I - 1);
+
+    // actually do flame
+    if (mons_add_ench(monster, currentStrength))
+        simple_monster_message(monster, " is covered in liquid fire!");
+}                               // end sticky_flame_monster
 
 //   Places a cloud with the given stats. May delete old clouds to make way
 //   if there are too many (MAX_CLOUDS == 30) on level. Will overwrite an old
@@ -1331,10 +1162,8 @@ void fire_tracer(struct monsters *monster, struct bolt &pbolt)
     // foe ratio for summon gtr. demons & undead -- they may be
     // summoned, but they're hostile and would love nothing better
     // than to nuke the player and his minions
-    if (mons_holiness(monster->type) == MH_UNDEAD
-        || mons_holiness(monster->type) == MH_DEMONIC)
-        if (monster->enchantment[0] == ENCH_CHARM)
-            pbolt.foeRatio = 25;
+    if (monster->attitude != ATT_FRIENDLY)
+        pbolt.foeRatio = 25;
 
     // fire!
     beam(pbolt);
@@ -1351,14 +1180,8 @@ void fire_tracer(struct monsters *monster, struct bolt &pbolt)
  */
 void mimic_alert(struct monsters *mimic)
 {
-    for (unsigned char p = 0; p < 3; p++)
-    {
-        if (mimic->enchantment[p] >= ENCH_TP_I
-            && mimic->enchantment[p] <= ENCH_TP_IV)
-        {
-            return;
-        }
-    }
+    if (mons_has_ench(mimic, ENCH_TP_I, ENCH_TP_IV))
+        return;
 
     monster_teleport(mimic, false);
 }                               // end mimic_alert()
@@ -2226,14 +2049,15 @@ static int  affect_player(struct bolt &beam)
     int hurted = 0;
     int burn_power = (beam.isExplosion)?5:((beam.isBeam)?3:2);
 
+    // bwross: Note the conversion here to regular dice (minimum of 1, not 0)
     if (beam.damage > 100)
     {
-        hurted += random2(beam.damage - 100);
-        hurted += random2(beam.damage - 100);
-        hurted += random2(beam.damage - 100);
+        hurted += 1 + random2(beam.damage - 100);
+        hurted += 1 + random2(beam.damage - 100);
+        hurted += 1 + random2(beam.damage - 100);
     }
     else
-        hurted += random2(beam.damage);
+        hurted += 1+ random2(beam.damage);
 
     hurted -= random2(1 + player_AC());
 
@@ -2341,7 +2165,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
     if (beam.isTracer)
     {
         // check can see other monster
-        if (!beam.canSeeInvis && menv[tid].enchantment[2] == ENCH_INVIS)
+        if (!beam.canSeeInvis && mons_has_ench(&menv[tid], ENCH_INVIS))
         {
             // can't see this monster, ignore it
             return 0;
@@ -2408,15 +2232,16 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
 
     hurt = 0;
 
+    // bwross: Nore the conversion here to regular dice (minimum of 1, not 0)
     if (beam.damage > 100)
     {
-        hurt += random2(beam.damage - 100);
-        hurt += random2(beam.damage - 100);
-        hurt += random2(beam.damage - 100);
+        hurt += 1 + random2(beam.damage - 100);
+        hurt += 1 + random2(beam.damage - 100);
+        hurt += 1 + random2(beam.damage - 100);
     }
     else
     {
-        hurt += random2(beam.damage);
+        hurt += 1 + random2(beam.damage);
     }
 
     hurt_final = hurt;
@@ -2479,7 +2304,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
     if (!beam.isExplosion && beam.hit < random2(mon->evasion))
     {
         // if the PLAYER cannot see the monster, don't tell them anything!
-        if ((menv[tid].enchantment[2] != ENCH_INVIS || player_see_invis())
+        if ((!mons_has_ench(&menv[tid], ENCH_INVIS) || player_see_invis())
             && mons_near(mon))
         {
             strcpy(info, "The ");
@@ -2498,7 +2323,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
         strcpy(info, "The ");
         strcat(info, beam.beam_name);
         strcat(info, beam.isExplosion?" engulfs ":" hits ");
-        if (menv[tid].enchantment[2] != ENCH_INVIS || player_see_invis())
+        if (!mons_has_ench(&menv[tid], ENCH_INVIS) || player_see_invis())
             strcat(info, ptr_monam(mon, 1));
         else
             strcat(info, "something");

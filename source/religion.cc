@@ -806,10 +806,7 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
         {
             // this should remain the last possible outcome {dlb}
             if (!one_chance_in(8))
-            {
-                mpr("You feel temporarily insulated.");
                 you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 1;
-            }
 
             god_speaks(GOD_XOM, "The area is suffused with divine lightning!");
 
@@ -827,7 +824,11 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
 
             explosion(beam);
 
-            you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
+            if (you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] == 1)
+            {
+                mpr("Your divine protection wanes.");
+                you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
+            }
 
             done_good = true;
         }

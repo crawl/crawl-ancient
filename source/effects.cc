@@ -819,7 +819,7 @@ void yell(void)
         struct monsters *target = &menv[you.prev_targ];
 
         if (mons_near(target)
-            && (target->enchantment[2] != ENCH_INVIS || player_see_invis()))
+            && (!mons_has_ench(target,ENCH_INVIS) || player_see_invis()))
         {
             mpr(" p - Order allies to attack your previous target");
             targ_prev = true;

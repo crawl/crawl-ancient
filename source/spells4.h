@@ -16,8 +16,9 @@
 
 bool backlight_monsters(char x, char y, int pow, int garbage);
 int torment_monsters(char x, char y, int pow, int message);
-bool monster_has_enchantment( struct monsters *mon, int ench );
-int enchant_monster( int mon, int ench );
+int mons_has_ench( struct monsters *mon, int ench, int ench2 = ENCH_NONE );
+bool mons_add_ench( struct monsters *mon, int ench );
+bool mons_del_ench(struct monsters *mon, int ench, int ench2 = ENCH_NONE );
 
 int make_a_normal_cloud(char x, char y, int pow, int ctype);
 void apply_area_cloud( int (*func)(char,char,int,int), char x, char y, int pow, int number, int ctype);

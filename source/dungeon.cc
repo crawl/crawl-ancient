@@ -261,15 +261,15 @@ int builder(unsigned int lev_numb, char level_type)
         menv[loopy].target_y = random2(GYM);
         menv[loopy].behavior = (one_chance_in(10) ? BEH_WANDER : BEH_SLEEP);
         menv[loopy].attitude = ATT_HOSTILE;
-        menv[loopy].enchantment1 = 0;
-        menv[loopy].enchantment[0] = ENCH_NONE;
-        menv[loopy].enchantment[1] = ENCH_NONE;
-        menv[loopy].enchantment[2] = ENCH_NONE;
+        menv[loopy].flags = 0;
+        for (bj = 0; bj < NUM_MON_ENCHANTS; bj++)
+            menv[loopy].enchantment[bj] = ENCH_NONE;
 
         for (bj = 0; bj < NUM_MONSTER_SLOTS; bj++)
             menv[loopy].inv[bj] = NON_ITEM;
 
         menv[loopy].number = 250;
+        menv[loopy].foe_memory = 0;
     }
 
     if (level_type == LEVEL_LABYRINTH)

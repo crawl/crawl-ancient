@@ -2105,7 +2105,7 @@ bool perma_mutate(int which_mut, char how_much)
     if (how_much >= 3 && mutate(which_mut + 1000))
         ret++;
 
-    you.demon_pow[which_mut] = how_much;
+    you.demon_pow[which_mut] = ret;
 
     if (ret > 0)
         return true;

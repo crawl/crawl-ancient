@@ -83,13 +83,13 @@ void tag_set_expected(char tags[], int fileType);
 /* ***********************************************************************
  * called from: files
  * *********************************************************************** */
-void tag_missing(int tag);
+void tag_missing(int tag, char minorVersion);
 
 
 // last updated 22jan2001 {gdl}
 /* ***********************************************************************
  * called from: files
  * *********************************************************************** */
-int tag_read(FILE *fp);
+int tag_read(FILE *fp, char minorVersion);
 
 #endif TAGS_H

@@ -449,19 +449,8 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         damage += random2avg(10,2);
 
     //jmf: check for backlight enchantment
-    if (defender->enchantment1)
-    {
-        for (unsigned char index = 0; index < 3; index++)
-        {
-            if (defender->enchantment[index] == ENCH_BACKLIGHT_I
-                || defender->enchantment[index] == ENCH_BACKLIGHT_II
-                || defender->enchantment[index] == ENCH_BACKLIGHT_III
-                || defender->enchantment[index] == ENCH_BACKLIGHT_IV)
-            {
-                your_to_hit += random2(10);
-            }
-        }
-    }
+    if (mons_has_ench(defender, ENCH_BACKLIGHT_I, ENCH_BACKLIGHT_IV))
+       your_to_hit += random2(10);
 
     int weapon_speed2 = 10;
 
@@ -555,7 +544,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
     if (defender->speed_increment <= 40
         || ((defender->behavior == BEH_FLEE
-            || monster_has_enchantment(defender, ENCH_CONFUSION))
+            || mons_has_ench(defender, ENCH_CONFUSION))
                 && random2(200) <= you.skills[SK_STABBING] + you.dex)
         || defender->behavior == BEH_SLEEP)
     {
@@ -579,7 +568,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         }
 
         // can't do this in the case statement
-        if (monster_has_enchantment(defender, ENCH_CONFUSION))
+        if (mons_has_ench(defender, ENCH_CONFUSION))
             stab_bonus = 2;
 
         simple_monster_message(defender, " fails to defend itself.");
@@ -813,7 +802,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             return;
         }
 
-        if (damage_done < 1 && (defender->enchantment[2] != ENCH_INVIS
+        if (damage_done < 1 && (!mons_has_ench(defender,ENCH_INVIS)
             || player_see_invis()))
         {
             hit = true;
@@ -839,7 +828,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
     }
 
     if (hit && damage_done > 0
-        || (hit && damage_done < 1 && defender->enchantment[2] == ENCH_INVIS))
+        || (hit && damage_done < 1 && mons_has_ench(defender,ENCH_INVIS)))
     {
         strcpy(info, "You ");
         strcat(info, damage_noise);
@@ -1710,7 +1699,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 }
 
                 if (damage_done < 1
-                    && (defender->enchantment[2] != ENCH_INVIS
+                    && (!mons_has_ench(defender,ENCH_INVIS)
                         || player_see_invis()))
                 {
                     strcpy(info, "You ");
@@ -1734,7 +1723,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             }
 
             if (damage_done > 0
-                || (damage_done < 1 && defender->enchantment[2] == ENCH_INVIS
+                || (damage_done < 1 && mons_has_ench(defender,ENCH_INVIS)
                     && damage_done != -99))
             {
                 strcpy(info, "You ");
@@ -1796,9 +1785,13 @@ void monster_attack(int monster_attacking)
     int hand_used = 0;
     int extraDamage = 0;            // from special mon. attacks (burn, freeze, etc)
     int resistValue = 0;           // player resist value (varies)
+    int wepSpd;                    // monster weapon speed
 
     if (attacker->type == MONS_HYDRA)
         heads = attacker->number;
+
+    if (mons_friendly(attacker))
+        return;
 
     if (attacker->type == MONS_GIANT_SPORE
         || attacker->type == MONS_BALL_LIGHTNING)
@@ -1807,10 +1800,8 @@ void monster_attack(int monster_attacking)
         return;
     }
 
-    you.pet_target = monster_attacking; // ??? {dlb}
-
-    if (mons_friendly(attacker))
-        return;
+    // if a friend wants to help,  they can attack <monster_attacking>
+    you.pet_target = monster_attacking;
 
     if (monster_habitat(attacker->type) != DNGN_FLOOR && attacker->number == 1)
         return;
@@ -1819,10 +1810,7 @@ void monster_attack(int monster_attacking)
         || (you.religion == GOD_VEHUMET && you.duration[DUR_PRAYER]
             && (!player_under_penance() && you.piety >= 75)))
     {
-        if ((attacker->enchantment[1] >= ENCH_ABJ_I
-                && attacker->enchantment[1] <= ENCH_ABJ_VI)
-            || (attacker->enchantment[1] >= ENCH_FRIEND_ABJ_I
-                && attacker->enchantment[1] <= ENCH_FRIEND_ABJ_VI))
+        if (mons_has_ench(attacker, ENCH_ABJ_I, ENCH_ABJ_VI))
         {
             // should be scaled {dlb}
             if (coinflip())
@@ -1850,11 +1838,12 @@ void monster_attack(int monster_attacking)
                                " uses the watery terrain to its advantage.");
     }
 
-    char runthru = 0;
+    char runthru;
 
     for (runthru = 0; runthru < 4; runthru++)
     {
         blocked = false;
+        wepSpd = 0;             // 0 = didn't attack w/ weapon
 
         if (attacker->type == MONS_HYDRA)
         {
@@ -1924,20 +1913,8 @@ void monster_attack(int monster_attacking)
                                      mitm.sub_type[attacker->inv[MSLOT_WEAPON]],
                                      PWPN_HIT);
 
-            if (attacker->speed_increment >= 50)
-            {
-                attacker->speed_increment -=
-                    (property( mitm.base_type[attacker->inv[MSLOT_WEAPON]],
-                               mitm.sub_type[attacker->inv[MSLOT_WEAPON]],
-                               PWPN_SPEED) - 10);
-            }
-        }
-
-        if (attacker->type == MONS_KILLER_BEE || attacker->type == MONS_WORM)
-        {
-            /* maybe this will work better: */
-            if (attacker->speed_increment >= 20)
-                attacker->speed_increment -= 10;
+            wepSpd = property(mitm.base_type[attacker->inv[hand_used]],
+                mitm.sub_type[attacker->inv[hand_used]], PWPN_SPEED);
         }
 
         // Factors against blocking
@@ -1997,8 +1974,8 @@ void monster_attack(int monster_attacking)
                     || mitm.sub_type[attacker->inv[hand_used]] > WPN_CROSSBOW))
             {
                 damage_size =
-                        property(mitm.base_type[attacker->inv[MSLOT_WEAPON]],
-                                 mitm.sub_type[attacker->inv[MSLOT_WEAPON]],
+                        property(mitm.base_type[attacker->inv[hand_used]],
+                                 mitm.sub_type[attacker->inv[hand_used]],
                                  PWPN_DAMAGE);
 
                 damage_taken = random2(damage_size);
@@ -2719,7 +2696,7 @@ commented out for now
                     break;
 
                 case SPWPN_SPEED:
-                    attacker->speed_increment -= attacker->speed / 2;
+                    wepSpd = wepSpd / 2 + 1;
                     break;
 
                 case SPWPN_VORPAL:
@@ -2823,6 +2800,15 @@ commented out for now
                 Xom_acts(true, you.experience_level, false);
             }
         }
+
+        // adjust time taken if monster used weapon
+        if (wepSpd > 0)
+        {
+            // only get one third penalty/bonus for second weapons.
+            if (runthru > 0)
+                wepSpd = (20 + wepSpd) / 3;
+            attacker->speed_increment -= (wepSpd - 10) / 2;
+        }
     }                           // end of for runthru
 
     return;
@@ -2842,6 +2828,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
     int specdam = 0;
     int hand_used = 0;
     bool sees = false;
+    int wepSpd;               // 0 == didn't use actual weapon
 
     if (attacker->type == MONS_GIANT_SPORE
         || attacker->type == MONS_BALL_LIGHTNING)
@@ -2882,6 +2869,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
     for (runthru = 0; runthru < 4; runthru++)
     {
         char mdam = mondamage(attacker->type, runthru);
+        wepSpd = 0;
 
         if (attacker->type == MONS_ZOMBIE_SMALL
             || attacker->type == MONS_ZOMBIE_LARGE
@@ -2927,22 +2915,18 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
         if (weapon != NON_ITEM)
         {
             if (mitm.pluses[weapon] - 50 > 130)
-                mons_to_hit += mitm.pluses[weapon] - 50 - 100;
+                mons_to_hit += mitm.pluses[weapon] - 150;
             else
                 mons_to_hit += mitm.pluses[weapon] - 50;
 
             mons_to_hit += 3 * property(OBJ_WEAPONS, mitm.sub_type[weapon],
                 PWPN_HIT);
 
-            attacker->speed_increment -= ((property(mitm.base_type[ weapon ],
-                                               mitm.sub_type[ weapon ],
-                                               PWPN_SPEED) - 10) / 2);
+            wepSpd = property(mitm.base_type[ weapon ], mitm.sub_type[ weapon ],
+                PWPN_SPEED);
         }
 
         mons_to_hit = random2(mons_to_hit);
-
-        if (attacker->type == MONS_KILLER_BEE || attacker->type == MONS_WORM)
-            attacker->speed_increment -= 10;    //--
 
         if (mons_to_hit >= defender->evasion
             || ((defender->speed_increment <= 60
@@ -3593,7 +3577,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                     break;
 
                 case SPWPN_SPEED:
-                    attacker->speed_increment -= attacker->speed / 2;
+                    wepSpd = wepSpd / 2 + 1;
                     break;
 
                 case SPWPN_VORPAL:
@@ -3636,7 +3620,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                     if (one_chance_in(3))
                     {
                         if (mons_near(defender)
-                            && (defender->enchantment[2] != ENCH_INVIS
+                            && (!mons_has_ench(defender,ENCH_INVIS)
                                 || player_see_invis()))
                         {
                             strcpy(info, "Space bends around ");
@@ -3651,7 +3635,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                     if (one_chance_in(3))
                     {
                         if (mons_near(defender)
-                            && (defender->enchantment[2] != ENCH_INVIS
+                            && (!mons_has_ench(defender,ENCH_INVIS)
                                 || player_see_invis()))
                         {
                             strcpy(info, "Space warps horribly around ");
@@ -3698,6 +3682,15 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                 return true;
             }
         }
+
+        // speed adjustment for weapon using monsters
+        if (wepSpd > 0)
+        {
+            // only get one third penalty/bonus for second weapons.
+            if (runthru > 0)
+                wepSpd = (20 + wepSpd) / 3;
+            attacker->speed_increment -= (wepSpd - 10) / 2;
+        }
     }                           // end of for runthru
 
     return true;
@@ -3740,9 +3733,7 @@ void monster_die(struct monsters *monster, char killer, int i)
                                MDAM_DEAD);
 
         if (YOU_KILL(killer)
-            && (monster->enchantment[1] < ENCH_FRIEND_ABJ_I
-                || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)
-            && monster->enchantment[1] != ENCH_CREATED_FRIENDLY)
+            && !testbits(monster->flags, MF_CREATED_FRIENDLY))
         {
             gain_exp(exper_value( monster->type, monster->hit_dice,
                                   monster->max_hit_points ));
@@ -3757,9 +3748,7 @@ void monster_die(struct monsters *monster, char killer, int i)
                                MSGCH_MONSTER_DAMAGE, MDAM_DEAD);
 
         if (YOU_KILL(killer)
-            && (monster->enchantment[1] < ENCH_FRIEND_ABJ_I
-                || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)
-            && monster->enchantment[1] != ENCH_CREATED_FRIENDLY)
+            && !testbits(monster->flags, MF_CREATED_FRIENDLY))
         {
             gain_exp(exper_value( monster->type, monster->hit_dice,
                                   monster->max_hit_points ));
@@ -3778,9 +3767,7 @@ void monster_die(struct monsters *monster, char killer, int i)
             strcat(info, "!");
             mpr(info, MSGCH_MONSTER_DAMAGE, MDAM_DEAD);
 
-            if ((monster->enchantment[1] < ENCH_FRIEND_ABJ_I
-                    || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)
-                && monster->enchantment[1] != ENCH_CREATED_FRIENDLY)
+            if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
             {
                 gain_exp(exper_value( monster->type, monster->hit_dice,
                                       monster->max_hit_points ));
@@ -3798,9 +3785,7 @@ void monster_die(struct monsters *monster, char killer, int i)
             // Trying to prevent summoning abuse here, so we're trying to
             // prevent summoned creatures from being being done_good kills,
             // Only affects monsters friendly when created.
-            if ((monster->enchantment[1] < ENCH_FRIEND_ABJ_I
-                    || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)
-                && monster->enchantment[1] != ENCH_CREATED_FRIENDLY)
+            if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
             {
                 if (you.duration[DUR_PRAYER])
                 {
@@ -3871,17 +3856,16 @@ void monster_die(struct monsters *monster, char killer, int i)
             simple_monster_message(monster, " dies!", MSGCH_MONSTER_DAMAGE,
                                    MDAM_DEAD);
 
-            if (mons_friendly(monster))
+            // no piety loss if god gifts killed by other monsters
+            if (mons_friendly(monster) && !testbits(monster->flags, MF_GOD_GIFT))
                 naughty(NAUGHTY_FRIEND_DIES, 1 + (monster->hit_dice / 2));
 
-            if ((i >= 0 && i < 200) && mons_friendly(monster))
+            if ((i >= 0 && i < 200) && mons_friendly(&menv[i]))
             {
                 // Trying to prevent summoning abuse here, so we're trying to
                 // prevent summoned creatures from being being done_good kills.
                 // Only affects creatures which were friendly when summoned.
-                if ((monster->enchantment[1] < ENCH_FRIEND_ABJ_I
-                        || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)
-                    && monster->enchantment[1] != ENCH_CREATED_FRIENDLY)
+                if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
                 {
                     gain_exp(exper_value( monster->type, monster->hit_dice,
                                           monster->max_hit_points ) / 2 + 1);
@@ -3984,27 +3968,24 @@ void monster_die(struct monsters *monster, char killer, int i)
 
     if (killer != KILL_RESET)
     {
-        if ((monster->enchantment[1] >= ENCH_ABJ_I
-                && monster->enchantment[1] <= ENCH_ABJ_VI)
-            || (monster->enchantment[1] >= ENCH_FRIEND_ABJ_I
-                && monster->enchantment[1] <= ENCH_FRIEND_ABJ_VI))
+        if (mons_has_ench(monster, ENCH_ABJ_I, ENCH_ABJ_VI))
         {
             if (mons_weight(mons_charclass(monster->type)))
             {
-                if (monster->type != MONS_SIMULACRUM_SMALL
-                    && monster->type != MONS_SIMULACRUM_LARGE)
-                {
-                    simple_monster_message(monster,
-                                "'s corpse disappears in a puff of smoke!");
-                    place_cloud(CLOUD_GREY_SMOKE_MON + random2(3),
-                                monster->x, monster->y, 1 + random2(3));
-                }
-                else
+                if (monster->type == MONS_SIMULACRUM_SMALL
+                    || monster->type == MONS_SIMULACRUM_LARGE)
                 {
                     simple_monster_message( monster, " vaporizes!" );
 
                     place_cloud(CLOUD_COLD_MON, monster->x, monster->y,
                                 1 + random2(3));
+                }
+                else
+                {
+                    simple_monster_message(monster,
+                                "'s corpse disappears in a puff of smoke!");
+                    place_cloud(CLOUD_GREY_SMOKE_MON + random2(3),
+                                monster->x, monster->y, 1 + random2(3));
                 }
             }
         }
@@ -4024,12 +4005,10 @@ void monster_cleanup(struct monsters *monster)
     int monster_killed = monster_index(monster);
     int dmi = 0;
 
-    for (unsigned char j = 0; j < 3; j++)
-    {
+    for (unsigned char j = 0; j < NUM_MON_ENCHANTS; j++)
         monster->enchantment[j] = ENCH_NONE;
-    }
 
-    monster->enchantment1 = 0;
+    monster->flags = 0;
     monster->type = -1;
     monster->hit_points = 0;
     monster->max_hit_points = 0;
@@ -4206,8 +4185,7 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
 
     // messaging: {dlb}
 
-    if (monster->enchantment[1] == ENCH_SHAPESHIFTER
-        || monster->enchantment[1] == ENCH_GLOWING_SHAPESHIFTER)
+    if (mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER, ENCH_SHAPESHIFTER))
     {
         strcat(str_polymon, " changes into ");
     }
@@ -4216,9 +4194,9 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
     else
         strcat(str_polymon, " evaporates and reforms as " );
 
-    strcat(str_polymon, monam(250, targetc,
-                              (mons_flag(targetc, M_INVIS) ? ENCH_INVIS
-                                              : monster->enchantment[2] ), 3));
+    bool invis = mons_flag(targetc, M_INVIS) ||
+        mons_has_ench(monster, ENCH_INVIS);
+    strcat(str_polymon, monam(250, targetc, (invis)?ENCH_INVIS:ENCH_NONE, 3));
 
     if ( targetc == MONS_PULSATING_LUMP )
         strcat(str_polymon, " of flesh");
@@ -4235,34 +4213,17 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
     monster->type = targetc;
     monster->number = 250;
 
-    for (unsigned char unenc = 0; unenc < 3; unenc++)
-    {
-        if ( monster->enchantment[unenc] >= ENCH_ABJ_I
-            && monster->enchantment[unenc] <= ENCH_ABJ_VI )
-        {
-            // Summoned creatures are still going to disappear eventually
-            continue;
-        }
+    int ench = mons_has_ench(monster, ENCH_ABJ_I, ENCH_ABJ_VI);
+    int ench2 = mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER, ENCH_SHAPESHIFTER);
 
-        if ( monster->enchantment[unenc] != ENCH_SHAPESHIFTER
-            && monster->enchantment[unenc] != ENCH_GLOWING_SHAPESHIFTER )
-        {
-            monster->enchantment[unenc] = 0; /* shapeshifters stay as such */
-        }
-    }
+    for (unsigned char unenc = 0; unenc < 5; unenc++)
+        monster->enchantment[unenc] = ENCH_NONE;
+
+    mons_add_ench(monster, ench);
+    mons_add_ench(monster, ench2);
 
     if ( mons_flag(monster->type, M_INVIS) )
-    {
-        monster->enchantment1 = 1;
-        monster->enchantment[2] = ENCH_INVIS;
-    }
-
-    if ( monster->enchantment[0] == ENCH_NONE
-        && monster->enchantment[1] == ENCH_NONE
-        && monster->enchantment[2] == ENCH_NONE )
-    {
-        monster->enchantment1 = 0;
-    }
+        mons_add_ench(monster, ENCH_INVIS);
 
     define_monster(monster_index(monster));
 
@@ -4523,9 +4484,9 @@ static void place_monster_corpse(struct monsters *monster)
 {
     int corpse_class = mons_charclass(monster->type);
 
-    if (monster->enchantment[1] == ENCH_SHAPESHIFTER)
+    if (mons_has_ench(monster, ENCH_SHAPESHIFTER))
         corpse_class = MONS_SHAPESHIFTER;
-    else if (monster->enchantment[1] == ENCH_GLOWING_SHAPESHIFTER)
+    else if (mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER))
         corpse_class = MONS_GLOWING_SHAPESHIFTER;
 
     if (!mons_weight(corpse_class)

@@ -713,6 +713,12 @@ void stethoscope(int mwh)
     strcat(info, " ench2: ");
     itoa(menv[i].enchantment[2], st_prn, 10);
     strcat(info, st_prn);
+    strcat(info, " ench3: ");
+    itoa(menv[i].enchantment[3], st_prn, 10);
+    strcat(info, st_prn);
+    strcat(info, " ench4: ");
+    itoa(menv[i].enchantment[4], st_prn, 10);
+    strcat(info, st_prn);
     mpr(info);
 
     strcpy(info, "Ghost damage: ");

@@ -38,6 +38,7 @@
 #include "overmap.h"
 #include "player.h"
 #include "stuff.h"
+#include "spells4.h"
 
 #ifdef MACROS
 #include "macro.h"
@@ -942,7 +943,7 @@ void monster_grid(bool do_updates)
                     }
                 }
 
-                if (monster->enchantment[2] == ENCH_INVIS
+                if (mons_has_ench(monster, ENCH_INVIS)
                     && (!player_see_invis()
                         || (monster_habitat(monster->type) != DNGN_FLOOR
                             && monster->number == 1)))
@@ -1256,7 +1257,17 @@ void noisy(char loudness, char nois_x, char nois_y)
         if (distance(monster->x, monster->y, nois_x, nois_y) <= dist
             && !silenced(monster->x, monster->y))
         {
-            behavior_event(monster, ME_DISTURB);
+            // if the noise came from the player,  any nearby monster
+            // will be jumping on top of them.
+
+            // otherwise, it just wakes monsters up and makes them
+            // wander about.  They'll probably pick up the player shortly
+            // through check_awaken() anyway.
+
+            if (nois_x == you.x_pos && nois_y == you.y_pos)
+                behavior_event(monster, ME_ALERT, MHITYOU);
+            else
+                behavior_event(monster, ME_DISTURB);
         }
     }
 }                               // end noisy()

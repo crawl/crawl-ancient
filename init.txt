@@ -43,7 +43,7 @@
 #    X          Corpses
 #    $          Gold
 
-# autopickup = $?!:"/0}%
+autopickup = $?!:"/0}%
 
 # verbose dump causes less important item details to appear in character dumps
 # verbose_dump  = false
@@ -137,7 +137,7 @@
 # game is started.
 #
 
-# always_greet = true
+always_greet = true
 
 # Set the default background colour of your window
 # Warning: setting this to a value different than the window's background
@@ -200,9 +200,12 @@
 
 # hp_warning = 25
 
-#
-# race and class choices.  Note that the name is not used,  just the letter
+# race can be used to preselect race.  Note that the letter from the
+# race choice screen must be used,  not the actual race name.
 
 # race = a
+
+# class used to preselect class.  Same format as race option above
+# (i.e. use the letter,  not the actual class name)
 
 # class = a

@@ -2202,15 +2202,15 @@ void init_properties(void)
     mss[OBJ_MISSILES][MI_STONE] = 5;
 
     prop[OBJ_MISSILES][MI_ARROW][PWPN_DAMAGE] = 2;
-    prop[OBJ_MISSILES][MI_ARROW][PWPN_HIT] = 7;
+    prop[OBJ_MISSILES][MI_ARROW][PWPN_HIT] = 6;
     mss[OBJ_MISSILES][MI_ARROW] = 10;
 
     prop[OBJ_MISSILES][MI_BOLT][PWPN_DAMAGE] = 2;
-    prop[OBJ_MISSILES][MI_BOLT][PWPN_HIT] = 9;
+    prop[OBJ_MISSILES][MI_BOLT][PWPN_HIT] = 8;
     mss[OBJ_MISSILES][MI_BOLT] = 12;
 
-    prop[OBJ_MISSILES][MI_DART][PWPN_DAMAGE] = 3;
-    prop[OBJ_MISSILES][MI_DART][PWPN_HIT] = 5;  //whatever - for hand crossbow
+    prop[OBJ_MISSILES][MI_DART][PWPN_DAMAGE] = 2;
+    prop[OBJ_MISSILES][MI_DART][PWPN_HIT] = 4;  //whatever - for hand crossbow
     mss[OBJ_MISSILES][MI_DART] = 5;
 
     // large rock

@@ -35,6 +35,7 @@
 #include "player.h"
 #include "shopping.h"
 #include "stuff.h"
+#include "spells4.h"
 #include "view.h"
 
 #ifdef MACROS
@@ -194,8 +195,7 @@ void direction( struct dist &moves, int restrict )
         // we have a valid previous target (maybe)
         struct monsters *montarget = &menv[you.prev_targ];
         if (!mons_near(montarget)
-            || (montarget->enchantment[2] == ENCH_INVIS
-                && !player_see_invis()))
+            || (mons_has_ench(montarget,ENCH_INVIS) && !player_see_invis()))
         {
             mpr("You can't see that creature any more.");
             return;
@@ -372,8 +372,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                         if (mid == NON_MONSTER)
                             break;
 
-                        if (menv[ mid ].enchantment[2] == ENCH_INVIS
-                            && !player_see_invis())
+                        if (mons_has_ench(&menv[ mid ], ENCH_INVIS) && !player_see_invis())
                             break;
 
                         if (monster_habitat( menv[ mid ].type ) != DNGN_FLOOR
@@ -428,8 +427,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                 if (mid == NON_MONSTER)
                     break;
 
-                if (menv[ mid ].enchantment[2] == ENCH_INVIS
-                    && !player_see_invis())
+                if (mons_has_ench(&menv[ mid ], ENCH_INVIS) && !player_see_invis())
                     break;
 
                 if (monster_habitat( menv[ mid ].type ) != DNGN_FLOOR
@@ -620,8 +618,7 @@ char mons_find(unsigned char xps, unsigned char yps,
 
         const int targ_mon = mgrd[ targ_x ][ targ_y ];
         if (targ_mon != NON_MONSTER && env.show[temp_xps - 8][temp_yps] != 0
-            && (menv[ targ_mon ].enchantment[2] != ENCH_INVIS
-                || player_see_invis())
+            && (!mons_has_ench(&menv[ targ_mon ], ENCH_INVIS) || player_see_invis())
             && (monster_habitat(menv[ targ_mon ].type) == DNGN_FLOOR
                 || menv[ targ_mon ].number != 1))
         {
@@ -647,14 +644,14 @@ static void describe_cell(int mx, int my)
 
         if (grd[mx][my] == DNGN_SHALLOW_WATER)
         {
-            if (menv[i].enchantment[2] == ENCH_INVIS
+            if (mons_has_ench(&menv[i], ENCH_INVIS)
                 && mons_flies(menv[i].type) == 0 && !player_see_invis())
             {
                 mpr("There is a strange disturbance in the water here.");
             }
         }
 
-        if (menv[i].enchantment[2] == ENCH_INVIS && !player_see_invis())
+        if (mons_has_ench(&menv[i],ENCH_INVIS) && !player_see_invis())
             goto look_clouds;
 
         int mon_wep = menv[i].inv[MSLOT_WEAPON];
@@ -711,13 +708,19 @@ static void describe_cell(int mx, int my)
             mpr(info);
         }
 
-        // special case: wandering hostile with no target in LOS
+        // wandering hostile with no target in LOS
         if (menv[i].behavior == BEH_WANDER && !mons_friendly(&menv[i])
             && menv[i].foe == MHITNOT)
         {
-            strcpy(info, mons_pronoun(menv[i].type, 0));
-            strcat(info, " doesn't appear to be interested in you.");
-            mpr(info);
+            // special case: bats, horroes, and blowflies get set to BEH_WANDER
+            // to produce their unique behavior.
+            if (!(menv[i].type == MONS_GIANT_BAT || menv[i].type == MONS_UNSEEN_HORROR
+                || menv[i].type == MONS_GIANT_BLOWFLY))
+            {
+                strcpy(info, mons_pronoun(menv[i].type, 0));
+                strcat(info, " doesn't appear to be interested in you.");
+                mpr(info);
+            }
         }
 
         if (menv[i].attitude == ATT_FRIENDLY)
@@ -727,57 +730,54 @@ static void describe_cell(int mx, int my)
             mpr(info);
         }
 
-        if (menv[i].enchantment1)
+        for (int p = 0; p < NUM_MON_ENCHANTS; p++)
         {
-            for (int p = 0; p < 3; p++)
+            strcpy(info, mons_pronoun(menv[i].type, 0));
+            switch (menv[i].enchantment[p])
             {
-                strcpy(info, mons_pronoun(menv[i].type, 0));
-                switch (menv[i].enchantment[p])
-                {
-                case ENCH_YOUR_ROT_I:
-                case ENCH_YOUR_ROT_II:
-                case ENCH_YOUR_ROT_III:
-                case ENCH_YOUR_ROT_IV:
-                    strcat(info, " is rotting away."); //jmf: "covered in sores"?
-                    break;
-                case ENCH_BACKLIGHT_I:
-                case ENCH_BACKLIGHT_II:
-                case ENCH_BACKLIGHT_III:
-                case ENCH_BACKLIGHT_IV:
-                    strcat(info, " is softly glowing.");
-                    break;
-                case ENCH_SLOW:
-                    strcat(info, " is moving slowly.");
-                    break;
-                case ENCH_HASTE:
-                    strcat(info, " is moving very quickly.");
-                    break;
-                case ENCH_CONFUSION:
-                    strcat(info, " appears to be bewildered and confused.");
-                    break;
-                case ENCH_INVIS:
-                    strcat(info, " is slightly transparent.");
-                    break;
-                case ENCH_CHARM:
-                    strcat(info, " is in your thrall.");
-                    break;
-                case ENCH_YOUR_STICKY_FLAME_I:
-                case ENCH_YOUR_STICKY_FLAME_II:
-                case ENCH_YOUR_STICKY_FLAME_III:
-                case ENCH_YOUR_STICKY_FLAME_IV:
-                case ENCH_STICKY_FLAME_I:
-                case ENCH_STICKY_FLAME_II:
-                case ENCH_STICKY_FLAME_III:
-                case ENCH_STICKY_FLAME_IV:
-                    strcat(info, " is covered in liquid flames.");
-                    break;
-                default:
-                    info[0] = '\0';
-                    break;
-                } // end switch
-                if (info[0])
-                    mpr(info);
-            }
+            case ENCH_YOUR_ROT_I:
+            case ENCH_YOUR_ROT_II:
+            case ENCH_YOUR_ROT_III:
+            case ENCH_YOUR_ROT_IV:
+                strcat(info, " is rotting away."); //jmf: "covered in sores"?
+                break;
+            case ENCH_BACKLIGHT_I:
+            case ENCH_BACKLIGHT_II:
+            case ENCH_BACKLIGHT_III:
+            case ENCH_BACKLIGHT_IV:
+                strcat(info, " is softly glowing.");
+                break;
+            case ENCH_SLOW:
+                strcat(info, " is moving slowly.");
+                break;
+            case ENCH_HASTE:
+                strcat(info, " is moving very quickly.");
+                break;
+            case ENCH_CONFUSION:
+                strcat(info, " appears to be bewildered and confused.");
+                break;
+            case ENCH_INVIS:
+                strcat(info, " is slightly transparent.");
+                break;
+            case ENCH_CHARM:
+                strcat(info, " is in your thrall.");
+                break;
+            case ENCH_YOUR_STICKY_FLAME_I:
+            case ENCH_YOUR_STICKY_FLAME_II:
+            case ENCH_YOUR_STICKY_FLAME_III:
+            case ENCH_YOUR_STICKY_FLAME_IV:
+            case ENCH_STICKY_FLAME_I:
+            case ENCH_STICKY_FLAME_II:
+            case ENCH_STICKY_FLAME_III:
+            case ENCH_STICKY_FLAME_IV:
+                strcat(info, " is covered in liquid flames.");
+                break;
+            default:
+                info[0] = '\0';
+                break;
+            } // end switch
+            if (info[0])
+                mpr(info);
         }
 
 #ifdef WIZARD

@@ -997,10 +997,10 @@ static void input(void)
 
     case '#':
     case CMD_CHARACTER_DUMP:
-        char name_your[kNameLen];
+        char name_your[kNameLen+1];
 
-        strncpy(name_your, you.your_name, kFileNameLen);
-        name_your[kFileNameLen] = 0;
+        strncpy(name_your, you.your_name, kNameLen);
+        name_your[kNameLen] = '\0';
         if (dump_char(0, name_your) == 1)
             strcpy(info, "Char dumped successfully.");
         else
@@ -2384,13 +2384,13 @@ static bool initialise(void)
         menv[i].type = -1;
         menv[i].speed_increment = 10;
         menv[i].target_x = 155;
-        menv[i].enchantment1 = 0;
+        menv[i].flags = 0;
         menv[i].behavior = BEH_SLEEP;
 
         menv[i].foe = NON_MONSTER;
         menv[i].attitude = ATT_HOSTILE;
 
-        for (j = 0; j < 3; j++)
+        for (j = 0; j < NUM_MON_ENCHANTS; j++)
             menv[i].enchantment[j] = ENCH_NONE;
 
         for (j = 0; j < NUM_MONSTER_SLOTS; j++)
@@ -2625,7 +2625,7 @@ static void move_player(char move_x, char move_y)
 
         // you can swap places with a friendly monster if you
         // can see it and you're not confused
-        if (mons_friendly(mon) && (!monster_has_enchantment(mon, ENCH_INVIS)
+        if (mons_friendly(mon) && (!mons_has_ench(mon, ENCH_INVIS)
             || player_see_invis()) && !you.conf)
         {
             if (!swap_places( &menv[ targ_monst ] ))

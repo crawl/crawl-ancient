@@ -439,7 +439,6 @@ void define_monster(int k)
     m2_ev = m->ev;
 
     // speed
-    // this is divided by 10 when reloaded ($pellbinder: why?)
     m2_speed = m->speed;
     m2_speed_inc = m->speed_inc;
 
@@ -536,7 +535,10 @@ void define_monster(int k)
     if (m2_sec == 250)
         m2_sec = m->sec;
 
-    m2_speed_inc *= 10;
+    // big change {gdl} - initial monster speed increment is 70+
+    // speed_inc,  not 10* as it was overflowing 8 bits and causing
+    // hangs
+    m2_speed_inc += 70;
     m2_speed_inc += random2(10);
 
     // so let it be written, so let it be done
@@ -554,7 +556,7 @@ void define_monster(int k)
 /* ------------------------- monam/moname ------------------------- */
 char *ptr_monam( struct monsters *mon, char desc )
 {
-    return (monam( mon->number, mon->type, mon->enchantment[2], desc ));
+    return (monam( mon->number, mon->type, mons_has_ench(mon, ENCH_INVIS), desc ));
 }
 
 char *monam(int mons_num, int mons, char mench, char desc)
@@ -770,19 +772,38 @@ int mons_power(int mc)
     return (smc->hpdice[0]);
 }
 
-bool mons_aligned(struct monsters *m1, struct monsters *m2)
+bool mons_aligned(int m1, int m2)
 {
-    bool fr1 = (m1->attitude == ATT_FRIENDLY) ||
-        monster_has_enchantment(m1, ENCH_CHARM);
-    bool fr2 = (m2->attitude == ATT_FRIENDLY) ||
-        monster_has_enchantment(m2, ENCH_CHARM);
+    bool fr1, fr2;
+    struct monsters *mon1, *mon2;
+
+    if (m1 == MHITNOT || m2 == MHITNOT)
+        return true;
+
+    if (m1 == MHITYOU)
+        fr1 = true;
+    else
+    {
+        mon1 = &menv[m1];
+        fr1 = (mon1->attitude == ATT_FRIENDLY) ||
+        mons_has_ench(mon1, ENCH_CHARM);
+    }
+
+    if (m2 == MHITYOU)
+        fr2 = true;
+    else
+    {
+        mon2 = &menv[m2];
+        fr2 = (mon2->attitude == ATT_FRIENDLY) ||
+            mons_has_ench(mon2, ENCH_CHARM);
+    }
 
     return fr1 == fr2;
 }
 
 bool mons_friendly(struct monsters *m)
 {
-    return (m->attitude == ATT_FRIENDLY || monster_has_enchantment(m, ENCH_CHARM));
+    return (m->attitude == ATT_FRIENDLY || mons_has_ench(m, ENCH_CHARM));
 }
 
 /* ******************************************************************
@@ -867,9 +888,9 @@ bool mons_should_fire(struct bolt &beam)
 // note - this function assumes that the monster is "nearby"
 // its target!
 
-bool ms_always_fire(int monspell)
+bool ms_requires_tracer(int monspell)
 {
-    bool always = true;
+    bool requires = false;
 
     switch(monspell)
     {
@@ -903,7 +924,7 @@ bool ms_always_fire(int monspell)
         case MS_STONE_ARROW:
         case MS_TELEPORT_OTHER:
         case MS_VENOM_BOLT:
-            always = false;
+            requires = true;
             break;
 
         // self-niceties and direct effects
@@ -937,7 +958,54 @@ bool ms_always_fire(int monspell)
 
     }
 
-    return always;
+    return requires;
+}
+
+// returns true if the spell is something you wouldn't want done if
+// you had a friendly target..  only returns a meaningful value for
+// non-beam spells
+
+bool ms_direct_nasty(int monspell)
+{
+    bool nasty = true;
+
+    switch(monspell)
+    {
+        // self-niceties/summonings
+        case MS_ANIMATE_DEAD:
+        case MS_BLINK:
+        case MS_DIG:
+        case MS_FAKE_RAKSHASA_SUMMON:
+        case MS_HASTE:
+        case MS_HEAL:
+        case MS_INVIS:
+        case MS_LEVEL_SUMMON:
+        case MS_SUMMON_BEAST:
+        case MS_SUMMON_DEMON_LESSER:
+        case MS_SUMMON_DEMON:
+        case MS_SUMMON_DEMON_GREATER:
+        case MS_SUMMON_UFETUBUS:
+        case MS_TELEPORT:
+        case MS_VAMPIRE_SUMMON:
+            nasty = false;
+            break;
+
+        case MS_BRAIN_FEED:
+        case MS_HELLFIRE_BURST:
+        case MS_MUTATION:
+        case MS_SMITE:
+        case MS_TORMENT:
+
+        // meaningless, but sure, why not?
+        case MS_NO_SPELL:
+            break;
+
+        default:
+            break;
+
+    }
+
+    return nasty;
 }
 
 // use of variant:

@@ -601,13 +601,13 @@ void hs_close(FILE *handle, char *mode)
     // actually close
     fclose(handle);
 
-#ifdef SHARED_FILES_CHMOD_VAL
+#ifdef SHARED_FILES_CHMOD_PUBLIC
     if (stricmp(mode, "w") == 0)
     {
   #ifdef SAVE_DIR_PATH
-        chmod(SAVE_DIR_PATH "scores", SHARED_FILES_CHMOD_VAL);
+        chmod(SAVE_DIR_PATH "scores", SHARED_FILES_CHMOD_PUBLIC);
   #else
-        chmod("scores", SHARED_FILES_CHMOD_VAL);
+        chmod("scores", SHARED_FILES_CHMOD_PUBLIC);
   #endif
     }
 #endif

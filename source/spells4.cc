@@ -182,59 +182,149 @@ inline void player_hurt_monster(int monster, int damage)
     return;
 }                               // end player_hurt_monster()
 
-bool monster_has_enchantment(struct monsters *mon, int ench)
+int mons_has_ench(struct monsters *mon, int ench, int ench2)
 {
-    for (int p = 0; p < 3; p++)
-        if (mon->enchantment[p] == ench)
-            return true;
+    // silliness
+    if (ench == ENCH_NONE)
+        return ench;
 
-    return false;
+    if (ench2 == ENCH_NONE)
+        ench2 = ench;
+
+    for (int p = 0; p < NUM_MON_ENCHANTS; p++)
+        if (mon->enchantment[p] >= ench && mon->enchantment[p] <= ench2)
+            return mon->enchantment[p];
+
+    return ENCH_NONE;
 }
 
-int enchant_monster(int mon, int ench)
+bool mons_del_ench(struct monsters *mon, int ench, int ench2)
 {
-    int p;
+         int p;
 
-    ASSERT(mon != NON_MONSTER);
+    // silliness
+    if (ench == ENCH_NONE)
+        return false;
 
-    if (monster_has_enchantment(&menv[mon], ench))
-        return 0;
+    if (ench2 == ENCH_NONE)
+        ench2 = ench;
 
-    for (p = 0; p < 3; p++)
+    for (p = 0; p < NUM_MON_ENCHANTS; p++)
+        if (mon->enchantment[p] >= ench && mon->enchantment[p] <= ench2)
+            break;
+
+    if (p == NUM_MON_ENCHANTS)
+        return false;
+
+    mon->enchantment[p] = ENCH_NONE;
+
+    // check for slow/haste
+    if (ench == ENCH_HASTE)
     {
-        if (menv[mon].enchantment[p] == 0)
+        if (mon->speed >= 100)
+            mon->speed = 100 + ((mon->speed - 100) / 2);
+        else
+            mon->speed /= 2;
+    }
+    if (ench == ENCH_SLOW)
+    {
+        if (mon->speed >= 100)
+            mon->speed = 100 + ((mon->speed - 100) * 2);
+        else
+            mon->speed *= 2;
+    }
+    if (ench == ENCH_FEAR)
+    {
+        simple_monster_message(mon, " seems to regain its courage.");
+
+        // reevaluate behavior
+        behavior_event(mon, ME_EVAL);
+    }
+
+    if (ench == ENCH_CONFUSION)
+    {
+        simple_monster_message(mon, " seems less confused.");
+
+        // reevaluate behavior
+        behavior_event(mon, ME_EVAL);
+    }
+
+    if (ench == ENCH_INVIS)
+    {
+        // invisible monsters stay invisible
+        if (!mons_flag(mon->type, M_INVIS))
         {
-            menv[mon].enchantment[p] = ench;
-            menv[mon].enchantment1 = 1;
-
-            // XXX: This isn't really complete, and might not be needed...
-            // although you'd have to prove that just setting an enchantment
-            // flag will eventually cause an actual change in speed to
-            // remove it.  There might be more cases that should be in
-            // here as well.  -- bwr
-            switch (ench)
+            if (monster_habitat(mon->type) == DNGN_FLOOR
+                || mon->number != 1)
             {
-            case ENCH_HASTE:
-                if (menv[mon].speed >= 100)
-                    menv[mon].speed = 100 + ((menv[mon].speed - 100) * 2);
-                else
-                    menv[mon].speed *= 2;
-                break;
-
-            case ENCH_SLOW:
-                if (menv[mon].speed >= 100)
-                    menv[mon].speed = 100 + ((menv[mon].speed - 100) / 2);
-                else
-                    menv[mon].speed /= 2;
-                break;
+                // Can't use simple_message, because we want
+                //  'a thing appears' (not 'the')
+                // Note: this message not printed if the player
+                //  could already see the monster.
+                if (mons_near(mon)
+                    && (!player_see_invis()
+                        || monster_habitat(mon->type)
+                                                != DNGN_FLOOR))
+                {
+                    strcpy(info, ptr_monam(mon, 2));
+                    strcat(info, " appears!");
+                    mpr(info);
+                }
             }
-
-            return 1;
         }
     }
 
-    return 0;
-}                               // end enchant_monster()
+    if (ench == ENCH_CHARM)
+    {
+        simple_monster_message(mon, " is no longer charmed.");
+
+        // reevaluate behavior
+        behavior_event(mon, ME_EVAL);
+    }
+
+    return true;
+}
+
+bool mons_add_ench(struct monsters *mon, int ench)
+{
+    // silliness
+    if (ench == ENCH_NONE)
+        return false;
+
+    int newspot = -1;
+
+    // don't double-add
+    for (int p = 0; p < NUM_MON_ENCHANTS; p++)
+    {
+        if (mon->enchantment[p] == ench)
+            return true;
+
+        if (mon->enchantment[p] == ENCH_NONE && newspot < 0)
+            newspot = p;
+    }
+
+    if (newspot < 0)
+        return false;
+
+    mon->enchantment[newspot] = ench;
+
+    // check for slow/haste
+    if (ench == ENCH_HASTE)
+    {
+        if (mon->speed >= 100)
+            mon->speed = 100 + ((mon->speed - 100) * 2);
+        else
+            mon->speed *= 2;
+    }
+    if (ench == ENCH_SLOW)
+    {
+        if (mon->speed >= 100)
+            mon->speed = 100 + ((mon->speed - 100) / 2);
+        else
+            mon->speed /= 2;
+    }
+    return true;
+}
 
 // FUNCTION APPLICATORS: Idea from Juho Snellman <jsnell@lyseo.edu.ouka.fi>
 //                       on the Roguelike News pages, Development section.
@@ -1328,22 +1418,18 @@ static int sleep_monsters(char x, char y, int pow, int garbage)
     //jmf: now that sleep == hibernation:
     if ((mons_res_cold(menv[mnstr].type) > 0) && coinflip())
         return 0;
-    if (monster_has_enchantment(&menv[mnstr], ENCH_SLEEP_WARY))
+    if (mons_has_ench(&menv[mnstr], ENCH_SLEEP_WARY))
         return 0;
 
     if (mons_flag(menv[mnstr].type, M_COLD_BLOOD))
     {
-        // XXX: does this really work?!?
-        enchant_monster(mnstr, ENCH_SLOW);
+        mons_add_ench(&menv[mnstr], ENCH_SLOW);
         menv[mnstr].behavior = BEH_SLEEP;
     }
     else
         menv[mnstr].behavior = BEH_SLEEP;
 
-    // XXX: this might lead to problems (along with all the other
-    // enchantments), in that there is only room for three on a
-    // monster... I'm not sure how abusable that fact really is. -- bwr
-    enchant_monster(mnstr, ENCH_SLEEP_WARY);
+    mons_add_ench(&menv[mnstr], ENCH_SLEEP_WARY);
 
     return 1;
 }                               // end sleep_monsters()
@@ -1382,17 +1468,7 @@ static int tame_beast_monsters(char x, char y, int pow, int garbage)
     if (random2(100) < random2(pow / 10))
         monster->attitude = ATT_FRIENDLY;       // permanent, right?
     else
-    {
-        for (unsigned char i = 0; i < 3; i++)
-        {
-            if (monster->enchantment[i] == 0)
-            {
-                monster->enchantment[i] = ENCH_CHARM;
-                monster->enchantment1 = 1;
-                break;
-            }
-        }
-    }
+        mons_add_ench(monster, ENCH_CHARM);
 
     return 1;
 }                               // end tame_beast_monsters()
@@ -2103,7 +2179,7 @@ static int intoxicate_monsters(char x, char y, int pow, int garbage)
     if (mons_res_poison(menv[mon].type) > 0)
         return 0;
 
-    enchant_monster(mon, ENCH_CONFUSION);
+    mons_add_ench(&menv[mon], ENCH_CONFUSION);
     return 1;
 }                               // end intoxicate_monsters()
 
@@ -2173,15 +2249,15 @@ static int glamour_monsters(char x, char y, int pow, int garbage)
     switch (random2(6))
     {
     case 0:
-        enchant_monster(mon, ENCH_FEAR);
+        mons_add_ench(&menv[mon], ENCH_FEAR);
         break;
     case 1:
     case 4:
-        enchant_monster(mon, ENCH_CONFUSION);
+        mons_add_ench(&menv[mon], ENCH_CONFUSION);
         break;
     case 2:
     case 5:
-        enchant_monster(mon, ENCH_CHARM);
+        mons_add_ench(&menv[mon], ENCH_CHARM);
         break;
     case 3:
         menv[mon].behavior = BEH_SLEEP;
@@ -2265,18 +2341,13 @@ bool backlight_monsters(char x, char y, int pow, int garbage)
 
     strcpy(info, ptr_monam( &(menv[mon]), 0 ));
     strcat(info, " is outlined in light.");
+    mpr(info);
 
-    if (menv[mon].enchantment[2] == ENCH_NONE
-        || menv[mon].enchantment[2] == ENCH_INVIS)
-    {
-        menv[mon].enchantment[2] = ENCH_BACKLIGHT_IV;
-        menv[mon].enchantment1 = 1;
-        mpr(info);
+    // this enchantment wipes out invisibility (neat)
+    mons_del_ench(&menv[mon], ENCH_INVIS);
+    mons_add_ench(&menv[mon], ENCH_BACKLIGHT_IV);
 
-        return true;
-    }
-
-    return false;
+    return true;
 }                               // end backlight_monsters()
 
 void cast_evaporate(int pow)
@@ -2408,7 +2479,7 @@ static int rot_living(char x, char y, int pow, int message)
     else
         ench = ENCH_YOUR_ROT_I;
 
-    enchant_monster(mon, ench);
+    mons_add_ench(&menv[mon], ench);
 
     return 1;
 }                               // end rot_living()
@@ -2472,7 +2543,7 @@ static int rot_undead(char x, char y, int pow, int garbage)
     else
         ench = ENCH_YOUR_ROT_I;
 
-    enchant_monster(mon, ench);
+    mons_add_ench(&menv[mon], ench);
 
     return 1;
 }                               // end rot_undead()
@@ -2805,8 +2876,8 @@ void cast_twist(int pow)
     struct bolt tmp;    // used, but ignored
 
     // level one power cap -- bwr
-    if (pow > 50)
-        pow = 50;
+    if (pow > 30)
+        pow = 30;
 
     // Get target,  using DIR_TARGET for targetting only,
     // since we don't use beam() for this spell.
@@ -2834,7 +2905,7 @@ void cast_twist(int pow)
     // it can target any monster in LOS (high utility).  This is
     // similar to the damage done by Magic Dart (although, the
     // distribution is much more uniform). -- bwr
-    int damage = 1 + random2( 6 + pow / 7 );
+    int damage = 1 + random2( 6 + pow / 4 );
 
     // Inflict the damage
     hurt_monster( monster, damage );
@@ -2990,6 +3061,8 @@ void cast_far_strike(int pow)
 void cast_apportation(int pow)
 {
     struct dist beam;
+
+    mpr("Pull items from where?");
 
     direction(beam, DIR_TARGET);
 
@@ -3177,9 +3250,9 @@ void cast_shuggoth_seed(int powc)
     if (mons_can_host_shuggoth(menv[i].type))
     {
         if (random2(powc) > 100)
-            enchant_monster(i, ENCH_YOUR_SHUGGOTH_III);
+            mons_add_ench(&menv[i], ENCH_YOUR_SHUGGOTH_III);
         else
-            enchant_monster(i, ENCH_YOUR_SHUGGOTH_IV);
+            mons_add_ench(&menv[i], ENCH_YOUR_SHUGGOTH_IV);
 
         simple_monster_message(&menv[i], " twitches.");
     }
@@ -3220,23 +3293,25 @@ static int quadrant_blink(char x, char y, int pow, int garbage)
     if (x == you.x_pos && y == you.y_pos)
         return 0;
 
-    // now that we know what quadrant we want,  reuse x and y
+    // use dx, dy since x,y are type 'char'
+    int dx = x;
+    int dy = y;
 
     // I'll accept that 98 is a magic number for the cap here -- bwr
     if (pow > 98)
         pow = 98;
 
-    while(random_near_space(you.x_pos, you.y_pos, x, y))
+    while(!random_near_space(you.x_pos, you.y_pos, dx, dy))
     {
         done = true;
 
-        if (up && y < you.y_pos)
+        if (up && dy < you.y_pos)
             done = false;
-        if (down && y > you.y_pos)
+        if (down && dy > you.y_pos)
             done = false;
-        if (right && x < you.x_pos)
+        if (right && dx < you.x_pos)
             done = false;
-        if (left && x > you.x_pos)
+        if (left && dx > you.x_pos)
             done = false;
     }
     while (!done && random2(100) < pow--);
@@ -3244,8 +3319,8 @@ static int quadrant_blink(char x, char y, int pow, int garbage)
     if (!done)
         return 0;
 
-    you.x_pos = x;
-    you.y_pos = y;
+    you.x_pos = dx;
+    you.y_pos = dy;
 
     if (you.level_type == LEVEL_ABYSS)
     {

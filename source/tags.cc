@@ -114,7 +114,7 @@ static void tag_construct_level_monsters(struct tagHeader &th);
 static void tag_construct_level_attitude(struct tagHeader &th);
 static void tag_read_level(struct tagHeader &th);
 static void tag_read_level_items(struct tagHeader &th);
-static void tag_read_level_monsters(struct tagHeader &th);
+static void tag_read_level_monsters(struct tagHeader &th, char minorVersion);
 static void tag_read_level_attitude(struct tagHeader &th);
 static void tag_missing_level_attitude();
 
@@ -359,7 +359,9 @@ void tag_write(struct tagHeader &th, FILE *saveFile)
     return;
 }
 
-int tag_read(FILE *fp)
+// minorVersion is available for any sub-readers that need it
+// (like TAG_LEVEL_MONSTERS)
+int tag_read(FILE *fp, char minorVersion)
 {
     const int tagHdrSize = 6;
     struct tagHeader hdr, th;
@@ -401,7 +403,7 @@ int tag_read(FILE *fp)
             tag_read_level_items(th);
             break;
         case TAG_LEVEL_MONSTERS:
-            tag_read_level_monsters(th);
+            tag_read_level_monsters(th, minorVersion);
             break;
         case TAG_LEVEL_ATTITUDE:
             tag_read_level_attitude(th);
@@ -425,7 +427,10 @@ int tag_read(FILE *fp)
 // This function will be called AFTER all other tags for
 // the savefile are read,  so everything that can be
 // initialized should have been by now.
-void tag_missing(int tag)
+
+// minorVersion is available for any child functions that need
+// it (currently none)
+void tag_missing(int tag, char minorVersion)
 {
     switch(tag)
     {
@@ -1050,7 +1055,7 @@ static void tag_construct_level_monsters(struct tagHeader &th)
     // how many monsters?
     marshallShort(th, MAX_MONSTERS);
     // how many monster enchantments?
-    marshallByte(th, 3);
+    marshallByte(th, NUM_MON_ENCHANTS);
     // how many monster inventory slots?
     marshallByte(th, NUM_MONSTER_SLOTS);
 
@@ -1066,9 +1071,9 @@ static void tag_construct_level_monsters(struct tagHeader &th)
         marshallByte(th, menv[i].y);
         marshallByte(th, menv[i].target_x);
         marshallByte(th, menv[i].target_y);
-        marshallByte(th, menv[i].enchantment1);
+        marshallByte(th, menv[i].flags);
 
-        for (j = 0; j < 3; j++)
+        for (j = 0; j < NUM_MON_ENCHANTS; j++)
             marshallByte(th, menv[i].enchantment[j]);
 
         marshallShort(th, menv[i].type);
@@ -1190,7 +1195,7 @@ static void tag_read_level_items(struct tagHeader &th)
     }
 }
 
-static void tag_read_level_monsters(struct tagHeader &th)
+static void tag_read_level_monsters(struct tagHeader &th, char minorVersion)
 {
     int i,j;
     int count, ecount, icount, turns;
@@ -1219,10 +1224,39 @@ static void tag_read_level_monsters(struct tagHeader &th)
         menv[i].y = unmarshallByte(th);
         menv[i].target_x = unmarshallByte(th);
         menv[i].target_y = unmarshallByte(th);
-        menv[i].enchantment1 = unmarshallByte(th);
+        menv[i].flags = unmarshallByte(th);
+
+        // VERSION NOTICE:  for pre 4.2 files,  flags was either 0
+        // or 1.  Now,  we can transfer ENCH_CREATED_FRIENDLY over
+        // from the enchantments array to flags.
+        // Also need to take care of ENCH_FRIEND_ABJ_xx flags
 
         for (j = 0; j < ecount; j++)
             menv[i].enchantment[j] = unmarshallByte(th);
+
+        if (minorVersion < 2)
+        {
+            menv[i].flags = 0;
+            for(j=0; j<NUM_MON_ENCHANTS; j++)
+            {
+                if (j>=ecount)
+                    menv[i].enchantment[j] = ENCH_NONE;
+                else
+                {
+                    if (menv[i].enchantment[j] == 71) // old ENCH_CREATED_FRIENDLY
+                    {
+                        menv[i].enchantment[j] = ENCH_NONE;
+                        menv[i].flags |= MF_CREATED_FRIENDLY;
+                    }
+                    if (menv[i].enchantment[j] >= 65 // old ENCH_FRIEND_ABJ_I
+                      && menv[i].enchantment[j] <= 70) // old ENCH_FRIEND_ABJ_VI
+                    {
+                        menv[i].enchantment[j] -= (65 - ENCH_ABJ_I);
+                        menv[i].flags |= MF_CREATED_FRIENDLY;
+                    }
+                }
+            }
+        } // end  minorversion < 2
 
         menv[i].type = unmarshallShort(th);
         menv[i].hit_points = unmarshallShort(th);
@@ -1296,7 +1330,7 @@ void tag_missing_level_attitude()
         if (menv[i].type < 0)
             continue;
 
-        isFriendly = (menv[i].enchantment[1] == ENCH_CREATED_FRIENDLY);
+        isFriendly = testbits(menv[i].flags, MF_CREATED_FRIENDLY);
 
         menv[i].foe = MHITNOT;
 
@@ -1314,7 +1348,7 @@ void tag_missing_level_attitude()
                 new_beh = BEH_SEEK;
                 break;
             case 7:         // old BEH_ENSLAVED
-                if (!monster_has_enchantment(&menv[i], ENCH_CHARM))
+                if (!mons_has_ench(&menv[i], ENCH_CHARM))
                     isFriendly = true;
                 break;
             default:
@@ -1323,6 +1357,7 @@ void tag_missing_level_attitude()
 
         menv[i].attitude = (isFriendly)?ATT_FRIENDLY : ATT_HOSTILE;
         menv[i].behavior = new_beh;
+        menv[i].foe_memory = 0;
     }
 }
 

@@ -151,7 +151,7 @@ void summon_small_mammals(int pow);
 /* ***********************************************************************
  * called from: ability - religion - spell
  * *********************************************************************** */
-void summon_swarm(int pow);
+void summon_swarm(int pow, bool god_gift = false);
 
 
 // last updated 24may2000 {dlb}

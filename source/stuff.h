@@ -121,7 +121,7 @@ bool yesno(const char * str, bool safe = true);
 /* ***********************************************************************
  * called from: fight - monstuff - spells4 - view
  * *********************************************************************** */
-int distance(char x1, char x2, char y1, char y2);
+int distance(char x1, char y1, char x2, char y2);
 
 
 // last updated 21may2000 {dlb}
@@ -169,5 +169,15 @@ int letter_to_index(int the_letter);
  * called from: monplace
  * *********************************************************************** */
 bool near_stairs(int px, int py, int max_dist);
+
+// last updated 16mar2001 {dlb}
+/* ***********************************************************************
+ * called from: fight
+ * *********************************************************************** */
+// just want to do this in a consistent fashion
+inline bool testbits(unsigned int flags, unsigned int test)
+{
+    return ((flags & test) == test);
+}
 
 #endif

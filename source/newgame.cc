@@ -336,8 +336,11 @@ bool new_game(void)
     if (you.your_name[0] == '\0')
     {
         clrscr();
-        sprintf(info, "You are a %s %s."EOL, species_name(you.species),
-            you.class_name);
+        // hack for proper grammar (argh) -- GDL
+        strcpy(info, species_name(you.species));
+        bool startVowel = (strchr("aeiouAEIOU", info[0]) != NULL);
+        sprintf(info, "You are a%s %s %s."EOL, (startVowel)?"n":"",
+            species_name(you.species), you.class_name);
         cprintf(info);
 
         enterPlayerName(false);
@@ -2134,6 +2137,7 @@ void enterPlayerName(bool blankOK)
 
     // anything to avoid goto statements {dlb}
     bool acceptable_name = false;
+    bool first_time = true;
 
     // first time -- names set through init.txt/environment assumed ok {dlb}
     if (you.your_name[0] != '\0')
@@ -2144,9 +2148,11 @@ void enterPlayerName(bool blankOK)
         // prompt for a new name if current one unsatisfactory {dlb}:
         if (!acceptable_name)
         {
-            if (blankOK)
+            if (blankOK && first_time)
                 cprintf(EOL "Press <Enter> to answer this after race and class are chosen."EOL);
             cprintf(EOL "What is your name today? ");
+
+            first_time = false;
 
 #if defined(LINUX)
             echo();
@@ -2202,11 +2208,33 @@ void enterPlayerName(bool blankOK)
 // was a bit of prefixing like the player_* functions in player.cc. -- bwr
 bool verifyPlayerName(void)
 {
+    static int william_tanksley_asked_for_this = 2;
+
     // quick check for CON -- blows up real good under DOS/Windows
 #if defined(DOS) || defined(WIN32CONSOLE)
     if (stricmp(you.your_name, "con") == 0)
     {
-        cprintf("Sorry, that name gives your OS a headache.");
+        cprintf(EOL "Sorry, that name gives your OS a headache." EOL);
+        return false;
+    }
+
+    // quick check for LPTx -- thank you,  Mr. Tanksley!   ;-)
+    if (strncmpi(you.your_name, "LPT", 3) == 0)
+    {
+        switch (william_tanksley_asked_for_this)
+        {
+            case 2:
+                cprintf(EOL "Hello, William!  How is work on Omega going?" EOL);
+                break;
+            case 1:
+                cprintf(EOL "Look, it's just not a legal name." EOL);
+                break;
+            case 0:
+                strcpy(you.your_name, "William");
+                return true;
+        } // end switch
+
+        william_tanksley_asked_for_this --;
         return false;
     }
 #endif
@@ -3796,8 +3824,8 @@ void give_items_skills()
                 you.inv_quantity[i] = 1;
                 you.inv_class[i] = OBJ_WEAPONS;
                 you.inv_type[i] = WPN_SPEAR;
-                you.inv_plus[i] = 51;
-                you.inv_plus2[i] = 51;
+                you.inv_plus[i] = 50;
+                you.inv_plus2[i] = 50;
                 you.inv_dam[i] = 0;
                 you.inv_colour[i] = LIGHTCYAN;
             }
@@ -4028,9 +4056,33 @@ void give_items_skills()
         case JOB_EARTH_ELEMENTALIST:
             you.inv_type[2] = BOOK_GEOMANCY;
             you.inv_plus[2] = 0;
-            //you.skills[SK_CONJURATIONS] = 1;
-            you.skills[SK_TRANSMIGRATION] = 1;
-            you.skills[SK_EARTH_MAGIC] = 3;
+            you.inv_quantity[3] = random2avg(12, 2) + 6;
+            you.inv_class[3] = OBJ_MISSILES;
+            you.inv_type[3] = MI_STONE;
+            you.inv_plus[3] = 50;
+            you.inv_plus2[3] = 50;
+            you.inv_dam[3] = 0;
+            you.inv_colour[3] = BROWN;
+
+            if (you.species == SP_GNOME)
+            {
+                you.inv_quantity[4] = 1;
+                you.inv_class[4] = OBJ_WEAPONS;
+                you.inv_type[4] = WPN_SLING;
+                you.inv_plus[4] = 50;
+                you.inv_plus2[4] = 50;
+                you.inv_dam[4] = 0;
+                you.inv_colour[4] = BROWN;
+
+                you.skills[SK_SLINGS] = 1;
+                you.skills[SK_THROWING] = 1;
+                you.skills[SK_EARTH_MAGIC] = 2;
+            }
+            else
+            {
+                you.skills[SK_TRANSMIGRATION] = 1;
+                you.skills[SK_EARTH_MAGIC] = 3;
+            }
             break;
 
         case JOB_VENOM_MAGE:

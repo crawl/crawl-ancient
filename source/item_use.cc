@@ -63,6 +63,9 @@
 #include "transfor.h"
 #include "view.h"
 #include "wpn-misc.h"
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 
 extern int book_thing;          // defined in spells.cc
 extern bool wield_change;       // defined in output.cc
@@ -1011,9 +1014,7 @@ bool takeoff_armour(int item)
         {
             if (item == you.equip[loopy])
             {
-                strcpy(info, "The ");
-                in_name(item, 5, str_pass);
-                strcat(info, str_pass);
+                in_name(item, 4, info);
                 strcat(info, " is stuck to your body!");
                 mpr(info);
                 return false;
@@ -1611,10 +1612,26 @@ static void throw_it(struct bolt &pbolt, int throw_2)
                 baseHit += 1;
             }
 
-            // give an appropriate 'tohit' - normal thrown penalty is -5,
-            // except for thrown rocks (easy)
-            if (!(wepClass == OBJ_MISSILES && wepType == MI_STONE))
-                baseHit -= 5;
+            // give an appropriate 'tohit' -
+            // axes are -5
+            // daggers are +1
+            // spears are -1
+            // rocks are 0
+            if (wepClass == OBJ_WEAPONS)
+            {
+                switch (wepType)
+                {
+                    case WPN_DAGGER:
+                        baseHit += 1;
+                        break;
+                    case WPN_SPEAR:
+                        baseHit -= 1;
+                        break;
+                    default:
+                        baseHit -= 5;
+                        break;
+                }
+            }
 
             exHitBonus = you.skills[SK_THROWING] * 2;
 
@@ -1700,13 +1717,13 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     if (pbolt.damage < 0)
         pbolt.damage = 0;
 
-    // DEBUG
-    // sprintf(info, "H:%d+%d;a%dl%d.  D:%d+%d;a%dl%d -> %d,%d",
-    //     baseHit, exHitBonus, ammoHitBonus, lnchHitBonus,
-    //     baseDam, exDamBonus, ammoDamBonus, lnchDamBonus,
-    //     pbolt.hit, pbolt.damage);
-    // mpr(info);
-    // END DEBUG
+#ifdef DEBUG
+    sprintf(info, "H:%d+%d;a%dl%d.  D:%d+%d;a%dl%d -> %d,%d",
+        baseHit, exHitBonus, ammoHitBonus, lnchHitBonus,
+        baseDam, exDamBonus, ammoDamBonus, lnchDamBonus,
+        pbolt.hit, pbolt.damage);
+    mpr(info);
+#endif
 
     // create message
     if (launched)

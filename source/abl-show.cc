@@ -656,7 +656,7 @@ void activate_ability(void)
         if (!enough_mp(3, false))
             return;
 
-        summon_swarm(you.piety);
+        summon_swarm(you.piety, true);
 
         dec_mp(3);
         lose_piety((coinflip()? 3 : 2));
@@ -910,7 +910,9 @@ void activate_ability(void)
             return;
         }
 
-        power = random2avg((you.skills[SK_INVOCATIONS] * 6), 2);
+        power = you.skills[SK_INVOCATIONS]
+                    + random2( 1 + you.skills[SK_INVOCATIONS] )
+                    + random2( 1 + you.skills[SK_INVOCATIONS] );
 
         switch (random2(5))
         {
@@ -949,7 +951,9 @@ void activate_ability(void)
             return;
         }
 
-        power = you.skills[SK_INVOCATIONS] * 5;
+        power = you.skills[SK_INVOCATIONS] * 3
+                    + random2( 1 + you.skills[SK_INVOCATIONS] )
+                    + random2( 1 + you.skills[SK_INVOCATIONS] );
 
         switch (random2(8))
         {
@@ -962,7 +966,6 @@ void activate_ability(void)
         case 6: zapping( ZAP_ORB_OF_ELECTRICITY, power, beam ); break;
 
         case 7:
-            mpr("You feel temporarily insulated.");
             you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 1;
             mpr("Makhleb hurls a blast of lightning!");
 
@@ -981,7 +984,9 @@ void activate_ability(void)
 
             // ... and fire!
             explosion(beam);
+
             // protection down
+            mpr("Your divine protection wanes.");
             you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
             break;
         }

@@ -282,9 +282,11 @@ struct monsters
     unsigned char attitude;            // from MONS_ATTITUDE
     unsigned int behavior;
     unsigned int foe;
-    FixedVector<unsigned int, 3> enchantment;
-    unsigned int enchantment1;         //
+    FixedVector<unsigned int, NUM_MON_ENCHANTS> enchantment;
+    unsigned char flags;               // bitfield of boolean flags
     unsigned int number;               // #heads (hydra), etc.
+    int foe_memory;                    // how long to 'remember' foe x,y
+                                       // once they go out of sight
 };
 
 

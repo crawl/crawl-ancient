@@ -325,12 +325,10 @@ int raise_corpse(int corps, char corx, char cory, int corps_beh,
 void cast_twisted(int power, int corps_beh, int corps_hit)
 {
     int total_mass = 0;
-    int old_item = NON_ITEM;
+    int old_item;
     int number_raised = 0;
     int type_resurr = MONS_ABOMINATION_SMALL;
     char coloured = corps_hit;
-
-    coloured = 0;
 
     unsigned char rotted = 0;
 
@@ -593,7 +591,7 @@ void turn_undead(int pow)
 {
     int p;
     bool brek = false;
-    struct monsters *monster = 0;       // NULL {dlb}
+    struct monsters *monster;
 
     mpr("You attempt to repel the undead.");
 
@@ -609,33 +607,18 @@ void turn_undead(int pow)
         if (mons_holiness(monster->type) == MH_UNDEAD)
         {
             if (random2(pow) + you.experience_level < monster->hit_dice * 5)
+                continue;
+
+            if (!mons_add_ench(monster, ENCH_FEAR))
+                continue;
+
+            simple_monster_message(monster, " is repelled!");
+
+            // reduce power based on monster turned
+            pow -= monster->hit_dice * 3;
+            if (pow <= 0)
                 break;
 
-            if (monster->enchantment1 == 1)
-            {
-                for (p = 0; p < 3; p++)
-                {
-                    if (monster->enchantment[p] == ENCH_FEAR)
-                        brek = true;
-                }               // end of for p
-            }
-
-            for (p = 0; p < 3; p++)
-            {
-                if (brek)
-                {
-                    brek = false;
-                    break;
-                }
-
-                if (monster->enchantment[p] == ENCH_NONE)
-                {
-                    monster->enchantment[p] = ENCH_FEAR;
-                    monster->enchantment1 = 1;
-                    simple_monster_message(monster, " is repelled!");
-                    break;
-                }
-            }
         }                       // end "if mons_holiness"
     }                           // end "for tu"
 }                               // end turn_undead()
@@ -644,7 +627,7 @@ void holy_word(int pow)
 {
     int p;
     bool brek = false;
-    struct monsters *monster = 0;       // NULL {dlb}
+    struct monsters *monster;
 
     mpr("You speak a Word of immense power!");
 
@@ -675,30 +658,7 @@ void holy_word(int pow)
             if (monster->speed_increment >= 25)
                 monster->speed_increment -= 20;
 
-            if (monster->enchantment1 == 1)
-            {
-                for (p = 0; p < 3; p++)
-                {
-                    if (monster->enchantment[p] == ENCH_FEAR)
-                        brek = true;
-                }
-            }
-
-            for (p = 0; p < 3; p++)
-            {
-                if (brek)
-                {
-                    brek = false;
-                    break;
-                }
-
-                if (monster->enchantment[p] == ENCH_NONE)
-                {
-                    monster->enchantment[p] = ENCH_FEAR;
-                    monster->enchantment1 = 1;
-                    break;
-                }
-            }
+            mons_add_ench(monster, ENCH_FEAR);
         }                       // end "if mons_holiness"
     }                           // end "for tu"
 }                               // end holy_word()
@@ -708,7 +668,7 @@ void holy_word(int pow)
 // assumes only you can cast this spell (or would want to)
 void cast_toxic_radiance(void)
 {
-    struct monsters *monster = 0;       // NULL {dlb}
+    struct monsters *monster;
 
     mpr("You radiate a sickly green light!");
 
@@ -735,7 +695,7 @@ void cast_toxic_radiance(void)
 
         if (monster->type != -1 && mons_near(monster))
         {
-            if (monster->enchantment[2] != ENCH_INVIS)
+            if (!mons_has_ench(monster, ENCH_INVIS))
             {
                 poison_monster(monster, true);
 
@@ -824,7 +784,7 @@ void cast_refrigeration(int pow)
 
                 //jmf: "slow snakes" finally available
                 if (mons_flag(monster->type, M_COLD_BLOOD))
-                    enchant_monster(toxy, ENCH_SLOW);
+                    mons_add_ench(monster, ENCH_SLOW);
             }
         }
     }
@@ -972,8 +932,8 @@ char burn_freeze(int pow, char flavour)
     struct monsters *monster = 0;       // NULL {dlb}
     struct dist bmove;
 
-    if (pow > 50)
-        pow = 50;
+    if (pow > 30)
+        pow = 30;
 
     while (mgr == NON_MONSTER)
     {
@@ -1016,7 +976,7 @@ char burn_freeze(int pow, char flavour)
     strcat(info, ".");
     mpr(info);
 
-    int hurted = 1 + random2( random2avg(9,2) + (pow / 10) );
+    int hurted = 1 + random2( random2avg(9,2) + (pow / 6) );
 
     struct bolt beam;
 
@@ -1038,10 +998,7 @@ char burn_freeze(int pow, char flavour)
             //jmf: slow snakes
             if (flavour == BEAM_COLD && mons_flag(monster->type, M_COLD_BLOOD)
                 && coinflip())
-            {
-                // XXX: I suspect this might be very wrong -- bwr
-                enchant_monster(mgr, ENCH_SLOW);
-            }
+                mons_add_ench(monster, ENCH_SLOW);
         }
     }
 
@@ -1171,9 +1128,10 @@ int summon_elemental(int pow, unsigned char restricted_type,
 
         || random2(100) < unfriendly)
     {
-        mpr("The elemental doesn't seem to appreciate being summoned.");
         summ_success = create_monster(type_summoned, numsc, BEH_HOSTILE,
                                        targ_x, targ_y, MHITYOU, 250);
+                  if (summ_success >= 0)
+            mpr("The elemental doesn't seem to appreciate being summoned.");
     }
     else
     {
@@ -1181,7 +1139,7 @@ int summon_elemental(int pow, unsigned char restricted_type,
                                        targ_x, targ_y, MHITNOT, 250);
     }
 
-    return 1;
+    return (summ_success >= 0);
 }                               // end summon_elemental()
 
 //jmf: beefed up higher-level casting of this (formerly lame) spell
@@ -1322,7 +1280,7 @@ void summon_ice_beast_etc(int pow, int ibc)
     create_monster(ibc, numsc, beha, you.x_pos, you.y_pos, MHITNOT, 250);
 }                               // end summon_ice_beast_etc()
 
-void summon_swarm(int pow)
+void summon_swarm(int pow, bool god_gift)
 {
     int thing_called = MONS_PROGRAM_BUG;        // error trapping {dlb}
     int numsc = 1 + random2(pow) / 25 + random2(pow) / 25;
@@ -1380,9 +1338,14 @@ void summon_swarm(int pow)
             break;
         }                       // end switch
 
-        create_monster( thing_called, ENCH_ABJ_III,
-                        (random2(pow) > 7) ? BEH_FRIENDLY : BEH_HOSTILE,
-                        you.x_pos, you.y_pos, MHITNOT, 250);
+        int behavior;
+        if (random2(pow) > 7)
+            behavior = (god_gift) ? BEH_GOD_GIFT : BEH_FRIENDLY;
+        else
+            behavior = BEH_HOSTILE;
+
+        create_monster( thing_called, ENCH_ABJ_III, behavior, you.x_pos,
+            you.y_pos, MHITNOT, 250);
     }
 
     mpr("You call forth a swarm of pestilential beasts!");

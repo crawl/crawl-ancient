@@ -181,7 +181,7 @@ static bool determine_ghost_version(FILE *ghostFile, char &majorVersion,
     char &minorVersion);
 static void restore_ghost_version(FILE *ghostFile, char majorVersion,
     char minorVersion);
-static void restore_tagged_file(FILE *restoreFile, int fileType);
+static void restore_tagged_file(FILE *restoreFile, int fileType, char minorVersion);
 static void load_ghost();
 
 void make_filename(char *buf, char *prefix, int level, int where,
@@ -281,8 +281,8 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     int foll_sec[8];
     unsigned char foll_hit[8];
 
-    unsigned char foll_ench[8][3];
-    unsigned char foll_ench_1[8];
+    unsigned char foll_ench[8][NUM_MON_ENCHANTS];
+    unsigned char foll_flags[8];
 
     unsigned char fit_iclass[8][8];
     unsigned char fit_itype[8][8];
@@ -435,18 +435,14 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 foll_att[following] = fmenv->attitude;
                 foll_sec[following] = fmenv->number;
                 foll_hit[following] = fmenv->foe;
-                foll_ench_1[following] = fmenv->enchantment1;
-                foll_ench[following][0] = fmenv->enchantment[0];
-                foll_ench[following][1] = fmenv->enchantment[1];
-                foll_ench[following][2] = fmenv->enchantment[2];
-
-                // now for the icky part:
-                for (j = 0; j < 3; ++j)
+                foll_flags[following] = fmenv->flags;
+                for(j=0; j<NUM_MON_ENCHANTS; j++)
                 {
-                    fmenv->enchantment[j] = 0;
+                    foll_ench[following][j] = fmenv->enchantment[j];
+                    fmenv->enchantment[j] = ENCH_NONE;
                 }
 
-                fmenv->enchantment1 = 0;
+                fmenv->flags = 0;
                 fmenv->type = -1;
                 fmenv->hit_points = 0;
                 fmenv->max_hit_points = 0;
@@ -689,10 +685,10 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                             menv[following].attitude = foll_att[fmenv];
                             menv[following].number = foll_sec[fmenv];
                             menv[following].foe = foll_hit[fmenv];
-                            menv[following].enchantment1 = foll_ench_1[fmenv];
-                            menv[following].enchantment[0] = foll_ench[fmenv][0];
-                            menv[following].enchantment[1] = foll_ench[fmenv][1];
-                            menv[following].enchantment[2] = foll_ench[fmenv][2];
+                            for(j=0; j<NUM_MON_ENCHANTS; j++)
+                                menv[following].enchantment[j]=foll_ench[fmenv][j];
+
+                            menv[following].flags = foll_flags[fmenv];
                             mgrd[count_x][count_y] = following;
                             break;
                         }
@@ -1052,12 +1048,16 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
         end(-1);
     }
 
-    write_tagged_file(saveFile, 4, 1, TAGTYPE_LEVEL);
+    // 4.0 initial genesis of saved format
+    // 4.1 added attitude tag
+    // 4.2 replaced old 'enchantment1' and with 'flags' (bitfield)
+
+    write_tagged_file(saveFile, 4, 2, TAGTYPE_LEVEL);
 
     fclose(saveFile);
 
-#ifdef SHARED_FILES_CHMOD_VAL
-    chmod(cha_fil, SHARED_FILES_CHMOD_VAL);
+#ifdef SHARED_FILES_CHMOD_PRIVATE
+    chmod(cha_fil, SHARED_FILES_CHMOD_PRIVATE);
 #endif
 }                               // end save_level()
 
@@ -1097,9 +1097,9 @@ void save_game(bool leave_game)
 
     fclose(saveFile);
 
-#ifdef SHARED_FILES_CHMOD_VAL
+#ifdef SHARED_FILES_CHMOD_PRIVATE
     // change mode (unices)
-    chmod(charFile, SHARED_FILES_CHMOD_VAL);
+    chmod(charFile, SHARED_FILES_CHMOD_PRIVATE);
 #endif
 
     // if just save, early out
@@ -1300,7 +1300,7 @@ static void restore_version(FILE *restoreFile, char majorVersion,
     switch(majorVersion)
     {
         case 4:
-            restore_tagged_file(restoreFile, TAGTYPE_PLAYER);
+            restore_tagged_file(restoreFile, TAGTYPE_PLAYER, minorVersion);
             break;
         default:
             break;
@@ -1308,7 +1308,7 @@ static void restore_version(FILE *restoreFile, char majorVersion,
 }
 
 // generic v4 restore function
-static void restore_tagged_file(FILE *restoreFile, int fileType)
+static void restore_tagged_file(FILE *restoreFile, int fileType, char minorVersion)
 {
     int i;
 
@@ -1317,7 +1317,7 @@ static void restore_tagged_file(FILE *restoreFile, int fileType)
 
     while(1)
     {
-        i = tag_read(restoreFile);
+        i = tag_read(restoreFile, minorVersion);
         if (i == 0)                 // no tag!
             break;
         tags[i] = 0;                // tag read
@@ -1327,7 +1327,7 @@ static void restore_tagged_file(FILE *restoreFile, int fileType)
     for(i=0; i<NUM_TAGS; i++)
     {
         if (tags[i] == 1)           // expected but never read
-            tag_missing(i);
+            tag_missing(i, minorVersion);
     }
 }
 
@@ -1374,7 +1374,7 @@ static void restore_level_version(FILE *levelFile, char majorVersion,
     switch(majorVersion)
     {
         case 4:
-            restore_tagged_file(levelFile, TAGTYPE_LEVEL);
+            restore_tagged_file(levelFile, TAGTYPE_LEVEL, minorVersion);
             break;
         default:
             break;
@@ -1427,7 +1427,7 @@ static void restore_ghost_version(FILE *ghostFile, char majorVersion,
     switch(majorVersion)
     {
         case 4:
-            restore_tagged_file(ghostFile, TAGTYPE_GHOST);
+            restore_tagged_file(ghostFile, TAGTYPE_GHOST, minorVersion);
             break;
         case 0:
             restore_old_ghost(ghostFile);
@@ -1539,8 +1539,8 @@ void save_ghost(void)
 
     fclose(gfile);
 
-#ifdef SHARED_FILES_CHMOD_VAL
-    chmod(cha_fil, SHARED_FILES_CHMOD_VAL);
+#ifdef SHARED_FILES_CHMOD_PUBLIC
+    chmod(cha_fil, SHARED_FILES_CHMOD_PUBLIC);
 #endif
 }                               // end save_ghost()
 

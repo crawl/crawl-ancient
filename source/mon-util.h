@@ -373,11 +373,17 @@ void mons_spell_list(unsigned char sec, int splist[6]);
 bool mons_should_fire(struct bolt &beam);
 
 
+// last updated 23mar2001 (gdl)
+/* ***********************************************************************
+ * called from: monstuff
+ * *********************************************************************** */
+bool ms_direct_nasty(int monspell);
+
 // last updated 14jan2001 (gdl)
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-bool ms_always_fire(int mons_spell);
+bool ms_requires_tracer(int mons_spell);
 
 // last updated 06mar2001 (gdl)
 /* ***********************************************************************
@@ -389,7 +395,7 @@ const char *mons_pronoun(int mon_type, int variant);
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-bool mons_aligned(struct monsters *m1, struct monsters *m2);
+bool mons_aligned(int m1, int m2);
 
 // last updated 14mar2001 (gdl)
 /* ***********************************************************************

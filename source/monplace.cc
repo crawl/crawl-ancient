@@ -18,6 +18,7 @@
 #include "mon-util.h"
 #include "misc.h"
 #include "stuff.h"
+#include "spells4.h"
 
 // NEW place_monster -- note that power should be set to:
 // 51 for abyss
@@ -203,7 +204,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
                     break;
                 case 1:
                 case 2:
-                    if (distance(you.x_pos, px, you.y_pos, py) > 7)
+                    if (distance(you.x_pos, you.y_pos, px, py) > 7)
                         close_to_player = false;
 
                     if ((proximity == 1 && !close_to_player)
@@ -226,7 +227,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
         } // end while.. place first monster
     }
 
-    id = place_monster_aux(mon_type, behavior, target, px, py, extra, false);
+    id = place_monster_aux(mon_type, behavior, target, px, py, extra, true);
 
     // now, forget about banding if the first placement failed,  or there's too
     // many monsters already
@@ -235,7 +236,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
 
     // (5) for each band monster, loop call to place_monster_aux().
     for(i=1; i<band_size; i++)
-        place_monster_aux(band_monsters[i], behavior, target, px, py, extra, true);
+        place_monster_aux(band_monsters[i], behavior, target, px, py, extra, false);
 
     // return id of first monster placed
     return id;
@@ -336,30 +337,20 @@ static int place_monster_aux(int mon_type, char behavior, int target,
         menv[id].number = extra;
 
     if (mons_flag(mon_type, M_INVIS))
-    {
-        menv[id].enchantment1 = 1;
-        menv[id].enchantment[2] = ENCH_INVIS;
-    }
+        mons_add_ench(&menv[id], ENCH_INVIS);
 
     if (mon_type == MONS_SHAPESHIFTER)
-    {
-        menv[id].enchantment1 = 1;
-        menv[id].enchantment[1] = ENCH_SHAPESHIFTER;
-    }
-    else if (mon_type == MONS_GLOWING_SHAPESHIFTER)
-    {
-        menv[id].enchantment1 = 1;
-        menv[id].enchantment[1] = ENCH_GLOWING_SHAPESHIFTER;
-    }
-    else if (mon_type == MONS_BUTTERFLY
+        mons_add_ench(&menv[id], ENCH_SHAPESHIFTER);
+
+    if (mon_type == MONS_GLOWING_SHAPESHIFTER)
+        mons_add_ench(&menv[id], ENCH_GLOWING_SHAPESHIFTER);
+
+    if (mon_type == MONS_BUTTERFLY
              || mon_type == MONS_FIRE_VORTEX
              || mon_type == MONS_SPATIAL_VORTEX
              || mon_type == MONS_BALL_LIGHTNING
              || mon_type == MONS_VAPOUR)
-    {
-        menv[id].enchantment1 = 1;
-        menv[id].enchantment[0] = ENCH_CONFUSION;
-    }
+        mons_add_ench(&menv[id], ENCH_CONFUSION);
 
     menv[id].x = fx;
     menv[id].y = fy;
@@ -383,41 +374,19 @@ static int place_monster_aux(int mon_type, char behavior, int target,
     // set attitude, behavior and target
     menv[id].attitude = ATT_HOSTILE;
     menv[id].behavior = behavior;
+    menv[id].foe_memory = 0;
+
     // setting attitude will always make the
     // monster wander.. if you want sleeping
     // hostiles,  use BEH_SLEEP since the default
     // attitude is hostile.
     if (behavior > NUM_BEHAVIORS)
     {
-        if (behavior == BEH_FRIENDLY)
+        if (behavior == BEH_FRIENDLY || behavior == BEH_GOD_GIFT)
             menv[id].attitude = ATT_FRIENDLY;
         menv[id].behavior = BEH_WANDER;
     }
     menv[id].foe = target;
-
-    if (mon_type == MONS_SHAPESHIFTER)
-    {
-        menv[id].enchantment1 = 1;
-        menv[id].enchantment[1] = ENCH_SHAPESHIFTER;
-    }
-
-    if (mon_type == MONS_GLOWING_SHAPESHIFTER)
-    {
-        menv[id].enchantment1 = 1;
-        menv[id].enchantment[1] = ENCH_GLOWING_SHAPESHIFTER;
-    }
-
-    if (mons_flag(mon_type, M_INVIS))
-    {
-        menv[id].enchantment1 = 1;
-        menv[id].enchantment[2] = ENCH_INVIS;
-    }
-
-    if (mon_type == MONS_BUTTERFLY)
-    {
-        menv[id].enchantment1 = 1;
-        menv[id].enchantment[0] = ENCH_CONFUSION;
-    }
 
     if (mon_type == MONS_DANCING_WEAPON)
         menv[id].number = mitm.colour[menv[id].inv[MSLOT_WEAPON]];
@@ -976,35 +945,30 @@ int create_monster(int cls, int dur, int beha, int cr_x, int cr_y,
     {
         if (see_grid(cr_x, cr_y))
             mpr("You see a puff of smoke.");
+
     }
     else
     {
         creation = &menv[summd];
 
-        // for abjurations (non-permanent summonings where dur != 0)
-        if (dur)
-        {
-            // some monsters (eg butterflies) use enchantment[0] for confusion
-            creation->enchantment[1] = dur;
-            creation->enchantment1 = 1;
+        // dur should always be ENCH_ABJ_xx
+        if (dur >= ENCH_ABJ_I && dur <= ENCH_ABJ_VI)
+            mons_add_ench(creation, dur );
 
-            if (beha == BEH_FRIENDLY)
-                creation->enchantment[1] += ENCH_FRIEND_ABJ_I - ENCH_ABJ_I;
-        }
-        else
-        {
-            if (beha == BEH_FRIENDLY)
-                creation->enchantment[1] = ENCH_CREATED_FRIENDLY;
-        }
-
-        // look at special cases: CHARMED, FRIENDLY, HOSTILE
+        // look at special cases: CHARMED, FRIENDLY, HOSTILE, GOD_GIFT
         // alert summoned being to player's presence
         if (beha > NUM_BEHAVIORS)
         {
+            if (beha == BEH_FRIENDLY || beha == BEH_GOD_GIFT)
+                creation->flags |= MF_CREATED_FRIENDLY;
+
+            if (beha == BEH_GOD_GIFT)
+                creation->flags |= MF_GOD_GIFT;
+
             if (beha == BEH_CHARMED)
             {
                 creation->attitude = ATT_HOSTILE;
-                creation->enchantment[0] = ENCH_CHARM;
+                mons_add_ench(creation, ENCH_CHARM);
             }
 
             // make summoned being aware of player's presence
@@ -1012,10 +976,7 @@ int create_monster(int cls, int dur, int beha, int cr_x, int cr_y,
         }
 
         if (creation->type == MONS_RAKSHASA_FAKE && !one_chance_in(3))
-        {
-            creation->enchantment[2] = ENCH_INVIS;
-            creation->enchantment1 = 1;
-        }
+            mons_add_ench(creation, ENCH_INVIS);
     }
 
     // the return value is either -1 (failure of some sort)
@@ -1027,7 +988,7 @@ int create_monster(int cls, int dur, int beha, int cr_x, int cr_y,
 bool empty_surrounds(int emx, int emy, unsigned char spc_wanted,
                      bool allow_centre, FixedVector < char, 2 > &empty)
 {
-    bool success = false;
+    bool success;
     // assume all player summoning originates from player x,y
     bool playerSummon = (emx == you.x_pos && emy == you.y_pos);
 
@@ -1064,13 +1025,11 @@ bool empty_surrounds(int emx, int emy, unsigned char spc_wanted,
                 continue;
 
             if (grd[tx][ty] == spc_wanted)
-            {
                 success = true;
-            }
 
             // second chance - those seeking ground can stand anywhere {dlb}:
             if (!success && spc_wanted == DNGN_FLOOR
-                && grd[emx + count_x][emy + count_y] >= DNGN_SHALLOW_WATER)
+                && grd[tx][ty] >= DNGN_SHALLOW_WATER)
             {
                 success = true;
             }

@@ -699,7 +699,7 @@ enum DURATIONS                         // you.duration[]
 
 enum ENCHANTMENT                       // menv[].enchantment[]
 {
-    ENCH_NONE,                         //    0
+    ENCH_NONE = 0,                     //    0
     ENCH_SLOW,
     ENCH_HASTE,                        //    2
     ENCH_FEAR = 4,                     //    4
@@ -747,13 +747,13 @@ enum ENCHANTMENT                       // menv[].enchantment[]
     ENCH_STICKY_FLAME_II,
     ENCH_STICKY_FLAME_III,
     ENCH_STICKY_FLAME_IV,
-    ENCH_FRIEND_ABJ_I,                 //   65
-    ENCH_FRIEND_ABJ_II,
-    ENCH_FRIEND_ABJ_III,
-    ENCH_FRIEND_ABJ_IV,
-    ENCH_FRIEND_ABJ_V,
-    ENCH_FRIEND_ABJ_VI,                //   70
-    ENCH_CREATED_FRIENDLY,             //   71 - no xp or piety for a kill
+    ENCH_FRIEND_ABJ_I,                 //   NO LONGER USED!
+    ENCH_FRIEND_ABJ_II,                //   NO LONGER USED!
+    ENCH_FRIEND_ABJ_III,               //   NO LONGER USED!
+    ENCH_FRIEND_ABJ_IV,                //   NO LONGER USED!
+    ENCH_FRIEND_ABJ_V,                 //   NO LONGER USED!
+    ENCH_FRIEND_ABJ_VI,                //   NO LONGER USED!
+    ENCH_CREATED_FRIENDLY,             //   71 - DO NOT USE!!!!!!!!
     ENCH_SLEEP_WARY,
     NUM_ENCHANTMENTS
 };
@@ -1451,7 +1451,8 @@ enum MONSTER_BEHAVIOR                  // create_monster()
     NUM_BEHAVIORS,                     //  max # of legal states
     BEH_CHARMED,                       //  hostile-but-charmed; create only
     BEH_FRIENDLY,                      //  used during creation only
-    BEH_HOSTILE                        //  creation only
+    BEH_HOSTILE,                       //  creation only
+    BEH_GOD_GIFT                       //  creation only
 };
 
 enum MONSTER_ATTITUDES
@@ -1477,6 +1478,12 @@ enum MONSTER_CATEGORIES
     MC_MIMIC, //    0
     NUM_MC,
     MC_UNSPECIFIED = 255 // keep at end !!! mind the upper limit of 255 {dlb}
+};
+
+enum MONSTER_FLAGS
+{
+    MF_CREATED_FRIENDLY = 0x01,
+    MF_GOD_GIFT         = 0x02
 };
 
 enum MONSTER_DAMAGE

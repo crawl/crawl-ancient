@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *      <7>     26 Mar  2001   GDL     Fixed monster reaching
+ *      <6>     13 Mar  2001   GDL     Rewrite of monster AI
  *      <5>     31 July 2000   GDL     More Manticore fixes.
  *      <4>     29 July 2000   JDJ     Fixed a bunch of places in mons_pickup where MSLOT_WEAPON
  *                                     was being erroneously used.
@@ -43,7 +45,6 @@
 
 static bool handle_special_ability(struct monsters *monster, bolt & beem);
 static bool mons_pickup(struct monsters *monster);
-static void flag_ench(struct monsters *monster, int p);
 static void handle_behavior(struct monsters *monster);
 static void mons_in_cloud(struct monsters *monster);
 static void monster_move(struct monsters *monster);
@@ -54,6 +55,8 @@ char mmov_x, mmov_y;
 
 static int compass_x[8] = { -1, 0, 1, 1, 1, 0, -1, -1 };
 static int compass_y[8] = { -1, -1, -1, 0, 1, 1, 1, 0 };
+
+#define FAR_AWAY    1000000         // used in monster_move()
 
 bool curse_an_item(char which, char power)
 {
@@ -381,7 +384,7 @@ bool wounded_damaged(int wound_class)
 //
 // behavior_event
 //
-// 1. Change monster state, target, and attitude,  if applicable
+// 1. Change any of: monster state, foe, and attitude
 // 2. Call handle_behavior to re-evaluate AI state and target x,y
 //
 //---------------------------------------------------------------
@@ -390,6 +393,7 @@ void behavior_event(struct monsters *mon, int event, int param)
     bool isSmart = (mons_intel(mon->type) > I_ANIMAL);
     bool isFriendly = mons_friendly(mon);
     bool sourceFriendly = false;
+    bool setTarget = false;
 
     if (param == MHITYOU)
         sourceFriendly = true;
@@ -432,12 +436,16 @@ void behavior_event(struct monsters *mon, int event, int param)
             mon->foe = param;
             if (mon->behavior != BEH_CORNERED)
                 mon->behavior = BEH_SEEK;
-            if (param == MHITYOU)
-                mon->attitude = ATT_HOSTILE;
+            // now set target x,y so that monster can whack
+            // back (once) at an invisible foe
+            setTarget = true;
             break;
         case ME_SCARE:
             mon->foe = param;
             mon->behavior = BEH_FLEE;
+            // assume monsters know where to run from, even
+            // if player is invisible.
+            setTarget = true;
             break;
         case ME_CORNERED:
             // just set behavior.. foe doesn't change.
@@ -447,6 +455,21 @@ void behavior_event(struct monsters *mon, int event, int param)
             break;
         default:
             break;
+    }
+
+    if (setTarget)
+    {
+        if (param == MHITYOU)
+        {
+            mon->target_x = you.x_pos;
+            mon->target_y = you.y_pos;
+            mon->attitude = ATT_HOSTILE;
+        }
+        else if (param != MHITNOT)
+        {
+            mon->target_x = menv[param].x;
+            mon->target_y = menv[param].y;
+        }
     }
 
     // do any resultant foe or state changes
@@ -470,11 +493,10 @@ static void handle_behavior(struct monsters *mon)
     bool isHurt = (mon->hit_points <= mon->max_hit_points / 4 - 1);
     bool isHealthy = (mon->hit_points > mon->max_hit_points / 2);
     bool isSmart = (mons_intel(mon->type) > I_ANIMAL);
-    bool isScared = monster_has_enchantment(mon, ENCH_FEAR);
-    struct monsters *myFoe;
+    bool isScared = mons_has_ench(mon, ENCH_FEAR);
 
     // check for confusion -- early out.
-    if (monster_has_enchantment(mon, ENCH_CONFUSION))
+    if (mons_has_ench(mon, ENCH_CONFUSION))
     {
         mon->target_x = 10 + random2(GXM - 10);
         mon->target_y = 10 + random2(GYM - 10);
@@ -550,7 +572,7 @@ static void handle_behavior(struct monsters *mon)
             else
             {
                 proxFoe = mons_near(mon, mon->foe);
-                if (monster_has_enchantment(&menv[mon->foe], ENCH_INVIS) &&
+                if (mons_has_ench(&menv[mon->foe], ENCH_INVIS) &&
                     !mons_see_invis(mon->type))
                     proxFoe = false;
             }
@@ -559,33 +581,6 @@ static void handle_behavior(struct monsters *mon)
         // track changes to state; attitude never changes here.
         unsigned int new_beh = mon->behavior;
         unsigned int new_foe = mon->foe;
-
-        myFoe = NULL;
-        // get foe x,y and put it in mon->target_x and y
-        if (mon->foe == MHITNOT)
-        {
-            mon->target_x = mon->x;
-            mon->target_y = mon->y;
-        }
-        else if (mon->foe == MHITYOU)
-        {
-            mon->target_x = you.x_pos;
-            mon->target_y = you.y_pos;
-        }
-        else
-        {
-            myFoe = &menv[mon->foe];
-            if (myFoe->type > -1)
-            {
-                mon->target_x = myFoe->x;
-                mon->target_y = myFoe->y;
-            }
-            else
-            {
-                myFoe = NULL;
-                new_foe = MHITNOT;
-            }
-        }
 
         // take care of monster state changes
         switch(mon->behavior)
@@ -598,43 +593,82 @@ static void handle_behavior(struct monsters *mon)
 
                 break;
             case BEH_SEEK:
-                // foe gone out of LOS?  Friendlies
-                // will seek player, others may chase
-                // the foe's last position for a
-                // turn or three (in case he's just
-                // gone around a corner),  then go back
-                // to wandering (but may pick the
-                // player up later in check_awake()
+                // no foe? then wander.
+                if (mon->foe == MHITNOT)
+                {
+                    new_beh = BEH_WANDER;
+                    break;
+                }
+
+                // foe gone out of LOS?
                 if (!proxFoe)
                 {
                     if (isFriendly)
+                    {
                         new_foe = MHITYOU;
+                        mon->target_x = you.x_pos;
+                        mon->target_y = you.y_pos;
+                        break;
+                    }
+                    if (mon->foe_memory > 0)
+                    {
+                        // either keep chasing, or start
+                        // wandering.
+                        if (mon->foe_memory < 2)
+                        {
+                            mon->foe_memory = 0;
+                            new_beh = BEH_WANDER;
+                        }
+                        break;
+                    }
+
+                    // hack: smarter monsters will
+                    // tend to persue the player longer.
+                    int memory;
+                    switch(mons_intel(monster_index(mon)))
+                    {
+                        case I_HIGH:
+                            memory = 100+random2(200);
+                            break;
+                        case I_NORMAL:
+                            memory = 20+random2(20);
+                            break;
+                        case I_ANIMAL:
+                            memory = 5+random2(10);
+                            break;
+                        case I_INSECT:
+                            memory = 3+random2(5);
+                            break;
+                        default:
+                            memory = 2;
+                    }
+                    mon->foe_memory = memory;
+                    break;      // from case
+                }
+
+                // monster can see foe: continue 'tracking'
+                // by updating target x,y
+                if (mon->foe == MHITYOU)
+                {
+                    // sometimes,  your friends will wander a bit.
+                    if (isFriendly && one_chance_in(8))
+                    {
+                        mon->target_x = 10 + random2(GXM - 10);
+                        mon->target_y = 10 + random2(GYM - 10);
+
+                    }
                     else
                     {
-                        // hack: smarter monsters will
-                        // tend to persue the player longer.
-                        int keep_going;
-                        switch(mons_intel(monster_index(mon)))
-                        {
-                            case I_HIGH:
-                                keep_going = 97;
-                                break;
-                            case I_NORMAL:
-                                keep_going = 85;
-                                break;
-                            case I_ANIMAL:
-                                keep_going = 80;
-                                break;
-                            case I_INSECT:
-                                keep_going = 50;
-                                break;
-                            default:
-                                keep_going = 85;
-                        }
-                        if (random2(100) >= keep_going)
-                            new_beh = BEH_WANDER;
+                        mon->target_x = you.x_pos;
+                        mon->target_y = you.y_pos;
                     }
                 }
+                else
+                {
+                    mon->target_x = menv[mon->foe].x;
+                    mon->target_y = menv[mon->foe].y;
+                }
+
                 if (isHurt && isSmart)
                     new_beh = BEH_FLEE;
 
@@ -642,7 +676,10 @@ static void handle_behavior(struct monsters *mon)
             case BEH_WANDER:
                 // is our foe in LOS?
                 if (proxFoe)
+                {
                     new_beh = BEH_SEEK;
+                    break;
+                }
 
                 // default wander behavior
                 mon->target_x = 10 + random2(GXM - 10);
@@ -686,29 +723,11 @@ static void handle_behavior(struct monsters *mon)
 
         changed = (new_beh != mon->behavior || new_foe != mon->foe);
         mon->behavior = new_beh;
+        if (mon->foe != new_foe)
+            mon->foe_memory = 0;
         mon->foe = new_foe;
     }
 }                               // end handle_behavior()
-
-//---------------------------------------------------------------
-//
-// flag_ench
-//
-// Handle the result of a spell cast upon a monster. Returns
-// true if the monster died.
-//
-//---------------------------------------------------------------
-static void flag_ench(struct monsters *monster, int p)
-{
-    monster->enchantment[p] = ENCH_NONE;
-
-    if (monster->enchantment[0] == ENCH_NONE
-        && monster->enchantment[1] == ENCH_NONE
-        && monster->enchantment[2] == ENCH_NONE)
-    {
-        monster->enchantment1 = 0;
-    }
-}                               // end flag_ench()
 
 // note that this function *completely* blocks messaging for monsters
 // distant or invisible to the player ... look elsewhere for a function
@@ -718,7 +737,7 @@ bool simple_monster_message(struct monsters *monster, const char *event,
                             int channel, int param)
 {
     if (mons_near(monster)
-        && (monster->enchantment[2] != ENCH_INVIS || player_see_invis()))
+        && (!mons_has_ench(monster, ENCH_INVIS) || player_see_invis()))
     {
         if (monster->type != MONS_DANCING_WEAPON)
         {
@@ -742,276 +761,213 @@ static bool handle_enchantment(struct monsters *monster)
 {
     bool died = false;
 
-    if (monster->enchantment1)
+    for (int p = 0; p < NUM_MON_ENCHANTS && !died; p++)
     {
-        for (int p = 0; p < 3 && !died; p++)
+        switch (monster->enchantment[p])
         {
-            switch (monster->enchantment[p])
+        case ENCH_SLOW:
+            if (random2(250) <= 10 + monster->hit_dice)
+                mons_del_ench(monster, ENCH_SLOW);
+            break;
+
+        case ENCH_HASTE:
+            if (one_chance_in(20))
+                mons_del_ench(monster, ENCH_HASTE);
+            break;
+
+        case ENCH_FEAR:
+            if (random2(150) <= 10 + monster->hit_dice)
+                mons_del_ench(monster, ENCH_FEAR);
+            break;
+
+        case ENCH_CONFUSION:
+            if (random2(120) < monster->hit_dice + 5)
             {
-            case ENCH_SLOW:
-                if (random2(250) <= 10 + monster->hit_dice)
+                if (monster->type != MONS_BUTTERFLY
+                    && monster->type != MONS_FIRE_VORTEX
+                    && monster->type != MONS_SPATIAL_VORTEX
+                    && monster->type != MONS_BALL_LIGHTNING
+                    && monster->type != MONS_VAPOUR)
+                mons_del_ench(monster, ENCH_CONFUSION);
+            }
+            break;
+
+        case ENCH_INVIS:
+            if ((monster_habitat(monster->type) != DNGN_FLOOR
+                    && monster->number == 0)
+                || (monster->type == MONS_AIR_ELEMENTAL
+                    && one_chance_in(3)) || one_chance_in(20))
+            {
+                mons_del_ench(monster, ENCH_INVIS);
+            }
+            break;
+
+        case ENCH_POISON_I:
+        case ENCH_POISON_II:
+        case ENCH_POISON_III:
+        case ENCH_POISON_IV:
+        case ENCH_YOUR_POISON_I:
+        case ENCH_YOUR_POISON_II:
+        case ENCH_YOUR_POISON_III:
+        case ENCH_YOUR_POISON_IV:
+            {
+                int poisonval = monster->enchantment[p] - ENCH_POISON_I;
+                if (poisonval < 0 || poisonval > 3)
+                    poisonval = monster->enchantment[p] - ENCH_YOUR_POISON_I;
+
+                if (coinflip())
+                    hurt_monster(monster, 1 + random2(poisonval - 3));
+
+                if (mons_res_poison(monster->type) < 0)
                 {
-                    if (monster->speed >= 100)
-                        monster->speed = 100 + ((monster->speed - 100) * 2);
-                    else
-                        monster->speed *= 2;
-
-                    flag_ench(monster, p);
-                    simple_monster_message(monster, " seems to speed up.");
+                    hurt_monster(monster, 1 + random2(poisonval - 5)
+                                            + random2(poisonval - 5));
                 }
-                break;
-
-            case ENCH_HASTE:
-                if (one_chance_in(20))
-                {
-                    if (monster->speed >= 100)
-                        monster->speed = ((monster->speed - 100) / 2) + 100;
-                    else
-                        monster->speed /= 2;
-
-                    flag_ench(monster, p);
-                    simple_monster_message(monster, " seems to slow down.");
-                }
-                break;
-
-            case ENCH_FEAR:
-                if (random2(150) <= 10 + monster->hit_dice)
-                {
-                    simple_monster_message(monster,
-                                           " seems to regain its courage.");
-                    flag_ench(monster, p);
-
-                    // reevaluate behavior
-                    behavior_event(monster, ME_EVAL);
-                }
-                break;
-
-            case ENCH_CONFUSION:
-                if (random2(120) < monster->hit_dice + 5)
-                {
-                    if (monster->type != MONS_BUTTERFLY
-                        && monster->type != MONS_FIRE_VORTEX
-                        && monster->type != MONS_SPATIAL_VORTEX
-                        && monster->type != MONS_BALL_LIGHTNING
-                        && monster->type != MONS_VAPOUR)
-                    {
-                        simple_monster_message(monster,
-                                               " seems less confused.");
-                        flag_ench(monster, p);
-
-                        // reevaluate behavior
-                        behavior_event(monster, ME_EVAL);
-                    }
-
-                }
-                break;
-
-            case ENCH_INVIS:
-                if ((monster_habitat(monster->type) != DNGN_FLOOR
-                        && monster->number == 0)
-                    || (monster->type == MONS_AIR_ELEMENTAL
-                        && one_chance_in(3)) || one_chance_in(20))
-                {
-                    // invisible monsters stay invisible
-                    if (!mons_flag(monster->type, M_INVIS))
-                    {
-                        if (monster_habitat(monster->type) == DNGN_FLOOR
-                            || monster->number != 1)
-                        {
-                            flag_ench(monster, p);
-                            // Can't use simple_message, because we want
-                            //  'a thing appears' (not 'the')
-                            // Note: this message not printed if the player
-                            //  could already see the monster.
-                            if (mons_near(monster)
-                                && (!player_see_invis()
-                                    || monster_habitat(monster->type)
-                                                            != DNGN_FLOOR))
-                            {
-                                strcpy(info, ptr_monam(monster, 2));
-                                strcat(info, " appears!");
-                                mpr(info);
-                            }
-                        }
-                    }
-                }
-                break;
-
-            case ENCH_POISON_I:
-            case ENCH_POISON_II:
-            case ENCH_POISON_III:
-            case ENCH_POISON_IV:
-            case ENCH_YOUR_POISON_I:
-            case ENCH_YOUR_POISON_II:
-            case ENCH_YOUR_POISON_III:
-            case ENCH_YOUR_POISON_IV:
-                {
-                    int poisonval = monster->enchantment[p] % 50;
-
-                    if (coinflip())
-                        hurt_monster(monster, 1 + random2(poisonval - 3));
-
-                    if (mons_res_poison(monster->type) < 0)
-                    {
-                        hurt_monster(monster, 1 + random2(poisonval - 5)
-                                                + random2(poisonval - 5));
-                    }
-
-                    if (monster->hit_points < 1)
-                    {
-                        monster_die(monster,
-                                    ((monster->enchantment[p] < ENCH_POISON_I)
-                                                ? KILL_YOU : KILL_MISC), 0);
-                        died = true;
-                    }
-
-                    // chance to get over poison
-                    if (one_chance_in(5))
-                    {
-                        if (monster->enchantment[p] == ENCH_POISON_I
-                            || monster->enchantment[p] == ENCH_YOUR_POISON_I)
-                            flag_ench(monster, p);
-                        else
-                            monster->enchantment[p] --;
-                    }
-                }
-                break;
-
-            case ENCH_YOUR_ROT_I:
-                if (one_chance_in(4))
-                    flag_ench(monster, p);
-                else if (monster->hit_points > 1 && one_chance_in(3))
-                    hurt_monster(monster, 1);
-                break;
-
-            //jmf: FIXME: if (undead) make_small_rot_cloud();
-            case ENCH_YOUR_ROT_II:
-            case ENCH_YOUR_ROT_III:
-            case ENCH_YOUR_ROT_IV:
-                if (monster->hit_points > 1 && one_chance_in(3))
-                    hurt_monster(monster, 1);
-                if (one_chance_in(4))
-                    monster->enchantment[p]--;
-                break;
-
-            case ENCH_BACKLIGHT_I:
-                if (one_chance_in(3))
-                    flag_ench(monster, p);
-                break;
-
-            case ENCH_BACKLIGHT_II:
-            case ENCH_BACKLIGHT_III:
-            case ENCH_BACKLIGHT_IV:
-                if (one_chance_in(3))
-                    monster->enchantment[p]--;
-                break;
-
-            // assumption: mons_res_fire has already been checked
-            case ENCH_STICKY_FLAME_I:
-            case ENCH_STICKY_FLAME_II:
-            case ENCH_STICKY_FLAME_III:
-            case ENCH_STICKY_FLAME_IV:
-            case ENCH_YOUR_STICKY_FLAME_I:
-            case ENCH_YOUR_STICKY_FLAME_II:
-            case ENCH_YOUR_STICKY_FLAME_III:
-            case ENCH_YOUR_STICKY_FLAME_IV:
-                hurt_monster(monster, ((1 + random2avg(7, 2)) * 10)
-                                                            / monster->speed);
-
-                if (mons_res_fire(monster->type) == -1)
-                {
-                    hurt_monster(monster, ((1 + random2avg(9, 2)) * 10)
-                                                            / monster->speed);
-                }
-
-                simple_monster_message(monster, " burns!");
 
                 if (monster->hit_points < 1)
                 {
                     monster_die(monster,
-                            ((monster->enchantment[p] < ENCH_STICKY_FLAME_I)
-                                        ? KILL_YOU : KILL_MISC), 0);
+                                ((monster->enchantment[p] < ENCH_POISON_I)
+                                            ? KILL_YOU : KILL_MISC), 0);
                     died = true;
                 }
 
-                if (coinflip())
+                // chance to get over poison
+                if (one_chance_in(5))
                 {
-                    monster->enchantment[p]--;  //= 0;
-
-                    if (monster->enchantment[p] == ENCH_STICKY_FLAME_I - 1
-                        || monster->enchantment[p] == ENCH_YOUR_STICKY_FLAME_I - 1)
+                    if (monster->enchantment[p] == ENCH_POISON_I
+                        || monster->enchantment[p] == ENCH_YOUR_POISON_I)
                     {
-                        flag_ench(monster, p);
+                        mons_del_ench(monster, ENCH_POISON_I);
+                        mons_del_ench(monster, ENCH_YOUR_POISON_I);
                     }
+                    else
+                        monster->enchantment[p] --;
                 }
-                break;
-
-            // 19 is taken by summoning:
-            // If these are changed, must also change abjuration
-            case ENCH_ABJ_I:
-            case ENCH_ABJ_II:
-            case ENCH_ABJ_III:
-            case ENCH_ABJ_IV:
-            case ENCH_ABJ_V:
-            case ENCH_ABJ_VI:
-            case ENCH_FRIEND_ABJ_I:
-            case ENCH_FRIEND_ABJ_II:
-            case ENCH_FRIEND_ABJ_III:
-            case ENCH_FRIEND_ABJ_IV:
-            case ENCH_FRIEND_ABJ_V:
-            case ENCH_FRIEND_ABJ_VI:
-                if (one_chance_in(10))
-                    monster->enchantment[p]--;
-
-                if (monster->enchantment[p] == ENCH_ABJ_I - 1
-                    || monster->enchantment[p] == ENCH_FRIEND_ABJ_I - 1)
-                {
-                    monster_die(monster, KILL_RESET, 0);
-                    died = true;
-                }
-                break;
-
-            case ENCH_CHARM:
-                if (random2(500) <= 10 + monster->hit_dice)
-                {
-                    simple_monster_message(monster,
-                            " is no longer your friend.");
-                    flag_ench(monster, p);
-
-                    // reevaluate behavior
-                    behavior_event(monster, ME_EVAL);
-                }
-                break;
-
-            case ENCH_GLOWING_SHAPESHIFTER:     // this ench never runs out
-                if (monster->type == MONS_GLOWING_SHAPESHIFTER
-                    || one_chance_in(4))
-                {
-                    monster_polymorph(monster, RANDOM_MONSTER, 0);
-                }
-                break;
-
-            case ENCH_SHAPESHIFTER:     // this ench never runs out
-                if (monster->type == MONS_SHAPESHIFTER || one_chance_in(15))
-                    monster_polymorph(monster, RANDOM_MONSTER, 0);
-                break;
-
-            case ENCH_TP_I:
-                monster_teleport(monster, true);
-                flag_ench(monster, p);
-                break;
-
-            case ENCH_TP_II:
-            case ENCH_TP_III:
-            case ENCH_TP_IV:
-                monster->enchantment[p]--;
-                break;
-
-            case ENCH_SLEEP_WARY:
-                if (one_chance_in(20))
-                    flag_ench(monster, p);
-                break;
             }
+            break;
+
+        case ENCH_YOUR_ROT_I:
+            if (one_chance_in(4))
+                mons_del_ench(monster, ENCH_YOUR_ROT_I);
+            else if (monster->hit_points > 1 && one_chance_in(3))
+                hurt_monster(monster, 1);
+            break;
+
+        //jmf: FIXME: if (undead) make_small_rot_cloud();
+        case ENCH_YOUR_ROT_II:
+        case ENCH_YOUR_ROT_III:
+        case ENCH_YOUR_ROT_IV:
+            if (monster->hit_points > 1 && one_chance_in(3))
+                hurt_monster(monster, 1);
+            if (one_chance_in(4))
+                monster->enchantment[p]--;
+            break;
+
+        case ENCH_BACKLIGHT_I:
+            if (one_chance_in(3))
+                mons_del_ench(monster, ENCH_BACKLIGHT_I);
+            break;
+
+        case ENCH_BACKLIGHT_II:
+        case ENCH_BACKLIGHT_III:
+        case ENCH_BACKLIGHT_IV:
+            if (one_chance_in(3))
+                monster->enchantment[p]--;
+            break;
+
+        // assumption: mons_res_fire has already been checked
+        case ENCH_STICKY_FLAME_I:
+        case ENCH_STICKY_FLAME_II:
+        case ENCH_STICKY_FLAME_III:
+        case ENCH_STICKY_FLAME_IV:
+        case ENCH_YOUR_STICKY_FLAME_I:
+        case ENCH_YOUR_STICKY_FLAME_II:
+        case ENCH_YOUR_STICKY_FLAME_III:
+        case ENCH_YOUR_STICKY_FLAME_IV:
+            hurt_monster(monster, ((1 + random2avg(7, 2)) * 10)
+                                                        / monster->speed);
+
+            if (mons_res_fire(monster->type) == -1)
+            {
+                hurt_monster(monster, ((1 + random2avg(9, 2)) * 10)
+                                                        / monster->speed);
+            }
+
+            simple_monster_message(monster, " burns!");
+
+            if (monster->hit_points < 1)
+            {
+                monster_die(monster,
+                        ((monster->enchantment[p] < ENCH_STICKY_FLAME_I)
+                                    ? KILL_YOU : KILL_MISC), 0);
+                died = true;
+            }
+
+            if (coinflip())
+            {
+                if (monster->enchantment[p] == ENCH_STICKY_FLAME_I
+                    || monster->enchantment[p] == ENCH_YOUR_STICKY_FLAME_I)
+                {
+                    mons_del_ench(monster, ENCH_STICKY_FLAME_I);
+                    mons_del_ench(monster, ENCH_YOUR_STICKY_FLAME_I);
+                }
+                else
+                    monster->enchantment[p] --;
+            }
+            break;
+
+        // 19 is taken by summoning:
+        // If these are changed, must also change abjuration
+        case ENCH_ABJ_I:
+        case ENCH_ABJ_II:
+        case ENCH_ABJ_III:
+        case ENCH_ABJ_IV:
+        case ENCH_ABJ_V:
+        case ENCH_ABJ_VI:
+            if (one_chance_in(10))
+                monster->enchantment[p]--;
+
+            if (monster->enchantment[p] < ENCH_ABJ_I)
+            {
+                monster_die(monster, KILL_RESET, 0);
+                died = true;
+            }
+            break;
+
+        case ENCH_CHARM:
+            if (random2(500) <= 10 + monster->hit_dice)
+                mons_del_ench(monster, ENCH_CHARM);
+            break;
+
+        case ENCH_GLOWING_SHAPESHIFTER:     // this ench never runs out
+            if (monster->type == MONS_GLOWING_SHAPESHIFTER
+                || one_chance_in(4))
+            {
+                monster_polymorph(monster, RANDOM_MONSTER, 0);
+            }
+            break;
+
+        case ENCH_SHAPESHIFTER:     // this ench never runs out
+            if (monster->type == MONS_SHAPESHIFTER || one_chance_in(15))
+                monster_polymorph(monster, RANDOM_MONSTER, 0);
+            break;
+
+        case ENCH_TP_I:
+            monster_teleport(monster, true);
+            mons_del_ench(monster, ENCH_TP_I);
+            break;
+
+        case ENCH_TP_II:
+        case ENCH_TP_III:
+        case ENCH_TP_IV:
+            monster->enchantment[p]--;
+            break;
+
+        case ENCH_SLEEP_WARY:
+            if (one_chance_in(20))
+                mons_del_ench(monster, ENCH_SLEEP_WARY);
+            break;
         }
     }
 
@@ -1022,27 +978,25 @@ static bool handle_enchantment(struct monsters *monster)
 //
 // handle_movement
 //
-// Move the monster close to its target square.
+// Move the monster closer to its target square.
 //
 //---------------------------------------------------------------
 static void handle_movement(struct monsters *monster)
 {
+    // some calculations
+    int dx = monster->target_x - monster->x;
+    int dy = monster->target_y - monster->y;
+
     // move the monster:
     if (monster->behavior == BEH_FLEE)
     {
-        mmov_x = ((monster->target_x > monster->x) ? -1 :
-                  (monster->target_x < monster->x) ? 1 : 0);
-
-        mmov_y = ((monster->target_y > monster->y) ? -1 :
-                  (monster->target_y < monster->y) ? 1 : 0);
+        mmov_x = (dx>0)?-1:((dx<0)?1:0);
+        mmov_y = (dy>0)?-1:((dy<0)?1:0);
     }
     else
     {
-        mmov_x = ((monster->target_x > monster->x) ? 1 :
-                  (monster->target_x < monster->x) ? -1 : 0);
-
-        mmov_y = ((monster->target_y > monster->y) ? 1 :
-                  (monster->target_y < monster->y) ? -1 : 0);
+        mmov_x = (dx>0)?1:((dx<0)?-1:0);
+        mmov_y = (dy>0)?1:((dy<0)?-1:0);
     }
 
     // bounds check: don't let fleeing monsters try to run
@@ -1051,6 +1005,27 @@ static void handle_movement(struct monsters *monster)
         mmov_x = 0;
     if (monster->target_y + mmov_y < 0 || monster->target_y + mmov_y >= GYM)
         mmov_y = 0;
+
+    // now quit if we're can't move
+    if (mmov_x == 0 && mmov_y == 0)
+        return;
+
+    // reproduced here is some semi-legacy code that makes monsters
+    // move somewhat randomly along oblique paths.  It is an exceedingly
+    // good idea,  given crawl's unique line of sight properties.
+    if (abs(dx) > abs(dy))
+    {
+        // sometimes we'll just move parallel the x axis
+        if (coinflip())
+            mmov_y = 0;
+    }
+    if (abs(dy) > abs(dx))
+    {
+        // sometimes we'll just move parallel the y axis
+        if (coinflip())
+            mmov_x = 0;
+    }
+
 }                               // end handle_movement()
 
 //---------------------------------------------------------------
@@ -1113,7 +1088,7 @@ static void handle_nearby_ability(struct monsters *monster)
                 || grd[monster->x][monster->y] == DNGN_BLUE_FOUNTAIN)
             {
                 monster->number = 0;
-                monster->enchantment[2] = ENCH_NONE;
+                mons_del_ench(monster, ENCH_INVIS);
             }
             else if (monster->number == 0
                      && grd[monster->x][monster->y] != DNGN_SHALLOW_WATER
@@ -1122,8 +1097,7 @@ static void handle_nearby_ability(struct monsters *monster)
                 if (one_chance_in(5))
                 {
                     monster->number = 1;
-                    monster->enchantment[2] = ENCH_INVIS;
-                    monster->enchantment1 = 1;
+                    mons_add_ench(monster, ENCH_INVIS);
                 }
 
             }
@@ -1136,10 +1110,7 @@ static void handle_nearby_ability(struct monsters *monster)
 
         case MONS_AIR_ELEMENTAL:
             if (one_chance_in(5))
-            {
-                monster->enchantment[2] = ENCH_INVIS;
-                monster->enchantment1 = 1;
-            }
+                mons_add_ench(monster, ENCH_INVIS);
             break;
 
         case MONS_PANDEMONIUM_DEMON:
@@ -1168,13 +1139,13 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
     switch (monster->type)
     {
     case MONS_LAVA_SNAKE:
-        if (monster_has_enchantment(monster, ENCH_CONFUSION))
+        if (mons_has_ench(monster, ENCH_CONFUSION))
             break;
 
         if (you.invis && !mons_see_invis(monster->type))
             break;
 
-        if (monster->number == 1 || monster->enchantment[2] == ENCH_INVIS
+        if (monster->number == 1 || mons_has_ench(monster, ENCH_INVIS)
             || coinflip())
         {
             break;
@@ -1205,13 +1176,13 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         break;
 
     case MONS_ELECTRICAL_EEL:
-        if (monster_has_enchantment(monster, ENCH_CONFUSION))
+        if (mons_has_ench(monster, ENCH_CONFUSION))
             break;
 
         if (you.invis && !mons_see_invis(monster->type))
             break;
 
-        if (monster->number == 1 || monster->enchantment[2] == ENCH_INVIS)
+        if (monster->number == 1 || mons_has_ench(monster, ENCH_INVIS))
             break;
 
         // setup tracer
@@ -1240,7 +1211,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         break;
 
     case MONS_OKLOB_PLANT:
-        if (monster_has_enchantment(monster, ENCH_CONFUSION))
+        if (mons_has_ench(monster, ENCH_CONFUSION))
             break;
 
         if (you.invis && !mons_see_invis(monster->type))
@@ -1256,9 +1227,12 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
             break;
         // deliberate fall through
     case MONS_FIEND:
-        if (monster_has_enchantment(monster, ENCH_CONFUSION))
+        if (mons_has_ench(monster, ENCH_CONFUSION))
             break;
 
+        // friendly fiends won't use torment,  preferring hellfire
+        // (right now there is no way a monster can predict how
+        // badly they'll damage the player with torment) -- GDL
         if (one_chance_in(4))
         {
             int spell_cast;
@@ -1266,11 +1240,14 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
             switch (random2(4))
             {
             case 0:
-                spell_cast = MS_TORMENT;
-                /* beem should be irrelevant here */
-                mons_cast(monster, beem, spell_cast);
-                used = true;
-                break;
+                if (!mons_friendly(monster))
+                {
+                    spell_cast = MS_TORMENT;
+                    mons_cast(monster, beem, spell_cast);
+                    used = true;
+                    break;
+                }
+                // deliberate fallthrough -- see above
             case 1:
             case 2:
             case 3:
@@ -1310,7 +1287,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         if (you.invis && !mons_see_invis(monster->type))
             break;
 
-        if (monster_has_enchantment(monster, ENCH_CONFUSION))
+        if (mons_has_ench(monster, ENCH_CONFUSION))
             break;
 
         if (!mons_near(monster))
@@ -1360,7 +1337,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         if (you.invis && !mons_see_invis(monster->type))
             break;
 
-        if (monster_has_enchantment(monster, ENCH_CONFUSION))
+        if (mons_has_ench(monster, ENCH_CONFUSION))
             break;
 
         if ((monster->type != MONS_HELL_HOUND && random2(13) < 3)
@@ -1466,18 +1443,44 @@ static bool handle_reaching(struct monsters *monster)
 {
     bool ret = false;
 
+    if (mons_aligned(monster_index(monster), monster->foe))
+        return false;
+
     if (monster->inv[MSLOT_WEAPON] != NON_ITEM
         && mitm.base_type[monster->inv[MSLOT_WEAPON]] == OBJ_WEAPONS
         && mitm.special[monster->inv[MSLOT_WEAPON]] < NWPN_SINGING_SWORD
         && mitm.special[monster->inv[MSLOT_WEAPON]] % 30 == SPWPN_REACHING)
     {
-        int dx = abs(monster->x - you.x_pos);
-        int dy = abs(monster->y - you.y_pos);
-
-        if ((dx == 2 && dy <= 2) || (dy == 2 && dx <= 2))
+        if (monster->foe == MHITYOU)
+            // this check isn't redundant -- player may be invisible.
         {
-            ret = true;
-            monster_attack(monster_index(monster));
+            if (monster->target_x == you.x_pos && monster->target_y == you.y_pos)
+            {
+                int dx = abs(monster->x - you.x_pos);
+                int dy = abs(monster->y - you.y_pos);
+
+                if ((dx == 2 && dy <= 2) || (dy == 2 && dx <= 2))
+                {
+                    ret = true;
+                    monster_attack(monster_index(monster));
+                }
+            }
+        }
+        else if (monster->foe != MHITNOT)
+        {
+            // same comments as to invisibility as above.
+            if (monster->target_x == menv[monster->foe].x
+             && monster->target_y == menv[monster->foe].y)
+            {
+                int dx = abs(monster->x - menv[monster->foe].x);
+                int dy = abs(monster->y - menv[monster->foe].y);
+                if ((dx == 2 && dy <= 2) || (dy == 2 && dx <= 2))
+                {
+                    ret = true;
+                    monsters_fight(monster_index(monster),
+                        monster->foe);
+                }
+            }
         }
     }
 
@@ -1495,7 +1498,7 @@ static bool handle_reaching(struct monsters *monster)
 static bool handle_scroll(struct monsters *monster)
 {
     // yes, there is a logic to this ordering {dlb}:
-    if (monster_has_enchantment(monster, ENCH_CONFUSION) || monster->behavior == BEH_SLEEP)
+    if (mons_has_ench(monster, ENCH_CONFUSION) || monster->behavior == BEH_SLEEP)
         return false;
     else if (monster->inv[MSLOT_SCROLL] == NON_ITEM)
         return false;
@@ -1509,9 +1512,7 @@ static bool handle_scroll(struct monsters *monster)
         switch (mitm.sub_type[monster->inv[MSLOT_SCROLL]])
         {
         case SCR_TELEPORTATION:
-            if (monster->enchantment[0] != ENCH_TP_I
-                && monster->enchantment[1] != ENCH_TP_I
-                && monster->enchantment[2] != ENCH_TP_I)
+            if (!mons_has_ench(monster, ENCH_TP_I))
             {
                 if (monster->behavior == BEH_FLEE)
                 {
@@ -1584,7 +1585,7 @@ static bool handle_wand(struct monsters *monster, bolt & beem)
     else
     {
         bool niceWand = false;
-        bool zap = true;
+        bool zap;
 
         switch (mitm.sub_type[monster->inv[MSLOT_WAND]])
         {
@@ -1597,9 +1598,7 @@ static bool handle_wand(struct monsters *monster, bolt & beem)
 
         // these are wands that monsters will aim at themselves {dlb}:
         case WAND_HASTING:
-            if (monster->enchantment[0] != ENCH_HASTE
-                && monster->enchantment[1] != ENCH_HASTE
-                && monster->enchantment[2] == ENCH_HASTE)
+            if (!mons_has_ench(monster, ENCH_HASTE))
             {
                 beem.target_x = monster->x;
                 beem.target_y = monster->y;
@@ -1619,7 +1618,7 @@ static bool handle_wand(struct monsters *monster, bolt & beem)
             break;
 
         case WAND_INVISIBILITY:
-            if (monster->enchantment[2] != ENCH_INVIS)
+            if (!mons_has_ench(monster, ENCH_INVIS))
             {
                 beem.target_x = monster->x;
                 beem.target_y = monster->y;
@@ -1630,9 +1629,7 @@ static bool handle_wand(struct monsters *monster, bolt & beem)
         case WAND_TELEPORTATION:
             if (monster->hit_points <= monster->max_hit_points / 2)
             {
-                if (monster->enchantment[0] != ENCH_TP_I
-                    && monster->enchantment[1] != ENCH_TP_I
-                    && monster->enchantment[2] != ENCH_TP_I)
+                if (!mons_has_ench(monster, ENCH_TP_I))
                 {
                     beem.target_x = monster->x;
                     beem.target_y = monster->y;
@@ -1699,7 +1696,6 @@ static bool handle_wand(struct monsters *monster, bolt & beem)
 //---------------------------------------------------------------
 static bool handle_spell(struct monsters *monster, bolt & beem)
 {
-    int temp_rand = 0;          // probability determination {dlb}
     bool monsterNearby = mons_near(monster);
     bool finalAnswer = false;   // as in: "Is that your...?" {dlb}
 
@@ -1712,13 +1708,12 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
 
     if ((mons_flag(monster->type, M_ACTUAL_SPELLS)
             || mons_flag(monster->type, M_PRIEST))
-        && (monster->enchantment[1] == ENCH_GLOWING_SHAPESHIFTER
-            || monster->enchantment[1] == ENCH_SHAPESHIFTER))
+        && (mons_has_ench(monster, ENCH_GLOWING_SHAPESHIFTER, ENCH_SHAPESHIFTER)))
     {
         return false;           //jmf: shapeshiftes don't get spells, just
                                 //     physical powers.
     }
-    else if (monster_has_enchantment(monster, ENCH_CONFUSION) && monster->type != MONS_VAPOUR)
+    else if (mons_has_ench(monster, ENCH_CONFUSION) && monster->type != MONS_VAPOUR)
         return false;
     else if (monster->type == MONS_PANDEMONIUM_DEMON && ghost.values[9] == 0)
         return false;
@@ -1764,6 +1759,8 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                 // up to four tries to pick a spell.
                 for (int loopy = 0; loopy < 4; loopy ++)
                 {
+                    bool spellOK = false;
+
                     // setup spell
                     spell_cast = hspell_pass[random2(5)];
                     if (spell_cast == MS_NO_SPELL)
@@ -1772,21 +1769,34 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                     // setup the spell
                     setup_mons_cast(monster, beem, spell_cast);
 
-                    // do we need a tracer?
-                    if (ms_always_fire(spell_cast))
+                    // beam-type spells requiring tracers
+                    if (ms_requires_tracer(spell_cast))
+                    {
+                        fire_tracer(monster, beem);
+                        // good idea?
+                        if (mons_should_fire(beem))
+                            spellOK = true;
+                    }
+                    else
+                    // all direct-effect/summoning/etc
+                    {
+                        spellOK = true;
+                        if (ms_direct_nasty(spell_cast)
+                            && mons_aligned(monster_index(monster), monster->foe))
+                            spellOK = false;
+                    }
+
+                    if (spellOK == true)
                         break;
 
-                    // fire tracer
-                    fire_tracer(monster, beem);
-
-                    // good idea?
-                    if (mons_should_fire(beem))
-                        break;
                     spell_cast = MS_NO_SPELL;
 
                     // ok, maybe we'll cast a defensive spell
                     if (coinflip())
                         spell_cast = hspell_pass[2];
+
+                    if (spell_cast != MS_NO_SPELL)
+                        break;
                 }
             }
         }
@@ -1854,7 +1864,7 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                 break;
 
             case MONS_VAPOUR:
-                monster->enchantment[2] = ENCH_INVIS;
+                mons_add_ench(monster, ENCH_INVIS);
                 break;
 
             case MONS_BRAIN_WORM:
@@ -1945,7 +1955,7 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
 static bool handle_throw(struct monsters *monster, bolt & beem)
 {
     // yes, there is a logic to this ordering {dlb}:
-    if (monster_has_enchantment(monster, ENCH_CONFUSION) || monster->behavior == BEH_SLEEP)
+    if (mons_has_ench(monster, ENCH_CONFUSION) || monster->behavior == BEH_SLEEP)
         return false;
 
     if (!mons_itemuse(monster->type))
@@ -2082,11 +2092,16 @@ void monster(void)
                 }
 
                 if (monster->type == MONS_GLOWING_SHAPESHIFTER)
-                    monster->enchantment[1] = ENCH_GLOWING_SHAPESHIFTER;
+                    mons_add_ench(monster, ENCH_GLOWING_SHAPESHIFTER);
 
                 // otherwise there are potential problems with summonings
                 if (monster->type == MONS_SHAPESHIFTER)
-                    monster->enchantment[1] = ENCH_SHAPESHIFTER;
+                    mons_add_ench(monster, ENCH_SHAPESHIFTER);
+
+                // memory is decremented here for a reason -- we only want it
+                // decrementing once per monster "move"
+                if (monster->foe_memory > 0)
+                    monster->foe_memory --;
 
                 handle_behavior(monster);
 
@@ -2128,7 +2143,7 @@ void monster(void)
 
                 brkk = false;
 
-                if (monster_has_enchantment(monster, ENCH_CONFUSION))
+                if (mons_has_ench(monster, ENCH_CONFUSION))
                 {
                     mmov_x = random2(3) - 1;
                     mmov_y = random2(3) - 1;
@@ -2166,33 +2181,29 @@ void monster(void)
                 if (!(monster->behavior == BEH_SLEEP
                     || monster->behavior == BEH_WANDER))
                 {
-                    // this seems to prevent monsters from hitting you from
-                    // offscreen.  How nice.
-                    if (monster->foe == MHITYOU && !mons_near(monster)
-                        && monster->type != MONS_CACODEMON)
+                    // prevents unfriendlies from nuking you from offscreen.
+                    // How nice!
+                    if (mons_friendly(monster) || mons_near(monster))
                     {
-                        goto end_switch;
+                        if (handle_special_ability(monster, beem))
+                            continue;
+
+                        if (handle_potion(monster, beem))
+                            continue;
+
+                        if (handle_scroll(monster))
+                            continue;
+
+                        if (handle_wand(monster, beem))
+                            continue;
+
+                        if (handle_spell(monster, beem))
+                            continue;
+
+                        if (handle_reaching(monster))
+                            continue;
                     }
 
-                    if (handle_special_ability(monster, beem))
-                        continue;
-
-                    if (handle_potion(monster, beem))
-                        continue;
-
-                    if (handle_scroll(monster))
-                        continue;
-
-                    if (handle_wand(monster, beem))
-                        continue;
-
-                    if (handle_spell(monster, beem))
-                        continue;
-
-                    if (handle_reaching(monster))
-                        continue;
-
-                  end_switch:
                     if (handle_throw(monster, beem))
                         continue;
                 }
@@ -2202,7 +2213,7 @@ void monster(void)
                 // see if we move into (and fight) an unfriendly monster
                 int targmon = mgrd[monster->x + mmov_x][monster->y + mmov_y];
                 if (targmon != i && targmon != NON_MONSTER
-                    && !mons_aligned(&menv[i], &menv[targmon]))
+                    && !mons_aligned(i, targmon))
                 {
                     // figure out if they fight
                     if (monsters_fight(i, targmon))
@@ -2280,6 +2291,11 @@ void monster(void)
                 }
 
                 monster_move(monster);
+
+                // reevaluate behavior, since the monster's
+                // surroundings have changed (it moved)
+                handle_behavior(monster);
+
             }                   // end while
         }                       // end of if (mons_class != -1)
     }                           // end of for loop
@@ -2670,7 +2686,7 @@ static void monster_move(struct monsters *monster)
             // are aligned differently
             if (mgrd[targ_x][targ_y] != NON_MONSTER)
             {
-                if (mons_aligned(monster, &menv[mgrd[targ_x][targ_y]]))
+                if (mons_aligned(monster_index(monster), mgrd[targ_x][targ_y]))
                 {
                     good_move[count_x][count_y] = false;
                     continue;
@@ -2843,13 +2859,17 @@ static void monster_move(struct monsters *monster)
     }
 
     // now,  if a monster can't move in its intended direction,  try
-    // either side.
+    // either side.  If they're both good,  move in whichever dir
+    // gets it closer to its target.  If neither does,  do nothing.
     if (good_move[mmov_x + 1][mmov_y + 1] == false)
     {
-        int dir = -1;
-        int which_first;
+        int current_distance = distance(monster->x, monster->y,
+            monster->target_x, monster->target_y);
 
-        for(int i=0; i<8; i++)
+        int dir = -1;
+        int i, mod, newdir;
+
+        for(i=0; i<8; i++)
         {
             if (compass_x[i] == mmov_x && compass_y[i] == mmov_y)
             {
@@ -2857,34 +2877,48 @@ static void monster_move(struct monsters *monster)
                 break;
             }
         }
-        if (dir != -1)
+
+        if (dir < 0)
+            goto forget_it;
+
+        int dist[2];
+
+        // first 1 away,  then 2 (3 is silly)
+        for (int j=1; j<3; j++)
         {
-            bool found_alt = false;
-            for (int j=1; j<3; j++)
+            // try both directions
+            for(mod = -j, i=0; mod < j+1; mod += 2*j, i++)
             {
-                which_first = coinflip()?j:-j;
-                int newdir = (dir + 8 + which_first) % 8;
+                newdir = (dir + 8 + mod) % 8;
                 if (good_move[compass_x[newdir] + 1][compass_y[newdir] + 1])
-                {
-                    mmov_x = compass_x[newdir];
-                    mmov_y = compass_y[newdir];
-                    found_alt = true;
-                }
+                    dist[i] = distance(monster->x + compass_x[newdir],
+                        monster->y + compass_y[newdir],monster->target_x,
+                        monster->target_y);
                 else
-                {
-                    newdir = (dir + 8 - which_first) % 8;
-                    if (good_move[compass_x[newdir] + 1][compass_y[newdir] + 1])
-                    {
-                        mmov_x = compass_x[newdir];
-                        mmov_y = compass_y[newdir];
-                        found_alt = true;
-                    }
-                }
-                if (found_alt)
-                    break;
+                    dist[i] = FAR_AWAY;
+            }
+
+            // now choose
+            if (dist[0] == FAR_AWAY && dist[1] == FAR_AWAY)
+                continue;
+
+            // which one was better?
+            if (dist[0] < dist[1] && dist[0] < current_distance)
+            {
+                mmov_x = compass_x[((dir+8)-j)%8];
+                mmov_y = compass_y[((dir+8)-j)%8];
+                break;
+            }
+            if (dist[1] < dist[0] && dist[1] < current_distance)
+            {
+                mmov_x = compass_x[(dir+j)%8];
+                mmov_y = compass_y[(dir+j)%8];
+                break;
             }
         }
     } // end - try to find good alternate move
+
+forget_it:
 
     // ------------------------------------------------------------------
     // if we haven't found a good move by this point, we're not going to.
@@ -3277,7 +3311,7 @@ bool message_current_target(void)
         struct monsters *montarget = &menv[you.prev_targ];
 
         if (mons_near(montarget)
-            && (montarget->enchantment[2] != ENCH_INVIS
+            && (!mons_has_ench(montarget, ENCH_INVIS)
                 || player_see_invis()))
         {
             strcpy(info, "You are currently targeting ");

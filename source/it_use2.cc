@@ -110,8 +110,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
     case ZAP_SMALL_SANDBLAST:
     case ZAP_DISRUPTION:                // ench_power boosted below
     case ZAP_PAIN:                      // ench_power boosted below
-        if (power > 50)
-            power = 50;
+        if (power > 30)
+            power = 30;
         break;
 
     // level 2
@@ -119,8 +119,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
     // pretty hard to get this high without intentionally trying to play
     // a strong spellcaster and they should really want to get into the
     // powerful spells below).
-    case ZAP_FLAME:
-    case ZAP_FROST:
+    case ZAP_FLAME:             // also ability (pow = lev * 2)
+    case ZAP_FROST:             // also ability (pow = lev * 2)
     case ZAP_SANDBLAST:
         if (power > 100)
             power = 100;
@@ -146,8 +146,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
     case ZAP_VENOM_BOLT:
     case ZAP_MAGMA:
     case ZAP_AGONY:
-    case ZAP_LIGHTNING:
-    case ZAP_NEGATIVE_ENERGY:
+    case ZAP_LIGHTNING:                 // also invoc * 6 or lev * 2 (abils)
+    case ZAP_NEGATIVE_ENERGY:           // also ability (pow = lev * 6)
     case ZAP_IRON_BOLT:
     case ZAP_DISINTEGRATION:
     case ZAP_FIREBALL:
@@ -175,6 +175,18 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
     case ZAP_BEAM_OF_ENERGY: // inaccuracy (only on staff, hardly hits)
         break;
 
+    // natural/mutant breath/spit powers (power ~= characer level)
+    case ZAP_SPIT_POISON:               // lev + mut * 5
+    case ZAP_BREATHE_FIRE:              // lev + mut * 4 + 12 (if dragonform)
+    case ZAP_BREATHE_FROST:             // lev
+    case ZAP_BREATHE_ACID:              // lev (or invoc * 3 from minor destr)
+    case ZAP_BREATHE_POISON:            // lev
+    case ZAP_BREATHE_POWER:             // lev
+    case ZAP_BREATHE_STEAM:             // lev
+        if (power > 50)
+            power = 50;
+        break;
+
     // enchantments and other resistable effects
     case ZAP_SLOWING:
     case ZAP_HASTING:
@@ -199,14 +211,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.ench_power /= 2;
         break;
 
-    // natural/mutant breath/spit powers and anything else...
-    case ZAP_SPIT_POISON:
-    case ZAP_BREATHE_FIRE:
-    case ZAP_BREATHE_FROST:
-    case ZAP_BREATHE_ACID:
-    case ZAP_BREATHE_POISON:
-    case ZAP_BREATHE_POWER:
-    case ZAP_BREATHE_STEAM:
+    // anything else we cap to 100
     default:
         if (power > 100)
             power = 100;
@@ -233,7 +238,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "puff of flame");
         pbolt.colour = RED;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 104 + (power / 20);              // max dam: 24
+        pbolt.damage = 104 + (power / 20);              // max dam: 27
         pbolt.hit = 8 + (power / 10);                   // max hit: 18
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
@@ -245,7 +250,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "puff of frost");
         pbolt.colour = WHITE;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 104 + (power / 20);              // max dam: 24
+        pbolt.damage = 104 + (power / 20);              // max dam: 27
         pbolt.hit = 8 + (power / 10);                   // max hit: 18
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_COLD;
@@ -269,7 +274,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "magic dart");
         pbolt.colour = LIGHTMAGENTA;
         pbolt.range = random2(5) + 8;
-        pbolt.damage = 102 + (power / 15);              // max dam: 12
+        pbolt.damage = 1 + (power / 4);                 // max dam: 8
         pbolt.hit = 1500;                               // hits always
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -292,7 +297,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of fire");
         pbolt.colour = RED;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 107 + (power / 11);              // max dam: 72
+        pbolt.damage = 107 + (power / 11);              // max dam: 75
         pbolt.hit = 10 + (random2(power) / 25);         // max hit: 17
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
@@ -305,7 +310,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of cold");
         pbolt.colour = WHITE;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 107 + (power / 11);              // max dam: 72
+        pbolt.damage = 107 + (power / 11);              // max dam: 75
         pbolt.hit = 10 + (random2(power) / 25);         // max hit: 17
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_COLD;
@@ -318,7 +323,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of magma");
         pbolt.colour = RED;
         pbolt.range = 5 + random2(4);
-        pbolt.damage = 106 + (power / 12);              // max dam: 63
+        pbolt.damage = 106 + (power / 12);              // max dam: 66
         pbolt.hit = 8 + (random2(power) / 25);          // max hit: 15
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_LAVA;
@@ -351,7 +356,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "fireball");
         pbolt.colour = RED;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 105 + (power / 7);               // max dam: 96
+        pbolt.damage = 105 + (power / 7);               // max dam: 99
         pbolt.hit = 40;                                 // hit: 40
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_EXPLOSION;                 // fire
@@ -365,11 +370,11 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.isBeam = true;
         break;
 
-    case ZAP_LIGHTNING:
+    case ZAP_LIGHTNING: // also for breath (at pow = lev * 2; max dam: 30)
         strcpy(pbolt.beam_name, "bolt of lightning");
         pbolt.colour = LIGHTCYAN;
         pbolt.range = 8 + random2(10);                  // extended in beam
-        pbolt.damage = 106 + (power / 12);              // max dam: 63
+        pbolt.damage = 106 + (power / 12);              // max dam: 66
         pbolt.hit = 7 + (random2(power) / 20);          // max hit: 16
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;               // beams & reflects
@@ -389,7 +394,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of poison");
         pbolt.colour = LIGHTGREEN;
         pbolt.range = 8 + random2(10);
-        pbolt.damage = 105 + (power / 14);              // max dam: 54
+        pbolt.damage = 105 + (power / 14);              // max dam: 57
         pbolt.hit = 8 + (random2(power) / 20);          // max hit: 17
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;                    // extra damage
@@ -402,7 +407,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of negative energy");
         pbolt.colour = DARKGREY;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 105 + (power / 14);              // max dam: 54
+        pbolt.damage = 105 + (power / 14);              // max dam: 57
         pbolt.hit = 8 + (random2(power) / 20);          // max hit: 17
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_NEG;                       // drains levels
@@ -428,7 +433,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "orb of energy");
         pbolt.colour = LIGHTMAGENTA;
         pbolt.range = 7 + random2(5);
-        pbolt.damage = 105 + (power / 20);              // max dam: 33
+        pbolt.damage = 105 + (power / 20);              // max dam: 36
         pbolt.hit = 10 + (power / 7);                   // max hit: 31
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -450,7 +455,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
         // is this right? other "0" beams do not define ->hit {dlb}
         // actually, it's used for damage (the spell always hits)
-        pbolt.hit = 8 + (power / 5);                   // max dam: 17
+        pbolt.hit = 6 + (power / 3);                   // max dam: 16
 
         pbolt.ench_power *= 7;
         pbolt.ench_power /= 2;
@@ -461,7 +466,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "sticky flame");        // extra damage
         pbolt.colour = RED;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 102 + (power / 30);              // max dam: 18
+        pbolt.damage = 102 + (power / 30);              // max dam: 21
         pbolt.hit = 11 + (power / 10);                  // max hit: 26
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
@@ -482,7 +487,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "golden flame");
         pbolt.colour = YELLOW;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 110 + (power / 7);               // max dam: 153
+        pbolt.damage = 110 + (power / 7);               // max dam: 156
         pbolt.hit = 20 + (random2(power) / 80);         // max hit: 23
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_HOLY;
@@ -500,8 +505,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         // The power here is quite large because it contains a
         // factor based on the size of the skeleton used... therefore
         // damage is highly dependant on material.
-        pbolt.damage = 102 + (power / 250);             // max dam: 66
-        pbolt.hit = 5 + (power / 100);                  // max hit: 57 (high)
+        pbolt.damage = 102 + (power / 250);             // max dam: 69
+        pbolt.hit = 8 + (power / 100);                  // max hit: 60 (high)
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MAGIC;                     // unresisted
 
@@ -527,8 +532,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "sting");
         pbolt.colour = GREEN;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 4 + (power / 6);                 // max dam: 11
-        pbolt.hit = 8 + (power / 20);                   // max hit: 10
+        pbolt.damage = 6 + (power / 5);                 // max dam: 12
+        pbolt.hit = 8 + (power / 5);                    // max hit: 14
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;                    // extra damage
 
@@ -539,7 +544,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "hellfire");
         pbolt.colour = RED;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 110 + (power / 10);              // max dam: 120
+        pbolt.damage = 110 + (power / 10);              // max dam: 123
         pbolt.hit = 20 + (power / 10);                  // max hit: 50
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_EXPLOSION;
@@ -553,7 +558,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.colour = BROWN;
         pbolt.range = 8 + random2(5);
         pbolt.damage = 5;                               // dam: 5
-        pbolt.hit = 8 + (power / 20);                   // max hit: 10
+        pbolt.hit = 8 + (power / 10);                   // max hit: 11
         pbolt.type = SYM_MISSILE;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
 
@@ -564,7 +569,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "stone arrow");
         pbolt.colour = LIGHTGREY;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 105 + (power / 20);              // max dam: 33
+        pbolt.damage = 105 + (power / 20);              // max dam: 36
         pbolt.hit = 7 + (power / 20);                   // max hit: 14
         pbolt.type = SYM_MISSILE;                       // unresistable
         pbolt.flavour = BEAM_MMISSILE;
@@ -576,7 +581,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "iron bolt");
         pbolt.colour = LIGHTCYAN;
         pbolt.range = 4 + random2(5);
-        pbolt.damage = 108 + (power / 12);              // max dam: 69
+        pbolt.damage = 108 + (power / 12);              // max dam: 72
         pbolt.hit = 5 + (random2(power) / 25);          // max hit: 13
         pbolt.type = SYM_MISSILE;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -588,7 +593,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "crystal spear");
         pbolt.colour = WHITE;
         pbolt.range = 7 + random2(10);
-        pbolt.damage = 112 + (power / 9);               // max dam: 132
+        pbolt.damage = 112 + (power / 9);               // max dam: 135
         pbolt.hit = 4 + random2(power) / 30;            // max hit: 14
         pbolt.type = SYM_MISSILE;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -600,8 +605,8 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "zap");
         pbolt.colour = LIGHTCYAN;
         pbolt.range = 6 + random2(8);                   // extended in beam
-        pbolt.damage = 7 + random2(power) / 12;         // max dam: 11
-        pbolt.hit = 8 + power / 20;                     // max hit: 10
+        pbolt.damage = 5 + random2(power) / 4;          // max dam: 12
+        pbolt.hit = 8 + power / 7;                      // max hit: 12
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;               // beams & reflects
 
@@ -613,23 +618,21 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "orb of electricity");
         pbolt.colour = LIGHTBLUE;
         pbolt.range = 9 + random2(12);
-        pbolt.damage = 105 + (power / 6);               // max dam: 111
+        pbolt.damage = 105 + (power / 6);               // max dam: 114
         pbolt.hit = 40;                                 // hit: 40
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;
-
         break;
 
     case ZAP_SPIT_POISON:
-        // power is different here (level based, I believe)
+        // max pow = lev + mut * 5 = 42
         strcpy(pbolt.beam_name, "splash of poison");
         pbolt.colour = GREEN;
         pbolt.range = 3 + random2(1 + (power / 2));
-        pbolt.damage = 4 + (power / 2);
+        pbolt.damage = 4 + (power / 2);                 // max dam: 25
         pbolt.hit = 5 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;
-
         pbolt.obviousEffect = true;
         break;
 
@@ -646,10 +649,11 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         break;
 
     case ZAP_BREATHE_FIRE:
+        // max pow = lev + mut * 4 + 12 = 51 (capped to 50)
         strcpy(pbolt.beam_name, "fiery breath");
         pbolt.colour = RED;
         pbolt.range = 3 + random2(1 + (power / 2));
-        pbolt.damage = 104 + (power / 3);  // NB: experience_level + mut * 4
+        pbolt.damage = 104 + (power / 3);               // max dam: 60
         pbolt.hit = 8 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
@@ -659,10 +663,11 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         break;
 
     case ZAP_BREATHE_FROST:
+        // max power = lev = 27
         strcpy(pbolt.beam_name, "freezing breath");
         pbolt.colour = WHITE;
         pbolt.range = 3 + random2(1 + (power / 2));
-        pbolt.damage = 104 + (power / 3);  // NB: experience_level + mut * 4
+        pbolt.damage = 104 + (power / 3);               // max dam: 39
         pbolt.hit = 8 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_COLD;
@@ -672,10 +677,11 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         break;
 
     case ZAP_BREATHE_ACID:
+        // max power = lev for ability, 50 for minor destruction (max dam: 57)
         strcpy(pbolt.beam_name, "acid");
         pbolt.colour = YELLOW;
         pbolt.range = 3 + random2(1 + (power / 2));
-        pbolt.damage = 103 + (power / 3);
+        pbolt.damage = 103 + (power / 3);               // max dam: 36
         pbolt.hit = 5 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ACID;
@@ -684,10 +690,11 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         break;
 
     case ZAP_BREATHE_POISON:    // leaves clouds of gas
+        // max power = lev = 27
         strcpy(pbolt.beam_name, "poison gas");
         pbolt.colour = GREEN;
         pbolt.range = 3 + random2(1 + (power / 2));
-        pbolt.damage = 102 + (power / 6);
+        pbolt.damage = 102 + (power / 6);               // max dam: 18
         pbolt.hit = 5 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_POISON;
@@ -697,6 +704,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
 
     case ZAP_BREATHE_POWER:
         strcpy(pbolt.beam_name, "bolt of energy");
+        // max power = lev = 27
 
         pbolt.colour = BLUE;
         if (random2(power) >= 8)
@@ -707,7 +715,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
             pbolt.colour = LIGHTMAGENTA;
 
         pbolt.range = 6 + random2(1 + (power / 2));
-        pbolt.damage = 103 + (power / 3);
+        pbolt.damage = 103 + (power / 3);               // max dam: 36
         pbolt.hit = 11 + random2(1 + (power / 3));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable
@@ -738,7 +746,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         pbolt.range = 7 + random2(8);
         // is this right? other "0" beams do not define ->hit {dlb}
         // actually, it's used for damage (the spell always hits)
-        pbolt.hit = 5 + (power / 5);                   // max dam: 14
+        pbolt.hit = 6 + (power / 3);                   // max dam: 16
         pbolt.ench_power *= 3;
         pbolt.isBeam = true;
         break;
@@ -756,10 +764,11 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         break;
 
     case ZAP_BREATHE_STEAM:
+        // max power = lev = 27
         strcpy(pbolt.beam_name, "ball of steam");
         pbolt.colour = LIGHTGREY;
         pbolt.range = 6 + random2(5);
-        pbolt.damage = 104 + (power / 5);
+        pbolt.damage = 104 + (power / 5);               // max dam: 27
         pbolt.hit = 10 + random2(1 + (power / 5));
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_FIRE;
@@ -779,7 +788,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "metal orb");
         pbolt.colour = CYAN;
         pbolt.range = 9 + random2(7);
-        pbolt.damage = 110 + (power / 7);               // max dam: 111
+        pbolt.damage = 110 + (power / 7);               // max dam: 114
         pbolt.hit = 20;                                 // hit: 20
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;
@@ -789,7 +798,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "bolt of ice");
         pbolt.colour = WHITE;
         pbolt.range = 8 + random2(5);
-        pbolt.damage = 105 + (power / 10);              // max dam: 57
+        pbolt.damage = 105 + (power / 10);              // max dam: 60
         pbolt.hit = 9 + (power / 12);                   // max hit: 21
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ICE;
@@ -799,7 +808,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "great blast of cold");
         pbolt.colour = BLUE;
         pbolt.range = 9 + random2(5);
-        pbolt.damage = 105 + (power / 7);               // max dam: 138
+        pbolt.damage = 105 + (power / 7);               // max dam: 141
         pbolt.hit = 10 + (power / 10);                  // max hit: 40
         pbolt.type = SYM_ZAP;
         /* ice */// <- changed from BEAM_COLD b/c of comment 13jan2000 {dlb}
@@ -825,12 +834,12 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "flame");
         pbolt.colour = RED;
 
-        pbolt.range = 1 + random2(2) + random2(power) / 20;
+        pbolt.range = 1 + random2(2) + random2(power) / 10;
         if (pbolt.range > 4)
             pbolt.range = 4;
 
-        pbolt.damage = 5 + (power / 4);                // max dam: 16
-        pbolt.hit = 8 + (power / 10);                  // max hit: 13
+        pbolt.damage = 8 + (power / 3);               // max dam: 18
+        pbolt.hit = 8 + (power / 5);                  // max hit: 15
         pbolt.type = SYM_BOLT;
         pbolt.flavour = BEAM_FIRE;
 
@@ -847,10 +856,10 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
             pbolt.range = 4;
 
         // remember -- this one has max power of 100
-        pbolt.damage = 6 + (power / 7);                // max dam: 19
-        pbolt.hit = 10 + (power / 10);                 // max hit: 20
+        pbolt.damage = 103 + (power / 25);              // max dam: 21
+        pbolt.hit = 13 + (power / 10);                  // max hit: 20
         pbolt.type = SYM_BOLT;
-        pbolt.flavour = BEAM_FRAG;
+        pbolt.flavour = BEAM_FRAG;                      // extra AC resist
 
         pbolt.obviousEffect = true;
         pbolt.isBeam = true;
@@ -866,11 +875,11 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
                                 (temp_rand == 2) ? "grit" : "sand");
 
         pbolt.colour = BROWN;
-        pbolt.range = (random2(power) > random2(50)) ? 2 : 1; // 1 or 2 squares
-        pbolt.damage = 4 + (power / 10);               // max dam: 8
-        pbolt.hit = 5 + (power / 10);                  // max hit: 10
+        pbolt.range = (random2(power) > random2(30)) ? 2 : 1; // 1 or 2 squares
+        pbolt.damage = 6 + power / 5;                   // max dam: 12
+        pbolt.hit = 10 + (power / 5);                   // max hit: 16
         pbolt.type = SYM_BOLT;
-        pbolt.flavour = BEAM_FRAG;
+        pbolt.flavour = BEAM_FRAG;                      // extra AC resist
 
         pbolt.obviousEffect = true;
         pbolt.isBeam = true;

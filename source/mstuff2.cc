@@ -35,6 +35,7 @@
 #include "player.h"
 #include "spells.h"
 #include "spells2.h"
+#include "spells4.h"
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
@@ -163,7 +164,7 @@ void mons_trap(struct monsters *monster)
             {
                 strcpy(info, "A huge blade swings out");
 
-                if (monster->enchantment[2] != ENCH_INVIS || player_see_invis())
+                if (!mons_has_ench(monster,ENCH_INVIS) || player_see_invis())
                 {
                     strcat(info, " and slices into ");
                     strcat(info, ptr_monam( monster, 1 ));
@@ -546,35 +547,13 @@ void monster_teleport(struct monsters *monster, bool instan)
 
     if (!instan)
     {
-        for (p = 0; p < 3; p++)
+        if (mons_del_ench(monster, ENCH_TP_I, ENCH_TP_IV))
         {
-            if (monster->enchantment[p] >= ENCH_TP_I
-                && monster->enchantment[p] <= ENCH_TP_IV)
-            {
-                monster->enchantment[p] = ENCH_NONE;
-
-                if (monster->enchantment[0] == ENCH_NONE
-                    && monster->enchantment[1] == ENCH_NONE
-                    && monster->enchantment[2] == ENCH_NONE)
-                {
-                    monster->enchantment1 = 0;
-                }
-
-                simple_monster_message(monster, " seems more stable.");
-                return;
-            }
-        }                       // end of for p
-
-        for (p = 0; p < 3; p++)
-        {
-            if (monster->enchantment[p] == ENCH_NONE)
-            {
-                monster->enchantment[p] =
-                    (coinflip()? ENCH_TP_III : ENCH_TP_IV);
-                monster->enchantment1 = 1;
-                break;
-            }
+            simple_monster_message(monster, " seems more stable.");
         }
+        else
+            mons_add_ench(monster, (coinflip() ? ENCH_TP_III : ENCH_TP_IV ));
+
         return;
     }
 
@@ -919,7 +898,7 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
         monster->inv[MSLOT_MISSILE] = NON_ITEM;
 
     // adjust speed for centaurs - quickest guns in the west?  :)
-    if (monster->type == MONS_CENTAUR)
+    if (monster->type == MONS_CENTAUR && monster->speed_increment > 10)
         monster->speed_increment -= 10;
 
     return true;
@@ -1475,6 +1454,8 @@ static unsigned char monster_abjuration(int pow, bool test)
 
     for (int ab = 0; ab < MAX_MONSTERS; ab++)
     {
+        int abjLevel;
+
         monster = &menv[ab];
 
         if (monster->type == -1 || !mons_near(monster))
@@ -1483,14 +1464,9 @@ static unsigned char monster_abjuration(int pow, bool test)
         if (!mons_friendly(monster))
             continue;
 
-        if (monster->enchantment1 == 0
-            || ((monster->enchantment[1] < ENCH_ABJ_I
-                     || monster->enchantment[1] > ENCH_ABJ_VI)
-                 && (monster->enchantment[1] < ENCH_FRIEND_ABJ_I
-                     || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)))
-        {
+        abjLevel = mons_has_ench(monster, ENCH_ABJ_I, ENCH_ABJ_VI);
+        if (abjLevel == ENCH_NONE)
             continue;
-        }
 
         result++;
 
@@ -1500,16 +1476,16 @@ static unsigned char monster_abjuration(int pow, bool test)
         if (pow > 60)
             pow = 60;
 
-        monster->enchantment[1] -= 1 + (random2(pow) / 3);
+        abjLevel -= 1 + (random2(pow) / 3);
 
-        if (monster->enchantment[1] < ENCH_ABJ_I
-            || (monster->enchantment[1] > ENCH_ABJ_VI
-            && monster->enchantment[1] < ENCH_FRIEND_ABJ_I))
-        {
+        if (abjLevel < ENCH_ABJ_I)
             monster_die(monster, KILL_RESET, 0);
-        }
         else
+        {
             simple_monster_message(monster, " shudders.");
+            mons_del_ench(monster, ENCH_ABJ_I, ENCH_ABJ_VI);
+            mons_add_ench(monster, abjLevel);
+        }
     }
 
     return result;
