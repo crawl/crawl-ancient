@@ -23,9 +23,15 @@ char *skill_name(unsigned char which_skill);
 
 // last_updated 24may2000 {dlb}
 /* ***********************************************************************
- * called from: acr - chardump - describe - player - skills - stuff
+ * called from: describe
  * *********************************************************************** */
-char *skill_title(unsigned char best_skill, unsigned char skill_lev);
+const char *skill_title(unsigned char best_skill, unsigned char skill_lev);
+
+// last_updated Sept 20 -- bwr
+/* ***********************************************************************
+ * called from: acr - chardump - player - skills - stuff
+ * *********************************************************************** */
+const char *player_title( void );
 
 
 // last_updated 24may2000 {dlb}

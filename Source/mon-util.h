@@ -18,7 +18,7 @@
 
 // ****remember***** must make an hardcopy of this sometime
 
-#if defined(macintosh) || defined(__IBMCPP__)
+#if defined(macintosh) || defined(__IBMCPP__) || defined(SOLARIS)
 #define PACKED
 #else
 #define PACKED __attribute__ ((packed))
@@ -163,6 +163,9 @@ void mon_init( FixedVector<unsigned char, 1000>& colour );
  *              spells4
  * *********************************************************************** */
 char *monam(int mons_cla, int mons_e, char desc, char see_invis);
+
+// these front for monam
+char *ptr_monam( struct monsters *mon, char desc );
 
 
 // last updated 12may2000 {dlb}

@@ -121,7 +121,7 @@
 {
     MONS_GIANT_BAT, 'b', DARKGREY, "giant bat",
     M_FLIES | M_SEE_INVIS | M_WARM_BLOOD,
-    150, 4, 1, MH_NATURAL, -3,
+    150, 4, 1, MH_NATURAL, -1,
     { 1, 0, 0, 0 },
     { 1, 2, 3, 0 },
     1, 14, 30, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_ANIMAL, 0
@@ -171,7 +171,7 @@
 {
     MONS_GOBLIN, 'g', LIGHTGREY, "goblin",
     M_WARM_BLOOD,
-    400, 10, 6, MH_NATURAL, -3,
+    400, 10, 6, MH_NATURAL, -1,
     { 4, 0, 0, 0 },
     { 1, 2, 4, 0 },
     1, 13, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
@@ -202,7 +202,7 @@
 {
     MONS_JACKAL, 'j', YELLOW, "jackal",
     M_WARM_BLOOD,
-    200, 10, 9, MH_NATURAL, -3,
+    200, 10, 9, MH_NATURAL, -1,
     { 3, 0, 0, 0 },
     { 1, 3, 5, 0 },
     2, 12, 14, 7, 250, CE_CONTAMINATED, Z_SMALL, S_BARK, I_ANIMAL, 0
@@ -283,7 +283,7 @@
 {
     MONS_RAT, 'r', BROWN, "rat",
     M_WARM_BLOOD,
-    200, 10, 17, MH_NATURAL, -3,
+    200, 10, 17, MH_NATURAL, -1,
     { 3, 0, 0, 0 },
     { 1, 1, 3, 0 },
     1, 10, 10, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_ANIMAL, 0
@@ -337,7 +337,7 @@
 {
     MONS_WORM, 'w', LIGHTRED, "worm",
     M_NO_SKELETON,
-    350, 4, 22, MH_NATURAL, -3,
+    350, 4, 22, MH_NATURAL, -2,
     { 12, 0, 0, 0 },
     { 5, 3, 5, 0 },
     1, 5, 6, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_INSECT, 0
@@ -449,7 +449,7 @@
 {
     MONS_HOBGOBLIN, 'g', BROWN, "hobgoblin",
     M_WARM_BLOOD,
-    500, 10, 33, MH_NATURAL, -3,
+    500, 10, 33, MH_NATURAL, -1,
     { 5, 0, 0, 0 },
     { 1, 4, 5, 0 },
     0, 10, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
@@ -479,7 +479,7 @@
 {
     MONS_KOBOLD, 'K', BROWN, "kobold",
     M_WARM_BLOOD,
-    400, 10, 36, MH_NATURAL, -3,
+    400, 10, 36, MH_NATURAL, -1,
     { 4, 0, 0, 0 },
     { 1, 2, 3, 0 },
     2, 12, 10, 7, 250, CE_POISONOUS, Z_SMALL, S_SHOUT, I_NORMAL, 3
@@ -559,7 +559,7 @@
 {
     MONS_SNAKE, 'S', GREEN, "snake",
     M_COLD_BLOOD,
-    200, 10, 44, MH_NATURAL, -3,
+    200, 10, 44, MH_NATURAL, -1,
     { 5, 0, 0, 0 },
     { 2, 3, 5, 0 },
     1, 15, 13, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SILENT, I_REPTILE, 0
@@ -1047,7 +1047,7 @@
 {
     MONS_GIANT_MITE, 's', LIGHTRED, "giant mite",
     M_ED_POISON,
-    350, 10, 100, MH_NATURAL, -3,
+    350, 10, 100, MH_NATURAL, -1,
     { 5, 0, 0, 0 },
     { 2, 3, 5, 0 },
     1, 7, 10, 7, 250, CE_POISONOUS, Z_SMALL, S_SILENT, I_INSECT, 0
@@ -1135,6 +1135,7 @@
     0, 0, 0, 0, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
 }
 ,
+
 
 {
     MONS_HELL_KNIGHT, '@', RED, "hell knight",
@@ -1868,7 +1869,7 @@
 {
     MONS_GIANT_COCKROACH, 'a', BROWN, "giant cockroach",
     M_NO_FLAGS,
-    250, 10, 181, MH_NATURAL, -3,
+    250, 10, 181, MH_NATURAL, -1,
     { 2, 0, 0, 0 },
     { 1, 3, 4, 0 },
     3, 10, 12, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SILENT, I_INSECT, 0
@@ -2852,7 +2853,7 @@
     0, 13, 47, MH_UNDEAD, -6,
     { 33, 0, 0, 0 },
     { 11, 3, 7, 0 },
-    10, 10, 10, 7, 40, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+    10, 10, 10, 7, 41, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
 }
 ,
 
@@ -2862,7 +2863,7 @@
     0, 15, 47, MH_UNDEAD, -6,
     { 22, 0, 0, 0 },
     { 8, 3, 4, 0 },
-    10, 10, 10, 7, 61, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 3
+    10, 10, 10, 7, 42, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 3
 }
 ,
 
@@ -3017,21 +3018,48 @@
 }
 ,
 
-/* ******************************************************************
-// these next few monsters are taken from the
-// Chronicles of an Age of Darkness, by Hugh Cook
-
-// the quokka is no more ... {dlb}
 {
-    MONS_QUOKKA, 'r', LIGHTGREY, "quokka",
-    M_SPEAKS,
-    0, 10, 382, MH_NATURAL, -3,
-    { 6, 0, 0, 0 },
-    { 1, 3, 5, 0 },
-    2, 13, 10, 7, 250, CE_CLEAN, Z_SMALL, S_SHOUT, I_NORMAL, 1
+    MONS_ELECTRIC_GOLEM, '8', LIGHTCYAN, "electric golem",
+    M_SPELLCASTER | M_RES_ELEC | M_RES_POISON | M_RES_FIRE | M_RES_COLD,
+    0, 10, MONS_ELECTRIC_GOLEM, MH_NATURAL, 5000,
+    { 30, 0, 0, 0 },
+    { 15, 7, 4, 0 },
+    5, 20, 20, 7, 116, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_PLANT, 1
 }
 ,
-****************************************************************** */
+
+{
+    MONS_BALL_LIGHTNING, '*', LIGHTCYAN, "ball lightning",
+    M_SPELLCASTER | M_FLIES | M_RES_ELEC | M_RES_FIRE | M_RES_COLD | M_RES_POISON,
+    0, 20, MONS_BALL_LIGHTNING, MH_NATURAL, 5000,
+    { 5, 0, 0, 0 },
+    { 30, 0, 0, 5 },
+    5, 20, 20, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 1
+}
+,
+
+{
+    MONS_ORB_OF_FIRE, '*', RED, "orb of fire",
+    M_SPELLCASTER | M_FLIES | M_RES_ELEC | M_RES_FIRE | M_RES_COLD | M_RES_POISON,
+    0, 10, MONS_ORB_OF_FIRE, MH_NATURAL, 5000,
+    { 0, 0, 0, 0 },
+    { 30, 0, 0, 150 },
+    20, 20, 20, 7, 117, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 1
+}
+,
+
+// the quokka is no more ... {dlb}
+// Why not? it's a perfectly real animal... we'll just rip out
+// it's cybernetics.-- bwr
+{
+    MONS_QUOKKA, 'r', LIGHTGREY, "quokka",
+    M_WARM_BLOOD,
+    0, 10, MONS_QUOKKA, MH_NATURAL, -1,
+    { 5, 0, 0, 0 },
+    { 1, 3, 5, 0 },
+    2, 13, 10, 7, 250, CE_CLEAN, Z_SMALL, S_SILENT, I_NORMAL, 1
+}
+,
 
 {
     MONS_EYE_OF_DEVASTATION, 'G', YELLOW, "eye of devastation",
@@ -3390,5 +3418,26 @@ not think it fits into Crawl ... {dlb}
 }
 ,
 
+// small simulacrum
+{
+    MONS_SIMULACRUM_SMALL, 'z', WHITE, "",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD,
+    0, 6, MONS_SIMULACRUM_SMALL, MH_UNDEAD, 5000,
+    { 6, 0, 0, 0 },
+    { 2, 3, 5, 0 },
+    10, 4, 7, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+
+// large simulacrum
+{
+    MONS_SIMULACRUM_LARGE, 'Z', WHITE, "",
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD,
+    0, 6, MONS_SIMULACRUM_LARGE, MH_UNDEAD, 5000,
+    { 14, 0, 0, 0 },
+    { 5, 3, 5, 0 },
+    10, 5, 7, 7, 250, CE_CONTAMINATED, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
 
 #endif

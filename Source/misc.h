@@ -56,7 +56,7 @@ void destroy_item(int dest);
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void disarm_trap(struct dist disa[1]);
+void disarm_trap(struct dist &disa);
 
 
 // last updated 12may2000 {dlb}
@@ -86,12 +86,17 @@ void handle_traps(char trt, int i, bool trap_known);
  * *********************************************************************** */
 void in_a_cloud(void);
 
+// Created Sept 1, 2000 -- bwr
+/* ***********************************************************************
+ * called from: acr misc
+ * *********************************************************************** */
+void merfolk_start_swimming(void);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: misc - mstuff2
  * *********************************************************************** */
-void itrap(struct bolt *pbolt, int trapped);
+void itrap(struct bolt &pbolt, int trapped);
 
 
 // last updated 12may2000 {dlb}

@@ -32,7 +32,7 @@ void _setcursortype(int curstype);
 void delay(long time);
 void init_key_to_command();
 void lincurses_shutdown(void);
-void lincurses_startup(bool use_no_black);
+void lincurses_startup(void);
 void textbackground(int bg);
 void textcolor(int col);
 

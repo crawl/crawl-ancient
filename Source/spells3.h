@@ -118,6 +118,13 @@ bool remove_curse(bool suppress_msg);
 void sublimation(int power);
 
 
+// updated Oct 2 -- bwr
+/* ***********************************************************************
+ * called from: spell
+ * *********************************************************************** */
+void simulacrum(int power);
+
+
 // updated 24may2000 {dlb}
 /* ***********************************************************************
  * called from: ability - beam - decks - fight - item_use - spell

@@ -45,6 +45,24 @@
 },
 
 {
+  SPELL_SWAP, "Swap",
+    SPTYP_TRANSLOCATION,
+    3
+},
+
+{
+  SPELL_APPORTATION, "Apportation",
+    SPTYP_TRANSLOCATION,
+    1
+},
+
+{
+  SPELL_TWIST, "Twist",
+    SPTYP_TRANSLOCATION,
+    1
+},
+
+{
     SPELL_CONJURE_FLAME, "Conjure Flame",
      SPTYP_CONJURATION | SPTYP_FIRE ,
      3
@@ -82,7 +100,7 @@
 
 {
     SPELL_POLYMORPH_OTHER, "Polymorph Other",
-     SPTYP_ENCHANTMENT | SPTYP_TRANSMIGRATION ,
+     SPTYP_TRANSMIGRATION ,  // removed enchantment, wasn't needed -- bwr
      5
 },
 
@@ -415,7 +433,7 @@
 },
 
 {
-    SPELL_BURN, "Burn",
+    SPELL_BURN, "Burn", // used by wanderers
      SPTYP_FIRE ,
      1
 },
@@ -626,7 +644,7 @@
 },
 
 {
-    SPELL_CRUSH, "Crush",
+    SPELL_CRUSH, "Crush", // used by wanderers
      SPTYP_EARTH ,
      1
 },
@@ -727,7 +745,7 @@
 {
     SPELL_PROJECTED_NOISE, "Projected Noise",
      SPTYP_ENCHANTMENT ,
-     2
+     1          // reduced from 2 - I've never found it that good --bwr
 },
 
 {
@@ -845,7 +863,7 @@
 },
 
 {
-    SPELL_ARC, "Arc",
+    SPELL_ARC, "Arc",   // used by wanderers
      SPTYP_AIR ,
      1
 },
@@ -892,10 +910,12 @@
      3
 },
 
+// removed SPTYP_POISON... this spell is aimed against poison and doesn't
+// require it (otherwise we'd be needing Ice to fireball Ice Beasts) -- bwr
 {
     SPELL_IGNITE_POISON, "Ignite Poison",
-     SPTYP_FIRE | SPTYP_TRANSMIGRATION | SPTYP_POISON ,
-     6
+     SPTYP_FIRE | SPTYP_TRANSMIGRATION,
+     7
 },
 
 {
@@ -954,7 +974,7 @@
 
 {
     SPELL_FORESCRY, "Forescry",
-     SPTYP_ENCHANTMENT | SPTYP_DIVINATION ,
+     SPTYP_DIVINATION, // -ench, part of enchantment spell reduction -- bwr
      5
 },
 
@@ -967,7 +987,13 @@
 {
     SPELL_WARP_BRAND, "Warp Weapon",
      SPTYP_ENCHANTMENT | SPTYP_TRANSLOCATION ,
-     3
+     6
+     // Yes, at *least* 6... distortion brands were never really indended
+     // to be easily available, they were obviously indended as very
+     // dangerous items you occasionally run into... so they do large
+     // amounts of unresistable damage compared to other brands, and
+     // occasionally do powerful teleportation effects... this spell
+     // shouldn't really be in the game at all. -- bwr
 },
 
 {
@@ -983,9 +1009,9 @@
 },
 
 {
-    SPELL_WARP_FIELD, "Distortion Field",
+    SPELL_DISPERSAL, "Dispersal",
      SPTYP_TRANSLOCATION ,
-     4
+     7
 },
 
 {
@@ -1082,6 +1108,24 @@
   SPELL_STONESKIN, "Stoneskin",
     SPTYP_EARTH | SPTYP_ENCHANTMENT,
     2
+},
+
+{
+  SPELL_SIMULACRUM, "Simulacrum",
+    SPTYP_ICE | SPTYP_NECROMANCY,
+    7
+},
+
+{
+  SPELL_CONJURE_BALL_LIGHTNING, "Conjure Ball Lightning",
+    SPTYP_AIR | SPTYP_CONJURATION,
+    8
+},
+
+{
+  SPELL_FAR_STRIKE, "Far Strike",
+    SPTYP_TRANSLOCATION,
+    3
 },
 
 {

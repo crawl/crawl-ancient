@@ -20,24 +20,18 @@
 #include <stdlib.h>
 
 #include "externs.h"
-
 #include "itemname.h"
 #include "stuff.h"
 #include "wpn-misc.h"
 
-
 #define RA_PROPERTIES 30
-
 
 /*
    The initial generation of a randart is very simple - it occurs
    in dungeon.cc and consists of giving it a few random things - plus & plus2
    mainly.
 */
-
-
-char *rand_wpn_names[] =
-{
+char *rand_wpn_names[] = {
     " of Blood",
     " of Death",
     " of Bloody Death",
@@ -479,7 +473,6 @@ char *rand_wpn_names[] =
     " of ",
     " of ",
 
-
 /* 390: */
     "\"\"",
     "\"\"",
@@ -492,7 +485,6 @@ char *rand_wpn_names[] =
     "\"\"",
     "\"\"",
 
-
 /* 340: */
     " of ",
     " of ",
@@ -504,7 +496,6 @@ char *rand_wpn_names[] =
     " of ",
     " of ",
     " of ",
-
 
 /* 200: */
     "",
@@ -519,9 +510,7 @@ char *rand_wpn_names[] =
     "",
 };
 
-
-char *rand_armour_names[] =
-{
+char *rand_armour_names[] = {
 /* 0: */
     " of Shielding",
     " of Grace",
@@ -614,9 +603,7 @@ char *rand_armour_names[] =
 // Sarcophagus
 };
 
-
 // Remember: disallow unrandart creation in abyss/pan
-
 
 /*
    The following unrandart bits were taken from $pellbinder's mon-util code
@@ -624,13 +611,11 @@ char *rand_armour_names[] =
    not randart.h because they're only used in this code module.
 */
 
-
 #if defined(MAC) || defined(__IBMCPP__)
 #define PACKED
 #else
 #define PACKED __attribute__ ((packed))
 #endif
-
 
 //int unranddatasize;
 
@@ -641,52 +626,54 @@ char *rand_armour_names[] =
 
 struct unrandart_entry
 {
-    char *name /*[32] */ PACKED;             // true name of unrandart (max 31 chars)
-    char *unid_name /*[32] */ PACKED;        // un-id'd name of unrandart (max 31 chars)
-    unsigned char ura_cl PACKED;             // class of ura
-    unsigned char ura_ty PACKED;             // type of ura
-    unsigned char ura_pl PACKED;             // plus of ura
-    unsigned char ura_pl2 PACKED;            // plus2 of ura
-    unsigned char ura_col PACKED;            // colour of ura
+    char *name /*[32] */ PACKED;        // true name of unrandart (max 31 chars)
+    // un-id'd name of unrandart (max 31 chars)
+    char *unid_name /*[32] */ PACKED;
+
+    unsigned char ura_cl PACKED;        // class of ura
+    unsigned char ura_ty PACKED;        // type of ura
+    unsigned char ura_pl PACKED;        // plus of ura
+    unsigned char ura_pl2 PACKED;       // plus2 of ura
+    unsigned char ura_col PACKED;       // colour of ura
     short prpty[RA_PROPERTIES] PACKED;
-    char *spec_descrip1 /*[32] */ PACKED;    // special description added to 'v' command output (max 31 chars)
-    char *spec_descrip2 /*[32] */ PACKED;    // special description added to 'v' command output (max 31 chars)
-    char *spec_descrip3 /*[32] */ PACKED;    // special description added to 'v' command output (max 31 chars)
+
+    // special description added to 'v' command output (max 31 chars)
+    char *spec_descrip1 /*[32] */ PACKED;
+    // special description added to 'v' command output (max 31 chars)
+    char *spec_descrip2 /*[32] */ PACKED;
+    // special description added to 'v' command output (max 31 chars)
+    char *spec_descrip3 /*[32] */ PACKED;
 };
 
 #ifdef __IBMCPP__
 #pragma pack(pop)
 #endif
 
-static struct unrandart_entry unranddata[] =
-{
+static struct unrandart_entry unranddata[] = {
 #include "unrand.h"
 };
 
 #define sura seekunrandart(aclass, atype, aplus, aplus2)
 
-
 char *art_n;
-static FixedVector<char, NO_UNRANDARTS> unrandart_exist;
-
+static FixedVector < char, NO_UNRANDARTS > unrandart_exist;
 
 static int random5(unsigned int randmax);
-static struct unrandart_entry *seekunrandart(unsigned char aclass, unsigned char atype, unsigned char aplus, unsigned char aplus2);
-
-
-
+static struct unrandart_entry *seekunrandart(unsigned char aclass,
+                                             unsigned char atype,
+                                             unsigned char aplus,
+                                             unsigned char aplus2);
 
 static int random5(unsigned int randmax)
 {
     if (randmax == 0)
         return 0;
 
-    return (int) rand() / (RAND_MAX / randmax + 1);     //return rand() % randmax;
+    //return rand() % randmax;
+    return (int) rand() / (RAND_MAX / randmax + 1);
     // must use random (not rand) for the predictable-results-from-known
     //  -srandom-seeds thing to work.
-
 }
-
 
 void set_unrandart_exist(int whun, char is_exist)
 {
@@ -698,43 +685,46 @@ char does_unrandart_exist(int whun)
     return unrandart_exist[whun];
 }
 
-
-int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned char adam, unsigned char aplus, unsigned char aplus2, unsigned char acol, char prop)
+int randart_wpn_properties(unsigned char aclass, unsigned char atype,
+                           unsigned char adam, unsigned char aplus,
+                           unsigned char aplus2, unsigned char acol,
+                           char prop)
 {
-
-    if ((aclass == OBJ_JEWELLERY && adam == 201) || (aclass != OBJ_JEWELLERY && adam == 25))
+    if ((aclass == OBJ_JEWELLERY && adam == 201)
+        || (aclass != OBJ_JEWELLERY && adam == 25))
     {
         struct unrandart_entry *search_unrandarts = sura;
-
         return search_unrandarts->prpty[prop];
     }
 
     long globby = aclass * adam + acol + atype * (aplus % 100) + aplus2 * 100;
     long randstore = random();
-    FixedVector<char, RA_PROPERTIES> proprt;
+    FixedVector < char, RA_PROPERTIES > proprt;
     int i = 0;
     int power_level = ((aplus % 100) - 50) / 3 + (aplus2 - 50) / 3;
 
     srand(globby);
 
     if (aclass == OBJ_ARMOUR)
-      power_level = ((aplus % 100) - 50) / 2 + 2;
+        power_level = ((aplus % 100) - 50) / 2 + 2;
 
     if (aclass == OBJ_JEWELLERY)
-      power_level = 1 + random5(3) + random5(2);
+        power_level = 1 + random5(3) + random5(2);
 
     if (power_level < 0)
-      power_level = 0;
+        power_level = 0;
 
     for (i = 0; i < RA_PROPERTIES; i++)
-      proprt[i] = 0;
+    {
+        proprt[i] = 0;
+    }
 
     if (aclass == OBJ_WEAPONS)  /* Only weapons get brands, of course */
     {
         proprt[RAP_BRAND] = SPWPN_FLAMING + random5(15);        /* brand */
 
         if (random5(6) == 0)
-          proprt[RAP_BRAND] = SPWPN_FLAMING + random5(2);
+            proprt[RAP_BRAND] = SPWPN_FLAMING + random5(2);
 
         if (random5(6) == 0)
             proprt[RAP_BRAND] = SPWPN_ORC_SLAYING + random5(4);
@@ -744,19 +734,28 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
 
         if (proprt[RAP_BRAND] == SPWPN_FLAME
             || proprt[RAP_BRAND] == SPWPN_FROST)
-          proprt[RAP_BRAND] = 0;      /* missile wpns */
+        {
+            proprt[RAP_BRAND] = 0;      /* missile wpns */
+        }
 
         if (proprt[RAP_BRAND] == SPWPN_PROTECTION)
-          proprt[RAP_BRAND] = 0;      /* no protection */
+            proprt[RAP_BRAND] = 0;      /* no protection */
 
-        if (proprt[RAP_BRAND] == SPWPN_DISRUPTION &&
-            ! (atype == WPN_MACE || atype == WPN_GREAT_MACE || atype == WPN_HAMMER))
-          proprt[RAP_BRAND] = SPWPN_NORMAL;
+        if (proprt[RAP_BRAND] == SPWPN_DISRUPTION
+            && !(atype == WPN_MACE || atype == WPN_GREAT_MACE
+                || atype == WPN_HAMMER))
+        {
+            proprt[RAP_BRAND] = SPWPN_NORMAL;
+        }
 
-        if ( launches_things(atype) )
-          proprt[RAP_BRAND] = ( (random5(3) == 0) ? SPWPN_FLAME + random5(2) : SPWPN_NORMAL );
+        if (launches_things(atype))
+        {
+            proprt[RAP_BRAND] = ((random5(3) == 0) ? SPWPN_FLAME + random5(2)
+                                                   : SPWPN_NORMAL);
+        }
 
-        if ( is_demonic(atype) )
+
+        if (is_demonic(atype))
         {
             switch (random5(9))
             {
@@ -795,7 +794,8 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
     if (random5(5) == 0)
         goto skip_mods;
 
-    if (random5(4 + power_level) == 0 && aclass != OBJ_ARMOUR)  /* AC mod - not for armours */
+    /* AC mod - not for armours */
+    if (random5(4 + power_level) == 0 && aclass != OBJ_ARMOUR)
     {
         proprt[RAP_AC] = 1 + random5(3) + random5(3) + random5(3);
         power_level++;
@@ -850,11 +850,11 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
         }
     }
 
-skip_mods:
+  skip_mods:
     if (random5(15) < power_level || aclass == OBJ_WEAPONS)
         goto skip_combat;
-/* Weapons can't get these */
 
+    /* Weapons can't get these */
     if (random5(4 + power_level) == 0)  /* to-hit */
     {
         proprt[RAP_ACCURACY] = 1 + random5(3) + random5(2);
@@ -877,59 +877,88 @@ skip_mods:
         }
     }
 
-skip_combat:
+  skip_combat:
     if (random5(12) < power_level)
         goto finished_powers;
 
 /* res_fire */
-    if (random5(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || (atype != RING_PROTECTION_FROM_FIRE && atype != RING_FIRE && atype != RING_ICE)) && (aclass != OBJ_ARMOUR || (atype != ARM_DRAGON_ARMOUR && atype != ARM_ICE_DRAGON_ARMOUR && atype != ARM_GOLD_DRAGON_ARMOUR)))
+    if (random5(4 + power_level) == 0
+        && (aclass != OBJ_JEWELLERY
+            || (atype != RING_PROTECTION_FROM_FIRE
+                && atype != RING_FIRE
+                && atype != RING_ICE))
+        && (aclass != OBJ_ARMOUR
+            || (atype != ARM_DRAGON_ARMOUR
+                && atype != ARM_ICE_DRAGON_ARMOUR
+                && atype != ARM_GOLD_DRAGON_ARMOUR)))
     {
         proprt[RAP_FIRE] = 1;
         if (random5(5) == 0)
-          proprt[RAP_FIRE]++;
+            proprt[RAP_FIRE]++;
         power_level++;
     }
 
-/* res_cold */
-    if (random5(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || (atype != RING_PROTECTION_FROM_COLD && atype != RING_FIRE && atype != RING_ICE)) && (aclass != OBJ_ARMOUR || (atype != ARM_DRAGON_ARMOUR && atype != ARM_ICE_DRAGON_ARMOUR && atype != ARM_GOLD_DRAGON_ARMOUR)))
+    /* res_cold */
+    if (random5(4 + power_level) == 0
+        && (aclass != OBJ_JEWELLERY
+            || (atype != RING_PROTECTION_FROM_COLD
+                && atype != RING_FIRE
+                && atype != RING_ICE))
+        && (aclass != OBJ_ARMOUR
+            || (atype != ARM_DRAGON_ARMOUR
+                && atype != ARM_ICE_DRAGON_ARMOUR
+                && atype != ARM_GOLD_DRAGON_ARMOUR)))
     {
         proprt[RAP_COLD] = 1;
         if (random5(5) == 0)
-          proprt[RAP_COLD]++;
+            proprt[RAP_COLD]++;
         power_level++;
     }
 
     if (random5(12) < power_level || power_level > 7)
         goto finished_powers;
 
-/* res_elec */
-    if (random5(4 + power_level) == 0 && (aclass != OBJ_ARMOUR || atype != ARM_STORM_DRAGON_ARMOUR))
+    /* res_elec */
+    if (random5(4 + power_level) == 0
+        && (aclass != OBJ_ARMOUR || atype != ARM_STORM_DRAGON_ARMOUR))
     {
         proprt[RAP_ELECTRICITY] = 1;
         power_level++;
     }
+
 /* res_poison */
-    if (random5(5 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_POISON_RESISTANCE) && (aclass != OBJ_ARMOUR || atype != ARM_GOLD_DRAGON_ARMOUR || atype != ARM_SWAMP_DRAGON_ARMOUR))
+    if (random5(5 + power_level) == 0
+        && (aclass != OBJ_JEWELLERY || atype != RING_POISON_RESISTANCE)
+        && (aclass != OBJ_ARMOUR
+            || atype != ARM_GOLD_DRAGON_ARMOUR
+            || atype != ARM_SWAMP_DRAGON_ARMOUR))
     {
         proprt[RAP_POISON] = 1;
         power_level++;
     }
 
-/* prot_life - no necromantic brands on weapons allowed */
-    if (random5(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_TELEPORTATION) && proprt[RAP_BRAND] != SPWPN_DRAINING && proprt[RAP_BRAND] != SPWPN_VAMPIRICISM && proprt[RAP_BRAND] != SPWPN_PAIN)
+    /* prot_life - no necromantic brands on weapons allowed */
+    if (random5(4 + power_level) == 0
+        && (aclass != OBJ_JEWELLERY || atype != RING_TELEPORTATION)
+        && proprt[RAP_BRAND] != SPWPN_DRAINING
+        && proprt[RAP_BRAND] != SPWPN_VAMPIRICISM
+        && proprt[RAP_BRAND] != SPWPN_PAIN)
     {
         proprt[RAP_NEGATIVE_ENERGY] = 1;
         power_level++;
     }
 
-    if (random5(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_PROTECTION_FROM_MAGIC))      /* res magic */
+    /* res magic */
+    if (random5(4 + power_level) == 0
+        && (aclass != OBJ_JEWELLERY || atype != RING_PROTECTION_FROM_MAGIC))
     {
         proprt[RAP_MAGIC] = 20 + random5(100);
         power_level++;
     }
 
-/* see_invis */
-    if (random5(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
+    /* see_invis */
+    if (random5(4 + power_level) == 0
+        && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
     {
         proprt[RAP_EYESIGHT] = 1;
         power_level++;
@@ -938,14 +967,17 @@ skip_combat:
     if (random5(12) < power_level || power_level > 10)
         goto finished_powers;
 
-/* turn invis */
-    if (random5(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
+    /* turn invis */
+    if (random5(10) == 0
+        && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
     {
         proprt[RAP_INVISIBLE] = 1;
         power_level++;
     }
 
-    if (random5(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_LEVITATION))      /* levitate */
+    /* levitate */
+    if (random5(10) == 0
+        && (aclass != OBJ_JEWELLERY || atype != RING_LEVITATION))
     {
         proprt[RAP_LEVITATE] = 1;
         power_level++;
@@ -957,13 +989,16 @@ skip_combat:
         power_level++;
     }
 
-    if (random5(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_TELEPORTATION))   /* teleport */
+    /* teleport */
+    if (random5(10) == 0
+        && (aclass != OBJ_JEWELLERY || atype != RING_TELEPORTATION))
     {
         proprt[RAP_CAN_TELEPORT] = 1;
         power_level++;
     }
 
-    if (random5(10) == 0 && (aclass != OBJ_JEWELLERY || atype != AMU_RAGE))     /* go berserk */
+    /* go berserk */
+    if (random5(10) == 0 && (aclass != OBJ_JEWELLERY || atype != AMU_RAGE))
     {
         proprt[RAP_BERSERK] = 1;
         power_level++;
@@ -976,18 +1011,20 @@ skip_combat:
     }
 
 
-finished_powers:
-    if ( aclass == OBJ_ARMOUR )
-      power_level -= 4;       /* Armours get less powers, and are also less likely to be cursed that wpns */
+  finished_powers:
+    /* Armours get less powers, and are also less likely to be
+       cursed that wpns */
+    if (aclass == OBJ_ARMOUR)
+        power_level -= 4;
 
-    if ( random5(17) >= power_level || power_level < 2 )
-      goto finished_curses;
+    if (random5(17) >= power_level || power_level < 2)
+        goto finished_curses;
 
     switch (random5(9))
     {
     case 0:                     /* makes noise */
-        if ( aclass != OBJ_WEAPONS )
-          break;
+        if (aclass != OBJ_WEAPONS)
+            break;
         proprt[RAP_NOISES] = 1 + random5(4);
         break;
     case 1:                     /* no magic */
@@ -998,7 +1035,7 @@ finished_powers:
             break;
         proprt[RAP_CAUSE_TELEPORTATION] = 5 + random5(15);
         break;
-    case 3:                     /* no teleport - doesn't affect some instantaneous teleports */
+    case 3:   /* no teleport - doesn't affect some instantaneous teleports */
         if (aclass == OBJ_JEWELLERY && atype == RING_TELEPORTATION)
             break;              /* already is a ring of tport */
         if (aclass == OBJ_JEWELLERY && atype == RING_TELEPORT_CONTROL)
@@ -1013,16 +1050,24 @@ finished_powers:
         proprt[RAP_ANGRY] = 1 + random5(8);
         break;
     case 5:                     /* susceptible to fire */
-        if (aclass == OBJ_JEWELLERY && (atype == RING_PROTECTION_FROM_FIRE || atype == RING_FIRE || atype == RING_ICE))
+        if (aclass == OBJ_JEWELLERY
+            && (atype == RING_PROTECTION_FROM_FIRE || atype == RING_FIRE
+                || atype == RING_ICE))
             break;              /* already does this or something */
-        if (aclass == OBJ_ARMOUR && (atype == ARM_DRAGON_ARMOUR || atype == ARM_ICE_DRAGON_ARMOUR || atype == ARM_GOLD_DRAGON_ARMOUR))
+        if (aclass == OBJ_ARMOUR
+            && (atype == ARM_DRAGON_ARMOUR || atype == ARM_ICE_DRAGON_ARMOUR
+                || atype == ARM_GOLD_DRAGON_ARMOUR))
             break;
         proprt[RAP_FIRE] = -1;
         break;
     case 6:                     /* susceptible to cold */
-        if (aclass == OBJ_JEWELLERY && (atype == RING_PROTECTION_FROM_COLD || atype == RING_FIRE || atype == RING_ICE))
+        if (aclass == OBJ_JEWELLERY
+            && (atype == RING_PROTECTION_FROM_COLD || atype == RING_FIRE
+                || atype == RING_ICE))
             break;              /* already does this or something */
-        if (aclass == OBJ_ARMOUR && (atype == ARM_DRAGON_ARMOUR || atype == ARM_ICE_DRAGON_ARMOUR || atype == ARM_GOLD_DRAGON_ARMOUR))
+        if (aclass == OBJ_ARMOUR
+            && (atype == ARM_DRAGON_ARMOUR || atype == ARM_ICE_DRAGON_ARMOUR
+                || atype == ARM_GOLD_DRAGON_ARMOUR))
             break;
         proprt[RAP_COLD] = -1;
         break;
@@ -1033,10 +1078,12 @@ finished_powers:
             break;              /* already is a ring of sustenance */
         proprt[RAP_METABOLISM] = 1 + random5(3);
         break;
-    case 8:                     /* emits mutagenic radiation - increases magic_contamination */
-        proprt[RAP_MUTAGENIC] = 2 + random5(4);         /* property is chance (1 in ...) of increasing magic_contamination */
+    case 8:   /* emits mutagenic radiation - increases magic_contamination */
+        /* property is chance (1 in ...) of increasing magic_contamination */
+        proprt[RAP_MUTAGENIC] = 2 + random5(4);
         break;
     }
+
 /*
    26 - +to-hit (no wpns)
    27 - +to-dam (no wpns)
@@ -1046,27 +1093,35 @@ finished_powers:
     srand(randstore);
 
     return proprt[prop];
-
 }
 
-
-
-
-char *randart_name( unsigned char aclass, unsigned char atype, unsigned char adam, unsigned char aplus, unsigned char aplus2, unsigned char ident_lev )
+int inv_randart_wpn_properties( int index, unsigned char acol, char prop)
 {
+    return (randart_wpn_properties( you.inv_class[ index ],
+                                    you.inv_type[ index ],
+                                    you.inv_dam[ index ],
+                                    you.inv_plus[ index ],
+                                    you.inv_plus2[ index ],
+                                    acol, prop ));
+}
 
-    if ( adam == 25 )
+char *randart_name(unsigned char aclass, unsigned char atype,
+                   unsigned char adam, unsigned char aplus,
+                   unsigned char aplus2, unsigned char ident_lev)
+{
+    if (adam == 25)
     {
         struct unrandart_entry *search_unrandarts = sura;
-        return ( (ident_lev == 0) ? search_unrandarts->unid_name : search_unrandarts->name );
-    }
 
+        return ((ident_lev == 0) ? search_unrandarts->unid_name
+                                 : search_unrandarts->name);
+    }
 
     free(art_n);
     art_n = (char *) malloc(sizeof(char) * 80);
 
-    if ( art_n == NULL )
-      return "Malloc Failed Error";
+    if (art_n == NULL)
+        return "Malloc Failed Error";
 
     strcpy(art_n, "");
 
@@ -1079,70 +1134,29 @@ char *randart_name( unsigned char aclass, unsigned char atype, unsigned char ada
     {
         switch (random5(21))
         {
-        case 0:
-            strcat(art_n, "brightly glowing ");
-            break;
-        case 1:
-            strcat(art_n, "runed ");
-            break;
-        case 2:
-            strcat(art_n, "smoking ");
-            break;
-        case 3:
-            strcat(art_n, "bloodstained ");
-            break;
-        case 4:
-            strcat(art_n, "twisted ");
-            break;
-        case 5:
-            strcat(art_n, "shimmering ");
-            break;
-        case 6:
-            strcat(art_n, "warped ");
-            break;
-        case 7:
-            strcat(art_n, "crystal ");
-            break;
-        case 8:
-            strcat(art_n, "jewelled ");
-            break;
-        case 9:
-            strcat(art_n, "transparent ");
-            break;
-        case 10:
-            strcat(art_n, "encrusted ");
-            break;
-        case 11:
-            strcat(art_n, "pitted ");
-            break;
-        case 12:
-            strcat(art_n, "slimy ");
-            break;
-        case 13:
-            strcat(art_n, "polished ");
-            break;
-        case 14:
-            strcat(art_n, "fine ");
-            break;
-        case 15:
-            strcat(art_n, "crude ");
-            break;
-        case 16:
-            strcat(art_n, "ancient ");
-            break;
-        case 17:
-            strcat(art_n, "ichor-stained ");
-            break;
-        case 18:
-            strcat(art_n, "faintly glowing ");
-            break;
-        case 19:
-            strcat(art_n, "steaming ");
-            break;
-        case 20:
-            strcat(art_n, "shiny ");
-            break;
+        case  0: strcat(art_n, "brightly glowing "); break;
+        case  1: strcat(art_n, "runed "); break;
+        case  2: strcat(art_n, "smoking "); break;
+        case  3: strcat(art_n, "bloodstained "); break;
+        case  4: strcat(art_n, "twisted "); break;
+        case  5: strcat(art_n, "shimmering "); break;
+        case  6: strcat(art_n, "warped "); break;
+        case  7: strcat(art_n, "crystal "); break;
+        case  8: strcat(art_n, "jewelled "); break;
+        case  9: strcat(art_n, "transparent "); break;
+        case 10: strcat(art_n, "encrusted "); break;
+        case 11: strcat(art_n, "pitted "); break;
+        case 12: strcat(art_n, "slimy "); break;
+        case 13: strcat(art_n, "polished "); break;
+        case 14: strcat(art_n, "fine "); break;
+        case 15: strcat(art_n, "crude "); break;
+        case 16: strcat(art_n, "ancient "); break;
+        case 17: strcat(art_n, "ichor-stained "); break;
+        case 18: strcat(art_n, "faintly glowing "); break;
+        case 19: strcat(art_n, "steaming "); break;
+        case 20: strcat(art_n, "shiny "); break;
         }
+
         char st_p3[80];
 
         standard_name_weap(atype, st_p3);
@@ -1168,6 +1182,7 @@ char *randart_name( unsigned char aclass, unsigned char atype, unsigned char ada
         make_name(random5(250), random5(250), random5(250), 3, st_p);
         standard_name_weap(atype, st_p2);
         strcat(art_n, st_p2);
+
         if (random5(3) == 0)
         {
             strcat(art_n, " of ");
@@ -1184,14 +1199,12 @@ char *randart_name( unsigned char aclass, unsigned char atype, unsigned char ada
     srand(randstore);
 
     return art_n;
-
 }
 
-
-
-char *randart_armour_name(unsigned char aclass, unsigned char atype, unsigned char adam, unsigned char aplus, unsigned char aplus2, unsigned char ident_lev)
+char *randart_armour_name(unsigned char aclass, unsigned char atype,
+                          unsigned char adam, unsigned char aplus,
+                          unsigned char aplus2, unsigned char ident_lev)
 {
-
     if (adam == 25)
     {
         struct unrandart_entry *search_unrandarts = sura;
@@ -1202,7 +1215,6 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype, unsigned ch
             return search_unrandarts->name;
     }
 
-
     free(art_n);
     art_n = (char *) malloc(sizeof(char) * 80);
 
@@ -1210,6 +1222,7 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype, unsigned ch
     {
         return "Malloc Failed Error";
     }
+
     strcpy(art_n, "");
 
     long globby = aclass + adam * (aplus % 100) + atype * aplus2;
@@ -1221,69 +1234,27 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype, unsigned ch
     {
         switch (random5(21))
         {
-        case 0:
-            strcat(art_n, "brightly glowing ");
-            break;
-        case 1:
-            strcat(art_n, "runed ");
-            break;
-        case 2:
-            strcat(art_n, "smoking ");
-            break;
-        case 3:
-            strcat(art_n, "bloodstained ");
-            break;
-        case 4:
-            strcat(art_n, "twisted ");
-            break;
-        case 5:
-            strcat(art_n, "shimmering ");
-            break;
-        case 6:
-            strcat(art_n, "warped ");
-            break;
-        case 7:
-            strcat(art_n, "heavily runed ");
-            break;
-        case 8:
-            strcat(art_n, "jewelled ");
-            break;
-        case 9:
-            strcat(art_n, "transparent ");
-            break;
-        case 10:
-            strcat(art_n, "encrusted ");
-            break;
-        case 11:
-            strcat(art_n, "pitted ");
-            break;
-        case 12:
-            strcat(art_n, "slimy ");
-            break;
-        case 13:
-            strcat(art_n, "polished ");
-            break;
-        case 14:
-            strcat(art_n, "fine ");
-            break;
-        case 15:
-            strcat(art_n, "crude ");
-            break;
-        case 16:
-            strcat(art_n, "ancient ");
-            break;
-        case 17:
-            strcat(art_n, "ichor-stained ");
-            break;
-        case 18:
-            strcat(art_n, "faintly glowing ");
-            break;
-        case 19:
-            strcat(art_n, "steaming ");
-            break;
-        case 20:
-            strcat(art_n, "shiny ");
-            break;
+        case  0: strcat(art_n, "brightly glowing "); break;
+        case  1: strcat(art_n, "runed "); break;
+        case  2: strcat(art_n, "smoking "); break;
+        case  3: strcat(art_n, "bloodstained "); break;
+        case  4: strcat(art_n, "twisted "); break;
+        case  5: strcat(art_n, "shimmering "); break;
+        case  6: strcat(art_n, "warped "); break;
+        case  7: strcat(art_n, "heavily runed "); break;
+        case  8: strcat(art_n, "jewelled "); break;
+        case  9: strcat(art_n, "transparent "); break;
+        case 10: strcat(art_n, "encrusted "); break;
+        case 11: strcat(art_n, "pitted "); break;
+        case 12: strcat(art_n, "slimy "); break;
+        case 13: strcat(art_n, "polished "); break;
+        case 14: strcat(art_n, "fine "); break;
+        case 15: strcat(art_n, "crude "); break;
+        case 16: strcat(art_n, "ancient "); break;
+        case 17: strcat(art_n, "ichor-stained "); break;
+        case 18: strcat(art_n, "faintly glowing "); break;
+        case 19: strcat(art_n, "steaming "); break;
+        case 20: strcat(art_n, "shiny "); break;
         }
         char st_p3[80];
 
@@ -1326,21 +1297,20 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype, unsigned ch
     srand(randstore);
 
     return art_n;
-
 }
 
-
-
-
-char *randart_ring_name(unsigned char aclass, unsigned char atype, unsigned char adam, unsigned char aplus, unsigned char aplus2, unsigned char ident_lev)
+char *randart_ring_name(unsigned char aclass, unsigned char atype,
+                        unsigned char adam, unsigned char aplus,
+                        unsigned char aplus2, unsigned char ident_lev)
 {
+    int temp_rand = 0;          // probability determination {dlb}
 
-    int temp_rand = 0;    // probability determination {dlb}
-
-    if ( adam == 201 )
+    if (adam == 201)
     {
         struct unrandart_entry *search_unrandarts = sura;
-        return ( (ident_lev == 0) ? search_unrandarts->unid_name : search_unrandarts->name );
+
+        return ((ident_lev == 0) ? search_unrandarts->unid_name
+                                 : search_unrandarts->name);
     }
 
     char st_p[80];
@@ -1348,8 +1318,8 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype, unsigned char
     free(art_n);
     art_n = (char *) malloc(sizeof(char) * 80);
 
-    if ( art_n == NULL )
-      return "Malloc Failed Error";
+    if (art_n == NULL)
+        return "Malloc Failed Error";
 
     strcpy(art_n, "");
 
@@ -1358,50 +1328,50 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype, unsigned char
 
     srand(globby);
 
-    if ( ident_lev == 0 )
+    if (ident_lev == 0)
     {
         temp_rand = random5(21);
 
-        strcat(art_n, (temp_rand ==  0) ? "brightly glowing" :
-                      (temp_rand ==  1) ? "runed" :
-                      (temp_rand ==  2) ? "smoking" :
-                      (temp_rand ==  3) ? "ruby" :
-                      (temp_rand ==  4) ? "twisted" :
-                      (temp_rand ==  5) ? "shimmering" :
-                      (temp_rand ==  6) ? "warped" :
-                      (temp_rand ==  7) ? "crystal" :
-                      (temp_rand ==  8) ? "diamond" :
-                      (temp_rand ==  9) ? "transparent" :
-                      (temp_rand == 10) ? "encrusted" :
-                      (temp_rand == 11) ? "pitted" :
-                      (temp_rand == 12) ? "slimy" :
-                      (temp_rand == 13) ? "polished" :
-                      (temp_rand == 14) ? "fine" :
-                      (temp_rand == 15) ? "crude" :
-                      (temp_rand == 16) ? "ancient" :
-                      (temp_rand == 17) ? "emerald" :
-                      (temp_rand == 18) ? "faintly glowing" :
-                      (temp_rand == 19) ? "steaming"
-                                        : "shiny" );
+        strcat(art_n,  (temp_rand == 0)  ? "brightly glowing" :
+                       (temp_rand == 1)  ? "runed" :
+                       (temp_rand == 2)  ? "smoking" :
+                       (temp_rand == 3)  ? "ruby" :
+                       (temp_rand == 4)  ? "twisted" :
+                       (temp_rand == 5)  ? "shimmering" :
+                       (temp_rand == 6)  ? "warped" :
+                       (temp_rand == 7)  ? "crystal" :
+                       (temp_rand == 8)  ? "diamond" :
+                       (temp_rand == 9)  ? "transparent" :
+                       (temp_rand == 10) ? "encrusted" :
+                       (temp_rand == 11) ? "pitted" :
+                       (temp_rand == 12) ? "slimy" :
+                       (temp_rand == 13) ? "polished" :
+                       (temp_rand == 14) ? "fine" :
+                       (temp_rand == 15) ? "crude" :
+                       (temp_rand == 16) ? "ancient" :
+                       (temp_rand == 17) ? "emerald" :
+                       (temp_rand == 18) ? "faintly glowing" :
+                       (temp_rand == 19) ? "steaming"
+                                         : "shiny");
 
         strcat(art_n, " ");
-        strcat(art_n, (atype < AMU_RAGE) ? "ring" : "amulet" );
+        strcat(art_n, (atype < AMU_RAGE) ? "ring" : "amulet");
 
         srand(randstore);
 
         return art_n;
     }
 
-    if ( random5(5) == 0 )
+    if (random5(5) == 0)
     {
-        strcat(art_n, (atype < AMU_RAGE) ? "ring" : "amulet" );
+        strcat(art_n, (atype < AMU_RAGE) ? "ring" : "amulet");
         strcat(art_n, rand_armour_names[random5(71)]);
     }
     else
     {
         make_name(random5(250), random5(250), random5(250), 3, st_p);
 
-        strcat(art_n, (atype < AMU_RAGE) ? "ring" : "amulet" );
+        strcat(art_n, (atype < AMU_RAGE) ? "ring" : "amulet");
 
         if (random5(3) == 0)
         {
@@ -1419,57 +1389,51 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype, unsigned char
     srand(randstore);
 
     return art_n;
+}                               // end randart_ring_name()
 
-}          // end randart_ring_name()
-
-
-
-
-static struct unrandart_entry *seekunrandart( unsigned char aclass, unsigned char atype, unsigned char aplus, unsigned char aplus2 )
+static struct unrandart_entry *seekunrandart(unsigned char aclass,
+                                             unsigned char atype,
+                                             unsigned char aplus,
+                                             unsigned char aplus2)
 {
-
     int x = 0;
 
     while (x < NO_UNRANDARTS)
     {
-        if ( unranddata[x].ura_cl == aclass && unranddata[x].ura_ty == atype && unranddata[x].ura_pl % 100 == aplus % 100 && unranddata[x].ura_pl2 == aplus2 )
-          return &unranddata[x];
+        if (unranddata[x].ura_cl == aclass && unranddata[x].ura_ty == atype
+            && unranddata[x].ura_pl % 100 == aplus % 100
+            && unranddata[x].ura_pl2 == aplus2)
+        {
+            return &unranddata[x];
+        }
 
         x++;
     }
 
     return seekunrandart(250, 250, 250, 250);   /* Should *never* happen */
+}                               // end seekunrandart()
 
-}          // end seekunrandart()
-
-
-
-
-int find_okay_unrandart( unsigned char aclass )
+int find_okay_unrandart(unsigned char aclass)
 {
-
     int x, count;
     int ret = -1;
 
     for (x = 0, count = 0; x < NO_UNRANDARTS; x++)
-      if (unranddata[x].ura_cl == aclass && does_unrandart_exist(x) == 0)
-      {
-          count++;
+    {
+        if (unranddata[x].ura_cl == aclass && does_unrandart_exist(x) == 0)
+        {
+            count++;
 
-          if ( random5(count) == 0 )
-            ret = x;
-      }
+            if (random5(count) == 0)
+                ret = x;
+        }
+    }
 
     return ret;
+}                               // end find_okay_unrandart()
 
-}          // end find_okay_unrandart()
-
-
-
-
-void make_item_unrandart( int x, int ura_item )
+void make_item_unrandart(int x, int ura_item)
 {
-
     mitm.base_type[ura_item] = unranddata[x].ura_cl;
     mitm.sub_type[ura_item] = unranddata[x].ura_ty;
     mitm.pluses[ura_item] = unranddata[x].ura_pl;
@@ -1477,87 +1441,80 @@ void make_item_unrandart( int x, int ura_item )
     mitm.colour[ura_item] = unranddata[x].ura_col;
     mitm.special[ura_item] = 25;
 
-    if ( mitm.base_type[ura_item] == OBJ_JEWELLERY )
-      mitm.special[ura_item] = 201;
+    if (mitm.base_type[ura_item] == OBJ_JEWELLERY)
+        mitm.special[ura_item] = 201;
 
     set_unrandart_exist(x, 1);
+}                               // end make_item_unrandart()
 
-}          // end make_item_unrandart()
-
-
-
-
-char *unrandart_descrip( char which_descrip, unsigned char aclass, unsigned char atype, unsigned char aplus, unsigned char aplus2 )
+const char *unrandart_descrip(char which_descrip, unsigned char aclass,
+                              unsigned char atype, unsigned char aplus,
+                              unsigned char aplus2)
 {
-
-    return ( (which_descrip == 0) ? sura->spec_descrip1 :
-             (which_descrip == 1) ? sura->spec_descrip2 :
-             (which_descrip == 2) ? sura->spec_descrip3
-                                  : "Unknown." );
-
 /* Eventually it would be great to have randomly generated descriptions for
    randarts. */
 
-}          // end unrandart_descrip()
+    return ((which_descrip == 0) ? sura->spec_descrip1 :
+            (which_descrip == 1) ? sura->spec_descrip2 :
+            (which_descrip == 2) ? sura->spec_descrip3 : "Unknown.");
 
+}                               // end unrandart_descrip()
 
-
-
-void standard_name_weap( unsigned char item_typ, char glorg[80] )
+void standard_name_weap(unsigned char item_typ, char glorg[80])
 {
+    strcpy(glorg,  (item_typ == WPN_CLUB) ? "club" :
+                   (item_typ == WPN_MACE) ? "mace" :
+                   (item_typ == WPN_FLAIL) ? "flail" :
+                   (item_typ == WPN_KNIFE) ? "knife" :
+                   (item_typ == WPN_DAGGER) ? "dagger" :
+                   (item_typ == WPN_MORNINGSTAR) ? "morningstar" :
+                   (item_typ == WPN_SHORT_SWORD) ? "short sword" :
+                   (item_typ == WPN_LONG_SWORD) ? "long sword" :
+                   (item_typ == WPN_GREAT_SWORD) ? "great sword" :
+                   (item_typ == WPN_SCIMITAR) ? "scimitar" :
+                   (item_typ == WPN_HAND_AXE) ? "hand axe" :
+                   (item_typ == WPN_BATTLEAXE) ? "battleaxe" :
+                   (item_typ == WPN_SPEAR) ? "spear" :
+                   (item_typ == WPN_TRIDENT) ? "trident" :
+                   (item_typ == WPN_HALBERD) ? "halberd" :
+                   (item_typ == WPN_SLING) ? "sling" :
+                   (item_typ == WPN_BOW) ? "bow" :
+                   (item_typ == WPN_CROSSBOW) ? "crossbow" :
+                   (item_typ == WPN_HAND_CROSSBOW) ? "hand crossbow" :
+                   (item_typ == WPN_GLAIVE) ? "glaive" :
+                   (item_typ == WPN_QUARTERSTAFF) ? "quarterstaff" :
+                   (item_typ == WPN_SCYTHE) ? "scythe" :
+                   (item_typ == WPN_EVENINGSTAR) ? "eveningstar" :
+                   (item_typ == WPN_QUICK_BLADE) ? "quick blade" :
+                   (item_typ == WPN_KATANA) ? "katana" :
+                   (item_typ == WPN_EXECUTIONERS_AXE) ? "executioner's axe" :
+                   (item_typ == WPN_DOUBLE_SWORD) ? "double sword" :
+                   (item_typ == WPN_TRIPLE_SWORD) ? "triple sword" :
+                   (item_typ == WPN_HAMMER) ? "hammer" :
+                   (item_typ == WPN_ANCUS) ? "ancus" :
+                   (item_typ == WPN_WHIP) ? "whip" :
+                   (item_typ == WPN_SABRE) ? "sabre" :
+                   (item_typ == WPN_DEMON_BLADE) ? "demon blade" :
+                   (item_typ == WPN_DEMON_WHIP) ? "demon whip" :
+                   (item_typ == WPN_DEMON_TRIDENT) ? "demon trident" :
+                   (item_typ == WPN_BROAD_AXE) ? "broad axe" :
+                   (item_typ == WPN_AXE) ? "axe" :
+                   (item_typ == WPN_SPIKED_FLAIL) ? "spiked flail" :
+                   (item_typ == WPN_GREAT_MACE) ? "great mace" :
+                   (item_typ == WPN_GREAT_FLAIL) ? "great flail" :
 
-    strcpy(glorg, (item_typ == WPN_CLUB)              ? "club" :
-                  (item_typ == WPN_MACE)              ? "mace" :
-                  (item_typ == WPN_FLAIL)             ? "flail" :
-                  (item_typ == WPN_KNIFE)             ? "knife" :
-                  (item_typ == WPN_DAGGER)            ? "dagger" :
-                  (item_typ == WPN_MORNINGSTAR)       ? "morningstar" :
-                  (item_typ == WPN_SHORT_SWORD)       ? "short sword" :
-                  (item_typ == WPN_LONG_SWORD)        ? "long sword" :
-                  (item_typ == WPN_GREAT_SWORD)       ? "great sword" :
-                  (item_typ == WPN_SCIMITAR)          ? "scimitar" :
-                  (item_typ == WPN_HAND_AXE)          ? "hand axe" :
-                  (item_typ == WPN_BATTLEAXE)         ? "battleaxe" :
-                  (item_typ == WPN_SPEAR)             ? "spear" :
-                  (item_typ == WPN_TRIDENT)           ? "trident" :
-                  (item_typ == WPN_HALBERD)           ? "halberd" :
-                  (item_typ == WPN_SLING)             ? "sling" :
-                  (item_typ == WPN_BOW)               ? "bow" :
-                  (item_typ == WPN_CROSSBOW)          ? "crossbow" :
-                  (item_typ == WPN_HAND_CROSSBOW)     ? "hand crossbow" :
-                  (item_typ == WPN_GLAIVE)            ? "glaive" :
-                  (item_typ == WPN_QUARTERSTAFF)      ? "quarterstaff" :
-                  (item_typ == WPN_SCYTHE)            ? "scythe" :
-                  (item_typ == WPN_EVENINGSTAR)       ? "eveningstar" :
-                  (item_typ == WPN_QUICK_BLADE)       ? "quick blade" :
-                  (item_typ == WPN_KATANA)            ? "katana" :
-                  (item_typ == WPN_EXECUTIONERS_AXE)  ? "executioner's axe" :
-                  (item_typ == WPN_DOUBLE_SWORD)      ? "double sword" :
-                  (item_typ == WPN_TRIPLE_SWORD)      ? "triple sword" :
-                  (item_typ == WPN_HAMMER)            ? "hammer" :
-                  (item_typ == WPN_ANCUS)             ? "ancus" :
-                  (item_typ == WPN_WHIP)              ? "whip" :
-                  (item_typ == WPN_SABRE)             ? "sabre" :
-                  (item_typ == WPN_DEMON_BLADE)       ? "demon blade" :
-                  (item_typ == WPN_DEMON_WHIP)        ? "demon whip" :
-                  (item_typ == WPN_DEMON_TRIDENT)     ? "demon trident" :
-                  (item_typ == WPN_BROAD_AXE)         ? "broad axe" :
-                  (item_typ == WPN_AXE)               ? "axe" :
-                  (item_typ == WPN_SPIKED_FLAIL)      ? "spiked flail" :
-                  (item_typ == WPN_GREAT_MACE)        ? "great mace" :
-                  (item_typ == WPN_GREAT_FLAIL)       ? "great flail" :
-                  (item_typ == WPN_GIANT_CLUB)        ? ( (getenv("BOARD_WITH_NAIL")) ? "two-by-four" : "giant club" ) :
-                  (item_typ == WPN_GIANT_SPIKED_CLUB) ? ( (getenv("BOARD_WITH_NAIL")) ? "board with nail" : "giant spiked club" )
-                                                      : "unknown weapon" );
+           (item_typ == WPN_GIANT_CLUB) ? ((getenv("BOARD_WITH_NAIL"))
+                                   ? "two-by-four" : "giant club") :
 
-}          // end standard_name_weap()
+           (item_typ == WPN_GIANT_SPIKED_CLUB) ? ((getenv("BOARD_WITH_NAIL"))
+                                   ? "board with nail" : "giant spiked club")
 
+                                   : "unknown weapon");
+}                               // end standard_name_weap()
 
-
-
-void standard_name_armour( unsigned char item_typ, unsigned char item_plus2, char glorg[80] )
+void standard_name_armour(unsigned char item_typ, unsigned char item_plus2,
+                          char glorg[80])
 {
-
     strcpy(glorg, "");
 
     switch (item_typ)
@@ -1606,12 +1563,12 @@ void standard_name_armour( unsigned char item_typ, unsigned char item_plus2, cha
         strcat(glorg, "gloves");
         break;
     case ARM_BOOTS:
-        if ( item_plus2 == 0 )
-          strcat(glorg, "boots");
-        if ( item_plus2 == 1 )
-          strcat(glorg, "naga barding");
-        if ( item_plus2 == 2 )
-          strcat(glorg, "centaur barding");
+        if (item_plus2 == 0)
+            strcat(glorg, "boots");
+        if (item_plus2 == 1)
+            strcat(glorg, "naga barding");
+        if (item_plus2 == 2)
+            strcat(glorg, "centaur barding");
         break;
     case ARM_BUCKLER:
         strcat(glorg, "buckler");
@@ -1674,5 +1631,4 @@ void standard_name_armour( unsigned char item_typ, unsigned char item_plus2, cha
         strcat(glorg, "swamp dragon armour");
         break;
     }
-
-}          // end standard_name_armour()
+}                               // end standard_name_armour()

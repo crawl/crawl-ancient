@@ -1,22 +1,30 @@
 #
 # Crawl Init file
 #
-# Lines preceded by # are comments, and are ignored. All others control
-# various user interface options
+# Lines begining with '#' are comments.  The basic syntax is:
 #
-# Player name
-# If this line is absent or you leave the space after the = blank,
-# you are prompted for your name every time you play.
-# If there is a name after the =, this will be used every time.
+# field = value         or      field.subfield = value
 #
-name=
+# Only one specification is allowed per line.
+#
+# The terms are typically case-insensitive except in the fairly obvious
+# cases (the character's name and specifying files or directories when
+# on a system that has case-sensitive filenames).
+#
+# White space is stripped from the begining and end of the line, as
+# well as imediately before and after the '='.  All other whitespace
+# is left alone.
+#
 
 #
+# Player name
+#
+
+# name=
+
 # Directory for reading macro.txt and init.txt, and dumping characters.
-# It should end with the path delimiter.  You may not need this
-#
-#crawl_dir=/u/bwross/crawl/
-#
+# It should end with the path delimiter.
+# crawl_dir=
 
 # Here's a list of autopickup types:
 #
@@ -26,7 +34,7 @@ name=
 #    /          Wands
 #    %          Food
 #    ?          Scrolls
-#    = or "     Jewellery
+#    " or =     jewellery
 #    !          Potions
 #    + or :     Books
 #    \ or |     Staves
@@ -34,24 +42,160 @@ name=
 #    }          Misc items
 #    X          Corpses
 #    $          Gold
-#
-# If you add any one of these to the autopickup list below, items of that
-# type will be automatically picked up when you walk over them.
-#
-autopickup=$?!:+="/0\}
 
-# How much information do we want in our character dumps?
-# With verbose_dump=1, all stats of special weapons (even generic
-# properties) and rings/amulets are printed out.
-# Otherwise, only those properties which are specific to an "artefact" item
-# (ie one whose powers cannot be predicted from its name) are given.
+# autopickup = $?!:"/0}%
+
+# verbose dump causes less important item details to appear in character dumps
+# verbose_dump  = false
+
+# Colours out of sight map features on the playing screen
+# colour_map    = true
+
+# Cleans up out of sight monsters and clouds on the map
+# clean_map     = false
+
+# Open doors by moving on to them
+# easy_open     = false
+
+# Auto-switch to uncursed short blade for butchery (EXPERIMENTAL!)
+# easy_butcher  = true
+
+# Allows auto removal of armour when dropping it
+# easy_armour   = false
+
+# Make confirmation queations easier to answer:
+#       none = force capitals on Y/N questions
+#       safe = force only on questions that will end game
+#       all  = never force capitals
+
+# easy_confirm  = safe
+
+# This option adds the text "uncursed" to items where the
+# curse status is relevent and known.  Does not bother to
+# show "uncursed" on items that are fully identified (showing pluses),
+# since that wound be redundant and waste space.
+
+# show_uncursed = true
+
 #
-verbose_dump=1
+# The weapon option allows defaulting on the weapon selection screen
 #
-# Do we want important locations (stairs etc) on the play-screen map to be
-# colour coded?
-colour_map=1
+# Valid weapons are short sword, hand axe, spear, mace, and trident...
+# although tridents are restricted to only merfolk and gladiators, so
+# you'll get queries for the illegal cases.
 #
-# Do we want monsters and clouds erased from the map?
-clean_map=0
+
+# weapon = hand axe
+
 #
+# These allow auto-selection of other third-screen options.
+#
+# Select "random" for random choice.
+#
+# chaos_knight => Xom or Makleb
+# death_knight => necromancy or Yredelemnul
+# priest       => Zin or Yredelemnul
+#
+
+# chaos_knight = xom
+# death_knight = necromancy
+# priest       = random
+
+#
+# The random_pick option will make randomly generate a character,
+# the above options (weapons and class options) will override where
+# appropriate.
+#
+
+# random_pick = true
+
+# Macro colours to other colours
+#
+# Useful for terminals where some colours are hards to read (and cannot
+# be adjusted), as well as for creating a custom scheme, especially
+# when used with the background option on a terminal with a non-black
+# background.
+#
+# Format is colour.OLDCOLOUR = NEWCOLOUR, later rules take preference and
+# the NEWCOLOUR is always literal (ie. it won't re-evaluate to a different
+# colour).
+#
+# The colours are:
+#
+# black, blue, green, cyan, red, magenta, brown, lightgrey, darkgrey,
+# lightblue, lightgreen, lightcyan, lightred, lightmagenta, yellow, white
+#
+# lightgray = lightgrey, darkgray = darkgrey
+
+# colour.lightgray = black
+# colour.white     = black
+# colour.lightcyan = cyan
+# colour.yellow    = brown
+
+#
+# always_greet will give the race/class and god messages everytime the
+# game is started.
+#
+
+# always_greet = true
+
+# Set the default background colour of your window
+# Warning: setting this to a value different than the window's background
+#          colour, will probably result in some very ugly results.
+#
+# Warning: only black - lightgrey from the above list can be used here, the
+#          other light colours, darkgrey, yellow, and white cannot be used
+
+# background = lightgrey
+
+# Message channel options:
+#
+# Format is channel.CHANNEL_NAME = (COLOUR|mute|default|on|off|plain)
+#
+# CHANNEL_NAME can currently be one of these:
+#   plain           = regular text (and things "uncoloured")
+#   prompt          = input prompts to the player
+#   god             = messages from the gods
+#   duration        = messages about character spells/effects wearing off
+#   danger          = serious threats to the characters existence
+#   food            = warnings about food
+#   warning         = various other warnings
+#   recovery        = recovery from disease/stat loss/poison conditions
+#   talk            = monsters talking (acting)
+#   intrinsic_gain  = level/stat/species power gains
+#   mutation        = gain/lose mutations
+#   monster_spell   = messages about monsters gesturing and casting spells
+#   monster_enchant = messages pertaining to monster enchantments (up or down)
+#   monster_damage  = messages telling how damaged a monster is
+#
+# COLOUR can be any of the colours in the colour section above.
+#
+# Other channel options:
+#
+#   mute    = show no messages from channel (dangerous, be careful!)
+#   default = turn channel on to it's default "colourful" scheme
+#   on      = same as default
+#   plain   = make channel the same colour as the "plain" channel
+#             (won't do anything silly like "mute" if plain == mute, though)
+#   off     = same as plain
+#
+# Note: The only multi-colour channels currently are monster_damage and
+#       god.  Setting god to a COLOUR will make all god messages that
+#       colour.  Setting monster_damage to a colour will make the
+#       "monster dies" messages that colour, and the "injured" messages
+#       will be plain coloured.  More control of these and other channels
+#       will be coming later.
+#
+
+# channel.plain = green
+# channel.god = default
+# channel.talk = mute
+# channel.warning = plain
+
+#
+# hp_warning gives "* * * LOW HITPOINT WARNING * * *" on the danger channel
+# when the player takens damage and their hitpoints are less than this
+# percentage of their maximum (use 0 to turn off these messages).
+
+
+# hp_warning = 25

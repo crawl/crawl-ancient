@@ -29,6 +29,18 @@ characteristics:
      o  Your rate of skill advancement
      o  Various special abilities and powers
 
+Note: Some species are slower than humans in most/all skills.  For some
+classes these races may seem to have very few skills because they haven't
+quite earned the first level of several of their skills (Centaurs are
+notable in this regard... although non-human Wanderers can appear to
+start with no apparent skills at all).  This isn't a bug or an oversight,
+these species are just particularly weaker than humans at these classes.
+
+If you practise the skills you think or know are missing early on, they
+should pick up the remaining skills very quickly (and their training will be
+more complete).
+
+
 The species:
 
 Human:
@@ -315,6 +327,31 @@ Kenku:
   Kenku do not appreciate any form of servitude, and so are poor at using
   invocations. Their light avian bodies cannot sustain a great deal of injury.
 
+Merfolk:
+
+  The Merfolk are a hybrid race of half-human, half-fish that typically
+  live in the oceans and rivers and seldom come onto the land.  The merfolk
+  aren't as limited on land as some myths suggest, their tails will quickly
+  reform into legs once they leave the water (and, likewise, their legs
+  will quickly reform into a tail should they ever enter water).  Their
+  agility is often misjudged, and they tend to be surprising nimble on
+  land as well as in the water.  Experts at swimming they need not fear
+  drowning as they can quickly slip out of any encumbering armour during
+  the transformation into their half-fish form.
+
+  The Merfolk have developed their martial arts strongly on thrusting
+  and grappling, since those are the most efficient ways to fight
+  underwater.  They, therefore, prefer polearms and short swords above
+  all other weapons, although they can also use longer swords quite well.
+
+  As spellcasters, they tend to be quite good in specific areas.  Their
+  mystical relationship with water makes it easier for them to use
+  divination, poison, and ice magics... which use water occasionally
+  as a material component.  The legendary water magic of the merfolk
+  was lost in ancient times, but some of that affinity still remains.
+  The instability of their own morphogenic matrix has made them very
+  accompished transmuters, but most other magics seem foreign to them.
+
 Note:
 
   Some species have special abilities which can be accessed by the 'a'
@@ -421,6 +458,11 @@ Priests:
    for which has been lost in the mists of time; Priests are not in any way
    restricted in their choice of weapon skills.
 
+Healers:
+
+  The Healer is a priest of Elyvilon. Healers begin with minor healing
+  powers, but can gain far greater abilities in the long run.
+
 Magicians:
 
   The magician is not a class, but a type of class. A magician is the best
@@ -438,11 +480,11 @@ Magicians:
 
   The Enchanter specialises in the more subtle area of enchantment magic.
   Although not as directly powerful as conjurations, high-level enchantments
-  offer a wide range of very handy effects. As there are no useful
-  enchantment spells of the first level, the Enchanter begins with a random
-  attack spell and has a magic wand to help survive until he or she can
-  start learning to use the craft properly, and is equipped with lightly
-  enchanted weapons and armour.
+  offer a wide range of very handy effects. The Enchanter begins with
+  lightly enchanted weapons and armour, but no direct damage spell (since
+  enchantments does not deal with direct attacks).  Instead they begin
+  with the "confusing touch" spell and some enchanted darts, which should
+  help them out until they can use the higher level enchantment spells.
 
   The Summoner specialises in calling creatures from this and other worlds
   to give assistance. Although they can at first summon only very wimpy
@@ -466,10 +508,17 @@ Magicians:
   Warpers specialise in translocations, and are experts in travelling long
   distances and positioning themselves precisely.
 
-Healers:
+Wanderers:
 
-  The Healer is a priest of Elyvilon. Healers begin with minor healing
-  powers, but can gain far greater abilities in the long run.
+  Wanderers are people who have not learned a specific trade.  Instead,
+  they've traveled around become a "Jack-of-all-trades, master of none".
+  They start the game with a large assortment of skills and maybe some
+  small items they picked up along the way, but other than that they're
+  pretty much on their own.  Non-human wanderers might not even know which
+  skills they have (since they haven't quite learned enough for one full
+  level), and therefore make for an additional challenge... although, you
+  shouldn't expect human wanderers to be easy either (this class is
+  typically harder to play than the other classes).
 
 ----------------------------------------------------------------------------
                                 EXPERIENCE

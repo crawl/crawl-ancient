@@ -42,7 +42,8 @@ bool forget_spell(void);
  * called from: fight - it_use2 - it_use3 - items - religion - spells -
  *              spells2 - spells4
  * *********************************************************************** */
-bool lose_stat(unsigned char which_stat, unsigned char stat_loss);
+bool lose_stat(unsigned char which_stat, unsigned char stat_loss,
+               bool force = false);
 
 
 // last updated 12may2000 {dlb}
@@ -70,14 +71,14 @@ bool recharge_wand(void);
 /* ***********************************************************************
  * called from: mstuff2
  * *********************************************************************** */
-void direct_effect(struct bolt *pbolt);
+void direct_effect(struct bolt &pbolt);
 
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: mstuff2
  * *********************************************************************** */
-void mons_direct_effect(struct bolt *pbolt, int i);
+void mons_direct_effect(struct bolt &pbolt, int i);
 
 
 // last updated 12may2000 {dlb}

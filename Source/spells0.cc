@@ -43,11 +43,8 @@
 #include <curses.h>
 #endif
 
-
-
-char spell_list( void )
+char spell_list(void)
 {
-
     char st_pass[60];
     int j;
     int lines = 0;
@@ -69,17 +66,17 @@ char spell_list( void )
 
     strcpy(st_pass, "");
     clrscr();
-    cprintf(" Your Spells                      Type                          Success   Level");
+    cprintf( " Your Spells                      Type                          Success   Level" );
     lines++;
 
-    if ( lines > NUMBER_OF_LINES - 2 )
+    if (lines > NUMBER_OF_LINES - 2)
     {
         gotoxy(1, NUMBER_OF_LINES);
         cprintf("-more-");
 
         ki = getch();
 
-        if ( ki == 27 )
+        if (ki == 27)
         {
 #ifdef DOS_TERM
             puttext(1, 1, 80, 25, buffer);
@@ -87,7 +84,7 @@ char spell_list( void )
             return 27;
         }
 
-        if ( ki >= 'A' && ki <= 'z' )
+        if (ki >= 'A' && ki <= 'z')
         {
 #ifdef DOS_TERM
             puttext(1, 1, 80, 25, buffer);
@@ -95,8 +92,8 @@ char spell_list( void )
             return ki;
         }
 
-        if ( ki == 0 )
-          ki = getch();
+        if (ki == 0)
+            ki = getch();
 
         lines = 0;
         clrscr();
@@ -104,8 +101,8 @@ char spell_list( void )
         anything = 0;
     }
 
-    if ( lines > 1 )
-      cprintf(EOL " ");
+    if (lines > 1)
+        cprintf(EOL " ");
 
     for (j = 0; j < 25; j++)
     {
@@ -116,7 +113,7 @@ char spell_list( void )
 
             ki = getch();
 
-            if ( ki == 27 )
+            if (ki == 27)
             {
 #ifdef DOS_TERM
                 puttext(1, 1, 80, 25, buffer);
@@ -124,7 +121,7 @@ char spell_list( void )
                 return 27;
             }
 
-            if ( ki >= 'A' && ki <= 'z' )
+            if (ki >= 'A' && ki <= 'z')
             {
 #ifdef DOS_TERM
                 puttext(1, 1, 80, 25, buffer);
@@ -132,8 +129,8 @@ char spell_list( void )
                 return ki;
             }
 
-            if ( ki == 0 )
-              ki = getch();
+            if (ki == 0)
+                ki = getch();
 
             lines = 0;
             clrscr();
@@ -141,12 +138,12 @@ char spell_list( void )
             anything = 0;
         }
 
-        if ( you.spells[j] != SPELL_NO_SPELL )
+        if (you.spells[j] != SPELL_NO_SPELL)
         {
             anything++;
 
-            if ( lines > 0 )
-              cprintf(EOL);
+            if (lines > 0)
+                cprintf(EOL);
 
             lines++;
             cprintf(" ");
@@ -164,12 +161,14 @@ char spell_list( void )
             already = false;
 
             for (i = 0; i <= SPTYP_LAST_EXPONENT; i++)
-              if ( spell_typematch(you.spells[j], 1<<i) )
-              {
-                  print_slash(already);
-                  cprintf(spelltype_name(1<<i));
-                  already = true;
-              }
+            {
+                if (spell_typematch(you.spells[j], 1 << i))
+                {
+                    print_slash(already);
+                    cprintf(spelltype_name(1 << i));
+                    already = true;
+                }
+            }
 
             char sval[4];
 
@@ -178,20 +177,18 @@ char spell_list( void )
 
             int spell_f = spell_fail(you.spells[j]);
 
-            cprintf( (spell_f == 100) ? "Useless" :
-                     (spell_f  >  90) ? "Terrible" :
-                     (spell_f  >  80) ? "Cruddy" :
-                     (spell_f  >  70) ? "Bad" :
-                     (spell_f  >  60) ? "Very Poor" :
-                     (spell_f  >  50) ? "Poor" :
-                     (spell_f  >  40) ? "Fair" :
-                     (spell_f  >  30) ? "Good" :
-                     (spell_f  >  20) ? "Very Good" :
-                     (spell_f  >  10) ? "Great" :
-                     (spell_f  >   0) ? "Excellent"
+            cprintf( (spell_f == 100) ? "Useless"   :
+                     (spell_f >   90) ? "Terrible"  :
+                     (spell_f >   80) ? "Cruddy"    :
+                     (spell_f >   70) ? "Bad"       :
+                     (spell_f >   60) ? "Very Poor" :
+                     (spell_f >   50) ? "Poor"      :
+                     (spell_f >   40) ? "Fair"      :
+                     (spell_f >   30) ? "Good"      :
+                     (spell_f >   20) ? "Very Good" :
+                     (spell_f >   10) ? "Great"     :
+                     (spell_f >    0) ? "Excellent"
                                       : "Perfect" );
-
-            //gotoxy(70, wherey());
 
             gotoxy(77, wherey());
 
@@ -200,12 +197,11 @@ char spell_list( void )
         }
     }                           // end of j loop
 
-    if ( anything > 0 )
+    if (anything > 0)
     {
-
         ki = getch();
 
-        if ( ki >= 'A' && ki <= 'z' )
+        if (ki >= 'A' && ki <= 'z')
         {
 #ifdef DOS_TERM
             puttext(1, 1, 80, 25, buffer);
@@ -213,8 +209,8 @@ char spell_list( void )
             return ki;
         }
 
-        if ( ki == 0 )
-          ki = getch();
+        if (ki == 0)
+            ki = getch();
 
 #ifdef DOS_TERM
         puttext(1, 1, 80, 25, buffer);
@@ -230,41 +226,33 @@ char spell_list( void )
     ki = getch();
 
     return ki;
+}                               // end spell_list()
 
-}          // end spell_list()
-
-
-
-
-void print_slash( bool already )
+void print_slash(bool already)
 {
-
-    if ( already )
-      cprintf("/");
+    if (already)
+        cprintf("/");
 
     return;
+}                               // end print_slash()
 
-}          // end print_slash()
-
-
-
-
-int spell_fail( int spell )
+int spell_fail(int spell)
 {
     int chance = 60;
     int chance2 = 0, armour = 0;
 
     chance -= 6 * spell_spec(spell);
-    chance -= (you.intel << 1);
+    chance -= (you.intel * 2);
 
     //chance -= (you.intel - 10) * abs(you.intel - 10);
     //chance += spell_difficulty(spell) * spell_difficulty(spell) * 3; //spell_difficulty(spell);
 
-    if ( you.equip[EQ_BODY_ARMOUR] != -1 )
+    if (you.equip[EQ_BODY_ARMOUR] != -1)
     {
 
         int ev_penalty = abs(property(OBJ_ARMOUR,
-                    you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION));
+                                      you.inv_type[you.equip[EQ_BODY_ARMOUR]],
+                                      PARM_EVASION));
 
         // The minus 15 is to make the -1 light armours not so bad
         armour += (20 * ev_penalty) - 15;
@@ -278,54 +266,52 @@ int spell_fail( int spell )
         //     easily be overcome by gaining spell skills... and a lot
         //     faster than any reasonable rate of bonus here.
         int lim_str = (you.strength > 30) ? 30 :
-                      (you.strength < 10) ? 10
-                                          : you.strength;
+                      (you.strength < 10) ? 10 : you.strength;
 
-        armour -= ( (you.skills[SK_ARMOUR] * lim_str) / 15 );
+        armour -= ((you.skills[SK_ARMOUR] * lim_str) / 15);
 
+        int race_arm = (int) (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30);
         int racial_type = DARM_PLAIN;
 
-        if ( player_genus(GENPC_DWARVEN) )
-          racial_type = DARM_DWARVEN;
-        else if ( player_genus(GENPC_ELVEN) )
-          racial_type = DARM_ELVEN;
-        else if ( you.species == SP_HILL_ORC )
-          racial_type = DARM_ORCISH;
+        if (player_genus(GENPC_DWARVEN))
+            racial_type = DARM_DWARVEN;
+        else if (player_genus(GENPC_ELVEN))
+            racial_type = DARM_ELVEN;
+        else if (you.species == SP_HILL_ORC)
+            racial_type = DARM_ORCISH;
 
-// Elven armour gives everyone some benefit to spellcasting,
-// Dwarven armour hinders everyone.
-        switch ( (int) (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30) )
+        // Elven armour gives everyone some benefit to spellcasting,
+        // Dwarven armour hinders everyone.
+        switch (race_arm)
         {
-          case DARM_ELVEN:
-            armour -= 10;
+        case DARM_ELVEN:
+            armour -= 20;
             break;
-          case DARM_DWARVEN:
+        case DARM_DWARVEN:
             armour += 10;
             break;
-          default:
+        default:
             break;
         }
 
-// Armour of the same racial type reduces penalty.
-        if ( racial_type != DARM_PLAIN
-            && (int) (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30) == racial_type )
-          armour -= 10;
+        // Armour of the same racial type reduces penalty.
+        if (racial_type != DARM_PLAIN && race_arm == racial_type)
+            armour -= 10;
 
         if (armour > 0)
-          chance += armour;
+            chance += armour;
     }
 
     if (you.equip[EQ_WEAPON] != -1
-        && you.inv_class[you.equip[EQ_WEAPON]] != OBJ_STAVES)
+            && you.inv_class[you.equip[EQ_WEAPON]] != OBJ_STAVES)
     {
         int wpn_penalty = 0;
 
         if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
         {
-            wpn_penalty = (5 *
-                           (property(OBJ_WEAPONS,
-                                     you.inv_type[you.equip[EQ_WEAPON]],
-                                     PWPN_SPEED) - 12)) / 2;
+            wpn_penalty = (3 * (property(OBJ_WEAPONS,
+                                         you.inv_type[you.equip[EQ_WEAPON]],
+                                         PWPN_SPEED) - 12)) / 2;
         }
 
         if (wpn_penalty > 0)
@@ -346,57 +332,37 @@ int spell_fail( int spell )
 
         case ARM_LARGE_SHIELD:
             // *BCR* Large chars now get a lower penalty for large shields
-            if ( ( you.species >= SP_OGRE && you.species <= SP_OGRE_MAGE ) || player_genus(GENPC_DRACONIAN) )
-              chance += 20;
+            if ((you.species >= SP_OGRE && you.species <= SP_OGRE_MAGE)
+                || player_genus(GENPC_DRACONIAN))
+            {
+                chance += 20;
+            }
             else
-              chance += 30;
+                chance += 30;
             break;
         }
     }
 
     switch (spell_difficulty(spell))
     {
-    case 1:
-        chance += 3;
-        break;
-    case 2:
-        chance += 15;
-        break;
-    case 3:
-        chance += 35;
-        break;
-    case 4:
-        chance += 70;
-        break;
-    case 5:
-        chance += 100;
-        break;
-    case 6:
-        chance += 150;
-        break;
-    case 7:
-        chance += 200;
-        break;
-    case 8:
-        chance += 260;
-        break;
-    case 9:
-        chance += 330;
-        break;
-    case 10:
-        chance += 420;
-        break;
-    case 11:
-        chance += 500;
-        break;
-    case 12:
-        chance += 600;
-        break;
+    case  1: chance +=   3; break;
+    case  2: chance +=  15; break;
+    case  3: chance +=  35; break;
+    case  4: chance +=  70; break;
+    case  5: chance += 100; break;
+    case  6: chance += 150; break;
+    case  7: chance += 200; break;
+    case  8: chance += 260; break;
+    case  9: chance += 330; break;
+    case 10: chance += 420; break;
+    case 11: chance += 500; break;
+    case 12: chance += 600; break;
+    default: chance += 750; break;
     }
 
     //if (chance < 1 ) chance = 0;
     if (chance > 100)
-      chance = 100;
+        chance = 100;
 
     chance2 = chance;
 
@@ -449,7 +415,7 @@ int spell_fail( int spell )
     if (chance < -180)
         chance2 = 0;
 
-    if ( you.religion == GOD_VEHUMET
+    if (you.religion == GOD_VEHUMET
         && you.duration[DUR_PRAYER]
         && (!player_under_penance() && you.piety >= 50)
         && (spell_typematch(spell, SPTYP_CONJURATION)
@@ -458,60 +424,68 @@ int spell_fail( int spell )
         chance2 /= 2;
     }
 
-    if (you.duration[DUR_TRANSFORMATION] > 0
-        && you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
+    if (you.duration[DUR_TRANSFORMATION] > 0)
     {
-        chance2 += 20;
+        switch (you.attribute[ATTR_TRANSFORMATION])
+        {
+        case TRAN_BLADE_HANDS:
+            chance2 += 20;
+            break;
+
+        case TRAN_SPIDER:
+            chance2 += 10;
+            break;
+        }
     }
 
     return chance2;
-}          // end spell_fail()
+}                               // end spell_fail()
 
-
-
-int spell_spec( int spell )
+int spell_spec(int spell)
 {
-  unsigned int bit;
-  int ndx;
-  int power = (you.skills[SK_SPELLCASTING] / 2) + player_mag_abil(false);
-  int enhanced = 0;
+    unsigned int bit;
+    int ndx;
+    int power = (you.skills[SK_SPELLCASTING] / 2) + player_mag_abil(false);
+    int enhanced = 0;
 
-  unsigned int disciplines = spell_type( spell );
-  disciplines &= (~SPTYP_HOLY); //jmf: evil evil evil -- exclude HOLY bit
-  int skillcount = count_bits( disciplines );
+    unsigned int disciplines = spell_type(spell);
 
-  if (skillcount)
-    for (ndx = 0; ndx <= SPTYP_LAST_EXPONENT; ndx++)
-      {
-        bit = 1<<ndx;
-        if ((bit != SPTYP_HOLY) && (disciplines & bit))
-          {
-            int skill = spell_type2skill(bit);
-            power += (you.skills[skill] *2) / skillcount;
-          }
-      }
+    //jmf: evil evil evil -- exclude HOLY bit
+    disciplines &= (~SPTYP_HOLY);
 
-  enhanced += spell_enhancement( disciplines );
-
-  if ( enhanced > 0 )
+    int skillcount = count_bits(disciplines);
+    if (skillcount)
     {
-      for (ndx = 0; ndx < enhanced; ndx++)
+        for (ndx = 0; ndx <= SPTYP_LAST_EXPONENT; ndx++)
         {
-          power *= 15;
-          power /= 10;
+            bit = 1 << ndx;
+            if ((bit != SPTYP_HOLY) && (disciplines & bit))
+            {
+                int skill = spell_type2skill(bit);
+
+                power += (you.skills[skill] * 2) / skillcount;
+            }
         }
     }
-  else if ( enhanced < 0 )
+
+    enhanced += spell_enhancement(disciplines);
+
+    if (enhanced > 0)
     {
-      for (ndx = enhanced; ndx < 0; ndx++)
-        power /= 2;
+        for (ndx = 0; ndx < enhanced; ndx++)
+        {
+            power *= 15;
+            power /= 10;
+        }
+    }
+    else if (enhanced < 0)
+    {
+        for (ndx = enhanced; ndx < 0; ndx++)
+            power /= 2;
     }
 
-  return power;
-}          // end spell_spec()
-
-
-
+    return power;
+}                               // end spell_spec()
 
 /*
    In case anyone ever wants to add new spells, or just understand my reasons
@@ -617,8 +591,6 @@ int spell_spec( int spell )
    I don't plan to implement a 'Poisoner' class, as it would become unplayable
    deep in the dungeon where most monsters are poison resistant.
 
-
-
    Many spells use magic from two types. These spells are equally
    available to either type; a conjurer is no worse at a fire/conjuration than
    at a pure conjuration. I guess a spell could be of three types, but they
@@ -645,9 +617,6 @@ int spell_spec( int spell )
  *   More summonings!
  */
 
-
-
-
 // recoded to answer whether an UNDEAD_STATE is
 // barred from a particular spell passed to the
 // function - note that the function can be expanded
@@ -655,147 +624,123 @@ int spell_spec( int spell )
 // the living by setting up an US_ALIVE case returning
 // a value of false for a set of spells ... might be
 // an idea worth further consideration - 12mar2000 {dlb}
-bool undead_cannot_memorise( unsigned char spell, unsigned char being )
+bool undead_cannot_memorise(unsigned char spell, unsigned char being)
 {
-
-    switch ( being )
+    switch (being)
     {
-       case US_HUNGRY_DEAD:
-         switch ( spell )
-         {
-           //case SPELL_REGENERATION:
-           case SPELL_BORGNJORS_REVIVIFICATION:
-           case SPELL_CURE_POISON_II:
-           case SPELL_DEATHS_DOOR:
-           case SPELL_NECROMUTATION:
-           case SPELL_RESIST_POISON:
-           case SPELL_SYMBOL_OF_TORMENT:
-           case SPELL_TAME_BEASTS:
-             return true;
-         }
-         break;
+    case US_HUNGRY_DEAD:
+        switch (spell)
+        {
+        //case SPELL_REGENERATION:
+        case SPELL_BORGNJORS_REVIVIFICATION:
+        case SPELL_CURE_POISON_II:
+        case SPELL_DEATHS_DOOR:
+        case SPELL_NECROMUTATION:
+        case SPELL_RESIST_POISON:
+        case SPELL_SYMBOL_OF_TORMENT:
+        case SPELL_TAME_BEASTS:
+            return true;
+        }
+        break;
 
-       case US_UNDEAD:
-         switch ( spell )
-         {
-           case SPELL_AIR_WALK:
-           case SPELL_ALTER_SELF:
-           case SPELL_BLADE_HANDS:
-           case SPELL_BORGNJORS_REVIVIFICATION:
-           case SPELL_CURE_POISON_II:
-           case SPELL_DEATHS_DOOR:
-           case SPELL_DRAGON_FORM:
+    case US_UNDEAD:
+        switch (spell)
+        {
+        case SPELL_AIR_WALK:
+        case SPELL_ALTER_SELF:
+        case SPELL_BLADE_HANDS:
+        case SPELL_BORGNJORS_REVIVIFICATION:
+        case SPELL_CURE_POISON_II:
+        case SPELL_DEATHS_DOOR:
+        case SPELL_DRAGON_FORM:
 #ifdef USE_ELVISH_GLAMOUR_ABILITY
-           case SPELL_GLAMOUR:
+        case SPELL_GLAMOUR:
 #endif
-           case SPELL_ICE_FORM:
-           case SPELL_INTOXICATE:
-           case SPELL_NECROMUTATION:
-           case SPELL_PASSWALL:
-           case SPELL_REGENERATION:
-           case SPELL_RESIST_POISON:
-           case SPELL_SPIDER_FORM:
-           case SPELL_STATUE_FORM:
-           case SPELL_SUMMON_HORRIBLE_THINGS:
-           case SPELL_SYMBOL_OF_TORMENT:
-           case SPELL_TAME_BEASTS:
-             return true;
-         }
-         break;
-
+        case SPELL_ICE_FORM:
+        case SPELL_INTOXICATE:
+        case SPELL_NECROMUTATION:
+        case SPELL_PASSWALL:
+        case SPELL_REGENERATION:
+        case SPELL_RESIST_POISON:
+        case SPELL_SPIDER_FORM:
+        case SPELL_STATUE_FORM:
+        case SPELL_SUMMON_HORRIBLE_THINGS:
+        case SPELL_SYMBOL_OF_TORMENT:
+        case SPELL_TAME_BEASTS:
+            return true;
+        }
+        break;
     }
 
     return false;
+}                               // end undead_cannot_memorise()
 
-}          // end undead_cannot_memorise()
-
-
-
-
-int spell_type2skill ( unsigned int spelltype )
+int spell_type2skill(unsigned int spelltype)
 {
-  char buffer[80];
+    char buffer[80];
 
-  switch ( spelltype )
+    switch (spelltype)
     {
-    case SPTYP_CONJURATION:
-      return SK_CONJURATIONS;
-    case SPTYP_ENCHANTMENT:
-      return SK_ENCHANTMENTS;
-    case SPTYP_FIRE:
-      return SK_FIRE_MAGIC;
-    case SPTYP_ICE:
-      return SK_ICE_MAGIC;
-    case SPTYP_TRANSMIGRATION:
-      return SK_TRANSMIGRATION;
-    case SPTYP_NECROMANCY:
-      return SK_NECROMANCY;
-    case SPTYP_SUMMONING:
-      return SK_SUMMONINGS;
-    case SPTYP_DIVINATION:
-      return SK_DIVINATIONS;
-    case SPTYP_TRANSLOCATION:
-      return SK_TRANSLOCATIONS;
-    case SPTYP_POISON:
-      return SK_POISON_MAGIC;
-    case SPTYP_EARTH:
-      return SK_EARTH_MAGIC;
-    case SPTYP_AIR:
-      return SK_AIR_MAGIC;
+    case SPTYP_CONJURATION:    return SK_CONJURATIONS;
+    case SPTYP_ENCHANTMENT:    return SK_ENCHANTMENTS;
+    case SPTYP_FIRE:           return SK_FIRE_MAGIC;
+    case SPTYP_ICE:            return SK_ICE_MAGIC;
+    case SPTYP_TRANSMIGRATION: return SK_TRANSMIGRATION;
+    case SPTYP_NECROMANCY:     return SK_NECROMANCY;
+    case SPTYP_SUMMONING:      return SK_SUMMONINGS;
+    case SPTYP_DIVINATION:     return SK_DIVINATIONS;
+    case SPTYP_TRANSLOCATION:  return SK_TRANSLOCATIONS;
+    case SPTYP_POISON:         return SK_POISON_MAGIC;
+    case SPTYP_EARTH:          return SK_EARTH_MAGIC;
+    case SPTYP_AIR:            return SK_AIR_MAGIC;
+
     default:
     case SPTYP_HOLY:
-      sprintf(buffer, "spell_type2skill: called with spelltype %d", spelltype);
-      mpr(buffer);
-      return -1;
+        sprintf(buffer, "spell_type2skill: called with spelltype %d",
+                spelltype);
+        mpr(buffer);
+        return -1;
     }
+}                               // end spell_type2skill()
 
-}          // end spell_type2skill()
-
-
-
-
-int spell_enhancement ( unsigned int typeflags )
+int spell_enhancement(unsigned int typeflags)
 {
+    unsigned int enhanced = 0;
 
-  unsigned int enhanced = 0;
+    if (typeflags & SPTYP_CONJURATION)
+        enhanced += player_spec_conj();
 
-  if ( typeflags & SPTYP_CONJURATION )
-    enhanced += player_spec_conj();
+    if (typeflags & SPTYP_ENCHANTMENT)
+        enhanced += player_spec_ench();
 
-  if ( typeflags & SPTYP_ENCHANTMENT )
-    enhanced += player_spec_ench();
+    if (typeflags & SPTYP_SUMMONING)
+        enhanced += player_spec_summ();
 
-  if ( typeflags & SPTYP_SUMMONING )
-    enhanced += player_spec_summ();
+    if (typeflags & SPTYP_POISON)
+        enhanced += player_spec_poison();
 
-  if ( typeflags & SPTYP_POISON )
-    enhanced += player_spec_poison();
+    /* if ( ar_typeflags[SPTYP_HOLY] ) {
+       enhanced += player_spec_holy() - player_spec_death();
+       if ( you.special_wield == SPWLD_SHADOW )
+       enhanced -= 2; } */
 
-  /* if ( ar_typeflags[SPTYP_HOLY] ) {
-     enhanced += player_spec_holy() - player_spec_death();
-     if ( you.special_wield == SPWLD_SHADOW )
-     enhanced -= 2; } */
+    if (typeflags & SPTYP_NECROMANCY)
+        enhanced += player_spec_death() - player_spec_holy();
 
-  if ( typeflags & SPTYP_NECROMANCY )
-    enhanced += player_spec_death() - player_spec_holy();
+    if (typeflags & SPTYP_FIRE)
+        enhanced += player_spec_fire() - player_spec_cold();
 
-  if ( typeflags & SPTYP_FIRE )
-    enhanced += player_spec_fire() - player_spec_cold();
+    if (typeflags & SPTYP_ICE)
+        enhanced += player_spec_cold() - player_spec_fire();
 
-  if ( typeflags & SPTYP_ICE )
-    enhanced += player_spec_cold() - player_spec_fire();
+    if (typeflags & SPTYP_EARTH)
+        enhanced += player_spec_earth() - player_spec_air();
 
-  if ( typeflags & SPTYP_EARTH )
-    enhanced += player_spec_earth() - player_spec_air();
+    if (typeflags & SPTYP_AIR)
+        enhanced += player_spec_air() - player_spec_earth();
 
-  if ( typeflags & SPTYP_AIR )
-    enhanced += player_spec_air() - player_spec_earth();
-
-  return ( enhanced );
-
-}          // end spell_enhancement()
-
-
+    return (enhanced);
+}                               // end spell_enhancement()
 
 //jmf: deprecated
 /*
@@ -809,7 +754,6 @@ int spell_enhancement ( unsigned int typeflags )
   {
   spellcount++;
   }
-
 
   return ( spellcount );
 

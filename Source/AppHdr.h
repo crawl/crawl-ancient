@@ -46,41 +46,39 @@
 //  System Defines
 // =========================================================================
 #ifdef SOLARIS
-     // Most of the linux stuff applies, and so we want it
+    // Most of the linux stuff applies, and so we want it
     #define LINUX
     #define PLAIN_TERM
+    #define MULTIUSER
     #include "liblinux.h"
 
-     // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
+    // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
     #define CHARACTER_SET           0
 
     #define USE_CURSES
     #define EOL "\n"
 
-        // This is used for Posix termios.
+    // This is used for Posix termios.
     #define USE_POSIX_TERMIOS
 
-        // This is used for BSD tchars type ioctl, use this if you can't
-        // use the Posix support above.
-        // #define USE_TCHARS_IOCTL
-        //
-        // This uses Unix signal control to block some things, may be
-        // useful in conjunction with USE_TCHARS_IOCTL, but not required
-        // with USE_POSIX_TERMIOS
-        //
+    // This is used for BSD tchars type ioctl, use this if you can't
+    // use the Posix support above.
+    // #define USE_TCHARS_IOCTL
+    //
+    // This uses Unix signal control to block some things, may be
+    // useful in conjunction with USE_TCHARS_IOCTL.
+    //
     #define USE_UNIX_SIGNALS
 
-        // This is for systems with no usleep... uncomment if you have it.
+    // This is for systems with no usleep... comment if you have it.
     #define USE_SELECT_FOR_DELAY
 
-        // Default to non-ibmn character set
+    // Default to non-ibm character set
     #define USE_ASCII_CHARACTERS
 
-        // This defines the chmod permissions for score and bones files.
-    #define SHARED_FILES_CHMOD_VAL  0664
+// Define plain_term for linux and similar, and dos_term for DOS and EMX.
+#elif defined(LINUX)
 
-    // Define plain_term for linux and similar, and dos_term for DOS and EMX.
-    #elif defined(LINUX)
     #define PLAIN_TERM
     #define CHARACTER_SET           A_ALTCHARSET
     //#define CHARACTER_SET           0
@@ -177,7 +175,7 @@
 // #define SEPARATE_SELECTION_SCREENS_FOR_SUBSPECIES
 
 // Uncomment this line to allow the player to select his draconian's colour.
-#define ALLOW_DRACONIAN_TYPE_SELECTION
+//#define ALLOW_DRACONIAN_TYPE_SELECTION
 
 // if this works out okay, eventually we can change this to USE_OLD_RANDOM
 #define USE_NEW_RANDOM
@@ -193,12 +191,11 @@
 // domain.  You shouldn't set this really high unless you want to
 // make players spend far too much time in Pandemonium/The Abyss.
 //
-// Traditional setting of this is one rune.
+// Traditional setting of this is one rune, three is pretty standard now.
 #define NUMBER_OF_RUNES_NEEDED    3
 
 // Number of top scores to keep.
 #define SCORE_FILE_ENTRIES      100
-
 
 // ================================================= --------------------------
 //jmf: New defines for a bunch of optional features.
@@ -240,35 +237,28 @@
 // Semi-Controlled Blink
 #define USE_SEMI_CONTROLLED_BLINK
 
+// Use new system for weighting str and dex based on weapon type -- bwr
+#define USE_NEW_COMBAT_STATS
+
+// Use this is you want the occasional spellcaster or ranger type wanderer
+// to show up... comment it if you find these types silly or too powerful,
+// or just want fighter type wanderers.
+#define USE_SPELLCASTER_AND_RANGER_WANDERER_TEMPLATES
+
 // LRH's skill-pool drainer for high skill pools
 // #define USE_SKILL_POOL_DRAIN
-
 
 //jmf: Disable gordon lipford's new LOS -- new as of 22jun2000
 // Use the old LOS code.  Warning: the old code does not support
 // variable radius lightsources, or wraithform/passwall.
 // #define USE_OLD_LOS
 
-
-//jmf: new as of 24jun2000
-//
-// USE_WARPER_BETTER_WEAPON gives Warpers a dagger of Distortion to start with.
-// Changing the Warper's starting weapon to something without an edge would
-// make this a more `interesting' (i.e. evil) option.
-//#define USE_WARPER_BETTER_WEAPON
-//
-// USE_WARPER_SPELL_BEND gives Warpers a first-level spell, Bend, which
-// duplicates many of the effects of a weapon of distortion.
-#define USE_WARPER_SPELL_BEND
-//
-// I recommend you uncomment only one of the above.
-
 // ====================== -----------------------------------------------------
 //jmf: end of new defines
 // ====================== -----------------------------------------------------
 
 
-#ifdef SOLARIS
+#ifdef MULTIUSER
     // Define SAVE_DIR to the directory where saves, bones, and score file
     // will go... end it with a '\'.  Since all player files will be in the
     // same directory, the players UID will be appended when this option
@@ -277,9 +267,8 @@
     // Setting it to nothing or not setting it will cause all game files to
     // be dumped in the current directory.
     //
-    #define SAVE_DIR_PATH       "/opt/crawl/lib/"
+    #define SAVE_DIR_PATH       "/opt/local/newcrawl/lib/"
 
-    // This is very kludgy for now... hopefully, a new save file system
     // will make this little thing go away.  Define SAVE_PACKAGE_CMD
     // to a command to compress and bundle the save game files into a
     // single unit... the two %s will be replaced with the players
@@ -290,18 +279,27 @@
     //
     // Comment these lines out if you want to leave the save files uncompressed.
     //
-//  #define SAVE_PACKAGE_CMD    "/opt/bin/zip -m -q -j -1 %s.zip %s.*"
-
-//  #define LOAD_UNPACKAGE_CMD  "/opt/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
-
-//  #define PACKAGE_SUFFIX      ".zip"
+    #define SAVE_PACKAGE_CMD    "/opt/bin/zip -m -q -j -1 %s.zip %s.*"
+    #define LOAD_UNPACKAGE_CMD  "/opt/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
+    #define PACKAGE_SUFFIX      ".zip"
 
     // This provides some rudimentary protection against people using
     // save file cheats on multi-user systems.
     #define DO_ANTICHEAT_CHECKS
 
-#endif
+    // This defines the chmod permissions for score and bones files.
+    #define SHARED_FILES_CHMOD_VAL  0664
 
+    // If we're on a multiuser system, file locking of shared files is
+    // very important (else things will just keep getting corrupted)
+    #define USE_FILE_LOCKING
+
+    // Define this if you'd rather have the game block on locked files,
+    // commenting it will poll the file lock once a second for thirty
+    // seconds before giving up.
+    #define USE_BLOCKING_LOCK
+
+#endif
 
 // ===========================================================================
 //  Misc
@@ -314,6 +312,5 @@ template < class T >
 inline void UNUSED(const volatile T &)
 {
 }                               // Note that this generates no code with CodeWarrior or MSVC (if inlining is on).
-
 
 #endif

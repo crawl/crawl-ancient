@@ -14,12 +14,23 @@
 
 #include "externs.h"
 
+bool player_is_shapechanged(void);
+
+/* ***********************************************************************
+ * called from: player - item_use
+ * *********************************************************************** */
+bool is_light_armour( int inv_type, int inv_dam );
 
 /* ***********************************************************************
  * called from: beam - fight - misc - newgame
  * *********************************************************************** */
 bool player_light_armour(void);
 
+
+/* ***********************************************************************
+ * called from: acr.cc - fight.cc - misc.cc - player.cc
+ * *********************************************************************** */
+bool player_in_water(void);
 
 /* ***********************************************************************
  * called from: ability - chardump - fight - religion - spell - spells -
@@ -85,10 +96,17 @@ unsigned char player_energy(void);
 int player_evasion(void);
 
 
+#if 0
 /* ***********************************************************************
  * called from: acr - spells1
  * *********************************************************************** */
 unsigned char player_fast_run(void);
+#endif
+
+/* ***********************************************************************
+ * called from: acr - spells1
+ * *********************************************************************** */
+int player_movement_speed(void);
 
 
 /* ***********************************************************************
@@ -254,7 +272,7 @@ unsigned char player_see_invis(void);
 /* ***********************************************************************
  * called from: acr - decks - it_use2 - ouch
  * *********************************************************************** */
-unsigned long exp_needed(int lev, char species);
+unsigned long exp_needed(int lev);
 
 
 /* ***********************************************************************
@@ -300,14 +318,15 @@ void level_change(void);
 /* ***********************************************************************
  * called from: skills
  * *********************************************************************** */
-void redraw_skill(char your_name[kNameLen], char class_name[40]);
+void redraw_skill(const char your_name[kNameLen], const char class_name[40]);
 
 
 /* ***********************************************************************
  * called from: ability - fight - item_use - mutation - newgame - spells0 -
  *              transfor
  * *********************************************************************** */
-bool player_genus(unsigned char which_genus);
+bool player_genus( unsigned char which_genus,
+                   unsigned char species = SP_UNKNOWN );
 
 
 /* ***********************************************************************
@@ -378,9 +397,16 @@ char *species_abbrev(unsigned char which_species);
 
 
 /* ***********************************************************************
+ * called from: ouch
+ * *********************************************************************** */
+char *class_abbrev(unsigned char which_class);
+
+
+/* ***********************************************************************
  * called from: newgame
  * *********************************************************************** */
-bool player_descriptor( unsigned char which_descriptor );
+bool player_descriptor( unsigned char which_descriptor,
+                        unsigned char species = SP_UNKNOWN );
 
 
 #endif

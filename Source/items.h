@@ -20,6 +20,11 @@ extern int autopickup_on;
 // used in initfile.cc {dlb}:
 extern long autopickups;
 
+// last updated: Oct 15 2000 -- bwr
+/* ***********************************************************************
+ * called from: spells4.cc items.cc
+ * *********************************************************************** */
+int mass_item( int item );
 
 // last updated: 08jun2000 {dlb}
 /* ***********************************************************************
@@ -41,6 +46,11 @@ void pickup(void);
  * *********************************************************************** */
 void item_place(int item_drop_2, int x_plos, int y_plos, int quant_drop);
 
+// last updated Oct 15, 2000 -- bwr
+/* ***********************************************************************
+ * called from: spells4.cc
+ * *********************************************************************** */
+bool move_top_item( int src_x, int src_y, int dest_x, int dest_y );
 
 // last updated: 08jun2000 {dlb}
 /* ***********************************************************************

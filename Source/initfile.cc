@@ -10,9 +10,10 @@
  *      <1>     6/9/99          DML             Created
  */
 
-
 #include "AppHdr.h"
 #include "initfile.h"
+
+#include <string>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,186 +21,509 @@
 #include <ctype.h>
 
 #include "externs.h"
-
 #include "items.h"
 
+game_options    Options;
 
-char *obj_syms = ")([/%.?=!.+\\0}X$";
-int obj_syms_len = 16;
+static string & tolower_string( string &str );
 
-extern char verbose_dump;       /* defined in chardump.cc */
-extern char colour_map;         /* defined in view.cc */
-extern char clean_map;          /* also defined in view.cc */
+const static char *obj_syms = ")([/%.?=!.+\\0}X$";
+const static int   obj_syms_len = 16;
 
-
-static void strip(char *buf)
+// returns -1 if unmatched else returns 0-15
+static short str_to_colour( const string &str )
 {
-   int len = strlen(buf);
-   int s;
+    int ret;
 
-   int t=0;
-   bool emptyspace = true;
-   for(s=0; s<len; s++)
-   {
-      // strip leading spaces as well as CRLF
-      if (buf[s] == ' ' && emptyspace)
-         continue;
-      // strip non-alnum.  this is redundant with the code in newgame(),
-      // which I hate,  but sscanf is known to produce garbage on some
-      // systems (i.e. mine :(  if the input field is blank.  This ends
-      // up swallowing the initial "hello!" text,  which is annoying.
-      if (!isalnum(buf[s]))
-         continue;
-      if (buf[s] == 0x0A || buf[s] == 0x0D)
-         buf[s] = '\0';
-      emptyspace = false;
-      buf[t] = buf[s];
-      t++;
-   }
-   // tie off
-   buf[t] = '\0';
+    const string cols[16] =
+    {
+        "black", "blue", "green", "cyan", "red", "magenta", "brown",
+        "lightgrey", "darkgrey", "lightblue", "lightgreen", "lightcyan",
+        "lightred", "lightmagenta", "yellow", "white"
+    };
 
-   // now strip trailing spaces - easy.
-   for( len=strlen(buf)-1;  len>= 0;  len--)
-   {
-      if (buf[len] != ' ')
-         break;
-   }
-   buf[len+1] = '\0';
+    for (ret = 0; ret < 16; ret++)
+    {
+        if (str == cols[ret])
+            break;
+    }
+
+    // check for alternate spellings
+    if (ret == 16)
+    {
+        if (str == "lightgray")
+            ret = 7;
+        else if (str == "darkgray")
+            ret = 8;
+    }
+
+    return ((ret == 16) ? -1 : ret);
 }
 
-
-void read_init_file( void )
+// returns -1 if unmatched else returns 0-15
+static short str_to_channel_colour( const string &str )
 {
+    int ret = str_to_colour( str );
 
-    verbose_dump = 0;
-    colour_map = 0;
+    if (ret == -1)
+    {
+        if (str == "mute")
+            ret = MSGCOL_MUTED;
+        else if (str == "plain" || str == "off")
+            ret = MSGCOL_PLAIN;
+        else if (str == "default" || str == "on")
+            ret = MSGCOL_DEFAULT;
+        else if (str == "alternate")
+            ret = MSGCOL_ALTERNATE;
+    }
+
+    return (ret);
+}
+
+// returns -1 if unmatched else returns 0-15
+static short str_to_channel( const string &str )
+{
+    short       ret;
+
+    const string cols[ NUM_MESSAGE_CHANNELS ] =
+    {
+        "plain", "prompt", "god", "duration", "danger", "warning", "food",
+        "recovery", "talk", "intrinsic_gain", "mutation", "monster_spell",
+        "monster_enchant", "monster_damage"
+    };
+
+    for (ret = 0; ret < NUM_MESSAGE_CHANNELS; ret++)
+    {
+        if (str == cols[ret])
+            break;
+    }
+
+    return (ret == NUM_MESSAGE_CHANNELS ? -1 : ret);
+}
+
+static int str_to_weapon( const string &str )
+{
+    int  ret;
+
+    if (str == "shortsword" || str == "short sword")
+        return (WPN_SHORT_SWORD);
+    else if (str == "mace")
+        return (WPN_MACE);
+    else if (str == "spear")
+        return (WPN_SPEAR);
+    else if (str == "trident")
+        return (WPN_TRIDENT);
+    else if (str == "hand axe" || str == "handaxe")
+        return (WPN_HAND_AXE);
+    else if (str == "random")
+        return (WPN_RANDOM);
+    else
+        return (WPN_UNKNOWN);
+}
+
+static string & trim_string( string &str )
+{
+    str.erase( 0, str.find_first_not_of( " \t\n\r" ) );
+    str.erase( str.find_last_not_of( " \t\n\r" ) + 1 );
+
+    return (str);
+}
+
+static string & tolower_string( string &str )
+{
+    if (str.length()) {
+        for (string::iterator cp = str.begin(); cp != str.end(); cp++) {
+            *cp = tolower( *cp );
+        }
+    }
+
+    return (str);
+}
+
+static void strip( string &buf )
+{
+    int len = buf.length();
+    int s;
+
+    int t = 0;
+    bool emptyspace = true;
+
+    for (s = 0; s < len; s++)
+    {
+        // strip leading spaces as well as CRLF
+        if (buf[s] == ' ' && emptyspace)
+            continue;
+
+        // strip non-alnum.  this is redundant with the code in newgame(),
+        // which I hate,  but sscanf is known to produce garbage on some
+        // systems (i.e. mine :(  if the input field is blank.  This ends
+        // up swallowing the initial "hello!" text,  which is annoying.
+        if (!isalnum(buf[s]))
+            continue;
+
+        if (buf[s] == 0x0A || buf[s] == 0x0D)
+            buf[s] = '\0';
+
+        emptyspace = false;
+        buf[t] = buf[s];
+        t++;
+    }
+
+    // tie off
+    buf[t] = '\0';
+
+    // now strip trailing spaces - easy.
+    for (len = strlen(buf.c_str()) - 1; len >= 0; len--)
+    {
+        if (buf[len] != ' ')
+            break;
+    }
+    buf[len + 1] = '\0';
+}
+
+static bool read_bool( const string &field, bool def_value )
+{
+    bool ret = def_value;
+
+    if (field == "true" || field == "1")
+        ret = true;
+
+    if (field == "false" || field == "0")
+        ret = false;
+
+    return (ret);
+}
+
+void read_init_file(void)
+{
+    // Option initialization
+    Options.autopickups   = 0x0000;
+    Options.verbose_dump  = false;
+    Options.colour_map    = false;
+    Options.clean_map     = false;
+    Options.show_uncursed = true;
+    Options.always_greet  = false;
+    Options.easy_open     = true;
+    Options.easy_armour   = true;
+    Options.easy_butcher  = true;
+    Options.easy_confirm  = CONFIRM_SAFE_EASY;
+    Options.weapon        = WPN_UNKNOWN;
+    Options.random_pick   = false;
+    Options.chaos_knight  = GOD_NO_GOD;
+    Options.death_knight  = DK_NO_SELECTION;
+    Options.priest        = GOD_NO_GOD;
+    Options.hp_warning    = 10;
+
+    // map each colour to itself as default
+    for (int i = 0; i < 16; i++)
+        Options.colour[i] = i;
+
+    // map each channel to plain (well, default for now since I'm testing)
+    for (int i = 0; i < NUM_MESSAGE_CHANNELS; i++)
+        Options.channels[i] = MSGCOL_DEFAULT;
 
     FILE *f;
-    char s[255], field[100];
+    char s[255];
     int i, j, line = 0;
+    char name_buff[kPathLen];
 
     you.your_name[0] = '\0';
 
-    if ( sys_env.crawl_rc )
+    if (SysEnv.crawl_rc)
     {
-        f = fopen(sys_env.crawl_rc, "r");
+        f = fopen(SysEnv.crawl_rc, "r");
     }
-    else if ( sys_env.crawl_dir )
+    else if (SysEnv.crawl_dir)
     {
-        char name_buff[kPathLen];
-
-        strncpy(name_buff, sys_env.crawl_dir, kPathLen);
+        strncpy(name_buff, SysEnv.crawl_dir, kPathLen);
         strncat(name_buff, "init.txt", kPathLen);
 
         f = fopen(name_buff, "r");
     }
+#ifdef MULTIUSER
+    else if (SysEnv.home)
+    {
+        // init.txt isn't such a good choice if we're looking in
+        // the user's home directory, we'll use Un*x standard
+        strncpy(name_buff, SysEnv.home, kPathLen);
+
+        // likely not to have a closing slash so we'll insert one...
+        strncat(name_buff, "/.crawlrc", kPathLen);
+
+        f = fopen(name_buff, "r");
+    }
+#endif
     else
     {
         f = fopen("init.txt", "r");
     }
 
-    if ( f == NULL )
-      return;
+    if (f == NULL)
+        return;
 
     while (!feof(f))
     {
         fgets(s, 255, f);
 
-        // This is to make some efficient comments
-        if ( s[0] == '#' || s[0] == '\0' )
-          continue;
-
         line++;
 
+        string str = string(s);
+        trim_string( str );
+
+        // This is to make some efficient comments
+        if (s[0] == '#' || s[0] == '\0')
+            continue;
+
+        string key = "";
+        string subkey = "";
+        string field = "";
+
+        const unsigned int first_equals = str.find('=');
+        const unsigned int first_dot = str.find('.');
+
+        // all lines with no equal-signs we ignore
+        if (first_equals == string::npos)
+            continue;
+
+        if (first_dot != string::npos || first_dot < first_equals)
+        {
+            key    = str.substr( 0, first_dot );
+            subkey = str.substr( first_dot + 1, first_equals - first_dot - 1 );
+            field  = str.substr( first_equals + 1 );
+        }
+        else
+        {
+            // no subkey (dots are okay in value field)
+            key    = str.substr( 0, first_equals );
+            field  = str.substr( first_equals + 1 );
+        }
+
+        // Clean up our data...
+        tolower_string( trim_string( key ) );
+        tolower_string( trim_string( subkey ) );
+
+        // some fields want capitals
+        trim_string( field );
+        if (key != "name" && key != "crawl_dir")
+            tolower_string( field );
+
         // everything not a valid line is treated as a comment
-        if ( sscanf(s, "autopickup=%s", field) )
-          {
-            for (i = 0; i < 100 && field[i] != '\0'; i++)
-              {
+        if (key == "autopickup")
+        {
+            for (i = 0; i < field.length(); i++)
+            {
+                char type = field[i];
+
                 // Make the amulet symbol equiv to ring -- bwross
-                switch ( field[i] )
+                switch (type)
                 {
-                  case '"':
+                case '"':
                     // also represents jewellery
-                    field[i] = '=';
+                    type = '=';
                     break;
 
-                  case '|':
+                case '|':
                     // also represents staves
-                    field[i] = '\\';
+                    type = '\\';
                     break;
 
-                  case ':':
+                case ':':
                     // also represents books
-                    field[i] = '+';
+                    type = '+';
                     break;
 
-                  case 'x':
+                case 'x':
                     // also corpses
-                    field[i] = 'X';
+                    type = 'X';
                     break;
                 }
 
-                for (j = 0; j < obj_syms_len && field[i] != obj_syms[j]; j++)
-                  ;
+                for (j = 0; j < obj_syms_len && type != obj_syms[j]; j++)
+                    ;
 
-                if ( j < obj_syms_len )
-                  autopickups |= (1L << j);
+                if (j < obj_syms_len)
+                    Options.autopickups |= (1L << j);
                 else
-                  fprintf(stderr, "Unparseable line #%d in init file", line);
-              }
-          }
-        else if ( sscanf(s, "name=%s", field) )
-          {
+                {
+                    fprintf( stderr, "Bad object type '%c' for autopickup.\n",
+                             type );
+                }
+            }
+        }
+        else if (key == "name")
+        {
             // clean up field first
-            strip(field);
-            strncpy(you.your_name, field, kNameLen);
-          }
-        else if ( sscanf(s, "verbose_dump=%s", field) )
-          {
-            verbose_dump = (atoi(field) == 1);  // gives verbose info in char dumps
-          }
-        else if ( sscanf(s, "colour_map=%s", field) )
-          {
-            colour_map = (atoi(field) == 1);    // colour-codes play-screen map
-          }
-        else if ( sscanf(s, "clean_map=%s", field) )
-          {
-            clean_map = (atoi(field) == 1);     // removes monsters/clouds from map
-          }
-        else if ( sscanf(s, "crawl_dir=%s", field) )
-          {
+            strip( field );
+            strncpy(you.your_name, field.c_str(), kNameLen);
+        }
+        else if (key == "verbose_dump")
+        {
+            // gives verbose info in char dumps
+            Options.verbose_dump = read_bool( field, Options.verbose_dump );
+        }
+        else if (key == "clean_map")
+        {
+            // removes monsters/clouds from map
+            Options.clean_map = read_bool( field, Options.clean_map );
+        }
+        else if (key == "colour_map" || key == "color_map")
+        {
+            // colour-codes play-screen map
+            Options.colour_map = read_bool( field, Options.colour_map );
+        }
+        else if (key == "easy_confirm")
+        {
+            // allows both 'Y'/'N' and 'y'/'n' on yesno() prompts
+            if (field == "none")
+                Options.easy_confirm = CONFIRM_NONE_EASY;
+            else if (field == "safe")
+                Options.easy_confirm = CONFIRM_SAFE_EASY;
+            else if (field == "all")
+                Options.easy_confirm = CONFIRM_ALL_EASY;
+        }
+        else if (key == "easy_open")
+        {
+            // automatic door opening with movement
+            Options.easy_open = read_bool( field, Options.easy_open );
+        }
+        else if (key == "easy_armour" || key == "easy_armor")
+        {
+            // automatic removal of armour when dropping
+            Options.easy_armour = read_bool( field, Options.easy_armour );
+        }
+        else if (key == "easy_butcher")
+        {
+            // automatic knife switching
+            Options.easy_butcher = read_bool( field, Options.easy_butcher );
+        }
+        else if (key == "colour" || key == "color")
+        {
+            const int orig_col   = str_to_colour( subkey );
+            const int result_col = str_to_colour( field );
+
+            if (orig_col != -1 && result_col != -1)
+                Options.colour[orig_col] = result_col;
+            else
+            {
+                fprintf( stderr, "Bad colour -- %s=%d or %s=%d\n",
+                         subkey.c_str(), orig_col, field.c_str(), result_col );
+            }
+        }
+        else if (key == "channel")
+        {
+            const int chnl = str_to_channel( subkey );
+            const int col  = str_to_channel_colour( field );
+
+            if (chnl != -1 && col != -1)
+                Options.channels[chnl] = col;
+            else if (chnl == -1)
+                fprintf( stderr, "Bad channel -- %s\n", subkey.c_str() );
+            else if (col == -1)
+                fprintf( stderr, "Bad colour -- %s\n", field.c_str() );
+        }
+        else if (key == "background")
+        {
+            // change background colour
+            // Experimental! This will probably look really bad!
+            const int col = str_to_colour( field );
+
+            if (col != -1)
+                Options.background = col;
+            else
+                fprintf( stderr, "Bad colour -- %s\n", field.c_str() );
+
+        }
+        else if (key == "show_uncursed")
+        {
+            // label known uncursed items as "uncursed"
+            Options.show_uncursed = read_bool( field, Options.show_uncursed );
+        }
+        else if (key == "always_greet")
+        {
+            // show greeting when reloading game
+            Options.always_greet = read_bool( field, Options.always_greet );
+        }
+        else if (key == "weapon")
+        {
+            // choose this weapon for classes that get choice
+            Options.weapon = str_to_weapon( field );
+        }
+        else if (key == "chaos_knight")
+        {
+            // choose god for Chaos Knights
+            if (field == "xom")
+                Options.chaos_knight = GOD_XOM;
+            else if (field == "makleb")
+                Options.chaos_knight = GOD_MAKHLEB;
+            else if (field == "random")
+                Options.chaos_knight = GOD_RANDOM;
+        }
+        else if (key == "death_knight")
+        {
+            if (field == "necromancy")
+                Options.death_knight = DK_NECROMANCY;
+            else if (field == "yredelemnul")
+                Options.death_knight = DK_YREDELEMNUL;
+            else if (field == "random")
+                Options.death_knight = DK_RANDOM;
+        }
+        else if (key == "priest")
+        {
+            // choose this weapon for classes that get choice
+            if (field == "zin")
+                Options.priest = GOD_ZIN;
+            else if (field == "yredelemnul")
+                Options.priest = GOD_YREDELEMNUL;
+            else if (field == "random")
+                Options.priest = GOD_RANDOM;
+        }
+        else if (key == "random_pick")
+        {
+            // randomly generate character
+            Options.random_pick = read_bool( field, Options.random_pick );
+        }
+        else if (key == "hp_warning")
+        {
+            Options.hp_warning = atoi( field.c_str() );
+            if (Options.hp_warning < 0 || Options.hp_warning > 100)
+            {
+                Options.hp_warning = 0;
+                fprintf( stderr, "Bad HP warning percentage -- %s\n",
+                         field.c_str() );
+            }
+        }
+        else if (key == "crawl_dir")
+        {
             // We shouldn't bother to allocate this a second time
             // if the user puts two crawl_dir lines in the init file.
-            if ( !sys_env.crawl_dir )
-              sys_env.crawl_dir = (char *) calloc(kPathLen, sizeof(char));
+            if (!SysEnv.crawl_dir)
+                SysEnv.crawl_dir = (char *) calloc(kPathLen, sizeof(char));
 
-            if ( sys_env.crawl_dir )
-              strncpy(sys_env.crawl_dir, field, kNameLen);
-          }
+            if (SysEnv.crawl_dir)
+                strncpy(SysEnv.crawl_dir, field.c_str(), kNameLen);
+        }
     }
 
     fclose(f);
+}                               // end read_init_file()
 
-}          // end read_init_file()
-
-
-
-
-void get_system_environment( void )
+void get_system_environment(void)
 {
     // The player's name
-    sys_env.crawl_name = getenv("CRAWL_NAME");
+    SysEnv.crawl_name = getenv("CRAWL_NAME");
 
     // The player's pizza
-    sys_env.crawl_pizza = getenv("CRAWL_PIZZA");
+    SysEnv.crawl_pizza = getenv("CRAWL_PIZZA");
 
     // The directory which contians init.txt, macro.txt, morgue.txt
     // This should end with the appropriate path delimiter.
-    sys_env.crawl_dir = getenv("CRAWL_DIR");
+    SysEnv.crawl_dir = getenv("CRAWL_DIR");
 
     // The full path to the init file -- this over-rides CRAWL_DIR
-    sys_env.crawl_rc = getenv("CRAWL_RC");
+    SysEnv.crawl_rc = getenv("CRAWL_RC");
 
-}          // end get_system_environment()
+#ifdef MULTIUSER
+    // The user's home directory (used to look for ~/.crawlrc file)
+    SysEnv.home = getenv("HOME");
+#endif
+}                               // end get_system_environment()

@@ -144,122 +144,116 @@ char vault_main( char vgrid[81][81], FixedVector<int, 7>& mons_array, int vault_
         vgrid[vx][80] = '\0';
     }
 
-
-// next, select an appropriate vault to place {dlb}:
+    // next, select an appropriate vault to place {dlb}:
     for (;;)
     {
         which_vault = ( (vault_force == 100) ? random2(14) : vault_force );
 
-    // NB - endless loops result if forced vault cannot pass these tests {dlb}:
+        // endless loops result if forced vault cannot pass these tests {dlb}:
         if ( which_vault == 9 )
         {
             if ( many_many > 23 || many_many > 12 )
-              break;
+                break;
         }
         else if ( which_vault == 11 || which_vault == 12 )
         {
             if ( many_many > 20 )
-              break;
+                break;
         }
         else
-          break;
+            break;
     }
 
-// then, determine which drawing routine to use {dlb}:
-
+    // then, determine which drawing routine to use {dlb}:
     fnc_vault = ( (which_vault ==   0) ? vault_1 :
-                  (which_vault ==   1) ? vault_2 :
-                  (which_vault ==   2) ? vault_3 :
-                  (which_vault ==   3) ? vault_4 :
-                  (which_vault ==   4) ? vault_5 :
-                  (which_vault ==   5) ? vault_6 :
-                  (which_vault ==   6) ? vault_7 :
-                  (which_vault ==   7) ? vault_8 :
-                  (which_vault ==   8) ? vault_9 :
-                  (which_vault ==   9) ? ( (many_many > 23) ? my_map : orc_temple ) :
-                  (which_vault ==  10) ? vault_10 :
-                  (which_vault ==  11) ? farm_and_country :
-                  (which_vault ==  12) ? fort_yaktaur :
-                  (which_vault ==  13) ? box_level :
-                  (which_vault ==  50) ? vestibule_map :
-                  (which_vault ==  51) ? castle_dis :
-                  (which_vault ==  52) ? asmodeus :
-                  (which_vault ==  53) ? antaeus :
-                  (which_vault ==  54) ? ereshkigal :
-                  (which_vault ==  60) ? nemelex :
-                  (which_vault ==  61) ? sif_muna :
-                  (which_vault ==  62) ? okawaru :
-                  (which_vault ==  63) ? kikuba :
-                  //(which_vault ==  64) ? mollusc :
-                  (which_vault ==  80) ? beehive :
-                  (which_vault ==  81) ? slime_pit :
-                  (which_vault ==  82) ? vaults_vault :
-                  (which_vault ==  83) ? hall_of_blades :
-                  (which_vault ==  84) ? hall_of_Zot :
-                  (which_vault ==  85) ? temple :
-                  (which_vault ==  86) ? snake_pit :
-                  (which_vault ==  87) ? elf_hall :
-                  (which_vault ==  88) ? tomb_1 :
-                  (which_vault ==  89) ? tomb_2 :
-                  (which_vault ==  90) ? tomb_3 :
-                  (which_vault ==  91) ? swamp :
-                  (which_vault == 200) ? minivault_1 :
-                  (which_vault == 201) ? minivault_2 :
-                  (which_vault == 202) ? minivault_3 :
-                  (which_vault == 203) ? minivault_4 :
-                  (which_vault == 204) ? minivault_5 :
-                  (which_vault == 205) ? ( (many_many > 15) ? minivault_6 : minivault_1 ) :
-                  (which_vault == 206) ? ( (many_many > 10) ? minivault_7 : minivault_2 ) :
-                  (which_vault == 207) ? ( (many_many > 15) ? minivault_8 : minivault_3 ) :
-                  (which_vault == 208) ? ( (many_many > 15) ? minivault_9 : minivault_4 ) :
-                  (which_vault == 209) ? minivault_10 :
-                  (which_vault == 210) ? minivault_11 :
-                  (which_vault == 211) ? minivault_12 :
-                  (which_vault == 212) ? minivault_13 :
-                  (which_vault == 213) ? minivault_14 :
-                  (which_vault == 214) ? minivault_15 :
-                  (which_vault == 215) ? minivault_16 :
-                  (which_vault == 216) ? minivault_17 :
-                  (which_vault == 217) ? minivault_18 :
-                  (which_vault == 218) ? minivault_19 :
-                  (which_vault == 219) ? minivault_20 :
-                  (which_vault == 220) ? minivault_21 :
-                  (which_vault == 221) ? minivault_22 :
-                  (which_vault == 222) ? minivault_23 :
-                  (which_vault == 223) ? minivault_24 :
-                  (which_vault == 224) ? minivault_25 :
-                  (which_vault == 225) ? minivault_26 :
-                  (which_vault == 226) ? minivault_27 :
-                  (which_vault == 227) ? minivault_28 :
-                  (which_vault == 228) ? minivault_29 :
-                  (which_vault == 229) ? minivault_30 :
-                  (which_vault == 230) ? minivault_31 :
-                  (which_vault == 231) ? minivault_32 :
-                  (which_vault == 232) ? minivault_33 :
-                  (which_vault == 233) ? minivault_34_a :
-                  (which_vault == 234) ? minivault_34_b :
-                  (which_vault == 235) ? minivault_35_a :
-                  (which_vault == 236) ? minivault_35_b :
-                  (which_vault == 300) ? rand_demon_1 :
-                  (which_vault == 301) ? rand_demon_2 :
-                  (which_vault == 302) ? rand_demon_3 :
-                  (which_vault == 303) ? rand_demon_4 :
-                  (which_vault == 304) ? rand_demon_5 :
-                  (which_vault == 305) ? rand_demon_6 :
-                  (which_vault == 306) ? rand_demon_7 :
-                  (which_vault == 307) ? rand_demon_8 :
-                  (which_vault == 308) ? rand_demon_9
-                  : 0 );    // yep, NULL -- original behavior {dlb}
+          (which_vault ==   1) ? vault_2 :
+          (which_vault ==   2) ? vault_3 :
+          (which_vault ==   3) ? vault_4 :
+          (which_vault ==   4) ? vault_5 :
+          (which_vault ==   5) ? vault_6 :
+          (which_vault ==   6) ? vault_7 :
+          (which_vault ==   7) ? vault_8 :
+          (which_vault ==   8) ? vault_9 :
+          (which_vault ==   9) ? ( (many_many > 23) ? my_map : orc_temple ) :
+          (which_vault ==  10) ? vault_10 :
+          (which_vault ==  11) ? farm_and_country :
+          (which_vault ==  12) ? fort_yaktaur :
+          (which_vault ==  13) ? box_level :
+          (which_vault ==  50) ? vestibule_map :
+          (which_vault ==  51) ? castle_dis :
+          (which_vault ==  52) ? asmodeus :
+          (which_vault ==  53) ? antaeus :
+          (which_vault ==  54) ? ereshkigal :
+          (which_vault ==  60) ? nemelex :
+          (which_vault ==  61) ? sif_muna :
+          (which_vault ==  62) ? okawaru :
+          (which_vault ==  63) ? kikuba :
+          //(which_vault ==  64) ? mollusc :
+          (which_vault ==  80) ? beehive :
+          (which_vault ==  81) ? slime_pit :
+          (which_vault ==  82) ? vaults_vault :
+          (which_vault ==  83) ? hall_of_blades :
+          (which_vault ==  84) ? hall_of_Zot :
+          (which_vault ==  85) ? temple :
+          (which_vault ==  86) ? snake_pit :
+          (which_vault ==  87) ? elf_hall :
+          (which_vault ==  88) ? tomb_1 :
+          (which_vault ==  89) ? tomb_2 :
+          (which_vault ==  90) ? tomb_3 :
+          (which_vault ==  91) ? swamp :
+          (which_vault == 200) ? minivault_1 :
+          (which_vault == 201) ? minivault_2 :
+          (which_vault == 202) ? minivault_3 :
+          (which_vault == 203) ? minivault_4 :
+          (which_vault == 204) ? minivault_5 :
+          (which_vault == 205) ? ( (many_many > 15) ? minivault_6 : minivault_1 ) :
+          (which_vault == 206) ? ( (many_many > 10) ? minivault_7 : minivault_2 ) :
+          (which_vault == 207) ? ( (many_many > 15) ? minivault_8 : minivault_3 ) :
+          (which_vault == 208) ? ( (many_many > 15) ? minivault_9 : minivault_4 ) :
+          (which_vault == 209) ? minivault_10 :
+          (which_vault == 210) ? minivault_11 :
+          (which_vault == 211) ? minivault_12 :
+          (which_vault == 212) ? minivault_13 :
+          (which_vault == 213) ? minivault_14 :
+          (which_vault == 214) ? minivault_15 :
+          (which_vault == 215) ? minivault_16 :
+          (which_vault == 216) ? minivault_17 :
+          (which_vault == 217) ? minivault_18 :
+          (which_vault == 218) ? minivault_19 :
+          (which_vault == 219) ? minivault_20 :
+          (which_vault == 220) ? minivault_21 :
+          (which_vault == 221) ? minivault_22 :
+          (which_vault == 222) ? minivault_23 :
+          (which_vault == 223) ? minivault_24 :
+          (which_vault == 224) ? minivault_25 :
+          (which_vault == 225) ? minivault_26 :
+          (which_vault == 226) ? minivault_27 :
+          (which_vault == 227) ? minivault_28 :
+          (which_vault == 228) ? minivault_29 :
+          (which_vault == 229) ? minivault_30 :
+          (which_vault == 230) ? minivault_31 :
+          (which_vault == 231) ? minivault_32 :
+          (which_vault == 232) ? minivault_33 :
+          (which_vault == 233) ? minivault_34_a :
+          (which_vault == 234) ? minivault_34_b :
+          (which_vault == 235) ? minivault_35_a :
+          (which_vault == 236) ? minivault_35_b :
+          (which_vault == 300) ? rand_demon_1 :
+          (which_vault == 301) ? rand_demon_2 :
+          (which_vault == 302) ? rand_demon_3 :
+          (which_vault == 303) ? rand_demon_4 :
+          (which_vault == 304) ? rand_demon_5 :
+          (which_vault == 305) ? rand_demon_6 :
+          (which_vault == 306) ? rand_demon_7 :
+          (which_vault == 307) ? rand_demon_8 :
+          (which_vault == 308) ? rand_demon_9
+          : 0 );    // yep, NULL -- original behavior {dlb}
 
     // NB - a return value of zero is not handled well by dungeon.cc (but there it is) 10mar2000 {dlb}
     return ( (fnc_vault == 0) ? 0 : fnc_vault(vgrid, mons_array) );
-
 }          // end vault_main()
 
-
 /* ********************* END PUBLIC FUNCTIONS ******************** */
-
-
 
 /*
    key:
@@ -338,12 +332,8 @@ char vault_main( char vgrid[81][81], FixedVector<int, 7>& mons_array, int vault_
         on each map (it is 1-7, not 0-6) {dlb}
  */
 
-
-
-
 static char vault_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // my first vault
-
     strcpy(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[2], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -386,10 +376,7 @@ static char vault_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[2] = MONS_SHAPESHIFTER;
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char vault_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -433,17 +420,14 @@ static char vault_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[35], "xxxxxxxxxxxxxxxxxxxxxxxc@cxxxxxxxxxxxxxx");
 
     return MAP_NORTHWEST;
-
 }
-
-
 
 
 static char vault_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // little maze vault
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcat(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcat(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -483,17 +467,14 @@ static char vault_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcat(vgrid[35], "xxxxxxxxxxxxxxx@xxxxxxxxxxxxxxxxxxxxxxxx");
 
     return MAP_NORTHEAST;
-
 }
-
-
 
 
 static char vault_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // thingy vault
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcpy(vgrid[36], "xxxxxxxxxxxxxxxxxxxxxxxxx@xxxxxxxxxxxxxx");
     strcpy(vgrid[37], "xxxxxxxxxxxxxxxxxxxxxxxxx.xxxxxxxxxxxxxx");
@@ -531,17 +512,13 @@ static char vault_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[69], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     return MAP_SOUTHWEST;
-
 }
-
-
-
 
 static char vault_5(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // hourglass vault
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcat(vgrid[36], "xxxxxxxxxxxxxx@xxxxxxxxxxxxxxxxxxxxxxxxx");
     strcat(vgrid[37], "xxxxxx.................xxxxxxxxxxxxxxxxx");
@@ -579,17 +556,14 @@ static char vault_5(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcat(vgrid[69], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     return MAP_SOUTHEAST;
-
 }
-
-
 
 
 static char vault_6(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // a more Angbandy vault
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcat(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcat(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -629,11 +603,7 @@ static char vault_6(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcat(vgrid[35], "cccc@cccccccccccccccccccccccccccxxxxxxxx");
 
     return MAP_NORTHEAST;
-
 }
-
-
-
 
 static char vault_7(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // four-leaf vault
@@ -676,11 +646,7 @@ static char vault_7(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[35], "xxxxxxxxxxxxxxxxxxxxxxx@xxxxxxxxxxxxxxxx");
 
     return MAP_NORTHWEST;
-
 }
-
-
-
 
 static char vault_8(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // cross vault
@@ -723,17 +689,14 @@ static char vault_8(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[35], "xxxxxxxxxxxxxxxxxxxxxx..@.xxxxxxxxxxxxxx");
 
     return MAP_NORTHWEST;
-
 }
-
-
 
 
 static char vault_9(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // another thingy vault (purely decorative with no monsters or items)
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcat(vgrid[36], "xxxxxxxxxxxxxxx@xxxxxxxxxxxxxxxxxxxxxxxx");
     strcat(vgrid[37], "xxxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxx");
@@ -771,17 +734,14 @@ static char vault_9(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcat(vgrid[69], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     return MAP_SOUTHEAST;
-
 }
-
-
 
 
 static char vault_10(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {    // impenetrable vault
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcat(vgrid[36], "..............@................xxxxxxxxx");
     strcat(vgrid[37], "...............................xxxxxxxxx");
@@ -819,17 +779,13 @@ static char vault_10(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcat(vgrid[69], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     return MAP_SOUTHEAST;
-
 }
-
-
 
 
 static char orc_temple(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
-
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcpy(vgrid[36], "xxxxxxxxxxxxxxxxxxxxxxx@xxxxxxxxxxxxxxxx");
     strcpy(vgrid[37], "xxxxxxxxxxxxxxxxxxxxxxx.xxxxxxxxxxxxxxxx");
@@ -875,17 +831,13 @@ static char orc_temple(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = MONS_ORC_SORCEROR;
 
     return MAP_SOUTHWEST;
-
 }
-
-
-
 
 static char my_map(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // by Matthew Ludivico
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcpy(vgrid[36], "xxxxxxxxxx.@.xxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[37], "xxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -931,17 +883,13 @@ static char my_map(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = MONS_GREAT_ORB_OF_EYES;
 
     return MAP_SOUTHWEST;
-
 }
-
-
-
 
 static char farm_and_country(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // by Matthew Ludivico (mll6@lehigh.edu)
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcpy(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -1023,17 +971,14 @@ static char farm_and_country(char vgrid[81][81], FixedVector<int, 7>& mons_array
     mons_array[6] = MONS_WANDERING_MUSHROOM;
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 static char fort_yaktaur(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // by Matthew Ludivico (mll6@lehigh.edu)
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcat(vgrid[36], ".........@....wwwwwwwwwwwwwwwwwxxxxxxxxx");
     strcat(vgrid[37], ".ccccc.......ww....wwww....wwwwxxxxxxxxx");
@@ -1079,10 +1024,7 @@ static char fort_yaktaur(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_SOUTHEAST;
-
 }
-
-
 
 
 static char box_level(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -1160,10 +1102,7 @@ static char box_level(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[69], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 static char vestibule_map(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -1249,10 +1188,7 @@ static char vestibule_map(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 static char castle_dis(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -1304,10 +1240,7 @@ static char castle_dis(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_NORTH_DIS;
-
 }
-
-
 
 
 static char asmodeus(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -1393,11 +1326,7 @@ static char asmodeus(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_ENCOMPASS;
-
 }
-
-
-
 
 static char antaeus(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // bottom of Cocytus. This needs work
@@ -1482,10 +1411,7 @@ static char antaeus(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 static char ereshkigal(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -1572,17 +1498,14 @@ static char ereshkigal(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = MONS_SHADOW_FIEND;
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 static char nemelex(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcat(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcat(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -1630,10 +1553,7 @@ static char nemelex(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_NORTHEAST;
-
 }
-
-
 
 
 static char sif_muna(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -1685,10 +1605,7 @@ static char sif_muna(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char okawaru(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -1696,7 +1613,7 @@ static char okawaru(char vgrid[81][81], FixedVector<int, 7>& mons_array)
       // unless you can reliably teleport away again.
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcat(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcat(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -1744,17 +1661,14 @@ static char okawaru(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_NORTHEAST;
-
 }
-
-
 
 
 static char kikuba(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcpy(vgrid[36], "xxxxxxxxxxxxxxxxxxxxxxx@.xxxxxxxxxxxxxxx");
     strcpy(vgrid[37], "xxxxxxxxx..............................x");
@@ -1800,10 +1714,7 @@ static char kikuba(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_SOUTHWEST;
-
 }
-
-
 
 
 static char beehive(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -1889,10 +1800,7 @@ static char beehive(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 static char vaults_vault(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -1978,17 +1886,14 @@ static char vaults_vault(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 static char snake_pit(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // Hey, this looks a bit like a face ...
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcpy(vgrid[36], "xxxxxxxxxxxxxxxxxxxxxxx..@.xxxxxxxxxxxxx");
     strcpy(vgrid[37], "xxxxxxxxxxxxxxxxxxx.............xxxxxxxx");
@@ -2034,10 +1939,7 @@ static char snake_pit(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_SOUTHWEST;
-
 }
-
-
 
 
 static char elf_hall(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2089,10 +1991,7 @@ static char elf_hall(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_NORTHWEST;
-
 }
-
-
 
 
 static char slime_pit(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2182,8 +2081,6 @@ static char slime_pit(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char hall_of_blades(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
 
@@ -2233,10 +2130,7 @@ static char hall_of_blades(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char hall_of_Zot(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2288,10 +2182,7 @@ static char hall_of_Zot(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char temple(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2369,10 +2260,7 @@ static char temple(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[69], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 static char tomb_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2458,10 +2346,7 @@ static char tomb_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 static char tomb_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2547,10 +2432,7 @@ static char tomb_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 static char tomb_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2636,10 +2518,7 @@ static char tomb_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_ENCOMPASS;
-
 }
-
-
 
 
 
@@ -2647,7 +2526,7 @@ static char swamp(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // NB - most of the 'x's here will be set to water in dungeon.cc
 
     for (unsigned char i = 0; i < 81; i++)
-      strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
     strcat(vgrid[36], "xxxxxxxxxxx@xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcat(vgrid[37], "xxxxxxxxxxx2xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -2693,10 +2572,7 @@ static char swamp(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[6] = RANDOM_MONSTER;
 
     return MAP_SOUTHEAST;
-
 }
-
-
 
 
 /*
@@ -2705,9 +2581,6 @@ static char swamp(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
    Remember, minivaults are always sidewards
 */
-
-
-
 
 static char minivault_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
@@ -2726,15 +2599,11 @@ static char minivault_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char minivault_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
-
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "..xxxx.xxxx.");
     strcpy(vgrid[2], "..xx.....xx.");
@@ -2749,10 +2618,7 @@ static char minivault_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char minivault_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2772,8 +2638,8 @@ static char minivault_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
+
 
 static char minivault_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
@@ -2792,10 +2658,7 @@ static char minivault_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char minivault_5(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2815,10 +2678,7 @@ static char minivault_5(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char minivault_6(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2846,8 +2706,6 @@ static char minivault_6(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_7(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // beehive minivault
 
@@ -2869,10 +2727,7 @@ static char minivault_7(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[2] = MONS_KILLER_BEE_LARVA;
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char minivault_8(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2894,10 +2749,7 @@ static char minivault_8(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[0] = MONS_MOLTEN_GARGOYLE;
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char minivault_9(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2921,8 +2773,6 @@ static char minivault_9(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_10(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
 
@@ -2942,8 +2792,6 @@ static char minivault_10(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_NORTH;
 
 }
-
-
 
 
 static char minivault_11(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -2967,8 +2815,6 @@ static char minivault_11(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_12(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // closed box minivault
 
@@ -2988,8 +2834,6 @@ static char minivault_12(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_NORTH;
 
 }
-
-
 
 
 static char minivault_13(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3013,8 +2857,6 @@ static char minivault_13(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_14(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // water cross
 
@@ -3034,8 +2876,6 @@ static char minivault_14(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_NORTH;
 
 }
-
-
 
 #ifndef USE_NEW_MINIVAULTS
 
@@ -3084,7 +2924,6 @@ static char minivault_15(char vgrid[81][81], FixedVector<int, 7>& mons_array) /*
 #endif // USE_NEW_MINIVAULTS
 
 
-
 static char minivault_16(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
 
@@ -3106,8 +2945,6 @@ static char minivault_16(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_17(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
 
@@ -3125,10 +2962,7 @@ static char minivault_17(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char minivault_18(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3148,10 +2982,7 @@ static char minivault_18(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char minivault_19(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3171,10 +3002,7 @@ static char minivault_19(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char minivault_20(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3194,10 +3022,7 @@ static char minivault_20(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char minivault_21(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3221,8 +3046,6 @@ static char minivault_21(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_22(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
 
@@ -3242,8 +3065,6 @@ static char minivault_22(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_NORTH;
 
 }
-
-
 
 
 static char minivault_23(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3267,8 +3088,6 @@ static char minivault_23(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_24(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
 
@@ -3288,8 +3107,6 @@ static char minivault_24(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_NORTH;
 
 }
-
-
 
 
 static char minivault_25(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3313,8 +3130,6 @@ static char minivault_25(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_26(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
 
@@ -3334,8 +3149,6 @@ static char minivault_26(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_NORTH;
 
 }
-
-
 
 
 static char minivault_27(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3359,8 +3172,6 @@ static char minivault_27(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_28(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
 
@@ -3380,8 +3191,6 @@ static char minivault_28(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_NORTH;
 
 }
-
-
 
 
 static char minivault_29(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3405,12 +3214,9 @@ static char minivault_29(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[2] = MONS_GIANT_ANT;
     mons_array[3] = MONS_ANT_LARVA;
 
-
     return MAP_NORTH;
 
 }
-
-
 
 
 static char minivault_30(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3434,8 +3240,6 @@ static char minivault_30(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_31(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
 
@@ -3457,8 +3261,6 @@ static char minivault_31(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char minivault_32(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
 
@@ -3478,8 +3280,6 @@ static char minivault_32(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_NORTH;
 
 }
-
-
 
 
 static char minivault_33(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3507,70 +3307,88 @@ static char minivault_34(char vgrid[81][81], FixedVector<int, 7>& mons_array, bo
   int i, di;
 
   if ( orientation )
-    { i = 0; di = +1;  }
+  {
+      i = 0;
+      di = +1;
+  }
   else
-    { i = 11; di = -1; }
+  {
+      i = 11;
+      di = -1;
+  }
 
   for (int c=0; c <= 11; c++, i += di)
   {
-    strcpy(vgrid[i], "............");
-    strcpy(vgrid[i], ".=xxxxxxxx=.");
-    strcpy(vgrid[i], ".x9......9x.");
-    strcpy(vgrid[i], ".xT......Tx.");
-    strcpy(vgrid[i], ".x..C..C..x.");
-    strcpy(vgrid[i], ".xT......Tx.");
-    strcpy(vgrid[i], ".xxxxxxxxxx.");
-    strcpy(vgrid[i], ".xxx$$$$xxx.");
-    strcpy(vgrid[i], ".xx8....8xx.");
-    strcpy(vgrid[i], "..xx....xx..");
-    strcpy(vgrid[i], "...xG..Gx...");
-    strcpy(vgrid[i], "............");
+      strcpy(vgrid[i], "............");
+      strcpy(vgrid[i], ".=xxxxxxxx=.");
+      strcpy(vgrid[i], ".x9......9x.");
+      strcpy(vgrid[i], ".xT......Tx.");
+      strcpy(vgrid[i], ".x..C..C..x.");
+      strcpy(vgrid[i], ".xT......Tx.");
+      strcpy(vgrid[i], ".xxxxxxxxxx.");
+      strcpy(vgrid[i], ".xxx$$$$xxx.");
+      strcpy(vgrid[i], ".xx8....8xx.");
+      strcpy(vgrid[i], "..xx....xx..");
+      strcpy(vgrid[i], "...xG..Gx...");
+      strcpy(vgrid[i], "............");
   }
 
     return MAP_NORTH;
 }
 
 static char minivault_34_a(char vgrid[81][81], FixedVector<int, 7>& mons_array)
-{ return minivault_34(vgrid, mons_array, true); }
+{
+    return minivault_34(vgrid, mons_array, true);
+}
 
 static char minivault_34_b(char vgrid[81][81], FixedVector<int, 7>& mons_array)
-{ return minivault_34(vgrid, mons_array, false); }
+{
+    return minivault_34(vgrid, mons_array, false);
+}
 
 static char minivault_35(char vgrid[81][81], FixedVector<int, 7>& mons_array, bool orientation)
 { //jmf: another multi-god temple thing
   int i, di;
 
   if (orientation)
-    { i = 0; di = +1;  }
+  {
+      i = 0;
+      di = +1;
+  }
   else
-    { i = 11; di = -1; }
+  {
+      i = 11;
+      di = -1;
+  }
 
   for (int c=0; c <= 11; c++, i += di)
   {
-    strcpy(vgrid[i], "............");
-    strcpy(vgrid[i], "..vvvvvvvv..");
-    strcpy(vgrid[i], ".vv......vv.");
-    strcpy(vgrid[i], ".v..x..x..v.");
-    strcpy(vgrid[i], ".v.Cx..xC.v.");
-    strcpy(vgrid[i], ".v..x..x..v.");
-    strcpy(vgrid[i], ".vT8x..x8Tv.");
-    strcpy(vgrid[i], ".vvvx==xvvv.");
-    strcpy(vgrid[i], "...Gx99xG...");
-    strcpy(vgrid[i], "...+*99*+...");
-    strcpy(vgrid[i], "...GxxxxG...");
-    strcpy(vgrid[i], "............");
+      strcpy(vgrid[i], "............");
+      strcpy(vgrid[i], "..vvvvvvvv..");
+      strcpy(vgrid[i], ".vv......vv.");
+      strcpy(vgrid[i], ".v..x..x..v.");
+      strcpy(vgrid[i], ".v.Cx..xC.v.");
+      strcpy(vgrid[i], ".v..x..x..v.");
+      strcpy(vgrid[i], ".vT8x..x8Tv.");
+      strcpy(vgrid[i], ".vvvx==xvvv.");
+      strcpy(vgrid[i], "...Gx99xG...");
+      strcpy(vgrid[i], "...+*99*+...");
+      strcpy(vgrid[i], "...GxxxxG...");
+      strcpy(vgrid[i], "............");
   }
 
     return MAP_NORTH;
 }
 
 static char minivault_35_a(char vgrid[81][81], FixedVector<int, 7>& mons_array)
-{ return minivault_35(vgrid, mons_array, true); }
+{
+    return minivault_35(vgrid, mons_array, true);
+}
 
 static char minivault_35_b(char vgrid[81][81], FixedVector<int, 7>& mons_array)
-{ return minivault_35(vgrid, mons_array, false); }
-
-
+{
+    return minivault_35(vgrid, mons_array, false);
+}
 
 
 static char rand_demon_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3597,10 +3415,7 @@ static char rand_demon_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[5] = RANDOM_MONSTER;
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char rand_demon_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3627,10 +3442,7 @@ static char rand_demon_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[5] = RANDOM_MONSTER;
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char rand_demon_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3654,10 +3466,7 @@ static char rand_demon_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     mons_array[2] = summon_any_demon(DEMON_COMMON);
 
     return MAP_NORTH;
-
 }
-
-
 
 
 static char rand_demon_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3685,8 +3494,6 @@ static char rand_demon_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char rand_demon_5(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // obviously possible to get stuck - too bad (should've come prepared)
 
@@ -3710,8 +3517,6 @@ static char rand_demon_5(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_NORTH;
 
 }
-
-
 
 
 static char rand_demon_6(char vgrid[81][81], FixedVector<int, 7>& mons_array)
@@ -3739,8 +3544,6 @@ static char rand_demon_6(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char rand_demon_7(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
 
@@ -3766,8 +3569,6 @@ static char rand_demon_7(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 
-
-
 static char rand_demon_8(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
 
@@ -3791,8 +3592,6 @@ static char rand_demon_8(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     return MAP_NORTH;
 
 }
-
-
 
 
 static char rand_demon_9(char vgrid[81][81], FixedVector<int, 7>& mons_array)

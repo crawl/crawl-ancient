@@ -27,77 +27,58 @@
 #include "stuff.h"
 #include "version.h"
 
-
-extern bool wield_change;    // defined in output.cc
-
+extern bool wield_change;       // defined in output.cc
 
 void adjust_item(void);
 void adjust_spells(void);
 void get_letter_id(char buff[5], int item_id);
 
-
-
-
-void quit_game( void )
+void quit_game(void)
 {
-    if ( yesno("Really quit?") )
-      ouch(-9999, 0, KILLED_BY_QUITTING);
+    if (yesno("Really quit?", false))
+        ouch(-9999, 0, KILLED_BY_QUITTING);
+}                               // end quit_game()
 
-}          // end quit_game()
-
-
-
-
-void version( void )
+void version(void)
 {
-
     mpr("This is Dungeon Crawl " VERSION " (Last build " BUILD_DATE ").");
+}                               // end version()
 
-}          // end version()
-
-
-
-
-void adjust( void )
+void adjust(void)
 {
-
-    mpr("Adjust (i)tems or (s)pells?");
+    mpr("Adjust (i)tems or (s)pells?", MSGCH_PROMPT);
 
     unsigned char keyin = get_ch();
 
     if (keyin == 'i' || keyin == 'I')
-      {
+    {
         adjust_item();
         return;
-      }
+    }
     else if (keyin == 's' || keyin == 'S')
-      {
+    {
         adjust_spells();
         return;
-      }
+    }
     else
-      mpr("Huh?");
+        mpr("Huh?");
 
     return;
+}                               // end adjust()
 
-}          // end adjust()
-
-
-
-
-void adjust_item( void )
+void adjust_item(void)
 {
     unsigned char throw_2, throw_3;
     unsigned nthing = 0;
 
-    if ( you.num_inv_items < 1 )
+    if (you.num_inv_items < 1)
     {
         canned_msg(MSG_NOTHING_CARRIED);
         return;
     }
 
-query:
-    mpr("Adjust which item?");
+  query:
+    mpr("Adjust which item?", MSGCH_PROMPT);
 
     unsigned char keyin = get_ch();
 
@@ -105,7 +86,9 @@ query:
     {
         if (keyin == '*' || keyin == '?')
             nthing = get_invent(-1);
-        if ( ( nthing >= 'A' && nthing <= 'Z' ) || ( nthing >= 'a' && nthing <= 'z' ) )
+
+        if ((nthing >= 'A' && nthing <= 'Z')
+                || (nthing >= 'a' && nthing <= 'z'))
         {
             keyin = nthing;
         }
@@ -118,7 +101,7 @@ query:
 
     int throw_1 = (int) keyin;
 
-    if ( throw_1 < 'A' || ( throw_1 > 'Z' && throw_1 < 'a' ) || throw_1 > 'z' )
+    if (throw_1 < 'A' || (throw_1 > 'Z' && throw_1 < 'a') || throw_1 > 'z')
     {
         mpr("You don't have any such object.");
         return;
@@ -143,7 +126,7 @@ query:
     strcat(info, str_pass);
     mpr(info);
 
-    mpr("Adjust to which letter?");
+    mpr("Adjust to which letter?", MSGCH_PROMPT);
 
     keyin = get_ch();
 
@@ -151,7 +134,9 @@ query:
     {
         if (keyin == '*' || keyin == '?')
             nthing = get_invent(-1);
-        if ( ( nthing >= 'A' && nthing <= 'Z' ) || ( nthing >= 'a' && nthing <= 'z' ) )
+
+        if ((nthing >= 'A' && nthing <= 'Z')
+                || (nthing >= 'a' && nthing <= 'z'))
         {
             keyin = nthing;
         }
@@ -164,7 +149,7 @@ query:
 
     throw_1 = (int) keyin;
 
-    if ( throw_1 < 'A' || ( throw_1 > 'Z' && throw_1 < 'a' ) || throw_1 > 'z' )
+    if (throw_1 < 'A' || (throw_1 > 'Z' && throw_1 < 'a') || throw_1 > 'z')
     {
         mpr("What?");
         return;
@@ -186,7 +171,6 @@ query:
     char tmp_colour = you.inv_colour[throw_3];
     int tmp_quantity = you.inv_quantity[throw_3];
 
-
     you.inv_ident[throw_3] = you.inv_ident[throw_2];
     you.inv_class[throw_3] = you.inv_class[throw_2];
     you.inv_type[throw_3] = you.inv_type[throw_2];
@@ -207,13 +191,11 @@ query:
 
     for (int i = 0; i < 10; i++)
     {
-        if ( you.equip[i] == throw_2 )
-          you.equip[i] = throw_3;
-        else if ( you.equip[i] == throw_3 )
-          you.equip[i] = throw_2;
+        if (you.equip[i] == throw_2)
+            you.equip[i] = throw_3;
+        else if (you.equip[i] == throw_3)
+            you.equip[i] = throw_2;
     }
-
-    // you.inv_quantity [throw_2] = 0;
 
     strcpy(info, " ");
 
@@ -226,7 +208,7 @@ query:
     strcat(info, str_pass);
     mpr(info);
 
-    if ( you.inv_quantity[throw_2] > 0 )
+    if (you.inv_quantity[throw_2] > 0)
     {
         strcpy(info, " ");
 
@@ -240,24 +222,18 @@ query:
         mpr(info);
     }
 
-    if ( throw_3 == you.equip[EQ_WEAPON] || throw_2 == you.equip[EQ_WEAPON] )
-      wield_change = true;
+    if (throw_3 == you.equip[EQ_WEAPON] || throw_2 == you.equip[EQ_WEAPON])
+        wield_change = true;
 
-}          // end adjust_item()
-
-
-
+}                               // end adjust_item()
 
 #ifdef PLAIN_TERM
-static void adjust_spells_cleanup( bool needs_redraw )
+static void adjust_spells_cleanup(bool needs_redraw)
 {
-    if ( needs_redraw )
-      redraw_screen();
+    if (needs_redraw)
+        redraw_screen();
 }
 #endif
-
-
-
 
 void adjust_spells(void)
 {
@@ -268,14 +244,14 @@ void adjust_spells(void)
     bool needs_redraw = false;
 #endif
 
-    if ( !you.spell_no )
+    if (!you.spell_no)
     {
         mpr("You don't know any spells.");
         return;
     }
 
-query:
-    mpr("Adjust which spell?");
+  query:
+    mpr("Adjust which spell?", MSGCH_PROMPT);
 
     unsigned char keyin = get_ch();
 
@@ -289,7 +265,8 @@ query:
 #endif
         }
 
-        if ( ( nthing >= 'A' && nthing <= 'Z' ) || ( nthing >= 'a' && nthing <= 'z' ) )
+        if ((nthing >= 'A' && nthing <= 'Z')
+            || (nthing >= 'a' && nthing <= 'z'))
         {
             keyin = nthing;
         }
@@ -302,7 +279,7 @@ query:
 
     int throw_1 = (int) keyin;
 
-    if ( throw_1 < 'a' || throw_1 > 'w' )
+    if (throw_1 < 'a' || throw_1 > 'w')
     {
 #ifdef PLAIN_TERM
         adjust_spells_cleanup(needs_redraw);
@@ -330,7 +307,7 @@ query:
     strcat(info, spell_title(you.spells[throw_2]));
     mpr(info);
 
-    mpr("Adjust to which letter?");
+    mpr("Adjust to which letter?", MSGCH_PROMPT);
 
     keyin = get_ch();
 
@@ -344,7 +321,8 @@ query:
 #endif
         }
 
-        if ( ( nthing >= 'A' && nthing <= 'Z' ) || ( nthing >= 'a' && nthing <= 'z' ) )
+        if ((nthing >= 'A' && nthing <= 'Z')
+            || (nthing >= 'a' && nthing <= 'z'))
         {
             keyin = nthing;
         }
@@ -358,7 +336,7 @@ query:
     throw_1 = (int) keyin;
 
     //if (throw_1 < 'a' || throw_1 > 'z' )
-    if ( throw_1 < 'a' || throw_1 > 'v' )
+    if (throw_1 < 'a' || throw_1 > 'v')
     {
 #ifdef PLAIN_TERM
         adjust_spells_cleanup(needs_redraw);
@@ -395,111 +373,100 @@ query:
         mpr(info);
     }
 
-}          // end adjust_spells()
+}                               // end adjust_spells()
 
-
-
-
-void get_letter_id( char buff[5], int item_id )
+void get_letter_id(char buff[5], int item_id)
 {
-
     buff[0] = index_to_letter(item_id);
     buff[1] = '\0';
 
     strcat(buff, " - ");
+}                               // end get_letter_id()
 
-}          // end get_letter_id()
-
-
-
-
-void list_armour( void )
+void list_armour(void)
 {
-
     for (int i = EQ_CLOAK; i <= EQ_BODY_ARMOUR; i++)
     {
         int armour_id = you.equip[i];
         char letter_buff[5];
 
-        strcpy(info, (i == EQ_CLOAK)       ? "Cloak  " :
-                     (i == EQ_HELMET)      ? "Helmet " :
-                     (i == EQ_GLOVES)      ? "Gloves " :
-                     (i == EQ_SHIELD)      ? "Shield " :
-                     (i == EQ_BODY_ARMOUR) ? "Armour " :
-                     (i == EQ_BOOTS && !(you.species == SP_CENTAUR || you.species == SP_NAGA))
-                                           ? "Boots  " :
-                     (i == EQ_BOOTS && (you.species == SP_CENTAUR || you.species == SP_NAGA))
-                                           ? "Barding"
-                                           : "unknown" );
+        strcpy( info,
+                (i == EQ_CLOAK)       ? "Cloak  " :
+                (i == EQ_HELMET)      ? "Helmet " :
+                (i == EQ_GLOVES)      ? "Gloves " :
+                (i == EQ_SHIELD)      ? "Shield " :
+                (i == EQ_BODY_ARMOUR) ? "Armour " :
+
+                (i == EQ_BOOTS
+                    && !(you.species == SP_CENTAUR || you.species == SP_NAGA))
+                                      ? "Boots  " :
+                (i == EQ_BOOTS
+                    && (you.species == SP_CENTAUR || you.species == SP_NAGA))
+                                      ? "Barding"
+                                      : "unknown" );
 
         strcat(info, " : ");
 
-        if ( armour_id != -1 )
-          {
+        if (armour_id != -1)
+        {
             get_letter_id(letter_buff, armour_id);
             strcat(info, letter_buff);
 
             in_name(armour_id, 3, str_pass);
             strcat(info, str_pass);
-          }
+        }
         else
-          strcat(info, "    none");
+        {
+            strcat(info, "    none");
+        }
 
         mpr(info);
     }
+}                               // end list_armour()
 
-}          // end list_armour()
-
-
-
-
-void list_jewellery( void )
+void list_jewellery(void)
 {
-
     for (int i = EQ_LEFT_RING; i <= EQ_AMULET; i++)
     {
         int jewellery_id = you.equip[i];
         char letter_buff[5];
 
-        strcpy(info, (i == EQ_LEFT_RING)  ? "Left ring " :
-                     (i == EQ_RIGHT_RING) ? "Right ring" :
-                     (i == EQ_AMULET)     ? "Amulet    "
-                                          : "unknown   " );
+        strcpy( info, (i == EQ_LEFT_RING)  ? "Left ring " :
+                      (i == EQ_RIGHT_RING) ? "Right ring" :
+                      (i == EQ_AMULET)     ? "Amulet    "
+                                           : "unknown   " );
 
         strcat(info, " : ");
 
-        if ( jewellery_id != -1 )
-          {
+        if (jewellery_id != -1)
+        {
             get_letter_id(letter_buff, jewellery_id);
             strcat(info, letter_buff);
 
             in_name(jewellery_id, 3, str_pass);
             strcat(info, str_pass);
-          }
+        }
         else
-          strcat(info, "    none");
+        {
+            strcat(info, "    none");
+        }
 
         mpr(info);
     }
+}                               // end list_jewellery()
 
-}          // end list_jewellery()
-
-
-
-
-void list_weapons( void )
+void list_weapons(void)
 {
     char letter_buff[5];
     const int weapon_id = you.equip[EQ_WEAPON];
 
-// Output the current weapon
-//
-// Yes, this is already on the screen... I'm outputing it
-// for completeness and to avoid confusion.
-
+    // Output the current weapon
+    //
+    // Yes, this is already on the screen... I'm outputing it
+    // for completeness and to avoid confusion.
     strcpy(info, "Current   : ");
 
-    if ( weapon_id != -1 )
+    if (weapon_id != -1)
     {
         get_letter_id(letter_buff, weapon_id);
         strcat(info, letter_buff);
@@ -510,27 +477,26 @@ void list_weapons( void )
     }
     else
     {
-        if ( you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS )
-          strcat(info, "    blade hands");
+        if (you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
+            strcat(info, "    blade hands");
         else
-          strcat(info, "    empty hands");
+            strcat(info, "    empty hands");
     }
 
     mpr(info);
 
-
-// Print out the swap slots
+    // Print out the swap slots
     for (int i = 0; i <= 1; i++)
     {
         // We'll avoid repeating the current weapon for these slots,
         // in order to keep things clean.
-        if ( weapon_id == i )
-          continue;
+        if (weapon_id == i)
+            continue;
 
         strcpy(info, (i == 0) ? "Primary   : " : "Secondary : ");
 
         if (you.inv_quantity[i] > 0)
-          {
+        {
             get_letter_id(letter_buff, i);
             strcat(info, letter_buff);
 
@@ -540,39 +506,45 @@ void list_weapons( void )
             // This is useful information
             for (int j = EQ_CLOAK; j <= EQ_AMULET; j++)
             {
-                if ( you.equip[j] == i )
-                  strcat(info, " (worn)");
+                if (you.equip[j] == i)
+                    strcat(info, " (worn)");
             }
-          }
+        }
         else
-          strcat(info, "    none");
+            strcat(info, "    none");
 
         mpr(info);              // Output slot
-
     }
 
-// Now we print out the current default throwing weapon
+    // Now we print out the current default throwing weapon
     int type_wanted;
     int throw_id = -1;
 
     strcpy(info, "Firing    : ");
 
-    if ( weapon_id == -1 || you.inv_class[weapon_id] != OBJ_WEAPONS
-          || you.inv_type[weapon_id] < WPN_SLING
-          || you.inv_type[weapon_id] > WPN_CROSSBOW )
-      type_wanted = MI_DART;
+    if (weapon_id == -1 || you.inv_class[weapon_id] != OBJ_WEAPONS
+                        || you.inv_type[weapon_id] < WPN_SLING
+                        || you.inv_type[weapon_id] > WPN_CROSSBOW)
+    {
+        type_wanted = MI_DART;
+    }
     else
-      type_wanted = you.inv_type[weapon_id] - 13;
+    {
+        type_wanted = you.inv_type[weapon_id] - 13;
+    }
 
     for (int i = 0; i < ENDOFPACK; i++)
-      if ( you.inv_quantity[i] )
-        if ( you.inv_class[i] == OBJ_MISSILES && you.inv_type[i] == type_wanted )
+    {
+        if (you.inv_quantity[i]
+                && (you.inv_class[i] == OBJ_MISSILES
+                        && you.inv_type[i] == type_wanted))
         {
             throw_id = i;
             break;
         }
+    }
 
-// We'll print this one even if it is the current weapon
+    // We'll print this one even if it is the current weapon
     if (throw_id != -1)
     {
         get_letter_id(letter_buff, throw_id);
@@ -582,11 +554,12 @@ void list_weapons( void )
         strcat(info, str_pass);
 
         if (weapon_id == throw_id)
-          strcat(info, " (weapon)");
+            strcat(info, " (weapon)");
     }
     else
-      strcat(info, "    nothing");
+    {
+        strcat(info, "    nothing");
+    }
 
     mpr(info);
-
-}          // end list_weapons()
+}                               // end list_weapons()

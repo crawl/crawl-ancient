@@ -48,7 +48,7 @@ char cast_lesser_healing(void);
 /* ***********************************************************************
  * called from: ability - spell - spells3 - spells4
  * *********************************************************************** */
-char spell_direction(struct dist spelld[1], struct bolt *pbolt);
+char spell_direction(struct dist &spelld, struct bolt &pbolt);
 
 
 // last updated 24may2000 {dlb}
@@ -189,6 +189,18 @@ void deflection(int pow);
  * called from: spell
  * *********************************************************************** */
 void extension(int pow);
+
+// last updated Sept 18
+/* ***********************************************************************
+ * called from: religion
+ * *********************************************************************** */
+void antimagic(void);
+
+// last updated sept 18
+/* ***********************************************************************
+ * called from: religion
+ * *********************************************************************** */
+void antimagic(void);
 
 
 // last updated 24may2000 {dlb}

@@ -67,7 +67,7 @@ void gain_piety(char pgn);
 /* ***********************************************************************
  * called from: spell - religion
  * *********************************************************************** */
-void god_speaks(int god);
+void god_speaks( int god, const char *mesg );
 
 
 // last updated 24may2000 {dlb}

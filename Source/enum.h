@@ -185,6 +185,54 @@ enum ATTRIBUTES
     NUM_ATTRIBUTES              // must always remain last member {dlb}
 };
 
+enum BANDS
+{
+    BAND_NO_BAND                = 0,
+    BAND_KOBOLDS                = 1,
+    BAND_ORCS,
+    BAND_ORC_KNIGHT,
+    BAND_KILLER_BEES,
+    BAND_FLYING_SKULLS,         // 5
+    BAND_SLIME_CREATURES,
+    BAND_YAKS,
+    BAND_UGLY_THINGS,
+    BAND_HELL_HOUNDS,
+    BAND_JACKALS,               // 10
+    BAND_HELL_KNIGHTS,
+    BAND_ORC_HIGH_PRIEST,
+    BAND_GNOLLS,                // 13
+    BAND_BUMBLEBEES             = 16,
+    BAND_CENTAURS,
+    BAND_YAKTAURS,
+    BAND_INSUBSTANTIAL_WISPS,
+    BAND_OGRE_MAGE,             // 20
+    BAND_DEATH_YAKS,
+    BAND_NECROMANCER,
+    BAND_BALRUG,
+    BAND_CACODEMON,
+    BAND_EXECUTIONER,           // 25
+    BAND_HELLWING,
+    BAND_DEEP_ELF_FIGHTER,
+    BAND_DEEP_ELF_KNIGHT,
+    BAND_DEEP_ELF_HIGH_PRIEST,
+    BAND_KOBOLD_DEMONOLOGIST,   // 30
+    BAND_NAGAS,
+    BAND_WAR_DOGS,
+    BAND_GREY_RATS,
+    BAND_GREEN_RATS,
+    BAND_ORANGE_RATS,           // 35
+    BAND_SHEEP,
+    BAND_GHOULS,
+    BAND_DEEP_TROLLS,
+    BAND_HOGS,
+    BAND_HELL_HOGS,             // 40
+    BAND_GIANT_MOSQUITOES,
+    BAND_BOGGARTS,
+    BAND_BLINK_FROGS,
+    BAND_SKELETAL_WARRIORS,     // 44
+    NUM_BANDS                   // always last
+};
+
 enum BEAMS                        // beam[].flavour
 {
     BEAM_MISSILE,                 //    0
@@ -242,7 +290,7 @@ enum BOOKS
     BOOK_SKY,
     BOOK_DIVINATIONS,                  //   30
     BOOK_WARP,
-    BOOK_TOXINS,
+    BOOK_ENVENOMATIONS,
     BOOK_ANNIHILATIONS,
     BOOK_UNLIFE,
     BOOK_DESTRUCTION,                  //   35
@@ -256,9 +304,8 @@ enum BOOKS
     BOOK_POWER,
     BOOK_CANTRIPS,                     //jmf: 04jan2000
     BOOK_PARTY_TRICKS,           // 45 //jmf: 04jan2000
-    BOOK_INOBTRUSIVENESS,
     BOOK_BEASTS,
-    BOOK_ASSASSINATION, //jmf: 24jul2000
+    BOOK_STALKING,         // renamed -- assassination was confusing  -- bwr
     NUM_BOOKS
 };
 
@@ -438,6 +485,13 @@ enum COMMANDS
     CMD_WIZARD
 };
 
+enum CONFIRM_LEVEL
+{
+    CONFIRM_NONE_EASY,
+    CONFIRM_SAFE_EASY,
+    CONFIRM_ALL_EASY,
+};
+
 enum CORPSE_EFFECTS
 {
     CE_NOCORPSE,                       //    0
@@ -458,6 +512,14 @@ enum CORPSES
     CORPSE_SKELETON
 };
 
+enum DEATH_KNIGHT_CHOICES
+{
+    DK_NO_SELECTION,
+    DK_NECROMANCY,
+    DK_YREDELEMNUL,
+    DK_RANDOM,
+};
+
 enum DECKS
 {
     DECK_OF_WONDERS,                   //    0
@@ -474,7 +536,9 @@ enum DELAY
     DELAY_ARMOR_OFF,
     DELAY_MEMORIZE,
     DELAY_BUTCHER,
-    DELAY_AUTOPICKUP
+    DELAY_AUTOPICKUP,
+    DELAY_WEAPON_SWAP,                 // for easy_butcher
+    DELAY_PASSWALL,
 };
 
 enum DEMON_BEAMS
@@ -690,6 +754,7 @@ enum ENCHANTMENT                       // menv[].enchantment[]
     ENCH_FRIEND_ABJ_V,
     ENCH_FRIEND_ABJ_VI,                //   70
     ENCH_CREATED_FRIENDLY,             //   71 - no xp or piety for a kill
+    ENCH_SLEEP_WARY,
     NUM_ENCHANTMENTS
 };
 
@@ -757,7 +822,9 @@ enum GODS                              //  you.religion
     GOD_TROG,                          //   10
     GOD_NEMELEX_XOBEH,
     GOD_ELYVILON,
-    NUM_GODS
+    NUM_GODS,                          // always after last god
+
+    GOD_RANDOM  = 100,
 };
 
 enum GOOD_THINGS
@@ -807,6 +874,15 @@ enum HUNGER_STATES                     // you.hunger_state
     HS_SATIATED,                       // "not hungry" state
     HS_FULL,
     HS_ENGORGED                        //    5
+};
+
+enum ITEM_DESCRIPTIONS
+{
+    IDESC_WANDS,
+    IDESC_POTIONS,
+    IDESC_SCROLLS,                      // special field (like the others)
+    IDESC_RINGS,
+    IDESC_SCROLLS_II,                   // pluses field
 };
 
 enum JEWELLERY
@@ -872,10 +948,15 @@ enum JOB
     JOB_CHAOS_KNIGHT,                  //   20
     JOB_TRANSMUTER,
     JOB_HEALER,                        //   22
-    JOB_REAVER = 24,                   //   24
+    JOB_QUITTER,                       //   23 -- this is job 'x', don't use
+    JOB_REAVER,                        //   24
     JOB_STALKER,                       //   25
     JOB_MONK,
-    JOB_WARPER
+    JOB_WARPER,
+    JOB_WANDERER,                      //   23
+    NUM_JOBS,                          // always after the last job
+
+    JOB_UNKNOWN = 100,
 };
 
 enum KILLBY
@@ -939,6 +1020,47 @@ enum MAP_SECTIONS                      // see maps.cc and dungeon.cc {dlb}
     MAP_SOUTHEAST,                     //    5
     MAP_ENCOMPASS,
     MAP_NORTH_DIS
+};
+
+// if you mess with this list, you'll need to make changes in initfile.cc
+enum MESSAGE_CHANNEL {
+    MSGCH_PLAIN,          // regular text
+    MSGCH_PROMPT,         // various prompts
+    MSGCH_GOD,            // god/religion (param is god)
+    MSGCH_DURATION,       // effect down/warnings
+    MSGCH_DANGER,         // serious life threats (ie very large HP attacks)
+    MSGCH_WARN,           // much less serious threats
+    MSGCH_FOOD,           // hunger notices
+    MSGCH_RECOVERY,       // recovery from disease/stat/poison condition
+    MSGCH_TALK,           // monster talk (param is monster type)
+    MSGCH_INTRINSIC_GAIN, // player level/stat/species-power gains
+    MSGCH_MUTATION,       // player gain/lose mutations
+    MSGCH_MONSTER_SPELL,  // monsters casting spells
+    MSGCH_MONSTER_ENCHANT,// monsters enchantments up and down
+    MSGCH_MONSTER_DAMAGE, // monster damage reports (param is level)
+    NUM_MESSAGE_CHANNELS, // always last
+};
+
+enum MESSAGE_COLOURS {
+    MSGCOL_BLACK        = 0,    // the order of these colours is important
+    MSGCOL_BLUE,
+    MSGCOL_GREEN,
+    MSGCOL_CYAN,
+    MSGCOL_RED,
+    MSGCOL_MAGENTA,
+    MSGCOL_BROWN,
+    MSGCOL_LIGHTGRAY,
+    MSGCOL_DARKGRAY,
+    MSGCOL_LIGHTBLUE,
+    MSGCOL_LIGHTGREEN,
+    MSGCOL_LIGHTCYAN,
+    MSGCOL_LIGHTMAGENTA,
+    MSGCOL_YELLOW,
+    MSGCOL_WHITE,
+    MSGCOL_DEFAULT,             // use default colour
+    MSGCOL_ALTERNATE,           // use secondary default colour scheme
+    MSGCOL_MUTED,               // don't print messages
+    MSGCOL_PLAIN,               // same as plain channel
 };
 
 enum MISCELLANY                        // mitm.sub_type[]
@@ -1159,6 +1281,8 @@ enum MONSTERS                          // (int) menv[].type
     MONS_GRIZZLY_BEAR,
     MONS_POLAR_BEAR,
     MONS_BLACK_BEAR,  // 189
+    MONS_SIMULACRUM_SMALL,
+    MONS_SIMULACRUM_LARGE,
     //jmf: end new monsters
     MONS_WHITE_IMP = 220,              //  220
     MONS_LEMURE,
@@ -1277,10 +1401,10 @@ enum MONSTERS                          // (int) menv[].type
     MONS_CENTAUR_WARRIOR,
     MONS_YAKTAUR_CAPTAIN,
     MONS_KILLER_KLOWN,
-    //MONS_GUARDIAN_ROBOT = 379, deprecated and now officially removed {dlb}
-    //MONS_DORGI = 380, //  380 - deprecated and now officially removed {dlb}
-    //MONS_SWORD = 381, //  381 - deprecated and now officially removed {dlb}
-    //MONS_QUOKKA = 382, //  382 - deprecated and now officially removed {dlb}
+    MONS_ELECTRIC_GOLEM, // replacing the guardian robot -- bwr
+    MONS_BALL_LIGHTNING, // replacing the dorgi -- bwr
+    MONS_ORB_OF_FIRE,    // Swords renamed to fit -- bwr
+    MONS_QUOKKA,         // Quokka are a type of wallaby, returned -- bwr
     MONS_EYE_OF_DEVASTATION = 385,     //  385
     MONS_MOTH_OF_WRATH,
     MONS_DEATH_COB,
@@ -1334,9 +1458,20 @@ enum MONSTER_BEHAVIOR                  // create_monster()
 
 enum MONSTER_CATEGORIES
 {
-  MC_MIMIC, //    0
-  NUM_MC,
-  MC_UNSPECIFIED = 255 // keep at end !!! and mind the upper limit of 255 {dlb}
+    MC_MIMIC, //    0
+    NUM_MC,
+    MC_UNSPECIFIED = 255 // keep at end !!! mind the upper limit of 255 {dlb}
+};
+
+enum MONSTER_DAMAGE
+{
+    MDAM_OKAY,
+    MDAM_LIGHTLY_DAMAGED,
+    MDAM_MODERATELY_DAMAGED,
+    MDAM_HEAVILY_DAMAGED,
+    MDAM_HORRIBLY_DAMAGED,
+    MDAM_ALMOST_DEAD,
+    MDAM_DEAD,
 };
 
 enum MONSTER_DESCRIPTORS // things that cross categorical lines {dlb}
@@ -1423,6 +1558,99 @@ enum MONSTER_SPELLS   // mons_cast(), mspell_list[], mons_spells()
     MS_SUMMON_DEMON_GREATER, // [foo]_1 was confusing - renamed 13jan2000 {dlb}
     MS_BANISHMENT,
     NUM_MONSTER_SPELLS
+};
+
+// XXX: These still need to be applied in mon-spll.h and mon-data.h
+enum MONSTER_SPELL_TEMPLATES
+{
+    MST_ORC_WIZARD_I     = 0,
+    MST_ORC_WIZARD_II,
+    MST_ORC_WIZARD_III,
+    MST_GUARDIAN_NAGA    = 10,
+    MST_LICH_I           = 20,
+    MST_LICH_II,
+    MST_LICH_III,
+    MST_LICH_IV,
+    MST_BURNING_DEVIL    = 30,
+    MST_VAMPIRE          = 40,
+    MST_VAMPIRE_KNIGHT,
+    MST_VAMPIRE_MAGE,
+    MST_EFREET           = 50,
+    MST_BRAIN_WORM       = 52,
+    MST_GIANT_ORANGE_BRAIN,
+    MST_RAKSHAKA,
+    MST_GREAT_ORB_OF_EYES,              // 55
+    MST_ORC_SORCEROR,
+    MST_STEAM_DRAGON,
+    MST_HELL_KNIGHT_I,
+    MST_HELL_KNIGHT_II,
+    MST_NECROMANCER_I,                  // 60
+    MST_NECROMANCER_II,
+    MST_WIZARD_I,
+    MST_WIZARD_II,
+    MST_WIZARD_III,
+    MST_WIZARD_IV,                      // 65
+    MST_WIZARD_V,
+    MST_ORC_PRIEST,
+    MST_ORC_HIGH_PRIEST,
+    MST_MOTTLED_DRAGON,
+    MST_ICE_FIEND,                      // 70
+    MST_SHADOW_FIEND,
+    MST_TORMENTOR,
+    MST_STORM_DRAGON,
+    MST_WHITE_IMP,
+    MST_YNOXINUL,                       // 75
+    MST_NEQOXEC,
+    MST_HELLWING,
+    MST_SMOKE_DEMON,
+    MST_CACODEMON,
+    MST_GREEN_DEATH,                    // 80
+    MST_BALRUG,
+    MST_BLUE_DEATH,
+    MST_GERYON,
+    MST_DISPATER,
+    MST_ASMODEUS,                       // 85
+    MST_ERESHKIGAL,
+    MST_ANTAEUS,                        // 87
+    MST_MNOLEG                = 90,
+    MST_LOM_LOBON,
+    MST_CEREBOV,
+    MST_GLOORX_VLOQ,
+    MST_TITAN,
+    MST_GOLDEN_DRAGON,                  // 95
+    MST_DEEP_ELF_SUMMONER,
+    MST_DEEP_ELF_CONJURER_I,
+    MST_DEEP_ELF_CONJURER_II,
+    MST_DEEP_ELF_PRIEST,
+    MST_DEEP_ELF_HIGH_PRIEST,           // 100
+    MST_DEEP_ELF_DEMONOLOGIST,
+    MST_DEEP_ELF_ANNIHILATOR,
+    MST_DEEP_ELF_SORCEROR,
+    MST_DEEP_ELF_DEATH_MAGE,
+    MST_KOBOLD_DEMONOLOGIST,            // 105
+    MST_NAGA,
+    MST_NAGA_MAGE,
+    MST_CURSE_SKULL,
+    MST_SHINING_EYE,
+    MST_FROST_GIANT,                    // 110
+    MST_ANGEL,
+    MST_DAEVA,
+    MST_SHINING_DRAGON,
+    MST_SPHINX,
+    MST_MUMMY,                          // 115
+    MST_ELECTRIC_GOLEM,
+    MST_ORB_OF_FIRE,
+    MST_SHADOW_IMP,
+    MST_GHOST,
+    MST_HELL_HOG,                       // 120
+    MST_SWAMP_DRAGON,
+    MST_SWAMP_DRAKE,
+    MST_SERPENT_OF_HELL,
+    MST_BOGGART,
+    MST_EYE_OF_DEVASTATION,             // 125
+    MST_QUICKSILVER_DRAGON,
+    MST_IRON_DRAGON,
+    MST_SKELETAL_WARRIOR,               // 127
 };
 
 enum MUTATIONS
@@ -1820,6 +2048,7 @@ enum SPECIAL_WIELD                     // you.special_wield
     SPWLD_ZONGULDROK,
     SPWLD_POWER,
     SPWLD_WUCAD_MU,                    //    9
+    SPWLD_OLGREB,                      //   10
     SPWLD_SHADOW = 50,                 //   50
     SPWLD_HUM, //   51 - see it_use3::special_wielded() {dlb}
     SPWLD_CHIME, //   52 - see it_use3::special_wielded() {dlb}
@@ -1864,7 +2093,11 @@ enum SPECIES
     SP_MINOTAUR,
     SP_DEMONSPAWN,
     SP_GHOUL,                          //   35
-    SP_KENKU
+    SP_KENKU,
+    SP_MERFOLK,
+    NUM_SPECIES,                       // always after the last species
+
+    SP_UNKNOWN  = 100,
 };
 
 enum SPELLS
@@ -1875,13 +2108,17 @@ enum SPELLS
     SPELL_CREATE_NOISE,
     SPELL_REMOVE_CURSE,
     SPELL_MAGIC_DART,                  //    5
-    SPELL_FIREBALL,                    //    6
+    SPELL_FIREBALL,
+    SPELL_SWAP,
+    SPELL_APPORTATION,
+    SPELL_TWIST,
+    SPELL_FAR_STRIKE,                  //   10
     SPELL_CONJURE_FLAME = 13,          //   13
     SPELL_DIG,
     SPELL_BOLT_OF_FIRE,                //   15
     SPELL_BOLT_OF_COLD,
     SPELL_LIGHTNING_BOLT,              //   17
-    SPELL_BOLT_OF_MAGMA,
+    SPELL_BOLT_OF_MAGMA,               //   18
     SPELL_POLYMORPH_OTHER = 20,        //   20
     SPELL_SLOW,
     SPELL_HASTE,
@@ -2016,38 +2253,40 @@ enum SPELLS
 //jmf: new spells
     SPELL_FLAME_TONGUE,
     SPELL_PASSWALL,
-    SPELL_IGNITE_POISON,
+    SPELL_IGNITE_POISON,               //  170
     SPELL_STICKS_TO_SNAKES,
     SPELL_SUMMON_LARGE_MAMMAL,         // e.g. hound
     SPELL_SUMMON_DRAGON,
     SPELL_TAME_BEASTS,                 // charm/enslave but only animals
-    SPELL_SLEEP,
+    SPELL_SLEEP,                       //  175
     SPELL_MASS_SLEEP,
     SPELL_DETECT_MAGIC,                //jmf: unfinished, perhaps useless
     SPELL_DETECT_SECRET_DOORS,
     SPELL_SEE_INVISIBLE,
-    SPELL_FORESCRY,
+    SPELL_FORESCRY,                    //  180
     SPELL_SUMMON_BUTTERFLIES,
     SPELL_WARP_BRAND,
     SPELL_SILENCE,
     SPELL_SHATTER,
-    SPELL_WARP_FIELD,
+    SPELL_DISPERSAL,                   //  185
     SPELL_DISCHARGE,
     SPELL_BEND,
     SPELL_BACKLIGHT,
     SPELL_INTOXICATE,   // confusion but only "smart" creatures
-    SPELL_GLAMOUR,      // charm/confuse/sleep but only "smart" creatures
+    SPELL_GLAMOUR,      // charm/confuse/sleep but only "smart" creatures 190
     SPELL_EVAPORATE,    // turn a potion into a cloud
     SPELL_ERINGYAS_SURPRISING_BOUQUET, // turn sticks into herbivore food
     SPELL_FRAGMENTATION,               // replacement for "orb of frag"
     SPELL_AIR_WALK,                    // "dematerialize" (air/transmigration)
     SPELL_SANDBLAST,     // mini-frag; can use stones for material component
-    SPELL_ROTTING,       // evil god power or necromantic transmigration
+    SPELL_ROTTING,       // evil god power or necromantic transmigration  201
     SPELL_SHUGGOTH_SEED, // evil god power or necromantic summoning
     SPELL_MAXWELLS_SILVER_HAMMER,      // vorpal-brand maces etc.
     SPELL_CONDENSATION_SHIELD,         // "shield" of icy vapour
-    SPELL_SEMI_CONTROLLED_BLINK,       //jmf: to test effect
+    SPELL_SEMI_CONTROLLED_BLINK,       //jmf: to test effect              205
     SPELL_STONESKIN,
+    SPELL_SIMULACRUM,
+    SPELL_CONJURE_BALL_LIGHTNING,     // 208 (be wary of 210, see below)
     NUM_SPELLS,
     SPELL_NO_SPELL = 210              //  210 - added 22jan2000 {dlb}
 };
@@ -2257,7 +2496,8 @@ enum WEAPONS
     NUM_WEAPONS,                       //   42 - must remain last regular member {dlb}
 // special cases
     WPN_UNARMED = 500,                 //  500
-    WPN_UNKNOWN = 1000                 // 1000
+    WPN_UNKNOWN = 1000,                // 1000
+    WPN_RANDOM
 };
 
 enum WEAPON_DESCRIPTIONS

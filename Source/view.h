@@ -32,8 +32,8 @@ bool mons_near(struct monsters *monster);
 /* ***********************************************************************
  * called from: acr - player - stuff
  * *********************************************************************** */
-void draw_border(char your_name[kNameLen], char class_name[40], char tspecies);
-
+void draw_border(const char your_name[kNameLen], const char class_name[40],
+                 const char tspecies);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************

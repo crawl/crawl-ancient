@@ -62,6 +62,7 @@ void clear_ids(void);
  *              spell - spells1 - spells2 - spells3 - spells4 - transfor
  * *********************************************************************** */
 void in_name(int inn, char des, char str_pass[80]);
+void in_quant_name(int inn, int quant, char des, char str_pass[80]);
 
 
 /* ***********************************************************************

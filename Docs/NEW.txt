@@ -1,0 +1,24 @@
+-- look at all the XXX and FIXME comments in the code
+-- Which compile time options will be made standard?  What are the the
+   appropriate defaults for the config file (set in initfile.cc)?  These
+   have to be laid out before the release.
+-- might want to branch off a version of the source for the next release,
+   with the unused spells and code cut out (along with some of the
+   unimporant comments).  The full code would naturally still be used
+   as the development code.
+-- documentation (crawl.txt, crawl.6 will probably need some changes)
+-- bow messages on skill screen might take up too much real estate
+   (things are already tight for people on 24 line terminals once they
+   get all the skills)
+-- very noisy gcc --Wall compile (it was bad before, I'm afraid I've
+   made it worse, it's hard to tell I get a lot of warnings from
+   curses that have to do with some unimportant system conflicts).
+-- giant spores sometimes seg fault when exploding (I added a simple check
+   for NULL, but that's probably not the problem)
+-- fix throwing at invisible monster code (no message when you miss, possible
+   message if you hit -- it's apparently backwards right now).
+-- look into why you.equip[EQ_WEAPON] (aka weapon) is used in
+    fight.cc::monster_fight() and monster_attack() (ie. when the
+    player isn't even involved!)
+-- BUG: no "scores" file == segfault
+-- 'X' (view map) causes core dumps on terminals larger than 64 lines?

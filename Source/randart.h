@@ -44,7 +44,7 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype,
 /* ***********************************************************************
  * called from: describe
  * *********************************************************************** */
-char *unrandart_descrip(char which_descrip, unsigned char aclass,
+const char *unrandart_descrip(char which_descrip, unsigned char aclass,
                         unsigned char atype, unsigned char aplus,
                         unsigned char aplus2);
 
@@ -68,6 +68,8 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype,
                            unsigned char adam, unsigned char aplus,
                            unsigned char aplus2, unsigned char acol,
                            char prop);
+
+int inv_randart_wpn_properties( int index, unsigned char acol, char prop );
 
 
 /* ***********************************************************************

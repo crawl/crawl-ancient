@@ -15,6 +15,7 @@
 
 int backlight_monsters(char x, char y, int pow, int garbage);
 int torment_monsters(char x, char y, int pow, int message);
+bool monster_has_enchantment( int mon, int ench );
 int enchant_monster( int mon, int ench );
 
 int make_a_normal_cloud(char x, char y, int pow, int ctype);
@@ -28,6 +29,10 @@ void cast_discharge(int pow);
 void cast_evaporate(int pow);
 void cast_forescry(int pow);
 void cast_fragmentation(int powc);
+void cast_twist(int powc);
+void cast_far_strike(int powc);
+void cast_swap(int powc);
+void cast_apportation(int powc);
 
 #ifdef USE_ELVISH_GLAMOUR_ABILITY
 void cast_glamour(int pow);
@@ -46,9 +51,10 @@ void cast_silence(int pow);
 void cast_sticks_to_snakes(int pow);
 void cast_summon_butterflies(int pow);
 void cast_summon_dragon(int pow);
+void cast_conjure_ball_lightning(int pow);
 void cast_summon_large_mammal(int pow);
 void cast_tame_beasts(int pow);
-void cast_warp_field(int pow);
+void cast_dispersal(int pow);
 void cast_snake_charm(int pow);
 void cast_stoneskin(int pow);
 

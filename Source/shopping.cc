@@ -34,7 +34,6 @@
 #include "macro.h"
 #endif
 
-
 /*
    struct item_struct
    {
@@ -69,39 +68,32 @@
 
  */
 
-
 char in_a_shop(char shoppy, char id[4][50]);
 char more3(void);
 void purchase(int item_got);
-void shop_init_id(int i, FixedArray<int, 4, 50>& shop_id);
+void shop_init_id(int i, FixedArray < int, 4, 50 > &shop_id);
 void shop_print(char *shoppy, char sh_line);
-void shop_set_id(int i, FixedArray<int, 4, 50>& shop_id, unsigned char base_type, unsigned char sub_type);
-void shop_uninit_id(int i, FixedArray<int, 4, 50>& shop_id);
+void shop_set_id(int i, FixedArray < int, 4, 50 > &shop_id,
+                 unsigned char base_type, unsigned char sub_type);
+void shop_uninit_id(int i, FixedArray < int, 4, 50 > &shop_id);
 
-
-
-
-char in_a_shop( char shoppy, char id[4][50] )
+char in_a_shop(char shoppy, char id[4][50])
 {
-
+    // easier to work with {dlb}
     unsigned int greedy = env.shop_greed[shoppy];
-    unsigned char shop_type = env.shop_type[shoppy];    // easier to work with {dlb}
+    unsigned char shop_type = env.shop_type[shoppy];
 
-    FixedArray<int, 4, 50> shop_id;
-    FixedVector<int, 20> shop_items;
+    FixedArray < int, 4, 50 > shop_id;
+    FixedVector < int, 20 > shop_items;
 
     char st_pass[60];
-
     char gold_p[10];
-
-    int gp_value = 0;
+    unsigned int gp_value = 0;
     char i;
     unsigned char ft;
 
-
 #ifdef DOS_TERM
     char buffer[4800];
-
     gettext(1, 1, 80, 25, buffer);
 #endif
 
@@ -118,64 +110,69 @@ char in_a_shop( char shoppy, char id[4][50] )
     strcpy(sh_name, "Welcome to ");
 
     char str_pass[50];
-    make_name(env.keeper_name[shoppy][0], env.keeper_name[shoppy][1], env.keeper_name[shoppy][2], 3, str_pass);
+
+    make_name( env.keeper_name[shoppy][0], env.keeper_name[shoppy][1],
+               env.keeper_name[shoppy][2], 3, str_pass );
 
     strcat(sh_name, str_pass);
     strcat(sh_name, "'s ");
 
-    if ( shop_type == SHOP_WEAPON_ANTIQUE
-          || shop_type == SHOP_ARMOUR_ANTIQUE )
-      strcat(sh_name, "Antique ");
+    if (shop_type == SHOP_WEAPON_ANTIQUE || shop_type == SHOP_ARMOUR_ANTIQUE)
+        strcat( sh_name, "Antique " );
 
     strcat(sh_name, (shop_type == SHOP_WEAPON
-                      || shop_type == SHOP_WEAPON_ANTIQUE) ? "Weapon" :
+                     || shop_type == SHOP_WEAPON_ANTIQUE) ? "Weapon" :
                     (shop_type == SHOP_ARMOUR
-                      || shop_type == SHOP_ARMOUR_ANTIQUE) ? "Armour" :
-                    (shop_type == SHOP_JEWELLERY )         ? "Jewellery" :
-                    (shop_type == SHOP_WAND )              ? "Magical Wand" :
-                    (shop_type == SHOP_BOOK )              ? "Book" :
-                    (shop_type == SHOP_FOOD )              ? "Food" :
-                    (shop_type == SHOP_SCROLL )            ? "Magic Scroll" :
-                    (shop_type == SHOP_GENERAL_ANTIQUE )   ? "Assorted Antiques" :
-                    (shop_type == SHOP_DISTILLERY )        ? "Distillery" :
-                    (shop_type == SHOP_GENERAL )           ? "General Store"
-                                                           : "Bug" );
+                     || shop_type == SHOP_ARMOUR_ANTIQUE) ? "Armour" :
 
-    if ( shop_type != SHOP_GENERAL
-        && shop_type != SHOP_GENERAL_ANTIQUE
-        && shop_type != SHOP_DISTILLERY )
-      strcat(sh_name," Shop");
+                    (shop_type == SHOP_JEWELLERY)         ? "Jewellery" :
+                    (shop_type == SHOP_WAND)              ? "Magical Wand" :
+                    (shop_type == SHOP_BOOK)              ? "Book" :
+                    (shop_type == SHOP_FOOD)              ? "Food" :
+                    (shop_type == SHOP_SCROLL)            ? "Magic Scroll" :
+                    (shop_type == SHOP_GENERAL_ANTIQUE) ? "Assorted Antiques" :
+                    (shop_type == SHOP_DISTILLERY)        ? "Distillery" :
+                    (shop_type == SHOP_GENERAL)           ? "General Store"
+                                                          : "Bug");
 
-    strcat(sh_name,"!");
 
+    if (shop_type != SHOP_GENERAL
+        && shop_type != SHOP_GENERAL_ANTIQUE && shop_type != SHOP_DISTILLERY)
+    {
+        int temp = (env.shop_x[ shoppy ] + env.shop_y[ shoppy ]) % 4;
+        strcat( sh_name, (temp == 0) ? " Shoppe" :
+                         (temp == 1) ? " Boutique" :
+                         (temp == 2) ? " Emporium"
+                                     : " Shop" );
+    }
+
+    strcat(sh_name, "!");
     shop_print(sh_name, 20);
-
     more3();
-
     shop_init_id(shoppy, shop_id);
 
-/* *************************************
-THINGS TO DO:
-  Allow inventory
-  Remove id change for antique shops
-  selling?
-************************************* */
+    /* *************************************
+    THINGS TO DO:
+      Allow inventory
+      Remove id change for antique shops
+      selling?
+    ************************************* */
 
     save_id(id);
 
-print_stock:
+  print_stock:
     clrscr();
     itty = igrd[0][5 + shoppy];
 
     if (igrd[0][5 + shoppy] == NON_ITEM)
     {
-empty_shop:
+      empty_shop:
         shop_print("I'm sorry, my shop is empty now.", 20);
         more3();
         goto goodbye;
     }
 
-    if ( you.num_inv_items >= ENDOFPACK )
+    if (you.num_inv_items >= ENDOFPACK)
     {
         shop_print("You seem to be carrying too much.", 20);
         more3();
@@ -189,7 +186,7 @@ empty_shop:
     {
         shop_items[i - 1] = itty;
 
-        if ( itty == NON_ITEM )        //mitm.link [itty] == NON_ITEM)
+        if (itty == NON_ITEM)   //mitm.link [itty] == NON_ITEM)
         {
             shop_items[i - 1] = NON_ITEM;
             continue;
@@ -204,17 +201,24 @@ empty_shop:
     {
         gotoxy(1, i);
 
-        textcolor( (i % 2) ? WHITE : LIGHTGREY );
+        textcolor((i % 2) ? WHITE : LIGHTGREY);
 
         it_name(itty, 3, st_pass);
         putch(i + 96);
         cprintf(" - ");
         cprintf(st_pass);
 
-        gp_value = greedy * item_value(mitm.base_type[itty], mitm.sub_type[itty], mitm.special[itty], mitm.pluses[itty], mitm.pluses2[itty], mitm.quantity[itty], mitm.id[itty], id);
+        gp_value = greedy * item_value( mitm.base_type[itty],
+                                        mitm.sub_type[itty],
+                                        mitm.special[itty],
+                                        mitm.pluses[itty],
+                                        mitm.pluses2[itty],
+                                        mitm.quantity[itty],
+                                        mitm.id[itty], id );
         gp_value /= 10;
         if (gp_value <= 1)
             gp_value = 1;
+
         gotoxy(60, i);
         // cdl - itoa(gp_value, st_pass, 10);
         sprintf(st_pass, "%5d", gp_value);
@@ -224,14 +228,13 @@ empty_shop:
             break;
 
         itty = mitm.link[itty];
-
     }
 
     textcolor(LIGHTGREY);
 
     shop_print("Type letter to buy item, x/Esc to leave, ?/* for inventory, v to examine.", 23);
 
-purchase:
+  purchase:
     strcpy(sh_name, "You have ");
     itoa(you.gold, gold_p, 10);
     strcat(sh_name, gold_p);
@@ -244,21 +247,22 @@ purchase:
 
     ft = get_ch();
 
-    if ( ft == 'x' || ft == 27 )
-      goto goodbye;
+    if (ft == 'x' || ft == 27)
+        goto goodbye;
 
     if (ft == 'v')
     {
         shop_print("Examine which item?", 20);
         ft = get_ch();
 
-        if ( ft < 'a' || ft > 'z' )     // wonder whether this should be recoded to permit uppercase, too? {dlb}
-          goto huh;
+        // wonder whether this should be recoded to permit uppercase, too? {dlb}
+        if (ft < 'a' || ft > 'z')
+            goto huh;
 
-        ft -= 'a';  // see above comment {dlb}
+        ft -= 'a';              // see above comment {dlb}
 
-        if ( ft > 18 )
-          goto huh;
+        if (ft > 18)
+            goto huh;
 
         if (shop_items[ft] == NON_ITEM)
         {
@@ -267,10 +271,13 @@ purchase:
             goto purchase;
         }
 
-        describe_item(mitm.base_type[shop_items[ft]], mitm.sub_type[shop_items[ft]], mitm.pluses[shop_items[ft]], mitm.pluses2[shop_items[ft]], mitm.special[shop_items[ft]], mitm.id[shop_items[ft]]);
+        describe_item(mitm.base_type[shop_items[ft]],
+                      mitm.sub_type[shop_items[ft]],
+                      mitm.pluses[shop_items[ft]],
+                      mitm.pluses2[shop_items[ft]],
+                      mitm.special[shop_items[ft]], mitm.id[shop_items[ft]]);
 
         goto print_stock;
-
     }
 
     if (ft == '?' || ft == '*')
@@ -284,18 +291,18 @@ purchase:
         goto print_stock;
     }
 
-    if ( ft < 'a' || ft > 'z' )    // see earlier comments re: uppercase {dlb}
+    if (ft < 'a' || ft > 'z')   // see earlier comments re: uppercase {dlb}
     {
-huh:
+      huh:
         shop_print("Huh?", 20);
         more3();
         goto purchase;
     }
 
-    ft -= 'a';    // see earlier comments re: uppercase {dlb}
+    ft -= 'a';                  // see earlier comments re: uppercase {dlb}
 
-    if ( ft > 18 )
-      goto huh;
+    if (ft > 18)
+        goto huh;
 
     if (shop_items[ft] == NON_ITEM)
     {
@@ -304,7 +311,15 @@ huh:
         goto purchase;
     }
 
-    if (greedy * (item_value(mitm.base_type[shop_items[ft]], mitm.sub_type[shop_items[ft]], mitm.special[shop_items[ft]], mitm.pluses[shop_items[ft]], mitm.pluses2[shop_items[ft]], mitm.quantity[shop_items[ft]], mitm.id[shop_items[ft]], id)) / 10 > you.gold)
+    gp_value = greedy * item_value( mitm.base_type[shop_items[ft]],
+                                        mitm.sub_type[shop_items[ft]],
+                                        mitm.special[shop_items[ft]],
+                                        mitm.pluses[shop_items[ft]],
+                                        mitm.pluses2[shop_items[ft]],
+                                        mitm.quantity[shop_items[ft]],
+                                        mitm.id[shop_items[ft]], id ) / 10;
+
+    if (gp_value > you.gold)
     {
         shop_print("I'm sorry, you don't seem to have enough money.", 20);
         more3();
@@ -312,20 +327,21 @@ huh:
     }
 
     purchase(shop_items[ft]);
-    shop_set_id(shoppy, shop_id, mitm.base_type[shop_items[ft]], mitm.sub_type[shop_items[ft]]);
+    shop_set_id( shoppy, shop_id, mitm.base_type[shop_items[ft]],
+                 mitm.sub_type[shop_items[ft]] );
 
-    you.gold -= (greedy * item_value(mitm.base_type[shop_items[ft]], mitm.sub_type[shop_items[ft]], mitm.special[shop_items[ft]], mitm.pluses[shop_items[ft]], mitm.pluses2[shop_items[ft]], mitm.quantity[shop_items[ft]], mitm.id[shop_items[ft]], id)) / 10;
+    you.gold -= gp_value;
 
     mitm.quantity[shop_items[ft]] = 0;
 
-    if ( ft == 0 )
-      igrd[0][5 + shoppy] = mitm.link[shop_items[ft]];
+    if (ft == 0)
+        igrd[0][5 + shoppy] = mitm.link[shop_items[ft]];
     else
-      mitm.link[shop_items[ft - 1]] = mitm.link[shop_items[ft]];
+        mitm.link[shop_items[ft - 1]] = mitm.link[shop_items[ft]];
 
     goto print_stock;
 
-goodbye:
+  goodbye:
     //clear_line();
     shop_print("Goodbye!", 20);
     more3();
@@ -338,106 +354,89 @@ goodbye:
 
     shop_uninit_id(shoppy, shop_id);
     return 0;
-
 }
 
-
-void shop_init_id(int i, FixedArray<int, 4, 50>& shop_id)
+void shop_init_id(int i, FixedArray < int, 4, 50 > &shop_id)
 {
-
     unsigned char j = 0;
 
-    if ( env.shop_type[i] != SHOP_WEAPON_ANTIQUE
+    if (env.shop_type[i] != SHOP_WEAPON_ANTIQUE
         && env.shop_type[i] != SHOP_ARMOUR_ANTIQUE
-        && env.shop_type[i] != SHOP_GENERAL_ANTIQUE )
-      for (j = 0; j < 50; j++)
-      {
-          shop_id[0][j] = get_id(OBJ_WANDS, j);
-          set_id(OBJ_WANDS, j, 1);
+        && env.shop_type[i] != SHOP_GENERAL_ANTIQUE)
+    {
+        for (j = 0; j < 50; j++)
+        {
+            shop_id[0][j] = get_id(OBJ_WANDS, j);
+            set_id(OBJ_WANDS, j, 1);
 
-          shop_id[1][j] = get_id(OBJ_SCROLLS, j);
-          set_id(OBJ_SCROLLS, j, 1);
+            shop_id[1][j] = get_id(OBJ_SCROLLS, j);
+            set_id(OBJ_SCROLLS, j, 1);
 
-          shop_id[2][j] = get_id(OBJ_JEWELLERY, j);
-          set_id(OBJ_JEWELLERY, j, 1);
+            shop_id[2][j] = get_id(OBJ_JEWELLERY, j);
+            set_id(OBJ_JEWELLERY, j, 1);
 
-          shop_id[3][j] = get_id(OBJ_POTIONS, j);
-          set_id(OBJ_POTIONS, j, 1);
-      }
-
+            shop_id[3][j] = get_id(OBJ_POTIONS, j);
+            set_id(OBJ_POTIONS, j, 1);
+        }
+    }
 }
 
-
-
-
-void shop_uninit_id(int i, FixedArray<int, 4, 50>& shop_id)
+void shop_uninit_id(int i, FixedArray < int, 4, 50 > &shop_id)
 {
-
     unsigned char j = 0;
 
-    if ( env.shop_type[i] != SHOP_WEAPON_ANTIQUE
+    if (env.shop_type[i] != SHOP_WEAPON_ANTIQUE
         && env.shop_type[i] != SHOP_ARMOUR_ANTIQUE
-        && env.shop_type[i] != SHOP_GENERAL_ANTIQUE )
-      for (j = 0; j < 50; j++)
-      {
-          set_id(OBJ_WANDS, j, shop_id[0][j]);
-          set_id(OBJ_SCROLLS, j, shop_id[1][j]);
-          set_id(OBJ_JEWELLERY, j, shop_id[2][j]);
-          set_id(OBJ_POTIONS, j, shop_id[3][j]);
-      }
-
+        && env.shop_type[i] != SHOP_GENERAL_ANTIQUE)
+    {
+        for (j = 0; j < 50; j++)
+        {
+            set_id(OBJ_WANDS, j, shop_id[0][j]);
+            set_id(OBJ_SCROLLS, j, shop_id[1][j]);
+            set_id(OBJ_JEWELLERY, j, shop_id[2][j]);
+            set_id(OBJ_POTIONS, j, shop_id[3][j]);
+        }
+    }
 }
 
-
-
-
-void shop_set_id(int i, FixedArray<int, 4, 50>& shop_id, unsigned char base_type, unsigned char sub_type)
+void shop_set_id(int i, FixedArray < int, 4, 50 > &shop_id,
+                 unsigned char base_type, unsigned char sub_type)
 {
-
-    if ( env.shop_type[i] != SHOP_WEAPON_ANTIQUE
+    if (env.shop_type[i] != SHOP_WEAPON_ANTIQUE
         && env.shop_type[i] != SHOP_ARMOUR_ANTIQUE
-        && env.shop_type[i] != SHOP_GENERAL_ANTIQUE )
+        && env.shop_type[i] != SHOP_GENERAL_ANTIQUE)
     {
         switch (base_type)
         {
-          case OBJ_WANDS:
+        case OBJ_WANDS:
             shop_id[0][sub_type] = 1;
             break;
-          case OBJ_SCROLLS:
+        case OBJ_SCROLLS:
             shop_id[1][sub_type] = 1;
             break;
-          case OBJ_JEWELLERY:
+        case OBJ_JEWELLERY:
             shop_id[2][sub_type] = 1;
             break;
-          case OBJ_POTIONS:
+        case OBJ_POTIONS:
             shop_id[3][sub_type] = 1;
             break;
         }
 
         set_id(base_type, sub_type, 1);
     }
-
 }
 
-
-
-
-void shop_print( char *shoppy, char sh_lines )
+void shop_print(char *shoppy, char sh_lines)
 {
-
     gotoxy(1, sh_lines);
 
     cprintf(shoppy);
 
     for (int i = strlen(shoppy); i < 80; i++)
-      cprintf(" ");
-
+        cprintf(" ");
 }
 
-
-
-
-char more3( void )
+char more3(void)
 {
     char keyin = 0;
 
@@ -450,25 +449,21 @@ char more3( void )
     return keyin;
 }
 
-
-
-
-void purchase( int item_got )
+void purchase(int item_got)
 {
-
     unsigned char i = 0;
 
     for (i = 0; i < (ENDOFPACK + 1); i++)
     {
-        if ( i == ENDOFPACK )
+        if (i == ENDOFPACK)
         {
             shop_print("The demon of the infinite void grins at you.", 20);
             more3();
             return;
         }
 
-        if ( you.inv_quantity[i] < 1 )
-          break;
+        if (you.inv_quantity[i] < 1)
+            break;
     }
 
     you.inv_ident[i] = mitm.id[item_got];
@@ -481,23 +476,20 @@ void purchase( int item_got )
     you.inv_quantity[i] = mitm.quantity[item_got];
 
     you.num_inv_items++;
+}                               // end purchase()
 
-}          // end purchase()
-
-
-
-
-unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsigned char item_da, unsigned char it_plus, unsigned char it_plus2, unsigned int item_quant, char ident_lev, char id[4][50] )
+unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
+                        unsigned char item_da, unsigned char it_plus,
+                        unsigned char it_plus2, unsigned int item_quant,
+                        char ident_lev, char id[4][50])
 {
-
     int valued = 0;
     int charge_value = 0;
 
-    switch ( item_clas )
+    switch (item_clas)
     {
-      case OBJ_WEAPONS:
-
-        if ( item_da >= NWPN_SINGING_SWORD )
+    case OBJ_WEAPONS:
+        if (item_da >= NWPN_SINGING_SWORD)
         {
             if (ident_lev > 0)
             {
@@ -543,7 +535,7 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
 
         }                       // end uniques
 
-        switch ( item_typ )
+        switch (item_typ)
         {
         case WPN_CLUB:
         case WPN_KNIFE:
@@ -678,90 +670,90 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
 
         if (ident_lev > 1)
         {
-            switch ( item_da % 30 )
+            switch (item_da % 30)
             {
-              case SPWPN_NORMAL:
-                  break;
+            case SPWPN_NORMAL:
+                break;
 
-              case SPWPN_DRAINING:
-                  valued *= 64;
-                  break;
+            case SPWPN_DRAINING:
+                valued *= 64;
+                break;
 
-              case SPWPN_VAMPIRICISM:
-                  valued *= 60;
-                  break;
+            case SPWPN_VAMPIRICISM:
+                valued *= 60;
+                break;
 
-              case SPWPN_DISRUPTION:
-              case SPWPN_FLAME:
-              case SPWPN_FROST:
-              case SPWPN_HOLY_WRATH:
-              case SPWPN_REACHING:
-                  valued *= 50;
-                  break;
+            case SPWPN_DISRUPTION:
+            case SPWPN_FLAME:
+            case SPWPN_FROST:
+            case SPWPN_HOLY_WRATH:
+            case SPWPN_REACHING:
+                valued *= 50;
+                break;
 
-              case SPWPN_SPEED:
-                  valued *= 40;
-                  break;
+            case SPWPN_SPEED:
+                valued *= 40;
+                break;
 
-              case SPWPN_DISTORTION:
-              case SPWPN_ELECTROCUTION:
-              case SPWPN_PAIN:
-              case SPWPN_VORPAL:
-                  valued *= 30;
-                  break;
+            case SPWPN_DISTORTION:
+            case SPWPN_ELECTROCUTION:
+            case SPWPN_PAIN:
+            case SPWPN_VORPAL:
+                valued *= 30;
+                break;
 
-              case SPWPN_FLAMING:
-              case SPWPN_FREEZING:
-                  valued *= 25;
-                  break;
+            case SPWPN_FLAMING:
+            case SPWPN_FREEZING:
+                valued *= 25;
+                break;
 
-              case SPWPN_VENOM:
-                  valued *= 23;
-                  break;
+            case SPWPN_VENOM:
+                valued *= 23;
+                break;
 
-              case SPWPN_ORC_SLAYING:
-                  valued *= 21;
-                  break;
+            case SPWPN_ORC_SLAYING:
+                valued *= 21;
+                break;
 
-              case SPWPN_PROTECTION:
-                  valued *= 20;
-                  break;
+            case SPWPN_PROTECTION:
+                valued *= 20;
+                break;
 
-              default:    // randart
-                  valued *= 70;
-                  break;
+            default:            // randart
+                valued *= 70;
+                break;
             }
 
-            if ( item_da % 30 != SPWPN_NORMAL )
-              valued /= 10;
+            if (item_da % 30 != SPWPN_NORMAL)
+                valued /= 10;
         }
 
-        if (item_da / 30 == DWPN_ELVEN || item_da / 30 == DWPN_DWARVEN)         // elf/dwarf
+        // elf/dwarf
+        if (item_da / 30 == DWPN_ELVEN || item_da / 30 == DWPN_DWARVEN)
         {
             valued *= 12;
             valued /= 10;
         }
 
-        if (item_da / 30 == DWPN_ORCISH)  // value was "6" but comment read "orc", so I went with comment {dlb}
+        // value was "6" but comment read "orc", so I went with comment {dlb}
+        if (item_da / 30 == DWPN_ORCISH)
         {
             valued *= 8;
             valued /= 10;
         }
 
-
         if (ident_lev > 2)
         {
-
             if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150))
             {
-                valued += (it_plus % 50) << 1;
+                valued += (it_plus % 50) * 2;
                 valued *= 10 + (it_plus % 50) + 2 * (it_plus % 50);
                 valued /= 10;
             }
 
             if (it_plus2 >= 50)
             {
-                valued += (it_plus2 % 50) << 1;
+                valued += (it_plus2 % 50) * 2;
                 valued *= 10 + (it_plus2 % 50) + 2 * (it_plus2 % 50);
                 valued /= 10;
             }
@@ -769,7 +761,8 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
             if (it_plus % 50 > 30)
             {
                 valued -= 5;
-                valued += ((it_plus % 50) - 50) * ((it_plus % 50) - 50) * ((it_plus % 50) - 50);
+                valued += ((it_plus % 50) - 50) * ((it_plus % 50) - 50)
+                                                    * ((it_plus % 50) - 50);
                 if (valued < 1)
                     valued = 1;
                 //break;
@@ -778,11 +771,11 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
             if (it_plus2 % 50 > 30)
             {
                 valued -= 5;
-                valued += ((it_plus2 % 50) - 50) * ((it_plus2 % 50) - 50) * ((it_plus2 % 50) - 50);
+                valued += ((it_plus2 % 50) - 50) * ((it_plus2 % 50) - 50)
+                                                    * ((it_plus2 % 50) - 50);
                 if (valued < 1)
                     valued = 1;
             }
-
         }
 
         if (ident_lev > 0 && it_plus >= 130)
@@ -790,42 +783,36 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
             valued *= 6;
             valued /= 10;
         }
-
-
         break;
 
-
     case OBJ_MISSILES:          // ammunition
-
         if (ident_lev > 0)
         {
             // assume not cursed (can they be anyway?)
-            if ( it_plus < 50 )
-              valued -= 11150;
-            if ( it_plus >= 50 )
-              valued += (it_plus % 50) << 1;
+            if (it_plus < 50)
+                valued -= 11150;
+            if (it_plus >= 50)
+                valued += (it_plus % 50) * 2;
         }
 
-        switch ( item_typ )
+        switch (item_typ)
         {
-          case MI_DART:
-          case MI_LARGE_ROCK:
-          case MI_STONE:
-          case MI_EGGPLANT:
+        case MI_DART:
+        case MI_LARGE_ROCK:
+        case MI_STONE:
+        case MI_EGGPLANT:
             valued++;
             break;
-          case MI_ARROW:
-          case MI_BOLT:
+        case MI_ARROW:
+        case MI_BOLT:
             valued += 2;
             break;
-          default:              // was: cases 6 through 16 with empty strcat()'s 15jan2000 {dlb}
+        default:
+            // was: cases 6 through 16 with empty strcat()'s 15jan2000 {dlb}
             valued += 5;
             break;              //strcat(glog , ""); break;
-
         }
-
         break;
-
 
     case OBJ_ARMOUR:
 /*
@@ -837,7 +824,6 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
            //             valued += it_plus % 50;
            }
 */
-
         switch (item_typ)
         {
         case ARM_GOLD_DRAGON_ARMOUR:
@@ -950,10 +936,7 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
         case ARM_ANIMAL_SKIN:
             valued += 3;
             break;
-
-
         }
-
 
         if (ident_lev > 1)
         {
@@ -1005,6 +988,7 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
                 valued *= 70;
                 break;
             }
+
             if (item_da % 30 != 0)
                 valued /= 10;
         }
@@ -1033,10 +1017,11 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
 
             if (it_plus % 50 > 30)
             {
-                valued += ((it_plus % 50) - 50) * ((it_plus % 50) - 50) * ((it_plus % 50) - 50);
+                valued +=
+                    ((it_plus % 50) - 50) * ((it_plus % 50) -
+                                             50) * ((it_plus % 50) - 50);
                 if (valued < 1)
                     valued = 1;
-//          break;
             }
         }
 
@@ -1045,14 +1030,11 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
             valued *= 6;
             valued /= 10;
         }
-
         break;
-
 
     case OBJ_WANDS:
         charge_value = 0;
-
-        if ( id[0][item_typ] )
+        if (id[0][item_typ])
         {
             switch (item_typ)
             {
@@ -1128,7 +1110,7 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
                 charge_value++;
                 break;
 
-            default:    // no default charge_value ??? 15jan2000 {dlb}
+            default:            // no default charge_value ??? 15jan2000 {dlb}
                 valued += 10;
                 break;
             }
@@ -1140,57 +1122,54 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
 
             if (it_plus == 0)
                 valued = 3;     // change if wands are rechargeable!
-
         }
-
         else
             valued = 35;        // = 10;
-
         break;
 
-
     case OBJ_POTIONS:
-        if ( !id[3][item_typ] )
-          valued += 9;
+        if (!id[3][item_typ])
+            valued += 9;
         else
-          switch ( item_typ )
-          {
+        {
+            switch (item_typ)
+            {
             case POT_EXPERIENCE:
-              valued += 500;
-              break;
+                valued += 500;
+                break;
             case POT_GAIN_DEXTERITY:
             case POT_GAIN_INTELLIGENCE:
             case POT_GAIN_STRENGTH:
-              valued += 350;
-              break;
+                valued += 350;
+                break;
             case POT_CURE_MUTATION:
-              valued += 150;
-              break;
+                valued += 150;
+                break;
             case POT_MAGIC:
-              valued += 120;
-              break;
+                valued += 120;
+                break;
             case POT_INVISIBILITY:
-              valued += 55;
-              break;
+                valued += 55;
+                break;
             case POT_MUTATION:
             case POT_RESTORE_ABILITIES:
-              valued += 50;
-              break;
+                valued += 50;
+                break;
             case POT_BERSERK_RAGE:
             case POT_HEAL_WOUNDS:
-              valued += 30;
-              break;
+                valued += 30;
+                break;
             case POT_MIGHT:
             case POT_SPEED:
-              valued += 25;
-              break;
+                valued += 25;
+                break;
             case POT_HEALING:
             case POT_LEVITATION:
-              valued += 20;
-              break;
+                valued += 20;
+                break;
             case POT_PORRIDGE:
-              valued += 10;
-              break;
+                valued += 10;
+                break;
             case POT_CONFUSION:
             case POT_DECAY:
             case POT_DEGENERATION:
@@ -1199,127 +1178,131 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
             case POT_SLOWING:
             case POT_STRONG_POISON:
             case POT_WATER:
-              valued++;
-              break;
-          }
+                valued++;
+                break;
+            }
+        }
         break;
 
-      case OBJ_FOOD:
-        switch ( item_typ )
+    case OBJ_FOOD:
+        switch (item_typ)
         {
-          case FOOD_ROYAL_JELLY:
+        case FOOD_ROYAL_JELLY:
             valued = 280;
             break;
-          case FOOD_HONEYCOMB:
+        case FOOD_HONEYCOMB:
             valued = 112;
             break;
-          case FOOD_MEAT_RATION:
-          case FOOD_BREAD_RATION:
+        case FOOD_MEAT_RATION:
+        case FOOD_BREAD_RATION:
             valued = 80;
             break;
-          case FOOD_BEEF_JERKY:
+        case FOOD_BEEF_JERKY:
             valued = 56;
             break;
-          case FOOD_CHEESE:
+        case FOOD_CHEESE:
             valued = 48;
             break;
-          case FOOD_CHOKO:
-          case FOOD_PIZZA:
+        case FOOD_CHOKO:
+        case FOOD_PIZZA:
             valued = 40;
             break;
-          case FOOD_LEMON:
-          case FOOD_ORANGE:
-          case FOOD_SAUSAGE:
+        case FOOD_LEMON:
+        case FOOD_ORANGE:
+        case FOOD_SAUSAGE:
             valued = 32;
             break;
-          case FOOD_APPLE:
-          case FOOD_APRICOT:
-          case FOOD_PEAR:
-          case FOOD_BANANA:
+        case FOOD_APPLE:
+        case FOOD_APRICOT:
+        case FOOD_PEAR:
+        case FOOD_BANANA:
             valued = 24;
             break;
-          case FOOD_LYCHEE:
+        case FOOD_LYCHEE:
             valued = 16;
             break;
-          case FOOD_SNOZZCUMBER:
-          case FOOD_STRAWBERRY:
-          case FOOD_RAMBUTAN:
-          case FOOD_GRAPE:
-          case FOOD_SULTANA:
-          case FOOD_CHUNK:
+        case FOOD_SNOZZCUMBER:
+        case FOOD_STRAWBERRY:
+        case FOOD_RAMBUTAN:
+        case FOOD_GRAPE:
+        case FOOD_SULTANA:
+        case FOOD_CHUNK:
             valued = 8;
             break;
         }
         break;
 
-      case OBJ_SCROLLS:
-        if ( !id[1][item_typ] )
-          valued += 10;
+    case OBJ_SCROLLS:
+        if (!id[1][item_typ])
+            valued += 10;
         else
-          switch ( item_typ )
-          {
+            switch (item_typ)
+            {
             case SCR_ACQUIREMENT:
-              valued += 520;
-              break;
+                valued += 520;
+                break;
             case SCR_ENCHANT_WEAPON_III:
             case SCR_VORPALISE_WEAPON:
-              valued += 200;
-              break;
+                valued += 200;
+                break;
             case SCR_SUMMONING:
-              valued += 95;
-              break;
+                valued += 95;
+                break;
             case SCR_TORMENT:
-              valued += 75;
-              break;
+                valued += 75;
+                break;
             case SCR_ENCHANT_WEAPON_II:
-              valued += 55;
-              break;
+                valued += 55;
+                break;
             case SCR_RECHARGING:
-              valued += 50;
-              break;
+                valued += 50;
+                break;
             case SCR_ENCHANT_ARMOUR:
             case SCR_ENCHANT_WEAPON_I:
-              valued += 48;
-              break;
+                valued += 48;
+                break;
             case SCR_FEAR:
-              valued += 45;
-              break;
+                valued += 45;
+                break;
             case SCR_MAGIC_MAPPING:
-              valued += 35;
-              break;
+                valued += 35;
+                break;
             case SCR_BLINKING:
             case SCR_REMOVE_CURSE:
             case SCR_TELEPORTATION:
-              valued += 30;
-              break;
+                valued += 30;
+                break;
             case SCR_DETECT_CURSE:
             case SCR_IDENTIFY:
-              valued += 20;
-              break;
+                valued += 20;
+                break;
             case SCR_NOISE:
             case SCR_RANDOM_USELESSNESS:
-              valued += 2;
-              break;
+                valued += 2;
+                break;
             case SCR_CURSE_ARMOUR:
             case SCR_CURSE_WEAPON:
             case SCR_FORGETFULNESS:
             case SCR_PAPER:
             case SCR_IMMOLATION:
-              valued++;
-              break;
-          }
+                valued++;
+                break;
+            }
         break;
 
-      case OBJ_JEWELLERY:
-        if ( !id[2][item_typ] )
-          valued += 50;
+    case OBJ_JEWELLERY:
+        if (!id[2][item_typ])
+            valued += 50;
 
-        if ( ident_lev > 0 && it_plus >= 130 )
-          valued -= 10;
+        if (ident_lev > 0 && it_plus >= 130)
+            valued -= 10;
 
         if (id[2][item_typ] > 0)
         {
-            if (ident_lev > 1 && item_typ == RING_PROTECTION || item_typ == RING_STRENGTH || item_typ == RING_EVASION || item_typ == RING_DEXTERITY || item_typ == RING_INTELLIGENCE)
+            if (ident_lev > 1 && item_typ == RING_PROTECTION
+                || item_typ == RING_STRENGTH || item_typ == RING_EVASION
+                || item_typ == RING_DEXTERITY
+                || item_typ == RING_INTELLIGENCE)
             {
                 if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150))
                     valued += 10 * (it_plus % 50);
@@ -1327,188 +1310,181 @@ unsigned int item_value( unsigned char item_clas, unsigned char item_typ, unsign
 
             switch (item_typ)
             {
-              case RING_INVISIBILITY:
+            case RING_INVISIBILITY:
                 valued += 100;
                 break;
-              case RING_REGENERATION:
+            case RING_REGENERATION:
                 valued += 75;
                 break;
-              case RING_FIRE:
-              case RING_ICE:
+            case RING_FIRE:
+            case RING_ICE:
                 valued += 62;
                 break;
-              case RING_LIFE_PROTECTION:
+            case RING_LIFE_PROTECTION:
                 valued += 60;
                 break;
-              case RING_TELEPORT_CONTROL:
+            case RING_TELEPORT_CONTROL:
                 valued += 42;
                 break;
-              case RING_MAGICAL_POWER:
-              case RING_PROTECTION_FROM_MAGIC:
+            case RING_MAGICAL_POWER:
+            case RING_PROTECTION_FROM_MAGIC:
                 valued += 40;
                 break;
-              case RING_WIZARDRY:
+            case RING_WIZARDRY:
                 valued += 35;
                 break;
-              case RING_LEVITATION:
-              case RING_POISON_RESISTANCE:
-              case RING_PROTECTION_FROM_COLD:
-              case RING_PROTECTION_FROM_FIRE:
-              case RING_SLAYING:
+            case RING_LEVITATION:
+            case RING_POISON_RESISTANCE:
+            case RING_PROTECTION_FROM_COLD:
+            case RING_PROTECTION_FROM_FIRE:
+            case RING_SLAYING:
                 valued += 30;
                 break;
-              case RING_SUSTAIN_ABILITIES:
-              case RING_SUSTENANCE:
+            case RING_SUSTAIN_ABILITIES:
+            case RING_SUSTENANCE:
                 valued += 25;
                 break;
-              case RING_SEE_INVISIBLE:
+            case RING_SEE_INVISIBLE:
                 valued += 20;
                 break;
-              case RING_DEXTERITY:
-              case RING_EVASION:
-              case RING_INTELLIGENCE:
-              case RING_PROTECTION:
-              case RING_STRENGTH:
+            case RING_DEXTERITY:
+            case RING_EVASION:
+            case RING_INTELLIGENCE:
+            case RING_PROTECTION:
+            case RING_STRENGTH:
                 valued += 10;
                 break;
-              case RING_TELEPORTATION:
+            case RING_TELEPORTATION:
                 valued -= 10;
                 break;
-              case RING_HUNGER:
+            case RING_HUNGER:
                 valued -= 50;
                 break;
-              case AMU_CLARITY:
-              case AMU_RESIST_CORROSION:
-              case AMU_RESIST_MUTATION:
-              case AMU_RESIST_SLOW:
-              case AMU_WARDING:
+            case AMU_CLARITY:
+            case AMU_RESIST_CORROSION:
+            case AMU_RESIST_MUTATION:
+            case AMU_RESIST_SLOW:
+            case AMU_WARDING:
                 valued += 30;
                 break;
-              case AMU_CONSERVATION:
-              case AMU_CONTROLLED_FLIGHT:
+            case AMU_CONSERVATION:
+            case AMU_CONTROLLED_FLIGHT:
                 valued += 25;
                 break;
-              case AMU_RAGE:
+            case AMU_RAGE:
                 valued += 20;
                 break;
-              case AMU_THE_GOURMAND:
+            case AMU_THE_GOURMAND:
                 valued += 15;
                 break;
-              case AMU_INACCURACY:
+            case AMU_INACCURACY:
                 valued -= 50;
                 break;
-              // got to do delusion!
+                // got to do delusion!
             }
 
-            if ( item_da == 200 )
-              valued += 50;
+            if (item_da == 200)
+                valued += 50;
 
             valued *= 7;
         }
         break;
 
-      case OBJ_MISCELLANY:
+    case OBJ_MISCELLANY:
         switch (ident_lev)
         {
-          case 0:
+        case 0:
             switch (item_typ)
             {
-              case MISC_HORN_OF_GERYON:
-              case MISC_RUNE_OF_ZOT:
+            case MISC_HORN_OF_GERYON:
+            case MISC_RUNE_OF_ZOT:
                 valued += 1000;
                 break;
-              case MISC_CRYSTAL_BALL_OF_SEEING:
+            case MISC_CRYSTAL_BALL_OF_SEEING:
                 valued += 450;
                 break;
-              case MISC_BOTTLED_EFREET:
+            case MISC_BOTTLED_EFREET:
                 valued += 350;
                 break;
-              case MISC_DECK_OF_TRICKS:
+            case MISC_DECK_OF_TRICKS:
                 valued += 100;
                 break;
-              default:
+            default:
                 valued += 400;
             }
             break;
-          default:
+        default:
             switch (item_typ)
             {
-              case MISC_HORN_OF_GERYON:
+            case MISC_HORN_OF_GERYON:
                 valued += 5000;
                 break;
-              case MISC_DISC_OF_STORMS:
+            case MISC_DISC_OF_STORMS:
                 valued += 2000;
                 break;
-              case MISC_RUNE_OF_ZOT:
+            case MISC_RUNE_OF_ZOT:
                 valued += 1200;
                 break;
-              case MISC_CRYSTAL_BALL_OF_SEEING:
+            case MISC_CRYSTAL_BALL_OF_SEEING:
                 valued += 500;
                 break;
-              case MISC_BOTTLED_EFREET:
+            case MISC_BOTTLED_EFREET:
                 valued += 400;
                 break;
-              case MISC_CRYSTAL_BALL_OF_FIXATION:
-              case MISC_EMPTY_EBONY_CASKET:
+            case MISC_CRYSTAL_BALL_OF_FIXATION:
+            case MISC_EMPTY_EBONY_CASKET:
                 valued += 20;
                 break;
-              default:
+            default:
                 valued += 500;
             }
             break;
         }
         break;
 
-//case 10: break;
+    //case 10: break;
 
-      case OBJ_BOOKS:
-        valued = 150 + ( (ident_lev == 0) ? 0 : book_rarity(item_typ) * 50 );
+    case OBJ_BOOKS:
+        valued = 150 + ((ident_lev == 0) ? 0 : book_rarity(item_typ) * 50);
         break;
 
-
-      case OBJ_STAVES:
-        if ( ident_lev == 0 )
-          valued = 120;
-        else if (item_typ == STAFF_SMITING || item_typ == STAFF_WARDING || item_typ == STAFF_DISCOVERY)
-          valued = 150;
+    case OBJ_STAVES:
+        if (ident_lev == 0)
+            valued = 120;
+        else if (item_typ == STAFF_SMITING || item_typ == STAFF_WARDING
+                                             || item_typ == STAFF_DISCOVERY)
+            valued = 150;
         else
-          valued = 250;
+            valued = 250;
         break;
 
-
-      case OBJ_ORBS:
+    case OBJ_ORBS:
         valued = 10000;
         break;
     }                           // end switch
 
     if (valued < 1)
-      valued = 1;
+        valued = 1;
 
     valued *= item_quant;
 
     return valued;
+}                               // end item_value()
 
-}          // end item_value()
-
-
-
-
-
-void shop( void )
+void shop(void)
 {
-
     unsigned char i = 0;
 
     for (i = 0; i < 6; i++)
     {
-        if ( i == 5 )
+        if (i == 5)
         {
             mpr("Help! Non-existent shop.");
             return;
         }
 
-        if ( env.shop_x[i] == you.x_pos && env.shop_y[i] == you.y_pos )
-          break;
+        if (env.shop_x[i] == you.x_pos && env.shop_y[i] == you.y_pos)
+            break;
     }
 
     char identy[4][50];
@@ -1522,5 +1498,4 @@ void shop( void )
 #ifdef PLAIN_TERM
     redraw_screen();
 #endif
-
-}          // end shop()
+}                               // end shop()

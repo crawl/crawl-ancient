@@ -50,33 +50,28 @@
 #include "macro.h"
 #endif
 
-
-
-
-bool miscast_effect( unsigned int sp_type, int mag_pow,
-                     int mag_fail, int force_effect )
+bool miscast_effect(unsigned int sp_type, int mag_pow,
+                    int mag_fail, int force_effect)
 {
-
 /*  sp_type is the type of the spell
- *  mag_pow is overall power of the spell or effect (ie its level) - I'm guessing mana cost under new scheme {dlb}
+ *  mag_pow is overall power of the spell or effect (ie its level)
  *  mag_fail is the degree to which you failed
  *  force_effect forces a certain effect to occur. Currently unused.
  */
-
-    struct bolt beam[1];
+    struct bolt beam;
 
     int loopj = 0;
     int spec_effect = 0;
     int hurted = 0;
 
-    if ( sp_type == SPTYP_RANDOM )
-      sp_type = 1<<(random2(12));
+    if (sp_type == SPTYP_RANDOM)
+        sp_type = 1 << (random2(12));
 
-    spec_effect = (mag_pow * mag_fail * (10 + mag_pow) / 7 * WILD_MAGIC_NASTINESS) / 100;
+    spec_effect = (mag_pow * mag_fail * (10 + mag_pow) / 7
+                                                * WILD_MAGIC_NASTINESS) / 100;
 
-    if ( force_effect == 100
-        && random2(40) > spec_effect
-        && random2(40) > spec_effect )
+    if (force_effect == 100
+        && random2(40) > spec_effect && random2(40) > spec_effect)
     {
         canned_msg(MSG_NOTHING_HAPPENS);
         return false;
@@ -95,10 +90,10 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
 
     spec_effect = random2(spec_effect);
 
-    if ( spec_effect > 3 )
-      spec_effect = 3;
-    else if ( spec_effect < 0 )
-      spec_effect = 0;
+    if (spec_effect > 3)
+        spec_effect = 3;
+    else if (spec_effect < 0)
+        spec_effect = 0;
 
 #ifdef WIZARD
     strcat(info, ", failure2: ");
@@ -107,201 +102,205 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
     mpr(info);
 #endif
 
-    if ( force_effect != 100 )
-      spec_effect = force_effect;
+    if (force_effect != 100)
+        spec_effect = force_effect;
 
-
-    switch ( sp_type )
+    switch (sp_type)
     {
-      case SPTYP_CONJURATION:
-        switch ( spec_effect )
+    case SPTYP_CONJURATION:
+        switch (spec_effect)
         {
-          case 0:         // just a harmless message
+        case 0:         // just a harmless message
             switch (random2(10))
             {
-              case 0:
+            case 0:
                 mpr("Sparks fly from your hands!");
                 break;
-              case 1:
+            case 1:
                 mpr("The air around you crackles with energy!");
                 break;
-              case 2:
+            case 2:
                 mpr("Wisps of smoke drift from your fingertips.");
                 break;
-              case 3:
+            case 3:
                 mpr("You feel a strange surge of energy!");
                 break;
-              case 4:
+            case 4:
                 mpr("You are momentarily dazzled by a flash of light!");
                 break;
-              case 5:
+            case 5:
                 mpr("Strange energies run through your body.");
                 break;
-              case 6:
+            case 6:
                 mpr("Your skin tingles.");
                 break;
-              case 7:
+            case 7:
                 mpr("Your skin glows momentarily.");
                 break;
-              case 8:
+            case 8:
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
-              case 9:
-                if ( you.species != SP_MUMMY )    // josh declares mummies cannot smell {dlb}
-                  mpr("You smell something strange.");
+            case 9:
+                // josh declares mummies cannot smell {dlb}
+                if (you.species != SP_MUMMY)
+                    mpr("You smell something strange.");
                 break;
             }
             break;
 
-          case 1:         // a bit less harmless stuff
-            switch ( random2(2) )
+        case 1:         // a bit less harmless stuff
+            switch (random2(2))
             {
-              case 0:
+            case 0:
                 mpr("Smoke pours from your fingertips!");
-                big_cloud(CLOUD_GREY_SMOKE, you.x_pos, you.y_pos, 20, 7 + random2(7));
+                big_cloud(CLOUD_GREY_SMOKE, you.x_pos, you.y_pos, 20,
+                          7 + random2(7));
                 break;
-              case 1:
+            case 1:
                 mpr("A wave of violent energy washes through your body!");
                 mpr("Ouch.");
-                ouch(6 + random2avg(7,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(6 + random2avg(7, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
 
-          case 2:         // rather less harmless stuff
-            switch ( random2(2) )
+        case 2:         // rather less harmless stuff
+            switch (random2(2))
             {
-              case 0:
+            case 0:
                 mpr("Energy rips through your body!");
                 mpr("Ouch!");
-                ouch(9 + random2avg(17,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(9 + random2avg(17, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 mpr("You are caught in a violent explosion!");
                 mpr("Oops.");
-                beam[0].type = SYM_BURST;
-                beam[0].damage = 112;
-                beam[0].flavour = BEAM_MISSILE;         // unsure about this
+                beam.type = SYM_BURST;
+                beam.damage = 112;
+                beam.flavour = BEAM_MISSILE; // unsure about this
                 // BEAM_EXPLOSION instead? {dlb}
 
-                beam[0].bx = you.x_pos;
-                beam[0].by = you.y_pos;
-                strcpy(beam[0].beam_name, "explosion");
-                beam[0].colour = random_colour();
-                beam[0].thing_thrown = KILL_YOU;       // your explosion (is this right?)
+                beam.bx = you.x_pos;
+                beam.by = you.y_pos;
+                strcpy(beam.beam_name, "explosion");
+                beam.colour = random_colour();
+                beam.thing_thrown = KILL_YOU; // your explosion(this right?)
 
-                explosion(false, &beam[0]);
+                explosion(false, beam);
 
-                if (! silenced(you.x_pos, you.y_pos))
-                  noisy(10, you.x_pos, you.y_pos);
+                if (!silenced(you.x_pos, you.y_pos))
+                    noisy(10, you.x_pos, you.y_pos);
                 break;
             }
             break;
 
-          case 3:         // considerably less harmless stuff
-            switch ( random2(2) )
+        case 3:         // considerably less harmless stuff
+            switch (random2(2))
             {
-              case 0:
+            case 0:
                 mpr("You are blasted with magical energy!");
-                ouch(12 + random2avg(29,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(12 + random2avg(29, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
-              case 1:
+            case 1:
                 mpr("There is a sudden explosion of magical energy!");
-                beam[0].type = SYM_BURST;
-                beam[0].damage = 120;
-                beam[0].flavour = BEAM_MISSILE;         // unsure about this
-                                                        // BEAM_EXPLOSION instead? {dlb}
-                beam[0].bx = you.x_pos;
-                beam[0].by = you.y_pos;
-                strcpy(beam[0].beam_name, "explosion");
-                beam[0].colour = random_colour();
-                beam[0].thing_thrown = KILL_YOU;       // your explosion (is this right?)
+                beam.type = SYM_BURST;
+                beam.damage = 120;
+                beam.flavour = BEAM_MISSILE; // unsure about this
+                // BEAM_EXPLOSION instead? {dlb}
+                beam.bx = you.x_pos;
+                beam.by = you.y_pos;
+                strcpy(beam.beam_name, "explosion");
+                beam.colour = random_colour();
+                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
 
-                explosion(coinflip(), &beam[0]);
+                explosion(coinflip(), beam);
 
-                if (! silenced(you.x_pos, you.y_pos))
-                  noisy(20, you.x_pos, you.y_pos);
+                if (!silenced(you.x_pos, you.y_pos))
+                    noisy(20, you.x_pos, you.y_pos);
                 break;
             }
             break;
-
         }
         break;                  // end conjuration
 
-      case SPTYP_ENCHANTMENT:
+    case SPTYP_ENCHANTMENT:
         switch (spec_effect)
         {
-          case 0:         // harmless messages only
+        case 0:         // harmless messages only
             switch (random2(10))
             {
-              case 0:
+            case 0:
                 mpr("Your hands glow momentarily.");
                 break;
-              case 1:
+            case 1:
                 mpr("The air around you crackles with energy!");
                 break;
-              case 2:
+            case 2:
                 mpr("Multicolored lights dance before your eyes!");
                 break;
-              case 3:
+            case 3:
                 mpr("You feel a strange surge of energy!");
                 break;
-              case 4:
+            case 4:
                 mpr("Waves of light ripple over your body.");
                 break;
-              case 5:
+            case 5:
                 mpr("Strange energies run through your body.");
                 break;
-              case 6:
+            case 6:
                 mpr("Your skin tingles.");
                 break;
-              case 7:
+            case 7:
                 mpr("Your skin glows momentarily.");
                 break;
-              case 8:
+            case 8:
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
-              case 9:
-                if( !silenced(you.x_pos, you.y_pos) )
-                  mpr("You hear something strange.");
+            case 9:
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear something strange.");
                 else
-                  mpr("Your skull vibrates slightly.");
+                    mpr("Your skull vibrates slightly.");
                 break;
             }
             break;
 
-          case 1:         // slightly annoying
+        case 1:         // slightly annoying
             switch (random2(2))
             {
-              case 0:
+            case 0:
                 potion_effect(POT_LEVITATION, 20);
                 break;
-              case 1:
+            case 1:
                 random_uselessness(2 + random2(7), 0);
                 break;
             }
             break;
 
-          case 2:         // much more annoying
-            switch (random2(3))
+        case 2:         // much more annoying
+            switch (random2(7))
             {
-              case 0:
+            case 0:
+            case 1:
+            case 2:
                 mpr("You sense a malignant aura.");
                 curse_an_item(0, 0);
                 break;
-              case 1:
+            case 3:
+            case 4:
+            case 5:
                 potion_effect(POT_SLOWING, 10);
                 break;
-              case 2:
+            case 6:
                 potion_effect(POT_BERSERK_RAGE, 10);
                 break;
             }
             break;
 
-          case 3:         // potentially lethal
+        case 3:         // potentially lethal
             switch (random2(4))
             {
-              case 0:
+            case 0:
                 do
                 {
                     curse_an_item(0, 0);
@@ -311,15 +310,15 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
 
                 mpr("You sense an overwhelmingly malignant aura!");
                 break;
-              case 1:
+            case 1:
                 potion_effect(POT_PARALYSIS, 10);
                 break;
-              case 2:
+            case 2:
                 potion_effect(POT_CONFUSION, 10);
                 break;
-              case 3:
-                if ( !mutate(100) )
-                  canned_msg(MSG_NOTHING_HAPPENS);
+            case 3:
+                if (!mutate(100))
+                    canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             }
             break;
@@ -329,84 +328,94 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
     case SPTYP_TRANSLOCATION:
         switch (spec_effect)
         {
-          case 0:         // harmless messages only
+        case 0:         // harmless messages only
             switch (random2(10))
             {
-              case 0:
+            case 0:
                 mpr("Space warps around you.");
                 break;
-              case 1:
+            case 1:
                 mpr("The air around you crackles with energy!");
                 break;
-              case 2:
+            case 2:
                 mpr("You feel a wrenching sensation.");
                 break;
-              case 3:
+            case 3:
                 mpr("You feel a strange surge of energy!");
                 break;
-              case 4:
+            case 4:
                 mpr("You spin around.");
                 break;
-              case 5:
+            case 5:
                 mpr("Strange energies run through your body.");
                 break;
-              case 6:
+            case 6:
                 mpr("Your skin tingles.");
                 break;
-              case 7:
+            case 7:
                 mpr("The world appears momentarily distorted!");
                 break;
-              case 8:
+            case 8:
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
-              case 9:
+            case 9:
                 mpr("You feel uncomfortable.");
                 break;
             }
             break;
 
-          case 1:         // mostly harmless
-            switch (random2(3))
+        case 1:         // mostly harmless
+            switch (random2(6))
             {
-              case 0:
+            case 0:
+            case 1:
+            case 2:
                 mpr("You are caught in a localised field of spatial distortion.");
                 mpr("Ouch!");
-                ouch(4 + random2avg(9,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(4 + random2avg(9, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
-              case 1:
+            case 3:
+            case 4:
                 mpr("Space bends around you!");
                 random_blink(false);
-                ouch(4 + random2avg(7,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(4 + random2avg(7, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
-              case 2:
+            case 5:
                 mpr("Space twists in upon itself!");
-                create_monster(MONS_SPATIAL_VORTEX, 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                create_monster(MONS_SPATIAL_VORTEX, 22, BEH_CHASING_I,
+                               you.x_pos, you.y_pos, MHITNOT, 250);
                 break;
             }
             break;
 
         case 2:         // less harmless
-            switch (random2(2))
+            switch (random2(6))
             {
-              case 0:
+            case 0:
+            case 1:
+            case 2:
                 mpr("You are caught in a strong localised spatial distortion.");
                 mpr("Ouch!!");
-                ouch(9 + random2avg(23,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(9 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
-              case 1:
+            case 3:
+            case 4:
                 mpr("Space warps around you!");
-                if ( one_chance_in(3) )
-                  you_teleport2(true);
+                if (one_chance_in(3))
+                    you_teleport2(true);
                 else
-                  random_blink(false);
-                ouch(5 + random2avg(9,2), 0, KILLED_BY_WILD_MAGIC);
+                    random_blink(false);
+                ouch(5 + random2avg(9, 2), 0, KILLED_BY_WILD_MAGIC);
                 potion_effect(POT_CONFUSION, 10);
                 break;
-              case 2:
+            case 5:
                 mpr("Space twists in upon itself!");
 
                 for (loopj = 0; loopj < 2 + random2(3); loopj++)
-                  create_monster(MONS_SPATIAL_VORTEX, 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                {
+                    create_monster(MONS_SPATIAL_VORTEX, 22, BEH_CHASING_I,
+                                   you.x_pos, you.y_pos, MHITNOT, 250);
+                }
                 break;
             }
             break;
@@ -418,23 +427,22 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             case 0:
                 mpr("You are caught in an extremely strong localised spatial distortion!");
                 mpr("Ouch!!!");
-                ouch(15 + random2avg(29,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(15 + random2avg(29, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 mpr("Space warps crazily around you!");
                 you_teleport2(true);
-                ouch(9 + random2avg(17,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(9 + random2avg(17, 2), 0, KILLED_BY_WILD_MAGIC);
                 potion_effect(POT_CONFUSION, 30);
                 break;
             case 2:
                 mpr("You are cast into the Abyss!");
                 more();
-                banished(DNGN_ENTER_ABYSS);   // sends you to the abyss
-
+                banished(DNGN_ENTER_ABYSS);     // sends you to the abyss
                 break;
             case 3:
-                if ( !mutate(100) )
-                  canned_msg(MSG_NOTHING_HAPPENS);
+                if (!mutate(100))
+                    canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             }
             break;
@@ -445,17 +453,16 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
         switch (spec_effect)
         {
         case 0:         // harmless messages only
-
             switch (random2(10))
             {
             case 0:
                 mpr("Shadowy shapes form in the air around you, then vanish.");
                 break;
             case 1:
-                if (! silenced(you.x_pos, you.y_pos))
-                  mpr("You hear strange voices.");
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear strange voices.");
                 else
-                  mpr("You feel momentarily dizzy.");
+                    mpr("You feel momentarily dizzy.");
                 break;
             case 2:
                 mpr("Your head hurts.");
@@ -485,51 +492,82 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             break;
 
         case 1:         // a little bad
-            switch ( random2(3) )
+            switch (random2(6))
             {
             case 0:             // identical to translocation
-              mpr("You are caught in a localised spatial distortion.");
-              mpr("Ouch!");
-              ouch(5 + random2avg(9,2), 0, KILLED_BY_WILD_MAGIC);
-              break;
-
             case 1:
-              mpr("Space twists in upon itself!");
-              create_monster(MONS_SPATIAL_VORTEX, 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
-              break;
-
             case 2:
-              if ( create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
-                mpr("Something appears in a flash of light!");
-              break;
+                mpr("You are caught in a localised spatial distortion.");
+                mpr("Ouch!");
+                ouch(5 + random2avg(9, 2), 0, KILLED_BY_WILD_MAGIC);
+                break;
+
+            case 3:
+                mpr("Space twists in upon itself!");
+                create_monster(MONS_SPATIAL_VORTEX, 22, BEH_CHASING_I,
+                               you.x_pos, you.y_pos, MHITNOT, 250);
+                break;
+
+            case 4:
+            case 5:
+                if (create_monster(summon_any_demon(DEMON_LESSER), 24,
+                                    BEH_CHASING_I, you.x_pos, you.y_pos,
+                                    MHITNOT, 250) != -1)
+                {
+                    mpr("Something appears in a flash of light!");
+                }
+                break;
             }
 
         case 2:         // more bad
-            switch (random2(3))
+            switch (random2(6))
             {
             case 0:
-              mpr("Space twists in upon itself!");
+                mpr("Space twists in upon itself!");
 
-              for (loopj = 0; loopj < 2 + random2(3); loopj++)
-                create_monster(MONS_SPATIAL_VORTEX, 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
-              break;
+                for (loopj = 0; loopj < 2 + random2(3); loopj++)
+                {
+                    create_monster(MONS_SPATIAL_VORTEX, 22, BEH_CHASING_I,
+                                   you.x_pos, you.y_pos, MHITNOT, 250);
+                }
+                break;
 
             case 1:
-              if ( create_monster(summon_any_demon(DEMON_COMMON), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
-                mpr("Something forms out of thin air!");
-              break;
-
             case 2:
-              mpr("A chorus of chattering voices calls out to you!");
-              create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
-              create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                if (create_monster(summon_any_demon(DEMON_COMMON), 24,
+                                    BEH_CHASING_I, you.x_pos, you.y_pos,
+                                    MHITNOT, 250) != -1)
+                {
+                    mpr("Something forms out of thin air!");
+                }
+                break;
 
-              if ( coinflip() )
-                create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+            case 3:
+            case 4:
+            case 5:
+                mpr("A chorus of chattering voices calls out to you!");
+                create_monster(summon_any_demon(DEMON_LESSER), 24,
+                               BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT,
+                               250);
 
-              if ( coinflip() )
-                create_monster(summon_any_demon(DEMON_LESSER), 24, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
-              break;
+                create_monster(summon_any_demon(DEMON_LESSER), 24,
+                               BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT,
+                               250);
+
+                if (coinflip())
+                {
+                    create_monster(summon_any_demon(DEMON_LESSER), 24,
+                                   BEH_CHASING_I, you.x_pos, you.y_pos,
+                                   MHITNOT, 250);
+                }
+
+                if (coinflip())
+                {
+                    create_monster(summon_any_demon(DEMON_LESSER), 24,
+                                   BEH_CHASING_I, you.x_pos, you.y_pos,
+                                   MHITNOT, 250);
+                }
+                break;
             }
             break;
 
@@ -537,23 +575,35 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             switch (random2(4))
             {
             case 0:
-                if ( create_monster(MONS_ABOMINATION_SMALL, 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
-                  mpr("Something forms out of thin air.");
+                if (create_monster(MONS_ABOMINATION_SMALL, 0, BEH_CHASING_I,
+                                    you.x_pos, you.y_pos, MHITNOT, 250) != -1)
+                {
+                    mpr("Something forms out of thin air.");
+                }
                 break;
 
             case 1:
                 mpr("You sense a hostile presence.");
-                create_monster(summon_any_demon(DEMON_GREATER), 0, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                create_monster(summon_any_demon(DEMON_GREATER), 0,
+                                BEH_CHASING_I, you.x_pos, you.y_pos,
+                                MHITNOT, 250);
                 break;
 
             case 2:
                 mpr("Something turns its malign attention towards you...");
 
-                create_monster(summon_any_demon(DEMON_COMMON), 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
-                create_monster(summon_any_demon(DEMON_COMMON), 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                create_monster(summon_any_demon(DEMON_COMMON), 22,
+                               BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT,
+                               250);
 
-                if ( coinflip() )
-                  create_monster(summon_any_demon(DEMON_COMMON), 22, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                create_monster(summon_any_demon(DEMON_COMMON), 22,
+                               BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT,
+                               250);
+
+                if (coinflip())
+                    create_monster(summon_any_demon(DEMON_COMMON), 22,
+                                   BEH_CHASING_I, you.x_pos, you.y_pos,
+                                   MHITNOT, 250);
                 break;
 
             case 3:
@@ -563,24 +613,22 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             }
             break;
         }                       // end Summonings
-
         break;
 
     case SPTYP_DIVINATION:
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
             switch (random2(10))
             {
             case 0:
                 mpr("Weird images run through your mind.");
                 break;
             case 1:
-                if (! silenced(you.x_pos, you.y_pos))
-                  mpr("You hear strange voices.");
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear strange voices.");
                 else
-                  mpr("Your nose twitches.");
+                    mpr("Your nose twitches.");
                 break;
             case 2:
                 mpr("Your head hurts.");
@@ -610,7 +658,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             break;
 
         case 1:         // more annoying things
-            switch ( random2(2) )
+            switch (random2(2))
             {
             case 0:
                 mpr("You feel slightly disoriented.");
@@ -623,53 +671,53 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             break;
 
         case 2:         // even more annoying things
-            switch ( random2(2) )
+            switch (random2(2))
             {
-              case 0:
-                if ( you.is_undead )
-                  mpr("You suddenly recall your previous life!");
-                else if ( lose_stat(STAT_INTELLIGENCE, 1 + random2(3)) )
-                  mpr("You have damaged your brain!");
+            case 0:
+                if (you.is_undead)
+                    mpr("You suddenly recall your previous life!");
+                else if (lose_stat(STAT_INTELLIGENCE, 1 + random2(3)))
+                    mpr("You have damaged your brain!");
                 else
-                  mpr("You have a terrible headache.");
+                    mpr("You have a terrible headache.");
                 break;
-              case 1:
+            case 1:
                 mpr("You feel lost.");
                 forget_map(40 + random2(40));
                 break;
             }
-            potion_effect(POT_CONFUSION, 1);    // common to all cases here {dlb}
+            potion_effect(POT_CONFUSION, 1);  // common to all cases here {dlb}
             break;
 
         case 3:         // nasty
-            switch ( random2(3) )
+            switch (random2(3))
             {
-              case 0:
+            case 0:
                 mpr( forget_spell() ? "You have forgotten a spell!"
                                     : "You get a splitting headache." );
                 break;
-              case 1:
+            case 1:
                 mpr("You feel completely lost.");
                 forget_map(100);
                 break;
-              case 2:
-                if ( you.is_undead )
-                  mpr("You suddenly recall your previous life.");
-                else if ( lose_stat(STAT_INTELLIGENCE, 3 + random2(3)) )
-                  mpr("You have damaged your brain!");
+            case 2:
+                if (you.is_undead)
+                    mpr("You suddenly recall your previous life.");
+                else if (lose_stat(STAT_INTELLIGENCE, 3 + random2(3)))
+                    mpr("You have damaged your brain!");
                 else
-                  mpr("You have a terrible headache.");
+                    mpr("You have a terrible headache.");
                 break;
             }
-            potion_effect(POT_CONFUSION, 1);    // common to all cases here {dlb}
+            potion_effect(POT_CONFUSION, 1);  // common to all cases here {dlb}
             break;
         }
         break;                  // end divinations
 
     case SPTYP_NECROMANCY:
         if (you.religion == GOD_KIKUBAAQUDGHA
-            && (!player_under_penance()
-                && you.piety >= 50 && random2(150) <= you.piety))
+            && (!player_under_penance() && you.piety >= 50
+                && random2(150) <= you.piety))
         {
             canned_msg(MSG_NOTHING_HAPPENS);
             break;
@@ -681,15 +729,16 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             switch (random2(10))
             {
             case 0:
-                if ( you.species != SP_MUMMY )    // josh declares mummies cannot smell {dlb}
-                  mpr("You smell decay.");
+                // josh declares mummies cannot smell {dlb}
+                if (you.species != SP_MUMMY)
+                    mpr("You smell decay.");
                 break;
             case 1:
-              if (! silenced(you.x_pos, you.y_pos))
-                mpr("You hear strange and distant voices.");
-              else
-                mpr("You feel homesick.");
-              break;
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear strange and distant voices.");
+                else
+                    mpr("You feel homesick.");
+                break;
             case 2:
                 mpr("Pain shoots through your body.");
                 break;
@@ -727,16 +776,17 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                     break;
                 }
                 mpr("Pain shoots through your body!");
-                ouch(5 + random2avg(15,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(5 + random2avg(15, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 mpr("You feel horribly lethargic.");
                 potion_effect(POT_SLOWING, 15);
                 break;
             case 2:
-                if ( you.species != SP_MUMMY )    // josh declares mummies cannot smell, and they do not rot {dlb}
+                // josh declares mummies cannot smell, and they do not rot{dlb}
+                if (you.species != SP_MUMMY)
                 {
-                    mpr("You smell decay.");       // identical to a harmless message
+                    mpr("You smell decay."); // identical to a harmless message
                     you.rotting++;
                 }
                 break;
@@ -749,16 +799,20 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             case 0:
                 mpr("Flickering shadows surround you.");
 
-                create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos,
+                               you.y_pos, MHITNOT, 250);
 
-                if ( coinflip() )
-                  create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                if (coinflip())
+                    create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos,
+                                   you.y_pos, MHITNOT, 250);
 
-                if ( coinflip() )
-                    create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250);
+                if (coinflip())
+                    create_monster(MONS_SHADOW, 21, BEH_CHASING_I, you.x_pos,
+                                   you.y_pos, MHITNOT, 250);
                 break;
+
             case 1:
-                if ( !player_prot_life() && one_chance_in(3) )
+                if (!player_prot_life() && one_chance_in(3))
                 {
                     drain_exp();
                     break;
@@ -771,7 +825,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                     break;
                 }
                 mpr("You convulse helplessly as pain tears through your body!");
-                ouch(15 + random2avg(23,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(15 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
@@ -779,44 +833,54 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
         case 3:         // even nastier
             switch (random2(6))
             {
-              case 0:
+            case 0:
                 if (you.is_undead)
-                  {
+                {
                     mpr("Something just walked over your grave. No, really!");
                     break;
-                  }
+                }
                 mpr("Your body is wracked with pain!");
 
                 dec_hp((you.hp / 2) - 1, false);
                 break;
-              case 1:
+
+            case 1:
                 mpr("You are engulfed in negative energy!");
 
-                if ( !player_prot_life() )
+                if (!player_prot_life())
                 {
                     drain_exp();
                     break;
                 }               // otherwise it just flows through...
 
-              case 2:
-                lose_stat(STAT_RANDOM, 1 + random2avg(7,2));
+            case 2:
+                lose_stat(STAT_RANDOM, 1 + random2avg(7, 2));
                 break;
-              case 3:
-                if ( you.is_undead )
+
+            case 3:
+                if (you.is_undead)
                 {
                     mpr("You feel terrible.");
                     break;
                 }
                 mpr("You feel your flesh start to rot away!");
-                you.rotting += random2avg(7,2) + 1;
+                you.rotting += random2avg(7, 2) + 1;
                 break;
+
             case 4:
-                if ( create_monster(MONS_SOUL_EATER, 23, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
-                  mpr("Something reaches out for you...");
+                if (create_monster(MONS_SOUL_EATER, 23, BEH_CHASING_I,
+                                    you.x_pos, you.y_pos, MHITNOT, 250) != -1)
+                {
+                    mpr("Something reaches out for you...");
+                }
                 break;
+
             case 5:
-                if ( create_monster(MONS_REAPER, 23, BEH_CHASING_I, you.x_pos, you.y_pos, MHITNOT, 250) != -1 )
-                  mpr("Death has come for you...");
+                if (create_monster(MONS_REAPER, 23, BEH_CHASING_I,
+                                    you.x_pos, you.y_pos, MHITNOT, 250) != -1)
+                {
+                    mpr("Death has come for you...");
+                }
                 break;
             }
             break;
@@ -827,7 +891,6 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
             switch (random2(10))
             {
             case 0:
@@ -858,8 +921,9 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             case 9:
-                if ( you.species != SP_MUMMY )    // josh declares mummies cannot smell {dlb}
-                  mpr("You smell something strange.");
+                // josh declares mummies cannot smell {dlb}
+                if (you.species != SP_MUMMY)
+                    mpr("You smell something strange.");
                 break;
             }
             break;
@@ -869,7 +933,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             {
             case 0:
                 mpr("Your body is twisted painfully.");
-                ouch(1 + random2avg(11,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(1 + random2avg(11, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 random_uselessness(2 + random2(7), 0);
@@ -882,7 +946,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             {
             case 0:
                 mpr("Your body is twisted very painfully!");
-                ouch(3 + random2avg(23,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(3 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 mpr("Strange energies tear through your body!");
@@ -905,23 +969,27 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 mpr("Your body is distorted in a weird and horrible way!");
 
                 for (unsigned char i = 0; i < 4; i++)
-                  mutate(100);
+                    mutate(100);
 
-                ouch(7 + random2avg(23,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(7 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
+
             case 1:
                 mpr("You feel very strange.");
                 delete_mutation(100);
-                ouch(5 + random2avg(23,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(5 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
+
             case 2:
                 mpr("Your body is distorted in a weirdly horrible way!");
 
                 for (unsigned char i = 0; i < 4; i++)
-                  if ( give_bad_mutation() )
-                    break;
+                {
+                    if (give_bad_mutation())
+                        break;
+                }
 
-                ouch(5 + random2avg(23,2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(5 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
@@ -947,8 +1015,9 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 mpr("You feel a strange surge of energy!");
                 break;
             case 4:
-                if ( you.species != SP_MUMMY )    // josh declares mummies cannot smell {dlb}
-                  mpr("You smell smoke.");
+                // josh declares mummies cannot smell {dlb}
+                if (you.species != SP_MUMMY)
+                    mpr("You smell smoke.");
                 break;
             case 5:
                 mpr("Heat runs through your body.");
@@ -963,27 +1032,28 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             case 9:
-                if (! silenced(you.x_pos, you.y_pos))
-                  mpr("You hear a sizzling sound.");
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear a sizzling sound.");
                 else
-                  mpr("You feel like you have heartburn.");
+                    mpr("You feel like you have heartburn.");
                 break;
             }
             break;
 
         case 1:         // a bit less harmless stuff
-
             switch (random2(2))
             {
             case 0:
                 mpr("Smoke pours from your fingertips!");
-                big_cloud(CLOUD_GREY_SMOKE + random2(3), you.x_pos, you.y_pos, 20, 7 + random2(7));
+                big_cloud(CLOUD_GREY_SMOKE + random2(3), you.x_pos, you.y_pos,
+                          20, 7 + random2(7));
                 break;
             case 1:
                 mpr("Flames sear your flesh.");
                 scrolls_burn(3, OBJ_SCROLLS);
-                if ( player_res_fire() < 100 )
-                  ouch(2 + random2avg(13,2), 0, KILLED_BY_WILD_MAGIC);
+
+                if (player_res_fire() < 100)
+                    ouch(2 + random2avg(13, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
@@ -993,59 +1063,65 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             {
             case 0:
                 mpr("You are blasted with fire.");
-                ouch(check_your_resists(5 + random2avg(29,2), 2), 0, KILLED_BY_WILD_MAGIC);
+
+                ouch(check_your_resists(5 + random2avg(29, 2), 2), 0,
+                     KILLED_BY_WILD_MAGIC);
+
                 scrolls_burn(5, OBJ_SCROLLS);
                 break;
             case 1:
                 mpr("You are caught a fiery explosion!");
                 mpr("Oops.");
 
-                beam[0].type = SYM_BURST;
-                beam[0].damage = 114;
-                beam[0].flavour = BEAM_FIRE;
-                beam[0].bx = you.x_pos;
-                beam[0].by = you.y_pos;
-                strcpy(beam[0].beam_name, "explosion");
-                beam[0].colour = RED;
-                beam[0].thing_thrown = KILL_YOU;       // your explosion (is this right?)
+                beam.type = SYM_BURST;
+                beam.damage = 114;
+                beam.flavour = BEAM_FIRE;
+                beam.bx = you.x_pos;
+                beam.by = you.y_pos;
+                strcpy(beam.beam_name, "explosion");
+                beam.colour = RED;
+                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
 
-                explosion(false, &beam[0]);
+                explosion(false, beam);
 
-                if ( !silenced(you.x_pos, you.y_pos) )
-                  noisy(10, you.x_pos, you.y_pos);
+                if (!silenced(you.x_pos, you.y_pos))
+                    noisy(10, you.x_pos, you.y_pos);
                 break;
             }
             break;
 
         case 3:         // considerably less harmless stuff
-
             switch (random2(3))
             {
             case 0:
                 mpr("You are blasted with searing flames!");
-                ouch(check_your_resists(9 + random2avg(33,2), 2), 0, KILLED_BY_WILD_MAGIC);
+
+                ouch(check_your_resists(9 + random2avg(33, 2), 2), 0,
+                     KILLED_BY_WILD_MAGIC);
+
                 scrolls_burn(10, OBJ_SCROLLS);
                 break;
             case 1:
                 mpr("There is a sudden and violent explosion of flames!");
 
-                beam[0].type = SYM_BURST;
-                beam[0].damage = 120;
-                beam[0].flavour = BEAM_FIRE;
-                beam[0].bx = you.x_pos;
-                beam[0].by = you.y_pos;
-                strcpy(beam[0].beam_name, "fireball");
-                beam[0].colour = RED;
-                beam[0].thing_thrown = KILL_YOU;       // your explosion (is this right?)
+                beam.type = SYM_BURST;
+                beam.damage = 120;
+                beam.flavour = BEAM_FIRE;
+                beam.bx = you.x_pos;
+                beam.by = you.y_pos;
+                strcpy(beam.beam_name, "fireball");
+                beam.colour = RED;
+                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
 
-                explosion(coinflip(), &beam[0]);
+                explosion(coinflip(), beam);
 
-                if ( !silenced(you.x_pos, you.y_pos) )
-                  noisy(20, you.x_pos, you.y_pos);
+                if (!silenced(you.x_pos, you.y_pos))
+                    noisy(20, you.x_pos, you.y_pos);
                 break;
+
             case 2:
                 mpr("You are covered in liquid fire!");
-                you.duration[DUR_LIQUID_FLAMES] += random2avg(7,3) + 1;
+                you.duration[DUR_LIQUID_FLAMES] += random2avg(7, 3) + 1;
                 break;
             }
             break;
@@ -1086,10 +1162,10 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             case 9:
-                if ( !silenced(you.x_pos, you.y_pos) )
-                  mpr("You hear a crackling sound.");
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear a crackling sound.");
                 else
-                  mpr("A snowflake lands on your nose.");
+                    mpr("A snowflake lands on your nose.");
                 break;
             }
             break;
@@ -1103,8 +1179,9 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             case 1:
                 mpr("You are covered in a thin layer of ice");
                 scrolls_burn(2, OBJ_POTIONS);
-                if ( player_res_cold() < 100 )
-                  ouch(4 + random2avg(5,2), 0, KILLED_BY_WILD_MAGIC);
+
+                if (player_res_cold() < 100)
+                    ouch(4 + random2avg(5, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
@@ -1114,26 +1191,30 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             {
             case 0:
                 mpr("Heat is drained from your body.");
-                ouch(check_your_resists(5 + random2(6) + random2(7), 3), 0, KILLED_BY_WILD_MAGIC);
+
+                ouch(check_your_resists(5 + random2(6) + random2(7), 3), 0,
+                     KILLED_BY_WILD_MAGIC);
+
                 scrolls_burn(4, OBJ_POTIONS);
                 break;
+
             case 1:
                 mpr("You are caught in an explosion of ice and frost!");
                 mpr("Oops.");
 
-                beam[0].type = SYM_BURST;
-                beam[0].damage = 111;
-                beam[0].flavour = BEAM_COLD;
-                beam[0].bx = you.x_pos;
-                beam[0].by = you.y_pos;
-                strcpy(beam[0].beam_name, "explosion");
-                beam[0].colour = WHITE;
-                beam[0].thing_thrown = KILL_YOU; // your explosion (is this right?)
+                beam.type = SYM_BURST;
+                beam.damage = 111;
+                beam.flavour = BEAM_COLD;
+                beam.bx = you.x_pos;
+                beam.by = you.y_pos;
+                strcpy(beam.beam_name, "explosion");
+                beam.colour = WHITE;
+                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
 
-                explosion(false, &beam[0]);
+                explosion(false, beam);
 
-                if ( !silenced(you.x_pos, you.y_pos) )
-                  noisy(10, you.x_pos, you.y_pos);
+                if (!silenced(you.x_pos, you.y_pos))
+                    noisy(10, you.x_pos, you.y_pos);
                 break;
             }
             break;
@@ -1143,13 +1224,18 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             {
             case 0:
                 mpr("You are blasted with ice!");
-                ouch(check_your_resists(9 + random2avg(23,2), 3), 0, KILLED_BY_WILD_MAGIC);
+
+                ouch(check_your_resists(9 + random2avg(23, 2), 3), 0,
+                     KILLED_BY_WILD_MAGIC);
+
                 scrolls_burn(9, OBJ_POTIONS);
                 break;
             case 1:
-               mpr("Freezing gasses pour from your hands!");
-               big_cloud(CLOUD_COLD, you.x_pos, you.y_pos, 20, 8 + random2(4));
-               break;
+                mpr("Freezing gasses pour from your hands!");
+
+                big_cloud(CLOUD_COLD, you.x_pos, you.y_pos, 20,
+                          8 + random2(4));
+                break;
             }
             break;
         }
@@ -1172,15 +1258,13 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 mpr("Sand pours from your fingers.");
                 break;
             case 3:
-                strcpy(info, "You feel a surge of energy through your ");
-                strcat(info, (you.species == SP_NAGA || you.species == SP_CENTAUR) ? "underbelly" : "feet");
-                mpr(info);
+                mpr("You feel a surge of energy from the ground.");
                 break;
             case 4:
-                if ( !silenced(you.x_pos, you.y_pos) )
-                  mpr("You hear a distant rumble.");
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear a distant rumble.");
                 else
-                  mpr("You sympathise with the stones.");
+                    mpr("You sympathise with the stones.");
                 break;
             case 5:
                 mpr("You feel gritty.");
@@ -1196,7 +1280,9 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 break;
             case 9:
                 strcpy(info, "Your ");
-                strcat(info, (you.species == SP_NAGA || you.species == SP_CENTAUR) ? "underbelly feels" : "feet feel");
+                strcat(info, (you.species == SP_NAGA)    ? "underbelly feels" :
+                             (you.species == SP_CENTAUR) ? "hooves feel"
+                                                         : "feet feel");
                 strcat(info, " warm.");
                 mpr(info);
                 break;
@@ -1220,7 +1306,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                     break;
                 }
 
-                hurted = random2avg(13,2) + 10;
+                hurted = random2avg(13, 2) + 10;
                 hurted -= random2(1 + player_AC());
 
                 ouch(hurted, 0, KILLED_BY_WILD_MAGIC);
@@ -1235,25 +1321,25 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 mpr("You are caught in an explosion of flying shrapnel!");
                 mpr("Oops.");
 
-                beam[0].type = SYM_BURST;
-                beam[0].damage = 115;
-                beam[0].flavour = BEAM_FRAG;
-                beam[0].bx = you.x_pos;
-                beam[0].by = you.y_pos;
-                strcpy(beam[0].beam_name, "explosion");
-                beam[0].colour = CYAN;
+                beam.type = SYM_BURST;
+                beam.damage = 115;
+                beam.flavour = BEAM_FRAG;
+                beam.bx = you.x_pos;
+                beam.by = you.y_pos;
+                strcpy(beam.beam_name, "explosion");
+                beam.colour = CYAN;
 
-                if ( one_chance_in(5) )
-                  beam[0].colour = BROWN;
-                if ( one_chance_in(5) )
-                  beam[0].colour = LIGHTCYAN;
+                if (one_chance_in(5))
+                    beam.colour = BROWN;
+                if (one_chance_in(5))
+                    beam.colour = LIGHTCYAN;
 
-                beam[0].thing_thrown = KILL_YOU;       // your explosion (is this right?)
+                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
 
-                explosion(false, &beam[0]);
+                explosion(false, beam);
 
-                if ( !silenced(you.x_pos, you.y_pos) )
-                  noisy(10, you.x_pos, you.y_pos);
+                if (!silenced(you.x_pos, you.y_pos))
+                    noisy(10, you.x_pos, you.y_pos);
                 break;
             }
             break;
@@ -1288,19 +1374,21 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 mpr("You are blasted with air!");
                 break;
             case 7:
-                if ( !silenced(you.x_pos, you.y_pos) )
-                  mpr("You hear a whooshing sound.");
-                else if ( you.species != SP_MUMMY )    // josh declares mummies cannot smell {dlb}
-                  mpr("You smell ozone.");
+                // josh declares mummies cannot smell {dlb}
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear a whooshing sound.");
+                else if (you.species != SP_MUMMY)
+                    mpr("You smell ozone.");
                 break;
             case 8:
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             case 9:
-                if ( !silenced(you.x_pos, you.y_pos) )
-                  mpr("You hear a crackling sound.");
-                else if ( you.species != SP_MUMMY )    // josh declares mummies cannot smell {dlb}
-                  mpr("You smell something musty.");
+                // josh declares mummies cannot smell {dlb}
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear a crackling sound.");
+                else if (you.species != SP_MUMMY)
+                    mpr("You smell something musty.");
                 break;
             }
             break;
@@ -1318,16 +1406,17 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             break;
 
         case 2:         // rather less harmless stuff
-
             switch (random2(2))
             {
             case 0:
                 mpr("Electricity courses through your body.");
-                ouch( check_your_resists(4 + random2avg(9,2), 5), 0, KILLED_BY_WILD_MAGIC );
+                ouch(check_your_resists(4 + random2avg(9, 2), 5), 0,
+                     KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 mpr("Noxious gasses pour from your hands!");
-                big_cloud(CLOUD_STINK, you.x_pos, you.y_pos, 20, 9 + random2(4));
+                big_cloud(CLOUD_STINK, you.x_pos, you.y_pos, 20,
+                          9 + random2(4));
                 break;
             }
             break;
@@ -1339,23 +1428,24 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 mpr("You are caught in an explosion of electrical discharges!");
                 mpr("Oops.");
 
-                beam[0].type = SYM_BURST;
-                beam[0].damage = 108;
-                beam[0].flavour = BEAM_ELECTRICITY;
-                beam[0].bx = you.x_pos;
-                beam[0].by = you.y_pos;
-                strcpy(beam[0].beam_name, "explosion");
-                beam[0].colour = LIGHTBLUE;
-                beam[0].thing_thrown = KILL_YOU; // your explosion (is this right?)
+                beam.type = SYM_BURST;
+                beam.damage = 108;
+                beam.flavour = BEAM_ELECTRICITY;
+                beam.bx = you.x_pos;
+                beam.by = you.y_pos;
+                strcpy(beam.beam_name, "explosion");
+                beam.colour = LIGHTBLUE;
+                beam.thing_thrown = KILL_YOU;// your explosion (this right?)
 
-                explosion(!one_chance_in(4), &beam[0]);
+                explosion(!one_chance_in(4), beam);
 
-                if ( !silenced(you.x_pos, you.y_pos) )
-                  noisy(10, you.x_pos, you.y_pos);
+                if (!silenced(you.x_pos, you.y_pos))
+                    noisy(10, you.x_pos, you.y_pos);
                 break;
             case 1:
                 mpr("Venomous gasses pour from your hands!");
-                big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 20, 8 + random2(5));
+                big_cloud( CLOUD_POISON, you.x_pos, you.y_pos, 20,
+                           8 + random2(5) );
                 break;
             }
             break;
@@ -1396,10 +1486,10 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             case 9:
-                if ( !silenced(you.x_pos, you.y_pos) )
-                  mpr("You hear a slurping sound.");
+                if (!silenced(you.x_pos, you.y_pos))
+                    mpr("You hear a slurping sound.");
                 else
-                  mpr("You taste almonds.");
+                    mpr("You taste almonds.");
                 break;
             }
             break;
@@ -1408,7 +1498,7 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             switch (random2(2))
             {
             case 0:
-                if ( player_res_poison() )
+                if (player_res_poison())
                 {
                     canned_msg(MSG_NOTHING_HAPPENS);
                     return false;
@@ -1419,7 +1509,8 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
                 break;
             case 1:
                 mpr("Noxious gasses pour from your hands!");
-                place_cloud(CLOUD_STINK, you.x_pos, you.y_pos, 2 + random2(4));
+                place_cloud(CLOUD_STINK, you.x_pos, you.y_pos,
+                            2 + random2(4));
                 break;
             }
             break;
@@ -1428,21 +1519,24 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             switch (random2(3))
             {
             case 0:
-                if ( player_res_poison() )
+                if (player_res_poison())
                 {
                     canned_msg(MSG_NOTHING_HAPPENS);
                     return false;
                 }
 
                 mpr("You feel very sick.");
-                you.poison += 3 + random2avg(9,2);
+                you.poison += 3 + random2avg(9, 2);
                 break;
+
             case 1:
                 mpr("Noxious gasses pour from your hands!");
-                big_cloud(CLOUD_STINK, you.x_pos, you.y_pos, 20, 8 + random2(5));
+                big_cloud(CLOUD_STINK, you.x_pos, you.y_pos, 20,
+                          8 + random2(5));
                 break;
+
             case 2:
-                if ( player_res_poison() )
+                if (player_res_poison())
                 {
                     canned_msg(MSG_NOTHING_HAPPENS);
                     return false;
@@ -1453,39 +1547,37 @@ bool miscast_effect( unsigned int sp_type, int mag_pow,
             break;
 
         case 3:         // less harmless stuff
-
             switch (random2(3))
             {
             case 0:
-                if ( player_res_poison() )
+                if (player_res_poison())
                 {
                     canned_msg(MSG_NOTHING_HAPPENS);
                     return false;
                 }
 
                 mpr("You feel incredibly sick.");
-                you.poison += 10 + random2avg(19,2);
+                you.poison += 10 + random2avg(19, 2);
                 break;
             case 1:
                 mpr("Venomous gasses pour from your hands!");
-                big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 20, 7 + random2(7));
+                big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 20,
+                          7 + random2(7));
                 break;
             case 2:
-                if ( player_res_poison() )
+                if (player_res_poison())
                 {
                     canned_msg(MSG_NOTHING_HAPPENS);
                     return false;
                 }
 
-                lose_stat(STAT_RANDOM, 1 + random2avg(5,2));
+                lose_stat(STAT_RANDOM, 1 + random2avg(5, 2));
                 break;
             }
             break;
         }
         break;                  // end poison
-
     }
 
     return true;
-
-}          // end miscast_effect()
+}                               // end miscast_effect()

@@ -45,14 +45,12 @@
 #define MyDebugBreak() _asm {int 3}
 #endif
 
-
 //-----------------------------------
 //      Internal Variables
 //
 #if WIN
 static HANDLE sConsole = NULL;
 #endif
-
 
 // ========================================================================
 //      Internal Functions
@@ -80,16 +78,17 @@ static void BreakStrToDebugger(const char *mesg)
     DebugStr(s);
 
 #elif WIN
-    MSG msg;                    // remove pending quit messages so the message box displays
+    MSG msg;    // remove pending quit messages so the message box displays
 
     bool quitting = (bool)::PeekMessage(&msg, NULL, WM_QUIT, WM_QUIT, PM_REMOVE);
 
     char text[2500];
 
-    int flags = MB_YESNO +      // want abort and ignore buttons (too bad we can't ditch the retry button...)
-     MB_ICONERROR +             // display the icon for errors
-     MB_TASKMODAL +             // don't let the user do anything else in the app
-     MB_SETFOREGROUND;          // bring the app to the front
+    int flags = MB_YESNO +   // want abort and ignore buttons
+                             // (too bad we can't ditch the retry button...)
+        MB_ICONERROR +       // display the icon for errors
+        MB_TASKMODAL +       // don't let the user do anything else in the app
+        MB_SETFOREGROUND;    // bring the app to the front
 
     strcpy(text, mesg);
     strcat(text, "\nDo you want to drop into the debugger?");
@@ -136,27 +135,25 @@ static bool IsDebuggerPresent95()
     asm
     {
         mov ax, fs
-          mov es, ax
-          mov eax, 0x18
-          mov eax, es:[eax]
-        sub eax, 0x10
-          xor eax,[threadID]
-          mov[obfuscator], eax
+            mov es, ax
+            mov eax, 0x18
+            mov eax, es:[eax]
+            sub eax, 0x10 xor eax,[threadID] mov[obfuscator], eax
     }
+
 #else
     _asm
     {
         mov ax, fs
-          mov es, ax
-          mov eax, 18 h
-          mov eax, es:[eax]
-        sub eax, 10 h
-          xor eax,[threadID]
-          mov[obfuscator], eax
+            mov es, ax
+            mov eax, 18 h
+            mov eax, es:[eax]
+            sub eax, 10 h xor eax,[threadID] mov[obfuscator], eax
     }
 #endif
 
-    const DWORD *processDatabase = reinterpret_cast < const DWORD * >(processID ^ obfuscator);
+    const DWORD *processDatabase =
+                    reinterpret_cast< const DWORD * >(processID ^ obfuscator);
 
     if (!IsBadReadPtr(processDatabase, kProcessDatabaseBytes))
     {
@@ -187,12 +184,12 @@ bool IsDebuggerPresent()
     if (kernelH != NULL)
     {                           // should never fail
 
-        IsDebuggerPresentProc proc = (IsDebuggerPresentProc)::GetProcAddress(kernelH, "IsDebuggerPresent");
+        IsDebuggerPresentProc proc =
+            (IsDebuggerPresentProc)::GetProcAddress( kernelH,
+                                                     "IsDebuggerPresent" );
 
         if (proc != NULL)       // only present in NT and Win 98
-
             present = proc() != 0;
-
         else
             present = IsDebuggerPresent95();
     }
@@ -213,31 +210,28 @@ static void CreateConsoleWindow()
     ASSERT(sConsole == NULL);
 
     // Create the console window
-  if (::AllocConsole())
+    if (::AllocConsole())
     {
-
         // Get the console window's handle
-      sConsole = ::GetStdHandle(STD_ERROR_HANDLE);
+        sConsole =::GetStdHandle(STD_ERROR_HANDLE);
         if (sConsole == INVALID_HANDLE_VALUE)
             sConsole = NULL;
 
         // Set some options
         if (sConsole != NULL)
         {
-          VERIFY(::SetConsoleTextAttribute(sConsole, FOREGROUND_GREEN));
-            // green text on a black background (there doesn't appear to be a way to get black text)
+            VERIFY(::SetConsoleTextAttribute(sConsole, FOREGROUND_GREEN));
+            // green text on a black background (there doesn't appear to
+            // be a way to get black text)
 
-          VERIFY(::SetConsoleTitle("Debug Log"));
+            VERIFY(::SetConsoleTitle("Debug Log"));
 
-            COORD size =
-            {80, 120};
+            COORD size = { 80, 120 };
 
-          VERIFY(::SetConsoleScreenBufferSize(sConsole, size));
-
+            VERIFY(::SetConsoleScreenBufferSize(sConsole, size));
         }
         else
             DEBUGSTR(L "Couldn't get the console window's handle!");
-
     }
     else
         DEBUGSTR(L "Couldn't allocate the console window!");
@@ -257,12 +251,10 @@ static void TraceString(const char *mesg)
     if (IsDebuggerPresent())
     {
         OutputDebugStringA(mesg);       // if you're using CodeWarrior you'll need to enable the "Log System Messages" checkbox to get this working
-
     }
     else
     {
         if (sConsole == NULL)   // otherwise we'll use a console window
-
             CreateConsoleWindow();
 
         if (sConsole != NULL)
@@ -322,12 +314,13 @@ void AssertFailed(const char *expr, const char *file, int line)
     sprintf(mesg, "ASSERT(%s) in %s at line %d failed.", expr, file, line);
 
 #else
-    const char *fileName = file + strlen(file);         // strip off path
+    const char *fileName = file + strlen(file); // strip off path
 
     while (fileName > file && fileName[-1] != '\\')
         --fileName;
 
-    sprintf(mesg, "ASSERT(%s) in '%s' at line %d failed.", expr, fileName, line);
+    sprintf(mesg, "ASSERT(%s) in '%s' at line %d failed.", expr, fileName,
+            line);
 #endif
 
     BreakStrToDebugger(mesg);
@@ -341,7 +334,7 @@ void AssertFailed(const char *expr, const char *file, int line)
 //
 //---------------------------------------------------------------
 #if DEBUG
-void DEBUGSTR(const char *format,...)
+void DEBUGSTR(const char *format, ...)
 {
     char mesg[2048];
 
@@ -362,7 +355,7 @@ void DEBUGSTR(const char *format,...)
 //
 //---------------------------------------------------------------
 #if DEBUG
-void TRACE(const char *format,...)
+void TRACE(const char *format, ...)
 {
     char mesg[2048];
 
@@ -387,7 +380,7 @@ void TRACE(const char *format,...)
 //
 //---------------------------------------------------------------
 #ifdef WIZARD
-void cast_spec_spell( void )
+void cast_spec_spell(void)
 {
     char specs[3];
 
@@ -397,7 +390,7 @@ void cast_spec_spell( void )
     specs[1] = getche();
     specs[2] = getche();
 
-    your_spells(atoi(specs), player_mag_abil(true), false);
+    your_spells(atoi(specs), 0, false);
 }
 #endif
 
@@ -408,9 +401,8 @@ void cast_spec_spell( void )
 //
 //---------------------------------------------------------------
 #ifdef WIZARD
-void cast_spec_spell_name( void )
+void cast_spec_spell_name(void)
 {
-
     int i = 0;
     char specs[50];
     char spname[60];
@@ -431,17 +423,15 @@ void cast_spec_spell_name( void )
     {
         strcpy(spname, spell_title(i));
 
-        if ( strstr(strlwr(spname), strlwr(specs)) != NULL )
+        if (strstr(strlwr(spname), strlwr(specs)) != NULL)
         {
-            your_spells(i, player_mag_abil(true), false);
+            your_spells(i, 0, false);
             return;
         }
-
     }
 
-    mpr( (one_chance_in(20)) ? "Maybe you should go back to WIZARD school."
-                             : "I couldn't find that spell." );
-
+    mpr((one_chance_in(20)) ? "Maybe you should go back to WIZARD school."
+                            : "I couldn't find that spell.");
 }
 #endif
 
@@ -452,7 +442,7 @@ void cast_spec_spell_name( void )
 //
 //---------------------------------------------------------------
 #ifdef WIZARD
-void create_spec_monster( void )
+void create_spec_monster(void)
 {
     char specs[3];
 
@@ -462,10 +452,9 @@ void create_spec_monster( void )
     specs[1] = getche();
     specs[2] = getche();
 
-    create_monster(atoi(specs), 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
-
-}          // end create_spec_monster()
-
+    create_monster( atoi(specs), 0, BEH_SLEEP, you.x_pos, you.y_pos,
+                    MHITNOT, 250 );
+}                               // end create_spec_monster()
 
 
 //---------------------------------------------------------------
@@ -473,9 +462,8 @@ void create_spec_monster( void )
 // create_spec_monster_name
 //
 //---------------------------------------------------------------
-void create_spec_monster_name( void )
+void create_spec_monster_name(void)
 {
-
     char specs[50];
     char spname[60];
 
@@ -503,17 +491,13 @@ void create_spec_monster_name( void )
             create_monster(i, 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
             return;
         }
-
     }
 
     mpr("I couldn't find that monster.");
 
-    if ( one_chance_in(20) )
-      mpr("Maybe it's hiding.");
-
-}          // end create_spec_monster_name()
-
-
+    if (one_chance_in(20))
+        mpr("Maybe it's hiding.");
+}                               // end create_spec_monster_name()
 
 
 //---------------------------------------------------------------
@@ -521,7 +505,7 @@ void create_spec_monster_name( void )
 // level_travel
 //
 //---------------------------------------------------------------
-void level_travel( void )
+void level_travel(void)
 {
     char specs[3];
 
@@ -535,10 +519,7 @@ void level_travel( void )
 
     mpr("Your level has been reset.");
     mpr("Enter a staircase for more obvious effects.");
-
-}          // end level_travel()
-
-
+}                               // end level_travel()
 
 
 //---------------------------------------------------------------
@@ -546,24 +527,25 @@ void level_travel( void )
 // create_spec_object
 //
 //---------------------------------------------------------------
-void create_spec_object( void )
+void create_spec_object(void)
 {
     unsigned char class_wanted = 0;
     unsigned char type_wanted = 0;
 
     mpr("Create which item (class then type)? ");
 
-    class_wanted = ( (unsigned char) getche() - 48 ) * 10;
+    class_wanted = ((unsigned char) getche() - 48) * 10;
     class_wanted += (unsigned char) getche() - 48;
 
-    type_wanted = ( (unsigned char) getche() - 48) * 10;
+    type_wanted = ((unsigned char) getche() - 48) * 10;
     type_wanted += (unsigned char) getche() - 48;
 
     itoa(property(class_wanted, type_wanted, 2), st_prn, 10);
     strcpy(info, st_prn);
     mpr(info);
 
-    int thing_created = items(1, class_wanted, type_wanted, 1, you.your_level, 250);
+    int thing_created = items( 1, class_wanted, type_wanted, 1,
+                               you.your_level, 250 );
 
     canned_msg(MSG_SOMETHING_APPEARS);
 
@@ -575,14 +557,12 @@ void create_spec_object( void )
 }
 
 
-
-
 //---------------------------------------------------------------
 //
 // create_spec_object2
 //
 //---------------------------------------------------------------
-void create_spec_object2( void )
+void create_spec_object2(void)
 {
     unsigned char class_wanted = 0;
     unsigned char type_wanted = 0;
@@ -590,10 +570,10 @@ void create_spec_object2( void )
 
     mpr("Create which item (class, type, then dam)? ");
 
-    class_wanted = ( (unsigned char) getche() - 48 ) * 10;
+    class_wanted = ((unsigned char) getche() - 48) * 10;
     class_wanted += (unsigned char) getche() - 48;
 
-    type_wanted = ( (unsigned char) getche() - 48 ) * 10;
+    type_wanted = ((unsigned char) getche() - 48) * 10;
     type_wanted += (unsigned char) getche() - 48;
 
     dam_wanted = (getche() - 48) * 10;
@@ -602,7 +582,8 @@ void create_spec_object2( void )
     //itoa(property[class_wanted][type_wanted][2], st_prn, 10);
     //mpr(st_prn);
 
-    int thing_created = items(1, class_wanted, type_wanted, 1, you.your_level, 250);
+    int thing_created = items( 1, class_wanted, type_wanted, 1,
+                               you.your_level, 250 );
 
     mitm.special[thing_created] = dam_wanted;
 
@@ -622,124 +603,121 @@ void create_spec_object2( void )
 // stethoscope
 //
 //---------------------------------------------------------------
-void stethoscope( int mwh )
+void stethoscope(int mwh)
 {
-// STETH can't examine spaces in cardinal directions more than 1 space from you
-
-    struct dist stth[1];
+    // STETH can't examine spaces in cardinal directions more
+    // than 1 space from you
+    struct dist stth;
     int i;
 
-    if ( mwh == RANDOM_MONSTER )
+    if (mwh == RANDOM_MONSTER)
     {
         mpr("Which monster?");
 
         direction(1, stth);
 
-        if (stth[0].nothing == -1)
+        if (stth.nothing == -1)
             return;
 
-        if (env.cgrid[you.x_pos + stth[0].move_x][you.y_pos + stth[0].move_y] != EMPTY_CLOUD)
+        const int steth_x = you.x_pos + stth.move_x;
+        const int steth_y = you.y_pos + stth.move_y;
+
+        if (env.cgrid[steth_x][steth_y] != EMPTY_CLOUD)
         {
-            itoa(env.cloud_type[env.cgrid[you.x_pos + stth[0].move_x][you.y_pos + stth[0].move_y]], st_prn, 10);
+            itoa(env.cloud_type[env.cgrid[steth_x][steth_y]], st_prn, 10);
             strcpy(info, st_prn);
             strcat(info, "/");
-            itoa(env.cloud_decay[env.cgrid[you.x_pos + stth[0].move_x][you.y_pos + stth[0].move_y]], st_prn, 10);
+            itoa(env.cloud_decay[env.cgrid[steth_x][steth_y]], st_prn, 10);
             strcat(info, st_prn);
             strcat(info, "   ");
             mpr(info);
         }
 
-        if ( mgrd[you.x_pos + stth[0].move_x][you.y_pos + stth[0].move_y] == NON_MONSTER )
+        if (mgrd[steth_x][steth_y] == NON_MONSTER)
         {
-            itoa((int) igrd[you.x_pos + stth[0].move_x][you.y_pos + stth[0].move_y], st_prn, 10);
+            itoa((int) igrd[steth_x][steth_y], st_prn, 10);
             strcpy(info, st_prn);
             mpr(info);
 
-            stth[0].move_x = 0;
-            stth[0].move_y = 0;
+            // these two lines can't be important -- bwr
+            // stth.move_x = 0;
+            // stth.move_y = 0;
             return;
         }
 
-        i = mgrd[you.x_pos + stth[0].move_x][you.y_pos + stth[0].move_y];
-
+        i = mgrd[steth_x][steth_y];
     }
     else
-      i = mwh;
+        i = mwh;
 
-    strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));
+    strcpy(info, ptr_monam( &(menv[i]), 0));
+
     strcat(info, ": ");
 
-    {
+    itoa(i, st_prn, 10);
+    strcat(info, st_prn);
+    strcat(info, ": cl ");
 
-        itoa(i, st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, ": cl ");
+    itoa(menv[i].type, st_prn, 10);
+    strcat(info, st_prn);
+    strcat(info, " - ");
 
-        itoa(menv[i].type, st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, " - ");
+    itoa(menv[i].hit_points, st_prn, 10);
+    strcat(info, st_prn);
+    strcat(info, "/");
+    itoa(menv[i].max_hit_points, st_prn, 10);
+    strcat(info, st_prn);
+    strcat(info, "   ");
 
-        itoa(menv[i].hit_points, st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, "/");
-        itoa(menv[i].max_hit_points, st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, "   ");
+    itoa(menv[i].behavior, st_prn, 10);
+    strcat(info, st_prn);
+    strcat(info, "/");
+    itoa(menv[i].monster_foe, st_prn, 10);
+    strcat(info, st_prn);
+    mpr(info);
 
-        itoa(menv[i].behavior, st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, "/");
-        itoa(menv[i].monster_foe, st_prn, 10);
-        strcat(info, st_prn);
-        mpr(info);
+    strcpy(info, "speed:");
+    itoa(menv[i].speed, st_prn, 10);
+    strcat(info, st_prn);
+    strcat(info, "/");
+    itoa(menv[i].speed_increment, st_prn, 10);
+    strcat(info, st_prn);
+    mpr(info);
 
-        strcpy(info, "speed:");
-        itoa(menv[i].speed, st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, "/");
-        itoa(menv[i].speed_increment, st_prn, 10);
-        strcat(info, st_prn);
-        mpr(info);
+    strcpy(info, "sec:");
+    itoa(menv[i].number, st_prn, 10);
+    strcat(info, st_prn);
+    mpr(info);
 
-        strcpy(info, "sec:");
-        itoa(menv[i].number, st_prn, 10);
-        strcat(info, st_prn);
-        mpr(info);
+    strcpy(info, "target: ");
+    itoa(menv[i].target_x, st_prn, 10);
+    strcat(info, st_prn);
+    strcat(info, ", ");
+    itoa(menv[i].target_y, st_prn, 10);
+    strcat(info, st_prn);
+    mpr(info);
 
-        strcpy(info, "target: ");
-        itoa(menv[i].target_x, st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, ", ");
-        itoa(menv[i].target_y, st_prn, 10);
-        strcat(info, st_prn);
-        mpr(info);
+    strcpy(info, "ench0: ");
+    itoa(menv[i].enchantment[0], st_prn, 10);
+    strcat(info, st_prn);
+    strcat(info, " ench1: ");
+    itoa(menv[i].enchantment[1], st_prn, 10);
+    strcat(info, st_prn);
+    strcat(info, " ench2: ");
+    itoa(menv[i].enchantment[2], st_prn, 10);
+    strcat(info, st_prn);
+    mpr(info);
 
-        strcpy(info, "ench0: ");
-        itoa(menv[i].enchantment[0], st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, " ench1: ");
-        itoa(menv[i].enchantment[1], st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, " ench2: ");
-        itoa(menv[i].enchantment[2], st_prn, 10);
-        strcat(info, st_prn);
-        mpr(info);
+    strcpy(info, "Ghost damage: ");
+    itoa(ghost.values[7], st_prn, 10);
+    strcat(info, st_prn);
+    mpr(info);
 
-        strcpy(info, "Ghost damage: ");
-        itoa(ghost.values[7], st_prn, 10);
-        strcat(info, st_prn);
-        mpr(info);
-
-    }
-
-    stth[0].move_x = 0;
-    stth[0].move_y = 0;
-
+    // these two lines can't be important -- bwr
+    // stth.move_x = 0;
+    // stth.move_y = 0;
     return;
-
-}          // end stethoscope()
-
-
+}                               // end stethoscope()
 
 
 //---------------------------------------------------------------
@@ -747,7 +725,7 @@ void stethoscope( int mwh )
 // debug_add_skills
 //
 //---------------------------------------------------------------
-void debug_add_skills( void )
+void debug_add_skills(void)
 {
     char specs[2];
 
@@ -757,16 +735,12 @@ void debug_add_skills( void )
     specs[1] = getche();
 
     exercise(atoi(specs), 100);
-
-}          // end debug_add_skills()
-
+}                               // end debug_add_skills()
 
 
-
-void error_message_to_player( void )
+void error_message_to_player(void)
 {
-
     mpr("Oh dear. There appears to be a bug in the program.");
     mpr("I suggest you leave this level then save as soon as possible.");
 
-}          // end error_message_to_player()
+}                               // end error_message_to_player()

@@ -55,21 +55,21 @@ struct SBeam mons_spells(char spell_cast, int power);
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-void dragon(struct monsters *monster, struct bolt *pbolt);
+void dragon(struct monsters *monster, struct bolt &pbolt);
 
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-void mons_cast(struct monsters *monster, struct bolt *pbolt, int spell_cast);
+void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast);
 
 
 // last updated 28july2000 (gdl)
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-bool mons_throw(struct monsters *monster, struct bolt *pbolt, int hand_used);
+bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used);
 
 
 // last updated 12may2000 {dlb}
@@ -86,11 +86,10 @@ void mons_trap(struct monsters *monster);
 void monster_teleport(struct monsters *monster, bool instan);
 
 
-// last updated 12may2000 {dlb}
+// last updated Oct 3,2000 -- bwr
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-void spore_goes_pop(struct monsters *monster);
-
+void spore_goes_pop(struct monsters *monster, int type);
 
 #endif

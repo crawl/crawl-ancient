@@ -42,6 +42,7 @@
 #include "defines.h"
 
 #include "enum.h"
+#include "externs.h"
 
 
 #if defined(USE_POSIX_TERMIOS)
@@ -68,13 +69,16 @@ static struct ltchars game_term;
 #include <curses.h>
 
 // Globals holding current text/backg. colors
-short FG_COL = COLOR_WHITE;
-short BG_COL = COLOR_BLACK;
+short FG_COL = WHITE;
+short BG_COL = BLACK;
 
 // a lookup table to convert keypresses to command enums
 int key_to_command_table[KEY_MAX];
 
-
+static inline short macro_colour( short col )
+{
+    return (Options.colour[ col ]);
+}
 
 // Translate DOS colors to curses. 128 just means use high intens./bold.
 short translatecolor(short col)
@@ -132,30 +136,26 @@ short translatecolor(short col)
     default:
         return COLOR_GREEN;
         break;                  //mainly for debugging
-
     }
 }
 
 
-
-void setupcolorpairs( bool use_no_black )
+void setupcolorpairs( void )
 {
 
     short i, j;
 
     for (i = 0; i < 8; i++)
-      for (j = 0; j < 8; j++)
-         if ( ( i > 0 ) || ( j > 0 ) )
-           init_pair(i * 8 + j, j, i);
+    {
+        for (j = 0; j < 8; j++)
+        {
+            if (( i > 0 ) || ( j > 0 ))
+                init_pair(i * 8 + j, j, i);
+        }
+    }
 
-    if ( use_no_black )
-      init_pair(63, COLOR_WHITE, COLOR_BLACK);
-    else
-      init_pair(63, COLOR_BLACK, COLOR_BLACK);
-
+    init_pair(63, COLOR_BLACK, Options.background);
 }          // end setupcolorpairs()
-
-
 
 
 #if defined(USE_POSIX_TERMIOS)
@@ -300,10 +300,20 @@ void init_key_to_command()
     key_to_command_table['?'] = CMD_DISPLAY_COMMANDS;
     key_to_command_table['`'] = CMD_MACRO_ADD;
     key_to_command_table['~'] = CMD_MACRO_SAVE;
-    key_to_command_table['('] = CMD_LIST_WEAPONS;
-    key_to_command_table[']'] = CMD_LIST_ARMOUR;
-    key_to_command_table['"'] = CMD_LIST_JEWELLERY;
     key_to_command_table['&'] = CMD_WIZARD;
+    key_to_command_table['"'] = CMD_LIST_JEWELLERY;
+
+
+    // I'm making this both, because I'm tried of changing it
+    // back to '[' (the character that represents armour on the map) -- bwr
+    key_to_command_table['['] = CMD_LIST_ARMOUR;
+    key_to_command_table[']'] = CMD_LIST_ARMOUR;
+
+    // This one also ended up backwards this time, so it's also going on
+    // both now -- should be ')'... the same character that's used to
+    // represent weapons.
+    key_to_command_table[')'] = CMD_LIST_WEAPONS;
+    key_to_command_table['('] = CMD_LIST_WEAPONS;
 
     key_to_command_table['\\'] = CMD_DISPLAY_KNOWN_OBJECTS;
     key_to_command_table['\''] = CMD_WEAPON_SWAP;
@@ -346,7 +356,6 @@ void init_key_to_command()
     key_to_command_table[125] = 125;
     key_to_command_table['*'] = '*';
     key_to_command_table['/'] = '/';
-
 }
 
 int key_to_command(int keyin)
@@ -405,7 +414,7 @@ int translate_keypad(int keyin)
     return (ret);
 }
 
-void lincurses_startup(bool use_no_black)
+void lincurses_startup( void )
 {
 #if defined(USE_POSIX_TERMIOS) || defined(USE_TCHARS_IOCTL)
     termio_init();
@@ -428,7 +437,7 @@ void lincurses_startup(bool use_no_black)
 
     meta(stdscr, TRUE);
     start_color();
-    setupcolorpairs(use_no_black);
+    setupcolorpairs();
 
     init_key_to_command();
 
@@ -483,12 +492,15 @@ int itoa(int value, char *strptr, int radix)
                 if (startflag)
                     sprintf(strptr + ctr, "0");
             }
+
             bitmask = bitmask >> 1;
             if (startflag)
                 ctr++;
         }
+
         if (!startflag)         /* Special case if value == 0 */
             sprintf((strptr + ctr++), "0");
+
         strptr[ctr] = (char) NULL;
     }
     return (OK);                /* Me? Fail? Nah. */
@@ -501,7 +513,8 @@ char *strlwr(char *str)
     unsigned int i;
 
     for (i = 0; i < strlen(str); i++)
-      str[i] = tolower(str[i]);
+        str[i] = tolower(str[i]);
+
     return (str);
 }
 
@@ -526,6 +539,7 @@ int putch(unsigned char chr)
 {
     if (chr == 0)
         chr = ' ';
+
     return (addch(chr));
 }
 
@@ -544,7 +558,6 @@ char getche()
 int window(int x1, int y1, int x2, int y2)
 {
     x1 = y1 = x2 = y2 = 0;      /* Do something to them.. makes gcc happy :) */
-
     return (refresh());
 }
 
@@ -570,8 +583,8 @@ void textcolor(int col)
     short fg, bg;
 
     FG_COL = col;
-    fg = translatecolor(FG_COL);
-    bg = translatecolor(BG_COL);
+    fg = translatecolor( macro_colour( FG_COL ) );
+    bg = translatecolor( (BG_COL == BLACK) ? Options.background : BG_COL );
 
     if (bg & 128)
         bg = bg - 128;
@@ -584,13 +597,9 @@ void textcolor(int col)
     else
     {
         if (fg & 128)
-        {
             attrset((COLOR_PAIR((fg - 128) + bg * 8)) | A_BOLD | CHARACTER_SET);
-        }
         else
-        {
             attrset(COLOR_PAIR(fg + bg * 8) | A_NORMAL | CHARACTER_SET);
-        }
     }
 }
 
@@ -600,8 +609,8 @@ void textbackground(int col)
     short fg, bg;
 
     BG_COL = col;
-    fg = translatecolor(FG_COL);
-    bg = translatecolor(BG_COL);
+    fg = translatecolor( macro_colour( FG_COL ) );
+    bg = translatecolor( (BG_COL == BLACK) ? Options.background : BG_COL );
 
     if (bg & 128)
         bg = bg - 128;
@@ -614,13 +623,9 @@ void textbackground(int col)
     else
     {
         if (fg & 128)
-        {
             attrset((COLOR_PAIR((fg - 128) + bg * 8)) | A_BOLD | CHARACTER_SET);
-        }
         else
-        {
             attrset(COLOR_PAIR(fg + bg * 8) | A_NORMAL | CHARACTER_SET);
-        }
     }
 }
 
@@ -685,6 +690,7 @@ int kbhit()
     nodelay(stdscr, TRUE);
     i = wgetch(stdscr);
     nodelay(stdscr, FALSE);
+
     if (i == -1)
         i = 0;
     else

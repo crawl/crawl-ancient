@@ -419,3 +419,37 @@ resist fire..., also some healing spells - neutralize poison etc...
 - score file still gets messed up from time to time... should probably
   change the format into something that can be expanded and contains more
   information that might be printed (user id on multiuser systems, time, etc)
+
+-- add checking for legal background colour (or just let it ignore the
+   "bold" colours like it does now?)
+
+-- change file formats and functions
+    -- change score file format (see nethack for additional fields... also
+       maybe a field for damage done by killing attack... could be used to
+       spice up the death description (use final HP?))... also a userid
+       field for MULTIUSER systems would be nice (to tell likenamed
+       charcters apart and identify the player).
+
+-- sort out spells into separate spl-* files based on type/skill
+
+-- make all this you.inv_*, mitm/itm stuff the same instead of
+   having conversions everywhere.
+
+-- differentiate the good gods more
+
+-- break up dungeon.cc more
+
+-- a check floor for lava/water function
+
+-- a simple "summon hostile unfriendly/random demon" spell with fewer params?
+
+-- centralize the elemental resistance code into a single entry point that
+   takes damage and type and does the appropriate things... some of the
+   cases are notably special, so some extra damage cateogries might have
+   to be created (ie. stepping/falling into lava is an instadeath for
+   characters with negative fire resistance, but being hit with a lava
+   bolt is only extra damage).
+
+-- functions to check for specific equipment (ie reduce checks for "!= -1")
+
+-- move ghost/demon array into a proper structure.

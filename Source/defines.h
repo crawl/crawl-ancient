@@ -101,6 +101,9 @@
     #define LIGHTMAGENTA 13
     #define YELLOW 14
     #define WHITE 15
+
+    #define LIGHTGRAY LIGHTGREY
+    #define DARKGRAY DARKGREY
 #else
     #include <conio.h>
     #define LIGHTGREY LIGHTGRAY

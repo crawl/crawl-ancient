@@ -1,6 +1,6 @@
 # Make file for Dungeon Crawl (solaris)
 
-APPNAME = crawl
+APPNAME = newcrawl
 
 # this file contains a list of the libraries.
 # it will make a variable called OBJECTS that contains all the libraries
@@ -14,15 +14,16 @@ COPY = cp
 GROUP = games
 MOVE = mv
 OS_TYPE = SOLARIS
-CFLAGS = -Wall -D$(OS_TYPE) $(EXTRA_FLAGS)
+CFLAGS = -Wall -g -D$(OS_TYPE) $(EXTRA_FLAGS)
 LDFLAGS = -static
 MCHMOD = 2755
-INSTALLDIR = /opt/crawl/bin
+INSTALLDIR = /opt/local/newcrawl/bin
 LIB = -lcurses
 
 all:            $(APPNAME)
 
 install:        $(APPNAME)
+		#strip $(APPNAME)
 		$(MOVE) ${INSTALLDIR}/${APPNAME} ${INSTALLDIR}/${APPNAME}.old
 		$(COPY) $(APPNAME) ${INSTALLDIR}
 		chgrp ${GROUP} ${INSTALLDIR}/${APPNAME}
@@ -45,9 +46,6 @@ distclean:
 
 $(APPNAME):	$(OBJECTS)
 		${CXX} ${LDFLAGS} $(INCLUDES) $(CFLAGS) $(OBJECTS) -o $(APPNAME) $(LIB)
-		strip $(APPNAME)
-		chgrp ${GROUP} ${APPNAME}
-		chmod ${MCHMOD} $(APPNAME)
 
 debug:		$(OBJECTS)
 		${CXX} ${LDFLAGS} $(INCLUDES) $(CFLAGS) $(OBJECTS) -o $(APPNAME) $(LIB)

@@ -114,7 +114,7 @@ void canned_msg(unsigned char which_message);
  * called from: ability - acr - command - it_use3 - item_use - items -
  *              misc - ouch - religion - spl-book - spells4
  * *********************************************************************** */
-bool yesno(const char * str);
+bool yesno(const char * str, bool safe = true);
 
 
 // last updated 21may2000 {dlb}

@@ -44,7 +44,7 @@ void unwield_item(char unw);
 /* ***********************************************************************
  * called from: ability - it_use3 - item_use - spell - spells1 - spells3
  * *********************************************************************** */
-void zapping(char ztype, int power, struct bolt *pbolt);
+void zapping(char ztype, int power, struct bolt &pbolt);
 
 
 #endif

@@ -20,7 +20,7 @@
 /* ***********************************************************************
  * called from: beam
  * *********************************************************************** */
-void explosion1(struct bolt *pbolt);
+void explosion1(struct bolt &pbolt);
 
 
 // last updated 12may2000 {dlb}
@@ -28,7 +28,7 @@ void explosion1(struct bolt *pbolt);
  * called from: ability - bang - it_use3 - item_use - mstuff2 - religion -
  *              spells - spells4
  * *********************************************************************** */
-void explosion(bool is5x5, struct bolt *pbolt);
+void explosion(bool is5x5, struct bolt &pbolt);
 
 
 #endif

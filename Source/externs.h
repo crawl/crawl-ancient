@@ -19,7 +19,6 @@
 #include "FixAry.h"
 #include "message.h"
 
-
 extern char info[200];               // defined in acr.cc {dlb}
 extern char st_prn[20];              // defined in acr.cc {dlb}
 extern char str_pass[80];            // defined in acr.cc {dlb}
@@ -143,7 +142,7 @@ struct player
   char redraw_intelligence;
   char redraw_dexterity;
   char redraw_experience;
-  char redraw_armor_class;
+  char redraw_armor_class;   // great -- more mixed american/proper spelling
 
   char redraw_gold;
   char redraw_evasion;
@@ -240,6 +239,9 @@ struct player
   unsigned char betrayal;
   unsigned char normal_vision;        // how far the species gets to see
   unsigned char current_vision;       // current sight radius (cells)
+
+  int passwall_x;       // coord for passwall, shouldn't need saving, since
+  int passwall_y;       // the player should never get an action.
 };
 
 extern struct player you;
@@ -251,7 +253,7 @@ struct monsters
     int hit_points;
     int max_hit_points;
     unsigned int hit_dice;
-    int armor_class;
+    int armor_class;       // great -- more mixed american/proper spelling
     int evasion;
     unsigned int speed;
     unsigned int speed_increment;
@@ -340,10 +342,34 @@ struct system_environment
     char *crawl_pizza;
     char *crawl_rc;
     char *crawl_dir;
+    char *home;
 };
 
+extern system_environment SysEnv;
 
-extern system_environment sys_env;
 
+struct game_options {
+    long        autopickups;    // items to autopickup
+    bool        verbose_dump;   // make character dumps contain more detail
+    bool        colour_map;     // add colour to the map
+    bool        clean_map;      // remove unseen clouds/monsters
+    bool        show_uncursed;  // label known uncursed items as "uncursed"
+    bool        always_greet;   // display greeting message when reloading
+    bool        easy_open;      // open doors with movement
+    bool        easy_armour;    // allow auto-removing of armour
+    bool        easy_butcher;   // open doors with movement
+    int         easy_confirm;   // make yesno() confirming easier
+    int         colour[16];     // macro fg colours to other colours
+    int         background;     // select default background colour
+    int         channels[NUM_MESSAGE_CHANNELS];  // msg channel colouring
+    int         weapon;         // auto-choose weapon for character
+    int         chaos_knight;   // choice of god for Chaos Knights (Xom/Makleb)
+    int         death_knight;   // choice of god/necromancy for Death Knights
+    int         priest;         // choice of god for priests (Zin/Yred)
+    bool        random_pick;    // randomly generate character
+    int         hp_warning;     // percentage hp for danger warning
+};
+
+extern game_options  Options;
 
 #endif // EXTERNS_H

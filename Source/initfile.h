@@ -12,11 +12,6 @@
 #ifndef INITFILE_H
 #define INITFILE_H
 
-
-extern char *obj_syms;
-extern int obj_syms_len;
-
-
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: acr

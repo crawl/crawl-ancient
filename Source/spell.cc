@@ -41,92 +41,92 @@
 #include "transfor.h"
 #include "view.h"
 
+extern bool wield_change;       // defined in output.cc
 
-extern bool wield_change;    // defined in output.cc
-
-
-static void surge_power( int spell )
+static void surge_power(int spell)
 {
     int enhanced = 0;
 
     //jmf: simplified
-    enhanced += spell_enhancement( spell_type( spell ) );
+    enhanced += spell_enhancement(spell_type(spell));
 
-    if ( enhanced )    // one way or the other {dlb}
+    if (enhanced)               // one way or the other {dlb}
     {
         strcpy(info, "You feel a");
 
-        strcat(info, (enhanced  < -2) ? "n extraordinarily" :
+        strcat(info, (enhanced < -2)  ? "n extraordinarily" :
                      (enhanced == -2) ? "n extremely" :
-                     (enhanced ==  2) ? " strong" :
-                     (enhanced  >  2) ? " huge"
-                                      : "" );
+                     (enhanced == 2)  ? " strong" :
+                     (enhanced > 2)   ? " huge"
+                                      : "");
 
         strcat(info, (enhanced < 0) ? " numb sensation."
-                                    : " surge of power!" );
-
+                                    : " surge of power!");
         mpr(info);
     }
-}          // end surge_power()
+}                               // end surge_power()
 
-
-void cast_a_spell( void )
+void cast_a_spell(void)
 {
     char spc = 0;
     char spc2 = 0;
     int spellh = 0;
-    int powc = 0;
     unsigned char keyin = 0;
     char unthing = 0;
 
-
-    if ( !you.spell_no )
+    if (!you.spell_no)
     {
         mpr("You don't know any spells.");
         return;
     }
 
-    if ( you.berserker )
+    if (you.berserker)
     {
         canned_msg(MSG_TOO_BERSERK);
         return;
     }
 
-// first query {dlb}:
+    if (silenced(you.x_pos, you.y_pos))
+    {
+        mpr("You cannot cast spells when silenced!");
+        return;
+    }
+
+    // first query {dlb}:
     for (;;)
     {
-      //jmf: FIXME: change to reflect range of known spells
-        mpr("Cast which spell? [a-y] spell [?|*] list");
+        //jmf: FIXME: change to reflect range of known spells
+        mpr("Cast which spell? [a-y] spell [?|*] list", MSGCH_PROMPT);
 
         keyin = get_ch();
 
-        if ( keyin == '?' || keyin == '*' )
+        if (keyin == '?' || keyin == '*')
         {
             unthing = spell_list();
 
 #ifdef PLAIN_TERM
             redraw_screen();
 #endif
-
             if (unthing == 2)
-              return;
+                return;
 
-            if ( unthing >= 'a' && unthing <= 'y' )
+            if (unthing >= 'a' && unthing <= 'y')
             {
                 keyin = unthing;
                 break;
             }
             else
-              mesclr();
+                mesclr();
         }
         else
-          break;
+        {
+            break;
+        }
     }
-
 
     spc = (int) keyin;
 
-    if ( spc < 'a' || spc > 'y' )
+    if (spc < 'a' || spc > 'y')
     {
         mpr("You don't know that spell.");
         return;
@@ -134,19 +134,20 @@ void cast_a_spell( void )
 
     spc2 = letter_to_index(spc);
 
-    if ( you.spells[spc2] == SPELL_NO_SPELL )
+    if (you.spells[spc2] == SPELL_NO_SPELL)
     {
         mpr("You don't know that spell.");
         return;
     }
 
-    if ( spell_mana(you.spells[spc2]) > you.magic_points )
+    if (spell_mana(you.spells[spc2]) > you.magic_points)
     {
         mpr("You don't have enough magic to cast that spell.");
         return;
     }
 
-    if ( you.hunger_state < HS_HUNGRY  || you.hunger <= spell_hunger(you.spells[spc2]) )
+    if (you.hunger_state < HS_HUNGRY
+        || you.hunger <= spell_hunger(you.spells[spc2]))
     {
         mpr("You don't have the energy to cast that spell.");
         return;
@@ -154,111 +155,116 @@ void cast_a_spell( void )
 
     dec_mp(spell_mana(you.spells[spc2]));
 
-    if ( !player_energy() && you.is_undead != US_UNDEAD )
+    if (!player_energy() && you.is_undead != US_UNDEAD)
     {
         spellh = spell_hunger(you.spells[spc2]);
-        spellh -= you.intel * you.skills[SK_SPELLCASTING];    // I wonder if a better algorithm is called for? {dlb}
+        // I wonder if a better algorithm is called for? {dlb}
+        spellh -= you.intel * you.skills[SK_SPELLCASTING];
 
-        if ( spellh < 1 )
-          spellh = 1;
+        if (spellh < 1)
+            spellh = 1;
         else
-          make_hungry(spellh, true);
+            make_hungry(spellh, true);
     }
 
     you.turn_is_over = 1;
     alert();
 
-    if ( you.conf )
+    if (you.conf)
     {
         random_uselessness(2 + random2(7), 0);
         return;
     }
 
-    exercise_spell( you.spells[spc2], true, your_spells(you.spells[spc2], powc, true) );
+    exercise_spell( you.spells[spc2], true,
+                    your_spells(you.spells[spc2], 0, true) );
 
     you.turn_is_over = 1;
     naughty(NAUGHTY_SPELLCASTING, 1 + random2(5));
+}                               // end cast_a_spell()
 
-}          // end cast_a_spell()
-
-
-bool your_spells( int spc2, int powc, bool allow_fail )
+bool your_spells(int spc2, int powc, bool allow_fail)
 {
     int dem_hor = 0;
     int dem_hor2 = 0;
     int total_skill = 0;
-    struct dist spd[1];
-    struct bolt beam[1];
+    struct dist spd;
+    struct bolt beam;
 
     alert();
 
-// determine base power: modified by skills, magic ability, enhancements {dlb}:
-    powc = spell_spec(spc2);
+    // Added this so that the passed in powc can have meaning -- bwr
+    if (powc == 0)
+    {
+        // determine base power: modified by skills, magic ability,
+        // enhancements {dlb}:
+        powc = spell_spec(spc2);
+    }
 
-// further modify base power by weighting against intelligence {dlb}:
+    // further modify base power by weighting against intelligence {dlb}:
     powc *= you.intel;
     powc /= 10;
 
-    if ( you.equip[EQ_WEAPON] != -1
+    if (you.equip[EQ_WEAPON] != -1
         && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_ident[you.equip[EQ_WEAPON]] == 0 )
+        && you.inv_ident[you.equip[EQ_WEAPON]] == 0)
     {
-        switch ( you.inv_type[you.equip[EQ_WEAPON]] )
+        switch (you.inv_type[you.equip[EQ_WEAPON]])
         {
-          case STAFF_ENERGY:
-          case STAFF_WIZARDRY:
+        case STAFF_ENERGY:
+        case STAFF_WIZARDRY:
             total_skill = you.skills[SK_SPELLCASTING];
             break;
-          case STAFF_FIRE:
-            if ( spell_typematch(spc2, SPTYP_FIRE) )
-              total_skill = you.skills[SK_FIRE_MAGIC];
-            else if ( spell_typematch(spc2, SPTYP_ICE) )
-              total_skill = you.skills[SK_ICE_MAGIC];
+        case STAFF_FIRE:
+            if (spell_typematch(spc2, SPTYP_FIRE))
+                total_skill = you.skills[SK_FIRE_MAGIC];
+            else if (spell_typematch(spc2, SPTYP_ICE))
+                total_skill = you.skills[SK_ICE_MAGIC];
             break;
-          case STAFF_COLD:
-            if ( spell_typematch(spc2, SPTYP_ICE) )
-              total_skill = you.skills[SK_ICE_MAGIC];
-            else if ( spell_typematch(spc2, SPTYP_FIRE) )
-              total_skill = you.skills[SK_FIRE_MAGIC];
+        case STAFF_COLD:
+            if (spell_typematch(spc2, SPTYP_ICE))
+                total_skill = you.skills[SK_ICE_MAGIC];
+            else if (spell_typematch(spc2, SPTYP_FIRE))
+                total_skill = you.skills[SK_FIRE_MAGIC];
             break;
-          case STAFF_AIR:
-            if ( spell_typematch(spc2, SPTYP_AIR) )
-              total_skill = you.skills[SK_AIR_MAGIC];
+        case STAFF_AIR:
+            if (spell_typematch(spc2, SPTYP_AIR))
+                total_skill = you.skills[SK_AIR_MAGIC];
             else if (spell_typematch(spc2, SPTYP_EARTH))
-              total_skill = you.skills[SK_EARTH_MAGIC];
+                total_skill = you.skills[SK_EARTH_MAGIC];
             break;
-          case STAFF_EARTH:
-            if ( spell_typematch(spc2, SPTYP_EARTH) )
-              total_skill = you.skills[SK_EARTH_MAGIC];
+        case STAFF_EARTH:
+            if (spell_typematch(spc2, SPTYP_EARTH))
+                total_skill = you.skills[SK_EARTH_MAGIC];
             else if (spell_typematch(spc2, SPTYP_AIR))
-              total_skill = you.skills[SK_AIR_MAGIC];
+                total_skill = you.skills[SK_AIR_MAGIC];
             break;
-          case STAFF_POISON:
-            if ( spell_typematch(spc2, SPTYP_POISON) )
-              total_skill = you.skills[SK_POISON_MAGIC];
+        case STAFF_POISON:
+            if (spell_typematch(spc2, SPTYP_POISON))
+                total_skill = you.skills[SK_POISON_MAGIC];
             break;
-          case STAFF_DEATH:
-            if ( spell_typematch(spc2, SPTYP_NECROMANCY) )
-              total_skill = you.skills[SK_NECROMANCY];
+        case STAFF_DEATH:
+            if (spell_typematch(spc2, SPTYP_NECROMANCY))
+                total_skill = you.skills[SK_NECROMANCY];
             break;
-          case STAFF_CONJURATION:
-            if ( spell_typematch(spc2, SPTYP_CONJURATION) )
-              total_skill = you.skills[SK_CONJURATIONS];
+        case STAFF_CONJURATION:
+            if (spell_typematch(spc2, SPTYP_CONJURATION))
+                total_skill = you.skills[SK_CONJURATIONS];
             break;
-          case STAFF_ENCHANTMENT:
-            if ( spell_typematch(spc2, SPTYP_ENCHANTMENT) )
-              total_skill = you.skills[SK_ENCHANTMENTS];
+        case STAFF_ENCHANTMENT:
+            if (spell_typematch(spc2, SPTYP_ENCHANTMENT))
+                total_skill = you.skills[SK_ENCHANTMENTS];
             break;
-          case STAFF_SUMMONING_I:
-            if ( spell_typematch(spc2, SPTYP_SUMMONING) )
-              total_skill = you.skills[SK_SUMMONINGS];
+        case STAFF_SUMMONING_I:
+            if (spell_typematch(spc2, SPTYP_SUMMONING))
+                total_skill = you.skills[SK_SUMMONINGS];
             break;
         }
 
-        if ( you.skills[SK_SPELLCASTING] > total_skill )
-          total_skill = you.skills[SK_SPELLCASTING];
+        if (you.skills[SK_SPELLCASTING] > total_skill)
+            total_skill = you.skills[SK_SPELLCASTING];
 
-        if ( random2(100) < total_skill )
+        if (random2(100) < total_skill)
         {
             you.inv_ident[you.equip[EQ_WEAPON]] = 3;
 
@@ -272,23 +278,20 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
             wield_change = true;
         }
-
     }
 
     surge_power(spc2);
 
-    if ( allow_fail )
+    if (allow_fail)
     {
-        int spfl = random2avg(100,3);
+        int spfl = random2avg(100, 3);
 
-        if ( you.religion != GOD_SIF_MUNA
-            && you.penance[GOD_SIF_MUNA]
-            && one_chance_in(40) )
+        if (you.religion != GOD_SIF_MUNA
+            && you.penance[GOD_SIF_MUNA] && one_chance_in(40))
         {
-            god_speaks(GOD_SIF_MUNA);
-            mpr("You feel a surge of divine spite.");
-        // This will cause failure and increase the miscast effect.
-            spfl = - (you.penance[GOD_SIF_MUNA]);
+            god_speaks(GOD_SIF_MUNA, "You feel a surge of divine spite.");
+            // This will cause failure and increase the miscast effect.
+            spfl = -(you.penance[GOD_SIF_MUNA]);
             dec_penance(1 + random2(3));
         }
 
@@ -296,27 +299,28 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         {
             mpr("You miscast the spell.");
 
-            if ( you.religion == GOD_SIF_MUNA
-                && ( !player_under_penance()
-                    && you.piety >= 100
-                    && random2(150) <= you.piety ) )
-              {
+            if (you.religion == GOD_SIF_MUNA
+                && (!player_under_penance()
+                    && you.piety >= 100 && random2(150) <= you.piety))
+            {
                 canned_msg(MSG_NOTHING_HAPPENS);
                 return false;
-              }
+            }
 
             char sptype = 0;
 
             do
             {
-                sptype = 1 + random2(SPTYP_RANDOM - 1);    // ewww! I need to write a function for this {dlb}
+                // ewww! I need to write a function for this {dlb}
+                sptype = 1 + random2(SPTYP_RANDOM - 1);
             }
             while (!spell_typematch(spc2, sptype));
 
-            miscast_effect(sptype, spell_mana(spc2), spell_fail(spc2) - spfl, 100);
+            miscast_effect( sptype, spell_mana(spc2),
+                                        spell_fail(spc2) - spfl, 100 );
 
             if (you.religion == GOD_XOM && random2(75) < spell_mana(spc2))
-              Xom_acts(coinflip(), spell_mana(spc2), false);
+                Xom_acts(coinflip(), spell_mana(spc2), false);
 
             return false;
         }
@@ -328,54 +332,56 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return false;
     }
 
-    if ( spc2 == SPELL_SUMMON_HORRIBLE_THINGS
-          || spc2 == SPELL_CALL_IMP
-          || spc2 == SPELL_SUMMON_DEMON
-          || spc2 == SPELL_DEMONIC_HORDE
-          || spc2 == SPELL_SUMMON_GREATER_DEMON
-          || spc2 == SPELL_HELLFIRE )
-      naughty(NAUGHTY_UNHOLY, 10 + spell_difficulty(spc2));
-
-    if ( spell_typematch(spc2, SPTYP_NECROMANCY) )
-      naughty(NAUGHTY_NECROMANCY, 10 + spell_difficulty(spc2));
-
-    if ( you.religion == GOD_SIF_MUNA
-        && you.piety < 200
-        && random2(12) <= spell_difficulty(spc2) )
-      gain_piety(1);
-
-    switch ( spc2 )
+    if (spc2 == SPELL_SUMMON_HORRIBLE_THINGS
+        || spc2 == SPELL_CALL_IMP
+        || spc2 == SPELL_SUMMON_DEMON
+        || spc2 == SPELL_DEMONIC_HORDE
+        || spc2 == SPELL_SUMMON_GREATER_DEMON || spc2 == SPELL_HELLFIRE)
     {
-      case SPELL_IDENTIFY:
+        naughty(NAUGHTY_UNHOLY, 10 + spell_difficulty(spc2));
+    }
+
+    if (spell_typematch(spc2, SPTYP_NECROMANCY))
+        naughty(NAUGHTY_NECROMANCY, 10 + spell_difficulty(spc2));
+
+    if (you.religion == GOD_SIF_MUNA
+        && you.piety < 200 && random2(12) <= spell_difficulty(spc2))
+    {
+        gain_piety(1);
+    }
+
+    switch (spc2)
+    {
+    case SPELL_IDENTIFY:
         identify(powc);
         return true;
 
-      case SPELL_TELEPORT_SELF:
+    case SPELL_TELEPORT_SELF:
         you_teleport();
         return true;
 
-      case SPELL_CAUSE_FEAR:
+    case SPELL_CAUSE_FEAR:
         mass_enchantment(4, powc);
         return true;
 
-    case SPELL_CREATE_NOISE:
-      if (silenced(you.x_pos, you.y_pos))
-        return true;
-      else
-      {
-          mpr("You hear a voice call your name!");
-          noisy(25, you.x_pos, you.y_pos);
-      }
-      break;
+    case SPELL_CREATE_NOISE:  // should be usused- bwr
+        if (silenced(you.x_pos, you.y_pos))
+            return true;
+        else
+        {
+            mpr("You hear a voice call your name!");
+            noisy(25, you.x_pos, you.y_pos);
+        }
+        break;
 
     case SPELL_REMOVE_CURSE:
         remove_curse(false);
         return true;
 
     case SPELL_MAGIC_DART:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_MAGIC_DARTS, powc, &beam[0]);
+        zapping(ZAP_MAGIC_DARTS, powc, beam);
         return true;
 
     case SPELL_FIREBALL:
@@ -387,99 +393,100 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_DIG:
-        if (spell_direction(spd, &beam[0]) == -1)
-          return true;
-        if (beam[0].move_x == 0 && beam[0].move_y == 0)
-          {
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        if (beam.move_x == 0 && beam.move_y == 0)
+        {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
-          }
-        zapping(ZAP_DIGGING, powc, &beam[0]);
+        }
+        zapping(ZAP_DIGGING, powc, beam);
         return true;
 
     case SPELL_BOLT_OF_FIRE:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_FIRE, powc, &beam[0]);
+        zapping(ZAP_FIRE, powc, beam);
         return true;
 
     case SPELL_BOLT_OF_COLD:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_COLD, powc, &beam[0]);
+        zapping(ZAP_COLD, powc, beam);
         return true;
 
     case SPELL_LIGHTNING_BOLT:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_LIGHTNING, powc, &beam[0]);
+        zapping(ZAP_LIGHTNING, powc, beam);
         return true;
 
     case SPELL_BOLT_OF_MAGMA:
-      if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        zapping(ZAP_MAGMA, powc, beam);
         return true;
-      zapping(ZAP_MAGMA, powc, &beam[0]);
-      return true;
 
     case SPELL_POLYMORPH_OTHER:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        if (beam[0].move_x == 0 && beam[0].move_y == 0)
+
+        if (beam.move_x == 0 && beam.move_y == 0)
         {
             mpr("Sorry, it doesn't work like that.");
             return true;
         }
-        zapping(ZAP_POLYMORPH_OTHER, powc, &beam[0]);
+        zapping(ZAP_POLYMORPH_OTHER, powc, beam);
         return true;
 
     case SPELL_SLOW:
-        if (spell_direction(spd, &beam[0]) == -1)
-          return true;
-        zapping(ZAP_SLOWING, powc, &beam[0]);
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        zapping(ZAP_SLOWING, powc, beam);
         return true;
 
     case SPELL_HASTE:
-        if (spell_direction(spd, &beam[0]) == -1)
-          return true;
-        zapping(ZAP_HASTING, powc, &beam[0]);
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        zapping(ZAP_HASTING, powc, beam);
         return true;
 
     case SPELL_PARALYZE:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_PARALYSIS, powc, &beam[0]);
+        zapping(ZAP_PARALYSIS, powc, beam);
         return true;
 
     case SPELL_CONFUSE:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_CONFUSION, powc, &beam[0]);
+        zapping(ZAP_CONFUSION, powc, beam);
         return true;
 
     case SPELL_CONFUSING_TOUCH:
-      cast_confusing_touch( powc );
-      return true;
+        cast_confusing_touch(powc);
+        return true;
 
     case SPELL_SURE_BLADE:
-      cast_sure_blade( powc );
-      return true;
+        cast_sure_blade(powc);
+        return true;
 
     case SPELL_INVISIBILITY:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_INVISIBILITY, powc, &beam[0]);
-        return true;               // you.invis
+        zapping(ZAP_INVISIBILITY, powc, beam);
+        return true;            // you.invis
 
     case SPELL_THROW_FLAME:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_FLAME, powc, &beam[0]);
+        zapping(ZAP_FLAME, powc, beam);
         return true;
 
     case SPELL_THROW_FROST:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_FROST, powc, &beam[0]);
+        zapping(ZAP_FROST, powc, beam);
         return true;
 
     case SPELL_CONTROLLED_BLINK:
@@ -511,9 +518,9 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_VENOM_BOLT:
-        if ( spell_direction(spd, &beam[0]) == -1 )
-          return true;
-        zapping(ZAP_VENOM_BOLT, powc, &beam[0]);
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        zapping(ZAP_VENOM_BOLT, powc, beam);
         return true;
 
     case SPELL_OLGREBS_TOXIC_RADIANCE:
@@ -521,14 +528,16 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_TELEPORT_OTHER:
-        if ( spell_direction(spd, &beam[0]) == -1 )
-          return true;
-        if (beam[0].move_x == 0 && beam[0].move_y == 0)
+        if (spell_direction(spd, beam) == -1)
+            return true;
+
+        if (beam.move_x == 0 && beam.move_y == 0)
         {
             mpr("Sorry, it doesn't work like that.");
             return true;
         }
-        zapping(ZAP_TELEPORTATION, powc, &beam[0]);    // teleport creature (I think)
+        // teleport creature (I think)
+        zapping(ZAP_TELEPORTATION, powc, beam);
         break;
 
     case SPELL_LESSER_HEALING:
@@ -552,8 +561,8 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         break;
 
     case SPELL_SELECTIVE_AMNESIA:
-      cast_selective_amnesia(false);
-      break;                         //     Sif Muna power calls with true
+        cast_selective_amnesia(false);
+        break;                  //     Sif Muna power calls with true
 
     case SPELL_MASS_CONFUSION:
         mass_enchantment(5, powc);
@@ -593,21 +602,21 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         break;
 
     case SPELL_BOLT_OF_DRAINING:
-        if (spell_direction(spd, &beam[0]) == -1)
-          return true;
-        zapping(ZAP_NEGATIVE_ENERGY, powc, &beam[0]);
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        zapping(ZAP_NEGATIVE_ENERGY, powc, beam);
         return true;
 
     case SPELL_LEHUDIBS_CRYSTAL_SPEAR:
-        if (spell_direction(spd, &beam[0]) == -1)
-          return true;
-        zapping(ZAP_CRYSTAL_SPEAR, powc, &beam[0]);
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        zapping(ZAP_CRYSTAL_SPEAR, powc, beam);
         return true;
 
     case SPELL_BOLT_OF_INACCURACY:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_BEAM_OF_ENERGY, powc, &beam[0]);
+        zapping(ZAP_BEAM_OF_ENERGY, powc, beam);
         return true;
 
     case SPELL_POISONOUS_CLOUD:
@@ -629,9 +638,9 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_ISKENDERUNS_MYSTIC_BLAST:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_ORB_OF_ENERGY, powc, &beam[0]);
+        zapping(ZAP_ORB_OF_ENERGY, powc, beam);
         return true;
 
     case SPELL_SWARM:
@@ -643,16 +652,16 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_ENSLAVEMENT:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_ENSLAVEMENT, powc, &beam[0]);
+        zapping(ZAP_ENSLAVEMENT, powc, beam);
         return true;
 
     case SPELL_MAGIC_MAPPING:
-        if ( you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS )
-          mpr("You feel momentarily disoriented.");
-        else if ( you.level_type == LEVEL_PANDEMONIUM )
-          mpr("Your Earth magic lacks the power to map Pandemonium.");
+        if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
+            mpr("You feel momentarily disoriented.");
+        else if (you.level_type == LEVEL_PANDEMONIUM)
+            mpr("Your Earth magic lacks the power to map Pandemonium.");
         else
         {
             mpr("You feel aware of your surroundings.");
@@ -661,14 +670,15 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_HEAL_OTHER:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        if (beam[0].move_x == 0 && beam[0].move_y == 0)
+
+        if (beam.move_x == 0 && beam.move_y == 0)
         {
             mpr("Sorry, it doesn't work like that.");
             return true;
         }
-        zapping(ZAP_HEALING, powc, &beam[0]);
+        zapping(ZAP_HEALING, powc, beam);
         return true;
 
     case SPELL_ANIMATE_DEAD:
@@ -677,10 +687,10 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_PAIN:
-        if ( spell_direction(spd, &beam[0]) == -1 )
-          return true;
+        if (spell_direction(spd, beam) == -1)
+            return true;
         dec_hp(1, false);
-        zapping(ZAP_PAIN, powc, &beam[0]);
+        zapping(ZAP_PAIN, powc, beam);
         return true;
 
     case SPELL_EXTENSION:
@@ -693,7 +703,8 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
     case SPELL_ANIMATE_SKELETON:
         mpr("You attempt to give life to the dead...");
-        animate_a_corpse(you.x_pos, you.y_pos, BEH_ENSLAVED, you.pet_target, CORPSE_SKELETON);
+        animate_a_corpse(you.x_pos, you.y_pos, BEH_ENSLAVED, you.pet_target,
+                         CORPSE_SKELETON);
         return true;
 
     case SPELL_VAMPIRIC_DRAINING:
@@ -729,9 +740,9 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_STICKY_FLAME:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_STICKY_FLAME, powc, &beam[0]);
+        zapping(ZAP_STICKY_FLAME, powc, beam);
         return true;
 
     case SPELL_SUMMON_ICE_BEAST:
@@ -760,30 +771,30 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_DISPEL_UNDEAD:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_DISPEL_UNDEAD, powc, &beam[0]);
+        zapping(ZAP_DISPEL_UNDEAD, powc, beam);
         return true;
 
     case SPELL_GUARDIAN:
         summon_ice_beast_etc(powc, MONS_ANGEL);
         return true;
 
-        //jmf: FIXME: SPELL_PESTILENCE?
+    //jmf: FIXME: SPELL_PESTILENCE?
 
     case SPELL_THUNDERBOLT:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_LIGHTNING, powc, &beam[0]);
+        zapping(ZAP_LIGHTNING, powc, beam);
         return true;
 
     case SPELL_FLAME_OF_CLEANSING:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_CLEANSING_FLAME, powc, &beam[0]);
+        zapping(ZAP_CLEANSING_FLAME, powc, beam);
         return true;
 
-        //jmf: FIXME: SPELL_SHINING_LIGHT?
+    //jmf: FIXME: SPELL_SHINING_LIGHT?
 
     case SPELL_SUMMON_DAEVA:
         summon_ice_beast_etc(powc, MONS_ANGEL);
@@ -793,7 +804,7 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         abjuration(powc);
         break;
 
-        // Remember that most holy spells above don't yet use powc!
+    // Remember that most holy spells above don't yet use powc!
 
     case SPELL_TWISTED_RESURRECTION:
         cast_twisted(powc, BEH_ENSLAVED, you.pet_target);
@@ -808,31 +819,32 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_BANISHMENT:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        /*   if (beam[0].move_x == 0 && beam[0].move_y == 0)
+        /*   if (beam.move_x == 0 && beam.move_y == 0)
            {
            canned_msg(MSG_UNTHINKING_ACT);
            return true;
            } */
-        zapping(ZAP_BANISHMENT, powc, &beam[0]);
+        zapping(ZAP_BANISHMENT, powc, beam);
         return true;
 
     case SPELL_CIGOTUVIS_DEGENERATION:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        if (beam[0].move_x == 0 && beam[0].move_y == 0)
+
+        if (beam.move_x == 0 && beam.move_y == 0)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
         }
-        zapping(ZAP_DEGENERATION, powc, &beam[0]);
+        zapping(ZAP_DEGENERATION, powc, beam);
         return true;
 
     case SPELL_STING:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_STING, powc, &beam[0]);
+        zapping(ZAP_STING, powc, beam);
         return true;
 
     case SPELL_SUBLIMATION_OF_BLOOD:
@@ -844,10 +856,10 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_HELLFIRE:        // should only be available from:
-                                // staff of Dispater & Sceptre of Asmodeus
-        if (spell_direction(spd, &beam[0]) == -1)
+        // staff of Dispater & Sceptre of Asmodeus
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_HELLFIRE, powc, &beam[0]);
+        zapping(ZAP_HELLFIRE, powc, beam);
         return true;
 
     case SPELL_SUMMON_DEMON:
@@ -861,20 +873,19 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         for (dem_hor = 0; dem_hor < 4 + dem_hor2; dem_hor++)
         {
             summon_ice_beast_etc(powc, summon_any_demon(DEMON_LESSER));
-            //if ( one_chance_in(6) ) summon_ice_beast_etc(powc, summon_any_demon(DEMON_LESSER));
-            //else summon_ice_beast_etc(powc, MONS_WHITE_IMP + random2(5));
         }
         return true;
 
     case SPELL_SUMMON_GREATER_DEMON:
         mpr("You open a gate to Pandemonium!");
 
-        dem_hor = ( (random2(powc) <= 5) ? BEH_CHASING_I : BEH_CHASING_II );
+        dem_hor = ((random2(powc) <= 5) ? BEH_CHASING_I : BEH_CHASING_II);
 
-        if ( dem_hor == BEH_CHASING_I )
-          mpr("You don't feel so good about this...");
+        if (dem_hor == BEH_CHASING_I)
+            mpr("You don't feel so good about this...");
 
-        create_monster(summon_any_demon(DEMON_GREATER), 24, dem_hor, you.x_pos, you.y_pos, MHITNOT, 250);
+        create_monster(summon_any_demon(DEMON_GREATER), 24, dem_hor,
+                       you.x_pos, you.y_pos, MHITNOT, 250);
 
         return true;
 
@@ -883,33 +894,33 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_TUKIMAS_VORPAL_BLADE:
-        if ( !brand_weapon(SPWPN_VORPAL, powc) )
-          canned_msg(MSG_SPELL_FIZZLES);
+        if (!brand_weapon(SPWPN_VORPAL, powc))
+            canned_msg(MSG_SPELL_FIZZLES);
         return true;
 
     case SPELL_FIRE_BRAND:
-        if ( !brand_weapon(SPWPN_FLAMING, powc) )
-          canned_msg(MSG_SPELL_FIZZLES);
+        if (!brand_weapon(SPWPN_FLAMING, powc))
+            canned_msg(MSG_SPELL_FIZZLES);
         return true;
 
     case SPELL_FREEZING_AURA:
-        if ( !brand_weapon(SPWPN_FREEZING, powc) )
-          canned_msg(MSG_SPELL_FIZZLES);
+        if (!brand_weapon(SPWPN_FREEZING, powc))
+            canned_msg(MSG_SPELL_FIZZLES);
         return true;
 
     case SPELL_LETHAL_INFUSION:
-        if ( !brand_weapon(SPWPN_DRAINING, powc) )
-          canned_msg(MSG_SPELL_FIZZLES);
+        if (!brand_weapon(SPWPN_DRAINING, powc))
+            canned_msg(MSG_SPELL_FIZZLES);
         return true;
 
     case SPELL_MAXWELLS_SILVER_HAMMER:
-        if (! brand_weapon(SPWPN_DUMMY_CRUSHING, powc))
-          canned_msg(MSG_SPELL_FIZZLES);
+        if (!brand_weapon(SPWPN_DUMMY_CRUSHING, powc))
+            canned_msg(MSG_SPELL_FIZZLES);
         return true;
 
     case SPELL_POISON_WEAPON:
-        if ( !brand_weapon(SPWPN_VENOM, powc) )
-          canned_msg(MSG_SPELL_FIZZLES);
+        if (!brand_weapon(SPWPN_VENOM, powc))
+            canned_msg(MSG_SPELL_FIZZLES);
         return true;
 
     case SPELL_CRUSH:
@@ -917,15 +928,15 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_BOLT_OF_IRON:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_IRON_BOLT, powc, &beam[0]);
+        zapping(ZAP_IRON_BOLT, powc, beam);
         return true;
 
     case SPELL_STONE_ARROW:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_STONE_ARROW, powc, &beam[0]);
+        zapping(ZAP_STONE_ARROW, powc, beam);
         return true;
 
     case SPELL_TOMB_OF_DOROKLOHE:
@@ -937,9 +948,9 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_SHOCK:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_ELECTRICITY, powc, &beam[0]);
+        zapping(ZAP_ELECTRICITY, powc, beam);
         return true;
 
     case SPELL_SWIFTNESS:
@@ -955,9 +966,9 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_ORB_OF_ELECTROCUTION:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_ORB_OF_ELECTRICITY, powc, &beam[0]);
+        zapping(ZAP_ORB_OF_ELECTRICITY, powc, beam);
         return true;
 
     case SPELL_DETECT_CREATURES:
@@ -985,7 +996,7 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_ALTER_SELF:
-        if ( !enough_hp(you.hp_max / 2, true) )
+        if (!enough_hp(you.hp_max / 2, true))
         {
             mpr("Your body is in too poor a condition "
                 "for this spell to function.");
@@ -995,14 +1006,14 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
         set_hp(1 + random2(you.hp), false);
 
-        if ( !mutate(100) )
-          mpr("The spell fails.");
+        if (!mutate(100))
+            mpr("Odd... you don't feel any different.");
         return true;
 
     case SPELL_DEBUGGING_RAY:
-        if (spell_direction(spd, &beam[0]) == -1)
-          return true;
-        zapping(ZAP_DEBUGGING_RAY, powc, &beam[0]);
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        zapping(ZAP_DEBUGGING_RAY, powc, beam);
         return true;
 
     case SPELL_RECALL:
@@ -1014,14 +1025,15 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_AGONY:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        if (beam[0].move_x == 0 && beam[0].move_y == 0)
+
+        if (beam.move_x == 0 && beam.move_y == 0)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
         }
-        zapping(ZAP_AGONY, powc, &beam[0]);
+        zapping(ZAP_AGONY, powc, beam);
         return true;
 
     case SPELL_SPIDER_FORM:
@@ -1029,25 +1041,27 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_DISRUPT:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        if (beam[0].move_x == 0 && beam[0].move_y == 0)
+
+        if (beam.move_x == 0 && beam.move_y == 0)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
         }
-        zapping(ZAP_DISRUPTION, powc, &beam[0]);
+        zapping(ZAP_DISRUPTION, powc, beam);
         return true;
 
     case SPELL_DISINTEGRATE:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        if (beam[0].move_x == 0 && beam[0].move_y == 0)
+
+        if (beam.move_x == 0 && beam.move_y == 0)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
         }
-        zapping(ZAP_DISINTEGRATION, powc, &beam[0]);
+        zapping(ZAP_DISINTEGRATION, powc, beam);
         return true;
 
     case SPELL_BLADE_HANDS:
@@ -1088,15 +1102,15 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_ORB_OF_FRAGMENTATION:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_ORB_OF_FRAGMENTATION, powc, &beam[0]);
+        zapping(ZAP_ORB_OF_FRAGMENTATION, powc, beam);
         return true;
 
     case SPELL_ICE_BOLT:
-        if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
             return true;
-        zapping(ZAP_ICE_BOLT, powc, &beam[0]);
+        zapping(ZAP_ICE_BOLT, powc, beam);
         return true;
 
     case SPELL_ARC:
@@ -1108,211 +1122,249 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         return true;
 
     case SPELL_ICE_STORM:
-        if (spell_direction(spd, &beam[0]) == -1)
-          return true;
-        zapping(ZAP_ICE_STORM, powc, &beam[0]);
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        zapping(ZAP_ICE_STORM, powc, beam);
         return true;
 
     case SPELL_SHADOW_CREATURES:
         mpr("Wisps of shadow whirl around you...");
-        create_monster(RANDOM_MONSTER, 24, BEH_ENSLAVED, you.x_pos, you.y_pos, MHITNOT, 250);
+        create_monster(RANDOM_MONSTER, 24, BEH_ENSLAVED, you.x_pos, you.y_pos,
+                       MHITNOT, 250);
         return true;
 
-
-//jmf: new spells 19mar2000
+    //jmf: new spells 19mar2000
     case SPELL_FLAME_TONGUE:
-      if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
+            return true;
+
+        if (beam.move_x == 0 && beam.move_y == 0)
+        {
+            canned_msg(MSG_UNTHINKING_ACT);
+            return true;
+        }
+        zapping(ZAP_FLAME_TONGUE, powc, beam);
+        /*
+        // This is not the place for this sort of power adjustment,
+        // it just makes it harder to balance -- bwr
+        zapping(ZAP_FLAME_TONGUE, 2 + random2(4) + random2(4)
+                                            + random2(powc) / 25, beam);
+        */
         return true;
-      if (beam[0].move_x == 0 && beam[0].move_y == 0)
-      {
-          canned_msg(MSG_UNTHINKING_ACT);
-          return true;
-      }
-      zapping(ZAP_FLAME_TONGUE, 2 + random2(4) + random2(4) + random2(powc)/25, &beam[0]);
-      return true;
 
     case SPELL_PASSWALL:
-      cast_passwall(powc);
-      return true;
+        cast_passwall(powc);
+        return true;
 
     case SPELL_IGNITE_POISON:
-      cast_ignite_poison(powc);
-      return true;
+        cast_ignite_poison(powc);
+        return true;
 
     case SPELL_STICKS_TO_SNAKES:
-      cast_sticks_to_snakes(powc);
-      return true;
+        cast_sticks_to_snakes(powc);
+        return true;
 
     case SPELL_SUMMON_LARGE_MAMMAL:
-      cast_summon_large_mammal(powc);
-      return true;
+        cast_summon_large_mammal(powc);
+        return true;
 
     case SPELL_SUMMON_DRAGON:
-      cast_summon_dragon(powc);
-      return true;
+        cast_summon_dragon(powc);
+        return true;
 
     case SPELL_TAME_BEASTS:
-      cast_tame_beasts(powc);
-      return true;
+        cast_tame_beasts(powc);
+        return true;
 
     case SPELL_SLEEP:
-      if ( spell_direction(spd, &beam[0]) == -1 )
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        zapping(ZAP_SLEEP, powc, beam);
         return true;
-      zapping(ZAP_SLEEP, powc, &beam[0]);
-      return true;
 
     case SPELL_MASS_SLEEP:
-      cast_mass_sleep(powc);
-      return true;
+        cast_mass_sleep(powc);
+        return true;
 
     case SPELL_DETECT_MAGIC:
-      mpr("FIXME: implement!");
-      return true;
+        mpr("FIXME: implement!");
+        return true;
 
     case SPELL_DETECT_SECRET_DOORS:
-      cast_detect_secret_doors(powc);
-      return true;
+        cast_detect_secret_doors(powc);
+        return true;
 
     case SPELL_SEE_INVISIBLE:
-      cast_see_invisible(powc);
-      return true;
+        cast_see_invisible(powc);
+        return true;
 
     case SPELL_FORESCRY:
-      cast_forescry(powc);
-      return true;
+        cast_forescry(powc);
+        return true;
 
     case SPELL_SUMMON_BUTTERFLIES:
-      cast_summon_butterflies(powc);
-      return true;
+        cast_summon_butterflies(powc);
+        return true;
 
     case SPELL_WARP_BRAND:
-      if ( !brand_weapon(SPWPN_DISTORTION, powc) )
-        canned_msg(MSG_SPELL_FIZZLES);
-      return true;
+        if (!brand_weapon(SPWPN_DISTORTION, powc))
+            canned_msg(MSG_SPELL_FIZZLES);
+        return true;
 
     case SPELL_SILENCE:
-      cast_silence(powc);
-      return true;
+        cast_silence(powc);
+        return true;
 
     case SPELL_SHATTER:
-      cast_shatter(powc);
-      return true;
+        cast_shatter(powc);
+        return true;
 
-    case SPELL_WARP_FIELD:
-      cast_warp_field(powc);
-      return true;
+    case SPELL_DISPERSAL:
+        cast_dispersal(powc);
+        return true;
 
     case SPELL_DISCHARGE:
-      cast_discharge(powc);
-      return true;
+        cast_discharge(powc);
+        return true;
 
     case SPELL_BEND:
-      cast_bend(powc);
-      return true;
+        cast_bend(powc);
+        return true;
 
     case SPELL_BACKLIGHT:
-      if (spell_direction(spd, &beam[0]) == -1)
+        if (spell_direction(spd, beam) == -1)
+            return true;
+        zapping(ZAP_BACKLIGHT, powc + 10, beam);
         return true;
-      zapping(ZAP_BACKLIGHT, powc + 10, &beam[0]);
-      return true;
 
     case SPELL_INTOXICATE:
-      cast_intoxicate(powc);
-      return true;
+        cast_intoxicate(powc);
+        return true;
 
 #ifdef USE_ELVISH_GLAMOUR_ABILITY
     case SPELL_GLAMOUR:
-      cast_glamour(powc);
-      return true;
+        cast_glamour(powc);
+        return true;
 #endif
 
     case SPELL_EVAPORATE:
-      cast_evaporate(powc);
-      return true;
+        cast_evaporate(powc);
+        return true;
 
     case SPELL_FRAGMENTATION:
-      cast_fragmentation(powc);
-      return true;
+        cast_fragmentation(powc);
+        return true;
 
     case SPELL_AIR_WALK:
-      transform(powc, TRAN_AIR);
-      return true;
+        transform(powc, TRAN_AIR);
+        return true;
 
     case SPELL_SANDBLAST:
-      cast_sandblast(powc);
-      return true;
+        cast_sandblast(powc);
+        return true;
 
     case SPELL_ROTTING:
-      cast_rotting(powc);
-      return true;
+        cast_rotting(powc);
+        return true;
 
     case SPELL_SHUGGOTH_SEED:
-      cast_shuggoth_seed(powc);
-      return true;
+        cast_shuggoth_seed(powc);
+        return true;
 
     case SPELL_CONDENSATION_SHIELD:
-      cast_condensation_shield(powc);
-      return true;
+        cast_condensation_shield(powc);
+        return true;
 
     case SPELL_SEMI_CONTROLLED_BLINK:
-      cast_semi_controlled_blink(powc); //jmf: powc is ignored
-      return true;
+        cast_semi_controlled_blink(powc);       //jmf: powc is ignored
+        return true;
 
     case SPELL_STONESKIN:
-      cast_stoneskin(powc);
-      return true;
+        cast_stoneskin(powc);
+        return true;
+
+    case SPELL_SIMULACRUM:
+        simulacrum(powc);
+        return true;
+
+    case SPELL_CONJURE_BALL_LIGHTNING:
+        cast_conjure_ball_lightning(powc);
+        return true;
+
+    case SPELL_TWIST:
+        cast_twist(powc);
+        return true;
+
+    case SPELL_FAR_STRIKE:
+        cast_far_strike(powc);
+        return true;
+
+    case SPELL_SWAP:
+        cast_swap(powc);
+        return true;
+
+    case SPELL_APPORTATION:
+        cast_apportation(powc);
+        return true;
 
     default:
-      mpr("Invalid spell!");
-      break;
+        mpr("Invalid spell!");
+        break;
     }                           // end switch
 
-    return false;                   // this should never(!) happen
-}          // end you_spells()
+    return false;               // this should never(!) happen
+}                               // end you_spells()
 
-
-void exercise_spell( int spell, bool spc, bool success )
+void exercise_spell(int spell, bool spc, bool success)
 {
-  // (!success) reduces skill increase for miscast spells
-  int ndx = 0;
-  int skill;
-  int workout = 0;
+    // (!success) reduces skill increase for miscast spells
+    int ndx = 0;
+    int skill;
+    int workout = 0;
 
-  unsigned int disciplines = spell_type( spell );
-  disciplines &= (~SPTYP_HOLY); //jmf: evil evil evil -- exclude HOLY bit
+    unsigned int disciplines = spell_type(spell);
 
-  int skillcount = count_bits( disciplines );
+    //jmf: evil evil evil -- exclude HOLY bit
+    disciplines &= (~SPTYP_HOLY);
 
-  if ( !success )
-    skillcount += 4 + random2(10);
+    int skillcount = count_bits(disciplines);
 
-  for (ndx = 0; ndx <= SPTYP_LAST_EXPONENT; ndx++)
+    if (!success)
+        skillcount += 4 + random2(10);
+
+    for (ndx = 0; ndx <= SPTYP_LAST_EXPONENT; ndx++)
     {
-      if (! spell_typematch( spell, 1 << ndx )) continue;
-      skill = spell_type2skill( 1 << ndx );
-      workout = ( random2(1 + spell_difficulty(spell)) / skillcount );
-      if ( !one_chance_in(5) )
-        workout++; // most recently, this was an automatic add {dlb}
-      exercise(skill, workout);
+        if (!spell_typematch(spell, 1 << ndx))
+            continue;
+
+        skill = spell_type2skill(1 << ndx);
+        workout = (random2(1 + spell_difficulty(spell)) / skillcount);
+
+        if (!one_chance_in(5))
+            workout++;       // most recently, this was an automatic add {dlb}
+
+        exercise(skill, workout);
     }
 
+    /* ******************************************************************
+       Other recent formulae for the above:
 
-  /* ******************************************************************
-     Other recent formulae for the above:
+       * workout = random2(spell_difficulty(spell_ex)
+       * (10 + (spell_difficulty(spell_ex) * 2 )) / 10 / spellsy + 1);
 
-     * workout = random2(spell_difficulty(spell_ex)
-               * (10 + (spell_difficulty(spell_ex) * 2 )) / 10 / spellsy + 1);
+       * workout = spell_difficulty(spell_ex)
+       * (15 + spell_difficulty(spell_ex)) / 15 / spellsy;
 
-     * workout = spell_difficulty(spell_ex)
-               * (15 + spell_difficulty(spell_ex)) / 15 / spellsy;
+       spellcasting had also been generally exercised at the same time
+       ****************************************************************** */
 
-     spellcasting had also been generally exercised at the same time
-     ****************************************************************** */
+    if (spc)
+    {
+        exercise(SK_SPELLCASTING, one_chance_in(3) ? 1 : 0 +
+                 random2(1 + random2(spell_difficulty(spell))));
+    }
 
-  if ( spc )
-    exercise(SK_SPELLCASTING, one_chance_in(3) ? 1 : 0 +
-             random2(1 + random2(spell_difficulty(spell))));
-             //+ (coinflip() ? 1 : 0) + (skillcount ? 1 : 0));
+    //+ (coinflip() ? 1 : 0) + (skillcount ? 1 : 0));
 
 /* ******************************************************************
    3.02 was:
@@ -1323,4 +1375,4 @@ void exercise_spell( int spell, bool spc, bool success )
       exercise(SK_SPELLCASTING, random2(random2(spell_difficulty(spell_ex)))); // + 1);
 ****************************************************************** */
 
-}          // end exercise_spell()
+}                               // end exercise_spell()

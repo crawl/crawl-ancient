@@ -38,12 +38,9 @@
 #include "macro.h"
 #endif
 
-
 int dir_cursor(char rng);
-char mons_find(unsigned char xps, unsigned char yps, FixedVector<char, 2>& mfp, char direction);
-
-
-
+char mons_find(unsigned char xps, unsigned char yps, FixedVector < char,
+               2 > &mfp, char direction);
 
 //---------------------------------------------------------------
 //
@@ -53,82 +50,83 @@ char mons_find(unsigned char xps, unsigned char yps, FixedVector<char, 2>& mfp, 
 // aiming.
 //
 //---------------------------------------------------------------
-void direction( char rnge, struct dist moves[1] )
+void direction( char rnge, struct dist &moves )
 {
-
     char ink = 0;
     char looked = 0;
 
-    moves[0].nothing = dir_cursor(rnge);
+    moves.nothing = dir_cursor(rnge);
 
-    if (moves[0].nothing == -9999 || moves[0].nothing == -10000 || moves[0].nothing == -10001)
+    if (moves.nothing == -9999 || moves.nothing == -10000
+        || moves.nothing == -10001)
     {
         mpr("Aim (move cursor or select with '-' or '+'/'=', then 'p', '.', or '>')");
-        moves[0].prev_targ = 0;
+        moves.prev_targ = 0;
 
-        if ( moves[0].nothing == -10000 )
-          moves[0].prev_targ = 1;
+        if (moves.nothing == -10000)
+            moves.prev_targ = 1;
 
-        if ( moves[0].nothing == -10001 )
-          moves[0].prev_targ = 2;
+        if (moves.nothing == -10001)
+            moves.prev_targ = 2;
 
-        moves[0].nothing = look_around(moves);
+        moves.nothing = look_around(moves);
         looked = 1;
     }
 
-    if ( moves[0].nothing > 50000 )
-      moves[0].nothing -= 50000;
+    if (moves.nothing > 50000)
+        moves.nothing -= 50000;
 
-    if ( moves[0].nothing > 10000 )
+    if (moves.nothing > 10000)
     {
-        moves[0].nothing -= 10000;
+        moves.nothing -= 10000;
         ink = 1;
     }
 
-    if (moves[0].nothing == -1)
+    if (moves.nothing == -1)
     {
         mpr("What an unusual direction.");
         return;
     }
 
-    if (moves[0].nothing == 253)
+    if (moves.nothing == 253)
     {
-        if ( you.prev_targ == MHITNOT || you.prev_targ == MHITYOU )
+        if (you.prev_targ == MHITNOT || you.prev_targ == MHITYOU)
         {
             mpr("You haven't got a target.");
-            moves[0].nothing = -1;
+            moves.nothing = -1;
         }
         else
         {
             struct monsters *montarget = &menv[you.prev_targ];
 
-            if ( !mons_near(montarget) || ( montarget->enchantment[2] == ENCH_INVIS && !player_see_invis() ) )
+            if (!mons_near(montarget)
+                || (montarget->enchantment[2] == ENCH_INVIS
+                    && !player_see_invis()))
             {
                 mpr("You can't see that creature any more.");
-                moves[0].nothing = -1;
+                moves.nothing = -1;
             }
             else
             {
-                moves[0].move_x = montarget->x - you.x_pos;
-                moves[0].move_y = montarget->y - you.y_pos;
-                moves[0].target_x = moves[0].move_x + you.x_pos;
-                moves[0].target_y = moves[0].move_y + you.y_pos;
+                moves.move_x = montarget->x - you.x_pos;
+                moves.move_y = montarget->y - you.y_pos;
+                moves.target_x = moves.move_x + you.x_pos;
+                moves.target_y = moves.move_y + you.y_pos;
             }
         }
-
         return;
     }
 
-    if ( moves[0].nothing == 254 )
+    if (moves.nothing == 254)
     {
-        moves[0].nothing = -1;
+        moves.nothing = -1;
         return;
     }
 
     if (looked == 0)
     {
-        moves[0].move_x = ((int) (moves[0].nothing / 100)) - 7;
-        moves[0].move_y = moves[0].nothing - (((int) moves[0].nothing / 100) * 100) - 7;
+        moves.move_x = ((int) (moves.nothing / 100)) - 7;
+        moves.move_y = moves.nothing - (((int) moves.nothing / 100) * 100) - 7;
     }
 
     /*target_x = move_x + you.x_pos;
@@ -136,46 +134,43 @@ void direction( char rnge, struct dist moves[1] )
 
     if (ink == 1)
     {
-        moves[0].target_x = 1;
-        moves[0].target_y = 1;
+        moves.target_x = 1;
+        moves.target_y = 1;
     }
 
-
-    if (moves[0].move_x == 0)
+    if (moves.move_x == 0)
     {
-        if (moves[0].move_y > 0)
-            moves[0].move_y = 1;
-        if (moves[0].move_y < 0)
-            moves[0].move_y = -1;
+        if (moves.move_y > 0)
+            moves.move_y = 1;
+        if (moves.move_y < 0)
+            moves.move_y = -1;
     }
 
-    if (moves[0].move_y == 0)
+    if (moves.move_y == 0)
     {
-        if (moves[0].move_x > 0)
-            moves[0].move_x = 1;
-        if (moves[0].move_x < 0)
-            moves[0].move_x = -1;
+        if (moves.move_x > 0)
+            moves.move_x = 1;
+        if (moves.move_x < 0)
+            moves.move_x = -1;
     }
 
-    if (moves[0].move_x == moves[0].move_y || moves[0].move_x * -1 == moves[0].move_y)
+    if (abs(moves.move_x) == abs(moves.move_y))
     {
-        if (moves[0].move_y > 0)
-            moves[0].move_y = 1;
-        if (moves[0].move_y < 0)
-            moves[0].move_y = -1;
-        if (moves[0].move_x > 0)
-            moves[0].move_x = 1;
-        if (moves[0].move_x < 0)
-            moves[0].move_x = -1;
+        if (moves.move_y > 0)
+            moves.move_y = 1;
+        if (moves.move_y < 0)
+            moves.move_y = -1;
+        if (moves.move_x > 0)
+            moves.move_x = 1;
+        if (moves.move_x < 0)
+            moves.move_x = -1;
     }
 
-    if ( mgrd[moves[0].target_x][moves[0].target_y] != NON_MONSTER && rnge != 100 )
-      you.prev_targ = mgrd[moves[0].target_x][moves[0].target_y];
+    if (mgrd[moves.target_x][moves.target_y] != NON_MONSTER
+        && rnge != 100)
+        you.prev_targ = mgrd[moves.target_x][moves.target_y];
 
 }                               // end of direction()
-
-
-
 
 //---------------------------------------------------------------
 //
@@ -199,7 +194,6 @@ int dir_cursor(char rng)
 #ifdef LINUX
     keyy = translate_keypad(keyy);
     //keyy = key_to_command(keyy);     // maybe replace with this? {dlb}
-
 #endif
 
     if (keyy != 0 && keyy != '*' && keyy != '.')
@@ -272,9 +266,7 @@ int dir_cursor(char rng)
             goto getkey;
         }
         return mve_x * 100 + mve_y + 707 + 10000;
-
     }
-
 
     if (keyy != '*' && keyy != '.')
         keyy = getch();
@@ -344,11 +336,7 @@ int dir_cursor(char rng)
         return 254;
 
     return -9999;
-
 }
-
-
-
 
 //---------------------------------------------------------------
 //
@@ -359,7 +347,7 @@ int dir_cursor(char rng)
 // descriptions.
 //
 //---------------------------------------------------------------
-int look_around( struct dist moves[1] )
+int look_around(struct dist &moves)
 {
     int xps = 17;
     int yps = 9;
@@ -367,8 +355,9 @@ int look_around( struct dist moves[1] )
     char mve_x = 0;
     char mve_y = 0;
     int trf = 0;
-    FixedVector<char, 2> monsfind_pos;
+    FixedVector < char, 2 > monsfind_pos;
     int p = 0;
+    unsigned int targ_item;
 
     bool printed_already = true;
 
@@ -384,25 +373,26 @@ int look_around( struct dist moves[1] )
 
     do
     {
-        if (moves[0].prev_targ == 0)
+        if (moves.prev_targ == 0)
         {
             gotch = getch();
 
 #ifdef LINUX
             gotch = translate_keypad(gotch);
-            //gotch = key_to_command(gotch);     // maybe replace with this? {dlb}
+
+            // maybe replace with this? {dlb}
+            //gotch = key_to_command(gotch);
 #endif
         }
         else
         {
-            if (moves[0].prev_targ == 1)
+            if (moves.prev_targ == 1)
                 gotch = '+';
             else
                 gotch = '-';
-            moves[0].prev_targ = 0;
+            moves.prev_targ = 0;
             printed_already = false;
         }
-
 
         if (gotch != 0 && gotch != 13)
         {
@@ -466,22 +456,34 @@ int look_around( struct dist moves[1] )
                 break;
 
             case '?':
-                mve_x = 0;
-                mve_y = 0;
-                if ( mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9] == NON_MONSTER )
-                  continue;
+                {
+                    const int tx = you.x_pos + xps - 17;
+                    const int ty = you.y_pos + yps - 9;
+                    const unsigned char tmon = mgrd[ tx ][ ty ];
 
-                if ( menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].enchantment[2] == ENCH_INVIS && !player_see_invis() )
-                  continue;
+                    mve_x = 0;
+                    mve_y = 0;
+                    if (mgrd[ tx ][ ty ] == NON_MONSTER)
+                        continue;
 
-                if ( monster_habitat(menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].type) != DNGN_FLOOR && menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].number == 1)
-                  continue;
+                    if (menv[ tmon ].enchantment[2] == ENCH_INVIS
+                        && !player_see_invis())
+                    {
+                        continue;
+                    }
 
-                describe_monsters(menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].type, mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]);
+                    if (monster_habitat( menv[ tmon ].type ) != DNGN_FLOOR
+                        && menv[ tmon ].number == 1)
+                    {
+                        continue;
+                    }
 
-#ifdef PLAIN_TERM
-                redraw_screen();
-#endif
+                    describe_monsters( menv[ tmon ].type, tmon );
+
+    #ifdef PLAIN_TERM
+                    redraw_screen();
+    #endif
+                }
                 break;
 
             case 'p':
@@ -522,7 +524,7 @@ int look_around( struct dist moves[1] )
         mve_x = 0;
         mve_y = 0;
 
-thingy:
+      thingy:
         switch (gotch)
         {
         case 13:
@@ -577,16 +579,16 @@ thingy:
             return -1;
         }
 
-gotchy:
+      gotchy:
         gotoxy(xps, yps);
 
         if (xps + mve_x >= 9 && xps + mve_x < 26)
-          xps += mve_x;
+            xps += mve_x;
         if (yps + mve_y >= 1 && yps + mve_y < 18)
-          yps += mve_y;
+            yps += mve_y;
 
-        if ( printed_already )
-          mesclr();
+        if (printed_already)
+            mesclr();
 
         printed_already = true;
 
@@ -600,18 +602,22 @@ gotchy:
         {
             int i = mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9];
 
-            if (grd[you.x_pos + xps - 17][you.y_pos + yps - 9] == DNGN_SHALLOW_WATER)
+            if (grd[you.x_pos + xps - 17][you.y_pos + yps - 9]
+                                                    == DNGN_SHALLOW_WATER)
             {
-                if (menv[i].enchantment[2] == ENCH_INVIS && mons_flies(menv[i].type) == 0 && !player_see_invis() )
+                if (menv[i].enchantment[2] == ENCH_INVIS
+                    && mons_flies(menv[i].type) == 0 && !player_see_invis())
                 {
                     mpr("There is a strange disturbance in the water here.");
                 }
             }
 
-            if ( menv[i].enchantment[2] == ENCH_INVIS && !player_see_invis() )
-              goto look_clouds;
+            if (menv[i].enchantment[2] == ENCH_INVIS && !player_see_invis())
+                goto look_clouds;
 
-            int mmov_x = menv[i].inv[MSLOT_WEAPON];    // and how the hell does a variable named mmov_x communicate this? :P {dlb}
+            // and how the hell does a variable named mmov_x communicate
+            // this? :P {dlb}
+            int mmov_x = menv[i].inv[MSLOT_WEAPON];
 
             if (menv[i].type == MONS_DANCING_WEAPON)
             {
@@ -622,44 +628,47 @@ gotchy:
             }
             else
             {
-                strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 2));
+                strcpy(info, ptr_monam( &(menv[i]), 2 ));
                 strcat(info, ".");
                 mpr(info);
+
                 if (mmov_x != NON_ITEM)
                 {
                     strcpy(info, "It is wielding ");
                     it_name(mmov_x, 3, str_pass);
                     strcat(info, str_pass);
-                    if (menv[i].type == MONS_TWO_HEADED_OGRE && menv[i].inv[MSLOT_MISSILE] != NON_ITEM)
+
+                    // 2-headed ogres can wield 2 weapons
+                    if (menv[i].type == MONS_TWO_HEADED_OGRE
+                        && menv[i].inv[MSLOT_MISSILE] != NON_ITEM)
                     {
                         strcat(info, ",");
                         mpr(info);
                         strcpy(info, " and ");
                         it_name(menv[i].inv[MSLOT_MISSILE], 3, str_pass);
                         strcat(info, str_pass);
-                        // 2-headed ogres can wield 2 weapons
                     }
                     strcat(info, ".");
                     mpr(info);
                 }
             }
 
-            if ( menv[i].type == MONS_HYDRA )
-              {
+            if (menv[i].type == MONS_HYDRA)
+            {
                 strcpy(info, "It has ");
                 itoa(menv[i].number, st_prn, 10);
                 strcat(info, st_prn);
                 strcat(info, " heads.");
                 mpr(info);
-              }
+            }
 
             print_wounds(&menv[i]);
 
-            if ( menv[i].behavior == BEH_ENSLAVED )
-              mpr("It is friendly.");
+            if (menv[i].behavior == BEH_ENSLAVED)
+                mpr("It is friendly.");
 
-            if ( menv[i].behavior == BEH_SLEEP )
-              mpr("It doesn't appear to have noticed you.");
+            if (menv[i].behavior == BEH_SLEEP)
+                mpr("It doesn't appear to have noticed you.");
 
             if (menv[i].enchantment1)
             {
@@ -667,99 +676,105 @@ gotchy:
                 {
                     switch (menv[i].enchantment[p])
                     {
-                      case ENCH_YOUR_ROT_I:
-                      case ENCH_YOUR_ROT_II:
-                      case ENCH_YOUR_ROT_III:
-                      case ENCH_YOUR_ROT_IV:
+                    case ENCH_YOUR_ROT_I:
+                    case ENCH_YOUR_ROT_II:
+                    case ENCH_YOUR_ROT_III:
+                    case ENCH_YOUR_ROT_IV:
                         mpr("It is rotting away."); //jmf: "covered in sores"?
                         break;
-                      case ENCH_BACKLIGHT_I:
-                      case ENCH_BACKLIGHT_II:
-                      case ENCH_BACKLIGHT_III:
-                      case ENCH_BACKLIGHT_IV:
+                    case ENCH_BACKLIGHT_I:
+                    case ENCH_BACKLIGHT_II:
+                    case ENCH_BACKLIGHT_III:
+                    case ENCH_BACKLIGHT_IV:
                         mpr("It is softly glowing.");
                         break;
-                      case ENCH_SLOW:
+                    case ENCH_SLOW:
                         mpr("It is moving slowly.");
                         break;
-                      case ENCH_HASTE:
+                    case ENCH_HASTE:
                         mpr("It is moving very quickly.");
                         break;
-                      case ENCH_CONFUSION:
+                    case ENCH_CONFUSION:
                         mpr("It appears to be bewildered and confused.");
                         break;
-                      case ENCH_INVIS:
+                    case ENCH_INVIS:
                         mpr("It is slightly transparent.");
                         break;
-                      case ENCH_CHARM:
+                    case ENCH_CHARM:
                         mpr("It is in your thrall.");
                         break;
-                      case ENCH_YOUR_STICKY_FLAME_I:
-                      case ENCH_YOUR_STICKY_FLAME_II:
-                      case ENCH_YOUR_STICKY_FLAME_III:
-                      case ENCH_YOUR_STICKY_FLAME_IV:
-                      case ENCH_STICKY_FLAME_I:
-                      case ENCH_STICKY_FLAME_II:
-                      case ENCH_STICKY_FLAME_III:
-                      case ENCH_STICKY_FLAME_IV:
+                    case ENCH_YOUR_STICKY_FLAME_I:
+                    case ENCH_YOUR_STICKY_FLAME_II:
+                    case ENCH_YOUR_STICKY_FLAME_III:
+                    case ENCH_YOUR_STICKY_FLAME_IV:
+                    case ENCH_STICKY_FLAME_I:
+                    case ENCH_STICKY_FLAME_II:
+                    case ENCH_STICKY_FLAME_III:
+                    case ENCH_STICKY_FLAME_IV:
                         mpr("It is covered in liquid flames.");
                         break;
                     }
                 }
             }
-
 #ifdef WIZARD
             stethoscope(i);
 #endif
         }
 
-look_clouds:
-        if (env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9] != EMPTY_CLOUD)
+      look_clouds:
+        if (env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9]
+                                                        != EMPTY_CLOUD)
         {
-            char cloud_inspected = env.cgrid[you.x_pos + xps - 17][you.y_pos + yps - 9];  // whew! {dlb}
+            const char cloud_inspected = env.cgrid[you.x_pos + xps - 17]
+                                                  [you.y_pos + yps - 9];
+
+            const char cloud_type = env.cloud_type[ cloud_inspected ];
 
             strcpy(info, "There is a cloud of ");
-            strcat(info, (cloud_inspected == CLOUD_FIRE
-                           || cloud_inspected == CLOUD_FIRE_MON)        ? "flame" :
-                         (cloud_inspected == CLOUD_STINK
-                           || cloud_inspected == CLOUD_STINK_MON)       ? "noxious fumes" :
-                         (cloud_inspected == CLOUD_COLD
-                           || cloud_inspected == CLOUD_COLD_MON)        ? "freezing vapour" :
-                         (cloud_inspected == CLOUD_POISON
-                           || cloud_inspected == CLOUD_POISON_MON)      ? "poison gases" :
-                         (cloud_inspected == CLOUD_GREY_SMOKE
-                           || cloud_inspected == CLOUD_GREY_SMOKE_MON)  ? "grey smoke" :
-                         (cloud_inspected == CLOUD_BLUE_SMOKE
-                           || cloud_inspected == CLOUD_BLUE_SMOKE_MON)  ? "blue smoke" :
-                         (cloud_inspected == CLOUD_PURP_SMOKE
-                           || cloud_inspected == CLOUD_PURP_SMOKE_MON)  ? "purple smoke" :
-                         (cloud_inspected == CLOUD_STEAM
-                           || cloud_inspected == CLOUD_STEAM_MON)       ? "steam" :
-                         (cloud_inspected == CLOUD_MIASMA
-                           || cloud_inspected == CLOUD_MIASMA_MON)      ? "foul pestilence" :
-                         (cloud_inspected == CLOUD_BLACK_SMOKE
-                           || cloud_inspected == CLOUD_BLACK_SMOKE_MON) ? "black smoke"
-                                                                        : "buggy goodness" );
+            strcat(info,
+                (cloud_type == CLOUD_FIRE
+                  || cloud_type == CLOUD_FIRE_MON) ? "flame" :
+                (cloud_type == CLOUD_STINK
+                  || cloud_type == CLOUD_STINK_MON) ? "noxious fumes" :
+                (cloud_type == CLOUD_COLD
+                  || cloud_type == CLOUD_COLD_MON) ? "freezing vapour" :
+                (cloud_type == CLOUD_POISON
+                  || cloud_type == CLOUD_POISON_MON) ? "poison gases" :
+                (cloud_type == CLOUD_GREY_SMOKE
+                  || cloud_type == CLOUD_GREY_SMOKE_MON) ? "grey smoke" :
+                (cloud_type == CLOUD_BLUE_SMOKE
+                  || cloud_type == CLOUD_BLUE_SMOKE_MON) ? "blue smoke" :
+                (cloud_type == CLOUD_PURP_SMOKE
+                  || cloud_type == CLOUD_PURP_SMOKE_MON) ? "purple smoke" :
+                (cloud_type == CLOUD_STEAM
+                  || cloud_type == CLOUD_STEAM_MON) ? "steam" :
+                (cloud_type == CLOUD_MIASMA
+                  || cloud_type == CLOUD_MIASMA_MON) ? "foul pestilence" :
+                (cloud_type == CLOUD_BLACK_SMOKE
+                  || cloud_type == CLOUD_BLACK_SMOKE_MON) ? "black smoke"
+                                                          : "buggy goodness");
             strcat(info, " here.");
             mpr(info);
         }
 
-        if (igrd[you.x_pos + xps - 17][you.y_pos + yps - 9] != NON_ITEM)
+        targ_item = igrd[ you.x_pos + xps - 17 ][ you.y_pos + yps - 9 ];
+
+        if (targ_item != NON_ITEM)
         {
-            if (mitm.base_type[igrd[you.x_pos + xps - 17][you.y_pos + yps - 9]] == OBJ_GOLD)
+            if (mitm.base_type[ targ_item ] == OBJ_GOLD)
             {
                 mpr("You see some money here.");
             }
             else
             {
                 strcpy(info, "You see ");
-                it_name(igrd[you.x_pos + xps - 17][you.y_pos + yps - 9], 3, str_pass);
+                it_name( targ_item, 3, str_pass);
                 strcat(info, str_pass);
                 strcat(info, " here.");
                 mpr(info);
             }
 
-            if (mitm.link[igrd[you.x_pos + xps - 17][you.y_pos + yps - 9]] != NON_ITEM)
+            if (mitm.link[ targ_item ] != NON_ITEM)
                 mpr("There is something else lying underneath.");
         }
 
@@ -770,10 +785,10 @@ look_clouds:
             break;
         case DNGN_ROCK_WALL:
         case DNGN_SECRET_DOOR:
-            if ( you.level_type == LEVEL_PANDEMONIUM )
-              mpr("A wall of the weird stuff which makes up Pandemonium.");
+            if (you.level_type == LEVEL_PANDEMONIUM)
+                mpr("A wall of the weird stuff which makes up Pandemonium.");
             else
-              mpr("A rock wall.");
+                mpr("A rock wall.");
             break;
         case DNGN_CLOSED_DOOR:
             mpr("A closed door.");
@@ -842,9 +857,12 @@ look_clouds:
         case DNGN_TRAP_III:
             for (trf = 0; trf < MAX_TRAPS; trf++)
             {
-                if ( env.trap_x[trf] == you.x_pos + xps - 17
-                    && env.trap_y[trf] == you.y_pos + yps - 9 )
-                  break;
+                if (env.trap_x[trf] == you.x_pos + xps - 17
+                    && env.trap_y[trf] == you.y_pos + yps - 9)
+                {
+                    break;
+                }
+
                 if (trf == MAX_TRAPS - 1)
                 {
                     mpr("Error - couldn't find that trap.");
@@ -852,36 +870,37 @@ look_clouds:
                     break;
                 }
             }
-            switch ( env.trap_type[trf] )
+
+            switch (env.trap_type[trf])
             {
-              case TRAP_DART:
+            case TRAP_DART:
                 mpr("A dart trap.");
                 break;
-              case TRAP_ARROW:
+            case TRAP_ARROW:
                 mpr("An arrow trap.");
                 break;
-              case TRAP_SPEAR:
+            case TRAP_SPEAR:
                 mpr("A spear trap.");
                 break;
-              case TRAP_AXE:
+            case TRAP_AXE:
                 mpr("An axe trap.");
                 break;
-              case TRAP_TELEPORT:
+            case TRAP_TELEPORT:
                 mpr("A teleportation trap.");
                 break;
-              case TRAP_AMNESIA:
+            case TRAP_AMNESIA:
                 mpr("An amnesia trap.");
                 break;
-              case TRAP_BLADE:
+            case TRAP_BLADE:
                 mpr("A blade trap.");
                 break;
-              case TRAP_BOLT:
+            case TRAP_BOLT:
                 mpr("A bolt trap.");
                 break;
-              case TRAP_ZOT:
+            case TRAP_ZOT:
                 mpr("A Zot trap.");
                 break;
-              default:
+            default:
                 mpr("An undefined trap. Huh?");
                 error_message_to_player();
                 break;
@@ -1045,19 +1064,18 @@ look_clouds:
             break;
         }
 
-glogokh:
+      glogokh:
         itoa((int) grd[you.x_pos + xps - 17][you.y_pos + yps - 9], st_prn, 10);
         strcpy(info, st_prn);
-
         gotoxy(xps + 1, yps);
     }
     while (gotch != 'S');
 
   finished_looking:
-    moves[0].move_x = xps - 17;
-    moves[0].move_y = yps - 9;
-    moves[0].target_x = you.x_pos + xps - 17;
-    moves[0].target_y = you.y_pos + yps - 9;
+    moves.move_x = xps - 17;
+    moves.move_y = yps - 9;
+    moves.target_x = you.x_pos + xps - 17;
+    moves.target_y = you.y_pos + yps - 9;
 
     if (gotch == 'p')
         return 253;
@@ -1065,12 +1083,7 @@ glogokh:
         return 50001;
 
     return 0;                   //mve_x * 100 + mve_y + 707 + 10000;
-
 }                               // end look_around()
-
-
-
-
 
 //---------------------------------------------------------------
 //
@@ -1082,9 +1095,9 @@ glogokh:
 // a monster, zero otherwise. If direction is -1, goes backwards.
 //
 //---------------------------------------------------------------
-char mons_find(unsigned char xps, unsigned char yps, FixedVector<char, 2>& mfp, char direction)
+char mons_find(unsigned char xps, unsigned char yps,
+                            FixedVector < char, 2 > &mfp, char direction)
 {
-
     unsigned char temp_xps = xps;
     unsigned char temp_yps = yps;
     char x_change = 0;
@@ -1095,10 +1108,8 @@ char mons_find(unsigned char xps, unsigned char yps, FixedVector<char, 2>& mfp, 
     if (direction == 1 && temp_xps == 9 && temp_yps == 17)
         return 0;               // end of spiral
 
-    while (temp_xps >= 8 && temp_xps <= 25 && temp_yps <= 17)   // yps always >= 0
-
+    while (temp_xps >= 8 && temp_xps <= 25 && temp_yps <= 17) // yps always >= 0
     {
-
         if (direction == -1 && temp_xps == 17 && temp_yps == 9)
             return 0;           // can't go backwards from you
 
@@ -1140,13 +1151,12 @@ char mons_find(unsigned char xps, unsigned char yps, FixedVector<char, 2>& mfp, 
                     y_change = 1;
             }
         }                       // end if (direction == 1)
-
         else
         {
-/*
-   This part checks all eight surrounding squares to find the one that
-   leads on to the present square.
- */
+            /*
+               This part checks all eight surrounding squares to find the
+               one that leads on to the present square.
+             */
             for (i = -1; i < 2; i++)
             {
                 for (j = -1; j < 2; j++)
@@ -1166,19 +1176,23 @@ char mons_find(unsigned char xps, unsigned char yps, FixedVector<char, 2>& mfp, 
                     }
                     else if (abs(temp_xps + i - 17) <= abs(temp_yps + j - 9))
                     {
-                        if (temp_xps + i - 17 >= 0 && temp_yps + j - 9 <= 0)
+                        const int xi = temp_xps + i - 17;
+                        const int yj = temp_yps + j - 9;
+
+                        if (xi >= 0 && yj <= 0)
                         {
-                            if (abs(temp_xps + i - 17) > abs(temp_yps + j - 9 + 1))
+                            if (abs(xi) > abs(yj + 1))
                             {
                                 x_change = 0;
                                 y_change = -1;
-                                if (temp_xps + i - 17 > 0)
+                                if (xi > 0)
                                     y_change = 1;
                                 goto finished_spiralling;
                             }
                         }
+
                         x_change = -1;
-                        if (temp_yps + j - 9 < 0)
+                        if (yj < 0)
                             x_change = 1;
                         y_change = 0;
                     }
@@ -1190,14 +1204,17 @@ char mons_find(unsigned char xps, unsigned char yps, FixedVector<char, 2>& mfp, 
                             y_change = 1;
                     }
 
-                    if (temp_xps + i + x_change == temp_xps && temp_yps + j + y_change == temp_yps)
+                    if (temp_xps + i + x_change == temp_xps
+                        && temp_yps + j + y_change == temp_yps)
+                    {
                         goto finished_spiralling;
+                    }
                 }
             }
         }                       // end else
 
 
-finished_spiralling:
+      finished_spiralling:
         x_change *= direction;
         y_change *= direction;
 
@@ -1205,15 +1222,19 @@ finished_spiralling:
         if (temp_yps + y_change <= 17)  // it can wrap, unfortunately
             temp_yps += y_change;
 
+        const int targ_x = you.x_pos + temp_xps - 17;
+        const int targ_y = you.y_pos + temp_yps - 9;
+        const int targ_mon = mgrd[ targ_x ][ targ_y ];
+
         // We don't want to be looking outside the bounds of the arrays:
-        if (temp_xps <= 25 && temp_xps >= 8 && temp_yps <= 17   // && temp_yps >= 1
-         && you.x_pos + temp_xps - 17 >= 0 && you.x_pos + temp_xps - 17 < GXM
-         && you.y_pos + temp_yps - 9 >= 0 && you.y_pos + temp_yps - 9 < GYM)
+        if (temp_xps <= 25 && temp_xps >= 8 && temp_yps <= 17// && temp_yps >= 1
+            && targ_x >= 0 && targ_x < GXM && targ_y >= 0 && targ_y < GYM)
         {
-            if ( mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9] != NON_MONSTER
-                && env.show[temp_xps - 8][temp_yps] != 0
-                && ( menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].enchantment[2] != ENCH_INVIS || player_see_invis() )
-                && ( monster_habitat(menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].type) == DNGN_FLOOR || menv[mgrd[you.x_pos + temp_xps - 17][you.y_pos + temp_yps - 9]].number != 1 ) )
+            if (targ_mon != NON_MONSTER && env.show[temp_xps - 8][temp_yps] != 0
+                && (menv[ targ_mon ].enchantment[2] != ENCH_INVIS
+                    || player_see_invis())
+                && (monster_habitat(menv[ targ_mon ].type) == DNGN_FLOOR
+                    || menv[ targ_mon ].number != 1))
             {
                 //mpr("Found something!");
                 //more();
@@ -1224,7 +1245,5 @@ finished_spiralling:
         }
     }
 
-
     return 0;
-
 }

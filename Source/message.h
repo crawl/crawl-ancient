@@ -9,9 +9,18 @@
  *               <1>     -/--/--        LRH             Created
  */
 
-
 #ifndef MESSAGE_H
 #define MESSAGE_H
+
+#include <string>
+
+#include "externs.h"
+
+struct message_item {
+    int                 channel;        // message channel
+    int                 param;          // param for channel (god, enchantment)
+    string              text;           // text of message
+};
 
 
 // last updated 12may2000 {dlb}
@@ -42,7 +51,7 @@ void more(void);
  *              spells1 - spells2 - spells3 - spells4 - stuff - transfor -
  *              view
  * *********************************************************************** */
-void mpr(const char *inf);
+void mpr(const char *inf, int channel = MSGCH_PLAIN, int param = 0);
 
 
 // last updated 12may2000 {dlb}

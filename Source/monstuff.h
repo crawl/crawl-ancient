@@ -17,8 +17,6 @@
 #include "externs.h"
 // for definition of type monsters {dlb}
 
-
-
 /* ***********************************************************************
  * called from: fight - it_use3 - spells
  * *********************************************************************** */
@@ -34,20 +32,21 @@ void monster_blink(struct monsters *monster);
 /* ***********************************************************************
  * called from: spells1
  * *********************************************************************** */
-bool random_near_space( FixedVector<int, 2>& passed );
+bool random_near_space( FixedVector<int, 2>& passed, bool least_two = false );
 
 
 /* ***********************************************************************
  * called from: beam - effects - fight - monstuff - mstuff2 - spells1 -
  *              spells2 - spells4
  * *********************************************************************** */
-bool simple_monster_message(struct monsters *monster, const char *event);
+bool simple_monster_message(struct monsters *monster, const char *event,
+                            int channel = MSGCH_PLAIN, int param = 0);
 
 
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void swap_places(struct monsters *monster);
+bool swap_places(struct monsters *monster);
 
 
 /* ***********************************************************************

@@ -68,23 +68,25 @@
 #include "macro.h"
 #endif
 
-
 #define HIT_WEAK 7
 #define HIT_MED 18
 #define HIT_STRONG 36
 // ... was 5, 12, 21
 // how these are used will be replaced by a function in a second ... :P {dlb}
 
-
-extern bool wield_change;    // defined in output.cc
-
+extern bool wield_change;       // defined in output.cc
 
 static int weapon_type_modify(int weap, char *st_prn, char *noise2, int damage);
 static void monster_drop_ething(struct monsters *monster);
 static void place_monster_corpse(struct monsters *monster);
 
+int weapon_str_weight( int wpn_class, int wpn_type );
 
+static inline int player_weapon_str_weight( void );
+static inline int player_weapon_dex_weight( void );
 
+static inline int calc_stat_to_hit_base( void );
+static inline int calc_stat_to_dam_base( void );
 
 /*
  **************************************************
@@ -94,82 +96,118 @@ static void place_monster_corpse(struct monsters *monster);
  **************************************************
 */
 
-
-void you_attack( int monster_attacked, bool unarmed_attacks )
+// This function returns the "extra" stats the player gets because of
+// choice of weapon... it's used only for giving warnings when a player
+// weilds a less than ideal weapon.
+int effective_stat_bonus( void )
 {
+#ifdef USE_NEW_COMBAT_STATS
+    return ((you.strength - you.dex) * (player_weapon_str_weight() - 5) / 10);
+#else
+    return (0);
+#endif
+}
 
+void you_attack(int monster_attacked, bool unarmed_attacks)
+{
     struct monsters *defender = &menv[monster_attacked];
 
     int your_to_hit;
     int damage_done = 0;
     bool hit = false;
-    unsigned char stab_bonus = 0;                           // this is never negative {dlb}
-    int temp_rand;                                          // for probability determination {dlb}
-    bool ur_armed = (you.equip[EQ_WEAPON] != -1);           // compacts code a bit {dlb}
-    bool bearing_shield = (you.equip[EQ_SHIELD] != -1);     // compacts code a bit {dlb}
+    unsigned char stab_bonus = 0;       // this is never negative {dlb}
+    int temp_rand;              // for probability determination {dlb}
+
+    const int weapon = you.equip[ EQ_WEAPON ];
+    const bool ur_armed = (weapon != -1);   // compacts code a bit {dlb}
+    const bool bearing_shield = (you.equip[EQ_SHIELD] != -1);
+
+    bool water_attack = false;
 
     char str_pass[80], damage_noise[20], damage_noise2[20];
     int special_brand = SPWPN_NORMAL;
 
     int heavy_armour = 0;
 
-// heavy armour modifiers for shield borne
-    if ( bearing_shield )
-      {
-        switch ( you.inv_type[you.equip[EQ_SHIELD]] )
+    // heavy armour modifiers for shield borne
+    if (bearing_shield)
+    {
+        switch (you.inv_type[you.equip[EQ_SHIELD]])
         {
-          case ARM_SHIELD:
-            if ( you.skills[SK_SHIELDS] < random2(7) )
-              heavy_armour++;
+        case ARM_SHIELD:
+            if (you.skills[SK_SHIELDS] < random2(7))
+                heavy_armour++;
             break;
-          case ARM_LARGE_SHIELD:
-            if ( ( you.species >= SP_OGRE && you.species <= SP_OGRE_MAGE ) || player_genus(GENPC_DRACONIAN) )
-              {
-                if ( you.skills[SK_SHIELDS] < random2(13) )
-                  heavy_armour++;    // was potentially "+= 3" {dlb}
-              }
+        case ARM_LARGE_SHIELD:
+            if ((you.species >= SP_OGRE && you.species <= SP_OGRE_MAGE)
+                || player_genus(GENPC_DRACONIAN))
+            {
+                if (you.skills[SK_SHIELDS] < random2(13))
+                    heavy_armour++;     // was potentially "+= 3" {dlb}
+            }
             else
-              for (unsigned char i = 0; i < 3; i++)
-                if ( you.skills[SK_SHIELDS] < random2(13) )
-                  heavy_armour += random2(3);
+            {
+                for (unsigned char i = 0; i < 3; i++)
+                {
+                    if (you.skills[SK_SHIELDS] < random2(13))
+                        heavy_armour += random2(3);
+                }
+            }
             break;
-          default:
+        default:
             break;
         }
-      }
+    }
 
-// heavy armour modifiers for PARM_EVASION
+    // heavy armour modifiers for PARM_EVASION
     if (you.equip[EQ_BODY_ARMOUR] != -1)
-      {
-        if ( property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION) < 0
-            && random2(you.skills[SK_ARMOUR]) < abs(property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION)) )
-          heavy_armour += random2(abs(property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION)));
-      }
+    {
+        const int ev_pen = property( OBJ_ARMOUR,
+                                     you.inv_type[you.equip[EQ_BODY_ARMOUR]],
+                                     PARM_EVASION );
 
-// ??? what is the reasoning behind this ??? {dlb}
-    if ( !ur_armed )
-      heavy_armour *= ( coinflip() ? 3 : 2 );
+        if (ev_pen < 0 && random2(you.skills[SK_ARMOUR]) < abs( ev_pen ))
+            heavy_armour += random2( abs(ev_pen) );
+    }
 
-// Calculate the following two flags in advance
-// to know what player does this combat turn:
+    // ??? what is the reasoning behind this ??? {dlb}
+    if (!ur_armed)
+        heavy_armour *= (coinflip()? 3 : 2);
+
+    // Calculate the following two flags in advance
+    // to know what player does this combat turn:
     bool can_do_unarmed_combat = false;
 
-    if ( you.burden_state == BS_UNENCUMBERED
+    if (you.burden_state == BS_UNENCUMBERED
         && random2(20) < you.skills[SK_UNARMED_COMBAT]
-        && random2(1 + heavy_armour) < 2 )
-      can_do_unarmed_combat = true;
+        && random2(1 + heavy_armour) < 2)
+    {
+        can_do_unarmed_combat = true;
+    }
 
-// if we're not getting potential unarmed attacks, and not wearing a
-// shield, and have a suitable uncursed weapon we get the bonus.
+    // if we're not getting potential unarmed attacks, and not wearing a
+    // shield, and have a suitable uncursed weapon we get the bonus.
     bool use_hand_and_a_half_bonus = false;
 
-    if ( unarmed_attacks
+    int wpn_skill = SK_UNARMED_COMBAT;
+    int hands_reqd = HANDS_ONE_HANDED;  // XXX: is this okay for unarmed? - bwr
+
+    if (weapon != -1)
+    {
+        wpn_skill = weapon_skill( you.inv_class[weapon], you.inv_type[weapon] );
+        hands_reqd = hands_reqd_for_weapon(you.inv_class[weapon],
+                                                        you.inv_type[weapon]);
+    }
+
+    if (unarmed_attacks
         && !can_do_unarmed_combat
-        && !bearing_shield
-        && ur_armed
-        && you.inv_plus[you.equip[EQ_WEAPON]] < 130     // that is, uncursed
-        && hands_reqd_for_weapon(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == HANDS_ONE_OR_TWO_HANDED )
-      use_hand_and_a_half_bonus = true;    // currently: +1 dam, +1 hit, -1 spd
+        && !bearing_shield && ur_armed
+        && you.inv_plus[ weapon ] < 130      // that is, uncursed
+        && hands_reqd == HANDS_ONE_OR_TWO_HANDED)
+    {
+        // currently: +1 dam, +1 hit, -1 spd (loosly)
+        use_hand_and_a_half_bonus = true;
+    }
 
 /*
  **************************************************************************
@@ -179,14 +217,13 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
  *                                                                        *
  **************************************************************************
  */
-
     bool helpless = mons_flag(defender->type, M_NO_EXP_GAIN);
 
     if (defender->behavior != BEH_ENSLAVED)
-      you.pet_target = monster_attacked;
-    if (defender->behavior == BEH_ENSLAVED)
-      {
+        you.pet_target = monster_attacked;
 
+    if (defender->behavior == BEH_ENSLAVED)
+    {
         defender->behavior = BEH_CHASING_I;
         naughty(NAUGHTY_ATTACK_FRIEND, 5);
 
@@ -198,165 +235,190 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
             && defender->enchantment[1] != ENCH_CREATED_FRIENDLY )
           done_good(GOOD_ATTACKED_FRIEND, 5);
 ************************************************************************ */
+    }
 
-      }
-
-// fumbling in shallow water <early return>:
-    if ( grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER && !you.levitation )
+    // fumbling in shallow water <early return>:
+    if (player_in_water() && you.species != SP_MERFOLK)
     {
-        if ( random2(you.dex) < 4 || one_chance_in(5) )
+        if (random2(you.dex) < 4 || one_chance_in(5))
         {
             mpr("Unstable footing causes you to fumble your attack.");
             return;
         }
     }
 
-// preliminary to_hit modifications:
-    your_to_hit = 15 + (you.dex / 2);    // + (you.strength / 2);
+    // wet merfolk
+    if (you.species == SP_MERFOLK && player_in_water()
+        // monster not a water creature
+        && monster_habitat(defender->type) != DNGN_DEEP_WATER
+        // monster in water
+        && (grd[defender->x][defender->y] == DNGN_SHALLOW_WATER
+            || grd[defender->x][defender->y] == DNGN_DEEP_WATER)
+        // monster not flying
+        && (!mons_flies(defender->type)))
+    {
+        water_attack = true;
+    }
 
-    if ( wearing_amulet(AMU_INACCURACY) )
-      your_to_hit -= 5;
+    // preliminary to_hit modifications:
+    your_to_hit = 15 + (calc_stat_to_hit_base() / 2);
+
+    if (water_attack)
+        your_to_hit += 5;
+
+    if (wearing_amulet(AMU_INACCURACY))
+        your_to_hit -= 5;
 
     your_to_hit += random2(1 + you.skills[SK_FIGHTING]);
 
-    if ( ur_armed )
-      {
-        if ( weapon_skill(you.inv_class[you.equip[EQ_WEAPON]],you.inv_type[you.equip[EQ_WEAPON]]) )
-          your_to_hit += random2(you.skills[weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]])] + 1);
-      }
-    else    // ...you must be unarmed
-      {
-        your_to_hit += (you.species == SP_TROLL || you.species == SP_GHOUL) ? 4 : 2;
+    if (ur_armed)
+    {
+        if (wpn_skill)
+            your_to_hit += random2(you.skills[wpn_skill] + 1);
+    }
+    else                        // ...you must be unarmed
+    {
+        your_to_hit += (you.species == SP_TROLL
+                        || you.species == SP_GHOUL) ? 4 : 2;
         your_to_hit += random2(1 + you.skills[SK_UNARMED_COMBAT]);
-      }
+    }
 
-// energy expenditure in terms of food:
-    if ( you.is_undead != US_UNDEAD )
-      make_hungry(3, true);
+    // energy expenditure in terms of food:
+    if (you.is_undead != US_UNDEAD)
+        make_hungry(3, true);
 
-    if ( ur_armed
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-        && (you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_SPEED
-            || (you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I
-              && randart_wpn_properties(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_plus2[you.equip[EQ_WEAPON]], 0, RAP_BRAND) == SPWPN_SPEED)))
+    if (ur_armed
+        && you.inv_class[ weapon ] == OBJ_WEAPONS
+        && (you.inv_dam[ weapon ] % 30 == SPWPN_SPEED
+            || (you.inv_dam[ weapon ] % 30 >= SPWPN_RANDART_I
+                && inv_randart_wpn_properties(weapon, 0, RAP_BRAND) == SPWPN_SPEED)))
     {
         you.time_taken *= 5;
         you.time_taken /= 10;
     }
 
-    if ( ur_armed
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-        && you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I)
+    if (ur_armed
+        && you.inv_class[ weapon ] == OBJ_WEAPONS
+        && you.inv_dam[ weapon ] % 30 >= SPWPN_RANDART_I)
     {
-        if (randart_wpn_properties(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_plus2[you.equip[EQ_WEAPON]], 0, RAP_ANGRY) >= 1)
+        if (inv_randart_wpn_properties( weapon, 0, RAP_ANGRY) >= 1)
         {
-            if (random2(1 + randart_wpn_properties(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_plus2[you.equip[EQ_WEAPON]], 0, RAP_ANGRY)))
-              go_berserk();
+            if (random2(1 + inv_randart_wpn_properties( weapon, 0, RAP_ANGRY )))
+                go_berserk();
         }
     }
 
-    switch ( you.special_wield )
+    switch (you.special_wield)
     {
-      case SPWLD_TROG:
-        if ( coinflip() )
-          go_berserk();
+    case SPWLD_TROG:
+        if (coinflip())
+            go_berserk();
         break;
-      case SPWLD_WUCAD_MU:
-        if ( one_chance_in(9) )
-          miscast_effect(SPTYP_DIVINATION, random2(9), random2(70), 100);
+    case SPWLD_WUCAD_MU:
+        if (one_chance_in(9))
+            miscast_effect(SPTYP_DIVINATION, random2(9), random2(70), 100);
         break;
-      default:
+    default:
         break;
     }
 
-
-    if ( you.mutation[MUT_BERSERK] )
+    if (you.mutation[MUT_BERSERK])
     {
-        if ( random2(100) < (you.mutation[MUT_BERSERK] * 10) - 5 )
-          go_berserk();
+        if (random2(100) < (you.mutation[MUT_BERSERK] * 10) - 5)
+            go_berserk();
     }
 
-    if ( ur_armed )
+    if (ur_armed)
     {
-        if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS)
+        if (you.inv_class[ weapon ] == OBJ_WEAPONS)
         {
-            int ghoggl = you.inv_plus[you.equip[EQ_WEAPON]] - 50;
+            int ghoggl = you.inv_plus[ weapon ] - 50;
 
-            if (you.inv_plus[you.equip[EQ_WEAPON]] > 130)
-              ghoggl -= 100;
+            if (you.inv_plus[ weapon ] > 130)
+                ghoggl -= 100;
 
-            your_to_hit += ghoggl;    // there was some stupid conditional here that applied this "if (ghoggl >= 0)" and "else" that .. which is all cases (d'oh!) {dlb}
+            // there was some stupid conditional here that applied this
+            // "if (ghoggl >= 0)" and "else" that .. which is all
+            // cases (d'oh!) {dlb}
+            your_to_hit += ghoggl;
 
-            your_to_hit += property(OBJ_WEAPONS, you.inv_type[you.equip[EQ_WEAPON]], PWPN_HIT);
+            your_to_hit += property( OBJ_WEAPONS, you.inv_type[ weapon ],
+                                     PWPN_HIT );
 
-            if ( you.inv_dam[you.equip[EQ_WEAPON]] / 30 == DWPN_ELVEN
-                && player_genus(GENPC_ELVEN) )
-              your_to_hit += ( coinflip() ? 2 : 1 );
+            if (you.inv_dam[ weapon ] / 30 == DWPN_ELVEN
+                && player_genus(GENPC_ELVEN))
+            {
+                your_to_hit += (coinflip()? 2 : 1);
+            }
         }
-        if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES )
-          your_to_hit += property(OBJ_WEAPONS, WPN_QUARTERSTAFF, PWPN_HIT);   /* magical staff */
+
+        /* magical staff */
+        if (you.inv_class[ weapon ] == OBJ_STAVES)
+            your_to_hit += property(OBJ_WEAPONS, WPN_QUARTERSTAFF, PWPN_HIT);
     }
 
-    your_to_hit += slaying_bonus(PWPN_HIT);    // see: player.cc
+    your_to_hit += slaying_bonus(PWPN_HIT);     // see: player.cc
 
-    if ( you.hunger_state == HS_STARVING )
-      your_to_hit -= 3;
+    if (you.hunger_state == HS_STARVING)
+        your_to_hit -= 3;
 
     your_to_hit -= heavy_armour;
 
-    your_to_hit = random2(your_to_hit);     // why does this come here and not later? {dlb}
+    // why does this come here and not later? {dlb}
+    // apparently to give the following pluses more significance -- bwr
+    your_to_hit = random2(your_to_hit);
 
-    if ( use_hand_and_a_half_bonus )
-      your_to_hit += random2(3);
+    if (use_hand_and_a_half_bonus)
+        your_to_hit += random2(3);
 
-    if ( ur_armed
-        && weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == SK_SHORT_BLADES
-        && you.sure_blade )
-      your_to_hit += 5 + random2limit(you.sure_blade, 25);
+    if (ur_armed && wpn_skill == SK_SHORT_BLADES && you.sure_blade)
+        your_to_hit += 5 + random2limit( you.sure_blade, 10 );
 
     int damage = 1;
 
-    if ( !ur_armed )    // empty-handed
-      {
+    if (!ur_armed)              // empty-handed
+    {
         damage = 3;
 
-        if ( you.confusing_touch )
-          {
-            special_brand = SPWPN_CONFUSE;     // just trying to touch is easier that trying to damage
+        if (you.confusing_touch)
+        {
+            // just trying to touch is easier that trying to damage
+            special_brand = SPWPN_CONFUSE;
             your_to_hit += random2(you.dex);
-            damage = 1;
-          }
+            // no base hand damage while using this spell
+            damage = 0;
+        }
 
-        if ( you.mutation[MUT_DRAIN_LIFE] )
-          special_brand = SPWPN_DRAINING;
+        if (you.mutation[MUT_DRAIN_LIFE])
+            special_brand = SPWPN_DRAINING;
 
         if (you.attribute[ATTR_TRANSFORMATION] != TRAN_NONE)
         {
             switch (you.attribute[ATTR_TRANSFORMATION])
             {
-              case TRAN_SPIDER:
+            case TRAN_SPIDER:
                 damage = 9;
                 special_brand = SPWPN_VENOM;
                 your_to_hit += random2(10);
                 break;
-              case TRAN_BLADE_HANDS:
+            case TRAN_BLADE_HANDS:
                 damage = 12 + (you.strength / 4) + (you.dex / 4);
                 your_to_hit += random2(12);
                 break;
-              case TRAN_STATUE:
+            case TRAN_STATUE:
                 damage = 12 + you.strength;
                 your_to_hit += random2(9);
                 break;
-              case TRAN_ICE_BEAST:
+            case TRAN_ICE_BEAST:
                 damage = 10;
                 special_brand = SPWPN_FREEZING;
                 your_to_hit += random2(10);
                 break;
-              case TRAN_DRAGON:
+            case TRAN_DRAGON:
                 damage = 20 + you.strength;
                 your_to_hit += random2(10);
                 break;
-              case TRAN_LICH:
+            case TRAN_LICH:
                 damage = 5;
                 special_brand = SPWPN_DRAINING;
                 your_to_hit += random2(10);
@@ -365,142 +427,178 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
         }
         else
         {
-            if ( you.species == SP_TROLL )
-              damage += 5;
-            else if ( you.species == SP_GHOUL )
-              damage += 2;
+            if (you.species == SP_TROLL)
+                damage += 5;
+            else if (you.species == SP_GHOUL)
+                damage += 2;
         }
 
         damage += you.skills[SK_UNARMED_COMBAT];
-      }
+    }
     else
-      {
-        if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
-          damage = property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_DAMAGE);
-        else if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES )
-          damage = property(OBJ_WEAPONS, WPN_QUARTERSTAFF, PWPN_DAMAGE);
-      }
+    {
+        if (you.inv_class[ weapon ] == OBJ_WEAPONS)
+        {
+            damage = property( you.inv_class[ weapon ],
+                               you.inv_type[ weapon ], PWPN_DAMAGE );
+        }
+        else if (you.inv_class[ weapon ] == OBJ_STAVES)
+            damage = property(OBJ_WEAPONS, WPN_QUARTERSTAFF, PWPN_DAMAGE);
+    }
+
+    // Yes, this isn't the *2 damage that monsters get, but since
+    // monster hps and player hps are different (as are the sizes
+    // of the attacks) it just wouldn't be fair to give merfolk
+    // that gross a potential... still they do get something for
+    // making use of the water.  -- bwr
+    if (water_attack)
+        damage += random2avg(10,2);
+
+    //jmf: check for backlight enchantment
+    if (defender->enchantment1)
+    {
+        for (unsigned char index = 0; index < 3; index++)
+        {
+            if (defender->enchantment[index] == ENCH_BACKLIGHT_I
+                || defender->enchantment[index] == ENCH_BACKLIGHT_II
+                || defender->enchantment[index] == ENCH_BACKLIGHT_III
+                || defender->enchantment[index] == ENCH_BACKLIGHT_IV)
+            {
+                your_to_hit += random2(10);
+            }
+        }
+    }
 
     int weapon_speed2 = 10;
 
-    if ( ur_armed )
-      {
-        if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS || you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES)
-          {
-            if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES)
-              weapon_speed2 = property(OBJ_WEAPONS, WPN_QUARTERSTAFF, PWPN_SPEED);
+    if (ur_armed)
+    {
+        if (you.inv_class[ weapon ] == OBJ_WEAPONS
+            || you.inv_class[ weapon ] == OBJ_STAVES)
+        {
+            if (you.inv_class[ weapon ] == OBJ_STAVES)
+            {
+                weapon_speed2 = property( OBJ_WEAPONS, WPN_QUARTERSTAFF,
+                                          PWPN_SPEED);
+            }
             else
-              weapon_speed2 = property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_SPEED);
+            {
+                weapon_speed2 = property( you.inv_class[ weapon ],
+                                          you.inv_type[ weapon ], PWPN_SPEED );
+            }
 
-            weapon_speed2 -= you.skills[weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]])] / 2;
+            weapon_speed2 -= you.skills[ wpn_skill ] / 2;
 
             int min_speed = 10;
 
-            if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES )
-              min_speed = property(OBJ_WEAPONS, WPN_QUARTERSTAFF, PWPN_SPEED) / 2;
+            if (you.inv_class[ weapon ] == OBJ_STAVES)
+            {
+                min_speed = property(OBJ_WEAPONS, WPN_QUARTERSTAFF,
+                                                            PWPN_SPEED) / 2;
+            }
             else
-              min_speed = property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_SPEED) / 2;
+            {
+                min_speed = property(you.inv_class[ weapon ],
+                                      you.inv_type[ weapon ], PWPN_SPEED) / 2;
+            }
 
-// Using both hands can get a weapon up to speed 7
-            if ( ( hands_reqd_for_weapon(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]] ) == HANDS_TWO_HANDED
-                   || use_hand_and_a_half_bonus )
-                && min_speed > 7 )
-              {
+            // Using both hands can get a weapon up to speed 7
+            if ((hands_reqd == HANDS_TWO_HANDED || use_hand_and_a_half_bonus)
+                && min_speed > 7)
+            {
                 min_speed = 7;
-              }
+            }
 
             if (weapon_speed2 < min_speed)
-              weapon_speed2 = min_speed;
+                weapon_speed2 = min_speed;
 
-            if ( bearing_shield )
-              {
+            if (bearing_shield)
+            {
                 switch (you.inv_type[you.equip[EQ_SHIELD]])
                 {
-                  case ARM_SHIELD:
+                case ARM_SHIELD:
                     weapon_speed2++;
                     break;
-                  case ARM_LARGE_SHIELD:
+                case ARM_LARGE_SHIELD:
                     weapon_speed2 += 2;
                     break;
                 }
-              }
-          }
-      }
+            }
+        }
+    }
     else
-      {
-        if ( you.burden_state == BS_UNENCUMBERED && one_chance_in(heavy_armour + 1) )
-          {
+    {
+        if (you.burden_state == BS_UNENCUMBERED
+            && one_chance_in(heavy_armour + 1))
+        {
             weapon_speed2 = 10 - you.skills[SK_UNARMED_COMBAT] / 3;
 
             if (weapon_speed2 < 4)
-              weapon_speed2 = 4;
-          }
-      }
+                weapon_speed2 = 4;
+        }
+    }
 
-// Hand and a half bonus only helps speed up to a point, any more
-// than speed 10 must come from skill and the weapon
-    if ( use_hand_and_a_half_bonus && weapon_speed2 > 10 )
-      weapon_speed2--;
+    // Hand and a half bonus only helps speed up to a point, any more
+    // than speed 10 must come from skill and the weapon
+    if (use_hand_and_a_half_bonus && weapon_speed2 > 10)
+        weapon_speed2--;
 
-    ASSERT(weapon_speed2 > 0);
+    // Never allow anything faster than 3 to get through... three+ attacks
+    // per round is enough... 5 is just silly. -- bwr
+    if (weapon_speed2 < 3)
+        weapon_speed2 = 3;
+
     you.time_taken *= weapon_speed2;
     you.time_taken /= 10;
 
-    if ( you.time_taken < 1 )
-      you.time_taken = 1;
+    if (you.time_taken < 1)
+        you.time_taken = 1;
 
 #ifdef WIZARD
     sprintf(info, "Time taken: %d", you.time_taken);
     mpr(info);
 #endif
 
-    if ( defender->speed_increment <= 40
+    if (defender->speed_increment <= 40
         || ((defender->behavior == BEH_FLEE
-    //              || defender->behavior == BEH_WANDER
-             || defender->behavior == BEH_CONFUSED)
-            && random2(200) <= you.skills[SK_STABBING] + you.dex)
-
+         // || defender->behavior == BEH_WANDER
+            || defender->behavior == BEH_CONFUSED)
+                && random2(200) <= you.skills[SK_STABBING] + you.dex)
         || defender->behavior == BEH_SLEEP)
     {
-        switch ( defender->behavior )
+        switch (defender->behavior)
         {
-          case BEH_SLEEP:
+        case BEH_SLEEP:
             // monster is a very easy target
             // note: lower stab_bonuses are better, because they're used
             //       as part of the divisors.
             stab_bonus = 1;
             break;
 
-          case BEH_FLEE:
-          case BEH_CONFUSED:
+        case BEH_FLEE:
+        case BEH_CONFUSED:
             // monster has limited control of his actions
             stab_bonus = 2;
             break;
 
-          default:
+        default:
             // monster is in control of his actions
             stab_bonus = 3;
         }
 
         simple_monster_message(defender, " fails to defend itself.");
 
-        exercise(SK_STABBING, 1 + random2avg(5,4));
+        exercise(SK_STABBING, 1 + random2avg(5, 4));
 
-        if ( mons_holiness(defender->type) == MH_NATURAL || mons_holiness(defender->type) == MH_HOLY )
-          naughty(NAUGHTY_STABBING, 4);
+        if (mons_holiness(defender->type) == MH_NATURAL
+            || mons_holiness(defender->type) == MH_HOLY)
+        {
+            naughty(NAUGHTY_STABBING, 4);
+        }
     }
     else
-      alert();
+        alert();
 
-
-    //jmf: check for backlight enchantment
-    if ( defender->enchantment1 )
-      for (unsigned char index = 0; index < 3; index++)
-        if ( defender->enchantment[index] == ENCH_BACKLIGHT_I
-              || defender->enchantment[index] == ENCH_BACKLIGHT_II
-              || defender->enchantment[index] == ENCH_BACKLIGHT_III
-              || defender->enchantment[index] == ENCH_BACKLIGHT_IV )
-          your_to_hit += 15; // FIXME: is this fair? lame?
 
     if ((your_to_hit >= defender->evasion || one_chance_in(15))
         || ((defender->speed_increment <= 60
@@ -510,55 +608,64 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
         hit = true;
         int dammod = 78;
 
-        if ( you.strength > 11 )
-          dammod += (random2(you.strength - 11) << 1);
-        else if ( you.strength < 9 )
-          dammod -= (random2(9 - you.strength) * 3);
+        const int dam_stat_val = calc_stat_to_dam_base();
+
+        if (dam_stat_val > 11)
+            dammod += (random2(dam_stat_val - 11) * 2);
+        else if (dam_stat_val < 9)
+            dammod -= (random2(9 - dam_stat_val) * 3);
 
         damage *= dammod;       //random2(you.strength);
-
         damage /= 78;
+
 
         damage_done = random2(damage);
 
-        if ( ur_armed && (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS || you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES))
+        if (ur_armed && (you.inv_class[ weapon ] == OBJ_WEAPONS
+                            || you.inv_class[ weapon ] == OBJ_STAVES))
         {
-            damage_done *= 25 + (random2(you.skills[weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]])] + 1));
+            damage_done *= 25 + (random2( you.skills[ wpn_skill ] + 1 ));
             damage_done /= 25;
         }
 
         damage_done *= 30 + (random2(you.skills[SK_FIGHTING] + 1));
         damage_done /= 30;
 
-        if ( you.might > 1 )
-          damage_done += 1 + random2(10);
+        if (you.might > 1)
+            damage_done += 1 + random2(10);
 
-        if ( you.hunger_state == HS_STARVING )
-          damage_done -= random2(5);
+        if (you.hunger_state == HS_STARVING)
+            damage_done -= random2(5);
 
-        if ( ur_armed && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
+        if (ur_armed && you.inv_class[ weapon ] == OBJ_WEAPONS)
         {
-            int hoggl = you.inv_plus2[you.equip[EQ_WEAPON]] - 50;
+            int hoggl = you.inv_plus2[ weapon ] - 50;
 
             damage_done += (hoggl > -1) ? (random2(1 + hoggl)) : (hoggl);
 
-            if ( use_hand_and_a_half_bonus
-                  || hands_reqd_for_weapon(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == HANDS_TWO_HANDED )
-              damage_done += random2(3);
+            // removed 2-handed weapons from here... their "bonus" is
+            // already included in the damage stat for the weapon -- bwr
+            if (use_hand_and_a_half_bonus)
+                damage_done += random2(3);
 
-            if ( you.inv_dam[you.equip[EQ_WEAPON]] / 30 == DWPN_DWARVEN
-                && player_genus(GENPC_DWARVEN) )
-              damage_done += random2(3);
-
-            if ( you.inv_dam[you.equip[EQ_WEAPON]] / 30 == DWPN_ORCISH
-                && you.species == SP_HILL_ORC && coinflip() )
-              damage_done++;
-
-            if (you.inv_ident[you.equip[EQ_WEAPON]] < 3 && random2(100) < you.skills[weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]])])
+            if (you.inv_dam[ weapon ] / 30 == DWPN_DWARVEN
+                && player_genus(GENPC_DWARVEN))
             {
-                you.inv_ident[you.equip[EQ_WEAPON]] = 3;
+                damage_done += random2(3);
+            }
+
+            if (you.inv_dam[ weapon ] / 30 == DWPN_ORCISH
+                && you.species == SP_HILL_ORC && coinflip())
+            {
+                damage_done++;
+            }
+
+            if (you.inv_ident[ weapon ] < 3
+                && random2(100) < you.skills[ wpn_skill ])
+            {
+                you.inv_ident[ weapon ] = 3;
                 strcpy(info, "You are wielding ");
-                in_name(you.equip[EQ_WEAPON], 3, str_pass);
+                in_name( weapon , 3, str_pass);
                 strcat(info, str_pass);
                 strcat(info, ".");
                 mpr(info);
@@ -566,18 +673,15 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
                 wield_change = true;
             }
         }
-//  else (damage_done -= random2(5));
 
+        //  else (damage_done -= random2(5));
         damage_done += slaying_bonus(PWPN_DAMAGE);
 
-        if ( stab_bonus )
+        if (stab_bonus)
         {
-          int skill_type;
-          if (you.equip[EQ_WEAPON] == -1)
-            skill_type = SK_UNARMED_COMBAT;
-          else
-            skill_type = weapon_skill(you.inv_class[you.equip[EQ_WEAPON]],
-                                        you.inv_type[you.equip[EQ_WEAPON]]);
+            // lets make sure we have some damage to work with...
+            if (damage_done < 1)
+                damage_done = 1;
 
             if (defender->behavior == BEH_SLEEP)
             {
@@ -588,93 +692,107 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
                 {
                     int stun = random2(you.dex + 1);
 
-                    if ( defender->speed_increment > stun )
-                      defender->speed_increment -= stun;
+                    if (defender->speed_increment > stun)
+                        defender->speed_increment -= stun;
                     else
-                      defender->speed_increment = 0;
+                        defender->speed_increment = 0;
                 }
             }
 
-            switch (skill_type)
+            switch (wpn_skill)
             {
-              case SK_SHORT_BLADES:
-                if ( you.inv_type[you.equip[EQ_WEAPON]] == WPN_DAGGER )
+            case SK_SHORT_BLADES:
+                if (you.inv_type[ weapon ] == WPN_DAGGER)
                 {
                     int bonus = you.dex / 3;
 
-                    if ( bonus > you.skills[SK_STABBING] + 1 )
-                      bonus = you.skills[SK_STABBING] + 1;
+                    if (bonus > you.skills[SK_STABBING] + 1)
+                        bonus = you.skills[SK_STABBING] + 1;
 
                     damage_done += bonus;
                 }
-              // fall through
-              case SK_LONG_SWORDS:
+                // fall through
+            case SK_LONG_SWORDS:
                 damage_done *= 10 + you.skills[SK_STABBING] /
-                  (stab_bonus + (skill_type == SK_SHORT_BLADES ? 0 : 1));
+                    (stab_bonus + (wpn_skill == SK_SHORT_BLADES ? 0 : 1));
                 damage_done /= 10;
-              // fall through
-              default:
+                // fall through
+            default:
                 damage_done *= 12 + you.skills[SK_STABBING] / stab_bonus;
                 damage_done /= 12;
             }
+
+            // when stabbing we can get by some of the armour
+            if (defender->armor_class > 0)
+            {
+                int ac = defender->armor_class
+                            - random2( you.skills[SK_STABBING] / stab_bonus );
+
+                if (ac > 0)
+                    damage_done -= random2(1 + ac);
+            }
+        }
+        else
+        {
+            // apply AC normally
+            if (defender->armor_class > 0)
+                damage_done -= random2(1 + defender->armor_class);
         }
 
-        if ( defender->armor_class > 0 )
-          damage_done -= random2(1 + defender->armor_class);
+        damage_done = weapon_type_modify( weapon , damage_noise,
+                                                   damage_noise2, damage_done);
 
-        damage_done = weapon_type_modify(you.equip[EQ_WEAPON], damage_noise, damage_noise2, damage_done);
+        if (damage_done < 0)
+            damage_done = 0;
 
-        if ( damage_done < 0 )
-          damage_done = 0;
-
-        if ( hurt_monster(defender, damage_done) )
+        if (hurt_monster(defender, damage_done))
         {
-            int skill = 0;
-
-            if ( ur_armed
-                && (skill = weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]])) )
+            if (ur_armed && wpn_skill)
             {
-                if ( !helpless || you.skills[skill] < 2 )
-                  exercise(skill, 1);
+                if (!helpless || you.skills[ wpn_skill ] < 2)
+                    exercise( wpn_skill, 1 );
             }
             else
             {
-                if ( !helpless || you.skills[SK_UNARMED_COMBAT] < 2 )
-                  exercise(SK_UNARMED_COMBAT, 1);
+                if (!helpless || you.skills[SK_UNARMED_COMBAT] < 2)
+                    exercise(SK_UNARMED_COMBAT, 1);
             }
 
-            if ((!helpless || you.skills[SK_FIGHTING] < 2) && one_chance_in(3))
+            if ((!helpless || you.skills[SK_FIGHTING] < 2)
+                && one_chance_in(3))
             {
                 exercise(SK_FIGHTING, 1);
             }
         }
 
-        if ( defender->hit_points < 1 )
+        if (defender->hit_points < 1)
         {
             /* thing_thrown = 1; */
 #ifdef WIZARD
             itoa(damage_done, st_prn, 10);
             strcpy(info, "Hit for ");
-            strcat(info, st_prn);       /* note: doesn't take account of special weapons etc */
+            /* note: doesn't take account of special weapons etc */
+            strcat(info, st_prn);
             strcat(info, ".");
             mpr(info);
 #endif
-            if ( ur_armed
-                && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-                && you.inv_dam[you.equip[EQ_WEAPON]] < NWPN_SINGING_SWORD
-                && you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_VAMPIRICISM )
+            if (ur_armed
+                && you.inv_class[ weapon ] == OBJ_WEAPONS
+                && you.inv_dam[ weapon ] < NWPN_SINGING_SWORD
+                && you.inv_dam[ weapon ] % 30 == SPWPN_VAMPIRICISM)
             {
-                if ( ( mons_holiness(defender->type) == MH_NATURAL || mons_holiness(defender->type) == MH_HOLY )
-                    && damage_done > 0
-                    && you.hp < you.hp_max
-                    && !one_chance_in(5) )
+                if ((mons_holiness(defender->type) == MH_NATURAL
+                        || mons_holiness(defender->type) == MH_HOLY)
+                    && damage_done > 0 && you.hp < you.hp_max
+                    && !one_chance_in(5))
                 {
                     mpr("You feel better.");
 
-                    inc_hp(1 + random2(damage_done), false);    // more than if not killed
+                    // more than if not killed
+                    inc_hp(1 + random2(damage_done), false);
 
-                    if ( you.hunger_state != HS_ENGORGED )
-                      lessen_hunger(30 + random2avg(59,2), true);
+                    if (you.hunger_state != HS_ENGORGED)
+                        lessen_hunger(30 + random2avg(59, 2), true);
 
                     naughty(NAUGHTY_NECROMANCY, 2);
                 }
@@ -682,17 +800,20 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
 
             monster_die(defender, KILL_YOU, 0);
 
-            if ( defender->type == MONS_GIANT_SPORE )
-              mpr("You hit the giant spore.");
+            if (defender->type == MONS_GIANT_SPORE)
+                mpr("You hit the giant spore.");
+            else if (defender->type == MONS_BALL_LIGHTNING)
+                mpr("You hit the ball lightning.");
             return;
         }
 
-        if ( damage_done < 1 && ( defender->enchantment[2] != ENCH_INVIS || player_see_invis() ) )
+        if (damage_done < 1 && (defender->enchantment[2] != ENCH_INVIS
+            || player_see_invis()))
         {
             hit = true;
 
             strcpy(info, "You hit ");
-            strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+            strcat(info, ptr_monam(defender, 1));
             strcat(info, ", but do no damage.");
             mpr(info);
         }
@@ -701,96 +822,102 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
     {
         hit = false;
 
-        if ( (your_to_hit + heavy_armour / 2) >= defender->evasion )
-          strcpy(info, "Your armour prevents you from hitting ");
+        if ((your_to_hit + heavy_armour / 2) >= defender->evasion)
+            strcpy(info, "Your armour prevents you from hitting ");
         else
-          strcpy(info, "You miss ");
+            strcpy(info, "You miss ");
 
-        strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+        strcat(info, ptr_monam(defender, 1));
         strcat(info, ".");
         mpr(info);
     }
 
-    if ( hit && damage_done > 0 || ( hit && damage_done < 1 && defender->enchantment[2] == ENCH_INVIS))
+    if (hit && damage_done > 0
+        || (hit && damage_done < 1 && defender->enchantment[2] == ENCH_INVIS))
     {
         strcpy(info, "You ");
         strcat(info, damage_noise);
         strcat(info, " ");
-        strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+        strcat(info, ptr_monam(defender, 1));
         strcat(info, damage_noise2);
+
 #ifdef WIZARD
         itoa(damage_done, st_prn, 10);
         strcat(info, " for ");
-        strcat(info, st_prn);   /* note: doesn't take account of special weapons etc */
+        /* note: doesn't take account of special weapons etc */
+        strcat(info, st_prn);
 #endif
         if (damage_done < HIT_WEAK)
-          strcat(info, ".");
+            strcat(info, ".");
         else if (damage_done < HIT_MED)
-          strcat(info, "!");
+            strcat(info, "!");
         else if (damage_done < HIT_STRONG)
-          strcat(info, "!!");
+            strcat(info, "!!");
         else
-          strcat(info, "!!!");
+            strcat(info, "!!!");
+
         mpr(info);
 
-        if ( mons_holiness(defender->type) == MH_HOLY )
-          done_good(GOOD_KILLED_ANGEL_I, 1);
+        if (mons_holiness(defender->type) == MH_HOLY)
+            done_good(GOOD_KILLED_ANGEL_I, 1);
 
-        if ( you.special_wield == SPWLD_TORMENT )
+        if (you.special_wield == SPWLD_TORMENT)
         {
             torment(you.x_pos, you.y_pos);
             naughty(NAUGHTY_UNHOLY, 5);
         }
-        if ( you.special_wield == SPWLD_ZONGULDROK || you.special_wield == SPWLD_CURSE )
-          naughty(NAUGHTY_NECROMANCY, 3);
+
+        if (you.special_wield == SPWLD_ZONGULDROK
+            || you.special_wield == SPWLD_CURSE)
+        {
+            naughty(NAUGHTY_NECROMANCY, 3);
+        }
     }
 
-    if ( defender->type == MONS_JELLY
-         || defender->type == MONS_BROWN_OOZE
-         || defender->type == MONS_ACID_BLOB
-         || defender->type == MONS_ROYAL_JELLY )
-      weapon_acid(5);
+    if (defender->type == MONS_JELLY
+        || defender->type == MONS_BROWN_OOZE
+        || defender->type == MONS_ACID_BLOB
+        || defender->type == MONS_ROYAL_JELLY)
+    {
+        weapon_acid(5);
+    }
 
     int specdam = 0;
 
-/* remember, damage_done is still useful! */
+    /* remember, damage_done is still useful! */
 
-    int weap_dam = 0;
+    int weap_dam = SPWPN_NORMAL;
 
-    if ( hit
-        && !ur_armed
-        && special_brand != SPWPN_NORMAL )
+    if (hit && !ur_armed && special_brand != SPWPN_NORMAL)
     {
         /* No electrocution - this references inv_plus2 */
         weap_dam = special_brand;
         goto dam_thing;
     }
 
-    if ( hit
-        && ur_armed
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
+    if (hit && ur_armed && you.inv_class[ weapon ] == OBJ_WEAPONS)
     {
-        if ( is_demonic(you.inv_type[you.equip[EQ_WEAPON]]) )
-          naughty(NAUGHTY_UNHOLY, 1);
+        if (is_demonic(you.inv_type[ weapon ]))
+            naughty(NAUGHTY_UNHOLY, 1);
 
-        weap_dam = you.inv_dam[you.equip[EQ_WEAPON]] % 30;
+        weap_dam = you.inv_dam[ weapon ] % 30;
 
-        if ( you.inv_dam[you.equip[EQ_WEAPON]] >= NWPN_SINGING_SWORD )
-          weap_dam = 0;
+        if (you.inv_dam[ weapon ] >= NWPN_SINGING_SWORD)
+            weap_dam = SPWPN_NORMAL;
 
-        if ( you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I )
-          weap_dam = randart_wpn_properties(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_plus2[you.equip[EQ_WEAPON]], 0, RAP_BRAND);
+        if (you.inv_dam[ weapon ] % 30 >= SPWPN_RANDART_I)
+            weap_dam = inv_randart_wpn_properties( weapon, 0, RAP_BRAND );
 
-        switch (you.inv_dam[you.equip[EQ_WEAPON]])
+        switch (you.inv_dam[ weapon ])
         {
-          case NWPN_SWORD_OF_CEREBOV:
-            weap_dam = 1;
+        case NWPN_SWORD_OF_CEREBOV:
+            weap_dam = SPWPN_FLAMING;
             break;
-          case NWPN_STAFF_OF_OLGREB:
-            weap_dam = 6;
+        case NWPN_STAFF_OF_OLGREB:
+            weap_dam = SPWPN_VENOM;
             break;
-          case NWPN_VAMPIRES_TOOTH:
-            weap_dam = 13;
+        case NWPN_VAMPIRES_TOOTH:
+            weap_dam = SPWPN_VAMPIRICISM;
             break;
         }
     }
@@ -799,26 +926,24 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
     // How much bonus damage will a staff of <foo> do?
     // FIXME: make these not macros. inline functions?
     // actually, it will all be pulled out and replaced by functions -- {dlb}
-#define STAFF_DAMAGE(SKILL) ((3 + random2(you.skills[ SKILL ] ) \
-                                + random2(you.skills[ SKILL ] ) \
-                                + random2(you.skills[ SKILL ] )) / 6 )
+#define STAFF_DAMAGE(SKILL) ((3 + random2(you.skills[ (SKILL) ] ) \
+                                + random2(you.skills[ (SKILL) ] ) \
+                                + random2(you.skills[ (SKILL) ] )) / 6 )
 #define STAFF_COST 2
 #define CAT_MONSTER_INFO(MONSTER) strcat(info, \
-                                  monam(menv[MONSTER].number, \
-                                        menv[MONSTER].type, \
-                                        menv[MONSTER].enchantment[2], 1) )
+                                  ptr_monam(&(menv[(MONSTER)]), 1) )
 
-#define CAT_PUNCTUATION(DAMAGE) if (DAMAGE < 3) strcat(info, "."); \
-                                if (DAMAGE >= 3) strcat(info, "!"); \
-                                if (DAMAGE >= 10) strcat(info, "!"); \
-                                if (DAMAGE >  20) strcat(info, "!");
+#define CAT_PUNCTUATION(DAMAGE) if ((DAMAGE) < 3) strcat(info, "."); \
+                                if ((DAMAGE) >= 3) strcat(info, "!"); \
+                                if ((DAMAGE) >= 10) strcat(info, "!"); \
+                                if ((DAMAGE) >  20) strcat(info, "!");
 
 
-    if (ur_armed && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES)
+    if (ur_armed && you.inv_class[ weapon ] == OBJ_STAVES)
     {
         specdam = 0;
         if (you.magic_points >= STAFF_COST)
-            switch (you.inv_type[you.equip[EQ_WEAPON]])
+            switch (you.inv_type[ weapon ])
             {
             case STAFF_AIR:
                 if (damage_done + you.skills[SK_AIR_MAGIC] > random2(30))
@@ -835,24 +960,27 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
                 break;
 
             case STAFF_COLD:    // FIXME: I don't think I used these right ...
-
                 if (mons_res_cold(defender->type) > 0)
                     break;
 
                 specdam = STAFF_DAMAGE(SK_ICE_MAGIC);
 
-                if ( defender->inv[MSLOT_ARMOUR] != NON_ITEM && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 == SPARM_COLD_RESISTANCE )
+                if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
+                    && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    == SPARM_COLD_RESISTANCE)
                 {
                     specdam /= 3;
                 }
 
-                if ( mons_res_cold(defender->type) < 0
-                    && ( defender->inv[MSLOT_ARMOUR] == NON_ITEM || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 != SPARM_COLD_RESISTANCE))
+                if (mons_res_cold(defender->type) < 0
+                    && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
+                        || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    != SPARM_COLD_RESISTANCE))
                 {
                     specdam += STAFF_DAMAGE(SK_ICE_MAGIC);
                 }
 
-                if ( specdam )
+                if (specdam)
                 {
                     strcpy(info, "You freeze ");
                     CAT_MONSTER_INFO(monster_attacked);
@@ -878,18 +1006,22 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
 
                 specdam = STAFF_DAMAGE(SK_FIRE_MAGIC);
 
-                if ( defender->inv[MSLOT_ARMOUR] != NON_ITEM && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 == SPARM_FIRE_RESISTANCE )
+                if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
+                    && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    == SPARM_FIRE_RESISTANCE)
                 {
                     specdam = (random2(damage_done) / 2 + 1) / 3;
                 }
 
-                if ( mons_res_fire(defender->type) < 0
-                    && (defender->inv[MSLOT_ARMOUR] == NON_ITEM || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 != SPARM_FIRE_RESISTANCE))
+                if (mons_res_fire(defender->type) < 0
+                    && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
+                        || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    != SPARM_FIRE_RESISTANCE))
                 {
                     specdam += STAFF_DAMAGE(SK_FIRE_MAGIC);
                 }
 
-                if ( specdam )
+                if (specdam)
                 {
                     strcpy(info, "You burn ");
                     CAT_MONSTER_INFO(monster_attacked);
@@ -899,16 +1031,18 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
                 break;
 
             case STAFF_POISON:
-                if ( damage_done + you.skills[SK_POISON_MAGIC] > random2(30) )
-                  poison_monster(defender, true);
+                // this really degrads the Staff of Olgreb -- bwr
+                if (damage_done + you.skills[SK_POISON_MAGIC] > random2(30))
+                    poison_monster(defender, true);
                 break;
 
             case STAFF_DEATH:
                 // FIXME: bring into line with other staff functions
-                if ( ( mons_holiness(defender->type) == MH_NATURAL || mons_holiness(defender->type) == MH_HOLY )
+                if ((mons_holiness(defender->type) == MH_NATURAL
+                        || mons_holiness(defender->type) == MH_HOLY)
                     && random2(8) <= you.skills[SK_NECROMANCY])
                 {
-                    strcpy(info, monam(defender->number, defender->type, defender->enchantment[2], 0));
+                    strcpy(info, ptr_monam(defender, 0));
                     strcat(info, " convulses in agony");
                     specdam = STAFF_DAMAGE(SK_NECROMANCY);
                     CAT_PUNCTUATION(specdam);
@@ -918,7 +1052,7 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
                 break;
 
             default:
-              mpr("You're wielding some staff I've never heard of! (fight.cc)");
+                mpr("You're wielding some staff I've never heard of! (fight.cc)");
             case STAFF_POWER:
             case STAFF_SUMMONING_I:
             case STAFF_SUMMONING_II:
@@ -941,11 +1075,11 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
         {
             dec_mp(STAFF_COST);
 
-            if (you.inv_ident[you.equip[EQ_WEAPON]] < 3)
+            if (you.inv_ident[ weapon ] < 3)
             {
-                you.inv_ident[you.equip[EQ_WEAPON]] = 3;
+                you.inv_ident[ weapon ] = 3;
                 strcpy(info, "You are wielding ");
-                in_name(you.equip[EQ_WEAPON], 3, str_pass);
+                in_name( weapon , 3, str_pass);
                 strcat(info, str_pass);
                 strcat(info, ".");
                 mpr(info);
@@ -962,11 +1096,9 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
 #undef CAT_PUNCTUATION
     // END STAFF HACK
 
-
-    if ( ur_armed && hit
-        && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS )
+    if (ur_armed && hit && you.inv_class[ weapon ] == OBJ_WEAPONS)
     {
-dam_thing:
+      dam_thing:
         switch (weap_dam)
         {
         case SPWPN_NORMAL:
@@ -975,32 +1107,36 @@ dam_thing:
         case SPWPN_FLAMING:
             specdam = 0;
 
-            if ( !mons_res_fire(defender->type) )
+            if (!mons_res_fire(defender->type))
             {
                 specdam = random2(damage_done) / 2 + 1;
-                if ( defender->inv[MSLOT_ARMOUR] != NON_ITEM && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 == SPARM_FIRE_RESISTANCE )
+                if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
+                    && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    == SPARM_FIRE_RESISTANCE)
                 {
                     specdam = (random2(damage_done) / 2 + 1) / 3;
                 }
             }
 
-            if ( mons_res_fire(defender->type) == -1
-                && (defender->inv[MSLOT_ARMOUR] == NON_ITEM || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 != SPARM_FIRE_RESISTANCE))
+            if (mons_res_fire(defender->type) == -1
+                && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
+                    || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    != SPARM_FIRE_RESISTANCE))
             {
                 specdam = random2(damage_done) + 1;
             }
 
-            if ( specdam )
+            if (specdam)
             {
                 strcpy(info, "You burn ");
-                strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                strcat(info, ptr_monam(defender, 1));
 
-                if ( specdam < 3 )
-                  strcat(info, ".");
+                if (specdam < 3)
+                    strcat(info, ".");
                 else if (specdam < 7)
-                  strcat(info, "!");
+                    strcat(info, "!");
                 else
-                  strcat(info, "!!");
+                    strcat(info, "!!");
 
                 mpr(info);
             }
@@ -1008,32 +1144,36 @@ dam_thing:
 
         case SPWPN_FREEZING:
             specdam = 0;
-            if ( !mons_res_cold(defender->type) )
+            if (!mons_res_cold(defender->type))
             {
                 specdam = 1 + random2(damage_done) / 2;
-                if (defender->inv[MSLOT_ARMOUR] != NON_ITEM && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 == SPARM_COLD_RESISTANCE)
+                if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
+                    && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    == SPARM_COLD_RESISTANCE)
                 {
                     specdam = (1 + random2(damage_done) / 2) / 3;
                 }
             }
 
-            if ( mons_res_cold(defender->type) == -1
-                && (defender->inv[MSLOT_ARMOUR] == NON_ITEM || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 != SPARM_COLD_RESISTANCE))
+            if (mons_res_cold(defender->type) == -1
+                && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
+                    || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    != SPARM_COLD_RESISTANCE))
             {
                 specdam = 1 + random2(damage_done);
             }
 
-            if ( specdam )
+            if (specdam)
             {
                 strcpy(info, "You freeze ");
-                strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                strcat(info, ptr_monam(defender, 1));
 
-                if ( specdam < 3 )
-                  strcat(info, ".");
+                if (specdam < 3)
+                    strcat(info, ".");
                 else if (specdam < 7)
-                  strcat(info, "!");
+                    strcat(info, "!");
                 else
-                  strcat(info, "!!");
+                    strcat(info, "!!");
 
                 mpr(info);
             }
@@ -1043,7 +1183,8 @@ dam_thing:
             specdam = 0;
             switch (mons_holiness(defender->type))
             {
-// there should be a case in here for holy monsters, see elsewhere in fight.cc {dlb}
+            // there should be a case in here for holy monsters,
+            // see elsewhere in fight.cc {dlb}
             case MH_UNDEAD:
                 specdam += 1 + random2(damage_done);
                 break;
@@ -1058,20 +1199,20 @@ dam_thing:
         case SPWPN_ELECTROCUTION:
             specdam = 0;
 
-            if ( mons_flies(defender->type) )
-              break;
-            else if ( mons_res_elec(defender->type) )
-              break;
-            else if ( one_chance_in(3) )
+            if (mons_flies(defender->type))
+                break;
+            else if (mons_res_elec(defender->type))
+                break;
+            else if (one_chance_in(3))
             {
                 mpr("There is a sudden explosion of sparks!");
-                specdam += random2avg(28,3);
+                specdam += random2avg(28, 3);
             }
             break;
 
         case SPWPN_ORC_SLAYING:
-            if ( mons_charclass(defender->type) == MONS_ORC )
-              hurt_monster(defender, 1 + random2(damage_done));
+            if (mons_charclass(defender->type) == MONS_ORC)
+                hurt_monster(defender, 1 + random2(damage_done));
             break;
 
         case SPWPN_VENOM:
@@ -1080,26 +1221,29 @@ dam_thing:
             break;
 
         case SPWPN_DRAINING:
-            if ( ( mons_holiness(defender->type) == MH_UNDEAD || mons_holiness(defender->type) == MH_DEMONIC )
+            if ((mons_holiness(defender->type) == MH_UNDEAD
+                    || mons_holiness(defender->type) == MH_DEMONIC)
                 || one_chance_in(3))
+            {
                 break;
+            }
 
             strcpy(info, "You drain ");
-            strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+            strcat(info, ptr_monam(defender, 1));
             strcat(info, "!");
             mpr(info);
 
-            if ( one_chance_in(5) )
-              defender->hit_dice--;
+            if (one_chance_in(5))
+                defender->hit_dice--;
 
             defender->max_hit_points -= 2 + random2(3);
             defender->hit_points -= 2 + random2(3);
 
-            if ( defender->hit_points >= defender->max_hit_points )
-              defender->hit_points = defender->max_hit_points;
+            if (defender->hit_points >= defender->max_hit_points)
+                defender->hit_points = defender->max_hit_points;
 
-            if ( defender->hit_dice < 1 )
-              defender->hit_points = 0;
+            if (defender->hit_dice < 1)
+                defender->hit_points = 0;
             specdam = 1 + (random2(damage_done) / 2);
             naughty(NAUGHTY_NECROMANCY, 2);
             break;
@@ -1110,81 +1254,89 @@ dam_thing:
             specdam = 1 + random2(damage_done) / 2;
             break;
 
-          case SPWPN_VAMPIRICISM:
+        case SPWPN_VAMPIRICISM:
             specdam = 0;        // NB: does no extra damage
 
-            if ( mons_holiness(defender->type) == MH_UNDEAD
-                  || mons_holiness(defender->type) == MH_DEMONIC )
-              break;          // should really also prevent draining eg golems
-            else if ( damage_done < 1 )
-              break;
-            else if ( you.hp == you.hp_max || one_chance_in(5) )
-              break;
+                 // should really also prevent draining eg golemsholiness(defender->type) == MH_UNDEAD
+            if (mons_holiness(defender->type) == MH_UNDEAD
+                || mons_holiness(defender->type) == MH_DEMONIC)
+            {
+                break;
+            }
+            else if (damage_done < 1)
+                break;
+            else if (you.hp == you.hp_max || one_chance_in(5))
+                break;
 
             mpr("You feel better.");
 
-            if ( ur_armed
-                && you.inv_dam[you.equip[EQ_WEAPON]] == NWPN_VAMPIRES_TOOTH )
-              inc_hp(damage_done, false);
-            else                   // thus is probably more valuable on larger weapons?
-              inc_hp(1 + random2(damage_done), false);
+            if (ur_armed
+                && you.inv_dam[ weapon ] == NWPN_VAMPIRES_TOOTH)
+            {
+                inc_hp(damage_done, false);
+            }
+            else
+            {
+                // thus is probably more valuable on larger weapons?
+                inc_hp(1 + random2(damage_done), false);
+            }
 
-            if ( you.hunger_state != HS_ENGORGED )
-              lessen_hunger(random2avg(59,2), true);
+            if (you.hunger_state != HS_ENGORGED)
+                lessen_hunger(random2avg(59, 2), true);
 
             naughty(NAUGHTY_NECROMANCY, 2);
             break;
 
         case SPWPN_DISRUPTION:
             specdam = 0;
-            if (mons_holiness(defender->type) == MH_UNDEAD
-                && !one_chance_in(3))
+            if (mons_holiness(defender->type) == MH_UNDEAD && !one_chance_in(3))
             {
                 simple_monster_message(defender, " shudders.");
-
-                specdam += random2avg((1 + (damage_done * 3)),3);
+                specdam += random2avg((1 + (damage_done * 3)), 3);
             }
             break;
 
         case SPWPN_PAIN:
             specdam = 0;
-            if ( ( mons_holiness(defender->type) == MH_NATURAL || mons_holiness(defender->type) == MH_HOLY )
+            if ((mons_holiness(defender->type) == MH_NATURAL
+                    || mons_holiness(defender->type) == MH_HOLY)
                 && random2(8) <= you.skills[SK_NECROMANCY])
             {
                 simple_monster_message(defender, " convulses in agony.");
-                specdam += random2(1 + (you.skills[SK_NECROMANCY] << 1));
+                specdam += random2(1 + (you.skills[SK_NECROMANCY] * 2));
             }
             naughty(NAUGHTY_NECROMANCY, 4);
             break;
 
         case SPWPN_DISTORTION:
-        //jmf: blink frogs *like* distortion
-        // I think could be amended to let blink frogs "grow" like jellies do {dlb}
-            if ( defender->type == MONS_BLINK_FROG && one_chance_in(5) )
+            //jmf: blink frogs *like* distortion
+            // I think could be amended to let blink frogs "grow" like
+            // jellies do {dlb}
+            if (defender->type == MONS_BLINK_FROG && one_chance_in(5))
             {
-                simple_monster_message(defender, " basks in the translocular energy.");
-
-                heal_monster(defender, 1 + random2avg(7,2), true);    // heh heh {dlb}
+                simple_monster_message( defender,
+                                        " basks in the translocular energy." );
+                heal_monster(defender, 1 + random2avg(7, 2), true); // heh heh
                 break;
             }
 
             if (one_chance_in(3))
             {
                 strcpy(info, "Space bends around ");
-                strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                strcat(info, ptr_monam(defender, 1));
                 strcat(info, ".");
                 mpr(info);
-                specdam += 1 + random2avg(7,2);
+                specdam += 1 + random2avg(7, 2);
                 break;
             }
 
             if (one_chance_in(3))
             {
                 strcpy(info, "Space warps horribly around ");
-                strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                strcat(info, ptr_monam(defender, 1));
                 strcat(info, "!");
                 mpr(info);
-                specdam += 3 + random2avg(24,2);
+                specdam += 3 + random2avg(24, 2);
                 break;
             }
 
@@ -1208,37 +1360,38 @@ dam_thing:
             break;
 
         case SPWPN_CONFUSE:
-          {  // declaring these just to pass to the enchant function
-            struct bolt beam_temp;
+            {
+                // declaring these just to pass to the enchant function
+                struct bolt beam_temp;
 
-            // ick -- colour tells beam function (confusion == RED)
-            beam_temp.colour = RED;
+                // ick -- colour tells beam function (confusion == RED)
+                beam_temp.colour = RED;
 
-            mons_ench_f2(defender, &beam_temp);
+                mons_ench_f2(defender, beam_temp);
 
-            you.confusing_touch -= random2(20);
+                you.confusing_touch -= random2(20);
 
-            if ( you.confusing_touch < 1 )
-              you.confusing_touch = 1;
-          }
-          break;
+                if (you.confusing_touch < 1)
+                    you.confusing_touch = 1;
+            }
+            break;
         }                       /* end switch */
     }
 
-post_spec_damage:             //jmf: added
+  post_spec_damage:             //jmf: added
 
-    if ( mons_holiness(defender->type) == MH_HOLY )
-      naughty(NAUGHTY_ATTACK_HOLY, defender->hit_dice);
+    if (mons_holiness(defender->type) == MH_HOLY)
+        naughty(NAUGHTY_ATTACK_HOLY, defender->hit_dice);
 
-    if ( defender->type == MONS_HYDRA )
+    if (defender->type == MONS_HYDRA)
     {
-        if ( ur_armed
-            && (damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == DVORP_SLICING
-                || damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == DVORP_CHOPPING))
+        const int dam_type = damage_type(you.inv_class[ weapon ],
+                                            you.inv_type[ weapon ]);
+        if (ur_armed && dam_type == DVORP_SLICING || dam_type == DVORP_CHOPPING)
         {
             if ((damage_done < 4 || coinflip())
-                && (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS
-                    || you.inv_dam[you.equip[EQ_WEAPON]] != WPN_BATTLEAXE))
+                && (you.inv_class[ weapon ] != OBJ_WEAPONS
+                    || you.inv_dam[ weapon ] != WPN_BATTLEAXE))
             {
                 goto mons_dies;
             }
@@ -1248,73 +1401,74 @@ post_spec_damage:             //jmf: added
             strcat(info, (temp_rand == 0) ? "slice" :
                          (temp_rand == 1) ? "lop" :
                          (temp_rand == 2) ? "chop"
-                                          : "hack" );
+                                          : "hack");
             strcat(info, " one of ");
-            strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+            strcat(info, ptr_monam(defender, 1));
             strcat(info, "'s heads off.");
             mpr(info);
 
             defender->number--;
-
-            if ( defender->number < 1 )
+            if (defender->number < 1)
             {
                 defender->hit_points = -1;
                 goto mons_dies;
             }
 
-            if ( you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
-                && you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_FLAMING )
+            if (you.inv_class[ weapon ] == OBJ_WEAPONS
+                && you.inv_dam[ weapon ] % 30 == SPWPN_FLAMING)
             {
                 goto mons_dies; // cauterised
             }
 
-            if ( defender->number >= 18 )
-              goto mons_dies;
+            if (defender->number >= 18)
+                goto mons_dies;
 
             simple_monster_message(defender, " grows two more!");
 
             defender->number += 2;
         }
     }
-/* remember, the hydra function sometimes skips straight to mons_dies */
 
+    /* remember, the hydra function sometimes skips straight to mons_dies */
     hurt_monster(defender, specdam);
 
-mons_dies:
-    if ( defender->hit_points < 1 )
+  mons_dies:
+    if (defender->hit_points < 1)
     {
         monster_die(defender, KILL_YOU, 0);
         return;
     }
 
-    if ( you.invis && defender->behavior == BEH_SLEEP )
-      defender->behavior = BEH_CHASING_I;
+    if (you.invis && defender->behavior == BEH_SLEEP)
+        defender->behavior = BEH_CHASING_I;
 
-    if ( you.invis && coinflip() )
+    if (you.invis && coinflip())
     {
         defender->target_x = you.x_pos;
         defender->target_y = you.y_pos;
         defender->behavior = BEH_CHASING_I;
     }
 
-    if ( unarmed_attacks )
+    if (unarmed_attacks)
     {
         char attack_name[20] = "";
         int sc_dam = 0;
 
         int unarmed_attack = UNAT_NO_ATTACK;
 
-        if ( can_do_unarmed_combat )
+        if (can_do_unarmed_combat)
         {
-            unarmed_attack = ( coinflip() ? UNAT_HEADBUTT : UNAT_KICK );
+            unarmed_attack = (coinflip() ? UNAT_HEADBUTT : UNAT_KICK);
 
-            if ( ( you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON || player_genus(GENPC_DRACONIAN) )
-                 && one_chance_in(3) )
+            if (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON
+                    || player_genus(GENPC_DRACONIAN)
+                    || (you.species == SP_MERFOLK && player_in_water())
+                && one_chance_in(3))
             {
                 unarmed_attack = UNAT_TAILSLAP;
             }
 
-            if ( coinflip() )
+            if (coinflip())
                 unarmed_attack = UNAT_PUNCH;
         }
 
@@ -1322,41 +1476,56 @@ mons_dies:
         {
             switch (scount)
             {
-              case 0:
-                if (unarmed_attack != UNAT_KICK) //jmf: hooves mutation
-                  if ((you.species != SP_CENTAUR && !you.mutation[MUT_HOOVES])
+            case 0:
+                if (unarmed_attack != UNAT_KICK)        //jmf: hooves mutation
+                {
+                    if ((you.species != SP_CENTAUR && !you.mutation[MUT_HOOVES])
                         || coinflip())
-                    continue;
+                    {
+                        continue;
+                    }
+                }
+
                 if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SERPENT_OF_HELL
-                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST
-                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON
-                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER)
-                  continue;
+                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST
+                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON
+                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER)
+                {
+                    continue;
+                }
 
                 strcpy(attack_name, "kick");
-                sc_dam = ( (you.mutation[MUT_HOOVES]  || you.species == SP_CENTAUR ) ? 10 : 5 );
+                sc_dam = ((you.mutation[MUT_HOOVES]
+                            || you.species == SP_CENTAUR) ? 10 : 5);
                 break;
 
-              case 1:
+            case 1:
                 if (unarmed_attack != UNAT_HEADBUTT)
-                  if ((you.species != SP_MINOTAUR
-                       && ( !you.mutation[MUT_HORNS]
-                           && you.species != SP_KENKU ) )
-                       || !one_chance_in(3))
-                    continue;
+                {
+                    if ((you.species != SP_MINOTAUR
+                            && (!you.mutation[MUT_HORNS]
+                                && you.species != SP_KENKU))
+                        || !one_chance_in(3))
+                    {
+                        continue;
+                    }
+                }
 
                 if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SERPENT_OF_HELL
                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER
                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST
                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
-                  continue;
+                {
+                    continue;
+                }
 
-                strcpy(attack_name, (you.species == SP_KENKU) ? "peck" : "headbutt");
+                strcpy(attack_name, (you.species == SP_KENKU) ? "peck"
+                                                              : "headbutt");
 
                 sc_dam = 5 + you.mutation[MUT_HORNS] * 3;
 
                 if (you.species == SP_MINOTAUR)
-                  sc_dam += 5;
+                    sc_dam += 5;
 
                 if (you.equip[EQ_HELMET] != -1
                     && you.inv_plus2[you.equip[EQ_HELMET]] <= 1)
@@ -1364,45 +1533,63 @@ mons_dies:
                     sc_dam += 2;
 
                     if (you.inv_dam[you.equip[EQ_HELMET]] / 30 == DHELM_SPIKED
-                        || you.inv_dam[you.equip[EQ_HELMET]] / 30 == DHELM_HORNED)
-                      sc_dam += 3;
+                        || you.inv_dam[you.equip[EQ_HELMET]] / 30
+                                                                == DHELM_HORNED)
+                    {
+                        sc_dam += 3;
+                    }
                 }
                 break;
 
-            case 2:      /* draconians */
-                if ( unarmed_attack != UNAT_TAILSLAP )
-                  if ( !player_genus(GENPC_DRACONIAN) || !one_chance_in(4))
-                    continue;
+            case 2:             /* draconians */
+                if (unarmed_attack != UNAT_TAILSLAP)
+                {
+                    // not draconian and not wet merfolk
+                    if ((!player_genus(GENPC_DRACONIAN)
+                        && (!(you.species == SP_MERFOLK && player_in_water())))
+                        || (!one_chance_in(4)))
+
+                    {
+                        continue;
+                    }
+                }
 
                 if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER
                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST)
-                  continue;
+                {
+                    continue;
+                }
 
                 strcpy(attack_name, "tail-slap");
-
                 sc_dam = 6;
 
-                /* grey dracs have spiny tails, or something */    // maybe add this to player messaging {dlb}
-                if ( you.species == SP_GREY_DRACONIAN && you.experience_level > 5 )
-                  sc_dam = 12;
+                /* grey dracs have spiny tails, or something */
+                // maybe add this to player messaging {dlb}
+                if (you.species == SP_GREY_DRACONIAN
+                    && you.experience_level > 5)
+                {
+                    sc_dam = 12;
+                }
                 break;
 
             case 3:
                 if (unarmed_attack != UNAT_PUNCH)
-                  continue;
+                    continue;
 
                 if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SERPENT_OF_HELL
                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER
                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST
                     || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
-                  continue;
+                {
+                    continue;
+                }
 
                 /* no punching with a shield or 2-handed wpn, except staves */
-                if ( bearing_shield
-                      || coinflip()
-                      || ( ur_armed
-                          && hands_reqd_for_weapon(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == HANDS_TWO_HANDED) )
-                  continue;
+                if (bearing_shield || coinflip()
+                    || (ur_armed && hands_reqd == HANDS_TWO_HANDED))
+                {
+                    continue;
+                }
 
                 strcpy(attack_name, "punch");
 
@@ -1422,16 +1609,17 @@ mons_dies:
 
             }
 
-            your_to_hit = 13 + you.dex / 2 + you.skills[SK_UNARMED_COMBAT] / 2 + you.skills[SK_FIGHTING] / 5;
+            your_to_hit = 13 + you.dex / 2 + you.skills[SK_UNARMED_COMBAT] / 2
+                                           + you.skills[SK_FIGHTING] / 5;
 
-            if ( wearing_amulet(AMU_INACCURACY) )
-              your_to_hit -= 5;
+            if (wearing_amulet(AMU_INACCURACY))
+                your_to_hit -= 5;
 
-            if ( you.is_undead != US_UNDEAD )
-              make_hungry(2, true);
+            if (you.is_undead != US_UNDEAD)
+                make_hungry(2, true);
 
-            if ( you.hunger_state == HS_STARVING )
-              your_to_hit -= 3;
+            if (you.hunger_state == HS_STARVING)
+                your_to_hit -= 3;
 
             your_to_hit += slaying_bonus(PWPN_HIT);
             your_to_hit = random2(your_to_hit);
@@ -1445,10 +1633,12 @@ mons_dies:
                 bool hit = true;
                 int dammod = 10;
 
-                if (you.strength > 11)
-                    dammod += random2(you.strength - 11) / 3;
-                if (you.strength < 9)
-                    dammod -= random2(9 - you.strength) / 2;
+                const int dam_stat_val = calc_stat_to_dam_base();
+
+                if (dam_stat_val > 11)
+                    dammod += random2(dam_stat_val - 11) / 3;
+                if (dam_stat_val < 9)
+                    dammod -= random2(9 - dam_stat_val) / 2;
 
                 damage *= dammod;
                 damage /= 10;
@@ -1457,30 +1647,35 @@ mons_dies:
 
                 damage_done *= 40 + (random2(you.skills[SK_FIGHTING] + 1));
                 damage_done /= 40;
-                damage_done *= 25 + (random2(you.skills[SK_UNARMED_COMBAT] + 1));
+
+                damage_done *= 25 + (random2(you.skills[SK_UNARMED_COMBAT]+1));
                 damage_done /= 25;
 
-                if ( you.might > 1 )
-                  damage_done += 1 + random2(10);
+                if (you.might > 1)
+                    damage_done += 1 + random2(10);
 
-                if ( you.hunger_state == HS_STARVING )
-                  damage_done -= random2(5);
+                if (you.hunger_state == HS_STARVING)
+                    damage_done -= random2(5);
 
                 damage_done += slaying_bonus(PWPN_DAMAGE);
 
                 damage_done -= random2(1 + defender->armor_class);
 
                 if (damage_done < 1)
-                  damage_done = 0;
+                    damage_done = 0;
                 else
-                  hurt_monster(defender, damage_done);
+                    hurt_monster(defender, damage_done);
 
-                if (damage_done > 0 )
-                  if ((!helpless || you.skills[SK_FIGHTING] < 2)
+                if (damage_done > 0)
+                {
+                    if ((!helpless || you.skills[SK_FIGHTING] < 2)
                         && one_chance_in(5))
-                    exercise(SK_FIGHTING, 1);
+                    {
+                        exercise(SK_FIGHTING, 1);
+                    }
+                }
 
-                if ( defender->hit_points < 1 )
+                if (defender->hit_points < 1)
                 {
 #ifdef WIZARD
                     itoa(damage_done, st_prn, 10);
@@ -1498,16 +1693,24 @@ mons_dies:
                         strcat(info, "the giant spore.");
                         mpr(info);
                     }
+                    else if (defender->type == MONS_BALL_LIGHTNING)
+                    {
+                        strcpy(info, "You ");
+                        strcat(info, attack_name);
+                        strcat(info, "the ball lightning.");
+                        mpr(info);
+                    }
                     return;
                 }
 
-                if ( damage_done < 1
-                    && ( defender->enchantment[2] != ENCH_INVIS || player_see_invis() ) )
+                if (damage_done < 1
+                    && (defender->enchantment[2] != ENCH_INVIS
+                        || player_see_invis()))
                 {
                     strcpy(info, "You ");
                     strcat(info, attack_name);
                     strcat(info, " ");
-                    strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                    strcat(info, ptr_monam(defender, 1));
                     strcat(info, ", but do no damage.");
                     mpr(info);
                     hit = true;
@@ -1518,21 +1721,20 @@ mons_dies:
                 strcpy(info, "Your ");
                 strcat(info, attack_name);
                 strcat(info, " misses ");
-                strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                strcat(info, ptr_monam(defender, 1));
                 strcat(info, ".");
                 mpr(info);
                 damage_done = -99;
             }
 
-            if ( damage_done > 0
-                  || ( damage_done < 1
-                      && defender->enchantment[2] == ENCH_INVIS
-                      && damage_done != -99 ) )
+            if (damage_done > 0
+                || (damage_done < 1 && defender->enchantment[2] == ENCH_INVIS
+                    && damage_done != -99))
             {
                 strcpy(info, "You ");
                 strcat(info, attack_name);
                 strcat(info, " ");
-                strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                strcat(info, ptr_monam(defender, 1));
 
 #ifdef WIZARD
                 itoa(damage_done, st_prn, 10);
@@ -1540,155 +1742,166 @@ mons_dies:
                 strcat(info, st_prn);
 #endif
 
-                if ( damage_done < HIT_WEAK )
-                  strcat(info, ".");
-                else if ( damage_done < HIT_MED )
-                  strcat(info, "!");
-                else if ( damage_done < HIT_STRONG )
-                  strcat(info, "!!");
+                if (damage_done < HIT_WEAK)
+                    strcat(info, ".");
+                else if (damage_done < HIT_MED)
+                    strcat(info, "!");
+                else if (damage_done < HIT_STRONG)
+                    strcat(info, "!!");
                 else
-                  strcat(info, "!!!");
+                    strcat(info, "!!!");
 
                 mpr(info);
 
-                if ( mons_holiness(defender->type) == MH_HOLY )
-                  done_good(GOOD_KILLED_ANGEL_I, 1);
+                if (mons_holiness(defender->type) == MH_HOLY)
+                    done_good(GOOD_KILLED_ANGEL_I, 1);
 
                 hit = true;
             }
 
-            if ( !helpless || you.skills[SK_UNARMED_COMBAT] < 2 )
-              exercise(SK_UNARMED_COMBAT, 1);
+            if (!helpless || you.skills[SK_UNARMED_COMBAT] < 2)
+                exercise(SK_UNARMED_COMBAT, 1);
         }
     }
 
-    if ( hit )
-      print_wounds(defender);
+    if (hit)
+        print_wounds(defender);
 
     return;
+}                               // end you_attack()
 
-}          // end you_attack()
-
-
-
-
-void monster_attack( int monster_attacking )
+void monster_attack(int monster_attacking)
 {
-
     struct monsters *attacker = &menv[monster_attacking];
 
     int damage_taken = 0;
     bool hit = false;
     bool blocked = false;
-    bool water_attack = false;    // being attacked by a water creature while standing in water?
-    bool bearing_shield = (you.equip[EQ_SHIELD] != -1);     // compacts code a bit {dlb}
+
+    // being attacked by a water creature while standing in water?
+    bool water_attack = false;
+
+    // XXX: Why is this used here? -- bwr
+    const int weapon = you.equip[ EQ_WEAPON ];
+
+    bool bearing_shield = (you.equip[EQ_SHIELD] != -1);
+
     int mmov_x = 0;
     char str_pass[80];
     int specdam = 0;
-    char heads = 0;               // for hydras {dlb}
+    char heads = 0;             // for hydras {dlb}
     int hand_used = 0;
 
-    if ( attacker->type == MONS_HYDRA )
-      heads = attacker->number;
+    if (attacker->type == MONS_HYDRA)
+        heads = attacker->number;
 
-    if ( attacker->type == MONS_GIANT_SPORE )
+    if (attacker->type == MONS_GIANT_SPORE
+        || attacker->type == MONS_BALL_LIGHTNING)
     {
         attacker->hit_points = -1;
         return;
     }
 
-    you.pet_target = monster_attacking;    // ??? {dlb}
+    you.pet_target = monster_attacking; // ??? {dlb}
 
     if (attacker->behavior == BEH_ENSLAVED)
         return;
 
-    if ( monster_habitat(attacker->type) != DNGN_FLOOR
-        && attacker->number == 1 )
-      return;
+    if (monster_habitat(attacker->type) != DNGN_FLOOR && attacker->number == 1)
+        return;
 
-    if ( wearing_amulet(AMU_WARDING)
-          || ( you.religion == GOD_VEHUMET && you.duration[DUR_PRAYER]
-              && ( !player_under_penance() && you.piety >= 75 ) ) )
+    if (wearing_amulet(AMU_WARDING)
+        || (you.religion == GOD_VEHUMET && you.duration[DUR_PRAYER]
+            && (!player_under_penance() && you.piety >= 75)))
     {
-        if ( (attacker->enchantment[1] >= ENCH_ABJ_I && attacker->enchantment[1] <= ENCH_ABJ_VI)
-             || (attacker->enchantment[1] >= ENCH_FRIEND_ABJ_I && attacker->enchantment[1] <= ENCH_FRIEND_ABJ_VI) )
-
-          if ( coinflip() )    // should be scaled {dlb}
-          {
-              simple_monster_message(attacker, " tries to attack you, but flinches away.");
-              return;
-          }
+        if ((attacker->enchantment[1] >= ENCH_ABJ_I
+                && attacker->enchantment[1] <= ENCH_ABJ_VI)
+            || (attacker->enchantment[1] >= ENCH_FRIEND_ABJ_I
+                && attacker->enchantment[1] <= ENCH_FRIEND_ABJ_VI))
+        {
+            // should be scaled {dlb}
+            if (coinflip())
+            {
+                simple_monster_message(attacker,
+                                   " tries to attack you, but flinches away.");
+                return;
+            }
+        }
     }
 
-    if ( grd[attacker->x][attacker->y] == DNGN_SHALLOW_WATER
+    if (grd[attacker->x][attacker->y] == DNGN_SHALLOW_WATER
         && !mons_flies(attacker->type)
-        && monster_habitat(attacker->type) == DNGN_FLOOR
-        && one_chance_in(4) )
+        && monster_habitat(attacker->type) == DNGN_FLOOR && one_chance_in(4))
     {
         simple_monster_message(attacker, " splashes around in the water.");
         return;
     }
 
-    if ( grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER && !you.levitation && monster_habitat(attacker->type) == DNGN_DEEP_WATER )
+    if (player_in_water() && you.species != SP_MERFOLK
+        && monster_habitat(attacker->type) == DNGN_DEEP_WATER)
     {
         water_attack = true;
-        simple_monster_message(attacker, " uses the watery terrain to its advantage.");
+        simple_monster_message(attacker,
+                               " uses the watery terrain to its advantage.");
     }
 
     char runthru = 0;
 
     for (runthru = 0; runthru < 4; runthru++)
     {
-
         blocked = false;
 
         if (attacker->type == MONS_HYDRA)
         {
-            if ( heads < 1 )
-              break;
+            if (heads < 1)
+                break;
             runthru = 0;
             heads--;
         }
 
         char mdam = mondamage(attacker->type, runthru);
 
-        if ( attacker->type == MONS_ZOMBIE_SMALL
-              || attacker->type == MONS_ZOMBIE_LARGE
-              || attacker->type == MONS_SKELETON_SMALL
-              || attacker->type == MONS_SKELETON_LARGE
-              || attacker->type == MONS_SPECTRAL_THING )
+        if (attacker->type == MONS_ZOMBIE_SMALL
+            || attacker->type == MONS_ZOMBIE_LARGE
+            || attacker->type == MONS_SKELETON_SMALL
+            || attacker->type == MONS_SKELETON_LARGE
+            || attacker->type == MONS_SIMULACRUM_SMALL
+            || attacker->type == MONS_SIMULACRUM_LARGE
+            || attacker->type == MONS_SPECTRAL_THING)
         {
             mdam = mondamage(attacker->number, runthru);
-// these are cumulative, of course: {dlb}
-            if ( mdam > 1 )
-              mdam--;
-            if ( mdam > 4 )
-              mdam--;
-            if ( mdam > 11 )
-              mdam--;
-            if ( mdam > 14 )
-              mdam--;
+
+            // these are cumulative, of course: {dlb}
+            if (mdam > 1)
+                mdam--;
+            if (mdam > 4)
+                mdam--;
+            if (mdam > 11)
+                mdam--;
+            if (mdam > 14)
+                mdam--;
         }
 
-        if ( mdam == 0 )
-          break;
+        if (mdam == 0)
+            break;
 
-        if ( attacker->type == MONS_TWO_HEADED_OGRE
-            && runthru == 1 && attacker->inv[MSLOT_MISSILE] != NON_ITEM )
-          hand_used = 1;
+        if (attacker->type == MONS_TWO_HEADED_OGRE
+            && runthru == 1 && attacker->inv[MSLOT_MISSILE] != NON_ITEM)
+            hand_used = 1;
 
         damage_taken = 0;
 
-        int mons_to_hit = 16 + attacker->hit_dice;        // * attacker->hit_dice; // * 3
+        int mons_to_hit = 16 + attacker->hit_dice; //* attacker->hit_dice;//* 3
 
-        if ( water_attack )
-          mons_to_hit += 5;
+        if (water_attack)
+            mons_to_hit += 5;
 
-        if ( attacker->inv[hand_used] != NON_ITEM )
+        if (attacker->inv[hand_used] != NON_ITEM)
         {
             it_name(attacker->inv[hand_used], 0, str_pass);
 
-            if (mitm.base_type[attacker->inv[hand_used]] != 0 || strstr(str_pass, "questionable item") != NULL)
+            if (mitm.base_type[attacker->inv[hand_used]] != 0
+                || strstr(str_pass, "questionable item") != NULL)
             {
                 destroy_item(attacker->inv[hand_used]);
                 attacker->inv[hand_used] = NON_ITEM;
@@ -1698,30 +1911,39 @@ void monster_attack( int monster_attacking )
         if (attacker->inv[hand_used] != NON_ITEM)
         {
             if (mitm.pluses[attacker->inv[hand_used]] - 50 > 130)
-            {
                 mons_to_hit += mitm.pluses[attacker->inv[hand_used]] - 50 - 100;
-            }
             else
-            {
                 mons_to_hit += mitm.pluses[attacker->inv[hand_used]] - 50;
+
+            mons_to_hit += property(OBJ_WEAPONS,
+                                     mitm.sub_type[attacker->inv[MSLOT_WEAPON]],
+                                     PWPN_HIT);
+
+            if (attacker->speed_increment >= 50)
+            {
+                attacker->speed_increment -=
+                    (property( mitm.base_type[attacker->inv[MSLOT_WEAPON]],
+                               mitm.sub_type[attacker->inv[MSLOT_WEAPON]],
+                               PWPN_SPEED) - 10);
             }
-
-            mons_to_hit += property(OBJ_WEAPONS, mitm.sub_type[attacker->inv[MSLOT_WEAPON]], PWPN_HIT);
-
-            if ( attacker->speed_increment >= 50 )
-              attacker->speed_increment -= (property(mitm.base_type[attacker->inv[MSLOT_WEAPON]], mitm.sub_type[attacker->inv[MSLOT_WEAPON]], PWPN_SPEED) - 10);
         }
 
         if (attacker->type == MONS_KILLER_BEE || attacker->type == MONS_WORM)
         {
             /* maybe this will work better: */
-            if ( attacker->speed_increment >= 20 )
-              attacker->speed_increment -= 10;
+            if (attacker->speed_increment >= 20)
+                attacker->speed_increment -= 10;
         }
 
-        if ( player_shield_class() > 0 && !you.paralysis && !you.conf
-            && random2(15 + attacker->hit_dice + (5 * you.shield_blocks))
-                 <= random2(player_shield_class()) + (random2(you.dex) / 5) - 1)
+        // Factors against blocking
+        const int con_block = 15 + attacker->hit_dice
+                               + (5 * you.shield_blocks * you.shield_blocks);
+
+        // Factors for blocking
+        const int pro_block = player_shield_class() + (random2(you.dex) / 5);
+
+        if (player_shield_class() > 0 && !you.paralysis && !you.conf
+            && random2(con_block) <= random2(pro_block))
         {
             you.shield_blocks++;
 
@@ -1737,7 +1959,9 @@ void monster_attack( int monster_attacking )
                 strcpy(info, str_pass);
             }
             else
-              strcat(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 1));
+            {
+                strcat(info, ptr_monam(attacker, 1));
+            }
 
             strcat(info, "'s attack.");
             mpr(info);
@@ -1745,93 +1969,132 @@ void monster_attack( int monster_attacking )
             blocked = true;
             hit = false;
 
-            if ( bearing_shield && one_chance_in(4) )
-              exercise(SK_SHIELDS, 1);
+            if (bearing_shield && one_chance_in(4))
+                exercise(SK_SHIELDS, 1);
         }
-        else if ( player_light_armour() && one_chance_in(3) )
-          exercise(SK_DODGING, 1);
+        else if (player_light_armour() && one_chance_in(3))
+        {
+            exercise(SK_DODGING, 1);
+        }
 
-        if ( !blocked
-            && (random2(mons_to_hit) >= random2limit(player_evasion(), 40) + random2(you.dex) / 3 - 2
-                || one_chance_in(15)))
+        const int player_dodge = random2limit(player_evasion(), 40)
+                                                + random2(you.dex) / 3 - 2;
+        if (!blocked
+            && (random2(mons_to_hit) >= player_dodge || one_chance_in(15)))
         {
             hit = true;
 
             int damage_size = 0;
 
-            if ( attacker->inv[hand_used] != NON_ITEM && mitm.base_type[attacker->inv[hand_used]] == OBJ_WEAPONS && (mitm.sub_type[attacker->inv[hand_used]] < WPN_SLING || mitm.sub_type[attacker->inv[hand_used]] > WPN_CROSSBOW))
+            if (attacker->inv[hand_used] != NON_ITEM
+                && mitm.base_type[attacker->inv[hand_used]] == OBJ_WEAPONS
+                && (mitm.sub_type[attacker->inv[hand_used]] < WPN_SLING
+                    || mitm.sub_type[attacker->inv[hand_used]] > WPN_CROSSBOW))
             {
+                damage_size =
+                        property(mitm.base_type[attacker->inv[MSLOT_WEAPON]],
+                                 mitm.sub_type[attacker->inv[MSLOT_WEAPON]],
+                                 PWPN_DAMAGE);
 
-                damage_size = property(mitm.base_type[attacker->inv[MSLOT_WEAPON]], mitm.sub_type[attacker->inv[MSLOT_WEAPON]], PWPN_DAMAGE);
                 damage_taken = random2(damage_size);
 
-                if ( mitm.special[attacker->inv[hand_used]] / 30 == DWPN_ORCISH
-                    && mons_charclass(attacker->type) == MONS_ORC && coinflip() )
-                  damage_taken++;
-
-                if ( mitm.pluses2[attacker->inv[hand_used]] > 130 )
+                if (mitm.special[attacker->inv[hand_used]] / 30 == DWPN_ORCISH
+                    && mons_charclass(attacker->type) == MONS_ORC
+                    && coinflip())
                 {
-                    if (mitm.pluses2[attacker->inv[hand_used]] - 150 >= 0)        /* + or 0 to-dam */
-                      damage_taken += random2(mitm.pluses2[attacker->inv[hand_used]] - 150 + 1);
+                    damage_taken++;
+                }
+
+                if (mitm.pluses2[attacker->inv[hand_used]] > 130)
+                {
+                    if (mitm.pluses2[attacker->inv[hand_used]] - 150 >= 0)
+                    {
+                        /* + or 0 to-dam */
+                        damage_taken +=
+                                random2(mitm.pluses2[attacker->inv[hand_used]]
+                                                            - 150 + 1);
+                    }
                     else
-                      damage_taken -= random2(abs(mitm.pluses2[attacker->inv[hand_used]] - 150 + 1));   /* - to-dam */
+                    {
+                        /* - to-dam */
+                        damage_taken -=
+                            random2(abs(mitm.pluses2[attacker->inv[hand_used]]
+                                                            - 150 + 1));
+                    }
                 }
                 else
                 {
-                    if (mitm.pluses2[attacker->inv[hand_used]] - 50 >= 0)         /* + or 0 to-dam */
-                      damage_taken += random2(mitm.pluses2[attacker->inv[hand_used]] - 50 + 1);
+                    if (mitm.pluses2[attacker->inv[hand_used]] - 50 >= 0)
+                    {
+                        /* + or 0 to-dam */
+                        damage_taken +=
+                            random2(mitm.pluses2[attacker->inv[hand_used]]
+                                                            - 50 + 1);
+                    }
                     else
-                      damage_taken -= random2(abs(mitm.pluses2[attacker->inv[hand_used]] - 50 + 1));    /* - to-dam */
+                    {
+                        /* - to-dam */
+                        damage_taken -=
+                            random2(abs(mitm.pluses2[attacker->inv[hand_used]]
+                                                            - 50 + 1));
+                    }
                 }
 
-                damage_taken -= 1 + random2(3);         //1;
+                damage_taken -= 1 + random2(3); //1;
             }
 
             damage_size += mdam;
             damage_taken += 1 + random2(mdam);
 
-            if ( water_attack )
-             damage_taken <<= 1;
+            if (water_attack)
+                damage_taken *= 2;
 
             int ac = player_AC();
 
-            if ( ac > 0 )
+            if (ac > 0)
             {
-                int damage_reduction = random2(1 + ac);
+                int damage_reduction = random2(ac + 1);
 
-                if ( !player_light_armour() )
+                if (!player_light_armour())
                 {
-                    int percent = you.skills[SK_ARMOUR] + property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_AC);
+                    const int body_arm_ac = property(OBJ_ARMOUR,
+                                        you.inv_type[you.equip[EQ_BODY_ARMOUR]],
+                                        PARM_AC);
 
-                    if ( percent > 50 )
-                      percent = 50;
+                    int percent = 2 * (you.skills[SK_ARMOUR] + body_arm_ac);
 
-                    int min = 1 + ( (damage_size * percent) / 100 );
+                    if (percent > 50)
+                        percent = 50;
 
-                    if ( min > ac / 2 )
-                      min = ac / 2;
+                    int min = 1 + (damage_size * percent) / 100;
 
-                    if ( damage_reduction < min )
-                      damage_reduction = min;
+                    if (min > ac / 2)
+                        min = ac / 2;
+
+                    if (damage_reduction < min)
+                        damage_reduction = min;
                 }
 
                 damage_taken -= damage_reduction;
             }
 
-            if ( damage_taken < 1 )
-              damage_taken = 0;
+            if (damage_taken < 1)
+                damage_taken = 0;
 
         }
-        else if ( !blocked )
+        else if (!blocked)
         {
             hit = false;
             simple_monster_message(attacker, " misses you.");
         }
 
-        if ( damage_taken < 1 && hit && !blocked )
-          simple_monster_message(attacker, " hits you but doesn't do any damage.");
+        if (damage_taken < 1 && hit && !blocked)
+        {
+            simple_monster_message(attacker,
+                                    " hits you but doesn't do any damage.");
+        }
 
-        if ( damage_taken > 0 )
+        if (damage_taken > 0)
         {
             hit = true;
 
@@ -1843,58 +2106,72 @@ void monster_attack( int monster_attacking )
                 strcpy(info, str_pass);
             }
             else
-              strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+            {
+                strcpy(info, ptr_monam(attacker, 0));
+            }
 
             strcat(info, " hits you");
 
 #ifdef WIZARD
             itoa(mmov_x, st_prn, 10);
             strcat(info, " it:");
-            strcat(info, st_prn);       // note: doesn't take account of special weapons etc
+            // note: doesn't take account of special weapons etc
+            strcat(info, st_prn);
 #endif
 
-            if ( attacker->type != MONS_DANCING_WEAPON && mmov_x != NON_ITEM && mitm.base_type[mmov_x] == OBJ_WEAPONS && !launches_things(mitm.sub_type[mmov_x]) )
+            if (attacker->type != MONS_DANCING_WEAPON && mmov_x != NON_ITEM
+                && mitm.base_type[mmov_x] == OBJ_WEAPONS
+                && !launches_things(mitm.sub_type[mmov_x]))
             {
                 strcat(info, " with ");
-                it_name(mmov_x, 3, str_pass);    // was 7
+                it_name(mmov_x, 3, str_pass);   // was 7
                 strcat(info, str_pass);
             }
 
             strcat(info, "!");
-            mpr(info);
 
-            if ( hit )
+            mpr( info, MSGCH_PLAIN );
+
+            if (hit)
             {
-                if ( you.equip[EQ_BODY_ARMOUR] != -1 )
-                    if ( !player_light_armour() && coinflip()
-                        && random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) )
-                      exercise(SK_ARMOUR, (coinflip() ? 2 : 1));     // raised from 1 {bwross}
+                if (you.equip[EQ_BODY_ARMOUR] != -1)
+                {
+                    const int body_arm_mass = mass(OBJ_ARMOUR,
+                                    you.inv_type[you.equip[EQ_BODY_ARMOUR]]);
 
+                    if (!player_light_armour() && coinflip()
+                        && random2(1000) <= body_arm_mass)
+                    {
+                        // raised from 1 {bwross}
+                        exercise(SK_ARMOUR, (coinflip() ? 2 : 1));
+                    }
+                }
             }
-/* special attacks: */
 
+            /* special attacks: */
             int mclas = attacker->type;
 
-            if ( mclas == MONS_KILLER_KLOWN )
+            if (mclas == MONS_KILLER_KLOWN)
             {
                 switch (random2(6))
                 {
-                  case 0:
-                    mclas = MONS_SNAKE;      // scorp     // comment and enum do not match {dlb}
+                case 0:
+                    // comment and enum do not match {dlb}
+                    mclas = MONS_SNAKE; // scorp
                     break;
-                  case 1:
+                case 1:
                     mclas = MONS_NECROPHAGE;
                     break;
-                  case 2:
+                case 2:
                     mclas = MONS_WRAITH;
                     break;
-                  case 3:
+                case 3:
                     mclas = MONS_FIRE_ELEMENTAL;
                     break;
-                  case 4:
+                case 4:
                     mclas = MONS_ICE_BEAST;
                     break;
-                  case 5:
+                case 5:
                     mclas = MONS_PHANTOM;
                     break;
                 }
@@ -1905,29 +2182,34 @@ void monster_attack( int monster_attacking )
             case MONS_GIANT_ANT:
             case MONS_WOLF_SPIDER:
             case MONS_REDBACK:
-                if ( player_res_poison() )
-                  break;
-                if ( one_chance_in(20) || ( damage_taken > 3 && one_chance_in(4) ) )
+                if (player_res_poison())
+                    break;
 
+                if (one_chance_in(20)
+                    || (damage_taken > 3 && one_chance_in(4)))
                 {
-                    strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                    strcpy(info, ptr_monam(attacker, 0));
                     strcat(info, " stings you!");
                     mpr(info);
                     you.poison++;
-                    if ( attacker->type == MONS_REDBACK )
-                      you.poison += random2avg(9,2) + 3;
+
+                    if (attacker->type == MONS_REDBACK)
+                        you.poison += random2avg(9, 2) + 3;
                 }
                 break;
 
             case MONS_KILLER_BEE:
             case MONS_BUMBLEBEE:
-                if ( !player_res_poison() && ( one_chance_in(20) || ( damage_taken > 2 && one_chance_in(3) ) ) )
+                if (!player_res_poison()
+                    && (one_chance_in(20)
+                        || (damage_taken > 2 && one_chance_in(3))))
 
                 {
-                    strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                    strcpy(info, ptr_monam(attacker, 0));
                     strcat(info, " stings you!");
                     mpr(info);
                     you.poison++;
+
                     if (attacker->type == MONS_BUMBLEBEE)
                         you.poison += random2(3);
                 }
@@ -1937,51 +2219,57 @@ void monster_attack( int monster_attacking )
             case MONS_NECROPHAGE:
             case MONS_GHOUL:
             case MONS_DEATH_OOZE:
-                if ( you.is_undead )
-                  break;
-                if (one_chance_in(20) || (damage_taken > 2 && one_chance_in(3)))       // both sides call random2() - looking familiar by now {dlb}
+                if (you.is_undead)
+                    break;
 
+                // both sides call random2() - looking familiar by now {dlb}
+                if (one_chance_in(20) || (damage_taken > 2 && one_chance_in(3)))
                 {
                     mpr("You feel your flesh start to rot away!");
                     you.rotting += random2(3) + 1;
                 }
+
                 if (one_chance_in(4))
                 {
                     mpr("You feel ill.");
 
-                    if ( you.disease > 100 )
-                      you.disease = 210;
+                    if (you.disease > 100)
+                        you.disease = 210;
                     else
-                      you.disease += 50 + random2(100);
+                        you.disease += 50 + random2(100);
                 }
                 break;
 
             case MONS_GIANT_MOSQUITO:
-                if ( !one_chance_in(3) )
-                  mpr("You feel ill.");
+                if (!one_chance_in(3))
+                    mpr("You feel ill.");
 
-                if ( you.disease > 100 )
-                  you.disease = 210;
+                if (you.disease > 100)
+                    you.disease = 210;
                 else
-                  you.disease += 50 + random2(100);
+                    you.disease += 50 + random2(100);
                 break;
 
             case MONS_FIRE_VORTEX:
                 attacker->hit_points = -10;
-            // fall through -- intentional? {dlb}
+                // fall through -- intentional? {dlb}
             case MONS_FIRE_ELEMENTAL:
             case MONS_BALRUG:
             case MONS_SUN_DEMON:
                 mpr("You are engulfed in flame!");
 
                 if (player_res_fire() > 100)
-                  damage_taken += (15 + random2(15)) / 2 + ((player_res_fire() - 100) * (player_res_fire() - 100));
+                {
+                    damage_taken += (15 + random2(15)) /
+                                        (1 + (player_res_fire() - 100)
+                                                * (player_res_fire() - 100));
+                }
 
                 if (player_res_fire() <= 100)
-                  damage_taken += 15 + random2(15);
+                    damage_taken += 15 + random2(15);
 
                 if (player_res_fire() < 100)
-                  damage_taken += 8 + random2(8);
+                    damage_taken += 8 + random2(8);
 
                 scrolls_burn(1, OBJ_SCROLLS);
                 break;
@@ -1994,9 +2282,11 @@ void monster_attack( int monster_attacking )
             case MONS_ARMOUR_MIMIC:
             case MONS_SCROLL_MIMIC:
             case MONS_POTION_MIMIC:
-                if ( !player_res_poison() && (one_chance_in(15) || (damage_taken > 2 && one_chance_in(4))))         // beginning to think this conditional should become a function {dlb}
+                if (!player_res_poison()
+                    && (one_chance_in(15)
+                        || (damage_taken > 2 && one_chance_in(4))))
                 {
-                    strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                    strcpy(info, ptr_monam(attacker, 0));
                     strcat(info, " poisons you!");
                     mpr(info);
 
@@ -2008,9 +2298,9 @@ void monster_attack( int monster_attacking )
             case MONS_GIANT_CENTIPEDE:
             case MONS_SOLDIER_ANT:
             case MONS_QUEEN_ANT:
-                if ( !player_res_poison() )
+                if (!player_res_poison())
                 {
-                    strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                    strcpy(info, ptr_monam(attacker, 0));
                     strcat(info, " stings you!");
                     mpr(info);
                     you.poison += 2;
@@ -2021,64 +2311,73 @@ void monster_attack( int monster_attacking )
             case MONS_BROWN_SNAKE:
             case MONS_BLACK_SNAKE:
             case MONS_YELLOW_SNAKE:
-
-                if ( !player_res_poison() && (one_chance_in(20) || (damage_taken > 2 && one_chance_in(4))))         // yep, this should be a function {dlb}
+                if (!player_res_poison()
+                    && (one_chance_in(20)
+                        || (damage_taken > 2 && one_chance_in(4))))
+                        // ^^^yep, this should be a function^^^ {dlb}
                 {
-                    strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                    strcpy(info, ptr_monam(attacker, 0));
                     strcat(info, " poisons you!");
                     mpr(info);
                     you.poison++;
                 }
                 break;
 
-
             case MONS_SHADOW_DRAGON:
             case MONS_SPECTRAL_THING:
                 if (coinflip())
                     break;
-        // fall-through {dlb}
+                // fall-through {dlb}
             case MONS_WIGHT:    // less likely because wights do less damage
             case MONS_WRAITH:
-            case MONS_SOUL_EATER:       // shadow devil     // enum does not match comment 14jan2000 {dlb}
+
+            // enum does not match comment 14jan2000 {dlb}
+            case MONS_SOUL_EATER:       // shadow devil
+
+            // enum does not match comment 14jan2000 {dlb}
+            case MONS_SPECTRAL_WARRIOR: // spectre
+
             case MONS_SHADOW_FIEND:
-            case MONS_SPECTRAL_WARRIOR: // spectre          // enum does not match comment 14jan2000 {dlb}
             case MONS_ORANGE_RAT:
             case MONS_SHADOW_WRAITH:
             case MONS_ANCIENT_LICH:
-                if ( one_chance_in(30) || ( damage_taken > 5 && coinflip() ) )
-                  drain_exp();
+                if (one_chance_in(30) || (damage_taken > 5 && coinflip()))
+                    drain_exp();
                 break;
 
             case MONS_RED_WASP:
-                if ( !player_res_poison() )
-                  you.poison += ( coinflip() ? 2 : 1 );
-            // intentional fall-through {dlb}
+                if (!player_res_poison())
+                    you.poison += (coinflip()? 2 : 1);
+                // intentional fall-through {dlb}
             case MONS_YELLOW_WASP:
-                strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                strcpy(info, ptr_monam(attacker, 0));
                 strcat(info, " stings you.");
                 mpr(info);
 
-                if ( !player_res_poison() && (one_chance_in(20) || (damage_taken > 2 && !one_chance_in(3))))        // maybe I should flip back the other way? {dlb}
+                if (!player_res_poison()
+                    && (one_chance_in(20)
+                        || (damage_taken > 2 && !one_chance_in(3))))
+                        // maybe I should flip back the other way? {dlb}
                 {
-                    if ( you.paralysis > 0 )
-                      mpr("You still can't move!");
+                    if (you.paralysis > 0)
+                        mpr("You still can't move!");
                     else
-                      mpr("You suddenly lose the ability to move!");
+                        mpr("You suddenly lose the ability to move!");
 
                     you.paralysis += 1 + random2(3);
                 }
                 break;
 
             case MONS_SPINY_WORM:
-                if ( !player_res_poison() )
+                if (!player_res_poison())
                 {
-                    strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                    strcpy(info, ptr_monam(attacker, 0));
                     strcat(info, " stings you!");
                     mpr(info);
 
                     you.poison += 2 + random2(4);
                 }
-        // intentional fall-through {dlb}
+                // intentional fall-through {dlb}
             case MONS_BROWN_OOZE:
             case MONS_ACID_BLOB:
             case MONS_ROYAL_JELLY:
@@ -2096,32 +2395,53 @@ void monster_attack( int monster_attacking )
             case MONS_AZURE_JELLY:
                 if (player_res_cold() <= 100)
                 {
-                    damage_taken += attacker->hit_dice + random2(attacker->hit_dice << 1);
-                    strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                    damage_taken += attacker->hit_dice
+                                            + random2(attacker->hit_dice * 2);
+
+                    strcpy(info, ptr_monam(attacker, 0));
                     strcat(info, " freezes you!");
                     mpr(info);
                 }
                 else
                 {
-                    damage_taken += attacker->hit_dice + random2(attacker->hit_dice << 1);
-                    damage_taken /= (2 + (player_res_cold() - 100) * (player_res_cold() - 100));
-                    strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                    damage_taken += attacker->hit_dice
+                                            + random2(attacker->hit_dice * 2);
+
+                    damage_taken /= (1 + (player_res_cold() - 100)
+                                                * (player_res_cold() - 100));
+
+                    strcpy(info, ptr_monam(attacker, 0));
                     strcat(info, " chills you.");
                     mpr(info);
                 }
 
                 if (player_res_cold() < 100)
-                    damage_taken += attacker->hit_dice + random2(attacker->hit_dice);
+                {
+                    damage_taken += attacker->hit_dice
+                                                + random2(attacker->hit_dice);
+                }
 
                 scrolls_burn(1, OBJ_POTIONS);
                 break;
 
+            case MONS_ELECTRIC_GOLEM:
+                if (!player_res_electricity())
+                {
+                    damage_taken += attacker->hit_dice
+                                            + random2(attacker->hit_dice * 2);
+
+                    strcpy(info, ptr_monam(attacker, 0));
+                    strcat(info, " shocks you!");
+                    mpr(info);
+                }
+                break;
+
             case MONS_VAMPIRE:
-                if ( you.is_undead )
-                  break;
+                if (you.is_undead)
+                    break;
 
 /* ******************************************************************
-                if ( damage_taken > 6 && one_chance_in(3) || !one_chance_in(20) )
+                if ( damage_taken > 6 && one_chance_in(3) || !one_chance_in(20))
                 {
                     mpr("You feel less resilient.");
                     you.hp_max -= ( coinflip() ? 2 : 1 );
@@ -2130,29 +2450,31 @@ void monster_attack( int monster_attacking )
                 }
 ****************************************************************** */
 
-                strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                strcpy(info, ptr_monam(attacker, 0));
                 strcat(info, " draws strength from you!");
                 mpr(info);
 
                 simple_monster_message(attacker, " and is healed!");
 
-                heal_monster(attacker, random2(damage_taken), true);    // heh heh {dlb}
-
+                // heh heh {dlb}
+                heal_monster(attacker, random2(damage_taken), true);
                 break;
 
             case MONS_SHADOW:
-                if ( player_prot_life() <= random2(3)
-                    && ( one_chance_in(20) || ( damage_taken > 0 && one_chance_in(3) ) ) )
+                if (player_prot_life() <= random2(3)
+                    && (one_chance_in(20)
+                        || (damage_taken > 0 && one_chance_in(3))))
                 {
                     lose_stat(STAT_STRENGTH, 1);
                 }
                 break;
 
             case MONS_HUNGRY_GHOST:
-                if ( you.is_undead == US_UNDEAD )
-                  break;
-                if ( one_chance_in(20) || ( damage_taken > 0 && coinflip() ) )
-                  make_hungry(400, false);
+                if (you.is_undead == US_UNDEAD)
+                    break;
+
+                if (one_chance_in(20) || (damage_taken > 0 && coinflip()))
+                    make_hungry(400, false);
                 break;
 
             case MONS_GUARDIAN_NAGA:
@@ -2162,7 +2484,7 @@ void monster_attack( int monster_attacking )
             case MONS_INSUBSTANTIAL_WISP:
             case MONS_BLINK_FROG:
             case MONS_MIDGE:
-                if ( one_chance_in(3) )
+                if (one_chance_in(3))
                 {
                     simple_monster_message(attacker, " blinks.");
                     monster_blink(attacker);
@@ -2171,12 +2493,17 @@ void monster_attack( int monster_attacking )
 
             case MONS_JELLYFISH:
             case MONS_ORANGE_DEMON:
-// if ( !one_chance_in(3) ) break;
-                if ( player_res_poison() )
-                  break;
-                if (attacker->type == MONS_ORANGE_DEMON && (!one_chance_in(4) || runthru != 1))
-                  break;
-                strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                // if ( !one_chance_in(3) ) break;
+                if (player_res_poison())
+                    break;
+
+                if (attacker->type == MONS_ORANGE_DEMON
+                    && (!one_chance_in(4) || runthru != 1))
+                {
+                    break;
+                }
+
+                strcpy(info, ptr_monam(attacker, 0));
                 strcat(info, " stings you!");
                 mpr(info);
                 you.poison++;
@@ -2188,45 +2515,59 @@ void monster_attack( int monster_attacking )
                     mutate(100);
                 break;
             }                   // end of switch for special attacks.
-
-/* use brek for level drain, maybe with beam variables, because so many creatures use it. */
+            /* use brek for level drain, maybe with beam variables,
+               because so many creatures use it. */
         }
 
-/* special weapons */
-        if ( hit && (attacker->inv[hand_used] != NON_ITEM || ((attacker->type == MONS_PLAYER_GHOST || attacker->type == MONS_PANDEMONIUM_DEMON) && ghost.values[8] != 0)))
+        /* special weapons */
+        if (hit
+            && (attacker->inv[hand_used] != NON_ITEM
+                || ((attacker->type == MONS_PLAYER_GHOST
+                        || attacker->type == MONS_PANDEMONIUM_DEMON)
+                    && ghost.values[8] != 0)))
         {
             unsigned char itdam;
 
-            if ( attacker->type == MONS_PLAYER_GHOST
-                  || attacker->type == MONS_PANDEMONIUM_DEMON )
-              itdam = ghost.values[8];
+            if (attacker->type == MONS_PLAYER_GHOST
+                || attacker->type == MONS_PANDEMONIUM_DEMON)
+            {
+                itdam = ghost.values[8];
+            }
             else
-              itdam = mitm.special[attacker->inv[hand_used]];
+                itdam = mitm.special[attacker->inv[hand_used]];
 
             specdam = 0;
 
-            if ( itdam == NWPN_SWORD_OF_CEREBOV )
-              goto flaming;
+            if (itdam == NWPN_SWORD_OF_CEREBOV)
+                goto flaming;
 
-            if ( attacker->type == MONS_PLAYER_GHOST
-                  || attacker->type == MONS_PANDEMONIUM_DEMON
-                  || mitm.special[attacker->inv[hand_used]] < NWPN_SINGING_SWORD )
-                switch ( itdam % 30 )
+            if (attacker->type == MONS_PLAYER_GHOST
+                || attacker->type == MONS_PANDEMONIUM_DEMON
+                || mitm.special[attacker->inv[hand_used]] < NWPN_SINGING_SWORD)
+            {
+                switch (itdam % 30)
                 {
-                  case SPWPN_NORMAL:
+                case SPWPN_NORMAL:
                     break;
 
-                  case SPWPN_FLAMING:
-flaming:
+                case SPWPN_FLAMING:
+                  flaming:
                     specdam = 0;
-                    if (player_res_fire() > 100)
-                      damage_taken += (random2(damage_taken) / 2 + 1) / 2 + ((player_res_fire() - 100) * (player_res_fire() - 100));
-                    if (player_res_fire() <= 100)
-                      specdam = random2(damage_taken) / 2 + 1;
-                    if (player_res_fire() < 100)
-                      specdam += random2(damage_taken) / 2 + 1;
 
-                    if ( specdam )
+                    if (player_res_fire() > 100)
+                    {
+                        damage_taken += (random2(damage_taken) / 2 + 1) /
+                                            (1 + (player_res_fire() - 100)
+                                                * (player_res_fire() - 100));
+                    }
+
+                    if (player_res_fire() <= 100)
+                        specdam = random2(damage_taken) / 2 + 1;
+
+                    if (player_res_fire() < 100)
+                        specdam += random2(damage_taken) / 2 + 1;
+
+                    if (specdam)
                     {
                         simple_monster_message(attacker, " burns you.");
 /* **********************
@@ -2247,13 +2588,19 @@ commented out for now
                     specdam = 0;
 
                     if (player_res_cold() <= 100)
-                      specdam = random2(damage_taken) / 2 + 1;
-                    if (player_res_cold() < 100)
-                      specdam += random2(damage_taken) / 2 + 1;
-                    if (player_res_cold() > 100)
-                      damage_taken += (random2(damage_taken) / 2 + 1) / 2 + ((player_res_cold() - 100) * (player_res_cold() - 100));
+                        specdam = random2(damage_taken) / 2 + 1;
 
-                    if ( specdam )
+                    if (player_res_cold() < 100)
+                        specdam += random2(damage_taken) / 2 + 1;
+
+                    if (player_res_cold() > 100)
+                    {
+                        damage_taken += (random2(damage_taken) / 2 + 1) /
+                                            (1 + (player_res_cold() - 100)
+                                                * (player_res_cold() - 100));
+                    }
+
+                    if (specdam)
                     {
                         simple_monster_message(attacker, " freezes you.");
 
@@ -2273,22 +2620,23 @@ commented out for now
 
 
                 case SPWPN_HOLY_WRATH:
-                    if ( attacker->type == MONS_PLAYER_GHOST )
-                      break;  // ghosts can't wield holy wrath
-                    if ( you.is_undead )
+                    if (attacker->type == MONS_PLAYER_GHOST)
+                        break;  // ghosts can't wield holy wrath
+
+                    if (you.is_undead)
                     {
                         specdam = random2(damage_taken);
 
-                        if ( specdam )
+                        if (specdam)
                         {
                             strcpy(info, "The wound is extremely painful");
 
-                            if ( specdam < 3 )
-                              strcat(info, ".");
-                            else if ( specdam < 7 )
-                              strcat(info, "!");
+                            if (specdam < 3)
+                                strcat(info, ".");
+                            else if (specdam < 7)
+                                strcat(info, "!");
                             else
-                              strcat(info, "!!");
+                                strcat(info, "!!");
 
                             mpr(info);
                         }
@@ -2296,17 +2644,25 @@ commented out for now
                     break;
 
                 case SPWPN_ELECTROCUTION:
-                    if ( you.levitation )   // you're not grounded
-                      break;
+                    // This runs the risk of making levitation into a
+                    // cheap version of the Resist spell (with added
+                    // bonuses), so it shouldn't be used anywhere else,
+                    // and should possibly be removed from this case as
+                    // well. -- bwr
+                    if (you.levitation) // you're not grounded
+                        break;
 
-                    if ( player_res_electricity() > 0 )  // resist lightning
-                      break;
+                    if (player_res_electricity())   // resist lightning
+                        break;
                     //if (menv [monster_attacking].type == MONS_PLAYER_GHOST) break;
-
                     specdam = 0;
 
-                    if (mitm.pluses2[attacker->inv[hand_used]] <= 50 || mitm.pluses2[attacker->inv[hand_used]] > 130 && mitm.pluses2[attacker->inv[hand_used]] <= 150)
-                      break;
+                    if (mitm.pluses2[attacker->inv[hand_used]] <= 50
+                        || mitm.pluses2[attacker->inv[hand_used]] > 130
+                        && mitm.pluses2[attacker->inv[hand_used]] <= 150)
+                    {
+                        break;
+                    }
 
                     if (one_chance_in(3))
                     {
@@ -2316,20 +2672,20 @@ commented out for now
                     break;
 
                 case SPWPN_ORC_SLAYING:
-                    if ( you.species == SP_HILL_ORC )
+                    if (you.species == SP_HILL_ORC)
                     {
                         specdam = random2(damage_taken);
 
-                        if ( specdam )
+                        if (specdam)
                         {
                             strcpy(info, "The wound is extremely painful");
 
                             if (specdam < 3)
-                              strcat(info, ".");
-                            else if (specdam < 7 )
-                              strcat(info, "!");
+                                strcat(info, ".");
+                            else if (specdam < 7)
+                                strcat(info, "!");
                             else
-                              strcat(info, "!!");
+                                strcat(info, "!!");
 
                             mpr(info);
                         }
@@ -2337,10 +2693,11 @@ commented out for now
                     break;
 
                 case SPWPN_VENOM:
-                    if ( !player_res_poison() && one_chance_in(3) )
+                    if (!player_res_poison() && one_chance_in(3))
                     {
-                        simple_monster_message(attacker, (attacker->type == MONS_DANCING_WEAPON) ? " is poisoned!"
-                                                                                                 : "'s weapon is poisoned!" );
+                        simple_monster_message(attacker,
+                                (attacker->type == MONS_DANCING_WEAPON)
+                                ? " is poisoned!" : "'s weapon is poisoned!");
 
                         you.poison += 2;
                     }
@@ -2366,32 +2723,38 @@ commented out for now
                     specdam = 0;        // note does no extra damage
 
                     if (you.is_undead)
-                      break;
-                    if (attacker->hit_points == attacker->max_hit_points || one_chance_in(5))
-                      break;
+                        break;
 
-                    heal_monster(attacker, 1 + random2(damage_taken), true);    // heh heh {dlb}
+                    if (attacker->hit_points == attacker->max_hit_points
+                        || one_chance_in(5))
+                    {
+                        break;
+                    }
 
+                    // heh heh {dlb}
+                    heal_monster(attacker, 1 + random2(damage_taken), true);
                     simple_monster_message(attacker, " is healed.");
                     break;
 
                 case SPWPN_DISRUPTION:
                     if (attacker->type == MONS_PLAYER_GHOST)
                         break;
+
                     if (you.is_undead)
                     {
-                        specdam = random2(damage_taken) + random2(damage_taken) + random2(damage_taken) + random2(damage_taken);
+                        specdam = random2(damage_taken) + random2(damage_taken)
+                                + random2(damage_taken) + random2(damage_taken);
 
-                        if ( specdam )
+                        if (specdam)
                         {
                             strcpy(info, "You are blasted by holy energy");
 
-                            if ( specdam < 7 )
-                              strcat(info, ".");
-                            else if ( specdam < 15 )
-                              strcat(info, "!");
+                            if (specdam < 7)
+                                strcat(info, ".");
+                            else if (specdam < 15)
+                                strcat(info, "!");
                             else
-                              strcat(info, "!!");
+                                strcat(info, "!!");
 
                             mpr(info);
                         }
@@ -2405,66 +2768,69 @@ commented out for now
                     if (one_chance_in(3))
                     {
                         mpr("Your body is twisted painfully.");
-                        specdam += 1 + random2avg(7,2);
+                        specdam += 1 + random2avg(7, 2);
                         break;
                     }
+
                     if (one_chance_in(3))
                     {
                         mpr("Your body is terribly warped!");
-                        specdam += 3 + random2avg(24,2);
+                        specdam += 3 + random2avg(24, 2);
                         break;
                     }
+
                     if (one_chance_in(3))
                     {
                         random_blink(true);
                         break;
                     }
+
                     if (coinflip())
                     {
                         you_teleport();
                         break;
                     }
+
                     if (coinflip())
                     {
                         you_teleport2(true);
                         break;
                     }
+
                     if (coinflip())
                     {
                         banished(DNGN_ENTER_ABYSS);
                         break;
                     }
                     break;
-
-
                 }               // end of switch
-
+            }
         }                       // end of special weapons
 
         damage_taken += specdam;
 
-        if ( damage_taken > 0 )
-          {
+        if (damage_taken > 0)
+        {
             ouch(damage_taken, monster_attacking, KILLED_BY_MONSTER);
 
-            if ( you.religion == GOD_XOM && you.hp <= you.hp_max / 3 && one_chance_in(10) )
-              Xom_acts(true, you.experience_level, false);
-          }
+            if (you.religion == GOD_XOM && you.hp <= you.hp_max / 3
+                && one_chance_in(10))
+            {
+                Xom_acts(true, you.experience_level, false);
+            }
+        }
     }                           // end of for runthru
 
-
     return;
+}                               // end monster_attack()
 
-}          // end monster_attack()
-
-
-
-
-bool monsters_fight( int monster_attacking, int monster_attacked )
+bool monsters_fight(int monster_attacking, int monster_attacked)
 {
-
     struct monsters *attacker = &menv[monster_attacking];
     struct monsters *defender = &menv[monster_attacked];
+
+    // XXX: Why is this and you.inv used here? -- bwr
+    const int weapon = you.equip[ EQ_WEAPON ];
 
     int damage_taken = 0;
     bool hit = false;
@@ -2475,148 +2841,195 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
     int hand_used = 0;
     bool sees = false;
 
-    if ( attacker->type == MONS_GIANT_SPORE )
+    if (attacker->type == MONS_GIANT_SPORE
+        || attacker->type == MONS_BALL_LIGHTNING)
     {
         attacker->hit_points = -1;
         return false;
     }
 
-    if ( monster_habitat(attacker->type) != DNGN_FLOOR && attacker->number == 1 && monster_habitat(defender->type) == DNGN_FLOOR )
-      return false;
-
-    if ( attacker->behavior == BEH_ENSLAVED )
+    if (monster_habitat(attacker->type) != DNGN_FLOOR && attacker->number == 1
+        && monster_habitat(defender->type) == DNGN_FLOOR)
     {
-        if ( defender->behavior == BEH_ENSLAVED )
-          return false;
+        return false;
+    }
+
+    if (attacker->behavior == BEH_ENSLAVED)
+    {
+        if (defender->behavior == BEH_ENSLAVED)
+            return false;
+
         attacker->monster_foe = monster_attacked;
     }
 
-    if ( defender->behavior == BEH_FIGHT )    // is this correct? see nested conditional! {dlb}
+    // is this correct? see nested conditional! {dlb}
+    if (defender->behavior == BEH_FIGHT)
     {
-        if ( defender->behavior != BEH_ENSLAVED && monster_attacked != attacker->monster_foe )
+        if (defender->behavior != BEH_ENSLAVED
+            && monster_attacked != attacker->monster_foe)
+        {
             return false;
+        }
     }
 
-    if ( grd[attacker->x][attacker->y] == DNGN_SHALLOW_WATER
+    if (grd[attacker->x][attacker->y] == DNGN_SHALLOW_WATER
         && !mons_flies(attacker->type)
-        && monster_habitat(attacker->type) == DNGN_FLOOR
-        && one_chance_in(4) )
+        && monster_habitat(attacker->type) == DNGN_FLOOR && one_chance_in(4))
     {
         mpr("You hear a splashing noise.");
         return true;
     }
 
-    if ( grd[defender->x][defender->y] == DNGN_SHALLOW_WATER && !mons_flies(defender->type) && monster_habitat(attacker->type) == DNGN_DEEP_WATER )
-      water_attack = true;
+    if (grd[defender->x][defender->y] == DNGN_SHALLOW_WATER
+        && !mons_flies(defender->type)
+        && monster_habitat(attacker->type) == DNGN_DEEP_WATER)
+    {
+        water_attack = true;
+    }
 
-    if ( mons_near(attacker) && mons_near(defender) )
-      sees = true;
+    if (mons_near(attacker) && mons_near(defender))
+        sees = true;
 
     char runthru;
 
     for (runthru = 0; runthru < 4; runthru++)
     {
-
         char mdam = mondamage(attacker->type, runthru);
 
-        if ( attacker->type == MONS_ZOMBIE_SMALL
-              || attacker->type == MONS_ZOMBIE_LARGE
-              || attacker->type == MONS_SKELETON_SMALL
-              || attacker->type == MONS_SKELETON_LARGE
-              || attacker->type == MONS_SPECTRAL_THING ) // what do these things have in common? {dlb}
+        if (attacker->type == MONS_ZOMBIE_SMALL
+            || attacker->type == MONS_ZOMBIE_LARGE
+            || attacker->type == MONS_SKELETON_SMALL
+            || attacker->type == MONS_SKELETON_LARGE
+            || attacker->type == MONS_SIMULACRUM_SMALL
+            || attacker->type == MONS_SIMULACRUM_LARGE
+            || attacker->type == MONS_SPECTRAL_THING)
+            // what do these things have in common? {dlb}
         {
             mdam = mondamage(attacker->number, runthru);
-// cumulative reductions - series of if-conditions is necessary: {dlb}
-            if ( mdam > 1 )
-              mdam--;
-            if ( mdam > 2 )
-              mdam--;
-            if ( mdam > 5 )
-              mdam--;
-            if ( mdam > 9 )
-              mdam--;         // was: "-= 2" {dlb}
+            // cumulative reductions - series of if-conditions
+            // is necessary: {dlb}
+            if (mdam > 1)
+                mdam--;
+            if (mdam > 2)
+                mdam--;
+            if (mdam > 5)
+                mdam--;
+            if (mdam > 9)
+                mdam--;         // was: "-= 2" {dlb}
         }
 
         if (mdam == 0)
-          break;
+            break;
 
-        if ( attacker->type == MONS_TWO_HEADED_OGRE
-            && runthru == 1
-            && attacker->inv[MSLOT_MISSILE] != NON_ITEM )
-          hand_used = 1;
+        if (attacker->type == MONS_TWO_HEADED_OGRE
+            && runthru == 1 && attacker->inv[MSLOT_MISSILE] != NON_ITEM)
+        {
+            hand_used = 1;
+        }
 
         damage_taken = 0;
 
-        int mons_to_hit = 20 + attacker->hit_dice;        // * menv [monster_attacking].hit_dice; // * 3
+        int mons_to_hit = 20 + attacker->hit_dice;
+                                // * menv [monster_attacking].hit_dice; // * 3
 
-        if ( water_attack )
-          mons_to_hit += 5;
+        if (water_attack)
+            mons_to_hit += 5;
 
-        if ( attacker->inv[hand_used] != NON_ITEM )
+        if (attacker->inv[hand_used] != NON_ITEM)
         {
-            if ( mitm.pluses[attacker->inv[hand_used]] - 50 > 130 )
-              mons_to_hit += mitm.pluses[attacker->inv[hand_used]] - 50 - 100;
+            if (mitm.pluses[attacker->inv[hand_used]] - 50 > 130)
+                mons_to_hit += mitm.pluses[attacker->inv[hand_used]] - 50 - 100;
             else
-              mons_to_hit += mitm.pluses[attacker->inv[hand_used]] - 50;
+                mons_to_hit += mitm.pluses[attacker->inv[hand_used]] - 50;
 
-            mons_to_hit += 3 * property(OBJ_WEAPONS, mitm.sub_type[attacker->inv[MSLOT_WEAPON]], PWPN_HIT);
+            mons_to_hit += 3 * property(OBJ_WEAPONS,
+                                    mitm.sub_type[attacker->inv[MSLOT_WEAPON]],
+                                    PWPN_HIT);
 
-            if (you.equip[EQ_WEAPON] != -1)
-              attacker->speed_increment -= ((property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_SPEED) - 10) / 2);
-            //attacker->speed_increment -= ((property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_SPEED) - 10) / 2);/// 10);
+            if (weapon != -1)
+            {
+                attacker->speed_increment -= ((property(you.inv_class[ weapon ],
+                                               you.inv_type[ weapon ],
+                                               PWPN_SPEED) - 10) / 2);
+            }
         }
 
         mons_to_hit = random2(mons_to_hit);
 
-        if ( attacker->type == MONS_KILLER_BEE || attacker->type == MONS_WORM )
-          attacker->speed_increment -= 10;      //--
+        if (attacker->type == MONS_KILLER_BEE || attacker->type == MONS_WORM)
+            attacker->speed_increment -= 10;    //--
 
         if (mons_to_hit >= defender->evasion
             || ((defender->speed_increment <= 60
-                 || defender->behavior == BEH_SLEEP)
-                && !one_chance_in(20)))
+                 || defender->behavior == BEH_SLEEP) && !one_chance_in(20)))
         {
             hit = true;
 
-            if ( attacker->inv[hand_used] != NON_ITEM && mitm.base_type[attacker->inv[hand_used]] == OBJ_WEAPONS && !launches_things(mitm.sub_type[attacker->inv[hand_used]]) )
+            if (attacker->inv[hand_used] != NON_ITEM
+                && mitm.base_type[attacker->inv[hand_used]] == OBJ_WEAPONS
+                && !launches_things(mitm.sub_type[attacker->inv[hand_used]]))
             {
+                damage_taken =
+                    random2(property(
+                                mitm.base_type[attacker->inv[MSLOT_WEAPON]],
+                                mitm.sub_type[attacker->inv[MSLOT_WEAPON]],
+                                PWPN_DAMAGE));
 
-                damage_taken = random2(property(mitm.base_type[attacker->inv[MSLOT_WEAPON]], mitm.sub_type[attacker->inv[MSLOT_WEAPON]], PWPN_DAMAGE));
-
-                if ( mitm.special[attacker->inv[hand_used]] / 30 == DWPN_ORCISH
-                    && mons_charclass(attacker->type) == MONS_ORC && coinflip() )
-                  damage_taken++;
+                if (mitm.special[attacker->inv[hand_used]] / 30 == DWPN_ORCISH
+                    && mons_charclass(attacker->type) == MONS_ORC
+                    && coinflip())
+                {
+                    damage_taken++;
+                }
 
                 //if (mitm.pluses[mons_inv[i][0]] > 80) damage_taken -= 100;
                 //  damage_taken += mitm.pluses[mons_inv[i][0]];
-
-                if ( mitm.pluses2[attacker->inv[hand_used]] > 130 )
+                if (mitm.pluses2[attacker->inv[hand_used]] > 130)
                 {
-                    if ( mitm.pluses2[attacker->inv[hand_used]] - 150 >= 0 )        /* + or 0 to-dam */
-                      damage_taken += random2(mitm.pluses2[attacker->inv[hand_used]] - 150 + 1);
+                    if (mitm.pluses2[attacker->inv[hand_used]] - 150 >= 0)
+                    {
+                        /* + or 0 to-dam */
+                        damage_taken +=
+                                random2(mitm.pluses2[attacker->inv[hand_used]]
+                                                        - 150 + 1);
+                    }
                     else
-                      damage_taken -= random2(abs(mitm.pluses2[attacker->inv[hand_used]] - 150 + 1));   /* - to-dam */
+                    {
+                        /* - to-dam */
+                        damage_taken -=
+                            random2(abs(mitm.pluses2[attacker->inv[hand_used]]
+                                                        - 150 + 1));
+                    }
                 }
                 else
                 {
-                    if ( mitm.pluses2[attacker->inv[hand_used]] - 50 >= 0 )         /* + or 0 to-dam */
-                      damage_taken += random2(mitm.pluses2[attacker->inv[hand_used]] - 50 + 1);
+                    if (mitm.pluses2[attacker->inv[hand_used]] - 50 >= 0)
+                    {
+                        /* + or 0 to-dam */
+                        damage_taken +=
+                            random2(mitm.pluses2[attacker->inv[hand_used]]
+                                                        - 50 + 1);
+                    }
                     else
-                      damage_taken -= random2(abs(mitm.pluses2[attacker->inv[hand_used]] - 50 + 1));    /* - to-dam */
+                    {
+                        /* - to-dam */
+                        damage_taken -=
+                            random2(abs(mitm.pluses2[attacker->inv[hand_used]]
+                                                        - 50 + 1));
+                    }
                 }
-
-                damage_taken -= 1 + random2(3);         //1;
+                damage_taken -= 1 + random2(3); //1;
             }
 
             damage_taken += 1 + random2(mdam);
 
-            if ( water_attack )
-              damage_taken <<= 1;
+            if (water_attack)
+                damage_taken *= 2;
 
             damage_taken -= random2(1 + defender->armor_class);
 
-            if ( damage_taken < 1 )
-              damage_taken = 0;
+            if (damage_taken < 1)
+                damage_taken = 0;
         }
         else
         {
@@ -2626,7 +3039,7 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
 
             char str_pass[80];
 
-            if ( sees )
+            if (sees)
             {
                 if (attacker->type == MONS_DANCING_WEAPON)
                 {
@@ -2634,22 +3047,24 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                     strcpy(info, str_pass);
                 }
                 else
-                  strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                {
+                    strcpy(info, ptr_monam(attacker, 0));
+                }
 
                 strcat(info, " misses ");
-                strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                strcat(info, ptr_monam(defender, 1));
                 strcat(info, ".");
                 mpr(info);
             }
         }
 
-        if ( damage_taken < 1 && hit )
+        if (damage_taken < 1 && hit)
         {
             int mmov_x = attacker->inv[hand_used];
 
             char str_pass[80];
 
-            if ( sees )
+            if (sees)
             {
                 if (attacker->type == MONS_DANCING_WEAPON)
                 {
@@ -2657,25 +3072,29 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                     strcpy(info, str_pass);
                 }
                 else
-                    strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                {
+                    strcpy(info, ptr_monam(attacker, 0));
+                }
 
                 strcat(info, " hits ");
-                strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                strcat(info, ptr_monam(defender, 1));
+
 #ifdef WIZARD
                 itoa(damage_taken, st_prn, 10);
                 strcat(info, " for ");
-                strcat(info, st_prn);       // note: doesn't take account of special weapons etc
+                // note: doesn't take account of special weapons etc
+                strcat(info, st_prn);
 #endif
-                strcat(info, ".");  // but doesn't do any you.damage.");
+                strcat(info, ".");      // but doesn't do any you.damage.");
                 mpr(info);
             }
         }
 
-        if ( hit )           //(int) damage_taken > 0)
+        if (hit)                //(int) damage_taken > 0)
         {
             int mmov_x = attacker->inv[hand_used];
 
-            if ( sees )
+            if (sees)
             {
                 if (attacker->type == MONS_DANCING_WEAPON)
                 {
@@ -2685,15 +3104,20 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                     strcpy(info, str_pass);
                 }
                 else
-                  strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                {
+                    strcpy(info, ptr_monam(attacker, 0));
+                }
 
                 strcat(info, " hits ");
-                strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                strcat(info, ptr_monam(defender, 1));
 
-                if ( attacker->type != MONS_DANCING_WEAPON && attacker->inv[hand_used] != NON_ITEM && mitm.base_type[attacker->inv[hand_used]] == OBJ_WEAPONS && !launches_things(mitm.sub_type[attacker->inv[hand_used]]) )
+                if (attacker->type != MONS_DANCING_WEAPON
+                    && attacker->inv[hand_used] != NON_ITEM
+                    && mitm.base_type[attacker->inv[hand_used]] == OBJ_WEAPONS
+                    && !launches_things(mitm.sub_type[attacker->inv[hand_used]]))
                 {
                     strcat(info, " with ");
-                    it_name(mmov_x, 3, str_pass);    // was 7
+                    it_name(mmov_x, 3, str_pass);       // was 7
                     strcat(info, str_pass);
                 }
 
@@ -2701,10 +3125,11 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                 mpr(info);
             }
 
-// special attacks:
+            // special attacks:
             switch (attacker->type)
             {
-            case MONS_CENTAUR:  // cockatrice             // enum does not match comment 14jan2000 {dlb}
+            // enum does not match comment 14jan2000 {dlb}
+            case MONS_CENTAUR:  // cockatrice
             case MONS_JELLY:
             case MONS_GUARDIAN_NAGA:
                 break;
@@ -2715,13 +3140,14 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
             case MONS_SPINY_WORM:
             case MONS_JELLYFISH:
             case MONS_ORANGE_DEMON:
-                if (attacker->type == MONS_SPINY_WORM || one_chance_in(20) || (damage_taken > 3 && one_chance_in(4)))
+                if (attacker->type == MONS_SPINY_WORM || one_chance_in(20)
+                    || (damage_taken > 3 && one_chance_in(4)))
                 {
-                    if ( sees )
+                    if (sees)
                     {
-                        strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                        strcpy(info, ptr_monam(attacker, 0));
                         strcat(info, " stings ");
-                        strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                        strcat(info, ptr_monam(defender, 1));
                         strcat(info, ".");
                         mpr(info);
                     }
@@ -2731,13 +3157,14 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
 
             case MONS_KILLER_BEE:
             case MONS_BUMBLEBEE:
-                if (one_chance_in(20) || (damage_taken > 2 && one_chance_in(3)))
+                if (one_chance_in(20)
+                    || (damage_taken > 2 && one_chance_in(3)))
                 {
-                    if ( sees )
+                    if (sees)
                     {
-                        strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                        strcpy(info, ptr_monam(attacker, 0));
                         strcat(info, " stings ");
-                        strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                        strcpy(info, ptr_monam(defender, 1));
                         strcat(info, ".");
                         mpr(info);
                     }
@@ -2749,37 +3176,49 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
             case MONS_ROTTING_DEVIL:
             case MONS_GHOUL:
             case MONS_DEATH_OOZE:
-                if ( mons_holiness(defender->type) == MH_UNDEAD || mons_holiness(defender->type) == MH_DEMONIC )
-                  break;
-                if ( one_chance_in(20) || ( damage_taken > 2 && one_chance_in(3) ) )
+                if (mons_holiness(defender->type) == MH_UNDEAD
+                    || mons_holiness(defender->type) == MH_DEMONIC)
+                    break;
+
+                if (one_chance_in(20)
+                    || (damage_taken > 2 && one_chance_in(3)))
                 {
                     defender->max_hit_points -= 1 + random2(3);
 
-                    if ( defender->hit_points > defender->max_hit_points )
-                      defender->hit_points = defender->max_hit_points;
+                    if (defender->hit_points > defender->max_hit_points)
+                        defender->hit_points = defender->max_hit_points;
                 }
                 break;
 
             case MONS_FIRE_VORTEX:
                 attacker->hit_points = -10;
-        // deliberate fall-through
+                // deliberate fall-through
             case MONS_FIRE_ELEMENTAL:
             case MONS_BALRUG:
             case MONS_SUN_DEMON:
                 specdam = 0;
-                if ( !mons_res_fire(defender->type) )
+                if (!mons_res_fire(defender->type))
                 {
                     specdam = 15 + random2(15);
 
-                    if (defender->inv[MSLOT_ARMOUR] != NON_ITEM && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 == SPARM_FIRE_RESISTANCE)
+                    if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
+                        && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                == SPARM_FIRE_RESISTANCE)
+                    {
                         specdam /= 3;
+                    }
                 }
 
-                if ( mons_res_fire(defender->type) == -1 || ( defender->inv[MSLOT_ARMOUR] == NON_ITEM || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 != SPARM_FIRE_RESISTANCE ) )
-                  specdam = random2(25) + 20;
+                if (mons_res_fire(defender->type) == -1
+                    || (defender->inv[MSLOT_ARMOUR] == NON_ITEM
+                        || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                != SPARM_FIRE_RESISTANCE))
+                {
+                    specdam = random2(25) + 20;
+                }
 
-                if ( specdam )
-                  simple_monster_message(defender, " is engulfed in flame!");
+                if (specdam)
+                    simple_monster_message(defender, " is engulfed in flame!");
 
                 damage_taken += specdam;
                 break;
@@ -2790,11 +3229,11 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
             case MONS_QUEEN_ANT:
                 //if ((damage_taken > 2 && one_chance_in(3) ) || one_chance_in(20) )
                 //{
-                if ( sees )
+                if (sees)
                 {
-                    strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                    strcpy(info, ptr_monam(attacker, 0));
                     strcat(info, " stings ");
-                    strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                    strcat(info, ptr_monam(defender, 1));
                     strcat(info, ".");
                     mpr(info);
                 }
@@ -2802,7 +3241,8 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                 //}
                 break;
 
-            case MONS_SCORPION: // snake     // enum does not match comment 14jan2000 {dlb}
+            // enum does not match comment 14jan2000 {dlb}
+            case MONS_SCORPION: // snake
             case MONS_BROWN_SNAKE:
             case MONS_BLACK_SNAKE:
             case MONS_YELLOW_SNAKE:
@@ -2811,7 +3251,8 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
             case MONS_ARMOUR_MIMIC:
             case MONS_SCROLL_MIMIC:
             case MONS_POTION_MIMIC:
-                if (one_chance_in(20) || (damage_taken > 2 && one_chance_in(4)))
+                if (one_chance_in(20)
+                    || (damage_taken > 2 && one_chance_in(4)))
                 {
                     simple_monster_message(defender, " is poisoned");
                     poison_monster(defender, false);
@@ -2822,7 +3263,7 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
             case MONS_SPECTRAL_THING:
                 if (coinflip())
                     break;
-        // intentional fall-through
+                // intentional fall-through
             case MONS_WIGHT:
             case MONS_WRAITH:
             case MONS_SOUL_EATER:
@@ -2830,22 +3271,26 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
             case MONS_SPECTRAL_WARRIOR:
             case MONS_ORANGE_RAT:
             case MONS_ANCIENT_LICH:
-                if ( mons_holiness(defender->type) == MH_UNDEAD || mons_holiness(defender->type) == MH_DEMONIC )
-                  break;
-                if ( one_chance_in(30) || ( damage_taken > 5 && coinflip() ) )
+                if (mons_holiness(defender->type) == MH_UNDEAD
+                    || mons_holiness(defender->type) == MH_DEMONIC)
+                {
+                    break;
+                }
+
+                if (one_chance_in(30) || (damage_taken > 5 && coinflip()))
                 {
                     simple_monster_message(defender, " is drained.");
 
-                    if ( one_chance_in(5) )
-                      defender->hit_dice--;
+                    if (one_chance_in(5))
+                        defender->hit_dice--;
 
                     defender->max_hit_points -= 2 + random2(3);
                     defender->hit_points -= 2 + random2(3);
 
-                    if ( defender->hit_points >= defender->max_hit_points )
-                      defender->hit_points = defender->max_hit_points;
+                    if (defender->hit_points >= defender->max_hit_points)
+                        defender->hit_points = defender->max_hit_points;
 
-                    if ( defender->hit_points < 1 || defender->hit_dice < 1 )
+                    if (defender->hit_points < 1 || defender->hit_dice < 1)
                     {
                         monster_die(defender, KILL_MON, monster_attacking);
                         return true;
@@ -2853,7 +3298,8 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                 }
                 break;
 
-            case MONS_WORM:     // giant wasp     // enum does not match comment 14jan2000 {dlb}
+            // enum does not match comment 14jan2000 {dlb}
+            case MONS_WORM:     // giant wasp
                 break;
 
             case MONS_ICE_DEVIL:
@@ -2864,23 +3310,58 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
             case MONS_AZURE_JELLY:
             case MONS_ANTAEUS:
                 specdam = 0;
-                if ( !mons_res_cold(defender->type) )
+                if (!mons_res_cold(defender->type))
                 {
-                    specdam = attacker->hit_dice + random2(attacker->hit_dice << 1);
-                    if (defender->inv[MSLOT_ARMOUR] != NON_ITEM && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 == SPARM_COLD_RESISTANCE )
-                      specdam = (random2(attacker->hit_dice << 1) + (attacker->hit_dice) / 3);
+                    specdam = attacker->hit_dice
+                                        + random2(attacker->hit_dice * 2);
+
+                    if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
+                        && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    == SPARM_COLD_RESISTANCE)
+                    {
+                        specdam = (random2(attacker->hit_dice * 2)
+                                                + (attacker->hit_dice) / 3);
+                    }
                 }
 
-                if (mons_res_cold(defender->type) == -1 && (defender->inv[MSLOT_ARMOUR] == NON_ITEM || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 != SPARM_COLD_RESISTANCE))
-                  specdam = random2(attacker->hit_dice * 3) + (attacker->hit_dice << 1);
-
-                if ( specdam )
+                if (mons_res_cold(defender->type) == -1
+                    && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
+                        || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    != SPARM_COLD_RESISTANCE))
                 {
-                    if ( sees )
+                    specdam = random2(attacker->hit_dice * 3)
+                                                + (attacker->hit_dice * 2);
+                }
+
+                if (specdam)
+                {
+                    if (sees)
                     {
-                        strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                        strcpy(info, ptr_monam(attacker, 0));
                         strcat(info, " freezes ");
-                        strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                        strcat(info, ptr_monam(defender, 1));
+                        strcat(info, ".");
+                        mpr(info);
+                    }
+                }
+                damage_taken += specdam;
+                break;
+
+            case MONS_ELECTRIC_GOLEM:
+                if (!mons_flies(defender->type
+                    && !mons_res_elec(defender->type)))
+                {
+                    specdam = attacker->hit_dice
+                                        + random2(attacker->hit_dice * 2);
+                }
+
+                if (specdam)
+                {
+                    if (sees)
+                    {
+                        strcpy(info, ptr_monam(attacker, 0));
+                        strcat(info, " shocks ");
+                        strcat(info, ptr_monam(defender, 1));
                         strcat(info, ".");
                         mpr(info);
                     }
@@ -2889,52 +3370,75 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                 break;
 
             case MONS_VAMPIRE:
-                if ( mons_holiness(defender->type) == MH_UNDEAD || mons_holiness(defender->type) == MH_DEMONIC )
-                  break;
+                if (mons_holiness(defender->type) == MH_UNDEAD
+                    || mons_holiness(defender->type) == MH_DEMONIC)
+                {
+                    break;
+                }
 
                 simple_monster_message(attacker, " is healed.");
 
-                heal_monster(attacker, random2(damage_taken), true);    // heh heh {dlb}
+                // heh heh {dlb}
+                heal_monster(attacker, random2(damage_taken), true);
                 break;
             }
         }
 
-// special weapons:
-        if ( hit && (attacker->inv[hand_used] != NON_ITEM || ((attacker->type == MONS_PLAYER_GHOST || attacker->type == MONS_PANDEMONIUM_DEMON) && ghost.values[8] != 0)))
+        // special weapons:
+        if (hit
+            && (attacker->inv[hand_used] != NON_ITEM
+                || ((attacker->type == MONS_PLAYER_GHOST
+                        || attacker->type == MONS_PANDEMONIUM_DEMON)
+                     && ghost.values[8] != 0)))
         {
             unsigned char itdam;
 
-            if ( attacker->type == MONS_PLAYER_GHOST || attacker->type == MONS_PANDEMONIUM_DEMON )
-              itdam = ghost.values[8];
+            if (attacker->type == MONS_PLAYER_GHOST
+                || attacker->type == MONS_PANDEMONIUM_DEMON)
+            {
+                itdam = ghost.values[8];
+            }
             else
-              itdam = mitm.special[attacker->inv[hand_used]];
+                itdam = mitm.special[attacker->inv[hand_used]];
 
             specdam = 0;
 
-            if ( itdam == NWPN_SWORD_OF_CEREBOV )
-              goto flaming;
+            if (itdam == NWPN_SWORD_OF_CEREBOV)
+                goto flaming;
 
-            if ( attacker->type == MONS_PLAYER_GHOST || attacker->type == MONS_PANDEMONIUM_DEMON || mitm.special[attacker->inv[hand_used]] < NWPN_SINGING_SWORD )
+            if (attacker->type == MONS_PLAYER_GHOST
+                || attacker->type == MONS_PANDEMONIUM_DEMON
+                || mitm.special[attacker->inv[hand_used]] < NWPN_SINGING_SWORD)
+            {
                 switch (itdam % 30)
                 {
-                  case SPWPN_NORMAL:
+                case SPWPN_NORMAL:
                     break;
 
                 case SPWPN_FLAMING:
                   flaming:specdam = 0;
-                    if ( !mons_res_fire(defender->type) )
+                    if (!mons_res_fire(defender->type))
                     {
                         specdam = 1 + (random2(damage_taken));
-                        if (defender->inv[MSLOT_ARMOUR] != NON_ITEM && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 == SPARM_FIRE_RESISTANCE)
+                        if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
+                            && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    == SPARM_FIRE_RESISTANCE)
+                        {
                             specdam /= 3;
+                        }
                     }
-                    if (mons_res_fire(defender->type) == -1 && (defender->inv[MSLOT_ARMOUR] == NON_ITEM || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 != SPARM_FIRE_RESISTANCE))
+
+                    if (mons_res_fire(defender->type) == -1
+                        && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
+                            || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    != SPARM_FIRE_RESISTANCE))
                     {
                         specdam = 1 + random2(damage_taken);
                     }
-                    if ( specdam )
+
+                    if (specdam)
                     {
-                        if ( sees )
+                        if (sees)
                         {
                             int mmov_x = attacker->inv[hand_used];
 
@@ -2946,17 +3450,19 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                                 strcpy(info, str_pass);
                             }
                             else
-                              strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                            {
+                                strcpy(info, ptr_monam(attacker, 0));
+                            }
 
                             strcat(info, " burns ");
-                            strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                            strcat(info, ptr_monam(defender, 1 ));
 
-                            if ( specdam < 3 )
-                              strcat(info, ".");
-                            else if ( specdam < 7 )
-                              strcat(info, "!");
+                            if (specdam < 3)
+                                strcat(info, ".");
+                            else if (specdam < 7)
+                                strcat(info, "!");
                             else
-                              strcat(info, "!!");
+                                strcat(info, "!!");
 
                             mpr(info);
                         }
@@ -2965,19 +3471,29 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
 
                 case SPWPN_FREEZING:
                     specdam = 0;
-                    if ( !mons_res_cold(defender->type) )
+
+                    if (!mons_res_cold(defender->type))
                     {
                         specdam = 1 + (random2(damage_taken));
-                        if (defender->inv[MSLOT_ARMOUR] != NON_ITEM && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 == SPARM_COLD_RESISTANCE)
+                        if (defender->inv[MSLOT_ARMOUR] != NON_ITEM
+                            && mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    == SPARM_COLD_RESISTANCE)
+                        {
                             specdam = (1 + (random2(damage_taken) / 2)) / 3;
+                        }
                     }
-                    if (mons_res_cold(defender->type) == -1 && (defender->inv[MSLOT_ARMOUR] == NON_ITEM || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30 != SPARM_COLD_RESISTANCE))
+
+                    if (mons_res_cold(defender->type) == -1
+                        && (defender->inv[MSLOT_ARMOUR] == NON_ITEM
+                            || mitm.special[defender->inv[MSLOT_ARMOUR]] % 30
+                                                    != SPARM_COLD_RESISTANCE))
                     {
                         specdam = 1 + random2(damage_taken);
                     }
-                    if ( specdam )
+
+                    if (specdam)
                     {
-                        if ( sees )
+                        if (sees)
                         {
                             mmov_x = attacker->inv[hand_used];
 
@@ -2987,17 +3503,19 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                                 strcpy(info, str_pass);
                             }
                             else
-                                strcpy(info, monam(attacker->number, attacker->type, attacker->enchantment[2], 0));
+                            {
+                                strcpy(info, ptr_monam(attacker, 0));
+                            }
 
                             strcat(info, " freezes ");
-                            strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                            strcat(info, ptr_monam(defender, 1));
 
                             if (specdam < 3)
-                              strcat(info, ".");
+                                strcat(info, ".");
                             else if (specdam < 7)
-                              strcat(info, "!");
+                                strcat(info, "!");
                             else
-                              strcat(info, "!!");
+                                strcat(info, "!!");
 
                             mpr(info);
                         }
@@ -3011,7 +3529,8 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                     switch (mons_holiness(defender->type))
                     {
                     case MH_HOLY:
-                        damage_taken -= 5 + random2(5);     // I would think that it would do zero damage {dlb}
+                        // I would think that it would do zero damage {dlb}
+                        damage_taken -= 5 + random2(5);
                         break;
 
                     case MH_UNDEAD:
@@ -3026,19 +3545,23 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
 
                 case SPWPN_ELECTROCUTION:
                     //if ( attacker->type == MONS_PLAYER_GHOST ) break;
-
-                    if ( mons_flies(defender->type) || mons_res_elec(defender->type) )
-                      break;
+                    if (mons_flies(defender->type)
+                        || mons_res_elec(defender->type))
+                        break;
 
                     specdam = 0;
 
-                    if (mitm.pluses2[attacker->inv[hand_used]] <= 50 || mitm.pluses2[attacker->inv[hand_used]] > 130 && mitm.pluses2[attacker->inv[hand_used]] <= 150)
-                        break;
-
-                    if ( one_chance_in(3) )
+                    if (mitm.pluses2[attacker->inv[hand_used]] <= 50
+                        || mitm.pluses2[attacker->inv[hand_used]] > 130
+                        && mitm.pluses2[attacker->inv[hand_used]] <= 150)
                     {
-                        if ( sees )
-                          mpr("There is a sudden explosion of sparks!");
+                        break;
+                    }
+
+                    if (one_chance_in(3))
+                    {
+                        if (sees)
+                            mpr("There is a sudden explosion of sparks!");
 
                         specdam += 10 + random2(15);
                         //mitm.pluses2[attacker->inv[hand_used]] --;
@@ -3046,32 +3569,36 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                     break;
 
                 case SPWPN_ORC_SLAYING:
-                    if ( mons_charclass(defender->type) == MONS_ORC )
-                      hurt_monster(defender, 1 + random2(damage_taken));
+                    if (mons_charclass(defender->type) == MONS_ORC)
+                        hurt_monster(defender, 1 + random2(damage_taken));
                     break;
 
                 case SPWPN_VENOM:
-                    if ( one_chance_in(3) )
-                      poison_monster(defender, true);
+                    if (one_chance_in(3))
+                        poison_monster(defender, true);
                     break;
 
-                //case 7: // protection
+                    //case 7: // protection
 
                 case SPWPN_DRAINING:
-                    if ( ( mons_holiness(defender->type) == MH_UNDEAD || mons_holiness(defender->type) == MH_DEMONIC ) && (one_chance_in(30) || (damage_taken > 5 && coinflip())))
+                    if ((mons_holiness(defender->type) == MH_UNDEAD
+                            || mons_holiness(defender->type) == MH_DEMONIC)
+                        && (one_chance_in(30)
+                            || (damage_taken > 5 && coinflip())))
                     {
                         simple_monster_message(defender, " is drained");
 
-                        if ( one_chance_in(5) )
-                          defender->hit_dice--;
+                        if (one_chance_in(5))
+                            defender->hit_dice--;
 
                         defender->max_hit_points -= 2 + random2(3);
                         defender->hit_points -= 2 + random2(3);
 
-                        if ( defender->hit_points >= defender->max_hit_points )
-                          defender->hit_points = defender->max_hit_points;
+                        if (defender->hit_points >= defender->max_hit_points)
+                            defender->hit_points = defender->max_hit_points;
 
-                        if (defender->hit_points < 1  || defender->hit_dice < 1)
+                        if (defender->hit_points < 1
+                            || defender->hit_dice < 1)
                         {
                             monster_die(defender, KILL_MON, monster_attacking);
                             return true;
@@ -3091,26 +3618,34 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                 case SPWPN_VAMPIRICISM:
                     specdam = 0;        // note does no extra damage
 
-                    if ( mons_holiness(defender->type) == MH_UNDEAD || mons_holiness(defender->type) == MH_DEMONIC )
-                      break;
-                    if (attacker->hit_points == attacker->max_hit_points || one_chance_in(5))
-                      break;
+                    if (mons_holiness(defender->type) == MH_UNDEAD
+                        || mons_holiness(defender->type) == MH_DEMONIC)
+                    {
+                        break;
+                    }
 
-                    heal_monster(attacker, 1 + random2(damage_taken), true);    // heh heh {dlb}
+                    if (attacker->hit_points == attacker->max_hit_points
+                        || one_chance_in(5))
+                    {
+                        break;
+                    }
 
+                    // heh heh {dlb}
+                    heal_monster(attacker, 1 + random2(damage_taken), true);
                     simple_monster_message(attacker, " is healed.");
                     break;
 
                 case SPWPN_DISRUPTION:
-                    if ( attacker->type == MONS_PLAYER_GHOST )
-                      break;
+                    if (attacker->type == MONS_PLAYER_GHOST)
+                        break;
 
                     specdam = 0;
 
-                    if ( mons_holiness(defender->type) == MH_UNDEAD && !one_chance_in(3) )
+                    if (mons_holiness(defender->type) == MH_UNDEAD
+                        && !one_chance_in(3))
                     {
                         simple_monster_message(defender, " shudders.");
-                        specdam += random2avg(1 + (3 * damage_taken),3);
+                        specdam += random2avg(1 + (3 * damage_taken), 3);
                     }
                     break;
 
@@ -3118,53 +3653,60 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
                 case SPWPN_DISTORTION:
                     if (one_chance_in(3))
                     {
-                        if ( mons_near(defender) && ( defender->enchantment[2] != ENCH_INVIS || player_see_invis() ) )
+                        if (mons_near(defender)
+                            && (defender->enchantment[2] != ENCH_INVIS
+                                || player_see_invis()))
                         {
                             strcpy(info, "Space bends around ");
-                            strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                            strcat(info, ptr_monam(defender, 1));
                             strcat(info, ".");
                             mpr(info);
                         }
 
-                        specdam += 1 + random2avg(7,2);
+                        specdam += 1 + random2avg(7, 2);
                         break;
                     }
                     if (one_chance_in(3))
                     {
-                        if ( mons_near(defender) && ( defender->enchantment[2] != ENCH_INVIS || player_see_invis() ) )
+                        if (mons_near(defender)
+                            && (defender->enchantment[2] != ENCH_INVIS
+                                || player_see_invis()))
                         {
                             strcpy(info, "Space warps horribly around ");
-                            strcat(info, monam(defender->number, defender->type, defender->enchantment[2], 1));
+                            strcat(info, ptr_monam(defender, 1));
                             strcat(info, "!");
                             mpr(info);
                         }
 
-                        specdam += 3 + random2avg(24,2);
+                        specdam += 3 + random2avg(24, 2);
                         break;
                     }
-                    if ( one_chance_in(3) )
+
+                    if (one_chance_in(3))
                     {
                         monster_blink(defender);
                         break;
                     }
-                    if ( coinflip() )
+
+                    if (coinflip())
                     {
                         monster_teleport(defender, coinflip());
                         break;
                     }
-                    if ( coinflip() )
+
+                    if (coinflip())
                     {
                         monster_die(defender, KILL_RESET, monster_attacking);
                         break;
                     }
                     break;
-
                 }
+            }
         }                       // end of if special weapon
 
         damage_taken += specdam;
 
-        if ( damage_taken > 0 )
+        if (damage_taken > 0)
         {
             hurt_monster(defender, damage_taken);
 
@@ -3182,253 +3724,339 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
         attacker->monster_foe = monster_attacked;
     }
 
-    if ( attacker->behavior != BEH_CONFUSED )       // && attacker->behavior != 7) // the latter is so that mons_beh[attacker] doesn't get reset to 6
+    if (attacker->behavior != BEH_CONFUSED)
+       // && attacker->behavior != 7)
+       // the latter is so that mons_beh[attacker] doesn't get reset to 6
     {
-        if ( defender->behavior <= BEH_WANDER
-            && distance(you.x_pos, you.y_pos, defender->x, defender->y) > 2 )
+        if (defender->behavior <= BEH_WANDER
+            && distance(you.x_pos, you.y_pos, defender->x, defender->y) > 2)
         {
             defender->behavior = BEH_FIGHT;
-            defender->monster_foe = monster_attacking;     // This'll do for now.
+            defender->monster_foe = monster_attacking;  // This'll do for now.
         }
     }
 
     return true;
+}                               // end monsters_fight()
 
-}          // end monsters_fight()
-
-
-
-
-void monster_die( struct monsters *monster, char killer, int i )
+void monster_die(struct monsters *monster, char killer, int i)
 {
 
-    int dmi;                                           // dead monster's inventory
+    int dmi;                    // dead monster's inventory
     int monster_killed = monster_index(monster);
 
-// From time to time Trog gives you a little bonus
-    if ( killer == KILL_YOU
+    // From time to time Trog gives you a little bonus
+    if (killer == KILL_YOU
         && you.religion == GOD_TROG
         && you.berserker
-        && ( !player_under_penance() && you.piety > random2(1000) ) )
+        && (!player_under_penance() && you.piety > random2(1000)))
     {
         int bonus = 3 + random2(3);
 
         you.berserker += bonus;
         you.might += bonus;
         you.haste += bonus;
-        mpr("You feel the power of Trog in you as your rage grows.");
+        mpr("You feel the power of Trog in you as your rage grows.",
+            MSGCH_GOD, GOD_TROG);
     }
 
-    if ( you.prev_targ == monster_killed )
-      you.prev_targ = MHITNOT;
+    if (you.prev_targ == monster_killed)
+        you.prev_targ = MHITNOT;
 
-    if ( monster->type == MONS_GIANT_SPORE )
+    if (monster->type == MONS_GIANT_SPORE
+        || monster->type == MONS_BALL_LIGHTNING)
     {
-        if ( monster->hit_points < 1 && monster->hit_points > -15 )
-          return;
+        if (monster->hit_points < 1 && monster->hit_points > -15)
+            return;
     }
-    else if ( monster->type == MONS_FIRE_VORTEX || monster->type == MONS_SPATIAL_VORTEX )
+    else if (monster->type == MONS_FIRE_VORTEX
+             || monster->type == MONS_SPATIAL_VORTEX)
     {
-        simple_monster_message(monster, " dissipates!");
+        simple_monster_message(monster, " dissipates!", MSGCH_MONSTER_DAMAGE,
+                               MDAM_DEAD);
 
-        if ( YOU_KILL(killer)
-            && ( monster->enchantment[1] < ENCH_FRIEND_ABJ_I
-                  || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI )
-            && monster->enchantment[1] != ENCH_CREATED_FRIENDLY )
-          gain_exp(exper_value(monster->type, monster->hit_dice, monster->max_hit_points));
+        if (YOU_KILL(killer)
+            && (monster->enchantment[1] < ENCH_FRIEND_ABJ_I
+                || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)
+            && monster->enchantment[1] != ENCH_CREATED_FRIENDLY)
+        {
+            gain_exp(exper_value( monster->type, monster->hit_dice,
+                                  monster->max_hit_points ));
+        }
 
-        if ( monster->type == MONS_FIRE_VORTEX )
-          place_cloud(CLOUD_FIRE_MON, monster->x, monster->y, 2 + random2(4));
+        if (monster->type == MONS_FIRE_VORTEX)
+            place_cloud(CLOUD_FIRE_MON, monster->x, monster->y, 2 + random2(4));
     }
-    else if ( monster->type == MONS_DANCING_WEAPON )
+    else if (monster->type == MONS_DANCING_WEAPON)
     {
-        simple_monster_message(monster, " falls from the air.");
+        simple_monster_message(monster, " falls from the air.",
+                               MSGCH_MONSTER_DAMAGE, MDAM_DEAD);
 
-        if ( YOU_KILL(killer)
-            && ( monster->enchantment[1] < ENCH_FRIEND_ABJ_I
-                  || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI )
-            && monster->enchantment[1] != ENCH_CREATED_FRIENDLY )
-          gain_exp(exper_value(monster->type, monster->hit_dice, monster->max_hit_points));
+        if (YOU_KILL(killer)
+            && (monster->enchantment[1] < ENCH_FRIEND_ABJ_I
+                || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)
+            && monster->enchantment[1] != ENCH_CREATED_FRIENDLY)
+        {
+            gain_exp(exper_value( monster->type, monster->hit_dice,
+                                  monster->max_hit_points ));
+        }
     }
     else
     {
-        switch ( killer )
+        switch (killer)
         {
-            case KILL_YOU:              /* You kill in combat. */
-            case KILL_YOU_MISSILE:      /* You kill by missile or beam. */
-              strcpy(info, "You ");
-              strcat(info, (wounded_damaged(monster->type)) ? "destroy" : "kill");
-              strcat(info, " ");
-              strcat(info, monam(monster->number, monster->type, monster->enchantment[2], 1));
-              strcat(info, "!");
-              mpr(info);
+        case KILL_YOU:          /* You kill in combat. */
+        case KILL_YOU_MISSILE:  /* You kill by missile or beam. */
+            strcpy(info, "You ");
+            strcat(info, (wounded_damaged(monster->type)) ? "destroy" : "kill");
+            strcat(info, " ");
+            strcat(info, ptr_monam(monster, 1));
+            strcat(info, "!");
+            mpr(info, MSGCH_MONSTER_DAMAGE, MDAM_DEAD);
 
-              if ( ( monster->enchantment[1] < ENCH_FRIEND_ABJ_I || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI )
-                  && monster->enchantment[1] != ENCH_CREATED_FRIENDLY )
-                gain_exp(exper_value(monster->type, monster->hit_dice, monster->max_hit_points));
-              else
+            if ((monster->enchantment[1] < ENCH_FRIEND_ABJ_I
+                    || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)
+                && monster->enchantment[1] != ENCH_CREATED_FRIENDLY)
+            {
+                gain_exp(exper_value( monster->type, monster->hit_dice,
+                                      monster->max_hit_points ));
+            }
+            else
                 mpr("That felt strangely unrewarding.");
 
-          // Xom doesn't care who you killed:
-              if ( you.religion == GOD_XOM && random2(70) <= 10 + monster->hit_dice )
+            // Xom doesn't care who you killed:
+            if (you.religion == GOD_XOM
+                && random2(70) <= 10 + monster->hit_dice)
+            {
                 Xom_acts(true, 1 + random2(monster->hit_dice), false);
+            }
 
-        // Trying to prevent summoning abuse here, so we're trying to
-        // prevent summoned creatures from being being done_good kills,
-        // Only affects monsters friendly when created.
-              if ( ( monster->enchantment[1] < ENCH_FRIEND_ABJ_I || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI )
-                  && monster->enchantment[1] != ENCH_CREATED_FRIENDLY )
-              {
-                  if ( you.duration[DUR_PRAYER] )
-                  {
-                      if (mons_holiness(monster->type) == MH_NATURAL)
+            // Trying to prevent summoning abuse here, so we're trying to
+            // prevent summoned creatures from being being done_good kills,
+            // Only affects monsters friendly when created.
+            if ((monster->enchantment[1] < ENCH_FRIEND_ABJ_I
+                    || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)
+                && monster->enchantment[1] != ENCH_CREATED_FRIENDLY)
+            {
+                if (you.duration[DUR_PRAYER])
+                {
+                    if (mons_holiness(monster->type) == MH_NATURAL)
                         done_good(GOOD_KILLED_LIVING, monster->hit_dice);
-                      if (mons_holiness(monster->type) == MH_UNDEAD)
+
+                    if (mons_holiness(monster->type) == MH_UNDEAD)
                         done_good(GOOD_KILLED_UNDEAD, monster->hit_dice);
-                      if (mons_holiness(monster->type) == MH_DEMONIC)
+
+                    if (mons_holiness(monster->type) == MH_DEMONIC)
                         done_good(GOOD_KILLED_DEMON, monster->hit_dice);
-                      if (mons_holiness(monster->type) == MH_HOLY)
-                       done_good(GOOD_KILLED_ANGEL_II, monster->hit_dice);
-                  //jmf: Trog hates wizards
-                      if (mons_flag(monster_killed, M_ACTUAL_SPELLS))
+
+                    if (mons_holiness(monster->type) == MH_HOLY)
+                        done_good(GOOD_KILLED_ANGEL_II, monster->hit_dice);
+
+                    //jmf: Trog hates wizards
+                    if (mons_flag(monster_killed, M_ACTUAL_SPELLS))
                         done_good(GOOD_KILLED_WIZARD, monster->hit_dice);
-                 //jmf: maybe someone hates priests?
-                      if (mons_flag(monster_killed, M_PRIEST))
+
+                    //jmf: maybe someone hates priests?
+                    if (mons_flag(monster_killed, M_PRIEST))
                         done_good(GOOD_KILLED_PRIEST, monster->hit_dice);
-                  }
-                  else if ( mons_holiness(monster->type) == MH_HOLY )
-                  {
-                      done_good(GOOD_KILLED_ANGEL_I, monster->hit_dice);
-                  }
-              }
+                }
+                else if (mons_holiness(monster->type) == MH_HOLY)
+                {
+                    done_good(GOOD_KILLED_ANGEL_I, monster->hit_dice);
+                }
+            }
 
-              if (you.mutation[MUT_DEATH_STRENGTH] || (you.religion == GOD_MAKHLEB && you.duration[DUR_PRAYER] && (!player_under_penance() && random2(you.piety) >= 30)))
-              {
-                  if ( you.hp < you.hp_max )
-                  {
-                      mpr("You feel a little better.");
-                      inc_hp(monster->hit_dice + random2(monster->hit_dice), false);
-                  }
-              }
+            if (you.mutation[MUT_DEATH_STRENGTH]
+                || (you.religion == GOD_MAKHLEB && you.duration[DUR_PRAYER]
+                    && (!player_under_penance() && random2(you.piety) >= 30)))
+            {
+                if (you.hp < you.hp_max)
+                {
+                    mpr("You feel a little better.");
+                    inc_hp(monster->hit_dice + random2(monster->hit_dice),
+                           false);
+                }
+            }
 
-              if ( ( you.religion == GOD_MAKHLEB || you.religion == GOD_VEHUMET )
-                  && you.duration[DUR_PRAYER] && ( !player_under_penance() && random2(you.piety) >= 30 ) )
-              {
-                  if (you.magic_points < you.max_magic_points)
-                  {
-                      mpr("You feel your power returning.");
-                      inc_mp(1 + random2(random2(monster->hit_dice)), false);
-                  }
-              }
+            if ((you.religion == GOD_MAKHLEB || you.religion == GOD_VEHUMET)
+                && you.duration[DUR_PRAYER]
+                && (!player_under_penance() && random2(you.piety) >= 30))
+            {
+                if (you.magic_points < you.max_magic_points)
+                {
+                    mpr("You feel your power returning.");
+                    inc_mp(1 + random2(random2(monster->hit_dice)), false);
+                }
+            }
 
-              if ( you.duration[DUR_DEATH_CHANNEL] && mons_holiness(monster->type) == MH_NATURAL && mons_weight(mons_charclass(monster->type)) )
-              {
-                  if ( create_monster(MONS_SPECTRAL_THING, 0, BEH_ENSLAVED, monster->x, monster->y, you.pet_target, mons_charclass(monster->type)) != -1 )
+            if (you.duration[DUR_DEATH_CHANNEL]
+                && mons_holiness(monster->type) == MH_NATURAL
+                && mons_weight(mons_charclass(monster->type)))
+            {
+                if (create_monster( MONS_SPECTRAL_THING, 0, BEH_ENSLAVED,
+                                    monster->x, monster->y, you.pet_target,
+                                    mons_charclass(monster->type)) != -1)
+                {
                     mpr("A strange glowing mist starts to gather...");
-              }
-              break;
+                }
+            }
+            break;
 
-            case KILL_MON:              /* Monster kills in combat */
-            case KILL_MON_MISSILE:      /* Monster kills by missile or beam */
-              simple_monster_message(monster, " dies!");
+        case KILL_MON:          /* Monster kills in combat */
+        case KILL_MON_MISSILE:  /* Monster kills by missile or beam */
+            simple_monster_message(monster, " dies!", MSGCH_MONSTER_DAMAGE,
+                                   MDAM_DEAD);
 
-              if ( monster->behavior == BEH_ENSLAVED )
+            if (monster->behavior == BEH_ENSLAVED)
                 naughty(NAUGHTY_FRIEND_DIES, 1 + (monster->hit_dice / 2));
 
-              if ( (i >= 0 && i < 200) && menv[i].behavior == BEH_ENSLAVED )
-              {
-              // Trying to prevent summoning abuse here, so we're trying to
-              // prevent summoned creatures from being being done_good kills.
-              // Only affects creatures which were friendly when summoned.
-                  if ( ( monster->enchantment[1] < ENCH_FRIEND_ABJ_I || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI )
-                      && monster->enchantment[1] != ENCH_CREATED_FRIENDLY )
-                  {
-                      gain_exp(exper_value(monster->type, monster->hit_dice, monster->max_hit_points) / 2 + 1);
+            if ((i >= 0 && i < 200) && menv[i].behavior == BEH_ENSLAVED)
+            {
+                // Trying to prevent summoning abuse here, so we're trying to
+                // prevent summoned creatures from being being done_good kills.
+                // Only affects creatures which were friendly when summoned.
+                if ((monster->enchantment[1] < ENCH_FRIEND_ABJ_I
+                        || monster->enchantment[1] > ENCH_FRIEND_ABJ_VI)
+                    && monster->enchantment[1] != ENCH_CREATED_FRIENDLY)
+                {
+                    gain_exp(exper_value( monster->type, monster->hit_dice,
+                                          monster->max_hit_points ) / 2 + 1);
 
-                      if (mons_holiness(menv[i].type) == MH_UNDEAD)
-                      {
-                          if (mons_holiness(monster->type) == MH_NATURAL)
-                            done_good(GOOD_SLAVES_KILL_LIVING, monster->hit_dice);
-                          else
+                    if (mons_holiness(menv[i].type) == MH_UNDEAD)
+                    {
+                        if (mons_holiness(monster->type) == MH_NATURAL)
+                        {
+                            done_good( GOOD_SLAVES_KILL_LIVING,
+                                       monster->hit_dice );
+                        }
+                        else
                             done_good(GOOD_SERVANTS_KILL, monster->hit_dice);
-                      }
-                      else
-                      {
-                          done_good(GOOD_SERVANTS_KILL, monster->hit_dice);
+                    }
+                    else
+                    {
+                        done_good(GOOD_SERVANTS_KILL, monster->hit_dice);
 
-                          if ( you.religion == GOD_VEHUMET && (!player_under_penance() && random2(you.piety) >= 20) )
-                          {
+                        if (you.religion == GOD_VEHUMET
+                            && (!player_under_penance()
+                                && random2(you.piety) >= 30))
+                        {
                             /* Vehumet - only for non-undead servants (coding
                                convenience, no real reason except that Vehumet
                                prefers demons) */
-                              if ( you.magic_points < you.max_magic_points )
-                              {
-                                  mpr("You feel your power returning.");
-                                  inc_mp(1 + random2(random2(monster->hit_dice)), false);
-                              }
-                          }
-                      }
-                  }
-              }
-              break;
+                            if (you.magic_points < you.max_magic_points)
+                            {
+                                mpr("You feel your power returning.");
+                                inc_mp(1 + random2(random2(monster->hit_dice)),
+                                       false);
+                            }
+                        }
+                    }
+                }
+            }
+            break;
 
-            case KILL_MISC:             /* Monster killed by trap/inanimate thing/itself/poison not from you */
-              simple_monster_message(monster, " dies!");
-              break;
+        /* Monster killed by trap/inanimate thing/itself/poison not from you */
+        case KILL_MISC:
+            simple_monster_message(monster, " dies!", MSGCH_MONSTER_DAMAGE,
+                                   MDAM_DEAD);
+            break;
 
-            case KILL_RESET:            /* Monster doesn't die, just goes back to wherever it came from
-                                           This must only be called by monsters running out of time (or abjuration),
-                                           because it uses the beam variables! Or does it??? */
-              simple_monster_message(monster, " disappears in a puff of smoke!");
-              place_cloud(CLOUD_GREY_SMOKE_MON + random2(3), monster->x, monster->y, 1 + random2(3));
+        case KILL_RESET:
+        /* Monster doesn't die, just goes back to wherever it came from
+           This must only be called by monsters running out of time (or
+           abjuration), because it uses the beam variables! Or does it??? */
+            if (monster->type != MONS_SIMULACRUM_SMALL
+                && monster->type != MONS_SIMULACRUM_LARGE)
+            {
+                simple_monster_message( monster,
+                                        " disappears in a puff of smoke!" );
 
-              for (dmi = MSLOT_GOLD; dmi >= MSLOT_WEAPON; dmi--)
-              {                       /* takes whatever it's carrying back home */
-                if ( monster->inv[dmi] != NON_ITEM )
-                  destroy_item(monster->inv[dmi]);
+                place_cloud(CLOUD_GREY_SMOKE_MON + random2(3), monster->x,
+                            monster->y, 1 + random2(3));
+            }
+            else
+            {
+                simple_monster_message( monster,
+                                        " vaporizes!" );
+
+                place_cloud(CLOUD_COLD_MON, monster->x, monster->y,
+                            1 + random2(3));
+            }
+
+            for (dmi = MSLOT_GOLD; dmi >= MSLOT_WEAPON; dmi--)
+            {                   /* takes whatever it's carrying back home */
+                if (monster->inv[dmi] != NON_ITEM)
+                    destroy_item(monster->inv[dmi]);
 
                 monster->inv[dmi] = NON_ITEM;
-              }
-              break;
+            }
+            break;
         }
     }
 
-    if ( monster->type == MONS_MUMMY )
+    if (monster->type == MONS_MUMMY)
     {
-        if ( YOU_KILL(killer) )
-          if ( curse_an_item(1, 0) )
-            mpr("You feel nervous for a moment...");
-    }
-    else if ( monster->type == MONS_GUARDIAN_MUMMY
-               || monster->type == MONS_GREATER_MUMMY
-               || monster->type == MONS_MUMMY_PRIEST )
-    {
-        if ( YOU_KILL(killer) )
+        if (YOU_KILL(killer))
         {
-            mpr("You feel extremely nervous for a moment...");
-            miscast_effect(SPTYP_NECROMANCY, 3 + (monster->type == MONS_GREATER_MUMMY) * 8 + (monster->type == MONS_MUMMY_PRIEST) * 5, random2avg(88,3), 100);
+            if (curse_an_item(1, 0))
+                mpr("You feel nervous for a moment...", MSGCH_MONSTER_SPELL);
+        }
+    }
+    else if (monster->type == MONS_GUARDIAN_MUMMY
+             || monster->type == MONS_GREATER_MUMMY
+             || monster->type == MONS_MUMMY_PRIEST)
+    {
+        if (YOU_KILL(killer))
+        {
+            mpr("You feel extremely nervous for a moment...",
+                MSGCH_MONSTER_SPELL);
+
+            miscast_effect(SPTYP_NECROMANCY,
+                           3 + (monster->type == MONS_GREATER_MUMMY) * 8
+                             + (monster->type == MONS_MUMMY_PRIEST) * 5,
+                           random2avg(88, 3), 100);
         }
     }
 
-    if ( killer != KILL_RESET )
+    if (killer != KILL_RESET)
     {
-        if ( ( monster->enchantment[1] >= ENCH_ABJ_I && monster->enchantment[1] <= ENCH_ABJ_VI )
-            || ( monster->enchantment[1] >= ENCH_FRIEND_ABJ_I && monster->enchantment[1] <= ENCH_FRIEND_ABJ_VI ) )
+        if ((monster->enchantment[1] >= ENCH_ABJ_I
+                && monster->enchantment[1] <= ENCH_ABJ_VI)
+            || (monster->enchantment[1] >= ENCH_FRIEND_ABJ_I
+                && monster->enchantment[1] <= ENCH_FRIEND_ABJ_VI))
         {
-            if ( mons_weight(mons_charclass(monster->type)) )
+            if (mons_weight(mons_charclass(monster->type)))
             {
-                simple_monster_message(monster, "'s corpse disappears in a puff of smoke!");
-                place_cloud(CLOUD_GREY_SMOKE_MON + random2(3), monster->x, monster->y, 1 + random2(3));
+                if (monster->type != MONS_SIMULACRUM_SMALL
+                    && monster->type != MONS_SIMULACRUM_LARGE)
+                {
+                    simple_monster_message(monster,
+                                "'s corpse disappears in a puff of smoke!");
+                    place_cloud(CLOUD_GREY_SMOKE_MON + random2(3),
+                                monster->x, monster->y, 1 + random2(3));
+                }
+                else
+                {
+                    simple_monster_message( monster, " vaporizes!" );
+
+                    place_cloud(CLOUD_COLD_MON, monster->x, monster->y,
+                                1 + random2(3));
+                }
             }
         }
         else
-          place_monster_corpse(monster);    // have to add case for disintegration effect here? {dlb}
+        {
+            // have to add case for disintegration effect here? {dlb}
+            place_monster_corpse(monster);
+        }
     }
 
     monster_drop_ething(monster);
 
     for (unsigned char j = 0; j < 3; j++)
-      monster->enchantment[j] = ENCH_NONE;
+    {
+        monster->enchantment[j] = ENCH_NONE;
+    }
 
     monster->enchantment1 = 0;
     monster->type = -1;
@@ -3441,79 +4069,79 @@ void monster_die( struct monsters *monster, char killer, int i )
     mgrd[monster->x][monster->y] = NON_MONSTER;
 
     for (dmi = MSLOT_GOLD; dmi >= MSLOT_WEAPON; dmi--)
-      monster->inv[dmi] = NON_ITEM;
+    {
+        monster->inv[dmi] = NON_ITEM;
+    }
 
     viewwindow(1, false);
 
     for (dmi = 0; dmi < MAX_MONSTERS; dmi++)
-      if ( menv[dmi].monster_foe == monster_killed )
-        menv[dmi].monster_foe = MHITNOT;
+    {
+        if (menv[dmi].monster_foe == monster_killed)
+            menv[dmi].monster_foe = MHITNOT;
+    }
 
-    if ( you.pet_target == monster_killed )
-      you.pet_target = MHITNOT;
+    if (you.pet_target == monster_killed)
+        you.pet_target = MHITNOT;
 
     return;
+}                               // end monster_die()
 
-}          // end monster_die()
-
-
-
-
-bool jelly_divide( struct monsters *parent )
+bool jelly_divide(struct monsters * parent)
 {
+    int jex = 0, jey = 0;       // loop variables {dlb}
+    bool foundSpot = false;     // to rid code of hideous goto {dlb}
+    struct monsters *child = 0; // NULL - value determined with loop {dlb}
 
-    int jex = 0, jey = 0;                   // loop variables {dlb}
-    bool foundSpot = false;                 // to rid code of hideous goto {dlb}
-    struct monsters *child = 0;             // NULL - value determined with loop {dlb}
+    if (parent->type != MONS_JELLY || parent->hit_points == 1)
+        return false;
 
-    if ( parent->type != MONS_JELLY || parent->hit_points == 1 )
-      return false;
-
-// first, find a suitable spot for the child {dlb}:
+    // first, find a suitable spot for the child {dlb}:
     for (jex = -1; jex < 3; jex++)
     {
-    // loop moves beyond those tiles contiguous to parent {dlb}:
-        if ( jex > 1 )
-          return false;
+        // loop moves beyond those tiles contiguous to parent {dlb}:
+        if (jex > 1)
+            return false;
 
         for (jey = -1; jey < 2; jey++)
         {
-        // 10-50 for now - must take clouds into account:
-            if ( mgrd[parent->x + jex][parent->y + jey] == NON_MONSTER
-                && grd[parent->x + jex][parent->y + jey] > DNGN_LAST_SOLID_TILE
-                && ( parent->x + jex != you.x_pos || parent->y + jey != you.y_pos ) )
+            // 10-50 for now - must take clouds into account:
+            if (mgrd[parent->x + jex][parent->y + jey] == NON_MONSTER
+                && grd[parent->x + jex][parent->y + jey] >
+                DNGN_LAST_SOLID_TILE && (parent->x + jex != you.x_pos
+                                         || parent->y + jey != you.y_pos))
             {
                 foundSpot = true;
                 break;
             }
         }
 
-        if ( foundSpot )
-          break;
+        if (foundSpot)
+            break;
     }                           /* end of for jex */
 
-    int k = 0;    // must remain outside loop that follows {dlb}
+    int k = 0;                  // must remain outside loop that follows {dlb}
 
-// now that we have a spot, find a monster slot {dlb}:
+    // now that we have a spot, find a monster slot {dlb}:
     for (k = 0; k < MAX_MONSTERS; k++)
     {
         child = &menv[k];
 
-        if ( child->type == -1 )
-          break;
-        else if ( k == MAX_MONSTERS - 1 )
-          return false;
+        if (child->type == -1)
+            break;
+        else if (k == MAX_MONSTERS - 1)
+            return false;
     }
 
-// handle impact of split on parent {dlb}:
+    // handle impact of split on parent {dlb}:
     parent->max_hit_points /= 2;
 
-    if ( parent->hit_points > parent->max_hit_points )
-      parent->hit_points = parent->max_hit_points;
+    if (parent->hit_points > parent->max_hit_points)
+        parent->hit_points = parent->max_hit_points;
 
-// create child {dlb}:
-// this is terribly partial and really requires
-// more thought as to generation ... {dlb}
+    // create child {dlb}:
+    // this is terribly partial and really requires
+    // more thought as to generation ... {dlb}
     child->type = parent->type;
     child->hit_dice = 4;
     child->hit_points = parent->hit_points;
@@ -3522,103 +4150,147 @@ bool jelly_divide( struct monsters *parent )
     child->evasion = 2;
     child->speed = 5;
     child->speed_increment = 70 + random2(5);
-    child->behavior = parent->behavior;      /* Look at this! */
+    child->behavior = parent->behavior; /* Look at this! */
 
     child->x = parent->x + jex;
     child->y = parent->y + jey;
 
     mgrd[child->x][child->y] = k;
 
-    if ( !simple_monster_message(parent, " splits in two!") )
-      if ( !silenced(parent->x, parent->y) || !silenced(child->x, child->y) )
-        mpr("You hear a squelching noise.");
+    if (!simple_monster_message(parent, " splits in two!"))
+    {
+        if (!silenced(parent->x, parent->y) || !silenced(child->x, child->y))
+            mpr("You hear a squelching noise.");
+    }
 
     return true;
-
-}          // end jelly_divde()
-
-
-
+}                               // end jelly_divde()
 
 // if you're invis and throw/zap whatever, alerts menv to your position
-void alert( void )
+void alert(void)
 {
-
-    struct monsters *monster = 0;    // NULL {dlb}
+    struct monsters *monster = 0;       // NULL {dlb}
 
     for (int it = 0; it < MAX_MONSTERS; it++)
     {
         monster = &menv[it];
 
-        if ( monster->type != -1 && mons_near(monster) )
-          if ( monster->behavior == BEH_CHASING_I || monster->behavior == BEH_WANDER || monster->behavior == BEH_SLEEP )
-          {
-              monster->behavior = BEH_CHASING_I;
+        if (monster->type != -1 && mons_near(monster))
+        {
+            if (monster->behavior == BEH_CHASING_I
+                || monster->behavior == BEH_WANDER
+                || monster->behavior == BEH_SLEEP)
+            {
+                monster->behavior = BEH_CHASING_I;
 
-              if ( !you.invis || mons_see_invis(monster->type) )
-              {
-                  monster->target_x = you.x_pos;
-                  monster->target_y = you.y_pos;
-              }
-          }
+                if (!you.invis || mons_see_invis(monster->type))
+                {
+                    monster->target_x = you.x_pos;
+                    monster->target_y = you.y_pos;
+                }
+            }
+        }
+    }
+}                               // end alert()
+
+static bool valid_morph( struct monsters *monster, int new_mclass )
+{
+    unsigned char current_tile = grd[monster->x][monster->y];
+
+    /* various inappropriate polymorph targets */
+    if ( mons_rarity(new_mclass) == 0
+          || mons_flag(new_mclass, M_NO_EXP_GAIN)
+          || new_mclass == monster->type         // no "in-place" poly {dlb}
+          || new_mclass == MONS_SHAPESHIFTER
+          || new_mclass == MONS_GLOWING_SHAPESHIFTER
+          || new_mclass == MONS_ZOMBIE_SMALL
+          || new_mclass == MONS_ZOMBIE_LARGE
+          || new_mclass == MONS_SPECTRAL_THING
+          || new_mclass == MONS_SKELETON_SMALL
+          || new_mclass == MONS_SKELETON_LARGE
+          || new_mclass == MONS_SIMULACRUM_SMALL
+          || new_mclass == MONS_SIMULACRUM_LARGE
+          || new_mclass == MONS_DANCING_WEAPON )
+    {
+        return false;
     }
 
-}          // end alert()
+    /* Not fair to instakill a monster like this --
+     order of evaluation of inner conditional important */
+    if ( current_tile == DNGN_LAVA || current_tile == DNGN_DEEP_WATER )
+    {
+        if ( !mons_flies(new_mclass)
+            || monster_habitat(new_mclass) != current_tile )
+        {
+            return false;
+        }
+    }
 
-
-
+    return true;
+}        // end valid_morph()
 
 // note that power is (as of yet) unused within this function -
 // may be worthy of consideration of later implementation, though,
 // so I'll still let the parameter exist for the time being {dlb}
 bool monster_polymorph( struct monsters *monster, int targetc, int power )
 {
-  char str_polymon[200]; // prevents segfaults -- cannot use info[] here {dlb}
+    char str_polymon[200] = "";      // cannot use info[] here {dlb}
+    bool player_messaged = false;
 
-  if ( targetc == RANDOM_MONSTER )
+    if ( targetc == RANDOM_MONSTER )
     {
-    loopy:
-      do
+        do
         {
-          targetc = random2(NUM_MONSTERS);     // was: random2(400) {dlb}
+            targetc = random2(NUM_MONSTERS);     // was: random2(400) {dlb}
         }
-        while ( mons_rarity(targetc) == 0 // not the best possible check routine? {dlb}
-                 || targetc == monster->type         // added this {dlb}
-                 || targetc == MONS_SHAPESHIFTER
-                 || targetc == MONS_GLOWING_SHAPESHIFTER
-                 || targetc == MONS_ZOMBIE_SMALL
-                 || targetc == MONS_ZOMBIE_LARGE
-                 || targetc == MONS_SPECTRAL_THING
-                 || targetc == MONS_SKELETON_SMALL
-                 || targetc == MONS_SKELETON_LARGE
-                 || targetc == MONS_DANCING_WEAPON
-                 || mons_flag(targetc, M_NO_EXP_GAIN) );
-
-        if ( grd[monster->x][monster->y] == DNGN_LAVA
-             || grd[monster->x][monster->y] == DNGN_DEEP_WATER )
-          if ( !mons_flies(targetc) )
-            goto loopy;     /* Not fair to instakill a monster like this (actually, I can't be bothered implementing it) */
-        /* Too long to put in the loop thing */
+        while ( !valid_morph(monster, targetc) );
     }
 
-    int old_class = monster->type;
+    // messaging: {dlb}
+
+    if (monster->enchantment[1] == ENCH_SHAPESHIFTER
+        || monster->enchantment[1] == ENCH_GLOWING_SHAPESHIFTER)
+    {
+        strcat(str_polymon, " changes into ");
+    }
+    else if (targetc == MONS_PULSATING_LUMP)
+        strcat(str_polymon, " degenerates into ");
+    else
+        strcat(str_polymon, " evaporates and reforms as " );
+
+    strcat(str_polymon, monam(250, targetc,
+                              (mons_flag(targetc, M_INVIS) ? ENCH_INVIS
+                                              : monster->enchantment[2] ), 3));
+
+    if ( targetc == MONS_PULSATING_LUMP )
+        strcat(str_polymon, " of flesh");
+
+    strcat(str_polymon, "!");
+
+    player_messaged = simple_monster_message(monster, str_polymon);
+
+    // the actual polymorphing:
     int old_hp = monster->hit_points;
     int old_hp_max = monster->max_hit_points;
-    unsigned char old_sec = monster->number;
 
     /* deal with mons_sec */
-
     monster->type = targetc;
     monster->number = 250;
 
     for (unsigned char unenc = 0; unenc < 3; unenc++)
     {
-      if ( monster->enchantment[unenc] >= ENCH_ABJ_I
-          && monster->enchantment[unenc] <= ENCH_ABJ_VI )
-        continue; // Summoned creatures are still going to disappear eventually
+        if ( monster->enchantment[unenc] >= ENCH_ABJ_I
+            && monster->enchantment[unenc] <= ENCH_ABJ_VI )
+        {
+            // Summoned creatures are still going to disappear eventually
+            continue;
+        }
+
         if ( monster->enchantment[unenc] != ENCH_SHAPESHIFTER
-             && monster->enchantment[unenc] != ENCH_GLOWING_SHAPESHIFTER )
-          monster->enchantment[unenc] = 0; /* shapeshifters stay as such */
+            && monster->enchantment[unenc] != ENCH_GLOWING_SHAPESHIFTER )
+        {
+            monster->enchantment[unenc] = 0; /* shapeshifters stay as such */
+        }
     }
 
     if ( mons_flag(monster->type, M_INVIS) )
@@ -3630,41 +4302,26 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
     if ( monster->enchantment[0] == ENCH_NONE
         && monster->enchantment[1] == ENCH_NONE
         && monster->enchantment[2] == ENCH_NONE )
-      monster->enchantment1 = 0;
+    {
+        monster->enchantment1 = 0;
+    }
 
     define_monster(monster_index(monster), menv);
 
-    monster->hit_points = monster->max_hit_points * ((old_hp * 100) / old_hp_max) / 100 + random2(monster->max_hit_points);
+    monster->hit_points = monster->max_hit_points
+                                * ((old_hp * 100) / old_hp_max) / 100
+                                + random2(monster->max_hit_points);
 
     if ( monster->hit_points > monster->max_hit_points )
-      monster->hit_points = monster->max_hit_points;
+        monster->hit_points = monster->max_hit_points;
 
     monster->speed_increment = 70 + random2(5);
 
-/* make sure that eg manticores don't drop their darts */
-
+    /* make sure that eg manticores don't drop their darts */
     monster_drop_ething(monster);
 
-// messaging: {dlb}
-    strcpy(str_polymon, monam(old_sec, old_class, monster->enchantment[2], 0));
-
-    strcat(str_polymon, (monster->enchantment[1] == ENCH_SHAPESHIFTER
-                          || monster->enchantment[1] == ENCH_GLOWING_SHAPESHIFTER) ? " changes into " :
-                        (targetc == MONS_PULSATING_LUMP)                           ? " degenerates into "
-                                                                                   : " evaporates and reforms as " );
-
-    strcat(str_polymon, monam(monster->number, monster->type, monster->enchantment[2], 3));
-
-    if ( targetc == MONS_PULSATING_LUMP )
-      strcat(str_polymon, " of flesh");
-
-    strcat(str_polymon, "!");
-
-    return ( simple_monster_message(monster, str_polymon) );
-
+    return ( player_messaged );
 }          // end monster_polymorph()
-
-
 
 
 /*
@@ -3676,26 +4333,24 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
 */
 
 
-
-
 // Added by DML 6/10/99.
 // For now, always returns damage: that is, it never modifies values,
 // just adds 'color'.
-static int weapon_type_modify( int weapnum, char *noise, char *noise2, int damage )
+static int weapon_type_modify(int weapnum, char *noise, char *noise2,
+                              int damage)
 {
-
     int weap_type = WPN_UNKNOWN;
 
     if (damage >= HIT_WEAK)
     {
-        if ( weapnum == -1 )
-          weap_type = WPN_UNARMED;
+        if (weapnum == -1)
+            weap_type = WPN_UNARMED;
         else
         {
-            if ( you.inv_class[weapnum] == OBJ_STAVES )
-              weap_type = WPN_QUARTERSTAFF;
-            else if ( you.inv_class[weapnum] == OBJ_WEAPONS )
-              weap_type = you.inv_type[weapnum];
+            if (you.inv_class[weapnum] == OBJ_STAVES)
+                weap_type = WPN_QUARTERSTAFF;
+            else if (you.inv_class[weapnum] == OBJ_WEAPONS)
+                weap_type = you.inv_type[weapnum];
         }
     }
 
@@ -3719,6 +4374,7 @@ static int weapon_type_modify( int weapnum, char *noise, char *noise2, int damag
             strcpy(noise2, " like a pig");
         }
         return damage;
+
     case WPN_BOW:
     case WPN_CROSSBOW:
     case WPN_HAND_CROSSBOW:
@@ -3727,6 +4383,7 @@ static int weapon_type_modify( int weapnum, char *noise, char *noise2, int damag
         else
             strcpy(noise, "skewer");
         return damage;
+
     case WPN_LONG_SWORD:
     case WPN_GREAT_SWORD:
     case WPN_SCIMITAR:
@@ -3754,6 +4411,7 @@ static int weapon_type_modify( int weapnum, char *noise, char *noise2, int damag
             strcpy(noise2, " like a pillowcase");
         }
         return damage;
+
     case WPN_SLING:
     case WPN_CLUB:
     case WPN_MACE:
@@ -3778,6 +4436,7 @@ static int weapon_type_modify( int weapnum, char *noise, char *noise2, int damag
             strcpy(noise2, " like a grape");
         }
         return damage;
+
     case WPN_WHIP:
     case WPN_DEMON_WHIP:
         if (damage < HIT_MED)
@@ -3785,6 +4444,7 @@ static int weapon_type_modify( int weapnum, char *noise, char *noise2, int damag
         else
             strcpy(noise, "thrash");
         return damage;
+
     case WPN_UNARMED:
         if (you.species == SP_TROLL || you.mutation[MUT_CLAWS])
         {
@@ -3794,7 +4454,6 @@ static int weapon_type_modify( int weapnum, char *noise, char *noise2, int damag
                 strcpy(noise, "mangle");
             else
                 strcpy(noise, "eviscerate");
-            return damage;
         }
         else
         {
@@ -3802,51 +4461,48 @@ static int weapon_type_modify( int weapnum, char *noise, char *noise2, int damag
                 strcpy(noise, "punch");
             else
                 strcpy(noise, "pummel");
-            return damage;
         }
+        return damage;
+
     case WPN_UNKNOWN:
     default:
         strcpy(noise, "hit");
         return damage;
     }
+}                               // end weapon_type_modify()
 
-}          // end weapon_type_modify()
-
-
-
-
-static void monster_drop_ething( struct monsters *monster )
+static void monster_drop_ething(struct monsters *monster)
 {
-/* drop weapons & missiles last (ie on top) so others pick up */
-
-    int loopy;                // loop variable {dlb}
+    /* drop weapons & missiles last (ie on top) so others pick up */
+    int loopy;                  // loop variable {dlb}
     bool splashes = false;
 
-    if ( grd[monster->x][monster->y] == DNGN_LAVA
-          || grd[monster->x][monster->y] == DNGN_DEEP_WATER )
+    if (grd[monster->x][monster->y] == DNGN_LAVA
+        || grd[monster->x][monster->y] == DNGN_DEEP_WATER)
     {
         for (loopy = 0; loopy < NUM_MONSTER_SLOTS; loopy++)
         {
-            if ( monster->inv[loopy] != NON_ITEM )
+            if (monster->inv[loopy] != NON_ITEM)
             {
                 destroy_item(monster->inv[loopy]);
                 splashes = true;
             }
         }
 
-        if ( splashes )
-          mpr("You hear a splashing sound.");    // I don't think things dropped into lava "splash" {dlb}
+        // I don't think things dropped into lava "splash" {dlb}
+        if (splashes)
+            mpr("You hear a splashing sound.");
 
         return;
     }
 
     for (loopy = MSLOT_GOLD; loopy >= MSLOT_WEAPON; loopy--)
     {
-        if ( monster->inv[loopy] != NON_ITEM )
+        if (monster->inv[loopy] != NON_ITEM)
         {
             mitm.link[monster->inv[loopy]] = NON_ITEM;
 
-            if ( igrd[monster->x][monster->y] == NON_ITEM )
+            if (igrd[monster->x][monster->y] == NON_ITEM)
             {
                 igrd[monster->x][monster->y] = monster->inv[loopy];
             }
@@ -3861,31 +4517,33 @@ static void monster_drop_ething( struct monsters *monster )
 
         monster->inv[loopy] = NON_ITEM;
     }
+}                               // end monster_drop_ething()
 
-}          // end monster_drop_ething()
-
-
-
-
-static void place_monster_corpse( struct monsters *monster )
+static void place_monster_corpse(struct monsters *monster)
 {
+    int corpse_class = mons_charclass(monster->type);
 
-    int corpse_class = ( (monster->enchantment[1] == ENCH_SHAPESHIFTER)         ? MONS_SHAPESHIFTER :
-                         (monster->enchantment[1] == ENCH_GLOWING_SHAPESHIFTER) ? MONS_GLOWING_SHAPESHIFTER
-                                                                                : mons_charclass(monster->type) );
+    if (monster->enchantment[1] == ENCH_SHAPESHIFTER)
+        corpse_class = MONS_SHAPESHIFTER;
+    else if (monster->enchantment[1] == ENCH_GLOWING_SHAPESHIFTER)
+        corpse_class = MONS_GLOWING_SHAPESHIFTER;
 
-    if ( !mons_weight(corpse_class)
-          || grd[monster->x][monster->y] == DNGN_LAVA
-          || grd[monster->x][monster->y] == DNGN_DEEP_WATER
-          || coinflip() )
-      return;
+    if (!mons_weight(corpse_class)
+        || grd[monster->x][monster->y] == DNGN_LAVA
+        || grd[monster->x][monster->y] == DNGN_DEEP_WATER || coinflip())
+    {
+        return;
+    }
 
     int o;
 
     for (o = 0; o < MAX_ITEMS; o++)
     {
-        if ( o >= 200 + random2(150) )    // seems to me that this should be translated to a probability calculation outside the loop (why keep calling random2() with each iteration?) {dlb}
-          return;
+        // seems to me that this should be translated to a probability
+        // calculation outside the loop (why keep calling random2() with
+        // each iteration?) {dlb}
+        if (o >= 200 + random2(150))
+            return;
 
         if (mitm.quantity[o] == 0)
         {
@@ -3896,16 +4554,16 @@ static void place_monster_corpse( struct monsters *monster )
             mitm.sub_type[o] = CORPSE_BODY;
             mitm.special[o] = 210;
             mitm.colour[o] = mons_colour(corpse_class);
-            if ( mitm.colour[o] == BLACK )
-              mitm.colour[o] = monster->number;
+            if (mitm.colour[o] == BLACK)
+                mitm.colour[o] = monster->number;
             mitm.quantity[o] = 1;
             mitm.link[o] = NON_ITEM;
             break;
         }
     }
 
-    if ( igrd[monster->x][monster->y] == NON_ITEM )
-      igrd[monster->x][monster->y] = o;
+    if (igrd[monster->x][monster->y] == NON_ITEM)
+        igrd[monster->x][monster->y] = o;
     else
     {
         int hug = igrd[monster->x][monster->y];
@@ -3915,5 +4573,129 @@ static void place_monster_corpse( struct monsters *monster )
     }
 
     return;
+}                               // end place_monster_corpse()
 
-}          // end place_monster_corpse()
+// Returns a value between 0 and 10 representing the weight given to str
+int weapon_str_weight( int wpn_class, int wpn_type )
+{
+    int  ret;
+
+    const int  wpn_skill  = weapon_skill( wpn_class, wpn_type );
+    const int  hands_reqd = hands_reqd_for_weapon( wpn_class, wpn_type );
+
+    // These are low values, because we'll be adding some bonus to the
+    // larger weapons later.  Remember also that 1-1/2-hand weapons get
+    // a bonus in player_weapon_str_weight() as well (can't be done
+    // here because this function is used for cases where the weapon
+    // isn't being used by the player).
+
+    // Reasonings:
+    // - Short Blades are the best for the dexterous... although they
+    //   are very limited in damage potential
+    // - Long Swords are better for the dexterous, the two-handed
+    //   swords are a 50/50 split; bastard swords are in between.
+    // - Staves: didn't want to punish the mages who want to use
+    //   these... made it a 50/50 split after the 2-hnd bonus
+    // - Polearms: Spears and tridents are the only ones that can
+    //   be used one handed and are poking weapons, which requires
+    //   more agility than strength.  The other ones also require a
+    //   fair amount of agility so they end up at 50/50 (most can poke
+    //   as well as slash... although slashing is not their strong
+    //   point).
+    // - Axes are weighted and edged and so require mostly strength,
+    //   but not as much as Maces and Flails, which are typically
+    //   blunt and spiked weapons.
+    switch (wpn_skill)
+    {
+    case SK_SHORT_BLADES:     ret = 2; break;
+    case SK_LONG_SWORDS:      ret = 3; break;
+    case SK_STAVES:           ret = 3; break;   // == 5 after 2-hand bonus
+    case SK_POLEARMS:         ret = 3; break;   // most are +2 for 2-hands
+    case SK_AXES:             ret = 6; break;
+    case SK_MACES_FLAILS:     ret = 7; break;
+    default:                  ret = 5; break;
+    }
+
+    // whips are special cased (because they are not much like maces)
+    if (wpn_type == WPN_WHIP || wpn_type == WPN_DEMON_WHIP)
+        ret = 2;
+    else if (wpn_type == WPN_QUICK_BLADE) // high dex is very good for these
+        ret = 1;
+
+    if (hands_reqd == HANDS_TWO_HANDED)
+        ret += 2;
+
+    // most weapons are capped at 8
+    if (ret > 8)
+    {
+        // these weapons are huge, so strength plays a larger role
+        if (wpn_type == WPN_GIANT_CLUB || wpn_type == WPN_GIANT_SPIKED_CLUB)
+            ret = 9;
+        else
+            ret = 8;
+    }
+
+    return (ret);
+}
+
+// Returns a value from 0 to 10 representing the weight of strength to
+// dexterity for the players currently wielded weapon.
+static inline int player_weapon_str_weight( void )
+{
+    const int weapon = you.equip[ EQ_WEAPON ];
+
+    // unarmed, weighted slightly towards dex -- would have been more,
+    // but then we'd be punishing Trolls and Ghouls who are strong and
+    // get special unarmed bonuses.
+    if (weapon == -1)
+        return (4);
+
+    int ret = weapon_str_weight( you.inv_class[weapon], you.inv_type[weapon] );
+
+    const bool shield     = (you.equip[EQ_SHIELD] != -1);
+    const int  hands_reqd = hands_reqd_for_weapon( you.inv_class[weapon],
+                                                   you.inv_type[weapon] );
+
+    if (hands_reqd == HANDS_ONE_OR_TWO_HANDED && !shield)
+        ret += 1;
+
+    return (ret);
+}
+
+// weapon_dex_weight() + weapon_str_weight == 10 so we only need define
+// one of these.
+static inline int player_weapon_dex_weight( void )
+{
+    return (10 - player_weapon_str_weight());
+}
+
+static inline int calc_stat_to_hit_base( void )
+{
+#ifdef USE_NEW_COMBAT_STATS
+
+    // towards_str_avg is a variable, whose sign points towards strength,
+    // and the magnitude is half the difference (thus, when added directly
+    // to you.dex it gives the average of the two.
+    const signed int towards_str_avg = (you.strength - you.dex) / 2;
+
+    // dex is modified by strength towards the average, by the
+    // weighted amount weapon_str_weight() / 10.
+    return (you.dex + towards_str_avg * player_weapon_str_weight() / 10);
+
+#else
+    return (you.dex);
+#endif
+}
+
+
+static inline int calc_stat_to_dam_base( void )
+{
+#ifdef USE_NEW_COMBAT_STATS
+
+    const signed int towards_dex_avg = (you.dex - you.strength) / 2;
+    return (you.strength + towards_dex_avg * player_weapon_dex_weight() / 10);
+
+#else
+    return (you.strength);
+#endif
+}
