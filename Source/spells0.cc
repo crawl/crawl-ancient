@@ -21,6 +21,9 @@
 #ifdef DOS
 #include <conio.h>
 #endif
+#ifdef WIN32CONSOLE
+#include <stdio.h>
+#endif
 
 #include "externs.h"
 

@@ -50,8 +50,8 @@ static void eat_chunk(int chunk_effect);
 static void eat_from_inventory(int which_inventory_slot);
 static void eating(unsigned char item_class, int item_type);
 static void ghoul_eat_flesh(bool rotting_chunk);
-static void how_hungered(int hunger_increment);
-static void how_satiated(int hunger_decrement);
+static void describe_food_change(int hunger_increment);
+static bool food_change(bool suppress_message);
 
 /*
  **************************************************
@@ -61,118 +61,42 @@ static void how_satiated(int hunger_decrement);
  **************************************************
 */
 
-// the parameter passed is whether the change is toward
-// more hunger (-1), less (+1), or neither (0) {dlb}
-void food_change(char type_of_change)
-{
-    if (you.is_undead == US_UNDEAD)
-    {
-        // cannot call set_hunger() here, or an infinite loop begins {dlb}
-        you.hunger = 6000;
-        you.hunger_state = HS_SATIATED;
-    }
-    else if (you.species == SP_GHOUL && (type_of_change == 1))
-    {
-        // cannot call set_hunger() here, or an infinite loop begins {dlb}
-        you.hunger = 6999;
-        you.hunger_state = HS_SATIATED;
-    }
-    else if (you.hunger <= 1000)
-        you.hunger_state = HS_STARVING;
-    else if (you.hunger <= 2600)
-        you.hunger_state = HS_HUNGRY;
-    else if (you.hunger < 7000)
-        you.hunger_state = HS_SATIATED;
-    else if (you.hunger < 11000)
-        you.hunger_state = HS_FULL;
-    else
-        you.hunger_state = HS_ENGORGED;
-
-    you.redraw_hunger = 1;
-
-    return;
-}                               // end food_change()
-
-// note the similarities to food_change() - I think they
-// can be merged on some level, but how escapes me at the
-// moment ... I'll come back to it in time. 2apr2000 {dlb}
-void hunger_warning(void)
-{
-    switch (you.hunger_state)
-    {
-    case HS_HUNGRY:
-        if (you.hunger <= 1000)
-        {
-            you.hunger_state = HS_STARVING;
-            you.redraw_hunger = 1;
-
-            mpr("You are starving!", MSGCH_FOOD);
-        }
-        break;
-    case HS_SATIATED:
-        if (you.hunger <= 2600)
-        {
-            you.hunger_state = HS_HUNGRY;
-            you.redraw_hunger = 1;
-
-            mpr("You are feeling hungry.", MSGCH_FOOD);
-        }
-        break;
-    case HS_FULL:
-        if (you.hunger < 7000)
-        {
-            you.hunger_state = HS_SATIATED;
-            you.redraw_hunger = 1;
-        }
-        break;
-    case HS_ENGORGED:
-        if (you.hunger < 11000)
-        {
-            you.hunger_state = HS_FULL;
-            you.redraw_hunger = 1;
-        }
-        break;
-    default:
-        break;
-    }
-
-    return;
-}                               // end hunger_warning()
-
 void make_hungry(int hunger_amount, bool suppress_msg)
 {
+    bool state_message = false;
+
     if (you.is_undead != US_UNDEAD)
     {
-        if (!suppress_msg)
-            how_hungered(hunger_amount);
-
         you.hunger -= hunger_amount;
 
         if (you.hunger < 0)
             you.hunger = 0;
 
-        food_change(-1);
-    }
+        // so we don't get two messages, ever.
+        state_message = food_change(false);
 
-    return;
+        if (!(suppress_msg || state_message))
+            describe_food_change(-hunger_amount);
+    }
 }                               // end make_hungry()
 
 void lessen_hunger(int satiated_amount, bool suppress_msg)
 {
+    bool state_message = false;
+
     if (you.is_undead != US_UNDEAD)
     {
-        if (!suppress_msg)
-            how_satiated(satiated_amount);
-
         you.hunger += satiated_amount;
 
         if (you.hunger > 12000)
             you.hunger = 12000;
 
-        food_change(1);
-    }
+        // so we don't get two messages, ever
+        state_message = food_change(false);
 
-    return;
+        if (!(suppress_msg || state_message))
+            describe_food_change(satiated_amount);
+    }
 }                               // end lessen_hunger()
 
 void set_hunger(int new_hunger_level, bool suppress_msg)
@@ -657,41 +581,81 @@ void eat_food(void)
  **************************************************
 */
 
-static void how_hungered(int hunger_increment)
+static bool food_change(bool suppress_message)
 {
-    if (hunger_increment > 0)
+    char current_state = you.hunger_state;
+    char newstate = HS_ENGORGED;
+    bool state_changed = false;
+
+    // take care of undead
+    if (you.is_undead == US_UNDEAD)
     {
-        strcpy(info, (hunger_increment <= 100) ? "You feel slightly " :
-                     (hunger_increment <= 350) ? "You feel somewhat " :
-                     (hunger_increment <= 800) ? "You feel a quite a bit "
-                                               : "You feel a lot ");
-
-        strcat(info, (you.hunger_state > HS_SATIATED) ? "less full."
-                                                      : "more hungry.");
-
-        mpr(info);
+        you.hunger = 6000;
+        return state_changed;
     }
 
-    return;
-}                               // end how_hungered()
+    // take care of ghouls - they can never be
+    // 'full'
+    if (you.hunger > 6999) you.hunger = 6999;
 
-static void how_satiated(int hunger_decrement)
-{
-    if (hunger_decrement > 0)
+
+    // get new hunger state
+    if (you.hunger <= 1000)
+        newstate = HS_STARVING;
+    else if (you.hunger <= 2600)
+        newstate = HS_HUNGRY;
+    else if (you.hunger < 7000)
+        newstate = HS_SATIATED;
+    else if (you.hunger < 11000)
+        newstate = HS_FULL;
+
+    if (newstate != you.hunger_state)
     {
-        strcpy(info, (hunger_decrement <= 100) ? "You feel slightly " :
-                     (hunger_decrement <= 350) ? "You feel somewhat " :
-                     (hunger_decrement <= 800) ? "You feel a quite a bit "
-                                               : "You feel a lot ");
+        state_changed = true;
+        you.hunger_state = newstate;
+        you.redraw_hunger = 1;
 
-        strcat(info, (you.hunger_state > HS_SATIATED) ? "more full."
-                                                      : "less hungry.");
-
-        mpr(info);
+        if (suppress_message == false)
+        {
+            switch (you.hunger_state)
+            {
+            case HS_STARVING:
+                mpr("You are starving!", MSGCH_FOOD);
+                break;
+            case HS_HUNGRY:
+                mpr("You are feeling hungry.", MSGCH_FOOD);
+                break;
+            default:
+                break;
+            }
+        }
     }
+    return state_changed;
+}                               // end food_change()
 
-    return;
-}                               // end how_satiated()
+
+// food_increment is positive for eating,  negative for hungering
+static void describe_food_change(int food_increment)
+{
+    int magnitude = (food_increment > 0)?food_increment:(-food_increment);
+
+    if (magnitude == 0)
+        return;
+
+    strcpy(info, (magnitude <= 100) ? "You feel slightly " :
+                 (magnitude <= 350) ? "You feel somewhat " :
+                 (magnitude <= 800) ? "You feel a quite a bit "
+                                    : "You feel a lot ");
+
+    if ((you.hunger_state > HS_SATIATED) ^ (food_increment < 0))
+        strcat(info, "more ");
+    else
+        strcat(info, "less ");
+
+    strcat(info, (you.hunger_state > HS_SATIATED) ? "full."
+                                                  : "hungry.");
+    mpr(info);
+}                               // end describe_food_change()
 
 static void eat_from_inventory(int which_inventory_slot)
 {

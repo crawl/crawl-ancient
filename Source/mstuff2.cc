@@ -891,10 +891,10 @@ bool mons_throw(struct monsters *monster, struct bolt &pbolt, int hand_used)
 }                               // end mons_throw()
 
 // should really do something about mons_hit, but can't be bothered
-// We pass type in, because monster->type is set to -1
-void spore_goes_pop(struct monsters *monster, int type)
+void spore_goes_pop(struct monsters *monster)
 {
     struct bolt beam;
+    int type = monster->type;
 
     if (monster == NULL)
         return;

@@ -45,12 +45,6 @@ static struct monsterentry mondata[] = {
 
 #define MONDATASIZE (sizeof(mondata)/sizeof(struct monsterentry))
 
-
-// will do as long as spell/sec numbers don't come above 255 or below 0:
-/*
-   Note: is assumed that most monsters capable of casting the more powerful
-   summonings can also cast Abjuration (just for simplicity)
- */
 static unsigned char mspell_list[][7] = {
 #include "mon-spll.h"
 };
@@ -231,7 +225,7 @@ int mons_res_poison(int mc)
 
 int mons_res_fire(int mc)
 {
-
+    if (mc == MONS_PLAYER_GHOST || mc == MONS_PANDEMONIUM_DEMON)
     {
         if (ghost.values[4] > 100)
             return 1;

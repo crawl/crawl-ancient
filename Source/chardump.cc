@@ -21,7 +21,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#ifndef __IBMCPP__
+#if !(defined(__IBMCPP__) || defined(__BCPLUSPLUS__))
 #include <unistd.h>
 #endif
 #include <ctype.h>
@@ -65,6 +65,18 @@
  //      Internal Functions
  // ========================================================================
 
+ // fillstring() is a hack to get around a missing constructor in
+ // Borland C++ implementation of the STD basic_string.   Argh!!!
+static string fillstring(size_t strlen, char filler)
+{
+        string s;
+
+        for(size_t i=0; i<strlen; i++)
+                s += filler;
+
+        return s;
+}
+
  //---------------------------------------------------------------
  //
  // munge_description
@@ -83,11 +95,11 @@ static string munge_description(const string & inStr)
     outStr.reserve(inStr.length() + 32);
 
     const long kIndent = 3;
-
-    outStr += string(kIndent, ' ');
     long lineLen = kIndent;
 
     long i = 0;
+
+    outStr += fillstring(kIndent, ' ');
 
     while (i < (long) inStr.length())
     {
@@ -96,7 +108,8 @@ static string munge_description(const string & inStr)
         if (ch == '$')
         {
             outStr += EOL;
-            outStr += string(kIndent, ' ');
+
+            outStr += fillstring(kIndent, ' ');
             lineLen = kIndent;
             ++i;
 
@@ -106,7 +119,7 @@ static string munge_description(const string & inStr)
             if (lineLen >= 79)
             {
                 outStr += EOL;
-                outStr += string(kIndent, ' ');
+                outStr += fillstring(kIndent, ' ');
                 lineLen = kIndent;
 
             }
@@ -131,7 +144,7 @@ static string munge_description(const string & inStr)
             if (lineLen + word.length() >= 79)
             {
                 outStr += EOL;
-                outStr += string(kIndent, ' ');
+                outStr += fillstring(kIndent, ' ');
                 lineLen = kIndent;
             }
 

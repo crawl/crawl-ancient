@@ -151,9 +151,7 @@ void activate_ability(void)
         {
             unthing = show_abilities(&abil_now[0]);
 
-#ifdef PLAIN_TERM
             redraw_screen();
-#endif
 
             if (unthing == 2)
                 return;
@@ -308,12 +306,16 @@ void activate_ability(void)
         switch (abil_now[abil_used].which)
         {
         case ABIL_BREATHE_FIRE:
-            mpr("You breathe fire.");
-            zapping( ZAP_BREATHE_FIRE,
-                        you.experience_level
-                            + (you.mutation[MUT_BREATHE_FLAMES] * 4)
-                            + (you.attribute[ATTR_TRANSFORMATION] ? 10 : 0),
-                        beam );
+            power = you.experience_level;
+            power += you.mutation[MUT_BREATHE_FLAMES] * 4;
+            if (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
+                power += 12;
+            // don't check for hell serpents - they get hell fire,
+            // never regular fire (GDL)
+
+            mpr("You breathe fire" + (power < 10)?".":"!");
+
+            zapping( ZAP_BREATHE_FIRE, power, beam);
             break;
 
         case ABIL_BREATHE_FROST:

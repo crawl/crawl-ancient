@@ -88,7 +88,7 @@ void end(int end_arg);
 /* ***********************************************************************
  * called from: newgame
  * *********************************************************************** */
-void modify_stats(int STmod, int IQmod, int DXmod);
+void modify_all_stats(int STmod, int IQmod, int DXmod);
 
 
 // last updated 12may2000 {dlb}

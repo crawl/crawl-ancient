@@ -540,13 +540,11 @@ int add_item(int item_got, int quant_got)
     int unit_mass = 0;
     int retval = 1;
     char brek = 0;
+    bool partialPickup = false;
 
     //int last_item = NON_ITEM;
     int m = 0;
     char str_pass[50];
-
-    if (you.num_inv_items >= ENDOFPACK)
-        return NON_ITEM;
 
     unit_mass = mass_item( item_got );
     item_mass = unit_mass * mitm.quantity[item_got];
@@ -570,7 +568,7 @@ int add_item(int item_got, int quant_got)
                 quant_got = m;
                 brek = 1;
                 item_mass = unit_mass * m;
-                mpr("You can only carry some of what is here.");
+                partialPickup = true;
                 break;
             }
         }
@@ -598,6 +596,13 @@ int add_item(int item_got, int quant_got)
 
         goto change_igrid;
     }
+
+    // check for slot space
+    if (you.num_inv_items >= ENDOFPACK)
+        return NON_ITEM;
+
+    if (partialPickup)
+        mpr("You can only carry some of what is here.");
 
     for (m = 0; m < ENDOFPACK; m++)
     {

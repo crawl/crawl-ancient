@@ -28,7 +28,9 @@
 #include "religion.h"
 #include "stuff.h"
 
+#ifdef USE_CURSES
 #include "curses.h"
+#endif
 
 enum
 {
@@ -251,9 +253,7 @@ void display_overmap( void )
 
     getch();
 
-#ifdef PLAIN_TERM
     redraw_screen();
-#endif
 
 #ifdef DOS_TERM
     puttext(1, 1, 80, 25, buffer);

@@ -265,10 +265,13 @@ int main(int argc, char *argv[])
     bool game_start = initialise();
     if (game_start || Options.always_greet)
     {
-        string welcome_msg = string( "Welcome, " )
-                                + you.your_name + " the "
-                                + species_name( you.species ) + " "
-                                + you.class_name + ".";
+        string welcome_msg = "Welcome, ";
+        welcome_msg += you.your_name;
+        welcome_msg += " the ";
+        welcome_msg += species_name( you.species );
+        welcome_msg += " ";
+        welcome_msg += you.class_name;
+        welcome_msg += ".";
 
         mpr( welcome_msg.c_str() );
 
@@ -472,14 +475,13 @@ static void input(void)
 
                     you.x_pos = you.passwall_x;
                     you.y_pos = you.passwall_y;
-#ifdef PLAIN_TERM
                     redraw_screen();
-#endif
+
                     const unsigned char grid = grd[ you.x_pos ][ you.y_pos ];
                     if ((grid == DNGN_LAVA || grid == DNGN_DEEP_WATER)
                         && !you.levitation)
                     {
-                        if (you.species == SP_MERFOLK)
+                        if (you.species == SP_MERFOLK && grid == DNGN_DEEP_WATER)
                         {
                             mpr("You fall into the water and return "
                                 "to your normal form.");
@@ -836,9 +838,7 @@ static void input(void)
     case 'A':
     case CMD_DISPLAY_MUTATIONS:
         display_mutations();
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         break;
 
     case 'v':
@@ -853,9 +853,7 @@ static void input(void)
     case '^':
     case CMD_DISPLAY_RELIGION:
         describe_god(you.religion);
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         break;
 
     case '.':
@@ -915,33 +913,25 @@ static void input(void)
         }
         plox[0] = 0;
         show_map(plox);
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         break;
 
     case '\\':
     case CMD_DISPLAY_KNOWN_OBJECTS:
         check_item_knowledge(); //nothing = check_item_knowledge();
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         break;
 
     case Control('P'):
     case CMD_REPLAY_MESSAGES:
         replay_messages();
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         break;
 
-#ifdef PLAIN_TERM
     case Control('R'):
     case CMD_REDRAW_SCREEN:
         redraw_screen();
         break;
-#endif
 
     case Control('X'):
     case CMD_SAVE_GAME_NOW:
@@ -967,9 +957,7 @@ static void input(void)
     case '?':
     case CMD_DISPLAY_COMMANDS:
         list_commands(false);
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         break;
 
     case 'C':
@@ -1010,9 +998,7 @@ static void input(void)
     case 'm':
     case CMD_DISPLAY_SKILLS:
         show_skills();
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         break;
 
     case '#':
@@ -1067,18 +1053,14 @@ static void input(void)
         {
         case '?':
             list_commands(true);        // tell it to list wizard commands
-#ifdef PLAIN_TERM
             redraw_screen();
-#endif
             break;
         case 'x':
             gain_exp(5000);
             break;
         case 's':
             you.exp_available = 20000;
-#ifdef PLAIN_TERM
             redraw_screen();
-#endif
             break;
         case '$':
             you.gold += 1000;
@@ -1804,7 +1786,7 @@ static void input(void)
     {
         mpr("You feel a little less mighty now.", MSGCH_DURATION);
         you.might = 0;
-        decrease_stats(STAT_STRENGTH, 5, true);
+        modify_stat(STAT_STRENGTH, -5, true);
     }
 
     if (you.berserker > 1)
@@ -1889,7 +1871,7 @@ static void input(void)
         if (grd[you.x_pos][you.y_pos] == DNGN_LAVA
             || grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
         {
-            if (you.species == SP_MERFOLK)
+            if (you.species == SP_MERFOLK && grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
             {
                 mpr("You dive into the water and return to your normal form.");
                 merfolk_start_swimming();
@@ -2002,10 +1984,10 @@ static void input(void)
 
     if (you.is_undead != US_UNDEAD)
     {
-        int total_food = player_hunger_rate() + you.burden_state;
+        int food_use = player_hunger_rate() + you.burden_state;
 
-        if (total_food > 0 && you.hunger >= 40)
-            make_hungry(total_food, true);
+        if (food_use > 0 && you.hunger >= 40)
+            make_hungry(food_use, true);
     }
     else
     {
@@ -2138,8 +2120,6 @@ static void input(void)
             ouch(-9999, 0, KILLED_BY_STARVATION);
         }
     }
-
-    hunger_warning();
 
     //jmf: added silence messages
     its_quiet = silenced(you.x_pos, you.y_pos);
@@ -2500,7 +2480,7 @@ static bool initialise(void)
 
     init_properties();
     burden_change();
-    food_change(0);
+    make_hungry(0,true);
 
     if (newc)
     {
@@ -2636,7 +2616,7 @@ static void move_player(char move_x, char move_y)
         if ((new_targ_grid == DNGN_LAVA || new_targ_grid == DNGN_DEEP_WATER)
              && !you.levitation)
         {
-            if (you.species == SP_MERFOLK)
+            if (you.species == SP_MERFOLK && new_targ_grid == DNGN_DEEP_WATER)
             {
                 mpr("You stumble into the water and return to your normal form.");
                 merfolk_start_swimming();
@@ -2702,7 +2682,7 @@ static void move_player(char move_x, char move_y)
     {
         // Merfold automatically enter deep water... every other case
         // we ask for confirmation.
-        if (targ_grid == DNGN_DEEP_WATER && you.species == SP_MERFOLK)
+        if (you.species == SP_MERFOLK && targ_grid == DNGN_DEEP_WATER)
         {
             // Only mention diving if we just entering the water.
             if (!player_in_water())

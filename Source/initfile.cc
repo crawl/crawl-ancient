@@ -13,11 +13,9 @@
 #include "AppHdr.h"
 #include "initfile.h"
 
-#include <string>
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <ctype.h>
 
 #include "externs.h"
@@ -123,8 +121,17 @@ static int str_to_weapon( const string &str )
 
 static string & trim_string( string &str )
 {
+    // OK,  this is really annoying.  Borland C++ seems to define
+    // basic_string::erase to take iterators,  and basic_string::remove
+    // to take size_t or integer.  This is ass-backwards compared to
+    // nearly all other C++ compilers.  Crap.             (GDL)
+#ifdef __BCPLUSPLUS__
+    str.remove( 0, str.find_first_not_of( " \t\n\r" ) );
+    str.remove( str.find_last_not_of( " \t\n\r" ) + 1 );
+#else
     str.erase( 0, str.find_first_not_of( " \t\n\r" ) );
     str.erase( str.find_last_not_of( " \t\n\r" ) + 1 );
+#endif
 
     return (str);
 }
@@ -267,7 +274,7 @@ void read_init_file(void)
 
         line++;
 
-        string str = string(s);
+        string str = s;
         trim_string( str );
 
         // This is to make some efficient comments

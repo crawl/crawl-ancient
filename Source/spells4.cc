@@ -301,7 +301,7 @@ static void apply_area_around_player(int (*func) (char, char, int, int),
 
 // effect up to max_targs monsters beside the player, chosen randomly
 static void apply_random_around_player( int (*func) (char, char, int, int),
-                                        int power, int max_targs = 1 )
+                                        int power, int max_targs)
 {
     if (max_targs <= 0)
         return;
@@ -414,7 +414,7 @@ static void apply_random_around_player( int (*func) (char, char, int, int),
 
         for (int i = 0; i < targs_found; i++)
         {
-            ASSERT( targs[i].x != 0 && targs[i].y != 0 );
+            ASSERT( targs[i].x && targs[i].y );
             func( targs[i].x, targs[i].y, divided_power, 0 );
         }
     }

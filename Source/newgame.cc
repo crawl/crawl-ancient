@@ -2222,9 +2222,11 @@ bool new_game(void)
     you.base_magic_points2 = 5000 + you.max_magic_points;
 
     // apply bonuses and recalculate hitpoints and experience points {dlb}
-    calc_hp();
-    calc_mp();
-    set_hp(you.hp_max, false);
+    // used to do this BEFORE skills were given;  it makes more sense to
+    // calculate them after.
+    // calc_hp();
+    // calc_mp();
+    // set_hp(you.hp_max, false);
 
     // these need to be set above using functions!!! {dlb}
     you.magic_points = you.max_magic_points;
@@ -2420,6 +2422,12 @@ bool new_game(void)
         if (you.inv_class[i] != OBJ_WEAPONS)
             set_id(you.inv_class[i], you.inv_type[i], 1);
     }
+
+    // we calculate hp and mp here;  all relevant factors should be
+    // finalized by now (GDL)
+    calc_hp();
+    calc_mp();
+    set_hp(you.hp_max, false);
 
     give_basic_spells(you.char_class);
     give_basic_knowledge(you.char_class);
@@ -3432,7 +3440,7 @@ void give_last_paycheck(int which_job)
     return;
 }
 
-// requires stuff::modify_stats() and works because
+// requires stuff::modify_all_stats() and works because
 // stats zeroed out by newgame::init_player()... recall
 // that demonspawn & demingods get more later on {dlb}
 void species_stat_init(unsigned char which_species)
@@ -3610,7 +3618,7 @@ void species_stat_init(unsigned char which_species)
         break;
     }
 
-    modify_stats(strength_base, intellect_base, dexterity_base);
+    modify_all_stats(strength_base, intellect_base, dexterity_base);
 
     return;
 }
@@ -3753,7 +3761,7 @@ void jobs_stat_init(int which_job)
         break;
     }
 
-    modify_stats(strength_mod, intellect_mod, dexterity_mod);
+    modify_all_stats(strength_mod, intellect_mod, dexterity_mod);
 
     return;
 }

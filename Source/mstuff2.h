@@ -86,10 +86,10 @@ void mons_trap(struct monsters *monster);
 void monster_teleport(struct monsters *monster, bool instan);
 
 
-// last updated Oct 3,2000 -- bwr
+// last updated Dec17,2000 -- gdl
 /* ***********************************************************************
  * called from: monstuff
  * *********************************************************************** */
-void spore_goes_pop(struct monsters *monster, int type);
+void spore_goes_pop(struct monsters *monster);
 
 #endif

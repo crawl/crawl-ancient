@@ -323,9 +323,9 @@ char *mutation_descrip[][3] = {
 char *gain_mutation[][3] = {
     {"Your skin toughens.", "Your skin toughens.", "Your skin toughens."},
 
-    {"", "", ""},  // replaced with player::increase_stats() handling {dlb}
-    {"", "", ""},  // replaced with player::increase_stats() handling {dlb}
-    {"", "", ""},  // replaced with player::increase_stats() handling {dlb}
+    {"", "", ""},  // replaced with player::modify_stat() handling {dlb}
+    {"", "", ""},  // replaced with player::modify_stat() handling {dlb}
+    {"", "", ""},  // replaced with player::modify_stat() handling {dlb}
 
     {"Green scales grow over part of your body.",
      "Green scales spread over more of your body.",
@@ -597,10 +597,10 @@ char *lose_mutation[][3] = {
     {"You feel a little hungry.", "You feel a little hungry.",
      "You feel a little hungry."},
 
-    {"", "", ""},  // replaced with player::increase_stats() handling {dlb}
-    {"", "", ""},  // replaced with player::increase_stats() handling {dlb}
+    {"", "", ""},  // replaced with player::modify_stat() handling {dlb}
+    {"", "", ""},  // replaced with player::modify_stat() handling {dlb}
 // 20
-    {"", "", ""},  // replaced with player::increase_stats() handling {dlb}
+    {"", "", ""},  // replaced with player::modify_stat() handling {dlb}
 
     {"You feel random.", "You feel uncontrolled.", "You feel uncontrolled."},
     {"You feel stable.", "You feel stable.", "You feel stable."},
@@ -869,7 +869,7 @@ void display_mutations(void)
     int j = 0;
     char st_prn[5];
     const char *mut_title =
-        "         Innate abilities, Weirdness & Mutations" EOL EOL;
+        "Innate abilities, Weirdness & Mutations";
 
 #ifdef DOS_TERM
     char buffer[4800];
@@ -880,8 +880,13 @@ void display_mutations(void)
 
     clrscr();
     textcolor(WHITE);
+    // center title
+    i = 40-strlen(mut_title)/2;
+    if (i<1) i=1;
+    gotoxy(i, 1);
     cprintf(mut_title);
 
+    gotoxy(1,3);
     textcolor(LIGHTBLUE);  //textcolor for inborn abilities and weirdness
 
     switch (you.species)   //mv: following code shows innate abilities - if any
@@ -1230,7 +1235,7 @@ bool mutate(int which_mutation)
             return true;
         }
         // replaces earlier, redundant code - 12mar2000 {dlb}
-        increase_stats(STAT_STRENGTH, 1, false);
+        modify_stat(STAT_STRENGTH, 1, false);
         break;
 
     case MUT_CLEVER:
@@ -1240,7 +1245,7 @@ bool mutate(int which_mutation)
             return true;
         }
         // replaces earlier, redundant code - 12mar2000 {dlb}
-        increase_stats(STAT_INTELLIGENCE, 1, false);
+        modify_stat(STAT_INTELLIGENCE, 1, false);
         break;
 
     case MUT_AGILE:
@@ -1250,7 +1255,7 @@ bool mutate(int which_mutation)
             return true;
         }
         // replaces earlier, redundant code - 12mar2000 {dlb}
-        increase_stats(STAT_DEXTERITY, 1, false);
+        modify_stat(STAT_DEXTERITY, 1, false);
         break;
 
     case MUT_WEAK:
@@ -1259,7 +1264,7 @@ bool mutate(int which_mutation)
             delete_mutation(MUT_STRONG);
             return true;
         }
-        decrease_stats(STAT_STRENGTH, 1, true);
+        modify_stat(STAT_STRENGTH, -1, true);
         mpr(gain_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
@@ -1269,7 +1274,7 @@ bool mutate(int which_mutation)
             delete_mutation(MUT_CLEVER);
             return true;
         }
-        decrease_stats(STAT_INTELLIGENCE, 1, true);
+        modify_stat(STAT_INTELLIGENCE, -1, true);
         mpr(gain_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
@@ -1279,7 +1284,7 @@ bool mutate(int which_mutation)
             delete_mutation(MUT_AGILE);
             return true;
         }
-        decrease_stats(STAT_DEXTERITY, 1, true);
+        modify_stat(STAT_DEXTERITY, -1, true);
         mpr(gain_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
@@ -1412,8 +1417,8 @@ bool mutate(int which_mutation)
             delete_mutation(MUT_FLEXIBLE_WEAK);
             return true;
         }
-        increase_stats(STAT_STRENGTH, 1, true);
-        decrease_stats(STAT_DEXTERITY, 1, true);
+        modify_stat(STAT_STRENGTH, 1, true);
+        modify_stat(STAT_DEXTERITY, -1, true);
         mpr(gain_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
@@ -1423,8 +1428,8 @@ bool mutate(int which_mutation)
             delete_mutation(MUT_STRONG_STIFF);
             return true;
         }
-        decrease_stats(STAT_STRENGTH, 1, true);
-        increase_stats(STAT_DEXTERITY, 1, true);
+        modify_stat(STAT_STRENGTH, -1, true);
+        modify_stat(STAT_DEXTERITY, 1, true);
         mpr(gain_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
@@ -1452,7 +1457,7 @@ bool mutate(int which_mutation)
 
     case MUT_BLACK_SCALES:
     case MUT_BONEY_PLATES:
-        decrease_stats(STAT_DEXTERITY, 1, true);
+        modify_stat(STAT_DEXTERITY, -1, true);
         // deliberate fall-through
     default:
         mpr(gain_mutation[mutat][you.mutation[mutat]], MSGCH_MUTATION);
@@ -1460,16 +1465,16 @@ bool mutate(int which_mutation)
 
     case MUT_GREY2_SCALES:
         if (you.mutation[mutat] != 1)
-            decrease_stats(STAT_DEXTERITY, 1, true);
+            modify_stat(STAT_DEXTERITY, -1, true);
 
         mpr(gain_mutation[mutat][you.mutation[mutat]], MSGCH_MUTATION);
         break;
 
     case MUT_METALLIC_SCALES:
         if (you.mutation[mutat] == 0)
-            decrease_stats(STAT_DEXTERITY, 2, true);
+            modify_stat(STAT_DEXTERITY, -2, true);
         else
-            decrease_stats(STAT_DEXTERITY, 1, true);
+            modify_stat(STAT_DEXTERITY, -1, true);
 
         mpr(gain_mutation[mutat][you.mutation[mutat]], MSGCH_MUTATION);
         break;
@@ -1477,7 +1482,7 @@ bool mutate(int which_mutation)
     case MUT_RED2_SCALES:
     case MUT_YELLOW_SCALES:
         if (you.mutation[mutat] != 0)
-            decrease_stats(STAT_DEXTERITY, 1, true);
+            modify_stat(STAT_DEXTERITY, -1, true);
 
         mpr(gain_mutation[mutat][you.mutation[mutat]], MSGCH_MUTATION);
         break;
@@ -1556,7 +1561,7 @@ bool delete_mutation(char which_mutation)
             break;
           }
 */
-        decrease_stats(STAT_STRENGTH, 1, true);
+        modify_stat(STAT_STRENGTH, -1, true);
         mpr(lose_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
@@ -1568,7 +1573,7 @@ bool delete_mutation(char which_mutation)
             break;
           }
 */
-        decrease_stats(STAT_INTELLIGENCE, 1, true);
+        modify_stat(STAT_INTELLIGENCE, -1, true);
         mpr(lose_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
@@ -1580,7 +1585,7 @@ bool delete_mutation(char which_mutation)
             break;
           }
 */
-        decrease_stats(STAT_DEXTERITY, 1, true);
+        modify_stat(STAT_DEXTERITY, -1, true);
         mpr(lose_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
@@ -1593,7 +1598,7 @@ bool delete_mutation(char which_mutation)
           }
 */
         // replaces earlier, redundant code - 12mar2000 {dlb}
-        increase_stats(STAT_STRENGTH, 1, false);
+        modify_stat(STAT_STRENGTH, 1, false);
         break;
 
     case MUT_DOPEY:
@@ -1605,7 +1610,7 @@ bool delete_mutation(char which_mutation)
           }
 */
         // replaces earlier, redundant code - 12mar2000 {dlb}
-        increase_stats(STAT_INTELLIGENCE, 1, false);
+        modify_stat(STAT_INTELLIGENCE, 1, false);
         break;
 
     case MUT_CLUMSY:
@@ -1617,7 +1622,7 @@ bool delete_mutation(char which_mutation)
           }
 */
         // replaces earlier, redundant code - 12mar2000 {dlb}
-        increase_stats(STAT_DEXTERITY, 1, false);
+        modify_stat(STAT_DEXTERITY, 1, false);
         break;
 
     case MUT_SHOCK_RESISTANCE:
@@ -1653,14 +1658,14 @@ bool delete_mutation(char which_mutation)
         break;
 
     case MUT_STRONG_STIFF:
-        decrease_stats(STAT_STRENGTH, 1, true);
-        increase_stats(STAT_DEXTERITY, 1, true);
+        modify_stat(STAT_STRENGTH, -1, true);
+        modify_stat(STAT_DEXTERITY, 1, true);
         mpr(lose_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
     case MUT_FLEXIBLE_WEAK:
-        increase_stats(STAT_STRENGTH, 1, true);
-        decrease_stats(STAT_DEXTERITY, 1, true);
+        modify_stat(STAT_STRENGTH, 1, true);
+        modify_stat(STAT_DEXTERITY, -1, true);
         mpr(lose_mutation[mutat][0], MSGCH_MUTATION);
         break;
 
@@ -1680,7 +1685,7 @@ bool delete_mutation(char which_mutation)
 
     case MUT_BLACK_SCALES:
     case MUT_BONEY_PLATES:
-        increase_stats(STAT_DEXTERITY, 1, true);
+        modify_stat(STAT_DEXTERITY, 1, true);
 
     default:
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1], MSGCH_MUTATION);
@@ -1688,15 +1693,15 @@ bool delete_mutation(char which_mutation)
 
     case MUT_GREY2_SCALES:
         if (you.mutation[mutat] != 2)
-            increase_stats(STAT_DEXTERITY, 1, true);
+            modify_stat(STAT_DEXTERITY, 1, true);
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1], MSGCH_MUTATION);
         break;
 
     case MUT_METALLIC_SCALES:
         if (you.mutation[mutat] == 1)
-            increase_stats(STAT_DEXTERITY, 2, true);
+            modify_stat(STAT_DEXTERITY, 2, true);
         else
-            increase_stats(STAT_DEXTERITY, 1, true);
+            modify_stat(STAT_DEXTERITY, 1, true);
 
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1], MSGCH_MUTATION);
         break;
@@ -1704,7 +1709,7 @@ bool delete_mutation(char which_mutation)
     case MUT_RED2_SCALES:
     case MUT_YELLOW_SCALES:
         if (you.mutation[mutat] != 1)
-            increase_stats(STAT_DEXTERITY, 1, true);
+            modify_stat(STAT_DEXTERITY, 1, true);
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1], MSGCH_MUTATION);
         break;
     }
@@ -1941,9 +1946,9 @@ void demonspawn(void)
         if (whichm == -1)       /* unlikely but remotely possible */
         {
             /* I know this is a cop-out */
-            increase_stats(STAT_STRENGTH, 1, true);
-            increase_stats(STAT_INTELLIGENCE, 1, true);
-            increase_stats(STAT_DEXTERITY, 1, true);
+            modify_stat(STAT_STRENGTH, 1, true);
+            modify_stat(STAT_INTELLIGENCE, 1, true);
+            modify_stat(STAT_DEXTERITY, 1, true);
             mpr("You feel much better now.", MSGCH_INTRINSIC_GAIN);
             return;
         }
@@ -2070,9 +2075,9 @@ void demonspawn(void)
     {
         /* unlikely but remotely possible */
         /* I know this is a cop-out */
-        increase_stats(STAT_STRENGTH, 1, true);
-        increase_stats(STAT_INTELLIGENCE, 1, true);
-        increase_stats(STAT_DEXTERITY, 1, true);
+        modify_stat(STAT_STRENGTH, 1, true);
+        modify_stat(STAT_INTELLIGENCE, 1, true);
+        modify_stat(STAT_DEXTERITY, 1, true);
         mpr("You feel much better now.", MSGCH_INTRINSIC_GAIN);
     }
 }                               // end demonspawn()

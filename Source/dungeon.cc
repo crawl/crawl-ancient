@@ -128,8 +128,8 @@ static void build_minivaults(int force_vault);
 static void build_vaults(int force_vault);
 static void check_doors(void);
 static void chequerboard(unsigned char cheq1, unsigned char cheq2,
-                         unsigned char deleted, unsigned char chx1,
-                         unsigned char chy1, unsigned char chx2,
+                         unsigned char deleted, unsigned char ch_x1,
+                         unsigned char chy1, unsigned char ch_x2,
                          unsigned char chy2);
 
 static void city_level(void);
@@ -6411,7 +6411,7 @@ static void item_colour(int p)
             break;
 
         case MISC_EMPTY_EBONY_CASKET:
-            mitm.colour[bp] = BLACK;
+            mitm.colour[bp] = DARKGREY;
             break;
 
         case MISC_DECK_OF_SUMMONINGS:
@@ -7226,9 +7226,19 @@ static void place_spec_shop(unsigned char shop_x, unsigned char shop_y,
         if (one_chance_in(4))
             item_level = 351;
 
-        orb = items( 1, item_in_shop(env.shop_type[i]), OBJ_RANDOM, 0,
-                                                          item_level, 250 );
+        // don't generate gold in shops!  This used to be possible with
+        // General Stores (see item_in_shop() below)   (GDL)
+        while(true)
+        {
+            orb = items( 1, item_in_shop(env.shop_type[i]), OBJ_RANDOM, 0,
+                item_level, 250 );
+            if (mitm.base_type[orb] != OBJ_GOLD)
+                break;
+            // reset object and try again
+            mitm.base_type[orb] = OBJ_UNASSIGNED;
+        }
 
+        // set object 'position' (gah!) & ID status
         mitm.x[orb] = 0;
         mitm.y[orb] = 5 + i;
 
@@ -7284,8 +7294,7 @@ static unsigned char item_in_shop(unsigned char shop_type)
         return OBJ_SCROLLS;
     }
 
-    // seems like a silly thing to return as a default {dlb}
-    return OBJ_WEAPONS;
+    return OBJ_RANDOM;
 }                               // end item_in_shop()
 
 static bool treasure_area(int many_many, unsigned char ta1_x,
@@ -7359,16 +7368,16 @@ static void hide_doors(void)
 }                               // end hide_doors()
 
 static void chequerboard(unsigned char cheq1, unsigned char cheq2,
-                         unsigned char deleted, unsigned char chx1,
-                         unsigned char chy1, unsigned char chx2,
+                         unsigned char deleted, unsigned char ch_x1,
+                         unsigned char chy1, unsigned char ch_x2,
                          unsigned char chy2)
 {
     int i, j;
 
-    if (chx1 >= chx2 || chy1 >= chy2)
+    if (ch_x1 >= ch_x2 || chy1 >= chy2)
         return;
 
-    for (i = chx1; i < chx2; i++)
+    for (i = ch_x1; i < ch_x2; i++)
     {
         for (j = chy1; j < chy2; j++)
         {

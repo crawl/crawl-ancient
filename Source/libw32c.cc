@@ -13,6 +13,9 @@
 #include "version.h"
 #include "defines.h"
 #include <winuser.h>
+#ifdef __BCPLUSPLUS__
+#include <stdio.h>
+#endif
 
 static HANDLE inbuf = NULL;
 static HANDLE outbuf = NULL;
@@ -24,6 +27,9 @@ static int current_color = -1;
 static char cbuf[BUF_SIZE];
 static int bcount = 0;
 static bool buffering = false;
+
+// function prototype to make BCPP happy
+WORD translatecolor(int col);
 
 void bFlush(void)
 {

@@ -283,7 +283,7 @@ static void FlashButton(DialogPtr dialog, short item)
 
     ControlHandle control = GetControl(dialog, item);
 
-    HiliteControl(control, kControlButtonPart);
+    HiliteControl(control, kControlEntireControl);
     Delay(8, &ticks);
     HiliteControl(control, 0);
 }

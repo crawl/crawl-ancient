@@ -195,7 +195,7 @@
     0, 13, 8, MH_DEMONIC, -9,
     { 4, 0, 0, 0 },
     { 3, 3, 3, 0 },
-    3, 14, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
+    3, 14, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
 }
 ,
 
@@ -1893,7 +1893,7 @@
     0, 10, 220, MH_DEMONIC, -3,
     { 4, 0, 0, 0 },
     { 2, 3, 5, 0 },
-    4, 10, 10, 7, 74, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 3
+    4, 10, 10, 7, 74, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 1
 }
 ,
 

@@ -4,10 +4,17 @@
 #define _X86_
 #include <string>
 // I think the following definition is all we need from STD namespace..
+#ifdef __IBMCPP__                       // Borland 5.01 doesn't seem to need this
 typedef std::basic_string<char> string;
+#endif
 
+#include <excpt.h>
+#include <stdarg.h>
 #include <windef.h>
 #include <winbase.h>
+#include <wingdi.h>
+#include <winuser.h>
+#include <winnls.h>
 #include <wincon.h>
 
 #define _NORMALCURSOR   true
@@ -21,6 +28,7 @@ void textcolor(int c);
 void cprintf(const char *s);
 void setStringInput(bool value);
 void setBuffering(bool value);
+DWORD getConsoleString(char *buf, DWORD maxlen);
 
 void window(int x, int y, int lx, int ly);
 int wherex(void);

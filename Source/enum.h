@@ -517,7 +517,7 @@ enum DEATH_KNIGHT_CHOICES
     DK_NO_SELECTION,
     DK_NECROMANCY,
     DK_YREDELEMNUL,
-    DK_RANDOM,
+    DK_RANDOM
 };
 
 enum DECKS
@@ -538,7 +538,7 @@ enum DELAY
     DELAY_BUTCHER,
     DELAY_AUTOPICKUP,
     DELAY_WEAPON_SWAP,                 // for easy_butcher
-    DELAY_PASSWALL,
+    DELAY_PASSWALL
 };
 
 enum DEMON_BEAMS
@@ -882,7 +882,7 @@ enum ITEM_DESCRIPTIONS
     IDESC_POTIONS,
     IDESC_SCROLLS,                      // special field (like the others)
     IDESC_RINGS,
-    IDESC_SCROLLS_II,                   // pluses field
+    IDESC_SCROLLS_II                    // pluses field
 };
 
 enum JEWELLERY
@@ -1038,7 +1038,7 @@ enum MESSAGE_CHANNEL {
     MSGCH_MONSTER_SPELL,  // monsters casting spells
     MSGCH_MONSTER_ENCHANT,// monsters enchantments up and down
     MSGCH_MONSTER_DAMAGE, // monster damage reports (param is level)
-    NUM_MESSAGE_CHANNELS, // always last
+    NUM_MESSAGE_CHANNELS  // always last
 };
 
 enum MESSAGE_COLOURS {
@@ -1471,7 +1471,7 @@ enum MONSTER_DAMAGE
     MDAM_HEAVILY_DAMAGED,
     MDAM_HORRIBLY_DAMAGED,
     MDAM_ALMOST_DEAD,
-    MDAM_DEAD,
+    MDAM_DEAD
 };
 
 enum MONSTER_DESCRIPTORS // things that cross categorical lines {dlb}
@@ -1557,10 +1557,11 @@ enum MONSTER_SPELLS   // mons_cast(), mspell_list[], mons_spells()
     MS_METAL_SPLINTERS,                //   50
     MS_SUMMON_DEMON_GREATER, // [foo]_1 was confusing - renamed 13jan2000 {dlb}
     MS_BANISHMENT,
-    NUM_MONSTER_SPELLS
+    NUM_MONSTER_SPELLS,
+    MS_NO_SPELL = 100
 };
 
-// XXX: These still need to be applied in mon-spll.h and mon-data.h
+// XXX: These still need to be applied in mon-data.h
 enum MONSTER_SPELL_TEMPLATES
 {
     MST_ORC_WIZARD_I     = 0,
@@ -1578,7 +1579,7 @@ enum MONSTER_SPELL_TEMPLATES
     MST_EFREET           = 50,
     MST_BRAIN_WORM       = 52,
     MST_GIANT_ORANGE_BRAIN,
-    MST_RAKSHAKA,
+    MST_RAKSHASA,
     MST_GREAT_ORB_OF_EYES,              // 55
     MST_ORC_SORCEROR,
     MST_STEAM_DRAGON,
@@ -1650,7 +1651,7 @@ enum MONSTER_SPELL_TEMPLATES
     MST_EYE_OF_DEVASTATION,             // 125
     MST_QUICKSILVER_DRAGON,
     MST_IRON_DRAGON,
-    MST_SKELETAL_WARRIOR,               // 127
+    MST_SKELETAL_WARRIOR                // 127
 };
 
 enum MUTATIONS
@@ -2097,7 +2098,7 @@ enum SPECIES
     SP_MERFOLK,
     NUM_SPECIES,                       // always after the last species
 
-    SP_UNKNOWN  = 100,
+    SP_UNKNOWN  = 100
 };
 
 enum SPELLS
@@ -2579,23 +2580,6 @@ enum ZAPS                              // zapping(), zappy()
     ZAP_SMALL_SANDBLAST,
     ZAP_MAGMA,
     NUM_ZAPS                           // must remain last member {dlb}
-};
-
-
-/* ** these are for the player spell struct, we'll see what's what later ** */
-
-#define SPELL_FOOD(x)  (x)
-#define SPELL_MANA(x)  (x)
-#define SPELL_LEVEL(x) (x)
-
-enum SPELL_EXCLUSION                 // value 0 reserved for "none" {dlb}
-{
-  SPLNOT_NOBODY,
-  SPLNOT_UNDEAD,                     // *all* undead
-  SPLNOT_UNHUNGRY,                   // those that don't need to eat
-  SPLNOT_LIVING,                     // the living
-  SPLNOT_UNHOLY,                     // mummies
-  SPLNOT_HOLY                        // goody-goodies
 };
 
 

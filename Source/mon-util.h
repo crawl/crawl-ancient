@@ -18,7 +18,7 @@
 
 // ****remember***** must make an hardcopy of this sometime
 
-#if defined(macintosh) || defined(__IBMCPP__) || defined(SOLARIS)
+#if defined(macintosh) || defined(__IBMCPP__) || defined(SOLARIS) || defined(__BCPLUSPLUS__)
 #define PACKED
 #else
 #define PACKED __attribute__ ((packed))

@@ -149,7 +149,7 @@ void monster_blink(struct monsters *monster)
 
 // least_two will try and get a space more than one square away
 // from the player
-bool random_near_space(FixedVector < int, 2 > &passed, bool least_two = false)
+bool random_near_space(FixedVector < int, 2 > &passed, bool least_two)
 {
     passed[0] = 0;
     passed[1] = 0;
@@ -531,7 +531,7 @@ static void flag_ench(struct monsters *monster, int p)
 // permitting output of "It" messages for the invisible {dlb}
 // utilizes both str_pass[] and info[] so be careful calling it {dlb}:
 bool simple_monster_message(struct monsters *monster, const char *event,
-                            int channel = MSGCH_PLAIN, int param = 0)
+                            int channel, int param)
 {
     if (mons_near(monster)
         && (monster->enchantment[2] != ENCH_INVIS || player_see_invis()))
@@ -858,6 +858,13 @@ static void handle_movement(struct monsters *monster)
                   (monster->target_y < monster->y) ? -1 : 0);
     }
 
+    // bounds check: don't let fleeing monsters try to run
+    // off the map
+    if (monster->target_x + mmov_x < 0 || monster->target_x + mmov_x >= GXM)
+        mmov_x = 0;
+    if (monster->target_y + mmov_y < 0 || monster->target_y + mmov_y >= GYM)
+        mmov_y = 0;
+
     // see if we attacked another monster
     int mnt = mgrd[monster->x + mmov_x][monster->y + mmov_y];
 
@@ -891,11 +898,8 @@ static void handle_nearby_ability(struct monsters *monster)
 
     if (mons_near(monster) && monster->behavior != BEH_SLEEP)
     {
-        if (mons_flag(monster->type, M_SPEAKS) && one_chance_in(21)
-            && !silenced(monster->x, monster->y))
-        {
-            mons_speaks(monster);       // mv: removed silence check
-        }
+        if (mons_flag(monster->type, M_SPEAKS) && one_chance_in(21))
+            mons_speaks(monster);
 
         switch (monster->type)
         {
@@ -990,7 +994,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
 
     FixedArray < unsigned int, 19, 19 > show;
 
-    losight(show, grd, you.x_pos, you.y_pos);
+//    losight(show, grd, you.x_pos, you.y_pos);
 
     switch (monster->type)
     {
@@ -1008,7 +1012,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         }
 
         // viewwindow was here.
-        if (show[monster->x - you.x_pos + 6][monster->y - you.y_pos + 6])
+        if (show[monster->x - you.x_pos + 9][monster->y - you.y_pos + 9])
         {
             beem.move_x = 0;
             beem.move_y = 0;
@@ -1050,7 +1054,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         if (monster->number == 1 || monster->enchantment[2] == ENCH_INVIS)
             break;
 
-        if (show[monster->x - you.x_pos + 6][monster->y - you.y_pos + 6])
+        if (show[monster->x - you.x_pos + 9][monster->y - you.y_pos + 9])
         {
             beem.move_x = 0;
             beem.move_y = 0;
@@ -1702,8 +1706,9 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
         return false;
     else
     {
-        int spell_cast = 100;
-        int hspell_pass[6] = { 100, 100, 100, 100, 100 };
+        int spell_cast = MS_NO_SPELL;
+        int hspell_pass[6] = { MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL,
+            MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL };
 
         // this little bit makes no sense, esp. given how
         // hellions are treated below -- a remnant of past
@@ -1716,8 +1721,8 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                                (temp_rand == 1) ? LIGHTRED : YELLOW);
         }
 
-        int msecc = ((monster->type == MONS_HELLION)           ? 30 :
-                     (monster->type == MONS_PANDEMONIUM_DEMON) ? 119
+        int msecc = ((monster->type == MONS_HELLION)           ? MST_BURNING_DEVIL :
+                     (monster->type == MONS_PANDEMONIUM_DEMON) ? MST_GHOST
                                                             : monster->number);
 
         // tracer = 0 = run out of range
@@ -1792,7 +1797,7 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
         {
             // should monster not have selected dig by now, it never will:
             if (hspell_pass[4] == MS_DIG)
-                hspell_pass[4] = 100;
+                hspell_pass[4] = MS_NO_SPELL;
 
             // select which spell to cast {dlb}:
             if (monster->behavior != BEH_FLEE)
@@ -1808,7 +1813,7 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                     {
                         spell_cast = hspell_pass[random2(5)];
 
-                        if (spell_cast != 100)
+                        if (spell_cast != MS_NO_SPELL)
                             break;
                     }
                 }
@@ -1818,18 +1823,18 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
                     spell_cast = hspell_pass[2];
                 }
                 else
-                    spell_cast = 100;
+                    spell_cast = MS_NO_SPELL;
             }
             else
             {
-                spell_cast = (one_chance_in(5) ? 100 : hspell_pass[5]);
+                spell_cast = (one_chance_in(5) ? MS_NO_SPELL : hspell_pass[5]);
             }
 
             finalAnswer = true;
         }
 
         // should the monster *still* not have a spell, well, too bad {dlb}:
-        if (spell_cast == 100)
+        if (spell_cast == MS_NO_SPELL)
             return false;
 
         // can't see anything to animate:
@@ -2074,7 +2079,7 @@ void monster(void)
 
     FixedArray < unsigned int, 19, 19 > show;
 
-    losight(show, grd, you.x_pos, you.y_pos);
+//    losight(show, grd, you.x_pos, you.y_pos);
 
     for (int i = 0; i < MAX_MONSTERS; i++)
     {
@@ -2091,17 +2096,13 @@ void monster(void)
                     || monster->type == MONS_BALL_LIGHTNING)
                 && monster->hit_points < 1)
             {
-                const int mtype = monster->type;
-
-                for (j = 0; j < 3; j++)
-                    monster->enchantment[j] = ENCH_NONE;
-
-                monster->enchantment1 = 0;
-                monster->type = -1;
+                // detach monster from the grid first, so it
+                // doesn't get hit by its own explosion (GDL)
                 mgrd[monster->x][monster->y] = NON_MONSTER;
 
-                // has to be after the above, so that spore isn't killed twice.
-                spore_goes_pop(monster, mtype);
+                spore_goes_pop(monster);
+                monster_cleanup(monster);
+
                 continue;
             }
 
@@ -2116,15 +2117,7 @@ void monster(void)
             while (monster->speed_increment >= 80)
             {                   // The continues & breaks are WRT this.
                 if (monster->type != -1 && monster->hit_points < 1)
-                {
                     monster_die(monster, KILL_MISC, 0);
-
-                    if (monster->type != MONS_GIANT_SPORE
-                        && monster->type != MONS_BALL_LIGHTNING)
-                    {
-                        continue;
-                    }
-                }
 
                 monster->speed_increment -= 10;
 
@@ -2205,6 +2198,13 @@ void monster(void)
                 {
                     mmov_x = random2(3) - 1;
                     mmov_y = random2(3) - 1;
+
+                    // bounds check: don't let confused monsters try to run
+                    // off the map
+                    if (monster->target_x + mmov_x < 0 || monster->target_x + mmov_x >= GXM)
+                        mmov_x = 0;
+                    if (monster->target_y + mmov_y < 0 || monster->target_y + mmov_y >= GYM)
+                        mmov_y = 0;
 
                     if (mgrd[monster->x + mmov_x][monster->y + mmov_y]
                                                             != NON_MONSTER
@@ -2335,8 +2335,6 @@ void monster(void)
                 if (monster->x + mmov_x == you.x_pos
                     && monster->y + mmov_y == you.y_pos)
                 {
-                    mmov_x = monster->inv[MSLOT_WEAPON];
-
                     if (monster->type == MONS_GIANT_BAT
                         || monster->type == MONS_UNSEEN_HORROR
                         || monster->type == MONS_GIANT_BLOWFLY)
@@ -2357,20 +2355,13 @@ void monster(void)
                             || monster->type == MONS_BALL_LIGHTNING)
                         && monster->hit_points < 1)
                     {
-                        const int mtype = monster->type;
 
-                        for (j = 0; j < 3; j++)
-                        {
-                            monster->enchantment[j] = ENCH_NONE;
-                        }
-
-                        monster->enchantment1 = 0;
-                        //no_mons--;
-                        monster->type = -1;
+                        // detach monster from the grid first, so it
+                        // doesn't get hit by its own explosion (GDL)
                         mgrd[monster->x][monster->y] = NON_MONSTER;
-                        /* has to be after the above, so that spore
-                           isn't killed twice. */
-                        spore_goes_pop(monster, mtype);
+
+                        spore_goes_pop(monster);
+                        monster_cleanup(monster);
                         continue;
                     }
 
@@ -2737,6 +2728,14 @@ static void monster_move(struct monsters *monster)
             good_move[count_x][count_y] = true;
             const int targ_x = monster->x + count_x - 1;
             const int targ_y = monster->y + count_y - 1;
+
+            // bounds check - don't consider moving out of grid!
+            if (targ_x < 0 || targ_x >= GXM ||
+                targ_y < 0 || targ_y >= GYM)
+            {
+                good_move[count_x][count_y] = false;
+                continue;
+            }
 
             if (monster->type == MONS_BORING_BEETLE)
             {

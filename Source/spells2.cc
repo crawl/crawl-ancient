@@ -516,17 +516,20 @@ bool brand_weapon(int which_brand, int power)
     return true;
 }                               // end brand_weapon()
 
-void restore_stat(unsigned char which_stat, bool suppress_msg)
+bool restore_stat(unsigned char which_stat, bool suppress_msg)
 {
+    bool statRestored = false;
+
     // a bit hackish, but cut me some slack, man! --
     // besides, a little recursion never hurt anyone {dlb}:
     if (which_stat == STAT_ALL)
     {
         for (unsigned char loopy = STAT_STRENGTH; loopy < NUM_STATS; loopy++)
         {
-            restore_stat(loopy, suppress_msg);
+            if (restore_stat(loopy, suppress_msg) == true)
+                statRestored = true;
         }
-        return;                 // early return {dlb}
+        return statRestored;                 // early return {dlb}
     }
 
     // the real function begins here {dlb}:
@@ -580,10 +583,13 @@ void restore_stat(unsigned char which_stat, bool suppress_msg)
 
         *ptr_stat = *ptr_stat_max;
         *ptr_redraw = 1;
+        statRestored = true;
 
         if (ptr_stat == &you.strength)
             burden_change();
     }
+
+    return statRestored;
 }                               // end restore_stat()
 
 void turn_undead(int pow)

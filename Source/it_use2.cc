@@ -907,6 +907,7 @@ void potion_effect(char pot_eff, int pow)
 {
 
     int new_value = 0;
+    unsigned char i;
 
     if (pow > 150)
         pow = 150;
@@ -1009,7 +1010,7 @@ void potion_effect(char pot_eff, int pow)
 
             if (!were_mighty)
             {
-                increase_stats(STAT_STRENGTH, 5, true);
+                modify_stat(STAT_STRENGTH, 5, true);
 
                 if (you.might > 75)
                     you.might = 75;
@@ -1038,8 +1039,8 @@ void potion_effect(char pot_eff, int pow)
         break;
 
     case POT_LEVITATION:
-        strcpy(info, "You feel ");
-        strcat(info, (!you.levitation) ? "very" : "more");
+        strcpy(info, "You feel");
+        strcat(info, (!you.levitation) ? " very" : " more");
         strcat(info, " buoyant.");
         mpr(info);
 
@@ -1202,8 +1203,8 @@ void potion_effect(char pot_eff, int pow)
         // that's just confusing when trying out random potions (this one
         // still auto-identifies so we know what the effect is, but it
         // shouldn't require bringing up the descovery screen to do that -- bwr
-        mpr( "You feel refreshed." );
-        restore_stat(STAT_ALL, false);
+        if (restore_stat(STAT_ALL, false) == false)
+            mpr( "You feel refreshed." );
         break;
 
     case POT_BERSERK_RAGE:
@@ -1213,7 +1214,7 @@ void potion_effect(char pot_eff, int pow)
 
     case POT_CURE_MUTATION:
         mpr("It has a very clean taste.");
-        for (unsigned char i = 0; i < 7; i++)
+        for (i = 0; i < 7; i++)
         {
             if (random2(10) > i)
                 delete_mutation(100);
@@ -1222,7 +1223,7 @@ void potion_effect(char pot_eff, int pow)
 
     case POT_MUTATION:
         mpr("You feel extremely strange.");
-        for (unsigned char i = 0; i < 3; i++)
+        for (i = 0; i < 3; i++)
         {
             mutate(100);
         }
@@ -1399,15 +1400,15 @@ void unwear_armour(char unw)
         break;
 
     case SPARM_STRENGTH:
-        decrease_stats(STAT_STRENGTH, 3, false);
+        modify_stat(STAT_STRENGTH, -3, false);
         break;
 
     case SPARM_DEXTERITY:
-        decrease_stats(STAT_DEXTERITY, 3, false);
+        modify_stat(STAT_DEXTERITY, -3, false);
         break;
 
     case SPARM_INTELLIGENCE:
-        decrease_stats(STAT_INTELLIGENCE, 3, false);
+        modify_stat(STAT_INTELLIGENCE, -3, false);
         break;
 
     case SPARM_PONDEROUSNESS:
@@ -1460,29 +1461,10 @@ void unuse_randart(unsigned char unw)
     if (inv_randart_wpn_properties( unw, 0, RAP_EVASION ) != 0)
         you.redraw_evasion = 1;
 
-    const int str_plus = inv_randart_wpn_properties( unw, 0, RAP_STRENGTH );
-    if (str_plus != 0)
-    {
-        you.strength -= str_plus;
-        you.max_strength -= str_plus;
-        you.redraw_strength = 1;
-    }
-
-    const int int_plus = inv_randart_wpn_properties( unw, 0, RAP_INTELLIGENCE );
-    if (int_plus != 0)
-    {
-        you.intel -= int_plus;
-        you.max_intel -= int_plus;
-        you.redraw_intelligence = 1;
-    }
-
-    const int dex_plus = inv_randart_wpn_properties( unw, 0, RAP_DEXTERITY );
-    if (dex_plus != 0)
-    {
-        you.dex -= dex_plus;
-        you.max_dex -= dex_plus;
-        you.redraw_dexterity = 1;
-    }
+    // modify ability scores
+    modify_stat(STAT_STRENGTH, -inv_randart_wpn_properties( unw, 0, RAP_STRENGTH ), true);
+    modify_stat(STAT_INTELLIGENCE, -inv_randart_wpn_properties( unw, 0, RAP_INTELLIGENCE ), true);
+    modify_stat(STAT_DEXTERITY, -inv_randart_wpn_properties( unw, 0, RAP_DEXTERITY ), true);
 
     if (inv_randart_wpn_properties( unw, 0, RAP_NOISES ) != 0)
         you.special_wield = SPWLD_NONE;

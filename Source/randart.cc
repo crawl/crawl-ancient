@@ -611,7 +611,7 @@ char *rand_armour_names[] = {
    not randart.h because they're only used in this code module.
 */
 
-#if defined(MAC) || defined(__IBMCPP__)
+#if defined(MAC) || defined(__IBMCPP__) || defined(__BCPLUSPLUS__)
 #define PACKED
 #else
 #define PACKED __attribute__ ((packed))

@@ -51,7 +51,7 @@
 unsigned char your_sign;        // accessed as extern in transfor.cc and acr.cc
 unsigned char your_colour;      // accessed as extern in transfor.cc and acr.cc
 
-FixedArray < unsigned int, 19, 19 > show_backup;
+FixedArray < unsigned int, 20, 19 > show_backup;
 
 unsigned char show_green;
 extern int stealth;             // defined in acr.cc
@@ -713,7 +713,7 @@ void viewwindow2(char draw_it, bool do_updates)
         }
 
 #ifdef DOS_TERM
-        puttext(2, 1, 34, 17, buffy);
+        puttext(2, 1, 34, 17, buffy.buffer());
 #endif
 
 #ifdef PLAIN_TERM
@@ -986,7 +986,6 @@ void monster_grid(bool do_updates)
                                    [ monster->y - you.y_pos + 9]
                            = env.show[ monster->x - you.x_pos + 9 ]
                                      [ monster->y - you.y_pos + 9 ];
-
                         env.show[monster->x - you.x_pos + 9]
                                 [monster->y - you.y_pos + 9] = 257;
                     }
@@ -2889,7 +2888,7 @@ void show_map(FixedVector < int, 2 > &spec_place)
     }
 
 #ifdef DOS_TERM
-    puttext(1, 1, 80, 25, buffer2);
+    puttext(1, 1, 80, 25, buffer2.buffer());
 #endif
 
     gotoxy(curs_x, curs_y);
@@ -3078,7 +3077,7 @@ void show_map(FixedVector < int, 2 > &spec_place)
   putty:
 
 #ifdef DOS_TERM
-    puttext(1, 1, 80, 25, buffer);
+    puttext(1, 1, 80, 25, buffer.buffer());
 #endif
 
     return;
@@ -4032,7 +4031,6 @@ void viewwindow3(char draw_it, bool do_updates)
                         get_non_ibm_symbol( show_backup[count_x + 1]
                                                        [count_y + 1],
                                             &ch, &color );
-
                         env.map[count_x + you.x_pos - 9]
                                [count_y + you.y_pos - 9] = ch;
                     }
@@ -4111,7 +4109,7 @@ void viewwindow3(char draw_it, bool do_updates)
         }
 
 #ifdef DOS_TERM
-        puttext(2, 1, 34, 17, buffy);
+        puttext(2, 1, 34, 17, buffy.buffer());
 #endif
 
 #ifdef PLAIN_TERM

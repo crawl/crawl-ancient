@@ -48,9 +48,7 @@ unsigned char get_invent(int invent_type)
 {
     char nothing = invent(invent_type, false);
 
-#ifdef PLAIN_TERM
     redraw_screen();
-#endif
 
     return nothing;
 }                               // end get_invent()

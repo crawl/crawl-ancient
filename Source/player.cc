@@ -2035,7 +2035,7 @@ get_out:
             {
             case SP_HUMAN:
                 if (!(you.experience_level % 5))
-                    increase_stats(STAT_RANDOM, 1, false);
+                    modify_stat(STAT_RANDOM, 1, false);
                 break;
 
             case SP_ELF:
@@ -2046,7 +2046,7 @@ get_out:
 
                 if (!(you.experience_level % 4))
                 {
-                    increase_stats( (coinflip() ? STAT_INTELLIGENCE
+                    modify_stat( (coinflip() ? STAT_INTELLIGENCE
                                                 : STAT_DEXTERITY), 1, false );
                 }
                 break;
@@ -2060,7 +2060,7 @@ get_out:
 
                 if (!(you.experience_level % 3))
                 {
-                    increase_stats( (coinflip() ? STAT_INTELLIGENCE
+                    modify_stat( (coinflip() ? STAT_INTELLIGENCE
                                                 : STAT_DEXTERITY), 1, false );
                 }
                 break;
@@ -2082,7 +2082,7 @@ get_out:
 
                 if (!(you.experience_level % 4))
                 {
-                    increase_stats( (coinflip() ? STAT_INTELLIGENCE
+                    modify_stat( (coinflip() ? STAT_INTELLIGENCE
                                                 : STAT_DEXTERITY), 1, false );
                 }
 
@@ -2097,7 +2097,7 @@ get_out:
                 mp_adjust++;
 
                 if (!(you.experience_level % 4))
-                    increase_stats(STAT_INTELLIGENCE, 1, false);
+                    modify_stat(STAT_INTELLIGENCE, 1, false);
                 break;
 
             case SP_SLUDGE_ELF:
@@ -2108,7 +2108,7 @@ get_out:
 
                 if (!(you.experience_level % 4))
                 {
-                    increase_stats( (coinflip() ? STAT_INTELLIGENCE
+                    modify_stat( (coinflip() ? STAT_INTELLIGENCE
                                                 : STAT_DEXTERITY), 1, false );
                 }
                 break;
@@ -2125,7 +2125,7 @@ get_out:
                     mp_adjust--;
 
                 if (!(you.experience_level % 4))
-                    increase_stats(STAT_STRENGTH, 1, false);
+                    modify_stat(STAT_STRENGTH, 1, false);
                 break;
 
             case SP_MOUNTAIN_DWARF:
@@ -2140,12 +2140,12 @@ get_out:
                     mp_adjust--;
 
                 if (!(you.experience_level % 4))
-                    increase_stats(STAT_STRENGTH, 1, false);
+                    modify_stat(STAT_STRENGTH, 1, false);
                 break;
 
             case SP_HALFLING:
                 if (!(you.experience_level % 5))
-                    increase_stats(STAT_DEXTERITY, 1, false);
+                    modify_stat(STAT_DEXTERITY, 1, false);
 
                 if (you.experience_level < 17)
                     hp_adjust--;
@@ -2157,7 +2157,7 @@ get_out:
             case SP_KOBOLD:
                 if (!(you.experience_level % 5))
                 {
-                    increase_stats( (coinflip() ? STAT_STRENGTH
+                    modify_stat( (coinflip() ? STAT_STRENGTH
                                                 : STAT_DEXTERITY), 1, false );
                 }
 
@@ -2180,7 +2180,7 @@ get_out:
                     mp_adjust--;
 
                 if (!(you.experience_level % 5))
-                    increase_stats(STAT_STRENGTH, 1, false);
+                    modify_stat(STAT_STRENGTH, 1, false);
                 break;
 
             case SP_MUMMY:
@@ -2197,7 +2197,7 @@ get_out:
                 hp_adjust++;
 
                 if (!(you.experience_level % 4))
-                    increase_stats(STAT_RANDOM, 1, false);
+                    modify_stat(STAT_RANDOM, 1, false);
 
                 if (!(you.experience_level % 3))
                 {
@@ -2215,7 +2215,7 @@ get_out:
 
                 if (!(you.experience_level % 4))
                 {
-                    increase_stats( (coinflip() ? STAT_INTELLIGENCE
+                    modify_stat( (coinflip() ? STAT_INTELLIGENCE
                                                 : STAT_DEXTERITY), 1, false );
                 }
                 break;
@@ -2235,7 +2235,7 @@ get_out:
                     mp_adjust--;
 
                 if (!(you.experience_level % 3))
-                    increase_stats(STAT_STRENGTH, 1, false);
+                    modify_stat(STAT_STRENGTH, 1, false);
                 break;
 
             case SP_OGRE_MAGE:
@@ -2247,7 +2247,7 @@ get_out:
 
                 if (!(you.experience_level % 5))
                 {
-                    increase_stats( (coinflip() ? STAT_INTELLIGENCE
+                    modify_stat( (coinflip() ? STAT_INTELLIGENCE
                                                 : STAT_STRENGTH), 1, false );
                 }
                 break;
@@ -2304,33 +2304,7 @@ get_out:
                         break;
                     }
                     more();
-
-                    // BEGIN - shouldn't all this be replaced by a call to
-                    // redraw_screen()??? {dlb}
-                    // XXX: maybe, let's try it -- bwr
                     redraw_screen();
-#if 0
-                    char title[40];
-
-                    draw_border(you.your_name, player_title(), you.species);
-
-                    you.redraw_hit_points = 1;
-                    you.redraw_magic_points = 1;
-                    you.redraw_strength = 1;
-                    you.redraw_intelligence = 1;
-                    you.redraw_dexterity = 1;
-                    you.redraw_armor_class = 1;
-                    you.redraw_evasion = 1;
-                    you.redraw_gold = 1;
-                    you.redraw_experience = 1;
-                    you.redraw_hunger = 1;
-                    you.redraw_burden = 1;
-
-                    print_stats();
-                    new_level();
-                    // END - shouldn't all this be replaced by a call to
-                    // redraw_screen()??? {dlb}
-#endif
                 }
 
                 if (you.experience_level == 18)
@@ -2357,7 +2331,7 @@ get_out:
                 {
                     mpr("Your scales feel tougher.", MSGCH_INTRINSIC_GAIN);
                     you.redraw_armor_class = 1;
-                    increase_stats(STAT_RANDOM, 1, false);
+                    modify_stat(STAT_RANDOM, 1, false);
                 }
                 break;
 
@@ -2366,29 +2340,7 @@ get_out:
                 {
                     mpr("Your scales start turning grey.", MSGCH_INTRINSIC_GAIN);
                     more();
-
-                    // BEGIN - shouldn't all this be replaced by a call
-                    // to redraw_screen()??? {dlb}
-#if 0
-                    draw_border(you.your_name, player_title(), you.species);
-
-                    you.redraw_hit_points = 1;
-                    you.redraw_magic_points = 1;
-                    you.redraw_strength = 1;
-                    you.redraw_intelligence = 1;
-                    you.redraw_dexterity = 1;
-                    you.redraw_armor_class = 1;
-                    you.redraw_evasion = 1;
-                    you.redraw_gold = 1;
-                    you.redraw_experience = 1;
-                    you.redraw_hunger = 1;
-                    you.redraw_burden = 1;
-
-                    print_stats();
-                    new_level();
-                    // END - shouldn't all this be replaced by a call
-                    // to redraw_screen()??? {dlb}
-#endif
+                    redraw_screen();
                 }
 
                 if (!(you.experience_level % 3))
@@ -2407,14 +2359,14 @@ get_out:
                 if ((you.experience_level > 7 && !(you.experience_level % 3))
                     || you.experience_level == 4 || you.experience_level == 7)
                 {
-                    increase_stats(STAT_RANDOM, 1, false);
+                    modify_stat(STAT_RANDOM, 1, false);
                 }
                 break;
 
             case SP_CENTAUR:
                 if (!(you.experience_level % 4))
                 {
-                    increase_stats( (coinflip() ? STAT_DEXTERITY
+                    modify_stat( (coinflip() ? STAT_DEXTERITY
                                                 : STAT_STRENGTH), 1, false );
                 }
 
@@ -2431,7 +2383,7 @@ get_out:
 
             case SP_DEMIGOD:
                 if (!(you.experience_level % 3))
-                    increase_stats(STAT_RANDOM, 1, false);
+                    modify_stat(STAT_RANDOM, 1, false);
 
                 // lowered because of HD raise -- bwr
                 // if (you.experience_level < 17)
@@ -2455,7 +2407,7 @@ get_out:
 
                 if (!(you.experience_level % 5))
                 {
-                    increase_stats( (coinflip() ? STAT_INTELLIGENCE
+                    modify_stat( (coinflip() ? STAT_INTELLIGENCE
                                                 : STAT_DEXTERITY), 1, false );
                 }
                 break;
@@ -2473,7 +2425,7 @@ get_out:
 
                 if (!(you.experience_level % 4))
                 {
-                    increase_stats( (coinflip() ? STAT_DEXTERITY
+                    modify_stat( (coinflip() ? STAT_DEXTERITY
                                                 : STAT_STRENGTH), 1, false );
                 }
                 break;
@@ -2527,7 +2479,7 @@ get_out:
 /*if (you.attribute [ATTR_NUM_DEMONIC_POWERS] == 6 && (you.experience_level == 8 || (you.experience_level < 8 && one_chance_in(3) ) )
    demonspawn(); */
                 if (!(you.experience_level % 4))
-                    increase_stats(STAT_RANDOM, 1, false);
+                    modify_stat(STAT_RANDOM, 1, false);
                 break;
 
             case SP_GHOUL:
@@ -2542,7 +2494,7 @@ get_out:
                     mp_adjust--;
 
                 if (!(you.experience_level % 5))
-                    increase_stats(STAT_STRENGTH, 1, false);
+                    modify_stat(STAT_STRENGTH, 1, false);
                 break;
 
             case SP_KENKU:
@@ -2553,7 +2505,7 @@ get_out:
                     hp_adjust--;
 
                 if (!(you.experience_level % 4))
-                    increase_stats(STAT_RANDOM, 1, false);
+                    modify_stat(STAT_RANDOM, 1, false);
 
                 if (you.experience_level == 5)
                     mpr("You have gained the ability to fly.", MSGCH_INTRINSIC_GAIN);
@@ -2566,7 +2518,7 @@ get_out:
                     hp_adjust++;
 
                 if (!(you.experience_level % 5))
-                    increase_stats(STAT_RANDOM, 1, false);
+                    modify_stat(STAT_RANDOM, 1, false);
                 break;
             }
         }
@@ -2711,17 +2663,17 @@ void ability_increase(void)
     {
     case 's':
     case 'S':
-        increase_stats(STAT_STRENGTH, 1, false);
+        modify_stat(STAT_STRENGTH, 1, false);
         return;
 
     case 'i':
     case 'I':
-        increase_stats(STAT_INTELLIGENCE, 1, false);
+        modify_stat(STAT_INTELLIGENCE, 1, false);
         return;
 
     case 'd':
     case 'D':
-        increase_stats(STAT_DEXTERITY, 1, false);
+        modify_stat(STAT_DEXTERITY, 1, false);
         return;
     }
 
@@ -3216,12 +3168,15 @@ int scan_randarts(char which_property)
     return retval;
 }                               // end scan_randarts()
 
-void increase_stats(unsigned char which_stat, unsigned char amount,
-                    bool suppress_msg)
+void modify_stat(unsigned char which_stat, char amount, bool suppress_msg)
 {
-    char *ptr_stat = 0;         // NULL {dlb}
-    char *ptr_stat_max = 0;     // NULL {dlb}
-    char *ptr_redraw = 0;       // NULL {dlb}
+    char *ptr_stat = NULL;
+    char *ptr_stat_max = NULL;
+    char *ptr_redraw = NULL;
+
+    // sanity - is non-zero amount?
+    if (amount == 0)
+        return;
 
     if (!suppress_msg)
         strcpy(info, "You feel ");
@@ -3236,7 +3191,7 @@ void increase_stats(unsigned char which_stat, unsigned char amount,
         ptr_stat_max = &you.max_strength;
         ptr_redraw = &you.redraw_strength;
         if (!suppress_msg)
-            strcat(info, "stronger");
+            strcat(info, (amount > 0)?"stronger":"weaker");
         break;
 
     case STAT_DEXTERITY:
@@ -3244,7 +3199,7 @@ void increase_stats(unsigned char which_stat, unsigned char amount,
         ptr_stat_max = &you.max_dex;
         ptr_redraw = &you.redraw_dexterity;
         if (!suppress_msg)
-            strcat(info, "agile");
+            strcat(info, (amount > 0)?"agile":"clumsy");
         break;
 
     case STAT_INTELLIGENCE:
@@ -3252,14 +3207,14 @@ void increase_stats(unsigned char which_stat, unsigned char amount,
         ptr_stat_max = &you.max_intel;
         ptr_redraw = &you.redraw_intelligence;
         if (!suppress_msg)
-            strcat(info, "clever");
+            strcat(info, (amount > 0)?"clever":"stupid");
         break;
     }
 
     if (!suppress_msg)
     {
         strcat(info, ".");
-        mpr(info, MSGCH_INTRINSIC_GAIN);
+        mpr(info, (amount > 0)?MSGCH_INTRINSIC_GAIN:MSGCH_WARN);
     }
 
     *ptr_stat += amount;
@@ -3270,66 +3225,7 @@ void increase_stats(unsigned char which_stat, unsigned char amount,
         burden_change();
 
     return;
-}                               // end increase_stats()
-
-// use effects::lose_stat() should you wish to:
-// (a) apply player_sust_abil() to reductions; and
-// (b) limit resultant stat value to three, minimum {dlb}
-void decrease_stats(unsigned char which_stat, unsigned char amount,
-                    bool suppress_msg)
-{
-    char *ptr_stat = 0;         // NULL {dlb}
-    char *ptr_stat_max = 0;     // NULL {dlb}
-    char *ptr_redraw = 0;       // NULL {dlb}
-
-    if (!suppress_msg)
-        strcpy(info, "You feel ");
-
-    if (which_stat == STAT_RANDOM)
-        which_stat = random2(NUM_STATS);
-
-    switch (which_stat)
-    {
-    case STAT_STRENGTH:
-        ptr_stat = &you.strength;
-        ptr_stat_max = &you.max_strength;
-        ptr_redraw = &you.redraw_strength;
-        if (!suppress_msg)
-            strcat(info, "weaker");
-        break;
-
-    case STAT_DEXTERITY:
-        ptr_stat = &you.dex;
-        ptr_stat_max = &you.max_dex;
-        ptr_redraw = &you.redraw_dexterity;
-        if (!suppress_msg)
-            strcat(info, "clumsy");
-        break;
-
-    case STAT_INTELLIGENCE:
-        ptr_stat = &you.intel;
-        ptr_stat_max = &you.max_intel;
-        ptr_redraw = &you.redraw_intelligence;
-        if (!suppress_msg)
-            strcat(info, "stupid");
-        break;
-    }
-
-    if (!suppress_msg)
-    {
-        strcat(info, ".");
-        mpr(info);
-    }
-
-    *ptr_stat -= amount;
-    *ptr_stat_max -= amount;
-    *ptr_redraw = 1;
-
-    if (ptr_stat == &you.strength)
-        burden_change();
-
-    return;
-}                               // end decrease_stats()
+}                               // end modify_stat()
 
 void dec_hp(int hp_loss, bool fatal)
 {

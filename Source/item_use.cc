@@ -624,7 +624,7 @@ void wear_armour(void)
         && hands_reqd_for_weapon(you.inv_class[you.equip[EQ_WEAPON]],
                       you.inv_type[you.equip[EQ_WEAPON]]) == HANDS_TWO_HANDED)
     {
-        mpr("You can't bear a shield *and* wield a two-handed weapon.");
+        mpr("You'd need three hands to do that!");
         return;
     }
 
@@ -910,15 +910,15 @@ void wear_armour(void)
             break;
 
         case SPARM_STRENGTH:
-            increase_stats(STAT_STRENGTH, 3, false);
+            modify_stat(STAT_STRENGTH, 3, false);
             break;
 
         case SPARM_DEXTERITY:
-            increase_stats(STAT_DEXTERITY, 3, false);
+            modify_stat(STAT_DEXTERITY, 3, false);
             break;
 
         case SPARM_INTELLIGENCE:
-            increase_stats(STAT_INTELLIGENCE, 3, false);
+            modify_stat(STAT_INTELLIGENCE, 3, false);
             break;
 
         case SPARM_PONDEROUSNESS:
@@ -1291,8 +1291,18 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     wepType = you.inv_type[throw_2];
 
     // get the launcher class,type.  Convenience.
-    lnchClass = you.inv_class[you.equip[EQ_WEAPON]];
-    lnchType = you.inv_type[you.equip[EQ_WEAPON]];
+    if (you.equip[EQ_WEAPON] < 0)
+    {
+        lnchClass = -1;
+        // set lnchType to 0 so the 'figure out if launched'
+        // code doesn't break
+        lnchType = 0;
+    }
+    else
+    {
+        lnchClass = you.inv_class[you.equip[EQ_WEAPON]];
+        lnchType = you.inv_type[you.equip[EQ_WEAPON]];
+    }
 
     // baseHit and damage for generic objects
     baseHit = you.strength - mass(wepClass, wepType) / 10;
@@ -1913,8 +1923,7 @@ void puton_ring(void)
         break;
 
     case RING_STRENGTH:
-        increase_stats(STAT_STRENGTH, (you.inv_plus[ring_wear_2] % 100), true);
-        decrease_stats(STAT_STRENGTH, 50, true);
+        modify_stat(STAT_STRENGTH, (you.inv_plus[ring_wear_2] % 100) - 50, true);
 
         if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
         {
@@ -1924,8 +1933,7 @@ void puton_ring(void)
         break;
 
     case RING_DEXTERITY:
-        increase_stats(STAT_DEXTERITY, (you.inv_plus[ring_wear_2] % 100), true);
-        decrease_stats(STAT_DEXTERITY, 50, true);
+        modify_stat(STAT_DEXTERITY, (you.inv_plus[ring_wear_2] % 100) - 50, true);
 
         if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
         {
@@ -1935,8 +1943,7 @@ void puton_ring(void)
         break;
 
     case RING_INTELLIGENCE:
-        increase_stats(STAT_INTELLIGENCE, (you.inv_plus[ring_wear_2] % 100), true);
-        decrease_stats(STAT_INTELLIGENCE, 50, true);
+        modify_stat(STAT_INTELLIGENCE, (you.inv_plus[ring_wear_2] % 100) - 50, true);
 
         if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
         {
@@ -1961,8 +1968,10 @@ void puton_ring(void)
         you.attribute[ATTR_CONTROL_TELEPORT]++;
         break;
 
-    /* all of the amulets so far existing are not needed here, but have their
-       presence queried whenever relevant through wearing_amulet in fn2.cc */
+    case AMU_RAGE:
+        mpr("You feel a brief urge to hack something to bits.");
+        set_id(you.inv_class[ring_wear_2], you.inv_type[ring_wear_2], 1);
+        break;
     }
 
     you.turn_is_over = 1;
@@ -2154,18 +2163,15 @@ void remove_ring(void)
         break;
 
     case RING_STRENGTH:
-        decrease_stats(STAT_STRENGTH, (you.inv_plus[ring_wear_2] % 100), true);
-        increase_stats(STAT_STRENGTH, 50, true);
+        modify_stat(STAT_STRENGTH, 50 - (you.inv_plus[ring_wear_2] % 100), true);
         break;
 
     case RING_DEXTERITY:
-        decrease_stats(STAT_DEXTERITY, (you.inv_plus[ring_wear_2] % 100), true);
-        increase_stats(STAT_DEXTERITY, 50, true);
+        modify_stat(STAT_DEXTERITY, 50 - (you.inv_plus[ring_wear_2] % 100), true);
         break;
 
     case RING_INTELLIGENCE:
-        decrease_stats(STAT_INTELLIGENCE, (you.inv_plus[ring_wear_2] % 100), true);
-        increase_stats(STAT_INTELLIGENCE, 50, true);
+        modify_stat(STAT_INTELLIGENCE, 50 -(you.inv_plus[ring_wear_2] % 100), true);
         break;
 
     case RING_INVISIBILITY:
@@ -2672,9 +2678,7 @@ void read_scroll(void)
 
         describe_spell(which_spell_in_book(you.inv_type[sc_read_2],
                                         1 + letter_to_index(book_thing)));
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
 
         mesclr();
         return;
@@ -3320,9 +3324,7 @@ void original_name(void)
     inn = drink_2;
     describe_item(you.inv_class[inn], you.inv_type[inn], you.inv_plus[inn],
                   you.inv_plus2[inn], you.inv_dam[inn], you.inv_ident[inn]);
-#ifdef PLAIN_TERM
     redraw_screen();
-#endif
 }                               // end original_name()
 
 void use_randart(unsigned char item_wield_2)
@@ -3333,29 +3335,13 @@ void use_randart(unsigned char item_wield_2)
     if (inv_randart_wpn_properties(item_wield_2, 0, RAP_EVASION) != 0)
         you.redraw_evasion = 1;
 
-    const int str_plus = inv_randart_wpn_properties(item_wield_2, 0, RAP_STRENGTH);
-    if (str_plus)
-    {
-        you.strength += str_plus;
-        you.max_strength += str_plus;
-        you.redraw_strength = 1;
-    }
-
-    const int int_plus = inv_randart_wpn_properties(item_wield_2, 0, RAP_INTELLIGENCE);
-    if (int_plus)
-    {
-        you.intel += int_plus;
-        you.max_intel += int_plus;
-        you.redraw_intelligence = 1;
-    }
-
-    const int dex_plus = inv_randart_wpn_properties(item_wield_2, 0, RAP_DEXTERITY);
-    if (dex_plus)
-    {
-        you.dex += dex_plus;
-        you.max_dex += dex_plus;
-        you.redraw_dexterity = 1;
-    }
+    // modify ability scores
+    modify_stat(STAT_STRENGTH, inv_randart_wpn_properties( item_wield_2,
+        0, RAP_STRENGTH ), true);
+    modify_stat(STAT_INTELLIGENCE, inv_randart_wpn_properties( item_wield_2,
+        0, RAP_INTELLIGENCE ), true);
+    modify_stat(STAT_DEXTERITY, inv_randart_wpn_properties( item_wield_2,
+        0, RAP_DEXTERITY ), true);
 
     if (inv_randart_wpn_properties(item_wield_2, 0, RAP_NOISES) != 0)
     {

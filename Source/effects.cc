@@ -474,11 +474,12 @@ void acquirement(unsigned char force_class)
 
         do
         {
+                unsigned char i;
             switch (class_wanted)
             {
             case OBJ_JEWELLERY:
                 // Try for a base type the player hasn't identified
-                for (unsigned char i = 0; i < 10; i++)
+                for (i = 0; i < 10; i++)
                 {
                     type_wanted = random2(24);
                     if (one_chance_in(3))

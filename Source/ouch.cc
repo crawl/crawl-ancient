@@ -556,7 +556,7 @@ void ouch(int dam, int death_source, char death_type)
         if (dam > 0 && you.hp_max <= dam * 2)
             mpr( "Ouch!  That really hurt!", MSGCH_DANGER );
 
-        if (you.hp && Options.hp_warning
+        if (you.hp > 0 && Options.hp_warning
             && you.hp <= (you.hp_max * Options.hp_warning) / 100)
         {
             mpr( "* * * LOW HITPOINT WARNING * * *", MSGCH_DANGER );
@@ -1356,25 +1356,26 @@ static char *pad(char *str)
 
 void highscore(char death_string[256], long points)
 {
-    char high_scores[SCORE_FILE_ENTRIES][80];
+    char high_scores[SCORE_FILE_ENTRIES][81];
     long scores[SCORE_FILE_ENTRIES];
     int i = 0;
     int j = 0;
-    char ready[80];
+    char ready[81];
+    char *readRV;
 
     pad(death_string);
 
     for (i = 0; i < SCORE_FILE_ENTRIES; i++)
     {
-        strcpy(high_scores[i], "0       empty                                                                  ");
+        strcpy(high_scores[i], "0       empty");
         scores[i] = 0;
     }
 
 #ifdef SAVE_DIR_PATH
-    FILE *handle = fopen(SAVE_DIR_PATH "scores", "rb");
+    FILE *handle = fopen(SAVE_DIR_PATH "scores", "r");
 
 #else
-    FILE *handle = fopen("scores", "rb");
+    FILE *handle = fopen("scores", "r");
 #endif
 
 #ifdef USE_FILE_LOCKING
@@ -1388,32 +1389,28 @@ void highscore(char death_string[256], long points)
 
     if (handle != NULL)
     {
-        i = 0;
-        int endOfFile = 0;
 
-        while ((i < SCORE_FILE_ENTRIES) && !endOfFile)
+        for(i=0;  i < SCORE_FILE_ENTRIES; i++)
         {
-            // BCR - reading in 80 chars at a time now instead of 1. 80x faster
-            fread(ready, 80, 1, handle);
+            // this way we maintain compatibility with old-style scores files,
+            // but can also read new ones with actual EOL at the end of lines.
+            // mind you,  the new score file entries MUST be less than 81
+            // characters in length or this will chop them up something rotten. :(
+            ///  GDL
+            readRV = fgets(ready, 81, handle);
 
+            if (readRV == NULL)
+                break;
+
+            // copy text over to highscore entry
+            char *targ = high_scores[i];
             for (j = 0; j < 80; j++)
             {
                 if (isspace(ready[j]) || isalpha(ready[j])
                     || isdigit(ready[j]) || ispunct(ready[j]))
-                    high_scores[i][j] = ready[j];
-                else if (ready[j] == EOF)
-                {
-                    endOfFile = 1;
-                    break;
-                }
-                else
-                {
-                    pad(high_scores[i]);
-                    break;
-                }
-            }                   // end for j
-
-            i++;
+                    *targ++ = ready[j];
+            }
+            *targ = 0;
         }                       // end for i
 
         for (i = 0; i < SCORE_FILE_ENTRIES; i++)
@@ -1428,18 +1425,27 @@ void highscore(char death_string[256], long points)
                 multip *= 10;
             }
         }
+
+        // finished file read - close it.
+
+#ifdef USE_FILE_LOCKING
+        unlock_file_handle( handle );
+#endif
+        fclose(handle);
     }
     else
     {
         perror( "Could not read scorefile... " );
     }
 
+    // print scores to screen and assign ranks
+
     char has_printed = 0;
     int numEntries = NUMBER_OF_LINES - 7;
 
     for (i = 0; i < numEntries; i++)
     {
-        if ((points >= scores[i]) && (!has_printed))
+        if ((points >= scores[i]) && (has_printed==0))
         {
             textcolor(YELLOW);
             itoa(i + 1, ready, 10);
@@ -1462,7 +1468,7 @@ void highscore(char death_string[256], long points)
         }
         else
         {
-            itoa(i + 1, ready, 10);
+            itoa(i + 1 + has_printed, ready, 10);
             cprintf(ready);
 
             if (strlen(ready) == 1)
@@ -1470,26 +1476,21 @@ void highscore(char death_string[256], long points)
             else
                 cprintf("-");
 
-            j = 0;
-            while ((j < 75) && (death_string[j] != EOF))
-            {
-                putch(high_scores[i][j++]);
-            }
+            // temp truncate of highscore entry
+            char tmp = high_scores[i][74];
+            high_scores[i][74] = '\0';
+            cprintf(high_scores[i]);
 
+            // restore
+            high_scores[i][74] = tmp;
             cprintf(EOL);
         }
     }
 
-#ifdef USE_FILE_LOCKING
-    unlock_file_handle( handle );
-#endif
-
-    fclose(handle);
-
 #ifdef SAVE_DIR_PATH
-    handle = fopen(SAVE_DIR_PATH "scores", "wb");
+    handle = fopen(SAVE_DIR_PATH "scores", "w");
 #else
-    handle = fopen("scores", "wb");
+    handle = fopen("scores", "w");
 #endif
 
 #ifdef USE_FILE_LOCKING
@@ -1504,20 +1505,24 @@ void highscore(char death_string[256], long points)
     if (handle != NULL)
     {
         has_printed = 0;
-        for (i = 0; i < SCORE_FILE_ENTRIES; i++)
+        for (i = 0; i < SCORE_FILE_ENTRIES && scores[i] > 0; i++)
         {
-
-            if (has_printed == 1 && i == SCORE_FILE_ENTRIES - 1)
-                break;
-
-            if (points > scores[i] && has_printed == 0)
+            if (points >= scores[i] && has_printed == 0)
             {
-                fwrite(death_string, 80, 1, handle);
+                // truncate after 79th character.
+                death_string[79] = '\0';
+                fputs(death_string, handle);
+                fputs("\n", handle);
                 i--;
                 has_printed = 1;
             }
             else
-                fwrite(high_scores[i], 80, 1, handle);
+            {
+                // truncate after 79th character
+                high_scores[i][79] = '\0';
+                fputs(high_scores[i], handle);
+                fputs("\n", handle);
+            }
         }
 
 #ifdef USE_FILE_LOCKING

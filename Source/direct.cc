@@ -369,7 +369,7 @@ int look_around(struct dist &moves)
     gotoxy(xps, yps);
     gotoxy(xps + 1, yps);
 
-    losight(env.show, grd, you.x_pos, you.y_pos);
+//    losight(env.show, grd, you.x_pos, you.y_pos);  // why??? (GDL)
 
     do
     {
@@ -479,10 +479,7 @@ int look_around(struct dist &moves)
                     }
 
                     describe_monsters( menv[ tmon ].type, tmon );
-
-    #ifdef PLAIN_TERM
                     redraw_screen();
-    #endif
                 }
                 break;
 

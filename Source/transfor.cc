@@ -107,7 +107,7 @@ bool transform(int pow, char which_trans)
     case TRAN_SPIDER:           /* also AC + 2, ev + 3, fast_run */
         mpr("You turn into a venomous arachnid creature.");
         remove_equipment(rem_stuff);
-        increase_stats(STAT_DEXTERITY, 5, true);
+        modify_stat(STAT_DEXTERITY, 5, true);
         you.attribute[ATTR_TRANSFORMATION] = TRAN_SPIDER;
         you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
 
@@ -115,7 +115,7 @@ bool transform(int pow, char which_trans)
             you.duration[DUR_TRANSFORMATION] = 100;
 
         your_sign = 's';
-        your_colour = DARKGREY;
+        your_colour = BROWN;
         return true;
 
     case TRAN_BLADE_HANDS:
@@ -143,8 +143,8 @@ bool transform(int pow, char which_trans)
 
         rem_stuff[EQ_WEAPON] = 0;       /* can still hold a weapon */
         remove_equipment(rem_stuff);
-        decrease_stats(STAT_DEXTERITY, 2, true);
-        increase_stats(STAT_STRENGTH, 2, true);
+        modify_stat(STAT_DEXTERITY, -2, true);
+        modify_stat(STAT_STRENGTH, 2, true);
         you.attribute[ATTR_TRANSFORMATION] = TRAN_STATUE;
         you.duration[DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
 
@@ -179,7 +179,7 @@ bool transform(int pow, char which_trans)
         if (you.duration[DUR_TRANSFORMATION] > 100)
             you.duration[DUR_TRANSFORMATION] = 100;
 
-        increase_stats(STAT_STRENGTH, 10, true);
+        modify_stat(STAT_STRENGTH, 10, true);
         your_sign = 'D';
         your_colour = GREEN;
         extra_hp(16);
@@ -205,7 +205,7 @@ bool transform(int pow, char which_trans)
         if (you.duration[DUR_TRANSFORMATION] > 100)
             you.duration[DUR_TRANSFORMATION] = 100;
 
-        increase_stats(STAT_STRENGTH, 3, true);
+        modify_stat(STAT_STRENGTH, 3, true);
         your_sign = 'L';
         your_colour = LIGHTGREY;
         you.is_undead = US_HUNGRY_DEAD;
@@ -221,7 +221,7 @@ bool transform(int pow, char which_trans)
         if (you.duration[DUR_TRANSFORMATION] > 150)
             you.duration[DUR_TRANSFORMATION] = 150;
 
-        increase_stats(STAT_DEXTERITY, 8, true);
+        modify_stat(STAT_DEXTERITY, 8, true);
         your_sign = '#';
         your_colour = DARKGREY;
         return true;
@@ -235,7 +235,7 @@ bool transform(int pow, char which_trans)
         if (you.duration[DUR_TRANSFORMATION] > 120)
             you.duration[DUR_TRANSFORMATION] = 120;
 
-        increase_stats(STAT_STRENGTH, 13, true);
+        modify_stat(STAT_STRENGTH, 13, true);
         your_sign = 'S';
         your_colour = RED;
         extra_hp(17);
@@ -265,7 +265,7 @@ void untransform(void)
     {
     case TRAN_SPIDER:
         mpr("Your transformation has ended.", MSGCH_DURATION);
-        decrease_stats(STAT_DEXTERITY, 5, true);
+        modify_stat(STAT_DEXTERITY, -5, true);
         break;
 
     case TRAN_BLADE_HANDS:
@@ -275,8 +275,8 @@ void untransform(void)
 
     case TRAN_STATUE:
         mpr("You revert to your normal fleshy form.", MSGCH_DURATION);
-        increase_stats(STAT_DEXTERITY, 2, true);
-        decrease_stats(STAT_STRENGTH, 2, true);
+        modify_stat(STAT_DEXTERITY, 2, true);
+        modify_stat(STAT_STRENGTH, -2, true);
         break;
 
     case TRAN_ICE_BEAST:
@@ -285,23 +285,23 @@ void untransform(void)
 
     case TRAN_DRAGON:
         mpr("Your transformation has ended.", MSGCH_DURATION);
-        decrease_stats(STAT_STRENGTH, 10, true);
+        modify_stat(STAT_STRENGTH, -10, true);
         break;
 
     case TRAN_LICH:
         mpr("You feel yourself come back to life.", MSGCH_DURATION);
-        decrease_stats(STAT_STRENGTH, 3, true);
+        modify_stat(STAT_STRENGTH, -3, true);
         you.is_undead = US_ALIVE;
         break;
 
     case TRAN_AIR:
         mpr("Your body solidifies.", MSGCH_DURATION);
-        decrease_stats(STAT_DEXTERITY, 8, true);
+        modify_stat(STAT_DEXTERITY, -8, true);
         break;
 
     case TRAN_SERPENT_OF_HELL:
         mpr("Your transformation has ended.", MSGCH_DURATION);
-        decrease_stats(STAT_STRENGTH, 13, true);
+        modify_stat(STAT_STRENGTH, -13, true);
         break;
     }
 

@@ -161,8 +161,6 @@ static void reset_ch(void)
     you.redraw_experience = 1;
     you.redraw_gold = 1;
     you.redraw_hunger = 1;
-    you.hunger_state = HS_SATIATED;
-
 }
 
 struct ghost_struct ghost;
@@ -180,34 +178,31 @@ void generate_random_demon();
 
 static void save_int(char *&p, int val, int digits)
 {
-    char thing_quant[8];
-    int add = 1;
+    char thing_quant[16];
+    int vallen = 0;
 
-    for (int i = 1; i < digits; ++i)
-        add *= 10;
+    itoa(val, thing_quant, 10);
 
-    itoa(val + add, thing_quant, 10);
-
-    for (int i = 0; i < digits; ++i)
-        *p++ = thing_quant[i];
+    vallen = strlen(thing_quant);
+    for(int i=0; i<digits; i++)
+    {
+        if (i<(digits - vallen))
+            *p++ = '0';
+        else
+            *p++ = thing_quant[i+vallen-digits];
+    }
 }
 
 
 static int load_int(char *&p, int digits)
 {
-    char thing_quant[8];
-    int add = 1;
+    char thing_quant[16];
 
-    thing_quant[0] = *p++;
-
-    for (int i = 1; i < digits; ++i)
-    {
+    for (int i = 0; i < digits; i++)
         thing_quant[i] = *p++;
-        add *= 10;
-    }
 
     thing_quant[digits] = 0;
-    return atoi(thing_quant) - add;
+    return atoi(thing_quant);
 }
 
 
@@ -247,7 +242,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
           char where_were_you2)
 {
     int j = 0;
-    int i, count_x, count_y;
+    int i = 0, count_x = 0, count_y = 0;
     char cha_fil[kFileNameSize];
 
     char corr_level[4];
@@ -282,9 +277,26 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     unsigned char fit_icol[8][8];
     char fit_iid[8][8];
     double elapsed_time = 0.0;
+    double delta = 0.0;
 
     int itmf = 0;
     int ic = 0;
+    int imn = 0;
+
+    const int oldlen = 20 + 20 + 4 * 80 * 70 + 3 * MAX_TRAPS + 25 * MAX_ITEMS
+                        + 1 + 9 * MAX_CLOUDS + 5 * 8 + 5 * 20
+                        + (18 + 5 + 5 + 5 + 5 + 8 * 5) * MAX_MONSTERS;
+
+    const int datalen = 42 + oldlen;
+    char *buf = (char *) malloc(datalen);
+
+    int bytes = 0;
+    char *p = NULL;
+
+    char majorVersion = 0;
+    char minorVersion = 0;
+    int chunkSize = 0, turns = 0;
+
 
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
@@ -477,7 +489,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     {                           /* generate new level */
         strcpy(ghost.name, "");
 
-        for (int imn = 0; imn < 20; ++imn)
+        for (imn = 0; imn < 20; ++imn)
         {
             ghost.values[imn] = 0;
         }
@@ -541,7 +553,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 ghost.values[19] = buf1[39];
                 unlink(cha_fil);
 
-                for (int imn = 0; imn < MAX_MONSTERS - 10; imn++)
+                for (imn = 0; imn < MAX_MONSTERS - 10; imn++)
                 {
                     if (menv[imn].type != -1)
                         continue;
@@ -829,7 +841,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
         if (elapsed_time != 0.0)
         {
-            double delta = you.elapsed_time - elapsed_time;
+            delta = you.elapsed_time - elapsed_time;
 
             // because of rounding errors when saving it's possible to
             // have a negative number if the numbers are large and
@@ -858,15 +870,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }
     }
 
-    const int oldlen = 20 + 20 + 4 * 80 * 70 + 3 * MAX_TRAPS + 25 * MAX_ITEMS
-                        + 1 + 9 * MAX_CLOUDS + 5 * 8 + 5 * 20
-                        + (18 + 5 + 5 + 5 + 5 + 8 * 5) * MAX_MONSTERS;
-
-    const int datalen = 42 + oldlen;
-
-    char *buf = (char *) malloc(datalen);
-
-    int bytes = read2(handle, buf, datalen);
+    bytes = read2(handle, buf, datalen);
 
     if (oldlen != bytes && datalen != bytes)
     {
@@ -883,13 +887,13 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
     fclose(handle);
 
-    char *p = buf;
+    p = buf;
 
     if (bytes > oldlen)
     {
-        char majorVersion = *p++;
-        char minorVersion = *p++;
-        int chunkSize = load_int(p, 4);
+        majorVersion = *p++;
+        minorVersion = *p++;
+        chunkSize = load_int(p, 4);
 
         if (majorVersion != 1)
         {
@@ -1068,7 +1072,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
             {
                 if (elapsed_time != 0.0)
                 {
-                    int turns = (int) (you.elapsed_time - elapsed_time) / 10;
+                    turns = (int) (you.elapsed_time - elapsed_time) / 10;
 
                     if (turns > 0)
                     {
@@ -1145,9 +1149,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     }
 
     // closes all the gates if you're on the way out
-    for (int i = 0; i < GXM; i++)
+    for (i = 0; i < GXM; i++)
     {
-        for (int j = 0; j < GYM; j++)
+        for (j = 0; j < GYM; j++)
         {
             if (you.char_direction == DIR_ASCENDING
                 && you.level_type != LEVEL_PANDEMONIUM)
@@ -1244,7 +1248,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
     if (elapsed_time != 0.0)
     {
-        double delta = you.elapsed_time - elapsed_time;
+        delta = you.elapsed_time - elapsed_time;
 
         // because of rounding errors when saving it's possible to
         // have a negative number if the numbers are large and close together

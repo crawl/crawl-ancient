@@ -294,18 +294,12 @@ void forget_map(unsigned char chance_forgotten);
 void gain_exp(unsigned int exp_gained);
 
 
-// last updated 18may2000 {dlb}
+// last updated 17dec2000 {gdl}
 /* ***********************************************************************
- * called from: acr - it_use2 - item_use - mutation - transfor
+ * called from: acr - it_use2 - item_use - mutation - transfor - player -
+ *              misc - stuff
  * *********************************************************************** */
-void decrease_stats(unsigned char which_stat, unsigned char amount, bool suppress_msg);
-
-
-// last updated 18may2000 {dlb}
-/* ***********************************************************************
- * called from: it_use2 - item_use - misc - mutation - player - transfor
- * *********************************************************************** */
-void increase_stats(unsigned char which_stat, unsigned char amount, bool suppress_msg);
+void modify_stat(unsigned char which_stat, char amount, bool suppress_msg);
 
 
 // last updated 19may2000 {dlb}

@@ -104,9 +104,7 @@ void cast_a_spell(void)
         {
             unthing = spell_list();
 
-#ifdef PLAIN_TERM
             redraw_screen();
-#endif
             if (unthing == 2)
                 return;
 

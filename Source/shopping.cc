@@ -1495,7 +1495,5 @@ void shop(void)
     you.redraw_gold = 1;
     burden_change();
 
-#ifdef PLAIN_TERM
     redraw_screen();
-#endif
 }                               // end shop()

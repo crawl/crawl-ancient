@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef __IBMCPP__
+#if !(defined(__IBMCPP__) || defined(__BCPLUSPLUS__))
 #include <unistd.h>
 #endif
 #include <stdarg.h>
@@ -31,7 +31,7 @@
 
 #ifdef LINUX
 #include <curses.h>
-#elif MAC
+#elif defined(MAC)|| defined(__IBMCPP__) || defined(__BCPLUSPLUS__)
 #else
 #include <conio.h>
 #endif

@@ -14,7 +14,7 @@
 
 #include <ctype.h>
 #include <string.h>
-#include <values.h>
+#include <limits.h>
 
 #include "externs.h"
 #include "debug.h"
@@ -112,7 +112,7 @@ int count_bits(unsigned int bits)
     unsigned int n;
     int c = 0;
 
-    for (n = 1; n < MAXINT; n <<= 1)
+    for (n = 1; n < INT_MAX; n <<= 1)
         if (n & bits)
             c++;
 
@@ -137,15 +137,6 @@ const char *spell_title(int spell)      //jmf: ah the joys of driving ms. data
 {
     return seekspell(spell)->title;
 }
-
-/* //jmf: commented out; add field `restriction' to spell struct if desired
-   //     (and if anyone finds a use for such a thing)
-   int spell_restriction( int which_spell, int which_restriction )
-   {
-   int this_restriction = (int) seekspell(which_spell)->restriction;
-   return ( this_restriction == which_restriction );
-   }          // end spell_restriction()
- */
 
 /*
  **************************************************

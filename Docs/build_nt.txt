@@ -8,15 +8,31 @@ Notes for building crawl with VACPP
 * define the macro WIN32CONSOLE
 * MUST build with signedchars = yes
 * MUST build with emumsize = 4
-* should probably target pentium-class machines.
+* target architecture should probably be 486 machines.
+
+  According to jmf,  targetting Pentium class machines
+  implies Pentium-specific instructions which are
+  actually slower on PPro/PII/PIII machines.
 
 Other than this,  it's pretty straightforward.
 
 
-//jmf: wrt/ 'target pentium-class machines': from Linux compiles, I know
-//     most of the benefit of 32-bit-happiness comes from just targeting
-//     486-class machines. Compiling for a Pentium implies a bunch of
-//     Pentium-specific idioms which are slower on PPro/PII(I) and don't
-//     work at all on 486s.
-//
-//     VACPP may or may not conform to the above behavior. :-)
+Notes for building crawl with Borland C++ 5.01
+----------------------------------------------
+* must alter the Tool information for CppCompile to
+  'understand' .cc extensions (in Advanced Tools Settings)
+* include libw32c.cc as source; ignore other lib*.cc files
+* define macro WIN32CONSOLE
+* MUST build with "Unsigned Characters" OFF
+* MUST build with "Allocate Enums as Ints" ON
+* MUST set search directories so that the Crawl Source directory
+  is searched before the BC5\INCLUDE directory.
+* target architecture should probably be 486 machines
+  (see note for VACPP)
+* helps to set Warnings to "Selected Subset only" or you
+  get ZILLIONS of warnings.   I usually turn off all the
+  "Code Efficiency" warnings.  :)
+* for best results,  specify following in target expert:
+  - Win32 Console Application (.exe)
+  - _Everything_ unchecked
+  - Static linking

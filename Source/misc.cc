@@ -14,7 +14,7 @@
 #include "misc.h"
 
 #include <string.h>
-#ifndef __IBMCPP__
+#if !(defined(__IBMCPP__) || defined(__BCPLUSPLUS__))
 #include <unistd.h>
 #endif
 #include <stdlib.h>
@@ -613,8 +613,6 @@ void up_stairs(void)
             }
         }
     }
-
-    food_change(0);             // not really certain this is necessary {dlb}
 }                               // end up_stairs()
 
 void down_stairs(bool remove_stairs, int old_level)
@@ -1013,8 +1011,6 @@ void down_stairs(bool remove_stairs, int old_level)
             }                   // this is so terribly dangerous ... {dlb}
         }
     }
-
-    food_change(0);             // not really certain this is necessary {dlb}
 }                               // end down_stairs()
 
 void new_level(void)
@@ -1781,7 +1777,7 @@ bool go_berserk(void)
         deflate_hp(you.hp_max, false);
 
         if (!you.might)
-            increase_stats(STAT_STRENGTH, 5, true);
+            modify_stat(STAT_STRENGTH, 5, true);
 
         you.might += you.berserker;
         you.haste += you.berserker;

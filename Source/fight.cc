@@ -1781,9 +1781,6 @@ void monster_attack(int monster_attacking)
     // being attacked by a water creature while standing in water?
     bool water_attack = false;
 
-    // XXX: Why is this used here? -- bwr
-    const int weapon = you.equip[ EQ_WEAPON ];
-
     bool bearing_shield = (you.equip[EQ_SHIELD] != -1);
 
     int mmov_x = 0;
@@ -2829,9 +2826,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
     struct monsters *attacker = &menv[monster_attacking];
     struct monsters *defender = &menv[monster_attacked];
 
-    // XXX: Why is this and you.inv used here? -- bwr
-    const int weapon = you.equip[ EQ_WEAPON ];
-
+    int weapon = -1;            // monster weapon, if any
     int damage_taken = 0;
     bool hit = false;
     int mmov_x = 0;
@@ -2935,23 +2930,21 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
         if (water_attack)
             mons_to_hit += 5;
 
-        if (attacker->inv[hand_used] != NON_ITEM)
+        weapon = attacker->inv[hand_used];
+
+        if (weapon != NON_ITEM)
         {
-            if (mitm.pluses[attacker->inv[hand_used]] - 50 > 130)
-                mons_to_hit += mitm.pluses[attacker->inv[hand_used]] - 50 - 100;
+            if (mitm.pluses[weapon] - 50 > 130)
+                mons_to_hit += mitm.pluses[weapon] - 50 - 100;
             else
-                mons_to_hit += mitm.pluses[attacker->inv[hand_used]] - 50;
+                mons_to_hit += mitm.pluses[weapon] - 50;
 
-            mons_to_hit += 3 * property(OBJ_WEAPONS,
-                                    mitm.sub_type[attacker->inv[MSLOT_WEAPON]],
-                                    PWPN_HIT);
+            mons_to_hit += 3 * property(OBJ_WEAPONS, mitm.sub_type[weapon],
+                PWPN_HIT);
 
-            if (weapon != -1)
-            {
-                attacker->speed_increment -= ((property(you.inv_class[ weapon ],
-                                               you.inv_type[ weapon ],
+            attacker->speed_increment -= ((property(mitm.base_type[ weapon ],
+                                               mitm.sub_type[ weapon ],
                                                PWPN_SPEED) - 10) / 2);
-            }
         }
 
         mons_to_hit = random2(mons_to_hit);
@@ -2971,8 +2964,8 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
             {
                 damage_taken =
                     random2(property(
-                                mitm.base_type[attacker->inv[MSLOT_WEAPON]],
-                                mitm.sub_type[attacker->inv[MSLOT_WEAPON]],
+                                mitm.base_type[attacker->inv[hand_used]],
+                                mitm.sub_type[attacker->inv[hand_used]],
                                 PWPN_DAMAGE));
 
                 if (mitm.special[attacker->inv[hand_used]] / 30 == DWPN_ORCISH
@@ -4052,6 +4045,15 @@ void monster_die(struct monsters *monster, char killer, int i)
     }
 
     monster_drop_ething(monster);
+    monster_cleanup(monster);
+
+    viewwindow(1, false);
+}                                                   // end monster_die
+
+void monster_cleanup(struct monsters *monster)
+{
+    int monster_killed = monster_index(monster);
+    int dmi = 0;
 
     for (unsigned char j = 0; j < 3; j++)
     {
@@ -4065,6 +4067,7 @@ void monster_die(struct monsters *monster, char killer, int i)
     monster->hit_dice = 0;
     monster->armor_class = 0;
     monster->evasion = 0;
+    monster->speed_increment = 0;
 
     mgrd[monster->x][monster->y] = NON_MONSTER;
 
@@ -4072,8 +4075,6 @@ void monster_die(struct monsters *monster, char killer, int i)
     {
         monster->inv[dmi] = NON_ITEM;
     }
-
-    viewwindow(1, false);
 
     for (dmi = 0; dmi < MAX_MONSTERS; dmi++)
     {
@@ -4084,8 +4085,7 @@ void monster_die(struct monsters *monster, char killer, int i)
     if (you.pet_target == monster_killed)
         you.pet_target = MHITNOT;
 
-    return;
-}                               // end monster_die()
+}                               // end monster_cleanup()
 
 bool jelly_divide(struct monsters * parent)
 {

@@ -965,10 +965,11 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
 
             switch (random2(3))
             {
+            unsigned char i;
             case 0:
                 mpr("Your body is distorted in a weird and horrible way!");
 
-                for (unsigned char i = 0; i < 4; i++)
+                for (i = 0; i < 4; i++)
                     mutate(100);
 
                 ouch(7 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
@@ -983,7 +984,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             case 2:
                 mpr("Your body is distorted in a weirdly horrible way!");
 
-                for (unsigned char i = 0; i < 4; i++)
+                for (i = 0; i < 4; i++)
                 {
                     if (give_bad_mutation())
                         break;

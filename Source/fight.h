@@ -35,6 +35,11 @@ int weapon_str_weight( int wpn_class, int wpn_type );
  * *********************************************************************** */
 void monster_die(struct monsters *monster, char killer, int i);
 
+// last updated: 17dec2000 {gdl}
+/* ***********************************************************************
+ * called from: monstuff - fight
+ * *********************************************************************** */
+void monster_cleanup(struct monsters *monster);
 
 // last updated: 08jun2000 {dlb}
 /* ***********************************************************************

@@ -126,14 +126,13 @@
 
     #include <string>
 
-#elif defined(WIN32CONSOLE) && defined(__IBMCPP__)
+#elif defined(WIN32CONSOLE) && (defined(__IBMCPP__) || defined(__BCPLUSPLUS__))
     #include "libw32c.h"
     #define PLAIN_TERM
     #define SHORT_FILE_NAMES
     #define EOL "\n\r"
     #define CHARACTER_SET           A_ALTCHARSET
     #define getstr(X,Y)         getConsoleString(X,Y)
-
 #else
     #error unsupported compiler
 #endif
@@ -175,7 +174,7 @@
 // #define SEPARATE_SELECTION_SCREENS_FOR_SUBSPECIES
 
 // Uncomment this line to allow the player to select his draconian's colour.
-//#define ALLOW_DRACONIAN_TYPE_SELECTION
+// #define ALLOW_DRACONIAN_TYPE_SELECTION
 
 // if this works out okay, eventually we can change this to USE_OLD_RANDOM
 #define USE_NEW_RANDOM

@@ -20,6 +20,7 @@
 // ===================================================================================
 //    class FixedVector
 // ===================================================================================
+
 template <class TYPE, int SIZE> class FixedVector {
 
 //-----------------------------------
@@ -61,10 +62,10 @@ public:
                         // instead of "int a[3] = {0, 1, 2}" you'd use "FixedVector<int, 3>
                         // a(0, 1, 2)". Note that there must be SIZE arguments.
 
-private:
-                        FixedVector(const FixedVector& rhs);
-
-            FixedVector& operator=(const FixedVector& rhs);
+// public:
+//                        FixedVector(const FixedVector& rhs);
+//
+//            FixedVector& operator=(const FixedVector& rhs);
 
 //-----------------------------------
 //    API

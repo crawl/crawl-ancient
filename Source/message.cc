@@ -236,7 +236,7 @@ static char channel_to_colour( int channel, int param )
     return (ret);
 }
 
-void mpr(const char *inf, int channel = MSGCH_PLAIN, int param = 0)
+void mpr(const char *inf, int channel, int param)
 {
     char inf_screens = 0;
     char info2[80];
@@ -309,7 +309,7 @@ void mpr(const char *inf, int channel = MSGCH_PLAIN, int param = 0)
     cprintf(info2);
 
     /* Put the message into store_message, and move the '---' line forward */
-    store_message[store_count].text = string(inf);
+    store_message[store_count].text = inf;
     store_message[store_count].channel = channel;
     store_message[store_count].param = param;
     store_count++;
@@ -320,7 +320,7 @@ void mpr(const char *inf, int channel = MSGCH_PLAIN, int param = 0)
     if (store_count > 23)
         store_count -= 24;
 
-    store_message[store_count].text = string( "------------------------------------------------------------------------------" );
+    store_message[store_count].text = "------------------------------------------------------------------------------";
     store_message[store_count].channel = MSGCH_PLAIN;
     store_message[store_count].param = 0;
 

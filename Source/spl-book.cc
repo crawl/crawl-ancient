@@ -1170,9 +1170,7 @@ void read_book(unsigned int book_read)
         }
     }
 
-#ifdef PLAIN_TERM
     redraw_screen();
-#endif
 
     /* Put special book effects in another function which can be called from
        memorise as well */
@@ -1212,9 +1210,7 @@ void which_spell(void)
     if (letter < 'A' || (letter > 'Z' && letter < 'a') || letter > 'z')
     {
       whatt:
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         mpr("What?");
         return;
     }
@@ -1257,9 +1253,7 @@ void which_spell(void)
     {
         if (you.spells[i] == specspell)
         {
-#ifdef PLAIN_TERM
             redraw_screen();
-#endif
             mpr("You already know that spell!");
             you.turn_is_over = 1;
             return;
@@ -1270,9 +1264,7 @@ void which_spell(void)
 
     if (player_spell_levels() < levels_needed)
     {
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         mpr("You can't memorise that many levels of magic yet!");
         //sprintf( info, "levels: %d  needed: %d  spec_spells: %d", player_spell_levels(), levels_needed, specspell);
         //mpr(info);
@@ -1282,9 +1274,7 @@ void which_spell(void)
 
     if (you.experience_level < spell_difficulty(specspell))
     {
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         mpr("You're too inexperienced to learn that spell!");
         you.turn_is_over = 1;
         return;
@@ -1292,9 +1282,7 @@ void which_spell(void)
 
     chance = spell_fail(specspell);
 
-#ifdef PLAIN_TERM
     redraw_screen();
-#endif
 
     strcpy(info, "This spell is ");
 
@@ -1338,9 +1326,7 @@ void which_spell(void)
 
         if (keyin == 'n' || keyin == 'N')
         {
-#ifdef PLAIN_TERM
             redraw_screen();
-#endif
             return;
         }
 
@@ -1360,9 +1346,7 @@ void which_spell(void)
 
     if (random2(40) + random2(40) + random2(40) < chance)
     {
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         mpr("You fail to memorise the spell.");
         you.turn_is_over = 1;
 
@@ -1404,9 +1388,7 @@ void which_spell(void)
 
     you.turn_is_over = 1;
 
-#ifdef PLAIN_TERM
     redraw_screen();
-#endif
 
     // is learning as bad as casting, then? {dlb}
     naughty(NAUGHTY_SPELLCASTING, 2 + random2(5));

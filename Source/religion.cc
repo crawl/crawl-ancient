@@ -184,7 +184,7 @@ void pray(void)
                                             + (random2(you.piety) / 20);
 
     if (player_under_penance())
-        simple_god_message("demands penance!");
+        simple_god_message(" demands penance!");
     else
     {
         strcpy(info, god_name(you.religion));
@@ -1636,17 +1636,13 @@ void divine_retribution(int god)
 
                 if (!player_under_penance() && you.piety > random2(400))
                 {
-                    // XXX: Too bragish... interfering with other gods
-                    // is somewhat taboo, they shouldn't brag about it.
-                    strcpy(info,
-                           "The Shinging One tried to smite you, but I, ");
-                    strcat(info, god_name(you.religion));
-                    strcat(info, ", have interceded.");
+                    strcpy(info, "Mortal, I have averted the wrath of "
+                        "the Shining One... this time.");
                     god_speaks(you.religion, info);
                 }
                 else
                 {
-                    simple_god_message("smites you!", god);
+                    simple_god_message(" smites you!", god);
                     ouch(divine_hurt, 0, KILLED_BY_TSO_SMITING);
                     dec_penance(GOD_SHINING_ONE, 1);
                 }
@@ -2221,17 +2217,13 @@ void god_pitch(unsigned char which_god)
 
     if (!yesno("Do you wish to join this religion?"))
     {
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         return;
     }
 
     if (!yesno("Are you sure?"))
     {
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
         return;
     }
 
@@ -2245,9 +2237,7 @@ void god_pitch(unsigned char which_god)
 
     more();
 
-#ifdef PLAIN_TERM
     redraw_screen();
-#endif
 
     // XXX: Currently penance is just zeroed, this could be much
     // more interesting

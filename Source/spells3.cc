@@ -64,9 +64,7 @@ void cast_selective_amnesia(bool force)
                 // this reassignment is "key" {dlb}
                 keyin = (unsigned char) spell_list();
 
-#ifdef PLAIN_TERM
                 redraw_screen();
-#endif
             }
 
             if (keyin < 'a' || keyin > 'y')
@@ -644,9 +642,7 @@ void you_teleport2(bool allow_control)
 
         show_map(plox);
 
-#ifdef PLAIN_TERM
         redraw_screen();
-#endif
 
         plox[0] += random2(3) - 1;
         plox[1] += random2(3) - 1;
@@ -858,9 +854,7 @@ bool create_noise(void)
     more();
     show_map(plox);
 
-#ifdef PLAIN_TERM
     redraw_screen();
-#endif
 
 #ifdef WIZARD
     strcpy(info, "Target square: ");

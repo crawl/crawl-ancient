@@ -227,22 +227,18 @@ void adjust_item(void)
 
 }                               // end adjust_item()
 
-#ifdef PLAIN_TERM
 static void adjust_spells_cleanup(bool needs_redraw)
 {
     if (needs_redraw)
         redraw_screen();
 }
-#endif
 
 void adjust_spells(void)
 {
     unsigned char throw_2, throw_3;
     unsigned char nthing = 0;
 
-#ifdef PLAIN_TERM
     bool needs_redraw = false;
-#endif
 
     if (!you.spell_no)
     {
@@ -260,9 +256,7 @@ void adjust_spells(void)
         if (keyin == '*' || keyin == '?')
         {
             nthing = spell_list();
-#ifdef PLAIN_TERM
             needs_redraw = true;
-#endif
         }
 
         if ((nthing >= 'A' && nthing <= 'Z')
@@ -281,9 +275,7 @@ void adjust_spells(void)
 
     if (throw_1 < 'a' || throw_1 > 'w')
     {
-#ifdef PLAIN_TERM
         adjust_spells_cleanup(needs_redraw);
-#endif
         mpr("You don't know that spell.");
         return;
     }
@@ -292,9 +284,7 @@ void adjust_spells(void)
 
     if (you.spells[throw_2] == SPELL_NO_SPELL)
     {
-#ifdef PLAIN_TERM
         adjust_spells_cleanup(needs_redraw);
-#endif
         strcpy(info, "You don't know that spell.");
         mpr(info);
         return;
@@ -316,9 +306,7 @@ void adjust_spells(void)
         if (keyin == '*' || keyin == '?')
         {
             nthing = spell_list();
-#ifdef PLAIN_TERM
             needs_redraw = true;
-#endif
         }
 
         if ((nthing >= 'A' && nthing <= 'Z')
@@ -338,16 +326,12 @@ void adjust_spells(void)
     //if (throw_1 < 'a' || throw_1 > 'z' )
     if (throw_1 < 'a' || throw_1 > 'v')
     {
-#ifdef PLAIN_TERM
         adjust_spells_cleanup(needs_redraw);
-#endif
         mpr("What?");
         return;
     }
 
-#ifdef PLAIN_TERM
     adjust_spells_cleanup(needs_redraw);
-#endif
 
     throw_3 = letter_to_index(throw_1);
 

@@ -1132,38 +1132,6 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
                 break;
             }
         }
-
-        if (item_plus >= 100 && item_id > 0)
-        {
-            description += "It has a curse placed upon it. ";
-            item_plus -= 100;
-        }
-
-        if (verbose == 1 && item_id > 2
-            && !(item_class == 0 && item_dam % 30 >= 25))
-        {
-            if (item_plus < 50)
-            {
-                description += "It has been damaged to be less accurate. ";
-            }
-            else if (item_plus > 50)
-            {
-                description += "It has been ";
-                print_ench(description, item_plus);
-                description += "to be more accurate. ";
-            }
-
-            if (item_plus2 < 50)
-            {
-                description += "It has been damaged to cause less damage. ";
-            }
-            else if (item_plus2 > 50)
-            {
-                description += "It has been ";
-                print_ench(description, item_plus2);
-                description += "to inflict greater damage. ";
-            }
-        }
     }
     else
     {
@@ -1259,11 +1227,48 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
             }
         }
 
-        // randart properties
-        if (item_id > 1 && item_dam % 30 >= SPWPN_RANDART_I)
+        // randart properties or more mundane +/- enchantments
+        if (item_id > 1)
         {
-            randart_descpr(description, item_class, item_type, item_plus,
-                           item_plus2, item_dam);
+            if (item_dam % 30 >= SPWPN_RANDART_I)
+            {
+                randart_descpr(description, item_class, item_type, item_plus,
+                    item_plus2, item_dam);
+            }
+            else
+            {
+                if (item_plus >= 100 && item_id > 0)
+                {
+                    description += "It has a curse placed upon it. ";
+                    item_plus -= 100;
+                }
+
+                if (verbose == 1 && item_id > 2
+                    && !(item_class == 0 && item_dam % 30 >= 25))
+                {
+                    if (item_plus < 50)
+                    {
+                        description += "It has been damaged to be less accurate. ";
+                    }
+                    else if (item_plus > 50)
+                    {
+                        description += "It has been ";
+                        print_ench(description, item_plus);
+                        description += "to be more accurate. ";
+                    }
+
+                    if (item_plus2 < 50)
+                    {
+                        description += "It has been damaged to cause less damage. ";
+                    }
+                    else if (item_plus2 > 50)
+                    {
+                        description += "It has been ";
+                        print_ench(description, item_plus2);
+                        description += "to inflict greater damage. ";
+                    }
+                }
+            }
         }
 
         if (verbose == 1)
@@ -5961,180 +5966,370 @@ void describe_monsters(int class_described, unsigned char which_mons)
 // by the ^ key if player is a worshipper.
 //
 //---------------------------------------------------------------
-void describe_god(int which_god)
-{
-    string description;
 
-    description.reserve(200);
+void describe_god( int which_god )
+{
+
+    char *description  = ""; //mv: temporary string used for printing description
+    int god_color; //mv:color used for some messages
 
 #ifdef DOS_TERM
-    char buffer[3400];
-
-    gettext(25, 1, 80, 25, buffer);
-    window(25, 1, 80, 25);
+    char buffer[4000];
+    gettext(1, 1, 80, 25, buffer);
+    window(1, 1, 80, 25);
 #endif
-
     clrscr();
 
-    description += "";
+    if (which_god == GOD_NO_GOD) //mv:no god -> say it and go away
+       {
+        cprintf("You are not religious.");
+        goto end_god_info;
+       }
 
+    switch ( which_god ) //mv:pick up color for god's name and messages
+                         //btw. I've changed here CYAN to LIGHTCYAN and
+                         //made ELYVILON LIGHTGREEN. It looks much netter ;-)
+    {
+      case GOD_SHINING_ONE:
+      case GOD_ZIN:
+      case GOD_OKAWARU:
+        god_color = LIGHTCYAN;
+        break;
+      case GOD_ELYVILON:
+        god_color = LIGHTGREEN;
+        break;
+      case GOD_YREDELEMNUL:
+      case GOD_KIKUBAAQUDGHA:
+      case GOD_MAKHLEB:
+      case GOD_VEHUMET:
+      case GOD_TROG:
+        god_color = LIGHTRED;
+        break;
+      case GOD_XOM:
+        god_color = YELLOW;
+        break;
+      case GOD_NEMELEX_XOBEH:
+        god_color = LIGHTMAGENTA;
+        break;
+      case GOD_SIF_MUNA:
+        god_color =  LIGHTBLUE;
+        break;
+      default:
+        god_color =  YELLOW;
+    } // end pick up color
+
+    //mv: print god's name and title - if you can think up better titles
+    //I have nothing against
+    textcolor(god_color);
+    switch ( which_god )
+      {
+      case GOD_ZIN:             cprintf ("Zin the Law-Giver"); break;
+      case GOD_SHINING_ONE:     cprintf ("The Shining One"); break;
+      case GOD_KIKUBAAQUDGHA:   cprintf ("Kikubaaqudgha the Vile"); break;
+      case GOD_YREDELEMNUL:     cprintf ("Yredelemnul the Dark"); break;
+      case GOD_XOM:             cprintf ("Xom the Psychotic"); break;
+      case GOD_VEHUMET:         cprintf ("Vehumet the Annihilator"); break;
+      case GOD_OKAWARU:         cprintf ("Okawaru the Warmaster"); break;
+      case GOD_MAKHLEB:         cprintf ("Makhleb the Destroyer"); break;
+      case GOD_SIF_MUNA:        cprintf ("Sif Muna the Eldritch"); break;
+      case GOD_TROG:            cprintf ("Trog the Fierce"); break;
+      case GOD_NEMELEX_XOBEH:   cprintf ("Nemelex Xobeh the Trickster"); break;
+      case GOD_ELYVILON:        cprintf ("Elyvilon the Healer"); break;
+      default : cprintf ("God of Program Bugs"); break;
+      } // end print title
+
+    //mv: print god's description
+    textcolor (LIGHTGRAY);
+    cprintf (EOL EOL);
     switch (which_god)
     {
-    case GOD_NO_GOD:
-        description += "You are not religious.";
-        break;
-
     case GOD_ZIN:
-        description += "Zin is an ancient and revered god, dedicated to "
-            "the establishment of order and the destruction of "
-            "the forces of chaos and night. "
-            "Valued worshippers can gain a variety of powers "
-            "useful in the fight against evil, but must abstain "
-            "from the use of necromancy and other forms of "
-            "unholy magic. Zin appreciates long-standing faith "
-            "as well as sacrifices of valued objects "
-            "and the slaying of demons and the undead. ";
+        description = "Zin is an ancient and revered God, dedicated to the establishment of order" EOL
+                      "and the destruction of the forces of chaos and night. Valued worshippers " EOL
+                      "can gain a variety of powers useful in the fight against the evil, but must" EOL
+                      "abstain from the use of necromancy and other forms of unholy magic." EOL
+                      "Zin appreciates long-standing faith as well as sacrifices of valued objects." EOL;
         break;
-
     case GOD_SHINING_ONE:
-        description +=
-            "The Shining One is a powerful crusading diety, allied "
-            "with Zin in the fight against evil. Followers may be granted with "
-            "the ability to summarily dispense the wrath of heaven, but must "
-            "never use any form of evil magic and should fight honourably. The "
-            "Shining One appreciates long-standing persistence in the endless "
-            "crusade, as well as the dedicated destruction of unholy creatures. ";
+        description = "The Shining One is a powerful crusading diety, allied with Zin in the fight" EOL
+                      "against evil. Followers may be granted with the ability to summarily dispense" EOL
+                      "the wrath of heaven, but must never use any form of evil magic and should" EOL
+                      "fight honourably. The Shining One appreciates long-standing persistence in " EOL
+                      "the endless crusade, as well as the dedicated destruction of unholy creatures.";
         break;
-
     case GOD_KIKUBAAQUDGHA:
-        description +=
-            "Kikubaaqudgha is a terrible demon-god, served by those "
-            "who seek knowledge of the powers of death. Followers gain special "
-            "powers over the undead, and especially favoured servants can call "
-            "on mighty demons to slay their foes. $Kikubaaqudgha requires the "
-            "deaths of living creatures as often as possible, but is not "
-            "interested in the offering of corpses except at an appropriate "
-            "altar. ";
-
-        if (you.piety >= 50 && you.religion == GOD_KIKUBAAQUDGHA)
-        {
-            description +=
-                "$Kikubaaqudgha is protecting you from some of the "
-                "side-effects of death magic. ";
-        }
+        description = "Kikubaaqudgha is a terrible Demon-God, served by those who seek knowledge of" EOL
+                      "the powers of death. Followers gain special powers over the undead, and " EOL
+                      "especially favoured servants can call on mighty demons to slay their foes." EOL
+                      "Kikubaaqudgha requires the deaths of living creatures as often as possible," EOL
+                      "but is not interested in the offering of corpses except at an appropriate" EOL
+                      "altar.";
         break;
 
     case GOD_YREDELEMNUL:
-        description +=
-            "Yredelemnul is worshipped by those who seek powers over "
-            "death and the undead without having to learn to use necromancy. "
-            "Followers can raise legions of servile undead and gain a number of "
-            "other useful (if unpleasant) powers. Yredelemnul appreciates killing,"
-            " but prefers corpses to be put to use rather than sacrificed. ";
+        description = "Yredelemnul is worshipped by those who seek powers over death and the undead" EOL
+                      "without having to learn to use necromancy. Followers can raise legions of " EOL
+                      "servile undead and gain a number of other useful (if unpleasant) powers." EOL
+                      "Yredelemnul appreciates killing, but prefers corpses to be put to use rather" EOL
+                      "than sacrificed.";
         break;
 
     case GOD_XOM:
-        description +=
-            "Xom is a wild and unpredictable god of chaos, who seeks "
-            "not worshippers but playthings to toy with. Many choose to follow "
-            "Xom in the hope of receiving fabulous rewards and mighty powers, "
-            "but Xom is nothing if not capricious. ";
+        description = "Xom is a wild and unpredictable God of chaos, who seeks not worshippers but" EOL
+                      "playthings to toy with. Many choose to follow Xom in the hope of receiving" EOL
+                      "fabulous rewards and mighty powers,but Xom is nothing if not capricious. ";
         break;
 
     case GOD_VEHUMET:
-        description += "Vehumet is a god of the destructive powers of magic. "
-            "Followers gain various useful powers to enhance their command of "
-            "the hermetic arts, and the most favoured stand to gain access to "
-            "some of the fearsome spells in Vehumet's library. One's devotion to "
-            "Vehumet can be proved by the causing of as much carnage and "
-            "destruction as possible. ";
-
-        if (you.religion == GOD_VEHUMET)
-        {
-            if (you.piety >= 30)
-                description += "$You can gain power from the those you kill "
-                    "in Vehumet's name, or those slain by your servants. ";
-
-            if (you.piety >= 50)
-                description += "$Your conjurations and summonings cast in "
-                    "Vehumet's name rarely fail. ";
-
-            if (you.piety >= 75)
-                description += "$During prayer you have some protection from "
-                    "summoned creatures. ";
-        }
+        description = "Vehumet is a God of the destructive powers of magic. Followers gain various" EOL
+                      "useful powers to enhance their command of the hermetic arts, and the most" EOL
+                      "favoured stand to gain access to some of the fearsome spells in Vehumet's" EOL
+                      "library. One's devotion to Vehumet can be proved by the causing of as much" EOL
+                      "carnage and destruction as possible.";
         break;
 
     case GOD_OKAWARU:
-        description += "Okawaru is a dangerous and powerful god of battle. "
-            "Followers can gain a number of powers useful in combat as well as "
-            "various rewards, but must constantly prove themselves through "
-            "battle and the sacrifice of corpses and valuable items. ";
+        description = "Okawaru is a dangerous and powerful God of battle. Followers can gain a " EOL
+                      "number of powers useful in combat as well as various rewards, but must " EOL
+                      "constantly prove themselves through battle and the sacrifice of corpses" EOL
+                      "and valuable items.";
         break;
-
     case GOD_MAKHLEB:
-        description += "Makhleb the Destroyer is a fearsome god of chaos and "
-            "violent death. Followers, who must constantly appease Makhleb with "
-            "blood, stand to gain various powers of death and destruction. The "
-            "Destroyer appreciates sacrifices of corpses and valuable items. ";
-
-        if (you.piety >= 30 && you.religion == GOD_MAKHLEB)
-        {
-            description +=
-                "$You can gain power from the deaths of those you kill "
-                "in Makhleb's name. ";
-        }
+        description = "Makhleb the Destroyer is a fearsome God of chaos and violent death. Followers," EOL
+                      "who must constantly appease Makhleb with blood, stand to gain various powers " EOL
+                      "of death and destruction. The Destroyer appreciates sacrifices of corpses and" EOL
+                      "valuable items.";
         break;
 
     case GOD_SIF_MUNA:
-        description +=
-            "Sif Muna is a contemplative but powerful deity, served "
-            "by those who seek magical knowledge. Sif Muna appreciates sacrifices "
-            "of valuable items, and the casting of spells as often as possible. ";
-        if (you.piety >= 100 && you.religion == GOD_SIF_MUNA)
-        {
-            description += "$Sif Muna is protecting you from some of the "
-                "side-effects of magic. ";
-        }
+        description = "Sif Muna is a contemplative but powerful deity, served by those who seek" EOL
+                      "magical knowledge. Sif Muna appreciates sacrifices of valuable items, and" EOL
+                      "the casting of spells as often as possible.";
         break;
 
     case GOD_TROG:
-        description +=
-            "Trog is an ancient god of anger and violence. Followers "
-            "are expected to kill in Trog's name and sacrifice the dead, and in "
-            "return gain power in battle and occasional rewards. Trog hates "
-            "wizards, and followers are forbidden the use of spell magic. ";
+        description = "Trog is an ancient God of anger and violence. Followers are expected to kill" EOL
+                      "in Trog's name and sacrifice the dead, and in return gain power in battle and" EOL
+                      "occasional rewards. Trog hates wizards, and followers are forbidden the use" EOL
+                      "of spell magic. ";
         break;
 
     case GOD_NEMELEX_XOBEH:
-        description +=
-            "Nemelex is a strange and unpredictable trickster god, "
-            "whose powers can be invoked through the magical packs of cards "
-            "which Nemelex paints in the ichor of demons. Followers receive "
-            "occasional gifts, and should use these gifts as much as possible. "
-            "Offerings of any type of item are also appreciated. ";
+        description = "Nemelex is a strange and unpredictable trickster God, whose powers can be" EOL
+                      "invoked through the magical packs of cards which Nemelex paints in the ichor" EOL
+                      "of demons. Followers receive occasional gifts, and should use these gifts as" EOL
+                      "as much as possible. Offerings of any type of item are also appreciated.";
         break;
 
     case GOD_ELYVILON:
-        description +=
-            "Elyvilon the Healer is worshipped by the healers (among "
-            "others), who gain their healing powers by long worship and devotion. "
-            "Although Elyvilon prefers a creed of pacifism, those who crusade "
-            "against evil are not excluded. Elyvilon appreciates the offering "
-            "of weapons. ";
-        break;
-
+        description = "Elyvilon the Healer is worshipped by the healers (among others), who gain" EOL
+                      "their healing powers by long worship and devotion. Although Elyvilon prefers" EOL
+                      "a creed of pacifism, those who crusade against evil are not excluded. Elyvilon" EOL
+                      "appreciates the offering of weapons. ";
+      break;
     default:
-        DEBUGSTR("Unknown god");
+      description = "God of Program Bugs is a weird and dangerous God and his presence should" EOL
+                    "be reported to dev-team.";
     }
 
-    print_description(description);
+    cprintf(description);
+    //end of printing description
 
-    if (getch() == 0)
-        getch();
+    if ( you.religion != which_god ) goto end_god_info;
+     //mv: player is praying at altar without appropriate religion
+     //it means player isn't checking his own religion and so we only
+     //display god's name and description and go out
 
-#ifdef DOS_TERM
-    puttext(25, 1, 80, 25, buffer);
+
+    //mv: print title based on piety
+    cprintf(EOL EOL);
+    cprintf("Status - ");
+    textcolor (god_color);
+
+    if ( which_god == GOD_XOM ) // mv: Xom doesn't cares about your piety
+                                // but slightly cares about your level
+       cprintf((you.experience_level>20) ? "Xom's Favorite Toy" : "Toy");
+       else
+        {
+
+        if (you.piety > 160) // mv: if your piety is high enough you get title
+                             // based on your god
+          { cprintf((which_god == GOD_SHINING_ONE) ? "Champion of Law" :
+                    (which_god == GOD_ZIN) ? "Divine Warrior" :
+                    (which_god == GOD_ELYVILON) ? "Champion of Light" :
+                    (which_god == GOD_OKAWARU) ? "Master of Thousand Battles" :
+                    (which_god == GOD_YREDELEMNUL) ? "Master of Eternal Death" :
+                    (which_god == GOD_KIKUBAAQUDGHA) ? "Lord of Darkness" :
+                    (which_god == GOD_MAKHLEB) ? "Champion of Chaos" :
+                    (which_god == GOD_VEHUMET) ? "Lord of Destruction" :
+                    (which_god == GOD_TROG) ? "Great Slayer" :
+                    (which_god == GOD_NEMELEX_XOBEH) ? "Great Trickster" :
+                    (which_god == GOD_SIF_MUNA) ? "Master of Arcane" :
+                    "Bogy the Lord of the Bugs"); // Xom and no god is handled before
+          }
+          //mv: universal titles - if any one wants to he might write
+          //specific titles for all gods
+          //btw. titles are divided according to piety levels on which you get
+          //new abilities.In the main it means - new ability = new title
+          else cprintf ( (you.piety >= 120) ? "High Priest" :
+                         (you.piety >= 100) ? "Elder" :
+                         (you.piety >=  75) ? "Priest" :
+                         (you.piety >=  50) ? "Deacon" :
+                         (you.piety >=  30) ? "Novice" :
+                         (you.piety >    5) ? "Believer"
+                                            : "Sinner" );
+        }
+
+    cprintf(EOL);
+    //mv: misc messages
+    if (player_under_penance()) //mv: penance check
+       {
+       cprintf ( (you.penance[which_god] >= 50) ? "Godly wrath is upon you !" EOL:
+                 (you.penance[which_god] >= 20) ? "You've transgressed heavily ! Be penitent !" EOL :
+                                         //mv: Is this possible to say in English ?
+                 (you.penance[which_god] >= 5 ) ? "You are under penance." EOL:
+                                                  "You should show more of discipline." EOL);
+
+       }
+
+    if ( (which_god == GOD_ZIN) || (which_god == GOD_SHINING_ONE)
+         || (which_god == GOD_ELYVILON) || (which_god == GOD_OKAWARU)
+         || (which_god == GOD_KIKUBAAQUDGHA) )
+       //mv: these gods protects you during your prayer (not mentioning XOM)
+       //chance for doing so is (random2(you.piety) >= 30)
+       //Note that it's not depending on penance.
+       {
+       if (you.duration[DUR_PRAYER])
+               cprintf ( (you.piety>=150) ? "You feel invulnerable." EOL:  // > 4/5
+                         (you.piety>=90 ) ? "You feel warded." EOL : // > 2/3
+                                            "You feel watched."); //less than 2:3
+       }
+
+    if ( (which_god == GOD_XOM) && one_chance_in(30) ) //mv: just kidding
+       cprintf ( (coinflip()) ? "You feel watched." EOL:
+                                "You feel like a puppet." EOL);
+
+    if ( !you.penance[you.religion] && !you.gift_timeout )
+       {
+       //mv:chance of getting these messages is the same as chance of getting
+       //appropriate gift.
+       if ( ( you.religion == GOD_OKAWARU || you.religion == GOD_TROG )
+            && (you.piety > 130) && (random2(you.piety) > 120) )
+            cprintf ( "You feel unrewarded." );
+
+       if ( you.religion == GOD_YREDELEMNUL && random2(you.piety) > 80
+            && one_chance_in(10) )
+            cprintf ( "You feel cumulation of dark powers." );
+
+       if ( ( you.religion == GOD_KIKUBAAQUDGHA
+                || you.religion == GOD_SIF_MUNA
+                || you.religion == GOD_VEHUMET )
+            && you.piety > 160 && random2(you.piety) > 100 )
+            cprintf ( "You forelook with hope." );
+       }
+
+    //end misc. messages
+
+    //mv: following code shows abilities given from god (if any)
+    textcolor(LIGHTGRAY);
+    cprintf(EOL EOL "Granted powers :" EOL);
+    textcolor(god_color);
+
+    if (player_under_penance()) //mv: No abilities under penance
+                                //(fix me if I'm wrong)
+       { cprintf ("None.");
+         goto end_god_info;
+       }
+
+    switch (which_god) //mv: finaly let's print abilities
+      {
+      case GOD_ZIN:
+         if ( you.piety >= 30 ) cprintf ("You can repel the undead." EOL);
+            else cprintf ("None.");
+         if ( you.piety >= 50 ) cprintf ("You can call upon Zin for minor healing." EOL);
+         if ( you.piety >= 75 ) cprintf ("You can call down a plague." EOL);
+         if ( you.piety >= 100 ) cprintf ("You can utter a Holy Word." EOL);
+         if ( you.piety >= 120 ) cprintf ("You are able to summon a guardian angel." EOL);
+         break;
+      case GOD_SHINING_ONE:
+         if ( you.piety >= 30 ) cprintf ("You can repel the undead." EOL);
+            else cprintf ("None.");
+         if ( you.piety >= 50 ) cprintf ("You can smite your foes." EOL);
+         if ( you.piety >= 75 ) cprintf ("You can dispel the undead." EOL);
+         if ( you.piety >= 100 ) cprintf ("You can hurl bolts of divine anger." EOL);
+         if ( you.piety >= 120 ) cprintf ("You are able to summon a divine warrior." EOL);
+         break;
+      case GOD_KIKUBAAQUDGHA:
+         if ( you.piety >= 30 ) cprintf ("You can recall your undead slaves." EOL);
+            else cprintf ("None.");
+         if ( you.piety >= 50 ) cprintf ("You are protected from some of the side-effects of death magic." EOL);
+         if ( you.piety >= 75 ) cprintf ("You can permanently enslave the undead." EOL);
+         if ( you.piety >= 120 ) cprintf ("You are able to summon an emmisary of Death." EOL);
+         break;
+      case GOD_YREDELEMNUL:
+         if ( you.piety >= 30 ) cprintf ("You can animate corpses." EOL);
+            else cprintf ("None.");
+         if ( you.piety >= 50 ) cprintf ("You can recall your undead slaves" EOL);
+         if ( you.piety >= 75 ) cprintf ("You can animate legions of the dead." EOL);
+         if ( you.piety >= 100 ) cprintf ("You can drain ambient lifeforce." EOL);
+         if ( you.piety >= 120 ) cprintf ("You can control the undead." EOL);
+         break;
+      case GOD_VEHUMET:
+         if ( you.piety >= 30 ) cprintf ("You can gain power from the those you kill "
+                                         "in Vehumet's name, or those slain by your servants." EOL);
+            else cprintf ("None.");
+         if ( you.piety >= 50 ) cprintf ("Praying in your God aids you in your destructive magics." EOL);
+         if ( you.piety >= 75 ) cprintf ("During prayer you have some protection from summoned creatures." EOL);
+         if ( you.piety >= 100 ) cprintf ("You are able to tap ambient magical fields." EOL);
+         break;
+      case GOD_OKAWARU:
+         if ( you.piety >= 30 ) cprintf ("You can gain great, albeit temporary, body strength." EOL);
+            else cprintf ("None.");
+         if ( you.piety >= 50 ) cprintf ("You can call upon Okawaru for minor healing." EOL);
+         if ( you.piety >= 120 ) cprintf ("You can haste yourself." EOL);
+         break;
+      case GOD_MAKHLEB:
+         if ( you.piety >= 30 ) cprintf ("You can gain power from the deaths "
+                                         "of those you kill in Makhleb's name." EOL);
+            else cprintf ("None.");
+         if ( you.piety >= 50 ) cprintf ("You can throw some minor destruction on your foes." EOL);
+         if ( you.piety >= 75 ) cprintf ("You can summon a lesser demon to your aid." EOL);
+         if ( you.piety >= 100 ) cprintf ("You can invoke a great divine destruction." EOL);
+         if ( you.piety >= 120 ) cprintf ("You can summon a greater servant of Makhleb." EOL);
+         break;
+      case GOD_SIF_MUNA:
+         if ( you.piety >= 50 ) cprintf ("You can freely open your mind to new spells." EOL);
+            else cprintf ("None.");
+         if ( you.piety >= 100 ) cprintf ("You are protected from some side-effects of spellcasting." EOL);
+         break;
+      case GOD_TROG:
+         if ( you.piety >= 30 ) cprintf ("You are able to go berserk at will." EOL);
+            else cprintf ("None.");
+         if ( you.piety >= 50 ) cprintf ("You can give your body great, but temporary, strength." EOL);
+         if ( you.piety >= 100 ) cprintf ("You are able to haste yourself." EOL);
+         break;
+      case GOD_ELYVILON:
+         if ( you.piety >= 30 ) cprintf ("You can do some minor healing." EOL);
+            else cprintf ("None.");
+         if ( you.piety >= 50 )  cprintf ("You are able purify yourself." EOL);
+         if ( you.piety >= 75 )  cprintf ("You can pray for moderate healing." EOL);
+         if ( you.piety >= 100 ) cprintf ("You can restore your abilities." EOL);
+         if ( you.piety >= 120 ) cprintf ("You can call upon Elyvilon for incredible healing." EOL);
+         break;
+      default:   //mv: default is Xom, Nemelex and all bugs.
+         cprintf ("None.");
+      } //end of printing abilities
+
+
+    end_god_info: //end of everything
+
+    getch(); // wait until keypressed
+
+#ifdef DOS_TERM //mv: if DOS_TERM is defined than buffer is returned to screen
+                //if not redraw_screen() is called everytime when this function is
+                //called
+    puttext(1, 1, 80, 25, buffer);
     window(1, 1, 80, 25);
 #endif
-}                               // end describe_god()
+
+}          //mv: That's all folks.

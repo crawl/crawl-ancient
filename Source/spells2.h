@@ -121,8 +121,9 @@ void holy_word(int pow);
 // last updated 24may2000 {dlb}
 /* ***********************************************************************
  * called from: ability - food - it_use2 - spell
+ * returns TRUE if a stat was restored.
  * *********************************************************************** */
-void restore_stat(unsigned char which_stat, bool suppress_msg);
+bool restore_stat(unsigned char which_stat, bool suppress_msg);
 
 
 // last updated 24may2000 {dlb}

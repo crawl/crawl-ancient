@@ -142,11 +142,11 @@ void end(int end_arg)
     exit(end_arg);
 }
 
+void redraw_screen(void)
+{
 #ifdef PLAIN_TERM
 // this function is used for systems without gettext/puttext to redraw the
 // playing screen after a call to for example inventory.
-void redraw_screen(void)
-{
     char title[40];
 
     const unsigned char best = best_skill( SK_FIGHTING, (NUM_SKILLS - 1), 99 );
@@ -172,8 +172,8 @@ void redraw_screen(void)
     new_level();
 
     viewwindow(1, false);
-}                               // end redraw_screen()
 #endif
+}                               // end redraw_screen()
 
 // STEPDOWN FUNCTION to replace conditional chains in spells2.cc 12jan2000 {dlb}
 // it is a bit more extensible and optimizes the logical structure, as well
@@ -318,7 +318,7 @@ void cf_setseed(void)
 // adding .. could use checking for sums less than zero, I guess.
 // used in conjunction with newgame::species_stat_init() and
 // newgame::job_stat_init() routines 24jan2000 {dlb}
-void modify_stats(int STmod, int IQmod, int DXmod)
+void modify_all_stats(int STmod, int IQmod, int DXmod)
 {
     if (STmod)
     {
@@ -342,7 +342,7 @@ void modify_stats(int STmod, int IQmod, int DXmod)
     }
 
     return;
-}                               // end modify_stats()
+}                               // end modify_stat()
 
 void canned_msg(unsigned char which_message)
 {
@@ -387,7 +387,7 @@ void canned_msg(unsigned char which_message)
 
 // jmf: general helper (should be used all over in code)
 //      -- idea borrowed from Nethack
-bool yesno(const char *str, bool safe = true)
+bool yesno(const char *str, bool safe)
 {
     unsigned char tmp;
 

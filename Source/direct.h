@@ -21,8 +21,8 @@
  * called from: acr - debug - effects - it_use3 - item_use - spells1 -
  *              spells2 - spells3 - spells4
  * *********************************************************************** */
-void direction(char rnge, struct dist &moves);
 
+void direction(char rnge, struct dist &moves);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
