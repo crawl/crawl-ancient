@@ -928,12 +928,16 @@ int create_monster(int cls, int dur, int beha, int cr_x, int cr_y,
     if (beha == BEH_CHASING_II)
         beha = BEH_ENSLAVED;
 
+int mons_place(int mon_type, char behavior, int target, bool summoned,
+    int px, int py, int level_type = LEVEL_DUNGEON, int proximity = 0,
+    unsigned char extra = 250);
+
     // determine whether creating a monster is successful (summd != -1) {dlb}:
     if (!empty_surrounds(cr_x, cr_y, spcw, true, empty))
         summd = -1;
     else
-        summd = mons_place( cls, true, empty[0], empty[1], beha, hitting,
-                                zsec, you.your_level );
+        summd = mons_place( cls, beha, hitting, true, empty[0], empty[1],
+            LEVEL_DUNGEON, 0, zsec );
 
     // then handle the outcome {dlb}:
     if (summd == -1)
