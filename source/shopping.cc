@@ -1469,7 +1469,9 @@ char *shop_name(int sx, int sy)
     // find shop
     for(shoppy = 0; shoppy < 5; shoppy ++)
     {
-        if (env.shop_x[shoppy] == sx && env.shop_y[shoppy] == sy )
+        // find shop index plus a little bit of paranoia
+        if (env.shop_x[shoppy] == sx && env.shop_y[shoppy] == sy &&
+            env.shop_type[shoppy] != SHOP_UNASSIGNED)
             break;
     }
 
@@ -1478,7 +1480,7 @@ char *shop_name(int sx, int sy)
     make_name( env.keeper_name[shoppy][0], env.keeper_name[shoppy][1],
                env.keeper_name[shoppy][2], 3, str_pass );
 
-    strcat(sh_name, str_pass);
+    strcpy(sh_name, str_pass);
     strcat(sh_name, "'s ");
 
     if (shop_type == SHOP_WEAPON_ANTIQUE || shop_type == SHOP_ARMOUR_ANTIQUE)

@@ -1030,7 +1030,7 @@ bool ms_always_fire(int monspell)
 // 3 : It sticks to her sword!      (lower case possessive)
 // ... as needed
 
-char *mons_pronoun(int mon_type, int variant)
+const char *mons_pronoun(int mon_type, int variant)
 {
     int gender = 0;         // its,  1 = male, 2=female
 
@@ -1048,8 +1048,10 @@ char *mons_pronoun(int mon_type, int variant)
             case MONS_MARGERY:
             case MONS_EROLCHA:
                 gender = 2;
+                break;
             default:
                 gender = 1;
+                break;
         }
     }
 

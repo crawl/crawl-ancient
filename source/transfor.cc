@@ -58,10 +58,7 @@ bool remove_equipment(FixedVector < char, 8 > &remove_stuff)
 
 bool transform(int pow, char which_trans)
 {
-    //jmf: silently discard this enchantment
-    you.duration[DUR_STONESKIN] = 0;
-
-    if (you.species && player_in_water())
+    if (you.species == SP_MERFOLK && player_in_water())
     {
         // This might by overkill, but it's okay because obviously
         // whatever magical ability that let's them walk on land is
@@ -70,7 +67,7 @@ bool transform(int pow, char which_trans)
         // the forced transform when entering water)... things like
         // allowing merfolk to transform into dragons and fly out of
         // the water can be done later -- bwr
-        mpr("You cannot tranform while you're in the water.");
+        mpr("You cannot transform while in water.");
         return (false);
     }
 
@@ -82,6 +79,10 @@ bool transform(int pow, char which_trans)
         mpr("Your unliving flesh cannot be transformed in this way.");
         return false;
     }
+
+    //jmf: silently discard this enchantment
+    you.duration[DUR_STONESKIN] = 0;
+
 
     FixedVector < char, 8 > rem_stuff;
 
@@ -412,7 +413,7 @@ void drop_everything(void)
     if (inv_count() < 1)
         return;
 
-    mpr( "You find yourself unable to carry your posessions!" );
+    mpr( "You find yourself unable to carry your possesions!" );
 
     for(i=0; i<ENDOFPACK; i++)
     {

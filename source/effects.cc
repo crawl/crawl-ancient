@@ -382,7 +382,7 @@ void random_uselessness(unsigned char ru, unsigned char sc_read_2)
 
         strcat(info, (temp_rand == 0) ? "ears itch."   :
                      (temp_rand == 1) ? "brain hurts!"
-                                      : "nose twitches sudednly!");
+                                      : "nose twitches suddenly!");
         mpr(info);
         break;
 

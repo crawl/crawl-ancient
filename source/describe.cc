@@ -512,7 +512,7 @@ static string describe_demon(void)
         description += " fat ";
         break;
     case 19:
-        description += " slimey ";
+        description += " slimy ";
         break;
     case 20:
         description += " wrinkled ";
@@ -567,7 +567,7 @@ static string describe_demon(void)
         break;
     case 3:
         if (ghost.values[10] == 1)
-            description += " with buttefly wings";
+            description += " with butterfly wings";
         break;
     case 4:
         if (ghost.values[10] == 1)
@@ -611,7 +611,7 @@ static string describe_demon(void)
         description += " and the head of a crocodile";
         break;
     case 15:
-        description += " and the head of a hippopotamous";
+        description += " and the head of a hippopotamus";
         break;
     case 16:
         description += " and a cruel curved beak for a mouth";
@@ -660,7 +660,7 @@ static string describe_demon(void)
         description += " and a huge, toothy maw in the centre of its chest";
         break;
     case 31:
-        description += " and a giant snailshell on its back";
+        description += " and a giant snail shell on its back";
         break;
     case 32:
         description += " and a dozen heads";
@@ -1023,7 +1023,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
             break;
         case HANDS_ONE_OR_TWO_HANDED:
             description += " It can be used with one hand, or more "
-                    "effectively with two (ie. when not using a shield). ";
+                    "effectively with two (i.e. when not using a shield). ";
             break;
         case HANDS_TWO_HANDED:
             description += " It is a two handed weapon. ";
@@ -1541,7 +1541,7 @@ static string describe_armour(int item_class, int item_type, int item_plus,
                 break;
             case ARM_TROLL_LEATHER_ARMOUR:
                 description += "A magical armour, made from the stiff and "
-                    "knbbly skin of a common troll. It magically regenerates "
+                    "knobbly skin of a common troll. It magically regenerates "
                     "its wearer's flesh at a fairly slow rate "
                     "(unless already a troll). ";
                 break;
@@ -3473,7 +3473,7 @@ void describe_spell(int spelled)
             "for a brief period, but can bring them dangerously "
             "close to death (how close depends on one's necromantic "
             "abilities). The spell can be cancelled at any time by "
-            "any healing effect, and the caster will recieve one "
+            "any healing effect, and the caster will receive one "
             "warning shortly before the spell expires. "
             "Undead cannot use this spell. ";
         break;
@@ -3604,7 +3604,7 @@ void describe_spell(int spelled)
 
     case SPELL_EXTENSION:
         description +=
-            "extends the durations of most beneficial enchantments "
+            "extends the duration of most beneficial enchantments "
             "affecting the caster. ";
         break;
 
@@ -3730,7 +3730,7 @@ void describe_spell(int spelled)
         description += "uses the bones of a skeleton (or similar materials: "
             "the rigid exoskeleton of an insect, for example) to "
             "dispense a lethal spray of slicing fragments, allowing "
-            "its caster to dispense with conjurations in favor of "
+            "its caster to dispense with conjurations in favour of "
             "necromancy alone to provide a low-level yet very "
             "powerful offensive spell. The use of a large and "
             "heavy skeleton (by wielding it) amplifies this spell's "
@@ -3943,7 +3943,7 @@ void describe_spell(int spelled)
 
     case SPELL_SPIDER_FORM:
         description += "temporarily transforms the caster into a venomous, "
-            "spider-like creature. Spellcasting is slightly more dificult "
+            "spider-like creature. Spellcasting is slightly more difficult "
             "in this form. ";
         break;
 
@@ -4121,7 +4121,7 @@ void describe_spell(int spelled)
 ****************************************************************** */
 
     case SPELL_DETECT_SECRET_DOORS:
-        description += "is beloved by lazy dungoneers everywhere, for it can "
+        description += "is beloved by lazy dungeoneers everywhere, for it can "
             "greatly reduce time-consuming searches. ";
         break;
 
@@ -4200,7 +4200,7 @@ void describe_spell(int spelled)
 #ifdef USE_ELVISH_GLAMOUR_ABILITY
     case SPELL_GLAMOUR: // intended only as High/Grey Elf ability
         description += "is an Elvish magic, which draws upon the viewing "
-            "creature's credulity and the caster's comliness "
+            "creature's credulity and the caster's comeliness "
             "to charm, confuse or render comatose. ";
         break;
 #endif
@@ -4249,16 +4249,16 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_SHUGGOTH_SEED:
-        description += "implants a Shuggoth Seed, the larval parasitic form "
-            "of the fearsome Shuggoth, in a living host. The "
-            "Shuggoth Seed will draw life from its host and then "
-            "hatch, whereupon a fully grown Shuggoth will burst "
+        description += "implants a shuggoth seed, the larval parasitic form "
+            "of the fearsome shuggoth, in a living host. The "
+            "shuggoth seed will draw life from its host and then "
+            "hatch, whereupon a fully grown shuggoth will burst "
             "from the unfortunate host's chest. ";
         break;
 
     case SPELL_MAXWELLS_SILVER_HAMMER:
         description += "bestows a lethal but temporary gravitic field "
-            "to a crushing impliment held by the caster. "
+            "to a crushing implement held by the caster. "
             "It will not affect weapons otherwise subject to "
             "special enchantments. ";
         break;
@@ -4302,7 +4302,7 @@ void describe_spell(int spelled)
                        "weapon strike to any target the caster can see.  "
                        "This spell will only deliver the impact of the blow, "
                        "magical side-effects and enchantments cannot be "
-                       "transfered in this way.  The force transfered by this "
+                       "transferred in this way.  The force transferred by this "
                        "spell has little to do with one's skill with weapons, "
                        "and more to do with personal strength, translocation "
                        "skill, and magic ability. ";
@@ -4625,7 +4625,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_SPINY_WORM:
         description = "A great black worm, its many-segmented body covered "
-            "in spikey plates of chitinous armour. Acidic venom drips "
+            "in spiky plates of chitinous armour. Acidic venom drips "
             "from its toothy maw.";
         break;
 
@@ -4807,7 +4807,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_BIG_KOBOLD:
-        description = "An unusualy large kobold.";
+        description = "An unusually large kobold.";
         break;
 
     case MONS_KOBOLD_DEMONOLOGIST:
@@ -4817,7 +4817,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_LICH:
         description +=
             "A wizard who didn't want to die, a Lich is a skeletal,"
-            " dessicated corpse kept alive by a mighty exercise of "
+            " desiccated corpse kept alive by a mighty exercise of "
             "necromancy. These undead creatures can wield great "
             "magic and are best avoided by all but the most " "confident.";
         break;
@@ -4866,7 +4866,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
             description += "It looks strong and aggressive.";
             break;
         case MONS_NAGA_MAGE:
-            description += "An eldrich nimbus trails its motions. ";
+            description += "An eldritch nimbus trails its motions. ";
             break;
         case MONS_NAGA_WARRIOR:
             description += "It bears scars of many past battles. ";
@@ -5028,7 +5028,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_EYE_OF_DEVASTATION:
         description = "A huge eyeball, encased in a levitating globe of "
-            "incandescant energy. ";
+            "incandescent energy. ";
         break;
 
     case MONS_SHINING_EYE:
@@ -5466,7 +5466,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         case MONS_DEEP_ELF_CONJURER:
             description += "This one is a mage specialized in ancient art ";
             if (class_described == MONS_DEEP_ELF_SUMMONER)
-                description += "of summoning servents";
+                description += "of summoning servants";
             else
                 description += "of hurling energies";
             description += " of destruction.";
@@ -5478,7 +5478,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
         case MONS_DEEP_ELF_HIGH_PRIEST:
             description +=
-                "This one is an exaulted servant of the deep elves' god.";
+                "This one is an exalted servant of the deep elves' god.";
             break;
 
         case MONS_DEEP_ELF_DEMONOLOGIST:
@@ -5854,7 +5854,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_LOUISE:
-        description += "An unusually heavily armored spellcaster.";
+        description += "An unusually heavily armoured spellcaster.";
         break;
 
     case MONS_FRANCIS:
@@ -6029,7 +6029,7 @@ void describe_god( int which_god )
                       "Zin appreciates long-standing faith as well as sacrifices of valued objects." EOL;
         break;
     case GOD_SHINING_ONE:
-        description = "The Shining One is a powerful crusading diety, allied with Zin in the fight" EOL
+        description = "The Shining One is a powerful crusading deity, allied with Zin in the fight" EOL
                       "against evil. Followers may be granted with the ability to summarily dispense" EOL
                       "the wrath of heaven, but must never use any form of evil magic and should" EOL
                       "fight honourably. The Shining One appreciates long-standing persistence in " EOL
@@ -6055,7 +6055,7 @@ void describe_god( int which_god )
     case GOD_XOM:
         description = "Xom is a wild and unpredictable God of chaos, who seeks not worshippers but" EOL
                       "playthings to toy with. Many choose to follow Xom in the hope of receiving" EOL
-                      "fabulous rewards and mighty powers,but Xom is nothing if not capricious. ";
+                      "fabulous rewards and mighty powers, but Xom is nothing if not capricious. ";
         break;
 
     case GOD_VEHUMET:
@@ -6210,9 +6210,16 @@ god_favour:     //mv: now let's print favor as Brent suggested
             cprintf("You are ignored.");
         else
         {
-            sprintf(info,  (you.piety >= 30 ) ? "You are walking the right path." :
-                                              "%s is ambivalent.",
-                                              god_name(which_god));
+
+            sprintf(info, (you.piety > 130) ? "A prized avatar of %s.":
+                     (you.piety > 100) ? "A shining star in the eyes of %s." :
+                     (you.piety >  70) ? "A rising star in the eyes of %s." :
+                     (you.piety >  40) ? "%s is most pleased with you." :
+                     (you.piety >  20) ? "%s has noted your presence." :
+                     (you.piety >   5) ? "%s is ambivalent."
+                                       : "You are beneath notice.",
+                                       god_name(which_god));
+
             cprintf(info);
         }
     }
@@ -6278,7 +6285,7 @@ god_favour:     //mv: now let's print favor as Brent suggested
             else cprintf ("None.");
          if ( you.piety >= 50 )  cprintf ("You are protected from some of the side-effects of death magic." EOL);
          if ( you.piety >= 75 )  cprintf ("You can permanently enslave the undead.                  (2 Magic, Food, Piety)" EOL);
-         if ( you.piety >= 120 ) cprintf ("You are able to summon an emmisary of Death.             (3 Magic, Food, Piety)" EOL);
+         if ( you.piety >= 120 ) cprintf ("You are able to summon an emissary of Death.             (3 Magic, Food, Piety)" EOL);
          break;
 
       case GOD_YREDELEMNUL:
@@ -6293,7 +6300,7 @@ god_favour:     //mv: now let's print favor as Brent suggested
          if ( you.piety >= 30 )  cprintf ("You can gain power from the those you kill "EOL
                                           "   in Vehumet's name, or those slain by your servants." EOL);
             else cprintf ("None.");
-         if ( you.piety >= 50 )  cprintf ("Praying in your God aids you in your destructive magics." EOL);
+         if ( you.piety >= 50 )  cprintf ("Praying to your God augments your destructive magics." EOL);
          if ( you.piety >= 75 )  cprintf ("During prayer you have some protection from summoned creatures." EOL);
          if ( you.piety >= 100 ) cprintf ("You are able to tap ambient magical fields.                              (Food)" EOL);
          break;

@@ -192,6 +192,18 @@ static void open_door(char move_x, char move_y);
 */
 int main(int argc, char *argv[])
 {
+#ifdef USE_ASCII_CHARACTERS
+    // Default to the non-ibm set when it makes sense.
+    viewwindow = &viewwindow3;
+    mapch = &mapchar3;
+    mapch2 = &mapchar4;
+#else
+    // Use the standard ibm default
+    viewwindow = &viewwindow2;
+    mapch = &mapchar;
+    mapch2 = &mapchar2;
+#endif
+
     // Load in the system environment variables
     get_system_environment();
 
@@ -220,18 +232,6 @@ int main(int argc, char *argv[])
     // now parse the args again, looking for everything else.
     parse_args(argc, argv, false);
 
-#ifdef USE_ASCII_CHARACTERS
-    // Default to the non-ibm set when it makes sense.
-    viewwindow = &viewwindow3;
-    mapch = &mapchar3;
-    mapch2 = &mapchar4;
-#else
-    // Use the standard ibm default
-    viewwindow = &viewwindow2;
-    mapch = &mapchar;
-    mapch2 = &mapchar2;
-#endif
-
 #ifdef LINUX
     lincurses_startup();
 #endif
@@ -239,6 +239,14 @@ int main(int argc, char *argv[])
 #ifdef MAC
     init_mac();
 #endif
+
+    // check for highscore list - must be done BEFORE libw32c init
+    if (Options.sc_entries > 0)
+    {
+        cprintf(" Best Crawlers -"EOL);
+        hiscores_print_list();
+        exit(1);
+    }
 
 #ifdef WIN32CONSOLE
     init_libw32c();
@@ -248,15 +256,6 @@ int main(int argc, char *argv[])
     // Load macros
     macro_init();
 #endif
-
-    // NOW check for highscore list (after platform-dependent init
-    // has finished!)
-    if (Options.sc_entries > 0)
-    {
-        cprintf(" Best Crawlers -"EOL);
-        hiscores_print_list();
-        exit(1);
-    }
 
     init_overmap();             // in overmap.cc (duh?)
     clear_ids();                // in itemname.cc
@@ -512,8 +511,6 @@ static void input(void)
 
         if (you.delay_t == 0)
         {
-            _setcursortype(_NORMALCURSOR);
-
             if (you.running > 0)
             {
                 keyin = 125;    // a closed curly brace
@@ -975,7 +972,7 @@ static void input(void)
 
         if (you.experience_level < 27)
         {
-            sprintf(info, "Level %d requires %d experience (%d more to go!)",
+            sprintf(info, "Level %d requires %d experience (%d points to go!)",
                 you.experience_level + 1, exp_needed(you.experience_level+2)+1,
                 (exp_needed(you.experience_level+2) - you.experience) + 1);
             mpr(info);
@@ -2141,35 +2138,27 @@ static void input(void)
     if (you.paralysis > 0)
         more();
 
-    if (you.level_type != LEVEL_DUNGEON)    /* No monsters in labyrinths */
+    // place normal dungeon monsters,  but not in player LOS
+    if (you.level_type == LEVEL_DUNGEON
+        && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE
+        && one_chance_in(240))
     {
-        switch (you.level_type)
-        {
-        case LEVEL_LABYRINTH:
-            break;
-
-        case LEVEL_ABYSS:
-            if (one_chance_in(5))
-            {
-                mons_place(WANDERING_MONSTER, false, 50, 50, BEH_CHASING_I,
-                           MHITNOT, 250, 51);
-            }
-            break;
-
-        case LEVEL_PANDEMONIUM:
-            if (one_chance_in(50))
-                pandemonium_mons();
-            break;
-        }
-    }
-    else if (you.level_type != LEVEL_LABYRINTH
-             && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE
-             && one_chance_in(240))
-    {
-        mons_place(WANDERING_MONSTER, false, 50, 50, BEH_CHASING_I, MHITNOT,
-                   250, you.your_level);
+        mons_place(WANDERING_MONSTER, BEH_CHASING_I, MHITNOT, false,
+            50,50, LEVEL_DUNGEON, 2);
     }
 
+    // place Abyss monsters.
+    if (you.level_type == LEVEL_ABYSS && one_chance_in(5))
+    {
+        mons_place(WANDERING_MONSTER, BEH_CHASING_I, MHITNOT, false,
+            50,50, LEVEL_ABYSS);
+    }
+
+    // place Pandemonium monsters
+    if (you.level_type == LEVEL_PANDEMONIUM && one_chance_in(50))
+        pandemonium_mons();
+
+    // No monsters in the Labyrinth,  or Ecumenical Temple
     return;
 }
 

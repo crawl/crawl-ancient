@@ -285,8 +285,6 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
 
     message_current_target();
 
-    _setcursortype(_NORMALCURSOR);
-
     // setup initial keystroke
     if (first_move >= 0)
         keyin = (int)'1' + first_move;

@@ -3004,7 +3004,7 @@ static void mons_in_cloud(struct monsters *monster)
     switch (env.cloud_type[wc])
     {
     case CLOUD_DEBUGGING:
-        cprintf("Fatal error: monster steps on nonexistant cloud!");
+        cprintf("Fatal error: monster steps on nonexistent cloud!");
         exit(0);
         return;
 
@@ -3290,7 +3290,7 @@ bool message_current_target(void)
             && (montarget->enchantment[2] != ENCH_INVIS
                 || player_see_invis()))
         {
-            strcpy(info, "You are currently targetting ");
+            strcpy(info, "You are currently targeting ");
             strcat(info, ptr_monam(montarget, 1));
             strcat(info, " (p to target).");
             mpr(info);

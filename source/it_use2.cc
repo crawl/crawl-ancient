@@ -1094,7 +1094,7 @@ void potion_effect(char pot_eff, int pow)
         strcpy(info, "You feel ");
 
         if (wearing_amulet(AMU_CLARITY))
-            strcat(info, "momentarilty ");
+            strcat(info, "momentarily ");
         else if (you.conf)
             strcat(info, "very ");
 

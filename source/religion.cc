@@ -809,10 +809,13 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
         else if (random2(sever) <= 2)
         {
             // this should remain the last possible outcome {dlb}
-            if (!one_chance_in(10))
+            if (!one_chance_in(8))
+            {
+                mpr("You feel temporarily insulated.");
                 you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 1;
+            }
 
-            god_speaks(GOD_XOM, "Xom hurls a blast of lightning!");
+            god_speaks(GOD_XOM, "The area is suffused with divine lightning!");
 
             beam.beam_source = NON_MONSTER;
             beam.type = SYM_BURST;
@@ -1155,7 +1158,7 @@ void gain_piety(char pgn)
                         (you.religion == GOD_VEHUMET)
                                 ? "tap ambient magical fields" :
                         (you.religion == GOD_MAKHLEB)
-                                ? "hurl Makleb's greater destruction" :
+                                ? "hurl Makhleb's greater destruction" :
                         (you.religion == GOD_TROG)
                                 ? "haste yourself" :
                         (you.religion == GOD_ELYVILON)
@@ -1189,7 +1192,7 @@ void gain_piety(char pgn)
                      (you.religion == GOD_SHINING_ONE)
                                 ? "summon a divine warrior" :
                      (you.religion == GOD_KIKUBAAQUDGHA)
-                                ? "summon an emmisary of Death" :
+                                ? "summon an emissary of Death" :
                      (you.religion == GOD_YREDELEMNUL)
                                 ? "control the undead" :
                      (you.religion == GOD_OKAWARU)
@@ -1400,7 +1403,7 @@ void lose_piety(char pgn)
                            (you.religion == GOD_OKAWARU)
                                 ? "haste yourself" :
                            (you.religion == GOD_MAKHLEB)
-                                ? "summon a greater servent of Makhleb" :
+                                ? "summon a greater servant of Makhleb" :
                            (you.religion == GOD_ELYVILON)
                                 ? "call upon Elyvilon for incredible healing"
                            // Unknown god
@@ -1439,7 +1442,7 @@ void lose_piety(char pgn)
                         (you.religion == GOD_VEHUMET)
                             ? "tap ambient magical fields" :
                         (you.religion == GOD_MAKHLEB)
-                            ? "direct Makleb's greater destructive powers" :
+                            ? "direct Makhleb's greater destructive powers" :
                         (you.religion == GOD_TROG)
                             ? "haste yourself"
                         // Unknown god
@@ -1691,7 +1694,7 @@ void divine_retribution(int god)
                 {
                     summon_swarm(0);    // power = 0 gives unfriendly
                 }
-                simple_god_message(" sends down a plague upon you!", god);
+                simple_god_message(" sends a plague down upon you!", god);
             }
         }
         break;
@@ -1703,7 +1706,7 @@ void divine_retribution(int god)
                                BEH_CHASING_I, you.x_pos, you.y_pos,
                                MHITNOT, 250) != -1)
             {
-                simple_god_message(" sends a greater servant against you!",
+                simple_god_message(" sends a greater servant after you!",
                                    god);
             }
         }
@@ -1722,7 +1725,7 @@ void divine_retribution(int god)
             }
 
             if (success)
-                simple_god_message(" sets servents against you.", god);
+                simple_god_message(" sends his servants after you.", god);
         }
         break;
 
@@ -1782,7 +1785,7 @@ void divine_retribution(int god)
             }
 
             if (success)
-                simple_god_message(" sends a servent to punish you.", god);
+                simple_god_message(" sends a servant to punish you.", god);
         }
         else
         {
@@ -2010,7 +2013,7 @@ void divine_retribution(int god)
             // real danger.
             dec_penance(GOD_SIF_MUNA, 3);
             antimagic();
-            mpr( "You sense a magical dispell.", MSGCH_WARN );
+            mpr( "You sense a dampening of magic.", MSGCH_WARN );
             break;
         }
         break;
@@ -2027,7 +2030,7 @@ void divine_retribution(int god)
         if (coinflip()) {
             if (you.conf < 20)
             {
-                mpr( "The divine experience left you feeling confused!",
+                mpr( "The divine experience leaves you feeling confused!",
                      MSGCH_WARN );
 
                 you.conf += random2(10);
@@ -2039,7 +2042,7 @@ void divine_retribution(int god)
         {
             if (you.slow < 90)
             {
-                mpr( "The divine experience left you feeling exhausted!",
+                mpr( "The divine experience leaves you feeling exhausted!",
                      MSGCH_WARN );
 
                 you.slow += random2(10);

@@ -286,6 +286,13 @@
     // seconds before giving up.
     #define USE_BLOCKING_LOCK
 
+// some files needed for file locking
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #endif
 
 // ===========================================================================

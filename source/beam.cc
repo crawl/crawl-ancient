@@ -202,7 +202,9 @@ void beam(struct bolt &pbolt, int inv_number)
 
     // before we start drawing the beam, turn buffering off
 #ifdef WIN32CONSOLE
-    if (!pbolt.isTracer) setBuffering(false);
+    bool oldValue = true;
+    if (!pbolt.isTracer)
+        oldValue = setBuffering(false);
 #endif
 
     // cannot use source_x, source_y, target_x, target_y during
@@ -387,6 +389,10 @@ void beam(struct bolt &pbolt, int inv_number)
             canned_msg(MSG_NOTHING_HAPPENS);
 
     // that's it!
+#ifdef WIN32CONSOLE
+    if (!pbolt.isTracer)
+        setBuffering(oldValue);
+#endif
 }                               // end beam();
 
 
@@ -2930,7 +2936,9 @@ void explosion(struct bolt &beam)
 
     // turn buffering off
 #ifdef WIN32CONSOLE
-    if (!beam.isTracer) setBuffering(false);
+    bool oldValue;
+    if (!beam.isTracer)
+        oldValue = setBuffering(false);
 #endif
 
     // do center
@@ -2969,7 +2977,8 @@ void explosion(struct bolt &beam)
     }
 
 #ifdef WIN32CONSOLE
-    if (!beam.isTracer) setBuffering(true);
+    if (!beam.isTracer)
+        setBuffering(oldValue);
 #endif
 
     // duplicate old behavior - pause after entire explosion

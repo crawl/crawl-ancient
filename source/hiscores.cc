@@ -10,8 +10,8 @@
 
 /*
  * ----------- MODIFYING THE PRINTED SCORE FORMAT ---------------------
- *   Do this at your leisure.  Change hs_format_single() as much as you
- *   like.
+ *   Do this at your leisure.  Change hiscores_format_single() as much
+ * as you like.
  *
  *
  * ----------- IF YOU MODIFY THE INTERNAL SCOREFILE FORMAT ------------
@@ -28,11 +28,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef USE_FILE_LOCKING
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#endif
 #include "AppHdr.h"
 #include "externs.h"
 #include "hiscores.h"
@@ -53,7 +48,7 @@
 static struct scorefile_entry hs_list[SCORE_FILE_ENTRIES];
 
 // hackish: scorefile position of newest entry.  Will be highlit during
-// highscore printing.
+// highscore printing (always -1 when run from command line).
 static int newest_entry = -1;
 
 static FILE *hs_open(char *mode);
@@ -63,7 +58,6 @@ static void hs_parse_numeric(char *inbuf, struct scorefile_entry &dest);
 static void hs_parse_string(char *inbuf, struct scorefile_entry &dest);
 static void hs_copy(struct scorefile_entry &dest, struct scorefile_entry &src);
 static void hs_write(FILE *scores, struct scorefile_entry &entry);
-static void hs_format_single(char *buffer, struct scorefile_entry &se);
 static void hs_nextstring(char *&inbuf, char *dest);
 static int hs_nextint(char *&inbuf);
 static long hs_nextlong(char *&inbuf);
@@ -151,7 +145,8 @@ void hiscores_print_list(void)
     scores = hs_open("r");
     if (scores == NULL)
     {
-        puts("No highscores.");
+        // will only happen from command line
+        puts("No high scores.");
         return;
     }
 
@@ -182,24 +177,308 @@ void hiscores_print_list(void)
         // print position (not tracked in score file)
         sprintf(info, "%2d.", i+1);
         cprintf(info);
-        hiscores_print_single(hs_list[i]);
-        cprintf(EOL);      // add newline, print_single() doesn't.
+
+        // format the entry
+        hiscores_format_single(info, hs_list[i]);
+
+        // truncate
+        info[76] = '\0';
+
+        // print entry
+        strcat(info, EOL);
+        cprintf(info);
 
         if (i == newest_entry)
             textcolor(LIGHTGREY);
     }
 }
 
-void hiscores_print_single(struct scorefile_entry &se)
+void hiscores_format_single(char *buf, struct scorefile_entry &se)
 {
-    // format this entry
-    hs_format_single(info, se);
+    char scratch[100];
 
-    // truncate
-    info[76] = '\0';
+    // race_class_name overrides race & class
+    if (strlen(se.race_class_name) == 0)
+        sprintf(scratch, "%s%s", species_abbrev(se.race), class_abbrev(se.cls));
+    else
+        strcpy(scratch, se.race_class_name);
 
-    // print
-    cprintf(info);
+    sprintf(buf, "%8d %-10s - %s%d%s,", se.points, se.name,
+        scratch, se.lvl, (se.wiz_mode==1)?" Wiz":"");
+
+    // get monster type & number, if applicable
+    int mon_type = se.death_source;
+    int mon_number = se.mon_num;
+
+    switch (se.death_type)
+    {
+    case KILLED_BY_MONSTER:
+
+/* BCR
+ * Note: There was a bug where deep elves weren't getting the 'a' before
+ *       their names.  It turns out that the code originally assumed that
+ *       Monsters with type between 250 and 310 would be uniques.  However,
+ *       Some new monsters were added between 260 and 280 that are not unique.
+ *       For now, I've updated the check to be accurate, but there may be other
+ *       issues with this.
+ */
+        // GDL: here's an example of using final_hp.  Verbiage could be better.
+        strcat(buf, (se.final_hp > -6)?" slain by ":
+                    (se.final_hp > -14)?" mangled by ":
+                    (se.final_hp > -22)?" blasted by ":
+                    " annihilated by ");
+
+        // if death_source_name is non-null,  override lookup (names might have
+        // changed!)
+        if (strlen(se.death_source_name) > 0)
+        {
+            strcat(buf, se.death_source_name);
+        }
+        else
+        {
+            if (mon_type < MONS_PROGRAM_BUG
+                || (mon_type < MONS_TERENCE && mon_type >= MONS_NAGA_MAGE)
+                || mon_type > MONS_BORIS && mon_type != MONS_PLAYER_GHOST)
+            {
+                strcat(buf, "a");
+            }
+
+            strcat(buf, monam(mon_number, mon_type, 0, 99));
+        }
+
+        break;
+
+    case KILLED_BY_POISON:
+        //if (dam == -9999) strcat(buf, "an overload of ");
+        strcat(buf, " killed by a lethal dose of poison");
+        break;
+
+    case KILLED_BY_CLOUD:
+        strcat(buf, " killed by a cloud");
+        break;
+
+    // beam - beam[0].name is a local variable, so can't access it
+    // without horrible hacks
+    case KILLED_BY_BEAM:
+        strcat(buf, " killed from afar by ");
+
+        // if death_source_name is non-null,  override this
+        if (strlen(se.death_source_name) > 0)
+        {
+            strcat(buf, se.death_source_name);
+        }
+        else
+        {
+            if (mon_type < MONS_PROGRAM_BUG
+                || (mon_type < MONS_TERENCE && mon_type >= MONS_NAGA_MAGE)
+                || mon_type > MONS_BORIS && mon_type != MONS_PLAYER_GHOST)
+            {
+                strcat(buf, "a");
+            }
+
+            strcat(buf, monam(mon_number, mon_type, 0, 99));
+        }
+        break;
+
+/*
+    case KILLED_BY_DEATHS_DOOR:
+        // death's door running out - NOTE: This is no longer fatal
+        strcat(buf, " ran out of time");
+        break;
+*/
+
+    case KILLED_BY_LAVA:
+        strcat(buf, " took a swim in molten lava");
+        break;
+
+    case KILLED_BY_WATER:
+        if (se.race == SP_MUMMY)
+            strcat(buf, " soaked and fell apart");
+        else
+            strcat(buf, " drowned");
+        break;
+
+    // these three are probably only possible if you wear a ring
+    // of >= +3 ability, get drained to 3, then take it off, or have a very
+    // low abil and wear a -ve ring. or, as of 2.7x, mutations can cause this
+    // Don't forget decks of cards (they have some nasty code for this) -- bwr
+    case KILLED_BY_STUPIDITY:
+        strcat(buf, " died of stupidity");
+        break;
+
+    case KILLED_BY_WEAKNESS:
+        strcat(buf, " too weak to continue adventuring");
+        break;
+
+    case KILLED_BY_CLUMSINESS:
+        strcat(buf, " slipped on a banana peel");
+        break;
+
+    case KILLED_BY_TRAP:
+        strcat(buf, " killed by a trap");
+        break;
+
+    case KILLED_BY_LEAVING:
+        strcat(buf, " got out of the dungeon alive.");
+        break;
+
+    case KILLED_BY_WINNING:
+        strcat(buf, " escaped with the Orb!");
+        break;
+
+    case KILLED_BY_QUITTING:
+        strcat(buf, " quit");
+        break;
+
+    case KILLED_BY_DRAINING:
+        strcat(buf, " was drained of all life");
+        break;
+
+    case KILLED_BY_STARVATION:
+        strcat(buf, " starved to death");
+        break;
+
+    case KILLED_BY_FREEZING:
+        strcat(buf, " froze to death");
+        break;
+
+    case KILLED_BY_BURNING:
+        strcat(buf, " burnt to a crisp");
+        break;
+
+    case KILLED_BY_WILD_MAGIC:
+        strcat(buf, " killed by wild magic");
+        break;
+
+    case KILLED_BY_XOM:
+        strcat(buf, " killed by Xom");
+        break;
+
+    case KILLED_BY_STATUE:
+        strcat(buf, " killed by a statue");
+        break;
+
+    case KILLED_BY_ROTTING:
+        strcat(buf, " rotted away");
+        break;
+
+    case KILLED_BY_TARGETTING:
+        strcat(buf, " killed by bad targeting");
+        break;
+
+    case KILLED_BY_SPORE:
+        strcat(buf, " killed by an exploding spore");
+        break;
+
+    case KILLED_BY_TSO_SMITING:
+        strcat(buf, " smote by The Shining One");
+        break;
+
+    case KILLED_BY_PETRIFICATION:
+        strcat(buf, " turned to stone");
+        break;
+
+    case KILLED_BY_SHUGGOTH:
+        strcat(buf, " eviscerated by a hatching shuggoth");
+        break;
+
+    case KILLED_BY_SOMETHING:
+        strcat(buf, " died");
+        break;
+
+    default:
+        strcat(buf, " nibbled to death by software bugs");
+        break;
+    }                           // end switch
+
+    if (se.death_type != KILLED_BY_LEAVING && se.death_type != KILLED_BY_WINNING)
+    {
+        if (se.level_type == LEVEL_ABYSS)
+        {
+            strcat(buf, " in the Abyss.");
+            return;
+        }
+        else if (se.level_type == LEVEL_PANDEMONIUM)
+        {
+            strcat(buf, " in Pandemonium.");
+            return;
+        }
+        else if (se.level_type == LEVEL_LABYRINTH)
+        {
+            strcat(buf, " in a labyrinth.");
+            return;
+        }
+
+        itoa((se.dlvl + 1), scratch, 10);
+
+        if (se.branch != BRANCH_VESTIBULE_OF_HELL)
+        {
+            strcat(buf, " on L");
+            strcat(buf, scratch);
+        }
+
+        switch (se.branch)
+        {
+        case BRANCH_DIS:
+            strcat(buf, " of Dis");
+            break;
+        case BRANCH_GEHENNA:
+            strcat(buf, " of Gehenna");
+            break;
+        case BRANCH_VESTIBULE_OF_HELL:
+            strcat(buf, " in the Vestibule");
+            break;
+        case BRANCH_COCYTUS:
+            strcat(buf, " of Cocytus");
+            break;
+        case BRANCH_TARTARUS:
+            strcat(buf, " of Tartarus");
+            break;
+        case BRANCH_ORCISH_MINES:
+            strcat(buf, " of the Mines");
+            break;
+        case BRANCH_HIVE:
+            strcat(buf, " of the Hive");
+            break;
+        case BRANCH_LAIR:
+            strcat(buf, " of the Lair");
+            break;
+        case BRANCH_SLIME_PITS:
+            strcat(buf, " of the Slime Pits");
+            break;
+        case BRANCH_VAULTS:
+            strcat(buf, " of the Vaults");
+            break;
+        case BRANCH_CRYPT:
+            strcat(buf, " of the Crypt");
+            break;
+        case BRANCH_HALL_OF_BLADES:
+            strcat(buf, " of the Hall");
+            break;
+        case BRANCH_HALL_OF_ZOT:
+            strcat(buf, " of Zot's Hall");
+            break;
+        case BRANCH_ECUMENICAL_TEMPLE:
+            strcat(buf, " of the Temple");
+            break;
+        case BRANCH_SNAKE_PIT:
+            strcat(buf, " of the Snake Pit");
+            break;
+        case BRANCH_ELVEN_HALLS:
+            strcat(buf, " of the Elf Hall");
+            break;
+        case BRANCH_TOMB:
+            strcat(buf, " of the Tomb");
+            break;
+        case BRANCH_SWAMP:
+            strcat(buf, " of the Swamp");
+            break;
+        }
+
+        strcat(buf, ".");
+    } // endif - killed by winning
+
+    return;
 }
 
 // --------------------------------------------------------------------------
@@ -468,294 +747,6 @@ static void hs_write(FILE *scores, struct scorefile_entry &se)
         se.death_type, se.death_source, se.mon_num,
         se.death_source_name, se.dlvl, se.level_type,
         se.branch, se.final_hp, se.wiz_mode);
-    return;
-}
-
-static void hs_format_single(char *buf, struct scorefile_entry &se)
-{
-    char scratch[100];
-
-    // race_class_name overrides race & class
-    if (strlen(se.race_class_name) == 0)
-        sprintf(scratch, "%s%s", species_abbrev(se.race), class_abbrev(se.cls));
-    else
-        strcpy(scratch, se.race_class_name);
-
-    sprintf(buf, "%8d %-10s - %s%d%s,", se.points, se.name,
-        scratch, se.lvl, (se.wiz_mode==1)?" Wiz":"");
-
-    // get monster type & number, if applicable
-    int mon_type = se.death_source;
-    int mon_number = se.mon_num;
-
-    switch (se.death_type)
-    {
-    case KILLED_BY_MONSTER:
-
-/* BCR
- * Note: There was a bug where deep elves weren't getting the 'a' before
- *       their names.  It turns out that the code originally assumed that
- *       Monsters with type between 250 and 310 would be uniques.  However,
- *       Some new monsters were added between 260 and 280 that are not unique.
- *       For now, I've updated the check to be accurate, but there may be other
- *       issues with this.
- */
-        // GDL: here's an example of using final_hp.  Verbiage could be better.
-        strcat(buf, (se.final_hp > -6)?" slain by ":
-                    (se.final_hp > -14)?" mangled by ":
-                    (se.final_hp > -22)?" blasted by ":
-                    " anihilated by ");
-
-        // if death_source_name is non-null,  override lookup (names might have
-        // changed!)
-        if (strlen(se.death_source_name) > 0)
-        {
-            strcat(buf, se.death_source_name);
-        }
-        else
-        {
-            if (mon_type < MONS_PROGRAM_BUG
-                || (mon_type < MONS_TERENCE && mon_type >= MONS_NAGA_MAGE)
-                || mon_type > MONS_BORIS && mon_type != MONS_PLAYER_GHOST)
-            {
-                strcat(buf, "a");
-            }
-
-            strcat(buf, monam(mon_number, mon_type, 0, 99));
-        }
-
-        break;
-
-    case KILLED_BY_POISON:
-        //if (dam == -9999) strcat(buf, "an overload of ");
-        strcat(buf, " killed by a lethal dose of poison");
-        break;
-
-    case KILLED_BY_CLOUD:
-        strcat(buf, " killed by a cloud");
-        break;
-
-    // beam - beam[0].name is a local variable, so can't access it
-    // without horrible hacks
-    case KILLED_BY_BEAM:
-        strcat(buf, " killed from afar by ");
-
-        // if death_source_name is non-null,  override this
-        if (strlen(se.death_source_name) > 0)
-        {
-            strcat(buf, se.death_source_name);
-        }
-        else
-        {
-            if (mon_type < MONS_PROGRAM_BUG
-                || (mon_type < MONS_TERENCE && mon_type >= MONS_NAGA_MAGE)
-                || mon_type > MONS_BORIS && mon_type != MONS_PLAYER_GHOST)
-            {
-                strcat(buf, "a");
-            }
-
-            strcat(buf, monam(mon_number, mon_type, 0, 99));
-        }
-        break;
-
-/*
-    case KILLED_BY_DEATHS_DOOR:
-        // death's door running out - NOTE: This is no longer fatal
-        strcat(buf, " ran out of time");
-        break;
-*/
-
-    case KILLED_BY_LAVA:
-        strcat(buf, " took a swim in molten lava");
-        break;
-
-    case KILLED_BY_WATER:
-        if (se.race == SP_MUMMY)
-            strcat(buf, " soaked and fell apart");
-        else
-            strcat(buf, " drowned");
-        break;
-
-    // these three are probably only possible if you wear a ring
-    // of >= +3 ability, get drained to 3, then take it off, or have a very
-    // low abil and wear a -ve ring. or, as of 2.7x, mutations can cause this
-    // Don't forget decks of cards (they have some nasty code for this) -- bwr
-    case KILLED_BY_STUPIDITY:
-        strcat(buf, " died of stupidity");
-        break;
-
-    case KILLED_BY_WEAKNESS:
-        strcat(buf, " too weak to continue adventuring");
-        break;
-
-    case KILLED_BY_CLUMSINESS:
-        strcat(buf, " slipped on a banana peel");
-        break;
-
-    case KILLED_BY_TRAP:
-        strcat(buf, " killed by a trap");
-        break;
-
-    case KILLED_BY_LEAVING:
-        strcat(buf, " got out of the dungeon alive.");
-        break;
-
-    case KILLED_BY_WINNING:
-        strcat(buf, " escaped with the Orb!");
-        break;
-
-    case KILLED_BY_QUITTING:
-        strcat(buf, " quit");
-        break;
-
-    case KILLED_BY_DRAINING:
-        strcat(buf, " was drained of all life");
-        break;
-
-    case KILLED_BY_STARVATION:
-        strcat(buf, " starved to death");
-        break;
-
-    case KILLED_BY_FREEZING:
-        strcat(buf, " froze to death");
-        break;
-
-    case KILLED_BY_BURNING:
-        strcat(buf, " burnt to a crisp");
-        break;
-
-    case KILLED_BY_WILD_MAGIC:
-        strcat(buf, " killed by wild magic");
-        break;
-
-    case KILLED_BY_XOM:
-        strcat(buf, " killed by Xom");
-        break;
-
-    case KILLED_BY_STATUE:
-        strcat(buf, " killed by a statue");
-        break;
-
-    case KILLED_BY_ROTTING:
-        strcat(buf, " rotted away");
-        break;
-
-    case KILLED_BY_TARGETTING:
-        strcat(buf, " killed by bad targetting");
-        break;
-
-    case KILLED_BY_SPORE:
-        strcat(buf, " killed by an exploding spore");
-        break;
-
-    case KILLED_BY_TSO_SMITING:
-        strcat(buf, " smote by The Shining One");
-        break;
-
-    case KILLED_BY_PETRIFICATION:
-        strcat(buf, " turned to stone");
-        break;
-
-    case KILLED_BY_SHUGGOTH:
-        strcat(buf, " eviscerated by a hatching shuggoth");
-        break;
-
-    case KILLED_BY_SOMETHING:
-        strcat(buf, " died");
-        break;
-
-    default:
-        strcat(buf, " nibbled to death by software bugs");
-        break;
-    }                           // end switch
-
-    if (se.death_type != KILLED_BY_LEAVING && se.death_type != KILLED_BY_WINNING)
-    {
-        if (se.level_type == LEVEL_ABYSS)
-        {
-            strcat(buf, " in the Abyss.");
-            return;
-        }
-        else if (se.level_type == LEVEL_PANDEMONIUM)
-        {
-            strcat(buf, " in Pandemonium.");
-            return;
-        }
-        else if (se.level_type == LEVEL_LABYRINTH)
-        {
-            strcat(buf, " in a labyrinth.");
-            return;
-        }
-
-        itoa((se.dlvl + 1), scratch, 10);
-
-        if (se.branch != BRANCH_VESTIBULE_OF_HELL)
-        {
-            strcat(buf, " on L");
-            strcat(buf, scratch);
-        }
-
-        switch (se.branch)
-        {
-        case BRANCH_DIS:
-            strcat(buf, " of Dis");
-            break;
-        case BRANCH_GEHENNA:
-            strcat(buf, " of Gehenna");
-            break;
-        case BRANCH_VESTIBULE_OF_HELL:
-            strcat(buf, " in the Vestibule");
-            break;
-        case BRANCH_COCYTUS:
-            strcat(buf, " of Cocytus");
-            break;
-        case BRANCH_TARTARUS:
-            strcat(buf, " of Tartarus");
-            break;
-        case BRANCH_ORCISH_MINES:
-            strcat(buf, " of the Mines");
-            break;
-        case BRANCH_HIVE:
-            strcat(buf, " of the Hive");
-            break;
-        case BRANCH_LAIR:
-            strcat(buf, " of the Lair");
-            break;
-        case BRANCH_SLIME_PITS:
-            strcat(buf, " of the Slime Pits");
-            break;
-        case BRANCH_VAULTS:
-            strcat(buf, " of the Vaults");
-            break;
-        case BRANCH_CRYPT:
-            strcat(buf, " of the Crypt");
-            break;
-        case BRANCH_HALL_OF_BLADES:
-            strcat(buf, " of the Hall");
-            break;
-        case BRANCH_HALL_OF_ZOT:
-            strcat(buf, " of Zot's Hall");
-            break;
-        case BRANCH_ECUMENICAL_TEMPLE:
-            strcat(buf, " of the Temple");
-            break;
-        case BRANCH_SNAKE_PIT:
-            strcat(buf, " of the Snake Pit");
-            break;
-        case BRANCH_ELVEN_HALLS:
-            strcat(buf, " of the Elf Hall");
-            break;
-        case BRANCH_TOMB:
-            strcat(buf, " of the Tomb");
-            break;
-        case BRANCH_SWAMP:
-            strcat(buf, " of the Swamp");
-            break;
-        }
-
-        strcat(buf, ".");
-    } // endif - killed by winning
-
     return;
 }
 

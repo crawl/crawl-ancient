@@ -94,7 +94,7 @@ void special_wielded(void)
                      (temp_rand == 23) ? "sighs." :
                      (temp_rand == 24) ? "makes a deep moaning sound." :
                      (temp_rand == 25) ? "makes a popping sound." :
-                     (temp_rand == 26) ? "sings a sudden stoccato note." :
+                     (temp_rand == 26) ? "sings a sudden staccato note." :
                      (temp_rand == 27) ? "says 'Hi! I'm the Singing Sword!'." :
                      (temp_rand == 28) ? "whispers something." :
                      (temp_rand == 29) ? "speaks gibberish." :

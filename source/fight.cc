@@ -99,10 +99,16 @@ static inline int calc_stat_to_dam_base( void );
 // This function returns the "extra" stats the player gets because of
 // choice of weapon... it's used only for giving warnings when a player
 // weilds a less than ideal weapon.
-int effective_stat_bonus( void )
+int effective_stat_bonus( int wepType )
 {
 #ifdef USE_NEW_COMBAT_STATS
-    return ((you.strength - you.dex) * (player_weapon_str_weight() - 5) / 10);
+    int str_weight;
+    if (wepType == -1)
+        str_weight = player_weapon_str_weight();
+    else
+        str_weight = weapon_str_weight( OBJ_WEAPONS, wepType );
+
+    return ((you.strength - you.dex) * (str_weight - 5) / 10);
 #else
     return (0);
 #endif
@@ -2463,14 +2469,11 @@ void monster_attack(int monster_attacking)
                 }
 ****************************************************************** */
 
-                strcpy(info, ptr_monam(attacker, 0));
-                strcat(info, " draws strength from you!");
-                mpr(info);
-
-                simple_monster_message(attacker, " and is healed!");
-
                 // heh heh {dlb}
-                heal_monster(attacker, random2(damage_taken), true);
+                // oh, this is mean!  {gdl}   :)
+                if (heal_monster(attacker, random2(damage_taken), true))
+                    simple_monster_message(attacker, " draws strength from your injuries!");
+
                 break;
 
             case MONS_SHADOW:
@@ -2738,15 +2741,12 @@ commented out for now
                     if (you.is_undead)
                         break;
 
-                    if (attacker->hit_points == attacker->max_hit_points
-                        || one_chance_in(5))
-                    {
+                    if (one_chance_in(5))
                         break;
-                    }
 
                     // heh heh {dlb}
-                    heal_monster(attacker, 1 + random2(damage_taken), true);
-                    simple_monster_message(attacker, " is healed.");
+                    if (heal_monster(attacker, 1 + random2(damage_taken), true))
+                        simple_monster_message(attacker, " draws strength from your injuries!");
                     break;
 
                 case SPWPN_DISRUPTION:
@@ -3385,10 +3385,10 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                     break;
                 }
 
-                simple_monster_message(attacker, " is healed.");
-
                 // heh heh {dlb}
-                heal_monster(attacker, random2(damage_taken), true);
+                if (heal_monster(attacker, random2(damage_taken), true))
+                    simple_monster_message(attacker, " is healed.");
+
                 break;
             }
         }
@@ -3633,15 +3633,12 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                         break;
                     }
 
-                    if (attacker->hit_points == attacker->max_hit_points
-                        || one_chance_in(5))
-                    {
+                    if (one_chance_in(5))
                         break;
-                    }
 
                     // heh heh {dlb}
-                    heal_monster(attacker, 1 + random2(damage_taken), true);
-                    simple_monster_message(attacker, " is healed.");
+                    if (heal_monster(attacker, 1 + random2(damage_taken), true))
+                        simple_monster_message(attacker, " is healed.");
                     break;
 
                 case SPWPN_DISRUPTION:

@@ -2762,7 +2762,7 @@ void display_char_status(void)
         mpr("You radiate silence.");
 
     if (you.duration[DUR_INFECTED_SHUGGOTH_SEED])       //jmf: added 19mar2000
-        mpr("You are infected with a Shuggoth parasite.");
+        mpr("You are infected with a shuggoth parasite.");
 
     if (you.duration[DUR_STONESKIN])
         mpr("Your skin is tough as stone.");

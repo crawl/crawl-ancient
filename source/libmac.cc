@@ -2491,7 +2491,7 @@ void init_mac()
     sColors = GetCTable(256);
     if (sColors == NULL)
     {
-        WarnUser("Couldn't load the color table!");
+        WarnUser("Couldn't load the colour table!");
         ExitToShell();
     }
 

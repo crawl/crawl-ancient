@@ -40,7 +40,9 @@
 #include "debug.h"
 #include "itemname.h"
 #include "maps.h"
+#include "misc.h"
 #include "mon-pick.h"
+#include "monplace.h"
 #include "monstuff.h"
 #include "mon-util.h"
 #include "randart.h"
@@ -140,7 +142,6 @@ static void clear_area(unsigned char x_min, unsigned char y_min,
 static void define_zombie(char not_zombsize, int ztype, int cs);
 static void diamond_rooms(void);
 static void generate_abyss(void);
-static void give_item(void);
 static void hide_doors(void);
 static void item_colour(int p);
 static void join_the_dots(unsigned char dotx1, unsigned char doty1,
@@ -176,6 +177,11 @@ static void specr_2(void);
 static void spotty_level(bool seeded, int iterations, bool boxy);
 static void place_branch_entrances(int dlevel, char level_type);
 
+static int choose_band( int mon_type, int &band_size );
+static int band_member(int band, int power);
+static int place_monster_aux(int mon_type, char behavior, int target,
+    int px, int py, unsigned char extra, bool first_band_member);
+
 /*
  **************************************************
  *                                                *
@@ -188,6 +194,7 @@ int builder(unsigned int lev_numb, char level_type)
 
     int temp_rand = 0;   // probability determination {dlb}
     int loopy = 0;       // trying to clear out bcount_x from these files {dlb}
+    int not_used;        // various throwaway returns
 
     int lava_spaces = 0;
     int water_spaces = 0;
@@ -835,11 +842,9 @@ int builder(unsigned int lev_numb, char level_type)
 
     for (kloppo = 0; kloppo < bno_mons; kloppo++)
     {
-        FixedVector < int, 2 > passed;
-
-        passed[1] = 1;
-        kloppo += place_monster( 250, RANDOM_MONSTER, false, 1, 1, BEH_SLEEP,
-                                          MHITNOT, true, many_many, passed );
+        if (place_monster(not_used, RANDOM_MONSTER, many_many, BEH_SLEEP,
+            MHITNOT, false, 1,1, true))
+            kloppo ++;
     }
     // keep kloppo for later (aquatic monsters)
 
@@ -878,11 +883,9 @@ int builder(unsigned int lev_numb, char level_type)
         else
         {
             // note: unique_creatures 40 + used by unique demons
-            FixedVector < int, 2 > passed;
-
-            passed[1] = 1;
-            kloppo += place_monster( 250, 280 + which_unique, false, 1, 1,
-                                BEH_SLEEP, MHITNOT, true, many_many, passed );
+            if (place_monster(not_used, 280 + which_unique, many_many, BEH_SLEEP,
+                MHITNOT, false, 1,1, true))
+                kloppo ++;
 
             if (one_chance_in(3))
                 goto do_uniques;
@@ -920,11 +923,10 @@ int builder(unsigned int lev_numb, char level_type)
         for (bcount_x = 0; bcount_x < aq_creatures; bcount_x++)
         {
             type_of_aq = swimming_things[random2(4)];
-            FixedVector < int, 2 > passed2;
-            passed2[1] = 1;
 
-            kloppo += place_monster( 250, type_of_aq, false, 1, 1, BEH_SLEEP,
-                                          MHITNOT, true, many_many, passed2 );
+            if (place_monster(not_used, type_of_aq, many_many, BEH_SLEEP,
+                MHITNOT, false, 1,1, true))
+                kloppo ++;
 
             if (kloppo > 99)
                 break;
@@ -958,11 +960,9 @@ int builder(unsigned int lev_numb, char level_type)
         {
             type_of_aq = swimming_things[random2(4)];
 
-            FixedVector < int, 2 > passed2;
-            passed2[1] = 1;
-
-            kloppo += place_monster( 250, type_of_aq, false, 1, 1, BEH_SLEEP,
-                                          MHITNOT, true, many_many, passed2 );
+            if (place_monster(not_used, type_of_aq, many_many, BEH_SLEEP,
+                MHITNOT, false, 1,1, true))
+                kloppo ++;
 
             if (kloppo > 99)
                 break;
@@ -1060,7 +1060,6 @@ int builder(unsigned int lev_numb, char level_type)
             }
             else if (grd[bcount_x][bcount_y] == 47
                      || grd[bcount_x][bcount_y] == 36
-                     || grd[bcount_x][bcount_y] == DNGN_ENTER_ZOT
                      || grd[bcount_x][bcount_y] == 106) // was 'j' {dlb}
             {
                 grd[bcount_x][bcount_y] = DNGN_FLOOR;
@@ -1180,763 +1179,26 @@ int builder(unsigned int lev_numb, char level_type)
         }
     }
 
+    // turn off all stairs to Zot if we're not actually on level 27!
+    if (!( you.your_level == 26 && you.where_are_you == BRANCH_MAIN_DUNGEON ))
+    {
+        for (bi = 1; bi < GXM; bi++)
+            for (bj = 1; bj < GYM; bj++)
+                if (grd[bi][bj] == DNGN_ENTER_ZOT)
+                    grd[bi][bj] = DNGN_FLOOR;
+    }
+
     link_items();
     prepare_water();
 
     return 0;
 }                               // end builder()
 
-int place_monster(unsigned char plus_seventy, int typed, bool is_summoning,
-                  int px, int py, char behaviour, int hitting,
-                  bool allow_bands, int many_many,
-                  FixedVector < int, 2 > &passed)
-{
-    int temp_rand = 0;          // probability determination {dlb}
-    int band = BAND_NO_BAND;    // internal to place_monster() {dlb}
-    int band_no = 0;            // internal to place_monster() {dlb}
 
-    unsigned char grid_ok = DNGN_FLOOR;
-    int worm = 0;
-    int plussed = 0;
-    int inv_delete = 0;
-    int lev_mons;
-    int passout;
 
-    int k = 0;
 
-  start_here:
-    for (k = 0; k < MAX_MONSTERS; k++)
-    {
-        if (menv[k].type == -1)
-            break;
-        else if (k == MAX_MONSTERS - 1)
-            return plussed;
-    }
 
-    if (is_summoning && mgrd[px][py] != NON_MONSTER)
-        return 0;
 
-    bk = k;
-
-    // interesting -- only use for passed[0] I can find {dlb}
-    passed[0] = k;
-
-    // basically passes back the index of the monster that is placed {dlb}
-    for (inv_delete = 0; inv_delete < NUM_MONSTER_SLOTS; inv_delete++)
-        menv[bk].inv[inv_delete] = NON_ITEM;
-
-    // hall of blades:
-    if (typed == RANDOM_MONSTER
-        && you.where_are_you == BRANCH_HALL_OF_BLADES
-        && you.level_type == LEVEL_DUNGEON)
-    {
-        typed = MONS_DANCING_WEAPON;
-    }
-
-    lev_mons = many_many;
-
-    if (typed == RANDOM_MONSTER)
-    {
-        if (you.where_are_you == BRANCH_MAIN_DUNGEON
-            && lev_mons != 51 && one_chance_in(4))
-        {
-            lev_mons = random2(many_many);
-        }
-        else
-            lev_mons = many_many;
-
-        if (you.where_are_you == BRANCH_MAIN_DUNGEON && lev_mons < 28)
-        {
-            // potentially nasty surprise, but very rare
-            if (one_chance_in(5000))
-                lev_mons = random2(27);
-
-            // slightly out of depth monsters are more common:
-            if (one_chance_in(50))
-                lev_mons += random2(6);
-
-            if (lev_mons > 27)
-                lev_mons = 27;
-        }
-
-        /* Abyss or Pandemonium. Almost never called from Pan;
-           probably only if a rand demon gets summon anything spell */
-        if (lev_mons == 51
-            || you.level_type == LEVEL_PANDEMONIUM
-            || you.level_type == LEVEL_ABYSS)
-        {
-            do
-            {
-                do
-                {
-                    // was: random2(400) {dlb}
-                    menv[bk].type = random2(NUM_MONSTERS);
-                }
-                while (!mons_abyss(menv[bk].type));
-            }
-            while (random2avg(100, 2) > mons_rare_abyss(menv[bk].type));
-        }
-        else
-        {
-            int level, diff, chance;
-
-            do
-            {
-                do
-                {
-                    // was: random2(400) {dlb}
-                    menv[bk].type = random2(NUM_MONSTERS);
-                }
-                while (mons_rarity(menv[bk].type) == 0);
-
-                // little touch of aliasing to reveal what the while
-                // condition actually is, any good optimizing compiler
-                // was probably doing it this way (instead of five
-                // function calls) -- bwr
-                level  = mons_level( menv[bk].type );
-                diff   = level - lev_mons;
-                chance = mons_rarity( menv[bk].type ) - (diff * diff);
-            }
-            while ( !(lev_mons > level - 5 && lev_mons < level + 5
-                         && random2avg(100, 2) <= chance) );
-        }
-    }
-    else
-        menv[bk].type = typed;
-
-    if (monster_habitat(menv[bk].type) != DNGN_FLOOR)
-    {
-        menv[bk].number = 0;
-        grid_ok = monster_habitat(menv[bk].type);
-    }
-
-    if (band != BAND_NO_BAND && band_no > 0)
-    {
-        switch (band)
-        {
-        case BAND_KOBOLDS:
-            menv[bk].type = MONS_KOBOLD;
-            break;
-
-        case BAND_ORC_KNIGHT:
-        case BAND_ORC_HIGH_PRIEST:
-            temp_rand = random2(32);
-            menv[bk].type = ((temp_rand > 18) ? MONS_ORC :          // 13 in 32
-                             (temp_rand >  8) ? MONS_ORC_WARRIOR :  // 10 in 32
-                             (temp_rand >  6) ? MONS_OGRE :         //  2 in 32
-                             (temp_rand >  4) ? MONS_TROLL :        //  2 in 32
-                             (temp_rand >  2) ? MONS_ORC_WIZARD :   //  2 in 32
-                             (temp_rand >  0) ? MONS_ORC_PRIEST     //  2 in 32
-                                              : MONS_ORC_SORCEROR); //  1 in 32
-            break;
-
-        case BAND_KILLER_BEES:
-            menv[bk].type = MONS_KILLER_BEE;
-            break;
-        case BAND_FLYING_SKULLS:
-            menv[bk].type = MONS_FLYING_SKULL;
-            break;
-        case BAND_SLIME_CREATURES:
-            menv[bk].type = MONS_SLIME_CREATURE;
-            break;
-        case BAND_YAKS:
-            menv[bk].type = MONS_YAK;
-            break;
-
-        case BAND_UGLY_THINGS:
-            menv[bk].type = ((many_many > 21 && one_chance_in(4)) ?
-                                    MONS_VERY_UGLY_THING : MONS_UGLY_THING);
-            break;
-
-        case BAND_HELL_HOUNDS:
-            menv[bk].type = MONS_HELL_HOUND;
-            break;
-        case BAND_JACKALS:
-            menv[bk].type = MONS_JACKAL;
-            break;
-        case BAND_GNOLLS:
-            menv[bk].type = MONS_GNOLL;
-            break;
-        case BAND_BUMBLEBEES:
-            menv[bk].type = MONS_BUMBLEBEE;
-            break;
-        case BAND_CENTAURS:
-            menv[bk].type = MONS_CENTAUR;
-            break;
-        case BAND_YAKTAURS:
-            menv[bk].type = MONS_YAKTAUR;
-            break;
-        case BAND_INSUBSTANTIAL_WISPS:
-            menv[bk].type = MONS_INSUBSTANTIAL_WISP;
-            break;
-        case BAND_DEATH_YAKS:
-            menv[bk].type = MONS_DEATH_YAK;
-            break;
-
-        case BAND_NECROMANCER:                // necromancer
-            temp_rand = random2(13);
-            menv[bk].type = ((temp_rand > 9) ? MONS_ZOMBIE_SMALL :   // 3 in 13
-                             (temp_rand > 6) ? MONS_ZOMBIE_LARGE :   // 3 in 13
-                             (temp_rand > 3) ? MONS_SKELETON_SMALL : // 3 in 13
-                             (temp_rand > 0) ? MONS_SKELETON_LARGE   // 3 in 13
-                                             : MONS_NECROPHAGE);     // 1 in 13
-            break;
-
-        case BAND_BALRUG:
-            menv[bk].type = (coinflip()? MONS_NEQOXEC : MONS_ORANGE_DEMON);
-            break;
-        case BAND_CACODEMON:
-            menv[bk].type = MONS_LEMURE;
-            break;
-
-        case BAND_EXECUTIONER:
-            menv[bk].type = (coinflip() ? MONS_ABOMINATION_SMALL
-                                        : MONS_ABOMINATION_LARGE);
-            break;
-
-        case BAND_HELLWING:
-            menv[bk].type = (coinflip() ? MONS_HELLWING
-                                        : MONS_SMOKE_DEMON);
-            break;
-
-        case BAND_DEEP_ELF_FIGHTER:    // deep elf fighter
-            temp_rand = random2(11);
-            menv[bk].type =
-                    ((temp_rand >  4) ? MONS_DEEP_ELF_SOLDIER : // 6 in 11
-                     (temp_rand == 4) ? MONS_DEEP_ELF_FIGHTER : // 1 in 11
-                     (temp_rand == 3) ? MONS_DEEP_ELF_KNIGHT :  // 1 in 11
-                     (temp_rand == 2) ? MONS_DEEP_ELF_CONJURER :// 1 in 11
-                     (temp_rand == 1) ? MONS_DEEP_ELF_MAGE      // 1 in 11
-                                      : MONS_DEEP_ELF_PRIEST);  // 1 in 11
-            break;
-        }
-    }                           // end "if ( band != 0 && band_no > 0 )"
-
-    // this is in addition to the above {dlb}:
-    switch (band)
-    {
-    case BAND_ORCS:
-        if (band_no > 0)
-            menv[bk].type = MONS_ORC;
-        if (one_chance_in(5))
-            menv[bk].type = MONS_ORC_WIZARD;
-        if (one_chance_in(7))
-            menv[bk].type = MONS_ORC_PRIEST;
-        break;
-
-    case BAND_HELL_KNIGHTS:
-        if (band_no > 0)
-            menv[bk].type = MONS_HELL_KNIGHT;
-        if (one_chance_in(4))
-            menv[bk].type = MONS_NECROMANCER;
-        break;
-
-    //case 12 is orc high priest
-
-    case BAND_OGRE_MAGE:
-        if (band_no > 0)
-            menv[bk].type = MONS_OGRE;
-        if (one_chance_in(3))
-            menv[bk].type = MONS_TWO_HEADED_OGRE;
-        break;                  // ogre mage
-
-        // comment does not match value (30, TWO_HEADED_OGRE) prior to
-        // enum replacement [!!!] 14jan2000 {dlb}
-
-    case BAND_DEEP_ELF_KNIGHT:                    // deep elf knight
-        temp_rand = random2(208);
-        menv[bk].type =
-                ((temp_rand > 159) ? MONS_DEEP_ELF_SOLDIER :    // 23.08%
-                 (temp_rand > 111) ? MONS_DEEP_ELF_FIGHTER :    // 23.08%
-                 (temp_rand >  79) ? MONS_DEEP_ELF_KNIGHT :     // 15.38%
-                 (temp_rand >  51) ? MONS_DEEP_ELF_MAGE :       // 13.46%
-                 (temp_rand >  35) ? MONS_DEEP_ELF_PRIEST :     //  7.69%
-                 (temp_rand >  19) ? MONS_DEEP_ELF_CONJURER :   //  7.69%
-                 (temp_rand >   3) ? MONS_DEEP_ELF_SUMMONER :    // 7.69%
-                 (temp_rand ==  3) ? MONS_DEEP_ELF_DEMONOLOGIST :// 0.48%
-                 (temp_rand ==  2) ? MONS_DEEP_ELF_ANNIHILATOR : // 0.48%
-                 (temp_rand ==  1) ? MONS_DEEP_ELF_SORCEROR      // 0.48%
-                                   : MONS_DEEP_ELF_DEATH_MAGE);  // 0.48%
-        break;
-
-    case BAND_DEEP_ELF_HIGH_PRIEST:                // deep elf high priest
-        temp_rand = random2(16);
-        menv[bk].type =
-                ((temp_rand > 12) ? MONS_DEEP_ELF_SOLDIER :     // 3 in 16
-                 (temp_rand >  9) ? MONS_DEEP_ELF_FIGHTER :     // 3 in 16
-                 (temp_rand >  6) ? MONS_DEEP_ELF_PRIEST :      // 3 in 16
-                 (temp_rand == 6) ? MONS_DEEP_ELF_MAGE :        // 1 in 16
-                 (temp_rand == 5) ? MONS_DEEP_ELF_SUMMONER :    // 1 in 16
-                 (temp_rand == 4) ? MONS_DEEP_ELF_CONJURER :    // 1 in 16
-                 (temp_rand == 3) ? MONS_DEEP_ELF_DEMONOLOGIST :// 1 in 16
-                 (temp_rand == 2) ? MONS_DEEP_ELF_ANNIHILATOR : // 1 in 16
-                 (temp_rand == 1) ? MONS_DEEP_ELF_SORCEROR      // 1 in 16
-                                  : MONS_DEEP_ELF_DEATH_MAGE);  // 1 in 16
-        break;
-
-    case BAND_KOBOLD_DEMONOLOGIST:
-        temp_rand = random2(13);
-        menv[bk].type = ((temp_rand > 4) ? MONS_KOBOLD :             // 8 in 13
-                         (temp_rand > 0) ? MONS_BIG_KOBOLD           // 4 in 13
-                                         : MONS_KOBOLD_DEMONOLOGIST);// 1 in 13
-        break;
-
-    case BAND_NAGAS:
-        menv[bk].type = MONS_NAGA;
-        break;
-    case BAND_WAR_DOGS:
-        menv[bk].type = MONS_WAR_DOG;
-        break;
-    case BAND_GREY_RATS:
-        menv[bk].type = MONS_GREY_RAT;
-        break;
-    case BAND_GREEN_RATS:
-        menv[bk].type = MONS_GREEN_RAT;
-        break;
-    case BAND_ORANGE_RATS:
-        menv[bk].type = MONS_ORANGE_RAT;
-        break;
-    case BAND_SHEEP:
-        menv[bk].type = MONS_SHEEP;
-        break;
-    case BAND_GHOULS:
-        menv[bk].type = (coinflip() ? MONS_GHOUL : MONS_NECROPHAGE);
-        break;
-    case BAND_DEEP_TROLLS:
-        menv[bk].type = MONS_DEEP_TROLL;
-        break;
-    case BAND_HOGS:
-        menv[bk].type = MONS_HOG;
-        break;
-    case BAND_HELL_HOGS:
-        menv[bk].type = MONS_HELL_HOG;
-        break;
-    case BAND_GIANT_MOSQUITOES:
-        menv[bk].type = MONS_GIANT_MOSQUITO;
-        break;
-    case BAND_BOGGARTS:
-        menv[bk].type = MONS_BOGGART;
-        break;
-    case BAND_BLINK_FROGS:
-        menv[bk].type = MONS_BLINK_FROG;
-        break;
-    case BAND_SKELETAL_WARRIORS:
-        menv[bk].type = MONS_SKELETAL_WARRIOR;
-        break;
-    }
-
-    if (monster_habitat(menv[bk].type) == DNGN_FLOOR)
-        menv[bk].number = 250;
-
-    define_monster(bk, menv);
-
-    // NOTE: Boris is actually a unique,  but we let him come back... :)
-    if (menv[bk].type >= MONS_TERENCE && menv[bk].type <= MONS_MARGERY)
-        you.unique_creatures[menv[bk].type - 280] = 1;
-
-    plussed++;
-
-    if (plus_seventy != 250)
-        menv[bk].number = plus_seventy;
-
-    if (menv[bk].type == MONS_ZOMBIE_SMALL
-        || menv[bk].type == MONS_ZOMBIE_LARGE
-        || menv[bk].type == MONS_SIMULACRUM_SMALL
-        || menv[bk].type == MONS_SIMULACRUM_LARGE
-        || menv[bk].type == MONS_SKELETON_SMALL
-        || menv[bk].type == MONS_SKELETON_LARGE
-        || menv[bk].type == MONS_SPECTRAL_THING)
-    {
-        define_zombie( 3, plus_seventy,
-                          ((plus_seventy != 250) ? menv[bk].type : 250) );
-    }
-
-    if (mons_flag(menv[bk].type, M_INVIS))
-    {
-        menv[bk].enchantment1 = 1;
-        menv[bk].enchantment[2] = ENCH_INVIS;
-    }
-
-    if (menv[bk].type == MONS_SHAPESHIFTER)
-    {
-        menv[bk].enchantment1 = 1;
-        menv[bk].enchantment[1] = ENCH_SHAPESHIFTER;
-    }
-    else if (menv[bk].type == MONS_GLOWING_SHAPESHIFTER)
-    {
-        menv[bk].enchantment1 = 1;
-        menv[bk].enchantment[1] = ENCH_GLOWING_SHAPESHIFTER;
-    }
-    else if (menv[bk].type == MONS_BUTTERFLY
-             || menv[bk].type == MONS_FIRE_VORTEX
-             || menv[bk].type == MONS_SPATIAL_VORTEX
-             || menv[bk].type == MONS_BALL_LIGHTNING
-             || menv[bk].type == MONS_VAPOUR)
-    {
-        menv[bk].enchantment1 = 1;
-        menv[bk].enchantment[0] = ENCH_CONFUSION;
-    }
-
-    switch (band)
-    {
-    case BAND_NO_BAND:                     // no band
-      give_up_on_band:
-        passout = 0;
-
-        if (is_summoning)
-        {
-            menv[bk].x = px;
-            menv[bk].y = py;
-        }
-        else if (grid_ok == DNGN_FLOOR)
-        {
-            do
-            {
-                menv[bk].x = 10 + random2(GXM - 10);
-                menv[bk].y = 10 + random2(GYM - 10);
-            }
-            while ((grd[menv[bk].x][menv[bk].y] < DNGN_FLOOR
-                        || mgrd[menv[bk].x][menv[bk].y] != NON_MONSTER)
-                    || (passed[1] == 0
-                        && menv[bk].x < you.x_pos + 7
-                        && menv[bk].x > you.x_pos - 7
-                        && menv[bk].y < you.y_pos + 7
-                        && menv[bk].y > you.y_pos - 7
-                        && !one_chance_in(100)));
-        }
-        else
-        {
-            do
-            {
-                menv[bk].x = 10 + random2(GXM - 10);
-                menv[bk].y = 10 + random2(GYM - 10);
-            }
-            while ((grd[menv[bk].x][menv[bk].y] != grid_ok
-                    && (grid_ok != DNGN_DEEP_WATER
-                        || grd[menv[bk].x][menv[bk].y] != DNGN_SHALLOW_WATER))
-                    || (menv[bk].x == you.x_pos && menv[bk].y == you.y_pos));
-        }
-
-        bj = 0;
-        break;
-
-    default:
-        menv[bk].x = menv[bk - 1].x;
-        menv[bk].y = menv[bk - 1].y;
-        passout = 0;
-
-        do
-        {
-            menv[bk].x += random2(3) - 1;
-            menv[bk].y += random2(3) - 1;
-
-            if (menv[bk].x > (GXM - 1)
-                || menv[bk].x < 5 || menv[bk].y > (GYM - 1) || menv[bk].y < 5)
-            {
-                menv[bk].x = menv[bk - 1].x;
-                menv[bk].y = menv[bk - 1].y;
-            }
-
-            passout++;
-
-            if (passout > 10000)
-            {
-                band_no--;
-                goto give_up_on_band;
-            }
-        }
-        while (grd[menv[bk].x][menv[bk].y] < DNGN_FLOOR
-               || mgrd[menv[bk].x][menv[bk].y] != NON_MONSTER
-               || (menv[bk].x == you.x_pos && menv[bk].y == you.y_pos));
-
-        band_no--;
-        // cannot have bands of water creatures!
-        break;
-    }                           // end "switch (band)"
-
-    if (allow_bands)
-    {
-        if (bk < MAX_MONSTERS - 50 && band == 0 && band_no == 0)
-        {
-            switch (menv[bk].type)
-            {
-            case MONS_ORC:
-                if (coinflip())
-                    break;
-                // intentional fall-through {dlb}
-            case MONS_ORC_WARRIOR:
-                band = BAND_ORCS;       // orcs
-                band_no = 2 + random2(3);
-                break;
-
-            case MONS_BIG_KOBOLD:
-                if (many_many > 3)
-                {
-                    band = BAND_KOBOLDS;
-                    band_no = 2 + random2(6);
-                }
-                break;
-
-            case MONS_ORC_KNIGHT:
-            case MONS_ORC_WARLORD:
-                band = BAND_ORC_KNIGHT;       // orcs + knight
-                band_no = 3 + random2(4);
-                break;
-            case MONS_KILLER_BEE:
-                band = BAND_KILLER_BEES;       // killer bees
-                band_no = 2 + random2(4);
-                break;
-            case MONS_FLYING_SKULL:
-                band = BAND_FLYING_SKULLS;       // flying skulls
-                band_no = 2 + random2(4);
-                break;
-            case MONS_SLIME_CREATURE:
-                band = BAND_SLIME_CREATURES;       // slime creatures
-                band_no = 2 + random2(4);
-                break;
-            case MONS_YAK:
-                band = BAND_YAKS;       // yaks
-                band_no = 2 + random2(4);
-                break;
-            case MONS_UGLY_THING:
-                band = BAND_UGLY_THINGS;       // ugly things
-                band_no = 2 + random2(4);
-                break;
-            case MONS_HELL_HOUND:
-                band = BAND_HELL_HOUNDS;       // hell hound
-                band_no = 2 + random2(3);
-                break;
-            case MONS_JACKAL:
-                band = BAND_JACKALS;      // jackal
-                band_no = 1 + random2(3);
-                break;
-            case MONS_HELL_KNIGHT:
-            case MONS_MARGERY:
-                band = BAND_HELL_KNIGHTS;      // hell knight
-                band_no = 4 + random2(4);
-                break;
-            case MONS_JOSEPHINE:
-            case MONS_NECROMANCER:
-            case MONS_VAMPIRE_MAGE:
-                band = BAND_NECROMANCER;      // necromancer
-                band_no = 4 + random2(4);
-                break;
-            case MONS_ORC_HIGH_PRIEST:
-                band = BAND_ORC_HIGH_PRIEST;      // orc high priest
-                band_no = 4 + random2(4);
-                break;
-            case MONS_GNOLL:
-                band = BAND_GNOLLS;      // gnoll
-                band_no = ((coinflip())? 3 : 2);
-                break;
-            case MONS_BUMBLEBEE:
-                band = BAND_BUMBLEBEES;      // bumble bees
-                band_no = 2 + random2(4);
-                break;
-            case MONS_CENTAUR:
-            case MONS_CENTAUR_WARRIOR:
-                if (many_many > 9 && one_chance_in(3))
-                {
-                    band = BAND_CENTAURS;  // centaurs
-                    band_no = 2 + random2(4);
-                }
-                break;
-
-            case MONS_YAKTAUR:
-            case MONS_YAKTAUR_CAPTAIN:
-                if (coinflip())
-                {
-                    band = BAND_YAKTAURS;  // yaktaurs
-                    band_no = 2 + random2(3);
-                }
-                break;
-
-            case MONS_DEATH_YAK:
-                band = BAND_DEATH_YAKS;      // death yaks
-                band_no = 2 + random2(4);
-                break;
-            case MONS_INSUBSTANTIAL_WISP:
-                band = BAND_INSUBSTANTIAL_WISPS;      // wisps
-                band_no = 4 + random2(5);
-                break;
-            case MONS_OGRE_MAGE:
-                band = BAND_OGRE_MAGE;      // ogre mage
-                band_no = 4 + random2(4);
-                break;
-            case MONS_BALRUG:
-                band = BAND_BALRUG;      // RED gr demon
-                band_no = 2 + random2(3);
-                break;
-            case MONS_CACODEMON:
-                band = BAND_CACODEMON;      // BROWN gr demon
-                band_no = 1 + random2(3);
-                break;
-
-            case MONS_EXECUTIONER:
-                if (coinflip())
-                {
-                    band = BAND_EXECUTIONER;  // DARKGREY gr demon
-                    band_no = 1 + random2(3);
-                }
-                break;
-
-            case MONS_HELLWING:
-                if (coinflip())
-                {
-                    band = BAND_HELLWING;  // LIGHTGREY gr demon
-                    band_no = 1 + random2(4);
-                }
-                break;
-
-            case MONS_DEEP_ELF_FIGHTER:
-                if (coinflip())
-                {
-                    band = BAND_DEEP_ELF_FIGHTER;  // deep elf warrior
-                    band_no = 3 + random2(4);
-                }
-                break;
-
-            case MONS_DEEP_ELF_KNIGHT:
-                if (coinflip())
-                {
-                    band = BAND_DEEP_ELF_KNIGHT;  // deep elf knight
-                    band_no = 3 + random2(4);
-                }
-                break;
-
-            case MONS_DEEP_ELF_HIGH_PRIEST:
-                if (coinflip())
-                {
-                    band = BAND_DEEP_ELF_HIGH_PRIEST;  // deep elf high priest
-                    band_no = 3 + random2(4);
-                }
-                break;
-
-            case MONS_KOBOLD_DEMONOLOGIST:
-                if (coinflip())
-                {
-                    band = BAND_KOBOLD_DEMONOLOGIST;  // kobold demonologist
-                    band_no = 3 + random2(6);
-                }
-                break;
-
-            case MONS_NAGA_MAGE:
-            case MONS_NAGA_WARRIOR:
-                band = BAND_NAGAS;      // Nagas
-                band_no = 3 + random2(4);
-                break;
-            case MONS_WAR_DOG:
-                band = BAND_WAR_DOGS;      // war dogs
-                band_no = 2 + random2(4);
-                break;
-            case MONS_GREY_RAT:
-                band = BAND_GREY_RATS;      // grey rats
-                band_no = 4 + random2(6);
-                break;
-            case MONS_GREEN_RAT:
-                band = BAND_GREEN_RATS;      // green rats
-                band_no = 4 + random2(6);
-                break;
-            case MONS_ORANGE_RAT:
-                band = BAND_ORANGE_RATS;      // orange rats
-                band_no = 3 + random2(4);
-                break;
-            case MONS_SHEEP:
-                band = BAND_SHEEP;      // sheep
-                band_no = 3 + random2(5);
-                break;
-            case MONS_GHOUL:
-                band = BAND_GHOULS;      // ghoul
-                band_no = 2 + random2(3);
-                break;
-            case MONS_HOG:
-                band = BAND_HOGS;      // hog
-                band_no = 1 + random2(3);
-                break;
-            case MONS_GIANT_MOSQUITO:
-                band = BAND_GIANT_MOSQUITOES;      // mosquito
-                band_no = 1 + random2(3);
-                break;
-            case MONS_DEEP_TROLL:
-                band = BAND_DEEP_TROLLS;      // deep troll
-                band_no = 3 + random2(3);
-                break;
-            case MONS_HELL_HOG:
-                band = BAND_HELL_HOGS;      // hell-hog
-                band_no = 1 + random2(3);
-                break;
-            case MONS_BOGGART:
-                band = BAND_BOGGARTS;      // boggart
-                band_no = 2 + random2(3);
-                break;
-            case MONS_BLINK_FROG:
-                band = BAND_BLINK_FROGS;      // blink frog
-                band_no = 2 + random2(3);
-                break;
-            case MONS_SKELETAL_WARRIOR:
-                band = BAND_SKELETAL_WARRIORS;      // skeletal warrior
-                band_no = 2 + random2(3);
-                break;
-            }                   // end "switch (menv[bk].type)"
-        }     // end "if (bk < MAX_MONSTERS - 50 && band == 0 && band_no == 0)"
-    }                           // end "if (allow_bands)"
-
-    if (band > 0 && band_no == 0)
-        band = 0;
-
-    //if ( monster_habitat(menv[bk].type) == DNGN_FLOOR )
-    //{
-    mgrd[menv[bk].x][menv[bk].y] = bk;
-    //}
-
-    if (mons_itemuse(menv[bk].type) > 0
-        || (menv[bk].type == MONS_DANCING_WEAPON && plus_seventy != 1))
-        give_item();
-
-    if (menv[bk].type == MONS_TWO_HEADED_OGRE
-        || menv[bk].type == MONS_EROLCHA)
-        give_item();
-
-    // give manticores 8 to 16 spike volleys.
-    // they're not spellcasters so this doesn't screw anything up.
-    if (menv[bk].type == MONS_MANTICORE)
-        menv[bk].number = 8 + random2(9);
-
-    menv[bk].behavior = behaviour;
-    menv[bk].monster_foe = hitting;
-
-    if (menv[bk].type == MONS_SHAPESHIFTER)
-    {
-        menv[bk].enchantment1 = 1;
-        menv[bk].enchantment[1] = ENCH_SHAPESHIFTER;
-    }
-
-    if (menv[bk].type == MONS_GLOWING_SHAPESHIFTER)
-    {
-        menv[bk].enchantment1 = 1;
-        menv[bk].enchantment[1] = ENCH_GLOWING_SHAPESHIFTER;
-    }
-
-    if (mons_flag(menv[bk].type, M_INVIS))
-    {
-        menv[bk].enchantment1 = 1;
-        menv[bk].enchantment[2] = ENCH_INVIS;
-    }
-
-    if (menv[bk].type == MONS_BUTTERFLY)
-    {
-        menv[bk].enchantment1 = 1;
-        menv[bk].enchantment[0] = ENCH_CONFUSION;
-    }
-
-    if (menv[bk].type == MONS_DANCING_WEAPON)
-        menv[bk].number = mitm.colour[menv[bk].inv[MSLOT_WEAPON]];
-
-    if (band != 0 || worm != 0)
-        goto start_here;
-
-    return plussed;             // which is either 0 or 1, I think {dlb}
-}                               // end place_monster()
 
 // OBJ_RANDOM used for force_class *and* force_type calls -- not a typo {dlb}
 
@@ -4588,7 +3850,7 @@ static void special_room(void)
 
                 bno_mons++;
 
-                give_item();
+                give_item(bk);
             }
         }
         break;
@@ -4643,7 +3905,7 @@ static void special_room(void)
 
                 bno_mons++;
 
-                give_item();
+                give_item(bk);
             }
         }
         break;
@@ -4838,7 +4100,7 @@ static void morgue(void)
     }
 }                               // end morgue()
 
-static void define_zombie(char not_zombsize,    /* 1=2, 2=1, 3=1 or 2 */
+void define_zombie(char not_zombsize,    /* 1=2, 2=1, 3=1 or 2 */
                           int ztype, int cs)
 {
     int mons_sec2 = 0;
@@ -5017,7 +4279,7 @@ static void specr_2(void)
     }
 }                               // end specr_2()
 
-static void give_item(void)
+void give_item(int mid)
 {
     int temp_rand = 0;          // probability determination {dlb}
 
@@ -5056,7 +4318,7 @@ static void give_item(void)
     mitm.x[bp] = 1;
     mitm.y[bp] = 1;
 
-    if (menv[bk].type == MONS_DANCING_WEAPON
+    if (menv[mid].type == MONS_DANCING_WEAPON
         && you.where_are_you == BRANCH_HALL_OF_BLADES && one_chance_in(3))
     {
         give_level = 351;
@@ -5066,7 +4328,7 @@ static void give_item(void)
     iquan = 1;
     // I wonder if this is even used, given calls to item() {dlb}
 
-    switch (menv[bk].type)
+    switch (menv[mid].type)
     {
     case MONS_KOBOLD:
     case MONS_BIG_KOBOLD:
@@ -5295,7 +4557,7 @@ static void give_item(void)
         force_spec = 100;
         hand_used = 0;
 
-        if (menv[bk].inv[MSLOT_WEAPON] != NON_ITEM)
+        if (menv[mid].inv[MSLOT_WEAPON] != NON_ITEM)
             hand_used = 1;
 
         mitm.base_type[bp] = OBJ_WEAPONS;
@@ -5531,7 +4793,7 @@ static void give_item(void)
         mitm.base_type[bp] = OBJ_MISCELLANY;
         mitm.sub_type[bp] = MISC_HORN_OF_GERYON;
         break;
-    }                           // end "switch(menv[bk].type)"
+    }                           // end "switch(menv[mid].type)"
 
 
     // only happens if something in above switch doesn't set it {dlb}
@@ -5556,24 +4818,24 @@ static void give_item(void)
 
     if (mitm.base_type[thing_created] == OBJ_WEAPONS)
         // hand_used = 0 unless Ettin's 2nd hand etc.
-        menv[bk].inv[hand_used] = thing_created;
+        menv[mid].inv[hand_used] = thing_created;
     else if (mitm.base_type[thing_created] == OBJ_MISSILES)
-        menv[bk].inv[MSLOT_MISSILE] = thing_created;
+        menv[mid].inv[MSLOT_MISSILE] = thing_created;
     else if (mitm.base_type[thing_created] == OBJ_SCROLLS)
-        menv[bk].inv[MSLOT_SCROLL] = thing_created;
+        menv[mid].inv[MSLOT_SCROLL] = thing_created;
     // but not potions? huh? {dlb}
     // only Geryon gets something other than weapon explicitly {dlb}
     else if (mitm.base_type[thing_created] == OBJ_GOLD
              || mitm.base_type[thing_created] == OBJ_MISCELLANY)
     {
-        menv[bk].inv[MSLOT_POTION] = thing_created;
+        menv[mid].inv[MSLOT_POTION] = thing_created;
     }
 
     // SPWPN_PROTECTION and NWPN_S_o_Z ??? {dlb}
     if (mitm.base_type[thing_created] == OBJ_WEAPONS
         && mitm.special[thing_created] % 30 == SPWPN_PROTECTION)
     {
-        menv[bk].armor_class += 5;
+        menv[mid].armor_class += 5;
     }
 
     if (!force_item)
@@ -5588,8 +4850,8 @@ static void give_item(void)
 
     // note that force_spec is not reset for this section
 
-    if (menv[bk].inv[MSLOT_WEAPON] != NON_ITEM
-        && launches_things(mitm.sub_type[menv[bk].inv[MSLOT_WEAPON]]))
+    if (menv[mid].inv[MSLOT_WEAPON] != NON_ITEM
+        && launches_things(mitm.sub_type[menv[mid].inv[MSLOT_WEAPON]]))
     {
         for (bp = 0; bp < MAX_ITEMS - 100; bp++)
         {
@@ -5606,11 +4868,11 @@ static void give_item(void)
         force_item = 0;
 
         mitm.base_type[bp] = OBJ_MISSILES;
-        mitm.sub_type[bp] = launched_by(mitm.sub_type[menv[bk].inv[MSLOT_WEAPON]]);
+        mitm.sub_type[bp] = launched_by(mitm.sub_type[menv[mid].inv[MSLOT_WEAPON]]);
         iquan = 3 + random2avg(16, 2);
 
         // that is, lose SPWPN's, I think, but retain racial typing {dlb}
-        mitm.special[bp] = (mitm.special[menv[bk].inv[MSLOT_WEAPON]] / 30) * 30;
+        mitm.special[bp] = (mitm.special[menv[mid].inv[MSLOT_WEAPON]] / 30) * 30;
 
         if (force_item)
             mitm.quantity[bp] = iquan;
@@ -5624,13 +4886,13 @@ static void give_item(void)
         mitm.x[thing_created] = 1;
         mitm.y[thing_created] = 1;
         mitm.id[thing_created] = 0;
-        menv[bk].inv[MSLOT_MISSILE] = thing_created;
+        menv[mid].inv[MSLOT_MISSILE] = thing_created;
 
         // again, SPWPN_PROTECTION + ???, I think {dlb}
         if (mitm.base_type[thing_created] == OBJ_WEAPONS
             && mitm.special[thing_created] % 30 == SPWPN_PROTECTION)
         {
-            menv[bk].armor_class += 3;
+            menv[mid].armor_class += 3;
         }
 
         item_colour(thing_created);
@@ -5650,7 +4912,7 @@ static void give_item(void)
 
     force_spec = 250;
 
-    switch (menv[bk].type)
+    switch (menv[mid].type)
     {
     case MONS_DEEP_ELF_ANNIHILATOR:
     case MONS_DEEP_ELF_CONJURER:
@@ -5789,7 +5051,7 @@ static void give_item(void)
 
     default:
         return;
-    }                           // end of switch(menv [bk].type)
+    }                           // end of switch(menv [mid].type)
 
     // because it may have been set earlier by giving ammo or weapons {dlb}
     iquan = 1;
@@ -5801,16 +5063,16 @@ static void give_item(void)
 
     mitm.x[thing_created] = 1;
     mitm.y[thing_created] = 1;
-    menv[bk].inv[MSLOT_ARMOUR] = thing_created;
+    menv[mid].inv[MSLOT_ARMOUR] = thing_created;
 
     // Wights' robes are white:
     // this completely overrides colouring above -- d'oh! {dlb}
-    if (menv[bk].type != MONS_WIGHT)
+    if (menv[mid].type != MONS_WIGHT)
         item_colour(thing_created);
     else
         mitm.colour[thing_created] = WHITE;
 
-    menv[bk].armor_class += property( mitm.base_type[thing_created],
+    menv[mid].armor_class += property( mitm.base_type[thing_created],
                                         mitm.sub_type[thing_created], PARM_AC );
 
     int armour_plus = 0;
@@ -5821,14 +5083,14 @@ static void give_item(void)
     ASSERT(abs(armour_plus) < 20);
 
     if (abs(armour_plus) < 20)
-        menv[bk].armor_class += armour_plus;
+        menv[mid].armor_class += armour_plus;
 
-    menv[bk].evasion += property( mitm.base_type[thing_created],
+    menv[mid].evasion += property( mitm.base_type[thing_created],
                                     mitm.sub_type[thing_created],
                                     PARM_EVASION ) / 2;
 
-    if (menv[bk].evasion < 1)
-        menv[bk].evasion = 1;   // This *shouldn't* happen.
+    if (menv[mid].evasion < 1)
+        menv[mid].evasion = 1;   // This *shouldn't* happen.
 }                               // end give_item()
 
 static void item_colour(int p)
@@ -6814,6 +6076,7 @@ static void check_doors(void)
 static void labyrinth_level(void)
 {
     int temp_rand;              // probability determination {dlb}
+    int not_used;
 
     int keep_lx = 0, keep_ly = 0;
     int keep_lx2 = 0, keep_ly2 = 0;
@@ -6969,11 +6232,8 @@ static void labyrinth_level(void)
         mitm.y[treasure_item] = ly;
     }
 
-    FixedVector < int, 2 > passed;
-
-    passed[1] = 1;
-    place_monster( 250, MONS_MINOTAUR, true, lx, ly, BEH_SLEEP, MHITNOT, false,
-                      many_many, passed );
+    place_monster(not_used, MONS_MINOTAUR, many_many, BEH_SLEEP, MHITNOT,
+        true, lx, ly, false);
 
     grd[lx][ly] = DNGN_ROCK_STAIRS_UP;
 
@@ -8369,6 +7629,8 @@ static int vault_grid(int vx, int vy, int altar_count, FixedVector < char,
                       7 > &acq_item_class, FixedVector < int, 7 > &mons_array,
                       char vgrid)
 {
+    int not_used;
+
     // first, set base tile for grids {dlb}:
     grd[vx][vy] = ((vgrid == 'x') ? DNGN_ROCK_WALL :
                    (vgrid == 'c') ? DNGN_STONE_WALL :
@@ -8483,11 +7745,8 @@ static int vault_grid(int vx, int vy, int altar_count, FixedVector < char,
     // finally, handle grids that place monsters {dlb}:
     if (vgrid >= '0' && vgrid <= '9')
     {
-        FixedVector < int, 2 > passed;
         int monster_level;
         int monster_type_thing;
-
-        passed[1] = 1;
 
         monster_level = ((vgrid == '8') ? (4 + (many_many * 2)) :
                          (vgrid == '9') ? (5 + many_many) : many_many);
@@ -8500,8 +7759,8 @@ static int vault_grid(int vx, int vy, int altar_count, FixedVector < char,
                                || vgrid == '0') ? RANDOM_MONSTER
                                                 : mons_array[(vgrid - '1')]);
 
-        place_monster(250, monster_type_thing, true, vx, vy, BEH_SLEEP,
-                      MHITNOT, false, monster_level, passed);
+        place_monster(not_used, monster_type_thing, monster_level, BEH_SLEEP,
+            MHITNOT, true, vx, vy, false);
     }
 
     // again, this seems odd, given that this is just one of many
@@ -8511,7 +7770,7 @@ static int vault_grid(int vx, int vy, int altar_count, FixedVector < char,
 
 static void place_curse_skull(void)
 {
-    FixedVector < int, 2 > passed;
+    int not_used;
     int px, py;
     int i, j;
     int k = 0;
@@ -8558,9 +7817,8 @@ static void place_curse_skull(void)
             }
         }
 
-        passed[1] = 1;
-        place_monster(250, MONS_CURSE_SKULL, true, px, py, BEH_SLEEP, MHITNOT,
-                      false, many_many, passed);
+        place_monster(not_used, MONS_CURSE_SKULL, many_many, BEH_SLEEP, MHITNOT,
+            true, px, py, false);
 
         return;
     }

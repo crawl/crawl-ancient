@@ -70,27 +70,6 @@ void monster_grid(bool do_updates);
 
 //---------------------------------------------------------------
 //
-// doOutputBuffering(bool)
-//
-// This is a very important function which can help speed up
-// screen redraw under operating systems which can buffer
-// multiple putc() calls before making an expensive system call
-// (GDL)
-//
-// also turns cursor off/on depending on buffering value
-//
-//---------------------------------------------------------------
-static void doOutputBuffering(bool newValue)
-{
-    _setcursortype(newValue?_NOCURSOR:_NORMALCURSOR);
-#ifdef WIN32CONSOLE
-    setBuffering(newValue);
-#endif
-}
-
-
-//---------------------------------------------------------------
-//
 // get_ibm_symbol
 //
 // Returns the DOS character code and color for everything drawn
@@ -597,6 +576,7 @@ void viewwindow2(char draw_it, bool do_updates)
 
     if (draw_it == 1)
     {
+        _setcursortype(_NOCURSOR);
         for (count_y = you.y_pos - 8; count_y < you.y_pos + 9; count_y++)
         {
             bufcount += 16;
@@ -743,8 +723,6 @@ void viewwindow2(char draw_it, bool do_updates)
         // Resting will be a LOT faster too.
         if (you.running == 0)
         {
-            // turn buffering on
-            doOutputBuffering(true);
             for (count_x = 0; count_x < 1120; count_x += 2)
             {                   // 1056
                 ch = buffy[count_x];
@@ -758,11 +736,9 @@ void viewwindow2(char draw_it, bool do_updates)
                 if (count_x % 66 == 64 && count_x > 0)
                     gotoxy(2, wherey() + 1);
             }
-            // we're done printing the map,
-            // turn buffering off, so SFX will work.
-            doOutputBuffering(false);
             // remember to comment out the line below if you comment out jump move.
         }
+        _setcursortype(_NORMALCURSOR);
 #endif
     }
 }                               // end viewwindow2()
@@ -1784,6 +1760,8 @@ void show_map(FixedVector < int, 2 > &spec_place)
   put_screen:
     bufcount2 = 0;
 
+    _setcursortype(_NOCURSOR);
+
 #ifdef PLAIN_TERM
     gotoxy(1, 1);
 #endif
@@ -1843,6 +1821,7 @@ void show_map(FixedVector < int, 2 > &spec_place)
     puttext(1, 1, 80, 25, buffer2);
 #endif
 
+    _setcursortype(_NORMALCURSOR);
     gotoxy(curs_x, curs_y);
 
   gettything:
@@ -2906,8 +2885,6 @@ void viewwindow3(char draw_it, bool do_updates)
 
     int count_x, count_y;
 
-    _setcursortype(_NOCURSOR);
-
     losight(env.show, grd, you.x_pos, you.y_pos);
 
     for (count_x = 0; count_x < 18; count_x++)
@@ -2926,6 +2903,7 @@ void viewwindow3(char draw_it, bool do_updates)
 
     if (draw_it == 1)
     {
+        _setcursortype(_NOCURSOR);
         for (count_y = (you.y_pos - 8); (count_y < you.y_pos + 9); count_y++)
         {
             bufcount += 16;
@@ -3070,7 +3048,6 @@ void viewwindow3(char draw_it, bool do_updates)
 
         if (!you.running)       // this line is purely optional
         {
-            doOutputBuffering(true);
             for (count_x = 0; count_x < 1120; count_x += 2)     // 1056
             {
                 textcolor(buffy[count_x + 1]);
@@ -3085,9 +3062,9 @@ void viewwindow3(char draw_it, bool do_updates)
                 gotoxy(2, wherey() + 1);
 #endif
             }
-            doOutputBuffering(false);
         }
 #endif
+        _setcursortype(_NORMALCURSOR);
     }                           // end of (if brek...)
 }                               // end viewwindow3()
 

@@ -176,6 +176,6 @@ void pandemonium_mons(void)
         }
         while (!mons_pan(pan_mons));
     }
-
-    mons_place(pan_mons, false, 50, 50, BEH_CHASING_I, MHITNOT, 250, 52);
+    mons_place(pan_mons, BEH_CHASING_I, MHITNOT, false, 50,50,
+        LEVEL_PANDEMONIUM);
 }                               // end pandemonium_mons()

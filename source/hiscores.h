@@ -28,6 +28,6 @@ void hiscores_print_list(void);
 /* ***********************************************************************
  * called from: ouch hiscores
  * *********************************************************************** */
-void hiscores_print_single(struct scorefile_entry &se);
+void hiscores_format_single(char *buffer, struct scorefile_entry &se);
 
 #endif  // HISCORES_H

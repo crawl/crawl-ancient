@@ -16,6 +16,7 @@
 
 #include "externs.h"
 
+#include "monplace.h"
 #include "dungeon.h"
 #include "lev-pand.h"
 #include "stuff.h"
@@ -327,14 +328,10 @@ char area_shift(void)
 
     generate_area(5, 5, (GXM - 5), (GYM - 5));
 
-    FixedVector < int, 2 > passed;
-
-    passed[0] = passed[1] = 0;
-
     for (unsigned int mcount = 0; mcount < 15; mcount++)
     {
-        mcount += place_monster(250, RANDOM_MONSTER, false, 1, 1,
-                                BEH_CHASING_I, MHITNOT, true, 51, passed);
+        mons_place(RANDOM_MONSTER, BEH_CHASING_I, MHITNOT, false, 1,1,
+            LEVEL_ABYSS, 1);
     }
 
     return cloud_no2;

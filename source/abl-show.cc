@@ -962,6 +962,7 @@ void activate_ability(void)
         case 6: zapping( ZAP_ORB_OF_ELECTRICITY, power, beam ); break;
 
         case 7:
+            mpr("You feel temporarily insulated.");
             you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 1;
             mpr("Makhleb hurls a blast of lightning!");
 
@@ -1202,7 +1203,7 @@ void activate_ability(void)
         break;
 
     case ABIL_RENOUNCE_RELIGION:
-        if (yesno("Really renouce your faith, foregoing its fabulous benefits?")
+        if (yesno("Really renounce your faith, foregoing its fabulous benefits?")
             && yesno( "Are you sure you won't change your mind later?" ))
         {
             excommunication();

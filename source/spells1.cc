@@ -230,9 +230,8 @@ void cast_fire_storm(int powc)
                     && mgrd[beam.target_x][beam.target_y] == NON_MONSTER
                     && one_chance_in(4))
             {
-                mons_place( MONS_FIRE_VORTEX, true, beam.target_x,
-                               beam.target_y, BEH_CONFUSED, MHITNOT, 250,
-                               you.your_level );
+                mons_place( MONS_FIRE_VORTEX, BEH_CONFUSED, MHITNOT, true,
+                    beam.target_x, beam.target_y);
             }
 
             if (grd[beam.target_x][beam.target_y] > DNGN_LAST_SOLID_TILE

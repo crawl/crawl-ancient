@@ -28,6 +28,7 @@
 #include "externs.h"
 #include "fight.h"
 #include "player.h"
+#include "randart.h"
 #include "wpn-misc.h"
 
 //jmf: brent sez:
@@ -1747,8 +1748,6 @@ void show_skills(void)
     char strng[5] = "";
     char lcount;
 
-    _setcursortype(_NOCURSOR);
-
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
     char buffer[4600];
@@ -1897,7 +1896,7 @@ char *skill_name(unsigned char which_skill)
 
 const char *skill_title(unsigned char best_skill, unsigned char skill_lev)
 {
-    unsigned char skill_rank = 0;
+    unsigned char skill_rank;
     char *tempstr = NULL;
 
     // translate skill level into skill ranking {dlb}:
@@ -1954,7 +1953,7 @@ unsigned char best_skill(unsigned char min_skill, unsigned char max_skill,
 
 int calc_hp(void)
 {
-    int hitp = you.hp_max;
+    int hitp;
 
     hitp = (you.base_hp - 5000) + (you.base_hp2 - 5000);
     hitp += (you.experience_level * you.skills[SK_FIGHTING]) / 5;
@@ -2000,7 +1999,7 @@ int calc_hp(void)
 
 int calc_mp(void)
 {
-    int enp = you.max_magic_points;
+    int enp;
 
     enp = (you.base_magic_points - 5000) + (you.base_magic_points2 - 5000);
 
@@ -2098,24 +2097,34 @@ int species_skills(char skill, char species)
 // new: inform player if they need more throwing skill (GDL)
 void wield_warning(bool newWeapon)
 {
-    char *wepstr = "your weapon.";
-    if (newWeapon)
-        wepstr = "this weapon.";
-
-    int wepType  = you.inv_type[you.equip[EQ_WEAPON]];
+    // hold weapon name
+    char wepstr[100];
+    char wepstr2[50];
 
     // early out - no weapon
     if (you.equip[EQ_WEAPON] == -1)
          return;
 
+    if (newWeapon)
+        strcpy(wepstr, "this ");
+    else
+        strcpy(wepstr, "your ");
+
+    int wepType  = you.inv_type[you.equip[EQ_WEAPON]];
+
     // early out - don't warn for non-weapons
     if (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS)
         return;
 
-#ifdef USE_NEW_COMBAT_STATS
+    // put the standard wep name in.
+    standard_name_weap(wepType, wepstr2);
+    strcat(wepstr, wepstr2);
+    strcat(wepstr, ".");
+
     // only warn about str/dex for non-launcher weapons
     if (!launches_things(wepType))
     {
+#ifdef USE_NEW_COMBAT_STATS
         const int stat_bonus = effective_stat_bonus();
 
         strcpy( info, "Your relatively low " );
@@ -2123,19 +2132,19 @@ void wield_warning(bool newWeapon)
 
         if (stat_bonus <= -2)
         {
-            strcat( info, "is limiting your use of " );
+            strcat( info, "limits the use of " );
             strcat( info, wepstr );
             mpr( info, MSGCH_WARN );
         }
         else if (stat_bonus <= -5)
         {
-            strcat( info, "is severely limiting your use of " );
+            strcat( info, "severely limits the use of " );
             strcat( info, wepstr );
             mpr( info, MSGCH_WARN );
         }
+#endif
         return;
     }
-#endif
 
     // must be a launcher
     int effSkill = you.skills[SK_THROWING] * 2 + 1;
@@ -2160,7 +2169,7 @@ void wield_warning(bool newWeapon)
 
     if (shoot_skill > effSkill)
     {
-        strcpy( info, "Your low throwing skill limits your effectiveness with ");
+        strcpy( info, "Your low throwing skill limits the effectiveness of ");
         strcat( info, wepstr );
         mpr( info, MSGCH_WARN );
     }

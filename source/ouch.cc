@@ -33,7 +33,7 @@
 
 #ifdef DOS
 #include <conio.h>
-#include <files.h>
+#include <file.h>
 #endif
 
 #ifdef LINUX
@@ -850,7 +850,12 @@ void end_game(struct scorefile_entry &se)
     cprintf(you.your_name);
     cprintf(".");
     cprintf(EOL EOL);
-    hiscores_print_single(se);
+    hiscores_format_single(info, se);
+
+    // truncate
+    info[79] = '\0';
+    cprintf(info);
+
     cprintf(EOL EOL " Best Crawlers - " EOL);
 
     hiscores_print_list();

@@ -67,7 +67,7 @@ bool mons_speaks(struct monsters *monster)
                      (temp_rand <  3) ? " glances furtively about." :
                      (temp_rand == 3) ? " opens its mouth, as if shouting." :
                      (temp_rand == 4) ? " looks around." :
-                     (temp_rand == 5) ? " appears indicisive." :
+                     (temp_rand == 5) ? " appears indecisive." :
                      (temp_rand == 6) ? " ponders situation."
                                       : " seems to says something.");
             break;
@@ -86,7 +86,7 @@ bool mons_speaks(struct monsters *monster)
             temp_rand = random2(10);
             strcat(info, (temp_rand <  4) ? " wildly gestures." :
                          (temp_rand == 4) ? " looks confused." :
-                         (temp_rand == 5) ? " grins evily." :
+                         (temp_rand == 5) ? " grins evilly." :
                          (temp_rand == 6) ? " smiles happily." :
                          (temp_rand == 7) ? " cries."
                              : " says something but you don't hear anything.");
@@ -118,7 +118,7 @@ bool mons_speaks(struct monsters *monster)
                 break;
             case 1:
                 sprintf(info, "%s %s \"Help!\"", m_name,
-                        coinflip() ? "crys" : "screams"); break;
+                        coinflip() ? "cries" : "screams"); break;
             case 2:
                 sprintf(info, "%s %s \"Why can't we all just get along?\"",
                         m_name, coinflip() ? "begs" : "pleads");
@@ -725,7 +725,7 @@ bool mons_speaks(struct monsters *monster)
                     strcat(info, " screams \"Die, monster!\"");
                     break;
                 case 7:
-                    strcat(info, " says \"You will forget everthing soon.\"");
+                    strcat(info, " says \"You will soon forget everything.\"");
                     break;
                 case 8:
                     strcat(info, " screams \"You will never... NEVER!\"");
@@ -793,7 +793,7 @@ bool mons_speaks(struct monsters *monster)
                     strcat(info, " disappears for a moment.");
                     break;
                 case 9:
-                    strcat(info, " summons swarm of flyies.");
+                    strcat(info, " summons a swarm of flies.");
                     break;
                 case 10:
                     strcat(info, " picks up some beetle and eats it.");
@@ -1198,7 +1198,7 @@ bool mons_speaks(struct monsters *monster)
                     break;
                 case 6:
                     strcat(info,
-                           " says \"Only few hits and and its over.\".");
+                           " says \"Only few hits and it's over.\".");
                     break;
                 case 7:
                     strcat(info, " says \"You know, I'm in a hurry.\"");
@@ -1833,7 +1833,7 @@ bool mons_speaks(struct monsters *monster)
                            " screams \"I'm going to kill you! Now!\"");
                         break;
                 case 3:
-                    strcat(info, " screams \"Blood and destruciton!\"");
+                    strcat(info, " screams \"Blood and destruction!\"");
                     break;
                 case 4:
                     strcat(info,
@@ -1892,7 +1892,7 @@ bool mons_speaks(struct monsters *monster)
                     strcat(info, " screams \"Snorg hungry!\"");
                     break;
                 case 11:
-                    strcat(info, " screams \"Snorg very very hungry!\"");
+                    strcat(info, " screams \"Snorg very, very hungry!\"");
                 case 12:
                     strcat(info, " says \"Snorg will eat you.\"");
                     break;
@@ -2000,7 +2000,7 @@ bool mons_speaks(struct monsters *monster)
                 case 11:
                     strcat(info, " casts a spell.");
                     mpr(info, MSGCH_MONSTER_SPELL);
-                    mpr("You equipment sudddenly weighs more.", MSGCH_WARN);
+                    mpr("Your equipment suddenly weighs more.", MSGCH_WARN);
                     return true;
                     break;
                 case 12:

@@ -219,52 +219,7 @@ void mpr(const char *inf, int channel, int param)
     textcolor(LIGHTGREY);
 
     if (scrloc == NUMBER_OF_LINES - 18) // ( scrloc == 8 )
-    {
-#ifdef PLAIN_TERM
-        gotoxy(2, NUMBER_OF_LINES);
-        _setcursortype(_NORMALCURSOR);
-        textcolor(LIGHTGREY);
-
-        // cdl -- cprintf("\r--more--");
-#ifdef DOS
-        cprintf(EOL);
-#endif
-
-        cprintf("--more--");
-
-        char keypress = 0;
-
-        do
-        {
-            keypress = getch();
-        }
-        while (keypress != 32 && keypress != 13);
-
-        int startLine = 18;
-
-        gotoxy(1, startLine);
-
-#ifdef USE_CURSES
-        clrtobot();
-#else
-        int numLines = NUMBER_OF_LINES - startLine + 1;
-        for (int i = 0; i < numLines; i++)
-        {
-            cprintf( "                                                                               " );
-
-            if (i < numLines - 1)
-                cprintf(EOL);
-        }
-#endif
-#endif
-
-#ifdef DOS_TERM
-        window(1, 18, 78, 25);
         more();
-        window(1, 1, 80, 25);
-#endif
-        scrloc = 0;
-    }
 
     gotoxy(1, scrloc + 18);     // (1, scrloc + 17)
     strncpy(info2, inf, 78);
@@ -295,6 +250,11 @@ void mpr(const char *inf, int channel, int param)
 
 void mesclr(void)
 {
+    // if no messages, return.
+    if (scrloc == 0)
+        return;
+
+    // turn cursor off -- avoid 'cursor dance'
     _setcursortype(_NOCURSOR);
 
 #ifdef DOS_TERM
@@ -325,10 +285,10 @@ void mesclr(void)
 #endif
 #endif
 
-    scrloc = 0;
+    // turn cursor back on
     _setcursortype(_NORMALCURSOR);
-    gotoxy(18, 9);
 
+    scrloc = 0;
 }                               // end mseclr()
 
 void more(void)
@@ -344,7 +304,6 @@ void more(void)
     gotoxy(2, 7);
 #endif
 
-    _setcursortype(_NORMALCURSOR);
     textcolor(LIGHTGREY);
 
     //cdl -- cprintf("\r--more--");
@@ -362,46 +321,11 @@ void more(void)
 
     /* Juho Snellman rewrote this part of the function: */
 
-    keypress = 0;
-
-#ifdef DOS_TERM
-    window(1, 18, 80, 25);
-    clrscr();
-#endif
-
-    /* clrscr() should be inside the DOS-define, and the message
-     * buffer cleared in a different way for Linux to fix annoying
-     * redraw bug whenever the more-prompt showed up. -- jsnell */
-
-#ifdef PLAIN_TERM
-    int startLine = 18;
-
-    gotoxy(1, startLine);
-
-#ifdef USE_CURSES
-    clrtobot();
-#else
-    int numLines = NUMBER_OF_LINES - startLine + 1;
-
-    for (int i = 0; i < numLines; i++)
-    {
-        cprintf( "                                                                               " );
-
-        if (i < numLines - 1)
-        {
-            cprintf(EOL);
-        }
-    }
-#endif
-#endif
-
-    scrloc = 0;
+    mesclr();
 }                               // end more()
 
 void replay_messages(void)
 {
-    _setcursortype(_NOCURSOR);
-
     int i = 0;
     int j = 0;
     int line = 0;
@@ -412,6 +336,9 @@ void replay_messages(void)
     window(1, 1, 80, 25);
     gettext(1, 1, 80, 25, buffer);
 #endif
+
+    // turn cursor off
+    _setcursortype(_NOCURSOR);
 
     clrscr();
 
@@ -463,14 +390,15 @@ void replay_messages(void)
      }
 */
 
+    // turn cursor back on
+    _setcursortype(_NORMALCURSOR);
+
     if (getch() == 0)
         getch();
 
 #ifdef DOS_TERM
     puttext(1, 1, 80, 25, buffer);
 #endif
-
-    _setcursortype(_NORMALCURSOR);
 
     return;
 }                               // end replay_messages()

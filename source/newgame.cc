@@ -79,6 +79,7 @@
 #include "externs.h"
 
 #include "files.h"
+#include "fight.h"
 #include "itemname.h"
 #include "player.h"
 #include "randart.h"
@@ -301,8 +302,6 @@ bool new_game(void)
     strcat(char_fil, ".sav");
 #endif
 
-    int passout = 0;
-
     handle = fopen(char_fil, "rb+");
 
     if (handle != NULL)
@@ -360,8 +359,6 @@ bool new_game(void)
     jobs_stat_init(you.char_class);
     jobs_hpmp_init(you.char_class);
     give_last_paycheck(you.char_class);
-    give_items_skills();
-
 
     // randomly boost stats a number of times based on species
     // - should be a function {dlb}
@@ -391,6 +388,9 @@ bool new_game(void)
         points_left--;
     }
     while (points_left > 0);
+
+    // this function depends on stats being finalized
+    give_items_skills();
 
 
     // first: set base_hp {dlb}
@@ -569,6 +569,8 @@ bool new_game(void)
             you.item_description[i][j] = 215;
         }
     }
+
+    int passout;
 
     you.item_description[IDESC_POTIONS][POT_PORRIDGE] = 139;  // "gluggy white"
     you.item_description[IDESC_POTIONS][POT_WATER] = 0;       // "clear"
@@ -1338,8 +1340,12 @@ bool class_allowed(unsigned char speci, int char_class)
     }
 }                               // end class_allowed()
 
+static char startwep[5] = { WPN_SHORT_SWORD, WPN_MACE,
+    WPN_HAND_AXE, WPN_SPEAR, WPN_TRIDENT };
+
 void choose_weapon( void )
 {
+    char wepName[50];
     unsigned char keyin = 0;
     int num_choices = 4;
     int temp_rand;              // probability determination {dlb}
@@ -1370,13 +1376,16 @@ void choose_weapon( void )
 
         cprintf(EOL " You have a choice of weapons:" EOL);
 
-        cprintf("a - short sword" EOL);
-        cprintf("b - mace" EOL);
-        cprintf("c - hand axe" EOL);
-        cprintf("d - spear" EOL);
+        for(int i=0; i<num_choices; i++)
+        {
+            int x = effective_stat_bonus(startwep[i]);
+            standard_name_weap(startwep[i], wepName);
 
-        if (you.char_class == JOB_GLADIATOR || you.species == SP_MERFOLK)
-            cprintf("e - trident" EOL);
+            sprintf(info, "%c - %s%s" EOL, 'a' + i, wepName,
+                (x <= -5) ? " (awkward)":
+                (x <= -2) ? " (not ideal)" : "");
+            cprintf(info);
+        }
 
         cprintf(EOL "? - Random" EOL);
 
@@ -1388,31 +1397,24 @@ void choose_weapon( void )
         }
         while (keyin != '?' && (keyin < 'a' || keyin > ('a' + num_choices)));
 
-        cprintf(EOL "A fine choice. " EOL);
+        if (keyin != '?')
+            cprintf(EOL "A fine choice. " EOL);
     }
 
     if (Options.random_pick || Options.weapon == WPN_RANDOM || keyin == '?')
-        keyin = 'a' + random2( num_choices );
-
-    switch (keyin)
     {
-    default:
-    case 'a':
-        you.inv_type[0] = WPN_SHORT_SWORD;
-        break;
-    case 'b':
-        you.inv_type[0] = WPN_MACE;
-        break;
-    case 'c':
-        you.inv_type[0] = WPN_HAND_AXE;
-        break;
-    case 'd':
-        you.inv_type[0] = WPN_SPEAR;
-        break;
-    case 'e':
-        you.inv_type[0] = WPN_TRIDENT;
-        break;
+        // try to choose a decent weapon
+        for(int times=0; times<50; times++)
+        {
+            keyin = random2(num_choices);
+            int x = effective_stat_bonus(startwep[keyin]);
+            if (x > -2)
+                break;
+        }
+        keyin += 'a';
     }
+
+    you.inv_type[0] = startwep[keyin-'a'];
 }
 
 void init_player(void)
@@ -2127,7 +2129,9 @@ void openingScreen(void)
 void enterPlayerName(bool blankOK)
 {
     // temporary 'til copyover to you.your_name {dlb}
-    char name_entered[kNameLen];
+    // made this rediculously long so that the game doesn't
+    // crash if a really really long name is entered (argh).  {gdl}
+    char name_entered[200];
 
     // anything to avoid goto statements {dlb}
     bool acceptable_name = false;
@@ -2939,8 +2943,11 @@ job_query:
 
         cprintf(EOL EOL);
         cprintf("Welcome, ");
-        cprintf(you.your_name);
-        cprintf(" the ");
+        if (strlen(you.your_name) > 0)
+        {
+            cprintf(you.your_name);
+            cprintf(" the ");
+        }
         cprintf(species_name(you.species));
         cprintf("." EOL EOL);
 

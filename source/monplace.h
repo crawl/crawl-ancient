@@ -12,15 +12,30 @@
 #ifndef MONPLACE_H
 #define MONPLACE_H
 
+#include "enum.h"
 #include "FixVec.h"
 
-
-// last updated 12may2000 {dlb}
+// last updated 13mar2001 {gdl}
 /* ***********************************************************************
- * called from: acr - levels - monplace - spells1
+ * called from: acr - lev-pand - monplace
+ *
+ * Usage:
+ * mon_type     WANDERING_MONSTER, RANDOM_MONSTER, or monster type
+ * behavior     standard behaviors (BEH_ENSLAVED, etc)
+ * target       MHITYOU, MHITNOT, or monster id
+ * extra        various things like skeleton/zombie types, colours, etc
+ * summoned     monster is summoned?
+ * px           placement x
+ * py           placement y
+ * level_type   LEVEL_DUNGEON, LEVEL_ABYSS, LEVEL_PANDEMONIUM.
+ *              LEVEL_DUNGEON will generate appropriate power monsters
+ * proximity    0 = no extra restrictions on monster placement
+ *              1 = try to place the monster near the player
+ *              2 = don't place the monster near the player
  * *********************************************************************** */
-int mons_place(int typed, bool is_summoning, int px, int py, char behaviour, int hitting, unsigned char plus_seventy, int lev_mons);
-
+int mons_place(int mon_type, char behavior, int target, bool summoned,
+    int px, int py, int level_type = LEVEL_DUNGEON, int proximity = 0,
+    unsigned char extra = 250);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -43,6 +58,21 @@ bool empty_surrounds(int emx, int emy, unsigned char spc_wanted, bool allow_cent
  * called from: ability - acr - items - maps - mstuff2 - spell - spells
  * *********************************************************************** */
 int summon_any_demon(char demon_class);
+
+
+// last update 13mar2001 {gdl}
+/* ***********************************************************************
+ * called from: dungeon monplace
+ *
+ * This isn't really meant to be a public function.  It is a low level
+ * monster placement function used by dungeon building routines and
+ * mons_place().  If you need to put a monster somewhere,  use mons_place().
+ * Summoned creatures can be created with create_monster().
+ * *********************************************************************** */
+bool place_monster(int &id, int mon_type, int power, char behavior,
+    int target, bool summoned, int px, int py, bool allow_bands,
+    int proximity = 0, unsigned char extra = 250);
+
 
 
 #endif

@@ -533,7 +533,7 @@ void command_string(char comm[50], int i)
            (i == 310) ? "!    : shout or command allies"               :
            (i == 325) ? "^    : describe religion"             :
            (i == 337) ? "@    : status"                   :
-           (i == 340) ? "#    : dump character to file <name>.txt"  :
+           (i == 340) ? "#    : dump character to file"  :
            (i == 350) ? "=    : reassign inventory/spell letters"     :
            (i == 360) ? "\'    : wield item a, or switch to b"      :
 #ifdef MACROS

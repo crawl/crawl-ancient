@@ -383,7 +383,7 @@ bool ms_always_fire(int mons_spell);
 /* ***********************************************************************
  * called from:
  * *********************************************************************** */
-char *mons_pronoun(int mon_type, int variant);
+const char *mons_pronoun(int mon_type, int variant);
 
 
 #endif

@@ -5,56 +5,227 @@
  *
  *  Change History (most recent first):
  *
+ *      <2>      8 Mar 2001        GDL       Rewrite to use low level IO
  *      <1>      1 Mar 2000        GDL       Created
  *
  */
 
-#include "AppHdr.h"
-#include "version.h"
-#include "defines.h"
-#include <winuser.h>
+#include <string.h>
 #ifdef __BCPLUSPLUS__
 #include <stdio.h>
 #endif
+#include "AppHdr.h"
+#include "version.h"
+#include "defines.h"
 
 static HANDLE inbuf = NULL;
 static HANDLE outbuf = NULL;
 static int current_color = -1;
+static bool current_cursor = _NOCURSOR;
+// dirty line (sx,ex,y)
+static int chsx=0, chex=0, chy=-1;
+// cursor position (start at 0,0 --> 1,1)
+static int cx=0, cy=0;
+
 //static FILE *foo = NULL;  //DEBUG
 
-// buffering stuff
-#define BUF_SIZE 128
-static char cbuf[BUF_SIZE];
-static int bcount = 0;
+// and now, for the screen buffer
+static CHAR_INFO screen[80 * NUMBER_OF_LINES];
+static COORD screensize;
+#define SCREENINDEX(x,y) (x)+80*(y)
 static bool buffering = false;
 
 // function prototype to make BCPP happy
-WORD translatecolor(int col);
+static WORD translatecolor(int col);
+static void writeChar(char c);
+static void bFlush(void);
+static void _setcursortype_internal(int curstype);
+
+//#define TIMING_INFO
+#ifdef TIMING_INFO
+
+#include <time.h>
+#include "message.h"
+
+// TIMING info
+static int ncalls[6] = { 0,0,0,0,0,0 };
+static double runavg[6] = { 0.0,0.0,0.0,0.0,0.0,0.0 };
+static int oob[6] = { 0,0,0,0,0,0 };
+static int dlen[6] = { 0,0,0,0,0,0 };
+static LARGE_INTEGER t1, t2;
+
+static void addcall(int i, LARGE_INTEGER &tm1, LARGE_INTEGER &tm2)
+{
+    double d = tm2.QuadPart - tm1.QuadPart;
+
+    runavg[i] = (runavg[i] * ncalls[i] + d) / (ncalls[i] + 1);
+    ncalls[i] ++;
+
+    // oob
+    if (ncalls[i] > 10)
+    {
+        if (d > 1.4*runavg[i])
+            oob[i] ++;
+    }
+}
+
+#define CLOCKIN     {QueryPerformanceCounter(&t1);}
+#define CLOCKOUT(x) {QueryPerformanceCounter(&t2); \
+                     addcall((x), t1, t2);}
+
+static char *descrip[] = {
+    "bflush:WriteConsoleOutput",
+    "_setCursorType:SetConsoleCursorInfo",
+    "gotoxy:SetConsoleCursorPosition",
+    "textcolor:SetConsoleTextAttribute",
+    "cprintf:WriteConsole",
+    "getch:ReadConsoleInput"
+};
+
+void print_timings(void)
+{
+    int i;
+    char s[100];
+
+    LARGE_INTEGER cps;
+    QueryPerformanceFrequency(&cps);
+
+    sprintf(s, "Avg (#/oob), CpS = %.1lf", cps.QuadPart);
+    mpr(s);
+    for(i=0; i<3; i++)
+    {
+        int dl = 0;
+        if (ncalls[i] > 0)
+            dl = dlen[i] / ncalls[i];
+        sprintf(s, "%-40s %.1f us (%d/%d), avg dlen = %d", descrip[i],
+            (1000000.0 * runavg[i]) / cps.QuadPart, ncalls[i], oob[i], dl);
+        mpr(s);
+    }
+}
+
+#else
+
+#define CLOCKIN
+#define CLOCKOUT(x)
+
+void print_timings()
+{ ; }
+
+#endif // TIMING INFO
+
+void writeChar(char c)
+{
+   bool noop = true;
+   PCHAR_INFO pci;
+
+   // check for CR: noop
+   if (c == 0x0D)
+      return;
+
+   // check for newline
+   if (c == 0x0A)
+   {
+      // must flush current buffer
+      bFlush();
+
+      // reposition
+      gotoxy(1, cy+2);
+
+      return;
+   }
+
+   int tc = translatecolor(current_color);
+   pci = &screen[SCREENINDEX(cx,cy)];
+
+   // is this a no-op?
+   if (pci->Char.AsciiChar != c)
+      noop = false;
+   else if (pci->Attributes != tc && c != ' ')
+      noop = false;
+
+   if (!noop)
+   {
+      // write the info and update the dirty area
+      pci->Char.AsciiChar = c;
+      pci->Attributes = tc;
+
+      if (chy < 0)
+         chsx = cx;
+      chy = cy;
+      chex = cx;
+
+      // if we're not buffering, flush
+      if (!buffering)
+         bFlush();
+   }
+
+   // update x position
+   cx += 1;
+   if (cx >= 80) cx = 80;
+}
 
 void bFlush(void)
 {
-   DWORD outlength;
+   COORD source;
+   SMALL_RECT target;
 
-   if (bcount > 0)
-      if (WriteConsole(outbuf, cbuf, bcount, &outlength, NULL) == 0)
-         fputs("WriteConsole() failed!", stderr);
+   // see if we have a dirty area
+   if (chy < 0)
+      return;
 
-   bcount = 0;
+   // set up call
+   source.X = chsx;
+   source.Y = chy;
+
+   target.Left = chsx;
+   target.Top = chy;
+   target.Right = chex;
+   target.Bottom = chy;
+
+   CLOCKIN
+   WriteConsoleOutput(outbuf, screen, screensize, source, &target);
+   CLOCKOUT(0)
+
+   chy = -1;
+
+   // if cursor is not NOCURSOR, update screen
+   if (current_cursor != _NOCURSOR)
+   {
+      COORD xy;
+      xy.X = cx;
+      xy.Y = cy;
+      CLOCKIN
+      if (SetConsoleCursorPosition(outbuf, xy) == 0)
+         fputs("SetConsoleCursorPosition() failed!", stderr);
+      CLOCKOUT(2)
+   }
 }
 
 
 void setStringInput(bool value)
 {
-   DWORD modes;
+   DWORD inmodes, outmodes;
    if (value == TRUE)
-      modes = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT;
+   {
+      inmodes = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT;
+      outmodes = ENABLE_PROCESSED_OUTPUT;
+   }
    else
-      modes = NULL;
+   {
+      inmodes = NULL;
+      outmodes = 0;
+   }
 
-   if ( SetConsoleMode( inbuf,  modes ) == 0) {
-      fputs("Error initializing console input mode.", stderr);
+   if ( SetConsoleMode( inbuf,  inmodes ) == 0) {
+      fputs("Error initialising console input mode.", stderr);
       exit(0);
    }
+
+   if ( SetConsoleMode( outbuf,  outmodes ) == 0) {
+      fputs("Error initialising console output mode.", stderr);
+      exit(0);
+   }
+
    // now flush it
    FlushConsoleInputBuffer( inbuf );
 }
@@ -65,79 +236,154 @@ void init_libw32c(void)
    outbuf = GetStdHandle( STD_OUTPUT_HANDLE );
 
    if (inbuf == INVALID_HANDLE_VALUE || outbuf == INVALID_HANDLE_VALUE) {
-      fputs("Could not initialize libw32c console support.", stderr);
+      fputs("Could not initialise libw32c console support.", stderr);
       exit(0);
    }
    SetConsoleTitle( "Crawl " VERSION );
    // by default,  set string input to false:  use char-input only
    setStringInput( false );
-   if (SetConsoleMode( outbuf, ENABLE_PROCESSED_OUTPUT ) == 0) {
-      fputs("Error initializing console output mode.", stderr);
+   if (SetConsoleMode( outbuf, 0 ) == 0) {
+      fputs("Error initialising console output mode.", stderr);
       exit(0);
    }
 
-   // initialize static text color (cuts down on calls to
-   // SetConsoleTextAttribute()
+   // set up screen size
+   screensize.X = 80;
+   screensize.Y = NUMBER_OF_LINES;
+
+   // initialise text color
    textcolor(DARKGREY);
+
+   // initialise cursor to NONE.
+   _setcursortype_internal(_NOCURSOR);
+
+   // buffering defaults to ON -- very important!
+   setBuffering(true);
 
    //DEBUG
    //foo = fopen("debug.txt", "w");
 }
 
+// we don't take our cues from Crawl.  Cursor is shown
+// only on input.
 void _setcursortype(int curstype)
+{
+    ;
+}
+
+
+void _setcursortype_internal(int curstype)
 {
    CONSOLE_CURSOR_INFO cci;
 
+   if (curstype == current_cursor)
+      return;
+
    cci.dwSize = 5;
    cci.bVisible = (bool)curstype;
+   current_cursor = curstype;
+   CLOCKIN
    SetConsoleCursorInfo( outbuf, &cci );
+   CLOCKOUT(1)
+
+   // now,  if we just changed from NOCURSOR to CURSOR,
+   // actually move screen cursor
+   if (current_cursor != _NOCURSOR)
+      gotoxy(cx+1, cy+1);
 }
 
 void clrscr(void)
 {
-   int i;
-   _setcursortype(_NOCURSOR);
-   for (i=0; i<NUMBER_OF_LINES; i++)
+   int x,y;
+   COORD source;
+   SMALL_RECT target;
+
+   PCHAR_INFO pci = screen;
+
+   for(x=0; x<80; x++)
    {
-       gotoxy(1, i+1);
-       cprintf("                                        "
-               "                                        ");
+      for(y=0; y<NUMBER_OF_LINES; y++)
+      {
+         pci->Char.AsciiChar = ' ';
+         pci->Attributes = 0;
+         pci++;
+      }
    }
+
+   source.X = 0;
+   source.Y = 0;
+   target.Left = 0;
+   target.Top = 0;
+   target.Right = 79;
+   target.Bottom = NUMBER_OF_LINES - 1;
+
+   WriteConsoleOutput(outbuf, screen, screensize, source, &target);
+
+   // reset cursor to 1,1 for convenience
    gotoxy(1,1);
-   _setcursortype(_NORMALCURSOR);
 }
 
 void gotoxy(int x, int y)
 {
-   // assume the Crawl coordinate system starts at (1,1)
-   COORD xy;
-   xy.X = x-1;
-   xy.Y = y-1;
-
    // always flush on goto
    bFlush();
 
-   if (SetConsoleCursorPosition(outbuf, xy) == 0)
-      fputs("SetConsoleCursorPosition() failed!", stderr);
+   // bounds check
+   if (x<1)
+      x=1;
+   if (x>80)
+      x=80;
+   if (y<1)
+      y=1;
+   if (y>NUMBER_OF_LINES)
+      y=NUMBER_OF_LINES;
+
+   // change current cursor
+   cx = x-1;
+   cy = y-1;
+
+   // if cursor is not NOCURSOR, update screen
+   if (current_cursor != _NOCURSOR)
+   {
+      COORD xy;
+      xy.X = cx;
+      xy.Y = cy;
+      CLOCKIN
+      if (SetConsoleCursorPosition(outbuf, xy) == 0)
+         fputs("SetConsoleCursorPosition() failed!", stderr);
+      CLOCKOUT(2)
+   }
 }
 
 void textcolor(int c)
 {
-   if (c != current_color)
-   {
-      // always flush on color change
-      bFlush();
-      if (SetConsoleTextAttribute( outbuf, translatecolor(c)) == 0)
-         fputs("SetConsoleTextAttribute() failed!", stderr);
-      current_color = c;
-   }
+   // change current color used to stamp chars
+   current_color = c;
 }
 
 void cprintf(const char *s)
 {
-   DWORD outlength;
-   if (WriteConsole(outbuf, s, strlen(s), &outlength, NULL) == 0)
-      fputs("WriteConsole() failed!", stderr);
+   // early out -- not initted yet
+   if (outbuf == NULL)
+   {
+      printf(s);
+      return;
+   }
+
+   // turn buffering ON (temporarily)
+   bool oldValue = buffering;
+   setBuffering(true);
+
+   // loop through string
+   char *p = (char *)s;
+   while(*p)
+      writeChar(*p++);
+
+   // reset buffering
+   setBuffering(oldValue);
+
+   // flush string
+   bFlush();
 }
 
 void window(int x, int y, int lx, int ly)
@@ -147,40 +393,21 @@ void window(int x, int y, int lx, int ly)
 
 int wherex(void)
 {
-   CONSOLE_SCREEN_BUFFER_INFO csbi;
-   if (GetConsoleScreenBufferInfo( outbuf, &csbi ) == 0)
-      fputs("GetConsoleScreenBufferInfo() failed!", stderr);
-   return csbi.dwCursorPosition.X + 1;
+   return cx+1;
 }
 
 int wherey(void)
 {
-   CONSOLE_SCREEN_BUFFER_INFO csbi;
-   if (GetConsoleScreenBufferInfo( outbuf, &csbi ) == 0)
-      fputs("GetConsoleScreenBufferInfo() failed!", stderr);
-   return csbi.dwCursorPosition.Y + 1;
+   return cy+1;
 }
 
 void putch(char c)
 {
-   static char tinybuf[2] = "x";
    // special case: check for '0' char: map to space
    if (c==0)
       c = ' ';
 
-   // buffer if appropriate
-   if (buffering)
-   {
-      cbuf[bcount] = c;
-      bcount += 1;
-      if (bcount == BUF_SIZE)
-         bFlush();
-   }
-   else
-   {
-      tinybuf[0] = c;
-      cprintf(tinybuf);
-   }
+   writeChar(c);
 }
 
 // translate virtual keys
@@ -260,10 +487,15 @@ int getch(void)
        return repeat_key;
     }
 
+    bool oldValue = current_cursor;
+    _setcursortype_internal(_NORMALCURSOR);
+
     while(1)
     {
+       CLOCKIN
        if (ReadConsoleInput( inbuf, &ir, 1, &nread) == 0)
            fputs("Error in ReadConsoleInput()!", stderr);
+       CLOCKOUT(5)
        if (nread > 0)
        {
           // ignore if it isn't a keyboard event.
@@ -287,15 +519,25 @@ int getch(void)
     // DEBUG
     //fprintf(foo, "getch() returning %02x (%c)\n", key, key);
 
+    _setcursortype_internal(oldValue);
+
     return key;
 }
 
 int getche(void)
 {
+   // turn buffering off temporarily
+   bool oldValue = buffering;
+   setBuffering(false);
+
    int val = getch();
 
    if (val != 0)
       putch(val);
+
+   // restore buffering value
+   setBuffering(oldValue);
+
    return val;
 }
 
@@ -316,7 +558,7 @@ void textbackground(int c)
 }
 
 // Translate DOS colors.
-WORD translatecolor(int col)
+static WORD translatecolor(int col)
 {
     // all we have to work with are:
     // FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_RED, and FOREGROUND_INTENSITY
@@ -389,6 +631,14 @@ DWORD getConsoleString(char *buf, DWORD maxlen)
    DWORD nread;
    // set console input to line mode
    setStringInput( true );
+
+   // force cursor
+   bool oldValue = current_cursor;
+   _setcursortype_internal(_NORMALCURSOR);
+
+   // set actual screen color to current color
+   SetConsoleTextAttribute( outbuf, translatecolor(current_color) );
+
    if (ReadConsole( inbuf, buf, maxlen-1, &nread, NULL) == 0)
       fputs("Error in ReadConsole()!", stderr);
 
@@ -407,15 +657,24 @@ DWORD getConsoleString(char *buf, DWORD maxlen)
    // reset console mode - also flushes if player has typed in
    // too long of a name so we don't get silly garbage on return.
    setStringInput( false );
+
+   // restore old cursor
+   _setcursortype_internal(oldValue);
+
+   // return # of bytes read
    return nread;
 }
 
-void setBuffering( bool value )
+bool setBuffering( bool value )
 {
+   bool oldValue = buffering;
+
    if (value == false)
    {
        // must flush buffer
        bFlush();
    }
    buffering = value;
+
+   return oldValue;
 }

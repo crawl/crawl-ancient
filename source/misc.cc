@@ -1758,7 +1758,7 @@ void weird_colours(unsigned char coll, char wc[30])
                (coll == 15) ? "leaf green" :
                (coll == 16) ? "mauve" :
                (coll == 17) ? "azure"
-                            : "colorless");
+                            : "colourless");
 
     return;
 }                               // end weird_colours()
