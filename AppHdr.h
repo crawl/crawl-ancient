@@ -16,17 +16,18 @@
  *
  *  Change History (most recent first):
  *
+ *       <5>     10/12/99   BCR     Added USE_NEW_RANDOM #define
  *       <4>     9/25/99    CDL     linuxlib -> liblinux
  *
  *       <3>     6/18/99    BCR     Moved the CHARACTER_SET #define here from
- *                          linuxlib.cc.  Also wrapped the #define
- *                          MACROS to prevent it from being used by
- *                          Linux.
+ *                                  linuxlib.cc.  Also wrapped the #define
+ *                                  MACROS to prevent it from being used by
+ *                                  Linux.
  *       <2>     6/17/99    BCR     Removed 'linux' check, replaced it with
- *                          'LINUX' check.  Now need to be -DLINUX
- *                          during compile.  Also moved
- *                          CHARACTER_SET #define here from
- *                          linuxlib.cc
+ *                                  'LINUX' check.  Now need to be -DLINUX
+ *                                  during compile.  Also moved
+ *                                  CHARACTER_SET #define here from
+ *                                  linuxlib.cc
  *       <1>     5/30/99    JDJ     Created (from config.h)
  */
 #ifndef APPHDR_H
@@ -165,13 +166,15 @@
 // Uncomment this line to allow the player to select his draconian's colour.
 // #define ALLOW_DRACONIAN_TYPE_SELECTION
 
+// Uncomment this to use the new random number generator
+// if this works out okay, eventually we can change this to USE_OLD_RANDOM
+#define USE_NEW_RANDOM
 
 // Uncomment this if you find the labyrinth to be buggy and what to
 // remove it from the game.
 // #define SHUT_LABYRINTH
 
 // Define MACRO if you want to use the macro patch in macro.cc.
-// *BCR* Macros aren't working in Linux right now...
 #define MACROS
 
 // Set this to the number of runes that will be required to enter Zot's

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <4>     10/12/99        BCR             BUILD_DATE is now used in version()
  *      <3>     6/13/99         BWR             New equipment listing commands
  *      <2>     5/20/99         BWR             Swapping inventory letters.
  *      <1>     -/--/--         LRH             Created
@@ -48,7 +49,7 @@ void quit_game()
 
 void version(void)
 {
-    strcpy(info, "This is Dungeon Crawl v" VERSION ". (Last build 26/3/99)");
+    strcpy(info, "This is Dungeon Crawl v" VERSION ". (Last build "BUILD_DATE")");
     mpr(info);
 }
 

@@ -1,7 +1,9 @@
 Bugs:
 
+* I think I fixed weapons of reaching but haven't been able to test them yet.
+
 * DJGPP (dos compiler) may puke up a lung on some of the very long function if
-  you try to compile in debug mode.
+  you try to compile using certain options.
 
 * values 250 - 310 should be reserved for Uniques in the monsters enum, but 260 - 280
   are occupied by other monsters.  Should move them if it won't mess anything else up.

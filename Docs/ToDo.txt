@@ -1,6 +1,16 @@
 Enhancements:
 
-* hand and a half weapons
+* Some commands in wizard help are still undefined.
+
+* Documentation needs to be updated for the upcoming release.
+
+* file locking for the high score file
+
+* adjust EV for low levels.
+
+* repopulate levels on the way out
+
+* monsters have too high a preference for missile weapons
 
 * should species armour bonus work on EV instead of AC?
 
@@ -10,8 +20,6 @@ Enhancements:
   gods, Zot traps, or mummies as a form of punishment.
 
 * add toggled stealthy mode?
-
-* make rings of fire/ice (and others?) auto identify with use
 
 * print out '@' status in character dumps (might be nice to have the
   chacters status in the dump... method of death might be good as well).
@@ -24,91 +32,31 @@ Enhancements:
   for things that are summoned against him.
 
 * Add a wizard debugging function to output several thousand items for
-a particular depth (should make item frequency tuning easier).
+  a particular depth (should make item frequency tuning easier).
 
 * Perhaps races should be physically "described" (stucture or bit
-fields) to keep track of their size and physical body parts that
-interfer with armour.  This could also be used in other ways...
-small races could be harder to hit with ranged weapons
-than larger ones, but the larger races might get a bonus
-to carrying capacity... could also probably simplify the
-extra unarmed combat attacks code
+  fields) to keep track of their size and physical body parts that
+  interfer with armour.  This could also be used in other ways...
+  small races could be harder to hit with ranged weapons
+  than larger ones, but the larger races might get a bonus
+  to carrying capacity... could also probably simplify the
+  extra unarmed combat attacks code
 
 * Speaking of the character info, I really like that Linley now displays
-the weapon being wielded.  We should think about displaying all ten
-wielded/worn objects.
+  the weapon being wielded.  We should think about displaying all ten
+  wielded/worn objects.
 
 * Need to make sure that ghost names will be OK when long player names
-are used.
+  are used.
 
 * Blink prompt is bogus (probably also happens elsewhere). Can probably
-fix this by adding a prompt argument to look_around.
+  fix this by adding a prompt argument to look_around.
 
 * There have been some comments on the newsgroup about adding some new low
-level monsters. I think this is a good idea and would give us a chance to
-cleanup the monster definition code.
-
-* Main screen should include experience pool information.
-    -- done (bwross)
-
-* Remove fire and cold resistances from the Cekugob amulet.
-    -- done (jesjones)
-
-* The adjust item letter function should swap items instead of fail.
-    -- done (bwross)
-
-* Rings/wands/scrolls and such should print a message when they are
-identified by use
-    -- done (bwross)
-
-* Jewelry should be refered to by inventory slot rather than by n(eck),
-r(ight hand), or l(eft hand).
-
-    -- done (DML)
-
-* Taking off armor while wearing a cloak needs work. If the cloak is
-cursed things should remain as they are now. Otherwise the cloak should
-automatically be taken off and put back on. The time taken should be
-adjusted accordingly and messages should be printed so the user knows
-what's happening.
-    -- done (JDJ)
-
-* You should be able to wear new armor without first taking off the old
-armor (modulo curses).
-    -- done (JDJ)
-
-* You should be able to drop the armor you're wearing. Ditto for jewelry.
-    -- done for armor (JDJ)
-
-* The memorize spells screen should draw the spells you already know
-in gray.
-    -- done (JDJ)
+  level monsters. I think this is a good idea and would give us a chance to
+  cleanup the monster definition code.
 
 * Some of the more important messages should be in color?
-
-* I was thinking that maybe the game should have an over "map"
-        > of the dungeon.  Just a quick list of what you've discovered
-        > on each level that would be available from a keypress.
-        >
-        > ie.  Main dungeon (Level 10) - Orc Mines entrance, 2 shops.
-        >      Orc Mines    (Level  4) - Elven Halls entrance.
-        >
-        > Only "interesting" levels would be mentioned, so it shouldn't
-        > take up too many lines.
-
-        Excellent idea. Some thoughts on how to implement this: I would
-        suggest that the code for entering a location in the 'map'
-        should be called from two places: in the part of the item_check
-        function which descibes the dungeon fixtures occupying the
-        player's current location (eg "There is a stone staircase
-        leading down here") and in the look_around function which
-        handles the x command and targetting.
-
-        That way all you have to do is move across or look at a feature
-        and it is recorded. Maybe (if it doesn't take up too much space)
-        shops could be listed by name/type as well - eg "Gog U Khig's
-        Antique Weapons".
- -- done (LRH)
 
 * The spores contaminate the food by exploding, only the
         > explosion effect should destroy food on the ground.
@@ -181,7 +129,7 @@ charm them, also some to work with natural forces - eg. elementals,
 resist fire..., also some healing spells - neutralize poison etc...
 
 * Maybe some God of Nature, which offers to his believers some of Druid
-ablities
+  ablities
 
 * "write scroll" skill
 
@@ -190,7 +138,7 @@ ablities
 * purify food spell
 
 * create water/lava pool spell, also some monsters creating this kind
-of terrain
+  of terrain
 
 * Some work needs to be done for multi-user environments.
     -- some done, more could be useful (bwross)
@@ -198,25 +146,12 @@ of terrain
 * Targetting isn't intuitive enough?
     -- slightly improved (bwross)
 
-* Troll food consumption needs to be bumped up?
-    -- done (bwross)
-
-* Kobolds should have stat increases every five levels? Mummies, and the
-draconians as well?
-    -- kobolds done (bwross)
-
-* More use of color in the map screen.
-    -- done (bwross)
-
 * Use gdbm to save games? However gdbm won't compensate for endian
-differences...
+  differences...
 
 * Use gdmn to save bones?
 
 * Use zlib to compress saved games?
-
-* auto-pickup
-  -- done (DML)
 
 * larger windows
     -- number of lines is now handled more dynamically, but only at
@@ -414,14 +349,6 @@ differences...
 * Improve artefacts to compete better with Sword of Power?  Improve
   non-sword weapons so they become more of a choice?
 
-*  pehaps races should be physically "described" (stucture or bit
-  fields) to keep track of their size and physical body parts that
-  interfer with armour.  This could also be used in other ways...
-  small races could be harder to hit with ranged weapons
-  than larger ones, but the larger races might get a bonus
-  to carrying capacity... could also probably simplify the
-  extra unarmed combat attacks code.
-
 *  Currently possible to gain 0hp when gaining a level... should
    be safeguards added to make sure this is at least never negative,
    if not guaranteeing 1hp / level.
@@ -438,7 +365,7 @@ differences...
 *  item inscriptions
 
 *  are crossbows correct?  The other launchers seem to be adding their
-    skill bonuses twice
+   skill bonuses twice
 
 *  The Throwing skill isn't particularly useful.  You could use it for
    throwing daggers, axes, or spears but they don't stack and are
@@ -489,5 +416,3 @@ differences...
 
    -- add special attacks to weapons and allow them to be accessed by the
       player via SHIFT-<move> onto an adjacent monster.
-
-*  Documentation needs to be updated for the upcoming release.

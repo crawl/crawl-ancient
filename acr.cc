@@ -5,7 +5,11 @@
  *
  *  Change History (most recent first):
  *
- *
+ *     <13>     10/11/99        BCR             Added Daniel's wizard patch
+ *     <12>     10/9/99         BCR             swapped 'v' and 'V' commands,
+ *                                              added wizard help command
+ *     <11>     10/7/99         BCR             haste and slow now take amulet of
+ *                                              resist slow into account
  *     <10>     9/25/99         CDL             Changes to Linux input
  *                                              switch on command enums
  *      <9>     6/12/99         BWR             New init code, restructured
@@ -894,7 +898,7 @@ static bool Use_No_Black = false;
          redraw_screen();
          #endif
             break;
-         case 'V':
+         case 'v':
          case CMD_EXAMINE_OBJECT:
             original_name();
             break;
@@ -940,10 +944,13 @@ static bool Use_No_Black = false;
             break;
          case 's':
          case CMD_SEARCH:
-         #ifdef WIZARD
-         stethoscope(250);
-         break;
-         #endif
+           /* BCR - This drives me crazy.  And you can get this
+                    with the look command, targetting, etc.
+           #ifdef WIZARD
+             stethoscope(250);
+             break;
+           #endif
+            */
             search_around();
             you.turn_is_over = 1;
             break;
@@ -958,7 +965,6 @@ static bool Use_No_Black = false;
             cast_a_spell();
             break;
 
-      //              case 'M': which_spell(); break;      //memorise_spell(); break;
          case '\'':
          case CMD_WEAPON_SWAP:
             wield_weapon(1);
@@ -1146,7 +1152,6 @@ static bool Use_No_Black = false;
       itoa(player_prot_life(), st_prn, 10);
       strcpy(info, st_prn);
       mpr(info);
-      //   acquirement();
       break;
 
       case ']':
@@ -1217,11 +1222,13 @@ static bool Use_No_Black = false;
          wiz_command = getch();
 
          switch (wiz_command) {
-         case '&':
+         case '?':
+            // BCR - the value of 1 tells it to list wizard commands
+            list_commands(1);
             break;
          case 'x':
-            you.experience += 500;
-            you.exp_available += 500;
+            you.experience += 5000;
+            you.exp_available += 5000;
             you.redraw_experience = 1;
             level_change();
             break;
@@ -1229,37 +1236,47 @@ static bool Use_No_Black = false;
             you.experience += 500;
             you.hp += 50;
             you.hp_max += 50;
+            you.hunger += 1000;
             you.redraw_experience = 1;
             you.redraw_hit_points = 1;
             you.gold += 50;
             you.exp_available += 500;
             level_change();
             break;
-         //  case '^': shop(); //in_a_shop(-1, you.inv_quantity, you.inv_dam, you.inv_class, you.inv_type, you.inv_plus, you.inv_ident, you.equip [0], you.armour [0], you.armour [5], you.armour [2], you.armour [1], you.armour [3], you.armour [4], you.ring, it, igrid, you);
-            //  break;
          case 'a':
             acquirement(250);
-            break;                  //animate_dead(5, 7, you.pet_target, 1); break;
-
-         case 'G': debug_add_skills(); break;
-
+            break;
+         case 'b':
+            banished(96);
+            break;
+         case 'g':
+            debug_add_skills();
+            break;
+         case 'X':
+            Xom_acts( 1, 20, 1 );
+            break;
          case 'h':
+            you.hp_max = abs(you.hp_max);
             you.hp = you.hp_max;
+            you.hunger = abs(you.hunger);
             you.redraw_hit_points = 1;
             break;
+         case '\"':
          case '~':
             level_travel();
             break;
+         case '%':
          case 'o':
             create_spec_object2();
             break;
+         case '+':
          case 'm':
             create_spec_monster();
             break;
+         case '*':
          case 'd':
             grd[you.x_pos][you.y_pos] = 82;
             break;
-         //  case '#': grid [you.x_pos] [you.y_pos] = 100; break;
          case 'p':
             grd[you.x_pos][you.y_pos] = 99;
             break;
@@ -1281,66 +1298,48 @@ static bool Use_No_Black = false;
             strcat(info, " skill points.");
             mpr(info);
             break;
-
-
-          case 'z': cast_spec_spell(); break;
-         case '%': create_spec_object2(); break;
-          case '*': grd [you.x_pos] [you.y_pos] = 82; break;
+          case 'z':
+            cast_spec_spell(); break;
           case '(':
-          char specs [3];
-          strcpy(info, "Create which feature? ");
-          mpr(info);
-          specs [0] = getche();
-          specs [1] = getche();
-          specs [2] = getche();
-          grd [you.x_pos] [you.y_pos] = atoi(specs); break;
-          case '+': create_spec_monster(); break;
+            char specs [3];
+            mpr("Create which feature? ");
+            specs [0] = getche();
+            specs [1] = getche();
+            specs [2] = getche();
+            grd [you.x_pos] [you.y_pos] = atoi(specs);
+            break;
           case ']':
-          char specx [2];
-          strcpy(info, "Gain which mutation? ");
-          mpr(info);
-          specx [0] = getche();
-          specx [1] = getche();
-          mutate(atoi(specx));
-          break;
-          case '\"': level_travel(); break;
+            char specx [2];
+            mpr("Gain which mutation? ");
+            specx [0] = getche();
+            specx [1] = getche();
+            mutate(atoi(specx));
+            break;
           case ':':
-          int i, j;
-          j = 0;
-          for (i = 0; i < 20; i ++)
-          {
-          if (you.branch_stairs [i] == 0) continue;
-          strcpy(info, "Branch ");
-          itoa(i, st_prn, 10);
-          strcat(info, st_prn);
-          strcat(info, " is on level ");
-          itoa(you.branch_stairs [i], st_prn, 10);
-          strcat(info, st_prn);
-          strcat(info, ".");
-          mpr(info);
-          }
+            int i, j;
+            j = 0;
+            for (i = 0; i < 20; i ++)
+            {
+              if (you.branch_stairs [i] == 0)
+                continue;
+              strcpy(info, "Branch ");
+              itoa(i, st_prn, 10);
+              strcat(info, st_prn);
+              strcat(info, " is on level ");
+              itoa(you.branch_stairs [i], st_prn, 10);
+              strcat(info, st_prn);
+              strcat(info, ".");
+              mpr(info);
+            }
           break;
           case '{':
-          magic_mapping(99, 100);
+            magic_mapping(99, 100);
           break;
           case '^':
-          mpr("You feel more pious! Well done.");
-          gain_piety(10);
+            mpr("You feel more pious! Well done.");
+            gain_piety(10);
           break;
-
-         /*  case '=':
-         new_level();
-         strcpy(info, "");
-         for (i = 0; i < 20; i ++)
-         {
-         itoa(mons_alloc [i], st_prn, 10);
-         strcat(info, st_prn);
-         strcat(info, ",");
-         }
-         mpr(info);
-         break; */
-
-         case '\'':
+          case '\'':
             for (i = 0; i < ITEMS; i++)
             {
                 if (mitm.link[i] == ING)
@@ -1409,13 +1408,13 @@ static bool Use_No_Black = false;
                 }
             }
             break;
-
          default:
             mpr( "Not a Wizard Command." );
             break;
          }
 
          break;
+         // end of WIZARD block
          #endif
 
          case 'S':
@@ -1431,7 +1430,7 @@ static bool Use_No_Black = false;
          case CMD_QUIT:
             quit_game();
             break;
-         case 'v':
+         case 'V':
          case CMD_GET_VERSION:
             version();
             break;
@@ -1862,7 +1861,19 @@ static bool Use_No_Black = false;
       }
 
       if (you.slow > 1)
-         you.slow--;
+      {
+         // BCR - Amulet of resist slow affects slow counter
+         if (wearing_amulet(AMU_RESIST_SLOW))
+         {
+            you.slow -= 5;
+            if (you.slow < 1)
+              you.slow = 1;
+         }
+         else
+         {
+            you.slow--;
+         }
+      }
       if (you.slow == 1)
       {
          strcpy(info, "You feel yourself speed up.");
@@ -1872,7 +1883,16 @@ static bool Use_No_Black = false;
 
       if (you.haste > 1)
       {
-         you.haste--;
+         // BCR - Amulet of resist slow affects haste counter
+         if (wearing_amulet(AMU_RESIST_SLOW))
+         {
+            you.haste -= random2(2);
+         }
+         else
+         {
+            you.haste--;
+         }
+
          if (you.haste == 6)
          {
             mpr("Your extra speed is starting to run out.");
@@ -1889,7 +1909,7 @@ static bool Use_No_Black = false;
 
       if (you.might > 1)
          you.might--;
-      if (you.might == 1)
+      else if (you.might == 1)
       {
          strcpy(info, "You feel a little less mighty now.");
          mpr(info);
@@ -2821,7 +2841,9 @@ static bool Use_No_Black = false;
             goto break_out;
          }
 
-         if (menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].behavior == 7 && menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].enchantment[2] != 6 && you.conf == 0)
+         if (   menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].behavior == 7
+            && menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].enchantment[2] != 6
+            && you.conf == 0)
          {
             swap_places(mgrd[you.x_pos + move_x][you.y_pos + move_y]);
             goto break_out;

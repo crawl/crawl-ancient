@@ -424,8 +424,7 @@ void pickup()
 
         if (counter > 1000)
         {
-            mpr("Oh dear. There appears to be a bug in the program.");
-            mpr("I suggest you leave this level then save as soon as possible.");
+            error_message_to_player();
             return;
         }
 
@@ -1639,8 +1638,7 @@ void autopickup()
 
         if (items_here > 1000)
         {
-            mpr("Oh dear. There appears to be a bug in the program.");
-            mpr("I suggest you leave this level then save as soon as possible.");
+            error_message_to_player();
             return;
         }
 

@@ -5,10 +5,11 @@
  *
  *  Change History (most recent first):
  *
- *      <4>     10/1/99        BCR              Clarified help screen
- *      <3>     6/9/99         DML              Autopickup
- *      <2>     5/20/99        BWR              Extended screen lines support
- *      <1>     -/--/--        LRH              Created
+ *      <5>     10/9/99     BCR     Added wizard help screen
+ *      <4>     10/1/99     BCR     Clarified help screen
+ *      <3>     6/9/99      DML     Autopickup
+ *      <2>     5/20/99     BWR     Extended screen lines support
+ *      <1>     -/--/--     LRH     Created
  */
 
 #include "AppHdr.h"
@@ -40,6 +41,7 @@
 #endif
 
    void command_string(char comm[50], int i);
+   void wizard_string(char comm[50], int i);
 
 //char invent(unsigned char inv_plus2 [52], int item_class_inv, int inv_quantity [52], unsigned char inv_dam [52], unsigned char inv_class [52], unsigned char inv_type [52], unsigned char inv_plus [52], unsigned char inv_ident [52], char item_wielded, char body_armour, char shield_armour, char cloak_armour, char head_armour, char hand_armour, char foot_armour, char ring [2], char show_price);
    char invent(int item_class_inv, char show_price);
@@ -458,7 +460,7 @@
 
 
 
-   void list_commands(void)
+   void list_commands(int wizard)
    {
 
       char st_pass[50];
@@ -480,7 +482,10 @@
 
       for (i = 0; i < 500; i++)
       {
-         command_string(st_pass, i);
+         if (wizard)
+            wizard_string(st_pass, i);
+         else
+            command_string(st_pass, i);
          if (strlen(st_pass) != 0)
          {
             // BCR - If we've reached the end of the screen, clear
@@ -514,7 +519,90 @@
       return;
    }
 
-
+   void wizard_string(char comm[50], int i)
+#ifdef WIZARD
+   {
+      switch (i)
+      {
+         case 10:
+            strcpy(comm, "a    - (a)cquirement");
+            break;
+         case 15:
+            strcpy(comm, "b    - (b)anish yourself to the Abyss");
+            break;
+         case 20:
+            strcpy(comm, "d/*  - ?");
+            break;
+         case 30:
+            strcpy(comm, "g    - add a skill");
+            break;
+         case 40:
+            strcpy(comm, "h    - (h)eal yourself");
+            break;
+         case 50:
+            strcpy(comm, "i    - (i)dentify an item");
+            break;
+         case 70:
+            strcpy(comm, "l    - ?");
+            break;
+         case 80:
+            strcpy(comm, "m/+  - create a (m)onster");
+            break;
+         case 90:
+            strcpy(comm, "o/%%  - create an (o)bject");
+            break;
+         case 100:
+            strcpy(comm, "p    - ?");
+            break;
+         case 110:
+            strcpy(comm, "x    - gain 5000 e(x)perience");
+            break;
+         case 115:
+            strcpy(comm, "X    - Receive a gift from (X)om");
+            break;
+         case 120:
+            strcpy(comm, "z    - cast any spell");
+            break;
+         case 130:
+            strcpy(comm, "$    - get heal + gold + xp");
+            break;
+         case 140:
+            strcpy(comm, "~/\"  - goto a level");
+            break;
+         case 150:
+            strcpy(comm, "(    - create a feature");
+            break;
+         case 160:
+            strcpy(comm, "]    - get a mutation");
+            break;
+         case 170:
+            strcpy(comm, ":    - find branch");
+            break;
+         case 180:
+            strcpy(comm, "{    - magic mapping");
+            break;
+         case 190:
+            strcpy(comm, "^    - gain piety");
+            break;
+         case 200:
+            strcpy(comm, "\'    - list items");
+            break;
+         case 210:
+            strcpy(comm, "_    - sum skill points");
+            break;
+         case 220:
+            strcpy(comm, "?    - list wizard commands");
+            break;
+         default:
+            strcpy(comm, "");
+            break;
+      }
+   }
+#else
+{
+            strcpy(comm, "");
+}
+#endif
    void command_string(char comm[50], int i)
    {
 
@@ -565,7 +653,7 @@
             strcpy(comm, "t    - (t)hrow or shoot something");
             break;
          case 110:
-            strcpy(comm, "v    - get (v)ersion information");
+            strcpy(comm, "v    - (v)iew details on an item");
             break;
          case 120:
             strcpy(comm, "w    - (w)ield a weapon");
@@ -600,8 +688,8 @@
          case 165:
             strcpy(comm, "Q    - commit suicide/(Q)uit");
             break;
-         case 209:
-            strcpy(comm, "V    - (V)iew details on an item");
+         case 179:
+            strcpy(comm, "V    - get (V)ersion information");
             break;
          case 200:
             strcpy(comm, "W/T  - (W)ear/(T)ake off armour");
@@ -627,6 +715,11 @@
          case 280:
             strcpy(comm, "\\    - check your item knowledge");
             break;
+      #ifdef WIZARD
+         case 290:
+            strcpy(comm, "&    - invoke your Wizardly powers");
+            break;
+      #endif
          case 300:
             strcpy(comm, "+ &  - on map screen - fast scroll");
             break;

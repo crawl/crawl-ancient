@@ -1,7 +1,7 @@
 #Makefile chooser.  Choose one:
 
-#MAKEFILE = makefile.lnx
-MAKEFILE = makefile.dos
+MAKEFILE = makefile.lnx
+#MAKEFILE = makefile.dos
 #MAKEFILE = makefile.emx
 #MAKEFILE = makefile.sol
 
@@ -15,3 +15,5 @@ distclean:
 	make -f $(MAKEFILE) distclean
 debug:
 	make -f $(MAKEFILE) debug EXTRA_FLAGS=-g
+wizard:
+	make -f $(MAKEFILE) debug EXTRA_FLAGS='-g -DWIZARD'

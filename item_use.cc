@@ -212,8 +212,8 @@ void wield_weapon(char auto_wield)
 
     if (you.inv_class[item_wield_2] != OBJ_WEAPONS)
     {
-        if (you.inv_class[item_wield_2] == OBJ_STAVES
-                                                && you.equip[EQ_SHIELD] != -1)
+        if (   you.inv_class[item_wield_2] == OBJ_STAVES
+            && you.equip[EQ_SHIELD] != -1)
         {
             mpr("You can't wield that with a shield.");
             return;
@@ -254,9 +254,10 @@ void wield_weapon(char auto_wield)
 
         }
 
-        if (hands_required_for_weapon( you.inv_class[item_wield_2],
-                            you.inv_type[item_wield_2] ) == HANDS_TWO_HANDED
-                && you.equip[EQ_SHIELD] != -1)
+        if (hands_required_for_weapon(
+              you.inv_class[item_wield_2],
+              you.inv_type[item_wield_2]   ) == HANDS_TWO_HANDED
+            && you.equip[EQ_SHIELD] != -1)
         {
             mpr("You can't wield that with a shield.");
             return;
@@ -285,7 +286,9 @@ void wield_weapon(char auto_wield)
     else
         info[0] = item_wield_2 + 39;
 
-    info[1] = 0;                /* This null-terminates it, right? */
+    //info[1] = 0;                /* This null-terminates it, right? */
+    // BCR - Yeah, but this is clearer...
+    info[1] = '\0';
 
     strcat(info, " - ");
 

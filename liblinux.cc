@@ -6,10 +6,11 @@
  *
  *  Change History (most recent first):
  *
+ *      <6>     10/11/99        BCR     Swapped 'v' and 'V' commands, fixed
+ *                                      & for debug command.
  *      <5>     9/25/99         CDL     linuxlib -> liblinux
  *                                      changes to fix "macro problem"
-                                        keypad -> command lookup
- *
+ *                                      keypad -> command lookup
  *      <4>     99/07/13        BWR     added translate_keypad(), to try and
  *                                      translate keypad escape sequences into
  *                                      numeric char values.
@@ -215,7 +216,7 @@ void termio_init()
       key_to_command_table[ 's' ] = CMD_SEARCH;
       key_to_command_table[ 't' ] = CMD_THROW;
       key_to_command_table[ 'u' ] = CMD_MOVE_UP_RIGHT;
-      key_to_command_table[ 'v' ] = CMD_GET_VERSION;
+      key_to_command_table[ 'v' ] = CMD_EXAMINE_OBJECT;
       key_to_command_table[ 'w' ] = CMD_WIELD_WEAPON;
       key_to_command_table[ 'x' ] = CMD_LOOK_AROUND;
       key_to_command_table[ 'y' ] = CMD_MOVE_UP_LEFT;
@@ -243,7 +244,7 @@ void termio_init()
       key_to_command_table[ 'S' ] = CMD_SAVE_GAME;
       key_to_command_table[ 'T' ] = CMD_REMOVE_ARMOUR;
       key_to_command_table[ 'U' ] = CMD_RUN_UP_RIGHT;
-      key_to_command_table[ 'V' ] = CMD_EXAMINE_OBJECT;
+      key_to_command_table[ 'V' ] = CMD_GET_VERSION;
       key_to_command_table[ 'W' ] = CMD_WEAR_ARMOUR;
       key_to_command_table[ 'X' ] = CMD_DISPLAY_MAP;
       key_to_command_table[ 'Y' ] = CMD_RUN_UP_LEFT;
@@ -294,6 +295,7 @@ void termio_init()
       key_to_command_table[ '(' ] = CMD_LIST_WEAPONS;
       key_to_command_table[ ']' ] = CMD_LIST_ARMOUR;
       key_to_command_table[ '"' ] = CMD_LIST_JEWELLERY;
+      key_to_command_table[ '&' ] = CMD_WIZARD;
 
       key_to_command_table[ '\\' ] = CMD_DISPLAY_KNOWN_OBJECTS;
       key_to_command_table[ '\'' ] = CMD_WEAPON_SWAP;

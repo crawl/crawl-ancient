@@ -66,5 +66,6 @@ void create_spec_object();
 void create_spec_object2();
 void stethoscope(int mwh);
 void debug_add_skills();
+void error_message_to_player();
 
 #endif // DEBUG_H

@@ -5,8 +5,10 @@
  *
  *  Change History (most recent first):
  *
- *              <2>             5/26/99         JDJ             detect_items uses '~' instead of '*'.
- *              <1>             -/--/--         LRH             Created
+ *     <3>     10/11/99    BCR     fixed range bug in burn_freeze,
+ *                                 vamp_drain, and summon_elemental
+ *     <2>     5/26/99     JDJ     detect_items uses '~' instead of '*'.
+ *     <1>     -/--/--     LRH     Created
  */
 
 #include "AppHdr.h"
@@ -847,11 +849,10 @@
          return -1;
       }
 
-      if (vmove[0].move_x > 1 || vmove[0].move_y > 1)
+      if (abs(vmove[0].move_x) > 1 || abs(vmove[0].move_y) > 1)
       {
-         strcpy(info, "This spell doesn't reach that far.");
-         mpr(info);
-         goto dirc;
+         mpr("This spell doesn't reach that far.");
+         return -1;
       }
 
       mgr = mgrd[you.x_pos + vmove[0].move_x][you.y_pos + vmove[0].move_y];
@@ -866,8 +867,7 @@
 
       if (mgr == MNG)
       {
-         strcpy(info, "There isn't anything there!");
-         mpr(info);
+         mpr("There isn't anything there!");
          return -1;
       }
 
@@ -926,40 +926,35 @@
 
       while (mgr == MNG)
       {
-         strcpy(info, "Which direction?");
-         mpr(info);
+         mpr("Which direction?");
          direction(0, bmove);
 
          if (bmove[0].nothing == -1)
          {
-            strcpy(info, "The spell fizzles!");
-            mpr(info);
+            mpr("The spell fizzles!");
             bmove[0].move_x = 0;
             bmove[0].move_y = 0;
             return -1;
          }
 
-         if (bmove[0].move_x > 1 || bmove[0].move_y > 1)
+         if ((abs(bmove[0].move_x) > 1) || (abs(bmove[0].move_y) > 1))
          {
-            strcpy(info, "This spell doesn't reach that far.");
-            mpr(info);
-            continue;
+            mpr("This spell doesn't reach that far.");
+            return -1;
          }
 
          if (bmove[0].move_x == 0 && bmove[0].move_y == 0)
          {
-            strcpy(info, "That would be silly!");
-            mpr(info);
+            mpr("That would be silly!");
             continue;
          }
 
          mgr = mgrd [you.x_pos+bmove[0].move_x] [you.y_pos+bmove[0].move_y];
 
-        // Yes, this is stange, but it dos maintain the original behaviour
+         // Yes, this is stange, but it does maintain the original behaviour
          if (mgr == MNG)
          {
-            strcpy(info, "There isn't anything there!");
-            mpr(info);
+            mpr("There isn't anything close enough!");
             bmove[0].move_x = 0;
             bmove[0].move_y = 0;
             return -1;
@@ -971,15 +966,12 @@
          case BEAM_FIRE:
             strcpy(info, "You burn ");
             break;
-
          case BEAM_COLD:
             strcpy(info, "You freeze ");
             break;
-
          case BEAM_MISSILE:
             strcpy(info, "You crush ");
             break;
-
          case BEAM_ELECTRICITY:
             strcpy(info, "You zap ");
             break;
@@ -1012,7 +1004,7 @@
       }
 
       return 1;
-   }                               // end vamp drain
+   }                               // end burn_freeze
 
 
    int summon_elemental(int pow, unsigned char restricted_type, unsigned char unfriendly)
@@ -1028,7 +1020,7 @@
 
    dirc:
       strcpy(info, "Summon from what material?");
-   // cannot summon earth elemental if you are floating in the air.
+    // cannot summon earth elemental if you are floating in the air.
     // problem: what if you're floating over water/lava and are surrounded by it and a wall, and summon an earth elemental? hmmm...
     //strcat(info, ", < for air)");
       mpr(info);
@@ -1051,11 +1043,11 @@
          goto dirc;
       }
 
-      if (smove[0].move_x > 1 || smove[0].move_y > 1)
+      if (abs(smove[0].move_x) > 1 || abs(smove[0].move_y) > 1)
       {
          strcpy(info, "This spell doesn't reach that far.");
          mpr(info);
-         goto dirc;
+         return -1;
       }
 
       if (smove[0].move_x == 0 && smove[0].move_y == 0)

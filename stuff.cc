@@ -37,6 +37,15 @@
 
 extern char wield_change;
 
+#ifdef USE_NEW_RANDOM
+int random2(unsigned int max)
+{
+  if (max <= 0)
+    return 0;
+  else
+    return (int) ((((float) max) * rand()) / RAND_MAX);
+}
+#else
 int random2(unsigned int randmax)
 {
     if (randmax <= 0)
@@ -44,6 +53,7 @@ int random2(unsigned int randmax)
 
     return random() % randmax;
 }
+#endif
 
 unsigned char get_ch()
 {

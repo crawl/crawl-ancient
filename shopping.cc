@@ -265,7 +265,7 @@ print_stock:
 
     textcolor(LIGHTGREY);
 
-    shop_print("Type letter to buy item, x/Esc to leave, ?/* for inventory, V to examine.", 23);
+    shop_print("Type letter to buy item, x/Esc to leave, ?/* for inventory, v to examine.", 23);
 
 purchase:
     strcpy(sh_name, "You have ");
@@ -287,7 +287,7 @@ purchase:
     if (ft == 'x' || ft == 27)
         goto goodbye;
 
-    if (ft == 'V')
+    if (ft == 'v')
     {
         shop_print("Examine which item?", 20);
         ft = shop_getch();

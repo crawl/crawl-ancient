@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *      <7>      10/8/99        BCR             Large races get a smaller
+ *                                              penalty for large shields
  *      <6>      9/09/99        BWR             Code for 1-1/2 hand weapons
  *      <5>      8/08/99        BWR             Reduced power of EV/shields
  *      <4>      6/22/99        BWR             Changes to stabbing code, made
@@ -14,7 +16,6 @@
  *                                              in combat slightly.
  *      <2>      5/12/99        BWR             Fixed a bug where burdened
  *                                              barehanded attacks where free
- *
  *      <1>      -/--/--        LRH             Created
  */
 
@@ -96,15 +97,27 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
 
     if (you.equip[EQ_SHIELD] != -1)
     {
-        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_SHIELD && you.skills[SK_SHIELDS] < random2(7))
+        if      (   you.inv_type[you.equip[EQ_SHIELD]] == ARM_SHIELD
+                 && you.skills[SK_SHIELDS] < random2(7))
             heavy_armour++;
-        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD && you.skills[SK_SHIELDS] < random2(13))
-            heavy_armour++;
-        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD && you.skills[SK_SHIELDS] < random2(13))
-            heavy_armour++;
-        if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD && you.skills[SK_SHIELDS] < random2(13))
-            heavy_armour += random2(4);
+        else if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD)
+        {
+          int i;
+          // this was originally just in here three times, so it now loops
+          for(i = 0; i < 3; i++)
+          {
+            if (you.skills[SK_SHIELDS] < random2(13))
+            {
+              // BCR - Giant races do not get a larger penalty for large shields.
+              if (you.species >= SP_OGRE && you.species <= SP_UNK2_DRACONIAN)
+                heavy_armour++;
+              else
+                heavy_armour += random2(3);
+            }
+          }
+        }
     }
+
     if (you.equip[EQ_BODY_ARMOUR] != -1)
     {
         if (property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION) < 0 && random2(you.skills[SK_ARMOUR]) < abs(property(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]], PARM_EVASION)))
@@ -172,8 +185,11 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
     if (you.equip[EQ_WEAPON] != -1)
     {
 
-        if (weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) != 0)
-            your_to_hit += random2(you.skills[weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]])] + 1);
+        if (weapon_skill(you.inv_class[you.equip[EQ_WEAPON]],
+                         you.inv_type[you.equip[EQ_WEAPON]]) != 0)
+            your_to_hit += random2(you.skills[weapon_skill(
+                             you.inv_class[you.equip[EQ_WEAPON]],
+                             you.inv_type[you.equip[EQ_WEAPON]])] + 1);
     }
     else
     {                           /* Unarmed... */

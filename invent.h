@@ -19,5 +19,6 @@ char invent(int item_class_inv, char show_price);
 
 unsigned char get_invent(int invent_type);
 
-void list_commands(void);
+// BCR - Default argument of 0 to keep code compatibility
+void list_commands(int wizard = 0);
 #endif

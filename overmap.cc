@@ -5,8 +5,14 @@
  *
  *  Change History (most recent first):
  *
- *      <1>      29/8/99        LRH             Created
+ *      <2>      8/10/99        BCR     Changed Linley's macros
+ *                                      to an enum in overmap.h
+ *      <1>      29/8/99        LRH     Created
  */
+
+/* BCR This is kinda silly, because each time these macros are
+       used, they each have to be recomputed.  See my replacement
+       in overmap.h.
 
 #define NO_FEATURE 0 // clear
 #define FEATURE_SHOP (1<<0)
@@ -14,7 +20,7 @@
 #define FEATURE_HELL (1<<2)
 #define FEATURE_ABYSS (1<<3)
 #define FEATURE_PANDEMONIUM (1<<4)
-
+*/
 
 #include "AppHdr.h"
 
@@ -34,13 +40,6 @@ Idea: allow player to make notes about levels. I don't know how to do
 this (I expect it will require some kind of dynamic memory management
 thing). - LH
 */
-
-
-/*void seen_altar(unsigned char which_altar);
-char print_level_name(int i, int j, char already_printed);
-void init_overmap(void);
-void display_overmap(void);*/
-
 
 
 // These variables need to become part of the player struct and need to

@@ -36,8 +36,9 @@
 #include "skills.h"
 #include "spell.h"
 
-#define WIZARD
-
+#ifndef WIZARD
+  #define WIZARD
+#endif
 
 #if DEBUG && WIN
 #define MyDebugBreak() _asm {int 3}
@@ -671,12 +672,17 @@ void debug_add_skills()
 {
     char specs[2];
 
-    strcpy(info, "Practice which skill? ");
-    mpr(info);
+    mpr("Practice which skill? ");
 
     specs[0] = getche();
     specs[1] = getche();
 
     exercise(atoi(specs), 100);
 
+}
+
+void error_message_to_player()
+{
+  mpr("Oh dear. There appears to be a bug in the program.");
+  mpr("I suggest you leave this level then save as soon as possible.");
 }

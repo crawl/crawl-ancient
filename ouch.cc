@@ -645,7 +645,11 @@
 
       itoa(you.experience_level, point_print, 10);
       strcat(death_string, point_print);
+      #ifdef WIZARD
+      strcat(death_string, " Wiz,");
+      #else
       strcat(death_string, ",");
+      #endif
 
       switch (death_type)
       {

@@ -25,6 +25,7 @@
 #include "externs.h"
 #include "enum.h"
 
+#include "debug.h"
 #include "view.h"
 #include "itemname.h"
 #include "mstruct.h"
@@ -36,11 +37,6 @@
 #ifdef MACROS
   #include "macro.h"
 #endif
-
-#ifdef WIZARD
-  #include "debug.h"
-#endif
-
 
 char mons_find(unsigned char xps, unsigned char yps, char mfp [2], char direction);
 
@@ -65,8 +61,10 @@ void direction(char rnge, struct dist moves[1])
     {
         mpr( "Aim (move cursor or select with '-' or '+'/'=', then 'p', '.', or '>')" );
         moves[0].prev_targ = 0;
-        if (moves[0].nothing == -10000) moves[0].prev_targ = 1;
-        if (moves[0].nothing == -10001) moves[0].prev_targ = 2;
+        if (moves[0].nothing == -10000)
+          moves[0].prev_targ = 1;
+        if (moves[0].nothing == -10001)
+          moves[0].prev_targ = 2;
         moves[0].nothing = look_around(moves);
         looked = 1;
     }
@@ -84,8 +82,7 @@ void direction(char rnge, struct dist moves[1])
 
     if (moves[0].nothing == -1)
     {
-        strcpy(info, "What an unusual direction.");
-        mpr(info);
+        mpr("What an unusual direction.");
         return;
     }
 
@@ -99,7 +96,9 @@ void direction(char rnge, struct dist moves[1])
             return;
         }
 
-        if (!mons_near(you.prev_targ) || (menv[you.prev_targ].enchantment[2] == 6 && player_see_invis() == 0))
+        if (   !mons_near(you.prev_targ)
+            || (   menv[you.prev_targ].enchantment[2] == 6
+                && player_see_invis() == 0))
         {
             strcpy(info, "You can't see that creature any more.");
             mpr(info);
@@ -370,7 +369,10 @@ int look_around(struct dist moves[1])
     monsfind_pos [1] = you.y_pos;
 
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
-        if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != 6 || player_see_invis() != 0))
+    {
+        if (   mons_near(you.prev_targ)
+            && (   menv[you.prev_targ].enchantment[2] != 6
+                || player_see_invis() != 0))
         {
             strcpy(info, "You are currently targetting ");
             strcat(info, monam(menv[you.prev_targ].number, menv[you.prev_targ].type,
@@ -380,6 +382,7 @@ int look_around(struct dist moves[1])
         }
         else
             mpr("You have no current target.");
+    }
 
     gotoxy(xps, yps);
     gotoxy(xps + 1, yps);
@@ -388,7 +391,6 @@ int look_around(struct dist moves[1])
 
     do
     {
-
       if (moves[0].prev_targ == 0)
       {
         gotch = getch();
@@ -692,7 +694,6 @@ look_clouds:
             if (mitm.base_type[igrd[you.x_pos + xps - 17][you.y_pos + yps - 9]] == 15)
             {
                 mpr("You see some money here.");
-
             }
             else
             {
@@ -714,7 +715,6 @@ look_clouds:
             break;
         case 1:
         case 5:         // secret door
-
             if (you.level_type == 3)
             {
                 mpr("A wall of the weird stuff which makes up Pandemonium.");
@@ -756,14 +756,12 @@ look_clouds:
             mpr("Some shallow water.");
             break;
         case 78:                // undiscovered trap
-
         case 67:
             mpr("Floor.");
             break;
         case 70:
             mpr("An open door.");
             break;
-
         case 85:
             mpr("A rock staircase leading down.");
             break;
@@ -795,8 +793,8 @@ look_clouds:
                     break;
                 if (trf == NTRAPS - 1)
                 {
-                    strcpy(info, "Error - couldn't find that trap.");
-                    mpr(info);
+                    mpr("Error - couldn't find that trap.");
+                    error_message_to_player();
                     break;
                 }
             }
@@ -831,6 +829,7 @@ look_clouds:
                 break;
             default:
                 mpr("An undefined trap. Huh?");
+                error_message_to_player();
                 break;
             }
             break;
@@ -870,7 +869,6 @@ look_clouds:
         case 101:
             mpr("A gate leading to another region of Pandemonium.");
             break;
-
         case 110:
             mpr("A staircase to the Orcish Mines.");
             break;
@@ -910,7 +908,6 @@ look_clouds:
         case 122:
             mpr("A staircase to the Swamp.");
             break;
-
         case 130:
         case 131:
         case 132:
@@ -942,7 +939,6 @@ look_clouds:
         case 142:
             mpr("A staircase back to the Lair.");
             break;
-
         case 180:
             mpr("A glowing white marble altar of Zin.");
             break;
@@ -961,7 +957,6 @@ look_clouds:
         case 185:
             mpr("A shining altar of Vehumet.");
             break;
-            // case 185
         case 186:
             mpr("An iron altar of Okawaru.");
             break;
@@ -980,7 +975,6 @@ look_clouds:
         case 191:
             mpr("A silver altar of Elyvilon.");
             break;
-
         case 200:
             mpr("A fountain of clear blue water.");
             break;

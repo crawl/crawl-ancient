@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *      <9>      10/12/99       BCR             Made sure all the classes are
+ *                                              capitalized correctly.
  *      <8>      9/09/99        BWR             Changed character selection
  *                                              screens look (added sub-species
  *                                              menus from Dustin Ragan)
@@ -759,13 +761,13 @@ switch_start:
         switch (i)
         {
         case JOB_FIGHTER:
-            cprintf("fighter");
+            cprintf("Fighter");
             break;
         case JOB_WIZARD:
             cprintf("Wizard");
             break;
         case JOB_PRIEST:
-            cprintf("priest");
+            cprintf("Priest");
             break;
         case JOB_THIEF:
             cprintf("Thief");
@@ -780,19 +782,19 @@ switch_start:
             cprintf("Paladin");
             break;
         case JOB_ASSASSIN:
-            cprintf("assassin");
+            cprintf("Assassin");
             break;
         case JOB_BERSERKER:
             cprintf("Berserker");
             break;
         case JOB_HUNTER:
-            cprintf("hunter");
+            cprintf("Hunter");
             break;
         case JOB_CONJURER:
-            cprintf("conjurer");
+            cprintf("Conjurer");
             break;
         case JOB_ENCHANTER:
-            cprintf("enchanter");
+            cprintf("Enchanter");
             break;
         case JOB_FIRE_ELEMENTALIST:
             cprintf("Fire Elementalist");
@@ -822,7 +824,7 @@ switch_start:
             cprintf("Chaos Knight");
             break;
         case JOB_TRANSMUTER:
-            cprintf("transmuter");
+            cprintf("Transmuter");
             break;
         case JOB_HEALER:
             cprintf("Healer");
@@ -831,13 +833,13 @@ switch_start:
             cprintf("Reaver");
             break;
         case JOB_STALKER:
-            cprintf("stalker");
+            cprintf("Stalker");
             break;
         case JOB_MONK:
             cprintf("Monk");
             break;
         case JOB_WARPER:
-            cprintf("warper");
+            cprintf("Warper");
             break;
             /* when adding more, also add to the range of the loop */
         }

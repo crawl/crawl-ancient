@@ -5,7 +5,8 @@
  *
  *  Change History (most recent first):
  *
- *               <1>     -/--/--        LRH             Created
+ *     <2>     10/11/99       BCR     Added Daniel's crash patch
+ *     <1>     -/--/--        LRH     Created
  */
 
 #include "AppHdr.h"
@@ -448,14 +449,15 @@ char area_shift(void)
 
     for (i = you.x_pos - 10; i < you.x_pos + 11; i++)
     {
+        if ( i < 0 || i >= GXM )
+          continue;
         for (j = you.y_pos - 10; j < you.y_pos + 11; j++)
         {
+            if ( j < 0 || j >= GYM )
+              continue;
             grd[45 + i - you.x_pos][35 + j - you.y_pos] = grd[i][j];
-//  if (igrd [i] [j] != 501)
-            //  {
             igrd[45 + i - you.x_pos][35 + j - you.y_pos] = igrd[i][j];
             igrd[i][j] = 501;
-//  }
             mgrd[45 + i - you.x_pos][35 + j - you.y_pos] = mgrd[i][j];
             if (mgrd[i][j] != MNG)
             {

@@ -31,6 +31,7 @@
 #include "itemname.h"
 #include "mstruct.h"
 #include "skills2.h"
+#include "debug.h"
 
 #ifdef MACROS
   #include "macro.h"
@@ -184,10 +185,7 @@ char eat_from_floor()
 
         if (counter > 1000)
         {
-            strcpy(info, "Oh dear. There appears to be a bug in the program.");
-            mpr(info);
-            strcpy(info, "I suggest you leave this level then save as soon as possible.");
-            mpr(info);
+            error_message_to_player();
             return 0;
         }
 
@@ -514,10 +512,7 @@ char butchery(void)
 
         if (counter > 1000)
         {
-            strcpy(info, "Oh dear. There appears to be a bug in the program.");
-            mpr(info);
-            strcpy(info, "I suggest you leave this level then save as soon as possible.");
-            mpr(info);
+            error_message_to_player();
             return 0;
         }
 

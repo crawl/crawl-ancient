@@ -5,9 +5,10 @@
  *
  *  Change History (most recent first):
  *
- *      <3>      6/13/99        BWR             Vehumet book giving code.
- *      <2>      5/20/99        BWR             Added screen redraws
- *      <1>      -/--/--        LRH             Created
+ *      <4>      10/11/99       BCR     Added Daniel's yellow Xom patch
+ *      <3>      6/13/99        BWR     Vehumet book giving code.
+ *      <2>      5/20/99        BWR     Added screen redraws
+ *      <1>      -/--/--        LRH     Created
  */
 
 #include "AppHdr.h"
@@ -411,6 +412,16 @@ char *god_name_long(int which_god)
 
 
 void Xom_acts(char niceness, int sever, char force_sever)
+#ifdef XOM_ACTS_YELLOW
+{
+  void Xom_acts0(char, int, char);
+
+  set_colour( YELLOW );
+  Xom_acts0( niceness, sever, force_sever );
+
+}
+void Xom_acts0(char niceness, int sever, char force_sever)
+#endif
 {
 
 /*

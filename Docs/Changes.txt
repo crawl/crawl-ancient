@@ -1,4 +1,64 @@
 Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
+10/12/99
+
+* Changed the version string to "3.40" and added a #define
+  BUILD_DATE in version.h which is printed along with the
+  version number.
+* Added the USE_NEW_RANDOM #define to AppHdr.h
+* Eliminated duplicate/done items from ToDo.txt.  Might have
+  missed some of the done one's, though.  I only cut the one's
+  that had done next to them.
+* Changed inspect item command to 'v' in shops.
+* moved the contents of oldmakefiles/ into a zip named oldmake.zip
+* make distclean now deletes *.sav, *.lab, core, and *.0* in DOS
+  and Linux.
+* Some of the class names in newgame.cc were not capitalized. Fixed.
+* Added a new random number generator.  Should be a little better
+  than the old one, but it uses rand() rather than random() to
+  get its number.  #define USE_NEW_RANDOM to use it.
+* Noticed a bug in wizard mode where some creatures (necrophage)
+  can reduce your max hp.  Normally this is okay because when you
+  get down to zero, you die.  But in wizard mode, you end up getting
+  negative max_hp, which results in the "you died, but its okay"
+  message every turn.  I added you.max_hp = abs(you.max_hp) to the
+  'h' wizard command, so you can get out of the negative max hps.
+* Removed stethoscope from the 's' key in wizard mode.  Terribly
+  annoying for me, since I can't rest with 5 in Linux.  You can
+  get stethoscope by targetting or looking, so its no big deal.
+* Scores now prints "Wiz" on any scores made from a WIZARD compiled
+  program
+* Added Daniel's patches:
+  * XOM_ACTS_YELLOW is now a #define to make Xom messages be in yellow
+  * Fixed the abyss crash bug
+  * Added banish and Xom acts to the Wizard commands
+* Swapped the v and V commands.  I think its more likely that someone
+  would want to examine one of their items than check the version, so
+  the examine command is lowercase.
+* Added wizard help.  Can be accessed by hitting & then ?.  It simply
+  lists the wizard commands like the normal help screen.
+* Fixed a bug in Daniel's command code where you couldn't do the
+  wizard command.
+* Added wizard option to Makefile.  Same as debug but includes
+  -DWIZARD
+* Weapons of reaching used to attack one monster over another now
+  have a chance to hit the monster inbetween.
+* Giant races get a smaller penalty when using a large shield.
+  Normal sized monsters may get a slightly larger penalty, but
+  only by one or so.
+* Added a function to debug.cc that just prints the
+
+        "You have encountered a program bug.
+         Please exit the level and save."
+
+  message.  I replaced all occurances of these strings in the code
+  with this function.
+* Changed the haste and slow counters in acr.cc to take into account
+  the amulet of resist slow.  Now haste subtract random2(2) each turn
+  rather than one (which could lead to infinite haste but lets not
+  worry about that), and the slow counter subtracts five instead of
+  one each turn.
+
+Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
 10/2/99
 
 * Reformatted the help screen so that it is easier to see what you're

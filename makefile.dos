@@ -29,6 +29,10 @@ distclean:
 		$(DELETE) morgue.txt
 		$(DELETE) scores
 		$(DELETE) $(APPNAME)
+		$(DELETE) *.sav
+		$(DELETE) core
+		$(DELETE) *.0*
+		$(DELETE) *.lab
 
 $(APPNAME):	$(OBJECTS)
 		${CXX} ${LDFLAGS} $(INCLUDES) $(CFLAGS) $(OBJECTS) -o $(APPNAME) $(LIB)
