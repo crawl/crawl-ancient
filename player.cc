@@ -472,14 +472,6 @@ int player_AC(void)
 {
  int AC = 0;
  int i;
- if (you[0].equip [2] != -1 && you[0].inv_plus2 [you[0].equip [2]] >= 2)
- {
-/*      if (you[0].inv_plus [armour_wear_2] > 130)
-                AC += (you[0].inv_plus [armour_wear_2] - 150);
-         else AC += you[0].inv_plus [armour_wear_2] - 50;*/
-
-        AC --; /* no AC points for hats */
- }
 
  for (i = 1; i < 7; i ++)
  {

@@ -148,6 +148,8 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
 
 /*        if (exsk == 13) increase_armour_skill();
         if (exsk == 14) player_evasion(you) += ev_mod();*/
+        if (exsk == 14) you[0].evasion_ch = 1;
+
         if (exsk == 17 | exsk == 13)
         {
 /*         you[0].shield_class = get_shield_class();*/
@@ -176,42 +178,3 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
 
 
 }
-
-/*
-void increase_armour_skill(void)
-{
-
-// should do something about helms as well
-
-char skill = you[0].skills [13];
-
-if (you[0].equip [6] == -1) return;
-
-char armr = you[0].equip [6];
-char ev_change = 0;
-
-player_AC(you) -= property [2] [you[0].inv_type [armr]] [0] * (15 + skill) / 15;
-
-ev_change = property [2] [you[0].inv_type [armr]] [1];
-
-ev_change -= skill / 3;
-
-if (ev_change < property [2] [you[0].inv_type [armr]] [1] / 3) ev_change = property [2] [you[0].inv_type [armr]] [1] / 3;
-
-player_evasion(you) -= ev_change;
-
-
-skill ++; // although this doesn't actually increase the skill, of course
-
-player_AC(you) += property [2] [you[0].inv_type [armr]] [0] * (15 + skill) / 15;
-
-ev_change = property [2] [you[0].inv_type [armr]] [1];
-
-ev_change -= skill / 3;
-
-if (ev_change < property [2] [you[0].inv_type [armr]] [1] / 3) ev_change = property [2] [you[0].inv_type [armr]] [1] / 3;
-
-player_evasion(you) += ev_change;
-
-}
-*/

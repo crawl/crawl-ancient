@@ -7,8 +7,11 @@
 #include <stdlib.h>
 
 #include "externs.h"
+#include "itemname.h"
 #include "player.h"
 #include "ouch.h"
+
+char wield_change;
 
 void print_stats(void)
 {
@@ -144,7 +147,7 @@ char temp_quant [15];
 
         if (you[0].hung_ch == 1)
         {
-         gotoxy(40,13);
+         gotoxy(40,14);
          switch(you[0].hung_state)
          {
           case 5: textcolor(BLUE); cprintf("Engorged"); textcolor(LIGHTGREY); break;
@@ -166,6 +169,23 @@ char temp_quant [15];
           case 0: cprintf("          "); break;
          }
          you[0].burden_ch = 0;
+        }
+        if (wield_change == 1)
+        {
+         gotoxy(40,13);
+         cprintf("                                       ");
+         if (you[0].equip [0] != -1)
+          {
+            gotoxy(40,13);
+            textcolor(you[0].inv_col [you[0].equip [0]]);
+            if (you[0].equip [0] <= 25) putch(you[0].equip [0] + 97);
+                else putch(you[0].equip [0] + 39);
+                cprintf(" - ");
+                in_name(you[0].equip [0], 3, str_pass);
+                cprintf(str_pass);
+            textcolor(LIGHTGREY);
+          }
+         wield_change = 0;
         }
 
 }

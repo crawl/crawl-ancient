@@ -16,7 +16,7 @@
 #include "view.h"
 #include "skills2.h"
 
-
+extern char wield_change;
 
 int random2(unsigned int randmax)
 {
@@ -92,6 +92,7 @@ you[0].gp_ch = 1;
 you[0].xp_ch = 1;
 you[0].hung_ch = 1;
 you[0].burden_ch = 1;
+wield_change = 1;
 
 print_stats();
 

@@ -28,6 +28,8 @@ char class_allowed(char speci, char clas);
 void init_player(void);
 void choose_weapon(void);
 
+extern char wield_change;
+
 
 char new_game(void)
 {
@@ -96,7 +98,7 @@ for (i = 0; i < 52; i ++)
 
 textcolor(7);
 
-cprintf("\n\rHello, and welcome to Dungeon Crawl v2.81!");
+cprintf("\n\rHello, and welcome to Dungeon Crawl v2.82!");
 cprintf("\n\r(Copyright 1997 Linley Henzell)");
 cprintf("\n\rPlease read Crawl.txt for instructions and legal details.\n\r\n\r");
 name_q : cprintf("What is your name today? ");
@@ -112,7 +114,7 @@ noecho();
 #endif
 
 
-if (strcmp(your_nam, "bones") == 0 | strlen(your_nam) == 0) // eventually I'll implement bones files.
+if (strcmp(your_nam, "bones") == 0 | strlen(your_nam) == 0) /* this would cause big probs with ghosts */
 {
         cprintf("\n\rThat's a silly name!\n\r");
         goto name_q;
@@ -934,6 +936,13 @@ case 4: // Gladiator
          you[0].inv_plus [1] = 50;
          you[0].inv_dam [1] = 0;
          you[0].inv_col [1] = LIGHTCYAN;
+
+         you[0].inv_quant [2] = 1;
+         you[0].inv_class [2] = 2;
+         you[0].inv_type [2] = 13;
+         you[0].inv_plus [2] = 50;
+         you[0].inv_dam [2] = 0;
+         you[0].inv_col [2] = LIGHTCYAN;
         }
 /*      you[0].AC = 4;
         you[0].evasion = 9;*/

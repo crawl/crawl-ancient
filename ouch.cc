@@ -43,6 +43,8 @@ int set_status(int stat);
 char death_string [80];
 long points = 0;
 
+extern char wield_change; /* defined in output.cc */
+
 /* NOTE: DOES NOT check for hellfire!!! */
 int check_your_resists(int hurted, int flavour)
 {
@@ -244,10 +246,9 @@ mpr(info);
         if (you[0].inv_class [itco] == 0) you[0].inv_plus2 [itco] = rusty;
                 else you[0].inv_plus [itco] = rusty;
 
-/*        if (you[0].inv_class [itco] == 2 && you[0].inv_type [itco] != 8 && you[0].inv_type [itco] != 13 && you[0].inv_type [itco] != 14) player_AC()--;
- if (you[0].inv_class [itco] == 2 && (you[0].inv_type [itco] == 8 | you[0].inv_type [itco] == 13 | you[0].inv_type [itco] == 14)) you[0].shield_class --;*/
         you[0].AC_ch = 1;
-/*        you[0].shield_class = get_shield_class();*/
+
+        if (you[0].equip [0] == itco) wield_change = 1;
 
 }
 
@@ -276,7 +277,7 @@ for (burnc = 0; burnc < 52; burnc++)
 
         for (burn2 = 0; burn2 < you[0].inv_quant [burnc]; burn2++)
         {
-                if (random2(30) < burn_strength)
+                if (random2(40) < burn_strength)
                 {
                         you[0].inv_quant [burnc] --;
                         burn_no++;

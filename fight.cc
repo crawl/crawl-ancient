@@ -57,6 +57,7 @@
 
 int jelly_divide(int jel);
 void place_monster_corpse(unsigned char mcr);
+extern char wield_change; /* defined in output.cc */
 
 
 void you_attack(int monster_attacked)
@@ -288,12 +289,14 @@ damage_done /= 20;
 
                 if (you[0].inv_ident [you[0].equip [0]] < 3 && random2(100) < you[0].skills [weapon_skill(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]])])
                 {
+                 you[0].inv_ident [you[0].equip [0]] = 3;
                  strcpy(info, "You are wielding ");
                  in_name(you[0].equip [0], 3, str_pass);
                  strcat(info, str_pass);
                  strcat(info, ".");
                  mpr(info);
-                 you[0].inv_ident [you[0].equip [0]] = 3;
+                 more();
+                 wield_change = 1;
                 }
 
         }
@@ -527,6 +530,7 @@ if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && hit ==
     mpr(info);
     specdam += 10 + random2(15);
     you[0].inv_plus2 [you[0].equip [0]] --;
+    wield_change = 1;
    }
    break;
 
@@ -726,6 +730,7 @@ if (damage_done >= 1 && you[0].equip [0] != -1 && you[0].inv_class [you[0].equip
                 unwield_item(you[0].equip [0]);
                 you[0].inv_quant [you[0].equip [0]] --;
                 you[0].equip [0] = -1;
+                wield_change = 1;
         }
 }
 
@@ -1153,8 +1158,16 @@ if (player_res_poison() == 0)
         }
         break;
 
+        case 170: // red wasp
+        if (player_res_poison() == 0)
+        {
+        you[0].poison += 1 + random2(2);
+        } // no break is intentional
         case 24: // yellow wasp
-        if (player_res_poison() == 0 && ((damage_taken >= 3 && random2(3) == 0) | random2(20) == 0))
+        strcpy(info, monam(menv[monster_attacking].m_sec,menv[monster_attacking].m_class, menv [monster_attacking].m_ench [2], 0));
+        strcat(info, " stings you.");
+        mpr(info);
+        if (player_res_poison() == 0 && ((damage_taken >= 3 && random2(3) != 0) | random2(20) == 0))
         {
         if (you[0].paralysis > 0)
         {

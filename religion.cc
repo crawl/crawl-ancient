@@ -188,15 +188,21 @@ if (was_praying == 0)
 
   if (gift != 0 && (grd [you[0].x_pos] [you[0].y_pos] != 61 && grd [you[0].x_pos] [you[0].y_pos] != 62))
   { /* shouldn't give you something if it's just going to fall in a pool */
-   int thing_created = items(1, 10, gift, 1, 1, 250);
    strcpy(info, god_name(you[0].religion));
    strcat(info, " grants you a gift!");
    mpr(info);
-   if (you[0].species != 13) mpr("Something appears at your feet!");
-    else mpr("Something appears before you!");
-   int what_was_there = igrd [you[0].x_pos] [you[0].y_pos];
-   mitm.ilink [thing_created] = what_was_there;
-   igrd [you[0].x_pos] [you[0].y_pos] = thing_created;
+   if (gift == 250)
+   {
+    acquirement(10);
+   } else
+   {
+    int thing_created = items(1, 10, gift, 1, 1, 250);
+    if (you[0].species != 13) mpr("Something appears at your feet!");
+     else mpr("Something appears before you!");
+    int what_was_there = igrd [you[0].x_pos] [you[0].y_pos];
+    mitm.ilink [thing_created] = what_was_there;
+    igrd [you[0].x_pos] [you[0].y_pos] = thing_created;
+   }
    lose_piety(30 + random2(10) + random2(10));
   }
  }
@@ -291,7 +297,7 @@ okay_try_again : if (niceness == 0 | random2(3) == 0) /* bad things */
    case 2: mpr("Xom's power touches on you for a moment."); break;
    case 3: mpr("You hear Xom's maniacal laughter."); break;
   }
-  miscast_effect(10 + random2(15), random2(15) + 1, random2(100), 0);
+  miscast_effect(10 + random2(15), random2(10) + 5, random2(100), 0);
   return;
  }
  if (random2(sever) <= 2)
@@ -360,10 +366,10 @@ okay_try_again : if (niceness == 0 | random2(3) == 0) /* bad things */
   if (random2(4) != 0)
   {
    create_monster(225 + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
-   if (random2(2) == 0) create_monster(225 + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
-   if (random2(2) == 0) create_monster(225 + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
-   if (random2(2) == 0) create_monster(80 + random2(10), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
-   if (random2(2) == 0) create_monster(80 + random2(10), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   if (random2(3) == 0) create_monster(225 + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   if (random2(4) == 0) create_monster(225 + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   if (random2(3) == 0) create_monster(80 + random2(10), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   if (random2(4) == 0) create_monster(80 + random2(10), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   } else dancing_weapon(100, 1); /* nasty, but fun */
   return;
  }
@@ -438,7 +444,7 @@ okay_try_again : if (niceness == 0 | random2(3) == 0) /* bad things */
    mpr("You hear a splash."); /* How unfortunate. I'll bet Xom feels sorry for you. */
    return;
   }
-  int thing_created = items(1, 250, 250, 1, you[0].xl * 2, 250);
+  int thing_created = items(1, 250, 250, 1, you[0].xl * 3, 250);
   if (you[0].species != 13) mpr("Something appears at your feet!");
    else mpr("Something appears before you!");
   int what_was_there = igrd [you[0].x_pos] [you[0].y_pos];
@@ -1037,6 +1043,7 @@ if (you[0].piety < 30 && old_piety >= 30)
 void excommunication(void)
 {
  mpr("You have lost your religion!");
+ more();
  if (you[0].religion == 5) Xom_acts(0, you[0].xl * 2, 1);
  you[0].religion = 0;
  you[0].piety = 0;

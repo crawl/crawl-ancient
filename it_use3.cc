@@ -34,6 +34,8 @@ void staff_spell(char zap_device_2);
 
 extern unsigned char show_green; /* defined in view.cc, I think */
 extern int book_thing; /* defined in spells.cc */
+extern unsigned char wield_change; /* defined in output.cc */
+
 
 void special_wielded(void)
 {
@@ -100,6 +102,7 @@ if (you[0].inv_plus [you[0].equip [0]] > 57) you[0].inv_plus [you[0].equip [0]] 
 if (you[0].inv_plus2 [you[0].equip [0]] < 46) you[0].inv_plus2 [you[0].equip [0]] = 46;
 if (you[0].inv_plus2 [you[0].equip [0]] > 57) you[0].inv_plus2 [you[0].equip [0]] = 57;
 you[0].inv_col [you[0].equip [0]] = random2(15) + 1;
+wield_change = 1;
 break;
 
 // 5 - glaive

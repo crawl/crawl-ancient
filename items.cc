@@ -31,6 +31,8 @@ int conv_lett(int item_drop_3);
 
 int last_item = ING;
 
+extern unsigned char wield_change; /* defined in output.cc */
+
 /*
 Takes keyin as an argument because it will only display a long list of items
  if ; is pressed.
@@ -278,11 +280,11 @@ if (items_here > 1)
                                 it_name(o, 3, str_pass);
                                 strcat(info, str_pass);
                          }
-                         strcat(info, "\?");
+                         strcat(info, "\? (y,n,a,q)");
                          mpr(info);
                         }
 
-                if (keyin != 'a') keyin = getch();
+                if (keyin != 'a') keyin = get_ch();
 
                 if (keyin == 'q')
                 {
@@ -999,6 +1001,7 @@ for (c = 0; c < 52; c ++)
    you[0].inv_type [c] = 1;
    you[0].inv_dam [c] = 0;
    you[0].inv_col [c] = LIGHTGREY;
+   wield_change = 1;
    continue;
  }
  you[0].inv_dam [c] -= rotted;

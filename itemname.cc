@@ -312,7 +312,7 @@ if (item_da % 30 == 3 | item_da % 30 == 4)
 {
  strcat(glog, "poisoned ");
 }
-        if (ident_lev > 0)
+        if (ident_lev > 2)
         {
                 unsigned char gokh = it_plus;
                 //it_plus -= 50;

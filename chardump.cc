@@ -224,34 +224,37 @@ if (you[0].religion != 0)
  lin ++;
  strcpy(dmp [lin], god_name(you[0].religion));
 
- if (you[0].piety <= 5)
+ if (you[0].religion != 5) /* Xom doesn't care */
  {
- strcat(dmp [lin], " is displeased.");
- } else
- if (you[0].piety <= 20)
- {
- strcat(dmp [lin], " is noncommittal.");
- } else
- if (you[0].piety <= 40)
- {
- strcat(dmp [lin], " is pleased with you.");
- } else
- if (you[0].piety <= 70)
- {
- strcat(dmp [lin], " is most pleased with you.");
- } else
- if (you[0].piety <= 100)
- {
- strcat(dmp [lin], " is greatly pleased with you.");
- } else
- if (you[0].piety <= 130)
- {
- strcat(dmp [lin], " is extremely pleased with you.");
- } else
- {
- strcat(dmp [lin], " is exalted by your worship.");
+  if (you[0].piety <= 5)
+  {
+  strcat(dmp [lin], " is displeased.");
+  } else
+  if (you[0].piety <= 20)
+  {
+  strcat(dmp [lin], " is noncommittal.");
+  } else
+  if (you[0].piety <= 40)
+  {
+  strcat(dmp [lin], " is pleased with you.");
+  } else
+  if (you[0].piety <= 70)
+  {
+  strcat(dmp [lin], " is most pleased with you.");
+  } else
+  if (you[0].piety <= 100)
+  {
+  strcat(dmp [lin], " is greatly pleased with you.");
+  } else
+  if (you[0].piety <= 130)
+  {
+  strcat(dmp [lin], " is extremely pleased with you.");
+  } else
+  {
+  strcat(dmp [lin], " is exalted by your worship.");
+  }
+  lin ++;
  }
- lin ++;
 }
 
 switch(you[0].burden_state)

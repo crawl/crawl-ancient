@@ -20,6 +20,8 @@
 #include "stuff.h"
 #include "view.h"
 
+extern char wield_change; /* defined in output.cc */
+
 
 void cast_selective_amnesia(void)
 {
@@ -566,6 +568,7 @@ if (you[0].inv_quant [you[0].equip [0]] == 1) strcat(info, " is covered in a thi
 mpr(info);
 
 you[0].inv_dam [you[0].equip [0]] = 3;
+wield_change = 1;
 
 }
 

@@ -1408,6 +1408,9 @@ case 37: // ghoul
 menv [bk].m_class = 156;
 if (random3(2) != 0) menv [bk].m_class = 13;
 break;
+case 38: // deep troll
+menv [bk].m_class = 168;
+break;
 
 }
 
@@ -1788,6 +1791,13 @@ case 156: if (bk < MNST - 50 && band == 0 && band_no == 0)
  {
   band = 37; // ghoul
   band_no = 2 + random3(3);
+ }
+break;
+
+case 168: if (bk < MNST - 50 && band == 0 && band_no == 0)
+ {
+  band = 38; // deep troll
+  band_no = 3 + random3(3);
  }
 break;
 
@@ -2343,8 +2353,7 @@ finish = 0;
 
 
 
-int items(
-unsigned char allow_uniques,
+int items(unsigned char allow_uniques,
 int force_class,
 int force_type,
 int force_place,
@@ -2386,7 +2395,7 @@ for (bp = 0; bp < 400; bp ++)
  mitm.itype [bp] = 0;
 
 
-        if (((mitm.iclass [bp] == 3 | mitm.iclass [bp] == 7) && random3(5) < 2)) mitm.iclass [bp] = 15; // food
+        if (((mitm.iclass [bp] == 3 | mitm.iclass [bp] == 7) && random3(5) < 2)) mitm.iclass [bp] = 1; // missiles
 
  if ((mitm.iclass [bp] == 10 | mitm.iclass [bp] == 11) && random3(5) != 0) mitm.iclass [bp] = 6;
  if (mitm.iclass [bp] == 11 && random3(2) != 0) mitm.iclass [bp] = 6;
@@ -3116,7 +3125,7 @@ if (force_spec == 250 && random() % 2 == 0)
 
   case 10: // books
 
-do
+create_book : do
 {
  mitm.itype [bp] = random() % 44;
  if (book_rarity(mitm.itype [bp]) == 100) continue;
@@ -3132,6 +3141,7 @@ do
  }
 } while (mitm.itype [bp] == 35 | mitm.itype [bp] == 41); // tomes and manuals
 
+  if (book_rarity(mitm.itype [bp]) == 100) goto create_book;
 
   mitm.iplus [bp] = 127;
   itoa(127, strungy, 2);
@@ -3255,7 +3265,7 @@ if (mitm.itype [bp] >= 10)
 
                 default: // money - class = 15
                 mitm.iclass [bp] = 15;
-                quant = random3(10) + random3(10) + 1 + random3(many_many) + random3(many_many);
+                quant = random3(10) + random3(10) + 1 + random3(many_many) + random3(many_many) + random3(many_many);
                 break;
 
         }

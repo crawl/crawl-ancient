@@ -314,7 +314,7 @@ gmon_use
 
 {45, 'T', 6, "troll", M_NO_FLAGS,
 1500, 10, 45, H_NORMAL, -3, {20,15,15,0},
-{6,3,5,0}, 3, 10, 10, 7, 250, C_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1},
+{7,3,5,0}, 3, 10, 10, 7, 250, C_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1},
 
 {46, 'x', MAGENTA, "unseen horror", M_LEVITATE|M_SEE_INVIS,
 0, 12, 46, H_NORMAL, -3, {12,0,0,0},
@@ -643,7 +643,7 @@ gmon_use
 
 {135, 'T', LIGHTGREY, "rock troll", M_NO_FLAGS,
 2200, 11, 135, H_NORMAL, -4, {30,20,20,0},
-{10,3,5,0}, 13, 6, 8, 7, 250, C_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1},
+{11,3,5,0}, 13, 6, 8, 7, 250, C_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1},
 
 {136, 'C', LIGHTGREY, "stone giant", M_NO_FLAGS,
 3000, 10, 136, H_NORMAL, -4, {45,0,0,0},
@@ -769,9 +769,20 @@ gmon_use
 600, 10, 167, H_NORMAL, -3, {30,0,0,0},
 {11,3,5,0}, 4, 16, 18, 7, 250, C_CLEAN, Z_SMALL, S_SILENT, I_ANIMAL, 0},
 
+{168, 'T', DARKGREY, "deep troll", M_NO_FLAGS,
+1500, 12, 168, H_NORMAL, -3, {27,20,20,0},
+{10,3,5,0}, 6, 10, 10, 7, 250, C_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL, 1},
+
+{169, 'y', LIGHTGREY, "giant blowfly", M_ED_POISON | M_FLIES,
+200, 10, 169, H_NORMAL, -3, {13,0,0,0},
+{5,3,5,0}, 2, 15, 19, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_BUZZ, I_PLANT, 0},
+
+{170, 'y', RED, "red wasp", M_ED_POISON | M_FLIES,
+400, 14, 170, H_NORMAL, -3, {23,0,0,0},
+{8,3,5,0}, 7, 14, 15, 7, 250, C_POISON, Z_NOZOMBIE, S_BUZZ, I_PLANT, 0},
 
 
-// I need to think of names for these.
+
 {220, '5', WHITE, "white imp", M_RES_COLD|M_SPELLCASTER|M_FLIES,
 0, 10, 220, H_DEMONIC, -3, {8,0,0,0},
 {2,3,5,0}, 4, 10, 10, 7, 74, C_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 3},
@@ -1190,7 +1201,7 @@ placed in the Crypt. */
 
 {372, 'n', BROWN, "rotting hulk", M_RES_POISON|M_RES_COLD,
 0, 12, 372, H_UNDEAD, -5, {25,0,0,0},
-{7,3,5,0}, 5, 7, 8, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1},
+{8,3,5,0}, 5, 7, 8, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1},
 
 {373, 'M', YELLOW, "guardian mummy", M_RES_POISON|M_RES_COLD,
 0, 13, 373, H_UNDEAD, -5, {30,0,0,0},

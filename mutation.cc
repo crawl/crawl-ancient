@@ -692,7 +692,7 @@ char *mutation_name(char which_mutat)
    return mut_string;
  }
 
- return mutation_descrip [which_mutat] [you[0].mutation [which_mutat]];
+ return mutation_descrip [which_mutat] [you[0].mutation [which_mutat] - 1];
 
 }
 

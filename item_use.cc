@@ -54,14 +54,16 @@
 void throw_it(struct bolt beam [1], int throw_2);
 
 extern int book_thing; /* defined in spells.cc */
+extern char wield_change; /* defined in output.cc */
 
 
-void wield_weapon(void)
+void wield_weapon(char auto_wield)
 {
 
 unsigned char nthing = 0;
 unsigned char i_dam = 0;
 char str_pass [80];
+unsigned char keyin;
 
 if (you[0].inv_no == 0)
         {
@@ -94,12 +96,19 @@ if ((you[0].equip [0] != -1) && you[0].inv_class [you[0].equip [0]] == 0 && you[
 }
 
 
+if (auto_wield == 1)
+{
+  if (you[0].equip [0] == 0) keyin = 'b';
+   else keyin = 'a';
+} else
+{
+
 query : strcpy(info, "Wield which item (- for none)?");
 mpr(info);
 
 // test relay_message();
 
-unsigned char keyin = get_ch();
+keyin = get_ch();
 
 if (keyin == '?')
 {
@@ -135,6 +144,7 @@ if (keyin == '*')
         }
 }
 
+}
 
 int item_wield_1 = (int) keyin;
 
@@ -250,6 +260,7 @@ strcpy(info, " ");
                         mpr(info);
 
 you[0].turnover = 1;
+wield_change = 1;
 
 if (you[0].inv_plus [item_wield_2] > 80 && you[0].inv_class [item_wield_2] == 0)
 {
@@ -505,6 +516,8 @@ if (you[0].inv_class [item_wield_2] == 11)
 }*/
  you[0].time_taken *= 5;
  you[0].time_taken /= 10;
+
+ wield_change = 1;
 
 
 } // end of wield_weapon()
@@ -1439,6 +1452,8 @@ char shoot = 0;
 //char nothing;
 struct dist thr [1];
 
+char shoot_skill = 0;
+
 strcpy(info, "Which direction? (* to target)");
 mpr(info);
 
@@ -1533,21 +1548,25 @@ if (you[0].inv_class [throw_2] == 0 | you[0].inv_class [throw_2] == 1)
                 {
                  case 13: /* sling */
                  exercise(8, 1 + random2(2) + random2(2) + random2(2));
-                 beam[0].hit += random2(you[0].skills [8] + 1) + random2(you[0].skills [8] + 1);
+                 beam[0].hit += random2(you[0].skills [8] + 1) + random2(random2(you[0].skills [8] + 1));
                  beam[0].damage += random2(you[0].skills [8] + 1);
+                 shoot_skill = you[0].skills [8];
                  break;
                  case 14: /* bow */
                  exercise(9, 1 + random2(2) + random2(2) + random2(2));
                  beam[0].hit += random2(you[0].skills [9] + 1) + random2(you[0].skills [9] + 1);
-                 beam[0].damage += random2(you[0].skills [9] + 1) + random2(you[0].skills [9] + 1);
+                 beam[0].damage += random2(you[0].skills [9] + 1) + random2(random2(you[0].skills [9] + 1));
+                 shoot_skill = you[0].skills [9];
                  break;
                  case 15: /* crossbow */
                  case 16: /* hand crossbow */
-                 exercise(12, 1 + random2(2) + random2(2) + random2(2));
+                 exercise(10, 1 + random2(2) + random2(2) + random2(2));
                  beam[0].hit += random2(you[0].skills [10] + 1);
                  beam[0].damage += random2(you[0].skills [10] + 1);
+                 shoot_skill = you[0].skills [12];
                  break;
                 }
+                exercise(12, 1 + random2(2));
 
                 int ghoggl = you[0].inv_plus [you[0].equip [0]] - 50;
 
@@ -1576,6 +1595,7 @@ if (you[0].inv_class [throw_2] == 0 | you[0].inv_class [throw_2] == 1)
                  beam[0].colour = RED;
                  beam[0].type = 35;
                  beam[0].thing_thrown = 3;
+                 you[0].inv_ident [throw_2] = 2;
                 }
 //                if (you[0].inv_dam [you[0].equip [0]] % 30 == 12)
                 if ((you[0].inv_dam [you[0].equip [0]] % 30 == 12 | you[0].inv_dam [throw_2] % 30 == 2) && you[0].inv_dam [throw_2] % 30 != 1 && you[0].inv_dam [you[0].equip [0]] % 30 != 11)
@@ -1589,6 +1609,7 @@ if (you[0].inv_class [throw_2] == 0 | you[0].inv_class [throw_2] == 1)
                  beam[0].colour = WHITE;
                  beam[0].type = 35;
                  beam[0].thing_thrown = 3;
+                 you[0].inv_ident [throw_2] = 2;
                 } /* the chief advantage here is the extra damage this does against susceptible creatures */
 
 /* Note: weapons & ammo of eg fire are not cumulative
@@ -1600,7 +1621,19 @@ ammo of fire and weapons of frost don't work together, and vice versa */
                         beam[0].hit -= 100;
                 }
                 shoot = 1;
+                if (you[0].inv_ident [you[0].equip [0]] < 3 && random2(100) < shoot_skill)
+                {
+                 you[0].inv_ident [you[0].equip [0]] = 3;
+                 strcpy(info, "You are wielding ");
+                 in_name(you[0].equip [0], 3, str_pass);
+                 strcat(info, str_pass);
+                 strcat(info, ".");
+                 mpr(info);
+                 more();
+                 wield_change = 1;
+                }
                 strcpy(info, "You shoot ");
+
         }
 /*
         13 = sling
@@ -2500,6 +2533,7 @@ if (you[0].inv_quant [food_eat_2] == 0)
                 you[0].equip [0] = -1;
                 strcpy(info, "You are now empty handed.");
                 mpr(info);
+                wield_change = 1;
         }
 }
 
@@ -2852,6 +2886,8 @@ if (you[0].inv_class [you[0].equip [0]] == 0 && (you[0].inv_dam [you[0].equip [0
         mpr(info);
         return;
 }
+
+ wield_change = 1;
 
  if (you[0].inv_dam [you[0].equip [0]] == 4) // electrocution
  {

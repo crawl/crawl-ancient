@@ -619,7 +619,9 @@ if (menv [i].m_speed >= 100) continue;
 
 if (menv [i].m_class == 25 | menv [i].m_class == 51 | menv [i].m_class == 107 | menv [i].m_class == 108) menv [i].m_hp_max = menv [i].m_hp;
 
-if (menv [i].m_hp < menv [i].m_hp_max && (random2(25) == 0 | menv [i].m_class == 8 | menv [i].m_class == 45 | menv [i].m_class == 76 | menv [i].m_class == 135 | menv [i].m_class == 160 | menv [i].m_class == 234 | menv [i].m_class == 221 | menv [i].m_class == 227 | menv [i].m_class == 292)) menv [i].m_hp ++;
+
+/* regenerate */
+if (menv [i].m_hp < menv [i].m_hp_max && (random2(25) == 0 | menv [i].m_class == 8 | menv [i].m_class == 45 | menv [i].m_class == 76 | menv [i].m_class == 135 | menv [i].m_class == 160 | menv [i].m_class == 234 | menv [i].m_class == 221 | menv [i].m_class == 227 | menv [i].m_class == 292 | menv [i].m_class == 168)) menv [i].m_hp ++;
 
 
 
@@ -1495,7 +1497,7 @@ end_throw : if ((menv [i].m_beh == 7 | menv [i].m_beh == 6) && (mmov_x != 0 | mm
 {
                         if (monsters_fight(i, mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y]) == 1)
    {
-    if (menv [i].m_class == 1 | menv [i].m_class == 46) menv [i].m_speed_inc -= menv [i].m_speed;
+    if (menv [i].m_class == 1 | menv [i].m_class == 46 | menv [i].m_class == 169) menv [i].m_speed_inc -= menv [i].m_speed;
                   mmov_x = 0; mmov_y = 0;
                         brkk = 1;
                         break;
@@ -1513,9 +1515,9 @@ if (menv [i].m_x + mmov_x == you[0].x_pos && menv [i].m_y + mmov_y == you[0].y_p
 
 mmov_x = menv [i].m_inv [0];
 
-if (menv [i].m_class == 1 | menv [i].m_class == 46 && bat == 0) monster_attack(i);
+if ((menv [i].m_class == 1 | menv [i].m_class == 46 | menv [i].m_class == 169) && bat == 0) monster_attack(i);
 
-if ((menv [i].m_class == 1 | menv [i].m_class == 46) && menv [i].m_beh != 7) // giant bat
+if ((menv [i].m_class == 1 | menv [i].m_class == 46 | menv [i].m_class == 169) && menv [i].m_beh != 7) // giant bat
 {
         menv [i].m_beh = 2;
         bat = 1;
@@ -1523,7 +1525,7 @@ if ((menv [i].m_class == 1 | menv [i].m_class == 46) && menv [i].m_beh != 7) // 
 
 
 
-if (menv [i].m_class != 1 && menv [i].m_class != 46) monster_attack(i);
+if (menv [i].m_class != 1 && menv [i].m_class != 46 && menv [i].m_class != 169) monster_attack(i);
 
 
 if (menv [i].m_class == 32 && menv [i].m_hp < 1)

@@ -155,6 +155,7 @@ unsigned char mapchar4(unsigned char ldfk);
 extern unsigned char your_sign; /* these two are defined in view.cc */
 extern unsigned char your_colour;
 
+extern char wield_change; /* defined in output.cc */
 
 int main(int argc, char *argv[])
 {
@@ -381,7 +382,7 @@ switch(keyin)
                 case 'g':
                 case ',': pickup(); break;
                 case ';': item_check(';'); break;
-                case 'w': wield_weapon(); break;
+                case 'w': wield_weapon(0); break;
                 case 't': throw_anything(); break;
                 case 'f': shoot_thing(); break;
                 case 'T': takeoff_armour(); break;
@@ -419,7 +420,7 @@ stethoscope(250); break;
   you[0].turnover = 1; break;
                 case 'Z': cast_a_spell(); break;
 //              case 'M': which_spell(); break;      //memorise_spell(); break;
-
+  case '\'': wield_weapon(1); break;
   case 'X':
   if (you[0].level_type == 1 | you[0].level_type == 2)
   {
@@ -506,7 +507,7 @@ redraw_screen();
   case '*': grd [you[0].x_pos] [you[0].y_pos] = 82; break;
   case 'G': grd [you[0].x_pos] [you[0].y_pos] = 96; break;
   case '\"': grd [you[0].x_pos] [you[0].y_pos] = 99; break;
-  case '\'': grd [you[0].x_pos] [you[0].y_pos] = 101; break;
+//  case '\'': grd [you[0].x_pos] [you[0].y_pos] = 101; break;
   case '+': create_spec_monster(); break;
 
 case '`':
@@ -1682,6 +1683,7 @@ new_level(); // - must come after mon_init
         you[0].xp_ch = 1;
         you[0].gp_ch = 1;
         you[0].hung_ch = 1;
+        wield_change = 1;
 char title [40];
 
 strcpy(title, skill_title(best_skill(0, 50, 99), you[0].skills [best_skill(0, 50, 99)], you[0].clas, you[0].xl));

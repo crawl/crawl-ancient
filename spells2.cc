@@ -21,6 +21,8 @@
 
 int raise_corpse(int corps, char corx, char cory, int corps_beh, int corps_hit, int actual);
 
+extern char wield_change; /* defined in output.cc */
+
 
 char detect_traps(void)
 {
@@ -446,6 +448,8 @@ switch(which_brand)
 }
 
 mpr(info);
+
+wield_change = 1;
 
  int dur_change = 7 + random2(power) + random2(power);
 

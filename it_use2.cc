@@ -16,6 +16,8 @@
 
 char zappy(int func_pass [10], char str_pass [50], char z_type);
 
+extern char wield_change; /* defined in output.cc */
+
 
 
 void zapping(char ztype, int power, struct bolt beams [1])
@@ -351,9 +353,9 @@ switch(z_type)
         func_pass [0] = 13; // pain
         func_pass [6] = 2; //1;
         func_pass [2] = 50;
-        func_pass [3] = 6 + (func_pass [8] / 50);  //104 + (func_pass [8] / 150);
+        func_pass [3] = 6 + (func_pass [8] / 20);  //104 + (func_pass [8] / 150);
         func_pass [5] = 4; // magic
-        func_pass [8] *= 15;
+        func_pass [8] *= 25;
         return 2;
 
         case 23: // sticky flame
@@ -617,7 +619,7 @@ switch(z_type)
         func_pass [2] = 50;
         func_pass [3] = 6 + (func_pass [8] / 50);  //104 + (func_pass [8] / 150);
         func_pass [5] = 4; // magic
-        func_pass [8] *= 15;
+        func_pass [8] *= 20;
         return 2;
 
         case 45: // disruption
@@ -629,7 +631,7 @@ switch(z_type)
         func_pass [2] = 50;
         func_pass [3] = 5 + (func_pass [8] / 50);
         func_pass [5] = 4; // magic
-        func_pass [8] *= 15;
+        func_pass [8] *= 25;
         return 2;
 
         case 46: // disintegrate
@@ -641,7 +643,7 @@ switch(z_type)
         func_pass [2] = 50;
         func_pass [3] = 15 + (func_pass [8] / 3);
         func_pass [5] = 4; // magic
-        func_pass [8] *= 15;
+        func_pass [8] *= 20;
         return 2;
 
 
@@ -978,6 +980,7 @@ void unwield_item(char unw)
 {
 
  you[0].special_wield = 0;
+ wield_change = 1;
 
 if (you[0].inv_class [unw] == 0 && you[0].inv_dam [unw] > 180)
 {

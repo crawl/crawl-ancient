@@ -674,6 +674,18 @@ case 167: // grey snake
 strcpy(descpr, "A very large grey python.");
 break;
 
+case 168: // deep troll
+strcpy(descpr, "A stooped troll.");
+break;
+
+case 169: // giant blowfly
+strcpy(descpr, "A huge and irritating fly.");
+break;
+
+case 170: // red wasp
+strcpy(descpr, "A huge wasp with a viciously barbed stinger.");
+break;
+
 case 240: // Shadow wraith
 strcpy(descpr, "A skeletal shadow hanging in mid-air, this creature is almost invisible even to your magically enhanced sight. "); // assumes: to read this message, has see invis
 break;

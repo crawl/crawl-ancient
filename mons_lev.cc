@@ -612,8 +612,7 @@ case 4: return 12; // "ettin"
 case 5: return 8; // "fungus"
 case 6: return 1; // "goblin"
 case 7: return 6; // "hound"
-case 8: if (many_many < 60) return 10; // "imp"
-            else return 60;
+case 8: return 10; // "imp"
 case 9: return 5; // "jackal"
 case 10: return 11; // "killer bee"
 case 11: return 5; // "killer bee larva"
@@ -630,8 +629,7 @@ case 21: return 60; // "fire vortex"
 case 22: return 6; // "worm"
 case 23: return 91; // "abomination"
 case 24: return 12; // "yellow wasp"
-case 25: if (many_many < 60) return 10; // "zombie"
-           else return 60;
+case 25: return 10; // "zombie"
 case 26: return 15; // "angel"
 case 27: return 12; // "giant beetle"
 case 28: return 18; // "cyclops"
@@ -657,8 +655,7 @@ case 47: return 19; // "vampire"
 case 48: return 15; // "wraith"
 case 49: return 1500; // "abomination"
 case 50: return 13; // "yak"
-case 51: if (many_many < 60) return 20; // "zombie"
-          else return 60;
+case 51: return 20; // "zombie"
 case 52: return 10; // "orc warrior"
 case 53: return 18; // "kobold demonologist"
 case 54: return 8; // "orc wizard"
@@ -694,7 +691,7 @@ case 82: return 62; // "tormentor"
 case 83: return 63; // "reaper"
 case 84: return 65; // "soul eater"
 case 85: return 60; // "hairy devil"
-case 86: return 6500; // "ice devil" not really appropriate for a fiery hell.
+case 86: return 6500; // "ice devil"
 case 87: return 6200; // "blue devil"
 case 100: return 5; //strcat(gmon_name, "giant mite"); break;
 case 101: return 10; //strcat(gmon_name, "steam dragon"); break;
@@ -704,8 +701,7 @@ case 104: return 15; //strcat(gmon_name, "hippogriff"); break;
 case 105: return 21; //strcat(gmon_name, "griffon"); break;
 case 106: return 23; //strcat(gmon_name, "hydra"); break;
 case 107:
-case 108: if (many_many < 60) return 20; // "skeleton"
-           else return 60;
+case 108: return 20; // "skeleton"
 case 109: return 31; //strcat(gmon_name, "hell knight"); break;
 case 110: return 20; //strcat(gmon_name, "necromancer"); break;
 case 111: return 17; //strcat(gmon_name, "wizard"); break;
@@ -733,7 +729,7 @@ case 131: return 25; // pulsating mass
 case 132: return 34; // storm D
 case 133: return 24; //strcat(gmon_name, "yaktaur"); break;
 //case 134: return 32; //strcat(gmon_name, "death yak"); break;
-case 135: return 28; //strcat(gmon_name, "rock troll"); break;
+case 135: return 19; //strcat(gmon_name, "rock troll"); break;
 case 136: return 33; //strcat(gmon_name, "stone giant"); break; // stoned giant
 case 137: return 29; // flayed ghost
 case 138: return 31; // bumblebee
@@ -746,10 +742,13 @@ case 144: return 30; // dancing weapon
 case 145: return 38; // Titan
 case 146: return 10; // Golden dragon
 
-case 160: return 32; // iron Troll
+case 160: return 26; // iron Troll
 case 162: return 34; // fire giant
 case 163: return 34; // frost giant
 case 165: return 36; // shadow dragon
+case 168: return 28; // deep troll
+case 169: return 19; // giant blowfly
+case 170: return 25; // red wasp
 
 case 240: return 30; // shadow wraith
 case 241: return 27; // giant amoeba
@@ -775,8 +774,8 @@ case 273: return 30; // deep elf sorceror
 case 274: return 30; // deep elf death mage
 case 364: return 23; // shining eye
 case 369: return 31; // skeletal dragon
-case 370: return 37; // tentacled monstr
-case 371: return 32; // sphinx
+case 370: return 27; // tentacled monstr
+case 371: return 28; // sphinx
 
 case MLAVA0: return 500; // "lava worm"
 case MLAVA1: return 500; // "lava fish"
@@ -964,6 +963,10 @@ case 160: return 25; // iron Troll
 case 162: return 25; // fire giant
 case 163: return 25; // frost giant
 case 165: return 20; // shadow dragon
+
+case 168: return 25; // deep troll
+case 169: return 50; // giant blowfly
+case 170: return 25; // red wasp
 
 case 240: return 10; // shadow wraith
 case 241: return 35; // giant amoeba

@@ -479,6 +479,7 @@ switch(i)
  case 367: strcpy(comm, "@ - character status"); break;
  case 370: strcpy(comm, "# - dump character to file <name>.txt"); break;
  case 380: strcpy(comm, "= - adjust inventory/spell letters"); break;
+ case 390: strcpy(comm, "\' - wield item a, or switch to b"); break;
 /* case 380: strcpy(comm, "d - drop"); break;
  case 390: strcpy(comm, "e - eat"); break;*/
 
