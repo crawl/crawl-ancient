@@ -816,6 +816,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
     case ZAP_BACKLIGHT: //jmf: added
         strcpy(pbolt.beam_name, "0");
         pbolt.flavour = BEAM_BACKLIGHT;
+        pbolt.colour = BLUE;
         pbolt.range = 7 + random2(5);
         pbolt.isBeam = true;
         break;

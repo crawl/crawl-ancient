@@ -88,8 +88,7 @@ struct bolt
     int fr_count, foe_count;    // # of times a friend/foe is "hit"
     int fr_power, foe_power;    // total levels/hit dice affected
 
-    // INTERNAL use - please do not read/set outside
-    // of beam.cc!!
+    // INTERNAL use - should not usually be set outside of beam.cc
     bool isTracer;              // is this a tracer?
     bool aimedAtFeet;           // this was aimed at self!
     bool msgGenerated;          // an appropriate msg was already mpr'd
@@ -292,7 +291,7 @@ struct item_struct // argh! why a struct of arrays and not an array of structs? 
 {
   FixedVector<unsigned char, MAX_ITEMS> base_type; /* basic class (eg weapon) */
   FixedVector<unsigned char, MAX_ITEMS> sub_type;  /* type within that class (eg dagger) */
-  FixedVector<unsigned char, MAX_ITEMS> pluses;        /* hit+, charges */
+  FixedVector<unsigned char, MAX_ITEMS> pluses;       /* hit+, charges */
   FixedVector<unsigned char, MAX_ITEMS> pluses2;       /* dam+ etc */
   FixedVector<unsigned char, MAX_ITEMS> special;       /* special stuff */
   FixedVector<unsigned int, MAX_ITEMS> quantity;       /* multiple items */

@@ -1814,6 +1814,13 @@ static bool handle_throw(struct monsters *monster, bolt & beem)
     if (monster->type == MONS_TWO_HEADED_OGRE) // poor 2-headed ogres {dlb}
         return false;
 
+    // recent addition {GDL} - monsters won't throw if they can do melee.
+    // wastes valuable ammo,  and most monsters are better at melee anyway.
+    int dx = beem.target_x - monster->x;
+    int dy = beem.target_y - monster->y;
+    if (abs(dx) < 2 && abs(dy) < 2)
+        return false;
+
     if (one_chance_in(5))
         return false;
 
@@ -1863,7 +1870,6 @@ void monster(void)
     bool bat = false;
     bool brkk = false;
     int monc = 0;
-    int j;
 
     struct bolt beem;
 

@@ -28,11 +28,26 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef USE_FILE_LOCKING
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#endif
 #include "AppHdr.h"
 #include "externs.h"
 #include "hiscores.h"
 #include "mon-util.h"
 #include "player.h"
+
+//jmf: brent sez:
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason ...
+#ifdef USE_CURSES
+#include <curses.h>
+#endif
+
 
 // enough memory allocated to snarf in the scorefile entries
 static struct scorefile_entry hs_list[SCORE_FILE_ENTRIES];
@@ -41,14 +56,17 @@ static struct scorefile_entry hs_list[SCORE_FILE_ENTRIES];
 // highscore printing.
 static int newest_entry = -1;
 
-static FILE *hs_open(const char *mode);
-static void hs_close(FILE *handle, const char *mode);
+static FILE *hs_open(char *mode);
+static void hs_close(FILE *handle, char *mode);
 static bool hs_read(FILE *scores, struct scorefile_entry &dest);
 static void hs_parse_numeric(char *inbuf, struct scorefile_entry &dest);
 static void hs_parse_string(char *inbuf, struct scorefile_entry &dest);
 static void hs_copy(struct scorefile_entry &dest, struct scorefile_entry &src);
 static void hs_write(FILE *scores, struct scorefile_entry &entry);
 static void hs_format_single(char *buffer, struct scorefile_entry &se);
+static void hs_nextstring(char *&inbuf, char *dest);
+static int hs_nextint(char *&inbuf);
+static long hs_nextlong(char *&inbuf);
 
 // functions dealing with old scorefile entries
 static void hs_parse_generic_1(char *&inbuf, char *outbuf, const char *stopvalues);
@@ -56,6 +74,10 @@ static void hs_parse_generic_2(char *&inbuf, char *outbuf, const char *continuev
 static void hs_stripblanks(char *buf);
 static void hs_search_death(char *inbuf, struct scorefile_entry &se);
 static void hs_search_where(char *inbuf, struct scorefile_entry &se);
+
+// file locking stuff
+static bool lock_file_handle( FILE *handle, int type );
+static bool unlock_file_handle( FILE *handle );
 
 void hiscores_new_entry(struct scorefile_entry &ne)
 {
@@ -86,15 +108,18 @@ void hiscores_new_entry(struct scorefile_entry &ne)
             i ++;
         }
     }
-    total_entries = i;
 
-    // special case: empty scorefile
-    if (total_entries == 0)
+    // special case: lowest score,  with room
+    if (!inserted && i < SCORE_FILE_ENTRIES)
     {
-        newest_entry = 0;
-        hs_copy(hs_list[0], ne);
-        total_entries = 1;
+        newest_entry = i;
+        inserted = true;
+        // copy new entry
+        hs_copy(hs_list[i], ne);
+        i++;
     }
+
+    total_entries = i;
 
     // close so we can re-open for writing
     hs_close(scores,"r");
@@ -158,7 +183,7 @@ void hiscores_print_list(void)
         sprintf(info, "%2d.", i+1);
         cprintf(info);
         hiscores_print_single(hs_list[i]);
-        cprintf("\n");      // add newline, print_single() doesn't.
+        cprintf(EOL);      // add newline, print_single() doesn't.
 
         if (i == newest_entry)
             textcolor(LIGHTGREY);
@@ -181,7 +206,88 @@ void hiscores_print_single(struct scorefile_entry &se)
 // BEGIN private functions
 // --------------------------------------------------------------------------
 
-FILE *hs_open(const char *mode)
+// first, some file locking stuff for multiuser crawl
+#ifdef USE_FILE_LOCKING
+
+static bool lock_file_handle( FILE *handle, int type )
+{
+    struct flock  lock;
+    int           status;
+
+    lock.l_whence = SEEK_SET;
+    lock.l_start = 0;
+    lock.l_len = 0;
+    lock.l_type = type;
+
+#ifdef USE_BLOCKING_LOCK
+
+    status = fcntl( fileno( handle ), F_SETLKW, &lock );
+
+#else
+
+    for (int i = 0; i < 30; i++)
+    {
+        status = fcntl( fileno( handle ), F_SETLK, &lock );
+
+        // success
+        if (status == 0)
+            break;
+
+        // known failure
+        if (status == -1 && (errno != EACCES && errno != EAGAIN))
+            break;
+
+        perror( "Problems locking file... retrying..." );
+        delay( 1000 );
+    }
+
+#endif
+
+    return (status == 0);
+}
+
+static bool unlock_file_handle( FILE *handle )
+{
+    struct flock  lock;
+    int           status;
+
+    lock.l_whence = SEEK_SET;
+    lock.l_start = 0;
+    lock.l_len = 0;
+    lock.l_type = F_UNLCK;
+
+#ifdef USE_BLOCKING_LOCK
+
+    status = fcntl( fileno( handle ), F_SETLKW, &lock );
+
+#else
+
+    for (int i = 0; i < 30; i++)
+    {
+        status = fcntl( fileno( handle ), F_SETLK, &lock );
+
+        // success
+        if (status == 0)
+            break;
+
+        // known failure
+        if (status == -1 && (errno != EACCES && errno != EAGAIN))
+            break;
+
+        perror( "Problems unlocking file... retrying..." );
+        delay( 1000 );
+    }
+
+#endif
+
+    return (status == 0);
+}
+
+#endif
+
+
+
+FILE *hs_open(char *mode)
 {
 #ifdef SAVE_DIR_PATH
     FILE *handle = fopen(SAVE_DIR_PATH "scores", mode);
@@ -191,7 +297,7 @@ FILE *hs_open(const char *mode)
 
 #ifdef USE_FILE_LOCKING
     int locktype = F_RDLCK;
-    if (stricmp(mode, "w") == NULL)
+    if (stricmp(mode, "w") == 0)
         locktype = F_WRLCK;
 
     if (handle && !lock_file_handle( handle, locktype ))
@@ -204,7 +310,7 @@ FILE *hs_open(const char *mode)
     return handle;
 }
 
-void hs_close(FILE *handle, const char *mode)
+void hs_close(FILE *handle, char *mode)
 {
     if (handle == NULL)
         return;
@@ -217,7 +323,7 @@ void hs_close(FILE *handle, const char *mode)
     fclose(handle);
 
 #ifdef SHARED_FILES_CHMOD_VAL
-    if (stricmp(mode, "w") == NULL)
+    if (stricmp(mode, "w") == 0)
     {
   #ifdef SAVE_DIR_PATH
         chmod(SAVE_DIR_PATH "scores", SHARED_FILES_CHMOD_VAL);
@@ -256,9 +362,15 @@ void hs_copy(struct scorefile_entry &dest, struct scorefile_entry &src)
 bool hs_read(FILE *scores, struct scorefile_entry &dest)
 {
     char inbuf[200];
+    char *result;
+    int c;
 
-    // first check for NULL scores file.
-    if (scores == NULL)
+    // get a character..
+    if (scores != NULL)
+        c = fgetc(scores);
+
+    // check for NULL scores file or EOF
+    if (scores == NULL || c == EOF)
     {
         dest.points = 0;
         return false;
@@ -268,17 +380,19 @@ bool hs_read(FILE *scores, struct scorefile_entry &dest)
     // 1) old-style lines which were 80 character blocks
     // 2) 4.0 pr1 through pr7 versions which were newline terminated
     // 3) 4.0 pr8 and onwards which are 'current' ASCII format, and
-    //    should never exceed 80 characters (or else weird things will
-    //    happen!
+    //    may exceed 80 characters!
 
-    if (fgets(inbuf, 81, scores) == NULL)
+    // put 'c' in first spot
+    inbuf[0] = c;
+
+    if (fgets(&inbuf[1], (c==':')?198:81, scores) == NULL)
     {
         dest.points = 0;
         return false;
     }
 
     // check type;  lines starting with a colon are new-style scores.
-    if (inbuf[0] == ':')
+    if (c == ':')
         hs_parse_numeric(inbuf, dest);
     else
         hs_parse_string(inbuf, dest);
@@ -286,7 +400,7 @@ bool hs_read(FILE *scores, struct scorefile_entry &dest)
     return true;
 }
 
-void hs_nextstring(char *&inbuf, char *dest)
+static void hs_nextstring(char *&inbuf, char *dest)
 {
     char *p = dest;
     // assume we're on a ':'
@@ -298,21 +412,21 @@ void hs_nextstring(char *&inbuf, char *dest)
     *p = '\0';
 }
 
-int hs_nextint(char *&inbuf)
+static int hs_nextint(char *&inbuf)
 {
     char num[20];
     hs_nextstring(inbuf, num);
     return atoi(num);
 }
 
-long hs_nextlong(char *&inbuf)
+static long hs_nextlong(char *&inbuf)
 {
     char num[20];
     hs_nextstring(inbuf, num);
     return atol(num);
 }
 
-void hs_parse_numeric(char *inbuf, struct scorefile_entry &se)
+static void hs_parse_numeric(char *inbuf, struct scorefile_entry &se)
 {
     se.version = hs_nextint(inbuf);
     se.release = hs_nextint(inbuf);
@@ -344,7 +458,7 @@ void hs_parse_numeric(char *inbuf, struct scorefile_entry &se)
     se.wiz_mode = hs_nextint(inbuf);
 }
 
-void hs_write(FILE *scores, struct scorefile_entry &se)
+static void hs_write(FILE *scores, struct scorefile_entry &se)
 {
     fprintf(scores, ":%d:%d:%ld:%s:%ld:%d:%d:%s:%d:%d:%d",
         se.version, se.release, se.points, se.name,
@@ -357,7 +471,7 @@ void hs_write(FILE *scores, struct scorefile_entry &se)
     return;
 }
 
-void hs_format_single(char *buf, struct scorefile_entry &se)
+static void hs_format_single(char *buf, struct scorefile_entry &se)
 {
     char scratch[100];
 
@@ -649,7 +763,7 @@ void hs_format_single(char *buf, struct scorefile_entry &se)
 // functions dealing with old-style scorefile entries.
 // -------------------------------------------------------------------------
 
-void hs_parse_string(char *inbuf, struct scorefile_entry &se)
+static void hs_parse_string(char *inbuf, struct scorefile_entry &se)
 {
     /* old entries are of the following format (Brent introduced some
        spacing at one point,  we have to take this into account):
@@ -719,7 +833,7 @@ void hs_parse_string(char *inbuf, struct scorefile_entry &se)
     se.final_hp = 0;
 }
 
-void hs_parse_generic_1(char *&inbuf, char *outbuf, const char *stopvalues)
+static void hs_parse_generic_1(char *&inbuf, char *outbuf, const char *stopvalues)
 {
     char *p = outbuf;
 
@@ -729,7 +843,7 @@ void hs_parse_generic_1(char *&inbuf, char *outbuf, const char *stopvalues)
     *p = '\0';
 }
 
-void hs_parse_generic_2(char *&inbuf, char *outbuf, const char *continuevalues)
+static void hs_parse_generic_2(char *&inbuf, char *outbuf, const char *continuevalues)
 {
     char *p = outbuf;
 
@@ -739,7 +853,7 @@ void hs_parse_generic_2(char *&inbuf, char *outbuf, const char *continuevalues)
     *p = '\0';
 }
 
-void hs_stripblanks(char *buf)
+static void hs_stripblanks(char *buf)
 {
     char *p = buf;
     char *q = buf;
@@ -759,7 +873,7 @@ void hs_stripblanks(char *buf)
     }
 }
 
-void hs_search_death(char *inbuf, struct scorefile_entry &se)
+static void hs_search_death(char *inbuf, struct scorefile_entry &se)
 {
     // assume killed by monster
     se.death_type = KILLED_BY_MONSTER;
@@ -852,7 +966,7 @@ void hs_search_death(char *inbuf, struct scorefile_entry &se)
     }
 }
 
-void hs_search_where(char *inbuf, struct scorefile_entry &se)
+static void hs_search_where(char *inbuf, struct scorefile_entry &se)
 {
     char scratch[6];
 

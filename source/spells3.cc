@@ -304,7 +304,7 @@ bool cast_bone_shards(int power)
         if (you.inv_quantity[you.equip[EQ_WEAPON]] == 0)
         {
             you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty handed.");
+            mpr("You are now empty-handed.");
         }
 
         zapping(ZAP_BONE_SHARDS, power, beam);
@@ -418,7 +418,7 @@ void simulacrum(int power)
         if (you.inv_quantity[ chunk ] <= 0)
         {
             you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty handed.");
+            mpr("You are now empty-handed.");
         }
 
         burden_change();

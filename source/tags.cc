@@ -356,7 +356,6 @@ int tag_read(FILE *fp)
     const int tagHdrSize = 6;
     struct tagHeader hdr, th;
     th.offset = 0;
-    int rv;
 
     // read tag header
     if (read2(fp, tagBuffer, tagHdrSize) != tagHdrSize)

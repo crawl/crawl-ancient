@@ -187,7 +187,7 @@ static void load_ghost();
 void make_filename(char *buf, char *prefix, int level, int where,
     bool isLabyrinth, bool isGhost)
 {
-    char suffix[4], lvl[5], uid[10];
+    char suffix[4], lvl[5];
     char finalprefix[kFileNameLen];
 
     strcpy(suffix, (level < 10) ? "0" : "");
@@ -210,6 +210,7 @@ void make_filename(char *buf, char *prefix, int level, int where,
 
 #ifdef SAVE_DIR_PATH
     // everyone sees everyone else's ghosts. :)
+    char uid[10];
     if (!isGhost)
     {
         itoa(getuid(), uid, 10);
@@ -954,7 +955,6 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
 {
     char cha_fil[kFileNameSize];
     int count_x, count_y;
-    int i, j;
     struct tagHeader th;
 
     make_filename(cha_fil, you.your_name, level_saved, where_were_you,
@@ -1059,7 +1059,6 @@ void save_game(bool leave_game)
 {
     char charFile[kFileNameSize];
     char cmd_buff[1024];
-    struct tagHeader th;
 
 #ifdef SAVE_PACKAGE_CMD
     char name_buff[kFileNameSize];

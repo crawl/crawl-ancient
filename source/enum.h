@@ -489,7 +489,7 @@ enum CONFIRM_LEVEL
 {
     CONFIRM_NONE_EASY,
     CONFIRM_SAFE_EASY,
-    CONFIRM_ALL_EASY,
+    CONFIRM_ALL_EASY
 };
 
 enum CORPSE_EFFECTS
@@ -824,7 +824,7 @@ enum GODS                              //  you.religion
     GOD_ELYVILON,
     NUM_GODS,                          // always after last god
 
-    GOD_RANDOM  = 100,
+    GOD_RANDOM  = 100
 };
 
 enum GOOD_THINGS
@@ -956,7 +956,7 @@ enum JOB
     JOB_WANDERER,                      //   23
     NUM_JOBS,                          // always after the last job
 
-    JOB_UNKNOWN = 100,
+    JOB_UNKNOWN = 100
 };
 
 enum KILLBY
@@ -1062,7 +1062,7 @@ enum MESSAGE_COLOURS {
     MSGCOL_DEFAULT,             // use default colour
     MSGCOL_ALTERNATE,           // use secondary default colour scheme
     MSGCOL_MUTED,               // don't print messages
-    MSGCOL_PLAIN,               // same as plain channel
+    MSGCOL_PLAIN                // same as plain channel
 };
 
 enum MISCELLANY                        // mitm.sub_type[]

@@ -130,7 +130,7 @@
     #include "libw32c.h"
     #define PLAIN_TERM
     #define SHORT_FILE_NAMES
-    #define EOL "\n\r"
+    #define EOL "\n"
     #define CHARACTER_SET           A_ALTCHARSET
     #define getstr(X,Y)         getConsoleString(X,Y)
 #else

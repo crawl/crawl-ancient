@@ -1233,7 +1233,7 @@ void cast_sticks_to_snakes(int pow)
             unwield_item( weapon );
             you.inv_quantity[ weapon ] = 0;
             you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty handed.");
+            mpr("You are now empty-handed.");
         }
         else
             you.inv_quantity[you.equip[EQ_WEAPON]] -= how_many;
@@ -1603,7 +1603,7 @@ void cast_ignite_poison(int pow)
     }
 
     if (wasWielding == true)
-        mpr("You are now empty handed.");
+        mpr("You are now empty-handed.");
 
     if (totalstrength)
     {
@@ -2365,7 +2365,7 @@ void cast_evaporate(int pow)
     {
         unwield_item(you.equip[EQ_WEAPON]);
         you.equip[EQ_WEAPON] = -1;
-        mpr("You are now empty handed.");
+        mpr("You are now empty-handed.");
     }
 
     wield_change = true;
@@ -2813,11 +2813,12 @@ void cast_twist(int pow)
     if (pow > 50)
         pow = 50;
 
-    // Get target
-    if (spell_direction(targ, tmp) == -1)
+    // Get target,  using DIR_TARGET for targetting only,
+    // since we don't use beam() for this spell.
+    if (spell_direction(targ, tmp, DIR_TARGET) == -1)
         return;
 
-    // Get the target monster...
+    // anything there?
     if (mgrd[targ.tx][targ.ty] == NON_MONSTER
         || targ.isMe)
     {
@@ -2870,8 +2871,9 @@ void cast_far_strike(int pow)
     struct dist targ;
     struct bolt tmp;    // used, but ignored
 
-    // Get target
-    if (spell_direction(targ, tmp) == -1)
+    // Get target,  using DIR_TARGET for targetting only,
+    // since we don't use beam() for this spell.
+    if (spell_direction(targ, tmp, DIR_TARGET) == -1)
         return;
 
     // Get the target monster...
@@ -3124,7 +3126,7 @@ void cast_sandblast(int pow)
         if (you.inv_quantity[you.equip[EQ_WEAPON]] < 1)
         {
             you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty handed.");
+            mpr("You are now empty-handed.");
         }
     }
     else

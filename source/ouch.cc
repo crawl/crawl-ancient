@@ -33,10 +33,6 @@
 
 #ifdef DOS
 #include <conio.h>
-#include <file.h>
-#endif
-
-#if !defined(DOS) && !defined(WIN32CONSOLE)
 #include <files.h>
 #endif
 
@@ -92,88 +88,6 @@ void end_game(struct scorefile_entry &se);
 void item_corrode(char itco);
 static char *pad(char *str);
 
-
-#ifdef USE_FILE_LOCKING
-
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-
-static bool lock_file_handle( FILE *handle, int type )
-{
-    struct flock  lock;
-    int           status;
-
-    lock.l_whence = SEEK_SET;
-    lock.l_start = 0;
-    lock.l_len = 0;
-    lock.l_type = type;
-
-#ifdef USE_BLOCKING_LOCK
-
-    status = fcntl( fileno( handle ), F_SETLKW, &lock );
-
-#else
-
-    for (int i = 0; i < 30; i++)
-    {
-        status = fcntl( fileno( handle ), F_SETLK, &lock );
-
-        // success
-        if (status == 0)
-            break;
-
-        // known failure
-        if (status == -1 && (errno != EACCES && errno != EAGAIN))
-            break;
-
-        perror( "Problems locking file... retrying..." );
-        delay( 1000 );
-    }
-
-#endif
-
-    return (status == 0);
-}
-
-static bool unlock_file_handle( FILE *handle )
-{
-    struct flock  lock;
-    int           status;
-
-    lock.l_whence = SEEK_SET;
-    lock.l_start = 0;
-    lock.l_len = 0;
-    lock.l_type = F_UNLCK;
-
-#ifdef USE_BLOCKING_LOCK
-
-    status = fcntl( fileno( handle ), F_SETLKW, &lock );
-
-#else
-
-    for (int i = 0; i < 30; i++)
-    {
-        status = fcntl( fileno( handle ), F_SETLK, &lock );
-
-        // success
-        if (status == 0)
-            break;
-
-        // known failure
-        if (status == -1 && (errno != EACCES && errno != EAGAIN))
-            break;
-
-        perror( "Problems unlocking file... retrying..." );
-        delay( 1000 );
-    }
-
-#endif
-
-    return (status == 0);
-}
-
-#endif
 
 /* NOTE: DOES NOT check for hellfire!!! -- this is good */
 int check_your_resists(int hurted, int flavour)
@@ -466,7 +380,7 @@ void scrolls_burn(char burn_strength, char target_class)
                     if (burnc == you.equip[EQ_WEAPON])
                     {
                         you.equip[EQ_WEAPON] = -1;
-                        mpr("You are now empty handed.");
+                        mpr("You are now empty-handed.");
                     }
                     break;
                 }
@@ -606,7 +520,6 @@ void drain_exp(void)
 // death_source should be set to zero for non-monsters {dlb}
 void ouch(int dam, int death_source, char death_type)
 {
-    char point_print[10];
     int d = 0;
     int e = 0;
 
@@ -720,9 +633,14 @@ void ouch(int dam, int death_source, char death_type)
 
     // for death by monster
     struct monsters *monster = NULL;
-    if (death_source != 0)
-        monster =  &menv[death_source];
 
+    // oh, oh, oh, this is really Bad.  XXX
+    if (death_source >= 0)
+    {
+        monster =  &menv[death_source];
+        if (monster->type < 0 || monster->type >= NUM_MONSTERS)
+            monster = NULL;
+    }
 
     // CONSTRUCT SCOREFILE ENTRY
     struct scorefile_entry se;
@@ -744,7 +662,7 @@ void ouch(int dam, int death_source, char death_type)
     se.best_skill = best_skill(SK_FIGHTING, NUM_SKILLS-1, 99);
     se.best_skill_lvl = you.skills[ se.best_skill ];
     se.death_type = death_type;
-    if (death_source != 0)
+    if (monster != NULL)
     {
         se.death_source = monster->type;
         se.mon_num = monster->number;

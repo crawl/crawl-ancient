@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -32,6 +33,7 @@
 #include "monstuff.h"
 #include "mon-util.h"
 #include "player.h"
+#include "shopping.h"
 #include "stuff.h"
 #include "view.h"
 
@@ -57,7 +59,7 @@ char mons_find(unsigned char xps, unsigned char yps, FixedVector < char,
 // direction
 //
 // input: restricts : DIR_NONE      accepts keypad dir or targetting
-//                    DIR_TARGET    must use targetting
+//                    DIR_TARGET    must use targetting.
 //                    DIR_DIR       must use keypad direction
 //
 //
@@ -167,7 +169,7 @@ void direction( struct dist &moves, int restrict )
     if (dirChosen && restrict == DIR_TARGET)
     {
         mpr(aim_prompt);
-        look_around(moves, dir);
+        look_around(moves, false, dir);
         return;
     }
 
@@ -177,7 +179,7 @@ void direction( struct dist &moves, int restrict )
         {
             mpr(aim_prompt);
             moves.prev_target = dir;
-            look_around(moves);
+            look_around(moves, false);
             if (moves.prev_target != -1)      // -1 means they pressed 'p'
                 return;
         }
@@ -265,7 +267,7 @@ void direction( struct dist &moves, int restrict )
 //
 //---------------------------------------------------------------
 
-void look_around(struct dist &moves, int first_move)
+void look_around(struct dist &moves, bool justLooking, int first_move)
 {
     int keyin = 0;
     bool dirChosen = false;
@@ -275,7 +277,7 @@ void look_around(struct dist &moves, int first_move)
     int cy = 9;
     int newcx, newcy;
     int mx, my;         // actual map x,y (scratch)
-    int mid;            // monster id (scratc)
+    int mid;            // monster id (scratch)
     FixedVector < char, 2 > monsfind_pos;
 
     monsfind_pos[0] = you.x_pos;
@@ -408,7 +410,8 @@ void look_around(struct dist &moves, int first_move)
             // RULE: cannot target what you cannot see
             if (env.show[cx - 8][cy] == 0 && !(cx == 17 && cy == 9))
             {
-                mpr("Sorry, you can't target what you can't see.");
+                if (!justLooking)
+                    mpr("Sorry, you can't target what you can't see.");
                 return;
             }
             moves.isValid = true;
@@ -638,6 +641,7 @@ char mons_find(unsigned char xps, unsigned char yps,
 static void describe_cell(int mx, int my)
 {
     int trf;            // used for trap type??
+    bool isCharmed = false;
 
     if (mgrd[mx][my] != NON_MONSTER)
     {
@@ -672,7 +676,7 @@ static void describe_cell(int mx, int my)
 
             if (mon_wep != NON_ITEM)
             {
-                strcpy(info, "It is wielding ");
+                sprintf(info, "%s is wielding ", mons_pronoun(menv[i].type,0));
                 it_name(mon_wep, 3, str_pass);
                 strcat(info, str_pass);
 
@@ -702,44 +706,47 @@ static void describe_cell(int mx, int my)
 
         print_wounds(&menv[i]);
 
-        if (menv[i].behavior == BEH_ENSLAVED)
-            mpr("It is friendly.");
-
         if (menv[i].behavior == BEH_SLEEP)
-            mpr("It doesn't appear to have noticed you.");
+        {
+            strcpy(info, mons_pronoun(menv[i].type, 0));
+            strcat(info, " doesn't appear to have noticed you.");
+            mpr(info);
+        }
 
         if (menv[i].enchantment1)
         {
             for (int p = 0; p < 3; p++)
             {
+                strcpy(info, mons_pronoun(menv[i].type, 0));
                 switch (menv[i].enchantment[p])
                 {
                 case ENCH_YOUR_ROT_I:
                 case ENCH_YOUR_ROT_II:
                 case ENCH_YOUR_ROT_III:
                 case ENCH_YOUR_ROT_IV:
-                    mpr("It is rotting away."); //jmf: "covered in sores"?
+                    strcat(info, " is rotting away."); //jmf: "covered in sores"?
                     break;
                 case ENCH_BACKLIGHT_I:
                 case ENCH_BACKLIGHT_II:
                 case ENCH_BACKLIGHT_III:
                 case ENCH_BACKLIGHT_IV:
-                    mpr("It is softly glowing.");
+                    strcat(info, " is softly glowing.");
                     break;
                 case ENCH_SLOW:
-                    mpr("It is moving slowly.");
+                    strcat(info, " is moving slowly.");
                     break;
                 case ENCH_HASTE:
-                    mpr("It is moving very quickly.");
+                    strcat(info, " is moving very quickly.");
                     break;
                 case ENCH_CONFUSION:
-                    mpr("It appears to be bewildered and confused.");
+                    strcat(info, " appears to be bewildered and confused.");
                     break;
                 case ENCH_INVIS:
-                    mpr("It is slightly transparent.");
+                    strcat(info, " is slightly transparent.");
                     break;
                 case ENCH_CHARM:
-                    mpr("It is in your thrall.");
+                    strcat(info, " is in your thrall.");
+                    isCharmed = true;
                     break;
                 case ENCH_YOUR_STICKY_FLAME_I:
                 case ENCH_YOUR_STICKY_FLAME_II:
@@ -749,11 +756,24 @@ static void describe_cell(int mx, int my)
                 case ENCH_STICKY_FLAME_II:
                 case ENCH_STICKY_FLAME_III:
                 case ENCH_STICKY_FLAME_IV:
-                    mpr("It is covered in liquid flames.");
+                    strcat(info, " is covered in liquid flames.");
                     break;
-                }
+                default:
+                    info[0] = '\0';
+                    break;
+                } // end switch
+                if (info[0])
+                    mpr(info);
             }
         }
+
+        if (menv[i].behavior == BEH_ENSLAVED && !isCharmed)
+        {
+            strcpy(info, mons_pronoun(menv[i].type, 0));
+            strcat(info, " is friendly.");
+            mpr(info);
+        }
+
 #ifdef WIZARD
         stethoscope(i);
 #endif
@@ -945,7 +965,7 @@ static void describe_cell(int mx, int my)
         }
         break;
     case DNGN_ENTER_SHOP:
-        mpr("A shop.");
+        mpr(shop_name(mx, my));
         break;
     case DNGN_ENTER_LABYRINTH:
         mpr("A labyrinth entrance.");

@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -40,6 +41,7 @@
 #include "mutation.h"
 #include "player.h"
 #include "religion.h"
+#include "shopping.h"
 #include "skills.h"
 #include "spells.h"
 #include "stuff.h"
@@ -123,7 +125,8 @@ void item_check(char keyin)
                 mpr("There is a gateway to the Iron City of Dis here.");
                 break;
             case DNGN_ENTER_SHOP:
-                mpr("There is an entrance to a shop here.");
+                sprintf(info, "There is an entrance to %s here.", shop_name(you.x_pos, you.y_pos));
+                mpr(info);
                 break;
             case DNGN_ENTER_LABYRINTH:
                 mpr("There is an entrance to a labyrinth here.");
@@ -265,10 +268,9 @@ void item_check(char keyin)
         }
     }
 
-    if (igrd[you.x_pos][you.y_pos] == NON_ITEM)
+    if (igrd[you.x_pos][you.y_pos] == NON_ITEM && keyin == ';')
     {
-        if (keyin == ';')
-            mpr("There are no items here.");
+        mpr("There are no items here.");
         return;
     }
 
@@ -586,13 +588,6 @@ int add_item(int item_got, int quant_got)
         goto change_igrid;
     }
 
-    // check for slot space
-    if (inv_count() >= ENDOFPACK)
-        return NON_ITEM;
-
-    if (partialPickup)
-        mpr("You can only carry some of what is here.");
-
     for (m = 0; m < ENDOFPACK; m++)
     {
         const int base_type = mitm.base_type[item_got];
@@ -620,6 +615,9 @@ int add_item(int item_got, int quant_got)
                 || base_type == OBJ_SCROLLS
                 || base_type == OBJ_POTIONS)
             {
+                if (partialPickup)
+                    mpr("You can only carry some of what is here.");
+
                 you.inv_quantity[m] += quant_got;
                 burden_change();
 
@@ -638,6 +636,13 @@ int add_item(int item_got, int quant_got)
             }
         }
     }                           // end of for m loop.
+
+    // can't combine, check for slot space
+    if (inv_count() >= ENDOFPACK)
+        return NON_ITEM;
+
+    if (partialPickup)
+        mpr("You can only carry some of what is here.");
 
     for (m = 0; m < ENDOFPACK; m++)
         if (!you.inv_quantity[m])
@@ -1025,7 +1030,7 @@ void drop(void)
     {
         unwield_item(item_drop_2);
         you.equip[EQ_WEAPON] = -1;
-        mpr("You are empty handed.");
+        mpr("You are empty-handed.");
     }
 
     item_place(item_drop_2, you.x_pos, you.y_pos, quant_drop);

@@ -32,7 +32,7 @@ void direction(struct dist &moves, int restricts = DIR_NONE);
 /* ***********************************************************************
  * called from: acr - direct
  * *********************************************************************** */
-void look_around(struct dist &moves, int first_move = -1);
+void look_around(struct dist &moves, bool justLooking, int first_move = -1);
 
 
 #endif

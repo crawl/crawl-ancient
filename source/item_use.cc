@@ -175,7 +175,7 @@ void wield_weapon(bool auto_wield)
             you.turn_is_over = 1;
         }
         you.equip[EQ_WEAPON] = -1;
-        mpr("You are empty handed.");
+        mpr("You are empty-handed.");
         you.time_taken *= 3;
         you.time_taken /= 10;
         return;
@@ -1235,7 +1235,7 @@ void shoot_thing(void)
     {
         if (i == ENDOFPACK)
         {
-            mpr("You have nothing suitable.");
+            mpr("No suitable missiles.");
             return;
         }
 
@@ -1738,7 +1738,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
         if (you.equip[EQ_WEAPON] == throw_2)
         {
             you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty handed.");
+            mpr("You are now empty-handed.");
         }
     }
 
@@ -2486,7 +2486,7 @@ void drink(void)
         if (you.equip[EQ_WEAPON] == drink_2)
         {
             you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty handed.");
+            mpr("You are now empty-handed.");
             wield_change = 1;
         }
     }
@@ -2743,7 +2743,7 @@ void read_scroll(void)
             if (you.equip[EQ_WEAPON] == sc_read_2)
             {
                 you.equip[EQ_WEAPON] = -1;
-                mpr("You are now empty handed.");
+                mpr("You are now empty-handed.");
             }
         }
 
@@ -2803,8 +2803,8 @@ void read_scroll(void)
         break;
 
     case SCR_FEAR:
-        mpr("You feel scary!");
-        mass_enchantment(4, 1000);
+        if (!mass_enchantment(4, 1000))
+            id_the_scroll = false;
         break;
 
     case SCR_NOISE:

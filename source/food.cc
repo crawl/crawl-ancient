@@ -581,7 +581,7 @@ void eat_food(void)
         if (you.equip[EQ_WEAPON] == which_inventory_slot)
         {
             you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty handed.");
+            mpr("You are now empty-handed.");
             wield_change = true;
         }
     }

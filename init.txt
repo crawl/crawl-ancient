@@ -199,3 +199,10 @@
 
 
 # hp_warning = 25
+
+#
+# race and class choices.  Note that the name is not used,  just the letter
+
+# race = a
+
+# class = a

@@ -379,5 +379,11 @@ bool mons_should_fire(struct bolt &beam);
  * *********************************************************************** */
 bool ms_always_fire(int mons_spell);
 
+// last updated 06mar2001 (gdl)
+/* ***********************************************************************
+ * called from:
+ * *********************************************************************** */
+char *mons_pronoun(int mon_type, int variant);
+
 
 #endif

@@ -248,13 +248,16 @@ void cast_fire_storm(int powc)
     viewwindow(1, false);
 }                               // end cast_fire_storm()
 
-char spell_direction(struct dist &spelld, struct bolt &pbolt)
+char spell_direction(struct dist &spelld, struct bolt &pbolt, int restrict)
 {
-    mpr("Which direction? (*/+ to target)");
+    if (restrict == DIR_TARGET)
+        mpr("Choose a target (+/- for next/prev monster)");
+    else
+        mpr("Which direction? (*/+ to target)");
 
     message_current_target();
 
-    direction(spelld);
+    direction(spelld, restrict);
 
     if (!spelld.isValid)
     {

@@ -444,34 +444,34 @@ void wizard_string(char comm[50], int i)
 #ifdef WIZARD
 
     strcpy( comm,
-           (i ==  10) ? "a    - (a)cquirement"                  :
-           (i ==  15) ? "b    - (b)anish yourself to the Abyss" :
-           (i ==  20) ? "d/*  - create (d)own stairdcase"       :
-           (i ==  30) ? "g    - add a skill"                    :
-           (i ==  40) ? "h    - (h)eal yourself"                :
-           (i ==  50) ? "i    - (i)dentify an item"             :
-           (i ==  70) ? "l    - make entrance to (l)abyrinth"   :
-           (i ==  75) ? "k    - controlled blin(k)"             :
-           (i ==  80) ? "m/+  - create a (m)onster by number"   :
-           (i ==  85) ? "M    - create a (m)onster by name"     :
-           (i ==  90) ? "o/%%  - create an (o)bject"            :
-           (i == 100) ? "p    - make entrance to (p)andemonium" :
-           (i == 105) ? "u    - create (u)p staircase"          :
-           (i == 110) ? "x    - gain 5000 e(x)perience"         :
-           (i == 112) ? "s    - gain 20000 (s)kill points"      :
-           (i == 115) ? "X    - Receive a gift from (X)om"      :
-           (i == 120) ? "z    - cast any spell by number"       :
-           (i == 125) ? "Z    - cast any spell by name"         :
-           (i == 130) ? "$    - get heal + gold + xp"           :
-           (i == 140) ? "~/\"  - goto a level"                  :
-           (i == 150) ? "(    - create a feature"               :
-           (i == 160) ? "]    - get a mutation"                 :
-           (i == 170) ? ":    - find branch"                    :
-           (i == 180) ? "{    - magic mapping"                  :
-           (i == 190) ? "^    - gain piety"                     :
-           (i == 200) ? "\'    - list items"                    :
-           (i == 210) ? "_    - sum skill points"               :
-           (i == 220) ? "?    - list wizard commands"
+           (i ==  10) ? "a    : acquirement"                  :
+           (i ==  15) ? "b    : banish yourself to the Abyss" :
+           (i ==  20) ? "d/*  : create down stairdcase"       :
+           (i ==  30) ? "g    : add a skill"                    :
+           (i ==  40) ? "h    : heal yourself"                :
+           (i ==  50) ? "i    : identify an item"             :
+           (i ==  70) ? "l    : make entrance to labyrinth"   :
+           (i ==  75) ? "k    : controlled blink"             :
+           (i ==  80) ? "m/+  : create a monster by number"   :
+           (i ==  85) ? "M    : create a monster by name"     :
+           (i ==  90) ? "o/%%  : create an object"            :
+           (i == 100) ? "p    : make entrance to pandemonium" :
+           (i == 105) ? "u    : create up staircase"          :
+           (i == 110) ? "x    : gain 5000 experience"         :
+           (i == 112) ? "s    : gain 20000 skill points"      :
+           (i == 115) ? "X    : Receive a gift from Xom"      :
+           (i == 120) ? "z    : cast any spell by number"       :
+           (i == 125) ? "Z    : cast any spell by name"         :
+           (i == 130) ? "$    : get heal + gold + xp"           :
+           (i == 140) ? "~/\"  : goto a level"                  :
+           (i == 150) ? "(    : create a feature"               :
+           (i == 160) ? "]    : get a mutation"                 :
+           (i == 170) ? ":    : find branch"                    :
+           (i == 180) ? "{    : magic mapping"                  :
+           (i == 190) ? "^    : gain piety"                     :
+           (i == 200) ? "\'    : list items"                    :
+           (i == 210) ? "_    : sum skill points"               :
+           (i == 220) ? "?    : list wizard commands"
                       : "" );
 
 #else
@@ -492,64 +492,64 @@ void command_string(char comm[50], int i)
      */
 
     strcpy( comm,
-           (i ==  10) ? "a    - use special (a)bility"              :
-           (i ==  20) ? "d(#) - (d)rop (#) item(s)"                 :
-           (i ==  30) ? "e    - (e)at some food"                    :
-           (i ==  40) ? "f    - (f)ire an appropriate thing"        :
-           (i ==  50) ? "i    - (i)nventory listing"                :
-           (i ==  55) ? "m    - check skills"                       :
-           (i ==  60) ? "o/c  - (o)pen/(c)lose a door"              :
-           (i ==  65) ? "p    - (p)ray"                             :
-           (i ==  70) ? "q    - (q)uaff a potion"                   :
-           (i ==  80) ? "r    - (r)ead a scroll or a book"          :
-           (i ==  90) ? "s    - (s)earch"                           :
-           (i == 100) ? "t    - (t)hrow or shoot something"         :
-           (i == 110) ? "v    - (v)iew details on an item"          :
-           (i == 120) ? "w    - (w)ield a weapon"                   :
-           (i == 130) ? "x    - e(x)amine your surroundings"        :
-           (i == 135) ? "z    - (z)ap a wand"                       :
-           (i == 140) ? "A    - check mutations"                    :
-           (i == 141) ? "C    - (C)heck experience"                 :
-           (i == 142) ? "D    - (D)issect a corpse"                 :
-           (i == 145) ? "I    - (I)nvoke power of wielded item"     :
-           (i == 150) ? "M    - (M)emorise a spell"                 :
-           (i == 155) ? "O    - View (O)ver-map of important sites" :
-           (i == 160) ? "P/R  - (P)ut on/(R)emove a ring"           :
-           (i == 165) ? "Q    - commit suicide/(Q)uit"              :
-           (i == 179) ? "V    - get (V)ersion information"          :
-           (i == 200) ? "W/T  - (W)ear/(T)ake off armour"           :
-           (i == 210) ? "X    - e(X)amine level map"                :
-           (i == 220) ? "Z    - (Z)ap a spell"                      :
-           (i == 240) ? ",/g  - pick something up"                  :
-           (i == 242) ? "./del- wait"                               :
-           (i == 250) ? "<>   - go up/down a staircase"             :
-           (i == 270) ? ";    - see what items you're standing on"  :
-           (i == 280) ? "\\    - check your item knowledge"         :
+           (i ==  10) ? "a    : use special ability"              :
+           (i ==  20) ? "d(#) : drop (exact quantity of) items"     :
+           (i ==  30) ? "e    : eat food"                    :
+           (i ==  40) ? "f    : fire first available missile"        :
+           (i ==  50) ? "i    : inventory listing"                :
+           (i ==  55) ? "m    : check skills"                       :
+           (i ==  60) ? "o/c  : open / close a door"              :
+           (i ==  65) ? "p    : pray"                             :
+           (i ==  70) ? "q    : quaff a potion"                   :
+           (i ==  80) ? "r    : read a scroll or book"          :
+           (i ==  90) ? "s    : search adjacent tiles"                           :
+           (i == 100) ? "t    : throw/shoot an item"         :
+           (i == 110) ? "v    : view item description"          :
+           (i == 120) ? "w    : wield an item"                   :
+           (i == 130) ? "x    : examine visible surroundings"        :
+           (i == 135) ? "z    : zap a wand"                       :
+           (i == 140) ? "A    : list abilities/mutations"                    :
+           (i == 141) ? "C    : check experience"                 :
+           (i == 142) ? "D    : dissect a corpse"                 :
+           (i == 145) ? "I    : invoke power of wielded item"     :
+           (i == 150) ? "M    : memorise a spell"                 :
+           (i == 155) ? "O    : view level map" :
+           (i == 160) ? "P/R  : put on / remove jewelry"           :
+           (i == 165) ? "Q    : quit without saving"              :
+           (i == 168) ? "S    : save game and exit"          :
+           (i == 179) ? "V    : version information"          :
+           (i == 200) ? "W/T  : wear / take off armour"           :
+           (i == 210) ? "X    : examine level map"                :
+           (i == 220) ? "Z    : cast a spell"                      :
+           (i == 240) ? ",/g  : pick up items"                  :
+           (i == 242) ? "./del: rest one turn"                               :
+           (i == 250) ? "</>  : ascend / descend a staircase"             :
+           (i == 270) ? ";    : examine occupied tile"  :
+           (i == 280) ? "\\    : check item knowledge"         :
 #ifdef WIZARD
-           (i == 290) ? "&    - invoke your Wizardly powers"        :
+           (i == 290) ? "&    : invoke your Wizardly powers"        :
 #endif
-           (i == 300) ? "+ &  - on map screen - fast scroll"        :
-           (i == 310) ? "!    - shout/command allies"               :
-           (i == 325) ? "^    - describe your religion"             :
-           (i == 337) ? "@    - character status"                   :
-           (i == 340) ? "#    - dump character to file <name>.txt"  :
-           (i == 350) ? "=    - adjust inventory/spell letters"     :
-           (i == 360) ? "\'    - wield item a, or switch to b"      :
+           (i == 300) ? "+/-  : scroll up/down [level map only]"        :
+           (i == 310) ? "!    : shout or command allies"               :
+           (i == 325) ? "^    : describe religion"             :
+           (i == 337) ? "@    : status"                   :
+           (i == 340) ? "#    : dump character to file <name>.txt"  :
+           (i == 350) ? "=    : reassign inventory/spell letters"     :
+           (i == 360) ? "\'    : wield item a, or switch to b"      :
 #ifdef MACROS
-           (i == 400) ? "`    - add macro"                          :
-           (i == 410) ? "~    - save macros"                        :
+           (i == 400) ? "`    : add macro"                          :
+           (i == 410) ? "~    : save macros"                        :
 #endif
-           (i == 420) ? "]    - list armour"                        :
-           (i == 425) ? "\"    - list jewelry"                      :
-           (i == 430) ? "Shift & direction   - long walk"           :
-           (i == 440) ? "Shift & 5 on keypad - rest 100 turns"      :
-           (i == 451) ? "S    - (S)ave your game and exit"          :
-           (i == 462) ? "Ctrl-P - see old messages"                 :
+           (i == 420) ? "]    : display worn armour"                        :
+           (i == 425) ? "\"    : display worn jewelry"                      :
+           (i == 430) ? "Shift & direction   : long walk"           :
+           (i == 440) ? "Shift & 5 on keypad : rest 100 turns"      :
+           (i == 462) ? "Ctrl-P : see old messages"                 :
 #ifdef PLAIN_TERM
-           (i == 475) ? "Ctrl-R - Redraw screen"                    :
+           (i == 475) ? "Ctrl-R : Redraw screen"                    :
 #endif
-           (i == 484) ? "Ctrl-A - toggle autopickup"                :
-           (i == 488) ? "Ctrl-X - Save game without query"          :
-           (i == 493) ? "Ctrl & dir - door; untrap; attack"
+           (i == 484) ? "Ctrl-A : toggle autopickup"                :
+           (i == 488) ? "Ctrl-X : Save game without query"          :
+           (i == 493) ? "Ctrl & dir : door; untrap; attack"
                       : "" );
 }                               // end command_string()

@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
     // has finished!)
     if (Options.sc_entries > 0)
     {
-        cprintf(" Best Crawlers -\n");
+        cprintf(" Best Crawlers -"EOL);
         hiscores_print_list();
         exit(1);
     }
@@ -886,7 +886,7 @@ static void input(void)
         mpr("Press '?' for a monster description.", MSGCH_PROMPT);
 
         struct dist lmove;
-        look_around(lmove);
+        look_around(lmove, true);
         break;
 
     case 's':
@@ -969,29 +969,19 @@ static void input(void)
 
     case 'C':
     case CMD_EXPERIENCE_CHECK:
-        strcpy(info, "You are a level ");
-        itoa(you.experience_level, st_prn, 10);
-        strcat(info, st_prn);
-        strcat(info, " ");
-        strcat(info, species_name(you.species));
-        strcat(info, " ");
-        strcat(info, you.class_name);
-        strcat(info, ".");
+        sprintf(info, "You are a level %d %s %s.", you.experience_level,
+            species_name(you.species), you.class_name);
         mpr(info);
 
-        if (you.experience_level == 27)
+        if (you.experience_level < 27)
         {
-            mpr( "I'm sorry, level 27 is as high as you can go." );
-            mpr( "With the way you've been playing, "
-                 "I'm surprised you got this far." );
-            break;
+            sprintf(info, "Level %d requires %d experience (%d more to go!)",
+                you.experience_level + 1, exp_needed(you.experience_level+2)+1,
+                (exp_needed(you.experience_level+2) - you.experience) + 1);
+            mpr(info);
         }
-        strcpy(info, "Your next level is at ");
-        itoa( exp_needed(you.experience_level + 2) + 1, st_prn, 10 );
-        strcat(info, st_prn);
-        strcat(info, " experience points.");
-        mpr(info);
         break;
+
 
     case '!':
     case CMD_SHOUT:

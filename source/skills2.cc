@@ -53,7 +53,7 @@ char *skills[50][5] = {
     {NULL},                     //  3- was: great swords {dlb}
     {"Axes", "Chopper", "Cleaver", "Hacker", "Axe Maniac"},
     {"Maces & Flails", "Basher", "Cruncher", "Smasher", "Shatterer"},   // 5
-    {"Polearms", "Spear-Bearer", "Phalangite", "Piker", "Halberdier"},
+    {"Polearms", "Spear-Bearer", "Phalangite", "Lancer", "Halberdier"},
     {"Staves", "Twirler", "Cruncher", "Smasher", "Skullbreaker"},
     {"Slings", "Slinger", "Vandal", "Whirler", "Very Crazy Person"},
     {"Bows", "Shooter", "Yeoman", "Archer", "Merry Person"},
@@ -1746,10 +1746,6 @@ void show_skills(void)
     int x;
     char strng[5] = "";
     char lcount;
-    int wbow = 0;               // warn about bow/throwing
-    int wxbow = 0;              // warn about xbow
-    int wsling = 0;             // warn about sling
-    int effSkill;               // max effective skill depends on Throwing
 
     _setcursortype(_NOCURSOR);
 
@@ -2107,6 +2103,10 @@ void wield_warning(bool newWeapon)
         wepstr = "this weapon.";
 
     int wepType  = you.inv_type[you.equip[EQ_WEAPON]];
+
+    // early out - no weapon
+    if (you.equip[EQ_WEAPON] == -1)
+         return;
 
     // early out - don't warn for non-weapons
     if (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS)

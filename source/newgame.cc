@@ -96,7 +96,7 @@
 bool class_allowed(unsigned char speci, int char_class);
 bool verifyPlayerName(void);
 void choose_weapon(void);
-void enterPlayerName(void);
+void enterPlayerName(bool blankOK);
 void give_basic_knowledge(int which_job);
 void give_basic_spells(int which_job);
 void give_last_paycheck(int which_job);
@@ -247,7 +247,7 @@ bool new_game(void)
 
     openingScreen();
 
-    enterPlayerName();
+    enterPlayerName(true);
 
 #ifdef LOAD_UNPACKAGE_CMD
     // Create the file name base
@@ -331,6 +331,20 @@ bool new_game(void)
         }
     }
 
+    strcpy(you.class_name, job_title(you.char_class));
+
+    // new: pick name _after_ race and class choices
+    if (you.your_name[0] == '\0')
+    {
+        clrscr();
+        sprintf(info, "You are a %s %s."EOL, species_name(you.species),
+            you.class_name);
+        cprintf(info);
+
+        enterPlayerName(false);
+    }
+
+
 // ************ round-out character statistics and such ************
 
     species_stat_init(you.species);     // must be down here {dlb}
@@ -345,7 +359,6 @@ bool new_game(void)
 
     jobs_stat_init(you.char_class);
     jobs_hpmp_init(you.char_class);
-    strcpy(you.class_name, job_title(you.char_class));
     give_last_paycheck(you.char_class);
     give_items_skills();
 
@@ -2103,7 +2116,7 @@ void openingScreen(void)
 ********************************************** */
 
     cprintf("Hello, welcome to Dungeon Crawl " VERSION "!");
-    cprintf(EOL "(c) Copyright 1997-2000 Linley Henzell");
+    cprintf(EOL "(c) Copyright 1997-2001 Linley Henzell");
     cprintf(EOL "Please consult crawl.txt for instructions and legal details."
             EOL);
 
@@ -2111,7 +2124,7 @@ void openingScreen(void)
 }                               // end openingScreen()
 
 
-void enterPlayerName(void)
+void enterPlayerName(bool blankOK)
 {
     // temporary 'til copyover to you.your_name {dlb}
     char name_entered[kNameLen];
@@ -2128,6 +2141,8 @@ void enterPlayerName(void)
         // prompt for a new name if current one unsatisfactory {dlb}:
         if (!acceptable_name)
         {
+            if (blankOK)
+                cprintf(EOL "Press <Enter> to answer this after race and class are chosen."EOL);
             cprintf(EOL "What is your name today? ");
 
 #if defined(LINUX)
@@ -2145,6 +2160,8 @@ void enterPlayerName(void)
         // verification begins here {dlb}:
         if (you.your_name[0] == '\0')
         {
+            if (blankOK)
+                return;
             cprintf(EOL "That's a silly name!" EOL);
             acceptable_name = false;
         }
@@ -2157,8 +2174,7 @@ void enterPlayerName(void)
         // ... having the name "bones" of course! The problem comes from
         // the fact that bones files would have the exact same filename
         // as level files for a character named "bones".  -- bwr
-        else if (strcmp(you.your_name, "bones") == 0
-                 || strlen(you.your_name) == 0)
+        else if (stricmp(you.your_name, "bones") == 0)
         {
             cprintf(EOL "That's a silly name!" EOL);
             acceptable_name = false;
@@ -2183,40 +2199,25 @@ void enterPlayerName(void)
 // was a bit of prefixing like the player_* functions in player.cc. -- bwr
 bool verifyPlayerName(void)
 {
-    unsigned int i;             // loop variable
-
-    for (i = 0; i < strlen(you.your_name); i++)
+     for (int i = 0; i < strlen(you.your_name); i++)
     {
-        // This is an easy way to avoid "bad" characters
-        // doesn't this clobber the Mac checking below? {dlb}
-        // ... It will clobber anything outside of [a-zA-Z0-9], so,
-        // yes, the other two checks are pretty much redundant. -- bwr
+#if MAC
+        // the only bad character on Macs is the path seperator
+        if (you.your_name[i] == ':')
+        {
+            cprintf(EOL "No colons, please." EOL);
+            return false;
+        }
+#else
+        // for other systems we'll be super-weak and rule out
+        // everything but alpha-numeric characters
         if (!isalnum(you.your_name[i]))
         {
             cprintf(EOL "No non-alphanumerics, please." EOL);
             return false;
         }
-
-        // colon is Mac path seperator
-        // $$$ shouldn't DOS and Unix path seperators be illegal?
-        // ... that's why I chose isalnum() above, it will avoid
-        // all possible shell/system characters (it's ultra-conservative,
-        // but it should avoid any problems). -- bwr
-#ifdef MAC
-        else if (you.your_name[i] == ':')
-        {
-            cprintf(EOL "No colons, please." EOL);
-            return false;
-        }
 #endif
-        else if (you.your_name[i] == '?')
-        {
-            cprintf(EOL "No question marks, please." EOL);
-            return false;
-        }
-    }
-
-    return true;
+    }     return true;
 }                               // end verifyPlayerName()
 
 static void give_random_scroll( int slot )

@@ -106,49 +106,11 @@ char in_a_shop(char shoppy, char id[4][50])
 
     clrscr();
     int itty = 0;
-    char sh_name[40];
 
-    strcpy(sh_name, "Welcome to ");
+    sprintf(info, "Welcome to %s!", shop_name(env.shop_x[shoppy],
+        env.shop_y[shoppy]));
+    shop_print(info, 20);
 
-    char str_pass[50];
-
-    make_name( env.keeper_name[shoppy][0], env.keeper_name[shoppy][1],
-               env.keeper_name[shoppy][2], 3, str_pass );
-
-    strcat(sh_name, str_pass);
-    strcat(sh_name, "'s ");
-
-    if (shop_type == SHOP_WEAPON_ANTIQUE || shop_type == SHOP_ARMOUR_ANTIQUE)
-        strcat( sh_name, "Antique " );
-
-    strcat(sh_name, (shop_type == SHOP_WEAPON
-                     || shop_type == SHOP_WEAPON_ANTIQUE) ? "Weapon" :
-                    (shop_type == SHOP_ARMOUR
-                     || shop_type == SHOP_ARMOUR_ANTIQUE) ? "Armour" :
-
-                    (shop_type == SHOP_JEWELLERY)         ? "Jewellery" :
-                    (shop_type == SHOP_WAND)              ? "Magical Wand" :
-                    (shop_type == SHOP_BOOK)              ? "Book" :
-                    (shop_type == SHOP_FOOD)              ? "Food" :
-                    (shop_type == SHOP_SCROLL)            ? "Magic Scroll" :
-                    (shop_type == SHOP_GENERAL_ANTIQUE) ? "Assorted Antiques" :
-                    (shop_type == SHOP_DISTILLERY)        ? "Distillery" :
-                    (shop_type == SHOP_GENERAL)           ? "General Store"
-                                                          : "Bug");
-
-
-    if (shop_type != SHOP_GENERAL
-        && shop_type != SHOP_GENERAL_ANTIQUE && shop_type != SHOP_DISTILLERY)
-    {
-        int temp = (env.shop_x[ shoppy ] + env.shop_y[ shoppy ]) % 4;
-        strcat( sh_name, (temp == 0) ? " Shoppe" :
-                         (temp == 1) ? " Boutique" :
-                         (temp == 2) ? " Emporium"
-                                     : " Shop" );
-    }
-
-    strcat(sh_name, "!");
-    shop_print(sh_name, 20);
     more3();
     shop_init_id(shoppy, shop_id);
 
@@ -236,13 +198,10 @@ char in_a_shop(char shoppy, char id[4][50])
     shop_print("Type letter to buy item, x/Esc to leave, ?/* for inventory, v to examine.", 23);
 
   purchase:
-    strcpy(sh_name, "You have ");
-    itoa(you.gold, gold_p, 10);
-    strcat(sh_name, gold_p);
-    strcat(sh_name, " gold piece");
-    strcat(sh_name, (you.gold == 1) ? "." : "s.");
+    sprintf(info, "You have %d gold piece%s.", you.gold,
+        (you.gold == 1)?"":"s");
 
-    shop_print(sh_name, 19);
+    shop_print(info, 19);
 
     shop_print("What would you like to purchase?", 20);
 
@@ -1496,3 +1455,60 @@ void shop(void)
 
     redraw_screen();
 }                               // end shop()
+
+char *shop_name(int sx, int sy)
+{
+    static char sh_name[40];
+    char str_pass[40];
+    int shoppy;
+
+    // paranoia
+    if (grd[sx][sy] != DNGN_ENTER_SHOP)
+        return "";
+
+    // find shop
+    for(shoppy = 0; shoppy < 5; shoppy ++)
+    {
+        if (env.shop_x[shoppy] == sx && env.shop_y[shoppy] == sy )
+            break;
+    }
+
+    int shop_type = env.shop_type[shoppy];
+
+    make_name( env.keeper_name[shoppy][0], env.keeper_name[shoppy][1],
+               env.keeper_name[shoppy][2], 3, str_pass );
+
+    strcat(sh_name, str_pass);
+    strcat(sh_name, "'s ");
+
+    if (shop_type == SHOP_WEAPON_ANTIQUE || shop_type == SHOP_ARMOUR_ANTIQUE)
+        strcat( sh_name, "Antique " );
+
+    strcat(sh_name, (shop_type == SHOP_WEAPON
+                     || shop_type == SHOP_WEAPON_ANTIQUE) ? "Weapon" :
+                    (shop_type == SHOP_ARMOUR
+                     || shop_type == SHOP_ARMOUR_ANTIQUE) ? "Armour" :
+
+                    (shop_type == SHOP_JEWELLERY)         ? "Jewellery" :
+                    (shop_type == SHOP_WAND)              ? "Magical Wand" :
+                    (shop_type == SHOP_BOOK)              ? "Book" :
+                    (shop_type == SHOP_FOOD)              ? "Food" :
+                    (shop_type == SHOP_SCROLL)            ? "Magic Scroll" :
+                    (shop_type == SHOP_GENERAL_ANTIQUE) ? "Assorted Antiques" :
+                    (shop_type == SHOP_DISTILLERY)        ? "Distillery" :
+                    (shop_type == SHOP_GENERAL)           ? "General Store"
+                                                          : "Bug");
+
+
+    if (shop_type != SHOP_GENERAL
+        && shop_type != SHOP_GENERAL_ANTIQUE && shop_type != SHOP_DISTILLERY)
+    {
+        int temp = sx + sy % 4;
+        strcat( sh_name, (temp == 0) ? " Shoppe" :
+                         (temp == 1) ? " Boutique" :
+                         (temp == 2) ? " Emporium"
+                                     : " Shop" );
+    }
+
+    return sh_name;
+}

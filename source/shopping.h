@@ -30,4 +30,11 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ,
 void shop(void);
 
 
+
+// last updated 06mar2001 {gdl}
+/* ***********************************************************************
+ * called from: items direct
+ * *********************************************************************** */
+char *shop_name(int sx, int sy);
+
 #endif

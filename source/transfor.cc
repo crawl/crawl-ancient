@@ -37,7 +37,7 @@ bool remove_equipment(FixedVector < char, 8 > &remove_stuff)
     {
         unwield_item(you.equip[EQ_WEAPON]);
         you.equip[EQ_WEAPON] = -1;
-        mpr("You are empty handed.");
+        mpr("You are empty-handed.");
     }
 
     for (int i = EQ_CLOAK; i < EQ_LEFT_RING; i++)

@@ -14,6 +14,7 @@
 
 
 #include "externs.h"
+#include "direct.h"
 
 
 // last updated 24may2000 {dlb}
@@ -44,11 +45,12 @@ char cast_greatest_healing(void);
 char cast_lesser_healing(void);
 
 
-// last updated 24may2000 {dlb}
+// last updated 06mar2001 {gdl}
 /* ***********************************************************************
  * called from: ability - spell - spells3 - spells4
  * *********************************************************************** */
-char spell_direction(struct dist &spelld, struct bolt &pbolt);
+char spell_direction(struct dist &spelld, struct bolt &pbolt,
+    int restrict = DIR_NONE);
 
 
 // last updated 24may2000 {dlb}

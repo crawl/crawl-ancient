@@ -39,7 +39,7 @@ enum
      FEATURE_LABYRINTH   = 0x02,
      FEATURE_HELL        = 0x04,
      FEATURE_ABYSS       = 0x08,
-     FEATURE_PANDEMONIUM = 0x10,
+     FEATURE_PANDEMONIUM = 0x10
 };
 
 // These variables need to become part of the player struct

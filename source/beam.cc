@@ -702,7 +702,7 @@ bool check_mons_magres(struct monsters * monster, int pow)
 }                               // end check_mons_magres()
 
 // Enchants all monsters in player's sight.
-void mass_enchantment(int wh_enchant, int pow)
+bool mass_enchantment(int wh_enchant, int pow)
 {
     int i = 0;                  // loop variable {dlb}
     int p;                      // loop variable {dlb}
@@ -770,7 +770,7 @@ void mass_enchantment(int wh_enchant, int pow)
                         {
                         case ENCH_FEAR:
                             simple_monster_message(monster,
-                                                   " looks frightened.");
+                                                   " looks frightened!");
                             break;
                         case ENCH_CONFUSION:
                             simple_monster_message(monster,
@@ -795,6 +795,8 @@ void mass_enchantment(int wh_enchant, int pow)
 
     if (!msgGenerated)
         canned_msg(MSG_NOTHING_HAPPENS);
+
+    return msgGenerated;
 }                               // end mass_enchantmenet()
 
 /*
@@ -1433,7 +1435,7 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
         if (inv_number == you.equip[EQ_WEAPON])
         {
             you.equip[EQ_WEAPON] = -1;
-            mpr("You are empty handed.");
+            mpr("You are empty-handed.");
         }
     }
 
@@ -1515,7 +1517,6 @@ static int bounce(float &step1, float &step2, float w1, float w2, float &n1, flo
 {
     int bounceType = 0;
     int bounceCount = 1;
-    float w2frac;
 
     if (topBlocked) bounceType = B_HORZ;
     if (sideBlocked) bounceType = B_VERT;
@@ -2350,7 +2351,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
                     beam.msgGenerated = true;
                 break;
             case MON_UNAFFECTED:
-                if (simple_monster_message(mon, " is unaffected."));
+                if (simple_monster_message(mon, " is unaffected."))
                     beam.msgGenerated = true;
                 break;
             default:

@@ -2649,7 +2649,7 @@ void ability_increase(void)
     more();
     mesclr();
 
-    mpr("Increase Strength, Intelligence, or Dexterity? ", MSGCH_PROMPT);
+    mpr("Increase (S)trength, (I)ntelligence, or (D)exterity? ", MSGCH_PROMPT);
 
   get_key:
     keyin = getch();
@@ -3419,7 +3419,7 @@ char *job_title(int which_job)
     case JOB_VENOM_MAGE:
         return "Venom Mage";
     case JOB_CHAOS_KNIGHT:
-        return "Knight of Chaos";
+        return "Chaos Knight";
     case JOB_TRANSMUTER:
         return "Transmuter";
     case JOB_HEALER:
@@ -3481,7 +3481,7 @@ char *class_abbrev( unsigned char which_class )
 {
     switch (which_class)
     {
-    case JOB_AIR_ELEMENTALIST:    return "AI";
+    case JOB_AIR_ELEMENTALIST:    return "AE";
     case JOB_ASSASSIN:            return "As";
     case JOB_BERSERKER:           return "Be";
     case JOB_CONJURER:            return "Cj";

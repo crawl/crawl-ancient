@@ -107,8 +107,6 @@ static short str_to_channel( const string &str )
 
 static int str_to_weapon( const string &str )
 {
-    int  ret;
-
     if (str == "shortsword" || str == "short sword")
         return (WPN_SHORT_SWORD);
     else if (str == "mace")
@@ -177,7 +175,7 @@ void read_init_file(void)
     Options.always_greet  = false;
     Options.easy_open     = true;
     Options.easy_armour   = true;
-    Options.easy_butcher  = true;
+    Options.easy_butcher  = false;
     Options.easy_confirm  = CONFIRM_SAFE_EASY;
     Options.weapon        = WPN_UNKNOWN;
     Options.random_pick   = false;
@@ -477,6 +475,22 @@ void read_init_file(void)
             if (SysEnv.crawl_dir)
                 strncpy(SysEnv.crawl_dir, field.c_str(), kNameLen);
         }
+        else if (key == "race")
+        {
+            if (field.length() != 1)
+                fprintf(stderr, "Unknown race choice: %s\n", field.c_str());
+            else
+            // set to first character of field
+                Options.race = field[0];
+        }
+        else if (key == "class")
+        {
+            if (field.length() != 1)
+                fprintf(stderr, "Unknown class choice: %s\n", field.c_str());
+            else
+            // set to first character of field
+                Options.cls = field[0];
+        }
     }
 
     fclose(f);
@@ -507,7 +521,7 @@ void get_system_environment(void)
 // parse args, filling in Options and game environment as we go.
 // returns true if no unknown or malformed arguments were found.
 
-static const char *cmd_ops[] = { "scores", "name", "race", "class",
+static char *cmd_ops[] = { "scores", "name", "race", "class",
     "pizza", "plain", "dir", "rc" };
 const int num_cmd_ops = 8;
 bool arg_seen[num_cmd_ops];

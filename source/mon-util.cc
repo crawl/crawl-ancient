@@ -1022,3 +1022,52 @@ bool ms_always_fire(int monspell)
 
     return always;
 }
+
+// use of variant:
+// 0 : She is tap dancing.
+// 1 : It seems she is tap dancing. (lower case pronoun)
+// 2 : Her sword explodes!          (upper case possessive)
+// 3 : It sticks to her sword!      (lower case possessive)
+// ... as needed
+
+char *mons_pronoun(int mon_type, int variant)
+{
+    int gender = 0;         // its,  1 = male, 2=female
+
+    if (mon_type >= MONS_TERENCE && mon_type <= MONS_BORIS)
+    {
+        switch(mon_type)
+        {
+            case MONS_JESSICA:
+            case MONS_PSYCHE:
+            case MONS_JOSEPHINE:
+            case MONS_AGNES:
+            case MONS_MAUD:
+            case MONS_LOUISE:
+            case MONS_FRANCIS:
+            case MONS_MARGERY:
+            case MONS_EROLCHA:
+                gender = 2;
+            default:
+                gender = 1;
+        }
+    }
+
+    switch(variant)
+    {
+        case 0:
+            return (gender==0)?"It":
+                   (gender==1)?"He":"She";
+        case 1:
+            return (gender==0)?"it":
+                   (gender==1)?"he":"she";
+        case 2:
+            return (gender==0)?"Its":
+                   (gender==1)?"His":"Her";
+        case 3:
+            return (gender==0)?"its":
+                   (gender==1)?"his":"her";
+    }
+
+    return "";
+}

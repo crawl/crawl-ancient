@@ -272,7 +272,7 @@ void deck_of_cards(unsigned char which_deck)
             {
                 you.equip[EQ_WEAPON] = -1;
 
-                mpr("You are now empty handed.");
+                mpr("You are now empty-handed.");
             }
 
             burden_change();

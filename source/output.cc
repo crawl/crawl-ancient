@@ -382,7 +382,7 @@ void print_stats(void)
             else
             {
                 textcolor(LIGHTGREY);
-                cprintf("Empty hands");
+                cprintf("Nothing wielded");
             }
         }
         wield_change = false;

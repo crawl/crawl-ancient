@@ -4269,7 +4269,7 @@ void describe_spell(int spelled)
             "shield, but its density (and therefore stopping power) "
             "depends upon the caster's skill with Ice Magic. The "
             "disc is controlled by the caster's mind and thus will "
-            "not conflict with the weilding of a two-handed weapon. ";
+            "not conflict with the wielding of a two-handed weapon. ";
         break;
 
     case SPELL_STONESKIN:
