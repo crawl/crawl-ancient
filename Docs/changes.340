@@ -15,6 +15,7 @@
 =============
 Contributors:
 =============
+Gordon Lipford    (lipford@ca.ibm.com)
 Linley Henzell    (linley.henzell@student.adelaide.edu.au)
 Jesse Jones       (jesjones@halcyon.com)
 Daniel Ligon      (makmorn@qis.net)
@@ -23,6 +24,281 @@ Brian Robinson    (bcr19374@pegasus.cc.ucf.edu)
 Brent Ross        (bwross@csclub.uwaterloo.ca)
 Josh Fishman      (fishman@cs.nyu.edu)
 Don Brodale       (lar@bway.net)
+
+
+ 29.july.2000 (Jesse Jones)
+
+    * Changed NUM_SPELL_TYPES to 14 (from 32767!).
+    * Misc very minor CodeWarrior tweaks.
+    * Moved the source files into a new "Source" directory.
+    * Switched to using bounds checked array classes for most arrays.
+    * Fixed several places that were indexing past the end of arrays.
+    * Renamed environ::sh_x, sh_y, sh_greed, sh_type, and sh_level so they start with shop.
+    * Renamed MNG NON_MONSTER, MNST MAX_MONSTERS, ITEMS MAX_ITEMS, ING NON_ITEM,
+      CLOUDS MAX_CLOUDS, CNG EMPTY_CLOUD, and NTRAPS MAX_TRAPS.
+    * Fixed end_game so that it works with filenames longer than 6 characters.
+    * Disabled USE_WARPER_BETTER_WEAPON.
+    * Fixed misspelled "jewelry".
+    * Removed SPELL_SWARM from the Book of Summonings.
+    * Added Josh's "pick appropriate conjuration spellbook" code.
+    * Added Gordon's Manticore fix.
+    * Added the lnchType fix to the monster throw code.
+    * Added Gordon's revised title changes.
+
+28.july.2000 (Gordon Lipford)
+
+    all changes are GPL'd by Gordon Lipford (c) 2000
+    in the event that the original Crawl license is found to be non-GPL,
+    special permission to use the changes with Crawl is hereby granted.
+
+    Bug Fixes:
+    * Manticores will now use their spikes.  They weren't being given any
+      inventory in place_monster(),  and then the throwing routine checked
+      for inventory before letting them throw..
+    * Player::level_change(): fixed up hit point penalty for halfings and
+      gnomes (incomplete coding of HP adjustment).  Rewrote hp and mp gained
+      due to level so that it couldn't happen again.
+    * item_use::wield_weapon(): smoothed out Translocator 'save' vs distortion
+      effects when wielding/unwielding.
+    * smoothed out hp bonus for fighting skill (in integer math,  always
+      divide _last_).
+    * enchant weapon scrolls will affect missiles now (no branding though),
+      if they aren't already heavily enchanted - same as weapons.
+
+    Changes:
+    * Completely reworked throwing for players _and_ monsters.  Monsters are
+      not nearly as good as players for the most part,  but can still be
+      rather scary.   Hit Dice are (approximately) substituted for player skill,
+      and monsters of high intelligence are much better shots now.
+    - targeting any missile weapon benefits from high dex and throwing skill.
+      In fact, effective bow/xbow/sling skill is limited to twice one's
+      throwing.  A warning is given on the skills screen if this limit is
+      hampering the player.
+    - darts, slings, and crossbows are easy to use.  Bows and thrown weapons
+      are harder,  but bows improve a _lot_ with skill.
+    - thrown weapons generally suck,  but not horribly badly - they're still
+      useful in a pinch if you have decent strength and throwing skill.
+    - Strength has a different effect on the damage done from missiles:
+      - Slings and bows benefit from strength,  up to a point determined by
+        the launcher's magical damage bonus.  The launcher damage bonus is
+        _not_ added into the damage calculation.
+      - Thrown weapons benefit directly from strength,  albeit at a lower rate.
+      - Crossbows do not benefit from strength at all.
+      - Crossbows benefit directly from magical launcher damage bonuses.
+
+    * changed some of the class titles
+    * updated display_mutations() so that more than 20 mutations will
+      cause a -more- prompt and screen clear.
+
+28.july.2000 (Michal Valvoda)
+
+    Changes in mutations::void display_mutations(void)
+    - added innate abilities and weirdness to "Mutations & Other weirdness"
+      screen and renamed it to "Innate abilities, weirdness & mutations".
+    Innate abilities are colored LIGHTBLUE
+
+
+22.july.2000 (Josh Fishman)
+
+    all changes are GPL'd by Josh Fishman (c) 2000
+    in the event that the original Crawl license is found to be non-GPL,
+    special permission to use the changes with Crawl is hereby granted.
+
+    * AppHdr.h:
+    added #defines:
+
+    USE_SKILL_POOL_DRAIN
+    - comment out to remove LRH's old skill-pool drain code, which makes the
+      xp-pool drain faster when it is very full
+
+    USE_WARPER_BETTER_WEAPON
+    USE_WARPER_SPELL_BEND
+    - start warpers with a {dagger/quarterstaff} of Distortion, or with the
+      spell Bend, depending on which is commented out. the former is
+      particularly evil for ogre-mages, since their default weapon can't dissect.
+
+    * abl-show.cc:
+    - Changed some `you breathe foo's to `you exhale foo's.
+
+    Made transformation, species & mutation breath weapons mutually exclusive
+    (so a naga with the `breathe flame' mutation can't spit poison). THIS IS
+    NOT TOTALLY DONE, but somewhat better than before.
+
+    + Added failure probabilities for some (not yet used) Invocations.
+
+    * beam.cc:
+
+    + Added BEAM_LAVA for player spell Bolt of Magma
+    + N.B.: in some places hellfire and lava were conflated; I tried to
+      separate them, but may have introduced bugs.
+
+
+    * describe.cc:
+
+    + Many changes to monster descriptions.
+    + Chunk-of-flesh description now depends on your race, but not enough.
+      For example, carnivores ought to like non-rotten meat.
+    + Spell descriptions:
+    - added Bolt of Magma
+    - changed Freeze, Sleep and Mass Sleep to reflect new `Slow Snakes' code
+    - Shadow Creatures has old description, to reflect its school
+    - Summon Large Mammal -> Call Canine Familiar
+    + Some changes to god descriptions
+
+
+    * dungeon.cc:
+
+    + Fixed "Entering..." bug (line 7215 or so)
+
+
+    * it_use2.cc:
+
+    + Added ZAP_MAGMA (for Bolt of Magma)
+    + Fixed POT_MIGHT effect
+
+
+    * it_use3.cc:
+
+    + Fixed staff_spell() (wasn't letting player pick first spell sometimes).
+    + STAFF_SMITING no longer gives you a one-choice menu, it just does it.
+    + Non-Spell Staves no longer say "This staff has no spells in it." when
+      (I)nvoked, they say "Nothing appears to happen.".
+    + Less abusive message for putting on non-jewellery (with free spelling
+      error!)
+    + Jewellery messages now feature "put on" in some places where "wear" was.
+
+    * mon-data.h:
+
+    + Added flags M_COLD_BLOOD and M_WARM_BLOOD where IMO appropriate.
+
+
+    * mon-pick.cc:
+
+    + Removed MONS_RAKSHASA_FAKE from generateable monster lists.
+    + Added Wargs, Wolves and Bears to generateable monster lists.
+    - Wargs in Orc Mines
+    - Wolves & Bears in the Lair
+    + Moved mon_entry[] from within function to outside; made init code
+      into its own function.
+
+
+    * monstuff.cc:
+
+    + Monster wounds messages: mon HPs left: was 1/4-1/3 => "horribly", now 1/6-1/3
+    + (Glowing) Shapeshifters are no longer allowed to use Mage and Priest
+      special powers, but still get their shape's physical abilities. So a
+      shapeshifter in the form of an orc priest can't smite you, but one in
+      dragon form could breathe fire.
+    + Some spelling & grammar fixes to mon_speaks; MUCH MORE WORK NEEDED HERE!
+
+
+    * newgame.cc:
+
+    + Implemented USE_WARPER_BETTER_WEAPON and USE_WARPER_SPELL_BEND
+
+    + Stalkers:
+    - skills: no more THROWING or DARTS, now SPELLCASTING and ENCHANTMENTS
+    - book: Book of Assassination
+    + Draconians:
+    - No longer allowed to be Enchanters -- they so suck at Enchantments
+    - ... but now allowed to be Transmuters, since they're good at Transmigrations
+    + Kobolds now allowed to be Death Knights.
+    + Halflings now allowed to be Crusaders.
+    + Removed strange random 1st level spell code -- now always give players the
+      1st spell in their spell-books.
+
+
+    * player.cc:
+
+    + Players transformed into Dragons and Air now protected from poison
+      (as monsters of those types are immune).
+    + Players transformed into Air no longer get air-magic boost, but still do
+      get earth-magic penalty.
+    + Centaurs and Spriggans don't lose their fast-running w/ BLADE_HANDS any more.
+
+
+    * religion.cc:
+
+    + simple_god_message() simplified
+    + Reduced number of colors in god_speaks().
+    + Changed some gain/lose piety messages to reflect what power was gained/lost.
+    + Changed penence messages to reflect that gods don't summon, they send.
+
+
+    * skills.cc:
+
+    + Sludge Elves now bad at Enchantments, good at Transmigrations, worse
+      at all forms of Elemental Magic (was experimental, not sure if it
+      was discussed on crawl-dev). FIXME: change back?
+
+
+    * spell.cc:
+
+    + Added SPELL_BOLT_OF_MAGMA.
+    + Spell type code now uses bitfields.
+
+
+    * spells.cc:
+
+    + Spell type code now uses bitfields.
+
+
+    * spells2.cc:
+
+    + Weapon branding code now works (brand_weapon()).
+    - er, except for what may be a bug at the end: `power << 1' => `power * 2'
+    + Ozocubu's Refrigeration and Freeze can now slow cold-blooded creatures.
+    + summon_things now correctly pluralizes.
+
+
+    * spells4.cc:
+
+    + Added case TRAN_AIR to your_hand().
+    + apply_area_one_neighboring_square() no longer gives unlimited trys.
+    + cast_summon_large_mammal() no longer generates hogs or sheep, now just
+      Jackals, Hounds and War Dogs.
+    + cast_sticks_to_snakes() gives MONS_SNAKE for low-level large object snakes
+      (as opposed to MONS_BROWN_SNAKEs).
+    + sleep_monsters() is now only called from hibernation-spells:
+    - Now cold resistance negates.
+    - `Slow Snakes' (cold blood => may be slowed as well as put to sleep)
+    + Fragmentation & Shatter:
+    - Statues and magic traps no longer destroyed
+    + Shuggoth Seeds: seed now requires MH_NORMAL, warm-blooded host
+
+
+    * spl-book.cc:
+
+    + Books of Minor Magic changed, hopefully for the better!
+    - BoMM-II man still need some help; Ozocubu's Armour replacement?
+    + Book of Flames loses BOLT_OF_FIRE, gains BOLT_OF_MAGMA
+    + Book of Frost gains SLEEP, loses FREEZING_CLOUD
+    + Book of Ice gets MASS_SLEEP and FREEZING_CLOUD
+    + Changes to Enchantment books
+    + New Book of Assassination
+    + spellbook_template() copying loop used to count from 1 to SPELLBOOK_SIZE,
+      I made it count from 0 (to fix the "can't-get-to-first-spell-in-staff" bug).
+
+
+    * spl-data.h:
+
+    + Spell structure now has one field for "level" (instead of 3 identical ones).
+    + Spell schools are now encoded as bits in an unsigned int instead of in a
+      special structure.
+    + Some spells moved back to their old schools (from my (bad) recent changes).
+
+
+    * spl-util.h & spl-util.cc:
+
+    + Changes to use new, simple spell structure.
+
+
+    * view.cc:
+
+    + Removed "if (do_updates) mpr("Stealth checks...");" from DEBUG builds
+      (it's too annoying).
+    + Enum'd monster noises.
+
 
 21.jun.2000 (Michal Valvoda)
      Changes:

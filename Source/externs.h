@@ -1,0 +1,349 @@
+/*
+ *  File:       externs.h
+ *  Summary:    Fixed size 2D vector class that asserts if you do something bad.
+ *  Written by: Linley Henzell
+ *
+ *  Change History (most recent first):
+ *
+ *         <3>     7/29/00    JDJ   Renamed sh_x, sh_y, sh_greed, sh_type, sh_level so
+ *                                  they start with shop.
+ *         <2>     7/29/00    JDJ   Switched to using bounds checked array classes.
+ *                                  Made a few char arrays unsigned char arrays.
+ */
+
+#ifndef EXTERNS_H
+#define EXTERNS_H
+
+#include "defines.h"
+#include "enum.h"
+#include "FixAry.h"
+#include "message.h"
+
+
+extern char info[200];               // defined in acr.cc {dlb}
+extern char st_prn[20];              // defined in acr.cc {dlb}
+extern char str_pass[80];            // defined in acr.cc {dlb}
+extern unsigned char show_green;     // defined in view.cc {dlb}
+extern FixedVector<unsigned char, 1000> mcolour;  // defined in mon-util.cc -- w/o this screen redraws *really* slow {dlb}
+
+#ifdef SHORT_FILE_NAMES
+    const int kNameLen = 30;
+    const int kFileNameLen = 6;
+    const int kFileNameSize = 5 + kFileNameLen;
+
+#else
+    #ifdef SAVE_DIR_PATH
+        // file name length has to be able to cover full paths -- bwross
+        const int kNameLen = 30;
+        const int kFileNameLen = 250;
+        const int kFileNameSize = 5 + kFileNameLen;
+    #else
+        const int kNameLen = 30;
+        const int kFileNameLen = 28;
+        const int kFileNameSize = 5 + kFileNameLen;
+    #endif
+#endif
+
+// Length of Path + File Name
+const int kPathLen = 256;
+
+// This value is used to mark that the current berserk is free from
+// penalty (Xom's granted or from a deck of cards).
+#define NO_BERSERK_PENALTY    -1
+
+
+struct dist
+{
+    char move_x;
+    char move_y;
+    char target_x;
+    char target_y;
+    char prev_targ;
+    long nothing;
+};
+
+
+struct bolt
+{
+    int range, type, colour, flavour, source_x, source_y;
+    int damage, ench_power, hit, bx, by, target_x;
+    int target_y;
+    char wand_id;
+    char aim_down;
+    char thing_thrown;
+    char move_x, move_y;
+    int trac_targ;
+    int tracer_mons;
+    int trac_hit_tamed;
+    int trac_hit_mons;
+    int tracer;
+    int trac_targ_x, trac_targ_y;
+
+    /* If a monster fired it, which monster? */
+    int beam_source;
+
+    char beam_name[40];
+};
+
+
+struct player
+{
+  char turn_is_over; // flag signaling that player has performed a timed action
+
+  unsigned char prev_targ;
+  char your_name[kNameLen];
+
+  unsigned char species;
+  char run_x;
+  char run_y;
+  char running;
+
+  char special_wield;
+  char deaths_door;
+  char shock_shield;
+
+  double elapsed_time;        // total amount of elapsed time in the game
+
+  unsigned char synch_time;   // amount to wait before calling handle_time
+
+  unsigned char disease;
+
+  char max_level;
+
+  int x_pos;
+  int y_pos;
+
+  int hunger;
+  FixedVector<char, NUM_EQUIP> equip;
+
+  int hp;
+  int hp_max;
+  int base_hp;                // this is what is affected by necrophages etc
+  int base_hp2;
+
+  int magic_points;
+  int max_magic_points;
+  int base_magic_points;
+  int base_magic_points2;
+
+  char strength;
+  char intel;
+  char dex;
+  char max_strength;
+  char max_intel;
+  char max_dex;
+
+  char redraw_hunger;
+  char hunger_state;
+
+  char redraw_burden;
+  char redraw_hit_points;
+  char redraw_magic_points;
+  char redraw_strength;
+  char redraw_intelligence;
+  char redraw_dexterity;
+  char redraw_experience;
+  char redraw_armor_class;    // remember that the AC shown = 10 - AC
+
+  char redraw_gold;
+  char redraw_evasion;
+
+  unsigned char hit_points_regeneration;
+  unsigned char magic_points_regeneration;
+
+  unsigned long experience;
+  int experience_level;
+  unsigned int gold;
+  int char_class;
+  char class_name[30];
+  char speed;
+  int time_taken;
+
+  char shield_blocks;         // number of shield blocks since last action
+  // this field is transient, its not saved
+  // out but is set to zero at the start of the
+  // input loop.
+
+  FixedVector<unsigned char, ENDOFPACK> inv_class;
+  FixedVector<unsigned char, ENDOFPACK> inv_type;
+  FixedVector<unsigned char, ENDOFPACK> inv_plus;
+  FixedVector<unsigned char, ENDOFPACK> inv_plus2;
+  FixedVector<unsigned char, ENDOFPACK> inv_dam;
+  FixedVector<unsigned char, ENDOFPACK> inv_ident;
+  FixedVector<unsigned char, ENDOFPACK> inv_colour;
+  FixedVector<int, ENDOFPACK> inv_quantity;
+  char num_inv_items;                    // number of items carried
+
+  int burden;
+  char burden_state;
+  FixedVector<unsigned char, 25> spells;
+  char spell_no;
+  unsigned char char_direction;          //
+
+  unsigned char pet_target;
+
+  int your_level; // offset by one (-1 == 0, 0 == 1, etc.) for display
+
+  FixedVector<int, NUM_DURATIONS> duration; // durational things. Why didn't I do this for haste etc right from the start? Oh well.
+
+  int invis;
+  int conf;
+  int paralysis;
+  int slow;
+  int haste;
+  int might;
+  int levitation;
+
+  int poison;
+  int rotting;
+  int berserker;
+
+  int exhausted;                      // fatigue counter for berserk
+
+  int berserk_penalty;                // pelnalty for moving while berserk
+
+  FixedVector<unsigned char, 30> attribute;        // see ATTRIBUTES in enum.h
+
+  char is_undead;                     // see UNDEAD_STATES in enum.h
+
+  char delay_doing;
+  char delay_t;
+
+  FixedVector<unsigned char, 50>  skills;
+  FixedVector<unsigned char, 50>  practise_skill;
+  FixedVector<unsigned int, 50>  skill_points;
+  int exp_available;
+
+  FixedArray<unsigned char, 5, 50> item_description;
+  FixedVector<unsigned char, 50> unique_items;
+  FixedVector<unsigned char, 50> unique_creatures;
+  char level_type;
+
+  char where_are_you;
+
+  FixedVector<unsigned char, 30> branch_stairs;
+
+  char religion;
+  unsigned char piety;
+  unsigned char gift_timeout;
+  FixedVector<unsigned char, 100> penance;
+
+  FixedVector<unsigned char, 100> mutation;
+  FixedVector<unsigned char, 100> demon_pow;
+  unsigned char magic_contamination;
+
+  char confusing_touch;
+  char sure_blade;
+
+  FixedVector<unsigned char, 50> had_item;
+
+  unsigned char betrayal;
+  unsigned char normal_vision;        // how far the species gets to see
+  unsigned char current_vision;       // current sight radius (cells)
+};
+
+extern struct player you;
+
+
+struct monsters
+{
+    int type;
+    int hit_points;
+    int max_hit_points;
+    unsigned int hit_dice;
+    int armor_class;
+    int evasion;
+    unsigned int speed;
+    unsigned int speed_increment;
+    unsigned char x;
+    unsigned char y;
+    unsigned char target_x;
+    unsigned char target_y;
+    FixedVector<int, 8> inv;
+    unsigned int behavior;
+    unsigned int number;               // #heads (hydra), etc.
+    unsigned int monster_foe;
+    FixedVector<unsigned int, 3> enchantment;
+    unsigned int enchantment1;         //
+};
+
+
+struct item_struct // argh! why a struct of arrays and not an array of structs? {dlb}
+{
+  FixedVector<unsigned char, MAX_ITEMS> base_type; /* basic class (eg weapon) */
+  FixedVector<unsigned char, MAX_ITEMS> sub_type;  /* type within that class (eg dagger) */
+  FixedVector<unsigned char, MAX_ITEMS> pluses;        /* hit+, charges */
+  FixedVector<unsigned char, MAX_ITEMS> pluses2;       /* dam+ etc */
+  FixedVector<unsigned char, MAX_ITEMS> special;       /* special stuff */
+  FixedVector<unsigned int, MAX_ITEMS> quantity;       /* multiple items */
+  FixedVector<unsigned char, MAX_ITEMS> x;             /* x-location */
+  FixedVector<unsigned char, MAX_ITEMS> y;             /* y-location */
+  FixedVector<unsigned char, MAX_ITEMS> colour;        /* colour */
+  FixedVector<unsigned char, MAX_ITEMS> id;            /* identification */
+  FixedVector<unsigned int, MAX_ITEMS> link;           /* next item in stack */
+};
+
+
+struct environ
+{
+    item_struct it[1];
+    FixedVector<monsters, MAX_MONSTERS> mons;
+    FixedArray<unsigned char, GXM, GYM> grid;
+    FixedArray<unsigned char, GXM, GYM> mgrid;
+    FixedArray<int, GXM, GYM> igrid;
+    FixedArray<unsigned char, GXM, GYM> map;
+    FixedArray<unsigned char, GXM, GYM> cgrid;
+    FixedArray<unsigned int, 19, 19> show;
+    FixedArray<unsigned char, 19, 19> show_col;
+    unsigned char rock_colour;
+    unsigned char floor_colour;
+
+    FixedVector<unsigned char, MAX_CLOUDS> cloud_x;
+    FixedVector<unsigned char, MAX_CLOUDS> cloud_y;
+    FixedVector<unsigned char, MAX_CLOUDS> cloud_type;
+    FixedVector<int, MAX_CLOUDS> cloud_decay;
+    unsigned char cloud_no;
+
+    FixedArray<unsigned char, 5, 3> keeper_name;
+    FixedVector<unsigned char, 5> shop_x;
+    FixedVector<unsigned char, 5> shop_y;
+    FixedVector<unsigned char, 5> shop_greed;
+    FixedVector<unsigned char, 5> shop_type;
+    FixedVector<unsigned char, 5> shop_level;
+
+    FixedVector<unsigned char, MAX_TRAPS> trap_type;
+    FixedVector<unsigned char, MAX_TRAPS> trap_x;
+    FixedVector<unsigned char, MAX_TRAPS> trap_y;
+    FixedVector<int, 20> mons_alloc;
+    int trap_known;
+};
+
+extern struct environ env;
+
+
+struct ghost_struct
+{
+    char name[20];
+    FixedVector<unsigned char, 20> values;
+};
+
+
+extern struct ghost_struct ghost;
+
+
+extern void (*viewwindow) (char, bool);
+
+
+struct system_environment
+{
+    char *crawl_name;
+    char *crawl_pizza;
+    char *crawl_rc;
+    char *crawl_dir;
+};
+
+
+extern system_environment sys_env;
+
+
+#endif // EXTERNS_H
