@@ -201,10 +201,10 @@ void mons_trap(struct monsters *monster)
         if (!silenced(monster->x, monster->y)
                 && !silenced(you.x_pos, you.y_pos))
         {
-            strcpy(info, "You hear");
-            if (!monsterNearby)
-                strcat(info, " in the distance");
-            strcat(info, "a loud \"Zot\"!");
+            if (monsterNearby)
+                strcpy(info, "You hear a loud \"Zot\"!");
+            else
+                strcpy(info, "You hear a distant \"Zot\"!");
             mpr(info);
         }
 

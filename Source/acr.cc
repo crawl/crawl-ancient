@@ -1007,11 +1007,10 @@ static void input(void)
 
         strncpy(name_your, you.your_name, kFileNameLen);
         name_your[kFileNameLen] = 0;
-        strcpy(info, "Char dump");
         if (dump_char(0, name_your) == 1)
-            strcat(info, "ed successfully.");
+            strcpy(info, "Char dumped successfully.");
         else
-            strcat(info, " unsuccessful! Sorry about that.");
+            strcat(info, "Char dump unsuccessful! Sorry about that.");
         mpr(info);
         break;
 

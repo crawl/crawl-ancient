@@ -451,12 +451,23 @@ void apply_area_within_radius(int (*func) (char, char, int, int),
 {
     int ix, iy;
     int sq_radius = radius * radius;
+    int sx, sy, ex, ey;       // start and end x, y - bounds checked
 
-    //jmf: FIXME: randomly start from other quadrants, like raise_dead?
-    //            or maybe start from center (x,y) and work out?
-    for (ix = 0; ix < GXM; ix++)
+    // begin x,y
+    sx = x - radius;
+    sy = y - radius;
+    if (sx < 0) sx = 0;
+    if (sy < 0) sy = 0;
+
+    // end x,y
+    ex = x + radius;
+    ey = y + radius;
+    if (ex > GXM) ex = GXM;
+    if (ey > GYM) ey = GYM;
+
+    for (ix = sx; ix < ex; ix++)
     {
-        for (iy = 0; iy < GYM; iy++)    // was "iy < 80" but that is WRONG {dlb}
+        for (iy = sy; iy < ey; iy++)
         {
             if (distance(x, y, ix, iy) <= sq_radius)
                 func(ix, iy, pow, ctype);
@@ -3290,15 +3301,7 @@ void cast_stoneskin(int pow)
 
 int torment_monsters(char x, char y, int pow, int garbage)
 {
-    int mon = mgrd[x][y];
-
-    // Shouldn't there be some magic resistance checks in here? -- bwr
-
-    if (mon == NON_MONSTER)
-        return 0;
-
-    struct monsters *monster = &menv[mon];
-
+    // is player?
     if (x == you.x_pos && y == you.y_pos)
     {
         if (you.is_undead || you.mutation[MUT_TORMENT_RESISTANCE])
@@ -3311,6 +3314,14 @@ int torment_monsters(char x, char y, int pow, int garbage)
 
         return 1;
     }
+
+    // check for monster in cell
+    int mon = mgrd[x][y];
+
+    if (mon == NON_MONSTER)
+        return 0;
+
+    struct monsters *monster = &menv[mon];
 
     if (monster->type == -1)
         return 0;

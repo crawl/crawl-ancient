@@ -38,6 +38,11 @@
 
 void summon_butter(void);
 
+// torment_monsters is called with power 0 because torment is
+// UNRESISTABLE except for being undead or having torment
+// resistance!   Even if we used maximum power of 1000,  high
+// level monsters and characters would save too often.  (GDL)
+
 void torment(char tx, char ty)
 {
 #ifdef USE_NEW_TORMENT_CODE

@@ -247,11 +247,6 @@
 // LRH's skill-pool drainer for high skill pools
 // #define USE_SKILL_POOL_DRAIN
 
-//jmf: Disable gordon lipford's new LOS -- new as of 22jun2000
-// Use the old LOS code.  Warning: the old code does not support
-// variable radius lightsources, or wraithform/passwall.
-// #define USE_OLD_LOS
-
 // ====================== -----------------------------------------------------
 //jmf: end of new defines
 // ====================== -----------------------------------------------------

@@ -1772,7 +1772,7 @@ int burden_change(void)
 
         // this message may have to change, just testing {dlb}
         if (old_burdenstate != you.burden_state)
-            mpr("You possessions no longer seem quite so burdensome.");
+            mpr("Your possessions no longer seem quite so burdensome.");
     }
     else if (you.burden < (max_carried * 11) / 12)
     // (you.burden < max_carried - 500)
