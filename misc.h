@@ -1,3 +1,4 @@
+#include "externs.h"
 
 void destroy_item(int dest);
 void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigned char chy, unsigned char ch_col);

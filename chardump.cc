@@ -4,9 +4,14 @@
 #include <sys/types.h>
 #endif
 
+#ifdef MAC
+#include <stat.h>
+#else
+#include <sys/stat.h>
+#endif
+
 #include <string.h>
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -27,6 +32,61 @@
 #include "shopping.h"
 #include "version.h"
 
+#include "debug.h"
+#include "new.h"
+
+#include "chardump.h"
+
+#if MAC
+class CArray
+{
+
+public:
+       ~CArray();
+        CArray(int height, int width);
+        char* operator[](int row);
+        bool IsValid() const {
+          return mData != NULL;
+        }// pretty lame, but can't count on exceptions?
+
+private:
+        CArray(const CArray& rhs);
+        CArray& operator=(const CArray& rhs);
+
+private:
+        int mWidth;
+        int mHeight;
+        char* mData;
+};
+
+CArray::~CArray()
+{
+        delete [] mData;
+}
+
+CArray::CArray(int height, int width)
+{
+        ASSERT(width >= 0);
+        ASSERT(height >= 0);
+
+        mWidth = width;
+        mHeight = height;
+
+        mData = new (nothrow) char[width*height];
+}
+
+
+inline char* CArray::operator[](int row)
+{
+        ASSERT(row >= 0);
+        ASSERT(row < mHeight);
+        ASSERT(mData != nil);
+
+        return mData + row*mWidth;
+}
+#endif  // MAC
+
+
 
 /*
 Creates a disk record of a character.
@@ -35,7 +95,17 @@ char dump_char(char show_prices, char fname [30])
 {
         char st_prn [15];
 
+#ifdef MAC
+        // Macs don't handle large arrays on the stack very well...
+        CArray dmp(400, 120);
+        if (!dmp.IsValid()) {
+                mpr("Not enough memory.");
+                return -1;
+        }
+#else
         char dmp [400] [120]; // second is length of line
+#endif
+
 
         int lin = 0;
 

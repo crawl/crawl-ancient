@@ -20,10 +20,15 @@
 #include <time.h>
 #endif
 
+#ifdef MAC
+#include <stat.h>
+#else
+#include <sys/stat.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h>
 
 #include "externs.h"
 #include "enum.h"
@@ -45,12 +50,12 @@ extern char wield_change;
 char new_game(void)
 {
 int handle;
-char your_nam [50];
+char your_nam [kNameLen];
 int p;
 char keyn;
 char weap_skill = 0;
 
-char char_fil [50];
+char char_fil [kFileNameSize];
 
 int i;
 
@@ -89,7 +94,7 @@ you[0].ep_incr_regen = 0;
 
 
 char j = 0;
-char char_name [30];
+char char_name [kNameLen];
 
 for (i = 0; i < 30; i ++)
 {
@@ -123,6 +128,11 @@ echo();
 getstr(your_nam);
 noecho();
 #endif
+
+#ifdef MAC
+getstr(your_nam, sizeof(your_nam));
+#endif
+
 /*#ifdef DOS_TERM
 gets(your_nam);
 #endif
@@ -144,11 +154,19 @@ unsigned int glorpo = 0;
 
 for (glorpo = 0; glorpo < strlen(your_nam); glorpo ++)
 {
- if (your_nam [glorpo] == ' ')
+#ifdef MAC
+ if (your_nam [glorpo] == ':')                  // colon is Mac path seperator
+ {      // $$$ shouldn't DOS and Unix path seperators be illegal?
+  cprintf(EOL"No colons, please."EOL);
+  goto name_q;
+ }
+#else
+ if (your_nam [glorpo] == ' ')  // spaces are OK in Mac file names
  {
   cprintf(EOL"No spaces, please."EOL);
   goto name_q;
  }
+#endif
  if (your_nam [glorpo] == '?')
  {
   cprintf(EOL"No question marks, please."EOL);
@@ -157,12 +175,12 @@ for (glorpo = 0; glorpo < strlen(your_nam); glorpo ++)
 }
 
 
-strcpy(you[0].your_name, your_nam);
+strncpy(you[0].your_name, your_nam, kNameLen);
 
-strncpy(char_name, your_nam, 6);
+strncpy(char_name, your_nam, kFileNameLen);
 
 strcpy(char_fil, "");
-strncat(char_fil, you[0].your_name, 6);
+strncat(char_fil, you[0].your_name, kFileNameLen);
 strcat(char_fil, ".sav");
 
 
@@ -2450,25 +2468,25 @@ if (you[0].clas == JOB_PRIEST || you[0].clas == JOB_PALADIN) set_id(OBJ_POTIONS,
 you[0].spell_levels = you[0].skills [SK_SPELLCASTING] * 2 - (you[0].spells [0] != 210) - (you[0].spells [1] != 210);
 
 
-        char del_file [55];
+        char del_file [kFileNameSize];
 
 
-char glorpstr [40];
-strncpy(glorpstr, you[0].your_name, 6);
-
-// glorpstr [strlen(glorpstr)] = 0;
-// This is broken. Length is not valid yet! We have to check if we got a
-// trailing NULL; if not, write one:
-if (strlen(you[0].your_name) > 5)    /* is name 6 chars or more? */
-        glorpstr[6] = (char) NULL;   /* if so, char 7 should be NULL */
-
-strncpy(glorpstr, you[0].your_name, 6);
+char glorpstr [kFileNameSize];
+strncpy(glorpstr, you[0].your_name, kFileNameLen);
 
 // glorpstr [strlen(glorpstr)] = 0;
 // This is broken. Length is not valid yet! We have to check if we got a
 // trailing NULL; if not, write one:
-if (strlen(you[0].your_name) > 5)    /* is name 6 chars or more? */
-        glorpstr[6] = (char) NULL;   /* if so, char 7 should be NULL */
+if (strlen(you[0].your_name) > kFileNameLen-1)    /* is name 6 chars or more? */
+        glorpstr[kFileNameLen] = (char) NULL;   /* if so, char 7 should be NULL */
+
+strncpy(glorpstr, you[0].your_name, kFileNameLen);
+
+// glorpstr [strlen(glorpstr)] = 0;
+// This is broken. Length is not valid yet! We have to check if we got a
+// trailing NULL; if not, write one:
+if (strlen(you[0].your_name) > kFileNameLen-1)    /* is name 6 chars or more? */
+        glorpstr[kFileNameLen] = (char) NULL;   /* if so, char 7 should be NULL */
 
 /*int fi = 0;
 char st_prn [6];
@@ -2525,7 +2543,7 @@ strcat(extens, hbjh);
 corr_level [2] = you[0].where_are_you + 97;
 corr_level [3] = 0; / * null-terminate it * /
 strcpy(cha_fil, "");
-strncat(cha_fil, you[0].your_name, 6);
+strncat(cha_fil, you[0].your_name, kFileNameLen);
 strcat(cha_fil, ".");
 if (was_a_labyrinth == 1) strcat(cha_fil, "lab"); / * temporary level * /
  else strcat(cha_fil, extens);

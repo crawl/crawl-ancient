@@ -25,8 +25,13 @@
 #include <unistd.h>
 #endif
 
-#include <string.h>
+#ifdef MAC
+#include <stat.h>
+#else
 #include <sys/stat.h>
+#endif
+
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -177,7 +182,7 @@ static int load_int (char **pp, int digits) {
 void load (unsigned char stair_taken, char moving_level, char was_a_labyrinth, char old_level, char want_followers, char just_made_new_lev, char where_were_you2) {
   int j = 0;
   int i, count_x, count_y;
-  char cha_fil [80];
+  char cha_fil [kFileNameSize];
 
   char corr_level [4];
 
@@ -226,11 +231,12 @@ void load (unsigned char stair_taken, char moving_level, char was_a_labyrinth, c
   strcat(corr_level, hbjh);
   corr_level [2] = you[0].where_are_you + 97;
   corr_level [3] = 0; /* null-terminate it */
-  strncpy(cha_fil, you[0].your_name, 6);
-  cha_fil [6] = 0;
+  strncpy(cha_fil, you[0].your_name, kFileNameLen);
+  cha_fil [kFileNameLen] = 0;
   strcat(cha_fil, ".");
   if (you[0].level_type!=0) strcat(cha_fil, "lab"); /* temporary level */
   else strcat(cha_fil, corr_level);
+
 
   you[0].prev_targ=MHITNOT;
 
@@ -786,7 +792,7 @@ out_of_foll :
 
 
 void save_level (int level_saved, char was_a_labyrinth, char where_were_you) {
-  char cha_fil[20];
+  char cha_fil[kFileNameSize];
   char extens[5];
   int count_x, count_y;
   int i, j;
@@ -798,8 +804,8 @@ void save_level (int level_saved, char was_a_labyrinth, char where_were_you) {
   strcat(extens, hbjh);
   extens [2] = where_were_you + 97;
   extens [3] = 0; /* null-terminate it */
-  strncpy(cha_fil, you[0].your_name, 6);
-  cha_fil [6] = 0;
+  strncpy(cha_fil, you[0].your_name, kFileNameLen);
+  cha_fil [kFileNameLen] = 0;
   strcat(cha_fil, ".");
   if (was_a_labyrinth == 1) strcat(cha_fil, "lab"); /* temporary level */
   else strcat(cha_fil, extens);
@@ -977,11 +983,11 @@ void save_level (int level_saved, char was_a_labyrinth, char where_were_you) {
 
 
 void save_game (char leave_game) {
-  char char_f [15];
+  char char_f [kFileNameSize];
   int i, j;
 
-  strncpy(char_f, you[0].your_name, 6);
-  char_f [6] = 0;
+  strncpy(char_f, you[0].your_name, kFileNameLen);
+  char_f [kFileNameLen] = 0;
   strcat(char_f, ".sav");
 #ifdef DOS
   strupr(char_f);
@@ -1209,11 +1215,11 @@ void save_game (char leave_game) {
 
 
 void restore_game () {
-  char char_f [15];
+  char char_f [kFileNameSize];
   int i, j;
 
-  strncpy(char_f, you[0].your_name, 6);
-  char_f [6] = 0;
+  strncpy(char_f, you[0].your_name, kFileNameLen);
+  char_f [kFileNameLen] = 0;
   strcat(char_f, ".sav");
 #ifdef DOS
   strupr(char_f);
@@ -1400,7 +1406,7 @@ void save_ghost () {
   if ((you[0].your_level<=1) || (you[0].is_undead!=0)) return;
   char corr_level[10];
   char hbjh [5];
-  char cha_fil [40];
+  char cha_fil [kFileNameSize];
   corr_level[0]=0;
   if (you[0].your_level<10) strcpy(corr_level, "0");
   itoa(you[0].your_level, hbjh, 10);

@@ -3,8 +3,12 @@
 #ifdef DOS
 #include <conio.h>
 #endif
+
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+
+#include "debug.h"
 
 #include "direct.h"
 #include "externs.h"
@@ -20,6 +24,77 @@
 #include "spell.h"
 
 #define DEBUG
+
+
+#if DEBUG_BUILD && WIN
+        #define MyDebugBreak() _asm {int 3}
+#endif
+
+
+#if DEBUG_BUILD
+static void BreakStrToDebugger(const char* mesg)
+{
+#if MAC
+        unsigned char s[256];
+
+        int len = strlen(mesg);
+        if (len > 255)
+        len = 255;
+
+        s[0] = (Byte) len;
+        BlockMoveData(mesg, s+1, len);
+
+        DebugStr(s);
+
+#elif WIN
+        MSG msg;   // remove pending quit messages so the message box displays
+        bool quitting = (bool) ::PeekMessage(&msg, nil, WM_QUIT, WM_QUIT, PM_REMOVE);
+
+        char text[2500];
+
+        int flags = MB_YESNO +  // want abort and ignore buttons (too bad we can't ditch the retry button...)
+                    MB_ICONERROR +  // display the icon for errors
+                    MB_TASKMODAL +  // don't let the user do anything else in the app
+                    MB_SETFOREGROUND;// bring the app to the front
+
+        strcpy(text, mesg);
+        strcat(text, "\nDo you want to drop into the debugger?");
+
+        int result = MessageBoxA(nil, text, "Debug Break", flags);
+        if (result == IDYES)
+                MyDebugBreak();
+
+        if (quitting)
+                PostQuitMessage(msg.wParam);
+
+#else
+        fprintf(stderr, "%s\n", mesg);
+        abort();
+#endif
+}
+#endif
+
+
+#if DEBUG_BUILD
+void AssertFailed(const char* expr, const char* file, int line)
+{
+        char mesg[512];
+
+#if MAC
+        sprintf(mesg, "ASSERT(%s) in %s at line %d failed.", expr, file, line);
+
+#else
+        const char* fileName = file + strlen(file);// strip off path
+        while (fileName > file && fileName[-1] != '\\')
+                --fileName;
+
+        sprintf(mesg, "ASSERT(%s) in '%s' at line %d failed.", expr, fileName,
+line);
+#endif
+
+        BreakStrToDebugger(mesg);
+}
+#endif
 
 /*
 Some debugging functions, accessable through keys like %, $, &, ) etc when

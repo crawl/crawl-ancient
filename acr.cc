@@ -24,9 +24,14 @@ Sub-Crawl 1.0
 #include <sys/types.h>
 #endif
 
+#ifdef MAC
+#include <stat.h>
+#else
+#include <sys/stat.h>
+#endif
+
 #include <fcntl.h>
 #include <stdio.h>
-#include <sys/stat.h>
 
 #include "externs.h"
 #include "enum.h"
@@ -181,6 +186,11 @@ int main(int argc, char *argv[])
         lincurses_startup();
 #endif
 
+#ifdef MAC
+        init_mac();
+#endif
+
+
 #ifdef MACROS
         macro_init();
 #endif
@@ -228,6 +238,10 @@ int main(int argc, char *argv[])
 #ifdef LINUX
     lincurses_shutdown();
 #endif
+#ifdef MAC
+        deinit_mac();
+#endif
+
 
 #ifdef USE_EMX
         deinit_emx();
@@ -397,6 +411,30 @@ void input(void)
                 case '6': you[0].run_x = 1; you[0].run_y = 0; you[0].running = 2; break;
                 case '5': you[0].run_x = 0; you[0].run_y = 0; you[0].running = 100; break;
 
+                case '&':
+                          //cdl
+                          mpr( "0");
+                          mpr( "1");
+                          mpr( "2");
+                          mpr( "3");
+                          mpr( "4");
+                          mpr( "5");
+                          mpr( "6");
+                          mpr( "7");
+                          mpr( "8");
+                          mpr( "9");
+                          mpr( "10");
+                          mpr( "11");
+                          mpr( "12");
+                          mpr( "13");
+                          mpr( "14");
+                          mpr( "15");
+                          mpr( "16");
+                          mpr( "17");
+                          mpr( "18");
+                          mpr( "19");
+                          mpr( "20");
+                          break;
                 case '<': up_stairs(); break;
                 case '>': down_stairs(0, you[0].your_level); break;
                 case 'o': open_door(100, 100); break;
@@ -539,9 +577,9 @@ void input(void)
 //  case '^': disarm_trap(); break;
 
                 case '#':
-                        char name_your [30];
-                        strncpy(name_your, you[0].your_name, 6);
-                        name_your [6] = 0;
+                        char name_your [kNameLen];
+                        strncpy(name_your, you[0].your_name, kFileNameLen);
+                        name_your [kFileNameLen] = 0;
                         if (dump_char(0, name_your) == 1)
                                 strcpy(info, "Char dumped successfully.");
                 else
@@ -1810,7 +1848,6 @@ void initialise(void)
 
 /* sets up a new game*/
         int newc = new_game();
-
         if (newc == 0) restore_game();
 
         calc_hp();

@@ -1,5 +1,5 @@
 #ifndef MACRO_C
-# undef getch()
+# undef getch
 # define getch() getchm()
 #endif
 

@@ -1,0 +1,1512 @@
+category skills
+preface  sk
+         fighting
+         short blades
+         long swords
+         great swords
+         axes
+         maces flails
+         polearms
+         staves
+         slings
+         bows
+         crossbows
+         darts
+         throwing
+         armour
+         dodging
+         stealth
+         stabbing
+         shields
+         traps doors
+         unarmed combat
+25       spellcasting
+         conjurations
+         enchantments
+         summonings
+         necromancy
+         translocations
+         transmigration
+         divinations
+         fire magic
+         ice magic
+         air magic
+         earth magic
+         poison magic
+         invocations
+
+
+category durations
+preface  dur
+         liquid flames
+         icy armour
+         repel missiles
+         prayer
+         regeneration
+         vorpal blade
+         fire brand
+         ice brand
+         lethal infusion
+         swiftness
+         insulation
+         stonemail
+         controlled flight
+         teleport
+         control teleport
+         poison weapon
+         resist poison
+         breath weapon
+         transformation
+         death channel
+         deflect missiles
+
+
+category attributes
+preface  attr
+         resist lightning
+         spec air
+         spec earth
+         control teleport
+         walk slowly
+         transformation
+         card countdown
+         card table
+         num demonic powers
+
+category transformations
+preface  tran
+         none
+         spider
+         blade hands
+         statue
+         ice beast
+         dragon
+         lich
+
+category equipment
+preface  eq
+         weapon
+         cloak
+         helmet
+         gloves
+         boots
+         shield
+         body armour
+         left ring
+         right ring
+         amulet
+
+
+
+category species
+preface  sp
+1        human
+         elf
+         high elf
+         grey elf
+         deep elf
+         sludge elf
+         hill dwarf
+         mountain dwarf
+         halfling
+         hill orc
+         kobold
+         mummy
+         naga
+         gnome
+         ogre
+         troll
+         ogre mage
+         red draconian
+         white draconian
+         green draconian
+         golden draconian
+         grey draconian
+         black draconian
+         purple draconian
+         mottled draconian
+         pale draconian
+         unk0 draconian
+         unk1 draconian
+         unk2 draconian
+         centaur
+         demigod
+         spriggan
+         minotaur
+         demonspawn
+         ghoul
+         kenku
+
+category job
+preface  job
+         fighter
+         wizard
+         priest
+         thief
+         gladiator
+         necromancer
+         paladin
+         assassin
+         berserker
+         ranger
+         conjurer
+         enchanter
+         fire elementalist
+         ice elementalist
+         summoner
+         air elementalist
+         earth elementalist
+         crusader
+         death knight
+         venom mage
+         chaos knight
+         transmuter
+         healer
+24       reaver
+         stalker
+         monk
+         warper
+
+category wands
+preface  wand
+         flame
+         frost
+         slowing
+         hasting
+         magic darts
+         healing
+         paralysis
+         fire
+         cold
+         confusion
+         invisibility
+         digging
+         fireball
+         teleportation
+         lightning
+         polymorph other
+         enslavement
+         draining
+         random effects
+         disintegration
+
+category potions
+preface  pot
+         healing
+         heal wounds
+         speed
+         might
+         gain strength
+         gain dexterity
+         gain intelligence
+         levitation
+         poison
+         slowing
+         paralysis
+         confusion
+         invisibility
+         porridge
+         degeneration
+         decay
+         water
+         experience
+         magic
+         restore abilities
+         strong poison
+         berserk rage
+         cure mutation
+         mutation
+
+category foods
+preface  food
+         meat ration
+         bread ration
+         pear
+         apple
+         choko
+         honeycomb
+         royal jelly
+         snozzcumber
+         pizza
+         apricot
+         orange
+         banana
+         strawberry
+         rambutan
+         lemon
+         grape
+         sultana
+         lychee
+         beef jerky
+         cheese
+         sausage
+         chunk
+
+category scrolls
+preface  scr
+         identify
+         teleportation
+         fear
+         noise
+         remove curse
+         detect curse
+         summoning
+         enchant weapon i
+         enchant armour
+         torment
+         random uselessness
+         curse weapon
+         curse armour
+         immolation
+         blinking
+         paper
+         magic mapping
+         forgetfulness
+         acquirement
+         enchant weapon ii
+         vorpalise weapon
+         recharging
+         enchant weapon iii
+
+category jewellery
+preface  ring
+         regeneration
+         protection
+         protection from fire
+         poison resistance
+         protection from cold
+         strength
+         slaying
+         see invisible
+         invisibility
+         hunger
+         teleportation
+         evasion
+         sustain abilities
+         sustenance
+         dexterity
+         intelligence
+         wizardry
+         magical power
+         levitation
+         life protection
+         protection from magic
+         fire
+         ice
+         teleport control
+preface  amu
+35       rage
+         maintain speed
+         clarity
+         warding
+         resist corrosion
+         the gourmand
+         conservation
+         controlled flight
+         inaccuracy
+         resist mutation
+
+category miscellany
+preface  misc
+         bottled efreet
+         crystal ball of seeing
+         air elemental fan
+         lamp of fire
+         stone of earth elementals
+         lantern of shadows
+         horn of geryon
+         box of beasts
+         deck of wonders
+         deck of summonings
+         crystal ball of energy
+         empty ebony casket
+         crystal ball of fixation
+         disc of storms
+         rune of zot
+         deck of tricks
+         deck of power
+         portable altar of nemelex
+
+category books
+preface  book
+         minor magic i
+         minor magic ii
+         minor magic iii
+         conjurations i
+         conjurations ii
+         flames
+         frost
+         invocations
+         fire
+         ice
+         surveyances
+         spatial translocations
+         enchantments
+         poisonings
+         storms and fire
+         death
+         hinderance
+         changes
+         transfigurations
+         useful magic
+         war chants
+         clouds
+         healing
+         necromancy
+         necronomicon
+         summonings
+         charms
+         demonology
+         air
+         sky
+         divinations
+         warp
+         envenomations
+         annihilations
+         unlife
+         destruction
+         control
+         mutations
+         tukima
+         geomancy
+         earth
+         manual
+         wizardry
+         power
+
+category staves
+preface  staff    # too long :(
+         wizardry
+         power
+         fire
+         cold
+         poison
+         energy
+         death
+         conjuration
+         enchantment
+         summoning i
+         smiting
+         summoning ii
+         destruction i
+         destruction ii
+         destruction iii
+         destruction iv
+         warding
+         discovery
+         demonology
+25       air
+         earth
+         channeling
+
+category named weapons
+preface  nwpn          # bleah!
+181      singing sword
+         wrath of trog
+         scythe of curses
+         mace of variability
+         glaive of prune
+         sceptre of torment
+         sword of zonguldrok
+         sword of cerebov
+         staff of dispater
+         sceptre of asmodeus
+         sword of power
+         knife of accuracy
+         staff of olgreb
+         vampires tooth
+         staff of wucad mu
+
+category weapons
+preface  wpn
+         club
+         mace
+         flail
+         dagger
+         morningstar
+         short sword
+         long sword
+         great sword
+         scimitar
+         hand axe
+         battleaxe
+         spear
+         halberd
+         sling
+         bow
+         crossbow
+         hand crossbow
+         glaive
+         quarterstaff
+         scythe
+         giant club
+         giant spiked club
+         eveningstar
+         quick blade
+         katana
+         executioners axe
+         double sword
+         triple sword
+         hammer
+         ancus
+         whip
+         sabre
+         demon blade
+         demon whip
+
+category armour
+preface  arm
+         robe
+         leather armour
+         ring mail
+         scale mail
+         chain mail
+         splint mail
+         banded mail
+         plate mail
+         shield
+         cloak
+         helmet
+         gloves
+         boots
+         buckler
+         large shield
+         dragon hide
+         troll hide
+         crystal plate mail
+         dragon armour
+         troll leather armour
+         ice dragon hide
+         ice dragon armour
+         steam dragon hide
+         steam dragon armour
+         mottled dragon hide
+         mottled dragon armour
+         storm dragon hide
+         storm dragon armour
+         gold dragon hide
+         gold dragon armour
+         animal skin
+         swamp dragon hide
+         swamp dragon armour
+
+
+category monsters
+preface  mons
+         giant ant
+         giant bat
+         centaur
+         red devil
+         ettin
+         fungus
+         goblin
+         hound
+         imp
+         jackal
+         killer bee
+         killer bee larva
+         manticore
+         necrophage
+         orc
+         phantom
+         quasit
+         rat
+         scorpion
+         tunneling worm
+         ugly thing
+         fire vortex
+         worm
+         large abomination
+         yellow wasp
+         small zombie
+         angel
+         giant beetle
+         cyclops
+         dragon
+         two headed ogre
+         fiend
+         giant spore
+         hobgoblin
+         ice beast
+         jelly
+         kobold
+         lich
+         mummy
+         guardian naga
+         ogre
+         plant
+         queen bee
+         rakshasa
+         snake
+         troll
+         unseen horror
+         vampire
+         wraith
+         small abomination
+         yak
+         big zombie
+         orc warrior
+         kobold demonologist
+         orc wizard
+         orc knight
+         worm tail
+         wyvern
+         big kobold
+         giant eyeball
+         wight
+         oklob plant
+         wolf spider
+         shadow
+         hungry ghost
+         eye of draining
+         butterfly
+         wandering mushroom
+         efreet
+         brain worm
+         giant orange brain
+         boulder beetle
+         flying skull
+         hell hound
+         minotaur
+         ice dragon
+         slime creature
+         freezing wraith
+         fake rakshasa
+         great orb of eyes
+         hellion
+         rotting devil
+         tormentor
+         reaper
+         soul eater
+         hairy devil
+         ice devil
+         blue devil
+         beast
+         iron devil
+98       glowing shapeshifter
+         shapeshifter
+         giant mite
+         steam dragon
+         very ugly thing
+         orc sorceror
+         hippogriff
+         griffon
+         hydra
+         small skeleton
+         large skeleton
+         hell knight
+         necromancer
+         wizard
+         orc priest
+         orc high priest
+         human
+         gnoll
+         clay golem
+         wood golem
+         stone golem
+         iron golem
+         crystal golem
+         toenail golem
+         mottled dragon
+         earth elemental
+         fire elemental
+         air elemental
+         ice fiend
+         shadow fiend
+         brown snake
+         giant lizard
+         spectral warrior
+         pulsating lump
+         storm dragon
+         yaktaur
+         death yak
+         rock troll
+         stone giant
+         flayed ghost
+         bumblebee
+         redback
+         insubstantial wisp
+         vapour
+         ogre mage
+         spiny worm
+         dancing weapon
+         titan
+         golden dragon
+         elf
+         lindworm
+         elephant slug
+         war dog
+         grey rat
+         green rat
+         orange rat
+         black snake
+         sheep
+         ghoul
+         hog
+         giant mosquito
+         giant centipede
+         iron troll
+         naga
+         fire giant
+         frost giant
+         firedrake
+         shadow dragon
+         yellow snake
+         grey snake
+         deep troll
+         giant blowfly
+         red wasp
+         swamp dragon
+         swamp drake
+         soldier ant
+         hill giant
+         queen ant
+         ant larva
+         giant frog
+         giant brown frog
+         spiny frog
+         blink frog
+220      white imp
+         lemure
+         ufetubus
+         manes
+         midge
+         neqoxec
+         orange demon
+         hellwing
+         smoke demon
+         ynoxinul
+         executioner
+         green death
+         blue death
+         balrug
+         cacodemon
+         demonic crawler
+         sun demon
+         shadow imp
+         shadow demon
+         lorocyproca
+         shadow wraith
+         giant amoeba
+         giant slug
+         giant snail
+         spatial vortex
+         pit fiend
+         boring beetle
+         gargoyle
+         metal gargoyle
+         molten gargoyle
+         program bug
+         mnoleg
+         lom lobon
+         cerebov
+         gloorx vloq
+260      naga mage
+         naga warrior
+         orc warlord
+         deep elf soldier
+         deep elf fighter
+         deep elf knight
+         deep elf mage
+         deep elf summoner
+         deep elf conjurer
+         deep elf priest
+         deep elf high priest
+         deep elf demonologist
+         deep elf annihilator
+         deep elf sorceror
+         deep elf death mage
+         ooze
+         azure jelly
+         death ooze
+         acid blob
+         royal jelly
+         terence
+         jessica
+         ijyb
+         sigmund
+         blork the orc
+         edmund
+         psyche
+         erolcha
+         donald
+         urug
+         michael
+         joseph
+         anita
+         erica
+         josephine
+         harold
+         norbert
+         jozef
+         agnes
+         maud
+         louise
+         francis
+         frances
+         rupert
+         wayne
+         duane
+         xtahua
+         norris
+         adolf
+         margery
+         boris
+340      geryon
+         dispater
+         asmodeus
+         antaeus
+         ereshkigal
+356      ancient lich
+360      vault guard
+         curse skull
+         vampire knight
+         vampire mage
+         shining eye
+         orb guardian
+         daeva
+         spectral thing
+         greater naga
+         skeletal dragon
+         tentacled monstrosity
+         sphinx
+         rotting hulk
+         guardian mummy
+         greater mummy
+         mummy priest
+         centaur warrior
+         yaktaur captain
+         killer klown
+         guardian robot
+         dorgi
+         sword
+         quokka
+385      eye of devastation
+         moth of wrath
+         death cob
+         curse toe
+         gold mimic
+         weapon mimic
+         armour mimic
+         scroll mimic
+         potion mimic
+         hell hog
+         serpent of hell
+         boggart
+         quicksilver dragon
+         iron dragon
+         skeletal warrior
+         player ghost
+         pandemonium demon
+mlava0   lava worm
+         lava fish
+         lava snake
+         another lava thing
+mwater0  big fish
+         giant goldfish
+         electrical eel
+         jellyfish
+         water elemental
+         swamp worm
+
+category object classes
+preface  obj
+         weapons
+         missiles
+         armour
+         wands
+         food
+6        scrolls
+         jewellery
+         potions
+10       books
+         staves
+         orbs
+         miscellany
+         corpses
+
+category missiles
+preface  mi
+         stone
+         arrow
+         bolt
+         dart
+         eggplant
+         large rock
+
+category orbs
+preface  orb
+         zot
+
+category spells
+preface  spell
+         identify
+         teleport self
+         cause fear
+         create noise
+         remove curse
+         magic dart
+         fireball
+13       conjure flame
+         dig
+         bolt of fire
+         bolt of cold
+         lightning bolt
+20       polymorph other
+         slow
+         haste
+         paralyze
+         confuse
+         invisibility
+         throw flame
+         throw frost
+         controlled blink
+         freezing cloud
+         mephitic cloud
+         ring of flames
+         restore strength
+         restore intelligence
+         restore dexterity
+         venom bolt
+         olgrebs toxic radiance
+         teleport other
+         lesser healing
+         greater healing
+         cure poison i
+         purification
+         deaths door
+         selective amnesia
+         mass confusion
+         smiting
+         repel undead
+         holy word
+         detect curse
+         summon small mammal
+         abjuration i
+         summon scorpions
+         levitation
+         bolt of draining
+         lehudibs crystal spear
+         bolt of inaccuracy
+         poisonous cloud
+         fire storm
+         detect traps
+         blink
+         iskenderuns mystic blast
+         swarm
+         summon horrible things
+         enslavement
+         magic mapping
+         heal other
+         animate dead
+         pain
+         extension
+         control undead
+         animate skeleton
+         vampiric draining
+         summon wraiths
+         detect items
+         borgnjors revivification
+         burn
+         freeze
+         summon elemental
+         ozocubus refrigeration
+         sticky flame
+         summon ice beast
+         ozocubus armour
+         call imp
+         repel missiles
+         berserker rage
+         dispel undead
+         guardian
+         pestilence
+         thunderbolt
+         flame of cleansing
+         shining light
+         summon daeva
+         abjuration ii
+110      twisted resurrection
+         regeneration
+         bone shards
+         banishment
+         cigotuvis degeneration
+         sting
+         sublimation of blood
+         tukimas dance
+         hellfire
+         summon demon
+         demonic horde
+         summon greater demon
+         corpse rot
+         tukimas vorpal blade
+         fire brand
+         freezing aura
+         lethal infusion
+         crush
+         bolt of iron
+         stone arrow
+         tomb of doroklohe
+         stonemail
+         shock
+         swiftness
+         fly
+         insulation
+         orb of electrocution
+         detect creatures
+         cure poison ii
+         control teleport
+         poison ammunition
+         poison weapon
+         resist poison
+         projected noise
+         alter self
+         debugging ray
+         recall
+         portal
+         agony
+         spider form
+         disrupt
+         disintegrate
+         blade hands
+         statue form
+         ice form
+         dragon form
+         necromutation
+         death channel
+         symbol of torment
+         deflect missiles
+         orb of fragmentation
+         ice bolt
+         ice storm
+         arc
+         airstrike
+         shadow creatures
+
+
+category spell types
+preface  sptyp          # barf!
+11       conjuration
+         enchantment
+         fire
+         ice
+         transmigration
+         necromancy
+         holy
+         summoning
+         divination
+         translocation
+         poison
+         earth
+         air
+
+category mutations
+preface  mut
+         tough skin
+         strong
+         clever
+         agile
+         green scales
+         black scales
+         grey scales
+         boney plates
+         repulsion field
+         poison resistance
+         carnivorous
+         herbivorous
+         heat resistance
+         cold resistance
+         shock resistance
+         regeneration
+         fast metabolism
+         slow metabolism
+         weak
+         dopey
+         clumsy
+         teleport control
+         teleport
+         magic resistance
+         fast
+         acute vision
+         deformed
+         teleport at will
+         spit poison
+         mapping
+         breathe flames
+         blink
+         horns
+         strong stiff
+         flexible weak
+         lost
+         clarity
+         berserk
+         deterioration
+         blurry vision
+         mutation resistance
+         frail
+         robust
+         torment resistance
+         negative energy resistance
+         summon minor demons
+         summon demons
+         hurl hellfire
+         call torment
+         raise dead
+         control demons
+         pandemonium
+         death strength
+         channel hell
+         drain life
+         throw flames
+         throw frost
+         smite
+
+category special armor
+preface  sparm
+         normal
+         running
+         fire resistance
+         cold resistance
+         poison resistance
+         see invisible
+         darkness
+         strength
+         dexterity
+         intelligence
+         ponderousness
+         levitation
+         magic resistance
+         protection
+         stealth
+         resistance
+         positive energy
+         archmagi
+         preservation
+
+category special weapons
+preface  spwpn
+         normal
+         flaming
+         freezing
+         holy wrath
+         electrocution
+         orc slaying
+         venom
+         protection
+         draining
+         speed
+         vorpal
+         flame
+         frost
+         vampiricism
+         disruption
+         pain
+         distortion
+25       randart i
+         randart ii
+         randart iii
+         randart iv
+         randart v
+
+category randart prop
+preface  rap  # yuck
+         brand
+         ac
+         evasion
+         strength
+         intelligence
+         dexterity
+         fire
+         cold
+         electricity
+         poison
+         negative energy
+         magic
+         eyesight
+         invisible
+         levitate
+         blink
+         can teleport
+         berserk
+         mapping
+         noises
+         prevent spellcasting
+         cause teleportation
+         prevent teleportation
+         angry
+         metabolism
+         mutagenic
+         accuracy
+         damage
+
+category gods
+preface  god
+         no god
+         zin
+         shining one
+         kikubaaqudgha
+         yredelemnul
+         xom
+         vehumet
+         okawaru
+         makhleb
+         sif muna
+         trog
+         nemelex xobeh
+         elyvilon
+
+category stats
+preface  stat
+         strength
+         dexterity
+         intelligence
+
+category dungeon features
+preface  dngn
+1        rock wall
+         stone wall
+         closed door
+         metal wall
+         secret door
+         green crystal wall
+         orcish idol
+         wax wall
+21       silver statue
+         granite statue
+         orange crystal statue
+61       lava
+         deep water
+65       shallow water
+67       floor
+69       enter hell
+         open door
+         branch stairs
+75       trap i
+         trap ii
+         trap iii
+         undiscovered trap
+80       enter shop
+         enter labyrinth
+         stone stairs down i
+         stone stairs down ii
+         stone stairs down iii
+         rock stairs down
+         stone stairs up i
+         stone stairs up ii
+         stone stairs up iii
+         rock stairs up
+92       enter dis
+         enter gehenna
+         enter cocytus
+         enter tartarus
+         enter abyss
+         exit abyss
+         stone arch
+         enter pandemonium
+         exit pandemonium
+         transit pandemonium
+110      enter orcish mines
+         enter hive
+         enter lair i
+         enter slime pits
+         enter vaults
+         enter crypt i
+         enter hall of blades
+         enter zot
+         enter temple
+         enter snake pit
+         enter elven halls
+         enter tomb
+         enter swamp
+130      return dungeon i
+         return dungeon ii
+         return dungeon iii
+         return lair ii
+         return dungeon iv
+         return vaults
+         return crypt ii
+         exit zot
+         return dungeon v
+         return lair iii
+         return mines
+         return crypt iii
+         return lair iv
+180      altar zin
+         altar shining one
+         altar kikubaaqudgha
+         altar yredelemnul
+         altar xom
+         altar vehumet
+         altar okawaru
+         altar makhleb
+         altar sif muna
+         altar trog
+         altar nemelex xobeh
+         altar elyvilon
+200      blue fountain
+         dry fountain i
+         sparkling fountain
+         dry fountain ii
+         dry fountain iii
+         dry fountain iv
+         dry fountain v
+         dry fountain vi
+
+
+category monster behavior
+preface  beh
+         sleep
+         chasing i
+         wander
+         flee
+         confused
+6        fight
+         enslaved
+100      chasing ii
+
+category monster holiness
+preface  MH
+-1       HOLY
+0        NORMAL
+         UNDEAD
+         DEMONIC
+
+category unarmed attacks
+preface  unat   # bleah
+1        kick
+         headbutt
+         tailslap
+         punch
+category weapon descriptions
+preface  dwpn
+1        runed
+         glowing
+         orcish
+         elven
+         dwarven
+
+category ammunition descriptions
+preface  dammo
+3        orcish
+         elven
+         dwarven
+
+category armour descriptions
+preface  darm
+1        embroidered shiny
+         runed
+         glowing
+         elven
+         dwarven
+         orcish
+
+category helmet descriptions
+preface  dhelm
+1        winged
+         horned
+         crested
+         plumed
+         spiked
+         visored
+         jewelled
+
+category weapon properties
+preface  pwpn
+         damage
+         hit
+         speed
+
+category armour properties
+preface  parm
+         AC
+         evasion
+
+category vorpal descriptions
+preface  dvorp
+         crushing
+         slicing
+         piercing
+         chopping
+
+category good things
+preface  good
+1        killed living
+         killed undead
+         killed demon
+         killed angel i
+         killed angel ii
+         hacked corpse
+         offer stuff
+         offer corpse
+         slaves kill living
+         servants kill
+         cards
+
+category naughty things
+preface  naughty
+1        necromancy
+         unholy
+         killing
+         attack holy
+         attack friend
+         friend dies
+         butcher
+         stabbing
+         spellcasting
+
+category special wield
+preface  spwld
+         none
+         sing
+         trog
+         curse
+         variable
+6        torment
+         zonguldrok
+         power
+         wucad mu
+50       shadow
+
+
+category demon beams
+preface  dmnbm
+         hellfire
+         smiting
+         brain feed
+         mutation
+
+category abilities
+preface  abil
+1        spit poison
+         mapping
+         teleportation
+         breathe fire
+         blink
+         breathe frost
+         breathe poison
+         breathe lightning
+         spit acid
+         breathe power
+         go berserk i
+         breathe sticky flame
+         breathe steam
+         fly
+         summon minor demon
+         summon demon
+         hellfire
+         torment
+         raise dead
+         control demon
+         to pandemonium
+         channeling
+         throw flame
+         throw frost
+         bolt of draining
+51       turn invisible
+         turn visible
+         levitate
+         stop levitating
+         end transformation
+110      repel undead i
+         minor healing
+         pestilence
+         holy word
+         summon guardian
+120      repel undead ii
+         smiting
+         annihilate undead
+         thunderbolt
+         summon daeva
+130      recall undead slaves
+132      enslave undead
+         invoke death
+140      animate corpse
+         recall undead
+         animate dead
+         drain life
+         control undead
+160      channel energy
+170      might i
+         healing i
+         haste
+180      minor destruction
+         lesser servant of makhleb
+         major destruction
+         greater servant of makhleb
+190      forget spell
+200      go berserk ii
+         might ii
+         haste self
+220      lesser healing
+         purification
+         healing ii
+         restoration
+         greater healing
+250      renounce religion
+
+category zaps
+preface  zap
+         flame
+         frost
+         slowing
+         hasting
+         magic darts
+         healing
+         paralysis
+         fire
+         cold
+         confusion
+         invisibility
+         digging
+         fireball
+         teleportation
+         lightning
+         polymorph other
+         venom bolt
+         negative energy
+         crystal spear
+         beam of energy
+         orb of energy
+         enslavement
+         agony i
+         sticky flame
+         dispel undead
+         cleansing flame
+         bone shards
+         banishment
+         degeneration
+         sting
+         hellfire
+         iron bolt
+         pebble
+         stone arrow
+         electricity
+         orb of electricity
+         spit poison
+         debugging ray
+         breathe fire
+         breathe frost
+         breathe acid
+         breathe poison
+         breathe power
+         enslave undead
+         agony ii
+         disruption
+         disintegration
+48       breathe steam
+         control demon
+         orb of fragmentation
+         ice bolt
+         ice storm
+
+
+category traps
+preface  trap
+         dart
+         arrow
+         spear
+         axe
+         teleport
+         amnesia
+         blade
+         bolt
+         zot

@@ -68,6 +68,11 @@ void end(int end_arg)
 #ifdef LINUX
 lincurses_shutdown();
 #endif
+
+#ifdef MAC
+deinit_mac();
+#endif
+
  exit(end_arg);
 }
 

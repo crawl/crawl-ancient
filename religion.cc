@@ -126,48 +126,6 @@ strcat(info, " is exalted by your worship!");
 you[0].duration [DUR_PRAYER] *= 3;
 }
 
-/*if (you[0].piety <= 20)
-{
-strcpy(info, "You sense hostility.");
-you[0].duration [DUR_PRAYER] = 0;
-} else
-if (you[0].piety <= 35)
-{
-strcat(info, " is most displeased with you.");
-you[0].duration [DUR_PRAYER] = 0;
-} else
-if (you[0].piety <= 45)
-{
-strcat(info, " is displeased with you.");
-you[0].duration [DUR_PRAYER] = 0;
-} else
-if (you[0].piety <= 65)
-{
-strcat(info, " is noncommittal.");
-} else
-if (you[0].piety <= 75)
-{
-strcat(info, " is pleased with you.");
-} else
-if (you[0].piety <= 90)
-{
-strcat(info, " is most pleased with you.");
-} else
-if (you[0].piety <= 110)
-{
-strcat(info, " favours you.");
-you[0].duration [DUR_PRAYER] *= 2;
-} else
-if (you[0].piety <= 130)
-{
-strcat(info, " favours you greatly.");
-you[0].duration [DUR_PRAYER] *= 2;
-} else
-{
-strcat(info, " is exalted by your worship!");
-you[0].duration [DUR_PRAYER] *= 3;
-}
-*/
 mpr(info);
 
 /* itoa(you[0].piety, st_prn, 10);
@@ -305,30 +263,19 @@ char *god_name(int which_god)
 
 switch(which_god)
 {
-/*case 0: strcpy(info, "You aren't religious!"); mpr(info); return;
-case 1: strcat(info, "Zin."); break;
-case 2: strcat(info, "The Shining One."); break;
-case 3: strcat(info, "Elyvilon."); break;
-case 4: strcat(info, "Nemelex Xobeh."); break;
-case 5: strcat(info, "Jurubetut."); break;
-case 6: strcat(info, "Vuhemeti."); break;
-case 7: strcat(info, "Okawaru."); break;
-case 8: strcat(info, "Kikubaaqudgha."); break;
-case 9: strcat(info, "Sif Muna."); break;
-case 10: strcat(info, "Trog."); break;*/
-case 0: return "You aren't religious!";
-case 1: return "Zin";
-case 2: return "The Shining One";
-case 3: return "Kikubaaqudgha";
-case 4: return "Yredelemnul";
-case 5: return "Xom";
-case 6: return "Vehumet";
-case 7: return "Okawaru";
-case 8: return "Makhleb";
-case 9: return "Sif Muna";
-case 10: return "Trog";
-case 11: return "Nemelex Xobeh";
-case 12: return "Elyvilon";
+case GOD_NO_GOD: return "You aren't religious!";
+case GOD_ZIN: return "Zin";
+case GOD_SHINING_ONE: return "The Shining One";
+case GOD_KIKUBAAQUDGHA: return "Kikubaaqudgha";
+case GOD_YREDELEMNUL: return "Yredelemnul";
+case GOD_XOM: return "Xom";
+case GOD_VEHUMET: return "Vehumet";
+case GOD_OKAWARU: return "Okawaru";
+case GOD_MAKHLEB: return "Makhleb";
+case GOD_SIF_MUNA: return "Sif Muna";
+case GOD_TROG: return "Trog";
+case GOD_NEMELEX_XOBEH: return "Nemelex Xobeh";
+case GOD_ELYVILON: return "Elyvilon";
 }
 
 return "Illegal god";
@@ -341,19 +288,19 @@ char *god_name_long(int which_god)
 
 switch(which_god)
 {
-case 0: return "Nobody";
-case 1: return "Zin the Law-Giver";
-case 2: return "The Shining One";
-case 3: return "Kikubaaqudgha";
-case 4: return "Yredelemnul";
-case 5: return "Xom of Chaos";
-case 6: return "Vehumet";
-case 7: return "Okawaru";
-case 8: return "Makhleb";
-case 9: return "Sif Muna";
-case 10: return "Trog";
-case 11: return "Nemelex Xobeh";
-case 12: return "Elyvilon the Healer";
+case GOD_NO_GOD: return "Nobody";
+case GOD_ZIN: return "Zin the Law-Giver";
+case GOD_SHINING_ONE: return "The Shining One";
+case GOD_KIKUBAAQUDGHA: return "Kikubaaqudgha";
+case GOD_YREDELEMNUL: return "Yredelemnul";
+case GOD_XOM: return "Xom of Chaos";
+case GOD_VEHUMET: return "Vehumet";
+case GOD_OKAWARU: return "Okawaru";
+case GOD_MAKHLEB: return "Makhleb";
+case GOD_SIF_MUNA: return "Sif Muna";
+case GOD_TROG: return "Trog";
+case GOD_NEMELEX_XOBEH: return "Nemelex Xobeh";
+case GOD_ELYVILON: return "Elyvilon the Healer";
 }
 
 return "Illegal God";
@@ -618,18 +565,6 @@ if (random2(4) != 0) goto okay_try_again;
 
 
 /*
-case 1: return "Zin";
-case 2: return "The Shining One";
-case 3: return "Kikubaaqudgha";
-case 4: return "Yredelemnul";
-case 5: return "Xom";
-case 6: return "Vehumet";
-case 7: return "Okawaru";
-case 8: return "Makhleb";
-case 9: return "Sif Muna";
-case 10: return "Trog";
-case 11: return "Nemelex Xobeh";
-case 12: return "Elyvilon";
 Thing_done:
 1 - killed a living monster in god's name
 2 - killed an undead in god's name
@@ -650,11 +585,11 @@ if (you[0].religion == GOD_NO_GOD) return;
 
 switch(thing_done)
 {
- case 1: /* killed a living monster in god's name */
+ case GOOD_KILLED_LIVING: /* killed a living monster in god's name */
  switch(you[0].religion)
  {
   case GOD_ELYVILON: mpr("Elyvilon did not appreciate that!");
-  naughty(3, 10);
+  naughty(NAUGHTY_KILLING, 10);
   break;
   case GOD_KIKUBAAQUDGHA:
   case GOD_YREDELEMNUL:
@@ -670,7 +605,7 @@ switch(thing_done)
  }
  break;
 
- case 2: /* killed an undead in god's name */
+ case GOOD_KILLED_UNDEAD: /* killed an undead in god's name */
  switch(you[0].religion)
  {
   case GOD_ZIN:
@@ -685,7 +620,7 @@ switch(thing_done)
  }
  break;
 
- case 3: /* killed a demon in god's name */
+ case GOOD_KILLED_DEMON: /* killed a demon in god's name */
  switch(you[0].religion)
  {
   case GOD_ZIN:
@@ -700,29 +635,23 @@ switch(thing_done)
  }
  break;
 
- case 4:
- case 5:
+ case GOOD_KILLED_ANGEL_I:
+ case GOOD_KILLED_ANGEL_II:
  switch(you[0].religion)
  {
-/*case 3:
-  case 8:
-  strcpy(info, god_name(you[0].religion);
-  strcat(info, " accepts your kill with pleasure!");
-  gain_piety(random2(2) + 1);
-  break;*/
   case GOD_ZIN:
   case GOD_SHINING_ONE:
   case GOD_ELYVILON:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " did not appreciate that!");
   mpr(info);
-  if (you[0].conf != 0) naughty(4, 3);
-   else naughty(4, pgain * 3);
+  if (you[0].conf != 0) naughty(NAUGHTY_ATTACK_HOLY, 3);
+   else naughty(NAUGHTY_ATTACK_HOLY, pgain * 3);
   break;
  }
  break;
 
- case 6: /* Note - pgain is you[0].xl, maybe */
+ case GOOD_HACKED_CORPSE: /* Note - pgain is you[0].xl, maybe */
  switch(you[0].religion)
  {
   case GOD_KIKUBAAQUDGHA:
@@ -740,7 +669,7 @@ switch(thing_done)
   strcpy(info, god_name(you[0].religion));
   strcat(info, " did not appreciate that!");
   mpr(info);
-  naughty(7, 8);
+  naughty(NAUGHTY_BUTCHER, 8);
   break;
  }
  break;
@@ -752,7 +681,7 @@ switch(thing_done)
  gain_piety(1);
  break;
 
- case 9: /* undead slaves killed a living monster */
+ case GOOD_SLAVES_KILL_LIVING: /* undead slaves killed a living monster */
  switch(you[0].religion)
  {
   case GOD_KIKUBAAQUDGHA:
@@ -766,7 +695,7 @@ switch(thing_done)
  }
  break;
 
- case 10: /* servants killed any monster */
+ case GOOD_SERVANTS_KILL: /* servants killed any monster */
  switch(you[0].religion)
  {
   case GOD_VEHUMET:
@@ -779,7 +708,7 @@ switch(thing_done)
  }
  break;
 
- case 11: /* cards */
+ case GOOD_CARDS: /* cards */
  switch(you[0].religion)
  {
   case GOD_NEMELEX_XOBEH:
@@ -985,9 +914,9 @@ int piety_loss = 0;
 
 switch(type_naughty)
 {
- case 1:
- case 2:
- case 4:
+ case NAUGHTY_NECROMANCY:
+ case NAUGHTY_UNHOLY:
+ case NAUGHTY_ATTACK_HOLY:
  switch(you[0].religion)
  {
   case GOD_ZIN:
@@ -998,7 +927,7 @@ switch(type_naughty)
  }
  break;
 
- case 3:
+ case NAUGHTY_KILLING:
  switch(you[0].religion)
  {
   case GOD_ELYVILON:
@@ -1007,8 +936,8 @@ switch(type_naughty)
  }
  break;
 
- case 5:
- case 6:
+ case NAUGHTY_ATTACK_FRIEND:
+ case NAUGHTY_FRIEND_DIES:
  switch(you[0].religion)
  {
   case GOD_ZIN:
@@ -1020,7 +949,7 @@ switch(type_naughty)
  }
  break;
 
- case 7: /* butchering in the name of */
+ case NAUGHTY_BUTCHER: /* butchering in the name of */
  switch(you[0].religion)
  {
   case GOD_ZIN:
@@ -1031,7 +960,7 @@ switch(type_naughty)
  }
  break;
 
- case 8: /* stabbing */
+ case NAUGHTY_STABBING: /* stabbing */
  switch(you[0].religion)
  {
   case GOD_SHINING_ONE:
@@ -1040,7 +969,7 @@ switch(type_naughty)
  }
  break;
 
- case 9: /* spellcasting */
+ case NAUGHTY_SPELLCASTING: /* spellcasting */
  switch(you[0].religion)
  {
   case GOD_TROG:
@@ -1242,21 +1171,21 @@ void excommunication(void)
   strcpy(info, god_name(you[0].religion));
   strcat(info, " does not appreciate desertion!");
   mpr(info);
-  miscast_effect(16, 5 + you[0].xl, random2(30) + random2(30) + random2(30), 100);
+  miscast_effect(SPTYP_NECROMANCY, 5 + you[0].xl, random2(30) + random2(30) + random2(30), 100);
  }
  if (you[0].religion == GOD_VEHUMET || you[0].religion == GOD_MAKHLEB)
  {
   strcpy(info, god_name(you[0].religion));
   strcat(info, " does not appreciate desertion!");
   mpr(info);
-  miscast_effect(11 + (random2(2) * 7), 8 + you[0].xl, random2(40) + random2(30) + random2(30), 100);
+  miscast_effect(SPTYP_CONJURATION + (random2(2) * 7), 8 + you[0].xl, random2(40) + random2(30) + random2(30), 100);
  }
  if (you[0].religion == GOD_TROG)
  {
   strcpy(info, god_name(you[0].religion));
   strcat(info, " does not appreciate desertion!");
   mpr(info);
-  miscast_effect(13, 8 + you[0].xl, random2(40) + random2(30) + random2(30), 100);
+  miscast_effect(SPTYP_FIRE, 8 + you[0].xl, random2(40) + random2(30) + random2(30), 100);
  } /* Trog uses fire wild magic - is this right? */
  you[0].religion = GOD_NO_GOD;
  you[0].piety = 0;
@@ -1394,5 +1323,5 @@ void offer_corpse(int corpse)
  strcpy(info, str_pass);
  strcat(info, sacrifice [you[0].religion - 1]);
  mpr(info);
- done_good(6, 10);
+ done_good(GOOD_HACKED_CORPSE, 10);
 }

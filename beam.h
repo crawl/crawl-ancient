@@ -1,3 +1,5 @@
+#include "externs.h"
+
 void missile(struct bolt beam [1], int throw_2);
 int check_mons_resists(struct bolt beam [1], int o, int hurted);
 void beam(struct bolt beam [1]);

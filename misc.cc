@@ -746,19 +746,22 @@ if (grd [you[0].x_pos] [you[0].y_pos] == 99)
 if (you[0].level_type == 1 || you[0].level_type == 2 || you[0].level_type == 3)
 {
 
-char glorpstr [40];
-char del_file [40];
+char glorpstr [kFileNameSize];
+char del_file [kFileNameSize];
 int sysg;
-strncpy(glorpstr, you[0].your_name, 6);
+strncpy(glorpstr, you[0].your_name, kFileNameLen);
+
 
 // glorpstr [strlen(glorpstr)] = 0;
 // This is broken. Length is not valid yet! We have to check if we got a
 // trailing NULL; if not, write one:
-if (strlen(you[0].your_name) > 5)    /* is name 6 chars or more? */
-        glorpstr[6] = (char) 0; // NULL;   /* if so, char 7 should be NULL */
+if (strlen(you[0].your_name) > kFileNameLen-1)    /* is name 6 chars or more? */
+        glorpstr[kFileNameLen] = (char) 0; // NULL;   /* if so, char 7 should be NULL */
 
 strcpy(del_file, glorpstr);
 strcat(del_file, ".lab");
+
+
 #ifdef DOS
 strupr(del_file);
 #endif

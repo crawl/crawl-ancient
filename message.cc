@@ -42,7 +42,13 @@ if (scrloc == 7)
 gotoxy(2,25);
 _setcursortype(_NORMALCURSOR);
 textcolor(7);
-cprintf("\r--more--");
+
+// cdl -- cprintf("\r--more--");
+#ifdef DOS
+cprintf( EOL );
+#endif
+cprintf( "--more--" );
+
 char keypress = 0;
 do
 {
@@ -122,7 +128,13 @@ char keypress = 0;
 #endif
  _setcursortype(_NORMALCURSOR);
  textcolor(7);
- cprintf("\r--more--");
+
+// cdl -- cprintf("\r--more--");
+#ifdef DOS
+cprintf( EOL );
+#endif
+cprintf( "--more--" );
+
  do
  {
         keypress = getch();

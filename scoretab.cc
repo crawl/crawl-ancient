@@ -19,7 +19,12 @@
 #include <time.h>
 #endif
 
+#ifdef MAC
+#include <stat.h>
+#else
 #include <sys/stat.h>
+#endif
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -782,8 +782,9 @@ break;
 
 
 
-
-if (((menv [i].m_beh == BEH_CHASING_I || menv [i].m_beh == BEH_FLEE) && mons_near(i) == 1) || ((menv [i].m_beh == BEH_FIGHT || menv [i].m_beh == BEH_ENSLAVED) && menv [i].m_hit != MHITNOT));
+// Surely a bug...
+// if (((menv [i].m_beh == BEH_CHASING_I || menv [i].m_beh == BEH_FLEE) && mons_near(i) == 1) || ((menv [i].m_beh == BEH_FIGHT || menv [i].m_beh == BEH_ENSLAVED) && menv [i].m_hit != MHITNOT));
+if (((menv [i].m_beh == BEH_CHASING_I || menv [i].m_beh == BEH_FLEE) && mons_near(i) == 1) || ((menv [i].m_beh == BEH_FIGHT || menv [i].m_beh == BEH_ENSLAVED) && menv [i].m_hit != MHITNOT))
 {
 
 if ((menv [i].m_beh == BEH_CHASING_I || menv [i].m_beh == BEH_FLEE) && mons_near(i) == 1) you[0].pet_target = i;

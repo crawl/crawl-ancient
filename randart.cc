@@ -616,7 +616,11 @@ char *rand_armour_names[] = {
 /* The following unrandart bits were taken from $pellbinder's mstruct code
 (see mstruct.h & mstruct.cc) and modified (LH). They're in randart.cc and
 not randart.h because they're only used in this code module. */
+#ifdef MAC
+#define PACKED
+#else
 #define PACKED __attribute__ ((packed))
+#endif
 typedef char MYCHAR; // used for flags and the like
 typedef unsigned char MYUCHAR; // used for flags and the like
 typedef short MYSHORT; // used for flags and the like

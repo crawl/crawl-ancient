@@ -2017,7 +2017,7 @@ if (you[0].mpower > 5)
 
 
 
-void redraw_skill(char your_name [30], char clasnam [40])
+void redraw_skill(char your_name [kNameLen], char clasnam [40])
 {
 
 char print_it [80];

@@ -1415,7 +1415,7 @@ if ((gr [x_p] [y_p + ys] < MINSEE && gr [x_p + xs] [y_p + ys] < MINSEE) || (gr [
 }
 
 
-void draw_border(int bord_col, char your_name [30], char clasnam [40], char tspecies)
+void draw_border(int bord_col, char your_name [kNameLen], char clasnam [40], char tspecies)
 {
 
 textcolor(bord_col);
@@ -1500,7 +1500,10 @@ void show_map(int spec_place [2])
    char move_x = 0;
    char move_y = 0;
    char getty = 0;
+
+#ifdef DOS_TERM
 char buffer[4800];
+#endif
 char buffer2[4800];
 
 char min_y = 0;

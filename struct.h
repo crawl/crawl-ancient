@@ -1,7 +1,7 @@
 
 struct player
 {
-char your_name [30];
+char your_name [kNameLen];
 
 unsigned char species;
 

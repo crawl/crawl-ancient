@@ -1,3 +1,6 @@
+#ifndef EXTERNS_H
+#define EXTERNS_H
+
 #include "defines.h"
 #include "message.h"
 
@@ -9,6 +12,16 @@ extern char str_pass [80];
 extern char gmon_use [1000];
 extern char mcolour [1000];
 extern unsigned char show_green;
+
+#ifdef SHORT_FILE_NAMES
+        const int kNameLen      = 30;
+        const int kFileNameLen  = 6;
+        const int kFileNameSize = 5 + kFileNameLen;
+#else
+        const int kNameLen      = 30;
+        const int kFileNameLen  = 28;
+        const int kFileNameSize = 5 + kFileNameLen;
+#endif
 
 
 struct dist
@@ -60,7 +73,7 @@ struct player
 char turnover;
 unsigned char prev_targ;
 
-char your_name [30];
+char your_name [kNameLen];
 
 unsigned char species;
 char run_x;
@@ -323,3 +336,7 @@ struct ghost_struct
 extern struct ghost_struct ghost;
 
 extern void (*viewwindow)(char);
+
+
+
+#endif // EXTERNS_H

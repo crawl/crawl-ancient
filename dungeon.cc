@@ -6192,7 +6192,9 @@ void roguey_level(void)
                 {
                         for (bcount_y = roy1 [bi]; bcount_y < roy2 [bi]; bcount_y ++)
                         {
-                                if (grd [bcount_x] [bcount_y] == 1 && bcount_x < 72);
+                                // Jesse says this is likely a bug...
+                                //if (grd [bcount_x] [bcount_y] == 1 && bcount_x < 72);
+                                if (grd [bcount_x] [bcount_y] == 1 && bcount_x < 72)
                                 grd [bcount_x] [bcount_y] = 67;
                         } // end of for bcount_y
                 } // end of for bcount_x

@@ -74,7 +74,7 @@ void eaten(int food_eat_2, int food_eat_3) /* this contains results of eating th
 you[0].hung_ch = 1;
 
 
-if (food_eat_3 == 21)
+if (food_eat_3 == FOOD_CHUNK)
 {
  if (you[0].inv_dam [food_eat_2] < 100 && (mons_corpse_thingy(you[0].inv_plus [food_eat_2]) == 1 || mons_corpse_thingy(you[0].inv_plus [food_eat_2]) == 2) || (mons_corpse_thingy(you[0].inv_plus [food_eat_2]) == 3 && player_res_poison() != 0)) eat_meat(50);
   else eat_meat(mons_corpse_thingy(you[0].inv_plus [food_eat_2]));
@@ -98,7 +98,7 @@ you[0].delay_doing = func_pass [2];
 
 //mpr(info);
 
-if (food_eat_3 == 6)
+if (food_eat_3 == FOOD_ROYAL_JELLY)
 {
  restore_str();
  restore_int();
@@ -160,7 +160,7 @@ if (counter > 1000)
 
 if (items_here == 1)
 {
-   if (mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != 4) goto out_of_eating;// && mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != 14) return 0;
+   if (mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != OBJ_FOOD) goto out_of_eating;// && mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != 14) return 0;
                         strcpy(info, "Eat ");
    if (mitm.iquant [igrd [you[0].x_pos] [you[0].y_pos]] > 1) strcat(info, "one of ");
                         it_name(igrd [you[0].x_pos] [you[0].y_pos], 3, str_pass);
@@ -182,7 +182,7 @@ if (items_here == 1)
 
    if (you[0].species == SP_GHOUL || you[0].species == SP_KOBOLD || you[0].mutation [MUT_CARNIVOROUS] == 3) // kobold, ghoul, mutant
    {
-    if ((mitm.itype [item_got] >= 1 && mitm.itype [item_got] <= 4) || (mitm.itype [item_got] >= 7 && mitm.itype [item_got] <= 17))
+    if ((mitm.itype [item_got] >= FOOD_BREAD_RATION && mitm.itype [item_got] <= FOOD_CHOKO) || (mitm.itype [item_got] >= FOOD_SNOZZCUMBER && mitm.itype [item_got] <= FOOD_LYCHEE))
      {
       strcpy(info, "Sorry, you're a carnivore.");
       mpr(info);
@@ -190,7 +190,7 @@ if (items_here == 1)
      }
    }
 
-   if (mitm.itype [item_got] == 21)
+   if (mitm.itype [item_got] == FOOD_CHUNK)
    {
     if (you[0].mutation [MUT_HERBIVOROUS] > 1)
     {
@@ -226,7 +226,7 @@ if (items_here == 1)
    you[0].delay_doing = func_pass [2];
 
 //   mpr(info);
-   if (mitm.itype [item_got] == 6)
+   if (mitm.itype [item_got] == FOOD_ROYAL_JELLY)
    {
     restore_str();
     restore_int();
@@ -253,7 +253,7 @@ if (items_here > 1)
 
         for (k = 0; k < items_here; k++) // use k because of call to relay_message()
         {
-   if (mitm.iclass [o] != 4) goto out_of_eating; // && mitm.iclass [o] != 14) goto out_of_eating;
+   if (mitm.iclass [o] != OBJ_FOOD) goto out_of_eating; // && mitm.iclass [o] != 14) goto out_of_eating;
                         strcpy(info, "Eat ");
    if (mitm.iquant [o] > 1) strcat(info, "one of ");
                         it_name(o, 3, str_pass);
@@ -278,7 +278,7 @@ if (items_here > 1)
 
    if (you[0].species == SP_GHOUL || you[0].species == SP_KOBOLD || you[0].mutation [MUT_CARNIVOROUS] == 3) // kobold etc
    {
-    if ((mitm.itype [item_got] >= 1 && mitm.itype [item_got] <= 4) || (mitm.itype [item_got] >= 7 && mitm.itype [item_got] <= 17))
+    if ((mitm.itype [item_got] >= FOOD_BREAD_RATION && mitm.itype [item_got] <= FOOD_CHOKO) || (mitm.itype [item_got] >= FOOD_SNOZZCUMBER && mitm.itype [item_got] <= FOOD_LYCHEE))
      {
       strcpy(info, "Sorry, you're a carnivore.");
       mpr(info);
@@ -286,7 +286,7 @@ if (items_here > 1)
      }
    }
 
-   if (mitm.itype [item_got] == 21)
+   if (mitm.itype [item_got] == FOOD_CHUNK)
    {
     if (you[0].mutation [MUT_HERBIVOROUS] > 1)
     {
@@ -316,7 +316,7 @@ if (items_here > 1)
    you[0].delay_doing = func_pass [2];
 
 //   mpr(info);
-   if (mitm.itype [item_got] == 6)
+   if (mitm.itype [item_got] == FOOD_ROYAL_JELLY)
    {
     restore_str();
     restore_int();
@@ -448,7 +448,7 @@ if (counter > 1000)
 
 if (items_here == 1)
 {
-   if (mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != 14 || mitm.itype [igrd [you[0].x_pos] [you[0].y_pos]] != 0) goto out_of_eating;// && mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != 14) return 0;
+   if (mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != OBJ_CORPSES || mitm.itype [igrd [you[0].x_pos] [you[0].y_pos]] != 0) goto out_of_eating;// && mitm.iclass [igrd [you[0].x_pos] [you[0].y_pos]] != 14) return 0;
                         strcpy(info, "Butcher ");
                         it_name(igrd [you[0].x_pos] [you[0].y_pos], 3, str_pass);
                         strcat(info, str_pass);
@@ -500,7 +500,7 @@ if (items_here > 1)
 
         for (k = 0; k < items_here; k++)
         {
-                    if (mitm.iclass [o] != 14 || mitm.itype [o] != 0) goto out_of_eating; // && mitm.iclass [o] != 14) goto out_of_eating;
+                    if (mitm.iclass [o] != OBJ_CORPSES || mitm.itype [o] != 0) goto out_of_eating; // && mitm.iclass [o] != 14) goto out_of_eating;
                         strcpy(info, "Butcher ");
                         it_name(o, 3, str_pass);
                         strcat(info, str_pass);
@@ -695,11 +695,11 @@ you[0].hp_ch = 1;
 int eating(int func_pass [10], unsigned char item_class, int food_eat_3)
 {
 
-if (item_class == 4)
+if (item_class == OBJ_FOOD)
 {
 switch(food_eat_3)
 {
-        case 0:
+        case FOOD_MEAT_RATION:
         mpr("That meat ration really hit the spot!");
         func_pass [0] += 5000;
         func_pass [0] += you[0].mutation [MUT_CARNIVOROUS] * 500;
@@ -709,7 +709,7 @@ switch(food_eat_3)
         //hung_ch = 1;
         return 0;
 
-        case 1:
+        case FOOD_BREAD_RATION:
     if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else mpr("That bread ration really hit the spot!");
         func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 1000;
@@ -719,7 +719,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 3: // apple
+        case FOOD_APPLE: // apple
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else mpr("Mmmm... Yummy apple.");
         func_pass [0] += 700;
@@ -730,7 +730,7 @@ switch(food_eat_3)
         //hung_ch = 1;
         return 0;
 
-        case 2: // pear
+        case FOOD_PEAR: // pear
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else mpr("Mmmm... Yummy pear.");
         //incrl();
@@ -745,7 +745,7 @@ switch(food_eat_3)
         //hung_ch = 1;
         return 0;
 
-        case 4:
+        case FOOD_CHOKO:
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That choko was very bland.");
         //incrl();
@@ -760,21 +760,21 @@ switch(food_eat_3)
         //hung_ch = 1;
         return 0;
 
-        case 5:
+        case FOOD_HONEYCOMB:
         mpr("That honeycomb was delicious.");
         func_pass [0] += 2000;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
-        case 6:
+        case FOOD_ROYAL_JELLY:
         mpr("That royal jelly was delicious!");
         func_pass [0] += 5000;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
-        case 7: // maybe a nasty side-effect from RD's book?
+        case FOOD_SNOZZCUMBER: // maybe a nasty side-effect from RD's book?
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else mpr("That snozzcumber tasted truly putrid!");
         func_pass [0] += 1500;
@@ -784,7 +784,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 8:
+        case FOOD_PIZZA:
         strcpy(info, "Mmm... ");
  switch(random2(9))
         {
@@ -804,7 +804,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 9:
+        case FOOD_APRICOT:
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else mpr("That apricot was delicious!");
         func_pass [0] += 700;
@@ -814,7 +814,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 10:
+        case FOOD_ORANGE:
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   {       mpr("That orange was delicious!");
                         if (random2(8) == 0) strcat(info, " Even the peel tasted good!");
@@ -826,7 +826,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 11:
+        case FOOD_BANANA:
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else {mpr("That banana was delicious!");
  if (random2(8) == 0) strcat(info, " Even the peel tasted good!");
@@ -838,7 +838,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 12:
+        case FOOD_STRAWBERRY:
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That strawberry was delicious!");
         func_pass [0] += 200;
@@ -848,7 +848,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 13:
+        case FOOD_RAMBUTAN:
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That rambutan was delicious!");
         func_pass [0] += 600;
@@ -858,7 +858,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 14:
+        case FOOD_LEMON:
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That lemon was rather sour... But delicious nonetheless!");
         func_pass [0] += 1000;
@@ -868,7 +868,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 15:
+        case FOOD_GRAPE:
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That grape was delicious!");
         func_pass [0] += 100;
@@ -878,7 +878,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 16:
+        case FOOD_SULTANA:
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That sultana was delicious! (but very small)");
         func_pass [0] += 70; // won't rescue you from starvation
@@ -888,7 +888,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 17:
+        case FOOD_LYCHEE:
         if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That lychee was delicious!");
         func_pass [0] += 600;
@@ -898,7 +898,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 18:
+        case FOOD_BEEF_JERKY:
         if (you[0].mutation [MUT_HERBIVOROUS] > 0) mpr ("Blech - you need vegetation!");
          else { mpr("That beef jerky was delicious!");
  if (random2(4) == 0) mpr("That beef jerky was jerk-a-riffic!");
@@ -910,7 +910,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 19:
+        case FOOD_CHEESE:
         strcpy(info, "Mmm... ");
  switch(random2(9))
         {
@@ -930,7 +930,7 @@ switch(food_eat_3)
         func_pass [2] = 0;
         return 0;
 
-        case 20:
+        case FOOD_SAUSAGE:
         mpr("That sausage was delicious!");
         func_pass [0] += 1200;
         func_pass [1] = 1;

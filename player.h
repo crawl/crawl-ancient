@@ -19,7 +19,7 @@ void forget_map(char chance_forgotten);
 void how_hungered(int hunge);
 void gain_exp(unsigned int exp_gained);
 void display_char_status(void);
-void redraw_skill(char your_name [30], char clasnam [40]);
+void redraw_skill(char your_name [kNameLen], char clasnam [40]);
 char *species_name(char speci);
 char wearing_amulet(char which_am);
 unsigned long exp_needed(int lev, char species);

@@ -20,7 +20,12 @@
 #include <time.h>
 #endif
 
+#ifdef MAC
+#include <stat.h>
+#else
 #include <sys/stat.h>
+#endif
+
 //#include <fstream.h>
 #include <string.h>
 #include <stdio.h>
@@ -683,30 +688,30 @@ void end_game(char end_status)
    set_status(end_status);
 
 
-        char del_file [55];
+        char del_file [kFileNameSize];
 
         int sysg = 0;
 
 strcpy(del_file, "");
-for (i = 0; i < 6; i ++)
+for (i = 0; i < kFileNameLen; i ++)
 {
  del_file [i] = you[0].your_name [i];
  if (you[0].your_name [i] == 0)
   break;
 }
-del_file [6] = 0;
+del_file [kFileNameLen] = 0;
 
 #ifdef DOS
 strupr(del_file);
 #endif
 
-char glorpstr [40];
-strncpy(glorpstr, you[0].your_name, 6);
+char glorpstr [kFileNameSize];
+strncpy(glorpstr, you[0].your_name, kFileNameLen);
 
 /* This is broken. Length is not valid yet! We have to check if we got a
    trailing NULL; if not, write one: */
-if (strlen(you[0].your_name) > 5)    /* is name 6 chars or more? */
-        glorpstr[6] = (char) NULL;   /* if so, char 7 should be NULL */
+if (strlen(you[0].your_name) > kFileNameLen-1)    /* is name 6 chars or more? */
+        glorpstr[kFileNameLen] = (char) NULL;   /* if so, char 7 should be NULL */
 
 
 int fi = 0;

@@ -15,6 +15,7 @@
 
 #ifdef LINUX
 # include <curses.h>
+#elif MAC
 #else
 # include <conio.h>
 #endif

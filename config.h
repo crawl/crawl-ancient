@@ -26,14 +26,30 @@ To compile with EMX for OS/2 define USE_EMX macro with compiler command line
   #include "libemx.h"
 #endif
 
+/*
+macintosh is predefined on all the common Mac compilers
+*/
+#ifdef macintosh
+  #undef DOS
+  #define MAC 1
+  #define DEBUG_BUILD 1
+  #define PLAIN_TERM
+  #include "libmac.h"
+#endif
+
+
 
 /*
-The first EOL should be used for DOS; most other OSs apparently
-use \n
+The first EOL should be used for DOS;
+Macs use \r;
+most other OSs apparently use \n
 */
 #ifdef DOS
   #define EOL "\n\r"
   #define DOS_TERM
+  #define SHORT_FILE_NAMES
+#elif MAC
+  #define EOL "\r"
 #else
   #define EOL "\n"
 #endif

@@ -1,7 +1,13 @@
+#ifndef DEFINES_H
+#define DEFINES_H
+
 
 #define NO_EQUIP 10
 
-#ifndef _LINUXLIB_IMPLEMENTATION
+// there's got to be a better way...
+#ifdef _LINUXLIB_IMPLEMENTATION
+#elif MAC
+#else
 #define TRUE 1
 #define FALSE 0
 #endif
@@ -78,3 +84,5 @@
 //#define DOS
 //#define LINUX
 // This is now in config.h
+
+#endif // DEFINES_H
