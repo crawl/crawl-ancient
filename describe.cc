@@ -5,9 +5,15 @@
  *
  *  Change History (most recent first):
  *
- *      <2>      5/20/99        BWR             Replaced is_artifact with is_dumpable_artifact
- *      <1>      4/20/99        JDJ             Reformatted, uses string objects, split out 10 new functions
- *                                              from describe_item(), added get_item_description and is_artifact.
+ *      <4>      10/14/99     BCR     enummed describe_god()
+ *      <3>      10/13/99     BCR     Added GOD_NO_GOD case in describe_god()
+ *      <2>      5/20/99      BWR     Replaced is_artifact with
+ *                                    is_dumpable_artifact
+ *      <1>      4/20/99      JDJ     Reformatted, uses string objects,
+ *                                    split out 10 new functions from
+ *                                    describe_item(), added
+ *                                    get_item_description and
+ *                                    is_artifact.
  */
 
 #include "AppHdr.h"
@@ -928,7 +934,13 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
                 description += "It is rather unreliable. ";
                 break;
             case 185:
-                description += "It is the creation of a mad God, and carries a curse which transforms anyone possessing it into a prune. Fortunately, the curse works very slowly, and one can use it briefly with no consequences worse than slightly purple skin and a few wrinkles. ";
+                description +=   "It is the creation of a mad God, and "
+                                "carries a curse which transforms anyone "
+                                "possessing it into a prune. Fortunately, "
+                                "the curse works very slowly, and one can "
+                                "use it briefly with no consequences "
+                                "worse than slightly purple skin and a "
+                                "few wrinkles.";
                 break;
             case 186:
                 description += "This truly accursed weapon is an instrument of Hell. ";
@@ -952,7 +964,15 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
                 description += "It is almost unerringly accurate. ";
                 break;
             case 193:
-                description += "It was the magical weapon wielded by the mighty wizard Olgreb before he met his fate somewhere within these dungeons. It grants its wielder resistance to the effects of poison and increases their ability to use venomous magic, and carries magical powers which can be invoked by one skilled in the use of magic. ";
+                description +=  "It was the magical weapon wielded by the "
+                               "mighty wizard Olgreb before he met his "
+                               "fate somewhere within these dungeons. It "
+                               "grants its wielder resistance to the "
+                               "effects of poison and increases their "
+                               "ability to use venomous magic, and "
+                               "carries magical powers which can "
+                               "be invoked by one skilled in the use "
+                               "of magic.";
                 break;
             case 194:
                 description += "It is lethally vampiric. ";
@@ -1325,7 +1345,10 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             break;
 
         case ARM_STEAM_DRAGON_ARMOUR:
-            description += "A magical armour, made from the scales of a steam-breathing dragon. Although unlike the armour made from the scales of some larger dragons it does not provide its wearer with any special magical protection, it is extremely light and as supple as cloth. ";
+            description += "A magical armour, made from the scales of a "
+ "steam-breathing dragon. Although unlike the armour made from the scales "
+ "of some larger dragons it does not provide its wearer with any special "
+ "magical protection, it is extremely light and as supple as cloth. ";
             break;
 
         case ARM_MOTTLED_DRAGON_HIDE:
@@ -1333,7 +1356,11 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             break;
 
         case ARM_MOTTLED_DRAGON_ARMOUR:
-            description += "A magical armour made from the scales of a mottled dragon. Although unlike the armour made from the scales of some larger dragons it does not provide its wearer with any special magical protection, it is as light and relatively uncumbersome as leather armour. ";
+             description += "A magical armour made from the scales of a "
+ "mottled dragon. Although unlike the armour made from the scales of some "
+ "larger dragons it does not provide its wearer with any special magical "
+ "protection, it is as light and relatively "
+ "uncumbersome as leather armour. ";
             break;
 
         case ARM_STORM_DRAGON_HIDE:
@@ -1915,7 +1942,12 @@ static string describe_scroll(int item_type)
             break;
 
         case 18:
-            description += "This wonderful scroll causes the creation of an item valuable to the reader at the reader's feet. It is especially treasured by specialist magicians, as they can use it to obtain the powerful spells of their speciality. It will avoid creating some types of item if one such is already in the possession of the reader. ";
+            description += "This wonderful scroll causes the creation of "
+ "an item valuable to the reader at the reader's feet. It is especially "
+ "treasured by specialist magicians, as they can use it to obtain the "
+ "powerful spells of their speciality. It will "
+ "avoid creating some types of item if one such is already in the "
+ "possession of the reader. ";
             break;
 
         case 19:
@@ -1924,7 +1956,12 @@ static string describe_scroll(int item_type)
 
         case 20:                // vorpalise weapon
 
-            description += "This scroll enchants a weapon so as to make it far more effective at inflicting harm on its wielder's enemies. Using it on a weapon already affected by some kind of special enchantment (other than that produced by a normal scroll of enchant weapon) is not advised. ";
+            description += "This scroll enchants a weapon so as to make "
+ "it far more effective at inflicting harm on its wielder's enemies. "
+ "Using "
+ "it on a weapon already affected by some kind of special enchantment "
+ "(other than that produced by a normal scroll of enchant weapon) is not "
+ "advised. ";
             break;
 
         case 21:
@@ -2063,7 +2100,10 @@ static string describe_jewellery(int item_class, int item_type, int item_plus, i
             break;
 
         case 23:
-            description += "This ring allows its wearer to control the destination of any teleportation, although without perfect accuracy. Trying to teleport into a solid object will result in a random teleportation, at least in the case of a normal teleportation. ";
+            description += "This ring allows its wearer to control the "
+ "destination of any teleportation, although without perfect accuracy. "
+ "Trying to teleport into a solid object will result in a random "
+ "teleportation, at least in the case of a normal teleportation.";
             break;
 
         case AMU_RAGE:
@@ -2095,7 +2135,11 @@ static string describe_jewellery(int item_class, int item_type, int item_plus, i
             break;
 
         case 42:
-            description += "Should the wearer of this amulet be levitated by magical means, he or she will be able to exercise some control over the resulting motion. This allows the descent of staircases and the retrieval of items lying on the ground, for example, but does not deprive the wearer of the benefits of levitation. ";
+            description += "Should the wearer of this amulet be levitated "
+ "by magical means, he or she will be able to exercise some control over "
+ "the resulting motion. This allows the descent of staircases and the "
+ "retrieval of items lying on the ground, for example, but does not "
+ "deprive the wearer of the benefits of levitation. ";
             break;
 
         case 43:
@@ -2300,13 +2344,23 @@ static string describe_misc_item(int item_type, unsigned char item_id)
             description += "A magical device which allows one to see the layout of their surroundings. It requires a degree of magical ability to be used reliably, otherwise it can produce unpredictable and possibly harmful results. ";
             break;
         case 2:
-            description += "A magical device for summoning air elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries an element of risk, which is reduced if one is skilled in the appropriate elemental magic. ";
+             description += "A magical device for summoning air "
+ "elementals. It is rather unreliable, and usually requires several "
+ "attempts to function correctly. Using it carries an element of risk, "
+ "which is reduced if one is skilled in the appropriate elemental magic. ";
             break;
         case 3:
-            description += "A magical device for summoning fire elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries an element of risk, which is reduced if one is skilled in the appropriate elemental magic. ";
+             description += "A magical device for summoning fire "
+ "elementals. It is rather unreliable, and usually requires several "
+ "attempts to function correctly. Using it carries an element of risk, "
+ "which is reduced if one is skilled in the appropriate elemental magic.";
             break;
         case 4:
-            description += "A magical device for summoning earth elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries an element of risk, which is reduced if one is skilled in the appropriate elemental magic. ";
+             description += "A magical device for summoning earth "
+ "elementals. It is rather unreliable, and usually requires several "
+ "attempts to function correctly. Using it carries an element of "
+ "risk, which is reduced if one is skilled in the appropriate "
+ "elemental magic.";
             break;
         case 5:
             description += "An unholy device which calls on the powers of darkness to assist its user, with a small cost attached. ";
@@ -2324,7 +2378,12 @@ static string describe_misc_item(int item_type, unsigned char item_id)
             description += "A deck of magical cards, depicting a range of weird and wondrous creatures. ";
             break;
         case 10:
-            description += "A magical device which can be used to restore one's reserves of magical energy, but the use of which carries the risk of draining all of those energies completely. This risk varies inversely with the proportion of their maximum energy which the user possesses; a user near his or her full potential will find this item most beneficial. ";
+ description += "A magical device which can be used to restore one's "
+ "reserves of magical energy, but the use of which carries the risk of "
+ "draining all of those energies completely. This risk varies inversely "
+ "with the proportion of their maximum "
+ "energy which the user possesses; a user near his or her full potential "
+ "will find this item most beneficial. ";
             break;
         case 11:
             description += "A magical box after its power is spent. ";
@@ -2466,12 +2525,13 @@ bool is_dumpable_artifact(int item_class, int item_type, int item_plus,
         case 7:                // jewellery
             if (item_dam == 200 || item_dam == 201)
                 is = item_id >= 2;      // randarts and unrandarts
-#if 1
+// BCR - huh?
+//#if 1
             // include this bit if descriptions of all rings and
             // amulets are desired
             else if (verbose == 1 && get_id(7, item_type))
                 is = true;
-#endif
+//#endif
             break;
     }
 
@@ -2793,13 +2853,22 @@ void describe_spell(int spelled)
         break;
 
     case 42:
-//                      description += " is extremely powerful, but carries a degree of risk. It renders a living caster almost invulnerable to harm for a brief period of time, but brings them to the very brink of death in doing so. When the duration expires, the caster will be returned to a state of near-death. The spell can be cancelled at any time by any healing effect, and the caster will recieve one warning shortly before the spell expires. Undead cannot use this spell. ";
-        description += " is extremely powerful, but carries a degree of risk. It renders a living caster almost invulnerable to harm for a brief period of time, but can bring them dangerously close to death (how close depends on their necromantic abilities). The spell can be cancelled at any time by any healing effect, and the caster will recieve one warning shortly before the spell expires. Undead cannot use this spell. ";
+         description += " is extremely powerful, but carries a degree of "
+  "risk. It renders a living caster almost invulnerable to harm for a "
+ "brief"
+ "period of time, but can bring them dangerously close to death (how "
+ "close"
+ "depends on their necromantic abilities).  The spell can be cancelled "
+ "at any time by any healing effect, and the "
+ "caster will recieve one warning shortly before the spell expires. "
+ "Undead cannot use this spell. ";
         break;
 
     case 43:
-//                      description += " allows the caster to selectively erase a spell from memory and regain the magical energy bound up in it. One will be able to memorise this spell even if their mind is otherwise full of magic (ie you have the maximum number of spells already; mere lack of spell levels is insufficient). ";
-        description += " allows the caster to selectively erase a spell from memory and regain the magical energy bound up in it. One will be able to memorise this spell even if their mind is otherwise full of magic (ie you have the maximum number of spells already). ";
+         description += " allows the caster to selectively erase a spell "
+ "from memory and regain the magical energy bound up in it. One will be "
+ "able to memorise this spell even if their mind is otherwise full of "
+ "magic (i.e. You have the maximum number of spells already).";
         break;
 
     case 44:
@@ -2843,7 +2912,6 @@ void describe_spell(int spelled)
         break;
 
     case 54:
-//                      description += " hurls a swarm of large and heavy metal splinters, to cut the caster's enemies into shreds. ";
         description += " hurls a lethally sharp bolt of crystal. ";
         break;
 
@@ -2876,7 +2944,10 @@ void describe_spell(int spelled)
         break;
 
     case 62:
-        description += " opens a gate to the Abyss and calls through one or more hideous abominations from that dreadful place. The powers who supervise this invocation require the caster to surrender some of his or her intelligence in exchange for their service. ";
+         description += " opens a gate to the Abyss and calls through one "
+ "or more hideous abominations from that dreadful place. The powers who "
+ "supervise this invocation require the caster to surrender some of "
+ "s/he/it's intelligence in exchange for their service. ";
         break;
 
     case 63:
@@ -2937,7 +3008,12 @@ void describe_spell(int spelled)
         break;
 
     case 77:
-        description += " calls forth a spirit from the elemental planes to aid the caster. A large quantity of the desired element must be available; this is rarely a problem for earth and air, but may be for fire or water. The elemental will usually be friendly to the caster (especially if they are skilled in the appropriate form of elemental magic). ";
+         description += " calls forth a spirit from the elemental planes "
+ "to aid the caster. A large quantity of the desired element must be "
+ "available; this is rarely a problem for earth and air, but may be for "
+ "fire or water. The elemental will usually be friendly to the caster "
+ "(especially if they are skilled in the appropriate form of elemental "
+ "magic).";
         break;
 
     case 78:
@@ -2953,7 +3029,11 @@ void describe_spell(int spelled)
         break;
 
     case 81:
-        description += " covers the caster's body with a protective layer of ice, the power of which depends on his or her skill with Ice magic. The caster and the caster's equipment are protected from the cold, but this spell will not function if the caster is already wearing heavy armour. ";
+         description += " covers the caster's body with a protective layer "
+ "of ice, the power of which depends on his or her skill with Ice magic. "
+ "The caster and the caster's equipment are protected from the cold, but "
+ "this spell will not function if the caster is already wearing "
+ "heavy armour. ";
         break;
 
     case 82:
@@ -2973,7 +3053,8 @@ void describe_spell(int spelled)
         break;
 
     case 110:
-        description += " allows its caster to imbue a mass of deceased flesh with a magical life force. Casting this spell involves the assembling of a heap of several corpses; the greater the mass of flesh available, the greater the chances of success. ";
+        description += " allows its caster to imbue a mass of deceased flesh with a magical life force. Casting this spell involves the assembling of a heap of several corpses; the greater the mass of flesh available, the greater the chances of success. "
+;
         break;
 
     case 111:
@@ -2981,7 +3062,13 @@ void describe_spell(int spelled)
         break;
 
     case 112:
-        description += " uses the bones of a skeleton (or the bone-like exoskeleton of, for example, an insect) as the raw materials for a lethal spray of slicing bone fragments, allowing its creator to dispense with conjuration magic entirely and use necromancy alone for a low-level but very powerful combat spell. Using a large and heavy skeleton (by wielding it) results in a more powerful effect. ";
+       description += " uses the bones of a skeleton (or the bone-like "
+ "exoskeleton of, for example, an insect) as the raw materials for a "
+ "lethal "
+ "spray of slicing bone fragments, allowing its creator to dispense with "
+ "conjuration magic entirely and use necromancy alone for a low-level but "
+ "very powerful combat spell. Using a large and heavy skeleton (by "
+ "wielding it) results in a more powerful effect. ";
         break;
 
     case 113:
@@ -2997,8 +3084,12 @@ void describe_spell(int spelled)
         break;
 
     case 116:
-//                      description += " converts flesh, blood, and other bodily fluids into magical energy. The caster must hold a piece of butchered flesh in his or her hand when casting, or the spell will feed directly on the caster's body; although never directly fatal, this could leave one very near death. ";
-        description += " converts flesh, blood, and other bodily fluids into magical energy. The caster may use his or her own body as the focus for this spell (which can be dangerous but never directly lethal), or can wield a piece of butchered flesh and draw power from that. ";
+         description += " converts flesh, blood, and other bodily fluids "
+ "into magical energy. The caster may use his or her own body as the "
+ "focus "
+ "for this spell (which can be dangerous but never directly lethal), or "
+ "can "
+ "wield a piece of butchered flesh and draw power from that. ";
         break;
 
     case 117:
@@ -3054,7 +3145,10 @@ void describe_spell(int spelled)
         break;
 
     case 130:
-        description += " entombs the caster within four walls of rock. These walls will destroy most objects in their way, but their growth is obstructed by the presence of any creatures. Beware - one would be unwise to use this spell without a reliable escape route. ";
+  description += " entombs the caster within four walls of rock. These "
+ "walls will destroy most objects in their way, but their growth is "
+ "obstructed by the presence of any creatures. Beware - one would be "
+ "unwise to use this spell without a reliable escape route.";
         break;
 
     case 131:
@@ -3119,7 +3213,11 @@ void describe_spell(int spelled)
         break;
 
     case 147:
-        description += " creates a gate allowing long-distance travel through a relatively ordinary environment (ie the Dungeon only). It lasts long enough for the caster and nearby creatures to enter. It will not take you past the level limits of your current area.";
+         description += " creates a gate allowing long-distance travel "
+ "through a relatively ordinary environment (ie the Dungeon only). It "
+ "lasts "
+ "long enough for the caster and nearby creatures to enter. It will "
+ "not take you past the level limits of your current area.";
         break;
 
     case 148:
@@ -3163,7 +3261,12 @@ void describe_spell(int spelled)
         break;
 
     case 158:
-        description += " calls on the powers of Hell to cause agonising injuries to anyone or anything living in the caster's vicinity. It carries a degree of danger for any necromancer brave enough to invoke it, for the Symbol also affects its caller and indeed will not function if they are immune to its terrible effects. Despite its power, however, it is never lethal.";
+        description += " calls on the powers of Hell to cause agonising "
+ "injuries to anyone or anything living in the caster's vicinity. It "
+ "carries a degree of danger for any necromancer brave enough to invoke "
+ "it, for the Symbol also affects its caller and "
+ "indeed will not function if they are immune to its terrible effects. "
+ "Despite its power, however, it is never lethal.";
         break;
 
     case 159:
@@ -3175,7 +3278,11 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_ICE_BOLT:
-        description += " throws a chunk of ice. It is particularly effective against those creatures not immune to the effects of freezing temperatures, but half of its destructive potential comes from its weight and sharp edges and cannot be ignored even by cold-resistant creatures.";
+        description += " throws a chunk of ice. It is particularly "
+ "effective against those creatures not immune to the effects of freezing "
+ "temperatures, but half of its destructive potential comes from its "
+ "weight and sharp edges and cannot be ignored even "
+ "by cold-resistant creatures.";
         break;
 
     case SPELL_ICE_STORM:
@@ -3192,14 +3299,14 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_SHADOW_CREATURES:
-        description += " weaves a creature from shadows and threads of Abyssal matter. The creature thus brought into existence will be a recreation of some type of creature found in the caster's immediate vicinity. The spell even creates appropriate pieces of equipment for the creature, which are given a lasting substance by their contact with firm reality.";
+         description += " weaves a creature from shadows and threads of "
+ "Abyssal matter. The creature thus brought into existence will be a "
+ "recreation of some type of creature found in the caster's immediate "
+ "vicinity. The spell even creates appropriate pieces of equipment for "
+"the"
+"creature, which are given a lasting substance by "
+"their contact with firm reality.";
         break;
-
-        /*
-           case 0:
-           description += ". ";
-           break;
-         */
 
     default:
         DEBUGSTR("Bad spell");
@@ -3441,7 +3548,10 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 37:                    // L
 
-        description = "A wizard who didn't want to die, a Lich is a skeleton or decaying corpse kept alive by a mighty exercise of necromancy. These undead creatures can wield great magic and are best avoided by all but the most confident (or stupid) adventurers.";
+     description = "A wizard who didn't want to die, a Lich is a skeleton "
+ "or decaying corpse kept alive by a mighty exercise of necromancy. These"
+" undead creatures can wield great magic and are best avoided by all but"
+" the most confident (or stupid) adventurers.";
         break;
 
     case 38:                    // M
@@ -4552,7 +4662,10 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 378:                   // Killer Klown
 
-        description = "A comical figure full of life and laughter.  It looks very happy to see you.$But is there a slightly malicious cast to its features?  Is that red facepaint or something altogether less pleasant? Join in the fun, and maybe you'll find out!";
+         description = "A comical figure full of life and laughter.  It"
+" looks very happy to see you.$But is there a slightly malicious cast to"
+" its features?  Is that red facepaint or something altogether less"
+" pleasant? Join in the fun, and maybe you'll find out!";
         break;
 
         /* Hugh Cook monsters: */
@@ -4564,7 +4677,11 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 380:                   // dorgi
 
-        description = "\"The dorgi...was a huge grumping machine with a pronounced propensity for violence. It was huge, heavy, brown and bulbous. A hulking thing stubbled with inscrutable protruberances. A monstrous thing which moved upon its victims with a sound like heavy breathing.\"$(Hugh Cook, _The Wazir and the Witch_)";
+       description = "\"The dorgi...was a huge grumping machine with a "
+" pronounced propensity for violence. It was huge, heavy, brown and"
+" bulbous. A hulking thing stubbled with inscrutable protruberances. A"
+" monstrous thing which moved upon its victims with a sound like heavy"
+" breathing.\"$(Hugh Cook, _The Wazir and the Witch_)";
         break;
 
     case 381:                   // Sword
@@ -4796,7 +4913,10 @@ void describe_god(int which_god)
 
     switch (which_god)
     {
-    case 1:
+    case GOD_NO_GOD:
+        description += "You are not religious.";
+        break;
+    case GOD_ZIN:
         description += "Zin is an ancient and revered God, dedicated to the "
             "establishment of order and the destruction of the forces of chaos and night. "
             "Valued "
@@ -4805,16 +4925,14 @@ void describe_god(int which_god)
             "Zin appreciates long-standing faith as well as sacrifices of valued objects "
             "and the slaying of demons and the undead.";
         break;
-
-    case 2:
+    case GOD_SHINING_ONE:
         description += "The Shining One is a powerful crusading diety, allied with "
             "Zin in the fight against evil. Followers may be granted with the ability to "
             "summarily dispense the wrath of heaven, but must never use any form of evil "
             "magic and should fight honourably. The Shining One appreciates long-standing persistence in the endless "
             "crusade, as well as the dedicated destruction of unholy creatures.";
         break;
-
-    case 3:
+    case GOD_KIKUBAAQUDGHA:
         description += "Kikubaaqudgha is a terrible Demon-God, served by those who "
             "seek knowledge of the powers of death. Followers gain special powers "
             "over the undead, and especially favoured servants can call on mighty demons "
@@ -4824,23 +4942,20 @@ void describe_god(int which_god)
         if (you.piety >= 50 && you.religion == GOD_KIKUBAAQUDGHA)
             description += "$Kikubaaqudgha is protecting you from the side-effects of death magic.";
         break;
-
-    case 4:
+    case GOD_YREDELEMNUL:
         description += "Yredelemnul is worshipped by those who seek powers over "
             "death and the undead without having to learn to use necromancy. Followers "
             "can raise legions of servile undead and gain a number of other useful (if "
             "unpleasant) powers. Yredelemnul appreciates killing, but prefers corpses "
             "to be put to use rather than sacrificed.";
         break;
-
-    case 5:
+    case GOD_XOM:
         description += "Xom is a wild and unpredictable God of chaos, who seeks not "
             "worshippers but playthings to toy with. Many choose to follow Xom in the "
             "hope of receiving fabulous rewards and mighty powers, but Xom is nothing if "
             "not capricious.";
         break;
-
-    case 6:
+    case GOD_VEHUMET:
         description += "Vehumet is a God of the destructive powers of magic. "
             "Followers gain various useful powers to enhance their command of "
             "the hermetic arts, and the most favoured stand to gain access to "
@@ -4858,15 +4973,13 @@ void describe_god(int which_god)
                 description += "$During prayer you are protected from summoned creatures.";
         }
         break;
-
-    case 7:
+    case GOD_OKAWARU:
         description += "Okawaru is a dangerous and powerful God of battle. Followers "
             "can gain a number of powers useful in combat as well as various rewards, "
             "but must constantly prove "
             "themselves through battle and the sacrifice of corpses and valuable items.";
         break;
-
-    case 8:
+    case GOD_MAKHLEB:
         description += "Makhleb the Destroyer is a fearsome God of chaos and violent "
             "death. Followers, who must constantly appease Makhleb with blood, stand to "
             "gain various powers of death and destruction. The Destroyer appreciates "
@@ -4874,37 +4987,32 @@ void describe_god(int which_god)
         if (you.piety >= 30 && you.religion == GOD_MAKHLEB)
             description += "$You can gain power from the deaths of those killed in Makhleb's name.";
         break;
-
-    case 9:
+    case GOD_SIF_MUNA:
         description += "Sif Muna is a contemplative but powerful deity, served by "
             "those who seek magical knowledge. Sif Muna appreciates sacrifices of valuable "
             "items, and the casting of spells as often as possible.";
         if (you.piety >= 100 && you.religion == GOD_SIF_MUNA)
             description += "$Sif Muna is protecting you from some of the side-effects of magic.";
         break;
-
-    case 10:
+    case GOD_TROG:
         description += "Trog is an ancient God of anger and violence. Followers are "
             "expected to kill in Trog's name and sacrifice the dead, and in return gain "
             "power in battle and occasional rewards. Trog hates wizards, and followers "
             "are forbidden the use of spell magic.";
         break;
-
-    case 11:
+    case GOD_NEMELEX_XOBEH:
         description += "Nemelex is a strange and unpredictable trickster God, whose "
             "powers can be invoked through the magical packs of cards which Nemelex "
             "paints in the ichor of demons. Followers receive occasional gifts, and "
             "should use these gifts as much as possible. Offerings of any type of "
             "item are also appreciated.";
         break;
-
-    case 12:
+    case GOD_ELYVILON:
         description += "Elyvilon the Healer is worshipped by the healers (among "
             "others), who gain their healing powers by long worship and devotion. Although Elyvilon "
             "prefers a creed of pacifism, those who crusade against evil are not "
             "excluded. Elyvilon appreciates the offering of weapons.";
         break;
-
     default:
         DEBUGSTR("Unknown god");
     }

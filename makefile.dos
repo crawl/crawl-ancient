@@ -1,17 +1,17 @@
 # Make file for Dungeon Crawl (dos)
 
-APPNAME = crawl
-
 # this file contains a list of the libraries.
 # it will make a variable called OBJECTS that contains all the libraries
 include makefile.obj
 
+# need .exe so make will find the right file
+APPNAME = crawl.exe
 CXX = gxx
 DELETE = del
 COPY = copy
 OS_TYPE = DOS
-CFLAGS = -Wall -D$(OS_TYPE) $(EXTRA_FLAGS)
-LDFLAGS = -Lc:\djgpp\contrib\pdcurs22\lib
+CFLAGS = -D$(OS_TYPE) $(EXTRA_FLAGS)
+LDFLAGS = -Bc:/djgpp/contrib/pdcurs22/lib
 INSTALLDIR = c:\games\crawl
 LIB = -lcurso -lpano
 

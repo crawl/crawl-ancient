@@ -14,6 +14,7 @@
 #include "AppHdr.h"
 #include "spells2.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "externs.h"

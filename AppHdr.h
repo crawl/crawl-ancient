@@ -166,9 +166,11 @@
 // Uncomment this line to allow the player to select his draconian's colour.
 // #define ALLOW_DRACONIAN_TYPE_SELECTION
 
-// Uncomment this to use the new random number generator
 // if this works out okay, eventually we can change this to USE_OLD_RANDOM
 #define USE_NEW_RANDOM
+
+// Uncomment this to make Xom's messages appear in yellow
+#define XOM_ACTS_YELLOW
 
 // Uncomment this if you find the labyrinth to be buggy and what to
 // remove it from the game.

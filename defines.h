@@ -8,7 +8,7 @@
  *                      because there are in numerical order.  But I'm too lazy to
  *                      do it myself.
  *
- *  Copyright © 1999 Brian Robinson.
+ *  Copyright © 1999 Brian Robinson.  // Me?  How come?
  *
  *  Change History (most recent first):
  *

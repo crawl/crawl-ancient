@@ -28,6 +28,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "externs.h"
 #include "enum.h"

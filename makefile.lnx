@@ -5,6 +5,7 @@ APPNAME = crawl
 # this file contains a list of the libraries.
 # it will make a variable called OBJECTS that contains all the libraries
 include makefile.obj
+
 OBJECTS += liblinux.o
 
 CXX = g++

@@ -5,6 +5,9 @@
  *
  *  Change History (most recent first):
  *
+ *     <14>     10/13/99        BCR             Added auto door opening,
+ *                                              move "you have no
+ *                                              religion" to describe.cc
  *     <13>     10/11/99        BCR             Added Daniel's wizard patch
  *     <12>     10/9/99         BCR             swapped 'v' and 'V' commands,
  *                                              added wizard help command
@@ -908,11 +911,6 @@ static bool Use_No_Black = false;
             break;
          case '^':
          case CMD_DISPLAY_RELIGION:
-            if (you.religion == GOD_NO_GOD)
-            {
-               mpr("You aren't religious.");
-               break;
-            }
             describe_god(you.religion);
          #ifdef PLAIN_TERM
          redraw_screen();
@@ -1256,9 +1254,12 @@ static bool Use_No_Black = false;
             Xom_acts( 1, 20, 1 );
             break;
          case 'h':
-            you.hp_max = abs(you.hp_max);
+            you.rotting = 0;
+            you.poison = 0;
+            you.disease = 0;
+            you.hp_max = abs(you.hp_max) + 10;
             you.hp = you.hp_max;
-            you.hunger = abs(you.hunger);
+            you.hunger = abs(you.hunger) + 5000;
             you.redraw_hit_points = 1;
             break;
          case '\"':
@@ -1507,6 +1508,7 @@ static bool Use_No_Black = false;
 
    // paradox: it both lasts longer & does more damage overall if you're
    //          moving slower.
+
    // rationalisation: I guess it gets rubbed off/falls off/etc if you
    //          move around more.
 
@@ -1589,7 +1591,6 @@ static bool Use_No_Black = false;
             mpr("Your skin stops crawling.");
             you.duration[DUR_REGENERATION] = 0;
             /* you.rate_regen -= 100; */
-            // you.hunger_inc -= 4;
          }
       }
 
@@ -2300,9 +2301,6 @@ static bool Use_No_Black = false;
  */
    void open_door(char move_x, char move_y)
    {
-   /*move_x = door_x;
-   move_y = door_y; */
-   //int nothing = 0;
       struct dist door_move[1];
 
       door_move[0].move_x = move_x;
@@ -2371,9 +2369,7 @@ static bool Use_No_Black = false;
             strcpy(info, "As you open the door, it creaks loudly!");
             noisy(15, you.x_pos, you.y_pos);
          }
-         else
-         {
-            if (you.levitation != 0)
+         else if (you.levitation != 0)
             {
                strcpy(info, "You reach down and open the door.");
             }
@@ -2381,8 +2377,6 @@ static bool Use_No_Black = false;
             {
                strcpy(info, "You open the door.");
             }
-
-         }
 
          mpr(info);
          grd[you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y] = 70;
@@ -2529,6 +2523,7 @@ static bool Use_No_Black = false;
    #endif
 
       srandom(time(NULL));
+      srand(time(NULL));
       clrscr();
 
    /* init item array */
@@ -2815,7 +2810,9 @@ static bool Use_No_Black = false;
             return;
          }
 
-         if ((grd[you.x_pos + move_x][you.y_pos + move_y] == 61 || grd[you.x_pos + move_x][you.y_pos + move_y] == 62) && you.levitation == 0)
+         if (   (grd[you.x_pos + move_x][you.y_pos + move_y] == 61
+             || grd[you.x_pos + move_x][you.y_pos + move_y] == 62)
+             && you.levitation == 0)
          {
             fall_into_a_pool(0, grd[you.x_pos + move_x][you.y_pos + move_y]);
             you.turn_is_over = 1;
@@ -2824,13 +2821,24 @@ static bool Use_No_Black = false;
          }
       }                           // end of if you.conf
 
-      if (you.running > 0 && you.running != 2 && grd[you.x_pos + move_x][you.y_pos + move_y] != 67 && grd[you.x_pos + move_x][you.y_pos + move_y] != 78)
+      if (   you.running > 0
+          && you.running != 2
+          && grd[you.x_pos + move_x][you.y_pos + move_y] != 67
+          && grd[you.x_pos + move_x][you.y_pos + move_y] != 78)
       {
-         you.running = 0;
-         move_x = 0;
-         move_y = 0;
-         you.turn_is_over = 0;
-         return;
+        // BCR - Easy doors running
+        if (grd[you.x_pos + move_x][you.y_pos + move_y] == 3)
+        {
+          open_door(move_x, move_y);
+        }
+        else
+        {
+          you.running = 0;
+          move_x = 0;
+          move_y = 0;
+          you.turn_is_over = 0;
+        }
+        return;
       }
 
       if (mgrd[you.x_pos + move_x][you.y_pos + move_y] != MNG)
@@ -2938,7 +2946,6 @@ static bool Use_No_Black = false;
 
          if (grd[you.x_pos][you.y_pos] > 74 && grd[you.x_pos][you.y_pos] < 79)
          {
-
             if (grd[you.x_pos][you.y_pos] == 78)
             {
                 //abort();
@@ -2975,7 +2982,12 @@ static bool Use_No_Black = false;
 
 
    out_of_traps:
-      if (grd[you.x_pos + move_x][you.y_pos + move_y] <= MINMOVE)
+      // BCR - Easy doors single move
+      if (grd[you.x_pos + move_x][you.y_pos + move_y] == 3)
+      {
+        open_door(move_x, move_y);
+      }
+      else if (grd[you.x_pos + move_x][you.y_pos + move_y] <= MINMOVE)
       {
          move_x = 0;
          move_y = 0;

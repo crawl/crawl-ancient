@@ -1,5 +1,7 @@
 Enhancements:
 
+* Make food acquirement give you more kinds of food.
+
 * Some commands in wizard help are still undefined.
 
 * Documentation needs to be updated for the upcoming release.
@@ -16,8 +18,8 @@ Enhancements:
 
 * make rings of fire/ice (and others?) auto identify with use
 
-* miscast effects too weak?  Not enough of a threat, especial when used by
-  gods, Zot traps, or mummies as a form of punishment.
+* miscast effects too weak?  Not enough of a threat, especially when used
+  by gods, Zot traps, or mummies as a form of punishment.
 
 * add toggled stealthy mode?
 
@@ -25,7 +27,7 @@ Enhancements:
   chacters status in the dump... method of death might be good as well).
 
 * fix green crystal room so its not boring (pretty vault, just no real
-   point to it currently)
+  point to it currently)
 
 * fix the summoning abuse problem properly.  Ideally, the player should
   not get piety for killing things he summoned, but should get piety

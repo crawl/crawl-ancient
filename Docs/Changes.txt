@@ -1,4 +1,32 @@
 Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
+10/15/99
+
+* you can now Acquire food.  It gives royal jellies to non
+  ghouls, and royal jellies or chunks to ghouls.  I tried to
+  get it to give you a variety of food, but it was a pain.
+* added XOM_ACTS_YELLOW #define to AppHdr.h
+* Added srand() to acr.cc so for the USE_NEW_RANDOM to work right.
+
+Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
+10/14/99
+
+* Fixed a problem where some super long strings in describe.cc got
+  cut up, causing a compiler error.  (Please try to keep lines < 80
+  characters whenever possible.)
+* enummed describe_god() in describe.cc
+* added makefile.sgi option to Makefile (although it doesn't work)
+* Culled fixed bugs from Bugs.txt
+* Added 'Easy Crawl' door opening.  Walking into a door now
+  opens it.  Running into a door currently opens the door
+  and stops.
+* Added a GOD_NO_GOD case in describe_religion in describe.cc.
+  It was a special case in acr.cc, but that's gone.
+* added #include <stdio.h> to fight.cc and spells2.cc because
+  they include sprintf().  Will compile and link properly
+  without the include on Linux, but not in DOS.
+* Tweaked makefiles .dos, .emx, and .sol
+
+Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
 10/12/99
 
 * Changed the version string to "3.40" and added a #define

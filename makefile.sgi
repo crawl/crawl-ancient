@@ -21,6 +21,10 @@ INCLUDES = -I/usr/include/ncurses
 
 all:            $(APPNAME)
 
+%.o:		%.cc
+		@echo hello
+		@${CXX} ${CFLAGS} -c $< ${INCLUDE}
+
 install:        $(APPNAME)
 		$(COPY) $(APPNAME) ${INSTALLDIR}
 		chmod ${MCHMOD} ${INSTALLDIR}/$(APPNAME)
@@ -45,9 +49,6 @@ debug:		$(OBJECTS)
 
 profile:	$(OBJECTS)
 		${CXX} -g -p ${LDFLAGS} $(INCLUDES) $(CFLAGS) $(OBJECTS) -o $(APPNAME) $(LIB)
-
-.cc.o:
-		${CXX} ${CFLAGS} -c $< ${INCLUDE}
 
 .h.cc:
 		touch $@

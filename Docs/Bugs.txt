@@ -1,25 +1,27 @@
 Bugs:
 
+* makefile for sgi IRIX does not work.  No clue why.
+
+* Sometimes when I'm in the Abyss and I use an exit, it goes into an
+  infinite loop.  This is hard to replicate, though.
+
 * I think I fixed weapons of reaching but haven't been able to test them yet.
 
 * DJGPP (dos compiler) may puke up a lung on some of the very long function if
-  you try to compile using certain options.
+  you try to compile using certain options.  Sometimes simply running make
+  again will work, sometimes you will have to change the options.
 
-* values 250 - 310 should be reserved for Uniques in the monsters enum, but 260 - 280
-  are occupied by other monsters.  Should move them if it won't mess anything else up.
-  If they are moved, remember to alter the ouch.cc check to see if 'a' is put in front
-  of the unique's name in the scores.
+* values 250 - 310 should be reserved for Uniques in the monsters enum,
+  but 260 - 280 are occupied by other monsters.  Should move them if it
+  won't mess anything else up.  If they are moved, remember to alter the
+  ouch.cc check to see if 'a' is put in front of the unique's name in the
+  scores.
 
 * Various odd effects when playing in term on Linux.  May be terminfo's fault.
 
 *  "-5 stone" is heavily enchanted to do *more* damage and costs 100
 
 *  "+6" was missile weapon generated in a jewellery shop
-
-*  stop polearms of reaching from working over other monsters... might
-   be a feature, though
-
-*  backwards compatibility with save files is probably too far gone.
 
 *  miscast effects are too weak?
 
@@ -31,18 +33,9 @@ Bugs:
 
 *  fix keypad... still broken
 
-* cannot make the program with -DWIZARD (some files won't compile)
-   -- fixed
-
 * Skeletal Warrior cast a spell and seg faulted the game in the abyss.
 
 * Makleb's Minor Destruction (first prompt '8' crashes game under DOS?)
-
-* Macro code does not work properly in Linux.  When enabled, the user must hit
-  two keys before any actions are executed, instead of having their actions
-  executed immediately after each keystroke.  Quick fix is to disable macros
-  from the Linux build, but eventually we want to get them working on Linux.
-   -- fixed
 
 * From the code it appears that dropping items takes zero time...
 
@@ -85,105 +78,6 @@ engorged and I think with full as well).
     -- should be fixed now (bwross)
     -- it's not fixed (JDJ)
 
-* One cannot escape from the labyrinth.  He suggests looking at
-the down_stair() and up_stair() functions, and disabling labyrinths
-until this is fixed.
-
-The problem seems to be that you arrive at a bad spot in the Labyrinth,
-i.e., on the stairs "down" (and hence out).  These stairs are near the
-center of the Labyrinth.  You *should* arrive at the stairs up, which
-are on the periphery.  The stair you arrive on is destroyed, so as to
-trap you in the Labyrinth.  Currently, the wrong stairs get destroyed,
-and the stairs up don't go anywhere.
-
-I think I've found the source of the problem.  Here is a partial diff
-between the 3.20 and 3.30 versions of misc.cc:
-
-< if (you[0].level_type == 1 || you[0].level_type == 2) stair_find = 81;
-< if (you[0].level_type == 3) stair_find = 101;
----
-> if (you[0].level_type == 1 || you[0].level_type == 2) stair_taken = 67; //81;
-> if (you[0].level_type == 3) stair_taken = 101;
-
-81 is the value for an entrance to the Labyrinth, and 67 is the value
-for floor.  The actual stairwell gets converted to flooring earlier
-in the code (or maybe that's the entrance to the Labyrinth that gets
-converted).  But now the routine load() gets passed 67 rather than 81.
-It's tough to follow from there, but load() tries to find a place to put
-the player upon his arrival, and it works a lot harder when it gets 67.
-
-I've changed the 67 back to 81 in my copy, and now I arrive somewhere
-in the lower left hand corner of the Labyrinth.  In previous versions,
-I arrived at the upper right corner, but I assume that this is OK.
-Using the clockwise spiral technique, I was able to quickly maneuver
-myself to the exit, kill the minotaur, and return to the dungeon.
-
-The above code also effects the Abyss (level_type 2), which has a similar
-"destroy this stairwell" feature.
-
-* In 3.20, I had some problems in the Abyss.  I would step to
-an open square, only to be told that hit/killed some monster
-that wasn't there.  After killing several non-existent monsters,
-I began killing "Program Bugs".
-    -- fixed
-
-* BTW you should not be reading the results of a monster stepping
-in a Zot trap when it's out of sight... IIRC you got a message
-saying "You hear a loud *Zot*!" or words to that effect.
-    -- fixed
-
-* I'm almost certain that monsters are triggering 'magic' traps
-(ie teleport, amnesia, Zot), but not the 'missile' traps (ie darts
-etc, including blade traps). There are two differences between these
-traps in the code: flying/levitating monsters don't trigger missile
-traps, and the two types are represented by different grid values.
-Either all monsters are being interpreted as flying, or something is
-preventing the game from calling some vital function when a missile
-trap is triggered.
-
-Here is code from mstuff2.cc:
-
-    if (env[0].trap_type[tr] < TRAP_TELEPORT || env[0].trap_type[tr] ==
-TRAP_BLADE || env[0].trap_type[tr] == TRAP_BOLT)
-    {
-        if (mons_flies (menv[i].m_class) == 0)
-            return;             /* Flying monsters can avoid mechanical
-                                 * traps, but not magical ones */
-    }
-
-It looks to me like non-flying monsters avoid mechanical traps.  In
-my copy I have changed this to:
-
-    // Flying monsters can avoid mechanical traps, but not magical ones
-    if (      mons_flies (menv[i].m_class)
-         && ! is_magical_trap( env[0].trap_type[tr] )
-       )
-    {
-        return;
-    }
-
-where I define the subroutine is_magical_trap() further up in the
-code.  I'll let you know if I see any differences in monster/trap
-interactions.
-
-* In decks.cc, we see:
-
-        case 3:
-        mpr("You have drawn Experience.");
-        if (you[0].xp < 27)
-         you[0].xp = exp_needed(you[0].xl + 2, you[0].species) + 1;
-        level_change();
-        break;
-
-We should use you[0].xl, not you[0].xp.
-
-* "Blade hands" is displayed as your weapon after your hands have
-returned to normal.
-
-I've fixed this (I think) in my copy.
-
-    -- fixed in dev copy now (bwross)
-
 * An item is cursed if its "iplus" value is "big enough".  However, "big
 enough" is >80 in some places, >130 in others, and perhaps >120 in others.
 I'm not sure about the 120 -- I recall seeing it but can't find it now.
@@ -194,11 +88,6 @@ The uncursing code checks against 80 for one hand, and against 130 for
 the other.
 
 * Artifact weapons of Holy Wrath can be wielded by undead.
-
-* Selective Amnesia spell description is confusing?
-    -- removed the last phrase which said you could learn
-       it with a shortage of "spell levels", it meant spell slots...
-       it was overly redundand anyways (bwross)
 
 * Line of sight code seems flaky: fairly often bits of the dungeon
 become visible even though they're in an unconnected part of the map.
@@ -259,46 +148,8 @@ that will light after waiting a turn.
 * beams aren't always visible
     -- should be fixed (at least for curses) (bwross)
 
-* Unarmed combat doesn't take the right amount of time?
-    -- fixed (bwross)
-
-* Noisy wield bug?
-    -- fixed (bwross)
-
-* Resist lightning air staff bug?
-    -- fixed (bwross)
-
 * Screen isn't always updated when wielded object changes?
     -- hopefully fixed most of these (bwross)
-
-* Triple level of a mutation is never granted?
-    -- from perma_mutation, a la demonspawn... fixed (bwross)
-
-* Going up or down stairs can clear the food status?
-    -- fixed (bwross)
-
-* Stat increases message is printing wrong stat?
-        What I found
-        was that the stats in the program are numbered like they are in the
-        character dump (str, dex, int), not like they are on the screen
-        (str, int, dex).  On random stat increases, some races (minotaur
-        is one) have a comment which says /* str or dex */, but what
-        it gives is str or int (obviously a confusion between the two
-        orderings).
-    -- actually the stats that were given didn't match the comments,
-       fixed (bwross)
-
-* Vehumet gift giving code is bogus?
-    -- fixed (bwross)
-
-* Demonspawn don't always get their mutations?
-    -- patched, demonspawn should always get something when demonspawn()
-       is called now (bwross)
-
-* Sword of Power is too buff?
-    -- somewhat less powerful now [max +20, div 13] (bwross)
-
-* Keypad handling is weak?
 
 * Fix the inventory count bug.  The inventory counter occasionally
   gets out of sync, it should either be moved or fixed.
@@ -311,8 +162,6 @@ that will light after waiting a turn.
     -- it doesn't seem quite right: food will sometimes rot, but more often
     it seems to disappear too quickly (JDJ)
 
-* Animate skeleton doesn't work on some skeletons?
-
 * Entering Ecumenical Temple may cause game to crash?
 
 * Missing space when printing gold amounts?
@@ -322,9 +171,6 @@ that will light after waiting a turn.
 
 * Conjure flame should do damage at a constant rate, not when creatures
   in it move.
-
-* "You are You escaped."  line in character dumps.
-    -- fixed (bwross)
 
 * Geryon should only appear once
 

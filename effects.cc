@@ -36,34 +36,34 @@
 #include "spells3.h"
 
 
-void torment()
-{
-    int dmi = 0;
+   void torment()
+   {
+      int dmi = 0;
 
-    if (you.is_undead != 0 || you.mutation[MUT_TORMENT_RESISTANCE] != 0)
-    {
-        strcpy(info, "You feel a surge of unholy energy.");
-        mpr(info);
-    }
-    else
-    {
-        strcpy(info, "Your body is wracked with pain!");
-        mpr(info);
+      if (you.is_undead != 0 || you.mutation[MUT_TORMENT_RESISTANCE] != 0)
+      {
+         strcpy(info, "You feel a surge of unholy energy.");
+         mpr(info);
+      }
+      else
+      {
+         strcpy(info, "Your body is wracked with pain!");
+         mpr(info);
         //you.hp -= (you.hp / 2) - 1;
-        int tormdam = (you.hp / 2) - 1;
+         int tormdam = (you.hp / 2) - 1;
 
-        if (tormdam <= 0)
+         if (tormdam <= 0)
             tormdam = 0;
-        ouch(tormdam, 0, 0);
-        you.redraw_hit_points = 1;
-    }
+         ouch(tormdam, 0, 0);
+         you.redraw_hit_points = 1;
+      }
 
-    for (dmi = 0; dmi < MNST; dmi++)
-    {
-        if (menv[dmi].type == -1)
+      for (dmi = 0; dmi < MNST; dmi++)
+      {
+         if (menv[dmi].type == -1)
             continue;
 
-        if (!mons_near(dmi))
+         if (!mons_near(dmi))
             continue;
 
         //              int mres = random2(100);
@@ -71,23 +71,23 @@ void torment()
 
         //              if (mres < mres2) continue;
 
-        if (mons_holiness(menv[dmi].type) > 0)
+         if (mons_holiness(menv[dmi].type) > 0)
             continue;
 
         // maybe an exemption for undead?
         // maybe do something fun for magic circles?
 
-        menv[dmi].hit_points -= (menv[dmi].hit_points / 2) - 1;
+         menv[dmi].hit_points -= (menv[dmi].hit_points / 2) - 1;
 
-        if (menv[dmi].enchantment[2] == 6)
+         if (menv[dmi].enchantment[2] == 6)
             continue;           // can't see it
 
-        strcpy(info, monam(menv[dmi].number, menv[dmi].type, menv[dmi].enchantment[2], 0));
-        strcat(info, " convulses!");
-        mpr(info);
-    }
+         strcpy(info, monam(menv[dmi].number, menv[dmi].type, menv[dmi].enchantment[2], 0));
+         strcat(info, " convulses!");
+         mpr(info);
+      }
 
-}
+   }
 
 
 /*
@@ -113,880 +113,853 @@ void torment()
    return 1;
    }
  */
-void banished(unsigned char gate_type)
-{
-    you_teleport2(0);           // this is to ensure that you're standing on a suitable space (67)
+   void banished(unsigned char gate_type)
+   {
+      you_teleport2(0);           // this is to ensure that you're standing on a suitable space (67)
 
-    grd[you.x_pos][you.y_pos] = gate_type;
-    down_stairs(1, you.your_level);     // heh heh
+      grd[you.x_pos][you.y_pos] = gate_type;
+      down_stairs(1, you.your_level);     // heh heh
 
-}
+   }
 
 
-char forget_spell(void)
-{
-    char spc2;
+   char forget_spell(void)
+   {
+      char spc2;
 
-    if (you.spell_no <= 0)
-        return 0;
+      if (you.spell_no <= 0)
+         return 0;
 
-    do
-    {
-        spc2 = random2(20);
-        if (random2(1000) == 0)
+      do
+      {
+         spc2 = random2(20);
+         if (random2(1000) == 0)
             return 0;           // safety check
 
-    }
-    while (you.spells[spc2] == 210);
+      }
+      while (you.spells[spc2] == 210);
 
 
     // This is now handled by a function in player.cc
     //you.spell_levels += spell_value(you.spells[spc2]);
-    you.spell_no--;
-    you.spells[spc2] = 210;
-    return 1;
-}
+      you.spell_no--;
+      you.spells[spc2] = 210;
+      return 1;
+   }
 
 
-char lose_stat(char force_stat, char stat_loss)
-{
+   char lose_stat(char force_stat, char stat_loss)
+   {
 
-    if (force_stat == 100)
-        force_stat = random2(3);
+      if (force_stat == 100)
+         force_stat = random2(3);
 
-    if (player_sust_abil() != 0)
-    {
-        strcpy(info, "You feel slightly ill for a moment.");
-        mpr(info);
-        return 0;
-    }
-    switch (force_stat)
-    {
-    case STAT_STRENGTH:
-        strcpy(info, "You feel weakened.");
-        mpr(info);
-        you.strength -= stat_loss;
-        if (you.strength < 3)
-            you.strength = 3;
-        you.redraw_strength = 1;
-        burden_change();
-        break;
-
-    case STAT_DEXTERITY:
-        strcpy(info, "You feel clumsy.");
-        mpr(info);
-        you.dex -= stat_loss;
-        if (you.dex < 3)
-            you.dex = 3;
-        you.redraw_dexterity = 1;
-        break;
-
-    case STAT_INTELLIGENCE:
-        strcpy(info, "You feel dopey.");
-        mpr(info);
-        you.intel -= stat_loss;
-        if (you.intel < 3)
-            you.intel = 3;
-        you.redraw_intelligence = 1;
-        break;
-
-    }
-
-    return 1;
-
-}
-
-
-
-
-
-void direct_effect(struct bolt beam[1])
-{
-    int hurted = 0;
-
-    switch (beam[0].type)
-    {
-    case DMNBM_HELLFIRE:
-        strcpy(info, "You are engulfed in a burst of hellfire!");
-        mpr(info);
-        hurted = random2(10) + random2(10) + 5;
-        beam[0].flavour = 20;   // lava, but it's hellfire anyway
-
-        strcpy(beam[0].beam_name, "hellfire");  // for ouch
-
-        hurted = check_your_resists(hurted, beam[0].flavour);
-        scrolls_burn(4, 6);
-        ouch(hurted, beam[0].beam_source, 3);
-        you.redraw_hit_points = 1;
-        break;
-
-    case DMNBM_SMITING:
-        strcpy(info, "Something smites you!");
-        mpr(info);
-        hurted = random2(6) + random2(6) + 7;
-        strcpy(beam[0].beam_name, "smiting");   // for ouch
-
-        ouch(hurted, beam[0].beam_source, 3);
-        you.redraw_hit_points = 1;
-        break;
-
-    case DMNBM_BRAIN_FEED:
-        if (random2(3) == 0 && you.intel > 3 && player_sust_abil() == 0)
-        {
-            strcpy(info, "Something feeds on your intelligence!");
+      if (player_sust_abil() != 0)
+      {
+         strcpy(info, "You feel slightly ill for a moment.");
+         mpr(info);
+         return 0;
+      }
+      switch (force_stat)
+      {
+         case STAT_STRENGTH:
+            strcpy(info, "You feel weakened.");
             mpr(info);
-            strcpy(info, "You feel stupid.");
+            you.strength -= stat_loss;
+            if (you.strength < 3)
+               you.strength = 3;
+            you.redraw_strength = 1;
+            burden_change();
+            break;
+
+         case STAT_DEXTERITY:
+            strcpy(info, "You feel clumsy.");
             mpr(info);
-            you.intel--;
+            you.dex -= stat_loss;
+            if (you.dex < 3)
+               you.dex = 3;
+            you.redraw_dexterity = 1;
+            break;
+
+         case STAT_INTELLIGENCE:
+            strcpy(info, "You feel dopey.");
+            mpr(info);
+            you.intel -= stat_loss;
+            if (you.intel < 3)
+               you.intel = 3;
             you.redraw_intelligence = 1;
-        }
-        else
-        {
-            strcpy(info, "Something tries to feed on your intelligence!");
+            break;
+
+      }
+
+      return 1;
+
+   }
+
+
+
+
+
+   void direct_effect(struct bolt beam[1])
+   {
+      int hurted = 0;
+
+      switch (beam[0].type)
+      {
+         case DMNBM_HELLFIRE:
+            strcpy(info, "You are engulfed in a burst of hellfire!");
             mpr(info);
-        }
-        break;
+            hurted = random2(10) + random2(10) + 5;
+            beam[0].flavour = 20;   // lava, but it's hellfire anyway
 
-    case DMNBM_MUTATION:
-        mpr("Strange energies course through your body.");
-        if (mutate(100) == 0)
-            mpr("You feel very weird for a moment.");
-        break;
-    }
+            strcpy(beam[0].beam_name, "hellfire");  // for ouch
 
-    return;
-}
+            hurted = check_your_resists(hurted, beam[0].flavour);
+            scrolls_burn(4, 6);
+            ouch(hurted, beam[0].beam_source, 3);
+            you.redraw_hit_points = 1;
+            break;
 
-
-void mons_direct_effect(struct bolt beam[1], int i)
-{
-
-    int o = menv[i].monster_foe;
-    int hurted = 0;
-
-    switch (beam[0].type)
-    {
-
-
-    case DMNBM_HELLFIRE:
-        if (mons_near(menv[i].monster_foe))
-        {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-            strcat(info, " is engulfed in hellfire.");
+         case DMNBM_SMITING:
+            strcpy(info, "Something smites you!");
             mpr(info);
-        }
-        strcpy(beam[0].beam_name, "hellfire");
-        beam[0].flavour = 20;
-        hurted = 0;
-        hurted += random2(10) + random2(5) + 5;
-        check_mons_resists(beam, o, hurted);
-        menv[o].hit_points -= hurted;
-        if (menv[o].behavior == 0)
-            menv[o].behavior = 1;
-        if (menv[o].hit_points <= 0)
-        {
-            monster_die(o, 4, i);
-        }
-        break;
+            hurted = random2(6) + random2(6) + 7;
+            strcpy(beam[0].beam_name, "smiting");   // for ouch
 
-    case DMNBM_SMITING:
-        if (mons_near(o))
-        {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-            strcat(info, " is smitten.");
-            mpr(info);
-        }
-        strcpy(beam[0].beam_name, "smiting");
-        beam[0].flavour = 0;
-        hurted = 0;
-        hurted += random2(6) + random2(6) + 7;
-        menv[o].hit_points -= hurted;
-        if (menv[o].hit_points <= 0)
-        {
-            monster_die(o, 4, i);
-        }
-        break;
+            ouch(hurted, beam[0].beam_source, 3);
+            you.redraw_hit_points = 1;
+            break;
 
+         case DMNBM_BRAIN_FEED:
+            if (random2(3) == 0 && you.intel > 3 && player_sust_abil() == 0)
+            {
+               strcpy(info, "Something feeds on your intelligence!");
+               mpr(info);
+               strcpy(info, "You feel stupid.");
+               mpr(info);
+               you.intel--;
+               you.redraw_intelligence = 1;
+            }
+            else
+            {
+               strcpy(info, "Something tries to feed on your intelligence!");
+               mpr(info);
+            }
+            break;
 
-    case DMNBM_BRAIN_FEED:      // brain feed - not implemented here (nor, probably, can be)
+         case DMNBM_MUTATION:
+            mpr("Strange energies course through your body.");
+            if (mutate(100) == 0)
+               mpr("You feel very weird for a moment.");
+            break;
+      }
 
-        break;
-
-    case DMNBM_MUTATION:
-        if (check_mons_magres(o, beam[0].ench_power) == 0)
-        {
-                if (mons_near(o))
-                {
-                    strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-                    strcat(info, " resists.");
-                    mpr(info);
-                }
-                break;
-        }
-        monster_polymorph(o, 250, 100);
-                break;
-
-    }                           // end switch
-
-}                               // end monster_direct_effect()
+      return;
+   }
 
 
+   void mons_direct_effect(struct bolt beam[1], int i)
+   {
 
-void random_uselessness(unsigned char ru, unsigned char sc_read_2)
-{
+      int o = menv[i].monster_foe;
+      int hurted = 0;
 
-    char wc[30];
+      switch (beam[0].type)
+      {
 
-    switch (ru)
-    {
-    case 0:
-        strcpy(info, "The dust glows a ");
-        weird_colours(random2(256), wc);
-        strcat(info, wc);
-        strcat(info, " colour!");
-        mpr(info);
-        break;
 
-    case 1:
-        strcpy(info, "The scroll reassembles itself in your hand!");
-        you.inv_quantity[sc_read_2]++;
-        mpr(info);
-        burden_change();
-        break;
+         case DMNBM_HELLFIRE:
+            if (mons_near(menv[i].monster_foe))
+            {
+               strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
+               strcat(info, " is engulfed in hellfire.");
+               mpr(info);
+            }
+            strcpy(beam[0].beam_name, "hellfire");
+            beam[0].flavour = 20;
+            hurted = 0;
+            hurted += random2(10) + random2(5) + 5;
+            check_mons_resists(beam, o, hurted);
+            menv[o].hit_points -= hurted;
+            if (menv[o].behavior == 0)
+               menv[o].behavior = 1;
+            if (menv[o].hit_points <= 0)
+            {
+               monster_die(o, 4, i);
+            }
+            break;
 
-    case 2:
-        if (you.equip[EQ_WEAPON] != -1)
-        {
-            in_name(you.equip[EQ_WEAPON], 4, str_pass);
-            strcpy(info, str_pass);
-            strcat(info, " glows ");
+         case DMNBM_SMITING:
+            if (mons_near(o))
+            {
+               strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
+               strcat(info, " is smitten.");
+               mpr(info);
+            }
+            strcpy(beam[0].beam_name, "smiting");
+            beam[0].flavour = 0;
+            hurted = 0;
+            hurted += random2(6) + random2(6) + 7;
+            menv[o].hit_points -= hurted;
+            if (menv[o].hit_points <= 0)
+            {
+               monster_die(o, 4, i);
+            }
+            break;
+
+
+         case DMNBM_BRAIN_FEED:      // brain feed - not implemented here (nor, probably, can be)
+
+            break;
+
+         case DMNBM_MUTATION:
+            if (check_mons_magres(o, beam[0].ench_power) == 0)
+            {
+               if (mons_near(o))
+               {
+                  strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
+                  strcat(info, " resists.");
+                  mpr(info);
+               }
+               break;
+            }
+            monster_polymorph(o, 250, 100);
+            break;
+
+      }                           // end switch
+
+   }                               // end monster_direct_effect()
+
+
+
+   void random_uselessness(unsigned char ru, unsigned char sc_read_2)
+   {
+
+      char wc[30];
+
+      switch (ru)
+      {
+         case 0:
+            strcpy(info, "The dust glows a ");
             weird_colours(random2(256), wc);
             strcat(info, wc);
-            strcat(info, " for a moment.");
+            strcat(info, " colour!");
             mpr(info);
-            return;
+            break;
+
+         case 1:
+            strcpy(info, "The scroll reassembles itself in your hand!");
+            you.inv_quantity[sc_read_2]++;
+            mpr(info);
+            burden_change();
+            break;
+
+         case 2:
+            if (you.equip[EQ_WEAPON] != -1)
+            {
+               in_name(you.equip[EQ_WEAPON], 4, str_pass);
+               strcpy(info, str_pass);
+               strcat(info, " glows ");
+               weird_colours(random2(256), wc);
+               strcat(info, wc);
+               strcat(info, " for a moment.");
+               mpr(info);
+               return;
             //strcat(info
-        }
-        else
-        {
-            strcpy(info, "Nothing appears to happen.");
+            }
+            else
+            {
+               strcpy(info, "Nothing appears to happen.");
+               mpr(info);
+               return;
+            }
+         //      break;
+
+         case 3:
+            strcpy(info, "You hear the distant roaring of an enraged ");
+            switch (random2(8))
+            {
+               case 0:
+                  strcat(info, "frog!");
+                  break;
+               case 1:
+                  strcat(info, "pill bug!");
+                  break;
+               case 2:
+                  strcat(info, "millipede!");
+                  break;
+               case 3:
+                  strcat(info, "eggplant!");
+                  break;
+               case 4:
+                  strcat(info, "albino dragon!");
+                  break;
+               case 5:
+                  strcat(info, "dragon!");
+                  break;
+               case 6:
+                  strcat(info, "human!");
+                  break;
+               case 7:
+                  strcat(info, "slug!");
+                  break;
+            }
             mpr(info);
             return;
-        }
-        //      break;
 
-    case 3:
-        strcpy(info, "You hear the distant roaring of an enraged ");
-        switch (random2(8))
-        {
-        case 0:
-            strcat(info, "frog!");
-            break;
-        case 1:
-            strcat(info, "pill bug!");
-            break;
-        case 2:
-            strcat(info, "millipede!");
-            break;
-        case 3:
-            strcat(info, "eggplant!");
-            break;
-        case 4:
-            strcat(info, "albino dragon!");
-            break;
-        case 5:
-            strcat(info, "dragon!");
-            break;
-        case 6:
-            strcat(info, "human!");
-            break;
-        case 7:
-            strcat(info, "slug!");
-            break;
-        }
-        mpr(info);
-        return;
-
-    case 4:
-        strcpy(info, "You smell ");
-        switch (random2(8))
-        {
-        case 0:
-            strcat(info, "coffee.");
-            break;
-        case 1:
-            strcat(info, "salt.");
-            break;
-        case 2:
-            strcat(info, "burning hair!");
-            break;
-        case 3:
-            strcat(info, "baking bread.");
-            break;
-        case 4:
-            strcat(info, "something weird.");
-            break;
-        case 5:
-            strcat(info, "wet wool.");
-            break;
-        case 6:
-            strcat(info, "sulphur.");
-            break;
-        case 7:
-            strcat(info, "fire and brimstone!");
-            break;
-        }
-        mpr(info);
-        return;
+         case 4:
+            strcpy(info, "You smell ");
+            switch (random2(8))
+            {
+               case 0:
+                  strcat(info, "coffee.");
+                  break;
+               case 1:
+                  strcat(info, "salt.");
+                  break;
+               case 2:
+                  strcat(info, "burning hair!");
+                  break;
+               case 3:
+                  strcat(info, "baking bread.");
+                  break;
+               case 4:
+                  strcat(info, "something weird.");
+                  break;
+               case 5:
+                  strcat(info, "wet wool.");
+                  break;
+               case 6:
+                  strcat(info, "sulphur.");
+                  break;
+               case 7:
+                  strcat(info, "fire and brimstone!");
+                  break;
+            }
+            mpr(info);
+            return;
 
 
 
-    case 5:
-        strcpy(info, "You experience a momentary feeling of inescapable doom!");
-        mpr(info);
-        return;
+         case 5:
+            strcpy(info, "You experience a momentary feeling of inescapable doom!");
+            mpr(info);
+            return;
 
-    case 6:
-        strcpy(info, "Your ");
-        switch (random2(3))
-        {
-        case 0:
-            strcat(info, "ears itch.");
-            break;
-        case 1:
-            strcat(info, "brain hurts!");
-            break;
-        case 2:
-            strcat(info, "nose twitches suddenly!");
-            break;
-        }
-        mpr(info);
-        return;
+         case 6:
+            strcpy(info, "Your ");
+            switch (random2(3))
+            {
+               case 0:
+                  strcat(info, "ears itch.");
+                  break;
+               case 1:
+                  strcat(info, "brain hurts!");
+                  break;
+               case 2:
+                  strcat(info, "nose twitches suddenly!");
+                  break;
+            }
+            mpr(info);
+            return;
 
-    case 7:
-        strcpy(info, "You hear the tinkle of a tiny bell.");
-        mpr(info);
-        summon_butter();
-        return;
+         case 7:
+            strcpy(info, "You hear the tinkle of a tiny bell.");
+            mpr(info);
+            summon_butter();
+            return;
 
-    case 8:
-        strcpy(info, "You hear ");
-        switch (random2(9))
-        {
-        case 0:
-            strcat(info, "snatches of song.");
-            break;
-        case 1:
-            strcat(info, "a voice call someone else's name.");
-            break;
-        case 2:
-            strcat(info, "a very strange noise.");
-            break;
-        case 3:
-            strcat(info, "roaring flame.");
-            break;
-        case 4:
-            strcat(info, "a very strange noise indeed.");
-            break;
-        case 5:
-            strcat(info, "the chiming of a distant gong.");
-            break;
-        case 6:
-            strcat(info, "the bellowing of a yak.");
-            break;
-        case 7:
-            strcat(info, "a crunching sound.");
-            break;
-        case 8:
-            strcat(info, "the tinkle of an enormous bell.");
-            break;
-        }
-        mpr(info);
-        return;
+         case 8:
+            strcpy(info, "You hear ");
+            switch (random2(9))
+            {
+               case 0:
+                  strcat(info, "snatches of song.");
+                  break;
+               case 1:
+                  strcat(info, "a voice call someone else's name.");
+                  break;
+               case 2:
+                  strcat(info, "a very strange noise.");
+                  break;
+               case 3:
+                  strcat(info, "roaring flame.");
+                  break;
+               case 4:
+                  strcat(info, "a very strange noise indeed.");
+                  break;
+               case 5:
+                  strcat(info, "the chiming of a distant gong.");
+                  break;
+               case 6:
+                  strcat(info, "the bellowing of a yak.");
+                  break;
+               case 7:
+                  strcat(info, "a crunching sound.");
+                  break;
+               case 8:
+                  strcat(info, "the tinkle of an enormous bell.");
+                  break;
+            }
+            mpr(info);
+            return;
 
 
-    }
+      }
 
     //abort();
 
-}
+   }
 
-
-void acquirement(unsigned char force_class)
-{
-    int thing_created = 0;
+   void acquirement(unsigned char force_class)
+   {
+      int thing_created = 0;
 
     // Remember lava!
-    unsigned char class_wanted = 250;
-    unsigned char type_wanted = 250;
+      unsigned char class_wanted = 250;
+      unsigned char type_wanted = 250;
 
-    unsigned char force_plus = 0;
+      unsigned char force_plus = 0;
 
-    unsigned char acqc = 0;
-    char already_has[50];
+      unsigned char unique = 1;
 
-    char glof = 99;
-    unsigned char keyin;
-    int func_pass[10];
+      unsigned char acqc = 0;
+      char already_has[50];
 
-    for (acqc = 0; acqc < 50; acqc++)
-    {
-        already_has[acqc] = 0;
-    }
+      char glof = 99;
+      unsigned char keyin;
+      int func_pass[10];
 
-    if (force_class == 250)
-    {
+      for (acqc = 0; acqc < 50; acqc++)
+      {
+         already_has[acqc] = 0;
+      }
 
-        mpr("This is a scroll of acquirement!");
-query:
-        mpr("a - Weapon, b - Armour, c - Jewellery,");
-        mpr("d - Book, e - Staff, f - Miscellaneous");
-        mpr("What kind of item would you like to acquire? ");
-        keyin = get_ch();
+      if (force_class == 250)
+      {
 
-        switch (keyin)
-        {
-        case 'a':
-        case 'A':
-            class_wanted = OBJ_WEAPONS;
-            break;
+         mpr("This is a scroll of acquirement!");
+      query:
+         mpr("a - Weapon, b - Armour, c - Jewellery,");
+         mpr("d - Book, e - Staff, f - Miscellaneous, g - Food");
+         mpr("What kind of item would you like to acquire? ");
+         keyin = get_ch();
 
-        case 'b':
-        case 'B':
-            class_wanted = OBJ_ARMOUR;
-            break;
+         switch (keyin)
+         {
+            case 'a':
+            case 'A':
+               class_wanted = OBJ_WEAPONS;
+               break;
 
-        case 'c':
-        case 'C':
-            class_wanted = OBJ_JEWELLERY;
-            break;
+            case 'b':
+            case 'B':
+               class_wanted = OBJ_ARMOUR;
+               break;
 
-        case 'd':
-        case 'D':
-            class_wanted = OBJ_BOOKS;
-            break;
+            case 'c':
+            case 'C':
+               class_wanted = OBJ_JEWELLERY;
+               break;
 
-        case 'e':
-        case 'E':
-            class_wanted = OBJ_STAVES;
-            break;
+            case 'd':
+            case 'D':
+               class_wanted = OBJ_BOOKS;
+               break;
 
-        case 'f':
-        case 'F':
-            class_wanted = OBJ_MISCELLANY;
-            break;
-        }
-    }
-    else
-        class_wanted = force_class;
+            case 'e':
+            case 'E':
+               class_wanted = OBJ_STAVES;
+               break;
 
-    if (class_wanted > OBJ_ARMOUR)
-    {
-        for (acqc = 0; acqc < 52; acqc++)
-        {
+            case 'f':
+            case 'F':
+               class_wanted = OBJ_MISCELLANY;
+               break;
+            case 'g':
+            case 'G':
+               class_wanted = OBJ_FOOD;
+               break;
+         }
+      }
+      else
+         class_wanted = force_class;
+
+      if (class_wanted > OBJ_ARMOUR)
+      {
+         for (acqc = 0; acqc < 52; acqc++)
+         {
             if (you.inv_quantity[acqc] > 0 && you.inv_class[acqc] == class_wanted)
             {
-                already_has[you.inv_type[acqc]] = 1;
-
-                /*  if (class_wanted == 10)
-                   {
-                   if (you.inv_type [acqc] == 0)
-                   {
-                   already_has [1] = 1;
-                   already_has [2] = 1;
-                   }
-                   if (you.inv_type [acqc] == 1)
-                   {
-                   already_has [0] = 1;
-                   already_has [2] = 1;
-                   }
-                   if (you.inv_type [acqc] == 3) already_has [4] = 1;
-                   if (you.inv_type [acqc] == 4) already_has [3] = 1;
-                   } */
+               already_has[you.inv_type[acqc]] = 1;
             }
-        }
-
-        /*if (class_wanted == 10) // these are books which that class wouldn't want (or shouldn't get, anyway)
-           {
-           / * if (you.char_class == JOB_NECROMANCER)
-           {
-           already_has [20] = 1; // holy books
-           already_has [17] = 1;
-           already_has [18] = 1;
-           }
-           if (you.char_class == JOB_FIRE_ELEMENTALIST)
-           {
-           already_has [6] = 1;
-           already_has [9] = 1;
-           }
-           if (you.char_class == JOB_ICE_ELEMENTALIST)
-           {
-           already_has [5] = 1;
-           already_has [8] = 1;
-           }* /
-           if (you.char_class == JOB_PRIEST || you.char_class == JOB_PALADIN)
-           {
-           already_has [15] = 1; // necromancy
-           already_has [23] = 1;
-           already_has [24] = 1;
-           already_has [34] = 1;
-           }
-           } */
-
-        do
-        {
+         }
+         do
+         {
             switch (class_wanted)
             {
-
-            case OBJ_JEWELLERY:
+               case OBJ_JEWELLERY:
                 // Try for a base type the player hasn't identified
-                for (int i = 0; i < 10; i++)
-                {
-                    type_wanted = random2(24);
-                    if (!random2(3))
+                  for (int i = 0; i < 10; i++)
+                  {
+                     type_wanted = random2(24);
+                     if (!random2(3))
                         type_wanted = 35 + random2(10);
 
-                    if (!get_id(OBJ_JEWELLERY, type_wanted)) break;
-                }
-                break;
+                     if (!get_id(OBJ_JEWELLERY, type_wanted))
+                        break;
+                  }
+                  break;
 
-            case OBJ_BOOKS:
+               case OBJ_BOOKS:
                 // remember, put rarer books higher in the list
+                  type_wanted = 99;
+                  glof = best_skill(26, 50, glof);
+               which_book:
+                  switch (glof)
+                  {
+                     default:
+                     case SK_SPELLCASTING:   // spellcasting
+                        if (you.had_item[BOOK_POWER] == 0)
+                           type_wanted = BOOK_POWER;
+                        if (you.had_item[BOOK_WIZARDRY] == 0)
+                           type_wanted = BOOK_WIZARDRY;
+                        break;
 
-                type_wanted = 99;
-                glof = best_skill(26, 50, glof);
-which_book:
-                switch (glof)
-                {
-                default:
-                case SK_SPELLCASTING:   // spellcasting
-                    if (you.had_item[BOOK_POWER] == 0)
-                        type_wanted = BOOK_POWER;
-                    if (you.had_item[BOOK_WIZARDRY] == 0)
-                        type_wanted = BOOK_WIZARDRY;
-                    break;
+                     case SK_POISON_MAGIC:   // Poison Magic
+                        if (you.had_item[BOOK_ENVENOMATIONS] == 0)
+                           type_wanted = BOOK_ENVENOMATIONS;
+                        if (you.had_item[BOOK_POISONINGS] == 0)
+                           type_wanted = BOOK_POISONINGS;
+                        break;
 
-                case SK_POISON_MAGIC:   // Poison Magic
-                    if (you.had_item[BOOK_ENVENOMATIONS] == 0)
-                        type_wanted = BOOK_ENVENOMATIONS;
-                    if (you.had_item[BOOK_POISONINGS] == 0)
-                        type_wanted = BOOK_POISONINGS;
-                    break;
+                     case SK_EARTH_MAGIC:    // Earth
+                        if (you.had_item[BOOK_EARTH] == 0)
+                           type_wanted = BOOK_EARTH;
+                        if (you.had_item[BOOK_GEOMANCY] == 0)
+                           type_wanted = BOOK_GEOMANCY;
+                        break;
 
-                case SK_EARTH_MAGIC:    // Earth
-                    if (you.had_item[BOOK_EARTH] == 0)
-                        type_wanted = BOOK_EARTH;
-                    if (you.had_item[BOOK_GEOMANCY] == 0)
-                        type_wanted = BOOK_GEOMANCY;
-                    break;
+                     case SK_AIR_MAGIC:      // Air
+                        if (you.had_item[BOOK_SKY] == 0)
+                           type_wanted = BOOK_SKY;
+                        if (you.had_item[BOOK_AIR] == 0)
+                           type_wanted = BOOK_AIR;
+                        break;
 
-                case SK_AIR_MAGIC:      // Air
-                    if (you.had_item[BOOK_SKY] == 0)
-                        type_wanted = BOOK_SKY;
-                    if (you.had_item[BOOK_AIR] == 0)
-                        type_wanted = BOOK_AIR;
-                    break;
+                     case SK_ICE_MAGIC:      // Ice
+                        if (you.had_item[BOOK_ICE] == 0)
+                           type_wanted = BOOK_ICE;
+                        if (you.had_item[BOOK_FROST] == 0)
+                           type_wanted = BOOK_FROST;
+                        break;
 
-                case SK_ICE_MAGIC:      // Ice
-                    if (you.had_item[BOOK_ICE] == 0)
-                        type_wanted = BOOK_ICE;
-                    if (you.had_item[BOOK_FROST] == 0)
-                        type_wanted = BOOK_FROST;
-                    break;
+                     case SK_FIRE_MAGIC:     // fire
+                        if (you.had_item[BOOK_FIRE] == 0)
+                           type_wanted = BOOK_FIRE;
+                        if (you.had_item[BOOK_FLAMES] == 0)
+                           type_wanted = BOOK_FLAMES;
+                        break;
 
-                case SK_FIRE_MAGIC:     // fire
-                    if (you.had_item[BOOK_FIRE] == 0)
-                        type_wanted = BOOK_FIRE;
-                    if (you.had_item[BOOK_FLAMES] == 0)
-                        type_wanted = BOOK_FLAMES;
-                    break;
+                     case SK_SUMMONINGS:     // summ
+                        if (you.had_item[BOOK_DEMONOLOGY] == 0)
+                           type_wanted = BOOK_DEMONOLOGY;
+                        if (you.had_item[BOOK_INVOCATIONS] == 0)
+                           type_wanted = BOOK_INVOCATIONS;
+                        if (you.had_item[BOOK_SUMMONINGS] == 0)
+                           type_wanted = BOOK_SUMMONINGS;
+                        break;
 
-                case SK_SUMMONINGS:     // summ
-                    if (you.had_item[BOOK_DEMONOLOGY] == 0)
-                        type_wanted = BOOK_DEMONOLOGY;
-                    if (you.had_item[BOOK_INVOCATIONS] == 0)
-                        type_wanted = BOOK_INVOCATIONS;
-                    if (you.had_item[BOOK_SUMMONINGS] == 0)
-                        type_wanted = BOOK_SUMMONINGS;
-                    break;
+                     case SK_ENCHANTMENTS:   // ench
+                        if (you.had_item[BOOK_ENCHANTMENTS] == 0)
+                           type_wanted = BOOK_ENCHANTMENTS;
+                        if (you.had_item[BOOK_WAR_CHANTS] == 0)
+                           type_wanted = BOOK_WAR_CHANTS;
+                        if (you.had_item[BOOK_CONTROL] == 0)
+                           type_wanted = BOOK_CONTROL;
+                        if (you.had_item[BOOK_HINDERANCE] == 0)
+                           type_wanted = BOOK_HINDERANCE;
+                        if (you.had_item[BOOK_CHARMS] == 0)
+                           type_wanted = BOOK_CHARMS;
+                        break;
 
-                case SK_ENCHANTMENTS:   // ench
-                    if (you.had_item[BOOK_ENCHANTMENTS] == 0)
-                        type_wanted = BOOK_ENCHANTMENTS;
-                    if (you.had_item[BOOK_WAR_CHANTS] == 0)
-                        type_wanted = BOOK_WAR_CHANTS;
-                    if (you.had_item[BOOK_CONTROL] == 0)
-                        type_wanted = BOOK_CONTROL;
-                    if (you.had_item[BOOK_HINDERANCE] == 0)
-                        type_wanted = BOOK_HINDERANCE;
-                    if (you.had_item[BOOK_CHARMS] == 0)
-                        type_wanted = BOOK_CHARMS;
-                    break;
+                     case SK_CONJURATIONS:   // conj
+                        if (you.had_item[BOOK_ANNIHILATIONS] == 0)
+                           type_wanted = BOOK_ANNIHILATIONS;
+                        if (you.had_item[BOOK_CONJURATIONS_I] == 0)
+                           type_wanted = BOOK_CONJURATIONS_I;
+                        break;
 
-                case SK_CONJURATIONS:   // conj
-                    if (you.had_item[BOOK_ANNIHILATIONS] == 0)
-                        type_wanted = BOOK_ANNIHILATIONS;
-                    if (you.had_item[BOOK_CONJURATIONS_I] == 0)
-                        type_wanted = BOOK_CONJURATIONS_I;
-                    break;
+                     case SK_NECROMANCY:     // necro
+                        if (you.had_item[BOOK_NECRONOMICON] == 0)
+                           type_wanted = BOOK_NECRONOMICON;
+                        if (you.had_item[BOOK_UNLIFE] == 0)
+                           type_wanted = BOOK_UNLIFE;
+                        if (you.had_item[BOOK_DEATH] == 0)
+                           type_wanted = BOOK_DEATH;
+                        if (you.had_item[BOOK_NECROMANCY] == 0)
+                           type_wanted = BOOK_NECROMANCY;
+                        break;
 
-                case SK_NECROMANCY:     // necro
-                    if (you.had_item[BOOK_NECRONOMICON] == 0)
-                        type_wanted = BOOK_NECRONOMICON;
-                    if (you.had_item[BOOK_UNLIFE] == 0)
-                        type_wanted = BOOK_UNLIFE;
-                    if (you.had_item[BOOK_DEATH] == 0)
-                        type_wanted = BOOK_DEATH;
-                    if (you.had_item[BOOK_NECROMANCY] == 0)
-                        type_wanted = BOOK_NECROMANCY;
-                    break;
+                     case SK_TRANSLOCATIONS: // translocations
+                        if (you.had_item[BOOK_SPATIAL_TRANSLOCATIONS] == 0)
+                           type_wanted = BOOK_SPATIAL_TRANSLOCATIONS;
+                        if (you.had_item[BOOK_WARP] == 0)
+                           type_wanted = BOOK_WARP;
+                        break;
 
-                case SK_TRANSLOCATIONS: // translocations
-                    if (you.had_item[BOOK_SPATIAL_TRANSLOCATIONS] == 0)
-                        type_wanted = BOOK_SPATIAL_TRANSLOCATIONS;
-                    if (you.had_item[BOOK_WARP] == 0)
-                        type_wanted = BOOK_WARP;
-                    break;
+                     case SK_TRANSMIGRATION: // transmutation
+                        if (you.had_item[BOOK_TRANSFIGURATIONS] == 0)
+                           type_wanted = BOOK_TRANSFIGURATIONS;
+                        if (you.had_item[BOOK_CHANGES] == 0)
+                           type_wanted = BOOK_CHANGES;
+                        break;
+                  }
 
-                case SK_TRANSMIGRATION: // transmutation
-                    if (you.had_item[BOOK_TRANSFIGURATIONS] == 0)
-                        type_wanted = BOOK_TRANSFIGURATIONS;
-                    if (you.had_item[BOOK_CHANGES] == 0)
-                        type_wanted = BOOK_CHANGES;
-                    break;
-                }
-
-                if (type_wanted == 99 && glof == best_skill(26, 50, 99))
-                {
-                    glof = best_skill(26, 50, best_skill(26, 50, 99));
-                    goto which_book;
-                }
+                  if (type_wanted == 99 && glof == best_skill(26, 50, 99))
+                  {
+                     glof = best_skill(26, 50, best_skill(26, 50, 99));
+                     goto which_book;
+                  }
 
                 // if we don't have a book, try and get a new one.
-                if (type_wanted == 99)
-                {
-                    do
-                    {
+                  if (type_wanted == 99)
+                  {
+                     do
+                     {
                         type_wanted = random2(NUM_BOOKS);
                         if (random2(500) == 0)
-                            break;
-                    }
-                    while (you.had_item[type_wanted] == 1);
-                }
+                           break;
+                     }
+                     while (you.had_item[type_wanted] == 1);
+                  }
 
                 // if the book is invalid find any valid one.
-                while (book_rarity(type_wanted) == 100
-                                        || type_wanted == BOOK_DESTRUCTION
-                                        || type_wanted == BOOK_MANUAL)
-                {
-                    type_wanted = random2(NUM_BOOKS);
-                }
+                  while (book_rarity(type_wanted) == 100
+                        || type_wanted == BOOK_DESTRUCTION
+                        || type_wanted == BOOK_MANUAL)
+                  {
+                     type_wanted = random2(NUM_BOOKS);
+                  }
 
-                force_plus = 127;
+                  force_plus = 127;
 
                 // should guarantee a full spellbook, so:
-                spellbook_template(type_wanted, func_pass);
-                if (func_pass[6] == 210)
-                    force_plus = 126;
-                if (func_pass[5] == 210)
-                    force_plus = 124;
-                if (func_pass[4] == 210)
-                    force_plus = 120;
-                if (func_pass[3] == 210)
-                    force_plus = 112;
-                if (func_pass[2] == 210)
-                    force_plus = 96;
-                break;
+                  spellbook_template(type_wanted, func_pass);
+                  if (func_pass[6] == 210)
+                     force_plus = 126;
+                  if (func_pass[5] == 210)
+                     force_plus = 124;
+                  if (func_pass[4] == 210)
+                     force_plus = 120;
+                  if (func_pass[3] == 210)
+                     force_plus = 112;
+                  if (func_pass[2] == 210)
+                     force_plus = 96;
+                  break;
 
-            case OBJ_STAVES:
-                type_wanted = random2(18);
-                if (class_wanted == OBJ_STAVES && type_wanted > 9
-                                                        && random2(5) != 0)
-                    type_wanted = random2(10);
-                break;
+               case OBJ_STAVES:
+                  type_wanted = random2(18);
+                  if (class_wanted == OBJ_STAVES && type_wanted > 9
+                     && random2(5) != 0)
+                     type_wanted = random2(10);
+                  break;
 
-            case OBJ_MISCELLANY:
-                type_wanted = random2(6);
-                break;
+               case OBJ_MISCELLANY:
+                  type_wanted = random2(6);
+                  break;
 
-            default:
-                mesclr();
-                goto query;
+               // BCR - You can now acquire food!
+               case OBJ_FOOD:
+                  unique = random2(7) + 4;
+                  if (you.species == SP_GHOUL)
+                  {
+                      if (random2(3) == 0)
+                        type_wanted = FOOD_ROYAL_JELLY;
+                      else
+                      {
+                        type_wanted = FOOD_CHUNK;
+                        unique += 10;
+                      }
+                  }
+                  else
+                  {
+                    type_wanted = FOOD_ROYAL_JELLY;
+                  }
+                  break;
+
+               default:
+                  mesclr();
+                  goto query;
             }
-        }
-        while (already_has[type_wanted] == 1 && random2(200) != 0);
+         } while (already_has[type_wanted] == 1 && random2(200) != 0);
 
-    }
-    else
-    {
-        if (class_wanted == OBJ_WEAPONS)
-            type_wanted = 250;  // 1 + random2(18); // weapons - no clubs
+      }
+      else if (class_wanted == OBJ_WEAPONS)
+         type_wanted = 250;  // 1 + random2(18); // weapons - no clubs
+      else
+         type_wanted = 250;  // always get random armour
 
-        else
-            type_wanted = 250;  // always get random armour
+      if (grd[you.x_pos][you.y_pos] == 61 || grd[you.x_pos][you.y_pos] == 62)
+      {
+         mpr("You hear a splash."); // how sad (and stupid)
+      }
+      else
+      {
+         // BCR - unique is now used for food quantity.
+         thing_created = items(unique, class_wanted, type_wanted, 1, 351, 250);
 
-    }
+         if (  type_wanted == 250
+            && (class_wanted == OBJ_WEAPONS
+               || class_wanted == OBJ_ARMOUR
+               || class_wanted == OBJ_JEWELLERY)
+            )
+         {
+            if (mitm.pluses[thing_created] > 130)
+               mitm.pluses[thing_created] -= 100;
+         }
 
-    if (grd[you.x_pos][you.y_pos] == 61 || grd[you.x_pos][you.y_pos] == 62)
-    {
-        strcpy(info, "You hear a splash.");     // how sad (and stupid)
+         if (you.species != SP_NAGA)
+            strcpy(info, "Something appears at your feet!");
+         else
+            strcpy(info, "Something appears before you!");
+         mpr(info);
 
-        mpr(info);
-        return;
-    }
+         if (force_plus != 0)
+            mitm.pluses[thing_created] = force_plus;
 
+         int what_was_there = igrd[you.x_pos][you.y_pos];
 
-    thing_created = items(1, class_wanted, type_wanted, 1, 351, 250);
-
-    if (type_wanted == 250 && (class_wanted == OBJ_WEAPONS
-            || class_wanted == OBJ_ARMOUR || class_wanted == OBJ_JEWELLERY))
-    {
-        if (mitm.pluses[thing_created] > 130)
-            mitm.pluses[thing_created] -= 100;
-    }
-
-    if (you.species != SP_NAGA)
-        strcpy(info, "Something appears at your feet!");
-    else
-        strcpy(info, "Something appears before you!");
-    mpr(info);
-
-    if (force_plus != 0)
-        mitm.pluses[thing_created] = force_plus;
-
-    int what_was_there = igrd[you.x_pos][you.y_pos];
-
-    mitm.link[thing_created] = what_was_there;
-    igrd[you.x_pos][you.y_pos] = thing_created;
-
-    return;
-
-}
+         mitm.link[thing_created] = what_was_there;
+         igrd[you.x_pos][you.y_pos] = thing_created;
+      }
+      return;
+   }
 
 
 
-char recharge_wand(void)
-{
+   char recharge_wand(void)
+   {
 
     // note that the scroll of recharging also recharges weapons of electrocution; see the scroll function
 
-    if (you.equip[EQ_WEAPON] == -1)
-    {
-        return 0;
-    }
+      if (you.equip[EQ_WEAPON] == -1)
+      {
+         return 0;
+      }
 
-    if (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WANDS)
-    {
-        return 0;               // not a wand
+      if (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WANDS)
+      {
+         return 0;               // not a wand
 
-    }
+      }
 
-    char charge_gain = 8;
+      char charge_gain = 8;
 
-    if (you.inv_type[you.equip[EQ_WEAPON]] == WAND_FIRE || you.inv_type[you.equip[EQ_WEAPON]] == WAND_COLD)
-        charge_gain = 5;
+      if (you.inv_type[you.equip[EQ_WEAPON]] == WAND_FIRE || you.inv_type[you.equip[EQ_WEAPON]] == WAND_COLD)
+         charge_gain = 5;
 
-    if (you.inv_type
-        [you.equip
+      if (you.inv_type
+         [you.equip
          [EQ_WEAPON]] == WAND_FIREBALL || you.inv_type
-        [you.equip
+         [you.equip
          [EQ_WEAPON]] == WAND_LIGHTNING ||
-        you.
-        inv_type[you.equip[EQ_WEAPON]] ==
-        WAND_DRAINING)
-        charge_gain = 4;
+         you.
+         inv_type[you.equip[EQ_WEAPON]] ==
+         WAND_DRAINING)
+         charge_gain = 4;
 
-    item_name(you.inv_plus2[you.equip[EQ_WEAPON]], you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON
-                                                                         ]],
-              you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_quantity[you.equip[EQ_WEAPON]]
-              ,you.inv_ident[you.equip[EQ_WEAPON]], 4, str_pass);
-    strcpy(info, str_pass);
-    strcat(info, " glows for a moment.");
-    mpr(info);
+      item_name(you.inv_plus2[you.equip[EQ_WEAPON]], you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON
+               ]],
+               you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_quantity[you.equip[EQ_WEAPON]]
+               ,you.inv_ident[you.equip[EQ_WEAPON]], 4, str_pass);
+      strcpy(info, str_pass);
+      strcat(info, " glows for a moment.");
+      mpr(info);
 
-    you.inv_plus[you.equip[EQ_WEAPON]] += random2(charge_gain) + random2(charge_gain) + random2(charge_gain) + 1;
+      you.inv_plus[you.equip[EQ_WEAPON]] += random2(charge_gain) + random2(charge_gain) + random2(charge_gain) + 1;
 
-    if (you.inv_plus[you.equip[EQ_WEAPON]] > charge_gain * 3)
-        you.inv_plus[you.equip[EQ_WEAPON]] = charge_gain * 3;
+      if (you.inv_plus[you.equip[EQ_WEAPON]] > charge_gain * 3)
+         you.inv_plus[you.equip[EQ_WEAPON]] = charge_gain * 3;
 
-    return 1;
+      return 1;
 
-}
+   }
 
 
-void yell(void)
-{
-    char targ_prev = 0;
-    int mons_targd = 0;
-    struct dist beam[1];
+   void yell(void)
+   {
+      char targ_prev = 0;
+      int mons_targd = 0;
+      struct dist beam[1];
 
-    mpr("What do you say?");
-    mpr(" ! - Yell");
-    mpr(" a - Order allies to attack a monster");
-    if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
-        if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != 6 || player_see_invis() != 0))
-        {
+      mpr("What do you say?");
+      mpr(" ! - Yell");
+      mpr(" a - Order allies to attack a monster");
+      if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
+         if (mons_near(you.prev_targ) && (menv[you.prev_targ].enchantment[2] != 6 || player_see_invis() != 0))
+         {
             mpr(" p - Order allies to attack your previous target");
             targ_prev = 1;
-        }
-    strcpy(info, " Anything else - Stay silent ");
-    if (random2(10) == 0)
-        strcat(info, "(and be thought of as a fool)");
-    mpr(info);
+         }
+      strcpy(info, " Anything else - Stay silent ");
+      if (random2(10) == 0)
+         strcat(info, "(and be thought of as a fool)");
+      mpr(info);
 
-    char keyn = get_ch();
+      char keyn = get_ch();
 
-    switch (keyn)
-    {
+      switch (keyn)
+      {
 
-    case '!':
-        strcpy(info, "You yell for attention!");
-        mpr(info);
-        you.turn_is_over = 1;
-        noisy(12, you.x_pos, you.y_pos);
-        return;
-
-    case 'a':
-        mpr("Gang up on whom?");
-        direction(100, beam);
-
-        if (beam[0].nothing == -1 || mgrd[beam[0].target_x][beam[0].target_y] == MNG)
-        {
-            mpr("Yeah, whatever.");
+         case '!':
+            strcpy(info, "You yell for attention!");
+            mpr(info);
+            you.turn_is_over = 1;
+            noisy(12, you.x_pos, you.y_pos);
             return;
-        }
-        mons_targd = mgrd[beam[0].target_x][beam[0].target_y];
-        break;
 
+         case 'a':
+            mpr("Gang up on whom?");
+            direction(100, beam);
 
-    case 'p':
-        if (targ_prev == 1)
-        {
-            mons_targd = you.prev_targ;
+            if (beam[0].nothing == -1 || mgrd[beam[0].target_x][beam[0].target_y] == MNG)
+            {
+               mpr("Yeah, whatever.");
+               return;
+            }
+            mons_targd = mgrd[beam[0].target_x][beam[0].target_y];
             break;
-        }
-        /* fall through... */
-    default:
-        mpr("Okely-dokely.");
-        return;
-    }
 
-    int i = 0;
 
-    for (i = 0; i < MNST; i++)
-    {
-        if (menv[i].type == -1)
+         case 'p':
+            if (targ_prev == 1)
+            {
+               mons_targd = you.prev_targ;
+               break;
+            }
+         /* fall through... */
+         default:
+            mpr("Okely-dokely.");
+            return;
+      }
+
+      int i = 0;
+
+      for (i = 0; i < MNST; i++)
+      {
+         if (menv[i].type == -1)
             continue;
-        if (menv[i].behavior != BEH_ENSLAVED)
+         if (menv[i].behavior != BEH_ENSLAVED)
             continue;
-        if (!mons_near(i))
+         if (!mons_near(i))
             continue;
-        menv[i].monster_foe = mons_targd;
-        menv[i].target_x = menv[mons_targd].x;
-        menv[i].target_y = menv[mons_targd].y;
-    }
+         menv[i].monster_foe = mons_targd;
+         menv[i].target_x = menv[mons_targd].x;
+         menv[i].target_y = menv[mons_targd].y;
+      }
 
-    noisy(10, you.x_pos, you.y_pos);
-    mpr("Attack!");
+      noisy(10, you.x_pos, you.y_pos);
+      mpr("Attack!");
 
-}
+   }
