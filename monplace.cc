@@ -135,7 +135,12 @@ bkout:
     {
         menv[summd].enchantment[1] = dur;       /* some monsters, eg butterflies, use [0] for confusion */
         menv[summd].enchantment1 = 1;
-    }
+                if (beha == 7) menv[summd].enchantment[1] += ENCH_FRIEND_ABJ_I - ENCH_ABJ_I;
+    } else
+        {
+        if (beha == 7) menv[summd].enchantment[1] = ENCH_CREATED_FRIENDLY;
+                 // means no xp, no piety for a kill
+        }
 
     if (menv[summd].type == 78 && random2(3) != 0)
     {

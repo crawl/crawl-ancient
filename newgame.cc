@@ -5,6 +5,9 @@
  *
  *  Change History (most recent first):
  *
+ *     <11>      11/22/99       LRH             Er, re-un-capitalised class
+ *                                              names (makes them distinguish-
+ *                                              able in score list)
  *     <10>      10/31/99       CDL             Allow Spriggan Assassins
  *                                              Remove some old comments
  *      <9>      10/12/99       BCR             Made sure all the classes are
@@ -763,13 +766,13 @@ switch_start:
         switch (i)
         {
         case JOB_FIGHTER:
-            cprintf("Fighter");
+            cprintf("fighter");
             break;
         case JOB_WIZARD:
             cprintf("Wizard");
             break;
         case JOB_PRIEST:
-            cprintf("Priest");
+            cprintf("priest");
             break;
         case JOB_THIEF:
             cprintf("Thief");
@@ -784,7 +787,7 @@ switch_start:
             cprintf("Paladin");
             break;
         case JOB_ASSASSIN:
-            cprintf("Assassin");
+            cprintf("assassin");
             break;
         case JOB_BERSERKER:
             cprintf("Berserker");
@@ -793,10 +796,10 @@ switch_start:
             cprintf("Hunter");
             break;
         case JOB_CONJURER:
-            cprintf("Conjurer");
+            cprintf("conjurer");
             break;
         case JOB_ENCHANTER:
-            cprintf("Enchanter");
+            cprintf("enchanter");
             break;
         case JOB_FIRE_ELEMENTALIST:
             cprintf("Fire Elementalist");
@@ -826,7 +829,7 @@ switch_start:
             cprintf("Chaos Knight");
             break;
         case JOB_TRANSMUTER:
-            cprintf("Transmuter");
+            cprintf("transmuter");
             break;
         case JOB_HEALER:
             cprintf("Healer");
@@ -3081,7 +3084,9 @@ getkey:
         for (int dng= 0; dng < MAX_BRANCHES; dng++)
             tmp_file_pairs[ lvl ][ dng ] = false;
 
-// This is the temporary file purging code
+// This is the temporary file purging code. Unfortunately it doesn't work.
+//  Use the other block (also in #if 0 right now) if you want to resume
+//  file purging.
 #if 0
     char del_file[kFileNameSize];
     char glorpstr[kFileNameSize];
@@ -3091,7 +3096,7 @@ getkey:
 #else
     strncpy(glorpstr, you.your_name, kFileNameLen);
 
-// glorpstr [strlen(glorpstr)] = 0;
+    glorpstr [strlen(you.your_name)] = '\0';
     // This is broken. Length is not valid yet! We have to check if we got a
     // trailing NULL; if not, write one:
     if (strlen(you.your_name) > kFileNameLen - 1)       /* is name 6 chars or more? */
@@ -3136,26 +3141,62 @@ getkey:
         {
             for (del_file[ones] = '0'; del_file[ones] <= '9'; del_file[ones]++)
             {
-                unlink(del_file);
+                if (!unlink(del_file)) cprintf("\n\rFailed to delete: ");
+                        else cprintf("\n\rDeleted: ");
+                cprintf(del_file);
+                if (!getch()) getch();
             }
         }
     }
 #endif
 
-/*
-   char hbjh [5];
 
-   if (level_saved < 10) strcpy(extens, "0");
-   itoa(level_saved, hbjh, 10);
-   strcat(extens, hbjh);
-   corr_level [2] = you.where_are_you + 97;
-   corr_level [3] = 0; / * null-terminate it * /
-   strcpy(cha_fil, "");
-   strncat(cha_fil, you.your_name, kFileNameLen);
-   strcat(cha_fil, ".");
-   if (was_a_labyrinth == 1) strcat(cha_fil, "lab"); / * temporary level * /
-   else strcat(cha_fil, extens);
- */
+#if 0
+char del_file [kFileNameSize];
+
+
+char glorpstr [kFileNameSize];
+strncpy(glorpstr, you.your_name, 6);
+
+// This is broken. Length is not valid yet! We have to check if we got a
+// trailing NULL; if not, write one:
+if (strlen(you.your_name) > 5)    /* is name 6 chars or more? */
+        glorpstr[6] = (char) NULL;   /* if so, char 7 should be NULL */
+
+strncpy(glorpstr, you.your_name, 6);
+
+// This is broken. Length is not valid yet! We have to check if we got a
+// trailing NULL; if not, write one:
+if (strlen(you.your_name) > 5)    /* is name 6 chars or more? */
+        glorpstr[6] = (char) NULL;   /* if so, char 7 should be NULL */
+
+int fi = 0;
+int fi2 = 0;
+char st_prn [6];
+
+for (fi2 = 0; fi2 < 30; fi2 ++)
+{
+ for (fi = 0; fi < 50; fi ++)
+ {
+  strcpy(del_file, glorpstr);
+  strcat(del_file, ".");
+  if (fi < 10) strcat(del_file, "0");
+  itoa(fi, st_prn, 10);
+  strcat(del_file, st_prn);
+  st_prn [0] = fi2 + 97;
+  st_prn [1] = 0;
+  strcat(del_file, st_prn);
+  strcat(del_file, "\0");
+  handle = open(del_file, S_IWRITE, S_IREAD);
+
+  if (handle != -1)
+  {
+        close(handle);
+        unlink(del_file);
+  } else close(handle);
+ }
+}
+#endif
 
     for (i = 0; i < 30; i++)
     {

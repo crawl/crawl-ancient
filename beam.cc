@@ -1259,7 +1259,7 @@ void missile(struct bolt beam[1], int throw_2)
 
                     if (player_shield_class() > 0
                             && random2(beam[0].hit * 5 + 5 * you.shield_blocks)
-                                        <= random2(player_shield_class()))
+                                        <= random2(player_shield_class()) + (random2(you.dex) / 5) - 1)
                     {
                         you.shield_blocks++;
                         strcpy(info, "You block the ");
@@ -2275,6 +2275,7 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
             func_pass[1] = 1;
         }
         menv[o].enchantment[2] = 6;
+        menv[o].enchantment1 = 1;
         return 1;
 
         /* 6 is used by digging

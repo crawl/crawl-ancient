@@ -750,10 +750,10 @@
             break;
       #endif
          case 420:
-            strcpy(comm, "]    - list armor");
+            strcpy(comm, "]    - list armour");
             break;
          case 425:
-            strcpy(comm, "\"    - list jewelry");
+            strcpy(comm, "\"    - list jewellery");
             break;
          case 430:
             strcpy(comm, "Shift & direction - long walk");

@@ -1,11 +1,11 @@
 /*
  *  File:       llist.cc
  *  Summary:    Linked list implementation
- *  Written by: Linley Henzell
+ *  Written by: Juho Snellman <jsnell@lyseo.edu.ouka.fi>
  *
  *  Change History (most recent first):
  *
- *               <1>     -/--/--        LRH             Created
+ *               <1>     -/--/--        JS             Created
  */
 
 #include "AppHdr.h"

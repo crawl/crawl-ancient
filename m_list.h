@@ -2583,6 +2583,32 @@
     ,3, 12, 14, 7, 250, C_CLEAN, Z_SMALL, S_CROAK, I_ANIMAL, 0
 }
 ,
+{
+    181, 'a', BROWN, "giant cockroach", M_NO_FLAGS,
+        250, 10, 181, H_NORMAL, -3,
+    {
+        2, 0, 0, 0
+    }
+    ,
+    {
+        1, 3, 4, 0
+    }
+    ,3, 10, 12, 7, 250, C_CONTAMINATED, Z_SMALL, S_SILENT, I_INSECT, 0
+}
+,
+{
+    182, 'S', LIGHTGREEN, "small snake", M_NO_FLAGS,
+        100, 13, 182, H_NORMAL, -3,
+    {
+        2, 0, 0, 0
+    }
+    ,
+    {
+        1, 2, 3, 0
+    }
+    ,0, 11, 12, 7, 250, C_CONTAMINATED, Z_SMALL, S_SILENT, I_ANIMAL, 0
+}
+,
 
 
 
@@ -3288,7 +3314,7 @@
 
 
 {
-    275, 'J', LIGHTGREY, "ooze", M_RES_POISON | M_NO_SKELETON,
+    275, 'J', BROWN, "brown ooze", M_RES_POISON | M_NO_SKELETON,
         0, 11, 275, H_NORMAL, -7,
     {
         25, 0, 0, 0
@@ -3884,6 +3910,19 @@
 /* number is set in define_monster */
 
 {
+    357, 'J', LIGHTGREY, "ooze", M_RES_POISON | M_NO_SKELETON,
+    0, 5, 357, H_NORMAL, -6,
+    {
+        5, 0, 0, 0
+    }
+    ,
+    {
+        3, 3, 5, 0
+    }
+    ,1, 3, 8, 7, 250, C_POISON, Z_NOZOMBIE, S_SILENT, I_PLANT, 0
+}
+,
+{
     360, '@', CYAN, "vault guard", M_NO_FLAGS,
         0, 12, 114, H_NORMAL, -3,
     {
@@ -4425,7 +4464,7 @@
 /* player ghost - only one per level. stats are stored in ghost struct */
 {
     400, 'p', DARKGREY, "", M_RES_POISON | M_SPEAKS | M_SPELLCASTER,
-        0, 20, 400, H_UNDEAD, -3,
+        0, 15, 400, H_UNDEAD, -3,
     {
         5, 0, 0, 0
     }

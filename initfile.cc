@@ -24,13 +24,16 @@
 char *obj_syms = ")([/%.?=!.+\\0}X$";
 int obj_syms_len = 16;
 
-extern char verbose_dump; /* defined in chardump.cc*/
+extern char verbose_dump; /* defined in chardump.cc */
+extern char colour_map; /* defined in view.cc */
+extern char clean_map; /* also defined in view.cc */
 
 
 void read_init_file()
 {
 
         verbose_dump = 0;
+        colour_map = 0;
 
     FILE *f;
     char s[255], field[100];
@@ -110,9 +113,17 @@ void read_init_file()
         {
             strncpy( you.your_name, field, kNameLen );
         }
-        else if (sscanf(s, "verbose=%s", field))
+        else if (sscanf(s, "verbose_dump=%s", field))
         {
             verbose_dump = (atoi(field) == 1); // gives verbose info in char dumps
+        }
+        else if (sscanf(s, "colour_map=%s", field))
+        {
+             colour_map = (atoi(field) == 1); // colour-codes play-screen map
+        }
+        else if (sscanf(s, "clean_map=%s", field))
+        {
+             clean_map = (atoi(field) == 1); // removes monsters/clouds from map
         }
         else if (sscanf(s, "crawl_dir=%s", field))
         {

@@ -1278,7 +1278,8 @@ void dart_trap(int trap_known, int trapped, struct bolt beam[1])
     }
 
     // note that this uses full (not random40) player_evasion.
-    if ((20 + you.your_level * 2) * random2(200) / 100 >= player_evasion() + random2(you.dex) / 3 - 2)
+    if ((20 + you.your_level * 2) * random2(200) / 100 >= player_evasion() + random2(you.dex) / 3 - 2 + (you.duration[DUR_REPEL_MISSILES] * 10)
+                && you.duration[DUR_DEFLECT_MISSILES] == 0)
     {
         damage_taken = random2(beam[0].damage);
         damage_taken -= random2(player_AC() + 1);

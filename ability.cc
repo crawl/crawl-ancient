@@ -683,6 +683,13 @@ unknown:
 
     abil_used = spc2;
 
+    if (you.hunger_state <= 1)
+    {
+        strcpy(info, "You're too hungry.");
+        mpr(info);
+        return;
+    }
+
     if (random2(33) + random2(33) + random2(34) <= ability_fail[abil_used])
     {
         mpr("You fail to use your ability.");
@@ -701,12 +708,6 @@ unknown:
         if (you.duration[DUR_BREATH_WEAPON] != 0)
         {
             mpr("You can't do that yet.");
-            return;
-        }
-        if (you.hunger_state <= 2)
-        {
-            strcpy(info, "You're too hungry.");
-            mpr(info);
             return;
         }
         if (spell_direction(abild, beam) == -1)
@@ -737,12 +738,6 @@ unknown:
 
     case ABIL_TELEPORTATION:    // ring of teleport, + teleport mut
 
-        if (you.hunger_state <= 2)
-        {
-            strcpy(info, "You're too hungry.");
-            mpr(info);
-            return;
-        }
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -768,11 +763,6 @@ unknown:
         if (you.duration[DUR_BREATH_WEAPON] != 0 && ability[abil_used] != ABIL_SPIT_ACID)
         {
             mpr("You can't do that yet.");
-            return;
-        }
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
             return;
         }
         if (spell_direction(abild, beam) == -1)
@@ -827,12 +817,6 @@ unknown:
 
     case ABIL_BLINK:            // blink mut
 
-        if (you.hunger_state <= 2)
-        {
-            strcpy(info, "You're too hungry.");
-            mpr(info);
-            return;
-        }
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -848,7 +832,7 @@ unknown:
 
         if (you.hunger_state <= 2)
         {
-            strcpy(info, "You're too hungry.");
+            strcpy(info, "You're too hungry to go berserk.");
             mpr(info);
             return;
         }
@@ -858,12 +842,6 @@ unknown:
 
     case ABIL_FLY:              // Fly (kenku). Eventually becomes permanent (handled in acr.cc)
 
-        if (you.hunger_state <= 2)
-        {
-            strcpy(info, "You're too hungry.");
-            mpr(info);
-            return;
-        }
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -884,11 +862,6 @@ unknown:
 /* Demonic powers follow: */
 
     case ABIL_SUMMON_MINOR_DEMON:       /* summon minor demon */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -908,11 +881,6 @@ unknown:
         break;
 
     case ABIL_SUMMON_DEMON:     /* summon demon */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -932,11 +900,6 @@ unknown:
         break;
 
     case ABIL_HELLFIRE: /* Hellfire */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 8)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -962,11 +925,6 @@ unknown:
             mpr("Undead cannot use this ability.");
             return;
         }
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 9)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -979,11 +937,6 @@ unknown:
         break;
 
     case ABIL_RAISE_DEAD:       /* Raise dead */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1004,11 +957,6 @@ unknown:
         break;
 
     case ABIL_CONTROL_DEMON:    /* Control demon */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1038,11 +986,6 @@ unknown:
             mpr("You're already here.");
             return;
         }
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1055,11 +998,6 @@ unknown:
         break;
 
     case ABIL_CHANNELING:       /* Channeling */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.hp < 1)
         {
             mpr("You don't have enough vitality to use that power.");
@@ -1077,11 +1015,6 @@ unknown:
 
     case ABIL_THROW_FLAME:
     case ABIL_THROW_FROST:      /* Throw flame/frost */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1109,11 +1042,6 @@ unknown:
         break;
 
     case ABIL_BOLT_OF_DRAINING: /* bolt of draining */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1141,7 +1069,7 @@ unknown:
     case ABIL_TURN_INVISIBLE:   /* turn invis */
         if (you.hunger_state <= 2)
         {
-            mpr("You're too hungry.");
+            mpr("You're too hungry to turn invisible.");
             return;
         }
         if (you.magic_points < 2)
@@ -1161,11 +1089,6 @@ unknown:
         break;
 
     case ABIL_LEVITATE: /* levitate */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1204,11 +1127,6 @@ unknown:
         break;
 
     case ABIL_MINOR_HEALING:    /* Minor Healing */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 2)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1224,11 +1142,6 @@ unknown:
         break;
 
     case ABIL_PESTILENCE:       /* Pestilence */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1243,11 +1156,6 @@ unknown:
         break;
 
     case ABIL_HOLY_WORD:        /* Holy Word */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 6)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1262,11 +1170,6 @@ unknown:
         break;
 
     case ABIL_SUMMON_GUARDIAN:  /* Guardian */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1284,11 +1187,6 @@ unknown:
 
 
     case ABIL_SMITING:
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1303,11 +1201,6 @@ unknown:
         break;
 
     case ABIL_ANNIHILATE_UNDEAD:        /* destroy undead */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1327,11 +1220,6 @@ unknown:
         break;
 
     case ABIL_THUNDERBOLT:      /* thunderbolt */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1351,11 +1239,6 @@ unknown:
         break;
 
     case ABIL_SUMMON_DAEVA:     /* Daeva */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1371,11 +1254,6 @@ unknown:
 
 
     case ABIL_RECALL_UNDEAD_SLAVES:     /* recall undead */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1388,11 +1266,6 @@ unknown:
         break;
 
     case ABIL_ENSLAVE_UNDEAD:   /* enslave undead */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1412,11 +1285,6 @@ unknown:
         break;
 
     case ABIL_INVOKE_DEATH:     /* Invoke Death */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1432,11 +1300,6 @@ unknown:
 
 
     case ABIL_ANIMATE_CORPSE:   /* Animate Skeleton */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1451,11 +1314,6 @@ unknown:
         break;
 
     case ABIL_RECALL_UNDEAD:    /* Recall Undead */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1469,11 +1327,6 @@ unknown:
         break;
 
     case ABIL_ANIMATE_DEAD:     /* Animate Dead */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 7)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1489,11 +1342,6 @@ unknown:
         break;
 
     case ABIL_DRAIN_LIFE:       /* Drain Life */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 6)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1508,11 +1356,6 @@ unknown:
         break;
 
     case ABIL_CONTROL_UNDEAD:   /* Control Undead */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1527,12 +1370,6 @@ unknown:
         break;
 
     case ABIL_CHANNEL_ENERGY:   /* channeling */
-        if (you.hunger_state <= 2)
-        {
-            strcpy(info, "You're too hungry.");
-            mpr(info);
-            return;
-        }
         you.hunger -= 50 + random2(50) + random2(50);
         you.magic_points += 1 + random2(you.skills[SK_INVOCATIONS] / 4 + 2);
         if (you.magic_points > you.max_magic_points)
@@ -1544,12 +1381,6 @@ unknown:
         break;
 
     case ABIL_MIGHT_I:          /* might */
-        if (you.hunger_state <= 2)
-        {
-            strcpy(info, "You're too hungry.");
-            mpr(info);
-            return;
-        }
         if (you.magic_points < 2)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1563,11 +1394,6 @@ unknown:
         break;
 
     case ABIL_HEALING_I:        /* Minor healing */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 2)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1583,12 +1409,6 @@ unknown:
 
 
     case ABIL_HASTE:            /* haste */
-        if (you.hunger_state <= 2)
-        {
-            strcpy(info, "You're too hungry.");
-            mpr(info);
-            return;
-        }
         if (you.magic_points < 5)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1605,11 +1425,6 @@ unknown:
 
 
     case ABIL_MINOR_DESTRUCTION:        /* minor destr */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1649,11 +1464,6 @@ unknown:
         break;
 
     case ABIL_LESSER_SERVANT_OF_MAKHLEB:        /* minor summoning */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 2)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1668,11 +1478,6 @@ unknown:
         break;
 
     case ABIL_MAJOR_DESTRUCTION:        /* major destr */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1730,11 +1535,6 @@ unknown:
         break;
 
     case ABIL_GREATER_SERVANT_OF_MAKHLEB:       /* major summoning */
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 4)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1753,7 +1553,7 @@ unknown:
     case ABIL_GO_BERSERK_II:    /* berserk */
         if (you.hunger_state <= 2)
         {
-            strcpy(info, "You're too hungry.");
+            strcpy(info, "You're too hungry to go berserk.");
             mpr(info);
             return;
         }
@@ -1764,12 +1564,6 @@ unknown:
         break;
 
     case ABIL_MIGHT_II: /* might */
-        if (you.hunger_state <= 2)
-        {
-            strcpy(info, "You're too hungry.");
-            mpr(info);
-            return;
-        }
         potion_effect(POT_MIGHT, you.skills[SK_INVOCATIONS] * 6);
         lose_piety(1 + random2(2));
         you.hunger -= 200 + random2(200) + random2(200);
@@ -1777,12 +1571,6 @@ unknown:
         break;
 
     case ABIL_HASTE_SELF:       /* haste */
-        if (you.hunger_state <= 2)
-        {
-            strcpy(info, "You're too hungry.");
-            mpr(info);
-            return;
-        }
         potion_effect(POT_SPEED, you.skills[SK_INVOCATIONS] * 6);
         lose_piety(2 + random2(3));
         you.hunger -= 250 + random2(250) + random2(250);
@@ -1799,11 +1587,6 @@ unknown:
 
 
     case ABIL_LESSER_HEALING:
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1818,11 +1601,6 @@ unknown:
         break;
 
     case ABIL_PURIFICATION:
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 1)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1837,11 +1615,6 @@ unknown:
         break;
 
     case ABIL_HEALING_II:
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 2)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1857,11 +1630,6 @@ unknown:
         break;
 
     case ABIL_RESTORATION:
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 3)
         {
             mpr("You don't have enough magic to use that ability.");
@@ -1884,11 +1652,6 @@ unknown:
         break;
 
     case ABIL_GREATER_HEALING:
-        if (you.hunger_state <= 2)
-        {
-            mpr("You're too hungry.");
-            return;
-        }
         if (you.magic_points < 6)
         {
             mpr("You don't have enough magic to use that ability.");

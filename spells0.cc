@@ -2488,7 +2488,8 @@ char spellbook_contents(unsigned char plus, unsigned char type)
         {
             knowsSpell = you.spells[i] == spell_types[j];
         }
-        textcolor(knowsSpell ? LIGHTGREY : LIGHTBLUE);
+//        textcolor(knowsSpell ? LIGHTGREY : LIGHTBLUE);
+        textcolor(knowsSpell ? DARKGREY : LIGHTGREY);
 
         char strng[2];
 

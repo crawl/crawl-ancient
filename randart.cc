@@ -694,8 +694,6 @@ void standard_name_armour(unsigned char item_typ, unsigned char item_plus2, char
 
 int random2(unsigned int randmax);
 
-
-
 void set_unrandart_exist(int whun, char is_exist)
 {
     unrandart_exist[whun] = is_exist;

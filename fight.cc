@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *   <9>   11/23/99      LRH    Now you don't get xp/piety for killing
+ *                                                              monsters who were created friendly
  *   <8>   11/14/99      cdl    evade with random40(ev) vice random2(ev)
  *   <7>   10/ 8/99      BCR    Large races get a smaller
  *                                    penalty for large shields
@@ -738,7 +740,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
         if (you.special_wield == SPWLD_ZONGULDROK || you.special_wield == SPWLD_CURSE)
             naughty(NAUGHTY_NECROMANCY, 3);
     }
-    if (menv[monster_attacked].type == MONS_JELLY || menv[monster_attacked].type == MONS_OOZE || menv[monster_attacked].type == MONS_ACID_BLOB || menv[monster_attacked].type == MONS_ROYAL_JELLY)
+    if (menv[monster_attacked].type == MONS_JELLY || menv[monster_attacked].type == MONS_BROWN_OOZE || menv[monster_attacked].type == MONS_ACID_BLOB || menv[monster_attacked].type == MONS_ROYAL_JELLY)
         weapon_acid(5);
 
     int specdam = 0;
@@ -1757,7 +1759,7 @@ void monster_attack(int monster_attacking)
         if (player_shield_class() > 0 && you.paralysis == 0 && you.conf == 0
                 && random2(menv[monster_attacking].hit_dice + 15
                                     + 5 * you.shield_blocks)
-                                            <= random2(player_shield_class()))
+                                            <= random2(player_shield_class()) + (random2(you.dex) / 5) - 1)
         {
             you.shield_blocks++;
             strcpy(info, "You block ");
@@ -2065,9 +2067,9 @@ void monster_attack(int monster_attacking)
                 scrolls_burn(1, 6);
                 break;
 
-
-            case MONS_SNAKE:    /* scorpion */
-            case MONS_GIANT_MITE:       /* giant mite */
+            case MONS_SMALL_SNAKE:
+            case MONS_SNAKE:
+            case MONS_GIANT_MITE:
             case MONS_GOLD_MIMIC:
             case MONS_WEAPON_MIMIC:
             case MONS_ARMOUR_MIMIC:
@@ -2099,7 +2101,7 @@ void monster_attack(int monster_attacking)
                 break;
 
 
-            case MONS_SCORPION: // snake
+            case MONS_SCORPION:
 
             case MONS_BROWN_SNAKE:      // br snake
 
@@ -2171,7 +2173,7 @@ void monster_attack(int monster_attacking)
                     you.poison += 2 + random2(4);
                 }               // no break is intentional
 
-            case MONS_OOZE:     // ooze
+            case MONS_BROWN_OOZE:     // ooze
 
             case MONS_ACID_BLOB:        // acid blob
 
@@ -2235,7 +2237,7 @@ void monster_attack(int monster_attacking)
    if (menv [monster_attacking].hit_points > menv [monster_attacking].max_hit_points) menv [monster_attacking].hit_points = menv [monster_attacking].max_hit_points;
    } */
                 strcpy(info, monam(menv[monster_attacking].number, menv[monster_attacking].type, menv[monster_attacking].enchantment[2], 0));
-                strcat(info, " is healed.");
+                strcat(info, " draws strength from you and is healed!");
                 mpr(info);
                 menv[monster_attacking].hit_points += random2(damage_taken);
                 if (menv[monster_attacking].hit_points > menv[monster_attacking].max_hit_points)
@@ -3565,7 +3567,9 @@ void monster_die(int monster_killed, char killer, int i)
 
         if (mons_near(monster_killed))
             mpr(info);
-        if (YOU_KILL(killer))
+        if (YOU_KILL(killer) && (menv[monster_killed].enchantment[1] < ENCH_FRIEND_ABJ_I
+                            || menv[monster_killed].enchantment[1] > ENCH_FRIEND_ABJ_VI)
+                                                        && menv[monster_killed].enchantment[1] != ENCH_CREATED_FRIENDLY)
         {
             gain_exp(exper_value(menv[monster_killed].type, menv[monster_killed].hit_dice, menv[monster_killed].max_hit_points));
         }
@@ -3579,7 +3583,9 @@ void monster_die(int monster_killed, char killer, int i)
         strcat(info, " falls from the air.");
         if (mons_near(monster_killed))
             mpr(info);
-        if (YOU_KILL(killer))
+        if (YOU_KILL(killer) && (menv[monster_killed].enchantment[1] < ENCH_FRIEND_ABJ_I
+                            || menv[monster_killed].enchantment[1] > ENCH_FRIEND_ABJ_VI)
+                                                        && menv[monster_killed].enchantment[1] != ENCH_CREATED_FRIENDLY)
         {
             gain_exp(exper_value(menv[monster_killed].type, menv[monster_killed].hit_dice, menv[monster_killed].max_hit_points));
         }
@@ -3596,15 +3602,22 @@ void monster_die(int monster_killed, char killer, int i)
 
         strcat(info, "!");
         mpr(info);
-        gain_exp(exper_value(menv[monster_killed].type, menv[monster_killed].hit_dice, menv[monster_killed].max_hit_points));
+        if ((menv[monster_killed].enchantment[1] < ENCH_FRIEND_ABJ_I
+                            || menv[monster_killed].enchantment[1] > ENCH_FRIEND_ABJ_VI)
+                                                        && menv[monster_killed].enchantment[1] != ENCH_CREATED_FRIENDLY)
+                                gain_exp(exper_value(menv[monster_killed].type, menv[monster_killed].hit_dice, menv[monster_killed].max_hit_points));
+                                        else mpr("That felt strangely unrewarding.");
+                // Xom doesn't care who you killed:
         if (you.religion == GOD_XOM && random2(70) <= 10 + menv[monster_killed].hit_dice)
             Xom_acts(1, random2(menv[monster_killed].hit_dice) + 1, 0);
 
         // Trying to prevent summoning abuse here, so we're trying to
         // prevent summoned creatures from being being done_good kills,
-        // this will also mean that opponenet summoned monsters will
-        // also not count.
-        if ((menv[monster_killed].enchantment[1] < 20
+        // Only affects monsters friendly when created.
+            if ((menv[monster_killed].enchantment[1] < ENCH_FRIEND_ABJ_I
+                            || menv[monster_killed].enchantment[1] > ENCH_FRIEND_ABJ_VI)
+                                                        && menv[monster_killed].enchantment[1] != ENCH_CREATED_FRIENDLY)
+/*        if ((menv[monster_killed].enchantment[1] < 20
                             || menv[monster_killed].enchantment[1] > 25)
 
                 // these gods can't be used for summoning abuse,
@@ -3612,7 +3625,7 @@ void monster_die(int monster_killed, char killer, int i)
                 // because they might be doing something naughty.
                     || you.religion == GOD_ELYVILON
                     || you.religion == GOD_SHINING_ONE
-                    || you.religion == GOD_ZIN)
+                    || you.religion == GOD_ZIN)*/
         {
             if (you.duration[DUR_PRAYER] > 0)
             {
@@ -3678,22 +3691,22 @@ void monster_die(int monster_killed, char killer, int i)
 
         if ((i >= 0 && i < 200) && menv[i].behavior == BEH_ENSLAVED)
         {
-            gain_exp(exper_value(menv[monster_killed].type, menv[monster_killed].hit_dice, menv[monster_killed].max_hit_points) / 2 + 1);
-
             // Trying to prevent summoning abuse here, so we're trying to
-            // prevent summoned creatures from being being done_good kills,
-            // this will also mean that opponenet summoned monsters will
-            // also not count.
-            if ((menv[monster_killed].enchantment[1] < 20
-                            || menv[monster_killed].enchantment[1] > 25)
-
+            // prevent summoned creatures from being being done_good kills.
+            // Only affects creatures which were friendly when summoned.
+            if ((menv[monster_killed].enchantment[1] < ENCH_FRIEND_ABJ_I
+                            || menv[monster_killed].enchantment[1] > ENCH_FRIEND_ABJ_VI)
+                                                        && menv[monster_killed].enchantment[1] != ENCH_CREATED_FRIENDLY)
+/*
                 // these gods can't be used for summoning abuse,
                 // and for the most part have to be passed through
                 // because they might be doing something naughty.
                     || you.religion == GOD_ELYVILON
                     || you.religion == GOD_SHINING_ONE
-                    || you.religion == GOD_ZIN)
+                    || you.religion == GOD_ZIN)*/
             {
+                    gain_exp(exper_value(menv[monster_killed].type, menv[monster_killed].hit_dice, menv[monster_killed].max_hit_points) / 2 + 1);
+
                 if (mons_holiness(menv[i].type) == MH_UNDEAD)
                 {
                     if (mons_holiness(menv[monster_killed].type) == MH_NORMAL)

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <6>      11/23/99       LRH             Fixed file purging for DOS?
  *      <5>      9/29/99        BCR             Fixed highscore so that it
  *                                              doesn't take so long.  Also
  *                                              added some whitespace to the scores.
@@ -937,6 +938,61 @@
          glorpstr[kFileNameLen] = '\0';  /* if so, char 7 should be NULL */
    #endif
 
+
+
+/* For some reason, the new file-purging method isn't working - I'll use my
+old one instead (LRH): */
+strncpy(glorpstr, you.your_name, 6);
+
+// This is broken. Length is not valid yet! We have to check if we got a
+// trailing NULL; if not, write one:
+if (strlen(you.your_name) > 5)    /* is name 6 chars or more? */
+        glorpstr[6] = (char) NULL;   /* if so, char 7 should be NULL */
+
+strncpy(glorpstr, you.your_name, 6);
+
+// This is broken. Length is not valid yet! We have to check if we got a
+// trailing NULL; if not, write one:
+if (strlen(you.your_name) > 5)    /* is name 6 chars or more? */
+        glorpstr[6] = (char) NULL;   /* if so, char 7 should be NULL */
+
+int fi = 0;
+int fi2 = 0;
+char st_prn [6];
+
+for (fi2 = 0; fi2 < 30; fi2 ++)
+{
+ for (fi = 0; fi < 50; fi ++)
+ {
+  if (!tmp_file_pairs[ fi ][ fi2 ]) continue;
+  strcpy(del_file, "");
+#ifdef SAVE_DIR_PATH
+  strcpy(del_file, SAVE_DIR_PATH);
+#endif
+  strcat(del_file, glorpstr);
+#ifdef SAVE_DIR_PATH
+  strcat(del_file, getuid());
+#endif
+  strcat(del_file, ".");
+  if (fi < 10) strcat(del_file, "0");
+  itoa(fi, st_prn, 10);
+  strcat(del_file, st_prn);
+  st_prn [0] = fi2 + 97;
+  st_prn [1] = 0;
+  strcat(del_file, st_prn);
+  strcat(del_file, "\0");
+  int handle = open(del_file, S_IWRITE, S_IREAD);
+
+  if (handle != -1)
+  {
+        close(handle);
+        unlink(del_file);
+  } else close(handle);
+ }
+}
+
+
+/*
       strncpy( del_file, glorpstr, kFileNameLen );
 
     // Calculate the positions of the characters
@@ -963,6 +1019,7 @@
             }
          }
       }
+*/
 
    #ifdef PACKAGE_SUFFIX
     // this is to catch the game package if it still exists.

@@ -875,7 +875,7 @@ void abjuration(int pow)
             continue;
         if (menv[ab].behavior == 7)
             continue;
-        if (menv[ab].enchantment1 == 0 || menv[ab].enchantment[1] < 20 || menv[ab].enchantment[1] > 25)
+        if (menv[ab].enchantment1 == 0 || menv[ab].enchantment[1] < ENCH_ABJ_I || (menv[ab].enchantment[1] > ENCH_ABJ_VI && menv[ab].enchantment[1] < ENCH_FRIEND_ABJ_I) || menv[ab].enchantment[1] > ENCH_FRIEND_ABJ_VI)
             continue;
 
         menv[ab].enchantment[1] -= 1 + random2(pow) / 3;

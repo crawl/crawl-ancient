@@ -30,7 +30,6 @@
  *      <1>     -/--/--         LRH             Created
  */
 
-
 #include "AppHdr.h"
 
 #ifdef DOS
@@ -1006,14 +1005,14 @@ static bool Use_No_Black = false;
 
          case 24:
          case CMD_SAVE_GAME_NOW:
-            mpr("Saving game... please wait");
+            mpr("Saving game... please wait.");
             save_game(1);
             break;
 
       #ifdef USE_UNIX_SIGNALS
       case 26:
       case CMD_SUSPEND_GAME:
-        // CTRL-Z suspend behaiour is implemented here.
+        // CTRL-Z suspend behaviour is implemented here.
         // because we want to have CTRL-Y available...
         // we have to stop both from sending the signals,
         // so we reimplement here
@@ -2320,6 +2319,14 @@ static bool Use_No_Black = false;
       return; */
          you_attack(mgrd[you.x_pos + move_x][you.y_pos + move_y], true);
          you.turn_is_over = 1;
+
+         if (you.berserk_penalty != NO_BERSERK_PENALTY)
+         {
+            // we don't want to create a penalty if there isn't
+            // supposed to be one
+            you.berserk_penalty = 0;
+         }
+
          return;
       }
 
@@ -2758,8 +2765,8 @@ static bool Use_No_Black = false;
                break;
          }
 
-        // I do these three separate, because the might and
-        // haste counters can different.
+        // I do these three separately, because the might and
+        // haste counters can be different.
          you.berserker -= you.berserk_penalty;
          if (you.berserker <= 0)
          {

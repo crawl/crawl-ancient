@@ -6,7 +6,7 @@
 
 # Player name
 #
-name=RBarnes
+name=Scrumpy
 #
 
 # Directory for reading macro.txt and init.txt, and dumping characters.
@@ -35,10 +35,16 @@ name=RBarnes
 autopickup=$?!:+="/0
 
 #How much information do we want in our character dumps?
-#With verbose on, all stats of special weapons (even generic
+#With verbose_dump=1, all stats of special weapons (even generic
 #properties) are printed out.
 #Otherwise, only those properties which are specific to an "artefact" item
 #(ie one whose powers cannot be predicted from its name) are given.
 #
-verbose=0
+verbose_dump=0
+#
+#Do we want the play-screen map to be colour coded?
+colour_map=1
+#
+#Do we want monsters and clouds erased from the map?
+clean_map=1
 #

@@ -272,7 +272,9 @@
       if (number_raised > 0)
          strcpy(info, "The dead are walking!");
       else
-         strcpy(info, "The dark energy consumes the dead!");
+//         strcpy(info, "The dark energy consumes the dead!"); - no, this
+// means that no corpses were found. Better to say:
+           strcpy(info, "You feel a surge of frustrated energy.");
       mpr(info);
 
       return number_raised;
@@ -289,7 +291,7 @@
       else if (raise_corpse(igrd[axps][ayps], axps, ayps, corps_beh, corps_hit, 1) > 0)
          strcpy(info, "The dead are walking!");
       else
-         strcpy(info, "Dark energy shatters the bones!");
+         strcpy(info, "You feel a surge of frustrated energy.");
 
       mpr(info);
 
@@ -311,8 +313,8 @@
          else
             create_monster(MONS_SMALL_SKELETON, 0, corps_beh, corx, cory, corps_hit,
                           mitm.pluses[corps]);
+         destroy_item(corps);
       }
-      destroy_item(corps);
 
       return returnVal;
    }

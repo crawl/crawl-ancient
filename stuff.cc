@@ -39,15 +39,15 @@
 
 extern char wield_change;
 
-#ifdef USE_NEW_RANDOM
-int random2(int max)
+//#ifdef USE_NEW_RANDOM
+/*int random2(int max)
 {
   if (max <= 0)
     return 0;
   else
     return (int) ((((float) max) * rand()) / RAND_MAX);
-}
-#else
+}*/
+//#else
 int random2(int randmax)
 {
     if (randmax <= 0)
@@ -55,7 +55,7 @@ int random2(int randmax)
 
     return random() % randmax;
 }
-#endif
+//#endif
 
 int random22( int max )
 {

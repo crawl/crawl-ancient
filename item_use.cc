@@ -5,10 +5,11 @@
  *
  *  Change History (most recent first):
  *
+ *   <7>     11/23/99    LRH    Horned characters can wear hats/caps
  *   <6>     7/13/99     BWR    Lowered learning rates for
  *                              throwing skills, and other
  *                              balance tweaks
- *   <5>     5/28/99     JDJ    Changed wear_armour to allow Spriggan's to
+ *   <5>     5/28/99     JDJ    Changed wear_armour to allow Spriggans to
  *                              wear bucklers.
  *   <4>     5/26/99     JDJ    body armor can be removed and worn if an
  *                              uncursed cloak is being worn.
@@ -689,6 +690,11 @@ void wear_armour()
                  || you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH))
     {
         // it fits
+    }
+    else if (you.inv_type[armour_wear_2] == ARM_HELMET
+             && you.inv_plus2[armour_wear_2] > 1)
+    {
+        // caps & wiz hats always fit, unless your head's too big (ogres &c)
     }
     else if (can_equip(wh_equip) == 0)
     {

@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *       <4>     11/23/99       LRH                             Looking at monsters now
+ *                                                                                              displays more info
  *       <3>     5/12/99        BWR             changes to allow for space selection of target.
  *                                              CR, ESC, and 't' in targeting.
  *
@@ -362,6 +364,7 @@ int look_around(struct dist moves[1])
     char mve_y = 0;
     int trf = 0;
     char monsfind_pos [2];
+        int p = 0;
 
     char printed_already = 1;
 
@@ -621,13 +624,36 @@ gotchy:
                           mitm.special[mmov_x], mitm.pluses[mmov_x], mitm.quantity[mmov_x],
                           mitm.id[mmov_x], 2, str_pass);
                 strcpy(info, str_pass);
+                strcat(info, ".");
+                    mpr(info);
             }
             else
+                        {
                 strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 2));
-            strcat(info, ".");
-            mpr(info);
-
-            print_wounds(i);
+                    strcat(info, ".");
+                    mpr(info);
+                if (mmov_x != 501)
+                                {
+                                        strcpy(info, "It is wielding ");
+                        item_name(mitm.pluses2[mmov_x], mitm.base_type[mmov_x], mitm.sub_type[mmov_x],
+                              mitm.special[mmov_x], mitm.pluses[mmov_x], mitm.quantity[mmov_x],
+                              mitm.id[mmov_x], 3, str_pass);
+                            strcat(info, str_pass);
+                                        if (menv[i].type == MONS_TWO_HEADED_OGRE && menv[i].inv[1] != 501)
+                                        {
+                        strcat(info, ",");
+                                                mpr(info);
+                                                strcpy(info, " and ");
+                                item_name(mitm.pluses2[menv[i].inv[1]], mitm.base_type[menv[i].inv[1]], mitm.sub_type[menv[i].inv[1]],
+                              mitm.special[menv[i].inv[1]], mitm.pluses[menv[i].inv[1]], mitm.quantity[menv[i].inv[1]],
+                              mitm.id[menv[i].inv[1]], 3, str_pass);
+                                    strcat(info, str_pass);
+                                            // 2-headed ogres can wield 2 weapons
+                                        }
+                                        strcat(info, ".");
+                                        mpr(info);
+                                }
+            }
 
             if (menv[i].type == 106)
             {
@@ -638,11 +664,36 @@ gotchy:
                 mpr(info);
             }
 
+            print_wounds(i);
+
             if (menv[i].behavior == 7)
                 mpr("It is friendly.");
 
             if (menv[i].behavior == 0)
                 mpr("It doesn't appear to have noticed you.");
+
+                        if (menv[i].enchantment1)
+                        {
+                                for (p = 0; p < 3; p ++)
+                                {
+                        switch(menv[i].enchantment[p])
+                                        {
+                        case ENCH_SLOW: mpr("It is moving slowly."); break;
+                        case ENCH_HASTE: mpr("It is moving very quickly."); break;
+                        case ENCH_CONFUSION: mpr("It appears to be bewildered and confused."); break;
+                        case ENCH_INVIS: mpr("It is slightly transparent."); break;
+                        case ENCH_CHARM: mpr("It is in your thrall."); break;
+                        case ENCH_YOUR_STICKY_FLAME_I:
+                        case ENCH_YOUR_STICKY_FLAME_II:
+                        case ENCH_YOUR_STICKY_FLAME_III:
+                        case ENCH_YOUR_STICKY_FLAME_IV:
+                        case ENCH_STICKY_FLAME_I:
+                        case ENCH_STICKY_FLAME_II:
+                        case ENCH_STICKY_FLAME_III:
+                        case ENCH_STICKY_FLAME_IV: mpr("It is covered in liquid flames."); break;
+                                        }
+                                }
+                        }
 
 #ifdef WIZARD
             stethoscope(i);

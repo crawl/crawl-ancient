@@ -1,3 +1,27 @@
+Linley Henzell (linley.henzell@student.adelaide.edu.au)
+12/09/99
+* Fixed new berserk code to work with ctrl+direction attacks
+* Now deletes savefiles after death (under DOS, at least)
+* You no longer get xp for killing creatures which were created friendly
+* A few low-level monsters added
+* Initfile options:
+   - Colour-code play-screen map, like the 'X' map
+   - Remove monsters & clouds from map
+* Horned characters can wear caps and hats
+* Class named were put back into lower case, where appropriate
+* You are now told when a monster's enchantments wear off (if in view)
+* You get more information when you look at a monster
+* Monsters no longer cast animate dead when there aren't any corpses in sight
+* You can now use most abilities while hungry (not starving)
+* Monster invisibility can now wear off (it couldn't before)
+* Deflect and repel missiles enchantments now affect missile traps
+* Dexterity affects your shield use
+* Monster AI improvements:
+   - Strong monsters no longer pick up missiles unless they're carrying some already
+   - Some improvements made to monster path-finding
+* USE_NEW_RANDOM rand() removed - the randart code relies on random()
+* Ghosts now only do 2/3 as much damage; xp value reduced, too
+
 Daniel Ligon (makmorn@qis.net)
 11/18/99
 
@@ -169,6 +193,35 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
     -- added note about using + for targeting to various prompts
     -- ghosts now fade away only if they have less than half their hps
 
+Linley Henzell (linley.henzell@student.adelaide.edu.au)
+12/09/99
+-- "Over-map" added
+-- Messages can now be coloured. Just call set_colour before mpr.
+-- Made wild magic effects do more harm, and increased likelihood of the
+   higher levels of effect.
+-- In the Abyss, blink may not work and teleport takes longer
+-- Tweaked a few unrandarts
+-- Rewrote part of the weapon generation function in dungeon.cc. Add a weapon
+   rarity function.
+-- Some monsters can now get a wider range of weapons.
+-- Many high-powered demons increased in speed
+-- Several changes to skills.cc. Now having many xp in the pool increases
+   the cost of exercising.
+-- Increased the threshold values for special "you hit" messages in fight.cc
+   and patched some grammar.
+-- Removed three 'silly' monsters (dorgi, Sword, Guardian robot)
+-- Now, haste has a direct effect on time_taken, rather than being treated
+   separately. See player_speed().
+-- Boots of levitation now allow permanent hovering.
+-- The random events in Hell are now much nastier
+-- Clouds can now be overwritten by other clouds, sometimes (see place_cloud)
+-- The monster mutation spell now affects monsters as polymorph
+-- A new init-file variable (verbose) determines how much info about
+   randarts and other magical items in the char dump.
+- bugs fixed:
+    -- monsters can now cast 'direct' spells (eg smiting) over other monsters
+        if targetting the player.
+    -- giants are now given the correct number of rocks.
 
 Brent Ross (bwross@csclub.uwaterloo.ca)
 09/09/99

@@ -380,13 +380,13 @@ void mons_cast(int i, struct bolt beem[1], int spell_cast)
         return;
 
     case MS_ANIMATE_DEAD:                    // animate dead
-        if (!mons_near(i) || animate_dead(100, menv[i].behavior,
+/*        if (!mons_near(i) || animate_dead(100, menv[i].behavior,
                                                 menv[i].monster_foe, 0) <= 0)
         {
             spell_cast = 100;
             return;
         }
-
+*/
         animate_dead(5 + random2(5), menv[i].behavior, menv[i].monster_foe, 1);
         return;
 
@@ -1418,14 +1418,16 @@ unsigned char monster_abjuration(int pow, char test)
             continue;
         if (menv[ab].behavior != BEH_ENSLAVED)
             continue;
-        if (menv[ab].enchantment1 == 0 || menv[ab].enchantment[1] < ENCH_ABJ_I || menv[ab].enchantment[1] > ENCH_ABJ_VI)
+        if (menv[ab].enchantment1 == 0 || ((menv[ab].enchantment[1] < ENCH_ABJ_I || menv[ab].enchantment[1] > ENCH_ABJ_VI) && (menv[ab].enchantment[1] < ENCH_FRIEND_ABJ_I || menv[ab].enchantment[1] > ENCH_FRIEND_ABJ_VI)))
             continue;
         result++;
         if (test == 1)
             continue;
 
+        if (pow > 60) pow = 60;
+
         menv[ab].enchantment[1] -= 1 + random2(pow) / 3;
-        if (menv[ab].enchantment[1] < ENCH_ABJ_I)
+        if (menv[ab].enchantment[1] < ENCH_ABJ_I || (menv[ab].enchantment[1] > ENCH_ABJ_VI && menv[ab].enchantment[1] < ENCH_FRIEND_ABJ_I))
         {
             monster_die(ab, KILL_RESET, 0);
             continue;

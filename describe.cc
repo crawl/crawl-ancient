@@ -4220,6 +4220,17 @@ void describe_monsters(int class_described, unsigned char which_mons)
         description = "A weird-looking frog, constantly blinking in and out of reality.";
         break;
 
+
+    case 181:                   // giant cockroach
+
+        description = "A large brown cockroach.";
+        break;
+
+    case 182:                   // small snake
+
+        description = "The lesser dungeon snake.";
+        break;
+
     case 240:                   // Shadow wraith
 
         description = "A mist-wreathed skeletal shadow hanging in mid-air, this creature is almost invisible even to your enhanced sight. ";    // assumes: to read this message, has see invis
@@ -4570,6 +4581,10 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 356:
         description = "A lich who has grown mighty over countless years.";
+        break;
+
+    case 357:
+        description = "A disgusting glob of grey sludge.";
         break;
 
     case 360:

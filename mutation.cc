@@ -783,6 +783,11 @@ char mutate(int which_mutation)
     case MUT_HORNS:             // horns force your helmet off
 
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
+
+                if (you.equip[EQ_HELMET] != -1
+                                && you.inv_plus2[you.equip[EQ_HELMET]] > 1) break;
+                // horns don't push caps/wizard hats off
+
         char removed[8];
 
         for (i = EQ_WEAPON; i < EQ_RIGHT_RING; i++)

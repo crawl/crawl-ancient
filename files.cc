@@ -2118,6 +2118,10 @@ void save_ghost()
     d /= 30;
 
     d += you.strength / 4;
+
+        d /= 3;
+        d *= 2; // ghosts were doing too much damage
+
     if (d > 50)
         d = 50;
 

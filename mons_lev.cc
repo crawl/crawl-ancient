@@ -2028,6 +2028,12 @@ int mons_level(int mcls)
     case 180:
         return 16;              // blink frog
 
+    case 181:
+        return 2;              // giant cockroach
+
+    case 182:
+        return 2;              // small snake
+
     case 240:
         return 20;              // shadow wraith
 
@@ -2089,6 +2095,9 @@ int mons_level(int mcls)
 
     case 356:
         return 30;              // ancient lich
+
+    case 357:
+        return 2;               // ooze
 
     case 364:
         return 23;              // shining eye
@@ -2701,6 +2710,12 @@ int mons_rarity(int mcls)
     case 180:
         return 15;              // blink frog
 
+    case 181:
+        return 50;              // giant cockroach
+
+    case 182:
+        return 30;              // small snake
+
     case 240:
         return 10;              // shadow wraith
 
@@ -2761,6 +2776,9 @@ int mons_rarity(int mcls)
 
     case 356:
         return 3;               // ancient lich
+
+    case 357:
+        return 25;               // ooze
 
     case 364:
         return 2;               // shining eye
@@ -3436,7 +3454,7 @@ int mons_level_slime_pits(int mcls)
 
     case 275:
         mlev = 3;
-        break;                  // ooze
+        break;                  // brown ooze
 
     case 276:
         mlev = 3;
@@ -3449,6 +3467,10 @@ int mons_level_slime_pits(int mcls)
     case 278:
         mlev = 3;
         break;                  // acid blob
+
+    case 357:
+                mlev = 1;
+        break;               // ooze
 
     case 370:
         return 5;               // tentacled monstr
@@ -3484,7 +3506,7 @@ int mons_rare_slime_pits(int mcls)
 
     case 275:
         mlev = 150;
-        break;                  // ooze
+        break;                  // brown ooze
 
     case 276:
         mlev = 30;
@@ -3497,6 +3519,10 @@ int mons_rare_slime_pits(int mcls)
     case 278:
         mlev = 100;
         break;                  // acid blob
+
+    case 357:
+                mlev = 50;
+        break;                  // ooze
 
     case 370:
         mlev = 2;

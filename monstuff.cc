@@ -5,7 +5,8 @@
  *
  *  Change History (most recent first):
  *
- *               <1>     -/--/--        LRH             Created
+ *               <2>     11/23/99       LRH             Upgraded monster AI
+ *               <1>     -/--/--        LRH     Created
  */
 
 #include "AppHdr.h"
@@ -31,14 +32,16 @@
 #include "mstuff2.h"
 #include "ouch.h"
 #include "player.h"
+#include "spells2.h"
 #include "stuff.h"
 #include "view.h"
 
-void mons_pickup(int i);
+char mons_pickup(int i);
 void plant_spit(int i, struct bolt beam[1]);
 void monster_move(int i);
 void mons_in_cloud(int i);
 char mons_speaks(int i);
+void simple_monster_message(int i, monsters& monster, const char *event);
 
 char mmov_x, mmov_y;
 
@@ -449,6 +452,16 @@ static void flag_ench(monsters& monster, int p)
           monster.enchantment1 = 0;
 }
 
+void simple_monster_message(int i, monsters& monster, const char *event)
+{
+    if (mons_near(i) && (monster.enchantment[2] != 6 || player_see_invis() != 0))
+    {
+         strcpy(info, monam(monster.number, monster.type, monster.enchantment[2], 0));
+         strcat(info, event);
+         mpr(info);
+    }
+}
+
 #define POISONVAL(p) ((p) % 50)
 
 static bool handle_enchantment(int i)
@@ -477,12 +490,13 @@ static bool handle_enchantment(int i)
                     else
                         monster.speed *= 2;
                     flag_ench(monster,p);
+                    simple_monster_message(i, monster, " seems to speed up.");
                 }
                 break;
 
             case ENCH_HASTE:             // haste
 
-                if (random2(40) == 0)
+                if (random2(20) == 0)
                 {
                     if (monster.speed >= 100)
                     {
@@ -491,6 +505,7 @@ static bool handle_enchantment(int i)
                     else
                         monster.speed /= 2;
                     flag_ench(monster,p);
+                    simple_monster_message(i, monster, " seems to slow down.");
                 }
                 break;
 
@@ -500,7 +515,7 @@ static bool handle_enchantment(int i)
                 if (random2(150) <= monster.hit_dice + 10)
                 {
                     monster.behavior = BEH_CHASING_I;   // reset to monster's original behaviour
-
+                    simple_monster_message(i, monster, " seems to regain its courage.");
                     flag_ench(monster,p);
                 }
                 break;
@@ -513,6 +528,7 @@ static bool handle_enchantment(int i)
                     if (monster.type != MONS_BUTTERFLY && monster.type != MONS_FIRE_VORTEX && monster.type != MONS_SPATIAL_VORTEX && monster.type != MONS_VAPOUR)
                     {
                         monster.behavior = BEH_CHASING_I;
+                        simple_monster_message(i, monster, " seems less confused.");
                         flag_ench(monster,p);
                     }
                 }
@@ -520,7 +536,7 @@ static bool handle_enchantment(int i)
 
             case ENCH_INVIS:             // invisibility
 
-                if (random2(40) == 0 || (monster.type >= MLAVA0 && monster.number == 0) || (monster.type == 125 && random2(3) == 0))
+                if (random2(20) == 0 || (monster.type >= MLAVA0 && monster.number == 0) || (monster.type == 125 && random2(3) == 0))
                 {
                     if (!mons_flag(monster.type, M_INVIS))
                     {           // invisible monsters stay invisible
@@ -528,6 +544,16 @@ static bool handle_enchantment(int i)
                         if (monster.type < MLAVA0 || monster.number != 1)
                         {
                            flag_ench(monster,p);
+                           // Can't use simple_message, because we want
+                           //  'a thing appears' (not 'the')
+                           // Note: this message not printed if the player
+                           //  could already see the monster.
+                           if (mons_near(i) && (player_see_invis() == 0 || monster.type >= MLAVA0))
+                           {
+                                strcpy(info, monam(monster.number, monster.type, monster.enchantment[2], 2));
+                                strcat(info, " appears!");
+                                mpr(info);
+                           }
                         }
                     }
                 }
@@ -623,10 +649,16 @@ static bool handle_enchantment(int i)
             case ENCH_ABJ_IV:
             case ENCH_ABJ_V:
             case ENCH_ABJ_VI:
+            case ENCH_FRIEND_ABJ_I:
+            case ENCH_FRIEND_ABJ_II:
+            case ENCH_FRIEND_ABJ_III:
+            case ENCH_FRIEND_ABJ_IV:
+            case ENCH_FRIEND_ABJ_V:
+            case ENCH_FRIEND_ABJ_VI:
                 if (random2(10) == 0)
                     monster.enchantment[p]--;
 
-                if (monster.enchantment[p] == ENCH_ABJ_I-1)
+                if (monster.enchantment[p] == ENCH_ABJ_I-1 || monster.enchantment[p] == ENCH_FRIEND_ABJ_I-1)
                 {
                     monster_die(i, KILL_RESET, 0);
                     died = true;
@@ -640,6 +672,7 @@ static bool handle_enchantment(int i)
                     monster.behavior = BEH_CHASING_I;   // reset to monster's original behaviour
 
                     flag_ench(monster,p);
+                    simple_monster_message(i, monster, " is no longer your friend.");
                 }
                 break;
 
@@ -1703,6 +1736,11 @@ casted:
         if (spell_cast == 100)
             goto bail;
 
+        if (spell_cast == MS_ANIMATE_DEAD
+                && (!mons_near(i)
+                || !animate_dead(100, menv[i].behavior, menv[i].monster_foe, 0)))
+                goto bail; // can't see anything to animate
+
         if (mons_near(i))
         {
             strcpy(info, monam(monster.number, monster.type, monster.enchantment[2], 0));
@@ -2008,7 +2046,9 @@ void monster()
                     monster.max_hit_points = monster.hit_points;
 
                 if (igrd[monster.x][monster.y] != 501 && (gmon_use[monster.type] == 3 || monster.type == MONS_JELLY || monster.type == MONS_NECROPHAGE || monster.type == MONS_GHOUL))
-                    mons_pickup(i);
+                {
+                    if (mons_pickup(i)) continue;
+                }
 
                 handle_movement(i);
 
@@ -2189,10 +2229,17 @@ end_switch:
 }                               // end of void monster()
 
 
-void mons_pickup(int i)
+//---------------------------------------------------------------
+//
+// mons_pickup
+//
+// Returns 0 if monster doesn't spend any time pickup up
+//
+//---------------------------------------------------------------
+char mons_pickup(int i)
 {
 
-    if (menv[i].type == MONS_JELLY || menv[i].type == MONS_OOZE || menv[i].type == MONS_ACID_BLOB || menv[i].type == MONS_ROYAL_JELLY)  /* Jelly! */
+    if (menv[i].type == MONS_JELLY || menv[i].type == MONS_BROWN_OOZE || menv[i].type == MONS_ACID_BLOB || menv[i].type == MONS_ROYAL_JELLY)  /* Jelly! */
     {
 
         int hps_gained;
@@ -2204,13 +2251,13 @@ void mons_pickup(int i)
             quant_eated = mitm.quantity[igrd[menv[i].x][menv[i].y]];
 
         if (mitm.base_type[igrd[menv[i].x][menv[i].y]] == OBJ_WEAPONS && mitm.special[igrd[menv[i].x][menv[i].y]] > 180)
-            return;             /* unique items */
+            return 0;             /* unique items */
 
         if (mitm.base_type[igrd[menv[i].x][menv[i].y]] == OBJ_MISSILES && (mitm.sub_type[igrd[menv[i].x][menv[i].y]] == MI_STONE || mitm.sub_type[igrd[menv[i].x][menv[i].y]] == MI_LARGE_ROCK))
         {
             /* shouldn't eat stone things.
                - but what about stone wands & rings? */
-            return;
+            return 0;
         }
 
         if (mitm.base_type[igrd[menv[i].x][menv[i].y]] < 15)
@@ -2257,7 +2304,7 @@ void mons_pickup(int i)
                 menv[i].hit_points = 50;
         }
 
-        return;
+        return 0;
 
     }
 
@@ -2266,16 +2313,16 @@ void mons_pickup(int i)
     {
     case OBJ_WEAPONS:
         if (menv[i].inv[0] != 501)
-            return;
+            return 0;
         if (mitm.special[igrd[menv[i].x][menv[i].y]] > 180)
-            return;
+            return 0;
         if (mitm.special[igrd[menv[i].x][menv[i].y]] % 30 >= 25)
-            return;
+            return 0;
         if ((mons_charclass(menv[i].type) == MONS_KOBOLD || mons_charclass(menv[i].type) == MONS_GOBLIN) && property(mitm.base_type[igrd[menv[i].x][menv[i].y]], mitm.sub_type[igrd[menv[i].x][menv[i].y]], 1) <= 0)
-            return;
+            return 0;
         // wimpy monsters (Kob, gob) shouldn't pick up halberds etc
         if (mitm.sub_type[igrd[menv[i].x][menv[i].y]] == WPN_GIANT_CLUB || mitm.sub_type[igrd[menv[i].x][menv[i].y]] == WPN_GIANT_SPIKED_CLUB)
-            return;
+            return 0;
         // Nobody picks up giant clubs
         menv[i].inv[0] = igrd[menv[i].x][menv[i].y];
         igrd[menv[i].x][menv[i].y] = mitm.link[igrd[menv[i].x][menv[i].y]];
@@ -2307,13 +2354,15 @@ void mons_pickup(int i)
             mitm.quantity[igrd[menv[i].x][menv[i].y]] = 0;
             igrd[menv[i].x][menv[i].y] = mitm.link[igrd[menv[i].x][menv[i].y]];
             mitm.link[menv[i].inv[0]] = 501;
-            return;
+            break;
         }
         if (mitm.sub_type[igrd[menv[i].x][menv[i].y]] == MI_LARGE_ROCK)
-            return;
+            return 0;
         // Nobody bothers to pick up rocks if they don't already have some.
         if (menv[i].inv[0] != 501 || mitm.quantity[igrd[menv[i].x][menv[i].y]] == 1)
-            return;
+            return 0;
+        if (mondamage(menv[i].type, 0) >= 7)
+            return 0; // monsters with powerful melee attacks don't bother
         menv[i].inv[1] = igrd[menv[i].x][menv[i].y];
         igrd[menv[i].x][menv[i].y] = mitm.link[igrd[menv[i].x][menv[i].y]];
         mitm.link[menv[i].inv[0]] = 501;
@@ -2329,7 +2378,7 @@ void mons_pickup(int i)
 
     case OBJ_WANDS:
         if (menv[i].inv[5] != 501)
-            return;
+            return 0;
         menv[i].inv[5] = igrd[menv[i].x][menv[i].y];
         igrd[menv[i].x][menv[i].y] = mitm.link[igrd[menv[i].x][menv[i].y]];
         mitm.link[menv[i].inv[0]] = 501;
@@ -2345,7 +2394,7 @@ void mons_pickup(int i)
 
     case OBJ_SCROLLS:
         if (menv[i].inv[6] != 501)
-            return;
+            return 0;
         menv[i].inv[6] = igrd[menv[i].x][menv[i].y];
         igrd[menv[i].x][menv[i].y] = mitm.link[igrd[menv[i].x][menv[i].y]];
         mitm.link[menv[i].inv[0]] = 501;
@@ -2361,7 +2410,7 @@ void mons_pickup(int i)
 
     case OBJ_POTIONS:
         if (menv[i].inv[4] != 501)
-            return;
+            return 0;
         menv[i].inv[4] = igrd[menv[i].x][menv[i].y];
         igrd[menv[i].x][menv[i].y] = mitm.link[igrd[menv[i].x][menv[i].y]];
         mitm.link[menv[i].inv[0]] = 501;
@@ -2379,7 +2428,7 @@ void mons_pickup(int i)
 
     case OBJ_CORPSES:
         if (menv[i].type != MONS_NECROPHAGE && menv[i].type != MONS_GHOUL)
-            return;
+            return 0;
         menv[i].hit_points += random2(mons_weight(mitm.pluses[igrd[menv[i].x][menv[i].y]])) / 100 + 1;
         if (menv[i].hit_points > 77)
             menv[i].hit_points = 77;
@@ -2395,10 +2444,13 @@ void mons_pickup(int i)
         destroy_item(igrd[menv[i].x][menv[i].y]);
         break;
 
+        default: return 0;
+
     }
 
-    if (menv[i].speed_increment > 25)
-        menv[i].speed_increment -= menv[i].speed;
+/*    if (menv[i].speed_increment > 25)
+        menv[i].speed_increment -= menv[i].speed;*/
+        return 1;
 
 }
 
@@ -2527,11 +2579,24 @@ void monster_move(int i)
     }
 
 
-/* have a variable equal to the minimum value the monster can move through! */
-
 /*  equivalent of your move() for monsters: */
     if (mmov_x != 0 && mmov_y != 0)
     {
+
+        // Now, we want to make the monster move in a straight line unless an
+        //  oblique line is faster (often, either is optimum above a certain
+        //  distance from the target). But should be a little random
+        if (random2(4) != 0 && mmov_x != 0 && mmov_y != 0 && abs(menv[i].y - menv[i].target_y) != abs(menv[i].x - menv[i].target_x))
+        {
+            if (abs(menv[i].target_x - menv[i].x) > abs(menv[i].target_y - menv[i].y))
+            {
+                if (good_move[mmov_x + 1][1] == 1)
+                        mmov_y = 0;
+            }
+                else if (good_move[1][mmov_y + 1] == 1)
+                        mmov_x = 0;
+        }
+
         if (good_move[mmov_x + 1][mmov_y + 1] == 0)
         {
 
@@ -2556,10 +2621,10 @@ void monster_move(int i)
             if (which_first == 1)
             {
 
-                if (good_move[mmov_x + 1][1] == 1)      //grd [menv [i].x + mmov_x] [menv [i].m_yly] > okmove && mgrd [menv [i].x + mmov_x] [menv [i].m_yly] == MNG)
+                if (good_move[mmov_x + 1][1] == 1)
 
                 {
-                    mmov_y = 0; // @@@
+                    mmov_y = 0;
 
                 }
                 else if (good_move[1][mmov_y + 1] == 1)
@@ -2672,13 +2737,9 @@ void monster_move(int i)
 
 
             if (mmov_x != 0 && mmov_y != 0)
-            {                   // was 11.
-                /* This could be wrong!!!
-                   @@@!!! */
+            {
                 if (good_move[mmov_x + 1][mmov_y + 1] == 1)
                 {
-
-/*      // some monsters opening doors: change the gmon_use == 1 to gmon_use > 0 maybe? */
 
                     {
                         mmov_y = random2(3) - 1;
@@ -2743,7 +2804,7 @@ void monster_move(int i)
         if (menv[i].type == MONS_EFREET || menv[i].type == MONS_FIRE_ELEMENTAL)
             place_cloud(101, menv[i].x, menv[i].y, 2 + random2(4));
 
-        /* this appears to be the real one: */
+        /* this appears to be the real one, ie where the movement occurs: */
         menv[i].x += mmov_x;
         menv[i].y += mmov_y;
 
