@@ -5,10 +5,10 @@
  *
  *  Change History (most recent first):
  *
- *         <3>     7/29/00    JDJ   Renamed sh_x, sh_y, sh_greed, sh_type, sh_level so
- *                                  they start with shop.
- *         <2>     7/29/00    JDJ   Switched to using bounds checked array classes.
- *                                  Made a few char arrays unsigned char arrays.
+ * <3>     7/29/00    JDJ   Renamed sh_x, sh_y, sh_greed, sh_type, sh_level so
+ *                          they start with shop.
+ * <2>     7/29/00    JDJ   Switched to using bounds checked array classes.
+ *                          Made a few char arrays unsigned char arrays.
  */
 
 #ifndef EXTERNS_H
@@ -143,7 +143,7 @@ struct player
   char redraw_intelligence;
   char redraw_dexterity;
   char redraw_experience;
-  char redraw_armor_class;    // remember that the AC shown = 10 - AC
+  char redraw_armor_class;
 
   char redraw_gold;
   char redraw_evasion;

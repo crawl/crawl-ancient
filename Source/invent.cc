@@ -22,10 +22,6 @@
 #include <conio.h>
 #endif
 
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
 #include "externs.h"
 
 #include "itemname.h"
@@ -35,6 +31,16 @@
 #ifdef MACROS
 #include "macro.h"
 #endif
+
+//jmf: brent sez:
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason ...
+#ifdef USE_CURSES
+#include <curses.h>
+#endif
+
 
 
 void command_string(char comm[50], int i);

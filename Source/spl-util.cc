@@ -5,7 +5,7 @@
  *                                                                   *
  *  Changelog(most recent first):                                    *
  *
- *  <2>     24jun2000     jmf     changed to use new data-structure
+ *  <2>     24jun2000     jmf     changed to use new data structure
  *  <1>     12jun2000     dlb     created after much thought        *
  */
 
@@ -15,7 +15,7 @@
 
 #include <ctype.h>
 #include <string.h>
-
+#include <values.h>
 
 #include "externs.h"
 #include "debug.h"
@@ -26,32 +26,41 @@ static struct playerspell spelldata[] =
 #include "spl-data.h"
 };
 
+static int plyrspell_list[NUM_SPELLS];
 
 #define PLYRSPELLDATASIZE (sizeof(spelldata)/sizeof(struct playerspell))
 
-
-static struct playerspell *seekspell(int *p_spellid);
+static struct playerspell *seekspell(int spellid);
 
 
 
 
 /*
- **************************************************
- *                                                *
- *             BEGIN PUBLIC FUNCTIONS             *
- *                                                *
- **************************************************
-*/
+ *             BEGIN PUBLIC FUNCTIONS
+ */
 
 
 // all this does is merely refresh the internal spell list {dlb}:
 void init_playerspells( void )
 {
 
-    seekspell(NULL);
+  //unsigned int x = 0;    // must be unsigned to match size_t {dlb}
+  size_t x; //jmf: changed to be an actual size_t, if it must match.
 
-    return;
+  for (x = 0; x < NUM_SPELLS; x++)
+    plyrspell_list[x] = -1;
 
+  // can only use up to PLYRSPELLDATASIZE _MINUS ONE_,  or the
+  // last entry tries to set plyrspell_list[SPELL_NO_SPELL]
+  // which corrupts the heap.
+  for (x = 0; x < PLYRSPELLDATASIZE-1; x++)
+    plyrspell_list[spelldata[x].id] = x;
+
+  for (x = 0; x < NUM_SPELLS; x++)
+    if ( plyrspell_list[x] == -1 )
+      plyrspell_list[x] = plyrspell_list[SPELL_NO_SPELL];
+
+  return; // return value should not matter here {dlb}
 };         // end init_playerspells()
 
 
@@ -59,10 +68,8 @@ void init_playerspells( void )
 
 int spell_hunger( int which_spell )
 {
-
-  int hunger_value = seekspell(&which_spell)->level;
-
-  switch ( hunger_value ) //jmf: returned old switch
+  int level = seekspell(which_spell)->level;
+  switch ( level )
     {
     case 1: return 50;
     case 2: return 95;
@@ -79,10 +86,10 @@ int spell_hunger( int which_spell )
     case 13: return 1380;
     case 14: return 1500;
     case 15: return 1600;
-    default: return 1600 + (20 * hunger_value);
+    default: return 1600 + (20 * level);
     }
 
-}          // end spell_hunger()
+} // end spell_hunger();  VISUALIZE_WHIRLED_PEAS();  free(love);
 
 
 
@@ -91,10 +98,8 @@ int spell_hunger( int which_spell )
 // for Xom acting (more power = more likely to grab his attention) {dlb}
 int spell_mana( int which_spell )
 {
-
-    return seekspell(&which_spell)->level;
-
-}          // end spell_mana()
+    return seekspell(which_spell)->level;
+}
 
 
 
@@ -103,50 +108,66 @@ int spell_mana( int which_spell )
 // and triggers for Sif acting (same reasoning as above, just good) {dlb}
 int spell_difficulty( int which_spell )
 {
-
-  return seekspell(&which_spell)->level;
-
-}          // end spell_difficulty()
+  return seekspell(which_spell)->level;
+}
 
 
 
 
-bool spell_typematch( int which_spell, int which_discipline )
+bool spell_typematch( int which_spell, unsigned int which_discipline )
 {
-  static int last_spell = -1;
-  static unsigned int last_discipline = 0;
-
-  if (which_spell != last_spell)
-  {
-      last_spell = which_spell;
-      last_discipline = seekspell(&which_spell)->disciplines;
-  }
-
-  return which_discipline & last_discipline;
-}         // end spell_typematch()
+  return seekspell(which_spell)->disciplines & which_discipline;
+}
 
 
+
+
+//jmf: next two for simple bit handling
+unsigned int spell_type( int spell )
+{
+  return seekspell( spell )->disciplines;
+}
+
+
+int count_bits( unsigned int bits )
+{
+  unsigned int n;
+  int c = 0;
+
+  for (n = 1; n < MAXINT; n<<=1)
+    if (n & bits)
+      c++;
+
+  return c;
+}
 
 
 // this will probably be used often, so rather than use malloc/free
 // (which may lead to memory fragmentation) I'll just use a static
 // array of characters -- if/when the String changeover takes place,
 // this will all shift, no doubt {dlb}
-char *spell_title( int which_spell )
-{
+/*
+  const char *spell_title( int which_spell )
+  {
   static char this_title[41] = ""; // this is generous, to say the least {dlb}
-  strncpy(this_title, seekspell(&which_spell)->title, 41);
+  strncpy(this_title, seekspell(which_spell)->title, 41);
   // truncation better than overrun {dlb}
   return ( this_title );
-}         // end spell_title()
+  }         // end spell_title()
+*/
 
+
+const char * spell_title( int spell ) //jmf: ah the joys of driving ms. data
+{
+  return seekspell(spell)->title;
+}
 
 
 /* //jmf: commented out; add field `restriction' to spell struct if desired
    //     (and if anyone finds a use for such a thing)
    int spell_restriction( int which_spell, int which_restriction )
    {
-   int this_restriction = (int) seekspell(&which_spell)->restriction;
+   int this_restriction = (int) seekspell(which_spell)->restriction;
    return ( this_restriction == which_restriction );
    }          // end spell_restriction()
  */
@@ -162,35 +183,8 @@ char *spell_title( int which_spell )
 
 
 
-
-// simply a retread of the new mon-util::seekmosnter() applied to another
-// context -- see mon-util.cc for details on how it works ... {dlb}
-static struct playerspell *seekspell( int *p_spellid )
+//jmf: simplified; moved init code to top function, init_playerspells()
+static struct playerspell *seekspell( int spell )
 {
-
-    static int plyrspell_list[NUM_SPELLS];
-
-// passing null pointer forces refresh -- typically, at gamestart, only {dlb}
-    if ( p_spellid == NULL )
-    {
-        unsigned int x = 0;    // must be unsigned to match size_t {dlb}
-
-        for (x = 0; x < NUM_SPELLS; x++)
-          plyrspell_list[x] = -1;
-
-        // can only use up to PLYRSPELLDATASIZE _MINUS ONE_,  or the
-        // last entry tries to set plyrspell_list[SPELL_NO_SPELL]
-        // which corrupts the heap.
-        for (x = 0; x < PLYRSPELLDATASIZE-1; x++)
-          plyrspell_list[spelldata[x].id] = x;
-
-        for (x = 0; x < NUM_SPELLS; x++)
-          if ( plyrspell_list[x] == -1 )
-            plyrspell_list[x] = plyrspell_list[SPELL_NO_SPELL];
-
-        return NULL; // return value should not matter here {dlb}
-    }
-    else
-      return &spelldata[plyrspell_list[(*p_spellid)]];
-
-}          // end seekspell()
+  return &spelldata[plyrspell_list[spell]];
+}

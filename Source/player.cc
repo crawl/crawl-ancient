@@ -5,14 +5,14 @@
  *
  *  Change History (most recent first):
  *
- *      <6>     7/30/99     BWR     Added player_spell_levels()
- *      <5>     7/13/99     BWR     Added player_res_electricity()
- *                                  and player_hunger_rate()
- *      <4>     6/22/99     BWR     Racial adjustments to stealth and Armour.
- *      <3>     5/20/99     BWR     Fixed problems with random stat increases, added kobold
- *                                  stat increase.  increased EV recovery for Armour.
- *      <2>     5/08/99     LRH     display_char_status correctly handles magic_contamination.
- *      <1>     -/--/--     LRH     Created
+ * <6> 7/30/99 BWR   Added player_spell_levels()
+ * <5> 7/13/99 BWR   Added player_res_electricity()
+ *                   and player_hunger_rate()
+ * <4> 6/22/99 BWR   Racial adjustments to stealth and Armour.
+ * <3> 5/20/99 BWR   Fixed problems with random stat increases, added kobold
+ *                   stat increase.  increased EV recovery for Armour.
+ * <2> 5/08/99 LRH   display_char_status correctly handles magic_contamination.
+ * <1> -/--/-- LRH   Created
  */
 
 #include "AppHdr.h"
@@ -45,7 +45,7 @@
 
 
 /*
-   you.duration []:
+   you.duration []: //jmf: obsolete, see enum.h instead
    0 - liquid flames
    1 - icy armour
    2 - repel missiles
@@ -1132,7 +1132,7 @@ int player_AC( void )
         AC += you.mutation[MUT_TOUGH_SKIN];
 
         if (you.mutation[MUT_GREEN_SCALES] > 0)
-          AC += (you.mutation[MUT_GREEN_SCALES] << 1) - 1;
+          AC += (you.mutation[MUT_GREEN_SCALES] * 2) - 1;
 
         AC += you.mutation[MUT_BLACK_SCALES] * 3;
 
@@ -1144,26 +1144,26 @@ int player_AC( void )
         AC += you.mutation[MUT_RED_SCALES]  + (you.mutation[MUT_RED_SCALES] == 3);
 
         if (you.mutation[MUT_NACREOUS_SCALES] > 0)
-          AC += (you.mutation[MUT_NACREOUS_SCALES] << 1) - 1;
+          AC += (you.mutation[MUT_NACREOUS_SCALES] * 2) - 1;
 
-        AC += you.mutation[MUT_GREY2_SCALES] << 1;
+        AC += you.mutation[MUT_GREY2_SCALES] * 2;
 
         AC += you.mutation[MUT_METALLIC_SCALES] * 3 + (you.mutation[MUT_METALLIC_SCALES] > 1);
 
         if (you.mutation[MUT_BLACK2_SCALES] > 0)
-          AC += (you.mutation[MUT_BLACK2_SCALES] << 1) - 1;
+          AC += (you.mutation[MUT_BLACK2_SCALES] * 2) - 1;
 
         if (you.mutation[MUT_WHITE_SCALES] > 0)
-          AC += (you.mutation[MUT_WHITE_SCALES] << 1) - 1;
+          AC += (you.mutation[MUT_WHITE_SCALES] * 2) - 1;
 
-        AC += you.mutation[MUT_YELLOW_SCALES] << 1;
+        AC += you.mutation[MUT_YELLOW_SCALES] * 2;
 
         if (you.mutation[MUT_BROWN_SCALES] > 0)
-          AC += (you.mutation[MUT_BROWN_SCALES] << 1) - (you.mutation[MUT_METALLIC_SCALES] == 3);
+          AC += (you.mutation[MUT_BROWN_SCALES] * 2) - (you.mutation[MUT_METALLIC_SCALES] == 3);
 
         AC += you.mutation[MUT_BLUE_SCALES];
 
-        AC += you.mutation[MUT_PURPLE_SCALES] << 1;
+        AC += you.mutation[MUT_PURPLE_SCALES] * 2;
 
         AC += you.mutation[MUT_SPECKLED_SCALES];
 
@@ -1172,7 +1172,7 @@ int player_AC( void )
         if (you.mutation[MUT_INDIGO_SCALES] > 0)
           AC += 1 + you.mutation[MUT_INDIGO_SCALES] + (you.mutation[MUT_INDIGO_SCALES] == 3);
 
-        AC += (you.mutation[MUT_RED2_SCALES] << 1) + (you.mutation[MUT_RED2_SCALES] > 1);
+        AC += (you.mutation[MUT_RED2_SCALES] * 2) + (you.mutation[MUT_RED2_SCALES] > 1);
 
         AC += you.mutation[MUT_IRIDESCENT_SCALES];
 
@@ -1186,27 +1186,31 @@ int player_AC( void )
 // transformations:
       switch (you.attribute[ATTR_TRANSFORMATION])
       {
-        case TRAN_NONE:
-          break;
-        case TRAN_SPIDER:
-        case TRAN_ICE_BEAST:
-          AC += 2;
-          break;
-        case TRAN_LICH:
-          AC += 3;
-          break;
-        case TRAN_DRAGON:
-          AC += 7;
-          break;
-        case TRAN_STATUE:
-          AC += 20;
-          break;
-        case TRAN_SERPENT_OF_HELL:
-          AC += 10;
-          break;
-        case TRAN_AIR:
-          AC = 20;     // air - scales & species ought to be irrelevent
-          break;
+      case TRAN_NONE:
+      case TRAN_BLADE_HANDS:
+        //jmf: just in case this somehow got by transform()
+        if (you.duration[ DUR_STONESKIN ] > 0)
+          AC += 1 + you.skills[ SK_EARTH_MAGIC ] / 5;
+        break;
+      case TRAN_SPIDER:
+      case TRAN_ICE_BEAST:
+        AC += 2;
+        break;
+      case TRAN_LICH:
+        AC += 3;
+        break;
+      case TRAN_DRAGON:
+        AC += 7;
+        break;
+      case TRAN_STATUE:
+        AC += 20;
+        break;
+      case TRAN_SERPENT_OF_HELL:
+        AC += 10;
+        break;
+      case TRAN_AIR:
+        AC = 20;     // air - scales & species ought to be irrelevent
+        break;
       }
 
     return AC;
@@ -1224,16 +1228,19 @@ bool player_light_armour( void )
 
     switch ( you.inv_type[you.equip[EQ_BODY_ARMOUR]] )
     {
-      case ARM_ROBE:
-      case ARM_LEATHER_ARMOUR:
-      case ARM_STEAM_DRAGON_HIDE:
-      case ARM_STEAM_DRAGON_ARMOUR:
-      case ARM_MOTTLED_DRAGON_HIDE:
-      case ARM_MOTTLED_DRAGON_ARMOUR:
-        return true;
+    case ARM_ROBE:
+    case ARM_ANIMAL_SKIN:
+    case ARM_LEATHER_ARMOUR:
+    case ARM_STEAM_DRAGON_HIDE:
+    case ARM_STEAM_DRAGON_ARMOUR:
+    case ARM_MOTTLED_DRAGON_HIDE:
+    case ARM_MOTTLED_DRAGON_ARMOUR:
+   //case ARM_TROLL_HIDE: //jmf: these are knobbly and stiff
+   //case ARM_TROLL_LEATHER_ARMOUR:
+      return true;
 
-      default:
-        return false;
+    default:
+      return false;
     }
 
 }          // end player_light_armour()
@@ -2489,6 +2496,9 @@ void display_char_status( void )
 
     if ( you.duration[DUR_INFECTED_SHUGGOTH_SEED] ) //jmf: added 19mar2000
       mpr("You are infected with a Shuggoth parasite.");
+
+    if ( you.duration[ DUR_STONESKIN ] )
+      mpr("Your skin is tough as stone.");
 
     if ( you.invis )
       mpr("You are invisible.");

@@ -48,13 +48,9 @@ extern bool wield_change;    // defined in output.cc
 static void surge_power( int spell )
 {
     int enhanced = 0;
-    int ar_spltyp[NUM_SPELL_TYPES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};    // to limit calls to spell_typematch() {dlb}
-                                                                       // note that the first member is skipped {dlb}
 
-    set_spellflags(spell, ar_spltyp);    // value returned unimportant here {dlb}
-
-// determine appropriate enhancements {dlb}:
-    enhanced += spell_enhancement(ar_spltyp);
+    //jmf: simplified
+    enhanced += spell_enhancement( spell_type( spell ) );
 
     if ( enhanced )    // one way or the other {dlb}
     {
@@ -660,7 +656,7 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         else
         {
             mpr("You feel aware of your surroundings.");
-            magic_mapping(5 + (powc << 1), 40 + (powc << 1));
+            magic_mapping(5 + (powc * 2), 40 + (powc * 2));
         }
         return true;
 
@@ -1262,62 +1258,61 @@ bool your_spells( int spc2, int powc, bool allow_fail )
       cast_semi_controlled_blink(powc); //jmf: powc is ignored
       return true;
 
+    case SPELL_STONESKIN:
+      cast_stoneskin(powc);
+      return true;
+
     default:
-        mpr("Invalid spell!");
-        break;
+      mpr("Invalid spell!");
+      break;
     }                           // end switch
 
     return false;                   // this should never(!) happen
 }          // end you_spells()
 
 
-void exercise_spell( int spell_ex, bool spc, bool divide )
+void exercise_spell( int spell, bool spc, bool success )
 {
-// divide reduces skill increase for miscast spells
+  // (!success) reduces skill increase for miscast spells
+  int ndx = 0;
+  int skill;
+  int workout = 0;
 
-    int loopy = 0;                                      // general purpose loop variable {dlb}
-    int spellsy = 0;
-    int workout = 0;                                    // innermost expression too long! {dlb}
-    int ar_spltyp[NUM_SPELL_TYPES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};    // to limit calls to spell_typematch() {dlb}
-                                                                       // note that the first member is skipped {dlb}
+  unsigned int disciplines = spell_type( spell );
+  disciplines &= (~SPTYP_HOLY); //jmf: evil evil evil -- exclude HOLY bit
 
-    spellsy = set_spellflags(spell_ex, ar_spltyp);
+  int skillcount = count_bits( disciplines );
 
-    if ( !divide )
-      spellsy += 4 + random2(10);
+  if ( !success )
+    skillcount += 4 + random2(10);
 
-    if ( spellsy )
+  for (ndx = 0; ndx <= SPTYP_LAST_EXPONENT; ndx++)
     {
-      for (loopy = SPTYP_CONJURATION; loopy < NUM_SPELL_TYPES; loopy<<=1)
-        if ( ar_spltyp[loopy] && loopy != SPTYP_HOLY )
-          {
-            workout = ( random2(1 + spell_difficulty(spell_ex)) / spellsy );
-            if ( !one_chance_in(5) ) // most recently, this was an automatic add {dlb}
-              workout++;
-            exercise(spell_type2skill(loopy), workout);
-          }
+      if (! spell_typematch( spell, 1 << ndx )) continue;
+      skill = spell_type2skill( 1 << ndx );
+      workout = ( random2(1 + spell_difficulty(spell)) / skillcount );
+      if ( !one_chance_in(5) )
+        workout++; // most recently, this was an automatic add {dlb}
+      exercise(skill, workout);
     }
 
 
-/* ******************************************************************
+  /* ******************************************************************
+     Other recent formulae for the above:
 
-Other recent formulae for the above:
+     * workout = random2(spell_difficulty(spell_ex)
+               * (10 + (spell_difficulty(spell_ex) * 2 )) / 10 / spellsy + 1);
 
-  * workout = random2(spell_difficulty(spell_ex) * (10 + (spell_difficulty(spell_ex) << 1)) / 10 / spellsy + 1);
+     * workout = spell_difficulty(spell_ex)
+               * (15 + spell_difficulty(spell_ex)) / 15 / spellsy;
 
-  * workout = spell_difficulty(spell_ex) * (15 + spell_difficulty(spell_ex)) / 15 / spellsy;
+     spellcasting had also been generally exercised at the same time
+     ****************************************************************** */
 
-spellcasting had also been generally exercised at the same time.
-
-****************************************************************** */
-
-
-    if ( spc )    // && spellsy
-      exercise(SK_SPELLCASTING, random2(random2(1 + spell_difficulty(spell_ex))) + ((one_chance_in(3)) ? 1 : 0));  // + 1);
-
-    //else if ( spc )
-    //  exercise(SK_SPELLCASTING, random2(spell_difficulty(spell_ex))); // + 1);
-
+  if ( spc )
+    exercise(SK_SPELLCASTING, one_chance_in(3) ? 1 : 0 +
+             random2(1 + random2(spell_difficulty(spell))));
+             //+ (coinflip() ? 1 : 0) + (skillcount ? 1 : 0));
 
 /* ******************************************************************
    3.02 was:

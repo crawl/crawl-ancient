@@ -18,7 +18,7 @@
 /* ***********************************************************************
  * called from: chardump - spell - spl-book - spells0
  * *********************************************************************** */
-char spell_fail(unsigned char spell);
+int spell_fail(int spell);
 
 
 // last updated 24may2000 {dlb}
@@ -53,21 +53,20 @@ void print_slash(bool already);
 /* ***********************************************************************
  * called from: spell - spells0
  * *********************************************************************** */
-int spell_enhancement (int ar_typeflags[NUM_SPELL_TYPES]);
+int spell_enhancement (unsigned int);
+
+
+/* ***********************************************************************
+ * called from: spell - spells0
+ * *********************************************************************** */
+//unsigned int set_spellflags (int which_spell );
 
 
 // last updated 05jun2000 {dlb}
 /* ***********************************************************************
  * called from: spell - spells0
  * *********************************************************************** */
-int set_spellflags (int which_spell, int ar_spelltypes[NUM_SPELL_TYPES]);
-
-
-// last updated 05jun2000 {dlb}
-/* ***********************************************************************
- * called from: spell - spells0
- * *********************************************************************** */
-int spell_type2skill (int which_spelltype);
+int spell_type2skill (unsigned int which_spelltype);
 
 
 #endif

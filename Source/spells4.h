@@ -50,6 +50,7 @@ void cast_summon_large_mammal(int pow);
 void cast_tame_beasts(int pow);
 void cast_warp_field(int pow);
 void cast_snake_charm(int pow);
+void cast_stoneskin(int pow);
 
 void cast_shuggoth_seed(int powc);
 void make_shuggoth(char x, char y, int hp);

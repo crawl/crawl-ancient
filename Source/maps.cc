@@ -3662,16 +3662,16 @@ static char rand_demon_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char rand_demon_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
-
+  //jmf: all 3s below were 1s -- may have been bug
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".xxxxxxxxx..");
-    strcpy(vgrid[2], ".x$=*=1=|x..");
+    strcpy(vgrid[2], ".x$=*=3=|x..");
     strcpy(vgrid[3], ".xxxxxxx=x..");
-    strcpy(vgrid[4], ".x2=1=2x|x..");
+    strcpy(vgrid[4], ".x2=3=2x|x..");
     strcpy(vgrid[5], ".x=xxxxx=x..");
-    strcpy(vgrid[6], ".x1=*x1=Px..");
+    strcpy(vgrid[6], ".x3=*x1=Px..");
     strcpy(vgrid[7], ".x=x=xxxxx..");
-    strcpy(vgrid[8], ".x*x2=1=2=..");
+    strcpy(vgrid[8], ".x*x2=3=2=..");
     strcpy(vgrid[9], ".xxxxxxxxx..");
     strcpy(vgrid[10], "............");
     strcpy(vgrid[11], "............");

@@ -28,10 +28,6 @@
 #include <conio.h>
 #endif
 
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
 #include "externs.h"
 
 #include "bang.h"
@@ -60,6 +56,15 @@
 
 #ifdef LINUX
 #include "liblinux.h"
+#endif
+
+//jmf: brent sez:
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason ...
+#ifdef USE_CURSES
+#include <curses.h>
 #endif
 
 
@@ -1352,7 +1357,7 @@ static char show_abilities( struct talent *p_abils )
               cprintf("Hellfire                        8 Magic, 8 hp, Food");
               break;
             case ABIL_TORMENT:
-              cprintf("Torment                         9 Magic, Food");
+              cprintf("Torment                         9 Magic, Food, Pain");
               break;
             case ABIL_RAISE_DEAD:
               cprintf("Raise Dead                      5 Magic, 5 hp, Food");
@@ -1505,7 +1510,7 @@ static char show_abilities( struct talent *p_abils )
               cprintf("Rotting                         4 Magic, 4 hp, Piety");
               break;
             case ABIL_TORMENT_II:
-              cprintf("Call Torment                    9 Magic, Piety");
+              cprintf("Call Torment                    9 Magic, Piety, Pain");
               break;
             case ABIL_SHUGGOTH_SEED:
               cprintf("Sow Shuggoth Seed              12 Magic, 8 hp, Piety");
@@ -1593,18 +1598,27 @@ static bool generate_abilities( struct talent *p_abils )
 #endif
 
 
-  if ( you.species == SP_GNOME )
+  if ( you.level_type == LEVEL_DUNGEON ) //jmf: alternately put check elsewhere
     {
-      insert_ability(ABIL_MAPPING, &p_abils);
+      if ( you.species == SP_GNOME )
+        {
+          insert_ability(ABIL_MAPPING, &p_abils);
+        }
+      else
+        {
+          if ( you.mutation[MUT_MAPPING] || scan_randarts(RAP_MAPPING) )
+            insert_ability(ABIL_MAPPING, &p_abils);
+        }
     }
-  else
+  else if ( you.level_type == LEVEL_PANDEMONIUM )
     {
-      if ( you.mutation[MUT_MAPPING] || scan_randarts(RAP_MAPPING) )
+      if ( you.mutation[ MUT_MAPPING ] == 3 )
         insert_ability(ABIL_MAPPING, &p_abils);
     }
 
-  //jmf: check for breath weapons -- they're exclusive of each other I hope
-  //     make better ones first.
+
+  //jmf: check for breath weapons -- they're exclusive of each other I hope!
+  //     better make better ones first.
   if ( you.attribute[ATTR_TRANSFORMATION] == TRAN_SERPENT_OF_HELL )
     insert_ability(ABIL_BREATHE_HELLFIRE, &p_abils);
   else if ( you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON

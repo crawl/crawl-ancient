@@ -3015,7 +3015,8 @@ static void mons_in_cloud( struct monsters *monster )
 }          // end mons_in_cloud()
 
 
-static bool mons_speaks( struct monsters *monster ) //returns true if something is said
+// returns true if something is said
+static bool mons_speaks( struct monsters *monster )
 {
     int temp_rand; //probability determination
 
@@ -4366,7 +4367,12 @@ static bool mons_speaks( struct monsters *monster ) //returns true if something 
 
 
            case MONS_DEATH_COB:
-              return false; break; // mv: I don't know what could _cob_ say
+             if (one_chance_in(2000))
+               {
+                 mpr("The death cob makes a corny joke.");
+                 return true;
+               }
+             return false; break; // mv: I don't know what could _cob_ say
                                    // any suggestions ?
 
            case MONS_KILLER_KLOWN: // Killer Klown - guess !
@@ -4534,7 +4540,6 @@ int monster_index( struct monsters *monster )
 bool hurt_monster( struct monsters *victim, int damage_dealt )
 {
     bool just_a_scratch = true;
-
 
     if ( damage_dealt > 0 )
     {

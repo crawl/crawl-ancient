@@ -22,10 +22,6 @@
 #include <conio.h>
 #endif
 
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
 #include "externs.h"
 
 #include "debug.h"
@@ -37,6 +33,10 @@
 #include "spells0.h"
 #include "spl-util.h"
 #include "stuff.h"
+
+#ifdef USE_CURSES
+#include <curses.h>
+#endif
 
 
 // jmf: these were globals in spells.cc
@@ -195,11 +195,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_ABJURATION_I,
      SPELL_RECALL,
+     SPELL_SUMMON_LARGE_MAMMAL,
      SPELL_SHADOW_CREATURES,
- //    SPELL_SWARM,
+     // SPELL_SWARM,
      SPELL_SUMMON_WRAITHS,
      SPELL_SUMMON_HORRIBLE_THINGS,
-     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
@@ -257,12 +257,12 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     },
     // 12 - Book of Enchantments (fourth one)
     {0,
-     SPELL_SELECTIVE_AMNESIA,
      SPELL_LEVITATION,
+     SPELL_SELECTIVE_AMNESIA,
      SPELL_REMOVE_CURSE,
      SPELL_CAUSE_FEAR,
-     SPELL_DEFLECT_MISSILES,
      SPELL_EXTENSION,
+     SPELL_DEFLECT_MISSILES,
      SPELL_HASTE,
      SPELL_NO_SPELL,
     },
@@ -304,9 +304,10 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_CONFUSING_TOUCH,
      SPELL_SLEEP,
      SPELL_SLOW,
-     SPELL_CONFUSE,             //jmf: added
+     //SPELL_CONFUSE,             //jmf: added
      SPELL_PARALYZE,
      SPELL_NO_SPELL, // jmf: was SPELL_TELEPORT_OTHER, but didn't fit
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
@@ -416,16 +417,16 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_BACKLIGHT,
      SPELL_REPEL_MISSILES,
+     SPELL_SLEEP,
 #ifdef USE_SILENCE_CODE
      SPELL_SILENCE,
 #endif
-     SPELL_SLOW,
+     SPELL_CONFUSE,
      SPELL_ENSLAVEMENT,
      SPELL_INVISIBILITY,
 #ifndef USE_SILENCE_CODE
      SPELL_NO_SPELL,
 #endif
-     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
     },
     // 27 - Book of Demonology
@@ -571,10 +572,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     // 39 - Book of Geomancy
     {0,
      SPELL_SANDBLAST,
+     SPELL_STONESKIN,
      SPELL_PASSWALL,
      SPELL_STONE_ARROW,
      //SPELL_DIG,   //jmf: moved to Book of Earth
-     SPELL_STATUE_FORM,
+     //SPELL_STATUE_FORM, //jmf: moved to Book of Earth
      SPELL_FRAGMENTATION,
      SPELL_BOLT_OF_IRON,
      SPELL_SUMMON_ELEMENTAL,
@@ -586,7 +588,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_MAXWELLS_SILVER_HAMMER,
      SPELL_MAGIC_MAPPING,
      SPELL_DIG,
-     SPELL_STONEMAIL,
+     SPELL_STATUE_FORM,
      SPELL_TOMB_OF_DOROKLOHE,
      //SPELL_ORB_OF_FRAGMENTATION, //jmf: deprecated by Fragmentation
      SPELL_LEHUDIBS_CRYSTAL_SPEAR,
@@ -699,7 +701,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_NO_SPELL,
     },
 
-    // 50 - Staff of Smiting
+    // 50 - Staff of Smiting //jmf: totally obsolete --- no longer looks here.
     {0,
      SPELL_SMITING,
      SPELL_NO_SPELL,
@@ -714,8 +716,8 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_RECALL,
      SPELL_SUMMON_ELEMENTAL,
+     SPELL_SHADOW_CREATURES,
      SPELL_SUMMON_DEMON,
-     SPELL_SWARM,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -767,10 +769,10 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     },
     // 56 - Staff of Warding
     {0,
-     SPELL_REPEL_UNDEAD,
-     SPELL_CAUSE_FEAR,
      SPELL_ABJURATION_I,
-     SPELL_NO_SPELL,
+     SPELL_CONDENSATION_SHIELD,
+     SPELL_CAUSE_FEAR,
+     SPELL_DEFLECT_MISSILES,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -882,12 +884,12 @@ unsigned char spellbook_contents(unsigned char type)
 
         already = 0;
 
-        for (i = SPTYP_CONJURATION; i < SPTYP_RANDOM; i<<=1)
+        for (i = 0; i <= SPTYP_LAST_EXPONENT; i++)
         {
-          if ( spell_typematch(spell_types[j], i) )
+          if ( spell_typematch(spell_types[j], (1<<i)) )
           {
               print_slash(already);
-              cprintf(spelltype_name(i));
+              cprintf(spelltype_name(1<<i));
               already = 1;
           }
         }

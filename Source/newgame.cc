@@ -168,6 +168,12 @@ bool new_game( void )
     unsigned char weap_skill = 0;
     int to_hit_bonus;             // used for assigning primary weapons {dlb}
 
+
+    //jmf: NEW ASSERTS: we ought to do a *lot* of these
+    ASSERT(NUM_SPELLS < SPELL_NO_SPELL);
+    ASSERT(NUM_DURATIONS > DUR_LAST_DUR);
+
+
     init_player();
 
     you.exp_available = 25;      // now why is this all the way up here? {dlb}
@@ -202,6 +208,7 @@ bool new_game( void )
     // Create save dir name
     strcpy(char_fil, name_buff);
     strcat(char_fil, ".sav");
+
 
     handle = fopen(zip_buff, "rb+");
     if (handle != NULL)
@@ -2747,6 +2754,8 @@ bool class_allowed( unsigned char speci, int char_class )
           return false;
         if ( player_descriptor(PDSC_UNDEAD) )
           return false;
+        if ( player_genus(GENPC_DRACONIAN) ) //jmf: draconians suck at ench.
+          return false;
 
         switch (speci)
         {
@@ -3717,8 +3726,8 @@ void openingScreen( void )
 
     if ( you.your_name[0] != '\0' )
     {
-       cprintf(you.your_name);        // better be less than 31 characters :P {dlb}
-                                      // of course, invalid names will appear {dlb}
+       cprintf(you.your_name); // better be less than 31 characters :P {dlb}
+                               // of course, invalid names will appear {dlb}
        cprintf(", ");
     }
 ********************************************** */
@@ -3737,8 +3746,8 @@ void openingScreen( void )
 void enterPlayerName( void )
 {
 
-    char name_entered[kNameLen];     // temporary 'til copyover to you.your_name {dlb}
-    bool acceptable_name = false;    // anything to avoid goto statements {dlb}
+    char name_entered[kNameLen]; // temporary 'til copyover to you.your_name {dlb}
+    bool acceptable_name = false; // anything to avoid goto statements {dlb}
 
 // first time -- names set through init.txt/environment assumed ok {dlb}
     if ( you.your_name[0] != '\0' )

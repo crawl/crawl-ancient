@@ -181,8 +181,8 @@ char area_shift( void )
         }
         else
         {
-            menv[i].target_x = menv[i].x;       // this will make it find a new target
-            menv[i].target_y = menv[i].y;
+          menv[i].target_x = menv[i].x; // this will make it find a new target
+          menv[i].target_y = menv[i].y;
         }
     }
 

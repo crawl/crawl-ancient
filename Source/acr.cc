@@ -39,6 +39,7 @@
 #if !defined(__IBMCPP__) && !defined(MAC)    // I don't seem to need values.h for VACPP..
 #include <values.h>
 #endif
+
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1087,10 +1088,8 @@ gutch:
             gain_exp(5000);
             break;
         case '$':
-          //inc_hp(50, true);
-          //lessen_hunger(1000, true);
           you.gold += 1000;
-          //gain_exp(500);
+          you.redraw_gold = 1;
           break;
         case 'a':
             acquirement(OBJ_RANDOM);
@@ -1398,9 +1397,9 @@ gutch:
         you.duration[DUR_REPEL_MISSILES]--;
         if (you.duration[DUR_REPEL_MISSILES] == 6)
         {
-            mpr("Your repel missiles spell is about to expire...");
-            if ( coinflip() )
-              you.duration[DUR_REPEL_MISSILES]--;
+          mpr("Your repel missiles spell is about to expire...");
+          if ( coinflip() )
+            you.duration[DUR_REPEL_MISSILES]--;
         }
     }
     else if ( you.duration[DUR_REPEL_MISSILES] == 1 )
@@ -1447,8 +1446,9 @@ gutch:
       you.duration[DUR_PRAYER]--;
     else if ( you.duration[DUR_PRAYER] == 1 )
     {
-        mpr("Your prayer is over.");
-        you.duration[DUR_PRAYER] = 0;
+      god_speaks(you.religion); //jmf:
+      mpr("Your prayer is over.");
+      you.duration[DUR_PRAYER] = 0;
     }
 
 
@@ -1466,30 +1466,30 @@ gutch:
 
         switch ( temp_effect )
         {
-          case SPWPN_VORPAL:
-            if ( damage_type(you.inv_class[you.equip[EQ_WEAPON]],you.inv_type[you.equip[EQ_WEAPON]]) != DVORP_CRUSHING )
-              strcat(info, " seems blunter.");
-            else
-              strcat(info, " feels lighter."); //jmf: for Maxwell's Silver Hammer
-            break;
-          case SPWPN_FLAMING:
-            strcat(info, " goes out.");
-            break;
-          case SPWPN_FREEZING:
-            strcat(info," stops glowing.");
-            break;
-          case SPWPN_VENOM:
-            strcat(info," stops dripping with poison.");
-            break;
-          case SPWPN_DRAINING:
-            strcat(info, " stops crackling.");
-            break;
-          case SPWPN_DISTORTION:
-            strcat(info, " seems straighter.");
-            break;
-          default:
-            strcat(info, " seems inexplicably less special.");
-            break;
+        case SPWPN_VORPAL:
+          if ( damage_type(you.inv_class[you.equip[EQ_WEAPON]],you.inv_type[you.equip[EQ_WEAPON]]) != DVORP_CRUSHING )
+            strcat(info, " seems blunter.");
+          else
+            strcat(info, " feels lighter."); //jmf: for Maxwell's Silver Hammer
+          break;
+        case SPWPN_FLAMING:
+          strcat(info, " goes out.");
+          break;
+        case SPWPN_FREEZING:
+          strcat(info," stops glowing.");
+          break;
+        case SPWPN_VENOM:
+          strcat(info," stops dripping with poison.");
+          break;
+        case SPWPN_DRAINING:
+          strcat(info, " stops crackling.");
+          break;
+        case SPWPN_DISTORTION:
+          strcat(info, " seems straighter.");
+          break;
+        default:
+          strcat(info, " seems inexplicably less special.");
+          break;
         }
 
       //you.attribute[ATTR_WEAPON_BRAND] = 0;
@@ -1599,6 +1599,17 @@ gutch:
         you.redraw_armor_class = 1;
     }
 
+    if ( you.duration[DUR_STONESKIN] > 1 )
+    {
+        you.duration[DUR_STONESKIN]--;
+    }
+    else if ( you.duration[DUR_STONESKIN] == 1 )
+    {
+        mpr("Your skin feels tender.");
+        you.redraw_armor_class = 1;
+        you.duration[DUR_STONESKIN] = 0;
+    }
+
 #ifdef USE_ELVISH_GLAMOUR_ABILITY
     if ( you.duration[DUR_GLAMOUR] > 1 ) //jmf: actually GLAMOUR_RELOAD, like
       you.duration[DUR_GLAMOUR]--;       //     the breath weapon delay
@@ -1675,7 +1686,7 @@ gutch:
     else if ( you.duration[DUR_INFECTED_SHUGGOTH_SEED] == 1 )
     { //jmf: use you.max_hp instead? or would that be too evil?
         you.duration[DUR_INFECTED_SHUGGOTH_SEED] = 0;
-        mpr("A horrible thing bursts from your chest!");    // this may not be the case, see the actual function {dlb}
+        mpr("A horrible thing bursts from your chest!");
         ouch(1 + you.hp / 2, 0, KILLED_BY_SHUGGOTH );
         make_shuggoth(you.x_pos, you.y_pos, 1+you.hp/2);
     }
@@ -1846,7 +1857,7 @@ gutch:
         if ( you.levitation == 10 )
           {
             mpr("You are starting to lose your buoyancy!");
-            you.levitation -= random2(6);       // so you never know how much time you have left!
+            you.levitation -= random2(6); // so you never know how much time you have left!
 
             if ( you.duration[DUR_CONTROLLED_FLIGHT] > 0 )
               you.duration[DUR_CONTROLLED_FLIGHT] = you.levitation;
@@ -1924,7 +1935,7 @@ gutch:
             else
             {
                 ouch(1, 0, KILLED_BY_POISON);
-                mpr("You feel sick.");         // //the poison running through your veins.");
+                mpr("You feel sick.");  // the poison running through your veins.");
             }
 
             if ( ( you.hp == 1 && one_chance_in(3) ) || one_chance_in(8) )
@@ -2117,7 +2128,7 @@ gutch:
     if ( you.paralysis > 0 )
       more();
 
-    if ( you.level_type != LEVEL_DUNGEON )        /* No monsters in labyrinths */
+    if ( you.level_type != LEVEL_DUNGEON )    /* No monsters in labyrinths */
       {
         switch (you.level_type)
         {
@@ -2574,15 +2585,15 @@ static void move_player( char move_x, char move_y )
         && grd[you.x_pos + move_x][you.y_pos + move_y] != DNGN_FLOOR
         && grd[you.x_pos + move_x][you.y_pos + move_y] != DNGN_UNDISCOVERED_TRAP )
     {
-        // BCR - Easy doors running
-        if ( grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_CLOSED_DOOR )
-          open_door(move_x, move_y);
-        else
+      // BCR - Easy doors running
+      if ( grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_CLOSED_DOOR )
+        open_door(move_x, move_y);
+      else
         {
-            you.running = 0;
-            move_x = 0;
-            move_y = 0;
-            you.turn_is_over = 0;
+          you.running = 0;
+          move_x = 0;
+          move_y = 0;
+          you.turn_is_over = 0;
         }
 
         return;
@@ -2615,7 +2626,7 @@ static void move_player( char move_x, char move_y )
         attacking = true;
     }
 
-break_out:
+ break_out:
     if ( ( grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_LAVA
             || grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_DEEP_WATER )
         && !attacking
@@ -2708,7 +2719,7 @@ break_out:
     }
 
 
-out_of_traps:
+ out_of_traps:
     // BCR - Easy doors single move
     if ( grd[you.x_pos + move_x][you.y_pos + move_y] == DNGN_CLOSED_DOOR )
     {

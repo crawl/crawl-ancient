@@ -42,10 +42,6 @@
 #include <unistd.h>
 #endif
 
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
 #ifdef USE_EMX
 #include <sys/types.h>
 #include <fcntl.h>
@@ -76,6 +72,14 @@
 #include "macro.h"
 #endif
 
+//jmf: brent sez:
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason ...
+#ifdef USE_CURSES
+#include <curses.h>
+#endif
 
 extern bool wield_change;    // defined in output.cc
 

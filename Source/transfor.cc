@@ -69,6 +69,8 @@ bool remove_equipment( FixedVector<char, 8>& remove_stuff )
 bool transform( int pow, char which_trans )
 {
 
+  you.duration[ DUR_STONESKIN ] = 0; //jmf: silently discard this enchantment
+
     if ( you.attribute[ATTR_TRANSFORMATION] != TRAN_NONE )
       untransform();
 
@@ -125,7 +127,7 @@ bool transform( int pow, char which_trans )
         return true;
 
       case TRAN_STATUE:           /* also AC + 20, ev - 5 */
-        if ( you.species == SP_GNOME )
+        if ( you.species == SP_GNOME && coinflip() )
           mpr("Look, a garden gnome. How cute is that?");
         else if ( player_genus(GENPC_DWARVEN) && one_chance_in(10) )
           mpr("You inwardly fear your resemblance to a lawn ornament.");

@@ -1078,6 +1078,11 @@
      3
 },
 
+{
+  SPELL_STONESKIN, "Stoneskin",
+    SPTYP_EARTH | SPTYP_ENCHANTMENT,
+    2
+},
 
 {
     SPELL_NO_SPELL, "nonexistent spell",

@@ -24,10 +24,6 @@
 #include <conio.h>
 #endif
 
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
 #include "externs.h"
 
 #include "bang.h"
@@ -48,6 +44,15 @@
 #include "spells4.h"
 #include "stuff.h"
 #include "view.h"
+
+//jmf: brent sez:
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason ...
+#ifdef USE_CURSES
+#include <curses.h>
+#endif
 
 
 void sticky_flame_monster(int mn, bool source, int power);

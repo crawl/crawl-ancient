@@ -38,7 +38,7 @@ name=
 # If you add any one of these to the autopickup list below, items of that
 # type will be automatically picked up when you walk over them.
 #
-#autopickup=$?!:+="/0%\}
+autopickup=$?!:+="/0\}
 
 # How much information do we want in our character dumps?
 # With verbose_dump=1, all stats of special weapons (even generic

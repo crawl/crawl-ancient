@@ -30,10 +30,6 @@
 #include <conio.h>
 #endif
 
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
 #include "externs.h"
 
 #include "debug.h"
@@ -45,6 +41,10 @@
 
 #ifdef MACROS
 #include "macro.h"
+#endif
+
+#ifdef USE_CURSES
+#include <curses.h>
 #endif
 
 
@@ -559,7 +559,7 @@ void viewwindow2( char draw_it, bool do_updates )
     _setcursortype(_NOCURSOR);
 
 #ifdef WIZARD
-    memset(buffy, 255, sizeof(buffy));
+    //memset(buffy, 255, sizeof(buffy)); //jmf: this won't compile for me
 #endif
 
     losight(env.show, grd, you.x_pos, you.y_pos);

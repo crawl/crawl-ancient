@@ -1367,7 +1367,7 @@ void demonspawn( void )
             if ( one_chance_in(10) )
               {
                 whichm = MUT_MAPPING;
-                howm = 2;
+                howm = 3;
               }
 
             if ( one_chance_in(12) )
@@ -1403,7 +1403,7 @@ void demonspawn( void )
             if ( one_chance_in(24) )
               {
                 whichm = MUT_BLACK_SCALES;
-                howm = ( coinflip() ? 2 : 1 );
+                howm = ( coinflip() ? 2 : 3 );
               }
 
             if ( one_chance_in(24) )
@@ -1578,7 +1578,7 @@ void demonspawn( void )
             howm = 1;
           }
 
-        if ( you.skills[SK_UNARMED_COMBAT] > 9 && one_chance_in(14) )
+        if ( you.skills[SK_UNARMED_COMBAT] > 5 && one_chance_in(14) )
           {
             whichm = MUT_DRAIN_LIFE;
             howm = 1;

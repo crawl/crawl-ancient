@@ -1233,10 +1233,10 @@ static int mons_mineorc_rare( int mcls )
 
       case MONS_HOBGOBLIN:
       case MONS_OGRE:
-      case MONS_WARG:
         return 20;
 
       case MONS_TROLL:
+      case MONS_WARG:
         return 13;
 
       case MONS_FUNGUS:
@@ -1571,7 +1571,9 @@ static int mons_pitslime_level( int mcls )
 
       case MONS_DEATH_OOZE:
       case MONS_TENTACLED_MONSTROSITY:
-        return 5;                       // should this be "mlev += 5" ??? 08mar2000 {dlb}
+        mlev += 5;
+        break;
+        //jmf: was just 'return 5;'
 
       default:
         mlev += 0;

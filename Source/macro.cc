@@ -25,18 +25,16 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#include "externs.h"
+#include "libmac.h"
+#include "llist.h"
+
 #ifdef LINUX
 #include <curses.h>
 #elif MAC
 #else
 #include <conio.h>
 #endif
-
-#include "externs.h"
-
-#include "libmac.h"
-#include "llist.h"
-
 
 
 

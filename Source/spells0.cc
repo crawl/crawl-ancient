@@ -22,10 +22,6 @@
 #include <conio.h>
 #endif
 
-#ifdef USE_CURSES
-#include <curses.h>
-#endif
-
 #include "externs.h"
 
 #include "itemname.h"
@@ -38,6 +34,14 @@
 #include "macro.h"
 #endif
 
+//jmf: brent sez:
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason ...
+#ifdef USE_CURSES
+#include <curses.h>
+#endif
 
 
 
@@ -159,11 +163,11 @@ char spell_list( void )
 
             already = false;
 
-            for (i = SPTYP_CONJURATION; i < NUM_SPELL_TYPES; i<<=1)
-              if ( spell_typematch(you.spells[j], i) )
+            for (i = 0; i <= SPTYP_LAST_EXPONENT; i++)
+              if ( spell_typematch(you.spells[j], 1<<i) )
               {
                   print_slash(already);
-                  cprintf(spelltype_name(i));
+                  cprintf(spelltype_name(1<<i));
                   already = true;
               }
 
@@ -245,7 +249,7 @@ void print_slash( bool already )
 
 
 
-char spell_fail( unsigned char spell )
+int spell_fail( int spell )
 {
     int chance = 60;
     int chance2 = 0, armour = 0;
@@ -448,7 +452,8 @@ char spell_fail( unsigned char spell )
     if ( you.religion == GOD_VEHUMET
         && you.duration[DUR_PRAYER]
         && (!player_under_penance() && you.piety >= 50)
-        && (spell_typematch(spell, SPTYP_CONJURATION) || spell_typematch(spell, SPTYP_SUMMONING)))
+        && (spell_typematch(spell, SPTYP_CONJURATION)
+            || spell_typematch(spell, SPTYP_SUMMONING)))
     {
         chance2 /= 2;
     }
@@ -463,37 +468,34 @@ char spell_fail( unsigned char spell )
 }          // end spell_fail()
 
 
+
 int spell_spec( int spell )
 {
-  unsigned int s = 0;
-  int power = 0;
-  int spellsy = 0;
+  unsigned int bit;
+  int ndx;
+  int power = (you.skills[SK_SPELLCASTING] / 2) + player_mag_abil(false);
   int enhanced = 0;
-  int ar_spltyp[NUM_SPELL_TYPES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-  // to limit calls to spell_typematch() {dlb}
-  // note that the first member is skipped {dlb}
 
+  unsigned int disciplines = spell_type( spell );
+  disciplines &= (~SPTYP_HOLY); //jmf: evil evil evil -- exclude HOLY bit
+  int skillcount = count_bits( disciplines );
 
-  // determine actual power levels {dlb}:
-  power = (you.skills[SK_SPELLCASTING] / 2) + player_mag_abil(false);
+  if (skillcount)
+    for (ndx = 0; ndx <= SPTYP_LAST_EXPONENT; ndx++)
+      {
+        bit = 1<<ndx;
+        if ((bit != SPTYP_HOLY) && (disciplines & bit))
+          {
+            int skill = spell_type2skill(bit);
+            power += (you.skills[skill] *2) / skillcount;
+          }
+      }
 
-  spellsy = set_spellflags(spell, ar_spltyp);
+  enhanced += spell_enhancement( disciplines );
 
-  if ( spellsy )
-    {
-      for (s = SPTYP_CONJURATION; s < NUM_SPELL_TYPES; s<<=1)
-        if ( ar_spltyp[s] && s != SPTYP_HOLY )
-          power += (you.skills[spell_type2skill(s)] << 1) / spellsy;
-    }
-
-
-  // determine appropriate enhancements {dlb}:
-  enhanced += spell_enhancement(ar_spltyp);
-
-  // apply enhancements to power {dlb}:
   if ( enhanced > 0 )
     {
-      for (s = 0; s < enhanced; s++)
+      for (ndx = 0; ndx < enhanced; ndx++)
         {
           power *= 15;
           power /= 10;
@@ -501,7 +503,7 @@ int spell_spec( int spell )
     }
   else if ( enhanced < 0 )
     {
-      for (s = enhanced; s < 0; s++)
+      for (ndx = enhanced; ndx < 0; ndx++)
         power /= 2;
     }
 
@@ -710,38 +712,41 @@ bool undead_cannot_memorise( unsigned char spell, unsigned char being )
 
 
 
-int spell_type2skill ( int which_spelltype )
+int spell_type2skill ( unsigned int spelltype )
 {
+  char buffer[80];
 
-    switch ( which_spelltype )
+  switch ( spelltype )
     {
-        case SPTYP_CONJURATION:
-          return SK_CONJURATIONS;
-        case SPTYP_ENCHANTMENT:
-          return SK_ENCHANTMENTS;
-        case SPTYP_FIRE:
-          return SK_FIRE_MAGIC;
-        case SPTYP_ICE:
-          return SK_ICE_MAGIC;
-        case SPTYP_TRANSMIGRATION:
-          return SK_TRANSMIGRATION;
-        case SPTYP_NECROMANCY:
-          return SK_NECROMANCY;
-        case SPTYP_SUMMONING:
-          return SK_SUMMONINGS;
-        case SPTYP_DIVINATION:
-          return SK_DIVINATIONS;
-        case SPTYP_TRANSLOCATION:
-          return SK_TRANSLOCATIONS;
-        case SPTYP_POISON:
-          return SK_POISON_MAGIC;
-        case SPTYP_EARTH:
-          return SK_EARTH_MAGIC;
-        case SPTYP_AIR:
-          return SK_AIR_MAGIC;
-        default:
-        case SPTYP_HOLY:
-          return -1;
+    case SPTYP_CONJURATION:
+      return SK_CONJURATIONS;
+    case SPTYP_ENCHANTMENT:
+      return SK_ENCHANTMENTS;
+    case SPTYP_FIRE:
+      return SK_FIRE_MAGIC;
+    case SPTYP_ICE:
+      return SK_ICE_MAGIC;
+    case SPTYP_TRANSMIGRATION:
+      return SK_TRANSMIGRATION;
+    case SPTYP_NECROMANCY:
+      return SK_NECROMANCY;
+    case SPTYP_SUMMONING:
+      return SK_SUMMONINGS;
+    case SPTYP_DIVINATION:
+      return SK_DIVINATIONS;
+    case SPTYP_TRANSLOCATION:
+      return SK_TRANSLOCATIONS;
+    case SPTYP_POISON:
+      return SK_POISON_MAGIC;
+    case SPTYP_EARTH:
+      return SK_EARTH_MAGIC;
+    case SPTYP_AIR:
+      return SK_AIR_MAGIC;
+    default:
+    case SPTYP_HOLY:
+      sprintf(buffer, "spell_type2skill: called with spelltype %d", spelltype);
+      mpr(buffer);
+      return -1;
     }
 
 }          // end spell_type2skill()
@@ -749,71 +754,64 @@ int spell_type2skill ( int which_spelltype )
 
 
 
-int spell_enhancement ( int ar_typeflags[NUM_SPELL_TYPES] )
+int spell_enhancement ( unsigned int typeflags )
 {
 
-    int enhanced = 0;
+  unsigned int enhanced = 0;
 
-    if ( ar_typeflags[SPTYP_CONJURATION] )
-      enhanced += player_spec_conj();
+  if ( typeflags & SPTYP_CONJURATION )
+    enhanced += player_spec_conj();
 
-    if ( ar_typeflags[SPTYP_ENCHANTMENT] )
-      enhanced += player_spec_ench();
+  if ( typeflags & SPTYP_ENCHANTMENT )
+    enhanced += player_spec_ench();
 
-    if ( ar_typeflags[SPTYP_SUMMONING] )
-      enhanced += player_spec_summ();
+  if ( typeflags & SPTYP_SUMMONING )
+    enhanced += player_spec_summ();
 
-    if ( ar_typeflags[SPTYP_POISON] )
-      enhanced += player_spec_poison();
+  if ( typeflags & SPTYP_POISON )
+    enhanced += player_spec_poison();
 
-    if ( ar_typeflags[SPTYP_HOLY] )
-    {
-      enhanced += player_spec_holy() - player_spec_death();
+  /* if ( ar_typeflags[SPTYP_HOLY] ) {
+     enhanced += player_spec_holy() - player_spec_death();
+     if ( you.special_wield == SPWLD_SHADOW )
+     enhanced -= 2; } */
 
-      if ( you.special_wield == SPWLD_SHADOW )
-        enhanced -= 2;
-    }
+  if ( typeflags & SPTYP_NECROMANCY )
+    enhanced += player_spec_death() - player_spec_holy();
 
-    if ( ar_typeflags[SPTYP_NECROMANCY] )
-      enhanced += player_spec_death() - player_spec_holy();
+  if ( typeflags & SPTYP_FIRE )
+    enhanced += player_spec_fire() - player_spec_cold();
 
-    if ( ar_typeflags[SPTYP_FIRE] )
-      enhanced += player_spec_fire() - player_spec_cold();
+  if ( typeflags & SPTYP_ICE )
+    enhanced += player_spec_cold() - player_spec_fire();
 
-    if ( ar_typeflags[SPTYP_ICE] )
-      enhanced += player_spec_cold() - player_spec_fire();
+  if ( typeflags & SPTYP_EARTH )
+    enhanced += player_spec_earth() - player_spec_air();
 
-    if ( ar_typeflags[SPTYP_EARTH] )
-      enhanced += player_spec_earth() - player_spec_air();
+  if ( typeflags & SPTYP_AIR )
+    enhanced += player_spec_air() - player_spec_earth();
 
-    if ( ar_typeflags[SPTYP_AIR] )
-      enhanced += player_spec_air() - player_spec_earth();
-
-    return ( enhanced );
+  return ( enhanced );
 
 }          // end spell_enhancement()
 
 
 
+//jmf: deprecated
+/*
+  unsigned int set_spellflags ( int which_spell )
+  {
+  unsigned int s = 1;
+  int spellcount = 0;
 
-// hand this function a spell and an array of thirteen ints,
-// and it will set the flags and sum the number of flags so
-// set (returned) -- *excluding* SPTYP_HOLY {dlb}
-int set_spellflags ( int which_spell, int ar_spelltypes[NUM_SPELL_TYPES] )
-{
-  unsigned int s = 0;             // generic looping variable {dlb}
-  int spellcount = 0;    // summing variable {dlb}
-
-    for (s = SPTYP_CONJURATION; s < NUM_SPELL_TYPES; s<<=1)
-      if ( spell_typematch(which_spell, s) )
-      {
-          ar_spelltypes[s] = 1;    // set appropriate flag with proper offset {dlb}
-
-          if ( s != SPTYP_HOLY )    // note special handling here and below {dlb}
-            spellcount++;
-      }
+  for (s = SPTYP_CONJURATION; s < SPTYP_LAST_EXPONENT; s<<=1)
+  if ( spell_typematch(which_spell, s) )
+  {
+  spellcount++;
+  }
 
 
-    return ( spellcount );
+  return ( spellcount );
 
-}          // end set_spellflags()
+  }
+*/

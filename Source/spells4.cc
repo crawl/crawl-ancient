@@ -970,15 +970,17 @@ void cast_summon_large_mammal( int pow )
     int mon;
     int temp_rand = random2(pow);
 
-    if (temp_rand < 10)
-      mon = MONS_JACKAL;
-    else if (temp_rand < 15)
-      mon = MONS_HOUND;
-    else switch (temp_rand % 5)
+    if (temp_rand < 10)      mon = MONS_JACKAL;
+    else if (temp_rand < 15) mon = MONS_HOUND;
+    else switch (temp_rand % 7)
       {
-      case 0:  mon = MONS_WAR_DOG; break;
+      case 0:
+        if (you.species == SP_HILL_ORC && coinflip()) mon = MONS_WARG;
+        else   mon = MONS_WOLF;    break;
       case 1:
-      case 2:  mon = MONS_HOUND;   break;
+      case 2:  mon = MONS_WAR_DOG; break;
+      case 3:
+      case 4:  mon = MONS_HOUND;   break;
       default: mon = MONS_JACKAL;  break;
       }
 
@@ -2755,10 +2757,46 @@ static int quadrant_blink( char x, char y, int pow, int garbage )
 
 void cast_semi_controlled_blink( int pow )
 {
-    apply_one_neighboring_square(quadrant_blink, pow);
-    return;
+  apply_one_neighboring_square(quadrant_blink, pow);
+  return;
 }
 
+
+
+
+void cast_stoneskin( int pow )
+{
+  if ( you.is_undead != 0 )
+    {
+      mpr("This spell does not affect your undead flesh.");
+      return;
+    }
+
+  if (!( you.attribute[ ATTR_TRANSFORMATION ] == TRAN_NONE ||
+         you.attribute[ ATTR_TRANSFORMATION ] == TRAN_BLADE_HANDS ))
+    {
+      mpr("This spell does not affect your current form.");
+      return;
+    }
+
+  if ( you.duration[ DUR_STONEMAIL ] || you.duration[ DUR_ICY_ARMOUR ] )
+    {
+      mpr("This spell conflicts with another spell still in effect.");
+      return;
+    }
+
+  if ( !you.duration[ DUR_STONESKIN ] )
+    {
+      mpr("Your skin hardens.");
+      you.redraw_armor_class = 1;
+    }
+  else
+    mpr("Your skin feels harder.");
+
+  you.duration[ DUR_STONESKIN ] += 10 + random2(pow) + random2(pow);
+  if ( you.duration[ DUR_STONESKIN ] > 50 )
+    you.duration[ DUR_STONESKIN ] = 50;
+}
 
 
 

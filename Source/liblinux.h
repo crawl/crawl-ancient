@@ -15,7 +15,7 @@ char getche(void);
 
 
 int clrscr(void);
-int cprintf(char *format,...);
+int cprintf(const char *format,...);
 int gotoxy(int x, int y);
 int itoa(int value, char *strptr, int radix);
 int kbhit(void);

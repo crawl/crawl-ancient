@@ -427,12 +427,12 @@
 ,
 
 {
-    MONS_FIEND, '1', RED, "Fiend",
+  MONS_FIEND, '1', LIGHTRED, "Fiend", //jmf: was RED, like Balrog
     M_RES_POISON | M_RES_HELLFIRE | M_ED_COLD | M_FLIES | M_SEE_INVIS,
     0, 18, 31, MH_DEMONIC, -12,
     { 25, 15, 15, 0 },
     { 18, 3, 5, 0 },
-    15, 6, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_ROAR, I_HIGH, 1
+      15, 6, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_ROAR, I_HIGH, 1
 }
 ,
 
@@ -1311,7 +1311,7 @@
 
 {
     MONS_ICE_FIEND, '1', WHITE, "Ice Fiend",
-    M_RES_POISON | M_ED_FIRE | M_RES_COLD | M_SPELLCASTER | M_FLIES | M_SEE_INVIS,
+    M_RES_POISON | M_ED_FIRE | M_RES_COLD | M_SPELLCASTER | M_FLIES | M_SEE_INVIS | M_FROZEN,
     0, 10, 126, MH_DEMONIC, -12,
     { 25, 25, 0, 0 },
     { 18, 3, 5, 0 },
@@ -1987,7 +1987,7 @@
 ,
 
 {
-    MONS_EXECUTIONER, '1', DARKGREY, "Executioner",
+    MONS_EXECUTIONER, '1', LIGHTGREY, "Executioner",
     M_RES_POISON,
     0, 14, 230, MH_DEMONIC, -9,
     { 30, 0, 0, 0 },
@@ -3317,9 +3317,9 @@ limited diversity of existing monster types?
 I'm still far from happy about the inclusion of "Shuggoths" -- I just do
 not think it fits into Crawl ... {dlb}
 ************************************************************************ */
-
   //jmf: it's never created anywhere yet, so you can save the punctuation.
   //     as to bears & wolves: the lair needs more variety.
+
 {
     MONS_SHUGGOTH, 'A', LIGHTGREEN, "shuggoth",
     M_NO_SKELETON | M_RES_ELEC | M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_SEE_INVIS,
@@ -3334,9 +3334,9 @@ not think it fits into Crawl ... {dlb}
     MONS_WOLF, 'h', LIGHTGREY, "wolf",
     M_WARM_BLOOD | M_SEE_INVIS, //jmf: until smell exists
     450, 10, MONS_WOLF, MH_NATURAL, -3,
-    { 12, 4, 4, 0 },
-    { 5, 3, 5, 0 },
-    6, 15, 17, 7, 250, CE_CLEAN, Z_SMALL, S_BARK, I_ANIMAL, 0
+    { 8, 2, 2, 0 },
+    { 4, 3, 5, 0 },
+    3, 15, 17, 7, 250, CE_CLEAN, Z_SMALL, S_BARK, I_ANIMAL, 0
 }
 ,
 
@@ -3344,9 +3344,9 @@ not think it fits into Crawl ... {dlb}
     MONS_WARG, 'h', DARKGREY, "warg",
     M_SEE_INVIS | M_RES_POISON | M_WARM_BLOOD,
     600, 12, MONS_WARG, MH_NATURAL, -6,
-    { 15, 6, 6, 0 },
-    { 5, 4, 5, 0 },
-    10, 12, 14, 7, 250, CE_CONTAMINATED, Z_SMALL, S_BARK, I_ANIMAL, 0
+    { 12, 3, 3, 0 },
+    { 4, 4, 5, 0 },
+    4, 12, 13, 7, 250, CE_CONTAMINATED, Z_SMALL, S_BARK, I_ANIMAL, 0
 }
 ,
 
@@ -3354,9 +3354,9 @@ not think it fits into Crawl ... {dlb}
     MONS_BEAR, 'U', BROWN, "bear",
     M_WARM_BLOOD,
     2000, 10, MONS_BEAR, MH_NATURAL, -3,
-    { 10, 10, 10, 0 },
+    { 10, 6, 6, 0 },
     { 7, 3, 3, 0 },
-    8, 8, 10, 7, 250, CE_CLEAN, Z_BIG, S_GROWL, I_ANIMAL, 0
+    4, 4, 10, 7, 250, CE_CLEAN, Z_BIG, S_GROWL, I_ANIMAL, 0
 }
 ,
 
@@ -3364,9 +3364,9 @@ not think it fits into Crawl ... {dlb}
     MONS_GRIZZLY_BEAR, 'U', LIGHTGREY, "grizzly bear",
     M_WARM_BLOOD,
     2500, 10, MONS_GRIZZLY_BEAR, MH_NATURAL, -3,
-    { 12, 12, 12, 0 },
+    { 12, 8, 8, 0 },
     { 7, 4, 4, 0 },
-    10, 8, 10, 7, 250, CE_CLEAN, Z_BIG, S_GROWL, I_ANIMAL, 0
+    5, 8, 10, 7, 250, CE_CLEAN, Z_BIG, S_GROWL, I_ANIMAL, 0
 }
 ,
 
@@ -3374,9 +3374,9 @@ not think it fits into Crawl ... {dlb}
     MONS_POLAR_BEAR, 'U', WHITE, "polar bear",
     M_RES_COLD | M_WARM_BLOOD,
     2500, 10, MONS_POLAR_BEAR, MH_NATURAL, -3,
-    { 20, 10, 10, 0 },    //jmf: polar bears have very strong jaws & necks
+    { 20, 5, 5, 0 },    //jmf: polar bears have very strong jaws & necks
     { 7, 5, 3, 0 },
-    15, 8, 10, 7, 250, CE_CLEAN, Z_BIG, S_GROWL, I_ANIMAL, 0
+    7, 8, 10, 7, 250, CE_CLEAN, Z_BIG, S_GROWL, I_ANIMAL, 0
 }
 ,
 
@@ -3384,9 +3384,9 @@ not think it fits into Crawl ... {dlb}
     MONS_BLACK_BEAR, 'U', DARKGREY, "black bear",
     M_WARM_BLOOD,
     1800, 10, MONS_BLACK_BEAR, MH_NATURAL, -3,
-    { 8, 3, 3, 0 },
-    { 6, 5, 3, 0 },
-    10, 8, 10, 7, 250, CE_CLEAN, Z_SMALL, S_GROWL, I_ANIMAL, 0
+    { 4, 4, 4, 0 },
+    { 6, 3, 3, 0 },
+    2, 8, 10, 7, 250, CE_CLEAN, Z_SMALL, S_GROWL, I_ANIMAL, 0
 }
 ,
 

@@ -627,6 +627,8 @@ enum DURATIONS                         // you.duration[]
     DUR_SHUGGOTH_SEED_RELOAD,
     DUR_INFECTED_SHUGGOTH_SEED,
     DUR_CONDENSATION_SHIELD,           //   23
+    DUR_STONESKIN,
+    DUR_LAST_DUR, //jmf: for asserts
     NUM_DURATIONS = 30
     // set at 30 to prevent savefile incompatibilities 12mar2000{dlb}
 };
@@ -2045,6 +2047,7 @@ enum SPELLS
     SPELL_MAXWELLS_SILVER_HAMMER,      // vorpal-brand maces etc.
     SPELL_CONDENSATION_SHIELD,         // "shield" of icy vapour
     SPELL_SEMI_CONTROLLED_BLINK,       //jmf: to test effect
+    SPELL_STONESKIN,
     NUM_SPELLS,
     SPELL_NO_SPELL = 210              //  210 - added 22jan2000 {dlb}
 };
@@ -2065,7 +2068,7 @@ enum SPELL_TYPES //jmf: 24jul2000: changed from integer-list to bitfield
   SPTYP_EARTH          = 1<<10,
   SPTYP_AIR            = 1<<11,
   SPTYP_HOLY           = 1<<12, //jmf: moved to accomodate "random" miscast f/x
-  SPTYP_LAST_EXPONENT  = 13,    //jmf: ``NUM_SPELL_TYPES'' kinda useless
+  SPTYP_LAST_EXPONENT  = 12,    //jmf: ``NUM_SPELL_TYPES'' kinda useless
   NUM_SPELL_TYPES      = 14,
   SPTYP_RANDOM         = 1<<14
 };

@@ -572,7 +572,12 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
 
         if ( stab_bonus )
         {
-            int skill_type = weapon_skill(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]);
+          int skill_type;
+          if (you.equip[EQ_WEAPON] == -1)
+            skill_type = SK_UNARMED_COMBAT;
+          else
+            skill_type = weapon_skill(you.inv_class[you.equip[EQ_WEAPON]],
+                                        you.inv_type[you.equip[EQ_WEAPON]]);
 
             if (defender->behavior == BEH_SLEEP)
             {
@@ -604,7 +609,8 @@ void you_attack( int monster_attacked, bool unarmed_attacks )
                 }
               // fall through
               case SK_LONG_SWORDS:
-                damage_done *= 10 + you.skills[SK_STABBING] / (stab_bonus + (skill_type == SK_SHORT_BLADES ? 0 : 1));
+                damage_done *= 10 + you.skills[SK_STABBING] /
+                  (stab_bonus + (skill_type == SK_SHORT_BLADES ? 0 : 1));
                 damage_done /= 10;
               // fall through
               default:
@@ -2555,7 +2561,9 @@ bool monsters_fight( int monster_attacking, int monster_attacked )
 
             mons_to_hit += 3 * property(OBJ_WEAPONS, mitm.sub_type[attacker->inv[MSLOT_WEAPON]], PWPN_HIT);
 
-            attacker->speed_increment -= ((property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_SPEED) - 10) / 2);      // / 10);
+            if (you.equip[EQ_WEAPON] != -1)
+              attacker->speed_increment -= ((property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_SPEED) - 10) / 2);
+            //attacker->speed_increment -= ((property(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], PWPN_SPEED) - 10) / 2);/// 10);
         }
 
         mons_to_hit = random2(mons_to_hit);

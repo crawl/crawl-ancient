@@ -674,7 +674,7 @@ static string describe_demon( void )
         description += " It looks as frightened of you as you are of it.";
         break;
     case 14:
-        description += " It moves in a serious of hideous convulsions.";
+        description += " It moves in a series of hideous convulsions.";
         break;
     case 15:
         description += " It moves with an unearthly grace.";
@@ -683,11 +683,11 @@ static string describe_demon( void )
         description += " It hungers for your soul!";
         break;
     case 17:
-        description += " Its joints are swollen as if afflicted by arthritis.";
-        break;
+      description += " It leaves a glistening oily trail.";
+      break;
     case 18:
-        description += " shimmers before your eyes.";
-        break;
+      description += " It shimmers before your eyes.";
+      break;
     case 19:
       description += " It is surrounded by a brilliant glow.";
       break;
@@ -1414,7 +1414,7 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
                                 "you could wear it if you really wanted to. ";
                 break;
               case ARM_TROLL_HIDE:
-                description += "The rough and knobbly hide of a troll. "
+                description += "The stiff and knobbly hide of a troll. "
                                "I suppose you could wear it "
                                "if you really wanted to. ";
                 break;
@@ -1431,10 +1431,10 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
                                "the effects of cold. ";
                 break;
               case ARM_TROLL_LEATHER_ARMOUR:
-                description += "A magical armour, made from the skin of "
-                               "a common troll. It magically regenerates "
-                               "its wearer's flesh at a fairly slow rate "
-                               "(unless already a troll). ";
+                description += "A magical armour, made from the stiff and "
+                  "knbbly skin of a common troll. It magically regenerates "
+                  "its wearer's flesh at a fairly slow rate "
+                  "(unless already a troll). ";
                 break;
               case ARM_ICE_DRAGON_HIDE:
                 description += "The scaly skin of a dragon. I suppose "
@@ -1503,10 +1503,10 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
                 description += "The skins of several animals. ";
                 break;
               case ARM_SWAMP_DRAGON_HIDE:
-                description += "The slimy ";
-                if ( you.species != SP_MUMMY ) description += ", smelly ";
-                description += "skin of a swamp-dwelling dragon. I suppose "
-                               "you could wear it if you *really* wanted to. ";
+                description += "The slimy";
+                if ( you.species != SP_MUMMY ) description += ", smelly";
+                description += " skin of a swamp-dwelling dragon. I suppose "
+                               "you could wear it if you really wanted to. ";
                 break;
               case ARM_SWAMP_DRAGON_ARMOUR:
                 description += "A magical armour made from the scales of "
@@ -1558,18 +1558,18 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
 
     if (item_dam % 30 < 25)
     {
-        switch (item_dam / 30)  // not the complete list - orcs? {dlb}
-        {
-        case DARM_ELVEN:
-            description += "It is well-crafted and very light";
-            if (item_type == ARM_CLOAK || item_type == ARM_BOOTS)
-                description += ", and helps its wearer avoid being noticed";
-            description += ". ";
-            break;
-        case DARM_DWARVEN:
-            description += "It is well-crafted and very durable. ";
-            break;
-        }
+      switch (item_dam / 30)  // not the complete list - orcs? {dlb}
+      {
+      case DARM_ELVEN:
+        description += "It is well-crafted and unobstructive"; //jmf: not light
+        if (item_type == ARM_CLOAK || item_type == ARM_BOOTS)
+          description += ", and helps its wearer avoid being noticed";
+        description += ". ";
+        break;
+      case DARM_DWARVEN:
+        description += "It is well-crafted and very durable. ";
+        break;
+      }
     }
 
     if (item_id > 1 && (verbose == 1 || item_dam % 30 >= 25))
@@ -2483,7 +2483,7 @@ static string describe_jewellery(int item_class, int item_type, int item_plus, i
                 break;
 
               case RING_LEVITATION:
-                description += "This ring causes its wearer to hover above the floor. ";
+                description += "This ring allows its wearer to hover above the floor. ";
                 break;
 
               case RING_LIFE_PROTECTION:
@@ -3989,7 +3989,7 @@ void describe_spell( int spelled )
 
     case SPELL_MAXWELLS_SILVER_HAMMER:
       description += "bestows a lethal but temporary gravitic field "
-                     "to any crushing impliment held by the caster. "
+                     "to a crushing impliment held by the caster. "
                      "It will not affect weapons otherwise subject to "
                      "special enchantments. ";
       break;
@@ -3999,8 +3999,15 @@ void describe_spell( int spelled )
                      "air surrounding the caster. It acts like a normal "
                      "shield, but its density (and therefore stopping power) "
                      "depends upon the caster's skill with Ice Magic. The "
-                     "disc is controlled by the caster's mind and therefore "
-                     "allows the caster to wield two-handed weapons. ";
+                     "disc is controlled by the caster's mind and thus will "
+                     "not conflict with the weilding of a two-handed weapon. ";
+      break;
+
+    case SPELL_STONESKIN:
+      description += "hardens the one's skin to a degree determined "
+        "by one's skill in Earth Magic. This enchantment only works on "
+        "relatively normal flesh; it will aid neither the undead nor "
+        "the bodily transformed.";
       break;
 
     default:
@@ -4068,7 +4075,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
     case MONS_ANGEL:
         description = "A winged holy being of unnatural beauty. "
-                    "It's surrounded by aura of brilliant golden light. ";
+          "It's surrounded by aura of brilliant golden light. ";
         break;
 
     case MONS_HUMAN:
@@ -4086,8 +4093,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_QUEEN_ANT:
         description = "A bloated insect, covered in thick chitinous armour."
-        "It's almost 12' long."
-        "$Now you know where all those ants keep coming from!";
+        "Now you know where all those ants keep coming from!";
         break;
 
     case MONS_ANT_LARVA:
@@ -4121,7 +4127,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_ROTTING_DEVIL:
         description = "A hideous decaying form.";
-        if ( you.species != SP_MUMMY ) description += "$It stinks really bad.";
+        if ( you.species == SP_GHOUL ) description += "$It smells great!";
+        else if ( you.species != SP_MUMMY ) description += "$It stinks.";
         break;
 
     case MONS_HAIRY_DEVIL:
@@ -4134,12 +4141,12 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_BLUE_DEVIL:
-        description = "A strange and nasty blue thing. It emits cold.";
-        break;
+      description = "A strange and nasty blue thing. It looks cold.";
+      break;
 
     case MONS_IRON_DEVIL:
-        description = "A hideous humanoid figure with metal skin.";
-        break;
+      description = "A hideous humanoid figure with metal skin.";
+      break;
 
     case MONS_ETTIN:
         DEBUGSTR("bad monster?");       // it has been enum'ed 16jan2000 {dlb}
@@ -4152,8 +4159,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_GOBLIN:
-        description = "A race of short (about 4 feet), "
-                    "ugly and unfriendly humanoids.";
+        description = "A race of short, ugly and unfriendly humanoids.";
         break;
 
     case MONS_HOUND:
@@ -4171,10 +4177,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_IMP:
-        description = "An ugly little minor demon with small "
-                    "(but very sharp) horns and long thin tail."
-                    "It's puffing clouds of smoke.";
-        break;
+      description = "A small, ugly minor demon.";
+      break;
 
     case MONS_JACKAL:
       description = "A small, dog-like scavenger. Packs of these creatures "
@@ -4182,7 +4186,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_KILLER_BEE:
-      description = "A giant bee, bearing a deadly sting which can sting "
+      description = "A giant bee, bearing a deadly barb which can sting "
         "repeatedly.";
       break;
 
@@ -4235,19 +4239,15 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_ORC_HIGH_PRIEST:
-        description = "A long and slender exalted servant of the cruel"
-                      " orcish Gods. Wearing proudly his embroidered robe"
-                      " he loudly asks his God for help. Damn...";
-        break;
+      description = "An exalted servant of the Orc God.";
+      break;
 
     case MONS_ORC_SORCEROR:
-        description = "Strangly looking orc who draws power from Hell and "
-                      "use it for his dark magic.";
-        break;
+      description = "An orc who draws magical power from Hell.";
+      break;
 
     case MONS_ORC_WARLORD:
-      description = "A very large and strong orc, born to kill and lead others"
-        " to attack. He looks he will enjoy your death.";
+      description = "A very large and strong looking orc.";
         break;
 
     case MONS_ORC_WARRIOR:
@@ -4275,7 +4275,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_GREEN_RAT:
         description = "A very large rat, with hair and skin of a "
-                    "most peculiar green colour. It's lightly glowing.";
+                    "most peculiar green colour.";
         break;
 
     case MONS_ORANGE_RAT:
@@ -4318,7 +4318,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_WORM:
-        description = "A giant worm, with unusually large teeth (for a worm).";
+        description = "A giant worm, with unusually large teeth.";
         break;
 
     case MONS_UGLY_THING:
@@ -4342,7 +4342,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_ABOMINATION_LARGE:
-        description = "A huge and hideous creature, created or summoned "
+        description = "A huge and hideous form, created or summoned "
                     "by some arcane process.";
         break;
 
@@ -4427,9 +4427,10 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_SWAMP_DRAKE:
-        description = "A small and slimy dragon, covered in swamp muck. "
-                    "It smells horrible.";
-        break;
+      description = "A small and slimy dragon, covered in swamp muck. ";
+      if (you.species != SP_MUMMY)
+        description += "It smells horrible.";
+      break;
 
     case MONS_FIREDRAKE:
         description = "A small dragon, puffing clouds of smoke.";
@@ -4442,7 +4443,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_FIEND:
-        description = "One of the most fearsome denizens of Hell. "
+        description = "One of the most fearsome denizens of any Hell. "
                     "A huge and powerful demon wreathed in hellfire,"
                     " with great scaly wings.";
         break;
@@ -4466,7 +4467,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_HOBGOBLIN:
-        description = "Larger and stronger relatives of goblins.";
+        description = "A larger and stronger relatives of goblins.";
         break;
 
     case MONS_ICE_BEAST:
@@ -4496,9 +4497,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_ANCIENT_LICH:
-        description = "A lich who has grown mighty over countless years. "
-                      "Its power is greater than any you have experienced.";
-        break;
+      description = "A lich who has grown mighty over countless years. ";
+      break;
 
     case MONS_MUMMY:
         description += "An undead figure covered in "
@@ -4522,28 +4522,32 @@ void describe_monsters(int class_described, unsigned char which_mons)
         description += ".";
         break;
 
-    case MONS_GUARDIAN_NAGA:
-    case MONS_GREATER_NAGA:
-        description = "A serpent with the head of a human. These nagas are "
-            "often used as guardians by powerful creatures.";
-        if (class_described == MONS_GREATER_NAGA)
-            description += "$This one is unusually large and probably "
-                           "very strong.";
-            break;
-
     case MONS_NAGA:
     case MONS_NAGA_MAGE:
     case MONS_NAGA_WARRIOR:
+    case MONS_GUARDIAN_NAGA:
+    case MONS_GREATER_NAGA:
       description = "A weird hybrid; human from the waist up,"
         " it has a snake tail instead of legs. ";
-      if (class_described == MONS_NAGA_MAGE)
+      switch (class_described) {
+      case MONS_GUARDIAN_NAGA:
+        description += "These nagas are "
+          "often used as guardians by powerful creatures.";
+        break;
+      case MONS_GREATER_NAGA:
+        description += "It looks strong and aggressive.";
+        break;
+      case MONS_NAGA_MAGE:
         description += "An eldrich nimbus trails its motions. ";
-      if (class_described == MONS_NAGA_WARRIOR)
+        break;
+      case MONS_NAGA_WARRIOR:
         description += "It bears scars of many past battles. ";
+        break;
+      }
       break;
 
     case MONS_OGRE:
-      description = "A much larger, uglier and usually fatter relative "
+      description = "A larger, uglier and fatter relative "
         "of orcs and goblins.";
       break;
 
@@ -4622,9 +4626,9 @@ void describe_monsters(int class_described, unsigned char which_mons)
       break;
 
     case MONS_ROCK_TROLL:
-        description = "An enormous and very nasty-looking humanoid creature. "
-          "Its rocky hide seems to heal almost instantaneously from most wounds.";
-        break;
+      description = "An enormous and very nasty-looking humanoid creature. Its"
+        " rocky hide seems to heal almost instantaneously from most wounds.";
+      break;
 
     case MONS_UNSEEN_HORROR:
         description = "These creatures are usually unseen by the eyes of most,"
@@ -4632,18 +4636,19 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_VAMPIRE:
-      description = "A powerful undead. ";
-      if (you.is_undead == 0)
-        description += "It wants to drink your blood! ";
+      description = "A powerful undead.";
+      if (you.is_undead == 0) description += " It wants to drink your blood! ";
       break;
 
     case MONS_VAMPIRE_KNIGHT:
-        description = "An evil warrior.  Undeath has not diminished his skills.";
-        break;
+      description = "A powerful warrior, with skills undiminished by undeath.";
+      if (you.is_undead == 0) description += " It wants to drink your blood! ";
+      break;
 
     case MONS_VAMPIRE_MAGE:
-        description = "Undeath has not lessened this powerful mage.. beware!";
-        break;
+      description = "Undeath has not lessened this powerful mage.";
+      if (you.is_undead == 0) description += " It wants to drink your blood! ";
+      break;
 
     case MONS_WRAITH:
         description = "This undead spirit appears as a cloud of black mist "
@@ -4699,9 +4704,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_EYE_OF_DRAINING:
-        description = "A levitating eyeball, emitting cold and negative energy."
-            "These hovering horrors are especially loathed by wizards.";
-        break;
+      description = "These hovering horrors are especially loathed by wizards.";
+      break;
 
     case MONS_WIGHT:
         description = "An ancient warrior, kept in a state of undeath "
@@ -4719,9 +4723,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_SHADOW:
-      description = "A walking undead shadow,  barely noticable even in bright"
-        " light.";
-        break;
+      description = "An wisp of unliving shadow, drifting on the edge of vision.";
+      break;
 
     case MONS_HUNGRY_GHOST:
         description = "The undead form of someone who died of starvation,"
@@ -4778,14 +4781,15 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_TORMENTOR:
-      description = "This cruel and malicious devil is covered in all manner "
-        "of claws, spines and hooks.";
+      description = "This malign devil is covered in all manner "
+        "of claws, spines and cruel hooks.";
       break;
 
     case MONS_REAPER:
-        description = "A skeletal form wielding a giant scythe. "
-                    "It has come for your soul!";
-        break;
+      description = "A skeletal form wielding a giant scythe. ";
+      if (you.is_undead == 0)
+        description += "It has come for your soul!";
+      break;
 
     case MONS_SOUL_EATER:
       description = "This greater demon looks like a shadow gliding through "
@@ -4837,13 +4841,12 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_HELL_KNIGHT:
       description = "A heavily armoured warrior, in league with the powers"
-          " of Hell.";
+         " of Hell.";
         break;
 
     case MONS_WIZARD:
-        description = "An rather eccentric person,  dabbling in all sorts of"
+        description = "An rather eccentric person, dabbling in all sorts of"
             " arcanities.";
-
         break;
 
     case MONS_NECROMANCER:
@@ -4851,8 +4854,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_GNOLL:
-      description = "Tall humanoids resembling hyenas, and not only by "
-                    "their appearance.";
+      description = "A taller and better equipt relative of goblins and orcs.";
       break;
 
     case MONS_CLAY_GOLEM:
@@ -4954,27 +4956,25 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_FIRE_GIANT:
-        description = "A huge red figure, with bright orange hair and deep red eyes, "
-                      "breathing clouds of smoke.";
-        break;
+      description = "A huge ruddy humanoid with bright hair. ";
+      break;
 
     case MONS_FROST_GIANT:
-        description = "A huge light blue figure with white hair."
-                      " It trails frozen vapors.";
-        break;
+      description = "A huge blue humanoid with hoarfrost hair.";
+      break;
 
     case MONS_HILL_GIANT:
-      description = "Although one of the smaller giant varieties, the hill giant is still big enough to be dangerous.";
+      description = "Although one of the smaller giant varieties, this hill giant is still big enough to be dangerous.";
       break;
 
     case MONS_STONE_GIANT:
-        description = "A gigantic humanoid figure, with grey skin almost as hard as rock. "
-                    "It carries several boulders - are you up for a game of 'catch'?";
-        break;
+      description = "A gigantic humanoid with grey skin almost as hard as rock. "
+        "It carries several boulders - are you up for a game of 'catch'?";
+      break;
 
     case MONS_TITAN:
-        description = "A huge, very muscular and also very handsome giant."
-                    " It radiates an aura of supreme confidence and power.";
+        description = "This lightning-limned humanoid is unusually large "
+          "and powerful, even among giants.";
         break;
 
     case MONS_FLAYED_GHOST:
@@ -5067,64 +5067,12 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_MOLTEN_GARGOYLE:
-        description = "Hissing and cracking,  this molten monstrosity "
-                      "lives only for the pain of its victims.";
+        description = "A hideous melting stone statue come to life.";
         break;
 
     // I think most of the deep elven descriptions are pretty much OK now. GDL
 
     case MONS_DEEP_ELF_SOLDIER:
-        description = "One of the race of elves which inhabits this dreary cave."
-                      " This one is just common soldier.";
-        break;
-
-    case MONS_DEEP_ELF_FIGHTER:
-        description = "A deep elven fighter guarding this territory against any trespassers.";
-        break;
-
-    case MONS_DEEP_ELF_KNIGHT:
-        description = "A long veteran of combat in the deep caves,  the Knight's"
-                      " skills are unmatched.";
-        break;
-
-    case MONS_DEEP_ELF_MAGE:
-        description = "Mana crackles between long fingers.";
-        break;
-
-    case MONS_DEEP_ELF_SUMMONER:
-    case MONS_DEEP_ELF_CONJURER:
-        description = "A deep elf mage specialized in ancient art ";
-        if (class_described == MONS_DEEP_ELF_SUMMONER)
-            description += "of summoning animals and magical creatures.";
-        else
-            description += "of destruction.";
-        break;
-
-    case MONS_DEEP_ELF_PRIEST:
-         description = "A loyal servant of the deep elven gods.";
-         break;
-
-    case MONS_DEEP_ELF_HIGH_PRIEST:
-         description = "A leader among servants,  closer to the gods than most.";
-         break;
-    case MONS_DEEP_ELF_DEMONOLOGIST:
-         description = "A deep elf mage specialized in demonology,  marked heavily"
-                       " by long years in contact with unnatural demonic forces.";
-         break;
-    case MONS_DEEP_ELF_ANNIHILATOR:
-         description = "Likes destruction more than most,  and is better at it.";
-         break;
-
-    case MONS_DEEP_ELF_SORCEROR:
-         description = "Old and wizened,  a mage of many years.";
-         break;
-
-    case MONS_DEEP_ELF_DEATH_MAGE:
-        description = "A deep elf mage,  preoccupied with death.";
-        break;
-
-/*
-    case MONS_DEEP_ELF_SOLDIER:
     case MONS_DEEP_ELF_FIGHTER:
     case MONS_DEEP_ELF_KNIGHT:
     case MONS_DEEP_ELF_MAGE:
@@ -5136,9 +5084,63 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_DEEP_ELF_ANNIHILATOR:
     case MONS_DEEP_ELF_SORCEROR:
     case MONS_DEEP_ELF_DEATH_MAGE:
-     description = "One of the race of elves which inhabits this dreary cave.";
-     break;
-*/
+      description = "One of the race of elves which inhabits this dreary cave. ";
+      switch (class_described) {
+
+     case MONS_DEEP_ELF_SOLDIER:
+      description += "This one is just common soldier.";
+      break;
+
+    case MONS_DEEP_ELF_FIGHTER:
+      description += "This soldier has learned some magic.";
+      break;
+
+    case MONS_DEEP_ELF_KNIGHT:
+      description += "This one bears the scars of battles past.";
+      break;
+
+    case MONS_DEEP_ELF_MAGE:
+      description += "Mana crackles between this one's long fingers.";
+      break;
+
+    case MONS_DEEP_ELF_SUMMONER:
+    case MONS_DEEP_ELF_CONJURER:
+      description += "This one is a mage specialized in ancient art ";
+      if (class_described == MONS_DEEP_ELF_SUMMONER)
+        description += "of summoning servents";
+      else
+        description += "of hurling energies";
+      description += " of destruction.";
+      break;
+
+    case MONS_DEEP_ELF_PRIEST:
+      description += "This one is a servant of the deep elves' God.";
+      break;
+
+    case MONS_DEEP_ELF_HIGH_PRIEST:
+      description += "This one is an exaulted servant of the deep elves' God.";
+      break;
+
+    case MONS_DEEP_ELF_DEMONOLOGIST:
+      description += "This mage specialized in demonology, and is marked "
+        "heavily by long years in contact with unnatural demonic forces.";
+      break;
+
+    case MONS_DEEP_ELF_ANNIHILATOR:
+      description += "This one likes destruction more than most, "
+        "and is better at it.";
+      break;
+
+    case MONS_DEEP_ELF_SORCEROR:
+         description += "This mighty spellcaster draws "
+           "power from Hell.";
+         break;
+
+    case MONS_DEEP_ELF_DEATH_MAGE:
+        description += "A strong negative aura surrounds this one.";
+        break;
+      }
+      break;
 
     case MONS_WHITE_IMP:
       description = "A small and mischevious minor demon. ";
@@ -5202,21 +5204,20 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_DEMONIC_CRAWLER:
         description = "A long and bloated body, supported by "
-                    "dozens of short legs and topped with an evil-looking head. ";
+          "dozens of short legs and topped with an evil-looking head. ";
         break;
 
     case MONS_SUN_DEMON:
-        description = "A demonic figure shining with the light and fury of the sun. ";
-        break;
+      description = "A demonic figure shining with the light and fury of a fallen star.";
+      break;
 
     case MONS_SHADOW_IMP:
-        description = "An shadowy minor demon with small "
-                    "horns and long thin tail.";
-        break;
+      description = "A small and shadowy minor demon.";
+      break;
 
     case MONS_SHADOW_DEMON:
         description = "A mysterious demonic figure,"
-                    " constantly blurring into multiple shadows of iteself.";
+                    " constantly blurring into multiple shadows of itself.";
         break;
 
     case MONS_LOROCYPROCA:
@@ -5401,11 +5402,11 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_TERENCE:
       description += "An evil human fighter.";
-        break;
+      break;
 
     case MONS_JESSICA:
-      description += "An evil sorceress.";
-        break;
+      description += "An evil apprentice wizard.";
+      break;
 
     case MONS_SIGMUND:
       description += "An evil elderly human.";
@@ -5432,7 +5433,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
       break;
 
     case MONS_ERICA:
-      description += "A beautiful sorceress.";
+      description += "A comely spellweaver.";
       break;
 
     case MONS_JOSEPHINE:
@@ -5452,7 +5453,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
       break;
 
     case MONS_AGNES:
-      description += "A tall warrior.";
+      description += "A lanky warrior.";
       break;
 
     case MONS_MAUD:
@@ -5504,7 +5505,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
       break;
 
     case MONS_EROLCHA:
-      description = "An especially beefy ogre mage.";
+      description = "An especially cunning ogre mage.";
       break;
 
     case MONS_URUG:
@@ -5515,7 +5516,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_SNORG:
       description = "A hairy troll.";
-        break;
+      break;
 
     case MONS_XTAHUA:
       description = "An ancient and mighty dragon.";
@@ -5528,7 +5529,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_SHUGGOTH:
       description += "A vile creature with an elongated head, spiked tail "
         "and wicked six-fingered claws. Its awesome strength is matched by "
-        "its fury at being transported to this backwater dimension. ";
+        "its umbrage at being transported to this backwater dimension. ";
       break;
 
     case MONS_WOLF:
@@ -5536,7 +5537,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
       break;
 
     case MONS_WARG:
-      description += "A particularly large and evil looking wolf.";
+      description += "A particularly large and evil looking wolf, usually "
+        "found in the company of Orcs.";
       break;
 
     case MONS_BEAR:

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *     01aug2000 jmf             RESTORED TITLES TO THEIR FORMER GLORY! MUA-HA!
  * <4> 22Jul2000 GDL             added warning for low throwing skill
  *                               Changed a few titles.
  * <3> 5/20/99   BWR             Changed Trapper titles, avoided
@@ -24,56 +25,67 @@
 #include <conio.h>
 #endif
 
+#include "externs.h"
+#include "player.h"
+
+//jmf: brent sez:
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason curses is included after the *.h files in beam.cc.
+//  There's a reason ...
 #ifdef USE_CURSES
 #include <curses.h>
 #endif
 
-#include "externs.h"
-#include "player.h"
-
 
 //#define WIZARD
 
+//jmf: some references for words I used below:
+// Peltast http://www.geocities.com/Athens/Aegean/9659/shields_main.htm
+// Phalangite http://www.users.cts.com/funtv/j/jjartist/EpiroteScenario1.htm
+// Yeoman: http://snt.student.utwente.nl/campus/sagi/artikel/longbow/longbow.html
 
 char *skills[50][5] =
 {
-  {"Fighting", "Grunt", "Warrior", "Slayer", "Warlord"}, // 0
+  {"Fighting", "Grunt", "Veteran", "Warrior", "Slayer"}, // 0
   {"Short Blades", "Stabber", "Cutter", "Slicer", "Knifefighter"},
-  {"Long Blades", "Slasher", "Fencer", "Swordsman", "Eviscerator"},
+  {"Long Blades", "Slasher", "Fencer", "Swordfighter", "Eviscerator"},
   {NULL}, //  3- was: great swords {dlb}
-  {"Axes", "Chopper", "Hacker", "Cleaver", "Axe Murderer"},
+  {"Axes", "Chopper", "Cleaver", "Hacker", "Axe Maniac"},
   {"Maces & Flails", "Basher", "Cruncher", "Smasher", "Shatterer"}, // 5
-  {"Polearms", "Chopper", "Hacker", "Cleaver", "Halberdier"},
+  {"Polearms", "Spear-Bearer", "Phalangite", "Piker", "Halberdier"},
   {"Staves", "Twirler", "Cruncher", "Smasher", "Skullbreaker"},
   {"Slings", "Slinger", "Vandal", "Whirler", "Very Crazy Person"},
-  {"Bows", "Shooter", "Hunter", "Archer", "Merry Person"},
-  {"Crossbows", "Shooter", "Hunter", "Archer", "Ballista"}, // 10
+  {"Bows", "Shooter", "Yeoman", "Archer", "Merry Person"},
+  {"Crossbows", "Shooter", "Sharpshooter", "Archer", "Ballista"}, // 10
   {"Darts", "Thrower", "Hurler", "Hurler, First Class", "Darts Champion"},
-  {"Throwing", "Marksman", "Sharpshooter", "Hawkeye", "Sniper"},
-  {"Armour", "Grunt", "Tortoise", "Armorer", "Impregnable"},
-  {"Dodging", "Ducker", "Dodger", "Evader", "Acrobat"},
-  {"Stealth", "Footpad", "Burglar", "Sneak", "Shadow"}, // 15
+  {"Throwing", "Skirmisher", "Marksman", "Hawkeye", "Sniper"},
+  {"Armour", "Grunt", "Heavy Grunt", "Tortoise", "Impregnable"},
+  {"Dodging", "Ducker", "Dodger", "Nimble", "Acrobat"},
+  {"Stealth", "Footpad", "Sneak", "Covert", "Ninjitsur"},
   {"Stabbing", "Backstabber", "Cutthroat", "Blackguard", "Politician"},
-  {"Shields", "Shield-Bearer", "Blocker", "Blocker, First Class", "Hoplite"},
+  {"Shields", "Shield-Bearer", "Blocker", "Peltast", "Hoplite"},
   {"Traps & Doors", "Disarmer", "Trapper", "Architect", "Engineer"},
-  {"Unarmed Combat", "Brawler", "Martial Artist", "Black Belt", "Sensei"}, // 19
+//{"Unarmed Combat", "Brawler", "Martial Artist", "Black Belt", "Sensei"},// 19
+  //jmf: remember that this applies to Troll Fighters as well as Kenku Monks:
+  {"Unarmed Combat", "Brawler", "Boxer", "Martial Artist", "Black Belt"},
   {NULL},                    // 20- empty
   {NULL},                    // 21- empty
   {NULL},                    // 22- empty
   {NULL},                    // 23- empty
   {NULL},                    // 24- empty
-  {"Spellcasting", "Magician", "Wizard", "Eclecticist", "Archmage"}, // 25
+  {"Spellcasting", "Magician", "Thaumaturge", "Eclecticist", "Archmage"}, // 25
   {"Conjurations", "Evoker", "Conjurer", "Destroyer", "Annihilator"},
   {"Enchantments", "Charm-Maker", "Enchanter", "Infuser", "Spellbinder"},
   {"Summonings", "Caller", "Summoner", "Demonologist", "Hellbinder"},
   {"Necromancy", "Grave Robber", "Necromancer", "Reanimator", "Death Mage"},
   {"Translocations", "Jumper", "Blinker", "Portalist", "Plane Walker"}, // 30
-  {"Transmigration", "Adjuster", "Changer", "Transformer", "Transmuter"},
+  {"Transmigration", "Changer", "Transformer", "Alchemist", "Transmuter"},
   {"Divinations", "Seer", "Soothsayer", "Diviner", "Oracle"},
   {"Fire Magic", "Firebug", "Arsonist", "Pyromaniac", "Infernalist"},
   {"Ice Magic", "Frost Mage", "Ice Mage", "Cryomancer", "Englaciator"},
   {"Air Magic", "Wind Mage", "Cloud Mage", "Sky Mage", "Storm Mage"}, // 35
-  {"Earth Magic", "Digger", "Petrifier", "Geomancer", "Earth Mage"},
+  {"Earth Magic", "Digger", "Geomancer", "Petrifier", "Earth Mage"},
   {"Poison Magic", "Stinger", "Tainter", "Poisoner", "Venom Mage"},
   {"Invocations", "Believer", "Servant", "Worldly Agent", "Avatar"}, // 38
 

@@ -858,6 +858,8 @@ void extension( int pow )
     }
 
 //jmf: added following
+    if ( you.duration[DUR_STONESKIN] )
+      cast_stoneskin(pow);
     if ( you.duration[DUR_FORESCRY] )
       cast_forescry(pow);
     if ( you.duration[DUR_SEE_INVISIBLE] )
@@ -877,10 +879,6 @@ void extension( int pow )
 void ice_armour( int pow, bool extending )
 {
 
-    //if (pow > 100) pow = 100;
-
-    int dur_change = 0;
-
     if (you.equip[EQ_BODY_ARMOUR] != -1 && !extending )
     {
         if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 1 && you.inv_type[you.equip[EQ_BODY_ARMOUR]] != 16 && you.inv_type[you.equip[EQ_BODY_ARMOUR]] != 19 && (you.inv_type[you.equip[EQ_BODY_ARMOUR]] < 22 || you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 25))
@@ -890,7 +888,7 @@ void ice_armour( int pow, bool extending )
         }
     }
 
-    if ( you.duration[DUR_STONEMAIL] )
+    if ( you.duration[DUR_STONEMAIL] || you.duration[DUR_STONESKIN] )
     {
         mpr("The spell conflicts with another spell still in effect.");
         return;
@@ -904,12 +902,10 @@ void ice_armour( int pow, bool extending )
     else
       mpr("Your icy armour thickens.");
 
-    dur_change = 20 + random2(pow) + random2(pow);
+    you.duration[DUR_ICY_ARMOUR] += 20 + random2(pow) + random2(pow);
 
-    if ( dur_change + you.duration[DUR_ICY_ARMOUR] >= 100 )
+    if ( you.duration[DUR_ICY_ARMOUR] > 100 )
       you.duration[DUR_ICY_ARMOUR] = 100;
-    else
-      you.duration[DUR_ICY_ARMOUR] += dur_change;
 /*
  you.duration [DUR_ICY_ARMOUR] += 20 + random2(pow) / 2 + random2(pow) / 2;
  if (you.duration [DUR_ICY_ARMOUR] >= 100) you.duration [DUR_ICY_ARMOUR] = 100;
@@ -928,7 +924,7 @@ void stone_scales( int pow )
 
     int dur_change = 0;
 
-    if ( you.duration[DUR_ICY_ARMOUR] )
+    if ( you.duration[DUR_ICY_ARMOUR] || you.duration[ DUR_STONESKIN ] )
     {
       mpr("The spell conflicts with another spell still in effect.");
       return;

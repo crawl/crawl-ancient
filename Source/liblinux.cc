@@ -35,7 +35,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <curses.h>
 #include <stdarg.h>
 #include <ctype.h>
 #define _LIBLINUX_IMPLEMENTATION
@@ -66,6 +65,7 @@ static struct ltchars game_term;
 #include <signal.h>
 #endif
 
+#include <curses.h>
 
 // Globals holding current text/backg. colors
 short FG_COL = COLOR_WHITE;
@@ -506,7 +506,7 @@ char *strlwr(char *str)
 }
 
 
-int cprintf(char *format,...)
+int cprintf(const char *format,...)
 {
     int i;
     char buffer[2048];          // One full screen if no control seq...

@@ -7,5 +7,16 @@ Notes for building crawl with VACPP
   ignore the other lib*.cc files
 * define the macro WIN32CONSOLE
 * MUST build with signedchars = yes
+* MUST build with emumsize = 4
+* should probably target pentium-class machines.
 
 Other than this,  it's pretty straightforward.
+
+
+//jmf: wrt/ 'target pentium-class machines': from Linux compiles, I know
+//     most of the benefit of 32-bit-happiness comes from just targeting
+//     486-class machines. Compiling for a Pentium implies a bunch of
+//     Pentium-specific idioms which are slower on PPro/PII(I) and don't
+//     work at all on 486s.
+//
+//     VACPP may or may not conform to the above behavior. :-)

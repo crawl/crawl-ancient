@@ -82,15 +82,15 @@ void item_check( char keyin )
             mpr(info);
         }
         else if ( grd[you.x_pos][you.y_pos] >= DNGN_STONE_STAIRS_UP_I
-                 && grd[you.x_pos][you.y_pos] <= DNGN_ROCK_STAIRS_UP )
+                  && grd[you.x_pos][you.y_pos] <= DNGN_ROCK_STAIRS_UP )
         {
-            strcpy(info, "There is a ");
-            strcat(info, (grd[you.x_pos][you.y_pos] == DNGN_ROCK_STAIRS_UP) ? "rock" : "stone");
-            strcat(info, " staircase leading upwards here.");
-            mpr(info);
+          strcpy(info, "There is a ");
+          strcat(info, (grd[you.x_pos][you.y_pos] == DNGN_ROCK_STAIRS_UP) ? "rock" : "stone");
+          strcat(info, " staircase leading upwards here.");
+          mpr(info);
         }
         else
-            switch ( grd[you.x_pos][you.y_pos] )
+          switch ( grd[you.x_pos][you.y_pos] )
             {
             case DNGN_ENTER_HELL:
                 mpr("There is a gateway to hell here.");

@@ -704,61 +704,61 @@ static void dump_spells( string & text )
 
         for (unsigned char j = 0; j < 25; j++)
         {
-            if (you.spells[j] != SPELL_NO_SPELL)
-            {
-                string spell_line = " ";
-                char ft;
+          if (you.spells[j] != SPELL_NO_SPELL)
+          {
+            string spell_line = " ";
+            char ft;
 
-                ft = index_to_letter(j);
+            ft = index_to_letter(j);
 
-                char st_pass[60];
+            char st_pass[60];
 
-                strng[0] = ft;
-                strng[1] = '\0';
-                spell_line += strng;
-                spell_line += " - ";
-                spell_line += spell_title(you.spells[j]);
+            strng[0] = ft;
+            strng[1] = '\0';
+            spell_line += strng;
+            spell_line += " - ";
+            spell_line += spell_title(you.spells[j]);
 
-                for (int i = spell_line.length(); i < 34; i++)
-                  spell_line += ' ';
+            for (int i = spell_line.length(); i < 34; i++)
+              spell_line += ' ';
 
-                bool already = false;
+            bool already = false;
 
-                for (int i = 0; spell_type_index[i] != 0; i++)
-                  if (spell_typematch(you.spells[j], spell_type_index[i]))
-                  {
-                      spell_line += spell_type_name(spell_type_index[i], already);
-                      already = true;
-                  }
+            for (int i = 0; spell_type_index[i] != 0; i++)
+              if (spell_typematch(you.spells[j], spell_type_index[i]))
+                {
+                  spell_line += spell_type_name(spell_type_index[i], already);
+                  already = true;
+                }
 
-                for (int i = spell_line.length(); i < 58; i++)
-                  spell_line += ' ';
+            for (int i = spell_line.length(); i < 58; i++)
+              spell_line += ' ';
 
-                int fail_rate = spell_fail(you.spells[j]);
+            int fail_rate = spell_fail(you.spells[j]);
 
-                spell_line += (fail_rate == 100) ? "Useless" :
-                              (fail_rate  >  90) ? "Terrible" :
-                              (fail_rate  >  80) ? "Cruddy" :
-                              (fail_rate  >  70) ? "Bad" :
-                              (fail_rate  >  60) ? "Very Poor" :
-                              (fail_rate  >  50) ? "Poor" :
-                              (fail_rate  >  40) ? "Fair" :
-                              (fail_rate  >  30) ? "Good" :
-                              (fail_rate  >  20) ? "Very Good" :
-                              (fail_rate  >  10) ? "Great" :
-                              (fail_rate  >   0) ? "Excellent"
-                                                 : "Perfect";
+            spell_line += (fail_rate == 100) ? "Useless" :
+              (fail_rate  >  90) ? "Terrible" :
+              (fail_rate  >  80) ? "Cruddy" :
+              (fail_rate  >  70) ? "Bad" :
+              (fail_rate  >  60) ? "Very Poor" :
+              (fail_rate  >  50) ? "Poor" :
+              (fail_rate  >  40) ? "Fair" :
+              (fail_rate  >  30) ? "Good" :
+              (fail_rate  >  20) ? "Very Good" :
+              (fail_rate  >  10) ? "Great" :
+              (fail_rate  >   0) ? "Excellent"
+              : "Perfect";
 
-                for (int i = spell_line.length(); i < 70; i++)
-                  spell_line += ' ';
+            for (int i = spell_line.length(); i < 70; i++)
+              spell_line += ' ';
 
-                itoa((int) spell_difficulty(you.spells[j]), st_pass, 10);
-                spell_line += st_pass;
-                spell_line += EOL;
+            itoa((int) spell_difficulty(you.spells[j]), st_pass, 10);
+            spell_line += st_pass;
+            spell_line += EOL;
 
-                text += spell_line;
+            text += spell_line;
 
-            }
+          }
 
         }
 
