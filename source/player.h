@@ -402,5 +402,10 @@ char *class_abbrev(unsigned char which_class);
 bool player_descriptor( unsigned char which_descriptor,
                         unsigned char species = SP_UNKNOWN );
 
+// last updated 19apr2001 {gdl}
+/* ***********************************************************************
+ * called from:
+ * *********************************************************************** */
+void contaminate_player(int change, bool statusOnly = false);
 
 #endif

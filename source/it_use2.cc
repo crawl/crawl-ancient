@@ -848,7 +848,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         break;
 
     case ZAP_SANDBLAST: //jmf: ought to be a weak, short-range missile
-        strcpy(pbolt.beam_name, coinflip() ? "blast of sand" : "rocky blast");
+        strcpy(pbolt.beam_name, coinflip() ? "blast of rock" : "rocky blast");
         pbolt.colour = BROWN;
 
         pbolt.range = 2 + random2(power) / 20;

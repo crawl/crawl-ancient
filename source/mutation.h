@@ -53,7 +53,7 @@ bool give_good_mutation(bool failMsg = true);
 /* ***********************************************************************
  * called from: items - spells
  * *********************************************************************** */
-bool give_bad_mutation(bool failMsg = true);
+bool give_bad_mutation(bool forceMutation = false, bool failMsg = true);
 
 
 // last updated 12may2000 {dlb}

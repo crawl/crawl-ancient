@@ -542,39 +542,48 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
     mpr(info);
 #endif
 
-    // stab if defender is slow OR sleeping
-    // OR ((fleeing/confused/not paying attention) and successful stab)
+    // DO STABBING
 
-    if (defender->speed_increment <= 40
-        || defender->behavior == BEH_SLEEP
-        || ((defender->behavior == BEH_FLEE
-            || mons_has_ench(defender, ENCH_CONFUSION)
-            || defender->foe != MHITYOU)
-                && random2(200) <= you.skills[SK_STABBING] + you.dex))
+    bool stabAttempt = false;
+    bool rollNeeded = true;
+
+    // This ordering is important!
+
+    // not paying attention (but not batty)
+    if (defender->foe != MHITYOU && !testbits(defender->flags, MF_BATTY))
     {
-        switch (defender->behavior)
-        {
-        case BEH_SLEEP:
-            // monster is a very easy target
-            // note: lower stab_bonuses are better, because they're used
-            //       as part of the divisors.
-            stab_bonus = 1;
-            break;
+        stabAttempt = true;
+        stab_bonus = 3;
+    }
 
-        case BEH_FLEE:
-            // monster has limited control of his actions
-            stab_bonus = 2;
-            break;
+    // confused (but not perma-confused)
+    if (mons_has_ench(defender, ENCH_CONFUSION) && !mons_flag(defender->type, M_CONFUSED))
+    {
+        stabAttempt = true;
+        stab_bonus = 2;
+    }
 
-        default:
-            // monster is in control of his actions
-            stab_bonus = 3;
-        }
+    // fleeing
+    if (defender->behavior == BEH_FLEE)
+    {
+        stab_bonus = 2;
+        stabAttempt = true;
+    }
 
-        // can't do this in the case statement
-        if (mons_has_ench(defender, ENCH_CONFUSION))
-            stab_bonus = 2;
+    // sleeping
+    if (defender->behavior == BEH_SLEEP)
+    {
+        stabAttempt = true;
+        rollNeeded = false;
+        stab_bonus = 1;
+    }
 
+    // see if we need to roll against dexterity / stabbing
+    if (stabAttempt && rollNeeded)
+        stabAttempt = (random2(200) <= you.skills[SK_STABBING] + you.dex);
+
+    if (stabAttempt)
+    {
         simple_monster_message(defender, " fails to defend itself.");
 
         exercise(SK_STABBING, 1 + random2avg(5, 4));
@@ -586,9 +595,12 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         }
     }
     else
+    {
+        stab_bonus = 0;
         // ok.. if you didn't backstab, you wake up the neighborhood.
         // I can live with that.
         alert();
+    }
 
     // now, whether or not you 'hit' the monster in question,  you've
     // pissed them off
@@ -3739,8 +3751,7 @@ void monster_die(struct monsters *monster, char killer, int i)
         if (YOU_KILL(killer)
             && !testbits(monster->flags, MF_CREATED_FRIENDLY))
         {
-            gain_exp(exper_value( monster->type, monster->hit_dice,
-                                  monster->max_hit_points ));
+            gain_exp(exper_value( monster ));
         }
 
         if (monster->type == MONS_FIRE_VORTEX)
@@ -3754,8 +3765,7 @@ void monster_die(struct monsters *monster, char killer, int i)
         if (YOU_KILL(killer)
             && !testbits(monster->flags, MF_CREATED_FRIENDLY))
         {
-            gain_exp(exper_value( monster->type, monster->hit_dice,
-                                  monster->max_hit_points ));
+            gain_exp(exper_value( monster ));
         }
     }
     else
@@ -3773,8 +3783,7 @@ void monster_die(struct monsters *monster, char killer, int i)
 
             if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
             {
-                gain_exp(exper_value( monster->type, monster->hit_dice,
-                                      monster->max_hit_points ));
+                gain_exp(exper_value( monster ));
             }
             else
                 mpr("That felt strangely unrewarding.");
@@ -3871,8 +3880,7 @@ void monster_die(struct monsters *monster, char killer, int i)
                 // Only affects creatures which were friendly when summoned.
                 if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
                 {
-                    gain_exp(exper_value( monster->type, monster->hit_dice,
-                                          monster->max_hit_points ) / 2 + 1);
+                    gain_exp(exper_value( monster ) / 2 + 1);
 
                     if (mons_holiness(menv[i].type) == MH_UNDEAD)
                     {
@@ -4020,6 +4028,9 @@ void monster_cleanup(struct monsters *monster)
     monster->armor_class = 0;
     monster->evasion = 0;
     monster->speed_increment = 0;
+    monster->attitude = ATT_HOSTILE;
+    monster->behavior = BEH_SLEEP;
+    monster->foe = MHITNOT;
 
     mgrd[monster->x][monster->y] = NON_MONSTER;
 
@@ -4166,6 +4177,11 @@ static bool valid_morph( struct monsters *monster, int new_mclass )
             return false;
         }
     }
+
+    // not fair to strand a water monster on dry land, either.  :)
+    if ( monster_habitat(new_mclass) == DNGN_DEEP_WATER &&
+        !(current_tile == DNGN_DEEP_WATER || current_tile == DNGN_SHALLOW_WATER))
+        return false;
 
     return true;
 }        // end valid_morph()

@@ -1035,11 +1035,8 @@ static void tag_construct_level_items(struct tagHeader &th)
         marshallByte(th, mitm.y[i]);
         marshallByte(th, mitm.id[i]);
 
-        if (mitm.quantity[i] == 0)
-            mitm.link[i] = NON_ITEM;
-
-        marshallShort(th, mitm.link[i]);
-        marshallShort(th, igrd[mitm.x[i]][mitm.y[i]]);
+        marshallShort(th, mitm.link[i]);                //  unused
+        marshallShort(th, igrd[mitm.x[i]][mitm.y[i]]);  //  unused
     }
 }
 
@@ -1184,14 +1181,15 @@ static void tag_read_level_items(struct tagHeader &th)
         mitm.y[i] = unmarshallByte(th);
         mitm.id[i] = unmarshallByte(th);
 
-        mitm.link[i] = unmarshallShort(th);
-        igrd[mitm.x[i]][mitm.y[i]] = unmarshallShort(th);
-
-        if (mitm.base_type[i] == OBJ_UNASSIGNED)
+        // pre 4.2 files had monster items stacked at (2,2) -- moved to (0,0)
+        if (mitm.x[i] == 2 && mitm.y[i] == 2)
         {
-            mitm.quantity[i] = 0;
-            mitm.link[i] = NON_ITEM;
+            mitm.x[i] = 0;
+            mitm.y[i] = 0;
         }
+
+        unmarshallShort(th);            // mitm.link[] -- unused
+        unmarshallShort(th);            // igrd[mitm.x[i]][mitm.y[i]] -- unused
     }
 }
 

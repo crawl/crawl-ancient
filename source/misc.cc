@@ -517,6 +517,7 @@ void up_stairs(void)
 
     mpr("Entering...");
     you.prev_targ = MHITNOT;
+    you.pet_target = MHITNOT;
 
     if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
     {
@@ -691,6 +692,7 @@ void down_stairs(bool remove_stairs, int old_level)
 
     mpr("Entering...");
     you.prev_targ = MHITNOT;
+    you.pet_target = MHITNOT;
 
     if (stair_find == DNGN_ENTER_HELL)
     {

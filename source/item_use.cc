@@ -2830,7 +2830,7 @@ void read_scroll(void)
         break;
 
     case SCR_FEAR:
-        if (!mass_enchantment(4, 1000))
+        if (!mass_enchantment(ENCH_FEAR, 1000, MHITYOU))
             id_the_scroll = false;
         break;
 

@@ -95,6 +95,7 @@ static char plan_6(int level_number);
 static bool octa_room(spec_room &sr, int oblique_max, unsigned char type_floor);
 static void labyrinth_level(int level_number);
 static void box_room(int bx1, int bx2, int by1, int by2, int wall_type);
+static int box_room_doors( int bx1, int bx2, int by1, int by2, int new_doors);
 static void city_level(int level_number);
 static void diamond_rooms(int level_number);
 
@@ -141,6 +142,58 @@ static void place_altar(void);
  *                                                *
  **************************************************
 */
+
+// this doesn't really 'unlink' items from the grid,  it
+// just nails them down for purposes of save/reload.
+
+void unlink_items(void)
+{
+    int x,y,i;
+
+    // nails all items to the ground (i.e. sets x,y)
+    for(x=0; x<GXM; x++)
+    {
+        for(y=0; y<GYM; y++)
+        {
+            i = igrd[x][y];
+            while (i != NON_ITEM)
+            {
+                mitm.x[i] = x;
+                mitm.y[i] = y;
+                i = mitm.link[i];
+            }
+        }
+    }
+}
+
+
+void link_items(void)
+{
+    int i,j;
+
+    // first, blank igrd
+    for (i = 0; i < GXM; i++)
+        for (j = 0; j < GYM; j++)
+            igrd[i][j] = NON_ITEM;
+
+    // link all items on the grid, plus shop inventory,
+    // DON'T link the huge pile of monster items at (0,0)
+
+    for (i = 0; i < MAX_ITEMS; i++)
+    {
+        if (mitm.base_type[i] == OBJ_UNASSIGNED || mitm.quantity[i] == 0
+            || mitm.y[i] == 0)
+        {
+            // item is not assigned,  or is monster item.  ignore.
+            mitm.link[i] = NON_ITEM;
+            continue;
+        }
+
+        // link to top
+        mitm.link[i] = igrd[mitm.x[i]][mitm.y[i]];
+        igrd[mitm.x[i]][mitm.y[i]] = i;
+    }
+}                               // end link_items()
 
 void builder(int level_number, char level_type)
 {
@@ -208,14 +261,13 @@ void builder(int level_number, char level_type)
     {
         // do 'normal' building.  Well, except for the swamp.
         if (you.where_are_you != BRANCH_SWAMP)
-        {
             skip_build = builder_normal(level_number, level_type, sr);
+
+        if (skip_build == 0)
+        {
+            skip_build = builder_basic(level_number);
             if (skip_build == 0)
-            {
-                skip_build = builder_basic(level_number);
-                if (skip_build == 0)
-                    builder_extras(level_number, level_type);
-            }
+                builder_extras(level_number, level_type);
         }
     }
 
@@ -241,7 +293,7 @@ void builder(int level_number, char level_type)
     }
     else
     {
-        mon_wanted = random2avg(58, 3);
+        mon_wanted = random2avg(29, 3);
 
         if (you.where_are_you == BRANCH_DIS
             || you.where_are_you == BRANCH_GEHENNA
@@ -249,15 +301,15 @@ void builder(int level_number, char level_type)
             || you.where_are_you == BRANCH_TARTARUS
             || you.where_are_you == BRANCH_HALL_OF_BLADES)
         {
-            mon_wanted += random2avg(48, 3);
+            mon_wanted += random2avg(24, 3);
         }
 
         if (you.where_are_you == BRANCH_HALL_OF_BLADES)
-            mon_wanted += random2avg(48, 3);
+            mon_wanted += random2avg(24, 3);
 
         // unlikely - now only possible in HoB {dlb} 10mar2000
-        if (mon_wanted > 120)
-            mon_wanted = 120;
+        if (mon_wanted > 60)
+            mon_wanted = 60;
     }
 
     place_branch_entrances(level_number, level_type);
@@ -273,7 +325,7 @@ void builder(int level_number, char level_type)
     int items_wanted = random2avg(32, 3);
 
     if (level_number > 5 && random2(500 - level_number) <= 3)
-        items_wanted += random2(100);  // rich level!
+        items_wanted += 10 + random2(90);  // rich level!
 
     // change pre-rock (105) to rock,  and pre-floor (106) to floor
     replace_area(0,0,GXM-1,GYM-1,DNGN_BUILDER_SPECIAL_WALL, DNGN_ROCK_WALL);
@@ -2141,8 +2193,8 @@ int items(unsigned char allow_uniques,  // not just true-false,
         if (one_chance_in(10))
             mitm.special[p] += random2(8) * 10;
 
-        if (force_type != OBJ_RANDOM)           //jmf: ADD THESE
-            mitm.sub_type[p] = force_type;     //     TWO LINES!
+        if (force_type != OBJ_RANDOM)
+            mitm.sub_type[p] = force_type;
 
         quant = 1;
 
@@ -3207,13 +3259,11 @@ static void hide_doors(void)
     {
         for (dy = 1; dy < GYM-1; dy++)
         {
-            // only one out of three doors are candidates for hiding {dlb}:
-            if (grd[dx][dy] == DNGN_CLOSED_DOOR && one_chance_in(3))
+            // only one out of four doors are candidates for hiding {gdl}:
+            if (grd[dx][dy] == DNGN_CLOSED_DOOR && one_chance_in(4))
             {
                 wall_count = 0;
 
-                // first half of each conditional represents
-                // bounds checking {dlb}:
                 if (grd[dx - 1][dy] == DNGN_ROCK_WALL)
                     wall_count++;
 
@@ -3581,7 +3631,7 @@ static int builder_normal(int level_number, char level_type, spec_room &sr)
     bool done_city = false;
 
     if (you.where_are_you == BRANCH_MAIN_DUNGEON && level_type == LEVEL_DUNGEON
-        && (level_number > 7 && level_number < 23) && one_chance_in(7))
+        && level_number > 7 && level_number < 23 && one_chance_in(9))
     {
         // Can't have vaults on you.where_are_you != BRANCH_MAIN_DUNGEON levels
         build_vaults(level_number, 100);
@@ -4190,6 +4240,8 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
     }
 
     // Unique beasties:
+    int which_unique;
+
     if (level_number > 0
         && !(you.where_are_you == BRANCH_DIS
              || you.where_are_you == BRANCH_GEHENNA
@@ -4202,13 +4254,16 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
     {
         while(one_chance_in(3))
         {
-            int which_unique = -1;   //     30 in total
+            which_unique = -1;   //     30 in total
 
             while(which_unique < 0 || you.unique_creatures[which_unique])
             {
                 // sometimes,  we just quit if a unique is already placed.
                 if (which_unique >= 0 && !one_chance_in(3))
+                {
+                    which_unique = -1;
                     break;
+                }
 
                 which_unique = ((level_number > 19) ? 20 + random2(11) :
                     (level_number > 16) ? 13 + random2(10) :
@@ -4711,28 +4766,6 @@ static void beehive(spec_room &sr)
     mons_place(MONS_QUEEN_BEE, BEH_SLEEP, MHITNOT, true, queenx, queeny);
 }                               // end beehive()
 
-static void link_items(void)
-{
-    int i,j;
-
-    // link all items on the grid, plus shop inventory.
-    // DON'T link the huge pile of monster items at (0,0)
-    for (i = 0; i < MAX_ITEMS; i++)
-    {
-        if (mitm.base_type[i] == OBJ_UNASSIGNED || mitm.quantity[i] == 0
-            || mitm.y[i] == 0)
-        {
-            // item is not assigned,  or is monster item.  ignore.
-            mitm.link[i] = NON_ITEM;
-            continue;
-        }
-
-        // link to top
-        mitm.link[i] = igrd[mitm.x[i]][mitm.y[i]];
-        igrd[mitm.x[i]][mitm.y[i]] = i;
-    }
-}                               // end link_items()
-
 static void build_minivaults(int level_number, int force_vault)
 {
     // for some weird reason can't put a vault on level 1, because monster equip
@@ -4855,7 +4888,7 @@ static void build_vaults(int level_number, int force_vault)
 
     FixedVector < char, 7 > acq_item_class;
     // hack - passing chars through '...' promotes them to ints, which
-    // barfs under gcc in fixvec.h.  So don't.
+    // barfs under gcc in fixvec.h.  So don't. -- GDL
     acq_item_class[0] = OBJ_WEAPONS;
     acq_item_class[1] = OBJ_ARMOUR;
     acq_item_class[2] = OBJ_WEAPONS;
@@ -5975,7 +6008,7 @@ static int pick_an_altar(void)
                                      : DNGN_ALTAR_YREDELEMNUL);
             break;
 
-        case BRANCH_ORCISH_MINES:
+        case BRANCH_ORCISH_MINES:       // violent gods
             temp_rand = random2(5);
 
             altar_type = ((temp_rand == 0) ? DNGN_ALTAR_VEHUMET :
@@ -5985,8 +6018,9 @@ static int pick_an_altar(void)
                                            : DNGN_ALTAR_XOM);
             break;
 
-        case BRANCH_SLIME_PITS:
-            altar_type = DNGN_FLOOR;        //jmf: no altars in Slime Pits
+        case BRANCH_SLIME_PITS:             //jmf: no altars in Slime Pits
+        case BRANCH_ECUMENICAL_TEMPLE:      //or extra ones in the temple
+            altar_type = DNGN_FLOOR;
             break;
 
         case BRANCH_VAULTS: // "lawful" gods
@@ -6112,7 +6146,7 @@ static void place_shops(int level_number)
 
     no_shops = ((temp_rand > 28) ? 0 :           // 76.8% probability
                 (temp_rand > 4)  ? 1             // 19.2% probability
-                                 : random2(5));  //  4.0% probability
+                                 : 1 + random2(4));  //  4.0% probability
 
     if (no_shops == 0 || level_number < 3)
         return;
@@ -6991,6 +7025,131 @@ static void labyrinth_level(int level_number)
 
 }                               // end labyrinth_level()
 
+static bool is_wall(int x, int y)
+{
+    unsigned char feat = grd[x][y];
+
+    switch (feat)
+    {
+        case DNGN_ROCK_WALL:
+        case DNGN_STONE_WALL:
+        case DNGN_METAL_WALL:
+        case DNGN_GREEN_CRYSTAL_WALL:
+        case DNGN_WAX_WALL:
+            return true;
+        default:
+            return false;
+    }
+}
+
+
+static int box_room_door_spot(int x, int y)
+{
+    // if there is a door near us embedded in rock, we have to be a door too.
+    if ((grd[x-1][y] == DNGN_CLOSED_DOOR && is_wall(x-1,y-1) && is_wall(x-1,y+1))
+     || (grd[x+1][y] == DNGN_CLOSED_DOOR && is_wall(x+1,y-1) && is_wall(x+1,y+1))
+     || (grd[x][y-1] == DNGN_CLOSED_DOOR && is_wall(x-1,y-1) && is_wall(x+1,y-1))
+     || (grd[x][y+1] == DNGN_CLOSED_DOOR && is_wall(x-1,y+1) && is_wall(x+1,y+1)))
+    {
+        grd[x][y] = DNGN_CLOSED_DOOR;
+        return 2;
+    }
+
+    // to be a good spot for a door, we need non-wall on two sides and
+    // wall on two sides.
+    bool nor = is_wall(x, y-1);
+    bool sou = is_wall(x, y+1);
+    bool eas = is_wall(x-1, y);
+    bool wes = is_wall(x+1, y);
+
+    if (nor == sou && eas == wes && nor != eas)
+        return 1;
+
+    return 0;
+}
+
+static int box_room_doors( int bx1, int bx2, int by1, int by2, int new_doors)
+{
+    int good_doors[200];        // 1 == good spot,  2 == door placed!
+    int spot;
+    int i,j;
+    int doors_placed = new_doors;
+
+    // sanity
+    if ( 2 * ( (bx2 - bx1) + (by2-by1) ) > 200)
+        return 0;
+
+    // go through, building list of good door spots,  and replacing wall
+    // with door if we're about to block off another door.
+    int spot_count = 0;
+
+    // top & bottom
+    for(i=bx1+1; i<bx2; i++)
+    {
+        good_doors[spot_count ++] = box_room_door_spot(i, by1);
+        good_doors[spot_count ++] = box_room_door_spot(i, by2);
+    }
+    // left & right
+    for(i=by1+1; i<by2; i++)
+    {
+        good_doors[spot_count ++] = box_room_door_spot(bx1, i);
+        good_doors[spot_count ++] = box_room_door_spot(bx2, i);
+    }
+
+    if (new_doors == 0)
+    {
+        // count # of doors we HAD to place
+        for(i=0; i<spot_count; i++)
+            if (good_doors[i] == 2)
+                doors_placed++;
+
+        return doors_placed;
+    }
+
+    while(new_doors > 0 && spot_count > 0)
+    {
+        spot = random2(spot_count);
+        if (good_doors[spot] != 1)
+            continue;
+
+        j = 0;
+        for(i=bx1+1; i<bx2; i++)
+        {
+            if (spot == j++)
+            {
+                grd[i][by1] = DNGN_CLOSED_DOOR;
+                break;
+            }
+            if (spot == j++)
+            {
+                grd[i][by2] = DNGN_CLOSED_DOOR;
+                break;
+            }
+        }
+
+        for(i=by1+1; i<by2; i++)
+        {
+            if (spot == j++)
+            {
+                grd[bx1][i] = DNGN_CLOSED_DOOR;
+                break;
+            }
+            if (spot == j++)
+            {
+                grd[bx2][i] = DNGN_CLOSED_DOOR;
+                break;
+            }
+        }
+
+        // try not to put a door in the same place twice
+        good_doors[spot] = 2;
+        new_doors --;
+    }
+
+    return doors_placed;
+}
+
+
 static void box_room(int bx1, int bx2, int by1, int by2, int wall_type)
 {
     // hack -- avoid lava in the crypt. {gdl}
@@ -6998,7 +7157,7 @@ static void box_room(int bx1, int bx2, int by1, int by2, int wall_type)
          && wall_type == DNGN_LAVA)
         wall_type = DNGN_SHALLOW_WATER;
 
-    int temp_rand;              // probability determination {dlb}
+    int temp_rand, new_doors, doors_placed;
 
     // do top & bottom walls
     replace_area(bx1,by1,bx2,by1,DNGN_FLOOR,wall_type);
@@ -7008,60 +7167,21 @@ static void box_room(int bx1, int bx2, int by1, int by2, int wall_type)
     replace_area(bx1,by1+1,bx1,by2-1,DNGN_FLOOR,wall_type);
     replace_area(bx2,by1+1,bx2,by2-1,DNGN_FLOOR,wall_type);
 
-    switch (random2(4))         // guarantee one doorway into room {dlb}
-    {
-    case 0:
-        grd[bx1][by1 + random2(by2 - by1 + 1)] = DNGN_CLOSED_DOOR;
-        break;
-    case 1:
-        grd[bx2][by1 + random2(by2 - by1 + 1)] = DNGN_CLOSED_DOOR;
-        break;
-    case 2:
-        grd[bx1 + random2(bx2 - bx1 + 1)][by1] = DNGN_CLOSED_DOOR;
-        break;
-    case 3:
-        grd[bx1 + random2(bx2 - bx1 + 1)][by2] = DNGN_CLOSED_DOOR;
-        break;
-    }
+    // sometimes we have to place doors, or else we shut in other buildings' doors
+    doors_placed = box_room_doors(bx1, bx2, by1, by2, 0);
 
-    temp_rand = random2(36);
+    temp_rand = random2(100);
+    new_doors = (temp_rand > 45) ? 2 :
+                ((temp_rand > 22) ? 1 : 3);
 
-    if (temp_rand > 15)         // 55.6% probability one additional door {dlb}
-    {
-        if (temp_rand > 27)
-            grd[bx1 + random2(by2 - by1 + 1)][by1] = DNGN_CLOSED_DOOR; // 22.2%
-        else if (temp_rand > 19)
-            grd[bx1 + random2(bx2 - bx1 + 1)][by2] = DNGN_CLOSED_DOOR; // 22.2%
-        else if (temp_rand > 17)
-            grd[bx1][by1 + random2(by2 - by1 + 1)] = DNGN_CLOSED_DOOR; //  5.6%
-        else
-            grd[bx2][by1 + random2(by2 - by1 + 1)] = DNGN_CLOSED_DOOR; //  5.6%
-    }
-    else if (temp_rand > 7)     // 22.2% probability two additional doors {dlb}
-    {
-        if (temp_rand > 13)
-        {
-            grd[bx1][by1 + random2(by2 - by1 + 1)] = DNGN_CLOSED_DOOR; //  5.6%
-            grd[bx1 + random2(by2 - by1 + 1)][by1] = DNGN_CLOSED_DOOR;
-        }
-        else if (temp_rand > 11)
-        {
-            grd[bx1][by1 + random2(by2 - by1 + 1)] = DNGN_CLOSED_DOOR; //  5.6%
-            grd[bx1 + random2(bx2 - bx1 + 1)][by2] = DNGN_CLOSED_DOOR;
-        }
-        else if (temp_rand > 9)
-        {
-            grd[bx2][by1 + random2(by2 - by1 + 1)] = DNGN_CLOSED_DOOR; //  5.6%
-            grd[bx1 + random2(by2 - by1 + 1)][by1] = DNGN_CLOSED_DOOR;
-        }
-        else
-        {
-            grd[bx2][by1 + random2(by2 - by1 + 1)] = DNGN_CLOSED_DOOR; //  5.6%
-            grd[bx1 + random2(bx2 - bx1 + 1)][by2] = DNGN_CLOSED_DOOR;
-        }
-    }
-    // no "else" -> 22.2% probability NO additional doors {dlb}
-}                               // end box_room()
+    // small rooms don't have as many doors
+    if ((bx2-bx1)*(by2-by1) < 36)
+        new_doors--;
+
+    new_doors -= doors_placed;
+    if (new_doors > 0)
+        box_room_doors(bx1, bx2, by1, by2, new_doors);
+}
 
 static void city_level(int level_number)
 {
@@ -7106,12 +7226,14 @@ static void city_level(int level_number)
                 box_room(x1, x2, y1, y2, wall_type_room);
 
                 // inner room - neat.
-                if (x2 - x1 > 2 && y2 - y1 > 2 && one_chance_in(8))
+                if (x2 - x1 > 5 && y2 - y1 > 5 && one_chance_in(8))
+                {
                     box_room(x1 + 2, x2 - 2, y1 + 2, y2 - 2, wall_type);
 
-                // treasure area.. neat.
-                if (one_chance_in(4))
-                    treasure_area(level_number, x1 + 3, x2 - 3, y1 + 3, y2 - 3);
+                    // treasure area.. neat.
+                    if (one_chance_in(3))
+                        treasure_area(level_number, x1 + 3, x2 - 3, y1 + 3, y2 - 3);
+                }
             }
         }
     }
@@ -7596,7 +7718,7 @@ void define_zombie(int mid, int ztype, int cs)
     // that is, random creature from which to fashion undead
     if (ztype == 250)
     {
-        while(1)
+        while(true)
         {
             // this limit can be updated if mons->number goes >8 bits..
             test = random2(182);            // not guaranteed to be valid!

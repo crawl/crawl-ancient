@@ -281,7 +281,7 @@ void read_init_file(void)
 
         // some fields want capitals
         trim_string( field );
-        if (key != "name" && key != "crawl_dir")
+        if (!(key == "name" || key == "crawl_dir" || key == "race" || key == "class"))
             tolower_string( field );
 
         // everything not a valid line is treated as a comment

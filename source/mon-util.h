@@ -53,6 +53,7 @@
 #define M_PRIEST (1<<17)      // monster is a priest of Brian's Orc God (BOG)
 #define M_COLD_BLOOD (1<<18)
 #define M_WARM_BLOOD (1<<19)
+#define M_CONFUSED (1<<20)      // monster is perma-confused
 //jmf: it'd be nice if these next two were implimented ...
 #define M_ON_FIRE (1<<29)        // flag for Hellion-like colour shift
 #define M_FROZEN (1<<30)         // flag for ice-like colour shift
@@ -200,7 +201,8 @@ char mons_shouts(int mclass);
 /* ***********************************************************************
  * called from: describe - fight
  * *********************************************************************** */
-int exper_value(int mclass, int mHD, int maxhp);
+// int exper_value(int mclass, int mHD, int maxhp);
+int exper_value( struct monsters *monster );
 
 
 // last updated 12may2000 {dlb}

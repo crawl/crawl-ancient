@@ -156,7 +156,7 @@ int give_first_conjuration_book()
         case SP_ELF:
         case SP_HIGH_ELF:
         case SP_GREY_ELF:
-        case SP_DEEP_ELF:
+        // case SP_DEEP_ELF:
         case SP_WHITE_DRACONIAN:
         case SP_BLACK_DRACONIAN:
             return BOOK_CONJURATIONS_II;
@@ -1584,14 +1584,15 @@ void give_last_paycheck(int which_job)
     case JOB_HEALER:
     case JOB_THIEF:
         // normalized with random2avg 23jan2000 {dlb}
-        you.gold = random2avg(100, 2);
+        you.gold = random2avg(200, 2);
         break;
     case JOB_WANDERER:
         you.gold = random2avg(50, 2);
         break;
     default:
-        you.gold = random2(10);
+        you.gold = 1 + random2avg(20,2);
         break;
+    case JOB_PALADIN:
     case JOB_MONK:
         you.gold = 0;
         break;
@@ -2234,10 +2235,10 @@ void enterPlayerName(bool blankOK)
 // was a bit of prefixing like the player_* functions in player.cc. -- bwr
 bool verifyPlayerName(void)
 {
+#if defined(DOS) || defined(WIN32CONSOLE)
     static int william_tanksley_asked_for_this = 2;
 
     // quick check for CON -- blows up real good under DOS/Windows
-#if defined(DOS) || defined(WIN32CONSOLE)
     if (stricmp(you.your_name, "con") == 0)
     {
         cprintf(EOL "Sorry, that name gives your OS a headache." EOL);
@@ -2695,19 +2696,24 @@ static void create_wanderer( void )
         // Spellcaster style wanderer
 
         // Could only have learned spells in common schools...
-        const int school_list[6] =
+        const int school_list[9] =
             { SK_CONJURATIONS, SK_FIRE_MAGIC, SK_ICE_MAGIC,
-              SK_AIR_MAGIC, SK_EARTH_MAGIC, SK_ENCHANTMENTS };
+             SK_AIR_MAGIC, SK_EARTH_MAGIC, SK_ENCHANTMENTS,
+             SK_TRANSMIGRATION, SK_TRANSLOCATIONS, SK_NECROMANCY };
 
-        // and even then we only get the old elemental ones
-        const int spell_list[6] =
-            { SPELL_MAGIC_DART, SPELL_BURN, SPELL_FREEZE,
-              SPELL_ARC, SPELL_CRUSH, SPELL_BACKLIGHT };
+            //jmf: Two of those spells are gone due to their munchkinicity.
+            //     crush() and arc() are like having good melee capability.
+            //     Therefore giving them to "harder" class makes less-than-
+        //     zero sense, and they're now gone.
+        const int spell_list[9] =
+           { SPELL_MAGIC_DART, SPELL_FLAME_TONGUE, SPELL_FREEZE,
+             SPELL_SHOCK, SPELL_SANDBLAST, SPELL_CONFUSING_TOUCH,
+             SPELL_DISRUPT, SPELL_APPORTATION, SPELL_ANIMATE_SKELETON };
 
         // Choose one of the schools we have at random.
         int school = SK_SPELLCASTING;
         int num_schools = 0;
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 9; i++)
         {
             if (you.skills[ school_list[ i ]])
             {
@@ -3317,7 +3323,10 @@ void give_items_skills()
         }
         else
         {
-            you.skills[SK_FIGHTING] += 2;
+            if (you.species == SP_TROLL)  //jmf: these guys get no weapon!
+                you.skills[SK_UNARMED_COMBAT] += 2;
+            else
+                you.skills[SK_FIGHTING] += 2;
             // BWR sez Ogres & Trolls should probably start w/ Dodge 2 -- GDL
             you.skills[SK_DODGING] = 2;
         }
@@ -3331,6 +3340,12 @@ void give_items_skills()
         {
             you.inv_type[0] = WPN_QUARTERSTAFF;
             you.inv_colour[0] = BROWN;
+        }
+        else if (you.species == SP_HILL_DWARF ||
+                 you.species == SP_MOUNTAIN_DWARF)
+        {
+            you.inv_type[0] = WPN_HAMMER;
+            you.inv_colour[0] = CYAN;
         }
         else
         {
@@ -4051,23 +4066,26 @@ void give_items_skills()
 
             if (you.species == SP_GNOME)
             {
+                you.inv_quantity[1] = 1;
+                you.inv_class[1] = OBJ_WEAPONS;
+                you.inv_type[1] = WPN_SLING;
+                you.inv_plus[1] = 50;
+                you.inv_plus2[1] = 50;
+                you.inv_dam[1] = 0;
+                you.inv_colour[1] = BROWN;
+
                 you.inv_quantity[4] = 1;
-                you.inv_class[4] = OBJ_WEAPONS;
-                you.inv_type[4] = WPN_SLING;
+                you.inv_class[4] = OBJ_ARMOUR;
+                you.inv_type[4] = ARM_ROBE;
                 you.inv_plus[4] = 50;
                 you.inv_plus2[4] = 50;
                 you.inv_dam[4] = 0;
                 you.inv_colour[4] = BROWN;
+                you.equip[EQ_BODY_ARMOUR] = 4;
 
-                you.skills[SK_SLINGS] = 1;
-                you.skills[SK_THROWING] = 1;
-                you.skills[SK_EARTH_MAGIC] = 2;
             }
-            else
-            {
-                you.skills[SK_TRANSMIGRATION] = 1;
-                you.skills[SK_EARTH_MAGIC] = 3;
-            }
+            you.skills[SK_TRANSMIGRATION] = 1;
+            you.skills[SK_EARTH_MAGIC] = 3;
             break;
 
         case JOB_VENOM_MAGE:
@@ -4094,6 +4112,12 @@ void give_items_skills()
             you.inv_type[0] = WPN_QUARTERSTAFF;
             you.inv_colour[0] = BROWN;
         }
+        else if (you.species == SP_HILL_DWARF ||
+                 you.species == SP_MOUNTAIN_DWARF)
+        {
+            you.inv_type[0] = WPN_HAMMER;
+            you.inv_colour[0] = CYAN;
+        }
 
         you.inv_quantity[2] = 1;
         you.inv_dam[2] = 0;
@@ -4114,27 +4138,41 @@ void give_items_skills()
         // get their hands on a polearm of reaching they should have
         // lots of fun... -- bwr
         if (you.char_class == JOB_SUMMONER
-            && (you.species == SP_MERFOLK || you.species == SP_DEMONSPAWN
-                || you.species == SP_HILL_ORC || you.species == SP_KENKU
-                || you.species == SP_MINOTAUR))
+            && (you.species == SP_MERFOLK || you.species == SP_HILL_ORC ||
+                you.species == SP_KENKU || you.species == SP_MINOTAUR))
         {
-            if (you.species == SP_MERFOLK || you.species == SP_DEMONSPAWN)
+            if (you.species == SP_MERFOLK)
                 you.inv_type[0] = WPN_TRIDENT;
             else
                 you.inv_type[0] = WPN_SPEAR;
 
-            you.skills[SK_POLEARMS] = 2;
-            you.skills[SK_DODGING] = 2;
-            you.skills[SK_STEALTH] = 2;
+            you.skills[SK_POLEARMS] = 1;
+        }
+        else if (you.species == SP_HILL_DWARF ||
+                 you.species == SP_MOUNTAIN_DWARF)
+        {
+            you.skills[SK_MACES_FLAILS] = 1;
         }
         else
         {
             you.skills[SK_SHORT_BLADES] = 1;
-            you.skills[SK_STAVES] = 1;
-            you.skills[SK_DODGING] = 1;
-            you.skills[SK_STEALTH] = 1;
-            you.skills[ (coinflip() ? SK_DODGING : SK_STEALTH) ]++;
         }
+
+        if (you.char_class == JOB_TRANSMUTER)
+            you.skills[SK_UNARMED_COMBAT] = 1;
+        else if (you.species == SP_GNOME)
+            you.skills[SK_SLINGS]++;
+        else
+            you.skills[SK_STAVES]++;
+
+        you.skills[SK_DODGING] = 1;
+        you.skills[SK_STEALTH] = 1;
+
+        if (you.species == SP_GNOME && you.char_class == JOB_EARTH_ELEMENTALIST)
+            you.skills[SK_THROWING]++;
+        else
+            you.skills[ (coinflip() ? SK_DODGING : SK_STEALTH) ]++;
+
         break;
 
     case JOB_CRUSADER:

@@ -834,19 +834,16 @@ static bool handle_enchantment(struct monsters *monster)
             break;
 
         case ENCH_FEAR:
-            if (random2(150) <= 10 + monster->hit_dice)
+            if (random2(150) <= 5 + monster->hit_dice)
                 mons_del_ench(monster, ENCH_FEAR);
             break;
 
         case ENCH_CONFUSION:
             if (random2(120) < monster->hit_dice + 5)
             {
-                if (monster->type != MONS_BUTTERFLY
-                    && monster->type != MONS_FIRE_VORTEX
-                    && monster->type != MONS_SPATIAL_VORTEX
-                    && monster->type != MONS_BALL_LIGHTNING
-                    && monster->type != MONS_VAPOUR)
-                mons_del_ench(monster, ENCH_CONFUSION);
+                // don't delete perma-confusion
+                if (!mons_flag(monster->type, M_CONFUSED))
+                    mons_del_ench(monster, ENCH_CONFUSION);
             }
             break;
 
@@ -2277,10 +2274,10 @@ void monster(void)
                     // figure out if they fight
                     if (monsters_fight(i, targmon))
                     {
-                        if (monster->type == MONS_GIANT_BAT
-                            || monster->type == MONS_UNSEEN_HORROR
-                            || monster->type == MONS_GIANT_BLOWFLY)
+                        if (testbits(monster->flags, MF_BATTY))
                         {
+                            monster->behavior = BEH_WANDER;
+                            monster->foe = MHITNOT;
                             monster->speed_increment -= monster->speed;
                         }
 
@@ -2298,9 +2295,7 @@ void monster(void)
                 {
                     bool isFriendly = mons_friendly(monster);
                     bool attacked = false;
-                    if (monster->type == MONS_GIANT_BAT
-                        || monster->type == MONS_UNSEEN_HORROR
-                        || monster->type == MONS_GIANT_BLOWFLY)
+                    if (testbits(monster->flags, MF_BATTY))
                     {
                         if (!isFriendly)
                         {
@@ -2770,9 +2765,6 @@ static void monster_move(struct monsters *monster)
                     continue;
                 }
 
-                if (mons_intel(monster->type) < I_ANIMAL)
-                    continue;
-
                 switch (env.cloud_type[ targ_cloud ])
                 {
                 case CLOUD_FIRE:
@@ -2821,7 +2813,11 @@ static void monster_move(struct monsters *monster)
                         continue;
                     break;
 
-                // why is this classed as a harmful cloud? {dlb}
+                // dumb monsters can be fooled by smoke
+                if (mons_intel(monster->type) > I_ANIMAL || coinflip())
+                    continue;
+
+                // this isn't harmful,  but dumb critters might think so.
                 case CLOUD_GREY_SMOKE:
                 case CLOUD_GREY_SMOKE_MON:
                     if (mons_res_fire(monster->type) > 0

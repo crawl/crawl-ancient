@@ -982,7 +982,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("Your body is distorted in a weirdly horrible way!");
                 failMsg = !give_bad_mutation();
                 if (one_chance_in(2))
-                    give_bad_mutation(failMsg);
+                    give_bad_mutation(false, failMsg);
 
                 ouch(5 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;

@@ -315,13 +315,19 @@ bool your_spells(int spc2, int powc, bool allow_fail)
             while (!spell_typematch(spc2, sptype));
 
             // all spell failures give a bit of magical radiation..
-            // High level spells failing very badly will give
-            // rand2avg(9*90/60,2) + 1 ~= 8 points,  which is
-            // fairly bad..  if they hit a bad miscast effect,
-            // they'll almost certainly get a bad mutation. --GDL
+            // failure is a function of power squared multiplied
+            // by how badly you missed the spell.  High power
+            // spells can be quite nasty: 9 * 9 * 90 / 500 = 15
+            // points of contamination!
+            int nastiness = spell_mana(spc2) * spell_mana(spc2)
+                * (spell_fail(spc2) - spfl) + 250;
 
-            you.magic_contamination += random2avg((spell_mana(spc2)
-                * (spell_fail(spc2) - spfl)) / 60, 2) + 1;
+            int cont_points = nastiness / 500;
+            // handle fraction
+            if (random2(500) < (nastiness % 500))
+                cont_points++;
+
+            contaminate_player( cont_points );
 
             miscast_effect( sptype, spell_mana(spc2),
                                         spell_fail(spc2) - spfl, 100 );
@@ -368,7 +374,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         return true;
 
     case SPELL_CAUSE_FEAR:
-        mass_enchantment(4, powc);
+        mass_enchantment(ENCH_FEAR, powc, MHITYOU);
         return true;
 
     case SPELL_CREATE_NOISE:  // should be usused- bwr
@@ -572,7 +578,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         break;                  //     Sif Muna power calls with true
 
     case SPELL_MASS_CONFUSION:
-        mass_enchantment(5, powc);
+        mass_enchantment(ENCH_CONFUSION, powc, MHITYOU);
         break;
 
     case SPELL_SMITING:
@@ -710,7 +716,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         return true;
 
     case SPELL_CONTROL_UNDEAD:
-        mass_enchantment(30, powc);
+        mass_enchantment(ENCH_CHARM, powc, MHITYOU);
         return true;
 
     case SPELL_ANIMATE_SKELETON:

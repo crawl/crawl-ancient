@@ -260,10 +260,12 @@
 }
 ,
 
+// XP modifier is 5 for these, because they really aren't all that
+// dangerous, but still come out at 200+ XP
 {
     MONS_PHANTOM, 'p', BLUE, "phantom",
     M_RES_POISON | M_RES_COLD,
-    0, 10, 15, MH_UNDEAD, -4,
+    0, 5, 15, MH_UNDEAD, -4,
     { 10, 0, 0, 0 },
     { 7, 3, 5, 0 },
     3, 13, 10, 7, 250, CE_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
@@ -326,7 +328,7 @@
 
 {
     MONS_FIRE_VORTEX, 'v', RED, "fire vortex",
-    M_RES_POISON | M_RES_FIRE | M_ED_COLD | M_LEVITATE,
+    M_RES_POISON | M_RES_FIRE | M_ED_COLD | M_LEVITATE | M_CONFUSED,
     0, 5, 21, MH_NATURAL, 5000,
     { 30, 0, 0, 0 },
     { 3, 3, 5, 0 },
@@ -416,10 +418,12 @@
 }
 ,
 
+// These guys get understated because the experience code can't see
+// that they wield two weapons... I'm raising their xp modifier. -- bwr
 {
     MONS_TWO_HEADED_OGRE, 'O', LIGHTRED, "two-headed ogre",
     M_WARM_BLOOD,
-    1500, 11, 30, MH_NATURAL, -4,
+    1500, 15, 30, MH_NATURAL, -4,
     { 17, 13, 0, 0 },
     { 6, 3, 5, 0 },
     1, 4, 8, 7, 250, CE_CONTAMINATED, Z_BIG, S_SHOUT2, I_NORMAL, 1
@@ -784,7 +788,7 @@
 
 {
     MONS_BUTTERFLY, 'b', BLACK, "butterfly",
-    M_FLIES | M_ED_POISON,
+    M_FLIES | M_ED_POISON | M_CONFUSED,
     150, 10, 66, MH_NATURAL, -3,
     { 0, 0, 0, 0 },
     { 1, 3, 5, 0 },
@@ -1462,7 +1466,7 @@
 
 {
     MONS_VAPOUR, '#', LIGHTGREY, "vapour",
-    M_RES_ELEC | M_RES_POISON | M_SPELLCASTER | M_LEVITATE | M_SEE_INVIS | M_INVIS,
+    M_RES_ELEC | M_RES_POISON | M_SPELLCASTER | M_LEVITATE | M_SEE_INVIS | M_INVIS | M_CONFUSED,
     0, 21, 141, MH_NATURAL, 5000,
     { 0, 0, 0, 0 },
     { 12, 2, 3, 0 },
@@ -2130,7 +2134,7 @@
 
 {
     MONS_SPATIAL_VORTEX, 'v', BLACK, "spatial vortex",
-    M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_RES_ELEC | M_LEVITATE,
+    M_RES_POISON | M_RES_FIRE | M_RES_COLD | M_RES_ELEC | M_LEVITATE | M_CONFUSED,
     0, 5, 244, MH_NATURAL, 5000,
     { 50, 0, 0, 0 },
     { 6, 6, 6, 0 },
@@ -3030,7 +3034,7 @@
 
 {
     MONS_BALL_LIGHTNING, '*', LIGHTCYAN, "ball lightning",
-    M_FLIES | M_RES_ELEC | M_RES_FIRE | M_RES_COLD | M_RES_POISON,
+    M_FLIES | M_RES_ELEC | M_RES_FIRE | M_RES_COLD | M_RES_POISON | M_CONFUSED,
     0, 20, MONS_BALL_LIGHTNING, MH_NATURAL, 5000,
     { 5, 0, 0, 0 },
     { 30, 0, 0, 5 },

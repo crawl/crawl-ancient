@@ -99,6 +99,10 @@ void direction( struct dist &moves, int restrict )
     moves.dx = moves.dy = 0;
     moves.tx = moves.ty = 0;
 
+    // XXX.  this is ALWAYS in relation to the player. But a bit of a hack
+    // nonetheless!  --GDL
+    gotoxy( 18, 9 );
+
     int keyin = getch();
 #ifdef LINUX
     keyin = translate_keypad(keyin);

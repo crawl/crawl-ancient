@@ -48,7 +48,7 @@ bool check_mons_magres(struct monsters *monster, int pow);
  * called from: ability - item_use - spell
  * returns true if messages were generated during the enchantment
  * *********************************************************************** */
-bool mass_enchantment(int wh_enchant, int pow);
+bool mass_enchantment(int wh_enchant, int pow, int who);
 
 
 /* ***********************************************************************

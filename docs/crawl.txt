@@ -87,10 +87,14 @@ Elves:
   than other elves and losing all colouration. They are poor at hand-to-hand
   combat but excellent at fighting from a distance.
 
-  Sludge elves are a slightly degenerate race of elves. They are a bit like
-  common elves in most respects, but are not quite as good at most things
-  while being better at necromancy and some elemental magics. They advance in
-  level slightly faster, though.
+  Sludge elves are a somewhat degenerate race of elves. They are mirror images
+  of normal elves in some respects: they have no special proficiency with bows
+  or swords (long or short), nor do they have any aptitude in the traditional
+  areas of high elven magic (enchantments, conjurations and divinations). On
+  the other hand, they are superlative transmuters, and are comfortable
+  dabbling in necromantic, poison and elemental magic. As fighters they are
+  often more dangerous unarmed than armed. They advance in level slightly
+  faster than their common brethren.
 
 Dwarves:
 

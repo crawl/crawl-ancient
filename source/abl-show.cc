@@ -23,6 +23,7 @@
 #include "abl-show.h"
 
 #include <string.h>
+#include <stdio.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -326,7 +327,8 @@ void activate_ability(void)
             // don't check for hell serpents - they get hell fire,
             // never regular fire (GDL)
 
-            mpr("You breathe fire" + (power < 10)?".":"!");
+            sprintf(info, "You breathe fire%c", (power < 15)?'.':'!');
+            mpr(info);
 
             zapping( ZAP_BREATHE_FIRE, power, beam);
             break;
@@ -846,7 +848,7 @@ void activate_ability(void)
         if (!enough_mp(5, false))
             return;
 
-        mass_enchantment(30, you.skills[SK_INVOCATIONS] * 8);
+        mass_enchantment(ENCH_CHARM, you.skills[SK_INVOCATIONS] * 8, MHITYOU);
 
         dec_mp(5);
         lose_piety(2 + random2(3));

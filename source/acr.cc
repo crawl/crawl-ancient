@@ -2409,6 +2409,12 @@ static bool initialise(void)
         }
     }
 
+    for (i=0; i<50; i++)
+    {
+        you.unique_creatures[i] = 0;
+        you.unique_items[i] = 0;
+    }
+
     for (i = 0; i < 10; i++)
     {
         visible[i] = 0;

@@ -17,6 +17,7 @@
 
 #include "AppHdr.h"
 #include "mon-util.h"
+#include "monstuff.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -338,12 +339,25 @@ unsigned char mons_category(int which_mons)
 }                               // end mons_category()
 
 
-int exper_value(int mclass, int mHD, int maxhp)
+// int exper_value(int mclass, int mHD, int maxhp)
+int exper_value( struct monsters *monster )
 {
     long x_val = 0;
 
-    int speed = mons_speed(mclass);
-    int modifier = mons_exp_mod(mclass);
+    // these three are the original arguments:
+    const int  mclass      = monster->type;
+    const int  mHD         = monster->hit_dice;
+    const int  maxhp       = monster->max_hit_points;
+
+    // these are some values we care about:
+    const int  speed       = mons_speed(mclass);
+    const int  modifier    = mons_exp_mod(mclass);
+    const bool spellcaster = mons_flag( mclass, M_SPELLCASTER );
+    const bool item_usage  = mons_itemuse(mclass);
+
+    // early out for no XP monsters
+    if (mons_flag(mclass, M_NO_EXP_GAIN))
+        return (0);
 
     if (mclass == MONS_ZOMBIE_SMALL
         || mclass == MONS_ZOMBIE_LARGE
@@ -360,12 +374,109 @@ int exper_value(int mclass, int mHD, int maxhp)
         x_val = (16 + maxhp) * (mHD * mHD) / 10;
     }
 
+    // Slow monsters without spells and items often have big HD which
+    // cause the experience value to be overly large... so we'll deny
+    // them one factor.
+    if (speed < 10 && !spellcaster && !item_usage)
+    {
+        x_val /= mHD;
+    }
+
     if (modifier > 0)
     {
-        x_val *= mons_exp_mod(mclass);
+        x_val *= modifier;
         x_val /= 10;
     }
 
+
+    // Let's calculate a simple difficulty modifier -- bwr
+    int diff = 0;
+
+    // Let's look for big spells -- bwr
+    // XXX: Might want to eventually turn with into a data
+    // table for all spells and up the granularity. -- bwr
+    if (spellcaster)
+    {
+        const int msecc = ((mclass == MONS_HELLION) ? MST_BURNING_DEVIL :
+                 (mclass == MONS_PANDEMONIUM_DEMON) ? MST_GHOST
+                                                    : monster->number);
+
+        int hspell_pass[6] = { MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL,
+                               MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL };
+
+        mons_spell_list( msecc, hspell_pass );
+
+        for (int i = 0; i < 6; i++)
+        {
+            switch (hspell_pass[i])
+            {
+            case MS_PARALYSIS:
+            case MS_SMITE:
+            case MS_HELLFIRE_BURST:
+            case MS_HELLFIRE:
+            case MS_TORMENT:
+            case MS_IRON_BOLT:
+                diff += 25;
+                break;
+
+            case MS_LIGHTNING_BOLT:
+            case MS_NEGATIVE_BOLT:
+            case MS_VENOM_BOLT:
+            case MS_STICKY_FLAME:
+            case MS_DISINTEGRATE:
+            case MS_SUMMON_DEMON_GREATER:
+            case MS_BANISHMENT:
+            case MS_CRYSTAL_SPEAR:
+            case MS_TELEPORT:
+            case MS_TELEPORT_OTHER:
+                diff += 10;
+                break;
+
+            case MS_VAMPIRE_SUMMON:
+                // This one hurts the monster more than anything...
+                // remove if vampires get big rats or bats later.
+                diff -= 15;
+                break;
+
+            default:
+                break;
+            }
+        }
+    }
+
+    // let's look at regeneration
+    if (monster_descriptor( mclass, MDSC_REGENERATES ))
+        diff += 15;
+
+    // monsters at normal or fast speed with big melee damage
+    if (speed >= 10)
+    {
+        int max_melee = 0;
+        for (int i = 0; i < 4; i++)
+            max_melee += mondamage( mclass, i );
+
+        if (max_melee > 30)
+            diff += (max_melee / ((speed == 10) ? 2 : 1));
+    }
+
+    // XXX: This is a bit hackish and relies on the fact that
+    // gmon_use is 0 for non-users, 1 for door openers, and
+    // 3 for weapon users.  That will probably be fixed or
+    // changed at which point this will need adjustment.
+    diff += (item_usage * 10);
+
+    // Set a reasonable range on the difficulty modifier... these
+    // might be too extreme and need adjustment. -- bwr
+    if (diff > 100)
+        diff = 100;
+    else if (diff < -30)
+        diff = -30;
+
+    // apply difficulty
+    x_val *= (100 + diff);
+    x_val /= 100;
+
+    // modify for speed
     if (speed > 0)
     {
         x_val *= speed;
@@ -373,16 +484,14 @@ int exper_value(int mclass, int mHD, int maxhp)
     }
 
     // some trial reductions -- bwross
-    if (x_val > 100)
-        x_val = 100 + (x_val - 100) * 3 / 4;
+    // if (x_val > 100)
+    //    x_val = 100 + (x_val - 100) * 3 / 4;
 
     if (x_val > 1000)
         x_val = 1000 + (x_val - 1000) / 2;
 
     // guarantee the value is within limits
-    if (mons_flag(mclass, M_NO_EXP_GAIN))
-        x_val = 0;
-    else if (x_val <= 0)
+    if (x_val <= 0)
         x_val = 1;
     else if (x_val > 15000)
         x_val = 15000;
@@ -413,7 +522,7 @@ void mons_spell_list(unsigned char sec, int splist[6])
     splist[4] = mspell_list[x][5];      // misc2
     splist[5] = mspell_list[x][6];      // emergency
 
-    if (sec == 119)             /* ghost */
+    if (sec == MST_GHOST)             /* ghost */
     {
         for (x = 0; x < 6; x++)
         {
@@ -489,26 +598,26 @@ void define_monster(int k)
     case MONS_DEEP_ELF_KNIGHT:
     case MONS_DEEP_ELF_SOLDIER:
     case MONS_ORC_WIZARD:
-        m2_sec = random2(3);
+        m2_sec = MST_ORC_WIZARD_I + random2(3);
         break;
 
     case MONS_LICH:
     case MONS_ANCIENT_LICH:
-        m2_sec = 20 + random2(4);
+        m2_sec = MST_LICH_I + random2(4);
         break;
     case MONS_HELL_KNIGHT:
-        m2_sec = (coinflip() ? 58 : 59);
+        m2_sec = (coinflip() ? MST_HELL_KNIGHT_I : MST_HELL_KNIGHT_II);
         break;
     case MONS_NECROMANCER:
-        m2_sec = (coinflip() ? 60 : 61);
+        m2_sec = (coinflip() ? MST_NECROMANCER_I : MST_NECROMANCER_II);
         break;
     case MONS_WIZARD:
     case MONS_OGRE_MAGE:
     case MONS_DEEP_ELF_MAGE:
-        m2_sec = 62 + random2(5);
+        m2_sec = MST_WIZARD_I + random2(5);
         break;
     case MONS_DEEP_ELF_CONJURER:
-        m2_sec = (coinflip()? 97 : 98);
+        m2_sec = (coinflip()? MST_DEEP_ELF_CONJURER_I : MST_DEEP_ELF_CONJURER_II);
         break;
     case MONS_BUTTERFLY:
     case MONS_POTION_MIMIC:

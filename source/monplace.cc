@@ -135,9 +135,6 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
     // (3) decide on banding (good lord!)
     band_size = 1;
     band_monsters[0] = mon_type;
-    // no banding for monsters coming up/down the stairs
-    if (proximity == 3)
-        allow_bands = false;
 
     if (allow_bands)
     {
@@ -148,6 +145,9 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
     }
 
     // (4) for first monster, choose location.  This is pretty intensive.
+    bool proxOK;
+    bool close_to_player;
+
     if (!summoned)
     {
         int tries = 0;
@@ -195,17 +195,16 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
                 if (env.trap_type[trap] == TRAP_TELEPORT)
                     continue;
 
-            bool proxOK = true;
-            bool close_to_player;
             // check proximity to player
+            proxOK = true;
+
             switch (proximity)
             {
                 case 0:
                     break;
                 case 1:
                 case 2:
-                    if (distance(you.x_pos, you.y_pos, px, py) > 7)
-                        close_to_player = false;
+                    close_to_player = (distance(you.x_pos, you.y_pos, px, py) < 64);
 
                     if ((proximity == 1 && !close_to_player)
                         || (proximity == 2 && close_to_player))
@@ -230,8 +229,8 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
     id = place_monster_aux(mon_type, behavior, target, px, py, power, extra, true);
 
     // now, forget about banding if the first placement failed,  or there's too
-    // many monsters already
-    if (id < 0 || id+30 > MAX_MONSTERS)
+    // many monsters already,  or we successfully placed by stairs
+    if (id < 0 || id+30 > MAX_MONSTERS || proximity == 3)
         return id;
 
     // (5) for each band monster, loop call to place_monster_aux().
@@ -275,8 +274,8 @@ static int place_monster_aux(int mon_type, char behavior, int target,
         // we'll try 1000 times for a good spot
         for(i=0; i<1000; i++)
         {
-            fx = px + random2(5) - 2;
-            fy = py + random2(5) - 2;
+            fx = px + random2(7) - 3;
+            fy = py + random2(7) - 3;
 
             // occupied?
             if (mgrd[fx][fy] != NON_MONSTER)
@@ -328,7 +327,6 @@ static int place_monster_aux(int mon_type, char behavior, int target,
     else
         define_monster(id);
 
-
     // NOTE: Boris is actually a unique,  but we let him come back... :)
     if (mon_type >= MONS_TERENCE && mon_type <= MONS_MARGERY)
         you.unique_creatures[mon_type - 280] = 1;
@@ -339,18 +337,19 @@ static int place_monster_aux(int mon_type, char behavior, int target,
     if (mons_flag(mon_type, M_INVIS))
         mons_add_ench(&menv[id], ENCH_INVIS);
 
+    if (mons_flag(mon_type, M_CONFUSED))
+        mons_add_ench(&menv[id], ENCH_CONFUSION);
+
     if (mon_type == MONS_SHAPESHIFTER)
         mons_add_ench(&menv[id], ENCH_SHAPESHIFTER);
 
     if (mon_type == MONS_GLOWING_SHAPESHIFTER)
         mons_add_ench(&menv[id], ENCH_GLOWING_SHAPESHIFTER);
 
-    if (mon_type == MONS_BUTTERFLY
-             || mon_type == MONS_FIRE_VORTEX
-             || mon_type == MONS_SPATIAL_VORTEX
-             || mon_type == MONS_BALL_LIGHTNING
-             || mon_type == MONS_VAPOUR)
-        mons_add_ench(&menv[id], ENCH_CONFUSION);
+    if (mon_type == MONS_GIANT_BAT || mon_type == MONS_UNSEEN_HORROR
+        || mon_type == MONS_GIANT_BLOWFLY)
+        menv[id].flags |= MF_BATTY;
+
 
     menv[id].x = fx;
     menv[id].y = fy;

@@ -253,7 +253,8 @@ enum BEAMS                        // beam[].flavour
     BEAM_BACKLIGHT,
     BEAM_SLEEP,
     BEAM_ICE = 23,                //   23
-    BEAM_NUKE = 27                //   27
+    BEAM_NUKE = 27,               //   27
+    BEAM_RANDOM                   //   currently translates into FIRE..ACID
 };
 
 enum BOOKS
@@ -1484,7 +1485,8 @@ enum MONSTER_CATEGORIES
 enum MONSTER_FLAGS
 {
     MF_CREATED_FRIENDLY = 0x01,
-    MF_GOD_GIFT         = 0x02
+    MF_GOD_GIFT         = 0x02,
+    MF_BATTY            = 0x04
 };
 
 enum MONSTER_DAMAGE

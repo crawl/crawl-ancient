@@ -1007,6 +1007,10 @@ bool check_awaken(int mons_aw)
     if (you.invis && !mons_see_invis(monster->type))
         mons_perc -= 75;
 
+    // glowing with magical contamination isn't very stealthy
+    if (you.magic_contamination > 20)
+        mons_perc += you.magic_contamination - 10;
+
     if (mons_perc < 0)
         mons_perc = 0;
 

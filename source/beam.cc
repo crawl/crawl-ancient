@@ -94,7 +94,7 @@ static int  range_used_on_hit(struct bolt &beam);
 static void explosion1(struct bolt &pbolt);
 static void explosion_map(struct bolt &beam, int x, int y,
     int count, int dir, int r);
-static void explosion_cell(struct bolt &beam, int x, int y);
+static void explosion_cell(struct bolt &beam, int x, int y, bool drawOnly);
 
 
 /*  NEW (GDL):
@@ -142,7 +142,7 @@ void beam(struct bolt &pbolt, int inv_number)
     bool roundX, roundY;    // which to round?
     int rangeRemaining;
     bool fuzzyOK;           // fuzzification resulted in OK move
-    bool sideBlocked, topBlocked;
+    bool sideBlocked, topBlocked, random_beam;
 
 #ifdef WIZARD
     sprintf(info, "%s %s fired to %d, %d : t=%d c=%d f=%d (%d,%d) ",
@@ -331,7 +331,20 @@ void beam(struct bolt &pbolt, int inv_number)
         // above -- affect() will early out if something gets
         // hit and the beam is type 'term on target'.
         if (!beamTerminate)
+        {
+            // random beams: randomize before affect
+            random_beam = false;
+            if (pbolt.flavour == BEAM_RANDOM)
+            {
+                random_beam = true;
+                pbolt.flavour = BEAM_FIRE + random2(7);
+            }
+
             rangeRemaining -= affect(pbolt, tx, ty);
+
+            if (random_beam)
+                pbolt.flavour = BEAM_RANDOM;
+        }
 
         // always decrease range by 1
         rangeRemaining -= 1;
@@ -359,7 +372,10 @@ void beam(struct bolt &pbolt, int inv_number)
             // bounds check
             if (drawx > 8 && drawx < 26 && drawy > 0 && drawy < 18)
             {
-                textcolor(pbolt.colour);
+                if (pbolt.colour == BLACK)
+                    textcolor(random_colour());
+                else
+                    textcolor(pbolt.colour);
                 gotoxy(drawx, drawy);
                 putch(pbolt.type);
 #ifdef USE_CURSES
@@ -688,7 +704,7 @@ bool check_mons_magres(struct monsters * monster, int pow)
     // them out (or building a level or two of their base skill so they
     // aren't resisted as often). -- bwr
     if (mrs < 6 && coinflip())
-        return (false);
+        return (true);
 
     if (pow > 40)               // nested if's rather than stacked 'em
     {                           // uglier than before but slightly
@@ -731,7 +747,7 @@ bool check_mons_magres(struct monsters * monster, int pow)
 }                               // end check_mons_magres()
 
 // Enchants all monsters in player's sight.
-bool mass_enchantment(int wh_enchant, int pow)
+bool mass_enchantment(int wh_enchant, int pow, int origin)
 {
     int i;                      // loop variable {dlb}
     int p;                      // loop variable {dlb}
@@ -797,6 +813,10 @@ bool mass_enchantment(int wh_enchant, int pow)
                         msgGenerated = false;
                     }
                 }
+
+                // extra check for fear (monster needs to reevaluate behavior)
+                if (wh_enchant == ENCH_FEAR)
+                    behavior_event( monster, ME_SCARE, origin );
             }
         }                       // end "if mons_near(monster)"
     }                           // end "for i"
@@ -1056,7 +1076,7 @@ void sticky_flame_monster(int mn, bool fromPlayer, int power)
     currentFlame = mons_has_ench(monster, ENCH_STICKY_FLAME_I, ENCH_STICKY_FLAME_IV);
     if (currentFlame != ENCH_NONE)
     {
-        currentStrength = (currentFlame - ENCH_STICKY_FLAME_I) + long_last;
+        currentStrength = currentFlame - ENCH_STICKY_FLAME_I;
         yourFlame = false;
     }
     else
@@ -1065,9 +1085,11 @@ void sticky_flame_monster(int mn, bool fromPlayer, int power)
             ENCH_YOUR_STICKY_FLAME_IV);
         if (currentFlame != ENCH_NONE)
         {
-            currentStrength = (currentFlame - ENCH_YOUR_STICKY_FLAME_I) + long_last;
+            currentStrength = currentFlame - ENCH_YOUR_STICKY_FLAME_I;
             yourFlame = true;
         }
+        else
+            currentStrength = -1;           // no flame yet!
     }
 
     // delete old flame
@@ -1075,16 +1097,18 @@ void sticky_flame_monster(int mn, bool fromPlayer, int power)
     mons_del_ench(monster, ENCH_YOUR_STICKY_FLAME_I, ENCH_YOUR_STICKY_FLAME_IV);
 
     // increase poison strength,  cap at 3 (level is 0..3)
-    if (currentStrength > 4)
-        currentStrength = 4;
+    currentStrength += long_last;
+
+    if (currentStrength > 3)
+        currentStrength = 3;
 
     // now, if player flames the monster at ANY TIME, they should
     // get credit for the kill if the monster dies from napalm.  This
     // really isn't that abusable -- GDL.
     if (fromPlayer || yourFlame)
-        currentStrength += (ENCH_YOUR_STICKY_FLAME_I - 1);
+        currentStrength += ENCH_YOUR_STICKY_FLAME_I;
     else
-        currentStrength += (ENCH_STICKY_FLAME_I - 1);
+        currentStrength += ENCH_STICKY_FLAME_I;
 
     // actually do flame
     if (mons_add_ench(monster, currentStrength))
@@ -1576,7 +1600,7 @@ static bool affectsWalls(struct bolt &beam)
 
     // disintegration (or powerful disruption)
     if (beam.colour == WHITE && beam.flavour != BEAM_COLD
-        && beam.hit >= 15)
+        && beam.hit >= 20)
         return true;
 
     // eye of devestation?
@@ -1619,7 +1643,7 @@ static int  affect_wall(struct bolt &beam, int x, int y)
     // END DIGGING EFFECT
 
     // NUKE / DISRUPT
-    if ((beam.colour == WHITE && beam.flavour != BEAM_COLD && beam.hit >= 15)
+    if ((beam.colour == WHITE && beam.flavour != BEAM_COLD && beam.hit >= 20)
         || beam.flavour == BEAM_NUKE)
     {
         int targ_grid = grd[ x ][ y ];
@@ -2374,7 +2398,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
 
         // sticky flame
         if (strcmp(beam.beam_name, "sticky flame") == 0)
-            sticky_flame_monster(tid, false, hurt_final);
+            sticky_flame_monster(tid, YOU_KILL(beam.thrower), hurt_final);
 
         /* looks for missiles which aren't poison but
            are poison*ed* */
@@ -2799,78 +2823,107 @@ void explosion(struct bolt &beam)
         oldValue = setBuffering(false);
 #endif
 
-    // do center
-    explosion_cell(beam, 0, 0);
+    // --------------------- begin boom ---------------
 
-    // do the rest of it
-    for(int rad = 1; rad <= r; rad ++)
+    bool drawing = true;
+    for(int i=0; i<2; i++)
     {
-        // do sides
-        for (int ay = 1 - rad; ay <= rad - 1; ay += 1)
-        {
-            if (explode_map[-rad+9][ay+9])
-                explosion_cell(beam, -rad, ay);
-            if (explode_map[rad+9][ay+9])
-                explosion_cell(beam, rad, ay);
-        }
+        // do center
+        explosion_cell(beam, 0, 0, drawing);
 
-        // do top & bottom
-        for (int ax = -rad; ax <= rad; ax += 1)
+        // do the rest of it
+        for(int rad = 1; rad <= r; rad ++)
         {
-            if (explode_map[ax+9][-rad+9])
-                explosion_cell(beam, ax, -rad);
-            if (explode_map[ax+9][rad+9])
-                explosion_cell(beam, ax, rad);
-        }
+            // do sides
+            for (int ay = 1 - rad; ay <= rad - 1; ay += 1)
+            {
+                if (explode_map[-rad+9][ay+9])
+                    explosion_cell(beam, -rad, ay, drawing);
+                if (explode_map[rad+9][ay+9])
+                    explosion_cell(beam, rad, ay, drawing);
+            }
 
-        // new-- delay after every 'ring' {gdl}
+            // do top & bottom
+            for (int ax = -rad; ax <= rad; ax += 1)
+            {
+                if (explode_map[ax+9][-rad+9])
+                    explosion_cell(beam, ax, -rad, drawing);
+                if (explode_map[ax+9][rad+9])
+                    explosion_cell(beam, ax, rad, drawing);
+            }
+
+            // new-- delay after every 'ring' {gdl}
 #ifdef USE_CURSES
-        // If we don't refresh curses we won't
-        // guarantee that the explosion is visible
-        refresh();
+            // If we don't refresh curses we won't
+            // guarantee that the explosion is visible
+            if (drawing)
+                refresh();
 #endif
-        // only delay on real explosion
-        if (!beam.isTracer)
-            delay(25);
+            // only delay on real explosion
+            if (!beam.isTracer && drawing)
+                delay(50);
+        }
+
+        drawing = false;
     }
+
+    // ---------------- end boom --------------------------
 
 #ifdef WIN32CONSOLE
     if (!beam.isTracer)
         setBuffering(oldValue);
 #endif
 
+
     // duplicate old behavior - pause after entire explosion
     // has been drawn.
     more();
 }
 
-static void explosion_cell(struct bolt &beam, int x, int y)
+static void explosion_cell(struct bolt &beam, int x, int y, bool drawOnly)
 {
+    bool random_beam = false;
     int realx = beam.target_x + x;
     int realy = beam.target_y + y;
 
-    // always affect the spot first before drawing
-    // gives player a chance to see what is being affected.
-    affect(beam, realx, realy);
+    if (!drawOnly)
+    {
+        // random beams: randomize before affect
+        if (beam.flavour == BEAM_RANDOM)
+        {
+            random_beam = true;
+            beam.flavour = BEAM_FIRE + random2(7);
+        }
+        affect(beam, realx, realy);
+        if (random_beam)
+            beam.flavour = BEAM_RANDOM;
+    }
 
     // early out for tracer
     if (beam.isTracer)
         return;
 
     // now affect items
-    affect_items(beam, realx, realy);
+    if (!drawOnly)
+        affect_items(beam, realx, realy);
 
-    int drawx = realx - you.x_pos + 18;
-    int drawy = realy - you.y_pos + 9;
-
-    if (see_grid(realx, realy) || (realx == you.x_pos && realy == you.y_pos))
+    if (drawOnly)
     {
-        // bounds check
-        if (drawx > 8 && drawx < 26 && drawy > 0 && drawy < 18)
+        int drawx = realx - you.x_pos + 18;
+        int drawy = realy - you.y_pos + 9;
+
+        if (see_grid(realx, realy) || (realx == you.x_pos && realy == you.y_pos))
         {
-            textcolor(beam.colour);
-            gotoxy(drawx, drawy);
-            putch('#');
+            // bounds check
+            if (drawx > 8 && drawx < 26 && drawy > 0 && drawy < 18)
+            {
+                if (beam.colour == BLACK)
+                    textcolor(random_colour());
+                else
+                    textcolor(beam.colour);
+                gotoxy(drawx, drawy);
+                putch('#');
+            }
         }
     }
 }

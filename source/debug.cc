@@ -33,6 +33,7 @@
 #include "mon-util.h"
 #include "player.h"
 #include "skills.h"
+#include "skills2.h"
 #include "spell.h"
 #include "spl-util.h"
 #include "stuff.h"
@@ -480,23 +481,36 @@ void create_spec_monster_name(void)
     gets(specs);
 #endif
 
-    int i = 0;
-
-    for (i = 0; i < NUM_MONSTERS; i++)
+    int mon = -1;
+    for (int i = 0; i < NUM_MONSTERS; i++)
     {
         moname(i, 0, 1, 100, spname);
 
-        if (strstr(strlwr(spname), strlwr(specs)) != NULL)
+        char *ptr = strstr( strlwr(spname), strlwr(specs) );
+        if (ptr != NULL)
         {
-            create_monster(i, 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
-            return;
+            mpr( spname );
+            if (ptr == spname && strlen(specs) > 0)
+            {
+                // we prefer prefixes over partial matches
+                mon = i;
+                break;
+            }
+            else
+                mon = i;
         }
     }
 
-    mpr("I couldn't find that monster.");
+    if (mon == -1)
+    {
+        mpr("I couldn't find that monster.");
 
-    if (one_chance_in(20))
-        mpr("Maybe it's hiding.");
+        if (one_chance_in(20))
+            mpr("Maybe it's hiding.");
+    }
+    else
+        create_monster(mon, 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
+
 }                               // end create_spec_monster_name()
 
 
@@ -737,14 +751,51 @@ void stethoscope(int mwh)
 //---------------------------------------------------------------
 void debug_add_skills(void)
 {
-    char specs[2];
+    char specs[50];
 
-    mpr("Practice which skill? ");
+    mpr("Which skill (by name, not number)? ");
 
-    specs[0] = getche();
-    specs[1] = getche();
+#if defined(LINUX)
+    echo();
+    getstr(specs);
+    noecho();
+#elif defined(MAC) || defined(WIN32CONSOLE)
+    getstr(specs, sizeof(specs));
+#else
+    gets(specs);
+#endif
 
-    exercise(atoi(specs), 100);
+    int skill = -1;
+
+    for (int i = 0; i < NUM_SKILLS; i++)
+    {
+        // avoid the bad values:
+        if (i == SK_UNUSED_1 || (i > SK_UNARMED_COMBAT && i < SK_SPELLCASTING))
+            continue;
+
+        char sk_name[50];
+        strcpy( sk_name, skill_name(i) );
+
+        char *ptr = strstr( strlwr(sk_name), strlwr(specs) );
+        if (ptr != NULL)
+        {
+            if (ptr == sk_name && strlen(specs) > 0)
+            {
+                // we prefer prefixes over partial matches
+                skill = i;
+                break;
+            }
+            else
+                skill = i;
+        }
+    }
+
+    mpr("Exercising...");
+
+    if (skill == -1)
+        mpr("That skill doesn't seem to exist.");
+    else
+        exercise(skill, 100);
 }                               // end debug_add_skills()
 
 

@@ -2149,7 +2149,7 @@ bool give_good_mutation(bool failMsg)
     return (mutate(which_good_one, failMsg));
 }                               // end give_good_mutation()
 
-bool give_bad_mutation(bool failMsg)
+bool give_bad_mutation(bool forceMutation, bool failMsg)
 {
 
     int temp_rand = 0;          // probability determination {dlb}
@@ -2169,6 +2169,9 @@ bool give_bad_mutation(bool failMsg)
                      (temp_rand ==  2) ? MUT_DETERIORATION :
                      (temp_rand ==  1) ? MUT_BLURRY_VISION
                                        : MUT_FRAIL);
+
+    if (forceMutation)
+        which_bad_one += 1000;
 
     return (mutate(which_bad_one), failMsg);
 }                               // end give_bad_mutation()

@@ -42,10 +42,11 @@
 
 //#define WIZARD
 
-//jmf: some references for words I used below:
-// Peltast http://www.geocities.com/Athens/Aegean/9659/shields_main.htm
-// Phalangite http://www.users.cts.com/funtv/j/jjartist/EpiroteScenario1.htm
-// Yeoman: http://snt.student.utwente.nl/campus/sagi/artikel/longbow/longbow.html
+/* jmf: some references for words I used below:
+ Peltast http://www.geocities.com/Athens/Aegean/9659/shields_main.htm
+ Phalangite http://www.users.cts.com/funtv/j/jjartist/EpiroteScenario1.htm
+ Yeoman: http://snt.student.utwente.nl/campus/sagi/artikel/longbow/longbow.html
+*/
 
 char *skills[50][5] = {
     {"Fighting", "Grunt", "Veteran", "Warrior", "Slayer"},      // 0
@@ -86,7 +87,7 @@ char *skills[50][5] = {
     {"Fire Magic", "Firebug", "Arsonist", "Pyromaniac", "Infernalist"},
     {"Ice Magic", "Frost Mage", "Ice Mage", "Cryomancer", "Englaciator"},
     {"Air Magic", "Wind Mage", "Cloud Mage", "Sky Mage", "Storm Mage"}, // 35
-    {"Earth Magic", "Digger", "Geomancer", "Petrifier", "Earth Mage"},
+    {"Earth Magic", "Digger", "Geomancer", "Petrodigitator", "Earth Mage"},
     {"Poison Magic", "Stinger", "Tainter", "Poisoner", "Venom Mage"},
     {"Invocations", "Believer", "Servant", "Worldly Agent", "Avatar"},  // 38
 
@@ -325,18 +326,18 @@ int spec_skills[ NUM_SPECIES ][39] = {
      },
 
     {                           // SP_SLUDGE_ELF (6)
-     100,                       // SK_FIGHTING
-     80,                        // SK_SHORT_BLADES
-     85,                        // SK_LONG_SWORDS
+     80,                        // SK_FIGHTING
+     110,                       // SK_SHORT_BLADES
+     110,                       // SK_LONG_SWORDS
      110,                       // SK_UNUSED_1
      130,                       // SK_AXES
      140,                       // SK_MACES_FLAILS
      140,                       // SK_POLEARMS
      100,                       // SK_STAVES
      100,                       // SK_SLINGS
-     70,                        // SK_BOWS
+     100,                       // SK_BOWS
      100,                       // SK_CROSSBOWS
-     80,                        // SK_DARTS
+     100,                       // SK_DARTS
      70,                        // SK_THROWING
      140,                       // SK_ARMOUR
      70,                        // SK_DODGING
@@ -344,25 +345,25 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_STABBING
      130,                       // SK_SHIELDS
      100,                       // SK_TRAPS_DOORS
-     90,                        // SK_UNARMED_COMBAT
+     80,                        // SK_UNARMED_COMBAT
      100,                       // undefined
      100,                       // undefined
      100,                       // undefined
      100,                       // undefined
      100,                       // undefined
      70,                        // SK_SPELLCASTING
-     90,                        // SK_CONJURATIONS
-     110,                       // SK_ENCHANTMENTS
+     130,                       // SK_CONJURATIONS
+     130,                       // SK_ENCHANTMENTS
      90,                        // SK_SUMMONINGS
-     100,                       // SK_NECROMANCY
+     90,                        // SK_NECROMANCY
      100,                       // SK_TRANSLOCATIONS
      60,                        // SK_TRANSMIGRATION
-     100,                       // SK_DIVINATIONS
-     95,                        // SK_FIRE_MAGIC
-     95,                        // SK_ICE_MAGIC
-     95,                        // SK_AIR_MAGIC
-     95,                        // SK_EARTH_MAGIC
-     100,                       // SK_POISON_MAGIC
+     130,                       // SK_DIVINATIONS
+     80,                        // SK_FIRE_MAGIC
+     80,                        // SK_ICE_MAGIC
+     80,                        // SK_AIR_MAGIC
+     80,                        // SK_EARTH_MAGIC
+     80,                        // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
      },
 

@@ -45,10 +45,6 @@
 
 extern bool wield_change;       // defined in output.cc
 
-// this does not belong in enum.h until well-implemented(!!!) {dlb}:
-//jmf: why not? there's tons of stuff in there that isn't.
-//     including your CE_foos, for a pointed example.
-
 enum DEBRIS                 // jmf: add for shatter, dig, and Giants to throw
 {
     DEBRIS_METAL,           //    0
@@ -252,7 +248,11 @@ bool mons_del_ench(struct monsters *mon, int ench, int ench2)
     if (ench == ENCH_INVIS)
     {
         // invisible monsters stay invisible
-        if (!mons_flag(mon->type, M_INVIS))
+        if (mons_flag(mon->type, M_INVIS))
+        {
+            mon->enchantment[p] = ENCH_INVIS;
+        }
+        else
         {
             if (monster_habitat(mon->type) == DNGN_FLOOR
                 || mon->number != 1)
@@ -323,6 +323,7 @@ bool mons_add_ench(struct monsters *mon, int ench)
         else
             mon->speed /= 2;
     }
+
     return true;
 }
 
@@ -959,9 +960,11 @@ void cast_shatter(int pow)
     if (damage)
         ouch(damage, 0, KILLED_BY_TARGETTING);
 
-    apply_area_within_radius(shatter_items, you.x_pos, you.y_pos, pow, 4, 0);
-    apply_area_within_radius(shatter_monsters, you.x_pos, you.y_pos, pow, 4, 0);
-    apply_area_within_radius(shatter_walls, you.x_pos, you.y_pos, pow, 4, 0);
+    int rad = 1 + (you.skills[SK_EARTH_MAGIC]/4);
+
+    apply_area_within_radius(shatter_items, you.x_pos, you.y_pos, pow, rad, 0);
+    apply_area_within_radius(shatter_monsters, you.x_pos, you.y_pos, pow, rad, 0);
+    apply_area_within_radius(shatter_walls, you.x_pos, you.y_pos, pow, rad, 0);
 }                               // end cast_shatter()
 
 // cast_forescry: raises evasion (by 8 currently) via divination
@@ -1781,7 +1784,7 @@ static int discharge_monsters(char x, char y, int pow, int garbage)
         // intelligently), and won't be rerolled (the bolt damage
         // calculated in it_use2.cc is rerolled in beam.cc so it
         // needs to be twice as large). -- bwr
-        damage = 1 + random2(5) + random2(pow) / 15;
+        damage = 3 + random2(5) + random2(pow) / 15;
 
         beam.flavour = BEAM_ELECTRICITY;
 
@@ -1807,8 +1810,22 @@ void cast_discharge(int pow)
     int dam;
 
     dam = apply_random_around_player( discharge_monsters, pow, num_targs );
-    if (dam == 0)
-        mpr("The air around you crackles with energy.");
+    if (dam == 0) {
+        if (coinflip())
+            mpr("The air around you crackles with electrical energy.");
+        else {
+            bool plural = coinflip();
+            sprintf(info, "%s blue arc%s ground%s harmlessly %s you.",
+                plural ? "Some" : "A",
+                plural ? "s" : "",
+                plural ? "" : "s",
+                plural ? " themselves" : "s itself",
+                plural ? "around" : (coinflip() ? "beside" :
+                                     coinflip() ? "behind" : "before")
+                );
+            mpr(info);
+        }
+    }
 }                               // end cast_discharge()
 
 // NB: this must be checked against the same effects

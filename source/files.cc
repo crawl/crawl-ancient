@@ -754,15 +754,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
     moving_level = false;
 
-    for (count_x = 0; count_x < MAX_ITEMS; count_x++)
-        mitm.link[count_x] = NON_ITEM;
-
-    for (i = 0; i < GXM; i++)
-        for (j = 0; j < GYM; j++)
-            igrd[i][j] = NON_ITEM;
-
     // LOAD various tags
-
     char majorVersion;
     char minorVersion;
 
@@ -786,6 +778,8 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
     // POST-LOAD tasks :
 
+    link_items();
+
     redraw_all();
 
     // closes certain gates if you're on the way out
@@ -806,69 +800,50 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }
     }
 
-    // XXX what is level 35?  It currently doesn't exist..
-    if (you.your_level == 35 && stair_taken >= DNGN_STONE_STAIRS_UP_I)
+    if (stair_taken == DNGN_FLOOR)
     {
-        do
+        for (count_x = 0; count_x < GXM; count_x++)
         {
-            you.x_pos = 10 + random2(GXM - 10);
-            you.y_pos = 10 + random2(GYM - 10);
+            for (count_y = 0; count_y < GYM; count_y++)
+            {
+                if (grd[count_x][count_y] == stair_taken)
+                    goto found_stair;
+            }
         }
-        while (grd[you.x_pos][you.y_pos] != DNGN_FLOOR
-               || mgrd[you.x_pos][you.y_pos] != NON_MONSTER);
-
-        count_x = you.x_pos;
-        count_y = you.y_pos;
-
-        goto found_stair;
     }
-    else
+
+    if (stair_taken >= DNGN_RETURN_DUNGEON_I && stair_taken < 150)
+        stair_taken -= 20;
+    else if (stair_taken >= DNGN_ENTER_ORCISH_MINES
+             && stair_taken <= DNGN_ENTER_SWAMP)
     {
-        if (stair_taken == DNGN_FLOOR)
+        stair_taken += 20;
+    }
+    else if (stair_taken < DNGN_STONE_STAIRS_UP_I)
+        stair_taken += 4;
+    else
+        stair_taken -= 4;
+
+    for (count_x = 0; count_x < GXM; count_x++)
+    {
+        for (count_y = 0; count_y < GYM; count_y++)
         {
-            for (count_x = 0; count_x < GXM; count_x++)
-            {
-                for (count_y = 0; count_y < GYM; count_y++)
-                {
-                    if (grd[count_x][count_y] == stair_taken)
-                        goto found_stair;
-                }
-            }
+            if (grd[count_x][count_y] == stair_taken)
+                goto found_stair;
         }
+    }
 
-        if (stair_taken >= DNGN_RETURN_DUNGEON_I && stair_taken < 150)
-            stair_taken -= 20;
-        else if (stair_taken >= DNGN_ENTER_ORCISH_MINES
-                 && stair_taken <= DNGN_ENTER_SWAMP)
+    if (stair_taken < DNGN_STONE_STAIRS_UP_I)
+        stair_taken = DNGN_STONE_STAIRS_DOWN_I;
+    else
+        stair_taken = DNGN_STONE_STAIRS_UP_I;
+
+    for (count_x = 0; count_x < GXM; count_x++)
+    {
+        for (count_y = 0; count_y < GYM; count_y++)
         {
-            stair_taken += 20;
-        }
-        else if (stair_taken < DNGN_STONE_STAIRS_UP_I)
-            stair_taken += 4;
-        else
-            stair_taken -= 4;
-
-        for (count_x = 0; count_x < GXM; count_x++)
-        {
-            for (count_y = 0; count_y < GYM; count_y++)
-            {
-                if (grd[count_x][count_y] == stair_taken)
-                    goto found_stair;
-            }
-        }
-
-        if (stair_taken < DNGN_STONE_STAIRS_UP_I)
-            stair_taken = DNGN_STONE_STAIRS_DOWN_I;
-        else
-            stair_taken = DNGN_STONE_STAIRS_UP_I;
-
-        for (count_x = 0; count_x < GXM; count_x++)
-        {
-            for (count_y = 0; count_y < GYM; count_y++)
-            {
-                if (grd[count_x][count_y] == stair_taken)
-                    goto found_stair;
-            }
+            if (grd[count_x][count_y] == stair_taken)
+                goto found_stair;
         }
     }
 
@@ -902,6 +877,9 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
         perror(info);
         end(-1);
     }
+
+    // nail all items to the ground
+    unlink_items();
 
     // 4.0 initial genesis of saved format
     // 4.1 added attitude tag
@@ -1037,13 +1015,18 @@ void load_ghost(void)
         menv[imn].evasion = ghost.values[1];
         menv[imn].speed = 10;
         menv[imn].speed_increment = 70;
+        menv[imn].attitude = ATT_HOSTILE;
+        menv[imn].behavior = BEH_WANDER;
+        menv[imn].flags = 0;
+        menv[imn].foe = MHITNOT;
+        menv[imn].foe_memory = 0;
 
         menv[imn].number = 250;
         for(int i=14; i<20; i++)
         {
             if (ghost.values[i] != MS_NO_SPELL)
             {
-                menv[i].number = 119;
+                menv[i].number = MST_GHOST;
                 break;
             }
         }

@@ -457,26 +457,14 @@ void simulacrum(int power)
 
 void dancing_weapon(int pow, bool force_hostile)
 {
-    int numsc = 21 + (random2(pow) / 5);
+    int numsc = ENCH_ABJ_II + (random2(pow) / 5);
 
-    if (numsc > 25)
-        numsc = 25;
+    if (numsc > ENCH_ABJ_VI)
+        numsc = ENCH_ABJ_VI;
 
     int summs = 0;
     int i = 0;
     char behavi = BEH_FRIENDLY;
-    FixedVector < char, 2 > empty;
-
-    if (!empty_surrounds(you.x_pos, you.y_pos, DNGN_FLOOR, false, empty))
-    {
-      failed_spell:
-        if (silenced(you.x_pos, you.y_pos))
-            mpr("Your weapon vibrates.");
-        else
-            mpr("You hear a popping sound.");
-
-        return;
-    }
 
     if (you.equip[EQ_WEAPON] == -1
         || you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS
@@ -486,24 +474,13 @@ void dancing_weapon(int pow, bool force_hostile)
         goto failed_spell;
     }
 
-    if (you.inv_plus[you.equip[EQ_WEAPON]] >= 100 || force_hostile)
-        behavi = BEH_HOSTILE; // cursed weapons become hostile
-
-    if ((summs = create_monster( MONS_DANCING_WEAPON, numsc, behavi, empty[0],
-                                        empty[1], you.pet_target, 1) ) != -1)
-    {
-        goto failed_spell;
-    }
-
+    // FIRST, find an item
     for (i = 0; i < MAX_ITEMS; i++)
     {
-        if (i >= 480)
-        {
-            mpr("The demon of the infinite void grins at you.");
-            return;
-        }
+        if (i > MAX_ITEMS - 20)
+            goto failed_spell;
 
-        if (!mitm.quantity[i])
+        if (mitm.quantity[i] == 0 || mitm.base_type[i] == OBJ_UNASSIGNED)
         {
             mitm.id[i] = you.inv_ident[you.equip[EQ_WEAPON]];
             mitm.base_type[i] = you.inv_class[you.equip[EQ_WEAPON]];
@@ -518,6 +495,20 @@ void dancing_weapon(int pow, bool force_hostile)
         }
     }                           // end for i loop
 
+    if (you.inv_plus[you.equip[EQ_WEAPON]] >= 100 || force_hostile)
+        behavi = BEH_HOSTILE; // cursed weapons become hostile
+
+    summs = create_monster ( MONS_DANCING_WEAPON, numsc, behavi, you.x_pos,
+        you.y_pos, you.pet_target, 1);
+
+    if (summs < 0)
+    {
+        // delete the item before failing!
+        mitm.base_type[i] = OBJ_UNASSIGNED;
+        mitm.quantity[i] = 0;
+        goto failed_spell;
+    }
+
     in_name(you.equip[EQ_WEAPON], 4, str_pass);
     strcpy(info, str_pass);
     strcat(info, " dances into the air!");
@@ -530,6 +521,11 @@ void dancing_weapon(int pow, bool force_hostile)
 
     menv[summs].inv[MSLOT_WEAPON] = i;
     menv[summs].number = mitm.colour[i];
+
+    return;
+
+failed_spell:
+    mpr("Your weapon vibrates crazily for a second.");
 }                               // end dancing_weapon()
 
 static bool monster_on_level(int monster)

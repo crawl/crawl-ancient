@@ -416,37 +416,102 @@ char *god_name(int which_god,bool long_name) // mv - rewritten
         sprintf(buffer, "The Shining One");
         break;
     case GOD_KIKUBAAQUDGHA:
-        sprintf(buffer, "Kikubaaqudgha%s", long_name?" the Vile":"");
+        strcpy(buffer, "Kikubaaqudgha");
         break;
     case GOD_YREDELEMNUL:
         sprintf(buffer, "Yredelemnul%s", long_name?" the Dark":"");
         break;
     case GOD_XOM:
-        sprintf(buffer, "Xom%s", long_name?" of Chaos":"");
+        strcpy(buffer, "Xom");
+        if (long_name) {
+          strcat(buffer, " ");
+          switch(random2(1000)) {
+          default:
+            strcat(buffer, "of Chaos"); break;
+          case 1:
+            strcat(buffer, "the Random");
+                     if (coinflip())
+                       strcat(buffer, coinflip()?"master":" Number God");
+            break;
+          case 2:
+            strcat(buffer, "the Tricky"); break;
+          case 3:
+            sprintf(buffer, "Xom the %sredictible", coinflip()?"Less-P":"Unp");
+            break;
+          case 4:
+            strcat(buffer, "of Many Doors"); break;
+          case 5:
+            strcat(buffer, "the Capricious"); break;
+          case 6:
+            strcat(buffer, "of ");
+            strcat(buffer, coinflip() ? "Bloodstained" : "Enforced");
+            strcat(buffer, " Whimsey");
+            break;
+          case 7:
+            strcat(buffer, "\"What was your username?\" *clickity-click*");
+            break;
+          case 8:
+            strcat(buffer, "of Bone-Dry Humour"); break;
+          case 9:
+            strcat(buffer, "of ");
+            strcat(buffer, coinflip() ? "Malevolent" : "Malicious");
+            strcat(buffer, " Giggling");
+            break;
+          case 10:
+            strcat(buffer, "the Psycho");
+            strcat(buffer, coinflip() ? "tic" : "path");
+            break;
+          case 11:
+            strcat(buffer, "of ");
+                     switch(random2(5)) {
+                     case 0: strcat(buffer, "Gnomic"); break;
+                     case 1: strcat(buffer, "Ineffable"); break;
+                     case 2: strcat(buffer, "Fickle"); break;
+                     case 3: strcat(buffer, "Swiftly Tilting"); break;
+                     case 4: strcat(buffer, "Unknown"); break;
+                     }
+                     strcat(buffer, " Intent");
+                     if (coinflip()) strcat(buffer, "ion");
+            break;
+          case 12:
+            sprintf(buffer, "The Xom-Meister");
+            if (coinflip())
+              strcat(buffer, ", Xom-a-lom-a-ding-dong");
+            else if (coinflip())
+              strcat(buffer, ", Xom-o-Rama");
+            else if (coinflip())
+              strcat(buffer, ", Xom-Xom-bo-Bom, Banana-Fana-fo-Fom");
+            break;
+          case 13:
+            strcat(buffer, "the Begettor of ");
+            strcat(buffer, coinflip() ? "Turbulence" : "Discontinuities");
+            break;
+          }
+        }
         break;
     case GOD_VEHUMET:
-        sprintf(buffer, "Vehumet%s", long_name?" the Annihilator":"");
+        strcpy(buffer, "Vehumet");
         break;
     case GOD_OKAWARU:
-        sprintf(buffer, "Okawaru%s", long_name?" the Warmaster":"");
+        sprintf(buffer, "%sOkawaru", long_name?"Warmaster ":"");
         break;
     case GOD_MAKHLEB:
         sprintf(buffer, "Makhleb%s", long_name?" the Destroyer":"");
         break;
     case GOD_SIF_MUNA:
-        sprintf(buffer, "Sif Muna%s", long_name?" the Eldritch":"");
+        sprintf(buffer, "Sif Muna%s", long_name?" the Loreminder":"");
         break;
     case GOD_TROG:
         sprintf(buffer, "Trog%s", long_name?" the Fierce":"");
         break;
     case GOD_NEMELEX_XOBEH:
-        sprintf(buffer, "Nemelex Xobeh%s", long_name?" the Trickster":"");
+        strcpy(buffer, "Nemelex Xobeh");
         break;
     case GOD_ELYVILON:
         sprintf(buffer, "Elyvilon%s", long_name?" the Healer":"");
         break;
     default:
-        sprintf(buffer, "Lord of Bugs (%d)", which_god);
+        sprintf(buffer, "The Buggy One (%d)", which_god);
 
     }
         return buffer;
@@ -725,7 +790,7 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
             temp_rand = random2(3);
 
             god_speaks(GOD_XOM,
-                (temp_rand == 0) ? "\"Take this token of my 'esteem'.\"" :
+                (temp_rand == 0) ? "\"Take this token of my esteem.\"" :
                 (temp_rand == 1) ? "Xom grants you a gift!"
                                  : "Xom's generous nature manifests itself.");
 
@@ -911,7 +976,7 @@ void done_good(char thing_done, int pgain)
     case GOOD_HACKED_CORPSE:    // NB - pgain is you.experience_level (maybe)
         switch (you.religion)
         {
-        case GOD_KIKUBAAQUDGHA:
+        // case GOD_KIKUBAAQUDGHA:
         case GOD_OKAWARU:
         case GOD_MAKHLEB:
         case GOD_TROG:
@@ -920,8 +985,8 @@ void done_good(char thing_done, int pgain)
                 gain_piety(1);
             break;
 
-        case GOD_ZIN:
-        case GOD_SHINING_ONE:
+        // case GOD_ZIN:
+        // case GOD_SHINING_ONE:
         case GOD_ELYVILON:
             simple_god_message(" did not appreciate that!");
 
@@ -2279,9 +2344,6 @@ void handle_god_time(void)
     if (one_chance_in(100))
     {
         // Choose a god randomly from those to whom we owe penance.
-        //jmf: changed so every god has equal opportunity here
-        //bwr: returned it back to the original algoritm (which actually
-        // works... as opposed to jmf's which gives a scew to earlier gods)
         //
         // Proof: (By induction)
         //

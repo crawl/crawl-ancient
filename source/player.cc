@@ -1869,6 +1869,11 @@ void gain_exp(unsigned int exp_gained)
         return;
     }
 
+#ifdef DEBUG
+    sprintf( info, "gain_exp: %d", exp_gained );
+    mpr( info );
+#endif
+
     if (you.experience + exp_gained > 8999999)
         you.experience = 8999999;
     else
@@ -2833,15 +2838,7 @@ void display_char_status(void)
         mpr(info);
     }
 
-    if (you.magic_contamination > 5)
-    {
-        sprintf(info, "You are %s with residual magics%c",
-            (you.magic_contamination > 25) ? "practically glowing" :
-            (you.magic_contamination > 15) ? "heavily infused"
-                                           : "contaminated",
-            (you.magic_contamination > 25) ? '!' : '.');
-        mpr(info);
-    }
+    contaminate_player( 0, true );
 
     if (you.confusing_touch)
     {
@@ -3592,3 +3589,64 @@ void priest_spells( int priest_pass[10], char religious )
 //   95 something else
 
 ****************************************************************** */
+void contaminate_player(int change, bool statusOnly)
+{
+    // get current contamination level
+    int old_level;
+    int new_level;
+
+    old_level = (you.magic_contamination > 60)?(you.magic_contamination / 20 + 2) :
+                (you.magic_contamination > 40)?4 :
+                (you.magic_contamination > 25)?3 :
+                (you.magic_contamination > 15)?2 :
+                (you.magic_contamination > 5)?1  : 0;
+
+    // make the change
+    if (change + you.magic_contamination < 0)
+        you.magic_contamination = 0;
+    else
+    {
+        if (change + you.magic_contamination > 250)
+            you.magic_contamination = 250;
+        else
+            you.magic_contamination += change;
+    }
+
+    // figure out new level
+    new_level = (you.magic_contamination > 60)?(you.magic_contamination / 20 + 2) :
+                (you.magic_contamination > 40)?4 :
+                (you.magic_contamination > 25)?3 :
+                (you.magic_contamination > 15)?2 :
+                (you.magic_contamination > 5)?1  : 0;
+
+    if (statusOnly)
+    {
+        if (new_level > 0)
+        {
+            if (new_level > 3)
+            {
+                strcpy(info, (new_level == 4) ?
+                    "Your entire body has taken on an eerie glow!" :
+                    "You are engulfed in a nimbus of crackling magics!");
+            }
+            else
+            {
+                sprintf(info, "You are %s with residual magics%c",
+                    (new_level == 3) ? "practically glowing" :
+                    (new_level == 2) ? "heavily infused"
+                                     : "contaminated",
+                    (new_level == 3) ? '!' : '.');
+            }
+
+            mpr(info);
+        }
+        return;
+    }
+
+    if (new_level == old_level)
+        return;
+
+    sprintf(info, "You feel %s contaminated with magical energies.",
+        (change < 0)?"less":"more");
+    mpr(info);
+}
