@@ -52,7 +52,6 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
     unsigned char x1, x2, y1, y2;
     unsigned char items_placed = 0;
     int thickness = random2(70) + 30;
-    int what_was_there;
     int thing_created;
     unsigned int rooms_done = 0;
     unsigned int rooms_to_do = 0;
@@ -141,8 +140,8 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
                                               OBJ_RANDOM, 1, 51, 250);
                     }
 
-                    what_was_there = igrd[i][j];
-                    mitm.link[thing_created] = what_was_there;
+                    // link to top
+                    mitm.link[thing_created] = igrd[i][j];
                     igrd[i][j] = thing_created;
                     items_placed++;
                 }

@@ -747,9 +747,8 @@ void acquirement(unsigned char force_class)
 
         canned_msg(MSG_SOMETHING_APPEARS);
 
-        int what_was_there = igrd[you.x_pos][you.y_pos];
-
-        mitm.link[thing_created] = what_was_there;
+        // link to top
+        mitm.link[thing_created] = igrd[you.x_pos][you.y_pos];
         igrd[you.x_pos][you.y_pos] = thing_created;
     }
     return;

@@ -4472,8 +4472,9 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_ETTIN:
-        DEBUGSTR("bad monster?");       // it has been enum'ed 16jan2000 {dlb}
-        description = "";
+        description = "A large, two headed humanoid.   Most often seen "
+            "wielding two weapons,  so that the heads will have one less "
+            "thing to bicker about.";
         break;
 
     case MONS_FUNGUS:

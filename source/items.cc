@@ -729,9 +729,8 @@ bool move_top_item( int src_x, int src_y, int dest_x, int dest_y )
     igrd[ src_x ][ src_y ] = mitm.link[ item ];
 
     // Now we'll add the item to the top of the destination stack
-    int tmp = igrd[ dest_x ][ dest_y ];
+    mitm.link[ item ] = igrd[dest_x][dest_y];
     igrd[ dest_x ][ dest_y ] = item;
-    mitm.link[ item ] = tmp;
 
     return (true);
 }

@@ -143,17 +143,9 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx,
         }
     }                           // end of o loop
 
-    if (igrd[chx][chy] == NON_ITEM)
-    {
-        igrd[chx][chy] = o;
-    }
-    else
-    {
-        int hug = igrd[chx][chy];
-
-        igrd[chx][chy] = o;
-        mitm.link[o] = hug;
-    }
+    // link to top
+    mitm.link[o] = igrd[chx][chy];
+    igrd[chx][chy] = o;
 
     // One day I'll add code for various monster organs.
 
@@ -217,17 +209,9 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx,
             }
         }
 
-        if (igrd[chx][chy] == NON_ITEM)
-        {
-            igrd[chx][chy] = o;
-        }
-        else
-        {
-            int hug = igrd[chx][chy];
-
-            igrd[chx][chy] = o;
-            mitm.link[o] = hug;
-        }
+        // link to top
+        mitm.link[o] = igrd[chx][chy];
+        igrd[chx][chy] = o;
     }
 }                               // end place_chunks()
 
@@ -1770,15 +1754,9 @@ bool trap_item(char base_type, char sub_type, char beam_x, char beam_y)
         }
     }                           // end of o loop
 
-    if (igrd[beam_x][beam_y] == NON_ITEM)
-        igrd[beam_x][beam_y] = o;
-    else
-    {
-        int hug = igrd[beam_x][beam_y];
-
-        igrd[beam_x][beam_y] = o;
-        mitm.link[o] = hug;
-    }
+    // link to top
+    mitm.link[o] = igrd[beam_x][beam_y];
+    igrd[beam_x][beam_y] = o;
 
     return true;
 }                               // end trap_item()

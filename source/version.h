@@ -34,11 +34,11 @@
 #define VERSION_H
 
 
-// last updated 20feb2001 {gdl}
+// last updated 04august2001 {gdl}
 /* ***********************************************************************
  * called from: chardump - command - newgame
  * *********************************************************************** */
-#define VERSION "4.0.0 beta 17"
+#define VERSION "4.0.0 beta 18"
 
 
 // last updated 20feb2001 {GDL}

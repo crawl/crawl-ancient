@@ -502,6 +502,10 @@ static void handle_behavior(struct monsters *mon)
     bool isHealthy = (mon->hit_points > mon->max_hit_points / 2);
     bool isSmart = (mons_intel(mon->type) > I_ANIMAL);
     bool isScared = mons_has_ench(mon, ENCH_FEAR);
+    // immobility logic stolen from later on in monster().. argh!  --gdl
+    bool isMobile = !(mon->type == MONS_OKLOB_PLANT || mon->type == MONS_CURSE_SKULL
+                    || (mon->type >= MONS_CURSE_TOE && mon->type <= MONS_POTION_MIMIC));
+
 
     // check for confusion -- early out.
     if (mons_has_ench(mon, ENCH_CONFUSION))
@@ -727,7 +731,7 @@ static void handle_behavior(struct monsters *mon)
                     mon->target_y = menv[mon->foe].y;
                 }
 
-                if (isHurt && isSmart)
+                if (isHurt && isSmart && isMobile)
                     new_beh = BEH_FLEE;
 
                 break;
@@ -1622,7 +1626,7 @@ static bool handle_scroll(struct monsters *monster)
 
             if (mitm.quantity[monster->inv[MSLOT_SCROLL]] < 1)
             {
-                mitm.quantity[monster->inv[MSLOT_SCROLL]] == 0; // paranoia
+                mitm.quantity[monster->inv[MSLOT_SCROLL]] = 0; // paranoia
                 monster->inv[MSLOT_SCROLL] = NON_ITEM;
             }
         }
@@ -2432,7 +2436,7 @@ static bool handle_pickup(struct monsters *monster)
         if (mitm.quantity[igrd[monster->x][monster->y]] < 1)
         {
             igrd[monster->x][monster->y] =
-                                    mitm.link[igrd[monster->x][monster->y]];
+                mitm.link[igrd[monster->x][monster->y]];
         }
 
         monster->hit_points += hps_gained;

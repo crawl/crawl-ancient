@@ -3334,7 +3334,7 @@ void read_scroll(void)
         affected = 0;
         for (i = EQ_CLOAK; i < EQ_LEFT_RING; i++)
         {
-            ok_to_curse[i] == (you.equip[i] != -1
+            ok_to_curse[i] = (you.equip[i] != -1
                 && you.inv_plus[you.equip[i]] < 130);
 
             if (ok_to_curse[i])
