@@ -113,6 +113,7 @@
 #include "spl-book.h"
 #include "spl-util.h"
 #include "stuff.h"
+#include "tags.h"
 #include "transfor.h"
 #include "view.h"
 #include "wpn-misc.h"
@@ -329,6 +330,8 @@ int main(int argc, char *argv[])
             // initialise())... then they'll all need messages -- bwr
             break;
         }
+        // warn player about their weapon, if unsuitable
+        wield_warning(false);
     }
 
     while (true)
@@ -2420,6 +2423,9 @@ static bool initialise(void)
     {
         visible[i] = 0;
     }
+
+    // initialize tag system before we try loading anything!
+    tag_init();
 
     // sets up a new game:
     bool newc = new_game();

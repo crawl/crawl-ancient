@@ -824,11 +824,11 @@ bool mons_speaks(struct monsters *monster)
                            " says \"You will wish to die when I get to you.\"");
                     break;
                 case 6:
-                    strcat(info, " says \"I will drown you in you blood.\"");
+                    strcat(info, " says \"I will drown you in your own blood.\"");
                     break;
                 case 7:
                     strcat(info,
-                           " says \"You will die in a very very ugly way.\"");
+                           " screams \"You will die horribly!\"");
                     break;
                 case 8:
                     strcat(info, " says \"I will eat your liver.\"");
@@ -850,7 +850,7 @@ bool mons_speaks(struct monsters *monster)
                 case 13:
                 case 14:
                     strcat(info,
-                           " says \"I'll crush all your bones. One by one.\"");
+                           " says \"I'll crush your bones, one by one.\"");
                     break;
                 case 15:
                     strcat(info, " says \"I know your fate. It's pain.\"");
@@ -1918,7 +1918,7 @@ bool mons_speaks(struct monsters *monster)
                     strcat(info, " roars \"I HATE BEING BOTHERED!\"");
                     break;
                 case 4:
-                    strcat(info, " roars \"YOU WILL END UP LIKE A SNACK!\"");
+                    strcat(info, " roars \"YOU WILL BE A TASTY SNACK!\"");
                     break;
                 case 5:
                     strcat(info, " roars \"I HATE ADVENTURERS!\"");
@@ -1935,7 +1935,7 @@ bool mons_speaks(struct monsters *monster)
                     break;
                 case 9:
                     strcat(info,
-                           " roars \"I'VE KILLED HUNDREDS OF ADVENTURERS LIKE YOU!\"");
+                           " roars \"I'VE KILLED HUNDREDS OF ADVENTURERS!\"");
                     break;
                 case 10:
                 case 11:
@@ -1983,7 +1983,7 @@ bool mons_speaks(struct monsters *monster)
                 case 7:
                     strcat(info, " stares at you.");
                     mpr(info, MSGCH_MONSTER_SPELL);
-                    mpr("You feel troubles.", MSGCH_WARN);
+                    mpr("You feel troubled.", MSGCH_WARN);
                     return true;
                     break;
                 case 8:
@@ -1995,23 +1995,23 @@ bool mons_speaks(struct monsters *monster)
                     break;
                 case 10:
                     strcat(info,
-                           " says \"You can not kill me. I'm immortal.\"");
+                           " says \"You can't kill me. I'm immortal.\"");
                     break;
                 case 11:
-                    strcat(info, " casts spell.");
+                    strcat(info, " casts a spell.");
                     mpr(info, MSGCH_MONSTER_SPELL);
-                    mpr("You equipment sudddenly weights more.", MSGCH_WARN);
+                    mpr("You equipment sudddenly weighs more.", MSGCH_WARN);
                     return true;
                     break;
                 case 12:
                     strcat(info,
-                           " says \"I know the secret of eternal life. You don't.\"");
+                           " says \"I know the secret of eternal life.  Do you?\"");
                     break;
                 case 13:
-                    strcat(info, " smiles crazily.");
+                    strcat(info, " says, \"I'll be back.\"");
                     break;
                 case 14:
-                    strcat(info, " casts spell.");
+                    strcat(info, " casts a spell.");
                     mpr(info, MSGCH_MONSTER_SPELL);
                     mpr("You resist.");
                     return true;

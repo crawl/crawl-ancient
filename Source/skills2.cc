@@ -2100,8 +2100,12 @@ int species_skills(char skill, char species)
 }                               // end species_skills()
 
 // new: inform player if they need more throwing skill (GDL)
-void wield_warning()
+void wield_warning(bool newWeapon)
 {
+    char *wepstr = "your weapon.";
+    if (newWeapon)
+        wepstr = "this weapon.";
+
     int wepType  = you.inv_type[you.equip[EQ_WEAPON]];
 
     // early out - don't warn for non-weapons
@@ -2119,12 +2123,14 @@ void wield_warning()
 
         if (stat_bonus <= -2)
         {
-            strcat( info, "is limiting your use of this weapon." );
+            strcat( info, "is limiting your use of " );
+            strcat( info, wepstr );
             mpr( info, MSGCH_WARN );
         }
         else if (stat_bonus <= -5)
         {
-            strcat( info, "is severely limiting your use of this weapon." );
+            strcat( info, "is severely limiting your use of " );
+            strcat( info, wepstr );
             mpr( info, MSGCH_WARN );
         }
         return;
@@ -2153,5 +2159,9 @@ void wield_warning()
     }
 
     if (shoot_skill > effSkill)
-        mpr("Your low throwing skill limits your effectiveness with this weapon.");
+    {
+        strcpy( info, "Your low throwing skill limits your effectiveness with ");
+        strcat( info, wepstr );
+        mpr( info, MSGCH_WARN );
+    }
 }

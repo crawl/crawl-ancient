@@ -26,6 +26,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
+#include <mem.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -57,6 +59,7 @@
 #include "dungeon.h"
 #include "itemname.h"
 #include "items.h"
+#include "message.h"
 #include "misc.h"
 #include "monstuff.h"
 #include "mon-util.h"
@@ -65,15 +68,13 @@
 #include "randart.h"
 #include "skills2.h"
 #include "stuff.h"
+#include "tags.h"
 #include "wpn-misc.h"
 
-// These three are defined in overmap.cc
-extern FixedArray < unsigned char, MAX_LEVELS, MAX_BRANCHES > altars_present;
-extern FixedVector < char, MAX_BRANCHES > stair_level;
-extern FixedArray < unsigned char, MAX_LEVELS, MAX_BRANCHES > feature;
-
-FixedArray < bool, MAX_LEVELS, MAX_BRANCHES > tmp_file_pairs;
 void save_level(int level_saved, bool was_a_labyrinth, char where_were_you);
+
+// temp file pairs used for file level cleanup
+extern FixedArray < bool, MAX_LEVELS, MAX_BRANCHES > tmp_file_pairs;
 
 /*
    Order for looking for conjurations for the 1st & 2nd spell slots,
@@ -145,10 +146,7 @@ unsigned char search_order_misc[] = {
 
 /* Last slot (emergency) can only be teleport self or blink. */
 
-int write2(FILE * file, char *buffer, unsigned int count);
-int read2(FILE * file, char *buffer, unsigned int count);
-
-static void reset_ch(void)
+static void redraw_all(void)
 {
 
     you.redraw_hit_points = 1;
@@ -165,75 +163,94 @@ static void reset_ch(void)
 
 struct ghost_struct ghost;
 
-extern unsigned char your_sign; /* these two are defined in view.cc */
-extern unsigned char your_colour;
-
 bool find_spell(unsigned char which_sp);
 unsigned char translate_spell(unsigned char spel);
 unsigned char search_third_list(unsigned char ignore_spell);
 unsigned char search_second_list(unsigned char ignore_spell);
 unsigned char search_first_list(unsigned char ignore_spell);
-void add_spells(FixedVector < unsigned char, 40 > &buffer);
+void add_spells(struct ghost_struct &gh);
 void generate_random_demon();
+static bool determine_version(FILE *restoreFile, char &majorVersion,
+    char &minorVersion);
+static void restore_version(FILE *restoreFile, char majorVersion,
+    char minorVersion);
+static bool determine_level_version(FILE *levelFile, char &majorVersion,
+    char &minorVersion);
+static void restore_level_version(FILE *levelFile, char majorVersion,
+    char minorVersion);
+static bool determine_ghost_version(FILE *ghostFile, char &majorVersion,
+    char &minorVersion);
+static void restore_ghost_version(FILE *ghostFile, char majorVersion,
+    char minorVersion);
+static void restore_tagged_file(FILE *restoreFile, int fileType);
+static void load_ghost();
 
-static void save_int(char *&p, int val, int digits)
+static void make_filename(char *buf, char *prefix, int level, int where,
+    bool isLabyrinth, bool isGhost)
 {
-    char thing_quant[16];
-    int vallen = 0;
+    char suffix[4], lvl[5], uid[10];
+    char finalprefix[kFileNameLen];
 
-    itoa(val, thing_quant, 10);
+    strcpy(suffix, (level < 10) ? "0" : "");
+    itoa(level, lvl, 10);
+    strcat(suffix, lvl);
+    suffix[2] = where + 97;
+    suffix[3] = '\0';
 
-    vallen = strlen(thing_quant);
-    for(int i=0; i<digits; i++)
+    // init buf
+    buf[0] = '\0';
+
+#ifdef SAVE_DIR_PATH
+    strcpy(buf, SAVE_DIR_PATH);
+#endif
+
+    strncpy(finalprefix, prefix, kFileNameLen);
+    finalprefix[kFileNameLen] = '\0';
+
+    strcat(buf, finalprefix);
+
+#ifdef SAVE_DIR_PATH
+    // everyone sees everyone else's ghosts. :)
+    if (!isGhost)
     {
-        if (i<(digits - vallen))
-            *p++ = '0';
-        else
-            *p++ = thing_quant[i+vallen-digits];
+        itoa(getuid(), uid, 10);
+        strcat(buf, uid);
     }
+#endif
+
+    strcat(buf, ".");
+    if (isLabyrinth)
+        strcat(buf, "lab");     // temporary level
+    else
+        strcat(buf, suffix);
 }
 
-
-static int load_int(char *&p, int digits)
+static void write_tagged_file(FILE *dataFile, char majorVersion,
+    char minorVersion, int fileType)
 {
-    char thing_quant[16];
+    struct tagHeader th;
 
-    for (int i = 0; i < digits; i++)
-        thing_quant[i] = *p++;
+    // find all relevant tags
+    char tags[NUM_TAGS];
+    tag_set_expected(tags, fileType);
 
-    thing_quant[digits] = 0;
-    return atoi(thing_quant);
-}
+    // write version
+    struct tagHeader versionTag;
+    versionTag.offset = 0;
+    versionTag.tagID = TAG_VERSION;
+    marshallByte(versionTag, majorVersion);
+    marshallByte(versionTag, minorVersion);
+    tag_write(versionTag, dataFile);
 
-
-static void save_double(char *&p, double value, int digits)
-{
-    int n = sprintf(p, "%*.6g", digits, value);
-
-    ASSERT(n == digits);
-    UNUSED(n);
-
-    p += digits;
-}
-
-
-static double load_double(char *&p, int digits)
-{
-    double value;
-
-    char old = p[digits];
-
-    p[digits] = '\0';           // make sure next value isn't interpreted as part of the double
-
-    int count = sscanf(p, "%lg", &value);
-
-    ASSERT(count == 1);
-    UNUSED(count);
-
-    p[digits] = old;
-    p += digits;
-
-    return value;
+    // all other tags
+    for(int i=1; i<NUM_TAGS; i++)
+    {
+        if (tags[i] == 1)
+        {
+            tag_construct(th, i);
+            tag_write(th, dataFile);
+        }
+    }
 }
 
 
@@ -244,8 +261,6 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     int j = 0;
     int i = 0, count_x = 0, count_y = 0;
     char cha_fil[kFileNameSize];
-
-    char corr_level[4];
 
     bool already_saved = false;
 
@@ -276,55 +291,24 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     unsigned int fit_iquant[8][8];
     unsigned char fit_icol[8][8];
     char fit_iid[8][8];
-    double elapsed_time = 0.0;
     double delta = 0.0;
 
     int itmf = 0;
     int ic = 0;
     int imn = 0;
 
-    const int oldlen = 20 + 20 + 4 * 80 * 70 + 3 * MAX_TRAPS + 25 * MAX_ITEMS
-                        + 1 + 9 * MAX_CLOUDS + 5 * 8 + 5 * 20
-                        + (18 + 5 + 5 + 5 + 5 + 8 * 5) * MAX_MONSTERS;
-
-    const int datalen = 42 + oldlen;
-    char *buf = (char *) malloc(datalen);
-
-    int bytes = 0;
-    char *p = NULL;
-
-    char majorVersion = 0;
-    char minorVersion = 0;
-    int chunkSize = 0, turns = 0;
+    int turns = 0;
 
 
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
 #endif
 
-    char hbjh[5];
+    make_filename(cha_fil, you.your_name, you.your_level, you.where_are_you,
+        you.level_type != LEVEL_DUNGEON, false);
 
-    strcpy(corr_level, (you.your_level < 10) ? "0" : "");
-    itoa(you.your_level, hbjh, 10);
-    strcat(corr_level, hbjh);
-    corr_level[2] = you.where_are_you + 97;
-    corr_level[3] = '\0';
-    // save the information for later deletion  -- DML 6/11/99
-
-#ifdef SAVE_DIR_PATH
-    sprintf(cha_fil, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
-#else
-    strncpy(cha_fil, you.your_name, kFileNameLen);
-    cha_fil[kFileNameLen] = 0;
-#endif
-
-    strcat(cha_fil, ".");
-
-    if (you.level_type != LEVEL_DUNGEON)
-        strcat(cha_fil, "lab"); // temporary level
-    else
+    if (you.level_type == LEVEL_DUNGEON)
     {
-        strcat(cha_fil, corr_level);
         if (tmp_file_pairs[you.your_level][you.where_are_you] == false)
         {
             // make sure old file is gone
@@ -483,9 +467,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     strupr(cha_fil);
 #endif
 
-    FILE *handle = fopen(cha_fil, "rb");
+    FILE *levelFile = fopen(cha_fil, "rb");
 
-    if (handle == NULL)
+    if (levelFile == NULL)
     {                           /* generate new level */
         strcpy(ghost.name, "");
 
@@ -500,93 +484,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
             generate_random_demon();
 
         if (you.your_level > 1 && one_chance_in(3))
-        {
-            strcpy(corr_level, (you.your_level < 10) ? "0" : "");
-            itoa(you.your_level, hbjh, 10);
-            strcat(corr_level, hbjh);
-            corr_level[2] = you.where_are_you + 97;
-            corr_level[3] = '\0';
-#ifdef SAVE_DIR_PATH
-            strcpy(cha_fil, SAVE_DIR_PATH "bones.");
-#else
-            strcpy(cha_fil, "bones.");
-#endif
-            if (you.level_type != LEVEL_DUNGEON)
-                strcat(cha_fil, "lab"); /* temporary level */
-            else
-                strcat(cha_fil, corr_level);
-
-            FILE *gfile = fopen(cha_fil, "rb");
-
-            if (gfile != NULL)
-            {
-                char buf1[40];
-
-                read2(gfile, buf1, 40);
-                fclose(gfile);
-
-                for (int iiii = 0; iiii < 20; ++iiii)
-                {
-                    ghost.name[iiii] = buf1[iiii];
-                }
-
-                ghost.values[0] = buf1[20];
-                ghost.values[1] = buf1[21];
-                ghost.values[2] = buf1[22];
-                ghost.values[3] = buf1[23];
-                ghost.values[4] = buf1[24];
-                ghost.values[5] = buf1[25];
-                ghost.values[6] = buf1[26];
-                ghost.values[7] = buf1[27];
-                ghost.values[8] = buf1[28];
-                // note - as ghosts, automatically get res poison + prot_life
-                ghost.values[9] = buf1[29];
-                ghost.values[10] = buf1[30];
-                ghost.values[11] = buf1[31];
-                ghost.values[12] = buf1[32];
-                ghost.values[13] = buf1[33];
-                ghost.values[14] = buf1[34];
-                ghost.values[15] = buf1[35];
-                ghost.values[16] = buf1[36];
-                ghost.values[17] = buf1[37];
-                ghost.values[18] = buf1[38];
-                ghost.values[19] = buf1[39];
-                unlink(cha_fil);
-
-                for (imn = 0; imn < MAX_MONSTERS - 10; imn++)
-                {
-                    if (menv[imn].type != -1)
-                        continue;
-
-                    menv[imn].type = MONS_PLAYER_GHOST;
-                    menv[imn].hit_dice = ghost.values[12];
-                    menv[imn].hit_points = ghost.values[0];
-                    menv[imn].max_hit_points = ghost.values[0];
-                    menv[imn].armor_class = ghost.values[2];
-                    menv[imn].evasion = ghost.values[1];
-                    menv[imn].speed = 10;
-                    menv[imn].speed_increment = 70;
-
-                    if (ghost.values[14] != 250 || ghost.values[15] != 250
-                        || ghost.values[16] != 250 || ghost.values[17] != 250
-                        || ghost.values[18] != 250 || ghost.values[19] != 250)
-                        menv[imn].number = 119;
-                    else
-                        menv[imn].number = 250;
-
-                    do
-                    {
-                        menv[imn].x = random2(GXM - 20) + 10;
-                        menv[imn].y = random2(GYM - 20) + 10;
-                    }
-                    while ((grd[menv[imn].x][menv[imn].y] != DNGN_FLOOR)
-                           || (mgrd[menv[imn].x][menv[imn].y] != NON_MONSTER));
-
-                    mgrd[menv[imn].x][menv[imn].y] = imn;
-                    break;
-                }
-            }
-        }
+            load_ghost();
 
         // closes all the gates if you're on the way out
         for (i = 0; i < GXM; i++)
@@ -795,7 +693,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }                       // end if level_type == LEVEL_DUNGEON
 
       out_of_foll:
-        reset_ch();
+        redraw_all();
         moving_level = false;
 
         for (i = 0; i < MAX_MONSTERS; i++)
@@ -839,9 +737,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
             }
         }
 
-        if (elapsed_time != 0.0)
+        if (env.elapsed_time != 0.0)
         {
-            delta = you.elapsed_time - elapsed_time;
+            delta = you.elapsed_time - env.elapsed_time;
 
             // because of rounding errors when saving it's possible to
             // have a negative number if the numbers are large and
@@ -854,6 +752,8 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                    you.where_are_you);
         return;
     }
+
+    // BEGIN -- must load the old level : pre-load tasks
 
     moving_level = false;
 
@@ -870,238 +770,32 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }
     }
 
-    bytes = read2(handle, buf, datalen);
+    // LOAD various tags
 
-    if (oldlen != bytes && datalen != bytes)
+    char majorVersion;
+    char minorVersion;
+
+    if (!determine_level_version(levelFile, majorVersion, minorVersion))
     {
-        perror("opa (7)...");
-        cprintf(EOL "Wanted to read ");
-        itoa(datalen, st_prn, 10);
-        cprintf(st_prn);
-        cprintf(" bytes; could only read ");
-        itoa(bytes, st_prn, 10);
-        cprintf(st_prn);
-        cprintf(".");
+        perror("\nLevel file appears to be invalid.\n");
         end(-1);
     }
 
-    fclose(handle);
+    restore_level_version(levelFile, majorVersion, minorVersion);
 
-    p = buf;
-
-    if (bytes > oldlen)
+    // sanity check - EOF
+    if (!feof(levelFile))
     {
-        majorVersion = *p++;
-        minorVersion = *p++;
-        chunkSize = load_int(p, 4);
-
-        if (majorVersion != 1)
-        {
-            free(buf);
-            perror("Unable to read level (bad version)");
-            end(-1);
-        }
-
-        elapsed_time = load_double(p, 14);
-
-        for (i = 0; i < (chunkSize - 20); ++i)
-        {
-            *p++;               // reserved
-        }
-    }
-
-    for (i = 0; i < 20; ++i)
-    {
-        ghost.name[i] = *p++;
-    }
-
-    for (i = 0; i < 20; ++i)
-    {
-        ghost.values[i] = *p++;
-    }
-
-    //for (j=0; j<20; ++j)
-    //  ghost.values[j]-=30;
-
-    for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            grd[count_x][count_y] = *p++;
-            env.map[count_x][count_y] = *p++;
-
-            if (env.map[count_x][count_y] == 201)
-                env.map[count_x][count_y] = 239;
-
-            mgrd[count_x][count_y] = NON_MONSTER;
-            ++p;
-
-            if (mgrd[count_x][count_y] != NON_MONSTER
-                && (menv[mgrd[count_x][count_y]].type == -1
-                    || menv[mgrd[count_x][count_y]].x != count_x
-                    || menv[mgrd[count_x][count_y]].y != count_y))
-            {
-                /* This is one of the worst things I've ever done */
-                mgrd[count_x][count_y] = NON_MONSTER;
-            }
-
-            env.cgrid[count_x][count_y] = *p++;
-        }
-    }
-
-    for (i = 0; i < MAX_TRAPS; i++)
-    {
-        env.trap_type[i] = *p++;
-        env.trap_x[i] = *p++;
-        env.trap_y[i] = *p++;
-    }
-
-    for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            if (igrd[count_x][count_y] < 0 || igrd[count_x][count_y] > NON_ITEM)
-                igrd[count_x][count_y] = NON_ITEM;
-        }
-    }
-
-    for (i = 0; i < MAX_ITEMS; ++i)
-    {
-        mitm.base_type[i] = *p++;
-        mitm.sub_type[i] = *p++;
-        mitm.pluses[i] = *p++;
-        mitm.special[i] = *p++;
-        mitm.quantity[i] = load_int(p, 6);
-        mitm.colour[i] = *p++;
-        mitm.x[i] = *p++;
-        mitm.y[i] = *p++;
-        mitm.id[i] = *p++;
-        mitm.link[i] = load_int(p, 5) - 40000;
-        igrd[mitm.x[i]][mitm.y[i]] = load_int(p, 5) - 40000;
-        mitm.pluses2[i] = *p++;
-
-        if (mitm.base_type[i] == OBJ_UNASSIGNED)
-        {
-            mitm.quantity[i] = 0;
-            mitm.link[i] = NON_ITEM;
-        }
-    }
-
-    env.cloud_no = *p++;
-
-    for (i = 0; i < MAX_CLOUDS; ++i)
-    {
-        env.cloud_x[i] = *p++;
-        env.cloud_y[i] = *p++;
-        env.cloud_type[i] = *p++;
-        env.cloud_decay[i] = load_int(p, 5);
-        ++p;
-    }
-
-    for (i = 0; i < 5; ++i)
-    {
-        env.keeper_name[i][0] = *p++;
-        env.keeper_name[i][1] = *p++;
-        env.keeper_name[i][2] = *p++;
-        env.shop_x[i] = *p++;
-        env.shop_y[i] = *p++;
-        env.shop_greed[i] = *p++;
-        env.shop_type[i] = *p++;
-        env.shop_level[i] = *p++;
-#ifdef DEBUG
-        if (env.shop_x[i] > 0 && env.shop_y[i] > 0)
-        {
-            // shouldn't that be grd[][]? {dlb}
-            if (mgrd[env.shop_x[i] - 1][env.shop_y[i] - 1] == 31)
-            {
-                cprintf("x");
-                getch();
-            }
-        }
-#endif
-    }
-
-    for (i = 0; i < 20; i++)
-    {
-        env.mons_alloc[i] = load_int(p, 5) - 10000;
-    }
-
-    for (count_x = 0; count_x < MAX_MONSTERS; ++count_x)
-    {
-        p += 3;
-        menv[count_x].armor_class = *p++;
-        menv[count_x].evasion = *p++;
-        menv[count_x].hit_dice = *p++;
-        menv[count_x].speed = *p++;
-        menv[count_x].speed_increment = *p++;
-        menv[count_x].behavior = *p++;
-        menv[count_x].x = *p++;
-        menv[count_x].y = *p++;
-        menv[count_x].target_x = *p++;
-        menv[count_x].target_y = *p++;
-        ++p;
-        menv[count_x].enchantment1 = *p++;
-
-        for (j = 0; j < 3; ++j)
-        {
-            menv[count_x].enchantment[j] = *p++;
-        }
-
-        menv[count_x].type = load_int(p, 5) - 40080;
-        menv[count_x].hit_points = load_int(p, 5) - 40000;
-        menv[count_x].max_hit_points = load_int(p, 5) - 40000;
-
-        menv[count_x].number = load_int(p, 5) - 40000;
-
-        for (j = 0; j < NUM_MONSTER_SLOTS; ++j)
-        {
-            menv[count_x].inv[j] = load_int(p, 5) - 40000;
-        }
-
-#if 0
-        for (j = 0; j < MAX_MONSTERS; ++j)
-            if (menv[j].type != -1)
-                mgrd[menv[j].x][menv[j].y] = j;
-#else
-
-        if (menv[count_x].type != -1)
-        {
-            mgrd[menv[count_x].x][menv[count_x].y] = count_x;
-
-            if (menv[count_x].hit_points < menv[count_x].max_hit_points)
-            {
-                if (elapsed_time != 0.0)
-                {
-                    turns = (int) (you.elapsed_time - elapsed_time) / 10;
-
-                    if (turns > 0)
-                    {
-                        // player ghosts included here because they cannot
-                        // leave the level to follow the player.
-                        if (monster_descriptor(menv[count_x].type,
-                                               MDSC_REGENERATES)
-                            || menv[count_x].type == MONS_PLAYER_GHOST)
-                        {
-                            heal_monster(&menv[count_x], turns, false);
-                        }
-                        else
-                            heal_monster(&menv[count_x], (turns / 25), false);
-                    }
-                }
-            }
-        }
-#endif
-    }
-
-    reset_ch();
-
-    free(buf);
-
-    if (p != buf + datalen)
-    {
-        perror("opa (6)...");
+        sprintf(info, "\nIncomplete read of \"%s\" - aborting.\n", cha_fil);
+        perror(info);
         end(-1);
     }
+
+    fclose(levelFile);
+
+    // POST-LOAD tasks :
+
+    redraw_all();
 
     for (i = 0; i < GXM; i++)
     {
@@ -1246,9 +940,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }
     }
 
-    if (elapsed_time != 0.0)
+    if (env.elapsed_time != 0.0)
     {
-        delta = you.elapsed_time - elapsed_time;
+        delta = you.elapsed_time - env.elapsed_time;
 
         // because of rounding errors when saving it's possible to
         // have a negative number if the numbers are large and close together
@@ -1260,33 +954,12 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
 {
     char cha_fil[kFileNameSize];
-    char extens[5];
     int count_x, count_y;
     int i, j;
-    char hbjh[5];
+    struct tagHeader th;
 
-    strcpy(extens, "");
-
-    if (level_saved < 10)
-        strcpy(extens, "0");
-
-    itoa(level_saved, hbjh, 10);
-    strcat(extens, hbjh);
-    extens[2] = where_were_you + 97;
-    extens[3] = '\0';
-
-#ifdef SAVE_DIR_PATH
-    sprintf(cha_fil, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
-#else
-    strncpy(cha_fil, you.your_name, kFileNameLen);
-    cha_fil[kFileNameLen] = 0;
-#endif
-
-    strcat(cha_fil, ".");
-    if (was_a_labyrinth)
-        strcat(cha_fil, "lab"); // temporary level
-    else
-        strcat(cha_fil, extens);
+    make_filename(cha_fil, you.your_name, level_saved, where_were_you,
+        was_a_labyrinth, false);
 
     you.prev_targ = MHITNOT;
 
@@ -1298,6 +971,7 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
     int frx;
 
     // Setting up x and y, which aren't normally used:
+    // XXX .. for what?? What is this code doing?  {gdl}
     for (frx = 0; frx < MAX_MONSTERS; frx++)
     {
         for (fry = 0; fry < NUM_MONSTER_SLOTS; fry++)
@@ -1360,177 +1034,22 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
             }
         }
     }
+    // END weirdness.
 
-    const int datalen = 42 + 20 + 20 + 4 * 80 * 70 + 3 * MAX_TRAPS
-                        + 25 * MAX_ITEMS + 1 + 9 * MAX_CLOUDS + 5 * 8 + 5 * 20
-                        + (18 + 5 + 5 + 5 + 5 + 8 * 5) * MAX_MONSTERS;
+    FILE *saveFile = fopen(cha_fil, "wb");
 
-    char *buf = (char *) malloc(datalen);
-    char *p = buf;
-
-    *p++ = 1;                   // major version number
-
-    *p++ = 1;                   // minor version number
-
-    save_int(p, 42, 4);         // chunk size
-
-    save_double(p, you.elapsed_time, 14);
-    for (i = 0; i < 22; ++i)
-        *p++ = 0;               // reserved
-
-    unsigned char ghost_bak[20];
-
-    for (j = 0; j < 20; j++)
+    if (saveFile == NULL)
     {
-        ghost_bak[j] = ghost.values[j];
-    }
-
-    for (i = 0; i < 20; ++i)
-    {
-        *p++ = ghost.name[i];
-    }
-
-    for (i = 0; i < 20; ++i)
-    {
-        *p++ = ghost_bak[i];
-    }
-
-    for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            *p++ = (grd[count_x][count_y]);
-            *p++ = env.map[count_x][count_y];
-            *p++ = mgrd[count_x][count_y];
-            *p++ = env.cgrid[count_x][count_y];
-        }
-    }
-
-    for (i = 0; i < MAX_TRAPS; ++i)
-    {
-        *p++ = env.trap_type[i];
-        *p++ = env.trap_x[i];
-        *p++ = env.trap_y[i];
-    }
-
-    for (i = 0; i < MAX_ITEMS; ++i)
-    {
-        *p++ = mitm.base_type[i];
-        *p++ = mitm.sub_type[i];
-        *p++ = mitm.pluses[i];
-        *p++ = mitm.special[i];
-        save_int(p, mitm.quantity[i], 6);
-        *p++ = mitm.colour[i];
-        *p++ = mitm.x[i];
-        *p++ = mitm.y[i];
-        *p++ = mitm.id[i];
-
-        if (mitm.quantity[i] == 0)
-            mitm.link[i] = NON_ITEM;
-
-        save_int(p, mitm.link[i] + 40000, 5);
-        save_int(p, igrd[mitm.x[i]][mitm.y[i]] + 40000, 5);
-        *p++ = mitm.pluses2[i];
-    }
-
-    *p++ = env.cloud_no;
-
-    for (i = 0; i < MAX_CLOUDS; i++)
-    {
-        *p++ = env.cloud_x[i];
-        *p++ = env.cloud_y[i];
-        *p++ = env.cloud_type[i];
-        save_int(p, env.cloud_decay[i], 5);
-        *p++ = 0;
-    }
-
-    for (i = 0; i < 5; i++)
-    {
-        *p++ = env.keeper_name[i][0];
-        *p++ = env.keeper_name[i][1];
-        *p++ = env.keeper_name[i][2];
-        *p++ = env.shop_x[i];
-        *p++ = env.shop_y[i];
-        *p++ = env.shop_greed[i];
-        *p++ = env.shop_type[i];
-        *p++ = env.shop_level[i];
-#ifdef DEBUG
-        if (env.shop_x[i] > 0 && env.shop_y[i] > 0)
-        {
-            // shouldn't that be grd[][]? {dlb}
-            if (mgrd[env.shop_x[i] - 1][env.shop_y[i] - 1] == 31)
-            {
-                cprintf("y");
-                getch();
-            }
-        }
-#endif
-    }
-
-    for (i = 0; i < 20; ++i)
-    {
-        save_int(p, env.mons_alloc[i] + 10000, 5);
-    }
-
-    for (i = 0; i < MAX_MONSTERS; i++)
-    {
-        *p++ = 5;
-        *p++ = 5;
-        *p++ = 5;
-        *p++ = menv[i].armor_class;
-        *p++ = menv[i].evasion;
-        *p++ = menv[i].hit_dice;
-        *p++ = (menv[i].speed);
-        *p++ = menv[i].speed_increment;
-        *p++ = menv[i].behavior;
-        *p++ = menv[i].x;
-        *p++ = menv[i].y;
-        *p++ = menv[i].target_x;
-        *p++ = menv[i].target_y;
-        //*p++ = 5;
-        *p++ = 0;
-        *p++ = menv[i].enchantment1;
-
-        for (j = 0; j < 3; j++)
-        {
-            *p++ = menv[i].enchantment[j];
-        }
-
-        save_int(p, menv[i].type + 40080, 5);
-        save_int(p, menv[i].hit_points + 40000, 5);
-        save_int(p, menv[i].max_hit_points + 40000, 5);
-        save_int(p, menv[i].number + 40000, 5);
-
-        for (j = 0; j < NUM_MONSTER_SLOTS; j++)
-        {
-            save_int(p, menv[i].inv[j] + 40000, 5);
-        }
-    }
-
-    if (p != buf + datalen)
-    {
-        perror("opa (1)...");
+        strcpy(info, "Unable to open \"");
+        strcat(info, cha_fil );
+        strcat(info, "\" for writing!");
+        perror(info);
         end(-1);
     }
 
-    FILE *handle = fopen(cha_fil, "wb");
+    write_tagged_file(saveFile, 4, 0, TAGTYPE_LEVEL);
 
-    if (handle == NULL)
-    {
-        perror("Oh dear... ");
-        end(-1);
-    }
-
-    int retval = write2(handle, buf, datalen);
-
-    free(buf);
-    if (datalen != retval)
-    {
-        perror("opa (2)...");
-        end(-1);
-    }
-
-    fclose(handle);
+    fclose(saveFile);
 
 #ifdef SHARED_FILES_CHMOD_VAL
     chmod(cha_fil, SHARED_FILES_CHMOD_VAL);
@@ -1539,332 +1058,53 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
 
 void save_game(bool leave_game)
 {
-    char char_f[kFileNameSize];
-    int i, j;
+    char charFile[kFileNameSize];
     char cmd_buff[1024];
+    struct tagHeader th;
 
 #ifdef SAVE_PACKAGE_CMD
     char name_buff[kFileNameSize];
 
     sprintf(name_buff, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
     sprintf(cmd_buff, SAVE_PACKAGE_CMD, name_buff, name_buff);
-    sprintf(char_f, "%s.sav", name_buff);
+    sprintf(charFile, "%s.sav", name_buff);
 #else
-    strncpy(char_f, you.your_name, kFileNameLen);
-    char_f[kFileNameLen] = 0;
-    strcat(char_f, ".sav");
+    strncpy(charFile, you.your_name, kFileNameLen);
+    charFile[kFileNameLen] = 0;
+    strcat(charFile, ".sav");
 
 #ifdef DOS
-    strupr(char_f);
+    strupr(charFile);
 #endif
 #endif
 
-    int datalen = 45 + 30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25
-                  + 12 * 52 + 50 * 5 + 50 * 4 + 50 + 50 + 6 * 50 + 50 + 50
-                  + 30 + 30 + 30 + 100 + 50 + 100 + NO_UNRANDARTS
-                  + MAX_LEVELS * MAX_BRANCHES + MAX_BRANCHES
-                  + (2 * (MAX_LEVELS * MAX_BRANCHES));
+    FILE *saveFile = fopen(charFile, "wb");
 
-    char *buf = (char *) malloc(datalen);
-    char *p = buf;
-
-    *p++ = 1;                   // major version number
-    *p++ = 4;                   // minor version number
-
-    save_int(p, 44, 4);         // chunk size
-
-    save_double(p, you.elapsed_time, 14);
-
-    // minor version >= 4
-    *p++ = you.gift_timeout;
-    for (i = 0; i < 21; i++)
+    if (saveFile == NULL)
     {
-        *p++ = you.penance[i];
-    }
-
-    // added 23Jun2000 by GDL for player vision radius
-    *p++ = you.normal_vision;
-    *p++ = you.current_vision;
-
-    // added 17jan2001 by GDL to track exit from hell.
-    *p++ = you.hell_exit;
-
-    // minor version >= 2
-    for (i = 0; i < MAX_LEVELS; i++)
-    {
-        for (j = 0; j < MAX_BRANCHES; j++)
-        {
-            *p++ = (char) tmp_file_pairs[i][j];
-        }
-    }
-
-    for (j = 0; j < 30; ++j)
-    {
-        unsigned char ch = you.your_name[j];
-
-        if ((ch == 26) || (ch == 27))
-            ch = 0;
-        *p++ = ch;
-    }
-
-    *p++ = you.religion;
-    *p++ = you.piety;
-    *p++ = you.invis;
-    *p++ = you.conf;
-    *p++ = you.paralysis;
-    *p++ = you.slow;
-    *p++ = you.shock_shield;
-    *p++ = you.rotting;
-    *p++ = you.exhausted;
-    *p++ = you.deaths_door;
-    *p++ = your_sign;
-    *p++ = your_colour;
-    *p++ = 0;
-    *p++ = you.pet_target;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;                   // *p++ = you.spell_levels;
-
-    *p++ = you.max_level;
-    *p++ = you.where_are_you;
-    *p++ = you.char_direction;
-    *p++ = you.your_level;
-    *p++ = you.is_undead;
-    *p++ = you.special_wield;
-    *p++ = you.berserker;
-    *p++ = you.berserk_penalty;
-    *p++ = you.level_type;
-    *p++ = you.synch_time;
-    *p++ = you.disease;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = you.species;
-
-    save_int(p, you.hp, 5);
-    save_int(p, you.hp, 5);
-
-    if (you.haste > 215)
-        you.haste = 215;
-
-    *p++ = you.haste;
-
-    if (you.might > 215)
-        you.might = 215;
-
-    *p++ = you.might;
-
-    if (you.levitation > 215)
-        you.levitation = 215;
-
-    *p++ = you.levitation;
-
-    if (you.poison > 215)
-        you.poison = 215;
-
-    *p++ = you.poison;
-
-    *p++ = 0;
-
-    save_int(p, you.hunger, 6);
-
-    *p++ = 0;
-
-    for (i = 0; i < NUM_EQUIP; ++i)
-    {
-        *p++ = you.equip[i];
-    }
-
-    *p++ = you.magic_points;
-    *p++ = you.max_magic_points;
-    *p++ = you.strength;
-    *p++ = you.intel;
-    *p++ = you.dex;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = you.confusing_touch;
-    *p++ = you.sure_blade;
-    *p++ = you.hit_points_regeneration;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-
-    save_int(p, (int) (you.hit_points_regeneration * 100), 5);
-    save_int(p, you.experience, 7);
-    save_int(p, you.gold, 5);
-
-    *p++ = you.char_class;
-    *p++ = you.experience_level;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-
-    save_int(p, you.exp_available, 6);
-
-    /* max values */
-    *p++ = you.max_strength;
-    *p++ = you.max_intel;
-    *p++ = you.max_dex;
-    *p++ = 0;                   // *p++ = you.hunger_inc;
-
-    *p++ = you.magic_points_regeneration;
-
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
-
-    save_int(p, you.base_hp, 5);
-    save_int(p, you.base_hp2, 5);
-    save_int(p, you.base_magic_points, 5);
-    save_int(p, you.base_magic_points2, 5);
-
-    *p++ = (unsigned char) you.x_pos;
-    *p++ = (unsigned char) you.y_pos;
-
-    for (j = 0; j < 30; ++j)
-        *p++ = you.class_name[j];
-
-    save_int(p, you.burden, 5);
-
-    for (i = 0; i < 25; ++i)
-        *p++ = you.spells[i];
-
-    for (i = 0; i < ENDOFPACK; ++i)
-    {
-        *p++ = you.inv_class[i];
-        *p++ = you.inv_type[i];
-        *p++ = you.inv_plus[i];
-        *p++ = you.inv_dam[i];
-        *p++ = you.inv_colour[i];
-        *p++ = you.inv_ident[i];
-        save_int(p, you.inv_quantity[i], 5);
-        *p++ = you.inv_plus2[i];
-    }
-
-    for (i = 0; i < 5; ++i)
-    {
-        for (j = 0; j < 50; ++j)
-            *p++ = you.item_description[i][j];
-    }
-
-    char identy[4][50];
-
-    save_id(identy);
-
-    for (i = 0; i < 4; ++i)
-    {
-        for (j = 0; j < 50; ++j)
-            *p++ = identy[i][j];
-    }
-
-    for (j = 0; j < 50; ++j)
-        *p++ = you.skills[j];   /* skills! */
-
-    for (j = 0; j < 50; ++j)
-        *p++ = you.practise_skill[j];   /* skills! */
-
-    for (j = 0; j < 50; ++j)
-        save_int(p, you.skill_points[j], 6);
-
-    for (j = 0; j < 50; ++j)
-        *p++ = you.unique_items[j];     /* unique items */
-
-    for (j = 0; j < 50; ++j)
-        *p++ = you.unique_creatures[j]; /* unique beasties */
-
-    for (j = 0; j < NUM_DURATIONS; ++j)
-        *p++ = you.duration[j];
-
-    for (j = 0; j < 30; ++j)
-        *p++ = you.attribute[j];
-
-    for (j = 0; j < 30; ++j)
-        *p++ = you.branch_stairs[j];
-
-    for (j = 0; j < 100; ++j)
-        *p++ = you.mutation[j];
-
-    for (j = 0; j < 50; ++j)
-        *p++ = you.had_item[j];
-
-    for (j = 0; j < 100; ++j)
-        *p++ = you.demon_pow[j];
-
-    for (j = 0; j < NO_UNRANDARTS; ++j)
-        *p++ = does_unrandart_exist(j);
-
-    for (j = 0; j < MAX_BRANCHES; ++j)
-        *p++ = stair_level[j];
-
-    for (i = 0; i < MAX_LEVELS; ++i)
-    {
-        for (j = 0; j < MAX_BRANCHES; ++j)
-        {
-            *p++ = altars_present[i][j];
-            *p++ = feature[i][j];
-        }
-    }
-
-    if (p != buf + datalen)
-    {
-        perror("opa (3)...");
+        strcpy(info, "Unable to open \"");
+        strcat(info, charFile );
+        strcat(info, "\" for writing!");
+        perror(info);
         end(-1);
     }
 
-    /* Use the first one to amend already created files, and the second
-       to create new - the 2nd will be used eventually, as save games will
-       be deleted after loading. */
+    write_tagged_file(saveFile, 4, 0, TAGTYPE_PLAYER);
 
-    //  int handle=open(char_f, O_CREAT|O_TRUNC|O_BINARY, 0660);
-    FILE *handle = fopen(char_f, "wb");
-    //open(char_f, O_RDWR|O_CREAT|O_TRUNC|O_BINARY, 0660);
-
-    if (handle == NULL)
-    {
-        perror("Unable to open file for writing!");
-        end(-1);
-    }
-
-    int retval = write2(handle, buf, datalen);
-
-    free(buf);
-
-    if (datalen != retval)
-    {
-        perror("opa (4)...!");
-        end(-1);
-    }
-
-    fclose(handle);
+    fclose(saveFile);
 
 #ifdef SHARED_FILES_CHMOD_VAL
-    chmod(char_f, SHARED_FILES_CHMOD_VAL);
+    // change mode (unices)
+    chmod(charFile, SHARED_FILES_CHMOD_VAL);
 #endif
 
+    // if just save, early out
     if (!leave_game)
         return;
 
+    // must be exiting -- save level & goodbye!
     save_level(you.your_level, (you.level_type != LEVEL_DUNGEON),
                you.where_are_you);
-
-//was_a_labyrinth = false;
 
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
@@ -1882,10 +1122,90 @@ void save_game(bool leave_game)
     end(0);
 }                               // end save_game()
 
+void load_ghost(void)
+{
+    char cha_fil[kFileNameSize];
+
+    make_filename(cha_fil, "bones", you.your_level, you.where_are_you,
+        you.level_type != LEVEL_DUNGEON, true);
+
+    FILE *gfile = fopen(cha_fil, "rb");
+
+    if (gfile == NULL)
+        return;                 // no such ghost.
+
+    char majorVersion;
+    char minorVersion;
+
+    if (!determine_ghost_version(gfile, majorVersion, minorVersion))
+    {
+        fclose(gfile);
+        sprintf(info, "Ghost file \"%s\" seems to be invalid.",
+            cha_fil);
+        mpr(info, MSGCH_WARN);
+        more();
+        return;
+    }
+
+    restore_ghost_version(gfile, majorVersion, minorVersion);
+
+    // sanity check - EOF
+    if (!feof(gfile))
+    {
+        fclose(gfile);
+        sprintf(info, "Incomplete read of \"%s\".", cha_fil);
+        mpr(info, MSGCH_WARN);
+        more();
+        return;
+    }
+
+    fclose(gfile);
+
+    // remove bones file - ghosts are hardly permanent.
+    unlink(cha_fil);
+
+    // translate ghost to monster and place.
+    for (int imn = 0; imn < MAX_MONSTERS - 10; imn++)
+    {
+        if (menv[imn].type != -1)
+            continue;
+
+        menv[imn].type = MONS_PLAYER_GHOST;
+        menv[imn].hit_dice = ghost.values[12];
+        menv[imn].hit_points = ghost.values[0];
+        menv[imn].max_hit_points = ghost.values[0];
+        menv[imn].armor_class = ghost.values[2];
+        menv[imn].evasion = ghost.values[1];
+        menv[imn].speed = 10;
+        menv[imn].speed_increment = 70;
+
+        menv[imn].number = 250;
+        for(int i=14; i<20; i++)
+        {
+            if (ghost.values[i] != MS_NO_SPELL)
+            {
+                menv[i].number = 119;
+                break;
+            }
+        }
+
+        do
+        {
+            menv[imn].x = random2(GXM - 20) + 10;
+            menv[imn].y = random2(GYM - 20) + 10;
+        }
+        while ((grd[menv[imn].x][menv[imn].y] != DNGN_FLOOR)
+               || (mgrd[menv[imn].x][menv[imn].y] != NON_MONSTER));
+
+        mgrd[menv[imn].x][menv[imn].y] = imn;
+        break;
+    }
+}
+
+
 void restore_game(void)
 {
     char char_f[kFileNameSize];
-    int i, j;
 
 #ifdef SAVE_DIR_PATH
     sprintf(char_f, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
@@ -1900,366 +1220,248 @@ void restore_game(void)
     strupr(char_f);
 #endif
 
-    //  int handle = open(char_f, O_RDONLY, S_IWRITE, S_IREAD);
-    FILE *handle = fopen(char_f, "rb");
-    //open(char_f, O_RDWR|O_CREAT|O_TRUNC|O_BINARY, 0660);
+    FILE *restoreFile = fopen(char_f, "rb");
 
-    if (handle == NULL)
+    if (restoreFile == NULL)
     {
-        perror("Unable to open file for reading");
+        strcpy(info, "Unable to open \"");
+        strcat(info, char_f );
+        strcat(info, "\" for reading!");
+        perror(info);
         end(-1);
     }
-
-    int oldlen =
-        30 + 35 + 10 + 69 + 6 + 5 + 25 + 2 + 30 + 5 + 25 + 12 * 52 + 50 * 5 +
-        50 * 4 + 50 + 50 + 6 * 50 + 50 + 50 + 30 + 30 + 30 + 100 + 50 + 100 +
-        NO_UNRANDARTS + MAX_BRANCHES + (2 * (MAX_LEVELS * MAX_BRANCHES));
-
-    int datalen = oldlen + 45 + MAX_LEVELS * MAX_BRANCHES;
-    char *buf = (char *) malloc(datalen);
-    char *p = buf;
-
-    int bytes = read2(handle, buf, datalen);
-
-    if (oldlen != bytes && datalen != bytes && (oldlen + 44) != bytes)
-    {
-        free(buf);
-        perror("Unable to read file");
-        end(-1);
-    }
-
-    fclose(handle);
 
     char majorVersion;
     char minorVersion;
 
-    if (bytes > oldlen)
+    if (!determine_version(restoreFile, majorVersion, minorVersion))
     {
-        majorVersion = *p++;
-        minorVersion = *p++;
-
-        int chunkSize = load_int(p, 4);
-
-        if (majorVersion != 1)
-        {
-            free(buf);
-            perror("Unable to read file (bad version)");
-            end(-1);
-        }
-
-        // if zero we're opening a new game so we need the saved time
-        if (you.elapsed_time < 0.01)
-            you.elapsed_time = load_double(p, 14);
-
-        int used_chunk = 20;
-
-        if (minorVersion >= 4)
-        {
-            used_chunk++;
-            you.gift_timeout = *p++;
-
-            for (i = 0; i < 21; i++)
-            {
-                you.penance[i] = *p++;
-                used_chunk++;
-            }
-
-            // added 22Jun2000 for player vision radius GDL
-            used_chunk += 2;
-            you.normal_vision = *p++;
-            you.current_vision = *p++;
-
-            // added 17jan2001 for player exit from hell
-            you.hell_exit = *p++;
-
-        }
-        else
-        {
-            you.gift_timeout = 0;
-
-            for (i = 0; i < 21; i++)
-                you.penance[i] = 0;
-        }
-
-        for (i = 0; i < (chunkSize - used_chunk); i++)
-            *p++;               // reserved
-
-        if (minorVersion >= 2)
-        {
-            for (int level = 0; level < MAX_LEVELS; level++)
-            {
-                for (int dungeon = 0; dungeon < MAX_BRANCHES; dungeon++)
-                    tmp_file_pairs[level][dungeon] = *p++;
-            }
-        }
-
-    }
-    else
-        you.elapsed_time = 0;
-
-    for (j = 0; j < 30; ++j)
-        you.your_name[j] = *p++;
-
-    you.religion = *p++;
-    you.piety = *p++;
-    you.invis = *p++;
-    you.conf = *p++;
-    you.paralysis = *p++;
-    you.slow = *p++;
-    you.shock_shield = *p++;
-    you.rotting = *p++;
-    you.exhausted = *p++;
-    you.deaths_door = *p++;
-    your_sign = *p++;
-    your_colour = *p++;
-    ++p;                        //you.spec_poison=*p++-40;
-    you.pet_target = *p++;
-    ++p;                        //you.prot_life=*p++-40;
-    p += 5;                     //you.res_magic=load_int(p, 5);
-    ++p;                        //you.spell_levels = *p++;
-
-    you.max_level = *p++;
-    you.where_are_you = *p++;
-    you.char_direction = *p++;
-    you.your_level = *p++;
-    you.is_undead = *p++;
-    you.special_wield = *p++;
-    you.berserker = *p++;
-    you.berserk_penalty = *p++;
-    you.level_type = *p++;
-    you.synch_time = *p++;
-    you.disease = *p++;
-    ++p;                        //you.spec_death=*p++;
-    ++p;                        //you.spec_holy=*p++;
-    you.species = *p++;
-    you.hp = load_int(p, 5);
-    you.hp_max = load_int(p, 5);
-    you.haste = *p++;
-    you.might = *p++;
-    you.levitation = *p++;
-    you.poison = *p++;
-    ++p;
-    you.hunger = load_int(p, 6);
-
-    ++p;                        //you.item_wielded=*p++;
-
-    for (i = 0; i < NUM_EQUIP; ++i)
-        you.equip[i] = *p++;
-
-    you.magic_points = *p++;
-    you.max_magic_points = *p++;
-    you.strength = *p++;
-    you.intel = *p++;
-    you.dex = *p++;
-
-    ++p;                        //you.AC=*p++-80;
-    ++p;                        //you.evasion=*p++;
-    ++p;                        //you.damage=*p++;
-
-    if (minorVersion >= 4)
-    {
-        you.confusing_touch = *p++;
-        you.sure_blade = *p++;
-    }
-    else
-    {
-        you.confusing_touch = 0;
-        you.sure_blade = 0;
-        p += 2;
-    }
-
-    you.hit_points_regeneration = *p++;
-    p += 3;
-    p += 5;
-    you.experience = load_int(p, 7);
-    you.gold = load_int(p, 5);
-    you.char_class = *p++;
-    you.experience_level = *p++;
-    p += 14;
-    you.exp_available = load_int(p, 6);
-    you.max_strength = *p++;
-    you.max_intel = *p++;
-    you.max_dex = *p++;
-    ++p;                        //you.hunger_inc = *p++;
-    you.magic_points_regeneration = *p++;
-    p += 5;
-    you.base_hp = load_int(p, 5);
-    you.base_hp2 = load_int(p, 5);
-    you.base_magic_points = load_int(p, 5);
-    you.base_magic_points2 = load_int(p, 5);
-    you.x_pos = (int) *p++;
-    you.y_pos = (int) *p++;
-
-    for (i = 0; i < 30; ++i)
-        you.class_name[i] = *p++;
-
-    you.burden = load_int(p, 5);
-    you.spell_no = 0;
-
-    for (i = 0; i < 25; ++i)
-    {
-        you.spells[i] = *p++;
-
-        if (you.spells[i] != SPELL_NO_SPELL)
-            ++you.spell_no;
-    }
-
-    for (i = 0; i < ENDOFPACK; ++i)
-    {
-        you.inv_class[i] = *p++;
-        you.inv_type[i] = *p++;
-        you.inv_plus[i] = *p++;
-        you.inv_dam[i] = *p++;
-        you.inv_colour[i] = *p++;
-        you.inv_ident[i] = *p++;
-        you.inv_quantity[i] = load_int(p, 5);
-        you.inv_plus2[i] = *p++;
-    }
-
-    for (i = 0; i < 5; ++i)
-    {
-        for (j = 0; j < 50; ++j)
-            you.item_description[i][j] = *p++;
-    }
-
-    for (i = 0; i < 4; ++i)
-    {
-        for (j = 0; j < 50; ++j)
-        {
-            unsigned char ch = *p++;
-
-            switch (i)
-            {
-            case 0:
-                set_id(OBJ_WANDS, j, ch);
-                break;
-            case 1:
-                set_id(OBJ_SCROLLS, j, ch);
-                break;
-            case 2:
-                set_id(OBJ_JEWELLERY, j, ch);
-                break;
-            case 3:
-                set_id(OBJ_POTIONS, j, ch);
-                break;
-            }
-        }
-    }
-
-    for (j = 0; j < 50; ++j)
-        you.skills[j] = *p++;   /* skills! */
-
-    for (j = 0; j < 50; ++j)
-        you.practise_skill[j] = *p++;   /* skills! */
-
-    for (j = 0; j < 50; ++j)
-    {
-        you.skill_points[j] = load_int(p, 6);
-
-        if (minorVersion < 3)
-        {
-            // Convert older save files to new higher granular skill points
-            you.skill_points[j] *= 10;
-        }
-    }
-
-    for (j = 0; j < 50; ++j)
-        you.unique_items[j] = *p++;
-
-    for (j = 0; j < 50; ++j)
-        you.unique_creatures[j] = *p++;
-
-    for (j = 0; j < NUM_DURATIONS; ++j)
-        you.duration[j] = *p++;
-
-    for (j = 0; j < 30; ++j)
-        you.attribute[j] = *p++;
-
-    for (j = 0; j < 30; ++j)
-        you.branch_stairs[j] = *p++;
-
-    for (j = 0; j < 100; ++j)
-        you.mutation[j] = *p++;
-
-    for (j = 0; j < 50; ++j)
-        you.had_item[j] = *p++;
-
-    for (j = 0; j < 100; ++j)
-        you.demon_pow[j] = *p++;
-
-    for (j = 0; j < NO_UNRANDARTS; ++j)
-        set_unrandart_exist(j, *p++);
-
-    for (i = 0; i < MAX_BRANCHES; ++i)
-        stair_level[i] = *p++;
-
-    for (i = 0; i < MAX_LEVELS; ++i)
-    {
-        for (j = 0; j < MAX_BRANCHES; ++j)
-        {
-            altars_present[i][j] = *p++;
-            feature[i][j] = *p++;
-        }
-    }
-
-    if (p != buf + datalen && p != buf + oldlen && p != (buf + oldlen + 42))
-    {
-        free(buf);
-        perror("opa (5)...");
+        perror("\nSavefile appears to be invalid.\n");
         end(-1);
     }
 
-    free(buf);
-}                               // end restore_game()
+    restore_version(restoreFile, majorVersion, minorVersion);
+
+    // sanity check - EOF
+    if (!feof(restoreFile))
+    {
+        sprintf(info, "\nIncomplete read of \"%s\" - aborting.\n", char_f);
+        perror(info);
+        end(-1);
+    }
+
+    fclose(restoreFile);
+}
+
+static bool determine_version(FILE *restoreFile, char &majorVersion,
+    char &minorVersion)
+{
+    // read first two bytes.
+    char buf[2];
+    if (read2(restoreFile, buf, 2) != 2)
+        return false;               // empty file?
+
+    // check for 3.30
+    if (buf[0] == you.your_name[0] && buf[1] == you.your_name[1])
+    {
+        majorVersion = 0;
+        minorVersion = 0;
+        rewind(restoreFile);
+        return true;
+    }
+
+    // otherwise, read version and validate.
+    majorVersion = buf[0];
+    minorVersion = buf[1];
+
+    if (majorVersion == 1 || majorVersion == 4)
+        return true;
+
+    return false;   // if its not 1 or 4, no idea!
+}
+
+static void restore_version(FILE *restoreFile, char majorVersion,
+    char minorVersion)
+{
+    // assuming the following check can be removed once we can read all
+    // savefile versions.
+    if (majorVersion < 4)
+    {
+        sprintf(info, "\nSorry, this release cannot read a v%d.%d savefile.\n",
+            majorVersion, minorVersion);
+        perror(info);
+        end(-1);
+    }
+
+    switch(majorVersion)
+    {
+        case 4:
+            restore_tagged_file(restoreFile, TAGTYPE_PLAYER);
+            break;
+        default:
+            break;
+    }
+}
+
+// generic v4 restore function
+static void restore_tagged_file(FILE *restoreFile, int fileType)
+{
+    int i;
+
+    char tags[NUM_TAGS];
+    tag_set_expected(tags, fileType);
+
+    while(1)
+    {
+        i = tag_read(restoreFile);
+        if (i == 0)                 // no tag!
+            break;
+        tags[i] = 0;                // tag read
+    }
+
+    // go through and init missing tags
+    for(i=0; i<NUM_TAGS; i++)
+    {
+        if (tags[i] == 1)           // expected but never read
+            tag_missing(i);
+    }
+}
+
+static bool determine_level_version(FILE *levelFile, char &majorVersion,
+    char &minorVersion)
+{
+    // read first two bytes.
+    char buf[2];
+    if (read2(levelFile, buf, 2) != 2)
+        return false;               // empty file?
+
+    // check for 3.30 -- simply started right in with player name.
+    if (isprint(buf[0]) && buf[0] > 4)      // who knows?
+    {
+        majorVersion = 0;
+        minorVersion = 0;
+        rewind(levelFile);
+        return true;
+    }
+
+    // otherwise, read version and validate.
+    majorVersion = buf[0];
+    minorVersion = buf[1];
+
+    if (majorVersion == 1 || majorVersion == 4)
+        return true;
+
+    return false;   // if its not 1 or 4, no idea!
+}
+
+static void restore_level_version(FILE *levelFile, char majorVersion,
+    char minorVersion)
+{
+    // assuming the following check can be removed once we can read all
+    // savefile versions.
+    if (majorVersion < 4)
+    {
+        sprintf(info, "\nSorry, this release cannot read a v%d.%d level file.\n",
+            majorVersion, minorVersion);
+        perror(info);
+        end(-1);
+    }
+
+    switch(majorVersion)
+    {
+        case 4:
+            restore_tagged_file(levelFile, TAGTYPE_LEVEL);
+            break;
+        default:
+            break;
+    }
+}
+
+static bool determine_ghost_version(FILE *ghostFile, char &majorVersion,
+    char &minorVersion)
+{
+    // read first two bytes.
+    char buf[2];
+    if (read2(ghostFile, buf, 2) != 2)
+        return false;               // empty file?
+
+    // check for pre-v4 -- simply started right in with ghost name.
+    if (isprint(buf[0]) && buf[0] > 4)
+    {
+        majorVersion = 0;
+        minorVersion = 0;
+        rewind(ghostFile);
+        return true;
+    }
+
+    // otherwise, read version and validate.
+    majorVersion = buf[0];
+    minorVersion = buf[1];
+
+    if (majorVersion == 4)
+        return true;
+
+    return false;   // if its not 4, no idea!
+}
+
+static void restore_old_ghost(FILE *ghostFile)
+{
+    char buf[41];
+    read2(ghostFile, buf, 41);  // 41 causes EOF. 40 will not.
+
+    // translate
+    memcpy(ghost.name, buf, 20);
+
+    for(int i=0; i<20; i++)
+        ghost.values[i] = buf[i+20];
+}
+
+static void restore_ghost_version(FILE *ghostFile, char majorVersion,
+    char minorVersion)
+{
+    // currently, we can read all known ghost versions.
+    switch(majorVersion)
+    {
+        case 4:
+            restore_tagged_file(ghostFile, TAGTYPE_GHOST);
+            break;
+        case 0:
+            restore_old_ghost(ghostFile);
+            break;
+        default:
+            break;
+    }
+}
 
 void save_ghost(void)
 {
+    char cha_fil[kFileNameSize];
+
     if (you.your_level < 2 || you.is_undead)
         return;
 
-    char corr_level[10];
-    char hbjh[5];
-    char cha_fil[kFileNameSize];
+    make_filename(cha_fil, "bones", you.your_level, you.where_are_you,
+        you.level_type != LEVEL_DUNGEON, true);
 
-    strcpy(corr_level, (you.your_level < 10) ? "0" : "");
-    itoa(you.your_level, hbjh, 10);
-    strcat(corr_level, hbjh);
-    corr_level[2] = index_to_letter(you.where_are_you);
-    corr_level[3] = '\0';
-
-#ifdef SAVE_DIR_PATH
-    strcpy(cha_fil, SAVE_DIR_PATH "bones.");
-#else
-    strcpy(cha_fil, "bones.");
-#endif
-
-    if (you.level_type != LEVEL_DUNGEON)
-        strcat(cha_fil, "lab"); /* temporary level */
-    else
-        strcat(cha_fil, corr_level);
-
-    //  int gfile=open(cha_fil, S_IWRITE, S_IREAD);
     FILE *gfile = fopen(cha_fil, "rb");
 
+    // don't overwrite existing bones!
     if (gfile != NULL)
     {
         fclose(gfile);
         return;
     }
 
-    FixedVector < unsigned char, 40 > buf1;
+    memcpy(ghost.name, you.your_name, 20);
 
-    for (int i = 0; i < 20; ++i)
-        buf1[i] = you.your_name[i];
-
-    buf1[20] = (you.hp_max >= 150) ? (150) : (you.hp_max);
-    buf1[21] = player_evasion();
-    buf1[22] = player_AC();
-    buf1[23] = player_see_invis();
-    buf1[24] = player_res_fire();
+    ghost.values[0] = (you.hp_max >= 150) ? (150) : (you.hp_max);
+    ghost.values[1] = player_evasion();
+    ghost.values[2] = player_AC();
+    ghost.values[3] = player_see_invis();
+    ghost.values[4] = player_res_fire();
     /* note - as ghosts, automatically get res poison + prot_life */
-    buf1[25] = player_res_cold();
-    buf1[26] = player_res_electricity();
+    ghost.values[5] = player_res_cold();
+    ghost.values[6] = player_res_electricity();
 
     int d = 4;
     int e = 0;
@@ -2309,17 +1511,16 @@ void save_ghost(void)
     if (d > 50)
         d = 50;
 
-    buf1[27] = d;
-    buf1[28] = e;
-    buf1[29] = you.species;
-    buf1[30] = best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99);
-    buf1[31] = you.skills[best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99)];
-    buf1[32] = you.experience_level;
-    buf1[33] = you.char_class;
-    add_spells(buf1);
+    ghost.values[7] = d;
+    ghost.values[8] = e;
+    ghost.values[9] = you.species;
+    ghost.values[10] = best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99);
+    ghost.values[11] = you.skills[best_skill(SK_FIGHTING, (NUM_SKILLS - 1), 99)];
+    ghost.values[12] = you.experience_level;
+    ghost.values[13] = you.char_class;
+    add_spells(ghost);
 
     gfile = fopen(cha_fil, "wb");
-    //open(cha_fil, O_RDWR|O_CREAT|O_TRUNC|O_BINARY, 0660);
 
     if (gfile == NULL)
     {
@@ -2330,7 +1531,8 @@ void save_ghost(void)
         return;
     }
 
-    write2(gfile, (char *) buf1.buffer(), 40);
+    write_tagged_file(gfile, 4, 0, TAGTYPE_GHOST);
+
     fclose(gfile);
 
 #ifdef SHARED_FILES_CHMOD_VAL
@@ -2338,65 +1540,46 @@ void save_ghost(void)
 #endif
 }                               // end save_ghost()
 
-//int write2(int file, const void *buffer, unsigned count)
-int write2(FILE * file, char *buffer, unsigned int count)
-{
-/*
-    unsigned int i = 0;
-
-    for (i = 0; i < count; i ++)
-      if ( buffer [i] == EOF | buffer [i] == 26 )
-        buffer [i] = 0;
-*/
-    return fwrite(buffer, 1, count, file);
-    //return write(file, buffer, count);
-}
-
-int read2(FILE * file, char *buffer, unsigned int count)
-{
-    return fread(buffer, 1, count, file);
-}
-
 /*
    Used when creating ghosts: goes through and finds spells for the ghost to
    cast. Death is a traumatic experience, so ghosts only remember a few spells.
  */
-void add_spells(FixedVector < unsigned char, 40 > &buffer)
+void add_spells(struct ghost_struct &gs)
 {
     int i = 0;
 
-    buffer[34] = 250;
-    buffer[35] = 250;
-    buffer[36] = 250;
-    buffer[37] = 250;
-    buffer[38] = 250;
-    buffer[39] = 250;
+    gs.values[14] = 250;
+    gs.values[15] = 250;
+    gs.values[16] = 250;
+    gs.values[17] = 250;
+    gs.values[18] = 250;
+    gs.values[19] = 250;
 
-    buffer[34] = search_first_list(250);
-    buffer[35] = search_first_list(buffer[34]);
-    buffer[36] = search_second_list(250);
-    buffer[37] = search_third_list(250);
+    gs.values[14] = search_first_list(250);
+    gs.values[15] = search_first_list(gs.values[14]);
+    gs.values[16] = search_second_list(250);
+    gs.values[17] = search_third_list(250);
 
-    if (buffer[37] == 250)
-        buffer[37] = search_first_list(250);
+    if (gs.values[17] == 250)
+        gs.values[17] = search_first_list(250);
 
-    buffer[38] = search_first_list(buffer[37]);
+    gs.values[18] = search_first_list(gs.values[17]);
 
-    if (buffer[38] == 250)
-        buffer[38] = search_first_list(buffer[37]);
+    if (gs.values[18] == 250)
+        gs.values[18] = search_first_list(gs.values[17]);
 
     if (find_spell(SPELL_DIG))
-        buffer[38] = SPELL_DIG;
+        gs.values[18] = SPELL_DIG;
 
     /* Looks for blink/tport for emergency slot */
     if (find_spell(SPELL_CONTROLLED_BLINK) || find_spell(SPELL_BLINK))
-        buffer[39] = SPELL_CONTROLLED_BLINK;
+        gs.values[19] = SPELL_CONTROLLED_BLINK;
 
     if (find_spell(SPELL_TELEPORT_SELF))
-        buffer[39] = SPELL_TELEPORT_SELF;
+        gs.values[19] = SPELL_TELEPORT_SELF;
 
-    for (i = 34; i < 40; i++)
-        buffer[i] = translate_spell(buffer[i]);
+    for (i = 14; i < 20; i++)
+        gs.values[i] = translate_spell(gs.values[i]);
 }                               // end add_spells()
 
 unsigned char search_first_list(unsigned char ignore_spell)
@@ -2555,10 +1738,10 @@ unsigned char translate_spell(unsigned char spel)
     case SPELL_SYMBOL_OF_TORMENT:
         return MS_TORMENT;
     default:
-        return 100;
+        break;
     }
 
-    return 100;
+    return MS_NO_SPELL;
 }
 
 void generate_random_demon(void)

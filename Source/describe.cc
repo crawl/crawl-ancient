@@ -100,7 +100,7 @@ static void print_description(const string & d)
 {
     int nextLine = -1;
     int currentPos = 0;
-    const int lineWidth = 79;
+    const int lineWidth = 70;
     bool nlSearch = true;       // efficiency
 
     textcolor(LIGHTGREY);
@@ -123,7 +123,7 @@ static void print_description(const string & d)
             nextLine = d.find('$', currentPos);
             if (nextLine >= currentPos && nextLine < currentPos + lineWidth)
             {
-                cprintf((d.substr(currentPos, nextLine - currentPos)).data());
+                cprintf((d.substr(currentPos, nextLine - currentPos)).c_str());
                 currentPos = nextLine + 1;
                 continue;
             }
@@ -134,7 +134,7 @@ static void print_description(const string & d)
         // no newline -- see if rest of string will fit.
         if (currentPos + lineWidth >= d.length())
         {
-            cprintf((d.substr(currentPos)).data());
+            cprintf((d.substr(currentPos)).c_str());
             return;
         }
 
@@ -144,7 +144,7 @@ static void print_description(const string & d)
 
         if (nextLine > 0)
         {
-            cprintf((d.substr(currentPos, nextLine - currentPos)).data());
+            cprintf((d.substr(currentPos, nextLine - currentPos)).c_str());
             currentPos = nextLine + 1;
             continue;
         }
@@ -155,7 +155,7 @@ static void print_description(const string & d)
         if (nextLine > d.length())
             nextLine = d.length();
 
-        cprintf((d.substr(currentPos, nextLine - currentPos)).data());
+        cprintf((d.substr(currentPos, nextLine - currentPos)).c_str());
         currentPos = nextLine;
     }
 }
@@ -441,7 +441,7 @@ static string describe_demon(void)
 
     globby *= strlen(ghost.name);
 
-    srandom(globby);
+    srand(globby);
 
     string description = "A powerful demon, ";
 

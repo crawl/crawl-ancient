@@ -2368,6 +2368,27 @@ enum SYMBOLS // beam[].type - note that this (and its variants) also accepts val
     SYM_ARMOUR = '['                   //   91
 };
 
+enum TAGS   // used during save/load process to identify data blocks
+{
+    TAG_VERSION = 0,                    // should NEVER be read in!
+    TAG_YOU = 1,                        // 'you' structure
+    TAG_YOU_ITEMS,                      // your items
+    TAG_YOU_DUNGEON,                    // dungeon specs (stairs, branches, features)
+    TAG_LEVEL,                          // various grids & clouds
+    TAG_LEVEL_ITEMS,                    // items/traps
+    TAG_LEVEL_MONSTERS,                 // monsters
+    TAG_GHOST,                          // ghost
+    NUM_TAGS
+};
+
+enum TAGTYPES   // file types supported by tag system
+{
+    TAGTYPE_PLAYER=0,           // Foo.sav
+    TAGTYPE_LEVEL,              // Foo.00a, .01a, etc.
+    TAGTYPE_GHOST               // bones.xxx
+};
+
+
 enum TRANSFORMATIONS
 {
     TRAN_NONE,                         //    0

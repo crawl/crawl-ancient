@@ -336,6 +336,7 @@ struct environ
     FixedVector<unsigned char, MAX_TRAPS> trap_y;
     FixedVector<int, 20> mons_alloc;
     int trap_known;
+    double elapsed_time;             // used during level load
 };
 
 extern struct environ env;
@@ -389,5 +390,10 @@ struct game_options {
 };
 
 extern game_options  Options;
+
+struct tagHeader {
+    short tagID;
+    long offset;
+};
 
 #endif // EXTERNS_H

@@ -3392,5 +3392,3 @@ static int map_wand_to_mspell(int wand_type)
 
     return mzap;
 }
-
-

@@ -938,7 +938,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                                 if ((DAMAGE) >  20) strcat(info, "!");
 
 
-    if (ur_armed && you.inv_class[ weapon ] == OBJ_STAVES)
+    if (ur_armed && hit && you.inv_class[ weapon ] == OBJ_STAVES)
     {
         specdam = 0;
         if (you.magic_points >= STAFF_COST)
@@ -1030,8 +1030,12 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 break;
 
             case STAFF_POISON:
-                // this really degrads the Staff of Olgreb -- bwr
-                if (damage_done + you.skills[SK_POISON_MAGIC] > random2(30))
+                // cap chance at 30% -- let staff of Olgreb shine
+                temp_rand = damage_done + you.skills[SK_POISON_MAGIC];
+                if (temp_rand > 30)
+                    temp_rand = 30;
+
+                if (random2(100) < temp_rand)
                     poison_monster(defender, true);
                 break;
 

@@ -1566,4 +1566,3 @@ int inv_count(void)
 
     return count;
 }
-

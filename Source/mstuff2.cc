@@ -453,6 +453,10 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 
 void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
 {
+    // always set these -- used by things other than beam()
+    pbolt.ench_power = 5 * monster->hit_dice;
+    pbolt.beam_source = monster_index(monster);
+
     if (spell_cast == MS_HELLFIRE_BURST
         || spell_cast == MS_BRAIN_FEED
         || spell_cast == MS_SMITE || spell_cast == MS_MUTATION)
@@ -510,8 +514,6 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
     pbolt.flavour = theBeam.flavour;
     pbolt.thrower = theBeam.thrown;
     strcpy(pbolt.beam_name, theBeam.name.c_str());
-    pbolt.ench_power = 5 * monster->hit_dice;
-    pbolt.beam_source = monster_index(monster);
     pbolt.isBeam = theBeam.isBeam;
 
     if (spell_cast == MS_HASTE

@@ -55,7 +55,6 @@
 
 #ifdef DOS
 #include <conio.h>
-#include <file.h>
 #endif
 
 #ifdef LINUX

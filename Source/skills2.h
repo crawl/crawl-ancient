@@ -82,7 +82,7 @@ void show_skills(void);
 /* ***********************************************************************
  * called from: item_use
  * *********************************************************************** */
-void wield_warning(void);
+void wield_warning(bool newWeapon = true);
 
 
 #endif

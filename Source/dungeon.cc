@@ -1530,7 +1530,8 @@ int place_monster(unsigned char plus_seventy, int typed, bool is_summoning,
 
     define_monster(bk, menv);
 
-    if (menv[bk].type >= MONS_TERENCE && menv[bk].type <= MONS_BORIS)
+    // NOTE: Boris is actually a unique,  but we let him come back... :)
+    if (menv[bk].type >= MONS_TERENCE && menv[bk].type <= MONS_MARGERY)
         you.unique_creatures[menv[bk].type - 280] = 1;
 
     plussed++;
@@ -4144,7 +4145,7 @@ static void big_room(void)
         if (type_floor == DNGN_LAVA)
             type_floor = DNGN_SHALLOW_WATER;
         if (type_2 == DNGN_LAVA)
-            type_2 == DNGN_SHALLOW_WATER;
+            type_2 = DNGN_SHALLOW_WATER;
     }
 
     if (one_chance_in(4))
@@ -6391,7 +6392,7 @@ static void link_items(void)
             if (menv[bi].inv[bj] == NON_ITEM)
                 continue;
 
-            const unsigned int item = menv[bi].inv[bj];
+            int item = menv[bi].inv[bj];
             if (igrd[ mitm.x[item] ][ mitm.y[item] ] == item)
                 igrd[ mitm.x[item] ][ mitm.y[item] ] = mitm.link[ item ];
         }
@@ -7989,13 +7990,16 @@ static void build_vaults(int force_vault)
     FixedVector < char, 10 > stair_exist;
     char stx, sty;
 
-    FixedVector < char, 7 > acq_item_class(OBJ_WEAPONS,
-                                           OBJ_ARMOUR,
-                                           OBJ_WEAPONS,
-                                           OBJ_JEWELLERY,
-                                           OBJ_BOOKS,
-                                           OBJ_STAVES,
-                                           OBJ_MISCELLANY);
+    FixedVector < char, 7 > acq_item_class;
+    // hack - passing chars through '...' promotes them to ints, which
+    // barfs under gcc in fixvec.h.  So don't.
+    acq_item_class[0] = OBJ_WEAPONS;
+    acq_item_class[1] = OBJ_ARMOUR;
+    acq_item_class[2] = OBJ_WEAPONS;
+    acq_item_class[3] = OBJ_JEWELLERY;
+    acq_item_class[4] = OBJ_BOOKS;
+    acq_item_class[5] = OBJ_STAVES;
+    acq_item_class[6] = OBJ_MISCELLANY;
 
     FixedVector < int, 7 > mons_array(RANDOM_MONSTER,
                                       RANDOM_MONSTER,
@@ -8249,13 +8253,16 @@ static void build_minivaults(int force_vault)
     // isn't generated.
     int altar_count = 0;
 
-    FixedVector < char, 7 > acq_item_class(OBJ_WEAPONS,
-                                           OBJ_ARMOUR,
-                                           OBJ_WEAPONS,
-                                           OBJ_JEWELLERY,
-                                           OBJ_BOOKS,
-                                           OBJ_STAVES,
-                                           OBJ_MISCELLANY);
+    FixedVector < char, 7 > acq_item_class;
+    // hack - passing chars through '...' promotes them to ints, which
+    // barfs under gcc in fixvec.h.  So don't.
+    acq_item_class[0] = OBJ_WEAPONS;
+    acq_item_class[1] = OBJ_ARMOUR;
+    acq_item_class[2] = OBJ_WEAPONS;
+    acq_item_class[3] = OBJ_JEWELLERY;
+    acq_item_class[4] = OBJ_BOOKS;
+    acq_item_class[5] = OBJ_STAVES;
+    acq_item_class[6] = OBJ_MISCELLANY;
 
     FixedVector < int, 7 > mons_array(RANDOM_MONSTER,
                                       RANDOM_MONSTER,
@@ -8944,5 +8951,3 @@ static void place_branch_entrances(int dlevel, char level_type)
         place_specific_stair(stair);
     }   // end loop - possible branch entrances
 }
-
-

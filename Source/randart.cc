@@ -698,7 +698,7 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype,
     }
 
     long globby = aclass * adam + acol + atype * (aplus % 100) + aplus2 * 100;
-    long randstore = random();
+    long randstore = rand();
     FixedVector < char, RA_PROPERTIES > proprt;
     int i = 0;
     int power_level = ((aplus % 100) - 50) / 3 + (aplus2 - 50) / 3;
@@ -1126,7 +1126,7 @@ char *randart_name(unsigned char aclass, unsigned char atype,
     strcpy(art_n, "");
 
     long globby = aclass + adam * (aplus % 100) + atype * aplus2;
-    long randstore = random();
+    long randstore = rand();
 
     srand(globby);
 
@@ -1226,7 +1226,7 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype,
     strcpy(art_n, "");
 
     long globby = aclass + adam * (aplus % 100) + atype * aplus2;
-    long randstore = random();
+    long randstore = rand();
 
     srand(globby);
 
@@ -1324,7 +1324,7 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype,
     strcpy(art_n, "");
 
     long globby = aclass + adam * (aplus % 100) + atype * aplus2;
-    long randstore = random();
+    long randstore = rand();
 
     srand(globby);
 

@@ -75,7 +75,7 @@ int random2(int max)
     if (max < 1)
         return 0;
 
-    return random() % max;
+    return rand() % max;
 #endif
 }
 
@@ -308,7 +308,7 @@ void cf_setseed(void)
     do
     {
         // using rand() here makes these predictable -- bwr
-        *ptr_cfseed = random();
+        *ptr_cfseed = rand();
     }
     while (*ptr_cfseed == 0);
 }

@@ -54,6 +54,7 @@ spells4.o \
 spl-book.o \
 spl-util.o \
 stuff.o \
+tags.o \
 transfor.o \
 view.o \
 wpn-misc.o

@@ -507,7 +507,10 @@ void eat_food(void)
     if (igrd[you.x_pos][you.y_pos] != NON_ITEM)
     {
         if (eat_from_floor())
+        {
+            burden_change();    // ghouls regain strength from rotten food
             return;
+        }
     }
 
     if (inv_count() < 1)
@@ -612,7 +615,6 @@ static bool food_change(bool suppress_message)
     // take care of ghouls - they can never be 'full'
     if (you.species == SP_GHOUL)
         if (you.hunger > 6999) you.hunger = 6999;
-
 
     // get new hunger state
     if (you.hunger <= 1000)
@@ -895,7 +897,7 @@ static void eat_chunk(int chunk_effect)
         you.delay_t = 3;
         you.delay_doing = DELAY_EAT;
 
-        food_change(1);
+        lessen_hunger(1000, true);
     }
     else
     {
